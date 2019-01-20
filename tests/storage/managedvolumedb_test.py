@@ -152,6 +152,31 @@ def test_delete(tmp_db):
             db.get_volume(test_id)
 
 
+def test_owns_multipath(tmp_db):
+    vol_id = str(uuid.uuid4())
+    connection_info = {"connection": 1}
+    attachment = {"attachment": 2}
+    path = "/dev/mapper/36001405376e34ea70384de7a34a2854d"
+    multipath_id = "36001405376e34ea70384de7a34a2854d"
+
+    db = managedvolumedb.open()
+    with closing(db):
+        # Empty db does not own any device.
+        assert not db.owns_multipath(multipath_id)
+
+        # Volume does not own (yet) multipath_id.
+        db.add_volume(vol_id, connection_info)
+        assert not db.owns_multipath(multipath_id)
+
+        # Volume owns multipath_id.
+        db.update_volume(vol_id, path, attachment, multipath_id)
+        assert db.owns_multipath(multipath_id)
+
+        # Nothing owns multipath_id now.
+        db.remove_volume(vol_id)
+        assert not db.owns_multipath(multipath_id)
+
+
 @pytest.mark.slow
 def test_concurrency(tmp_db):
 

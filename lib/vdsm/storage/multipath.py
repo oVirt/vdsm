@@ -29,6 +29,7 @@ from glob import glob
 import logging
 import re
 from collections import namedtuple
+from contextlib import closing
 
 from vdsm import utils
 from vdsm.common import cmdutils
@@ -39,6 +40,7 @@ from vdsm.config import config
 from vdsm.storage import devicemapper
 from vdsm.storage import hba
 from vdsm.storage import iscsi
+from vdsm.storage import managedvolumedb
 from vdsm.storage import misc
 
 DEV_ISCSI = "iSCSI"
@@ -365,37 +367,43 @@ def getMPDevNamesIter():
 def getMPDevsIter():
     """
     Collect the list of all the multipath block devices, except devices
-    blacklisted in vdsm configuration.
+    blacklisted in vdsm configuration, and devices owned by managed volumes.
 
     Return the list of device identifiers w/o "/dev/mapper" prefix
     """
-    for dmInfoDir in glob(SYS_BLOCK + "/dm-*/dm/"):
-        uuidFile = os.path.join(dmInfoDir, "uuid")
-        try:
-            with open(uuidFile, "r") as uf:
-                uuid = uf.read().strip()
-        except (OSError, IOError):
-            continue
+    db = managedvolumedb.open()
+    with closing(db):
+        for dmInfoDir in glob(SYS_BLOCK + "/dm-*/dm/"):
+            uuidFile = os.path.join(dmInfoDir, "uuid")
+            try:
+                with open(uuidFile, "r") as uf:
+                    uuid = uf.read().strip()
+            except (OSError, IOError):
+                continue
 
-        if not uuid.startswith("mpath-"):
-            continue
+            if not uuid.startswith("mpath-"):
+                continue
 
-        nameFile = os.path.join(dmInfoDir, "name")
-        try:
-            with open(nameFile, "r") as nf:
-                guid = nf.read().rstrip("\n")
-        except (OSError, IOError):
-            continue
+            nameFile = os.path.join(dmInfoDir, "name")
+            try:
+                with open(nameFile, "r") as nf:
+                    guid = nf.read().rstrip("\n")
+            except (OSError, IOError):
+                continue
 
-        if guid in BLACKLIST:
-            log.debug("Blacklisted device %r discarded", guid)
-            continue
+            if guid in BLACKLIST:
+                log.debug("Blacklisted device %r discarded", guid)
+                continue
 
-        if TOXIC_REGEX.match(guid):
-            log.info("Device with unsupported GUID %s discarded", guid)
-            continue
+            if TOXIC_REGEX.match(guid):
+                log.info("Device with unsupported GUID %s discarded", guid)
+                continue
 
-        yield dmInfoDir.split("/")[3], guid
+            if db.owns_multipath(guid):
+                log.debug("Managed volume device %r discarded", guid)
+                continue
+
+            yield dmInfoDir.split("/")[3], guid
 
 
 def devIsiSCSI(type):

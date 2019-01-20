@@ -209,6 +209,21 @@ class DB(object):
             self._conn.execute(sql, (path, attachment_json, multipath_id,
                                      vol_id))
 
+    def owns_multipath(self, multipath_id):
+        """
+        Return True if multipath device is owned by a managed volume.
+        """
+        sql = """
+            SELECT EXISTS (
+                SELECT 1
+                FROM volumes
+                WHERE multipath_id = ?
+            )
+        """
+        res = self._conn.execute(sql, (multipath_id,))
+        row = res.fetchall()[0]
+        return row[0] == 1
+
 
 class ClosedConnection(object):
 

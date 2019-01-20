@@ -138,6 +138,7 @@ def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db):
     }
 
     assert tmp_db.get_volume("fake_vol_id") == volume_info
+    assert tmp_db.owns_multipath("fakemultipathid")
 
     entries = fake_os_brick.log()
     assert len(entries) == 1
@@ -236,6 +237,9 @@ def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir, tmp_db):
 
     with pytest.raises(se.ManagedVolumeAlreadyAttached):
         managedvolume.attach_volume("fake_vol_id", connection_info)
+
+    # Device still owned by managed volume.
+    assert tmp_db.owns_multipath("fakemultipathid")
 
     entries = fake_os_brick.log()
     assert len(entries) == 1
@@ -342,3 +346,6 @@ def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir,
 
     with pytest.raises(managedvolumedb.NotFound):
         tmp_db.get_volume("fake_vol_id")
+
+    # Device not owned by managed volume.
+    assert not tmp_db.owns_multipath("fakemultipathid")
