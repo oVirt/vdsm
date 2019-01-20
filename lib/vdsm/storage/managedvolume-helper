@@ -109,7 +109,18 @@ def get_connector(conn_info):
 
     protocol = conn_info['driver_volume_type']
 
-    conn = connector.InitiatorConnector.factory(
+    if protocol == "rbd":
+        # Imported locally to keep non RBD tests working
+        # nos_brick is importing a lot of other packages
+        # that make the tests difficult
+        from vdsm.storage import nos_brick
+
+        def factory(protocol, *args, **kwargs):
+            return nos_brick.RBDConnector(*args, **kwargs)
+    else:
+        factory = connector.InitiatorConnector.factory
+
+    conn = factory(
         protocol,
         None,
         use_multipath=connector_properties['multipath'],

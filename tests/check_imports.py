@@ -37,7 +37,11 @@ def find_modules():
     """
     Yields fully qualified modules names in the vdsm package.
     """
-    expected_to_fail = set()
+    expected_to_fail = {
+        # TODO: imports os_brick which is a soft dependency
+        # remove when os_brick can be required.
+        "vdsm.storage.nos_brick",
+    }
 
     def error(name):
         raise
@@ -47,7 +51,7 @@ def find_modules():
                                             prefix="vdsm.",
                                             onerror=error):
         if name in expected_to_fail:
-            name = pytest.mark.xfail(name)
+            name = pytest.param(name, marks=pytest.mark.xfail)
         yield name
 
 

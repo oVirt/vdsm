@@ -71,6 +71,7 @@ dist_vdsmstorage_PYTHON = \
 	multipath.py \
 	nbd.py \
 	nfsSD.py \
+	nos_brick.py \
 	operation.py \
 	outOfProcess.py \
 	persistent.py \

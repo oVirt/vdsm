@@ -166,6 +166,7 @@ def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
 
 
 @requires_root
+@pytest.mark.xfail(reason='RBD monkeypatching not implemented yet')
 def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK_RBD")
     connection_info = {
