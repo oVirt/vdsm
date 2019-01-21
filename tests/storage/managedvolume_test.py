@@ -70,6 +70,23 @@ def fake_os_brick(monkeypatch, tmpdir):
     return fake_os_brick()
 
 
+@pytest.fixture
+def fake_lvm(monkeypatch):
+
+    class fake_lvm:
+
+        def __init__(self):
+            self.filter_invalidated = False
+
+        def invalidateFilter(self):
+            self.filter_invalidated = True
+
+    flvm = fake_lvm()
+    monkeypatch.setattr(managedvolume, "lvm", flvm)
+
+    return flvm
+
+
 @requires_root
 def test_connector_info_not_installed(monkeypatch):
     # Simulate missing os_brick.
@@ -115,7 +132,7 @@ def test_attach_volume_not_installed_attach(monkeypatch):
 
 
 @requires_root
-def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db):
+def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     connection_info = {
         "driver_volume_type": "iscsi",
@@ -144,9 +161,12 @@ def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db):
     assert len(entries) == 1
     assert entries[0]["action"] == "connect_volume"
 
+    # Adding new multipath id requires filter invalidation.
+    assert fake_lvm.filter_invalidated
+
 
 @requires_root
-def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick, tmp_db):
+def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK_RBD")
     connection_info = {
         "driver_volume_type": "rbd",
@@ -172,9 +192,12 @@ def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick, tmp_db):
     assert len(entries) == 1
     assert entries[0]["action"] == "connect_volume"
 
+    # RBD does not use multipath.
+    assert not fake_lvm.filter_invalidated
+
 
 @requires_root
-def test_attach_volume_ok_other(monkeypatch, fake_os_brick, tmp_db):
+def test_attach_volume_ok_other(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "NO_WWN")
     connection_info = {
         "driver_volume_type": "other",
@@ -201,11 +224,14 @@ def test_attach_volume_ok_other(monkeypatch, fake_os_brick, tmp_db):
     assert len(entries) == 1
     assert entries[0]["action"] == "connect_volume"
 
+    # Other devices do not use multipath.
+    assert not fake_lvm.filter_invalidated
+
 
 @requires_root
 @pytest.mark.parametrize("vol_type", ["iscsi", "fibre_channel"])
 def test_attach_volume_no_multipath_id(monkeypatch, fake_os_brick, tmp_db,
-                                       vol_type):
+                                       vol_type, fake_lvm):
     # Simulate attaching iSCSI or FC device without multipath_id.
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "NO_WWN")
     with pytest.raises(se.ManagedVolumeUnsupportedDevice):
@@ -223,9 +249,13 @@ def test_attach_volume_no_multipath_id(monkeypatch, fake_os_brick, tmp_db,
     with pytest.raises(managedvolumedb.NotFound):
         tmp_db.get_volume("vol_id")
 
+    # Multipath id was not added to database, so no invalidation is needed.
+    assert not fake_lvm.filter_invalidated
+
 
 @requires_root
-def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir, tmp_db):
+def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir, tmp_db,
+                                  fake_lvm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     monkeypatch.setattr(managedvolume, "DEV_MAPPER", str(tmpdir))
     tmpdir.join("fakemultipathid").write("")
@@ -234,6 +264,9 @@ def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir, tmp_db):
         "data": {"some_info": 26}
     }
     managedvolume.attach_volume("fake_vol_id", connection_info)
+
+    # Attaching invalidates the filter, reset.
+    fake_lvm.filter_invalidated = False
 
     with pytest.raises(se.ManagedVolumeAlreadyAttached):
         managedvolume.attach_volume("fake_vol_id", connection_info)
@@ -245,9 +278,13 @@ def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir, tmp_db):
     assert len(entries) == 1
     assert entries[0]["action"] == "connect_volume"
 
+    # Volume already attached, no need to invalidated filter.
+    assert not fake_lvm.filter_invalidated
+
 
 @requires_root
-def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir, tmp_db):
+def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir, tmp_db,
+                                   fake_lvm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     monkeypatch.setattr(managedvolume, "DEV_MAPPER", str(tmpdir))
     tmpdir.join("fakemultipathid").write("")
@@ -269,15 +306,22 @@ def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir, tmp_db):
     assert entries[0]["action"] == "connect_volume"
     assert entries[1]["action"] == "disconnect_volume"
 
+    # Multipath id not added, no need to invalidated filter.
+    assert not fake_lvm.filter_invalidated
+
 
 @requires_root
-def test_reattach_volume_other_connection(monkeypatch, fake_os_brick, tmp_db):
+def test_reattach_volume_other_connection(monkeypatch, fake_os_brick, tmp_db,
+                                          fake_lvm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     connection_info = {
         "driver_volume_type": "iscsi",
         "data": {"some_info": 26}
     }
     managedvolume.attach_volume("fake_vol_id", connection_info)
+
+    # Attaching invalidates the filter, reset.
+    fake_lvm.filter_invalidated = False
 
     other_connection_info = {
         "driver_volume_type": "iscsi",
@@ -291,15 +335,23 @@ def test_reattach_volume_other_connection(monkeypatch, fake_os_brick, tmp_db):
     assert len(entries) == 1
     assert entries[0]["action"] == "connect_volume"
 
+    # No multipath id added, no need to invalidated filter.
+    assert not fake_lvm.filter_invalidated
+
 
 @requires_root
-def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick, tmp_db):
+def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick, tmp_db,
+                                          fake_lvm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     connection_info = {
         "driver_volume_type": "iscsi",
         "data": {"some_info": 26}
     }
     managedvolume.attach_volume("fake_vol_id", connection_info)
+
+    # Attaching invalidates the filter, reset.
+    fake_lvm.filter_invalidated = False
+
     managedvolume.detach_volume("fake_vol_id")
 
     with pytest.raises(managedvolumedb.NotFound):
@@ -309,26 +361,44 @@ def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick, tmp_db):
     assert len(entries) == 1
     assert entries[0]["action"] == "connect_volume"
 
+    # No multipath id added, no need to invalidated filter.
+    assert not fake_lvm.filter_invalidated
+
 
 @requires_root
-def test_detach_volume_not_installed(monkeypatch, fake_os_brick, tmp_db):
+def test_detach_volume_not_installed(monkeypatch, fake_os_brick, tmp_db,
+                                     fake_lvm):
     # Simulate missing os_brick.
     monkeypatch.setattr(managedvolume, "os_brick", None)
+
+    # Attaching invalidates the filter, reset.
+    fake_lvm.filter_invalidated = False
+
     with pytest.raises(se.ManagedVolumeNotSupported):
         managedvolume.detach_volume("vol_id")
 
+    # No multipath id added, no need to invalidated filter.
+    assert not fake_lvm.filter_invalidated
+
 
 @requires_root
-def test_detach_not_in_db(monkeypatch, fake_os_brick, tmp_db):
+def test_detach_not_in_db(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
     managedvolume.detach_volume("fake_vol_id")
+
+    # Attaching invalidates the filter, reset.
+    fake_lvm.filter_invalidated = False
+
     with pytest.raises(managedvolumedb.NotFound):
         tmp_db.get_volume("fake_vol_id")
     assert [] == fake_os_brick.log()
 
+    # No multipath id added, no need to invalidated filter.
+    assert not fake_lvm.filter_invalidated
+
 
 @requires_root
 def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir,
-                                      tmp_db):
+                                      tmp_db, fake_lvm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     monkeypatch.setattr(managedvolume, "DEV_MAPPER", str(tmpdir))
     connection_info = {
@@ -336,6 +406,10 @@ def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir,
         "data": {"some_info": 26}
     }
     managedvolume.attach_volume("fake_vol_id", connection_info)
+
+    # Attaching invalidates the filter, reset.
+    fake_lvm.filter_invalidated = False
+
     tmpdir.join("fakemultipathid").write("")
     managedvolume.detach_volume("fake_vol_id")
 
@@ -349,3 +423,6 @@ def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir,
 
     # Device not owned by managed volume.
     assert not tmp_db.owns_multipath("fakemultipathid")
+
+    # No multipath id added, no need to invalidated filter.
+    assert not fake_lvm.filter_invalidated

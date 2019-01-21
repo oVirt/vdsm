@@ -44,9 +44,11 @@ except ImportError:
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm.storage import managedvolumedb
 from vdsm.common import supervdsm
+
 from vdsm.storage import exception as se
+from vdsm.storage import lvm
+from vdsm.storage import managedvolumedb
 
 HELPER = '/usr/libexec/vdsm/managedvolume-helper'
 DEV_MAPPER = "/dev/mapper"
@@ -93,6 +95,7 @@ def attach_volume(vol_id, connection_info):
                     path=path,
                     attachment=attachment,
                     multipath_id=attachment.get("multipath_id"))
+                _invalidate_lvm_filter(attachment)
             except:
                 _silent_detach(connection_info, attachment)
                 raise
@@ -183,6 +186,22 @@ def _resolve_path(vol_id, connection_info, attachment):
         log.warning("Managed Volume without multipath info: %s",
                     attachment)
         return attachment["path"]
+
+
+def _invalidate_lvm_filter(attachment):
+    """
+    Invalidate lvm filter when if attached disk has a multipath id.
+
+    Vdsm may discover a managed volume after we connected the device to the
+    host on the storage side (FC), or after we attached the volume but betore
+    we store the multipath id (iSCSI). In this case lvm filter may include the
+    device, and the next lvm command will scan the device.
+
+    Invalidate the lvm filter to ensure that it does not contain the managed
+    volume.
+    """
+    if "multipath_id" in attachment:
+        lvm.invalidateFilter()
 
 
 def _silent_remove(db, vol_id):
