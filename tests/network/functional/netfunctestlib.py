@@ -23,6 +23,7 @@ from __future__ import division
 
 from contextlib import contextmanager
 from copy import deepcopy
+import time
 
 import six
 from six.moves import zip
@@ -41,6 +42,7 @@ from vdsm.network.ip.address import ipv6_supported, prefix2netmask
 from vdsm.network.link.iface import iface
 from vdsm.network.link.bond import sysfs_options as bond_options
 from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
+from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo.cache import CachingNetInfo
@@ -372,6 +374,22 @@ class NetFuncTestAdapter(object):
         self.update_running_config()
         assert bond not in self.running_config.bonds
 
+    def assertLACPConfigured(self, bonds, nics):
+        """When LACP is configured on bonds, the aggregator id and
+        partner_mac should exist"""
+        for bond in bonds:
+            assert 'ad_aggregator_id' in self.netinfo.bondings[bond]
+            assert 'ad_partner_mac' in self.netinfo.bondings[bond]
+        for nic in nics:
+            assert 'ad_aggregator_id' in self.netinfo.nics[nic]
+            assert self.netinfo.nics[nic]['ad_aggregator_id'] is not None
+
+    def assertBondHwaddrToPartnerMac(self, hwaddr_bond, partner_bond):
+        bond_caps = self.netinfo.bondings
+        bond_hwaddr = bond_caps[hwaddr_bond]['hwaddr']
+        bond_ad_partner_mac = bond_caps[partner_bond]['ad_partner_mac']
+        assert bond_hwaddr == bond_ad_partner_mac
+
     def assertNetworkIp(self, net, attrs):
         bridged = attrs.get('bridged', True)
         vlan = attrs.get('vlan')
@@ -702,6 +720,19 @@ def monitor_stable_link_state(device, wait_for_linkup=True):
                 raise pytest.fail(
                     '{} link state changed: {} -> {}'.format(
                         device, original_state, state))
+
+
+def wait_bonds_lp_interval():
+    """ mode 4 (802.3ad) is a relevant bond mode where bonds will attempt
+        to synchronize with each other, sending learning packets to the
+        slaves in intervals set via lp_interval
+    """
+    GRACE_PERIOD = 1
+    LACP_BOND_MODE = '4'
+
+    default_lp_interval = int(
+        getDefaultBondingOptions(LACP_BOND_MODE)['lp_interval'][0])
+    time.sleep(default_lp_interval + GRACE_PERIOD)
 
 
 def _normalize_caps(netinfo_from_caps):

@@ -21,13 +21,15 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from contextlib import contextmanager
+
 import pytest
 
 from vdsm.network import errors as ne
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestAdapter, NOCHK, SetupNetworksError
-from network.nettestlib import dummy_devices
+from network.nettestlib import dummy_devices, veth_pair
 
 BOND_NAME = 'bond1_name'
 NETWORK_NAME = 'test-network'
@@ -232,3 +234,31 @@ class TestBondOptions(object):
             with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 adapter.setupNetworks({}, BONDEDIT, NOCHK)
                 adapter.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
+
+    def test_bond_mode4_caps_aggregator_id(self, switch):
+        with two_connected_pair_of_bond_slaves() as (
+                bond0_slaves, bond1_slaves):
+            nics = bond0_slaves + bond1_slaves
+            BONDCREATE = {
+                BOND_NAME + '0': {
+                    'nics': bond0_slaves,
+                    'options': 'mode=4 lacp_rate=1',
+                    'switch': switch},
+                BOND_NAME + '1': {
+                    'nics': bond1_slaves,
+                    'options': 'mode=4 lacp_rate=1',
+                    'switch': switch
+                }}
+            bond1, bond2 = BONDCREATE
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                nftestlib.wait_bonds_lp_interval()
+
+                adapter.assertLACPConfigured(BONDCREATE, nics)
+                adapter.assertBondHwaddrToPartnerMac(bond1, bond2)
+                adapter.assertBondHwaddrToPartnerMac(bond2, bond1)
+
+
+@contextmanager
+def two_connected_pair_of_bond_slaves():
+    with veth_pair() as (n1, n2), veth_pair() as (n3, n4):
+        yield (n1, n3), (n2, n4)

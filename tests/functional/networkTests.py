@@ -1583,28 +1583,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @ValidateRunningAsRoot
-    def test_bond_mode4_caps_aggregator_id(self):
-        with self.setup_bonds_with_veth_pair(
-                'mode=4 lacp_rate=1 miimon=100'
-        ) as (bonds, nics, bond_caps, nic_caps):
-            for bond in bonds:
-                self.assertIn('ad_aggregator_id', bond_caps[bond])
-                self.assertIn('ad_partner_mac', bond_caps[bond])
-            bond1, bond2 = bonds
-            self.assertEqual(
-                bond_caps[bond1]['ad_partner_mac'],
-                bond_caps[bond2]['hwaddr']
-            )
-            self.assertEqual(
-                bond_caps[bond2]['ad_partner_mac'],
-                bond_caps[bond1]['hwaddr']
-            )
-            for nic in nics:
-                self.assertIn('ad_aggregator_id', nic_caps[nic])
-                self.assertNotEqual(nic_caps[nic]['ad_aggregator_id'], None)
-
-    @cleanupNet
-    @ValidateRunningAsRoot
     def test_bond_mode0_caps_aggregator_id(self):
         with self.setup_bonds_with_veth_pair(
                 'mode=0'
