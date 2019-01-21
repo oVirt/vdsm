@@ -396,13 +396,6 @@ class NetworkTest(TestCaseBase):
         for rule in source_route._buildRules():
             self.assertRuleExists(rule)
 
-    def assertMtu(self, mtu, *elems):
-        # Due to compatibility with engine, the expected mtu type is string
-        # REQUIRED_FOR engine < 3.7
-        mtu = str(mtu)
-        for elem in elems:
-            self.assertEqual(mtu, self.vdsm_net.getMtu(elem))
-
     def assert_active_slave_exists(self, bondName, nics):
         netinfo = self.vdsm_net.netinfo
         self.assertIn(bondName, netinfo.bondings)
@@ -1178,41 +1171,6 @@ class NetworkTest(TestCaseBase):
 
             bonds[BONDING_NAME] = {'remove': True}
             status, msg = self.setupNetworks({}, bonds, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
-    def testLowerMtuDoesNotOverride(self):
-        """Adding multiple vlanned networks with different mtus over a bond
-        should have each network with its own mtu and the bond with the maximum
-        mtu amongst all the configured networks"""
-        with dummyIf(2) as nics:
-            MTU_LOWEST, MTU_MAX, MTU_STEP = 2200, 3000, 100
-
-            # We need the dictionary to at least have one smaller mtu network
-            # handled after a bigger mtu one. The dictionary order depends on
-            # the string hash, so having the net names in deceasing and mtu
-            # values in increasing order will help.
-            networks = dict(
-                (NETWORK_NAME + str(MTU_MAX - mtu),
-                 {'mtu': mtu, 'bonding': BONDING_NAME, 'vlan': mtu}) for mtu in
-                range(MTU_LOWEST, MTU_MAX, MTU_STEP))
-            bonds = {BONDING_NAME: {'nics': nics}}
-
-            status, msg = self.setupNetworks(networks, bonds, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            for network, attributes in six.viewitems(networks):
-                self.assertNetworkExists(network)
-                self.assertMtu(attributes['mtu'], network)
-
-            # Check that the bond's mtu is the maximum amongst the networks,
-            # which range [MTU_LOWEST, MTU_MAX - MTU_STEP]
-            self.assertMtu(MTU_MAX - MTU_STEP, BONDING_NAME)
-
-            # cleanup
-            for network in six.viewkeys(networks):
-                networks[network] = {'remove': True}
-            bonds[BONDING_NAME] = {'remove': True}
-            status, msg = self.setupNetworks(networks, bonds, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
     @slowtest
