@@ -33,6 +33,7 @@ from __future__ import division
 import json
 import logging
 import os
+from contextlib import closing
 
 # TODO: Change to simple import when os_brick is available
 #       and required
@@ -105,42 +106,43 @@ def attach_volume(vol_id, connection_info):
     if os_brick is None:
         raise se.ManagedVolumeNotSupported("Cannot import os_brick.initiator")
 
-    try:
-        vol_info = managedvolumedb.get(vol_id)
-    except managedvolumedb.NotFound:
-        vol_info = {"connection_info": connection_info}
-        managedvolumedb.add(vol_id, vol_info)
-    else:
-        if vol_info["connection_info"] != connection_info:
-            raise se.ManagedVolumeConnectionMismatch(
-                vol_id, vol_info["connection_info"], connection_info)
-
-        if "path" in vol_info and os.path.exists(vol_info["path"]):
-            raise se.ManagedVolumeAlreadyAttached(
-                vol_id, vol_info["path"], vol_info.get('attachment'))
-
-    log.debug("Starting Attach volume with os-brick")
-
-    try:
-        attachment = run_helper("attach", connection_info)
-        path = _resolve_path(vol_id, connection_info, attachment)
+    db = managedvolumedb.open()
+    with closing(db):
         try:
-            managedvolumedb.update(
-                vol_id,
-                path=path,
-                attachment=attachment,
-                multipath_id=attachment.get("multipath_id"))
+            vol_info = db.get_volume(vol_id)
+        except managedvolumedb.NotFound:
+            db.add_volume(vol_id, connection_info)
+        else:
+            if vol_info["connection_info"] != connection_info:
+                raise se.ManagedVolumeConnectionMismatch(
+                    vol_id, vol_info["connection_info"], connection_info)
+
+            if "path" in vol_info and os.path.exists(vol_info["path"]):
+                raise se.ManagedVolumeAlreadyAttached(
+                    vol_id, vol_info["path"], vol_info.get('attachment'))
+
+        log.debug("Starting Attach volume with os-brick")
+
+        try:
+            attachment = run_helper("attach", connection_info)
+            path = _resolve_path(vol_id, connection_info, attachment)
+            try:
+                db.update_volume(
+                    vol_id,
+                    path=path,
+                    attachment=attachment,
+                    multipath_id=attachment.get("multipath_id"))
+            except:
+                vol_info = {"connection_info": connection_info,
+                            "attachment": attachment}
+                run_helper("detach", vol_info)
+                raise
         except:
-            vol_info = {"connection_info": connection_info,
-                        "attachment": attachment}
-            run_helper("detach", vol_info)
+            try:
+                db.remove_volume(vol_id)
+            except Exception:
+                log.exception("Failed to remove managed volume from DB")
             raise
-    except:
-        try:
-            managedvolumedb.remove(vol_id)
-        except Exception:
-            log.exception("Failed to remove managed volume from DB")
-        raise
 
     log.debug("Attached volume: %s", attachment)
 
@@ -155,13 +157,15 @@ def detach_volume(vol_id):
     if os_brick is None:
         raise se.ManagedVolumeNotSupported("Cannot import os_brick.initiator")
 
-    try:
-        vol_info = managedvolumedb.get(vol_id)
-    except managedvolumedb.NotFound:
-        return
+    db = managedvolumedb.open()
+    with closing(db):
+        try:
+            vol_info = db.get_volume(vol_id)
+        except managedvolumedb.NotFound:
+            return
 
-    log.debug("Starting Detach volume with os-brick")
-    if "path" in vol_info and os.path.exists(vol_info["path"]):
-        run_helper("detach", vol_info)
+        log.debug("Starting Detach volume with os-brick")
+        if "path" in vol_info and os.path.exists(vol_info["path"]):
+            run_helper("detach", vol_info)
 
-    managedvolumedb.remove(vol_id)
+        db.remove_volume(vol_id)

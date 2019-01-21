@@ -231,6 +231,7 @@ DOMAIN_VERSIONS = (0, 2, 3, 4)
 # future we might slice it (eg. tuple(DOMAIN_VERSION[1:]))
 SUPPORTED_DOMAIN_VERSIONS = DOMAIN_VERSIONS
 
+P_VDSM_LIB = os.path.join(constants.P_VDSM_LIB, 'storage/')
 P_VDSM_STORAGE = os.path.join(constants.P_VDSM_RUN, 'storage/')
 
 # Storage repository

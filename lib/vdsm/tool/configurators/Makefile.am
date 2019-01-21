@@ -26,6 +26,7 @@ dist_configurators_PYTHON = \
 	certificates.py \
 	libvirt.py \
 	lvm.py \
+	managedvolumedb.py \
 	multipath.py \
 	passwd.py \
 	sanlock.py \

@@ -983,6 +983,7 @@ exit 0
 %dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
 %dir %{_localstatedir}/lib/%{vdsm_name}/persistence
 %dir %{_localstatedir}/lib/%{vdsm_name}/staging
+%dir %{_localstatedir}/lib/%{vdsm_name}/storage
 %dir %{_localstatedir}/lib/%{vdsm_name}/upgrade
 %dir %{_localstatedir}/log/%{vdsm_name}
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
@@ -1088,8 +1089,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/blockdev.py*
 %{python_sitelib}/%{vdsm_name}/storage/blockSD.py*
 %{python_sitelib}/%{vdsm_name}/storage/blockVolume.py*
-%{python_sitelib}/%{vdsm_name}/storage/managedvolume.py*
-%{python_sitelib}/%{vdsm_name}/storage/managedvolumedb.py*
 %{python_sitelib}/%{vdsm_name}/storage/check.py*
 %{python_sitelib}/%{vdsm_name}/storage/clusterlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/compat.py*
@@ -1122,6 +1121,8 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/lvmconf.py*
 %{python_sitelib}/%{vdsm_name}/storage/lvmfilter.py*
 %{python_sitelib}/%{vdsm_name}/storage/mailbox.py*
+%{python_sitelib}/%{vdsm_name}/storage/managedvolume.py*
+%{python_sitelib}/%{vdsm_name}/storage/managedvolumedb.py*
 %{python_sitelib}/%{vdsm_name}/storage/merge.py*
 %{python_sitelib}/%{vdsm_name}/storage/misc.py*
 %{python_sitelib}/%{vdsm_name}/storage/monitor.py*
@@ -1202,6 +1203,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/configurators/certificates.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/libvirt.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/lvm.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/managedvolumedb.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/multipath.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/passwd.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sanlock.py*

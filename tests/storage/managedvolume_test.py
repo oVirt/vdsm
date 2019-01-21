@@ -23,6 +23,7 @@ from __future__ import division
 
 import os
 import json
+from contextlib import closing
 
 import pytest
 
@@ -33,6 +34,16 @@ from vdsm.storage import managedvolumedb
 
 requires_root = pytest.mark.skipif(
     os.geteuid() != 0, reason="requires root")
+
+
+@pytest.fixture
+def tmp_db(tmpdir, monkeypatch):
+    db_file = str(tmpdir.join("managedvolumes.db"))
+    monkeypatch.setattr(managedvolumedb, "DB_FILE", db_file)
+    managedvolumedb.create_db()
+    db = managedvolumedb.open()
+    with closing(db):
+        yield db
 
 
 @pytest.fixture
@@ -50,9 +61,6 @@ def fake_os_brick(monkeypatch, tmpdir):
     # os_brick may not be available yet on developers machines. Make sure we
     # test with our fake os_brick.
     monkeypatch.setattr(managedvolume, "os_brick", object())
-
-    # clear DB
-    managedvolumedb._clear()
 
     class fake_os_brick:
         def log(self):
@@ -107,7 +115,7 @@ def test_attach_volume_not_installed_attach(monkeypatch):
 
 
 @requires_root
-def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick):
+def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     connection_info = {
         "driver_volume_type": "iscsi",
@@ -129,7 +137,7 @@ def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick):
         "multipath_id": "fakemultipathid"
     }
 
-    assert managedvolumedb.get("fake_vol_id") == volume_info
+    assert tmp_db.get_volume("fake_vol_id") == volume_info
 
     entries = fake_os_brick.log()
     assert len(entries) == 1
@@ -137,7 +145,7 @@ def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick):
 
 
 @requires_root
-def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick):
+def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick, tmp_db):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK_RBD")
     connection_info = {
         "driver_volume_type": "rbd",
@@ -157,7 +165,7 @@ def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick):
         }
     }
 
-    assert managedvolumedb.get("fake_vol_id") == volume_info
+    assert tmp_db.get_volume("fake_vol_id") == volume_info
 
     entries = fake_os_brick.log()
     assert len(entries) == 1
@@ -165,7 +173,7 @@ def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick):
 
 
 @requires_root
-def test_attach_volume_ok_other(monkeypatch, fake_os_brick):
+def test_attach_volume_ok_other(monkeypatch, fake_os_brick, tmp_db):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "NO_WWN")
     connection_info = {
         "driver_volume_type": "other",
@@ -186,7 +194,7 @@ def test_attach_volume_ok_other(monkeypatch, fake_os_brick):
         }
     }
 
-    assert managedvolumedb.get("other_vol_id") == volume_info
+    assert tmp_db.get_volume("other_vol_id") == volume_info
 
     entries = fake_os_brick.log()
     assert len(entries) == 1
@@ -195,7 +203,7 @@ def test_attach_volume_ok_other(monkeypatch, fake_os_brick):
 
 @requires_root
 @pytest.mark.parametrize("vol_type", ["iscsi", "fibre_channel"])
-def test_attach_volume_no_wwn(monkeypatch, fake_os_brick, vol_type):
+def test_attach_volume_no_wwn(monkeypatch, fake_os_brick, vol_type, tmp_db):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "NO_WWN")
     with pytest.raises(se.ManagedVolumeUnsupportedDevice):
         managedvolume.attach_volume("vol_id", {
@@ -208,7 +216,7 @@ def test_attach_volume_no_wwn(monkeypatch, fake_os_brick, vol_type):
 
 
 @requires_root
-def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir):
+def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir, tmp_db):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     monkeypatch.setattr(managedvolume, "DEV_MAPPER", str(tmpdir))
     tmpdir.join("fakemultipathid").write("")
@@ -227,7 +235,7 @@ def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir):
 
 
 @requires_root
-def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir):
+def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir, tmp_db):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     monkeypatch.setattr(managedvolume, "DEV_MAPPER", str(tmpdir))
     tmpdir.join("fakemultipathid").write("")
@@ -239,7 +247,7 @@ def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir):
     def raise_error(*args, **kargs):
         raise RuntimeError
 
-    monkeypatch.setattr(managedvolumedb, "update", raise_error)
+    monkeypatch.setattr(managedvolumedb.DB, "update_volume", raise_error)
 
     with pytest.raises(RuntimeError):
         managedvolume.attach_volume("fake_vol_id", connection_info)
@@ -251,7 +259,7 @@ def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir):
 
 
 @requires_root
-def test_reattach_volume_other_connection(monkeypatch, fake_os_brick):
+def test_reattach_volume_other_connection(monkeypatch, fake_os_brick, tmp_db):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     connection_info = {
         "driver_volume_type": "iscsi",
@@ -273,7 +281,7 @@ def test_reattach_volume_other_connection(monkeypatch, fake_os_brick):
 
 
 @requires_root
-def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick):
+def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick, tmp_db):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     connection_info = {
         "driver_volume_type": "iscsi",
@@ -283,7 +291,7 @@ def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick):
     managedvolume.detach_volume("fake_vol_id")
 
     with pytest.raises(managedvolumedb.NotFound):
-        managedvolumedb.get("fake_vol_id")
+        tmp_db.get_volume("fake_vol_id")
 
     entries = fake_os_brick.log()
     assert len(entries) == 1
@@ -291,7 +299,7 @@ def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick):
 
 
 @requires_root
-def test_detach_volume_not_installed(monkeypatch, fake_os_brick):
+def test_detach_volume_not_installed(monkeypatch, fake_os_brick, tmp_db):
     # Simulate missing os_brick.
     monkeypatch.setattr(managedvolume, "os_brick", None)
     with pytest.raises(se.ManagedVolumeNotSupported):
@@ -299,15 +307,16 @@ def test_detach_volume_not_installed(monkeypatch, fake_os_brick):
 
 
 @requires_root
-def test_detach_not_in_db(monkeypatch, fake_os_brick):
+def test_detach_not_in_db(monkeypatch, fake_os_brick, tmp_db):
     managedvolume.detach_volume("fake_vol_id")
     with pytest.raises(managedvolumedb.NotFound):
-        managedvolumedb.get("fake_vol_id")
+        tmp_db.get_volume("fake_vol_id")
     assert [] == fake_os_brick.log()
 
 
 @requires_root
-def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir):
+def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir,
+                                      tmp_db):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     monkeypatch.setattr(managedvolume, "DEV_MAPPER", str(tmpdir))
     connection_info = {
@@ -324,4 +333,4 @@ def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir):
     assert entries[1]["action"] == "disconnect_volume"
 
     with pytest.raises(managedvolumedb.NotFound):
-        managedvolumedb.get("fake_vol_id")
+        tmp_db.get_volume("fake_vol_id")
