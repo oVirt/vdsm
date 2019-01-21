@@ -182,6 +182,19 @@ class TestBondOptions(object):
             with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
+    def test_bond_active_slave_report(self, switch):
+        with dummy_devices(2) as nics:
+            BONDCREATE = {BOND_NAME: {'nics': nics,
+                                      'switch': switch,
+                                      'options': 'mode=1'}}
+            BONDEDIT = {BOND_NAME: {'nics': nics,
+                                    'switch': switch,
+                                    'options': 'mode=4'}}
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                adapter.assertBondActiveSlaveExists(BOND_NAME, nics)
+                adapter.setupNetworks({}, BONDEDIT, NOCHK)
+                adapter.assertBondNoActiveSlaveExists(BOND_NAME)
+
     def test_bond_mode_change(self, switch):
         with dummy_devices(2) as nics:
             BONDCREATE = {BOND_NAME: {'nics': nics,

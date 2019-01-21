@@ -396,16 +396,6 @@ class NetworkTest(TestCaseBase):
         for rule in source_route._buildRules():
             self.assertRuleExists(rule)
 
-    def assert_active_slave_exists(self, bondName, nics):
-        netinfo = self.vdsm_net.netinfo
-        self.assertIn(bondName, netinfo.bondings)
-        self.assertIn(netinfo.bondings[bondName]['active_slave'], nics)
-
-    def assert_active_slave_doesnt_exist(self, bondName):
-        netinfo = self.vdsm_net.netinfo
-        self.assertIn(bondName, netinfo.bondings)
-        self.assertEqual(netinfo.bondings[bondName]['active_slave'], '')
-
     def setupNetworks(self, networks, bonds, options, test_kernel_config=True):
         status, msg = self.vdsm_net.setupNetworks(networks, bonds, options)
         if test_kernel_config:
@@ -1347,22 +1337,6 @@ class NetworkTest(TestCaseBase):
             # deletion.
             self.assertEqual(0, len(list(tc.qdiscs(nic))),
                              'Failed to cleanup tc hfsc and ingress qdiscs')
-            self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
-    def testSetupNetworksActiveSlave(self):
-        def create_bond_with_mode(nics, mode):
-            bonding = {BONDING_NAME: {'nics': nics}}
-            bonding[BONDING_NAME]['options'] = 'mode=%s' % mode
-            status, msg = self.setupNetworks({}, bonding, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-        with dummyIf(2) as nics:
-            create_bond_with_mode(nics, 1)
-            self.assert_active_slave_exists(BONDING_NAME, nics)
-            create_bond_with_mode(nics, 4)
-            self.assert_active_slave_doesnt_exist(BONDING_NAME)
-            status, msg = self.setupNetworks(
-                {}, {BONDING_NAME: {'remove': True}}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet

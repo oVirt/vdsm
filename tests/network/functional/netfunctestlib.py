@@ -329,6 +329,14 @@ class NetFuncTestAdapter(object):
     def assertBondSlaves(self, bond, nics):
         assert set(nics) == set(self.netinfo.bondings[bond]['slaves'])
 
+    def assertBondActiveSlaveExists(self, bond, nics):
+        assert bond in self.netinfo.bondings
+        assert self.netinfo.bondings[bond]['active_slave'] in nics
+
+    def assertBondNoActiveSlaveExists(self, bond):
+        assert bond in self.netinfo.bondings
+        assert self.netinfo.bondings[bond]['active_slave'] == ''
+
     def assertBondOptions(self, bond, options):
         requested_opts = _split_bond_options(options)
         running_opts = self.netinfo.bondings[bond]['opts']
