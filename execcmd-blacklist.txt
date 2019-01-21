@@ -36,7 +36,6 @@ lib/vdsm/storage/xlease.py
 lib/vdsm/supervdsm_api/systemd.py
 lib/vdsm/taskset.py
 lib/vdsm/tool/configurators/certificates.py
-lib/vdsm/tool/configurators/multipath.py
 lib/vdsm/tool/configurators/passwd.py
 lib/vdsm/tool/configurators/sanlock.py
 lib/vdsm/tool/dummybr.py
