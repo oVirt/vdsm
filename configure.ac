@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2018 Red Hat, Inc.
+# Copyright 2008-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -452,6 +452,7 @@ AC_OUTPUT([
 	lib/vdsm/tool/configurators/Makefile
 	lib/vdsm/virt/Makefile
 	lib/vdsm/virt/jobs/Makefile
+	lib/vdsm/virt/libvirt/Makefile
 	lib/vdsm/virt/vmdevices/Makefile
 	lib/vdsmclient/Makefile
 	lib/yajsonrpc/Makefile

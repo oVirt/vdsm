@@ -19,37 +19,6 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS = jobs libvirt vmdevices
-
-vdsmvirtdir = $(vdsmpylibdir)/virt
-dist_vdsmvirt_PYTHON = \
-	__init__.py \
-	collectd.py \
-	displaynetwork.py \
-	domain_descriptor.py \
-	domxml_preprocess.py \
-	drivemonitor.py \
-	events.py \
-	guestagent.py \
-	libvirtnetwork.py \
-	libvirtxml.py \
-	metadata.py \
-	migration.py \
-	periodic.py \
-	qemuguestagent.py \
-	guestagenthelpers.py \
-	recovery.py \
-	sampling.py \
-	secret.py \
-	utils.py \
-	virdomain.py \
-	vm.py \
-	vmchannels.py \
-	vmexitreason.py \
-	vmpowerdown.py \
-	vmstats.py \
-	vmstatus.py \
-	vmtune.py \
-	vmxml.py \
-	xmlconstants.py \
+dist_vdsmexec_SCRIPTS = \
+	vm_libvirt_hook.py \
 	$(NULL)
