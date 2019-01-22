@@ -112,8 +112,9 @@ class DB(object):
         self._conn = conn
 
     def close(self):
-        self._conn.close()
-        self._conn = ClosedConnection()
+        if self._conn is not _CLOSED_CONNECTION:
+            self._conn.close()
+            self._conn = _CLOSED_CONNECTION
 
     def get_volume(self, vol_id):
         sql = """
@@ -221,7 +222,13 @@ class DB(object):
         return res.fetchall()[0]
 
 
-class ClosedConnection(object):
+# Private
+
+
+class _closed_connection(object):
 
     def __getattr__(self, name):
         raise Closed
+
+
+_CLOSED_CONNECTION = _closed_connection()

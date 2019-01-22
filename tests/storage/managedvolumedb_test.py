@@ -72,7 +72,7 @@ def test_version_info(db_path):
                                       "%Y-%m-%d %H:%M:%S")
 
 
-def test_db_close(tmp_db):
+def test_close(tmp_db):
     db = managedvolumedb.open()
     db.close()
 
@@ -80,6 +80,13 @@ def test_db_close(tmp_db):
     # can be execute
     with pytest.raises(managedvolumedb.Closed):
         db.get_volume("something")
+
+
+def test_close_twice(tmp_db):
+    db = managedvolumedb.open()
+    db.close()
+    # Closing twice does nothing.
+    db.close()
 
 
 def test_insert_select(tmp_db):
