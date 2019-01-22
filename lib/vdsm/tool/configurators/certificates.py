@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,15 +19,15 @@
 
 from __future__ import absolute_import
 from __future__ import division
+
 import os
 import sys
 
-from vdsm.config import config
-
 from . import YES, NO
 from vdsm import constants
+from vdsm.common import commands
 from vdsm.common import pki
-from vdsm.common.commands import execCmd
+from vdsm.config import config
 
 
 def validate():
@@ -35,7 +35,7 @@ def validate():
 
 
 def _exec_vdsm_gencerts():
-    rc, out, err = execCmd(
+    rc, out, err = commands.execCmd(
         (
             os.path.join(
                 constants.P_VDSM_EXEC,
