@@ -21,10 +21,10 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
-import sys
 
 from . import YES, NO
 from vdsm import constants
+from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import pki
 from vdsm.config import config
@@ -35,22 +35,16 @@ def validate():
 
 
 def _exec_vdsm_gencerts():
-    rc, out, err = commands.execCmd(
-        (
-            os.path.join(
-                constants.P_VDSM_EXEC,
-                'vdsm-gencerts.sh'
-            ),
+    try:
+        commands.run([
+            os.path.join(constants.P_VDSM_EXEC, 'vdsm-gencerts.sh'),
             pki.CA_FILE,
             pki.KEY_FILE,
-            pki.CERT_FILE,
-        ),
-        raw=True,
-    )
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-    if rc != 0:
-        raise RuntimeError("Failed to perform vdsm-gencerts action.")
+            pki.CERT_FILE
+        ])
+    except cmdutils.Error as e:
+        msg = "Failed to perform vdsm-gencerts action: {}".format(e)
+        raise RuntimeError(msg)
 
 
 def configure():
