@@ -154,10 +154,11 @@ class DB(object):
             VALUES (?, ?)
         """
 
-        conn_info_json = json.dumps(connection_info).encode("utf-8")
-
         log.info("Adding volume %s connection_info=%s",
                  vol_id, connection_info)
+
+        conn_info_json = json.dumps(connection_info).encode("utf-8")
+
         try:
             with self._conn:
                 self._conn.execute(sql, (vol_id, conn_info_json))
@@ -181,10 +182,11 @@ class DB(object):
             WHERE vol_id = ?
         """
 
+        log.info("Updating volume %s path=%s, attachment=%s, multipath_id=%s",
+                 vol_id, path, attachment, multipath_id)
+
         attachment_json = json.dumps(attachment).encode("utf-8")
 
-        log.info("Updating volume %s path=%s, attachment=%s, multipath_id=%s",
-                 vol_id, path, attachment_json, multipath_id)
         with self._conn:
             self._conn.execute(sql, (path, attachment_json, multipath_id,
                                      vol_id))
