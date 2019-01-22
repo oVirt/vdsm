@@ -62,7 +62,9 @@ def test_version_info(db_path):
     start = datetime.utcnow().replace(microsecond=0)
 
     managedvolumedb.create_db()
-    curr_version = managedvolumedb.version_info()
+    db = managedvolumedb.open()
+    with closing(db):
+        curr_version = db.version_info()
 
     assert managedvolumedb.VERSION == curr_version["version"]
     assert "Initial version" == curr_version["description"]

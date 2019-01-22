@@ -24,6 +24,8 @@ from __future__ import division
 import os
 import sys
 
+from contextlib import closing
+
 from vdsm import constants
 from vdsm.common import errors
 from vdsm.storage import fileUtils
@@ -106,7 +108,9 @@ def _db_owned_by_vdsm():
 
 
 def _db_version_correct():
-    version = mvdb.version_info()
+    db = mvdb.open()
+    with closing(db):
+        version = db.version_info()
 
     if mvdb.VERSION == version["version"]:
         return True

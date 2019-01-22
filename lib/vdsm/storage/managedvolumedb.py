@@ -106,26 +106,6 @@ def create_db():
         conn.executescript(create_table % VERSION)
 
 
-def version_info():
-    sql = """
-        SELECT
-            version,
-            description,
-            updated
-        FROM versions
-        WHERE version = (
-            SELECT max(version) FROM versions
-        )
-    """
-
-    log.debug("Getting current DB version from %s", DB_FILE)
-    conn = sqlite3.connect(DB_FILE)
-    with closing(conn):
-        conn.row_factory = sqlite3.Row
-        res = conn.execute(sql)
-        return res.fetchall()[0]
-
-
 class DB(object):
 
     def __init__(self, conn):
@@ -223,6 +203,20 @@ class DB(object):
         res = self._conn.execute(sql, (multipath_id,))
         row = res.fetchall()[0]
         return row[0] == 1
+
+    def version_info(self):
+        sql = """
+            SELECT
+                version,
+                description,
+                updated
+            FROM versions
+            WHERE version = (
+                SELECT max(version) FROM versions
+            )
+        """
+        res = self._conn.execute(sql)
+        return res.fetchall()[0]
 
 
 class ClosedConnection(object):
