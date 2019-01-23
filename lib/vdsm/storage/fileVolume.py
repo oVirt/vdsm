@@ -158,7 +158,8 @@ class FileVolumeManifest(volume.VolumeManifest):
             raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
 
         md = VolumeMetadata.from_lines(lines)
-        return md.legacy_info()
+        sd = sdCache.produce_manifest(self.sdUUID)
+        return md.legacy_info(sd.getVersion())
 
     def getParent(self):
         """

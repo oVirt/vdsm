@@ -33,18 +33,14 @@ class VolumeMetadata(object):
 
     log = logging.getLogger('storage.VolumeMetadata')
 
-    def __init__(self, domain, image, puuid, size, format,
-                 type, voltype, disktype, description="",
-                 legality=sc.ILLEGAL_VOL, ctime=None, mtime=None,
+    def __init__(self, domain, image, puuid, size, format, type, voltype,
+                 disktype, description="", legality=sc.ILLEGAL_VOL, ctime=None,
                  generation=sc.DEFAULT_GENERATION):
         if not isinstance(size, six.integer_types):
             raise AssertionError("Invalid value for 'size': {!r}".format(size))
         if ctime is not None and not isinstance(ctime, int):
             raise AssertionError(
                 "Invalid value for 'ctime': {!r}".format(ctime))
-        if mtime is not None and not isinstance(mtime, int):
-            raise AssertionError(
-                "Invalid value for 'mtime': {!r}".format(mtime))
         if not isinstance(generation, int):
             raise AssertionError(
                 "Invalid value for 'generation': {!r}".format(generation))
@@ -71,8 +67,6 @@ class VolumeMetadata(object):
         self.legality = legality
         # Volume creation time (in seconds since the epoch)
         self.ctime = int(time.time()) if ctime is None else ctime
-        # Volume modification time (unused and should be zero)
-        self.mtime = 0 if mtime is None else mtime
         # Generation increments each time certain operations complete
         self.generation = generation
 
@@ -99,7 +93,6 @@ class VolumeMetadata(object):
                        description=md[sc.DESCRIPTION],
                        legality=md[sc.LEGALITY],
                        ctime=int(md[sc.CTIME]),
-                       mtime=int(md[sc.MTIME]),
                        # generation was added to the set of metadata keys well
                        # after the above fields.  Therefore, it may not exist
                        # on storage for pre-existing volumes.  In that case we
@@ -131,13 +124,16 @@ class VolumeMetadata(object):
             desc = desc[:sc.DESCRIPTION_SIZE]
         return desc
 
-    def storage_format(self):
+    def storage_format(self, domain_version):
         """
         Format metadata string in storage format.
 
         Raises MetadataOverflowError if formatted metadata is too long.
+
+        NOTE: Not used yet! We need to drop legacy_info() and pass
+        VolumeMetadata instance instead of a dict to use this code.
         """
-        info = self.legacy_info()
+        info = self.legacy_info(domain_version)
         keys = sorted(info.keys())
         lines = ["%s=%s\n" % (key, info[key]) for key in keys]
         lines.append("EOF\n")
@@ -146,11 +142,14 @@ class VolumeMetadata(object):
             raise exception.MetadataOverflowError(data)
         return data
 
-    def legacy_info(self):
+    def legacy_info(self, domain_version):
         """
         Return metadata in dictionary format
+
+        NOTE: The dict returned here will be formatted by
+        Volume.formatMetadata() and written to storage.
         """
-        return {
+        md = {
             sc.FORMAT: self.format,
             sc.TYPE: self.type,
             sc.VOLTYPE: self.voltype,
@@ -161,7 +160,14 @@ class VolumeMetadata(object):
             sc.IMAGE: self.image,
             sc.DESCRIPTION: self.description,
             sc.PUUID: self.puuid,
-            sc.MTIME: str(self.mtime),
             sc.LEGALITY: self.legality,
             sc.GENERATION: self.generation,
         }
+        if domain_version < 5:
+            # Always zero on pre v5 domains
+            # We need to keep MTIME available on pre v5
+            # domains, as other code is expecting that
+            # field to exists and will fail without it.
+            md[sc.MTIME] = 0
+
+        return md

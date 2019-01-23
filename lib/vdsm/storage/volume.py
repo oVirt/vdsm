@@ -533,7 +533,8 @@ class VolumeManifest(object):
                     voltype, disktype, desc="", legality=sc.ILLEGAL_VOL):
         meta = VolumeMetadata(sdUUID, imgUUID, puuid, size, format, type,
                               voltype, disktype, desc, legality)
-        cls.createMetadata(metaId, meta.legacy_info())
+        sd = sdCache.produce_manifest(sdUUID)
+        cls.createMetadata(metaId, meta.legacy_info(sd.getVersion()))
         return meta
 
     def refreshVolume(self):

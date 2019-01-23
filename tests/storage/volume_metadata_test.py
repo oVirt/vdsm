@@ -67,7 +67,6 @@ def make_md_dict(**kwargs):
         sc.DISKTYPE: 'disktype',
         sc.DESCRIPTION: 'description',
         sc.LEGALITY: 'legality',
-        sc.MTIME: '0',
         sc.CTIME: '0',
         sc.GENERATION: '1',
     }
@@ -86,7 +85,7 @@ def make_lines(**kwargs):
 
 class TestVolumeMetadata:
 
-    def test_create_info(self, monkeypatch):
+    def test_create_info_v4(self, monkeypatch):
         params = make_init_params()
         expected = dict(
             CTIME=str(FAKE_TIME),
@@ -96,7 +95,7 @@ class TestVolumeMetadata:
             FORMAT=params['format'],
             IMAGE=params['image'],
             LEGALITY=params['legality'],
-            MTIME="0",
+            MTIME=0,
             PUUID=params['puuid'],
             SIZE=str(params['size']),
             TYPE=params['type'],
@@ -104,10 +103,30 @@ class TestVolumeMetadata:
             GEN=params['generation'])
 
         monkeypatch.setattr(time, 'time', lambda: FAKE_TIME)
-        info = volume.VolumeMetadata(**params).legacy_info()
+        info = volume.VolumeMetadata(**params).legacy_info(4)
         assert expected == info
 
-    def test_storage_format(self):
+    def test_create_info_v5(self, monkeypatch):
+        params = make_init_params()
+        expected = dict(
+            CTIME=str(FAKE_TIME),
+            DESCRIPTION=params['description'],
+            DISKTYPE=params['disktype'],
+            DOMAIN=params['domain'],
+            FORMAT=params['format'],
+            IMAGE=params['image'],
+            LEGALITY=params['legality'],
+            PUUID=params['puuid'],
+            SIZE=str(params['size']),
+            TYPE=params['type'],
+            VOLTYPE=params['voltype'],
+            GEN=params['generation'])
+
+        monkeypatch.setattr(time, 'time', lambda: FAKE_TIME)
+        info = volume.VolumeMetadata(**params).legacy_info(5)
+        assert expected == info
+
+    def test_storage_format_v4(self):
         params = make_init_params(ctime=FAKE_TIME)
         expected = textwrap.dedent("""\
             CTIME=%(ctime)s
@@ -126,9 +145,29 @@ class TestVolumeMetadata:
             EOF
             """ % params)
         md = volume.VolumeMetadata(**params)
-        assert expected == md.storage_format()
+        assert expected == md.storage_format(4)
 
-    @pytest.mark.parametrize("param", ['size', 'ctime', 'mtime'])
+    def test_storage_format_v5(self):
+        params = make_init_params(ctime=FAKE_TIME)
+        expected = textwrap.dedent("""\
+            CTIME=%(ctime)s
+            DESCRIPTION=%(description)s
+            DISKTYPE=%(disktype)s
+            DOMAIN=%(domain)s
+            FORMAT=%(format)s
+            GEN=%(generation)s
+            IMAGE=%(image)s
+            LEGALITY=%(legality)s
+            PUUID=%(puuid)s
+            SIZE=%(size)s
+            TYPE=%(type)s
+            VOLTYPE=%(voltype)s
+            EOF
+            """ % params)
+        md = volume.VolumeMetadata(**params)
+        assert expected == md.storage_format(5)
+
+    @pytest.mark.parametrize("param", ['size', 'ctime'])
     def test_int_params_str_raises(self, param):
         params = make_init_params(**{param: 'not_an_int'})
         with pytest.raises(AssertionError):
@@ -144,12 +183,13 @@ class TestVolumeMetadata:
         with pytest.raises(se.MetaDataKeyNotFoundError):
             volume.VolumeMetadata.from_lines(lines)
 
-    def test_from_lines_invalid_param(self):
+    @pytest.mark.parametrize("version", [4, 5])
+    def test_from_lines_invalid_param(self, version):
         lines = make_lines(INVALID_KEY='foo')
-        assert ("INVALID_KEY" not in
-                volume.VolumeMetadata.from_lines(lines).legacy_info())
+        md = volume.VolumeMetadata.from_lines(lines)
+        assert "INVALID_KEY" not in md.legacy_info(version)
 
-    @pytest.mark.parametrize("key", [sc.SIZE, sc.CTIME, sc.MTIME])
+    @pytest.mark.parametrize("key", [sc.SIZE, sc.CTIME])
     def test_from_lines_int_parse_error(self, key):
         lines = make_lines(**{key: 'not_an_integer'})
         with pytest.raises(ValueError):
@@ -169,7 +209,6 @@ class TestVolumeMetadata:
         assert data[sc.VOLTYPE] == md.voltype
         assert data[sc.DISKTYPE] == md.disktype
         assert data[sc.DESCRIPTION] == md.description
-        assert int(data[sc.MTIME]) == md.mtime
         assert int(data[sc.CTIME]) == md.ctime
         assert data[sc.LEGALITY] == md.legality
         assert int(data[sc.GENERATION]) == md.generation
@@ -196,6 +235,7 @@ class TestMDSize:
         md = volume.VolumeMetadata(**params)
         assert sc.DESCRIPTION_SIZE == len(md.description)
 
+    @pytest.mark.parametrize('version', [4, 5])
     @pytest.mark.parametrize('md_params', [
         # Preallocated block/file example:
         #
@@ -238,7 +278,7 @@ class TestMDSize:
             'type': 'SPARSE'
         }
     ])
-    def test_max_size(self, md_params):
+    def test_max_size(self, version, md_params):
         md = volume.VolumeMetadata(
             ctime=1440935038,
             description=self.MAX_DESCRIPTION,
@@ -248,7 +288,6 @@ class TestMDSize:
             generation=sc.MAX_GENERATION,
             image='75f8a1bb-4504-4314-91ca-d9365a30692b',
             legality='ILLEGAL',
-            mtime=0,
             # Blank UUID for RAW, can be real UUID for COW.
             puuid=sc.BLANK_UUID,
             size=md_params['size'] // 512,
@@ -256,14 +295,14 @@ class TestMDSize:
             voltype='INTERNAL',
         )
 
-        md_len = len(md.storage_format())
+        md_len = len(md.storage_format(version))
         # Needed for documenting sc.MAX_DESCRIPTION.
         md_fields = md_len - sc.DESCRIPTION_SIZE
         md_free = sc.METADATA_SIZE - md_len
 
         # To see this, run:
         # tox -e storage-py27 tests/storage/volume_metadata_test.py -- -vs
-        print("type={} length={} fields={} free={}"
-              .format(md_params['type'], md_len, md_fields, md_free))
+        print("version={} type={} length={} fields={} free={}"
+              .format(version, md_params['type'], md_len, md_fields, md_free))
 
         assert sc.METADATA_SIZE >= md_len
