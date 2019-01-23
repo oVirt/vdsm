@@ -678,7 +678,7 @@ class FileVolume(volume.Volume):
         try:
             self.oop.os.rename(prevLeasePath, leasePath)
         except OSError as e:
-            if e.errno != os.errno.ENOENT:
+            if e.errno != errno.ENOENT:
                 raise
 
         self.renameLease((volPath, LEASE_FILEOFFSET), newUUID,

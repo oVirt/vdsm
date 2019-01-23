@@ -70,7 +70,7 @@ def _decodeFilesIntoDir(files, parentdir):
             try:
                 os.makedirs(dirname)
             except OSError as e:
-                if e.errno != os.errno.EEXIST:
+                if e.errno != errno.EEXIST:
                     raise
         with _openFile(filename, 'wb', 0o640) as f:
             f.write(base64.b64decode(content))
@@ -93,7 +93,7 @@ def getFileName(vmId, files):
                      resolveUid(DISKIMAGE_USER),
                      resolveGid(DISKIMAGE_GROUP))
         except OSError as e:
-            if e.errno != os.errno.EEXIST:
+            if e.errno != errno.EEXIST:
                 raise
     content = ''.join(files.keys()).encode() + b''.join(files.values())
     md5 = hashlib.md5(content).hexdigest()

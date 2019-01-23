@@ -422,7 +422,7 @@ class FileStorageDomain(sd.StorageDomain):
             try:
                 mailboxStat = self.oop.os.stat(mailboxFilePath)
             except OSError as e:
-                if e.errno != os.errno.ENOENT:
+                if e.errno != errno.ENOENT:
                     raise
                 prevMailboxFileSize = None
             else:

@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import calendar
+import errno
 import logging
 import os
 import socket
@@ -1713,6 +1714,6 @@ def exists():
     try:
         return os.path.exists(_glusterCommandPath.cmd)
     except OSError as e:
-        if e.errno != os.errno.ENOENT:
+        if e.errno != errno.ENOENT:
             raise
         return False
