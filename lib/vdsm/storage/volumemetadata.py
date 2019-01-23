@@ -23,7 +23,7 @@ from __future__ import absolute_import
 import logging
 import time
 
-from vdsm.storage import constants
+from vdsm.storage import constants as sc
 from vdsm.storage import exception
 
 
@@ -33,8 +33,8 @@ class VolumeMetadata(object):
 
     def __init__(self, domain, image, puuid, size, format,
                  type, voltype, disktype, description="",
-                 legality=constants.ILLEGAL_VOL, ctime=None, mtime=None,
-                 generation=constants.DEFAULT_GENERATION):
+                 legality=sc.ILLEGAL_VOL, ctime=None, mtime=None,
+                 generation=sc.DEFAULT_GENERATION):
         if not isinstance(size, int):
             raise AssertionError("Invalid value for 'size': {!r}".format(size))
         if ctime is not None and not isinstance(ctime, int):
@@ -86,25 +86,25 @@ class VolumeMetadata(object):
             md[key.strip()] = value.strip()
 
         try:
-            return cls(domain=md[constants.DOMAIN],
-                       image=md[constants.IMAGE],
-                       puuid=md[constants.PUUID],
-                       size=int(md[constants.SIZE]),
-                       format=md[constants.FORMAT],
-                       type=md[constants.TYPE],
-                       voltype=md[constants.VOLTYPE],
-                       disktype=md[constants.DISKTYPE],
-                       description=md[constants.DESCRIPTION],
-                       legality=md[constants.LEGALITY],
-                       ctime=int(md[constants.CTIME]),
-                       mtime=int(md[constants.MTIME]),
+            return cls(domain=md[sc.DOMAIN],
+                       image=md[sc.IMAGE],
+                       puuid=md[sc.PUUID],
+                       size=int(md[sc.SIZE]),
+                       format=md[sc.FORMAT],
+                       type=md[sc.TYPE],
+                       voltype=md[sc.VOLTYPE],
+                       disktype=md[sc.DISKTYPE],
+                       description=md[sc.DESCRIPTION],
+                       legality=md[sc.LEGALITY],
+                       ctime=int(md[sc.CTIME]),
+                       mtime=int(md[sc.MTIME]),
                        # generation was added to the set of metadata keys well
                        # after the above fields.  Therefore, it may not exist
                        # on storage for pre-existing volumes.  In that case we
                        # report a default value of 0 which will be written to
                        # the volume metadata on the next metadata change.
-                       generation=int(md.get(constants.GENERATION,
-                                             constants.DEFAULT_GENERATION)))
+                       generation=int(md.get(sc.GENERATION,
+                                             sc.DEFAULT_GENERATION)))
         except KeyError as e:
             raise exception.MetaDataKeyNotFoundError(
                 "Missing metadata key: %s: found: %s" % (e, md))
@@ -123,10 +123,10 @@ class VolumeMetadata(object):
         # We cannot fail when the description is too long, since we must
         # support older engine that may send such values, or old disks
         # with long description.
-        if len(desc) > constants.DESCRIPTION_SIZE:
+        if len(desc) > sc.DESCRIPTION_SIZE:
             cls.log.warning("Description is too long, truncating to %d bytes",
-                            constants.DESCRIPTION_SIZE)
-            desc = desc[:constants.DESCRIPTION_SIZE]
+                            sc.DESCRIPTION_SIZE)
+            desc = desc[:sc.DESCRIPTION_SIZE]
         return desc
 
     def storage_format(self):
@@ -140,7 +140,7 @@ class VolumeMetadata(object):
         lines = ["%s=%s\n" % (key, info[key]) for key in keys]
         lines.append("EOF\n")
         data = "".join(lines)
-        if len(data) > constants.METADATA_SIZE:
+        if len(data) > sc.METADATA_SIZE:
             raise exception.MetadataOverflowError(data)
         return data
 
@@ -149,18 +149,18 @@ class VolumeMetadata(object):
         Return metadata in dictionary format
         """
         return {
-            constants.FORMAT: self.format,
-            constants.TYPE: self.type,
-            constants.VOLTYPE: self.voltype,
-            constants.DISKTYPE: self.disktype,
-            constants.SIZE: str(self.size),
-            constants.CTIME: str(self.ctime),
-            constants.POOL: "",  # obsolete
-            constants.DOMAIN: self.domain,
-            constants.IMAGE: self.image,
-            constants.DESCRIPTION: self.description,
-            constants.PUUID: self.puuid,
-            constants.MTIME: str(self.mtime),
-            constants.LEGALITY: self.legality,
-            constants.GENERATION: self.generation,
+            sc.FORMAT: self.format,
+            sc.TYPE: self.type,
+            sc.VOLTYPE: self.voltype,
+            sc.DISKTYPE: self.disktype,
+            sc.SIZE: str(self.size),
+            sc.CTIME: str(self.ctime),
+            sc.POOL: "",  # obsolete
+            sc.DOMAIN: self.domain,
+            sc.IMAGE: self.image,
+            sc.DESCRIPTION: self.description,
+            sc.PUUID: self.puuid,
+            sc.MTIME: str(self.mtime),
+            sc.LEGALITY: self.legality,
+            sc.GENERATION: self.generation,
         }
