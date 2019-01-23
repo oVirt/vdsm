@@ -23,8 +23,9 @@ from __future__ import division
 import textwrap
 import time
 
+import pytest
+
 from testlib import make_uuid
-from testlib import VdsmTestCase, permutations, expandPermutations
 from monkeypatch import MonkeyPatchScope
 
 from vdsm.storage import constants as sc
@@ -84,8 +85,7 @@ def make_lines(**kwargs):
     return lines
 
 
-@expandPermutations
-class TestVolumeMetadata(VdsmTestCase):
+class TestVolumeMetadata:
 
     def test_create_info(self):
         params = make_init_params()
@@ -107,7 +107,7 @@ class TestVolumeMetadata(VdsmTestCase):
 
         with MonkeyPatchScope([[time, 'time', lambda: FAKE_TIME]]):
             info = volume.VolumeMetadata(**params).legacy_info()
-            self.assertEqual(expected, info)
+            assert expected == info
 
     def test_storage_format(self):
         params = make_init_params(ctime=FAKE_TIME)
@@ -129,68 +129,70 @@ class TestVolumeMetadata(VdsmTestCase):
             EOF
             """ % params)
         md = volume.VolumeMetadata(**params)
-        self.assertEqual(expected, md.storage_format())
+        assert expected == md.storage_format()
 
-    @permutations([
-        [sc.DESCRIPTION_SIZE],
-        [sc.DESCRIPTION_SIZE + 1]
+    @pytest.mark.parametrize('size', [
+        sc.DESCRIPTION_SIZE,
+        sc.DESCRIPTION_SIZE + 1
     ])
     def test_long_description(self, size):
         params = make_init_params(description="!" * size)
         md = volume.VolumeMetadata(**params)
-        self.assertEqual(sc.DESCRIPTION_SIZE, len(md.description))
+        assert sc.DESCRIPTION_SIZE == len(md.description)
 
-    @permutations([['size'], ['ctime'], ['mtime']])
+    @pytest.mark.parametrize("param", ['size', 'ctime', 'mtime'])
     def test_int_params_str_raises(self, param):
         params = make_init_params(**{param: 'not_an_int'})
-        self.assertRaises(AssertionError, volume.VolumeMetadata, **params)
+        with pytest.raises(AssertionError):
+            volume.VolumeMetadata(**params)
 
-    @permutations([[key] for key in make_md_dict()
-                   if key not in (sc.POOL, sc.GENERATION)])
+    @pytest.mark.parametrize("required_key",
+                             [key for key in make_md_dict()
+                              if key not in (sc.POOL, sc.GENERATION)])
     def test_from_lines_missing_key(self, required_key):
         data = make_md_dict(POOL=None)
         data[required_key] = None
         lines = make_lines(**data)
-        self.assertRaises(se.MetaDataKeyNotFoundError,
-                          volume.VolumeMetadata.from_lines, lines)
+        with pytest.raises(se.MetaDataKeyNotFoundError):
+            volume.VolumeMetadata.from_lines(lines)
 
-    @permutations([[None], ['pool']])
+    @pytest.mark.parametrize("val", [None, 'pool'])
     def test_deprecated_pool(self, val):
         lines = make_lines(**{sc.POOL: val})
         md = volume.VolumeMetadata.from_lines(lines)
-        self.assertEqual("", md.legacy_info()[sc.POOL])
+        assert "" == md.legacy_info()[sc.POOL]
 
     def test_from_lines_invalid_param(self):
         lines = make_lines(INVALID_KEY='foo')
-        self.assertNotIn("INVALID_KEY",
-                         volume.VolumeMetadata.from_lines(lines).legacy_info())
+        assert ("INVALID_KEY" not in
+                volume.VolumeMetadata.from_lines(lines).legacy_info())
 
-    @permutations([[sc.SIZE], [sc.CTIME], [sc.MTIME]])
+    @pytest.mark.parametrize("key", [sc.SIZE, sc.CTIME, sc.MTIME])
     def test_from_lines_int_parse_error(self, key):
         lines = make_lines(**{key: 'not_an_integer'})
-        self.assertRaises(ValueError,
-                          volume.VolumeMetadata.from_lines, lines)
+        with pytest.raises(ValueError):
+            volume.VolumeMetadata.from_lines(lines)
 
     def test_from_lines(self):
         data = make_md_dict()
         lines = make_lines(**data)
 
         md = volume.VolumeMetadata.from_lines(lines)
-        self.assertEqual(data[sc.DOMAIN], md.domain)
-        self.assertEqual(data[sc.IMAGE], md.image)
-        self.assertEqual(data[sc.PUUID], md.puuid)
-        self.assertEqual(int(data[sc.SIZE]), md.size)
-        self.assertEqual(data[sc.FORMAT], md.format)
-        self.assertEqual(data[sc.TYPE], md.type)
-        self.assertEqual(data[sc.VOLTYPE], md.voltype)
-        self.assertEqual(data[sc.DISKTYPE], md.disktype)
-        self.assertEqual(data[sc.DESCRIPTION], md.description)
-        self.assertEqual(int(data[sc.MTIME]), md.mtime)
-        self.assertEqual(int(data[sc.CTIME]), md.ctime)
-        self.assertEqual(data[sc.LEGALITY], md.legality)
-        self.assertEqual(int(data[sc.GENERATION]), md.generation)
+        assert data[sc.DOMAIN] == md.domain
+        assert data[sc.IMAGE] == md.image
+        assert data[sc.PUUID] == md.puuid
+        assert int(data[sc.SIZE]) == md.size
+        assert data[sc.FORMAT] == md.format
+        assert data[sc.TYPE] == md.type
+        assert data[sc.VOLTYPE] == md.voltype
+        assert data[sc.DISKTYPE] == md.disktype
+        assert data[sc.DESCRIPTION] == md.description
+        assert int(data[sc.MTIME]) == md.mtime
+        assert int(data[sc.CTIME]) == md.ctime
+        assert data[sc.LEGALITY] == md.legality
+        assert int(data[sc.GENERATION]) == md.generation
 
     def test_generation_default(self):
         lines = make_lines(GEN=None)
         md = volume.VolumeMetadata.from_lines(lines)
-        self.assertEqual(sc.DEFAULT_GENERATION, md.generation)
+        assert sc.DEFAULT_GENERATION == md.generation
