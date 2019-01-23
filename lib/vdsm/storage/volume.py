@@ -223,7 +223,7 @@ class VolumeManifest(object):
             "size": int(meta.get(sc.SIZE, "0")),
             "parent": self.getParent(),
             "description": meta.get(sc.DESCRIPTION, ""),
-            "pool": meta.get(sc.POOL, ""),
+            "pool": "",  # deprecated value
             "domain": meta.get(sc.DOMAIN, ""),
             "image": self.getImage(),
             "ctime": meta.get(sc.CTIME, ""),

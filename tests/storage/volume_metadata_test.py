@@ -69,7 +69,6 @@ def make_md_dict(**kwargs):
         sc.LEGALITY: 'legality',
         sc.MTIME: '0',
         sc.CTIME: '0',
-        sc.POOL: '',
         sc.GENERATION: '1',
     }
     res.update(kwargs)
@@ -98,7 +97,6 @@ class TestVolumeMetadata:
             IMAGE=params['image'],
             LEGALITY=params['legality'],
             MTIME="0",
-            POOL_UUID="",
             PUUID=params['puuid'],
             SIZE=str(params['size']),
             TYPE=params['type'],
@@ -121,7 +119,6 @@ class TestVolumeMetadata:
             IMAGE=%(image)s
             LEGALITY=%(legality)s
             MTIME=0
-            POOL_UUID=
             PUUID=%(puuid)s
             SIZE=%(size)s
             TYPE=%(type)s
@@ -139,19 +136,13 @@ class TestVolumeMetadata:
 
     @pytest.mark.parametrize("required_key",
                              [key for key in make_md_dict()
-                              if key not in (sc.POOL, sc.GENERATION)])
+                              if key != sc.GENERATION])
     def test_from_lines_missing_key(self, required_key):
-        data = make_md_dict(POOL=None)
+        data = make_md_dict()
         data[required_key] = None
         lines = make_lines(**data)
         with pytest.raises(se.MetaDataKeyNotFoundError):
             volume.VolumeMetadata.from_lines(lines)
-
-    @pytest.mark.parametrize("val", [None, 'pool'])
-    def test_deprecated_pool(self, val):
-        lines = make_lines(**{sc.POOL: val})
-        md = volume.VolumeMetadata.from_lines(lines)
-        assert "" == md.legacy_info()[sc.POOL]
 
     def test_from_lines_invalid_param(self):
         lines = make_lines(INVALID_KEY='foo')

@@ -157,7 +157,6 @@ class VolumeMetadata(object):
             sc.DISKTYPE: self.disktype,
             sc.SIZE: str(self.size),
             sc.CTIME: str(self.ctime),
-            sc.POOL: "",  # obsolete
             sc.DOMAIN: self.domain,
             sc.IMAGE: self.image,
             sc.DESCRIPTION: self.description,

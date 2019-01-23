@@ -83,9 +83,6 @@ LEASE_FILEEXT = ".lease"
 TEMP_VOL_FILEEXT = ".volatile"         # Added to FileVolume metadata filenames
 TEMP_VOL_LVTAG = "OVIRT_VOL_VOLATILE"  # Tag applied to BlockVolume LVs
 
-# StorageDomain Metadata keys
-MDK_POOLS = "POOL_UUID"
-
 # Volume Types
 UNKNOWN_VOL = 0
 PREALLOCATED_VOL = 1
@@ -174,7 +171,6 @@ DESCRIPTION = "DESCRIPTION"
 LEGALITY = "LEGALITY"
 MTIME = "MTIME"
 GENERATION = "GEN"  # Added in 4.1
-POOL = MDK_POOLS  # Deprecated
 
 # In block storage, metadata size is limited to BLOCK_SIZE (512), to
 # ensure that metadata is written atomically. This is big enough for the
@@ -197,7 +193,6 @@ POOL = MDK_POOLS  # Deprecated
 # IMAGE=75f8a1bb-4504-4314-91ca-d9365a30692b  # uuid
 # LEGALITY=ILLEGAL                            # ILLEGAL|LEGAL|FAKE
 # MTIME=0                                     # always 0
-# POOL_UUID=                                  # always empty
 # PUUID=75f8a1bb-4504-4314-91ca-d9365a30692b  # uuid
 # SIZE=2199023255552                          # size in blocks
 # TYPE=PREALLOCATED                           # PREALLOCATED|UNKNOWN|SPARSE
@@ -208,8 +203,8 @@ POOL = MDK_POOLS  # Deprecated
 # For more info why this is the worst possible case, see
 # tests/storage/volume_metadata_test.py.
 #
-# This content requires up to 287 bytes, leaving 225 bytes for the description
-# field. OVF_STORE JSON format needs up to 175 bytes.
+# This content requires up to 276 bytes, leaving 236 bytes for the
+# description. OVF_STORE JSON format needs up to 175 bytes.
 #
 # We use a limit of 210 bytes for the description field, leaving couple
 # of bytes for unexpected future changes. This should good enough for

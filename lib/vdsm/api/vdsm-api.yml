@@ -7703,7 +7703,9 @@ types:
             name: status
             type: *VolumeStatus
 
-        -   description: The Storage Pool associated with the Volume
+        -   description: The Storage Pool associated with the Volume. Not used
+                and is effectively empty since version 3.5
+            deprecated: '4.3'
             name: pool
             type: *UUID
 
