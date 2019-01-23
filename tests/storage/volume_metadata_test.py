@@ -26,7 +26,6 @@ import time
 import pytest
 
 from testlib import make_uuid
-from monkeypatch import MonkeyPatchScope
 
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -87,7 +86,7 @@ def make_lines(**kwargs):
 
 class TestVolumeMetadata:
 
-    def test_create_info(self):
+    def test_create_info(self, monkeypatch):
         params = make_init_params()
         expected = dict(
             CTIME=str(FAKE_TIME),
@@ -105,9 +104,9 @@ class TestVolumeMetadata:
             VOLTYPE=params['voltype'],
             GEN=params['generation'])
 
-        with MonkeyPatchScope([[time, 'time', lambda: FAKE_TIME]]):
-            info = volume.VolumeMetadata(**params).legacy_info()
-            assert expected == info
+        monkeypatch.setattr(time, 'time', lambda: FAKE_TIME)
+        info = volume.VolumeMetadata(**params).legacy_info()
+        assert expected == info
 
     def test_storage_format(self):
         params = make_init_params(ctime=FAKE_TIME)
