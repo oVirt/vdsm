@@ -515,7 +515,11 @@ class VolumeManifest(object):
     @classmethod
     def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
                     voltype, disktype, desc="", legality=sc.ILLEGAL_VOL):
-        meta = VolumeMetadata(sdUUID, imgUUID, puuid, size, format, type,
+        # TODO: VolumeMetadata now operates in bytes and we temporary
+        # convert blocks to bytes there. Needs to be fixed, when
+        # all the volume code will be converted to bytes.
+        capacity = size * sc.BLOCK_SIZE_512
+        meta = VolumeMetadata(sdUUID, imgUUID, puuid, capacity, format, type,
                               voltype, disktype, desc, legality)
         cls.createMetadata(metaId, meta)
         return meta

@@ -157,7 +157,7 @@ def name2type(name):
 
 
 # Volume meta data fields
-CAPACITY = "CAPACITY"  # Added in 4.3
+CAPACITY = "CAP"  # Added in 4.3
 SIZE = "SIZE"  # Deprecated in 4.3
 TYPE = "TYPE"
 FORMAT = "FORMAT"
@@ -194,7 +194,8 @@ GENERATION = "GEN"  # Added in 4.1
 # LEGALITY=ILLEGAL                            # ILLEGAL|LEGAL|FAKE
 # MTIME=0                                     # always 0 (v4 only)
 # PUUID=75f8a1bb-4504-4314-91ca-d9365a30692b  # uuid
-# SIZE=2199023255552                          # size in blocks
+# SIZE=18014398509481983                      # size in blocks (<=v4)
+# CAP=9223372036854775808                     # capacity in bytes (>=v5)
 # TYPE=PREALLOCATED                           # PREALLOCATED|UNKNOWN|SPARSE
 # VOLTYPE=INTERNAL                            # INTERNAL|SHARED|LEAF
 # GEN=999                                     # int
@@ -204,9 +205,12 @@ GENERATION = "GEN"  # Added in 4.1
 # tests/storage/volume_metadata_test.py.
 #
 # On V4 This content requires up to 276 bytes, leaving 236 bytes for the
-# description. On V5 this content requires 268 bytes, leaving 244 bytes
-# for the description. OVF_STORE JSON description format needs up to 175
-# bytes.
+# description.
+#
+# On V5 this content requires 270 bytes, leaving 242 bytes for the description
+# field.
+#
+# OVF_STORE JSON description format needs up to 175 bytes.
 #
 # We use a limit of 210 bytes for the description field, leaving couple
 # of bytes for unexpected future changes. This should good enough for
