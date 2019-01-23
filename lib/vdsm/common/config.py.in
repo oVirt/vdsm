@@ -99,8 +99,11 @@ parameters = [
             'listening before migration begins.'),
 
         ('migration_max_bandwidth', '52',
-            'Maximum bandwidth for migration, in MiBps, 0 means libvirt\'s '
-            'default, since 0.10.x default in libvirt is unlimited'),
+            'Local VDSM setting of the maximum bandwidth for sending '
+            'migrations, in MiBps. 0 means libvirt\'s default, '
+            'which is unlimited since v0.10.x. '
+            'This value is used, if no maximal bandwidth is requested '
+            'by Engine while initiating the migration.'),
 
         ('migration_monitor_interval', '10',
             'How often (in seconds) should the monitor thread pulse, 0 means '
