@@ -41,6 +41,7 @@
 %else
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 %endif
+%global _vdsm_log_dir %{_localstatedir}/log/%{vdsm_name}
 
 # Disable debuginfo package, since vdsm is a meta-package
 %global debug_package %{nil}
@@ -765,10 +766,10 @@ fi
 # After vdsm install we should create the logs files.
 # In the install session we create it but since we use
 # the ghost macro (in files session) the files are not included
-touch @VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
-chmod 0644 @VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
-chown @VDSMUSER@:@VDSMGROUP@ @VDSMLOGDIR@/{mom.log,vdsm.log}
-chown root:root @VDSMLOGDIR@/supervdsm.log
+touch %{_vdsm_log_dir}/{mom.log,supervdsm.log,vdsm.log}
+chmod 0644 %{_vdsm_log_dir}/{mom.log,supervdsm.log,vdsm.log}
+chown @VDSMUSER@:@VDSMGROUP@ %{_vdsm_log_dir}/{mom.log,vdsm.log}
+chown root:root %{_vdsm_log_dir}/supervdsm.log
 
 systemd-tmpfiles --create %{vdsm_name}.conf
 
@@ -857,9 +858,9 @@ exit 0
 %{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
 
 %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @VDSMREPO@
-%ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/mom.log
-%ghost %config %attr(0644, root, root) @VDSMLOGDIR@/supervdsm.log
-%ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/vdsm.log
+%ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) %{_vdsm_log_dir}/mom.log
+%ghost %config %attr(0644, root, root) %{_vdsm_log_dir}/supervdsm.log
+%ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) %{_vdsm_log_dir}/vdsm.log
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @VDSMREPO@/hsm-tasks
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @VDSMREPO@/mnt
 %dir %{_libexecdir}/%{vdsm_name}
