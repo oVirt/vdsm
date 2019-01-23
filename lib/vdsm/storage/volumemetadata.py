@@ -33,11 +33,12 @@ class VolumeMetadata(object):
 
     log = logging.getLogger('storage.VolumeMetadata')
 
-    def __init__(self, domain, image, puuid, size, format, type, voltype,
+    def __init__(self, domain, image, puuid, capacity, format, type, voltype,
                  disktype, description="", legality=sc.ILLEGAL_VOL, ctime=None,
                  generation=sc.DEFAULT_GENERATION):
-        if not isinstance(size, six.integer_types):
-            raise AssertionError("Invalid value for 'size': {!r}".format(size))
+        if not isinstance(capacity, six.integer_types):
+            raise AssertionError(
+                "Invalid value for 'capacity': {!r}".format(capacity))
         if ctime is not None and not isinstance(ctime, int):
             raise AssertionError(
                 "Invalid value for 'ctime': {!r}".format(ctime))
@@ -51,8 +52,8 @@ class VolumeMetadata(object):
         self.image = image
         # UUID of the parent volume or BLANK_UUID
         self.puuid = puuid
-        # Volume size in blocks
-        self.size = size
+        # Volume capacity in bytes
+        self.capacity = capacity
         # Format (RAW or COW)
         self.format = format
         # Allocation policy (PREALLOCATED or SPARSE)
@@ -82,10 +83,18 @@ class VolumeMetadata(object):
             md[key.strip()] = value.strip()
 
         try:
+            # We work internally in bytes, even if old format store
+            # value in blocks, we will read SIZE instead of CAPACITY
+            # from non-converted volumes and use it
+            if sc.CAPACITY in md:
+                capacity = int(md[sc.CAPACITY])
+            else:
+                capacity = int(md[sc.SIZE]) * sc.BLOCK_SIZE_512
+
             return cls(domain=md[sc.DOMAIN],
                        image=md[sc.IMAGE],
                        puuid=md[sc.PUUID],
-                       size=int(md[sc.SIZE]),
+                       capacity=capacity,
                        format=md[sc.FORMAT],
                        type=md[sc.TYPE],
                        voltype=md[sc.VOLTYPE],
@@ -111,6 +120,14 @@ class VolumeMetadata(object):
     @description.setter
     def description(self, desc):
         self._description = self.validate_description(desc)
+
+    @property
+    def size(self):
+        return self.capacity // sc.BLOCK_SIZE_512
+
+    @size.setter
+    def size(self, value):
+        self.capacity = value * sc.BLOCK_SIZE_512
 
     @classmethod
     def validate_description(cls, desc):
@@ -140,13 +157,31 @@ class VolumeMetadata(object):
         VolumeMetadata instance instead of a dict to use this code.
         """
 
-        info = dict(self.iteritems())
+        info = {
+            sc.CTIME: str(self.ctime),
+            sc.DESCRIPTION: self.description,
+            sc.DISKTYPE: self.disktype,
+            sc.DOMAIN: self.domain,
+            sc.FORMAT: self.format,
+            sc.GENERATION: self.generation,
+            sc.IMAGE: self.image,
+            sc.LEGALITY: self.legality,
+            sc.PUUID: self.puuid,
+            sc.TYPE: self.type,
+            sc.VOLTYPE: self.voltype,
+        }
         if domain_version < 5:
             # Always zero on pre v5 domains
             # We need to keep MTIME available on pre v5
             # domains, as other code is expecting that
             # field to exists and will fail without it.
             info[sc.MTIME] = 0
+
+            # Pre v5 domains should have SIZE in blocks
+            # instead of CAPACITY in bytes
+            info[sc.SIZE] = self.size
+        else:
+            info[sc.CAPACITY] = self.capacity
 
         info.update(overrides)
 
@@ -163,12 +198,16 @@ class VolumeMetadata(object):
     # with values, we return self and mimick dict behaviour.
     # In the fieldmap we keep mapping between metadata
     # field name and our internal field names
+    #
+    # TODO: All dict specific code below should be removed, when rest of VDSM
+    # will be refactored, to use VolumeMetadata properties, instead of dict
+
     _fieldmap = {
         sc.FORMAT: 'format',
         sc.TYPE: 'type',
         sc.VOLTYPE: 'voltype',
         sc.DISKTYPE: 'disktype',
-        sc.SIZE: 'size',
+        sc.CAPACITY: 'capacity',
         sc.CTIME: 'ctime',
         sc.DOMAIN: 'domain',
         sc.IMAGE: 'image',
@@ -176,6 +215,7 @@ class VolumeMetadata(object):
         sc.PUUID: 'puuid',
         sc.LEGALITY: 'legality',
         sc.GENERATION: 'generation',
+        sc.SIZE: 'size'
     }
 
     def __getitem__(self, item):
@@ -185,7 +225,7 @@ class VolumeMetadata(object):
             raise KeyError(item)
 
         # Some fields needs to be converted to string
-        if item in (sc.SIZE, sc.CTIME):
+        if item in (sc.CAPACITY, sc.SIZE, sc.CTIME):
             value = str(value)
         return value
 

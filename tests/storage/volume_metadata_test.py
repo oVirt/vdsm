@@ -44,7 +44,7 @@ def make_init_params(**kwargs):
         domain=make_uuid(),
         image=make_uuid(),
         puuid=make_uuid(),
-        size=1024 * MB,
+        capacity=1024 * MB,
         format=sc.type2name(sc.RAW_FORMAT),
         type=sc.type2name(sc.SPARSE_VOL),
         voltype=sc.type2name(sc.LEAF_VOL),
@@ -61,7 +61,7 @@ def make_md_dict(**kwargs):
         sc.DOMAIN: 'domain',
         sc.IMAGE: 'image',
         sc.PUUID: 'parent',
-        sc.SIZE: '0',
+        sc.CAPACITY: '0',
         sc.FORMAT: 'format',
         sc.TYPE: 'type',
         sc.VOLTYPE: 'voltype',
@@ -77,6 +77,7 @@ def make_md_dict(**kwargs):
 
 def make_lines(**kwargs):
     data = make_md_dict(**kwargs)
+
     lines = ['EOF']
     for k, v in data.items():
         if v is not None:
@@ -97,7 +98,8 @@ class TestVolumeMetadata:
             IMAGE=params['image'],
             LEGALITY=params['legality'],
             PUUID=params['puuid'],
-            SIZE=str(params['size']),
+            SIZE=str(params['capacity'] // sc.BLOCK_SIZE_512),
+            CAP=str(params['capacity']),
             TYPE=params['type'],
             VOLTYPE=params['voltype'],
             GEN=params['generation'])
@@ -109,6 +111,8 @@ class TestVolumeMetadata:
 
     def test_storage_format_v4(self):
         params = make_init_params(ctime=FAKE_TIME)
+        expected_params = dict(params)
+        expected_params['size'] = params['capacity'] // sc.BLOCK_SIZE_512
         expected = textwrap.dedent("""\
             CTIME=%(ctime)s
             DESCRIPTION=%(description)s
@@ -124,13 +128,14 @@ class TestVolumeMetadata:
             TYPE=%(type)s
             VOLTYPE=%(voltype)s
             EOF
-            """ % params)
+            """ % expected_params)
         md = volume.VolumeMetadata(**params)
         assert expected == md.storage_format(4)
 
     def test_storage_format_v5(self):
         params = make_init_params(ctime=FAKE_TIME)
         expected = textwrap.dedent("""\
+            CAP=%(capacity)s
             CTIME=%(ctime)s
             DESCRIPTION=%(description)s
             DISKTYPE=%(disktype)s
@@ -140,7 +145,6 @@ class TestVolumeMetadata:
             IMAGE=%(image)s
             LEGALITY=%(legality)s
             PUUID=%(puuid)s
-            SIZE=%(size)s
             TYPE=%(type)s
             VOLTYPE=%(voltype)s
             EOF
@@ -156,7 +160,7 @@ class TestVolumeMetadata:
         assert "SIZE=%s\n" % md.size in data
         assert "CAP=%s\n" % capacity in data
 
-    @pytest.mark.parametrize("param", ['size', 'ctime'])
+    @pytest.mark.parametrize("param", ['capacity', 'ctime'])
     def test_int_params_str_raises(self, param):
         params = make_init_params(**{param: 'not_an_int'})
         with pytest.raises(AssertionError):
@@ -178,29 +182,58 @@ class TestVolumeMetadata:
         with pytest.raises(KeyError):
             md["INVALID_KEY"]
 
-    @pytest.mark.parametrize("key", [sc.SIZE, sc.CTIME])
+    @pytest.mark.parametrize("key", [sc.CTIME, sc.CAPACITY])
     def test_from_lines_int_parse_error(self, key):
         lines = make_lines(**{key: 'not_an_integer'})
         with pytest.raises(ValueError):
             volume.VolumeMetadata.from_lines(lines)
 
-    def test_from_lines(self):
-        data = make_md_dict()
-        lines = make_lines(**data)
+    @pytest.mark.parametrize("version", [4, 5])
+    def test_from_lines_common(self, monkeypatch, version):
+        data = make_init_params()
+        monkeypatch.setattr(time, 'time', lambda: FAKE_TIME)
+        md = volume.VolumeMetadata(**data)
+        lines = md.storage_format(version).splitlines()
 
         md = volume.VolumeMetadata.from_lines(lines)
-        assert data[sc.DOMAIN] == md.domain
-        assert data[sc.IMAGE] == md.image
-        assert data[sc.PUUID] == md.puuid
-        assert int(data[sc.SIZE]) == md.size
-        assert data[sc.FORMAT] == md.format
-        assert data[sc.TYPE] == md.type
-        assert data[sc.VOLTYPE] == md.voltype
-        assert data[sc.DISKTYPE] == md.disktype
-        assert data[sc.DESCRIPTION] == md.description
-        assert int(data[sc.CTIME]) == md.ctime
-        assert data[sc.LEGALITY] == md.legality
-        assert int(data[sc.GENERATION]) == md.generation
+        assert data['domain'] == md.domain
+        assert data['image'] == md.image
+        assert data['puuid'] == md.puuid
+        assert data['format'] == md.format
+        assert data['type'] == md.type
+        assert data['voltype'] == md.voltype
+        assert str(data['disktype']) == md.disktype
+        assert data['description'] == md.description
+        assert FAKE_TIME == md.ctime
+        assert data['legality'] == md.legality
+        assert int(data['generation']) == md.generation
+
+    def test_from_lines_v5(self):
+        data = make_init_params()
+        md = volume.VolumeMetadata(**data)
+        lines = md.storage_format(5).splitlines()
+
+        md = volume.VolumeMetadata.from_lines(lines)
+        assert int(data['capacity']) == md.capacity
+
+    def test_from_lines_v4(self):
+        data = make_init_params()
+        md = volume.VolumeMetadata(**data)
+        lines = md.storage_format(5).splitlines()
+        lines.remove("CAP=1073741824")
+        lines.insert(0, "SIZE=4096")
+
+        md = volume.VolumeMetadata.from_lines(lines)
+        assert md.capacity == 2 * MB
+
+    def test_from_lines_no_size_and_capacity(self):
+        data = make_init_params()
+        md = volume.VolumeMetadata(**data)
+        lines = md.storage_format(5).splitlines()
+        lines.remove("CAP=1073741824")
+
+        with pytest.raises(se.MetaDataKeyNotFoundError):
+            volume.VolumeMetadata.from_lines(lines)
 
     def test_generation_default(self):
         lines = make_lines(GEN=None)
@@ -232,7 +265,7 @@ class TestMDSize:
         # FORMAT=RAW
         # DISKTYPE=ISOF
         # LEGALITY=ILLEGAL
-        # SIZE=2199023255552
+        # CAP=1125899906842624
         # VOLTYPE=LEAF
         # DESCRIPTION={"DiskAlias":"Fedora-Server-dvd-x86_64-29-1.2.iso", "DiskDescription":"Uploaded disk"} # NOQA: E501 (potentially long line)
         # IMAGE=bc9d15fa-70eb-40aa-8a2e-e4f27664752f
@@ -243,7 +276,7 @@ class TestMDSize:
         # GEN=0
         # EOF
         {
-            'size': MAX_PREALLOCATED_SIZE,
+            'capacity': MAX_PREALLOCATED_SIZE,
             'type': 'PREALLOCATED'
         },
         # Sparse block/file example:
@@ -252,7 +285,7 @@ class TestMDSize:
         # FORMAT=RAW
         # DISKTYPE=ISOF
         # LEGALITY=ILLEGAL
-        # SIZE=18014398509481984
+        # CAP=9223372036854775808
         # VOLTYPE=LEAF
         # DESCRIPTION={"DiskAlias":"Fedora-Server-dvd-x86_64-29-1.2.iso", "DiskDescription":"Uploaded disk"} # NOQA: E501 (potentially long line)
         # IMAGE=bc9d15fa-70eb-40aa-8a2e-e4f27664752f
@@ -263,7 +296,7 @@ class TestMDSize:
         # GEN=0
         # EOF
         {
-            'size': MAX_VOLUME_SIZE,
+            'capacity': MAX_VOLUME_SIZE,
             'type': 'SPARSE'
         }
     ])
@@ -279,7 +312,7 @@ class TestMDSize:
             legality='ILLEGAL',
             # Blank UUID for RAW, can be real UUID for COW.
             puuid=sc.BLANK_UUID,
-            size=md_params['size'] // 512,
+            capacity=md_params['capacity'],
             type=md_params['type'],
             voltype='INTERNAL',
         )
@@ -318,7 +351,7 @@ class TestDictInterface:
         assert md[sc.FORMAT] == params['format']
         assert md[sc.IMAGE] == params['image']
         assert md[sc.PUUID] == params['puuid']
-        assert md[sc.SIZE] == str(params['size'])
+        assert md[sc.CAPACITY] == str(params['capacity'])
         assert md[sc.TYPE] == params['type']
         assert md[sc.VOLTYPE] == params['voltype']
         assert md[sc.DISKTYPE] == params['disktype']
@@ -335,10 +368,26 @@ class TestDictInterface:
         # SIZE in blocks is legacy option, make sure setting and getting SIZE
         # works when we replace it with CAP in bytes.
         params = make_init_params()
+        size_blk = params['capacity'] // sc.BLOCK_SIZE_512
         md = volume.VolumeMetadata(**params)
-        new_size = params['size'] * 2
-        md[sc.SIZE] = new_size
-        assert md[sc.SIZE] == str(new_size)
+        new_size_blk = size_blk * 2
+        md[sc.SIZE] = new_size_blk
+        assert md[sc.SIZE] == str(new_size_blk)
+
+    def test_size_capacity(self):
+        params = make_init_params()
+        size_blk = params['capacity'] // sc.BLOCK_SIZE_512
+        md = volume.VolumeMetadata(**params)
+        new_size_blk = size_blk * 2
+        md[sc.SIZE] = new_size_blk
+        assert md.capacity == new_size_blk * sc.BLOCK_SIZE_512
+
+    def test_capacity_size(self):
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        new_capacity = md.capacity * 2
+        md.capacity = new_capacity
+        assert md.size == new_capacity // sc.BLOCK_SIZE_512
 
     def test_get_nonexistent(self):
         params = make_init_params()
