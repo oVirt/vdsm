@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,14 +20,22 @@
 
 from __future__ import absolute_import
 
+import os
+import uuid
+
 import pytest
+
+from vdsm.storage import constants as sc
+from vdsm.storage import fileUtils
+from vdsm.storage import formatconverter
+from vdsm.storage import localFsSD
+from vdsm.storage import sd
+from vdsm.storage.formatconverter import _v3_reset_meta_volsize
 
 from .storagetestlib import (
     fake_volume,
     MB
 )
-from vdsm.storage import constants as sc
-from vdsm.storage.formatconverter import _v3_reset_meta_volsize
 
 
 @pytest.fixture(params=[sc.RAW_FORMAT, sc.COW_FORMAT])
@@ -47,3 +55,36 @@ def test_v3_reset_meta_vol_size_metadata_wrong(vol):
     vol.setSize(1024)
     _v3_reset_meta_volsize(vol)
     assert vol.getSize() == original_size_blk
+
+
+def test_convert_from_v3_to_v4_localfs(tmp_repo, fake_access):
+    # In a real domain this is a symlink to the domain directory.
+    remote_path = "/data/domain"
+    dom_dir = os.path.join(
+        sc.REPO_MOUNT_DIR, fileUtils.transformPath(remote_path))
+    os.makedirs(dom_dir)
+
+    dom = localFsSD.LocalFsStorageDomain.create(
+        sdUUID=str(uuid.uuid4()),
+        domainName="domain",
+        domClass=sd.DATA_DOMAIN,
+        remotePath=remote_path,
+        version=3,
+        storageType=sd.LOCALFS_DOMAIN,
+        block_size=sc.BLOCK_SIZE_512,
+        alignment=sc.ALIGN_1M)
+
+    assert dom.getVersion() == 3
+
+    fc = formatconverter.DefaultFormatConverter()
+
+    fc.convert(
+        repoPath=tmp_repo.path,
+        hostId=1,
+        imageRepo=dom,
+        isMsd=False,
+        targetFormat='4')
+
+    # LocalFS do not support external leases, so the only change is the
+    # version.
+    assert dom.getVersion() == 4
