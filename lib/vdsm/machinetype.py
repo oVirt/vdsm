@@ -28,6 +28,7 @@ import xml.etree.ElementTree as ET
 from vdsm.common import cache
 from vdsm.common import cpuarch
 from vdsm.common import libvirtconnection
+from vdsm.common.config import config
 
 
 class _CpuMode:
@@ -89,7 +90,11 @@ def domain_cpu_models(conn, arch, cpu_mode):
     Example:
         {'z13' : 'unknown', 'zEC12': 'no', 'z196': 'yes'}
     """
-    domcaps = conn.getDomainCapabilities(None, arch, None, 'kvm', 0)
+    if config.getboolean('vars', 'fake_kvm_support'):
+        virt_type = 'qemu'
+    else:
+        virt_type = 'kvm'
+    domcaps = conn.getDomainCapabilities(None, arch, None, virt_type, 0)
     if not domcaps:
         logging.error('Error while getting CPU models: '
                       'no domain capabilities found')
