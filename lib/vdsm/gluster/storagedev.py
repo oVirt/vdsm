@@ -143,7 +143,7 @@ def _reset_blivet(blivetEnv):
         blivetEnv.reset()
     except (blivet.errors.UnusableConfigurationError,
             blivet.errors.StorageError) as e:
-        log.error("Error: %s" % e.message)
+        log.error("Error: %s", e)
 
 
 @gluster_mgmt_api
