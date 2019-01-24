@@ -19,11 +19,11 @@
 #
 
 """
-types - vdsm storage types
+types - Vdsm storage types
 
-This module include the storage types mentioned in vdsm schema.  The purpose of
-these types is to validate the input and provide an easy way to pass the
-arguments around.
+This module includes the storage types mentioned in Vdsm schema.
+The purpose of these types is to validate the input and provide an
+easy way to pass the arguments around.
 """
 
 from __future__ import absolute_import
