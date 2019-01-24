@@ -1898,7 +1898,7 @@ class UnexpectedVolumeState(StorageException):
 
 #################################################
 #  Managed Volume Errors
-#  Range: 925-929
+#  Range: 925-935
 #################################################
 
 
@@ -1931,7 +1931,7 @@ class ManagedVolumeUnsupportedDevice(StorageException):
 
 
 class ManagedVolumeConnectionMismatch(StorageException):
-    code = 928
+    code = 929
     message = "Attach existing volume with different connection information"
 
     def __init__(self, vol_id, expected, actual):
