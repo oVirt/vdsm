@@ -128,7 +128,7 @@ def _v3_reset_meta_volsize(vol):
     if metaVolSize != virtVolSize:
         log.warn("Fixing the mismatch between the metadata volume size "
                  "(%s) and the volume virtual size (%s) for the volume "
-                 "%s", vol.volUUID, metaVolSize, virtVolSize)
+                 "%s", metaVolSize, virtVolSize, vol.volUUID)
         vol.setMetaParam(sc.SIZE, str(virtVolSize))
 
 
