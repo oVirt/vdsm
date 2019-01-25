@@ -28,45 +28,19 @@ from vdsm.gluster.exception import GlusterException
 
 class TestGlusterException(VdsmTestCase):
 
-    def test_str(self):
+    def test_str_no_args(self):
         e = GlusterException()
-        self.assertEqual(str(e), "Gluster Exception")
+        self.assertEqual(str(e), "Gluster Exception: rc=0 out=() err=()")
 
-    def test_str_with_rc(self):
-        e = GlusterException(rc=1)
-        self.assertEqual(str(e), "Gluster Exception\nreturn code: 1")
+    def test_str_strings(self):
+        e = GlusterException(rc=1, out='out', err='err')
+        self.assertEqual(str(e), "Gluster Exception: rc=1 out='out' err='err'")
 
-    def test_str_with_out(self):
-        e = GlusterException(out=["output"])
-        self.assertEqual(str(e), "Gluster Exception\nerror: output")
-
-    def test_str_with_out_multiline(self):
-        e = GlusterException(out=["line 1", "line 2", "line 3"])
-        self.assertEqual(str(e), "Gluster Exception\nerror: line 1\nline 2\n"
-                                 "line 3")
-
-    def test_str_with_err(self):
-        e = GlusterException(err=["error"])
-        self.assertEqual(str(e), "Gluster Exception\nerror: error")
-
-    def test_str_with_err_multiline(self):
-        e = GlusterException(err=["line 1", "line 2", "line 3"])
-        self.assertEqual(str(e), "Gluster Exception\nerror: line 1\nline 2\n"
-                                 "line 3")
-
-    def test_str_with_out_err(self):
-        e = GlusterException(out=["output"], err=["error"])
-        self.assertEqual(str(e), "Gluster Exception\nerror: output\nerror")
-
-    def test_str_with_out_err_multiline(self):
-        e = GlusterException(out=["out 1", "out 2"], err=["err 1", "err 2"])
-        self.assertEqual(str(e), "Gluster Exception\nerror: out 1\nout 2\n"
-                                 "err 1\nerr 2")
-
-    def test_str_with_rc_out_err(self):
-        e = GlusterException(rc=1, out=["output"], err=["error"])
-        self.assertEqual(str(e), "Gluster Exception\nerror: output\nerror\n"
-                                 "return code: 1")
+    def test_str_lists(self):
+        e = GlusterException(rc=1, out=["o", "u", "t"], err=["e", "r", "r"])
+        expected = ("Gluster Exception: rc=1 out=['o', 'u', 't'] "
+                    "err=['e', 'r', 'r']")
+        self.assertEqual(str(e), expected)
 
     def test_info(self):
         e = GlusterException()
