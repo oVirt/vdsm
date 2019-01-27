@@ -22,6 +22,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import binascii
+import json
+import os
 import time
 import uuid
 
@@ -255,3 +258,54 @@ def test_concurrency(tmp_db):
                 assert "path" in vol_info
                 assert "multipath_id" in vol_info
                 assert "attachment" in vol_info
+
+
+@pytest.mark.slow
+def test_lookup_benchmark(tmp_db):
+    count = 500
+
+    # Sort for fastest insertion.
+    volumes = sorted((str(uuid.uuid4()), make_multipath_id())
+                     for i in range(count))
+
+    def iter_volumes():
+        for vol_id, multipath_id in volumes:
+            path = "/dev/mapper/" + multipath_id
+            connection_info = json.dumps({"connection": vol_id})
+            attachment = json.dumps({"attachment": multipath_id})
+            yield vol_id, path, connection_info, attachment, multipath_id
+
+    db = managedvolumedb.open()
+    with closing(db):
+        # Access db._conn directly for faster import with single transaction.
+        insert_volume = """
+            INSERT INTO volumes (
+                vol_id,
+                path,
+                connection_info,
+                attachment,
+                multipath_id,
+                updated
+            )
+            VALUES (
+                ?, ?, ?, ?, ?, datetime("now")
+            )
+        """
+        with db._conn:
+            db._conn.executemany(insert_volume, iter_volumes())
+
+    start = time.time()
+
+    db = managedvolumedb.open()
+    with closing(db):
+        for _, multipath_id in volumes:
+            db.owns_multipath(multipath_id)
+
+    elapsed = time.time() - start
+
+    print("Lookup %d multipath ids in %.6f seconds (%.6f seconds/op)"
+          % (count, elapsed, elapsed / count))
+
+
+def make_multipath_id():
+    return binascii.hexlify(os.urandom(16)).decode()
