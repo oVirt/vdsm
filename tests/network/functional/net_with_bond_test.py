@@ -84,6 +84,18 @@ class TestNetworkWithBond(object):
                     adapter.setupNetworks(NETCREATE, {}, NOCHK)
                 assert e.value.status == ne.ERR_USED_NIC
 
+    def test_remove_bridged_net_and_keep_bond(self, switch):
+        with dummy_devices(2) as nics:
+            NETCREATE = {
+                NETWORK1_NAME: {'bonding': BOND_NAME, 'switch': switch}}
+            BONDCREATE = {BOND_NAME: {'nics': nics, 'switch': switch}}
+
+            with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
+                NETCREATE[NETWORK1_NAME] = {'remove': True}
+                adapter.setupNetworks(NETCREATE, {}, NOCHK)
+
+                adapter.assertNoNetwork(NETWORK1_NAME)
+
     @nftestlib.parametrize_bridged
     def test_given_bonded_net_transfer_one_slave_to_new_net(self,
                                                             switch,

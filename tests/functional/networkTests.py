@@ -41,7 +41,6 @@ from vdsm.network import kernelconfig
 from vdsm.network.netconfpersistence import PersistentConfig, RunningConfig
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.netinfo.bonding import BONDING_SLAVES
-from vdsm.network.netinfo.bridges import bridges
 from vdsm.network.netinfo.misc import NET_CONF_PREF
 from vdsm.network.netinfo.nics import operstate, OPERSTATE_UNKNOWN
 from vdsm.network.netinfo.routes import getRouteDeviceTo
@@ -1141,25 +1140,6 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks(network, {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkDoesntExist(NETWORK_NAME)
-
-    def testNoBridgeLeftovers(self):
-        """Test for https://bugzilla.redhat.com/1071398"""
-        with dummyIf(2) as nics:
-            network = {NETWORK_NAME: {'bonding': BONDING_NAME}}
-            bonds = {BONDING_NAME: {'nics': nics}}
-            status, msg = self.setupNetworks(network, bonds, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME)
-
-            # Remove the network but not the bond
-            network[NETWORK_NAME] = {'remove': True}
-            status, msg = self.setupNetworks(network, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNotIn(NETWORK_NAME, bridges())
-
-            bonds[BONDING_NAME] = {'remove': True}
-            status, msg = self.setupNetworks({}, bonds, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
 
     @slowtest
     @cleanupNet
