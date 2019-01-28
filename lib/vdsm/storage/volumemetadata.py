@@ -35,10 +35,17 @@ class VolumeMetadata(object):
                  type, voltype, disktype, description="",
                  legality=constants.ILLEGAL_VOL, ctime=None, mtime=None,
                  generation=constants.DEFAULT_GENERATION):
-        assert(isinstance(size, int))
-        assert(ctime is None or isinstance(ctime, int))
-        assert(mtime is None or isinstance(mtime, int))
-        assert(isinstance(generation, int))
+        if not isinstance(size, int):
+            raise AssertionError("Invalid value for 'size': {!r}".format(size))
+        if ctime is not None and not isinstance(ctime, int):
+            raise AssertionError(
+                "Invalid value for 'ctime': {!r}".format(ctime))
+        if mtime is not None and not isinstance(mtime, int):
+            raise AssertionError(
+                "Invalid value for 'mtime': {!r}".format(mtime))
+        if not isinstance(generation, int):
+            raise AssertionError(
+                "Invalid value for 'generation': {!r}".format(generation))
 
         # Storage domain UUID
         self.domain = domain
