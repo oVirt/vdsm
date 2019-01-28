@@ -101,7 +101,7 @@ def test_insert_select(tmp_db):
         db.add_volume(test_id, connection_info)
         res = db.get_volume(test_id)
 
-        assert res == {"connection_info": connection_info}
+        assert res == {"vol_id": test_id, "connection_info": connection_info}
 
 
 def test_insert_existing(tmp_db):
@@ -131,17 +131,15 @@ def test_update(tmp_db):
     db = managedvolumedb.open()
     with closing(db):
         db.add_volume(test_id, connection_info)
-        res = db.get_volume(test_id)
-
-        assert res == {"connection_info": connection_info}
 
         path = "/dev/mapper/36001405376e34ea70384de7a34a2854d"
         multipath_id = "36001405376e34ea70384de7a34a2854d"
-        attachment = {"key2": "value2"}
+        attachment = {"attachment": 2}
         db.update_volume(test_id, path, attachment, multipath_id)
         res = db.get_volume(test_id)
 
-        expected = {"connection_info": connection_info,
+        expected = {"vol_id": test_id,
+                    "connection_info": connection_info,
                     "path": path,
                     "attachment": attachment,
                     "multipath_id": multipath_id}
@@ -187,6 +185,67 @@ def test_owns_multipath(tmp_db):
         # Nothing owns multipath_id now.
         db.remove_volume(vol_id)
         assert not db.owns_multipath(multipath_id)
+
+
+def test_get_all_volumes(tmp_db):
+    expected = [{"vol_id": "vol-id-1",
+                 "connection_info": {"connection": 1}},
+                {"vol_id": "vol-id-2",
+                 "connection_info": {"connection": 2},
+                 "path": "/dev/mapper/36001405376e34ea70384de7a34a2854d",
+                 "attachment": {"attachment": 2},
+                 "multipath_id": "36001405376e34ea70384de7a34a2854d"}]
+
+    db = managedvolumedb.open()
+    with closing(db):
+        for vol in expected:
+            db.add_volume(vol["vol_id"], vol["connection_info"])
+            if "path" in vol:
+                db.update_volume(vol["vol_id"], vol["path"], vol["attachment"],
+                                 vol["multipath_id"])
+
+        actual = list(db.iter_volumes())
+        assert expected == actual
+
+
+def test_get_volumes_by_id(tmp_db):
+    vol1 = {"vol_id": "vol-id-1", "connection_info": {"connection": 1}}
+    vol2 = {"vol_id": "vol-id-2",
+            "connection_info": {"connection": 2},
+            "path": "/dev/mapper/36001405376e34ea70384de7a34a2854d",
+            "attachment": {"attachment": 2},
+            "multipath_id": "36001405376e34ea70384de7a34a2854d"}
+    vol3 = {"vol_id": "vol-id-3", "connection_info": {"connection": 3}}
+    expected = [vol1, vol2, vol3]
+
+    db = managedvolumedb.open()
+    with closing(db):
+        for vol in expected:
+            db.add_volume(vol["vol_id"], vol["connection_info"])
+            if "path" in vol:
+                db.update_volume(vol["vol_id"], vol["path"], vol["attachment"],
+                                 vol["multipath_id"])
+
+        actual = list(db.iter_volumes(["vol-id-1", "vol-id-2", "vol-id-3"]))
+        assert expected == actual
+
+        actual = list(db.iter_volumes(["vol-id-1", "vol-id-3"]))
+        assert [vol1, vol3] == actual
+
+
+def test_partial_iteration(tmp_db):
+    db = managedvolumedb.open()
+    with closing(db):
+        db.add_volume("vol-1", {})
+        db.add_volume("vol-2", {})
+
+        # This triggers OperationalError if we use don't use fetchall() inside
+        # iter_volumes().
+        volumes1 = db.iter_volumes()
+        next(volumes1)
+        volumes2 = db.iter_volumes()
+        next(volumes2)
+        db.close()
 
 
 @pytest.mark.slow

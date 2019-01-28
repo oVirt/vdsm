@@ -117,6 +117,21 @@ class DB(object):
             self._conn = _CLOSED_CONNECTION
 
     def get_volume(self, vol_id):
+        for vol in self.iter_volumes([vol_id]):
+            return vol
+
+        raise NotFound(vol_id)
+
+    def iter_volumes(self, vol_ids=[]):
+        """
+        Lookup volumes info in managed volume database for all volume IDs in
+        the vol_ids list and returns a list with volume information for each
+        volume ID which is present in the database. List is sorted by volume
+        IDs. If the list of requested volume IDs is not specified or empty,
+        list of all volumes info in the DB is returned. Empty list is returned
+        if any of IDs are not in the database.
+        """
+        # if no volume IDs are provided, select all
         sql = """
             SELECT
                 vol_id,
@@ -125,27 +140,34 @@ class DB(object):
                 attachment,
                 multipath_id
             FROM volumes
-            WHERE vol_id = ?
         """
 
-        res = self._conn.execute(sql, (vol_id,))
-        vol = res.fetchall()
+        if vol_ids:
+            sql += "WHERE vol_id IN ({ids})\n".format(
+                ids=",".join("?" for _ in vol_ids))
 
-        if len(vol) < 1:
-            raise NotFound(vol_id)
+        sql += "ORDER BY vol_id\n"
 
-        vol = vol[0]
-        volume_info = {}
-        if vol["connection_info"]:
-            volume_info["connection_info"] = json.loads(vol["connection_info"])
-        if vol["path"]:
-            volume_info["path"] = vol["path"]
-        if vol["attachment"]:
-            volume_info["attachment"] = json.loads(vol["attachment"])
-        if vol["multipath_id"]:
-            volume_info["multipath_id"] = vol["multipath_id"]
+        res = self._conn.execute(sql, vol_ids)
 
-        return volume_info
+        # Fetch all the results now. Iterating over the result set lazily and
+        # yielding items one by one can result in
+        # sqlite3.OperationalError: unable to close due to unfinalized
+        # statements or unfinished backups
+        vols = res.fetchall()
+
+        for vol in vols:
+            volume_info = {"vol_id": vol["vol_id"]}
+            if vol["connection_info"]:
+                volume_info["connection_info"] = json.loads(
+                    vol["connection_info"])
+            if vol["path"]:
+                volume_info["path"] = vol["path"]
+            if vol["attachment"]:
+                volume_info["attachment"] = json.loads(vol["attachment"])
+            if vol["multipath_id"]:
+                volume_info["multipath_id"] = vol["multipath_id"]
+            yield volume_info
 
     def add_volume(self, vol_id, connection_info):
         sql = """
@@ -223,7 +245,6 @@ class DB(object):
 
 
 # Private
-
 
 class _closed_connection(object):
 

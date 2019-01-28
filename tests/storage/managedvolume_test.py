@@ -151,7 +151,8 @@ def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
             "scsi_wwn": "fakewwn",
             "multipath_id": "fakemultipathid"
         },
-        "multipath_id": "fakemultipathid"
+        "multipath_id": "fakemultipathid",
+        "vol_id": "fake_vol_id"
     }
 
     assert tmp_db.get_volume("fake_vol_id") == volume_info
@@ -184,7 +185,8 @@ def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
         "path": path,
         "attachment": {
             "path": "/dev/fakerbd"
-        }
+        },
+        "vol_id": "fake_vol_id"
     }
 
     assert tmp_db.get_volume("fake_vol_id") == volume_info
@@ -216,7 +218,8 @@ def test_attach_volume_ok_other(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
         "path": path,
         "attachment": {
             "path": "/dev/fakesda"
-        }
+        },
+        "vol_id": "other_vol_id"
     }
 
     assert tmp_db.get_volume("other_vol_id") == volume_info
