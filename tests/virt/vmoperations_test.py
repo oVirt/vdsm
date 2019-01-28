@@ -31,7 +31,9 @@ from vdsm.common import hooks
 from vdsm.common import libvirtconnection
 from vdsm.common import password
 from vdsm.common import response
+from vdsm.common import systemd
 from vdsm.config import config
+from vdsm.virt import saslpasswd2
 from vdsm.virt import virdomain
 from vdsm.virt import vmexitreason
 from vdsm.virt.vmdevices import hwclass
@@ -178,8 +180,12 @@ class TestVmOperations(XMLTestCase):
         def _check_ticket_params(domXML, conf, params):
             self.assertEqual(params, _TICKET_PARAMS)
 
+        def _fake_systemd_run(cmd, stdin=None):
+            return 0
+
         with MonkeyPatchScope([(hooks, 'before_vm_set_ticket',
-                                _check_ticket_params)]):
+                                _check_ticket_params),
+                               (systemd, 'run', _fake_systemd_run)]):
             params = {'graphicsType': device_type}
             params.update(graphics_params)
             return testvm.updateDevice(params)
@@ -193,6 +199,59 @@ class TestVmOperations(XMLTestCase):
                                        graphics_params)
 
             self.assertXMLEqual(testvm._dom.devXml, devXml)
+
+    def testSetSaslPasswordInFips(self):
+        graphics_params = dict(_GRAPHICS_DEVICE_PARAMS)
+        del graphics_params['existingConnAction']
+        device = self.GRAPHIC_DEVICES[1]  # VNC
+        domXml = '''
+            <devices>
+                <graphics type="%s" port="5900" />
+            </devices>''' % device['device']
+
+        with fake.VM(devices=domXml) as testvm:
+            def _fake_set_vnc_pwd(username, pwd):
+                testvm.pwd = pwd
+                testvm.username = username
+
+            testvm._dom = fake.Domain(domXml)
+            testvm.pwd = "invalid"
+            params = {'graphicsType': device['device']}
+            params.update(graphics_params)
+            params['params']['fips'] = 'true'
+            params['params']['vncUsername'] = 'vnc-123-456'
+
+            with MonkeyPatchScope([(saslpasswd2, 'set_vnc_password',
+                                    _fake_set_vnc_pwd)]):
+                testvm.updateDevice(params)
+
+            self.assertEqual(password.unprotect(params['password']),
+                             testvm.pwd)
+            self.assertEqual(params['params']['vncUsername'], testvm.username)
+
+    def testClearSaslPasswordNoFips(self):
+        graphics_params = dict(_GRAPHICS_DEVICE_PARAMS)
+        del graphics_params['existingConnAction']
+        device = self.GRAPHIC_DEVICES[1]  # VNC
+        domXml = '''
+            <devices>
+                <graphics type="%s" port="5900" />
+            </devices>''' % device['device']
+
+        with fake.VM(devices=domXml) as testvm:
+            def _fake_remove_pwd(username):
+                testvm.username = username
+
+            testvm._dom = fake.Domain(domXml)
+            params = {'graphicsType': device['device']}
+            params.update(graphics_params)
+            params['params']['vncUsername'] = 'vnc-123-456'
+
+            with MonkeyPatchScope([(saslpasswd2, 'remove_vnc_password',
+                                    _fake_remove_pwd)]):
+                testvm.updateDevice(params)
+
+            self.assertEqual(params['params']['vncUsername'], testvm.username)
 
     def testDomainNotRunningWithoutDomain(self):
         with fake.VM() as testvm:

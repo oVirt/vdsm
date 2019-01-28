@@ -25,9 +25,11 @@ from __future__ import division
 import libvirt
 
 from vdsm.common import conv
+from vdsm.common import xmlutils
 from vdsm.network import api as net_api
 from vdsm.virt import displaynetwork
 from vdsm.virt import libvirtnetwork
+from vdsm.virt import utils
 from vdsm.config import config
 from vdsm.virt import vmxml
 
@@ -316,3 +318,23 @@ def _is_feature_flag_enabled(dev, node, attr):
         return False
     else:
         return True
+
+
+def is_vnc_secure(vmParams):
+    """
+    This function checks if VNC is not mis-configured to offer insecure,
+    free-for-all access. The engine can send the XML with empty password,
+    but it's acceptable IFF qemu uses SASL as the authentication mechanism.
+
+    is_vnc_secure returns False in such case (i.e. no password and no SASL),
+    otherwise VNC connection is considered secure.
+    """
+    if 'xml' not in vmParams:
+        return True
+    parsed = xmlutils.fromstring(vmParams['xml'])
+    graphics = vmxml.find_all(parsed, 'graphics')
+    for g in graphics:
+        if vmxml.attr(g, 'type') == 'vnc':
+            if vmxml.attr(g, 'passwd') == '' and not utils.sasl_enabled():
+                return False
+    return True

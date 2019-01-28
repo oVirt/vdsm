@@ -29,6 +29,7 @@ from vdsm.common import xmlutils
 from vdsm import constants
 import vdsm
 import vdsm.virt
+from vdsm.virt import utils
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
 from vdsm.virt.domain_descriptor import DomainDescriptor
@@ -1258,3 +1259,56 @@ class MockedProxy(object):
 
     def remove_ovs_port(self, bridge, port):
         pass
+
+
+class VncSecureTest(TestCaseBase):
+    XML_NO_VNC = """<?xml version="1.0" encoding="utf-8"?>
+        <domain type="kvm"
+          xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
+          <devices>
+            <graphics autoport="yes" keymap="en-us" passwd="*****"
+                  passwdValidTo="1970-01-01T00:00:01" port="1234"
+                  tlsPort="4321" type="spice">
+              <listen network="vdsm-vmDisplay" type="network"/>
+            </graphics>
+          </devices>
+        </domain>"""
+
+    XML_VNC = """<?xml version="1.0" encoding="utf-8"?>
+        <domain type="kvm"
+          xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
+          <devices>
+            <graphics autoport="yes" keymap="en-us" passwd="%s"
+                  passwdValidTo="1970-01-01T00:00:01" port="5900"
+                  tlsPort="5900" type="vnc">
+              <listen network="vdsm-vmDisplay" type="network"/>
+            </graphics>
+          </devices>
+        </domain>"""
+
+    def test_no_xml(self):
+        self.assertTrue(graphics.is_vnc_secure({}))
+        self.assertTrue(graphics.is_vnc_secure({'other': 'something'}))
+
+    def test_no_vnc(self):
+        self.assertTrue(graphics.is_vnc_secure({'xml': self.XML_NO_VNC}))
+
+    @MonkeyPatch(utils, 'sasl_enabled', lambda: False)
+    def test_sasl_disabled_no_password(self):
+        xml = self.XML_VNC % ""
+        self.assertFalse(graphics.is_vnc_secure({'xml': xml}))
+
+    @MonkeyPatch(utils, 'sasl_enabled', lambda: False)
+    def test_sasl_disabled_password(self):
+        xml = self.XML_VNC % "a-paSSword321"
+        self.assertTrue(graphics.is_vnc_secure({'xml': xml}))
+
+    @MonkeyPatch(utils, 'sasl_enabled', lambda: True)
+    def test_sasl_enabled_password(self):
+        xml = self.XML_VNC % "a-paSSword321"
+        self.assertTrue(graphics.is_vnc_secure({'xml': xml}))
+
+    @MonkeyPatch(utils, 'sasl_enabled', lambda: True)
+    def test_sasl_enabled_no_password(self):
+        xml = self.XML_VNC % ""
+        self.assertTrue(graphics.is_vnc_secure({'xml': xml}))
