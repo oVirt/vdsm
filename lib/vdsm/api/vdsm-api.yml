@@ -505,16 +505,22 @@ types:
 
     DiskType: &DiskType
         added: '3.1'
-        description: An enumeration of disk usage types.
+        modified: '4.3'
+        description: Disk content type.
         name: DiskType
         type: enum
         values:
-            DATA: The disk is for data
-            SHARED: The disk is shared among multiple VMs
-            SWAP: The disk is used for swap space
-            SYSTEM: The disk contains the operating system
-            TEMP: The disk is used for temporary storage space
-            UNKNOWN: The type is not specified
+            1: The disk is for data (<4.2)
+            2: The disk is shared among multiple VMs (<4.2)
+            3: The disk is used for swap space (<4.2)
+            4: The disk contains the operating system (<4.2)
+            5: The disk is used for temporary storage space (<4.2)
+            6: The type is not specified (<4.2)
+            DATA: This volume is for data (>=4.2)
+            OVFS: This volume is OVF store (>=4.2)
+            MEMD: This is a memory dump volume (>=4.2)
+            MEMM: This is a memory metadata volume (>=4.2)
+            ISOF: This is ISO volume (>=4.2)
 
     QemuImageFormat: &QemuImageFormat
         added: '4.1'

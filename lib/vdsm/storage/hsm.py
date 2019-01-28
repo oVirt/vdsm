@@ -1450,8 +1450,8 @@ class HSM(object):
         if srcVolUUID:
             misc.validateUUID(srcVolUUID, 'srcVolUUID')
         # Validate volume type and format
-        dom.validateCreateVolumeParams(volFormat, srcVolUUID,
-                                       preallocate=preallocate)
+        dom.validateCreateVolumeParams(
+            volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(spUUID, "createVolume", pool.createVolume, sdUUID,
@@ -1799,8 +1799,9 @@ class HSM(object):
             dom = dstSdUUID
         else:
             dom = sdUUID
+
         sdCache.produce(dom).validateCreateVolumeParams(
-            volFormat, sc.BLANK_UUID, preallocate)
+            volFormat, sc.BLANK_UUID, preallocate=preallocate)
 
         # If dstSdUUID defined, means we copy image to it
         domains = [sdUUID]

@@ -251,7 +251,7 @@ class TestMDSize:
         md = volume.VolumeMetadata(
             ctime=1440935038,
             description=self.MAX_DESCRIPTION,
-            disktype="2",
+            disktype="ISOF",
             domain='75f8a1bb-4504-4314-91ca-d9365a30692b',
             format="RAW",
             generation=sc.MAX_GENERATION,

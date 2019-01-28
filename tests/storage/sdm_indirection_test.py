@@ -180,8 +180,9 @@ class FakeDomainManifest(object):
     def refresh(self):
         pass
 
+    @classmethod
     @recorded
-    def validateCreateVolumeParams(self, volFormat, srcVolUUID,
+    def validateCreateVolumeParams(cls, volFormat, srcVolUUID, diskType=None,
                                    preallocate=None):
         pass
 
@@ -655,6 +656,11 @@ class RedirectionChecker(object):
         getattr(self.source_instance, fn)(*args)
         self.assertEqual([(fn, args, {})], target.__class_calls__)
 
+    def check_classmethod_call_args_kwargs(self, fn, *args, **kwargs):
+        getattr(self.source_instance, fn)(*args, **kwargs)
+        target = getattr(self.source_instance, self.target_name)
+        self.assertEqual([(fn, args, kwargs)], target.__class_calls__)
+
     def assertEqual(self, expected, actual):
         assert actual == expected, "expected: %r got: %r" % (expected, actual)
 
@@ -682,6 +688,10 @@ class DomainTestMixin(object):
         # method getRepoPath in the StorageDomainManifest.
         self.checker.check_method('_getRepoPath', (),
                                   [('getRepoPath', (), {})])
+
+    def test_validate_create_volume_params(self):
+        self.checker.check_classmethod_call_args_kwargs(
+            "validateCreateVolumeParams", 1, 2, diskType=3, preallocate=4)
 
     def test_nonexisting_function(self):
         self.assertRaises(AttributeError,
@@ -735,7 +745,6 @@ class DomainTestMixin(object):
         ['hasVolumeLeases', 0],
         ['refreshDirTree', 0],
         ['refresh', 0],
-        ['validateCreateVolumeParams', 3],
         ['getVolumeLease', 2],
         ['external_leases_path', 0],
     ])

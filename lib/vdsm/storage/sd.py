@@ -575,7 +575,8 @@ class StorageDomainManifest(object):
     def refresh(self):
         pass
 
-    def validateCreateVolumeParams(self, volFormat, srcVolUUID,
+    @classmethod
+    def validateCreateVolumeParams(cls, volFormat, srcVolUUID, diskType=None,
                                    preallocate=None):
         """
         Validate create volume parameters
@@ -586,6 +587,9 @@ class StorageDomainManifest(object):
         # Volumes with a parent must be cow
         if srcVolUUID != sc.BLANK_UUID and volFormat != sc.COW_FORMAT:
             raise se.IncorrectFormat(sc.type2name(volFormat))
+
+        if diskType is not None and diskType not in sc.VOL_DISKTYPE:
+            raise se.InvalidParameterException("DiskType", diskType)
 
         if preallocate is not None and preallocate not in sc.VOL_TYPE:
             raise se.IncorrectType(preallocate)
@@ -817,10 +821,11 @@ class StorageDomain(object):
         return self.getVolumeClass()(self.mountpoint, self.sdUUID, imgUUID,
                                      volUUID)
 
-    def validateCreateVolumeParams(self, volFormat, srcVolUUID,
+    @classmethod
+    def validateCreateVolumeParams(cls, volFormat, srcVolUUID, diskType=None,
                                    preallocate=None):
-        return self._manifest.validateCreateVolumeParams(volFormat, srcVolUUID,
-                                                         preallocate)
+        return cls.manifestClass.validateCreateVolumeParams(
+            volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate)
 
     def createVolume(self, imgUUID, size, volFormat, preallocate, diskType,
                      volUUID, desc, srcImgUUID, srcVolUUID, initialSize=None):

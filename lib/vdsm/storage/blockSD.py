@@ -889,10 +889,11 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         occupiedSlots.sort()
         return occupiedSlots
 
-    def validateCreateVolumeParams(self, volFormat, srcVolUUID,
+    @classmethod
+    def validateCreateVolumeParams(cls, volFormat, srcVolUUID, diskType,
                                    preallocate=None):
-        super(BlockStorageDomainManifest, self).validateCreateVolumeParams(
-            volFormat, srcVolUUID, preallocate=preallocate)
+        super(BlockStorageDomainManifest, cls).validateCreateVolumeParams(
+            volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate)
         # Sparse-Raw not supported for block volumes
         if preallocate == sc.SPARSE_VOL and volFormat == sc.RAW_FORMAT:
             raise se.IncorrectFormat(sc.type2name(volFormat))

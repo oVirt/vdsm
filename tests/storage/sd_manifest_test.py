@@ -27,6 +27,7 @@ import pytest
 
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
+from vdsm.storage import exception as se
 from vdsm.storage import clusterlock
 from vdsm.storage import sd
 
@@ -246,3 +247,41 @@ class TestDomainLock():
             with manifest.domain_lock(1):
                 raise InjectedFailure()
         assert manifest.__calls__ == expected_calls
+
+
+class TestCreateVolumeParams:
+
+    @pytest.mark.parametrize("vol_format", sc.VOL_FORMAT)
+    def test_valid_format(self, vol_format):
+        StorageDomainManifest.validateCreateVolumeParams(
+            vol_format, sc.BLANK_UUID)
+
+    def test_invalid_format(self):
+        with pytest.raises(se.IncorrectFormat):
+            StorageDomainManifest.validateCreateVolumeParams(
+                -1, sc.BLANK_UUID)
+
+    @pytest.mark.parametrize("disk_type", sc.VOL_DISKTYPE)
+    def test_valid_type(self, disk_type):
+        StorageDomainManifest.validateCreateVolumeParams(
+            sc.RAW_FORMAT, sc.BLANK_UUID, diskType=disk_type)
+
+    def test_invalid_type(self):
+        with pytest.raises(se.InvalidParameterException):
+            StorageDomainManifest.validateCreateVolumeParams(
+                sc.RAW_FORMAT, sc.BLANK_UUID, diskType="FAIL")
+
+    def test_invalid_parent(self):
+        with pytest.raises(se.IncorrectFormat):
+            StorageDomainManifest.validateCreateVolumeParams(
+                sc.RAW_FORMAT, "11111111-1111-1111-1111-11111111111")
+
+    @pytest.mark.parametrize("preallocate", sc.VOL_TYPE)
+    def test_valid_preallocate(self, preallocate):
+        StorageDomainManifest.validateCreateVolumeParams(
+            sc.RAW_FORMAT, sc.BLANK_UUID, preallocate=preallocate)
+
+    def test_invalid_preallocate(self):
+        with pytest.raises(se.IncorrectType):
+            StorageDomainManifest.validateCreateVolumeParams(
+                sc.RAW_FORMAT, sc.BLANK_UUID, preallocate=-1)

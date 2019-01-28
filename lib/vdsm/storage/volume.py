@@ -1137,8 +1137,8 @@ class Volume(object):
                             in case of thin provisioning
         """
         dom = sdCache.produce(sdUUID)
-        dom.validateCreateVolumeParams(volFormat, srcVolUUID,
-                                       preallocate=preallocate)
+        dom.validateCreateVolumeParams(
+            volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate)
 
         imgPath = dom.create_image(imgUUID)
 

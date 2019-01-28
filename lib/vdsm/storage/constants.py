@@ -103,6 +103,19 @@ LEAF_VOL = 8
 
 VOL_TYPE = [PREALLOCATED_VOL, SPARSE_VOL]
 VOL_FORMAT = [COW_FORMAT, RAW_FORMAT]
+VOL_DISKTYPE = frozenset([
+    "DATA",  # This volume is for data (>=4.2)
+    "OVFS",  # This volume is OVF store (>=4.2)
+    "MEMD",  # This is a memory dump volume (>=4.2)
+    "MEMM",  # This is a memory metadata volume (>=4.2)
+    "ISOF",  # This is ISO volume (>=4.2)
+    "1",  # The disk is for data (<4.2)
+    "2",  # The disk is shared among multiple VMs (<4.2)
+    "3",  # The disk is used for swap space (<4.2)
+    "4",  # The disk contains the operating system (<4.2)
+    "5",  # The disk is used for temporary storage space (<4.2)
+    "6"  # The type is not specified (<4.2)
+])
 
 VOLUME_TYPES = {UNKNOWN_VOL: 'UNKNOWN', PREALLOCATED_VOL: 'PREALLOCATED',
                 SPARSE_VOL: 'SPARSE',
@@ -178,7 +191,7 @@ POOL = MDK_POOLS  # Deprecated
 #
 # CTIME=1440935038                            # int(time.time())
 # DESCRIPTION=                                # text|JSON
-# DISKTYPE=2                                  # enum
+# DISKTYPE=OVFS                               # 4 bytes string in v>=4.2
 # DOMAIN=75f8a1bb-4504-4314-91ca-d9365a30692b # uuid
 # FORMAT=COW                                  # RAW|COW
 # IMAGE=75f8a1bb-4504-4314-91ca-d9365a30692b  # uuid
@@ -195,7 +208,7 @@ POOL = MDK_POOLS  # Deprecated
 # For more info why this is the worst possible case, see
 # tests/storage/volume_metadata_test.py.
 #
-# This content requires up to 284 bytes, leaving 228 bytes for the description
+# This content requires up to 287 bytes, leaving 225 bytes for the description
 # field. OVF_STORE JSON format needs up to 175 bytes.
 #
 # We use a limit of 210 bytes for the description field, leaving couple
