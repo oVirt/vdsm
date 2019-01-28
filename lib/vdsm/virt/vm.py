@@ -78,6 +78,7 @@ from vdsm.virt import libvirtxml
 from vdsm.virt import metadata
 from vdsm.virt import migration
 from vdsm.virt import sampling
+from vdsm.virt import saslpasswd2
 from vdsm.virt import vmchannels
 from vdsm.virt import vmexitreason
 from vdsm.virt import virdomain
@@ -4980,6 +4981,21 @@ class Vm(object):
 
     def _setTicketForGraphicDev(self, graphics, otp, seconds, connAct,
                                 disconnectAction, params):
+        if vmxml.attr(graphics, 'type') == 'vnc':
+            try:
+                fips = utils.str2bool(params.get('fips', 'false'))
+            except ValueError:
+                raise exception.VdsmException(
+                    'fips param should either be "true", '
+                    '"false" or non-existent')
+            vnc_username = params.get('vncUsername')
+            if fips:
+                if vnc_username is None:
+                    raise exception.VdsmException(
+                        'FIPS mode requires vncUsername')
+                saslpasswd2.set_vnc_password(vnc_username, otp.value)
+            elif vnc_username is not None:
+                saslpasswd2.remove_vnc_password(vnc_username)
         vmxml.set_attr(graphics, 'passwd', otp.value)
         if int(seconds) > 0:
             validto = time.strftime('%Y-%m-%dT%H:%M:%S',

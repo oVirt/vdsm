@@ -226,6 +226,10 @@ class VM(APIBase):
             if not graphics.isSupportedDisplayType(vmParams):
                 raise exception.CannotCreateVM(
                     'Unknown display type %s' % vmParams.get('display'))
+            if not graphics.is_vnc_secure(vmParams):
+                raise exception.CannotCreateVM(
+                    "Host runs in FIPS mode but SASL authentication for VNC "
+                    "is not configured.")
             return self._cif.createVm(vmParams)
 
         except OSError as e:

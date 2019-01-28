@@ -470,3 +470,12 @@ def log_success(success, log, msg_ok, msg_fail):
     else:
         log.warn(msg_fail)
     return success
+
+
+def str2bool(s):
+    v = s.lower()
+    if v in ['true', 'yes', 'y', 't', '1']:
+        return True
+    if v in ['false', 'no', 'n', '0']:
+        return False
+    raise ValueError('Converting ' + s + ' to bool failed.')

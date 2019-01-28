@@ -34,6 +34,7 @@ shared utilities and common code for the virt package
 import os.path
 import threading
 
+from vdsm.common import supervdsm
 from vdsm.common.fileutils import rm_file
 from vdsm.common.time import monotonic_time
 from . import metadata
@@ -344,3 +345,11 @@ class TimedAcquireLock(object):
     def release(self):
         self._flow = None
         self._lock.release()
+
+
+def sasl_enabled():
+    """
+    Returns true if qemu.conf contains entry for SASL authentication
+    for VNC console.
+    """
+    return supervdsm.getProxy().check_qemu_conf_contains('vnc_sasl', '1')
