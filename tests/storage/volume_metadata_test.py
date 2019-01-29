@@ -19,6 +19,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import print_function
 
 import textwrap
 import time
@@ -130,15 +131,6 @@ class TestVolumeMetadata:
         md = volume.VolumeMetadata(**params)
         assert expected == md.storage_format()
 
-    @pytest.mark.parametrize('size', [
-        sc.DESCRIPTION_SIZE,
-        sc.DESCRIPTION_SIZE + 1
-    ])
-    def test_long_description(self, size):
-        params = make_init_params(description="!" * size)
-        md = volume.VolumeMetadata(**params)
-        assert sc.DESCRIPTION_SIZE == len(md.description)
-
     @pytest.mark.parametrize("param", ['size', 'ctime', 'mtime'])
     def test_int_params_str_raises(self, param):
         params = make_init_params(**{param: 'not_an_int'})
@@ -195,3 +187,92 @@ class TestVolumeMetadata:
         lines = make_lines(GEN=None)
         md = volume.VolumeMetadata.from_lines(lines)
         assert sc.DEFAULT_GENERATION == md.generation
+
+
+class TestMDSize:
+    MAX_DESCRIPTION = "x" * sc.DESCRIPTION_SIZE
+    # We don't think that any one will actually preallocate
+    # 1 PB in near future.
+    MAX_PREALLOCATED_SIZE = 1024**5
+    MAX_VOLUME_SIZE = 2**63 - 1
+
+    @pytest.mark.parametrize('size', [
+        sc.DESCRIPTION_SIZE,
+        sc.DESCRIPTION_SIZE + 1
+    ])
+    def test_long_description(self, size):
+        params = make_init_params(description="!" * size)
+        md = volume.VolumeMetadata(**params)
+        assert sc.DESCRIPTION_SIZE == len(md.description)
+
+    @pytest.mark.parametrize('md_params', [
+        # Preallocated block/file example:
+        #
+        # CTIME=1542308390
+        # FORMAT=RAW
+        # DISKTYPE=ISOF
+        # LEGALITY=ILLEGAL
+        # SIZE=2199023255552
+        # VOLTYPE=LEAF
+        # DESCRIPTION={"DiskAlias":"Fedora-Server-dvd-x86_64-29-1.2.iso", "DiskDescription":"Uploaded disk"} # NOQA: E501 (potentially long line)
+        # IMAGE=bc9d15fa-70eb-40aa-8a2e-e4f27664752f
+        # PUUID=00000000-0000-0000-0000-000000000000
+        # MTIME=0
+        # POOL_UUID=
+        # TYPE=PREALLOCATED
+        # GEN=0
+        # EOF
+        {
+            'size': MAX_PREALLOCATED_SIZE,
+            'type': 'PREALLOCATED'
+        },
+        # Sparse block/file example:
+        #
+        # CTIME=1542308390
+        # FORMAT=RAW
+        # DISKTYPE=ISOF
+        # LEGALITY=ILLEGAL
+        # SIZE=18014398509481984
+        # VOLTYPE=LEAF
+        # DESCRIPTION={"DiskAlias":"Fedora-Server-dvd-x86_64-29-1.2.iso", "DiskDescription":"Uploaded disk"} # NOQA: E501 (potentially long line)
+        # IMAGE=bc9d15fa-70eb-40aa-8a2e-e4f27664752f
+        # PUUID=00000000-0000-0000-0000-000000000000
+        # MTIME=0
+        # POOL_UUID=
+        # TYPE=SPARSE
+        # GEN=0
+        # EOF
+        {
+            'size': MAX_VOLUME_SIZE,
+            'type': 'SPARSE'
+        }
+    ])
+    def test_max_size(self, md_params):
+        md = volume.VolumeMetadata(
+            ctime=1440935038,
+            description=self.MAX_DESCRIPTION,
+            disktype="2",
+            domain='75f8a1bb-4504-4314-91ca-d9365a30692b',
+            format="RAW",
+            generation=sc.MAX_GENERATION,
+            image='75f8a1bb-4504-4314-91ca-d9365a30692b',
+            legality='ILLEGAL',
+            mtime=0,
+            # Blank UUID for RAW, can be real UUID for COW.
+            puuid=sc.BLANK_UUID,
+            size=md_params['size'] // 512,
+            type=md_params['type'],
+            voltype='INTERNAL',
+        )
+
+        md_len = len(md.storage_format())
+        # Needed for documenting sc.MAX_DESCRIPTION.
+        md_fields = md_len - sc.DESCRIPTION_SIZE
+        md_free = sc.METADATA_SIZE - md_len
+
+        # To see this, run:
+        # tox -e storage-py27 tests/storage/volume_metadata_test.py -- -vs
+        print("type={} length={} fields={} free={}"
+              .format(md_params['type'], md_len, md_fields, md_free))
+
+        assert sc.METADATA_SIZE >= md_len
