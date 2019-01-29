@@ -30,7 +30,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import clusterlock
 from vdsm.storage import sd
 
-from monkeypatch import MonkeyPatchScope
 from testlib import recorded
 from testlib import make_uuid
 
@@ -49,14 +48,14 @@ VOLSIZE = 256 * MB
 
 class ManifestMixin(object):
 
-    def test_init_failure_raises(self):
+    def test_init_failure_raises(self, monkeypatch):
         def fail(*args):
             raise RuntimeError("injected failure")
 
         with self.env() as env:
-            with MonkeyPatchScope([(clusterlock, 'initSANLock', fail)]):
-                with pytest.raises(RuntimeError):
-                    env.sd_manifest.initDomainLock()
+            monkeypatch.setattr(clusterlock, 'initSANLock', fail)
+            with pytest.raises(RuntimeError):
+                env.sd_manifest.initDomainLock()
 
 
 class TestFileManifest(ManifestMixin):
