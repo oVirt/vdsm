@@ -140,6 +140,7 @@ def get():
     caps['hugepages'] = hugepages.supported()
     caps['kernelFeatures'] = osinfo.kernel_features()
     caps['vncEncrypted'] = _isVncEncrypted()
+    caps['backupEnabled'] = False
 
     try:
         caps["connector_info"] = managedvolume.connector_info()

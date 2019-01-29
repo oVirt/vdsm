@@ -7138,6 +7138,13 @@ types:
             name: connector_info
             type: *ConnectorInfo
             added: '4.3'
+
+        -   defaultvalue: null
+            description: Indicates if the host supports backup
+            name: backupEnabled
+            type: boolean
+            added: '4.3'
+
         type: object
 
     VdsmNetworkCapabilities: &VdsmNetworkCapabilities
