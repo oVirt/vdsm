@@ -71,6 +71,7 @@ def _get_ovs_external_id(key):
     cmd_line = [
         OVS_VSCTL,
         '--no-wait',
+        '--verbose=db_ctl_base:syslog:off',
         'get',
         'Open_vSwitch',
         '.',
