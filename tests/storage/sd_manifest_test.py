@@ -23,15 +23,16 @@ from __future__ import division
 import os
 import uuid
 
+import pytest
+
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import clusterlock
 from vdsm.storage import sd
 
 from monkeypatch import MonkeyPatchScope
-from testlib import VdsmTestCase, recorded
+from testlib import recorded
 from testlib import make_uuid
-from testlib import expandPermutations, permutations
 
 from storage.storagetestlib import (
     fake_block_env,
@@ -54,61 +55,61 @@ class ManifestMixin(object):
 
         with self.env() as env:
             with MonkeyPatchScope([(clusterlock, 'initSANLock', fail)]):
-                with self.assertRaises(RuntimeError):
+                with pytest.raises(RuntimeError):
                     env.sd_manifest.initDomainLock()
 
 
-class TestFileManifest(ManifestMixin, VdsmTestCase):
+class TestFileManifest(ManifestMixin):
     env = fake_file_env
 
-    def setUp(self):
+    def setup_method(self):
         self.img_id = str(uuid.uuid4())
         self.vol_id = str(uuid.uuid4())
 
     def test_get_monitoring_path(self):
         with self.env() as env:
-            self.assertEqual(env.sd_manifest.metafile,
-                             env.sd_manifest.getMonitoringPath())
+            assert (env.sd_manifest.metafile ==
+                    env.sd_manifest.getMonitoringPath())
 
     def test_getvsize(self):
         with self.env() as env:
             make_file_volume(env.sd_manifest, VOLSIZE,
                              self.img_id, self.vol_id)
-            self.assertEqual(VOLSIZE, env.sd_manifest.getVSize(
-                self.img_id, self.vol_id))
+            assert VOLSIZE == env.sd_manifest.getVSize(
+                self.img_id, self.vol_id)
 
     def test_getvallocsize(self):
         with self.env() as env:
             make_file_volume(env.sd_manifest, VOLSIZE,
                              self.img_id, self.vol_id)
-            self.assertEqual(0, env.sd_manifest.getVAllocSize(
-                self.img_id, self.vol_id))
+            assert 0 == env.sd_manifest.getVAllocSize(
+                self.img_id, self.vol_id)
 
     def test_getisodomainimagesdir(self):
         with self.env() as env:
             isopath = os.path.join(env.sd_manifest.domaindir, sd.DOMAIN_IMAGES,
                                    sd.ISO_IMAGE_UUID)
-            self.assertEqual(isopath, env.sd_manifest.getIsoDomainImagesDir())
+            assert isopath == env.sd_manifest.getIsoDomainImagesDir()
 
     def test_getmdpath(self):
         with self.env() as env:
             sd_manifest = env.sd_manifest
             mdpath = os.path.join(sd_manifest.domaindir, sd.DOMAIN_META_DATA)
-            self.assertEqual(mdpath, env.sd_manifest.getMDPath())
+            assert mdpath == env.sd_manifest.getMDPath()
 
     def test_getmetaparam(self):
         with self.env() as env:
             sd_manifest = env.sd_manifest
-            self.assertEqual(sd_manifest.sdUUID,
-                             sd_manifest.getMetaParam(sd.DMDK_SDUUID))
+            assert (sd_manifest.sdUUID ==
+                    sd_manifest.getMetaParam(sd.DMDK_SDUUID))
 
     def test_getallimages(self):
         with self.env() as env:
-            self.assertEqual(set(), env.sd_manifest.getAllImages())
+            assert set() == env.sd_manifest.getAllImages()
             img_id = str(uuid.uuid4())
             vol_id = str(uuid.uuid4())
             make_file_volume(env.sd_manifest, VOLSIZE, img_id, vol_id)
-            self.assertIn(img_id, env.sd_manifest.getAllImages())
+            assert img_id in env.sd_manifest.getAllImages()
 
     def test_purgeimage_race(self):
         with self.env() as env:
@@ -126,13 +127,13 @@ class TestFileManifest(ManifestMixin, VdsmTestCase):
             env.sd_manifest.purgeImage(sd_id, img_id, [vol_id], False)
 
 
-class TestBlockManifest(ManifestMixin, VdsmTestCase):
+class TestBlockManifest(ManifestMixin):
     env = fake_block_env
 
     def test_get_monitoring_path(self):
         with self.env() as env:
             md_lv_path = env.lvm.lvPath(env.sd_manifest.sdUUID, sd.METADATA)
-            self.assertEqual(md_lv_path, env.sd_manifest.getMonitoringPath())
+            assert md_lv_path == env.sd_manifest.getMonitoringPath()
 
     def test_getvsize_active_lv(self):
         # Tests the path when the device file is present
@@ -141,26 +142,24 @@ class TestBlockManifest(ManifestMixin, VdsmTestCase):
             lv_name = str(uuid.uuid4())
             env.lvm.createLV(vg_name, lv_name, VOLSIZE // MB)
             env.lvm.fake_lv_symlink_create(vg_name, lv_name)
-            self.assertEqual(VOLSIZE,
-                             env.sd_manifest.getVSize('<imgUUID>', lv_name))
+            assert VOLSIZE == env.sd_manifest.getVSize('<imgUUID>', lv_name)
 
     def test_getvsize_inactive_lv(self):
         # Tests the path when the device file is not present
         with self.env() as env:
             lv_name = str(uuid.uuid4())
             env.lvm.createLV(env.sd_manifest.sdUUID, lv_name, VOLSIZE // MB)
-            self.assertEqual(VOLSIZE,
-                             env.sd_manifest.getVSize('<imgUUID>', lv_name))
+            assert VOLSIZE == env.sd_manifest.getVSize('<imgUUID>', lv_name)
 
     def test_getmetaparam(self):
         with self.env() as env:
-            self.assertEqual(env.sd_manifest.sdUUID,
-                             env.sd_manifest.getMetaParam(sd.DMDK_SDUUID))
+            assert (env.sd_manifest.sdUUID ==
+                    env.sd_manifest.getMetaParam(sd.DMDK_SDUUID))
 
     def test_getblocksize_defaults(self):
         with self.env() as env:
-            self.assertEqual(512, env.sd_manifest.logBlkSize)
-            self.assertEqual(512, env.sd_manifest.phyBlkSize)
+            assert 512 == env.sd_manifest.logBlkSize
+            assert 512 == env.sd_manifest.phyBlkSize
 
     def test_overwrite_blocksize(self):
         metadata = {sd.DMDK_VERSION: 3,
@@ -170,28 +169,26 @@ class TestBlockManifest(ManifestMixin, VdsmTestCase):
             # Replacing the metadata will not overwrite these values since they
             # are set only in the manifest constructor.
             env.sd_manifest.replaceMetadata(metadata)
-            self.assertEqual(512, env.sd_manifest.logBlkSize)
-            self.assertEqual(512, env.sd_manifest.phyBlkSize)
+            assert 512 == env.sd_manifest.logBlkSize
+            assert 512 == env.sd_manifest.phyBlkSize
 
             # If we supply values in the metadata used to construct the
             # manifest then those values will apply.
             new_manifest = blockSD.BlockStorageDomainManifest(
                 env.sd_manifest.sdUUID, metadata)
-            self.assertEqual(2048, new_manifest.logBlkSize)
-            self.assertEqual(1024, new_manifest.phyBlkSize)
+            assert 2048 == new_manifest.logBlkSize
+            assert 1024 == new_manifest.phyBlkSize
 
 
-@expandPermutations
-class TestBlockDomainMetadataSlot(VdsmTestCase):
+class TestBlockDomainMetadataSlot:
 
-    @permutations([
-        # used_slots, free_slot
-        # Note: the first 4 slots (0-3) are reserved for domain metadata
-        ([], 4),
-        ([4], 5),
-        ([5], 4),
-        ([4, 6], 5),
-        ([4, 7], 5),
+    # Note: the first 4 slots (0-3) are reserved for domain metadata
+    @pytest.mark.parametrize("used_slots, free_slot", [
+        [[], 4],
+        [[4], 5],
+        [[5], 4],
+        [[4, 6], 5],
+        [[4, 7], 5],
     ])
     def test_metaslot_selection(self, used_slots, free_slot):
         with fake_block_env() as env:
@@ -202,13 +199,13 @@ class TestBlockDomainMetadataSlot(VdsmTestCase):
                 tag = sc.TAG_PREFIX_MD + str(offset)
                 env.lvm.addtag(sduuid, lv, tag)
             with env.sd_manifest.acquireVolumeMetadataSlot(None, 1) as mdSlot:
-                self.assertEqual(mdSlot, free_slot)
+                assert mdSlot == free_slot
 
     def test_metaslot_lock(self):
         with fake_block_env() as env:
             with env.sd_manifest.acquireVolumeMetadataSlot(None, 1):
                 acquired = env.sd_manifest._lvTagMetaSlotLock.acquire(False)
-                self.assertFalse(acquired)
+                assert not acquired
 
 
 class StorageDomainManifest(sd.StorageDomainManifest):
@@ -228,7 +225,7 @@ class StorageDomainManifest(sd.StorageDomainManifest):
         pass
 
 
-class TestDomainLock(VdsmTestCase):
+class TestDomainLock():
 
     def test_domainlock_contextmanager(self):
         expected_calls = [("acquireDomainLock", (1,), {}),
@@ -237,7 +234,7 @@ class TestDomainLock(VdsmTestCase):
         manifest = StorageDomainManifest()
         with manifest.domain_lock(1):
             manifest.dummy()
-        self.assertEqual(manifest.__calls__, expected_calls)
+        assert manifest.__calls__ == expected_calls
 
     def test_domainlock_contextmanager_exception(self):
         class InjectedFailure(Exception):
@@ -246,7 +243,7 @@ class TestDomainLock(VdsmTestCase):
         expected_calls = [("acquireDomainLock", (1,), {}),
                           ("releaseDomainLock", (), {})]
         manifest = StorageDomainManifest()
-        with self.assertRaises(InjectedFailure):
+        with pytest.raises(InjectedFailure):
             with manifest.domain_lock(1):
                 raise InjectedFailure()
-        self.assertEqual(manifest.__calls__, expected_calls)
+        assert manifest.__calls__ == expected_calls
