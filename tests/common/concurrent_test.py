@@ -26,6 +26,8 @@ import random
 import threading
 import time
 
+from vdsm.common.time import monotonic_time
+
 from fakelib import FakeLogger
 from testlib import VdsmTestCase, expandPermutations, permutations
 from testValidation import slowtest, stresstest
@@ -208,10 +210,10 @@ class TMapTests(VdsmTestCase):
         self.assertEqual(results, expected)
 
     def test_concurrency(self):
-        start = time.time()
+        start = monotonic_time()
         concurrent.tmap(time.sleep, [0.5] * 10)
-        elapsed = time.time() - start
-        self.assertGreater(elapsed, 0.5)
+        elapsed = monotonic_time() - start
+        self.assertGreaterEqual(elapsed, 0.5)
         self.assertLess(elapsed, 1.0)
 
     def test_error(self):
