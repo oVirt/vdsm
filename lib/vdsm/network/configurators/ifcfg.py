@@ -628,7 +628,7 @@ class ConfigWriter(object):
                 cfg += 'DHCPV6C=yes\n'
             cfg += 'IPV6_AUTOCONF=%s\n' % _to_ifcfg_bool(ipv6.ipv6autoconf)
         if nameservers:
-            for i, nameserver in enumerate(nameservers[0:2], 1):
+            for i, nameserver in enumerate(nameservers[0:3], 1):
                 cfg += 'DNS{}={}\n'.format(i, nameserver)
 
         ifcfg_file = NET_CONF_PREF + name
