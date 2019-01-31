@@ -384,6 +384,15 @@ class NetFuncTestAdapter(object):
             assert 'ad_aggregator_id' in self.netinfo.nics[nic]
             assert self.netinfo.nics[nic]['ad_aggregator_id'] is not None
 
+    def assertNoLACPConfigured(self, bonds, nics):
+        """When LACP is not configured on bonds, the aggregator id and
+        partner_mac should not exist"""
+        for bond in bonds:
+            assert 'ad_aggregator_id' not in self.netinfo.bondings[bond]
+            assert 'ad_partner_mac' not in self.netinfo.bondings[bond]
+        for nic in nics:
+            assert 'ad_aggregator_id' not in self.netinfo.nics[nic]
+
     def assertBondHwaddrToPartnerMac(self, hwaddr_bond, partner_bond):
         bond_caps = self.netinfo.bondings
         bond_hwaddr = bond_caps[hwaddr_bond]['hwaddr']

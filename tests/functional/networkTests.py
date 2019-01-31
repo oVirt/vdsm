@@ -24,7 +24,6 @@ from functools import wraps
 import json
 import re
 import os.path
-import time
 
 import netaddr
 from nose.plugins.skip import SkipTest
@@ -41,7 +40,6 @@ from vdsm.network.ipwrapper import (
 from vdsm.network import kernelconfig
 from vdsm.network.netconfpersistence import PersistentConfig, RunningConfig
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
-from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
 from vdsm.network.netinfo.bonding import BONDING_SLAVES
 from vdsm.network.netinfo.bridges import bridges
 from vdsm.network.netinfo.misc import NET_CONF_PREF
@@ -1554,46 +1552,6 @@ class NetworkTest(TestCaseBase):
             self.assertBondDoesntExist(BONDING_NAME, nics)
 
     @contextmanager
-    def setup_bonds_with_veth_pair(self, bond_options):
-        with veth_pair() as (n1, n2), veth_pair() as (n3, n4):
-            nics = [n1, n2, n3, n4]
-            bonds = {BONDING_NAME: (n1, n3), BONDING_NAME + "0": (n2, n4)}
-            for bond, pair in six.iteritems(bonds):
-                bonding = {'nics': pair}
-                bonding.update({'options': bond_options})
-                status, msg = self.setupNetworks(
-                    {},
-                    {bond: bonding},
-                    NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
-                self.assertBondExists(bond, pair)
-
-            _wait_bonds_lp_interval()
-
-            status, msg, info = self.vdsm_net.getVdsCapabilities()
-            bond_caps, nic_caps = info['bondings'], info['nics']
-            try:
-                yield bonds, nics, bond_caps, nic_caps
-            finally:
-                for bond in bonds:
-                    status, msg = self.setupNetworks(
-                        {}, {bond: {'remove': True}}, NOCHK)
-                    self.assertEqual(status, SUCCESS, msg)
-                    self.assertBondDoesntExist(bond, bonds[bond])
-
-    @cleanupNet
-    @ValidateRunningAsRoot
-    def test_bond_mode0_caps_aggregator_id(self):
-        with self.setup_bonds_with_veth_pair(
-                'mode=0'
-        ) as (bonds, nics, bond_caps, nic_caps):
-            for bond in bonds:
-                self.assertNotIn('ad_aggregator_id', bond_caps[bond])
-                self.assertNotIn('ad_partner_mac', bond_caps[bond])
-            for nic in nics:
-                self.assertNotIn('ad_aggregator_id', nic_caps[nic])
-
-    @contextmanager
     def _create_external_ifcfg_bond(self, bond_name, nics, vlan_id):
         IFCFG_SLAVE_TEMPLATE = """DEVICE=%s
 MASTER=%s
@@ -1658,16 +1616,3 @@ def _create_external_bond(name, slaves):
     finally:
         with open(BONDING_MASTERS, 'w') as bonds:
             bonds.write('-%s\n' % name)
-
-
-def _wait_bonds_lp_interval():
-        """ mode 4 (802.3ad) is a relevant bond mode where bonds will attempt
-            to synchronize with each other, sending learning packets to the
-            slaves in intervals set via lp_interval
-        """
-        GRACE_PERIOD = 1
-        LACP_BOND_MODE = '4'
-
-        default_lp_interval = int(
-            getDefaultBondingOptions(LACP_BOND_MODE)['lp_interval'][0])
-        time.sleep(default_lp_interval + GRACE_PERIOD)

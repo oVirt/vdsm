@@ -23,6 +23,8 @@ from __future__ import division
 
 from contextlib import contextmanager
 
+import six
+
 import pytest
 
 from vdsm.network import errors as ne
@@ -256,6 +258,26 @@ class TestBondOptions(object):
                 adapter.assertLACPConfigured(BONDCREATE, nics)
                 adapter.assertBondHwaddrToPartnerMac(bond1, bond2)
                 adapter.assertBondHwaddrToPartnerMac(bond2, bond1)
+
+    def test_bond_mode0_no_lacp_configuration(self, switch):
+        with two_connected_pair_of_bond_slaves() as (
+                bond0_slaves, bond1_slaves):
+            nics = bond0_slaves + bond1_slaves
+            BONDCREATE = {
+                BOND_NAME + '0': {
+                    'nics': bond0_slaves,
+                    'options': 'mode=0',
+                    'switch': switch},
+                BOND_NAME + '1': {
+                    'nics': bond1_slaves,
+                    'options': 'mode=0',
+                    'switch': switch
+                }}
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                nftestlib.wait_bonds_lp_interval()
+                for bond_name, bond_options in six.viewitems(BONDCREATE):
+                    adapter.assertBond(bond_name, bond_options)
+                adapter.assertNoLACPConfigured(BONDCREATE, nics)
 
 
 @contextmanager
