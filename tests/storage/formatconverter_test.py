@@ -20,13 +20,11 @@
 
 from __future__ import absolute_import
 
-import os
 import uuid
 
 import pytest
 
 from vdsm.storage import constants as sc
-from vdsm.storage import fileUtils
 from vdsm.storage import formatconverter
 from vdsm.storage import localFsSD
 from vdsm.storage import sd
@@ -57,12 +55,9 @@ def test_v3_reset_meta_vol_size_metadata_wrong(vol):
     assert vol.getSize() == original_size_blk
 
 
-def test_convert_from_v3_to_v4_localfs(tmp_repo, fake_access):
-    # In a real domain this is a symlink to the domain directory.
-    remote_path = "/data/domain"
-    dom_dir = os.path.join(
-        sc.REPO_MOUNT_DIR, fileUtils.transformPath(remote_path))
-    os.makedirs(dom_dir)
+def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
+    remote_path = str(tmpdir.mkdir("domain"))
+    tmp_repo.connect_localfs(remote_path)
 
     dom = localFsSD.LocalFsStorageDomain.create(
         sdUUID=str(uuid.uuid4()),

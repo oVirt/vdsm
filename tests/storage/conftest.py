@@ -33,6 +33,8 @@ from vdsm.storage import constants as sc
 from vdsm.storage import fileSD
 from vdsm.storage import outOfProcess as oop
 
+from . import tmprepo
+
 
 @pytest.fixture
 def tmp_repo(tmpdir, monkeypatch):
@@ -40,22 +42,19 @@ def tmp_repo(tmpdir, monkeypatch):
     Provide a temporary repo directory and patch vsdm to use it instead of
     /rhev/data-center.
     """
-    # Create data-center directory in the tmpdir, so we don't mix temporary
-    # files from other tests in the data-center.
-    data_center = tmpdir.mkdir("data-center")
-    mnt_dir = data_center.mkdir(sc.DOMAIN_MNT_POINT)
+    # Create rhev/data-center directory in the tmpdir, so we don't mix
+    # temporary files created by the same test in the data-center.
+    data_center = str(tmpdir.mkdir("rhev").mkdir("data-center"))
+
+    pool_id = str(uuid.uuid4())
+    repo = tmprepo.TemporaryRepo(data_center, pool_id)
 
     # Patch repo directory.
-    monkeypatch.setattr(sc, "REPO_DATA_CENTER", str(data_center))
-    monkeypatch.setattr(sc, "REPO_MOUNT_DIR", str(mnt_dir))
-
-    class tmp_repo:
-        path = str(data_center)
-        pool_id = str(uuid.uuid4())
-        pool_path = str(data_center.join(pool_id))
+    monkeypatch.setattr(sc, "REPO_DATA_CENTER", repo.path)
+    monkeypatch.setattr(sc, "REPO_MOUNT_DIR", repo.mnt_dir)
 
     try:
-        yield tmp_repo
+        yield repo
     finally:
         # ioprocess is typically invoked from tests using tmp_repo. This
         # terminate ioprocess instances, avoiding thread and process leaks in

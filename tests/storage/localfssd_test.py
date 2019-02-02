@@ -22,7 +22,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import os
 import uuid
 
 import pytest
@@ -31,7 +30,6 @@ from vdsm.storage import localFsSD
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileSD
-from vdsm.storage import fileUtils
 from vdsm.storage import sd
 
 
@@ -50,12 +48,9 @@ def test_incorrect_alignment_rejected():
 
 
 @pytest.mark.parametrize("domain_version", [3, 4])
-def test_create_domain_metadata(tmp_repo, fake_access, domain_version):
-    # In a real domain this is a symlink to the domain directory.
-    remote_path = "/data/domain"
-    dom_dir = os.path.join(
-        sc.REPO_MOUNT_DIR, fileUtils.transformPath(remote_path))
-    os.makedirs(dom_dir)
+def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
+    remote_path = str(tmpdir.mkdir("domain"))
+    tmp_repo.connect_localfs(remote_path)
 
     sd_uuid = str(uuid.uuid4())
     domain_name = "domain"
