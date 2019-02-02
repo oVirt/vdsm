@@ -1,4 +1,4 @@
-# Volume attachment - Managed Block Storage support
+# Managed Volumes
 
 In version 4.3, oVirt introduced support of Managed Block Storage.
 
