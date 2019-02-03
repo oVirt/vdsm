@@ -812,6 +812,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     _lvTagMetaSlotLock = threading.Lock()
 
+    # TODO: remove slotSize, must be always 1.
     @contextmanager
     def acquireVolumeMetadataSlot(self, vol_name, slotSize):
         # TODO: Check if the lock is needed when using
@@ -842,6 +843,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         raise se.MetaDataMappingError("domain %s: can't map PV %s ext %s" %
                                       (self.sdUUID, dev, ext))
 
+    # TODO: Remove slotSize, must be always 1.
     def _getFreeMetadataSlot(self, slotSize):
         occupiedSlots = self._getOccupiedMetadataSlots()
 
@@ -849,12 +851,20 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         # to tags. But this is here because domain metadata and volume metadata
         # look the same. The domain might get confused and think it has lv
         # metadata if it finds something is written in that area.
+
+        # TODO: This is always 4 in V4, since logical block size is always 512.
+        # In V5, this is always 1, since slot size is always 8k regardless of
+        # the block size. Extract to a helper function that will consider the
+        # domain version.
         freeSlot = (utils.round(SD_METADATA_SIZE, self.logBlkSize) //
                     self.logBlkSize)
+
+        # TODO: size is always 1, simplify.
         for offset, size in occupiedSlots:
             if offset >= freeSlot + slotSize:
                 break
 
+            # TODO: size is always 1, simplify.
             freeSlot = offset + size
 
         self.log.debug("Found freeSlot %s in VG %s", freeSlot, self.sdUUID)
@@ -870,17 +880,9 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                 continue
 
             offset = None
-            size = sc.VOLUME_MDNUMBLKS
             for tag in lv.tags:
                 if tag.startswith(sc.TAG_PREFIX_MD):
                     offset = int(stripPrefix(tag, sc.TAG_PREFIX_MD))
-
-                if tag.startswith(sc.TAG_PREFIX_MDNUMBLKS):
-                    size = int(stripPrefix(tag,
-                                           sc.TAG_PREFIX_MDNUMBLKS))
-
-                if offset is not None and size != sc.VOLUME_MDNUMBLKS:
-                    # I've found everything I need
                     break
 
             if offset is None:
@@ -888,7 +890,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                               self.sdUUID, lv.name)
                 continue
 
-            occupiedSlots.append((offset, size))
+            # TODO: return only offset, size is always 1.
+            occupiedSlots.append((offset, sc.VOLUME_MDNUMBLKS))
 
         occupiedSlots.sort(key=itemgetter(0))
         return occupiedSlots
@@ -1162,6 +1165,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
     _lvTagMetaSlotLock = threading.Lock()
 
+    # TODO: remove slotSize, must be always 1.
     @contextmanager
     def acquireVolumeMetadataSlot(self, vol_name, slotSize):
         with self._manifest.acquireVolumeMetadataSlot(vol_name, slotSize) \

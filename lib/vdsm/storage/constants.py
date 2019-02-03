@@ -212,14 +212,12 @@ MAX_GENERATION = 999  # Since this is represented in ASCII, limit to 3 places
 
 # Block volume metadata tags
 TAG_PREFIX_MD = "MD_"
-TAG_PREFIX_MDNUMBLKS = "MS_"
 TAG_PREFIX_IMAGE = "IU_"
 TAG_PREFIX_PARENT = "PU_"
 TAG_VOL_UNINIT = "OVIRT_VOL_INITIALIZING"
 VOLUME_TAGS = [TAG_PREFIX_PARENT,
                TAG_PREFIX_IMAGE,
-               TAG_PREFIX_MD,
-               TAG_PREFIX_MDNUMBLKS]
+               TAG_PREFIX_MD]
 
 SUPPORTED_BLOCKSIZE = (512,)
 

@@ -201,6 +201,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                       metaOffset, vol.volUUID)
             metaContent = vol.getMetadata()
 
+            # TODO: remove slotSize, it is always 1.
             with domain.acquireVolumeMetadataSlot(
                     vol.volUUID, sc.VOLUME_MDNUMBLKS) \
                     as newMetaSlot:

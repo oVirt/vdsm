@@ -532,6 +532,7 @@ class BlockVolume(volume.Volume):
                          imgUUID, volUUID, srcImgUUID, srcVolUUID, size)
             volParent.clone(volPath, volFormat, size)
 
+        # TODO: Remove slotSize, must be always 1.
         with dom.acquireVolumeMetadataSlot(
                 volUUID, sc.VOLUME_MDNUMBLKS) as slot:
             mdTags = ["%s%s" % (sc.TAG_PREFIX_MD, slot),
