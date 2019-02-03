@@ -248,7 +248,7 @@ class FakeBlockDomainManifest(FakeDomainManifest):
 
     @recorded
     @contextmanager
-    def acquireVolumeMetadataSlot(self, vol_name, slotSize):
+    def acquireVolumeMetadataSlot(self, vol_name):
         yield
 
     @recorded
@@ -760,8 +760,8 @@ class TestBlockDomain(DomainTestMixin, VdsmTestCase):
         self.assertEqual(512, self.domain.phyBlkSize)
 
     def test_acquirevolumemetadataslot(self):
-        with self.domain.acquireVolumeMetadataSlot(0, 1):
-            result = [('acquireVolumeMetadataSlot', (0, 1), {})]
+        with self.domain.acquireVolumeMetadataSlot(0):
+            result = [('acquireVolumeMetadataSlot', (0,), {})]
             self.assertEqual(self.domain._manifest.__calls__, result)
 
     @permutations([

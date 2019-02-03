@@ -197,12 +197,12 @@ class TestBlockDomainMetadataSlot:
                 env.lvm.createLV(sduuid, lv, VOLSIZE // MB)
                 tag = sc.TAG_PREFIX_MD + str(offset)
                 env.lvm.addtag(sduuid, lv, tag)
-            with env.sd_manifest.acquireVolumeMetadataSlot(None, 1) as mdSlot:
+            with env.sd_manifest.acquireVolumeMetadataSlot(None) as mdSlot:
                 assert mdSlot == free_slot
 
     def test_metaslot_lock(self):
         with fake_block_env() as env:
-            with env.sd_manifest.acquireVolumeMetadataSlot(None, 1):
+            with env.sd_manifest.acquireVolumeMetadataSlot(None):
                 acquired = env.sd_manifest._lvTagMetaSlotLock.acquire(False)
                 assert not acquired
 

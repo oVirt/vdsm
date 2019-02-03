@@ -31,7 +31,6 @@ import functools
 import sys
 from collections import namedtuple
 from contextlib import contextmanager
-from operator import itemgetter
 
 import six
 
@@ -812,16 +811,15 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     _lvTagMetaSlotLock = threading.Lock()
 
-    # TODO: remove slotSize, must be always 1.
     @contextmanager
-    def acquireVolumeMetadataSlot(self, vol_name, slotSize):
+    def acquireVolumeMetadataSlot(self, vol_name):
         # TODO: Check if the lock is needed when using
         # getVolumeMetadataOffsetFromPvMapping()
         with self._lvTagMetaSlotLock:
             if self.getVersion() in VERS_METADATA_LV:
                 yield self._getVolumeMetadataOffsetFromPvMapping(vol_name)
             else:
-                yield self._getFreeMetadataSlot(slotSize)
+                yield self._getFreeMetadataSlot()
 
     def _getVolumeMetadataOffsetFromPvMapping(self, vol_name):
         dev, ext = lvm.getFirstExt(self.sdUUID, vol_name)
@@ -843,32 +841,32 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         raise se.MetaDataMappingError("domain %s: can't map PV %s ext %s" %
                                       (self.sdUUID, dev, ext))
 
-    # TODO: Remove slotSize, must be always 1.
-    def _getFreeMetadataSlot(self, slotSize):
-        occupiedSlots = self._getOccupiedMetadataSlots()
+    def _getFreeMetadataSlot(self):
+        occupied_slots = self._getOccupiedMetadataSlots()
 
         # It might look weird skipping the sd metadata when it has been moved
         # to tags. But this is here because domain metadata and volume metadata
         # look the same. The domain might get confused and think it has lv
         # metadata if it finds something is written in that area.
 
-        # TODO: This is always 4 in V4, since logical block size is always 512.
-        # In V5, this is always 1, since slot size is always 8k regardless of
-        # the block size. Extract to a helper function that will consider the
-        # domain version.
-        freeSlot = (utils.round(SD_METADATA_SIZE, self.logBlkSize) //
-                    self.logBlkSize)
+        # TODO: This first free slots depends on domain version:
+        # - V4: always 4, slots 0-3 reserved for domain metadata
+        # - V5: always 1, slot 0 reserved for metadata lv metadata.
+        # TODO: Extract to a method hiding the difference.
+        free_slot = (utils.round(SD_METADATA_SIZE, self.logBlkSize) //
+                     self.logBlkSize)
 
-        # TODO: size is always 1, simplify.
-        for offset, size in occupiedSlots:
-            if offset >= freeSlot + slotSize:
+        # We have these cases:
+        # slot > free_slot: free_slot is free, use it.
+        # slot == free_slot: free_slot is occupied, try next slot (slot + 1).
+        # slot < free_slot: impossible.
+        for slot in occupied_slots:
+            if slot > free_slot:
                 break
+            free_slot = slot + 1
 
-            # TODO: size is always 1, simplify.
-            freeSlot = offset + size
-
-        self.log.debug("Found freeSlot %s in VG %s", freeSlot, self.sdUUID)
-        return freeSlot
+        self.log.debug("Found free slot %s in VG %s", free_slot, self.sdUUID)
+        return free_slot
 
     def _getOccupiedMetadataSlots(self):
         stripPrefix = lambda s, pfx: s[len(pfx):]
@@ -890,10 +888,9 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                               self.sdUUID, lv.name)
                 continue
 
-            # TODO: return only offset, size is always 1.
-            occupiedSlots.append((offset, sc.VOLUME_MDNUMBLKS))
+            occupiedSlots.append(offset)
 
-        occupiedSlots.sort(key=itemgetter(0))
+        occupiedSlots.sort()
         return occupiedSlots
 
     def validateCreateVolumeParams(self, volFormat, srcVolUUID,
@@ -1165,11 +1162,9 @@ class BlockStorageDomain(sd.StorageDomain):
 
     _lvTagMetaSlotLock = threading.Lock()
 
-    # TODO: remove slotSize, must be always 1.
     @contextmanager
-    def acquireVolumeMetadataSlot(self, vol_name, slotSize):
-        with self._manifest.acquireVolumeMetadataSlot(vol_name, slotSize) \
-                as slot:
+    def acquireVolumeMetadataSlot(self, vol_name):
+        with self._manifest.acquireVolumeMetadataSlot(vol_name) as slot:
             yield slot
 
     def readMetadataMapping(self):

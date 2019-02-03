@@ -349,9 +349,7 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
         with open(volpath, "r+") as f:
             f.truncate(int(lvm.getLV(sduuid, voluuid).size))
 
-    # TODO: Remove slotSize, it is always 1.
-    with sd_manifest.acquireVolumeMetadataSlot(
-            voluuid, sc.VOLUME_MDNUMBLKS) as slot:
+    with sd_manifest.acquireVolumeMetadataSlot(voluuid) as slot:
         lvm.addtag(sduuid, voluuid, "%s%s" % (sc.TAG_PREFIX_MD, slot))
         lvm.addtag(sduuid, voluuid, "%s%s" % (sc.TAG_PREFIX_PARENT,
                                               parent_vol_id))

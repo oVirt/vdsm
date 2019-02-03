@@ -48,7 +48,6 @@ MIN_CHUNK = 8 * VG_EXTENT_SIZE_MB * constants.MEGAB  # 1 GB
 # it will depend on the storage domain.
 BLOCK_SIZE = 512
 METADATA_SIZE = BLOCK_SIZE
-VOLUME_MDNUMBLKS = 1  # The number of blocks needed to store block vol md
 
 # Supported block sizes in bytes
 BLOCK_SIZE_512 = 512
