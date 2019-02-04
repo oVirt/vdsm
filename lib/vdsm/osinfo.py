@@ -20,6 +20,7 @@
 
 from __future__ import absolute_import
 
+import errno
 import itertools
 import glob
 import linecache
@@ -350,9 +351,13 @@ def nested_virtualization():
             with open(kvm_module_path) as f:
                 if f.readline().strip() in ("Y", "1"):
                     return NestedVirtualization(True, kvm_module)
-        except IOError:
-            logging.debug('%s nested virtualization '
-                          'not detected' % kvm_module, exc_info=True)
+        except IOError as e:
+            if e.errno != errno.ENOENT:
+                logging.exception('Error checking %s nested virtualization',
+                                  kvm_module)
+            else:
+                logging.debug('%s nested virtualization not detected',
+                              kvm_module)
 
     logging.debug('Could not determine status of nested '
                   'virtualization')
