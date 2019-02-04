@@ -438,7 +438,8 @@ class FileStorageDomain(sd.StorageDomain):
 
     @classmethod
     def _prepareMetadata(cls, domPath, sdUUID, domainName, domClass,
-                         remotePath, storageType, version):
+                         remotePath, storageType, version, alignment,
+                         block_size):
         """
         Prepare all domain's special volumes and metadata
         """

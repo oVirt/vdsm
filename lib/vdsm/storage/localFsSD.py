@@ -111,7 +111,8 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
 
         domainDir = os.path.join(mntPoint, sdUUID)
         cls._prepareMetadata(domainDir, sdUUID, domainName, domClass,
-                             remotePath, storageType, version)
+                             remotePath, storageType, version, alignment,
+                             block_size)
 
         # create domain images folder
         imagesDir = os.path.join(domainDir, sd.DOMAIN_IMAGES)
