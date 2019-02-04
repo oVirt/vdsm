@@ -30,6 +30,7 @@ This module provides needed interfaces to for attaching and detaching volumes:
 from __future__ import absolute_import
 from __future__ import division
 
+import functools
 import json
 import logging
 import os
@@ -57,28 +58,35 @@ DEV_RBD = "/dev/rbd"
 log = logging.getLogger("storage.managedvolume")
 
 
+def requires_os_brick(func):
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if os_brick is None:
+            raise se.ManagedVolumeNotSupported("Cannot import os_brick")
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 # Public interface
 
 
+@requires_os_brick
 def connector_info():
     """
     Get connector information from os-brick.
         If not running as root, use supervdsm to invoke this function as root.
     """
-    if os_brick is None:
-        raise se.ManagedVolumeNotSupported("Cannot import os_brick.initiator")
-
     log.debug("Starting get connector_info")
     return run_helper("connector_info")
 
 
+@requires_os_brick
 def attach_volume(vol_id, connection_info):
     """
     Attach volume with os-brick.
     """
-    if os_brick is None:
-        raise se.ManagedVolumeNotSupported("Cannot import os_brick.initiator")
-
     db = managedvolumedb.open()
     with closing(db):
         _add_volume(db, vol_id, connection_info)
@@ -108,13 +116,11 @@ def attach_volume(vol_id, connection_info):
     return {"result": {'attachment': attachment, 'path': path}}
 
 
+@requires_os_brick
 def detach_volume(vol_id):
     """
     Detach volume with os-brick.
     """
-    if os_brick is None:
-        raise se.ManagedVolumeNotSupported("Cannot import os_brick.initiator")
-
     db = managedvolumedb.open()
     with closing(db):
         try:
