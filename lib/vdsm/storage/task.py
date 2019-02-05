@@ -1348,7 +1348,8 @@ class Task:
     def __str__(self):
         return str(self.id)
 
-    # FIXME : Use StringIO and enumerate()
+    # FIXME : Use six.StringIO and enumerate()
+    # TODO: Or six.ByteIO?
     def dumpTask(self):
         s = "Task: %s" % self._dump(self, Task.fields)
         i = 0

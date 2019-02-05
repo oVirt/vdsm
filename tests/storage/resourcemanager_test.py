@@ -25,10 +25,10 @@ import time
 from weakref import proxy
 from random import Random
 import threading
-from six.moves._thread import error as ThreadError
-from StringIO import StringIO
-import types
 from resource import getrlimit, RLIMIT_NPROC
+
+import six
+from six.moves._thread import error as ThreadError
 
 import pytest
 
@@ -58,7 +58,7 @@ class ErrorResourceFactory(rm.SimpleResourceFactory):
 
 class StringResourceFactory(rm.SimpleResourceFactory):
     def createResource(self, name, lockType):
-        s = StringIO("%s:%s" % (name, lockType))
+        s = six.StringIO("%s:%s" % (name, lockType))
         s.seek(0)
 
         def switchLockType(self, lockType):
@@ -69,31 +69,31 @@ class StringResourceFactory(rm.SimpleResourceFactory):
             self.write("%s:%s" % (name, lockType))
             self.seek(0)
 
-        s.switchLockType = types.MethodType(switchLockType, s, StringIO)
+        s.switchLockType = six.create_bound_method(switchLockType, s)
         return s
 
 
 class SwitchFailFactory(rm.SimpleResourceFactory):
     def createResource(self, name, lockType):
-        s = StringIO("%s:%s" % (name, lockType))
+        s = six.StringIO("%s:%s" % (name, lockType))
         s.seek(0)
 
         def switchLockType(self, lockType):
             raise Exception("I NEVER SWITCH!!!")
 
-        s.switchLockType = types.MethodType(switchLockType, s, StringIO)
+        s.switchLockType = six.create_bound_method(switchLockType, s)
         return s
 
 
 class CrashOnCloseFactory(rm.SimpleResourceFactory):
     def createResource(self, name, lockType):
-        s = StringIO("%s:%s" % (name, lockType))
+        s = six.StringIO("%s:%s" % (name, lockType))
         s.seek(0)
 
         def close(self):
             raise Exception("I NEVER CLOSE!!!")
 
-        s.close = types.MethodType(close, s, StringIO)
+        s.close = six.create_bound_method(close, s)
         return s
 
 
@@ -105,7 +105,7 @@ class FailAfterSwitchFactory(rm.SimpleResourceFactory):
         if self.fail:
             raise Exception("I CANT TAKE ALL THIS SWITCHING!")
 
-        s = StringIO("%s:%s" % (name, lockType))
+        s = six.StringIO("%s:%s" % (name, lockType))
         s.seek(0)
 
         factory = self
@@ -114,7 +114,7 @@ class FailAfterSwitchFactory(rm.SimpleResourceFactory):
             factory.fail = True
             raise Exception("FAIL!!!")
 
-        s.switchLockType = types.MethodType(switchLockType, s, StringIO)
+        s.switchLockType = six.create_bound_method(switchLockType, s)
         return s
 
 
@@ -190,7 +190,7 @@ class TestResourceManager(VdsmTestCase):
 
     @MonkeyPatch(rm, "_manager", manager())
     def testResourceWrapper(self):
-        s = StringIO
+        s = six.StringIO
         with rm.acquireResource("string", "test", rm.EXCLUSIVE) as resource:
             for attr in dir(s):
                 if attr == "close":
@@ -413,15 +413,13 @@ class TestResourceManager(VdsmTestCase):
         resources.pop().release()
         self.assertEqual(resources[-1].read(), "resource:shared")
         resources.pop().release()
-        # This part is to stop pyflakes for complaining, the reason I need the
-        # resourcesRefs alive is so that the manage will not autocollect during
-        # the test
-        hash(sharedReq1)
-        hash(sharedReq2)
-        hash(sharedReq3)
-        hash(exclusive2)
-        hash(exclusive3)
-        hash(sharedReq3)
+
+        # Silense flake8 unused local variables warnings.
+        sharedReq1
+        sharedReq2
+        exclusive2
+        exclusive3
+        sharedReq3
 
     @MonkeyPatch(rm, "_manager", manager())
     def testResourceAcquireTimeout(self):
