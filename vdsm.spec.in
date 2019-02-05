@@ -165,7 +165,12 @@ Requires: libvirt-daemon-kvm >= 4.5.0-10.el7_6.3
 Requires: libvirt-python >= 3.7.0
 # Required to fix order of VM life cycle events.
 # See https://bugzilla.redhat.com/1612943 for details.
+%ifnarch s390 s390x
+# virt-preview is not available for s390
 Requires: libvirt-daemon-kvm >= 4.9.0-1
+%else
+Requires: libvirt-daemon-kvm
+%endif
 %endif
 
 # iscsi-intiator versions
