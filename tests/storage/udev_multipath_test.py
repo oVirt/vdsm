@@ -409,8 +409,8 @@ def test_failing_event():
 
 
 @pytest.mark.xfail(
-    os.environ.get("OVIRT_CI") or os.environ.get("TRAVIS_CI"),
-    reason="Requires real env")
+    os.environ.get("TRAVIS_CI"),
+    reason="udev events not available")
 @pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")
 def test_loopback_event(tmpdir):
     listener = udev.MultipathListener()
