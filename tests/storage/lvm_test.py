@@ -24,7 +24,6 @@ from __future__ import division
 
 import os
 import uuid
-import re
 
 from contextlib import closing
 
@@ -41,21 +40,11 @@ from vdsm.storage import multipath
 from . import tmpstorage
 
 
-def on_fedora(version):
-    with open("/etc/redhat-release") as f:
-        line = f.readline()
-    return re.match(r"Fedora release %s" % version, line)
-
-
 requires_root = pytest.mark.skipif(
     os.geteuid() != 0, reason="requires root")
 
 xfail_python3 = pytest.mark.xfail(
     six.PY3, reason="needs porting to python 3")
-
-skipif_fedora_29 = pytest.mark.skipif(
-    on_fedora(29),
-    reason="lvm get stuck on Fedora 29")
 
 
 def test_build_filter():
@@ -178,7 +167,6 @@ def temp_storage(monkeypatch, tmpdir):
 
 @requires_root
 @xfail_python3
-@skipif_fedora_29
 @pytest.mark.root
 def test_vg_create_remove_single_device(temp_storage):
     dev_size = 20 * 1024**3
@@ -213,7 +201,6 @@ def test_vg_create_remove_single_device(temp_storage):
 
 @requires_root
 @xfail_python3
-@skipif_fedora_29
 @pytest.mark.root
 def test_vg_create_multiple_devices(temp_storage):
     dev_size = 10 * 1024**3
@@ -259,7 +246,6 @@ def test_vg_create_multiple_devices(temp_storage):
 
 @requires_root
 @xfail_python3
-@skipif_fedora_29
 @pytest.mark.root
 def test_vg_extend_reduce(temp_storage):
     dev_size = 10 * 1024**3
@@ -304,7 +290,6 @@ def test_vg_extend_reduce(temp_storage):
 
 @requires_root
 @xfail_python3
-@skipif_fedora_29
 @pytest.mark.root
 def test_vg_add_delete_tags(temp_storage):
     dev_size = 20 * 1024**3
@@ -326,7 +311,6 @@ def test_vg_add_delete_tags(temp_storage):
 
 @requires_root
 @pytest.mark.root
-@skipif_fedora_29
 def test_vg_check(temp_storage):
     dev_size = 10 * 1024**3
     dev1 = temp_storage.create_device(dev_size)
@@ -338,7 +322,6 @@ def test_vg_check(temp_storage):
 
 @requires_root
 @xfail_python3
-@skipif_fedora_29
 @pytest.mark.root
 def test_lv_create_remove(temp_storage):
     dev_size = 20 * 1024**3
@@ -365,7 +348,6 @@ def test_lv_create_remove(temp_storage):
 
 @requires_root
 @xfail_python3
-@skipif_fedora_29
 @pytest.mark.root
 def test_lv_add_delete_tags(temp_storage):
     dev_size = 20 * 1024**3
@@ -386,7 +368,6 @@ def test_lv_add_delete_tags(temp_storage):
 
 @requires_root
 @xfail_python3
-@skipif_fedora_29
 @pytest.mark.root
 def test_lv_activate_deactivate(temp_storage):
     dev_size = 20 * 1024**3
@@ -412,7 +393,6 @@ def test_lv_activate_deactivate(temp_storage):
 
 @requires_root
 @xfail_python3
-@skipif_fedora_29
 @pytest.mark.root
 def test_lv_extend_reduce(temp_storage):
     dev_size = 20 * 1024**3
@@ -434,7 +414,6 @@ def test_lv_extend_reduce(temp_storage):
 
 @requires_root
 @xfail_python3
-@skipif_fedora_29
 @pytest.mark.root
 def test_lv_refresh(temp_storage):
     dev_size = 20 * 1024**3
@@ -474,7 +453,6 @@ def test_lv_refresh(temp_storage):
 
 @requires_root
 @xfail_python3
-@skipif_fedora_29
 @pytest.mark.root
 def test_lv_rename(temp_storage):
     dev_size = 20 * 1024**3
@@ -492,7 +470,6 @@ def test_lv_rename(temp_storage):
 
 @requires_root
 @xfail_python3
-@skipif_fedora_29
 @pytest.mark.root
 def test_bootstrap(temp_storage):
     dev_size = 20 * 1024**3
@@ -540,7 +517,6 @@ def test_bootstrap(temp_storage):
 
 @requires_root
 @xfail_python3
-@skipif_fedora_29
 @pytest.mark.root
 def test_retry_with_wider_filter(temp_storage):
     # Force reload of the cache. The system does not know about any device at
