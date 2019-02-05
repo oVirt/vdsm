@@ -34,7 +34,9 @@ before_script:
   # and we don't want to get the entire history for testing the tip.
   - git tag v999 -a -m "tesing"
 
-# Note: network tests on centos fail on low coverage, so we use lower value.
+# Notes:
+# - network tests on centos fail on low coverage, so we use lower value.
+# - mount /run/udev to enable tests receiving udev events.
 script:
   - |
     docker run \
@@ -45,5 +47,7 @@ script:
     --privileged \
     --rm \
     -it \
-    -v `pwd`:/vdsm:Z $DOCKER_IMAGE \
+    --volume `pwd`:/vdsm:Z \
+    --volume /run/udev:/run/udev:Z \
+    $DOCKER_IMAGE \
     bash -c "cd /vdsm && ./autogen.sh --system && make && make $MAKE_TARGET"
