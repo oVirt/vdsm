@@ -663,15 +663,15 @@ def alignment(block_size, max_hosts):
     if block_size == sc.BLOCK_SIZE_512:
         # Only this block size is supported on 512b blocks
         # Supports up to 2000 hosts.
-        return sc.ALIGN_1M
+        return sc.ALIGNMENT_1M
 
     if max_hosts > sc.HOSTS_4K_4M:
-        return sc.ALIGN_8M
+        return sc.ALIGNMENT_8M
 
     if max_hosts > sc.HOSTS_4K_2M:
-        return sc.ALIGN_4M
+        return sc.ALIGNMENT_4M
 
     if max_hosts > sc.HOSTS_4K_1M:
-        return sc.ALIGN_2M
+        return sc.ALIGNMENT_2M
 
-    return sc.ALIGN_1M
+    return sc.ALIGNMENT_1M

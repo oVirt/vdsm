@@ -60,15 +60,15 @@ BLOCK_SIZE_AUTO = 0
 # sanlock possible alignment values, that set a lockspace size
 # In combination with a block size (see above)
 # they set a limit of supported number of hosts:
-# - ALIGN1M | BLOCK_SIZE_512: max_hosts 2000
-# - ALIGN1M | BLOCK_SIZE_4K:  max_hosts 250
-# - ALIGN2M | BLOCK_SIZE_4K:  max_hosts 500
-# - ALIGN4M | BLOCK_SIZE_4K:  max_hosts 1000
-# - ALIGN8M | BLOCK_SIZE_4K:  max_hosts 2000
-ALIGN_1M = 1024**2
-ALIGN_2M = 2 * ALIGN_1M
-ALIGN_4M = 4 * ALIGN_1M
-ALIGN_8M = 8 * ALIGN_1M
+# - SANLK_RES_ALIGN1M | SANLK_RES_SECTOR512: max_hosts 2000
+# - SANLK_RES_ALIGN1M | SANLK_RES_SECTOR4K:  max_hosts 250
+# - SANLK_RES_ALIGN2M | SANLK_RES_SECTOR4K:  max_hosts 500
+# - SANLK_RES_ALIGN4M | SANLK_RES_SECTOR4K:  max_hosts 1000
+# - SANLK_RES_ALIGN8M | SANLK_RES_SECTOR4K:  max_hosts 2000
+ALIGNMENT_1M = 1024 ** 2
+ALIGNMENT_2M = 2 * ALIGNMENT_1M
+ALIGNMENT_4M = 4 * ALIGNMENT_1M
+ALIGNMENT_8M = 8 * ALIGNMENT_1M
 
 # block size/alignment mapping to the number of hosts
 HOSTS_512_1M = 2000

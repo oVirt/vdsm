@@ -67,7 +67,7 @@ def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
         version=3,
         storageType=sd.LOCALFS_DOMAIN,
         block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGN_1M)
+        alignment=sc.ALIGNMENT_1M)
 
     assert dom.getVersion() == 3
 

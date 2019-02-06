@@ -52,7 +52,7 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
     manifestClass = LocalFsStorageDomainManifest
 
     supported_block_size = (sc.BLOCK_SIZE_512,)
-    supported_alignment = (sc.ALIGN_1M,)
+    supported_alignment = (sc.ALIGNMENT_1M,)
 
     @property
     def supportsMailbox(self):
@@ -76,7 +76,8 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
 
     @classmethod
     def create(cls, sdUUID, domainName, domClass, remotePath, storageType,
-               version, block_size=sc.BLOCK_SIZE_512, alignment=sc.ALIGN_1M):
+               version, block_size=sc.BLOCK_SIZE_512,
+               alignment=sc.ALIGNMENT_1M):
         """
         Create new storage domain
 

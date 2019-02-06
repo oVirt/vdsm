@@ -33,11 +33,13 @@ def test_incorrect_block_rejected():
     with pytest.raises(se.InvalidParameterException):
         nfsSD.NfsStorageDomain.create(
             sc.BLANK_UUID, "test", sd.DATA_DOMAIN,
-            sc.BLANK_UUID, sd.ISCSI_DOMAIN, 4, sc.BLOCK_SIZE_4K, sc.ALIGN_1M)
+            sc.BLANK_UUID, sd.ISCSI_DOMAIN, 4, sc.BLOCK_SIZE_4K,
+            sc.ALIGNMENT_1M)
 
 
 def test_incorrect_alignment_rejected():
     with pytest.raises(se.InvalidParameterException):
         nfsSD.NfsStorageDomain.create(
             sc.BLANK_UUID, "test", sd.DATA_DOMAIN,
-            sc.BLANK_UUID, sd.ISCSI_DOMAIN, 4, sc.BLOCK_SIZE_512, sc.ALIGN_2M)
+            sc.BLANK_UUID, sd.ISCSI_DOMAIN, 4, sc.BLOCK_SIZE_512,
+            sc.ALIGNMENT_2M)

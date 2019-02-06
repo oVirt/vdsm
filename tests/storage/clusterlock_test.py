@@ -239,18 +239,18 @@ def test_inquire_lease_has_no_owner(fake_sanlock):
 
 
 @pytest.mark.parametrize('block_size, max_hosts, alignment', [
-    (sc.BLOCK_SIZE_512, 250, sc.ALIGN_1M),
-    (sc.BLOCK_SIZE_512, 2000, sc.ALIGN_1M),
-    (sc.BLOCK_SIZE_4K, 250, sc.ALIGN_1M),
-    (sc.BLOCK_SIZE_4K, 251, sc.ALIGN_2M),
-    (sc.BLOCK_SIZE_4K, 499, sc.ALIGN_2M),
-    (sc.BLOCK_SIZE_4K, 500, sc.ALIGN_2M),
-    (sc.BLOCK_SIZE_4K, 501, sc.ALIGN_4M),
-    (sc.BLOCK_SIZE_4K, 999, sc.ALIGN_4M),
-    (sc.BLOCK_SIZE_4K, 1000, sc.ALIGN_4M),
-    (sc.BLOCK_SIZE_4K, 1001, sc.ALIGN_8M),
-    (sc.BLOCK_SIZE_4K, 1999, sc.ALIGN_8M),
-    (sc.BLOCK_SIZE_4K, 2000, sc.ALIGN_8M),
+    (sc.BLOCK_SIZE_512, 250, sc.ALIGNMENT_1M),
+    (sc.BLOCK_SIZE_512, 2000, sc.ALIGNMENT_1M),
+    (sc.BLOCK_SIZE_4K, 250, sc.ALIGNMENT_1M),
+    (sc.BLOCK_SIZE_4K, 251, sc.ALIGNMENT_2M),
+    (sc.BLOCK_SIZE_4K, 499, sc.ALIGNMENT_2M),
+    (sc.BLOCK_SIZE_4K, 500, sc.ALIGNMENT_2M),
+    (sc.BLOCK_SIZE_4K, 501, sc.ALIGNMENT_4M),
+    (sc.BLOCK_SIZE_4K, 999, sc.ALIGNMENT_4M),
+    (sc.BLOCK_SIZE_4K, 1000, sc.ALIGNMENT_4M),
+    (sc.BLOCK_SIZE_4K, 1001, sc.ALIGNMENT_8M),
+    (sc.BLOCK_SIZE_4K, 1999, sc.ALIGNMENT_8M),
+    (sc.BLOCK_SIZE_4K, 2000, sc.ALIGNMENT_8M),
 ])
 def test_sanlock_alignment(block_size, max_hosts, alignment):
     assert clusterlock.alignment(block_size, max_hosts) == alignment
