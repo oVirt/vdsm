@@ -52,6 +52,8 @@ class Dispatcher(object):
 
     def _exposeFunctions(self, obj):
         for funcName in dir(obj):
+            if funcName.startswith("_"):
+                continue
             funcObj = getattr(obj, funcName)
             if hasattr(funcObj, _EXPORTED_ATTRIBUTE) and callable(funcObj):
                 if hasattr(self, funcName):
