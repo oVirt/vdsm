@@ -1,4 +1,4 @@
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,10 +19,11 @@
 
 from __future__ import absolute_import
 from __future__ import division
-import os
-import sys
+
 import grp
+import os
 import pwd
+import sys
 
 from . import YES, NO, MAYBE, InvalidConfig
 from vdsm.common import commands
