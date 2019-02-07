@@ -23,9 +23,9 @@ from __future__ import division
 import grp
 import os
 import pwd
-import sys
 
 from . import YES, NO, MAYBE, InvalidConfig
+from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm import constants
 
@@ -38,20 +38,16 @@ def configure():
     """
     Configure sanlock process groups
     """
-    rc, out, err = commands.execCmd(
-        (
+    try:
+        commands.run([
             '/usr/sbin/usermod',
             '-a',
             '-G',
             ','.join(SANLOCK_GROUPS),
             constants.SANLOCK_USER
-        ),
-        raw=True,
-    )
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-    if rc != 0:
-        raise RuntimeError("Failed to perform sanlock config.")
+        ])
+    except cmdutils.Error as e:
+        raise RuntimeError("Failed to perform sanlock config: {}".format(e))
 
 
 def isconfigured():
