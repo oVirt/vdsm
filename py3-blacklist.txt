@@ -10,7 +10,6 @@
 ./lib/vdsm/gluster/exception.py
 ./lib/vdsm/gluster/storagedev.py
 ./lib/vdsm/kvm2ovirt.py
-./lib/vdsm/rpc/http.py
 ./lib/vdsm/storage/asyncevent.py
 ./lib/vdsm/storage/blockSD.py
 ./lib/vdsm/storage/curl-img-wrap

@@ -69,7 +69,7 @@ class Server(object):
                 try:
                     self.server.handle_request()
                 except Exception as e:
-                    if e[0] != EINTR:
+                    if e.args[0] != EINTR:
                         self.log.error("http handler exception",
                                        exc_info=True)
             self.log.info("Server stopped")
