@@ -22,14 +22,14 @@ from __future__ import absolute_import
 from __future__ import division
 from errno import EINTR
 import json
-import httplib
 import logging
 import threading
 import re
 import socket
 import sys
 
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from six.moves import http_client as httplib
 
 from vdsm import API
 from vdsm.common import concurrent
