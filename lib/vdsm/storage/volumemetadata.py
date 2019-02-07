@@ -23,6 +23,8 @@ from __future__ import absolute_import
 import logging
 import time
 
+import six
+
 from vdsm.storage import constants as sc
 from vdsm.storage import exception
 
@@ -35,7 +37,7 @@ class VolumeMetadata(object):
                  type, voltype, disktype, description="",
                  legality=sc.ILLEGAL_VOL, ctime=None, mtime=None,
                  generation=sc.DEFAULT_GENERATION):
-        if not isinstance(size, int):
+        if not isinstance(size, six.integer_types):
             raise AssertionError("Invalid value for 'size': {!r}".format(size))
         if ctime is not None and not isinstance(ctime, int):
             raise AssertionError(
