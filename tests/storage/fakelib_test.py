@@ -67,7 +67,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
                      blockSD.STORAGE_UNREADY_DOMAIN_TAG,
                      blockSD.VG_METADATASIZE)
 
-        print lvm.getVG('1ffead52-7363-4968-a8c7-3bc34504d452')
+        print(lvm.getVG('1ffead52-7363-4968-a8c7-3bc34504d452'))
         VG(uuid='15hlPF-V3eG-F9Cp-SGtu-4Mq0-28Do-HC806y',
            name='1ffead52-7363-4968-a8c7-3bc34504d452',
            attr=VG_ATTR(permission='w', resizeable='z', exported='-',
@@ -79,7 +79,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
            pv_name=('/dev/mapper/360014054d75cb132d474c0eae9825766',),
            writeable=True, partial='OK')
 
-        print lvm.getPV('360014054d75cb132d474c0eae9825766')
+        print(lvm.getPV('360014054d75cb132d474c0eae9825766'))
         PV(uuid='fIRjbD-usOA-tYgW-b2Uz-oUly-AJ49-bMMjYe',
            name='/dev/mapper/360014054d75cb132d474c0eae9825766',
            size='10334765056', vg_name='1ffead52-7363-4968-a8c7-3bc34504d452',
@@ -163,8 +163,8 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
         lvm.createLV('1ffead52-7363-4968-a8c7-3bc34504d452',
                      '54e3378a-b2f6-46ff-b2da-a9c82522a55e', 1024)
 
-        print lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
-                        '54e3378a-b2f6-46ff-b2da-a9c82522a55e')
+        print(lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
+                        '54e3378a-b2f6-46ff-b2da-a9c82522a55e'))
         LV(uuid='89tSvh-HJl5-SO2K-O36t-3qkj-Zo2J-yugkjk',
            name='54e3378a-b2f6-46ff-b2da-a9c82522a55e',
            vg_name='1ffead52-7363-4968-a8c7-3bc34504d452',
@@ -215,8 +215,8 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
                      '54e3378a-b2f6-46ff-b2da-a9c82522a55e',
                      1024, activate=False)
 
-        print lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
-                        '54e3378a-b2f6-46ff-b2da-a9c82522a55e')
+        print(lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
+                        '54e3378a-b2f6-46ff-b2da-a9c82522a55e'))
         LV(uuid='dDbzkJ-RSAQ-0CdJ-1pTD-OdqZ-3my2-v3hSUT',
            name='54e3378a-b2f6-46ff-b2da-a9c82522a55e',
            vg_name='1ffead52-7363-4968-a8c7-3bc34504d452',
@@ -244,8 +244,8 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
                      '54e3378a-b2f6-46ff-b2da-a9c82522a55e',
                      1024, initialTags=(sc.TAG_VOL_UNINIT, "FOO"))
 
-        print lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
-                        '54e3378a-b2f6-46ff-b2da-a9c82522a55e')
+        print(lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
+                        '54e3378a-b2f6-46ff-b2da-a9c82522a55e'))
         LV(uuid='yJngqd-2kRy-9ogk-D7Gk-v3b1-RDQm-cb1bJv',
            name='54e3378a-b2f6-46ff-b2da-a9c82522a55e',
            vg_name='1ffead52-7363-4968-a8c7-3bc34504d452',
@@ -286,8 +286,8 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
         lvm.activateLVs('1ffead52-7363-4968-a8c7-3bc34504d452',
                         ['54e3378a-b2f6-46ff-b2da-a9c82522a55e'])
 
-        print lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
-                        '54e3378a-b2f6-46ff-b2da-a9c82522a55e')
+        print(lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
+                        '54e3378a-b2f6-46ff-b2da-a9c82522a55e'))
         LV(uuid='P8Y7p8-V13j-rWDp-FvGk-5AX1-zXhp-ZU4K2G',
            name='54e3378a-b2f6-46ff-b2da-a9c82522a55e',
            vg_name='1ffead52-7363-4968-a8c7-3bc34504d452',

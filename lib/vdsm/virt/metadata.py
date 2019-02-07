@@ -654,7 +654,7 @@ class Descriptor(object):
         let's run this code
         md_desc = Descriptor('vm')
         md_desc.load(dom)
-        print [dev for dev in md_desc.all_devices(kind="blah")]
+        print([dev for dev in md_desc.all_devices(kind="blah")])
 
         will emit
 

@@ -29,6 +29,8 @@ Usage:
 
 """
 
+from __future__ import print_function
+
 import collections
 import sys
 
@@ -60,8 +62,8 @@ stats = list(reversed(sorted((len(lvs), vg, lvs) for vg, lvs in vgs.items())))
 
 removed = []
 total = collections.defaultdict(int)
-print "%8s %-36s %-8s %-8s %-8s" % (
-    "#lv", "vg name", "#active", "#open", "#removed")
+print("%8s %-36s %-8s %-8s %-8s" % (
+    "#lv", "vg name", "#active", "#open", "#removed"))
 for n, vg, lvs in stats:
     total["lv"] += n
     removed_lvs = [(name, lv) for name, lv in lvs.items()
@@ -76,21 +78,21 @@ for n, vg, lvs in stats:
             if "o" in attr:
                 open_lvs += 1
                 total["open"] += 1
-    print "%8d %-36s %8d %8d %8d" % (
-        n, vg, active_lvs, open_lvs, len(removed_lvs))
+    print("%8d %-36s %8d %8d %8d" % (
+        n, vg, active_lvs, open_lvs, len(removed_lvs)))
     if removed_lvs:
         removed.append((vg, removed_lvs))
 
-print
-print "totals"
+print()
+print("totals")
 for key in ["lv", "active", "open"]:
-    print "%10s:  %d" % (key, total[key])
+    print("%10s:  %d" % (key, total[key]))
 print
 
 
 if removed:
-    print "removed lvs that should be wiped and deleted"
+    print("removed lvs that should be wiped and deleted")
     for vg, removed_lvs in removed.items():
-        print vg
+        print(vg)
         for name, lv in removed_lvs:
-            print "  %s %s" % (name, lv)
+            print("  %s %s" % (name, lv))

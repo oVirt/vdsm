@@ -176,7 +176,7 @@ for d in dirs:
     files = os.listdir(d)
     for f in files:
         full_path = os.path.join(d, f)
-        print 'removing %s' % full_path
+        print('removing %s' % full_path)
         os.remove(full_path)
 
 d = '/etc/sysconfig/network-scripts/'
@@ -184,7 +184,7 @@ for f in os.listdir('/etc/sysconfig/network-scripts/'):
     if (f.startswith('ifcfg-bond') or
         f.startswith('ifcfg-test-network')):
         full_path = os.path.join(d, f)
-        print 'removing %s' % full_path
+        print('removing %s' % full_path)
         os.remove(full_path)
 EOF
 }

@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+
 """
 This module provides a Scheduler class scheduling execution of
 a callable on a background thread.
@@ -38,7 +39,7 @@ live with monotonic_time's lower resolution, you can use it as the clock.
 When you want to schedule some callable:
 
     def task():
-        print '30 seconds passed'
+        print('30 seconds passed')
 
     scheduler.schedule(30.0, task)
 

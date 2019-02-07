@@ -35,6 +35,8 @@ Exit codes:
   1         scanning some hosts or devices failed
 """
 
+from __future__ import print_function
+
 import glob
 import logging
 import os
@@ -120,7 +122,7 @@ class Scan(object):
 
 def main(args):
     if '-h' in args:
-        print __doc__
+        print(__doc__)
         return 0
 
     logging.basicConfig(

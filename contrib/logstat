@@ -25,6 +25,8 @@ Usage: logstat logfile ...
 Show the amount of data each log call produce.
 """
 
+from __future__ import print_function
+
 import collections
 import sys
 
@@ -35,7 +37,7 @@ Message = collections.namedtuple("Message", "level, logger, location, line")
 
 def main(args):
     if len(args) < 1:
-        print __doc__
+        print(__doc__)
         sys.exit(2)
 
     levels = collections.defaultdict(int)
@@ -50,23 +52,23 @@ def main(args):
             loggers[msg.logger] += size
             locations[msg.location] += size
 
-    print
-    print "Levels"
+    print()
+    print("Levels")
     for label, size in sorted(levels.items(), reverse=True,
                               key=itemgetter(1)):
-        print "%10d %s" % (size, label)
+        print("%10d %s" % (size, label))
 
-    print
-    print "Loggers"
+    print()
+    print("Loggers")
     for label, size in sorted(loggers.items(), reverse=True,
                               key=itemgetter(1)):
-        print "%10d %s" % (size, label)
+        print("%10d %s" % (size, label))
 
-    print
-    print "Locations"
+    print()
+    print("Locations")
     for label, size in sorted(locations.items(), reverse=True,
                               key=itemgetter(1)):
-        print "%10s %s" % (size, label)
+        print("%10s %s" % (size, label))
 
 
 def parse(logfile):
