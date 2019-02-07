@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ import logging
 import threading
 import re
 import socket
-import sys
 
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from six.moves import http_client as httplib
@@ -35,6 +34,12 @@ from vdsm import API
 from vdsm.common import concurrent
 from vdsm.common.define import doneCode
 from vdsm.executor import TaskQueue
+
+
+# The corresponding queue is used only for OVF upload and download.
+# If the queue has more than 10 waiting connections there is something
+# wrong and it doesn't help anything to queue more connections.
+_MAX_QUEUE_TASKS = 10
 
 
 class RequestException(Exception):
@@ -278,11 +283,8 @@ class ThreadedServer(HTTPServer):
 
     def __init__(self, RequestHandlerClass):
         HTTPServer.__init__(self, None, RequestHandlerClass, False)
-
         self.requestHandler = RequestHandlerClass
-
-        # TODO provide proper limit for this queue
-        self.queue = TaskQueue("http-server", sys.maxint)
+        self.queue = TaskQueue("http-server", _MAX_QUEUE_TASKS)
 
     def add(self, connected_socket, socket_address):
         self.queue.put((connected_socket, socket_address))
