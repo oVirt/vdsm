@@ -56,11 +56,19 @@ def libvirt_sasl_isconfigured():
 
 
 def passwd_isconfigured():
-    script = (str(_SASLDBLISTUSERS2), '-f', _LIBVIRT_SASLDB)
-    _, out, _ = commands.execCmd(script)
-    for user in out:
-        if SASL_USERNAME in user:
-            return YES
+    try:
+        out = commands.run([
+            str(_SASLDBLISTUSERS2),
+            '-f',
+            _LIBVIRT_SASLDB
+        ])
+        username = SASL_USERNAME.encode("utf-8")
+        for user in out.splitlines():
+            if username in user:
+                return YES
+    # TODO: why errors here were always ignored?
+    except cmdutils.Error:
+        pass
     return NO
 
 
@@ -71,16 +79,17 @@ def configure():
 
 def removeConf():
     if passwd_isconfigured() == YES:
-        rc, out, err = commands.execCmd(
-            (
+        try:
+            commands.run([
                 str(_SASLPASSWD2),
                 '-p',
-                '-a', 'libvirt',
-                '-d', SASL_USERNAME,
-            ),
-        )
-        if rc != 0:
-            raise RuntimeError("Remove password failed: %s" % (err,))
+                '-a',
+                'libvirt',
+                '-d',
+                SASL_USERNAME
+            ])
+        except cmdutils.Error as e:
+            raise RuntimeError("Remove password failed: {}".format(e))
 
 
 def configure_libvirt_sasl():
@@ -93,7 +102,16 @@ def configure_libvirt_sasl():
 
 
 def configure_passwd():
-    script = (str(_SASLPASSWD2), '-p', '-a', 'libvirt', SASL_USERNAME)
-    rc, _, err = commands.execCmd(script, data=libvirt_password())
-    if rc != 0:
-        raise RuntimeError("Set password failed: %s" % (err,))
+    args = [
+        str(_SASLPASSWD2),
+        '-p',
+        '-a',
+        'libvirt',
+        SASL_USERNAME
+    ]
+
+    password = libvirt_password().encode("utf-8")
+    try:
+        commands.run(args, input=password)
+    except cmdutils.Error as e:
+        raise RuntimeError("Set password failed: {}".format(e))

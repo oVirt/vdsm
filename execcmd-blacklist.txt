@@ -35,7 +35,6 @@ lib/vdsm/storage/qemuimg.py
 lib/vdsm/storage/xlease.py
 lib/vdsm/supervdsm_api/systemd.py
 lib/vdsm/taskset.py
-lib/vdsm/tool/configurators/passwd.py
 lib/vdsm/tool/configurators/sanlock.py
 lib/vdsm/tool/dummybr.py
 lib/vdsm/tool/service.py
