@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ def libvirt_sasl_isconfigured():
 def passwd_isconfigured():
     try:
         out = commands.run([
-            str(_SASLDBLISTUSERS2),
+            _SASLDBLISTUSERS2.cmd,
             '-f',
             _LIBVIRT_SASLDB
         ])
@@ -81,7 +81,7 @@ def removeConf():
     if passwd_isconfigured() == YES:
         try:
             commands.run([
-                str(_SASLPASSWD2),
+                _SASLPASSWD2.cmd,
                 '-p',
                 '-a',
                 'libvirt',
@@ -103,7 +103,7 @@ def configure_libvirt_sasl():
 
 def configure_passwd():
     args = [
-        str(_SASLPASSWD2),
+        _SASLPASSWD2.cmd,
         '-p',
         '-a',
         'libvirt',
