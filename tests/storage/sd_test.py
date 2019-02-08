@@ -31,6 +31,6 @@ def test_validate_domain_version_invaid():
         sd.validateDomainVersion(-1)
 
 
-@pytest.mark.parametrize("domain_version", [0, 2, 3, 4])
+@pytest.mark.parametrize("domain_version", [0, 2, 3, 4, 5])
 def test_validate_domain_version_supported(domain_version):
     sd.validateDomainVersion(domain_version)

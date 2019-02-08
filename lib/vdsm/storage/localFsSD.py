@@ -39,6 +39,7 @@ class LocalFsStorageDomainManifest(fileSD.FileStorageDomainManifest):
         2: clusterlock.SafeLease,
         3: clusterlock.LocalLock,
         4: clusterlock.LocalLock,
+        5: clusterlock.LocalLock,
     }
 
     # External leases support

@@ -149,7 +149,7 @@ def test_metadata_offset(monkeypatch):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-@pytest.mark.parametrize("domain_version", [3, 4])
+@pytest.mark.parametrize("domain_version", [3, 4, 5])
 def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
     sd_uuid = str(uuid.uuid4())
     domain_name = "loop-domain"
@@ -176,8 +176,8 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
     sdCache.manuallyAddDomain(dom)
 
     lease = sd.DEFAULT_LEASE_PARAMS
-    assert dom.getMetadata() == {
-        # Common storge domain values.
+    expected = {
+        # Common storage domain values.
         sd.DMDK_CLASS: sd.DATA_DOMAIN,
         sd.DMDK_DESCRIPTION: domain_name,
         sd.DMDK_IO_OP_TIMEOUT_SEC: lease[sd.DMDK_IO_OP_TIMEOUT_SEC],
@@ -213,6 +213,15 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
             'uuid': pv2.uuid,
         },
     }
+
+    # In version 5 we added ALIGNMENT and BLOCK_SIZE.
+    if domain_version > 4:
+        expected[sd.DMDK_ALIGNMENT] = sc.ALIGNMENT_1M
+        expected[sd.DMDK_BLOCK_SIZE] = sc.BLOCK_SIZE_512
+
+    actual = dom.getMetadata()
+
+    assert expected == actual
 
     # Check that first PV is device where metadata is stored.
     assert dev1 == lvm.getVgMetadataPv(dom.sdUUID)

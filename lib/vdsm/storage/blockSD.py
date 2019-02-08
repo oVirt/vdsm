@@ -132,7 +132,7 @@ DMDK_VGUUID = "VGUUID"
 DMDK_PV_REGEX = re.compile(r"^PV\d+$")
 
 VERS_METADATA_LV = (0,)
-VERS_METADATA_TAG = (2, 3, 4)
+VERS_METADATA_TAG = (2, 3, 4, 5)
 
 # Reserved leases for special purposes:
 #  - 0       SPM (Backward comapatibility with V0 and V2)
@@ -1162,11 +1162,12 @@ class BlockStorageDomain(sd.StorageDomain):
 
         logBlkSize, phyBlkSize = lvm.getVGBlockSizes(vgName)
 
-        # create domain metadata
-        # FIXME : This is 99% like the metadata in file SD
+        # Create domain metadata.
+        # FIXME : This is 99% like the metadata in file SD.
         #         Do we really need to keep the VGUUID?
-        #         no one reads it from here anyway
+        #         No one reads it from here anyway.
         initialMetadata = {
+            # These keys are common to version 4 and version 5.
             sd.DMDK_VERSION: version,
             sd.DMDK_SDUUID: sdUUID,
             sd.DMDK_TYPE: storageType,
@@ -1187,6 +1188,11 @@ class BlockStorageDomain(sd.StorageDomain):
             sd.DMDK_LOGBLKSIZE: logBlkSize,
             sd.DMDK_PHYBLKSIZE: phyBlkSize,
         }
+
+        if version > 4:
+            # These keys are added in version 5.
+            initialMetadata[sd.DMDK_ALIGNMENT] = alignment
+            initialMetadata[sd.DMDK_BLOCK_SIZE] = block_size
 
         initialMetadata.update(mapping)
 
