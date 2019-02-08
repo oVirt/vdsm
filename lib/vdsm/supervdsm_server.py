@@ -71,8 +71,6 @@ from vdsm.network.initializer import init_privileged_network_components
 
 from vdsm.storage.multipath import getScsiSerial as _getScsiSerial
 from vdsm.storage import multipath
-from vdsm.constants import METADATA_GROUP, \
-    VDSM_USER, GLUSTER_MGMT_ENABLED
 from vdsm.config import config
 
 RUN_AS_TIMEOUT = config.getint("irs", "process_pool_timeout")
@@ -255,6 +253,12 @@ def main(args):
         __assertSingleInstance()
         parser = option_parser()
         args = parser.parse_args(args=args)
+
+        # Override user and group if called with --user and --group.
+        constants.VDSM_USER = args.user
+        constants.VDSM_GROUP = args.group
+
+        # Override storage-repository, used to verify file access.
         try:
             logging.config.fileConfig(args.logger_conf,
                                       disable_existing_loggers=False)
@@ -275,7 +279,8 @@ def main(args):
             return wrapper
 
         if args.enable_gluster:
-            for name, func in listPublicFunctions(GLUSTER_MGMT_ENABLED):
+            for name, func in listPublicFunctions(
+                    constants.GLUSTER_MGMT_ENABLED):
                 setattr(_SuperVdsm, name, bind(logDecorator(func)))
 
         for _, module_name, _ in pkgutil.iter_modules([supervdsm_api.
@@ -318,7 +323,7 @@ def main(args):
             servThread = concurrent.thread(server.serve_forever)
             servThread.start()
 
-            chown(address, args.sock_user, args.sock_group)
+            chown(address, args.user, args.group)
 
             if args.enable_network:
                 init_privileged_network_components()
@@ -351,13 +356,13 @@ def option_parser():
         default=None,
         help="pid file path")
     parser.add_argument(
-        '--sock-user',
-        default=VDSM_USER,
-        help="override socket user name (default %s)" % VDSM_USER)
+        '--user',
+        default=constants.VDSM_USER,
+        help="override user name (default %s)" % constants.VDSM_USER)
     parser.add_argument(
-        '--sock-group',
-        default=METADATA_GROUP,
-        help="override socket group name (default %s)" % METADATA_GROUP)
+        '--group',
+        default=constants.VDSM_GROUP,
+        help="override group name (default %s)" % constants.VDSM_GROUP)
     parser.add_argument(
         '--logger-conf',
         default=LOG_CONF_PATH,
