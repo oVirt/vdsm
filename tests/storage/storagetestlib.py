@@ -21,9 +21,12 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import shutil
+import tempfile
+
 from contextlib import contextmanager
 
-from testlib import make_file, make_uuid, namedTemporaryDir
+from testlib import make_file, make_uuid
 from testlib import maybefail
 from testlib import recorded
 
@@ -55,6 +58,26 @@ from vdsm.storage import volume
 
 NR_PVS = 2       # The number of fake PVs we use to make a fake VG by default
 MB = 1024 ** 2   # Used to convert bytes to MB
+
+
+@contextmanager
+def temp_dir(base="/var/tmp", path=None):
+    """
+    If path is specified, use given path instead of a temporary directory.
+    Needed when the tests must use the same directory as another program
+    running during the tests. An example use case is running supervdsm with
+    --data-center option.
+    """
+    if path is None:
+        path = tempfile.mkdtemp(dir=base)
+    else:
+        # Fail if the directory exists, since we are going to delete it at the
+        # end of the test.
+        os.makedirs(path)
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path)
 
 
 class FakeFileEnv(object):
@@ -90,8 +113,9 @@ class FakeBlockEnv(object):
 
 
 @contextmanager
-def fake_file_env(obj=None, sd_version=3, remote_path="server:/path"):
-    with namedTemporaryDir() as tmpdir:
+def fake_file_env(obj=None, sd_version=3, data_center=None,
+                  remote_path="server:/path"):
+    with temp_dir(path=data_center) as tmpdir:
         mnt_dir = os.path.join(tmpdir, "mnt")
         local_path = fileUtils.transformPath(remote_path)
         mountpoint = os.path.join(mnt_dir, local_path)
@@ -116,8 +140,8 @@ def fake_file_env(obj=None, sd_version=3, remote_path="server:/path"):
 
 
 @contextmanager
-def fake_block_env(obj=None, sd_version=3):
-    with namedTemporaryDir() as tmpdir:
+def fake_block_env(obj=None, sd_version=3, data_center=None):
+    with temp_dir(path=data_center) as tmpdir:
         lvm = FakeLVM(tmpdir)
         fake_sdc = FakeStorageDomainCache()
         with MonkeyPatchScope([
@@ -138,11 +162,15 @@ def fake_block_env(obj=None, sd_version=3):
                 oop.stop()
 
 
-def fake_env(storage_type, sd_version=3, remote_path="server:/path"):
+def fake_env(storage_type, sd_version=3, data_center=None,
+             remote_path="server:/path"):
     if storage_type == 'file':
-        return fake_file_env(sd_version=sd_version, remote_path=remote_path)
+        return fake_file_env(
+            sd_version=sd_version,
+            data_center=data_center,
+            remote_path=remote_path)
     elif storage_type == 'block':
-        return fake_block_env(sd_version=sd_version)
+        return fake_block_env(sd_version=sd_version, data_center=data_center)
     else:
         raise ValueError("Invalid storage_type: %r" % storage_type)
 
