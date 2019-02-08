@@ -23,10 +23,7 @@ systemd - wrapper for systemd-run command.
 from __future__ import absolute_import
 from __future__ import division
 
-import os
-
 from . import commands
-from . import supervdsm
 
 SYSTEMD_RUN = "/usr/bin/systemd-run"
 
@@ -42,19 +39,8 @@ def run(cmd, scope=False, unit=None, slice=None, uid=None, gid=None,
     """
     Run a command using systemd-run.
 
-    If not running as root, use supervdsm to invoke this function as root.
+    Caller must run as root, otherwise the call will fail.
     """
-
-    if os.geteuid() != 0:
-        return supervdsm.getProxy().systemd_run(
-            cmd,
-            scope=scope,
-            unit=unit,
-            slice=slice,
-            uid=uid,
-            gid=gid,
-            accounting=accounting)
-
     cmd = wrap(
         cmd,
         scope=scope,

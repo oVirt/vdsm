@@ -1177,9 +1177,9 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/hwinfo.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/mkimage.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/ksm.py*
+%{python_sitelib}/%{vdsm_name}/supervdsm_api/nbd.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/network.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/systemctl.py*
-%{python_sitelib}/%{vdsm_name}/supervdsm_api/systemd.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/test.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/udev.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/virt.py*

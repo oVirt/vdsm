@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,19 +20,11 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from vdsm.common import systemd
+from vdsm.storage import nbd
 
 from . import expose
 
 
 @expose
-def systemd_run(cmd, scope=False, unit=None, slice=None, uid=None, gid=None,
-                accounting=None):
-    return systemd.run(
-        cmd,
-        scope=scope,
-        unit=unit,
-        slice=slice,
-        uid=uid,
-        gid=gid,
-        accounting=accounting)
+def nbd_start_transient_service(server_id, config):
+    return nbd.start_transient_service(server_id, config)

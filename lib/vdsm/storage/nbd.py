@@ -25,6 +25,7 @@ NBD - manage network block devices
 from __future__ import absolute_import
 from __future__ import division
 
+import collections
 import errno
 import logging
 import os
@@ -32,12 +33,14 @@ import time
 
 from vdsm.common import constants
 from vdsm.common import properties
+from vdsm.common import supervdsm
 from vdsm.common import systemctl
 from vdsm.common import systemd
 from vdsm.common.time import monotonic_time
 
 from . import constants as sc
 from . import exception as se
+from . import fileUtils
 from . sdc import sdCache
 
 QEMU_NBD = "/usr/bin/qemu-nbd"
@@ -46,8 +49,16 @@ RUN_DIR = os.path.join(constants.P_VDSM_RUN, "nbd")
 log = logging.getLogger("storage.nbd")
 
 
-class Timeout(Exception):
-    pass
+class Error(Exception):
+    """ Base class for nbd errors """
+
+
+class Timeout(Error):
+    """ Timeout starting nbd server """
+
+
+class InvalidPath(Error):
+    """ Path is not a valid volume path """
 
 
 class ServerConfig(properties.Owner):
@@ -66,6 +77,10 @@ class ServerConfig(properties.Owner):
         self.discard = config.get("discard")
 
 
+QemuNBDConfig = collections.namedtuple(
+    "QemuNBDConfig", "format,readonly,discard,path")
+
+
 def start_server(server_id, config):
     cfg = ServerConfig(config)
     dom = sdCache.produce_manifest(cfg.sd_id)
@@ -74,40 +89,21 @@ def start_server(server_id, config):
     if vol.isShared() and not cfg.readonly:
         raise se.SharedVolumeNonWritable(vol)
 
-    cmd = [QEMU_NBD]
+    _create_rundir()
 
     sock = _socket_path(server_id)
-    service = _service_name(server_id)
-
-    cmd.append("--socket")
-    cmd.append(sock)
-
-    cmd.append("--format")
-    cmd.append(sc.fmt2str(vol.getFormat()))
-
-    cmd.append("--persistent")
-
-    # Use empty export name for nicer url: "nbd:unix:/path" instead of
-    # "nbd:unix:/path:exportname=name".
-    cmd.append("--export-name=")
-
-    cmd.append("--cache=none")
-    cmd.append("--aio=native")
-
-    if cfg.readonly:
-        cmd.append("--read-only")
-    elif cfg.discard:
-        cmd.append("--discard=unmap")
-
-    cmd.append(vol.getVolumePath())
-
-    _create_rundir()
 
     log.info("Starting transient service %s, serving volume %s/%s via unix "
              "socket %s",
-             service, cfg.sd_id, cfg.vol_id, sock)
+             _service_name(server_id), cfg.sd_id, cfg.vol_id, sock)
 
-    systemd.run(cmd, unit=service, uid=os.getuid(), gid=os.getgid())
+    qemu_nbd_config = QemuNBDConfig(
+        format=sc.fmt2str(vol.getFormat()),
+        readonly=cfg.readonly,
+        discard=cfg.discard,
+        path=vol.getVolumePath())
+
+    start_transient_service(server_id, qemu_nbd_config)
 
     if not _wait_for_socket(sock, 1.0):
         raise Timeout("Timeout starting NBD server {}: {}"
@@ -131,6 +127,54 @@ def stop_server(server_id):
 
     log.info("Stopping transient service %s", service)
     systemctl.stop(service)
+
+
+def start_transient_service(server_id, config):
+    if os.geteuid() != 0:
+        return supervdsm.getProxy().nbd_start_transient_service(
+            server_id, config)
+
+    _verify_path(config.path)
+
+    cmd = [
+        QEMU_NBD,
+        "--socket", _socket_path(server_id),
+        "--format", config.format,
+        "--persistent",
+
+        # Use empty export name for nicer url: "nbd:unix:/path" instead of
+        # "nbd:unix:/path:exportname=name".
+        "--export-name=",
+
+        "--cache=none",
+        "--aio=native",
+    ]
+
+    if config.readonly:
+        cmd.append("--read-only")
+    elif config.discard:
+        cmd.append("--discard=unmap")
+
+    cmd.append(config.path)
+
+    systemd.run(
+        cmd,
+        unit=_service_name(server_id),
+        uid=fileUtils.resolveUid(constants.VDSM_USER),
+        gid=fileUtils.resolveGid(constants.VDSM_GROUP))
+
+
+def _verify_path(path):
+    """
+    Anyone running as vdsm can invoke nbd_start_transient_service() with
+    arbitrary path. Verify the path is in the storage repository.
+    """
+    norm_path = os.path.normpath(path)
+
+    if not norm_path.startswith(sc.REPO_MOUNT_DIR):
+        raise InvalidPath(
+            "Path {!r} is outside storage repository {!r}"
+            .format(path, sc.REPO_MOUNT_DIR))
 
 
 def _service_name(server_id):

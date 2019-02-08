@@ -28,9 +28,10 @@ To setup the environment for unprivileged user:
     $ sudo chown $USER:$USER /run/vdsm
 
     $ sudo env PYTHONPATH=lib static/usr/sbin/supervdsmd \
+          --data-center /var/tmp/vdsm/data-center \
           --sockfile /run/vdsm/svdsm.sock \
-          --sock-user=$USER \
-          --sock-group=$USER \
+          --user=$USER \
+          --group=$USER \
           --logger-conf tests/conf/svdsm.logger.conf \
           --disable-gluster \
           --disable-network
@@ -86,10 +87,11 @@ def nbd_env(monkeypatch):
     """
     Fixture for serving a volume using nbd server.
     """
-    with fake_env("file") as env:
-        # Monkeypatch nbd.RUN_DIR so tests can run without /run/vdsm.
-        monkeypatch.setattr(nbd, "RUN_DIR", os.path.join(env.tmpdir, "nbd"))
+    # These tests require supervdsm running, so we cannot use a random
+    # directory. We need to use the same path used to start supervdsm.
+    data_center = "/var/tmp/vdsm/data-center"
 
+    with fake_env("file", data_center=data_center) as env:
         env.virtual_size = 1024**2
 
         # Source image for copying into the nbd server.

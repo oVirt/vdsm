@@ -26,9 +26,9 @@ dist_supervdsm_api_PYTHON = \
 	ksm.py \
 	managedvolume.py \
 	mkimage.py \
+	nbd.py \
 	network.py \
 	systemctl.py \
-	systemd.py \
 	test.py \
 	udev.py \
 	virt.py \
