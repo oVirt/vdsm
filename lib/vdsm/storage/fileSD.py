@@ -472,7 +472,7 @@ class FileStorageDomain(sd.StorageDomain):
         # FIXME : This is 99% like the metadata in block SD
         #         Do we really need to keep the EXPORT_PATH?
         #         no one uses it
-        md.update({
+        metadata = {
             sd.DMDK_VERSION: version,
             sd.DMDK_SDUUID: sdUUID,
             sd.DMDK_TYPE: storageType,
@@ -490,7 +490,13 @@ class FileStorageDomain(sd.StorageDomain):
             sd.DMDK_LEASE_RETRIES:
             sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LEASE_RETRIES],
             REMOTE_PATH: remotePath
-        })
+        }
+
+        if version > 4:
+            metadata[sd.DMDK_ALIGNMENT] = alignment
+            metadata[sd.DMDK_BLOCK_SIZE] = block_size
+
+        md.update(metadata)
 
     def getFileList(self, pattern, caseSensitive):
         """

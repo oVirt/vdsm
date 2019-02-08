@@ -133,6 +133,8 @@ DMDK_ROLE = "ROLE"
 DMDK_DESCRIPTION = "DESCRIPTION"
 DMDK_CLASS = "CLASS"
 DMDK_POOLS = "POOL_UUID"
+DMDK_BLOCK_SIZE = "BLOCK_SIZE"
+DMDK_ALIGNMENT = "ALIGNMENT"
 
 # Lock related metadata keys
 DMDK_LOCK_POLICY = 'LOCKPOLICY'
@@ -305,6 +307,8 @@ SD_MD_FIELDS = {
         lambda val: intOrDefault(
             DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES], val),
         intEncode),
+    DMDK_BLOCK_SIZE: (int, str),
+    DMDK_ALIGNMENT: (int, str),
 }
 
 
@@ -318,6 +322,7 @@ class StorageDomainManifest(object):
         2: clusterlock.SafeLease,
         3: clusterlock.SANLock,
         4: clusterlock.SANLock,
+        5: clusterlock.SANLock,
     }
 
     def __init__(self, sdUUID, domaindir, metadata):

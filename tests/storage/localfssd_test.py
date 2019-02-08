@@ -54,7 +54,7 @@ def test_incorrect_alignment_rejected():
             sc.ALIGNMENT_2M)
 
 
-@pytest.mark.parametrize("domain_version", [3, 4])
+@pytest.mark.parametrize("domain_version", [3, 4, 5])
 def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     remote_path = str(tmpdir.mkdir("domain"))
     tmp_repo.connect_localfs(remote_path)
@@ -76,7 +76,7 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     sdCache.manuallyAddDomain(dom)
 
     lease = sd.DEFAULT_LEASE_PARAMS
-    assert dom.getMetadata() == {
+    expected = {
         sd.DMDK_CLASS: sd.DATA_DOMAIN,
         sd.DMDK_DESCRIPTION: domain_name,
         sd.DMDK_IO_OP_TIMEOUT_SEC: lease[sd.DMDK_IO_OP_TIMEOUT_SEC],
@@ -92,6 +92,15 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
         sd.DMDK_VERSION: domain_version,
         fileSD.REMOTE_PATH: remote_path
     }
+
+    # In version 5 we added ALIGNMENT and BLOCK_SIZE.
+    if domain_version > 4:
+        expected[sd.DMDK_ALIGNMENT] = sc.ALIGNMENT_1M
+        expected[sd.DMDK_BLOCK_SIZE] = sc.BLOCK_SIZE_512
+
+    actual = dom.getMetadata()
+
+    assert expected == actual
 
 
 def test_create_delete_volume(monkeypatch, tmpdir, tmp_repo, fake_access,

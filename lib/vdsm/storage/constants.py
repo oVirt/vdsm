@@ -239,7 +239,7 @@ SUPPORTED_BLOCKSIZE = (512,)
 
 # This is the domain version translation list
 # DO NOT CHANGE OLD VALUES ONLY APPEND
-DOMAIN_VERSIONS = (0, 2, 3, 4)
+DOMAIN_VERSIONS = (0, 2, 3, 4, 5)
 
 # This contains the domains versions that this VDSM
 # accepts currently its all of the version but in the
