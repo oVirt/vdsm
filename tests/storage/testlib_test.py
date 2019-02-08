@@ -59,9 +59,20 @@ class TestFakeFileEnv(VdsmTestCase):
         with fake_file_env() as env:
             self.assertFalse(hasattr(env, 'lvm'))
 
-    def test_repopath_location(self):
+    def test_repo_location(self):
         with fake_file_env() as env:
-            self.assertTrue(env.sd_manifest.getRepoPath().startswith(TEMPDIR))
+            # Verify that the environment uses expected tmp dir.
+            self.assertTrue(env.tmpdir.startswith(TEMPDIR))
+
+            # Verify that global REPO consntats are patched.
+            self.assertEqual(sc.REPO_DATA_CENTER, env.tmpdir)
+            repo_mnt_dir = os.path.join(sc.REPO_DATA_CENTER, "mnt")
+            self.assertEqual(sc.REPO_MOUNT_DIR, repo_mnt_dir)
+
+            # And domain is mounted in the patched envrionment.
+            dom = env.sd_manifest
+            mountpoint = os.path.join(sc.REPO_MOUNT_DIR, "server:_path")
+            self.assertEqual(dom.mountpoint, mountpoint)
 
     def test_domain_structure(self):
         with fake_file_env() as env:

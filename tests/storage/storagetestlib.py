@@ -41,6 +41,7 @@ from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileSD
+from vdsm.storage import fileUtils
 from vdsm.storage import fileVolume
 from vdsm.storage import guarded
 from vdsm.storage import hsm
@@ -89,19 +90,24 @@ class FakeBlockEnv(object):
 
 
 @contextmanager
-def fake_file_env(obj=None, sd_version=3, mnt_dir="server:_path"):
+def fake_file_env(obj=None, sd_version=3, remote_path="server:/path"):
     with namedTemporaryDir() as tmpdir:
-        mountpoint = os.path.join(tmpdir, mnt_dir)
-        os.mkdir(mountpoint)
-        sd_manifest = make_filesd_manifest(mountpoint, sd_version=sd_version)
+        mnt_dir = os.path.join(tmpdir, "mnt")
+        local_path = fileUtils.transformPath(remote_path)
+        mountpoint = os.path.join(mnt_dir, local_path)
+        os.makedirs(mountpoint)
+
         fake_sdc = FakeStorageDomainCache()
         with MonkeyPatchScope([
             [sc, 'REPO_DATA_CENTER', tmpdir],
+            [sc, 'REPO_MOUNT_DIR', mnt_dir],
             [volume, 'sdCache', fake_sdc],
             [fileVolume, 'sdCache', fake_sdc],
             [hsm, 'sdCache', fake_sdc],
             [nbd, 'sdCache', fake_sdc],
         ]):
+            sd_manifest = make_filesd_manifest(
+                mountpoint, sd_version=sd_version)
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
             try:
                 yield FakeFileEnv(tmpdir, sd_manifest, fake_sdc)
@@ -132,9 +138,9 @@ def fake_block_env(obj=None, sd_version=3):
                 oop.stop()
 
 
-def fake_env(storage_type, sd_version=3, mnt_dir="server:_path"):
+def fake_env(storage_type, sd_version=3, remote_path="server:/path"):
     if storage_type == 'file':
-        return fake_file_env(sd_version=sd_version, mnt_dir=mnt_dir)
+        return fake_file_env(sd_version=sd_version, remote_path=remote_path)
     elif storage_type == 'block':
         return fake_block_env(sd_version=sd_version)
     else:

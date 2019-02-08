@@ -78,11 +78,11 @@ class TestFileVolumeManifest(object):
     def test_get_image_volumes(self):
         img_id = make_uuid()
         vol_id = make_uuid()
-        mnt_dir = "[2001:db8:85a3::8a2e:370:7334]:1234:_path"
+        remote_path = "[2001:db8:85a3::8a2e:370:7334]:1234:/path"
         size = 5 * MEGAB
 
         # Simulate a domain with an ipv6 address
-        with fake_env(storage_type='file', mnt_dir=mnt_dir) as env:
+        with fake_env(storage_type='file', remote_path=remote_path) as env:
             env.make_volume(size, img_id, vol_id)
             vol = env.sd_manifest.produceVolume(img_id, vol_id)
             vol_path = vol.getVolumePath()
@@ -91,11 +91,11 @@ class TestFileVolumeManifest(object):
             assert vol.getImageVolumes(sduuid, img_id) == [vol_id]
 
     def test_get_children(self):
-        mnt_dir = "[2001:db8:85a3::8a2e:370:7334]:1234:_path"
+        remote_path = "[2001:db8:85a3::8a2e:370:7334]:1234:/path"
         size = 5 * MEGAB
 
         # Simulate a domain with an ipv6 address
-        with fake_env(storage_type='file', mnt_dir=mnt_dir) as env:
+        with fake_env(storage_type='file', remote_path=remote_path) as env:
             env.chain = make_qemu_chain(env, size, sc.name2type('raw'), 2)
             base_vol = env.chain[0]
             assert (env.chain[1].volUUID,) == base_vol.getChildren()
