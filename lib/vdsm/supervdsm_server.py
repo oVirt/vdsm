@@ -53,6 +53,7 @@ except ImportError:
     _glusterEnabled = False
 
 from vdsm import supervdsm_api
+from vdsm.storage import constants as sc
 from vdsm.storage import fuser
 from vdsm.storage import hba
 from vdsm.storage import mount
@@ -259,6 +260,9 @@ def main(args):
         constants.VDSM_GROUP = args.group
 
         # Override storage-repository, used to verify file access.
+        sc.REPO_DATA_CENTER = args.data_center
+        sc.REPO_MOUNT_DIR = os.path.join(args.data_center, sc.DOMAIN_MNT_POINT)
+
         try:
             logging.config.fileConfig(args.logger_conf,
                                       disable_existing_loggers=False)
@@ -379,4 +383,9 @@ def option_parser():
         dest='enable_network',
         default=True,
         help="disable network initialization (default enabled)")
+    parser.add_argument(
+        '--data-center',
+        default=sc.REPO_DATA_CENTER,
+        help=("override storage repository directory (default %s)"
+              % sc.REPO_DATA_CENTER))
     return parser
