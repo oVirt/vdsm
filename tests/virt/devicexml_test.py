@@ -29,6 +29,7 @@ import xml.etree.ElementTree as ET
 
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.vmdevices import hwclass
+from vdsm.virt.vmdevices import lookup
 from vdsm.virt import metadata
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
@@ -1678,6 +1679,9 @@ _DOMAIN_MD_MATCH_XML = u"""<domain type='kvm' id='2'>
         xmlns:ovirt-vm='http://ovirt.org/vm/1.0'>
     <ovirt-tune:qos/>
     <ovirt-vm:vm>
+      <ovirt-vm:device devtype="disk" name="sda">
+        <ovirt-vm:RBD>/dev/rbd/pool/volume-uuid</ovirt-vm:RBD>
+      </ovirt-vm:device>
       <ovirt-vm:device mac_address="00:1a:4a:16:01:00">
         <ovirt-vm:portMirroring>
           <ovirt-vm:network>network1</ovirt-vm:network>
@@ -1700,6 +1704,18 @@ _DOMAIN_MD_MATCH_XML = u"""<domain type='kvm' id='2'>
   </metadata>
   <devices>
     <emulator>/usr/libexec/qemu-kvm</emulator>
+    <disk type='block' device='disk' snapshot='no'>
+        <driver name='qemu' type='raw' cache='none'/>
+        <source dev='/dev/rbd/pool/volume-uuid'>
+        <seclabel model='dac' relabel='no'/>
+        </source>
+        <backingStore/>
+        <target dev='sda' bus='scsi'/>
+        <serial>44ab108a-62e6-480e-b44c-aac301227f94</serial>
+        <boot order='1'/>
+        <alias name='ua-44ab108a-62e6-480e-b44c-aac301227f94'/>
+        <address type='drive' controller='0' bus='0' target='0' unit='0'/>
+    </disk>
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
       <source startupPolicy='optional'/>
@@ -1819,6 +1835,20 @@ class DeviceMetadataMatchTests(XMLTestCase):
             if nic.macAddr == mac_addr:
                 return nic
         raise AssertionError('no nic with mac=%s found' % mac_addr)
+
+    def test_correct_rbd_disk_metadata(self):
+        drives = vmdevices.common.storage_device_params_from_domain_xml(
+            'TESTING', self.dom_desc, self.md_desc, self.log
+        )
+
+        disk_objs = [
+            vmdevices.storage.Drive(self.log, **params)
+            for params in drives
+        ]
+
+        rbd_drive = lookup.drive_by_name(disk_objs, 'sda')
+
+        assert getattr(rbd_drive, 'RBD') == '/dev/rbd/pool/volume-uuid'
 
 
 _VM_MDEV_XML = """<?xml version='1.0' encoding='utf-8'?>

@@ -125,7 +125,7 @@ class Drive(core.Base):
                  'extSharedState', 'drv', 'sgio', 'GUID', 'diskReplicate',
                  '_diskType', 'hosts', 'protocol', 'auth', 'discard',
                  'vm_custom', 'blockinfo', '_threshold_state', '_lock',
-                 '_monitorable', 'guestName', '_iotune')
+                 '_monitorable', 'guestName', '_iotune', 'RBD')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
