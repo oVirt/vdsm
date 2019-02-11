@@ -113,7 +113,8 @@ def attach_volume(vol_id, connection_info):
 
     log.debug("Attached volume %s attachment=%s", vol_id, attachment)
 
-    return {"result": {'attachment': attachment, 'path': path}}
+    return {"result": {'attachment': attachment, 'path': path,
+                       'vol_id': vol_id}}
 
 
 @requires_os_brick
@@ -134,6 +135,39 @@ def detach_volume(vol_id):
             run_helper("detach", vol_info)
 
         db.remove_volume(vol_id)
+
+
+def volumes_info(vol_ids=()):
+    """
+    Lookup volumes information in managed volume database.
+
+    Lookup volumes info in managed volume database for all volume IDs in the
+    vol_ids list and returns a list with volume information for each volume ID
+    which is present in the database. Each record contains connection info.
+    Path and attachment info of the volume is contained only when the resource
+    is attached. Dictionary can also contain 'exists' item, which is set to
+    True if the volume is connected and to False otherwise. Empty list is
+    returned if any of IDs are not in the database.
+
+    If the list of requested volume IDs is not specified or empty, list of all
+    volumes info in the DB is returned.
+
+    Arguments:
+            vol_ids (list): list of queried volume IDs.
+
+    Returns:
+            List of managed volumes information.
+    """
+    db = managedvolumedb.open()
+    with closing(db):
+        result = []
+        for vol_info in db.iter_volumes(vol_ids):
+            if "path" in vol_info:
+                vol_info["exists"] = os.path.exists(vol_info["path"])
+            vol_info.pop("multipath_id", None)
+            result.append(vol_info)
+
+    return {"result": result}
 
 
 # supervdsm interface

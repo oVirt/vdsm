@@ -430,3 +430,63 @@ def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir,
 
     # No multipath id added, no need to invalidated filter.
     assert not fake_lvm.filter_invalidated
+
+
+def test_volume_info_not_found(tmp_db):
+    assert [] == managedvolume.volumes_info(["fake_vol_id"])["result"]
+    assert [] == managedvolume.volumes_info()["result"]
+
+
+def test_volume_info_path_not_exists(tmp_db):
+    vol_info = {
+        "exists": False,
+        "connection_info": {"connection": 1},
+        "path": "/dev/mapper/fakemultipathid",
+        "attachment": {"attachment": 1},
+        "vol_id": "vol_id"
+    }
+
+    tmp_db.add_volume("vol_id", vol_info["connection_info"])
+    tmp_db.update_volume(vol_info["vol_id"], vol_info["path"],
+                         vol_info["attachment"], "fakemultipathid")
+
+    assert managedvolume.volumes_info(["vol_id"])["result"] == [vol_info]
+
+
+def test_volume_info_path_exists(tmpdir, tmp_db):
+    path = tmpdir.join("image")
+    path.write("")
+
+    vol_info = {
+        "exists": True,
+        "connection_info": {"connection": 1},
+        "path": str(path),
+        "attachment": {"attachment": 1},
+        "vol_id": "vol_id"
+    }
+
+    tmp_db.add_volume("vol_id", vol_info["connection_info"])
+    tmp_db.update_volume(vol_info["vol_id"], vol_info["path"],
+                         vol_info["attachment"], "fakemultipathid")
+
+    assert managedvolume.volumes_info(["vol_id"])["result"] == [vol_info]
+
+
+def test_volume_info_all(tmp_db):
+    expected = [{"vol_id": "vol-id-1",
+                 "connection_info": {"connection": 1}},
+                {"vol_id": "vol-id-2",
+                 "exists": False,
+                 "connection_info": {"connection": 2},
+                 "path": "/dev/mapper/fakemultipathid",
+                 "attachment": {"attachment": 2}}]
+
+    db = managedvolumedb.open()
+    with closing(db):
+        for vol in expected:
+            db.add_volume(vol["vol_id"], vol["connection_info"])
+            if "path" in vol:
+                db.update_volume(vol["vol_id"], vol["path"], vol["attachment"],
+                                 "fakemultipathid")
+
+    assert expected == managedvolume.volumes_info()["result"]

@@ -1182,12 +1182,28 @@ types:
         description: Volume information after attachment.
         name: ManagedVolumeInformation
         properties:
-        -   description: The volume path to be used in the VM XML
+        -   defaultvalue: null
+            description: Indicate if the volume is attached to the host (path
+                exists on the host) or not. Property is added only if volume
+                was attached and has a path.
+            name: exists
+            type: boolean
+        -   defaultvalue: null
+            description: Managed volume connection information provided by
+                Cinderlib
+            name: connection_info
+            type: *ManagedVolumeConnection
+        -   defaultvalue: null
+            description: The volume path to be used in the VM XML
             name: path
             type: string
-        -   description: The attached volume information
+        -   defaultvalue: null
+            description: The attached volume information
             name: attachment
             type: *ManagedVolumeAttachement
+        -   description: ID of the volume
+            name: vol_id
+            type: string
         type: object
 
     FenceNodeAction: &FenceNodeAction
@@ -8799,17 +8815,21 @@ ManagedVolume.detach_volume:
         name: vol_id
         type: *UUID
 
-ManagedVolume.volume_info:
+ManagedVolume.volumes_info:
     added: '4.3'
-    description: Get a volume information
+    description: Get information about list of volumes
     params:
-    -   description: The volume ID
-        name: vol_id
-        type: *UUID
+    -   defaultvalue: ()
+        description: The list of volume IDs
+        name: vol_ids
+        type:
+        - *UUID
     return:
-        description: Information about the attached volume. If the required
-            volume is not attached an ResourceDoesNotExist error is returned.
-        type: *ManagedVolumeInformation
+        description: Information about the attached volumes. If list of volume
+            IDs is not specified or empty, info about all volumes in DB is
+            returned.
+        type:
+        - *ManagedVolumeInformation
 
 ISCSIConnection.discoverSendTargets:
     added: '3.1'

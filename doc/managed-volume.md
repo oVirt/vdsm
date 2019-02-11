@@ -128,13 +128,19 @@ detachment is retrieved from the local DB.
 
 ## Get volume information
 
-The user is able to get the information of a specific volume using
-ManagedVolume.volume_info with the volume ID.
-Vdsm will return the volume information, as in the attach flow.
+The user is able to get the information of specific volumes using
+ManagedVolume.volumes_info with the volume IDs. List of all volumes can be
+obtained by using ManagedVolume.volumes_info without specifying a volume id.
+Vdsm will return the volume information, similar to the attach flow.
+Besides information contained in attach flow, it also includes volume ID and
+parameter `exists`, which is set to `True` if multipath device is connected
+and path exists on local machine.
 For example:
 
 ```json
-{
+[{
+  "vol_id": "01713ade-9688-43ff-a46c-0e2e35974dce",
+  "exists": "True",
   "path" : "/dev/mapper/20024f400585401ce",
   "attachment":
   {
@@ -142,5 +148,5 @@ For example:
     "scsi_wwn": "20024f400585401ce",
     "type": "block"
   }
-}
+}]
 ```

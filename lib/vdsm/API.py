@@ -1769,5 +1769,5 @@ class ManagedVolume(APIBase):
 
     @api.logged(on="api.storage")
     @api.method
-    def volume_info(self, vol_id):
-        raise exception.MethodNotImplemented
+    def volumes_info(self, vol_ids=()):
+        return managedvolume.volumes_info(vol_ids)

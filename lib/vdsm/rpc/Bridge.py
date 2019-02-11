@@ -436,7 +436,7 @@ command_info = {
     'Lease_status': {'ret': 'result'},
     'NBD_start_server': {'ret': 'result'},
     'ManagedVolume_attach_volume': {'ret': 'result'},
-    'ManagedVolume_volume_info': {'ret': 'result'},
+    'ManagedVolume_volumes_info': {'ret': 'result'},
     'VM_start_backup': {'ret': 'result'},
     'VM_stop_backup': {'ret': 'status'},
     'VM_backup_info': {'ret': 'result'},
