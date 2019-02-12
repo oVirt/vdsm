@@ -25,8 +25,6 @@ from __future__ import division
 import os
 import uuid
 
-from contextlib import closing
-
 import six
 import pytest
 
@@ -35,10 +33,6 @@ from vdsm.common import constants
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
-from vdsm.storage import multipath
-
-from . import tmpstorage
-
 
 requires_root = pytest.mark.skipif(
     os.geteuid() != 0, reason="requires root")
@@ -140,29 +134,6 @@ def test_rebuild_filter_after_invaliation(fake_devices):
     assert cmd[3] == lvm._buildConfig(
         dev_filter=lvm._buildFilter(fake_devices),
         locking_type="1")
-
-
-@pytest.fixture
-def temp_storage(monkeypatch, tmpdir):
-    storage = tmpstorage.TemporaryStorage(str(tmpdir))
-
-    # Get devices from our temporary storage instead of multipath.
-    monkeypatch.setattr(multipath, "getMPDevNamesIter", storage.devices)
-
-    # Use custom /run/vdsm/storage directory, used to keep symlinks to active
-    # lvs.
-    storage_dir = str(tmpdir.join("storage"))
-    os.mkdir(storage_dir)
-    monkeypatch.setattr(sc, "P_VDSM_STORAGE", storage_dir)
-
-    with closing(storage):
-        # Don't let other test break us...
-        lvm.invalidateCache()
-        try:
-            yield storage
-        finally:
-            # and don't break other tests.
-            lvm.invalidateCache()
 
 
 @requires_root
