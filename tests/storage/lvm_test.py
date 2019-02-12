@@ -324,26 +324,41 @@ def test_vg_check(temp_storage):
 @xfail_python3
 @pytest.mark.root
 def test_lv_create_remove(temp_storage):
-    dev_size = 20 * 1024**3
-    dev = temp_storage.create_device(dev_size)
+    dev_size = 10 * 1024**3
+    dev1 = temp_storage.create_device(dev_size)
+    dev2 = temp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
-    lv_name = str(uuid.uuid4())
-    lvm.createVG(vg_name, [dev], "initial-tag", 128)
-    lvm.createLV(vg_name, lv_name, 1024)
+    lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
 
-    lv = lvm.getLV(vg_name, lv_name)
-    assert lv.name == lv_name
+    lv_any = "lv-on-any-device"
+    lv_specific = "lv-on-device-2"
+
+    # Create the first LV on any device.
+    lvm.createLV(vg_name, lv_any, 1024)
+    lv = lvm.getLV(vg_name, lv_any)
+    assert lv.name == lv_any
     assert lv.vg_name == vg_name
     assert int(lv.size) == 1024**3
     assert lv.tags == ()
     assert lv.writeable
     assert not lv.opened
     assert lv.active
-    assert lv.devices == "%s(0)" % dev
 
-    lvm.removeLVs(vg_name, [lv_name])
-    with pytest.raises(se.LogicalVolumeDoesNotExistError):
-        lvm.getLV(vg_name, lv_name)
+    # LV typically created on dev1.
+    device, extent = lvm.getFirstExt(vg_name, lv_any)
+    assert device in dev1, dev2
+    assert extent == "0"
+
+    # Create the second LV on dev2.
+    lvm.createLV(vg_name, lv_specific, 1024, device=dev2)
+    device, extent = lvm.getFirstExt(vg_name, lv_specific)
+    assert device == dev2
+
+    # Remove both LVs.
+    lvm.removeLVs(vg_name, [lv_any, lv_specific])
+    for lv_name in (lv_any, lv_specific):
+        with pytest.raises(se.LogicalVolumeDoesNotExistError):
+            lvm.getLV(vg_name, lv_name)
 
 
 @requires_root
