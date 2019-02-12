@@ -139,9 +139,9 @@ def test_rebuild_filter_after_invaliation(fake_devices):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_vg_create_remove_single_device(temp_storage):
+def test_vg_create_remove_single_device(tmp_storage):
     dev_size = 20 * 1024**3
-    dev = temp_storage.create_device(dev_size)
+    dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
 
@@ -173,11 +173,11 @@ def test_vg_create_remove_single_device(temp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_vg_create_multiple_devices(temp_storage):
+def test_vg_create_multiple_devices(tmp_storage):
     dev_size = 10 * 1024**3
-    dev1 = temp_storage.create_device(dev_size)
-    dev2 = temp_storage.create_device(dev_size)
-    dev3 = temp_storage.create_device(dev_size)
+    dev1 = tmp_storage.create_device(dev_size)
+    dev2 = tmp_storage.create_device(dev_size)
+    dev3 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lvm.createVG(vg_name, [dev1, dev2, dev3], "initial-tag", 128)
 
@@ -218,11 +218,11 @@ def test_vg_create_multiple_devices(temp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_vg_extend_reduce(temp_storage):
+def test_vg_extend_reduce(tmp_storage):
     dev_size = 10 * 1024**3
-    dev1 = temp_storage.create_device(dev_size)
-    dev2 = temp_storage.create_device(dev_size)
-    dev3 = temp_storage.create_device(dev_size)
+    dev1 = tmp_storage.create_device(dev_size)
+    dev2 = tmp_storage.create_device(dev_size)
+    dev3 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lvm.createVG(vg_name, [dev1], "initial-tag", 128)
 
@@ -262,9 +262,9 @@ def test_vg_extend_reduce(temp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_vg_add_delete_tags(temp_storage):
+def test_vg_add_delete_tags(tmp_storage):
     dev_size = 20 * 1024**3
-    dev = temp_storage.create_device(dev_size)
+    dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
     lvm.changeVGTags(
@@ -282,10 +282,10 @@ def test_vg_add_delete_tags(temp_storage):
 
 @requires_root
 @pytest.mark.root
-def test_vg_check(temp_storage):
+def test_vg_check(tmp_storage):
     dev_size = 10 * 1024**3
-    dev1 = temp_storage.create_device(dev_size)
-    dev2 = temp_storage.create_device(dev_size)
+    dev1 = tmp_storage.create_device(dev_size)
+    dev2 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
     assert lvm.chkVG(vg_name)
@@ -294,10 +294,10 @@ def test_vg_check(temp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_lv_create_remove(temp_storage):
+def test_lv_create_remove(tmp_storage):
     dev_size = 10 * 1024**3
-    dev1 = temp_storage.create_device(dev_size)
-    dev2 = temp_storage.create_device(dev_size)
+    dev1 = tmp_storage.create_device(dev_size)
+    dev2 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
 
@@ -335,9 +335,9 @@ def test_lv_create_remove(temp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_lv_add_delete_tags(temp_storage):
+def test_lv_add_delete_tags(tmp_storage):
     dev_size = 20 * 1024**3
-    dev = temp_storage.create_device(dev_size)
+    dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
@@ -355,9 +355,9 @@ def test_lv_add_delete_tags(temp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_lv_activate_deactivate(temp_storage):
+def test_lv_activate_deactivate(tmp_storage):
     dev_size = 20 * 1024**3
-    dev = temp_storage.create_device(dev_size)
+    dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
@@ -380,9 +380,9 @@ def test_lv_activate_deactivate(temp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_lv_extend_reduce(temp_storage):
+def test_lv_extend_reduce(tmp_storage):
     dev_size = 20 * 1024**3
-    dev = temp_storage.create_device(dev_size)
+    dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
@@ -401,9 +401,9 @@ def test_lv_extend_reduce(temp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_lv_refresh(temp_storage):
+def test_lv_refresh(tmp_storage):
     dev_size = 20 * 1024**3
-    dev = temp_storage.create_device(dev_size)
+    dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
     lv_fullname = "{}/{}".format(vg_name, lv_name)
@@ -413,7 +413,7 @@ def test_lv_refresh(temp_storage):
     # Simulate extending the LV on the SPM.
     commands.run([
         "lvextend",
-        "--config", temp_storage.lvm_config(),
+        "--config", tmp_storage.lvm_config(),
         "-L+1g",
         lv_fullname
     ])
@@ -426,7 +426,7 @@ def test_lv_refresh(temp_storage):
     # Simulate extending the LV on the SPM.
     commands.run([
         "lvextend",
-        "--config", temp_storage.lvm_config(),
+        "--config", tmp_storage.lvm_config(),
         "-L+1g",
         lv_fullname
     ])
@@ -440,9 +440,9 @@ def test_lv_refresh(temp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_lv_rename(temp_storage):
+def test_lv_rename(tmp_storage):
     dev_size = 20 * 1024**3
-    dev = temp_storage.create_device(dev_size)
+    dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
@@ -457,14 +457,14 @@ def test_lv_rename(temp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_bootstrap(temp_storage):
+def test_bootstrap(tmp_storage):
     dev_size = 20 * 1024**3
 
-    dev1 = temp_storage.create_device(dev_size)
+    dev1 = tmp_storage.create_device(dev_size)
     vg1_name = str(uuid.uuid4())
     lvm.createVG(vg1_name, [dev1], "initial-tag", 128)
 
-    dev2 = temp_storage.create_device(dev_size)
+    dev2 = tmp_storage.create_device(dev_size)
     vg2_name = str(uuid.uuid4())
     lvm.createVG(vg2_name, [dev2], "initial-tag", 128)
 
@@ -504,13 +504,13 @@ def test_bootstrap(temp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_retry_with_wider_filter(temp_storage):
+def test_retry_with_wider_filter(tmp_storage):
     # Force reload of the cache. The system does not know about any device at
     # this point.
     lvm.getAllPVs()
 
     # Create a device - this device in not the lvm cached filter yet.
-    dev = temp_storage.create_device(20 * 1024**3)
+    dev = tmp_storage.create_device(20 * 1024**3)
 
     # We run vgcreate with explicit devices argument, so the filter is correct
     # and it succeeds.

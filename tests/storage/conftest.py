@@ -69,7 +69,7 @@ def tmp_repo(tmpdir, monkeypatch):
 
 
 @pytest.fixture
-def temp_storage(monkeypatch, tmpdir):
+def tmp_storage(monkeypatch, tmpdir):
     """
     Provide a temporary storage for creating temporary block devices, and patch
     vsdm to use it instead of multipath device.
