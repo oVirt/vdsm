@@ -23,17 +23,27 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import uuid
 
+import six
 import pytest
 
-from storage.storagefakelib import fake_vg
+from vdsm import constants
 from vdsm.storage import blockSD
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
-from vdsm import constants
+from vdsm.storage import sd
 
+from storage.storagefakelib import fake_vg
 
 TESTDIR = os.path.dirname(__file__)
+
+requires_root = pytest.mark.skipif(
+    os.geteuid() != 0, reason="requires root")
+
+xfail_python3 = pytest.mark.xfail(
+    six.PY3, reason="needs porting to python 3")
 
 
 class TestMetadataValidity:
@@ -159,3 +169,59 @@ def test_meta_size_max_val(monkeypatch):
         free=str(1024 * constants.MEGAB)))
     meta_size = blockSD.BlockStorageDomain.metaSize('sd-uuid')
     assert meta_size == 513
+
+
+@requires_root
+@xfail_python3
+@pytest.mark.root
+@pytest.mark.parametrize("domain_version", [3, 4])
+def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
+    sd_uuid = str(uuid.uuid4())
+    domain_name = "loop-domain"
+
+    dev = tmp_storage.create_device(20 * 1024**3)
+    lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_uuid)
+    pv = lvm.getPV(dev)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_uuid,
+        domainName=domain_name,
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=domain_version,
+        storageType=sd.ISCSI_DOMAIN,
+        block_size=sc.BLOCK_SIZE_512,
+        alignment=sc.ALIGNMENT_1M)
+
+    lease = sd.DEFAULT_LEASE_PARAMS
+    assert dom.getMetadata() == {
+        # Common storge domain values.
+        sd.DMDK_CLASS: sd.DATA_DOMAIN,
+        sd.DMDK_DESCRIPTION: domain_name,
+        sd.DMDK_IO_OP_TIMEOUT_SEC: lease[sd.DMDK_IO_OP_TIMEOUT_SEC],
+        sd.DMDK_LEASE_RETRIES: lease[sd.DMDK_LEASE_RETRIES],
+        sd.DMDK_LEASE_TIME_SEC: lease[sd.DMDK_LEASE_TIME_SEC],
+        sd.DMDK_LOCK_POLICY: "",
+        sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC:
+            lease[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+        sd.DMDK_POOLS: [],
+        sd.DMDK_ROLE: sd.REGULAR_DOMAIN,
+        sd.DMDK_SDUUID: sd_uuid,
+        sd.DMDK_TYPE: sd.ISCSI_DOMAIN,
+        sd.DMDK_VERSION: domain_version,
+
+        # Block storge domain extra values.
+        blockSD.DMDK_VGUUID: vg.uuid,
+        blockSD.DMDK_LOGBLKSIZE: sc.BLOCK_SIZE_512,
+        blockSD.DMDK_PHYBLKSIZE: sc.BLOCK_SIZE_512,
+
+        # PV keys for blockSD.DMDK_PV_REGEX.
+        "PV0": {
+            'guid': os.path.basename(dev),
+            'mapoffset': '0',
+            'pecount': '157',
+            'pestart': '0',
+            'uuid': pv.uuid,
+        },
+    }
