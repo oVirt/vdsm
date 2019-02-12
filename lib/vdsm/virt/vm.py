@@ -4771,7 +4771,7 @@ class Vm(object):
     def _diskSizeExtendCow(self, drive, newSizeBytes):
         try:
             # Due to an old bug in libvirt (BZ#963881) this call used to be
-            # broken for NFS domains when squash_root was enabled.  This has
+            # broken for NFS domains when root_squash was enabled.  This has
             # been fixed since libvirt-0.10.2-29
             curVirtualSize = self._dom.blockInfo(drive.name)[0]
         except libvirt.libvirtError:
