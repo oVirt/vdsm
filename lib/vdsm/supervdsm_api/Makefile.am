@@ -27,11 +27,10 @@ dist_supervdsm_api_PYTHON = \
 	ksm.py \
 	mkimage.py \
 	network.py \
-	systemd.py \
 	udev.py \
 	virt.py \
 	$(NULL)
 
 if CONTAINERS
-dist_supervdsm_api_PYTHON += containers.py
+dist_supervdsm_api_PYTHON += containers.py systemd.py
 endif
