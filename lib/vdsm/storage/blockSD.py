@@ -103,8 +103,11 @@ BlockSDVol = namedtuple("BlockSDVol", "name, image, parent")
 
 log = logging.getLogger("storage.BlockSD")
 
-# FIXME: Make this calculated from something logical
-RESERVED_METADATA_SIZE = 40 * (2 ** 20)
+# Metadata LV reserved size:
+# 0-1 MiB: V4 metadata area.
+# 1-17 MiB: V5 metadata area.
+RESERVED_METADATA_SIZE = 17 * constants.MEGAB
+
 RESERVED_MAILBOX_SIZE = MAILBOX_SIZE * clusterlock.MAX_HOST_ID
 METADATA_BASE_SIZE = 378
 # VG's min metadata threshold is 20%
