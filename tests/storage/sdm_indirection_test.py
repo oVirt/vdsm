@@ -222,11 +222,6 @@ class FakeBlockDomainManifest(FakeDomainManifest):
 
     @classmethod
     @recorded
-    def metaSize(cls, *args):
-        pass
-
-    @classmethod
-    @recorded
     def getMetaDataMapping(cls, *args):
         pass
 
@@ -774,7 +769,6 @@ class TestBlockDomain(DomainTestMixin, VdsmTestCase):
         self.checker.check_method_call(fn, nargs)
 
     @permutations([
-        ['metaSize', 1],
         ['getMetaDataMapping', 2],
     ])
     def test_block_classmethod(self, fn, nargs=0):

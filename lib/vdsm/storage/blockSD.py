@@ -75,6 +75,29 @@ SPECIAL_LVS_V0 = sd.SPECIAL_VOLUMES_V0 + (MASTERLV,)
 # Special lvs avilable since storage domain version 4.
 SPECIAL_LVS_V4 = sd.SPECIAL_VOLUMES_V4 + (MASTERLV,)
 
+# The metadata LV
+#
+# We use 2 GiB leases volume, which gives us 2048 leases using the
+# default 512 bytes block size and 1 MiB align. Then we have the SPM
+# lease, and 100 reserved leases for future use. This result in 1947
+# volume leases. Because every volume have a lease, we cannot have more
+# than 1947 volumes (not including special volumes).
+#
+# In V4 we use 512 bytes metadata slot size. We reserve metadata slots
+# 0-3 (was used in older versions for domain metadata), so the total
+# maximum used size in the metadata LV is 998,912 bytes which is less
+# than 1 MiB.  We had wrong calculation assuming that we can have one
+# volume per extent.  Based on this, we allocated at least 512 MiB for
+# the metadata volume.
+#
+# In V5 we use 8 KiB metadata slots size. We reserved the first 1 MiB to
+# make it easy to convert V4 metadta in the same LV atomically. Then we
+# reserve the first slot for metadata LV metadata. Assuming 1951 slots
+# converted from V4 metadta, we need 17,031,168 bytes, which is less
+# than 17 MiB.
+
+METADATA_LV_SIZE_MB = 128
+
 MASTERLV_SIZE = "1024"  # In MiB = 2 ** 20 = 1024 ** 2 => 1GiB
 BlockSDVol = namedtuple("BlockSDVol", "name, image, parent")
 
@@ -573,33 +596,6 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                     else:
                         del self._metadata[key]
 
-    @classmethod
-    def metaSize(cls, vgroup):
-        ''' Calc the minimal meta volume size in MB'''
-        # In any case the metadata volume cannot be less than 512MB for the
-        # case of 512 bytes per volume metadata, 2K for domain metadata and
-        # extent size of 128MB. In any case we compute the right size on line.
-        vg = lvm.getVG(vgroup)
-        sd_metadata_blocks = SD_METADATA_SIZE // sc.METADATA_SIZE
-        # TODO - Remove this unneeded rounding, the minimal lvm extent size
-        # is 4M, and we use 128M so Rounding extent size to 1 MiB is irellevant
-        rounded_extent_size_mb = utils.round(
-            int(vg.extent_size), constants.MEGAB) // constants.MEGAB
-        min_metasize_mb = sd_metadata_blocks * rounded_extent_size_mb
-        metaratio = int(vg.extent_size) // sc.METADATA_SIZE
-        max_volume_slots_size = int(vg.extent_count) * sc.METADATA_SIZE
-        max_volume_slots_size_mb = utils.round(
-            max_volume_slots_size, constants.MEGAB) // constants.MEGAB
-        max_metasize_mb = max(min_metasize_mb, max_volume_slots_size_mb)
-        if max_metasize_mb > int(vg.free) // constants.MEGAB:
-            raise se.VolumeGroupSizeError(
-                "volume group has not enough extents %s (Minimum %s), VG may "
-                "be too small" % (
-                    vg.extent_count, constants.MEGAB // sc.METADATA_SIZE))
-        cls.log.info(
-            "size %s MB (metaratio %s)" % (max_metasize_mb, metaratio))
-        return max_metasize_mb
-
     def extend(self, devlist, force):
         with self.metadata_lock:
             if self.getVersion() in VERS_METADATA_LV:
@@ -614,15 +610,11 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
             lvm.extendVG(self.sdUUID, devlist, force)
             self.updateMapping()
-            newsize = self.metaSize(self.sdUUID)
-            lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
 
     def resizePV(self, guid):
         with self.metadata_lock:
             lvm.resizePV(self.sdUUID, guid)
             self.updateMapping()
-            newsize = self.metaSize(self.sdUUID)
-            lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
 
     def movePV(self, src_device, dst_devices):
         self._validatePVsPartOfVG(src_device, dst_devices)
@@ -1006,10 +998,6 @@ class BlockStorageDomain(sd.StorageDomain):
                            lvmActivationNamespace)
 
     @classmethod
-    def metaSize(cls, vgroup):
-        return cls.manifestClass.metaSize(vgroup)
-
-    @classmethod
     def create(cls, sdUUID, domainName, domClass, vgUUID, storageType,
                version, block_size=sc.BLOCK_SIZE_512,
                alignment=sc.ALIGNMENT_1M):
@@ -1059,12 +1047,14 @@ class BlockStorageDomain(sd.StorageDomain):
             cls.log.debug("%d > %d", numOfPVs, MAX_PVS)
             raise se.StorageDomainIsMadeFromTooManyPVs()
 
-        # Create metadata service volume
-        # Metadata have to be stored always on the VG metadata device, which is
-        # always the first PV.
-        metasize = cls.metaSize(vgName)
-        lvm.createLV(vgName, sd.METADATA, "%s" % (metasize),
-                     device=lvm.getVgMetadataPv(vgName))
+        # Create metadata service volume. Metadata have to be stored always on
+        # the VG metadata device, which is always the first PV.
+        lvm.createLV(
+            vgName=vgName,
+            lvName=sd.METADATA,
+            size="%s" % METADATA_LV_SIZE_MB,
+            device=lvm.getVgMetadataPv(vgName))
+
         # Create the mapping right now so the index 0 is guaranteed to belong
         # to the metadata volume. Since the metadata is at least
         # SD_METADATA_SIZE / sc.METADATA_SIZE units, we know we can use the

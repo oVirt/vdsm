@@ -30,7 +30,6 @@ import pytest
 from vdsm import constants
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
-from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import sd
 
@@ -123,48 +122,6 @@ class TestDecodeValidity:
         assert pvinfo["guid"] == 'my,name'
 
 
-# VG size 10 GB
-def test_meta_size_enough_free_space(monkeypatch):
-    monkeypatch.setattr(lvm, 'getVG', lambda x: fake_vg(
-        extent_size=str(128 * constants.MEGAB),
-        extent_count='77',
-        free=str(512 * constants.MEGAB)))
-    meta_size = blockSD.BlockStorageDomain.metaSize('sd-uuid')
-    assert meta_size == 512
-
-
-# VG size 10 GB
-def test_meta_size_vg_too_small(monkeypatch):
-    # Creating a VG with size=10GB and 512MB - 1 byte of free space
-    # Should raise an exception - VG too small
-    monkeypatch.setattr(lvm, 'getVG', lambda x: fake_vg(
-        extent_size=(128 * constants.MEGAB),
-        extent_count='77',
-        free=str((512 - 1) * constants.MEGAB)))
-    with pytest.raises(se.VolumeGroupSizeError):
-        blockSD.BlockStorageDomain.metaSize('sd-uuid')
-
-
-# VG size 128.002 TB
-def test_meta_size_min_val(monkeypatch):
-    monkeypatch.setattr(lvm, 'getVG', lambda x: fake_vg(
-        extent_size=(128 * constants.MEGAB),
-        extent_count='1048576',
-        free=str(512 * constants.MEGAB)))
-    meta_size = blockSD.BlockStorageDomain.metaSize('sd-uuid')
-    assert meta_size == 512
-
-
-# VG size is 128.003 TB
-def test_meta_size_max_val(monkeypatch):
-    monkeypatch.setattr(lvm, 'getVG', lambda x: fake_vg(
-        extent_size=(128 * constants.MEGAB),
-        extent_count='1048577',
-        free=str(1024 * constants.MEGAB)))
-    meta_size = blockSD.BlockStorageDomain.metaSize('sd-uuid')
-    assert meta_size == 513
-
-
 @requires_root
 @xfail_python3
 @pytest.mark.root
@@ -232,3 +189,6 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
 
     # Check that first PV is device where metadata is stored.
     assert dev1 == lvm.getVgMetadataPv(dom.sdUUID)
+
+    lv = lvm.getLV(dom.sdUUID, sd.METADATA)
+    assert int(lv.size) == blockSD.METADATA_LV_SIZE_MB * constants.MEGAB
