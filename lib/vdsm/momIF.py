@@ -22,7 +22,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import logging
-import os
 import socket
 
 import six
@@ -52,14 +51,9 @@ class MomClient(object):
         if self._mom is not None:
             return
 
-        if os.access(self._sock_path, os.W_OK):
-            self.log.info("MOM: Using named unix socket: %s",
-                          self._sock_path)
-            self._mom = unixrpc.UnixXmlRpcClient(self._sock_path)
-        else:
-            self.log.info("MOM: named unix socket %s missing, not available",
-                          self._sock_path)
-            self._mom = None
+        self.log.info("MOM: Using named unix socket: %s",
+                      self._sock_path)
+        self._mom = unixrpc.UnixXmlRpcClient(self._sock_path)
 
     def getKsmStats(self):
         """
