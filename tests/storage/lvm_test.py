@@ -25,7 +25,6 @@ from __future__ import division
 import os
 import uuid
 
-import six
 import pytest
 
 from vdsm.common import commands
@@ -34,11 +33,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
 
-requires_root = pytest.mark.skipif(
-    os.geteuid() != 0, reason="requires root")
-
-xfail_python3 = pytest.mark.xfail(
-    six.PY3, reason="needs porting to python 3")
+from . marks import requires_root, xfail_python3
 
 
 def test_build_filter():

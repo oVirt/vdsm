@@ -31,9 +31,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import managedvolume
 from vdsm.storage import managedvolumedb
 
-
-requires_root = pytest.mark.skipif(
-    os.geteuid() != 0, reason="requires root")
+from . marks import requires_root
 
 
 @pytest.fixture

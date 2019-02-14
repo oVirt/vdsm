@@ -25,7 +25,6 @@ from __future__ import division
 import os
 import uuid
 
-import six
 import pytest
 
 from vdsm import constants
@@ -35,15 +34,10 @@ from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import sd
 
+from . marks import requires_root, xfail_python3
 from storage.storagefakelib import fake_vg
 
 TESTDIR = os.path.dirname(__file__)
-
-requires_root = pytest.mark.skipif(
-    os.geteuid() != 0, reason="requires root")
-
-xfail_python3 = pytest.mark.xfail(
-    six.PY3, reason="needs porting to python 3")
 
 
 class TestMetadataValidity:
