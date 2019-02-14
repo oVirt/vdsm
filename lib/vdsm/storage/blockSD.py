@@ -1060,8 +1060,11 @@ class BlockStorageDomain(sd.StorageDomain):
             raise se.StorageDomainIsMadeFromTooManyPVs()
 
         # Create metadata service volume
+        # Metadata have to be stored always on the VG metadata device, which is
+        # always the first PV.
         metasize = cls.metaSize(vgName)
-        lvm.createLV(vgName, sd.METADATA, "%s" % (metasize))
+        lvm.createLV(vgName, sd.METADATA, "%s" % (metasize),
+                     device=lvm.getVgMetadataPv(vgName))
         # Create the mapping right now so the index 0 is guaranteed to belong
         # to the metadata volume. Since the metadata is at least
         # SD_METADATA_SIZE / sc.METADATA_SIZE units, we know we can use the

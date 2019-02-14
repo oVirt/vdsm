@@ -173,10 +173,13 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
     sd_uuid = str(uuid.uuid4())
     domain_name = "loop-domain"
 
-    dev = tmp_storage.create_device(20 * 1024**3)
-    lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    dev1 = tmp_storage.create_device(10 * 1024**3)
+    dev2 = tmp_storage.create_device(10 * 1024**3)
+    lvm.createVG(sd_uuid, [dev1, dev2], blockSD.STORAGE_UNREADY_DOMAIN_TAG,
+                 128)
     vg = lvm.getVG(sd_uuid)
-    pv = lvm.getPV(dev)
+    pv1 = lvm.getPV(dev1)
+    pv2 = lvm.getPV(dev2)
 
     dom = blockSD.BlockStorageDomain.create(
         sdUUID=sd_uuid,
@@ -212,10 +215,20 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
 
         # PV keys for blockSD.DMDK_PV_REGEX.
         "PV0": {
-            'guid': os.path.basename(dev),
+            'guid': os.path.basename(dev1),
             'mapoffset': '0',
-            'pecount': '157',
+            'pecount': '77',
             'pestart': '0',
-            'uuid': pv.uuid,
+            'uuid': pv1.uuid,
+        },
+        "PV1": {
+            'guid': os.path.basename(dev2),
+            'mapoffset': '77',
+            'pecount': '77',
+            'pestart': '0',
+            'uuid': pv2.uuid,
         },
     }
+
+    # Check that first PV is device where metadata is stored.
+    assert dev1 == lvm.getVgMetadataPv(dom.sdUUID)
