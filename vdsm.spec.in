@@ -244,7 +244,12 @@ Requires: qemu-kvm-rhev >= 10:2.12.0-18.el7_6.3
 %endif
 %else # fedora
 # qemu-kvm 2.12 is Fedora 28 virt-preview baseline
+# but virt-preview is not available on s390 arch
+%ifnarch s390 s390x
 Requires: qemu-kvm >= 2:2.12
+%else
+Requires: qemu-kvm >= 2:2.11.2
+%endif
 %endif
 
 # GlusterFS client-side RPMs needed for Gluster SD
