@@ -1031,7 +1031,7 @@ class BlockStorageDomain(sd.StorageDomain):
         cls.log.info("sdUUID=%s domainName=%s domClass=%s vgUUID=%s "
                      "storageType=%s version=%s, block_size=%s, alignment=%s",
                      sdUUID, domainName, domClass, vgUUID, storageType,
-                     version, block_size, version)
+                     version, block_size, alignment)
 
         cls._validate_block_and_alignment(block_size, alignment)
 
