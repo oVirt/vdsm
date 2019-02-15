@@ -189,7 +189,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
                                  fixedminor='-', state='a', devopen='-',
                                  target='-', zero='-')
         with self.base_config() as lvm:
-            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB))
+            lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB)
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
             self.validate_properties(props, lv)
             self.assertEqual(attrs, lv.attr)
@@ -213,7 +213,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
 
         lvm.createLV('1ffead52-7363-4968-a8c7-3bc34504d452',
                      '54e3378a-b2f6-46ff-b2da-a9c82522a55e',
-                     '1024', activate=False)
+                     1024, activate=False)
 
         print lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
                         '54e3378a-b2f6-46ff-b2da-a9c82522a55e')
@@ -228,7 +228,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
            writeable=True, opened=False, active=False)
         """
         with self.base_config() as lvm:
-            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
+            lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB,
                          activate=False)
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
             self.assertFalse(lv.active)
@@ -242,7 +242,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
 
         lvm.createLV('1ffead52-7363-4968-a8c7-3bc34504d452',
                      '54e3378a-b2f6-46ff-b2da-a9c82522a55e',
-                     '1024', initialTags=(sc.TAG_VOL_UNINIT, "FOO"))
+                     1024, initialTags=(sc.TAG_VOL_UNINIT, "FOO"))
 
         print lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
                         '54e3378a-b2f6-46ff-b2da-a9c82522a55e')
@@ -257,7 +257,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
            opened=False, active=True)
         """
         with self.base_config() as lvm:
-            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
+            lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB,
                          initialTags=(sc.TAG_VOL_UNINIT, "FOO"))
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
             self.assertEqual((sc.TAG_VOL_UNINIT, "FOO"), lv.tags)
@@ -267,7 +267,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
         Create a logical volume with an initial tag and replace it.
         """
         with self.base_config() as lvm:
-            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
+            lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB,
                          initialTags=(sc.TAG_VOL_UNINIT,))
             deltags = (sc.TAG_VOL_UNINIT,)
             addtags = ("FOO",)
@@ -282,7 +282,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
 
         lvm.createLV('1ffead52-7363-4968-a8c7-3bc34504d452',
                      '54e3378a-b2f6-46ff-b2da-a9c82522a55e',
-                     '1024', activate=False)
+                     1024, activate=False)
         lvm.activateLVs('1ffead52-7363-4968-a8c7-3bc34504d452',
                         ['54e3378a-b2f6-46ff-b2da-a9c82522a55e'])
 
@@ -299,7 +299,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
            writeable=True, opened=False, active=True)
         """
         with self.base_config() as lvm:
-            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
+            lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB,
                          activate=False)
             lv_path = lvm.lvPath(self.VG_NAME, self.LV_NAME)
             self.assertFalse(os.path.exists(lv_path))
@@ -311,7 +311,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
 
     def test_deactivate_lv(self):
         with self.base_config() as lvm:
-            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB))
+            lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB)
             lvm.deactivateLVs(self.VG_NAME, [self.LV_NAME])
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
             self.assertFalse(lv.active)
@@ -321,7 +321,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
 
     def test_deactivate_inactive_lv(self):
         with self.base_config() as lvm:
-            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
+            lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB,
                          activate=False)
             # Deactivating inactive lvs should do nothing, simulating the
             # real code.
@@ -381,7 +381,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
     def test_lv_io(self):
         with self.base_config() as lvm:
             msg = "Hello World!"
-            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
+            lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB,
                          activate=True)
             lv_path = lvm.lvPath(self.VG_NAME, self.LV_NAME)
             self.assertEqual(MB * self.LV_SIZE_MB,
@@ -401,7 +401,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
 
     def test_lvsbytag(self):
         with self.base_config() as lvm:
-            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB))
+            lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB)
             lvm.changeLVTags(self.VG_NAME, self.LV_NAME, addTags=('foo',))
             lvs = lvm.lvsByTag(self.VG_NAME, 'foo')
             self.assertEqual(1, len(lvs))
@@ -424,7 +424,7 @@ class TestFakeLVMGeneral(VdsmTestCase):
         [se.VolumeGroupDoesNotExist, 'getVG', ['vg']],
         [se.CannotActivateLogicalVolume, 'activateLVs', ['vg', ['lv']]],
         [se.MissingTagOnLogicalVolume, 'addtag', ['vg', 'lv', 'tag']],
-        [se.CannotCreateLogicalVolume, 'createLV', ['vg', 'lv', '1024']],
+        [se.CannotCreateLogicalVolume, 'createLV', ['vg', 'lv', 1024]],
         [se.LogicalVolumeDoesNotExistError, 'getLV', ['vg', 'lv']],
         [se.InaccessiblePhysDev, 'getPV', ['pv']],
         [se.LogicalVolumeReplaceTagError, 'changeLVTags', ['vg', 'lv']],

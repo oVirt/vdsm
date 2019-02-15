@@ -1056,7 +1056,7 @@ class BlockStorageDomain(sd.StorageDomain):
         lvm.createLV(
             vgName=vgName,
             lvName=sd.METADATA,
-            size="%s" % METADATA_LV_SIZE_MB,
+            size=METADATA_LV_SIZE_MB,
             device=lvm.getVgMetadataPv(vgName))
 
         # Create the mapping right now so the index 0 is guaranteed to belong

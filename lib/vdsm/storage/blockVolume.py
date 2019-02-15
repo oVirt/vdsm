@@ -507,7 +507,7 @@ class BlockVolume(volume.Volume):
         lvSize = cls.calculate_volume_alloc_size(preallocate,
                                                  size, initialSize)
 
-        lvm.createLV(dom.sdUUID, volUUID, "%s" % lvSize, activate=True,
+        lvm.createLV(dom.sdUUID, volUUID, lvSize, activate=True,
                      initialTags=(sc.TAG_VOL_UNINIT,))
 
         fileutils.rm_file(volPath)
