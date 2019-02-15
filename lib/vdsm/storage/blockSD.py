@@ -98,7 +98,8 @@ SPECIAL_LVS_V4 = sd.SPECIAL_VOLUMES_V4 + (MASTERLV,)
 
 METADATA_LV_SIZE_MB = 128
 
-MASTERLV_SIZE = "1024"  # In MiB = 2 ** 20 = 1024 ** 2 => 1GiB
+MASTER_LV_SIZE_MB = 1024
+
 BlockSDVol = namedtuple("BlockSDVol", "name, image, parent")
 
 log = logging.getLogger("storage.BlockSD")
@@ -1071,7 +1072,7 @@ class BlockStorageDomain(sd.StorageDomain):
             if name in special_lvs:
                 lvm.createLV(vgName, name, size_mb)
 
-        lvm.createLV(vgName, MASTERLV, MASTERLV_SIZE)
+        lvm.createLV(vgName, MASTERLV, MASTER_LV_SIZE_MB)
 
         if cls.supports_external_leases(version):
             xleases_path = _external_leases_path(vgName)

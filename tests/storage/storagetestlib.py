@@ -255,7 +255,7 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
         if name in special:
             fake_lvm.createLV(sduuid, name, size_mb)
 
-    fake_lvm.createLV(sduuid, blockSD.MASTERLV, blockSD.MASTERLV_SIZE)
+    fake_lvm.createLV(sduuid, blockSD.MASTERLV, blockSD.MASTER_LV_SIZE_MB)
 
     # We'll store the domain metadata in the VG's tags
     metadata = make_sd_metadata(sduuid, version=sd_version, pools=[spuuid])
