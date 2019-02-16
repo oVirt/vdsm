@@ -186,13 +186,16 @@ POOL = MDK_POOLS  # Deprecated
 # MTIME=0                                     # always 0
 # POOL_UUID=                                  # always empty
 # PUUID=75f8a1bb-4504-4314-91ca-d9365a30692b  # uuid
-# SIZE=2147483648                             # size in blocks
+# SIZE=2199023255552                          # size in blocks
 # TYPE=PREALLOCATED                           # PREALLOCATED|UNKNOWN|SPARSE
 # VOLTYPE=INTERNAL                            # INTERNAL|SHARED|LEAF
 # GEN=999                                     # int
 # EOF
 #
-# This content requires 281 bytes, leaving 231 bytes for the description
+# For more info why this is the worst possible case, see
+# tests/storage/volume_metadata_test.py.
+#
+# This content requires up to 284 bytes, leaving 228 bytes for the description
 # field. OVF_STORE JSON format needs up to 175 bytes.
 #
 # We use a limit of 210 bytes for the description field, leaving couple
