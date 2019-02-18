@@ -4446,9 +4446,9 @@ class Vm(object):
             # directly to files, should be done with outOfProcess
             vmConfVol = memoryParams['dstparams']
             vmConfVolPath = self.cif.prepareVolumePath(vmConfVol)
-            vmConf = _vmConfForMemorySnapshot()
             try:
                 with open(vmConfVolPath, "rb+") as f:
+                    vmConf = _vmConfForMemorySnapshot()
                     data = pickle.dumps(vmConf)
 
                     # Ensure that the volume is aligned; qemu-img may segfault
@@ -4458,6 +4458,8 @@ class Vm(object):
                     data = data.ljust(aligned_length)
 
                     f.write(data)
+                    f.flush()
+                    os.fsync(f.fileno())
             finally:
                 self.cif.teardownVolumePath(vmConfVol)
 
