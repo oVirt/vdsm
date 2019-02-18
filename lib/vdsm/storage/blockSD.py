@@ -420,8 +420,6 @@ def metadataValidity(vg):
 
 
 class BlockStorageDomainManifest(sd.StorageDomainManifest):
-    # TODO: replace with a property that will compute the value in runtime.
-    mountpoint = os.path.join(sc.REPO_MOUNT_DIR, sd.BLOCKSD_DIR)
 
     def __init__(self, sdUUID, metadata=None):
         domaindir = os.path.join(self.mountpoint, sdUUID)
@@ -453,6 +451,10 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             return SPECIAL_LVS_V4
         else:
             return SPECIAL_LVS_V0
+
+    @property
+    def mountpoint(self):
+        return os.path.join(sc.REPO_MOUNT_DIR, sd.BLOCKSD_DIR)
 
     def readMetadataMapping(self):
         meta = self.getMetadata()

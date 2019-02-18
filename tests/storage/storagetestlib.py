@@ -149,6 +149,8 @@ def fake_block_env(obj=None, sd_version=3, data_center=None):
             (blockVolume, 'lvm', lvm),
             (blockVolume, 'sdCache', fake_sdc),
             (sc, 'REPO_DATA_CENTER', tmpdir),
+            (sc, "REPO_MOUNT_DIR", os.path.join(tmpdir, sc.DOMAIN_MNT_POINT,
+                                                sd.BLOCKSD_DIR)),
             (volume, 'sdCache', fake_sdc),
             (hsm, 'sdCache', fake_sdc),
             [nbd, 'sdCache', fake_sdc],
@@ -264,9 +266,6 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
     tag_md.update(metadata)
 
     manifest = blockSD.BlockStorageDomainManifest(sduuid, tag_md)
-    manifest.mountpoint = os.path.join(tmpdir, sc.DOMAIN_MNT_POINT,
-                                       sd.BLOCKSD_DIR)
-    manifest.domaindir = os.path.join(manifest.mountpoint, sduuid)
     os.makedirs(os.path.join(manifest.domaindir, sd.DOMAIN_IMAGES))
 
     # Make the repo directory structure
