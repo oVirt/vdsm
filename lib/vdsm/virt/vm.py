@@ -4448,9 +4448,16 @@ class Vm(object):
             vmConfVolPath = self.cif.prepareVolumePath(vmConfVol)
             vmConf = _vmConfForMemorySnapshot()
             try:
-                # Use r+ to avoid truncating the file, see BZ#1282239
-                with open(vmConfVolPath, "r+") as f:
-                    pickle.dump(vmConf, f)
+                with open(vmConfVolPath, "rb+") as f:
+                    data = pickle.dumps(vmConf)
+
+                    # Ensure that the volume is aligned; qemu-img may segfault
+                    # when converting unligned images.
+                    # https://bugzilla.redhat.com/1649788
+                    aligned_length = utils.round(len(data), 4096)
+                    data = data.ljust(aligned_length)
+
+                    f.write(data)
             finally:
                 self.cif.teardownVolumePath(vmConfVol)
 
