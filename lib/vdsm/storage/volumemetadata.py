@@ -171,3 +171,47 @@ class VolumeMetadata(object):
             md[sc.MTIME] = 0
 
         return md
+
+    # Three defs below allow us to imitate a dictionary
+    # So intstead of providing a method to return a dictionary
+    # with values, we return self and mimick dict behaviour.
+    # In the fieldmap we keep mapping between metadata
+    # field name and our internal field names
+    _fieldmap = {
+        sc.FORMAT: 'format',
+        sc.TYPE: 'type',
+        sc.VOLTYPE: 'voltype',
+        sc.DISKTYPE: 'disktype',
+        sc.SIZE: 'size',
+        sc.CTIME: 'ctime',
+        sc.DOMAIN: 'domain',
+        sc.IMAGE: 'image',
+        sc.DESCRIPTION: 'description',
+        sc.PUUID: 'puuid',
+        sc.LEGALITY: 'legality',
+        sc.GENERATION: 'generation',
+    }
+
+    def __getitem__(self, item):
+        try:
+            value = getattr(self, self._fieldmap[item])
+        except AttributeError:
+            raise KeyError(item)
+
+        # Some fields needs to be converted to string
+        if item in (sc.SIZE, sc.CTIME):
+            value = str(value)
+        return value
+
+    def __setitem__(self, item, value):
+        setattr(self, self._fieldmap[item], value)
+
+    def get(self, item, default=None):
+        try:
+            return self[item]
+        except KeyError:
+            return default
+
+    def iteritems(self):
+        for item in self._fieldmap:
+            yield (item, self[item])

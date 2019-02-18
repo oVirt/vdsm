@@ -306,3 +306,55 @@ class TestMDSize:
               .format(version, md_params['type'], md_len, md_fields, md_free))
 
         assert sc.METADATA_SIZE >= md_len
+
+
+class TestDictInterface:
+
+    @pytest.mark.parametrize('size', [
+        sc.DESCRIPTION_SIZE,
+        sc.DESCRIPTION_SIZE + 1
+    ])
+    def test_description_trunc(self, size):
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        md[sc.DESCRIPTION] = "!" * size
+        assert sc.DESCRIPTION_SIZE == len(md[sc.DESCRIPTION])
+
+    def test_dict_interface(self):
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        assert md[sc.DESCRIPTION] == params['description']
+        assert md[sc.DISKTYPE] == params['disktype']
+        assert md[sc.DOMAIN] == params['domain']
+        assert md[sc.FORMAT] == params['format']
+        assert md[sc.IMAGE] == params['image']
+        assert md[sc.PUUID] == params['puuid']
+        assert md[sc.SIZE] == str(params['size'])
+        assert md[sc.TYPE] == params['type']
+        assert md[sc.VOLTYPE] == params['voltype']
+        assert md[sc.DISKTYPE] == params['disktype']
+        assert md[sc.GENERATION] == params['generation']
+
+    def test_dict_setter(self):
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        assert md[sc.DESCRIPTION] == params['description']
+        md[sc.DESCRIPTION] = "New description"
+        assert "New description" == md[sc.DESCRIPTION]
+
+    def test_get_nonexistent(self):
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        with pytest.raises(KeyError):
+            md["INVALID_KEY"]
+
+    def test_set_nonexistent(self):
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        with pytest.raises(KeyError):
+            md["INVALID_KEY"] = "VALUE"
+
+    def test_get_default(self):
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        assert md.get("INVALID_KEY", "TEST") == "TEST"
