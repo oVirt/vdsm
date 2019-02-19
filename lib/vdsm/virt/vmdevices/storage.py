@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2017 Red Hat, Inc.
+# Copyright 2008-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -909,6 +909,9 @@ def disable_dynamic_ownership(element):
     """
     Disable dynamic ownership in the given device element.
 
+    If there is already <seclabel> subelement present, leave the whole
+    element untouched.
+
     Generally all devices should be put under dynamic ownership.  However it's
     more complicated with storage devices.  Vdsm handles volumes throughout
     their lifetimes, and lifetime of a volume exceeds lifetime of a VM.  It's
@@ -923,6 +926,8 @@ def disable_dynamic_ownership(element):
     #  model='dac' -- dac is the FS permissions driver
     #  type='none' -- type is currently used for SELinux/AppArmor drivers
     #  relabel='no' -- disable the change of permissions itself
+    if element.find('seclabel') is not None:
+        return
     seclabel = ET.Element('seclabel')
     seclabel.set('type', 'none')
     seclabel.set('relabel', 'no')
