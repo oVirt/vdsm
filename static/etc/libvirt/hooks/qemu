@@ -3,9 +3,6 @@ DOMAIN=$1
 EVENT=$2
 PHASE=$3
 
-# This condition depends on a feature that will be included in
-# libvirt once https://bugzilla.redhat.com/show_bug.cgi?id=1142684
-# is resolved. It will work only for migrations before that.
 if [ "x$EVENT" != "xmigrate" -a "x$EVENT" != "xrestore" ]; then
   # Return 0 and empty output for events that are not handled
   # by this hook.
