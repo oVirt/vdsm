@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2017 Red Hat, Inc.
+# Copyright 2011-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -108,11 +108,6 @@ parameters = [
         ('migration_monitor_interval', '10',
             'How often (in seconds) should the monitor thread pulse, 0 means '
             'the thread is disabled.'),
-
-        ('migration_ovs_hook_enabled', 'false',
-            'Whether migration hook should be enabled or not. It must be used '
-            'if you need to support VM migration between hosts with OVS '
-            'switch involved as VDSM network configurator.'),
 
         ('hidden_nics', 'w*,usb*',
             'Comma-separated list of fnmatch-patterns for host nics to be '
