@@ -55,6 +55,7 @@ dist_vdsmvirt_PYTHON = \
 	$(NULL)
 
 dist_vdsmexec_SCRIPTS = \
+	vm_libvirt_hook.py \
 	$(NULL)
 
 EXTRA_DIST = \
