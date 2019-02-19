@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,7 +55,6 @@ dist_vdsmvirt_PYTHON = \
 	$(NULL)
 
 dist_vdsmexec_SCRIPTS = \
-	vm_migrate_hook.py \
 	$(NULL)
 
 EXTRA_DIST = \
