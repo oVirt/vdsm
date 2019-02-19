@@ -112,7 +112,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
             raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
 
         md = VolumeMetadata.from_lines(lines)
-        return md.legacy_info(sd.getVersion())
+        return md
 
     def validateImagePath(self):
         """
