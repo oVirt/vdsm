@@ -32,11 +32,13 @@ from contextlib import closing
 
 import pytest
 
+from vdsm.common import threadlocal
 from vdsm.storage import constants as sc
 from vdsm.storage import fileSD
 from vdsm.storage import lvm
 from vdsm.storage import multipath
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage import task
 
 from . import tmprepo
 from . import tmpstorage
@@ -109,3 +111,23 @@ def fake_access(monkeypatch):
     fa = fake_access()
     monkeypatch.setattr(fileSD, "validateDirAccess", lambda path: fa.allowed)
     return fa
+
+
+@pytest.fixture
+def fake_task(monkeypatch):
+    """
+    Create fake task, expected in various places in the code. In the real code
+    a task is created for every HSM public call by the dispatcher.
+    """
+    monkeypatch.setattr(threadlocal.vars, 'task', task.Task("fake-task-id"))
+
+
+@pytest.fixture
+def fake_rescan(monkeypatch):
+    """
+    Fake rescanning of devices. Do nothing instead.
+    """
+    def rescan():
+        pass
+
+    monkeypatch.setattr(multipath, "rescan", rescan)
