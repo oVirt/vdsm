@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import six
 import textwrap
 import time
 
@@ -85,28 +86,7 @@ def make_lines(**kwargs):
 
 class TestVolumeMetadata:
 
-    def test_create_info_v4(self, monkeypatch):
-        params = make_init_params()
-        expected = dict(
-            CTIME=str(FAKE_TIME),
-            DESCRIPTION=params['description'],
-            DISKTYPE=params['disktype'],
-            DOMAIN=params['domain'],
-            FORMAT=params['format'],
-            IMAGE=params['image'],
-            LEGALITY=params['legality'],
-            MTIME=0,
-            PUUID=params['puuid'],
-            SIZE=str(params['size']),
-            TYPE=params['type'],
-            VOLTYPE=params['voltype'],
-            GEN=params['generation'])
-
-        monkeypatch.setattr(time, 'time', lambda: FAKE_TIME)
-        info = volume.VolumeMetadata(**params).legacy_info(4)
-        assert expected == info
-
-    def test_create_info_v5(self, monkeypatch):
+    def test_create_info(self, monkeypatch):
         params = make_init_params()
         expected = dict(
             CTIME=str(FAKE_TIME),
@@ -123,8 +103,9 @@ class TestVolumeMetadata:
             GEN=params['generation'])
 
         monkeypatch.setattr(time, 'time', lambda: FAKE_TIME)
-        info = volume.VolumeMetadata(**params).legacy_info(5)
-        assert expected == info
+        info = volume.VolumeMetadata(**params)
+        for key, value in six.iteritems(expected):
+            assert info[key] == value
 
     def test_storage_format_v4(self):
         params = make_init_params(ctime=FAKE_TIME)
@@ -183,11 +164,11 @@ class TestVolumeMetadata:
         with pytest.raises(se.MetaDataKeyNotFoundError):
             volume.VolumeMetadata.from_lines(lines)
 
-    @pytest.mark.parametrize("version", [4, 5])
-    def test_from_lines_invalid_param(self, version):
+    def test_from_lines_invalid_param(self):
         lines = make_lines(INVALID_KEY='foo')
         md = volume.VolumeMetadata.from_lines(lines)
-        assert "INVALID_KEY" not in md.legacy_info(version)
+        with pytest.raises(KeyError):
+            md["INVALID_KEY"]
 
     @pytest.mark.parametrize("key", [sc.SIZE, sc.CTIME])
     def test_from_lines_int_parse_error(self, key):

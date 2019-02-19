@@ -133,7 +133,15 @@ class VolumeMetadata(object):
         NOTE: Not used yet! We need to drop legacy_info() and pass
         VolumeMetadata instance instead of a dict to use this code.
         """
-        info = self.legacy_info(domain_version)
+
+        info = dict(self.iteritems())
+        if domain_version < 5:
+            # Always zero on pre v5 domains
+            # We need to keep MTIME available on pre v5
+            # domains, as other code is expecting that
+            # field to exists and will fail without it.
+            info[sc.MTIME] = 0
+
         keys = sorted(info.keys())
         lines = ["%s=%s\n" % (key, info[key]) for key in keys]
         lines.append("EOF\n")
@@ -141,36 +149,6 @@ class VolumeMetadata(object):
         if len(data) > sc.METADATA_SIZE:
             raise exception.MetadataOverflowError(data)
         return data
-
-    def legacy_info(self, domain_version):
-        """
-        Return metadata in dictionary format
-
-        NOTE: The dict returned here will be formatted by
-        Volume.formatMetadata() and written to storage.
-        """
-        md = {
-            sc.FORMAT: self.format,
-            sc.TYPE: self.type,
-            sc.VOLTYPE: self.voltype,
-            sc.DISKTYPE: self.disktype,
-            sc.SIZE: str(self.size),
-            sc.CTIME: str(self.ctime),
-            sc.DOMAIN: self.domain,
-            sc.IMAGE: self.image,
-            sc.DESCRIPTION: self.description,
-            sc.PUUID: self.puuid,
-            sc.LEGALITY: self.legality,
-            sc.GENERATION: self.generation,
-        }
-        if domain_version < 5:
-            # Always zero on pre v5 domains
-            # We need to keep MTIME available on pre v5
-            # domains, as other code is expecting that
-            # field to exists and will fail without it.
-            md[sc.MTIME] = 0
-
-        return md
 
     # Three defs below allow us to imitate a dictionary
     # So intstead of providing a method to return a dictionary
