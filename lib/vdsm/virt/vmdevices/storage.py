@@ -920,6 +920,14 @@ def disable_dynamic_ownership(element):
     Arguments:
       element: etree element representing the device
     """
+    # NOTE: This function is used also in vm_libvirt_hook.py, which is
+    # a libvirt hook. The purpose of the hook is to make sure
+    # seclabel's are added on host and file migrations from older Vdsm
+    # versions, otherwise libvirt may change image permissions
+    # inappropriately (see https://bugzilla.redhat.com/1666795). When
+    # making any changes to the function, don't forget to check that
+    # they don't break the hook!
+
     # We need to make sure that libvirt DAC (fs permission driver) is
     # disabled. The libvirt spec may be hard to read at times, so just as a
     # help:

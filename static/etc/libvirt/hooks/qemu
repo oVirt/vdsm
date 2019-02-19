@@ -1,0 +1,7 @@
+#!/bin/sh
+
+DOMAIN="$1"
+EVENT="$2"
+PHASE="$3"
+
+exec /usr/libexec/vdsm/vm_libvirt_hook.py "$DOMAIN" "$EVENT" "$PHASE"
