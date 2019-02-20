@@ -794,6 +794,44 @@ class FileStorageDomain(sd.StorageDomain):
             if e.errno == errno.EEXIST:
                 self.log.info("Reusing external leases volume %s", path)
 
+    # Format conversion
+
+    def convert_volumes_metadata(self, target_version):
+        current_version = self.getVersion()
+
+        if not (current_version == 4 and target_version == 5):
+            raise RuntimeError(
+                "Cannot convert domain {} volumes metadata from version {} "
+                "to version {}"
+                .format(self.sdUUID, current_version, target_version))
+
+        self.log.info(
+            "Converting domain %s volumes metadata from version %s to "
+            "version %s",
+            self.sdUUID, current_version, target_version)
+
+        for vol in self.iter_volumes():
+            self.log.debug("Converting volume %s metadata", vol.volUUID)
+            vol_md = vol.getMetadata()
+            vol.setMetadata(vol_md, CAP=vol_md.capacity)
+
+    def finalize_volumes_metadata(self, target_version):
+        current_version = self.getVersion()
+
+        if current_version != target_version:
+            raise RuntimeError(
+                "Cannot finalize domain {} volumes metadata: current version "
+                "{} != target version {}"
+                .format(self.sdUUID, current_version, target_version))
+
+        self.log.info("Finalizing domain %s volumes metadata version %s",
+                      self.sdUUID, target_version)
+
+        for vol in self.iter_volumes():
+            self.log.debug("Finalizing volume %s metadata", vol.volUUID)
+            vol_md = vol.getMetadata()
+            vol.setMetadata(vol_md)
+
 
 def _getMountsList(pattern="*"):
     fileDomPattern = os.path.join(sc.REPO_MOUNT_DIR, pattern)

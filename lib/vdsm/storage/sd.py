@@ -748,6 +748,21 @@ class StorageDomain(object):
     def getAllVolumes(self):
         return self._manifest.getAllVolumes()
 
+    def iter_volumes(self):
+        """
+        Iterate over all volumes.
+
+        Yields:
+            Volume instance
+        """
+        all_volumes = self.getAllVolumes()
+        for vol_id, (img_ids, _) in six.iteritems(all_volumes):
+            # The first img_id is the id of the template or the only image
+            # where the volume id appears.
+            img_id = img_ids[0]
+
+            yield self.produceVolume(img_id, vol_id)
+
     def prepareMailbox(self):
         """
         This method has been introduced in order to prepare the mailbox
@@ -1315,3 +1330,52 @@ class StorageDomain(object):
                 cls.log.error("create image rollback: Cannot remove dirty "
                               "image (image_dir=%s)",
                               image_dir)
+
+    # Format conversion
+
+    def convert_volumes_metadata(self, target_version):
+        """
+        Add new keys for version target_version to volumes metadata. The
+        operation must be completed by calling finalize_volumes_metadata().
+
+        Must be called before domain metadata was converted.
+
+        Must be implemented by concrete storge domains.
+        """
+        raise NotImplementedError
+
+    def convert_metadata(self, target_version):
+        """
+        Convert domain metadata to version target_version.
+
+        Must be called after convert_volumes_metadata().
+        """
+        current_version = self.getVersion()
+
+        if not (current_version == 4 and target_version == 5):
+            raise RuntimeError(
+                "Cannot convert domain {} from version {} to version {}"
+                .format(self.sdUUID, current_version, target_version))
+
+        self.log.info(
+            "Converting domain %s metadata from version %s to version %s",
+            self.sdUUID, current_version, target_version)
+
+        with self._metadata.transaction():
+            self._metadata[DMDK_VERSION] = target_version
+
+            # V4 domain never supported anything else, no need to probe
+            # storage.
+            self._metadata[DMDK_BLOCK_SIZE] = sc.BLOCK_SIZE_512
+            self._metadata[DMDK_ALIGNMENT] = sc.ALIGNMENT_1M
+
+    def finalize_volumes_metadata(self, target_version):
+        """
+        Rewrite volumes metadata, removing older keys kept during
+        convert_volumes_metadata().
+
+        Must be called after domain version was converted.
+
+        Must be implemented by concrete storge domains.
+        """
+        raise NotImplementedError

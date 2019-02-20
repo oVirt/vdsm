@@ -388,11 +388,39 @@ def v4DomainConverter(repoPath, hostId, domain, isMsd):
               domain.sdUUID, targetVersion)
 
 
+def v5DomainConverter(repoPath, hostId, domain, isMsd):
+    target_version = 5
+
+    log.debug("Starting conversion of domain %s to version %s",
+              domain.sdUUID, target_version)
+
+    # 1. Add v5 keys to volume metadata. If this fail or interrupted, we still
+    # have valid v4 metadata.
+    domain.convert_volumes_metadata(target_version)
+
+    # 2. All volumes were converted, we can switch the domain to v5 now.
+    # If this fails or interrupted, the conversion will fail and the domain
+    # will remain a valid v4 domain.
+    domain.convert_metadata(target_version)
+
+    # 3. Remove legacy volume metadata keys. If this fails or interrupted we
+    # can safely log and continue; the old keys are ignored when reading
+    # metadata, and will be eventually removed in the next metadata update.
+    try:
+        domain.finalize_volumes_metadata(target_version)
+    except Exception:
+        log.exception("Error finalizing volume metadata")
+
+    log.debug("Conversion of domain %s to version %s has been completed",
+              domain.sdUUID, target_version)
+
+
 _IMAGE_REPOSITORY_CONVERSION_TABLE = {
     ('0', '2'): v2DomainConverter,
     ('0', '3'): v3DomainConverter,
     ('2', '3'): v3DomainConverter,
     ('3', '4'): v4DomainConverter,
+    ('4', '5'): v5DomainConverter,
 }
 
 
