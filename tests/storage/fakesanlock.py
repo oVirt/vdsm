@@ -70,6 +70,16 @@ class FakeSanlock(object):
         timeout for the specific lockspace, overriding the default value
         (see the sanlock daemon parameter -o).
         """
+        # TODO: check, if sanlock was initalized. If not, throw exception:
+        #
+        #   if lockspace not in self.spaces:
+        #       raise self.SanlockException(errno.ENOENT,
+        #                                   "Sanlock lockspace add failure",
+        #                                   "No such file or directory")
+        #
+        # Such check may be added also into other places. Find all relevant
+        # places is also TBD.
+
         generation = 0
         host = self.hosts.get(host_id)
         if host:
@@ -274,3 +284,16 @@ class FakeSanlock(object):
                 errno.ENOSPC, "No such lockspace %r" % lockspace)
 
         return [self.hosts[host_id]]
+
+    def init_lockspace(self, lockspace, path, offset=0, max_hosts=0,
+                       num_hosts=0, use_aio=False):
+        """
+        Initialize a device to be used as sanlock lock space.
+        In our case, we just create empty dictionary for a lockspace.
+        """
+        self.spaces[lockspace] = {}
+
+    def init_resource(self, lockspace, resource, disks, max_hosts=0,
+                      num_hosts=0, use_aio=True):
+        self.write_resource(lockspace, resource, disks, max_hosts=max_hosts,
+                            num_hosts=num_hosts)

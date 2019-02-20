@@ -292,3 +292,29 @@ class TestFakeSanlock(VdsmTestCase):
         assert host[0]["id"] == 1
         assert host[0]["generation"] == 1
         assert host[0]["flags"] == sanlock.HOST_LIVE
+
+    def test_init_lockspace(self):
+        lockspace = "lockspace"
+        fs = FakeSanlock()
+
+        assert lockspace not in fs.spaces
+        fs.init_lockspace(lockspace, "path")
+        assert fs.spaces[lockspace] == {}
+
+    def test_init_resource(self):
+        fs = FakeSanlock()
+        fs.init_resource("lockspace", "resource", [("path", 1048576)])
+        info = fs.read_resource("path", 1048576)
+        expected = {"resource": "resource",
+                    "lockspace": "lockspace",
+                    "version": 0,
+                    "acquired": False}
+        self.assertEqual(info, expected)
+
+    @pytest.mark.xfail(
+        reason="Init lockspace is not forced in fake sanlock yet")
+    def test_add_without_init_lockpsace(self):
+        fs = FakeSanlock()
+        with pytest.raises(fs.SanlockException) as e:
+            fs.add_lockspace("lockspace", 1, "path")
+        assert e.value.errno == errno.ENOENT
