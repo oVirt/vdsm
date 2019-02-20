@@ -320,7 +320,7 @@ class PersistentDict(object):
 
     def __contains__(self, item):
         with self._accessWrapper():
-            return self._metadata.__contains__(self, item)
+            return item in self._metadata
 
     def copy(self):
         with self._accessWrapper():
