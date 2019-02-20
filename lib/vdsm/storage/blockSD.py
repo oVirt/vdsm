@@ -1185,9 +1185,12 @@ class BlockStorageDomain(sd.StorageDomain):
             sd.DMDK_LEASE_RETRIES: sd.DEFAULT_LEASE_PARAMS[
                 sd.DMDK_LEASE_RETRIES],
             DMDK_VGUUID: vgUUID,
-            sd.DMDK_LOGBLKSIZE: logBlkSize,
-            sd.DMDK_PHYBLKSIZE: phyBlkSize,
         }
+
+        if version < 5:
+            # These keys are removed in version 5.
+            initialMetadata[sd.DMDK_LOGBLKSIZE] = logBlkSize
+            initialMetadata[sd.DMDK_PHYBLKSIZE] = phyBlkSize
 
         if version > 4:
             # These keys are added in version 5.

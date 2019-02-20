@@ -194,8 +194,6 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
 
         # Block storge domain extra values.
         blockSD.DMDK_VGUUID: vg.uuid,
-        sd.DMDK_LOGBLKSIZE: sc.BLOCK_SIZE_512,
-        sd.DMDK_PHYBLKSIZE: sc.BLOCK_SIZE_512,
 
         # PV keys for blockSD.DMDK_PV_REGEX.
         "PV0": {
@@ -214,8 +212,12 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
         },
     }
 
-    # In version 5 we added ALIGNMENT and BLOCK_SIZE.
-    if domain_version > 4:
+    # In version 5 we removed LOGBLKSIZE and PHYBLKSIZE and added
+    # ALIGNMENT and BLOCK_SIZE.
+    if domain_version < 5:
+        expected[sd.DMDK_LOGBLKSIZE] = sc.BLOCK_SIZE_512
+        expected[sd.DMDK_PHYBLKSIZE] = sc.BLOCK_SIZE_512
+    else:
         expected[sd.DMDK_ALIGNMENT] = sc.ALIGNMENT_1M
         expected[sd.DMDK_BLOCK_SIZE] = sc.BLOCK_SIZE_512
 
