@@ -21,8 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from vdsm.storage import persistent
 from testlib import VdsmTestCase
-from vdsm.storage import persistent as persistentDict
 
 
 class DummyFailWriter(object):
@@ -63,11 +63,11 @@ class TestPersistentDict(VdsmTestCase):
         data = "Scotty had a will of her own, which was always " + \
                "dangerous in a woman."
         # (C) Philip K. Dick - The Three Stigmata of Palmer Eldritch
-        pd = persistentDict.PersistentDict(DummyFailWriter())
+        pd = persistent.PersistentDict(DummyFailWriter())
         self.assertRaises(RuntimeError, pd.__setitem__, "4", data)
 
     def testFailedNestedTransaction(self):
-        pd = persistentDict.PersistentDict(DummyFailWriter())
+        pd = persistent.PersistentDict(DummyFailWriter())
         try:
             with pd.transaction():
                 with pd.transaction():
