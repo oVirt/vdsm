@@ -33,13 +33,17 @@ from contextlib import closing
 import pytest
 
 from vdsm.common import threadlocal
+from vdsm.storage import blockSD
+from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import fileSD
 from vdsm.storage import lvm
+from vdsm.storage import managedvolumedb
 from vdsm.storage import multipath
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import task
 
+from .fakesanlock import FakeSanlock
 from . import tmprepo
 from . import tmpstorage
 
@@ -131,3 +135,24 @@ def fake_rescan(monkeypatch):
         pass
 
     monkeypatch.setattr(multipath, "rescan", rescan)
+
+
+@pytest.fixture
+def tmp_db(monkeypatch, tmpdir):
+    """
+    Create managed volume database in temporal directory.
+    """
+    db_file = str(tmpdir.join("managedvolumes.db"))
+    monkeypatch.setattr(managedvolumedb, "DB_FILE", db_file)
+    managedvolumedb.create_db()
+
+
+@pytest.fixture
+def fake_sanlock(monkeypatch):
+    """
+    Create fake sanlock which mimics sanlock functionality.
+    """
+    fs = FakeSanlock()
+    monkeypatch.setattr(clusterlock, "sanlock", fs)
+    monkeypatch.setattr(blockSD, "sanlock", fs)
+    return fs

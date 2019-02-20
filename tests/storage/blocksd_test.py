@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import time
 import uuid
 
 import pytest
@@ -31,6 +32,7 @@ from vdsm import constants
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import lvm
+from vdsm.storage import image
 from vdsm.storage import sd
 
 from . marks import requires_root, xfail_python3
@@ -192,3 +194,75 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
 
     lv = lvm.getLV(dom.sdUUID, sd.METADATA)
     assert int(lv.size) == blockSD.METADATA_LV_SIZE_MB * constants.MEGAB
+
+
+@requires_root
+@xfail_python3
+@pytest.mark.root
+def test_create_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
+                       fake_rescan, tmp_db, fake_task, fake_sanlock):
+    sd_uuid = str(uuid.uuid4())
+    domain_name = "domain"
+    domain_version = 4
+
+    dev = tmp_storage.create_device(20 * 1024 ** 3)
+    lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_uuid)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_uuid,
+        domainName=domain_name,
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=domain_version,
+        storageType=sd.ISCSI_DOMAIN,
+        block_size=sc.BLOCK_SIZE_512,
+        alignment=sc.ALIGNMENT_1M)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+    vol_capacity = 10 * 1024**3
+    vol_size = vol_capacity // sc.BLOCK_SIZE_512
+    vol_desc = "Test volume"
+
+    # Create domain directory structure.
+    dom.refresh()
+    # Attache repo pool - SD expects at least one pool is attached.
+    dom.attach(tmp_repo.pool_id)
+
+    with monkeypatch.context() as mc:
+        mc.setattr(time, "time", lambda: 1550522547)
+        dom.createVolume(
+            imgUUID=img_uuid,
+            size=vol_size,
+            volFormat=sc.COW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType=image.DISK_TYPES[image.DATA_DISK_TYPE],
+            volUUID=vol_uuid,
+            desc=vol_desc,
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID)
+
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+    actual = vol.getInfo()
+
+    expected_lease = {
+        "offset": ((blockSD.RESERVED_LEASES + 4) * sc.BLOCK_SIZE_512 *
+                   sd.LEASE_BLOCKS),
+        "owners": [],
+        "path": "/dev/{}/leases".format(sd_uuid),
+        "version": None,
+    }
+
+    assert int(actual["capacity"]) == vol_capacity
+    assert int(actual["ctime"]) == 1550522547
+    assert actual["description"] == vol_desc
+    assert actual["disktype"] == "DATA"
+    assert actual["domain"] == sd_uuid
+    assert actual["format"] == "COW"
+    assert actual["lease"] == expected_lease
+    assert actual["parent"] == sc.BLANK_UUID
+    assert actual["status"] == "OK"
+    assert actual["type"] == "SPARSE"
+    assert actual["voltype"] == "LEAF"
+    assert actual["uuid"] == vol_uuid
