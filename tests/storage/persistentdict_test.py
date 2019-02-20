@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import pytest
 from vdsm.storage import persistent
-from testlib import VdsmTestCase
 
 
 class DummyFailWriter(object):
@@ -58,24 +58,21 @@ class SpecialError (RuntimeError):
     pass
 
 
-class TestPersistentDict(VdsmTestCase):
-    def testFailedWrite(self):
-        data = "Scotty had a will of her own, which was always " + \
-               "dangerous in a woman."
-        # (C) Philip K. Dick - The Three Stigmata of Palmer Eldritch
-        pd = persistent.PersistentDict(DummyFailWriter())
-        self.assertRaises(RuntimeError, pd.__setitem__, "4", data)
+def test_persistent_dict_write_fail():
+    data = "Scotty had a will of her own, which was always " + \
+           "dangerous in a woman."
+    # (C) Philip K. Dick - The Three Stigmata of Palmer Eldritch
+    pd = persistent.PersistentDict(DummyFailWriter())
+    with pytest.raises(RuntimeError):
+        pd.__setitem__("4", data)
 
-    def testFailedNestedTransaction(self):
-        pd = persistent.PersistentDict(DummyFailWriter())
-        try:
+
+def test_persistent_dict_nested_transaction():
+    pd = persistent.PersistentDict(DummyFailWriter())
+    with pytest.raises(RuntimeError):
+        with pd.transaction():
             with pd.transaction():
-                with pd.transaction():
-                    raise SpecialError("Take the Kama Sutra. How many people "
-                                       "died from the Kama Sutra, as opposed "
-                                       "to the Bible? Who wins?")
-                    # (C) Frank Zappa
-        except RuntimeError:
-            return
-
-        self.fail("Exception was not thrown")
+                raise SpecialError("Take the Kama Sutra. How many people "
+                                   "died from the Kama Sutra, as opposed "
+                                   "to the Bible? Who wins?")
+                # (C) Frank Zappa
