@@ -199,17 +199,15 @@ class PersistentDict(object):
 
     def __getitem__(self, key):
         with self._accessWrapper():
-            if key not in self._metadata:
-                raise KeyError(key)
             return self._metadata[key]
 
     def __setitem__(self, key, value):
         with self.transaction():
-            self._metadata.__setitem__(key, value)
+            self._metadata[key] = value
 
     def __delitem__(self, key):
         with self.transaction():
-            self._metadata.__delitem__(key)
+            del self._metadata[key]
 
     def update(self, metadata):
         with self.transaction():
@@ -225,7 +223,7 @@ class PersistentDict(object):
 
     def __iter__(self):
         with self._accessWrapper():
-            return self._metadata.__iter__()
+            return iter(self._metadata)
 
     def refresh(self):
         with self._syncRoot:
