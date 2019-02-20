@@ -25,54 +25,42 @@ import pytest
 from vdsm.storage import persistent
 
 
-class DummyFailWriter(object):
-
-    def writelines(self, lines):
-        raise RuntimeError("You might have a very minor case of "
-                           "serious brain damage")
-        # (C) Valve - Portal 2
-
-    def readlines(self):
-        data = """Edward Tattsyrup: The time has come to find him a mate!
-                  Tubbs Tattsyrup: A no-tail? But where will we get one?
-                  Edward Tattsyrup: [grabs an animal trap]
-                                    Leave it to me, Tubbs!
-                                    I...have a way with women!"""
-        # (C) BBC - The League of Gentlemen
-        lines = data.splitlines()
-        return dict(zip([str(i) for i in range(len(lines))], lines))
+class WriterError(Exception):
+    """ Raised while writing or reading """
 
 
-class DummyWriter(object):
-    def __init__(self):
+class UserError(Exception):
+    """ Raised by user code inside a transaction """
+
+
+class MemoryWriter(object):
+
+    def __init__(self, fail=False):
         self.lines = []
+        self.fail = fail
 
     def readlines(self):
+        if self.fail:
+            raise WriterError
         return self.lines[:]
 
     def writelines(self, lines):
+        if self.fail:
+            raise WriterError
         self.lines = lines[:]
 
 
-class SpecialError (RuntimeError):
-    pass
-
-
 def test_persistent_dict_write_fail():
-    data = "Scotty had a will of her own, which was always " + \
-           "dangerous in a woman."
-    # (C) Philip K. Dick - The Three Stigmata of Palmer Eldritch
-    pd = persistent.PersistentDict(DummyFailWriter())
-    with pytest.raises(RuntimeError):
-        pd.__setitem__("4", data)
+    pd = persistent.PersistentDict(MemoryWriter(fail=True))
+    with pytest.raises(WriterError):
+        pd["key"] = 1
 
 
-def test_persistent_dict_nested_transaction():
-    pd = persistent.PersistentDict(DummyFailWriter())
-    with pytest.raises(RuntimeError):
+def test_persistent_dict_nested_transaction_fail():
+    pd = persistent.PersistentDict(MemoryWriter(fail=True))
+    # TODO: This looks like a bug - we should raise the user error during the
+    # transaction.
+    with pytest.raises(WriterError):
         with pd.transaction():
             with pd.transaction():
-                raise SpecialError("Take the Kama Sutra. How many people "
-                                   "died from the Kama Sutra, as opposed "
-                                   "to the Bible? Who wins?")
-                # (C) Frank Zappa
+                raise UserError
