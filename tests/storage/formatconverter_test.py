@@ -88,3 +88,76 @@ def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
     # LocalFS do not support external leases, so the only change is the
     # version.
     assert dom.getVersion() == 4
+
+
+def test_convert_from_v4_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
+                                       fake_rescan, fake_task):
+    remote_path = str(tmpdir.mkdir("domain"))
+    tmp_repo.connect_localfs(remote_path)
+    sd_uuid = str(uuid.uuid4())
+
+    dom = localFsSD.LocalFsStorageDomain.create(
+        sdUUID=sd_uuid,
+        domainName="domain",
+        domClass=sd.DATA_DOMAIN,
+        remotePath=remote_path,
+        version=4,
+        storageType=sd.LOCALFS_DOMAIN,
+        block_size=sc.BLOCK_SIZE_512,
+        alignment=sc.ALIGNMENT_1M)
+
+    sdCache.knownSDs[sd_uuid] = localFsSD.findDomain
+    sdCache.manuallyAddDomain(dom)
+
+    # Only attached domains are converted.
+    dom.attach(tmp_repo.pool_id)
+
+    # Create some volumes in v4 format.
+    for i in range(3):
+        dom.createVolume(
+            desc="Awesome volume %d" % i,
+            diskType="DATA",
+            imgUUID=str(uuid.uuid4()),
+            preallocate=sc.SPARSE_VOL,
+            size=10 * 1024**3,
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID,
+            volFormat=sc.COW_FORMAT,
+            volUUID=str(uuid.uuid4()))
+
+    # Record domain and volumes metadata before conversion.
+    old_dom_md = dom.getMetadata()
+    volumes_md = {vol.volUUID: vol.getMetadata() for vol in dom.iter_volumes()}
+
+    fc = formatconverter.DefaultFormatConverter()
+
+    fc.convert(
+        repoPath=tmp_repo.path,
+        hostId=1,
+        imageRepo=dom,
+        isMsd=False,
+        targetFormat='5')
+
+    # Verify changes in domain metadata.
+
+    new_dom_md = dom.getMetadata()
+
+    # Values modified in v5.
+    assert old_dom_md.pop("VERSION") == 4
+    assert new_dom_md.pop("VERSION") == 5
+
+    # Keys added in v5.
+    assert new_dom_md.pop("BLOCK_SIZE") == sc.BLOCK_SIZE_512
+    assert new_dom_md.pop("ALIGNMENT") == sc.ALIGNMENT_1M
+
+    # Rest of the values should not be modified.
+    assert new_dom_md == old_dom_md
+
+    # Verify that volumes metadata was converted to v5 format.
+
+    for vol in dom.iter_volumes():
+        vol_md = volumes_md[vol.volUUID]
+        meta_path = vol.getMetaVolumePath()
+        with open(meta_path) as f:
+            data = f.read()
+        assert data == vol_md.storage_format(5)
