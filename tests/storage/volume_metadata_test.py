@@ -148,6 +148,14 @@ class TestVolumeMetadata:
         md = volume.VolumeMetadata(**params)
         assert expected == md.storage_format(5)
 
+    def test_storage_format_overrides(self):
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        capacity = md.size * sc.BLOCK_SIZE_512
+        data = md.storage_format(4, CAP=capacity)
+        assert "SIZE=%s\n" % md.size in data
+        assert "CAP=%s\n" % capacity in data
+
     @pytest.mark.parametrize("param", ['size', 'ctime'])
     def test_int_params_str_raises(self, param):
         params = make_init_params(**{param: 'not_an_int'})

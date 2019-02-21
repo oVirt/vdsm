@@ -124,9 +124,15 @@ class VolumeMetadata(object):
             desc = desc[:sc.DESCRIPTION_SIZE]
         return desc
 
-    def storage_format(self, domain_version):
+    def storage_format(self, domain_version, **overrides):
         """
         Format metadata string in storage format.
+
+        VolumeMetadata is quite restrictive and doesn't allows
+        you to make an invalid metadata, but sometimes, for example
+        for a format conversion, you need some additional fields to
+        be written to the storage. Those fields can be added using
+        overrides dict.
 
         Raises MetadataOverflowError if formatted metadata is too long.
 
@@ -141,6 +147,8 @@ class VolumeMetadata(object):
             # domains, as other code is expecting that
             # field to exists and will fail without it.
             info[sc.MTIME] = 0
+
+        info.update(overrides)
 
         keys = sorted(info.keys())
         lines = ["%s=%s\n" % (key, info[key]) for key in keys]
