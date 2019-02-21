@@ -100,6 +100,8 @@ class StompTests(TestCaseBase):
                                                    str(uuid4())),
                                  data)
 
+    @broken_on_ci(
+        "Fails randomly in oVirt CI, see https://gerrit.ovirt.org/c/95899/")
     @permutations(_USE_SSL)
     def test_event(self, use_ssl):
         with constructAcceptor(self.log, use_ssl, _SampleBridge(),
