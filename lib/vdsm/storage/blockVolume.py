@@ -31,7 +31,6 @@ from vdsm.common.threadlocal import vars
 from vdsm.config import config
 from vdsm.storage import blockdev
 from vdsm.storage import constants as sc
-from vdsm.storage import directio
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import misc
@@ -238,16 +237,13 @@ class BlockVolumeManifest(volume.VolumeManifest):
 
     @classmethod
     def _putMetadata(cls, metaId, meta):
-        vgname, offs = metaId
+        sd = sdCache.produce_manifest(meta.domain)
+
+        _, slot = metaId
 
         data = cls.formatMetadata(meta)
         data += "\0" * (sc.METADATA_SIZE - len(data))
-
-        sd = sdCache.produce_manifest(vgname)
-        metavol = sd.metadata_volume_path()
-        with directio.DirectFile(metavol, "r+") as f:
-            f.seek(sd.metadata_offset(offs))
-            f.write(data)
+        sd.write_metadata_block(slot, data)
 
     def changeVolumeTag(self, tagPrefix, uuid):
 
@@ -295,11 +291,8 @@ class BlockVolumeManifest(volume.VolumeManifest):
         """
         Just wipe meta.
         """
-        try:
-            self._putMetadata(metaId, {"NONE": "#" * (sc.METADATA_SIZE - 10)})
-        except Exception as e:
-            self.log.error(e, exc_info=True)
-            raise se.VolumeMetadataWriteError("%s: %s" % (metaId, e))
+        _, slot = metaId
+        sdCache.produce_manifest(self.sdUUID).clear_metadata_block(slot)
 
     @classmethod
     def newVolumeLease(cls, metaId, sdUUID, volUUID):
@@ -491,10 +484,10 @@ class BlockVolume(volume.Volume):
                     os.unlink(volPath)
 
     @classmethod
-    def createVolumeMetadataRollback(cls, taskObj, sdUUID, offs):
-        cls.log.info("Metadata rollback for sdUUID=%s offs=%s", sdUUID, offs)
-        cls._putMetadata((sdUUID, int(offs)),
-                         {"NONE": "#" * (sc.METADATA_SIZE - 10)})
+    def createVolumeMetadataRollback(cls, taskObj, sdUUID, slot):
+        cls.log.info("Metadata rollback for sdUUID=%s slot=%s", sdUUID, slot)
+        sd = sdCache.produce_manifest(sdUUID)
+        sd.clear_metadata_block(slot)
 
     @classmethod
     def _create(cls, dom, imgUUID, volUUID, size, volFormat, preallocate,

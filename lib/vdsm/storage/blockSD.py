@@ -979,6 +979,26 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         else:
             return METADATA_BASE_V5 + slot * METADATA_SLOT_SIZE_V5
 
+    def write_metadata_block(self, slot, data):
+        """
+        Writes prepared metadata block to the specified
+        storage.
+
+        Data block is expected to be aligned to the
+        storage block size.
+        """
+        metavol = self.metadata_volume_path()
+        with directio.DirectFile(metavol, "r+") as f:
+            f.seek(self.metadata_offset(slot))
+            f.write(data)
+
+    def clear_metadata_block(self, slot):
+        """
+        Just wipe meta.
+        """
+        data = b"\0" * sc.METADATA_SIZE
+        self.write_metadata_block(slot, data)
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
