@@ -331,22 +331,6 @@ class VolumeManifest(object):
                            (self.volUUID, key, value))
             raise
 
-    @classmethod
-    def formatMetadata(cls, meta):
-        """
-        Format metadata string in storage format.
-
-        Raises MetadataOverflowError if formatted metadata is too long.
-        """
-        # TODO: Adopt VolumeMetadata.storage_format()
-        lines = ["%s=%s\n" % (key.strip(), str(value).strip())
-                 for key, value in meta.iteritems()]
-        lines.append("EOF\n")
-        data = "".join(lines)
-        if len(data) > sc.METADATA_SIZE:
-            raise se.MetadataOverflowError(data)
-        return data
-
     @deprecated  # valid for domain version < 3
     def setrw(self, rw):
         # Since domain version 3 (V3) VDSM is not changing the internal volumes
@@ -861,10 +845,6 @@ class Volume(object):
 
     def _share(self, dstImgPath):
         return self._manifest._share(dstImgPath)
-
-    @classmethod
-    def formatMetadata(cls, meta):
-        return cls.manifestClass.formatMetadata(meta)
 
     @classmethod
     def _putMetadata(cls, metaId, meta):

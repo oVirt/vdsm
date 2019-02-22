@@ -325,11 +325,6 @@ class FakeVolumeManifest(object):
 
     @classmethod
     @recorded
-    def formatMetadata(cls, *args):
-        pass
-
-    @classmethod
-    @recorded
     def _putMetadata(cls, *args):
         pass
 
@@ -859,7 +854,6 @@ class VolumeTestMixin(object):
         self.checker.check_method_call(fn, nargs)
 
     @permutations([
-        ['formatMetadata', 1],
         ['_putMetadata', 2],
         ['createMetadata', 2],
         ['newMetadata', 11],
