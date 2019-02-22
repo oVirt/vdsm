@@ -248,13 +248,14 @@ class FileVolumeManifest(volume.VolumeManifest):
         volPath, = metaId
         metaPath = cls.metaVolumePath(volPath)
 
-        data = cls.formatMetadata(meta)
+        sd = sdCache.produce_manifest(meta.domain)
+
+        data = meta.storage_format(sd.getVersion())
 
         with open(metaPath + ".new", "w") as f:
             f.write(data)
 
-        sdUUID = getDomUuidFromVolumePath(volPath)
-        oop.getProcessPool(sdUUID).os.rename(metaPath + ".new", metaPath)
+        oop.getProcessPool(meta.domain).os.rename(metaPath + ".new", metaPath)
 
     def setImage(self, imgUUID):
         """

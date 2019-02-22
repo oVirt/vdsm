@@ -241,7 +241,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
 
         _, slot = metaId
 
-        data = cls.formatMetadata(meta)
+        data = meta.storage_format(sd.getVersion())
         data += "\0" * (sc.METADATA_SIZE - len(data))
         sd.write_metadata_block(slot, data)
 
