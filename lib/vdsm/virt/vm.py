@@ -4455,7 +4455,7 @@ class Vm(object):
                     # when converting unligned images.
                     # https://bugzilla.redhat.com/1649788
                     aligned_length = utils.round(len(data), 4096)
-                    data = data.ljust(aligned_length)
+                    data = data.ljust(aligned_length, b"\0")
 
                     f.write(data)
                     f.flush()
