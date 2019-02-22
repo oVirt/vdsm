@@ -142,6 +142,24 @@ VERS_METADATA_TAG = (2, 3, 4)
 #  - 2..100  (Unassigned)
 RESERVED_LEASES = 100
 
+# Metadata area start offset v4
+METADATA_BASE_V4 = 0
+
+# Size of metadata slot in v4
+METADATA_SLOT_SIZE_V4 = 512
+
+# Starting version 5, first 1 MB is still reserved for version 4 (but
+# zeroed) and therefore when computing metadata offset in version 5,
+# we have to add 1 MB offset. Metadata slot size is 512B in version 4
+# and 8kB starting version 5. However, actual metadata size
+# (sc.METADATA_SIZE) is always 512B.
+
+# Metadata area start offset v5
+METADATA_BASE_V5 = constants.MEGAB
+
+# Size of metadata slot in v5
+METADATA_SLOT_SIZE_V5 = 8192
+
 
 def encodePVInfo(pvInfo):
     return (
@@ -951,6 +969,15 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     def metadata_volume_path(self):
         return lvm.lvPath(self.sdUUID, sd.METADATA)
+
+    def metadata_offset(self, slot, version=None):
+        if not version:
+            version = self.getVersion()
+
+        if version < 5:
+            return METADATA_BASE_V4 + slot * METADATA_SLOT_SIZE_V4
+        else:
+            return METADATA_BASE_V5 + slot * METADATA_SLOT_SIZE_V5
 
 
 class BlockStorageDomain(sd.StorageDomain):

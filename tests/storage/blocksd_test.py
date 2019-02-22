@@ -124,6 +124,26 @@ class TestDecodeValidity:
         assert pvinfo["guid"] == 'my,name'
 
 
+def test_metadata_offset(monkeypatch):
+    sd_uuid = str(uuid.uuid4())
+    fake_metadata = {
+        sd.DMDK_VERSION: 4,
+        blockSD.DMDK_LOGBLKSIZE: 512,
+        blockSD.DMDK_PHYBLKSIZE: 512,
+    }
+
+    monkeypatch.setattr(sd.StorageDomainManifest, "_makeDomainLock",
+                        lambda _: None)
+    sd_manifest = blockSD.BlockStorageDomainManifest(sd_uuid, fake_metadata)
+
+    assert 0 == sd_manifest.metadata_offset(0)
+    assert 51200 == sd_manifest.metadata_offset(100)
+    assert 0 == sd_manifest.metadata_offset(0, version=4)
+    assert 51200 == sd_manifest.metadata_offset(100, version=4)
+    assert 1048576 == sd_manifest.metadata_offset(0, version=5)
+    assert 1867776 == sd_manifest.metadata_offset(100, version=5)
+
+
 @requires_root
 @xfail_python3
 @pytest.mark.root
@@ -266,3 +286,9 @@ def test_create_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
     assert actual["type"] == "SPARSE"
     assert actual["voltype"] == "LEAF"
     assert actual["uuid"] == vol_uuid
+
+    # as creating block volume is quite expensive, test metadata offset here
+    _, slot = vol.getMetadataId()
+    offset = dom.manifest.metadata_offset(slot)
+
+    assert offset == slot * blockSD.METADATA_SLOT_SIZE_V4

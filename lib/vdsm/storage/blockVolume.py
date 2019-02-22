@@ -105,7 +105,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         sd = sdCache.produce_manifest(self.sdUUID)
         try:
             lines = misc.readblock(sd.metadata_volume_path(),
-                                   offs * sc.METADATA_SIZE,
+                                   sd.metadata_offset(offs),
                                    sc.METADATA_SIZE)
         except Exception as e:
             self.log.error(e, exc_info=True)
@@ -246,7 +246,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         sd = sdCache.produce_manifest(vgname)
         metavol = sd.metadata_volume_path()
         with directio.DirectFile(metavol, "r+") as f:
-            f.seek(offs * sc.METADATA_SIZE)
+            f.seek(sd.metadata_offset(offs))
             f.write(data)
 
     def changeVolumeTag(self, tagPrefix, uuid):
