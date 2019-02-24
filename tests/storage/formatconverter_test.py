@@ -24,9 +24,11 @@ import uuid
 
 import pytest
 
+from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import formatconverter
 from vdsm.storage import localFsSD
+from vdsm.storage import lvm
 from vdsm.storage import sd
 from vdsm.storage.formatconverter import _v3_reset_meta_volsize
 from vdsm.storage.sdc import sdCache
@@ -35,6 +37,8 @@ from .storagetestlib import (
     fake_volume,
     MB
 )
+
+from . marks import requires_root, xfail_python3
 
 
 @pytest.fixture(params=[sc.RAW_FORMAT, sc.COW_FORMAT])
@@ -161,3 +165,70 @@ def test_convert_from_v4_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
         with open(meta_path) as f:
             data = f.read()
         assert data == vol_md.storage_format(5)
+
+
+@requires_root
+@xfail_python3
+@pytest.mark.root
+def test_convert_from_v4_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
+                                     fake_rescan, fake_task, fake_sanlock):
+    sd_uuid = str(uuid.uuid4())
+
+    dev = tmp_storage.create_device(20 * 1024 ** 3)
+    lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_uuid)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_uuid,
+        domainName="domain",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=4,
+        storageType=sd.ISCSI_DOMAIN,
+        block_size=sc.BLOCK_SIZE_512,
+        alignment=sc.ALIGNMENT_1M)
+
+    sdCache.knownSDs[sd_uuid] = blockSD.findDomain
+    sdCache.manuallyAddDomain(dom)
+
+    # Create domain directory structure.
+    dom.refresh()
+
+    # Only attached domains are converted.
+    dom.attach(tmp_repo.pool_id)
+
+    # TODO: Create some volumes in v4 format.
+
+    # Record domain metadata before conversion.
+    # TODO: record volumes metadata.
+    old_dom_md = dom.getMetadata()
+
+    fc = formatconverter.DefaultFormatConverter()
+
+    fc.convert(
+        repoPath=tmp_repo.path,
+        hostId=1,
+        imageRepo=dom,
+        isMsd=False,
+        targetFormat='5')
+
+    # Verify changes in domain metadata.
+
+    new_dom_md = dom.getMetadata()
+
+    # Keys modified in v5.
+    assert old_dom_md.pop("VERSION") == 4
+    assert new_dom_md.pop("VERSION") == 5
+
+    # Keys added in V5.
+    assert new_dom_md.pop("BLOCK_SIZE") == sc.BLOCK_SIZE_512
+    assert new_dom_md.pop("ALIGNMENT") == sc.ALIGNMENT_1M
+
+    # Kyes removed in v5.
+    assert old_dom_md.pop("LOGBLKSIZE") == sc.BLOCK_SIZE_512
+    assert old_dom_md.pop("PHYBLKSIZE") == sc.BLOCK_SIZE_512
+
+    # Rest of the keys must not be modifed by conversion.
+    assert old_dom_md == new_dom_md
+
+    # TODO: Verify changes in volumes metadata.
