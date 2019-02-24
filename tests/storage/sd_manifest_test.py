@@ -163,8 +163,8 @@ class TestBlockManifest(ManifestMixin):
 
     def test_overwrite_blocksize(self):
         metadata = {sd.DMDK_VERSION: 3,
-                    blockSD.DMDK_LOGBLKSIZE: 2048,
-                    blockSD.DMDK_PHYBLKSIZE: 1024}
+                    sd.DMDK_LOGBLKSIZE: 2048,
+                    sd.DMDK_PHYBLKSIZE: 1024}
         with self.env() as env:
             # Replacing the metadata will not overwrite these values since they
             # are set only in the manifest constructor.
