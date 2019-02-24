@@ -1687,6 +1687,38 @@ class BlockStorageDomain(sd.StorageDomain):
             self.log.info("Reusing external leases volume %s", path)
             lvm.activateLVs(self.sdUUID, [sd.XLEASES], refresh=False)
 
+    # Format conversion
+
+    def convert_volumes_metadata(self, target_version):
+        current_version = self.getVersion()
+
+        if not (current_version == 4 and target_version == 5):
+            raise RuntimeError(
+                "Cannot convert domain {} volumes metadta from version {} "
+                "to version {}"
+                .format(self.sdUUID, current_version, target_version))
+
+        self.log.info(
+            "Converting domain %s volumes metadata from version %s to "
+            "version %s",
+            self.sdUUID, current_version, target_version)
+
+        # TODO: read metadata from v4 area and write to v5 area.
+
+    def finalize_volumes_metadata(self, target_version):
+        current_version = self.getVersion()
+
+        if current_version != target_version:
+            raise RuntimeError(
+                "Cannot finalize domain {} volumes metadta: current version "
+                "{} != target version {}"
+                .format(self.sdUUID, current_version, target_version))
+
+        self.log.info("Finalizing domain %s volumes metadata version %s",
+                      self.sdUUID, target_version)
+
+        # TODO: clear v4 metadta area.
+
 
 def _external_leases_path(sdUUID):
     return lvm.lvPath(sdUUID, sd.XLEASES)

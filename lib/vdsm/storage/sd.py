@@ -1369,6 +1369,12 @@ class StorageDomain(object):
             self._metadata[DMDK_BLOCK_SIZE] = sc.BLOCK_SIZE_512
             self._metadata[DMDK_ALIGNMENT] = sc.ALIGNMENT_1M
 
+            # Keys removed in v5, may exists in block storage domain.
+            if DMDK_LOGBLKSIZE in self._metadata:
+                del self._metadata[DMDK_LOGBLKSIZE]
+            if DMDK_PHYBLKSIZE in self._metadata:
+                del self._metadata[DMDK_PHYBLKSIZE]
+
     def finalize_volumes_metadata(self, target_version):
         """
         Rewrite volumes metadata, removing older keys kept during
