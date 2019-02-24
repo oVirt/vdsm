@@ -129,8 +129,8 @@ def test_metadata_offset(monkeypatch):
     sd_uuid = str(uuid.uuid4())
     fake_metadata = {
         sd.DMDK_VERSION: 4,
-        blockSD.DMDK_LOGBLKSIZE: 512,
-        blockSD.DMDK_PHYBLKSIZE: 512,
+        sd.DMDK_LOGBLKSIZE: 512,
+        sd.DMDK_PHYBLKSIZE: 512,
     }
 
     monkeypatch.setattr(sd.StorageDomainManifest, "_makeDomainLock",
@@ -193,8 +193,8 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
 
         # Block storge domain extra values.
         blockSD.DMDK_VGUUID: vg.uuid,
-        blockSD.DMDK_LOGBLKSIZE: sc.BLOCK_SIZE_512,
-        blockSD.DMDK_PHYBLKSIZE: sc.BLOCK_SIZE_512,
+        sd.DMDK_LOGBLKSIZE: sc.BLOCK_SIZE_512,
+        sd.DMDK_PHYBLKSIZE: sc.BLOCK_SIZE_512,
 
         # PV keys for blockSD.DMDK_PV_REGEX.
         "PV0": {

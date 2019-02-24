@@ -130,8 +130,6 @@ DEFAULT_BLOCKSIZE = 512
 
 DMDK_VGUUID = "VGUUID"
 DMDK_PV_REGEX = re.compile(r"^PV\d+$")
-DMDK_LOGBLKSIZE = "LOGBLKSIZE"
-DMDK_PHYBLKSIZE = "PHYBLKSIZE"
 
 VERS_METADATA_LV = (0,)
 VERS_METADATA_TAG = (2, 3, 4)
@@ -183,10 +181,10 @@ BLOCK_SD_MD_FIELDS.update({
     # Key           dec,  enc
     DMDK_PV_REGEX: (decodePVInfo, encodePVInfo),
     DMDK_VGUUID: (str, str),
-    DMDK_LOGBLKSIZE: (functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE),
-                      str),
-    DMDK_PHYBLKSIZE: (functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE),
-                      str),
+    sd.DMDK_LOGBLKSIZE: (
+        functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE), str),
+    sd.DMDK_PHYBLKSIZE: (
+        functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE), str),
 })
 
 INVALID_CHARS = re.compile(r"[^a-zA-Z0-9_+.\-/=!:#]")
@@ -453,8 +451,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         self.metadata_lock = threading.Lock()
 
         try:
-            self.logBlkSize = self.getMetaParam(DMDK_LOGBLKSIZE)
-            self.phyBlkSize = self.getMetaParam(DMDK_PHYBLKSIZE)
+            self.logBlkSize = self.getMetaParam(sd.DMDK_LOGBLKSIZE)
+            self.phyBlkSize = self.getMetaParam(sd.DMDK_PHYBLKSIZE)
         except KeyError:
             # 512 by Saggi "Trust me (Smoch Alai (sic))"
             # *blkSize keys may be missing from metadata only for domains that
@@ -1176,8 +1174,8 @@ class BlockStorageDomain(sd.StorageDomain):
             sd.DMDK_LEASE_RETRIES: sd.DEFAULT_LEASE_PARAMS[
                 sd.DMDK_LEASE_RETRIES],
             DMDK_VGUUID: vgUUID,
-            DMDK_LOGBLKSIZE: logBlkSize,
-            DMDK_PHYBLKSIZE: phyBlkSize,
+            sd.DMDK_LOGBLKSIZE: logBlkSize,
+            sd.DMDK_PHYBLKSIZE: phyBlkSize,
         }
 
         initialMetadata.update(mapping)
