@@ -20,17 +20,20 @@
 
 from __future__ import absolute_import
 
-import os
-import threading
-import logging
-import signal
 import errno
-import re
-import time
 import functools
+import logging
+import mmap
+import os
+import re
+import signal
 import sys
+import threading
+import time
+
 from collections import namedtuple
 from contextlib import contextmanager
+from contextlib import closing
 
 import six
 
@@ -60,6 +63,7 @@ from vdsm.storage import sd
 from vdsm.storage.compat import sanlock
 from vdsm.storage.mailbox import MAILBOX_SIZE
 from vdsm.storage.persistent import PersistentDict, DictValidator
+from vdsm.storage.volumemetadata import VolumeMetadata
 
 import vdsm.common.supervdsm as svdsm
 
@@ -856,7 +860,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                                       (self.sdUUID, dev, ext))
 
     def _getFreeMetadataSlot(self):
-        occupied_slots = self._getOccupiedMetadataSlots()
+        occupied_slots = self.occupied_metadata_slots()
 
         # It might look weird skipping the sd metadata when it has been moved
         # to tags. But this is here because domain metadata and volume metadata
@@ -882,7 +886,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         self.log.debug("Found free slot %s in VG %s", free_slot, self.sdUUID)
         return free_slot
 
-    def _getOccupiedMetadataSlots(self):
+    def occupied_metadata_slots(self):
         stripPrefix = lambda s, pfx: s[len(pfx):]
         occupiedSlots = []
         special_lvs = self.special_volumes(self.getVersion())
@@ -1703,7 +1707,35 @@ class BlockStorageDomain(sd.StorageDomain):
             "version %s",
             self.sdUUID, current_version, target_version)
 
-        # TODO: read metadata from v4 area and write to v5 area.
+        path = self._manifest.metadata_volume_path()
+
+        # Map v4 and v5 areas, read metadata from v4 metadata area, format v5
+        # metadata, and write it to v5 metadata area. Since v5 metadata area is
+        # zeroed, we need to write only the metadata block.
+        # TODO: Using mmap, we may read stale data from page cache.
+
+        with open(path, "rb+") as f:
+            m = mmap.mmap(f.fileno(), RESERVED_METADATA_SIZE)
+            with closing(m):
+                for slot in self._manifest.occupied_metadata_slots():
+                    v4_off = self._manifest.metadata_offset(slot)
+
+                    self.log.debug("Reading v4 metadata slot %s offset=%s",
+                                   slot, v4_off)
+                    v4_data = m[v4_off:v4_off + sc.METADATA_SIZE]
+                    v4_data = v4_data.rstrip(b"\0")
+                    md = VolumeMetadata.from_lines(v4_data.splitlines())
+
+                    v5_off = self._manifest.metadata_offset(slot, version=5)
+
+                    self.log.debug("Writing v5 metadata slot %s offset=%s",
+                                   slot, v5_off)
+                    v5_data = md.storage_format(5).ljust(
+                        sc.METADATA_SIZE, "\0")
+                    m[v5_off:v5_off + sc.METADATA_SIZE] = v5_data
+
+                # Synchonize v5 metadadta to underlying storage.
+                m.flush()
 
     def finalize_volumes_metadata(self, target_version):
         current_version = self.getVersion()
@@ -1717,7 +1749,17 @@ class BlockStorageDomain(sd.StorageDomain):
         self.log.info("Finalizing domain %s volumes metadata version %s",
                       self.sdUUID, target_version)
 
-        # TODO: clear v4 metadta area.
+        path = self._manifest.metadata_volume_path()
+        offset = METADATA_BASE_V4
+        size = METADATA_BASE_V5 - METADATA_BASE_V4
+
+        self.log.debug("Zero domain %s v4 metadata area offset=%s size=%s",
+                       self.sdUUID, offset, size)
+        with open(path, "rb+") as f:
+            f.seek(offset)
+            f.write(b"\0" * size)
+            f.flush()
+            os.fsync(f.fileno())
 
 
 def _external_leases_path(sdUUID):

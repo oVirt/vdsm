@@ -29,6 +29,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import formatconverter
 from vdsm.storage import localFsSD
 from vdsm.storage import lvm
+from vdsm.storage import misc
 from vdsm.storage import sd
 from vdsm.storage.formatconverter import _v3_reset_meta_volsize
 from vdsm.storage.sdc import sdCache
@@ -197,11 +198,22 @@ def test_convert_from_v4_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
     # Only attached domains are converted.
     dom.attach(tmp_repo.pool_id)
 
-    # TODO: Create some volumes in v4 format.
+    # Create some volumes in v4 format.
+    for i in range(3):
+        dom.createVolume(
+            desc="Awesome volume %d" % i,
+            diskType="DATA",
+            imgUUID=str(uuid.uuid4()),
+            preallocate=sc.SPARSE_VOL,
+            size=10 * 1024**3,
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID,
+            volFormat=sc.COW_FORMAT,
+            volUUID=str(uuid.uuid4()))
 
-    # Record domain metadata before conversion.
-    # TODO: record volumes metadata.
+    # Record domain and volumes metadata before conversion.
     old_dom_md = dom.getMetadata()
+    volumes_md = {vol.volUUID: vol.getMetadata() for vol in dom.iter_volumes()}
 
     fc = formatconverter.DefaultFormatConverter()
 
@@ -231,4 +243,19 @@ def test_convert_from_v4_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
     # Rest of the keys must not be modifed by conversion.
     assert old_dom_md == new_dom_md
 
-    # TODO: Verify changes in volumes metadata.
+    # Verify that volumes metadta was converted to v5 format.
+
+    for vol in dom.iter_volumes():
+        vol_md = volumes_md[vol.volUUID]
+        _, slot = vol.getMetadataId()
+        data = dom.manifest.read_metadata_block(slot)
+        data = data.rstrip("\0")
+        assert data == vol_md.storage_format(5)
+
+    # Check that v4 metadata area is zeroed.
+
+    meta_path = dom.manifest.metadata_volume_path()
+    offset = blockSD.METADATA_BASE_V4
+    size = blockSD.METADATA_BASE_V5 - blockSD.METADATA_BASE_V4
+    data = misc.readblock(meta_path, offset, size)
+    assert data == "\0" * size
