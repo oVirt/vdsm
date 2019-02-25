@@ -323,6 +323,15 @@ class TestDictInterface:
         md[sc.DESCRIPTION] = "New description"
         assert "New description" == md[sc.DESCRIPTION]
 
+    def test_size(self):
+        # SIZE in blocks is legacy option, make sure setting and getting SIZE
+        # works when we replace it with CAP in bytes.
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        new_size = params['size'] * 2
+        md[sc.SIZE] = new_size
+        assert md[sc.SIZE] == str(new_size)
+
     def test_get_nonexistent(self):
         params = make_init_params()
         md = volume.VolumeMetadata(**params)
