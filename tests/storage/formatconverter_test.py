@@ -29,6 +29,7 @@ from vdsm.storage import formatconverter
 from vdsm.storage import localFsSD
 from vdsm.storage import sd
 from vdsm.storage.formatconverter import _v3_reset_meta_volsize
+from vdsm.storage.sdc import sdCache
 
 from .storagetestlib import (
     fake_volume,
@@ -58,9 +59,10 @@ def test_v3_reset_meta_vol_size_metadata_wrong(vol):
 def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
     remote_path = str(tmpdir.mkdir("domain"))
     tmp_repo.connect_localfs(remote_path)
+    sd_uuid = str(uuid.uuid4())
 
     dom = localFsSD.LocalFsStorageDomain.create(
-        sdUUID=str(uuid.uuid4()),
+        sdUUID=sd_uuid,
         domainName="domain",
         domClass=sd.DATA_DOMAIN,
         remotePath=remote_path,
@@ -68,6 +70,9 @@ def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
         storageType=sd.LOCALFS_DOMAIN,
         block_size=sc.BLOCK_SIZE_512,
         alignment=sc.ALIGNMENT_1M)
+
+    sdCache.knownSDs[sd_uuid] = localFsSD.findDomain
+    sdCache.manuallyAddDomain(dom)
 
     assert dom.getVersion() == 3
 
