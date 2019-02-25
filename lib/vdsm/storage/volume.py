@@ -767,7 +767,7 @@ class VolumeManifest(object):
     def setParentTag(self, puuid):
         raise NotImplementedError
 
-    def getMetaOffset(self):
+    def getMetaSlot(self):
         raise NotImplementedError
 
 

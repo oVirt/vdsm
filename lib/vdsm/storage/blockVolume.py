@@ -79,9 +79,9 @@ class BlockVolumeManifest(volume.VolumeManifest):
         """
         Get the metadata Id
         """
-        return (self.sdUUID, self.getMetaOffset())
+        return (self.sdUUID, self.getMetaSlot())
 
-    def getMetaOffset(self):
+    def getMetaSlot(self):
         try:
             md = getVolumeTag(self.sdUUID, self.volUUID, sc.TAG_PREFIX_MD)
         except se.MissingTagOnLogicalVolume:
@@ -100,11 +100,11 @@ class BlockVolumeManifest(volume.VolumeManifest):
         if not metaId:
             metaId = self.getMetadataId()
 
-        _, offs = metaId
+        _, slot = metaId
         sd = sdCache.produce_manifest(self.sdUUID)
         try:
             lines = misc.readblock(sd.metadata_volume_path(),
-                                   sd.metadata_offset(offs),
+                                   sd.metadata_offset(slot),
                                    sc.METADATA_SIZE)
         except Exception as e:
             self.log.error(e, exc_info=True)
@@ -558,7 +558,7 @@ class BlockVolume(volume.Volume):
                       self.volUUID, self.imgUUID, self.sdUUID)
 
         vol_path = self.getVolumePath()
-        offs = self.getMetaOffset()
+        slot = self.getMetaSlot()
 
         # On block storage domains we store a volume's parent UUID in two
         # places: 1) in the domain's metadata LV, and 2) in a LV tag attached
@@ -646,7 +646,7 @@ class BlockVolume(volume.Volume):
             # errors when accessing the metadata that was wiped.  This is a
             # minimal solution for: https://bugzilla.redhat.com/1574631
             try:
-                self.removeMetadata([self.sdUUID, offs])
+                self.removeMetadata([self.sdUUID, slot])
             except se.VolumeMetadataWriteError as e:
                 eFound = e
                 self.log.exception("Failed to delete volume %s/%s metadata.",
@@ -756,8 +756,8 @@ class BlockVolume(volume.Volume):
     def setParentTag(self, puuid):
         return self._manifest.setParentTag(puuid)
 
-    def getMetaOffset(self):
-        return self._manifest.getMetaOffset()
+    def getMetaSlot(self):
+        return self._manifest.getMetaSlot()
 
     def _extendSizeRaw(self, newSize):
         # Since this method relies on lvm.extendLV (lvextend) when the

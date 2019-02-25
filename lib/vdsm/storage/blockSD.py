@@ -925,7 +925,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         if not self.hasVolumeLeases():
             return clusterlock.Lease(None, None, None)
         # TODO: use the sanlock specific offset when present
-        slot = self.produceVolume(imgUUID, volUUID).getMetaOffset()
+        slot = self.produceVolume(imgUUID, volUUID).getMetaSlot()
         offset = self.volume_lease_offset(slot)
         return clusterlock.Lease(volUUID, self.getLeasesFilePath(), offset)
 

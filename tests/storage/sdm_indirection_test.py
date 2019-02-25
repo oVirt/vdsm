@@ -540,7 +540,7 @@ class FakeVolumeManifest(object):
 class FakeBlockVolumeManifest(FakeVolumeManifest):
 
     @recorded
-    def getMetaOffset(self):
+    def getMetaSlot(self):
         pass
 
     @recorded
@@ -873,7 +873,7 @@ class TestBlockVolume(VolumeTestMixin, VdsmTestCase):
         self.checker = RedirectionChecker(self.volume, '_manifest')
 
     @permutations([
-        ['getMetaOffset', 0],
+        ['getMetaSlot', 0],
         ['getParentMeta', 0],
         ['getParentTag', 0],
         ['getVolumeTag', 1],
