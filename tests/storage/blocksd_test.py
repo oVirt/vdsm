@@ -34,6 +34,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import lvm
 from vdsm.storage import image
 from vdsm.storage import sd
+from vdsm.storage.sdc import sdCache
 
 from . marks import requires_root, xfail_python3
 from storage.storagefakelib import fake_vg
@@ -170,6 +171,9 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
         block_size=sc.BLOCK_SIZE_512,
         alignment=sc.ALIGNMENT_1M)
 
+    sdCache.knownSDs[sd_uuid] = blockSD.findDomain
+    sdCache.manuallyAddDomain(dom)
+
     lease = sd.DEFAULT_LEASE_PARAMS
     assert dom.getMetadata() == {
         # Common storge domain values.
@@ -238,6 +242,9 @@ def test_create_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
         storageType=sd.ISCSI_DOMAIN,
         block_size=sc.BLOCK_SIZE_512,
         alignment=sc.ALIGNMENT_1M)
+
+    sdCache.knownSDs[sd_uuid] = blockSD.findDomain
+    sdCache.manuallyAddDomain(dom)
 
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())

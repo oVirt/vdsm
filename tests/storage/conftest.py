@@ -42,6 +42,7 @@ from vdsm.storage import managedvolumedb
 from vdsm.storage import multipath
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import task
+from vdsm.storage.sdc import sdCache
 
 from .fakesanlock import FakeSanlock
 from . import tmprepo
@@ -65,6 +66,11 @@ def tmp_repo(tmpdir, monkeypatch):
     monkeypatch.setattr(sc, "REPO_DATA_CENTER", repo.path)
     monkeypatch.setattr(sc, "REPO_MOUNT_DIR", repo.mnt_dir)
 
+    # Invalidate sdCache so stale data from previous test will affect
+    # this test.
+    sdCache.refresh()
+    sdCache.knownSDs.clear()
+
     try:
         yield repo
     finally:
@@ -72,6 +78,11 @@ def tmp_repo(tmpdir, monkeypatch):
         # terminate ioprocess instances, avoiding thread and process leaks in
         # tests, and errors in __del__ during test shutdown.
         oop.stop()
+
+        # Invalidate sdCache so stale data from this test will affect
+        # the next test.
+        sdCache.refresh()
+        sdCache.knownSDs.clear()
 
 
 @pytest.fixture

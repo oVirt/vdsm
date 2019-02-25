@@ -34,6 +34,7 @@ from vdsm.storage import fileSD
 from vdsm.storage import image
 from vdsm.storage import qemuimg
 from vdsm.storage import sd
+from vdsm.storage.sdc import sdCache
 
 
 def test_incorrect_block_rejected():
@@ -69,6 +70,9 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
         storageType=sd.LOCALFS_DOMAIN,
         block_size=sc.BLOCK_SIZE_512,
         alignment=sc.ALIGNMENT_1M)
+
+    sdCache.knownSDs[sd_uuid] = localFsSD.findDomain
+    sdCache.manuallyAddDomain(dom)
 
     lease = sd.DEFAULT_LEASE_PARAMS
     assert dom.getMetadata() == {
@@ -107,6 +111,9 @@ def test_create_volume(monkeypatch, tmpdir, tmp_repo, fake_access, fake_rescan,
         storageType=sd.LOCALFS_DOMAIN,
         block_size=sc.BLOCK_SIZE_512,
         alignment=sc.ALIGNMENT_1M)
+
+    sdCache.knownSDs[sd_uuid] = localFsSD.findDomain
+    sdCache.manuallyAddDomain(dom)
 
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
