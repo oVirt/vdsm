@@ -472,8 +472,8 @@ class GuestAgent(object):
         return self.guestStatus
 
     def getGuestInfo(self):
-        # This is rather hacky, but for now we want to prefer information from
-        # oVirt GA over QEMU-GA
+        # Prefer information from QEMU GA if available. Fall-back to oVirt GA
+        # only for info that is not availble in QEMU GA.
         info = {
             'username': 'Unknown',
             'session': 'Unknown',
@@ -483,12 +483,6 @@ class GuestAgent(object):
             'guestIPs': '',
             'guestFQDN': ''}
         diskMapping = {}
-        qga = self._qgaGuestInfo()
-        if qga is not None:
-            if 'diskMapping' in qga:
-                diskMapping.update(qga['diskMapping'])
-                del qga['diskMapping']
-            info.update(qga)
         if self.isResponsive():
             info.update(self.guestInfo)
             diskMapping.update(self.oVirtGuestDiskMapping)
@@ -499,6 +493,17 @@ class GuestAgent(object):
                 info['guestIPs'] = self.guestInfo['guestIPs']
             if len(self.guestInfo['guestFQDN']) > 0:
                 info['guestFQDN'] = self.guestInfo['guestFQDN']
+        qga = self._qgaGuestInfo()
+        if qga is not None:
+            if 'diskMapping' in qga:
+                diskMapping.update(qga['diskMapping'])
+                del qga['diskMapping']
+            if len(info['appsList']) > 0:
+                # This is an exception since the entry from QEMU GA is faked.
+                # Prefer oVirt GA info if available. Take fake QEMU GA info
+                # only if the other is not available.
+                del qga['appsList']
+            info.update(qga)
         self.guestDiskMapping = diskMapping
         return utils.picklecopy(info)
 
