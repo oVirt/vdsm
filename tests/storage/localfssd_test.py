@@ -32,16 +32,8 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileSD
 from vdsm.storage import image
-from vdsm.storage import managedvolumedb
 from vdsm.storage import qemuimg
 from vdsm.storage import sd
-
-
-@pytest.fixture
-def tmp_db(tmpdir, monkeypatch):
-    db_file = str(tmpdir.join("managedvolumes.db"))
-    monkeypatch.setattr(managedvolumedb, "DB_FILE", db_file)
-    managedvolumedb.create_db()
 
 
 def test_incorrect_block_rejected():
