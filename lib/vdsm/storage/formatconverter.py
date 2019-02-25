@@ -192,13 +192,13 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
             # The first imgUUID is the imgUUID of the template or the only
             # imgUUID where the volUUID appears.
             vol = domain.produceVolume(imgUUIDs[0], volUUID)
-            metaOffset = vol.getMetaOffset()
+            metaSlot = vol.getMetaSlot()
 
-            if metaOffset < metaMaxSlot:
+            if metaSlot < metaMaxSlot:
                 continue
 
             log.debug("Reallocating metadata slot %s for volume %s",
-                      metaOffset, vol.volUUID)
+                      metaSlot, vol.volUUID)
             metaContent = vol.getMetadata()
 
             with domain.acquireVolumeMetadataSlot(vol.volUUID) as newMetaSlot:
