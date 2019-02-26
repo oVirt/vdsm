@@ -36,25 +36,6 @@ _ARCH_PPC64LE = 'ppc64le'
 _ARCH_X86 = 'x86'
 _ARCH_X86_64 = 'x86_64'
 
-_WINDOWS_DESKTOP_VERSIONS = {
-    '5.0': 'Win 2000',
-    '5.1': 'Win XP',
-    '6.0': 'Win Vista',
-    '6.1': 'Win 7',
-    '6.2': 'Win 8',
-    '6.3': 'Win 8.1',
-    '10.0': 'Win 10',
-}
-
-_WINDOWS_SERVER_VERSIONS = {
-    '5.2': 'Win 2003',
-    '6.0': 'Win 2008',
-    '6.1': 'Win 2008 R2',
-    '6.2': 'Win 2012',
-    '6.3': 'Win 2012 R2',
-    '10.0': 'Win 2016',
-}
-
 
 def translate_arch(arch):
     """
@@ -155,27 +136,14 @@ def translate_windows_osinfo(os_info):
 
     # Treat missing values as empty strings
     os_info = defaultdict(str, os_info)
-    name = translate_windows_version(
-        os_info['kernel-version'], os_info['variant-id'])
     return {
-        'guestOs': name,
+        'guestOs': os_info['pretty-name'],
         'guestOsInfo': {
             'type': 'windows',
             'arch': translate_arch(os_info['machine']),
             'kernel': '',
             'distribution': '',
             'version': os_info['kernel-version'],
-            'codename': name,
+            'codename': os_info['pretty-name'],
         }
     }
-
-
-def translate_windows_version(version, variant):
-    """
-    Translate Windows version to version string recognized by oVirt Engine.
-    The values are copied from oVirt Guest Agent.
-    """
-    if variant == _WINDOWS_VARIANT_SERVER:
-        return _WINDOWS_SERVER_VERSIONS.get(version, 'unknown')
-    else:
-        return _WINDOWS_DESKTOP_VERSIONS.get(version, 'unknown')
