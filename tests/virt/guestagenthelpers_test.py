@@ -78,14 +78,14 @@ class GuestAgentHelpersTest(TestCaseBase):
         self.assertEqual(
             guestagenthelpers.translate_windows_osinfo({}),
             {
-                'guestOs': 'unknown',
+                'guestOs': '',
                 'guestOsInfo': {
                     'type': 'windows',
                     'arch': 'unknown',
                     'kernel': '',
                     'distribution': '',
                     'version': '',
-                    'codename': 'unknown',
+                    'codename': '',
                 },
             })
         self.assertEqual(
@@ -95,31 +95,23 @@ class GuestAgentHelpersTest(TestCaseBase):
                 "kernel-version": "6.1",
                 "machine": "x86_64",
                 "name": "some-name",
-                "pretty-name": "pretty name",
+                "pretty-name": "Windows 7 Standard",
                 "variant": "client",
                 "variant-id": "client",
                 "version": "10",
                 "version-id": "10",
             }),
             {
-                'guestOs': 'Win 7',
+                'guestOs': 'Windows 7 Standard',
                 'guestOsInfo': {
                     'type': 'windows',
                     'arch': 'x86_64',
                     'kernel': '',
                     'distribution': '',
                     'version': '6.1',
-                    'codename': 'Win 7',
+                    'codename': 'Windows 7 Standard',
                 },
             })
-
-    def test_translate_windows_version(self):
-        self.assertEqual(
-            guestagenthelpers.translate_windows_version('6.2', 'client'),
-            'Win 8')
-        self.assertEqual(
-            guestagenthelpers.translate_windows_version('6.2', 'server'),
-            'Win 2012')
 
     def test_translate_fsinfo(self):
         self.assertEqual(
