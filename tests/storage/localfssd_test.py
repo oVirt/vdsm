@@ -22,6 +22,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import os
 import time
 import uuid
 
@@ -93,8 +94,11 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     }
 
 
-def test_create_volume(monkeypatch, tmpdir, tmp_repo, fake_access, fake_rescan,
-                       tmp_db, fake_task):
+def test_create_delete_volume(monkeypatch, tmpdir, tmp_repo, fake_access,
+                              fake_rescan, tmp_db, fake_task):
+    # as creation of block storage domain and volume is quite time consuming,
+    # we test several volume operations in one test to speed up the test suite
+
     remote_path = str(tmpdir.mkdir("domain"))
     tmp_repo.connect_localfs(remote_path)
 
@@ -157,3 +161,17 @@ def test_create_volume(monkeypatch, tmpdir, tmp_repo, fake_access, fake_rescan,
 
     assert qcow2_info["actualsize"] < vol_capacity
     assert qcow2_info["virtualsize"] == vol_capacity
+
+    # test deleting of the volume - check volume and metadata files are
+    # deleted once the volume is deleted. Lock files is not checked as it's
+    # not created in case of file volume which uses LocalLock
+    vol_path = vol.getVolumePath()
+    meta_path = vol._manifest.metaVolumePath(vol_path)
+
+    assert os.path.isfile(vol_path)
+    assert os.path.isfile(meta_path)
+
+    vol.delete(postZero=False, force=False, discard=False)
+
+    assert not os.path.isfile(vol_path)
+    assert not os.path.isfile(meta_path)
