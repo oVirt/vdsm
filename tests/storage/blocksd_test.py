@@ -31,8 +31,10 @@ import pytest
 from vdsm import constants
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
+from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import image
+from vdsm.storage import misc
 from vdsm.storage import sd
 from vdsm.storage.sdc import sdCache
 
@@ -223,8 +225,11 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_create_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
-                       fake_rescan, tmp_db, fake_task, fake_sanlock):
+def test_create_delete_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
+                              fake_rescan, tmp_db, fake_task, fake_sanlock):
+    # as creation of block storage domain and volume is quite time consuming,
+    # we test several volume operations in one test to speed up the test suite
+
     sd_uuid = str(uuid.uuid4())
     domain_name = "domain"
     domain_version = 4
@@ -294,8 +299,24 @@ def test_create_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
     assert actual["voltype"] == "LEAF"
     assert actual["uuid"] == vol_uuid
 
+    assert os.path.islink(vol.getVolumePath())
+
     # as creating block volume is quite expensive, test metadata offset here
     _, slot = vol.getMetadataId()
     offset = dom.manifest.metadata_offset(slot)
 
     assert offset == slot * blockSD.METADATA_SLOT_SIZE_V4
+
+    # test also deleting of the volume
+    vol.delete(postZero=False, force=False, discard=False)
+
+    # verify lvm with volume is deleted
+    assert not os.path.islink(vol.getVolumePath())
+    with pytest.raises(se.LogicalVolumeDoesNotExistError):
+        lvm.getLV(sd_uuid, vol_uuid)
+
+    # verify also metadata from metadata lv is deleted
+    lines = misc.readblock(dom.manifest.metadata_volume_path(),
+                           dom.manifest.metadata_offset(slot),
+                           sc.METADATA_SIZE)
+    assert lines[0] == b"\0" * sc.METADATA_SIZE
