@@ -356,10 +356,6 @@ class FakeVolumeManifest(object):
         pass
 
     @recorded
-    def setMetadata(self, meta, metaId=None):
-        pass
-
-    @recorded
     def getParent(self):
         pass
 
@@ -809,7 +805,6 @@ class VolumeTestMixin(object):
         ['getMetadataId', 0],
         ['getMetadata', 1],
         ['getMetaParam', 1],
-        ['setMetadata', 2],
         ['getParent', 0],
         ['setLeaf', 0],
         ['isLeaf', 0],

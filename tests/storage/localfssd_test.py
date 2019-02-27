@@ -225,3 +225,10 @@ def test_volume_metadata(tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
     with open(meta_path) as f:
         data = f.read()
     assert data == md.storage_format(4)
+
+    # Test overriding with new keys.
+    md = vol.getMetadata()
+    vol.setMetadata(md, CAP=md.capacity)
+    with open(meta_path) as f:
+        data = f.read()
+    assert data == md.storage_format(4, CAP=md.capacity)

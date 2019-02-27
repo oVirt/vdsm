@@ -300,11 +300,8 @@ def test_create_delete_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
 
     assert os.path.islink(vol.getVolumePath())
 
-    # as creating block volume is quite expensive, test metadata offset here
+    # Keep the slot before deleting the volume.
     _, slot = vol.getMetadataId()
-    offset = dom.manifest.metadata_offset(slot)
-
-    assert offset == slot * blockSD.METADATA_SLOT_SIZE_V4
 
     # test also deleting of the volume
     vol.delete(postZero=False, force=False, discard=False)
@@ -317,3 +314,73 @@ def test_create_delete_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
     # verify also metadata from metadata lv is deleted
     data = dom.manifest.read_metadata_block(slot)
     assert data == b"\0" * sc.METADATA_SIZE
+
+
+@requires_root
+@xfail_python3
+@pytest.mark.root
+def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
+                         tmp_db, fake_task, fake_sanlock):
+    sd_uuid = str(uuid.uuid4())
+
+    dev = tmp_storage.create_device(20 * 1024 ** 3)
+    lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_uuid)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_uuid,
+        domainName="domain",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=4,
+        storageType=sd.ISCSI_DOMAIN,
+        block_size=sc.BLOCK_SIZE_512,
+        alignment=sc.ALIGNMENT_1M)
+
+    sdCache.knownSDs[sd_uuid] = blockSD.findDomain
+    sdCache.manuallyAddDomain(dom)
+
+    dom.refresh()
+    dom.attach(tmp_repo.pool_id)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    dom.createVolume(
+        desc="old description",
+        diskType="DATA",
+        imgUUID=img_uuid,
+        preallocate=sc.SPARSE_VOL,
+        size=10 * 1024**3,
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        volFormat=sc.COW_FORMAT,
+        volUUID=vol_uuid)
+
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+
+    # Test metadata offset
+    _, slot = vol.getMetadataId()
+    offset = dom.manifest.metadata_offset(slot)
+    assert offset == slot * blockSD.METADATA_SLOT_SIZE_V4
+
+    meta_path = dom.manifest.metadata_volume_path()
+
+    # Change metadata.
+    md = vol.getMetadata()
+    md.description = "new description"
+    vol.setMetadata(md)
+    with open(meta_path) as f:
+        f.seek(offset)
+        data = f.read(sc.METADATA_SIZE)
+    data = data.rstrip("\0")
+    assert data == md.storage_format(4)
+
+    # Add additioanl metadata.
+    md = vol.getMetadata()
+    vol.setMetadata(md, CAP=md.capacity)
+    with open(meta_path) as f:
+        f.seek(offset)
+        data = f.read(sc.METADATA_SIZE)
+    data = data.rstrip("\0")
+    assert data == md.storage_format(4, CAP=md.capacity)

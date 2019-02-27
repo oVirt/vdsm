@@ -680,7 +680,7 @@ class VolumeManifest(object):
         raise NotImplementedError
 
     @classmethod
-    def _putMetadata(cls, metaId, meta):
+    def _putMetadata(cls, metaId, meta, **overrides):
         raise NotImplementedError
 
     @classmethod
@@ -726,7 +726,7 @@ class VolumeManifest(object):
     def getVolumeTrueSize(self):
         raise NotImplementedError
 
-    def setMetadata(self, meta, metaId=None):
+    def setMetadata(self, meta, metaId=None, **overrides):
         raise NotImplementedError
 
     @deprecated  # valid only for domain version < 3, see volume.setrw
@@ -845,11 +845,11 @@ class Volume(object):
         return self._manifest._share(dstImgPath)
 
     @classmethod
-    def _putMetadata(cls, metaId, meta):
-        cls.manifestClass._putMetadata(metaId, meta)
+    def _putMetadata(cls, metaId, meta, **overrides):
+        cls.manifestClass._putMetadata(metaId, meta, **overrides)
 
-    def setMetadata(self, meta, metaId=None):
-        return self._manifest.setMetadata(meta, metaId)
+    def setMetadata(self, meta, metaId=None, **overrides):
+        return self._manifest.setMetadata(meta, metaId, **overrides)
 
     @classmethod
     def _getModuleAndClass(cls):
