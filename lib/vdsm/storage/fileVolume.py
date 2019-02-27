@@ -100,7 +100,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         else:
             return None
 
-    def _getMetaVolumePath(self, vol_path=None):
+    def getMetaVolumePath(self, vol_path=None):
         """
         Get the volume metadata file/link path
         """
@@ -113,7 +113,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         In file volume repositories,
         the volume metadata must exists after the image/volume is created.
         """
-        metaVolumePath = self._getMetaVolumePath()
+        metaVolumePath = self.getMetaVolumePath()
         if not self.oop.fileUtils.pathExists(metaVolumePath):
             raise se.VolumeDoesNotExist(self.volUUID)
 
@@ -149,7 +149,7 @@ class FileVolumeManifest(volume.VolumeManifest):
             metaId = self.getMetadataId()
 
         volPath, = metaId
-        metaPath = self._getMetaVolumePath(volPath)
+        metaPath = self.getMetaVolumePath(volPath)
 
         try:
             lines = self.oop.directReadLines(metaPath)
@@ -267,7 +267,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         """
         Remove the meta file
         """
-        metaPath = self._getMetaVolumePath()
+        metaPath = self.getMetaVolumePath()
         if self.oop.os.path.lexists(metaPath):
             self.log.info("Removing: %s", metaPath)
             self.oop.os.unlink(metaPath)
@@ -311,14 +311,14 @@ class FileVolumeManifest(volume.VolumeManifest):
         Share this volume to dstImgPath, including the metadata and the lease
         """
         dstVolPath = os.path.join(dstImgPath, self.volUUID)
-        dstMetaPath = self._getMetaVolumePath(dstVolPath)
+        dstMetaPath = self.getMetaVolumePath(dstVolPath)
 
         self.log.debug("Share volume %s to %s", self.volUUID, dstImgPath)
         self.oop.utils.forceLink(self.getVolumePath(), dstVolPath)
 
         self.log.debug("Share volume metadata of %s to %s", self.volUUID,
                        dstImgPath)
-        self.oop.utils.forceLink(self._getMetaVolumePath(), dstMetaPath)
+        self.oop.utils.forceLink(self.getMetaVolumePath(), dstMetaPath)
 
         # Link the lease file if the domain uses sanlock
         if sdCache.produce(self.sdUUID).hasVolumeLeases():
@@ -582,8 +582,8 @@ class FileVolume(volume.Volume):
         if not self.imagePath:
             self._manifest.validateImagePath()
         volPath = os.path.join(self.imagePath, newUUID)
-        metaPath = self._getMetaVolumePath(volPath)
-        prevMetaPath = self._getMetaVolumePath()
+        metaPath = self.getMetaVolumePath(volPath)
+        prevMetaPath = self.getMetaVolumePath()
         leasePath = self._getLeaseVolumePath(volPath)
         prevLeasePath = self._getLeaseVolumePath()
 
@@ -622,8 +622,9 @@ class FileVolume(volume.Volume):
         self._manifest.volUUID = newUUID
         self._manifest.volumePath = volPath
 
-    def _getMetaVolumePath(self, vol_path=None):
-        return self._manifest._getMetaVolumePath(vol_path)
+    def getMetaVolumePath(self, vol_path=None):
+        # pylint: disable=no-member
+        return self._manifest.getMetaVolumePath(vol_path)
 
     def _getLeaseVolumePath(self, vol_path=None):
         return self._manifest._getLeaseVolumePath(vol_path)

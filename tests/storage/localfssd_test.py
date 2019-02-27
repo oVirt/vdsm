@@ -175,3 +175,53 @@ def test_create_delete_volume(monkeypatch, tmpdir, tmp_repo, fake_access,
 
     assert not os.path.isfile(vol_path)
     assert not os.path.isfile(meta_path)
+
+
+def test_volume_metadata(tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
+                         fake_task):
+    remote_path = str(tmpdir.mkdir("domain"))
+    tmp_repo.connect_localfs(remote_path)
+
+    sd_uuid = str(uuid.uuid4())
+    domain_name = "domain"
+    domain_version = 4
+
+    dom = localFsSD.LocalFsStorageDomain.create(
+        sdUUID=sd_uuid,
+        domainName=domain_name,
+        domClass=sd.DATA_DOMAIN,
+        remotePath=remote_path,
+        version=domain_version,
+        storageType=sd.LOCALFS_DOMAIN,
+        block_size=sc.BLOCK_SIZE_512,
+        alignment=sc.ALIGNMENT_1M)
+
+    sdCache.knownSDs[sd_uuid] = localFsSD.findDomain
+    sdCache.manuallyAddDomain(dom)
+
+    dom.attach(tmp_repo.pool_id)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    dom.createVolume(
+        desc="old description",
+        diskType="DATA",
+        imgUUID=img_uuid,
+        preallocate=sc.SPARSE_VOL,
+        size=10 * 1024**3 // sc.BLOCK_SIZE_512,
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        volFormat=sc.COW_FORMAT,
+        volUUID=vol_uuid)
+
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+    meta_path = vol.getMetaVolumePath()
+
+    # Change volume metadata.
+    md = vol.getMetadata()
+    md.description = "new description"
+    vol.setMetadata(md)
+    with open(meta_path) as f:
+        data = f.read()
+    assert data == md.storage_format(4)
