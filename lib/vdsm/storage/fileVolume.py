@@ -213,7 +213,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         volPath = self.getVolumePath()
         return int(int(self.oop.os.stat(volPath).st_blocks) * BLOCK_SIZE)
 
-    def setMetadata(self, meta, metaId=None):
+    def setMetadata(self, meta, metaId=None, **overrides):
         """
         Set the meta data hash as the new meta data of the Volume
         """
@@ -221,7 +221,7 @@ class FileVolumeManifest(volume.VolumeManifest):
             metaId = self.getMetadataId()
 
         try:
-            self._putMetadata(metaId, meta)
+            self._putMetadata(metaId, meta, **overrides)
         except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataWriteError(str(metaId) + str(e))
@@ -244,13 +244,13 @@ class FileVolumeManifest(volume.VolumeManifest):
         self.file_setrw(self.getVolumePath(), rw=rw)
 
     @classmethod
-    def _putMetadata(cls, metaId, meta):
+    def _putMetadata(cls, metaId, meta, **overrides):
         volPath, = metaId
         metaPath = cls.metaVolumePath(volPath)
 
         sd = sdCache.produce_manifest(meta.domain)
 
-        data = meta.storage_format(sd.getVersion())
+        data = meta.storage_format(sd.getVersion(), **overrides)
 
         with open(metaPath + ".new", "w") as f:
             f.write(data)

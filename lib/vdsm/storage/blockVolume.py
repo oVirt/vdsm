@@ -212,7 +212,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         """
         return self.getVolumeSize(bs=1)
 
-    def setMetadata(self, meta, metaId=None):
+    def setMetadata(self, meta, metaId=None, **overrides):
         """
         Set the meta data hash as the new meta data of the Volume
         """
@@ -220,7 +220,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
             metaId = self.getMetadataId()
 
         try:
-            self._putMetadata(metaId, meta)
+            self._putMetadata(metaId, meta, **overrides)
         except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataWriteError("%s: %s" % (metaId, e))
@@ -233,12 +233,12 @@ class BlockVolumeManifest(volume.VolumeManifest):
         lvm.setrwLV(self.sdUUID, self.volUUID, rw)
 
     @classmethod
-    def _putMetadata(cls, metaId, meta):
+    def _putMetadata(cls, metaId, meta, **overrides):
         sd = sdCache.produce_manifest(meta.domain)
 
         _, slot = metaId
 
-        data = meta.storage_format(sd.getVersion())
+        data = meta.storage_format(sd.getVersion(), **overrides)
         data += "\0" * (sc.METADATA_SIZE - len(data))
         sd.write_metadata_block(slot, data)
 
