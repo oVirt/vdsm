@@ -977,6 +977,16 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         else:
             return METADATA_BASE_V5 + slot * METADATA_SLOT_SIZE_V5
 
+    def read_metadata_block(self, slot):
+        """
+        Reads metadata block from storage.
+        """
+        # Function readblock is used here intentionally as it supports
+        # short reads while DirectFile read doesn't.
+        return misc.readblock(self.metadata_volume_path(),
+                              self.metadata_offset(slot),
+                              sc.METADATA_SIZE)
+
     def write_metadata_block(self, slot, data):
         """
         Writes prepared metadata block to the specified

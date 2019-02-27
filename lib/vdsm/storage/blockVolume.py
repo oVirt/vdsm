@@ -33,7 +33,6 @@ from vdsm.storage import blockdev
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
-from vdsm.storage import misc
 from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import task
@@ -103,9 +102,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         _, slot = metaId
         sd = sdCache.produce_manifest(self.sdUUID)
         try:
-            lines = misc.readblock(sd.metadata_volume_path(),
-                                   sd.metadata_offset(slot),
-                                   sc.METADATA_SIZE).splitlines()
+            lines = sd.read_metadata_block(slot).splitlines()
         except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
