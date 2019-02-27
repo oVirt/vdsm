@@ -34,7 +34,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import image
-from vdsm.storage import misc
 from vdsm.storage import sd
 from vdsm.storage.sdc import sdCache
 
@@ -316,7 +315,5 @@ def test_create_delete_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
         lvm.getLV(sd_uuid, vol_uuid)
 
     # verify also metadata from metadata lv is deleted
-    data = misc.readblock(dom.manifest.metadata_volume_path(),
-                          dom.manifest.metadata_offset(slot),
-                          sc.METADATA_SIZE)
+    data = dom.manifest.read_metadata_block(slot)
     assert data == b"\0" * sc.METADATA_SIZE
