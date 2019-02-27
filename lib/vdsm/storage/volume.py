@@ -742,9 +742,6 @@ class VolumeManifest(object):
     def _share(self, dstImgPath):
         raise NotImplementedError
 
-    def _getLeaseVolumePath(self, vol_path=None):
-        raise NotImplementedError
-
     # Implemented only in block storage
 
     def getDevPath(self):

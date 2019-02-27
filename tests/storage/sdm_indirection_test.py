@@ -604,7 +604,7 @@ class FakeFileVolumeManifest(FakeVolumeManifest):
         pass
 
     @recorded
-    def _getLeaseVolumePath(self, vol_path):
+    def getLeaseVolumePath(self, vol_path):
         pass
 
     @recorded
@@ -908,10 +908,10 @@ class TestFileVolume(VolumeTestMixin, VdsmTestCase):
     def test_file_property(self, prop, val):
         self.assertEqual(getattr(self.volume, prop), val)
 
-    # TODO: Test _getLeaseVolumePath with no arguments
+    # TODO: Test getLeaseVolumePath with no arguments
     @permutations([
         ['getMetaVolumePath', 1],
-        ['_getLeaseVolumePath', 1],
+        ['getLeaseVolumePath', 1],
         ['_setrw', 1],
         ['removeMetadata', 0],
     ])

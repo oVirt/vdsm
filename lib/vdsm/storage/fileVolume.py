@@ -279,7 +279,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         else:
             return None
 
-    def _getLeaseVolumePath(self, vol_path=None):
+    def getLeaseVolumePath(self, vol_path=None):
         if not vol_path:
             vol_path = self.getVolumePath()
         return self.leaseVolumePath(vol_path)
@@ -302,9 +302,9 @@ class FileVolumeManifest(volume.VolumeManifest):
         """
         self.log.debug("Share volume lease of %s to %s", self.volUUID,
                        dstImgPath)
-        dstLeasePath = self._getLeaseVolumePath(
+        dstLeasePath = self.getLeaseVolumePath(
             os.path.join(dstImgPath, self.volUUID))
-        self.oop.utils.forceLink(self._getLeaseVolumePath(), dstLeasePath)
+        self.oop.utils.forceLink(self.getLeaseVolumePath(), dstLeasePath)
 
     def _share(self, dstImgPath):
         """
@@ -584,8 +584,8 @@ class FileVolume(volume.Volume):
         volPath = os.path.join(self.imagePath, newUUID)
         metaPath = self.getMetaVolumePath(volPath)
         prevMetaPath = self.getMetaVolumePath()
-        leasePath = self._getLeaseVolumePath(volPath)
-        prevLeasePath = self._getLeaseVolumePath()
+        leasePath = self.getLeaseVolumePath(volPath)
+        prevLeasePath = self.getLeaseVolumePath()
 
         if recovery:
             name = "Rename volume rollback: " + volPath
@@ -626,8 +626,9 @@ class FileVolume(volume.Volume):
         # pylint: disable=no-member
         return self._manifest.getMetaVolumePath(vol_path)
 
-    def _getLeaseVolumePath(self, vol_path=None):
-        return self._manifest._getLeaseVolumePath(vol_path)
+    def getLeaseVolumePath(self, vol_path=None):
+        # pylint: disable=no-member
+        return self._manifest.getLeaseVolumePath(vol_path)
 
     def _extendSizeRaw(self, newSize):
         volPath = self.getVolumePath()
