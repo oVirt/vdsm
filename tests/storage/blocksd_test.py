@@ -37,6 +37,7 @@ from vdsm.storage import image
 from vdsm.storage import sd
 from vdsm.storage.sdc import sdCache
 
+from . import qemuio
 from . marks import requires_root, xfail_python3
 from storage.storagefakelib import fake_vg
 
@@ -235,8 +236,8 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_create_delete_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
-                              fake_rescan, tmp_db, fake_task, fake_sanlock):
+def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
+                           fake_rescan, tmp_db, fake_task, fake_sanlock):
     # as creation of block storage domain and volume is quite time consuming,
     # we test several volume operations in one test to speed up the test suite
 
@@ -285,6 +286,7 @@ def test_create_delete_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
             srcImgUUID=sc.BLANK_UUID,
             srcVolUUID=sc.BLANK_UUID)
 
+    # test create volume
     vol = dom.produceVolume(img_uuid, vol_uuid)
     actual = vol.getInfo()
 
@@ -309,10 +311,28 @@ def test_create_delete_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
     assert actual["voltype"] == "LEAF"
     assert actual["uuid"] == vol_uuid
 
-    assert os.path.islink(vol.getVolumePath())
+    vol_path = vol.getVolumePath()
 
     # Keep the slot before deleting the volume.
     _, slot = vol.getMetadataId()
+
+    # test volume prepare
+    assert os.path.islink(vol_path)
+    assert not os.path.exists(vol_path)
+
+    vol.prepare()
+
+    assert os.path.exists(vol_path)
+
+    # verify we can really write and read to an image
+    qemuio.write_pattern(vol_path, "qcow2")
+    qemuio.verify_pattern(vol_path, "qcow2")
+
+    # test volume teardown
+    vol.teardown(sd_uuid, vol_uuid)
+
+    assert os.path.islink(vol_path)
+    assert not os.path.exists(vol_path)
 
     # test also deleting of the volume
     vol.delete(postZero=False, force=False, discard=False)

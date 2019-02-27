@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import stat
 import time
 import uuid
 
@@ -36,6 +37,8 @@ from vdsm.storage import image
 from vdsm.storage import qemuimg
 from vdsm.storage import sd
 from vdsm.storage.sdc import sdCache
+
+from . import qemuio
 
 
 def test_incorrect_block_rejected():
@@ -103,8 +106,8 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     assert expected == actual
 
 
-def test_create_delete_volume(monkeypatch, tmpdir, tmp_repo, fake_access,
-                              fake_rescan, tmp_db, fake_task):
+def test_volume_life_cycle(monkeypatch, tmpdir, tmp_repo, fake_access,
+                           fake_rescan, tmp_db, fake_task):
     # as creation of block storage domain and volume is quite time consuming,
     # we test several volume operations in one test to speed up the test suite
 
@@ -151,6 +154,7 @@ def test_create_delete_volume(monkeypatch, tmpdir, tmp_repo, fake_access,
             srcImgUUID=sc.BLANK_UUID,
             srcVolUUID=sc.BLANK_UUID)
 
+    # test create volume
     vol = dom.produceVolume(img_uuid, vol_uuid)
     actual = vol.getInfo()
 
@@ -166,10 +170,25 @@ def test_create_delete_volume(monkeypatch, tmpdir, tmp_repo, fake_access,
     assert actual["voltype"] == "LEAF"
     assert actual["uuid"] == vol_uuid
 
-    qcow2_info = qemuimg.info(vol.getVolumePath())
+    vol_path = vol.getVolumePath()
+
+    qcow2_info = qemuimg.info(vol_path)
 
     assert qcow2_info["actualsize"] < vol_capacity
     assert qcow2_info["virtualsize"] == vol_capacity
+
+    # test volume prepare, teardown does nothing in case of file volume
+    vol.prepare()
+
+    mode = os.stat(vol_path).st_mode
+    assert mode & stat.S_IRUSR
+    assert mode & stat.S_IWUSR
+    assert mode & stat.S_IRGRP
+    assert mode & stat.S_IWGRP
+
+    # verify we can really write and read to an image
+    qemuio.write_pattern(vol_path, "qcow2")
+    qemuio.verify_pattern(vol_path, "qcow2")
 
     # test deleting of the volume - check volume and metadata files are
     # deleted once the volume is deleted. Lock files is not checked as it's
