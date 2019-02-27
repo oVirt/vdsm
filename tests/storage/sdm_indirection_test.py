@@ -591,7 +591,7 @@ class FakeFileVolumeManifest(FakeVolumeManifest):
         self.oop = 'oop'
 
     @recorded
-    def _getMetaVolumePath(self, vol_path=None):
+    def getMetaVolumePath(self, vol_path=None):
         pass
 
     @classmethod
@@ -910,7 +910,7 @@ class TestFileVolume(VolumeTestMixin, VdsmTestCase):
 
     # TODO: Test _getLeaseVolumePath with no arguments
     @permutations([
-        ['_getMetaVolumePath', 1],
+        ['getMetaVolumePath', 1],
         ['_getLeaseVolumePath', 1],
         ['_setrw', 1],
         ['removeMetadata', 0],
