@@ -109,36 +109,13 @@ def test_volume_life_cycle(monkeypatch, tmpdir, tmp_repo, fake_access,
                            fake_rescan, tmp_db, fake_task):
     # as creation of block storage domain and volume is quite time consuming,
     # we test several volume operations in one test to speed up the test suite
-
-    remote_path = str(tmpdir.mkdir("domain"))
-    tmp_repo.connect_localfs(remote_path)
-
-    sd_uuid = str(uuid.uuid4())
-    domain_name = "domain"
-    domain_version = 4
-
-    dom = localFsSD.LocalFsStorageDomain.create(
-        sdUUID=sd_uuid,
-        domainName=domain_name,
-        domClass=sd.DATA_DOMAIN,
-        remotePath=remote_path,
-        version=domain_version,
-        storageType=sd.LOCALFS_DOMAIN,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M)
-
-    sdCache.knownSDs[sd_uuid] = localFsSD.findDomain
-    sdCache.manuallyAddDomain(dom)
+    dom = tmp_repo.create_localfs_domain(name="domain", version=4)
 
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
     vol_capacity = 10 * 1024**3
     vol_size = vol_capacity // sc.BLOCK_SIZE_512
     vol_desc = "Test volume"
-
-    # sd.StorageDomainManifest.getRepoPath() assumes at least one pool is
-    # attached
-    dom.attach(tmp_repo.pool_id)
 
     with monkeypatch.context() as mc:
         mc.setattr(time, "time", lambda: 1550522547)
@@ -161,7 +138,7 @@ def test_volume_life_cycle(monkeypatch, tmpdir, tmp_repo, fake_access,
     assert int(actual["ctime"]) == 1550522547
     assert actual["description"] == vol_desc
     assert actual["disktype"] == "DATA"
-    assert actual["domain"] == sd_uuid
+    assert actual["domain"] == dom.sdUUID
     assert actual["format"] == sc.VOLUME_TYPES[sc.COW_FORMAT]
     assert actual["parent"] == sc.BLANK_UUID
     assert actual["status"] == "OK"
@@ -206,27 +183,7 @@ def test_volume_life_cycle(monkeypatch, tmpdir, tmp_repo, fake_access,
 
 def test_volume_metadata(tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
                          fake_task):
-    remote_path = str(tmpdir.mkdir("domain"))
-    tmp_repo.connect_localfs(remote_path)
-
-    sd_uuid = str(uuid.uuid4())
-    domain_name = "domain"
-    domain_version = 4
-
-    dom = localFsSD.LocalFsStorageDomain.create(
-        sdUUID=sd_uuid,
-        domainName=domain_name,
-        domClass=sd.DATA_DOMAIN,
-        remotePath=remote_path,
-        version=domain_version,
-        storageType=sd.LOCALFS_DOMAIN,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M)
-
-    sdCache.knownSDs[sd_uuid] = localFsSD.findDomain
-    sdCache.manuallyAddDomain(dom)
-
-    dom.attach(tmp_repo.pool_id)
+    dom = tmp_repo.create_localfs_domain(name="domain", version=4)
 
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())

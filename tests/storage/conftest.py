@@ -26,7 +26,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
-import uuid
 
 from contextlib import closing
 
@@ -55,12 +54,7 @@ def tmp_repo(tmpdir, monkeypatch):
     Provide a temporary repo directory and patch vsdm to use it instead of
     /rhev/data-center.
     """
-    # Create rhev/data-center directory in the tmpdir, so we don't mix
-    # temporary files created by the same test in the data-center.
-    data_center = str(tmpdir.mkdir("rhev").mkdir("data-center"))
-
-    pool_id = str(uuid.uuid4())
-    repo = tmprepo.TemporaryRepo(data_center, pool_id)
+    repo = tmprepo.TemporaryRepo(tmpdir)
 
     # Patch repo directory.
     monkeypatch.setattr(sc, "REPO_DATA_CENTER", repo.path)
