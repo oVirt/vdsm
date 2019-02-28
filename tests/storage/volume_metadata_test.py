@@ -388,6 +388,12 @@ class TestDictInterface:
         md.capacity = new_capacity
         assert md.size == new_capacity // sc.BLOCK_SIZE_512
 
+    def test_size_integer(self):
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        with pytest.raises(AssertionError):
+            md.size = "fail"
+
     def test_get_nonexistent(self):
         params = make_init_params()
         md = volume.VolumeMetadata(**params)
