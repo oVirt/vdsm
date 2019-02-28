@@ -129,7 +129,7 @@ def _v3_reset_meta_volsize(vol):
         log.warn("Fixing the mismatch between the metadata volume size "
                  "(%s) and the volume virtual size (%s) for the volume "
                  "%s", metaVolSize, virtVolSize, vol.volUUID)
-        vol.setMetaParam(sc.SIZE, str(virtVolSize))
+        vol.setMetaParam(sc.SIZE, virtVolSize)
 
 
 def v3DomainConverter(repoPath, hostId, domain, isMsd):
