@@ -324,7 +324,7 @@ class VolumeManifest(object):
         """
         meta = self.getMetadata()
         try:
-            meta[str(key)] = str(value)
+            meta[key] = value
             self.setMetadata(meta)
         except Exception:
             self.log.error("Volume.setMetaParam: %s: %s=%s" %
