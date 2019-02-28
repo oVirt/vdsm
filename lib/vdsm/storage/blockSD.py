@@ -356,7 +356,7 @@ class LvMetadataRW(object):
                         refresh=self._needs_refresh())
 
         # Fetch the metadata from metadata volume
-        m = misc.readblock(self.metavol, self._offset, self._size)
+        m = misc.readblock(self.metavol, self._offset, self._size).splitlines()
         # Read from metadata volume will bring a load of zeroes trailing
         # actual metadata. Strip it out.
         metadata = [i for i in m if len(i) > 0 and i[0] != '\x00' and "=" in i]

@@ -105,7 +105,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         try:
             lines = misc.readblock(sd.metadata_volume_path(),
                                    sd.metadata_offset(slot),
-                                   sc.METADATA_SIZE)
+                                   sc.METADATA_SIZE).splitlines()
         except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
