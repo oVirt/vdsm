@@ -316,7 +316,7 @@ def test_create_delete_volume(monkeypatch, tmp_storage, tmp_repo, fake_access,
         lvm.getLV(sd_uuid, vol_uuid)
 
     # verify also metadata from metadata lv is deleted
-    lines = misc.readblock(dom.manifest.metadata_volume_path(),
-                           dom.manifest.metadata_offset(slot),
-                           sc.METADATA_SIZE)
-    assert lines[0] == b"\0" * sc.METADATA_SIZE
+    data = misc.readblock(dom.manifest.metadata_volume_path(),
+                          dom.manifest.metadata_offset(slot),
+                          sc.METADATA_SIZE)
+    assert data == b"\0" * sc.METADATA_SIZE

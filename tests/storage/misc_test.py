@@ -626,7 +626,7 @@ class TestReadBlock(VdsmTestCase):
 
         os.unlink(path)
 
-        self.assertEqual(block[0], expectedResultData)
+        self.assertEqual(block, expectedResultData)
 
     def testInvalidOffset(self):
         """

@@ -116,7 +116,7 @@ def readblock(name, offset, size):
         ret += out
         left = left % iounit
         offset = baseoffset + size - left
-    return ret.splitlines()
+    return ret
 
 
 def validateDDBytes(ddstderr, size):
