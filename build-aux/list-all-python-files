@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Lists all Python files (including the ones without '.py' extension,
+# but containing a Python shebang line) in current directory.
+# Please remember to run 'make' before using this script - it doesn't
+# cover '*.py.in' files
+
+PYTHON_MODULES=$(find . -not -path '*/\.tox*' -type f -name '*.py')
+
+PYTHON_SCRIPTS=$(grep --color=never -rl "#\!/usr/bin/python" . | \
+                     grep -v \
+                         -e "^\./\.tox*" \
+                         -e "\.pyc\?$" \
+                         -e "\.html$" \
+                         -e ChangeLog)
+
+echo -e "${PYTHON_MODULES}\n${PYTHON_SCRIPTS}" | uniq | sort | sed -r '/^\s*$/d'
