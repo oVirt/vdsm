@@ -162,8 +162,8 @@ rpm: dist
 	rpmbuild -ta $(if $(BUILDID),--define="extra_release .$(BUILDID)") \
 		$(DIST_ARCHIVES)
 
-dist-hook: gen-VERSION gen-ChangeLog
-.PHONY: gen-VERSION gen-ChangeLog
+dist-hook: gen-VERSION gen-ChangeLog fix-python-shebangs
+.PHONY: gen-VERSION gen-ChangeLog fix-python-shebangs
 
 # Generate the ChangeLog file and insert it into the directory
 # we're about to use to create a tarball.
@@ -182,3 +182,8 @@ gen-VERSION:
 	  rm -f $(distdir)/VERSION;				\
 	  mv $(distdir)/ve-t $(distdir)/VERSION;		\
 	fi
+
+fix-python-shebangs:
+	cd $(distdir); \
+	sed -i 's+#!/usr/bin/python[23]\?+#!/usr/bin/$(VDSM_TARGET_PY_MAJOR_VERSION)+' \
+		`$(abs_top_srcdir)/build-aux/list-all-python-files`;

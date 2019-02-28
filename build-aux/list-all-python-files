@@ -12,6 +12,7 @@ PYTHON_SCRIPTS=$(grep --color=never -rl "#\!/usr/bin/python" . | \
                          -e "^\./\.tox*" \
                          -e "\.pyc\?$" \
                          -e "\.html$" \
-                         -e ChangeLog)
+                         -e ChangeLog \
+                         -e Makefile)
 
 echo -e "${PYTHON_MODULES}\n${PYTHON_SCRIPTS}" | uniq | sort | sed -r '/^\s*$/d'
