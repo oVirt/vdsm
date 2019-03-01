@@ -127,11 +127,16 @@ class VolumeMetadata(object):
 
     @size.setter
     def size(self, value):
+        self.capacity = (self._validate_integer("size", value) *
+                         sc.BLOCK_SIZE_512)
+
+    @classmethod
+    def _validate_integer(cls, property, value):
         if not isinstance(value, six.integer_types):
             raise AssertionError(
-                "Invalid value for 'size': {!r}".format(value))
-
-        self.capacity = value * sc.BLOCK_SIZE_512
+                "Invalid value for metadata property {!r}: {!r}".format(
+                    property, value))
+        return value
 
     @classmethod
     def validate_description(cls, desc):
