@@ -861,18 +861,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     def _getFreeMetadataSlot(self):
         occupied_slots = self.occupied_metadata_slots()
-
-        # It might look weird skipping the sd metadata when it has been moved
-        # to tags. But this is here because domain metadata and volume metadata
-        # look the same. The domain might get confused and think it has lv
-        # metadata if it finds something is written in that area.
-
-        # TODO: This first free slots depends on domain version:
-        # - V4: always 4, slots 0-3 reserved for domain metadata
-        # - V5: always 1, slot 0 reserved for metadata lv metadata.
-        # TODO: Extract to a method hiding the difference.
-        free_slot = (utils.round(SD_METADATA_SIZE, self.logBlkSize) //
-                     self.logBlkSize)
+        free_slot = self._first_available_slot()
 
         # We have these cases:
         # slot > free_slot: free_slot is free, use it.
@@ -910,6 +899,20 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
         occupiedSlots.sort()
         return occupiedSlots
+
+    def _first_available_slot(self):
+        version = self.getVersion()
+
+        # It might look weird skipping the sd metadata when it has been moved
+        # to tags. But this is here because domain metadata and volume metadata
+        # look the same. The domain might get confused and think it has lv
+        # metadata if it finds something is written in that area.
+        # - V4: always 4, slots 0-3 reserved for domain metadata
+        # - V5: always 1, slot 0 reserved for metadata lv metadata.
+        if version < 5:
+            return 4
+        else:
+            return 1
 
     @classmethod
     def validateCreateVolumeParams(cls, volFormat, srcVolUUID, diskType,

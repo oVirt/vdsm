@@ -182,7 +182,7 @@ class TestBlockManifest(ManifestMixin):
 
 class TestBlockDomainMetadataSlot:
 
-    # Note: the first 4 slots (0-3) are reserved for domain metadata
+    # Note: the first 4 slots (0-3) are reserved for domain metadata in V3,4
     @pytest.mark.parametrize("used_slots, free_slot", [
         [[], 4],
         [[4], 5],
@@ -190,8 +190,22 @@ class TestBlockDomainMetadataSlot:
         [[4, 6], 5],
         [[4, 7], 5],
     ])
-    def test_metaslot_selection(self, used_slots, free_slot):
-        with fake_block_env() as env:
+    @pytest.mark.parametrize("sd_version", [3, 4])
+    def test_metaslot_selection_v4(self, used_slots, free_slot, sd_version):
+        self._metaslot_selection(used_slots, free_slot, sd_version)
+
+    @pytest.mark.parametrize("used_slots, free_slot", [
+        [[], 1],
+        [[1], 2],
+        [[2], 1],
+        [[1, 3], 2],
+        [[1, 4], 2],
+    ])
+    def test_metaslot_selection_v5(self, used_slots, free_slot):
+        self._metaslot_selection(used_slots, free_slot, 5)
+
+    def _metaslot_selection(self, used_slots, free_slot, sd_version):
+        with fake_block_env(sd_version=sd_version) as env:
             for offset in used_slots:
                 lv = make_uuid()
                 sduuid = env.sd_manifest.sdUUID
@@ -201,8 +215,9 @@ class TestBlockDomainMetadataSlot:
             with env.sd_manifest.acquireVolumeMetadataSlot(None) as mdSlot:
                 assert mdSlot == free_slot
 
-    def test_metaslot_lock(self):
-        with fake_block_env() as env:
+    @pytest.mark.parametrize("sd_version", [3, 4, 5])
+    def test_metaslot_lock(self, sd_version):
+        with fake_block_env(sd_version=sd_version) as env:
             with env.sd_manifest.acquireVolumeMetadataSlot(None):
                 acquired = env.sd_manifest._lvTagMetaSlotLock.acquire(False)
                 assert not acquired
