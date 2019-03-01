@@ -328,6 +328,24 @@ class TestMDSize:
 
         assert sc.METADATA_SIZE >= md_len
 
+    def test_capacity_integer(self):
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        with pytest.raises(AssertionError):
+            md.capacity = "fail"
+
+    def test_ctime_integer(self):
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        with pytest.raises(AssertionError):
+            md.ctime = "fail"
+
+    def test_generation_integer(self):
+        params = make_init_params()
+        md = volume.VolumeMetadata(**params)
+        with pytest.raises(AssertionError):
+            md.generation = "fail"
+
 
 class TestDictInterface:
 

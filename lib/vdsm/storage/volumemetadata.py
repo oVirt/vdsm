@@ -36,16 +36,6 @@ class VolumeMetadata(object):
     def __init__(self, domain, image, puuid, capacity, format, type, voltype,
                  disktype, description="", legality=sc.ILLEGAL_VOL, ctime=None,
                  generation=sc.DEFAULT_GENERATION):
-        if not isinstance(capacity, six.integer_types):
-            raise AssertionError(
-                "Invalid value for 'capacity': {!r}".format(capacity))
-        if ctime is not None and not isinstance(ctime, int):
-            raise AssertionError(
-                "Invalid value for 'ctime': {!r}".format(ctime))
-        if not isinstance(generation, int):
-            raise AssertionError(
-                "Invalid value for 'generation': {!r}".format(generation))
-
         # Storage domain UUID
         self.domain = domain
         # Image UUID
@@ -122,6 +112,22 @@ class VolumeMetadata(object):
         self._description = self.validate_description(desc)
 
     @property
+    def capacity(self):
+        return self._capacity
+
+    @capacity.setter
+    def capacity(self, value):
+        self._capacity = self._validate_integer("capacity", value)
+
+    @property
+    def ctime(self):
+        return self._ctime
+
+    @ctime.setter
+    def ctime(self, value):
+        self._ctime = self._validate_integer("ctime", value)
+
+    @property
     def size(self):
         return self.capacity // sc.BLOCK_SIZE_512
 
@@ -129,6 +135,14 @@ class VolumeMetadata(object):
     def size(self, value):
         self.capacity = (self._validate_integer("size", value) *
                          sc.BLOCK_SIZE_512)
+
+    @property
+    def generation(self):
+        return self._generation
+
+    @generation.setter
+    def generation(self, value):
+        self._generation = self._validate_integer("generation", value)
 
     @classmethod
     def _validate_integer(cls, property, value):
