@@ -34,6 +34,7 @@ from vdsm.common import hostdev
 from vdsm.common import supervdsm
 from vdsm.config import config
 from vdsm.host import rngsources
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import hba
 from vdsm.storage import managedvolume
@@ -148,6 +149,9 @@ def get():
         logging.info("managedvolume not supported: %s", e)
     except se.ManagedVolumeHelperFailed as e:
         logging.exception("Error getting managedvolume connector info: %s", e)
+
+    # Which domain versions are supported by this host.
+    caps["domain_versions"] = sc.DOMAIN_VERSIONS
 
     return caps
 

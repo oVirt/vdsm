@@ -7167,6 +7167,13 @@ types:
             type: boolean
             added: '4.3'
 
+        -   defaultvalue: null
+            description: Storage domain versions supported on this host.
+            name: domain_versions
+            type:
+                - int
+            added: '4.3'
+
         type: object
 
     VdsmNetworkCapabilities: &VdsmNetworkCapabilities
