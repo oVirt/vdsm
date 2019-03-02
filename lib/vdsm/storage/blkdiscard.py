@@ -25,26 +25,6 @@ from vdsm.common.cmdutils import CommandPath
 
 from vdsm.storage import operation
 
-# The kernel reports the maximum value of WRITE_SAME in
-# /sys/devices/virtual/dm-*/queue/write_same_max_bytes. However testing
-# shows that this value is not reliable. For example, with LIO, the
-# reported value is 65535 * 512, but the server will fail any request
-# bigger than 4096 * 512.
-#
-# When the request fails, the kernel *silently* falls-back to
-# inefficient manually writing zeros, and changes both the LV and the
-# underlying multipath device write_same_max_bytes to 0. Future
-# BLKZEROOUT requests on any LV on this multipath device will use the
-# inefficient manual zero fallback.
-#
-# qemu-img is using 2 MiB by defualt for BLKZEROOUT during qemu-img
-# convert, so we can safely use the same value.
-#
-# Note: on newer kernels (>4.12), the kernel is not using WRITE_SAME for
-# zeroing. We will need to test again this value when we require newer
-# kernels.
-SAFE_WRITE_SAME_SIZE = 2 * 1024**2
-
 # From tests that we've run on netapp, 32M is the most optimal discard step
 # size in terms of total discard time and minimal starvation of other processes
 # that run in parallel.
@@ -83,7 +63,7 @@ def zeroout_operation(device, size):
     return operation.Command([
         _blkdiscard.cmd,
         "--zeroout",
-        "--step", "%d" % SAFE_WRITE_SAME_SIZE,
+        "--step", "%d" % OPTIMAL_DISCARD_STEP,
         "--length", "%d" % size,
         device,
     ])
