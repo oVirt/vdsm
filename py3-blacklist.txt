@@ -18,7 +18,6 @@
 ./lib/vdsm/rpc/http.py
 ./lib/vdsm/storage/asyncevent.py
 ./lib/vdsm/storage/blockSD.py
-./lib/vdsm/storage/constants.py
 ./lib/vdsm/storage/curl-img-wrap
 ./lib/vdsm/storage/exception.py
 ./lib/vdsm/storage/fc-scan
@@ -30,7 +29,6 @@
 ./lib/vdsm/storage/iscsi.py
 ./lib/vdsm/storage/lvm.py
 ./lib/vdsm/storage/mailbox.py
-./lib/vdsm/storage/managedvolume-helper
 ./lib/vdsm/storage/merge.py
 ./lib/vdsm/storage/misc.py
 ./lib/vdsm/storage/monitor.py
@@ -87,7 +85,6 @@
 ./vdsm_hooks/openstacknet/after_get_caps.py
 ./vdsm_hooks/openstacknet/after_vm_start.py
 ./vdsm_hooks/openstacknet/before_device_create.py
-./vdsm_hooks/openstacknet/openstacknet-get-config
 ./vdsm_hooks/openstacknet/openstacknet_utils.py
 ./vdsm_hooks/pincpu/before_vm_start.py
 ./vdsm_hooks/promisc/after_vm_start.py
