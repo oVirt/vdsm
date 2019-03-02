@@ -167,7 +167,7 @@ def main(args=None):
         with utils.closing(cli):
             command = getattr(getattr(cli, namespace), method)
             result = command(**request_params)
-            print(json.dumps(result, indent=4))
+            print(json.dumps(result, indent=4, sort_keys=True))
     except UsageError as e:
         parser.error(str(e))
     except Exception as e:
