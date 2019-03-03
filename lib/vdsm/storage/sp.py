@@ -2070,7 +2070,7 @@ class StoragePool(object):
         dom = sdCache.produce(lease.sd_id)
         try:
             dom.delete_lease(lease.lease_id)
-        except xlease.NoSuchLease:
+        except se.NoSuchLease:
             # We cannot fail the task as engine is not checking tasks errors.
             self.log.info("Lease already deleted: %s:%s",
                           lease.sd_id, lease.lease_id)

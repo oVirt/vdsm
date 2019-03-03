@@ -39,6 +39,7 @@ from testlib import namedTemporaryDir
 
 from vdsm import constants
 from vdsm import utils
+from vdsm.storage import exception as se
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import xlease
 
@@ -183,7 +184,7 @@ class TestIndex:
 
     def test_lookup_missing(self):
         with make_volume() as vol:
-            with pytest.raises(xlease.NoSuchLease):
+            with pytest.raises(se.NoSuchLease):
                 vol.lookup(make_uuid())
 
     def test_lookup_updating(self):
@@ -280,7 +281,7 @@ class TestIndex:
     def test_remove_missing(self):
         with make_volume() as vol:
             lease_id = make_uuid()
-            with pytest.raises(xlease.NoSuchLease):
+            with pytest.raises(se.NoSuchLease):
                 vol.remove(lease_id)
 
     def test_remove_write_failure(self):
@@ -350,7 +351,7 @@ def bench():
         with utils.closing(vol, log="test"):
             try:
                 vol.lookup(lease_id)
-            except xlease.NoSuchLease:
+            except se.NoSuchLease:
                 pass
 """
         with make_volume() as vol:

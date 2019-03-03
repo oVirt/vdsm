@@ -145,6 +145,7 @@ from vdsm.common import commands
 from vdsm.common import constants
 from vdsm.common import errors
 from vdsm.common.osutils import uninterruptible
+from vdsm.storage import exception as se
 from vdsm.storage import fsutils
 from vdsm.storage.compat import sanlock
 
@@ -223,10 +224,6 @@ class Error(errors.Base):
 
     def __init__(self, lease_id):
         self.lease_id = lease_id
-
-
-class NoSuchLease(Error):
-    msg = "No such lease {self.lease_id}"
 
 
 class LeaseExists(Error):
@@ -550,7 +547,7 @@ class LeasesVolume(object):
                   lease_id, self.lockspace)
         recnum = self._index.find_record(lease_id)
         if recnum == -1:
-            raise NoSuchLease(lease_id)
+            raise se.NoSuchLease(lease_id)
 
         record = self._index.read_record(recnum)
         if record.updating:
@@ -610,7 +607,7 @@ class LeasesVolume(object):
                  lease_id, self.lockspace)
         recnum = self._index.find_record(lease_id)
         if recnum == -1:
-            raise NoSuchLease(lease_id)
+            raise se.NoSuchLease(lease_id)
 
         offset = lease_offset(recnum)
         record = Record(lease_id, offset, updating=True)

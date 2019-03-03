@@ -1937,3 +1937,18 @@ class ManagedVolumeConnectionMismatch(StorageException):
     def __init__(self, vol_id, expected, actual):
         self.value = "vol_id=%s expected=%s actual=%s" % (
             vol_id, expected, actual)
+
+
+#################################################
+#  VM leases Errors
+#  Range: 936-940
+#################################################
+
+
+class NoSuchLease(StorageException):
+    code = 936
+    message = "No such lease"
+    expected = True
+
+    def __init__(self, lease_id):
+        self.value = "lease={}".format(lease_id)
