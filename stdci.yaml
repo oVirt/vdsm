@@ -42,3 +42,13 @@ stages:
               host-distro: same
             distributions:
               - fc28
+  - check-network:
+      archs:
+        - x86_64
+      substages:
+        - functional-linux-bridge:
+            runtime-requirements:
+              support-nesting-level: 2
+              isolation-level: container
+            distributions:
+              - el7

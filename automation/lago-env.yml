@@ -5,7 +5,7 @@ domains:
       memory: 1024
       vm-type: ovirt-host
       disks:
-        - template_name: el7.4-base
+        - template_name: el7.6-base
           type: template
           name: root
           dev: sda3
