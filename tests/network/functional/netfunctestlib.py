@@ -138,6 +138,7 @@ class NetFuncTestAdapter(object):
 
     def refresh_netinfo(self):
         self._vdsm_proxy.refreshNetworkCapabilities()
+        self.netinfo = self._vdsm_proxy.netinfo
 
     def update_running_config(self):
         self.running_config = self._vdsm_proxy.config

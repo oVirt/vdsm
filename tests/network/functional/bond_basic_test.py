@@ -254,6 +254,7 @@ class TestBondOptions(object):
             bond1, bond2 = BONDCREATE
             with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 nftestlib.wait_bonds_lp_interval()
+                adapter.refresh_netinfo()
 
                 adapter.assertLACPConfigured(BONDCREATE, nics)
                 adapter.assertBondHwaddrToPartnerMac(bond1, bond2)
