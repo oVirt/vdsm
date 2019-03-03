@@ -1934,37 +1934,6 @@ class SyncGuestTimeTests(TestCaseBase):
             vm._syncGuestTime()
 
 
-_DISK_CONF = {
-    'device': 'disk',
-    'format': 'cow',
-    'iface': 'virtio',
-    'index': '0',
-    'name': 'vda',
-    'path': '/path/to/volume',
-    'propagateErrors': 'off',
-    'readonly': 'False',
-    'shared': 'none',
-    'type': 'disk',
-    'specParams': {},
-    'vm_custom': {'viodiskcache': 'writethrough'},
-    'diskReplicate': {
-        'cache': 'none',
-        'device': 'disk',
-        'diskType': 'block',
-        'format': 'cow',
-        'path': '/path/to/replica',
-        'propagateErrors': 'off',
-        'specParams': {
-            'ioTune': {
-                'read_bytes_sec': 2,
-                'total_bytes_sec': 0,
-                'write_bytes_sec': 1,
-            },
-        },
-    }
-}
-
-
 @expandPermutations
 class MetadataTests(TestCaseBase):
 
