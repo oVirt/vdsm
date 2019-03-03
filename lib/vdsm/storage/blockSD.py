@@ -387,7 +387,7 @@ class LvMetadataRW(object):
                         refresh=self._needs_refresh())
 
         data = metaStr.getvalue()
-        with directio.DirectFile(self.metavol, "r+") as f:
+        with directio.open(self.metavol, "r+") as f:
             f.seek(self._offset)
             f.write(data)
 
@@ -1003,7 +1003,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         storage block size.
         """
         metavol = self.metadata_volume_path()
-        with directio.DirectFile(metavol, "r+") as f:
+        with directio.open(metavol, "r+") as f:
             f.seek(self.metadata_offset(slot))
             f.write(data)
 

@@ -58,7 +58,7 @@ class TestZero:
     @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     def test_entire_device(self, loop_device):
         # Write some data to the device.
-        with directio.DirectFile(loop_device.path, "r+") as f:
+        with directio.open(loop_device.path, "r+") as f:
             f.write(DATA)
             f.seek(FILE_SIZE - len(DATA))
             f.write(DATA)
@@ -67,7 +67,7 @@ class TestZero:
         blockdev.zero(loop_device.path)
 
         # Verify that parts with data were zeroed.
-        with directio.DirectFile(loop_device.path, "r") as f:
+        with directio.open(loop_device.path) as f:
             data = f.read(len(ZERO))
             assert data == ZERO
             f.seek(FILE_SIZE - len(ZERO))
@@ -77,14 +77,14 @@ class TestZero:
     @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     def test_size(self, loop_device):
         # Write some data to the device.
-        with directio.DirectFile(loop_device.path, "r+") as f:
+        with directio.open(loop_device.path, "r+") as f:
             f.write(DATA * 2)
 
         # Zero bytes at the start of the device.
         blockdev.zero(loop_device.path, size=len(ZERO))
 
         # Verify that the area was zeroed.
-        with directio.DirectFile(loop_device.path, "r") as f:
+        with directio.open(loop_device.path) as f:
             data = f.read(len(ZERO))
             assert data == ZERO
             data = f.read(len(DATA))
@@ -94,14 +94,14 @@ class TestZero:
     @pytest.mark.parametrize("size", [sc.BLOCK_SIZE, 250 * 4096])
     def test_special_volumes(self, size, loop_device):
         # Write some data to the device.
-        with directio.DirectFile(loop_device.path, "r+") as f:
+        with directio.open(loop_device.path, "r+") as f:
             f.write(b"x" * size * 2)
 
         # Zero size bytes
         blockdev.zero(loop_device.path, size=size)
 
         # Verify that size bytes were zeroed and the rest not modified.
-        with directio.DirectFile(loop_device.path, "r") as f:
+        with directio.open(loop_device.path) as f:
             data = f.read(size)
             assert data == b"\0" * size
             data = f.read(size)
@@ -150,7 +150,7 @@ class TestDiscard:
     @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     def test_supported(self, loop_device):
         # Write some data to the device.
-        with directio.DirectFile(loop_device.path, "r+") as f:
+        with directio.open(loop_device.path, "r+") as f:
             f.write(DATA)
             f.seek(FILE_SIZE - len(DATA))
             f.write(DATA)

@@ -36,6 +36,10 @@ _PC_REC_XFER_ALIGN = 17
 _PC_REC_MIN_XFER_SIZE = 16
 
 
+def open(path, mode="r"):
+    return DirectFile(path, mode)
+
+
 class DirectFile(object):
 
     def __init__(self, path, mode):
