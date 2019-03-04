@@ -52,7 +52,6 @@ from vdsm.host import caps
 # TODO fix name conflict and use from vdsm.storage import sd
 import vdsm.storage.sd
 from vdsm.storage import clusterlock
-from vdsm.storage import image
 from vdsm.storage import managedvolume
 from vdsm.storage import misc
 from vdsm.storage import constants as sc
@@ -880,14 +879,6 @@ class Image(APIBase):
     ctorArgs = ['imageID', 'storagepoolID', 'storagedomainID']
 
     BLANK_UUID = sc.BLANK_UUID
-
-    class DiskTypes:
-        UNKNOWN = image.UNKNOWN_DISK_TYPE
-        SYSTEM = image.SYSTEM_DISK_TYPE
-        DATA = image.DATA_DISK_TYPE
-        SHARED = image.SHARED_DISK_TYPE
-        SWAP = image.SWAP_DISK_TYPE
-        TEMP = image.TEMP_DISK_TYPE
 
     def __init__(self, UUID, spUUID, sdUUID):
         APIBase.__init__(self)

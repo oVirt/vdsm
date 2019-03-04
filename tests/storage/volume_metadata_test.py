@@ -31,7 +31,6 @@ from testlib import make_uuid
 
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
-from vdsm.storage import image
 from vdsm.storage import volume
 
 
@@ -48,7 +47,7 @@ def make_init_params(**kwargs):
         format=sc.type2name(sc.RAW_FORMAT),
         type=sc.type2name(sc.SPARSE_VOL),
         voltype=sc.type2name(sc.LEAF_VOL),
-        disktype=image.SYSTEM_DISK_TYPE,
+        disktype=sc.DATA_DISKTYPE,
         description="",
         legality=sc.LEGAL_VOL,
         generation=sc.DEFAULT_GENERATION)

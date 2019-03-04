@@ -48,18 +48,6 @@ from vdsm.common.exception import ActionStopped
 
 log = logging.getLogger('storage.Image')
 
-# Disk type
-UNKNOWN_DISK_TYPE = 0
-SYSTEM_DISK_TYPE = 1
-DATA_DISK_TYPE = 2
-SHARED_DISK_TYPE = 3
-SWAP_DISK_TYPE = 4
-TEMP_DISK_TYPE = 5
-
-DISK_TYPES = {UNKNOWN_DISK_TYPE: 'UNKNOWN', SYSTEM_DISK_TYPE: 'SYSTEM',
-              DATA_DISK_TYPE: 'DATA', SHARED_DISK_TYPE: 'SHARED',
-              SWAP_DISK_TYPE: 'SWAP', TEMP_DISK_TYPE: 'TEMP'}
-
 # What volumes to synchronize
 SYNC_VOLUMES_ALL = 'ALL'
 SYNC_VOLUMES_INTERNAL = 'INTERNAL'
