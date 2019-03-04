@@ -48,7 +48,6 @@ from vdsm.storage import fileUtils
 from vdsm.storage import fileVolume
 from vdsm.storage import guarded
 from vdsm.storage import hsm
-from vdsm.storage import image
 from vdsm.storage import nbd
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import qemuimg
@@ -88,7 +87,7 @@ class FakeFileEnv(object):
 
     def make_volume(self, size, imguuid, voluuid, parent_vol_id=sc.BLANK_UUID,
                     vol_format=sc.RAW_FORMAT, vol_type=sc.LEAF_VOL,
-                    prealloc=sc.SPARSE_VOL, disk_type=image.UNKNOWN_DISK_TYPE,
+                    prealloc=sc.SPARSE_VOL, disk_type=sc.DATA_DISKTYPE,
                     desc='fake volume', qcow2_compat='0.10'):
         return make_file_volume(self.sd_manifest, size, imguuid, voluuid,
                                 parent_vol_id, vol_format, vol_type,
@@ -104,7 +103,7 @@ class FakeBlockEnv(object):
 
     def make_volume(self, size, imguuid, voluuid, parent_vol_id=sc.BLANK_UUID,
                     vol_format=sc.RAW_FORMAT, vol_type=sc.LEAF_VOL,
-                    prealloc=sc.SPARSE_VOL, disk_type=image.UNKNOWN_DISK_TYPE,
+                    prealloc=sc.SPARSE_VOL, disk_type=sc.DATA_DISKTYPE,
                     desc='fake volume', qcow2_compat='0.10'):
         return make_block_volume(self.lvm, self.sd_manifest, size, imguuid,
                                  voluuid, parent_vol_id, vol_format,
@@ -305,7 +304,7 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
                      vol_format=sc.RAW_FORMAT,
                      vol_type=sc.LEAF_VOL,
                      prealloc=sc.SPARSE_VOL,
-                     disk_type=image.UNKNOWN_DISK_TYPE,
+                     disk_type=sc.DATA_DISKTYPE,
                      desc='fake volume', qcow2_compat='0.10'):
     volpath = os.path.join(sd_manifest.domaindir, "images", imguuid, voluuid)
 
@@ -349,7 +348,7 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
                       vol_format=sc.RAW_FORMAT,
                       vol_type=sc.LEAF_VOL,
                       prealloc=sc.PREALLOCATED_VOL,
-                      disk_type=image.UNKNOWN_DISK_TYPE,
+                      disk_type=sc.DATA_DISKTYPE,
                       desc='fake volume', qcow2_compat='0.10'):
     sduuid = sd_manifest.sdUUID
     imagedir = sd_manifest.getImageDir(imguuid)

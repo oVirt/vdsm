@@ -32,7 +32,6 @@ from testlib import VdsmTestCase as TestCaseBase
 apiWhitelist = (
     'Global.ctorArgs',
     'ISCSIConnection.ctorArgs',
-    'Image.DiskTypes',
     'Image.ctorArgs',
     'LVMVolumeGroup.ctorArgs',
     'StorageDomain.Classes',

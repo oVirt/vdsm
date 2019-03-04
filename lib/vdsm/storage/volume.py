@@ -1108,7 +1108,7 @@ class Volume(object):
             'size' - in blocks
             'volFormat' - volume format COW / RAW
             'preallocate' - Preallocate / Sparse
-            'diskType' - enum (vdsm.API.Image.DiskTypes)
+            'diskType' - enum (vdsm.storage.constants.VOL_DISKTYPE)
             'srcImgUUID' - source image UUID
             'srcVolUUID' - source volume UUID
             'initialSize' - initial volume size in blocks,

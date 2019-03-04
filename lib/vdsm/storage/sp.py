@@ -1899,7 +1899,7 @@ class StoragePool(object):
         :param preallocate: Should the volume be preallocated.
         :type preallocate: bool
         :param diskType: The disk type of the new volume.
-        :type diskType: :class:`API.Image.DiskTypes`
+        :type diskType: :enum:`constants.VOL_DISKTYPE`
         :param volUUID: The UUID of the new volume that will be created.
         :type volUUID: UUID
         :param desc: A human readable description of the new volume.

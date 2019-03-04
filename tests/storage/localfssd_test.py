@@ -33,7 +33,6 @@ from vdsm.storage import localFsSD
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileSD
-from vdsm.storage import image
 from vdsm.storage import qemuimg
 from vdsm.storage import sd
 from vdsm.storage.sdc import sdCache
@@ -148,7 +147,7 @@ def test_volume_life_cycle(monkeypatch, tmpdir, tmp_repo, fake_access,
             size=vol_size,
             volFormat=sc.COW_FORMAT,
             preallocate=sc.SPARSE_VOL,
-            diskType=image.DISK_TYPES[image.DATA_DISK_TYPE],
+            diskType=sc.DATA_DISKTYPE,
             volUUID=vol_uuid,
             desc=vol_desc,
             srcImgUUID=sc.BLANK_UUID,
@@ -234,7 +233,7 @@ def test_volume_metadata(tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
 
     dom.createVolume(
         desc="old description",
-        diskType="DATA",
+        diskType=sc.DATA_DISKTYPE,
         imgUUID=img_uuid,
         preallocate=sc.SPARSE_VOL,
         size=10 * 1024**3 // sc.BLOCK_SIZE_512,
