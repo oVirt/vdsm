@@ -1243,8 +1243,10 @@ GLUSTER_VOLUME_HEAL_INFO = {
             'numberOfEntries': '10'},
         {
             'name': 'ovirt-node-1.test.com:/brick-2',
-            'status': 'Transport endpoint is not connected',
-            'hostUuid': 'f0ef3d05-3ef3-411a-af2c-628b0a14278b'},
+            'status': 'Failed to process entries completely. '
+                      '(Transport endpoint is not connected)',
+            'hostUuid': '-',
+        },
         {
             'name': 'ovirt-node-1.test.com:/brick-3',
             'status': 'Connected',

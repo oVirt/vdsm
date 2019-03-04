@@ -5,17 +5,23 @@
       <brick hostUuid="f0ef3d05-3ef3-411a-af2c-628b0a14278b">
         <name>ovirt-node-1.test.com:/brick-1</name>
         <status>Connected</status>
-        <numberOfEntries>10</numberOfEntries>
+        <totalNumberOfEntries>10</totalNumberOfEntries>
+        <numberOfEntriesInHealPending>10</numberOfEntriesInHealPending>
+        <numberOfEntriesInSplitBrain>0</numberOfEntriesInSplitBrain>
+        <numberOfEntriesPossiblyHealing>0</numberOfEntriesPossiblyHealing>
       </brick>
-      <brick hostUuid="f0ef3d05-3ef3-411a-af2c-628b0a14278b">
+      <brick hostUuid="-">
         <name>ovirt-node-1.test.com:/brick-2</name>
-        <status>Transport endpoint is not connected</status>
-        <numberOfEntries>-</numberOfEntries>
+        <status>Failed to process entries completely. (Transport endpoint is not connected)</status>
+        <totalNumberOfEntries>0</totalNumberOfEntries>
       </brick>
       <brick hostUuid="f0ef3d05-3ef3-411a-af2c-628b0a14278b">
         <name>ovirt-node-1.test.com:/brick-3</name>
         <status>Connected</status>
-        <numberOfEntries>50</numberOfEntries>
+        <totalNumberOfEntries>50</totalNumberOfEntries>
+        <numberOfEntriesInHealPending>49</numberOfEntriesInHealPending>
+        <numberOfEntriesInSplitBrain>0</numberOfEntriesInSplitBrain>
+        <numberOfEntriesPossiblyHealing>1</numberOfEntriesPossiblyHealing>
       </brick>
     </bricks>
   </healInfo>

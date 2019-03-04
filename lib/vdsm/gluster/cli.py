@@ -1619,7 +1619,7 @@ def volumeGeoRepSessionDelete(volumeName, remoteHost, remoteVolumeName,
 
 @gluster_mgmt_api
 def volumeHealInfo(volumeName=None):
-    command = _getGlusterVolCmd() + ["heal", volumeName, 'info']
+    command = _getGlusterVolCmd() + ["heal", volumeName, 'info', 'summary']
     try:
         xmltree = _execGlusterXmlWithTimeout(command, timeout=_DEFAULT_TIMEOUT)
         return _parseVolumeHealInfo(xmltree)
@@ -1644,7 +1644,8 @@ def _parseVolumeHealInfo(tree):
         brick['status'] = el.find('status').text
         brick['hostUuid'] = el.get('hostUuid')
         if brick['status'] == 'Connected':
-            brick['numberOfEntries'] = el.find('numberOfEntries').text
+            brick['numberOfEntries'] = (
+                el.find('totalNumberOfEntries').text)
         healInfo['bricks'].append(brick)
     return healInfo
 
