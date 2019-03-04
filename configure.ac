@@ -48,7 +48,7 @@ AM_INIT_AUTOMAKE([-Wno-portability])
 
 # Checking for build tools
 AC_PROG_LN_S
-AM_PATH_PYTHON([2.6])
+AM_PATH_PYTHON([2.7])
 
 AC_ARG_ENABLE(
     [hooks],
