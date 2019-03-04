@@ -237,7 +237,3 @@ class VolumeMetadata(object):
             return self[item]
         except KeyError:
             return default
-
-    def iteritems(self):
-        for item in self._fieldmap:
-            yield (item, self[item])
