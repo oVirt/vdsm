@@ -29,13 +29,23 @@ from vdsm.rpc.Bridge import DynamicBridge
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase as TestCaseBase
 
-apiWhitelist = ('StorageDomain.Classes', 'StorageDomain.Types',
-                'Volume.Formats', 'Volume.Types', 'Volume.Roles',
-                'Image.DiskTypes', 'Global.ctorArgs',
-                'ISCSIConnection.ctorArgs', 'Image.ctorArgs',
-                'LVMVolumeGroup.ctorArgs', 'StorageDomain.ctorArgs',
-                'StoragePool.ctorArgs', 'Task.ctorArgs', 'VM.ctorArgs',
-                'Volume.ctorArgs')
+apiWhitelist = (
+    'Global.ctorArgs',
+    'ISCSIConnection.ctorArgs',
+    'Image.DiskTypes',
+    'Image.ctorArgs',
+    'LVMVolumeGroup.ctorArgs',
+    'StorageDomain.Classes',
+    'StorageDomain.Types',
+    'StorageDomain.ctorArgs',
+    'StoragePool.ctorArgs',
+    'Task.ctorArgs',
+    'VM.ctorArgs',
+    'Volume.Formats',
+    'Volume.Roles',
+    'Volume.Types',
+    'Volume.ctorArgs',
+)
 
 
 class Host():
