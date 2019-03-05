@@ -1715,17 +1715,21 @@ class BlockStorageDomain(sd.StorageDomain):
         # Map v4 and v5 areas, read metadata from v4 metadata area, format v5
         # metadata, and write it to v5 metadata area. Since v5 metadata area is
         # zeroed, we need to write only the metadata block.
-        # TODO: Using mmap, we may read stale data from page cache.
+        # To avoid reading stale data from page cache, mics.readblock() is used
+        # instead of reading the block from mmap.
+        offset = METADATA_BASE_V4
+        size = METADATA_BASE_V5 - METADATA_BASE_V4
+        src = misc.readblock(path, offset, size)
 
         with open(path, "rb+") as f:
-            m = mmap.mmap(f.fileno(), RESERVED_METADATA_SIZE)
-            with closing(m):
+            dst = mmap.mmap(f.fileno(), RESERVED_METADATA_SIZE)
+            with closing(dst):
                 for slot in self._manifest.occupied_metadata_slots():
                     v4_off = self._manifest.metadata_offset(slot)
 
                     self.log.debug("Reading v4 metadata slot %s offset=%s",
                                    slot, v4_off)
-                    v4_data = m[v4_off:v4_off + sc.METADATA_SIZE]
+                    v4_data = src[v4_off:v4_off + sc.METADATA_SIZE]
                     v4_data = v4_data.rstrip(b"\0")
                     md = VolumeMetadata.from_lines(v4_data.splitlines())
 
@@ -1735,10 +1739,10 @@ class BlockStorageDomain(sd.StorageDomain):
                                    slot, v5_off)
                     v5_data = md.storage_format(5).ljust(
                         sc.METADATA_SIZE, "\0")
-                    m[v5_off:v5_off + sc.METADATA_SIZE] = v5_data
+                    dst[v5_off:v5_off + sc.METADATA_SIZE] = v5_data
 
                 # Synchonize v5 metadadta to underlying storage.
-                m.flush()
+                dst.flush()
 
     def finalize_volumes_metadata(self, target_version):
         current_version = self.getVersion()
