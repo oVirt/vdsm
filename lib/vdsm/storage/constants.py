@@ -100,18 +100,34 @@ LEAF_VOL = 8
 
 VOL_TYPE = [PREALLOCATED_VOL, SPARSE_VOL]
 VOL_FORMAT = [COW_FORMAT, RAW_FORMAT]
+
+DATA_DISKTYPE = "DATA"  # Data disk
+ISOF_DISKTYPE = "ISOF"  # ISO disk
+MEMD_DISKTYPE = "MEMD"  # Memory dump disk
+MEMM_DISKTYPE = "MEMM"  # Memory metadata disk
+OVFS_DISKTYPE = "OVFS"  # OVF disk
+
+# TODO: Remove these constants when vdsm doesn't support engine 4.1
+# These constants were used by engine 4.1 and older
+LEGACY_DATA_DISKTYPE = "1"     # Data disk
+LEGACY_SHARED_DISKTYPE = "2"   # Shared disk
+LEGACY_SWAP_DISKTYPE = "3"     # Swap disk
+LEGACY_SYSTEM_DISKTYPE = "4"   # Disk with operating system
+LEGACY_TMP_DISKTYPE = "5"      # Temporary storage disk
+LEGACY_UNKNOWN_DISKTYPE = "6"  # Disk type not specified
+
 VOL_DISKTYPE = frozenset([
-    "DATA",  # This volume is for data (>=4.2)
-    "OVFS",  # This volume is OVF store (>=4.2)
-    "MEMD",  # This is a memory dump volume (>=4.2)
-    "MEMM",  # This is a memory metadata volume (>=4.2)
-    "ISOF",  # This is ISO volume (>=4.2)
-    "1",  # The disk is for data (<4.2)
-    "2",  # The disk is shared among multiple VMs (<4.2)
-    "3",  # The disk is used for swap space (<4.2)
-    "4",  # The disk contains the operating system (<4.2)
-    "5",  # The disk is used for temporary storage space (<4.2)
-    "6"  # The type is not specified (<4.2)
+    DATA_DISKTYPE,
+    ISOF_DISKTYPE,
+    MEMD_DISKTYPE,
+    MEMM_DISKTYPE,
+    OVFS_DISKTYPE,
+    LEGACY_DATA_DISKTYPE,
+    LEGACY_SHARED_DISKTYPE,
+    LEGACY_SWAP_DISKTYPE,
+    LEGACY_SYSTEM_DISKTYPE,
+    LEGACY_TMP_DISKTYPE,
+    LEGACY_UNKNOWN_DISKTYPE
 ])
 
 VOLUME_TYPES = {UNKNOWN_VOL: 'UNKNOWN', PREALLOCATED_VOL: 'PREALLOCATED',
