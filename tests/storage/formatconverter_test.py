@@ -27,7 +27,6 @@ import pytest
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import formatconverter
-from vdsm.storage import localFsSD
 from vdsm.storage import lvm
 from vdsm.storage import misc
 from vdsm.storage import sd
@@ -62,22 +61,7 @@ def test_v3_reset_meta_vol_size_metadata_wrong(vol):
 
 
 def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
-    remote_path = str(tmpdir.mkdir("domain"))
-    tmp_repo.connect_localfs(remote_path)
-    sd_uuid = str(uuid.uuid4())
-
-    dom = localFsSD.LocalFsStorageDomain.create(
-        sdUUID=sd_uuid,
-        domainName="domain",
-        domClass=sd.DATA_DOMAIN,
-        remotePath=remote_path,
-        version=3,
-        storageType=sd.LOCALFS_DOMAIN,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M)
-
-    sdCache.knownSDs[sd_uuid] = localFsSD.findDomain
-    sdCache.manuallyAddDomain(dom)
+    dom = tmp_repo.create_localfs_domain(name="domain", version=3)
 
     assert dom.getVersion() == 3
 
@@ -97,25 +81,7 @@ def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
 
 def test_convert_from_v4_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
                                        fake_rescan, fake_task):
-    remote_path = str(tmpdir.mkdir("domain"))
-    tmp_repo.connect_localfs(remote_path)
-    sd_uuid = str(uuid.uuid4())
-
-    dom = localFsSD.LocalFsStorageDomain.create(
-        sdUUID=sd_uuid,
-        domainName="domain",
-        domClass=sd.DATA_DOMAIN,
-        remotePath=remote_path,
-        version=4,
-        storageType=sd.LOCALFS_DOMAIN,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M)
-
-    sdCache.knownSDs[sd_uuid] = localFsSD.findDomain
-    sdCache.manuallyAddDomain(dom)
-
-    # Only attached domains are converted.
-    dom.attach(tmp_repo.pool_id)
+    dom = tmp_repo.create_localfs_domain(name="domain", version=4)
 
     # Create some volumes in v4 format.
     for i in range(3):
