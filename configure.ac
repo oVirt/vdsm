@@ -357,24 +357,18 @@ fi
 
 AC_SUBST([CONFIGURE_FLAGS], ["$configure_flags"])
 
-if test "$PYTHON3_SUPPORT" = "1"; then
-  AC_PATH_PROG([PYTHON3], [python3])
-  if test "x$PYTHON3" = "x"; then
-    AC_MSG_ERROR([python3 not found])
-  fi
-  AX_PYTHON_MODULE([netaddr], [fatal], python3)
-  AX_PYTHON_MODULE([libvirt], [fatal], python3)
-  AX_PYTHON_MODULE([nose], [fatal], python3)
-fi
+for _py_major_version in ${VDSM_SUPPORTED_PY_MAJOR_VERSIONS}; do
+    AX_PYTHON_MODULE([libvirt], [fatal], ${_py_major_version})
+    AX_PYTHON_MODULE([netaddr], [fatal], ${_py_major_version})
+    AX_PYTHON_MODULE([six], [fatal], ${_py_major_version})
+done
 
-# Checking for python-devel
-AC_PATH_PROG([PYTHON_CONFIG], [python-config])
+# Checking for pythonX-devel, we need it only
+# for the version of the interpreter we're targeting
+AC_PATH_PROG([PYTHON_CONFIG], ["${VDSM_TARGET_PY_MAJOR_VERSION}-config"])
 if test "x$PYTHON_CONFIG" = "x"; then
-  AC_MSG_ERROR([python-devel not found, please install it.])
+  AC_MSG_ERROR([${VDSM_TARGET_PY_MAJOR_VERSION}-devel not found, please install it.])
 fi
-
-# Checking for python modules (sorted, please keep in order)
-AX_PYTHON_MODULE([six], [fatal], python2)
 
 # External programs (sorted, please keep in order)
 AC_PATH_PROG([CAT_PATH], [cat], [/bin/cat])
