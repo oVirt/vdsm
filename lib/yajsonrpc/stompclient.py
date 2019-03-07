@@ -339,7 +339,7 @@ class ClientRpcTransportAdapter(object):
         """
         self._message_handler = handler
 
-    def send(self, data, destination=None):
+    def send(self, data, destination=None, flow_id=None):
         if not destination:
             destination = self._request_queue
 
@@ -347,6 +347,10 @@ class ClientRpcTransportAdapter(object):
             "content-type": "application/json",
             "reply-to": self._response_queue,
         }
+
+        if flow_id is not None:
+            headers[Headers.FLOW_ID] = flow_id
+
         self._client.send(
             data,
             destination,

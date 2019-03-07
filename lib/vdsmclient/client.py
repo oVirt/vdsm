@@ -99,6 +99,21 @@ Edit lease.json, and run::
 
     # vdsm-client -f lease.json Lease create
 
+You can use '--flow-id' argument to make tracking method calls easy, i.e.:
+
+    # vdsm-client --flow-id="myflowid" Host getStats
+    # vdsm-client --flow-id="myflowid" Host getVMList
+
+will cause each call to be annotated with "flow_id=myflowid" in vdsm's
+log file:
+
+     grep myflowid /var/log/vdsm/vdsm.log
+
+     INFO  (jsonrpc/1) [vdsm.api] START getStats() flow_id=myflowid, ...
+     INFO  (jsonrpc/1) [vdsm.api] FINISH getStats() flow_id=myflowid, ...
+     INFO  (jsonrpc/1) [vdsm.api] START getVMList() flow_id=myflowid, ...
+     INFO  (jsonrpc/1) [vdsm.api] FINISH getVMList() flow_id=myflowid, ...
+
 In order to run vdsm-client on a host where engine is located please create
 /etc/pki/vdsm/ directory with the required certificates.
 vdsm-client can be run from an engine host using these steps:
@@ -165,9 +180,10 @@ def main(args=None):
                              gluster_enabled=known_args.gluster_enabled)
 
         with utils.closing(cli):
-            command = getattr(getattr(cli, namespace), method)
-            result = command(**request_params)
-            print(json.dumps(result, indent=4, sort_keys=True))
+            with cli.flow(args.flow_id):
+                command = getattr(getattr(cli, namespace), method)
+                result = command(**request_params)
+                print(json.dumps(result, indent=4, sort_keys=True))
     except UsageError as e:
         parser.error(str(e))
     except Exception as e:
@@ -206,6 +222,11 @@ def option_parser(namespaces):
                         help="port (default 54321)")
     parser.add_argument('--insecure', dest="use_tls", action="store_false",
                         help="insecure connection")
+    parser.add_argument('--flow-id', dest="flow_id", default=None, type=str,
+                        help=("flow id to be used for the call. This argument "
+                              "simplifies tracking a series of method calls - "
+                              "each will be annotated with provided value in "
+                              "the log files."))
     parser.set_defaults(use_tls=True)
     parser.add_argument('--timeout', dest="timeout", default=60, type=float,
                         help="timeout (default 60 seconds)")

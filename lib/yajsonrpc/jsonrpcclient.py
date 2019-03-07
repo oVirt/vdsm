@@ -33,7 +33,6 @@ class _JsonRpcClientRequestContext(object):
     def __init__(self, requests, callback):
         self.callback = callback
         self._requests = requests
-
         self._responses = {}
         for req in requests:
             if req.id is None:
@@ -84,16 +83,17 @@ class JsonRpcClient(object):
             return response.result
 
     def call(self, *reqs, **kwargs):
-        call = self.call_async(*reqs)
+        flow_id = kwargs.pop('flow_id', None)
+        call = self.call_async(flow_id, *reqs)
         call.wait(kwargs.get('timeout', CALL_TIMEOUT))
         return call.responses
 
-    def call_async(self, *reqs):
+    def call_async(self, flow_id, *reqs):
         call = JsonRpcCall()
-        self.call_cb(call.callback, *reqs)
+        self.call_cb(call.callback, flow_id, *reqs)
         return call
 
-    def call_cb(self, cb, *reqs):
+    def call_cb(self, cb, flow_id, *reqs):
         ctx = _JsonRpcClientRequestContext(reqs, cb)
         with self._lock:
             for rid in ctx.ids():
@@ -106,7 +106,7 @@ class JsonRpcClient(object):
 
                 self._runningRequests[rid] = ctx
 
-        self._transport.send(ctx.encode())
+        self._transport.send(ctx.encode(), flow_id=flow_id)
 
         # All notifications
         if ctx.isDone():
