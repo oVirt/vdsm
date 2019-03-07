@@ -1015,12 +1015,8 @@ exit 0
 %{_datadir}/yum-plugins/*.py*
 
 %files common
-%dir %{python_sitelib}/%{vdsm_name}
-%dir %{python_sitelib}/%{vdsm_name}/common
-%dir %{python_sitelib}/%{vdsm_name}/common/network
 %{python_sitelib}/%{vdsm_name}/__init__.py*
-%{python_sitelib}/%{vdsm_name}/common/*.py*
-%{python_sitelib}/%{vdsm_name}/common/network/*.py*
+%{python_sitelib}/%{vdsm_name}/common
 
 %files network
 %{python_sitelib}/%{vdsm_name}/network
