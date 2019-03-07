@@ -4985,23 +4985,31 @@ class Vm(object):
         return self._setTicketForGraphicDev(
             graphics, otp, seconds, connAct, None, params)
 
+    def _check_fips_params_valid(self, params):
+            if 'fips' in params and \
+               params.get('fips') not in ['true', 'false']:
+                raise exception.MissingParameter(
+                    'fips param should either be "true", '
+                    '"false" or non-existent')
+
+            fips = conv.tobool(params.get('fips'))
+            if fips and params.get('vncUsername') is None:
+                raise exception.GeneralException(
+                    'FIPS mode requires vncUsername')
+
     def _setTicketForGraphicDev(self, graphics, otp, seconds, connAct,
                                 disconnectAction, params):
         if vmxml.attr(graphics, 'type') == 'vnc':
-            try:
-                fips = utils.str2bool(params.get('fips', 'false'))
-            except ValueError:
-                raise exception.VdsmException(
-                    'fips param should either be "true", '
-                    '"false" or non-existent')
+            self._check_fips_params_valid(params)
+
             vnc_username = params.get('vncUsername')
+            fips = conv.tobool(params.get('fips'))
+
             if fips:
-                if vnc_username is None:
-                    raise exception.VdsmException(
-                        'FIPS mode requires vncUsername')
                 saslpasswd2.set_vnc_password(vnc_username, otp.value)
-            elif vnc_username is not None:
+            else:
                 saslpasswd2.remove_vnc_password(vnc_username)
+
         vmxml.set_attr(graphics, 'passwd', otp.value)
         if int(seconds) > 0:
             validto = time.strftime('%Y-%m-%dT%H:%M:%S',
@@ -5016,6 +5024,7 @@ class Vm(object):
                 ConsoleDisconnectAction.LOCK_SCREEN
         except virdomain.TimeoutError as tmo:
             raise exception.SpiceTicketError(six.text_type(tmo))
+
         else:
             hooks.after_vm_set_ticket(self._domain.xml, self._custom, params)
             return {}
