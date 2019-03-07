@@ -33,7 +33,8 @@ except:  # Import will fail in python3
 
 from testlib import \
     VdsmTestCase, \
-    dummyTextGenerator
+    dummyTextGenerator, \
+    mock
 
 from testValidation import skipif, slowtest
 
@@ -41,6 +42,8 @@ from vdsm.client import \
     _Client, \
     ServerError, \
     TimeoutError
+
+from yajsonrpc import stompclient
 
 from yajsonrpc.exception import \
     JsonRpcMethodNotFoundError, \
@@ -172,6 +175,34 @@ class VdsmClientTests(VdsmTestCase):
                 client.Test.echo()
 
             self.assertEqual(ex.exception.code, JsonRpcInternalError().code)
+
+    @skipif(six.PY3, "Needs porting to python 3")
+    @mock.patch.object(stompclient.ClientRpcTransportAdapter, 'send')
+    def test_client_should_use_flow_id_in(self, send_mock):
+        # Here we just care about whether 'flow_id' was forwarded or not
+        # by the client to the transport layer, so we raise this artificial
+        # exception to skip any unnecessary processing and quickly check call
+        # arguments
+        class TerminateAfterSend(Exception):
+            pass
+
+        send_mock.side_effect = TerminateAfterSend()
+        with self._create_client() as client:
+            try:
+                client.Test.echo(text="")
+            except TerminateAfterSend:
+                pass
+
+            send_mock.assert_called_with(mock.ANY, flow_id=None)
+            send_mock.reset_mock()
+
+            with client.flow("zorro"):
+                try:
+                    client.Test.echo(text="")
+                except TerminateAfterSend:
+                    pass
+
+            send_mock.assert_called_with(mock.ANY, flow_id="zorro")
 
     @skipif(six.PY3, "Needs porting to python 3")
     @slowtest

@@ -79,6 +79,23 @@ Setting timeout per command::
 
     cli.Host.getVMList(_timeout=180)
 
+To make tracking multiple, potentially non-related method calls easy, you can
+use 'flow' context manager, i.e.:
+
+    with cli.flow("myflowid"):
+        cli.Host.getStats()
+        cli.Host.getVMList()
+
+This will cause each call to be annotated with "flow_id=myflowid" in vdsm's
+log file:
+
+     # grep myflowid /var/log/vdsm/vdsm.log
+
+     INFO  (jsonrpc/1) [vdsm.api] START getStats() flow_id=myflowid, ...
+     INFO  (jsonrpc/1) [vdsm.api] FINISH getStats() flow_id=myflowid, ...
+     INFO  (jsonrpc/1) [vdsm.api] START getVMList() flow_id=myflowid, ...
+     INFO  (jsonrpc/1) [vdsm.api] FINISH getVMList() flow_id=myflowid, ...
+
 ConnectionError: client can't connect to vdsm::
 
     vdsm.client.ConnectionError: Connection to localhost:54321 with
@@ -111,6 +128,7 @@ failed::
 
 from __future__ import absolute_import
 
+import contextlib
 import functools
 import uuid
 
@@ -223,6 +241,7 @@ class _Client(object):
     def __init__(self, client, default_timeout, gluster_enabled=False):
         self._client = client
         self._default_timeout = default_timeout
+        self._flow_id = None
         self._init_schema(gluster_enabled)
         self._create_namespaces()
 
@@ -264,8 +283,10 @@ class _Client(object):
 
         req = yajsonrpc.JsonRpcRequest(
             method, kwargs, reqId=str(uuid.uuid4()))
+
         try:
-            responses = self._client.call(req, timeout=timeout)
+            responses = self._client.call(
+                req, timeout=timeout, flow_id=self._flow_id)
         except EnvironmentError as e:
             raise ClientError(method, kwargs, e)
 
@@ -285,6 +306,14 @@ class _Client(object):
 
     def close(self):
         self._client.close()
+
+    @contextlib.contextmanager
+    def flow(self, flow_id):
+        try:
+            self._flow_id = flow_id
+            yield
+        finally:
+            self._flow_id = None
 
     def subscribe(self, queue_name, event_queue=None):
         """
