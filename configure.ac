@@ -26,6 +26,7 @@ AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_HOST
 
 m4_include([m4/ax_python_module.m4])
+m4_include([m4/vdsm_python_helpers.m4])
 
 # Package release
 AC_ARG_ENABLE(
@@ -60,7 +61,10 @@ AM_INIT_AUTOMAKE([-Wno-portability])
 
 # Checking for build tools
 AC_PROG_LN_S
-AM_PATH_PYTHON([2.7])
+
+TARGET_PYTHON_VERSION="python2.7"
+
+VDSM_CHECK_PY_VERSIONS(${TARGET_PYTHON_VERSION})
 
 AC_ARG_ENABLE(
     [hooks],
