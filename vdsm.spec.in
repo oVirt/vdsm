@@ -16,7 +16,6 @@
 %global with_gluster_mgmt @GLUSTER_MGMT@
 %global with_hooks @HOOKS@
 %global with_vhostmd @VHOSTMD@
-%global with_python3 @PYTHON3_SUPPORT@
 
 %ifarch ppc64le
 %global with_openvswitch 0
