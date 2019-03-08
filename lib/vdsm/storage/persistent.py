@@ -60,8 +60,6 @@ class DictValidator(object):
         # Fields to export as is
         self.transaction = self._dict.transaction
         self.invalidate = self._dict.invalidate
-        self.flush = self._dict.flush
-        self.refresh = self._dict.refresh
 
     def __len__(self):
         return len(self.keys())
@@ -151,7 +149,7 @@ class PersistentDict(object):
     def _accessWrapper(self):
         with self._syncRoot:
             if not self._isValid:
-                self.refresh()
+                self._refresh()
 
             yield
 
@@ -173,14 +171,14 @@ class PersistentDict(object):
                         # TODO : check appropriateness
                         if backup != self._metadata:
                             self.log.debug("Flushing changes")
-                            self.flush(self._metadata)
+                            self._flush(self._metadata)
                         self.log.debug("Finished transaction")
                     except:
                         self.log.warn(
                             "Error in transaction, rolling back changes",
                             exc_info=True)
                         # TBD: Maybe check that the old MD is what I remember?
-                        self.flush(backup)
+                        self._flush(backup)
                         raise
             finally:
                 self._inTransaction = False
@@ -226,7 +224,7 @@ class PersistentDict(object):
         with self._accessWrapper():
             return iter(self._metadata)
 
-    def refresh(self):
+    def _refresh(self):
         with self._syncRoot:
             lines = self._metaRW.readlines()
 
@@ -285,7 +283,7 @@ class PersistentDict(object):
             self._isValid = True
             self._metadata = newMD
 
-    def flush(self, overrideMD):
+    def _flush(self, overrideMD):
         with self._syncRoot:
             md = overrideMD
 
