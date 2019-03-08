@@ -28,6 +28,7 @@ dist_supervdsm_api_PYTHON = \
 	mkimage.py \
 	nbd.py \
 	network.py \
+	saslpasswd2.py \
 	systemctl.py \
 	test.py \
 	udev.py \

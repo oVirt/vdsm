@@ -40,6 +40,7 @@ dist_vdsmvirt_PYTHON = \
 	guestagenthelpers.py \
 	recovery.py \
 	sampling.py \
+	saslpasswd2.py \
 	secret.py \
 	utils.py \
 	virdomain.py \
