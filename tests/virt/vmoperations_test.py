@@ -31,7 +31,6 @@ from vdsm.common import hooks
 from vdsm.common import libvirtconnection
 from vdsm.common import password
 from vdsm.common import response
-from vdsm.common import systemd
 from vdsm.config import config
 from vdsm.virt import saslpasswd2
 from vdsm.virt import virdomain
@@ -78,8 +77,13 @@ class TestVmOperations(XMLTestCase):
     UPDATE_OFFSETS = [-3200, 3502, -2700, 3601]
     BASE_OFFSET = 42
 
-    GRAPHIC_DEVICES = [{'type': 'graphics', 'device': 'spice', 'port': '-1'},
-                       {'type': 'graphics', 'device': 'vnc', 'port': '-1'}]
+    VNC_DEVICE = {'type': 'graphics', 'device': 'vnc', 'port': '-1'}
+    SPICE_DEVICE = {'type': 'graphics', 'device': 'spice', 'port': '-1'}
+
+    GRAPHIC_DEVICES = [
+        SPICE_DEVICE,
+        VNC_DEVICE,
+    ]
 
     @MonkeyPatch(libvirtconnection, 'get', lambda x: fake.Connection())
     @permutations([[define.NORMAL], [define.ERROR]])
@@ -180,12 +184,13 @@ class TestVmOperations(XMLTestCase):
         def _check_ticket_params(domXML, conf, params):
             self.assertEqual(params, _TICKET_PARAMS)
 
-        def _fake_systemd_run(cmd, stdin=None):
-            return 0
+        def _fake_set_vnc_pwd(username, pwd):
+            pass
 
         with MonkeyPatchScope([(hooks, 'before_vm_set_ticket',
                                 _check_ticket_params),
-                               (systemd, 'run', _fake_systemd_run)]):
+                               (saslpasswd2, 'set_vnc_password',
+                                _fake_set_vnc_pwd)]):
             params = {'graphicsType': device_type}
             params.update(graphics_params)
             return testvm.updateDevice(params)
