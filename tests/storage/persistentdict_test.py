@@ -290,7 +290,6 @@ def test_persistent_dict_invalidate():
     assert pd["key 3"] == "value 3"
 
 
-@pytest.mark.xfail(reason="read error leave dict in transaction")
 def test_persistent_dict_read_error():
     initial_lines = [
         "key 1=value 1",
@@ -376,7 +375,6 @@ def test_persistent_dict_nested_transaction_user_error():
     assert w.lines == []
 
 
-@pytest.mark.xfail(reason="read error leave dict in transaction")
 def test_persistent_dict_transient_read_error():
     initial_lines = [
         "key 1=value 1",

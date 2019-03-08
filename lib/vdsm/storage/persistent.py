@@ -164,25 +164,26 @@ class PersistentDict(object):
                 return
 
             self._inTransaction = True
-
-            with self._accessWrapper():
-                self.log.debug("Starting transaction")
-                backup = deepcopy(self._metadata)
-                try:
-                    yield
-                    # TODO : check appropriateness
-                    if backup != self._metadata:
-                        self.log.debug("Flushing changes")
-                        self.flush(self._metadata)
-                    self.log.debug("Finished transaction")
-                except:
-                    self.log.warn("Error in transaction, rolling back changes",
-                                  exc_info=True)
-                    # TBD: Maybe check that the old MD is what I remember?
-                    self.flush(backup)
-                    raise
-                finally:
-                    self._inTransaction = False
+            try:
+                with self._accessWrapper():
+                    self.log.debug("Starting transaction")
+                    backup = deepcopy(self._metadata)
+                    try:
+                        yield
+                        # TODO : check appropriateness
+                        if backup != self._metadata:
+                            self.log.debug("Flushing changes")
+                            self.flush(self._metadata)
+                        self.log.debug("Finished transaction")
+                    except:
+                        self.log.warn(
+                            "Error in transaction, rolling back changes",
+                            exc_info=True)
+                        # TBD: Maybe check that the old MD is what I remember?
+                        self.flush(backup)
+                        raise
+            finally:
+                self._inTransaction = False
 
     def __init__(self, metaReaderWriter):
         self._syncRoot = threading.RLock()
