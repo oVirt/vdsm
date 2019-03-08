@@ -27,8 +27,12 @@ from vdsm.storage import exception as se
 from vdsm.storage import persistent
 
 
-class WriterError(Exception):
-    """ Raised while writing or reading """
+class ReadError(Exception):
+    """ Raised while reading from storage """
+
+
+class WriteError(Exception):
+    """ Raised while writing to storage """
 
 
 class UserError(Exception):
@@ -37,19 +41,20 @@ class UserError(Exception):
 
 class MemoryWriter(object):
 
-    def __init__(self, lines=(), fail=False):
+    def __init__(self, lines=(), fail_read=False, fail_write=False):
         self.lines = list(lines)
-        self.fail = fail
+        self.fail_read = fail_read
+        self.fail_write = fail_write
         self.version = 0
 
     def readlines(self):
-        if self.fail:
-            raise WriterError
+        if self.fail_read:
+            raise ReadError
         return self.lines[:]
 
     def writelines(self, lines):
-        if self.fail:
-            raise WriterError
+        if self.fail_write:
+            raise WriteError
         self.lines = lines[:]
         self.version += 1
 
@@ -285,12 +290,56 @@ def test_persistent_dict_invalidate():
     assert pd["key 3"] == "value 3"
 
 
-def test_persistent_dict_write_fail():
-    w = MemoryWriter(fail=True)
+@pytest.mark.xfail(reason="read error leave dict in transaction")
+def test_persistent_dict_read_error():
+    initial_lines = [
+        "key 1=value 1",
+        "key 2=value 2",
+        "_SHA_CKSUM=ad4e8ffdd89dde809bf1ed700838b590b08a3826",
+    ]
+    w = MemoryWriter(lines=initial_lines, fail_read=True)
     pd = persistent.PersistentDict(w)
-    with pytest.raises(WriterError):
-        pd["key"] = 1
-    assert w.lines == []
+
+    # Trying to modify persistent dict should start a new tranaction and fail
+    # the transaction while reading from storage.
+
+    with pytest.raises(ReadError):
+        pd["key 1"] = "new value 1"
+
+    with pytest.raises(ReadError):
+        del pd["key 1"]
+
+    assert w.lines == initial_lines
+    assert w.version == 0
+
+
+@pytest.mark.xfail(reason="no rollback after write error")
+def test_persistent_dict_write_error():
+    initial_lines = [
+        "key 1=value 1",
+        "key 2=value 2",
+        "_SHA_CKSUM=ad4e8ffdd89dde809bf1ed700838b590b08a3826",
+    ]
+    w = MemoryWriter(lines=initial_lines, fail_write=True)
+    pd = persistent.PersistentDict(w)
+
+    # All access to persistent dict should fail the transaction when trying to
+    # modify storage, and rollback to previous state.
+
+    with pytest.raises(WriteError):
+        pd["key 1"] = "new value 1"
+
+    assert pd["key 1"] == "value 1"
+    assert pd["key 2"] == "value 2"
+
+    with pytest.raises(WriteError):
+        del pd["key 1"]
+
+    assert pd["key 1"] == "value 1"
+    assert pd["key 2"] == "value 2"
+
+    assert w.lines == initial_lines
+    assert w.version == 0
 
 
 @pytest.mark.xfail(reason="nested transaction rollback is broken")
@@ -327,16 +376,75 @@ def test_persistent_dict_nested_transaction_user_error():
     assert w.lines == []
 
 
-def test_persistent_dict_nested_transaction_write_error():
-    w = MemoryWriter(fail=True)
+@pytest.mark.xfail(reason="read error leave dict in transaction")
+def test_persistent_dict_transient_read_error():
+    initial_lines = [
+        "key 1=value 1",
+        "key 2=value 2",
+        "_SHA_CKSUM=ad4e8ffdd89dde809bf1ed700838b590b08a3826",
+    ]
+    w = MemoryWriter(lines=initial_lines)
     pd = persistent.PersistentDict(w)
 
-    # Write error will abort the entire transaction.
-    with pytest.raises(WriterError):
-        with pd.transaction():
-            pd["key 1"] = 1
-            with pd.transaction():
-                pd["key 2"] = 2
+    # Simulate transient error on storage.
+    w.fail_read = True
 
-    # Nothing should be written as we use failing writer.
-    assert w.lines == []
+    with pytest.raises(ReadError):
+        pd["key 2"] = "new value 2"
+
+    # Nothing should be written since the transaction was aborted.
+    assert w.lines == initial_lines
+    assert w.version == 0
+
+    # Restore storage, reading and writing should work now.
+    w.fail_read = False
+
+    pd["key 2"] = "new value 2"
+
+    # Both dict and storage should change.
+    assert pd["key 1"] == "value 1"
+    assert pd["key 2"] == "new value 2"
+    assert w.lines == [
+        "key 1=value 1",
+        "key 2=new value 2",
+        "_SHA_CKSUM=3c313d2c72ab17086f75350f5cf71d9a42655419",
+    ]
+    assert w.version == 1
+
+
+@pytest.mark.xfail(reason="no rollback after write error")
+def test_persistent_dict_transient_write_error():
+    initial_lines = [
+        "key 1=value 1",
+        "key 2=value 2",
+        "_SHA_CKSUM=ad4e8ffdd89dde809bf1ed700838b590b08a3826",
+    ]
+    w = MemoryWriter(lines=initial_lines)
+    pd = persistent.PersistentDict(w)
+
+    # Simulate transient error on storage.
+    w.fail_write = True
+
+    with pytest.raises(WriteError):
+        pd["key 2"] = "new value 2"
+
+    # Nothing should change.
+    assert pd["key 1"] == "value 1"
+    assert pd["key 2"] == "value 2"
+    assert w.lines == initial_lines
+    assert w.version == 0
+
+    # Restore storage, writing should work now.
+    w.fail_write = False
+
+    pd["key 2"] = "new value 2"
+
+    # Both dict and storage should change.
+    assert pd["key 1"] == "value 1"
+    assert pd["key 2"] == "new value 2"
+    assert w.lines == [
+        "key 1=value 1",
+        "key 2=new value 2",
+        "_SHA_CKSUM=3c313d2c72ab17086f75350f5cf71d9a42655419",
+    ]
+    assert w.version == 1
