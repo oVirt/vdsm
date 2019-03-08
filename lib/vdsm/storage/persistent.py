@@ -178,7 +178,7 @@ class PersistentDict(object):
                             "Error in transaction, rolling back changes",
                             exc_info=True)
                         # TBD: Maybe check that the old MD is what I remember?
-                        self._flush(backup)
+                        self._metadata = backup
                         raise
             finally:
                 self._inTransaction = False

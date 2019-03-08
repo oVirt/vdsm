@@ -312,7 +312,6 @@ def test_persistent_dict_read_error():
     assert w.version == 0
 
 
-@pytest.mark.xfail(reason="no rollback after write error")
 def test_persistent_dict_write_error():
     initial_lines = [
         "key 1=value 1",
@@ -341,7 +340,6 @@ def test_persistent_dict_write_error():
     assert w.version == 0
 
 
-@pytest.mark.xfail(reason="nested transaction rollback is broken")
 def test_persistent_dict_transaction_user_error():
     w = MemoryWriter()
     pd = persistent.PersistentDict(w)
@@ -357,7 +355,6 @@ def test_persistent_dict_transaction_user_error():
     assert w.lines == []
 
 
-@pytest.mark.xfail(reason="nested transaction rollback is broken")
 def test_persistent_dict_nested_transaction_user_error():
     w = MemoryWriter()
     pd = persistent.PersistentDict(w)
@@ -410,7 +407,6 @@ def test_persistent_dict_transient_read_error():
     assert w.version == 1
 
 
-@pytest.mark.xfail(reason="no rollback after write error")
 def test_persistent_dict_transient_write_error():
     initial_lines = [
         "key 1=value 1",
