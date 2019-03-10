@@ -258,6 +258,16 @@ def test_volume_create_raw_prealloc(
 
     assert qemu_info['actualsize'] == PREALLOCATED_VOL_SIZE
 
+    # Verify actual volume metadata
+    actual = vol.getInfo()
+    assert int(actual["capacity"]) == PREALLOCATED_VOL_SIZE
+    assert actual["format"] == "RAW"
+    assert actual["type"] == "PREALLOCATED"
+    assert actual["voltype"] == "LEAF"
+    assert actual["uuid"] == vol_uuid
+    assert int(actual["apparentsize"]) == qemu_info['virtualsize']
+    assert int(actual["truesize"]) == qemu_info['actualsize']
+
 
 @pytest.mark.xfail(
     reason="Create preallocated-raw volume "
@@ -295,6 +305,16 @@ def test_volume_create_raw_prealloc_with_initial_size(
         qemu_info=qemu_info)
 
     assert qemu_info['actualsize'] == INITIAL_VOL_SIZE
+
+    # Verify actual volume metadata
+    actual = vol.getInfo()
+    assert int(actual["capacity"]) == PREALLOCATED_VOL_SIZE
+    assert actual["format"] == "RAW"
+    assert actual["type"] == "PREALLOCATED"
+    assert actual["voltype"] == "LEAF"
+    assert actual["uuid"] == vol_uuid
+    assert int(actual["apparentsize"]) == qemu_info['virtualsize']
+    assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
 @pytest.mark.parametrize("domain_version", [4, 5])
@@ -359,6 +379,16 @@ def test_volume_create_raw_sparse(
 
     assert qemu_info['actualsize'] == 0
 
+    # Verify actual volume metadata
+    actual = vol.getInfo()
+    assert int(actual["capacity"]) == SPARSE_VOL_SIZE
+    assert actual["format"] == "RAW"
+    assert actual["type"] == "SPARSE"
+    assert actual["voltype"] == "LEAF"
+    assert actual["uuid"] == vol_uuid
+    assert int(actual["apparentsize"]) == qemu_info['virtualsize']
+    assert int(actual["truesize"]) == qemu_info['actualsize']
+
 
 @pytest.mark.parametrize("domain_version", [4, 5])
 def test_volume_create_cow_sparse(
@@ -395,6 +425,18 @@ def test_volume_create_cow_sparse(
     # Check the volume specific actual size is fragile,
     # will easily break on CI or when qemu change the implementation.
     assert qemu_info['actualsize'] < MEGAB
+
+    # Verify actual volume metadata
+    actual = vol.getInfo()
+    assert int(actual["capacity"]) == SPARSE_VOL_SIZE
+    assert actual["format"] == "COW"
+    assert actual["type"] == "SPARSE"
+    assert actual["voltype"] == "LEAF"
+    assert actual["uuid"] == vol_uuid
+    # Check the volume specific apparent size is fragile,
+    # will easily break on CI or when qemu change the implementation.
+    assert int(actual["apparentsize"]) < MEGAB
+    assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
 @pytest.mark.parametrize("domain_version", [4, 5])
@@ -449,6 +491,18 @@ def test_volume_create_cow_sparse_with_parent(
     # Check the volume specific actual size is fragile,
     # will easily break on CI or when qemu change the implementation.
     assert qemu_info['actualsize'] < MEGAB
+
+    # Verify actual volume metadata
+    actual = vol.getInfo()
+    assert int(actual["capacity"]) == SPARSE_VOL_SIZE
+    assert actual["format"] == "COW"
+    assert actual["type"] == "SPARSE"
+    assert actual["voltype"] == "LEAF"
+    assert actual["uuid"] == vol_uuid
+    # Check the volume specific apparent size is fragile,
+    # will easily break on CI or when qemu change the implementation.
+    assert int(actual["apparentsize"]) < MEGAB
+    assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
 def verify_volume_file(
