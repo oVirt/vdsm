@@ -259,11 +259,53 @@ def test_volume_create_raw_prealloc(
     assert qemu_info['actualsize'] == PREALLOCATED_VOL_SIZE
 
 
+@pytest.mark.xfail(
+    reason="Create preallocated-raw volume "
+           "with initial size isn't supported yet")
 @pytest.mark.parametrize("domain_version", [4, 5])
-@pytest.mark.parametrize("vol_format", [sc.RAW_FORMAT, sc.COW_FORMAT])
-def test_volume_create_raw_cow_prealloc_with_initial_size(
+def test_volume_create_raw_prealloc_with_initial_size(
+        tmpdir, tmp_repo, tmp_db, fake_access, fake_rescan,
+        fake_task, local_fallocate, domain_version):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        size=PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512,
+        volFormat=sc.RAW_FORMAT,
+        preallocate=sc.PREALLOCATED_VOL,
+        diskType='DATA',
+        volUUID=vol_uuid,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        initialSize=INITIAL_VOL_SIZE // sc.BLOCK_SIZE_512)
+
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+
+    path = vol.getVolumePath()
+    qemu_info = qemuimg.info(path)
+
+    verify_volume_file(
+        path=path,
+        format=qemuimg.FORMAT.RAW,
+        virtual_size=PREALLOCATED_VOL_SIZE,
+        qemu_info=qemu_info)
+
+    assert qemu_info['actualsize'] == INITIAL_VOL_SIZE
+
+
+@pytest.mark.parametrize("domain_version", [4, 5])
+@pytest.mark.parametrize("vol_format,prealloc", [
+    (sc.RAW_FORMAT, sc.SPARSE_VOL),
+    (sc.COW_FORMAT, sc.PREALLOCATED_VOL),
+    (sc.COW_FORMAT, sc.SPARSE_VOL),
+])
+def test_volume_create_initial_size_not_supported(
         tmpdir, tmp_repo, tmp_db, fake_access, fake_task, local_fallocate,
-        fake_rescan, vol_format, domain_version):
+        fake_rescan, vol_format, prealloc, domain_version):
     dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
 
     img_uuid = str(uuid.uuid4())
@@ -272,9 +314,9 @@ def test_volume_create_raw_cow_prealloc_with_initial_size(
     with pytest.raises(se.VolumeCreationError):
         dom.createVolume(
             imgUUID=img_uuid,
-            size=PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512,
+            size=SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
             volFormat=vol_format,
-            preallocate=sc.PREALLOCATED_VOL,
+            preallocate=prealloc,
             diskType='DATA',
             volUUID=vol_uuid,
             desc="Test volume",
