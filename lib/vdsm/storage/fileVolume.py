@@ -439,17 +439,7 @@ class FileVolume(volume.Volume):
         cls._truncate_volume(volPath, truncSize, volUUID, dom)
 
         if preallocate == sc.PREALLOCATED_VOL:
-            try:
-                operation = fallocate.allocate(volPath,
-                                               sizeBytes)
-                with vars.task.abort_callback(operation.abort):
-                    with utils.stopwatch("Preallocating volume %s" % volPath):
-                        operation.run()
-            except exception.ActionStopped:
-                raise
-            except Exception:
-                cls.log.error("Unexpected error", exc_info=True)
-                raise se.VolumesZeroingError(volPath)
+            cls._fallocate_volume(volPath, sizeBytes)
 
         if not volParent:
             cls.log.info("Request to create %s volume %s with size = %s "
@@ -486,6 +476,19 @@ class FileVolume(volume.Volume):
             if e.errno == errno.EEXIST:
                 raise se.VolumeAlreadyExists(vol_id)
             raise
+
+    @classmethod
+    def _fallocate_volume(cls, vol_path, size):
+        try:
+            operation = fallocate.allocate(vol_path, size)
+            with vars.task.abort_callback(operation.abort):
+                with utils.stopwatch("Preallocating volume %s" % vol_path):
+                    operation.run()
+        except exception.ActionStopped:
+            raise
+        except Exception:
+            cls.log.error("Unexpected error", exc_info=True)
+            raise se.VolumesZeroingError(vol_path)
 
     def removeMetadata(self, metaId=None):
         self._manifest.removeMetadata()
