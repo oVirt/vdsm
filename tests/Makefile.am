@@ -269,6 +269,7 @@ run_modules += $(common_modules)
 
 define define_check_vars
 check-$(1): PYTHON_EXE = $(2)
+check-$(1): PYTHON_SHORT_NAME = $(1)
 check-$(1): BLACKLISTED_MODULES = $(blacklisted_modules_$(1))
 endef
 
@@ -282,36 +283,37 @@ $(foreach i,\
 check-recursive:
 	@true
 
+.PHONY: check-net
 check-net:
 	@echo '=== Running networking tests. ==='
 	@$(top_srcdir)/tests/run_tests_local.sh $(network_modules)
 
+.PHONY: check-virt
 check-virt:
 	@echo '=== Running virt tests. ==='
 	@$(top_srcdir)/tests/run_tests_local.sh $(virt_modules)
 
-check: check-py27 check-py36
+.PHONY: check-target
+check-target: check-$(VDSM_TARGET_PY_SHORT_VERSION)
 
-check-py27:
-	@echo '=== Running tests.  To skip this step place NOSE_EXCLUDE=.* ==='
-	@echo '=== into your environment.  Do not submit untested code!    ==='
-	$(top_srcdir)/tests/run_tests_local.sh $(run_modules)
-	if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
-		mv .coverage .coverage-nose-py27; \
-	fi
+.PHONY: check-all
+check-all: $(VDSM_SUPPORTED_PY_SHORT_VERSIONS:%=check-%)
 
-check-py36:
+.PHONY: check
+check: check-all
+
+# To run checks for specific interpreter version use
+# i.e. 'make -C tests check-py36' from root dir
+check-%:
 	@echo '=== Running "$(@)" target with "$(PYTHON_EXE)" interpreter version.   ==='
 	@echo '=== To skip this step place "NOSE_EXCLUDE=.*" into your environment.    ==='
 	$(if $(BLACKLISTED_MODULES),@printf '=== Disabling blacklisted module: %37s ===\n' $(shell echo $(BLACKLISTED_MODULES)),)
 	@echo '=== Do not submit untested code!                                        ==='
-	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
-		PYTHON_EXE=$(PYTHON_EXE) \
-			$(top_srcdir)/tests/run_tests_local.sh \
-			$(filter-out $(BLACKLISTED_MODULES),$(run_modules)) && \
-		if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
-		    mv .coverage .coverage-nose-py36; \
-		fi \
+	PYTHON_EXE=$(PYTHON_EXE) \
+		$(top_srcdir)/tests/run_tests_local.sh \
+		$(filter-out $(BLACKLISTED_MODULES),$(run_modules)) && \
+	if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
+		mv .coverage .coverage-nose-$(PYTHON_SHORT_NAME); \
 	fi
 
 # Disable builtin %.out rule, overrwriting out files
