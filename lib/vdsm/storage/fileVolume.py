@@ -436,14 +436,7 @@ class FileVolume(volume.Volume):
         sizeBytes = size * BLOCK_SIZE
         truncSize = sizeBytes if volFormat == sc.RAW_FORMAT else 0
 
-        try:
-            oop.getProcessPool(dom.sdUUID).truncateFile(
-                volPath, truncSize, mode=sc.FILE_VOLUME_PERMISSIONS,
-                creatExcl=True)
-        except OSError as e:
-            if e.errno == errno.EEXIST:
-                raise se.VolumeAlreadyExists(volUUID)
-            raise
+        cls._truncate_volume(volPath, truncSize, volUUID, dom)
 
         if preallocate == sc.PREALLOCATED_VOL:
             try:
@@ -482,6 +475,17 @@ class FileVolume(volume.Volume):
         dom.oop.os.chmod(volPath, sc.FILE_VOLUME_PERMISSIONS)
 
         return (volPath,)
+
+    @classmethod
+    def _truncate_volume(cls, vol_path, size, vol_id, dom):
+        try:
+            oop.getProcessPool(dom.sdUUID).truncateFile(
+                vol_path, size, mode=sc.FILE_VOLUME_PERMISSIONS,
+                creatExcl=True)
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                raise se.VolumeAlreadyExists(vol_id)
+            raise
 
     def removeMetadata(self, metaId=None):
         self._manifest.removeMetadata()
