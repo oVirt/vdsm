@@ -263,6 +263,16 @@ run_modules += $(network_modules)
 run_modules += $(device_modules)
 run_modules += $(common_modules)
 
+define define_check_vars
+check-$(1): PYTHON_EXE = $(2)
+endef
+
+# Determine the value of the 'PYTHON_EXE' variable for all 'check-py*'
+# targets (i.e. 'check-py36: PYTHON_EXE = python3.6').
+$(foreach i,\
+          $(shell seq $(words $(VDSM_SUPPORTED_PY_VERSIONS))),\
+		  $(eval $(call define_check_vars,$(word $(i), $(VDSM_SUPPORTED_PY_SHORT_VERSIONS)),$(word $(i), $(VDSM_SUPPORTED_PY_VERSIONS)))))
+
 # Disable builtin (recursive) check target.
 check-recursive:
 	@true
@@ -286,10 +296,11 @@ check-py27:
 	fi
 
 check-py36:
-	@echo '=== Running tests.  To skip this step place NOSE_EXCLUDE=.* ==='
-	@echo '=== into your environment.  Do not submit untested code!    ==='
+	@echo '=== Running "$(@)" target with "$(PYTHON_EXE)" interpreter version.   ==='
+	@echo '=== To skip this step place "NOSE_EXCLUDE=.*" into your environment.    ==='
+	@echo '=== Do not submit untested code!                                        ==='
 	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
-		PYTHON_EXE=python3 \
+		PYTHON_EXE=$(PYTHON_EXE) \
 			$(top_srcdir)/tests/run_tests_local.sh \
 			$(filter-out $(blacklist_modules_python3),$(run_modules)) && \
 		if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
