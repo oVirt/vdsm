@@ -82,7 +82,7 @@ generate_combined_coverage_report() {
     pushd tests
     pwd
     ls .cov*
-    coverage combine ".coverage-nose-${python_version::-1}" \
+    coverage combine ".coverage-nose-$python_version" \
                      ".coverage-storage-$python_version" \
                      ".coverage-network-$python_version" \
                      ".coverage-virt-$python_version" \

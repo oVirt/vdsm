@@ -297,7 +297,7 @@ check-py27:
 	@echo '=== into your environment.  Do not submit untested code!    ==='
 	$(top_srcdir)/tests/run_tests_local.sh $(run_modules)
 	if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
-		mv .coverage .coverage-nose-py2; \
+		mv .coverage .coverage-nose-py27; \
 	fi
 
 check-py36:
@@ -310,7 +310,7 @@ check-py36:
 			$(top_srcdir)/tests/run_tests_local.sh \
 			$(filter-out $(BLACKLISTED_MODULES),$(run_modules)) && \
 		if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
-		    mv .coverage .coverage-nose-py3; \
+		    mv .coverage .coverage-nose-py36; \
 		fi \
 	fi
 
