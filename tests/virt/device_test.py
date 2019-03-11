@@ -1278,37 +1278,65 @@ class VncSecureTest(TestCaseBase):
         <domain type="kvm"
           xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
           <devices>
-            <graphics autoport="yes" keymap="en-us" passwd="%s"
-                  passwdValidTo="1970-01-01T00:00:01" port="5900"
+            <graphics autoport="yes" keymap="en-us" {passwd_tag}
+                  {passwd_valid_tag} port="5900"
                   tlsPort="5900" type="vnc">
               <listen network="vdsm-vmDisplay" type="network"/>
             </graphics>
           </devices>
         </domain>"""
 
+    NO_PASSWD = ''
+    PASSWD_EMPTY = 'passwd = ""'
+    PASSWD_PRESENT = 'passwd = "a-paSSword321"'
+    NO_PASSWD_VALID = ''
+    PASSWD_VALID_EMPTY = 'passwdValidTo = ""'
+    PASSWD_VALID_PRESENT = 'passwdValidTo = "1970-01-01T00:00:01"'
+
     def test_no_xml(self):
-        self.assertTrue(graphics.is_vnc_secure({}))
-        self.assertTrue(graphics.is_vnc_secure({'other': 'something'}))
+        self.assertTrue(graphics.is_vnc_secure({}, self.log))
+        self.assertTrue(graphics.is_vnc_secure({'other': 'something'},
+                                               self.log))
 
     def test_no_vnc(self):
-        self.assertTrue(graphics.is_vnc_secure({'xml': self.XML_NO_VNC}))
+        self.assertTrue(graphics.is_vnc_secure({'xml': self.XML_NO_VNC},
+                                               self.log))
 
     @MonkeyPatch(utils, 'sasl_enabled', lambda: False)
     def test_sasl_disabled_no_password(self):
-        xml = self.XML_VNC % ""
-        self.assertFalse(graphics.is_vnc_secure({'xml': xml}))
+        xml = self.XML_VNC.format(passwd_tag=self.NO_PASSWD,
+                                  passwd_valid_tag=self.NO_PASSWD_VALID)
+        self.assertFalse(graphics.is_vnc_secure({'xml': xml}, self.log))
+        xml = self.XML_VNC.format(passwd_tag=self.PASSWD_EMPTY,
+                                  passwd_valid_tag=self.PASSWD_VALID_EMPTY)
+        self.assertFalse(graphics.is_vnc_secure({'xml': xml}, self.log))
+        xml = self.XML_VNC.format(passwd_tag=self.PASSWD_PRESENT,
+                                  passwd_valid_tag=self.NO_PASSWD_VALID)
+        self.assertFalse(graphics.is_vnc_secure({'xml': xml}, self.log))
+        xml = self.XML_VNC.format(passwd_tag=self.PASSWD_PRESENT,
+                                  passwd_valid_tag=self.PASSWD_VALID_EMPTY)
+        self.assertFalse(graphics.is_vnc_secure({'xml': xml}, self.log))
+        xml = self.XML_VNC.format(passwd_tag=self.NO_PASSWD,
+                                  passwd_valid_tag=self.PASSWD_VALID_PRESENT)
+        self.assertTrue(graphics.is_vnc_secure({'xml': xml}, self.log))
+        xml = self.XML_VNC.format(passwd_tag=self.PASSWD_EMPTY,
+                                  passwd_valid_tag=self.PASSWD_VALID_PRESENT)
+        self.assertTrue(graphics.is_vnc_secure({'xml': xml}, self.log))
 
     @MonkeyPatch(utils, 'sasl_enabled', lambda: False)
     def test_sasl_disabled_password(self):
-        xml = self.XML_VNC % "a-paSSword321"
-        self.assertTrue(graphics.is_vnc_secure({'xml': xml}))
+        xml = self.XML_VNC.format(passwd_tag=self.PASSWD_PRESENT,
+                                  passwd_valid_tag=self.PASSWD_VALID_PRESENT)
+        self.assertTrue(graphics.is_vnc_secure({'xml': xml}, self.log))
 
     @MonkeyPatch(utils, 'sasl_enabled', lambda: True)
     def test_sasl_enabled_password(self):
-        xml = self.XML_VNC % "a-paSSword321"
-        self.assertTrue(graphics.is_vnc_secure({'xml': xml}))
+        xml = self.XML_VNC.format(passwd_tag=self.PASSWD_PRESENT,
+                                  passwd_valid_tag=self.PASSWD_VALID_PRESENT)
+        self.assertTrue(graphics.is_vnc_secure({'xml': xml}, self.log))
 
     @MonkeyPatch(utils, 'sasl_enabled', lambda: True)
     def test_sasl_enabled_no_password(self):
-        xml = self.XML_VNC % ""
-        self.assertTrue(graphics.is_vnc_secure({'xml': xml}))
+        xml = self.XML_VNC.format(passwd_tag=self.NO_PASSWD,
+                                  passwd_valid_tag=self.NO_PASSWD_VALID)
+        self.assertTrue(graphics.is_vnc_secure({'xml': xml}, self.log))

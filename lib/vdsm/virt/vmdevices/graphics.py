@@ -320,7 +320,7 @@ def _is_feature_flag_enabled(dev, node, attr):
         return True
 
 
-def is_vnc_secure(vmParams):
+def is_vnc_secure(vmParams, log):
     """
     This function checks if VNC is not mis-configured to offer insecure,
     free-for-all access. The engine can send the XML with empty password,
@@ -335,6 +335,11 @@ def is_vnc_secure(vmParams):
     graphics = vmxml.find_all(parsed, 'graphics')
     for g in graphics:
         if vmxml.attr(g, 'type') == 'vnc':
-            if vmxml.attr(g, 'passwd') == '' and not utils.sasl_enabled():
+            # When the XML does not contain 'passwordValidTo' attribute
+            # this is a way to say 'don't use password auth'.
+            no_password_auth = vmxml.attr(g, 'passwdValidTo') == ''
+            if no_password_auth and not utils.sasl_enabled():
+                log.warn("VNC not secure: passwdValidTo empty or missing"
+                         " and SASL not configured")
                 return False
     return True
