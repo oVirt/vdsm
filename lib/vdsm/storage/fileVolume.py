@@ -436,54 +436,54 @@ class FileVolume(volume.Volume):
 
     @classmethod
     def _create_raw_volume(
-            cls, dom, volUUID, size, volPath, initialSize, preallocate):
+            cls, dom, vol_id, size, vol_path, initial_size, preallocate):
         """
         Specific implementation of _create() for RAW volumes.
         All the exceptions are properly handled and logged in volume.create()
         """
-        sizeBytes = size * BLOCK_SIZE
+        size_bytes = size * BLOCK_SIZE
 
-        if initialSize:
+        if initial_size:
             cls.log.error(
                 "initial size is not supported for file-based volumes")
-            raise se.InvalidParameterException("initial size", initialSize)
+            raise se.InvalidParameterException("initial size", initial_size)
 
-        cls._truncate_volume(volPath, sizeBytes, volUUID, dom)
+        cls._truncate_volume(vol_path, size_bytes, vol_id, dom)
 
         if preallocate == sc.PREALLOCATED_VOL:
-            cls._fallocate_volume(volPath, sizeBytes)
+            cls._fallocate_volume(vol_path, size_bytes)
 
         cls.log.info("Request to create RAW volume %s with size = %s blocks",
-                     volPath, size)
+                     vol_path, size)
 
         # Forcing the volume permissions in case one of the tools we use
         # (dd, qemu-img, etc.) will mistakenly change the file permissions.
-        cls._set_permissions(volPath, dom)
+        cls._set_permissions(vol_path, dom)
 
-        return (volPath,)
+        return (vol_path,)
 
     @classmethod
     def _create_cow_volume(
-            cls, dom, volUUID, size, volPath, initialSize, volParent,
-            imgUUID, srcImgUUID, srcVolUUID):
+            cls, dom, vol_id, size, vol_path, initial_size, vol_parent,
+            img_id, src_img_id, src_vol_id):
         """
         specific implementation of _create() for COW volumes.
         All the exceptions are properly handled and logged in volume.create()
         """
-        sizeBytes = size * BLOCK_SIZE
+        size_bytes = size * BLOCK_SIZE
 
-        if initialSize:
+        if initial_size:
             cls.log.error("initial size is not supported "
                           "for file-based volumes")
-            raise se.InvalidParameterException("initial size", initialSize)
+            raise se.InvalidParameterException("initial size", initial_size)
 
-        cls._truncate_volume(volPath, 0, volUUID, dom)
+        cls._truncate_volume(vol_path, 0, vol_id, dom)
 
-        if not volParent:
+        if not vol_parent:
             cls.log.info("Request to create COW volume %s with size = %s "
-                         "blocks", volPath, size)
-            operation = qemuimg.create(volPath,
-                                       size=sizeBytes,
+                         "blocks", vol_path, size)
+            operation = qemuimg.create(vol_path,
+                                       size=size_bytes,
                                        format=sc.fmt2str(sc.COW_FORMAT),
                                        qcow2Compat=dom.qcow2_compat())
             operation.run()
@@ -491,14 +491,14 @@ class FileVolume(volume.Volume):
             # Create hardlink to template and its meta file
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s "
                          "with size %s (blocks)",
-                         imgUUID, volUUID, srcImgUUID, srcVolUUID, size)
-            volParent.clone(volPath, sc.COW_FORMAT, size)
+                         img_id, vol_id, src_img_id, src_vol_id, size)
+            vol_parent.clone(vol_path, sc.COW_FORMAT, size)
 
         # Forcing the volume permissions in case one of the tools we use
         # (dd, qemu-img, etc.) will mistakenly change the file permissions.
-        cls._set_permissions(volPath, dom)
+        cls._set_permissions(vol_path, dom)
 
-        return (volPath,)
+        return (vol_path,)
 
     @classmethod
     def _truncate_volume(cls, vol_path, size, vol_id, dom):
