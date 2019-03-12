@@ -136,20 +136,18 @@ check-unit:
 # Note: dependencies ordered by time needed to run them
 lint: gitignore execcmd imports flake8 pylint-py3k pylint
 
+.PHONY: tests-target
+tests-target: tests-$(VDSM_TARGET_PY_SHORT_VERSION)
+
+.PHONY: tests-all
+tests-all: $(VDSM_SUPPORTED_PY_SHORT_VERSIONS:%=tests-%)
+
 .PHONY: tests
-tests: tests-py27 tests-py36
+tests: tests-all
 
-.PHONY: tests-py27
-tests-py27: tox
-	tox -e "{tests,storage,lib,network,virt}-py27"
-
-.PHONY: tests-py36
-tests-py36: tox
-	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
-		tox -e "{tests,storage,lib,network,virt}-py36"; \
-	else \
-		echo "Skipping tests for Python 3.6"; \
-	fi
+# To run tests for specific interpreter version use i.e. 'make tests-py36'
+tests-%: tox
+	tox -e "{tests,storage,lib,network,virt}-$(@:tests-%=%)"
 
 all-local: \
 	vdsm.spec
