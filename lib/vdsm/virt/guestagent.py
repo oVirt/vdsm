@@ -498,7 +498,7 @@ class GuestAgent(object):
             if 'diskMapping' in qga:
                 diskMapping.update(qga['diskMapping'])
                 del qga['diskMapping']
-            if len(info['appsList']) > 0:
+            if len(info['appsList']) > 0 and 'appsList' in qga:
                 # This is an exception since the entry from QEMU GA is faked.
                 # Prefer oVirt GA info if available. Take fake QEMU GA info
                 # only if the other is not available.
