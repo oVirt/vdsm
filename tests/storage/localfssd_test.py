@@ -162,11 +162,8 @@ def test_volume_life_cycle(monkeypatch, tmpdir, tmp_repo, fake_access,
     # test volume prepare, teardown does nothing in case of file volume
     vol.prepare()
 
-    mode = os.stat(vol_path).st_mode
-    assert mode & stat.S_IRUSR
-    assert mode & stat.S_IWUSR
-    assert mode & stat.S_IRGRP
-    assert mode & stat.S_IWGRP
+    permissions = stat.S_IMODE(os.stat(vol_path).st_mode)
+    assert permissions == sc.FILE_VOLUME_PERMISSIONS
 
     # verify we can really write and read to an image
     qemuio.write_pattern(vol_path, "qcow2")
