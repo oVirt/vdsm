@@ -460,9 +460,7 @@ class FileVolume(volume.Volume):
 
         # Forcing the volume permissions in case one of the tools we use
         # (dd, qemu-img, etc.) will mistakenly change the file permissiosn.
-        cls.log.info("Changing volume %r permission to %04o",
-                     volPath, sc.FILE_VOLUME_PERMISSIONS)
-        dom.oop.os.chmod(volPath, sc.FILE_VOLUME_PERMISSIONS)
+        cls._set_permissions(volPath, dom)
 
         return (volPath,)
 
@@ -489,6 +487,12 @@ class FileVolume(volume.Volume):
         except Exception:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.VolumesZeroingError(vol_path)
+
+    @classmethod
+    def _set_permissions(cls, vol_path, dom):
+        cls.log.info("Changing volume %r permission to %04o",
+                     vol_path, sc.FILE_VOLUME_PERMISSIONS)
+        dom.oop.os.chmod(vol_path, sc.FILE_VOLUME_PERMISSIONS)
 
     def removeMetadata(self, metaId=None):
         self._manifest.removeMetadata()
