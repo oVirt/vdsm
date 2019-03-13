@@ -943,10 +943,10 @@ def _exec_ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
 
     If IPv6 is requested, enable it before the actual ifup because it may have
     been disabled (during network restoration after boot, or by a previous
-    setupNetworks).
-    If IPv6 is not requested, disable it before and after ifup.
+    setupNetworks). If IPv6 is not requested, disable it after ifup.
     """
-    _enable_ipv6(iface.name, enable=bool(iface.ipv6))
+    if iface.ipv6:
+        _enable_ipv6(iface.name)
 
     _exec_ifup_by_name(iface.name, cgroup)
 
