@@ -227,12 +227,10 @@ class VM(APIBase):
                 raise exception.CannotCreateVM(
                     'Unknown display type %s' % vmParams.get('display'))
             if not graphics.is_vnc_secure(vmParams, self.log):
-                self.log.error(
-                    "VNC does not seem to be secure: {0}".format(vmParams)
-                )
                 raise exception.CannotCreateVM(
-                    "VNC is allowed to start VNC with no password auth and "
-                    "SASL authentication is not configured.")
+                    "A VM is not secure: VNC has no password and SASL "
+                    "authentication not configured. On hosts in FIPS mode "
+                    "VNC must use SASL.")
             return self._cif.createVm(vmParams)
 
         except OSError as e:
