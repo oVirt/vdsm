@@ -22,6 +22,7 @@ from __future__ import division
 
 from contextlib import contextmanager
 import logging
+import time
 
 from vdsm.common.config import config
 from vdsm.network import dhclient_monitor
@@ -104,6 +105,8 @@ def _init_sourceroute(net_api):
 
 def _register_notifications(cif):
     def _notify(**kwargs):
+        # Delay the notification in order to allow the ifup job to finish
+        time.sleep(5)
         cif.notify('|net|host_conn|no_id')
 
     dhclient_monitor.register_action_handler(
