@@ -38,8 +38,9 @@ log = logging.getLogger("loopback")
 
 class Device(object):
 
-    def __init__(self, backing_file):
+    def __init__(self, backing_file, sector_size=None):
         self._backing_file = backing_file
+        self._sector_size = sector_size
         self._path = None
 
     @property
@@ -50,10 +51,18 @@ class Device(object):
     def backing_file(self):
         return self._backing_file
 
+    @property
+    def sector_size(self):
+        return self._sector_size
+
     def attach(self):
         if self._path is not None:
             raise AssertionError("Device is attached: %s" % self)
-        cmd = ["losetup", "--find", "--show", self._backing_file]
+        cmd = ["losetup", "--find", "--show"]
+        if self._sector_size:
+            cmd.append("--sector-size")
+            cmd.append(str(self._sector_size))
+        cmd.append(self._backing_file)
         rc, out, err = commands.execCmd(cmd, raw=True)
         if rc != 0:
             raise cmdutils.Error(cmd, rc, out, err)
