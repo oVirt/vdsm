@@ -25,6 +25,11 @@ import os
 
 import pytest
 
+from vdsm.common import cache
+from vdsm.common import commands
+from vdsm.storage import constants as sc
+from vdsm.storage import multipath
+
 from . import loopback
 from . marks import requires_root
 
@@ -33,13 +38,32 @@ BEFORE = b"a" * 10
 AFTER = b"b" * 10
 
 
+@cache.memoized
+def has_loopback_sector_size():
+    out = commands.run(["losetup", "-h"])
+    return "--sector-size <num>" in out.decode()
+
+
+requires_loopback_sector_size = pytest.mark.skipif(
+    not has_loopback_sector_size(),
+    reason="lossetup --sector-size option not available")
+
+
 @requires_root
-def test_with_device(tmpdir):
+@pytest.mark.parametrize("sector_size", [
+    None,
+    pytest.param(sc.BLOCK_SIZE_512, marks=requires_loopback_sector_size),
+    pytest.param(sc.BLOCK_SIZE_4K, marks=requires_loopback_sector_size),
+])
+def test_with_device(tmpdir, sector_size):
     filename = str(tmpdir.join("file"))
     prepare_backing_file(filename)
-    with loopback.Device(filename) as device:
+    with loopback.Device(filename, sector_size=sector_size) as device:
         assert device.is_attached()
         check_device(device)
+        block_size, _ = multipath.getDeviceBlockSizes(device.path)
+        expected = sector_size if sector_size else sc.BLOCK_SIZE_512
+        assert block_size == expected
     assert not device.is_attached()
     check_backing_file(filename)
 
