@@ -67,7 +67,7 @@ class DictValidator(object):
     def __contains__(self, item):
         return (item in self._validatorDict and item in self._dict)
 
-    def getValidator(self, key):
+    def _validator(self, key):
         if key in self._validatorDict:
             return self._validatorDict[key]
 
@@ -78,25 +78,25 @@ class DictValidator(object):
 
         raise KeyError("%s not in allowed keys list" % key)
 
-    def getEncoder(self, key):
-        return self.getValidator(key)[1]
+    def _encoder(self, key):
+        return self._validator(key)[1]
 
-    def getDecoder(self, key):
-        return self.getValidator(key)[0]
+    def _decoder(self, key):
+        return self._validator(key)[0]
 
     def __getitem__(self, key):
-        dec = self.getDecoder(key)
+        dec = self._decoder(key)
         return dec(self._dict[key])
 
     def get(self, key, default=None):
-        dec = self.getDecoder(key)
+        dec = self._decoder(key)
         try:
             return dec(self._dict[key])
         except KeyError:
             return default
 
     def __setitem__(self, key, value):
-        enc = self.getEncoder(key)
+        enc = self._encoder(key)
         self._dict.__setitem__(key, enc(value))
 
     def __delitem__(self, key):
@@ -115,7 +115,7 @@ class DictValidator(object):
     def update(self, metadata):
         metadata = metadata.copy()
         for key, value in metadata.iteritems():
-            enc = self.getEncoder(key)
+            enc = self._encoder(key)
             metadata[key] = enc(value)
 
         self._dict.update(metadata)
@@ -129,7 +129,7 @@ class DictValidator(object):
         md = self._dict.copy()
         for key, value in md.iteritems():
             try:
-                dec = self.getDecoder(key)
+                dec = self._decoder(key)
                 md[key] = dec(value)
             except KeyError:
                 # there is a value in the dict that isn't mine, skipping
