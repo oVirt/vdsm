@@ -84,16 +84,6 @@ parameters = [
         ('migration_destination_timeout', '21600',
             'Maximum time the destination waits for the migration to finish.'),
 
-        ('migration_progress_timeout', '240',
-            'Maximum time the source host waits during a migration in case '
-            'that there is no progress. If the time has passed, the migration '
-            'will be aborted.'),
-
-        ('migration_max_time_per_gib_mem', '64',
-            'The maximum time in seconds per GiB memory a migration may take '
-            'before the migration will be aborted by the source host. '
-            'Setting this value to 0 will disable this feature.'),
-
         ('migration_listener_timeout', '30',
             'Time to wait (in seconds) for migration destination to start '
             'listening before migration begins.'),
@@ -129,10 +119,6 @@ parameters = [
             '(anything below 100ms is ignored) if you do not care about '
             'liveness of migration, set to a very high value, such as '
             '600000.'),
-
-        ('migration_downtime_delay', '100',
-            'Timespan in seconds per GiB of RAM, used on the source side '
-            'to reach incrementally the final value of migration_downtime. '),
 
         ('migration_downtime_steps', '5',
             'Incremental steps used to reach migration_downtime.'),

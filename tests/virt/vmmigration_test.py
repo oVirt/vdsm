@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -59,28 +59,6 @@ _DOWNTIME_HUGE = 10000
 
 _PARAMS = tuple(product((_DOWNTIME_MIN, _DOWNTIME, _DOWNTIME_HUGE),
                         (_STEPS_MIN, _STEPS, _STEPS_HUGE)))
-
-
-@expandPermutations
-class DowntimeThreadTests(TestCaseBase):
-
-    # No special meaning, But steps just need to be >= 2
-    DOWNTIME = 1000
-
-    @permutations([[1], [2], [10]])
-    def test_update_downtime_using_n_steps(self, steps):
-        downtimes = _update_downtime_repeatedly(self.DOWNTIME, steps)
-        self.assertEqual(len(downtimes), steps)
-
-    @permutations([[1], [2], [10]])
-    def test_update_downtime_monotonic_increasing(self, steps):
-        downtimes = _update_downtime_repeatedly(self.DOWNTIME, steps)
-        self.assertTrue(sorted(downtimes), downtimes)
-
-    @permutations([[1], [2], [10]])
-    def test_update_downtime_converges(self, steps):
-        downtimes = _update_downtime_repeatedly(self.DOWNTIME, steps)
-        self.assertEqual(downtimes[-1], self.DOWNTIME)
 
 
 @expandPermutations
@@ -521,22 +499,6 @@ def _linear_downtime(downtime, steps):
         # however, it makes no sense to have less than 1 ms
         # we want to avoid anyway downtime = 0
         yield max(1, downtime * (i + 1) / steps)
-
-
-def _update_downtime_repeatedly(downtime, steps):
-        dom = fake.Domain()
-
-        with fake.VM({'memSize': 1024}) as testvm:
-            testvm._dom = dom
-
-            cfg = make_config([('vars', 'migration_downtime_delay', '0')])
-            with MonkeyPatchScope([(migration, 'config', cfg)]):
-                dt = migration.DowntimeThread(testvm, downtime, steps)
-                dt.set_initial_downtime()
-                dt.start()
-                dt.join()
-
-                return dom.getDowntimes()
 
 
 class CannonizeHostPortTest(TestCaseBase):

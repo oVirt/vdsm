@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2017 Red Hat, Inc.
+# Copyright 2008-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,6 @@ from vdsm.virt.utils import DynamicBoundedSemaphore
 from vdsm.virt import virdomain
 from vdsm.virt import vmexitreason
 from vdsm.virt import vmstatus
-from six.moves import range
 
 
 MODE_REMOTE = 'remote'
@@ -105,18 +104,12 @@ class SourceThread(object):
         self._vm = vm
         self._dst = dst
         self._mode = mode
-        if method != METHOD_ONLINE:
-            self.log.warning(
-                'migration method %s is deprecated, forced to "online"',
-                method)
         self._dstparams = dstparams
         self._enableGuestEvents = kwargs.get('enableGuestEvents', False)
         # TODO: conv.tobool shouldn't be used in this constructor, the
         # conversions should be handled properly in the API layer
         self._consoleAddress = consoleAddress
         self._dstqemu = dstqemu
-        self._downtime = kwargs.get('downtime') or \
-            config.get('vars', 'migration_downtime')
         self._maxBandwidth = int(
             kwargs.get('maxBandwidth') or
             config.getint('vars', 'migration_max_bandwidth')
@@ -136,16 +129,18 @@ class SourceThread(object):
         self._migrationCanceledEvt = threading.Event()
         self._monitorThread = None
         self._destServer = None
-        self._convergence_schedule = {
-            'init': [],
-            'stalling': []
-        }
-        self._use_convergence_schedule = False
         if 'convergenceSchedule' in kwargs:
-            self._convergence_schedule = kwargs.get('convergenceSchedule')
-            self._use_convergence_schedule = True
-            self.log.debug('convergence schedule set to: %s',
-                           str(self._convergence_schedule))
+            self._convergence_schedule = kwargs['convergenceSchedule']
+        else:
+            # Needed for Engine < 4.3 or when legacy migration is used
+            # as a supposedly rare fallback in Engine >= 4.3.
+            self._convergence_schedule = \
+                self._legacy_convergence_schedule(kwargs.get('downtime'))
+            self.log.info('using a computed convergence schedule for '
+                          'a legacy migration: %s',
+                          self._convergence_schedule)
+        self.log.debug('convergence schedule set to: %s',
+                       str(self._convergence_schedule))
         self._started = False
         self._failed = False
         self._recovery = recovery
@@ -496,16 +491,9 @@ class SourceThread(object):
 
             self._vm.log.info('starting migration to %s '
                               'with miguri %s', duri, muri)
-
             self._monitorThread = MonitorThread(self._vm, startTime,
-                                                self._convergence_schedule,
-                                                self._use_convergence_schedule)
-
-            if self._use_convergence_schedule:
-                self._perform_with_conv_schedule(duri, muri)
-            else:
-                self._perform_with_downtime_thread(duri, muri)
-
+                                                self._convergence_schedule)
+            self._perform_with_conv_schedule(duri, muri)
             self.log.info("migration took %d seconds to complete",
                           (time.time() - startTime) + destCreationTime)
 
@@ -572,24 +560,32 @@ class SourceThread(object):
                 break
         return flags
 
-    def _perform_with_downtime_thread(self, duri, muri):
-        self._vm.log.debug('performing migration with downtime thread')
-        self._monitorThread.downtime_thread = DowntimeThread(
-            self._vm,
-            int(self._downtime),
-            config.getint('vars', 'migration_downtime_steps')
-        )
-
-        with utils.running(self._monitorThread):
-            self._perform_migration(duri, muri)
-
-        self._monitorThread.join()
-
     def _perform_with_conv_schedule(self, duri, muri):
         self._vm.log.debug('performing migration with conv schedule')
         with utils.running(self._monitorThread):
             self._perform_migration(duri, muri)
         self._monitorThread.join()
+
+    def _legacy_convergence_schedule(self, max_downtime):
+        # Simplified emulation of legacy non-scheduled migrations.
+        if max_downtime is None:
+            max_downtime = config.get('vars', 'migration_downtime')
+        max_downtime = int(max_downtime)
+        max_steps = config.getint('vars', 'migration_downtime_steps')
+        downtimes = exponential_downtime(max_downtime, max_steps)
+
+        def downtime_action(downtime):
+            return {'params': [str(downtime)], 'name': 'setDowntime'}
+        init = [downtime_action(next(downtimes))]
+        stalling = []
+        limit = 1
+        for d in downtimes:
+            stalling.append({'action': downtime_action(d), 'limit': limit})
+            limit += 1
+        stalling.append({'action': downtime_action(d), 'limit': 42})
+        stalling.append({'action': {'params': [], 'name': 'abort'},
+                         'limit': -1})
+        return {'init': init, 'stalling': stalling}
 
     def set_max_bandwidth(self, bandwidth):
         self._vm.log.debug('setting migration max bandwidth to %d', bandwidth)
@@ -647,91 +643,11 @@ def exponential_downtime(downtime, steps):
         yield downtime
 
 
-class DowntimeThread(object):
-
-    # avoid grow too large for large VMs
-    _WAIT_STEP_LIMIT = 60  # seconds
-
-    def __init__(self, vm, downtime, steps):
-        self._vm = vm
-        self._downtime = downtime
-        self._steps = steps
-        self._stop = threading.Event()
-
-        delay_per_gib = config.getint('vars', 'migration_downtime_delay')
-        memSize = vm.mem_size_mb()
-        self._wait = min(
-            delay_per_gib * memSize / (_MiB_IN_GiB * self._steps),
-            self._WAIT_STEP_LIMIT)
-        # do not materialize, keep as generator expression
-        self._downtimes = exponential_downtime(self._downtime, self._steps)
-        # we need the first value to support set_initial_downtime
-        self._initial_downtime = next(self._downtimes)
-
-        self._thread = concurrent.thread(
-            self.run, name='migdwn/' + self._vm.id[:8])
-
-    def start(self):
-        self._thread.start()
-
-    def join(self):
-        self._thread.join()
-
-    def is_alive(self):
-        return self._thread.is_alive()
-
-    @logutils.traceback()
-    def run(self):
-        self._vm.log.debug('migration downtime thread started (%i steps)',
-                           self._steps)
-
-        for downtime in self._downtimes:
-            if self._stop.is_set():
-                break
-
-            self._set_downtime(downtime)
-
-            self._stop.wait(self._wait)
-
-        self._vm.log.debug('migration downtime thread exiting')
-
-    def set_initial_downtime(self):
-        self._set_downtime(self._initial_downtime)
-
-    def stop(self):
-        self._vm.log.debug('stopping migration downtime thread')
-        self._stop.set()
-
-    def _set_downtime(self, downtime):
-        self._vm.log.debug('setting migration downtime to %d', downtime)
-        self._vm._dom.migrateSetMaxDowntime(downtime, 0)
-
-
-# we introduce this empty fake so the monitoring code doesn't have
-# to distinguish between no DowntimeThread and DowntimeThread present.
-class _FakeThreadInterface(object):
-
-    def start(self):
-        pass
-
-    def stop(self):
-        pass
-
-    def join(self):
-        pass
-
-    def is_alive(self):
-        return False
-
-    def set_initial_downtime(self):
-        pass
-
-
 class MonitorThread(object):
     _MIGRATION_MONITOR_INTERVAL = config.getint(
         'vars', 'migration_monitor_interval')  # seconds
 
-    def __init__(self, vm, startTime, conv_schedule, use_conv_schedule):
+    def __init__(self, vm, startTime, conv_schedule):
         super(MonitorThread, self).__init__()
         self._stop = threading.Event()
         self._vm = vm
@@ -739,8 +655,6 @@ class MonitorThread(object):
         self.daemon = True
         self.progress = None
         self._conv_schedule = conv_schedule
-        self._use_conv_schedule = use_conv_schedule
-        self.downtime_thread = _FakeThreadInterface()
         self._thread = concurrent.thread(
             self.run, name='migmon/' + self._vm.id[:8])
 
@@ -768,32 +682,17 @@ class MonitorThread(object):
                 # and shouldn't bubble up, let's just finish the thread.
                 self._vm.log.debug('domain disconnected in monitor thread: %s',
                                    e)
-            finally:
-                self.downtime_thread.stop()
-            if self.downtime_thread.is_alive():
-                # on very short migrations, the downtime thread
-                # may not be started at all.
-                self.downtime_thread.join()
             self._vm.log.debug('stopped migration monitor thread')
         else:
             self._vm.log.info('migration monitor thread disabled'
                               ' (monitoring interval set to 0)')
 
     def monitor_migration(self):
-        memSize = self._vm.mem_size_mb()
-        maxTimePerGiB = config.getint('vars',
-                                      'migration_max_time_per_gib_mem')
-        migrationMaxTime = (maxTimePerGiB * memSize + 1023) // 1024
-        progress_timeout = config.getint('vars', 'migration_progress_timeout')
-        lastProgressTime = time.time()
         lowmark = None
         lastDataRemaining = None
         iterationCount = 0
 
         self._execute_init(self._conv_schedule['init'])
-        if not self._use_conv_schedule:
-            self._vm.log.debug('setting initial migration downtime')
-            self.downtime_thread.set_initial_downtime()
 
         while not self._stop.isSet():
             stopped = self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
@@ -809,7 +708,6 @@ class MonitorThread(object):
             progress = Progress.from_job_stats(job_stats)
             self._vm.send_migration_status_event()
 
-            now = time.time()
             if self._vm.post_copy != PostCopyPhase.NONE:
                 # Post-copy mode is a final state of a migration -- it either
                 # completes or fails and stops the VM, there is no way to
@@ -828,20 +726,8 @@ class MonitorThread(object):
                         'Post-copy migration still in progress: %d',
                         progress.data_remaining
                     )
-            elif not self._use_conv_schedule and\
-                    (0 < migrationMaxTime < now - self._startTime):
-                self._vm.log.warn('The migration took %d seconds which is '
-                                  'exceeding the configured maximum time '
-                                  'for migrations of %d seconds. The '
-                                  'migration will be aborted.',
-                                  now - self._startTime,
-                                  migrationMaxTime)
-                self._vm._dom.abortJob()
-                self.stop()
-                break
             elif (lowmark is None) or (lowmark > progress.data_remaining):
                 lowmark = progress.data_remaining
-                lastProgressTime = now
             else:
                 self._vm.log.warn(
                     'Migration stalling: remaining (%sMiB)'
@@ -854,23 +740,9 @@ class MonitorThread(object):
                 iterationCount += 1
                 self._vm.log.debug('new iteration detected: %i',
                                    iterationCount)
-                if self._use_conv_schedule:
-                    self._next_action(iterationCount)
-                elif iterationCount == 1:
-                    # it does not make sense to do any adjustments before
-                    # first iteration.
-                    self.downtime_thread.start()
+                self._next_action(iterationCount)
 
             lastDataRemaining = progress.data_remaining
-
-            if not self._use_conv_schedule and\
-                    (now - lastProgressTime) > progress_timeout:
-                # Migration is stuck, abort
-                self._vm.log.warn(
-                    'Migration is stuck: Hasn\'t progressed in %s seconds. '
-                    'Aborting.' % (now - lastProgressTime))
-                self._vm._dom.abortJob()
-                self.stop()
 
             if self._stop.isSet():
                 break
