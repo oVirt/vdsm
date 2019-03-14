@@ -83,6 +83,9 @@ AS_IF([test -n "${with_only_python}"],
 
 VDSM_CHECK_PY_VERSIONS([${TARGET_PYTHON_VERSION}], [${CHECKED_PYTHON_VERSIONS}])
 
+AS_IF([test z"${enable_python3}" = "zno"],
+      VDSM_DISABLE_PY3_VERSIONS)
+
 AC_ARG_ENABLE(
     [hooks],
     [AS_HELP_STRING(
@@ -132,15 +135,9 @@ AC_ARG_ENABLE(
     [python3],
     [AS_HELP_STRING(
         [--disable-python3],
-        [disable build for python3. Disabled by default over centos and RHEL]
-    )],
-    ,
-    [enable_python3=${fedora_run}]
+        [disable support for version 3 Python interpreters]
+    )]
 )
-AS_IF([test "${enable_python3}" = "yes"],
-      AC_SUBST([PYTHON3_SUPPORT], ['1']),
-      AC_SUBST([PYTHON3_SUPPORT], ['0']))
-
 
 AC_ARG_ENABLE(
     [gluster-mgmt],
@@ -367,7 +364,7 @@ fi
 if test "$GLUSTER_MGMT" == "0"; then
     configure_flags+=" --disable-gluster-mgmt"
 fi
-if test "$PYTHON3_SUPPORT" == "0"; then
+if test z"$enable_python3" = "zno"; then
     configure_flags+=" --disable-python3"
 fi
 if test -n "$with_target_python"; then
