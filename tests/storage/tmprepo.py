@@ -35,11 +35,13 @@ class TemporaryRepo(object):
     Temporary storage repository replacing /rhev/data-center during tests.
     """
 
-    def __init__(self, tmpdir):
+    def __init__(self, tmpdir, tmp_fs):
         self.tmpdir = tmpdir
+        self.tmp_fs = tmp_fs
+
         # Create rhev/data-center directory in the tmpdir, so we don't mix
         # temporary files created by the same test in the data-center.
-        self.path = str(tmpdir.mkdir("rhev").mkdir("data-center"))
+        self.path = str(self.tmpdir.mkdir("rhev").mkdir("data-center"))
         self.pool_id = str(uuid.uuid4())
         self.pool_dir = os.path.join(self.path, self.pool_id)
         self.mnt_dir = os.path.join(self.path, sc.DOMAIN_MNT_POINT)
@@ -63,13 +65,36 @@ class TemporaryRepo(object):
         dom_link = os.path.join(self.mnt_dir, local_path)
         os.remove(dom_link)
 
-    def create_localfs_domain(self, name, version):
+    def create_localfs_domain(self, name, version, filesystem=None):
         """
-        Create local FS file storage domain in the repository
+        Create local FS file storage domain in the repository.
+        If filesystem argument is provided, new file system on loopback device
+        is created and used as local FS for creating new domain.
         """
         remote_path = str(self.tmpdir.mkdir(name))
+        if filesystem is None:
+            self.connect_localfs(remote_path)
+        else:
+            self._connect_loopbackfs(remote_path, filesystem)
+
+        return self._create_domain(name, version, remote_path)
+
+    def _connect_loopbackfs(self, remote_path, filesystem):
+        """
+        Create loopback device of size `size`, create file system on top of it
+        and mount it to `remote_path`.
+        """
+        self.tmp_fs.create_filesystem(filesystem, remote_path)
         self.connect_localfs(remote_path)
 
+    def _disconnect_loopbackfs(self, remote_path):
+        """
+        Perform umount of loopback device and destroy the device.
+        """
+        self.disconnect_localfs(remote_path)
+        self.tmp_fs.destroy_filesystem(remote_path)
+
+    def _create_domain(self, name, version, remote_path):
         sd_uuid = str(uuid.uuid4())
 
         dom = localFsSD.LocalFsStorageDomain.create(
