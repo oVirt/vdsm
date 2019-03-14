@@ -51,12 +51,12 @@ from . import tmpstorage
 
 
 @pytest.fixture
-def tmp_repo(tmpdir, monkeypatch):
+def tmp_repo(tmpdir, monkeypatch, tmp_fs):
     """
     Provide a temporary repo directory and patch vsdm to use it instead of
     /rhev/data-center.
     """
-    repo = tmprepo.TemporaryRepo(tmpdir)
+    repo = tmprepo.TemporaryRepo(tmpdir, tmp_fs)
 
     # Patch repo directory.
     monkeypatch.setattr(sc, "REPO_DATA_CENTER", repo.path)
