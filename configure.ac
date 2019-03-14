@@ -86,6 +86,9 @@ VDSM_CHECK_PY_VERSIONS([${TARGET_PYTHON_VERSION}], [${CHECKED_PYTHON_VERSIONS}])
 AS_IF([test z"${enable_python3}" = "zno"],
       VDSM_DISABLE_PY3_VERSIONS)
 
+AS_IF([test z"${enable_python2}" = "zno"],
+      VDSM_DISABLE_PY2_VERSIONS)
+
 AC_ARG_ENABLE(
     [hooks],
     [AS_HELP_STRING(
@@ -123,6 +126,14 @@ AC_ARG_WITH(
     [only-python],
     [AS_HELP_STRING([--with-only-python=pythonX.Y],
                     [use 'pythonX.Y' as the target and the only supported interpreter version])]
+)
+
+AC_ARG_ENABLE(
+    [python2],
+    [AS_HELP_STRING(
+        [--disable-python2],
+        [disable support for version 2 Python interpreters]
+    )]
 )
 
 AC_ARG_ENABLE(
@@ -363,6 +374,9 @@ if test "$HOOKS" == "1"; then
 fi
 if test "$GLUSTER_MGMT" == "0"; then
     configure_flags+=" --disable-gluster-mgmt"
+fi
+if test z"$enable_python2" = "zno"; then
+    configure_flags+=" --disable-python2"
 fi
 if test z"$enable_python3" = "zno"; then
     configure_flags+=" --disable-python3"
