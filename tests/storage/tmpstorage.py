@@ -55,7 +55,7 @@ class TemporaryStorage(object):
         self._count = itertools.count()
         self._devices = {}
 
-    def create_device(self, size):
+    def create_device(self, size, sector_size=None):
         """
         Create loop device of size bytes.
 
@@ -66,7 +66,7 @@ class TemporaryStorage(object):
         with open(backing_file, "w") as f:
             f.truncate(size)
 
-        device = loopback.Device(backing_file)
+        device = loopback.Device(backing_file, sector_size=sector_size)
         device.attach()
         self._devices[device.path] = device
 

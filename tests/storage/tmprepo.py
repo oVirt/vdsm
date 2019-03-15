@@ -65,19 +65,24 @@ class TemporaryRepo(object):
         dom_link = os.path.join(self.mnt_dir, local_path)
         os.remove(dom_link)
 
-    def create_localfs_domain(self, name, version, filesystem=None):
+    def create_localfs_domain(
+            self, name, version, block_size=sc.BLOCK_SIZE_512,
+            alignment=sc.ALIGNMENT_1M, filesystem=None):
         """
         Create local FS file storage domain in the repository.
         If filesystem argument is provided, new file system on loopback device
         is created and used as local FS for creating new domain.
         """
         remote_path = str(self.tmpdir.mkdir(name))
+
         if filesystem is None:
             self.connect_localfs(remote_path)
         else:
             self._connect_loopbackfs(remote_path, filesystem)
 
-        return self._create_domain(name, version, remote_path)
+        return self._create_domain(
+            name, version, remote_path, block_size=block_size,
+            alignment=alignment)
 
     def _connect_loopbackfs(self, remote_path, filesystem):
         """
@@ -94,7 +99,9 @@ class TemporaryRepo(object):
         self.disconnect_localfs(remote_path)
         self.tmp_fs.destroy_filesystem(remote_path)
 
-    def _create_domain(self, name, version, remote_path):
+    def _create_domain(
+            self, name, version, remote_path, block_size=sc.BLOCK_SIZE_512,
+            alignment=sc.ALIGNMENT_1M):
         sd_uuid = str(uuid.uuid4())
 
         dom = localFsSD.LocalFsStorageDomain.create(
@@ -104,8 +111,8 @@ class TemporaryRepo(object):
             remotePath=remote_path,
             version=version,
             storageType=sd.LOCALFS_DOMAIN,
-            block_size=sc.BLOCK_SIZE_512,
-            alignment=sc.ALIGNMENT_1M)
+            block_size=block_size,
+            alignment=alignment)
 
         sdCache.knownSDs[sd_uuid] = localFsSD.findDomain
         sdCache.manuallyAddDomain(dom)

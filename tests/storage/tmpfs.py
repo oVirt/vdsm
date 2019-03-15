@@ -48,7 +48,8 @@ class TemporaryFS(object):
         Creates loopback device, build file system on of it and finally mounts
         it to specified directory.
         """
-        loopback_path = self.tmp_storage.create_device(filesystem.size)
+        loopback_path = self.tmp_storage.create_device(
+            filesystem.size, sector_size=filesystem.block_size)
 
         try:
             commands.run(["mkfs", "-t", filesystem.fs_type, loopback_path])
