@@ -444,10 +444,12 @@ def memory(stats, first_sample, last_sample, interval):
 
         # 'mem_free' used to report the free memory (aka 'mem_unused')
         # plus memory allocated for buffers (aka 'mem_buffers') and
-        # caches (aka 'mem_cached'). This is deprecated now. Let's set
-        # 'mem_free' to the same value as 'mem_unused' before it can be
-        # safely removed.
-        mem_stats['mem_free'] = mem_stats['mem_unused']
+        # caches (aka 'mem_cached'). On host with libvirt at least 4.6.0 and
+        # guests with kernel at least 4.16 we can obtain sum of buffers and
+        # caches in balloon.disk_caches.
+        mem_stats['mem_free'] = str(
+            last_sample.get('balloon.unused', 0) +
+            last_sample.get('balloon.disk_caches', 0))
 
     if first_sample is not None and last_sample is not None \
             and interval > 0:
