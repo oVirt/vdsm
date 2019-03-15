@@ -1764,9 +1764,18 @@ class Vm(object):
             else:
                 stats.update(self._getRunningVmStats())
                 oga_stats = self._getGuestStats()
-                if 'memoryStats' in stats and 'memoryStats' in oga_stats:
+                if 'memoryStats' in stats:
                     # prefer balloon stats over OGA stats
-                    oga_stats['memoryStats'].update(stats['memoryStats'])
+                    if 'memoryStats' not in oga_stats:
+                        oga_stats['memoryStats'] = stats['memoryStats']
+                    else:
+                        oga_stats['memoryStats'].update(stats['memoryStats'])
+                    if oga_stats['memUsage'] == '0':
+                        # Compute memUsage from balloon stats
+                        oga_stats['memUsage'] = str(int(
+                            100 - float(
+                                int(stats['memoryStats']['mem_free']) / 1024) /
+                            self.mem_size_mb() * 100))
                 stats.update(oga_stats)
         return stats
 
