@@ -23,6 +23,7 @@ import logging
 
 from vdsm import constants
 from vdsm.common import commands
+from vdsm.common.compat import subprocess
 from vdsm.storage import curlImgWrap
 from vdsm.storage import exception as se
 
@@ -89,17 +90,17 @@ def copyToImage(dstImgPath, methodArgs):
         "conv=fsync",
     ]
 
-    p = commands.execCmd(cmd, sync=False)
+    p = commands.start(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
     with commands.terminating(p):
         _copyData(fileObj, p.stdin, totalSize)
-        p.stdin.close()
-        if not p.wait(WAIT_TIMEOUT):
+        try:
+            _, err = p.communicate(timeout=WAIT_TIMEOUT)
+        except subprocess.TimeoutExpired:
             log.error("timeout waiting for dd process")
             raise se.StorageException()
 
         if p.returncode != 0:
-            log.error("dd error - code %s, stderr %s",
-                      p.returncode, p.stderr.read(1000))
+            log.error("dd failed rc=%s err=%r", p.returncode, err)
             raise se.MiscFileWriteException()
 
 
@@ -117,8 +118,7 @@ def copyFromImage(dstImgPath, methodArgs):
         "iflag=direct",
     ]
 
-    p = commands.execCmd(cmd, sync=False)
-    p.blocking = True
+    p = commands.start(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     with commands.terminating(p):
         _copyData(p.stdout, fileObj, bytes_left)
 
