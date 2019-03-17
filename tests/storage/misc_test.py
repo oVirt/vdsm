@@ -237,93 +237,6 @@ class TestParseHumanReadableSize(VdsmTestCase):
         self.assertEqual(misc.parseHumanReadableSize("4.3T"), 0)
 
 
-@pytest.mark.skipif(six.PY3, reason="not compatible with python 3")
-class TestAsyncProc(VdsmTestCase):
-
-    def test(self):
-        data = """Striker: You are a Time Lord, a lord of time.
-                           Are there lords in such a small domain?
-                  The Doctor: And where do you function?
-                  Striker: Eternity. The endless wastes of eternity. """
-        # (C) BBC - Doctor Who
-        p = commands.execCmd([EXT_CAT], sync=False)
-        self.log.info("Writing data to std out")
-        p.stdin.write(data)
-        p.stdin.flush()
-        self.log.info("Written data reading")
-        self.assertEqual(p.stdout.read(len(data)), data)
-
-    def testMutiWrite(self):
-        data = """The Doctor: Androzani Major was becoming quite developed
-                              last time I passed this way.
-                  Peri: When was that?
-                  The Doctor: ...I don't remember.
-                              I'm pretty sure it wasn't the future. """
-        # (C) BBC - Doctor Who
-        halfPoint = len(data) // 2
-        p = commands.execCmd([EXT_CAT], sync=False)
-        self.log.info("Writing data to std out")
-        p.stdin.write(data[:halfPoint])
-        self.log.info("Writing more data to std out")
-        p.stdin.write(data[halfPoint:])
-        p.stdin.flush()
-        self.log.info("Written data reading")
-        self.assertEqual(p.stdout.read(len(data)), data)
-
-    def testWriteLargeData(self):
-        data = """The Doctor: Davros, if you had created a virus in your
-                              laboratory, something contagious and infectious
-                              that killed on contact, a virus that would
-                              destroy all other forms of life; would you allow
-                              its use?
-                  Davros: It is an interesting conjecture.
-                  The Doctor: Would you do it?
-                  Davros: The only living thing... The microscopic organism...
-                          reigning supreme... A fascinating idea.
-                  The Doctor: But would you do it?
-                  Davros: Yes; yes. To hold in my hand, a capsule that
-                          contained such power. To know that life and death on
-                          such a scale was my choice. To know that the tiny
-                          pressure on my thumb, enough to break the glass,
-                          would end everything. Yes! I would do it! That power
-                          would set me up above the gods! And through the
-                          Daleks, I shall have that power! """
-        # (C) BBC - Doctor Who
-
-        data = data * 100
-        p = commands.execCmd([EXT_CAT], sync=False)
-        self.log.info("Writing data to std out")
-        p.stdin.write(data)
-        p.stdin.flush()
-        self.log.info("Written data reading")
-        self.assertEqual(p.stdout.read(len(data)), data)
-
-    def testWaitTimeout(self):
-        p = commands.execCmd([EXT_SLEEP, str(EXECCMD_TIMEOUT + 1)], sync=False)
-        startTime = time.time()
-        p.wait(TIMEOUT)
-        duration = time.time() - startTime
-        self.assertLess(duration, EXECCMD_TIMEOUT + TIMEOUT)
-        self.assertGreater(duration, EXECCMD_TIMEOUT)
-        p.kill()
-
-    def testWaitCond(self):
-        p = commands.execCmd([EXT_SLEEP, str(EXECCMD_TIMEOUT + 1)], sync=False)
-        startTime = time.time()
-        p.wait(cond=lambda: time.time() - startTime > TIMEOUT)
-        duration = time.time() - startTime
-        self.assertLess(duration, EXECCMD_TIMEOUT + TIMEOUT)
-        self.assertGreater(duration, EXECCMD_TIMEOUT)
-        p.kill()
-
-    def testCommunicate(self):
-        data = ("The trouble with the world is that the stupid are cocksure "
-                "and the intelligent are full of doubt")
-        p = commands.execCmd([EXT_DD], data=data, sync=False)
-        p.stdin.close()
-        self.assertEqual(p.stdout.read(len(data)).strip(), data)
-
-
 class TestValidateN(VdsmTestCase):
 
     def testValidInput(self):
@@ -786,7 +699,7 @@ class TestExecCmd(VdsmTestCase):
     @pytest.mark.skipif(six.PY3, reason="uses AsyncProc")
     def testNice(self):
         cmd = ["sleep", "10"]
-        proc = commands.execCmd(cmd, nice=10, sync=False)
+        proc = commands.start(cmd, nice=10)
         try:
             time.sleep(0.2)
             nice = pidstat(proc.pid).nice

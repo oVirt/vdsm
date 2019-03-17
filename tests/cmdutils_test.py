@@ -27,15 +27,11 @@ import io
 import os
 from subprocess import Popen
 
-import six
-
 from vdsm import constants
 from vdsm.common import cmdutils
-from vdsm.common import commands
 from vdsm.common.compat import subprocess
 from vdsm.common.time import monotonic_time
 
-from testValidation import skipif, slowtest
 from testlib import VdsmTestCase
 
 
@@ -113,53 +109,6 @@ class TestRecieveBench(VdsmTestCase):
         p.stdin.close()
         for _, data in cmdutils.receive(p, 10):
             pass
-        elapsed = monotonic_time() - start
-        sent_gb = sent / float(1024**3)
-        print("%.2fg in %.2f seconds (%.2fg/s)"
-              % (sent_gb, elapsed, sent_gb / elapsed), end=" ")
-        self.assertEqual(p.returncode, 0)
-
-    @skipif(six.PY3, "needs porting to python 3")
-    @slowtest
-    def test_asyncproc_read(self):
-        p = commands.execCmd(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
-                              "count=%d" % self.COUNT],
-                             sync=False, raw=True)
-        start = monotonic_time()
-        p.blocking = True
-        received = 0
-        while True:
-            data = p.stdout.read(self.BUFSIZE)
-            if not data:
-                break
-            received += len(data)
-        p.wait()
-        elapsed = monotonic_time() - start
-        received_gb = received / float(1024**3)
-        print("%.2fg in %.2f seconds (%.2fg/s)"
-              % (received_gb, elapsed, received_gb / elapsed), end=" ")
-        self.assertEqual(received, self.COUNT * self.BUFSIZE)
-        self.assertEqual(p.returncode, 0)
-
-    @skipif(six.PY3, "needs porting to python 3")
-    @slowtest
-    def test_asyncproc_write(self):
-        p = commands.execCmd(["dd", "of=/dev/null", "bs=%d" % self.COUNT],
-                             sync=False, raw=True)
-        start = monotonic_time()
-        total = self.COUNT * self.BUFSIZE
-        sent = 0
-        with io.open("/dev/zero", "rb") as f:
-            while sent < total:
-                n = min(total - sent, self.BUFSIZE)
-                data = f.read(n)
-                if not data:
-                    raise RuntimeError("/dev/zero closed?!")
-                p.stdin.write(data)
-                sent += len(data)
-        p.stdin.flush()
-        p.stdin.close()
-        p.wait()
         elapsed = monotonic_time() - start
         sent_gb = sent / float(1024**3)
         print("%.2fg in %.2f seconds (%.2fg/s)"

@@ -78,7 +78,7 @@ class FakeMonotonicTime(object):
 class TestTerminating(TestCaseBase):
 
     def setUp(self):
-        self.proc = commands.execCmd([EXT_SLEEP, "2"], sync=False)
+        self.proc = commands.start([EXT_SLEEP, "2"])
         self.proc_poll = self.proc.poll
         self.proc_kill = self.proc.kill
         self.proc_wait = self.proc.wait
@@ -145,10 +145,6 @@ class TestTerminating(TestCaseBase):
 
         self.assertEqual(e.exception.pid, self.proc.pid)
         self.assertEqual(type(e.exception.error), ExpectedFailure)
-
-        # Note: We cannot check return code since AsyncProc.returncode is a
-        # property calling poll(). The return code here may be None or -9,
-        # depeending on timing.
 
 
 class ExpectedFailure(Exception):
@@ -265,7 +261,7 @@ class TestRetry(TestCaseBase):
 class TestGetCmdArgs(TestCaseBase):
     def test(self):
         args = [EXT_SLEEP, "4"]
-        sproc = commands.execCmd(args, sync=False)
+        sproc = commands.start(args)
         try:
             cmd_args = utils.getCmdArgs(sproc.pid)
             # let's ignore optional taskset at the beginning
@@ -277,7 +273,7 @@ class TestGetCmdArgs(TestCaseBase):
 
     def testZombie(self):
         args = [EXT_SLEEP, "0"]
-        sproc = commands.execCmd(args, sync=False)
+        sproc = commands.start(args)
         sproc.kill()
         try:
             test = lambda: self.assertEqual(utils.getCmdArgs(sproc.pid),
@@ -504,9 +500,8 @@ class TestExecCmdAffinity(TestCaseBase):
     @forked
     @MonkeyPatch(cmdutils, '_USING_CPU_AFFINITY', False)
     def testResetAffinityByDefault(self):
+        proc = commands.start((EXT_SLEEP, '30s'))
         try:
-            proc = commands.execCmd((EXT_SLEEP, '30s'), sync=False)
-
             self.assertEqual(taskset.get(proc.pid),
                              taskset.get(os.getpid()))
         finally:
@@ -518,9 +513,8 @@ class TestExecCmdAffinity(TestCaseBase):
         taskset.set(os.getpid(), self.CPU_SET)
         self.assertEqual(taskset.get(os.getpid()), self.CPU_SET)
 
+        proc = commands.start((EXT_SLEEP, '30s'))
         try:
-            proc = commands.execCmd((EXT_SLEEP, '30s'), sync=False)
-
             self.assertEqual(taskset.get(proc.pid), online_cpus())
         finally:
             proc.kill()
@@ -531,11 +525,8 @@ class TestExecCmdAffinity(TestCaseBase):
         taskset.set(os.getpid(), self.CPU_SET)
         self.assertEqual(taskset.get(os.getpid()), self.CPU_SET)
 
+        proc = commands.start((EXT_SLEEP, '30s'), reset_cpu_affinity=False)
         try:
-            proc = commands.execCmd((EXT_SLEEP, '30s'),
-                                    sync=False,
-                                    resetCpuAffinity=False)
-
             self.assertEqual(taskset.get(proc.pid), self.CPU_SET)
         finally:
             proc.kill()
