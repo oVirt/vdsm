@@ -170,7 +170,7 @@ def start(args, stdin=None, stdout=None, stderr=None, cwd=None, env=None,
         cwd=cwd,
         stdin=stdin,
         stdout=stdout,
-        stderr=stdout,
+        stderr=stderr,
         env=env)
 
 

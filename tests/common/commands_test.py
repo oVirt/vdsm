@@ -46,12 +46,54 @@ from testlib import mock
 
 class TestStart:
 
-    def test_start_cat_out(self):
-        p = commands.start(["cat"], stdin=subprocess.PIPE,
-                           stdout=subprocess.PIPE)
+    def test_true(self):
+        p = commands.start(["true"])
+        out, err = p.communicate()
+        assert p.returncode == 0
+        assert out is None
+        assert err is None
+
+    def test_false(self):
+        p = commands.start(["false"])
+        out, err = p.communicate()
+        assert p.returncode == 1
+        assert out is None
+        assert err is None
+
+    def test_out(self):
+        p = commands.start(
+            ["echo", "-n", "out"],
+            stdout=subprocess.PIPE)
+        out, err = p.communicate()
+        assert out == b"out"
+        assert err is None
+
+    def test_out_err(self):
+        p = commands.start(
+            ["sh", "-c", "echo -n out >&1; echo -n err >&2"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        assert out == b"out"
+        assert err == b"err"
+
+    def test_in_out(self):
+        p = commands.start(
+            ["cat"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE)
         out, err = p.communicate(b"data")
         assert out == b"data"
-        assert err == b""
+        assert err is None
+
+    def test_in_err(self):
+        p = commands.start(
+            ["sh", "-c", "cat >&2"],
+            stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        out, err = p.communicate(b"data")
+        assert out is None
+        assert err == b"data"
 
     def test_start_nonexisting(self):
         with pytest.raises(OSError):
