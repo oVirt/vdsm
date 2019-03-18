@@ -23,67 +23,67 @@ from __future__ import division
 import io
 import os
 
-from testlib import VdsmTestCase
-from testlib import namedTemporaryDir
-from testValidation import ValidateRunningAsRoot, stresstest
+import pytest
 
 from . import loopback
+from . marks import requires_root
 
 
-class TestDevice(VdsmTestCase):
+BEFORE = b"a" * 10
+AFTER = b"b" * 10
 
-    BEFORE = b"a" * 10
-    AFTER = b"b" * 10
 
-    @ValidateRunningAsRoot
-    def test_with_device(self):
-        with namedTemporaryDir(dir="/tmp") as tmpdir:
-            filename = os.path.join(tmpdir, "file")
-            self.prepare_backing_file(filename)
-            with loopback.Device(filename) as device:
-                self.assertTrue(device.is_attached())
-                self.check_device(device)
-            self.assertFalse(device.is_attached())
-            self.check_backing_file(filename)
+@requires_root
+def test_with_device(tmpdir):
+    filename = str(tmpdir.join("file"))
+    prepare_backing_file(filename)
+    with loopback.Device(filename) as device:
+        assert device.is_attached()
+        check_device(device)
+    assert not device.is_attached()
+    check_backing_file(filename)
 
-    @ValidateRunningAsRoot
-    def test_attach_detach_manually(self):
-        with namedTemporaryDir(dir="/tmp") as tmpdir:
-            filename = os.path.join(tmpdir, "file")
-            self.prepare_backing_file(filename)
-            device = loopback.Device(filename)
-            device.attach()
-            try:
-                self.assertTrue(device.is_attached())
-                self.check_device(device)
-            finally:
-                device.detach()
-            self.assertFalse(device.is_attached())
-            self.check_backing_file(filename)
 
-    @ValidateRunningAsRoot
-    @stresstest
-    def test_many_devices(self):
-        with namedTemporaryDir(dir="/tmp") as tmpdir:
-            filename = os.path.join(tmpdir, "file")
-            self.prepare_backing_file(filename)
-            for i in range(300):
-                with loopback.Device(filename) as device:
-                    self.assertTrue(device.is_attached())
-                self.assertFalse(device.is_attached())
+@requires_root
+def test_attach_detach_manually(tmpdir):
+    filename = str(tmpdir.join("file"))
+    prepare_backing_file(filename)
+    device = loopback.Device(filename)
+    device.attach()
+    try:
+        assert device.is_attached()
+        check_device(device)
+    finally:
+        device.detach()
+    assert not device.is_attached()
+    check_backing_file(filename)
 
-    def prepare_backing_file(self, filename):
-        with io.open(filename, "wb") as f:
-            f.truncate(1024**3)
-            f.write(self.BEFORE)
 
-    def check_device(self, device):
-        with io.open(device.path, "r+b", buffering=0) as f:
-            self.assertEqual(f.read(len(self.BEFORE)), self.BEFORE)
-            f.write(self.AFTER)
-            os.fsync(f.fileno())
+@requires_root
+@pytest.mark.stress
+def test_many_devices(tmpdir):
+    filename = str(tmpdir.join("file"))
+    prepare_backing_file(filename)
+    for i in range(300):
+        with loopback.Device(filename) as device:
+            assert device.is_attached()
+        assert not device.is_attached()
 
-    def check_backing_file(self, filename):
-        with io.open(filename, "rb") as f:
-            self.assertEqual(f.read(len(self.BEFORE + self.AFTER)),
-                             self.BEFORE + self.AFTER)
+
+def prepare_backing_file(filename):
+    with io.open(filename, "wb") as f:
+        f.truncate(1024**3)
+        f.write(BEFORE)
+
+
+def check_device(device):
+    with io.open(device.path, "r+b", buffering=0) as f:
+        assert f.read(len(BEFORE)) == BEFORE
+        f.write(AFTER)
+        os.fsync(f.fileno())
+
+
+def check_backing_file(filename):
+    expected = BEFORE + AFTER
+    with io.open(filename, "rb") as f:
+        assert f.read(len(expected)) == expected
