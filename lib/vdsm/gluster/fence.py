@@ -35,6 +35,9 @@ def can_fence_host(vdsmProxy, hostUuid, skipFencingIfGlusterBricksUp,
     volumesList = _getVolumeInfo(vdsmProxy)
     for volumeName in volumesList:
         volStatus = _getVolumeStatus(vdsmProxy, volumeName)
+        if not volStatus:
+            msg = ("Failed to get volume status for volume %s" % volumeName)
+            return False, msg
         if skipFencingIfGlusterBricksUp:
             for brick in volStatus.get('bricks'):
                 if hostUuid == brick.get('hostuuid') \
@@ -98,7 +101,7 @@ def _getVolumeInfo(vdsmProxy):
     try:
         return vdsmProxy.glusterVolumeInfo()
     except ge.GlusterCmdExecFailedException as e:
-        log.warning("Failed to check gluster realted fencing "
+        log.warning("Failed to check gluster related fencing "
                     "policies: %s", e)
         return {}
 
@@ -107,6 +110,6 @@ def _getVolumeStatus(vdsmProxy, volumeName):
     try:
         return vdsmProxy.glusterVolumeStatus(volumeName)
     except ge.GlusterCmdExecFailedException as e:
-        log.warning("Failed to check gluster realted fencing "
+        log.warning("Failed to check gluster related fencing "
                     "policies: %s", e)
         return {}
