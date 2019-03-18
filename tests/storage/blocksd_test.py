@@ -429,8 +429,9 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
 @requires_root
 @xfail_python3
 @pytest.mark.root
+@pytest.mark.parametrize("domain_version", [4, 5])
 def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
-                         tmp_db, fake_task, fake_sanlock):
+                         tmp_db, fake_task, fake_sanlock, domain_version):
     sd_uuid = str(uuid.uuid4())
 
     dev = tmp_storage.create_device(20 * 1024 ** 3)
@@ -442,7 +443,7 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
         domainName="domain",
         domClass=sd.DATA_DOMAIN,
         vgUUID=vg.uuid,
-        version=4,
+        version=domain_version,
         storageType=sd.ISCSI_DOMAIN,
         block_size=sc.BLOCK_SIZE_512,
         alignment=sc.ALIGNMENT_1M)
@@ -472,9 +473,20 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
     # Test metadata offset
     _, slot = vol.getMetadataId()
     offset = dom.manifest.metadata_offset(slot)
-    assert offset == slot * blockSD.METADATA_SLOT_SIZE_V4
+    if domain_version < 5:
+        assert offset == slot * blockSD.METADATA_SLOT_SIZE_V4
+    else:
+        assert offset == (blockSD.METADATA_BASE_V5 + slot *
+                          blockSD.METADATA_SLOT_SIZE_V5)
 
     meta_path = dom.manifest.metadata_volume_path()
+
+    # Check capacity
+    assert 10 * 1024 ** 3 == vol.getCapacity()
+    vol.setCapacity(0)
+    with pytest.raises(se.MetaDataValidationError):
+        vol.getCapacity()
+    vol.setCapacity(10 * 1024 ** 3)
 
     # Change metadata.
     md = vol.getMetadata()
@@ -484,7 +496,7 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
         f.seek(offset)
         data = f.read(sc.METADATA_SIZE)
     data = data.rstrip("\0")
-    assert data == md.storage_format(4)
+    assert data == md.storage_format(domain_version)
 
     # Add additioanl metadata.
     md = vol.getMetadata()
@@ -493,7 +505,7 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
         f.seek(offset)
         data = f.read(sc.METADATA_SIZE)
     data = data.rstrip("\0")
-    assert data == md.storage_format(4, CAP=md.capacity)
+    assert data == md.storage_format(domain_version, CAP=md.capacity)
 
 
 @requires_root

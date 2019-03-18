@@ -40,6 +40,7 @@ from vdsm.storage import sd
 from vdsm.storage.sdc import sdCache
 
 from . import qemuio
+from . marks import xfail_python3
 
 PREALLOCATED_VOL_SIZE = 10 * MEGAB
 SPARSE_VOL_SIZE = GIB
@@ -215,9 +216,11 @@ def test_volume_life_cycle(monkeypatch, tmpdir, tmp_repo, fake_access,
     assert not os.path.isfile(meta_path)
 
 
+@xfail_python3
+@pytest.mark.parametrize("domain_version", [4, 5])
 def test_volume_metadata(tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
-                         fake_task):
-    dom = tmp_repo.create_localfs_domain(name="domain", version=4)
+                         fake_task, domain_version):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
 
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
@@ -236,20 +239,27 @@ def test_volume_metadata(tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
     vol = dom.produceVolume(img_uuid, vol_uuid)
     meta_path = vol.getMetaVolumePath()
 
+    # Check capacity
+    assert 10 * 1024 ** 3 == vol.getCapacity()
+    vol.setCapacity(0)
+    with pytest.raises(se.MetaDataValidationError):
+        vol.getCapacity()
+    vol.setCapacity(10 * 1024 ** 3)
+
     # Change volume metadata.
     md = vol.getMetadata()
     md.description = "new description"
     vol.setMetadata(md)
     with open(meta_path) as f:
         data = f.read()
-    assert data == md.storage_format(4)
+    assert data == md.storage_format(domain_version)
 
     # Test overriding with new keys.
     md = vol.getMetadata()
     vol.setMetadata(md, CAP=md.capacity)
     with open(meta_path) as f:
         data = f.read()
-    assert data == md.storage_format(4, CAP=md.capacity)
+    assert data == md.storage_format(domain_version, CAP=md.capacity)
 
 
 @pytest.mark.parametrize("domain_version", [4, 5])

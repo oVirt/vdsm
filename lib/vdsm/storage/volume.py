@@ -170,6 +170,12 @@ class VolumeManifest(object):
         except se.MetaDataKeyNotFoundError:
             return False
 
+    def getCapacity(self):
+        capacity = int(self.getMetaParam(sc.CAPACITY))
+        if capacity < 1:  # Capacity stored in the metadata is not valid
+            raise se.MetaDataValidationError()
+        return capacity
+
     @deprecated  # capacity will be used instead
     def getSizeBlk(self):
         size = int(self.getMetaParam(sc.SIZE))
@@ -304,6 +310,7 @@ class VolumeManifest(object):
         # to byte multiples everywhere to avoid conversion errors and change
         # only at the end
         volParams['size'] = self.getSizeBlk()
+        volParams['capacity'] = self.getCapacity()
         volParams['apparentsize'] = self.getVolumeSize(bs=bs)
         volParams['parent'] = self.getParent()
         volParams['descr'] = self.getDescription()
@@ -468,6 +475,15 @@ class VolumeManifest(object):
         if vol_attr.type is not None:
             # Note: must match setShared logic
             self.voltype = vol_attr.type
+
+    def setCapacity(self, capacity):
+        """
+        Sets volume capacity in bytes.
+
+        Arguments:
+                capacity (int) - new capacity value in bytes.
+        """
+        self.setMetaParam(sc.CAPACITY, capacity)
 
     def setSizeBlk(self, size_blk):
         self.setMetaParam(sc.SIZE, size_blk)
@@ -1406,6 +1422,9 @@ class Volume(object):
     def getSizeBlk(self):
         return self._manifest.getSizeBlk()
 
+    def getCapacity(self):
+        return self._manifest.getCapacity()
+
     @classmethod
     def max_size(cls, virtual_size, format):
         return cls.manifestClass.max_size(virtual_size, format)
@@ -1418,6 +1437,9 @@ class Volume(object):
 
     def getVolumeTrueSize(self):
         return self._manifest.getVolumeTrueSize()
+
+    def setCapacity(self, capacity):
+        self._manifest.setCapacity(capacity)
 
     def setSizeBlk(self, size):
         self._manifest.setSizeBlk(size)
