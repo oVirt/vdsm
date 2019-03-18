@@ -30,13 +30,14 @@ import pytest
 
 from testlib import make_config
 from testlib import namedTemporaryDir
-import loopback
+from . import loopback
 
 from vdsm import constants
 from vdsm.common import exception
 from vdsm.storage import blockdev
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+
 
 DEFAULT_BLOCK_SIZE = blockdev.zero_block_size()
 FILE_SIZE = 2 * DEFAULT_BLOCK_SIZE

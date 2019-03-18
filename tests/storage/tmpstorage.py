@@ -29,7 +29,7 @@ import re
 from vdsm.common import commands
 from vdsm.common import cmdutils
 
-import loopback
+from . import loopback
 
 log = logging.getLogger("test")
 

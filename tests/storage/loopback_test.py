@@ -27,7 +27,7 @@ from testlib import VdsmTestCase
 from testlib import namedTemporaryDir
 from testValidation import ValidateRunningAsRoot, stresstest
 
-import loopback
+from . import loopback
 
 
 class TestDevice(VdsmTestCase):

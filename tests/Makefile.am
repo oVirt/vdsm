@@ -91,7 +91,6 @@ test_modules = \
 	jobs_test.py \
 	jsonRpcClient_test.py \
 	jsonrpc_test.py \
-	loopback_test.py \
 	mkimage_test.py \
 	modprobe.py \
 	moduleloader_test.py \
@@ -232,7 +231,6 @@ dist_vdsmtests_PYTHON = \
 	hookValidation.py \
 	fakelib.py \
 	hostdevlib.py \
-	loopback.py \
 	monkeypatch.py \
 	testlib.py \
 	testrunner.py \
