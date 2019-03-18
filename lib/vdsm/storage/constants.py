@@ -106,6 +106,10 @@ ISOF_DISKTYPE = "ISOF"  # ISO disk
 MEMD_DISKTYPE = "MEMD"  # Memory dump disk
 MEMM_DISKTYPE = "MEMM"  # Memory metadata disk
 OVFS_DISKTYPE = "OVFS"  # OVF disk
+HEVD_DISKTYPE = "HEVD"  # Hosted Engine VM disk
+HESD_DISKTYPE = "HESD"  # Hosted Engine Sanlock disk
+HEMD_DISKTYPE = "HEMD"  # Hosted Engine metadata disk
+HECI_DISKTYPE = "HECI"  # Hosted Engine configuration image
 
 # TODO: Remove these constants when vdsm doesn't support engine 4.1
 # These constants were used by engine 4.1 and older
@@ -122,6 +126,10 @@ VOL_DISKTYPE = frozenset([
     MEMD_DISKTYPE,
     MEMM_DISKTYPE,
     OVFS_DISKTYPE,
+    HEVD_DISKTYPE,
+    HESD_DISKTYPE,
+    HEMD_DISKTYPE,
+    HECI_DISKTYPE,
     LEGACY_DATA_DISKTYPE,
     LEGACY_SHARED_DISKTYPE,
     LEGACY_SWAP_DISKTYPE,
