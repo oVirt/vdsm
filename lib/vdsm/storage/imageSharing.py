@@ -77,7 +77,18 @@ def httpUploadImage(srcImgPath, methodArgs):
 def copyToImage(dstImgPath, methodArgs):
     totalSize = getLengthFromArgs(methodArgs)
     fileObj = methodArgs['fileObj']
-    cmd = [constants.EXT_DD, "of=%s" % dstImgPath, "bs=%s" % constants.MEGAB]
+
+    # Unlike copyFromImage, we don't use direct I/O when writing because:
+    # - Images are small so using host page cache is ok.
+    # - Images typically aligned to 512 bytes (tar), may fail on 4k storage.
+    cmd = [
+        constants.EXT_DD,
+        "of=%s" % dstImgPath,
+        "bs=%s" % constants.MEGAB,
+        # Ensure that data reach physical storage before returning.
+        "conv=fsync",
+    ]
+
     p = commands.execCmd(cmd, sync=False)
     with commands.terminating(p):
         _copyData(fileObj, p.stdin, totalSize)
@@ -95,8 +106,16 @@ def copyToImage(dstImgPath, methodArgs):
 def copyFromImage(dstImgPath, methodArgs):
     fileObj = methodArgs['fileObj']
     bytes_left = total_size = methodArgs['length']
-    cmd = [constants.EXT_DD, "if=%s" % dstImgPath, "bs=%s" % constants.MEGAB,
-           "count=%s" % (total_size // constants.MEGAB + 1)]
+
+    # Unlike copyToImage, we must use direct I/O to avoid reading stale data
+    # from host page cache, in case OVF disk was modified on another host.
+    cmd = [
+        constants.EXT_DD,
+        "if=%s" % dstImgPath,
+        "bs=%s" % constants.MEGAB,
+        "count=%s" % (total_size // constants.MEGAB + 1),
+        "iflag=direct",
+    ]
 
     p = commands.execCmd(cmd, sync=False)
     p.blocking = True
