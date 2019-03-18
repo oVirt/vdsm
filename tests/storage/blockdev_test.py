@@ -34,7 +34,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import directio
 from vdsm.storage import exception as se
 
-import loopback
+from . import loopback
 
 # Zeroing and discarding block device is instant, so we can use real lv size.
 FILE_SIZE = 128 * 1024**2

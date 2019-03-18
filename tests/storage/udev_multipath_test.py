@@ -32,7 +32,7 @@ from vdsm.storage import devicemapper
 from vdsm.storage import udev
 from vdsm.utils import running
 
-import loopback
+from . import loopback
 
 EVENT = udev.MultipathEvent(type=udev.MPATH_REMOVED,
                             mpath_uuid="fake-uuid-3",

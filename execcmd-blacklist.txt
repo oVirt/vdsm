@@ -48,11 +48,11 @@ tests/common/cmdutils_test.py
 tests/common/commands_test.py
 tests/functional/virtTests.py
 tests/gluster_thinstorage_test.py
-tests/loopback.py
 tests/mkimage_test.py
 tests/modprobe.py
 tests/prlimit_test.py
 tests/storage/iscsi_test.py
+tests/storage/loopback.py
 tests/storage/lvm_test.py
 tests/storage/misc_test.py
 tests/storage/mount_test.py
