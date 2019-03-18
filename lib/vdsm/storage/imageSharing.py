@@ -22,6 +22,7 @@ from __future__ import absolute_import
 import logging
 
 from vdsm import constants
+from vdsm import utils
 from vdsm.common import commands
 from vdsm.common.compat import subprocess
 from vdsm.storage import curlImgWrap
@@ -90,18 +91,21 @@ def copyToImage(dstImgPath, methodArgs):
         "conv=fsync",
     ]
 
-    p = commands.start(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-    with commands.terminating(p):
-        _copyData(fileObj, p.stdin, totalSize)
-        try:
-            _, err = p.communicate(timeout=WAIT_TIMEOUT)
-        except subprocess.TimeoutExpired:
-            log.error("timeout waiting for dd process")
-            raise se.StorageException()
+    log.info("Copy to image %s", dstImgPath)
+    with utils.stopwatch(
+            "Copy %s bytes" % totalSize, level=logging.INFO, log=log):
+        p = commands.start(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        with commands.terminating(p):
+            _copyData(fileObj, p.stdin, totalSize)
+            try:
+                _, err = p.communicate(timeout=WAIT_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                log.error("timeout waiting for dd process")
+                raise se.StorageException()
 
-        if p.returncode != 0:
-            log.error("dd failed rc=%s err=%r", p.returncode, err)
-            raise se.MiscFileWriteException()
+            if p.returncode != 0:
+                log.error("dd failed rc=%s err=%r", p.returncode, err)
+                raise se.MiscFileWriteException()
 
 
 def copyFromImage(dstImgPath, methodArgs):
@@ -118,9 +122,12 @@ def copyFromImage(dstImgPath, methodArgs):
         "iflag=direct",
     ]
 
-    p = commands.start(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    with commands.terminating(p):
-        _copyData(p.stdout, fileObj, bytes_left)
+    log.info("Copy from image %s", dstImgPath)
+    with utils.stopwatch(
+            "Copy %s bytes" % total_size, level=logging.INFO, log=log):
+        p = commands.start(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        with commands.terminating(p):
+            _copyData(p.stdout, fileObj, bytes_left)
 
 
 def _copyData(inFile, outFile, totalSize):
