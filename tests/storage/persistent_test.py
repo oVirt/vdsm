@@ -266,7 +266,7 @@ class TestDictValidator:
 
 class TestPersistentDict:
 
-    def test_persistent_dict_len(self):
+    def test_len(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
 
@@ -278,7 +278,7 @@ class TestPersistentDict:
         pd["key 2"] = "value 2"
         assert len(pd) == 2
 
-    def test_persistent_dict_contains(self):
+    def test_contains(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
 
@@ -286,7 +286,7 @@ class TestPersistentDict:
         pd["key"] = "value"
         assert "key" in pd
 
-    def test_persistent_dict_get_good_checksum(self):
+    def test_get_good_checksum(self):
         b = MemoryBackend([
             "key 1=value 1",
             "key 2=value 2",
@@ -297,7 +297,7 @@ class TestPersistentDict:
         assert pd["key 1"] == "value 1"
         assert pd["key 2"] == "value 2"
 
-    def test_persistent_dict_get_no_checksum(self):
+    def test_get_no_checksum(self):
         initial_lines = [
             "key 1=value 1",
             "key 2=value 2",
@@ -311,7 +311,7 @@ class TestPersistentDict:
         # Storage not modified by reading.
         assert b.lines == initial_lines
 
-    def test_persistent_dict_get_bad_checksum(self):
+    def test_get_bad_checksum(self):
         initial_lines = [
             "key 1=value 1",
             "key 2=value 2",
@@ -326,7 +326,7 @@ class TestPersistentDict:
         # Storage not modified by reading.
         assert b.lines == initial_lines
 
-    def test_persistent_dict_getitem_setitem(self):
+    def test_getitem_setitem(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
 
@@ -345,7 +345,7 @@ class TestPersistentDict:
         assert pd["key 2"] == "new value 2"
         assert pd["key 3"] == "value 3"
 
-    def test_persistent_dict_get(self):
+    def test_get(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
 
@@ -353,27 +353,27 @@ class TestPersistentDict:
         pd["key"] = "value"
         assert pd.get("key") == "value"
 
-    def test_persistent_dict_del(self):
+    def test_del(self):
         b = MemoryBackend(["key=value"])
         pd = persistent.PersistentDict(b)
 
         del pd["key"]
         assert "key" not in pd
 
-    def test_persistent_dict_del_missing(self):
+    def test_del_missing(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
 
         with pytest.raises(KeyError):
             del pd["key"]
 
-    def test_persistent_dict_iter(self):
+    def test_iter(self):
         b = MemoryBackend(["key 1=1", "key 2=2"])
         pd = persistent.PersistentDict(b)
 
         assert set(pd) == {"key 1", "key 2"}
 
-    def test_persistent_dict_clear(self):
+    def test_clear(self):
         b = MemoryBackend([
             "key 1=value 1",
             "key 2=value 2",
@@ -394,7 +394,7 @@ class TestPersistentDict:
             "_SHA_CKSUM=da39a3ee5e6b4b0d3255bfef95601890afd80709"
         ]
 
-    def test_persistent_dict_storage(self):
+    def test_storage(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
 
@@ -425,7 +425,7 @@ class TestPersistentDict:
         ]
         assert b.version == 3
 
-    def test_persistent_transaction(self):
+    def test_transaction(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
 
@@ -438,10 +438,9 @@ class TestPersistentDict:
         assert pd["key 2"] == "value 2"
         assert b.version == 1
 
-    def test_persistent_transaction_nested(self):
+    def test_transaction_nested(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
-
         # Transaction flushes lines to storage once.
         with pd.transaction():
             pd["key 1"] = "value 1"
@@ -452,7 +451,7 @@ class TestPersistentDict:
         assert pd["key 2"] == "value 2"
         assert b.version == 1
 
-    def test_persistent_dict_invalidate(self):
+    def test_invalidate(self):
         b = MemoryBackend([
             "key 1=value 1",
             "key 2=value 2",
@@ -483,7 +482,7 @@ class TestPersistentDict:
         assert pd["key 2"] == "new value 2"
         assert pd["key 3"] == "value 3"
 
-    def test_persistent_dict_read_error(self):
+    def test_read_error(self):
         initial_lines = [
             "key 1=value 1",
             "key 2=value 2",
@@ -504,7 +503,7 @@ class TestPersistentDict:
         assert b.lines == initial_lines
         assert b.version == 0
 
-    def test_persistent_dict_write_error(self):
+    def test_write_error(self):
         initial_lines = [
             "key 1=value 1",
             "key 2=value 2",
@@ -531,7 +530,7 @@ class TestPersistentDict:
         assert b.lines == initial_lines
         assert b.version == 0
 
-    def test_persistent_dict_transaction_user_error(self):
+    def test_transaction_user_error(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
 
@@ -545,7 +544,7 @@ class TestPersistentDict:
         # Nothing should be written since the transaction was aborted.
         assert b.lines == []
 
-    def test_persistent_dict_nested_transaction_user_error(self):
+    def test_nested_transaction_user_error(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
 
@@ -561,7 +560,7 @@ class TestPersistentDict:
         # Nothing should be written since the transaction was aborted.
         assert b.lines == []
 
-    def test_persistent_dict_transient_read_error(self):
+    def test_transient_read_error(self):
         initial_lines = [
             "key 1=value 1",
             "key 2=value 2",
@@ -595,7 +594,7 @@ class TestPersistentDict:
         ]
         assert b.version == 1
 
-    def test_persistent_dict_transient_write_error(self):
+    def test_transient_write_error(self):
         initial_lines = [
             "key 1=value 1",
             "key 2=value 2",
