@@ -267,7 +267,13 @@ def _getNetworkIp(network):
         # the device is defaulted to the network name (i.e. northbound port).
         device = (nets[network].get('iface', network)
                   if network in nets else network)
-        ip, _, _, _ = net_api.ip_addrs_info(device)
+        _, _, ipv4addrs, ipv6addrs = net_api.ip_addrs_info(device)
+        if ipv4addrs:
+            ip = ipv4addrs[0].split('/')[0]
+        elif ipv6addrs:
+            ip = ipv6addrs[0].split('/')[0]
+        else:
+            ip = '0'
     except (libvirt.libvirtError, KeyError, IndexError):
         ip = '0'
     finally:
