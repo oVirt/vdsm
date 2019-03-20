@@ -45,6 +45,7 @@ from vdsm.storage import task
 from vdsm.storage.sdc import sdCache
 
 from .fakesanlock import FakeSanlock
+from . import tmpfs
 from . import tmprepo
 from . import tmpstorage
 
@@ -78,6 +79,17 @@ def tmp_repo(tmpdir, monkeypatch):
         # the next test.
         sdCache.refresh()
         sdCache.knownSDs.clear()
+
+
+@pytest.fixture
+def tmp_fs(tmp_storage):
+    """
+    Provides a temporary file system created on provided device. Contains also
+    support for mounting newly created FS.
+    """
+    fs = tmpfs.TemporaryFS(tmp_storage)
+    with closing(fs):
+        yield fs
 
 
 @pytest.fixture

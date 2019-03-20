@@ -24,7 +24,6 @@ from __future__ import division
 import itertools
 import logging
 import os
-import pprint
 import re
 
 import six
@@ -32,21 +31,10 @@ import six
 from vdsm.common import commands
 from vdsm.common import cmdutils
 
+from . cleanup import CleanupError
 from . import loopback
 
 log = logging.getLogger("test")
-
-
-class CleanupError(Exception):
-    def __init__(self, msg, errors):
-        self.msg = msg
-        self.errors = errors
-
-    def __str__(self):
-        return "%s: %s" % (self.msg, pprint.pformat(self.errors))
-
-    def __repr__(self):
-        return str(self)
 
 
 class TemporaryStorage(object):
