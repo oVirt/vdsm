@@ -1,4 +1,4 @@
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2019 Red Hat, Inc.
 # Copyright (C) 2014 Saggi Mizrahi, Red Hat Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -174,7 +174,7 @@ def decodeValue(s):
 
 
 def encodeValue(s):
-    if six.PY3 or (six.PY2 and isinstance(s, unicode)):
+    if isinstance(s, six.text_type):
         s = s.encode('utf-8')
     elif isinstance(s, int):
         s = str(s)
@@ -526,7 +526,7 @@ class AsyncDispatcher(object):
         return not self._on_timeout
 
     def _milis(self):
-        return int(round(self._clock() * 1000))
+        return int(round(self._clock() * 1000))  # pylint: disable=W1633
 
     def handle_close(self, dispatcher):
         if not self._on_timeout:
