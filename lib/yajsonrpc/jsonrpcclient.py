@@ -1,4 +1,4 @@
-# Copyright (C) 2017 Red Hat Inc.
+# Copyright (C) 2017-2019 Red Hat Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
@@ -16,6 +16,9 @@ from __future__ import absolute_import
 from __future__ import division
 
 import logging
+
+import six
+
 from six.moves import queue
 from threading import Lock, Event
 
@@ -51,10 +54,10 @@ class _JsonRpcClientRequestContext(object):
         return True
 
     def getResponses(self):
-        return self._responses.values()
+        return list(six.itervalues(self._responses))
 
     def ids(self):
-        return self._responses.keys()
+        return six.iterkeys(self._responses)
 
     def encode(self):
         return ("[" +
@@ -183,7 +186,8 @@ class JsonRpcClient(object):
 
     def _processIncomingResponse(self, resp):
         if isinstance(resp, list):
-            map(self._processIncomingResponse, resp)
+            for response in resp:
+                self._processIncomingResponse(response)
             return
 
         resp = JsonRpcResponse.fromRawObject(resp)
