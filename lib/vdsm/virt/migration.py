@@ -787,8 +787,7 @@ class MonitorThread(object):
         progress_timeout = config.getint('vars', 'migration_progress_timeout')
         lastProgressTime = time.time()
         lowmark = None
-        lastDataRemaining = None
-        iterationCount = 0
+        initial_iteration = last_iteration = None
 
         self._execute_init(self._conv_schedule['init'])
         if not self._use_conv_schedule:
@@ -807,6 +806,12 @@ class MonitorThread(object):
                 continue
 
             progress = Progress.from_job_stats(job_stats)
+            if initial_iteration is None:
+                # The initial iteration number from libvirt is not
+                # fixed, since it may include iterations from
+                # previously cancelled migrations.
+                initial_iteration = last_iteration = progress.mem_iteration
+
             self._vm.send_migration_status_event()
 
             now = time.time()
@@ -849,19 +854,16 @@ class MonitorThread(object):
                     progress.data_remaining // Mbytes, lowmark // Mbytes)
 
             if not self._vm.post_copy and\
-                    lastDataRemaining is not None and\
-                    lastDataRemaining < progress.data_remaining:
-                iterationCount += 1
-                self._vm.log.debug('new iteration detected: %i',
-                                   iterationCount)
+               progress.mem_iteration > last_iteration:
+                last_iteration = progress.mem_iteration
+                current_iteration = last_iteration - initial_iteration
+                self._vm.log.debug('new iteration: %i', current_iteration)
                 if self._use_conv_schedule:
-                    self._next_action(iterationCount)
-                elif iterationCount == 1:
+                    self._next_action(current_iteration)
+                elif not self.downtime_thread.is_alive():
                     # it does not make sense to do any adjustments before
                     # first iteration.
                     self.downtime_thread.start()
-
-            lastDataRemaining = progress.data_remaining
 
             if not self._use_conv_schedule and\
                     (now - lastProgressTime) > progress_timeout:
