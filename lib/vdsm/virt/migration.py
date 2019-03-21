@@ -689,8 +689,7 @@ class MonitorThread(object):
 
     def monitor_migration(self):
         lowmark = None
-        lastDataRemaining = None
-        iterationCount = 0
+        initial_iteration = last_iteration = None
 
         self._execute_init(self._conv_schedule['init'])
 
@@ -706,6 +705,12 @@ class MonitorThread(object):
                 continue
 
             progress = Progress.from_job_stats(job_stats)
+            if initial_iteration is None:
+                # The initial iteration number from libvirt is not
+                # fixed, since it may include iterations from
+                # previously cancelled migrations.
+                initial_iteration = last_iteration = progress.mem_iteration
+
             self._vm.send_migration_status_event()
 
             if self._vm.post_copy != PostCopyPhase.NONE:
@@ -735,14 +740,11 @@ class MonitorThread(object):
                     progress.data_remaining // Mbytes, lowmark // Mbytes)
 
             if not self._vm.post_copy and\
-                    lastDataRemaining is not None and\
-                    lastDataRemaining < progress.data_remaining:
-                iterationCount += 1
-                self._vm.log.debug('new iteration detected: %i',
-                                   iterationCount)
-                self._next_action(iterationCount)
-
-            lastDataRemaining = progress.data_remaining
+               progress.mem_iteration > last_iteration:
+                last_iteration = progress.mem_iteration
+                current_iteration = last_iteration - initial_iteration
+                self._vm.log.debug('new iteration: %i', current_iteration)
+                self._next_action(current_iteration)
 
             if self._stop.isSet():
                 break
