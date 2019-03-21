@@ -81,6 +81,20 @@ function run_functional_network_test_linux_bridge {
     return $res
 }
 
+function run_functional_network_test_ovs_switch {
+    local res=0
+    timeout $TEST_RUN_TIMEOUT lago shell "$VM_NAME" -c \
+        " \
+            cd /usr/share/vdsm/tests
+            systemctl start openvswitch
+            pytest \
+                --junitxml=$TESTS_OUT/tests-${DISTRO}-network-ovs.junit.xml \
+                -m ovs_switch \
+                network/functional
+        " || res=$?
+    return $res
+}
+
 function prepare_and_copy_yum_conf {
     local tempfile=$(mktemp XXXXXX)
 

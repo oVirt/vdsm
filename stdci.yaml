@@ -52,3 +52,9 @@ stages:
               isolation-level: container
             distributions:
               - el7
+        - functional-ovs-switch:
+            runtime-requirements:
+              support-nesting-level: 2
+              isolation-level: container
+            distributions:
+              - el7
