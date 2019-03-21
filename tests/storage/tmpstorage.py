@@ -24,7 +24,10 @@ from __future__ import division
 import itertools
 import logging
 import os
+import pprint
 import re
+
+import six
 
 from vdsm.common import commands
 from vdsm.common import cmdutils
@@ -32,6 +35,18 @@ from vdsm.common import cmdutils
 from . import loopback
 
 log = logging.getLogger("test")
+
+
+class CleanupError(Exception):
+    def __init__(self, msg, errors):
+        self.msg = msg
+        self.errors = errors
+
+    def __str__(self):
+        return "%s: %s" % (self.msg, pprint.pformat(self.errors))
+
+    def __repr__(self):
+        return str(self)
 
 
 class TemporaryStorage(object):
@@ -50,7 +65,7 @@ class TemporaryStorage(object):
     def __init__(self, tmpdir):
         self._tmpdir = tmpdir
         self._count = itertools.count()
-        self._devices = []
+        self._devices = {}
 
     def create_device(self, size):
         """
@@ -65,16 +80,22 @@ class TemporaryStorage(object):
 
         device = loopback.Device(backing_file)
         device.attach()
-        self._devices.append(device)
+        self._devices[device.path] = device
 
         return device.path
 
+    def remove_device(self, device_path):
+        device = self._devices[device_path]
+        self._remove_device_vg(device)
+        device.detach()
+        del self._devices[device_path]
+
     def devices(self):
-        return tuple(d.path for d in self._devices)
+        return tuple(self._devices)
 
     def lvm_config(self):
         if self._devices:
-            pattern = "|".join("^{}$".format(d.path) for d in self._devices)
+            pattern = "|".join("^{}$".format(path) for path in self._devices)
             accept = '"a|{}|", '.format(pattern)
         else:
             accept = ""
@@ -82,39 +103,50 @@ class TemporaryStorage(object):
         return self.CONF % filt
 
     def close(self):
-        self._destroy_vgs()
-        self._detach_devices()
+        errors = []
 
-    def _destroy_vgs(self):
-        conf = self.lvm_config()
-        vgs = set()
+        for device in six.itervalues(self._devices):
+            try:
+                self._remove_device_vg(device)
+            except CleanupError as e:
+                errors.append(e)
 
-        for device in self._devices:
-            vg_name = self._run_silent([
-                "vgs",
-                "-o", "name",
-                "--noheadings",
-                "--config", conf,
-                "--select", "pv_name = %s" % device.path
-            ])
-            if vg_name:
-                vgs.add(vg_name)
-
-        for vg_name in vgs:
-            self._run_silent(["vgchange", "-an", "--config", conf, vg_name])
-            self._run_silent(["lvremove", "-ff", "--config", conf, vg_name])
-            self._run_silent(["vgremove", "-ff", "--config", conf, vg_name])
-
-    def _run_silent(self, cmd):
-        try:
-            return commands.run(cmd).strip().decode()
-        except cmdutils.Error as e:
-            log.exception("%s", e)
-            return None
-
-    def _detach_devices(self):
-        for device in self._devices:
+        for device in six.itervalues(self._devices):
             try:
                 device.detach()
-            except Exception:
-                log.exception("Error deatching device: %s", device)
+            except Exception as e:
+                errors.append("Error deatching device: %s: %s" % (device, e))
+
+        if errors:
+            raise CleanupError("Errors during close", errors)
+
+    def _remove_device_vg(self, device):
+        conf = self.lvm_config()
+        cmd = [
+            "vgs",
+            "-o", "name",
+            "--noheadings",
+            "--config", conf,
+            "--select", "pv_name = %s" % device.path
+        ]
+        vg_name = commands.run(cmd).strip().decode()
+
+        if vg_name:
+
+            errors = []
+            cmds = [
+                ["vgchange", "-an", "--config", conf, vg_name],
+                ["lvremove", "-ff", "--config", conf, vg_name],
+                ["vgremove", "-ff", "--config", conf, vg_name],
+            ]
+
+            # run all the commands even if some of them fail
+            for cmd in cmds:
+                try:
+                    commands.run(cmd)
+                except cmdutils.Error as e:
+                    errors.append(e)
+
+            # but report error if there is any failure
+            if errors:
+                raise CleanupError("Errors removing vg %s" % vg_name, errors)
