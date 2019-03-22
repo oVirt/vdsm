@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2017 Red Hat, Inc.
+# Copyright 2008-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -2036,6 +2036,7 @@ class Vm(object):
             if self.hasTransientDisks():
                 return response.error('transientErr')
             self._migration_downtime = None
+            self._post_copy = migration.PostCopyPhase.NONE
             self._migrationSourceThread = migration.SourceThread(
                 self, **params)
             self._migrationSourceThread.start()
