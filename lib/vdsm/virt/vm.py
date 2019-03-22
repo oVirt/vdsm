@@ -881,15 +881,7 @@ class Vm(object):
             if self._altered_state and self.lastStatus != vmstatus.DOWN:
                 self._completeIncomingMigration()
             if self.lastStatus == vmstatus.MIGRATION_DESTINATION:
-                # Waiting for post-copy migration to finish before we can
-                # change status to UP.
-                self._incomingMigrationFinished.wait(
-                    config.getint('vars', 'migration_destination_timeout'))
-                # Wait a bit to increase the chance that downtime is reported
-                # from the source before we report that the VM is UP on the
-                # destination.  This makes migration completion handling in
-                # Engine easier.
-                time.sleep(1)
+                self._wait_for_incoming_postcopy_migration()
 
             if self.recovering and \
                self._lastStatus == vmstatus.WAIT_FOR_LAUNCH:
@@ -898,6 +890,9 @@ class Vm(object):
                                          vmstatus.WAIT_FOR_LAUNCH)
                 else:
                     self._recover_status()
+                    if self._lastStatus == vmstatus.MIGRATION_DESTINATION:
+                        self._wait_for_incoming_postcopy_migration()
+                        self.lastStatus = vmstatus.UP
             else:
                 self.lastStatus = vmstatus.UP
             if self._initTimePauseCode:
@@ -968,7 +963,14 @@ class Vm(object):
             else:
                 self.set_last_status(vmstatus.PAUSED, vmstatus.WAIT_FOR_LAUNCH)
         elif state == libvirt.VIR_DOMAIN_RUNNING:
-            if self._recovering_migration(self._dom):
+            if reason == libvirt.VIR_DOMAIN_RUNNING_POSTCOPY:
+                # post-copy migration on the destination
+                self.log.info("Post-copy incoming migration detected "
+                              "in recovery")
+                self.set_last_status(vmstatus.MIGRATION_DESTINATION,
+                                     vmstatus.WAIT_FOR_LAUNCH)
+            elif self._recovering_migration(self._dom):
+                # pre-copy migration on the source
                 self.set_last_status(vmstatus.MIGRATION_SOURCE,
                                      vmstatus.WAIT_FOR_LAUNCH)
                 self._migrationSourceThread.start()
@@ -994,6 +996,18 @@ class Vm(object):
             # for status change forever. Setting UP in such a case is
             # consistent with the libvirtError fallback above.
             self.set_last_status(vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
+
+    def _wait_for_incoming_postcopy_migration(self):
+        # We must wait for a contingent post-copy migration to finish
+        # in VM initialization before we can run libvirt jobs such as
+        # write metadata or run periodic operations.
+        self._incomingMigrationFinished.wait(
+            config.getint('vars', 'migration_destination_timeout'))
+        # Wait a bit to increase the chance that downtime is reported
+        # from the source before we report that the VM is UP on the
+        # destination.  This makes migration completion handling in
+        # Engine easier.
+        time.sleep(1)
 
     def preparePaths(self):
         if 'xml' in self.conf:
@@ -4019,16 +4033,15 @@ class Vm(object):
             hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self._custom,
                                        {'FROM_SNAPSHOT': fromSnapshot})
         elif self._altered_state.origin == _MIGRATION_ORIGIN:
-            if self._needToWaitForMigrationToComplete():
-                finished, timeout = self._waitForUnderlyingMigration()
-                if self._destroy_requested.is_set():
-                    try:
-                        dom = self._connection.lookupByUUIDString(self.id)
-                        dom.destroyFlags()
-                    except libvirt.libvirtError as e:
-                        self.log.warning("Couldn't destroy incoming VM: %s", e)
-                    raise DestroyedOnStartupError()
-                self._attachLibvirtDomainAfterMigration(finished, timeout)
+            finished, timeout = self._waitForUnderlyingMigration()
+            if self._destroy_requested.is_set():
+                try:
+                    dom = self._connection.lookupByUUIDString(self.id)
+                    dom.destroyFlags()
+                except libvirt.libvirtError as e:
+                    self.log.warning("Couldn't destroy incoming VM: %s", e)
+                raise DestroyedOnStartupError()
+            self._attachLibvirtDomainAfterMigration(finished, timeout)
             # else domain connection already established earlier
             self._domDependentInit()
             self._altered_state = _AlteredState()
@@ -4062,23 +4075,6 @@ class Vm(object):
         self._update_metadata()   # to store agent API version
         self._updateDomainDescriptor()
         self.log.info("End of migration")
-
-    def _needToWaitForMigrationToComplete(self):
-        if not self.recovering:
-            # if not recovering, we are in a base flow and need
-            # to wait for migration to complete
-            return True
-
-        try:
-            if not self._isDomainRunning():
-                # migration still in progress during recovery
-                return True
-        except libvirt.libvirtError:
-            self.log.exception('migration failed while recovering!')
-            raise MigrationError()
-        else:
-            self.log.info('migration completed while recovering!')
-            return False
 
     def _waitForUnderlyingMigration(self):
         timeout = config.getint('vars', 'migration_destination_timeout')
