@@ -5530,11 +5530,16 @@ class Vm(object):
             elif (self.lastStatus == vmstatus.MIGRATION_DESTINATION and
                   detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_POSTCOPY):
                 # When we enter post-copy mode, the VM starts actually
-                # running on the destination, so we should unblock the
-                # start up processing here.  The only exception is status,
-                # which must still signal incoming migration to not confuse
-                # Engine.
-                self._incoming_migration_vm_running.set()
+                # running on the destination.  But libvirt doesn't
+                # like when we operate the VM as running, since the
+                # migration job is still running.  That prevents us
+                # from running other libvirt jobs, such as metadata
+                # updates, which can time out, fail, and cause (at
+                # least) migration failure.
+                # So let's just log the event here and keep waiting
+                # for migration completion.  Let's also keep the VM
+                # status as incoming migration, which is what Engine
+                # expects while the VM is still migrating.
                 self.log.info("Migration switched to post-copy mode")
 
     def _updateDevicesDomxmlCache(self, xml):
