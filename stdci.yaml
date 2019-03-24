@@ -30,6 +30,7 @@ stages:
                 - 'vdsm.spec.in'
                 - '*Makefile.am'
                 - 'automation/*'
+                - 'build-aux/*'
         - linters:
             distributions:
               - fc28
