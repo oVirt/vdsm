@@ -140,7 +140,7 @@ def _create_bond(bondname, bondattrs):
         'state': 'up',
         'link-aggregation': {},
     }
-    iface_state['link-aggregation']['slaves'] = bondattrs['nics']
+    iface_state['link-aggregation']['slaves'] = sorted(bondattrs['nics'])
     bond_options = parse_bond_options(bondattrs.get('options'))
     bond_mode = bond_options.pop('mode', 'balance-rr')
     _set_bond_mode(iface_state, bond_mode)
