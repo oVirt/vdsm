@@ -473,3 +473,14 @@ class ResourceExhausted(ContextException):
 class HookError(GeneralException):
     code = 1500
     message = "Hook Error"
+
+
+#################################################
+#  Backups Errors
+#  Range: 1600-1610
+#################################################
+
+
+class BackupError(ContextException):
+    code = 1600
+    message = "Backup Error"

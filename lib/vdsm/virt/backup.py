@@ -23,12 +23,21 @@ from __future__ import division
 
 import functools
 import libvirt
+import logging
+import os
+import six
 
 from vdsm.common import exception
+from vdsm.common import nbdutils
 from vdsm.common import properties
+from vdsm.common import xmlutils
+from vdsm.common.constants import P_BACKUP
 
 from vdsm.virt import virdomain
+from vdsm.virt import vmxml
 
+
+log = logging.getLogger("storage.backup")
 
 # DomainAdapter should be defined only if libvirt supports
 # incremental backup API
@@ -94,7 +103,49 @@ class BackupConfig(properties.Owner):
 
 
 def start_backup(vm, dom, config):
-    raise exception.MethodNotImplemented()
+    backup_cfg = BackupConfig(config)
+
+    if (backup_cfg.from_checkpoint_id is not None or
+            backup_cfg.to_checkpoint_id is not None):
+        raise exception.BackupError(
+            reason="Incremental backup not supported yet",
+            vm_id=vm.id,
+            backup=backup_cfg)
+
+    try:
+        drives = _get_disks_drives(vm, backup_cfg.disks)
+    except LookupError as e:
+        raise exception.BackupError(
+            reason="Failed to find one of the backup disks: {}".format(e),
+            vm_id=vm.id,
+            backup=backup_cfg)
+
+    # TODO: We need to create a vm directory in
+    # /run/vdsm/backup for each vm backup socket.
+    # This way we can prevent vms from accessing
+    # other vms backup socket with selinux.
+    socket_path = os.path.join(P_BACKUP, backup_cfg.backup_id)
+    nbd_addr = nbdutils.UnixAddress(socket_path)
+
+    backup_xml = _create_backup_xml(nbd_addr)
+
+    vm.log.debug("VM backup XML request: %s", backup_xml)
+    vm.log.info(
+        "Starting backup for backup_id: %r", backup_cfg.backup_id)
+    checkpoint_xml = None
+    try:
+        dom.backupBegin(backup_xml, checkpoint_xml)
+    except libvirt.libvirtError as e:
+        raise exception.BackupError(
+            reason="Error starting backup: {}".format(e),
+            vm_id=vm.id,
+            backup=backup_cfg)
+
+    disks_urls = {
+        img_id: nbd_addr.url(drive.name)
+        for img_id, drive in six.iteritems(drives)}
+
+    return {'result': {'disks': disks_urls}}
 
 
 def stop_backup(vm, dom, backup_id):
@@ -111,3 +162,29 @@ def delete_checkpoints(vm, dom, checkpoint_ids):
 
 def redefine_checkpoints(vm, dom, checkpoints):
     raise exception.MethodNotImplemented()
+
+
+def _get_disks_drives(vm, disks_cfg):
+    drives = {}
+    for disk in disks_cfg:
+        drive = vm.findDriveByUUIDs({
+            'domainID': disk.dom_id,
+            'imageID': disk.img_id,
+            'volumeID': disk.vol_id})
+        drives[disk.img_id] = drive
+    return drives
+
+
+def _create_backup_xml(address):
+    domainbackup = vmxml.Element('domainbackup', mode='pull')
+
+    server = vmxml.Element(
+        'server', transport=address.transport, socket=address.path)
+
+    # TODO: supporting full VM backup including all
+    # the VM disks, need to add the option to create
+    # a VM backup using specific disks only
+
+    domainbackup.appendChild(server)
+
+    return xmlutils.tostring(domainbackup)

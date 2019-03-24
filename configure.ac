@@ -285,6 +285,8 @@ AC_SUBST([vdsmtooldir], ['${vdsmpylibdir}/tool'])
 AC_SUBST([configuratorsdir], ['${vdsmtooldir}/configurators'])
 AC_SUBST([vdsmtestsdir], ['${datarootdir}/vdsm/tests'])
 AC_SUBST([vdsmtransientdisksdir], ['${vdsmlibdir}/storage/transient_disks'])
+AC_SUBST([vdsmrunbackupdir], ['${vdsmrundir}/backup'])
+
 
 # VDSM service
 AC_SUBST([SERVICE_STOP_TIMEOUT], ['10'])

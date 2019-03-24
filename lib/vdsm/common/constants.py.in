@@ -61,6 +61,7 @@ P_VDSM_LIB = '@VDSMLIBDIR@/'  # NOQA: E501 (potentially long line)
 P_VDSM_RUN = '@VDSMRUNDIR@/'  # NOQA: E501 (potentially long line)
 P_VDSM_CONF = '@CONFDIR@/'  # NOQA: E501 (potentially long line)
 P_TRANSIENT_DISKS = '@VDSMTRANSIENTDISKSDIR@/'  # NOQA: E501 (potentially long line)
+P_BACKUP = '@VDSMRUNBACKUPDIR@/'  # NOQA: E501 (potentially long line)
 
 P_VDSM_LOG = '@VDSMLOGDIR@'  # NOQA: E501 (potentially long line)
 
