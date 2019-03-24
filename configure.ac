@@ -28,8 +28,20 @@ AC_CANONICAL_HOST
 m4_include([m4/ax_python_module.m4])
 
 # Package release
-AC_SUBST([PACKAGE_RELEASE],
-         [m4_esyscmd([build-aux/pkg-version --release])])
+AC_ARG_ENABLE(
+    [timestamp],
+    [AS_HELP_STRING(
+        [--enable-timestamp],
+        [add a timestamp to the package release @<:@default=no@:>@]
+    )],
+    ,
+    [enable_timestamp="no"]
+)
+AS_IF([test "${enable_timestamp}" = "yes"],
+      AC_SUBST([PACKAGE_RELEASE],
+               [m4_esyscmd([build-aux/pkg-version --timestamp-release])]),
+      AC_SUBST([PACKAGE_RELEASE],
+               [m4_esyscmd([build-aux/pkg-version --release])]))
 
 # Testing for version and release
 AS_IF([test "x$PACKAGE_VERSION" = x],
@@ -313,6 +325,9 @@ configure_flags="--with-data-center=$vdsmrepo\
  --with-smbios-manufacturer=$SMBIOS_MANUFACTURER\
  '--with-smbios-osname=$SMBIOS_OSNAME'\
  --with-polkitdir=$polkitdir"
+if test "$enable_timestamp" == "yes"; then
+    configure_flags+=" --enable-timestamp"
+fi
 if test "$HOOKS" == "1"; then
     configure_flags+=" --enable-hooks"
 fi
