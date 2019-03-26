@@ -523,15 +523,6 @@ class LocalLock(object):
     def initLock(self, lease):
         if lease != self._lease:
             raise MultipleLeasesNotSupported("init", lease)
-        # The LocalLock initialization is based on SANLock to maintain on-disk
-        # domain format consistent across all the V3 types.
-        # The advantage is that the domain can be exposed as an NFS/GlusterFS
-        # domain later on without any modification.
-        # XXX: Keep in mind that LocalLock and SANLock cannot detect each other
-        # and therefore concurrently using the same domain as local domain and
-        # NFS domain (or any other shared file-based domain) will certainly
-        # lead to disastrous consequences.
-        initSANLock(self._sdUUID, self._idsPath, lease)
 
     def setParams(self, *args):
         pass
