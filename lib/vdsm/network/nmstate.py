@@ -139,6 +139,8 @@ def _create_bond(bondname, bondattrs):
         'type': 'bond',
         'state': 'up',
         'link-aggregation': {},
+        'ipv4': {'enabled': False},
+        'ipv6': {'enabled': False}
     }
     iface_state['link-aggregation']['slaves'] = sorted(bondattrs['nics'])
     bond_options = parse_bond_options(bondattrs.get('options'))

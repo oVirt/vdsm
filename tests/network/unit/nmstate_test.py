@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -151,7 +151,9 @@ def test_translate_bond_with_two_slaves():
                 'link-aggregation': {
                     'mode': 'balance-rr',
                     'slaves': ['eth0', 'eth1']
-                }
+                },
+                'ipv4': {'enabled': False},
+                'ipv6': {'enabled': False}
             }
         ]
     }
@@ -180,7 +182,9 @@ def test_translate_bond_with_two_slaves_and_options():
                     'options': {
                         'miimon': '150'
                     }
-                }
+                },
+                'ipv4': {'enabled': False},
+                'ipv6': {'enabled': False}
             }
         ]
     }
@@ -307,7 +311,9 @@ def test_translate_bridgeless_net_with_ip_on_vlan_on_bond():
                 'link-aggregation': {
                     'mode': 'balance-rr',
                     'slaves': ['eth0', 'eth1']
-                }
+                },
+                'ipv4': {'enabled': False},
+                'ipv6': {'enabled': False}
             },
             {
                 'name': 'testbond0.101',

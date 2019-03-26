@@ -92,6 +92,7 @@ class TestBondBasic(object):
                     adapter.setupNetworks({}, BONDEDIT, NOCHK)
                     adapter.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
 
+    @pytest.mark.nmstate
     def test_swap_slaves_between_bonds(self, switch):
         BOND1 = BOND_NAME + '1'
         BOND2 = BOND_NAME + '2'
@@ -108,6 +109,7 @@ class TestBondBasic(object):
                 adapter.assertBond(BOND1, BONDEDIT[BOND1])
                 adapter.assertBond(BOND2, BONDEDIT[BOND2])
 
+    @pytest.mark.nmstate
     def test_resize_bond(self, switch):
         with dummy_devices(4) as (nic1, nic2, nic3, nic4):
             bond = {BOND_NAME: {'nics': [nic1, nic2],
