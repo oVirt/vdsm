@@ -148,28 +148,29 @@ def start_backup(vm, dom, config):
 
 
 def stop_backup(vm, dom, backup_id):
-    raise exception.MethodNotImplemented()
-
-
-def backup_info(vm, dom, backup_id):
     try:
-        backup_xml = dom.backupGetXMLDesc()
+        _get_backup_xml(vm.id, dom, backup_id)
+    except exception.NoSuchBackupError:
+        vm.log.info(
+            "No backup with id '%s' found for vm '%s'",
+            backup_id, vm.id)
+        return
+
+    try:
+        dom.abortJob()
     except libvirt.libvirtError as e:
-        if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN_BACKUP:
-            raise exception.NoSuchBackupError(
-                reason="VM backup not exists: {}".format(e),
+        if e.get_error_code() != libvirt.VIR_ERR_OPERATION_INVALID:
+            raise exception.BackupError(
+                reason="Failed to end VM backup: {}".format(e),
                 vm_id=vm.id,
                 backup_id=backup_id)
 
-        raise exception.BackupError(
-            reason="Failed to fetch VM ''backup info: {}".format(e),
-            vm_id=vm.id,
-            backup_id=backup_id)
 
+def backup_info(vm, dom, backup_id):
+    backup_xml = _get_backup_xml(vm.id, dom, backup_id)
     vm.log.debug("backup_id %r info: %s", backup_id, backup_xml)
 
     disks_urls = _parse_backup_info(vm, backup_id, backup_xml)
-
     return {'result': {'disks': disks_urls}}
 
 
@@ -190,6 +191,24 @@ def _get_disks_drives(vm, disks_cfg):
             'volumeID': disk.vol_id})
         drives[disk.img_id] = drive
     return drives
+
+
+def _get_backup_xml(vm_id, dom, backup_id):
+    try:
+        backup_xml = dom.backupGetXMLDesc()
+    except libvirt.libvirtError as e:
+        if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN_BACKUP:
+            raise exception.NoSuchBackupError(
+                reason="VM backup not exists: {}".format(e),
+                vm_id=vm_id,
+                backup_id=backup_id)
+
+        raise exception.BackupError(
+            reason="Failed to fetch VM ''backup info: {}".format(e),
+            vm_id=vm_id,
+            backup_id=backup_id)
+
+    return backup_xml
 
 
 def _parse_backup_info(vm, backup_id, backup_xml):
