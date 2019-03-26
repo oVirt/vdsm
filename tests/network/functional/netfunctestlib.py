@@ -62,8 +62,11 @@ IFCFG_DIR = '/etc/sysconfig/network-scripts/'
 IFCFG_PREFIX = IFCFG_DIR + 'ifcfg-'
 
 parametrize_switch = pytest.mark.parametrize(
-    'switch', [pytest.mark.legacy_switch('legacy'),
-               pytest.mark.ovs_switch('ovs')])
+    'switch', [pytest.param('legacy', marks=pytest.mark.legacy_switch()),
+               pytest.param('ovs', marks=pytest.mark.ovs_switch())])
+
+parametrize_legacy_switch = pytest.mark.parametrize(
+    'switch', [pytest.param('legacy', marks=pytest.mark.legacy_switch())])
 
 parametrize_bridged = pytest.mark.parametrize('bridged', [False, True],
                                               ids=['bridgeless', 'bridged'])
