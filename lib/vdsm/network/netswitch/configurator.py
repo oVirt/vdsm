@@ -170,6 +170,7 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
     """
     logging.info('Processing setup through nmstate')
     desired_state = nmstate.generate_state(networks, bondings)
+    logging.info('Desired state: %s', desired_state)
     nmstate.setup(desired_state, verify_change=not in_rollback)
     with Transaction(in_rollback=in_rollback) as config:
         config.networks = {
