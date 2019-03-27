@@ -598,7 +598,12 @@ def volumeDelete(volumeName):
 
 @gluster_mgmt_api
 def volumeSet(volumeName, option, value):
-    command = _getGlusterVolCmd() + ["set", volumeName, option, value]
+    if option == 'cluster.granular-entry-heal'\
+            or option == 'granular-entry-heal':
+        command = _getGlusterVolCmd() + ['heal', volumeName,
+                                         'granular-entry-heal', value]
+    else:
+        command = _getGlusterVolCmd() + ["set", volumeName, option, value]
     try:
         _execGlusterXml(command)
         return True
