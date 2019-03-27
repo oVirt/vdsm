@@ -284,4 +284,4 @@ class TestBondOptions(object):
 @contextmanager
 def two_connected_pair_of_bond_slaves():
     with veth_pair() as (n1, n2), veth_pair() as (n3, n4):
-        yield (n1, n3), (n2, n4)
+        yield [n1, n3], [n2, n4]
