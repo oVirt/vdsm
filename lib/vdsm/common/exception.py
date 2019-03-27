@@ -484,3 +484,8 @@ class HookError(GeneralException):
 class BackupError(ContextException):
     code = 1600
     message = "Backup Error"
+
+
+class NoSuchBackupError(ContextException):
+    code = 1601
+    message = "No such backup Error"

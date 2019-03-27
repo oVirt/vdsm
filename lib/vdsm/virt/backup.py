@@ -36,7 +36,6 @@ from vdsm.common.constants import P_BACKUP
 from vdsm.virt import virdomain
 from vdsm.virt import vmxml
 
-
 log = logging.getLogger("storage.backup")
 
 # DomainAdapter should be defined only if libvirt supports
@@ -153,7 +152,25 @@ def stop_backup(vm, dom, backup_id):
 
 
 def backup_info(vm, dom, backup_id):
-    raise exception.MethodNotImplemented()
+    try:
+        backup_xml = dom.backupGetXMLDesc()
+    except libvirt.libvirtError as e:
+        if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN_BACKUP:
+            raise exception.NoSuchBackupError(
+                reason="VM backup not exists: {}".format(e),
+                vm_id=vm.id,
+                backup_id=backup_id)
+
+        raise exception.BackupError(
+            reason="Failed to fetch VM ''backup info: {}".format(e),
+            vm_id=vm.id,
+            backup_id=backup_id)
+
+    vm.log.debug("backup_id %r info: %s", backup_id, backup_xml)
+
+    disks_urls = _parse_backup_info(vm, backup_id, backup_xml)
+
+    return {'result': {'disks': disks_urls}}
 
 
 def delete_checkpoints(vm, dom, checkpoint_ids):
@@ -173,6 +190,56 @@ def _get_disks_drives(vm, disks_cfg):
             'volumeID': disk.vol_id})
         drives[disk.img_id] = drive
     return drives
+
+
+def _parse_backup_info(vm, backup_id, backup_xml):
+    """
+    Parse the backup info returned XML,
+    For example using Unix socket:
+
+    <domainbackup mode='pull' id='1'>
+        <server transport='unix' socket='/run/vdsm/backup-id'/>
+        <disks>
+            <disk name='vda' backup='yes' type='file'>
+                <driver type='qcow2'/>
+                <scratch file='/path/to/scratch/disk.qcow2'/>
+            </disk>
+            <disk name='sda' backup='yes' type='file'>
+                <driver type='qcow2'/>
+                <scratch file='/path/to/scratch/disk.qcow2'/>
+            </disk>
+        </disks>
+    </domainbackup>
+    """
+    domainbackup = xmlutils.fromstring(backup_xml)
+
+    server = domainbackup.find('./server')
+    if server is None:
+        _raise_parse_error(vm.id, backup_id, backup_xml)
+
+    path = server.get('socket')
+    if path is None:
+        _raise_parse_error(vm.id, backup_id, backup_xml)
+
+    address = nbdutils.UnixAddress(path)
+
+    disks_urls = {}
+    for disk in domainbackup.findall("./disks/disk[@backup='yes']"):
+        disk_name = disk.get('name')
+        if disk_name is None:
+            _raise_parse_error(vm.id, backup_id, backup_xml)
+        drive = vm.find_device_by_name_or_path(disk_name)
+        disks_urls[drive.imageID] = address.url(disk_name)
+
+    return disks_urls
+
+
+def _raise_parse_error(vm_id, backup_id, backup_xml):
+    raise exception.BackupError(
+        reason="Failed to parse invalid libvirt "
+               "backup XML: {}".format(backup_xml),
+        vm_id=vm_id,
+        backup_id=backup_id)
 
 
 def _create_backup_xml(address):
