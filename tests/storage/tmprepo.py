@@ -80,9 +80,14 @@ class TemporaryRepo(object):
         else:
             self._connect_loopbackfs(remote_path, filesystem)
 
-        return self._create_domain(
+        domain = self._create_domain(
             name, version, remote_path, block_size=block_size,
             alignment=alignment)
+        # To make sure we read metadata from storage in tests, invalidate
+        # metadata now.
+        domain.invalidateMetadata()
+
+        return domain
 
     def _connect_loopbackfs(self, remote_path, filesystem):
         """
