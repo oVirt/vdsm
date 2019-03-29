@@ -25,28 +25,16 @@ import os
 
 import pytest
 
-from vdsm.common import cache
-from vdsm.common import commands
 from vdsm.storage import constants as sc
 from vdsm.storage import multipath
 
 from . import loopback
 from . marks import requires_root
+from . marks import requires_loopback_sector_size
 
 
 BEFORE = b"a" * 10
 AFTER = b"b" * 10
-
-
-@cache.memoized
-def has_loopback_sector_size():
-    out = commands.run(["losetup", "-h"])
-    return "--sector-size <num>" in out.decode()
-
-
-requires_loopback_sector_size = pytest.mark.skipif(
-    not has_loopback_sector_size(),
-    reason="lossetup --sector-size option not available")
 
 
 @requires_root
