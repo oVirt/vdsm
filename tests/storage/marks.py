@@ -27,9 +27,23 @@ import os
 import six
 import pytest
 
+from vdsm.common import cache
+from vdsm.common import commands
+
 
 requires_root = pytest.mark.skipif(
     os.geteuid() != 0, reason="requires root")
 
 xfail_python3 = pytest.mark.xfail(
     six.PY3, reason="needs porting to python 3")
+
+
+@cache.memoized
+def has_loopback_sector_size():
+    out = commands.run(["losetup", "-h"])
+    return "--sector-size <num>" in out.decode()
+
+
+requires_loopback_sector_size = pytest.mark.skipif(
+    not has_loopback_sector_size(),
+    reason="lossetup --sector-size option not available")
