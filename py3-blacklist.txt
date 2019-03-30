@@ -21,7 +21,6 @@
 ./lib/vdsm/storage/formatconverter.py
 ./lib/vdsm/storage/hsm.py
 ./lib/vdsm/storage/image.py
-./lib/vdsm/storage/iscsi.py
 ./lib/vdsm/storage/lvm.py
 ./lib/vdsm/storage/mailbox.py
 ./lib/vdsm/storage/merge.py

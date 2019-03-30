@@ -34,6 +34,8 @@ import re
 from collections import namedtuple
 from threading import RLock
 
+import six
+
 from vdsm.config import config
 from vdsm.common import supervdsm
 from vdsm.common.network.address import hosttail_join
@@ -409,7 +411,7 @@ class IscsiInterface(object):
     def update(self):
         # If this fails mid operation we get a partially updated interface.
         # Suggestions are welcome.
-        for key, value in self._conf.iteritems():
+        for key, value in six.iteritems(self._conf):
             if value is None or key == 'iface.iscsi_ifacename':
                 continue
 
@@ -537,7 +539,7 @@ def disconnectiScsiSession(sessionID):
     try:
         iscsiadm.session_logout(sessionID)
     except iscsiadm.IscsiError as e:
-        return e[0]
+        return e.args[0]
 
     netIfaceName = sessionInfo.iface.netIfaceName
     hostname = sessionInfo.target.portal.hostname
