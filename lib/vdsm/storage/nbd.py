@@ -36,6 +36,7 @@ from vdsm.common import properties
 from vdsm.common import supervdsm
 from vdsm.common import systemctl
 from vdsm.common import systemd
+from vdsm.common import nbdutils
 from vdsm.common.time import monotonic_time
 
 from . import constants as sc
@@ -108,8 +109,8 @@ def start_server(server_id, config):
     if not _wait_for_socket(sock, 1.0):
         raise Timeout("Timeout starting NBD server {}: {}"
                       .format(server_id, config))
-
-    return "nbd:unix:" + sock
+    unix_address = nbdutils.UnixAddress(sock)
+    return unix_address.url()
 
 
 def stop_server(server_id):
