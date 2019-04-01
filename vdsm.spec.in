@@ -1199,8 +1199,6 @@ exit 0
 %endif
 
 %files http
-%dir %{python_sitelib}/%{vdsm_name}
-%dir %{python_sitelib}/%{vdsm_name}/rpc
 %{python_sitelib}/%{vdsm_name}/rpc/http.py*
 
 %files client
