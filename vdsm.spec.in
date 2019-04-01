@@ -1248,9 +1248,6 @@ exit 0
 %if 0%{?with_gluster_mgmt}
 %files gluster
 %license COPYING
-%dir %{python_sitelib}/%{vdsm_name}
-%dir %{python_sitelib}/%{vdsm_name}/rpc
-%dir %{python_sitelib}/%{vdsm_name}/gluster
 %{python_sitelib}/%{vdsm_name}/gluster/api.py*
 %{python_sitelib}/%{vdsm_name}/gluster/apiwrapper.py*
 %{python_sitelib}/%{vdsm_name}/gluster/events.py*
