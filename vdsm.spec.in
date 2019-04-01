@@ -1212,8 +1212,6 @@ exit 0
 %{_mandir}/man1/vdsm-client.1*
 
 %files jsonrpc
-%dir %{python_sitelib}/%{vdsm_name}
-%dir %{python_sitelib}/%{vdsm_name}/rpc
 %{python_sitelib}/%{vdsm_name}/rpc/__init__.py*
 %{python_sitelib}/%{vdsm_name}/rpc/bindingjsonrpc.py*
 %{python_sitelib}/%{vdsm_name}/rpc/Bridge.py*
