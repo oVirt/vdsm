@@ -1233,7 +1233,6 @@ exit 0
 %endif
 
 %files yajsonrpc
-%dir %{python_sitelib}/yajsonrpc
 %{python_sitelib}/yajsonrpc/betterAsyncore.py*
 %{python_sitelib}/yajsonrpc/exception.py*
 %{python_sitelib}/yajsonrpc/stomp.py*
