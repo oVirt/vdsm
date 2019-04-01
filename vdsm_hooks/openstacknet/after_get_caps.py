@@ -91,9 +91,7 @@ def _get_open_vswitch_hostname():
     if rc == 0:
         return out[0].replace('"', '')
 
-    if _is_ovs_service_running():
-        hooking.log('Failed to get Open vSwitch hostname. err = %s' % (err))
-
+    hooking.log('Failed to get Open vSwitch hostname. err = %s' % (err))
     return None
 
 
@@ -136,6 +134,9 @@ if __name__ == '__main__':
         elif option in ('-t', '--test'):
             _test()
             sys.exit()
+
+    if not _is_ovs_service_running():
+        hooking.exit_hook('OVS is not running', return_code=0)
 
     caps = hooking.read_json()
     caps = _update_openstack_binding_host_ids(caps)
