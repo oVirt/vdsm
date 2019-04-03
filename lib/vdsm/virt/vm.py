@@ -68,6 +68,7 @@ from vdsm.storage import qemuimg
 from vdsm.storage import sd
 from vdsm.storage import sdc
 
+from vdsm.virt import backup
 from vdsm.virt import domxml_preprocess
 from vdsm.virt import drivemonitor
 from vdsm.virt import guestagent
@@ -3953,26 +3954,44 @@ class Vm(object):
         self.log.info("%d guest filesystems thawed", thawed)
         return response.success()
 
+    @backup.requires_libvirt_support()
     @api.guard(_not_migrating)
     def start_backup(self, backup_id, disks,
                      from_checkpoint_id=None, to_checkpoint_id=None):
-        raise exception.MethodNotImplemented()
+        dom = backup.DomainAdapter(self)
+        return backup.start_backup(
+            self,
+            dom,
+            backup_id=backup_id,
+            disks=disks,
+            from_checkpoint_id=from_checkpoint_id,
+            to_checkpoint_id=to_checkpoint_id)
 
+    @backup.requires_libvirt_support()
     @api.guard(_not_migrating)
     def stop_backup(self, backup_id):
-        raise exception.MethodNotImplemented()
+        dom = backup.DomainAdapter(self)
+        return backup.stop_backup(self, dom, backup_id=backup_id)
 
+    @backup.requires_libvirt_support()
     @api.guard(_not_migrating)
     def backup_info(self, backup_id):
-        raise exception.MethodNotImplemented()
+        dom = backup.DomainAdapter(self)
+        return backup.backup_info(self, dom, backup_id=backup_id)
 
+    @backup.requires_libvirt_support()
     @api.guard(_not_migrating)
     def delete_checkpoints(self, checkpoint_ids):
-        raise exception.MethodNotImplemented()
+        dom = backup.DomainAdapter(self)
+        return backup.delete_checkpoints(
+            self, dom, checkpoint_ids=checkpoint_ids)
 
+    @backup.requires_libvirt_support()
     @api.guard(_not_migrating)
     def redefine_checkpoints(self, checkpoints):
-        raise exception.MethodNotImplemented()
+        dom = backup.DomainAdapter(self)
+        return backup.redefine_checkpoints(
+            self, dom, checkpoints=checkpoints)
 
     @api.guard(_not_migrating)
     def snapshot(self, snapDrives, memoryParams, frozen=False):

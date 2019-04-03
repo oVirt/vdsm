@@ -24,6 +24,7 @@ SUBDIRS = jobs libvirthook vmdevices
 vdsmvirtdir = $(vdsmpylibdir)/virt
 dist_vdsmvirt_PYTHON = \
 	__init__.py \
+	backup.py \
 	displaynetwork.py \
 	domain_descriptor.py \
 	domxml_preprocess.py \
