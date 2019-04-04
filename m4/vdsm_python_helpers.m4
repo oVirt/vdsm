@@ -273,12 +273,25 @@ AC_DEFUN([_vdsm_remove_string_from_var], [$1=_vdsm_strip_string(_vdsm_remove_str
 # _vdsm_validate_interpreter_name
 # -------------------------------
 # Checks if the interpreter name matches 'pythonMAJOR.MINOR'
-# form (i.e. 'python.3.6'). If it doesn't, an error is raised.
+# form (i.e. 'python3.6'). If it doesn't, an error is raised.
 #
 AC_DEFUN([_vdsm_validate_interpreter_name], [
-    AS_IF([echo $1 | grep -qve "^python@<:@1-9@:>@@<:@0-9@:>@*\.@<:@0-9@:>@\+$"],
+    _vdsm_is_valid_interpreter_name($1,
+        ,
         AC_MSG_ERROR(m4_strip([Invalid interpreter name format: $1. \
-                               The interpreter name should take 'pythonMAJOR.MINOR' form i.e. 'python2.7'])))
+                               The interpreter name should take 'pythonMAJOR.MINOR' form i.e. 'python2.7']))
+    )
+])
+
+#
+# _vdsm_is_valid_interpreter_name
+# -------------------------------
+# Checks if the interpreter name matches 'pythonMAJOR.MINOR'
+# form (i.e. 'python3.6'). If it does, it evaluates to first argument,
+# if it doesn't it evaluates to second argument.
+#
+AC_DEFUN([_vdsm_is_valid_interpreter_name], [
+    AS_IF([echo $1 | grep -qe "^python@<:@1-9@:>@@<:@0-9@:>@*\.@<:@0-9@:>@\+$"], [$2], [$3])
 ])
 
 #
