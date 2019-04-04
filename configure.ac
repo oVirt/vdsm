@@ -65,6 +65,13 @@ AC_PROG_LN_S
 TARGET_PYTHON_VERSION="python2.7"
 CHECKED_PYTHON_VERSIONS="python2.7 python3"
 
+AS_IF([test -n "${with_target_python}"],
+    AS_IF([test "${with_target_python}" = "yes" -o "${with_target_python}" = "no"],
+        [AC_MSG_ERROR(['--with-target-python' option needs a value i.e. '--with-target-python=python3'])],
+        [TARGET_PYTHON_VERSION="${with_target_python}"]
+    )
+)
+
 VDSM_CHECK_PY_VERSIONS([${TARGET_PYTHON_VERSION}], [${CHECKED_PYTHON_VERSIONS}])
 
 AC_ARG_ENABLE(
@@ -99,6 +106,12 @@ if grep -q 'Fedora' /etc/redhat-release; then
 else
     fedora_run="no"
 fi
+
+AC_ARG_WITH(
+    [target-python],
+    [AS_HELP_STRING([--with-target-python=pythonX.Y],
+                    [use 'pythonX.Y' interpreter to build RPMs])]
+)
 
 AC_ARG_ENABLE(
     [python3],
@@ -341,6 +354,9 @@ if test "$GLUSTER_MGMT" == "0"; then
 fi
 if test "$PYTHON3_SUPPORT" == "0"; then
     configure_flags+=" --disable-python3"
+fi
+if test -n "$with_target_python"; then
+    configure_flags+=" --with-target-python=$with_target_python"
 fi
 if test "$OVIRT_IMAGEIO" == "0"; then
     configure_flags+=" --disable-ovirt-imageio"
