@@ -72,6 +72,15 @@ AS_IF([test -n "${with_target_python}"],
     )
 )
 
+AS_IF([test -n "${with_only_python}"],
+    AS_IF([test "${with_only_python}" = "yes" -o "${with_only_python}" = "no"],
+        [AC_MSG_ERROR(['--with-only-python' option needs a value i.e. '--with-only-python=python3'])], [
+            TARGET_PYTHON_VERSION="${with_only_python}"
+            CHECKED_PYTHON_VERSIONS="${with_only_python}"
+        ]
+    )
+)
+
 VDSM_CHECK_PY_VERSIONS([${TARGET_PYTHON_VERSION}], [${CHECKED_PYTHON_VERSIONS}])
 
 AC_ARG_ENABLE(
@@ -111,6 +120,12 @@ AC_ARG_WITH(
     [target-python],
     [AS_HELP_STRING([--with-target-python=pythonX.Y],
                     [use 'pythonX.Y' interpreter to build RPMs])]
+)
+
+AC_ARG_WITH(
+    [only-python],
+    [AS_HELP_STRING([--with-only-python=pythonX.Y],
+                    [use 'pythonX.Y' as the target and the only supported interpreter version])]
 )
 
 AC_ARG_ENABLE(
@@ -357,6 +372,9 @@ if test "$PYTHON3_SUPPORT" == "0"; then
 fi
 if test -n "$with_target_python"; then
     configure_flags+=" --with-target-python=$with_target_python"
+fi
+if test -n "$with_only_python"; then
+    configure_flags+=" --with-only-python=$with_only_python"
 fi
 if test "$OVIRT_IMAGEIO" == "0"; then
     configure_flags+=" --disable-ovirt-imageio"
