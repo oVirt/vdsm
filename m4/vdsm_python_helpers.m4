@@ -19,8 +19,8 @@
 #
 
 #
-# VDSM_CHECK_PY_VERSIONS(TARGET_PY_VERSION)
-# -----------------------------------------
+# VDSM_CHECK_PY_VERSIONS(TARGET_PY_VERSION, CHECKED_PY_VERSIONS)
+# --------------------------------------------------------------
 # Sets up variables that are helpful when working with multiple
 # Python interpreter versions. Calls 'AM_PATH_PYTHON' with 'PYTHON'
 # variable defined as 'TARGET_PY_VERSION'.
@@ -30,6 +30,10 @@
 # (for packaging, etc.). It needs to be defined in a 'pythonMAJOR.MINOR'
 # form (i.e. 'python3.6'). If 'TARGET_PY_VERSION' is not available,
 # an error will be raised.
+#
+# 'CHECKED_PY_VERSIONS' is a space-separated string containing interpreter
+# names in a 'pythonMAJOR.MINOR' form, that will be checked for availability
+# (i.e. 'python2.7 python3.6 python3.7').
 #
 # Variables defined by the macro come handy for writing shell loops, i.e.:
 #
@@ -84,19 +88,18 @@
 #
 AC_DEFUN([VDSM_CHECK_PY_VERSIONS], [
     _target_py_name="$1"
+    _checked_py_versions="$2"
     _vdsm_validate_interpreter_name(${_target_py_name})
 
-    m4_define_default([VDSM_TESTED_PY_VERSIONS],
-                      [python2.7 python3.6 python3.7])
-
-    m4_foreach_w([version], VDSM_TESTED_PY_VERSIONS, [
-        _vdsm_validate_interpreter_name([version])
-        AM_PYTHON_CHECK_VERSION([version], _vdsm_py_version_number([version]), [
-            _vdsm_append_string_to_var(_available_py_versions, [version])
-            _vdsm_append_string_to_var(_available_py_major_versions, _vdsm_py_major_name([version]))
-            _vdsm_append_string_to_var(_available_py_major_short_versions, _vdsm_py_major_short_name([version]))
-            _vdsm_append_string_to_var(_available_py_short_versions, _vdsm_py_short_name([version]))
-        ])])
+    for _checked_py_version in ${_checked_py_versions}; do
+        _vdsm_validate_interpreter_name([${_checked_py_version}])
+        AM_PYTHON_CHECK_VERSION([${_checked_py_version}], _vdsm_py_version_number([${_checked_py_version}]), [
+            _vdsm_append_string_to_var(_available_py_versions, [${_checked_py_version}])
+            _vdsm_append_string_to_var(_available_py_major_versions, _vdsm_py_major_name([${_checked_py_version}]))
+            _vdsm_append_string_to_var(_available_py_major_short_versions, _vdsm_py_major_short_name([${_checked_py_version}]))
+            _vdsm_append_string_to_var(_available_py_short_versions, _vdsm_py_short_name([${_checked_py_version}]))
+        ])
+    done
 
     AS_IF([echo "${_available_py_versions}" | grep -v ${_target_py_name}], [
         AC_MSG_ERROR([Desired TARGET_PY_VERSION=${_target_py_name} is not available])])
