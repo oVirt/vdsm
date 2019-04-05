@@ -39,7 +39,6 @@
 ./tests/functional/utils.py
 ./tests/functional/virtTests.py
 ./tests/stomp_test_utils.py
-./tests/storage/misc_test.py
 ./tests/storage/resourcemanager_test.py
 ./tests/storage/storagetestlib.py
 ./tests/unicode_test.py
