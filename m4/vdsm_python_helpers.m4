@@ -28,12 +28,16 @@
 # 'TARGET_PY_VERSION' argument defines a Python version that must
 # be available in the system and will be used as the main version
 # (for packaging, etc.). It needs to be defined in a 'pythonMAJOR.MINOR'
-# form (i.e. 'python3.6'). If 'TARGET_PY_VERSION' is not available,
+# or  'pythonMAJOR' form (i.e. 'python3.6', 'python3'). If 'pythonMAJOR'
+# form is used, an attempt to resolve to 'pythonMAJOR.MINOR' form will
+# be made by following symlinks. If 'TARGET_PY_VERSION' is not available,
 # an error will be raised.
 #
 # 'CHECKED_PY_VERSIONS' is a space-separated string containing interpreter
-# names in a 'pythonMAJOR.MINOR' form, that will be checked for availability
-# (i.e. 'python2.7 python3.6 python3.7').
+# names in a 'pythonMAJOR.MINOR' or 'pythonMAJOR' form, that will be checked
+# for availability (i.e. 'python2.7 python3.6 python3.7' or simply
+# 'python2 python3'). If 'pythonMAJOR' form is used, an attempt to resolve
+# to 'pythonMAJOR.MINOR' form will be made by following symlinks.
 #
 # Variables defined by the macro come handy for writing shell loops, i.e.:
 #
@@ -89,10 +93,10 @@
 AC_DEFUN([VDSM_CHECK_PY_VERSIONS], [
     _target_py_name="$1"
     _checked_py_versions="$2"
-    _vdsm_validate_interpreter_name(${_target_py_name})
+    _vdsm_resolve_ambiguous_interpreter_name(_target_py_name)
 
     for _checked_py_version in ${_checked_py_versions}; do
-        _vdsm_validate_interpreter_name([${_checked_py_version}])
+        _vdsm_resolve_ambiguous_interpreter_name(_checked_py_version)
         AM_PYTHON_CHECK_VERSION([${_checked_py_version}], _vdsm_py_version_number([${_checked_py_version}]), [
             _vdsm_append_string_to_var(_available_py_versions, [${_checked_py_version}])
             _vdsm_append_string_to_var(_available_py_major_versions, _vdsm_py_major_name([${_checked_py_version}]))
@@ -164,37 +168,6 @@ AC_DEFUN([VDSM_DISABLE_PY_VERSION], [
     if test ${_remove_major_names} = "yes"; then
         _vdsm_remove_string_from_var(VDSM_SUPPORTED_PY_MAJOR_VERSIONS, ${_disabled_py_major_name})
         _vdsm_remove_string_from_var(VDSM_SUPPORTED_PY_MAJOR_SHORT_VERSIONS, _vdsm_py_major_short_name($1))
-    fi
-])
-
-#
-# VDSM_DETERMINE_DEFAULT_PY3_VERSION
-# ----------------------------------
-# Sets the value of 'VDSM_DEFAULT_PY3_VERSION' variable to the name
-# of the default Python 3 interpreter version (the one 'python3'
-# points to) in a 'pythonMAJOR.MINOR' form. If there is no Python 3
-# available, 'VDSM_DEFAULT_PY3_VERSION' will not be defined.
-#
-AC_DEFUN([VDSM_DETERMINE_DEFAULT_PY3_VERSION], [
-    AC_PATH_PROG([_default_py3_path], [python3])
-
-    if test -n "${_default_py3_path}"; then
-        _previous_path="${_default_py3_path}"
-
-        while true; do
-            _new_path="$(readlink ${_previous_path})"
-
-            if test -n "${_new_path}"; then
-                _previous_path="${_new_path}"
-            else
-                break
-            fi
-        done
-
-        _default_py3_version="$(basename ${_previous_path})"
-        _vdsm_validate_interpreter_name("${_default_py3_version}")
-
-        VDSM_DEFAULT_PY3_VERSION=${_default_py3_version}
     fi
 ])
 
@@ -308,4 +281,50 @@ AC_DEFUN([_vdsm_disable_pyx_versions], [
             VDSM_DISABLE_PY_VERSION([${version}])
         fi
     done
+])
+
+#
+# _vdsm_resolve_ambiguous_interpreter_name
+# ----------------------------------------
+# Resolves ambiguous names like 'pythonMAJOR' to 'pythonMAJOR.MINOR'
+# format in the context of the current environment.
+#
+# The only argument is the name of the variable whose value will
+# be modified to hold the resolved name. Its initial value should
+# be the name we want to resolve (i.e. 'python3').
+#
+# The algorithm behind the resolution is symbolic link following until
+# a satisfactory name is found, or the end of symbolic links chain reached.
+# In the latter case, an error will be raised.
+#
+AC_DEFUN([_vdsm_resolve_ambiguous_interpreter_name], [
+    _searched_py_name="$$1"
+
+    _vdsm_is_valid_interpreter_name([${_searched_py_name}],,[
+         if test "$$1" = "python2"; then
+            $1=python2.7
+         else
+            # Since every variable here is global, we have to initialize
+            # '_tested_py_path' so it's not contaminated by previous calls
+            # to this function. Same thing applies to 'unset ac_cv_path__tested_py_path'.
+            _tested_py_path=""
+
+            AC_PATH_PROG([_tested_py_path], [${_searched_py_name}])
+            unset ac_cv_path__tested_py_path
+
+            if test -n "${_tested_py_path}"; then
+                while true; do
+                    _tested_py_basename="$(basename ${_tested_py_path})"
+                    _vdsm_is_valid_interpreter_name([${_tested_py_basename}], [break])
+                    _tested_py_path="$(readlink ${_tested_py_path})"
+
+                    if test -z "${_tested_py_path}"; then
+                        AC_MSG_ERROR([Could not determine full interpreter name for ${_searched_py_name}, please use 'pythonMAJOR.MINOR' form])
+                    fi
+                done
+
+                $1="${_tested_py_basename}"
+            fi
+        fi
+    ])
 ])
