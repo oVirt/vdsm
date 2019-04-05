@@ -42,7 +42,6 @@
 ./tests/storage/misc_test.py
 ./tests/storage/resourcemanager_test.py
 ./tests/storage/storagetestlib.py
-./tests/testrunner.py
 ./tests/unicode_test.py
 ./tests/validate_test.py
 ./vdsm_hooks/allocate_net/before_device_create.py
