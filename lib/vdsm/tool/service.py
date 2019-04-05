@@ -362,7 +362,7 @@ def _runAlts(alts, srvName, *args, **kwarg):
                         "%s failed" % alt.__name__, out, err)
     raise ServiceNotExistError(
         'Tried all alternatives but failed:\n%s' %
-        ('\n'.join(str(e) for errs in errors.values() for e in errs)))
+        ('\n'.join(str(err) for errs in errors.values() for err in errs)))
 
 
 @expose("service-start")

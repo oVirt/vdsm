@@ -32,7 +32,6 @@
 ./lib/vdsm/storage/task.py
 ./lib/vdsm/storage/volume.py
 ./lib/vdsm/tool/configurator.py
-./lib/vdsm/tool/service.py
 ./lib/yajsonrpc/jsonrpcclient.py
 ./lib/yajsonrpc/stomp.py
 ./tests/exception_test.py
