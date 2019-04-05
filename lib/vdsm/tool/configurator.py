@@ -35,6 +35,8 @@ import argparse
 import sys
 import traceback
 
+import six
+
 from . import \
     service, \
     expose, \
@@ -288,7 +290,7 @@ def _parse_args(*args):
             '(e.g %s).\n'
             'If non is specified, operation will run for '
             'all related modules.'
-            % _CONFIGURATORS.keys()
+            % six.iterkeys(_CONFIGURATORS)
         ),
     )
     if action == "configure":
@@ -302,7 +304,7 @@ def _parse_args(*args):
 
     pargs = parser.parse_args(args[1:])
     if not pargs.modules:
-        pargs.modules = _CONFIGURATORS.keys()
+        pargs.modules = six.iterkeys(_CONFIGURATORS)
 
     pargs.modules = _sort_modules(_add_dependencies(pargs.modules))
 
