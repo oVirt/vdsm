@@ -366,6 +366,9 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
 def v4DomainConverter(repoPath, hostId, domain, isMsd):
     targetVersion = 4
 
+    log.debug("Starting conversion of domain %s to version %s",
+              domain.sdUUID, targetVersion)
+
     if domain.supports_external_leases(targetVersion):
         # Try to create and format the new external leases volume. If this
         # fail, the conversion will fail and the domain will remain in version
@@ -390,6 +393,9 @@ def v4DomainConverter(repoPath, hostId, domain, isMsd):
 
 def v5DomainConverter(repoPath, hostId, domain, isMsd):
     target_version = 5
+
+    if domain.getVersion() == 3:
+        v4DomainConverter(repoPath, hostId, domain, isMsd)
 
     log.debug("Starting conversion of domain %s to version %s",
               domain.sdUUID, target_version)
@@ -420,6 +426,7 @@ _IMAGE_REPOSITORY_CONVERSION_TABLE = {
     ('0', '3'): v3DomainConverter,
     ('2', '3'): v3DomainConverter,
     ('3', '4'): v4DomainConverter,
+    ('3', '5'): v5DomainConverter,
     ('4', '5'): v5DomainConverter,
 }
 
