@@ -79,9 +79,13 @@ def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
     assert dom.getVersion() == 4
 
 
-def test_convert_from_v4_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
-                                       fake_rescan, fake_task):
-    dom = tmp_repo.create_localfs_domain(name="domain", version=4)
+@pytest.mark.parametrize("src_version", [
+    pytest.param(3, marks=pytest.mark.xfail(reason="not implemented yet")),
+    4,
+])
+def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
+                               fake_rescan, fake_task, src_version):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=src_version)
 
     # Create some volumes in v4 format.
     for i in range(3):
@@ -114,7 +118,7 @@ def test_convert_from_v4_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
     new_dom_md = dom.getMetadata()
 
     # Values modified in v5.
-    assert old_dom_md.pop("VERSION") == 4
+    assert old_dom_md.pop("VERSION") == src_version
     assert new_dom_md.pop("VERSION") == 5
 
     # Keys added in v5.
@@ -137,8 +141,13 @@ def test_convert_from_v4_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_convert_from_v4_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
-                                     fake_rescan, fake_task, fake_sanlock):
+@pytest.mark.parametrize("src_version", [
+    pytest.param(3, marks=pytest.mark.xfail(reason="not implemented yet")),
+    4,
+])
+def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
+                             fake_rescan, fake_task, fake_sanlock,
+                             src_version):
     sd_uuid = str(uuid.uuid4())
 
     dev = tmp_storage.create_device(20 * 1024 ** 3)
@@ -150,7 +159,7 @@ def test_convert_from_v4_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
         domainName="domain",
         domClass=sd.DATA_DOMAIN,
         vgUUID=vg.uuid,
-        version=4,
+        version=src_version,
         storageType=sd.ISCSI_DOMAIN,
         block_size=sc.BLOCK_SIZE_512,
         alignment=sc.ALIGNMENT_1M)
@@ -195,7 +204,7 @@ def test_convert_from_v4_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
     new_dom_md = dom.getMetadata()
 
     # Keys modified in v5.
-    assert old_dom_md.pop("VERSION") == 4
+    assert old_dom_md.pop("VERSION") == src_version
     assert new_dom_md.pop("VERSION") == 5
 
     # Keys added in V5.
