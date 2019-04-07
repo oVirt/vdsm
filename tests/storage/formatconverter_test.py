@@ -26,6 +26,7 @@ import pytest
 
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
+from vdsm.storage import exception as se
 from vdsm.storage import formatconverter
 from vdsm.storage import lvm
 from vdsm.storage import misc
@@ -80,7 +81,7 @@ def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
 
 
 @pytest.mark.parametrize("src_version", [
-    pytest.param(3, marks=pytest.mark.xfail(reason="not implemented yet")),
+    3,
     4,
 ])
 def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
@@ -142,7 +143,7 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
 @xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("src_version", [
-    pytest.param(3, marks=pytest.mark.xfail(reason="not implemented yet")),
+    3,
     4,
 ])
 def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
@@ -217,6 +218,13 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
 
     # Rest of the keys must not be modifed by conversion.
     assert old_dom_md == new_dom_md
+
+    # Verify that xleases volume is created when upgrading from version < 4.
+    xleases_vol = lvm.getLV(sd_uuid, "xleases")
+    assert int(xleases_vol.size) == 1024**3
+
+    with pytest.raises(se.NoSuchLease):
+        dom.manifest.lease_info("no-such-lease")
 
     # Verify that volumes metadta was converted to v5 format.
 
