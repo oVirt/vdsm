@@ -806,7 +806,15 @@ class StorageDomain(object):
         pass
 
     @classmethod
-    def _validate_block_and_alignment(cls, block_size, alignment):
+    def _validate_block_and_alignment(cls, block_size, alignment, version):
+        # For domain version prior version 5 block size has to ve 512b and
+        # alignment has to be 1M.
+        if version < 5:
+            if block_size != sc.BLOCK_SIZE_512:
+                raise se.InvalidParameterException('block_size', block_size)
+            if alignment != sc.ALIGNMENT_1M:
+                raise se.InvalidParameterException('alignment', alignment)
+
         if block_size not in cls.supported_block_size:
             raise se.InvalidParameterException('block_size', block_size)
 

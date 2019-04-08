@@ -85,7 +85,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
                      sdUUID, domainName, remotePath, domClass,
                      block_size, alignment)
 
-        cls._validate_block_and_alignment(block_size, alignment)
+        cls._validate_block_and_alignment(block_size, alignment, version)
 
         remotePath = fileUtils.normalize_path(remotePath)
 

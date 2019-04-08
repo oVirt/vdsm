@@ -62,6 +62,21 @@ def test_incorrect_alignment_rejected():
             sc.ALIGNMENT_2M)
 
 
+@pytest.mark.parametrize("version", [3, 4])
+@pytest.mark.parametrize("block_size", [sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K])
+@pytest.mark.parametrize(
+    "alignment", [sc.ALIGNMENT_1M, sc.ALIGNMENT_2M, sc.ALIGNMENT_4M,
+                  sc.ALIGNMENT_8M])
+def test_incorrect_version_and_block_rejected(version, block_size, alignment):
+    # block size 512b and alignment of 1M is the only allowed combination for
+    # storage domain 3 and 4
+    if block_size != sc.BLOCK_SIZE_512 and alignment != sc.ALIGNMENT_1M:
+        with pytest.raises(se.InvalidParameterException):
+            localFsSD.LocalFsStorageDomain.create(
+                sc.BLANK_UUID, "test", sd.DATA_DOMAIN,
+                sc.BLANK_UUID, sd.ISCSI_DOMAIN, version, block_size, alignment)
+
+
 @pytest.mark.parametrize("domain_version", [3, 4, 5])
 def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     remote_path = str(tmpdir.mkdir("domain"))

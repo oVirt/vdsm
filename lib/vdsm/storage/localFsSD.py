@@ -99,7 +99,7 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
                      sdUUID, domainName, remotePath, domClass,
                      block_size, alignment)
 
-        cls._validate_block_and_alignment(block_size, alignment)
+        cls._validate_block_and_alignment(block_size, alignment, version)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
             raise se.UnicodeArgumentException()
