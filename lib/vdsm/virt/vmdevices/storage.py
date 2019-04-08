@@ -905,7 +905,7 @@ def image_id(path):
     return os.path.basename(image_path)
 
 
-def disable_dynamic_ownership(element):
+def disable_dynamic_ownership(element, write_type=True):
     """
     Disable dynamic ownership in the given device element.
 
@@ -937,7 +937,8 @@ def disable_dynamic_ownership(element):
     if element.find('seclabel') is not None:
         return
     seclabel = ET.Element('seclabel')
-    seclabel.set('type', 'none')
+    if write_type:
+        seclabel.set('type', 'none')
     seclabel.set('relabel', 'no')
     seclabel.set('model', 'dac')
     element.append(seclabel)

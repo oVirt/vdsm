@@ -30,11 +30,13 @@ import six
 from vdsm.common import exception
 from vdsm.common import nbdutils
 from vdsm.common import properties
+from vdsm.common import response
 from vdsm.common import xmlutils
 from vdsm.common.constants import P_BACKUP
 
 from vdsm.virt import virdomain
 from vdsm.virt import vmxml
+from vdsm.virt.vmdevices import storage
 
 log = logging.getLogger("storage.backup")
 
@@ -66,7 +68,8 @@ if backup_enabled:
         "backupBegin",
         "abortJob",
         "backupGetXMLDesc",
-        "checkpointCreateXML"
+        "checkpointCreateXML",
+        "blockInfo"
     )
     class DomainAdapter(object):
         """
@@ -126,15 +129,24 @@ def start_backup(vm, dom, config):
     socket_path = os.path.join(P_BACKUP, backup_cfg.backup_id)
     nbd_addr = nbdutils.UnixAddress(socket_path)
 
-    backup_xml = _create_backup_xml(nbd_addr)
+    # Create scratch disk for each drive
+    scratch_disks = _create_scratch_disks(
+        vm, dom, backup_cfg.backup_id, drives)
+
+    backup_xml = _create_backup_xml(nbd_addr, drives, scratch_disks)
 
     vm.log.debug("VM backup XML request: %s", backup_xml)
     vm.log.info(
         "Starting backup for backup_id: %r", backup_cfg.backup_id)
     checkpoint_xml = None
+    # pylint: disable=no-member
+    flags = libvirt.VIR_DOMAIN_BACKUP_BEGIN_REUSE_EXTERNAL
     try:
-        dom.backupBegin(backup_xml, checkpoint_xml)
+        dom.backupBegin(backup_xml, checkpoint_xml, flags=flags)
     except libvirt.libvirtError as e:
+        # remove all the created scratch disks
+        _remove_scratch_disks(vm, backup_cfg.backup_id)
+
         raise exception.BackupError(
             reason="Error starting backup: {}".format(e),
             vm_id=vm.id,
@@ -154,6 +166,7 @@ def stop_backup(vm, dom, backup_id):
         vm.log.info(
             "No backup with id '%s' found for vm '%s'",
             backup_id, vm.id)
+        _remove_scratch_disks(vm, backup_id)
         return
 
     try:
@@ -164,6 +177,8 @@ def stop_backup(vm, dom, backup_id):
                 reason="Failed to end VM backup: {}".format(e),
                 vm_id=vm.id,
                 backup_id=backup_id)
+
+    _remove_scratch_disks(vm, backup_id)
 
 
 def backup_info(vm, dom, backup_id):
@@ -261,16 +276,94 @@ def _raise_parse_error(vm_id, backup_id, backup_xml):
         backup_id=backup_id)
 
 
-def _create_backup_xml(address):
+def _create_backup_xml(address, drives, scratch_disks):
     domainbackup = vmxml.Element('domainbackup', mode='pull')
 
     server = vmxml.Element(
         'server', transport=address.transport, socket=address.path)
 
-    # TODO: supporting full VM backup including all
-    # the VM disks, need to add the option to create
-    # a VM backup using specific disks only
-
     domainbackup.appendChild(server)
 
+    disks = vmxml.Element('disks')
+
+    # fill the backup XML disks
+    for drive in drives.values():
+        disk = vmxml.Element('disk', name=drive.name, type='file')
+        # scratch element can have dev=/path/to/block/disk
+        # or file=/path/to/file/disk attribute according to
+        # the disk type.
+        # Currently, all the scratch disks resides on the
+        # host local file storage.
+        scratch = vmxml.Element('scratch', file=scratch_disks[drive.name])
+
+        storage.disable_dynamic_ownership(scratch, write_type=False)
+        disk.appendChild(scratch)
+
+        disks.appendChild(disk)
+
+    domainbackup.appendChild(disks)
+
     return xmlutils.tostring(domainbackup)
+
+
+def _create_scratch_disks(vm, dom, backup_id, drives):
+    scratch_disks = {}
+
+    for drive in drives.values():
+        try:
+            path = _create_transient_disk(vm, dom, backup_id, drive)
+        except Exception:
+            _remove_scratch_disks(vm, backup_id)
+            raise
+
+        scratch_disks[drive.name] = path
+
+    return scratch_disks
+
+
+def _remove_scratch_disks(vm, backup_id):
+    log.info(
+        "Removing scratch disks for backup id: %s", backup_id)
+
+    res = vm.cif.irs.list_transient_disks(vm.id)
+    if response.is_error(res):
+        raise exception.BackupError(
+            reason="Failed to fetch scratch disks: {}".format(res),
+            vm_id=vm.id,
+            backup_id=backup_id)
+
+    for disk_name in res['result']:
+        res = vm.cif.irs.remove_transient_disk(vm.id, disk_name)
+        if response.is_error(res):
+            log.error(
+                "Failed to remove backup '%s' "
+                "scratch disk for drive name: %s, ",
+                backup_id, disk_name)
+
+
+def _get_drive_capacity(dom, drive):
+    try:
+        capacity, _, _ = dom.blockInfo(drive.path)
+        return capacity
+    except libvirt.libvirtError as e:
+        raise exception.BackupError(
+            reason="Failed to get drive {} capacity: {}".format(
+                drive.name, e))
+
+
+def _create_transient_disk(vm, dom, backup_id, drive):
+    disk_name = "{}.{}".format(backup_id, drive.name)
+    drive_size = _get_drive_capacity(dom, drive)
+
+    res = vm.cif.irs.create_transient_disk(
+        owner_name=vm.id,
+        disk_name=disk_name,
+        size=drive_size
+    )
+    if response.is_error(res):
+        raise exception.BackupError(
+            reason='Failed to create transient disk: {}'.format(res),
+            vm_id=vm.id,
+            backup_id=backup_id,
+            drive_name=drive.name)
+    return res['result']['path']
