@@ -1090,7 +1090,7 @@ class BlockStorageDomain(sd.StorageDomain):
                      sdUUID, domainName, domClass, vgUUID, storageType,
                      version, block_size, alignment)
 
-        cls._validate_block_and_alignment(block_size, alignment)
+        cls._validate_block_and_alignment(block_size, alignment, version)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
             raise se.UnicodeArgumentException()
