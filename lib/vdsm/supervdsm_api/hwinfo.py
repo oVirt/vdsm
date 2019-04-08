@@ -62,3 +62,8 @@ def get_retp(*args, **kwargs):
 @expose
 def get_ibrs(*args, **kwargs):
     return read_debugfs_property('/sys/kernel/debug/x86/ibrs_enabled')
+
+
+@expose
+def get_ssbd(*args, **kwargs):
+    return read_debugfs_property('/sys/kernel/debug/x86/ssbd_enabled')
