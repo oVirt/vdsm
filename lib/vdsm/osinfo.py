@@ -357,4 +357,5 @@ def kernel_features():
         'PTI': supervdsm.getProxy().get_pti(),
         'RETP': supervdsm.getProxy().get_retp(),
         'IBRS': supervdsm.getProxy().get_ibrs(),
+        'SSBD': supervdsm.getProxy().get_ssbd(),
     }
