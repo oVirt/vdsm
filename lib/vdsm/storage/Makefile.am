@@ -114,7 +114,7 @@ EXTRA_DIST = \
 all: vdsm-lvm.rules
 
 vdsm-lvm.rules: vdsm_lvm_rules.template
-	python $< > $@
+	$(VDSM_TARGET_PY_VERSION) $< > $@
 
 install-data-local: vdsm-lvm.rules
 	$(MKDIR_P) $(DESTDIR)/usr/lib/udev/rules.d

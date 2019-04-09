@@ -112,7 +112,7 @@ tox:
 		exit 1; \
 	fi; \
 	version=`echo $$out | cut -d' ' -f1`; \
-	if build-aux/vercmp $$version $(TOX_MIN_VERSION); then \
+	if $(VDSM_TARGET_PY_VERSION) build-aux/vercmp $$version $(TOX_MIN_VERSION); then \
 		echo "Error: tox is too old, please install tox \
 		$(TOX_MIN_VERSION) or later"; \
 		exit 1; \
