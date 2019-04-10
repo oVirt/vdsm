@@ -81,6 +81,7 @@ class FakeSanlock(object):
         # places is also TBD.
 
         wait = not kwargs.get('async', False)
+
         generation = 0
         host = self.hosts.get(host_id)
         if host:
@@ -129,8 +130,11 @@ class FakeSanlock(object):
 
         def complete():
             # Delete the lockspace and wake up threads waiting on
-            # inq_lockspace()
-            del self.spaces[lockspace]
+            # inq_lockspace().
+            # Lockspace shouldn't be removed completely, as this would mean
+            # that sanlock on given path wasn't initialized. Instead just
+            # remove host_id from lockspace.
+            del ls["host_id"]
             ls["ready"].set()
 
         if wait:
@@ -168,7 +172,7 @@ class FakeSanlock(object):
         elif not ls["ready"].is_set():
             return None
 
-        return lockspace in self.spaces
+        return "host_id" in ls
 
     @maybefail
     def write_resource(self, lockspace, resource, disks, max_hosts=0,
