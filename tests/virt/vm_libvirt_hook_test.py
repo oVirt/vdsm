@@ -23,9 +23,10 @@ from __future__ import absolute_import
 
 import six
 
-from vdsm.virt import vm_libvirt_hook
+from vdsm.virt.libvirthook import vm_libvirt_hook
 
 from testlib import XMLTestCase
+from testValidation import skipif
 
 
 _DISK_XML = '''<domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
@@ -167,9 +168,11 @@ class MigrateHookTestCase(XMLTestCase):
         vm_libvirt_hook.main(domain, event, phase, stdin=stdin, stdout=stdout)
         self.assertXMLEqual(stdout.getvalue(), modified_xml)
 
+    @skipif(six.PY3, "needs porting to python 3")
     def test_empty(self):
         xml = '<domain/>'
         self._test_hook(xml, xml)
 
+    @skipif(six.PY3, "needs porting to python 3")
     def test_disks(self):
         self._test_hook(_DISK_XML, _MODIFIED_DISK_XML)

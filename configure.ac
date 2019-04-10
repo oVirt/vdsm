@@ -465,7 +465,7 @@ AC_OUTPUT([
 	lib/vdsm/tool/configurators/Makefile
 	lib/vdsm/virt/Makefile
 	lib/vdsm/virt/jobs/Makefile
-	lib/vdsm/virt/libvirt/Makefile
+	lib/vdsm/virt/libvirthook/Makefile
 	lib/vdsm/virt/vmdevices/Makefile
 	lib/vdsmclient/Makefile
 	lib/yajsonrpc/Makefile

@@ -19,7 +19,7 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS = jobs libvirt vmdevices
+SUBDIRS = jobs libvirthook vmdevices
 
 vdsmvirtdir = $(vdsmpylibdir)/virt
 dist_vdsmvirt_PYTHON = \
