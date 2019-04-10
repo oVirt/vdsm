@@ -28,6 +28,7 @@ from __future__ import division
 
 class VdsmException(Exception):
     code = 0
+    # TODO: Rename to `msg' once `message' is no longer used
     message = "Vdsm Exception"
 
     # A flag that is used to mark expected errors. Setting this to True will
@@ -38,13 +39,23 @@ class VdsmException(Exception):
     expected = False
 
     def __str__(self):
-        return self.message
+        return self.msg
 
     def info(self):
         return {'code': self.code, 'message': str(self)}
 
     def response(self):
         return {'status': self.info()}
+
+    # TODO: Remove once `message' is no longer used
+    @property
+    def msg(self):
+        return self.message
+
+    # TODO: Remove once `message' is no longer used
+    @msg.setter
+    def msg(self, message):
+        self.message = message
 
 
 def expected(error):
@@ -85,9 +96,9 @@ class ContextException(VdsmException):
 
     def __str__(self):
         if self.context:
-            return "%s: %s" % (self.message, self.context)
+            return "%s: %s" % (self.msg, self.context)
         else:
-            return self.message
+            return self.msg
 
 
 class NoSuchVM(ContextException):
@@ -441,7 +452,7 @@ class GeneralException(VdsmException):
         self.value = value
 
     def __str__(self):
-        return "%s: %s" % (self.message, repr(self.value))
+        return "%s: %s" % (self.msg, repr(self.value))
 
 
 class InvalidConfiguration(ContextException):

@@ -34,7 +34,7 @@ class TestVdsmException(VdsmTestCase):
 
     def test_str(self):
         e = VdsmException()
-        self.assertEqual(str(e), e.message)
+        self.assertEqual(str(e), e.msg)
 
     def test_info(self):
         e = VdsmException()
@@ -66,7 +66,7 @@ class TestContextException(VdsmTestCase):
 
     def test_str(self):
         e = ContextException("not hot enough", temperature=42)
-        self.assertEqual(str(e), "%s: %s" % (e.message, e.context))
+        self.assertEqual(str(e), "%s: %s" % (e.msg, e.context))
 
     def test_info(self):
         e = ContextException("not hot enough", temperature=42)

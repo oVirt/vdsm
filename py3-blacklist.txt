@@ -21,7 +21,6 @@
 ./lib/vdsm/storage/resourceManager.py
 ./lib/vdsm/storage/task.py
 ./lib/vdsm/storage/volume.py
-./tests/exception_test.py
 ./tests/storage/resourcemanager_test.py
 ./tests/storage/storagetestlib.py
 ./tests/unicode_test.py
