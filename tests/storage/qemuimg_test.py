@@ -1021,12 +1021,12 @@ def make_image(path, size, format, index, qcow2_compat, backing=None):
 class MapMismatch(AssertionError):
 
     def __init__(self, message, expected, actual):
-        self.message = message
+        self.msg = message
         self.expected = expected
         self.actual = actual
 
     def __str__(self):
-        text = self.message + "\n"
+        text = self.msg + "\n"
         text += "\n"
         text += "Expected map:\n"
         text += pprint.pformat(self.expected) + "\n"
