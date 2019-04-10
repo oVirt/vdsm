@@ -3538,7 +3538,7 @@ class Vm(object):
                     # If there is a valid reason why not all 4 are required,
                     # please change the code
 
-                    disk = self._findDriveByUUIDs({
+                    disk = self.findDriveByUUIDs({
                         'domainID': ioTune["domainID"],
                         'poolID': ioTune["poolID"],
                         'imageID': ioTune["imageID"],
@@ -3863,7 +3863,7 @@ class Vm(object):
             # needed to find network drives
             diskParams['path'] = self.cif.prepareVolumePath(diskParams)
             try:
-                drive = self._findDriveByUUIDs(diskParams)
+                drive = self.findDriveByUUIDs(diskParams)
             except LookupError:
                 self.log.error("Hotunplug disk failed - Disk not found: %s",
                                diskParams)
@@ -4136,7 +4136,7 @@ class Vm(object):
         hooks.before_vm_pause(self._dom.XMLDesc(0), self._custom)
         self._dom.suspend()
 
-    def _findDriveByUUIDs(self, drive):
+    def findDriveByUUIDs(self, drive):
         """Find a drive given its definition"""
 
         if "domainID" in drive:
@@ -4383,7 +4383,7 @@ class Vm(object):
             baseDrv, tgetDrv = _normSnapDriveParams(drive)
 
             try:
-                self._findDriveByUUIDs(tgetDrv)
+                self.findDriveByUUIDs(tgetDrv)
             except LookupError:
                 # The vm is not already using the requested volume for the
                 # snapshot, continuing.
@@ -4394,7 +4394,7 @@ class Vm(object):
                 continue  # Next drive
 
             try:
-                vmDrive = self._findDriveByUUIDs(baseDrv)
+                vmDrive = self.findDriveByUUIDs(baseDrv)
             except LookupError:
                 # The volume we want to snapshot doesn't exist
                 self.log.error("The base volume doesn't exist: %s", baseDrv)
@@ -4556,7 +4556,7 @@ class Vm(object):
 
     def diskReplicateStart(self, srcDisk, dstDisk):
         try:
-            drive = self._findDriveByUUIDs(srcDisk)
+            drive = self.findDriveByUUIDs(srcDisk)
         except LookupError:
             self.log.error("Unable to find the disk for '%s'", srcDisk)
             return response.error('imageErr')
@@ -4614,7 +4614,7 @@ class Vm(object):
 
     def diskReplicateFinish(self, srcDisk, dstDisk):
         try:
-            drive = self._findDriveByUUIDs(srcDisk)
+            drive = self.findDriveByUUIDs(srcDisk)
         except LookupError:
             self.log.error("Drive not found (srcDisk: %r)", srcDisk)
             return response.error('imageErr')
@@ -4869,7 +4869,7 @@ class Vm(object):
             return response.error('resizeErr')
 
         try:
-            drive = self._findDriveByUUIDs(driveSpecs)
+            drive = self.findDriveByUUIDs(driveSpecs)
         except LookupError:
             return response.error('imageErr')
 
@@ -5744,7 +5744,7 @@ class Vm(object):
                     continue
 
                 try:
-                    drive = self._findDriveByUUIDs(storedJob['disk'])
+                    drive = self.findDriveByUUIDs(storedJob['disk'])
                 except LookupError:
                     # Drive loopkup may fail only in case of active layer
                     # merge, and pivot completed.
@@ -5758,7 +5758,7 @@ class Vm(object):
                     pivoted_drive = dict(disk)
                     pivoted_drive["volumeID"] = storedJob["baseVolume"]
                     try:
-                        drive = self._findDriveByUUIDs(pivoted_drive)
+                        drive = self.findDriveByUUIDs(pivoted_drive)
                     except LookupError:
                         self.log.error("Pivot completed but cannot find drive "
                                        "for job %s (disk=%s)",
@@ -5817,7 +5817,7 @@ class Vm(object):
             jobUUID = str(uuid.uuid4())
 
         try:
-            drive = self._findDriveByUUIDs(driveSpec)
+            drive = self.findDriveByUUIDs(driveSpec)
         except LookupError:
             return response.error('imageErr')
 

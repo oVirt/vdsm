@@ -323,7 +323,7 @@ def find_drive_lease_info(sd_id, lease_id, drive_objs):
         volume_chain = getattr(drive_obj, "volumeChain", [])
         for vol_info in volume_chain[-1:]:
             # TODO: is this matching safe enough?
-            # vm._findDriveByUUIDs uses also the imageID
+            # vm.findDriveByUUIDs uses also the imageID
             if (vol_info['domainID'] == sd_id and
                     vol_info['volumeID'] == lease_id):
                 drive_obj.log.info('Using drive lease: %s', vol_info)
