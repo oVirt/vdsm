@@ -21,18 +21,19 @@
 from __future__ import absolute_import
 
 from vdsm import virtsparsify
+from vdsm.common.exception import VdsmException
 from vdsm.storage import guarded
 from vdsm.storage.sdm.volume_info import VolumeInfo
 
 from . import base
 
 
-class SparsifyException(Exception):
+class SparsifyException(VdsmException):
     ''' Base class for sparsify exceptions '''
 
 
 class VolumeIsNotLeafException(SparsifyException):
-    message = 'Volume to be sparsified is not a leaf volume'
+    msg = 'Volume to be sparsified is not a leaf volume'
 
 
 class Job(base.Job):

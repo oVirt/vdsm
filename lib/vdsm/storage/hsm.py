@@ -2517,16 +2517,16 @@ class HSM(object):
             return 0, ""
 
         if isinstance(e, mount.MountError):
-            return se.MountError.code, se.MountError.message
+            return se.MountError.code, se.MountError.msg
         if isinstance(e, iscsi.iscsiadm.IscsiAuthenticationError):
-            return se.iSCSILoginAuthError.code, se.iSCSILoginAuthError.message
+            return se.iSCSILoginAuthError.code, se.iSCSILoginAuthError.msg
         if isinstance(e, iscsi.iscsiadm.IscsiInterfaceError):
-            return se.iSCSIifaceError.code, se.iSCSIifaceError.message
+            return se.iSCSIifaceError.code, se.iSCSIifaceError.msg
         if isinstance(e, iscsi.iscsiadm.IscsiError):
-            return se.iSCSISetupError.code, se.iSCSISetupError.message
+            return se.iSCSISetupError.code, se.iSCSISetupError.msg
 
         if hasattr(e, 'code'):
-            return e.code, e.message
+            return e.code, e.msg
 
         return se.GeneralException.code, str(e)
 
@@ -3447,7 +3447,7 @@ class HSM(object):
             if not repoStats[sdUUID]['mdavalid']:
                 domInfo[sdUUID]['alerts'].append({
                     'code': se.SmallVgMetadata.code,
-                    'message': se.SmallVgMetadata.message,
+                    'message': se.SmallVgMetadata.msg,
                 })
                 self.log.warning("VG %s's metadata size too small %s",
                                  sdUUID, repoStats[sdUUID]['mdasize'])
@@ -3455,7 +3455,7 @@ class HSM(object):
             if not repoStats[sdUUID]['mdathreshold']:
                 domInfo[sdUUID]['alerts'].append({
                     'code': se.VgMetadataCriticallyFull.code,
-                    'message': se.VgMetadataCriticallyFull.message,
+                    'message': se.VgMetadataCriticallyFull.msg,
                 })
                 self.log.warning("VG %s's metadata size exceeded critical "
                                  "size: mdasize=%s mdafree=%s", sdUUID,

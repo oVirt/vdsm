@@ -37,11 +37,11 @@ class CurlError(Exception):
         self.ecode = ecode
         self.stdout = stdout
         self.stderr = stderr
-        self.message = message
+        self.msg = message
 
     def __str__(self):
         return "ecode=%s, stdout=%s, stderr=%s, message=%s" % (
-            self.ecode, self.stdout, self.stderr, self.message)
+            self.ecode, self.stdout, self.stderr, self.msg)
 
 
 def _headersToOptions(headers):
