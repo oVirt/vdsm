@@ -562,8 +562,10 @@ class NetFuncTestAdapter(object):
 
         netinfo = _normalize_caps(self.netinfo)
         kernel_config = kernelconfig.KernelConfig(netinfo)
+
         _extend_with_bridge_opts(kernel_config, running_config)
         kernel_config = kernel_config.as_unicode()
+        _normalize_bonds((kernel_config, running_config))
 
         self._assert_inclusive_nameservers(kernel_config, running_config)
         # Do not use KernelConfig.__eq__ to get a better exception if something
@@ -774,8 +776,25 @@ def _normalize_qos_config(qos):
     return qos
 
 
+def _normalize_bonds(configs):
+    for cfg in configs:
+        for bond_name, bond_attrs in six.viewitems(cfg['bonds']):
+            opts = dict(pair.split('=', 1)
+                        for pair in bond_attrs['options'].split())
+
+            normalized_opts = _normalize_bond_opts(opts)
+            bond_attrs['options'] = ' '.join(sorted(normalized_opts))
+
+
 def _normalize_bond_opts(opts):
+    _normalize_arg_ip_target_option(opts)
     return [opt + '=' + val for (opt, val) in six.iteritems(opts)]
+
+
+def _normalize_arg_ip_target_option(opts):
+    if "arp_ip_target" in opts.keys():
+        opts['arp_ip_target'] = ','.join(
+            sorted(opts['arp_ip_target'].split(',')))
 
 
 def _split_bond_options(opts):
