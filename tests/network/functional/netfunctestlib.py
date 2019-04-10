@@ -116,7 +116,7 @@ class LibProxy(object):
             api.setupNetworks(networks, bonds, options)
         except errors.ConfigNetworkError as e:
             status = e.errCode
-            msg = e.message
+            msg = e.msg
         else:
             status = SUCCESS
             msg = ''

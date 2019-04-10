@@ -47,6 +47,6 @@ def process_request(command):
 class TrafficControlException(Exception):
     def __init__(self, errCode, message, command):
         self.errCode = errCode
-        self.message = message
+        self.msg = message
         self.command = command
-        Exception.__init__(self, self.errCode, self.message, self.command)
+        Exception.__init__(self, self.errCode, self.msg, self.command)

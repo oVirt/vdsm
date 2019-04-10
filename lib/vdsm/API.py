@@ -1517,8 +1517,8 @@ class Global(APIBase):
             supervdsm.getProxy().setupNetworks(networks, bondings, options)
             return {'status': doneCode}
         except ConfigNetworkError as e:
-            self.log.error(e.message, exc_info=True)
-            return {'status': {'code': e.errCode, 'message': e.message}}
+            self.log.error('%s', e.msg, exc_info=True)
+            return {'status': {'code': e.errCode, 'message': e.msg}}
         except exception.HookError as e:
             return response.error('hookError', 'Hook error: ' + str(e))
         finally:

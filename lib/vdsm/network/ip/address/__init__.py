@@ -173,7 +173,7 @@ class IPv4(object):
         try:
             IPv4.validateAddress(netmask)
         except ConfigNetworkError as cne:
-            cne.message = '%r is not a valid IPv4 netmask.' % netmask
+            cne.msg = '%r is not a valid IPv4 netmask.' % netmask
             raise
         num = struct.unpack('>I', socket.inet_aton(netmask))[0]
         if num & (num - 1) != (num << 1) & 0xffffffff:
@@ -186,7 +186,7 @@ class IPv4(object):
         try:
             IPv4.validateAddress(gateway)
         except ConfigNetworkError as cne:
-            cne.message = '%r is not a valid IPv4 gateway' % gateway
+            cne.msg = '%r is not a valid IPv4 gateway' % gateway
             raise
 
 
@@ -248,7 +248,7 @@ class IPv6(object):
         try:
             IPv6.validateAddress(gateway)
         except ConfigNetworkError as cne:
-            cne.message = '%r is not a valid IPv6 gateway.'
+            cne.msg = '%r is not a valid IPv6 gateway.'
             raise
 
 

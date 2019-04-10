@@ -42,7 +42,7 @@ ERR_OVS_CONNECTION = 32
 class ConfigNetworkError(Exception):
     def __init__(self, errCode, message):
         self.errCode = errCode
-        self.message = message
+        self.msg = message
         super(ConfigNetworkError, self).__init__(errCode, message)
 
 
