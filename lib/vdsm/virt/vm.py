@@ -3630,14 +3630,19 @@ class Vm(object):
             xmlconstants.METADATA_VM_TUNE_ELEMENT,
             None)
 
-    def _findDeviceByNameOrPath(self, device_name, device_path):
+    def find_device_by_name_or_path(self, device_name=None, device_path=None):
         for device in self._devices[hwclass.DISK]:
-            if ((device.name == device_name or
-                ("path" in device and device["path"] == device_path)) and
-                    isVdsmImage(device)):
+            if not isVdsmImage(device):
+                continue
+            if device_name is not None and device.name == device_name:
                 return device
-        else:
-            return None
+            if (device_path is not None and
+                    (device.get("path") == device_path)):
+                return device
+
+        raise LookupError(
+            "No such disk {} with path {}".format(
+                device_name, device_path))
 
     def io_tune_policy_values(self):
         try:
@@ -3705,10 +3710,11 @@ class Vm(object):
             device_path = io_tune_change.get('path', None)
             io_tune = io_tune_change['ioTune']
 
-            # Find the proper device object
-            found_device = self._findDeviceByNameOrPath(device_name,
-                                                        device_path)
-            if found_device is None:
+            try:
+                # Find the proper device object
+                found_device = self.find_device_by_name_or_path(
+                    device_name, device_path)
+            except LookupError:
                 raise exception.UpdateIOTuneError(
                     "Device {} not found".format(device_name))
 
