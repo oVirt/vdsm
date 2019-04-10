@@ -65,7 +65,7 @@ class TestFakeSanlock(VdsmTestCase):
         fs = FakeSanlock()
         fs.add_lockspace("lockspace", 1, "path")
         fs.rem_lockspace("lockspace", 1, "path")
-        self.assertNotIn("lockspace", fs.spaces)
+        self.assertNotIn("host_id", fs.spaces["lockspace"])
 
     def test_rem_lockspace_async(self):
         fs = FakeSanlock()
@@ -73,6 +73,28 @@ class TestFakeSanlock(VdsmTestCase):
         fs.rem_lockspace("lockspace", 1, "path", **{'async': True})
         ls = fs.spaces["lockspace"]
         self.assertFalse(ls["ready"].is_set(), "lockspace is ready")
+
+    def test_rem_lockspace_while_holding_lock(self):
+        fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
+        fs.write_resource("lockspace", "resource", [("path", 1048576)])
+        fs.add_lockspace("lockspace", 1, "path")
+        fd = fs.register()
+        fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
+        fs.rem_lockspace("lockspace", 1, "path", **{"async": True})
+
+        # Fake sanlock return special None value when sanlock is in process of
+        # releasing host_id.
+        acquired = fs.inq_lockspace("lockspace", 1, "path")
+        self.assertIsNone(acquired, "locksapce is not being released")
+
+        # Finish rem_lockspace.
+        fs.complete_async("lockspace")
+
+        # Lock shouldn't be hold any more.
+        acquired = fs.inq_lockspace("lockspace", 1, "path")
+        self.assertIsNotNone(acquired, "lockspace still acquired")
+        self.assertFalse(acquired, "lockspace still acquired")
 
     def test_inq_lockspace_acquired(self):
         fs = FakeSanlock()
@@ -263,6 +285,18 @@ class TestFakeSanlock(VdsmTestCase):
         fd = fs.register()
         fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
         fs.release("lockspace", "resource", [("path", 1048576)], slkfd=fd)
+        owners = fs.read_resource_owners(
+            "lockspace", "resource", [("path", 1048576)])
+        self.assertEqual(owners, [], "resource still has owners")
+
+    def test_read_resource_owners_lockspace_removed(self):
+        fs = FakeSanlock()
+        fs.write_resource("lockspace", "resource", [("path", 1048576)])
+        fs.add_lockspace("lockspace", 1, "path")
+        fd = fs.register()
+        fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
+        fs.release("lockspace", "resource", [("path", 1048576)], slkfd=fd)
+        fs.rem_lockspace("lockspace", 1, "path")
         owners = fs.read_resource_owners(
             "lockspace", "resource", [("path", 1048576)])
         self.assertEqual(owners, [], "resource still has owners")
