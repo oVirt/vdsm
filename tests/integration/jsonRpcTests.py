@@ -181,7 +181,7 @@ class JsonRpcServerTests(TestCaseBase):
                 self.assertEqual(
                     cm.exception.code,
                     JsonRpcMethodNotFoundError(method=missing_method).code)
-                self.assertIn(missing_method, cm.exception.message)
+                self.assertIn(missing_method, cm.exception.msg)
 
     @permutations(PERMUTATIONS)
     def testMethodBadParameters(self, ssl):

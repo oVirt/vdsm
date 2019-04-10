@@ -64,10 +64,10 @@ class ServiceError(UsageError):
     def __init__(self, message, out=None, err=None):
         self.out = out
         self.err = err
-        self.message = message
+        self.msg = message
 
     def __str__(self):
-        s = ["%s: %s" % (self.__class__.__name__, self.message)]
+        s = ["%s: %s" % (self.__class__.__name__, self.msg)]
         if self.out:
             s.append(self.out)
         if self.err:

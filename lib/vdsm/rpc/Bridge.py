@@ -41,10 +41,10 @@ except ImportError:
 class VdsmError(Exception):
     def __init__(self, code, message):
         self.code = code
-        self.message = message
+        self.msg = message
 
     def __str__(self):
-        return '[error %d] %s' % (self.code, self.message)
+        return '[error %d] %s' % (self.code, self.msg)
 
 
 class InvalidCall(Exception):

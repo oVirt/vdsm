@@ -97,10 +97,10 @@ class AckMode(object):
 class StompError(RuntimeError):
     def __init__(self, frame, message):
         self.frame = frame
-        self.message = message
+        self.msg = message
 
     def __str__(self):
-        return "Error in frame %s: %s" % (self.frame, self.message)
+        return "Error in frame %s: %s" % (self.frame, self.msg)
 
 
 class Disconnected(RuntimeError):

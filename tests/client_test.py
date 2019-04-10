@@ -160,7 +160,7 @@ class VdsmClientTests(VdsmTestCase):
 
             self.assertEqual(
                 ex.exception.code, JsonRpcMethodNotFoundError("").code)
-            self.assertIn("missingMethod", ex.exception.message)
+            self.assertIn("missingMethod", ex.exception.msg)
 
     @skipif(six.PY3, "Needs porting to python 3")
     def test_missing_namespace(self):

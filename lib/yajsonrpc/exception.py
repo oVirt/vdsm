@@ -24,40 +24,40 @@ class JsonRpcErrorBase(exception.ContextException):
 
 class JsonRpcParseError(JsonRpcErrorBase):
     code = -32700
-    message = ("Invalid JSON was received by the server. "
-               "An error occurred on the server while parsing "
-               "the JSON text.")
+    msg = ("Invalid JSON was received by the server. "
+           "An error occurred on the server while parsing "
+           "the JSON text.")
 
 
 class JsonRpcInvalidRequestError(JsonRpcErrorBase):
     code = -32600
-    message = "Invalid request"
+    msg = "Invalid request"
 
 
 class JsonRpcMethodNotFoundError(JsonRpcErrorBase):
     code = -32601
-    message = ("The method does not exist or is not "
-               "available")
+    msg = ("The method does not exist or is not "
+           "available")
 
 
 class JsonRpcInvalidParamsError(JsonRpcErrorBase):
     code = -32602
-    message = "Invalid method parameter(s)"
+    msg = "Invalid method parameter(s)"
 
 
 class JsonRpcInternalError(JsonRpcErrorBase):
     code = -32603
-    message = "Internal JSON-RPC error"
+    msg = "Internal JSON-RPC error"
 
 
 class JsonRpcBindingsError(JsonRpcErrorBase):
     code = -32604
-    message = "Missing bindings for JSON-RPC."
+    msg = "Missing bindings for JSON-RPC."
 
 
 class JsonRpcNoResponseError(JsonRpcErrorBase):
     code = -32605
-    message = "No response for JSON-RPC request"
+    msg = "No response for JSON-RPC request"
 
 
 class JsonRpcServerError(JsonRpcErrorBase):
@@ -71,7 +71,7 @@ class JsonRpcServerError(JsonRpcErrorBase):
 
     def __init__(self, code, message):
         self.code = code
-        self.message = message
+        self.msg = message
 
     @classmethod
     def from_dict(cls, d):
