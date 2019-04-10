@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import libvirt
+import pytest
 
 from vdsm.virt import virdomain
 from vdsm.virt import xmlconstants
@@ -145,3 +146,60 @@ class TestNotifying(VdsmTestCase):
             # any method is fine
             self.dom.state(0)
         self.assertIs(self.elapsed, None)
+
+
+class TestExpose:
+
+    def test_expose(self):
+        dom = FakeDom()
+        f = VMFreezer(FakeVM(dom))
+        f.fsFreeze(["sda"])
+        f.fsThaw(["sda"])
+
+        assert dom.calls == [
+            ("fsFreeze", ["sda"], 0),
+            ("fsThaw", ["sda"], 0),
+        ]
+
+    def test_wrapping(self):
+        dom = FakeDom()
+        f = VMFreezer(FakeVM(dom))
+        orig = libvirt.virDomain.fsFreeze
+        for name in "__doc__", "__name__":
+            assert getattr(f.fsFreeze, name) == getattr(orig, name)
+
+    def test_replace_dom(self):
+        dom = FakeDom()
+        vm = FakeVM(dom)
+        f = VMFreezer(vm)
+
+        # Simulate disconnection...
+        vm._dom = virdomain.Disconnected("dom-id")
+
+        with pytest.raises(virdomain.NotConnectedError):
+            f.fsFreeze()
+
+
+@virdomain.expose("fsFreeze", "fsThaw")
+class VMFreezer(object):
+
+    def __init__(self, vm):
+        self._vm = vm
+
+
+class FakeVM(object):
+
+    def __init__(self, dom):
+        self._dom = dom
+
+
+class FakeDom(object):
+
+    def __init__(self):
+        self.calls = []
+
+    def fsFreeze(self, mountpoints=None, flags=0):
+        self.calls.append(('fsFreeze', mountpoints, flags))
+
+    def fsThaw(self, mountpoints=None, flags=0):
+        self.calls.append(('fsThaw', mountpoints, flags))
