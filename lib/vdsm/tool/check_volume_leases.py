@@ -179,7 +179,7 @@ def _repair(broken_leases):
                 total += 1
                 vol_lease = broken_leases[sd_uuid][img_uuid][vol_uuid]
                 try:
-                    sanlock.init_resource(
+                    sanlock.write_resource(
                         sd_uuid,
                         vol_uuid,
                         [(vol_lease['path'], vol_lease['offset'])])

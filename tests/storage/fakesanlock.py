@@ -310,8 +310,8 @@ class FakeSanlock(object):
 
         return [self.hosts[host_id]]
 
-    def init_lockspace(self, lockspace, path, offset=0, max_hosts=0,
-                       num_hosts=0, use_aio=False):
+    def write_lockspace(self, lockspace, path, offset=0, max_hosts=0,
+                        iotimeout=0):
         """
         Initialize a device to be used as sanlock lock space.
         In our case, we just create empty dictionary for a lockspace.
@@ -320,14 +320,8 @@ class FakeSanlock(object):
             "path": path,
             "offset": offset,
             "max_hosts": max_hosts,
-            "num_hosts": num_hosts,
-            "use_aio": use_aio,
+            "iotimeout": 0,
         }
 
         # Real sanlock just overwrites lockspace if it was already initialized.
         self.spaces[lockspace] = ls
-
-    def init_resource(self, lockspace, resource, disks, max_hosts=0,
-                      num_hosts=0, use_aio=True):
-        self.write_resource(lockspace, resource, disks, max_hosts=max_hosts,
-                            num_hosts=num_hosts)

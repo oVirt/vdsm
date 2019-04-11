@@ -292,7 +292,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         leasePath = cls.leaseVolumePath(volPath)
         oop.getProcessPool(sdUUID).truncateFile(leasePath, LEASE_FILEOFFSET)
         cls.file_setrw(leasePath, rw=True)
-        sanlock.init_resource(sdUUID, volUUID, [(leasePath,
+        sanlock.write_resource(sdUUID, volUUID, [(leasePath,
                                                  LEASE_FILEOFFSET)])
 
     def _shareLease(self, dstImgPath):

@@ -239,8 +239,9 @@ def initSANLock(sdUUID, idsPath, lease):
     initSANLockLog.debug("Initializing SANLock for domain %s", sdUUID)
 
     try:
-        sanlock.init_lockspace(sdUUID, idsPath)
-        sanlock.init_resource(sdUUID, lease.name, [(lease.path, lease.offset)])
+        sanlock.write_lockspace(sdUUID, idsPath)
+        sanlock.write_resource(
+            sdUUID, lease.name, [(lease.path, lease.offset)])
     except sanlock.SanlockException:
         initSANLockLog.error("Cannot initialize SANLock for domain %s",
                              sdUUID, exc_info=True)

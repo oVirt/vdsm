@@ -965,7 +965,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
     def create_volume_lease(self, slot, vol_id):
         path = self.getLeasesFilePath()
         offset = self.volume_lease_offset(slot)
-        sanlock.init_resource(self.sdUUID, vol_id, [(path, offset)])
+        sanlock.write_resource(self.sdUUID, vol_id, [(path, offset)])
 
     def volume_lease_offset(self, slot):
         return (RESERVED_LEASES + slot) * self.logBlkSize * sd.LEASE_BLOCKS
