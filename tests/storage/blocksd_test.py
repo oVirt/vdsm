@@ -165,7 +165,8 @@ def test_incorrect_version_and_block_rejected(version, block_size, alignment):
 @xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("domain_version", [3, 4, 5])
-def test_create_domain_metadata(tmp_storage, tmp_repo, domain_version):
+def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
+                                domain_version):
     sd_uuid = str(uuid.uuid4())
     domain_name = "loop-domain"
 
