@@ -39,6 +39,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_add_lockspace_sync(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path")
         ls = fs.spaces["lockspace"]
         self.assertEqual(ls["host_id"], 1)
@@ -49,6 +50,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_add_lockspace_options(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path", offset=42)
         fs.add_lockspace("lockspace", 1, "path", offset=42, iotimeout=10)
         ls = fs.spaces["lockspace"]
         self.assertEqual(ls["offset"], 42)
@@ -56,6 +58,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_add_lockspace_async(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path", **{'async': True})
         ls = fs.spaces["lockspace"]
         self.assertEqual(ls["iotimeout"], 0)
@@ -63,12 +66,14 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_rem_lockspace_sync(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path")
         fs.rem_lockspace("lockspace", 1, "path")
         self.assertNotIn("host_id", fs.spaces["lockspace"])
 
     def test_rem_lockspace_async(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path")
         fs.rem_lockspace("lockspace", 1, "path", **{'async': True})
         ls = fs.spaces["lockspace"]
@@ -98,18 +103,21 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_inq_lockspace_acquired(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path")
         acquired = fs.inq_lockspace("lockspace", 1, "path")
         self.assertTrue(acquired, "lockspace not acquired")
 
     def test_inq_lockspace_acquring_no_wait(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path", **{'async': True})
         acquired = fs.inq_lockspace("lockspace", 1, "path")
         self.assertIsNone(acquired, "lockspace is ready")
 
     def test_inq_lockspace_acquiring_wait(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path", **{'async': True})
 
         t = concurrent.thread(fs.complete_async, args=("lockspace",))
@@ -122,6 +130,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_inq_lockspace_released(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path")
         fs.rem_lockspace("lockspace", 1, "path")
         acquired = fs.inq_lockspace("lockspace", 1, "path")
@@ -129,6 +138,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_inq_lockspace_releasing_no_wait(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path")
         fs.rem_lockspace("lockspace", 1, "path", **{'async': True})
         acquired = fs.inq_lockspace("lockspace", 1, "path")
@@ -136,6 +146,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_inq_lockspace_releasing_wait(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path")
         fs.rem_lockspace("lockspace", 1, "path", **{'async': True})
 
@@ -190,6 +201,7 @@ class TestFakeSanlock(VdsmTestCase):
     # Acquiring and releasing resources
     def test_acquire(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path")
         fd = fs.register()
@@ -209,6 +221,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_acquire_lockspace_adding(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path", **{'async': True})
         fd = fs.register()
@@ -218,6 +231,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_acquire_an_acquired_resource(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path")
         fd = fs.register()
@@ -230,6 +244,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_release(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path")
         fd = fs.register()
@@ -243,6 +258,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_release_not_acquired(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path")
         fd = fs.register()
@@ -258,6 +274,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_read_resource_owners_no_owner(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path")
         owners = fs.read_resource_owners("lockspace",
@@ -267,6 +284,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_read_resource_owners(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path")
         fd = fs.register()
@@ -280,6 +298,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_read_resource_owners_resource_released(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path")
         fd = fs.register()
@@ -291,6 +310,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_read_resource_owners_lockspace_removed(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path")
         fd = fs.register()
@@ -303,6 +323,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_get_hosts(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path")
         host = fs.get_hosts("lockspace", 1)
         assert host[0]["id"] == 1
@@ -316,6 +337,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_add_lockspace_generation_increase(selfs):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path")
         fs.rem_lockspace("lockspace", 1, "path")
@@ -330,11 +352,21 @@ class TestFakeSanlock(VdsmTestCase):
         fs = FakeSanlock()
 
         assert lockspace not in fs.spaces
-        fs.init_lockspace(lockspace, "path")
-        assert fs.spaces[lockspace] == {}
+
+        fs.init_lockspace(lockspace, "/var/tmp/test", offset=0, max_hosts=1)
+
+        expected = {
+            "path": "/var/tmp/test",
+            "offset": 0,
+            "max_hosts": 1,
+            "num_hosts": 0,
+            "use_aio": False,
+        }
+        assert expected == fs.spaces[lockspace]
 
     def test_init_resource(self):
         fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
         fs.init_resource("lockspace", "resource", [("path", 1048576)])
         info = fs.read_resource("path", 1048576)
         expected = {"resource": "resource",
@@ -343,10 +375,30 @@ class TestFakeSanlock(VdsmTestCase):
                     "acquired": False}
         self.assertEqual(info, expected)
 
-    @pytest.mark.xfail(
-        reason="Init lockspace is not forced in fake sanlock yet")
     def test_add_without_init_lockpsace(self):
         fs = FakeSanlock()
         with pytest.raises(fs.SanlockException) as e:
             fs.add_lockspace("lockspace", 1, "path")
-        assert e.value.errno == errno.ENOENT
+        assert e.value.errno == fs.SANLK_LEADER_MAGIC
+
+    def test_add_lockspace_twice(self):
+        fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
+        fs.add_lockspace("lockspace", 1, "path")
+        with pytest.raises(fs.SanlockException) as e:
+            fs.add_lockspace("lockspace", 1, "path")
+        assert e.value.errno == errno.EEXIST
+
+    def test_add_lockspace_wrong_path(self):
+        fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
+        with pytest.raises(fs.SanlockException) as e:
+            fs.add_lockspace("lockspace", 1, "path2", )
+        assert e.value.errno == errno.EINVAL
+
+    def test_add_lockspace_wrong_offset(self):
+        fs = FakeSanlock()
+        fs.init_lockspace("lockspace", "path")
+        with pytest.raises(fs.SanlockException) as e:
+            fs.add_lockspace("lockspace", 1, "path", offset=42)
+        assert e.value.errno == errno.EINVAL

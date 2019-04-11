@@ -60,6 +60,20 @@ class FakeSanlock(object):
         self.errors = {}
         self.hosts = {}
 
+    def check_lockspace_initialized(self, lockspace):
+        # TODO: check that sanlock was initialized may need to be added also
+        # into other places beside add_lockspace. Find all relevant places.
+        if lockspace not in self.spaces:
+            raise self.SanlockException(
+                self.SANLK_LEADER_MAGIC, "Sanlock lockspace add failure",
+                "Lease does not exist on storage")
+
+    def check_lockspace_location(self, lockspace, path, offset):
+        if lockspace["path"] != path or lockspace["offset"] != offset:
+            raise self.SanlockException(
+                errno.EINVAL, "Sanlock lockspace add failure",
+                "Invalid argument")
+
     @maybefail
     def add_lockspace(self, lockspace, host_id, path, offset=0, iotimeout=0,
                       **kwargs):
@@ -70,15 +84,14 @@ class FakeSanlock(object):
         timeout for the specific lockspace, overriding the default value
         (see the sanlock daemon parameter -o).
         """
-        # TODO: check, if sanlock was initalized. If not, throw exception:
-        #
-        #   if lockspace not in self.spaces:
-        #       raise self.SanlockException(errno.ENOENT,
-        #                                   "Sanlock lockspace add failure",
-        #                                   "No such file or directory")
-        #
-        # Such check may be added also into other places. Find all relevant
-        # places is also TBD.
+
+        self.check_lockspace_initialized(lockspace)
+        ls = self.spaces[lockspace]
+        self.check_lockspace_location(ls, path, offset)
+
+        if "host_id" in ls:
+            raise self.SanlockException(
+                errno.EEXIST, "Sanlock lockspace add failure", "File exists")
 
         wait = not kwargs.get('async', False)
 
@@ -94,12 +107,11 @@ class FakeSanlock(object):
 
         # Mark the locksapce as not ready, so callers of inq_lockspace will
         # wait until it is added.
-        ls = {"host_id": host_id,
-              "path": path,
-              "offset": offset,
-              "iotimeout": iotimeout,
-              "ready": threading.Event()}
-        self.spaces[lockspace] = ls
+        ls["host_id"] = host_id
+        # TODO: check the real sanlock semantics if iotimeout is different from
+        # iotimeout provided during initialization.
+        ls["iotimeout"] = iotimeout
+        ls["ready"] = threading.Event()
 
         def complete():
             # Wake up threads waiting on inq_lockspace()
@@ -297,7 +309,16 @@ class FakeSanlock(object):
         Initialize a device to be used as sanlock lock space.
         In our case, we just create empty dictionary for a lockspace.
         """
-        self.spaces[lockspace] = {}
+        ls = {
+            "path": path,
+            "offset": offset,
+            "max_hosts": max_hosts,
+            "num_hosts": num_hosts,
+            "use_aio": use_aio,
+        }
+
+        # Real sanlock just overwrites lockspace if it was already initialized.
+        self.spaces[lockspace] = ls
 
     def init_resource(self, lockspace, resource, disks, max_hosts=0,
                       num_hosts=0, use_aio=True):
