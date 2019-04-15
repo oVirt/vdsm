@@ -268,7 +268,7 @@ class FakeSanlock(object):
         res = self.resources[key]
 
         # The lease is not owned, return empty list
-        if res.get("host_id") is None:
+        if res.get("host_id", 0) == 0:
             return []
 
         # The actual sanlock also returns timestamp and host flags but we do

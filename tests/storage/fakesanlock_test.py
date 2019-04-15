@@ -256,18 +256,16 @@ class TestFakeSanlock(VdsmTestCase):
         assert owners[0]["host_id"] == 1
         assert owners[0]["generation"] == 0
 
-    def test_read_resource_owners_no_lockspace(self):
+    def test_read_resource_owners_resource_released(self):
         fs = FakeSanlock()
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path")
         fd = fs.register()
         fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
-        fs.rem_lockspace("lockspace", 1, "path")
-        with pytest.raises(fs.SanlockException) as e:
-            fs.read_resource_owners("lockspace",
-                                    "resource",
-                                    [("path", 1048576)])
-        assert e.value.errno == errno.ENOSPC
+        fs.release("lockspace", "resource", [("path", 1048576)], slkfd=fd)
+        owners = fs.read_resource_owners(
+            "lockspace", "resource", [("path", 1048576)])
+        self.assertEqual(owners, [], "resource still has owners")
 
     def test_get_hosts(self):
         fs = FakeSanlock()
