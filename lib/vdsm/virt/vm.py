@@ -4296,7 +4296,7 @@ class Vm(object):
         return response.success()
 
     def start_backup(self, backup_id, disks,
-                     from_checkpoint_id, to_checkpoint_id):
+                     from_checkpoint_id=None, to_checkpoint_id=None):
         raise exception.MethodNotImplemented()
 
     def stop_backup(self, backup_id):
