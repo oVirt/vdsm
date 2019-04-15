@@ -277,8 +277,15 @@ class FakeSanlock(object):
         try:
             self.spaces[lockspace]
         except KeyError:
+            # Sanlock can return two kind of error:
+            #  - EINVAL in case device wasn't initialized
+            #  - EMSGSIZE in case device doesn't exists
+            # As we don't do checks that device exists (or have an option to
+            # simulate it (doesn't) exists), assume here that device exists and
+            # raise EINVAL error.
             raise self.SanlockException(
-                errno.ENOSPC, "No such lockspace %r" % lockspace)
+                errno.EINVAL, "Unable to read resource owners",
+                "Invalid argument")
 
         key = disks[0]
         res = self.resources[key]

@@ -272,6 +272,14 @@ class TestFakeSanlock(VdsmTestCase):
             fs.release("lockspace", "resource", [("path", 1048576)])
         assert e.value.errno == errno.ENOSPC
 
+    def test_read_resource_owners_lockspace_not_initialized(self):
+        fs = FakeSanlock()
+        fs.write_resource("lockspace", "resource", [("path", 1048576)])
+        with pytest.raises(fs.SanlockException) as e:
+            fs.read_resource_owners(
+                "lockspace", "resource", [("path", 1048576)])
+        assert e.value.errno == errno.EINVAL
+
     def test_read_resource_owners_no_owner(self):
         fs = FakeSanlock()
         fs.init_lockspace("lockspace", "path")
