@@ -7174,6 +7174,13 @@ types:
                 - int
             added: '4.3'
 
+        -   defaultvalue: null
+            description: Block sizes allowed on this host.
+            name: supported_block_sizes
+            type:
+                - int
+            added: '4.3'
+
         type: object
 
     VdsmNetworkCapabilities: &VdsmNetworkCapabilities
