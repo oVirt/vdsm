@@ -329,8 +329,6 @@ def is_vnc_secure(vmParams, log):
     is_vnc_secure returns False in such case (i.e. no password and no SASL),
     otherwise VNC connection is considered secure.
     """
-    if 'xml' not in vmParams:
-        return True
     parsed = xmlutils.fromstring(vmParams['xml'])
     graphics = vmxml.find_all(parsed, 'graphics')
     for g in graphics:

@@ -221,6 +221,9 @@ class DynamicBoundedSemaphore(object):
 
 
 def has_xml_configuration(params):
+    # TODO: Remove this method.
+    return True
+
     if 'xml' in params:
         # fresh startup from Engine >= 4.2
         return True

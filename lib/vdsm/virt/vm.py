@@ -347,7 +347,7 @@ class Vm(object):
         self._src_domain_xml = params.get('_srcDomXML')
         if self._src_domain_xml is not None:
             self._domain = DomainDescriptor(self._src_domain_xml)
-        elif 'xml' in params:
+        elif True:  # TODO: remove the else part
             self._domain = DomainDescriptor(params['xml'])
         else:
             # If no direct XML representation is available then use a minimal,
@@ -385,7 +385,7 @@ class Vm(object):
         self._blockJobs = {}
         # REQUIRED_FOR: Engine < 4.2.6
         self._mdev_type = params.get('custom', {}).get('mdev_type')
-        if 'xml' in self.conf:
+        if True:  # TODO: remove the else part
             self._md_desc = metadata.Descriptor.from_xml(self.conf['xml'])
             self._init_from_metadata()
         else:
@@ -421,7 +421,7 @@ class Vm(object):
         self._guestEventTime = 0
         self._guestCpuRunning = False
         self._guestCpuLock = TimedAcquireLock(self.id)
-        if recover and 'xml' in self.conf:
+        if recover:
             with self._md_desc.values() as md:
                 if 'startTime' in md:
                     self._startTime = md['startTime']
@@ -1010,7 +1010,7 @@ class Vm(object):
         time.sleep(1)
 
     def preparePaths(self):
-        if 'xml' in self.conf:
+        if True:  # TODO: remove the else part
             drives = vmdevices.common.storage_device_params_from_domain_xml(
                 self.id, self.domain, self._md_desc, self.log)
         else:
@@ -1717,6 +1717,11 @@ class Vm(object):
     # REQUIRED_FOR: oVirt <= 4.1
     # DEPRECATED_SINCE: oVirt >= 4.2
     def status(self, fullStatus=True):
+        # TODO: Update for 4.2+: fullStatus=True is no longer used by
+        # Engine directly, but it is used by hot plugs and at least
+        # `devices' must be present to keep some API calls working on
+        # the Engine side.
+
         # used by vdsm.API.Global.getVMList
         if not fullStatus:
             return {'vmId': self.id, 'status': self.lastStatus,
@@ -1734,7 +1739,7 @@ class Vm(object):
             status['arch'] = self.arch
             status['memGuaranteedSize'] = self._mem_guaranteed_size_mb
             ret = utils.picklecopy(status)
-            if 'xml' in self.conf:
+            if True:
                 # If Vdsm 4.2 runs in a 4.1 environment, it will receive
                 # and keep the vm.conf received by Engine (or source side of
                 # migration) up until it is restarted. The recovery uses
@@ -2262,7 +2267,7 @@ class Vm(object):
             hugepages.alloc(to_allocate, self.hugepagesz)
 
     def _buildDomainXML(self):
-        if 'xml' in self.conf:
+        if True:  # TODO: remove the else part
             # Do DOM-dependent xml transformations
             dom = xmlutils.fromstring(self.conf['xml'])
 
@@ -2576,7 +2581,7 @@ class Vm(object):
             dev.clear()
 
     def _dom_vcpu_setup(self):
-        if 'xml' not in self.conf:
+        if False:  # TODO: Remove.
             nice = int(self.conf.get('nice', '0'))
             nice = max(min(nice, 19), 0)
 
@@ -2618,7 +2623,7 @@ class Vm(object):
                     done.append(dev_object)
 
     def _make_devices(self):
-        if 'xml' not in self.conf:
+        if False:  # TODO: Remove.
             devices = self._make_devices_from_dict()
         else:
             disk_objs = self._perform_host_local_adjustment()
@@ -2744,13 +2749,8 @@ class Vm(object):
         self.log.debug("Overridden %d legacy drive configurations",
                        len(disk_params))
 
+    # TODO: Remove this method.
     def _build_device_conf_from_objects(self, dev_map):
-        # REQUIRED_FOR: vdsm < 4.2
-        # We need to create self.conf['devices'] to be able to migrate to hosts
-        # running Vdsm < 4.2.
-        if 'xml' not in self.conf:
-            return []
-
         devices_conf = []
         for dev_class, dev_objs in dev_map.items():
             if dev_class == hwclass.DISK:
@@ -2977,7 +2977,7 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def hotplugNic(self, params):
-        if 'xml' in params:
+        if True:  # TODO: remove the else part
             xml = params['xml']
             nic = vmdevices.common.dev_from_xml(self, xml)
             dom = xmlutils.fromstring(xml)
@@ -3032,7 +3032,7 @@ class Vm(object):
         except Exception as e:
             self.log.exception("setPortMirroring for network %s failed",
                                network)
-            if 'xml' in params:
+            if True:  # TODO: remove the else part
                 nic_element = xmlutils.fromstring(nicXml)
                 vmxml.replace_first_child(dom_devices, nic_element)
                 hotunplug_params = {'xml': xmlutils.tostring(dom)}
@@ -3315,7 +3315,7 @@ class Vm(object):
     def hotunplugNic(self, params, port_mirroring=None):
         xml = params.get('xml')
 
-        if xml is not None:
+        if True:  # TODO: remove the else part
             try:
                 nic = lookup.device_from_xml_alias(
                     self._devices[hwclass.NIC][:], xml)
@@ -3408,7 +3408,7 @@ class Vm(object):
     def hotunplugMemory(self, params):
         xml = params.get('xml')
         try:
-            if xml is not None:
+            if True:  # TODO: remove the else part
                 device = lookup.device_from_xml_alias(
                     self._devices[hwclass.MEMORY][:],
                     xml)
@@ -3801,7 +3801,7 @@ class Vm(object):
     @api.guard(_not_migrating)
     def hotplugDisk(self, params):
         xml = params.get('xml')
-        if xml is None:
+        if False:  # TODO: remove
             diskParams = params.get('drive', {})
         else:
             _cls, elem, meta = vmdevices.common.dev_elems_from_xml(self, xml)
@@ -3855,7 +3855,7 @@ class Vm(object):
         diskParams = {}
         drive = None
         xml = params.get('xml')
-        if xml is not None:
+        if True:  # TODO: remove the else part
             try:
                 drive = lookup.device_from_xml_alias(
                     self._devices[hwclass.DISK][:], xml)
@@ -4768,7 +4768,7 @@ class Vm(object):
         """
         del drive.diskReplicate
 
-        if 'xml' in self.conf:
+        if True:  # TODO: remove the else part
             with self._confLock:
                 with self._md_desc.device(
                         devtype=drive.type, name=drive.name
@@ -4782,7 +4782,7 @@ class Vm(object):
                 del conf['diskReplicate']
 
     def _persist_drive_replica(self, drive, replica):
-        if 'xml' in self.conf:
+        if True:  # TODO: remove the else part
             with self._confLock:
                 with self._md_desc.device(
                         devtype=drive.type, name=drive.name

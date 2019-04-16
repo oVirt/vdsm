@@ -1136,11 +1136,6 @@ class VncSecureTest(TestCaseBase):
     PASSWD_VALID_EMPTY = 'passwdValidTo = ""'
     PASSWD_VALID_PRESENT = 'passwdValidTo = "1970-01-01T00:00:01"'
 
-    def test_no_xml(self):
-        self.assertTrue(graphics.is_vnc_secure({}, self.log))
-        self.assertTrue(graphics.is_vnc_secure({'other': 'something'},
-                                               self.log))
-
     def test_no_vnc(self):
         self.assertTrue(graphics.is_vnc_secure({'xml': self.XML_NO_VNC},
                                                self.log))

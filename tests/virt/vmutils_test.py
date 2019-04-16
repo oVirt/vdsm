@@ -232,44 +232,6 @@ XML_TEMPLATE = u'''<domain type='kvm' id='1'>
 </domain>'''
 
 
-@expandPermutations
-class TestHasXmlConfiguration(TestCaseBase):
-
-    @permutations([
-        # tag, expected_result
-        ['xml', True],
-        ['_srcDomXML', False],
-    ])
-    def test_no_metadata(self, tag, expected_result):
-        test_xml = u'''<domain type='kvm' id='1'>
-          <name>a0_41</name>
-          <uuid>13070562-2ee7-4092-a746-7975ff5b3993</uuid>
-        </domain>'''
-        params = {tag: test_xml}
-        self.assertEqual(
-            utils.has_xml_configuration(params),
-            expected_result)
-
-    def test_detects_creation(self):
-        test_xml = XML_TEMPLATE.format(cluster_version='')
-        params = {'xml': test_xml}
-        self.assertTrue(utils.has_xml_configuration(params))
-
-    @permutations([
-        # cluster_version, expected_result
-        ('', False),
-        ('<clusterVersion>4.2</clusterVersion>', True),
-        ('<ovirt-vm:clusterVersion>4.2</ovirt-vm:clusterVersion>', True),
-        ('<ovirt-vm:clusterVersion>4.3</ovirt-vm:clusterVersion>', True),
-    ])
-    def test_detects_migration(self, cluster_version, expected_result):
-        test_xml = XML_TEMPLATE.format(cluster_version=cluster_version)
-        params = {'_srcDomXML': test_xml}
-        self.assertEqual(
-            utils.has_xml_configuration(params),
-            expected_result)
-
-
 class TestTimedAcquireLock(TestCaseBase):
 
     def setUp(self):
