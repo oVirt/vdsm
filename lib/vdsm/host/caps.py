@@ -39,12 +39,14 @@ from vdsm.common import dsaversion
 from vdsm.common import hooks
 from vdsm.common import hostdev
 from vdsm.common import supervdsm
+from vdsm.common.compat import Unsupported
 from vdsm.config import config
 from vdsm.host import rngsources
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import hba
 from vdsm.storage import managedvolume
+from vdsm.storage.compat import sanlock
 
 try:
     import ovirt_hosted_engine_ha.client.client as haClient
@@ -153,6 +155,12 @@ def get():
 
     # Which domain versions are supported by this host.
     caps["domain_versions"] = sc.DOMAIN_VERSIONS
+
+    # Supported block sizes.
+    try:
+        caps["supported_block_sizes"] = sanlock.SECTOR_SIZE
+    except Unsupported:
+        caps["supported_block_sizes"] = (sc.BLOCK_SIZE_512,)
 
     return caps
 
