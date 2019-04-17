@@ -4301,19 +4301,24 @@ class Vm(object):
         self.log.info("%d guest filesystems thawed", thawed)
         return response.success()
 
+    @api.guard(_not_migrating)
     def start_backup(self, backup_id, disks,
                      from_checkpoint_id=None, to_checkpoint_id=None):
         raise exception.MethodNotImplemented()
 
+    @api.guard(_not_migrating)
     def stop_backup(self, backup_id):
         raise exception.MethodNotImplemented()
 
+    @api.guard(_not_migrating)
     def backup_info(self, backup_id):
         raise exception.MethodNotImplemented()
 
+    @api.guard(_not_migrating)
     def delete_checkpoints(self, checkpoint_ids):
         raise exception.MethodNotImplemented()
 
+    @api.guard(_not_migrating)
     def redefine_checkpoints(self, checkpoints):
         raise exception.MethodNotImplemented()
 
