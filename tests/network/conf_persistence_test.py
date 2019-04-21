@@ -214,11 +214,11 @@ class TransactionTests(TestCaseBase):
                 _config.set_device(DEVICE, DEVICE_ATTRIBUTES)
                 raise TestException()
 
-        diff, ex_type, _ = roi.exception.args
+        diff = roi.exception.diff
         self.assertEqual(diff.networks[NETWORK], {'remove': True})
         self.assertEqual(diff.bonds[BONDING], {'remove': True})
         self.assertEqual(diff.devices, {})
-        self.assertEqual(ex_type, TestException)
+        self.assertEqual(roi.exception.exc_type, TestException)
         self.assertFalse(os.path.exists(self.net_path))
         self.assertFalse(os.path.exists(self.bond_path))
         self.assertFalse(os.path.exists(self.device_path))

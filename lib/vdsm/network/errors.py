@@ -64,7 +64,15 @@ class RollbackIncomplete(Exception):
     up.
     Note that it is never raised by the default ifcfg configurator.
     """
-    pass
+    def __init__(self, diff, exc_type, value):
+        self.diff = diff
+        self.exc_type = exc_type
+        self.value = value
+        super(RollbackIncomplete, self).__init__()
+
+    def __str__(self):
+        return '{} : diff={} exc_type={} value={}'.format(
+            self.__class__.__name__, self.diff, self.exc_type, self.value)
 
 
 def _get_message(args):

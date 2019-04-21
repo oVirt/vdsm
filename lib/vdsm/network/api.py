@@ -139,13 +139,12 @@ def _rollback():
     try:
         yield
     except RollbackIncomplete as roi:
-        diff, excType, value = roi
         tb = sys.exc_info()[2]
         try:
             # diff holds the difference between RunningConfig on disk and
             # the one in memory with the addition of {'remove': True}
             # hence, the next call to setupNetworks will perform a cleanup.
-            setupNetworks(diff.networks, diff.bonds,
+            setupNetworks(roi.diff.networks, roi.diff.bonds,
                           {'inRollback': True, 'connectivityCheck': 0})
         except Exception:
             logging.error('Memory rollback failed.', exc_info=True)
@@ -154,7 +153,7 @@ def _rollback():
             # exception that might have happened on rollback is
             # properly logged and derived from actions to respond to
             # the original exception.
-            six.reraise(excType, value, tb)
+            six.reraise(roi.exc_type, roi.value, tb)
 
 
 def setupNetworks(networks, bondings, options):
