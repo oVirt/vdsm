@@ -585,6 +585,43 @@ def test_extended_snapshot(
     assert int(actual["capacity"]) == 2 * SPARSE_VOL_SIZE
 
 
+@pytest.mark.parametrize("domain_version", [4, 5])
+def test_volume_metadata_capacity_corrupted(
+        tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
+        fake_task, local_fallocate, domain_version):
+    # This test verifies a flow in which volume metadata capacity is corrupted.
+    # This can happen e.g. a result of bug https://bugzilla.redhat.com/1700623.
+    # To simulate the corrupted data, we corrupt it manually in the test.
+    dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        size=2 * SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=vol_uuid,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        initialSize=None)
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+
+    # corrupt the metadata capacity manually
+    md = vol.getMetadata()
+    md.capacity = SPARSE_VOL_SIZE
+    vol.setMetadata(md)
+
+    # during preparation of the volume, matadata capacity should be fixed
+    vol.prepare()
+
+    actual = vol.getInfo()
+    assert int(actual["capacity"]) == 2 * SPARSE_VOL_SIZE
+
+
 def verify_volume_file(
         path, format, virtual_size, qemu_info, backing_file=None):
     assert qemu_info['format'] == format

@@ -439,6 +439,11 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
 def test_extended_snapshot(
         tmp_storage, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
         fake_sanlock, domain_version):
+    # This test was added to verify fix for https://bugzilla.redhat.com/1700623
+    # As a result of this bug, there can be volumes with corrupted metadata
+    # capacity. The metadata of such volume should be fixed when the volume is
+    # prepared. As the creation of tmp storage for block SD is time consuming,
+    # let's test this flow also in this test.
     sd_uuid = str(uuid.uuid4())
 
     dev = tmp_storage.create_device(20 * 1024 ** 3)
@@ -494,6 +499,18 @@ def test_extended_snapshot(
     # Verify volume sizes obtained from metadata
     actual_parent = parent_vol.getInfo()
     assert int(actual_parent["capacity"]) == constants.GIB
+
+    actual = vol.getInfo()
+    assert int(actual["capacity"]) == 2 * constants.GIB
+
+    # Now test the flow in which metadata capacity is corrupted.
+    # Corrupt the metadata capacity manually.
+    md = vol.getMetadata()
+    md.capacity = constants.GIB
+    vol.setMetadata(md)
+
+    # During preparation of the volume, matadata capacity should be fixed.
+    vol.prepare()
 
     actual = vol.getInfo()
     assert int(actual["capacity"]) == 2 * constants.GIB
