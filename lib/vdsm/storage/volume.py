@@ -1169,9 +1169,6 @@ class Volume(object):
                     volParent.share(imgPath)
                     volParent = cls(repoPath, sdUUID, imgUUID, srcVolUUID)
 
-                # Override the size with the size of the parent
-                size = volParent.getSize()
-
         except se.StorageException:
             cls.log.error("Unexpected error", exc_info=True)
             raise
