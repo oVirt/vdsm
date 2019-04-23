@@ -28,6 +28,7 @@ import six
 import pytest
 
 from vdsm.network import errors as ne
+from vdsm.network import ipwrapper
 from vdsm.network.link import iface as link_iface
 
 from . import netfunctestlib as nftestlib
@@ -288,6 +289,24 @@ class TestNetworkBasicLegacy(object):
                 with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                     pass
             assert err.value.status == ne.ERR_BAD_BRIDGE
+
+    @nftestlib.parametrize_bridged
+    def test_replace_broken_network(self, bridged):
+        with dummy_device() as nic:
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLANID,
+                                        'bridged': bridged}}
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                if bridged:
+                    ipwrapper.linkDel(NETWORK_NAME)
+                else:
+                    ipwrapper.linkDel(
+                        nic + '.' + str(NETCREATE[NETWORK_NAME]['vlan']))
+
+                adapter.refresh_netinfo()
+
+                adapter.assertNoNetworkExists(NETWORK_NAME)
+                with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                    adapter.assertNetworkExists(NETWORK_NAME)
 
 
 @pytest.mark.legacy_switch

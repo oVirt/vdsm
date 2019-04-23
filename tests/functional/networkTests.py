@@ -31,7 +31,6 @@ import six
 
 import vdsm.config
 from vdsm.network.configurators.ifcfg import EXT_IFDOWN, EXT_IFUP
-from vdsm.network import ipwrapper
 from vdsm.network import netswitch
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
@@ -1086,31 +1085,6 @@ class NetworkTest(TestCaseBase):
                                  nic)
             finally:
                 addrFlush(nic)
-
-    @permutations([[False], [True]])
-    @cleanupNet
-    def testBrokenNetworkReplacement(self, bridged):
-        with dummyIf(1) as nics:
-            nic, = nics
-            network = {NETWORK_NAME: {'nic': nic, 'vlan': VLAN_ID,
-                                      'bridged': bridged}}
-            status, msg = self.setupNetworks(network, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME)
-            if bridged:
-                ipwrapper.linkDel(NETWORK_NAME)
-            else:
-                ipwrapper.linkDel(nic + '.' + VLAN_ID)
-
-            self.vdsm_net.refreshNetinfo()
-            self.assertNotIn(NETWORK_NAME, self.vdsm_net.netinfo.networks)
-            status, msg = self.setupNetworks(network, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME)
-            network[NETWORK_NAME] = {'remove': True}
-            status, msg = self.setupNetworks(network, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkDoesntExist(NETWORK_NAME)
 
     @cleanupNet
     def testReconfigureBrNetWithVanishedPort(self):
