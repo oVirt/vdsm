@@ -1437,42 +1437,6 @@ class NetworkTest(TestCaseBase):
             finally:
                 addrFlush(nic_1)
 
-    @cleanupNet
-    def test_rollback(self):
-        with dummyIf(3) as nics:
-            NET1 = NETWORK_NAME + '1'
-            NET2 = NETWORK_NAME + '2'
-
-            # setup initial network
-            status, msg = self.setupNetworks(
-                {NET1:
-                 {'bonding': BONDING_NAME, 'bridged': True}},
-                {BONDING_NAME: {'nics': nics[:2]}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NET1)
-            self.assertBondExists(BONDING_NAME, nics[:2])
-
-            # setup network with invalid IP, expecting failure
-            status, msg = self.setupNetworks(
-                {NET2:
-                 {'nic': nics[2], 'bridged': True, 'vlan': VLAN_ID,
-                  'netmask': '300.300.300.300', 'ipaddr': '300.300.300.300'}},
-                {}, NOCHK)
-            self.assertNotEqual(status, SUCCESS, msg)
-            self.assertNetworkDoesntExist(NET2)
-
-            # test if initial network is still there
-            self.assertNetworkExists(NET1)
-            self.assertBondExists(BONDING_NAME, nics[:2])
-
-            # cleanup
-            status, msg = self.setupNetworks(
-                {NET1: {'remove': True}},
-                {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkDoesntExist(NET1)
-            self.assertBondDoesntExist(BONDING_NAME, nics)
-
     @contextmanager
     def _create_external_ifcfg_bond(self, bond_name, nics, vlan_id):
         IFCFG_SLAVE_TEMPLATE = """DEVICE=%s

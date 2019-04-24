@@ -166,3 +166,25 @@ class TestNetworkRollback(object):
                 adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
                 if bonded:
                     adapter.assertBond(BOND_NAME, BONDBASE[BOND_NAME])
+
+    def test_setup_two_networks_second_fails(self, switch):
+        with dummy_devices(3) as (nic1, nic2, nic3):
+            NET1_NAME = NETWORK_NAME + '1'
+            NET2_NAME = NETWORK_NAME + '2'
+
+            NETCREATE = {NET1_NAME: {'bonding': BOND_NAME,
+                                     'bridged': True,
+                                     'switch': switch}}
+            NETFAIL = {NET2_NAME: {'nic': nic3,
+                                   'bridged': True,
+                                   'vlan': VLAN,
+                                   'switch': switch}}
+            BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
+
+            with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
+                with pytest.raises(SetupNetworksError):
+                    adapter.setupNetworks(NETFAIL, {}, TIMEOUT_CHK)
+
+                adapter.assertNoNetwork(NET2_NAME)
+                adapter.assertNetwork(NET1_NAME, NETCREATE[NET1_NAME])
+                adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
