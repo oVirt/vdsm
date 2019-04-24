@@ -57,6 +57,7 @@ except ImportError:
     ipaddress = None
 
 NOCHK = {'connectivityCheck': False}
+TIMEOUT_CHK = {'connectivityCheck': True, 'connectivityTimeout': 0.1}
 
 IFCFG_DIR = '/etc/sysconfig/network-scripts/'
 IFCFG_PREFIX = IFCFG_DIR + 'ifcfg-'

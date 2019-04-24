@@ -45,7 +45,6 @@ from vdsm.network.netinfo.nics import operstate, OPERSTATE_UNKNOWN
 from vdsm.network.netinfo.routes import getRouteDeviceTo
 from vdsm.network.netlink import monitor
 from vdsm.network.configurators.ifcfg import stop_devices, NET_CONF_BACK_DIR
-from vdsm.network import errors
 from vdsm.network import sourceroute
 from vdsm.network import sysctl
 from vdsm.network import tc
@@ -1226,37 +1225,6 @@ class NetworkTest(TestCaseBase):
 
             # cleanup
             self.setupNetworks({NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-
-    @cleanupNet
-    def testSetupNetworksConnectivityCheck(self):
-        status, msg = self.setupNetworks(
-            {NETWORK_NAME: {'bridged': True}}, {},
-            {'connectivityCheck': True, 'connectivityTimeout': 0.1})
-        self.assertEqual(status, errors.ERR_LOST_CONNECTION)
-        self.assertNetworkDoesntExist(NETWORK_NAME)
-
-    @cleanupNet
-    def testSetupNetworksConnectivityCheckOverExistingBond(self):
-        with dummyIf(2) as nics:
-            # setup initial bonding
-            status, msg = self.setupNetworks(
-                {}, {BONDING_NAME: {'nics': nics}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertBondExists(BONDING_NAME, nics)
-
-            # setup a network on top of existing bond
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'bridged': True, 'bonding': BONDING_NAME}}, {},
-                {'connectivityCheck': True, 'connectivityTimeout': 0.1})
-            self.assertEqual(status, errors.ERR_LOST_CONNECTION)
-            self.assertNetworkDoesntExist(NETWORK_NAME)
-            self.assertBondExists(BONDING_NAME, nics)
-
-            # cleanup
-            status, msg = self.setupNetworks(
-                {}, {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertBondDoesntExist(BONDING_NAME, nics)
 
     @permutations([[True], [False]])
     @cleanupNet
