@@ -113,12 +113,6 @@ AS_IF([test "${enable_vhostmd}" = "yes"],
       AC_SUBST([VHOSTMD], ['1']),
       AC_SUBST([VHOSTMD], ['0']))
 
-if grep -q 'Fedora' /etc/redhat-release; then
-    fedora_run="yes"
-else
-    fedora_run="no"
-fi
-
 AC_ARG_WITH(
     [target-python],
     [AS_HELP_STRING([--with-target-python=pythonX.Y],
@@ -284,6 +278,12 @@ AC_ARG_WITH(
     [with_data_center="${withval}"],
     [with_data_center="/rhev/data-center"])
 AC_SUBST([vdsmrepo], [${with_data_center}])
+
+if grep -q 'Fedora' /etc/redhat-release; then
+    fedora_run="yes"
+else
+    fedora_run="no"
+fi
 
 AS_IF([test "${fedora_run}" = "yes"],
     [_polkitdir="/usr/share/polkit-1/rules.d"],
