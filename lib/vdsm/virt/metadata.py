@@ -378,7 +378,7 @@ class Descriptor(object):
                 <ovirt-vm:foo>bar</ovirt-vm:foo>
               </ovirt-vm:custom>
             </ovirt-vm:vm>
-          </metadata.>
+          </metadata>
         </domain>
 
         md_desc = Descriptor.from_xml(
