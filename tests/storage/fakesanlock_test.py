@@ -371,17 +371,6 @@ class TestFakeSanlock(VdsmTestCase):
         }
         assert expected == fs.spaces[lockspace]
 
-    def test_write_resource(self):
-        fs = FakeSanlock()
-        fs.write_lockspace("lockspace", "path")
-        fs.write_resource("lockspace", "resource", [("path", 1048576)])
-        info = fs.read_resource("path", 1048576)
-        expected = {"resource": "resource",
-                    "lockspace": "lockspace",
-                    "version": 0,
-                    "acquired": False}
-        self.assertEqual(info, expected)
-
     def test_add_without_init_lockpsace(self):
         fs = FakeSanlock()
         with pytest.raises(fs.SanlockException) as e:
