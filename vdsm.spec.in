@@ -928,15 +928,7 @@ exit 0
 %dir %{_localstatedir}/log/%{vdsm_name}/import
 %defattr(644, %{vdsm_user}, %{vdsm_group}, -)
 %{_datadir}/%{vdsm_name}/lvmlocal.conf
-%{_datadir}/%{vdsm_name}/autounattend/Win7.xml
-%{_datadir}/%{vdsm_name}/autounattend/Win8.xml
-%{_datadir}/%{vdsm_name}/autounattend/Win8.1.xml
-%{_datadir}/%{vdsm_name}/autounattend/Win10.xml
-%{_datadir}/%{vdsm_name}/autounattend/Win2008.xml
-%{_datadir}/%{vdsm_name}/autounattend/Win2008R2.xml
-%{_datadir}/%{vdsm_name}/autounattend/Win2012.xml
-%{_datadir}/%{vdsm_name}/autounattend/Win2012R2.xml
-%{_datadir}/%{vdsm_name}/autounattend/Win2016.xml
+%{_datadir}/%{vdsm_name}/autounattend/
 
 %{_sysconfdir}/yum/pluginconf.d/vdsmupgrade.conf
 %{_datadir}/yum-plugins/*.py*
