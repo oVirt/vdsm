@@ -49,6 +49,11 @@ class FakeSanlock(object):
     # Copied from sanlock src/sanlock_rv.h
     SANLK_LEADER_MAGIC = -223
 
+    # Tuples with supported alignment and sector size.
+    # Copied from python/sanlock.c
+    ALIGN_SIZE = (1048576, 2097152, 4194304, 8388608)
+    SECTOR_SIZE = (512, 4096)
+
     class SanlockException(Exception):
         @property
         def errno(self):
