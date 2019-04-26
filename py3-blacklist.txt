@@ -46,9 +46,6 @@
 ./vdsm_hooks/allocate_net/before_device_create.py
 ./vdsm_hooks/boot_hostdev/before_vm_start.py
 ./vdsm_hooks/checkimages/before_vm_start.py
-./vdsm_hooks/checkips/after_get_stats.py
-./vdsm_hooks/checkips/checkipsd
-./vdsm_hooks/checkips/checkips_utils.py
 ./vdsm_hooks/cpuflags/before_vm_start.py
 ./vdsm_hooks/diskunmap/before_vm_start.py
 ./vdsm_hooks/ethtool_options/ethtool_options.py
