@@ -899,66 +899,7 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/spmprotect.sh
 %{_libexecdir}/%{vdsm_name}/spmstop.sh
 %dir %{_libexecdir}/%{vdsm_name}/hooks
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_device_create
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_device_create
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_device_destroy
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_device_destroy
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_start
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_cont
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_cont
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_pause
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_pause
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_hibernate
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_hibernate
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_dehibernate
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_device_migrate_source
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_source
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_device_migrate_destination
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_migrate_source
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_migrate_destination
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_destroy
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_set_ticket
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_set_ticket
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_update_device
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_update_device
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_update_device_fail
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotunplug
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotunplug
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug_fail
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotunplug_fail
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_disk_prepare
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_disk_hotplug
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_disk_hotplug
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_disk_hotunplug
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_disk_hotunplug
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vdsm_start
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vdsm_stop
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_network_setup
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_network_setup_fail
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_set_num_of_cpus
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_set_num_of_cpus
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_memory_hotplug
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_memory_hotplug
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_get_vm_stats
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_get_vm_stats
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_get_all_vm_stats
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_get_all_vm_stats
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_get_caps
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_get_caps
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_get_stats
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_get_stats
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_hostdev_list_by_caps
-%dir %{_libexecdir}/%{vdsm_name}/hooks/before_ifcfg_write
-%dir %{_libexecdir}/%{vdsm_name}/hooks/after_ifcfg_write
+%dir %{_libexecdir}/%{vdsm_name}/hooks/*
 
 %{_libexecdir}/%{vdsm_name}/get-conf-item
 %{python_sitelib}/sos/plugins/vdsm.py*
