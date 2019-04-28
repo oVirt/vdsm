@@ -152,15 +152,12 @@ class NetFuncTestAdapter(object):
     @property
     def setupNetworks(self):
         return SetupNetworks(self._vdsm_proxy,
-                             self._setup_networks_post_hook())
+                             self._update_running_and_kernel_config,
+                             self._assert_kernel_vs_running_config)
 
-    def _setup_networks_post_hook(self):
-        def assert_kernel_vs_running():
-            # Refresh caps and running config data
-            self.update_netinfo()
-            self.update_running_config()
-            self.assert_kernel_vs_running_config()
-        return assert_kernel_vs_running
+    def _update_running_and_kernel_config(self):
+        self.update_netinfo()
+        self.update_running_config()
 
     def assertNetwork(self, netname, netattrs):
         """
@@ -548,7 +545,7 @@ class NetFuncTestAdapter(object):
     def assertNameservers(self, nameservers):
         assert nameservers == self.netinfo.nameservers[:len(nameservers)]
 
-    def assert_kernel_vs_running_config(self):
+    def _assert_kernel_vs_running_config(self):
         """
         This is a special test, that checks setup integrity through
         non vdsm api data.
@@ -668,9 +665,11 @@ class SetupNetworksError(Exception):
 
 class SetupNetworks(object):
 
-    def __init__(self, vdsm_proxy, post_setup_hook):
+    def __init__(self, vdsm_proxy,
+                 update_running_and_kernel_config, assert_kernel_vs_running):
         self.vdsm_proxy = vdsm_proxy
-        self.post_setup_hook = post_setup_hook
+        self._update_configs = update_running_and_kernel_config
+        self._assert_configs = assert_kernel_vs_running
 
     def __call__(self, networks, bonds, options):
         self.setup_networks = networks
@@ -678,10 +677,12 @@ class SetupNetworks(object):
 
         status, msg = self.vdsm_proxy.setupNetworks(networks, bonds, options)
         if status != SUCCESS:
+            self._update_configs()
             raise SetupNetworksError(status, msg)
 
         try:
-            self.post_setup_hook()
+            self._update_configs()
+            self._assert_configs()
         except:
             # Ignore cleanup failure, make sure to re-raise original exception.
             self._cleanup()
