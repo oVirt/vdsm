@@ -65,6 +65,13 @@ class FakeSanlock(object):
         self.errors = {}
         self.hosts = {}
 
+    def check_align_and_sector(self, align, sector):
+        if align not in self.ALIGN_SIZE:
+            raise ValueError("Invalid align value: %d" % align)
+
+        if sector not in self.SECTOR_SIZE:
+            raise ValueError("Invalid sector value: %d" % sector)
+
     def check_lockspace_initialized(self, lockspace):
         # TODO: check that sanlock was initialized may need to be added also
         # into other places beside add_lockspace. Find all relevant places.
@@ -193,10 +200,13 @@ class FakeSanlock(object):
 
     @maybefail
     def write_resource(self, lockspace, resource, disks, max_hosts=0,
-                       num_hosts=0):
+                       num_hosts=0, align=ALIGN_SIZE[0],
+                       sector=SECTOR_SIZE[0]):
         # We never use more then one disk, not sure why sanlock supports more
         # then one. Fail if called with multiple disks.
         assert len(disks) == 1
+
+        self.check_align_and_sector(align, sector)
 
         path, offset = disks[0]
         self.resources[(path, offset)] = {"lockspace": lockspace,
@@ -205,7 +215,10 @@ class FakeSanlock(object):
                                           "acquired": False}
 
     @maybefail
-    def read_resource(self, path, offset=0):
+    def read_resource(
+            self, path, offset=0, align=ALIGN_SIZE[0], sector=SECTOR_SIZE[0]):
+        self.check_align_and_sector(align, sector)
+
         key = (path, offset)
         if key not in self.resources:
             raise self.SanlockException(self.SANLK_LEADER_MAGIC,
@@ -278,7 +291,11 @@ class FakeSanlock(object):
         res["host_id"] = 0
         res["generation"] = 0
 
-    def read_resource_owners(self, lockspace, resource, disks):
+    def read_resource_owners(
+            self, lockspace, resource, disks, align=ALIGN_SIZE[0],
+            sector=SECTOR_SIZE[0]):
+        self.check_align_and_sector(align, sector)
+
         try:
             self.spaces[lockspace]
         except KeyError:
@@ -316,11 +333,14 @@ class FakeSanlock(object):
         return [self.hosts[host_id]]
 
     def write_lockspace(self, lockspace, path, offset=0, max_hosts=0,
-                        iotimeout=0):
+                        iotimeout=0, align=ALIGN_SIZE[0],
+                        sector=SECTOR_SIZE[0]):
         """
         Initialize a device to be used as sanlock lock space.
         In our case, we just create empty dictionary for a lockspace.
         """
+        self.check_align_and_sector(align, sector)
+
         ls = {
             "path": path,
             "offset": offset,
