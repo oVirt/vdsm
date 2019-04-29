@@ -27,7 +27,16 @@ import pytest
 
 from .fakesanlock import FakeSanlock
 from vdsm.common import concurrent
+from vdsm.storage import constants as sc
 from vdsm.storage.compat import sanlock
+
+
+INVALID_ALIGN_SECTOR = [
+    # Invalid alignment
+    (1024, sc.BLOCK_SIZE_512),
+    # Invalid block size
+    (sc.ALIGNMENT_1M, 8 * 1024),
+]
 
 
 class ExpectedError(Exception):
@@ -199,12 +208,29 @@ def test_write_resource_failure():
     assert e.value.errno == fs.SANLK_LEADER_MAGIC
 
 
+@pytest.mark.parametrize("align, sector", INVALID_ALIGN_SECTOR)
+def test_write_resource_invalid_align_sector(align, sector):
+    fs = FakeSanlock()
+    disks = [("path", 0)]
+    with pytest.raises(ValueError):
+        fs.write_resource(
+            "ls_name", "res_name", disks, align=align, sector=sector)
+
+
 def test_read_resource_failure():
     fs = FakeSanlock()
     fs.errors["read_resource"] = ExpectedError
     fs.write_resource("lockspace", "resource", [("path", 1048576)])
     with pytest.raises(ExpectedError):
         fs.read_resource("path", 1048576)
+
+
+@pytest.mark.parametrize("align, sector", INVALID_ALIGN_SECTOR)
+def test_read_resource_invalid_align_sector(align, sector):
+    fs = FakeSanlock()
+    fs.write_resource("lockspace", "resource", [("path", 1048576)])
+    with pytest.raises(ValueError):
+        fs.read_resource("path", 1048576, align=align, sector=sector)
 
 
 # Connecting to the sanlock daemon
@@ -356,6 +382,17 @@ def test_read_resource_owners_lockspace_removed():
     assert owners == []
 
 
+@pytest.mark.parametrize("align, sector", INVALID_ALIGN_SECTOR)
+def test_read_resource_owners_invalid_align_sector(align, sector):
+    fs = FakeSanlock()
+    fs.write_lockspace("lockspace", "path")
+    fs.write_resource("lockspace", "resource", [("path", 1048576)])
+    disks = [("path", 1048576)]
+    with pytest.raises(ValueError):
+        fs.read_resource_owners(
+            "lockspace", "path", disks, align=align, sector=sector)
+
+
 def test_get_hosts():
     fs = FakeSanlock()
     fs.write_lockspace("lockspace", "path")
@@ -400,6 +437,13 @@ def test_write_lockspace():
         "iotimeout": 0,
     }
     assert expected == fs.spaces[lockspace]
+
+
+@pytest.mark.parametrize("align, sector", INVALID_ALIGN_SECTOR)
+def test_write_lockspace_invalid_align_sector(align, sector):
+    fs = FakeSanlock()
+    with pytest.raises(ValueError):
+        fs.write_lockspace("ls_name", "path", align=align, sector=sector)
 
 
 def test_write_resource():
