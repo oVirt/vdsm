@@ -100,15 +100,16 @@ class LibProxy(object):
     def setupNetworks(self, networks, bonds, options):
         try:
             api.setupNetworks(networks, bonds, options)
-            caps = api.network_caps()
-            self.netinfo = CachingNetInfo(caps)
-            self.config = RunningConfig()
         except errors.ConfigNetworkError as e:
             status = e.errCode
             msg = e.message
         else:
             status = SUCCESS
             msg = ''
+        finally:
+            caps = api.network_caps()
+            self.netinfo = CachingNetInfo(caps)
+            self.config = RunningConfig()
 
         return status, msg
 
