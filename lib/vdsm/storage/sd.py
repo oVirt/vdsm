@@ -331,6 +331,22 @@ class StorageDomainManifest(object):
         self.replaceMetadata(metadata)
         self._domainLock = self._makeDomainLock()
         self._external_leases_lock = rwlock.RWLock()
+        self._alignment = metadata.get(DMDK_ALIGNMENT, sc.ALIGNMENT_1M)
+        self._block_size = metadata.get(DMDK_BLOCK_SIZE, sc.BLOCK_SIZE_512)
+
+        # Validate alignment and block size.
+
+        version = self.getVersion()
+        if version < 5:
+            if self.alignment != sc.ALIGNMENT_1M:
+                raise se.MetaDataValidationError(
+                    "Storage domain version {} does not support alignment {}"
+                        .format(version, self.alignment))
+
+            if self.block_size != sc.BLOCK_SIZE_512:
+                raise se.MetaDataValidationError(
+                    "Storage domain version {} does not support block size {}"
+                        .format(version, self.block_size))
 
     @classmethod
     def special_volumes(cls, version):
@@ -422,6 +438,14 @@ class StorageDomainManifest(object):
 
     def getVersion(self):
         return self.getMetaParam(DMDK_VERSION)
+
+    @property
+    def alignment(self):
+        return self._alignment
+
+    @property
+    def block_size(self):
+        return self._block_size
 
     def resizePV(self, guid):
         pass
