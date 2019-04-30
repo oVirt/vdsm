@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,6 +49,14 @@ _STATE = {
     'nr_hugepages_mempolicy': 1234,
     'vm.free_hugepages': 1234
 }
+
+_VM_HUGEPAGES_METADATA = '''
+<ovirt-vm:vm>
+   <ovirt-vm:custom>
+     <ovirt-vm:hugepages>{hugepages}</ovirt-vm:hugepages>
+   </ovirt-vm:custom>
+</ovirt-vm:vm>
+'''
 
 
 @expandPermutations
@@ -368,39 +376,42 @@ class TestIntelligentDeallocation(TestCaseBase):
 @expandPermutations
 class TestVmHugepages(TestCaseBase):
     @permutations([
-        [{'custom': {'hugepages': '-1'}}, False],
-        [{'custom': {'hugepages': '0'}}, False],
-        [{'custom': {'hugepages': '1'}}, True],
-        [{'custom': {'hugepages': '2048'}}, True],
-        [{'custom': {'hugepages': '1048576'}}, True],
+        [-1, False],
+        [0, False],
+        [1, True],
+        [2048, True],
+        [1048576, True],
     ])
-    def test_hugepages_allowed(self, custom, expected):
-        with fake.VM(params=custom) as vm:
+    def test_hugepages_allowed(self, hugepages, expected):
+        metadata = _VM_HUGEPAGES_METADATA.format(hugepages=hugepages)
+        with fake.VM(metadata=metadata) as vm:
             self.assertEqual(vm.hugepages, expected)
 
     @permutations([
-        [{'custom': {'hugepages': '1'}}, 2048],
-        [{'custom': {'hugepages': '2048'}}, 2048],
-        [{'custom': {'hugepages': '1048576'}}, 1048576],
-        [{'custom': {'hugepages': '10485760'}}, 2048],
+        [1, 2048],
+        [2048, 2048],
+        [1048576, 1048576],
+        [10485760, 2048],
     ])
     @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
     @MonkeyPatch(hugepages, 'supported', lambda: [2048, 1048576])
-    def test_hugepagesz(self, custom, expected):
-        with fake.VM(params=custom) as vm:
+    def test_hugepagesz(self, hugepages, expected):
+        metadata = _VM_HUGEPAGES_METADATA.format(hugepages=hugepages)
+        with fake.VM(metadata=metadata) as vm:
             self.assertEqual(vm.hugepagesz, expected)
 
     @permutations([
-        [{'custom': {'hugepages': '1'}}, 1, 1],
-        [{'custom': {'hugepages': '1'}}, 3, 2],
-        [{'custom': {'hugepages': '1048576'}}, 1023, 1],
-        [{'custom': {'hugepages': '1048576'}}, 1025, 2],
+        [1, 1, 1],
+        [1, 3, 2],
+        [1048576, 1023, 1],
+        [1048576, 1025, 2],
     ])
     @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
     @MonkeyPatch(hugepages, 'supported', lambda: [2048, 1048576])
-    def test_nr_hugepages(self, custom, memory, expected):
+    def test_nr_hugepages(self, hugepages, memory, expected):
         with mock.patch.object(vm.Vm, 'mem_size_mb', lambda _: memory):
-            with fake.VM(params=custom) as fakevm:
+            metadata = _VM_HUGEPAGES_METADATA.format(hugepages=hugepages)
+            with fake.VM(metadata=metadata) as fakevm:
                 self.assertEqual(fakevm.nr_hugepages, expected)
 
 
