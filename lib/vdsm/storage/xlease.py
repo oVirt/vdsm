@@ -145,6 +145,7 @@ from vdsm.common import commands
 from vdsm.common import constants
 from vdsm.common import errors
 from vdsm.common.osutils import uninterruptible
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fsutils
 from vdsm.storage.compat import sanlock
@@ -504,9 +505,13 @@ class LeasesVolume(object):
     written immediately to storage.
     """
 
-    def __init__(self, file):
+    def __init__(
+            self, file, alignment=sc.ALIGNMENT_1M,
+            block_size=sc.BLOCK_SIZE_512):
         log.debug("Loading index from %r", file.name)
         self._file = file
+        self._alignment = alignment
+        self._block_size = block_size
         self._index = VolumeIndex()
         try:
             self._index.load(file)
@@ -586,8 +591,12 @@ class LeasesVolume(object):
         record = Record(lease_id, offset, updating=True)
         self._write_record(recnum, record)
 
-        sanlock.write_resource(self.lockspace, lease_id,
-                               [(self._file.name, offset)])
+        sanlock.write_resource(
+            self.lockspace,
+            lease_id,
+            [(self._file.name, offset)],
+            align=self._alignment,
+            sector=self._block_size)
 
         record = Record(lease_id, offset)
         self._write_record(recnum, record)
@@ -616,7 +625,12 @@ class LeasesVolume(object):
         # There is no way to remove a resource, so we write an invalid resource
         # with empty resource and lockspace values.
         # TODO: Use SANLK_WRITE_CLEAR, expected in rhel 7.4.
-        sanlock.write_resource("", "", [(self._file.name, offset)])
+        sanlock.write_resource(
+            "",
+            "",
+            [(self._file.name, offset)],
+            align=self._alignment,
+            sector=self._block_size)
 
         self._write_record(recnum, EMPTY_RECORD)
 
@@ -681,7 +695,9 @@ def format_index(lockspace, file):
             index.dump(file)
 
 
-def rebuild_index(lockspace, file):
+def rebuild_index(
+        lockspace, file, alignment=sc.ALIGNMENT_1M,
+        block_size=sc.BLOCK_SIZE_512):
     """
     Rebuild xleases volume index from underlying storage.
 
@@ -709,7 +725,11 @@ def rebuild_index(lockspace, file):
                     index.write_record(recnum, EMPTY_RECORD)
                     continue
                 try:
-                    res = read_resource(file.name, offset)
+                    res = read_resource(
+                        file.name,
+                        offset,
+                        alignment=alignment,
+                        block_size=block_size)
                 except NoSuchResource:
                     record = EMPTY_RECORD
                 else:
@@ -722,7 +742,8 @@ def rebuild_index(lockspace, file):
             index.dump(file)
 
 
-def read_resource(path, offset):
+def read_resource(
+        path, offset, alignment=sc.ALIGNMENT_1M, block_size=sc.BLOCK_SIZE_512):
     """
     Helper for reading sanlock resoruces, supporting both non-existing and
     deleted resources.
@@ -731,7 +752,8 @@ def read_resource(path, offset):
     Raises: NoSuchResource if there is no resource at this offset
     """
     try:
-        res = sanlock.read_resource(path, offset)
+        res = sanlock.read_resource(
+            path, offset, align=alignment, sector=block_size)
     except sanlock.SanlockException as e:
         if e.errno != SANLK_LEADER_MAGIC:
             raise
