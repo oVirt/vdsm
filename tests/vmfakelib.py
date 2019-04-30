@@ -147,6 +147,8 @@ class Domain(object):
                  domState=libvirt.VIR_DOMAIN_RUNNING,
                  domReason=0,
                  vmId='', vm=None):
+        if not xml and vm is not None:
+            xml = vm.conf.get('xml', '')
         self._xml = xml
         self.devXml = ''
         self.virtError = virtError
