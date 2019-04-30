@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2017 Red Hat, Inc.
+# Copyright 2013-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,7 +56,6 @@ from vdsm.virt import vmexitreason
 from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
 from vdsm.virt import xmlconstants
-from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices import lease
 from vdsm.virt.vmdevices.storage import DISK_TYPE
@@ -627,22 +626,13 @@ class TestVm(XMLTestCase):
                 testvm._makeChannelPath(vmchannels.LEGACY_DEVICE_NAME))
 
     def test_spice_restore_set_passwd(self):
-        # stolen from VDSM logs
-        conf = {
-            'tlsPort': u'5901',
-            u'specParams': {
-                u'fileTransferEnable': u'true',
-                u'copyPasteEnable': u'true',
-                'displayIp': '0'
-            },
-            'deviceType': u'graphics',
-            u'deviceId': u'dbb9db4e-1a30-45b7-b76d-608afc797be9',
-            u'device': u'spice',
-            u'type': u'graphics',
-            'port': u'5900'
-        }
-
-        with fake.VM(devices=[conf], create_device_objects=True) as testvm:
+        devices = '''
+<graphics type="spice" port="-1" autoport="yes"
+          passwd="*****" passwdValidTo="1970-01-01T00:00:01" tlsPort="-1">
+  <listen type="network" network="vdsm-ovirtmgmt"/>
+</graphics>
+'''
+        with fake.VM(xmldevices=devices, create_device_objects=True) as testvm:
             out_dom_xml = testvm._correctGraphicsConfiguration(
                 _load_xml('vm_restore_spice_before.xml'))
 
@@ -711,18 +701,15 @@ class TestVm(XMLTestCase):
             })
 
     def test_acpi_enabled(self):
-        params = {'acpiEnable': True}
-        with fake.VM(params=params, arch=cpuarch.X86_64) as testvm:
+        with fake.VM(arch=cpuarch.X86_64, features='<acpi/>') as testvm:
             self.assertTrue(testvm.acpi_enabled())
 
     def test_acpi_disabled(self):
-        params = {'acpiEnable': False}
-        with fake.VM(params=params, arch=cpuarch.X86_64) as testvm:
+        # `features' argument is needed here to add an Engine XML in fake.VM.
+        # It can be removed once fake.VM starts using Engine XML
+        # unconditionally.
+        with fake.VM(arch=cpuarch.X86_64, features='<apic/>') as testvm:
             self.assertFalse(testvm.acpi_enabled())
-
-    def test_acpi_missing(self):
-        with fake.VM(params={}, arch=cpuarch.X86_64) as testvm:
-            self.assertTrue(testvm.acpi_enabled())
 
     def test_hotplug_lease(self):
         params = {
@@ -764,15 +751,6 @@ class TestVm(XMLTestCase):
             self.assertTrue(res.pop('vmList'))
             self.assertEqual(res, response.success())
             # Up until here we verified the hotplugLease proper.
-
-            # Let's now verify what happens on migration destination,
-            # when migrating in 4.1 clusters - here Vdsm must use the 4.1
-            # compatibility mode.
-            self.assertNotRaises(
-                vmdevices.common.update_device_info,
-                testvm,
-                testvm._devices
-            )
 
     def test_fix_lease_parameters(self):
         params = {
@@ -825,15 +803,6 @@ class TestVm(XMLTestCase):
             testvm._dom = FakeLeaseDomain()
             testvm.cif = FakeLeaseClientIF(expected_conf)
             testvm._updateDomainDescriptor()
-
-            # Let's now verify what happens on migration destination,
-            # when migrating in 4.1 clusters - here Vdsm must use the 4.1
-            # compatibility mode.
-            self.assertNotRaises(
-                vmdevices.common.update_device_info,
-                testvm,
-                testvm._devices
-            )
 
 
 class ExpectedError(Exception):
@@ -1205,12 +1174,18 @@ class TestLibVirtCallbacks(TestCaseBase):
         ['missing', set(('dimm0', 'balloon',))],
     ])
     def test_onDeviceRemoved(self, alias, kept_aliases):
-        devices = [{'alias': 'dimm0', 'type': hwclass.MEMORY, 'size': 1024},
-                   {'alias': 'balloon', 'type': hwclass.BALLOON,
-                    'device': 'memballoon', 'specParams': {'model': 'none'}}]
-        with fake.VM(_VM_PARAMS, devices=devices,
+        devices = '''
+<memory model="dimm">
+  <alias name="dimm0"/>
+  <target><size unit='KiB'>524288</size><node>1</node></target>
+</memory>
+<memballoon model="none">
+  <alias name="balloon"/>
+</memballoon>
+'''
+        with fake.VM(_VM_PARAMS, xmldevices=devices,
                      create_device_objects=True) as testvm:
-            testvm._domain = DomainDescriptor('<devices/>')
+            testvm._updateDomainDescriptor = lambda *args: None
             testvm.onDeviceRemoved(alias)
             self.assertEqual(
                 set([d.alias for group in testvm._devices.values()
@@ -1259,15 +1234,10 @@ class TestVmBalloon(TestCaseBase):
                              define.errCode[specificErr]['status']['code'])
 
     def testSucceed(self):
-        devices = [{
-            'type': hwclass.BALLOON,
-            'device': 'memballoon',
-            'specParams': {'model': 'virtio'}
-        }]
-
+        devices = '<memballoon model="virtio" alias="balloon"/>'
         with fake.VM(
             params={'memSize': 128 * 1024},
-            devices=devices,
+            xmldevices=devices,
             create_device_objects=True
         ) as testvm:
             testvm._dom = fake.Domain()
@@ -1277,14 +1247,9 @@ class TestVmBalloon(TestCaseBase):
                              [('setMemory', (target,), {})])
 
     def testVmWithoutDom(self):
-        devices = [{
-            'type': hwclass.BALLOON,
-            'device': 'memballoon',
-            'specParams': {'model': 'virtio'}
-        }]
-
+        devices = '<memballoon model="virtio" alias="balloon"/>'
         with fake.VM(
-            devices=devices,
+            xmldevices=devices,
             create_device_objects=True
         ) as testvm:
             self.assertRaises(
@@ -1294,14 +1259,9 @@ class TestVmBalloon(TestCaseBase):
             )
 
     def testTargetValueNotInteger(self):
-        devices = [{
-            'type': hwclass.BALLOON,
-            'device': 'memballoon',
-            'specParams': {'model': 'virtio'}
-        }]
-
+        devices = '<memballoon model="virtio" alias="balloon"/>'
         with fake.VM(
-            devices=devices,
+            xmldevices=devices,
             create_device_objects=True
         ) as testvm:
             self.assertRaises(
@@ -1311,14 +1271,9 @@ class TestVmBalloon(TestCaseBase):
             )
 
     def testLibvirtFailure(self):
-        devices = [{
-            'type': hwclass.BALLOON,
-            'device': 'memballoon',
-            'specParams': {'model': 'virtio'}
-        }]
-
+        devices = '<memballoon model="virtio" alias="balloon"/>'
         with fake.VM(
-            devices=devices,
+            xmldevices=devices,
             create_device_objects=True
         ) as testvm:
             testvm._dom = fake.Domain(virtError=libvirt.VIR_ERR_INTERNAL_ERROR)
@@ -1335,15 +1290,10 @@ class TestVmBalloon(TestCaseBase):
             self.assertEqual(testvm.get_balloon_info(), {})
 
     def testSkipBalloonModelNone(self):
-        devices = [{
-            'type': hwclass.BALLOON,
-            'device': 'memballoon',
-            'specParams': {'model': 'none'}
-        }]
-
+        devices = '<memballoon model="none" alias="balloon"/>'
         with fake.VM(
             params={'memSize': 128 * 1024},
-            devices=devices,
+            xmldevices=devices,
             create_device_objects=True
         ) as testvm:
             testvm._dom = fake.Domain()
@@ -2006,8 +1956,8 @@ class FakeLeaseDomain(object):
     def attachDevice(self, device_xml):
         pass
 
-    def XMLDesc(flags=0):
-        pass
+    def XMLDesc(self, flags=0):
+        return '<domain/>'
 
 
 class FakeLeaseIRS(object):
