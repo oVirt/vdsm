@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1943,12 +1943,6 @@ class MdevTests(XMLTestCase):
 
     def test_legacy_mdev_creation_4_2_metadata(self):
         params = {'xml': _VM_METADATA_MDEV_XML}
-        with vmfakelib.VM(params=params, create_device_objects=True) as vm:
-            self._legacy_mdev_checks(vm)
-
-    def test_legacy_mdev_creation_4_1(self):
-        params = {'custom': _MDEV_CUSTOM,
-                  'vmId': '6a28e9f6-6627-49b8-8c24-741ab810ecc0'}
         with vmfakelib.VM(params=params, create_device_objects=True) as vm:
             self._legacy_mdev_checks(vm)
 

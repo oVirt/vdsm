@@ -23,23 +23,12 @@ from __future__ import absolute_import
 from __future__ import division
 
 from vdsm.common import cpuarch
-from vdsm.common import libvirtconnection
-from vdsm import constants
-from vdsm import host
-from vdsm import osinfo
 
-from vdsm.common.compat import json
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt import libvirtxml
-from vdsm.virt import recovery
-from vdsm.virt import vm
-
-from monkeypatch import MonkeyPatch
 
 from testlib import VdsmTestCase
 from testlib import read_data
-
-import vmfakelib as fake
 
 
 # Engine doesn't care about those:
@@ -73,69 +62,7 @@ DEVICE_KEYS_WHITELIST = (
 )
 
 
-class VMConfFromXMLTests(VdsmTestCase):
-
-    @MonkeyPatch(cpuarch, 'effective', lambda: cpuarch.X86_64)
-    @MonkeyPatch(osinfo, 'version', lambda: {
-        'release': '1', 'version': '18', 'name': 'Fedora'})
-    @MonkeyPatch(constants, 'SMBIOS_MANUFACTURER', 'oVirt')
-    @MonkeyPatch(constants, 'SMBIOS_OSNAME', 'oVirt Node')
-    @MonkeyPatch(libvirtconnection, 'get', fake.Connection)
-    @MonkeyPatch(host, 'uuid',
-                 lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
-    @MonkeyPatch(vm.Vm, 'send_status_event', lambda x: None)
-    def test_compat41(self):
-        expected_conf = json.loads(
-            read_data('vm_compat41.json'))[0]
-
-        vm_params = recovery._recovery_params(
-            expected_conf['vmId'],
-            read_data('vm_compat41.xml'),
-            False)
-
-        vm_obj = vm.Vm(fake.ClientIF(), vm_params, recover=True)
-        # TODO: ugly hack, but we don't have APIs to do that
-        vm_obj._devices = vm_obj._make_devices()
-
-        recovered_conf = vm_obj.status(fullStatus=True)
-
-        self.assert_conf_equal(
-            recovered_conf, expected_conf, filter_vm_conf_keys)
-
-        self.assert_devices_conf_equal(
-            recovered_conf['devices'], expected_conf['devices'],
-            IGNORED_DEVICE_TYPES)
-
-    def assert_devices_conf_equal(self, actual_devs, expected_devs,
-                                  device_classes_to_ignore):
-
-        for expected_dev_conf in expected_devs:
-            if expected_dev_conf['type'] in device_classes_to_ignore:
-                continue
-
-            attrs = find_match_attrs(expected_dev_conf)
-
-            actual_dev_conf = find_dev_conf_by_attrs(actual_devs, **attrs)
-            self.assertIsNotNone(actual_dev_conf)
-
-            self.assert_conf_equal(
-                actual_dev_conf, expected_dev_conf, filter_dev_conf_keys)
-
-    def assert_conf_equal(self, actual, expected, filter_keys):
-        expected_keys = filter_keys(expected)
-        for key in sorted(expected_keys):
-            self.assertEqual(
-                actual[key], expected[key],
-                "comparing key %s: actual=%s expected=%s" % (
-                    key, actual[key], expected[key]))
-
-
 class ParseDomainXMLTests(VdsmTestCase):
-
-    def test_vm_compat_41(self):
-        dom_xml = read_data('vm_compat41.xml')
-        conf = libvirtxml.parse_domain(dom_xml, cpuarch.X86_64)
-        self.assertEqual(int(conf['smp']), 2)
 
     def test_hosted_engine_42(self):
         dom_xml = read_data('vm_hosted_engine_42.xml')

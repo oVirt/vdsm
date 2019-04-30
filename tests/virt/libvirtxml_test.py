@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2018 Red Hat, Inc.
+# Copyright 2013-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import xml.etree.cElementTree as etree
-
 import six
 from six.moves import zip
 
@@ -37,8 +35,6 @@ from monkeypatch import MonkeyPatch
 from testlib import XMLTestCase
 from testlib import find_xml_element
 from testlib import permutations, expandPermutations
-
-import vmfakelib as fake
 
 
 @expandPermutations
@@ -430,26 +426,6 @@ class TestLibvirtxml(XMLTestCase):
         domxml.appendSysinfo(product, version, serial)
         xml = find_xml_element(domxml.toxml(), './sysinfo')
         self.assertXMLEqual(xml, sysinfoXML)
-
-    @permutations([
-        # console_type, cpu_arch, use_serial, check_attrib
-        ['serial', cpuarch.X86_64, True, True],
-        ['virtio', cpuarch.X86_64, False, True],
-        ['serial', cpuarch.PPC64, False, False],
-        ['serial', cpuarch.PPC64LE, False, False],
-    ])
-    def testSerialBios(self, console_type, cpu_arch, use_serial, check_attrib):
-        devices = {'device': 'console', 'type': 'console',
-                   'specParams': {'consoleType': console_type}},
-        with fake.VM(devices=devices, arch=cpu_arch,
-                     create_device_objects=True) as fakevm:
-            dom_xml = fakevm._buildDomainXML()
-            tree = etree.fromstring(dom_xml)
-            xpath = ".//bios"
-            if check_attrib:
-                xpath += "[@useserial='yes']"
-            element = tree.find(xpath)
-            self.assertEqual(element is not None, use_serial)
 
     def testClockXML(self):
         clockXML = """

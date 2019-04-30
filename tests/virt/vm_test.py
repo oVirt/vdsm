@@ -36,8 +36,6 @@ import libvirt
 from six.moves import zip
 
 from vdsm import constants
-from vdsm import host
-from vdsm import osinfo
 
 from vdsm.common import cpuarch
 from vdsm.common import define
@@ -77,8 +75,6 @@ from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
 from testlib import recorded
 
-from vmTestsData import CONF_TO_DOMXML_PPC64
-from vmTestsData import CONF_TO_DOMXML_X86_64
 from fakelib import FakeLogger
 import vmfakelib as fake
 
@@ -119,19 +115,6 @@ class TestVm(XMLTestCase):
                      'smp': '8', 'maxVCpus': '160',
                      'memSize': '1024', 'memGuaranteedSize': '512'}
 
-    def assertBuildCmdLine(self, confToDom):
-        with namedTemporaryDir() as tmpDir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir)]):
-                for conf, expectedXML in confToDom:
-
-                    expectedXML = expectedXML % conf
-
-                    testVm = vm.Vm(fake.ClientIF(), conf)
-
-                    output = testVm._buildDomainXML()
-
-                    self.assertXMLEqual(output, expectedXML)
-
     def testIoTuneException(self):
         SERIAL = '54-a672-23e5b495a9ea'
         devConf = {'index': '0', 'propagateErrors': 'on', 'iface': 'virtio',
@@ -161,28 +144,6 @@ class TestVm(XMLTestCase):
                 drive.iotune = tuneConf
 
             self.assertEqual(cm.exception.args[0], exceptionMsg)
-
-    @MonkeyPatch(cpuarch, 'effective', lambda: cpuarch.X86_64)
-    @MonkeyPatch(osinfo, 'version', lambda: {
-        'release': '1', 'version': '18', 'name': 'Fedora'})
-    @MonkeyPatch(constants, 'SMBIOS_MANUFACTURER', 'oVirt')
-    @MonkeyPatch(constants, 'SMBIOS_OSNAME', 'oVirt Node')
-    @MonkeyPatch(libvirtconnection, 'get', fake.Connection)
-    @MonkeyPatch(host, 'uuid',
-                 lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
-    @MonkeyPatch(vm.Vm, 'send_status_event', lambda x: None)
-    def testBuildCmdLineX86_64(self):
-        self.assertBuildCmdLine(CONF_TO_DOMXML_X86_64)
-
-    @MonkeyPatch(cpuarch, 'effective', lambda: cpuarch.PPC64)
-    @MonkeyPatch(osinfo, 'version', lambda: {
-        'release': '1', 'version': '18', 'name': 'Fedora'})
-    @MonkeyPatch(libvirtconnection, 'get', fake.Connection)
-    @MonkeyPatch(host, 'uuid',
-                 lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
-    @MonkeyPatch(vm.Vm, 'send_status_event', lambda x: None)
-    def testBuildCmdLinePPC64(self):
-        self.assertBuildCmdLine(CONF_TO_DOMXML_PPC64)
 
     def testVmPolicyOnStartup(self):
         LIMIT = '50'
