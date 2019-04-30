@@ -306,27 +306,65 @@ class ConfStub(object):
         self.conf = conf
 
 
+DEFAULT_DOMAIN_XML = '''
+<domain type='kvm' xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <name>n{vm_id}</name>
+  <uuid>{vm_id}</uuid>
+  <memory unit='KiB'>4194304</memory>
+  <os>
+    <type arch='x86_64' machine='pc-i440fx-2.3'>hvm</type>
+  </os>
+  {features}
+  {devices}
+  {metadata}
+</domain>
+'''
+
+
 @contextmanager
 def VM(params=None, devices=None, runCpu=False,
        arch=cpuarch.X86_64, status=None,
        cif=None, create_device_objects=False,
        post_copy=None, recover=False, vmid=None,
-       resume_behavior=None, pause_time_offset=None):
+       resume_behavior=None, pause_time_offset=None,
+       features='', xmldevices='', metadata=''):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir),
                                (libvirtconnection, 'get', Connection),
                                ]):
             if params is None:
                 params = {}
-            if 'xml' in params:
-                vmParams = {}
-            else:
+            if 'xml' not in params:
                 if vmid is None:
-                    vmid = 'TESTING'
-                vmParams = {'vmId': vmid, 'vmName': 'n%s' % vmid}
-            vmParams.update(params)
+                    vmid = params.get('vmId', 'TESTING')
+
+                def xmlsnippet(content, tag):
+                    if content:
+                        snippet = ('<{tag}>{content}</{tag}>'.
+                                   format(tag=tag, content=content))
+                    else:
+                        snippet = '<{tag}/>'.format(tag=tag)
+                    return snippet
+
+                features_xml = xmlsnippet(features, 'features')
+                xmldevices_xml = xmlsnippet(xmldevices, 'devices')
+                metadata_xml = xmlsnippet(metadata, 'metadata')
+                params = params.copy()
+                # TODO: Make the following unconditional once all
+                # tests are compatible and remove the else part.
+                if features or xmldevices or metadata:
+                    params['xml'] = DEFAULT_DOMAIN_XML.format(
+                        vm_id=vmid,
+                        features=features_xml,
+                        devices=xmldevices_xml,
+                        metadata=metadata_xml
+                    )
+                else:
+                    params['vmId'] = vmid
+                    if 'vmName' not in params:
+                        params['vmName'] = 'n%s' % vmid
             cif = ClientIF() if cif is None else cif
-            fake = vm.Vm(cif, vmParams, recover=recover)
+            fake = vm.Vm(cif, params, recover=recover)
             cif.vmContainer[fake.id] = fake
             fake._update_metadata = lambda: None
             fake._sync_metadata = lambda: None
