@@ -124,10 +124,14 @@ class TestVmDevices(XMLTestCase):
                                    self.confDeviceGraphicsSpice)
 
     def test_createXmlElem(self):
-        dev = {'type': 'graphics', 'device': 'spice'}
+        devices = '''
+          <graphics type="spice">
+            <listen type="network" network="vdsm-ovirtmgmt"/>
+          </graphics>
+        '''
         expected_xml = '''<?xml version=\'1.0\' encoding=\'utf-8\'?>
         <graphics device="spice" type="test" />'''
-        with fake.VM(self.conf, devices=(dev,),
+        with fake.VM(self.conf, xmldevices=devices,
                      create_device_objects=True) as testvm:
             graphics = testvm._devices[hwclass.GRAPHICS][0]
             element = graphics.createXmlElem('graphics', 'test',
@@ -240,16 +244,22 @@ class TestVmDevices(XMLTestCase):
                  'getProxy', lambda: MockedProxy(
                      ovs_bridge={'name': 'ovirtmgmt', 'dpdk_enabled': False}))
     def test_interface_update(self):
-        devices = [{'nicModel': 'virtio', 'network': 'ovirtmgmt',
-                    'macAddr': '52:54:00:59:F5:3F',
-                    'device': 'bridge', 'type': 'interface',
-                    'alias': 'net1', 'name': 'net1',
-                    'linkActive': 'true',
-                    'specParams': {'inbound': {'average': 1000, 'peak': 5000,
-                                               'burst': 1024},
-                                   'outbound': {'average': 128, 'burst': 256}},
-                    }]
-        params = {'linkActive': 'true', 'alias': 'net1',
+        devices = '''
+            <interface type="bridge">
+              <mac address="52:54:00:59:F5:3F"/>
+              <model type="virtio"/>
+              <source bridge="ovirtmgmt"/>
+              <virtualport type="openvswitch"/>
+              <link state="up"/>
+              <alias name="ua-net1"/>
+              <target dev="net1"/>
+              <bandwidth>
+                 <inbound average="1000" peak="5000" burst="1024"/>
+                 <inbound average="128" burst="256"/>
+              </bandwidth>
+            </interface>
+        '''
+        params = {'linkActive': 'true', 'alias': 'ua-net1', 'name': 'net1',
                   'deviceType': 'interface', 'network': 'ovirtmgmt2',
                   'specParams': {'inbound': {}, 'outbound': {}}}
         updated_xml = '''
@@ -259,11 +269,11 @@ class TestVmDevices(XMLTestCase):
               <source bridge="ovirtmgmt2"/>
               <virtualport type="openvswitch"/>
               <link state="up"/>
-              <alias name="net1"/>
+              <alias name="ua-net1"/>
               <bandwidth/>
             </interface>
         '''
-        with fake.VM(devices=devices, create_device_objects=True) as testvm:
+        with fake.VM(xmldevices=devices, create_device_objects=True) as testvm:
             testvm._dom = fake.Domain()
             res = testvm.updateDevice(params)
             self.assertIn('vmList', res)
@@ -752,13 +762,18 @@ class TestHotplug(TestCaseBase):
 '''
 
     def setUp(self):
-        devices = [{'nicModel': 'virtio', 'network': 'ovirtmgmt',
-                    'macAddr': "11:22:33:44:55:66",
-                    'device': 'bridge', 'type': 'interface',
-                    'alias': 'net1', 'name': 'net1',
-                    'linkActive': 'true',
-                    }]
-        with fake.VM(devices=devices, create_device_objects=True) as vm:
+        devices = '''
+            <interface type="bridge">
+              <mac address="11:22:33:44:55:66"/>
+              <model type="virtio"/>
+              <source bridge="ovirtmgmt"/>
+              <virtualport type="openvswitch"/>
+              <link state="up"/>
+              <alias name="net2"/>
+              <target dev="net2"/>
+            </interface>
+        '''
+        with fake.VM(xmldevices=devices, create_device_objects=True) as vm:
             vm._dom = fake.Domain(vm=vm)
             self.vm = vm
         self.supervdsm = fake.SuperVdsm()
@@ -912,14 +927,19 @@ class TestUpdateDevice(TestCaseBase):
 '''
 
     def setUp(self):
-        devices = [{'nicModel': 'virtio', 'network': 'ovirtmgmt',
-                    'macAddr': "11:22:33:44:55:66",
-                    'device': 'bridge', 'type': 'interface',
-                    'alias': 'net1', 'name': 'net1',
-                    'linkActive': False,
-                    }]
-        with fake.VM(devices=devices, create_device_objects=True) as vm:
-            vm._dom = fake.Domain()
+        devices = '''
+            <interface type="bridge">
+              <mac address="11:22:33:44:55:66"/>
+              <model type="virtio"/>
+              <source bridge="ovirtmgmt"/>
+              <virtualport type="openvswitch"/>
+              <link state="down"/>
+              <alias name="net1"/>
+              <target dev="net1"/>
+            </interface>
+        '''
+        with fake.VM(xmldevices=devices, create_device_objects=True) as vm:
+            vm._dom = fake.Domain(vm=vm)
             self.vm = vm
         self.supervdsm = fake.SuperVdsm()
 
