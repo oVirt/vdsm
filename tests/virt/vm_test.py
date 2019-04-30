@@ -705,10 +705,7 @@ class TestVm(XMLTestCase):
             self.assertTrue(testvm.acpi_enabled())
 
     def test_acpi_disabled(self):
-        # `features' argument is needed here to add an Engine XML in fake.VM.
-        # It can be removed once fake.VM starts using Engine XML
-        # unconditionally.
-        with fake.VM(arch=cpuarch.X86_64, features='<apic/>') as testvm:
+        with fake.VM(arch=cpuarch.X86_64) as testvm:
             self.assertFalse(testvm.acpi_enabled())
 
     def test_hotplug_lease(self):

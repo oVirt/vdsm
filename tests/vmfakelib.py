@@ -36,7 +36,6 @@ import vdsm.common.time
 from vdsm.common import xmlutils
 from vdsm.virt import sampling
 from vdsm.virt import vm
-from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.vmdevices import core
 
 from testlib import namedTemporaryDir
@@ -350,19 +349,12 @@ def VM(params=None, devices=None, runCpu=False,
                 xmldevices_xml = xmlsnippet(xmldevices, 'devices')
                 metadata_xml = xmlsnippet(metadata, 'metadata')
                 params = params.copy()
-                # TODO: Make the following unconditional once all
-                # tests are compatible and remove the else part.
-                if features or xmldevices or metadata:
-                    params['xml'] = DEFAULT_DOMAIN_XML.format(
-                        vm_id=vmid,
-                        features=features_xml,
-                        devices=xmldevices_xml,
-                        metadata=metadata_xml
-                    )
-                else:
-                    params['vmId'] = vmid
-                    if 'vmName' not in params:
-                        params['vmName'] = 'n%s' % vmid
+                params['xml'] = DEFAULT_DOMAIN_XML.format(
+                    vm_id=vmid,
+                    features=features_xml,
+                    devices=xmldevices_xml,
+                    metadata=metadata_xml
+                )
             cif = ClientIF() if cif is None else cif
             fake = vm.Vm(cif, params, recover=recover)
             cif.vmContainer[fake.id] = fake
@@ -386,12 +378,6 @@ def VM(params=None, devices=None, runCpu=False,
                 fake._pause_time = (vdsm.common.time.monotonic_time() -
                                     pause_time_offset)
             sampling.stats_cache.add(fake.id)
-
-            if 'xml' not in params:
-                def _updateDomainDescriptor(_=None):
-                    fake._domain = DomainDescriptor(fake._buildDomainXML())
-                fake._updateDomainDescriptor = _updateDomainDescriptor
-
             yield fake
 
 
