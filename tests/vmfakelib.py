@@ -264,7 +264,12 @@ class Domain(object):
         pass
 
     def attachDevice(self, device_xml):
-        pass
+        if self._xml:
+            dom = xmlutils.fromstring(self._xml)
+            devices = dom.find('.//devices')
+            attached_device = xmlutils.fromstring(device_xml)
+            devices.append(attached_device)
+            self._xml = xmlutils.tostring(dom)
 
     def detachDevice(self, device_xml):
         if self.vm is not None:
@@ -344,10 +349,10 @@ def VM(params=None, devices=None, runCpu=False,
                                     pause_time_offset)
             sampling.stats_cache.add(fake.id)
 
-            def _updateDomainDescriptor(_=None):
-                fake._domain = DomainDescriptor(fake._buildDomainXML())
-
-            fake._updateDomainDescriptor = _updateDomainDescriptor
+            if 'xml' not in params:
+                def _updateDomainDescriptor(_=None):
+                    fake._domain = DomainDescriptor(fake._buildDomainXML())
+                fake._updateDomainDescriptor = _updateDomainDescriptor
 
             yield fake
 
