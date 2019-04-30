@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2018 Red Hat, Inc.
+# Copyright 2013-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -327,6 +327,7 @@ def VM(params=None, devices=None, runCpu=False,
             fake.conf['devices'] = [] if devices is None else devices
             if create_device_objects:
                 fake._devices = fake._make_devices()
+                fake._getUnderlyingVmDevicesInfo()
             fake._guestCpuRunning = runCpu
             if status is not None:
                 fake._lastStatus = status
