@@ -691,7 +691,10 @@ class StorageDomainManifest(object):
         """
         path = self.external_leases_path()
         with self.external_leases_backend(self.sdUUID, path) as backend:
-            vol = xlease.LeasesVolume(backend)
+            vol = xlease.LeasesVolume(
+                backend,
+                alignment=self._alignment,
+                block_size=self._block_size)
             with utils.closing(vol):
                 yield vol
 
@@ -1329,7 +1332,11 @@ class StorageDomain(object):
             path = self.external_leases_path()
             backend = xlease.DirectFile(path)
             with utils.closing(backend):
-                xlease.rebuild_index(self.sdUUID, backend)
+                xlease.rebuild_index(
+                    self.sdUUID,
+                    backend,
+                    alignment=self._manifest.alignment,
+                    block_size=self._manifest.block_size)
 
     # Images
 
