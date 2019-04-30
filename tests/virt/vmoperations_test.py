@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2017 Red Hat, Inc.
+# Copyright 2013-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -143,11 +143,13 @@ class TestVmOperations(XMLTestCase):
             ' port="5900" type="spice"/>',
             '<graphics passwd="12345678" port="5900" type="vnc"/>')
         for device, devXml in zip(self.GRAPHIC_DEVICES, devXmls):
+            graphics_xml = ('<graphics type="{device}" port="{port}"/>'.
+                            format(**device))
             domXml = '''
                 <devices>
                     <graphics type="%s" port="5900" />
                 </devices>''' % device['device']
-            self._verifyDeviceUpdate(device, device, domXml, devXml,
+            self._verifyDeviceUpdate(device, graphics_xml, domXml, devXml,
                                      _GRAPHICS_DEVICE_PARAMS)
 
     def testUpdateSingleDeviceGraphicsNoConnected(self):
@@ -158,11 +160,13 @@ class TestVmOperations(XMLTestCase):
             ' port="5900" type="spice"/>',
             '<graphics passwd="12345678" port="5900" type="vnc"/>')
         for device, devXml in zip(self.GRAPHIC_DEVICES, devXmls):
+            graphics_xml = ('<graphics type="{device}" port="{port}"/>'.
+                            format(**device))
             domXml = '''
                 <devices>
                     <graphics type="%s" port="5900" />
                 </devices>''' % device['device']
-            self._verifyDeviceUpdate(device, device, domXml, devXml,
+            self._verifyDeviceUpdate(device, graphics_xml, domXml, devXml,
                                      graphics_params)
 
     def testUpdateMultipleDeviceGraphics(self):
@@ -175,9 +179,13 @@ class TestVmOperations(XMLTestCase):
                 <graphics type="spice" port="5900" />
                 <graphics type="vnc" port="5901" />
             </devices>'''
+        graphics_xml = ''
+        for device in self.GRAPHIC_DEVICES:
+            graphics_xml += ('<graphics type="{device}" port="{port}"/>'.
+                             format(**device))
         for device, devXml in zip(self.GRAPHIC_DEVICES, devXmls):
             self._verifyDeviceUpdate(
-                device, self.GRAPHIC_DEVICES, domXml, devXml,
+                device, graphics_xml, domXml, devXml,
                 _GRAPHICS_DEVICE_PARAMS)
 
     def _updateGraphicsDevice(self, testvm, device_type, graphics_params):
@@ -197,7 +205,7 @@ class TestVmOperations(XMLTestCase):
 
     def _verifyDeviceUpdate(self, device, allDevices, domXml, devXml,
                             graphics_params):
-        with fake.VM(devices=allDevices) as testvm:
+        with fake.VM(xmldevices=allDevices) as testvm:
             testvm._dom = fake.Domain(domXml)
 
             self._updateGraphicsDevice(testvm, device['device'],
@@ -209,17 +217,16 @@ class TestVmOperations(XMLTestCase):
         graphics_params = dict(_GRAPHICS_DEVICE_PARAMS)
         del graphics_params['existingConnAction']
         device = self.GRAPHIC_DEVICES[1]  # VNC
-        domXml = '''
-            <devices>
-                <graphics type="%s" port="5900" />
-            </devices>''' % device['device']
+        graphics_xml = ('<graphics type="%s" port="5900"/>' %
+                        (device['device'],))
+        device_xml = '<devices>%s</devices>''' % (graphics_xml,)
 
-        with fake.VM(devices=domXml) as testvm:
+        with fake.VM(xmldevices=graphics_xml) as testvm:
             def _fake_set_vnc_pwd(username, pwd):
                 testvm.pwd = pwd
                 testvm.username = username
 
-            testvm._dom = fake.Domain(domXml)
+            testvm._dom = fake.Domain(device_xml)
             testvm.pwd = "invalid"
             params = {'graphicsType': device['device']}
             params.update(graphics_params)
@@ -238,16 +245,15 @@ class TestVmOperations(XMLTestCase):
         graphics_params = dict(_GRAPHICS_DEVICE_PARAMS)
         del graphics_params['existingConnAction']
         device = self.GRAPHIC_DEVICES[1]  # VNC
-        domXml = '''
-            <devices>
-                <graphics type="%s" port="5900" />
-            </devices>''' % device['device']
+        graphics_xml = ('<graphics type="%s" port="5900"/>' %
+                        (device['device'],))
+        device_xml = '<devices>%s</devices>''' % (graphics_xml,)
 
-        with fake.VM(devices=domXml) as testvm:
+        with fake.VM(xmldevices=graphics_xml) as testvm:
             def _fake_remove_pwd(username):
                 testvm.username = username
 
-            testvm._dom = fake.Domain(domXml)
+            testvm._dom = fake.Domain(device_xml)
             params = {'graphicsType': device['device']}
             params.update(graphics_params)
             params['params']['vncUsername'] = 'vnc-123-456'
