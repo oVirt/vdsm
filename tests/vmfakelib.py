@@ -311,13 +311,15 @@ def VM(params=None, devices=None, runCpu=False,
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir),
                                (libvirtconnection, 'get', Connection),
                                ]):
-            if params and 'xml' in params:
+            if params is None:
+                params = {}
+            if 'xml' in params:
                 vmParams = {}
             else:
                 if vmid is None:
                     vmid = 'TESTING'
                 vmParams = {'vmId': vmid, 'vmName': 'n%s' % vmid}
-            vmParams.update({} if params is None else params)
+            vmParams.update(params)
             cif = ClientIF() if cif is None else cif
             fake = vm.Vm(cif, vmParams, recover=recover)
             cif.vmContainer[fake.id] = fake
