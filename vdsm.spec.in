@@ -45,6 +45,16 @@
 # Disable debuginfo package, since vdsm is a meta-package
 %global debug_package %{nil}
 
+%global target_py @VDSM_TARGET_PY_MAJOR_SHORT_VERSION@
+
+%if %{target_py} == py2
+%global python2_or_python3 python2
+%global python_or_python3 python
+%else
+%global python2_or_python3 python3
+%global python_or_python3 python3
+%endif
+
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
 Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
@@ -58,11 +68,13 @@ Source0:        %{vdsm_name}-%{version}.tar.gz
 %{!?_licensedir:%global license %%doc}
 
 BuildRequires: openssl
-BuildRequires: python
+BuildRequires: %{python_or_python3}
 BuildRequires: python-six >= 1.9.0
 BuildRequires: python-dateutil
+%if %{target_py} == py2
 BuildRequires: python-subprocess32
-BuildRequires: python2-devel
+%endif
+BuildRequires: %{python2_or_python3}-devel
 BuildRequires: rpm-build
 BuildRequires: systemd-units
 
@@ -76,11 +88,11 @@ BuildRequires: util-linux
 %endif
 
 %if 0%{?rhel}
-BuildRequires: python-enum34
+BuildRequires: %{python_or_python3}-enum34
 %endif
 
 %if 0%{?fedora}
-BuildRequires: python2-enum34
+BuildRequires: %{python2_or_python3}-enum34
 %endif
 
 # Numactl is not available on s390[x] and ARM
@@ -89,7 +101,7 @@ Requires: numactl
 %endif
 
 %ifarch x86_64
-Requires: python-dmidecode
+Requires: %{python_or_python3}-dmidecode
 Requires: dmidecode
 Requires: virt-v2v
 %endif
@@ -101,8 +113,11 @@ Requires: logrotate
 Requires: lshw
 Requires: xz
 Requires: python-netaddr
+%if %{target_py} == py2
+# TODO: port ioprocess to python3
 # Requires lstat() support, see https://bugzilla.redhat.com/1560460
 Requires: python2-ioprocess >= 1.1.1
+%endif
 Requires: python-pthreading >= 0.1.3-3
 Requires: python-six >= 1.9.0
 Requires: python-requests
@@ -110,12 +125,17 @@ Requires: rpm-python
 Requires: abrt-cli
 Requires: abrt-addon-vmcore
 Requires: abrt-addon-ccpp
+%if %{target_py} == py2
 Requires: abrt-addon-python
+%endif
 Requires: curl
 Requires: %{name}-http = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-7
+%if %{target_py} == py2
+# TODO: port mom to python3
 Requires: mom >= 0.5.12
+%endif
 Requires: util-linux
 Requires(pre): shadow-utils
 
@@ -140,11 +160,15 @@ Requires: ovirt-vmconsole >= 1.0.0-0
 %endif
 
 # Python
+%if %{target_py} == py2
 # For https://bugzilla.redhat.com/1518676
 %if 0%{?rhel}
-Requires: python >= 2.7.5-65.el7
+Requires: %{python_or_python3} >= 2.7.5-65.el7
 %else
-Requires: python >= 2.7.14-4
+Requires: %{python_or_python3} >= 2.7.14-4
+%endif
+%else  # target_py
+Requires: python3 >= 3.6
 %endif
 
 Requires: libvirt-client
@@ -324,7 +348,11 @@ Access vdsm API from the command line.
 %package api
 Summary:        VDSM API
 BuildArch:      noarch
+%if %{target_py} == py2
 BuildRequires:  PyYAML
+%else
+BuildRequires:  python3-PyYAML
+%endif
 
 %description api
 Contains api schema files
@@ -353,17 +381,19 @@ Summary:        common VDSM python libraries, required by all subsystems
 BuildArch:      noarch
 Requires:       systemd
 Requires:       glibc
-Requires:       python-dateutil
-Requires:       python-six >= 1.9.0
+Requires:       %{python_or_python3}-dateutil
+Requires:       %{python_or_python3}-six >= 1.9.0
+%if %{target_py} == py2
 Requires:       python-subprocess32
+%endif
 %if 0%{?rhel}
-Requires:       python-decorator
-Requires:       python-enum34
+Requires:       %{python_or_python3}-decorator
 Requires:       libvirt-python >= 3.2.0-3.el7_4.1
+Requires:       %{python_or_python3}-enum34
 %endif
 %if 0%{?fedora}
-Requires:       python2-decorator
-Requires:       python2-enum34
+Requires:       %{python2_or_python3}-decorator
+Requires:       %{python2_or_python3}-enum34
 Requires:       libvirt-python >= 3.7.0
 %endif
 
@@ -387,7 +417,7 @@ Requires:       lldpad
 %if 0%{?with_openvswitch}
 Requires:       openvswitch >= 2.7.0
 %endif
-Requires:       python-inotify
+Requires:       %{python_or_python3}-inotify
 Requires:       python-ipaddress
 Requires:       python-netaddr
 Requires:       python-six
