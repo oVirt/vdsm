@@ -75,13 +75,7 @@ BuildRequires: libtool
 BuildRequires: util-linux
 %endif
 
-%if 0%{?rhel}
-BuildRequires: python-enum34
-%endif
-
-%if 0%{?fedora}
 BuildRequires: python2-enum34
-%endif
 
 # Numactl is not available on s390[x] and ARM
 %ifnarch s390 s390x %{arm}
@@ -356,14 +350,13 @@ Requires:       glibc
 Requires:       python-dateutil
 Requires:       python-six >= 1.9.0
 Requires:       python-subprocess32
+Requires:       python2-enum34
 %if 0%{?rhel}
 Requires:       python-decorator
-Requires:       python-enum34
 Requires:       libvirt-python >= 3.2.0-3.el7_4.1
 %endif
 %if 0%{?fedora}
 Requires:       python2-decorator
-Requires:       python2-enum34
 Requires:       libvirt-python >= 3.7.0
 %endif
 
