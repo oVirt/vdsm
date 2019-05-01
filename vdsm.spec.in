@@ -55,6 +55,18 @@
 %global python_or_python3 python3
 %endif
 
+%if %{target_py} == py3
+# RPM packaging guidelines require all files outside of '/usr/lib[64]/pythonX.X'
+# to be compiled manually [1]. Some distros try to find '*.py' files outside of the aforementioned
+# dirs and compile them for us, but using hard-coded '__python' macro, which points to Python 2.
+# We opt-out of this behavior and do the compilation ourselves in 'install' stage.
+#
+# [1] https://docs.fedoraproject.org/en-US/packaging-guidelines/Python_Appendix/#manual-bytecompilation
+%global _python_bytecompile_extra 0
+
+%global python_sitelib %{python3_sitelib}
+%endif
+
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
 Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
@@ -744,6 +756,21 @@ make
 %install
 make DESTDIR=%{buildroot} install
 
+%if %{target_py} == py3
+%py_byte_compile python3 %{buildroot}/%{_datadir}/%{vdsm_name}/sitecustomize.py
+%py_byte_compile python3 %{buildroot}/%{_datadir}/%{vdsm_name}/tests
+%py_byte_compile python3 %{buildroot}/%{_datadir}/yum-plugins/vdsmupgrade.py
+%py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_device_create/openstacknet_utils.py
+%py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/openstacknet_utils.py
+%py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/openstacknet_utils.py
+%py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/checkips_utils.py
+%py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug/openstacknet_utils.py
+%py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/openstacknet_utils.py
+%py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/openstacknet_utils.py
+%py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/openstacknet_utils.py
+%py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/vm_libvirt_hook.py
+%endif
+
 %pre
 # Force standard locale behavior (English)
 export LC_ALL=C
@@ -879,6 +906,9 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}
 %{_datadir}/%{vdsm_name}/daemonAdapter
 %{_datadir}/%{vdsm_name}/sitecustomize.py*
+%if %{target_py} == py3
+%{_datadir}/%{vdsm_name}/__pycache__/*
+%endif
 %{_datadir}/%{vdsm_name}/supervdsmd
 %{_datadir}/%{vdsm_name}/vdsmd
 
@@ -908,11 +938,17 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/wait_for_ipv4s
 %{_libexecdir}/%{vdsm_name}/spmprotect.sh
 %{_libexecdir}/%{vdsm_name}/spmstop.sh
+%if %{target_py} == py3
+%{_libexecdir}/%{vdsm_name}/__pycache__/*
+%endif
 %dir %{_libexecdir}/%{vdsm_name}/hooks
 %dir %{_libexecdir}/%{vdsm_name}/hooks/*
 
 %{_libexecdir}/%{vdsm_name}/get-conf-item
 %{python_sitelib}/sos/plugins/vdsm.py*
+%if %{target_py} == py3
+%{python3_sitelib}/sos/plugins/__pycache__/*
+%endif
 %{_udevrulesdir}/12-vdsm-lvm.rules
 /etc/security/limits.d/99-vdsm.conf
 %{_mandir}/man8/vdsmd.8*
@@ -942,9 +978,15 @@ exit 0
 
 %{_sysconfdir}/yum/pluginconf.d/vdsmupgrade.conf
 %{_datadir}/yum-plugins/*.py*
+%if %{target_py} == py3
+%{_datadir}/yum-plugins/__pycache__/*
+%endif
 
 %files common
 %{python_sitelib}/%{vdsm_name}/__init__.py*
+%if %{target_py} == py3
+%{python3_sitelib}/%{vdsm_name}/__pycache__/__init__.*.pyc
+%endif
 %{python_sitelib}/%{vdsm_name}/common
 
 %files network
@@ -999,6 +1041,44 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/
 %{python_sitelib}/%{vdsm_name}/tool/
 %{python_sitelib}/%{vdsm_name}/virt/
+%if %{target_py} == py3
+%{python3_sitelib}/%{vdsm_name}/__pycache__/alignmentScan.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/API.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/client.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/clientIF.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/config.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/constants.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/cpuinfo.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/dmidecodeUtil.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/executor.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/health.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/hugepages.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/jobs.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/jsonrpcvdscli.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/kvm2ovirt.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/logUtils.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/machinetype.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/moduleloader.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/momIF.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/mkimage.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/numa.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/osinfo.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/ppc64HardwareInfo.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/protocoldetector.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/schedule.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/sslutils.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/supervdsm_server.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/taskset.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/throttledlog.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/utils.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/v2v.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/vdsmd.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/virtsparsify.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/virtsysprep.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/__init__.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/cli.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/exception.*.pyc
+%endif
 
 %files tests
 %doc %{_datadir}/%{vdsm_name}/tests/README
@@ -1020,6 +1100,15 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/openstacknet_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/openstacknet_utils.py*
+%if %{target_py} == py3
+%{_libexecdir}/%{vdsm_name}/hooks/after_device_create/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/__pycache__/*
+%endif
 
 %if 0%{?with_vhostmd}
 %files hook-vhostmd
@@ -1077,6 +1166,9 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/10_checkips
 %{_libexecdir}/%{vdsm_name}/hooks/checkipsd
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/checkips_utils.py*
+%if %{target_py} == py3
+%{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/__pycache__/checkips_utils.*.pyc
+%endif
 %{_unitdir}/vdsm-checkips.service
 
 %files hook-extra-ipv4-addrs
@@ -1137,6 +1229,9 @@ exit 0
 
 %files http
 %{python_sitelib}/%{vdsm_name}/rpc/http.py*
+%if %{target_py} == py3
+%{python3_sitelib}/%{vdsm_name}/rpc/__pycache__/http.*.pyc
+%endif
 
 %files client
 %{_bindir}/vdsm-client
@@ -1144,6 +1239,10 @@ exit 0
 %{python_sitelib}/vdsmclient/__init__.py*
 %{python_sitelib}/vdsmclient/client.py*
 %{python_sitelib}/yajsonrpc/__init__.py*
+%if %{target_py} == py3
+%{python3_sitelib}/vdsmclient/__pycache__/*
+%{python3_sitelib}/yajsonrpc/__pycache__/__init__.*.pyc
+%endif
 %{_mandir}/man1/vdsm-client.1*
 
 %files jsonrpc
@@ -1152,6 +1251,13 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/rpc/Bridge.py*
 %{python_sitelib}/yajsonrpc/__init__.py*
 %{python_sitelib}/yajsonrpc/jsonrpcclient.py*
+%if %{target_py} == py3
+%{python3_sitelib}/%{vdsm_name}/rpc/__pycache__/__init__.*.pyc
+%{python3_sitelib}/%{vdsm_name}/rpc/__pycache__/bindingjsonrpc.*.pyc
+%{python3_sitelib}/%{vdsm_name}/rpc/__pycache__/Bridge.*.pyc
+%{python3_sitelib}/yajsonrpc/__pycache__/__init__.*.pyc
+%{python3_sitelib}/yajsonrpc/__pycache__/jsonrpcclient.*.pyc
+%endif
 
 %files api
 %doc lib/vdsm/api/vdsm-api.html
@@ -1161,6 +1267,9 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/api/*.py*
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api.pickle
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-events.pickle
+%if %{target_py} == py3
+%{python3_sitelib}/%{vdsm_name}/api/__pycache__/*
+%endif
 %if ! 0%{?with_gluster_mgmt}
 %exclude %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.pickle
 %endif
@@ -1171,6 +1280,13 @@ exit 0
 %{python_sitelib}/yajsonrpc/stomp.py*
 %{python_sitelib}/yajsonrpc/stompclient.py*
 %{python_sitelib}/yajsonrpc/stompserver.py*
+%if %{target_py} == py3
+%{python3_sitelib}/yajsonrpc/__pycache__/betterAsyncore.*.pyc
+%{python3_sitelib}/yajsonrpc/__pycache__/exception.*.pyc
+%{python3_sitelib}/yajsonrpc/__pycache__/stomp.*.pyc
+%{python3_sitelib}/yajsonrpc/__pycache__/stompclient.*.pyc
+%{python3_sitelib}/yajsonrpc/__pycache__/stompserver.*.pyc
+%endif
 
 %files hook-faqemu
 %license COPYING
@@ -1192,6 +1308,19 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/gluster/tasks.py*
 %{python_sitelib}/%{vdsm_name}/gluster/thinstorage.py*
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.pickle
+%if %{target_py} == py3
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/api.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/apiwrapper.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/events.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/fstab.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/fence.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/gfapi.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/hooks.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/services.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/storagedev.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/tasks.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/thinstorage.*.pyc
+%endif
 %endif
 
 
