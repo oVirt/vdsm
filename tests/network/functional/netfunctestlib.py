@@ -685,7 +685,7 @@ class SetupNetworks(object):
         try:
             self._update_configs()
             self._assert_configs()
-        except:
+        except Exception:
             # Ignore cleanup failure, make sure to re-raise original exception.
             self._cleanup()
             raise
