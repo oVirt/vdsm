@@ -10,6 +10,8 @@ Syntax:
 Where:
     VM_ID should be replaced with the vm id.'''
 
+from __future__ import absolute_import
+
 import libvirt
 import os
 import time

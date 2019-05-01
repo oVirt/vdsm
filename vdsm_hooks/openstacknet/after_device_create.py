@@ -21,6 +21,8 @@ Where:
     port_id should be replaced with the port id of the virtual NIC to be
     connected to OpenStack Network.'''
 
+from __future__ import absolute_import
+
 import os
 import sys
 import traceback

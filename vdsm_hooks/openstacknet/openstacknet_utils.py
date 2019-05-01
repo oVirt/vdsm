@@ -1,6 +1,8 @@
 #!/usr/bin/python2
 
+from __future__ import absolute_import
 from __future__ import print_function
+
 import hooking
 import os
 import subprocess

@@ -22,6 +22,7 @@ Where:
     plugin_type_value should be replaced with with OPEN_VSWITCH for OVS plugin
     of anything else for Linux Bridge plugin.
 '''
+from __future__ import absolute_import
 from __future__ import print_function
 
 import libvirt
