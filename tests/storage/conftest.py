@@ -37,6 +37,7 @@ from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import fallocate
 from vdsm.storage import fileSD
+from vdsm.storage import fileVolume
 from vdsm.storage import lvm
 from vdsm.storage import managedvolumedb
 from vdsm.storage import multipath
@@ -173,6 +174,7 @@ def fake_sanlock(monkeypatch):
     fs = FakeSanlock()
     monkeypatch.setattr(clusterlock, "sanlock", fs)
     monkeypatch.setattr(blockSD, "sanlock", fs)
+    monkeypatch.setattr(fileVolume, "sanlock", fs)
     return fs
 
 

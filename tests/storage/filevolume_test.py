@@ -125,3 +125,27 @@ class TestFileVolumeManifest(object):
 
             vol.updateInvalidatedSize()
             assert vol.getMetadata().capacity == expected_capacity
+
+    @xfail_python3
+    def test_new_volume_lease(self, fake_sanlock):
+        size = 5 * MEGAB
+        with self.make_volume(size=size, format=sc.COW_FORMAT) as vol:
+            md_id = vol.getMetadataId()
+            sd_uuid = vol.sdUUID
+            vol_uuid = vol.volUUID
+
+            # We just create volume in the test, but to get volume info
+            # sanlock lockspace has to be initialized (as it calls
+            # read_resource_owners for a lease), so initialize lockspace
+            # manually here.
+            fake_sanlock.write_lockspace(sd_uuid, "test_path")
+            vol.newVolumeLease(md_id, sd_uuid, vol_uuid)
+            info = vol.getInfo()
+
+            expected = {
+                "offset": 0,
+                "owners": [],
+                "path": "%s.lease" % vol.getVolumePath(),
+                "version": None,
+            }
+            assert expected == info["lease"]
