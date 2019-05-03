@@ -292,8 +292,14 @@ class FileVolumeManifest(volume.VolumeManifest):
         leasePath = cls.leaseVolumePath(volPath)
         oop.getProcessPool(sdUUID).truncateFile(leasePath, LEASE_FILEOFFSET)
         cls.file_setrw(leasePath, rw=True)
-        sanlock.write_resource(sdUUID, volUUID, [(leasePath,
-                                                 LEASE_FILEOFFSET)])
+
+        manifest = sdCache.produce_manifest(sdUUID)
+        sanlock.write_resource(
+            sdUUID,
+            volUUID,
+            [(leasePath, LEASE_FILEOFFSET)],
+            align=manifest.alignment,
+            sector=manifest.block_size)
 
     def _shareLease(self, dstImgPath):
         """
