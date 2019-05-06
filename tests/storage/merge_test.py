@@ -423,6 +423,9 @@ class TestFinalizeMerge:
             assert subchain.top_vol.getLegality() == sc.LEGAL_VOL
             assert subchain.top_vol.getParent() == base_vol.volUUID
 
+    @pytest.mark.xfail(
+        reason="Monkeypatch qemuimg cmd is too broad and cause failured in"
+               "wrong place (in volume.updateInvalidatedSize()).")
     def test_rollback_volume_legallity_failed(self):
         with self.make_env(sd_type='block', chain_len=4) as env:
             base_vol = env.chain[1]
