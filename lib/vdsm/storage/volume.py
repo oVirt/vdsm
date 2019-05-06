@@ -490,17 +490,52 @@ class VolumeManifest(object):
         self.setMetaParam(sc.SIZE, size)
 
     def updateInvalidatedSize(self):
-        # During some complex flows the volume size might have been marked as
-        # invalidated (e.g. during a transaction). Here we are checking
-        # NOTE: the prerequisite to run this is that the volume is accessible
-        # (e.g. lv active) and not in use by another process (e.g. dd, qemu).
-        # Going directly to the metadata parameter as we should skip the size
-        # validation in getSize.
-        if int(self.getMetaParam(sc.SIZE)) < 1:
-            volInfo = qemuimg.info(
-                self.getVolumePath(), sc.fmt2str(self.getFormat()))
-            # qemu/qemu-img rounds down
-            self.setSize(volInfo['virtualsize'] / sc.BLOCK_SIZE)
+        """
+        Repair volume capacity that may become invalid.
+
+        We know about 2 cases when the volume capacity is invalid:
+
+        - qcow2 volume capacity was set to 0 during Volume.updateSize(), and
+          the operation failed, leaving the invalid value on storage.
+
+        - qcow2 volume was created with the wrong capacity, using the parent
+          capacity (see https://bugzilla.redhat.com/1700623). This was fixed in
+          https://gerrit.ovirt.org/c/99539/ but we have to handle broken
+          volumes created by older versions.
+
+        Both issues are relevant only to qcow2 volumes. To keep the code
+        simpler and more robust against other cases that we did not discover
+        yet, or future bugs, we check and repair also raw volumes. The only
+        exception is shared volumes, which must be read-only.
+
+        The prerequisite to run this is that the volume and its metadata are
+        accessible.
+        """
+
+        # Shared volumes (templates) are immutable and must not be modified.
+        if self.isShared():
+            return
+
+        # Bypass the size validation in getSize() by using metadata directly.
+        capacity = int(self.getMetaParam(sc.SIZE)) * sc.BLOCK_SIZE
+
+        # We use unsafe here as image may be locked by qemu in some cases, for
+        # example when preparing a disk of running VM. However, using unsafe
+        # shouldn't cause any harm as virtual size is never changed by qemu.
+        # We also don't specify an image format, as some images can have
+        # corrupted qcow2 header (see https://bugzilla.redhat.com/1282239).
+        qemu_info = qemuimg.info(self.getVolumePath(), unsafe=True)
+        virtual_size = qemu_info["virtualsize"]
+
+        # If capacity is smaller than virtual size, creating a snapshot on top
+        # of this volume will create qcow2 volume with wrong virtual size. This
+        # will corrupt the image later when qemu try to access data beyond the
+        # wrong virtual size (https://bugzilla.redhat.com/1700189).
+        if capacity < virtual_size:
+            self.log.warn(
+                "Repairing wrong %s for volume %s stored=%d actual=%d",
+                sc.SIZE, self.volUUID, capacity, virtual_size)
+            self.setMetaParam(sc.SIZE, virtual_size // sc.BLOCK_SIZE)
 
     def setType(self, prealloc):
         self.setMetaParam(sc.TYPE, sc.type2name(prealloc))
