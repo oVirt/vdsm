@@ -430,3 +430,73 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
         data = f.read(sc.METADATA_SIZE)
     data = data.rstrip("\0")
     assert data == md.storage_format(4, CAP=md.capacity)
+
+
+@requires_root
+@xfail_python3
+@pytest.mark.root
+@pytest.mark.parametrize("domain_version", [4, 5])
+@pytest.mark.xfail(
+    reason=("Fails as size is overwritten by parent size, see"
+            "https://bugzilla.redhat.com/1700623"))
+def test_extended_snapshot(
+        tmp_storage, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
+        fake_sanlock, domain_version):
+    sd_uuid = str(uuid.uuid4())
+
+    dev = tmp_storage.create_device(20 * 1024 ** 3)
+    lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_uuid)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_uuid,
+        domainName="domain",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=domain_version,
+        storageType=sd.ISCSI_DOMAIN,
+        block_size=sc.BLOCK_SIZE_512,
+        alignment=sc.ALIGNMENT_1M)
+
+    sdCache.knownSDs[sd_uuid] = blockSD.findDomain
+    sdCache.manuallyAddDomain(dom)
+
+    dom.refresh()
+    dom.attach(tmp_repo.pool_id)
+
+    img_uuid = str(uuid.uuid4())
+    parent_vol_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        size=constants.GIB // sc.BLOCK_SIZE_512,
+        volFormat=sc.RAW_FORMAT,
+        preallocate=sc.PREALLOCATED_VOL,
+        diskType='DATA',
+        volUUID=parent_vol_uuid,
+        desc="Test parent volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        initialSize=None)
+    parent_vol = dom.produceVolume(img_uuid, parent_vol_uuid)
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        size=2 * constants.GIB // sc.BLOCK_SIZE_512,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=vol_uuid,
+        desc="Extended volume",
+        srcImgUUID=parent_vol.imgUUID,
+        srcVolUUID=parent_vol.volUUID,
+        initialSize=None)
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+
+    # Verify volume sizes obtained from metadata
+    actual_parent = parent_vol.getInfo()
+    assert int(actual_parent["capacity"]) == constants.GIB
+
+    actual = vol.getInfo()
+    assert int(actual["capacity"]) == 2 * constants.GIB

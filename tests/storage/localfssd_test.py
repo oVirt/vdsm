@@ -541,6 +541,53 @@ def test_volume_create_raw_prealloc_invalid_initial_size(
             initialSize=initial_size)
 
 
+@pytest.mark.parametrize("domain_version", [4, 5])
+@pytest.mark.xfail(
+    reason=("Fails as size is overwritten by parent size, see"
+            "https://bugzilla.redhat.com/1700623"))
+def test_extended_snapshot(
+        tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
+        fake_task, local_fallocate, domain_version):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
+
+    img_uuid = str(uuid.uuid4())
+    parent_vol_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        size=SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        volFormat=sc.RAW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=parent_vol_uuid,
+        desc="Test parent volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        initialSize=None)
+    parent_vol = dom.produceVolume(img_uuid, parent_vol_uuid)
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        size=2 * SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=vol_uuid,
+        desc="Extended volume",
+        srcImgUUID=parent_vol.imgUUID,
+        srcVolUUID=parent_vol.volUUID,
+        initialSize=None)
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+
+    # Verify volume sizes obtained from metadata
+    actual_parent = parent_vol.getInfo()
+    assert int(actual_parent["capacity"]) == SPARSE_VOL_SIZE
+
+    actual = vol.getInfo()
+    assert int(actual["capacity"]) == 2 * SPARSE_VOL_SIZE
+
+
 def verify_volume_file(
         path, format, virtual_size, qemu_info, backing_file=None):
     assert qemu_info['format'] == format
