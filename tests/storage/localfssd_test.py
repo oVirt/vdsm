@@ -530,9 +530,6 @@ def test_volume_create_raw_prealloc_invalid_initial_size(
 
 
 @pytest.mark.parametrize("domain_version", [4, 5])
-@pytest.mark.xfail(
-    reason=("Fails as size is overwritten by parent size, see"
-            "https://bugzilla.redhat.com/1700623"))
 def test_extended_snapshot(
         tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
         fake_task, local_fallocate, domain_version):

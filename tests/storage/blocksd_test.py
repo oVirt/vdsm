@@ -420,9 +420,6 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
 @xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("domain_version", [4, 5])
-@pytest.mark.xfail(
-    reason=("Fails as size is overwritten by parent size, see"
-            "https://bugzilla.redhat.com/1700623"))
 def test_extended_snapshot(
         tmp_storage, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
         fake_sanlock, domain_version):
