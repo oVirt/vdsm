@@ -174,3 +174,20 @@ class TestBlockVolumeManifest(VdsmTestCase):
             with MonkeyPatchScope([(qemuimg, 'check', fake_check)]):
                 env.chain = make_qemu_chain(env, actual_size, sc.COW_FORMAT, 3)
                 self.assertEqual(env.chain[1].optimal_size(), optimal_size)
+
+    @permutations([
+        # capacity, virtual_size, expected_capacity
+        (0, 128 * MEGAB, 128 * MEGAB),  # failed resize, repair capacity
+        (128 * MEGAB, 256 * MEGAB, 256 * MEGAB),  # invalid size, repair cap
+        (128 * MEGAB, 128 * MEGAB, 128 * MEGAB),  # normal case, no change
+        (256 * MEGAB, 128 * MEGAB, 256 * MEGAB),  # cap > actual, no change
+    ])
+    def test_repair_capacity(self, capacity, virtual_size, expected_capacity):
+        with self.make_volume(virtual_size, format=sc.COW_FORMAT) as vol:
+            md = vol.getMetadata()
+            md.capacity = capacity
+            vol.setMetadata(md)
+            assert md.capacity == capacity
+
+            vol.updateInvalidatedSize()
+            assert vol.getMetadata().capacity == expected_capacity
