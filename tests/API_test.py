@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,13 +26,13 @@ import logging
 
 from vdsm import API
 from vdsm.common import api
-from vdsm.common import conv
 from vdsm.common import response
 from vdsm.common import threadlocal
 
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import recorded
+import vmfakelib
 
 
 class TestVMCreate(TestCaseBase):
@@ -53,6 +53,7 @@ class TestVMCreate(TestCaseBase):
             'display': 'qxl',
             'kvmEnable': 'true',
             'smp': '1',
+            'xml': vmfakelib.default_domain_xml(vm_id=self.uuid)
         }
         with MonkeyPatchScope([(API, 'clientIF', self.cif)]):
             self.vm = API.VM(self.uuid)
@@ -74,71 +75,6 @@ class TestVMCreate(TestCaseBase):
         finally:
             del self.cif.vmContainer[vm.id]
         self.assertEqual(self.cif.vmContainer, {})
-
-    def test_create_without_id(self):
-        res = self.vm.create({})
-        self.assertTrue(response.is_error(res, 'MissParam'))
-
-    def test_create_without_memsize(self):
-        res = self.vm.create({'vmId': self.uuid})
-        self.assertTrue(response.is_error(res, 'MissParam'))
-
-    def test_create_with_invalid_id(self):
-        # anything which doesn't look like an UUID
-        res = self.vm.create({'vmId': 'foobar'})
-        self.assertTrue(response.is_error(res, 'MissParam'))
-
-    def test_create_with_zero_memsize(self):
-        res = self.vm.create({
-            'vmId': self.uuid,
-            'memSize': 0,
-        })
-        self.assertTrue(response.is_error(res, 'MissParam'))
-
-    def test_create_with_missing_boot_disk(self):
-        res = self.vm.create({
-            'vmId': self.uuid,
-            'memSize': 0,
-            'boot': 'c',
-        })
-        self.assertTrue(response.is_error(res, 'MissParam'))
-
-    def test_create_fix_param_vmType(self):
-        vmParams = {
-            'vmId': self.uuid,
-            'memSize': 8 * 1024,
-        }
-        res = self.vm.create(vmParams)
-        self.assertFalse(response.is_error(res))
-        self.assertEqual(vmParams.get('vmType'), 'kvm')
-
-    def test_create_fix_param_smp(self):
-        vmParams = {
-            'vmId': self.uuid,
-            'memSize': 8 * 1024,
-        }
-        res = self.vm.create(vmParams)
-        self.assertFalse(response.is_error(res))
-        self.assertEqual(vmParams.get('smp'), '1')
-
-    def test_create_fix_param_vmName(self):
-        vmParams = {
-            'vmId': self.uuid,
-            'memSize': 8 * 1024,
-        }
-        res = self.vm.create(vmParams)
-        self.assertFalse(response.is_error(res))
-        self.assertEqual(vmParams.get('vmName'), 'n%s' % self.uuid)
-
-    def test_create_fix_param_kvmEnable(self):
-        vmParams = {
-            'vmId': self.uuid,
-            'memSize': 8 * 1024,
-            'vmType': 'kvm',
-        }
-        res = self.vm.create(vmParams)
-        self.assertFalse(response.is_error(res))
-        self.assertTrue(conv.tobool(vmParams.get('kvmEnable')))
 
     def test_create_unsupported_graphics(self):
         vmParams = {

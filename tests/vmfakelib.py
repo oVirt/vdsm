@@ -320,6 +320,27 @@ DEFAULT_DOMAIN_XML = '''
 '''
 
 
+def default_domain_xml(vm_id='TESTING', features='', devices='', metadata=''):
+
+    def xmlsnippet(content, tag):
+        if content:
+            snippet = ('<{tag}>{content}</{tag}>'.
+                       format(tag=tag, content=content))
+        else:
+            snippet = '<{tag}/>'.format(tag=tag)
+        return snippet
+
+    features_xml = xmlsnippet(features, 'features')
+    devices_xml = xmlsnippet(devices, 'devices')
+    metadata_xml = xmlsnippet(metadata, 'metadata')
+    return DEFAULT_DOMAIN_XML.format(
+        vm_id=vm_id,
+        features=features_xml,
+        devices=devices_xml,
+        metadata=metadata_xml
+    )
+
+
 @contextmanager
 def VM(params=None, devices=None, runCpu=False,
        arch=cpuarch.X86_64, status=None,
@@ -333,27 +354,15 @@ def VM(params=None, devices=None, runCpu=False,
                                ]):
             if params is None:
                 params = {}
+            if vmid is None:
+                vmid = params.get('vmId', 'TESTING')
             if 'xml' not in params:
-                if vmid is None:
-                    vmid = params.get('vmId', 'TESTING')
-
-                def xmlsnippet(content, tag):
-                    if content:
-                        snippet = ('<{tag}>{content}</{tag}>'.
-                                   format(tag=tag, content=content))
-                    else:
-                        snippet = '<{tag}/>'.format(tag=tag)
-                    return snippet
-
-                features_xml = xmlsnippet(features, 'features')
-                xmldevices_xml = xmlsnippet(xmldevices, 'devices')
-                metadata_xml = xmlsnippet(metadata, 'metadata')
                 params = params.copy()
-                params['xml'] = DEFAULT_DOMAIN_XML.format(
+                params['xml'] = default_domain_xml(
                     vm_id=vmid,
-                    features=features_xml,
-                    devices=xmldevices_xml,
-                    metadata=metadata_xml
+                    features=features,
+                    devices=xmldevices,
+                    metadata=metadata
                 )
             cif = ClientIF() if cif is None else cif
             fake = vm.Vm(cif, params, recover=recover)
