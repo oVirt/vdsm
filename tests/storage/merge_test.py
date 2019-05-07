@@ -51,6 +51,7 @@ from vdsm.storage import fileVolume
 from vdsm.storage import guarded
 from vdsm.storage import image
 from vdsm.storage import merge
+from vdsm.storage import operation
 from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import volume
@@ -423,9 +424,6 @@ class TestFinalizeMerge:
             assert subchain.top_vol.getLegality() == sc.LEGAL_VOL
             assert subchain.top_vol.getParent() == base_vol.volUUID
 
-    @pytest.mark.xfail(
-        reason="Monkeypatch qemuimg cmd is too broad and cause failured in"
-               "wrong place (in volume.updateInvalidatedSize()).")
     def test_rollback_volume_legallity_failed(self):
         with self.make_env(sd_type='block', chain_len=4) as env:
             base_vol = env.chain[1]
@@ -443,7 +441,10 @@ class TestFinalizeMerge:
                 self.setMetaParam(sc.LEGALITY, legality)
 
             with MonkeyPatch().context() as mp:
-                mp.setattr(qemuimg._qemuimg, '_cmd', '/usr/bin/false')
+                def failing_rebase(*args, **kw):
+                    return operation.Command("/usr/bin/false")
+
+                mp.setattr(qemuimg, 'rebase', failing_rebase)
                 mp.setattr(volume.VolumeManifest, 'setLegality', setLegality)
                 with pytest.raises(cmdutils.Error):
                     merge.finalize(subchain)
