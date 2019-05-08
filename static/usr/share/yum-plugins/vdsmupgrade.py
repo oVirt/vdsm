@@ -30,6 +30,8 @@ plugin_type = (TYPE_CORE, TYPE_INTERACTIVE)
 
 
 def predownload_hook(conduit):
+    if conduit.getConf().downloadonly:
+        return
     packages = [p for p in conduit.getDownloadPackages() if p.name == 'vdsm']
     if not packages:
         return
