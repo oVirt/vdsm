@@ -3204,29 +3204,41 @@ class HSM(object):
                     raise se.prepareIllegalVolumeError(volUUID)
 
         imgPath = dom.activateVolumes(imgUUID, imgVolumes)
-        if spUUID and spUUID != sd.BLANK_UUID:
-            runImgPath = dom.linkBCImage(imgPath, imgUUID)
-        else:
-            runImgPath = imgPath
+        try:
+            for volUUID in imgVolumes:
+                dom.produceVolume(imgUUID, volUUID).updateInvalidatedSize()
 
-        leafInfo = dom.produceVolume(imgUUID, leafUUID).getVmVolumeInfo()
+            if spUUID and spUUID != sd.BLANK_UUID:
+                runImgPath = dom.linkBCImage(imgPath, imgUUID)
+            else:
+                runImgPath = imgPath
 
-        leafPath = os.path.join(runImgPath, leafUUID)
-        for volUUID in imgVolumes:
-            path = os.path.join(dom.domaindir, sd.DOMAIN_IMAGES, imgUUID,
-                                volUUID)
-            volInfo = {'domainID': sdUUID, 'imageID': imgUUID,
-                       'volumeID': volUUID, 'path': path}
+            leafInfo = dom.produceVolume(imgUUID, leafUUID).getVmVolumeInfo()
 
-            lease = dom.getVolumeLease(imgUUID, volUUID)
+            leafPath = os.path.join(runImgPath, leafUUID)
+            for volUUID in imgVolumes:
+                path = os.path.join(dom.domaindir, sd.DOMAIN_IMAGES, imgUUID,
+                                    volUUID)
+                volInfo = {'domainID': sdUUID, 'imageID': imgUUID,
+                           'volumeID': volUUID, 'path': path}
 
-            if lease.path and isinstance(lease.offset, numbers.Integral):
-                volInfo.update({
-                    'leasePath': lease.path,
-                    'leaseOffset': lease.offset,
-                })
+                lease = dom.getVolumeLease(imgUUID, volUUID)
 
-            imgVolumesInfo.append(volInfo)
+                if lease.path and isinstance(lease.offset, numbers.Integral):
+                    volInfo.update({
+                        'leasePath': lease.path,
+                        'leaseOffset': lease.offset,
+                    })
+
+                imgVolumesInfo.append(volInfo)
+        except Exception:
+            # Tear down everyting on failure.
+            try:
+                dom.unlinkBCImage(imgUUID)
+                dom.deactivateImage(imgUUID)
+            except Exception:
+                self.log.exception("Error tearing down image")
+            raise
 
         return {'path': leafPath, 'info': leafInfo,
                 'imgVolumesInfo': imgVolumesInfo}
