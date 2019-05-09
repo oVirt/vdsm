@@ -1,4 +1,4 @@
-# Copyright 2017-2018 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,7 +46,8 @@ def update_numvfs(pci_path, numvfs):
         # results in 'write error: Device or resource busy'
         # https://www.kernel.org/doc/Documentation/PCI/pci-iov-howto.txt
         f.write('0')
-        f.write(str(numvfs))
+        if int(numvfs) > 0:
+            f.write(str(numvfs))
         _wait_for_udev_events()
         _set_valid_vf_macs(pci_path, numvfs)
 
