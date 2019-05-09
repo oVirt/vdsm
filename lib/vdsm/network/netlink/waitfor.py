@@ -57,7 +57,7 @@ def waitfor_ipv4_addr(iface, address=None, timeout=10):
     if address:
         expected_event.update(address=address)
     groups = ('ipv4-ifaddr',)
-    with _wait_for_event(iface, expected_event, groups, timeout):
+    with wait_for_event(iface, expected_event, groups, timeout):
         yield
 
 
@@ -74,7 +74,7 @@ def waitfor_ipv6_addr(iface, address=None, timeout=10):
     if address:
         expected_event.update(address=address)
     groups = ('ipv6-ifaddr',)
-    with _wait_for_event(iface, expected_event, groups, timeout):
+    with wait_for_event(iface, expected_event, groups, timeout):
         yield
 
 
@@ -93,12 +93,13 @@ def waitfor_link_exists(iface, timeout=0.5):
 @contextmanager
 def _wait_for_link_event(iface, expected_event, timeout):
     groups = ('link',)
-    with _wait_for_event(iface, expected_event, groups, timeout):
+    with wait_for_event(iface, expected_event, groups, timeout):
         yield
 
 
 @contextmanager
-def _wait_for_event(iface, expected_event, groups, timeout):
+def wait_for_event(iface, expected_event, groups, timeout,
+                   check_event=lambda event: True):
     with monitor.Monitor(groups=groups, timeout=timeout) as mon:
         try:
             yield
@@ -107,7 +108,8 @@ def _wait_for_event(iface, expected_event, groups, timeout):
             try:
                 for event in mon:
                     caught_events.append(event)
-                    if _is_subdict(expected_event, event):
+                    if _is_subdict(expected_event, event) and check_event(
+                            event):
                         return
             except monitor.MonitorError as e:
                 if e.args[0] == monitor.E_TIMEOUT:
