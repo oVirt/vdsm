@@ -508,12 +508,9 @@ class Vm(object):
     @property
     def _agent_channel_name(self):
         name = vmchannels.LEGACY_DEVICE_NAME
-        if 'agentChannelName' in self.conf:
-            name = self.conf['agentChannelName']
-        else:
-            for channel_name, _path in self._domain.all_channels():
-                if channel_name == 'ovirt-guest-agent.0':
-                    name = channel_name
+        for channel_name, _path in self._domain.all_channels():
+            if channel_name == 'ovirt-guest-agent.0':
+                name = channel_name
         return name
 
     def _init_from_metadata(self):
