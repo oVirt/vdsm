@@ -344,16 +344,8 @@ class Vm(object):
         self._src_domain_xml = params.get('_srcDomXML')
         if self._src_domain_xml is not None:
             self._domain = DomainDescriptor(self._src_domain_xml)
-        elif True:  # TODO: remove the else part
-            self._domain = DomainDescriptor(params['xml'])
         else:
-            # If no direct XML representation is available then use a minimal,
-            # but still correct, one.  More complete domain will be available
-            # and assigned once the VM is started.
-            dom = libvirtxml.make_minimal_domain(
-                libvirtxml.Domain(self.conf, self.log, self.arch)
-            )
-            self._domain = DomainDescriptor(dom.toxml())
+            self._domain = DomainDescriptor(params['xml'])
         self.id = self._domain.id
         if self._src_domain_xml is not None:
             if self._altered_state.from_snapshot:

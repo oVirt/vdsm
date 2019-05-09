@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,9 +33,6 @@ from vdsm.common import xmlutils
 from vdsm.virt import domain_descriptor
 from vdsm.virt import vmchannels
 from vdsm.virt import vmxml
-# TODO: split those tests as well
-from vdsm.virt import libvirtxml
-
 
 from testValidation import brokentest, slowtest
 from testlib import VdsmTestCase as TestCaseBase
@@ -304,77 +301,3 @@ class TestDomainDescriptor(VmXmlTestCase):
     def test_no_channels(self):
         dom = domain_descriptor.MutableDomainDescriptor('<domain/>')
         self.assertEqual(list(dom.all_channels()), [])
-
-
-@expandPermutations
-class TestVmXmlMetadata(XMLTestCase):
-
-    def __init__(self, *args, **kwargs):
-        XMLTestCase.__init__(self, *args, **kwargs)
-        self.channelListener = None
-        self.conf = {
-            'vmName': 'testVm',
-            'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
-            'smp': '8',
-            'maxVCpus': '160',
-            'memSize': '1024',
-            'memGuaranteedSize': '512',
-        }
-
-    def test_no_custom(self):
-        expected = """
-          <domain type="kvm"
-                  xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0"
-                  xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
-            <metadata>
-              <ovirt-tune:qos/>
-              <ovirt-vm:vm/>
-            </metadata>
-          </domain>
-        """
-        conf = {}
-        conf.update(self.conf)
-        domxml = StrippedDomain(conf, self.log, cpuarch.X86_64)
-        domxml.appendMetadata()
-        result = domxml.toxml()
-        self.assertXMLEqual(result, expected)
-
-    @permutations([
-        # conf
-        [{}],
-        [{'custom': {}}],
-        [{'custom': {'containerImage': 'foobar'}}],
-        [{'custom': {'containerType': 'foobar'}}],
-    ])
-    def test_no_container_data(self, conf):
-        expected = """
-          <domain type="kvm"
-                  xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0"
-                  xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
-            <metadata>
-              <ovirt-tune:qos/>
-              <ovirt-vm:vm/>
-            </metadata>
-          </domain>
-        """
-        conf.update(self.conf)
-        domxml = StrippedDomain(conf, self.log, cpuarch.X86_64)
-        domxml.appendMetadata()
-        result = domxml.toxml()
-        self.assertXMLEqual(result, expected)
-
-
-class StrippedDomain(libvirtxml.Domain):
-    """
-    Bare-bones libvirtxml.Domain, which doesn't add elements on its __init__
-    to sinmplify the testing. Will be dropped if libvirtxml.Domain
-    is refactored.
-    """
-    def __init__(self, conf, log, arch):
-        self.conf = conf
-        self.log = log
-        self.arch = arch
-        self.dom = vmxml.Element('domain', type='kvm')
-
-    def toxml(self):
-        return xmlutils.tostring(self.dom)

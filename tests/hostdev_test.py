@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,15 +23,12 @@ from __future__ import division
 
 from vdsm.common import exception
 from vdsm.common import xmlutils
-from vdsm.virt import libvirtxml
 from vdsm.virt.vmdevices import hostdevice, network, hwclass
 
 from testlib import VdsmTestCase as TestCaseBase, XMLTestCase
 from testlib import permutations, expandPermutations
-from testlib import find_xml_element
 from monkeypatch import MonkeyClass, MonkeyPatchScope
 
-from vdsm.common import cpuarch
 from vdsm.common import hooks
 from vdsm.common import hostdev
 from vdsm.common import libvirtconnection
@@ -223,38 +220,6 @@ class HostdevCreationTests(XMLTestCase):
                 self._PCI_ADDRESS_XML
             )
         )
-
-    @permutations([[
-        ['pci_0000_00_02_0'], 0],
-        [[hostdevlib.SRIOV_PF, hostdevlib.SRIOV_VF], 1]
-    ])
-    def testNumaTuneXMLSingleNode(self, devices, numa_node):
-        numatuneXML = """
-          <numatune>
-              <memory mode="preferred" nodeset="{}" />
-          </numatune> """.format(numa_node)
-
-        domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
-        devices = [hostdevice.HostDevice(
-            self.log, **{'type': 'hostdev', 'device': device}) for
-            device in devices]
-        domxml.appendHostdevNumaTune(devices)
-        xml = xmlutils.tostring(domxml.dom)
-        self.assertXMLEqual(find_xml_element(xml, './numatune'), numatuneXML)
-
-    def testNumaTuneXMLMultiNode(self):
-        domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
-        devices = [
-            hostdevice.HostDevice(
-                self.log, **{'type': 'hostdev', 'device': device}
-            ) for device in [
-                hostdevlib.SRIOV_PF, hostdevlib.SRIOV_VF, 'pci_0000_00_02_0'
-            ]
-        ]
-        domxml.appendHostdevNumaTune(devices)
-        xml = xmlutils.tostring(domxml.dom)
-        self.assertRaises(AssertionError,
-                          lambda: find_xml_element(xml, './numatune'))
 
 
 @expandPermutations
