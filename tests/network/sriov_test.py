@@ -22,6 +22,8 @@ from __future__ import division
 
 import six
 
+from contextlib import contextmanager
+
 from nose.plugins.attrib import attr
 
 from testlib import mock
@@ -39,19 +41,6 @@ NUMVFS = 2
 
 @attr(type='unit')
 class TestSriov(VdsmTestCase):
-
-    @mock.patch.object(sriov.udevadm, 'settle', lambda **x: None)
-    @mock.patch.object(sriov.time, 'sleep', lambda x: None)
-    @mock.patch.object(sriov, 'open', create=True)
-    def test_update_numvfs(self, mock_open):
-        fd = six.StringIO()
-        mock_open.return_value.__enter__.return_value = fd
-
-        sriov.update_numvfs(PCI1, NUMVFS)
-
-        expected_sysfs_path = '/sys/bus/pci/devices/' + PCI1 + '/sriov_numvfs'
-        mock_open.assert_called_once_with(expected_sysfs_path, 'w', 0)
-        self.assertEqual(fd.getvalue(), '0' + str(NUMVFS))
 
     @mock.patch.object(sriov.netconfpersistence, 'RunningConfig')
     def test_persist_config(self, mock_rconfig):
@@ -82,3 +71,59 @@ class TestSriov(VdsmTestCase):
         expected_new_cfg = {DEV0: {'sriov': {'numvfs': 2}},
                             DEV1: {'sriov': {'numvfs': 5}}}
         self.assertEqual(new_cfg, expected_new_cfg)
+
+
+@contextmanager
+def _wait_for_event(*args, **kwargs):
+    yield
+    check_event = kwargs.get('check_event')
+    for dev in [DEV0, DEV1]:
+        if check_event({'name': dev}):
+            break
+
+
+@attr(type='unit')
+@mock.patch.object(sriov.waitfor, 'wait_for_link_event', _wait_for_event)
+@mock.patch.object(sriov, 'physical_function_to_pci_address',
+                   lambda dev_name: PCI1)
+@mock.patch.object(sriov, 'open', create=True)
+class TestSriovNumVfs(VdsmTestCase):
+
+    @mock.patch.object(sriov, 'get_all_vf_names', lambda pci: [DEV0])
+    def test_update_numvfs_1_to_2(self, mock_open):
+        fd = _create_fd(mock_open)
+        sriov.update_numvfs(PCI1, NUMVFS)
+        _assert_open_was_called(mock_open)
+        self.assertEqual(fd.getvalue(), '0' + str(NUMVFS))
+
+    @mock.patch.object(sriov, 'get_all_vf_names', lambda pci: [DEV0, DEV1])
+    def test_update_numvfs_2_to_0(self, mock_open):
+        fd = _create_fd(mock_open)
+        sriov.update_numvfs(PCI1, 0)
+        _assert_open_was_called(mock_open)
+        self.assertEqual(fd.getvalue(), '0')
+
+    @mock.patch.object(sriov, 'get_all_vf_names', lambda pci: [])
+    def test_update_numvfs_0_to_2(self, mock_open):
+        fd = _create_fd(mock_open)
+        sriov.update_numvfs(PCI1, NUMVFS)
+        _assert_open_was_called(mock_open)
+        self.assertEqual(fd.getvalue(), str(NUMVFS))
+
+    @mock.patch.object(sriov, 'get_all_vf_names', lambda pci: [])
+    def test_update_numvfs_0_to_0(self, mock_open):
+        fd = _create_fd(mock_open)
+        sriov.update_numvfs(PCI1, 0)
+        _assert_open_was_called(mock_open)
+        self.assertEqual(fd.getvalue(), '')
+
+
+def _assert_open_was_called(mock_open):
+    expected_sysfs_path = '/sys/bus/pci/devices/' + PCI1 + '/sriov_numvfs'
+    mock_open.assert_called_with(expected_sysfs_path, 'w', 0)
+
+
+def _create_fd(mock_open):
+    fd = six.StringIO()
+    mock_open.return_value.__enter__.return_value = fd
+    return fd

@@ -27,6 +27,9 @@ import logging
 from . import monitor
 from .link import get_link, is_link_up
 
+NEWLINK_STATE_UP = {'event': 'new_link', 'state': 'up'}
+DELLINK_STATE_DOWN = {'event': 'del_link', 'state': 'down'}
+
 
 @contextmanager
 def waitfor_linkup(iface, oper_blocking=True, timeout=10):
