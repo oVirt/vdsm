@@ -733,7 +733,7 @@ class Vm(object):
         if self._vmAsyncStartError:
             return self._vmAsyncStartError
 
-        status = self.status(fullStatus=False)
+        status = self.status()
         status['xml'] = self._domain.xml
         return response.success(vmList=status)
 
@@ -1622,53 +1622,9 @@ class Vm(object):
         if event_data:
             self.send_status_event(**event_data)
 
-    # REQUIRED_FOR: oVirt <= 4.1
-    # DEPRECATED_SINCE: oVirt >= 4.2
-    def status(self, fullStatus=True):
-        # TODO: Update for 4.2+: fullStatus=True is no longer used by
-        # Engine directly, but it is used by hot plugs and at least
-        # `devices' must be present to keep some API calls working on
-        # the Engine side.
-
-        # used by vdsm.API.Global.getVMList
-        if not fullStatus:
-            return {'vmId': self.id, 'status': self.lastStatus,
-                    'statusTime': self._get_status_time()}
-
-        with self._confLock:
-            # Filter out any internal keys
-            status = dict((k, v) for k, v in six.viewitems(self.conf)
-                          if not k.startswith("_"))
-            status['vmId'] = self.id
-            status['vmName'] = self.name
-            status['status'] = self.lastStatus
-            status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
-            status['statusTime'] = self._get_status_time()
-            status['arch'] = self.arch
-            status['memGuaranteedSize'] = self._mem_guaranteed_size_mb
-            ret = utils.picklecopy(status)
-            if True:
-                # If Vdsm 4.2 runs in a 4.1 environment, it will receive
-                # and keep the vm.conf received by Engine (or source side of
-                # migration) up until it is restarted. The recovery uses
-                # the domain XML + metadata - we have no other option.
-                # The idea is to keep the original data as much as we can,
-                # hence we use this if. This is also useful to crosscheck
-                # that we convert back the data in the right way.
-                ret['acpiEnable'] = (
-                    'true' if self._domain.acpi_enabled() else 'false'
-                )
-                ret['custom'] = utils.picklecopy(self._custom['custom'])
-                ret.update(
-                    libvirtxml.parse_domain(self._domain.xml, self.arch))
-                # We trust only the disk configuration: we need to store
-                # it early in the initialization flow to properly support
-                # live merge.
-                ret['devices'] = [
-                    utils.picklecopy(dev) for dev in self.conf['devices']
-                    if dev.get('type', '') == hwclass.DISK
-                ] + self._build_device_conf_from_objects(self._devices)
-            return ret
+    def status(self):
+        return {'vmId': self.id, 'status': self.lastStatus,
+                'statusTime': self._get_status_time()}
 
     def getStats(self):
         """
