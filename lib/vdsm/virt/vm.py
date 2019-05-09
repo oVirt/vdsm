@@ -365,21 +365,8 @@ class Vm(object):
         self._blockJobs = {}
         # REQUIRED_FOR: Engine < 4.2.6
         self._mdev_type = params.get('custom', {}).get('mdev_type')
-        if True:  # TODO: remove the else part
-            self._md_desc = metadata.Descriptor.from_xml(self.conf['xml'])
-            self._init_from_metadata()
-        else:
-            self._md_desc = metadata.Descriptor()
-            self._custom['custom'] = params.get('custom', {})
-            self._destroy_on_reboot = False
-            self._mem_guaranteed_size_mb = int(
-                params.get('memGuaranteedSize', '0')
-            )
-            self._launch_paused = self.conf.get('launchPaused', False)
-            self._resume_behavior = ResumeBehavior.AUTO_RESUME
-            # REQUIRED_FOR: oVirt <= 4.1
-            self._guest_agent_api_version = params.pop(
-                'guestAgentAPIVersion', None)
+        self._md_desc = metadata.Descriptor.from_xml(self.conf['xml'])
+        self._init_from_metadata()
         self._destroy_requested = threading.Event()
         self._monitorResponse = 0
         self._post_copy = migration.PostCopyPhase.NONE
