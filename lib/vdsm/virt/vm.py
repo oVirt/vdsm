@@ -4477,32 +4477,22 @@ class Vm(object):
         """
         del drive.diskReplicate
 
-        if True:  # TODO: remove the else part
-            with self._confLock:
-                with self._md_desc.device(
-                        devtype=drive.type, name=drive.name
-                ) as dev:
-                    del dev['diskReplicate']
+        with self._confLock:
+            with self._md_desc.device(
+                    devtype=drive.type, name=drive.name
+            ) as dev:
+                del dev['diskReplicate']
 
-            self._sync_metadata()
-        else:
-            conf = self._findDriveConfigByName(drive.name)
-            with self._confLock:
-                del conf['diskReplicate']
+        self._sync_metadata()
 
     def _persist_drive_replica(self, drive, replica):
-        if True:  # TODO: remove the else part
-            with self._confLock:
-                with self._md_desc.device(
-                        devtype=drive.type, name=drive.name
-                ) as dev:
-                    dev['diskReplicate'] = replica
+        with self._confLock:
+            with self._md_desc.device(
+                    devtype=drive.type, name=drive.name
+            ) as dev:
+                dev['diskReplicate'] = replica
 
-            self._sync_metadata()
-        else:
-            conf = self._findDriveConfigByName(drive.name)
-            with self._confLock:
-                conf['diskReplicate'] = replica
+        self._sync_metadata()
 
     def _diskSizeExtendCow(self, drive, newSizeBytes):
         try:
