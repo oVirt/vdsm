@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -332,13 +332,3 @@ def find_drive_lease_info(sd_id, lease_id, drive_objs):
                     'offset': vol_info['leaseOffset'],
                 }
     return None
-
-
-# REQUIRED_FOR: oVirt < 4.2, see bz1590063
-def fix_parameters(vm_params):
-    dev_params = vm_params.get('devices', [])
-    for params in dev_params:
-        if params.get('type', '') != hwclass.LEASE:
-            continue
-        if 'device' not in params:
-            params['device'] = hwclass.LEASE

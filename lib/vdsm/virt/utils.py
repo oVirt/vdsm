@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,6 @@ import threading
 from vdsm.common import supervdsm
 from vdsm.common.fileutils import rm_file
 from vdsm.common.time import monotonic_time
-from . import metadata
 
 
 log = logging.getLogger('virt.utils')
@@ -218,32 +217,6 @@ class DynamicBoundedSemaphore(object):
         if delta > 0:
             for i in range(delta):
                 self.release()
-
-
-def has_xml_configuration(params):
-    # TODO: Remove this method.
-    return True
-
-    if 'xml' in params:
-        # fresh startup from Engine >= 4.2
-        return True
-
-    if '_srcDomXML' in params:
-        # inbound migration (live or dehibernation).
-        # Could be either from VM created with Engine <= 4.1
-        # or from VM created with Engine >= 4.2
-        md_desc = metadata.Descriptor.from_xml(params['_srcDomXML'])
-        if not bool(md_desc):
-            return False
-
-        with md_desc.values() as md:
-            cver = extract_cluster_version(md)
-
-        # TODO: actually compare the cluster version like we do
-        # in Vm.min_cluster_version()
-        return cver is not None
-
-    return False
 
 
 def extract_cluster_version(md_values):

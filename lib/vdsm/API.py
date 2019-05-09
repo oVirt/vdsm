@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2012 Adam Litke, IBM Corporation
-# Copyright (C) 2012-2018 Red Hat, Inc.
+# Copyright (C) 2012-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,7 +53,6 @@ from vdsm.host import caps
 import vdsm.storage.sd
 from vdsm.storage import clusterlock
 from vdsm.storage import managedvolume
-from vdsm.storage import misc
 from vdsm.storage import constants as sc
 from vdsm.virt import migration
 from vdsm.virt import secret
@@ -61,12 +60,10 @@ from vdsm.common.compat import pickle
 from vdsm.common.define import doneCode, errCode
 from vdsm.config import config
 from vdsm.virt import sampling
-from vdsm.virt import utils as virtutils
 import vdsm.virt.jobs
 from vdsm.virt.jobs import seal
 from vdsm.virt.vmdevices import graphics
 from vdsm.virt.vmdevices import hwclass
-from vdsm.virt.vmdevices import lease
 
 
 haClient = None  # Define here to work around pyflakes issue #13
@@ -216,13 +213,6 @@ class VM(APIBase):
                     self.log.error("Error restoring VM parameters",
                                    exc_info=True)
 
-            if not virtutils.has_xml_configuration(vmParams):
-                self._validate_vm_params(vmParams)
-                self._fix_vm_params(vmParams)
-                lease.fix_parameters(vmParams)
-            # else we don't need any other parameter, the XML data
-            # contains everything we need.
-
             if not graphics.isSupportedDisplayType(vmParams):
                 raise exception.CannotCreateVM(
                     'Unknown display type %s' % vmParams.get('display'))
@@ -243,33 +233,6 @@ class VM(APIBase):
         except:
             self.log.debug("Error creating VM", exc_info=True)
             raise exception.UnexpectedError()
-
-    def _validate_vm_params(self, vmParams):
-        validate.require_keys(vmParams, ('vmId', 'memSize'))
-        try:
-            misc.validateUUID(vmParams['vmId'])
-        except:
-            raise exception.MissingParameter('vmId must be a valid UUID')
-        if vmParams['memSize'] == 0:
-            raise exception.MissingParameter(
-                'Must specify nonzero memSize')
-
-        if vmParams.get('boot') == 'c' and 'hda' not in vmParams \
-                and not vmParams.get('drives'):
-            raise exception.MissingParameter('missing boot disk')
-
-    def _fix_vm_params(self, vmParams):
-        if 'vmType' not in vmParams:
-            vmParams['vmType'] = 'kvm'
-        elif vmParams['vmType'] == 'kvm':
-            if 'kvmEnable' not in vmParams:
-                vmParams['kvmEnable'] = 'true'
-
-        if 'smp' not in vmParams:
-            vmParams['smp'] = '1'
-        if 'vmName' not in vmParams:
-            vmParams['vmName'] = 'n%s' % vmParams['vmId']
-        return vmParams
 
     @api.logged(on="api.virt")
     @api.method
