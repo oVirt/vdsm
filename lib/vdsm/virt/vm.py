@@ -666,42 +666,6 @@ class Vm(object):
             dev['vm_custom'] = vm_custom
         return dev
 
-    def _devSpecMapFromConf(self):
-        """
-        Return the "devices" section of this Vm's conf.
-        """
-        devices = vmdevices.common.empty_dev_map()
-
-        # while this code is running, Vm is queryable for status(),
-        # thus we must fix devices in an atomic way, hence the deep copy
-        with self._confLock:
-            devConf = utils.picklecopy(self.conf.get('devices', []))
-
-        if not devConf:
-            # avoid normalization of the balloon device.
-            # Everything else is safe to do with empty devConf
-            return devices
-
-        for dev in devConf:
-            dev = self._dev_spec_update_with_vm_conf(dev)
-            try:
-                devices[dev['type']].append(dev)
-            except KeyError:
-                if 'type' not in dev or dev['type'] != 'channel':
-                    self.log.warning(
-                        "Unknown type found, device: '%s' found", dev)
-                devices[hwclass.GENERAL].append(dev)
-
-        self._checkDeviceLimits(devices)
-
-        self._normalize_storage_params(devices[hwclass.DISK])
-
-        # Preserve old behavior. Since libvirt add a memory balloon device
-        # to all guests, we need to specifically request not to add it.
-        self._normalizeBalloonDevice(devices[hwclass.BALLOON])
-
-        return devices
-
     def _normalize_storage_params(self, disk_params):
         # Normalize vdsm images
         for drv in disk_params:
@@ -717,14 +681,6 @@ class Vm(object):
 
         self.normalizeDrivesIndices(disk_params)
 
-    def _normalizeBalloonDevice(self, balloonDevices):
-        EMPTY_BALLOON = {'type': hwclass.BALLOON,
-                         'device': 'memballoon',
-                         'specParams': {
-                             'model': 'none'}}
-        if not balloonDevices:
-            balloonDevices.append(EMPTY_BALLOON)
-
     def _initialize_balloon(self, balloon_devs):
         if len(balloon_devs) < 1:
             self.log.warning("No balloon device present")
@@ -735,20 +691,6 @@ class Vm(object):
         dev = balloon_devs[0]
         dev.target = self.mem_size_mb(current=self.recovering) * 1024
         dev.minimum = self._mem_guaranteed_size_mb * 1024
-
-    def _checkDeviceLimits(self, devices):
-        # libvirt only support one watchdog and one console device
-        for device in (hwclass.WATCHDOG, hwclass.CONSOLE):
-            if len(devices[device]) > 1:
-                raise ValueError("only a single %s device is "
-                                 "supported" % device)
-        graphDevTypes = set()
-        for dev in devices[hwclass.GRAPHICS]:
-            if dev.get('device') not in graphDevTypes:
-                graphDevTypes.add(dev.get('device'))
-            else:
-                raise ValueError("only a single graphic device "
-                                 "per type is supported")
 
     def updateDriveIndex(self, drv):
         drv['index'] = self.__getNextIndex(self._usedIndices[
@@ -977,11 +919,8 @@ class Vm(object):
         time.sleep(1)
 
     def preparePaths(self):
-        if True:  # TODO: remove the else part
-            drives = vmdevices.common.storage_device_params_from_domain_xml(
-                self.id, self.domain, self._md_desc, self.log)
-        else:
-            drives = self._devSpecMapFromConf()[hwclass.DISK]
+        drives = vmdevices.common.storage_device_params_from_domain_xml(
+            self.id, self.domain, self._md_desc, self.log)
         self._preparePathsForDrives(drives)
 
     def _preparePathsForDrives(self, drives):
@@ -2468,11 +2407,8 @@ class Vm(object):
                     done.append(dev_object)
 
     def _make_devices(self):
-        if False:  # TODO: Remove.
-            devices = self._make_devices_from_dict()
-        else:
-            disk_objs = self._perform_host_local_adjustment()
-            devices = self._make_devices_from_xml(disk_objs)
+        disk_objs = self._perform_host_local_adjustment()
+        devices = self._make_devices_from_xml(disk_objs)
         if self._mdev_type is not None:
             # REQUIRED_FOR: Engine < 4.2.6
             # Mediated devices used to be handled by a hook, so they are not
@@ -2481,33 +2417,6 @@ class Vm(object):
                 devices, self.log, self._mdev_type, self.id
             )
         return devices
-
-    def _make_devices_from_dict(self):
-        dev_spec_map = self._devSpecMapFromConf()
-        # recovery flow note:
-        # we do not start disk stats collection here since
-        # in the recovery flow irs may not be ready yet.
-        # Disk stats collection is started from clientIF at the end
-        # of the recovery process.
-        if not self.recovering:
-            # We need to save conf here before we actually run VM.
-            # It's not enough to save conf only on status changes as we did
-            # before, because if vdsm will restarted between VM run and conf
-            # saving we will fail in inconsistent state during recovery.
-            # So, to get proper device objects during VM recovery flow
-            # we must to have updated conf before VM run
-            vmdevices.lease.prepare(self.cif.irs, dev_spec_map[hwclass.LEASE])
-            self._preparePathsForDrives(dev_spec_map[hwclass.DISK])
-            self._prepareTransientDisks(dev_spec_map[hwclass.DISK])
-            self._updateDevices(dev_spec_map)
-            try:
-                self._sync_metadata()
-            except virdomain.NotConnectedError:
-                self.log.debug("Not storing device metadata now, "
-                               "domain not yet available")
-
-        return vmdevices.common.dev_map_from_dev_spec_map(
-            dev_spec_map, self.log)
 
     def _perform_host_local_adjustment(self):
         """
@@ -2736,19 +2645,6 @@ class Vm(object):
 
     def _remove_domain_artifacts(self):
         _undefine_stale_domain(self, self._connection)
-
-    def _updateDevices(self, devices):
-        """
-        Update self.conf with updated devices
-        For old type vmParams, new 'devices' key will be
-        created with all devices info
-        """
-        newDevices = []
-        for dev in devices.values():
-            newDevices.extend(dev)
-
-        with self._confLock:
-            self.conf['devices'] = newDevices
 
     def _correct_disk_volumes_from_conf(self, srcDomXML):
         """

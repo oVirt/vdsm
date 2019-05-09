@@ -1031,20 +1031,17 @@ class TestVmStats(TestCaseBase):
         })
 
     def testMultipleGraphicDeviceStats(self):
-        devices = [{'type': 'graphics', 'device': 'spice', 'port': '-1'},
-                   {'type': 'graphics', 'device': 'vnc', 'port': '-1'}]
-
-        with fake.VM(_VM_PARAMS, devices) as testvm:
-            dev_spec_map = testvm._devSpecMapFromConf()
-            testvm._updateDevices(dev_spec_map)
-            testvm._devices = vmdevices.common.dev_map_from_dev_spec_map(
-                dev_spec_map, testvm.log
-            )
+        device_types = ['spice', 'vnc']
+        devices = '\n'.join(['''
+<graphics type="{type_}" port="-1">
+  <listen type="network" network="vdsm-ovirtmgmt"/>
+</graphics>'''.format(type_=t) for t in device_types])
+        with fake.VM(xmldevices=devices, create_device_objects=True) as testvm:
             res = testvm.getStats()
             self.assertTrue(res['displayInfo'])
-            for statsDev, confDev in zip(res['displayInfo'], devices):
-                self.assertIn(statsDev['type'], confDev['device'])
-                self.assertIn('port', statsDev)
+            for dev_stats, type_ in zip(res['displayInfo'], device_types):
+                self.assertIn(dev_stats['type'], type_)
+                self.assertIn('port', dev_stats)
 
     def testDiskMappingHashInStatsHash(self):
         with fake.VM(_VM_PARAMS) as testvm:

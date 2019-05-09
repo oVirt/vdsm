@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2017 Red Hat, Inc.
+# Copyright 2008-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -128,16 +128,6 @@ def identify_from_xml_elem(dev_elem):
 
 def empty_dev_map():
     return {dev: [] for dev in _DEVICE_MAPPING}
-
-
-def dev_map_from_dev_spec_map(dev_spec_map, log):
-    dev_map = empty_dev_map()
-
-    for dev_type, dev_class in _DEVICE_MAPPING.items():
-        for dev in dev_spec_map[dev_type]:
-            dev_map[dev_type].append(dev_class(log, **dev))
-
-    return dev_map
 
 
 # metadata used by the devices. Unless otherwise specified, type and meaning

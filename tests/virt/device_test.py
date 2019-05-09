@@ -104,24 +104,31 @@ class TestVmDevices(XMLTestCase):
             'memSize': '1024', 'memGuaranteedSize': '512',
         }
 
-        self.confDeviceGraphicsVnc = (
-            ({'type': 'graphics', 'device': 'vnc'},),
+        self.vnc_graphics = (
+            '''
+            <graphics type="vnc">
+              <listen type="network" network="ovirtmgmt"/>
+            </graphics>''',
+            '''
+            <graphics type="spice" port="-1" keyMap="en-us">
+              <listen type="network" network="vmDisplay"/>
+            </graphics>
+''',)
 
-            ({'type': 'graphics', 'device': 'vnc', 'port': '-1',
-                'specParams': {
-                    'displayNetwork': 'vmDisplay',
-                    'keyMap': 'en-us'}},))
+        self.spice_graphics = (
+            '''
+            <graphics type="spice">
+              <listen type="network" network="ovirtmgmt"/>
+            </graphics>''',
+            '''
+            <graphics type="spice" port="-1" tlsPort="-1"
+                      spiceSecureChannels="sfoo,sbar">
+              <listen type="network" network="ovirtmgmt"/>
+            </graphics>
+''',)
 
-        self.confDeviceGraphicsSpice = (
-            ({'type': 'graphics', 'device': 'spice'},),
-
-            ({'type': 'graphics', 'device': 'spice', 'port': '-1',
-                'tlsPort': '-1', 'specParams': {
-                    'spiceSecureChannels':
-                    'smain,sinputs,scursor,splayback,srecord,sdisplay'}},))
-
-        self.confDeviceGraphics = (self.confDeviceGraphicsVnc +
-                                   self.confDeviceGraphicsSpice)
+        self.graphics_devices = (self.vnc_graphics +
+                                 self.spice_graphics)
 
     def test_createXmlElem(self):
         devices = '''
@@ -140,15 +147,13 @@ class TestVmDevices(XMLTestCase):
             self.assertXMLEqual(result, expected_xml)
 
     def testGraphicsDevice(self):
-        for dev in self.confDeviceGraphics:
-            with fake.VM(self.conf, dev) as testvm:
-                devs = testvm._devSpecMapFromConf()
-                self.assertTrue(devs['graphics'])
+        for dev in self.graphics_devices:
+            with fake.VM(xmldevices=dev, create_device_objects=True) as testvm:
+                self.assertTrue(testvm._devices[hwclass.GRAPHICS])
 
     def testGraphicDeviceHeadless(self):
-        with fake.VM(self.conf) as testvm:
-            devs = testvm._devSpecMapFromConf()
-            self.assertFalse(devs['graphics'])
+        with fake.VM(create_device_objects=True) as testvm:
+            self.assertFalse(testvm._devices[hwclass.GRAPHICS])
 
     def testGraphicDeviceHeadlessSupported(self):
         conf = {}
@@ -164,49 +169,12 @@ class TestVmDevices(XMLTestCase):
 
     @permutations([['vnc', 'spice'], ['spice', 'vnc']])
     def testGraphicsDeviceMultiple(self, primary, secondary):
-        devices = [{'type': 'graphics', 'device': primary},
-                   {'type': 'graphics', 'device': secondary}]
-        with fake.VM(self.conf, devices) as testvm:
-            devs = testvm._devSpecMapFromConf()
-            self.assertEqual(len(devs['graphics']), 2)
-
-    @permutations([['vnc'], ['spice']])
-    def testGraphicsDeviceDuplicated(self, devType):
-        devices = [{'type': 'graphics', 'device': devType},
-                   {'type': 'graphics', 'device': devType}]
-        with fake.VM(self.conf, devices) as testvm:
-            self.assertRaises(ValueError, testvm._devSpecMapFromConf)
-
-    @permutations([
-        # alias, memballoonXML
-        (None, "<memballoon model='none'/>"),
-        ('balloon0',
-         "<memballoon model='none'><alias name='balloon0'/></memballoon>"),
-    ])
-    def testBalloonDeviceAliasUpdateConfig(self, alias, memballoonXML):
-        domainXML = """<domain>
-        <devices>
-        %s
-        </devices>
-        </domain>""" % memballoonXML
-        dev = {'device': 'memballoon', 'type': 'none', 'specParams': {}}
-        with fake.VM(self.conf, [dev]) as testvm:
-            testvm._domain = DomainDescriptor(domainXML)
-            devs = testvm._devSpecMapFromConf()
-            testvm._updateDevices(devs)
-            testvm._devices = vmdevices.common.dev_map_from_dev_spec_map(
-                devs, testvm.log
-            )
-            self.assertNotRaises(
-                vmdevices.core.Balloon.update_device_info,
-                testvm,
-                testvm._devices[hwclass.BALLOON],
-            )
-            dev = testvm._devices[hwclass.BALLOON][0]
-            if alias is None:
-                self.assertFalse(hasattr(dev, 'alias'))
-            else:
-                self.assertEqual(dev.alias, alias)
+        devices = '\n'.join(['''
+<graphics type="{type_}" port="-1">
+  <listen type="network" network="vdsm-ovirtmgmt"/>
+</graphics>'''.format(type_=type_) for type_ in (primary, secondary)])
+        with fake.VM(xmldevices=devices, create_device_objects=True) as testvm:
+            self.assertEqual(len(testvm._devices['graphics']), 2)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: MockedProxy())
