@@ -3128,14 +3128,9 @@ class Vm(object):
     def hotunplugMemory(self, params):
         xml = params.get('xml')
         try:
-            if True:  # TODO: remove the else part
-                device = lookup.device_from_xml_alias(
-                    self._devices[hwclass.MEMORY][:],
-                    xml)
-            else:
-                device = lookup.device_by_alias(
-                    self._devices[hwclass.MEMORY][:],
-                    params['memory']['alias'])
+            device = lookup.device_from_xml_alias(
+                self._devices[hwclass.MEMORY][:],
+                xml)
         except LookupError as e:
             raise exception.HotunplugMemFailed(str(e), vmId=self.id)
 
