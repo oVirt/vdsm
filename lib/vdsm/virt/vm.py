@@ -48,9 +48,7 @@ from vdsm.common import logutils
 from vdsm.common import response
 import vdsm.common.time
 from vdsm import constants
-from vdsm import host
 from vdsm import hugepages
-from vdsm import osinfo
 from vdsm import utils
 from vdsm.config import config
 from vdsm.common import concurrent
@@ -2125,16 +2123,6 @@ class Vm(object):
         finally:
             self._guestCpuLock.release()
 
-    def _getSerialConsole(self):
-        """
-        Return serial console device.
-        If no serial console device is available, return 'None'.
-        """
-        for console in self._devices[hwclass.CONSOLE]:
-            if console.isSerial:
-                return console
-        return None
-
     def migrateChangeParams(self, params):
         self._acquireCpuLockWithTimeout(flow='migrate.change_params')
 
@@ -2200,41 +2188,6 @@ class Vm(object):
                 if dev.custom:
                     yield dev
 
-    def _process_devices(self):
-        """
-        Create all devices and run before_device_create hook script for devices
-        with custom properties
-
-        The resulting device xml is cached in dev._deviceXML.
-        """
-
-        devices_xml = vmdevices.common.empty_dev_map()
-        for dev_type, dev_objs in self._devices.items():
-            for dev in dev_objs:
-                try:
-                    try:
-                        dev_xml = dev.getXML()
-                    except vmdevices.core.SkipDevice:
-                        self.log.info('Skipping device %s.', dev.device)
-                        continue
-
-                    deviceXML = xmlutils.tostring(dev_xml)
-
-                    if getattr(dev, "custom", {}):
-                        deviceXML = hooks.before_device_create(
-                            deviceXML, self._custom, dev.custom)
-                        dev_xml = xmlutils.fromstring(deviceXML)
-
-                    dev._deviceXML = deviceXML
-
-                    devices_xml[dev_type].append(dev_xml)
-                except:
-                    device_id = getattr(dev, 'device', 'unidentified')
-                    self.log.error('Processing device %s failed.', device_id)
-                    self.log.info('Device content: %s', dev)
-                    raise
-        return devices_xml
-
     def _prepare_hugepages(self):
         if not config.getboolean('performance', 'use_dynamic_hugepages'):
             self.log.info('Dynamic hugepage allocation disabled.')
@@ -2257,95 +2210,33 @@ class Vm(object):
             hugepages.alloc(to_allocate, self.hugepagesz)
 
     def _buildDomainXML(self):
-        if True:  # TODO: remove the else part
-            # Do DOM-dependent xml transformations
-            dom = xmlutils.fromstring(self.conf['xml'])
+        # Do DOM-dependent xml transformations
+        dom = xmlutils.fromstring(self.conf['xml'])
 
-            on_reboot = vmxml.find_first(dom, 'on_reboot', None)
-            if on_reboot is not None:
-                vmxml.remove_child(dom, on_reboot)
+        on_reboot = vmxml.find_first(dom, 'on_reboot', None)
+        if on_reboot is not None:
+            vmxml.remove_child(dom, on_reboot)
 
-            domxml_preprocess.replace_placeholders(
-                dom, self.arch, self.conf.get('serial'))
+        domxml_preprocess.replace_placeholders(
+            dom, self.arch, self.conf.get('serial'))
 
-            if config.getboolean('devel', 'xml_minimal_changes'):
-                domxml_preprocess.update_disks_xml_from_objs(
-                    self, dom, self._devices[hwclass.DISK])
-            else:
-                domxml_preprocess.replace_disks_xml(
-                    dom, self._devices[hwclass.DISK])
-
-            domxml_preprocess.update_leases_xml_from_disk_objs(
+        if config.getboolean('devel', 'xml_minimal_changes'):
+            domxml_preprocess.update_disks_xml_from_objs(
                 self, dom, self._devices[hwclass.DISK])
-            if self._mdev_type is not None:
-                # REQUIRED_FOR: Engine < 4.2.6
-                mdev_uuid = hostdev.get_mdev_uuid(self.id)
-                domxml_preprocess.add_mediated_device(dom, mdev_uuid)
-            domxml_preprocess.replace_device_xml_with_hooks_xml(
-                dom, self.id, self._custom)
-
-            return xmlutils.tostring(dom, pretty=True)
-
-        return self._make_domain_xml()
-
-    def _make_domain_xml(self):
-        serial_console = self._getSerialConsole()
-
-        domxml = libvirtxml.make_minimal_domain(
-            libvirtxml.Domain(self.conf, self.log, self.arch)
-        )
-
-        domxml.appendOs(use_serial_console=(serial_console is not None))
-
-        if self.hugepages:
-            domxml.appendMemoryBacking(self.hugepagesz)
-
-        if cpuarch.is_x86(self.arch):
-            osd = osinfo.version()
-
-            osVersion = osd.get('version', '') + '-' + osd.get('release', '')
-            serialNumber = self.conf.get('serial', host.uuid())
-
-            domxml.appendSysinfo(
-                osname=constants.SMBIOS_OSNAME,
-                osversion=osVersion,
-                serialNumber=serialNumber)
-
-        domxml.appendCpu(self._hugepages_shared)
-
-        if 'numaTune' in self.conf:
-            domxml.appendNumaTune()
         else:
-            if (config.getboolean('vars', 'host_numa_scheduling') and
-                    self._devices[hwclass.HOSTDEV]):
-                domxml.appendHostdevNumaTune(
-                    list(itertools.chain(*self._devices.values())))
+            domxml_preprocess.replace_disks_xml(
+                dom, self._devices[hwclass.DISK])
 
-        domxml._appendAgentDevice(self._guestSocketFile,
-                                  self._agent_channel_name)
-        domxml._appendAgentDevice(self._qemuguestSocketFile,
-                                  vmchannels.QEMU_GA_DEVICE_NAME)
-        if not cpuarch.is_s390(self.arch):
-            domxml.appendInput()
+        domxml_preprocess.update_leases_xml_from_disk_objs(
+            self, dom, self._devices[hwclass.DISK])
+        if self._mdev_type is not None:
+            # REQUIRED_FOR: Engine < 4.2.6
+            mdev_uuid = hostdev.get_mdev_uuid(self.id)
+            domxml_preprocess.add_mediated_device(dom, mdev_uuid)
+        domxml_preprocess.replace_device_xml_with_hooks_xml(
+            dom, self.id, self._custom)
 
-        if self.arch == cpuarch.PPC64:
-            domxml.appendEmulator()
-
-        devices_xml = self._process_devices()
-        for dev_type, dev_objs in devices_xml.items():
-            for dev in dev_objs:
-                if isinstance(dev, vmxml.Element):
-                    kwargs = {'element': dev}
-                else:
-                    kwargs = {'etree_element': dev}
-                domxml._devices.appendChild(**kwargs)
-
-        for dev_objs in self._devices.values():
-            for dev in dev_objs:
-                for elem in dev.get_extra_xmls():
-                    domxml._devices.appendChild(element=elem)
-
-        return domxml.toxml()
+        return xmlutils.tostring(dom, pretty=True)
 
     def _cleanup(self):
         """
@@ -2571,21 +2462,6 @@ class Vm(object):
             dev.clear()
 
     def _dom_vcpu_setup(self):
-        if False:  # TODO: Remove.
-            nice = int(self.conf.get('nice', '0'))
-            nice = max(min(nice, 19), 0)
-
-            # if cpuShares weren't configured we derive the value from the
-            # niceness, cpuShares has no unit, it is only meaningful when
-            # compared to other VMs (and can't be negative)
-            cpuShares = int(self.conf.get('cpuShares', str((20 - nice) * 51)))
-            cpuShares = max(cpuShares, 0)
-
-            try:
-                self._dom.setSchedulerParameters({'cpu_shares': cpuShares})
-            except Exception:
-                self.log.warning('failed to set Vm niceness', exc_info=True)
-
         self._updateVcpuTuneInfo()
         self._updateVcpuLimit()
 
