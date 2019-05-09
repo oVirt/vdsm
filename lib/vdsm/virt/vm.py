@@ -3516,11 +3516,8 @@ class Vm(object):
     @api.guard(_not_migrating)
     def hotplugDisk(self, params):
         xml = params.get('xml')
-        if False:  # TODO: remove
-            diskParams = params.get('drive', {})
-        else:
-            _cls, elem, meta = vmdevices.common.dev_elems_from_xml(self, xml)
-            diskParams = storagexml.parse(elem, meta)
+        _cls, elem, meta = vmdevices.common.dev_elems_from_xml(self, xml)
+        diskParams = storagexml.parse(elem, meta)
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
 
         if isVdsmImage(diskParams):
@@ -3570,15 +3567,12 @@ class Vm(object):
         diskParams = {}
         drive = None
         xml = params.get('xml')
-        if True:  # TODO: remove the else part
-            try:
-                drive = lookup.device_from_xml_alias(
-                    self._devices[hwclass.DISK][:], xml)
-            except LookupError:
-                _, elem, meta = vmdevices.common.dev_elems_from_xml(self, xml)
-                diskParams = storagexml.parse(elem, meta)
-        else:
-            diskParams = params.get('drive', {})
+        try:
+            drive = lookup.device_from_xml_alias(
+                self._devices[hwclass.DISK][:], xml)
+        except LookupError:
+            _, elem, meta = vmdevices.common.dev_elems_from_xml(self, xml)
+            diskParams = storagexml.parse(elem, meta)
 
         if drive is None:
             # needed to find network drives
