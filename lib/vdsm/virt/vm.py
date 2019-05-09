@@ -2718,17 +2718,12 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def hotplugNic(self, params):
-        if True:  # TODO: remove the else part
-            xml = params['xml']
-            nic = vmdevices.common.dev_from_xml(self, xml)
-            dom = xmlutils.fromstring(xml)
-            dom_devices = vmxml.find_first(dom, 'devices')
-            nic_dom = next(iter(dom_devices))
-            nicXml = xmlutils.tostring(nic_dom)
-        else:
-            nicParams = params['nic']
-            nic = vmdevices.network.Interface(self.log, **nicParams)
-            nicXml = xmlutils.tostring(nic.getXML(), pretty=True)
+        xml = params['xml']
+        nic = vmdevices.common.dev_from_xml(self, xml)
+        dom = xmlutils.fromstring(xml)
+        dom_devices = vmxml.find_first(dom, 'devices')
+        nic_dom = next(iter(dom_devices))
+        nicXml = xmlutils.tostring(nic_dom)
         nicXml = hooks.before_nic_hotplug(
             nicXml, self._custom, params=nic.custom
         )
@@ -2773,12 +2768,9 @@ class Vm(object):
         except Exception as e:
             self.log.exception("setPortMirroring for network %s failed",
                                network)
-            if True:  # TODO: remove the else part
-                nic_element = xmlutils.fromstring(nicXml)
-                vmxml.replace_first_child(dom_devices, nic_element)
-                hotunplug_params = {'xml': xmlutils.tostring(dom)}
-            else:
-                hotunplug_params = {'nic': nicParams}
+            nic_element = xmlutils.fromstring(nicXml)
+            vmxml.replace_first_child(dom_devices, nic_element)
+            hotunplug_params = {'xml': xmlutils.tostring(dom)}
             self.hotunplugNic(hotunplug_params,
                               port_mirroring=mirroredNetworks)
             return response.error('hotplugNic', str(e))
@@ -3055,28 +3047,15 @@ class Vm(object):
     @api.guard(_not_migrating)
     def hotunplugNic(self, params, port_mirroring=None):
         xml = params.get('xml')
+        try:
+            nic = lookup.device_from_xml_alias(
+                self._devices[hwclass.NIC][:], xml)
+        except LookupError:
+            nic = vmdevices.common.dev_from_xml(self, xml)
 
-        if True:  # TODO: remove the else part
-            try:
-                nic = lookup.device_from_xml_alias(
-                    self._devices[hwclass.NIC][:], xml)
-            except LookupError:
-                nic = vmdevices.common.dev_from_xml(self, xml)
-
-            nicParams = {'macAddr': nic.macAddr}
-            if port_mirroring is None:
-                port_mirroring = nic.portMirroring
-        else:
-            nicParams = params['nic']
-            if port_mirroring is None:
-                port_mirroring = nicParams.get('portMirroring')
-
-            # Find NIC object in vm's NICs list
-            nic = None
-            for dev in self._devices[hwclass.NIC][:]:
-                if dev.macAddr.lower() == nicParams['macAddr'].lower():
-                    nic = dev
-                    break
+        nicParams = {'macAddr': nic.macAddr}
+        if port_mirroring is None:
+            port_mirroring = nic.portMirroring
 
         if nic:
             if port_mirroring is not None:
