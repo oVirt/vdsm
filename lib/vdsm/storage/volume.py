@@ -1213,6 +1213,16 @@ class Volume(object):
                 "Couldn't get parent %s for volume %s: %s" %
                 (srcVolUUID, volUUID, e))
 
+        if volParent:
+            # Requested capacity must not be smaller then parent capacity,
+            # as this will corrupt the new volume when qemu will try to
+            # access areas beyond the volume virtual size.
+            parent_size = volParent.getSize()
+            if size < parent_size:
+                cls.log.error("Requested size %d < parent size %d",
+                              size, parent_size)
+                raise se.InvalidParameterException("size", size)
+
         try:
             cls.log.info("Creating volume %s", volUUID)
 
