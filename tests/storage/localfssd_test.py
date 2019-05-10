@@ -542,18 +542,22 @@ def test_volume_create_raw_prealloc_invalid_initial_size(
 
 
 @pytest.mark.parametrize("domain_version", [4, 5])
-def test_extended_snapshot(
+def test_create_snapshot_size(
         tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
         fake_task, local_fallocate, domain_version):
     dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
 
     img_uuid = str(uuid.uuid4())
     parent_vol_uuid = str(uuid.uuid4())
+    parent_vol_capacity = SPARSE_VOL_SIZE
     vol_uuid = str(uuid.uuid4())
+    vol_capacity = 2 * parent_vol_capacity
+
+    # Create parent volume.
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size=SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        size=parent_vol_capacity // sc.BLOCK_SIZE_512,
         volFormat=sc.RAW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType='DATA',
@@ -562,7 +566,25 @@ def test_extended_snapshot(
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         initialSize=None)
+
     parent_vol = dom.produceVolume(img_uuid, parent_vol_uuid)
+
+    # Verify that snapshot cannot be smaller than the parent.
+
+    with pytest.raises(se.InvalidParameterException):
+        dom.createVolume(
+            imgUUID=img_uuid,
+            size=parent_vol.getSize() - 1,
+            volFormat=sc.COW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType='DATA',
+            volUUID=vol_uuid,
+            desc="Volume with smaller size",
+            srcImgUUID=parent_vol.imgUUID,
+            srcVolUUID=parent_vol.volUUID,
+            initialSize=None)
+
+    # Verify that snapshot can be larger than parent.
 
     dom.createVolume(
         imgUUID=img_uuid,
@@ -579,10 +601,10 @@ def test_extended_snapshot(
 
     # Verify volume sizes obtained from metadata
     actual_parent = parent_vol.getInfo()
-    assert int(actual_parent["capacity"]) == SPARSE_VOL_SIZE
+    assert int(actual_parent["capacity"]) == parent_vol_capacity
 
     actual = vol.getInfo()
-    assert int(actual["capacity"]) == 2 * SPARSE_VOL_SIZE
+    assert int(actual["capacity"]) == vol_capacity
 
 
 @pytest.mark.parametrize("domain_version", [4, 5])
