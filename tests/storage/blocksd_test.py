@@ -420,7 +420,7 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
 @xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("domain_version", [4, 5])
-def test_extended_snapshot(
+def test_create_snapshot_size(
         tmp_storage, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
         fake_sanlock, domain_version):
     # This test was added to verify fix for https://bugzilla.redhat.com/1700623
@@ -452,11 +452,15 @@ def test_extended_snapshot(
 
     img_uuid = str(uuid.uuid4())
     parent_vol_uuid = str(uuid.uuid4())
+    parent_vol_capacity = constants.GIB
     vol_uuid = str(uuid.uuid4())
+    vol_capacity = 2 * parent_vol_capacity
+
+    # Create parent volume.
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size=constants.GIB // sc.BLOCK_SIZE_512,
+        size=parent_vol_capacity // sc.BLOCK_SIZE_512,
         volFormat=sc.RAW_FORMAT,
         preallocate=sc.PREALLOCATED_VOL,
         diskType='DATA',
@@ -465,11 +469,29 @@ def test_extended_snapshot(
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         initialSize=None)
+
     parent_vol = dom.produceVolume(img_uuid, parent_vol_uuid)
+
+    # Verify that snapshot cannot be smaller than parent.
+
+    with pytest.raises(se.InvalidParameterException):
+        dom.createVolume(
+            imgUUID=img_uuid,
+            size=parent_vol.getSize() - 1,
+            volFormat=sc.COW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType='DATA',
+            volUUID=vol_uuid,
+            desc="Extended volume",
+            srcImgUUID=parent_vol.imgUUID,
+            srcVolUUID=parent_vol.volUUID,
+            initialSize=None)
+
+    # Verify that snapshot can be bigger than parent.
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size=2 * constants.GIB // sc.BLOCK_SIZE_512,
+        size=vol_capacity // sc.BLOCK_SIZE_512,
         volFormat=sc.COW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType='DATA',
@@ -478,23 +500,24 @@ def test_extended_snapshot(
         srcImgUUID=parent_vol.imgUUID,
         srcVolUUID=parent_vol.volUUID,
         initialSize=None)
+
     vol = dom.produceVolume(img_uuid, vol_uuid)
 
     # Verify volume sizes obtained from metadata
     actual_parent = parent_vol.getInfo()
-    assert int(actual_parent["capacity"]) == constants.GIB
+    assert int(actual_parent["capacity"]) == parent_vol_capacity
 
     actual = vol.getInfo()
-    assert int(actual["capacity"]) == 2 * constants.GIB
+    assert int(actual["capacity"]) == vol_capacity
 
     # Now test the flow in which metadata capacity is corrupted.
     # Corrupt the metadata capacity manually.
     md = vol.getMetadata()
-    md.capacity = constants.GIB
+    md.capacity = vol_capacity // 2
     vol.setMetadata(md)
 
     # During preparation of the volume, matadata capacity should be fixed.
     vol.prepare()
 
     actual = vol.getInfo()
-    assert int(actual["capacity"]) == 2 * constants.GIB
+    assert int(actual["capacity"]) == vol_capacity
