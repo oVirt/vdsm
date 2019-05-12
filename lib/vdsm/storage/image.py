@@ -61,9 +61,6 @@ OP_TYPES = {UNKNOWN_OP: 'UNKNOWN', COPY_OP: 'COPY', MOVE_OP: 'MOVE'}
 
 RENAME_RANDOM_STRING_LEN = 8
 
-# Temporary size of a volume when we optimize out the prezeroing
-TEMPORARY_VOLUME_SIZE = 20480  # in blocks (10M)
-
 
 def _deleteImage(dom, imgUUID, postZero, discard):
     """This ancillary function will be removed.
@@ -731,7 +728,12 @@ class Image:
 
             # Create dst volume
             try:
-                # find out src volume parameters
+                # Before reading source volume parameters from volume metadata,
+                # prepare the volume. This ensure that the volume capacity will
+                # match the actual virtual size, see
+                # https://bugzilla.redhat.com/1700623.
+                srcVol.prepare(rw=False)
+
                 volParams = srcVol.getVolumeParams()
 
                 if volFormat in [sc.COW_FORMAT, sc.RAW_FORMAT]:
@@ -739,8 +741,8 @@ class Image:
                 else:
                     dstVolFormat = volParams['volFormat']
 
-                # Prepare src volume to be readable when calculating dst size.
-                srcVol.prepare(rw=False)
+                # TODO: This is needed only when copying to qcow2-thin volume
+                # on block storage. Move into calculate_initial_size_blk.
                 dstVolAllocBlk = self.calculate_vol_alloc(
                     sdUUID, volParams, dstSdUUID, dstVolFormat)
 
@@ -748,11 +750,17 @@ class Image:
                 if preallocate in [sc.PREALLOCATED_VOL, sc.SPARSE_VOL]:
                     volParams['prealloc'] = preallocate
 
-                self.log.info("copy source %s:%s:%s size %s blocks "
-                              "destination %s:%s:%s allocating %s blocks" %
-                              (sdUUID, srcImgUUID, srcVolUUID,
-                               volParams['size'], dstSdUUID, dstImgUUID,
-                               dstVolUUID, dstVolAllocBlk))
+                initialSizeBlk = self.calculate_initial_size_blk(
+                    destDom.supportsSparseness,
+                    dstVolFormat,
+                    volParams['prealloc'],
+                    dstVolAllocBlk)
+
+                self.log.info("Copy source %s:%s:%s to destination %s:%s:%s "
+                              "size=%s blocks, initial size=%s blocks",
+                              sdUUID, srcImgUUID, srcVolUUID, dstSdUUID,
+                              dstImgUUID, dstVolUUID, volParams['size'],
+                              initialSizeBlk)
 
                 # If image already exists check whether it illegal/fake,
                 # overwrite it
@@ -767,24 +775,21 @@ class Image:
                                   "overwriting", dstImgUUID, dstSdUUID)
                     _deleteImage(destDom, dstImgUUID, postZero, discard)
 
-                # To avoid 'prezeroing' preallocated volume on NFS domain,
-                # we create the target volume with minimal size and after that
-                # we'll change its metadata back to the original size.
-                tmpSize = TEMPORARY_VOLUME_SIZE  # in blocks (10M)
                 destDom.createVolume(
-                    imgUUID=dstImgUUID, size=tmpSize, volFormat=dstVolFormat,
+                    imgUUID=dstImgUUID,
+                    size=volParams['size'],
+                    volFormat=dstVolFormat,
                     preallocate=volParams['prealloc'],
-                    diskType=volParams['disktype'], volUUID=dstVolUUID,
-                    desc=descr, srcImgUUID=sc.BLANK_UUID,
-                    srcVolUUID=sc.BLANK_UUID)
+                    diskType=volParams['disktype'],
+                    volUUID=dstVolUUID,
+                    desc=descr,
+                    srcImgUUID=sc.BLANK_UUID,
+                    srcVolUUID=sc.BLANK_UUID,
+                    initialSize=initialSizeBlk)
 
                 dstVol = sdCache.produce(dstSdUUID).produceVolume(
                     imgUUID=dstImgUUID, volUUID=dstVolUUID)
 
-                dstVol.extend(dstVolAllocBlk)
-                dstPath = dstVol.getVolumePath()
-                # Change destination volume metadata back to the original size.
-                dstVol.setSize(volParams['size'])
             except se.StorageException:
                 self.log.error("Unexpected error", exc_info=True)
                 raise
@@ -806,7 +811,7 @@ class Image:
                 try:
                     operation = qemuimg.convert(
                         volParams['path'],
-                        dstPath,
+                        dstVol.getVolumePath(),
                         srcFormat=sc.fmt2str(volParams['volFormat']),
                         dstFormat=sc.fmt2str(dstVolFormat),
                         dstQcow2Compat=destDom.qcow2_compat(),
@@ -846,6 +851,32 @@ class Image:
             return dstVolUUID
         finally:
             self.__cleanupCopy(srcVol=srcVol, dstVol=dstVol)
+
+    def calculate_initial_size_blk(self, is_file, format, prealloc,
+                                   estimate_blk):
+        """
+        Return the initial size for creating a volume during copyCollapsed.
+
+        Arguments:
+            is_file (bool): destination storage domain is file domain.
+            format (int): destination volume format enum.
+            prealloc (int): destination volume preallocation enum.
+            estimate_blk (int): estimated allocation in 512 blocks.
+        """
+        if is_file:
+            # Avoid slow preallocation of raw-preallocated volumes on file
+            # based storage.
+            if format == sc.RAW_FORMAT and prealloc == sc.PREALLOCATED_VOL:
+                return 0
+        else:
+            # Ensure that enough extents are allocated for raw-preallocated
+            # volume on block storage.
+            # TODO: Calculate the value here.
+            if format == sc.COW_FORMAT and prealloc == sc.SPARSE_VOL:
+                return estimate_blk
+
+        # Otherwise no initial size is used.
+        return None
 
     def calculate_vol_alloc(self, src_sd_id, src_vol_params,
                             dst_sd_id, dst_vol_format):
