@@ -1578,8 +1578,8 @@ types:
         description: Information about one script within a hook.
         name: HookScriptInfo
         properties:
-        -   description: The md5 sum of the script
-            name: md5
+        -   description: The sha256 digest of the script
+            name: checksum
             type: string
         type: object
 

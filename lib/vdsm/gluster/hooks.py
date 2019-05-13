@@ -65,12 +65,12 @@ def _getMimeType(fileName):
     return _mimeType.file(fileName)
 
 
-def _computeMd5Sum(fileName):
-    md5 = hashlib.md5()
+def _computeSha256Sum(fileName):
+    csum = hashlib.sha256()
     with open(fileName, 'rb') as f:
-        for pack in iter(lambda: f.read(128 * md5.block_size), b''):
-            md5.update(pack)
-    return md5.hexdigest()
+        for pack in iter(lambda: f.read(128 * csum.block_size), b''):
+            csum.update(pack)
+    return csum.hexdigest()
 
 
 def checkArgs(func):
@@ -97,7 +97,8 @@ def hooksList():
           'mimetype': MIME_TYPE,
           'command': GLUSTERCOMMAND,
           'level': HOOK-LEVEL,
-          'md5sum': MD5SUM}]
+          'md5sum': EMPTY,
+          'checksum': SHA256CHECKSUM}]
     """
     def _getHooks(gCmd, hookLevel):
         hooks = []
@@ -112,15 +113,16 @@ def hooksList():
                 if not hookType:
                     hookType = ''
                 try:
-                    md5sum = _computeMd5Sum(hookPath)
+                    checksum = _computeSha256Sum(hookPath)
                 except IOError:
-                    md5sum = ''
+                    checksum = ''
                 hooks.append({'name': hookFile[1:],
                               'status': status,
                               'mimetype': hookType,
                               'command': gCmd,
                               'level': hookLevel,
-                              'md5sum': md5sum})
+                              'md5sum': '',
+                              'checksum': checksum})
         return hooks
 
     hooks = []
@@ -191,7 +193,8 @@ def hookRead(glusterCmd, hookLevel, hookName):
     Returns:
         {'content': HOOK_CONTENT,
         'mimetype': MIME_TYPE,
-        'md5sum': MD5SUM}
+        'md5sum': EMPTY,
+        'checksum': SHA256CHECKSUM}
     """
     enabledFile, disabledFile = _getHookFileNames(glusterCmd,
                                                   hookLevel.lower(), hookName)
@@ -206,13 +209,14 @@ def hookRead(glusterCmd, hookLevel, hookName):
             encodedString = base64.b64encode(f.read())
         return {'content': encodedString,
                 'mimetype': _getMimeType(hookFile),
-                'md5sum': _computeMd5Sum(hookFile)}
+                'md5sum': '',
+                'checksum': _computeSha256Sum(hookFile)}
     except IOError as e:
         errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
         raise ge.GlusterHookReadFailedException(err=[errMsg])
 
 
-def _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
+def _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData, hookChecksum,
                      update=True, enable=False):
     enabledFile, disabledFile = _getHookFileNames(glusterCmd,
                                                   hookLevel.lower(), hookName)
@@ -226,9 +230,9 @@ def _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
             raise ge.GlusterHookAlreadyExistException(glusterCmd, hookLevel,
                                                       hookName)
     content = base64.b64decode(hookData)
-    md5Sum = hashlib.md5(content).hexdigest()
-    if hookMd5Sum != md5Sum:
-        raise ge.GlusterHookCheckSumMismatchException(md5Sum, hookMd5Sum)
+    checksum = hashlib.sha256(content).hexdigest()
+    if hookChecksum != checksum:
+        raise ge.GlusterHookCheckSumMismatchException(checksum, hookChecksum)
 
     if enable or hookStat[0]:
         safeWrite(enabledFile, content)
@@ -240,10 +244,10 @@ def _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
 
 @checkArgs
 @gluster_mgmt_api
-def hookUpdate(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum):
+def hookUpdate(glusterCmd, hookLevel, hookName, hookData, hookChecksum):
     try:
         return _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData,
-                                hookMd5Sum)
+                                hookChecksum)
     except IOError as e:
         errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
         raise ge.GlusterHookUpdateFailedException(err=[errMsg])
@@ -251,7 +255,7 @@ def hookUpdate(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum):
 
 @checkArgs
 @gluster_mgmt_api
-def hookAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
+def hookAdd(glusterCmd, hookLevel, hookName, hookData, hookChecksum,
             enable=False):
     hookPath = os.path.join(_glusterHooksPath, glusterCmd, hookLevel.lower())
     try:
@@ -267,7 +271,7 @@ def hookAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
 
     try:
         return _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData,
-                                hookMd5Sum, update=False, enable=enable)
+                                hookChecksum, update=False, enable=enable)
     except IOError as e:
         errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
         raise ge.GlusterHookAddFailedException(err=[errMsg])

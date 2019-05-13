@@ -48,14 +48,14 @@ class GlusterHook(GlusterApiBase):
         return self._gluster.hookRead(glusterCmd, hookLevel, hookName)
 
     def update(self, glusterCmd, hookLevel, hookName, hookData,
-               hookMd5Sum):
+               hookChecksum):
         return self._gluster.hookUpdate(glusterCmd, hookLevel, hookName,
-                                        hookData, hookMd5Sum)
+                                        hookData, hookChecksum)
 
-    def add(self, glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
+    def add(self, glusterCmd, hookLevel, hookName, hookData, hookChecksum,
             enable=False):
         return self._gluster.hookAdd(glusterCmd, hookLevel, hookName,
-                                     hookData, hookMd5Sum, enable)
+                                     hookData, hookChecksum, enable)
 
     def remove(self, glusterCmd, hookLevel, hookName):
         return self._gluster.hookRemove(glusterCmd, hookLevel, hookName)
