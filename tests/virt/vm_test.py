@@ -744,7 +744,7 @@ class TestVm(XMLTestCase):
             testvm.cif = FakeLeaseClientIF(expected_conf)
             res = testvm.hotplugLease(params)
 
-            self.assertTrue(res.pop('vmList'))
+            self.assertIsNotNone(res.pop('vmList'))
             self.assertEqual(res, response.success())
             # Up until here we verified the hotplugLease proper.
 

@@ -2919,7 +2919,7 @@ class Vm(object):
                                         custom, specParams, MTU):
                 with self.updatePortMirroring(netDev, netsToMirror):
                     self._hotplug_device_metadata(hwclass.NIC, netDev)
-                    return {'vmList': self.status()}
+                    return {'vmList': {}}
         except (LookupError,
                 SetLinkAndNetworkError,
                 UpdatePortMirroringError) as e:
@@ -3022,7 +3022,7 @@ class Vm(object):
             params['params']
         )
 
-        result['vmList'] = self.status()
+        result['vmList'] = {}
         return result
 
     def updateDevice(self, params):
@@ -3125,7 +3125,7 @@ class Vm(object):
 
         hooks.after_memory_hotplug(deviceXml, self._custom)
 
-        return {'status': doneCode, 'vmList': self.status()}
+        return {'status': doneCode, 'vmList': {}}
 
     @api.guard(_not_migrating)
     def hotunplugMemory(self, params):
@@ -3164,7 +3164,7 @@ class Vm(object):
 
         self._updateDomainDescriptor()
         hooks.after_set_num_of_cpus()
-        return {'status': doneCode, 'vmList': self.status()}
+        return {'status': doneCode, 'vmList': {}}
 
     def _updateVcpuLimit(self):
         qos = self._getVmPolicy()
@@ -3563,7 +3563,7 @@ class Vm(object):
             hooks.after_disk_hotplug(driveXml, self._custom,
                                      params=drive.custom)
 
-        return {'status': doneCode, 'vmList': self.status()}
+        return {'status': doneCode, 'vmList': {}}
 
     @api.guard(_not_migrating)
     def hotunplugDisk(self, params):
@@ -3616,7 +3616,7 @@ class Vm(object):
                                        params=drive.custom)
             self._cleanupDrives(drive)
 
-        return {'status': doneCode, 'vmList': self.status()}
+        return {'status': doneCode, 'vmList': {}}
 
     @api.guard(_not_migrating)
     def hotplugLease(self, params):
@@ -3645,7 +3645,7 @@ class Vm(object):
 
         self._devices[hwclass.LEASE].append(lease)
         self._updateDomainDescriptor()
-        return response.success(vmList=self.status())
+        return response.success(vmList={})
 
     @api.guard(_not_migrating)
     def hotunplugLease(self, params):
@@ -3670,7 +3670,7 @@ class Vm(object):
         # See https://bugzilla.redhat.com/1639228.
         self._updateDomainDescriptor()
 
-        return response.success(vmList=self.status())
+        return response.success(vmList={})
 
     def _device_removed(self, device, sleep_time):
         if isinstance(device, vmdevices.lease.Device):
@@ -4683,7 +4683,7 @@ class Vm(object):
         if vmDev in self.conf:
             self.cif.teardownVolumePath(self.conf[vmDev])
 
-        return {'vmList': self.status()}
+        return {'vmList': {}}
 
     def setTicket(self, otp, seconds, connAct, params):
         """
