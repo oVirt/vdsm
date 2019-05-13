@@ -733,7 +733,9 @@ class Vm(object):
         if self._vmAsyncStartError:
             return self._vmAsyncStartError
 
-        return response.success(vmList=self.status())
+        status = self.status(fullStatus=False)
+        status['xml'] = self._domain.xml
+        return response.success(vmList=status)
 
     def mem_size_mb(self, current=False):
         mem_size_mb = self._domain.get_memory_size(current=current)
