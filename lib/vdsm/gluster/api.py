@@ -475,15 +475,15 @@ class GlusterApi(object):
 
     @exportAsVerb
     def hookUpdate(self, glusterCmd, hookLevel, hookName, hookData,
-                   hookMd5Sum, options=None):
+                   hookChecksum, options=None):
         self.svdsmProxy.glusterHookUpdate(glusterCmd, hookLevel, hookName,
-                                          hookData, hookMd5Sum)
+                                          hookData, hookChecksum)
 
     @exportAsVerb
-    def hookAdd(self, glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
+    def hookAdd(self, glusterCmd, hookLevel, hookName, hookData, hookChecksum,
                 enable=False, options=None):
         self.svdsmProxy.glusterHookAdd(glusterCmd, hookLevel, hookName,
-                                       hookData, hookMd5Sum, enable)
+                                       hookData, hookChecksum, enable)
 
     @exportAsVerb
     def hookRemove(self, glusterCmd, hookLevel, hookName, options=None):

@@ -257,8 +257,8 @@ types:
             name: mimetype
             type: string
 
-        -   description: Md5sum of the hook file
-            name: md5sum
+        -   description: SHA256 digest of the hook file
+            name: checksum
             type: string
 
         -   description: Hook content
@@ -301,8 +301,8 @@ types:
             name: name
             type: string
 
-        -   description: Md5sum of the hook file
-            name: md5sum
+        -   description: SHA256 digest of the hook file
+            name: checksum
             type: string
 
         -   description: Hook level
@@ -971,8 +971,8 @@ GlusterHook.add:
         name: hookData
         type: string
 
-    -   description: Md5sum of the hook file
-        name: hookMd5Sum
+    -   description: SHA256 checksum of the hook file
+        name: checksum
         type: string
 
     -   description: Hook status
@@ -1086,8 +1086,8 @@ GlusterHook.update:
         name: hookData
         type: string
 
-    -   description: Md5sum of the hook file
-        name: hookMd5Sum
+    -   description: SHA256 checksum of the hook file
+        name: hookChecksum
         type: string
     return:
         description: success or failure
