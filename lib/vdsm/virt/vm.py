@@ -1857,28 +1857,14 @@ class Vm(object):
             return self.lastStatus
 
     def migration_parameters(self):
-        params = {
+        return {
             '_srcDomXML': self._dom.XMLDesc(0),
+            'vmId': self.id,
+            'xml': self._domain.xml,
             'elapsedTimeOffset': (
                 time.time() - self._startTime
             ),
         }
-
-        vm_conf = self.status()
-        for key, value in vm_conf.items():
-            if key == 'launchPaused':
-                continue
-            params[key] = value
-
-        vmStats = self.getStats()
-        for key in ('username', 'guestIPs', 'guestFQDN'):
-            if key in vmStats:
-                params[key] = vmStats[key]
-
-        version = self.update_guest_agent_api_version()
-        # REQUIRED_FOR: oVirt <= 4.1
-        params['guestAgentAPIVersion'] = version
-        return params
 
     def _get_vm_migration_progress(self):
         return self.migrateStatus()['progress']
@@ -3788,13 +3774,6 @@ class Vm(object):
             #    operation.
 
         self._src_domain_xml = None  # just to save memory
-        with self._confLock:
-            if 'guestIPs' in self.conf:
-                del self.conf['guestIPs']
-            if 'guestFQDN' in self.conf:
-                del self.conf['guestFQDN']
-            if 'username' in self.conf:
-                del self.conf['username']
         self._update_metadata()   # to store agent API version
         self._updateDomainDescriptor()
         self.log.info("End of migration")
