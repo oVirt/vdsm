@@ -2775,7 +2775,10 @@ class Vm(object):
                               port_mirroring=mirroredNetworks)
             return response.error('hotplugNic', str(e))
 
-        return {'status': doneCode, 'vmList': self.status()}
+        device_info = {'devices': [{'macAddr': nic.macAddr,
+                                    'alias': nic.alias,
+                                    }]}
+        return {'status': doneCode, 'vmList': device_info}
 
     def _lookupDeviceByIdentification(self, devType, devIdent):
         for dev in self._devices[devType][:]:
@@ -3083,7 +3086,7 @@ class Vm(object):
 
         hooks.after_nic_hotunplug(nicXml, self._custom,
                                   params=nic.custom)
-        return {'status': doneCode, 'vmList': self.status()}
+        return {'status': doneCode, 'vmList': {}}
 
     def _update_mem_guaranteed_size(self, params):
         if 'memGuaranteedSize' in params:
