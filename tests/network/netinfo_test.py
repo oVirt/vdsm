@@ -371,8 +371,8 @@ class TestNetinfo(TestCaseBase):
         return '{}/{}'.format(ip_addr, prefix_length)
 
     def test_parse_bond_options(self):
-        self.assertEqual(bonding.parse_bond_options('mode=4 custom=foo:bar'),
-                         {'custom': {'foo': 'bar'}, 'mode': '4'})
+        self.assertEqual(bonding.parse_bond_options('mode=4 miimon=100'),
+                         {'mode': '4', 'miimon': '100'})
 
 
 @attr(type='integration')

@@ -130,13 +130,9 @@ def _ip_flush(ifaces):
         address.flush(iface)
 
 
-def parse_bond_options(options, keep_custom=False):
+def parse_bond_options(options):
     """
-    Parse bonding options into dictionary, if keep_custom is set to True,
-    custom option will not be recursively parsed.
-
-    >>> parse_bond_options('mode=4 custom=foo:yes,bar:no')
-    {'custom': {'bar': 'no', 'foo': 'yes'}, 'mode': '4'}
+    Parse bonding options into a dictionary.
     """
     def _string_to_dict(str, div, eq):
         if options == '':
@@ -145,19 +141,6 @@ def parse_bond_options(options, keep_custom=False):
                     for option in str.strip(div).split(div))
     if options:
         d_options = _string_to_dict(options, ' ', '=')
-        if d_options.get('custom') and not keep_custom:
-            d_options['custom'] = _string_to_dict(d_options['custom'], ',',
-                                                  ':')
         return d_options
     else:
         return {}
-
-
-def remove_custom_bond_option(options):
-    """ Removes 'custom' option from bond options string.
-
-    >>> remove_custom_bond_option('custom=foo=bar mode=1')
-    'mode=1'
-    """
-    return ' '.join((option for option in options.split()
-                     if not option.startswith('custom=')))

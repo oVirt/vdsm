@@ -79,7 +79,7 @@ def _set_mode(bond, mode):
 
 def _set_options(bond, requested_options, current_options):
     for key, value in six.iteritems(requested_options):
-        if key not in ('mode', 'custom') and (
+        if key != 'mode' and (
                 key not in current_options or value != current_options[key]):
             _set_option(bond, key, value, current_options.get(key))
 

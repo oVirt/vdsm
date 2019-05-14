@@ -311,15 +311,6 @@ class NetworkTest(TestCaseBase):
             active_opts = self._get_active_bond_opts(bondName)
             self.assertTrue(set(options.split()) <= set(active_opts))
 
-    def _assert_exact_bond_opts(self, bond, opts):
-        """:param opts: list of strings e.g. ['miimon=150', 'mode=4']"""
-        # TODO: we should try and call this logic always during
-        # TODO: assertBondExists and be stricter. Will probably need to fix a
-        # TODO: few tests
-        self.assertEqual(
-            set(self._get_active_bond_opts(bond)) - set(["mode=0"]),
-            set(opts) - set(["mode=0"]))
-
     def _get_active_bond_opts(self, bondName):
         netinfo = self.vdsm_net.netinfo
         active_options = [opt + '=' + val for (opt, val)
@@ -1363,29 +1354,6 @@ class NetworkTest(TestCaseBase):
             self.assertNetworkDoesntExist(NETWORK_NAME)
             self.assertBondDoesntExist(BONDING_NAME, nics)
             self.vdsm_net.save_config()
-
-    @cleanupNet
-    @ValidateRunningAsRoot
-    def test_setupNetworks_bond_with_custom_option(self):
-        with dummyIf(2) as nics:
-            status, msg = self.setupNetworks(
-                {},
-                {BONDING_NAME: {'nics': nics,
-                                'options': 'custom=foo:bar mode=4'}},
-                NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertBondExists(BONDING_NAME, nics)
-
-            # custom property has to be persisted, but not reported by netinfo.
-            self._assert_exact_bond_opts(BONDING_NAME, ['mode=4'])
-            bond = self.vdsm_net.config.bonds.get(BONDING_NAME)
-            self.assertSetEqual(set(['mode=4', 'custom=foo:bar']),
-                                set(bond.get('options').split()))
-
-            status, msg = self.setupNetworks(
-                {}, {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertBondDoesntExist(BONDING_NAME, nics)
 
     @cleanupNet
     @ValidateRunningAsRoot

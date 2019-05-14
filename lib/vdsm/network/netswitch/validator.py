@@ -180,7 +180,7 @@ def _validate_bond_options(bond_options):
 
     for option in bond_options.split():
         key, _ = option.split('=', 1)
-        if key not in defaults and key != 'custom':
+        if key not in defaults:
             raise ne.ConfigNetworkError(
                 ne.ERR_BAD_BONDING, '%r is not a valid bonding option' % key)
 

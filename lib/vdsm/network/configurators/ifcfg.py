@@ -55,7 +55,6 @@ from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NAME_TO_NUMBER
 from vdsm.network.link.bond.sysfs_options import numerize_bond_mode
 from vdsm.network.link.setup import parse_bond_options
-from vdsm.network.link.setup import remove_custom_bond_option
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo import nics, misc, NET_PATH
 from vdsm.network.netlink import waitfor
@@ -669,8 +668,7 @@ class ConfigWriter(object):
 
     def addBonding(self, bond, net_info, **opts):
         """ Create ifcfg-* file with proper fields for bond """
-        # 'custom' is not a real bond option, it just piggybacks custom values
-        options = remove_custom_bond_option(bond.options)
+        options = bond.options
         conf = 'BONDING_OPTS=%s\n' % pipes.quote(options)
         opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         if bond.bridge:

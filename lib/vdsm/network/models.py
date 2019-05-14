@@ -26,7 +26,6 @@ import re
 from vdsm.network.link import bond as link_bond
 from vdsm.network.link import iface as link_iface
 from vdsm.network.link.bond import sysfs_options as bond_options
-from vdsm.network.link.setup import remove_custom_bond_option
 from vdsm.network.netinfo import bonding, nics
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.ip.address import IPv4, IPv6
@@ -253,8 +252,7 @@ class Bond(NetDevice):
         # TODO: this method returns True iff self.options are a subset of the
         # TODO: current bonding options. VDSM should probably compute if the
         # TODO: non-default settings are equal to the non-default state.
-        # 'custom' is not a real bond option, it just piggybacks custom values
-        options = remove_custom_bond_option(self.options)
+        options = self.options
         if options == '':
             return True
         confOpts = [option.split('=', 1) for option in options.split(' ')]
@@ -331,7 +329,7 @@ class Bond(NetDevice):
 
         for option in bondingOptions.split():
             key, _ = option.split('=', 1)
-            if key not in defaults and key != 'custom':
+            if key not in defaults:
                 raise ConfigNetworkError(ne.ERR_BAD_BONDING, '%r is not a '
                                          'valid bonding option' % key)
 
