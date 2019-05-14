@@ -741,7 +741,12 @@ class Image:
 
             # Create dst volume
             try:
-                # find out src volume parameters
+                # Before reading source volume parameters from volume metadata,
+                # prepare the volume. This ensure that the volume capacity will
+                # match the actual virtual size, see
+                # https://bugzilla.redhat.com/1700623.
+                srcVol.prepare(rw=False)
+
                 volParams = srcVol.getVolumeParams()
 
                 if volFormat in [sc.COW_FORMAT, sc.RAW_FORMAT]:
@@ -749,8 +754,6 @@ class Image:
                 else:
                     dstVolFormat = volParams['volFormat']
 
-                # Prepare src volume to be readable when calculating dst size.
-                srcVol.prepare(rw=False)
                 dstVolAllocBlk = self.calculate_vol_alloc(
                     sdUUID, volParams, dstSdUUID, dstVolFormat)
 
@@ -758,11 +761,27 @@ class Image:
                 if preallocate in [sc.PREALLOCATED_VOL, sc.SPARSE_VOL]:
                     volParams['prealloc'] = preallocate
 
-                self.log.info("copy source %s:%s:%s size %s blocks "
-                              "destination %s:%s:%s allocating %s blocks" %
-                              (sdUUID, srcImgUUID, srcVolUUID,
-                               volParams['size'], dstSdUUID, dstImgUUID,
-                               dstVolUUID, dstVolAllocBlk))
+                # How this works:
+                # - For raw preallocated volume on file storage we use small
+                #   temporary image size, and resize the image after copying
+                #   the source image.
+                # - For qcow2 volume on block storage, initialSizeBlk is used
+                #   to allocated the needed extents.
+                # - Otherwise we use the real image size and initialSize is
+                #   None
+
+                tmpSize, initialSizeBlk = self.calculate_tmp_and_init_size(
+                    destDom.supportsSparseness,
+                    dstVolFormat,
+                    volParams['prealloc'],
+                    volParams['size'],
+                    dstVolAllocBlk)
+
+                self.log.info("Copy source %s:%s:%s to destination %s:%s:%s "
+                              "size=%s blocks, temp size=%s blocks, initial "
+                              "size=%s blocks", sdUUID, srcImgUUID, srcVolUUID,
+                              dstSdUUID, dstImgUUID, dstVolUUID,
+                              volParams['size'], tmpSize, initialSizeBlk)
 
                 # If image already exists check whether it illegal/fake,
                 # overwrite it
@@ -777,24 +796,17 @@ class Image:
                                   "overwriting", dstImgUUID, dstSdUUID)
                     _deleteImage(destDom, dstImgUUID, postZero, discard)
 
-                # To avoid 'prezeroing' preallocated volume on NFS domain,
-                # we create the target volume with minimal size and after that
-                # we'll change its metadata back to the original size.
-                tmpSize = TEMPORARY_VOLUME_SIZE  # in sectors (10M)
                 destDom.createVolume(
                     imgUUID=dstImgUUID, size=tmpSize, volFormat=dstVolFormat,
                     preallocate=volParams['prealloc'],
                     diskType=volParams['disktype'], volUUID=dstVolUUID,
                     desc=descr, srcImgUUID=sc.BLANK_UUID,
-                    srcVolUUID=sc.BLANK_UUID)
+                    srcVolUUID=sc.BLANK_UUID, initialSize=initialSizeBlk)
 
                 dstVol = sdCache.produce(dstSdUUID).produceVolume(
                     imgUUID=dstImgUUID, volUUID=dstVolUUID)
 
-                dstVol.extend(dstVolAllocBlk)
                 dstPath = dstVol.getVolumePath()
-                # Change destination volume metadata back to the original size.
-                dstVol.setSize(volParams['size'])
             except se.StorageException:
                 self.log.error("Unexpected error", exc_info=True)
                 raise
@@ -807,6 +819,18 @@ class Image:
                 # Start the actual copy image procedure
                 dstVol.prepare(rw=True, setrw=True)
 
+                # Change destination volume metadata back to the original size.
+                # Restore original size has to be called after preparing
+                # dstVol, otherwise it would result into wrong metadata size.
+                # At this point, the actual volume hasn't correct size, but it
+                # will be truncated to the correct size in subsequent step by
+                # qemuimg.convert().
+                if tmpSize != volParams['size']:
+                    self.log.debug("Restoring size of %s:%s:%s to %s blocks",
+                                   dstSdUUID, dstImgUUID, dstVolUUID,
+                                   volParams['size'])
+                    dstVol.setSize(volParams['size'])
+
                 if (destDom.supportsSparseness and
                         dstVol.getType() == sc.PREALLOCATED_VOL):
                     preallocation = qemuimg.PREALLOCATION.FALLOC
@@ -814,6 +838,9 @@ class Image:
                     preallocation = None
 
                 try:
+                    # Qemu convert truncate the real volume size to correct
+                    # value for preallocated raw image which was created with
+                    # tmpSize.
                     operation = qemuimg.convert(
                         volParams['path'],
                         dstPath,
@@ -856,6 +883,39 @@ class Image:
             return dstVolUUID
         finally:
             self.__cleanupCopy(srcVol=srcVol, dstVol=dstVol)
+
+    def calculate_tmp_and_init_size(
+            self, is_file, format, prealloc, size_blk, estimate_blk):
+        """
+        Return the temporal size and initial size in 512 bytes blocks for
+        creating a volume.
+
+        The caller has to fix volume size when this calculation is used for raw
+        pre-allocated volume on the file domain. This method is intended for
+        use only in copyCollapsed.
+
+        Arguments:
+            is_file (bool): if destination storage domain is file domain.
+            format (int): destination volume format enum.
+            prealloc (int): destination volume preallocation enum.
+            size_blk (int): size of the destination volume in 512 bytes blocks.
+            estimate_blk (int): estimated allocation in 512 byte blocks.
+        """
+        tmp_size_blk = size_blk
+        initial_size_blk = None
+
+        if is_file:
+            if format == sc.RAW_FORMAT and prealloc == sc.PREALLOCATED_VOL:
+                # To avoid 'prezeroing' preallocated volume on file domain,
+                # we create the target volume with minimal size.
+                tmp_size_blk = TEMPORARY_VOLUME_SIZE
+        else:
+            if format == sc.COW_FORMAT and prealloc == sc.SPARSE_VOL:
+                # Ensure that enough extents are allocated for raw-preallocated
+                # volume on block storage.
+                initial_size_blk = estimate_blk
+
+        return tmp_size_blk, initial_size_blk
 
     def calculate_vol_alloc(self, src_sd_id, src_vol_params,
                             dst_sd_id, dst_vol_format):

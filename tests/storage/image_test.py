@@ -96,3 +96,42 @@ class TestCalculateVolAlloc(VdsmTestCase):
         alloc_blk = img.calculate_vol_alloc("src_sd_id", src_params,
                                             "dst_sd_id", dest_format)
         self.assertEqual(alloc_blk, expected_blk)
+
+    @permutations([
+        # storage, format, prealloc, size_blk, estimated_blk,
+        # expected_tmp_size_blk, expected_initial_size_blk
+        # File raw preallocated, avoid prealocation.
+        ("file", sc.RAW_FORMAT, sc.PREALLOCATED_VOL, 20971520, 20971520,
+         image.TEMPORARY_VOLUME_SIZE, None),
+
+        # File - anything else using real size and no initial size.
+        ("file", sc.RAW_FORMAT, sc.SPARSE_VOL, 20971520, 20971520, 20971520,
+         None),
+        ("file", sc.COW_FORMAT, sc.SPARSE_VOL, 20971520, 10485760, 20971520,
+         None),
+        ("file", sc.COW_FORMAT, sc.PREALLOCATED_VOL, 20971520, 21037056,
+         20971520, None),
+
+        # Block qcow2 thin, using real size and estimated initial size.
+        ("block", sc.COW_FORMAT, sc.SPARSE_VOL, 20971520, 10485760, 20971520,
+         10485760),
+
+        # Block - anything else using real size and no initial size.
+        ("block", sc.COW_FORMAT, sc.PREALLOCATED_VOL, 20971520, 21037056,
+         20971520, None),
+        ("block", sc.RAW_FORMAT, sc.PREALLOCATED_VOL, 20971520, 20971520,
+         20971520, None),
+    ])
+    def test_calculate_tmp_and_init_size(
+            self, storage, format, prealloc, size_blk, estimated_blk,
+            expected_tmp_size_blk, expected_initial_size_blk):
+        img = image.Image("/path")
+        tmp_size_blk, init_size_blk = img.calculate_tmp_and_init_size(
+            storage == "file",
+            format,
+            prealloc,
+            size_blk,
+            estimated_blk)
+
+        assert tmp_size_blk == expected_tmp_size_blk
+        assert init_size_blk == expected_initial_size_blk
