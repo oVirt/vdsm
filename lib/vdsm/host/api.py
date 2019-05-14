@@ -185,14 +185,15 @@ def _getHaInfo():
                 i['localMaintenance'] = stats[host_id]['maintenance']
         except IOError as ex:
             if ex.errno == errno.ENOENT:
-                logging.error(
+                logging.warning(
                     ("failed to retrieve Hosted Engine HA score '{0}'"
                         "Is the Hosted Engine setup finished?")
                     .format(str(ex))
                 )
             else:
-                logging.exception(
-                    "failed to retrieve Hosted Engine HA score"
+                logging.warning(
+                    ("failed to retrieve Hosted Engine HA score '{0}'")
+                    .format(str(ex))
                 )
         except Exception:
             logging.exception("failed to retrieve Hosted Engine HA info")
