@@ -45,7 +45,8 @@ BOND_NAME = 'bond10'
 IPv4_ADDRESS = '192.0.3.1'
 IPv4_NETMASK = '255.255.255.0'
 IPv4_PREFIX_LEN = '24'
-IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
+IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1'
+IPv6_PREFIX_LEN = '64'
 
 DHCPv4_RANGE_FROM = '192.0.3.2'
 DHCPv4_RANGE_TO = '192.0.3.253'
@@ -127,7 +128,7 @@ class TestIpSwitch(object):
                 'bonding': BOND_NAME,
                 'ipaddr': IPv4_ADDRESS,
                 'netmask': IPv4_NETMASK,
-                'ipv6addr': IPv6_ADDRESS,
+                'ipv6addr': IPv6_ADDRESS + '/' + IPv6_PREFIX_LEN,
                 'switch': sw_src}}
             NETSETUP_TARGET = _change_switch_type(NETSETUP_SOURCE, sw_dst)
             BONDSETUP_SOURCE = {BOND_NAME: {

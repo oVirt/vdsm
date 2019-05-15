@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,8 @@ IPv4_NETMASK = '255.255.255.0'
 IPv4_PREFIX_LEN = '24'
 IPv4_GATEWAY = '192.0.2.254'
 IPv4_GATEWAY2 = '192.0.3.254'
-IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
+IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1'
+IPv6_PREFIX_LEN = '64'
 
 adapter = None
 
@@ -90,6 +91,8 @@ class TestNetworkStaticIpBasic(object):
 
     def _test_add_net_with_ip(self, families, switch,
                               bonded=False, vlaned=False, bridged=False):
+        IPv6_ADDRESS_AND_PREFIX_LEN = IPv6_ADDRESS + '/' + IPv6_PREFIX_LEN
+
         with dummy_devices(2) as (nic1, nic2):
             network_attrs = {'bridged': bridged, 'switch': switch}
 
@@ -97,7 +100,7 @@ class TestNetworkStaticIpBasic(object):
                 network_attrs['ipaddr'] = IPv4_ADDRESS
                 network_attrs['netmask'] = IPv4_NETMASK
             if IpFamily.IPv6 in families:
-                network_attrs['ipv6addr'] = IPv6_ADDRESS
+                network_attrs['ipv6addr'] = IPv6_ADDRESS_AND_PREFIX_LEN
 
             if bonded:
                 bondcreate = {
@@ -135,7 +138,7 @@ class TestNetworkStaticIpBasic(object):
                              'netmask': IPv4_NETMASK,
                              'switch': switch}
             net_ipv6_atts = {'nic': nic1,
-                             'ipv6addr': IPv6_ADDRESS,
+                             'ipv6addr': IPv6_ADDRESS + '/' + IPv6_PREFIX_LEN,
                              'switch': switch}
 
             net_ipv4 = {NETWORK_NAME: net_ipv4_atts}
