@@ -379,6 +379,7 @@ class TestAcquireNicsWithStaticIP(object):
     def test_attach_nic_with_ip_as_a_slave_to_ipless_network(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             addrAdd(nic1, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+            addrAdd(nic1, IPv6_ADDRESS, IPv6_PREFIX_LEN, family=6)
 
             NETCREATE = {
                 NETWORK_NAME: {'bonding': BOND_NAME, 'switch': switch}}
@@ -387,6 +388,7 @@ class TestAcquireNicsWithStaticIP(object):
             with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
                 nic_netinfo = adapter.netinfo.nics[nic1]
                 adapter.assertDisabledIPv4(nic_netinfo)
+                adapter.assertDisabledIPv6(nic_netinfo)
 
     def test_attach_nic_with_ip_as_a_slave_to_ip_network(self, switch):
         with dummy_devices(2) as (nic1, nic2):
