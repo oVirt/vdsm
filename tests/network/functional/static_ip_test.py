@@ -355,11 +355,13 @@ class TestAcquireNicsWithStaticIP(object):
     def test_attach_nic_with_ip_to_ipless_network(self, switch):
         with dummy_device() as nic:
             addrAdd(nic, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+            addrAdd(nic, IPv6_ADDRESS, IPv6_PREFIX_LEN, family=6)
 
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': switch}}
             with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                 nic_netinfo = adapter.netinfo.nics[nic]
                 adapter.assertDisabledIPv4(nic_netinfo)
+                adapter.assertDisabledIPv6(nic_netinfo)
 
     def test_attach_nic_with_ip_to_ip_network(self, switch):
         with dummy_device() as nic:

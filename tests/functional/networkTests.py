@@ -1389,31 +1389,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @ValidateRunningAsRoot
-    def test_drop_initial_network_nic_ip_config(self):
-        with dummyIf(1) as nics:
-            nic, = nics
-            sysctl.disable_ipv6(nic, False)
-            addrAdd(nic, IP_ADDRESS, IP_CIDR)
-            addrAdd(nic, IPv6_ADDRESS, IPv6_CIDR, family=6)
-            try:
-                status, msg = self.setupNetworks(
-                    {NETWORK_NAME: {'nic': nic, 'bridged': True}}, {}, NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
-
-                ipv4addrs = self.vdsm_net.netinfo.nics[nic]['ipv4addrs']
-                ipv6addrs = self.vdsm_net.netinfo.nics[nic]['ipv6addrs']
-                self.assertNotIn(IP_ADDRESS_AND_CIDR, ipv4addrs)
-                self.assertNotIn(IPv6_ADDRESS_AND_CIDR, ipv6addrs)
-
-                status, msg = self.setupNetworks(
-                    {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
-                self.assertNetworkDoesntExist(NETWORK_NAME)
-            finally:
-                addrFlush(nic)
-
-    @cleanupNet
-    @ValidateRunningAsRoot
     def test_drop_initial_bond_slaves_ip_config(self):
         with dummyIf(2) as nics:
             nic_1, nic_2 = nics
