@@ -176,12 +176,10 @@ Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
 
 %if 0%{?rhel}
-# Required for preventing an HotPlug disk failure due to cgroups.
-# See https://bugzilla.redhat.com/1532183 for details.
-Requires: libvirt-python >= 3.2.0-3.el7_4.1
-# Required to fix order of VM life cycle events.
-# See https://bugzilla.redhat.com/1612943 for details.
-Requires: libvirt-daemon-kvm >= 4.5.0-10.el7_6.3
+# 7.6 baseline
+Requires: libvirt-python >= 4.5.0-1.el7
+# CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
+Requires: libvirt-daemon-kvm >= 4.5.0-10.el7_6.9
 %else # fedora
 # Required for preventing an HotPlug disk failure due to cgroups.
 # See https://bugzilla.redhat.com/1540872 for details.
@@ -236,17 +234,13 @@ Requires: lvm2 >= 2.02.145
 %endif
 
 %if 0%{?rhel}
-%if 0%{?centos}
-# 7.6 baseline
-Requires: kernel >= 3.10.0-957.el7
-%else # RHEL
-# Required for new hyperv flags for Windows https://bugzilla.redhat.com/1644693
-Requires: kernel >= 3.10.0-957.3.1.el7
-%endif
+# CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
+Requires: kernel >= 3.10.0-957.12.2.el7
 Requires: e2fsprogs
 Requires: selinux-policy-targeted >= 3.13.1-166.el7_4.3
 %else # fedora
-Requires: kernel >= 4.1.6
+# CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
+Requires: kernel >=  5.0.16-100
 Requires: e2fsprogs >= 1.41.14
 Requires: policycoreutils-python-utils
 Requires: sed >= 4.2.1-10
@@ -258,13 +252,8 @@ Requires: policycoreutils >= 2.1.13-55
 %endif
 
 %if 0%{?rhel}
-%if 0%{?centos}
-# 7.6 baseline
-Requires: qemu-kvm-rhev >= 10:2.12.0-18.el7_6.1
-%else # RHEL
-# Required for new hyperv flags for Windows https://bugzilla.redhat.com/1644693
-Requires: qemu-kvm-rhev >= 10:2.12.0-18.el7_6.3
-%endif
+# CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
+Requires: qemu-kvm-rhev >= 10:2.12.0-18.el7_6.5
 %else # fedora
 # qemu-kvm 2.12 is Fedora 28 virt-preview baseline
 # but virt-preview is not available on s390 arch
