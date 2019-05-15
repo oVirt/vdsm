@@ -43,10 +43,17 @@ def getHardwareInfo(*args, **kwargs):
 def read_debugfs_property(path):
     try:
         with open(path) as f:
-            return int(f.read().strip())
+            return f.read().strip()
     except IOError as e:
         if e.errno == errno.ENOENT:
             return -1
+
+
+def read_string_property(path):
+    result = read_debugfs_property(path)
+    if result != -1:
+        result = '(%s)' % (result,)
+    return result
 
 
 @expose
@@ -67,3 +74,8 @@ def get_ibrs(*args, **kwargs):
 @expose
 def get_ssbd(*args, **kwargs):
     return read_debugfs_property('/sys/kernel/debug/x86/ssbd_enabled')
+
+
+@expose
+def get_mds(*args, **kwargs):
+    return read_string_property('/sys/devices/system/cpu/vulnerabilities/mds')
