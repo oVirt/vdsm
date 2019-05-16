@@ -85,6 +85,19 @@ def requires_ipaddress():
         pytest.skip('ipaddress package is not installed')
 
 
+def retry_assert(func):
+    def retry(*args, **kwargs):
+        for i in range(4):
+            try:
+                func(*args, **kwargs)
+            except AssertionError:
+                    time.sleep(1)
+            else:
+                return
+        func(*args, **kwargs)
+    return retry
+
+
 class Target(object):
     SERVICE = 1
     LIB = 0
@@ -532,6 +545,7 @@ class NetFuncTestAdapter(object):
                                       is_gateway_requested)
         assert is_default_route_requested == ipinfo['ipv4defaultroute']
 
+    @retry_assert
     def assertLinksUp(self, net, attrs):
         switch = attrs.get('switch', 'legacy')
         if switch == 'legacy':
