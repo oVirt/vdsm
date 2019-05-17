@@ -1,0 +1,2 @@
+- name: 'CI_PYTHON_VERSION'
+  value: 'python2'
