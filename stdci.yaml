@@ -19,7 +19,12 @@ release_branches:
     - ovirt-4.2
 
 stages:
-  - build-artifacts
+  - build-artifacts:
+      substages:
+        - build-py27
+        - build-py36:
+            distributions:
+              - fc28
   - check-patch:
       archs:
         - x86_64

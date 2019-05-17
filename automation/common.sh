@@ -21,7 +21,8 @@ build_vdsm() {
         ${CI_PYTHON_VERSION} tests/profile autogen ./autogen.sh \
             --system \
             --enable-hooks \
-            --enable-vhostmd
+            --enable-vhostmd \
+            --with-only-python=${CI_PYTHON_VERSION}
     fi
 
     ${CI_PYTHON_VERSION} tests/profile make make
@@ -85,18 +86,16 @@ check_install() {
 }
 
 generate_combined_coverage_report() {
-    local python_version="$1"
-
     pushd tests
     pwd
     ls .cov*
-    coverage combine ".coverage-nose-$python_version" \
-                     ".coverage-storage-$python_version" \
-                     ".coverage-network-$python_version" \
-                     ".coverage-virt-$python_version" \
-                     ".coverage-lib-$python_version"
+    coverage combine .coverage-nose-py* \
+                     .coverage-storage-py* \
+                     .coverage-network-py* \
+                     .coverage-virt-py* \
+                     .coverage-lib-py*
 
-    ${CI_PYTHON_VERSION} ./profile "coverage-$python_version" coverage html -d "$EXPORT_DIR/htmlcov"
+    ${CI_PYTHON_VERSION} ./profile coverage coverage html -d "$EXPORT_DIR/htmlcov"
     popd
 
     # Export subsystem coverage reports for viewing in jenkins.
@@ -128,8 +127,6 @@ install_lvmlocal_conf() {
 }
 
 run_tests() {
-    local python_version="$1"
-
     if [ -z "$EXPORT_DIR" ]; then
         (>&2 echo "*** EXPORT_DIR must be set to run tests!")
         exit 1
@@ -137,7 +134,9 @@ run_tests() {
 
     trap collect_logs EXIT
 
-    ${CI_PYTHON_VERSION} tests/profile debuginfo-install debuginfo-install -y python
+    # 'CI_PYTHON_VERSION' variable needs to have a 'pythonMAJOR' form
+    # (i.e. 'python3') so it points to proper package
+    ${CI_PYTHON_VERSION} tests/profile debuginfo-install debuginfo-install -y ${CI_PYTHON_VERSION}
 
     # Make sure we have enough loop device nodes. Using 16 devices since with 8
     # devices we have random mount failures.
@@ -145,5 +144,5 @@ run_tests() {
 
     install_lvmlocal_conf
 
-    TIMEOUT=600 make "tests-$python_version" NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
+    TIMEOUT=600 make tests NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 }
