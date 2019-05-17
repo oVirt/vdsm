@@ -13,15 +13,18 @@ prepare_env() {
 }
 
 install_dependencies() {
-    tests/profile pip-install pip install -U tox==2.9.1
+    ${CI_PYTHON_VERSION} tests/profile pip-install pip install -U tox==2.9.1
 }
 
 build_vdsm() {
     if [ ! -f Makefile ]; then
-      tests/profile autogen ./autogen.sh --system --enable-hooks --enable-vhostmd
+        ${CI_PYTHON_VERSION} tests/profile autogen ./autogen.sh \
+            --system \
+            --enable-hooks \
+            --enable-vhostmd
     fi
 
-    tests/profile make make
+    ${CI_PYTHON_VERSION} tests/profile make make
 }
 
 # oVirt CI helper functions
@@ -58,7 +61,7 @@ check_install() {
         exit 1
     fi
 
-    tests/profile build-artifacts $PWD/automation/build-artifacts.sh
+    ${CI_PYTHON_VERSION} tests/profile build-artifacts $PWD/automation/build-artifacts.sh
 
     tests/check_distpkg.sh "$(ls "$EXPORT_DIR"/vdsm*.tar.gz)"
     tests/check_rpms.sh "$EXPORT_DIR"
@@ -73,7 +76,12 @@ check_install() {
         DNF=yum
     fi
 
-    tests/profile install "$DNF" -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\* vdsm-gluster-$vr\*
+    ${CI_PYTHON_VERSION} tests/profile install "$DNF" -y install \
+        vdsm-$vr\* \
+        vdsm-client-$vr\* \
+        vdsm-hook-\*-$vr\* \
+        vdsm-tests-$vr\* \
+        vdsm-gluster-$vr\*
 }
 
 generate_combined_coverage_report() {
@@ -88,7 +96,7 @@ generate_combined_coverage_report() {
                      ".coverage-virt-$python_version" \
                      ".coverage-lib-$python_version"
 
-    ./profile "coverage-$python_version" coverage html -d "$EXPORT_DIR/htmlcov"
+    ${CI_PYTHON_VERSION} ./profile "coverage-$python_version" coverage html -d "$EXPORT_DIR/htmlcov"
     popd
 
     # Export subsystem coverage reports for viewing in jenkins.
@@ -129,7 +137,7 @@ run_tests() {
 
     trap collect_logs EXIT
 
-    tests/profile debuginfo-install debuginfo-install -y python
+    ${CI_PYTHON_VERSION} tests/profile debuginfo-install debuginfo-install -y python
 
     # Make sure we have enough loop device nodes. Using 16 devices since with 8
     # devices we have random mount failures.
