@@ -4605,21 +4605,10 @@ class Vm(object):
                       actionToString(action))
 
     def changeCD(self, cdromspec):
-        if isinstance(cdromspec, six.string_types):
-            # < 4.0 - known cdrom interface/index
-            drivespec = cdromspec
-            if cpuarch.is_ppc(self.arch) or cpuarch.is_s390(self.arch):
-                blockdev = 'sda'
-            else:
-                blockdev = 'hdc'
-            iface = None
-        else:
-            # > 4.0 - variable cdrom interface/index
-            drivespec = cdromspec['path']
-            blockdev = drivename.make(
-                cdromspec['iface'], cdromspec['index'])
-            iface = cdromspec['iface']
-
+        drivespec = cdromspec['path']
+        blockdev = drivename.make(
+            cdromspec['iface'], cdromspec['index'])
+        iface = cdromspec['iface']
         return self._changeBlockDev('cdrom', blockdev, drivespec, iface,
                                     force=bool(drivespec))
 
