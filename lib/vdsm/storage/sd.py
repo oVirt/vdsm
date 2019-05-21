@@ -329,7 +329,6 @@ class StorageDomainManifest(object):
         self.sdUUID = sdUUID
         self.domaindir = domaindir
         self.replaceMetadata(metadata)
-        self._domainLock = self._makeDomainLock()
         self._external_leases_lock = rwlock.RWLock()
         self._alignment = metadata.get(DMDK_ALIGNMENT, sc.ALIGNMENT_1M)
         self._block_size = metadata.get(DMDK_BLOCK_SIZE, sc.BLOCK_SIZE_512)
@@ -347,6 +346,8 @@ class StorageDomainManifest(object):
                 raise se.MetaDataValidationError(
                     "Storage domain version {} does not support block size {}"
                         .format(version, self.block_size))
+
+        self._domainLock = self._makeDomainLock()
 
     @classmethod
     def special_volumes(cls, version):
@@ -583,6 +584,11 @@ class StorageDomainManifest(object):
             DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC],
         )
 
+        kwargs = {
+            "alignment": self._alignment,
+            "block_size": self._block_size,
+        }
+
         try:
             lockClass = self._domainLockTable[domVersion]
         except KeyError:
@@ -590,10 +596,11 @@ class StorageDomainManifest(object):
 
         # Note: lease and leaseParams are needed only for legacy locks
         # supporting only single lease, and ignored by modern lock managers
-        # like sanlock.
+        # like sanlock. On the contrary, kwargs are not needed by legacy locks
+        # and are used by modern locks like sanlock.
 
         return lockClass(self.sdUUID, self.getIdsFilePath(),
-                         self.getDomainLease(), *leaseParams)
+                         self.getDomainLease(), *leaseParams, **kwargs)
 
     def initDomainLock(self):
         """

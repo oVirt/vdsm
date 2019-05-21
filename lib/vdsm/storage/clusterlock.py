@@ -132,7 +132,11 @@ class SafeLease(object):
     freeLockCmd = config.get('irs', 'free_lock_cmd')
 
     def __init__(self, sdUUID, idsPath, lease, lockRenewalIntervalSec,
-                 leaseTimeSec, leaseFailRetry, ioOpTimeoutSec):
+                 leaseTimeSec, leaseFailRetry, ioOpTimeoutSec, **kwargs):
+        """
+        Note: kwargs are not used. They were added to keep forward
+              compatibility with more recent locks.
+        """
         self._lock = threading.Lock()
         self._sdUUID = sdUUID
         self._idsPath = idsPath
@@ -235,13 +239,20 @@ class SafeLease(object):
 initSANLockLog = logging.getLogger("storage.initSANLock")
 
 
-def initSANLock(sdUUID, idsPath, lease):
+def initSANLock(
+        sdUUID, idsPath, lease, alignment=sc.ALIGNMENT_1M,
+        block_size=sc.BLOCK_SIZE_512):
     initSANLockLog.debug("Initializing SANLock for domain %s", sdUUID)
 
     try:
-        sanlock.write_lockspace(sdUUID, idsPath)
+        sanlock.write_lockspace(
+            sdUUID, idsPath, align=alignment, sector=block_size)
         sanlock.write_resource(
-            sdUUID, lease.name, [(lease.path, lease.offset)])
+            sdUUID,
+            lease.name,
+            [(lease.path, lease.offset)],
+            align=alignment,
+            sector=block_size)
     except sanlock.SanlockException:
         initSANLockLog.error("Cannot initialize SANLock for domain %s",
                              sdUUID, exc_info=True)
@@ -268,13 +279,15 @@ class SANLock(object):
     _sanlock_fd = None
     _sanlock_lock = threading.Lock()
 
-    def __init__(self, sdUUID, idsPath, lease, *args):
+    def __init__(self, sdUUID, idsPath, lease, *args, **kwargs):
         """
         Note: lease and args are unused, needed by legacy locks.
         """
         self._lock = threading.Lock()
         self._sdUUID = sdUUID
         self._idsPath = idsPath
+        self._alignment = kwargs.get("alignment", sc.ALIGNMENT_1M)
+        self._block_size = kwargs.get("block_size", sc.BLOCK_SIZE_512)
         self._ready = concurrent.ValidatingEvent()
 
     @property
@@ -282,7 +295,12 @@ class SANLock(object):
         return True
 
     def initLock(self, lease):
-        initSANLock(self._sdUUID, self._idsPath, lease)
+        initSANLock(
+            self._sdUUID,
+            self._idsPath,
+            lease,
+            alignment=self._alignment,
+            block_size=self._block_size)
 
     def setParams(self, *args):
         pass
@@ -426,12 +444,20 @@ class SANLock(object):
         self.log.info("Successfully acquired %s for host id %s", lease, hostId)
 
     def inquire(self, lease):
-        resource = sanlock.read_resource(lease.path, lease.offset)
+        resource = sanlock.read_resource(
+            lease.path,
+            lease.offset,
+            align=self._alignment,
+            sector=self._block_size)
         if resource["resource"] != lease.name:
             raise InvalidLeaseName(resource["resource"], lease)
 
-        owners = sanlock.read_resource_owners(self._sdUUID, lease.name,
-                                              [(lease.path, lease.offset)])
+        owners = sanlock.read_resource_owners(
+            self._sdUUID,
+            lease.name,
+            [(lease.path, lease.offset)],
+            align=self._alignment,
+            sector=self._block_size)
 
         if len(owners) > 1:
             self.log.error("Cluster lock is reported to have more than "
@@ -506,9 +532,10 @@ class LocalLock(object):
     _globalLockMap = {}
     _globalLockMapSync = threading.Lock()
 
-    def __init__(self, sdUUID, idsPath, lease, *args):
+    def __init__(self, sdUUID, idsPath, lease, *args, **kwargs):
         """
-        Note: args unused, needed only by legacy locks.
+        Note: args unused, needed only by legacy locks. kwargs also unused,
+              needed only by distributed locks like sanlock.
         """
         self._sdUUID = sdUUID
         self._idsPath = idsPath
