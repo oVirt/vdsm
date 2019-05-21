@@ -2721,7 +2721,9 @@ class Vm(object):
 
         device_info = {'devices': [{'macAddr': nic.macAddr,
                                     'alias': nic.alias,
-                                    }]}
+                                    }],
+                       'xml': self._domain.xml,
+                       }
         return {'status': doneCode, 'vmList': device_info}
 
     def _lookupDeviceByIdentification(self, devType, devIdent):
