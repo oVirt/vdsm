@@ -58,8 +58,11 @@ class ReportDpdkPortsTests(VdsmTestCase):
                                             'configuration': {
                                                 'driver': driver}}]}]})
 
-        with mock.patch.object(dpdk.cmd, 'exec_sync',
-                               return_value=(0, lshw_output, None)):
+        mock_exec_sync = mock.patch.object(
+            dpdk.cmd, 'exec_sync', return_value=(0, lshw_output, None))
+        mock_getboolean = mock.patch.object(
+            dpdk.config, 'getboolean', return_value=True)
+        with mock_exec_sync, mock_getboolean:
 
             dpdk.invalidate_dpdk_devices()
             expected_ports = {
@@ -92,8 +95,11 @@ class ReportDpdkPortsTests(VdsmTestCase):
                                             'configuration': {
                                                 'driver': 'igb_uio'}}]}]})
 
-        with mock.patch.object(dpdk.cmd, 'exec_sync',
-                               return_value=(0, lshw_output, None)):
+        mock_exec_sync = mock.patch.object(
+            dpdk.cmd, 'exec_sync', return_value=(0, lshw_output, None))
+        mock_getboolean = mock.patch.object(
+            dpdk.config, 'getboolean', return_value=True)
+        with mock_exec_sync, mock_getboolean:
 
             dpdk.invalidate_dpdk_devices()
             expected_ports = {

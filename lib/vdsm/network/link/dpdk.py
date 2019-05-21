@@ -28,6 +28,7 @@ import os
 import six
 
 from vdsm.common import cache
+from vdsm.common.config import config
 from vdsm.network import cmd
 
 
@@ -43,6 +44,9 @@ class LshwError(Exception):
 
 
 def get_dpdk_devices():
+    if not config.getboolean('vars', 'dpdk_enable'):
+        return {}
+
     dpdk_devices = _get_dpdk_devices()
     if not _dpdk_devs_current(dpdk_devices):
         invalidate_dpdk_devices()
