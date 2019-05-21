@@ -52,7 +52,8 @@ VOLSIZE = 256 * MB
 class ManifestMixin(object):
 
     def test_init_failure_raises(self, monkeypatch):
-        def fail(*args):
+        def fail(sdUUID, idsPath, lease, alignment=sc.ALIGNMENT_1M,
+                 block_size=sc.BLOCK_SIZE_512):
             raise RuntimeError("injected failure")
 
         with self.env() as env:
