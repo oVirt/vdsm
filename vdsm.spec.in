@@ -450,8 +450,13 @@ Requires:       %{name} = %{version}-%{release}
 Requires:       %{name}-common = %{version}-%{release}
 Requires:       %{name}-network = %{version}-%{release}
 Requires:       dracut
-Requires:       python-nose python-ipaddress
+Requires:       %{python_or_python3}-nose
+%if %{target_py} == py2
+Requires:       python-ipaddress
 Requires:       PyYAML
+%else
+Requires:       python3-pyyaml
+%endif
 
 %description tests
 A test suite for verifying the functionality of a running vdsm instance
