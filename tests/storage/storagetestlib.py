@@ -235,6 +235,9 @@ def make_sd_metadata(sduuid, version=3, dom_class=sd.DATA_DOMAIN, pools=None):
     md[sd.DMDK_VERSION] = version
     md[sd.DMDK_CLASS] = dom_class
     md[sd.DMDK_POOLS] = pools if pools is not None else [make_uuid()]
+    if version > 4:
+        md[sd.DMDK_ALIGNMENT] = sc.ALIGNMENT_1M
+        md[sd.DMDK_BLOCK_SIZE] = sc.BLOCK_SIZE_512
     return md
 
 
