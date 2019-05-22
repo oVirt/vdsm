@@ -24,11 +24,12 @@ import errno
 import os
 import re
 import signal
+import sys
 
 import pytest
 
 from vdsm.common import cmdutils
-from vdsm.common.cmdutils import exec_cmd
+from vdsm.common import commands
 from vdsm.common.compat import subprocess
 
 
@@ -44,18 +45,19 @@ def on_ovirt_ci():
 class TestPyWatch(object):
 
     def test_short_success(self):
-        rc, _, _ = exec_cmd(['./py-watch', '0.2', 'true'])
-        assert rc == 0
+        commands.run([sys.executable, 'py-watch', '0.2', 'true'])
 
     def test_short_failure(self):
-        rc, _, _ = exec_cmd(['./py-watch', '0.2', 'false'])
-        assert rc == 1
+        with pytest.raises(cmdutils.Error) as e:
+            commands.run([sys.executable, 'py-watch', '0.2', 'false'])
+        assert e.value.rc == 1
 
     def test_timeout_output(self):
-        rc, out, err = exec_cmd(['./py-watch', '0.1', 'sleep', '10'])
-        assert b'Watched process timed out' in out
-        assert b'Terminating watched process' in out
-        assert rc == 128 + signal.SIGTERM
+        with pytest.raises(cmdutils.Error) as e:
+            commands.run([sys.executable, 'py-watch', '0.1', 'sleep', '10'])
+        assert b'Watched process timed out' in e.value.out
+        assert b'Terminating watched process' in e.value.out
+        assert e.value.rc == 128 + signal.SIGTERM
 
     @pytest.mark.xfail(on_fedora(), reason="py-bt is broken on Fedora")
     @pytest.mark.xfail(on_ovirt_ci(),
@@ -72,23 +74,27 @@ def inner():
 
 outer()
 '''
-        rc, out, err = exec_cmd(['./py-watch', '0.1', 'python', '-c', script])
-        assert b'in inner ()' in out
-        assert b'in outer ()' in out
+        with pytest.raises(cmdutils.Error) as e:
+            commands.run([
+                sys.executable, 'py-watch', '0.1', sys.executable,
+                '-c', script])
+        assert b'in inner ()' in e.value.out
+        assert b'in outer ()' in e.value.out
 
     def test_kill_grandkids(self):
         # watch a bash process that starts a grandchild bash process.
         # The grandkid bash echoes its pid and sleeps a lot.
         # on timeout, py-watch should kill the process session spawned by it.
-        rc, out, err = exec_cmd([
-            './py-watch', '0.2', 'bash',
-            '-c', 'bash -c "readlink /proc/self; sleep 10"'])
+        with pytest.raises(cmdutils.Error) as e:
+            commands.run([
+                sys.executable, 'py-watch', '0.2', 'bash',
+                '-c', 'bash -c "readlink /proc/self; sleep 10"'])
 
         # assert that the internal bash no longer exist
-        grandkid_pid = int(out.splitlines()[0])
-        with pytest.raises(OSError) as excinfo:
+        grandkid_pid = int(e.value.out.splitlines()[0])
+        with pytest.raises(OSError) as e:
             assert os.kill(grandkid_pid, 0)
-        assert excinfo.value.errno == errno.ESRCH
+        assert e.value.errno == errno.ESRCH
 
     @pytest.mark.parametrize("signo", [signal.SIGINT, signal.SIGTERM])
     def test_terminate(self, signo):
@@ -96,7 +102,8 @@ outer()
         # before printing the pid avoids a race when we got the pid before
         # py-watch started to wait for the child.
         p = subprocess.Popen(
-            ['./py-watch', '10', 'bash', '-c', 'sleep 0.5; echo $$; sleep 10'],
+            [sys.executable, 'py-watch', '10', 'bash', '-c',
+                'sleep 0.5; echo $$; sleep 10'],
             stdout=subprocess.PIPE)
 
         # Wait until the underlying bash process prints its pid.

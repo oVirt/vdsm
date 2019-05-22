@@ -22,7 +22,7 @@ export \
     $NULL
 
 if [ -n "$TIMEOUT" ]; then
-    PYTHON_EXE="./py-watch $TIMEOUT $PYTHON_EXE"
+    PYTHON_EXE="$PYTHON_EXE py-watch $TIMEOUT $PYTHON_EXE"
 fi
 
 $PYTHON_EXE "@top_srcdir@"/tests/testrunner.py --local-modules "$@"
