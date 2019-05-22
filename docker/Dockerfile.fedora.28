@@ -27,7 +27,6 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python-decorator \
     python-devel \
     python-inotify \
-    python-ioprocess \
     python-ipaddress \
     python-magic \
     python-netaddr \
@@ -40,6 +39,7 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python2-dateutil \
     python2-dmidecode \
     python2-enum34 \
+    python2-ioprocess \
     python2-libvirt \
     python2-mock \
     python2-policycoreutils \
@@ -50,6 +50,7 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python3-dbus \
     python3-decorator \
     python3-devel \
+    python3-ioprocess \
     python3-libvirt \
     python3-magic \
     python3-netaddr \
