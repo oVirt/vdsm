@@ -81,8 +81,8 @@ Source0:        %{vdsm_name}-%{version}.tar.gz
 
 BuildRequires: openssl
 BuildRequires: %{python_or_python3}
-BuildRequires: python-six >= 1.9.0
-BuildRequires: python-dateutil
+BuildRequires: %{python_or_python3}-six >= 1.9.0
+BuildRequires: %{python_or_python3}-dateutil
 %if %{target_py} == py2
 BuildRequires: python-subprocess32
 %endif
