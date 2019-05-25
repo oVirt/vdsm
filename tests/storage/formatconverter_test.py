@@ -39,6 +39,7 @@ from .storagetestlib import (
     MB
 )
 
+from . constants import CLEARED_VOLUME_METADATA
 from . marks import requires_root, xfail_python3
 
 
@@ -105,6 +106,28 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
     old_dom_md = dom.getMetadata()
     volumes_md = {vol.volUUID: vol.getMetadata() for vol in dom.iter_volumes()}
 
+    # Simulate a partly-deleted volume with cleared metada. Such volumes could
+    # be created by vdsm < 4.20.34-1.
+
+    img_id = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+
+    dom.createVolume(
+        desc="Half deleted volume",
+        diskType="DATA",
+        imgUUID=img_id,
+        preallocate=sc.SPARSE_VOL,
+        size=10 * 1024**3,
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        volFormat=sc.COW_FORMAT,
+        volUUID=vol_id)
+
+    partly_deleted_vol = dom.produceVolume(img_id, vol_id)
+    meta_path = partly_deleted_vol.getMetaVolumePath()
+    with open(meta_path, "wb") as f:
+        f.write(CLEARED_VOLUME_METADATA)
+
     fc = formatconverter.DefaultFormatConverter()
 
     fc.convert(
@@ -132,11 +155,18 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
     # Verify that volumes metadata was converted to v5 format.
 
     for vol in dom.iter_volumes():
+        if vol.volUUID == partly_deleted_vol.volUUID:
+            continue
         vol_md = volumes_md[vol.volUUID]
         meta_path = vol.getMetaVolumePath()
         with open(meta_path) as f:
             data = f.read()
         assert data == vol_md.storage_format(5)
+
+    # On file storage cleared metadata is left as is.
+    meta_path = partly_deleted_vol.getMetaVolumePath()
+    with open(meta_path, "rb") as f:
+        assert f.read() == CLEARED_VOLUME_METADATA
 
 
 @requires_root
@@ -191,6 +221,27 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
     old_dom_md = dom.getMetadata()
     volumes_md = {vol.volUUID: vol.getMetadata() for vol in dom.iter_volumes()}
 
+    # Simulate a partly-deleted volume with cleared metada. Such volumes could
+    # be created by vdsm < 4.20.34-1.
+
+    img_id = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+
+    dom.createVolume(
+        desc="Half deleted volume",
+        diskType="DATA",
+        imgUUID=img_id,
+        preallocate=sc.SPARSE_VOL,
+        size=10 * 1024**3,
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        volFormat=sc.COW_FORMAT,
+        volUUID=vol_id)
+
+    partly_deleted_vol = dom.produceVolume(img_id, vol_id)
+    slot = partly_deleted_vol.getMetadataId()[1]
+    dom.manifest.write_metadata_block(slot, CLEARED_VOLUME_METADATA)
+
     fc = formatconverter.DefaultFormatConverter()
 
     fc.convert(
@@ -229,11 +280,17 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
     # Verify that volumes metadta was converted to v5 format.
 
     for vol in dom.iter_volumes():
+        if vol.volUUID == partly_deleted_vol.volUUID:
+            continue
         vol_md = volumes_md[vol.volUUID]
         _, slot = vol.getMetadataId()
         data = dom.manifest.read_metadata_block(slot)
         data = data.rstrip("\0")
         assert data == vol_md.storage_format(5)
+
+    # On block storage, cleared metadata is converted to zeroed slot.
+    slot = partly_deleted_vol.getMetadataId()[1]
+    assert dom.manifest.read_metadata_block(slot) == b"\0" * sc.METADATA_SIZE
 
     # Check that v4 metadata area is zeroed.
 
