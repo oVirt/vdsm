@@ -1776,6 +1776,11 @@ class MetadataOverflowError(MetaDataGeneralError):
         self.value = "data=%r" % data
 
 
+class MetadataCleared(MetaDataGeneralError):
+    code = 757
+    message = "Metadata was cleared, volume is partly deleted"
+
+
 #################################################
 #  Import/Export Exceptions
 #################################################
