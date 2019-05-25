@@ -285,8 +285,12 @@ Requires: policycoreutils >= 2.1.13-55
 %endif
 
 %if 0%{?rhel}
+%if 0%{?rhel} >= 8
+Requires: qemu-kvm >= 15:3.1.0-20.module+el8+2888+cdc893a8
+%else
 # CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
 Requires: qemu-kvm-rhev >= 10:2.12.0-18.el7_6.5
+%endif
 %else # fedora
 # qemu-kvm 2.12 is Fedora 28 virt-preview baseline
 # but virt-preview is not available on s390 arch
