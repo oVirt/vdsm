@@ -33,6 +33,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import volume
 
+from . constants import CLEARED_VOLUME_METADATA
 
 MB = 1024 ** 2
 FAKE_TIME = 1461095629
@@ -238,6 +239,20 @@ class TestVolumeMetadata:
         lines = make_lines(GEN=None)
         md = volume.VolumeMetadata.from_lines(lines)
         assert sc.DEFAULT_GENERATION == md.generation
+
+    @pytest.mark.parametrize("data", [
+        # V4: metadata was cleared by writing invalid metadata.
+        pytest.param(
+            CLEARED_VOLUME_METADATA,
+            id="v4",
+            marks=pytest.mark.xfail(
+                six.PY3, reason="bytes handled incorrectly")),
+        # V5: metadata area is zeroed.
+        pytest.param(b"", id="v5"),
+    ])
+    def test_cleared_metadata(self, data):
+        with pytest.raises(se.MetadataCleared):
+            volume.VolumeMetadata.from_lines(data.splitlines())
 
 
 class TestMDSize:
