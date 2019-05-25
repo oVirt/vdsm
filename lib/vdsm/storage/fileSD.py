@@ -812,7 +812,14 @@ class FileStorageDomain(sd.StorageDomain):
 
         for vol in self.iter_volumes():
             self.log.debug("Converting volume %s metadata", vol.volUUID)
-            vol_md = vol.getMetadata()
+            try:
+                vol_md = vol.getMetadata()
+            except se.MetadataCleared:
+                self.log.warning(
+                    "Skipping volume %s with cleared metadata, volume is "
+                    "partly deleted",
+                    vol.volUUID)
+                continue
             vol.setMetadata(vol_md, CAP=vol_md.capacity)
 
     def finalize_volumes_metadata(self, target_version):
@@ -829,7 +836,11 @@ class FileStorageDomain(sd.StorageDomain):
 
         for vol in self.iter_volumes():
             self.log.debug("Finalizing volume %s metadata", vol.volUUID)
-            vol_md = vol.getMetadata()
+            try:
+                vol_md = vol.getMetadata()
+            except se.MetadataCleared:
+                # We already logged about this in convert_volume_metadata().
+                continue
             vol.setMetadata(vol_md)
 
 

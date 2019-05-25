@@ -100,6 +100,13 @@ class VolumeMetadata(object):
                        generation=int(md.get(sc.GENERATION,
                                              sc.DEFAULT_GENERATION)))
         except KeyError as e:
+            if "NONE" in md or not md:
+                # Volume metadata was cleared; {} for V5, {"NONE": "####..."}
+                # for older versions. Before 4.20.34-1 (ovirt 4.2.5) volume
+                # metadata could be cleared after failing to remove the LV.
+                # See https://bugzilla.redhat.com/1574631.
+                raise exception.MetadataCleared
+
             raise exception.MetaDataKeyNotFoundError(
                 "Missing metadata key: %s: found: %s" % (e, md))
 

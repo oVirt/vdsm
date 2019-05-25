@@ -1731,7 +1731,15 @@ class BlockStorageDomain(sd.StorageDomain):
                                    slot, v4_off)
                     v4_data = src[v4_off:v4_off + sc.METADATA_SIZE]
                     v4_data = v4_data.rstrip(b"\0")
-                    md = VolumeMetadata.from_lines(v4_data.splitlines())
+
+                    try:
+                        md = VolumeMetadata.from_lines(v4_data.splitlines())
+                    except se.MetadataCleared:
+                        self.log.warning(
+                            "Skipping metadata slot %s offset=%s with "
+                            "cleared metadata, volume is partly deleted",
+                            slot, v4_off)
+                        continue
 
                     v5_off = self._manifest.metadata_offset(slot, version=5)
 
