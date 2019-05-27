@@ -154,7 +154,11 @@ Requires: python3-abrt-addon
 Requires: curl
 Requires: %{name}-http = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
+%if 0%{?rhel} >= 8
+Requires: safelease >= 1.0.1-1.el8ev
+%else
 Requires: safelease >= 1.0-7
+%endif
 %if %{target_py} == py2
 # TODO: port mom to python3
 Requires: mom >= 0.5.12
