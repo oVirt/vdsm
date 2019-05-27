@@ -240,19 +240,15 @@ class TestVolumeMetadata:
         md = volume.VolumeMetadata.from_lines(lines)
         assert sc.DEFAULT_GENERATION == md.generation
 
-    @pytest.mark.parametrize("data", [
-        # V4: metadata was cleared by writing invalid metadata.
-        pytest.param(
-            CLEARED_VOLUME_METADATA,
-            id="v4",
-            marks=pytest.mark.xfail(
-                six.PY3, reason="bytes handled incorrectly")),
-        # V5: metadata area is zeroed.
-        pytest.param(b"", id="v5"),
-    ])
-    def test_cleared_metadata(self, data):
+    @pytest.mark.xfail(six.PY3, reason="bytes handled incorrectly")
+    def test_cleared_metadata(self):
+        lines = CLEARED_VOLUME_METADATA.rstrip(b"\0").splitlines()
         with pytest.raises(se.MetadataCleared):
-            volume.VolumeMetadata.from_lines(data.splitlines())
+            volume.VolumeMetadata.from_lines(lines)
+
+    def test_empty_metadata(self):
+        with pytest.raises(se.MetaDataKeyNotFoundError):
+            volume.VolumeMetadata.from_lines([])
 
 
 class TestMDSize:

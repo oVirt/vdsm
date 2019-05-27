@@ -814,11 +814,10 @@ class FileStorageDomain(sd.StorageDomain):
             self.log.debug("Converting volume %s metadata", vol.volUUID)
             try:
                 vol_md = vol.getMetadata()
-            except se.MetadataCleared:
+            except se.MetaDataKeyNotFoundError as e:
                 self.log.warning(
-                    "Skipping volume %s with cleared metadata, volume is "
-                    "partly deleted",
-                    vol.volUUID)
+                    "Skipping volume %s with invalid metadata: %s",
+                    vol.volUUID, e)
                 continue
             vol.setMetadata(vol_md, CAP=vol_md.capacity)
 
@@ -838,7 +837,7 @@ class FileStorageDomain(sd.StorageDomain):
             self.log.debug("Finalizing volume %s metadata", vol.volUUID)
             try:
                 vol_md = vol.getMetadata()
-            except se.MetadataCleared:
+            except se.MetaDataKeyNotFoundError:
                 # We already logged about this in convert_volume_metadata().
                 continue
             vol.setMetadata(vol_md)
