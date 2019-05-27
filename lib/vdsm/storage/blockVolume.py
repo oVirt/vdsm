@@ -555,7 +555,6 @@ class BlockVolume(volume.Volume):
                       self.volUUID, self.imgUUID, self.sdUUID)
 
         vol_path = self.getVolumePath()
-        slot = self.getMetaSlot()
 
         # On block storage domains we store a volume's parent UUID in two
         # places: 1) in the domain's metadata LV, and 2) in a LV tag attached
@@ -636,18 +635,6 @@ class BlockVolume(volume.Volume):
             self.log.exception("Failed to delete volume %s/%s. The "
                                "logical volume must be removed manually.",
                                self.sdUUID, self.volUUID)
-        else:
-            # If removing the LV fails, we don't want to remove the
-            # metadata. As the volume still exists on the storage, and is
-            # accessible, removing the metadata will cause unexpected
-            # errors when accessing the metadata that was wiped.  This is a
-            # minimal solution for: https://bugzilla.redhat.com/1574631
-            try:
-                self.removeMetadata([self.sdUUID, slot])
-            except se.VolumeMetadataWriteError as e:
-                eFound = e
-                self.log.exception("Failed to delete volume %s/%s metadata.",
-                                   self.sdUUID, self.volUUID)
 
         try:
             self.log.info("Unlinking %s", vol_path)

@@ -357,10 +357,6 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
     with pytest.raises(se.LogicalVolumeDoesNotExistError):
         lvm.getLV(sd_uuid, vol_uuid)
 
-    # verify also metadata from metadata lv is deleted
-    data = dom.manifest.read_metadata_block(slot)
-    assert data == b"\0" * sc.METADATA_SIZE
-
 
 @requires_root
 @xfail_python3
