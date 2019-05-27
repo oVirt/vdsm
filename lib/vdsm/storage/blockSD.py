@@ -1730,23 +1730,23 @@ class BlockStorageDomain(sd.StorageDomain):
                     self.log.debug("Reading v4 metadata slot %s offset=%s",
                                    slot, v4_off)
                     v4_data = src[v4_off:v4_off + sc.METADATA_SIZE]
-                    v4_data = v4_data.rstrip(b"\0")
 
                     try:
-                        md = VolumeMetadata.from_lines(v4_data.splitlines())
-                    except se.MetadataCleared:
+                        md = VolumeMetadata.from_lines(
+                            v4_data.rstrip(b"\0").splitlines())
+                    except se.MetaDataKeyNotFoundError as e:
                         self.log.warning(
-                            "Skipping metadata slot %s offset=%s with "
-                            "cleared metadata, volume is partly deleted",
-                            slot, v4_off)
-                        continue
+                            "Cannot convert metadata slot %s offset=%s: %s",
+                            slot, v4_off, e)
+                        v5_data = v4_data
+                    else:
+                        v5_data = md.storage_format(5).ljust(
+                            sc.METADATA_SIZE, "\0")
 
                     v5_off = self._manifest.metadata_offset(slot, version=5)
 
                     self.log.debug("Writing v5 metadata slot %s offset=%s",
                                    slot, v5_off)
-                    v5_data = md.storage_format(5).ljust(
-                        sc.METADATA_SIZE, "\0")
                     dst[v5_off:v5_off + sc.METADATA_SIZE] = v5_data
 
                 # Synchonize v5 metadadta to underlying storage.
