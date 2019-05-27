@@ -13,19 +13,19 @@ prepare_env() {
 }
 
 install_dependencies() {
-    ${CI_PYTHON_VERSION} tests/profile pip-install pip install -U tox==2.9.1
+    ${CI_PYTHON} tests/profile pip-install pip install -U tox==2.9.1
 }
 
 build_vdsm() {
     if [ ! -f Makefile ]; then
-        ${CI_PYTHON_VERSION} tests/profile autogen ./autogen.sh \
+        ${CI_PYTHON} tests/profile autogen ./autogen.sh \
             --system \
             --enable-hooks \
             --enable-vhostmd \
-            --with-only-python=${CI_PYTHON_VERSION}
+            --with-only-python=${CI_PYTHON}
     fi
 
-    ${CI_PYTHON_VERSION} tests/profile make make
+    ${CI_PYTHON} tests/profile make make
 }
 
 # oVirt CI helper functions
@@ -62,7 +62,7 @@ check_install() {
         exit 1
     fi
 
-    ${CI_PYTHON_VERSION} tests/profile build-artifacts $PWD/automation/build-artifacts.sh
+    ${CI_PYTHON} tests/profile build-artifacts $PWD/automation/build-artifacts.sh
 
     tests/check_distpkg.sh "$(ls "$EXPORT_DIR"/vdsm*.tar.gz)"
     tests/check_rpms.sh "$EXPORT_DIR"
@@ -77,7 +77,7 @@ check_install() {
         DNF=yum
     fi
 
-    ${CI_PYTHON_VERSION} tests/profile install "$DNF" -y install \
+    ${CI_PYTHON} tests/profile install "$DNF" -y install \
         vdsm-$vr\* \
         vdsm-client-$vr\* \
         vdsm-hook-\*-$vr\* \
@@ -95,7 +95,7 @@ generate_combined_coverage_report() {
                      .coverage-virt-py* \
                      .coverage-lib-py*
 
-    ${CI_PYTHON_VERSION} ./profile coverage coverage html -d "$EXPORT_DIR/htmlcov"
+    ${CI_PYTHON} ./profile coverage coverage html -d "$EXPORT_DIR/htmlcov"
     popd
 
     # Export subsystem coverage reports for viewing in jenkins.
@@ -134,9 +134,9 @@ run_tests() {
 
     trap collect_logs EXIT
 
-    # 'CI_PYTHON_VERSION' variable needs to have a 'pythonMAJOR' form
+    # 'CI_PYTHON' variable needs to have a 'pythonMAJOR' form
     # (i.e. 'python3') so it points to proper package
-    ${CI_PYTHON_VERSION} tests/profile debuginfo-install debuginfo-install -y ${CI_PYTHON_VERSION}
+    ${CI_PYTHON} tests/profile debuginfo-install debuginfo-install -y ${CI_PYTHON}
 
     # Make sure we have enough loop device nodes. Using 16 devices since with 8
     # devices we have random mount failures.
