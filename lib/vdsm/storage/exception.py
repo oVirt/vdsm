@@ -1776,7 +1776,7 @@ class MetadataOverflowError(MetaDataGeneralError):
         self.value = "data=%r" % data
 
 
-class MetadataCleared(MetaDataGeneralError):
+class MetadataCleared(MetaDataKeyNotFoundError):
     code = 757
     message = "Metadata was cleared, volume is partly deleted"
 
