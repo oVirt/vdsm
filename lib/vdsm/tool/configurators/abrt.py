@@ -26,7 +26,7 @@ from . import MAYBE, NO
 from vdsm.tool import confutils
 from vdsm import constants
 
-CONF_VERSION = '4.20.0'
+CONF_VERSION = '4.30.0'
 
 
 def configure():
@@ -72,7 +72,6 @@ FILES = {
                     'DumpLocation': '/var/tmp/abrt',
                     'AutoreportingEvent': 'report_uReport',
                     'MaxCrashReportsSize': '13500',
-                    'AutoreportingEnabled': 'yes'
                 },
             },
         ]
