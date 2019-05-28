@@ -1431,7 +1431,7 @@ class Global(APIBase):
         """ return a list of known VMs with full (or partial) config each """
         # To improve complexity, convert 'vms' to set(vms)
         vmSet = set(vmList)
-        vmlist = [v.status(fullStatus)
+        vmlist = [v.status()
                   for v in self._cif.vmContainer.values()
                   if not vmSet or v.id in vmSet]
         if not fullStatus and onlyUUID:
