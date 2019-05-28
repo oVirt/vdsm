@@ -319,7 +319,7 @@ class LVMCache(object):
             # 1. Try the command with fast specific filter including the
             # specified devices.
             full_cmd = self._addExtraCfg(cmd, devices)
-            rc, out, err = misc.execCmd(full_cmd, sudo=True)
+            rc, out, err = self._run_lvm(full_cmd)
             if rc == 0:
                 return rc, out, err
 
@@ -334,7 +334,7 @@ class LVMCache(object):
                     full_cmd, rc, err)
                 full_cmd = wider_cmd
 
-                rc, out, err = misc.execCmd(full_cmd, sudo=True)
+                rc, out, err = self._run_lvm(full_cmd)
                 if rc == 0:
                     return rc, out, err
 
@@ -352,11 +352,32 @@ class LVMCache(object):
                     time.sleep(delay)
                     delay *= self.RETRY_BACKUP_OFF
 
-                    rc, out, err = misc.execCmd(full_cmd, sudo=True)
+                    rc, out, err = self._run_lvm(full_cmd)
                     if rc == 0:
                         return rc, out, err
 
             return rc, out, err
+
+    def _run_lvm(self, cmd):
+        """
+        Run LVM command, logging warnings for successful commands.
+
+        An example case is when LVM decide to fix VG metadata when running a
+        command that should not change the metadata on non-SPM host. In this
+        case LVM will log this warning:
+
+            WARNING: Inconsistent metadata found for VG xxx-yyy-zzz - updating
+            to use version 42
+
+        We log warnings only for successful commands since callers are already
+        handling failures.
+        """
+        rc, out, err = misc.execCmd(cmd, sudo=True)
+
+        if rc == 0 and err:
+            log.warning("Command %s succeeded with warnings: %s", cmd, err)
+
+        return rc, out, err
 
     def __str__(self):
         return ("PVS:\n%s\n\nVGS:\n%s\n\nLVS:\n%s" %
