@@ -166,7 +166,7 @@ class FakeRunner(object):
     To validate the call, inspect the calls instance variable.
     """
 
-    def __init__(self, rc=0, out=b"", err=b"", retries=0, delay=0.0):
+    def __init__(self, rc=0, out=(), err=(), retries=0, delay=0.0):
         self.rc = rc
         self.out = out
         self.err = err
@@ -182,7 +182,7 @@ class FakeRunner(object):
 
         if self.retries > 0:
             self.retries -= 1
-            return 1, b"", b"fake error"
+            return 1, [], [b"fake error"]
 
         return self.rc, self.out, self.err
 
@@ -390,6 +390,18 @@ def test_cmd_read_only_filter_stale_fail(fake_devices, fake_runner):
     # Call should fail after max retries + 2 calls.
     assert rc == 1
     assert len(fake_runner.calls) == lc.READ_ONLY_RETRIES + 2
+
+
+def test_suppress_warnings(fake_devices, fake_runner):
+    fake_runner.err = [
+        b"  before",
+        b"  WARNING: This metadata update is NOT backed up.",
+        b"  after",
+    ]
+    lc = lvm.LVMCache()
+    rc, out, err = lc.cmd(["fake"])
+    assert rc == 0
+    assert err == [b"  before", b"  after"]
 
 
 class Workers(object):
