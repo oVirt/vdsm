@@ -252,6 +252,11 @@ class LVMCache(object):
     RETRY_DELAY = 0.01
     RETRY_BACKUP_OFF = 2
 
+    # Warnings written to LVM stderr that should not be logged as warnings.
+    SUPPRESS_WARNINGS = re.compile(
+        br"WARNING: This metadata update is NOT backed up",
+        re.IGNORECASE)
+
     def __init__(self):
         self._read_only_lock = rwlock.RWLock()
         self._read_only = False
@@ -373,6 +378,8 @@ class LVMCache(object):
         handling failures.
         """
         rc, out, err = misc.execCmd(cmd, sudo=True)
+
+        err = [s for s in err if not self.SUPPRESS_WARNINGS.search(s)]
 
         if rc == 0 and err:
             log.warning("Command %s succeeded with warnings: %s", cmd, err)
