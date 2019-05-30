@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 
 import itertools
+import libvirt
 import logging
 import six
 import xml.etree.ElementTree as ET
@@ -94,7 +95,11 @@ def domain_cpu_models(conn, arch, cpu_mode):
         virt_type = 'qemu'
     else:
         virt_type = 'kvm'
-    domcaps = conn.getDomainCapabilities(None, arch, None, virt_type, 0)
+    try:
+        domcaps = conn.getDomainCapabilities(None, arch, None, virt_type, 0)
+    except libvirt.libvirtError:
+        logging.exception('Error while getting domain capabilities')
+        return {}
     if not domcaps:
         logging.error('Error while getting CPU models: '
                       'no domain capabilities found')

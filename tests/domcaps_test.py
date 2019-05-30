@@ -1,6 +1,6 @@
 #
 # Copyright 2017 IBM Corp.
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,6 +58,12 @@ class FakeConnection(object):
         return libvirt.VIR_CPU_COMPARE_SUPERSET
 
 
+class FailingConnection(object):
+
+    def getDomainCapabilities(self, *args):
+        raise libvirt.libvirtError('test')
+
+
 _EXPECTED_CPU_MODELS_X86_64 = (
     'qemu64', 'qemu32', 'pentium3', 'pentium2', 'pentium', 'kvm64', 'kvm32',
     'coreduo', 'core2duo', 'Penryn', 'Opteron_G2', 'Opteron_G1', 'Nehalem',
@@ -107,3 +113,12 @@ class TestDomCaps(TestCaseBase):
         result = set(result)
         expected = set(['model_' + m for m in expected_models])
         self.assertEqual(result, expected)
+
+    def test_libvirt_exception(self):
+        machinetype.compatible_cpu_models.invalidate()
+        with MonkeyPatchScope([
+                (machinetype.libvirtconnection, 'get',
+                 lambda: FailingConnection()),
+        ]):
+            result = machinetype.compatible_cpu_models()
+            self.assertEqual(result, [])
