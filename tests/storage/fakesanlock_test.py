@@ -22,18 +22,19 @@ from __future__ import absolute_import
 from __future__ import division
 
 import errno
+
 import pytest
+
 from .fakesanlock import FakeSanlock
 from vdsm.common import concurrent
 from vdsm.storage.compat import sanlock
-from testlib import VdsmTestCase
 
 
 class ExpectedError(Exception):
     pass
 
 
-class TestFakeSanlock(VdsmTestCase):
+class TestFakeSanlock:
 
     # Managing lockspaces
 
@@ -42,34 +43,34 @@ class TestFakeSanlock(VdsmTestCase):
         fs.write_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path")
         ls = fs.spaces["lockspace"]
-        self.assertEqual(ls["host_id"], 1)
-        self.assertEqual(ls["path"], "path")
-        self.assertEqual(ls["offset"], 0)
-        self.assertEqual(ls["iotimeout"], 0)
-        self.assertTrue(ls["ready"].is_set(), "lockspace is not ready")
+        assert ls["host_id"] == 1
+        assert ls["path"] == "path"
+        assert ls["offset"] == 0
+        assert ls["iotimeout"] == 0
+        assert ls["ready"].is_set()
 
     def test_add_lockspace_options(self):
         fs = FakeSanlock()
         fs.write_lockspace("lockspace", "path", offset=42)
         fs.add_lockspace("lockspace", 1, "path", offset=42, iotimeout=10)
         ls = fs.spaces["lockspace"]
-        self.assertEqual(ls["offset"], 42)
-        self.assertEqual(ls["iotimeout"], 10)
+        assert ls["offset"] == 42
+        assert ls["iotimeout"] == 10
 
     def test_add_lockspace_async(self):
         fs = FakeSanlock()
         fs.write_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path", **{'async': True})
         ls = fs.spaces["lockspace"]
-        self.assertEqual(ls["iotimeout"], 0)
-        self.assertFalse(ls["ready"].is_set(), "lockspace is ready")
+        assert ls["iotimeout"] == 0
+        assert not ls["ready"].is_set()
 
     def test_rem_lockspace_sync(self):
         fs = FakeSanlock()
         fs.write_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path")
         fs.rem_lockspace("lockspace", 1, "path")
-        self.assertNotIn("host_id", fs.spaces["lockspace"])
+        assert "host_id" not in fs.spaces["lockspace"]
 
     def test_rem_lockspace_async(self):
         fs = FakeSanlock()
@@ -77,7 +78,7 @@ class TestFakeSanlock(VdsmTestCase):
         fs.add_lockspace("lockspace", 1, "path")
         fs.rem_lockspace("lockspace", 1, "path", **{'async': True})
         ls = fs.spaces["lockspace"]
-        self.assertFalse(ls["ready"].is_set(), "lockspace is ready")
+        assert not ls["ready"].is_set()
 
     def test_rem_lockspace_while_holding_lock(self):
         fs = FakeSanlock()
@@ -91,29 +92,29 @@ class TestFakeSanlock(VdsmTestCase):
         # Fake sanlock return special None value when sanlock is in process of
         # releasing host_id.
         acquired = fs.inq_lockspace("lockspace", 1, "path")
-        self.assertIsNone(acquired, "locksapce is not being released")
+        assert acquired is None
 
         # Finish rem_lockspace.
         fs.complete_async("lockspace")
 
         # Lock shouldn't be hold any more.
         acquired = fs.inq_lockspace("lockspace", 1, "path")
-        self.assertIsNotNone(acquired, "lockspace still acquired")
-        self.assertFalse(acquired, "lockspace still acquired")
+        assert acquired is not None
+        assert not acquired
 
     def test_inq_lockspace_acquired(self):
         fs = FakeSanlock()
         fs.write_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path")
         acquired = fs.inq_lockspace("lockspace", 1, "path")
-        self.assertTrue(acquired, "lockspace not acquired")
+        assert acquired
 
     def test_inq_lockspace_acquring_no_wait(self):
         fs = FakeSanlock()
         fs.write_lockspace("lockspace", "path")
         fs.add_lockspace("lockspace", 1, "path", **{'async': True})
         acquired = fs.inq_lockspace("lockspace", 1, "path")
-        self.assertIsNone(acquired, "lockspace is ready")
+        assert acquired is None
 
     def test_inq_lockspace_acquiring_wait(self):
         fs = FakeSanlock()
@@ -126,7 +127,7 @@ class TestFakeSanlock(VdsmTestCase):
             acquired = fs.inq_lockspace("lockspace", 1, "path", wait=True)
         finally:
             t.join()
-        self.assertTrue(acquired, "lockspace not acquired")
+        assert acquired
 
     def test_inq_lockspace_released(self):
         fs = FakeSanlock()
@@ -134,7 +135,7 @@ class TestFakeSanlock(VdsmTestCase):
         fs.add_lockspace("lockspace", 1, "path")
         fs.rem_lockspace("lockspace", 1, "path")
         acquired = fs.inq_lockspace("lockspace", 1, "path")
-        self.assertFalse(acquired, "lockspace not released")
+        assert not acquired
 
     def test_inq_lockspace_releasing_no_wait(self):
         fs = FakeSanlock()
@@ -142,7 +143,7 @@ class TestFakeSanlock(VdsmTestCase):
         fs.add_lockspace("lockspace", 1, "path")
         fs.rem_lockspace("lockspace", 1, "path", **{'async': True})
         acquired = fs.inq_lockspace("lockspace", 1, "path")
-        self.assertFalse(acquired, "lockspace not released")
+        assert not acquired
 
     def test_inq_lockspace_releasing_wait(self):
         fs = FakeSanlock()
@@ -156,7 +157,7 @@ class TestFakeSanlock(VdsmTestCase):
             acquired = fs.inq_lockspace("lockspace", 1, "path", wait=True)
         finally:
             t.join()
-        self.assertFalse(acquired, "lockspace not released")
+        assert not acquired
 
     # Writing and reading resources
 
@@ -168,35 +169,34 @@ class TestFakeSanlock(VdsmTestCase):
                     "lockspace": "lockspace",
                     "version": 0,
                     "acquired": False}
-        self.assertEqual(info, expected)
+        assert info == expected
 
     def test_non_existing_resource(self):
         fs = FakeSanlock()
-        with self.assertRaises(fs.SanlockException) as e:
+        with pytest.raises(fs.SanlockException) as e:
             fs.read_resource("path", 1048576)
-        self.assertEqual(e.exception.errno, fs.SANLK_LEADER_MAGIC)
+        assert e.value.errno == fs.SANLK_LEADER_MAGIC
 
     def test_write_resource_failure(self):
         fs = FakeSanlock()
         fs.errors["write_resource"] = ExpectedError
-        with self.assertRaises(ExpectedError):
+        with pytest.raises(ExpectedError):
             fs.write_resource("lockspace", "resource", [("path", 1048576)])
-        with self.assertRaises(fs.SanlockException) as e:
+        with pytest.raises(fs.SanlockException) as e:
             fs.read_resource("path", 1048576)
-        self.assertEqual(e.exception.errno, fs.SANLK_LEADER_MAGIC)
+        assert e.value.errno == fs.SANLK_LEADER_MAGIC
 
     def test_read_resource_failure(self):
         fs = FakeSanlock()
         fs.errors["read_resource"] = ExpectedError
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
-        with self.assertRaises(ExpectedError):
+        with pytest.raises(ExpectedError):
             fs.read_resource("path", 1048576)
 
     # Connecting to the sanlock daemon
-
     def test_register(self):
         fs = FakeSanlock()
-        self.assertEqual(fs.register(), 42)
+        assert fs.register() == 42
 
     # Acquiring and releasing resources
     def test_acquire(self):
@@ -207,17 +207,17 @@ class TestFakeSanlock(VdsmTestCase):
         fd = fs.register()
         fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
         res = fs.read_resource("path", 1048576)
-        self.assertTrue(res["acquired"], "resource is not acquired")
-        self.assertEqual(fs.spaces["lockspace"]["host_id"], res["host_id"])
-        self.assertEqual(fs.hosts[1]["generation"], res["generation"])
+        assert res["acquired"]
+        assert fs.spaces["lockspace"]["host_id"] == res["host_id"]
+        assert fs.hosts[1]["generation"] == res["generation"]
 
     def test_acquire_no_lockspace(self):
         fs = FakeSanlock()
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fd = fs.register()
-        with self.assertRaises(fs.SanlockException) as e:
+        with pytest.raises(fs.SanlockException) as e:
             fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
-        self.assertEqual(e.exception.errno, errno.ENOSPC)
+        assert e.value.errno == errno.ENOSPC
 
     def test_acquire_lockspace_adding(self):
         fs = FakeSanlock()
@@ -225,9 +225,9 @@ class TestFakeSanlock(VdsmTestCase):
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path", **{'async': True})
         fd = fs.register()
-        with self.assertRaises(fs.SanlockException) as e:
+        with pytest.raises(fs.SanlockException) as e:
             fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
-        self.assertEqual(e.exception.errno, errno.ENOSPC)
+        assert e.value.errno == errno.ENOSPC
 
     def test_acquire_an_acquired_resource(self):
         fs = FakeSanlock()
@@ -236,11 +236,11 @@ class TestFakeSanlock(VdsmTestCase):
         fs.add_lockspace("lockspace", 1, "path")
         fd = fs.register()
         fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
-        with self.assertRaises(fs.SanlockException) as e:
+        with pytest.raises(fs.SanlockException) as e:
             fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
-        self.assertEqual(e.exception.errno, errno.EEXIST)
+        assert e.value.errno == errno.EEXIST
         res = fs.read_resource("path", 1048576)
-        self.assertTrue(res["acquired"], "resource is not acquired")
+        assert res["acquired"]
 
     def test_release(self):
         fs = FakeSanlock()
@@ -251,10 +251,10 @@ class TestFakeSanlock(VdsmTestCase):
         fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
         fs.release("lockspace", "resource", [("path", 1048576)], slkfd=fd)
         res = fs.read_resource("path", 1048576)
-        self.assertFalse(res["acquired"], "resource is not acquired")
+        assert not res["acquired"]
         # The resource has been released and the owner is zeroed
-        self.assertEqual(res["host_id"], 0)
-        self.assertEqual(fs.hosts[1]["generation"], res["generation"])
+        assert res["host_id"] == 0
+        assert fs.hosts[1]["generation"] == res["generation"]
 
     def test_release_not_acquired(self):
         fs = FakeSanlock()
@@ -262,9 +262,9 @@ class TestFakeSanlock(VdsmTestCase):
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
         fs.add_lockspace("lockspace", 1, "path")
         fd = fs.register()
-        with self.assertRaises(fs.SanlockException) as e:
+        with pytest.raises(fs.SanlockException) as e:
             fs.release("lockspace", "resource", [("path", 1048576)], slkfd=fd)
-        self.assertEqual(e.exception.errno, errno.EPERM)
+        assert e.value.errno == errno.EPERM
 
     def test_release_no_lockspace(self):
         fs = FakeSanlock()
@@ -314,7 +314,7 @@ class TestFakeSanlock(VdsmTestCase):
         fs.release("lockspace", "resource", [("path", 1048576)], slkfd=fd)
         owners = fs.read_resource_owners(
             "lockspace", "resource", [("path", 1048576)])
-        self.assertEqual(owners, [], "resource still has owners")
+        assert owners == []
 
     def test_read_resource_owners_lockspace_removed(self):
         fs = FakeSanlock()
@@ -327,7 +327,7 @@ class TestFakeSanlock(VdsmTestCase):
         fs.rem_lockspace("lockspace", 1, "path")
         owners = fs.read_resource_owners(
             "lockspace", "resource", [("path", 1048576)])
-        self.assertEqual(owners, [], "resource still has owners")
+        assert owners == []
 
     def test_get_hosts(self):
         fs = FakeSanlock()
@@ -343,7 +343,7 @@ class TestFakeSanlock(VdsmTestCase):
             fs.get_hosts("lockspace", 1)
         assert e.value.errno == errno.ENOSPC
 
-    def test_add_lockspace_generation_increase(selfs):
+    def test_add_lockspace_generation_increase(self):
         fs = FakeSanlock()
         fs.write_lockspace("lockspace", "path")
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
