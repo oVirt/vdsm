@@ -65,12 +65,29 @@ class FakeSanlock(object):
         self.errors = {}
         self.hosts = {}
 
-    def check_align_and_sector(self, align, sector):
+    def check_align_and_sector(self, align, sector, resource=None):
+        """
+        Check that alignment and sector size contain valid values.
+        This means that the values are in ALIGN_SIZE/SECTOR_SIZE tuple
+        and if the resource dict is provided, that these values match
+        the values in the dict. This dict can represent either lockspace
+        or resource. In any case, it has to contain "align" and "sector"
+        keys.
+        """
         if align not in self.ALIGN_SIZE:
             raise ValueError("Invalid align value: %d" % align)
 
         if sector not in self.SECTOR_SIZE:
             raise ValueError("Invalid sector value: %d" % sector)
+
+        if resource:
+            if align != resource["align"]:
+                raise self.SanlockException(
+                    errno.EINVAL, "Invalid alignment", "Invalid argument")
+
+            if sector != resource["sector"]:
+                raise self.SanlockException(
+                    errno.EINVAL, "Invalid sector size", "Invalid argument")
 
     def check_lockspace_initialized(self, lockspace):
         # TODO: check that sanlock was initialized may need to be added also
@@ -212,18 +229,23 @@ class FakeSanlock(object):
         self.resources[(path, offset)] = {"lockspace": lockspace,
                                           "resource": resource,
                                           "version": 0,
-                                          "acquired": False}
+                                          "acquired": False,
+                                          "align": align,
+                                          "sector": sector,
+                                          }
 
     @maybefail
     def read_resource(
             self, path, offset=0, align=ALIGN_SIZE[0], sector=SECTOR_SIZE[0]):
-        self.check_align_and_sector(align, sector)
-
         key = (path, offset)
         if key not in self.resources:
             raise self.SanlockException(self.SANLK_LEADER_MAGIC,
                                         "Sanlock resource read failure",
                                         "Sanlock excpetion")
+
+        self.check_align_and_sector(
+            align, sector, resource=self.resources[key])
+
         return self.resources[key]
 
     def register(self):
@@ -294,8 +316,6 @@ class FakeSanlock(object):
     def read_resource_owners(
             self, lockspace, resource, disks, align=ALIGN_SIZE[0],
             sector=SECTOR_SIZE[0]):
-        self.check_align_and_sector(align, sector)
-
         try:
             self.spaces[lockspace]
         except KeyError:
@@ -311,6 +331,8 @@ class FakeSanlock(object):
 
         key = disks[0]
         res = self.resources[key]
+
+        self.check_align_and_sector(align, sector, resource=res)
 
         # The lease is not owned, return empty list
         if res.get("host_id", 0) == 0:
@@ -346,6 +368,8 @@ class FakeSanlock(object):
             "offset": offset,
             "max_hosts": max_hosts,
             "iotimeout": 0,
+            "align": align,
+            "sector": sector,
         }
 
         # Real sanlock just overwrites lockspace if it was already initialized.
