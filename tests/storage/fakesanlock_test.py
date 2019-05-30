@@ -38,6 +38,13 @@ INVALID_ALIGN_SECTOR = [
     (sc.ALIGNMENT_1M, 8 * 1024),
 ]
 
+WRONG_ALIGN_SECTOR = [
+    # Wrong alignment
+    (sc.ALIGNMENT_8M, sc.BLOCK_SIZE_512),
+    # Wrong block size
+    (sc.ALIGNMENT_1M, sc.BLOCK_SIZE_4K),
+]
+
 
 class ExpectedError(Exception):
     pass
@@ -184,10 +191,14 @@ def test_write_read_resource():
     fs = FakeSanlock()
     fs.write_resource("lockspace", "resource", [("path", 1048576)])
     info = fs.read_resource("path", 1048576)
-    expected = {"resource": "resource",
-                "lockspace": "lockspace",
-                "version": 0,
-                "acquired": False}
+    expected = {
+        "resource": "resource",
+        "lockspace": "lockspace",
+        "version": 0,
+        "acquired": False,
+        "align": sc.ALIGNMENT_1M,
+        "sector": sc.BLOCK_SIZE_512,
+    }
     assert info == expected
 
 
@@ -231,6 +242,15 @@ def test_read_resource_invalid_align_sector(align, sector):
     fs.write_resource("lockspace", "resource", [("path", 1048576)])
     with pytest.raises(ValueError):
         fs.read_resource("path", 1048576, align=align, sector=sector)
+
+
+@pytest.mark.parametrize("align, sector", WRONG_ALIGN_SECTOR)
+def test_read_resource_wrong_align_sector(align, sector):
+    fs = FakeSanlock()
+    fs.write_resource("lockspace", "resource", [("path", 1048576)])
+    with pytest.raises(fs.SanlockException) as e:
+        fs.read_resource("path", 1048576, align=align, sector=sector)
+    assert e.value.errno == errno.EINVAL
 
 
 # Connecting to the sanlock daemon
@@ -393,6 +413,18 @@ def test_read_resource_owners_invalid_align_sector(align, sector):
             "lockspace", "path", disks, align=align, sector=sector)
 
 
+@pytest.mark.parametrize("align, sector", WRONG_ALIGN_SECTOR)
+def test_read_resource_owners_wrong_align_sector(align, sector):
+    fs = FakeSanlock()
+    fs.write_lockspace("lockspace", "path")
+    fs.write_resource("lockspace", "resource", [("path", 1048576)])
+    disks = [("path", 1048576)]
+    with pytest.raises(fs.SanlockException) as e:
+        fs.read_resource_owners(
+            "lockspace", "path", disks, align=align, sector=sector)
+    assert e.value.errno == errno.EINVAL
+
+
 def test_get_hosts():
     fs = FakeSanlock()
     fs.write_lockspace("lockspace", "path")
@@ -435,6 +467,8 @@ def test_write_lockspace():
         "offset": 0,
         "max_hosts": 1,
         "iotimeout": 0,
+        "align": sc.ALIGNMENT_1M,
+        "sector": sc.BLOCK_SIZE_512,
     }
     assert expected == fs.spaces[lockspace]
 
@@ -451,10 +485,14 @@ def test_write_resource():
     fs.write_lockspace("lockspace", "path")
     fs.write_resource("lockspace", "resource", [("path", 1048576)])
     info = fs.read_resource("path", 1048576)
-    expected = {"resource": "resource",
-                "lockspace": "lockspace",
-                "version": 0,
-                "acquired": False}
+    expected = {
+        "resource": "resource",
+        "lockspace": "lockspace",
+        "version": 0,
+        "acquired": False,
+        "align": sc.ALIGNMENT_1M,
+        "sector": sc.BLOCK_SIZE_512,
+    }
     assert info == expected
 
 
