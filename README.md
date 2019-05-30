@@ -8,37 +8,75 @@ the host's storage, memory and networks as well as virtual machine
 creation, other host administration tasks, statistics gathering, and
 log collection.
 
+## Manual installation
 
-## Installation
+Add ovirt repositories to your repositories list:
 
-VDSM uses autoconf and automake as its build system.
+    sudo yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm
 
-To configure the build environment:
+Install Vdsm:
 
-    ./autogen.sh --system
+    sudo yum install vdsm vdsm-client
 
-To see available options:
+Configure Vdsm:
 
-    ./configure --help
+    sudo vdsm-tool configure --force
+
+`--force` flag will override old conf files with vdsm defaults and
+restart services that were configured (if were already running).
+
+Enable and start Vdsm service:
+
+    sudo systemctl enable --now vdsmd
+
+To inspect Vdsm service status:
+
+    sudo systemctl status vdsmd
+
+Vdsm logs can be found at `/var/log/vdsm/*.log` (refer to README.logging for further information).
+
+
+## Development environment setup
+
+Set local git clone:
+
+    sudo yum install -y git
+    git clone http://gerrit.ovirt.org/p/vdsm.git .
+
+Install additional packages for Fedora:
+
+    sudo dnf install -y `cat automation/check-patch.packages.fc28`
+
+Install additional packages for CentOS:
+
+    sudo yum install -y `cat automation/check-patch.packages.el7`
+    easy_install pip
+
+Install tox:
+
+    pip install --user tox
+
+
+## Building Vdsm
+
+To configure sources (run `./configure --help` to see configuration options):
+
+    git clean -xfd
+    ./autogen.sh --system --enable-timestamp
+    make
+
+To test Vdsm (refer to tests/README for further tests information):
+
+    make check
 
 To create an RPM:
 
+    rm -rf ~/rpmbuild/RPMS/*/vdsm*.rpm
     make rpm
 
-Install the desired Rpms from ~/rpmbuild/RPMS/noarch.
+To update your system with local build's RPM:
 
-In order to start vdsm at first try, please perform:
-
-    vdsm-tool configure [--force]
-
-`--force` flag will override old conf files with vdsm defaults and
-restart services that were configured (if were already running)
-
-
-## Packaging
-
-The 'vdsm.spec' file demonstrates how to distribute Vdsm as an RPM
-package.
+    (cd ~/rpmbuild/RPMS && sudo yum upgrade */vdsm*.rpm)
 
 
 ## Getting Help
@@ -59,6 +97,10 @@ The developers also hang out on IRC at #vdsm hosted on freenode.net
 The latest upstream code can be obtained from GIT:
 
     git clone https://gerrit.ovirt.org/vdsm
+
+To setup development with ovirt gerrit visit:
+
+  https://ovirt.org/develop/dev-process/working-with-gerrit.html
 
 
 ## Licensing
