@@ -23,8 +23,10 @@ from __future__ import division
 
 import errno
 import threading
+
 from testlib import maybefail
 
+from vdsm.storage import constants as sc
 from vdsm.storage.compat import sanlock
 
 
@@ -59,27 +61,45 @@ class FakeSanlock(object):
         def errno(self):
             return self.args[0]
 
-    def __init__(self):
+    def __init__(self, sector_size=sc.BLOCK_SIZE_512):
         self.spaces = {}
         self.resources = {}
         self.errors = {}
         self.hosts = {}
+        # As fake sanlock keeps everything only in memory, this mimics
+        # sector size of underlying storage.
+        self.sector_size = sector_size
 
-    def check_align_and_sector(self, align, sector, resource=None):
+    def check_align_and_sector(
+            self, align, sector, resource=None, check_sector=True):
         """
         Check that alignment and sector size contain valid values.
         This means that the values are in ALIGN_SIZE/SECTOR_SIZE tuple
         and if the resource dict is provided, that these values match
         the values in the dict. This dict can represent either lockspace
         or resource. In any case, it has to contain "align" and "sector"
-        keys.
+        keys. We also check, that sector size is same as sector size of
+        underlying storage. This check can be skipped if check_sector is set to
+        False. This is a workaround which mimics real sanlock behavior: sanlock
+        write_resource() doesn't fail even if it's called with different sector
+        size than underlying sector size.
         """
+        # Check that alignment and sector size are among values supported by
+        # sanlock
+
         if align not in self.ALIGN_SIZE:
             raise ValueError("Invalid align value: %d" % align)
 
         if sector not in self.SECTOR_SIZE:
             raise ValueError("Invalid sector value: %d" % sector)
 
+        # Check that sector size is same underlying storage sector size
+        if check_sector and self.sector_size != sector:
+            raise self.SanlockException(
+                errno.EINVAL, "Invalid sector size", "Invalid argument")
+
+        # Check that alignment and sector size is same as alignment and sector
+        # size of previously written resource
         if resource:
             if align != resource["align"]:
                 raise self.SanlockException(
@@ -223,7 +243,9 @@ class FakeSanlock(object):
         # then one. Fail if called with multiple disks.
         assert len(disks) == 1
 
-        self.check_align_and_sector(align, sector)
+        # Here we skip check underlying sector size is same as one we use in
+        # this call, as real sanlock always succeeds.
+        self.check_align_and_sector(align, sector, check_sector=False)
 
         path, offset = disks[0]
         self.resources[(path, offset)] = {"lockspace": lockspace,
