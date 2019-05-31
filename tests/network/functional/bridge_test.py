@@ -45,6 +45,7 @@ def create_adapter(target):
 
 
 class TestBridge(object):
+    @pytest.mark.nmstate
     @nftestlib.parametrize_switch
     def test_add_bridge_with_stp(self, switch):
         if switch == 'ovs':

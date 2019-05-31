@@ -21,6 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import pytest
+
 from vdsm.network import nmstate
 
 from network.compat import mock
@@ -44,16 +46,21 @@ IPv6_ADDRESS2 = 'fdb3:84e5:4ff4:88e3::1'
 IPv6_PREFIX2 = '64'
 
 
+parametrize_bridged = pytest.mark.parametrize('bridged', [False, True],
+                                              ids=['bridgeless', 'bridged'])
+
+
 def test_translate_empty_networks_and_bonds():
     state = nmstate.generate_state(networks={}, bondings={})
 
     assert {nmstate.INTERFACES: []} == state
 
 
-def test_translate_bridgeless_nets_without_ip():
+@parametrize_bridged
+def test_translate_nets_without_ip(bridged):
     networks = {
-        'testnet1': {'nic': IFACE0, 'bridged': False, 'switch': 'legacy'},
-        'testnet2': {'nic': IFACE1, 'bridged': False, 'switch': 'legacy'}
+        'testnet1': {'nic': IFACE0, 'bridged': bridged, 'switch': 'legacy'},
+        'testnet2': {'nic': IFACE1, 'bridged': bridged, 'switch': 'legacy'}
     }
     state = nmstate.generate_state(networks=networks, bondings={})
 
@@ -68,15 +75,24 @@ def test_translate_bridgeless_nets_without_ip():
             eth1_state
         ]
     }
+    if bridged:
+        bridge1_state = _create_bridge_iface_state('testnet1', IFACE0)
+        bridge2_state = _create_bridge_iface_state('testnet2', IFACE1)
+        _disable_iface_ip(bridge1_state, bridge2_state)
+        expected_state[nmstate.INTERFACES].extend([
+            bridge1_state,
+            bridge2_state
+        ])
     _sort_by_name(expected_state[nmstate.INTERFACES])
     assert expected_state == state
 
 
-def test_translate_bridgeless_nets_with_ip():
+@parametrize_bridged
+def test_translate_nets_with_ip(bridged):
     networks = {
         'testnet1': {
             'nic': IFACE0,
-            'bridged': False,
+            'bridged': bridged,
             'ipaddr': IPv4_ADDRESS1,
             'netmask': IPv4_NETMASK1,
             'ipv6addr': IPv6_ADDRESS1 + '/' + IPv6_PREFIX1,
@@ -84,7 +100,7 @@ def test_translate_bridgeless_nets_with_ip():
         },
         'testnet2': {
             'nic': IFACE1,
-            'bridged': False,
+            'bridged': bridged,
             'ipaddr': IPv4_ADDRESS2,
             'netmask': IPv4_NETMASK2,
             'ipv6addr': IPv6_ADDRESS2 + '/' + IPv6_PREFIX2,
@@ -101,15 +117,21 @@ def test_translate_bridgeless_nets_with_ip():
     ip1_state = _create_ipv4_state(IPv4_ADDRESS2, IPv4_PREFIX2)
     ip1_state.update(_create_ipv6_state(IPv6_ADDRESS2, IPv6_PREFIX2))
 
-    eth0_state.update(ip0_state)
-    eth1_state.update(ip1_state)
+    expected_state = {nmstate.INTERFACES: [eth0_state, eth1_state]}
+    if bridged:
+        _disable_iface_ip(eth0_state, eth1_state)
+        bridge1_state = _create_bridge_iface_state('testnet1', IFACE0)
+        bridge2_state = _create_bridge_iface_state('testnet2', IFACE1)
+        bridge1_state.update(ip0_state)
+        bridge2_state.update(ip1_state)
+        expected_state[nmstate.INTERFACES].extend([
+            bridge1_state,
+            bridge2_state
+        ])
+    else:
+        eth0_state.update(ip0_state)
+        eth1_state.update(ip1_state)
 
-    expected_state = {
-        nmstate.INTERFACES: [
-            eth0_state,
-            eth1_state
-        ]
-    }
     _sort_by_name(expected_state[nmstate.INTERFACES])
     assert expected_state == state
 
@@ -159,11 +181,12 @@ def test_translate_bond_with_two_slaves_and_options():
     assert expected_state == state
 
 
-def test_translate_bridgeless_net_with_ip_on_bond():
+@parametrize_bridged
+def test_translate_net_with_ip_on_bond(bridged):
     networks = {
         'testnet1': {
             'bonding': 'testbond0',
-            'bridged': False,
+            'bridged': bridged,
             'ipaddr': IPv4_ADDRESS1,
             'netmask': IPv4_NETMASK1,
             'ipv6addr': IPv6_ADDRESS1 + '/' + IPv6_PREFIX1,
@@ -184,21 +207,24 @@ def test_translate_bridgeless_net_with_ip_on_bond():
     ip_state = _create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
     ip_state.update(_create_ipv6_state(IPv6_ADDRESS1, IPv6_PREFIX1))
 
-    bond0_state.update(ip_state)
+    expected_state = {nmstate.INTERFACES: [bond0_state]}
+    if bridged:
+        _disable_iface_ip(bond0_state)
+        bridge1_state = _create_bridge_iface_state('testnet1', 'testbond0')
+        bridge1_state.update(ip_state)
+        expected_state[nmstate.INTERFACES].extend([bridge1_state])
+    else:
+        bond0_state.update(ip_state)
 
-    expected_state = {
-        nmstate.INTERFACES: [
-            bond0_state
-        ]
-    }
     assert expected_state == state
 
 
-def test_translate_bridgeless_net_with_dynamic_ip():
+@parametrize_bridged
+def test_translate_net_with_dynamic_ip(bridged):
     networks = {
         'testnet1': {
             'bonding': 'testbond0',
-            'bridged': False,
+            'bridged': bridged,
             'bootproto': 'dhcp',
             'dhcpv6': True,
             'ipv6autoconf': True,
@@ -219,21 +245,24 @@ def test_translate_bridgeless_net_with_dynamic_ip():
     ip_state = _create_ipv4_state(dynamic=True)
     ip_state.update(_create_ipv6_state(dynamic=True))
 
-    bond0_state.update(ip_state)
+    expected_state = {nmstate.INTERFACES: [bond0_state]}
+    if bridged:
+        _disable_iface_ip(bond0_state)
+        bridge1_state = _create_bridge_iface_state('testnet1', 'testbond0')
+        bridge1_state.update(ip_state)
+        expected_state[nmstate.INTERFACES].extend([bridge1_state])
+    else:
+        bond0_state.update(ip_state)
 
-    expected_state = {
-        nmstate.INTERFACES: [
-            bond0_state
-        ]
-    }
     assert expected_state == state
 
 
-def test_translate_bridgeless_net_with_ip_on_vlan_on_bond():
+@parametrize_bridged
+def test_translate_net_with_ip_on_vlan_on_bond(bridged):
     networks = {
         'testnet1': {
             'bonding': 'testbond0',
-            'bridged': False,
+            'bridged': bridged,
             'vlan': VLAN101,
             'ipaddr': IPv4_ADDRESS1,
             'netmask': IPv4_NETMASK1,
@@ -258,22 +287,24 @@ def test_translate_bridgeless_net_with_ip_on_vlan_on_bond():
     ip1_state = _create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
     ip1_state.update(_create_ipv6_state(IPv6_ADDRESS1, IPv6_PREFIX1))
 
-    vlan101_state.update(ip1_state)
-
-    expected_state = {
-        nmstate.INTERFACES: [
-            bond0_state,
-            vlan101_state
-        ]
-    }
+    expected_state = {nmstate.INTERFACES: [bond0_state, vlan101_state]}
+    if bridged:
+        _disable_iface_ip(vlan101_state)
+        bridge1_state = _create_bridge_iface_state('testnet1',
+                                                   vlan101_state['name'])
+        bridge1_state.update(ip1_state)
+        expected_state[nmstate.INTERFACES].extend([bridge1_state])
+    else:
+        vlan101_state.update(ip1_state)
     assert expected_state == state
 
 
+@parametrize_bridged
 @mock.patch.object(nmstate, 'RunningConfig')
-def test_translate_remove_bridgeless_nets(rconfig_mock):
+def test_translate_remove_nets(rconfig_mock, bridged):
     rconfig_mock.return_value.networks = {
-        'testnet1': {'nic': IFACE0, 'bridged': False, 'switch': 'legacy'},
-        'testnet2': {'nic': IFACE1, 'bridged': False, 'switch': 'legacy'}
+        'testnet1': {'nic': IFACE0, 'bridged': bridged, 'switch': 'legacy'},
+        'testnet2': {'nic': IFACE1, 'bridged': bridged, 'switch': 'legacy'}
     }
     networks = {
         'testnet1': {'remove': True},
@@ -286,22 +317,29 @@ def test_translate_remove_bridgeless_nets(rconfig_mock):
 
     _disable_iface_ip(eth0_state, eth1_state)
 
-    expected_state = {
-        nmstate.INTERFACES: [
-            eth0_state,
-            eth1_state
-        ]
-    }
+    expected_state = {nmstate.INTERFACES: [eth0_state, eth1_state]}
+    if bridged:
+        expected_state[nmstate.INTERFACES].extend([
+            {
+                'name': 'testnet1',
+                'state': 'absent'
+            },
+            {
+                'name': 'testnet2',
+                'state': 'absent'
+            }
+        ])
     _sort_by_name(expected_state[nmstate.INTERFACES])
     assert expected_state == state
 
 
+@parametrize_bridged
 @mock.patch.object(nmstate, 'RunningConfig')
-def test_translate_remove_bridgeless_vlan_net(rconfig_mock):
+def test_translate_remove_vlan_net(rconfig_mock, bridged):
     rconfig_mock.return_value.networks = {
         'testnet1': {
             'nic': IFACE0,
-            'bridged': False,
+            'bridged': bridged,
             'vlan': VLAN101,
             'switch': 'legacy',
         }
@@ -319,6 +357,11 @@ def test_translate_remove_bridgeless_vlan_net(rconfig_mock):
             }
         ]
     }
+    if bridged:
+        expected_state[nmstate.INTERFACES].append({
+            'name': 'testnet1',
+            'state': 'absent'
+        })
     _sort_by_name(expected_state[nmstate.INTERFACES])
     assert expected_state == state
 
@@ -342,11 +385,12 @@ def test_translate_remove_bonds():
     assert expected_state == state
 
 
+@parametrize_bridged
 @mock.patch.object(nmstate, 'RunningConfig')
-def test_translate_remove_bridgeless_net_on_bond(rconfig_mock):
+def test_translate_remove_net_on_bond(rconfig_mock, bridged):
     rconfig_mock.return_value.networks = {
         'testnet1':
-            {'bonding': 'testbond0', 'bridged': False, 'switch': 'legacy'}
+            {'bonding': 'testbond0', 'bridged': bridged, 'switch': 'legacy'}
     }
     networks = {
         'testnet1': {'remove': True}
@@ -363,17 +407,23 @@ def test_translate_remove_bridgeless_net_on_bond(rconfig_mock):
             }
         ]
     }
+    if bridged:
+        expected_state[nmstate.INTERFACES].append({
+            'name': 'testnet1',
+            'state': 'absent'
+        })
     _sort_by_name(expected_state[nmstate.INTERFACES])
     assert expected_state == state
 
 
+@parametrize_bridged
 @mock.patch.object(nmstate, 'RunningConfig')
-def test_translate_remove_bridgeless_vlan_net_on_bond(rconfig_mock):
+def test_translate_remove_vlan_net_on_bond(rconfig_mock, bridged):
     rconfig_mock.return_value.networks = {
         'testnet1':
             {
                 'bonding': 'testbond0',
-                'bridged': False,
+                'bridged': bridged,
                 'vlan': VLAN101,
                 'switch': 'legacy'
             }
@@ -391,6 +441,13 @@ def test_translate_remove_bridgeless_vlan_net_on_bond(rconfig_mock):
             }
         ]
     }
+    if bridged:
+        expected_state[nmstate.INTERFACES].extend([
+            {
+                'name': 'testnet1',
+                'state': 'absent'
+            }
+        ])
     _sort_by_name(expected_state[nmstate.INTERFACES])
     assert expected_state == state
 
@@ -413,6 +470,19 @@ def _create_bond_iface_state(name, mode, slaves, **options):
     if options:
         state['link-aggregation']['options'] = options
     return state
+
+
+def _create_bridge_iface_state(name, port):
+    return {
+        'name': name,
+        'type': 'linux-bridge',
+        'state': 'up',
+        'bridge': {
+            'port': [{
+                'name': port
+            }]
+        }
+    }
 
 
 def _create_vlan_iface_state(base, vlan):
