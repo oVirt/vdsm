@@ -25,7 +25,6 @@ import uuid
 
 import pytest
 
-from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import clusterlock
@@ -155,29 +154,6 @@ class TestBlockManifest(ManifestMixin):
         with self.env() as env:
             assert (env.sd_manifest.sdUUID ==
                     env.sd_manifest.getMetaParam(sd.DMDK_SDUUID))
-
-    def test_getblocksize_defaults(self):
-        with self.env() as env:
-            assert 512 == env.sd_manifest.logBlkSize
-            assert 512 == env.sd_manifest.phyBlkSize
-
-    def test_overwrite_blocksize(self):
-        metadata = {sd.DMDK_VERSION: 3,
-                    sd.DMDK_LOGBLKSIZE: 2048,
-                    sd.DMDK_PHYBLKSIZE: 1024}
-        with self.env() as env:
-            # Replacing the metadata will not overwrite these values since they
-            # are set only in the manifest constructor.
-            env.sd_manifest.replaceMetadata(metadata)
-            assert 512 == env.sd_manifest.logBlkSize
-            assert 512 == env.sd_manifest.phyBlkSize
-
-            # If we supply values in the metadata used to construct the
-            # manifest then those values will apply.
-            new_manifest = blockSD.BlockStorageDomainManifest(
-                env.sd_manifest.sdUUID, metadata)
-            assert 2048 == new_manifest.logBlkSize
-            assert 1024 == new_manifest.phyBlkSize
 
 
 class TestBlockDomainMetadataSlot:
