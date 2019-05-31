@@ -47,10 +47,10 @@ def create_adapter(target):
     adapter = NetFuncTestAdapter(target)
 
 
+@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestBondBasic(object):
 
-    @pytest.mark.nmstate
     def test_add_bond_with_two_nics(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             BONDCREATE = {
@@ -59,7 +59,6 @@ class TestBondBasic(object):
             with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
-    @pytest.mark.nmstate
     def test_add_bond_with_two_nics_and_options(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             BONDCREATE = {BOND_NAME: {
@@ -69,7 +68,6 @@ class TestBondBasic(object):
             with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
-    @pytest.mark.nmstate
     def test_remove_bond(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             BONDCREATE = {
@@ -80,7 +78,6 @@ class TestBondBasic(object):
                 adapter.setupNetworks({}, BONDREMOVE, NOCHK)
                 adapter.assertNoBond(BOND_NAME)
 
-    @pytest.mark.nmstate
     @pytest.mark.xfail(condition=nftestlib.is_nmstate_enabled(),
                        reason='Links stability not supported by nmstate/NM',
                        raises=nftestlib.UnexpectedLinkStateChangeError,
@@ -97,7 +94,6 @@ class TestBondBasic(object):
                     adapter.setupNetworks({}, BONDEDIT, NOCHK)
                     adapter.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
 
-    @pytest.mark.nmstate
     def test_swap_slaves_between_bonds(self, switch):
         BOND1 = BOND_NAME + '1'
         BOND2 = BOND_NAME + '2'
@@ -114,7 +110,6 @@ class TestBondBasic(object):
                 adapter.assertBond(BOND1, BONDEDIT[BOND1])
                 adapter.assertBond(BOND2, BONDEDIT[BOND2])
 
-    @pytest.mark.nmstate
     def test_resize_bond(self, switch):
         with dummy_devices(4) as (nic1, nic2, nic3, nic4):
             bond = {BOND_NAME: {'nics': [nic1, nic2],
@@ -128,7 +123,6 @@ class TestBondBasic(object):
                 adapter.setupNetworks({}, bond, NOCHK)
                 adapter.assertBond(BOND_NAME, bond[BOND_NAME])
 
-    @pytest.mark.nmstate
     def test_add_bond_with_bad_name_fails(self, switch):
         INVALID_BOND_NAMES = ('bond',
                               'bond bad',
@@ -143,7 +137,6 @@ class TestBondBasic(object):
                         pass
                 assert cm.value.status == ne.ERR_BAD_BONDING
 
-    @pytest.mark.nmstate
     def test_add_bond_with_no_nics_fails(self, switch):
         BONDCREATE = {BOND_NAME: {'nics': [], 'switch': switch}}
 
@@ -152,7 +145,6 @@ class TestBondBasic(object):
                 pass
         assert err.value.status == ne.ERR_BAD_PARAMS
 
-    @pytest.mark.nmstate
     def test_add_bond_with_enforced_mac_address(self, switch):
         if switch == 'ovs':
             pytest.xfail(
@@ -167,7 +159,6 @@ class TestBondBasic(object):
             with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
-    @pytest.mark.nmstate
     def test_bond_slaves_order_does_not_affect_the_mac_address(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             bond1 = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
@@ -181,6 +172,7 @@ class TestBondBasic(object):
             assert bond1_hwaddr == bond2_hwaddr
 
 
+@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestBondOptions(object):
 
