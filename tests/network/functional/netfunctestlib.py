@@ -739,7 +739,7 @@ def monitor_stable_link_state(device, wait_for_linkup=True):
         state_changes = (e['state'] for e in mon if e['name'] == device)
         for state in state_changes:
             if state != original_state:
-                raise pytest.fail(
+                raise UnexpectedLinkStateChangeError(
                     '{} link state changed: {} -> {}'.format(
                         device, original_state, state))
 
@@ -863,4 +863,8 @@ def _gather_expected_ovs_links(net, attrs, netinfo):
 
 
 class DeviceNotInCapsError(Exception):
+    pass
+
+
+class UnexpectedLinkStateChangeError(Exception):
     pass
