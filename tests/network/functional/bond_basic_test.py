@@ -152,6 +152,7 @@ class TestBondBasic(object):
                 pass
         assert err.value.status == ne.ERR_BAD_PARAMS
 
+    @pytest.mark.nmstate
     def test_add_bond_with_enforced_mac_address(self, switch):
         if switch == 'ovs':
             pytest.xfail(
