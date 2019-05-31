@@ -80,6 +80,11 @@ class TestBondBasic(object):
                 adapter.setupNetworks({}, BONDREMOVE, NOCHK)
                 adapter.assertNoBond(BOND_NAME)
 
+    @pytest.mark.nmstate
+    @pytest.mark.xfail(condition=nftestlib.is_nmstate_enabled(),
+                       reason='Links stability not supported by nmstate/NM',
+                       raises=nftestlib.UnexpectedLinkStateChangeError,
+                       strict=True)
     def test_change_bond_slaves(self, switch):
         with dummy_devices(3) as (nic1, nic2, nic3):
             BONDCREATE = {
