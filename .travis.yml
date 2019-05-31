@@ -9,7 +9,7 @@ services:
 git:
   depth: 1
 
-# Notes: we run the linters only on Fedora 28 to save time. This may miss some
+# Notes: we run the linters only on Fedora 29 to save time. This may miss some
 # issues on CentOS but the chance is very low.
 # TODO: add Fedora 29 python 3.7 build.
 env:
@@ -17,10 +17,8 @@ env:
     - DOCKER_IMAGE=ovirtorg/vdsm-test-centos
       MAKE_TARGET=tests-py27
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-28
-      MAKE_TARGET=tests-py27
-    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-28
       MAKE_TARGET=tests-py36
-    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-28
+    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29
       MAKE_TARGET=lint
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29
       MAKE_TARGET=tests-py27
