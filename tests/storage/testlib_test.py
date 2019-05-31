@@ -49,9 +49,13 @@ from vdsm.storage import fileSD
 from vdsm.storage import fileVolume
 from vdsm.storage import sd
 
+from . marks import xfail_python3
+
+
 MB = 1024 ** 2
 
 
+@xfail_python3
 @expandPermutations
 class TestFakeFileEnv(VdsmTestCase):
 
@@ -147,6 +151,7 @@ class TestFakeFileEnv(VdsmTestCase):
             self.assertEqual(desc, vol.getDescription())
 
 
+@xfail_python3
 @expandPermutations
 class TestFakeBlockEnv(VdsmTestCase):
 
@@ -273,6 +278,7 @@ class TestFakeBlockEnv(VdsmTestCase):
             self.assertTrue(os.path.samefile(repo_path, domain_path))
 
 
+@xfail_python3
 @expandPermutations
 class TestChainVerification(VdsmTestCase):
 

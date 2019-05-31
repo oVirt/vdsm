@@ -26,6 +26,7 @@ from collections import namedtuple
 from functools import partial
 
 import pytest
+
 from _pytest.monkeypatch import MonkeyPatch
 
 from storage.storagefakelib import (
@@ -55,6 +56,8 @@ from vdsm.storage import operation
 from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import volume
+
+from . marks import xfail_python3
 
 MB = 1024 ** 2
 GB = 1024 ** 3
@@ -133,6 +136,7 @@ class FakeImage(object):
         pass
 
 
+@xfail_python3
 class TestSubchainInfo:
 
     # TODO: use one make_env for all tests?
@@ -227,6 +231,7 @@ class TestSubchainInfo:
                 subchain.validate()
 
 
+@xfail_python3
 class TestPrepareMerge:
 
     @pytest.mark.parametrize("base, top, expected", [
@@ -315,6 +320,7 @@ class FakeSyncVolumeChain(object):
         self.actual_chain = actual_chain
 
 
+@xfail_python3
 class TestFinalizeMerge:
 
     # TODO: use one make_env for all tests?

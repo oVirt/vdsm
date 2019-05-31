@@ -50,6 +50,8 @@ from testlib import make_uuid
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
 
+from . marks import xfail_python3
+
 CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
 GIB_IN_BLOCKS = GIB // sc.BLOCK_SIZE
 
@@ -131,11 +133,13 @@ class TestBlockVolumeManifest(VdsmTestCase):
         self.assertEqual(BlockVolume.max_size(10 * GIB, sc.COW_FORMAT),
                          11811160064)
 
+    @xfail_python3
     def test_optimal_size_raw(self):
         # verify optimal size equals to virtual size.
         with self.make_volume(size=GIB) as vol:
             self.assertEqual(vol.optimal_size(), GIB)
 
+    @xfail_python3
     @MonkeyPatch(blockVolume, 'config', CONFIG)
     def test_optimal_size_cow_leaf_empty(self):
         # verify optimal size equals to actual size + one chunk.
@@ -157,6 +161,7 @@ class TestBlockVolumeManifest(VdsmTestCase):
             max_size = vol.max_size(GIB, vol.getFormat())
             self.assertEqual(vol.optimal_size(), max_size)
 
+    @xfail_python3
     @permutations([
         # actual_size, optimal_size
         (200 * MEGAB, 1024 * MEGAB),
@@ -175,6 +180,7 @@ class TestBlockVolumeManifest(VdsmTestCase):
                 env.chain = make_qemu_chain(env, actual_size, sc.COW_FORMAT, 3)
                 self.assertEqual(env.chain[1].optimal_size(), optimal_size)
 
+    @xfail_python3
     @permutations([
         # capacity, virtual_size, expected_capacity
         (0, 128 * MEGAB, 128 * MEGAB),  # failed resize, repair capacity

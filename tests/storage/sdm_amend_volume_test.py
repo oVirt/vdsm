@@ -50,11 +50,14 @@ from vdsm.storage import qemuimg
 from vdsm.storage.sdm import volume_info
 from vdsm.storage.sdm.api import amend_volume, copy_data
 
+from . marks import xfail_python3
+
 
 def failure(*args, **kwargs):
     raise cmdutils.Error("code", "out", "err", "Fail amend")
 
 
+@xfail_python3
 @expandPermutations
 class TestAmendVolume(VdsmTestCase):
     DEFAULT_SIZE = 1048576

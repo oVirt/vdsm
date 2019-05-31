@@ -59,7 +59,10 @@ from vdsm.storage import volume
 from vdsm.storage import workarounds
 from vdsm.storage.sdm.api import copy_data
 
+from . marks import xfail_python3
 
+
+@xfail_python3
 @expandPermutations
 class TestCopyDataDIV(VdsmTestCase):
     DEFAULT_SIZE = 1048576

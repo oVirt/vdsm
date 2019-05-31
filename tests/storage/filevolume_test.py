@@ -69,16 +69,19 @@ class TestFileVolumeManifest(object):
         # overhead, aligned to MiB.
         assert max_size == 11811160064
 
+    @xfail_python3
     def test_optimal_size_raw(self):
         size = 5 * MEGAB
         with self.make_volume(size=size) as vol:
             assert vol.optimal_size() == size
 
+    @xfail_python3
     def test_optimal_size_cow(self):
         size = 5 * MEGAB
         with self.make_volume(size=size, format=sc.COW_FORMAT) as vol:
             assert vol.optimal_size() == vol.getVolumeSize(bs=1)
 
+    @xfail_python3
     def test_get_image_volumes(self):
         img_id = make_uuid()
         vol_id = make_uuid()
@@ -94,6 +97,7 @@ class TestFileVolumeManifest(object):
 
             assert vol.getImageVolumes(sduuid, img_id) == [vol_id]
 
+    @xfail_python3
     def test_get_children(self):
         remote_path = "[2001:db8:85a3::8a2e:370:7334]:1234:/path"
         size = 5 * MEGAB
@@ -104,6 +108,7 @@ class TestFileVolumeManifest(object):
             base_vol = env.chain[0]
             assert (env.chain[1].volUUID,) == base_vol.getChildren()
 
+    @xfail_python3
     @pytest.mark.parametrize("capacity, virtual_size, expected_capacity", [
         # capacity, virtual_size, expected_capacity
         (0, 128 * MEGAB, 128 * MEGAB),  # failed resize, repair capacity
