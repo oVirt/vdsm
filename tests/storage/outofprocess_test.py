@@ -36,6 +36,8 @@ import time
 import re
 from weakref import ref
 
+from . marks import xfail_python3
+
 
 @pytest.fixture
 def oop_ns():
@@ -85,6 +87,7 @@ class TestOopWrapper(VdsmTestCase):
 
         self.assertNotEquals(pids[0], pids[1])
 
+    @xfail_python3
     def testAmountOfInstancesPerPoolName(self):
         with MonkeyPatchScope([(oop, 'IOPROC_IDLE_TIME', 0.5)]):
             poolA = "A"

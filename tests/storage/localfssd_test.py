@@ -40,6 +40,7 @@ from vdsm.storage import sd
 from vdsm.storage.sdc import sdCache
 
 from . import qemuio
+from . marks import xfail_python3
 
 PREALLOCATED_VOL_SIZE = 10 * MEGAB
 SPARSE_VOL_SIZE = GIB
@@ -77,6 +78,7 @@ def test_incorrect_version_and_block_rejected(version, block_size, alignment):
                 sc.BLANK_UUID, sd.ISCSI_DOMAIN, version, block_size, alignment)
 
 
+@xfail_python3
 @pytest.mark.parametrize("domain_version", [3, 4, 5])
 def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     remote_path = str(tmpdir.mkdir("domain"))
@@ -126,6 +128,7 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     assert expected == actual
 
 
+@xfail_python3
 def test_volume_life_cycle(monkeypatch, tmpdir, tmp_repo, fake_access,
                            fake_rescan, tmp_db, fake_task):
     # as creation of block storage domain and volume is quite time consuming,
@@ -199,6 +202,7 @@ def test_volume_life_cycle(monkeypatch, tmpdir, tmp_repo, fake_access,
     assert not os.path.isfile(meta_path)
 
 
+@xfail_python3
 def test_volume_metadata(tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
                          fake_task):
     dom = tmp_repo.create_localfs_domain(name="domain", version=4)
@@ -236,6 +240,7 @@ def test_volume_metadata(tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
     assert data == md.storage_format(4, CAP=md.capacity)
 
 
+@xfail_python3
 @pytest.mark.parametrize("domain_version", [4, 5])
 def test_volume_create_raw_prealloc(
         tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
@@ -281,6 +286,7 @@ def test_volume_create_raw_prealloc(
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
+@xfail_python3
 @pytest.mark.parametrize("domain_version", [4, 5])
 @pytest.mark.parametrize("initial_size", [0, INITIAL_VOL_SIZE])
 def test_volume_create_raw_prealloc_with_initial_size(
@@ -327,6 +333,7 @@ def test_volume_create_raw_prealloc_with_initial_size(
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
+@xfail_python3
 @pytest.mark.parametrize("domain_version", [4, 5])
 @pytest.mark.parametrize("vol_format,prealloc", [
     (sc.RAW_FORMAT, sc.SPARSE_VOL),
@@ -355,6 +362,7 @@ def test_volume_create_initial_size_not_supported(
             initialSize=INITIAL_VOL_SIZE // sc.BLOCK_SIZE_512)
 
 
+@xfail_python3
 @pytest.mark.parametrize("domain_version", [4, 5])
 def test_volume_create_raw_sparse(
         tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
@@ -400,6 +408,7 @@ def test_volume_create_raw_sparse(
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
+@xfail_python3
 @pytest.mark.parametrize("domain_version", [4, 5])
 def test_volume_create_cow_sparse(
         tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
@@ -449,6 +458,7 @@ def test_volume_create_cow_sparse(
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
+@xfail_python3
 @pytest.mark.parametrize("domain_version", [4, 5])
 def test_volume_create_cow_sparse_with_parent(
         tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
@@ -515,6 +525,7 @@ def test_volume_create_cow_sparse_with_parent(
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
+@xfail_python3
 @pytest.mark.parametrize("initial_size", [
     -1,
     (PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512) + 1
@@ -541,6 +552,7 @@ def test_volume_create_raw_prealloc_invalid_initial_size(
             initialSize=initial_size)
 
 
+@xfail_python3
 @pytest.mark.parametrize("domain_version", [4, 5])
 def test_create_snapshot_size(
         tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
@@ -607,6 +619,7 @@ def test_create_snapshot_size(
     assert int(actual["capacity"]) == vol_capacity
 
 
+@xfail_python3
 @pytest.mark.parametrize("domain_version", [4, 5])
 def test_volume_metadata_capacity_corrupted(
         tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,

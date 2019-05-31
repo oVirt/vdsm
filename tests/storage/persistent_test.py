@@ -26,6 +26,8 @@ import pytest
 from vdsm.storage import exception as se
 from vdsm.storage import persistent
 
+from . marks import xfail_python3
+
 
 class ReadError(Exception):
     """ Raised while reading from storage """
@@ -59,6 +61,7 @@ class MemoryBackend(object):
         self.version += 1
 
 
+@xfail_python3
 class TestDictValidator:
 
     VALID_FIELDS = {
@@ -266,6 +269,7 @@ class TestDictValidator:
 
 class TestPersistentDict:
 
+    @xfail_python3
     def test_len(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
@@ -278,6 +282,7 @@ class TestPersistentDict:
         pd["key 2"] = "value 2"
         assert len(pd) == 2
 
+    @xfail_python3
     def test_contains(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
@@ -286,6 +291,7 @@ class TestPersistentDict:
         pd["key"] = "value"
         assert "key" in pd
 
+    @xfail_python3
     def test_get_good_checksum(self):
         b = MemoryBackend([
             "key 1=value 1",
@@ -311,6 +317,7 @@ class TestPersistentDict:
         # Storage not modified by reading.
         assert b.lines == initial_lines
 
+    @xfail_python3
     def test_get_bad_checksum(self):
         initial_lines = [
             "key 1=value 1",
@@ -326,6 +333,7 @@ class TestPersistentDict:
         # Storage not modified by reading.
         assert b.lines == initial_lines
 
+    @xfail_python3
     def test_getitem_setitem(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
@@ -345,6 +353,7 @@ class TestPersistentDict:
         assert pd["key 2"] == "new value 2"
         assert pd["key 3"] == "value 3"
 
+    @xfail_python3
     def test_get(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
@@ -353,6 +362,7 @@ class TestPersistentDict:
         pd["key"] = "value"
         assert pd.get("key") == "value"
 
+    @xfail_python3
     def test_del(self):
         b = MemoryBackend(["key=value"])
         pd = persistent.PersistentDict(b)
@@ -373,6 +383,7 @@ class TestPersistentDict:
 
         assert set(pd) == {"key 1", "key 2"}
 
+    @xfail_python3
     def test_clear(self):
         b = MemoryBackend([
             "key 1=value 1",
@@ -394,6 +405,7 @@ class TestPersistentDict:
             "_SHA_CKSUM=da39a3ee5e6b4b0d3255bfef95601890afd80709"
         ]
 
+    @xfail_python3
     def test_storage(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
@@ -425,6 +437,7 @@ class TestPersistentDict:
         ]
         assert b.version == 3
 
+    @xfail_python3
     def test_transaction(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
@@ -438,6 +451,7 @@ class TestPersistentDict:
         assert pd["key 2"] == "value 2"
         assert b.version == 1
 
+    @xfail_python3
     def test_transaction_nested(self):
         b = MemoryBackend()
         pd = persistent.PersistentDict(b)
@@ -451,6 +465,7 @@ class TestPersistentDict:
         assert pd["key 2"] == "value 2"
         assert b.version == 1
 
+    @xfail_python3
     def test_invalidate(self):
         b = MemoryBackend([
             "key 1=value 1",
@@ -503,6 +518,7 @@ class TestPersistentDict:
         assert b.lines == initial_lines
         assert b.version == 0
 
+    @xfail_python3
     def test_write_error(self):
         initial_lines = [
             "key 1=value 1",
@@ -560,6 +576,7 @@ class TestPersistentDict:
         # Nothing should be written since the transaction was aborted.
         assert b.lines == []
 
+    @xfail_python3
     def test_transient_read_error(self):
         initial_lines = [
             "key 1=value 1",
@@ -594,6 +611,7 @@ class TestPersistentDict:
         ]
         assert b.version == 1
 
+    @xfail_python3
     def test_transient_write_error(self):
         initial_lines = [
             "key 1=value 1",

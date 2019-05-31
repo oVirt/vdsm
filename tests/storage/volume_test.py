@@ -38,6 +38,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import volume
 
+from . marks import xfail_python3
 
 HOST_ID = 1
 MB = 1048576
@@ -108,6 +109,7 @@ class TestVolumeLease:
         assert "%x" % id(lock) in lock_string
 
 
+@xfail_python3
 class TestVolumeManifest:
 
     @pytest.fixture
@@ -186,6 +188,7 @@ class TestVolumeManifest:
         assert "description" == vol.getMetaParam(sc.DESCRIPTION)
 
 
+@xfail_python3
 class TestVolumeSize:
 
     @pytest.fixture(params=[sc.RAW_FORMAT, sc.COW_FORMAT])
