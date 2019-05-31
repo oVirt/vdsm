@@ -26,6 +26,11 @@ from vdsm.network import nmstate
 from network.compat import mock
 
 
+IFACE0 = 'eth0'
+IFACE1 = 'eth1'
+
+VLAN101 = 101
+
 IPv4_ADDRESS1 = '192.0.2.1'
 IPv4_NETMASK1 = '255.255.255.0'
 IPv4_PREFIX1 = 24
@@ -47,23 +52,15 @@ def test_translate_empty_networks_and_bonds():
 
 def test_translate_bridgeless_nets_without_ip():
     networks = {
-        'testnet1': {'nic': 'eth0', 'bridged': False, 'switch': 'legacy'},
-        'testnet2': {'nic': 'eth1', 'bridged': False, 'switch': 'legacy'}
+        'testnet1': {'nic': IFACE0, 'bridged': False, 'switch': 'legacy'},
+        'testnet2': {'nic': IFACE1, 'bridged': False, 'switch': 'legacy'}
     }
     state = nmstate.generate_state(networks=networks, bondings={})
 
     expected_state = {
         nmstate.INTERFACES: [
-            {
-                'name': 'eth0',
-                'type': 'ethernet',
-                'state': 'up',
-            },
-            {
-                'name': 'eth1',
-                'type': 'ethernet',
-                'state': 'up',
-            }
+            _create_ethernet_iface_state(IFACE0),
+            _create_ethernet_iface_state(IFACE1)
         ]
     }
     _sort_by_name(expected_state[nmstate.INTERFACES])
@@ -73,7 +70,7 @@ def test_translate_bridgeless_nets_without_ip():
 def test_translate_bridgeless_nets_with_ip():
     networks = {
         'testnet1': {
-            'nic': 'eth0',
+            'nic': IFACE0,
             'bridged': False,
             'ipaddr': IPv4_ADDRESS1,
             'netmask': IPv4_NETMASK1,
@@ -81,7 +78,7 @@ def test_translate_bridgeless_nets_with_ip():
             'switch': 'legacy'
         },
         'testnet2': {
-            'nic': 'eth1',
+            'nic': IFACE1,
             'bridged': False,
             'ipaddr': IPv4_ADDRESS2,
             'netmask': IPv4_NETMASK2,
@@ -91,42 +88,21 @@ def test_translate_bridgeless_nets_with_ip():
     }
     state = nmstate.generate_state(networks=networks, bondings={})
 
+    eth0_state = _create_ethernet_iface_state(IFACE0)
+    eth1_state = _create_ethernet_iface_state(IFACE1)
+
+    ip0_state = _create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
+    ip0_state.update(_create_ipv6_state(IPv6_ADDRESS1, IPv6_PREFIX1))
+    ip1_state = _create_ipv4_state(IPv4_ADDRESS2, IPv4_PREFIX2)
+    ip1_state.update(_create_ipv6_state(IPv6_ADDRESS2, IPv6_PREFIX2))
+
+    eth0_state.update(ip0_state)
+    eth1_state.update(ip1_state)
+
     expected_state = {
         nmstate.INTERFACES: [
-            {
-                'name': 'eth0',
-                'type': 'ethernet',
-                'state': 'up',
-                'ipv4': {
-                    'enabled': True,
-                    'address': [
-                        {'ip': IPv4_ADDRESS1, 'prefix-length': IPv4_PREFIX1}
-                    ]
-                },
-                'ipv6': {
-                    'enabled': True,
-                    'address': [
-                        {'ip': IPv6_ADDRESS1, 'prefix-length': IPv6_PREFIX1}
-                    ]
-                }
-            },
-            {
-                'name': 'eth1',
-                'type': 'ethernet',
-                'state': 'up',
-                'ipv4': {
-                    'enabled': True,
-                    'address': [
-                        {'ip': IPv4_ADDRESS2, 'prefix-length': IPv4_PREFIX2}
-                    ]
-                },
-                'ipv6': {
-                    'enabled': True,
-                    'address': [
-                        {'ip': IPv6_ADDRESS2, 'prefix-length': IPv6_PREFIX2}
-                    ]
-                }
-            }
+            eth0_state,
+            eth1_state
         ]
     }
     _sort_by_name(expected_state[nmstate.INTERFACES])
@@ -136,25 +112,23 @@ def test_translate_bridgeless_nets_with_ip():
 def test_translate_bond_with_two_slaves():
     bondings = {
         'testbond0': {
-            'nics': ['eth0', 'eth1'],
+            'nics': [IFACE0, IFACE1],
             'switch': 'legacy'
         }
     }
     state = nmstate.generate_state(networks={}, bondings=bondings)
 
+    bond0_state = _create_bond_iface_state(
+        'testbond0', 'balance-rr', [IFACE0, IFACE1])
+
+    ip_state = _create_ipv4_state()
+    ip_state.update(_create_ipv6_state())
+
+    bond0_state.update(ip_state)
+
     expected_state = {
         nmstate.INTERFACES: [
-            {
-                'name': 'testbond0',
-                'type': 'bond',
-                'state': 'up',
-                'link-aggregation': {
-                    'mode': 'balance-rr',
-                    'slaves': ['eth0', 'eth1']
-                },
-                'ipv4': {'enabled': False},
-                'ipv6': {'enabled': False}
-            }
+            bond0_state,
         ]
     }
     assert expected_state == state
@@ -163,29 +137,24 @@ def test_translate_bond_with_two_slaves():
 def test_translate_bond_with_two_slaves_and_options():
     bondings = {
         'testbond0': {
-            'nics': ['eth0', 'eth1'],
+            'nics': [IFACE0, IFACE1],
             'options': 'mode=4 miimon=150',
             'switch': 'legacy'
         }
     }
     state = nmstate.generate_state(networks={}, bondings=bondings)
 
+    bond0_state = _create_bond_iface_state(
+        'testbond0', '802.3ad', [IFACE0, IFACE1], miimon='150')
+
+    ip_state = _create_ipv4_state()
+    ip_state.update(_create_ipv6_state())
+
+    bond0_state.update(ip_state)
+
     expected_state = {
         nmstate.INTERFACES: [
-            {
-                'name': 'testbond0',
-                'type': 'bond',
-                'state': 'up',
-                'link-aggregation': {
-                    'mode': '802.3ad',
-                    'slaves': ['eth0', 'eth1'],
-                    'options': {
-                        'miimon': '150'
-                    }
-                },
-                'ipv4': {'enabled': False},
-                'ipv6': {'enabled': False}
-            }
+            bond0_state,
         ]
     }
     assert expected_state == state
@@ -204,35 +173,23 @@ def test_translate_bridgeless_net_with_ip_on_bond():
     }
     bondings = {
         'testbond0': {
-            'nics': ['eth0', 'eth1'],
+            'nics': [IFACE0, IFACE1],
             'switch': 'legacy'
         }
     }
     state = nmstate.generate_state(networks=networks, bondings=bondings)
 
+    bond0_state = _create_bond_iface_state(
+        'testbond0', 'balance-rr', [IFACE0, IFACE1])
+
+    ip_state = _create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
+    ip_state.update(_create_ipv6_state(IPv6_ADDRESS1, IPv6_PREFIX1))
+
+    bond0_state.update(ip_state)
+
     expected_state = {
         nmstate.INTERFACES: [
-            {
-                'name': 'testbond0',
-                'type': 'bond',
-                'state': 'up',
-                'link-aggregation': {
-                    'mode': 'balance-rr',
-                    'slaves': ['eth0', 'eth1']
-                },
-                'ipv4': {
-                    'enabled': True,
-                    'address': [
-                        {'ip': IPv4_ADDRESS1, 'prefix-length': IPv4_PREFIX1}
-                    ]
-                },
-                'ipv6': {
-                    'enabled': True,
-                    'address': [
-                        {'ip': IPv6_ADDRESS1, 'prefix-length': IPv6_PREFIX1}
-                    ]
-                }
-            }
+            bond0_state
         ]
     }
     assert expected_state == state
@@ -251,32 +208,23 @@ def test_translate_bridgeless_net_with_dynamic_ip():
     }
     bondings = {
         'testbond0': {
-            'nics': ['eth0', 'eth1'],
+            'nics': [IFACE0, IFACE1],
             'switch': 'legacy'
         }
     }
     state = nmstate.generate_state(networks=networks, bondings=bondings)
 
+    bond0_state = _create_bond_iface_state(
+        'testbond0', 'balance-rr', [IFACE0, IFACE1])
+
+    ip_state = _create_ipv4_state(dynamic=True)
+    ip_state.update(_create_ipv6_state(dynamic=True))
+
+    bond0_state.update(ip_state)
+
     expected_state = {
         nmstate.INTERFACES: [
-            {
-                'name': 'testbond0',
-                'type': 'bond',
-                'state': 'up',
-                'link-aggregation': {
-                    'mode': 'balance-rr',
-                    'slaves': ['eth0', 'eth1']
-                },
-                'ipv4': {
-                    'enabled': True,
-                    'dhcp': True
-                },
-                'ipv6': {
-                    'enabled': True,
-                    'dhcp': True,
-                    'autoconf': True
-                }
-            }
+            bond0_state
         ]
     }
     assert expected_state == state
@@ -287,7 +235,7 @@ def test_translate_bridgeless_net_with_ip_on_vlan_on_bond():
         'testnet1': {
             'bonding': 'testbond0',
             'bridged': False,
-            'vlan': 101,
+            'vlan': VLAN101,
             'ipaddr': IPv4_ADDRESS1,
             'netmask': IPv4_NETMASK1,
             'ipv6addr': IPv6_ADDRESS1 + '/' + IPv6_PREFIX1,
@@ -296,46 +244,29 @@ def test_translate_bridgeless_net_with_ip_on_vlan_on_bond():
     }
     bondings = {
         'testbond0': {
-            'nics': ['eth0', 'eth1'],
+            'nics': [IFACE0, IFACE1],
             'switch': 'legacy'
         }
     }
     state = nmstate.generate_state(networks=networks, bondings=bondings)
 
+    bond0_state = _create_bond_iface_state(
+        'testbond0', 'balance-rr', [IFACE0, IFACE1])
+    ip0_state = _create_ipv4_state()
+    ip0_state.update(_create_ipv6_state())
+
+    bond0_state.update(ip0_state)
+
+    vlan101_state = _create_vlan_iface_state('testbond0', VLAN101)
+    ip1_state = _create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
+    ip1_state.update(_create_ipv6_state(IPv6_ADDRESS1, IPv6_PREFIX1))
+
+    vlan101_state.update(ip1_state)
+
     expected_state = {
         nmstate.INTERFACES: [
-            {
-                'name': 'testbond0',
-                'type': 'bond',
-                'state': 'up',
-                'link-aggregation': {
-                    'mode': 'balance-rr',
-                    'slaves': ['eth0', 'eth1']
-                },
-                'ipv4': {'enabled': False},
-                'ipv6': {'enabled': False}
-            },
-            {
-                'name': 'testbond0.101',
-                'type': 'vlan',
-                'state': 'up',
-                'vlan': {
-                    'id': 101,
-                    'base-iface': 'testbond0'
-                },
-                'ipv4': {
-                    'enabled': True,
-                    'address': [
-                        {'ip': IPv4_ADDRESS1, 'prefix-length': IPv4_PREFIX1}
-                    ]
-                },
-                'ipv6': {
-                    'enabled': True,
-                    'address': [
-                        {'ip': IPv6_ADDRESS1, 'prefix-length': IPv6_PREFIX1}
-                    ]
-                }
-            }
+            bond0_state,
+            vlan101_state
         ]
     }
     assert expected_state == state
@@ -344,8 +275,8 @@ def test_translate_bridgeless_net_with_ip_on_vlan_on_bond():
 @mock.patch.object(nmstate, 'RunningConfig')
 def test_translate_remove_bridgeless_nets(rconfig_mock):
     rconfig_mock.return_value.networks = {
-        'testnet1': {'nic': 'eth0', 'bridged': False, 'switch': 'legacy'},
-        'testnet2': {'nic': 'eth1', 'bridged': False, 'switch': 'legacy'}
+        'testnet1': {'nic': IFACE0, 'bridged': False, 'switch': 'legacy'},
+        'testnet2': {'nic': IFACE1, 'bridged': False, 'switch': 'legacy'}
     }
     networks = {
         'testnet1': {'remove': True},
@@ -353,22 +284,18 @@ def test_translate_remove_bridgeless_nets(rconfig_mock):
     }
     state = nmstate.generate_state(networks=networks, bondings={})
 
+    eth0_state = _create_ethernet_iface_state(IFACE0)
+    eth1_state = _create_ethernet_iface_state(IFACE1)
+    ip_state = _create_ipv4_state()
+    ip_state.update(_create_ipv6_state())
+
+    eth0_state.update(ip_state)
+    eth1_state.update(ip_state)
+
     expected_state = {
         nmstate.INTERFACES: [
-            {
-                'name': 'eth0',
-                'type': 'ethernet',
-                'state': 'up',
-                'ipv4': {'enabled': False},
-                'ipv6': {'enabled': False}
-            },
-            {
-                'name': 'eth1',
-                'type': 'ethernet',
-                'state': 'up',
-                'ipv4': {'enabled': False},
-                'ipv6': {'enabled': False}
-            }
+            eth0_state,
+            eth1_state
         ]
     }
     _sort_by_name(expected_state[nmstate.INTERFACES])
@@ -378,8 +305,12 @@ def test_translate_remove_bridgeless_nets(rconfig_mock):
 @mock.patch.object(nmstate, 'RunningConfig')
 def test_translate_remove_bridgeless_vlan_net(rconfig_mock):
     rconfig_mock.return_value.networks = {
-        'testnet1':
-            {'nic': 'eth0', 'bridged': False, 'vlan': 101, 'switch': 'legacy'}
+        'testnet1': {
+            'nic': IFACE0,
+            'bridged': False,
+            'vlan': VLAN101,
+            'switch': 'legacy',
+        }
     }
     networks = {
         'testnet1': {'remove': True}
@@ -389,7 +320,7 @@ def test_translate_remove_bridgeless_vlan_net(rconfig_mock):
     expected_state = {
         nmstate.INTERFACES: [
             {
-                'name': 'eth0.101',
+                'name': IFACE0 + '.' + str(VLAN101),
                 'type': 'vlan',
                 'state': 'absent',
             }
@@ -451,7 +382,7 @@ def test_translate_remove_bridgeless_vlan_net_on_bond(rconfig_mock):
             {
                 'bonding': 'testbond0',
                 'bridged': False,
-                'vlan': 101,
+                'vlan': VLAN101,
                 'switch': 'legacy'
             }
     }
@@ -463,7 +394,7 @@ def test_translate_remove_bridgeless_vlan_net_on_bond(rconfig_mock):
     expected_state = {
         nmstate.INTERFACES: [
             {
-                'name': 'testbond0.101',
+                'name': 'testbond0.' + str(VLAN101),
                 'type': 'vlan',
                 'state': 'absent',
             }
@@ -475,3 +406,56 @@ def test_translate_remove_bridgeless_vlan_net_on_bond(rconfig_mock):
 
 def _sort_by_name(ifaces_states):
     ifaces_states.sort(key=lambda d: d['name'])
+
+
+def _create_ethernet_iface_state(name):
+    return {'name': name, 'type': 'ethernet', 'state': 'up'}
+
+
+def _create_bond_iface_state(name, mode, slaves, **options):
+    state = {
+        'name': name,
+        'type': 'bond',
+        'state': 'up',
+        'link-aggregation': {'mode': mode, 'slaves': slaves}
+    }
+    if options:
+        state['link-aggregation']['options'] = options
+    return state
+
+
+def _create_vlan_iface_state(base, vlan):
+    return {
+        'name': base + '.' + str(vlan),
+        'type': 'vlan',
+        'state': 'up',
+        'vlan': {'id': vlan, 'base-iface': base}
+    }
+
+
+def _create_ipv4_state(address=None, prefix=None, dynamic=False):
+    state = {'ipv4': {'enabled': False}}
+    if dynamic:
+        state['ipv4'] = {'enabled': True, 'dhcp': True}
+    elif address and prefix:
+        state['ipv4'] = {
+            'enabled': True,
+            'address': [
+                {'ip': address, 'prefix-length': prefix}
+            ]
+        }
+    return state
+
+
+def _create_ipv6_state(address=None, prefix=None, dynamic=False):
+    state = {'ipv6': {'enabled': False}}
+    if dynamic:
+        state['ipv6'] = {'enabled': True, 'dhcp': True, 'autoconf': True}
+    elif address and prefix:
+        state['ipv6'] = {
+            'enabled': True,
+            'address': [
+                {'ip': address, 'prefix-length': prefix}
+            ]
+        }
+    return state
