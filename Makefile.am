@@ -149,6 +149,10 @@ tests: tests-all
 tests-%: tox
 	tox -e "{tests,storage,lib,network,virt}-$(@:tests-%=%)"
 
+.PHONY: tests-py37
+tests-py37: tox
+	tox -e "storage-py37"
+
 all-local: \
 	vdsm.spec
 

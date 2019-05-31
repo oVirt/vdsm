@@ -23,6 +23,7 @@ from __future__ import division
 
 import os
 import stat
+import sys
 
 import pytest
 
@@ -49,10 +50,21 @@ class TestCreatedir(VdsmTestCase):
             mode = 0o700
             fileUtils.createdir(path, mode=mode)
             self.assertTrue(os.path.isdir(path))
-            while path != base:
-                pathmode = stat.S_IMODE(os.lstat(path).st_mode)
-                self.assertEqual(pathmode, mode)
-                path = os.path.dirname(path)
+            actual_mode = stat.S_IMODE(os.lstat(path).st_mode)
+            self.assertEqual(actual_mode, mode)
+
+    @pytest.mark.xfail(
+        sys.version_info[:2] == (3, 7),
+        reason="mode does not affect new intermediate directories")
+    def test_create_dirs_with_mode_intermediate(self):
+        with namedTemporaryDir() as base:
+            intermediate = os.path.join(base, "a")
+            path = os.path.join(intermediate, "b")
+            mode = 0o700
+            fileUtils.createdir(path, mode=mode)
+            self.assertTrue(os.path.isdir(path))
+            actual_mode = stat.S_IMODE(os.lstat(intermediate).st_mode)
+            self.assertEqual(actual_mode, mode)
 
     @pytest.mark.skipif(os.geteuid() == 0, reason="requires unprivileged user")
     def test_create_raise_errors(self):
