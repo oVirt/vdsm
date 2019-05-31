@@ -750,10 +750,6 @@ class TestBlockDomain(DomainTestMixin, VdsmTestCase):
         self.domain = FakeBlockStorageDomain()
         self.checker = RedirectionChecker(self.domain, '_manifest')
 
-    def test_block_properties(self):
-        self.assertEqual(512, self.domain.logBlkSize)
-        self.assertEqual(512, self.domain.phyBlkSize)
-
     def test_acquirevolumemetadataslot(self):
         with self.domain.acquireVolumeMetadataSlot(0):
             result = [('acquireVolumeMetadataSlot', (0,), {})]

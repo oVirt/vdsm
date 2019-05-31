@@ -454,17 +454,6 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         # BlockStorageDomain. The lock should not be used elsewhere.
         self.metadata_lock = threading.Lock()
 
-        try:
-            self.logBlkSize = self.getMetaParam(sd.DMDK_LOGBLKSIZE)
-            self.phyBlkSize = self.getMetaParam(sd.DMDK_PHYBLKSIZE)
-        except KeyError:
-            # 512 by Saggi "Trust me (Smoch Alai (sic))"
-            # *blkSize keys may be missing from metadata only for domains that
-            # existed before the introduction of the keys.
-            # Such domains supported only 512 sizes
-            self.logBlkSize = 512
-            self.phyBlkSize = 512
-
     @classmethod
     def special_volumes(cls, version):
         if cls.supports_external_leases(version):
@@ -968,7 +957,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         sanlock.write_resource(self.sdUUID, vol_id, [(path, offset)])
 
     def volume_lease_offset(self, slot):
-        return (RESERVED_LEASES + slot) * self.logBlkSize * sd.LEASE_BLOCKS
+        return (RESERVED_LEASES + slot) * sc.BLOCK_SIZE_512 * sd.LEASE_BLOCKS
 
     # Metadata volume
 
@@ -1034,19 +1023,11 @@ class BlockStorageDomain(sd.StorageDomain):
 
         # Check that all devices in the VG have the same logical and physical
         # block sizes.
-        lvm.checkVGBlockSizes(sdUUID, (self.logBlkSize, self.phyBlkSize))
+        lvm.checkVGBlockSizes(sdUUID, (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_512))
 
         self.imageGarbageCollector()
         self._registerResourceNamespaces()
         self._lastUncachedSelftest = 0
-
-    @property
-    def logBlkSize(self):
-        return self._manifest.logBlkSize
-
-    @property
-    def phyBlkSize(self):
-        return self._manifest.phyBlkSize
 
     def _registerResourceNamespaces(self):
         """
