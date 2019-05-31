@@ -570,7 +570,7 @@ class NetFuncTestAdapter(object):
         # Do not use KernelConfig.__eq__ to get a better exception if something
         # breaks.
         assert running_config['networks'] == kernel_config['networks']
-        if vdsm_config.getboolean('vars', 'net_nmstate_enabled'):
+        if is_nmstate_enabled():
             self._assert_inclusive_bond_options(kernel_config, running_config)
         assert running_config['bonds'] == kernel_config['bonds']
 
@@ -718,6 +718,10 @@ class SetupNetworks(object):
             fileutils.rm_file(IFCFG_PREFIX + nic)
 
         return status, msg
+
+
+def is_nmstate_enabled():
+    return vdsm_config.getboolean('vars', 'net_nmstate_enabled')
 
 
 @contextmanager
