@@ -1367,6 +1367,9 @@ exit 0
 
 
 %changelog
+* Tue Feb 26 2019 Milan Zamazal <mzamazal@redhat.com> - 4.40.0
+- Bumped to 4.40.0
+
 * Wed Aug 03 2016 Yaniv Bronhaim <ybronhei@redhat.com> - 4.18.999
 - Re-review of vdsm.spec to return it to fedora Bug #1361659
 
