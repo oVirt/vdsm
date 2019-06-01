@@ -444,7 +444,11 @@ VDSM libraries that are imported by all subsystems
 %package network
 Summary:        VDSM network python libraries
 Requires:       NetworkManager-config-server
+%if %{target_py} == py2
 Requires:       dbus-python
+%else
+Requires:       python3-dbus
+%endif
 Requires:       dhclient
 Requires:       ethtool
 Requires:       initscripts
@@ -453,15 +457,21 @@ Requires:       iproute
 Requires:       iproute-tc
 %endif
 Requires:       libnl3
+%if %{target_py} == py2
 Requires:       libselinux-python
+%else
+Requires:       python3-libselinux
+%endif
 Requires:       lldpad
 %if 0%{?with_openvswitch}
 Requires:       openvswitch >= 2.7.0
 %endif
 Requires:       %{python_or_python3}-inotify
+%if %{target_py} == py2
 Requires:       python-ipaddress
-Requires:       python-netaddr
-Requires:       python-six
+%endif
+Requires:       %{python_or_python3}-netaddr
+Requires:       %{python_or_python3}-six
 Requires:       systemd
 Requires:       %{name}-common = %{version}-%{release}
 
