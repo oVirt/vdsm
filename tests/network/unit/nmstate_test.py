@@ -57,10 +57,15 @@ def test_translate_bridgeless_nets_without_ip():
     }
     state = nmstate.generate_state(networks=networks, bondings={})
 
+    eth0_state = _create_ethernet_iface_state(IFACE0)
+    eth1_state = _create_ethernet_iface_state(IFACE1)
+
+    _disable_iface_ip(eth0_state, eth1_state)
+
     expected_state = {
         nmstate.INTERFACES: [
-            _create_ethernet_iface_state(IFACE0),
-            _create_ethernet_iface_state(IFACE1)
+            eth0_state,
+            eth1_state
         ]
     }
     _sort_by_name(expected_state[nmstate.INTERFACES])
@@ -121,10 +126,7 @@ def test_translate_bond_with_two_slaves():
     bond0_state = _create_bond_iface_state(
         'testbond0', 'balance-rr', [IFACE0, IFACE1])
 
-    ip_state = _create_ipv4_state()
-    ip_state.update(_create_ipv6_state())
-
-    bond0_state.update(ip_state)
+    _disable_iface_ip(bond0_state)
 
     expected_state = {
         nmstate.INTERFACES: [
@@ -147,10 +149,7 @@ def test_translate_bond_with_two_slaves_and_options():
     bond0_state = _create_bond_iface_state(
         'testbond0', '802.3ad', [IFACE0, IFACE1], miimon='150')
 
-    ip_state = _create_ipv4_state()
-    ip_state.update(_create_ipv6_state())
-
-    bond0_state.update(ip_state)
+    _disable_iface_ip(bond0_state)
 
     expected_state = {
         nmstate.INTERFACES: [
@@ -252,10 +251,8 @@ def test_translate_bridgeless_net_with_ip_on_vlan_on_bond():
 
     bond0_state = _create_bond_iface_state(
         'testbond0', 'balance-rr', [IFACE0, IFACE1])
-    ip0_state = _create_ipv4_state()
-    ip0_state.update(_create_ipv6_state())
 
-    bond0_state.update(ip0_state)
+    _disable_iface_ip(bond0_state)
 
     vlan101_state = _create_vlan_iface_state('testbond0', VLAN101)
     ip1_state = _create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
@@ -286,11 +283,8 @@ def test_translate_remove_bridgeless_nets(rconfig_mock):
 
     eth0_state = _create_ethernet_iface_state(IFACE0)
     eth1_state = _create_ethernet_iface_state(IFACE1)
-    ip_state = _create_ipv4_state()
-    ip_state.update(_create_ipv6_state())
 
-    eth0_state.update(ip_state)
-    eth1_state.update(ip_state)
+    _disable_iface_ip(eth0_state, eth1_state)
 
     expected_state = {
         nmstate.INTERFACES: [
@@ -431,6 +425,13 @@ def _create_vlan_iface_state(base, vlan):
         'state': 'up',
         'vlan': {'id': vlan, 'base-iface': base}
     }
+
+
+def _disable_iface_ip(*ifaces_states):
+    ip_disabled_state = _create_ipv4_state()
+    ip_disabled_state.update(_create_ipv6_state())
+    for iface_state in ifaces_states:
+        iface_state.update(ip_disabled_state)
 
 
 def _create_ipv4_state(address=None, prefix=None, dynamic=False):

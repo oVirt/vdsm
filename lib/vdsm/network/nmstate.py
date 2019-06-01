@@ -168,6 +168,8 @@ def _generate_iface_ipv4_state(iface_state, netattrs):
         _generate_iface_static_ipv4_state(iface_state, ipv4addr, netattrs)
     elif dhcpv4:
         _generate_iface_dynamic_ipv4_state(iface_state)
+    else:
+        iface_state['ipv4'] = {'enabled': False}
 
 
 def _generate_iface_static_ipv4_state(iface_state, ipv4addr, netattrs):
@@ -189,15 +191,17 @@ def _generate_iface_dynamic_ipv4_state(iface_state):
 
 def _generate_iface_ipv6_state(iface_state, netattrs):
     ipv6addr = netattrs.get('ipv6addr')
-    if ipv6addr:
-        _generate_iface_static_ipv6_state(iface_state, ipv6addr)
-    else:
-        _generate_iface_dynamic_ipv6_state(iface_state, netattrs)
-
-
-def _generate_iface_dynamic_ipv6_state(iface_state, netattrs):
     dhcpv6 = netattrs.get('dhcpv6')
     autoconf = netattrs.get('ipv6autoconf')
+    if ipv6addr:
+        _generate_iface_static_ipv6_state(iface_state, ipv6addr)
+    elif dhcpv6 or autoconf:
+        _generate_iface_dynamic_ipv6_state(iface_state, dhcpv6, autoconf)
+    else:
+        iface_state['ipv6'] = {'enabled': False}
+
+
+def _generate_iface_dynamic_ipv6_state(iface_state, dhcpv6, autoconf):
     iface_ipv6_state = {}
     if dhcpv6:
         iface_ipv6_state['enabled'] = True
