@@ -230,8 +230,12 @@ Requires: %{python_libvirt} >= 3.7.0
 # iscsi-intiator versions
 Requires: iscsi-initiator-utils >= 6.2.0.873-21
 
+%if %{target_py} == py2
 # Adding 4k support.
 Requires: sanlock-python >= 3.7.3
+%else
+Requires: python3-sanlock
+%endif
 
 # device-mapper-multipath
 
