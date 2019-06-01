@@ -67,6 +67,12 @@
 %global python_sitelib %{python3_sitelib}
 %endif
 
+%if %{target_py} == py2
+%global python_libvirt libvirt-python
+%else
+%global python_libvirt python3-libvirt
+%endif
+
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
 Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
@@ -193,22 +199,19 @@ Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
 
 %if 0%{?rhel}
-%if %{target_py} == py2
+%if 0%{?rhel} < 8
 # 7.6 baseline
-Requires: libvirt-python >= 4.5.0-1.el7
-%else
-Requires: python3-libvirt >= 4.5.0-1.el7
-%endif
+Requires: %{python_libvirt} >= 4.5.0-1.el7
 # CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
 Requires: libvirt-daemon-kvm >= 4.5.0-10.el7_6.9
+%else # RHEL 8
+Requires: libvirt-daemon-kvm
+Requires: %{python_libvirt}
+%endif
 %else # fedora
 # Required for preventing an HotPlug disk failure due to cgroups.
 # See https://bugzilla.redhat.com/1540872 for details.
-%if %{target_py} == py2
-Requires: libvirt-python >= 3.7.0
-%else
-Requires: python3-libvirt >= 3.7.0
-%endif
+Requires: %{python_libvirt} >= 3.7.0
 # Required to fix order of VM life cycle events.
 # See https://bugzilla.redhat.com/1612943 for details.
 %ifnarch s390 s390x
@@ -426,13 +429,13 @@ Requires:       python-subprocess32
 %endif
 %if 0%{?rhel}
 Requires:       %{python_or_python3}-decorator
-Requires:       libvirt-python >= 3.2.0-3.el7_4.1
+Requires:       %{python_libvirt} >= 3.2.0-3.el7_4.1
 Requires:       %{python_or_python3}-enum34
 %endif
 %if 0%{?fedora}
 Requires:       %{python2_or_python3}-decorator
 Requires:       %{python2_or_python3}-enum34
-Requires:       libvirt-python >= 3.7.0
+Requires:       %{python_libvirt} >= 3.7.0
 %endif
 
 %description common
