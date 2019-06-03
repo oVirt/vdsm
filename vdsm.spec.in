@@ -279,7 +279,7 @@ Requires: selinux-policy-targeted >= 3.13.1-166.el7_4.3
 # CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
 Requires: kernel >=  5.0.16-100
 Requires: e2fsprogs >= 1.41.14
-Requires: policycoreutils-python-utils
+Requires: %{python_or_python3}-policycoreutils
 Requires: sed >= 4.2.1-10
 Requires: ed
 Requires: selinux-policy-targeted >= 3.13-1
