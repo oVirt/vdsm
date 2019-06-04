@@ -213,16 +213,17 @@ Requires: libvirt-daemon-kvm
 Requires: %{python_libvirt}
 %endif
 %else # fedora
+%ifnarch s390 s390x
+# virt-preview is not available for s390
+# Required to fix order of VM life cycle events.
+# See https://bugzilla.redhat.com/1612943 for details.
+Requires: libvirt-daemon-kvm >= 4.9.0-1
+Requires: %{python_libvirt} >= 4.9
+%else
+Requires: libvirt-daemon-kvm
 # Required for preventing an HotPlug disk failure due to cgroups.
 # See https://bugzilla.redhat.com/1540872 for details.
 Requires: %{python_libvirt} >= 3.7.0
-# Required to fix order of VM life cycle events.
-# See https://bugzilla.redhat.com/1612943 for details.
-%ifnarch s390 s390x
-# virt-preview is not available for s390
-Requires: libvirt-daemon-kvm >= 4.9.0-1
-%else
-Requires: libvirt-daemon-kvm
 %endif
 %endif
 
