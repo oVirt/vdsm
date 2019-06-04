@@ -50,6 +50,10 @@ _BASE_INDEX = base26.decode("aaa")
 
 def main():
     dev_type = os.environ.get('hostdev_scsi')
+    if dev_type is None:
+        # No translation requested for the given VM
+        return
+
     _check_supported(dev_type)
 
     domxml = hooking.read_domxml()

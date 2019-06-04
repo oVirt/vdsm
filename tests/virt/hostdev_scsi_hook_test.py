@@ -25,7 +25,6 @@ from contextlib import contextmanager
 import os
 import sys
 
-from testValidation import xfail
 from testlib import XMLTestCase
 from testlib import expandPermutations
 from testlib import permutations
@@ -98,7 +97,6 @@ class HostdevScsiHookTests(XMLTestCase):
     def setUp(self):
         self.out_xml = None
 
-    @xfail("hook needs to handle no custom property")
     def test_ignore_not_configured(self):
         fake_xml = "hook should not read or write this"
         with self._hook_env(fake_xml):
