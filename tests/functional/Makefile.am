@@ -24,7 +24,6 @@ dist_vdsmfunctests_PYTHON = \
 	__init__.py \
 	momTests.py \
 	networkTests.py \
-	sosPluginTests.py \
 	supervdsmFuncTests.py \
 	upgrade_vdsm_test.py \
 	utils.py \
