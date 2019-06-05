@@ -19,4 +19,4 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS = sos vdsm vdsmclient yajsonrpc
+SUBDIRS = vdsm vdsmclient yajsonrpc

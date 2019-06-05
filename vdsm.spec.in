@@ -300,7 +300,18 @@ Requires: glusterfs-fuse >= %{gluster_version}
 %endif
 
 Requires: psmisc >= 22.6-15
+
+# Make sure we require sos version which includes VDSM plugin
+%if 0%{?centos} || 0%{?fedora}
+# Currently we are without sos VDSM plugin on CentOS/Fedora:
+#  - CentOS: When 7.7 is released, we also need to require 3.7-3+
+#  - Fedora: When sos 3.7.1/3.8 is relased, we need to require it
 Requires: sos
+%else
+# RHEL
+Requires: sos >= 3.7-3
+%endif
+
 Requires: tree
 Requires: dosfstools
 Requires: genisoimage
@@ -984,10 +995,6 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/*
 
 %{_libexecdir}/%{vdsm_name}/get-conf-item
-%{python_sitelib}/sos/plugins/vdsm.py*
-%if %{target_py} == py3
-%{python3_sitelib}/sos/plugins/__pycache__/*
-%endif
 %{_udevrulesdir}/12-vdsm-lvm.rules
 /etc/security/limits.d/99-vdsm.conf
 %{_mandir}/man8/vdsmd.8*
