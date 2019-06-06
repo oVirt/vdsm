@@ -1,4 +1,4 @@
-# Copyright 2014-2016 Red Hat, Inc.
+# Copyright 2014-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,16 +19,12 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from nose.plugins.attrib import attr
-
-from testlib import VdsmTestCase as TestCaseBase
 
 from vdsm.network.netinfo import qos
 from vdsm.network.tc import cls
 
 
-@attr(type='unit')
-class TestConversions(TestCaseBase):
+class TestConversions(object):
     def test_qos_to_str(self):
         data = (({'ls': {'m1': 100, 'd': 10, 'm2': 300},
                   'ul': {'m1': 100, 'd': 10, 'm2': 300},
@@ -42,15 +38,15 @@ class TestConversions(TestCaseBase):
                   'rt': ['m1', '100bit', 'd', '10us', 'm2', '300bit']}),
                 ({'ls': {'m1': 100, 'd': 10, 'm2': 300}},
                  {'ls': ['m1', '100bit', 'd', '10us', 'm2', '300bit']}))
-        for inp, correct in data:
-            self.assertEqual(cls._qos_to_str_dict(inp), correct)
+        for input_qos, expected_str in data:
+            assert cls._qos_to_str_dict(input_qos) == expected_str
 
     def test_get_root_qdisc(self):
         root = {'kind': 'hfsc', 'root': True, 'handle': '1:', 'refcnt': 2,
                 'hfsc': {'default': 0x5000}}
-        inp = (root,
-               {'kind': 'sfq', 'handle': '10:', 'parent': '1:10',
-                'sfq': {'limit': 127, 'quantum': 1514}},
-               {'kind': 'sfq', 'handle': '20:', 'parent': '1:20',
-                'sfq': {'limit': 127, 'quantum': 1514}})
-        self.assertEqual(qos.get_root_qdisc(inp), root)
+        qdiscs = (root,
+                  {'kind': 'sfq', 'handle': '10:', 'parent': '1:10',
+                   'sfq': {'limit': 127, 'quantum': 1514}},
+                  {'kind': 'sfq', 'handle': '20:', 'parent': '1:20',
+                   'sfq': {'limit': 127, 'quantum': 1514}})
+        assert qos.get_root_qdisc(qdiscs) == root
