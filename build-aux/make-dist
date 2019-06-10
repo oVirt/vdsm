@@ -1,0 +1,43 @@
+#!/bin/sh
+
+cd $(dirname $0)/..
+
+if [ -f Makefile ]; then
+    make dist
+else
+    VERSION=$(./build-aux/pkg-version --version)
+    RELEASE=$(./build-aux/pkg-version --release)
+    DISTDIR="vdsm-$VERSION"
+
+    rm -rf "$DISTDIR"
+    mkdir $DISTDIR
+    tar cf - --exclude-vcs -X .gitignore --exclude="$DISTDIR" . | tar xf - -C "$DISTDIR"
+    cd "$DISTDIR"
+
+    echo "$(./build-aux/pkg-version --full)" > VERSION
+
+    SPEC_FILE=vdsm.spec
+    SPEC_FILE_IN=$SPEC_FILE.in
+    while [ -n "$1" ]; do
+        echo "%{!?$1:%global $1 $2}" >>$SPEC_FILE
+        shift 2
+    done
+    cat >>$SPEC_FILE <<EOF
+%{!?vdsm_version: %global vdsm_version $VERSION}
+%{!?vdsm_release: %global vdsm_release $RELEASE}
+%{!?target_py: %global target_py py3}
+%global enable_autotools 1
+EOF
+    cat $SPEC_FILE_IN >>$SPEC_FILE
+
+# TODO remove when (mostly just) hooks are converted
+    sed -i 's+#!/usr/bin/python[23]\?+#!/usr/bin/python3+' \
+        $(./build-aux/list-all-python-files)
+
+    cd ..
+    TAR_FILE="$DISTDIR.tar.gz"
+    tar cfz "$TAR_FILE" "$DISTDIR"
+    rm -rf "$DISTDIR"
+
+    echo "$TAR_FILE"
+fi

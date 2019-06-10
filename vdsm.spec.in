@@ -2,26 +2,29 @@
 %global vdsm_name vdsm
 
 # Required users and groups
-%global vdsm_user @VDSMUSER@
-%global vdsm_group @VDSMGROUP@
-%global qemu_user @QEMUUSER@
-%global qemu_group @QEMUGROUP@
-%global snlk_group @SNLKGROUP@
-%global snlk_user @SNLKUSER@
-%global cdrom_group @CDROMGROUP@
+%global vdsm_user vdsm
+%global vdsm_group kvm
+%{!?qemu_user: %global qemu_user qemu}
+%{!?qemu_group: %global qemu_group qemu}
+%global snlk_group sanlock
+%global snlk_user sanlock
+%global cdrom_group cdrom
 
 # Features
-%global with_ovirt_imageio @OVIRT_IMAGEIO@
-%global with_ovirt_vmconsole @OVIRT_VMCONSOLE@
-%global with_gluster_mgmt @GLUSTER_MGMT@
-%global with_hooks @HOOKS@
-%global with_vhostmd @VHOSTMD@
+%{!?with_ovirt_imageio: %global with_ovirt_imageio 1}
+%{!?with_ovirt_vmconsole: %global with_ovirt_vmconsole 1}
+%{!?with_gluster_mgmt: %global with_gluster_mgmt 1}
+%{!?with_hooks: %global with_hooks 0}
+%{!?with_vhostmd: %global with_vhostmd 0}
 
 %ifarch ppc64le
-%global with_openvswitch 0
+%global with_openvswitch_default 0
 %else
-%global with_openvswitch @OPENVSWITCH@
+%global with_openvswitch_default 1
 %endif
+%{!?with_openvswitch: %global with_openvswitch %{with_openvswitch_default}}
+
+%{!?vdsm_repo: %global vdsm_repo /rhev/data-center}
 
 %if 0%{?centos} || 0%{?fedora}
 %global gluster_version 3.12
@@ -45,7 +48,7 @@
 # Disable debuginfo package, since vdsm is a meta-package
 %global debug_package %{nil}
 
-%global target_py @VDSM_TARGET_PY_MAJOR_SHORT_VERSION@
+%{!?target_py: %global target_py py2}
 
 %if %{target_py} == py2
 %global python2_or_python3 python2
@@ -73,9 +76,19 @@
 %global python_libvirt python3-libvirt
 %endif
 
+# Version and release must be generated dynamically and that can't be done here.
+# They must be either:
+# - filled in by configure
+# - generated using ./build-aux/make-dist script
+# - passed to rpmbuild as
+#   --define="version $(./build-aux/pkg-version --version)"
+#   --define="release $(./build-aux/pkg-version --release)"
+%{!?vdsm_version: %global vdsm_version @PACKAGE_VERSION@}
+%{!?vdsm_release: %global vdsm_release @PACKAGE_RELEASE@}
+
 Name:           %{vdsm_name}
-Version:        @PACKAGE_VERSION@
-Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
+Version:        %{vdsm_version}
+Release:        %{vdsm_release}%{?dist}%{?extra_release}
 Summary:        Virtual Desktop Server Manager
 
 Group:          Applications/System
@@ -174,13 +187,13 @@ Requires: nfs-utils >= 1.3.0-0.48.el7_4.2
 Requires: nfs-utils
 %endif
 
-%if 0%{?with_ovirt_imageio}
+%if %{with_ovirt_imageio}
 Requires: ovirt-imageio-common
 # For GET /tickets/*
 Requires: ovirt-imageio-daemon >= 1.2.0
 %endif
 
-%if 0%{?with_ovirt_vmconsole}
+%if %{with_ovirt_vmconsole}
 Requires: ovirt-vmconsole >= 1.0.0-0
 %endif
 
@@ -482,7 +495,7 @@ Requires:       libselinux-python
 Requires:       python3-libselinux
 %endif
 Requires:       lldpad
-%if 0%{?with_openvswitch}
+%if %{with_openvswitch}
 Requires:       openvswitch >= 2.7.0
 %endif
 Requires:       %{python_or_python3}-inotify
@@ -589,7 +602,7 @@ Summary:        Set extra ipv4 addresses for vdsm networks.
 This hook allows the user to set extra ipv4
 addresses for vdsm networks.
 
-%if 0%{?with_vhostmd}
+%if %{with_vhostmd}
 %package hook-vhostmd
 Summary:        VDSM hook set for interaction with vhostmd
 BuildArch:      noarch
@@ -799,7 +812,7 @@ BuildArch:      noarch
 Hook to optimizet hostdev SCSI generic devices translating their configuration
 into more specific one.
 
-%if 0%{?with_gluster_mgmt}
+%if %{with_gluster_mgmt}
 %package gluster
 Summary:        Gluster Plugin for VDSM
 Requires: %{name} = %{version}-%{release}
@@ -833,7 +846,32 @@ Gluster plugin enables VDSM to serve Gluster functionalities.
 autoreconf -if
 %endif
 
-%configure @CONFIGURE_FLAGS@
+%if %{with_ovirt_imageio}
+%define enable_ovirt_imageio yes
+%else
+%define enable_ovirt_imageio no
+%endif
+%if %{with_ovirt_vmconsole}
+%define enable_ovirt_vmconsole yes
+%else
+%define enable_ovirt_vmconsole no
+%endif
+%if %{with_gluster_mgmt}
+%define enable_gluster_mgmt yes
+%else
+%define enable_gluster_mgmt no
+%endif
+%if %{with_hooks}
+%define enable_hooks yes
+%else
+%define enable_hooks no
+%endif
+%if %{with_vhostmd}
+%define enable_vhostmd yes
+%else
+%define enable_vhostmd no
+%endif
+%configure --with-qemu-user=%{qemu_user} --with-qemu-group=%{qemu_group} --enable-ovirt-imageio=%{enable_ovirt_imageio} --enable-ovirt-vmconsole=%{enable_ovirt_vmconsole} --enable-gluster-mgmt=%{enable_gluster_mgmt} --enable-hooks=%{enable_hooks} --enable-vhostmd=%{enable_vhostmd} --with-data-center=%{vdsm_repo} --with-only-python=%{python2_or_python3}
 make
 
 %install
@@ -884,7 +922,7 @@ fi
 # the ghost macro (in files session) the files are not included
 touch %{_vdsm_log_dir}/{mom.log,supervdsm.log,vdsm.log}
 chmod 0644 %{_vdsm_log_dir}/{mom.log,supervdsm.log,vdsm.log}
-chown @VDSMUSER@:@VDSMGROUP@ %{_vdsm_log_dir}/{mom.log,vdsm.log}
+chown %{vdsm_user}:%{vdsm_group} %{_vdsm_log_dir}/{mom.log,vdsm.log}
 chown root:root %{_vdsm_log_dir}/supervdsm.log
 
 systemd-tmpfiles --create %{vdsm_name}.conf
@@ -973,12 +1011,12 @@ exit 0
 %{_unitdir}/mom-vdsm.service
 %{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
 
-%dir %attr(-, %{vdsm_user}, %{vdsm_group}) @VDSMREPO@
+%dir %attr(-, %{vdsm_user}, %{vdsm_group}) %{vdsm_repo}
 %ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) %{_vdsm_log_dir}/mom.log
 %ghost %config %attr(0644, root, root) %{_vdsm_log_dir}/supervdsm.log
 %ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) %{_vdsm_log_dir}/vdsm.log
-%ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @VDSMREPO@/hsm-tasks
-%ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @VDSMREPO@/mnt
+%ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) %{vdsm_repo}/hsm-tasks
+%ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) %{vdsm_repo}/mnt
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/vdsm.conf.d
 %dir %{_sysconfdir}/modprobe.d/
@@ -1189,7 +1227,7 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/__pycache__/*
 %endif
 
-%if 0%{?with_vhostmd}
+%if %{with_vhostmd}
 %files hook-vhostmd
 %license COPYING
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_vhostmd
@@ -1234,7 +1272,7 @@ exit 0
 %files hook-hostdev-scsi
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hostdev_scsi
 
-%if 0%{?with_hooks}
+%if %{with_hooks}
 %files hook-allocate_net
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/10_allocate_net
 
@@ -1352,7 +1390,7 @@ exit 0
 %if %{target_py} == py3
 %{python3_sitelib}/%{vdsm_name}/api/__pycache__/*
 %endif
-%if ! 0%{?with_gluster_mgmt}
+%if ! %{with_gluster_mgmt}
 %exclude %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.pickle
 %endif
 
@@ -1375,7 +1413,7 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/10_faqemu
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu
 
-%if 0%{?with_gluster_mgmt}
+%if %{with_gluster_mgmt}
 %files gluster
 %license COPYING
 %{python_sitelib}/%{vdsm_name}/gluster/api.py*

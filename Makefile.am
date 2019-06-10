@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2018 Red Hat, Inc.
+# Copyright 2008-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -164,6 +164,17 @@ srpm: dist
 
 rpm: dist
 	rpmbuild -ta $(if $(BUILDID),--define="extra_release .$(BUILDID)") \
+		--define="qemu_user $(QEMUUSER)" \
+		--define="qemu_group $(QEMUGROUP)" \
+		--define="with_ovirt_imageio $(OVIRT_IMAGEIO)" \
+		--define="with_ovirt_vmconsole $(OVIRT_VMCONSOLE)" \
+		--define="with_gluster_mgmt $(GLUSTER_MGMT)" \
+		--define="with_hooks $(HOOKS)" \
+		--define="with_vhostmd $(VHOSTMD)" \
+		--define="with_openvswitch $(OPENVSWITCH)" \
+		--define="target_py $(VDSM_TARGET_PY_MAJOR_SHORT_VERSION)" \
+		--define="vdsm_version $(PACKAGE_VERSION)" \
+		--define="vdsm_release $(PACKAGE_RELEASE)" \
 		$(DIST_ARCHIVES)
 
 dist-hook: gen-VERSION gen-ChangeLog fix-python-shebangs
