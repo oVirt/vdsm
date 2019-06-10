@@ -36,6 +36,7 @@ from vdsm import osinfo
 from vdsm.common import cache
 from vdsm.common import commands
 from vdsm.common import cpuarch
+from vdsm.common import libvirtconnection
 
 
 def _getTestData(testFileName):
@@ -48,6 +49,23 @@ def _getTestData(testFileName):
 
 def _getCapsNumaDistanceTestData(testFileName):
     return (0, _getTestData(testFileName).splitlines(False), [])
+
+
+def _getLibvirtConnStub():
+    class ConnStub:
+        def getCapabilities(self):
+            return "<capabilities><host><cpu>" \
+                   "<counter name='tsc' frequency='1234000000'/>" \
+                   "</cpu></host></capabilities>"
+    return ConnStub()
+
+
+def _getLibvirtConnStubEmpty():
+    class ConnStub:
+        def getCapabilities(self):
+            return "<capabilities><host><cpu>" \
+                   "</cpu></host></capabilities>"
+    return ConnStub()
 
 
 class TestCaps(TestCaseBase):
@@ -252,3 +270,16 @@ class TestCaps(TestCaseBase):
         self.assertEqual(t.sockets, 1)
         self.assertEqual(t.online_cpus,
                          ['0', '1', '2', '3', '4', '5', '6', '7'])
+
+    @MonkeyPatch(libvirtconnection, 'get', _getLibvirtConnStub)
+    def test_getTscFrequency_libvirt(self):
+        freq = caps._getTscFrequency()
+        self.assertEqual(freq, "1234")
+
+    @MonkeyPatch(libvirtconnection, 'get', _getLibvirtConnStubEmpty)
+    @MonkeyPatch(caps, 'DMESG_PATH', '/tmp/test_dmesg')
+    def test_getTscFrequency_dmesg(self):
+        with open('/tmp/test_dmesg', 'w') as d:
+            d.write('[    0.000000] tsc: Detected 4321.123 MHz processor')
+        freq = caps._getTscFrequency()
+        self.assertEqual(freq, "4321.123")

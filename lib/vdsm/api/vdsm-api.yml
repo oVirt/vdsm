@@ -7224,6 +7224,12 @@ types:
             type: *SupportedBlockSizeMap
             added: '4.3.6'
 
+        -   defaultvalue: ''
+            description: TSC frequency of the CPU
+            name: tscFrequency
+            type: string
+            added: '4.4'
+
         type: object
 
     VdsmNetworkCapabilities: &VdsmNetworkCapabilities
