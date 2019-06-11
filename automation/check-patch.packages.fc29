@@ -3,6 +3,7 @@ automake
 createrepo
 dnf
 dnf-utils
+gcc
 gdb
 git
 iproute-tc
@@ -30,6 +31,7 @@ python2-ipaddress
 python2-magic
 python2-mock
 python2-netaddr
+python2-pip
 python2-pthreading
 python2-pyudev
 python2-pyyaml
@@ -48,9 +50,11 @@ python3-ioprocess
 python3-magic
 python3-netaddr
 python3-nose
+python3-pip
 python3-pyudev
 python3-six
 python3-yaml
+python-unversioned-command
 rpm-build
 rpmlint
 sanlock-python

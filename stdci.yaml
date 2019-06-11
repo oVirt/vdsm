@@ -4,11 +4,11 @@ archs:
         - el7
   - s390x:
       distributions:
-        - fc28
+        - fc29
   - x86_64:
       distributions:
         - el7
-        - fc28
+        - fc29
 
 release_branches:
   master:
@@ -35,15 +35,15 @@ stages:
                 - 'build-aux/*'
         - linters:
             distributions:
-              - fc28
+              - fc29
         - tests-py27:
             runtime-requirements:
               host-distro: same
-        - tests-py36:
+        - tests-py37:
             runtime-requirements:
               host-distro: same
             distributions:
-              - fc28
+              - fc29
   - check-network:
       archs:
         - x86_64
