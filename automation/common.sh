@@ -92,12 +92,7 @@ generate_combined_coverage_report() {
 
     # 'CI_PYTHON' variable needs to take a 'pythonMAJOR' form
     # (i.e. 'python3') to make running '${CI_PYTHON}-coverage' work
-    ${CI_PYTHON}-coverage combine .coverage-nose-py* \
-                     .coverage-storage-py* \
-                     .coverage-network-py* \
-                     .coverage-virt-py* \
-                     .coverage-lib-py*
-
+    ${CI_PYTHON}-coverage combine .coverage-*
     ${CI_PYTHON} ./profile coverage ${CI_PYTHON}-coverage html -d "$EXPORT_DIR/htmlcov"
     popd
 
