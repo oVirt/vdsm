@@ -143,7 +143,7 @@ Requires: abrt-cli
 Requires: abrt-addon-vmcore
 Requires: abrt-addon-ccpp
 %if %{target_py} == py2
-%if 0%{?fedora} < 29 || 0%{?rhel} < 8
+%if ! ( 0%{?fedora} >= 29 || 0%{?rhel} >= 8 )
 Requires: abrt-addon-python
 %endif
 # There's no python2 support for abrt in latest rhel and fedora
