@@ -26,6 +26,13 @@ import logging
 
 import libvirt
 
+from vdsm import cpuinfo
+from vdsm import host
+from vdsm import hugepages
+from vdsm import machinetype
+from vdsm import numa
+from vdsm import osinfo
+from vdsm import utils
 from vdsm.common import cache
 from vdsm.common import cpuarch
 from vdsm.common import dsaversion
@@ -38,13 +45,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import hba
 from vdsm.storage import managedvolume
-from vdsm import cpuinfo
-from vdsm import host
-from vdsm import hugepages
-from vdsm import machinetype
-from vdsm import numa
-from vdsm import osinfo
-from vdsm import utils
 
 try:
     import ovirt_hosted_engine_ha.client.client as haClient
