@@ -23,6 +23,12 @@ else:
     import subprocess
 
 
+class Terminated(Exception):
+
+    def __init__(self, signo):
+        self.signo = signo
+
+
 def parse_args(argv):
     return float(argv[1]), argv[2:]
 
@@ -31,6 +37,10 @@ def dump_trace(proc):
     subprocess.call([
         'gdb', '-p', str(proc.pid), '--batch', '-ex',
         'thread apply all py-bt'])
+
+
+def terminate(signo, frame):
+    raise Terminated(signo)
 
 
 def run_in_new_session(argv):
@@ -49,6 +59,9 @@ def kill_proc_session(proc):
 
 
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, terminate)
+    signal.signal(signal.SIGTERM, terminate)
+
     timeout, watched_argv = parse_args(sys.argv)
     watched_proc = run_in_new_session(watched_argv)
     try:
@@ -64,5 +77,9 @@ if __name__ == '__main__':
               "=============================================================")
         sys.stdout.flush()
         sys.exit(kill_proc_session(watched_proc))
+    except Terminated as e:
+        print("py-watch: Terminated by signal {}".format(e.signo))
+        kill_proc_session(watched_proc)
+        sys.exit(128 + e.signo)
     else:
         sys.exit(rc)

@@ -27,7 +27,9 @@ import signal
 
 import pytest
 
+from vdsm.common import cmdutils
 from vdsm.common.cmdutils import exec_cmd
+from vdsm.common.compat import subprocess
 
 
 def on_fedora():
@@ -87,3 +89,25 @@ outer()
         with pytest.raises(OSError) as excinfo:
             assert os.kill(grandkid_pid, 0)
         assert excinfo.value.errno == errno.ESRCH
+
+    @pytest.mark.parametrize("signo", [signal.SIGINT, signal.SIGTERM])
+    def test_terminate(self, signo):
+        # Start bash process printing its pid and sleeping.
+        p = subprocess.Popen(
+            ['./py-watch', '10', 'bash', '-c', 'echo $$; sleep 10'],
+            stdout=subprocess.PIPE)
+
+        # Wait until the underlying bash process prints its pid.
+        for src, data in cmdutils.receive(p):
+            if src == cmdutils.OUT:
+                child_pid = int(data)
+                break
+
+        # Terminate py-watch, and check its exit code.
+        p.send_signal(signo)
+        assert p.wait() == 128 + signo
+
+        # Check that the child process was terminated.
+        with pytest.raises(OSError) as e:
+            assert os.kill(child_pid, 0)
+        assert e.value.errno == errno.ESRCH
