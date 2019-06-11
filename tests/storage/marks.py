@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import sys
 
 import six
 import pytest
@@ -36,6 +37,9 @@ requires_root = pytest.mark.skipif(
 
 xfail_python3 = pytest.mark.xfail(
     six.PY3, reason="needs porting to python 3")
+
+xfail_python37 = pytest.mark.xfail(
+    sys.version_info[:2] == (3, 7), reason="needs porting to python 3.7")
 
 
 @cache.memoized

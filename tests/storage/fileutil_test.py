@@ -23,7 +23,6 @@ from __future__ import division
 
 import os
 import stat
-import sys
 
 import pytest
 
@@ -33,6 +32,7 @@ from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 from testlib import namedTemporaryDir
 from testlib import temporaryPath
+from . marks import xfail_python37
 
 
 class TestCreatedir(VdsmTestCase):
@@ -53,9 +53,7 @@ class TestCreatedir(VdsmTestCase):
             actual_mode = stat.S_IMODE(os.lstat(path).st_mode)
             self.assertEqual(actual_mode, mode)
 
-    @pytest.mark.xfail(
-        sys.version_info[:2] == (3, 7),
-        reason="mode does not affect new intermediate directories")
+    @xfail_python37
     def test_create_dirs_with_mode_intermediate(self):
         with namedTemporaryDir() as base:
             intermediate = os.path.join(base, "a")
@@ -66,6 +64,7 @@ class TestCreatedir(VdsmTestCase):
             actual_mode = stat.S_IMODE(os.lstat(intermediate).st_mode)
             self.assertEqual(actual_mode, mode)
 
+    @xfail_python37
     @pytest.mark.skipif(os.geteuid() == 0, reason="requires unprivileged user")
     def test_create_raise_errors(self):
         with namedTemporaryDir() as base:
