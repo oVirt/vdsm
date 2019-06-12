@@ -41,6 +41,7 @@ import time
 
 from itertools import chain
 from subprocess import list2cmdline
+import six
 
 from vdsm import constants
 from vdsm.common import errors
@@ -431,7 +432,7 @@ class LVMCache(object):
                 self._stalepv = False
                 # Remove stalePVs
                 stalePVs = [staleName for staleName in self._pvs.keys()
-                            if staleName not in updatedPVs.iterkeys()]
+                            if staleName not in updatedPVs]
                 for staleName in stalePVs:
                     log.warning("Removing stale PV: %s", staleName)
                     self._pvs.pop((staleName), None)
@@ -494,7 +495,7 @@ class LVMCache(object):
                     vgsFields[uuid] = fields
                 else:
                     vgsFields[uuid][pvNameIdx].append(pv_name)
-            for fields in vgsFields.itervalues():
+            for fields in six.itervalues(vgsFields):
                 vg = makeVG(*fields)
                 if int(vg.pv_count) != len(vg.pv_name):
                     log.error("vg %s has pv_count %s but pv_names %s",
@@ -506,7 +507,7 @@ class LVMCache(object):
                 self._stalevg = False
                 # Remove stale VGs
                 staleVGs = [staleName for staleName in self._vgs.keys()
-                            if staleName not in updatedVGs.iterkeys()]
+                            if staleName not in updatedVGs]
                 for staleName in staleVGs:
                     removeVgMapping(staleName)
                     log.warning("Removing stale VG: %s", staleName)
@@ -553,12 +554,12 @@ class LVMCache(object):
             # Determine if there are stale LVs
             if lvNames:
                 staleLVs = (lvName for lvName in lvNames
-                            if (vgName, lvName) not in updatedLVs.iterkeys())
+                            if (vgName, lvName) not in updatedLVs)
             else:
                 # All the LVs in the VG
                 staleLVs = (lvName for v, lvName in self._lvs.keys()
                             if (v == vgName) and
-                            ((vgName, lvName) not in updatedLVs.iterkeys()))
+                            ((vgName, lvName) not in updatedLVs))
 
             for lvName in staleLVs:
                 log.warning("Removing stale lv: %s/%s", vgName, lvName)
@@ -656,7 +657,7 @@ class LVMCache(object):
             pvs = self._reloadpvs()
         else:
             pvs = dict(self._pvs)
-            stalepvs = [pv.name for pv in pvs.itervalues()
+            stalepvs = [pv.name for pv in six.itervalues(pvs)
                         if isinstance(pv, Stub)]
             if stalepvs:
                 reloaded = self._reloadpvs(stalepvs)
@@ -698,7 +699,7 @@ class LVMCache(object):
         Fills the cache but not uses it.
         Only returns found VGs.
         """
-        return [vg for vgName, vg in self._reloadvgs(vgNames).iteritems()
+        return [vg for vgName, vg in six.iteritems(self._reloadvgs(vgNames))
                 if vgName in vgNames]
 
     def getAllVgs(self):
@@ -707,7 +708,7 @@ class LVMCache(object):
             vgs = self._reloadvgs()
         else:
             vgs = dict(self._vgs)
-            stalevgs = [vg.name for vg in vgs.itervalues()
+            stalevgs = [vg.name for vg in six.itervalues(vgs)
                         if isinstance(vg, Stub)]
             if stalevgs:
                 reloaded = self._reloadvgs(stalevgs)
@@ -1142,7 +1143,7 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
 def removeVG(vgName):
     cmd = ["vgremove", "-f", vgName]
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
-    pvs = tuple(pvName for pvName, pv in _lvminfo._pvs.iteritems()
+    pvs = tuple(pvName for pvName, pv in six.iteritems(_lvminfo._pvs)
                 if not isinstance(pv, Stub) and pv.vg_name == vgName)
     # PVS needs to be reloaded anyhow: if vg is removed they are staled,
     # if vg remove failed, something must be wrong with devices and we want
