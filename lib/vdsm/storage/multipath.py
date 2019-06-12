@@ -308,7 +308,7 @@ def pathListIter(filterGuids=()):
                     pathInfo["lun"] = 0
                 else:
                     log.error("Error: %s while trying to get hbtl of device: "
-                              "%s", str(e.message), slave)
+                              "%s", e, slave)
                     raise
             else:
                 pathInfo["lun"] = hbtl.lun
