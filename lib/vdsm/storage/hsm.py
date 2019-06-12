@@ -1504,7 +1504,7 @@ class HSM(object):
         # on data domains, images should not be deleted if they are templates
         # being used by other images.
         fakeTUUID = None
-        for k, v in volsByImg.iteritems():
+        for k, v in six.iteritems(volsByImg):
             if len(v.imgs) > 1 and v.imgs[0] == imgUUID:
                 if dom.isBackup():
                     fakeTUUID = k
@@ -1594,7 +1594,7 @@ class HSM(object):
         # Filter volumes related to this image
         srcVolsImgs = sd.getVolsOfImage(srcAllVols, imgUUID)
         # Find the template
-        for volName, imgsPar in srcVolsImgs.iteritems():
+        for volName, imgsPar in six.iteritems(srcVolsImgs):
             if len(imgsPar.imgs) > 1:
                 # This is the template. Should be only one.
                 tName, tImgs = volName, imgsPar.imgs
@@ -1934,7 +1934,7 @@ class HSM(object):
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
 
-        for d, status in domDict.iteritems():
+        for d, status in six.iteritems(domDict):
             misc.validateUUID(d)
             try:
                 sd.validateSDStatus(status)
@@ -2617,7 +2617,7 @@ class HSM(object):
         sdCache.knownSDs[sdUUID] = findMethod
         self.log.debug("knownSDs: {%s}", ", ".join("%s: %s.%s" %
                        (k, v.__module__, v.__name__)
-                       for k, v in sdCache.knownSDs.iteritems()))
+                       for k, v in six.iteritems(sdCache.knownSDs)))
 
         sdCache.manuallyAddDomain(newSD)
 
