@@ -1070,7 +1070,7 @@ def getVGbyUUID(vgUUID):
                 return vg
         except AttributeError as e:
             # An unreloadable VG found but may be we are not looking for it.
-            log.debug("%s" % e.message, exc_info=True)
+            log.debug("%s", e, exc_info=True)
             continue
     # If not cry loudly
     raise se.VolumeGroupDoesNotExist("vg_uuid: %s" % vgUUID)
