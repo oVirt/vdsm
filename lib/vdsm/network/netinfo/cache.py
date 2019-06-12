@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,24 +20,26 @@
 
 from __future__ import absolute_import
 from __future__ import division
-import logging
+
 import errno
+import logging
+
 import six
 
 from vdsm.network import dns
-from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ip import dhclient
+from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.link import dpdk
 from vdsm.network.link import iface as link_iface
 from vdsm.network.netconfpersistence import RunningConfig
 
-from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
 from . import bonding
 from . import bridges
 from . import nics
-from .routes import get_routes, get_gateway, is_default_route
+from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
 from .qos import report_network_qos
+from .routes import get_routes, get_gateway, is_default_route
 
 
 # By default all networks are 'legacy', it can be optionaly changed to 'ovs' in
@@ -72,6 +74,60 @@ def _get(vdsmnets=None):
     networking_report['supportsIPv6'] = ipv6_supported()
 
     return networking_report
+
+
+def add_qos_info_to_devices(nets_info, devices_info):
+    """ Update Qos data from networks on corresponding nic/bond """
+
+    qos_list = _get_qos_info_from_net(nets_info)
+    qos_list and _add_qos_info_to_southbound(qos_list, devices_info)
+
+
+def _get_qos_info_from_net(nets_info):
+    return [dict(host_qos=attrs['hostQos'],
+                 southbound=attrs['southbound'],
+                 net_name=net)
+            for net, attrs in six.viewitems(nets_info) if 'hostQos' in attrs]
+
+
+def _add_qos_info_to_southbound(qos_list, devices_info):
+    for qos_dict in qos_list:
+        southbound = qos_dict['southbound']
+        host_qos = qos_dict['host_qos']
+        net_name = qos_dict['net_name']
+        vlan = '-1'
+
+        if southbound in devices_info['vlans']:
+            southbound, vlan = southbound.rsplit('.', 1)
+
+        if southbound in devices_info['nics']:
+            devices = devices_info['nics']
+        elif southbound in devices_info['bondings']:
+            devices = devices_info['bondings']
+        else:
+            logging.warning('Qos exists on network {},'
+                            'but no corresponding nic/bond device ({})'
+                            'was found'.format(net_name, southbound))
+            continue
+
+        devices_sb_info = devices[southbound]
+        sb_qos_info = devices_sb_info.get('qos')
+
+        if not sb_qos_info:
+            sb_qos_info = devices_sb_info['qos'] = []
+
+        qos_info = dict(hostQos=host_qos, vlan=int(vlan))
+
+        sb_qos_info.append(qos_info)
+
+    _sort_devices_qos_by_vlan(devices_info, 'nics')
+    _sort_devices_qos_by_vlan(devices_info, 'bondings')
+
+
+def _sort_devices_qos_by_vlan(devices_info, iface_type):
+    for iface_attrs in six.viewvalues(devices_info[iface_type]):
+        if 'qos' in iface_attrs:
+            iface_attrs['qos'].sort(key=lambda k: (k['vlan']))
 
 
 def _update_dhcp_info(nets_info, devices_info):

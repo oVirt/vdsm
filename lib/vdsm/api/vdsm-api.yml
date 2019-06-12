@@ -1974,6 +1974,21 @@ types:
             type: *HostBandwidthParams
         type: object
 
+    DeviceQoSParams: &DeviceQoSParams
+        added: '4.4'
+        description: Device host networking QoS parameters.
+        name: DeviceQoSParams
+        properties:
+        - description: host traffic QoS params.
+          name: hostQos
+          type: *HostQoSParams
+
+        - defaultvalue: -1
+          description: network vlan-id of the hostQos Params.
+          name: vlan
+          type: int
+        type: object
+
     NumaNodeMemoryStats: &NumaNodeMemoryStats
         added: '3.4'
         description: Statistics about the memory of a numa node.
@@ -4633,6 +4648,12 @@ types:
             type: boolean
 
         -   defaultvalue: no-default
+            description: List of host traffic QoS entries on the interface
+            name: qos
+            type:
+            - *DeviceQoSParams
+
+        -   defaultvalue: no-default
             description: Specify Switch. Legacy is used if not passed
             name: switch
             type: string
@@ -4878,6 +4899,12 @@ types:
                 nic device
             name: addr
             type: string
+
+        -   defaultvalue: no-default
+            description: List of host traffic QoS entries on the interface
+            name: qos
+            type:
+            - *DeviceQoSParams
         type: object
 
     NetInfoNicMap: &NetInfoNicMap
