@@ -201,7 +201,7 @@ def lvmTagEncode(s):
 
 
 def lvmTagDecode(s):
-    return LVM_ENC_ESCAPE.sub(lambda c: unichr(int(c.groups()[0])), s)
+    return LVM_ENC_ESCAPE.sub(lambda c: six.unichr(int(c.groups()[0])), s)
 
 
 def _getVolsTree(sdUUID):

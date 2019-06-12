@@ -25,6 +25,7 @@ from __future__ import division
 import os
 import time
 import uuid
+import string
 
 import pytest
 
@@ -547,3 +548,39 @@ def test_create_snapshot_size(
 
     actual = vol.getInfo()
     assert int(actual["capacity"]) == vol_capacity
+
+
+LVM_TAG_CHARS = string.ascii_letters + "0123456789_+.-/=!:#"
+
+LVM_TAGS = [
+    LVM_TAG_CHARS,
+    u"&",
+    u"\u05d9",
+    LVM_TAG_CHARS + "$@|",
+]
+
+ENCODED_LVM_TAGS = [
+    LVM_TAG_CHARS,
+    u"&38&",
+    u"&1497&",
+    LVM_TAG_CHARS + "&36&&64&&124&",
+]
+
+
+@pytest.mark.parametrize("lvm_tag", LVM_TAGS)
+def test_lvmtag_roundtrip(lvm_tag):
+    assert blockSD.lvmTagDecode(blockSD.lvmTagEncode(lvm_tag)) == lvm_tag
+
+
+@pytest.mark.parametrize(
+    "encoded_tag,lvm_tag",
+    list(zip(ENCODED_LVM_TAGS, LVM_TAGS)))
+def test_lvmtag_decode(encoded_tag, lvm_tag):
+    assert blockSD.lvmTagDecode(encoded_tag) == lvm_tag
+
+
+@pytest.mark.parametrize(
+    "lvm_tag,encoded_tag",
+    list(zip(LVM_TAGS, ENCODED_LVM_TAGS)))
+def test_lvmtag_encode(lvm_tag, encoded_tag):
+    assert blockSD.lvmTagEncode(lvm_tag) == encoded_tag
