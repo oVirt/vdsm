@@ -439,7 +439,7 @@ def poll(timeout=0.0, map=None):
     try:
         r = pollster.poll(timeout)
     except select.error as e:
-        if e[0] != errno.EINTR:
+        if e.args[0] != errno.EINTR:
             raise
         return []
 
