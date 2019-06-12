@@ -26,6 +26,8 @@ import threading
 import uuid
 from contextlib import contextmanager
 
+import six
+
 from vdsm import constants
 from vdsm import utils
 from vdsm import virtsparsify
@@ -1286,13 +1288,13 @@ class Image:
         # safe. Producing the (eventual) template is safe also.
         # TODO: Split for block and file based volumes for efficiency sake.
         vols = {}
-        for vName in volsImgs.iterkeys():
+        for vName in volsImgs:
             vols[vName] = sdDom.produceVolume(imgUUID, vName)
 
         srcVol = vols[successor]
         srcVolParams = srcVol.getVolumeParams()
         srcVolParams['children'] = []
-        for vName, vol in vols.iteritems():
+        for vName, vol in six.iteritems(vols):
             if vol.getParent() == successor:
                 srcVolParams['children'].append(vol)
         dstVol = vols[ancestor]
