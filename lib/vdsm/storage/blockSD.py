@@ -563,7 +563,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         devNum = len(oldMapping)
         for dev in pvlist:
             knownDev = False
-            for pvID, oldInfo in oldMapping.iteritems():
+            for pvID, oldInfo in six.iteritems(oldMapping):
                 if os.path.basename(dev) == oldInfo["guid"]:
                     mapping[pvID] = oldInfo
                     knownDev = True
@@ -675,7 +675,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     def _getImgExclusiveVols(self, imgUUID, volsImgs):
         """Filter vols belonging to imgUUID only."""
-        exclusives = dict((vName, v) for vName, v in volsImgs.iteritems()
+        exclusives = dict((vName, v) for vName, v in six.iteritems(volsImgs)
                           if v.imgs[0] == imgUUID)
         return exclusives
 
@@ -766,7 +766,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         vols = {}  # The "legal" volumes: not half deleted/removed volumes.
         remnants = {}  # Volumes which are part of failed image deletes.
         allVols = getAllVolumes(self.sdUUID)
-        for volName, ip in allVols.iteritems():
+        for volName, ip in six.iteritems(allVols):
             if (volName.startswith(sc.REMOVED_IMAGE_PREFIX) or
                     ip.imgs[0].startswith(sc.REMOVED_IMAGE_PREFIX)):
                 remnants[volName] = ip
@@ -787,7 +787,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         """
         vols = self.getAllVolumes()  # {volName: ([imgs], parent)}
         images = set()
-        for imgs, parent in vols.itervalues():
+        for imgs, parent in six.itervalues(vols):
             images.update(imgs)
         return images
 
@@ -1114,7 +1114,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
         # Create the rest of the BlockSD internal volumes
         special_lvs = cls.manifestClass.special_volumes(version)
-        for name, size_mb in sd.SPECIAL_VOLUME_SIZES_MIB.iteritems():
+        for name, size_mb in six.iteritems(sd.SPECIAL_VOLUME_SIZES_MIB):
             if name in special_lvs:
                 lvm.createLV(vgName, name, size_mb)
 
