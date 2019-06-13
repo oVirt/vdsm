@@ -326,7 +326,11 @@ Requires: psmisc >= 22.6-15
 Requires: sos
 %else
 # RHEL
+%if 0%{?rhel} >= 8
+Requires: sos >= 3.7-1
+%else
 Requires: sos >= 3.7-3
+%endif
 %endif
 
 Requires: tree
