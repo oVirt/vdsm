@@ -501,6 +501,8 @@ AC_OUTPUT([
 	tests/devices/data/Makefile
 	tests/devices/parsing/Makefile
 	tests/functional/Makefile
+	tests/gluster/Makefile
+	tests/gluster/results/Makefile
 	tests/integration/Makefile
 	tests/network/Makefile
 	tests/network/functional/Makefile

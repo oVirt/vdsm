@@ -147,7 +147,7 @@ tests: tests-all
 
 # To run tests for specific interpreter version use i.e. 'make tests-py36'
 tests-%: tox
-	tox -e "{tests,storage,lib,network,virt}-$(@:tests-%=%)"
+	tox -e "{tests,storage,lib,network,virt,gluster}-$(@:tests-%=%)"
 
 .PHONY: tests-py37
 tests-py37: tox

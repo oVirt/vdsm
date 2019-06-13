@@ -1,0 +1,20 @@
+[
+   {
+      "status":"ENABLED",
+      "mimetype":"text/plain",
+      "name":"11test1.sh",
+      "level":"PRE",
+      "checksum":"ba5a391049fb083e5b180a5971bf4c3d9ccd5f97d89fabf57ce25281b29e7abb",
+      "md5sum":"",
+      "command":"add-brick"
+   },
+   {
+      "status":"DISABLED",
+      "mimetype":"text/plain",
+      "name":"12test2.sh",
+      "level":"POST",
+      "checksum":"d237ee8a8a63a041dc05d4791b9f0341f05ae1a55d8f71c2d9c44500dc8c1f74",
+      "md5sum":"",
+      "command":"create"
+   }
+]

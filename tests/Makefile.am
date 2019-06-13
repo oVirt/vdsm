@@ -29,6 +29,7 @@ SUBDIRS = \
 	  network \
 	  storage \
 	  virt \
+	  gluster \
 	  $(NULL)
 
 common_modules = \
@@ -56,6 +57,8 @@ device_modules = \
 network_modules = network/*_test.py
 
 virt_modules = virt/*_test.py
+
+gluster_modules = gluster/*_test.py
 
 test_modules = \
 	API_test.py \
