@@ -18,6 +18,11 @@ env:
     - DIST=fedora-29  PY=3.7  TARGET=lint
     - DIST=fedora-29  PY=2.7  TARGET=tests
     - DIST=fedora-29  PY=3.7  TARGET=tests
+    - DIST=fedora-30  PY=3.7  TARGET=tests
+
+matrix:
+  allow_failures:
+    - env: DIST=fedora-30  PY=3.7  TARGET=tests
 
 before_install:
   - docker --version
