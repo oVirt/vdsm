@@ -13,20 +13,15 @@ git:
 # issues on CentOS but the chance is very low.
 env:
   matrix:
-    - DOCKER_IMAGE=ovirtorg/vdsm-test-centos
-      MAKE_TARGET=tests-py27
-    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-28
-      MAKE_TARGET=tests-py36
-    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29
-      MAKE_TARGET=lint
-    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29
-      MAKE_TARGET=tests-py27
-    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29
-      MAKE_TARGET=tests-py37
+    - DIST=centos     PY=2.7  TARGET=tests
+    - DIST=fedora-28  PY=3.6  TARGET=tests
+    - DIST=fedora-29  PY=3.7  TARGET=lint
+    - DIST=fedora-29  PY=2.7  TARGET=tests
+    - DIST=fedora-29  PY=3.7  TARGET=tests
 
 before_install:
   - docker --version
-  - docker pull $DOCKER_IMAGE
+  - docker pull ovirtorg/vdsm-test-$DIST
 
 before_script:
   # autogen.sh needs a tag, but the last tag may be 100 commits in the past,
@@ -48,5 +43,5 @@ script:
     -it \
     --volume `pwd`:/vdsm:Z \
     --volume /run/udev:/run/udev:Z \
-    $DOCKER_IMAGE \
-    bash -c "cd /vdsm && ./autogen.sh --system && make && make $MAKE_TARGET"
+    ovirtorg/vdsm-test-$DIST \
+    bash -c "cd /vdsm && ./autogen.sh --system --with-only-python=python$PY && make && make $TARGET"
