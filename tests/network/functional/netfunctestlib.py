@@ -199,10 +199,35 @@ class NetFuncTestAdapter(object):
         self.assertNetworkMtu(netname, netattrs)
 
     def assertHostQos(self, netname, netattrs):
+        if 'hostQos' not in netattrs:
+            return
+
+        self.assertHostQosOnNet(netname, netattrs)
+        self.assertHostQosOnDevice(netattrs)
+
+    def assertHostQosOnNet(self, netname, netattrs):
         network_caps = self.netinfo.networks[netname]
-        if 'hostQos' in netattrs:
-            qos_caps = _normalize_qos_config(network_caps['hostQos'])
-            assert netattrs['hostQos'] == qos_caps
+        qos_caps = _normalize_qos_config(network_caps['hostQos'])
+        assert netattrs['hostQos'] == qos_caps
+
+    def assertHostQosOnDevice(self, netattrs):
+        vlan_id = netattrs.get('vlan', -1)
+        host_qos = netattrs['hostQos']
+        nic = netattrs.get('nic')
+        bond = netattrs.get('bonding')
+
+        if nic:
+            dev_qos_caps = self.netinfo.nics[nic]['qos']
+        elif bond:
+            dev_qos_caps = self.netinfo.bondings[bond]['qos']
+
+        for qos in dev_qos_caps:
+            qos['hostQos'] = _normalize_qos_config(qos['hostQos'])
+        qos_info = dict(hostQos=host_qos, vlan=vlan_id)
+        assert qos_info in dev_qos_caps
+
+    def assertNoQosOnNic(self, iface_name):
+        assert 'qos' not in self.netinfo.nics[iface_name]
 
     def assertNetworkExists(self, netname):
         assert netname in self.netinfo.networks

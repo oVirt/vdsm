@@ -66,6 +66,7 @@ def _get(vdsmnets=None):
     nets_info = _networks_report(vdsmnets, routes, ipaddrs, devices_info)
 
     _update_dhcp_info(nets_info, devices_info)
+    add_qos_info_to_devices(nets_info, devices_info)
 
     networking_report = {'networks': nets_info}
     networking_report.update(devices_info)

@@ -47,7 +47,6 @@ from vdsm.network.netlink import monitor
 from vdsm.network.configurators.ifcfg import stop_devices, NET_CONF_BACK_DIR
 from vdsm.network import sourceroute
 from vdsm.network import sysctl
-from vdsm.network import tc
 
 from vdsm.common.cmdutils import CommandPath
 from vdsm.common import commands
@@ -1187,39 +1186,6 @@ class NetworkTest(TestCaseBase):
 
             # cleanup
             self.setupNetworks({NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-
-    @permutations([[True], [False]])
-    @cleanupNet
-    def testSetupNetworkOutboundQos(self, bridged):
-        hostQos = {
-            'out': {
-                'ls': {
-                    'm1': 4 * 1000 ** 2,  # 4Mbit/s
-                    'd': 100 * 1000,  # 100 microseconds
-                    'm2': 3 * 1000 ** 2},  # 3Mbit/s
-                'ul': {
-                    'm2': 8 * 1000 ** 2}}}  # 8Mbit/s
-        with dummyIf(1) as nics:
-            nic, = nics
-            attrs = {'vlan': VLAN_ID, 'nic': nic, 'bridged': bridged,
-                     'hostQos': hostQos}
-            status, msg = self.setupNetworks({NETWORK_NAME: attrs}, {}, NOCHK)
-
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME, hostQos=hostQos)
-
-            # Cleanup
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: dict(remove=True)}, {}, NOCHK)
-            self.assertEqual([], list(tc._filters(nic)),
-                             'Failed to cleanup tc filters')
-            self.assertEqual([], list(tc.classes(nic)),
-                             'Failed to cleanup tc classes')
-            # Real devices always get a qdisc, dummies don't, so 0 after
-            # deletion.
-            self.assertEqual(0, len(list(tc.qdiscs(nic))),
-                             'Failed to cleanup tc hfsc and ingress qdiscs')
-            self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     def testSetupNetworksRemoveSlavelessBond(self):
