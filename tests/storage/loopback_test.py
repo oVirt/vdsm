@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 import io
 import os
+import sys
 
 import pytest
 
@@ -41,7 +42,13 @@ AFTER = b"b" * 10
 @pytest.mark.parametrize("sector_size", [
     None,
     pytest.param(sc.BLOCK_SIZE_512, marks=requires_loopback_sector_size),
-    pytest.param(sc.BLOCK_SIZE_4K, marks=requires_loopback_sector_size),
+    pytest.param(sc.BLOCK_SIZE_4K, marks=[
+        requires_loopback_sector_size,
+        pytest.mark.xfail(
+            "OVIRT_CI" in os.environ and sys.version_info[:2] == (3, 7),
+            reason="fails randomly to create loop device with 4k sector "
+                   "size, only in ovirt CI - needs investigation")
+    ]),
 ])
 def test_with_device(tmpdir, sector_size):
     filename = str(tmpdir.join("file"))
