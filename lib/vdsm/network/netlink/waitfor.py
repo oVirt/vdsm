@@ -86,14 +86,15 @@ def waitfor_link_exists(iface, timeout=0.5):
     :param timeout: The maximum time in seconds to wait for the message.
     """
     expected_event = {'name': iface, 'event': 'new_link'}
-    with _wait_for_link_event(iface, expected_event, timeout):
+    with wait_for_link_event(iface, expected_event, timeout):
         yield
 
 
 @contextmanager
-def _wait_for_link_event(iface, expected_event, timeout):
+def wait_for_link_event(iface, expected_event, timeout,
+                        check_event=lambda event: True):
     groups = ('link',)
-    with wait_for_event(iface, expected_event, groups, timeout):
+    with wait_for_event(iface, expected_event, groups, timeout, check_event):
         yield
 
 
