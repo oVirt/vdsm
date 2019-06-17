@@ -187,6 +187,25 @@ class TestNetworkWithBond(object):
                 adapter.assertNetwork(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
+    def test_remove_bonded_network_while_a_slave_is_missing(self, switch):
+        with dummy_device() as nic1:
+            NETCREATE = {NETWORK1_NAME: {'bonding': BOND_NAME,
+                                         'bridged': False,
+                                         'switch': switch}}
+            BONDCREATE = {BOND_NAME: {'nics': [nic1], 'switch': switch}}
+
+            with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
+                with dummy_device() as nic2:
+                    BONDEDIT = {BOND_NAME: {'nics': [nic2], 'switch': switch}}
+                    adapter.setupNetworks({}, BONDEDIT, NOCHK)
+
+                adapter.setupNetworks({NETWORK1_NAME: {'remove': True}},
+                                      {BOND_NAME: {'remove': True}},
+                                      NOCHK)
+
+                adapter.assertNoNetwork(NETWORK1_NAME)
+                adapter.assertNoBond(BOND_NAME)
+
 
 @nftestlib.parametrize_switch
 class TestReuseBond(object):
