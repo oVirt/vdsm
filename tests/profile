@@ -11,6 +11,7 @@ from __future__ import print_function
 
 import json
 import resource
+import signal
 import sys
 import time
 
@@ -23,7 +24,13 @@ name = sys.argv[1]
 command = sys.argv[2:]
 
 start = time.time()
-status = subprocess.call(command)
+
+try:
+    status = subprocess.call(command)
+except KeyboardInterrupt:
+    print("profile: Interrupted")
+    sys.exit(128 + signal.SIGINT)
+
 elapsed = time.time() - start
 
 ru = resource.getrusage(resource.RUSAGE_CHILDREN)
