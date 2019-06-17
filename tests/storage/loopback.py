@@ -63,18 +63,13 @@ class Device(object):
             cmd.append("--sector-size")
             cmd.append(str(self._sector_size))
         cmd.append(self._backing_file)
-        rc, out, err = commands.execCmd(cmd, raw=True)
-        if rc != 0:
-            raise cmdutils.Error(cmd, rc, out, err)
+        out = commands.run(cmd)
         self._path = out.strip().decode("ascii")
 
     def detach(self):
         if self._path is None:
             raise AssertionError("Device is detached: %s" % self)
-        cmd = ["losetup", "--detach", self._path]
-        rc, out, err = commands.execCmd(cmd, raw=True)
-        if rc != 0:
-            raise cmdutils.Error(cmd, rc, out, err)
+        commands.run(["losetup", "--detach", self._path])
         self._path = None
         # After deactivating lvs backed by loop device, we get tons of udev
         # events. We must wait for the events or we may get stale lvs that
