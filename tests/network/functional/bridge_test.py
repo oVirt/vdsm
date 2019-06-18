@@ -29,7 +29,7 @@ from vdsm.network.cmd import exec_sync
 from vdsm.network.link.iface import iface
 
 from . import netfunctestlib as nftestlib
-from network.nettestlib import dummy_devices
+from network.nettestlib import dummy_devices, dummy_device
 
 
 NETWORK_NAME = 'test-network'
@@ -93,6 +93,26 @@ class TestBridge(object):
                         adapter.setupNetworks(NETSETUP2, {}, nftestlib.NOCHK)
                         adapter.assertNetwork(NETWORK_NAME,
                                               NETSETUP2[NETWORK_NAME])
+
+    @nftestlib.parametrize_legacy_switch
+    def test_reconfigure_bridge_with_vanished_port(self, switch):
+        with dummy_device() as nic1:
+            NETCREATE = {NETWORK_NAME: {'nic': nic1,
+                                        'bridged': True,
+                                        'switch': switch}}
+            with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+                with dummy_device() as nic2:
+                    NETCREATE[NETWORK_NAME]['nic'] = nic2
+                    adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK)
+
+                adapter.refresh_netinfo()
+                assert adapter.netinfo.networks[NETWORK_NAME]['ports'] == []
+
+                NETCREATE[NETWORK_NAME]['nic'] = nic1
+                adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK)
+
+                net_ports = adapter.netinfo.networks[NETWORK_NAME]['ports']
+                assert net_ports == [nic1]
 
 
 def _attach_dev_to_bridge(tapdev, bridge):

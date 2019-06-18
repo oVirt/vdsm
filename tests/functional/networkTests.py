@@ -1076,35 +1076,6 @@ class NetworkTest(TestCaseBase):
             finally:
                 addrFlush(nic)
 
-    @cleanupNet
-    def testReconfigureBrNetWithVanishedPort(self):
-        """Test for re-defining a bridged network for which the device
-        providing connectivity to the bridge had been removed from it"""
-        with dummyIf(1) as nics:
-            nic, = nics
-            network = {NETWORK_NAME: {'nic': nic, 'bridged': True}}
-            status, msg = self.setupNetworks(network, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME)
-
-            # Remove the nic from the bridge
-            linkSet(nic, ['nomaster'])
-            self.vdsm_net.refreshNetinfo()
-            self.assertEqual(len(
-                self.vdsm_net.netinfo.networks[NETWORK_NAME]['ports']), 0)
-
-            # Attempt to reconfigure the network
-            status, msg = self.setupNetworks(network, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertEqual(
-                self.vdsm_net.netinfo.networks[NETWORK_NAME]['ports'], [nic])
-
-            # cleanup
-            network[NETWORK_NAME] = {'remove': True}
-            status, msg = self.setupNetworks(network, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkDoesntExist(NETWORK_NAME)
-
     @slowtest
     @cleanupNet
     def testHonorBlockingDhcp(self):
