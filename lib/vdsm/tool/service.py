@@ -1,5 +1,5 @@
 # Copyright 2013 IBM, Inc.
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017, 2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -119,8 +119,8 @@ else:
             if srvName.count('.') < 1:
                 fullName = srvName + ".service"
             for line in out.splitlines():
-                if fullName == line.split(" ", 1)[0]:
-                    return systemctlFun(fullName)
+                if fullName == line.split(b" ", 1)[0]:
+                    return systemctlFun(fullName.decode('utf-8'))
             raise ServiceNotExistError("%s is not native systemctl service" %
                                        srvName)
         return wrapper
