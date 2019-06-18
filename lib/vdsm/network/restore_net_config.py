@@ -1,4 +1,4 @@
-# Copyright 2011-2018 Red Hat, Inc.
+# Copyright 2011-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import glob
+import itertools
 import logging
 import os
 import re
@@ -112,7 +113,11 @@ def unified_restoration():
     _verify_all_devices_are_up(list(_owned_ifcfg_files()))
 
     _wait_for_for_all_devices_up(
-        available_config.networks.keys() + available_config.bonds.keys())
+        itertools.chain(
+            available_config.networks.keys(),
+            available_config.bonds.keys(),
+        )
+    )
 
     if ipv6_supported():
         _restore_disable_ipv6()
