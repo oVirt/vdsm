@@ -1,4 +1,4 @@
-# Copyright 2017-2018 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -134,16 +134,17 @@ def _lvmetad_configured():
     #     },
     # }
     units = {}
-    for unit in out.strip().split("\n\n"):
-        info = dict(prop.split("=", 1) for prop in unit.split("\n"))
-        names = info.pop("Names")
-        for name in names.split(","):
+    for unit in out.strip().split(b"\n\n"):
+        info = dict(prop.split(b"=", 1) for prop in unit.split(b"\n"))
+        names = info.pop(b"Names")
+        for name in names.split(b","):
             units[name] = info
 
     not_configured = {}
     for name, state in units.items():
         # ActiveState may be "inactive" or "failed", both are good.
-        if state["LoadState"] != "masked" or state["ActiveState"] == "active":
+        if state[b"LoadState"] != b"masked" or \
+           state[b"ActiveState"] == b"active":
             not_configured[name] = state
 
     if not_configured:
