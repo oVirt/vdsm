@@ -22,12 +22,13 @@ from __future__ import absolute_import
 from __future__ import division
 import io
 import os
-import sys
 
 import pytest
 
 from vdsm.storage import constants as sc
 from vdsm.storage import multipath
+
+import testing
 
 from . import loopback
 from . marks import requires_root
@@ -45,7 +46,7 @@ AFTER = b"b" * 10
     pytest.param(sc.BLOCK_SIZE_4K, marks=[
         requires_loopback_sector_size,
         pytest.mark.xfail(
-            "OVIRT_CI" in os.environ and sys.version_info[:2] == (3, 7),
+            testing.on_ovirt_ci() and testing.on_fedora("29"),
             reason="fails randomly to create loop device with 4k sector "
                    "size, only in ovirt CI - needs investigation")
     ]),
