@@ -32,21 +32,18 @@ from contextlib import closing
 
 import pytest
 
-from testlib import VdsmTestCase
-from testlib import expandPermutations, permutations
-
 from vdsm.common import concurrent
 from vdsm.common import osutils
 import vdsm.common.time
 from vdsm.storage import asyncevent
 
 
-class TestEventLoop(VdsmTestCase):
+class TestEventLoop:
 
-    def setUp(self):
+    def setup_method(self, m):
         self.loop = asyncevent.EventLoop()
 
-    def tearDown(self):
+    def teardown_method(self, m):
         self.loop.close()
 
     def test_stop_while_running(self):
@@ -58,7 +55,7 @@ class TestEventLoop(VdsmTestCase):
 
         self.loop.call_soon(callback)
         self.loop.run_forever()
-        self.assertTrue(self.was_called)
+        assert self.was_called
 
     def test_stop_before_running(self):
         self.was_called = False
@@ -69,7 +66,7 @@ class TestEventLoop(VdsmTestCase):
         self.loop.call_soon(callback)
         self.loop.stop()
         self.loop.run_forever()
-        self.assertTrue(self.was_called)
+        assert self.was_called
 
     def test_stop_abort_call_later(self):
         self.was_called = False
@@ -80,7 +77,7 @@ class TestEventLoop(VdsmTestCase):
         self.loop.call_later(0, callback)
         self.loop.stop()
         self.loop.run_forever()
-        self.assertFalse(self.was_called)
+        assert not self.was_called
 
     def test_stop_abort_call_soon(self):
         self.was_called = False
@@ -91,7 +88,7 @@ class TestEventLoop(VdsmTestCase):
         self.loop.stop()
         self.loop.call_soon(0, callback)
         self.loop.run_forever()
-        self.assertFalse(self.was_called)
+        assert not self.was_called
 
     def test_stop_keep_call_soon(self):
         self.calls = []
@@ -105,10 +102,10 @@ class TestEventLoop(VdsmTestCase):
         self.loop.stop()
 
         self.loop.run_forever()
-        self.assertEqual([1], self.calls)
+        assert [1] == self.calls
 
         self.loop.run_forever()
-        self.assertEqual([1, 2], self.calls)
+        assert [1, 2] == self.calls
 
     def test_stop_keep_call_later(self):
         self.calls = []
@@ -122,13 +119,13 @@ class TestEventLoop(VdsmTestCase):
         self.loop.call_later(0.3, self.loop.stop)
 
         self.loop.run_forever()
-        self.assertEqual([1], self.calls)
+        assert [1] == self.calls
 
         self.loop.run_forever()
-        self.assertEqual([1, 2], self.calls)
+        assert [1, 2] == self.calls
 
     def test_is_running_before(self):
-        self.assertFalse(self.loop.is_running())
+        assert not self.loop.is_running()
 
     def test_is_running_during(self):
         self.was_running = False
@@ -139,12 +136,12 @@ class TestEventLoop(VdsmTestCase):
 
         self.loop.call_soon(callback)
         self.loop.run_forever()
-        self.assertTrue(self.was_running)
+        assert self.was_running
 
     def test_is_running_after(self):
         self.loop.stop()
         self.loop.run_forever()
-        self.assertFalse(self.loop.is_running())
+        assert not self.loop.is_running()
 
     def test_fail_when_running_run_forever(self):
         self.error = None
@@ -158,7 +155,7 @@ class TestEventLoop(VdsmTestCase):
 
         self.loop.call_soon(callback)
         self.loop.run_forever()
-        self.assertEqual(type(self.error), RuntimeError)
+        assert type(self.error) == RuntimeError
 
     def test_fail_when_running_close(self):
         self.error = None
@@ -172,31 +169,33 @@ class TestEventLoop(VdsmTestCase):
 
         self.loop.call_soon(callback)
         self.loop.run_forever()
-        self.assertEqual(type(self.error), RuntimeError)
+        assert type(self.error) == RuntimeError
 
     def test_fail_when_closed_call_soon(self):
         self.loop.close()
-        self.assertRaises(RuntimeError, self.loop.call_soon, lambda: None)
+        with pytest.raises(RuntimeError):
+            self.loop.call_soon(lambda: None)
 
     def test_fail_when_closed_call_later(self):
         self.loop.close()
-        self.assertRaises(RuntimeError, self.loop.call_later, 0, lambda: None)
+        with pytest.raises(RuntimeError):
+            self.loop.call_later(0, lambda: None)
 
     def test_fail_when_closed_call_at(self):
         self.loop.close()
-        self.assertRaises(RuntimeError, self.loop.call_at, self.loop.time(),
-                          lambda: None)
+        with pytest.raises(RuntimeError):
+            self.loop.call_at(self.loop.time(), lambda: None)
 
     def test_is_closed_before(self):
         self.loop.stop()
         self.loop.run_forever()
-        self.assertFalse(self.loop.is_closed())
+        assert not self.loop.is_closed()
 
     def test_is_closed_after(self):
         self.loop.stop()
         self.loop.run_forever()
         self.loop.close()
-        self.assertTrue(self.loop.is_closed())
+        assert self.loop.is_closed()
 
     def test_close_twice(self):
         self.loop.close()
@@ -217,8 +216,8 @@ class TestEventLoop(VdsmTestCase):
         self.loop.call_soon(fail)
         self.loop.call_soon(callback)
         self.loop.run_forever()
-        self.assertTrue(self.failed)
-        self.assertEqual(1, self.count)
+        assert self.failed
+        assert 1 == self.count
 
     def test_call_soon_stop(self):
         self.was_called = False
@@ -229,7 +228,7 @@ class TestEventLoop(VdsmTestCase):
         self.loop.call_soon(callback)
         self.loop.call_soon(self.loop.stop)
         self.loop.run_forever()
-        self.assertTrue(self.was_called)
+        assert self.was_called
 
     def test_call_soon_cancel(self):
         self.was_called = False
@@ -241,7 +240,7 @@ class TestEventLoop(VdsmTestCase):
         self.loop.call_soon(self.loop.stop)
         handle.cancel()
         self.loop.run_forever()
-        self.assertFalse(self.was_called)
+        assert not self.was_called
 
     def test_call_later_failure(self):
         self.failed = False
@@ -258,8 +257,8 @@ class TestEventLoop(VdsmTestCase):
         self.loop.call_later(0.00, fail)
         self.loop.call_later(0.01, callback)
         self.loop.run_forever()
-        self.assertTrue(self.failed)
-        self.assertEqual(1, self.count)
+        assert self.failed
+        assert 1 == self.count
 
     def test_call_later_order(self):
         # event based sleep sort
@@ -274,7 +273,7 @@ class TestEventLoop(VdsmTestCase):
         self.loop.call_later(0.0, callback, 0)
         self.loop.call_later(0.2, callback, 2)
         self.loop.run_forever()
-        self.assertEqual([0, 1, 2, 3], self.calls)
+        assert [0, 1, 2, 3] == self.calls
 
     def test_call_later_stop(self):
         self.was_called = False
@@ -285,7 +284,7 @@ class TestEventLoop(VdsmTestCase):
         self.loop.call_later(0, callback)
         self.loop.call_soon(self.loop.stop)
         self.loop.run_forever()
-        self.assertTrue(self.was_called)
+        assert self.was_called
 
     def test_call_later_cancel(self):
         self.was_called = False
@@ -297,7 +296,7 @@ class TestEventLoop(VdsmTestCase):
         self.loop.call_soon(self.loop.stop)
         handle.cancel()
         self.loop.run_forever()
-        self.assertFalse(self.was_called)
+        assert not self.was_called
 
     def test_handle_error_failures(self):
 
@@ -333,17 +332,16 @@ class TestEventLoop(VdsmTestCase):
             t.join()
 
 
-@expandPermutations
-class TestEventLoopTiming(VdsmTestCase):
+class TestEventLoopTiming:
 
-    def setUp(self):
+    def setup_method(self, m):
         self.loop = asyncevent.EventLoop()
 
-    def tearDown(self):
+    def teardown_method(self, m):
         self.loop.close()
 
     @pytest.mark.slow
-    @permutations([[1], [100], [1000]])
+    @pytest.mark.parametrize("max_count", [1, 100, 1000])
     def test_call_soon_loop(self, max_count):
         self.count = 0
 
@@ -359,10 +357,10 @@ class TestEventLoopTiming(VdsmTestCase):
         self.loop.run_forever()
         elapsed = time.time() - start
         print("%7d loops: %f" % (max_count, elapsed))
-        self.assertEqual(max_count, self.count)
+        assert max_count == self.count
 
     @pytest.mark.slow
-    @permutations([[1], [100], [1000]])
+    @pytest.mark.parametrize("counters", [1, 100, 1000])
     def test_call_soon_counters(self, counters):
         max_count = 100
         self.counts = [0] * counters
@@ -380,10 +378,10 @@ class TestEventLoopTiming(VdsmTestCase):
         self.loop.run_forever()
         elapsed = time.time() - start
         print("%7d counters: %f" % (counters, elapsed))
-        self.assertEqual([max_count] * counters, self.counts)
+        assert [max_count] * counters == self.counts
 
     @pytest.mark.slow
-    @permutations([[1], [100], [1000]])
+    @pytest.mark.parametrize("max_count", [1, 100, 1000])
     def test_call_later_loop(self, max_count):
         self.count = 0
 
@@ -399,10 +397,10 @@ class TestEventLoopTiming(VdsmTestCase):
         self.loop.run_forever()
         elapsed = time.time() - start
         print("%7d loops: %f" % (max_count, elapsed))
-        self.assertEqual(max_count, self.count)
+        assert max_count == self.count
 
     @pytest.mark.slow
-    @permutations([[1], [100], [1000]])
+    @pytest.mark.parametrize("counters", [1, 100, 1000])
     def test_call_later_counters(self, counters):
         max_count = 100
         self.counts = [0] * counters
@@ -420,10 +418,10 @@ class TestEventLoopTiming(VdsmTestCase):
         self.loop.run_forever()
         elapsed = time.time() - start
         print("%7d counters: %f" % (counters, elapsed))
-        self.assertEqual([max_count] * counters, self.counts)
+        assert [max_count] * counters == self.counts
 
     @pytest.mark.slow
-    @permutations([[1], [100], [1000], [10000], [100000]])
+    @pytest.mark.parametrize("calls", [1, 100, 1000, 10000, 100000])
     def test_call_at(self, calls):
         start = time.time()
         now = self.loop.time()
@@ -437,7 +435,7 @@ class TestEventLoopTiming(VdsmTestCase):
     # seconds). For this test it is useful to use a real time source with
     # microsecond resolution.
     @pytest.mark.slow
-    @permutations([
+    @pytest.mark.parametrize("clock, timers", [
         (vdsm.common.time.monotonic_time, 1),
         (vdsm.common.time.monotonic_time, 100),
         (vdsm.common.time.monotonic_time, 1000),
@@ -467,10 +465,10 @@ class TestEventLoopTiming(VdsmTestCase):
         max_lat = max(latency)
         print("avg=%f, min=%f, med=%f, max=%f" %
               (avg_lat, min_lat, med_lat, max_lat))
-        self.assertTrue(avg_lat < 0.01)
+        assert avg_lat < 0.01
 
     @pytest.mark.slow
-    @permutations([[1], [10], [1000], [10000]])
+    @pytest.mark.parametrize("calls", [1, 10, 1000, 10000])
     def test_call_soon_threadsafe(self, calls):
         self.count = 0
 
@@ -488,10 +486,10 @@ class TestEventLoopTiming(VdsmTestCase):
             t.join()
         elapsed = time.time() - start
         print("%7d calls: %f seconds" % (calls, elapsed))
-        self.assertEqual(calls, self.count)
+        assert calls == self.count
 
     @pytest.mark.slow
-    @permutations([[1], [100], [400]])
+    @pytest.mark.parametrize("concurrency", [1, 100, 400])
     def test_echo(self, concurrency):
         msg = b"ping"
         sockets = []
@@ -508,7 +506,7 @@ class TestEventLoopTiming(VdsmTestCase):
                     osutils.uninterruptible(sock.send, msg)
                 for sock in sockets:
                     data = osutils.uninterruptible(sock.recv, len(msg))
-                    self.assertEqual(data, msg)
+                    assert data == msg
                 elapsed = time.time() - start
                 print("%7d echos: %f seconds" % (concurrency, elapsed))
             finally:
@@ -529,22 +527,20 @@ class Echo(asyncore.dispatcher):
         return False
 
 
-@expandPermutations
-class TestBufferedReader(VdsmTestCase):
+class TestBufferedReader:
 
-    def setUp(self):
+    def setup_method(self, m):
         self.loop = asyncevent.EventLoop()
         self.received = None
 
-    def tearDown(self):
+    def teardown_method(self, m):
         self.loop.close()
 
     def complete(self, data):
         self.received = data
         self.loop.stop()
 
-    @permutations([
-        # size, bufsize
+    @pytest.mark.parametrize("size, bufsize", [
         (0, 1),
         (1, 32),
         (1024, 256),
@@ -561,7 +557,7 @@ class TestBufferedReader(VdsmTestCase):
             os.close(r)  # Dupped by BufferedReader
             Sender(self.loop, w, data, bufsize)
             self.loop.run_forever()
-            self.assertEqual(self.received, data)
+            assert self.received == data
 
     def test_complete_failure(self):
         complete_calls = [0]
@@ -581,7 +577,7 @@ class TestBufferedReader(VdsmTestCase):
             self.loop.run_forever()
 
         # Complete must be called exactly once.
-        self.assertEqual(complete_calls[0], 1)
+        assert complete_calls[0] == 1
 
 
 class Sender(object):
@@ -603,14 +599,13 @@ class Sender(object):
         self.loop.call_soon(self.send)
 
 
-@expandPermutations
-class TestReaper(VdsmTestCase):
+class TestReaper:
 
-    def setUp(self):
+    def setup_method(self, m):
         self.loop = asyncevent.EventLoop()
         self.rc = None
 
-    def tearDown(self):
+    def teardown_method(self, m):
         self.loop.close()
 
     def complete(self, rc):
@@ -619,20 +614,20 @@ class TestReaper(VdsmTestCase):
 
     def test_success(self):
         self.reap(["true"])
-        self.assertEqual(0, self.rc)
+        assert 0 == self.rc
 
     def test_failure(self):
         self.reap(["false"])
-        self.assertEqual(1, self.rc)
+        assert 1 == self.rc
 
     @pytest.mark.slow
-    @permutations([[0.1], [0.2], [0.4], [0.8], [1.6]])
+    @pytest.mark.parametrize("delay", [0.1, 0.2, 0.4, 0.8, 1.6])
     def test_slow(self, delay):
         start = time.time()
         self.reap(["sleep", "%.1f" % delay])
         reap_time = time.time() - start - delay
         print("reap time: %.3f" % reap_time)
-        self.assertLess(reap_time, 1.0)
+        assert reap_time < 1.0
 
     def reap(self, cmd):
         proc = subprocess.Popen(cmd, stdin=None, stdout=None, stderr=None)
