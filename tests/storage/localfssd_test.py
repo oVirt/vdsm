@@ -123,6 +123,10 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
         expected[sd.DMDK_ALIGNMENT] = sc.ALIGNMENT_1M
         expected[sd.DMDK_BLOCK_SIZE] = sc.BLOCK_SIZE_512
 
+    # Tests also alignment and block size properties here.
+    assert dom.alignment == sc.ALIGNMENT_1M
+    assert dom.block_size == sc.BLOCK_SIZE_512
+
     actual = dom.getMetadata()
 
     assert expected == actual
