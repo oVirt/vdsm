@@ -70,7 +70,6 @@ test_modules = \
 	cpu_profile_test.py \
 	cpuinfo_test.py \
 	domcaps_test.py \
-	encoding_test.py \
 	exception_test.py \
 	executor_test.py \
 	eventfd_test.py \
