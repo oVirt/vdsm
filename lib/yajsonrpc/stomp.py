@@ -106,12 +106,13 @@ class Disconnected(RuntimeError):
     pass
 
 
-class _HeartBeatFrame(object):
+class _HeartbeatFrame(object):
     def encode(self):
-        return "\n"
+        return b"\n"
+
 
 # There is no reason to have multiple instances
-_heartBeatFrame = _HeartBeatFrame()
+_heartbeat_frame = _HeartbeatFrame()
 
 
 class Frame(object):
@@ -521,7 +522,7 @@ class AsyncDispatcher(object):
             return True
 
         if (self.next_check_interval() == 0):
-            self._frame_handler.queue_frame(_heartBeatFrame)
+            self._frame_handler.queue_frame(_heartbeat_frame)
             return True
 
         return False
