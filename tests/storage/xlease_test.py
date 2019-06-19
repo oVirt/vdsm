@@ -31,14 +31,15 @@ import timeit
 import six
 import pytest
 
-from .fakesanlock import FakeSanlock
-from testlib import make_uuid
-
 from vdsm import constants
 from vdsm import utils
 from vdsm.storage import exception as se
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import xlease
+
+from testlib import make_uuid
+
+from . fakesanlock import FakeSanlock
 
 
 class ReadError(Exception):
