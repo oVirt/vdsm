@@ -24,7 +24,7 @@ from __future__ import division
 
 import pytest
 
-from yajsonrpc.stomp import decodeValue, encodeValue
+from yajsonrpc.stomp import decode_value, encode_value
 
 
 @pytest.mark.parametrize("value, expected", [
@@ -33,17 +33,17 @@ from yajsonrpc.stomp import decodeValue, encodeValue
     (u'\u0105b\u0107', b'\xc4\x85b\xc4\x87'),
 ])
 def test_encode_should_handle_strings(value, expected):
-    assert encodeValue(value) == expected
+    assert encode_value(value) == expected
 
 
-# TODO: Remove handling ints as 'decodeValue'
+# TODO: Remove handling ints as 'decode_value'
 #       doesn't do the reverse conversion
 def test_encode_should_handle_ints():
-    assert encodeValue(5) == b'5'
+    assert encode_value(5) == b'5'
 
 
 def test_encode_should_accept_bytes():
-    assert encodeValue(b'abc') == b'abc'
+    assert encode_value(b'abc') == b'abc'
 
 
 # https://stomp.github.io/stomp-specification-1.2.html#Value_Encoding
@@ -57,19 +57,19 @@ def test_encode_should_accept_bytes():
     (b'\r\r\n:\\\n', br'\r\r\n\c\\\n')
 ])
 def test_encode_should_escape_characters(value, expected):
-    assert encodeValue(value) == expected
+    assert encode_value(value) == expected
 
 
 def test_encode_should_raise_for_unsupported_types():
     with pytest.raises(ValueError) as err:
-        encodeValue(5.4)
+        encode_value(5.4)
 
     assert 'Unable to encode' in str(err.value)
 
 
 def test_decode_should_raise_for_sequences_with_colon():
     with pytest.raises(ValueError) as err:
-        decodeValue(b'abc:def')
+        decode_value(b'abc:def')
 
     assert 'Contains illegal character' in str(err.value)
 
@@ -85,12 +85,12 @@ def test_decode_should_raise_for_sequences_with_colon():
     (br'\\\r\r\n\r\\', u'\\\r\r\n\r\\')
 ])
 def test_decode_should_unescape_characters(value, expected):
-    assert decodeValue(value) == expected
+    assert decode_value(value) == expected
 
 
 def test_decode_should_raise_for_invalid_escape_sequences():
     with pytest.raises(ValueError) as err:
-        decodeValue(b'\\m')
+        decode_value(b'\\m')
 
     assert 'Contains invalid escape sequence' in str(err)
 
@@ -100,12 +100,12 @@ def test_decode_should_raise_for_invalid_escape_sequences():
     (b'\xc4\x85b\xc4\x87', u'ąbć'),
 ])
 def test_decode_should_handle_bytes(value, expected):
-    assert decodeValue(value) == expected
+    assert decode_value(value) == expected
 
 
 def test_decode_should_raise_for_unsupported_types():
     with pytest.raises(ValueError) as err:
-        decodeValue(u'abc')
+        decode_value(u'abc')
 
     assert 'Unable to decode non-binary values' in str(err)
 
@@ -117,4 +117,4 @@ def test_decode_should_raise_for_unsupported_types():
     '98c592f4\\-e2e2-46ea-b7b6-aa4f57f924b9',
 ])
 def test_encoding_process_should_be_reversible(value):
-    assert decodeValue(encodeValue(value)) == value
+    assert decode_value(encode_value(value)) == value

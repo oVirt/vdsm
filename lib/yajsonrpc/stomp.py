@@ -136,9 +136,9 @@ class Frame(object):
 
         data = [self.command, '\n']
         for key, value in six.viewitems(self.headers):
-            data.append(encodeValue(key))
+            data.append(encode_value(key))
             data.append(":")
-            data.append(encodeValue(value))
+            data.append(encode_value(value))
             data.append("\n")
 
         data.append('\n')
@@ -155,7 +155,7 @@ class Frame(object):
         return Frame(self.command, self.headers.copy(), self.body)
 
 
-def decodeValue(s):
+def decode_value(s):
     if not isinstance(s, six.binary_type):
         raise ValueError("Unable to decode non-binary values")
 
@@ -175,10 +175,10 @@ def decodeValue(s):
     return s.decode("utf-8")
 
 
-def encodeValue(s):
+def encode_value(s):
     if isinstance(s, six.text_type):
         s = s.encode("utf-8")
-    # TODO: Remove handling ints as 'decodeValue'
+    # TODO: Remove handling ints as 'decode_value'
     #       doesn't do the reverse conversion
     elif isinstance(s, int):
         s = str(s).encode("utf-8")
@@ -236,7 +236,7 @@ class Parser(object):
         if cmd == "":
             return True
 
-        cmd = decodeValue(cmd)
+        cmd = decode_value(cmd)
         self._tmpFrame = Frame(cmd)
 
         self._change_state(self._STATE_HEADER)
@@ -257,8 +257,8 @@ class Parser(object):
             return True
 
         key, value = header.split(":", 1)
-        key = decodeValue(key)
-        value = decodeValue(value)
+        key = decode_value(key)
+        value = decode_value(value)
 
         # If a client or a server receives repeated frame header entries, only
         # the first header entry SHOULD be used as the value of header entry.
