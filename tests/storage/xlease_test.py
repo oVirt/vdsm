@@ -338,6 +338,7 @@ class TestIndex:
 import os
 from testlib import make_uuid
 from vdsm import utils
+from vdsm.storage import exception as se
 from vdsm.storage import xlease
 
 path = "%s"
