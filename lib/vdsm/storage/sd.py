@@ -739,6 +739,14 @@ class StorageDomain(object):
         return self._manifest.sdUUID
 
     @property
+    def alignment(self):
+        return self._manifest.alignment
+
+    @property
+    def block_size(self):
+        return self._manifest.block_size
+
+    @property
     def domaindir(self):
         return self._manifest.domaindir
 
