@@ -577,6 +577,16 @@ class StorageDomainManifest(object):
         if not domVersion:
             domVersion = self.getVersion()
 
+        try:
+            lockClass = self._domainLockTable[domVersion]
+        except KeyError:
+            raise se.UnsupportedDomainVersion(domVersion)
+
+        # Note: lease and leaseParams are needed only for legacy locks
+        # supporting only single lease, and ignored by modern lock managers
+        # like sanlock. On the contrary, kwargs are not needed by legacy locks
+        # and are used by modern locks like sanlock.
+
         leaseParams = (
             DEFAULT_LEASE_PARAMS[DMDK_LOCK_RENEWAL_INTERVAL_SEC],
             DEFAULT_LEASE_PARAMS[DMDK_LEASE_TIME_SEC],
@@ -588,16 +598,6 @@ class StorageDomainManifest(object):
             "alignment": self._alignment,
             "block_size": self._block_size,
         }
-
-        try:
-            lockClass = self._domainLockTable[domVersion]
-        except KeyError:
-            raise se.UnsupportedDomainVersion(domVersion)
-
-        # Note: lease and leaseParams are needed only for legacy locks
-        # supporting only single lease, and ignored by modern lock managers
-        # like sanlock. On the contrary, kwargs are not needed by legacy locks
-        # and are used by modern locks like sanlock.
 
         return lockClass(self.sdUUID, self.getIdsFilePath(),
                          self.getDomainLease(), *leaseParams, **kwargs)
