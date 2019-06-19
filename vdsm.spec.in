@@ -100,8 +100,6 @@ BuildRequires: systemd-units
 %if 0%{?enable_autotools}
 BuildRequires: autoconf
 BuildRequires: automake
-BuildRequires: gettext-devel
-BuildRequires: libtool
 BuildRequires: util-linux
 %endif
 
