@@ -279,8 +279,7 @@ class SANLock(object):
     _sanlock_fd = None
     _sanlock_lock = threading.Lock()
 
-    def __init__(
-            self, sdUUID, idsPath, lease, *args, **kwargs):
+    def __init__(self, sdUUID, idsPath, lease, *args, **kwargs):
         """
         Note: lease and args are unused, needed by legacy locks.
         """
