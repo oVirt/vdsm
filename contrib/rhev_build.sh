@@ -4,8 +4,6 @@ echo '============================================'
 make distclean
 ./autogen.sh \
         --system \
-        --with-smbios-manufacturer='Red Hat' \
-        --with-smbios-osname='RHEV Hypervisor' \
         --with-qemu-kvm='qemu-kvm-rhev' \
         --with-qemu-img='qemu-img-rhev' \
         --enable-hooks \

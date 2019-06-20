@@ -342,29 +342,10 @@ AC_SUBST([vdsmtestsdir], ['${datarootdir}/vdsm/tests'])
 # VDSM service
 AC_SUBST([SERVICE_STOP_TIMEOUT], ['10'])
 
-# SMBIOS names
-AC_ARG_WITH(
-    [smbios-manufacturer],
-    [AS_HELP_STRING([--with-smbios-manufacturer=NAME],
-                    [SMBIOS manufacturer name @<:@default=oVirt@:>@])],
-    [SMBIOS_MANUFACTURER="${withval}"],
-    [SMBIOS_MANUFACTURER="oVirt"])
-AC_SUBST([SMBIOS_MANUFACTURER])
-
-AC_ARG_WITH(
-    [smbios-osname],
-    [AS_HELP_STRING([--with-smbios-osname=NAME],
-                    [SMBIOS OS name @<:@default=oVirt Node@:>@])],
-    [SMBIOS_OSNAME="${withval}"],
-    [SMBIOS_OSNAME="oVirt Node"])
-AC_SUBST([SMBIOS_OSNAME])
-
 AC_SUBST([VMCON_USER],ovirt-vmconsole)
 AC_SUBST([VMCON_GROUP],ovirt-vmconsole)
 
 configure_flags="--with-data-center=$vdsmrepo\
- --with-smbios-manufacturer=$SMBIOS_MANUFACTURER\
- '--with-smbios-osname=$SMBIOS_OSNAME'\
  --with-polkitdir=$polkitdir"
 if test "$enable_timestamp" == "yes"; then
     configure_flags+=" --enable-timestamp"

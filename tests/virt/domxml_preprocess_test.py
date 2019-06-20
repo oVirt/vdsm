@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018, 2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@ from vdsm.common import xmlutils
 from vdsm.virt import domxml_preprocess
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
-from vdsm import constants
 from vdsm import osinfo
 
 from testlib import VdsmTestCase
@@ -47,7 +46,6 @@ class TestReplacePlaceholders(XMLTestCase):
         dom = xmlutils.fromstring(xml_str)
         with MonkeyPatchScope([
             (osinfo, 'version', self._version),
-            (constants, 'SMBIOS_OSNAME', 'test-product'),
         ]):
             domxml_preprocess.replace_placeholders(
                 dom, cpuarch.X86_64, serial='test-serial')
@@ -74,6 +72,7 @@ class TestReplacePlaceholders(XMLTestCase):
         return {
             'version': '42',
             'release': '1',
+            'name': 'test-product',
         }
 
 

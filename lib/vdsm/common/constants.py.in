@@ -25,10 +25,6 @@ import os
 
 GLUSTER_MGMT_ENABLED = bool(@GLUSTER_MGMT@)
 
-# SMBIOS manufacturer
-SMBIOS_MANUFACTURER = '@SMBIOS_MANUFACTURER@'
-SMBIOS_OSNAME = '@SMBIOS_OSNAME@'
-
 #
 # file ownership definitions
 #
