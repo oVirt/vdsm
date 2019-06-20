@@ -14,10 +14,10 @@ git:
 # TODO: add Fedora 29 python 3.7 build.
 env:
   matrix:
-    - DIST=centos     TARGET=tests-py27
-    - DIST=fedora-28  TARGET=tests-py36
-    - DIST=fedora-29  TARGET=lint
-    - DIST=fedora-29  TARGET=tests-py27
+    - DIST=centos     TARGETS="storage tests-py27"
+    - DIST=fedora-28  TARGETS="storage tests-py36"
+    - DIST=fedora-29  TARGETS="lint"
+    - DIST=fedora-29  TARGETS="storage tests-py27"
 
 before_install:
   - docker --version
@@ -44,4 +44,4 @@ script:
     --volume `pwd`:/vdsm:Z \
     --volume /run/udev:/run/udev:Z \
     ovirtorg/vdsm-test-$DIST \
-    bash -c "cd /vdsm && ./autogen.sh --system && make && make $TARGET"
+    bash -c "cd /vdsm && ./autogen.sh --system && make all $TARGETS"

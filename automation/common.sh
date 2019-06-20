@@ -95,7 +95,7 @@ generate_combined_coverage_report() {
     mv tests/htmlcov-* "$EXPORT_DIR"
 }
 
-collect_logs() {
+teardown() {
     res=$?
     [ "$res" -ne 0 ] && echo "*** err: $res"
 
@@ -112,6 +112,14 @@ collect_logs() {
         --exclude "journal/*" \
         -czf "$EXPORT_DIR/host_varlogs.tar.gz" \
         . || echo "WARNING: Ignoring error collecting logs in /var/host_log"
+
+    # We must teardown loop devices and mounts, otherwise mock fail to remove
+    # the mount directories:
+    # OSError: [Errno 16] Device or resource busy:
+    # '/var/lib/mock/epel-7-x86_64-2ff84fd1f104757319d3f4d8e9603805-15751/root/var/tmp/vdsm-storage/mount.file-512'
+
+    python2 tests/storage/userstorage.py teardown \
+        || echo "WARNING: Ingoring error while tearing down user storage"
 }
 
 install_lvmlocal_conf() {
@@ -127,7 +135,7 @@ run_tests() {
         exit 1
     fi
 
-    trap collect_logs EXIT
+    trap teardown EXIT
 
     tests/profile debuginfo-install debuginfo-install -y python
 
@@ -136,6 +144,9 @@ run_tests() {
     create_loop_devices 16
 
     install_lvmlocal_conf
+
+    # Set up storage for storage tests (tore down in teardown()).
+    python2 tests/storage/userstorage.py setup
 
     TIMEOUT=600 make "tests-$python_version" NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 }

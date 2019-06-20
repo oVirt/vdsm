@@ -151,6 +151,10 @@ tests-py36: tox
 		echo "Skipping tests for Python 3.6"; \
 	fi
 
+.PHONY: storage
+storage:
+	python2 tests/storage/userstorage.py setup
+
 all-local: \
 	vdsm.spec
 
