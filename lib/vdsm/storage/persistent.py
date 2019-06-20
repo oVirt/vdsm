@@ -28,6 +28,8 @@ import hashlib
 import logging
 from contextlib import contextmanager
 
+import six
+
 from vdsm.storage import exception as se
 
 import threading
@@ -114,7 +116,7 @@ class DictValidator(object):
 
     def update(self, metadata):
         metadata = metadata.copy()
-        for key, value in metadata.iteritems():
+        for key, value in six.iteritems(metadata):
             enc = self._encoder(key)
             metadata[key] = enc(value)
 
@@ -127,7 +129,7 @@ class DictValidator(object):
 
     def copy(self):
         md = self._dict.copy()
-        for key, value in md.iteritems():
+        for key, value in six.iteritems(md):
             try:
                 dec = self._decoder(key)
                 md[key] = dec(value)
