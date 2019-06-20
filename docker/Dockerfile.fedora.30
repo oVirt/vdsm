@@ -1,7 +1,5 @@
 FROM fedora:30
 
-# TODO: add python3-ioprocess.
-
 RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm && \
   dnf update -y && \
   dnf install -y --enablerepo=updates-testing \
@@ -27,6 +25,7 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python3-dbus \
     python3-decorator \
     python3-devel \
+    python3-ioprocess \
     python3-libselinux \
     python3-libvirt \
     python3-magic \
