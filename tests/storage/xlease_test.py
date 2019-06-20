@@ -40,6 +40,7 @@ from vdsm.storage import xlease
 from testlib import make_uuid
 
 from . fakesanlock import FakeSanlock
+from . import userstorage
 
 
 class ReadError(Exception):
@@ -60,14 +61,15 @@ class FailingWriter(xlease.DirectFile):
         raise WriteError
 
 
-# TODO:
-# - Support storage with 512/4k block size.
-# - Support multiple alignments.
-@pytest.fixture(scope="session")
-def tmp_storage(tmpdir_factory):
-    path = tmpdir_factory.mktemp("xlease").join("volume")
-    path.write("")
-    return str(path)
+@pytest.fixture(scope="module", params=userstorage.PATHS, ids=str)
+def user_storage(request):
+    storage = request.param
+    if storage.sector_size == 4096:
+        pytest.xfail("Sector size {} not supported yet"
+                     .format(storage.sector_size))
+    if not os.path.exists(storage.path):
+        pytest.xfail("{} storage not available".format(storage.name))
+    return storage
 
 
 class TemporaryVolume(object):
@@ -110,8 +112,8 @@ class TemporaryVolume(object):
 
 
 @pytest.fixture
-def tmp_vol(tmp_storage):
-    tv = TemporaryVolume(tmp_storage)
+def tmp_vol(user_storage):
+    tv = TemporaryVolume(user_storage.path)
     yield tv
     tv.close()
 
@@ -504,15 +506,15 @@ def direct_file(request):
 
 class TestDirectFile:
 
-    def test_name(self, tmp_storage, direct_file):
-        file = direct_file(tmp_storage)
+    def test_name(self, user_storage, direct_file):
+        file = direct_file(user_storage.path)
         with utils.closing(file):
-            assert file.name == tmp_storage
+            assert file.name == user_storage.path
 
-    def test_size(self, tmp_storage, direct_file):
-        with io.open(tmp_storage, "wb") as f:
+    def test_size(self, user_storage, direct_file):
+        with io.open(user_storage.path, "wb") as f:
             f.truncate(constants.GIB)
-        file = direct_file(tmp_storage)
+        file = direct_file(user_storage.path)
         with utils.closing(file):
             assert file.size() == constants.GIB
 
