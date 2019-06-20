@@ -451,7 +451,7 @@ class FileStorageDomain(sd.StorageDomain):
         procPool.fileUtils.createdir(metadataDir, 0o775)
 
         special_volumes = cls.manifestClass.special_volumes(version)
-        for name, size_mb in FILE_SPECIAL_VOLUME_SIZES_MIB.iteritems():
+        for name, size_mb in six.iteritems(FILE_SPECIAL_VOLUME_SIZES_MIB):
             if name in special_volumes:
                 try:
                     procPool.truncateFile(
