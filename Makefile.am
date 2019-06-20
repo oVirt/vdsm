@@ -153,6 +153,10 @@ tests-%: tox
 tests-py37: tox
 	tox -e "{lib,storage}-py37"
 
+.PHONY: storage
+storage:
+	${VDSM_TARGET_PY_VERSION} tests/storage/userstorage.py setup
+
 all-local: \
 	vdsm.spec
 
