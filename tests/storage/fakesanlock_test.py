@@ -46,6 +46,12 @@ WRONG_ALIGN_SECTOR = [
 ]
 
 
+DIFFERENT_DISK_SANLOCK_SECTOR = [
+    (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K),
+    (sc.BLOCK_SIZE_4K, sc.BLOCK_SIZE_512),
+]
+
+
 class ExpectedError(Exception):
     pass
 
@@ -82,10 +88,8 @@ def test_add_lockspace_async():
     assert not ls["ready"].is_set()
 
 
-@pytest.mark.parametrize("disk_sector, sanlock_sector", [
-    (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K),
-    (sc.BLOCK_SIZE_4K, sc.BLOCK_SIZE_512),
-])
+@pytest.mark.parametrize(
+    "disk_sector, sanlock_sector", DIFFERENT_DISK_SANLOCK_SECTOR)
 def test_write_lockspace_wrong_sector(disk_sector, sanlock_sector):
     fs = FakeSanlock(disk_sector)
     with pytest.raises(fs.SanlockException) as e:
@@ -239,10 +243,8 @@ def test_write_resource_invalid_align_sector(align, sector):
             "ls_name", "res_name", disks, align=align, sector=sector)
 
 
-@pytest.mark.parametrize("disk_sector, sanlock_sector", [
-    (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K),
-    (sc.BLOCK_SIZE_4K, sc.BLOCK_SIZE_512),
-])
+@pytest.mark.parametrize(
+    "disk_sector, sanlock_sector", DIFFERENT_DISK_SANLOCK_SECTOR)
 def test_write_resource_wrong_sector(disk_sector, sanlock_sector):
     fs = FakeSanlock(disk_sector)
     disks = [("path", 0)]
@@ -275,10 +277,8 @@ def test_read_resource_wrong_align_sector(align, sector):
     assert e.value.errno == errno.EINVAL
 
 
-@pytest.mark.parametrize("disk_sector, sanlock_sector", [
-    (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K),
-    (sc.BLOCK_SIZE_4K, sc.BLOCK_SIZE_512),
-])
+@pytest.mark.parametrize(
+    "disk_sector, sanlock_sector", DIFFERENT_DISK_SANLOCK_SECTOR)
 def test_read_resource_wrong_sector(disk_sector, sanlock_sector):
     fs = FakeSanlock(disk_sector)
     fs.write_resource(
@@ -460,10 +460,8 @@ def test_read_resource_owners_wrong_align_sector(align, sector):
     assert e.value.errno == errno.EINVAL
 
 
-@pytest.mark.parametrize("disk_sector, sanlock_sector", [
-    (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K),
-    (sc.BLOCK_SIZE_4K, sc.BLOCK_SIZE_512),
-])
+@pytest.mark.parametrize(
+    "disk_sector, sanlock_sector", DIFFERENT_DISK_SANLOCK_SECTOR)
 def test_read_resource_owners_wrong_sector(disk_sector, sanlock_sector):
     fs = FakeSanlock(disk_sector)
     fs.write_lockspace("lockspace", "path", sector=disk_sector)
