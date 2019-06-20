@@ -385,8 +385,6 @@ fi
 AC_SUBST([CONFIGURE_FLAGS], ["$configure_flags"])
 
 for _py_major_version in ${VDSM_SUPPORTED_PY_MAJOR_VERSIONS}; do
-    AX_PYTHON_MODULE([libvirt], [fatal], ${_py_major_version})
-    AX_PYTHON_MODULE([netaddr], [fatal], ${_py_major_version})
     AX_PYTHON_MODULE([six], [fatal], ${_py_major_version})
 done
 
