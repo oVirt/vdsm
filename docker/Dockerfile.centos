@@ -43,6 +43,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     redhat-rpm-config \
     rpm-python \
     sanlock-python \
+    sudo \
     which \
     && \
   debuginfo-install -y python && \
