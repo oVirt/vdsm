@@ -204,7 +204,7 @@ class Parser(object):
             self._STATE_BODY: self._parse_body}
         self._frames = deque()
         self._change_state(self._STATE_CMD)
-        self._contentLength = -1
+        self._content_length = -1
         self._flush()
 
     def _change_state(self, new_state):
@@ -212,7 +212,7 @@ class Parser(object):
         self._state_cb = self._states[new_state]
 
     def _flush(self):
-        self._buffer = ""
+        self._buffer = b""
 
     def _write_buffer(self, buff):
         self._buffer += buff
@@ -230,37 +230,37 @@ class Parser(object):
         return res
 
     def _parse_command(self):
-        cmd = self._handle_terminator('\n')
+        cmd = self._handle_terminator(b"\n")
         if cmd is None:
             return False
 
-        if len(cmd) > 0 and cmd[-1] == '\r':
+        if len(cmd) > 0 and cmd[-1:] == b"\r":
             cmd = cmd[:-1]
 
-        if cmd == "":
+        if cmd == b"":
             return True
 
         cmd = decode_value(cmd)
-        self._tmpFrame = Frame(cmd)
+        self._tmp_frame = Frame(cmd)
 
         self._change_state(self._STATE_HEADER)
         return True
 
     def _parse_header(self):
-        header = self._handle_terminator('\n')
+        header = self._handle_terminator(b"\n")
         if header is None:
             return False
 
-        if len(header) > 0 and header[-1] == '\r':
+        if len(header) > 0 and header[-1:] == b"\r":
             header = header[:-1]
 
-        headers = self._tmpFrame.headers
-        if header == "":
-            self._contentLength = int(headers.get('content-length', -1))
+        headers = self._tmp_frame.headers
+        if header == b"":
+            self._content_length = int(headers.get(Headers.CONTENT_LENGTH, -1))
             self._change_state(self._STATE_BODY)
             return True
 
-        key, value = header.split(":", 1)
+        key, value = header.split(b":", 1)
         key = decode_value(key)
         value = decode_value(value)
 
@@ -272,43 +272,43 @@ class Parser(object):
 
         return True
 
-    def _pushFrame(self):
-        self._frames.append(self._tmpFrame)
+    def _push_frame(self):
+        self._frames.append(self._tmp_frame)
         self._change_state(self._STATE_CMD)
-        self._tmpFrame = None
-        self._contentLength = -1
+        self._tmp_frame = None
+        self._content_length = -1
 
     def _parse_body(self):
-        if self._contentLength >= 0:
+        if self._content_length >= 0:
             return self._parse_body_length()
         else:
             return self._parse_body_terminator()
 
     def _parse_body_terminator(self):
-        body = self._handle_terminator('\0')
+        body = self._handle_terminator(b"\0")
         if body is None:
             return False
 
-        self._tmpFrame.body = body
-        self._pushFrame()
+        self._tmp_frame.body = body
+        self._push_frame()
         return True
 
     def _parse_body_length(self):
         buf = self._get_buffer()
-        cl = self._contentLength
+        cl = self._content_length
         ndata = len(buf)
         if ndata < (cl + 1):
             return False
 
-        if buf[cl] != "\0":
-            raise RuntimeError("Frame end is missing \\0")
+        if buf[cl:] != b"\0":
+            raise RuntimeError("Frame doesn't end with NULL byte")
 
         self._flush()
         self._write_buffer(buf[cl + 1:])
         body = buf[:cl]
 
-        self._tmpFrame.body = body
-        self._pushFrame()
+        self._tmp_frame.body = body
+        self._push_frame()
 
         return True
 
@@ -321,7 +321,7 @@ class Parser(object):
         while self._state_cb():
             pass
 
-    def popFrame(self):
+    def pop_frame(self):
         try:
             return self._frames.popleft()
         except IndexError:
@@ -420,7 +420,7 @@ class AsyncDispatcher(object):
             todo = pending()
 
         while parser.pending > 0:
-            self._frame_handler.handle_frame(self, parser.popFrame())
+            self._frame_handler.handle_frame(self, parser.pop_frame())
 
         if self._incoming_heartbeat_in_milis:
             self._update_incoming_heartbeat()
@@ -449,7 +449,7 @@ class AsyncDispatcher(object):
         self._frame_handler.handle_timeout(self)
 
     def popFrame(self):
-        return self._parser.popFrame()
+        return self._parser.pop_frame()
 
     def _update_outgoing_heartbeat(self):
         self._lastOutgoingTimeStamp = self._clock()

@@ -21,7 +21,6 @@
 from __future__ import absolute_import
 
 import pytest
-import six
 
 from yajsonrpc.stomp import Command, Frame, Parser
 
@@ -29,17 +28,16 @@ from yajsonrpc.stomp import Command, Frame, Parser
 def test_empty_parser():
     parser = Parser()
     assert parser.pending == 0
-    assert parser.popFrame() is None
+    assert parser.pop_frame() is None
 
 
 @pytest.mark.parametrize("command", [
     Command.CONNECT, Command.SEND, Command.DISCONNECT
 ])
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_parsing_simple_frame(command):
     parser = Parser()
     parser.parse(Frame(command).encode())
-    parsed_frame = parser.popFrame()
+    parsed_frame = parser.pop_frame()
 
     assert parsed_frame.command == command
     assert parsed_frame.headers == {}
@@ -53,12 +51,11 @@ def test_parsing_simple_frame(command):
     {u"\u0105b\u0107": "def"},
     {"abc": "with\nescaped:chars"},
 ])
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_parsing_frame_with_headers(headers):
     parser = Parser()
     frame = Frame(Command.CONNECT, headers)
     parser.parse(frame.encode())
-    parsed_frame = parser.popFrame()
+    parsed_frame = parser.pop_frame()
 
     assert parsed_frame.command == Command.CONNECT
     assert parsed_frame.headers == headers
@@ -69,12 +66,11 @@ def test_parsing_frame_with_headers(headers):
     b"zorro",
     u"\u0105b\u0107".encode("utf-8")
 ])
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_parsing_frame_with_headers_and_body(body):
     parser = Parser()
     frame = Frame(Command.CONNECT, {"abc": "def"}, body)
     parser.parse(frame.encode())
-    parsed_frame = parser.popFrame()
+    parsed_frame = parser.pop_frame()
 
     assert parsed_frame.command == Command.CONNECT
     assert "abc" in parsed_frame.headers
@@ -84,13 +80,12 @@ def test_parsing_frame_with_headers_and_body(body):
     assert parsed_frame.body == body
 
 
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_parser_should_accept_frames_with_crlf_eols():
     parser = Parser()
     frame = Frame(Command.CONNECT, {"abc": "def"}, b"zorro")
     encoded_frame = frame.encode().replace(b"\n", b"\r\n")
     parser.parse(encoded_frame)
-    parsed_frame = parser.popFrame()
+    parsed_frame = parser.pop_frame()
 
     assert parsed_frame.command == Command.CONNECT
     assert "abc" in parsed_frame.headers
@@ -100,20 +95,18 @@ def test_parser_should_accept_frames_with_crlf_eols():
     assert parsed_frame.body == b"zorro"
 
 
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_parser_should_handle_frames_with_no_content_length():
     encoded_frame = b"CONNECT\nabc:def\n\nzorro\x00"
     parser = Parser()
 
     parser.parse(encoded_frame)
-    parsed_frame = parser.popFrame()
+    parsed_frame = parser.pop_frame()
 
     assert parsed_frame.command == Command.CONNECT
     assert parsed_frame.headers == {"abc": "def"}
     assert parsed_frame.body == b"zorro"
 
 
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_parser_should_raise_for_frames_with_invalid_content_length():
     encoded_frame = b"CONNECT\nabc:def\ncontent-length:3\n\n6chars\x00"
     parser = Parser()
@@ -121,14 +114,13 @@ def test_parser_should_raise_for_frames_with_invalid_content_length():
     with pytest.raises(RuntimeError) as err:
         parser.parse(encoded_frame)
 
-    assert "Frame end is missing \\0" in str(err.value)
+    assert "Frame doesn't end with NULL byte" in str(err.value)
 
 
 @pytest.mark.parametrize("encoded_frame", [
     b"CONNECT\nabc:def\ncontent-length:5\n\nzorro\x00",
     b"CONNECT\nabc:def\n\nzorro\x00",
 ])
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_parser_should_wait_until_frame_is_fully_transfered(encoded_frame):
     parser = Parser()
 
@@ -139,18 +131,17 @@ def test_parser_should_wait_until_frame_is_fully_transfered(encoded_frame):
     for byte in single_bytes[:-1]:
         parser.parse(byte)
         assert parser.pending == 0
-        assert parser.popFrame() is None
+        assert parser.pop_frame() is None
 
     parser.parse(single_bytes[-1])
     assert parser.pending == 1
 
-    frame = parser.popFrame()
+    frame = parser.pop_frame()
     assert frame is not None
     assert frame.command == Command.CONNECT
     assert frame.body == b"zorro"
 
 
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_parser_should_skip_heartbeat_frames():
     parser = Parser()
     heartbeats = b"\n\n\n\n\n"
@@ -159,6 +150,6 @@ def test_parser_should_skip_heartbeat_frames():
     parser.parse(heartbeats + encoded_frame)
     assert parser.pending == 1
 
-    decoded_frame = parser.popFrame()
+    decoded_frame = parser.pop_frame()
     assert decoded_frame is not None
     assert decoded_frame.command == Command.CONNECT
