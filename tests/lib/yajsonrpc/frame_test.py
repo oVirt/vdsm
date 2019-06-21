@@ -21,7 +21,6 @@
 from __future__ import absolute_import
 
 import pytest
-import six
 
 from collections import OrderedDict
 
@@ -40,7 +39,6 @@ def test_heartbeat_frame():
     (Command.SEND, b"SEND\n\n\x00"),
     (Command.SUBSCRIBE, b"SUBSCRIBE\n\n\x00"),
 ])
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_encoding_frame_with_command_only(command, expected):
     assert Frame(command).encode() == expected
 
@@ -63,7 +61,6 @@ def test_encoding_frame_with_command_only(command, expected):
         b"CONNECT\nabc:def\nxyz:meh\n\n\x00"
     ),
 ])
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_encoding_frame_with_headers(headers, expected):
     assert Frame(Command.CONNECT, headers).encode() == expected
 
@@ -95,23 +92,19 @@ def test_encoding_frame_with_headers(headers, expected):
         b"SEND\nabc:def\ncontent-length:9\n\nwith\x00null\x00"
     ),
 ])
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_encoding_frame_with_headers_and_payload(headers, payload, expected):
     assert Frame(Command.SEND, headers, payload).encode() == expected
 
 
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_encoding_frame_should_fix_invalid_content_length():
     frame = Frame(Command.SEND, {"content-length": 3}, "6chars")
     assert frame.encode() == b"SEND\ncontent-length:6\n\n6chars\x00"
 
 
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_frame_should_have_a_nice_repr():
     assert repr(Frame(Command.SEND)) == "<StompFrame command='SEND'>"
 
 
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_frame_should_have_a_copy_method():
     original = Frame(Command.SEND, {"abc": "def"}, "zorro")
     original_encoded = original.encode()

@@ -118,36 +118,39 @@ _heartbeat_frame = _HeartbeatFrame()
 class Frame(object):
     __slots__ = ("headers", "command", "body")
 
-    def __init__(self, command="", headers=None, body=None):
+    def __init__(self, command, headers=None, body=None):
         self.command = command
         if headers is None:
             headers = {}
 
         self.headers = headers
         if isinstance(body, six.text_type):
-            body = body.encode('utf-8')
+            body = body.encode("utf-8")
 
         self.body = body
 
+    # https://stomp.github.io/stomp-specification-1.2.html#Augmented_BNF
     def encode(self):
         body = self.body
         # We do it here so we are sure header is up to date
         if body is not None:
-            self.headers["content-length"] = len(body)
+            self.headers[Headers.CONTENT_LENGTH] = str(len(body))
 
-        data = [self.command, '\n']
+        data = [encode_value(self.command), b"\n"]
+
         for key, value in six.viewitems(self.headers):
             data.append(encode_value(key))
-            data.append(":")
+            data.append(b":")
             data.append(encode_value(value))
-            data.append("\n")
+            data.append(b"\n")
 
-        data.append('\n')
+        data.append(b"\n")
+
         if body is not None:
             data.append(body)
 
-        data.append("\0")
-        return ''.join(data)
+        data.append(b"\0")
+        return b"".join(data)
 
     def __repr__(self):
         return "<StompFrame command=%s>" % (repr(self.command))
