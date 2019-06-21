@@ -121,15 +121,15 @@ def _v3_reset_meta_volsize(vol):
     if vol.getFormat() == sc.COW_FORMAT:
         qemuVolInfo = qemuimg.info(vol.getVolumePath(),
                                    qemuimg.FORMAT.QCOW2)
-        virtVolSize = qemuVolInfo["virtualsize"] / V2META_BLOCKSIZE
+        virtVolSizeBlk = qemuVolInfo["virtualsize"] / V2META_BLOCKSIZE
     else:
-        virtVolSize = vol.getVolumeSize()
+        virtVolSizeBlk = vol.getVolumeSize()
 
-    if metaVolSize != virtVolSize:
+    if metaVolSize != virtVolSizeBlk:
         log.warn("Fixing the mismatch between the metadata volume size "
                  "(%s) and the volume virtual size (%s) for the volume "
-                 "%s", metaVolSize, virtVolSize, vol.volUUID)
-        vol.setMetaParam(sc.SIZE, virtVolSize)
+                 "%s", metaVolSize, virtVolSizeBlk, vol.volUUID)
+        vol.setMetaParam(sc.SIZE, virtVolSizeBlk)
 
 
 def v3DomainConverter(repoPath, hostId, domain, isMsd):

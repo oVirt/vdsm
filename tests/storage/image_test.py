@@ -137,9 +137,9 @@ class TestEstimateQcow2Size:
             size=constants.GIB,
             volFormat=sc.RAW_FORMAT,
             path='path')
-        estimated_size = img.estimate_qcow2_size(vol_params, "sdUUID")
+        estimated_size_blk = img.estimate_qcow2_size(vol_params, "sdUUID")
 
-        assert estimated_size == 2097920
+        assert estimated_size_blk == 2097920
 
     @pytest.mark.parametrize('sd_class', [FakeFileSD, FakeBlockSD])
     def test_qcow2_to_qcow2_estimated_size(
@@ -165,9 +165,9 @@ class TestEstimateQcow2Size:
             size=constants.GIB,
             volFormat=sc.COW_FORMAT,
             path='path')
-        estimated_size = img.estimate_qcow2_size(vol_params, "sdUUID")
+        estimated_size_blk = img.estimate_qcow2_size(vol_params, "sdUUID")
 
-        assert estimated_size == 2097920
+        assert estimated_size_blk == 2097920
 
     @pytest.mark.parametrize("storage,format,prealloc,estimate,expected", [
         # File raw preallocated, avoid prealocation.

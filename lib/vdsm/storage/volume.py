@@ -1193,10 +1193,10 @@ class Volume(object):
             # Requested capacity must not be smaller then parent capacity,
             # as this will corrupt the new volume when qemu will try to
             # access areas beyond the volume virtual size.
-            parent_size = volParent.getSize()
-            if size < parent_size:
+            parent_size_blk = volParent.getSize()
+            if size < parent_size_blk:
                 cls.log.error("Requested size %d < parent size %d",
-                              size, parent_size)
+                              size, parent_size_blk)
                 raise se.InvalidParameterException("size", size)
 
         try:
@@ -1233,19 +1233,19 @@ class Volume(object):
             # we need to update the size value so that the metadata reflects
             # the correct state.
             if volFormat == sc.RAW_FORMAT:
-                apparentSize = int(dom.getVSize(imgUUID, volUUID) /
-                                   sc.BLOCK_SIZE)
-                if apparentSize < size:
+                apparent_size_blk = int(dom.getVSize(imgUUID, volUUID) /
+                                        sc.BLOCK_SIZE)
+                if apparent_size_blk < size:
                     cls.log.error("The volume %s apparent size %s is smaller "
                                   "than the requested size %s",
-                                  volUUID, apparentSize, size)
+                                  volUUID, apparent_size_blk, size)
                     raise se.VolumeCreationError()
-                if apparentSize > size:
+                if apparent_size_blk > size:
                     cls.log.info("The requested size for volume %s doesn't "
                                  "match the granularity on domain %s, "
                                  "updating the volume size from %s to %s",
-                                 volUUID, sdUUID, size, apparentSize)
-                    size = apparentSize
+                                 volUUID, sdUUID, size, apparent_size_blk)
+                    size = apparent_size_blk
 
             vars.task.pushRecovery(
                 task.Recovery("Create volume metadata rollback", clsModule,
@@ -1299,17 +1299,17 @@ class Volume(object):
                            "its format is not RAW", self.volUUID)
             return
 
-        newVolSize = self.getVolumeSize()
-        oldVolSize = self.getSize()
+        new_vol_size_blk = self.getVolumeSize()
+        old_vol_size_blk = self.getSize()
 
-        if oldVolSize == newVolSize:
+        if old_vol_size_blk == new_vol_size_blk:
             self.log.debug("size metadata %s is up to date for volume %s",
-                           oldVolSize, self.volUUID)
+                           old_vol_size_blk, self.volUUID)
         else:
             self.log.debug("updating metadata for volume %s changing the "
-                           "size %s to %s", self.volUUID, oldVolSize,
-                           newVolSize)
-            self.setSize(newVolSize)
+                           "size %s to %s", self.volUUID, old_vol_size_blk,
+                           new_vol_size_blk)
+            self.setSize(new_vol_size_blk)
 
     @classmethod
     def extendSizeFinalize(cls, taskObj, sdUUID, imgUUID, volUUID):
@@ -1343,22 +1343,22 @@ class Volume(object):
         if not (isBase or self.isLeaf()):
             raise se.VolumeNonWritable(self.volUUID)
 
-        curRawSize = self.getVolumeSize()
+        cur_raw_size_blk = self.getVolumeSize()
 
-        if (newSize < curRawSize):
+        if (newSize < cur_raw_size_blk):
             self.log.error("current size of volume %s is larger than the "
                            "size requested in the extension (%s > %s)",
-                           self.volUUID, curRawSize, newSize)
+                           self.volUUID, cur_raw_size_blk, newSize)
             raise se.VolumeResizeValueError(newSize)
 
-        if (newSize == curRawSize):
+        if (newSize == cur_raw_size_blk):
             self.log.debug("the requested size %s is equal to the current "
                            "size %s, skipping extension", newSize,
-                           curRawSize)
+                           cur_raw_size_blk)
         else:
             self.log.info("executing a raw size extension for volume %s "
                           "from size %s to size %s", self.volUUID,
-                          curRawSize, newSize)
+                          cur_raw_size_blk, newSize)
             vars.task.pushRecovery(task.Recovery(
                 "Extend size for volume: " + self.volUUID, "volume",
                 "Volume", "extendSizeFinalize",
