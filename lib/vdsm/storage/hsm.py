@@ -713,11 +713,11 @@ class HSM(object):
     def extendVolumeSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):
         pool = self.getPool(spUUID)
         newSizeBytes = misc.validateN(newSize, "newSize")
-        newSizeBlocks = (newSizeBytes + BLOCK_SIZE - 1) / BLOCK_SIZE
+        new_size_blk = (newSizeBytes + BLOCK_SIZE - 1) / BLOCK_SIZE
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(
             spUUID, "extendVolumeSize", pool.extendVolumeSize, sdUUID,
-            imgUUID, volUUID, newSizeBlocks)
+            imgUUID, volUUID, new_size_blk)
 
     @public
     def updateVolumeSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):
@@ -1446,9 +1446,10 @@ class HSM(object):
         dom = sdCache.produce(sdUUID=sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
         misc.validateUUID(volUUID, 'volUUID')
-        size = misc.validateSize(size, "size")
+        size_blk = misc.validateSize(size, "size")
+        initial_size_blk = None
         if initialSize:
-            initialSize = misc.validateSize(initialSize, "initialSize")
+            initial_size_blk = misc.validateSize(initialSize, "initialSize")
 
         if srcImgUUID:
             misc.validateUUID(srcImgUUID, 'srcImgUUID')
@@ -1460,8 +1461,9 @@ class HSM(object):
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(spUUID, "createVolume", pool.createVolume, sdUUID,
-                          imgUUID, size, volFormat, preallocate, diskType,
-                          volUUID, desc, srcImgUUID, srcVolUUID, initialSize)
+                          imgUUID, size_blk, volFormat, preallocate, diskType,
+                          volUUID, desc, srcImgUUID, srcVolUUID,
+                          initial_size_blk)
 
     @public
     def deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False,
@@ -3073,10 +3075,10 @@ class HSM(object):
         # Values lower than 1 are used to uncommit (marking as inconsisent
         # during a transaction) the volume size.
         if capacity > 0:
-            blocks = (capacity + BLOCK_SIZE - 1) / BLOCK_SIZE
+            size_blk = (capacity + BLOCK_SIZE - 1) / BLOCK_SIZE
         else:
-            blocks = capacity
-        vol.setSize(blocks)
+            size_blk = capacity
+        vol.setSize(size_blk)
 
     @public
     def getVolumeInfo(self, sdUUID, spUUID, imgUUID, volUUID, options=None):

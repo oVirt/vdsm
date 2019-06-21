@@ -149,17 +149,17 @@ class Image:
         log_str = logutils.volume_chain_to_str(vol.volUUID for vol in chain)
         self.log.info("chain=%s ", log_str)
 
-        newsize = 0
+        new_size_blk = 0
         template = chain[0].getParentVolume()
         if template:
-            newsize = template.getVolumeSize()
+            new_size_blk = template.getVolumeSize()
         for vol in chain:
-            newsize += vol.getVolumeSize()
-        if newsize > size:
-            newsize = size
+            new_size_blk += vol.getVolumeSize()
+        if new_size_blk > size:
+            new_size_blk = size
         # allocate %10 more for cow metadata
-        newsize = int(newsize * sc.COW_OVERHEAD)
-        return newsize
+        new_size_blk = int(new_size_blk * sc.COW_OVERHEAD)
+        return new_size_blk
 
     def getChain(self, sdUUID, imgUUID, volUUID=None):
         """
@@ -1183,15 +1183,15 @@ class Image:
         but this file should probably removed.
         """
         chain = []
-        accumulatedChainSize = 0
+        accumulated_chain_size_blk = 0
         endVolName = vols[ancestor].getParent()  # TemplateVolName or None
         currVolName = successor
         while (currVolName != endVolName):
             chain.insert(0, currVolName)
-            accumulatedChainSize += vols[currVolName].getVolumeSize()
+            accumulated_chain_size_blk += vols[currVolName].getVolumeSize()
             currVolName = vols[currVolName].getParent()
 
-        return accumulatedChainSize, chain
+        return accumulated_chain_size_blk, chain
 
     def syncVolumeChain(self, sdUUID, imgUUID, volUUID, actualChain):
         """
