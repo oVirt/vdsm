@@ -510,12 +510,7 @@ types:
         name: DiskType
         type: enum
         values:
-            1: The disk is for data (<4.2)
-            2: The disk is shared among multiple VMs (<4.2)
-            3: The disk is used for swap space (<4.2)
-            4: The disk contains the operating system (<4.2)
-            5: The disk is used for temporary storage space (<4.2)
-            6: The type is not specified (<4.2)
+            2: The disk is for data (int value <4.2)
             DATA: This volume is for data (>=4.2)
             OVFS: This volume is OVF store (>=4.2)
             MEMD: This is a memory dump volume (>=4.2)

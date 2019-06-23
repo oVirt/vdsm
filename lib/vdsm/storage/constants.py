@@ -113,12 +113,7 @@ HECI_DISKTYPE = "HECI"  # Hosted Engine configuration image
 
 # TODO: Remove these constants when vdsm doesn't support engine 4.1
 # These constants were used by engine 4.1 and older
-LEGACY_DATA_DISKTYPE = "1"     # Data disk
-LEGACY_SHARED_DISKTYPE = "2"   # Shared disk
-LEGACY_SWAP_DISKTYPE = "3"     # Swap disk
-LEGACY_SYSTEM_DISKTYPE = "4"   # Disk with operating system
-LEGACY_TMP_DISKTYPE = "5"      # Temporary storage disk
-LEGACY_UNKNOWN_DISKTYPE = "6"  # Disk type not specified
+LEGACY_DATA_DISKTYPE = 2     # Data disk
 
 VOL_DISKTYPE = frozenset([
     DATA_DISKTYPE,
@@ -131,11 +126,6 @@ VOL_DISKTYPE = frozenset([
     HEMD_DISKTYPE,
     HECI_DISKTYPE,
     LEGACY_DATA_DISKTYPE,
-    LEGACY_SHARED_DISKTYPE,
-    LEGACY_SWAP_DISKTYPE,
-    LEGACY_SYSTEM_DISKTYPE,
-    LEGACY_TMP_DISKTYPE,
-    LEGACY_UNKNOWN_DISKTYPE
 ])
 
 VOLUME_TYPES = {UNKNOWN_VOL: 'UNKNOWN', PREALLOCATED_VOL: 'PREALLOCATED',
