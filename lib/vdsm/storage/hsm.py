@@ -926,7 +926,8 @@ class HSM(object):
             callback will never be called.
 
         """
-        newSize = misc.validateN(newSize, "newSize") / 2 ** 20
+        newSize = misc.validateN(newSize, "newSize")
+        newSize = utils.round(newSize, constants.MEGAB) // constants.MEGAB
         try:
             pool = self.getPool(spUUID)
         except se.StoragePoolUnknown:
