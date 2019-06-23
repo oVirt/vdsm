@@ -118,6 +118,7 @@ def _lvmetad_configured():
     """
     out = _systemctl("show", "--property=Names,LoadState,ActiveState",
                      _LVMETAD_SERVICE, _LVMETAD_SOCKET)
+    out = out.decode("utf-8")
 
     # Convert systemctl output:
     # Names=lvm2-lvmetad.service\nLoadState=masked\nActiveState=inactive\n\n
@@ -134,17 +135,16 @@ def _lvmetad_configured():
     #     },
     # }
     units = {}
-    for unit in out.strip().split(b"\n\n"):
-        info = dict(prop.split(b"=", 1) for prop in unit.split(b"\n"))
-        names = info.pop(b"Names")
-        for name in names.split(b","):
+    for unit in out.strip().split("\n\n"):
+        info = dict(prop.split("=", 1) for prop in unit.split("\n"))
+        names = info.pop("Names")
+        for name in names.split(","):
             units[name] = info
 
     not_configured = {}
     for name, state in units.items():
         # ActiveState may be "inactive" or "failed", both are good.
-        if state[b"LoadState"] != b"masked" or \
-           state[b"ActiveState"] == b"active":
+        if state["LoadState"] != "masked" or state["ActiveState"] == "active":
             not_configured[name] = state
 
     if not_configured:
