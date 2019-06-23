@@ -54,77 +54,66 @@ def test_os_path_islink_not_link(oop_ns, tmpdir):
     assert not oop_ns.os.path.islink(str(tmpdir))
 
 
-class TestOopWrapper():
+def test_same_pool_name(oop_ns):
+    poolA = "A"
+    pids = []
+    for pool in (poolA, poolA):
+        proc = oop.getProcessPool(pool)._ioproc
+        name = proc._commthread.getName()
+        pids.append(int(re.search(r'\d+', name).group()))
 
-    def setup_method(self, m):
-        self.pool = oop.getGlobalProcPool()
+    assert pids[0] == pids[1]
 
-    def teardown_method(self, m):
-        oop.stop()
 
-    def testSamePoolName(self):
-        poolA = "A"
-        pids = []
-        for pool in (poolA, poolA):
-            proc = oop.getProcessPool(pool)._ioproc
-            name = proc._commthread.getName()
-            pids.append(int(re.search(r'\d+', name).group()))
+def test_different_pool_name(oop_ns):
+    poolA = "A"
+    poolB = "B"
+    pools = (poolA, poolB)
+    pids = []
+    for pool in pools:
+        proc = oop.getProcessPool(pool)._ioproc
+        name = proc._commthread.name
+        pids.append(int(re.search(r'\d+', name).group()))
 
-        assert pids[0] == pids[1]
+    assert pids[0] != pids[1]
 
-    def testDifferentPoolName(self):
-        poolA = "A"
-        poolB = "B"
-        pools = (poolA, poolB)
-        pids = []
-        for pool in pools:
-            proc = oop.getProcessPool(pool)._ioproc
-            name = proc._commthread.name
-            pids.append(int(re.search(r'\d+', name).group()))
 
-        assert pids[0] != pids[1]
+@xfail_python3
+def test_amount_of_instances_per_pool_name(oop_ns, monkeypatch):
+    monkeypatch.setattr(oop, 'IOPROC_IDLE_TIME', 0.5)
+    poolA = "A"
+    poolB = "B"
+    wrapper = ref(oop.getProcessPool(poolA))
+    ioproc = ref(oop.getProcessPool(poolA)._ioproc)
+    oop.getProcessPool(poolA)
+    time.sleep(oop.IOPROC_IDLE_TIME + 0.5)
+    oop.getProcessPool(poolB)
+    assert wrapper() is None
+    gc.collect()
+    try:
+        assert ioproc() is None
+    except AssertionError:
+        logging.info("GARBAGE: %s", gc.garbage)
+        refs = gc.get_referrers(ioproc())
+        logging.info(refs)
+        logging.info(gc.get_referrers(*refs))
+        raise
 
-    @xfail_python3
-    def testAmountOfInstancesPerPoolName(self, monkeypatch):
-        monkeypatch.setattr(oop, 'IOPROC_IDLE_TIME', 0.5)
-        poolA = "A"
-        poolB = "B"
-        wrapper = ref(oop.getProcessPool(poolA))
-        ioproc = ref(oop.getProcessPool(poolA)._ioproc)
-        oop.getProcessPool(poolA)
-        time.sleep(oop.IOPROC_IDLE_TIME + 0.5)
-        oop.getProcessPool(poolB)
-        assert wrapper() is None
-        gc.collect()
-        try:
-            assert ioproc() is None
-        except AssertionError:
-            logging.info("GARBAGE: %s", gc.garbage)
-            refs = gc.get_referrers(ioproc())
-            logging.info(refs)
-            logging.info(gc.get_referrers(*refs))
-            raise
 
-    def testEcho(self):
-        data = """Censorship always defeats it own purpose, for it creates in
-                  the end the kind of society that is incapable of exercising
-                  real discretion."""
-        # Henry Steele Commager
+def test_fileutils_call(oop_ns):
+    """fileUtils is a custom module and calling it might break even though
+    built in module calls aren't broken"""
+    path = "/dev/null"
+    assert oop_ns.fileUtils.pathExists(path)
 
-        assert self.pool._ioproc.echo(data) == data
 
-    def testFileUtilsCall(self):
-        """fileUtils is a custom module and calling it might break even though
-        built in module calls arn't broken"""
-        path = "/dev/null"
-        assert self.pool.fileUtils.pathExists(path)
+def test_sub_module_call(oop_ns):
+    path = "/dev/null"
+    assert oop_ns.os.path.exists(path)
 
-    def testSubModuleCall(self):
-        path = "/dev/null"
-        assert self.pool.os.path.exists(path)
 
-    def testUtilsFuncs(self):
-        tmpfd, tmpfile = tempfile.mkstemp()
-        self.pool.utils.rmFile(tmpfile)
-        os.close(tmpfd)
-        return True
+def test_utils_funcs(oop_ns):
+    tmpfd, tmpfile = tempfile.mkstemp()
+    oop_ns.utils.rmFile(tmpfile)
+    os.close(tmpfd)
+    return True
