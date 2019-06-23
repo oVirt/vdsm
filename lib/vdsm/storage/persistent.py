@@ -41,8 +41,32 @@ SHA_CKSUM_TAG = "_SHA_CKSUM"
 log = logging.getLogger("storage.persistent")
 
 
-def _preprocessLine(line):
-    return line.encode('ascii', 'xmlcharrefreplace')
+def _format_line(key, value):
+    return "%s=%s" % (key, value)
+
+
+def _dump_lines(md):
+    return [_format_line(key, value)
+            for key, value in sorted(six.iteritems(md))]
+
+
+def _calc_checksum(lines):
+    h = hashlib.sha1()
+    for line in lines:
+        h.update(line.encode('ascii', 'xmlcharrefreplace'))
+    return h.hexdigest()
+
+
+def _parse_lines(lines):
+    md = {}
+    for line in lines:
+        try:
+            key, value = line.split("=", 1)
+        except ValueError:
+            log.warning("Could not parse line: %r", line)
+        else:
+            md[key.strip()] = value
+    return md
 
 
 def unicodeEncoder(s):
@@ -223,22 +247,9 @@ class PersistentDict(object):
             log.debug("read lines (%s)=%s",
                       self._metaRW.__class__.__name__,
                       lines)
-            newMD = {}
-            declaredChecksum = None
-            for line in lines:
-                try:
-                    key, value = line.split("=", 1)
-                    value = value.strip()
-                except ValueError:
-                    log.warning("Could not parse line: %r", line)
-                    continue
 
-                if key == SHA_CKSUM_TAG:
-                    declaredChecksum = value
-                    continue
-
-                newMD[key] = value
-
+            newMD = _parse_lines(lines)
+            declaredChecksum = newMD.pop(SHA_CKSUM_TAG, None)
             if not newMD:
                 log.debug("Empty metadata")
                 self._isValid = True
@@ -256,12 +267,7 @@ class PersistentDict(object):
                 self._metadata = newMD
                 return
 
-            checksumCalculator = hashlib.sha1()
-            for key in sorted(newMD):
-                value = newMD[key]
-                line = "%s=%s" % (key, value)
-                checksumCalculator.update(_preprocessLine(line))
-            computedChecksum = checksumCalculator.hexdigest()
+            computedChecksum = _calc_checksum(_dump_lines(newMD))
 
             if declaredChecksum != computedChecksum:
                 log.warning("data seal is broken metadata declares `%s` "
@@ -276,18 +282,9 @@ class PersistentDict(object):
     def _flush(self, overrideMD):
         with self._syncRoot:
             md = overrideMD
-
-            checksumCalculator = hashlib.sha1()
-            lines = []
-            for key in sorted(md):
-                value = md[key]
-                line = "=".join([key, value.strip()])
-                checksumCalculator.update(_preprocessLine(line))
-                lines.append(line)
-
-            computedChecksum = checksumCalculator.hexdigest()
-            lines.append("=".join([SHA_CKSUM_TAG, computedChecksum]))
-
+            lines = _dump_lines(md)
+            computedChecksum = _calc_checksum(lines)
+            lines.append(_format_line(SHA_CKSUM_TAG, str(computedChecksum)))
             log.debug("about to write lines (%s)=%s",
                       self._metaRW.__class__.__name__, lines)
             self._metaRW.writelines(lines)
