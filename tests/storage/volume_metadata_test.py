@@ -77,11 +77,12 @@ def make_md_dict(**kwargs):
 
 def make_lines(**kwargs):
     data = make_md_dict(**kwargs)
-
-    lines = ['EOF']
+    # Emulate "key=value" lines read from VolumeMD storage as bytes
+    lines = [b'EOF']
     for k, v in data.items():
         if v is not None:
-            lines.insert(0, "%s=%s" % (k, v))
+            line = ("%s=%s" % (k, v)).encode("utf-8")
+            lines.insert(0, line)
     return lines
 
 
@@ -127,7 +128,7 @@ class TestVolumeMetadata:
             TYPE=%(type)s
             VOLTYPE=%(voltype)s
             EOF
-            """ % expected_params)
+            """ % expected_params).encode("utf-8")
         md = volume.VolumeMetadata(**params)
         assert expected == md.storage_format(4)
 
@@ -147,14 +148,14 @@ class TestVolumeMetadata:
             TYPE=%(type)s
             VOLTYPE=%(voltype)s
             EOF
-            """ % params)
+            """ % params).encode("utf-8")
         md = volume.VolumeMetadata(**params)
         assert expected == md.storage_format(5)
 
     def test_storage_format_overrides(self):
         params = make_init_params()
         md = volume.VolumeMetadata(**params)
-        data = md.storage_format(4, CAP=md.capacity)
+        data = md.storage_format(4, CAP=md.capacity).decode("utf-8")
         assert "SIZE=%s\n" % str(int(md.capacity) // sc.BLOCK_SIZE_512) in data
         assert "CAP=%s\n" % md.capacity in data
 
@@ -218,8 +219,8 @@ class TestVolumeMetadata:
         data = make_init_params()
         md = volume.VolumeMetadata(**data)
         lines = md.storage_format(5).splitlines()
-        lines.remove("CAP=1073741824")
-        lines.insert(0, "SIZE=4096")
+        lines.remove(b"CAP=1073741824")
+        lines.insert(0, b"SIZE=4096")
 
         md = volume.VolumeMetadata.from_lines(lines)
         assert md.capacity == 2 * MB
@@ -228,7 +229,7 @@ class TestVolumeMetadata:
         data = make_init_params()
         md = volume.VolumeMetadata(**data)
         lines = md.storage_format(5).splitlines()
-        lines.remove("CAP=1073741824")
+        lines.remove(b"CAP=1073741824")
 
         with pytest.raises(se.MetaDataKeyNotFoundError):
             volume.VolumeMetadata.from_lines(lines)

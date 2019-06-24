@@ -252,7 +252,7 @@ class FileVolumeManifest(volume.VolumeManifest):
 
         data = meta.storage_format(sd.getVersion(), **overrides)
 
-        with open(metaPath + ".new", "w") as f:
+        with open(metaPath + ".new", "wb") as f:
             f.write(data)
 
         oop.getProcessPool(meta.domain).os.rename(metaPath + ".new", metaPath)

@@ -69,8 +69,16 @@ class VolumeMetadata(object):
 
     @classmethod
     def from_lines(cls, lines):
+        '''
+        Instantiates a VolumeMetadata object from storage read bytes.
+
+        Args:
+            lines: list of key=value entries given as bytes read from storage
+            metadata section. "EOF" entry terminates parsing.
+        '''
         md = {}
         for line in lines:
+            line = line.decode("utf-8")
             if line.startswith("EOF"):
                 break
             if '=' not in line:
@@ -169,18 +177,15 @@ class VolumeMetadata(object):
 
     def storage_format(self, domain_version, **overrides):
         """
-        Format metadata string in storage format.
+        Format metadata parameters into storage format bytes.
 
-        VolumeMetadata is quite restrictive and doesn't allows
+        VolumeMetadata is quite restrictive and does not allow
         you to make an invalid metadata, but sometimes, for example
         for a format conversion, you need some additional fields to
         be written to the storage. Those fields can be added using
         overrides dict.
 
         Raises MetadataOverflowError if formatted metadata is too long.
-
-        NOTE: Not used yet! We need to drop legacy_info() and pass
-        VolumeMetadata instance instead of a dict to use this code.
         """
 
         info = {
@@ -214,7 +219,7 @@ class VolumeMetadata(object):
         keys = sorted(info.keys())
         lines = ["%s=%s\n" % (key, info[key]) for key in keys]
         lines.append("EOF\n")
-        data = "".join(lines)
+        data = "".join(lines).encode("utf-8")
         if len(data) > sc.METADATA_SIZE:
             raise exception.MetadataOverflowError(data)
         return data
