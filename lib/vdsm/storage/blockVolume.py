@@ -413,7 +413,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
             the volume must be prepared when calling this helper.
         """
         if self.getFormat() == sc.RAW_FORMAT:
-            virtual_size = self.getSize() * sc.BLOCK_SIZE
+            virtual_size = self.getSizeBlk() * sc.BLOCK_SIZE
             self.log.debug("RAW format, using virtual size: %s", virtual_size)
             return virtual_size
 
@@ -442,7 +442,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
             potential_optimal_size = max(sc.MIN_CHUNK, potential_optimal_size)
 
         # Limit optimal size by maximum size.
-        max_size = self.max_size(self.getSize() * sc.BLOCK_SIZE,
+        max_size = self.max_size(self.getSizeBlk() * sc.BLOCK_SIZE,
                                  self.getFormat())
         optimal_size = min(potential_optimal_size, max_size)
         self.log.debug("COW format, actual_size: %s, max_size: %s, "

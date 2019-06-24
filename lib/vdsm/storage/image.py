@@ -591,14 +591,14 @@ class Image:
                 # tmpVolume needs to be as large as the virtual disk size for
                 # the worst case.
                 # TODO: Some extra space may be needed for QCOW2 headers
-                tmpVolume.extend(tmpVolume.getSize())
+                tmpVolume.extend(tmpVolume.getSizeBlk())
                 # For the dstVolume we may think of an optimization where the
                 # extension is as large as the source (and at the end we
                 # shrinkToOptimalSize).
                 # TODO: Extend the dstVolume only as much as the actual size of
                 # srcVolume
                 # TODO: Some extra space may be needed for QCOW2 headers
-                dstVolume.extend(tmpVolume.getSize())
+                dstVolume.extend(tmpVolume.getSizeBlk())
 
                 srcFormat = sc.fmt2str(srcVolume.getFormat())
                 dstFormat = sc.fmt2str(dstVolume.getFormat())
