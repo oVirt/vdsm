@@ -379,7 +379,7 @@ class FileVolumeManifest(volume.VolumeManifest):
             the volume must be prepared when calling this helper.
         """
         if self.getFormat() == sc.RAW_FORMAT:
-            return self.getSize() * sc.BLOCK_SIZE
+            return self.getSizeBlk() * sc.BLOCK_SIZE
         else:
             return self.getVolumeSize() * sc.BLOCK_SIZE
 

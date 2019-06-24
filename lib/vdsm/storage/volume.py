@@ -170,7 +170,8 @@ class VolumeManifest(object):
         except se.MetaDataKeyNotFoundError:
             return False
 
-    def getSize(self):
+    @deprecated  # capacity will be used instead
+    def getSizeBlk(self):
         size = int(self.getMetaParam(sc.SIZE))
         if size < 1:  # Size stored in the metadata is not valid
             raise se.MetaDataValidationError()
@@ -302,7 +303,7 @@ class VolumeManifest(object):
         # TODO: getSize returns size in 512b multiples, should move all sizes
         # to byte multiples everywhere to avoid conversion errors and change
         # only at the end
-        volParams['size'] = self.getSize()
+        volParams['size'] = self.getSizeBlk()
         volParams['apparentsize'] = self.getVolumeSize(bs=bs)
         volParams['parent'] = self.getParent()
         volParams['descr'] = self.getDescription()
@@ -1193,7 +1194,7 @@ class Volume(object):
             # Requested capacity must not be smaller then parent capacity,
             # as this will corrupt the new volume when qemu will try to
             # access areas beyond the volume virtual size.
-            parent_size_blk = volParent.getSize()
+            parent_size_blk = volParent.getSizeBlk()
             if size < parent_size_blk:
                 cls.log.error("Requested size %d < parent size %d",
                               size, parent_size_blk)
@@ -1300,7 +1301,7 @@ class Volume(object):
             return
 
         new_vol_size_blk = self.getVolumeSize()
-        old_vol_size_blk = self.getSize()
+        old_vol_size_blk = self.getSizeBlk()
 
         if old_vol_size_blk == new_vol_size_blk:
             self.log.debug("size metadata %s is up to date for volume %s",
@@ -1398,8 +1399,9 @@ class Volume(object):
     def getVolType(self):
         return self._manifest.getVolType()
 
-    def getSize(self):
-        return self._manifest.getSize()
+    @deprecated  # capacity will be used instead
+    def getSizeBlk(self):
+        return self._manifest.getSizeBlk()
 
     @classmethod
     def max_size(cls, virtual_size, format):

@@ -590,7 +590,7 @@ def test_create_snapshot_size(
     with pytest.raises(se.InvalidParameterException):
         dom.createVolume(
             imgUUID=img_uuid,
-            size=parent_vol.getSize() - 1,
+            size=parent_vol.getSizeBlk() - 1,
             volFormat=sc.COW_FORMAT,
             preallocate=sc.SPARSE_VOL,
             diskType='DATA',
