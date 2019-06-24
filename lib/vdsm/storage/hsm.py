@@ -760,8 +760,8 @@ class HSM(object):
         finally:
             volToExtend.teardown(sdUUID, volUUID)
 
-        volToExtend.setSize(
-            (roundedSizeBytes + BLOCK_SIZE - 1) / BLOCK_SIZE)
+        new_size_blk = (roundedSizeBytes + BLOCK_SIZE - 1) / BLOCK_SIZE
+        volToExtend.setSize(new_size_blk)
 
         return dict(size=str(roundedSizeBytes))
 

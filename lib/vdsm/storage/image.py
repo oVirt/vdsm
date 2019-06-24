@@ -1376,7 +1376,8 @@ class Image:
         finally:
             vol.teardown(vol.sdUUID, vol.volUUID)
 
-        vol.reduce(optimal_size // sc.BLOCK_SIZE)
+        optimal_size_blk = optimal_size // sc.BLOCK_SIZE
+        vol.reduce(optimal_size_blk)
 
     def _activateVolumeForImportExport(self, domain, imgUUID, volUUID=None):
         chain = self.getChain(domain.sdUUID, imgUUID, volUUID)
@@ -1407,7 +1408,8 @@ class Image:
         vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)
         try:
             # Extend the volume (if relevant) to the image size
-            vol.extend(imageSharing.getSize(methodArgs) / sc.BLOCK_SIZE)
+            img_size_blk = imageSharing.getSize(methodArgs) / sc.BLOCK_SIZE
+            vol.extend(img_size_blk)
             imageSharing.download(vol.getVolumePath(), methodArgs)
         finally:
             domain.deactivateImage(imgUUID)
@@ -1427,8 +1429,9 @@ class Image:
         vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)
         try:
             # Extend the volume (if relevant) to the image size
-            vol.extend(imageSharing.getLengthFromArgs(methodArgs) /
-                       sc.BLOCK_SIZE)
+            img_size_blk = (imageSharing.getLengthFromArgs(methodArgs) /
+                            sc.BLOCK_SIZE)
+            vol.extend(img_size_blk)
             imageSharing.copyToImage(vol.getVolumePath(), methodArgs)
         finally:
             domain.deactivateImage(imgUUID)
