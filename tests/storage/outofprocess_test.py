@@ -21,18 +21,17 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import pytest
-
-from vdsm.storage import outOfProcess as oop
-
 import gc
 import logging
 import os
+import re
 import tempfile
 import time
-import re
-from weakref import ref
+import weakref
 
+import pytest
+
+from vdsm.storage import outOfProcess as oop
 from . marks import xfail_python3
 
 
@@ -54,11 +53,22 @@ def test_os_path_islink_not_link(oop_ns, tmpdir):
     assert not oop_ns.os.path.islink(str(tmpdir))
 
 
+# TODO: the following 2 tests use private instance variables that
+#  should not be used by tests.
+# oop.getProcessPool(pool)._ioproc
+#   This is a private implementation detail of VDSM.
+# proc._commthread
+#   Is an implementation detail and is neither part of ioprocess,
+#   nor it is part of ioprocess API.
+# proc._commthread.getName()
+#   The method is not part of ioprocess API.
+# proc._commthread.name
+#   The member is not part of ioprocess API.
+
 def test_same_pool_name(oop_ns):
-    poolA = "A"
     pids = []
-    for pool in (poolA, poolA):
-        proc = oop.getProcessPool(pool)._ioproc
+    for poolName in ["A", "A"]:
+        proc = oop.getProcessPool(poolName)._ioproc
         name = proc._commthread.getName()
         pids.append(int(re.search(r'\d+', name).group()))
 
@@ -66,12 +76,9 @@ def test_same_pool_name(oop_ns):
 
 
 def test_different_pool_name(oop_ns):
-    poolA = "A"
-    poolB = "B"
-    pools = (poolA, poolB)
     pids = []
-    for pool in pools:
-        proc = oop.getProcessPool(pool)._ioproc
+    for poolName in ["A", "B"]:
+        proc = oop.getProcessPool(poolName)._ioproc
         name = proc._commthread.name
         pids.append(int(re.search(r'\d+', name).group()))
 
@@ -80,11 +87,21 @@ def test_different_pool_name(oop_ns):
 
 @xfail_python3
 def test_amount_of_instances_per_pool_name(oop_ns, monkeypatch):
+    # TODO: This is very bad test, assuming the behavior
+    #  of the gc module instead of testing our code behavior.
+    # We can replace the 3 tests for above with:
+    #   a) Test that we get the same instance when calling with
+    #      same pool name (e.g. getProcPool("this") is getProcPool("this"))
+    #   b) Test that we get different instance when calling with
+    #      different pool name
+    #      (e.g.  getProcPool("this") is not getProcPool("other"))
+    #   c) Test that after idle timeout, calling getProcPool("other") and
+    #   getProcPool("this"), we get a new instance of "this".
     monkeypatch.setattr(oop, 'IOPROC_IDLE_TIME', 0.5)
     poolA = "A"
     poolB = "B"
-    wrapper = ref(oop.getProcessPool(poolA))
-    ioproc = ref(oop.getProcessPool(poolA)._ioproc)
+    wrapper = weakref.ref(oop.getProcessPool(poolA))
+    ioproc = weakref.ref(oop.getProcessPool(poolA)._ioproc)
     oop.getProcessPool(poolA)
     time.sleep(oop.IOPROC_IDLE_TIME + 0.5)
     oop.getProcessPool(poolB)
@@ -113,6 +130,12 @@ def test_sub_module_call(oop_ns):
 
 
 def test_utils_funcs(oop_ns):
+    # TODO: There are few issues in this test that we need to fix:
+    # 1) Use pytest tmpdir to create temporary file instead of tempfile.
+    # 2) Fix fd leak if "oop_ns.utils.rmFile()" raises.
+    # 3) Remove the redundant return.
+    # 4) Test that the file was actually removed -
+    #    the current test does not test anything.
     tmpfd, tmpfile = tempfile.mkstemp()
     oop_ns.utils.rmFile(tmpfile)
     os.close(tmpfd)
