@@ -288,7 +288,7 @@ def configure():
             dir=os.path.dirname(_CONF_FILE),
             delete=False) as f:
         try:
-            f.write(_CONF_DATA)
+            f.write(_CONF_DATA.encode('utf-8'))
             f.flush()
             selinux.restorecon(f.name)
             os.chmod(f.name, 0o644)
