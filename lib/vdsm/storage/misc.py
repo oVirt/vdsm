@@ -235,7 +235,7 @@ def validateN(number, name):
     return n
 
 
-def validateSize(size, name):
+def validateSizeBlk(size, name):
     """
     Validate number of bytes as string and convert to number of blocks,
     rounding up to next blocks.
