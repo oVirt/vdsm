@@ -250,6 +250,11 @@ Requires: glusterfs-fuse >= %{gluster_version}
 Requires: psmisc >= 22.6-15
 
 # Make sure we require sos version which includes VDSM plugin
+%ifarch ppc64le
+# Currently we are without sos VDSM plugin on power, because power8 is going
+# to be using RHEL 7.7, but power9 is going to stay on RHEL 7.6-ALT.
+Requires: sos
+%else
 %if 0%{?centos} || 0%{?fedora}
 # Currently we are without sos VDSM plugin on CentOS/Fedora:
 #  - CentOS: When 7.7 is released, we also need to require 3.7-3+
@@ -258,6 +263,7 @@ Requires: sos
 %else
 # RHEL
 Requires: sos >= 3.7-3
+%endif
 %endif
 
 Requires: tree
