@@ -92,9 +92,11 @@ outer()
 
     @pytest.mark.parametrize("signo", [signal.SIGINT, signal.SIGTERM])
     def test_terminate(self, signo):
-        # Start bash process printing its pid and sleeping.
+        # Start bash process printing its pid and sleeping. The short sleep
+        # before printing the pid avoids a race when we got the pid before
+        # py-watch started to wait for the child.
         p = subprocess.Popen(
-            ['./py-watch', '10', 'bash', '-c', 'echo $$; sleep 10'],
+            ['./py-watch', '10', 'bash', '-c', 'sleep 0.5; echo $$; sleep 10'],
             stdout=subprocess.PIPE)
 
         # Wait until the underlying bash process prints its pid.
