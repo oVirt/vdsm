@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2017 Red Hat, Inc.
+# Copyright 2009-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,10 +42,12 @@ from six.moves import map
 from vdsm import constants
 from vdsm import jobs
 from vdsm import utils
+from vdsm.common import cmdutils
 from vdsm.common import concurrent
 from vdsm.common import function
 from vdsm.common.threadlocal import vars
 from vdsm.common import api
+from vdsm.common import commands
 from vdsm.common import exception
 from vdsm.common import supervdsm
 from vdsm.common.marks import deprecated
@@ -440,16 +442,19 @@ class HSM(object):
         """
         Check lvm locking type.
         """
-        rc, out, err = misc.execCmd([constants.EXT_LVM, "dumpconfig",
-                                     "global/locking_type"],
-                                    sudo=True)
-        if rc != 0:
-            self.log.error("Can't validate lvm locking_type. %d %s %s",
-                           rc, out, err)
+        try:
+            out = commands.run(
+                [constants.EXT_LVM, "dumpconfig", "global/locking_type"],
+                sudo=True
+            )
+        except cmdutils.Error as e:
+            self.log.error("Can't validate lvm locking_type: %s", e)
             return False
 
+        out = out.decode("utf-8").strip()
+
         try:
-            lvmLockingType = int(out[0].split('=')[1])
+            lvmLockingType = int(out.split('=')[1])
         except (ValueError, IndexError):
             self.log.error("Can't parse lvm locking_type. %s", out)
             return False
