@@ -41,11 +41,11 @@ GB_IN_BLK = 1024**3 // 512
 CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
 
 
-def fakeEstimateChainSize(self, sdUUID, imgUUID, volUUID, size):
+def fakeEstimateChainSizeBlk(self, sdUUID, imgUUID, volUUID, size):
     return GB_IN_BLK * 2.25
 
 
-def fake_estimate_qcow2_size(self, src_vol_params, dst_sd_id):
+def fake_estimate_qcow2_size_blk(self, src_vol_params, dst_sd_id):
     return GB_IN_BLK * 1.25
 
 
@@ -101,13 +101,14 @@ class TestCalculateVolAlloc(VdsmTestCase):
          sc.COW_FORMAT,
          GB_IN_BLK * 2.25),
     ])
-    @MonkeyPatch(image.Image, 'estimateChainSize', fakeEstimateChainSize)
-    @MonkeyPatch(image.Image, 'estimate_qcow2_size', fake_estimate_qcow2_size)
+    @MonkeyPatch(image.Image, 'estimateChainSizeBlk', fakeEstimateChainSizeBlk)
+    @MonkeyPatch(
+        image.Image, 'estimate_qcow2_size_blk', fake_estimate_qcow2_size_blk)
     def test_calculate_vol_alloc(
             self, src_params, dest_format, expected_blk):
         img = image.Image("/path/to/repo")
-        alloc_blk = img.calculate_vol_alloc("src_sd_id", src_params,
-                                            "dst_sd_id", dest_format)
+        alloc_blk = img.calculate_vol_alloc_blk("src_sd_id", src_params,
+                                                "dst_sd_id", dest_format)
         self.assertEqual(alloc_blk, expected_blk)
 
 
@@ -137,7 +138,7 @@ class TestEstimateQcow2Size:
             size=constants.GIB,
             volFormat=sc.RAW_FORMAT,
             path='path')
-        estimated_size_blk = img.estimate_qcow2_size(vol_params, "sdUUID")
+        estimated_size_blk = img.estimate_qcow2_size_blk(vol_params, "sdUUID")
 
         assert estimated_size_blk == 2097920
 
@@ -165,7 +166,7 @@ class TestEstimateQcow2Size:
             size=constants.GIB,
             volFormat=sc.COW_FORMAT,
             path='path')
-        estimated_size_blk = img.estimate_qcow2_size(vol_params, "sdUUID")
+        estimated_size_blk = img.estimate_qcow2_size_blk(vol_params, "sdUUID")
 
         assert estimated_size_blk == 2097920
 
