@@ -222,7 +222,8 @@ class TestFakeBlockEnv(VdsmTestCase):
 
             extent_size = sc.VG_EXTENT_SIZE_MB * MB
             expected_size = utils.round(size_param, extent_size)
-            self.assertEqual(expected_size // sc.BLOCK_SIZE, vol.getSize())
+            expected_size_blk = expected_size // sc.BLOCK_SIZE
+            self.assertEqual(expected_size_blk, vol.getSize())
             self.assertEqual(expected_size,
                              int(env.lvm.getLV(sd_id, vol_id).size))
             lv_file_size = os.stat(env.lvm.lvPath(sd_id, vol_id)).st_size
