@@ -23,7 +23,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import pytest
-import six
 
 from yajsonrpc.stomp import decodeValue, encodeValue
 
@@ -39,12 +38,10 @@ def test_encode_should_handle_strings(value, expected):
 
 # TODO: Remove handling ints as 'decodeValue'
 #       doesn't do the reverse conversion
-@pytest.mark.skipif(six.PY3, reason="needs porting to python 3")
 def test_encode_should_handle_ints():
     assert encodeValue(5) == b'5'
 
 
-@pytest.mark.skipif(six.PY3, reason="needs porting to python 3")
 def test_encode_should_accept_bytes():
     assert encodeValue(b'abc') == b'abc'
 
@@ -59,7 +56,6 @@ def test_encode_should_accept_bytes():
     (b'\\', br'\\'),  # \\ (octet 92 and 92) translates to \ (octet 92)
     (b'\r\r\n:\\\n', br'\r\r\n\c\\\n')
 ])
-@pytest.mark.skipif(six.PY3, reason="needs porting to python 3")
 def test_encode_should_escape_characters(value, expected):
     assert encodeValue(value) == expected
 
@@ -75,7 +71,7 @@ def test_decode_should_raise_for_sequences_with_colon():
     with pytest.raises(ValueError) as err:
         decodeValue(b'abc:def')
 
-    assert 'Contains illigal charachter' in str(err.value)
+    assert 'Contains illegal character' in str(err.value)
 
 
 # https://stomp.github.io/stomp-specification-1.2.html#Value_Encoding
@@ -96,7 +92,7 @@ def test_decode_should_raise_for_invalid_escape_sequences():
     with pytest.raises(ValueError) as err:
         decodeValue(b'\\m')
 
-    assert 'Containes invalid escape squence' in str(err)
+    assert 'Contains invalid escape sequence' in str(err)
 
 
 @pytest.mark.parametrize('value, expected', [
@@ -105,6 +101,13 @@ def test_decode_should_raise_for_invalid_escape_sequences():
 ])
 def test_decode_should_handle_bytes(value, expected):
     assert decodeValue(value) == expected
+
+
+def test_decode_should_raise_for_unsupported_types():
+    with pytest.raises(ValueError) as err:
+        decodeValue(u'abc')
+
+    assert 'Unable to decode non-binary values' in str(err)
 
 
 @pytest.mark.parametrize('value', [

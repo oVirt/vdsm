@@ -40,6 +40,7 @@ NR_RETRIES = 1
 # This is the value used by engine
 GRACE_PERIOD_FACTOR = 0.2
 
+# https://stomp.github.io/stomp-specification-1.2.html#Value_Encoding
 _RE_ESCAPE_SEQUENCE = re.compile(br"\\(.)")
 
 _RE_ENCODE_CHARS = re.compile(br"[\r\n\\:]")
@@ -52,7 +53,7 @@ _EC_DECODE_MAP = {
 }
 
 _EC_ENCODE_MAP = {
-    b":": b"\c",
+    b":": b"\\c",
     b"\\": b"\\\\",
     b"\r": b"\\r",
     b"\n": b"\\n",
@@ -155,10 +156,13 @@ class Frame(object):
 
 
 def decodeValue(s):
+    if not isinstance(s, six.binary_type):
+        raise ValueError("Unable to decode non-binary values")
+
     # Make sure to leave this check before decoding as ':' can appear in the
     # value after decoding using \c
     if b":" in s:
-        raise ValueError("Contains illigal charachter `:`")
+        raise ValueError("Contains illegal character ':'")
 
     try:
         s = _RE_ESCAPE_SEQUENCE.sub(
@@ -166,20 +170,20 @@ def decodeValue(s):
             s,
         )
     except KeyError as e:
-        raise ValueError("Containes invalid escape squence `\\%s`" % e.args[0])
+        raise ValueError("Contains invalid escape sequence '\\%s'" % e.args[0])
 
-    if six.PY2 or (six.PY3 and isinstance(s, bytes)):
-        s = s.decode('utf-8')
-    return s
+    return s.decode("utf-8")
 
 
 def encodeValue(s):
     if isinstance(s, six.text_type):
-        s = s.encode('utf-8')
+        s = s.encode("utf-8")
+    # TODO: Remove handling ints as 'decodeValue'
+    #       doesn't do the reverse conversion
     elif isinstance(s, int):
-        s = str(s)
-    elif not isinstance(s, str):
-        raise ValueError('Unable to encode non-string values')
+        s = str(s).encode("utf-8")
+    elif not isinstance(s, six.binary_type):
+        raise ValueError("Unable to encode non-string values")
 
     return _RE_ENCODE_CHARS.sub(lambda m: _EC_ENCODE_MAP[m.group(0)], s)
 
