@@ -81,6 +81,7 @@ class TemporaryVolume(object):
         """
         Zero storage and format index area.
         """
+        self.path = path
         self.backend = xlease.DirectFile(path)
         self.zero_storage()
         self.format_index()
@@ -100,11 +101,11 @@ class TemporaryVolume(object):
 
     def zero_storage(self):
         # TODO: suport block storage.
-        with io.open(self.backend.name, "wb") as f:
+        with io.open(self.path, "wb") as f:
             f.truncate(constants.GIB)
 
     def format_index(self):
-        lockspace = os.path.basename(os.path.dirname(self.backend.name))
+        lockspace = os.path.basename(os.path.dirname(self.path))
         xlease.format_index(lockspace, self.backend)
 
     def close(self):
@@ -256,7 +257,7 @@ class TestIndex:
                     assert vol.leases() == expected
 
     def test_create_read_failure(self, tmp_vol):
-        file = FailingReader(tmp_vol.backend.name)
+        file = FailingReader(tmp_vol.path)
         with utils.closing(file):
             with pytest.raises(ReadError):
                 xlease.LeasesVolume(file)
@@ -290,7 +291,7 @@ class TestIndex:
             assert res["resource"] == lease.resource
 
     def test_add_write_failure(self, tmp_vol):
-        backend = FailingWriter(tmp_vol.backend.name)
+        backend = FailingWriter(tmp_vol.path)
         with utils.closing(backend):
             vol = xlease.LeasesVolume(backend)
             with utils.closing(vol):
@@ -375,7 +376,7 @@ class TestIndex:
     def test_remove_write_failure(self, tmp_vol):
         record = xlease.Record(make_uuid(), 0, updating=True)
         tmp_vol.write_records((42, record))
-        backend = FailingWriter(tmp_vol.backend.name)
+        backend = FailingWriter(tmp_vol.path)
         with utils.closing(backend):
             vol = xlease.LeasesVolume(backend)
             with utils.closing(vol):
@@ -446,7 +447,7 @@ def bench():
                 pass
 """
         setup = setup % {
-            "path": tmp_vol.backend.name,
+            "path": tmp_vol.path,
         }
         count = 100
         elapsed = timeit.timeit("bench()", setup=setup, number=count)
@@ -473,7 +474,7 @@ def bench():
             vol.add(lease_id)
 """
         setup = setup % {
-            "path": tmp_vol.backend.name,
+            "path": tmp_vol.path,
         }
         count = 100
         elapsed = timeit.timeit("bench()", setup=setup, number=count)
