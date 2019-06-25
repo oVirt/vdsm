@@ -64,9 +64,6 @@ class FailingWriter(xlease.DirectFile):
 @pytest.fixture(scope="module", params=userstorage.PATHS, ids=str)
 def user_storage(request):
     storage = request.param
-    if storage.sector_size == 4096:
-        pytest.xfail("Sector size {} not supported yet"
-                     .format(storage.sector_size))
     if not os.path.exists(storage.path):
         pytest.xfail("{} storage not available".format(storage.name))
     return storage
@@ -91,7 +88,7 @@ class TemporaryVolume(object):
         """
         Write records to volume index area.
         """
-        index = xlease.VolumeIndex()
+        index = xlease.VolumeIndex(self.block_size)
         with utils.closing(index):
             index.load(self.backend)
             for recnum, record in records:
@@ -107,7 +104,8 @@ class TemporaryVolume(object):
 
     def format_index(self):
         lockspace = os.path.basename(os.path.dirname(self.path))
-        xlease.format_index(lockspace, self.backend)
+        xlease.format_index(
+            lockspace, self.backend, block_size=self.block_size)
 
     def close(self):
         self.backend.close()
@@ -224,7 +222,7 @@ class TestIndex:
             # Truncate index, reading it should fail.
             with io.open(vol.path, "r+b") as f:
                 f.truncate(
-                    xlease.INDEX_BASE + xlease.INDEX_SIZE - xlease.BLOCK_SIZE)
+                    xlease.INDEX_BASE + xlease.INDEX_SIZE - tmp_vol.block_size)
 
         with pytest.raises(xlease.InvalidIndex):
             xlease.LeasesVolume(
