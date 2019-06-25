@@ -463,7 +463,8 @@ class FileStorageDomain(sd.StorageDomain):
 
         if cls.supports_external_leases(version):
             xleases_path = os.path.join(metadataDir, sd.XLEASES)
-            cls.format_external_leases(sdUUID, xleases_path)
+            cls.format_external_leases(
+                sdUUID, xleases_path, block_size=block_size)
 
         metaFile = os.path.join(metadataDir, sd.METADATA)
 
