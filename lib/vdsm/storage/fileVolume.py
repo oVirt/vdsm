@@ -426,18 +426,18 @@ class FileVolume(volume.Volume):
             oop.getProcessPool(sdUUID).os.unlink(metaPath)
 
     @classmethod
-    def _create(cls, dom, imgUUID, volUUID, size, volFormat, preallocate,
+    def _create(cls, dom, imgUUID, volUUID, size_blk, volFormat, preallocate,
                 volParent, srcImgUUID, srcVolUUID, volPath,
-                initialSize=None):
+                initial_size_blk=None):
         """
         Class specific implementation of volumeCreate.
         """
         # TODO: Remove _bytes when arguments to _create are fixed.
-        size_bytes = size * BLOCK_SIZE
-        if initialSize is None:
+        size_bytes = size_blk * BLOCK_SIZE
+        if initial_size_blk is None:
             initial_size_bytes = None
         else:
-            initial_size_bytes = initialSize * BLOCK_SIZE
+            initial_size_bytes = initial_size_blk * BLOCK_SIZE
 
         if volFormat == sc.RAW_FORMAT:
             return cls._create_raw_volume(
@@ -701,10 +701,10 @@ class FileVolume(volume.Volume):
         # pylint: disable=no-member
         return self._manifest.getLeaseVolumePath(vol_path)
 
-    def _extendSizeRaw(self, newSize):
+    def _extendSizeRaw(self, new_size_blk):
         volPath = self.getVolumePath()
         curSizeBytes = self.oop.os.stat(volPath).st_size
-        newSizeBytes = newSize * BLOCK_SIZE
+        newSizeBytes = new_size_blk * BLOCK_SIZE
 
         # No real sanity checks here, they should be included in the calling
         # function/method. We just validate the sizes to be consistent since
@@ -715,7 +715,7 @@ class FileVolume(volume.Volume):
             raise se.StorageException(
                 "Volume size is impossible: %s" % curSizeBytes)
         elif newSizeBytes < curSizeBytes:
-            raise se.VolumeResizeValueError(newSize)
+            raise se.VolumeResizeValueError(new_size_blk)
 
         if self.getType() == sc.PREALLOCATED_VOL:
             self.log.info("Preallocating volume %s to %s bytes",

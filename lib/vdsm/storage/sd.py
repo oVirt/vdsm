@@ -901,15 +901,16 @@ class StorageDomain(object):
         return cls.manifestClass.validateCreateVolumeParams(
             volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate)
 
-    def createVolume(self, imgUUID, size, volFormat, preallocate, diskType,
-                     volUUID, desc, srcImgUUID, srcVolUUID, initialSize=None):
+    def createVolume(self, imgUUID, size_blk, volFormat, preallocate, diskType,
+                     volUUID, desc, srcImgUUID, srcVolUUID,
+                     initial_size_blk=None):
         """
         Create a new volume
         """
         return self.getVolumeClass().create(
-            self._getRepoPath(), self.sdUUID, imgUUID, size, volFormat,
+            self._getRepoPath(), self.sdUUID, imgUUID, size_blk, volFormat,
             preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID,
-            initialSize=initialSize)
+            initial_size_blk=initial_size_blk)
 
     def getMDPath(self):
         return self._manifest.getMDPath()
