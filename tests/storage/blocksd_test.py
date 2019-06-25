@@ -284,7 +284,7 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
     vol_capacity = 10 * 1024**3
-    vol_size = vol_capacity // sc.BLOCK_SIZE_512
+    vol_size_blk = vol_capacity // sc.BLOCK_SIZE_512
     vol_desc = "Test volume"
 
     # Create domain directory structure.
@@ -296,7 +296,7 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
         mc.setattr(time, "time", lambda: 1550522547)
         dom.createVolume(
             imgUUID=img_uuid,
-            size=vol_size,
+            size_blk=vol_size_blk,
             volFormat=sc.COW_FORMAT,
             preallocate=sc.SPARSE_VOL,
             diskType=sc.DATA_DISKTYPE,
@@ -397,7 +397,7 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
         diskType="DATA",
         imgUUID=img_uuid,
         preallocate=sc.SPARSE_VOL,
-        size=10 * 1024**3,
+        size_blk=10 * 1024 ** 3,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
@@ -476,7 +476,7 @@ def test_create_snapshot_size(
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size=parent_vol_capacity // sc.BLOCK_SIZE_512,
+        size_blk=parent_vol_capacity // sc.BLOCK_SIZE_512,
         volFormat=sc.RAW_FORMAT,
         preallocate=sc.PREALLOCATED_VOL,
         diskType='DATA',
@@ -484,7 +484,7 @@ def test_create_snapshot_size(
         desc="Test parent volume",
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
-        initialSize=None)
+        initial_size_blk=None)
 
     parent_vol = dom.produceVolume(img_uuid, parent_vol_uuid)
 
@@ -493,29 +493,27 @@ def test_create_snapshot_size(
     with pytest.raises(se.InvalidParameterException):
         dom.createVolume(
             imgUUID=img_uuid,
-            size=parent_vol.getSizeBlk() - 1,
+            size_blk=parent_vol.getSizeBlk() - 1,
             volFormat=sc.COW_FORMAT,
             preallocate=sc.SPARSE_VOL,
             diskType='DATA',
             volUUID=vol_uuid,
             desc="Extended volume",
             srcImgUUID=parent_vol.imgUUID,
-            srcVolUUID=parent_vol.volUUID,
-            initialSize=None)
+            srcVolUUID=parent_vol.volUUID)
 
     # Verify that snapshot can be bigger than parent.
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size=vol_capacity // sc.BLOCK_SIZE_512,
+        size_blk=vol_capacity // sc.BLOCK_SIZE_512,
         volFormat=sc.COW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType='DATA',
         volUUID=vol_uuid,
         desc="Extended volume",
         srcImgUUID=parent_vol.imgUUID,
-        srcVolUUID=parent_vol.volUUID,
-        initialSize=None)
+        srcVolUUID=parent_vol.volUUID)
 
     vol = dom.produceVolume(img_uuid, vol_uuid)
 

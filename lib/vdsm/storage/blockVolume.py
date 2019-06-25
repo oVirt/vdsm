@@ -321,38 +321,40 @@ class BlockVolumeManifest(volume.VolumeManifest):
         return [lv.name for lv in lvs]
 
     @classmethod
-    def calculate_volume_alloc_size(cls, preallocate, capacity, initial_size):
+    def calculate_volume_alloc_size(
+            cls, preallocate, capacity_blk, initial_size_blk):
         """ Calculate the allocation size in mb of the volume
         'preallocate' - Sparse or Preallocated
-        'capacity' - the volume size in blocks
-        'initial_size' - optional, if provided the initial allocated
+        'capacity_blk' - the volume size in blocks
+        'initial_size_blk' - optional, if provided the initial allocated
                          size in blocks for sparse volumes
          """
-        if initial_size and preallocate == sc.PREALLOCATED_VOL:
+        if initial_size_blk and preallocate == sc.PREALLOCATED_VOL:
             log.error("Initial size is not supported for preallocated volumes")
             raise se.InvalidParameterException("initial size",
-                                               initial_size)
+                                               initial_size_blk)
 
-        if initial_size:
-            capacity_bytes = capacity * sc.BLOCK_SIZE
-            initial_size_bytes = initial_size * sc.BLOCK_SIZE
+        if initial_size_blk:
+            capacity_bytes = capacity_blk * sc.BLOCK_SIZE
+            initial_size_bytes = initial_size_blk * sc.BLOCK_SIZE
             max_size = cls.max_size(capacity_bytes, sc.COW_FORMAT)
             if initial_size_bytes > max_size:
                 log.error("The requested initial %s is bigger "
                           "than the max size %s", initial_size_bytes, max_size)
-                raise se.InvalidParameterException("initial size",
-                                                   initial_size)
+                raise se.InvalidParameterException("initial_size_blk",
+                                                   initial_size_blk)
 
         if preallocate == sc.SPARSE_VOL:
-            if initial_size:
-                initial_size = int(initial_size * QCOW_OVERHEAD_FACTOR)
-                alloc_size = (utils.round(initial_size, BLOCKS_TO_MB) //
+            if initial_size_blk:
+                initial_size_blk = int(initial_size_blk * QCOW_OVERHEAD_FACTOR)
+                alloc_size = (utils.round(initial_size_blk, BLOCKS_TO_MB) //
                               BLOCKS_TO_MB)
             else:
                 alloc_size = config.getint("irs",
                                            "volume_utilization_chunk_mb")
         else:
-            alloc_size = utils.round(capacity, BLOCKS_TO_MB) // BLOCKS_TO_MB
+            alloc_size = (utils.round(capacity_blk, BLOCKS_TO_MB) //
+                          BLOCKS_TO_MB)
 
         return alloc_size
 
@@ -487,15 +489,16 @@ class BlockVolume(volume.Volume):
         sd.clear_metadata_block(slot)
 
     @classmethod
-    def _create(cls, dom, imgUUID, volUUID, size, volFormat, preallocate,
-                volParent, srcImgUUID, srcVolUUID, volPath, initialSize=None):
+    def _create(cls, dom, imgUUID, volUUID, size_blk, volFormat, preallocate,
+                volParent, srcImgUUID, srcVolUUID, volPath,
+                initial_size_blk=None):
         """
         Class specific implementation of volumeCreate. All the exceptions are
         properly handled and logged in volume.create()
         """
 
         lvSize = cls.calculate_volume_alloc_size(preallocate,
-                                                 size, initialSize)
+                                                 size_blk, initial_size_blk)
 
         lvm.createLV(dom.sdUUID, volUUID, lvSize, activate=True,
                      initialTags=(sc.TAG_VOL_UNINIT,))
@@ -508,10 +511,10 @@ class BlockVolume(volume.Volume):
         if not volParent:
             cls.log.info("Request to create %s volume %s with size = %s "
                          "blocks", sc.type2name(volFormat), volPath,
-                         size)
+                         size_blk)
             if volFormat == sc.COW_FORMAT:
                 operation = qemuimg.create(volPath,
-                                           size=size * BLOCK_SIZE,
+                                           size=size_blk * BLOCK_SIZE,
                                            format=sc.fmt2str(volFormat),
                                            qcow2Compat=dom.qcow2_compat())
                 operation.run()
@@ -519,8 +522,8 @@ class BlockVolume(volume.Volume):
             # Create hardlink to template and its meta file
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s "
                          "with size %s (blocks)",
-                         imgUUID, volUUID, srcImgUUID, srcVolUUID, size)
-            volParent.clone(volPath, volFormat, size)
+                         imgUUID, volUUID, srcImgUUID, srcVolUUID, size_blk)
+            volParent.clone(volPath, volFormat, size_blk)
 
         with dom.acquireVolumeMetadataSlot(volUUID) as slot:
             mdTags = ["%s%s" % (sc.TAG_PREFIX_MD, slot),
@@ -538,9 +541,10 @@ class BlockVolume(volume.Volume):
         return (dom.sdUUID, slot)
 
     @classmethod
-    def calculate_volume_alloc_size(cls, preallocate, capacity, initial_size):
+    def calculate_volume_alloc_size(
+            cls, preallocate, capacity_blk, initial_size_blk):
         return cls.manifestClass.calculate_volume_alloc_size(
-            preallocate, capacity, initial_size)
+            preallocate, capacity_blk, initial_size_blk)
 
     def removeMetadata(self, metaId):
         self._manifest.removeMetadata(metaId)
@@ -647,30 +651,30 @@ class BlockVolume(volume.Volume):
 
         raise eFound
 
-    def extend(self, newSize):
+    def extend(self, new_size_blk):
         """Extend a logical volume
-            'newSize' - new size in blocks
+            'new_size_blk' - new size in blocks
         """
         self.log.info("Request to extend LV %s of image %s in VG %s with "
-                      "size = %s", self.volUUID, self.imgUUID, self.sdUUID,
-                      newSize)
+                      "size = %s blocks", self.volUUID, self.imgUUID,
+                      self.sdUUID, new_size_blk)
         # we should return: Success/Failure
         # Backend APIs:
-        sizemb = utils.round(newSize, BLOCKS_TO_MB) // BLOCKS_TO_MB
+        sizemb = utils.round(new_size_blk, BLOCKS_TO_MB) // BLOCKS_TO_MB
         lvm.extendLV(self.sdUUID, self.volUUID, sizemb)
 
-    def reduce(self, newSize, allowActive=False):
+    def reduce(self, new_size_blk, allowActive=False):
         """
         Reduce the size of the logical volume.
 
         Arguments:
-            newSize (int) - new size in blocks
+            new_size_blk (int) - new size in blocks
             allowActive (boolean) - indicates whether the LV is active
         """
         self.log.info("Request to reduce LV %s of image %s in VG %s with "
-                      "size = %s allowActive = %s", self.volUUID, self.imgUUID,
-                      self.sdUUID, newSize, allowActive)
-        sizemb = utils.round(newSize, BLOCKS_TO_MB) // BLOCKS_TO_MB
+                      "size = %s blocks allowActive = %s", self.volUUID,
+                      self.imgUUID, self.sdUUID, new_size_blk, allowActive)
+        sizemb = utils.round(new_size_blk, BLOCKS_TO_MB) // BLOCKS_TO_MB
         lvm.reduceLV(self.sdUUID, self.volUUID, sizemb, force=allowActive)
 
     @classmethod
