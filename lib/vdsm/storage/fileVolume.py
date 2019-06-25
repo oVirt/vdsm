@@ -381,7 +381,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         if self.getFormat() == sc.RAW_FORMAT:
             return self.getSizeBlk() * sc.BLOCK_SIZE
         else:
-            return self.getVolumeSize() * sc.BLOCK_SIZE
+            return self.getVolumeSize(bs=1)
 
 
 class FileVolume(volume.Volume):

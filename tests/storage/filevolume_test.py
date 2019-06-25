@@ -77,7 +77,7 @@ class TestFileVolumeManifest(object):
     def test_optimal_size_cow(self):
         size = 5 * MEGAB
         with self.make_volume(size=size, format=sc.COW_FORMAT) as vol:
-            assert vol.optimal_size() == vol.getVolumeSize() * sc.BLOCK_SIZE
+            assert vol.optimal_size() == vol.getVolumeSize(bs=1)
 
     def test_get_image_volumes(self):
         img_id = make_uuid()
