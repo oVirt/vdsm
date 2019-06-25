@@ -104,27 +104,8 @@ teardown() {
     res=$?
     [ "$res" -ne 0 ] && echo "*** err: $res"
 
-    # NOTE: Tar fails randomly when some log file is modified while tar is
-    # reading it, and there is no way to detet and filter this failure.
-    # We also do not want to fail the build if log collections failed.
-
-    tar --directory /var/log \
-        --exclude "journal/*" \
-        -czf "$EXPORT_DIR/mock_varlogs.tar.gz" \
-        . || echo "WARNING: Ignoring error collecting logs in /var/log"
-
-    tar --directory /var/host_log \
-        --exclude "journal/*" \
-        -czf "$EXPORT_DIR/host_varlogs.tar.gz" \
-        . || echo "WARNING: Ignoring error collecting logs in /var/host_log"
-
-    # We must teardown loop devices and mounts, otherwise mock fail to remove
-    # the mount directories:
-    # OSError: [Errno 16] Device or resource busy:
-    # '/var/lib/mock/epel-7-x86_64-2ff84fd1f104757319d3f4d8e9603805-15751/root/var/tmp/vdsm-storage/mount.file-512'
-
-    ${CI_PYTHON} tests/storage/userstorage.py teardown \
-        || echo "WARNING: Ingoring error while tearing down user storage"
+    collect_logs
+    teardown_storage
 }
 
 install_lvmlocal_conf() {
@@ -150,8 +131,43 @@ run_tests() {
 
     install_lvmlocal_conf
 
-    # Set up storage for storage tests (tore down in teardown()).
-    ${CI_PYTHON} tests/storage/userstorage.py setup
+    setup_storage
 
     TIMEOUT=600 make tests NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
+}
+
+# Set up storage for storage tests. The storage is tore down in teardown().
+setup_storage() {
+    ${CI_PYTHON} tests/storage/userstorage.py setup
+}
+
+# Teardown storage set up in setup_storage.
+# We must teardown loop devices and mounts, otherwise mock fail to remove the
+# mount directories:
+# OSError: [Errno 16] Device or resource busy:
+# '/var/lib/mock/epel-7-x86_64-2ff84fd1f104757319d3f4d8e9603805-15751/root/var/tmp/vdsm-storage/mount.file-512'
+# NOTE: should be called only in teardown context. Always succeeds, even if
+# tearing down storage failed.
+teardown_storage() {
+    ${CI_PYTHON} tests/storage/userstorage.py teardown \
+        || echo "WARNING: Ingoring error while tearing down user storage"
+}
+
+# Collect tests logs.
+# NOTE: should be called only in teardown context. Always succeeds, even if
+# collecting logs failed.
+collect_logs() {
+    # NOTE: Tar fails randomly when some log file is modified while tar is
+    # reading it, and there is no way to detect and filter this failure.
+    # We also do not want to fail the build if log collections failed.
+
+    tar --directory /var/log \
+        --exclude "journal/*" \
+        -czf "$EXPORT_DIR/mock_varlogs.tar.gz" \
+        . || echo "WARNING: Ignoring error collecting logs in /var/log"
+
+    tar --directory /var/host_log \
+        --exclude "journal/*" \
+        -czf "$EXPORT_DIR/host_varlogs.tar.gz" \
+        . || echo "WARNING: Ignoring error collecting logs in /var/host_log"
 }
