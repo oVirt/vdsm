@@ -1285,7 +1285,8 @@ class StorageDomain(object):
         return cls.manifestClass.supports_external_leases(version)
 
     @classmethod
-    def format_external_leases(cls, lockspace, path):
+    def format_external_leases(
+            cls, lockspace, path, block_size=sc.BLOCK_SIZE_512):
         """
         Format the special xleases volume.
 
@@ -1302,7 +1303,7 @@ class StorageDomain(object):
         """
         with cls.manifestClass.external_leases_backend(
                 lockspace, path) as backend:
-            xlease.format_index(lockspace, backend)
+            xlease.format_index(lockspace, backend, block_size=block_size)
 
     def external_leases_path(self):
         return self._manifest.external_leases_path()
