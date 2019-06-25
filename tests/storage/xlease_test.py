@@ -146,7 +146,8 @@ class TestIndex:
 
     def test_bad_magic(self, tmp_vol):
         tmp_vol.zero_storage()
-        self.check_invalid_index(tmp_vol.backend.name)
+        with pytest.raises(xlease.InvalidIndex):
+            xlease.LeasesVolume(tmp_vol.backend).close()
 
     def test_bad_version(self, tmp_vol):
         vol = xlease.LeasesVolume(tmp_vol.backend)
@@ -154,7 +155,9 @@ class TestIndex:
             with io.open(vol.path, "r+b") as f:
                 f.seek(xlease.INDEX_BASE + 5)
                 f.write(b"blah")
-            self.check_invalid_index(vol.path)
+
+        with pytest.raises(xlease.InvalidIndex):
+            xlease.LeasesVolume(tmp_vol.backend).close()
 
     def test_unsupported_version(self, tmp_vol):
         vol = xlease.LeasesVolume(tmp_vol.backend)
@@ -163,7 +166,9 @@ class TestIndex:
             with io.open(vol.path, "r+b") as f:
                 f.seek(xlease.INDEX_BASE)
                 f.write(md.bytes())
-            self.check_invalid_index(vol.path)
+
+        with pytest.raises(xlease.InvalidIndex):
+            xlease.LeasesVolume(tmp_vol.backend).close()
 
     def test_bad_lockspace(self, tmp_vol):
         vol = xlease.LeasesVolume(tmp_vol.backend)
@@ -171,7 +176,9 @@ class TestIndex:
             with io.open(vol.path, "r+b") as f:
                 f.seek(xlease.INDEX_BASE + 10)
                 f.write(b"\xf0")
-            self.check_invalid_index(vol.path)
+
+        with pytest.raises(xlease.InvalidIndex):
+            xlease.LeasesVolume(tmp_vol.backend).close()
 
     def test_bad_mtime(self, tmp_vol):
         vol = xlease.LeasesVolume(tmp_vol.backend)
@@ -179,7 +186,9 @@ class TestIndex:
             with io.open(vol.path, "r+b") as f:
                 f.seek(xlease.INDEX_BASE + 59)
                 f.write(b"not a number")
-            self.check_invalid_index(vol.path)
+
+        with pytest.raises(xlease.InvalidIndex):
+            xlease.LeasesVolume(tmp_vol.backend).close()
 
     def test_updating(self, tmp_vol):
         vol = xlease.LeasesVolume(tmp_vol.backend)
@@ -189,7 +198,9 @@ class TestIndex:
             with io.open(vol.path, "r+b") as f:
                 f.seek(xlease.INDEX_BASE)
                 f.write(md.bytes())
-            self.check_invalid_index(vol.path)
+
+        with pytest.raises(xlease.InvalidIndex):
+            xlease.LeasesVolume(tmp_vol.backend).close()
 
     def test_truncated_index(self, tmp_vol):
         vol = xlease.LeasesVolume(tmp_vol.backend)
@@ -198,14 +209,9 @@ class TestIndex:
             with io.open(vol.path, "r+b") as f:
                 f.truncate(
                     xlease.INDEX_BASE + xlease.INDEX_SIZE - xlease.BLOCK_SIZE)
-            self.check_invalid_index(vol.path)
 
-    def check_invalid_index(self, path):
-        file = xlease.DirectFile(path)
-        with utils.closing(file):
-            with pytest.raises(xlease.InvalidIndex):
-                vol = xlease.LeasesVolume(file)
-                vol.close()
+        with pytest.raises(xlease.InvalidIndex):
+            xlease.LeasesVolume(tmp_vol.backend).close()
 
     def test_format(self, tmp_vol):
         vol = xlease.LeasesVolume(tmp_vol.backend)
