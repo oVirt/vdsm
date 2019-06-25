@@ -290,17 +290,15 @@ class TestIndex:
             assert res["resource"] == lease.resource
 
     def test_add_write_failure(self, tmp_vol):
-        base = xlease.LeasesVolume(tmp_vol.backend)
-        with utils.closing(base):
-            file = FailingWriter(base.path)
-            with utils.closing(file):
-                vol = xlease.LeasesVolume(file)
-                with utils.closing(vol):
-                    lease_id = make_uuid()
-                    with pytest.raises(WriteError):
-                        vol.add(lease_id)
-                    # Must succeed becuase writng to storage failed
-                    assert lease_id not in vol.leases()
+        backend = FailingWriter(tmp_vol.backend.name)
+        with utils.closing(backend):
+            vol = xlease.LeasesVolume(backend)
+            with utils.closing(vol):
+                lease_id = make_uuid()
+                with pytest.raises(WriteError):
+                    vol.add(lease_id)
+                # Must succeed becuase writng to storage failed
+                assert lease_id not in vol.leases()
 
     def test_add_sanlock_failure(self, tmp_vol, fake_sanlock):
         vol = xlease.LeasesVolume(tmp_vol.backend)
@@ -377,16 +375,14 @@ class TestIndex:
     def test_remove_write_failure(self, tmp_vol):
         record = xlease.Record(make_uuid(), 0, updating=True)
         tmp_vol.write_records((42, record))
-        base = xlease.LeasesVolume(tmp_vol.backend)
-        with utils.closing(base):
-            file = FailingWriter(base.path)
-            with utils.closing(file):
-                vol = xlease.LeasesVolume(file)
-                with utils.closing(vol):
-                    with pytest.raises(WriteError):
-                        vol.remove(record.resource)
-                    # Must succeed becuase writng to storage failed
-                    assert record.resource in vol.leases()
+        backend = FailingWriter(tmp_vol.backend.name)
+        with utils.closing(backend):
+            vol = xlease.LeasesVolume(backend)
+            with utils.closing(vol):
+                with pytest.raises(WriteError):
+                    vol.remove(record.resource)
+                # Must succeed becuase writng to storage failed
+                assert record.resource in vol.leases()
 
     def test_remove_sanlock_failure(self, tmp_vol, fake_sanlock):
         vol = xlease.LeasesVolume(tmp_vol.backend)
@@ -435,7 +431,7 @@ from vdsm import utils
 from vdsm.storage import exception as se
 from vdsm.storage import xlease
 
-path = "%s"
+path = "%(path)s"
 lockspace = os.path.basename(os.path.dirname(path))
 lease_id = make_uuid()
 
@@ -449,13 +445,13 @@ def bench():
             except se.NoSuchLease:
                 pass
 """
-        vol = xlease.LeasesVolume(tmp_vol.backend)
-        with utils.closing(vol):
-            count = 100
-            elapsed = timeit.timeit("bench()", setup=setup % vol.path,
-                                    number=count)
-            print("%d lookups in %.6f seconds (%.6f seconds per lookup)"
-                  % (count, elapsed, elapsed / count))
+        setup = setup % {
+            "path": tmp_vol.backend.name,
+        }
+        count = 100
+        elapsed = timeit.timeit("bench()", setup=setup, number=count)
+        print("%d lookups in %.6f seconds (%.6f seconds per lookup)"
+              % (count, elapsed, elapsed / count))
 
     @pytest.mark.slow
     def test_time_add(self, tmp_vol, fake_sanlock):
@@ -465,7 +461,7 @@ from testlib import make_uuid
 from vdsm import utils
 from vdsm.storage import xlease
 
-path = "%s"
+path = "%(path)s"
 lockspace = os.path.basename(os.path.dirname(path))
 
 def bench():
@@ -476,15 +472,15 @@ def bench():
         with utils.closing(vol, log="test"):
             vol.add(lease_id)
 """
-        vol = xlease.LeasesVolume(tmp_vol.backend)
-        with utils.closing(vol):
-            count = 100
-            elapsed = timeit.timeit("bench()", setup=setup % vol.path,
-                                    number=count)
-            # Note: this does not include the time to create the real sanlock
-            # resource.
-            print("%d adds in %.6f seconds (%.6f seconds per add)"
-                  % (count, elapsed, elapsed / count))
+        setup = setup % {
+            "path": tmp_vol.backend.name,
+        }
+        count = 100
+        elapsed = timeit.timeit("bench()", setup=setup, number=count)
+        # Note: this does not include the time to create the real sanlock
+        # resource.
+        print("%d adds in %.6f seconds (%.6f seconds per add)"
+              % (count, elapsed, elapsed / count))
 
 
 @pytest.fixture(params=[
