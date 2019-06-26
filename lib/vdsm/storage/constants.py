@@ -262,3 +262,7 @@ P_VDSM_STORAGE = os.path.join(constants.P_VDSM_RUN, 'storage/')
 DOMAIN_MNT_POINT = 'mnt'
 REPO_DATA_CENTER = config.get('irs', 'repository')
 REPO_MOUNT_DIR = os.path.join(REPO_DATA_CENTER, DOMAIN_MNT_POINT)
+
+# TODO: Consider totally removing it in the future.
+# Global process pool name.
+GLOBAL_OOP = 'Global'

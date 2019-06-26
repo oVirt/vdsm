@@ -2353,13 +2353,13 @@ class HSM(object):
         elif domType is sd.NFS_DOMAIN:
             lPath = conObj._mountCon._getLocalPath()
             self.log.debug("nfs local path: %s", lPath)
-            goop = oop.getGlobalProcPool()
+            goop = oop.getProcessPool(sc.GLOBAL_OOP)
             uuids = tuple(os.path.basename(d) for d in
                           goop.glob.glob(os.path.join(lPath, uuidPatern)))
         elif domType is sd.POSIXFS_DOMAIN:
             lPath = conObj._getLocalPath()
             self.log.debug("posix local path: %s", lPath)
-            goop = oop.getGlobalProcPool()
+            goop = oop.getProcessPool(sc.GLOBAL_OOP)
             uuids = tuple(os.path.basename(d) for d in
                           goop.glob.glob(os.path.join(lPath, uuidPatern)))
         elif domType is sd.GLUSTERFS_DOMAIN:

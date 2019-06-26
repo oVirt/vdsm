@@ -64,11 +64,10 @@ from vdsm.common.logutils import SimpleLogAdapter
 from vdsm.common.threadlocal import vars
 from vdsm.config import config
 from vdsm.storage import exception as se
+from vdsm.storage import constants as sc
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import resourceManager
 
-
-getProcPool = oop.getGlobalProcPool
 
 KEY_SEPARATOR = "="
 KEY_SEPARATOR_ENCODED = "_eq_"
@@ -84,6 +83,10 @@ FIELD_SEP = ","
 TASK_METADATA_VERSION = 1
 
 ROLLBACK_SENTINEL = "rollback sentinel"
+
+
+def getProcPool():
+    return oop.getProcessPool(sc.GLOBAL_OOP)
 
 
 def _eq_encode(s):

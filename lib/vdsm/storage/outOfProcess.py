@@ -36,8 +36,6 @@ from vdsm.config import config
 from vdsm.storage import exception as se
 from vdsm.storage.compat import ioprocess
 
-GLOBAL = 'Global'
-
 DEFAULT_TIMEOUT = config.getint("irs", "process_pool_timeout")
 IOPROC_IDLE_TIME = config.getint("irs", "max_ioprocess_idle_time")
 HELPERS_PER_DOMAIN = config.getint("irs", "process_pool_max_slots_per_domain")
@@ -94,10 +92,6 @@ def getProcessPool(clientName):
 
         _procPool[clientName] = (elapsed_time() + IOPROC_IDLE_TIME, proc)
         return proc
-
-
-def getGlobalProcPool():
-    return getProcessPool(GLOBAL)
 
 
 class _IOProcessGlob(object):

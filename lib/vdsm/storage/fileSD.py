@@ -73,7 +73,9 @@ ST_BYTES_PER_BLOCK = 512
 
 _MOUNTLIST_IGNORE = ('/' + sd.BLOCKSD_DIR, '/' + sd.GLUSTERSD_DIR)
 
-getProcPool = oop.getGlobalProcPool
+
+def getProcPool():
+    return oop.getProcessPool(sc.GLOBAL_OOP)
 
 
 def validateDirAccess(dirPath):
