@@ -47,7 +47,6 @@ SUBDIRS += \
 	httpsisoboot \
 	macbind \
 	nestedvt \
-	numa \
 	pincpu \
 	promisc \
 	scratchpad \

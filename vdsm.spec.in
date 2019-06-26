@@ -381,6 +381,7 @@ Conflicts: vdsm-hook-sriov
 Obsoletes: vdsm-hook-vfio-mdev
 Provides: vdsm-hook-vfio-mdev
 Obsoletes: %{name}-hook-floppy
+Obsoletes: %{name}-hook-numa
 
 %description
 The VDSM service is required by a Virtualization Manager to manage the
@@ -692,14 +693,6 @@ BuildArch:      noarch
 %description hook-nestedvt
 If the nested virtualization is enabled in your kvm module
 this hook will expose it to the guests.
-
-%package hook-numa
-Summary:        NUMA support for VDSM
-BuildArch:      noarch
-
-%description hook-numa
-Hooks is getting number/rage of NUMA nodes and NUMA mode,
-and update the VM xml.
 
 %package hook-openstacknet
 Summary:        OpenStack Network vNICs support for VDSM
@@ -1310,9 +1303,6 @@ exit 0
 %files hook-nestedvt
 %{_sysconfdir}/modprobe.d/vdsm-nestedvt.conf
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_nestedvt
-
-%files hook-numa
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_numa
 
 %files hook-pincpu
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_pincpu
