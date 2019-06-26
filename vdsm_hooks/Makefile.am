@@ -51,7 +51,6 @@ SUBDIRS += \
 	scratchpad \
 	smbios \
 	spiceoptions \
-	vmdisk \
 	$(NULL)
 endif
 

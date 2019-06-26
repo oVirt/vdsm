@@ -383,6 +383,7 @@ Provides: vdsm-hook-vfio-mdev
 Obsoletes: %{name}-hook-floppy
 Obsoletes: %{name}-hook-numa
 Obsoletes: %{name}-hook-pincpu
+Obsoletes: %{name}-hook-vmdisk
 
 %description
 The VDSM service is required by a Virtualization Manager to manage the
@@ -755,13 +756,6 @@ Conflicts:      hook-vmfex
 %description hook-vmfex-dev
 Allows to use custom device properties to connect a guest vNIC to a host
 VM-FEX Virtual Function (SR-IOV with macvtap mode).
-
-%package hook-vmdisk
-Summary:        External disk support for VDSM
-BuildArch:      noarch
-
-%description hook-vmdisk
-Hook adds additional disk image for a VM (raw or qcow2)
 
 %package hook-fcoe
 Summary:        Hook to enable FCoE support
@@ -1312,9 +1306,6 @@ exit 0
 
 %files hook-spiceoptions
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_spiceoptions
-
-%files hook-vmdisk
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vmdisk
 %endif
 
 %files http
