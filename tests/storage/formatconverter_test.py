@@ -63,16 +63,16 @@ def vol(request):
 
 
 def test_v3_reset_meta_vol_size_metadata_no_change_needed(vol):
-    original_size_blk = vol.getSizeBlk()
+    original_capacity = vol.getCapacity()
     _v3_reset_meta_volsize(vol)
-    assert vol.getSizeBlk() == original_size_blk
+    assert vol.getCapacity() == original_capacity
 
 
 def test_v3_reset_meta_vol_size_metadata_wrong(vol):
-    original_size_blk = vol.getSizeBlk()
-    vol.setSizeBlk(1024)
+    original_capacity = vol.getCapacity()
+    vol.setCapacity(original_capacity // 2)
     _v3_reset_meta_volsize(vol)
-    assert vol.getSizeBlk() == original_size_blk
+    assert vol.getCapacity() == original_capacity
 
 
 def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
