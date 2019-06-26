@@ -526,7 +526,6 @@ AC_OUTPUT([
 	vdsm_hooks/faqemu/Makefile
 	vdsm_hooks/fcoe/Makefile
 	vdsm_hooks/fileinject/Makefile
-	vdsm_hooks/floppy/Makefile
 	vdsm_hooks/hostdev_scsi/Makefile
 	vdsm_hooks/httpsisoboot/Makefile
 	vdsm_hooks/localdisk/Makefile

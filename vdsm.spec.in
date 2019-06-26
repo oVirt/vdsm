@@ -380,6 +380,7 @@ Requires: %{python_or_python3}-pyudev
 Conflicts: vdsm-hook-sriov
 Obsoletes: vdsm-hook-vfio-mdev
 Provides: vdsm-hook-vfio-mdev
+Obsoletes: %{name}-hook-floppy
 
 %description
 The VDSM service is required by a Virtualization Manager to manage the
@@ -671,13 +672,6 @@ Requires:       python-libguestfs
 %description hook-fileinject
 Hook is getting target file name and its content and
 create that file in target machine.
-
-%package hook-floppy
-Summary:        Allow adding floppy to VM
-BuildArch:      noarch
-
-%description hook-floppy
-Allow adding floppy to VM
 
 %package hook-httpsisoboot
 Summary:        Allow directly booting from an https available ISO
@@ -1302,10 +1296,6 @@ exit 0
 
 %files hook-fileinject
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_fileinject
-
-%files hook-floppy
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_floppy
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_floppy
 
 %files hook-httpsisoboot
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_httpsisoboot
