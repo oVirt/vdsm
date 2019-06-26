@@ -85,8 +85,9 @@ class Headers(object):
     HEARTBEAT = "heart-beat"
 
 
-COMMANDS = tuple([command for command in dir(Command)
-                  if not command.startswith('_')])
+COMMANDS = tuple(getattr(Command, command)
+                 for command in dir(Command)
+                 if not command.startswith('_'))
 
 
 class AckMode(object):
