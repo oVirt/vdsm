@@ -121,15 +121,10 @@ class FileMetadataRW(object):
             return []
         else:
             data = data.rstrip(b"\0")
-            return data.splitlines()
+            return data.decode('utf-8').splitlines()
 
     def writelines(self, metadata):
-        for i, line in enumerate(metadata):
-            if isinstance(line, unicode):
-                line = line.encode('utf-8')
-            metadata[i] = line
-
-        metadata = [i + '\n' for i in metadata]
+        metadata = [line.encode('utf-8') + b'\n' for line in metadata]
         tmpFilePath = self._metafile + ".new"
         try:
             self._oop.writeLines(tmpFilePath, metadata)

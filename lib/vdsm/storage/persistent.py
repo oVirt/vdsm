@@ -40,10 +40,7 @@ SHA_CKSUM_TAG = "_SHA_CKSUM"
 
 
 def _preprocessLine(line):
-    if not isinstance(line, unicode):
-        line = unicode(str(line), 'utf-8')
-
-    return unicode.encode(line, 'ascii', 'xmlcharrefreplace')
+    return line.encode('ascii', 'xmlcharrefreplace')
 
 
 def unicodeEncoder(s):
