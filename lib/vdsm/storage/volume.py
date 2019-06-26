@@ -469,8 +469,8 @@ class VolumeManifest(object):
             # Note: must match setShared logic
             self.voltype = vol_attr.type
 
-    def setSize(self, size):
-        self.setMetaParam(sc.SIZE, size)
+    def setSizeBlk(self, size_blk):
+        self.setMetaParam(sc.SIZE, size_blk)
 
     def updateInvalidatedSize(self):
         """
@@ -1313,7 +1313,7 @@ class Volume(object):
             self.log.debug("updating metadata for volume %s changing the "
                            "size %s to %s", self.volUUID, old_vol_size_blk,
                            new_vol_size_blk)
-            self.setSize(new_vol_size_blk)
+            self.setSizeBlk(new_vol_size_blk)
 
     @classmethod
     def extendSizeFinalize(cls, taskObj, sdUUID, imgUUID, volUUID):
@@ -1419,8 +1419,8 @@ class Volume(object):
     def getVolumeTrueSize(self):
         return self._manifest.getVolumeTrueSize()
 
-    def setSize(self, size):
-        self._manifest.setSize(size)
+    def setSizeBlk(self, size):
+        self._manifest.setSizeBlk(size)
 
     def updateInvalidatedSize(self):
         self._manifest.updateInvalidatedSize()

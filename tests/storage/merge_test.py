@@ -69,14 +69,14 @@ def fake_blockVolume_extendSize(env, vol_instance, new_size_blk):
     new_size = new_size_blk * sc.BLOCK_SIZE
     new_size_mb = (new_size + MB - 1) // MB
     env.lvm.extendLV(env.sd_manifest.sdUUID, vol_instance.volUUID, new_size_mb)
-    vol_instance.setSize(new_size_blk)
+    vol_instance.setSizeBlk(new_size_blk)
 
 
 def fake_fileVolume_extendSize(env, vol_instance, new_size_blk):
     new_size = new_size_blk * sc.BLOCK_SIZE
     vol_path = vol_instance.getVolumePath()
     env.sd_manifest.oop.truncateFile(vol_path, new_size)
-    vol_instance.setSize(new_size_blk)
+    vol_instance.setSizeBlk(new_size_blk)
 
 
 Volume = namedtuple("Volume", "format,virtual,physical")
@@ -474,9 +474,9 @@ class TestFinalizeMerge:
             fake_base_vol = fake_sd.produceVolume(subchain.img_id,
                                                   subchain.base_id)
 
-            optimal_size = base_vol.optimal_size() // sc.BLOCK_SIZE
+            optimal_size_blk = base_vol.optimal_size() // sc.BLOCK_SIZE
             assert fake_base_vol.__calls__ == [
-                ('reduce', (optimal_size,), {}),
+                ('reduce', (optimal_size_blk,), {}),
             ]
 
     def test_reduce_not_chunked(self):

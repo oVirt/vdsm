@@ -202,7 +202,7 @@ def _update_base_capacity(base_vol, top_vol):
         log.info("Updating base capacity, setting size in metadata to "
                  "%d for cow base volume",
                  top_size_blk)
-        base_vol.setSize(top_size_blk)
+        base_vol.setSizeBlk(top_size_blk)
 
 
 def _extend_base_allocation(base_vol, top_vol):
