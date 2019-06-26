@@ -21,7 +21,6 @@
 from __future__ import absolute_import
 
 import pytest
-import six
 
 from yajsonrpc import stomp
 from yajsonrpc.stompserver import StompDetector
@@ -33,7 +32,6 @@ class Dummy(object):
 
 
 @pytest.mark.parametrize("data", [c.encode("utf-8") for c in stomp.COMMANDS])
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_stomp_detector_should_detect_stomp_protocol(data):
     assert StompDetector(json_binding=Dummy()).detect(data)
 
@@ -42,7 +40,6 @@ def test_stomp_detector_should_detect_stomp_protocol(data):
     b"smth",
     b"\x23\x54",
 ])
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_stomp_detector_should_reject_garbage(data):
     assert not StompDetector(json_binding=Dummy()).detect(data)
 
@@ -51,6 +48,5 @@ def test_stomp_detector_should_reject_garbage(data):
     b"GET /",
     b"PUT /",
 ])
-@pytest.mark.skipif(six.PY3, reason="needs porting to py3")
 def test_stomp_detector_should_reject_http_verbs(data):
     assert not StompDetector(json_binding=Dummy()).detect(data)

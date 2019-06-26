@@ -400,13 +400,14 @@ class StompDetector():
     log = logging.getLogger("protocoldetector.StompDetector")
     NAME = "stomp"
     REQUIRED_SIZE = max(len(s) for s in stomp.COMMANDS)
+    COMMANDS = tuple(c.encode("utf-8") for c in stomp.COMMANDS)
 
     def __init__(self, json_binding):
         self.json_binding = json_binding
         self._reactor = self.json_binding.reactor
 
     def detect(self, data):
-        return data.startswith(stomp.COMMANDS)
+        return data.startswith(StompDetector.COMMANDS)
 
     def handle_socket(self, client_socket, socket_address):
         self.json_binding.add_socket(self._reactor, client_socket)
