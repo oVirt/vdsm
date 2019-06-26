@@ -110,26 +110,25 @@ def _v3_reset_meta_volsize(vol):
     Arguments:
         vol (Volume): Volume to reset
     """
-    V2META_BLOCKSIZE = 512
 
     # BZ811880 Verifiying that the volume size is the same size advertised
     # by the metadata
     log.debug("Checking the volume size for the volume %s", vol.volUUID)
 
-    metaVolSize = int(vol.getMetaParam(sc.SIZE))
+    meta_vol_size = int(vol.getMetaParam(sc.CAPACITY))
 
     if vol.getFormat() == sc.COW_FORMAT:
         qemuVolInfo = qemuimg.info(vol.getVolumePath(),
                                    qemuimg.FORMAT.QCOW2)
-        virtVolSizeBlk = qemuVolInfo["virtualsize"] / V2META_BLOCKSIZE
+        virtual_vol_size = qemuVolInfo["virtualsize"]
     else:
-        virtVolSizeBlk = vol.getVolumeSize()
+        virtual_vol_size = vol.getVolumeSize(bs=1)
 
-    if metaVolSize != virtVolSizeBlk:
+    if meta_vol_size != virtual_vol_size:
         log.warn("Fixing the mismatch between the metadata volume size "
                  "(%s) and the volume virtual size (%s) for the volume "
-                 "%s", metaVolSize, virtVolSizeBlk, vol.volUUID)
-        vol.setMetaParam(sc.SIZE, virtVolSizeBlk)
+                 "%s", meta_vol_size, virtual_vol_size, vol.volUUID)
+        vol.setMetaParam(sc.CAPACITY, virtual_vol_size)
 
 
 def v3DomainConverter(repoPath, hostId, domain, isMsd):
