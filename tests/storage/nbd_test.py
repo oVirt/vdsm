@@ -100,7 +100,7 @@ def nbd_env(monkeypatch):
         with io.open(env.src, "wb") as f:
             f.truncate(env.virtual_size)
             f.seek(128 * 1024)
-            f.write("data from source image")
+            f.write(b"data from source image")
 
         # Destination for copying from nbd server.
         env.dst = os.path.join(env.tmpdir, "dst")
