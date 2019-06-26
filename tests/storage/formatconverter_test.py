@@ -70,7 +70,7 @@ def test_v3_reset_meta_vol_size_metadata_no_change_needed(vol):
 
 def test_v3_reset_meta_vol_size_metadata_wrong(vol):
     original_size_blk = vol.getSizeBlk()
-    vol.setSize(1024)
+    vol.setSizeBlk(1024)
     _v3_reset_meta_volsize(vol)
     assert vol.getSizeBlk() == original_size_blk
 

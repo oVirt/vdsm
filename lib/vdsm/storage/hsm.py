@@ -753,7 +753,7 @@ class HSM(object):
                     newSizeBytes)
                 raise se.VolumeResizeValueError(str(newSizeBytes))
             # Uncommit the current size
-            volToExtend.setSize(0)
+            volToExtend.setSizeBlk(0)
             qemuimg.resize(volPath, newSizeBytes, qemuImgFormat)
             roundedSizeBytes = qemuimg.info(volPath,
                                             qemuImgFormat)['virtualsize']
@@ -761,7 +761,7 @@ class HSM(object):
             volToExtend.teardown(sdUUID, volUUID)
 
         new_size_blk = (roundedSizeBytes + BLOCK_SIZE - 1) / BLOCK_SIZE
-        volToExtend.setSize(new_size_blk)
+        volToExtend.setSizeBlk(new_size_blk)
 
         return dict(size=str(roundedSizeBytes))
 
@@ -3078,7 +3078,7 @@ class HSM(object):
             size_blk = (capacity + BLOCK_SIZE - 1) / BLOCK_SIZE
         else:
             size_blk = capacity
-        vol.setSize(size_blk)
+        vol.setSizeBlk(size_blk)
 
     @public
     def getVolumeInfo(self, sdUUID, spUUID, imgUUID, volUUID, options=None):
