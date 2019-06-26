@@ -323,7 +323,7 @@ def readLines(ioproc, path):
 
 
 def writeLines(ioproc, path, lines):
-    data = ''.join(lines)
+    data = b''.join(lines)
     return writeFile(ioproc, path, data)
 
 
