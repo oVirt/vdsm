@@ -325,13 +325,14 @@ class ThreadedServer(HTTPServer):
 class HttpDetector():
     log = logging.getLogger("HttpDetector")
     NAME = "http"
-    REQUIRED_SIZE = 5
+    HTTP_VERBS = (b"PUT /", b"GET /")
+    REQUIRED_SIZE = max(len(v) for v in HTTP_VERBS)
 
     def __init__(self, server):
         self.server = server
 
     def detect(self, data):
-        return data.startswith("PUT /") or data.startswith("GET /")
+        return data.startswith(HttpDetector.HTTP_VERBS)
 
     def handle_socket(self, client_socket, socket_address):
         self.server.add_socket(client_socket, socket_address)
