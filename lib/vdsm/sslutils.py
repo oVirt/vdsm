@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ CLIENT_PROTOCOL = ssl.PROTOCOL_SSLv23
 class SSLSocket(object):
     def __init__(self, sock):
         self.sock = sock
-        self._data = ''
+        self._data = b''
 
     # ssl do not accept flag other than 0
     def read(self, size=4096, flag=None):
@@ -51,7 +51,7 @@ class SSLSocket(object):
             else:
                 if self._data:
                     result = self._data
-                    self._data = ''
+                    self._data = b''
                 else:
                     result = self.sock.read(size)
         except SSLError as e:
