@@ -410,6 +410,7 @@ Obsoletes: %{name}-hook-floppy
 Obsoletes: %{name}-hook-numa
 Obsoletes: %{name}-hook-pincpu
 Obsoletes: %{name}-hook-vmdisk
+Obsoletes: %{name}-hook-hostdev-scsi
 
 %description
 The VDSM service is required by a Virtualization Manager to manage the
@@ -1263,9 +1264,6 @@ exit 0
 
 %files hook-cpuflags
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_cpuflags
-
-%files hook-hostdev-scsi
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hostdev_scsi
 
 %if %{with_hooks}
 %files hook-allocate_net
