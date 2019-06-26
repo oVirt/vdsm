@@ -382,6 +382,7 @@ Obsoletes: vdsm-hook-vfio-mdev
 Provides: vdsm-hook-vfio-mdev
 Obsoletes: %{name}-hook-floppy
 Obsoletes: %{name}-hook-numa
+Obsoletes: %{name}-hook-pincpu
 
 %description
 The VDSM service is required by a Virtualization Manager to manage the
@@ -700,14 +701,6 @@ BuildArch:      noarch
 
 %description hook-openstacknet
 Hook for OpenStack Network vNICs.
-
-%package hook-pincpu
-Summary:        Hook pin VM so specific CPUs
-BuildArch:      noarch
-
-%description hook-pincpu
-pincpu is hook for VDSM.
-pincpu enable to pin virtual machine to a specific CPUs.
 
 %package hook-promisc
 Summary:        Network interface promiscuous mode support for VDSM
@@ -1303,9 +1296,6 @@ exit 0
 %files hook-nestedvt
 %{_sysconfdir}/modprobe.d/vdsm-nestedvt.conf
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_nestedvt
-
-%files hook-pincpu
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_pincpu
 
 %files hook-promisc
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_promisc

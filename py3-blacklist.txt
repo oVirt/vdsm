@@ -58,7 +58,6 @@
 ./vdsm_hooks/localdisk/localdisk-helper
 ./vdsm_hooks/macbind/before_vm_start.py
 ./vdsm_hooks/nestedvt/before_vm_start.py
-./vdsm_hooks/pincpu/before_vm_start.py
 ./vdsm_hooks/promisc/after_vm_start.py
 ./vdsm_hooks/promisc/before_vm_destroy.py
 ./vdsm_hooks/qemucmdline/before_vm_start.py
