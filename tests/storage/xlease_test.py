@@ -33,6 +33,7 @@ import pytest
 
 from vdsm import constants
 from vdsm import utils
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import xlease
@@ -143,7 +144,7 @@ class TestIndex:
             tmp_vol.backend, block_size=tmp_vol.block_size)
         with utils.closing(vol):
             with io.open(vol.path, "rb") as f:
-                f.seek(xlease.INDEX_BASE)
+                f.seek(sc.ALIGNMENT_1M)
                 assert f.read(4) == b"\x12\x15\x20\x16"
 
     def test_bad_magic(self, tmp_vol):
@@ -157,7 +158,7 @@ class TestIndex:
             tmp_vol.backend, block_size=tmp_vol.block_size)
         with utils.closing(vol):
             with io.open(vol.path, "r+b") as f:
-                f.seek(xlease.INDEX_BASE + 5)
+                f.seek(sc.ALIGNMENT_1M + 5)
                 f.write(b"blah")
 
         with pytest.raises(xlease.InvalidIndex):
@@ -170,7 +171,7 @@ class TestIndex:
         with utils.closing(vol):
             md = xlease.IndexMetadata(2, "lockspace")
             with io.open(vol.path, "r+b") as f:
-                f.seek(xlease.INDEX_BASE)
+                f.seek(sc.ALIGNMENT_1M)
                 f.write(md.bytes())
 
         with pytest.raises(xlease.InvalidIndex):
@@ -182,7 +183,7 @@ class TestIndex:
             tmp_vol.backend, block_size=tmp_vol.block_size)
         with utils.closing(vol):
             with io.open(vol.path, "r+b") as f:
-                f.seek(xlease.INDEX_BASE + 10)
+                f.seek(sc.ALIGNMENT_1M + 10)
                 f.write(b"\xf0")
 
         with pytest.raises(xlease.InvalidIndex):
@@ -194,7 +195,7 @@ class TestIndex:
             tmp_vol.backend, block_size=tmp_vol.block_size)
         with utils.closing(vol):
             with io.open(vol.path, "r+b") as f:
-                f.seek(xlease.INDEX_BASE + 59)
+                f.seek(sc.ALIGNMENT_1M + 59)
                 f.write(b"not a number")
 
         with pytest.raises(xlease.InvalidIndex):
@@ -208,7 +209,7 @@ class TestIndex:
             md = xlease.IndexMetadata(xlease.INDEX_VERSION, "lockspace",
                                       updating=True)
             with io.open(vol.path, "r+b") as f:
-                f.seek(xlease.INDEX_BASE)
+                f.seek(sc.ALIGNMENT_1M)
                 f.write(md.bytes())
 
         with pytest.raises(xlease.InvalidIndex):
@@ -222,7 +223,7 @@ class TestIndex:
             # Truncate index, reading it should fail.
             with io.open(vol.path, "r+b") as f:
                 f.truncate(
-                    xlease.INDEX_BASE + xlease.INDEX_SIZE - tmp_vol.block_size)
+                    sc.ALIGNMENT_1M + xlease.INDEX_SIZE - tmp_vol.block_size)
 
         with pytest.raises(xlease.InvalidIndex):
             xlease.LeasesVolume(
