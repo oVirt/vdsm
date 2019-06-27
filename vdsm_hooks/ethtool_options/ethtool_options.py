@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
 from __future__ import print_function
 from collections import namedtuple
 import sys
@@ -115,7 +116,7 @@ def _process_network(network, attrs):
                     _set_ethtool_opts(network,
                                       [subcmd.name, nic] + subcmd.flags)
                 except EthtoolError as ee:
-                    hooking.log(ee.message)
+                    hooking.log(str(ee))
 
 
 def _net_nics(attrs):

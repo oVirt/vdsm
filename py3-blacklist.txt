@@ -40,7 +40,6 @@
 ./tests/storage/storagetestlib.py
 ./tests/unicode_test.py
 ./tests/validate_test.py
-./vdsm_hooks/ethtool_options/ethtool_options.py
 ./vdsm_hooks/extra_ipv4_addrs/extra_ipv4_addrs.py
 ./vdsm_hooks/fcoe/fcoe_before_network_setup.py
 ./vdsm_hooks/localdisk/after_disk_prepare
