@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,6 +55,6 @@ def getHardwareInfoStructure():
               'UUID', 'Family'):
         val = dmiInfo.get(k, None)
         if val not in [None, 'Not Specified']:
-            sysStruct[('system' + k).replace(' ', '')] = val
+            sysStruct[('system' + k).replace(' ', '')] = val.decode('utf-8')
 
     return sysStruct
