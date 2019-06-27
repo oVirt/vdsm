@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2017 Red Hat, Inc.
+# Copyright 2010-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -438,7 +438,7 @@ def after_hostdev_list_by_caps(devices):
 
 def _getScriptInfo(path):
     try:
-        with open(path) as f:
+        with open(path, 'rb') as f:
             md5 = hashlib.md5(f.read()).hexdigest()
     except EnvironmentError:
         md5 = ''
