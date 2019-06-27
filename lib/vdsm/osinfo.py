@@ -286,8 +286,8 @@ def package_versions():
                                   KEY_PACKAGES[pkg])
                 else:
                     pkgs[pkg] = {
-                        'version': mi['version'],
-                        'release': mi['release'],
+                        'version': mi['version'].decode('utf-8'),
+                        'release': mi['release'].decode('utf-8'),
                     }
         except Exception:
             logging.error('', exc_info=True)
