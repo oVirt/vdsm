@@ -152,9 +152,9 @@ class Image:
         new_size_blk = 0
         template = chain[0].getParentVolume()
         if template:
-            new_size_blk = template.getVolumeSize(bs=1) // sc.BLOCK_SIZE_512
+            new_size_blk = template.getVolumeSize() // sc.BLOCK_SIZE_512
         for vol in chain:
-            new_size_blk += vol.getVolumeSize(bs=1) // sc.BLOCK_SIZE_512
+            new_size_blk += vol.getVolumeSize() // sc.BLOCK_SIZE_512
         if new_size_blk > size:
             new_size_blk = size
         # allocate %10 more for cow metadata
@@ -1208,7 +1208,7 @@ class Image:
         currVolName = successor
         while (currVolName != endVolName):
             chain.insert(0, currVolName)
-            vol_size_blk = (vols[currVolName].getVolumeSize(bs=1) //
+            vol_size_blk = (vols[currVolName].getVolumeSize() //
                             sc.BLOCK_SIZE_512)
             accumulated_chain_size_blk += vol_size_blk
             currVolName = vols[currVolName].getParent()

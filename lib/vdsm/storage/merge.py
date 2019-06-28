@@ -209,8 +209,8 @@ def _extend_base_allocation(base_vol, top_vol):
     if not (base_vol.is_block() and base_vol.getFormat() == sc.COW_FORMAT):
         return
 
-    base_alloc = base_vol.getVolumeSize(bs=1)
-    top_alloc = top_vol.getVolumeSize(bs=1)
+    base_alloc = base_vol.getVolumeSize()
+    top_alloc = top_vol.getVolumeSize()
     vol_chunk_size = (config.getint('irs', 'volume_utilization_chunk_mb') *
                       constants.MEGAB)
     potential_alloc = base_alloc + top_alloc + vol_chunk_size

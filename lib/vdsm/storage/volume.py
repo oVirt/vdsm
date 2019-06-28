@@ -243,7 +243,7 @@ class VolumeManifest(object):
             meta = self.getMetadata()
             info = self.metadata2info(meta)
             # Get the image actual size on disk
-            vsize = self.getVolumeSize(bs=1)
+            vsize = self.getVolumeSize()
             avsize = self.getVolumeTrueSize()
             info['apparentsize'] = str(vsize)
             info['truesize'] = str(avsize)
@@ -298,7 +298,7 @@ class VolumeManifest(object):
         volParams['prealloc'] = self.getType()
         volParams['volFormat'] = self.getFormat()
         volParams['capacity'] = self.getCapacity()
-        volParams['apparentsize'] = self.getVolumeSize(bs=1)
+        volParams['apparentsize'] = self.getVolumeSize()
         volParams['parent'] = self.getParent()
         volParams['descr'] = self.getDescription()
         volParams['legality'] = self.getLegality()
@@ -756,7 +756,7 @@ class VolumeManifest(object):
     def getImage(self):
         raise NotImplementedError
 
-    def getVolumeSize(self, bs=sc.BLOCK_SIZE):
+    def getVolumeSize(self):
         raise NotImplementedError
 
     def getVolumeTrueSize(self):
@@ -1303,7 +1303,7 @@ class Volume(object):
                            "its format is not RAW", self.volUUID)
             return
 
-        new_vol_size_blk = self.getVolumeSize(bs=1) // sc.BLOCK_SIZE_512
+        new_vol_size_blk = self.getVolumeSize() // sc.BLOCK_SIZE_512
         old_vol_size_blk = self.getCapacity() // sc.BLOCK_SIZE_512
 
         if old_vol_size_blk == new_vol_size_blk:
@@ -1347,7 +1347,7 @@ class Volume(object):
         if not (isBase or self.isLeaf()):
             raise se.VolumeNonWritable(self.volUUID)
 
-        cur_raw_size_blk = self.getVolumeSize(bs=1) // sc.BLOCK_SIZE_512
+        cur_raw_size_blk = self.getVolumeSize() // sc.BLOCK_SIZE_512
 
         if (newSize < cur_raw_size_blk):
             self.log.error("current size of volume %s is larger than the "
@@ -1412,8 +1412,8 @@ class Volume(object):
     def optimal_size(self):
         return self._manifest.optimal_size()
 
-    def getVolumeSize(self, bs=sc.BLOCK_SIZE):
-        return self._manifest.getVolumeSize(bs)
+    def getVolumeSize(self):
+        return self._manifest.getVolumeSize()
 
     def getVolumeTrueSize(self):
         return self._manifest.getVolumeTrueSize()

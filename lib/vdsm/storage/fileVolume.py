@@ -198,12 +198,12 @@ class FileVolumeManifest(volume.VolumeManifest):
         """
         return self.getVolumePath()
 
-    def getVolumeSize(self, bs=BLOCK_SIZE):
+    def getVolumeSize(self):
         """
-        Return the volume size in blocks
+        Return the volume size in bytes.
         """
         volPath = self.getVolumePath()
-        return int(int(self.oop.os.stat(volPath).st_size) / bs)
+        return self.oop.os.stat(volPath).st_size
 
     def getVolumeTrueSize(self):
         """
@@ -381,7 +381,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         if self.getFormat() == sc.RAW_FORMAT:
             return self.getCapacity()
         else:
-            return self.getVolumeSize(bs=1)
+            return self.getVolumeSize()
 
 
 class FileVolume(volume.Volume):

@@ -196,21 +196,21 @@ class BlockVolumeManifest(volume.VolumeManifest):
         """
         return lvm.lvPath(self.sdUUID, self.volUUID)
 
-    def getVolumeSize(self, bs=BLOCK_SIZE):
+    def getVolumeSize(self):
         """
-        Return the volume size in blocks
+        Return the volume size in bytes.
         """
         # Just call the SD Manifest method getVSize() - apparently it does what
         # we need. We consider incurred overhead of producing the object
         # to be a small price for code de-duplication.
         manifest = sdCache.produce_manifest(self.sdUUID)
-        return int(manifest.getVSize(self.imgUUID, self.volUUID) // bs)
+        return manifest.getVSize(self.imgUUID, self.volUUID)
 
     def getVolumeTrueSize(self):
         """
         Return the true volume size in bytes
         """
-        return self.getVolumeSize(bs=1)
+        return self.getVolumeSize()
 
     def setMetadata(self, meta, metaId=None, **overrides):
         """
