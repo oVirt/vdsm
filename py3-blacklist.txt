@@ -53,7 +53,6 @@
 ./vdsm_hooks/scratchpad/after_vm_destroy.py
 ./vdsm_hooks/scratchpad/before_vm_migrate_source.py
 ./vdsm_hooks/scratchpad/before_vm_start.py
-./vdsm_hooks/smbios/before_vm_start.py
 ./vdsm_hooks/spiceoptions/before_vm_start.py
 ./vdsm_hooks/vhostmd/after_vm_destroy.py
 ./vdsm_hooks/vhostmd/before_vm_start.py
