@@ -306,10 +306,6 @@ class VolumeManifest(object):
         volParams['disktype'] = self.getDiskType()
         volParams['prealloc'] = self.getType()
         volParams['volFormat'] = self.getFormat()
-        # TODO: getSize returns size in 512b multiples, should move all sizes
-        # to byte multiples everywhere to avoid conversion errors and change
-        # only at the end
-        volParams['size'] = self.getSizeBlk()
         volParams['capacity'] = self.getCapacity()
         volParams['apparentsize'] = self.getVolumeSize(bs=bs)
         volParams['parent'] = self.getParent()
