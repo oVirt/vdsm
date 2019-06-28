@@ -173,7 +173,6 @@ def name2type(name):
 
 # Volume meta data fields
 CAPACITY = "CAP"  # Added in 4.3
-SIZE = "SIZE"  # Deprecated in 4.3
 TYPE = "TYPE"
 FORMAT = "FORMAT"
 DISKTYPE = "DISKTYPE"

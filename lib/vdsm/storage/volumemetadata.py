@@ -29,6 +29,12 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception
 
 
+# SIZE property was deprecated in metadata v5, but we still need this key to
+# read and write legacy metadata. To make sure no other code use it and it's
+# used only by metadata code, move it here and make it private.
+_SIZE = "SIZE"
+
+
 class VolumeMetadata(object):
 
     log = logging.getLogger('storage.VolumeMetadata')
@@ -79,7 +85,7 @@ class VolumeMetadata(object):
             if sc.CAPACITY in md:
                 capacity = int(md[sc.CAPACITY])
             else:
-                capacity = int(md[sc.SIZE]) * sc.BLOCK_SIZE_512
+                capacity = int(md[_SIZE]) * sc.BLOCK_SIZE_512
 
             return cls(domain=md[sc.DOMAIN],
                        image=md[sc.IMAGE],
@@ -199,7 +205,7 @@ class VolumeMetadata(object):
 
             # Pre v5 domains should have SIZE in blocks
             # instead of CAPACITY in bytes
-            info[sc.SIZE] = self.capacity // sc.BLOCK_SIZE_512
+            info[_SIZE] = self.capacity // sc.BLOCK_SIZE_512
         else:
             info[sc.CAPACITY] = self.capacity
 
