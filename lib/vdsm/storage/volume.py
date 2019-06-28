@@ -1325,7 +1325,7 @@ class Volume(object):
             self.log.debug("updating metadata for volume %s changing the "
                            "size %s to %s", self.volUUID, old_vol_size_blk,
                            new_vol_size_blk)
-            self.setSizeBlk(new_vol_size_blk)
+            self.setCapacity(new_vol_size_blk * sc.BLOCK_SIZE_512)
 
     @classmethod
     def extendSizeFinalize(cls, taskObj, sdUUID, imgUUID, volUUID):

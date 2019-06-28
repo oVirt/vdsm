@@ -69,14 +69,14 @@ def fake_blockVolume_extendSize(env, vol_instance, new_size_blk):
     new_size = new_size_blk * sc.BLOCK_SIZE
     new_size_mb = (new_size + MB - 1) // MB
     env.lvm.extendLV(env.sd_manifest.sdUUID, vol_instance.volUUID, new_size_mb)
-    vol_instance.setSizeBlk(new_size_blk)
+    vol_instance.setCapacity(new_size)
 
 
 def fake_fileVolume_extendSize(env, vol_instance, new_size_blk):
     new_size = new_size_blk * sc.BLOCK_SIZE
     vol_path = vol_instance.getVolumePath()
     env.sd_manifest.oop.truncateFile(vol_path, new_size)
-    vol_instance.setSizeBlk(new_size_blk)
+    vol_instance.setCapacity(new_size)
 
 
 Volume = namedtuple("Volume", "format,virtual,physical")
