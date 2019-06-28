@@ -122,7 +122,7 @@ def _v3_reset_meta_volsize(vol):
                                    qemuimg.FORMAT.QCOW2)
         virtual_vol_size = qemuVolInfo["virtualsize"]
     else:
-        virtual_vol_size = vol.getVolumeSize(bs=1)
+        virtual_vol_size = vol.getVolumeSize()
 
     if meta_vol_size != virtual_vol_size:
         log.warn("Fixing the mismatch between the metadata volume size "

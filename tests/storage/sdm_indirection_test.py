@@ -460,7 +460,7 @@ class FakeVolumeManifest(object):
         pass
 
     @recorded
-    def getVolumeSize(self, bs=0):
+    def getVolumeSize(self):
         pass
 
     @recorded
@@ -818,7 +818,7 @@ class VolumeTestMixin(object):
         ['isFake', 0],
         ['isInternal', 0],
         ['isSparse', 0],
-        ['getVolumeSize', 1],
+        ['getVolumeSize', 0],
         ['getVolumeTrueSize', 0],
         ['metadata2info', 1],
         ['getInfo', 0],
