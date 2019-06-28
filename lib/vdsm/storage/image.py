@@ -131,7 +131,7 @@ class Image:
         size_blk = (qemu_measure["required"] + chunk_size) // sc.BLOCK_SIZE
         # Limit estimates size by maximum size.
         vol_class = sdCache.produce(dst_sd_id).getVolumeClass()
-        max_size = vol_class.max_size(src_vol_params['size'] * sc.BLOCK_SIZE,
+        max_size = vol_class.max_size(src_vol_params['capacity'],
                                       sc.COW_FORMAT)
         size_blk = min(size_blk, max_size // sc.BLOCK_SIZE)
 
@@ -260,7 +260,7 @@ class Image:
                     # Create fake parent volume
                     destDom.createVolume(
                         imgUUID=volParams['imgUUID'],
-                        size_blk=volParams['size'],
+                        size_blk=volParams['capacity'] // sc.BLOCK_SIZE_512,
                         volFormat=sc.COW_FORMAT,
                         preallocate=sc.SPARSE_VOL,
                         diskType=volParams['disktype'],
@@ -382,7 +382,7 @@ class Image:
 
                     destDom.createVolume(
                         imgUUID=imgUUID,
-                        size_blk=volParams['size'],
+                        size_blk=volParams['capacity'] // sc.BLOCK_SIZE_512,
                         volFormat=volParams['volFormat'],
                         preallocate=tmpVolPreallocation,
                         diskType=volParams['disktype'],
@@ -767,7 +767,7 @@ class Image:
                     dstSdUUID,
                     dstImgUUID,
                     dstVolUUID,
-                    volParams['size'],
+                    volParams['capacity'] // sc.BLOCK_SIZE_512,
                     initialSizeBlk)
 
                 # If image already exists check whether it illegal/fake,
@@ -785,7 +785,7 @@ class Image:
 
                 destDom.createVolume(
                     imgUUID=dstImgUUID,
-                    size_blk=volParams['size'],
+                    size_blk=volParams['capacity'] // sc.BLOCK_SIZE_512,
                     volFormat=dstVolFormat,
                     preallocate=volParams['prealloc'],
                     diskType=volParams['disktype'],
@@ -904,7 +904,7 @@ class Image:
         if dst_vol_format == sc.RAW_FORMAT:
             # destination 'raw'.
             # The actual volume size must be the src virtual size.
-            return src_vol_params['size']
+            return src_vol_params['capacity'] // sc.BLOCK_SIZE_512
         else:
             # destination 'cow'.
             # The actual volume size can be more than virtual size
@@ -920,7 +920,7 @@ class Image:
                         src_sd_id,
                         src_vol_params['imgUUID'],
                         src_vol_params['volUUID'],
-                        src_vol_params['size'])
+                        src_vol_params['capacity'] // sc.BLOCK_SIZE_512)
                 else:
                     # source 'cow' without parent.
                     # Use estimate for supporting compressed source images, for
@@ -1059,7 +1059,7 @@ class Image:
         newUUID = str(uuid.uuid4())
         sdDom.createVolume(
             imgUUID=srcVolParams['imgUUID'],
-            size_blk=volParams['size'],
+            size_blk=volParams['capacity'] // sc.BLOCK_SIZE_512,
             volFormat=volParams['volFormat'],
             preallocate=sc.SPARSE_VOL,
             diskType=volParams['disktype'],
@@ -1130,7 +1130,7 @@ class Image:
             newUUID = srcVol.volUUID + "_MERGE"
             sdDom.createVolume(
                 imgUUID=srcVolParams['imgUUID'],
-                size_blk=srcVolParams['size'],
+                size_blk=srcVolParams['capacity'] // sc.BLOCK_SIZE_512,
                 volFormat=volParams['volFormat'],
                 preallocate=volParams['prealloc'],
                 diskType=volParams['disktype'],
@@ -1321,9 +1321,9 @@ class Image:
             volParams = dstVol.getVolumeParams()
 
         accSize, chain = self.subChainSizeCalc(ancestor, successor, vols)
-        imageApparentSize = volParams['size']
+        image_apparent_size_blk = volParams['capacity'] // sc.BLOCK_SIZE_512
         # allocate %10 more for cow metadata
-        reqSize = min(accSize, imageApparentSize) * sc.COW_OVERHEAD
+        reqSize = min(accSize, image_apparent_size_blk) * sc.COW_OVERHEAD
         try:
             # Start the actual merge image procedure
             # IMPORTANT NOTE: volumes in the same image chain might have
