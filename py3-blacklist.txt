@@ -43,6 +43,3 @@
 ./vdsm_hooks/localdisk/after_disk_prepare
 ./vdsm_hooks/localdisk/before_vm_migrate_source
 ./vdsm_hooks/localdisk/localdisk-helper
-./vdsm_hooks/scratchpad/after_vm_destroy.py
-./vdsm_hooks/scratchpad/before_vm_migrate_source.py
-./vdsm_hooks/scratchpad/before_vm_start.py
