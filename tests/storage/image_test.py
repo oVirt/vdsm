@@ -32,7 +32,7 @@ from testlib import expandPermutations, permutations
 from testlib import make_config
 from testlib import VdsmTestCase
 
-from vdsm.common import constants
+from vdsm.common.constants import GIB
 from vdsm.storage import constants as sc
 from vdsm.storage import image
 from vdsm.storage import qemuimg
@@ -55,13 +55,13 @@ class TestCalculateVolAlloc(VdsmTestCase):
     @permutations([
         # srcVolParams, destVolFormt, expectedAlloc
         # copy raw to raw, using virtual size
-        (dict(size=GB_IN_BLK * 2,
+        (dict(capacity=GIB * 2,
               volFormat=sc.RAW_FORMAT,
               apparentsize=GB_IN_BLK),
          sc.RAW_FORMAT,
          GB_IN_BLK * 2),
         # copy raw to qcow, using estimated chain size
-        (dict(size=GB_IN_BLK * 2,
+        (dict(capacity=GIB * 2,
               volFormat=sc.RAW_FORMAT,
               apparentsize=GB_IN_BLK,
               prealloc=sc.SPARSE_VOL,
@@ -71,27 +71,27 @@ class TestCalculateVolAlloc(VdsmTestCase):
          sc.COW_FORMAT,
          GB_IN_BLK * 1.25),
         # copy single cow volume to raw, using virtual size
-        (dict(size=GB_IN_BLK * 2,
+        (dict(capacity=GIB * 2,
               volFormat=sc.COW_FORMAT,
               apparentsize=GB_IN_BLK),
          sc.RAW_FORMAT,
          GB_IN_BLK * 2),
         # copy cow chain to raw, using virtual size
-        (dict(size=GB_IN_BLK * 2,
+        (dict(capacity=GIB * 2,
               volFormat=sc.COW_FORMAT,
               apparentsize=GB_IN_BLK,
               parent="parentUUID"),
          sc.RAW_FORMAT,
          GB_IN_BLK * 2),
         # copy single cow to cow, using estimated size.
-        (dict(size=GB_IN_BLK * 2,
+        (dict(capacity=GIB * 2,
               volFormat=sc.COW_FORMAT,
               apparentsize=GB_IN_BLK,
               parent=sc.BLANK_UUID),
          sc.COW_FORMAT,
          GB_IN_BLK * 1.25),
         # copy qcow chain to cow, using estimated chain size
-        (dict(size=GB_IN_BLK * 2,
+        (dict(capacity=GIB * 2,
               volFormat=sc.COW_FORMAT,
               apparentsize=GB_IN_BLK,
               prealloc=sc.SPARSE_VOL,
@@ -135,7 +135,7 @@ class TestEstimateQcow2Size:
         img = image.Image("/path/to/repo")
 
         vol_params = dict(
-            size=constants.GIB,
+            capacity=GIB,
             volFormat=sc.RAW_FORMAT,
             path='path')
         estimated_size_blk = img.estimate_qcow2_size_blk(vol_params, "sdUUID")
@@ -163,7 +163,7 @@ class TestEstimateQcow2Size:
         img = image.Image("/path/to/repo")
 
         vol_params = dict(
-            size=constants.GIB,
+            capacity=GIB,
             volFormat=sc.COW_FORMAT,
             path='path')
         estimated_size_blk = img.estimate_qcow2_size_blk(vol_params, "sdUUID")
