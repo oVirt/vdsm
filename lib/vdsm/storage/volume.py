@@ -298,7 +298,7 @@ class VolumeManifest(object):
         volParams['prealloc'] = self.getType()
         volParams['volFormat'] = self.getFormat()
         volParams['capacity'] = self.getCapacity()
-        volParams['apparentsize'] = self.getVolumeSize(bs=bs)
+        volParams['apparentsize'] = self.getVolumeSize(bs=1)
         volParams['parent'] = self.getParent()
         volParams['descr'] = self.getDescription()
         volParams['legality'] = self.getLegality()
@@ -1303,7 +1303,7 @@ class Volume(object):
                            "its format is not RAW", self.volUUID)
             return
 
-        new_vol_size_blk = self.getVolumeSize()
+        new_vol_size_blk = self.getVolumeSize(bs=1) // sc.BLOCK_SIZE_512
         old_vol_size_blk = self.getCapacity() // sc.BLOCK_SIZE_512
 
         if old_vol_size_blk == new_vol_size_blk:
@@ -1347,7 +1347,7 @@ class Volume(object):
         if not (isBase or self.isLeaf()):
             raise se.VolumeNonWritable(self.volUUID)
 
-        cur_raw_size_blk = self.getVolumeSize()
+        cur_raw_size_blk = self.getVolumeSize(bs=1) // sc.BLOCK_SIZE_512
 
         if (newSize < cur_raw_size_blk):
             self.log.error("current size of volume %s is larger than the "
