@@ -1549,7 +1549,7 @@ class HSM(object):
                 (qemu_format, meta_format))
 
         # NOTE: Volume size is in blocks.
-        meta_size = vol.getSizeBlk() * sc.BLOCK_SIZE
+        meta_size = vol.getCapacity()
         qemu_size = qemu_info["virtualsize"]
         if meta_size < qemu_size:
             raise se.ImageVerificationError(

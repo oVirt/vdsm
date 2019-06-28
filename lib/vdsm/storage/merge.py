@@ -184,8 +184,8 @@ def prepare(subchain):
 
 
 def _update_base_capacity(base_vol, top_vol):
-    top_size_blk = top_vol.getSizeBlk()
-    base_size_blk = base_vol.getSizeBlk()
+    top_size_blk = top_vol.getCapacity() // sc.BLOCK_SIZE_512
+    base_size_blk = base_vol.getCapacity() // sc.BLOCK_SIZE_512
     # TODO: raise if top < base raise some impossible state error.
     if top_size_blk <= base_size_blk:
         return
@@ -215,7 +215,7 @@ def _extend_base_allocation(base_vol, top_vol):
                       constants.MEGAB)
     potential_alloc = base_alloc + top_alloc + vol_chunk_size
     # TODO: add chunk_size only if top is leaf.
-    capacity = base_vol.getSizeBlk() * sc.BLOCK_SIZE
+    capacity = base_vol.getCapacity()
     max_alloc = utils.round(capacity * sc.COW_OVERHEAD, constants.MEGAB)
     actual_alloc = min(potential_alloc, max_alloc)
     actual_alloc_mb = (actual_alloc + constants.MEGAB - 1) / constants.MEGAB

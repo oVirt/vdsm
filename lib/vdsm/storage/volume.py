@@ -1207,7 +1207,7 @@ class Volume(object):
             # Requested capacity must not be smaller then parent capacity,
             # as this will corrupt the new volume when qemu will try to
             # access areas beyond the volume virtual size.
-            parent_size_blk = volParent.getSizeBlk()
+            parent_size_blk = volParent.getCapacity() // sc.BLOCK_SIZE_512
             if size_blk < parent_size_blk:
                 cls.log.error(
                     "Requested size %d blocks < parent size %d blocks",
@@ -1316,7 +1316,7 @@ class Volume(object):
             return
 
         new_vol_size_blk = self.getVolumeSize()
-        old_vol_size_blk = self.getSizeBlk()
+        old_vol_size_blk = self.getCapacity() // sc.BLOCK_SIZE_512
 
         if old_vol_size_blk == new_vol_size_blk:
             self.log.debug("size metadata %s is up to date for volume %s",
