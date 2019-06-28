@@ -19,6 +19,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
+
 '''
 To Enable this set fake_kvm_support=true in /etc/vdsm/vdsm.conf.
 '''
