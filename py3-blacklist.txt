@@ -50,7 +50,6 @@
 ./vdsm_hooks/macbind/before_vm_start.py
 ./vdsm_hooks/promisc/after_vm_start.py
 ./vdsm_hooks/promisc/before_vm_destroy.py
-./vdsm_hooks/qemucmdline/before_vm_start.py
 ./vdsm_hooks/scratchpad/after_vm_destroy.py
 ./vdsm_hooks/scratchpad/before_vm_migrate_source.py
 ./vdsm_hooks/scratchpad/before_vm_start.py
