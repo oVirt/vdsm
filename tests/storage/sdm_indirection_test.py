@@ -416,15 +416,7 @@ class FakeVolumeManifest(object):
         pass
 
     @recorded
-    def getSizeBlk(self):
-        pass
-
-    @recorded
     def optimal_size(self):
-        pass
-
-    @recorded
-    def setSizeBlk(self, size):
         pass
 
     @recorded
@@ -816,8 +808,6 @@ class VolumeTestMixin(object):
         ['setLegality', 1],
         ['setDomain', 1],
         ['setShared', 0],
-        ['getSizeBlk', 0],
-        ['setSizeBlk', 1],
         ['updateInvalidatedSize', 0],
         ['getType', 0],
         ['setType', 1],

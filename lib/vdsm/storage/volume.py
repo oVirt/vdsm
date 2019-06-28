@@ -176,13 +176,6 @@ class VolumeManifest(object):
             raise se.MetaDataValidationError()
         return capacity
 
-    @deprecated  # capacity will be used instead
-    def getSizeBlk(self):
-        size = int(self.getMetaParam(sc.SIZE))
-        if size < 1:  # Size stored in the metadata is not valid
-            raise se.MetaDataValidationError()
-        return size
-
     def getFormat(self):
         return sc.name2type(self.getMetaParam(sc.FORMAT))
 
@@ -480,9 +473,6 @@ class VolumeManifest(object):
                 capacity (int) - new capacity value in bytes.
         """
         self.setMetaParam(sc.CAPACITY, capacity)
-
-    def setSizeBlk(self, size_blk):
-        self.setMetaParam(sc.SIZE, size_blk)
 
     def updateInvalidatedSize(self):
         """
@@ -1414,10 +1404,6 @@ class Volume(object):
     def getVolType(self):
         return self._manifest.getVolType()
 
-    @deprecated  # capacity will be used instead
-    def getSizeBlk(self):
-        return self._manifest.getSizeBlk()
-
     def getCapacity(self):
         return self._manifest.getCapacity()
 
@@ -1436,9 +1422,6 @@ class Volume(object):
 
     def setCapacity(self, capacity):
         self._manifest.setCapacity(capacity)
-
-    def setSizeBlk(self, size):
-        self._manifest.setSizeBlk(size)
 
     def updateInvalidatedSize(self):
         self._manifest.updateInvalidatedSize()
