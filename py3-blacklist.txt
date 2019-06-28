@@ -40,6 +40,3 @@
 ./tests/storage/storagetestlib.py
 ./tests/unicode_test.py
 ./tests/validate_test.py
-./vdsm_hooks/localdisk/after_disk_prepare
-./vdsm_hooks/localdisk/before_vm_migrate_source
-./vdsm_hooks/localdisk/localdisk-helper
