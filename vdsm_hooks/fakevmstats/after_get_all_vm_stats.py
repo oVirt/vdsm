@@ -19,6 +19,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
+
 """
 To Enable this set fake_vmstats_enable=true in /etv/vdsm/vdsm.conf.
 To set this automatically via ovirt-host-deploy
@@ -28,6 +30,7 @@ To set this automatically via ovirt-host-deploy
     VDSM_CONFIG/fake_vmstats_enable=str:true
 """
 import hooking
+import codecs
 import random
 
 from vdsm.config import config
@@ -93,8 +96,8 @@ def uuidDigest(uuid):
     - Supposed to be simple and relatively fast.
     """
 
-    bytes_string = uuid.replace('-', '').decode('hex')
-    bytes_list = map(lambda x: ord(x), bytes_string)
+    bytes_string = codecs.decode(uuid.replace('-', ''), 'hex')
+    bytes_list = [ord(x) for x in bytes_string]
     idx = 0
     iteration = 0
     while True:
@@ -167,10 +170,10 @@ def randomizeRuntimeStats(stats):
     netIfaces = []
     for i in range(1 + (next(vmDigest) % 3)):
         netif = {}
-        hw = map(lambda x: next(vmDigest), range(6))
+        hw = [next(vmDigest) for _ in range(6)]
         netif['hw'] = ETH_HW_ADDR_FORMAT % (hw[0], hw[1], hw[2], hw[3], hw[4],
                                             hw[5])
-        inet = map(lambda x: next(vmDigest), range(4))
+        inet = [next(vmDigest) for _ in range(4)]
         netif['inet'] = ['%d.%d.%d.%d' % (inet[0], inet[1], inet[2], inet[3])]
         # For simplicty purposes, the ipv6 addresses are transition from ipv4
         netif['inet6'] = ['0:0:0:0:0:ffff:%x%02x:%x%02x' % (inet[0], inet[1],

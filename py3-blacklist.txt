@@ -43,7 +43,6 @@
 ./vdsm_hooks/diskunmap/before_vm_start.py
 ./vdsm_hooks/ethtool_options/ethtool_options.py
 ./vdsm_hooks/extra_ipv4_addrs/extra_ipv4_addrs.py
-./vdsm_hooks/fakevmstats/after_get_all_vm_stats.py
 ./vdsm_hooks/faqemu/after_get_caps.py
 ./vdsm_hooks/faqemu/before_vm_start.py
 ./vdsm_hooks/fcoe/fcoe_before_network_setup.py
