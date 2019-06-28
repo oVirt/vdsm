@@ -18,6 +18,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
+
 """
 Modify a network interface definition so that it uses a Cisco VM-FEX Port
 Profile with a Virtual Function from a pool. It gets triggered and used by two
