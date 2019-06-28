@@ -220,7 +220,7 @@ class VolumeManifest(object):
             "format": meta.get(sc.FORMAT, ""),
             "disktype": meta.get(sc.DISKTYPE, ""),
             "voltype": meta.get(sc.VOLTYPE, ""),
-            "size": int(meta.get(sc.SIZE, "0")),
+            "capacity": meta.get(sc.CAPACITY, "0"),
             "parent": self.getParent(),
             "description": meta.get(sc.DESCRIPTION, ""),
             "pool": "",  # deprecated value
@@ -242,8 +242,6 @@ class VolumeManifest(object):
         try:
             meta = self.getMetadata()
             info = self.metadata2info(meta)
-            info["capacity"] = str(int(info["size"]) * sc.BLOCK_SIZE)
-            del info["size"]
             # Get the image actual size on disk
             vsize = self.getVolumeSize(bs=1)
             avsize = self.getVolumeTrueSize()
