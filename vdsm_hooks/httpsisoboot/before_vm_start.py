@@ -1,10 +1,13 @@
 #!/usr/bin/python2
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 import os
 import hooking
 import sys
 import traceback
-import urlparse
+from six.moves import urllib
 from xml.dom import minidom
 
 
@@ -128,7 +131,7 @@ def create_https_iso_element(domxml, protocol, hostname, port, url_path):
 
 
 def validate_URL(url):
-    parsed = urlparse.urlsplit(url)
+    parsed = urllib.parse.urlsplit(url)
     protocol = parsed.scheme
     if protocol != 'https':
         hooking.exit_hook(

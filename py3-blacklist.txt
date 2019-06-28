@@ -44,7 +44,6 @@
 ./vdsm_hooks/ethtool_options/ethtool_options.py
 ./vdsm_hooks/extra_ipv4_addrs/extra_ipv4_addrs.py
 ./vdsm_hooks/fcoe/fcoe_before_network_setup.py
-./vdsm_hooks/httpsisoboot/before_vm_start.py
 ./vdsm_hooks/localdisk/after_disk_prepare
 ./vdsm_hooks/localdisk/before_vm_migrate_source
 ./vdsm_hooks/localdisk/localdisk-helper
