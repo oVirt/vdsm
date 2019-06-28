@@ -382,15 +382,16 @@ class Image:
                     else:
                         tmpVolPreallocation = sc.PREALLOCATED_VOL
 
-                    destDom.createVolume(imgUUID=imgUUID,
-                                         size_blk=volParams['size'],
-                                         volFormat=volParams['volFormat'],
-                                         preallocate=tmpVolPreallocation,
-                                         diskType=volParams['disktype'],
-                                         volUUID=srcVol.volUUID,
-                                         desc=volParams['descr'],
-                                         srcImgUUID=pimg,
-                                         srcVolUUID=volParams['parent'])
+                    destDom.createVolume(
+                        imgUUID=imgUUID,
+                        size_blk=volParams['size'],
+                        volFormat=volParams['volFormat'],
+                        preallocate=tmpVolPreallocation,
+                        diskType=volParams['disktype'],
+                        volUUID=srcVol.volUUID,
+                        desc=volParams['descr'],
+                        srcImgUUID=pimg,
+                        srcVolUUID=volParams['parent'])
 
                     dstVol = destDom.produceVolume(imgUUID=imgUUID,
                                                    volUUID=srcVol.volUUID)
@@ -759,11 +760,17 @@ class Image:
                     volParams['prealloc'],
                     dstVolAllocBlk)
 
-                self.log.info("Copy source %s:%s:%s to destination %s:%s:%s "
-                              "size=%s blocks, initial size=%s blocks",
-                              sdUUID, srcImgUUID, srcVolUUID, dstSdUUID,
-                              dstImgUUID, dstVolUUID, volParams['size'],
-                              initialSizeBlk)
+                self.log.info(
+                    "Copy source %s:%s:%s to destination %s:%s:%s size=%s "
+                    "blocks, initial size=%s blocks",
+                    sdUUID,
+                    srcImgUUID,
+                    srcVolUUID,
+                    dstSdUUID,
+                    dstImgUUID,
+                    dstVolUUID,
+                    volParams['size'],
+                    initialSizeBlk)
 
                 # If image already exists check whether it illegal/fake,
                 # overwrite it
@@ -912,8 +919,10 @@ class Image:
                     if src_vol_params['prealloc'] != sc.SPARSE_VOL:
                         raise se.IncorrectFormat(self)
                     return self.estimateChainSizeBlk(
-                        src_sd_id, src_vol_params['imgUUID'],
-                        src_vol_params['volUUID'], src_vol_params['size'])
+                        src_sd_id,
+                        src_vol_params['imgUUID'],
+                        src_vol_params['volUUID'],
+                        src_vol_params['size'])
                 else:
                     # source 'cow' without parent.
                     # Use estimate for supporting compressed source images, for
@@ -1051,10 +1060,14 @@ class Image:
         #         parameters
         newUUID = str(uuid.uuid4())
         sdDom.createVolume(
-            imgUUID=srcVolParams['imgUUID'], size_blk=volParams['size'],
-            volFormat=volParams['volFormat'], preallocate=sc.SPARSE_VOL,
-            diskType=volParams['disktype'], volUUID=newUUID,
-            desc="New base volume", srcImgUUID=sc.BLANK_UUID,
+            imgUUID=srcVolParams['imgUUID'],
+            size_blk=volParams['size'],
+            volFormat=volParams['volFormat'],
+            preallocate=sc.SPARSE_VOL,
+            diskType=volParams['disktype'],
+            volUUID=newUUID,
+            desc="New base volume",
+            srcImgUUID=sc.BLANK_UUID,
             srcVolUUID=sc.BLANK_UUID)
 
         tmpVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
@@ -1118,11 +1131,14 @@ class Image:
             # destination volume's parent parameters
             newUUID = srcVol.volUUID + "_MERGE"
             sdDom.createVolume(
-                imgUUID=srcVolParams['imgUUID'], size_blk=srcVolParams['size'],
+                imgUUID=srcVolParams['imgUUID'],
+                size_blk=srcVolParams['size'],
                 volFormat=volParams['volFormat'],
                 preallocate=volParams['prealloc'],
-                diskType=volParams['disktype'], volUUID=newUUID,
-                desc=srcVolParams['descr'], srcImgUUID=sc.BLANK_UUID,
+                diskType=volParams['disktype'],
+                volUUID=newUUID,
+                desc=srcVolParams['descr'],
+                srcImgUUID=sc.BLANK_UUID,
                 srcVolUUID=sc.BLANK_UUID)
 
             newVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
