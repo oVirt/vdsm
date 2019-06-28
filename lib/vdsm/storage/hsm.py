@@ -41,6 +41,7 @@ from six.moves import map
 
 from vdsm import constants
 from vdsm import jobs
+from vdsm import utils
 from vdsm.common import concurrent
 from vdsm.common import function
 from vdsm.common.threadlocal import vars
@@ -753,7 +754,7 @@ class HSM(object):
                     newSizeBytes)
                 raise se.VolumeResizeValueError(str(newSizeBytes))
             # Uncommit the current size
-            volToExtend.setSizeBlk(0)
+            volToExtend.setCapacity(0)
             qemuimg.resize(volPath, newSizeBytes, qemuImgFormat)
             roundedSizeBytes = qemuimg.info(volPath,
                                             qemuImgFormat)['virtualsize']
@@ -761,7 +762,7 @@ class HSM(object):
             volToExtend.teardown(sdUUID, volUUID)
 
         new_size_blk = (roundedSizeBytes + BLOCK_SIZE - 1) / BLOCK_SIZE
-        volToExtend.setSizeBlk(new_size_blk)
+        volToExtend.setCapacity(new_size_blk * sc.BLOCK_SIZE_512)
 
         return dict(size=str(roundedSizeBytes))
 
@@ -3067,13 +3068,8 @@ class HSM(object):
     def setVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, capacity):
         capacity = int(capacity)
         vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
-        # Values lower than 1 are used to uncommit (marking as inconsisent
-        # during a transaction) the volume size.
-        if capacity > 0:
-            size_blk = (capacity + BLOCK_SIZE - 1) / BLOCK_SIZE
-        else:
-            size_blk = capacity
-        vol.setSizeBlk(size_blk)
+        capacity = utils.round(capacity, sc.BLOCK_SIZE_512)
+        vol.setCapacity(capacity)
 
     @public
     def getVolumeInfo(self, sdUUID, spUUID, imgUUID, volUUID, options=None):
