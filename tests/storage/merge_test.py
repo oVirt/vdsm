@@ -243,7 +243,7 @@ class TestPrepareMerge:
             assert self.expected_locks(env.subchain) == guarded.context.locks
             base_vol = env.subchain.base_vol
             assert sc.LEGAL_VOL == base_vol.getLegality()
-            new_base_size = base_vol.getSizeBlk() * sc.BLOCK_SIZE
+            new_base_size = base_vol.getCapacity()
             new_base_alloc = env.sd_manifest.getVSize(base_vol.imgUUID,
                                                       base_vol.volUUID)
             assert expected.virtual * GB == new_base_size
@@ -260,7 +260,7 @@ class TestPrepareMerge:
             assert self.expected_locks(env.subchain) == guarded.context.locks
             base_vol = env.subchain.base_vol
             assert sc.LEGAL_VOL == base_vol.getLegality()
-            new_base_size = base_vol.getSizeBlk() * sc.BLOCK_SIZE
+            new_base_size = base_vol.getCapacity()
             new_base_alloc = env.sd_manifest.getVSize(base_vol.imgUUID,
                                                       base_vol.volUUID)
             assert expected.virtual * GB == new_base_size
@@ -275,7 +275,7 @@ class TestPrepareMerge:
             merge.prepare(env.subchain)
             base_vol = env.subchain.base_vol
             assert sc.LEGAL_VOL == base_vol.getLegality()
-            new_base_size = base_vol.getSizeBlk() * sc.BLOCK_SIZE
+            new_base_size = base_vol.getCapacity()
             assert expected.virtual * GB == new_base_size
 
     @pytest.mark.xfail(reason="cannot create a domain object in the tests")
@@ -287,7 +287,7 @@ class TestPrepareMerge:
             merge.prepare(env.subchain)
             base_vol = env.subchain.base_vol
             assert sc.LEGAL_VOL == base_vol.getLegality()
-            new_base_size = base_vol.getSizeBlk() * sc.BLOCK_SIZE
+            new_base_size = base_vol.getCapacity()
             assert expected.virtual * GB == new_base_size
 
     def expected_locks(self, subchain):
