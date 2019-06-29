@@ -98,7 +98,7 @@ class TemporaryVolume(object):
         """
         Write records to volume index area.
         """
-        index = xlease.VolumeIndex(self.block_size)
+        index = xlease.VolumeIndex(self.alignment, self.block_size)
         with utils.closing(index):
             index.load(self.backend)
             for recnum, record in records:
@@ -116,6 +116,7 @@ class TemporaryVolume(object):
         xlease.format_index(
             self.lockspace,
             self.backend,
+            alignment=self.alignment,
             block_size=self.block_size)
 
     def close(self):
@@ -129,6 +130,15 @@ class TemporaryVolume(object):
     pytest.param(
         (userstorage.PATHS["file-4k"], sc.ALIGNMENT_1M),
         id="file-4k-1m"),
+    pytest.param(
+        (userstorage.PATHS["file-4k"], sc.ALIGNMENT_2M),
+        id="file-4k-2m"),
+    pytest.param(
+        (userstorage.PATHS["file-4k"], sc.ALIGNMENT_4M),
+        id="file-4k-4m"),
+    pytest.param(
+        (userstorage.PATHS["file-4k"], sc.ALIGNMENT_8M),
+        id="file-4k-8m"),
 ])
 def tmp_vol(request):
     storage, alignment = request.param
@@ -256,7 +266,7 @@ class TestIndex:
         # Add underlying sanlock resources.
         for i in [3, 4, 6]:
             resource = "%04d" % i
-            offset = xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * i
+            offset = xlease.lease_offset(i, tmp_vol.alignment)
             fake_sanlock.write_resource(
                 tmp_vol.lockspace,
                 resource,
@@ -283,15 +293,15 @@ class TestIndex:
         # resources.
         expected = {
             "0003": {
-                "offset": xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 3,
+                "offset": xlease.lease_offset(3, tmp_vol.alignment),
                 "updating": False,
             },
             "0004": {
-                "offset": xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 4,
+                "offset": xlease.lease_offset(4, tmp_vol.alignment),
                 "updating": False,
             },
             "0006": {
-                "offset": xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 6,
+                "offset": xlease.lease_offset(6, tmp_vol.alignment),
                 "updating": False,
             },
         }
@@ -521,15 +531,19 @@ class TestIndex:
             vol.remove(uuids[1])
             vol.add(uuids[3])
             leases = vol.leases()
+
             # The first lease in the first slot
-            assert leases[uuids[0]]["offset"] == xlease.USER_RESOURCE_BASE
+            offset = xlease.lease_offset(0, tmp_vol.alignment)
+            assert leases[uuids[0]]["offset"] == offset
+
             # The forth lease was added in the second slot after the second
             # lease was removed.
-            assert (leases[uuids[3]]["offset"] ==
-                    xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE)
+            offset = xlease.lease_offset(1, tmp_vol.alignment)
+            assert leases[uuids[3]]["offset"] == offset
+
             # The third lease in the third slot
-            assert (leases[uuids[2]]["offset"] ==
-                    xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 2)
+            offset = xlease.lease_offset(2, tmp_vol.alignment)
+            assert leases[uuids[2]]["offset"] == offset
 
     @pytest.mark.slow
     def test_time_lookup(self, tmp_vol):
