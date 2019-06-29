@@ -380,9 +380,12 @@ def v4DomainConverter(repoPath, hostId, domain, isMsd):
         # sure it is properly formatted - formatting is cheap.
         xleases_path = domain.external_leases_path()
 
-        # V4 domain always uses 512 bytes block size.
+        # V4 domain always uses 1m alignment and 512 bytes block size.
         domain.format_external_leases(
-            domain.sdUUID, xleases_path, block_size=sc.BLOCK_SIZE_512)
+            domain.sdUUID,
+            xleases_path,
+            alignment=sc.ALIGNMENT_1M,
+            block_size=sc.BLOCK_SIZE_512)
 
     # We may have now a good external leases volume, try to change the domain
     # version to 4. If this fail, conversion will fail, and the domain will
