@@ -87,6 +87,7 @@ class TemporaryVolume(object):
         Zero storage and format index area.
         """
         self.path = storage.path
+        self.lockspace = make_uuid()
         self.block_size = storage.sector_size
         self.backend = xlease.DirectFile(storage.path)
         self.zero_storage()
@@ -111,9 +112,8 @@ class TemporaryVolume(object):
             f.truncate(constants.GIB)
 
     def format_index(self):
-        lockspace = os.path.basename(os.path.dirname(self.path))
         xlease.format_index(
-            lockspace, self.backend, block_size=self.block_size)
+            self.lockspace, self.backend, block_size=self.block_size)
 
     def close(self):
         self.backend.close()
@@ -141,18 +141,14 @@ class TestIndex:
         vol = xlease.LeasesVolume(
             tmp_vol.backend, block_size=tmp_vol.block_size)
         with utils.closing(vol):
-            lockspace = os.path.basename(os.path.dirname(vol.path))
             assert vol.version == 1
-            assert vol.lockspace == lockspace
+            assert vol.lockspace == tmp_vol.lockspace
             assert vol.mtime == 123456789
 
     def test_magic_big_endian(self, tmp_vol):
-        vol = xlease.LeasesVolume(
-            tmp_vol.backend, block_size=tmp_vol.block_size)
-        with utils.closing(vol):
-            with io.open(vol.path, "rb") as f:
-                f.seek(sc.ALIGNMENT_1M)
-                assert f.read(4) == b"\x12\x15\x20\x16"
+        with io.open(tmp_vol.path, "rb") as f:
+            f.seek(sc.ALIGNMENT_1M)
+            assert f.read(4) == b"\x12\x15\x20\x16"
 
     def test_bad_magic(self, tmp_vol):
         tmp_vol.zero_storage()
@@ -161,128 +157,114 @@ class TestIndex:
                 tmp_vol.backend, block_size=tmp_vol.block_size).close()
 
     def test_bad_version(self, tmp_vol):
-        vol = xlease.LeasesVolume(
-            tmp_vol.backend, block_size=tmp_vol.block_size)
-        with utils.closing(vol):
-            with io.open(vol.path, "r+b") as f:
-                f.seek(sc.ALIGNMENT_1M + 5)
-                f.write(b"blah")
+        with io.open(tmp_vol.path, "r+b") as f:
+            f.seek(sc.ALIGNMENT_1M + 5)
+            f.write(b"blah")
 
         with pytest.raises(xlease.InvalidIndex):
             xlease.LeasesVolume(
                 tmp_vol.backend, block_size=tmp_vol.block_size).close()
 
     def test_unsupported_version(self, tmp_vol):
-        vol = xlease.LeasesVolume(
-            tmp_vol.backend, block_size=tmp_vol.block_size)
-        with utils.closing(vol):
-            md = xlease.IndexMetadata(2, "lockspace")
-            with io.open(vol.path, "r+b") as f:
-                f.seek(sc.ALIGNMENT_1M)
-                f.write(md.bytes())
+        md = xlease.IndexMetadata(2, "lockspace")
+        with io.open(tmp_vol.path, "r+b") as f:
+            f.seek(sc.ALIGNMENT_1M)
+            f.write(md.bytes())
 
         with pytest.raises(xlease.InvalidIndex):
             xlease.LeasesVolume(
                 tmp_vol.backend, block_size=tmp_vol.block_size).close()
 
     def test_bad_lockspace(self, tmp_vol):
-        vol = xlease.LeasesVolume(
-            tmp_vol.backend, block_size=tmp_vol.block_size)
-        with utils.closing(vol):
-            with io.open(vol.path, "r+b") as f:
-                f.seek(sc.ALIGNMENT_1M + 10)
-                f.write(b"\xf0")
+        with io.open(tmp_vol.path, "r+b") as f:
+            f.seek(sc.ALIGNMENT_1M + 10)
+            f.write(b"\xf0")
 
         with pytest.raises(xlease.InvalidIndex):
             xlease.LeasesVolume(
                 tmp_vol.backend, block_size=tmp_vol.block_size).close()
 
     def test_bad_mtime(self, tmp_vol):
-        vol = xlease.LeasesVolume(
-            tmp_vol.backend, block_size=tmp_vol.block_size)
-        with utils.closing(vol):
-            with io.open(vol.path, "r+b") as f:
-                f.seek(sc.ALIGNMENT_1M + 59)
-                f.write(b"not a number")
+        with io.open(tmp_vol.path, "r+b") as f:
+            f.seek(sc.ALIGNMENT_1M + 59)
+            f.write(b"not a number")
 
         with pytest.raises(xlease.InvalidIndex):
             xlease.LeasesVolume(
                 tmp_vol.backend, block_size=tmp_vol.block_size).close()
 
     def test_updating(self, tmp_vol):
-        vol = xlease.LeasesVolume(
-            tmp_vol.backend, block_size=tmp_vol.block_size)
-        with utils.closing(vol):
-            md = xlease.IndexMetadata(xlease.INDEX_VERSION, "lockspace",
-                                      updating=True)
-            with io.open(vol.path, "r+b") as f:
-                f.seek(sc.ALIGNMENT_1M)
-                f.write(md.bytes())
+        md = xlease.IndexMetadata(
+            xlease.INDEX_VERSION, "lockspace", updating=True)
+        with io.open(tmp_vol.path, "r+b") as f:
+            f.seek(sc.ALIGNMENT_1M)
+            f.write(md.bytes())
 
         with pytest.raises(xlease.InvalidIndex):
             xlease.LeasesVolume(
                 tmp_vol.backend, block_size=tmp_vol.block_size).close()
 
     def test_truncated_index(self, tmp_vol):
-        vol = xlease.LeasesVolume(
-            tmp_vol.backend, block_size=tmp_vol.block_size)
-        with utils.closing(vol):
-            # Truncate index, reading it should fail.
-            with io.open(vol.path, "r+b") as f:
-                f.truncate(
-                    sc.ALIGNMENT_1M + xlease.INDEX_SIZE - tmp_vol.block_size)
+        # Truncate index, reading it should fail.
+        with io.open(tmp_vol.path, "r+b") as f:
+            f.truncate(
+                sc.ALIGNMENT_1M + xlease.INDEX_SIZE - tmp_vol.block_size)
 
         with pytest.raises(xlease.InvalidIndex):
             xlease.LeasesVolume(
                 tmp_vol.backend, block_size=tmp_vol.block_size).close()
 
-    def test_format(self, tmp_vol):
+    def test_empty(self, tmp_vol):
         vol = xlease.LeasesVolume(
             tmp_vol.backend, block_size=tmp_vol.block_size)
         with utils.closing(vol):
             assert vol.leases() == {}
 
     def test_rebuild_empty(self, tmp_vol, fake_sanlock):
+        # Add underlying sanlock resources.
+        for i in [3, 4, 6]:
+            resource = "%04d" % i
+            offset = xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * i
+            fake_sanlock.write_resource(
+                tmp_vol.lockspace,
+                resource,
+                [(tmp_vol.path, offset)],
+                sector=tmp_vol.block_size)
+
+        # Check that the index is empty before rebuilding.
         vol = xlease.LeasesVolume(
-            tmp_vol.backend, block_size=tmp_vol.block_size)
+            tmp_vol.backend,
+            block_size=tmp_vol.block_size)
         with utils.closing(vol):
-            # Add underlying sanlock resources
-            for i in [3, 4, 6]:
-                resource = "%04d" % i
-                offset = xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * i
-                fake_sanlock.write_resource(
-                    vol.lockspace,
-                    resource,
-                    [(vol.path, offset)],
-                    sector=tmp_vol.block_size)
-            # The index is empty
             assert vol.leases() == {}
 
-            # After rebuilding the index it should contain all the underlying
-            # resources.
-            file = xlease.DirectFile(vol.path)
-            with utils.closing(file):
-                xlease.rebuild_index(
-                    vol.lockspace, file, block_size=tmp_vol.block_size)
-            expected = {
-                "0003": {
-                    "offset": xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 3,
-                    "updating": False,
-                },
-                "0004": {
-                    "offset": xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 4,
-                    "updating": False,
-                },
-                "0006": {
-                    "offset": xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 6,
-                    "updating": False,
-                },
-            }
-            file = xlease.DirectFile(vol.path)
-            with utils.closing(file):
-                vol = xlease.LeasesVolume(file, block_size=tmp_vol.block_size)
-                with utils.closing(vol):
-                    assert vol.leases() == expected
+        # Rebuild the index from storage.
+        xlease.rebuild_index(
+            tmp_vol.lockspace,
+            tmp_vol.backend,
+            block_size=tmp_vol.block_size)
+
+        # After rebuilding the index it should contain all the underlying
+        # resources.
+        expected = {
+            "0003": {
+                "offset": xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 3,
+                "updating": False,
+            },
+            "0004": {
+                "offset": xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 4,
+                "updating": False,
+            },
+            "0006": {
+                "offset": xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 6,
+                "updating": False,
+            },
+        }
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            block_size=tmp_vol.block_size)
+        with utils.closing(vol):
+            assert vol.leases() == expected
 
     def test_create_read_failure(self, tmp_vol):
         file = FailingReader(tmp_vol.path)
