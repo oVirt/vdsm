@@ -168,10 +168,10 @@ def _have_sector_size():
 
 HAVE_SECTOR_SIZE = _have_sector_size()
 
-PATHS = [
-    File("file-512", size=1024**3, sector_size=512),
-    File("file-4k", size=1024**3, sector_size=4096),
-]
+PATHS = {
+    "file-512": File("file-512", size=1024**3, sector_size=512),
+    "file-4k": File("file-4k", size=1024**3, sector_size=4096),
+}
 
 
 def main():
@@ -192,7 +192,7 @@ def main():
 
 def setup(args):
     _create_dir(BASE_DIR)
-    for p in PATHS:
+    for p in PATHS.values():
         try:
             p.setup()
         except Unsupported as e:
@@ -200,7 +200,7 @@ def setup(args):
 
 
 def teardown(args):
-    for p in PATHS:
+    for p in PATHS.values():
         p.teardown()
     _remove_dir(BASE_DIR)
 
