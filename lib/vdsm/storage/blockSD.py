@@ -1128,7 +1128,10 @@ class BlockStorageDomain(sd.StorageDomain):
         if cls.supports_external_leases(version):
             xleases_path = _external_leases_path(vgName)
             cls.format_external_leases(
-                vgName, xleases_path, block_size=block_size)
+                vgName,
+                xleases_path,
+                alignment=alignment,
+                block_size=block_size)
 
         # Create VMS file system
         _createVMSfs(os.path.join("/dev", vgName, MASTERLV))
