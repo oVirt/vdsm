@@ -62,7 +62,14 @@ class FailingWriter(xlease.DirectFile):
         raise WriteError
 
 
-@pytest.fixture(scope="module", params=userstorage.PATHS, ids=str)
+@pytest.fixture(
+    scope="module",
+    params=[
+        userstorage.PATHS["file-512"],
+        userstorage.PATHS["file-4k"],
+    ],
+    ids=str,
+)
 def user_storage(request):
     storage = request.param
     if not os.path.exists(storage.path):
