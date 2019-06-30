@@ -887,6 +887,10 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                 # Special LVs have no mapping
                 continue
 
+            if sc.TAG_VOL_UNINIT in lv.tags:
+                # Uninitialized LVs have no mapping yet.
+                continue
+
             offset = None
             for tag in lv.tags:
                 if tag.startswith(sc.TAG_PREFIX_MD):
