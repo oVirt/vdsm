@@ -251,6 +251,27 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
     lv = lvm.getLV(dom.sdUUID, sd.METADATA)
     assert int(lv.size) == blockSD.METADATA_LV_SIZE_MB * constants.MEGAB
 
+    # Test the domain lease.
+    lease = dom.getClusterLease()
+    assert lease.name == "SDM"
+    assert lease.path == "/dev/{}/leases".format(dom.sdUUID)
+    assert lease.offset == dom.alignment
+
+    resource = fake_sanlock.read_resource(
+        lease.path,
+        lease.offset,
+        align=dom.alignment,
+        sector=dom.block_size)
+
+    assert resource == {
+        "acquired": False,
+        "align": dom.alignment,
+        "lockspace": dom.sdUUID,
+        "resource": lease.name,
+        "sector": dom.block_size,
+        "version": 0,
+    }
+
 
 @requires_root
 @xfail_python3

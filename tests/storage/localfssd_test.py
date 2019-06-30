@@ -130,6 +130,15 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     assert expected == actual
 
 
+@pytest.mark.parametrize("domain_version", [3, 4, 5])
+def test_domain_lease(tmpdir, tmp_repo, fake_access, domain_version):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
+    lease = dom.getClusterLease()
+    assert lease.name == "SDM"
+    assert lease.path == dom.getLeasesFilePath()
+    assert lease.offset == dom.alignment
+
+
 def test_volume_life_cycle(monkeypatch, tmpdir, tmp_repo, fake_access,
                            fake_rescan, tmp_db, fake_task):
     # as creation of block storage domain and volume is quite time consuming,
