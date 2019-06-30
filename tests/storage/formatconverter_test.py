@@ -343,7 +343,7 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
 
     # Verify that xleases volume is created when upgrading from version < 4.
     xleases_vol = lvm.getLV(sd_uuid, "xleases")
-    assert int(xleases_vol.size) == 1024**3
+    assert int(xleases_vol.size) == 1024 * dom.alignment
 
     with pytest.raises(se.NoSuchLease):
         dom.manifest.lease_info("no-such-lease")

@@ -272,6 +272,23 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
         "version": 0,
     }
 
+    # Test special volumes sizes.
+
+    for name in (sd.IDS, sd.INBOX, sd.OUTBOX, sd.METADATA):
+        lv = lvm.getLV(dom.sdUUID, name)
+        # This is the minimal LV size on block storage.
+        assert int(lv.size) == 128 * 1024**2
+
+    lv = lvm.getLV(dom.sdUUID, blockSD.MASTERLV)
+    assert int(lv.size) == constants.GIB
+
+    lv = lvm.getLV(dom.sdUUID, sd.LEASES)
+    assert int(lv.size) == 2048 * dom.alignment
+
+    if domain_version > 3:
+        lv = lvm.getLV(dom.sdUUID, sd.XLEASES)
+        assert int(lv.size) == 1024 * dom.alignment
+
 
 @requires_root
 @xfail_python3
