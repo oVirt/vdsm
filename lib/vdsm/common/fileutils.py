@@ -21,7 +21,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import errno
-import logging
 import io
 
 from contextlib import contextmanager
@@ -50,10 +49,7 @@ def rm_file(file_to_remove):
     try:
         os.unlink(file_to_remove)
     except OSError as e:
-        if e.errno == errno.ENOENT:
-            logging.warning("File: %s already removed", file_to_remove)
-        else:
-            logging.exception("Removing file: %s failed", file_to_remove)
+        if e.errno != errno.ENOENT:
             raise
 
 
@@ -95,9 +91,7 @@ def rm_tree(dir_to_remove):
     try:
         shutil.rmtree(dir_to_remove)
     except OSError as e:
-        if e.errno == errno.ENOENT:
-            logging.warning("Directory: %s already removed", dir_to_remove)
-        else:
+        if e.errno != errno.ENOENT:
             raise
 
 
