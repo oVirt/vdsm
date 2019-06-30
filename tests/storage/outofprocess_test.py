@@ -36,21 +36,21 @@ from . marks import xfail_python3
 
 
 @pytest.fixture
-def oop_ns():
-    try:
-        yield oop.getProcessPool("test")
-    finally:
-        oop.stop()
+def oop_cleanup():
+    yield
+    oop.stop()
 
 
-def test_os_path_islink(oop_ns, tmpdir):
+def test_os_path_islink(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
     link = str(tmpdir.join("link"))
     os.symlink("/no/such/file", link)
-    assert oop_ns.os.path.islink(link)
+    assert iop.os.path.islink(link)
 
 
-def test_os_path_islink_not_link(oop_ns, tmpdir):
-    assert not oop_ns.os.path.islink(str(tmpdir))
+def test_os_path_islink_not_link(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    assert not iop.os.path.islink(str(tmpdir))
 
 
 # TODO: the following 2 tests use private instance variables that
@@ -65,7 +65,7 @@ def test_os_path_islink_not_link(oop_ns, tmpdir):
 # proc._commthread.name
 #   The member is not part of ioprocess API.
 
-def test_same_pool_name(oop_ns):
+def test_same_pool_name(oop_cleanup):
     pids = []
     for poolName in ["A", "A"]:
         proc = oop.getProcessPool(poolName)._ioproc
@@ -75,7 +75,7 @@ def test_same_pool_name(oop_ns):
     assert pids[0] == pids[1]
 
 
-def test_different_pool_name(oop_ns):
+def test_different_pool_name(oop_cleanup):
     pids = []
     for poolName in ["A", "B"]:
         proc = oop.getProcessPool(poolName)._ioproc
@@ -86,7 +86,7 @@ def test_different_pool_name(oop_ns):
 
 
 @xfail_python3
-def test_amount_of_instances_per_pool_name(oop_ns, monkeypatch):
+def test_amount_of_instances_per_pool_name(oop_cleanup, monkeypatch):
     # TODO: This is very bad test, assuming the behavior
     #  of the gc module instead of testing our code behavior.
     # We can replace the 3 tests for above with:
@@ -117,26 +117,29 @@ def test_amount_of_instances_per_pool_name(oop_ns, monkeypatch):
         raise
 
 
-def test_fileutils_call(oop_ns):
+def test_fileutils_call(oop_cleanup):
     """fileUtils is a custom module and calling it might break even though
     built in module calls aren't broken"""
+    iop = oop.getProcessPool("test")
     path = "/dev/null"
-    assert oop_ns.fileUtils.pathExists(path)
+    assert iop.fileUtils.pathExists(path)
 
 
-def test_sub_module_call(oop_ns):
+def test_sub_module_call(oop_cleanup):
     path = "/dev/null"
-    assert oop_ns.os.path.exists(path)
+    iop = oop.getProcessPool("test")
+    assert iop.os.path.exists(path)
 
 
-def test_utils_funcs(oop_ns):
+def test_utils_funcs(oop_cleanup):
     # TODO: There are few issues in this test that we need to fix:
     # 1) Use pytest tmpdir to create temporary file instead of tempfile.
     # 2) Fix fd leak if "oop_ns.utils.rmFile()" raises.
     # 3) Remove the redundant return.
     # 4) Test that the file was actually removed -
     #    the current test does not test anything.
+    iop = oop.getProcessPool("test")
     tmpfd, tmpfile = tempfile.mkstemp()
-    oop_ns.utils.rmFile(tmpfile)
+    iop.utils.rmFile(tmpfile)
     os.close(tmpfd)
     return True
