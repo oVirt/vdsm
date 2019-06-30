@@ -350,7 +350,10 @@ class HSM(object):
     def getPool(cls, spUUID):
         if cls._pool.is_connected() and cls._pool.spUUID == spUUID:
             return cls._pool
-        raise se.StoragePoolUnknown(spUUID)
+
+        # Calling when pool is not connected or with wrong pool id is client
+        # error.
+        raise exception.expected(se.StoragePoolUnknown(spUUID))
 
     @classmethod
     def setPool(cls, pool):
