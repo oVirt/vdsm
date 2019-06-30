@@ -1436,6 +1436,11 @@ class HSM(object):
                     diskType, volUUID, desc, srcImgUUID, srcVolUUID,
                     initialSize))
         vars.task.setDefaultException(se.VolumeCreationError(argsStr))
+
+        # Engine 4.1 sends disktype=2 (integer), engine 4.2 sends diskType="2" (string).
+        # https://bugzilla.redhat.com/1725390
+        diskType = str(diskType)
+
         # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
         dom = sdCache.produce(sdUUID=sdUUID)

@@ -112,8 +112,9 @@ HEMD_DISKTYPE = "HEMD"  # Hosted Engine metadata disk
 HECI_DISKTYPE = "HECI"  # Hosted Engine configuration image
 
 # TODO: Remove these constants when vdsm doesn't support engine 4.1
-# These constants were used by engine 4.1 and older
-LEGACY_DATA_DISKTYPE = 2     # Data disk
+# This constant is used by engine 4.1 and older,
+# or by a newer engine with a cluster compatibility level of 4.1.
+LEGACY_DATA_DISKTYPE = "2"     # Data disk
 
 VOL_DISKTYPE = frozenset([
     DATA_DISKTYPE,

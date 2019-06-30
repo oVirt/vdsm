@@ -510,7 +510,7 @@ types:
         name: DiskType
         type: enum
         values:
-            2: The disk is for data (int value <4.2)
+            2: The disk is for data (<4.2)
             DATA: This volume is for data (>=4.2)
             OVFS: This volume is OVF store (>=4.2)
             MEMD: This is a memory dump volume (>=4.2)
