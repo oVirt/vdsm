@@ -254,8 +254,10 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
     fake_lvm.createLV(sduuid, sd.METADATA, blockSD.SD_METADATA_SIZE)
 
     # Create the rest of the special LVs
-    special = blockSD.BlockStorageDomainManifest.special_volumes(sd_version)
-    for name, size_mb in sd.SPECIAL_VOLUME_SIZES_MIB.iteritems():
+    bsd = blockSD.BlockStorageDomain
+    special = bsd.special_volumes(sd_version)
+    sizes_mb = bsd.special_volumes_size_mb(sc.ALIGNMENT_1M)
+    for name, size_mb in sizes_mb.iteritems():
         if name in special:
             fake_lvm.createLV(sduuid, name, size_mb)
 
