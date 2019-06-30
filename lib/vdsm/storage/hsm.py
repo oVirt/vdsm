@@ -76,6 +76,7 @@ from vdsm.storage import outOfProcess as oop
 from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
+from vdsm.storage import securable
 from vdsm.storage import sp
 from vdsm.storage import storageServer
 from vdsm.storage import taskManager
@@ -2192,9 +2193,16 @@ class HSM(object):
         :options: ?
         """
         # getSharedLock(tasksResource...)
+        # Calling on non-SPM is client error.
         if not self._pool.is_connected():
-            raise se.SpmStatusError()
-        allTasksStatus = self._pool.getAllTasksStatuses()
+            raise exception.expected(se.SpmStatusError())
+
+        # Calling on non-SPM is client error.
+        try:
+            allTasksStatus = self._pool.getAllTasksStatuses()
+        except securable.SecureError:
+            raise exception.expected(se.SpmStatusError())
+
         return dict(allTasksStatus=allTasksStatus)
 
     @public
@@ -2232,9 +2240,16 @@ class HSM(object):
         :rtype: dict
         """
         # getSharedLock(tasksResource...)
+        # Calling on non-SPM is client error.
         if not self._pool.is_connected():
-            raise se.SpmStatusError()
-        allTasksInfo = self._pool.getAllTasksInfo()
+            raise exception.expected(se.SpmStatusError())
+
+        # Calling on non-SPM is client error.
+        try:
+            allTasksInfo = self._pool.getAllTasksInfo()
+        except securable.SecureError:
+            raise exception.expected(se.SpmStatusError())
+
         return dict(allTasksInfo=allTasksInfo)
 
     @public
