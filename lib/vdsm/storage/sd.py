@@ -161,9 +161,6 @@ ImgsPar = namedtuple("ImgsPar", "imgs,parent")
 ISO_IMAGE_UUID = '11111111-1111-1111-1111-111111111111'
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'
 
-# Blocks used for each lease (valid on all domain types)
-LEASE_BLOCKS = 2048
-
 UNICODE_MINIMAL_VERSION = 3
 
 # The LEASE_OFFSET is used by SANLock to not overlap with safelease in

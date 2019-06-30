@@ -962,7 +962,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             sector=self.block_size)
 
     def volume_lease_offset(self, slot):
-        return (RESERVED_LEASES + slot) * sc.BLOCK_SIZE_512 * sd.LEASE_BLOCKS
+        return (RESERVED_LEASES + slot) * self.alignment
 
     # Metadata volume
 
