@@ -596,14 +596,25 @@ class HSM(object):
         # return immediately if the SPM was already started, and once after
         # taking the lock, in case the SPM was stopped while we were waiting
         # for the lock.
-        self.getPool(spUUID).validateNotSPM()
+
+        # Calling on the SPM is client error.
+        try:
+            self.getPool(spUUID).validateNotSPM()
+        except se.IsSpm as e:
+            raise exception.expected(e)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         # We should actually just return true if we are SPM after lock,
         # but seeing as it would break the API with Engine,
         # it's easiest to fail.
-        pool.validateNotSPM()
+
+        # Calling on the SPM is client error.
+        try:
+            pool.validateNotSPM()
+        except se.IsSpm as e:
+            raise exception.expected(e)
+
         self._hsmSchedule("spmStart", pool.startSpm, prevID, prevLVER,
                           maxHostID, domVersion)
 
@@ -1134,7 +1145,11 @@ class HSM(object):
             self.log.warning("Already disconnected from %r", spUUID)
             return
 
-        self.getPool(spUUID).validateNotSPM()
+        # Calling on the SPM is client error.
+        try:
+            self.getPool(spUUID).validateNotSPM()
+        except se.IsSpm as e:
+            raise exception.expected(e)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
@@ -1142,7 +1157,12 @@ class HSM(object):
         return self._disconnectPool(pool, hostID, remove)
 
     def _disconnectPool(self, pool, hostID, remove):
-        pool.validateNotSPM()
+        # Calling on the SPM is client error.
+        try:
+            pool.validateNotSPM()
+        except se.IsSpm as e:
+            raise exception.expected(e)
+
         with rm.acquireResource(STORAGE, HSM_DOM_MON_LOCK, rm.EXCLUSIVE):
             res = pool.disconnect()
             self.setPool(sp.DisconnectedPool())
