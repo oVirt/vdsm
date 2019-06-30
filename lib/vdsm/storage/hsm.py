@@ -933,7 +933,13 @@ class HSM(object):
 
     def _spmSchedule(self, spUUID, name, func, *args):
         pool = self.getPool(spUUID)
-        pool.validateSPM()
+
+        # Calling when the host is not the SPM is a caller error.
+        try:
+            pool.validateSPM()
+        except se.SpmStatusError as e:
+            raise exception.expected(e)
+
         self.taskMng.scheduleJob("spm", pool.tasksDir, vars.task,
                                  name, func, *args)
 
