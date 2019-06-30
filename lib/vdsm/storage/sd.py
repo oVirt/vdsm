@@ -163,11 +163,11 @@ BLANK_UUID = '00000000-0000-0000-0000-000000000000'
 
 UNICODE_MINIMAL_VERSION = 3
 
-# The LEASE_OFFSET is used by SANLock to not overlap with safelease in
-# orfer to preserve the ability to acquire both locks (e.g.: during the
-# domain upgrade)
+# The LEASE_SLOT is used by Sanlock to not overlap with safelease in
+# order to preserve the ability to acquire both locks during the domain
+# upgrade from V1 to V3.
 SDM_LEASE_NAME = 'SDM'
-SDM_LEASE_OFFSET = 512 * 2048
+SDM_LEASE_SLOT = 1
 
 
 def getVolsOfImage(allVols, imgUUID):
@@ -536,7 +536,7 @@ class StorageDomainManifest(object):
         """
         return clusterlock.Lease(SDM_LEASE_NAME,
                                  self.getLeasesFilePath(),
-                                 SDM_LEASE_OFFSET)
+                                 SDM_LEASE_SLOT * self.alignment)
 
     def acquireDomainLock(self, hostID):
         self.refresh()
