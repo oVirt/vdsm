@@ -255,7 +255,12 @@ class LVMCache(object):
 
     # Warnings written to LVM stderr that should not be logged as warnings.
     SUPPRESS_WARNINGS = re.compile(
-        br"WARNING: This metadata update is NOT backed up",
+        b"|".join([
+            b"WARNING: This metadata update is NOT backed up",
+            # TODO: remove when https://bugzilla.redhat.com/1639360 is fixed.
+            b"WARNING: Combining activation change with other commands is "
+            b"not advised",
+        ]),
         re.IGNORECASE)
 
     def __init__(self):

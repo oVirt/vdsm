@@ -396,6 +396,8 @@ def test_suppress_warnings(fake_devices, fake_runner):
     fake_runner.err = [
         b"  before",
         b"  WARNING: This metadata update is NOT backed up.",
+        b"  WARNING: Combining activation change with other commands is "
+        b"not advised.",
         b"  after",
     ]
     lc = lvm.LVMCache()
