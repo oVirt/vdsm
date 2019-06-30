@@ -3763,4 +3763,5 @@ class HSM(object):
 
     def _check_pool_connected(self):
         if not self._pool.is_connected():
-            raise se.StoragePoolNotConnected
+            # Calling when pool is not connected is client error.
+            raise exception.expected(se.StoragePoolNotConnected())
