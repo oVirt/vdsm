@@ -66,6 +66,11 @@ OUTBOX = "outbox"
 # volumes.
 XLEASES = "xleases"
 
+# The size of these volumes is calculated dynamically based on the
+# domain block size and alignment.
+LEASES_SLOTS = 2048
+XLEASES_SLOTS = 1024
+
 # Special volumes available since storage domain version 0
 SPECIAL_VOLUMES_V0 = (METADATA, LEASES, IDS, INBOX, OUTBOX)
 
@@ -73,11 +78,9 @@ SPECIAL_VOLUMES_V0 = (METADATA, LEASES, IDS, INBOX, OUTBOX)
 SPECIAL_VOLUMES_V4 = SPECIAL_VOLUMES_V0 + (XLEASES,)
 
 SPECIAL_VOLUME_SIZES_MIB = {
-    LEASES: 2048,
     IDS: 8,
     INBOX: 16,
     OUTBOX: 16,
-    XLEASES: 1024,
 }
 
 # Storage Domain Types

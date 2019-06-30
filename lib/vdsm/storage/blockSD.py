@@ -461,6 +461,14 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         else:
             return SPECIAL_LVS_V0
 
+    @classmethod
+    def special_volumes_size_mb(cls, alignment):
+        alignment_mb = alignment // constants.MEGAB
+        sizes_mb = dict(sd.SPECIAL_VOLUME_SIZES_MIB)
+        sizes_mb[sd.LEASES] = sd.LEASES_SLOTS * alignment_mb
+        sizes_mb[sd.XLEASES] = sd.XLEASES_SLOTS * alignment_mb
+        return sizes_mb
+
     @property
     def mountpoint(self):
         return os.path.join(sc.REPO_MOUNT_DIR, sd.BLOCKSD_DIR)
@@ -1118,8 +1126,9 @@ class BlockStorageDomain(sd.StorageDomain):
         mapping = cls.getMetaDataMapping(vgName)
 
         # Create the rest of the BlockSD internal volumes
-        special_lvs = cls.manifestClass.special_volumes(version)
-        for name, size_mb in sd.SPECIAL_VOLUME_SIZES_MIB.iteritems():
+        special_lvs = cls.special_volumes(version)
+        lvs_size_mb = cls.special_volumes_size_mb(alignment)
+        for name, size_mb in six.iteritems(lvs_size_mb):
             if name in special_lvs:
                 lvm.createLV(vgName, name, size_mb)
 
@@ -1214,6 +1223,14 @@ class BlockStorageDomain(sd.StorageDomain):
     @classmethod
     def getMetaDataMapping(cls, vgName, oldMapping={}):
         return cls.manifestClass.getMetaDataMapping(vgName, oldMapping)
+
+    @classmethod
+    def special_volumes(cls, version):
+        return cls.manifestClass.special_volumes(version)
+
+    @classmethod
+    def special_volumes_size_mb(cls, alignment):
+        return cls.manifestClass.special_volumes_size_mb(alignment)
 
     def extend(self, devlist, force):
         self._manifest.extend(devlist, force)
@@ -1678,8 +1695,8 @@ class BlockStorageDomain(sd.StorageDomain):
             lvm.getLV(self.sdUUID, sd.XLEASES)
         except se.LogicalVolumeDoesNotExistError:
             self.log.info("Creating external leases volume %s", path)
-            size = sd.SPECIAL_VOLUME_SIZES_MIB[sd.XLEASES]
-            lvm.createLV(self.sdUUID, sd.XLEASES, size)
+            lvs_size_mb = self.special_volumes_size_mb(self.alignment)
+            lvm.createLV(self.sdUUID, sd.XLEASES, lvs_size_mb[sd.XLEASES])
         else:
             self.log.info("Reusing external leases volume %s", path)
             lvm.activateLVs(self.sdUUID, [sd.XLEASES], refresh=False)
