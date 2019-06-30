@@ -255,14 +255,15 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
 @requires_root
 @xfail_python3
 @pytest.mark.root
+@pytest.mark.parametrize("domain_version", [3, 4, 5])
 def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
-                           fake_rescan, tmp_db, fake_task, fake_sanlock):
+                           fake_rescan, tmp_db, fake_task, fake_sanlock,
+                           domain_version):
     # as creation of block storage domain and volume is quite time consuming,
     # we test several volume operations in one test to speed up the test suite
 
     sd_uuid = str(uuid.uuid4())
     domain_name = "domain"
-    domain_version = 4
 
     dev = tmp_storage.create_device(20 * 1024 ** 3)
     lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
@@ -307,15 +308,34 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
 
     # test create volume
     vol = dom.produceVolume(img_uuid, vol_uuid)
-    actual = vol.getInfo()
 
-    expected_lease = {
-        "offset": ((blockSD.RESERVED_LEASES + 4) * sc.BLOCK_SIZE_512 *
-                   sd.LEASE_BLOCKS),
-        "owners": [],
-        "path": "/dev/{}/leases".format(sd_uuid),
-        "version": None,
+    # Get the metadata slot, used for volume metadata and volume lease offset.
+    _, slot = vol.getMetadataId()
+
+    lease = dom.getVolumeLease(img_uuid, vol_uuid)
+
+    assert lease.name == vol.volUUID
+    assert lease.path == "/dev/{}/leases".format(sd_uuid)
+    assert lease.offset == (blockSD.RESERVED_LEASES + slot) * dom.alignment
+
+    # Test that we created a sanlock resource for this volume.
+    resource = fake_sanlock.read_resource(
+        lease.path,
+        lease.offset,
+        align=dom.alignment,
+        sector=dom.block_size)
+
+    assert resource == {
+        "acquired": False,
+        "align": dom.alignment,
+        "lockspace": vol.sdUUID,
+        "resource": vol.volUUID,
+        "sector": dom.block_size,
+        "version": 0,
     }
+
+    # Test volume info.
+    actual = vol.getInfo()
 
     assert int(actual["capacity"]) == vol_capacity
     assert int(actual["ctime"]) == 1550522547
@@ -323,7 +343,12 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
     assert actual["disktype"] == "DATA"
     assert actual["domain"] == sd_uuid
     assert actual["format"] == "COW"
-    assert actual["lease"] == expected_lease
+    assert actual["lease"] == {
+        "offset": lease.offset,
+        "owners": [],
+        "path": lease.path,
+        "version": None,
+    }
     assert actual["parent"] == sc.BLANK_UUID
     assert actual["status"] == "OK"
     assert actual["type"] == "SPARSE"
@@ -331,9 +356,6 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
     assert actual["uuid"] == vol_uuid
 
     vol_path = vol.getVolumePath()
-
-    # Keep the slot before deleting the volume.
-    _, slot = vol.getMetadataId()
 
     # test volume prepare
     assert os.path.islink(vol_path)
