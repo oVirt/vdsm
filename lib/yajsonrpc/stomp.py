@@ -162,12 +162,13 @@ class Frame(object):
 
 def decode_value(s):
     if not isinstance(s, six.binary_type):
-        raise ValueError("Unable to decode non-binary values")
+        raise ValueError(
+            "Unable to decode non-binary value: {!r}".format(repr(s)))
 
     # Make sure to leave this check before decoding as ':' can appear in the
     # value after decoding using \c
     if b":" in s:
-        raise ValueError("Contains illegal character ':'")
+        raise ValueError("'{}' contains illegal character ':'".format(s))
 
     try:
         s = _RE_ESCAPE_SEQUENCE.sub(
@@ -175,7 +176,9 @@ def decode_value(s):
             s,
         )
     except KeyError as e:
-        raise ValueError("Contains invalid escape sequence '\\%s'" % e.args[0])
+        raise ValueError(
+            "'{}' contains invalid escape sequence '\\{}'".format(
+                s, e.args[0]))
 
     return s.decode("utf-8")
 
@@ -188,7 +191,8 @@ def encode_value(s):
     elif isinstance(s, int):
         s = str(s).encode("utf-8")
     elif not isinstance(s, six.binary_type):
-        raise ValueError("Unable to encode non-string values")
+        raise ValueError(
+            "Unable to encode non-string value: {!r}".format(repr(s)))
 
     return _RE_ENCODE_CHARS.sub(lambda m: _EC_ENCODE_MAP[m.group(0)], s)
 

@@ -78,6 +78,11 @@ def test_encoding_frame_with_headers(headers, expected):
     ),
     (
         {},
+        b"zorro",
+        b"SEND\ncontent-length:5\n\nzorro\x00"
+    ),
+    (
+        {},
         u"\u0105b\u0107",
         b"SEND\ncontent-length:5\n\n\xc4\x85b\xc4\x87\x00"
     ),

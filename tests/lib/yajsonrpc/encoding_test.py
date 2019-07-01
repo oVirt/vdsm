@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright 2015-2019 Red Hat, Inc.
 #
@@ -30,18 +29,19 @@ from yajsonrpc.stomp import decode_value, encode_value
 @pytest.mark.parametrize("value, expected", [
     (u'abc', b'abc'),
     ('abc', b'abc'),
-    (u'\u0105b\u0107', b'\xc4\x85b\xc4\x87'),
+    pytest.param(u'\u0105b\u0107', b'\xc4\x85b\xc4\x87',
+                 id='utf-8 string with localized characters'),
 ])
 def test_encode_should_handle_strings(value, expected):
     assert encode_value(value) == expected
 
 
-# TODO: Remove handling ints as 'decode_value'
-#       doesn't do the reverse conversion
+@pytest.mark.xpass("needs to be removed - decoding doesn't do the opposite")
 def test_encode_should_handle_ints():
     assert encode_value(5) == b'5'
 
 
+@pytest.mark.xpass("to be removed when we go py3-only")
 def test_encode_should_accept_bytes():
     assert encode_value(b'abc') == b'abc'
 
@@ -54,7 +54,12 @@ def test_encode_should_accept_bytes():
                       # to line feed (octet 10)
     (b':', br'\c'),   # \c (octet 92 and 99) translates to : (octet 58)
     (b'\\', br'\\'),  # \\ (octet 92 and 92) translates to \ (octet 92)
-    (b'\r\r\n:\\\n', br'\r\r\n\c\\\n')
+    (b'\r\r\n:\\\n', br'\r\r\n\c\\\n'),
+    (u'\r', br'\r'),  # same patterns as unicode literals
+    (u'\n', br'\n'),
+    (u':', br'\c'),
+    (u'\\', br'\\'),
+    (u'\r\r\n:\\\n', br'\r\r\n\c\\\n')
 ])
 def test_encode_should_escape_characters(value, expected):
     assert encode_value(value) == expected
@@ -65,13 +70,16 @@ def test_encode_should_raise_for_unsupported_types():
         encode_value(5.4)
 
     assert 'Unable to encode' in str(err.value)
+    assert repr(5.4) in str(err.value)
 
 
+# https://stomp.github.io/stomp-specification-1.2.html#Value_Encoding
 def test_decode_should_raise_for_sequences_with_colon():
     with pytest.raises(ValueError) as err:
         decode_value(b'abc:def')
 
-    assert 'Contains illegal character' in str(err.value)
+    assert 'abc:def' in str(err.value)
+    assert 'contains illegal character' in str(err.value)
 
 
 # https://stomp.github.io/stomp-specification-1.2.html#Value_Encoding
@@ -88,16 +96,20 @@ def test_decode_should_unescape_characters(value, expected):
     assert decode_value(value) == expected
 
 
+# https://stomp.github.io/stomp-specification-1.2.html#Value_Encoding
 def test_decode_should_raise_for_invalid_escape_sequences():
     with pytest.raises(ValueError) as err:
-        decode_value(b'\\m')
+        decode_value(b'Evil sequence \\m')
 
-    assert 'Contains invalid escape sequence' in str(err)
+    assert 'Evil sequence' in str(err)
+    assert 'contains invalid escape sequence' in str(err)
+    assert '\\m' in str(err)
 
 
 @pytest.mark.parametrize('value, expected', [
     (b'abc', u'abc'),
-    (b'\xc4\x85b\xc4\x87', u'ąbć'),
+    pytest.param(b'\xc4\x85b\xc4\x87', u'\u0105b\u0107',
+                 id='utf-8 string with localized characters'),
 ])
 def test_decode_should_handle_bytes(value, expected):
     assert decode_value(value) == expected
@@ -107,14 +119,15 @@ def test_decode_should_raise_for_unsupported_types():
     with pytest.raises(ValueError) as err:
         decode_value(u'abc')
 
-    assert 'Unable to decode non-binary values' in str(err)
+    assert 'Unable to decode non-binary value' in str(err)
+    assert repr(u'abc') in str(err)
 
 
 @pytest.mark.parametrize('value', [
-    'accept-version',
-    '1.2:',
-    '98c592f4-e2e2-46ea-b7b6-aa4f57f924b9\n\r',
-    '98c592f4\\-e2e2-46ea-b7b6-aa4f57f924b9',
+    u'accept-version',
+    u'1.2:',
+    u'98c592f4-e2e2-46ea-b7b6-aa4f57f924b9\n\r',
+    u'98c592f4\\-e2e2-46ea-b7b6-aa4f57f924b9',
 ])
 def test_encoding_process_should_be_reversible(value):
     assert decode_value(encode_value(value)) == value
