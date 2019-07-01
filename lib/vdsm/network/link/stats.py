@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import errno
+
 from vdsm.network.link import bond
 from vdsm.network.link import dpdk
 from vdsm.network.link import iface
@@ -30,20 +32,28 @@ from vdsm.network.link import vlan
 def report():
     stats = {}
     for iface_properties in iface.list():
-        i = iface.iface(iface_properties['name'])
-        stats[i.device] = i.statistics()
+        try:
+            interface = iface.iface(iface_properties['name'])
+            stats[interface.device] = _generate_iface_stats(interface)
+        except IOError as e:
+            if e.errno != errno.ENODEV:
+                raise
+    return stats
 
-        speed = 0
-        if i.type() == iface.Type.NIC:
-            speed = nic.speed(i.device)
-        elif i.type() == iface.Type.BOND:
-            speed = bond.speed(i.device)
-        elif i.type() == iface.Type.VLAN:
-            speed = vlan.speed(i.device)
-        elif i.type() == iface.Type.DPDK:
-            speed = dpdk.speed(i.device)
 
-        stats[i.device]['speed'] = speed
-        stats[i.device]['duplex'] = nic.duplex(i.device)
+def _generate_iface_stats(interface):
+    stats = interface.statistics()
+    speed = 0
+    if interface.type() == iface.Type.NIC:
+        speed = nic.speed(interface.device)
+    elif interface.type() == iface.Type.BOND:
+        speed = bond.speed(interface.device)
+    elif interface.type() == iface.Type.VLAN:
+        speed = vlan.speed(interface.device)
+    elif interface.type() == iface.Type.DPDK:
+        speed = dpdk.speed(interface.device)
+
+    stats['speed'] = speed
+    stats['duplex'] = nic.duplex(interface.device)
 
     return stats
