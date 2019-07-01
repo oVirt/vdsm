@@ -158,8 +158,11 @@ class FileMetadataRW(object):
         self._oop.os.rename(tmpFilePath, self._metafile)
 
 
-FileSDMetadata = lambda metafile: DictValidator(
-    PersistentDict(FileMetadataRW(metafile)), FILE_SD_MD_FIELDS)
+def FileSDMetadata(metafile):
+    return DictValidator(
+        PersistentDict(
+            FileMetadataRW(metafile)),
+        FILE_SD_MD_FIELDS)
 
 
 class FileStorageDomainManifest(sd.StorageDomainManifest):
