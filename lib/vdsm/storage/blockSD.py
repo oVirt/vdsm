@@ -406,12 +406,18 @@ class LvMetadataRW(object):
             return self._offset + self._size > lv_size
 
 
-LvBasedSDMetadata = lambda vg, lv: DictValidator(
-    PersistentDict(LvMetadataRW(vg, lv, 0, SD_METADATA_SIZE)),
-    BLOCK_SD_MD_FIELDS)
-TagBasedSDMetadata = lambda vg: DictValidator(
-    PersistentDict(VGTagMetadataRW(vg)),
-    BLOCK_SD_MD_FIELDS)
+def LvBasedSDMetadata(vg, lv):
+    return DictValidator(
+        PersistentDict(
+            LvMetadataRW(vg, lv, 0, SD_METADATA_SIZE)),
+        BLOCK_SD_MD_FIELDS)
+
+
+def TagBasedSDMetadata(vg):
+    return DictValidator(
+        PersistentDict(
+            VGTagMetadataRW(vg)),
+        BLOCK_SD_MD_FIELDS)
 
 
 def selectMetadata(sdUUID):
