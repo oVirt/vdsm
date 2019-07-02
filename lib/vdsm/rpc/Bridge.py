@@ -354,6 +354,7 @@ command_info = {
     'Host_setupNetworks': {'ret': 'status'},
     'Host_setKsmTune': {'ret': 'status'},
     'Host_setHaMaintenanceMode': {'ret': 'status'},
+    'Host_echo': {'ret': 'logged'},
     'Image_cloneStructure': {'ret': 'uuid'},
     'Image_delete': {'ret': 'uuid'},
     'Image_deleteVolumes': {'ret': 'uuid'},

@@ -1553,6 +1553,11 @@ class Global(APIBase):
         """
         return response.success(info=supervdsm.getProxy().network_stats())
 
+    @api.logged(on="api.host")
+    @api.method
+    def echo(self, message):
+        return {'status': doneCode, 'logged': message}
+
     def getLldp(self, filter):
         return response.success(
             info=supervdsm.getProxy().get_lldp_info(filter))

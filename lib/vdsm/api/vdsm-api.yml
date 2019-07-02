@@ -8348,6 +8348,17 @@ Host.getNetworkStatistics:
         description: Host network statistics
         type: *HostNetworkStatistics
 
+Host.echo:
+    added: '4.4'
+    description: Log a user message and echo it
+    params:
+    -   description: Message to log with api.Host logger
+        name: message
+        type: string
+    return:
+        description: The logged message
+        type: string
+
 Host.getHardwareInfo:
     added: '3.2'
     description: Get host hardware information.
