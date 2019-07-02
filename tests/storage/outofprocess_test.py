@@ -25,7 +25,6 @@ import gc
 import logging
 import os
 import re
-import tempfile
 import time
 import weakref
 
@@ -131,15 +130,14 @@ def test_sub_module_call(oop_cleanup):
     assert iop.os.path.exists(path)
 
 
-def test_utils_funcs(oop_cleanup):
-    # TODO: There are few issues in this test that we need to fix:
-    # 1) Use pytest tmpdir to create temporary file instead of tempfile.
-    # 2) Fix fd leak if "oop_ns.utils.rmFile()" raises.
-    # 3) Remove the redundant return.
-    # 4) Test that the file was actually removed -
-    #    the current test does not test anything.
+def test_rmfile(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
-    tmpfd, tmpfile = tempfile.mkstemp()
-    iop.utils.rmFile(tmpfile)
-    os.close(tmpfd)
-    return True
+
+    # Create an empty file.
+    path = str(tmpdir.join("file"))
+    open(path, "w").close()
+
+    # Test the file removal.
+    assert os.path.exists(path)
+    iop.utils.rmFile(path)
+    assert not os.path.exists(path)
