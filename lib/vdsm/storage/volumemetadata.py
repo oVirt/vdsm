@@ -134,15 +134,6 @@ class VolumeMetadata(object):
         self._ctime = self._validate_integer("ctime", value)
 
     @property
-    def size(self):
-        return self.capacity // sc.BLOCK_SIZE_512
-
-    @size.setter
-    def size(self, value):
-        self.capacity = (self._validate_integer("size", value) *
-                         sc.BLOCK_SIZE_512)
-
-    @property
     def generation(self):
         return self._generation
 
@@ -208,7 +199,7 @@ class VolumeMetadata(object):
 
             # Pre v5 domains should have SIZE in blocks
             # instead of CAPACITY in bytes
-            info[sc.SIZE] = self.size
+            info[sc.SIZE] = self.capacity // sc.BLOCK_SIZE_512
         else:
             info[sc.CAPACITY] = self.capacity
 
@@ -244,7 +235,6 @@ class VolumeMetadata(object):
         sc.PUUID: 'puuid',
         sc.LEGALITY: 'legality',
         sc.GENERATION: 'generation',
-        sc.SIZE: 'size'
     }
 
     def __getitem__(self, item):
@@ -254,7 +244,7 @@ class VolumeMetadata(object):
             raise KeyError(item)
 
         # Some fields needs to be converted to string
-        if item in (sc.CAPACITY, sc.SIZE, sc.CTIME):
+        if item in (sc.CAPACITY, sc.CTIME):
             value = str(value)
         return value
 
