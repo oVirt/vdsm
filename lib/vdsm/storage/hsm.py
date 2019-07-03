@@ -756,15 +756,14 @@ class HSM(object):
             # Uncommit the current size
             volToExtend.setCapacity(0)
             qemuimg.resize(volPath, newSizeBytes, qemuImgFormat)
-            roundedSizeBytes = qemuimg.info(volPath,
-                                            qemuImgFormat)['virtualsize']
+            virtual_size = qemuimg.info(volPath,
+                                        qemuImgFormat)['virtualsize']
         finally:
             volToExtend.teardown(sdUUID, volUUID)
 
-        new_size_blk = (roundedSizeBytes + BLOCK_SIZE - 1) / BLOCK_SIZE
-        volToExtend.setCapacity(new_size_blk * sc.BLOCK_SIZE_512)
+        volToExtend.setCapacity(virtual_size)
 
-        return dict(size=str(roundedSizeBytes))
+        return dict(size=str(virtual_size))
 
     @public
     def extendStorageDomain(self, sdUUID, spUUID, guids,
