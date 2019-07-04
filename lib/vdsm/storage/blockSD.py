@@ -506,13 +506,10 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         try:
             size = fsutils.size(lvm.lvPath(self.sdUUID, volUUID))
         except IOError as e:
-            if e.errno == errno.ENOENT:
-                # Inactive volume has no /dev entry. Fallback to lvm way.
-                size = lvm.getLV(self.sdUUID, volUUID).size
-            else:
-                self.log.warn("Could not get size for vol %s/%s",
-                              self.sdUUID, volUUID, exc_info=True)
+            if e.errno != errno.ENOENT:
                 raise
+            # Inactive volume has no /dev entry. Fallback to lvm way.
+            size = lvm.getLV(self.sdUUID, volUUID).size
 
         return int(size)
 
