@@ -1625,27 +1625,22 @@ class BlockStorageDomain(sd.StorageDomain):
                     return
 
                 if len(pids) == 0:
-                    cls.log.warn("Unmount failed because of errors that fuser "
-                                 "can't solve")
+                    cls.log.warning(
+                        "Unmount failed because of errors that fuser can't "
+                        "solve")
                 else:
                     for pid in pids:
+                        cls.log.debug("Trying to kill pid %d", pid)
                         try:
-                            cls.log.debug("Trying to kill pid %d", pid)
                             os.kill(pid, signal.SIGKILL)
                         except OSError as e:
                             if e.errno == errno.ESRCH:  # No such process
-                                pass
-                            elif e.errno == errno.EPERM:  # Op. not permitted
-                                cls.log.warn("Could not kill pid %d because "
-                                             "operation was not permitted",
-                                             pid)
-                            else:
-                                cls.log.warn("Could not kill pid %d because an"
-                                             " unexpected error",
-                                             exc_info=True)
-                        except:
-                            cls.log.warn("Could not kill pid %d because an "
-                                         "unexpected error", exc_info=True)
+                                continue
+                            cls.log.warning("Could not kill pid %d: %s",
+                                            pid, e)
+                        except Exception as e:
+                            cls.log.warning("Could not kill pid %d: %s",
+                                            pid, e)
 
                 # Try umount, take 2
                 try:
