@@ -208,6 +208,10 @@ def _getVolsTree(sdUUID):
     lvs = lvm.getLV(sdUUID)
     vols = {}
     for lv in lvs:
+        if sc.TAG_VOL_UNINIT in lv.tags:
+            # Uninitialized LVs have no image or parent yet.
+            continue
+
         image = ""
         parent = ""
         for tag in lv.tags:
