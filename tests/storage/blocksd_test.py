@@ -102,7 +102,7 @@ class TestGetAllVolumes:
         monkeypatch.setattr(lvm, 'getLV', fakeGetLV)
         sdName = "f9e55e18-67c4-4377-8e39-5833ca422bef"
         allVols = blockSD.getAllVolumes(sdName)
-        assert len(allVols) == 1
+        assert len(allVols) == 2
 
 
 class TestDecodeValidity:

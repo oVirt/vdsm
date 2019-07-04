@@ -79,10 +79,6 @@ HOSTS_4K_8M = 2000
 FILE_VOLUME_PERMISSIONS = 0o660
 LEASE_FILEEXT = ".lease"
 
-# Temporary volume indicators
-TEMP_VOL_FILEEXT = ".volatile"         # Added to FileVolume metadata filenames
-TEMP_VOL_LVTAG = "OVIRT_VOL_VOLATILE"  # Tag applied to BlockVolume LVs
-
 # Volume Types
 UNKNOWN_VOL = 0
 PREALLOCATED_VOL = 1

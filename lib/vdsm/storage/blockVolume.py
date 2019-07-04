@@ -150,14 +150,10 @@ class BlockVolumeManifest(volume.VolumeManifest):
 
     def validate(self):
         try:
-            lv = lvm.getLV(self.sdUUID, self.volUUID)
+            lvm.getLV(self.sdUUID, self.volUUID)
         except se.LogicalVolumeDoesNotExistError:
             raise se.VolumeDoesNotExist(self.volUUID)
-        else:
-            if sc.TEMP_VOL_LVTAG in lv.tags:
-                self.log.warning("Tried to produce a volume artifact: %s/%s",
-                                 self.sdUUID, self.volUUID)
-                raise se.VolumeDoesNotExist(self.volUUID)
+
         volume.VolumeManifest.validate(self)
 
     def getVolumeTag(self, tagPrefix):

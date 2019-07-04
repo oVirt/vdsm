@@ -208,8 +208,6 @@ def _getVolsTree(sdUUID):
     lvs = lvm.getLV(sdUUID)
     vols = {}
     for lv in lvs:
-        if sc.TEMP_VOL_LVTAG in lv.tags:
-            continue
         image = ""
         parent = ""
         for tag in lv.tags:
