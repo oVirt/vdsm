@@ -227,8 +227,10 @@ def _getVolsTree(sdUUID):
                 vols[lv.name] = BlockSDVol(lv.name, image, parent)
                 break
         else:
-            log.warning("Ignoring Volume %s that lacks minimal tag set"
-                        "tags %s" % (lv.name, lv.tags))
+            log.warning(
+                "Ignoring volume %s that lacks minimal tag set: %s",
+                lv.name, lv.tags)
+
     return vols
 
 
