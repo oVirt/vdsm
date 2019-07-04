@@ -208,6 +208,10 @@ def _getVolsTree(sdUUID):
     lvs = lvm.getLV(sdUUID)
     vols = {}
     for lv in lvs:
+        if lv.name in SPECIAL_LVS_V4:
+            # Special lvs are not user lvs.
+            continue
+
         if sc.TAG_VOL_UNINIT in lv.tags:
             # Uninitialized LVs have no image or parent yet.
             continue
@@ -223,9 +227,8 @@ def _getVolsTree(sdUUID):
                 vols[lv.name] = BlockSDVol(lv.name, image, parent)
                 break
         else:
-            if lv.name not in SPECIAL_LVS_V4:
-                log.warning("Ignoring Volume %s that lacks minimal tag set"
-                            "tags %s" % (lv.name, lv.tags))
+            log.warning("Ignoring Volume %s that lacks minimal tag set"
+                        "tags %s" % (lv.name, lv.tags))
     return vols
 
 
