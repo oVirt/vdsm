@@ -902,8 +902,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                     break
 
             if offset is None:
-                self.log.warn("Could not find mapping for lv %s/%s",
-                              self.sdUUID, lv.name)
+                self.log.warning("Could not find mapping for lv %s/%s",
+                                 self.sdUUID, lv.name)
                 continue
 
             occupiedSlots.append(offset)
@@ -1590,8 +1590,10 @@ class BlockStorageDomain(sd.StorageDomain):
                 # Umount succeeded after all
                 return
 
-            cls.log.warn("master mount resource is `%s`, trying to disconnect "
-                         "underlying storage", masterDev)
+            cls.log.warning(
+                "master mount resource is `%s`, trying to disconnect "
+                "underlying storage",
+                masterDev)
             iscsi.disconnectFromUndelyingStorage(masterDev)
 
     @classmethod
