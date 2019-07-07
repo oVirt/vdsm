@@ -22,8 +22,11 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import collections
 import os
+import shutil
 import stat
+import tempfile
 import time
 import uuid
 
@@ -39,11 +42,40 @@ from vdsm.storage import qemuimg
 from vdsm.storage import sd
 
 from . import qemuio
+from . import userstorage
 from . marks import xfail_python3
 
 PREALLOCATED_VOL_SIZE = 10 * MEGAB
 SPARSE_VOL_SIZE = GIB
 INITIAL_VOL_SIZE = 1 * MEGAB
+
+
+Storage = collections.namedtuple("Storage", "path, block_size, alignment")
+
+
+@pytest.fixture(
+    params=[
+        pytest.param(
+            (userstorage.PATHS["mount-512"], sc.ALIGNMENT_1M),
+            id="mount-512-1m"),
+        pytest.param(
+            (userstorage.PATHS["mount-4k"], sc.ALIGNMENT_1M),
+            id="mount-4k-1m"),
+        pytest.param(
+            (userstorage.PATHS["mount-4k"], sc.ALIGNMENT_2M),
+            id="mount-4k-2m"),
+    ],
+)
+def user_mount(request):
+    storage, alignment = request.param
+    if not storage.exists():
+        pytest.xfail("{} storage not available".format(storage.name))
+
+    tmp_dir = tempfile.mkdtemp(dir=storage.path)
+
+    yield Storage(tmp_dir, storage.sector_size, alignment)
+
+    shutil.rmtree(tmp_dir)
 
 
 def test_incorrect_block_rejected():
@@ -78,7 +110,7 @@ def test_incorrect_version_and_block_rejected(version, block_size, alignment):
 
 
 @xfail_python3
-@pytest.mark.parametrize("domain_version", [3, 4, 5])
+@pytest.mark.parametrize("domain_version", [3, 4])
 def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     remote_path = str(tmpdir.mkdir("domain"))
 
@@ -105,11 +137,6 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
         sd.DMDK_VERSION: domain_version,
     }
 
-    # In version 5 we added ALIGNMENT and BLOCK_SIZE.
-    if domain_version > 4:
-        expected[sd.DMDK_ALIGNMENT] = sc.ALIGNMENT_1M
-        expected[sd.DMDK_BLOCK_SIZE] = sc.BLOCK_SIZE_512
-
     actual = dom.getMetadata()
     assert expected == actual
 
@@ -119,13 +146,65 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
 
 
 @xfail_python3
-@pytest.mark.parametrize("domain_version", [3, 4, 5])
+def test_create_domain_metadata_v5(user_mount, tmp_repo, fake_access):
+    dom = tmp_repo.create_localfs_domain(
+        name="domain",
+        version=5,
+        block_size=user_mount.block_size,
+        alignment=user_mount.alignment,
+        remote_path=user_mount.path)
+
+    lease = sd.DEFAULT_LEASE_PARAMS
+    expected = {
+        fileSD.REMOTE_PATH: user_mount.path,
+        sd.DMDK_ALIGNMENT: user_mount.alignment,
+        sd.DMDK_BLOCK_SIZE: user_mount.block_size,
+        sd.DMDK_CLASS: sd.DATA_DOMAIN,
+        sd.DMDK_DESCRIPTION: "domain",
+        sd.DMDK_IO_OP_TIMEOUT_SEC: lease[sd.DMDK_IO_OP_TIMEOUT_SEC],
+        sd.DMDK_LEASE_RETRIES: lease[sd.DMDK_LEASE_RETRIES],
+        sd.DMDK_LEASE_TIME_SEC: lease[sd.DMDK_LEASE_TIME_SEC],
+        sd.DMDK_LOCK_POLICY: "",
+        sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC:
+            lease[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+        sd.DMDK_POOLS: [tmp_repo.pool_id],
+        sd.DMDK_ROLE: sd.REGULAR_DOMAIN,
+        sd.DMDK_SDUUID: dom.sdUUID,
+        sd.DMDK_TYPE: sd.LOCALFS_DOMAIN,
+        sd.DMDK_VERSION: 5,
+    }
+
+    actual = dom.getMetadata()
+    assert expected == actual
+
+    # Tests also alignment and block size properties here.
+    assert dom.alignment == user_mount.alignment
+    assert dom.block_size == user_mount.block_size
+
+
+@xfail_python3
+@pytest.mark.parametrize("domain_version", [3, 4])
 def test_domain_lease(tmpdir, tmp_repo, fake_access, domain_version):
     dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
     lease = dom.getClusterLease()
     assert lease.name == "SDM"
     assert lease.path == dom.getLeasesFilePath()
     assert lease.offset == dom.alignment
+
+
+@xfail_python3
+def test_domain_lease_v5(user_mount, tmp_repo, fake_access):
+    dom = tmp_repo.create_localfs_domain(
+        name="domain",
+        version=5,
+        block_size=user_mount.block_size,
+        alignment=user_mount.alignment,
+        remote_path=user_mount.path)
+
+    lease = dom.getClusterLease()
+    assert lease.name == "SDM"
+    assert lease.path == dom.getLeasesFilePath()
+    assert lease.offset == user_mount.alignment
 
 
 @xfail_python3
