@@ -24,14 +24,21 @@ backed up by sparse files and do not consume much resources.
 
 ## Storage test matrix
 
-These are the supported storage configurations:
+These are the available storage configurations:
 
-- file-512 - file system backed by loop device with 512 bytes sector
-  size.
+- file-512 - a file on a file system backed by loop device with 512
+  bytes sector size.
 
-- file-4k - file system backed by loop device with 4k sector size. This
-  configuration is not available on CentOS 7 and is known to be fail
-  randomly on oVirt CI.
+- file-4k - a file on a file system backed by loop device with 4k sector
+  size. This configuration is not available on CentOS 7 and is known to
+  be fail randomly on oVirt CI.
+
+- mount-512 - mounted file system backed by loop device with 512 bytes
+  sector size.
+
+- mount-4k - mounted file system backed by loop device with 4k sector
+  size.  This configuration is not available on CentOS 7 and is known to
+  be fail randomly on oVirt CI.
 
 Storage configurations which are not supported on the current
 environment are skipped automatically. The tests must deal with the
