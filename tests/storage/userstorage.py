@@ -32,19 +32,34 @@ class Unsupported(Exception):
     """
 
 
-class File(object):
+class Path(object):
+    """
+    Base class for path objects.
+    """
+
+    name = None  # subclass should define.
+
+    def setup(self):
+        raise NotImplementedError
+
+    def teardown(self):
+        raise NotImplementedError
+
+    def exists(self):
+        raise NotImplementedError
+
+    def __str__(self):
+        return self.name
+
+
+class LoopDevice(Path):
 
     def __init__(self, name, size, sector_size=512):
-        """
-        Create file based storage.
-        """
         self.name = name
         self.size = size
         self.sector_size = sector_size
-        self.loop = os.path.join(BASE_DIR, "loop." + name)
-        self.backing = os.path.join(BASE_DIR, "backing." + name)
-        self.mountpoint = os.path.join(BASE_DIR, "mount." + name)
-        self.path = os.path.join(self.mountpoint, "file")
+        self.path = os.path.join(BASE_DIR, "loop." + name)
+        self._backing = os.path.join(BASE_DIR, "backing." + name)
 
     def setup(self):
         # Detecting unsupported environment automatically makes it easy to run
@@ -54,29 +69,43 @@ class File(object):
                 raise Unsupported("Sector size {} not supported"
                                   .format(self.sector_size))
 
-        if not os.path.exists(self.loop):
-            self._create_loop_device()
-            self._create_filesystem()
-            self._create_file()
+        if self.exists():
+            log.debug("Reusing loop device %s", self.path)
+            return
 
-    def teardown(self):
-        if self._is_mounted():
-            self._remove_filesystem()
-        _remove_dir(self.mountpoint)
-        if os.path.exists(self.loop):
-            self._remove_loop_device()
-        _remove_file(self.backing)
-
-    def _create_loop_device(self):
-        log.info("Creating loop device %s", self.loop)
-
-        with open(self.backing, "w") as f:
+        log.info("Creating backing file %s", self._backing)
+        with open(self._backing, "w") as f:
             f.truncate(self.size)
 
+        log.info("Creating loop device %s", self.path)
+        device = self._create_loop_device()
+
+        # Remove stale symlink.
+        if os.path.islink(self.path):
+            os.unlink(self.path)
+
+        os.symlink(device, self.path)
+
+        if os.geteuid() != 0:
+            _chown(self.path)
+
+    def teardown(self):
+        log.info("Removing loop device %s", self.path)
+        if self.exists():
+            self._remove_loop_device()
+        _remove_file(self.path)
+
+        log.info("Removing backing file %s", self._backing)
+        _remove_file(self._backing)
+
+    def exists(self):
+        return os.path.exists(self.path)
+
+    def _create_loop_device(self):
         cmd = [
             "sudo",
             "losetup",
-            "-f", self.backing,
+            "-f", self._backing,
             "--show",
         ]
 
@@ -85,51 +114,103 @@ class File(object):
             cmd.append(str(self.sector_size))
 
         out = subprocess.check_output(cmd)
-        device = out.decode("utf-8").strip()
-
-        # Remove stale symlink.
-        if os.path.islink(self.loop):
-            os.unlink(self.loop)
-
-        os.symlink(device, self.loop)
-
-        if os.geteuid() != 0:
-            _chown(self.loop)
+        return out.decode("utf-8").strip()
 
     def _remove_loop_device(self):
-        log.info("Removing loop device %s", self.loop)
-        subprocess.check_call(["sudo", "losetup", "-d", self.loop])
-        _remove_file(self.loop)
+        subprocess.check_call(["sudo", "losetup", "-d", self.path])
 
-    def _create_filesystem(self):
-        log.info("Creating filesystem %s", self.mountpoint)
 
-        # TODO: Use -t xfs (requires xfsprogs package).
-        subprocess.check_call(["sudo", "mkfs", "-q", self.loop])
-        _create_dir(self.mountpoint)
-        subprocess.check_call(["sudo", "mount", self.loop, self.mountpoint])
+class Mount(Path):
+
+    def __init__(self, loop):
+        self._loop = loop
+        self.path = os.path.join(BASE_DIR, "mount." + loop.name)
+
+    @property
+    def name(self):
+        return self._loop.name
+
+    @property
+    def sector_size(self):
+        return self._loop.sector_size
+
+    def setup(self):
+        if self.exists():
+            log.debug("Reusing mount %s", self.path)
+            return
+
+        self._loop.setup()
+
+        log.info("Creating filesystem %s", self.path)
+        self._create_filesystem()
+        _create_dir(self.path)
+        self._mount_loop()
 
         if os.geteuid() != 0:
-            _chown(self.mountpoint)
+            _chown(self.path)
 
-    def _remove_filesystem(self):
-        log.info("Removing filesystem %s", self.mountpoint)
-        subprocess.check_call(["sudo", "umount", self.mountpoint])
+    def teardown(self):
+        log.info("Unmounting filesystem %s", self.path)
 
-    def _is_mounted(self):
+        if self.exists():
+            self._unmount_loop()
+
+        _remove_dir(self.path)
+
+        self._loop.teardown()
+
+    def exists(self):
         with open("/proc/self/mounts") as f:
             for line in f:
-                if self.mountpoint in line:
+                if self.path in line:
                     return True
         return False
 
-    def _create_file(self):
-        log.info("Creating file %s", self.path)
-        with open(self.path, "w") as f:
-            f.truncate(self.size)
+    def _create_filesystem(self):
+        # TODO: Use -t xfs (requires xfsprogs package).
+        subprocess.check_call(["sudo", "mkfs", "-q", self._loop.path])
 
-    def __str__(self):
-        return self.name
+    def _mount_loop(self):
+        subprocess.check_call(["sudo", "mount", self._loop.path, self.path])
+
+    def _unmount_loop(self):
+        subprocess.check_call(["sudo", "umount", self.path])
+
+
+class File(Path):
+
+    def __init__(self, mount):
+        """
+        Create file based storage.
+        """
+        self._mount = mount
+        self.path = os.path.join(mount.path, "file")
+
+    @property
+    def name(self):
+        return self._mount.name
+
+    @property
+    def sector_size(self):
+        return self._mount.sector_size
+
+    def setup(self):
+        if self.exists():
+            log.debug("Reusing file %s", self.path)
+            return
+
+        self._mount.setup()
+
+        log.info("Creating file %s", self.path)
+        open(self.path, "w").close()
+
+    def teardown(self):
+        log.info("Removing file %s", self.path)
+        _remove_file(self.path)
+        self._mount.teardown()
+
+    def exists(self):
+        return os.path.exists(self.path)
 
 
 def _chown(path):
@@ -169,8 +250,10 @@ def _have_sector_size():
 HAVE_SECTOR_SIZE = _have_sector_size()
 
 PATHS = {
-    "file-512": File("file-512", size=1024**3, sector_size=512),
-    "file-4k": File("file-4k", size=1024**3, sector_size=4096),
+    "file-512":
+        File(Mount(LoopDevice("file-512", size=1024**3, sector_size=512))),
+    "file-4k":
+        File(Mount(LoopDevice("file-4k", size=1024**3, sector_size=4096))),
 }
 
 
