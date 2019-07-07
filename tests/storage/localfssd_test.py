@@ -37,7 +37,6 @@ from vdsm.storage import exception as se
 from vdsm.storage import fileSD
 from vdsm.storage import qemuimg
 from vdsm.storage import sd
-from vdsm.storage.sdc import sdCache
 
 from . import qemuio
 from . marks import xfail_python3
@@ -82,40 +81,28 @@ def test_incorrect_version_and_block_rejected(version, block_size, alignment):
 @pytest.mark.parametrize("domain_version", [3, 4, 5])
 def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     remote_path = str(tmpdir.mkdir("domain"))
-    tmp_repo.connect_localfs(remote_path)
 
-    sd_uuid = str(uuid.uuid4())
-    domain_name = "domain"
-
-    dom = localFsSD.LocalFsStorageDomain.create(
-        sdUUID=sd_uuid,
-        domainName=domain_name,
-        domClass=sd.DATA_DOMAIN,
-        remotePath=remote_path,
+    dom = tmp_repo.create_localfs_domain(
+        name="domain",
         version=domain_version,
-        storageType=sd.LOCALFS_DOMAIN,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M)
-
-    sdCache.knownSDs[sd_uuid] = localFsSD.findDomain
-    sdCache.manuallyAddDomain(dom)
+        remote_path=remote_path)
 
     lease = sd.DEFAULT_LEASE_PARAMS
     expected = {
+        fileSD.REMOTE_PATH: remote_path,
         sd.DMDK_CLASS: sd.DATA_DOMAIN,
-        sd.DMDK_DESCRIPTION: domain_name,
+        sd.DMDK_DESCRIPTION: "domain",
         sd.DMDK_IO_OP_TIMEOUT_SEC: lease[sd.DMDK_IO_OP_TIMEOUT_SEC],
         sd.DMDK_LEASE_RETRIES: lease[sd.DMDK_LEASE_RETRIES],
         sd.DMDK_LEASE_TIME_SEC: lease[sd.DMDK_LEASE_TIME_SEC],
         sd.DMDK_LOCK_POLICY: "",
         sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC:
             lease[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
-        sd.DMDK_POOLS: [],
+        sd.DMDK_POOLS: [tmp_repo.pool_id],
         sd.DMDK_ROLE: sd.REGULAR_DOMAIN,
-        sd.DMDK_SDUUID: sd_uuid,
+        sd.DMDK_SDUUID: dom.sdUUID,
         sd.DMDK_TYPE: sd.LOCALFS_DOMAIN,
         sd.DMDK_VERSION: domain_version,
-        fileSD.REMOTE_PATH: remote_path
     }
 
     # In version 5 we added ALIGNMENT and BLOCK_SIZE.
@@ -123,13 +110,12 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
         expected[sd.DMDK_ALIGNMENT] = sc.ALIGNMENT_1M
         expected[sd.DMDK_BLOCK_SIZE] = sc.BLOCK_SIZE_512
 
+    actual = dom.getMetadata()
+    assert expected == actual
+
     # Tests also alignment and block size properties here.
     assert dom.alignment == sc.ALIGNMENT_1M
     assert dom.block_size == sc.BLOCK_SIZE_512
-
-    actual = dom.getMetadata()
-
-    assert expected == actual
 
 
 @xfail_python3
