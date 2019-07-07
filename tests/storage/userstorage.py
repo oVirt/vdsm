@@ -254,6 +254,10 @@ PATHS = {
         File(Mount(LoopDevice("file-512", size=1024**3, sector_size=512))),
     "file-4k":
         File(Mount(LoopDevice("file-4k", size=1024**3, sector_size=4096))),
+    "mount-512":
+        Mount(LoopDevice("mount-512", size=1024**3, sector_size=512)),
+    "mount-4k":
+        Mount(LoopDevice("mount-4k", size=1024**3, sector_size=4096)),
 }
 
 
