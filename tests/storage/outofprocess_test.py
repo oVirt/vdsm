@@ -21,12 +21,14 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import errno
 import gc
 import logging
 import os
 import re
 import time
 import weakref
+import stat
 
 import pytest
 
@@ -133,11 +135,161 @@ def test_sub_module_call(oop_cleanup):
 def test_rmfile(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
 
-    # Create an empty file.
     path = str(tmpdir.join("file"))
     open(path, "w").close()
 
-    # Test the file removal.
     assert os.path.exists(path)
     iop.utils.rmFile(path)
     assert not os.path.exists(path)
+
+
+def test_read_lines(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    with open(path, "wb") as f:
+        f.write(b"1\n2\n3\n")
+    assert iop.readLines(path) == [b"1", b"2", b"3"]
+
+
+@xfail_python3
+def test_write_lines(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    iop.writeLines(path, [b"1\n", b"2\n", b"3\n"])
+    with open(path, "rb") as f:
+        assert f.read() == b"1\n2\n3\n"
+
+
+def test_write_file_direct_false(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    iop.writeFile(path, b"1\n2\n3\n", direct=False)
+    with open(path, "rb") as f:
+        assert f.read() == b"1\n2\n3\n"
+
+
+def test_write_file_direct_true_aligned(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    iop.writeFile(path, b"x" * 4096, direct=True)
+    with open(path, "rb") as f:
+        assert f.read() == b"x" * 4096
+
+
+def test_write_file_direct_true_unaligned(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    with pytest.raises(OSError) as e:
+        # Expected to fail with "OSError: [Errno 22] Invalid argument".
+        iop.writeFile(path, b"1\n2\n3\n", direct=True)
+    assert e.value.errno == errno.EINVAL
+
+
+@pytest.mark.xfail(reason="Need to fix truncateFile() default mode to be 0.")
+def test_truncate_file_default_mode(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    iop.truncateFile(path, 10)
+
+    # The test describes the current behavior of ioprocess.truncateFile():
+    # the default mode is 0o644 (depends on umask).
+    expected_mode = 0o644 & ~get_umask()
+    verify_file(path, mode=expected_mode, size=10, content=b"\0" * 10)
+
+
+@pytest.mark.parametrize("mode", [0o644, 0o700, 0o777])
+def test_truncate_file_non_default_mode(oop_cleanup, tmpdir, mode):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    iop.truncateFile(path, 10, mode)
+    verify_file(path, mode, size=10, content=b"\0" * 10)
+
+
+def test_truncate_existing_file_down(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+    mode = 0o644
+
+    with open(path, "wb") as f:
+        f.write(b"A" * 10)
+    iop.truncateFile(path, 5, mode)
+    verify_file(path, mode, size=5, content=b"A" * 5)
+
+
+def test_truncate_existing_file_up(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+    mode = 0o777
+
+    with open(path, "wb") as f:
+        f.write(b"A" * 5)
+    iop.truncateFile(path, 10, mode)
+    verify_file(path, mode, size=10, content=b"A" * 5 + b"\0" * 5)
+
+
+def test_truncate_file_non_default_creatExcl(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+    mode = 0o700
+    size = 10
+
+    with open(path, "wb") as f:
+        f.write(b"A" * size)
+
+    iop.truncateFile(path, size, mode, creatExcl=False)
+    verify_file(path, mode, size)
+
+    with pytest.raises(OSError) as e:
+        # Expected to fail with "OSError: [Errno 17] File exists",
+        # so the file and it's properties should stay the same.
+        iop.truncateFile(path, size - 5, mode, creatExcl=True)
+    assert e.value.errno == errno.EEXIST
+    verify_file(path, mode, size)
+
+
+def test_simple_walk(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    f1 = tmpdir.join("file1")
+    f1.write("")
+
+    d1 = tmpdir.mkdir("subdir1")
+    f2 = d1.join("file2")
+    f2.write("")
+    f3 = d1.join("file3")
+    f3.write("")
+
+    d2 = tmpdir.mkdir("subdir2")
+    f4 = d2.join("file4")
+    f4.write("")
+
+    expected_files = {str(f) for f in [f1, f2, f3, f4]}
+    discovered_files = set(iop.simpleWalk(str(tmpdir)))
+    assert discovered_files == expected_files
+
+
+def verify_file(path, mode=None, size=None, content=None):
+    assert os.path.exists(path)
+
+    if size is not None:
+        assert os.stat(path).st_size == size
+
+    if mode is not None:
+        actual_mode = stat.S_IMODE(os.stat(path).st_mode)
+        assert oct(actual_mode) == oct(mode)
+
+    if content is not None:
+        with open(path, "rb") as f:
+            assert f.read() == content
+
+
+def get_umask():
+    current_umask = os.umask(0)
+    os.umask(current_umask)
+    return current_umask

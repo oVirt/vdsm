@@ -315,6 +315,7 @@ class _IOProcessUtils(object):
                 raise
 
 
+# TODO: to be removed after it's only usage (in fileSD.py) is removed
 def directTouch(ioproc, path, mode=0o777):
     flags = os.O_CREAT | os.O_DIRECT
     ioproc.touch(path, flags, mode)
