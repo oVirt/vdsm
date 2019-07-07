@@ -25,7 +25,6 @@ from __future__ import print_function
 import functools
 import io
 import mmap
-import os
 import timeit
 
 import six
@@ -72,7 +71,7 @@ class FailingWriter(xlease.DirectFile):
 )
 def user_storage(request):
     storage = request.param
-    if not os.path.exists(storage.path):
+    if not storage.exists():
         pytest.xfail("{} storage not available".format(storage.name))
     return storage
 
@@ -142,7 +141,7 @@ class TemporaryVolume(object):
 ])
 def tmp_vol(request):
     storage, alignment = request.param
-    if not os.path.exists(storage.path):
+    if not storage.exists():
         pytest.xfail("{} storage not available".format(storage.name))
 
     tv = TemporaryVolume(storage, alignment)

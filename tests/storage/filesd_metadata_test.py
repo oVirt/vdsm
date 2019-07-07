@@ -22,7 +22,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import collections
-import os
 
 import pytest
 
@@ -109,7 +108,7 @@ Storage = collections.namedtuple("Storage", "path, block_size, alignment")
 )
 def storage(request):
     storage, alignment = request.param
-    if not os.path.exists(storage.path):
+    if not storage.exists():
         pytest.xfail("{} storage not available".format(storage.name))
 
     with open(storage.path, "w") as f:
