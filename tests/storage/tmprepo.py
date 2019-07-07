@@ -67,13 +67,19 @@ class TemporaryRepo(object):
 
     def create_localfs_domain(
             self, name, version, block_size=sc.BLOCK_SIZE_512,
-            alignment=sc.ALIGNMENT_1M, filesystem=None):
+            alignment=sc.ALIGNMENT_1M, filesystem=None, remote_path=None):
         """
         Create local FS file storage domain in the repository.
+
         If filesystem argument is provided, new file system on loopback device
         is created and used as local FS for creating new domain.
+
+        If remote_path is provided, use existing directory to create the
+        storage domain. The block size must match the underlying block size of
+        the existing directory.
         """
-        remote_path = str(self.tmpdir.mkdir(name))
+        if remote_path is None:
+            remote_path = str(self.tmpdir.mkdir(name))
 
         if filesystem is None:
             self.connect_localfs(remote_path)
