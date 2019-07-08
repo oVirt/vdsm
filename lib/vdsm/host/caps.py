@@ -24,8 +24,6 @@ from __future__ import division
 import os
 import logging
 
-import libvirt
-
 from vdsm import cpuinfo
 from vdsm import host
 from vdsm import hugepages
@@ -33,7 +31,6 @@ from vdsm import machinetype
 from vdsm import numa
 from vdsm import osinfo
 from vdsm import utils
-from vdsm.common import cache
 from vdsm.common import cpuarch
 from vdsm.common import dsaversion
 from vdsm.common import hooks
@@ -93,7 +90,7 @@ def get():
     caps['cpuFlags'] = ','.join(cpuinfo.flags() +
                                 machinetype.compatible_cpu_models())
 
-    caps.update(_getVersionInfo())
+    caps.update(dsaversion.version_info)
 
     net_caps = supervdsm.getProxy().network_caps()
     caps.update(net_caps)
@@ -163,44 +160,6 @@ def get():
         caps["supported_block_sizes"] = (sc.BLOCK_SIZE_512,)
 
     return caps
-
-
-def _dropVersion(vstring, logMessage):
-    logging.error(logMessage)
-
-    from distutils import version
-    # Drop cluster supported version to be strictly less than given vstring.
-    info = dsaversion.version_info.copy()
-    maxVer = version.StrictVersion(vstring)
-    info['clusterLevels'] = [ver for ver in info['clusterLevels']
-                             if version.StrictVersion(ver) < maxVer]
-    return info
-
-
-@cache.memoized
-def _getVersionInfo():
-    if not hasattr(libvirt, 'VIR_MIGRATE_ABORT_ON_ERROR'):
-        return _dropVersion('3.4',
-                            'VIR_MIGRATE_ABORT_ON_ERROR not found in libvirt,'
-                            ' support for clusterLevel >= 3.4 is disabled.'
-                            ' For Fedora 19 users, please consider upgrading'
-                            ' libvirt from the virt-preview repository')
-
-    if not hasattr(libvirt, 'VIR_MIGRATE_AUTO_CONVERGE'):
-        return _dropVersion('3.6',
-                            'VIR_MIGRATE_AUTO_CONVERGE not found in libvirt,'
-                            ' support for clusterLevel >= 3.6 is disabled.'
-                            ' For Fedora 20 users, please consider upgrading'
-                            ' libvirt from the virt-preview repository')
-
-    if not hasattr(libvirt, 'VIR_MIGRATE_COMPRESSED'):
-        return _dropVersion('3.6',
-                            'VIR_MIGRATE_COMPRESSED not found in libvirt,'
-                            ' support for clusterLevel >= 3.6 is disabled.'
-                            ' For Fedora 20 users, please consider upgrading'
-                            ' libvirt from the virt-preview repository')
-
-    return dsaversion.version_info
 
 
 def _isHostedEngineDeployed():
