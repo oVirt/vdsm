@@ -480,7 +480,7 @@ class FakeVolumeManifest(object):
         pass
 
     @recorded
-    def getVolumeParams(self, bs=0):
+    def getVolumeParams(self):
         pass
 
     @recorded
@@ -823,7 +823,7 @@ class VolumeTestMixin(object):
         ['metadata2info', 1],
         ['getInfo', 0],
         ['getVmVolumeInfo', 0],
-        ['getVolumeParams', 1],
+        ['getVolumeParams', 0],
         ['validateDelete', 0],
         ['refreshVolume', 0],
         ['_share', 1],
