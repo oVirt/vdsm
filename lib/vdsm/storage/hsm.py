@@ -1531,7 +1531,7 @@ class HSM(object):
         else:
             if fakeTUUID:
                 tParams = dom.produceVolume(imgUUID, fakeTUUID).\
-                    getVolumeParams()
+                    getVolumeParams(bs=1)
             pool.deleteImage(dom, imgUUID, volsByImg)
             if fakeTUUID:
                 img = image.Image(os.path.join(sc.REPO_DATA_CENTER, spUUID))
@@ -1651,7 +1651,7 @@ class HSM(object):
                 tName = e.absentTemplateUUID
                 tImgUUID = e.absentTemplateImageUUID
                 tParams = srcDom.produceVolume(tImgUUID,
-                                               tName).getVolumeParams()
+                                               tName).getVolumeParams(bs=1)
                 image.Image(os.path.join(sc.REPO_DATA_CENTER, spUUID)
                             ).createFakeTemplate(dstDom.sdUUID, tParams)
 

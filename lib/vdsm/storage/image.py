@@ -340,7 +340,7 @@ class Image:
         pvol = srcChain[0].getParentVolume()
         if pvol:
             # find out parent volume parameters
-            volParams = pvol.getVolumeParams()
+            volParams = pvol.getVolumeParams(bs=1)
             pimg = volParams['imgUUID']      # pimg == template image
             if destDom.isBackup():
                 # FIXME: This workaround help as copy VM to the backup domain
@@ -395,7 +395,9 @@ class Image:
                                                    volUUID=srcVol.volUUID)
 
                     # Extend volume (for LV only) size to the actual size
-                    dstVol.extend((volParams['apparentsize'] + 511) / 512)
+                    size_aligned = utils.round(
+                        volParams['apparentsize'], sc.BLOCK_SIZE_512)
+                    dstVol.extend(size_aligned // sc.BLOCK_SIZE_512)
 
                     # Change destination volume metadata to preallocated in
                     # case we've used a sparse volume to accelerate the
@@ -736,7 +738,7 @@ class Image:
                 # https://bugzilla.redhat.com/1700623.
                 srcVol.prepare(rw=False)
 
-                volParams = srcVol.getVolumeParams()
+                volParams = srcVol.getVolumeParams(bs=1)
 
                 if volFormat in [sc.COW_FORMAT, sc.RAW_FORMAT]:
                     dstVolFormat = volFormat
@@ -1308,7 +1310,7 @@ class Image:
             vols[vName] = sdDom.produceVolume(imgUUID, vName)
 
         srcVol = vols[successor]
-        srcVolParams = srcVol.getVolumeParams()
+        srcVolParams = srcVol.getVolumeParams(bs=1)
         srcVolParams['children'] = []
         for vName, vol in vols.iteritems():
             if vol.getParent() == successor:
@@ -1316,9 +1318,9 @@ class Image:
         dstVol = vols[ancestor]
         dstParentUUID = dstVol.getParent()
         if dstParentUUID != sd.BLANK_UUID:
-            volParams = vols[dstParentUUID].getVolumeParams()
+            volParams = vols[dstParentUUID].getVolumeParams(bs=1)
         else:
-            volParams = dstVol.getVolumeParams()
+            volParams = dstVol.getVolumeParams(bs=1)
 
         accSize, chain = self.subChainSizeCalc(ancestor, successor, vols)
         image_apparent_size_blk = volParams['capacity'] // sc.BLOCK_SIZE_512
