@@ -340,7 +340,7 @@ class Image:
         pvol = srcChain[0].getParentVolume()
         if pvol:
             # find out parent volume parameters
-            volParams = pvol.getVolumeParams(bs=1)
+            volParams = pvol.getVolumeParams()
             pimg = volParams['imgUUID']      # pimg == template image
             if destDom.isBackup():
                 # FIXME: This workaround help as copy VM to the backup domain
@@ -368,7 +368,7 @@ class Image:
                 # Create the dst volume
                 try:
                     # find out src volume parameters
-                    volParams = srcVol.getVolumeParams(bs=1)
+                    volParams = srcVol.getVolumeParams()
 
                     # To avoid prezeroing preallocated volumes on NFS domains
                     # we create the target as a sparse volume (since it will be
@@ -738,7 +738,7 @@ class Image:
                 # https://bugzilla.redhat.com/1700623.
                 srcVol.prepare(rw=False)
 
-                volParams = srcVol.getVolumeParams(bs=1)
+                volParams = srcVol.getVolumeParams()
 
                 if volFormat in [sc.COW_FORMAT, sc.RAW_FORMAT]:
                     dstVolFormat = volFormat
@@ -1312,7 +1312,7 @@ class Image:
             vols[vName] = sdDom.produceVolume(imgUUID, vName)
 
         srcVol = vols[successor]
-        srcVolParams = srcVol.getVolumeParams(bs=1)
+        srcVolParams = srcVol.getVolumeParams()
         srcVolParams['children'] = []
         for vName, vol in vols.iteritems():
             if vol.getParent() == successor:
@@ -1320,9 +1320,9 @@ class Image:
         dstVol = vols[ancestor]
         dstParentUUID = dstVol.getParent()
         if dstParentUUID != sd.BLANK_UUID:
-            volParams = vols[dstParentUUID].getVolumeParams(bs=1)
+            volParams = vols[dstParentUUID].getVolumeParams()
         else:
-            volParams = dstVol.getVolumeParams(bs=1)
+            volParams = dstVol.getVolumeParams()
 
         accSize, chain = self.subChainSizeCalc(ancestor, successor, vols)
         image_apparent_size_blk = volParams['capacity'] // sc.BLOCK_SIZE_512

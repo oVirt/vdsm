@@ -289,7 +289,7 @@ class VolumeManifest(object):
                             sc.fmt2str(self.getFormat()),
                             unsafe=True)
 
-    def getVolumeParams(self, bs=sc.BLOCK_SIZE):
+    def getVolumeParams(self):
         volParams = {}
         volParams['volUUID'] = self.volUUID
         volParams['imgUUID'] = self.getImage()
@@ -1533,8 +1533,8 @@ class Volume(object):
         """
         self._manifest.setMetaParam(key, value)
 
-    def getVolumeParams(self, bs=sc.BLOCK_SIZE):
-        return self._manifest.getVolumeParams(bs)
+    def getVolumeParams(self):
+        return self._manifest.getVolumeParams()
 
     def chunked(self):
         return self._manifest.chunked()
