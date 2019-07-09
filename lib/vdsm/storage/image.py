@@ -397,9 +397,7 @@ class Image:
                                                    volUUID=srcVol.volUUID)
 
                     # Extend volume (for LV only) size to the actual size
-                    size_aligned = utils.round(
-                        volParams['apparentsize'], sc.BLOCK_SIZE_512)
-                    dstVol.extend(size_aligned // sc.BLOCK_SIZE_512)
+                    dstVol.extend(volParams['apparentsize'])
 
                     # Change destination volume metadata to preallocated in
                     # case we've used a sparse volume to accelerate the
@@ -597,14 +595,14 @@ class Image:
                 # tmpVolume needs to be as large as the virtual disk size for
                 # the worst case.
                 # TODO: Some extra space may be needed for QCOW2 headers
-                tmpVolume.extend(tmpVolume.getCapacity() // sc.BLOCK_SIZE_512)
+                tmpVolume.extend(tmpVolume.getCapacity())
                 # For the dstVolume we may think of an optimization where the
                 # extension is as large as the source (and at the end we
                 # shrinkToOptimalSize).
                 # TODO: Extend the dstVolume only as much as the actual size of
                 # srcVolume
                 # TODO: Some extra space may be needed for QCOW2 headers
-                dstVolume.extend(tmpVolume.getCapacity() // sc.BLOCK_SIZE_512)
+                dstVolume.extend(tmpVolume.getCapacity())
 
                 srcFormat = sc.fmt2str(srcVolume.getFormat())
                 dstFormat = sc.fmt2str(dstVolume.getFormat())
@@ -1021,7 +1019,7 @@ class Image:
         srcVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
                                      volUUID=srcVolParams['volUUID'])
         # Extend successor volume to new accumulated subchain size
-        srcVol.extend(new_size_blk)
+        srcVol.extend(new_size_blk * sc.BLOCK_SIZE_512)
 
         srcVol.prepare(rw=True, chainrw=True, setrw=True)
         try:
@@ -1057,7 +1055,7 @@ class Image:
         srcVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
                                      volUUID=srcVolParams['volUUID'])
         # Extend successor volume to new accumulated subchain size
-        srcVol.extend(new_size_blk)
+        srcVol.extend(new_size_blk * sc.BLOCK_SIZE_512)
         # Step 1: Create temporary volume with destination volume's parent
         #         parameters
         newUUID = str(uuid.uuid4())
@@ -1432,8 +1430,7 @@ class Image:
         vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)
         try:
             # Extend the volume (if relevant) to the image size
-            img_size_blk = imageSharing.getSize(methodArgs) / sc.BLOCK_SIZE
-            vol.extend(img_size_blk)
+            vol.extend(imageSharing.getSize(methodArgs))
             imageSharing.download(vol.getVolumePath(), methodArgs)
         finally:
             domain.deactivateImage(imgUUID)
@@ -1453,9 +1450,7 @@ class Image:
         vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)
         try:
             # Extend the volume (if relevant) to the image size
-            img_size_blk = (imageSharing.getLengthFromArgs(methodArgs) /
-                            sc.BLOCK_SIZE)
-            vol.extend(img_size_blk)
+            vol.extend(imageSharing.getLengthFromArgs(methodArgs))
             imageSharing.copyToImage(vol.getVolumePath(), methodArgs)
         finally:
             domain.deactivateImage(imgUUID)

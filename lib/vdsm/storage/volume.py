@@ -1284,7 +1284,7 @@ class Volume(object):
     def validateDelete(self):
         self._manifest.validateDelete()
 
-    def extend(self, new_size_blk):
+    def extend(self, new_size):
         """
         Extend the apparent size of logical volume (thin provisioning)
         """

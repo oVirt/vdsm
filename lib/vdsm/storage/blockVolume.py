@@ -646,16 +646,16 @@ class BlockVolume(volume.Volume):
 
         raise eFound
 
-    def extend(self, new_size_blk):
+    def extend(self, new_size):
         """Extend a logical volume
-            'new_size_blk' - new size in blocks
+            'new_size' - new size in bytes
         """
         self.log.info("Request to extend LV %s of image %s in VG %s with "
-                      "size = %s blocks", self.volUUID, self.imgUUID,
-                      self.sdUUID, new_size_blk)
+                      "size = %s", self.volUUID, self.imgUUID,
+                      self.sdUUID, new_size)
         # we should return: Success/Failure
         # Backend APIs:
-        sizemb = utils.round(new_size_blk, BLOCKS_TO_MB) // BLOCKS_TO_MB
+        sizemb = utils.round(new_size, constants.MEGAB) // constants.MEGAB
         lvm.extendLV(self.sdUUID, self.volUUID, sizemb)
 
     def reduce(self, new_size_blk, allowActive=False):
