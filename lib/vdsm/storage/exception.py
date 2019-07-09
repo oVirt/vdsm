@@ -860,10 +860,9 @@ class StorageDomainDescriptionTooLongError(StorageException):
     code = 387
     message = "Storage domain description is too long"
 
-
-class StorageDomainIsMadeFromTooManyPVs(StorageException):
-    code = 388
-    message = "Storage domain is made from too many PVs"
+# Removed Exception. Commented for code number reference.
+# class StorageDomainIsMadeFromTooManyPVs(StorageException):
+#     code = 388
 
 
 class TooManyPVsInVG(StorageException):

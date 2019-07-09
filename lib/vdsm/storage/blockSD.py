@@ -631,11 +631,6 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     def extend(self, devlist, force):
         with self.metadata_lock:
-            if self.getVersion() in VERS_METADATA_LV:
-                mapping = self.readMetadataMapping().values()
-                if len(mapping) + len(devlist) > MAX_PVS:
-                    raise se.StorageDomainIsMadeFromTooManyPVs()
-
             knowndevs = set(multipath.getMPDevNamesIter())
             unknowndevs = set(devlist) - knowndevs
             if unknowndevs:
@@ -1124,11 +1119,6 @@ class BlockStorageDomain(sd.StorageDomain):
             raise se.StorageDomainNotEmpty(vgUUID)
         except se.LogicalVolumeDoesNotExistError:
             pass
-
-        numOfPVs = len(lvm.listPVNames(vgName))
-        if version in VERS_METADATA_LV and numOfPVs > MAX_PVS:
-            cls.log.debug("%d > %d", numOfPVs, MAX_PVS)
-            raise se.StorageDomainIsMadeFromTooManyPVs()
 
         # Create metadata service volume. Metadata have to be stored always on
         # the VG metadata device, which is always the first PV.
