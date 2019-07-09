@@ -1009,15 +1009,15 @@ class Image:
             chain.remove(srcVol.volUUID)
             srcVol = vol
 
-    def _internalVolumeMerge(self, sdDom, srcVolParams, volParams,
-                             new_size_blk, chain):
+    def _internalVolumeMerge(self, sdDom, srcVolParams, volParams, new_size,
+                             chain):
         """
         Merge internal volume
         """
         srcVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
                                      volUUID=srcVolParams['volUUID'])
         # Extend successor volume to new accumulated subchain size
-        srcVol.extend(new_size_blk * sc.BLOCK_SIZE_512)
+        srcVol.extend(new_size)
 
         srcVol.prepare(rw=True, chainrw=True, setrw=True)
         try:
@@ -1034,7 +1034,7 @@ class Image:
 
         return chain
 
-    def _baseCowVolumeMerge(self, sdDom, srcVolParams, volParams, new_size_blk,
+    def _baseCowVolumeMerge(self, sdDom, srcVolParams, volParams, new_size,
                             chain, discard):
         """
         Merge snapshot with base COW volume
@@ -1053,7 +1053,7 @@ class Image:
         srcVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
                                      volUUID=srcVolParams['volUUID'])
         # Extend successor volume to new accumulated subchain size
-        srcVol.extend(new_size_blk * sc.BLOCK_SIZE_512)
+        srcVol.extend(new_size)
         # Step 1: Create temporary volume with destination volume's parent
         #         parameters
         newUUID = str(uuid.uuid4())
@@ -1322,10 +1322,10 @@ class Image:
         else:
             volParams = dstVol.getVolumeParams()
 
-        accSize, chain = self.subChainSizeCalc(ancestor, successor, vols)
-        image_apparent_size_blk = volParams['capacity'] // sc.BLOCK_SIZE_512
+        acc_size_blk, chain = self.subChainSizeCalc(ancestor, successor, vols)
+        acc_size = acc_size_blk * sc.BLOCK_SIZE_512
         # allocate %10 more for cow metadata
-        reqSize = min(accSize, image_apparent_size_blk) * sc.COW_OVERHEAD
+        reqSize = min(acc_size, volParams['capacity']) * sc.COW_OVERHEAD
         try:
             # Start the actual merge image procedure
             # IMPORTANT NOTE: volumes in the same image chain might have
