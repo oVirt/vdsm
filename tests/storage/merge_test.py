@@ -474,9 +474,8 @@ class TestFinalizeMerge:
             fake_base_vol = fake_sd.produceVolume(subchain.img_id,
                                                   subchain.base_id)
 
-            optimal_size_blk = base_vol.optimal_size() // sc.BLOCK_SIZE
             assert fake_base_vol.__calls__ == [
-                ('reduce', (optimal_size_blk,), {}),
+                ('reduce', (base_vol.optimal_size(),), {}),
             ]
 
     def test_reduce_not_chunked(self):

@@ -331,5 +331,4 @@ def _shrink_base_volume(subchain, optimal_size):
     # while reduce is implemented on the Volume.
     sd = sdCache.produce(subchain.sd_id)
     base_vol = sd.produceVolume(subchain.img_id, subchain.base_id)
-    optimal_size_blk = optimal_size // sc.BLOCK_SIZE
-    base_vol.reduce(optimal_size_blk)
+    base_vol.reduce(optimal_size)

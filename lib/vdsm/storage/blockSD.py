@@ -1661,8 +1661,7 @@ class BlockStorageDomain(sd.StorageDomain):
     def reduceVolume(self, imgUUID, volUUID, allowActive=False):
         with self.manifest.metadata_lock:
             vol = self.produceVolume(imgUUID, volUUID)
-            optimal_size_blk = vol.optimal_size() // sc.BLOCK_SIZE
-            vol.reduce(optimal_size_blk, allowActive=allowActive)
+            vol.reduce(vol.optimal_size(), allowActive=allowActive)
 
     @staticmethod
     def findDomainPath(sdUUID):

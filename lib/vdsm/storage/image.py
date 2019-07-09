@@ -1396,8 +1396,7 @@ class Image:
         finally:
             vol.teardown(vol.sdUUID, vol.volUUID)
 
-        optimal_size_blk = optimal_size // sc.BLOCK_SIZE
-        vol.reduce(optimal_size_blk)
+        vol.reduce(optimal_size)
 
     def _activateVolumeForImportExport(self, domain, imgUUID, volUUID=None):
         chain = self.getChain(domain.sdUUID, imgUUID, volUUID)

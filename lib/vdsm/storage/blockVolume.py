@@ -675,18 +675,18 @@ class BlockVolume(volume.Volume):
         sizemb = utils.round(new_size, constants.MEGAB) // constants.MEGAB
         lvm.extendLV(self.sdUUID, self.volUUID, sizemb)
 
-    def reduce(self, new_size_blk, allowActive=False):
+    def reduce(self, new_size, allowActive=False):
         """
         Reduce the size of the logical volume.
 
         Arguments:
-            new_size_blk (int) - new size in blocks
+            new_size (int) - new size in bytes
             allowActive (boolean) - indicates whether the LV is active
         """
         self.log.info("Request to reduce LV %s of image %s in VG %s with "
-                      "size = %s blocks allowActive = %s", self.volUUID,
-                      self.imgUUID, self.sdUUID, new_size_blk, allowActive)
-        sizemb = utils.round(new_size_blk, BLOCKS_TO_MB) // BLOCKS_TO_MB
+                      "size = %s allowActive = %s", self.volUUID,
+                      self.imgUUID, self.sdUUID, new_size, allowActive)
+        sizemb = utils.round(new_size, constants.MEGAB) // constants.MEGAB
         lvm.reduceLV(self.sdUUID, self.volUUID, sizemb, force=allowActive)
 
     @classmethod
