@@ -65,9 +65,9 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
         if os.path.abspath(typeSpecificArg) != typeSpecificArg:
             raise se.StorageDomainIllegalRemotePath(typeSpecificArg)
 
-        fileSD.validateDirAccess(domPath)
+        cls.validate_version(version)
 
-        sd.validateDomainVersion(version)
+        fileSD.validateDirAccess(domPath)
 
         # Make sure there are no remnants of other domain
         mdpat = os.path.join(domPath, "*", sd.DOMAIN_META_DATA)
@@ -94,6 +94,7 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
                 default to sc.HOSTS_4K_1M.
         """
         cls._validate_block_size(block_size, version)
+        cls.validate_version(version)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
             raise se.UnicodeArgumentException()

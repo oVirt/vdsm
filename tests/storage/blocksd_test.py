@@ -39,6 +39,7 @@ from vdsm.storage.sdc import sdCache
 
 from . import qemuio
 from . marks import requires_root, xfail_python3
+from storage.storagefakelib import fake_spm
 from storage.storagefakelib import fake_vg
 
 TESTDIR = os.path.dirname(__file__)
@@ -171,6 +172,71 @@ def test_unsupported_block_size_rejected(version, block_size):
             storageType=sd.ISCSI_DOMAIN,
             version=version,
             block_size=block_size)
+
+
+def test_create_domain_unsupported_version():
+    with pytest.raises(se.UnsupportedDomainVersion):
+        blockSD.BlockStorageDomain.create(
+            str(uuid.uuid4()),
+            "test",
+            sd.DATA_DOMAIN,
+            None,  # vg-uuid
+            sd.ISCSI_DOMAIN,
+            0)
+
+
+@requires_root
+@xfail_python3
+@pytest.mark.root
+def test_attach_domain_unsupported_version(
+        monkeypatch, tmp_storage, tmp_repo, fake_task, fake_sanlock):
+    sd_uuid = str(uuid.uuid4())
+
+    dev = tmp_storage.create_device(20 * 1024 ** 3)
+    lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_uuid)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_uuid,
+        domainName="domain",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=3,
+        storageType=sd.ISCSI_DOMAIN)
+
+    sdCache.knownSDs[sd_uuid] = blockSD.findDomain
+
+    # Remove domain metadata
+    dom.setMetadata({})
+
+    # Set domain metadata to version 0
+    metadata = """\
+ALIGNMENT=1048576
+BLOCK_SIZE=512
+CLASS=Data
+DESCRIPTION=storage domain
+IOOPTIMEOUTSEC=10
+LEASERETRIES=3
+LEASETIMESEC=60
+LOCKPOLICY=
+LOCKRENEWALINTERVALSEC=5
+POOL_UUID=
+REMOTE_PATH=server:/path
+ROLE=Regular
+SDUUID={}
+TYPE=LOCALFS
+VERSION=0
+""".format(sd_uuid)
+    with open("/dev/{}/metadata".format(vg.name), "wb") as f:
+        f.write(metadata)
+
+    spm = fake_spm(
+        tmp_repo.pool_id,
+        0,
+        {sd_uuid: sd.DOM_UNATTACHED_STATUS})
+
+    with pytest.raises(se.UnsupportedDomainVersion):
+        spm.attachSD(sd_uuid)
 
 
 @requires_root

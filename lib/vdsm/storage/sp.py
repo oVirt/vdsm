@@ -464,7 +464,7 @@ class StoragePool(object):
         try:
             with rm.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
                                     rm.EXCLUSIVE, timeout=lockTimeout):
-                sd.validateDomainVersion(targetDomVersion)
+                sd.StorageDomain.validate_version(targetDomVersion)
                 # _upgradePool is executed during startSpm. Other operations
                 # (like storage jobs such as copy_data/amend_image) that use
                 # the same lock may be running. In case we'll try to upgrade

@@ -594,7 +594,7 @@ class HSM(object):
 
         if domVersion is not None:
             domVersion = int(domVersion)
-            sd.validateDomainVersion(domVersion)
+            sd.StorageDomain.validate_version(domVersion)
 
         # We validate SPM status twice - once before taking the lock, so we can
         # return immediately if the SPM was already started, and once after
@@ -2623,8 +2623,6 @@ class HSM(object):
 
         if domClass not in sd.DOMAIN_CLASSES.keys():
             raise se.StorageDomainClassError()
-
-        sd.validateDomainVersion(domVersion)
 
         # getSharedLock(connectionsResource...)
         # getExclusiveLock(sdUUID...)

@@ -204,11 +204,6 @@ def packLeaseParams(lockRenewalIntervalSec, leaseTimeSec,
     return DEFAULT_LEASE_PARAMS
 
 
-def validateDomainVersion(version):
-    if version not in sc.SUPPORTED_DOMAIN_VERSIONS:
-        raise se.UnsupportedDomainVersion(version)
-
-
 def validateSDDeprecatedStatus(status):
     if not status.capitalize() in DEPRECATED_STATUSES:
         raise se.StorageDomainStatusError(status)
@@ -438,7 +433,11 @@ class StorageDomainManifest(object):
         return self._metadata[key]
 
     def getVersion(self):
-        return self.getMetaParam(DMDK_VERSION)
+        try:
+            version = self.getMetaParam(DMDK_VERSION)
+        except KeyError:
+            raise se.MetaDataKeyNotFoundError("key={}".format(DMDK_VERSION))
+        return version
 
     @property
     def alignment(self):
@@ -724,9 +723,13 @@ class StorageDomain(object):
     manifestClass = StorageDomainManifest
 
     supported_block_size = ()
+    # Default supported domain versions unless overidden
+    supported_versions = sc.SUPPORTED_DOMAIN_VERSIONS
 
     def __init__(self, manifest):
         self._manifest = manifest
+        # Do not allow attaching SD with an unsupported version
+        self.validate_version(manifest.getVersion())
         self._lock = threading.Lock()
 
     @property
@@ -879,6 +882,11 @@ class StorageDomain(object):
             return block_size
 
         raise se.StorageDomainBlockSizeMismatch(block_size, storage_block_size)
+
+    @classmethod
+    def validate_version(cls, version):
+        if version not in cls.supported_versions:
+            raise se.UnsupportedDomainVersion(version)
 
     def _registerResourceNamespaces(self):
         """

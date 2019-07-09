@@ -1035,6 +1035,8 @@ class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
 
     supported_block_size = (sc.BLOCK_SIZE_512,)
+    # This storage domain only supports domain versions 2 or later.
+    supported_versions = (2, 3, 4, 5)
 
     def __init__(self, sdUUID):
         manifest = self.manifestClass(sdUUID)
@@ -1098,14 +1100,13 @@ class BlockStorageDomain(sd.StorageDomain):
                 default to sc.HOSTS_4K_1M.
         """
         cls._validate_block_size(block_size, version)
+        cls.validate_version(version)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
             raise se.UnicodeArgumentException()
 
         if len(domainName) > sd.MAX_DOMAIN_DESCRIPTION_SIZE:
             raise se.StorageDomainDescriptionTooLongError()
-
-        sd.validateDomainVersion(version)
 
         logical_block_size, physical_block_size = lvm.getVGBlockSizes(sdUUID)
         block_size = cls._validate_storage_block_size(

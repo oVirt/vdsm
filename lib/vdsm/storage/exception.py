@@ -891,7 +891,7 @@ class UnsupportedDomainVersion(StorageException):
     def __init__(self, version="unspecified"):
         self.value = ""
         self.version = version
-        self.message = ("Domain version `%d` is unsupported "
+        self.message = ("Domain version %r is unsupported "
                         "by this version of VDSM" % version)
     code = 394
 

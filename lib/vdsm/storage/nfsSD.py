@@ -46,7 +46,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         if storageType == sd.NFS_DOMAIN and ":" not in typeSpecificArg:
             raise se.StorageDomainIllegalRemotePath(typeSpecificArg)
 
-        sd.validateDomainVersion(version)
+        cls.validate_version(version)
 
         # Make sure the underlying file system is mounted
         if not mount.isMounted(domPath):
@@ -79,6 +79,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
                 default to sc.HOSTS_4K_1M.
         """
         cls._validate_block_size(block_size, version)
+        cls.validate_version(version)
 
         remotePath = fileUtils.normalize_path(remotePath)
 
