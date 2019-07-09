@@ -1290,7 +1290,7 @@ class Volume(object):
         """
         pass
 
-    def reduce(self, new_size_blk, allowActive=False):
+    def reduce(self, new_size, allowActive=False):
         """
         reduce a logical volume
         """
