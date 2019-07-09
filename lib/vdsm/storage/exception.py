@@ -163,6 +163,15 @@ class MiscDirCleanupFailure(StorageException):
     message = "Directory cleanup failure"
 
 
+class UnsupportedOperation(StorageException):
+    code = 2009
+    message = "Unsupported operation"
+    expected = True
+
+    def __init__(self, reason, **context):
+        self.value = "reason={}, context={}".format(reason, context)
+
+
 #################################################
 #  Volumes Exceptions
 #################################################
@@ -805,11 +814,6 @@ class StorageDomainTypeNotBackup(StorageException):
 class StorageDomainAccessError(StorageException):
     code = 379
     message = "Domain is either partially accessible or entirely inaccessible"
-
-
-class StorageDomainVersionError(StorageException):
-    code = 380
-    message = "Unsupported Storage Domain version"
 
 
 class StorageDomainAlreadyAttached(StorageException):

@@ -496,7 +496,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         return meta
 
     def supports_device_reduce(self):
-        return self.getVersion() not in VERS_METADATA_LV
+        return True
 
     def getMonitoringPath(self):
         return lvm.lvPath(self.sdUUID, sd.METADATA)

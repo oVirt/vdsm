@@ -41,10 +41,10 @@ class Job(base.Job):
     def _run(self):
         sd_manifest = sdCache.produce_manifest(self.params.sd_id)
         if not sd_manifest.supports_device_reduce():
-            raise se.StorageDomainVersionError(
-                "reduce device not supported for domain version %s" %
-                sd_manifest.getVersion())
-
+            raise se.UnsupportedOperation(
+                "Storage domain does not support reduce operation",
+                sdUUID=sd_manifest.sdUUID(),
+                sdType=sd_manifest.getStorageType())
         # TODO: we assume at this point that the domain isn't active and can't
         # be activated - we need to ensure that.
         with rm.acquireResource(STORAGE, self.params.sd_id, rm.EXCLUSIVE):
