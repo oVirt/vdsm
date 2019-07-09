@@ -135,9 +135,6 @@ DEFAULT_BLOCKSIZE = 512
 DMDK_VGUUID = "VGUUID"
 DMDK_PV_REGEX = re.compile(r"^PV\d+$")
 
-VERS_METADATA_LV = (0,)
-VERS_METADATA_TAG = (2, 3, 4, 5)
-
 # Reserved leases for special purposes:
 #  - 0       SPM (Backward comapatibility with V0 and V2)
 #  - 1       SDM (SANLock V3)
@@ -349,91 +346,11 @@ class VGTagMetadataRW(object):
         lvm.changeVGTags(self._vgName, delTags=toRemove, addTags=toAdd)
 
 
-class LvMetadataRW(object):
-    """
-    Block Storage Domain metadata implementation
-    """
-    log = logging.getLogger("storage.Metadata.LvMetadataRW")
-
-    def __init__(self, vgName, lvName, offset, size):
-        self._size = size
-        self._lvName = lvName
-        self._vgName = vgName
-        self._offset = offset
-        self.metavol = lvm.lvPath(vgName, lvName)
-
-    def readlines(self):
-        lvm.activateLVs(self._vgName, [self._lvName],
-                        refresh=self._needs_refresh())
-
-        # Fetch the metadata from metadata volume
-        m = misc.readblock(self.metavol, self._offset, self._size).splitlines()
-        # Read from metadata volume will bring a load of zeroes trailing
-        # actual metadata. Strip it out.
-        metadata = [i for i in m if len(i) > 0 and i[0] != '\x00' and "=" in i]
-
-        return metadata
-
-    def writelines(self, lines):
-        # Write `metadata' to metadata volume
-        # TODO StringIO is broken on Python 3, we should properly encode to
-        # bytes.
-        metaStr = six.StringIO()
-
-        for line in lines:
-            metaStr.write(line)
-            metaStr.write("\n")
-
-        if metaStr.pos > self._size:
-            raise se.MetadataOverflowError(metaStr.getvalue())
-
-        # Clear out previous data - it is a volume, not a file
-        metaStr.write('\0' * (self._size - metaStr.pos))
-
-        lvm.activateLVs(self._vgName, [self._lvName],
-                        refresh=self._needs_refresh())
-
-        data = metaStr.getvalue()
-        with directio.open(self.metavol, "r+") as f:
-            f.seek(self._offset)
-            f.write(data)
-
-    def _needs_refresh(self):
-        try:
-            lv_size = fsutils.size(self.metavol)
-        except EnvironmentError as e:
-            if e.errno != errno.ENOENT:
-                raise
-            # Inactive volume, nothing to refresh.
-            return False
-        else:
-            # Active lv - we need to refresh if we try to access location after
-            # the end of the device. Can happen if the metadata lv was extended
-            # on the SPM, and we try to access the metadata lv on another host.
-            return self._offset + self._size > lv_size
-
-
-def LvBasedSDMetadata(vg, lv):
-    return DictValidator(
-        PersistentDict(
-            LvMetadataRW(vg, lv, 0, SD_METADATA_SIZE)),
-        BLOCK_SD_MD_FIELDS)
-
-
 def TagBasedSDMetadata(vg):
     return DictValidator(
         PersistentDict(
             VGTagMetadataRW(vg)),
         BLOCK_SD_MD_FIELDS)
-
-
-def selectMetadata(sdUUID):
-    mdProvider = LvBasedSDMetadata(sdUUID, sd.METADATA)
-    if len(mdProvider) > 0:
-        metadata = mdProvider
-    else:
-        metadata = TagBasedSDMetadata(sdUUID)
-    return metadata
 
 
 def metadataValidity(vg):
@@ -458,7 +375,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         domaindir = os.path.join(self.mountpoint, sdUUID)
 
         if metadata is None:
-            metadata = selectMetadata(sdUUID)
+            metadata = TagBasedSDMetadata(sdUUID)
         sd.StorageDomainManifest.__init__(self, sdUUID, domaindir, metadata)
 
         # metadata_lock is used to protect medadata mapping on v1 storage
@@ -827,7 +744,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
     def refresh(self):
         self.refreshDirTree()
         lvm.invalidateVG(self.sdUUID)
-        self.replaceMetadata(selectMetadata(self.sdUUID))
+        self.replaceMetadata(TagBasedSDMetadata(self.sdUUID))
 
     _lvTagMetaSlotLock = threading.Lock()
 
@@ -836,30 +753,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         # TODO: Check if the lock is needed when using
         # getVolumeMetadataOffsetFromPvMapping()
         with self._lvTagMetaSlotLock:
-            if self.getVersion() in VERS_METADATA_LV:
-                yield self._getVolumeMetadataOffsetFromPvMapping(vol_name)
-            else:
-                yield self._getFreeMetadataSlot()
-
-    def _getVolumeMetadataOffsetFromPvMapping(self, vol_name):
-        dev, ext = lvm.getFirstExt(self.sdUUID, vol_name)
-        self.log.debug("vol %s dev %s ext %s" % (vol_name, dev, ext))
-        for pv in self.readMetadataMapping().values():
-            self.log.debug("MAPOFFSET: pv %s -- dev %s ext %s" %
-                           (pv, dev, ext))
-            pestart = int(pv["pestart"])
-            pecount = int(pv["pecount"])
-            if (os.path.basename(dev) == pv["guid"] and
-                    int(ext) in range(pestart, pestart + pecount)):
-
-                offs = int(ext) + int(pv["mapoffset"])
-                if offs < SD_METADATA_SIZE // sc.METADATA_SIZE:
-                    raise se.MetaDataMappingError(
-                        "domain %s: vol %s MD offset %s is bad - will "
-                        "overwrite SD's MD" % (self.sdUUID, vol_name, offs))
-                return offs
-        raise se.MetaDataMappingError("domain %s: can't map PV %s ext %s" %
-                                      (self.sdUUID, dev, ext))
+            yield self._getFreeMetadataSlot()
 
     def _getFreeMetadataSlot(self):
         occupied_slots = self.occupied_metadata_slots()
@@ -1171,10 +1065,7 @@ class BlockStorageDomain(sd.StorageDomain):
         except se.StorageException:
             raise se.VolumesZeroingError(path)
 
-        if version in VERS_METADATA_LV:
-            md = LvBasedSDMetadata(vgName, sd.METADATA)
-        elif version in VERS_METADATA_TAG:
-            md = TagBasedSDMetadata(vgName)
+        md = TagBasedSDMetadata(vgName)
 
         # Create domain metadata.
         # FIXME : This is 99% like the metadata in file SD.

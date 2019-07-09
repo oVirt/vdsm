@@ -235,7 +235,10 @@ VERSION=0
         0,
         {sd_uuid: sd.DOM_UNATTACHED_STATUS})
 
-    with pytest.raises(se.UnsupportedDomainVersion):
+    # Since we removed support for V0 we can no longer read
+    # the replaced metadata from storage and end up with missing
+    # version key when trying to get version for attached domain
+    with pytest.raises(se.MetaDataKeyNotFoundError):
         spm.attachSD(sd_uuid)
 
 
