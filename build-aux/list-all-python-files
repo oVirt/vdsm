@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Lists all Python files (including the ones without '.py' extension,
 # but containing a Python shebang line) in current directory.
@@ -15,4 +15,4 @@ PYTHON_SCRIPTS=$(grep --color=never -rl "#\!/usr/bin/python" . | \
                          -e ChangeLog \
                          -e Makefile)
 
-echo -e "${PYTHON_MODULES}\n${PYTHON_SCRIPTS}" | uniq | sort | sed -r '/^\s*$/d'
+echo -e "${PYTHON_MODULES}\n${PYTHON_SCRIPTS}" | uniq | sort | sed -E -e '/^\s*$/d'
