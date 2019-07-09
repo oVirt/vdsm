@@ -26,7 +26,6 @@ import weakref
 import six
 
 from vdsm.common import exception
-from vdsm.storage import blockSD
 from vdsm.storage import clusterlock
 from vdsm.storage import exception as se
 from vdsm.storage import misc
@@ -50,13 +49,6 @@ PMDK_POOL_DESCRIPTION = "POOL_DESCRIPTION"
 PMDK_LVER = "POOL_SPM_LVER"
 PMDK_SPM_ID = "POOL_SPM_ID"
 PMDK_MASTER_VER = "MASTER_VERSION"
-
-
-# Calculate how many domains can be in the pool before overflowing the Metadata
-MAX_DOMAINS = blockSD.SD_METADATA_SIZE - blockSD.METADATA_BASE_SIZE
-MAX_DOMAINS -= MAX_POOL_DESCRIPTION_SIZE + sd.MAX_DOMAIN_DESCRIPTION_SIZE
-MAX_DOMAINS -= blockSD.PVS_METADATA_SIZE
-MAX_DOMAINS //= 48
 
 
 def _domainListEncoder(domDict):
@@ -270,14 +262,7 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
 
     @unsecured
     def getMaximumSupportedDomains(self):
-        msdInfo = self.masterDomain.getInfo()
-        msdType = sd.name2type(msdInfo["type"])
-        msdVersion = int(msdInfo["version"])
-        if msdType in sd.BLOCK_DOMAIN_TYPES and \
-                msdVersion in blockSD.VERS_METADATA_LV:
-            return MAX_DOMAINS
-        else:
-            return config.getint("irs", "maximum_domains_in_pool")
+        return config.getint("irs", "maximum_domains_in_pool")
 
     @unsecured
     def getMasterVersion(self):

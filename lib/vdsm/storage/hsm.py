@@ -86,7 +86,7 @@ from vdsm.storage import udev
 from vdsm.storage import validators
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.sdc import sdCache
-from vdsm.storage.spbackends import MAX_POOL_DESCRIPTION_SIZE, MAX_DOMAINS
+from vdsm.storage.spbackends import MAX_POOL_DESCRIPTION_SIZE
 from vdsm.storage.spbackends import StoragePoolDiskBackend
 from vdsm.storage.spbackends import StoragePoolMemoryBackend
 
@@ -1008,14 +1008,6 @@ class HSM(object):
 
         if len(poolName) > MAX_POOL_DESCRIPTION_SIZE:
             raise se.StoragePoolDescriptionTooLongError()
-
-        msd = sdCache.produce(sdUUID=masterDom)
-        msdType = msd.getStorageType()
-        msdVersion = msd.getVersion()
-        if (msdType in sd.BLOCK_DOMAIN_TYPES and
-                msdVersion in blockSD.VERS_METADATA_LV and
-                len(domList) > MAX_DOMAINS):
-            raise se.TooManyDomainsInStoragePoolError()
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         for dom in sorted(domList):
