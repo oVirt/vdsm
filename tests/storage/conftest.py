@@ -63,6 +63,10 @@ def tmp_repo(tmpdir, monkeypatch, tmp_fs):
     monkeypatch.setattr(sc, "REPO_DATA_CENTER", repo.path)
     monkeypatch.setattr(sc, "REPO_MOUNT_DIR", repo.mnt_dir)
 
+    # Patch multipath discovery and resize
+    monkeypatch.setattr(multipath, "rescan", lambda: None)
+    monkeypatch.setattr(multipath, "resize_devices", lambda: None)
+
     # Invalidate sdCache so stale data from previous test will affect
     # this test.
     sdCache.refresh()
