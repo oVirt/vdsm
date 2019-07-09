@@ -47,60 +47,6 @@ from vdsm.storage import sd
 log = logging.getLogger("storage.format")
 
 
-def __convertDomainMetadataToTags(domain, targetVersion):
-    newMetadata = blockSD.TagBasedSDMetadata(domain.sdUUID)
-    oldMetadata = domain._metadata
-
-    # We use _dict to bypass the validators in order to copy all metadata
-    metadata = oldMetadata._dict.copy()
-    metadata[sd.DMDK_VERSION] = str(targetVersion)  # Must be a string
-
-    log.debug("Converting domain %s to tag based metadata", domain.sdUUID)
-    newMetadata._dict.update(metadata)
-
-    try:
-        # If we can't clear the old metadata we don't have any clue on what
-        # actually happened. We prepare the convertError exception to raise
-        # later on if we discover that the upgrade didn't take place.
-        oldMetadata._dict.clear()
-    except Exception as convertError:
-        log.error("Could not clear the old metadata", exc_info=True)
-    else:
-        # We don't have any valuable information to add here
-        convertError = RuntimeError("Unknown metadata conversion error")
-
-    # If this fails, there's nothing we can do, let's bubble the exception
-    chkMetadata = blockSD.selectMetadata(domain.sdUUID)
-
-    if chkMetadata[sd.DMDK_VERSION] == int(targetVersion):
-        # Switching to the newMetadata (successful upgrade), the oldMetadata
-        # was cleared after all.
-        domain.replaceMetadata(chkMetadata)
-        log.debug("Conversion of domain %s to tag based metadata completed, "
-                  "target version = %s", domain.sdUUID, targetVersion)
-    else:
-        # The upgrade failed, cleaning up the new metadata
-        log.error("Could not convert domain %s to tag based metadata, "
-                  "target version = %s", domain.sdUUID, targetVersion)
-        newMetadata._dict.clear()
-        # Raising the oldMetadata_dict.clear() exception or the default one
-        raise convertError
-
-
-def v2DomainConverter(repoPath, hostId, domain, isMsd):
-    targetVersion = 2
-
-    if domain.getStorageType() in sd.BLOCK_DOMAIN_TYPES:
-        log.debug("Trying to upgrade domain %s to tag based metadata "
-                  "version %s", domain.sdUUID, targetVersion)
-
-        __convertDomainMetadataToTags(domain, targetVersion)
-
-    else:
-        log.debug("Skipping the upgrade to tag based metadata version %s "
-                  "for the domain %s", targetVersion, domain.sdUUID)
-
-
 def _v3_reset_meta_volsize(vol):
     """
     This function should only be used inside of v2->v3 domain format
@@ -146,12 +92,6 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
     # For block domains if we're upgrading from version 0 we need to first
     # upgrade to version 2 and then proceed to upgrade to version 3.
     if domain.getStorageType() in sd.BLOCK_DOMAIN_TYPES:
-        if currentVersion == 0:
-            log.debug("Upgrading domain %s from version %s to version 2",
-                      domain.sdUUID, currentVersion)
-            v2DomainConverter(repoPath, hostId, domain, isMsd)
-            currentVersion = domain.getVersion()
-
         if currentVersion != 2:
             log.debug("Unsupported conversion from version %s to version %s",
                       currentVersion, targetVersion)
@@ -429,7 +369,6 @@ def v5DomainConverter(repoPath, hostId, domain, isMsd):
 
 
 _IMAGE_REPOSITORY_CONVERSION_TABLE = {
-    ('0', '2'): v2DomainConverter,
     ('0', '3'): v3DomainConverter,
     ('2', '3'): v3DomainConverter,
     ('3', '4'): v4DomainConverter,
