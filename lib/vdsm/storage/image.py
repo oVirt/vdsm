@@ -1013,15 +1013,15 @@ class Image:
             chain.remove(srcVol.volUUID)
             srcVol = vol
 
-    def _internalVolumeMerge(self, sdDom, srcVolParams, volParams, newSize,
-                             chain):
+    def _internalVolumeMerge(self, sdDom, srcVolParams, volParams,
+                             new_size_blk, chain):
         """
         Merge internal volume
         """
         srcVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
                                      volUUID=srcVolParams['volUUID'])
         # Extend successor volume to new accumulated subchain size
-        srcVol.extend(newSize)
+        srcVol.extend(new_size_blk)
 
         srcVol.prepare(rw=True, chainrw=True, setrw=True)
         try:
@@ -1038,7 +1038,7 @@ class Image:
 
         return chain
 
-    def _baseCowVolumeMerge(self, sdDom, srcVolParams, volParams, newSize,
+    def _baseCowVolumeMerge(self, sdDom, srcVolParams, volParams, new_size_blk,
                             chain, discard):
         """
         Merge snapshot with base COW volume
@@ -1057,7 +1057,7 @@ class Image:
         srcVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
                                      volUUID=srcVolParams['volUUID'])
         # Extend successor volume to new accumulated subchain size
-        srcVol.extend(newSize)
+        srcVol.extend(new_size_blk)
         # Step 1: Create temporary volume with destination volume's parent
         #         parameters
         newUUID = str(uuid.uuid4())
