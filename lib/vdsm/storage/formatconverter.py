@@ -86,9 +86,6 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
     log.debug("Starting conversion for domain %s from version %s "
               "to version %s", domain.sdUUID, currentVersion, targetVersion)
 
-    targetVersion = 3
-    currentVersion = domain.getVersion()
-
     # For block domains if we're upgrading from version 0 we need to first
     # upgrade to version 2 and then proceed to upgrade to version 3.
     if domain.getStorageType() in sd.BLOCK_DOMAIN_TYPES:
