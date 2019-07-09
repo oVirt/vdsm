@@ -39,6 +39,8 @@ from vdsm.storage import fileVolume
 from vdsm.storage import lvm as real_lvm
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
+from vdsm.storage import sp
+from vdsm.storage import spbackends as spb
 
 
 VG = collections.namedtuple("VG", [
@@ -454,3 +456,11 @@ def fake_repo():
 def fake_vg(vg_mda_size=None, vg_mda_free=None, extent_size=None,
             extent_count=None, free=None):
     return VG(vg_mda_size, vg_mda_free, extent_size, extent_count, free)
+
+
+def fake_spm(pool_id, master_version, domains_map):
+    pool = sp.StoragePool(pool_id, None, None)
+    pool.setBackend(spb.StoragePoolMemoryBackend(
+        pool, master_version, domains_map))
+    pool._setSecure()
+    return pool
