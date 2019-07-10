@@ -304,17 +304,12 @@ class XMLTestCase(VdsmTestCase):
         In case of a mismatch, display normalized xmls to make it easier to
         find the differences.
         """
-        actual = xmlutils.fromstring(xml)
-        xmlutils.indent(actual)
-        actualXML = ET.tostring(actual)
+        actual = xmlutils.indented(xml)
+        expected = xmlutils.indented(expectedXML)
 
-        expected = xmlutils.fromstring(expectedXML)
-        xmlutils.indent(expected)
-        expectedXML = ET.tostring(expected)
-
-        self.assertEqual(actualXML, expectedXML,
+        self.assertEqual(actual, expected,
                          "XMLs are different:\nActual:\n%s\nExpected:\n%s\n" %
-                         (actualXML, expectedXML))
+                         (actual, expected))
 
     def assert_dom_xml_equal(self, dom, expected_xml):
         xml = xmlutils.tostring(dom)

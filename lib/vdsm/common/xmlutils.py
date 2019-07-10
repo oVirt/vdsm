@@ -69,3 +69,12 @@ def indent(element, level=0, s="    "):
     else:
         if level and (not element.tail or not element.tail.strip()):
             element.tail = i
+
+
+def indented(xml):
+    """
+    Returns indented XML string.
+    """
+    element = fromstring(xml)
+    indent(element)
+    return tostring(element)

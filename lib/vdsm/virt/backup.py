@@ -133,7 +133,7 @@ def start_backup(vm, dom, config):
     scratch_disks = _create_scratch_disks(
         vm, dom, backup_cfg.backup_id, drives)
 
-    backup_xml = _create_backup_xml(nbd_addr, drives, scratch_disks)
+    backup_xml = create_backup_xml(nbd_addr, drives, scratch_disks)
 
     vm.log.debug("VM backup XML request: %s", backup_xml)
     vm.log.info(
@@ -276,7 +276,7 @@ def _raise_parse_error(vm_id, backup_id, backup_xml):
         backup_id=backup_id)
 
 
-def _create_backup_xml(address, drives, scratch_disks):
+def create_backup_xml(address, drives, scratch_disks):
     domainbackup = vmxml.Element('domainbackup', mode='pull')
 
     server = vmxml.Element(
