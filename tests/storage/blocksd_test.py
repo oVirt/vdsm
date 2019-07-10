@@ -617,21 +617,30 @@ ENCODED_LVM_TAGS = [
     LVM_TAG_CHARS + "&36&&64&&124&",
 ]
 
+TEST_IDS = [
+    "lvm_tag_chars",
+    "ampersand",
+    "unicode_char",
+    "lvm_tag_chars_with_symbols",
+]
 
-@pytest.mark.parametrize("lvm_tag", LVM_TAGS)
+
+@pytest.mark.parametrize("lvm_tag", LVM_TAGS, ids=TEST_IDS)
 def test_lvmtag_roundtrip(lvm_tag):
     assert blockSD.lvmTagDecode(blockSD.lvmTagEncode(lvm_tag)) == lvm_tag
 
 
 @pytest.mark.parametrize(
     "encoded_tag,lvm_tag",
-    list(zip(ENCODED_LVM_TAGS, LVM_TAGS)))
+    list(zip(ENCODED_LVM_TAGS, LVM_TAGS)),
+    ids=TEST_IDS)
 def test_lvmtag_decode(encoded_tag, lvm_tag):
     assert blockSD.lvmTagDecode(encoded_tag) == lvm_tag
 
 
 @pytest.mark.parametrize(
     "lvm_tag,encoded_tag",
-    list(zip(LVM_TAGS, ENCODED_LVM_TAGS)))
+    list(zip(LVM_TAGS, ENCODED_LVM_TAGS)),
+    ids=TEST_IDS)
 def test_lvmtag_encode(lvm_tag, encoded_tag):
     assert blockSD.lvmTagEncode(lvm_tag) == encoded_tag
