@@ -723,12 +723,7 @@ class StorageDomain(object):
     mdBackupDir = config.get('irs', 'md_backup_dir')
     manifestClass = StorageDomainManifest
 
-    # Those two variables contain block sizes and sanlock alignments
-    # supported by a storage domain. Values are validated by
-    # _validate_block_and_alignment function.
-    # Concrete storage domain types must override to define supported values.
     supported_block_size = ()
-    supported_alignment = ()
 
     def __init__(self, manifest):
         self._manifest = manifest
@@ -848,20 +843,13 @@ class StorageDomain(object):
         pass
 
     @classmethod
-    def _validate_block_and_alignment(cls, block_size, alignment, version):
-        # For domain version prior version 5 block size has to ve 512b and
-        # alignment has to be 1M.
+    def _validate_block_size(cls, block_size, version):
         if version < 5:
             if block_size != sc.BLOCK_SIZE_512:
                 raise se.InvalidParameterException('block_size', block_size)
-            if alignment != sc.ALIGNMENT_1M:
-                raise se.InvalidParameterException('alignment', alignment)
-
-        if block_size not in cls.supported_block_size:
-            raise se.InvalidParameterException('block_size', block_size)
-
-        if alignment not in cls.supported_alignment:
-            raise se.InvalidParameterException('alignment', alignment)
+        else:
+            if block_size not in cls.supported_block_size:
+                raise se.InvalidParameterException('block_size', block_size)
 
     def _registerResourceNamespaces(self):
         """

@@ -54,8 +54,6 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
 
     supported_block_size = (
         sc.BLOCK_SIZE_AUTO, sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K)
-    supported_alignment = (
-        sc.ALIGNMENT_1M, sc.ALIGNMENT_2M, sc.ALIGNMENT_4M, sc.ALIGNMENT_8M)
 
     @property
     def supportsMailbox(self):
@@ -96,8 +94,8 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
             max_hosts (int): Maximum number of hosts accessing this domain,
                 default to sc.HOSTS_4K_1M.
         """
+        cls._validate_block_size(block_size, version)
         alignment = clusterlock.alignment(block_size, max_hosts)
-        cls._validate_block_and_alignment(block_size, alignment, version)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
             raise se.UnicodeArgumentException()
