@@ -51,6 +51,16 @@ SPARSE_VOL_SIZE = GIB
 INITIAL_VOL_SIZE = 1 * MEGAB
 
 
+DETECT_BLOCK_SIZE = [
+    pytest.param(
+        True,
+        id="auto block size",
+        marks=pytest.mark.xfail(reason="not implemented yet")),
+    pytest.param(
+        False,
+        id="explicit block size"),
+]
+
 Storage = collections.namedtuple("Storage", "path, block_size, max_hosts")
 
 
@@ -130,11 +140,18 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
 
 
 @xfail_python3
-def test_create_domain_metadata_v5(user_mount, tmp_repo, fake_access):
+@pytest.mark.parametrize("detect_block_size", DETECT_BLOCK_SIZE)
+def test_create_domain_metadata_v5(
+        user_mount, tmp_repo, fake_access, detect_block_size):
+    if detect_block_size:
+        block_size = sc.BLOCK_SIZE_AUTO
+    else:
+        block_size = user_mount.block_size
+
     dom = tmp_repo.create_localfs_domain(
         name="domain",
         version=5,
-        block_size=user_mount.block_size,
+        block_size=block_size,
         max_hosts=user_mount.max_hosts,
         remote_path=user_mount.path)
 
@@ -180,11 +197,17 @@ def test_domain_lease(tmpdir, tmp_repo, fake_access, domain_version):
 
 
 @xfail_python3
-def test_domain_lease_v5(user_mount, tmp_repo, fake_access):
+@pytest.mark.parametrize("detect_block_size", DETECT_BLOCK_SIZE)
+def test_domain_lease_v5(user_mount, tmp_repo, fake_access, detect_block_size):
+    if detect_block_size:
+        block_size = sc.BLOCK_SIZE_AUTO
+    else:
+        block_size = user_mount.block_size
+
     dom = tmp_repo.create_localfs_domain(
         name="domain",
         version=5,
-        block_size=user_mount.block_size,
+        block_size=block_size,
         max_hosts=user_mount.max_hosts,
         remote_path=user_mount.path)
 

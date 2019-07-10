@@ -52,7 +52,8 @@ class LocalFsStorageDomainManifest(fileSD.FileStorageDomainManifest):
 class LocalFsStorageDomain(fileSD.FileStorageDomain):
     manifestClass = LocalFsStorageDomainManifest
 
-    supported_block_size = (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K)
+    supported_block_size = (
+        sc.BLOCK_SIZE_AUTO, sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K)
     supported_alignment = (
         sc.ALIGNMENT_1M, sc.ALIGNMENT_2M, sc.ALIGNMENT_4M, sc.ALIGNMENT_8M)
 
