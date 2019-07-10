@@ -95,11 +95,6 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
             alignment (int): Sanlock alignment to use for this storage domain.
                 Supported value is ALIGN_1M
         """
-        cls.log.info("sdUUID=%s domainName=%s remotePath=%s "
-                     "domClass=%s, block_size=%s, alignment=%s",
-                     sdUUID, domainName, remotePath, domClass,
-                     block_size, alignment)
-
         cls._validate_block_and_alignment(block_size, alignment, version)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
