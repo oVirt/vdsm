@@ -31,7 +31,6 @@ from vdsm.storage import outOfProcess as oop
 from vdsm.storage import sd
 
 from . import userstorage
-from . marks import xfail_python3
 
 EXAMPLE_DATA = {
     (sc.BLOCK_SIZE_512, sc.ALIGNMENT_1M): """\
@@ -143,7 +142,6 @@ def make_metadata(storage):
     }
 
 
-@xfail_python3
 def test_write(storage):
     metadata = make_metadata(storage)
 
@@ -163,7 +161,6 @@ def test_write(storage):
     assert data == EXAMPLE_DATA[(storage.block_size, storage.alignment)]
 
 
-@xfail_python3
 def test_read(storage):
     data = EXAMPLE_DATA[(storage.block_size, storage.alignment)]
     with open(storage.path, "wb") as f:
@@ -177,7 +174,6 @@ def test_read(storage):
     assert md[sd.DMDK_VERSION] == metadata[sd.DMDK_VERSION]
 
 
-@xfail_python3
 def test_read_strip_zero_padding(storage):
     data = EXAMPLE_DATA[(storage.block_size, storage.alignment)]
 
@@ -197,7 +193,6 @@ def test_read_strip_zero_padding(storage):
     assert md[sd.DMDK_VERSION] == metadata[sd.DMDK_VERSION]
 
 
-@xfail_python3
 def test_update(storage):
     data = EXAMPLE_DATA[(storage.block_size, storage.alignment)]
     with open(storage.path, "wb") as f:
@@ -223,7 +218,6 @@ def test_update(storage):
     assert md.copy() == metadata
 
 
-@xfail_python3
 def test_transaction(storage):
     data = EXAMPLE_DATA[(storage.block_size, storage.alignment)]
     with open(storage.path, "wb") as f:
@@ -248,7 +242,6 @@ def test_transaction(storage):
     assert md.copy() == metadata
 
 
-@xfail_python3
 def test_invalidate(storage):
     data = EXAMPLE_DATA[(storage.block_size, storage.alignment)]
     with open(storage.path, "wb") as f:
