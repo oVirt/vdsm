@@ -29,7 +29,9 @@ from vdsm.storage import exception as se
 from vdsm.storage import sd
 
 
-def test_incorrect_block_rejected():
+@pytest.mark.parametrize("version", [3, 4])
+@pytest.mark.parametrize("block_size", [sc.BLOCK_SIZE_4K, sc.BLOCK_SIZE_AUTO])
+def test_incorrect_block_rejected(version, block_size):
     with pytest.raises(se.InvalidParameterException):
         nfsSD.NfsStorageDomain.create(
             sc.BLANK_UUID,
@@ -37,5 +39,5 @@ def test_incorrect_block_rejected():
             sd.DATA_DOMAIN,
             sc.BLANK_UUID,
             sd.ISCSI_DOMAIN,
-            4,
-            block_size=sc.BLOCK_SIZE_4K)
+            version,
+            block_size=block_size)
