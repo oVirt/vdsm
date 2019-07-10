@@ -488,16 +488,21 @@ class BlockVolume(volume.Volume):
         sd.clear_metadata_block(slot)
 
     @classmethod
-    def _create(cls, dom, imgUUID, volUUID, size_blk, volFormat, preallocate,
-                volParent, srcImgUUID, srcVolUUID, volPath,
-                initial_size_blk=None):
+    def _create(cls, dom, imgUUID, volUUID, capacity, volFormat, preallocate,
+                volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None):
         """
         Class specific implementation of volumeCreate. All the exceptions are
         properly handled and logged in volume.create()
         """
 
-        lvSize = cls.calculate_volume_alloc_size(preallocate,
-                                                 size_blk, initial_size_blk)
+        if initial_size is None:
+            initial_size_blk = None
+        else:
+            initial_size_blk = initial_size // sc.BLOCK_SIZE_512
+        lvSize = cls.calculate_volume_alloc_size(
+            preallocate,
+            capacity // sc.BLOCK_SIZE_512,
+            initial_size_blk)
 
         lvm.createLV(dom.sdUUID, volUUID, lvSize, activate=True,
                      initialTags=(sc.TAG_VOL_UNINIT,))
@@ -508,21 +513,20 @@ class BlockVolume(volume.Volume):
         os.symlink(lvPath, volPath)
 
         if not volParent:
-            cls.log.info("Request to create %s volume %s with size = %s "
-                         "blocks", sc.type2name(volFormat), volPath,
-                         size_blk)
+            cls.log.info("Request to create %s volume %s with capacity = %s",
+                         sc.type2name(volFormat), volPath, capacity)
             if volFormat == sc.COW_FORMAT:
                 operation = qemuimg.create(volPath,
-                                           size=size_blk * BLOCK_SIZE,
+                                           size=capacity,
                                            format=sc.fmt2str(volFormat),
                                            qcow2Compat=dom.qcow2_compat())
                 operation.run()
         else:
             # Create hardlink to template and its meta file
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s "
-                         "with size %s (blocks)",
-                         imgUUID, volUUID, srcImgUUID, srcVolUUID, size_blk)
-            volParent.clone(volPath, volFormat, size_blk)
+                         "with capacity %s",
+                         imgUUID, volUUID, srcImgUUID, srcVolUUID, capacity)
+            volParent.clone(volPath, volFormat, capacity // sc.BLOCK_SIZE_512)
 
         with dom.acquireVolumeMetadataSlot(volUUID) as slot:
             mdTags = ["%s%s" % (sc.TAG_PREFIX_MD, slot),

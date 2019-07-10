@@ -924,10 +924,16 @@ class StorageDomain(object):
         """
         Create a new volume
         """
+        capacity = size_blk * sc.BLOCK_SIZE_512
+        if initial_size_blk is None:
+            initial_size = None
+        else:
+            initial_size = initial_size_blk * sc.BLOCK_SIZE_512
+
         return self.getVolumeClass().create(
-            self._getRepoPath(), self.sdUUID, imgUUID, size_blk, volFormat,
+            self._getRepoPath(), self.sdUUID, imgUUID, capacity, volFormat,
             preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID,
-            initial_size_blk=initial_size_blk)
+            initial_size=initial_size)
 
     def getMDPath(self):
         return self._manifest.getMDPath()

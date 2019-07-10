@@ -725,11 +725,13 @@ def test_create_snapshot_size(
     parent_vol = dom.produceVolume(img_uuid, parent_vol_uuid)
 
     # Verify that snapshot cannot be smaller than the parent.
+    # As we round capacity to 4k block size, we reduce it here by one 4k block.
 
     with pytest.raises(se.InvalidParameterException):
         dom.createVolume(
             imgUUID=img_uuid,
-            size_blk=parent_vol.getCapacity() // sc.BLOCK_SIZE_512 - 1,
+            size_blk=((parent_vol.getCapacity() - sc.BLOCK_SIZE_4K) //
+                      sc.BLOCK_SIZE_512),
             volFormat=sc.COW_FORMAT,
             preallocate=sc.SPARSE_VOL,
             diskType='DATA',

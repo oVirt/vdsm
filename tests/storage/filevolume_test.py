@@ -23,6 +23,7 @@ from __future__ import division
 
 from contextlib import contextmanager
 import os
+import uuid
 
 import pytest
 
@@ -36,6 +37,7 @@ from vdsm.constants import GIB
 from vdsm.constants import MEGAB
 from vdsm.storage import constants as sc
 from vdsm.storage import fileVolume
+from vdsm.storage import qemuimg
 
 from . marks import xfail_python3
 
@@ -149,3 +151,34 @@ class TestFileVolumeManifest(object):
                 "version": None,
             }
             assert expected == info["lease"]
+
+
+@xfail_python3
+@pytest.mark.parametrize("domain_version", [3, 4, 5])
+def test_volume_size_unaligned(monkeypatch, tmpdir, tmp_repo, fake_access,
+                               fake_rescan, tmp_db, fake_task, domain_version):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    # Creating with unaligned size should align to 4k.
+    unaligned_vol_capacity = 10 * 1024**3 + sc.BLOCK_SIZE_512
+    expected_vol_capacity = 10 * 1024**3 + sc.BLOCK_SIZE_4K
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        size_blk=unaligned_vol_capacity // sc.BLOCK_SIZE_512,
+        volFormat=sc.RAW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType=sc.DATA_DISKTYPE,
+        volUUID=vol_uuid,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+    vol_path = vol.getVolumePath()
+    qcow2_info = qemuimg.info(vol_path)
+
+    assert qcow2_info["virtualsize"] == expected_vol_capacity
+    assert vol.getCapacity() == expected_vol_capacity
