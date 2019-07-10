@@ -171,10 +171,7 @@ Requires: safelease >= 1.0.1-1.el8ev
 %else
 Requires: safelease >= 1.0-7
 %endif
-%if %{target_py} == py2
-# TODO: port mom to python3
-Requires: mom >= 0.5.12
-%endif
+Requires: mom >= 0.5.14
 Requires: util-linux
 Requires(pre): shadow-utils
 
