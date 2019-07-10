@@ -80,7 +80,8 @@ def user_mount(request):
 
 
 @pytest.mark.parametrize("version", [3, 4])
-def test_incorrect_block_size_rejected(version):
+@pytest.mark.parametrize("block_size", [sc.BLOCK_SIZE_4K, sc.BLOCK_SIZE_AUTO])
+def test_incorrect_block_size_rejected(version, block_size):
     with pytest.raises(se.InvalidParameterException):
         localFsSD.LocalFsStorageDomain.create(
             sc.BLANK_UUID,
@@ -89,7 +90,7 @@ def test_incorrect_block_size_rejected(version):
             sc.BLANK_UUID,
             sd.ISCSI_DOMAIN,
             version,
-            block_size=sc.BLOCK_SIZE_4K)
+            block_size=block_size)
 
 
 @xfail_python3
