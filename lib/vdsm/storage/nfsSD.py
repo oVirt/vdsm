@@ -37,7 +37,6 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
 
     # This storage domain supports only 512b block size and 1M alignment.
     supported_block_size = (sc.BLOCK_SIZE_512,)
-    supported_alignment = (sc.ALIGNMENT_1M,)
 
     @classmethod
     def _preCreateValidation(cls, sdUUID, domPath, typeSpecificArg,
@@ -80,8 +79,8 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
             max_hosts (int): Maximum number of hosts accessing this domain,
                 default to sc.HOSTS_4K_1M.
         """
+        cls._validate_block_size(block_size, version)
         alignment = clusterlock.alignment(block_size, max_hosts)
-        cls._validate_block_and_alignment(block_size, alignment, version)
 
         remotePath = fileUtils.normalize_path(remotePath)
 

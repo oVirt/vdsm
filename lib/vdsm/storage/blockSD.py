@@ -1034,9 +1034,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
 
-    # This storage domain supports only 512b block size and 1M alignment.
     supported_block_size = (sc.BLOCK_SIZE_512,)
-    supported_alignment = (sc.ALIGNMENT_1M,)
 
     def __init__(self, sdUUID):
         manifest = self.manifestClass(sdUUID)
@@ -1093,8 +1091,8 @@ class BlockStorageDomain(sd.StorageDomain):
             max_hosts (int): Maximum number of hosts accessing this domain,
                 default to sc.HOSTS_4K_1M.
         """
+        cls._validate_block_size(block_size, version)
         alignment = clusterlock.alignment(block_size, max_hosts)
-        cls._validate_block_and_alignment(block_size, alignment, version)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
             raise se.UnicodeArgumentException()
