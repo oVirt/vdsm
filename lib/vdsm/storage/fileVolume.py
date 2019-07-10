@@ -426,27 +426,18 @@ class FileVolume(volume.Volume):
             oop.getProcessPool(sdUUID).os.unlink(metaPath)
 
     @classmethod
-    def _create(cls, dom, imgUUID, volUUID, size_blk, volFormat, preallocate,
-                volParent, srcImgUUID, srcVolUUID, volPath,
-                initial_size_blk=None):
+    def _create(cls, dom, imgUUID, volUUID, capacity, volFormat, preallocate,
+                volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None):
         """
         Class specific implementation of volumeCreate.
         """
-        # TODO: Remove _bytes when arguments to _create are fixed.
-        size_bytes = size_blk * BLOCK_SIZE
-        if initial_size_blk is None:
-            initial_size_bytes = None
-        else:
-            initial_size_bytes = initial_size_blk * BLOCK_SIZE
-
         if volFormat == sc.RAW_FORMAT:
             return cls._create_raw_volume(
-                dom, volUUID, size_bytes, volPath, initial_size_bytes,
-                preallocate)
+                dom, volUUID, capacity, volPath, initial_size, preallocate)
         else:
             return cls._create_cow_volume(
-                dom, volUUID, size_bytes, volPath, initial_size_bytes,
-                volParent, imgUUID, srcImgUUID, srcVolUUID)
+                dom, volUUID, capacity, volPath, initial_size, volParent,
+                imgUUID, srcImgUUID, srcVolUUID)
 
     @classmethod
     def _create_raw_volume(
