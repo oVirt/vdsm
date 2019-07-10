@@ -153,14 +153,13 @@ Requires: %{python_or_python3}-requests
 Requires: abrt-cli
 Requires: abrt-addon-vmcore
 Requires: abrt-addon-ccpp
-%if %{target_py} == py2
-%if ! ( 0%{?fedora} >= 29 || 0%{?rhel} >= 8 )
-Requires: abrt-addon-python
-%endif
-# There's no python2 support for abrt in latest rhel and fedora
-%endif
 %if %{target_py} == py3
 Requires: python3-abrt-addon
+%else
+# python2 abrt-addon-python doesn't exist in Fedora anymore
+%if ! 0%{?fedora}
+Requires: abrt-addon-python
+%endif
 %endif
 Requires: curl
 Requires: %{name}-http = %{version}-%{release}
