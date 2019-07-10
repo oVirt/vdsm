@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 import os
 
+from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileSD
@@ -63,7 +64,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
     @classmethod
     def create(cls, sdUUID, domainName, domClass, remotePath, storageType,
                version, block_size=sc.BLOCK_SIZE_512,
-               alignment=sc.ALIGNMENT_1M):
+               max_hosts=sc.HOSTS_4K_1M):
         """
         Create new storage domain
 
@@ -76,10 +77,10 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
             version (int): DOMAIN_VERSIONS,
             block_size (int): Underlying storage block size.
                 Supported value is BLOCK_SIZE_512
-            alignment (int): Sanlock alignment in bytes to use for
-                this storage domain.
-                Supported value is ALIGN_1M
+            max_hosts (int): Maximum number of hosts accessing this domain,
+                default to sc.HOSTS_4K_1M.
         """
+        alignment = clusterlock.alignment(block_size, max_hosts)
         cls._validate_block_and_alignment(block_size, alignment, version)
 
         remotePath = fileUtils.normalize_path(remotePath)

@@ -839,7 +839,7 @@ class StorageDomain(object):
 
     @classmethod
     def create(cls, sdUUID, domainName, domClass, typeSpecificArg, version,
-               block_size, alignment):
+               block_size=sc.BLOCK_SIZE_512, max_hosts=sc.HOSTS_4K_1M):
         """
         Create a storage domain. The initial status is unattached.
         The storage domain underlying storage must be visible (connected)
