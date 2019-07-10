@@ -408,7 +408,8 @@ VDSM network python libraries
 Summary:        VDSM python libraries
 Requires:       %{name}-api = %{version}-%{release}
 BuildArch:      noarch
-Requires:       python-ioprocess >= 0.16.1-1
+# For 4k support, see https://bugzilla.redhat.com/1592916
+Requires:       python-ioprocess >= 1.2.1
 Requires:       %{name}-common = %{version}-%{release}
 Requires:       %{name}-network = %{version}-%{release}
 
