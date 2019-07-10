@@ -185,9 +185,7 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
         domClass=sd.DATA_DOMAIN,
         vgUUID=vg.uuid,
         version=domain_version,
-        storageType=sd.ISCSI_DOMAIN,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M)
+        storageType=sd.ISCSI_DOMAIN)
 
     sdCache.knownSDs[sd_uuid] = blockSD.findDomain
     sdCache.manuallyAddDomain(dom)
@@ -314,9 +312,7 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
         domClass=sd.DATA_DOMAIN,
         vgUUID=vg.uuid,
         version=domain_version,
-        storageType=sd.ISCSI_DOMAIN,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M)
+        storageType=sd.ISCSI_DOMAIN)
 
     sdCache.knownSDs[sd_uuid] = blockSD.findDomain
     sdCache.manuallyAddDomain(dom)
@@ -441,9 +437,7 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
         domClass=sd.DATA_DOMAIN,
         vgUUID=vg.uuid,
         version=domain_version,
-        storageType=sd.ISCSI_DOMAIN,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M)
+        storageType=sd.ISCSI_DOMAIN)
 
     sdCache.knownSDs[sd_uuid] = blockSD.findDomain
     sdCache.manuallyAddDomain(dom)
@@ -529,9 +523,7 @@ def test_create_snapshot_size(
         domClass=sd.DATA_DOMAIN,
         vgUUID=vg.uuid,
         version=domain_version,
-        storageType=sd.ISCSI_DOMAIN,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M)
+        storageType=sd.ISCSI_DOMAIN)
 
     sdCache.knownSDs[sd_uuid] = blockSD.findDomain
     sdCache.manuallyAddDomain(dom)

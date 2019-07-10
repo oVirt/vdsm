@@ -234,9 +234,7 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
         domClass=sd.DATA_DOMAIN,
         vgUUID=vg.uuid,
         version=src_version,
-        storageType=sd.ISCSI_DOMAIN,
-        block_size=sc.BLOCK_SIZE_512,
-        alignment=sc.ALIGNMENT_1M)
+        storageType=sd.ISCSI_DOMAIN)
 
     sdCache.knownSDs[sd_uuid] = blockSD.findDomain
     sdCache.manuallyAddDomain(dom)
