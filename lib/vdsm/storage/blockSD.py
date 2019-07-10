@@ -1077,7 +1077,7 @@ class BlockStorageDomain(sd.StorageDomain):
     @classmethod
     def create(cls, sdUUID, domainName, domClass, vgUUID, storageType,
                version, block_size=sc.BLOCK_SIZE_512,
-               alignment=sc.ALIGNMENT_1M):
+               max_hosts=sc.HOSTS_4K_1M):
         """
         Create new storage domain
 
@@ -1090,9 +1090,10 @@ class BlockStorageDomain(sd.StorageDomain):
             version (int): DOMAIN_VERSIONS,
             block_size (int): Underlying storage block size.
                 This domain supports only block_size=BLOCK_SIZE_512
-            alignment (int): Sanlock alignment to use for this storage domain.
-                This domain supports only alignment=ALIGN_1M
+            max_hosts (int): Maximum number of hosts accessing this domain,
+                default to sc.HOSTS_4K_1M.
         """
+        alignment = clusterlock.alignment(block_size, max_hosts)
         cls._validate_block_and_alignment(block_size, alignment, version)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):

@@ -2610,7 +2610,7 @@ class HSM(object):
                             typeSpecificArg, domClass,
                             domVersion=sc.SUPPORTED_DOMAIN_VERSIONS[0],
                             block_size=sc.BLOCK_SIZE_512,
-                            max_hosts=sc.HOSTS_512_1M, options=None):
+                            max_hosts=sc.HOSTS_4K_1M, options=None):
         """
         Creates a new storage domain.
 
@@ -2632,12 +2632,11 @@ class HSM(object):
                 bigger lockspaces with 4096 block.
             options: unused
         """
-        alignment = clusterlock.alignment(block_size, max_hosts)
         msg = ("storageType=%s, sdUUID=%s, domainName=%s, "
                "domClass=%s, typeSpecificArg=%s domVersion=%s"
-               "block_size=%s, alignment=%s" %
+               "block_size=%s, max_hosts=%s" %
                (storageType, sdUUID, domainName, domClass,
-                typeSpecificArg, domVersion, block_size, alignment))
+                typeSpecificArg, domVersion, block_size, max_hosts))
         domVersion = int(domVersion)
         vars.task.setDefaultException(se.StorageDomainCreationError(msg))
         misc.validateUUID(sdUUID, 'sdUUID')
@@ -2661,8 +2660,15 @@ class HSM(object):
         else:
             raise se.StorageDomainTypeError(storageType)
 
-        newSD = create(sdUUID, domainName, domClass, typeSpecificArg,
-                       storageType, domVersion, block_size, alignment)
+        newSD = create(
+            sdUUID,
+            domainName,
+            domClass,
+            typeSpecificArg,
+            storageType,
+            domVersion,
+            block_size=block_size,
+            max_hosts=max_hosts)
 
         findMethod = self._getSDTypeFindMethod(storageType)
         sdCache.knownSDs[sdUUID] = findMethod

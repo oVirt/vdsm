@@ -34,10 +34,11 @@ import pytest
 
 from vdsm.constants import GIB
 from vdsm.constants import MEGAB
-from vdsm.storage import localFsSD
+from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileSD
+from vdsm.storage import localFsSD
 from vdsm.storage import qemuimg
 from vdsm.storage import sd
 
@@ -50,63 +51,45 @@ SPARSE_VOL_SIZE = GIB
 INITIAL_VOL_SIZE = 1 * MEGAB
 
 
-Storage = collections.namedtuple("Storage", "path, block_size, alignment")
+Storage = collections.namedtuple("Storage", "path, block_size, max_hosts")
 
 
 @pytest.fixture(
     params=[
         pytest.param(
-            (userstorage.PATHS["mount-512"], sc.ALIGNMENT_1M),
+            (userstorage.PATHS["mount-512"], sc.HOSTS_512_1M),
             id="mount-512-1m"),
         pytest.param(
-            (userstorage.PATHS["mount-4k"], sc.ALIGNMENT_1M),
+            (userstorage.PATHS["mount-4k"], sc.HOSTS_4K_1M),
             id="mount-4k-1m"),
         pytest.param(
-            (userstorage.PATHS["mount-4k"], sc.ALIGNMENT_2M),
+            (userstorage.PATHS["mount-4k"], sc.HOSTS_4K_2M),
             id="mount-4k-2m"),
     ],
 )
 def user_mount(request):
-    storage, alignment = request.param
+    storage, max_hosts = request.param
     if not storage.exists():
         pytest.xfail("{} storage not available".format(storage.name))
 
     tmp_dir = tempfile.mkdtemp(dir=storage.path)
 
-    yield Storage(tmp_dir, storage.sector_size, alignment)
+    yield Storage(tmp_dir, storage.sector_size, max_hosts)
 
     shutil.rmtree(tmp_dir)
 
 
-def test_incorrect_block_rejected():
-    with pytest.raises(se.InvalidParameterException):
-        localFsSD.LocalFsStorageDomain.create(
-            sc.BLANK_UUID, "test", sd.DATA_DOMAIN,
-            sc.BLANK_UUID, sd.ISCSI_DOMAIN, 4, sc.BLOCK_SIZE_4K,
-            sc.ALIGNMENT_1M)
-
-
-def test_incorrect_alignment_rejected():
-    with pytest.raises(se.InvalidParameterException):
-        localFsSD.LocalFsStorageDomain.create(
-            sc.BLANK_UUID, "test", sd.DATA_DOMAIN,
-            sc.BLANK_UUID, sd.ISCSI_DOMAIN, 4, sc.BLOCK_SIZE_512,
-            sc.ALIGNMENT_2M)
-
-
 @pytest.mark.parametrize("version", [3, 4])
-@pytest.mark.parametrize("block_size", [sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K])
-@pytest.mark.parametrize(
-    "alignment", [sc.ALIGNMENT_1M, sc.ALIGNMENT_2M, sc.ALIGNMENT_4M,
-                  sc.ALIGNMENT_8M])
-def test_incorrect_version_and_block_rejected(version, block_size, alignment):
-    # block size 512b and alignment of 1M is the only allowed combination for
-    # storage domain 3 and 4
-    if block_size != sc.BLOCK_SIZE_512 and alignment != sc.ALIGNMENT_1M:
-        with pytest.raises(se.InvalidParameterException):
-            localFsSD.LocalFsStorageDomain.create(
-                sc.BLANK_UUID, "test", sd.DATA_DOMAIN,
-                sc.BLANK_UUID, sd.ISCSI_DOMAIN, version, block_size, alignment)
+def test_incorrect_block_size_rejected(version):
+    with pytest.raises(se.InvalidParameterException):
+        localFsSD.LocalFsStorageDomain.create(
+            sc.BLANK_UUID,
+            "test",
+            sd.DATA_DOMAIN,
+            sc.BLANK_UUID,
+            sd.ISCSI_DOMAIN,
+            version,
+            block_size=sc.BLOCK_SIZE_4K)
 
 
 @xfail_python3
@@ -151,13 +134,16 @@ def test_create_domain_metadata_v5(user_mount, tmp_repo, fake_access):
         name="domain",
         version=5,
         block_size=user_mount.block_size,
-        alignment=user_mount.alignment,
+        max_hosts=user_mount.max_hosts,
         remote_path=user_mount.path)
+
+    alignment = clusterlock.alignment(
+        user_mount.block_size, user_mount.max_hosts)
 
     lease = sd.DEFAULT_LEASE_PARAMS
     expected = {
         fileSD.REMOTE_PATH: user_mount.path,
-        sd.DMDK_ALIGNMENT: user_mount.alignment,
+        sd.DMDK_ALIGNMENT: alignment,
         sd.DMDK_BLOCK_SIZE: user_mount.block_size,
         sd.DMDK_CLASS: sd.DATA_DOMAIN,
         sd.DMDK_DESCRIPTION: "domain",
@@ -178,7 +164,7 @@ def test_create_domain_metadata_v5(user_mount, tmp_repo, fake_access):
     assert expected == actual
 
     # Tests also alignment and block size properties here.
-    assert dom.alignment == user_mount.alignment
+    assert dom.alignment == alignment
     assert dom.block_size == user_mount.block_size
 
 
@@ -198,13 +184,16 @@ def test_domain_lease_v5(user_mount, tmp_repo, fake_access):
         name="domain",
         version=5,
         block_size=user_mount.block_size,
-        alignment=user_mount.alignment,
+        max_hosts=user_mount.max_hosts,
         remote_path=user_mount.path)
+
+    alignment = clusterlock.alignment(
+        user_mount.block_size, user_mount.max_hosts)
 
     lease = dom.getClusterLease()
     assert lease.name == "SDM"
     assert lease.path == dom.getLeasesFilePath()
-    assert lease.offset == user_mount.alignment
+    assert lease.offset == alignment
 
 
 @xfail_python3
