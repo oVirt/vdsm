@@ -28,6 +28,8 @@ Usage: repoplot vdsm.log [...]
 Requirements: python-pandas
 """
 
+from __future__ import absolute_import
+
 import argparse
 import fileinput
 import sys

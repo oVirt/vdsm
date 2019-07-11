@@ -1,11 +1,4 @@
-./contrib/logdb
-./contrib/logstat
-./contrib/lvs-stats
-./contrib/profile-stats
-./contrib/refmt
-./contrib/repoplot
 ./contrib/repostat
-./contrib/runvm
 ./lib/vdsm/common/commands.py
 ./lib/vdsm/gluster/exception.py
 ./lib/vdsm/gluster/storagedev.py

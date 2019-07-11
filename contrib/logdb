@@ -25,6 +25,7 @@ Usage: logdb dbname logfile ...
 Import vdsm log files into log database dbname.
 """
 
+from __future__ import absolute_import
 from __future__ import print_function
 
 import sqlite3

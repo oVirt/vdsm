@@ -24,6 +24,7 @@ Parse repoStats log lines and calculate statistics.
 Usage: repostat vdsm.log [...]
 """
 
+from __future__ import absolute_import
 from __future__ import print_function
 import fileinput
 import re
