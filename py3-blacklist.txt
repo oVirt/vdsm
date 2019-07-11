@@ -28,4 +28,3 @@
 ./tests/storage/resourcemanager_test.py
 ./tests/storage/storagetestlib.py
 ./tests/unicode_test.py
-./tests/validate_test.py

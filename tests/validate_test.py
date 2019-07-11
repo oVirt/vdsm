@@ -46,9 +46,9 @@ class ValidateFunctionsTests(TestCaseBase):
         self.assertRaises(exception.MissingParameter,
                           validate.require_keys,
                           params,
-                          self._PARAMS.keys())
+                          list(self._PARAMS.keys()))
 
     def test_require_keys_pass(self):
         self.assertNotRaises(validate.require_keys,
                              self._PARAMS,
-                             self._PARAMS.keys())
+                             list(self._PARAMS.keys()))
