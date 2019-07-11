@@ -334,14 +334,13 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
     for mdfile in mdfiles:
         make_file(mdfile)
 
-    size_blk = size // sc.BLOCK_SIZE
     vol_class = sd_manifest.getVolumeClass()
     vol_class.newMetadata(
         (volpath,),
         sd_manifest.sdUUID,
         imguuid,
         parent_vol_id,
-        size_blk,
+        size,
         sc.type2name(vol_format),
         sc.type2name(prealloc),
         sc.type2name(vol_type),
@@ -362,15 +361,16 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
     if not os.path.exists(imagedir):
         os.makedirs(imagedir)
 
-    size_blk = (size + sc.BLOCK_SIZE - 1) // sc.BLOCK_SIZE
     lv_size = sd_manifest.getVolumeClass().calculate_volume_alloc_size(
         prealloc, size, None)
     lv_size_mb = (utils.round(lv_size, constants.MEGAB) // constants.MEGAB)
     lvm.createLV(sduuid, voluuid, lv_size_mb)
+
     # LVM may create the volume with a larger size due to extent granularity
-    lv_size_blk = int(lvm.getLV(sduuid, voluuid).size) // sc.BLOCK_SIZE
-    if lv_size_blk > size_blk:
-        size_blk = lv_size_blk
+    if vol_format == sc.RAW_FORMAT:
+        lv_size = int(lvm.getLV(sduuid, voluuid).size)
+        if lv_size > size:
+            size = lv_size
 
     if vol_format == sc.COW_FORMAT:
         volpath = lvm.lvPath(sduuid, voluuid)
@@ -401,7 +401,7 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
         sduuid,
         imguuid,
         parent_vol_id,
-        size_blk,
+        size,
         sc.type2name(vol_format),
         sc.type2name(prealloc),
         sc.type2name(vol_type),

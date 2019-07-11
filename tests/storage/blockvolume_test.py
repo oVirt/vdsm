@@ -159,7 +159,7 @@ class TestBlockVolumeManifest(VdsmTestCase):
     @xfail_python3
     @permutations([
         # actual_size, optimal_size
-        (200 * MEGAB, 1024 * MEGAB),
+        (200 * MEGAB, 256 * MEGAB),
         (1023 * MEGAB, 1024 * MEGAB),
         (1024 * MEGAB, 1024 * MEGAB + blockVolume.MIN_PADDING),
     ])
