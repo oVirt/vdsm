@@ -27,9 +27,6 @@ dist_vdsmfunctests_PYTHON = \
 	supervdsmFuncTests.py \
 	upgrade_vdsm_test.py \
 	utils.py \
-	virtTests.py \
-	vmQoSTests.py \
-	vmRecoveryTests.py \
 	$(NULL)
 
 dist_vdsmfunctests_DATA = \

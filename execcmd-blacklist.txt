@@ -45,7 +45,6 @@ tests/caps_test.py
 tests/cmdutils_test.py
 tests/common/cmdutils_test.py
 tests/common/commands_test.py
-tests/functional/virtTests.py
 tests/gluster_thinstorage_test.py
 tests/mkimage_test.py
 tests/modprobe.py
