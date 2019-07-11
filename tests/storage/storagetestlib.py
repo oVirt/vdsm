@@ -39,6 +39,8 @@ from . import qemuio
 
 from monkeypatch import MonkeyPatchScope
 
+from vdsm import constants
+from vdsm import utils
 from vdsm.storage import blockSD
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
@@ -362,8 +364,9 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
 
     size_blk = (size + sc.BLOCK_SIZE - 1) // sc.BLOCK_SIZE
     lv_size = sd_manifest.getVolumeClass().calculate_volume_alloc_size(
-        prealloc, size_blk, None)
-    lvm.createLV(sduuid, voluuid, lv_size)
+        prealloc, size, None)
+    lv_size_mb = (utils.round(lv_size, constants.MEGAB) // constants.MEGAB)
+    lvm.createLV(sduuid, voluuid, lv_size_mb)
     # LVM may create the volume with a larger size due to extent granularity
     lv_size_blk = int(lvm.getLV(sduuid, voluuid).size) // sc.BLOCK_SIZE
     if lv_size_blk > size_blk:

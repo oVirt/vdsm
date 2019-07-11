@@ -318,39 +318,39 @@ class BlockVolumeManifest(volume.VolumeManifest):
 
     @classmethod
     def calculate_volume_alloc_size(
-            cls, preallocate, capacity_blk, initial_size_blk):
-        """ Calculate the allocation size in mb of the volume
+            cls, preallocate, capacity, initial_size):
+        """ Calculate the allocation size in bytes of the volume
         'preallocate' - Sparse or Preallocated
-        'capacity_blk' - the volume size in blocks
-        'initial_size_blk' - optional, if provided the initial allocated
-                         size in blocks for sparse volumes
+        'capacity' - the volume size in bytes
+        'initial_size' - optional, if provided the initial allocated
+                         size in bytes for sparse volumes
          """
-        if initial_size_blk and preallocate == sc.PREALLOCATED_VOL:
+        if initial_size and preallocate == sc.PREALLOCATED_VOL:
             log.error("Initial size is not supported for preallocated volumes")
             raise se.InvalidParameterException("initial size",
-                                               initial_size_blk)
+                                               initial_size)
 
-        if initial_size_blk:
-            capacity_bytes = capacity_blk * sc.BLOCK_SIZE
-            initial_size_bytes = initial_size_blk * sc.BLOCK_SIZE
-            max_size = cls.max_size(capacity_bytes, sc.COW_FORMAT)
-            if initial_size_bytes > max_size:
+        if initial_size:
+            max_size = cls.max_size(capacity, sc.COW_FORMAT)
+            if initial_size > max_size:
                 log.error("The requested initial %s is bigger "
-                          "than the max size %s", initial_size_bytes, max_size)
-                raise se.InvalidParameterException("initial_size_blk",
-                                                   initial_size_blk)
+                          "than the max size %s", initial_size, max_size)
+                raise se.InvalidParameterException("initial_size",
+                                                   initial_size)
 
         if preallocate == sc.SPARSE_VOL:
-            if initial_size_blk:
-                initial_size_blk = int(initial_size_blk * QCOW_OVERHEAD_FACTOR)
-                alloc_size = (utils.round(initial_size_blk, BLOCKS_TO_MB) //
-                              BLOCKS_TO_MB)
+            if initial_size:
+                # TODO: if initial_size == max_size, we exceed the max_size
+                # here. This should be fixed, but first we must check that
+                # engine is not assuming that vdsm will increase initial size
+                # like this.
+                alloc_size = int(initial_size * QCOW_OVERHEAD_FACTOR)
             else:
-                alloc_size = config.getint("irs",
-                                           "volume_utilization_chunk_mb")
+                chunk_size_mb = config.getint("irs",
+                                              "volume_utilization_chunk_mb")
+                alloc_size = chunk_size_mb * constants.MEGAB
         else:
-            alloc_size = (utils.round(capacity_blk, BLOCKS_TO_MB) //
-                          BLOCKS_TO_MB)
+            alloc_size = capacity
 
         return alloc_size
 
@@ -491,16 +491,11 @@ class BlockVolume(volume.Volume):
         properly handled and logged in volume.create()
         """
 
-        if initial_size is None:
-            initial_size_blk = None
-        else:
-            initial_size_blk = initial_size // sc.BLOCK_SIZE_512
-        lvSize = cls.calculate_volume_alloc_size(
-            preallocate,
-            capacity // sc.BLOCK_SIZE_512,
-            initial_size_blk)
+        lv_size = cls.calculate_volume_alloc_size(
+            preallocate, capacity, initial_size)
+        lv_size_mb = (utils.round(lv_size, constants.MEGAB) // constants.MEGAB)
 
-        lvm.createLV(dom.sdUUID, volUUID, lvSize, activate=True,
+        lvm.createLV(dom.sdUUID, volUUID, lv_size_mb, activate=True,
                      initialTags=(sc.TAG_VOL_UNINIT,))
 
         fileutils.rm_file(volPath)
@@ -540,10 +535,9 @@ class BlockVolume(volume.Volume):
         return (dom.sdUUID, slot)
 
     @classmethod
-    def calculate_volume_alloc_size(
-            cls, preallocate, capacity_blk, initial_size_blk):
+    def calculate_volume_alloc_size(cls, preallocate, capacity, initial_size):
         return cls.manifestClass.calculate_volume_alloc_size(
-            preallocate, capacity_blk, initial_size_blk)
+            preallocate, capacity, initial_size)
 
     def removeMetadata(self, metaId):
         self._manifest.removeMetadata(metaId)
