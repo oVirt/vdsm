@@ -549,12 +549,8 @@ class VolumeManifest(object):
         cls._putMetadata(metaId, meta)
 
     @classmethod
-    def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size_blk, format,
+    def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, capacity, format,
                     type, voltype, disktype, desc="", legality=sc.ILLEGAL_VOL):
-        # TODO: VolumeMetadata now operates in bytes and we temporary
-        # convert blocks to bytes there. Needs to be fixed, when
-        # all the volume code will be converted to bytes.
-        capacity = size_blk * sc.BLOCK_SIZE_512
         meta = VolumeMetadata(sdUUID, imgUUID, puuid, capacity, format, type,
                               voltype, disktype, desc, legality)
         cls.createMetadata(metaId, meta)
@@ -1268,8 +1264,7 @@ class Volume(object):
                               map(str, metaId))
             )
 
-            size_blk = capacity // sc.BLOCK_SIZE_512
-            cls.newMetadata(metaId, sdUUID, imgUUID, srcVolUUID, size_blk,
+            cls.newMetadata(metaId, sdUUID, imgUUID, srcVolUUID, capacity,
                             sc.type2name(volFormat), sc.type2name(preallocate),
                             volType, diskType, desc, sc.LEGAL_VOL)
 
@@ -1497,10 +1492,10 @@ class Volume(object):
         return self._manifest.metadata2info(meta)
 
     @classmethod
-    def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size_blk, format,
+    def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, capacity, format,
                     type, voltype, disktype, desc="", legality=sc.ILLEGAL_VOL):
         return cls.manifestClass.newMetadata(
-            metaId, sdUUID, imgUUID, puuid, size_blk, format, type, voltype,
+            metaId, sdUUID, imgUUID, puuid, capacity, format, type, voltype,
             disktype, desc, legality)
 
     def getInfo(self):
