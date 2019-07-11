@@ -522,7 +522,7 @@ class BlockVolume(volume.Volume):
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s "
                          "with capacity %s",
                          imgUUID, volUUID, srcImgUUID, srcVolUUID, capacity)
-            volParent.clone(volPath, volFormat, capacity // sc.BLOCK_SIZE_512)
+            volParent.clone(volPath, volFormat, capacity)
 
         with dom.acquireVolumeMetadataSlot(volUUID) as slot:
             mdTags = ["%s%s" % (sc.TAG_PREFIX_MD, slot),

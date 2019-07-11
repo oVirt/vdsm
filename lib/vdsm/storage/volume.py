@@ -1015,7 +1015,7 @@ class Volume(object):
         self.setParent(backingVol)
         self.recheckIfLeaf()
 
-    def clone(self, dstPath, volFormat, size_blk):
+    def clone(self, dstPath, volFormat, capacity):
         """
         Clone self volume to the specified dst_image_dir/dst_volUUID
         """
@@ -1038,7 +1038,7 @@ class Volume(object):
             # hence we have to provide it.
             operation = qemuimg.create(
                 dstPath,
-                size=size_blk * sc.BLOCK_SIZE,
+                size=capacity,
                 backing=parent,
                 format=sc.fmt2str(volFormat),
                 qcow2Compat=domain.qcow2_compat(),

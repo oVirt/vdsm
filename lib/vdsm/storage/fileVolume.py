@@ -506,8 +506,7 @@ class FileVolume(volume.Volume):
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s "
                          "with capacity %s",
                          img_id, vol_id, src_img_id, src_vol_id, capacity)
-            size_blk = capacity // BLOCK_SIZE
-            vol_parent.clone(vol_path, sc.COW_FORMAT, size_blk)
+            vol_parent.clone(vol_path, sc.COW_FORMAT, capacity)
 
         # Forcing the volume permissions in case one of the tools we use
         # (dd, qemu-img, etc.) will mistakenly change the file permissions.
