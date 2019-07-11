@@ -1,4 +1,3 @@
-./contrib/repostat
 ./lib/vdsm/common/commands.py
 ./lib/vdsm/gluster/exception.py
 ./lib/vdsm/gluster/storagedev.py
