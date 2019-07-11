@@ -23,12 +23,15 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
+import libvirt
 import os
 import pytest
 
 from fakelib import FakeLogger
 from testlib import make_uuid
+from virt.fakedomainadapter import FakeDomainAdapter
 
+from vdsm.common import exception
 from vdsm.common import nbdutils
 from vdsm.common.xmlutils import indented
 
@@ -37,6 +40,12 @@ from vdsm.storage import transientdisk
 from vdsm.storage.dispatcher import Dispatcher
 
 from vdsm.virt import backup
+
+import vmfakelib as fake
+
+requires_backup_support = pytest.mark.skipif(
+    not backup.backup_enabled,
+    reason="libvirt does not support backup")
 
 
 class FakeDrive(object):
@@ -145,3 +154,147 @@ def test_backup_xml(tmp_backupdir):
         </domainbackup>
         """.format(socket_path)
     assert indented(expected_xml) == indented(backup_xml)
+
+
+@requires_backup_support
+def test_start_stop_backup(tmp_backupdir, tmp_basedir):
+    backup_id = 'backup_id'
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+
+    fake_disks = create_fake_disks()
+    config = {
+        'backup_id': backup_id,
+        'disks': fake_disks
+    }
+
+    res = backup.start_backup(vm, dom, config)
+    assert dom.backing_up
+
+    verify_scratch_disks_exists(vm)
+
+    result_disks = res['result']['disks']
+    verify_backup_urls(backup_id, result_disks)
+
+    backup.stop_backup(vm, dom, backup_id)
+    assert not dom.backing_up
+
+    verify_scratch_disks_removed(vm)
+
+
+def test_start_backup_disk_not_found():
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+
+    fake_disks = create_fake_disks()
+    fake_disks.append({
+        'domainID': make_uuid(),
+        'imageID': make_uuid(),
+        'volumeID': make_uuid()})
+
+    config = {
+        'backup_id': 'backup_id',
+        'disks': fake_disks
+    }
+
+    with pytest.raises(exception.BackupError):
+        backup.start_backup(vm, dom, config)
+
+    assert not dom.backing_up
+    verify_scratch_disks_removed(vm)
+
+
+@requires_backup_support
+def test_backup_begin_failed(tmp_backupdir, tmp_basedir):
+    backup_id = 'backup_id'
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+    dom.errors["backupBegin"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
+
+    fake_disks = create_fake_disks()
+
+    config = {
+        'backup_id': backup_id,
+        'disks': fake_disks
+    }
+
+    with pytest.raises(exception.BackupError):
+        backup.start_backup(vm, dom, config)
+
+    verify_scratch_disks_removed(vm)
+
+
+@requires_backup_support
+def test_stop_backup_failed(tmp_backupdir, tmp_basedir):
+    backup_id = 'backup_id'
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+    dom.errors["abortJob"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
+
+    fake_disks = create_fake_disks()
+
+    config = {
+        'backup_id': backup_id,
+        'disks': fake_disks
+    }
+
+    res = backup.start_backup(vm, dom, config)
+
+    verify_scratch_disks_exists(vm)
+
+    result_disks = res['result']['disks']
+    verify_backup_urls(backup_id, result_disks)
+
+    with pytest.raises(exception.BackupError):
+        backup.stop_backup(vm, dom, backup_id)
+
+    # Failed to stop, backup still alive
+    assert dom.backing_up
+
+    # verify scratch disks weren't removed
+    verify_scratch_disks_exists(vm)
+
+
+@requires_backup_support
+def test_stop_non_existing_backup():
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+    dom.errors["backupGetXMLDesc"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_NO_DOMAIN_BACKUP], "Fake libvirt error")
+
+    # test that nothing is raised when stopping non-existing backup
+    backup.stop_backup(vm, dom, 'backup_id')
+
+
+def verify_scratch_disks_exists(vm):
+    res = vm.cif.irs.list_transient_disks(vm.id)
+    assert res["status"]["code"] == 0
+
+    scratch_disks = ["backup_id." + drive.name
+                     for drive in FAKE_DRIVES.values()]
+    assert sorted(res["result"]) == sorted(scratch_disks)
+
+
+def verify_backup_urls(backup_id, result_disks):
+    for image_id, drive in FAKE_DRIVES.items():
+        socket_path = os.path.join(backup.P_BACKUP, backup_id)
+        exp_addr = nbdutils.UnixAddress(socket_path).url(drive.name)
+        assert result_disks[image_id] == exp_addr
+
+
+def verify_scratch_disks_removed(vm):
+    res = vm.cif.irs.list_transient_disks(vm.id)
+    assert res['status']['code'] == 0
+    assert res['result'] == []
+
+
+def create_fake_disks():
+    fake_disks = []
+    for img_id in FAKE_DRIVES:
+        fake_disks.append({
+            'domainID': make_uuid(),
+            'imageID': img_id,
+            'volumeID': make_uuid()})
+    return fake_disks
