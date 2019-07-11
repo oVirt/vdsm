@@ -23,7 +23,6 @@
 ./lib/vdsm/storage/task.py
 ./lib/vdsm/storage/volume.py
 ./tests/exception_test.py
-./tests/executor_test.py
 ./tests/functional/momTests.py
 ./tests/functional/utils.py
 ./tests/storage/resourcemanager_test.py
