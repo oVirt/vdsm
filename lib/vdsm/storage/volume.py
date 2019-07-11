@@ -1315,17 +1315,17 @@ class Volume(object):
                            "its format is not RAW", self.volUUID)
             return
 
-        new_vol_size_blk = self.getVolumeSize() // sc.BLOCK_SIZE_512
-        old_vol_size_blk = self.getCapacity() // sc.BLOCK_SIZE_512
+        new_vol_capacity = self.getVolumeSize()
+        old_vol_capacity = self.getCapacity()
 
-        if old_vol_size_blk == new_vol_size_blk:
-            self.log.debug("size metadata %s is up to date for volume %s",
-                           old_vol_size_blk, self.volUUID)
+        if old_vol_capacity == new_vol_capacity:
+            self.log.debug("capacity metadata %s is up to date for volume %s",
+                           old_vol_capacity, self.volUUID)
         else:
             self.log.debug("updating metadata for volume %s changing the "
-                           "size %s to %s", self.volUUID, old_vol_size_blk,
-                           new_vol_size_blk)
-            self.setCapacity(new_vol_size_blk * sc.BLOCK_SIZE_512)
+                           "capacity %s to %s", self.volUUID, old_vol_capacity,
+                           new_vol_capacity)
+            self.setCapacity(new_vol_capacity)
 
     @classmethod
     def extendSizeFinalize(cls, taskObj, sdUUID, imgUUID, volUUID):
