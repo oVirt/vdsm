@@ -799,6 +799,40 @@ def test_volume_metadata_capacity_corrupted(
     assert int(actual["capacity"]) == 2 * SPARSE_VOL_SIZE
 
 
+@xfail_python3
+@pytest.mark.parametrize("domain_version", [4, 5])
+def test_volume_sync_metadata(
+        tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
+        fake_task, local_fallocate, domain_version):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        size_blk=2 * SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        volFormat=sc.RAW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=vol_uuid,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+
+    # corrupt the metadata capacity manually
+    md = vol.getMetadata()
+    md.capacity = SPARSE_VOL_SIZE
+    vol.setMetadata(md)
+
+    # syncMetadata() should fix capacity
+    vol.syncMetadata()
+
+    actual = vol.getInfo()
+    assert int(actual["capacity"]) == 2 * SPARSE_VOL_SIZE
+
+
 def verify_volume_file(
         path, format, virtual_size, qemu_info, backing_file=None):
     assert qemu_info['format'] == format

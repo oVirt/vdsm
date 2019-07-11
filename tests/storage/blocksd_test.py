@@ -643,3 +643,15 @@ def test_create_snapshot_size(
 
     actual = vol.getInfo()
     assert int(actual["capacity"]) == vol_capacity
+
+    # Corrupt the metadata capacity manually again.
+    # And reuse this test also for testing Volume.syncMetadata().
+    # As syncMetadata() work only for RAW volumes, test it on parent volume.
+    parent_md = parent_vol.getMetadata()
+    parent_md.capacity = parent_vol_capacity // 2
+    parent_vol.setMetadata(md)
+
+    parent_vol.syncMetadata()
+
+    actual = parent_vol.getInfo()
+    assert int(actual["capacity"]) == parent_vol_capacity
