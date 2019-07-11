@@ -27,7 +27,6 @@ import io
 import mmap
 import timeit
 
-import six
 import pytest
 
 from vdsm import constants
@@ -621,11 +620,7 @@ def bench():
 
 @pytest.fixture(params=[
     xlease.DirectFile,
-    pytest.param(
-        xlease.InterruptibleDirectFile,
-        marks=pytest.mark.skipif(
-            six.PY3,
-            reason="ioprocess is not availale on python 3"))
+    xlease.InterruptibleDirectFile,
 ])
 def direct_file(request):
     """
