@@ -268,6 +268,86 @@ def test_stop_non_existing_backup():
     backup.stop_backup(vm, dom, 'backup_id')
 
 
+@requires_backup_support
+def test_backup_info(tmp_backupdir, tmp_basedir):
+    backup_id = 'backup_id'
+    vm = FakeVm()
+    expected_xml = """
+        <domainbackup mode='pull'>
+          <server transport='unix' socket='{}'/>
+          <disks>
+            <disk name='sda' backup='yes' type='file' exportname='sda'>
+                <driver type='qcow2'/>
+                <scratch file='/path/to/scratch_sda'>
+                    <seclabel model='dac' relabel='no'/>
+                </scratch>
+            </disk>
+            <disk name='vda' backup='yes' type='file' exportname='vda'>
+                <driver type='qcow2'/>
+                <scratch file='/path/to/scratch_vda'>
+                    <seclabel model="dac" relabel="no"/>
+                </scratch>
+            </disk>
+            <disk name='hdc' backup='no'/>
+          </disks>
+        </domainbackup>
+        """.format(os.path.join(backup.P_BACKUP, backup_id))
+    dom = FakeDomainAdapter(expected_xml)
+
+    fake_disks = create_fake_disks()
+    config = {
+        'backup_id': backup_id,
+        'disks': fake_disks
+    }
+    res = backup.start_backup(vm, dom, config)
+    backup_info = backup.backup_info(vm, dom, backup_id)
+    assert res['result']['disks'] == backup_info['result']['disks']
+
+
+@requires_backup_support
+def test_backup_info_no_backup_running():
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+    dom.errors["backupGetXMLDesc"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_NO_DOMAIN_BACKUP], "Fake libvirt error")
+
+    with pytest.raises(exception.NoSuchBackupError):
+        backup.backup_info(vm, dom, "backup_id")
+
+
+@requires_backup_support
+def test_backup_info_get_xml_desc_failed():
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+    dom.errors["backupGetXMLDesc"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_INTERNAL_ERROR], "Fakse libvirt error")
+
+    with pytest.raises(exception.BackupError):
+        backup.backup_info(vm, dom, "backup_id")
+
+
+@requires_backup_support
+def test_fail_parse_backup_xml(tmp_backupdir, tmp_basedir):
+    backup_id = 'backup_id'
+    vm = FakeVm()
+    INVALID_BACKUP_XML = """
+        <domainbackup mode='pull'>
+            <disks/>
+        </domainbackup>
+        """
+    dom = FakeDomainAdapter(INVALID_BACKUP_XML)
+
+    fake_disks = create_fake_disks()
+    config = {
+        'backup_id': backup_id,
+        'disks': fake_disks
+    }
+    backup.start_backup(vm, dom, config)
+
+    with pytest.raises(exception.BackupError):
+        backup.backup_info(vm, dom, backup_id)
+
+
 def verify_scratch_disks_exists(vm):
     res = vm.cif.irs.list_transient_disks(vm.id)
     assert res["status"]["code"] == 0
