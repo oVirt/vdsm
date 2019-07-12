@@ -1038,6 +1038,11 @@ class BlockStorageDomain(sd.StorageDomain):
 
     def __init__(self, sdUUID):
         manifest = self.manifestClass(sdUUID)
+
+        logical_block_size, physical_block_size = lvm.getVGBlockSizes(sdUUID)
+        self._validate_storage_block_size(
+            manifest.block_size, logical_block_size)
+
         sd.StorageDomain.__init__(self, manifest)
 
         # TODO: Move this to manifest.activate_special_lvs
@@ -1048,7 +1053,8 @@ class BlockStorageDomain(sd.StorageDomain):
 
         # Check that all devices in the VG have the same logical and physical
         # block sizes.
-        lvm.checkVGBlockSizes(sdUUID, (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_512))
+        lvm.checkVGBlockSizes(
+            sdUUID, (logical_block_size, physical_block_size))
 
         self.imageGarbageCollector()
         self._registerResourceNamespaces()
@@ -1092,7 +1098,6 @@ class BlockStorageDomain(sd.StorageDomain):
                 default to sc.HOSTS_4K_1M.
         """
         cls._validate_block_size(block_size, version)
-        alignment = clusterlock.alignment(block_size, max_hosts)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
             raise se.UnicodeArgumentException()
@@ -1101,6 +1106,12 @@ class BlockStorageDomain(sd.StorageDomain):
             raise se.StorageDomainDescriptionTooLongError()
 
         sd.validateDomainVersion(version)
+
+        logical_block_size, physical_block_size = lvm.getVGBlockSizes(sdUUID)
+        block_size = cls._validate_storage_block_size(
+            block_size, logical_block_size)
+
+        alignment = clusterlock.alignment(block_size, max_hosts)
 
         vg = lvm.getVGbyUUID(vgUUID)
         vgName = vg.name
@@ -1174,8 +1185,6 @@ class BlockStorageDomain(sd.StorageDomain):
         elif version in VERS_METADATA_TAG:
             md = TagBasedSDMetadata(vgName)
 
-        logBlkSize, phyBlkSize = lvm.getVGBlockSizes(vgName)
-
         # Create domain metadata.
         # FIXME : This is 99% like the metadata in file SD.
         #         Do we really need to keep the VGUUID?
@@ -1203,8 +1212,8 @@ class BlockStorageDomain(sd.StorageDomain):
 
         if version < 5:
             # These keys are removed in version 5.
-            initialMetadata[sd.DMDK_LOGBLKSIZE] = logBlkSize
-            initialMetadata[sd.DMDK_PHYBLKSIZE] = phyBlkSize
+            initialMetadata[sd.DMDK_LOGBLKSIZE] = block_size
+            initialMetadata[sd.DMDK_PHYBLKSIZE] = physical_block_size
 
         if version > 4:
             # These keys are added in version 5.

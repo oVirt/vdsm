@@ -53,7 +53,6 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
             raise se.StorageDomainFSNotMounted(domPath)
 
         fileSD.validateDirAccess(domPath)
-        fileSD.validateFileSystemFeatures(sdUUID, domPath)
 
         # Make sure there are no remnants of other domain
         mdpat = os.path.join(domPath, "*", sd.DOMAIN_META_DATA)
@@ -80,7 +79,6 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
                 default to sc.HOSTS_4K_1M.
         """
         cls._validate_block_size(block_size, version)
-        alignment = clusterlock.alignment(block_size, max_hosts)
 
         remotePath = fileUtils.normalize_path(remotePath)
 
@@ -94,6 +92,12 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
 
         cls._preCreateValidation(sdUUID, mntPoint, remotePath, storageType,
                                  version)
+
+        storage_block_size = cls._detect_block_size(sdUUID, mntPoint)
+        block_size = cls._validate_storage_block_size(
+            block_size, storage_block_size)
+
+        alignment = clusterlock.alignment(block_size, max_hosts)
 
         domainDir = os.path.join(mntPoint, sdUUID)
         cls._prepareMetadata(domainDir, sdUUID, domainName, domClass,

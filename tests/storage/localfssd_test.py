@@ -52,13 +52,8 @@ INITIAL_VOL_SIZE = 1 * MEGAB
 
 
 DETECT_BLOCK_SIZE = [
-    pytest.param(
-        True,
-        id="auto block size",
-        marks=pytest.mark.xfail(reason="not implemented yet")),
-    pytest.param(
-        False,
-        id="explicit block size"),
+    pytest.param(True, id="auto block size"),
+    pytest.param(False, id="explicit block size"),
 ]
 
 Storage = collections.namedtuple("Storage", "path, block_size, max_hosts")
@@ -197,7 +192,6 @@ def test_create_domain_metadata_v5(
 
 
 @xfail_python3
-@pytest.mark.xfail(reason="not implemented yet")
 def test_create_storage_domain_block_size_mismatch(
         user_mount, tmp_repo, fake_access):
     # Select the wrong block size for current storage.
@@ -216,7 +210,6 @@ def test_create_storage_domain_block_size_mismatch(
 
 
 @xfail_python3
-@pytest.mark.xfail(reason="not implemented yet")
 def test_create_instance_block_size_mismatch(
         user_mount, tmp_repo, fake_access):
     dom = tmp_repo.create_localfs_domain(
