@@ -84,7 +84,6 @@ test_modules = \
 	gluster_exception_test.py \
 	glusterTestData.py \
 	gluster_thinstorage_test.py \
-	hooks_test.py \
 	hostdev_test.py \
 	hoststats_test.py \
 	hugepages_test.py \
@@ -133,7 +132,6 @@ test_modules = \
 
 blacklisted_modules_py36 = \
 	bridge_test.py \
-	hooks_test.py \
 	protocoldetector_test.py \
 	stompasyncdispatcher_test.py \
 	stomp_test.py \

@@ -1,6 +1,6 @@
 # encoding: utf-8
 #
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,12 +23,14 @@
 from __future__ import absolute_import
 from __future__ import division
 
-
 import contextlib
 import libvirt
 import tempfile
 import os
 import os.path
+import pytest
+import six
+
 from contextlib import contextmanager
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
@@ -59,6 +61,7 @@ echo -n %s >> "$_hook_domxml"
                 script.close()
             yield dirName, scripts
 
+    @pytest.mark.xfail(six.PY3, reason="needs porting to py3")
     def test_scriptsPerDir(self):
         with self.tempScripts() as (dirName, scripts):
             sNames = [script.name for script in scripts]
@@ -66,6 +69,7 @@ echo -n %s >> "$_hook_domxml"
             hooksNames.sort()
             self.assertEqual(sNames, hooksNames)
 
+    @pytest.mark.xfail(six.PY3, reason="needs porting to py3")
     def test_runHooksDir(self):
         # Add an unicode value to the environment variables
         # to test whether the utf-8 recoding works properly
@@ -95,12 +99,14 @@ echo "81212590184644762"
         os.chmod(script.name, 0o775)
         return script.name, '683394fc34f6830dd1882418eefd9b66'
 
+    @pytest.mark.xfail(six.PY3, reason="needs porting to py3")
     def test_getScriptInfo(self):
         sName, md5 = self.createScript()
         info = hooks._getScriptInfo(sName)
         os.unlink(sName)
         self.assertEqual({'md5': md5}, info)
 
+    @pytest.mark.xfail(six.PY3, reason="needs porting to py3")
     def test_getHookInfo(self):
         with namedTemporaryDir() as dir:
             sName, md5 = self.createScript(dir)
@@ -129,12 +135,14 @@ domXMLFile.close()
                 os.chmod(f.name, 0o775)
             yield dirName
 
+    @pytest.mark.xfail(six.PY3, reason="needs porting to py3")
     def test_deviceCustomProperties(self):
         with self._deviceCustomPropertiesTestFile() as dirName:
             result = hooks._runHooksDir("oVirt", dirName,
                                         params={'customProperty': ' rocks!'})
             self.assertEqual(result, "oVirt rocks!")
 
+    @pytest.mark.xfail(six.PY3, reason="needs porting to py3")
     def test_deviceVmConfProperties(self):
         with self._deviceCustomPropertiesTestFile() as dirName:
             vmconf = {
