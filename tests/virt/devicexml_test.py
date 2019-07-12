@@ -27,8 +27,6 @@ import logging
 import os.path
 import xml.etree.ElementTree as ET
 
-import six
-
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices import lookup
@@ -44,7 +42,6 @@ from testlib import make_config
 from testlib import permutations, expandPermutations
 from testlib import read_data
 from testlib import XMLTestCase
-from testValidation import skipif
 
 import vmfakecon as fake
 import vmfakelib
@@ -1249,7 +1246,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             expected_xml=expected_xml
         )
 
-    @skipif(six.PY3, "Needs Python 3 code fixes")
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
     def test_interface_sriov_only_host_address(self):
@@ -1279,7 +1275,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             self._check_roundtrip(
                 vmdevices.network.Interface, interface_xml, meta=meta)
 
-    @skipif(six.PY3, "Needs Python 3 code fixes")
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
     def test_interface_sriov_with_host_and_guest_address(self):
@@ -1311,7 +1306,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             self._check_roundtrip(
                 vmdevices.network.Interface, interface_xml, meta=meta)
 
-    @skipif(six.PY3, "Needs Python 3 code fixes")
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
     def test_interface_hostdev(self):
@@ -1393,7 +1387,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
 
     # TODO: add test with OVS and DPDK enabled
 
-    @skipif(six.PY3, "Needs Python 3 code fixes")
     @permutations(_HOSTDEV_XML)
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())

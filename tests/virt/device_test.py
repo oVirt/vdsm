@@ -23,8 +23,6 @@ from __future__ import division
 
 import os.path
 
-import six
-
 from vdsm.common import hostdev
 from vdsm.common import response
 from vdsm.common import xmlutils
@@ -42,7 +40,6 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import permutations, expandPermutations, make_config, read_data
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase
-from testValidation import skipif
 import vmfakelib as fake
 
 
@@ -250,7 +247,6 @@ class TestVmDevices(XMLTestCase):
             self.assertIn('vmList', res)
             self.assertXMLEqual(testvm._dom.devXml, updated_xml)
 
-    @skipif(six.PY3, "Needs Python 3 code fixes")
     def testUpdateDriverInSriovInterface(self):
         interface_xml = """<?xml version="1.0" encoding="utf-8"?>
         <domain type="kvm"
@@ -484,7 +480,6 @@ class TestVmDevices(XMLTestCase):
             self.assert_dom_xml_equal(graph.getSpiceVmcChannelsXML(),
                                       spiceChannelXML)
 
-    @skipif(six.PY3, "Needs Python 3 code fixes")
     @permutations([['''<hostdev managed="no" mode="subsystem" type="usb">
                           <alias name="testusb"/>
                           <source>

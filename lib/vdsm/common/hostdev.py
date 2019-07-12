@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -163,7 +163,7 @@ def __device_tree_hash(libvirt_devices):
     """
     current_hash = hashlib.sha256()
     for _, xml in _each_device_xml(libvirt_devices):
-        current_hash.update(xml)
+        current_hash.update(xml.encode('utf-8'))
 
     return current_hash.hexdigest()
 
@@ -488,7 +488,10 @@ def _process_device_params(device_xml):
     """
     params = {}
 
-    devXML = etree.fromstring(device_xml.decode('ascii', errors='ignore'))
+    if six.PY2:
+        device_xml = device_xml.decode('ascii', errors='ignore')
+
+    devXML = etree.fromstring(device_xml)
 
     caps = devXML.find('capability')
     params['capability'] = caps.attrib['type']
