@@ -94,7 +94,7 @@ class MOMTest(TestCaseBase):
         self.assertEqual(status, SUCCESS, msg)
 
         # Filter all vms' statistics to get balloon operation candidates.
-        candidateStats = filter(self._statsOK, statsList)
+        candidateStats = [s for s in statsList if self._statsOK(s)]
 
         # Set the balloon target to initial value before shrink
         # or grow operation.
@@ -116,7 +116,7 @@ class MOMTest(TestCaseBase):
         self.assertEqual(status, SUCCESS, msg)
 
         # Filter all vms' statistics to get balloon operation candidates.
-        candidateStats = filter(self._statsOK, statsList)
+        candidateStats = [s for s in statsList if self._statsOK(s)]
 
         # Set the balloon target to initial value before shrink
         # or grow operation.
@@ -144,7 +144,7 @@ class MOMTest(TestCaseBase):
                 raise SkipTest('The policy file %s is missing.' %
                                file_name)
             else:
-                raise SkipTest(e.message)
+                raise SkipTest(str(e))
 
         status, msg = self.s.setMOMPolicy(testPolicyStr)
         self.assertEqual(status, SUCCESS, msg)
