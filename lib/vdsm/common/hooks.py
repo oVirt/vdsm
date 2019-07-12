@@ -78,9 +78,9 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
     data_fd, data_filename = tempfile.mkstemp()
     try:
         if hookType == _DOMXML_HOOK:
-            os.write(data_fd, data or '')
+            os.write(data_fd, data.encode('utf-8') if data else b'')
         elif hookType == _JSON_HOOK:
-            os.write(data_fd, json.dumps(data))
+            os.write(data_fd, json.dumps(data).encode('utf-8'))
         os.close(data_fd)
 
         scriptenv = os.environ.copy()
