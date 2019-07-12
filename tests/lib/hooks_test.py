@@ -31,12 +31,134 @@ import os.path
 import pytest
 import six
 
+from collections import namedtuple
 from contextlib import contextmanager
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import namedTemporaryDir
 
 from vdsm.common import hooks
+
+
+DirEntry = namedtuple("DirEntry", "name, mode, contents")
+FileEntry = namedtuple("FileEntry", "name, mode, contents")
+
+
+def dir_entry_apply(self, hooks_dir):
+    path = hooks_dir.join(self.name)
+    path.mkdir()
+    for entry in self.contents:
+        entry.apply(path)
+    path.chmod(self.mode)
+
+
+def file_entry_apply(self, hooks_dir):
+    path = hooks_dir.join(self.name)
+    path.write(self.contents)
+    path.chmod(self.mode)
+
+
+DirEntry.apply = dir_entry_apply
+FileEntry.apply = file_entry_apply
+
+
+@pytest.fixture
+def fake_hooks_root(monkeypatch, tmpdir):
+    with monkeypatch.context() as m:
+        m.setattr(hooks, "P_VDSM_HOOKS", str(tmpdir) + "/")
+        yield tmpdir
+
+
+@pytest.fixture
+def hooks_dir(fake_hooks_root, request):
+    hooks_dir = fake_hooks_root.mkdir("hooks_dir")
+    for entry in request.param:
+        entry.apply(hooks_dir)
+    yield hooks_dir
+
+
+@pytest.mark.parametrize("hooks_dir", indirect=["hooks_dir"], argvalues=[
+    pytest.param(
+        [
+            FileEntry("executable", 0o700, ""),
+            FileEntry("executable_2", 0o700, ""),
+        ],
+        id="two executable scripts"
+    ),
+])
+def test_scripts_per_dir_should_list_scripts(hooks_dir):
+    scripts = hooks._scriptsPerDir(hooks_dir.basename)
+
+    assert len(scripts) == 2
+    assert sorted(scripts) == sorted(list(str(p) for p in hooks_dir.visit()))
+
+
+@pytest.mark.parametrize("hooks_dir", indirect=True, argvalues=[
+    pytest.param(
+        [
+            FileEntry("non-executable", 0o666, ""),
+        ],
+        id="non-executable"
+    ),
+    pytest.param(
+        [
+            DirEntry("__pycache__", 0o777, []),
+        ],
+        id="executable directory",
+        marks=pytest.mark.xfail(reason="need to filter-out dirs")
+    ),
+    pytest.param(
+        [
+            DirEntry("nested", 0o777, [
+                FileEntry("executable", 0o777, "")
+            ])
+        ],
+        id="script in nested dir",
+        marks=pytest.mark.xfail(reason="need to filter-out dirs")
+    ),
+])
+def test_scripts_per_dir_should_not_list(hooks_dir):
+    assert hooks._scriptsPerDir(hooks_dir.basename) == []
+
+
+@pytest.mark.parametrize("dir_name, error", [
+    pytest.param(
+        "/tmp/evil/absolute/path",
+        "Cannot use absolute path as hook directory",
+        id="absolute path",
+        marks=pytest.mark.xfail(reason="needs to be removed")
+    ),
+    pytest.param(
+        "../../tmp/evil/relative/path",
+        "Hook directory paths cannot contain '..'",
+        id="escaping relative path",
+        marks=pytest.mark.xfail(reason="needs to be filtered-out")
+    ),
+])
+def test_scripts_per_dir_should_raise(fake_hooks_root, dir_name, error):
+    with pytest.raises(ValueError) as e:
+        hooks._scriptsPerDir(dir_name)
+
+    assert error in str(e.value)
+
+
+@pytest.mark.parametrize("hooks_dir", indirect=["hooks_dir"], argvalues=[
+    pytest.param(
+        [
+            FileEntry("executable", 0o700, ""),
+        ],
+        id="no trailing slash",
+        marks=pytest.mark.xfail(reason="replace '+' with 'os.path.join'")
+    ),
+])
+def test_scripts_per_dir_should_accept_root_without_trailing_slash(monkeypatch,
+                                                                   hooks_dir):
+    with monkeypatch.context() as m:
+        hooks_root = hooks.P_VDSM_HOOKS.rstrip("/")
+        m.setattr(hooks, "P_VDSM_HOOKS", hooks_root)
+        scripts = hooks._scriptsPerDir(hooks_dir.basename)
+
+        assert len(scripts) == 1
 
 
 class TestHooks(TestCaseBase):
@@ -60,14 +182,6 @@ echo -n %s >> "$_hook_domxml"
                 os.chmod(os.path.join(dirName, script.name), 0o775)
                 script.close()
             yield dirName, scripts
-
-    @pytest.mark.xfail(six.PY3, reason="needs porting to py3")
-    def test_scriptsPerDir(self):
-        with self.tempScripts() as (dirName, scripts):
-            sNames = [script.name for script in scripts]
-            hooksNames = hooks._scriptsPerDir(dirName)
-            hooksNames.sort()
-            self.assertEqual(sNames, hooksNames)
 
     @pytest.mark.xfail(six.PY3, reason="needs porting to py3")
     def test_runHooksDir(self):
