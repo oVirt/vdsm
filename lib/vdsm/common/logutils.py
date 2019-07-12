@@ -381,8 +381,9 @@ def set_level(level_name, name=''):
     log_name = None if not name else name
     # getLogger() default argument is None, not ''
     logger = logging.getLogger(log_name)
-    logging.warning('Setting loglevel on %r to %s (%d)',
-                    logger.name, level_name, log_level)
+    logging.info(
+        'Setting log level on %r to %s (%d)',
+        logger.name, level_name, log_level)
     logger.setLevel(log_level)
 
 
