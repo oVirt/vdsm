@@ -92,14 +92,15 @@ def user_mount(request):
 @pytest.mark.parametrize("version", [3, 4])
 @pytest.mark.parametrize("block_size", [sc.BLOCK_SIZE_4K, sc.BLOCK_SIZE_AUTO])
 def test_incorrect_block_size_rejected(version, block_size):
+    # Note: assumes that validation is done before trying to reach storage.
     with pytest.raises(se.InvalidParameterException):
         localFsSD.LocalFsStorageDomain.create(
-            sc.BLANK_UUID,
-            "test",
-            sd.DATA_DOMAIN,
-            sc.BLANK_UUID,
-            sd.ISCSI_DOMAIN,
-            version,
+            sdUUID=str(uuid.uuid4()),
+            domainName="test",
+            domClass=sd.DATA_DOMAIN,
+            remotePath="/path",
+            version=version,
+            storageType=sd.LOCALFS_DOMAIN,
             block_size=block_size)
 
 
