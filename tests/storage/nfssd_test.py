@@ -32,9 +32,20 @@ from vdsm.storage import exception as se
 from vdsm.storage import sd
 
 
-@pytest.mark.parametrize("version", [3, 4])
-@pytest.mark.parametrize("block_size", [sc.BLOCK_SIZE_4K, sc.BLOCK_SIZE_AUTO])
-def test_incorrect_block_rejected(version, block_size):
+@pytest.mark.parametrize("version,block_size", [
+    # Before version 5 only 512 bytes is supported.
+    (3, sc.BLOCK_SIZE_4K),
+    (3, sc.BLOCK_SIZE_AUTO),
+    (3, 42),
+    (4, sc.BLOCK_SIZE_4K),
+    (4, sc.BLOCK_SIZE_AUTO),
+    (4, 42),
+    # Version 5 will allow 4k soon.
+    (5, sc.BLOCK_SIZE_4K),
+    (5, sc.BLOCK_SIZE_AUTO),
+    (5, 42),
+])
+def test_unsupported_block_size_rejected(version, block_size):
     # Note: assumes that validation is done before trying to reach storage.
     with pytest.raises(se.InvalidParameterException):
         nfsSD.NfsStorageDomain.create(
