@@ -244,6 +244,6 @@ def _parse_result(result, return_value=None):
     msg = status['message']
 
     if code == SUCCESS and return_value:
-        return code, msg, result['result']
+        return code, msg, result.get('result', {})
     else:
         return code, msg

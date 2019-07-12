@@ -33,7 +33,7 @@ import testValidation
 from testlib import VdsmTestCase as TestCaseBase
 from nose.plugins.skip import SkipTest
 from vdsm.common.define import errCode
-from utils import VdsProxy, SUCCESS
+from .utils import getProxy, SUCCESS
 
 
 def skipNoMOM(method):
@@ -58,7 +58,7 @@ class MOMTest(TestCaseBase):
     BalloonRatio = namedtuple('BalloonRatio', 'initial, low, high')
 
     def setUp(self):
-        self.s = VdsProxy()
+        self.s = getProxy()
 
     @testValidation.ValidateRunningAsRoot
     @skipNoMOM
