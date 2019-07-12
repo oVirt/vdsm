@@ -216,6 +216,29 @@ def test_create_storage_domain_block_size_mismatch(
 
 
 @xfail_python3
+@pytest.mark.xfail(reason="not implemented yet")
+def test_create_instance_block_size_mismatch(
+        user_mount, tmp_repo, fake_access):
+    dom = tmp_repo.create_localfs_domain(
+        name="domain",
+        version=5,
+        block_size=user_mount.block_size,
+        max_hosts=user_mount.max_hosts,
+        remote_path=user_mount.path)
+
+    # Change metadata to report the wrong block size for current storage.
+    if user_mount.block_size == sc.BLOCK_SIZE_512:
+        bad_block_size = sc.BLOCK_SIZE_4K
+    else:
+        bad_block_size = sc.BLOCK_SIZE_512
+    dom.setMetaParam(sd.DMDK_BLOCK_SIZE, bad_block_size)
+
+    # Creating a new instance should fail now.
+    with pytest.raises(se.StorageDomainBlockSizeMismatch):
+        localFsSD.LocalFsStorageDomain(dom.domaindir)
+
+
+@xfail_python3
 @pytest.mark.parametrize("domain_version", [3, 4])
 def test_domain_lease(tmpdir, tmp_repo, fake_access, domain_version):
     dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
