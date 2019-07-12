@@ -48,15 +48,17 @@ _LAUNCH_FLAGS_PATH = os.path.join(
 )
 
 
-# dir path is relative to '/' for test purposes
-# otherwise path is relative to P_VDSM_HOOKS
-def _scriptsPerDir(dir):
-    if (dir[0] == '/'):
-        path = dir
-    else:
-        path = P_VDSM_HOOKS + dir
-    return [s for s in glob.glob(path + '/*')
-            if os.access(s, os.X_OK)]
+def _scriptsPerDir(dir_name):
+    if os.path.isabs(dir_name):
+        raise ValueError("Cannot use absolute path as hook directory")
+    head = dir_name
+    while head:
+        head, tail = os.path.split(head)
+        if tail == "..":
+            raise ValueError("Hook directory paths cannot contain '..'")
+    path = os.path.join(P_VDSM_HOOKS, dir_name, '*')
+    return [s for s in glob.glob(path)
+            if os.path.isfile(s) and os.access(s, os.X_OK)]
 
 _DOMXML_HOOK = 1
 _JSON_HOOK = 2

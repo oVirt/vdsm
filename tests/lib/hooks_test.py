@@ -107,8 +107,7 @@ def test_scripts_per_dir_should_list_scripts(hooks_dir):
         [
             DirEntry("__pycache__", 0o777, []),
         ],
-        id="executable directory",
-        marks=pytest.mark.xfail(reason="need to filter-out dirs")
+        id="executable directory"
     ),
     pytest.param(
         [
@@ -116,8 +115,7 @@ def test_scripts_per_dir_should_list_scripts(hooks_dir):
                 FileEntry("executable", 0o777, "")
             ])
         ],
-        id="script in nested dir",
-        marks=pytest.mark.xfail(reason="need to filter-out dirs")
+        id="script in nested dir"
     ),
 ])
 def test_scripts_per_dir_should_not_list(hooks_dir):
@@ -128,14 +126,12 @@ def test_scripts_per_dir_should_not_list(hooks_dir):
     pytest.param(
         "/tmp/evil/absolute/path",
         "Cannot use absolute path as hook directory",
-        id="absolute path",
-        marks=pytest.mark.xfail(reason="needs to be removed")
+        id="absolute path"
     ),
     pytest.param(
         "../../tmp/evil/relative/path",
         "Hook directory paths cannot contain '..'",
-        id="escaping relative path",
-        marks=pytest.mark.xfail(reason="needs to be filtered-out")
+        id="escaping relative path"
     ),
 ])
 def test_scripts_per_dir_should_raise(fake_hooks_root, dir_name, error):
@@ -150,8 +146,7 @@ def test_scripts_per_dir_should_raise(fake_hooks_root, dir_name, error):
         [
             FileEntry("executable", 0o700, ""),
         ],
-        id="no trailing slash",
-        marks=pytest.mark.xfail(reason="replace '+' with 'os.path.join'")
+        id="no trailing slash"
     ),
 ])
 def test_scripts_per_dir_should_accept_root_without_trailing_slash(monkeypatch,
