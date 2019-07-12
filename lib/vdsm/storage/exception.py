@@ -628,6 +628,15 @@ class GetFileStatsError(StorageException):
 #  Domains Exceptions
 #################################################
 
+class StorageDomainBlockSizeMismatch(StorageException):
+    code = 348
+    message = "Block size does not match storage block size"
+
+    def __init__(self, block_size, storage_block_size):
+        self.value = "block_size=%s, storage_block_size=%s" % (
+            block_size, storage_block_size)
+
+
 class DiscardIsNotSupported(StorageException):
     code = 349
     message = "Discard is not supported by storage domain"
