@@ -302,7 +302,6 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
 @xfail_python3
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason="not implemented yet")
 def test_create_instance_block_size_mismatch(
         tmp_storage, tmp_repo, fake_sanlock):
     sd_uuid = str(uuid.uuid4())

@@ -337,8 +337,8 @@ def writeLines(ioproc, path, lines):
     return writeFile(ioproc, path, data)
 
 
-def writeFile(ioproc, path, data):
-    return ioproc.writefile(path, data)
+def writeFile(ioproc, path, data, direct=False):
+    return ioproc.writefile(path, data, direct=direct)
 
 
 def simpleWalk(ioproc, path):

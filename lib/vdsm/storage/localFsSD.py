@@ -66,7 +66,6 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
             raise se.StorageDomainIllegalRemotePath(typeSpecificArg)
 
         fileSD.validateDirAccess(domPath)
-        fileSD.validateFileSystemFeatures(sdUUID, domPath)
 
         sd.validateDomainVersion(version)
 
@@ -95,7 +94,6 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
                 default to sc.HOSTS_4K_1M.
         """
         cls._validate_block_size(block_size, version)
-        alignment = clusterlock.alignment(block_size, max_hosts)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
             raise se.UnicodeArgumentException()
@@ -106,6 +104,12 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
         mntPoint = os.path.join(sc.REPO_MOUNT_DIR, mntPath)
 
         cls._preCreateValidation(sdUUID, mntPoint, remotePath, version)
+
+        storage_block_size = cls._detect_block_size(sdUUID, mntPoint)
+        block_size = cls._validate_storage_block_size(
+            block_size, storage_block_size)
+
+        alignment = clusterlock.alignment(block_size, max_hosts)
 
         domainDir = os.path.join(mntPoint, sdUUID)
         cls._prepareMetadata(domainDir, sdUUID, domainName, domClass,

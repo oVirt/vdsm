@@ -844,12 +844,41 @@ class StorageDomain(object):
 
     @classmethod
     def _validate_block_size(cls, block_size, version):
+        """
+        Validate that block size can be used with this storage domain class.
+        """
         if version < 5:
             if block_size != sc.BLOCK_SIZE_512:
                 raise se.InvalidParameterException('block_size', block_size)
         else:
             if block_size not in cls.supported_block_size:
                 raise se.InvalidParameterException('block_size', block_size)
+
+    @classmethod
+    def _validate_storage_block_size(cls, block_size, storage_block_size):
+        """
+        Validate that block size matches storage block size, returning the
+        block size that should be used with this storage.
+        """
+        # If we cannot detect the storage block size, use the user block size
+        # or fallback to safe default.
+        if storage_block_size == 1:
+            if block_size != sc.BLOCK_SIZE_AUTO:
+                return block_size
+            else:
+                return sc.BLOCK_SIZE_512
+
+        # If we can detect the storage block size and the user does not care
+        # about it, use it.
+        if block_size == sc.BLOCK_SIZE_AUTO:
+            return storage_block_size
+
+        # Otherwise verify that the user block size matches the storage block
+        # size.
+        if block_size == storage_block_size:
+            return block_size
+
+        raise se.StorageDomainBlockSizeMismatch(block_size, storage_block_size)
 
     def _registerResourceNamespaces(self):
         """

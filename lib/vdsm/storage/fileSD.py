@@ -95,25 +95,6 @@ def validateDirAccess(dirPath):
     return True
 
 
-def validateFileSystemFeatures(sdUUID, mountDir):
-    try:
-        # Don't unlink this file, we don't have the cluster lock yet as it
-        # requires direct IO which is what we are trying to test for. This
-        # means that unlinking the file might cause a race. Since we don't
-        # care what the content of the file is, just that we managed to
-        # open it O_DIRECT.
-        testFilePath = os.path.join(mountDir, "__DIRECT_IO_TEST__")
-        oop.getProcessPool(sdUUID).directTouch(testFilePath)
-    except OSError as e:
-        if e.errno == errno.EINVAL:
-            log = logging.getLogger("storage.fileSD")
-            log.error("Underlying file system doesn't support"
-                      "direct IO")
-            raise se.StorageDomainTargetUnsupported()
-
-        raise
-
-
 def getDomUuidFromMetafilePath(metafile):
     # Metafile path has pattern:
     #  /rhev/data-center/mnt/export-path/sdUUID/dom_md/metadata
@@ -396,10 +377,11 @@ class FileStorageDomain(sd.StorageDomain):
     def __init__(self, domainPath):
         manifest = self.manifestClass(domainPath)
 
-        # We perform validation here since filesystem features are relevant to
-        # construction of an actual Storage Domain.  Direct users of
-        # FileStorageDomainManifest should call this explicitly if required.
-        validateFileSystemFeatures(manifest.sdUUID, manifest.mountpoint)
+        storage_block_size = self._detect_block_size(
+            manifest.sdUUID, manifest.mountpoint)
+        self._validate_storage_block_size(
+            manifest.block_size, storage_block_size)
+
         sd.StorageDomain.__init__(self, manifest)
         self.imageGarbageCollector()
         self._registerResourceNamespaces()
@@ -848,6 +830,50 @@ class FileStorageDomain(sd.StorageDomain):
                 # We already logged about this in convert_volume_metadata().
                 continue
             vol.setMetadata(vol_md)
+
+    # Validating file system features
+
+    @classmethod
+    def _detect_block_size(cls, sd_id, mountpoint):
+        """
+        Detect filesystem block size and validate direct I/O usage.
+
+        There is no way to get the underlying storage logical block size, but
+        since direct I/O must be aligned to the logical block size, we can
+        detect the capability by trying to write a file using direct I/O.
+
+        This creates a file __DIRECT_IO_TEST__ in the mountpoint. Removing this
+        file is racy so we leave it.
+
+        Raises:
+            se.StorageDomainTargetUnsupported if direct I/O fails for all
+                supported block sizes.
+            OSError if writing failed because of another error.
+            ioprocess.Timeout if writing to storage timed out.
+
+        Returns:
+            the detected block size (1, 512, 4096)
+        """
+
+        log = logging.getLogger("storage.fileSD")
+        path = os.path.join(mountpoint, "__DIRECT_IO_TEST__")
+        iop = oop.getProcessPool(sd_id)
+
+        for block_size in (1, sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K):
+            log.debug("Trying block size %s", block_size)
+            data = b"\0" * block_size
+            try:
+                iop.writeFile(path, data, direct=True)
+            except OSError as e:
+                if e.errno != errno.EINVAL:
+                    raise
+            else:
+                log.debug("Detected domain %s block size %s",
+                          sd_id, block_size)
+                return block_size
+
+        raise se.StorageDomainTargetUnsupported(
+            "Failed to write to {} using direct I/O".format(path))
 
 
 def _getMountsList(pattern="*"):
