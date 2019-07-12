@@ -1,4 +1,3 @@
-./lib/vdsm/common/commands.py
 ./lib/vdsm/gluster/exception.py
 ./lib/vdsm/gluster/storagedev.py
 ./lib/vdsm/storage/asyncevent.py
