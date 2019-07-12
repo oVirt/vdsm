@@ -299,6 +299,34 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
         assert int(lv.size) == 1024 * dom.alignment
 
 
+@xfail_python3
+@requires_root
+@pytest.mark.root
+@pytest.mark.xfail(reason="not implemented yet")
+def test_create_instance_block_size_mismatch(
+        tmp_storage, tmp_repo, fake_sanlock):
+    sd_uuid = str(uuid.uuid4())
+
+    dev = tmp_storage.create_device(10 * 1024**3)
+    lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_uuid)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_uuid,
+        domainName="test",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=5,
+        storageType=sd.ISCSI_DOMAIN)
+
+    # Change metadata to report the wrong block size for current storage.
+    dom.setMetaParam(sd.DMDK_BLOCK_SIZE, sc.BLOCK_SIZE_4K)
+
+    # Creating a new instance should fail now.
+    with pytest.raises(se.StorageDomainBlockSizeMismatch):
+        blockSD.BlockStorageDomain(sd_uuid)
+
+
 @requires_root
 @xfail_python3
 @pytest.mark.root
