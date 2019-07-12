@@ -44,6 +44,7 @@ from subprocess import list2cmdline
 import six
 
 from vdsm import constants
+from vdsm import utils
 from vdsm.common import errors
 from vdsm.common import commands
 from vdsm.common.compat import subprocess
@@ -1371,27 +1372,47 @@ def removeLVs(vgName, lvNames):
 
 
 def extendLV(vgName, lvName, size_mb):
+    # Since this runs only on the SPM, assume that cached vg and lv metadata
+    # are correct.
+    vg = getVG(vgName)
+    lv = getLV(vgName, lvName)
+    extent_size = int(vg.extent_size)
+
+    # Convert sizes to extents to match lvm behavior.
+    lv_extents = int(lv.size) // extent_size
+    requested_extents = utils.round(
+        size_mb * constants.MEGAB, extent_size) // extent_size
+
+    # Check if lv is large enough before trying to extend it to avoid warnings,
+    # filter invalidation and pointless retries if the lv is already large
+    # enough.
+    if lv_extents >= requested_extents:
+        log.debug("LV %s/%s already extended (extents=%d, requested=%d)",
+                  vgName, lvName, lv_extents, requested_extents)
+        return
+
     log.info("Extending LV %s/%s to %s megabytes", vgName, lvName, size_mb)
     cmd = ("lvextend",) + LVM_NOBACKUP
     cmd += ("--size", "%sm" % (size_mb,), "%s/%s" % (vgName, lvName))
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName,)))
-    if rc != 0:
-        # Since this runs only on the SPM, assume that cached vg and lv
-        # metadata is correct.
-        vg = getVG(vgName)
-        lv = getLV(vgName, lvName)
 
-        # Convert sizes to extents to match lvm behavior.
-        extent_size = int(vg.extent_size)
+    # Invalidate vg and lv to ensure cached metadata is correct if we need to
+    # access it when handling errors.
+    _lvminfo._invalidatevgs(vgName)
+    _lvminfo._invalidatelvs(vgName, lvName)
+
+    if rc != 0:
+        # Reload lv to get updated size.
+        lv = getLV(vgName, lvName)
         lv_extents = int(lv.size) // extent_size
-        requested_size = size_mb * constants.MEGAB
-        requested_extents = (requested_size + extent_size - 1) // extent_size
 
         if lv_extents >= requested_extents:
             log.debug("LV %s/%s already extended (extents=%d, requested=%d)",
                       vgName, lvName, lv_extents, requested_extents)
             return
 
+        # Reload vg to get updated free extents.
+        vg = getVG(vgName)
         needed_extents = requested_extents - lv_extents
         free_extents = int(vg.free_count)
         if free_extents < needed_extents:
@@ -1401,9 +1422,6 @@ def extendLV(vgName, lvName, size_mb):
                 % (vgName, lvName, free_extents, needed_extents))
 
         raise se.LogicalVolumeExtendError(vgName, lvName, "%sm" % (size_mb,))
-
-    _lvminfo._invalidatevgs(vgName)
-    _lvminfo._invalidatelvs(vgName, lvName)
 
 
 def reduceLV(vgName, lvName, size_mb, force=False):

@@ -818,6 +818,22 @@ def test_lv_extend_reduce(tmp_storage):
     lv = lvm.getLV(vg_name, lv_name)
     assert int(lv.size) == 2 * 1024**3
 
+    # Extending LV to same does nothing.
+
+    lvm.extendLV(vg_name, lv_name, 2048)
+
+    lvm.invalidateVG(vg_name)
+    lv = lvm.getLV(vg_name, lv_name)
+    assert int(lv.size) == 2 * 1024**3
+
+    # Extending LV to smaller size does nothing.
+
+    lvm.extendLV(vg_name, lv_name, 1024)
+
+    lvm.invalidateVG(vg_name)
+    lv = lvm.getLV(vg_name, lv_name)
+    assert int(lv.size) == 2 * 1024**3
+
     # Reducing active LV requires force.
     lvm.reduceLV(vg_name, lv_name, 1024, force=True)
     lv = lvm.getLV(vg_name, lv_name)
