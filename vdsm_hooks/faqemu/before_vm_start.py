@@ -20,11 +20,11 @@
 #
 
 from __future__ import absolute_import
+from __future__ import print_function
 
 '''
 To Enable this set fake_kvm_support=true in /etc/vdsm/vdsm.conf.
 '''
-from __future__ import print_function
 from functools import wraps
 import getopt
 import sys
