@@ -186,7 +186,6 @@ def dummy_hook(hooks_dir):
         id="simple XML data"
     ),
 ])
-@pytest.mark.xfail(six.PY3, reason="invalid 'pkgutil' usage")
 def test_rhd_should_handle_xml_data(dummy_hook, hooks_dir, data, expected):
     result = hooks._runHooksDir(data, hooks_dir.basename,
                                 hookType=hooks._DOMXML_HOOK)
@@ -210,7 +209,6 @@ def test_rhd_should_handle_xml_data(dummy_hook, hooks_dir, data, expected):
         id="JSON data with localized chars"
     ),
 ])
-@pytest.mark.xfail(six.PY3, reason="invalid 'pkgutil' usage")
 def test_rhd_should_handle_json_data(dummy_hook, hooks_dir, data, expected):
     result = hooks._runHooksDir(data, hooks_dir.basename,
                                 hookType=hooks._JSON_HOOK)
@@ -237,7 +235,6 @@ def appender_script(script_name, exit_code=0):
         id="single hook"
     ),
 ])
-@pytest.mark.xfail(six.PY3, reason="invalid 'pkgutil' usage")
 def test_rhd_should_run_a_hook(hooks_dir):
     assert hooks._runHooksDir(u"123", hooks_dir.basename) == u"123myhook.sh\n"
 
@@ -252,7 +249,6 @@ def test_rhd_should_run_a_hook(hooks_dir):
         appender_script("3.sh")
     ])
 ])
-@pytest.mark.xfail(six.PY3, reason="invalid 'pkgutil' usage")
 def test_rhd_should_run_hooks_in_order(hooks_dir):
     assert hooks._runHooksDir(u"", hooks_dir.basename) == u"1.sh\n2.sh\n3.sh\n"
 
@@ -278,7 +274,6 @@ def test_rhd_should_run_hooks_in_order(hooks_dir):
         id="fatal hook error, '3.sh' skipped"
     ),
 ])
-@pytest.mark.xfail(six.PY3, reason="invalid 'pkgutil' usage")
 def test_rhd_should_raise_hook_errors(hooks_dir, error):
     with pytest.raises(exception.HookError) as e:
         hooks._runHooksDir(u"", hooks_dir.basename)
@@ -308,7 +303,6 @@ def test_rhd_should_raise_hook_errors(hooks_dir, error):
         id="fatal hook error, '3.sh' skipped"
     ),
 ])
-@pytest.mark.xfail(six.PY3, reason="invalid 'pkgutil' usage")
 def test_rhd_should_handle_hook_errors(hooks_dir, expected):
     assert hooks._runHooksDir(u"", hooks_dir.basename, raiseError=False) == \
         expected
@@ -322,7 +316,6 @@ def test_rhd_should_handle_hook_errors(hooks_dir, expected):
         id="invalid exit code"
     ),
 ])
-@pytest.mark.xfail(six.PY3, reason="invalid 'pkgutil' usage")
 def test_rhd_should_report_invalid_hook_error_codes(caplog, hooks_dir):
     hooks._runHooksDir(u"", hooks_dir.basename, raiseError=False)
 
@@ -339,7 +332,6 @@ def test_rhd_should_report_invalid_hook_error_codes(caplog, hooks_dir):
         id="script writing to stderr"
     ),
 ])
-@pytest.mark.xfail(six.PY3, reason="invalid 'pkgutil' usage")
 def test_rhd_should_report_hook_stderr(caplog, hooks_dir):
     caplog.set_level(logging.INFO)
     hooks._runHooksDir(u"", hooks_dir.basename)
@@ -410,7 +402,6 @@ def env_dump(hooks_dir):
         id="vmconf param override"
     ),
 ])
-@pytest.mark.xfail(six.PY3, reason="invalid 'pkgutil' usage")
 def test_rhd_should_assemble_environment_for_hooks(hooks_dir, env_dump, vmconf,
                                                    params, expected):
     hooks._runHooksDir(u"", hooks_dir.basename, vmconf, params=params)
@@ -444,7 +435,6 @@ def mkstemp_path(monkeypatch, hooks_dir):
         id="JSON hook"
     )
 ])
-@pytest.mark.xfail(six.PY3, reason="invalid 'pkgutil' usage")
 def test_rhd_should_pass_data_file_to_hooks(hooks_dir, env_dump, mkstemp_path,
                                             var_name, hook_type):
     hooks._runHooksDir(None, hooks_dir.basename, hookType=hook_type)
@@ -469,7 +459,6 @@ def hooking_client(hooks_dir):
     yield
 
 
-@pytest.mark.xfail(six.PY3, reason="invalid 'pkgutil' usage")
 def test_rhd_should_make_import_hooking_possible(hooks_dir, hooking_client):
     hooks._runHooksDir(u"", hooks_dir.basename)
 

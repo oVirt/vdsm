@@ -103,7 +103,7 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
         if vmconf.get('vmId'):
             scriptenv['vmId'] = vmconf.get('vmId')
         ppath = scriptenv.get('PYTHONPATH', '')
-        hook = pkgutil.get_loader('vdsm.hook').filename
+        hook = os.path.dirname(pkgutil.get_loader('vdsm.hook').get_filename())
         scriptenv['PYTHONPATH'] = ':'.join(ppath.split(':') + [hook])
         if hookType == _DOMXML_HOOK:
             scriptenv['_hook_domxml'] = data_filename
