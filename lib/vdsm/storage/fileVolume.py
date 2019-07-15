@@ -441,13 +441,13 @@ class FileVolume(volume.Volume):
 
     @classmethod
     def _create_raw_volume(
-            cls, dom, vol_id, size, vol_path, initial_size, preallocate):
+            cls, dom, vol_id, capacity, vol_path, initial_size, preallocate):
         """
         Specific implementation of _create() for RAW volumes.
         All the exceptions are properly handled and logged in volume.create()
         """
         if initial_size is None:
-            alloc_size = size
+            alloc_size = capacity
         else:
             if preallocate == sc.SPARSE_VOL:
                 cls.log.error("initial size is not supported for file-based "
@@ -455,21 +455,21 @@ class FileVolume(volume.Volume):
                 raise se.InvalidParameterException(
                     "initial size", initial_size)
 
-            if initial_size > size:
+            if initial_size > capacity:
                 cls.log.error("initial_size %d out of range 0-%s",
-                              initial_size, size)
+                              initial_size, capacity)
                 raise se.InvalidParameterException(
                     "initial size", initial_size)
 
             alloc_size = initial_size
 
-        cls._truncate_volume(vol_path, size, vol_id, dom)
+        cls._truncate_volume(vol_path, capacity, vol_id, dom)
 
         if preallocate == sc.PREALLOCATED_VOL and alloc_size != 0:
             cls._fallocate_volume(vol_path, alloc_size)
 
-        cls.log.info("Request to create RAW volume %s with size = %s bytes",
-                     vol_path, size)
+        cls.log.info("Request to create RAW volume %s with capacity = %s",
+                     vol_path, capacity)
 
         # Forcing the volume permissions in case one of the tools we use
         # (dd, qemu-img, etc.) will mistakenly change the file permissions.
@@ -479,7 +479,7 @@ class FileVolume(volume.Volume):
 
     @classmethod
     def _create_cow_volume(
-            cls, dom, vol_id, size, vol_path, initial_size, vol_parent,
+            cls, dom, vol_id, capacity, vol_path, initial_size, vol_parent,
             img_id, src_img_id, src_vol_id):
         """
         specific implementation of _create() for COW volumes.
@@ -493,20 +493,20 @@ class FileVolume(volume.Volume):
         cls._truncate_volume(vol_path, 0, vol_id, dom)
 
         if not vol_parent:
-            cls.log.info("Request to create COW volume %s with size = %s "
-                         "bytes", vol_path, size)
+            cls.log.info("Request to create COW volume %s with capacity = %s",
+                         vol_path, capacity)
 
             operation = qemuimg.create(vol_path,
-                                       size=size,
+                                       size=capacity,
                                        format=sc.fmt2str(sc.COW_FORMAT),
                                        qcow2Compat=dom.qcow2_compat())
             operation.run()
         else:
             # Create hardlink to template and its meta file
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s "
-                         "with size %s (bytes)",
-                         img_id, vol_id, src_img_id, src_vol_id, size)
-            size_blk = size // BLOCK_SIZE
+                         "with capacity %s",
+                         img_id, vol_id, src_img_id, src_vol_id, capacity)
+            size_blk = capacity // BLOCK_SIZE
             vol_parent.clone(vol_path, sc.COW_FORMAT, size_blk)
 
         # Forcing the volume permissions in case one of the tools we use
@@ -516,10 +516,10 @@ class FileVolume(volume.Volume):
         return (vol_path,)
 
     @classmethod
-    def _truncate_volume(cls, vol_path, size, vol_id, dom):
+    def _truncate_volume(cls, vol_path, capacity, vol_id, dom):
         try:
             oop.getProcessPool(dom.sdUUID).truncateFile(
-                vol_path, size, mode=sc.FILE_VOLUME_PERMISSIONS,
+                vol_path, capacity, mode=sc.FILE_VOLUME_PERMISSIONS,
                 creatExcl=True)
         except OSError as e:
             if e.errno == errno.EEXIST:
