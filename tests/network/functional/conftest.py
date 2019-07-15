@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,10 +34,10 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope='session', autouse=True)
-def target():
+def target(request):
 
-    target_lib = pytest.config.getoption('--target-lib')
-    target_service = pytest.config.getoption('--target-service')
+    target_lib = request.config.getoption('--target-lib')
+    target_service = request.config.getoption('--target-service')
 
     if target_lib is None and target_service is None:
         target_proxy = Target.SERVICE
