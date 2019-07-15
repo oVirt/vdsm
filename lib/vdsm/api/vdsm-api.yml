@@ -651,6 +651,16 @@ types:
         value-type:
         -   string
 
+    SupportedBlockSizeMap: &SupportedBlockSizeMap
+        added: '4.3.6'
+        description: A mapping from storage domain type name to a list of
+            supported block size.
+        key-type: string
+        name: SupportedBlockSizeMap
+        type: map
+        value-type:
+        -   int
+
     DriveVmPayload: &DriveVmPayload
         added: '3.1'
         description: Directly specified data to be inserted
@@ -7183,11 +7193,10 @@ types:
             added: '4.3'
 
         -   defaultvalue: null
-            description: Block sizes allowed on this host.
-            name: supported_block_sizes
-            type:
-                - int
-            added: '4.3'
+            description: Map of supported block size per storage domain type.
+            name: supported_block_size
+            type: *SupportedBlockSizeMap
+            added: '4.3.6'
 
         type: object
 

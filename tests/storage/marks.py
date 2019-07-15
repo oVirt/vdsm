@@ -29,10 +29,17 @@ import pytest
 
 from vdsm.common import cache
 from vdsm.common import commands
+from vdsm.common import compat
+
+from vdsm.storage.compat import sanlock
 
 
 requires_root = pytest.mark.skipif(
     os.geteuid() != 0, reason="requires root")
+
+requires_sanlock_python3 = pytest.mark.skipif(
+    isinstance(sanlock, compat.MissingModule),
+    reason="requires sanlock for python 3")
 
 xfail_python3 = pytest.mark.xfail(
     six.PY3, reason="needs porting to python 3")
