@@ -190,7 +190,6 @@ def test_write_file_direct_true_unaligned(oop_cleanup, tmpdir):
     assert e.value.errno == errno.EINVAL
 
 
-@pytest.mark.xfail(reason="Need to fix truncateFile() default mode to be 0.")
 def test_truncate_file_default_mode(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.join("file"))

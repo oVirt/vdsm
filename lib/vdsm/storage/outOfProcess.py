@@ -348,7 +348,7 @@ def simpleWalk(ioproc, path):
 
 
 def truncateFile(ioproc, path, size, mode=None, creatExcl=False):
-    ioproc.truncate(path, size, mode, creatExcl)
+    ioproc.truncate(path, size, mode if mode is not None else 0, creatExcl)
     if mode is not None:
         _IOProcessOs(ioproc).chmod(path, mode)
 
