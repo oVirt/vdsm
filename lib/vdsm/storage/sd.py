@@ -1167,6 +1167,9 @@ class StorageDomain(object):
         info['role'] = self.getMetaParam(DMDK_ROLE)
         info['pool'] = self.getPools()
         info['version'] = str(self.getMetaParam(DMDK_VERSION))
+        info['block_size'] = self.block_size
+        info['alignment'] = self.alignment
+
         return info
 
     def getStats(self):
