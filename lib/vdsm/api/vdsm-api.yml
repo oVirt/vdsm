@@ -6180,6 +6180,19 @@ types:
                 metadata for block storage domains (optional)
             name: vgMetadataDevice
             type: string
+
+        -   description: Logical block size in bytes of the underlying storage
+                (512, 4096).
+            name: block_size
+            type: int
+            added: '4.3.6'
+
+        -   description: Size of clusterlock resource in bytes (1048576,
+                2097152, 4194304, 8388608).
+            name: alignment
+            type: int
+            added: '4.3.6'
+
         type: object
 
     StorageDomainStatus: &StorageDomainStatus
