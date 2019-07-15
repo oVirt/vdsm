@@ -1,4 +1,4 @@
-# Copyright 2011-2017 Red Hat, Inc.
+# Copyright 2011-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ from vdsm.common.conv import tobool
 from vdsm.network import cmd
 from vdsm.network import ifacetracking
 from vdsm.network import ipwrapper
+from vdsm.network import py2to3
 from vdsm.network import sysctl
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
@@ -580,10 +581,8 @@ class ConfigWriter(object):
         os.chmod(fileName, 0o664)
 
         try:
-            # filname can be of 'unicode' type. restorecon calls into a C API
-            # that needs a char *. Thus, it is necessary to encode unicode to
-            # a utf-8 string.
-            selinux.restorecon(fileName.encode('utf-8'))
+            # restorecon expects string type
+            selinux.restorecon(py2to3.to_str(fileName))
         except:
             logging.debug('ignoring restorecon error in case '
                           'SElinux is disabled', exc_info=True)
