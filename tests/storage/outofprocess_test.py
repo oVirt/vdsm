@@ -152,7 +152,6 @@ def test_read_lines(oop_cleanup, tmpdir):
     assert iop.readLines(path) == [b"1", b"2", b"3"]
 
 
-@xfail_python3
 def test_write_lines(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.join("file"))
