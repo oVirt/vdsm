@@ -666,19 +666,20 @@ def test_volume_create_cow_sparse_with_parent(
 
 
 @xfail_python3
-@pytest.mark.parametrize("initial_size", [
-    -1,
-    (PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512) + 1
+@pytest.mark.parametrize("initial_size, expected_exception", [
+    # initial size, expected exception
+    [-1, se.InvalidParameterException],
+    [(PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512) + 1, se.VolumeCreationError]
 ])
 def test_volume_create_raw_prealloc_invalid_initial_size(
         tmpdir, tmp_repo, tmp_db, fake_access, fake_task, local_fallocate,
-        fake_rescan, initial_size):
+        fake_rescan, initial_size, expected_exception):
     dom = tmp_repo.create_localfs_domain(name="domain", version=5)
 
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
 
-    with pytest.raises(se.VolumeCreationError):
+    with pytest.raises(expected_exception):
         dom.createVolume(
             imgUUID=img_uuid,
             size_blk=PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512,

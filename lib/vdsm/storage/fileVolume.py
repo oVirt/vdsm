@@ -464,7 +464,7 @@ class FileVolume(volume.Volume):
                 raise se.InvalidParameterException(
                     "initial size", initial_size)
 
-            if initial_size < 0 or initial_size > size:
+            if initial_size > size:
                 cls.log.error("initial_size %d out of range 0-%s",
                               initial_size, size)
                 raise se.InvalidParameterException(
