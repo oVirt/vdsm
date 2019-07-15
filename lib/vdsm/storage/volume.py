@@ -1151,6 +1151,13 @@ class Volume(object):
             'initial_size_blk' - initial volume size in blocks,
                                  in case of thin provisioning
         """
+        # Do the input values validation first.
+        if initial_size_blk is not None:
+            if initial_size_blk < 0:
+                cls.log.error("initial_size %d is negative", initial_size_blk)
+                raise se.InvalidParameterException(
+                    "initial size", initial_size_blk)
+
         dom = sdCache.produce(sdUUID)
         dom.validateCreateVolumeParams(
             volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate)
