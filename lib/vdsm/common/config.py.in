@@ -615,6 +615,13 @@ parameters = [
         ('allowed_replica_counts', '1,3',
             'Only replica 1 and 3 are supported. This configuration is for '
             'development only. Value is comma delimeted.'),
+
+        ('enable_4k_storage', 'false',
+            "Enable support for gluster storage with 4k sector size. When "
+            "set to 'true', storage sector size is detected when creating "
+            "a storage domain. When set to 'false', storage with 4k sector "
+            "size cannot be used. (default false)."),
+
     ]),
 
     # Section: [performance]
