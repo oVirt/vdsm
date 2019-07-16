@@ -53,9 +53,11 @@
 %if %{target_py} == py2
 %global python2_or_python3 python2
 %global python_or_python3 python
+%global python_pyyaml PyYAML
 %else
 %global python2_or_python3 python3
 %global python_or_python3 python3
+%global python_pyyaml python3-pyyaml
 %endif
 
 %if %{target_py} == py3
@@ -417,11 +419,7 @@ Access vdsm API from the command line.
 %package api
 Summary:        VDSM API
 BuildArch:      noarch
-%if %{target_py} == py2
-BuildRequires:  PyYAML
-%else
-BuildRequires:  python3-PyYAML
-%endif
+BuildRequires:  %{python_pyyaml}
 
 %description api
 Contains api schema files
@@ -537,11 +535,9 @@ Requires:       %{name}-common = %{version}-%{release}
 Requires:       %{name}-network = %{version}-%{release}
 Requires:       dracut
 Requires:       %{python_or_python3}-nose
+Requires:       %{python_pyyaml}
 %if %{target_py} == py2
 Requires:       python-ipaddress
-Requires:       PyYAML
-%else
-Requires:       python3-pyyaml
 %endif
 
 %description tests
@@ -797,12 +793,12 @@ Requires: glusterfs-server >= %{gluster_version}
 Requires: glusterfs-api >= %{gluster_version}
 Requires: glusterfs-geo-replication >= %{gluster_version}
 Requires: glusterfs-events >= %{gluster_version}
-Requires: python-magic
-Requires: PyYAML
-%if 0%{?fedora}
-Requires: python-blivet1 >= 1.20.4-1
+Requires: %{python_or_python3}-magic
+Requires: %{python_pyyaml}
+%if 0%{?fedora} && %{target_py} == py2
+Requires: python2-blivet1 >= 1.20.4-1
 %else
-Requires: python-blivet
+Requires: %{python_or_python3}-blivet
 %endif
 Requires: xfsprogs
 %ifarch x86_64
