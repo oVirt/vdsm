@@ -1476,11 +1476,10 @@ class HSM(object):
         dom = sdCache.produce(sdUUID=sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
         misc.validateUUID(volUUID, 'volUUID')
-        size_blk = misc.validateSize(size, "size") // sc.BLOCK_SIZE_512
-        initial_size_blk = None
-        if initialSize:
-            initialSize = misc.validateSize(initialSize, "initialSize")
-            initial_size_blk = initialSize // sc.BLOCK_SIZE_512
+        capacity = misc.validateSize(size, "size")
+        initial_size = None
+        if initialSize is not None:
+            initial_size = misc.validateSize(initialSize, "initialSize")
 
         if srcImgUUID:
             misc.validateUUID(srcImgUUID, 'srcImgUUID')
@@ -1492,9 +1491,8 @@ class HSM(object):
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(spUUID, "createVolume", pool.createVolume, sdUUID,
-                          imgUUID, size_blk, volFormat, preallocate, diskType,
-                          volUUID, desc, srcImgUUID, srcVolUUID,
-                          initial_size_blk)
+                          imgUUID, capacity, volFormat, preallocate, diskType,
+                          volUUID, desc, srcImgUUID, srcVolUUID, initial_size)
 
     @public
     def deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False,

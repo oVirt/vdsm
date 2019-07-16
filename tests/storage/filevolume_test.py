@@ -168,7 +168,7 @@ def test_volume_size_unaligned(monkeypatch, tmpdir, tmp_repo, fake_access,
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size_blk=unaligned_vol_capacity // sc.BLOCK_SIZE_512,
+        capacity=unaligned_vol_capacity,
         volFormat=sc.RAW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType=sc.DATA_DISKTYPE,
