@@ -307,12 +307,12 @@ class TestValidateSize(VdsmTestCase):
 
     @permutations(
         # size, result
-        [("512", 1),
-         ("513", 2),
-         (u"1073741824", 2097152),
+        [("512", 512),
+         ("513", 513),
+         (u"1073741824", 1073741824),
          ])
     def test_valid_size(self, size, result):
-        self.assertEqual(misc.validateSizeBlk(size, "size"), result)
+        self.assertEqual(misc.validateSize(size, "size"), result)
 
     @permutations([
         # size
@@ -325,7 +325,7 @@ class TestValidateSize(VdsmTestCase):
     ])
     def test_invalid_size(self, size):
         self.assertRaises(misc.se.InvalidParameterException,
-                          misc.validateSizeBlk, size, "size")
+                          misc.validateSize, size, "size")
 
 
 class TestValidateUuid(VdsmTestCase):
