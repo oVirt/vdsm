@@ -112,7 +112,6 @@ class Nic(NetDevice):
 
     def __iter__(self):
         yield self
-        raise StopIteration
 
     def __repr__(self):
         return 'Nic(%s)' % self.name
@@ -177,7 +176,7 @@ class Bridge(NetDevice):
     def __iter__(self):
         yield self
         if self.port is None:
-            raise StopIteration
+            return
         for dev in self.port:
             yield dev
 
@@ -221,7 +220,6 @@ class Bond(NetDevice):
         for slave in self.slaves:
             for dev in slave:
                 yield dev
-        raise StopIteration
 
     def __repr__(self):
         return 'Bond(%s: %r)' % (self.name, self.slaves)
