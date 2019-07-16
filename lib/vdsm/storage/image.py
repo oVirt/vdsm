@@ -260,7 +260,7 @@ class Image:
                     # Create fake parent volume
                     destDom.createVolume(
                         imgUUID=volParams['imgUUID'],
-                        size_blk=volParams['capacity'] // sc.BLOCK_SIZE_512,
+                        capacity=volParams['capacity'],
                         volFormat=sc.COW_FORMAT,
                         preallocate=sc.SPARSE_VOL,
                         diskType=volParams['disktype'],
@@ -382,7 +382,7 @@ class Image:
 
                     destDom.createVolume(
                         imgUUID=imgUUID,
-                        size_blk=volParams['capacity'] // sc.BLOCK_SIZE_512,
+                        capacity=volParams['capacity'],
                         volFormat=volParams['volFormat'],
                         preallocate=tmpVolPreallocation,
                         diskType=volParams['disktype'],
@@ -783,9 +783,13 @@ class Image:
                                   "overwriting", dstImgUUID, dstSdUUID)
                     _deleteImage(destDom, dstImgUUID, postZero, discard)
 
+                initial_size = None
+                if initialSizeBlk is not None:
+                    initial_size = initialSizeBlk * sc.BLOCK_SIZE_512
+
                 destDom.createVolume(
                     imgUUID=dstImgUUID,
-                    size_blk=volParams['capacity'] // sc.BLOCK_SIZE_512,
+                    capacity=volParams['capacity'],
                     volFormat=dstVolFormat,
                     preallocate=volParams['prealloc'],
                     diskType=volParams['disktype'],
@@ -793,7 +797,7 @@ class Image:
                     desc=descr,
                     srcImgUUID=sc.BLANK_UUID,
                     srcVolUUID=sc.BLANK_UUID,
-                    initial_size_blk=initialSizeBlk)
+                    initial_size=initial_size)
 
                 dstVol = sdCache.produce(dstSdUUID).produceVolume(
                     imgUUID=dstImgUUID, volUUID=dstVolUUID)
@@ -1059,7 +1063,7 @@ class Image:
         newUUID = str(uuid.uuid4())
         sdDom.createVolume(
             imgUUID=srcVolParams['imgUUID'],
-            size_blk=volParams['capacity'] // sc.BLOCK_SIZE_512,
+            capacity=volParams['capacity'],
             volFormat=volParams['volFormat'],
             preallocate=sc.SPARSE_VOL,
             diskType=volParams['disktype'],
@@ -1130,7 +1134,7 @@ class Image:
             newUUID = srcVol.volUUID + "_MERGE"
             sdDom.createVolume(
                 imgUUID=srcVolParams['imgUUID'],
-                size_blk=srcVolParams['capacity'] // sc.BLOCK_SIZE_512,
+                capacity=srcVolParams['capacity'],
                 volFormat=volParams['volFormat'],
                 preallocate=volParams['prealloc'],
                 diskType=volParams['disktype'],

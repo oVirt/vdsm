@@ -357,7 +357,6 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
     vol_capacity = 10 * 1024**3
-    vol_size_blk = vol_capacity // sc.BLOCK_SIZE_512
     vol_desc = "Test volume"
 
     # Create domain directory structure.
@@ -369,7 +368,7 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
         mc.setattr(time, "time", lambda: 1550522547)
         dom.createVolume(
             imgUUID=img_uuid,
-            size_blk=vol_size_blk,
+            capacity=vol_capacity,
             volFormat=sc.COW_FORMAT,
             preallocate=sc.SPARSE_VOL,
             diskType=sc.DATA_DISKTYPE,
@@ -494,7 +493,7 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
         diskType="DATA",
         imgUUID=img_uuid,
         preallocate=sc.SPARSE_VOL,
-        size_blk=(10 * 1024 ** 3) // sc.BLOCK_SIZE_512,
+        capacity=10 * 1024 ** 3,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
@@ -582,15 +581,14 @@ def test_create_snapshot_size(
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size_blk=parent_vol_capacity // sc.BLOCK_SIZE_512,
+        capacity=parent_vol_capacity,
         volFormat=sc.RAW_FORMAT,
         preallocate=sc.PREALLOCATED_VOL,
         diskType='DATA',
         volUUID=parent_vol_uuid,
         desc="Test parent volume",
         srcImgUUID=sc.BLANK_UUID,
-        srcVolUUID=sc.BLANK_UUID,
-        initial_size_blk=None)
+        srcVolUUID=sc.BLANK_UUID)
 
     parent_vol = dom.produceVolume(img_uuid, parent_vol_uuid)
 
@@ -600,8 +598,7 @@ def test_create_snapshot_size(
     with pytest.raises(se.InvalidParameterException):
         dom.createVolume(
             imgUUID=img_uuid,
-            size_blk=((parent_vol.getCapacity() - sc.BLOCK_SIZE_4K) //
-                      sc.BLOCK_SIZE_512),
+            capacity=parent_vol.getCapacity() - sc.BLOCK_SIZE_4K,
             volFormat=sc.COW_FORMAT,
             preallocate=sc.SPARSE_VOL,
             diskType='DATA',
@@ -614,7 +611,7 @@ def test_create_snapshot_size(
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size_blk=vol_capacity // sc.BLOCK_SIZE_512,
+        capacity=vol_capacity,
         volFormat=sc.COW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType='DATA',

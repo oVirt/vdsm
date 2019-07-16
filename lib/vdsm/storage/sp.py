@@ -1934,10 +1934,10 @@ class StoragePool(object):
 
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             newVolUUID = sdCache.produce(sdUUID).createVolume(
-                imgUUID=imgUUID, size_blk=size, volFormat=volFormat,
+                imgUUID=imgUUID, capacity=size, volFormat=volFormat,
                 preallocate=preallocate, diskType=diskType, volUUID=volUUID,
                 desc=desc, srcImgUUID=srcImgUUID, srcVolUUID=srcVolUUID,
-                initial_size_blk=initialSize)
+                initial_size=initialSize)
         return dict(uuid=newVolUUID)
 
     def deleteVolume(self, sdUUID, imgUUID, volumes, postZero, force, discard):

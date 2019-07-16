@@ -918,18 +918,12 @@ class StorageDomain(object):
         return cls.manifestClass.validateCreateVolumeParams(
             volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate)
 
-    def createVolume(self, imgUUID, size_blk, volFormat, preallocate, diskType,
+    def createVolume(self, imgUUID, capacity, volFormat, preallocate, diskType,
                      volUUID, desc, srcImgUUID, srcVolUUID,
-                     initial_size_blk=None):
+                     initial_size=None):
         """
         Create a new volume
         """
-        capacity = size_blk * sc.BLOCK_SIZE_512
-        if initial_size_blk is None:
-            initial_size = None
-        else:
-            initial_size = initial_size_blk * sc.BLOCK_SIZE_512
-
         return self.getVolumeClass().create(
             self._getRepoPath(), self.sdUUID, imgUUID, capacity, volFormat,
             preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID,

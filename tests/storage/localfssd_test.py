@@ -275,14 +275,13 @@ def test_volume_life_cycle(monkeypatch, tmpdir, tmp_repo, fake_access,
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
     vol_capacity = 10 * 1024**3
-    vol_size_blk = vol_capacity // sc.BLOCK_SIZE_512
     vol_desc = "Test volume"
 
     with monkeypatch.context() as mc:
         mc.setattr(time, "time", lambda: 1550522547)
         dom.createVolume(
             imgUUID=img_uuid,
-            size_blk=vol_size_blk,
+            capacity=vol_capacity,
             volFormat=sc.COW_FORMAT,
             preallocate=sc.SPARSE_VOL,
             diskType=sc.DATA_DISKTYPE,
@@ -356,7 +355,7 @@ def test_volume_metadata(tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
         diskType=sc.DATA_DISKTYPE,
         imgUUID=img_uuid,
         preallocate=sc.SPARSE_VOL,
-        size_blk=10 * 1024 ** 3 // sc.BLOCK_SIZE_512,
+        capacity=10 * 1024 ** 3,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
@@ -400,7 +399,7 @@ def test_volume_create_raw_prealloc(
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size_blk=PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512,
+        capacity=PREALLOCATED_VOL_SIZE,
         volFormat=sc.RAW_FORMAT,
         preallocate=sc.PREALLOCATED_VOL,
         diskType='DATA',
@@ -446,7 +445,7 @@ def test_volume_create_raw_prealloc_with_initial_size(
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size_blk=PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512,
+        capacity=PREALLOCATED_VOL_SIZE,
         volFormat=sc.RAW_FORMAT,
         preallocate=sc.PREALLOCATED_VOL,
         diskType='DATA',
@@ -454,7 +453,7 @@ def test_volume_create_raw_prealloc_with_initial_size(
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
-        initial_size_blk=initial_size // sc.BLOCK_SIZE_512)
+        initial_size=initial_size)
 
     vol = dom.produceVolume(img_uuid, vol_uuid)
 
@@ -498,7 +497,7 @@ def test_volume_create_initial_size_not_supported(
     with pytest.raises(se.VolumeCreationError):
         dom.createVolume(
             imgUUID=img_uuid,
-            size_blk=SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+            capacity=SPARSE_VOL_SIZE,
             volFormat=vol_format,
             preallocate=prealloc,
             diskType='DATA',
@@ -506,7 +505,7 @@ def test_volume_create_initial_size_not_supported(
             desc="Test volume",
             srcImgUUID=sc.BLANK_UUID,
             srcVolUUID=sc.BLANK_UUID,
-            initial_size_blk=INITIAL_VOL_SIZE // sc.BLOCK_SIZE_512)
+            initial_size=INITIAL_VOL_SIZE)
 
 
 @xfail_python3
@@ -521,7 +520,7 @@ def test_volume_create_raw_sparse(
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size_blk=SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        capacity=SPARSE_VOL_SIZE,
         volFormat=sc.RAW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType='DATA',
@@ -566,7 +565,7 @@ def test_volume_create_cow_sparse(
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size_blk=SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        capacity=SPARSE_VOL_SIZE,
         volFormat=sc.COW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType='DATA',
@@ -615,7 +614,7 @@ def test_volume_create_cow_sparse_with_parent(
 
     dom.createVolume(
         imgUUID=parent_img_uuid,
-        size_blk=SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        capacity=SPARSE_VOL_SIZE,
         volFormat=sc.RAW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType='DATA',
@@ -631,7 +630,7 @@ def test_volume_create_cow_sparse_with_parent(
 
     dom.createVolume(
         imgUUID=parent_img_uuid,
-        size_blk=SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        capacity=SPARSE_VOL_SIZE,
         volFormat=sc.COW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType='DATA',
@@ -672,7 +671,7 @@ def test_volume_create_cow_sparse_with_parent(
 @pytest.mark.parametrize("initial_size, expected_exception", [
     # initial size, expected exception
     [-1, se.InvalidParameterException],
-    [(PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512) + 1, se.VolumeCreationError]
+    [PREALLOCATED_VOL_SIZE + 1, se.VolumeCreationError]
 ])
 def test_volume_create_raw_prealloc_invalid_initial_size(
         tmpdir, tmp_repo, tmp_db, fake_access, fake_task, local_fallocate,
@@ -685,7 +684,7 @@ def test_volume_create_raw_prealloc_invalid_initial_size(
     with pytest.raises(expected_exception):
         dom.createVolume(
             imgUUID=img_uuid,
-            size_blk=PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512,
+            capacity=PREALLOCATED_VOL_SIZE,
             volFormat=sc.RAW_FORMAT,
             preallocate=sc.PREALLOCATED_VOL,
             diskType='DATA',
@@ -693,7 +692,7 @@ def test_volume_create_raw_prealloc_invalid_initial_size(
             desc="Test volume",
             srcImgUUID=sc.BLANK_UUID,
             srcVolUUID=sc.BLANK_UUID,
-            initial_size_blk=initial_size)
+            initial_size=initial_size)
 
 
 @xfail_python3
@@ -713,7 +712,7 @@ def test_create_snapshot_size(
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size_blk=parent_vol_capacity // sc.BLOCK_SIZE_512,
+        capacity=parent_vol_capacity,
         volFormat=sc.RAW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType='DATA',
@@ -730,8 +729,7 @@ def test_create_snapshot_size(
     with pytest.raises(se.InvalidParameterException):
         dom.createVolume(
             imgUUID=img_uuid,
-            size_blk=((parent_vol.getCapacity() - sc.BLOCK_SIZE_4K) //
-                      sc.BLOCK_SIZE_512),
+            capacity=parent_vol.getCapacity() - sc.BLOCK_SIZE_4K,
             volFormat=sc.COW_FORMAT,
             preallocate=sc.SPARSE_VOL,
             diskType='DATA',
@@ -744,7 +742,7 @@ def test_create_snapshot_size(
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size_blk=2 * SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        capacity=2 * SPARSE_VOL_SIZE,
         volFormat=sc.COW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType='DATA',
@@ -777,7 +775,7 @@ def test_volume_metadata_capacity_corrupted(
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size_blk=2 * SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        capacity=2 * SPARSE_VOL_SIZE,
         volFormat=sc.COW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType='DATA',
@@ -811,7 +809,7 @@ def test_volume_sync_metadata(
 
     dom.createVolume(
         imgUUID=img_uuid,
-        size_blk=2 * SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        capacity=2 * SPARSE_VOL_SIZE,
         volFormat=sc.RAW_FORMAT,
         preallocate=sc.SPARSE_VOL,
         diskType='DATA',
