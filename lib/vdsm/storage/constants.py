@@ -52,9 +52,15 @@ METADATA_SIZE = BLOCK_SIZE
 # Supported block sizes in bytes
 BLOCK_SIZE_512 = 512
 BLOCK_SIZE_4K = 4096
+
 # Vdsm will detect the underlying storage block size if the storage domain
 # supports this.
 BLOCK_SIZE_AUTO = 0
+
+# This value is not supported as user input, but it may be returned when
+# detecting underlying storage block size, meaning that the underlying
+# storage does not enforce minimal block size for direct I/O.
+BLOCK_SIZE_NONE = 1
 
 # sanlock possible alignment values, that set a lockspace size
 # In combination with a block size (see above)

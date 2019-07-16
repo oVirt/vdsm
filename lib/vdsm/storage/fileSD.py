@@ -859,7 +859,8 @@ class FileStorageDomain(sd.StorageDomain):
         path = os.path.join(mountpoint, "__DIRECT_IO_TEST__")
         iop = oop.getProcessPool(sd_id)
 
-        for block_size in (1, sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K):
+        for block_size in (
+                sc.BLOCK_SIZE_NONE, sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K):
             log.debug("Trying block size %s", block_size)
             data = b"\0" * block_size
             try:

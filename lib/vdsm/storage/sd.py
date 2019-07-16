@@ -862,7 +862,7 @@ class StorageDomain(object):
         """
         # If we cannot detect the storage block size, use the user block size
         # or fallback to safe default.
-        if storage_block_size == 1:
+        if storage_block_size == sc.BLOCK_SIZE_NONE:
             if block_size != sc.BLOCK_SIZE_AUTO:
                 return block_size
             else:
