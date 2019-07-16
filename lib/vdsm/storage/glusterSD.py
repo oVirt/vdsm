@@ -22,6 +22,8 @@ from __future__ import absolute_import
 
 import os
 
+from vdsm.common.config import config
+
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileSD
@@ -32,6 +34,10 @@ from vdsm.storage import sd
 
 
 class GlusterStorageDomain(nfsSD.NfsStorageDomain):
+
+    if config.getboolean("gluster", "enable_4k_storage"):
+        supported_block_size = (
+            sc.BLOCK_SIZE_AUTO, sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K)
 
     @classmethod
     def getMountPoint(cls, mountPath):
