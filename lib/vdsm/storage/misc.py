@@ -53,7 +53,6 @@ from vdsm.common import logutils
 from vdsm.common import proc
 
 from vdsm.storage import exception as se
-from vdsm.storage.constants import BLOCK_SIZE
 
 IOUSER = "vdsm"
 DIRECTFLAG = "direct"
@@ -235,20 +234,18 @@ def validateN(number, name):
     return n
 
 
-def validateSizeBlk(size, name):
+def validateSize(capacity, name):
     """
-    Validate number of bytes as string and convert to number of blocks,
-    rounding up to next blocks.
+    Validate number of bytes as string.
 
     Raises InvalidParameterException if value is not a string or if it could
     not be converted to integer.
     """
-    if not isinstance(size, basestring):
+    if not isinstance(capacity, basestring):
         log.error("Number of blocks as int is not supported, use size in "
                   "bytes as string")
-        raise se.InvalidParameterException("size", size)
-    size = validateN(size, name)
-    return (size + BLOCK_SIZE - 1) / BLOCK_SIZE
+        raise se.InvalidParameterException(name, capacity)
+    return validateN(capacity, name)
 
 
 def parseHumanReadableSize(size):

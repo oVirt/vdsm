@@ -1447,10 +1447,11 @@ class HSM(object):
         dom = sdCache.produce(sdUUID=sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
         misc.validateUUID(volUUID, 'volUUID')
-        size_blk = misc.validateSizeBlk(size, "size")
+        size_blk = misc.validateSize(size, "size") // sc.BLOCK_SIZE_512
         initial_size_blk = None
         if initialSize:
-            initial_size_blk = misc.validateSizeBlk(initialSize, "initialSize")
+            initialSize = misc.validateSize(initialSize, "initialSize")
+            initial_size_blk = initialSize // sc.BLOCK_SIZE_512
 
         if srcImgUUID:
             misc.validateUUID(srcImgUUID, 'srcImgUUID')
