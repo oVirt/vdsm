@@ -315,12 +315,6 @@ class _IOProcessUtils(object):
                 raise
 
 
-# TODO: to be removed after it's only usage (in fileSD.py) is removed
-def directTouch(ioproc, path, mode=0o777):
-    flags = os.O_CREAT | os.O_DIRECT
-    ioproc.touch(path, flags, mode)
-
-
 def readLines(ioproc, path):
     return ioproc.readlines(path)
 
@@ -367,7 +361,6 @@ class _IOProcWrapper(types.ModuleType):
         self.writeLines = partial(writeLines, ioproc)
         self.writeFile = partial(writeFile, ioproc)
         self.simpleWalk = partial(simpleWalk, ioproc)
-        self.directTouch = partial(directTouch, ioproc)
         self.truncateFile = partial(truncateFile, ioproc)
 
     def readFile(self, path, direct=False):
