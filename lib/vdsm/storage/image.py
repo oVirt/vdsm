@@ -107,7 +107,7 @@ class Image:
         randomStr = misc.randomStr(RENAME_RANDOM_STRING_LEN)
         return "%s%s_%s" % (sc.REMOVED_IMAGE_PREFIX, randomStr, uuid)
 
-    def estimate_qcow2_size_blk(self, src_vol_params, dst_sd_id):
+    def estimate_qcow2_size(self, src_vol_params, dst_sd_id):
         """
         Calculate volume allocation size for converting raw/qcow2
         source volume to qcow2 volume on destination storage domain.
@@ -118,7 +118,7 @@ class Image:
             dst_sd_id(str) : Destination volume storage domain id
 
         Returns:
-            Volume allocation in blocks
+            Volume allocation in bytes
         """
         # measure required size.
         qemu_measure = qemuimg.measure(
@@ -130,17 +130,17 @@ class Image:
         # when a vm is started.
         chunk_size_mb = config.getint("irs", "volume_utilization_chunk_mb")
         chunk_size = chunk_size_mb * constants.MEGAB
-        size_blk = (qemu_measure["required"] + chunk_size) // sc.BLOCK_SIZE
+        required = (qemu_measure["required"] + chunk_size)
         # Limit estimates size by maximum size.
         vol_class = sdCache.produce(dst_sd_id).getVolumeClass()
         max_size = vol_class.max_size(src_vol_params['capacity'],
                                       sc.COW_FORMAT)
-        size_blk = min(size_blk, max_size // sc.BLOCK_SIZE)
+        allocation = min(required, max_size)
 
-        # Return estimated size of allocation blocks.
+        # Return estimated size of allocation.
         self.log.debug("Estimated allocation for qcow2 volume:"
-                       "%d blocks", size_blk)
-        return size_blk
+                       "%d", allocation)
+        return allocation
 
     def estimateChainSizeBlk(self, sdUUID, imgUUID, volUUID, size):
         """
@@ -931,12 +931,13 @@ class Image:
                     # source 'cow' without parent.
                     # Use estimate for supporting compressed source images, for
                     # example, uploaded compressed qcow2 appliance.
-                    return self.estimate_qcow2_size_blk(
-                        src_vol_params, dst_sd_id)
+                    return (self.estimate_qcow2_size(
+                        src_vol_params, dst_sd_id) // sc.BLOCK_SIZE_512)
             else:
                 # source 'raw'.
                 # Add additional space for qcow2 metadata.
-                return self.estimate_qcow2_size_blk(src_vol_params, dst_sd_id)
+                return (self.estimate_qcow2_size(src_vol_params, dst_sd_id) //
+                        sc.BLOCK_SIZE_512)
 
     def markIllegalSubChain(self, sdDom, imgUUID, chain):
         """
