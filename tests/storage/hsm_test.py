@@ -85,7 +85,7 @@ class TestVerifyUntrustedVolume(object):
         with self.fake_volume(vol_fmt) as vol:
             op = qemuimg.create(
                 vol.volumePath,
-                size=self.SIZE + sc.BLOCK_SIZE,
+                size=self.SIZE + sc.BLOCK_SIZE_4K,
                 format=qemu_fmt)
             op.run()
             h = FakeHSM()
@@ -104,7 +104,7 @@ class TestVerifyUntrustedVolume(object):
         with self.fake_volume(vol_fmt) as vol:
             op = qemuimg.create(
                 vol.volumePath,
-                size=self.SIZE - sc.BLOCK_SIZE,
+                size=self.SIZE - sc.BLOCK_SIZE_4K,
                 format=qemu_fmt)
             op.run()
             h = FakeHSM()
