@@ -142,7 +142,7 @@ class Image:
                        "%d", allocation)
         return allocation
 
-    def estimateChainSizeBlk(self, sdUUID, imgUUID, volUUID, size):
+    def estimateChainSize(self, sdUUID, imgUUID, volUUID, capacity):
         """
         Compute an estimate of the whole chain size
         using the sum of the actual size of the chain's volumes
@@ -151,17 +151,17 @@ class Image:
         log_str = logutils.volume_chain_to_str(vol.volUUID for vol in chain)
         self.log.info("chain=%s ", log_str)
 
-        new_size_blk = 0
+        chain_allocation = 0
         template = chain[0].getParentVolume()
         if template:
-            new_size_blk = template.getVolumeSize() // sc.BLOCK_SIZE_512
+            chain_allocation = template.getVolumeSize()
         for vol in chain:
-            new_size_blk += vol.getVolumeSize() // sc.BLOCK_SIZE_512
-        if new_size_blk > size:
-            new_size_blk = size
+            chain_allocation += vol.getVolumeSize()
+        if chain_allocation > capacity:
+            chain_allocation = capacity
         # allocate %10 more for cow metadata
-        new_size_blk = int(new_size_blk * sc.COW_OVERHEAD)
-        return new_size_blk
+        chain_allocation = int(chain_allocation * sc.COW_OVERHEAD)
+        return chain_allocation
 
     def getChain(self, sdUUID, imgUUID, volUUID=None):
         """
@@ -922,11 +922,11 @@ class Image:
                     # Using estimated size of the chain.
                     if src_vol_params['prealloc'] != sc.SPARSE_VOL:
                         raise se.IncorrectFormat(self)
-                    return self.estimateChainSizeBlk(
+                    return self.estimateChainSize(
                         src_sd_id,
                         src_vol_params['imgUUID'],
                         src_vol_params['volUUID'],
-                        src_vol_params['capacity'] // sc.BLOCK_SIZE_512)
+                        src_vol_params['capacity']) // sc.BLOCK_SIZE_512
                 else:
                     # source 'cow' without parent.
                     # Use estimate for supporting compressed source images, for
