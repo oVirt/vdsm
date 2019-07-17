@@ -196,7 +196,7 @@ def _update_base_capacity(base_vol, top_vol):
         # extendSize can run on only SPM so only StorageDomain implement it.
         dom = sdCache.produce(base_vol.sdUUID)
         vol = dom.produceVolume(base_vol.imgUUID, base_vol.volUUID)
-        vol.extendSize(top_capacity // sc.BLOCK_SIZE_512)
+        vol.extendSize(top_capacity)
     else:
         log.info("Updating base capacity, setting size in metadata to "
                  "%d for cow base volume", top_capacity)

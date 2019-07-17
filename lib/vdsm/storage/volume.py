@@ -1331,7 +1331,7 @@ class Volume(object):
         sdCache.produce(sdUUID) \
                .produceVolume(imgUUID, volUUID).syncMetadata()
 
-    def extendSize(self, newSize):
+    def extendSize(self, new_capacity):
         """
         Extend the size (virtual disk size seen by the guest) of the volume.
         """
@@ -1341,7 +1341,7 @@ class Volume(object):
         volFormat = self.getFormat()
         if volFormat == sc.COW_FORMAT:
             self.log.debug("skipping cow size extension for volume %s to "
-                           "size %s", self.volUUID, newSize)
+                           "capacity %s", self.volUUID, new_capacity)
             return
         elif volFormat != sc.RAW_FORMAT:
             raise se.IncorrectFormat(self.volUUID)
@@ -1354,27 +1354,27 @@ class Volume(object):
         if not (isBase or self.isLeaf()):
             raise se.VolumeNonWritable(self.volUUID)
 
-        cur_raw_size_blk = self.getVolumeSize() // sc.BLOCK_SIZE_512
+        cur_raw_capacity = self.getVolumeSize()
 
-        if (newSize < cur_raw_size_blk):
-            self.log.error("current size of volume %s is larger than the "
-                           "size requested in the extension (%s > %s)",
-                           self.volUUID, cur_raw_size_blk, newSize)
-            raise se.VolumeResizeValueError(newSize)
+        if new_capacity < cur_raw_capacity:
+            self.log.error("current capacity of volume %s is larger than the "
+                           "capacity requested in the extension (%s > %s)",
+                           self.volUUID, cur_raw_capacity, new_capacity)
+            raise se.VolumeResizeValueError(new_capacity)
 
-        if (newSize == cur_raw_size_blk):
-            self.log.debug("the requested size %s is equal to the current "
-                           "size %s, skipping extension", newSize,
-                           cur_raw_size_blk)
+        if new_capacity == cur_raw_capacity:
+            self.log.debug("the requested capacity %s is equal to the current "
+                           "capacity %s, skipping extension", new_capacity,
+                           cur_raw_capacity)
         else:
-            self.log.info("executing a raw size extension for volume %s "
-                          "from size %s to size %s", self.volUUID,
-                          cur_raw_size_blk, newSize)
+            self.log.info("executing a raw capacity extension for volume %s "
+                          "from capacity %s to capacity %s", self.volUUID,
+                          cur_raw_capacity, new_capacity)
             vars.task.pushRecovery(task.Recovery(
                 "Extend size for volume: " + self.volUUID, "volume",
                 "Volume", "extendSizeFinalize",
                 [self.sdUUID, self.imgUUID, self.volUUID]))
-            self._extendSizeRaw(newSize)
+            self._extendSizeRaw(new_capacity)
 
         self.syncMetadata()  # update the metadata
 

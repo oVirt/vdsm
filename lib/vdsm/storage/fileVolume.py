@@ -691,34 +691,33 @@ class FileVolume(volume.Volume):
         # pylint: disable=no-member
         return self._manifest.getLeaseVolumePath(vol_path)
 
-    def _extendSizeRaw(self, new_size_blk):
+    def _extendSizeRaw(self, new_capacity):
         volPath = self.getVolumePath()
-        curSizeBytes = self.oop.os.stat(volPath).st_size
-        newSizeBytes = new_size_blk * BLOCK_SIZE
+        cur_capacity = self.oop.os.stat(volPath).st_size
 
         # No real sanity checks here, they should be included in the calling
         # function/method. We just validate the sizes to be consistent since
         # they're computed and used in the pre-allocated case.
-        if newSizeBytes == curSizeBytes:
+        if new_capacity == cur_capacity:
             return  # Nothing to do
-        elif curSizeBytes <= 0:
+        elif cur_capacity <= 0:
             raise se.StorageException(
-                "Volume size is impossible: %s" % curSizeBytes)
-        elif newSizeBytes < curSizeBytes:
-            raise se.VolumeResizeValueError(new_size_blk)
+                "Volume capacity is impossible: %s" % cur_capacity)
+        elif new_capacity < cur_capacity:
+            raise se.VolumeResizeValueError(new_capacity)
 
         if self.getType() == sc.PREALLOCATED_VOL:
-            self.log.info("Preallocating volume %s to %s bytes",
-                          volPath, newSizeBytes)
+            self.log.info("Preallocating volume %s to %s",
+                          volPath, new_capacity)
             operation = fallocate.allocate(volPath,
-                                           newSizeBytes - curSizeBytes,
-                                           curSizeBytes)
+                                           new_capacity - cur_capacity,
+                                           cur_capacity)
             with vars.task.abort_callback(operation.abort):
                 with utils.stopwatch("Preallocating volume %s" % volPath):
                     operation.run()
         else:
             # for sparse files we can just truncate to the correct size
             # also good fallback for failed preallocation
-            self.log.info("Truncating volume %s to %s bytes",
-                          volPath, newSizeBytes)
-            self.oop.truncateFile(volPath, newSizeBytes)
+            self.log.info("Truncating volume %s to %s",
+                          volPath, new_capacity)
+            self.oop.truncateFile(volPath, new_capacity)
