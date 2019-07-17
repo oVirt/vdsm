@@ -1200,17 +1200,16 @@ class Image:
         but this file should probably removed.
         """
         chain = []
-        accumulated_chain_size_blk = 0
+        accumulated_chain_size = 0
         endVolName = vols[ancestor].getParent()  # TemplateVolName or None
         currVolName = successor
         while (currVolName != endVolName):
             chain.insert(0, currVolName)
-            vol_size_blk = (vols[currVolName].getVolumeSize() //
-                            sc.BLOCK_SIZE_512)
-            accumulated_chain_size_blk += vol_size_blk
+            vol_size = vols[currVolName].getVolumeSize()
+            accumulated_chain_size += vol_size
             currVolName = vols[currVolName].getParent()
 
-        return accumulated_chain_size_blk, chain
+        return accumulated_chain_size, chain
 
     def syncVolumeChain(self, sdUUID, imgUUID, volUUID, actualChain):
         """
@@ -1321,8 +1320,7 @@ class Image:
         else:
             volParams = dstVol.getVolumeParams()
 
-        acc_size_blk, chain = self.subChainSizeCalc(ancestor, successor, vols)
-        acc_size = acc_size_blk * sc.BLOCK_SIZE_512
+        acc_size, chain = self.subChainSizeCalc(ancestor, successor, vols)
         # allocate %10 more for cow metadata
         reqSize = min(acc_size, volParams['capacity']) * sc.COW_OVERHEAD
         try:
