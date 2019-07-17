@@ -215,7 +215,7 @@ class TestNormalizePath(VdsmTestCase):
 @pytest.mark.parametrize("orig_size, expected_size", [
     (4096 - 1, 4096),
     (4096, 4096),
-    (4096 + 1, 4096 + sc.BLOCK_SIZE),
+    (4096 + 1, 4096 + sc.BLOCK_SIZE_4K),
 ])
 def test_pad_to_block_size(tmpdir, orig_size, expected_size):
     path = str(tmpdir.join("file"))
