@@ -171,24 +171,24 @@ class TestEstimateQcow2Size:
 
     @pytest.mark.parametrize("storage,format,prealloc,estimate,expected", [
         # File raw preallocated, avoid prealocation.
-        ("file", sc.RAW_FORMAT, sc.PREALLOCATED_VOL, 20971520, 0),
+        ("file", sc.RAW_FORMAT, sc.PREALLOCATED_VOL, 10 * GIB, 0),
 
         # File - anything else no initial size.
-        ("file", sc.RAW_FORMAT, sc.SPARSE_VOL, 20971520, None),
-        ("file", sc.COW_FORMAT, sc.SPARSE_VOL, 20971520, None),
-        ("file", sc.COW_FORMAT, sc.PREALLOCATED_VOL, 20971520, None),
+        ("file", sc.RAW_FORMAT, sc.SPARSE_VOL, 10 * GIB, None),
+        ("file", sc.COW_FORMAT, sc.SPARSE_VOL, 10 * GIB, None),
+        ("file", sc.COW_FORMAT, sc.PREALLOCATED_VOL, 10 * GIB, None),
 
         # Block qcow2 thin, return estimate.
-        ("block", sc.COW_FORMAT, sc.SPARSE_VOL, 20971520, 20971520),
+        ("block", sc.COW_FORMAT, sc.SPARSE_VOL, 10 * GIB, 10 * GIB),
 
         # Block - anything else no initial size.
-        ("block", sc.COW_FORMAT, sc.PREALLOCATED_VOL, 20971520, None),
-        ("block", sc.RAW_FORMAT, sc.PREALLOCATED_VOL, 20971520, None),
+        ("block", sc.COW_FORMAT, sc.PREALLOCATED_VOL, 10 * GIB, None),
+        ("block", sc.RAW_FORMAT, sc.PREALLOCATED_VOL, 10 * GIB, None),
     ])
     def test_calculate_initial_size_blk_file_raw_prealloc(
             self, storage, format, prealloc, estimate, expected):
         img = image.Image("/path")
-        initial_size_blk = img.calculate_initial_size_blk(
+        initial_size = img.calculate_initial_size(
             storage == "file", format, prealloc, estimate)
 
-        assert initial_size_blk == expected
+        assert initial_size == expected

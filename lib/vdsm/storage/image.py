@@ -744,32 +744,31 @@ class Image:
                     dstVolFormat = volParams['volFormat']
 
                 # TODO: This is needed only when copying to qcow2-thin volume
-                # on block storage. Move into calculate_initial_size_blk.
-                dstVolAllocBlk = (self.calculate_vol_alloc(
-                    sdUUID, volParams, dstSdUUID, dstVolFormat) //
-                    sc.BLOCK_SIZE_512)
+                # on block storage. Move into calculate_initial_size.
+                dst_vol_allocation = self.calculate_vol_alloc(
+                    sdUUID, volParams, dstSdUUID, dstVolFormat)
 
                 # Find out dest volume parameters
                 if preallocate in [sc.PREALLOCATED_VOL, sc.SPARSE_VOL]:
                     volParams['prealloc'] = preallocate
 
-                initialSizeBlk = self.calculate_initial_size_blk(
+                initial_size = self.calculate_initial_size(
                     destDom.supportsSparseness,
                     dstVolFormat,
                     volParams['prealloc'],
-                    dstVolAllocBlk)
+                    dst_vol_allocation)
 
                 self.log.info(
-                    "Copy source %s:%s:%s to destination %s:%s:%s size=%s "
-                    "blocks, initial size=%s blocks",
+                    "Copy source %s:%s:%s to destination %s:%s:%s size=%s, "
+                    "initial size=%s",
                     sdUUID,
                     srcImgUUID,
                     srcVolUUID,
                     dstSdUUID,
                     dstImgUUID,
                     dstVolUUID,
-                    volParams['capacity'] // sc.BLOCK_SIZE_512,
-                    initialSizeBlk)
+                    volParams['capacity'],
+                    initial_size)
 
                 # If image already exists check whether it illegal/fake,
                 # overwrite it
@@ -783,10 +782,6 @@ class Image:
                     self.log.info("delete image %s on domain %s before "
                                   "overwriting", dstImgUUID, dstSdUUID)
                     _deleteImage(destDom, dstImgUUID, postZero, discard)
-
-                initial_size = None
-                if initialSizeBlk is not None:
-                    initial_size = initialSizeBlk * sc.BLOCK_SIZE_512
 
                 destDom.createVolume(
                     imgUUID=dstImgUUID,
@@ -865,8 +860,8 @@ class Image:
         finally:
             self.__cleanupCopy(srcVol=srcVol, dstVol=dstVol)
 
-    def calculate_initial_size_blk(self, is_file, format, prealloc,
-                                   estimate_blk):
+    def calculate_initial_size(self, is_file, format, prealloc,
+                               estimate):
         """
         Return the initial size for creating a volume during copyCollapsed.
 
@@ -874,7 +869,7 @@ class Image:
             is_file (bool): destination storage domain is file domain.
             format (int): destination volume format enum.
             prealloc (int): destination volume preallocation enum.
-            estimate_blk (int): estimated allocation in 512 blocks.
+            estimate (int): estimated allocation in bytes.
         """
         if is_file:
             # Avoid slow preallocation of raw-preallocated volumes on file
@@ -886,7 +881,7 @@ class Image:
             # volume on block storage.
             # TODO: Calculate the value here.
             if format == sc.COW_FORMAT and prealloc == sc.SPARSE_VOL:
-                return estimate_blk
+                return estimate
 
         # Otherwise no initial size is used.
         return None
