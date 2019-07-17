@@ -747,8 +747,9 @@ class Image:
 
                 # TODO: This is needed only when copying to qcow2-thin volume
                 # on block storage. Move into calculate_initial_size_blk.
-                dstVolAllocBlk = self.calculate_vol_alloc_blk(
-                    sdUUID, volParams, dstSdUUID, dstVolFormat)
+                dstVolAllocBlk = (self.calculate_vol_alloc(
+                    sdUUID, volParams, dstSdUUID, dstVolFormat) //
+                    sc.BLOCK_SIZE_512)
 
                 # Find out dest volume parameters
                 if preallocate in [sc.PREALLOCATED_VOL, sc.SPARSE_VOL]:
@@ -892,8 +893,8 @@ class Image:
         # Otherwise no initial size is used.
         return None
 
-    def calculate_vol_alloc_blk(self, src_sd_id, src_vol_params,
-                                dst_sd_id, dst_vol_format):
+    def calculate_vol_alloc(self, src_sd_id, src_vol_params,
+                            dst_sd_id, dst_vol_format):
         """
         Calculate destination volume allocation size for copying source volume.
 
@@ -905,12 +906,12 @@ class Image:
             dst_vol_format (int): One of sc.RAW_FORMAT, sc.COW_FORMAT
 
         Returns:
-            Volume allocation in blocks
+            Volume allocation in bytes
         """
         if dst_vol_format == sc.RAW_FORMAT:
             # destination 'raw'.
             # The actual volume size must be the src virtual size.
-            return src_vol_params['capacity'] // sc.BLOCK_SIZE_512
+            return src_vol_params['capacity']
         else:
             # destination 'cow'.
             # The actual volume size can be more than virtual size
@@ -926,18 +927,16 @@ class Image:
                         src_sd_id,
                         src_vol_params['imgUUID'],
                         src_vol_params['volUUID'],
-                        src_vol_params['capacity']) // sc.BLOCK_SIZE_512
+                        src_vol_params['capacity'])
                 else:
                     # source 'cow' without parent.
                     # Use estimate for supporting compressed source images, for
                     # example, uploaded compressed qcow2 appliance.
-                    return (self.estimate_qcow2_size(
-                        src_vol_params, dst_sd_id) // sc.BLOCK_SIZE_512)
+                    return self.estimate_qcow2_size(src_vol_params, dst_sd_id)
             else:
                 # source 'raw'.
                 # Add additional space for qcow2 metadata.
-                return (self.estimate_qcow2_size(src_vol_params, dst_sd_id) //
-                        sc.BLOCK_SIZE_512)
+                return self.estimate_qcow2_size(src_vol_params, dst_sd_id)
 
     def markIllegalSubChain(self, sdDom, imgUUID, chain):
         """

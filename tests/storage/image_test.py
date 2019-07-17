@@ -37,7 +37,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import image
 from vdsm.storage import qemuimg
 
-GB_IN_BLK = 1024**3 // 512
 CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
 
 
@@ -59,7 +58,7 @@ class TestCalculateVolAlloc(VdsmTestCase):
               volFormat=sc.RAW_FORMAT,
               apparentsize=GIB),
          sc.RAW_FORMAT,
-         GB_IN_BLK * 2),
+         GIB * 2),
         # copy raw to qcow, using estimated chain size
         (dict(capacity=GIB * 2,
               volFormat=sc.RAW_FORMAT,
@@ -69,27 +68,27 @@ class TestCalculateVolAlloc(VdsmTestCase):
               imgUUID="imgUUID",
               volUUID="volUUID"),
          sc.COW_FORMAT,
-         GB_IN_BLK * 1.25),
+         GIB * 1.25),
         # copy single cow volume to raw, using virtual size
         (dict(capacity=GIB * 2,
               volFormat=sc.COW_FORMAT,
               apparentsize=GIB),
          sc.RAW_FORMAT,
-         GB_IN_BLK * 2),
+         GIB * 2),
         # copy cow chain to raw, using virtual size
         (dict(capacity=GIB * 2,
               volFormat=sc.COW_FORMAT,
               apparentsize=GIB,
               parent="parentUUID"),
          sc.RAW_FORMAT,
-         GB_IN_BLK * 2),
+         GIB * 2),
         # copy single cow to cow, using estimated size.
         (dict(capacity=GIB * 2,
               volFormat=sc.COW_FORMAT,
               apparentsize=GIB,
               parent=sc.BLANK_UUID),
          sc.COW_FORMAT,
-         GB_IN_BLK * 1.25),
+         GIB * 1.25),
         # copy qcow chain to cow, using estimated chain size
         (dict(capacity=GIB * 2,
               volFormat=sc.COW_FORMAT,
@@ -99,17 +98,17 @@ class TestCalculateVolAlloc(VdsmTestCase):
               imgUUID="imgUUID",
               volUUID="volUUID"),
          sc.COW_FORMAT,
-         GB_IN_BLK * 2.25),
+         GIB * 2.25),
     ])
     @MonkeyPatch(image.Image, 'estimateChainSize', fake_estimate_chain_size)
     @MonkeyPatch(
         image.Image, 'estimate_qcow2_size', fake_estimate_qcow2_size)
     def test_calculate_vol_alloc(
-            self, src_params, dest_format, expected_blk):
+            self, src_params, dest_format, expected):
         img = image.Image("/path/to/repo")
-        alloc_blk = img.calculate_vol_alloc_blk("src_sd_id", src_params,
-                                                "dst_sd_id", dest_format)
-        self.assertEqual(alloc_blk, expected_blk)
+        allocation = img.calculate_vol_alloc("src_sd_id", src_params,
+                                             "dst_sd_id", dest_format)
+        self.assertEqual(allocation, expected)
 
 
 class TestEstimateQcow2Size:
