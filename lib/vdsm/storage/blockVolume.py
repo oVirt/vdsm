@@ -43,8 +43,6 @@ from vdsm.storage.volumemetadata import VolumeMetadata
 
 BLOCK_SIZE = sc.BLOCK_SIZE
 
-BLOCKS_TO_MB = 2048
-
 QCOW_OVERHEAD_FACTOR = 1.1
 
 # Minimal padding to be added to internal volume optimal size.
