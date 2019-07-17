@@ -740,12 +740,13 @@ class BlockVolume(volume.Volume):
     def getMetaSlot(self):
         return self._manifest.getMetaSlot()
 
-    def _extendSizeRaw(self, newSize):
+    def _extendSizeRaw(self, new_capacity):
         # Since this method relies on lvm.extendLV (lvextend) when the
         # requested size is equal or smaller than the current size, the
         # request is siliently ignored.
-        newSizeMb = utils.round(newSize, BLOCKS_TO_MB) // BLOCKS_TO_MB
-        lvm.extendLV(self.sdUUID, self.volUUID, newSizeMb)
+        new_capacity_mb = (utils.round(new_capacity, constants.MEGAB) //
+                           constants.MEGAB)
+        lvm.extendLV(self.sdUUID, self.volUUID, new_capacity_mb)
 
 
 def getVolumeTag(sdUUID, volUUID, tagPrefix):

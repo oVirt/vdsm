@@ -1424,11 +1424,11 @@ class StoragePool(object):
         dom = sdCache.produce(sdUUID)
         dom.reduceVolume(imgUUID, volUUID, allowActive=allowActive)
 
-    def extendVolumeSize(self, sdUUID, imgUUID, volUUID, newSize):
+    def extendVolumeSize(self, sdUUID, imgUUID, volUUID, new_capacity):
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
-            return vol.extendSize(int(newSize))
+            return vol.extendSize(int(new_capacity))
 
     @unsecured
     def getVersion(self):

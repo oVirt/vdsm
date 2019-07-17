@@ -85,7 +85,6 @@ from vdsm.storage import taskManager
 from vdsm.storage import udev
 from vdsm.storage import validators
 from vdsm.storage.constants import STORAGE
-from vdsm.storage.constants import BLOCK_SIZE
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.spbackends import MAX_POOL_DESCRIPTION_SIZE, MAX_DOMAINS
 from vdsm.storage.spbackends import StoragePoolDiskBackend
@@ -733,12 +732,12 @@ class HSM(object):
     @public
     def extendVolumeSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):
         pool = self.getPool(spUUID)
-        newSizeBytes = misc.validateN(newSize, "newSize")
-        new_size_blk = (newSizeBytes + BLOCK_SIZE - 1) / BLOCK_SIZE
+        new_capacity = misc.validateN(newSize, "newSize")
+        new_capacity = utils.round(new_capacity, sc.BLOCK_SIZE_4K)
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(
             spUUID, "extendVolumeSize", pool.extendVolumeSize, sdUUID,
-            imgUUID, volUUID, new_size_blk)
+            imgUUID, volUUID, new_capacity)
 
     @public
     def updateVolumeSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):
