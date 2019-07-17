@@ -45,8 +45,8 @@ def fakeEstimateChainSizeBlk(self, sdUUID, imgUUID, volUUID, size):
     return GB_IN_BLK * 2.25
 
 
-def fake_estimate_qcow2_size_blk(self, src_vol_params, dst_sd_id):
-    return GB_IN_BLK * 1.25
+def fake_estimate_qcow2_size(self, src_vol_params, dst_sd_id):
+    return GIB * 1.25
 
 
 @expandPermutations
@@ -103,7 +103,7 @@ class TestCalculateVolAlloc(VdsmTestCase):
     ])
     @MonkeyPatch(image.Image, 'estimateChainSizeBlk', fakeEstimateChainSizeBlk)
     @MonkeyPatch(
-        image.Image, 'estimate_qcow2_size_blk', fake_estimate_qcow2_size_blk)
+        image.Image, 'estimate_qcow2_size', fake_estimate_qcow2_size)
     def test_calculate_vol_alloc(
             self, src_params, dest_format, expected_blk):
         img = image.Image("/path/to/repo")
@@ -138,9 +138,9 @@ class TestEstimateQcow2Size:
             capacity=GIB,
             volFormat=sc.RAW_FORMAT,
             path='path')
-        estimated_size_blk = img.estimate_qcow2_size_blk(vol_params, "sdUUID")
+        estimated_size = img.estimate_qcow2_size(vol_params, "sdUUID")
 
-        assert estimated_size_blk == 2097920
+        assert estimated_size == 1074135040
 
     @pytest.mark.parametrize('sd_class', [FakeFileSD, FakeBlockSD])
     def test_qcow2_to_qcow2_estimated_size(
@@ -166,9 +166,9 @@ class TestEstimateQcow2Size:
             capacity=GIB,
             volFormat=sc.COW_FORMAT,
             path='path')
-        estimated_size_blk = img.estimate_qcow2_size_blk(vol_params, "sdUUID")
+        estimated_size = img.estimate_qcow2_size(vol_params, "sdUUID")
 
-        assert estimated_size_blk == 2097920
+        assert estimated_size == 1074135040
 
     @pytest.mark.parametrize("storage,format,prealloc,estimate,expected", [
         # File raw preallocated, avoid prealocation.
