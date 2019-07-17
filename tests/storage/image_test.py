@@ -41,8 +41,8 @@ GB_IN_BLK = 1024**3 // 512
 CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
 
 
-def fakeEstimateChainSizeBlk(self, sdUUID, imgUUID, volUUID, size):
-    return GB_IN_BLK * 2.25
+def fake_estimate_chain_size(self, sdUUID, imgUUID, volUUID, size):
+    return GIB * 2.25
 
 
 def fake_estimate_qcow2_size(self, src_vol_params, dst_sd_id):
@@ -101,7 +101,7 @@ class TestCalculateVolAlloc(VdsmTestCase):
          sc.COW_FORMAT,
          GB_IN_BLK * 2.25),
     ])
-    @MonkeyPatch(image.Image, 'estimateChainSizeBlk', fakeEstimateChainSizeBlk)
+    @MonkeyPatch(image.Image, 'estimateChainSize', fake_estimate_chain_size)
     @MonkeyPatch(
         image.Image, 'estimate_qcow2_size', fake_estimate_qcow2_size)
     def test_calculate_vol_alloc(
