@@ -323,6 +323,6 @@ def copyUserModeToGroup(path):
 def padToBlockSize(path):
     with open(path, 'a') as f:
         size = os.fstat(f.fileno()).st_size
-        newSize = utils.round(size, sc.BLOCK_SIZE)
+        newSize = utils.round(size, sc.BLOCK_SIZE_4K)
         log.info("Truncating file %s to %d bytes", path, newSize)
         os.ftruncate(f.fileno(), newSize)
