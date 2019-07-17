@@ -184,25 +184,23 @@ def prepare(subchain):
 
 
 def _update_base_capacity(base_vol, top_vol):
-    top_size_blk = top_vol.getCapacity() // sc.BLOCK_SIZE_512
-    base_size_blk = base_vol.getCapacity() // sc.BLOCK_SIZE_512
+    top_capacity = top_vol.getCapacity()
+    base_capacity = base_vol.getCapacity()
     # TODO: raise if top < base raise some impossible state error.
-    if top_size_blk <= base_size_blk:
+    if top_capacity <= base_capacity:
         return
 
     if base_vol.getFormat() == sc.RAW_FORMAT:
         log.info("Updating base capacity, extending size of raw base "
-                 "volume to %d",
-                 top_size_blk)
+                 "volume to %d", top_capacity)
         # extendSize can run on only SPM so only StorageDomain implement it.
         dom = sdCache.produce(base_vol.sdUUID)
         vol = dom.produceVolume(base_vol.imgUUID, base_vol.volUUID)
-        vol.extendSize(top_size_blk)
+        vol.extendSize(top_capacity // sc.BLOCK_SIZE_512)
     else:
         log.info("Updating base capacity, setting size in metadata to "
-                 "%d for cow base volume",
-                 top_size_blk)
-        base_vol.setCapacity(top_size_blk * sc.BLOCK_SIZE_512)
+                 "%d for cow base volume", top_capacity)
+        base_vol.setCapacity(top_capacity)
 
 
 def _extend_base_allocation(base_vol, top_vol):
