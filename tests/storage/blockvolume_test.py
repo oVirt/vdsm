@@ -53,7 +53,6 @@ from testlib import VdsmTestCase
 from . marks import xfail_python3
 
 CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
-GIB_IN_BLOCKS = GIB // sc.BLOCK_SIZE
 
 
 @expandPermutations

@@ -41,8 +41,6 @@ from vdsm.storage.sdc import sdCache
 from vdsm.storage.volumemetadata import VolumeMetadata
 
 
-BLOCK_SIZE = sc.BLOCK_SIZE
-
 QCOW_OVERHEAD_FACTOR = 1.1
 
 # Minimal padding to be added to internal volume optimal size.
