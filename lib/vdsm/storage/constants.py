@@ -48,15 +48,11 @@ MIN_CHUNK = 8 * VG_EXTENT_SIZE_MB * constants.MEGAB  # 1 GB
 # Specific stat(2) block size as defined in the man page
 STAT_BYTES_PER_BLOCK = 512
 
-# At the moment this is static and it has been introduced to group all the
-# previous implicit references to the block size in FileVolume. In the future
-# it will depend on the storage domain.
-BLOCK_SIZE = 512
-METADATA_SIZE = BLOCK_SIZE
-
 # Supported block sizes in bytes
 BLOCK_SIZE_512 = 512
 BLOCK_SIZE_4K = 4096
+
+METADATA_SIZE = BLOCK_SIZE_512
 
 # Vdsm will detect the underlying storage block size if the storage domain
 # supports this.

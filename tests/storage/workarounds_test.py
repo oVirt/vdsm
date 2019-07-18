@@ -33,7 +33,6 @@ from . marks import xfail_python3
 
 md_formats = dict(raw=sc.RAW_FORMAT, cow=sc.COW_FORMAT)
 qemu_formats = dict(raw=qemuimg.FORMAT.RAW, cow=qemuimg.FORMAT.QCOW2)
-VM_CONF_SIZE = workarounds.VM_CONF_SIZE_BLK * sc.BLOCK_SIZE
 
 
 def make_volume(env, size, md_fmt, real_fmt):
@@ -56,7 +55,8 @@ class TestDetectFormat(VdsmTestCase):
         expect the workaround to report both volumes as RAW.
         """
         with fake_file_env() as env:
-            vol = make_volume(env, VM_CONF_SIZE, md_fmt='cow', real_fmt='raw')
+            vol = make_volume(
+                env, workarounds.VM_CONF_SIZE, md_fmt='cow', real_fmt='raw')
             self.assertTrue(workarounds.invalid_vm_conf_disk(vol))
 
     def test_bad_format_other_size(self):
@@ -64,7 +64,7 @@ class TestDetectFormat(VdsmTestCase):
         When the volume size does not match the VM configuration disk size then
         the workaround will not be activated even when the formats don't match
         """
-        size = 2 * VM_CONF_SIZE
+        size = 2 * workarounds.VM_CONF_SIZE
         with fake_file_env() as env:
             vol = make_volume(env, size, md_fmt='cow', real_fmt='raw')
             self.assertFalse(workarounds.invalid_vm_conf_disk(vol))
@@ -74,5 +74,6 @@ class TestDetectFormat(VdsmTestCase):
         When a VM configuration disk is actually COW format report it correctly
         """
         with fake_file_env() as env:
-            vol = make_volume(env, VM_CONF_SIZE, md_fmt='cow', real_fmt='cow')
+            vol = make_volume(
+                env, workarounds.VM_CONF_SIZE, md_fmt='cow', real_fmt='cow')
             self.assertFalse(workarounds.invalid_vm_conf_disk(vol))

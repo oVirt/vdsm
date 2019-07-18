@@ -245,11 +245,11 @@ class TestCopyDataDIV(VdsmTestCase):
         workaround we have in place allows the copy to proceed without error.
         """
         job_id = make_uuid()
-        vm_conf_size = workarounds.VM_CONF_SIZE_BLK * sc.BLOCK_SIZE
+
         vm_conf_data = "VM Configuration".ljust(512)
 
         with self.make_env('file', sc.COW_FORMAT, sc.COW_FORMAT,
-                           size=vm_conf_size) as env:
+                           size=workarounds.VM_CONF_SIZE) as env:
             src_vol = env.src_chain[0]
             dst_vol = env.dst_chain[0]
 
