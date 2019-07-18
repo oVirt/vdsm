@@ -24,7 +24,6 @@ from __future__ import division
 System service management utlities.
 '''
 
-import os
 import functools
 import re
 import sys
@@ -43,19 +42,6 @@ _SYSTEMCTL = CommandPath("systemctl",
                          "/bin/systemctl",
                          "/usr/bin/systemctl",
                          )
-
-_SERVICE = CommandPath("service",
-                       "/sbin/service",
-                       "/usr/sbin/service",
-                       )
-
-_CHKCONFIG = CommandPath("chkconfig",
-                         "/sbin/chkconfig",
-                         )
-
-_UPDATERC = CommandPath("update-rc.d",
-                        "/usr/sbin/update-rc.d",
-                        )
 
 _srvNameAlts = {
     'iscsid': ['iscsid', 'open-iscsi'],
@@ -167,97 +153,6 @@ else:
 def _isStopped(message):
     stopRegex = r"\bstopped\b|\bstop\b|\bwaiting\b|\bnot running\b"
     return bool(re.search(stopRegex, message, re.MULTILINE))
-
-
-def _sysvNative(sysvFun):
-    @functools.wraps(sysvFun)
-    def wrapper(srvName):
-        srvPath = os.path.join(os.sep + 'etc', 'init.d', srvName)
-        if os.path.exists(srvPath):
-            return sysvFun(srvName)
-
-        raise ServiceNotExistError("%s is not a SysV service" % srvName)
-    return wrapper
-
-try:
-    _SERVICE.cmd
-except OSError:
-    pass
-else:
-    _sysvEnv = os.environ.copy()
-    _sysvEnv['SYSTEMCTL_SKIP_REDIRECT'] = '1'
-    _execSysvEnv = functools.partial(execCmd, env=_sysvEnv)
-
-    @_sysvNative
-    def _serviceStart(srvName):
-        cmd = [_SERVICE.cmd, srvName, "start"]
-        return _execSysvEnv(cmd)
-
-    @_sysvNative
-    def _serviceStop(srvName):
-        cmd = [_SERVICE.cmd, srvName, "stop"]
-        return _execSysvEnv(cmd)
-
-    @_sysvNative
-    def _serviceStatus(srvName):
-        cmd = [_SERVICE.cmd, srvName, "status"]
-        rc, out, err = _execSysvEnv(cmd)
-        if rc == 0:
-            # certain service rc is 0 even though the service is stopped
-            rc = _isStopped(out)
-        return (rc, out, err)
-
-    @_sysvNative
-    def _serviceRestart(srvName):
-        cmd = [_SERVICE.cmd, srvName, "restart"]
-        return _execSysvEnv(cmd)
-
-    @_sysvNative
-    def _serviceReload(srvName):
-        cmd = [_SERVICE.cmd, srvName, "reload"]
-        rc, out, err = _execSysvEnv(cmd)
-        status = service_status(srvName, False)
-        if (rc == 0) and (status != 0):
-            rc = 1
-            err = 'reload failed because service was not running'
-        return (rc, out, err)
-
-    @_sysvNative
-    def _serviceIsManaged(srvName):
-        return (0, '', '')
-
-    _srvStartAlts.append(_serviceStart)
-    _srvStopAlts.append(_serviceStop)
-    _srvRestartAlts.append(_serviceRestart)
-    _srvReloadAlts.append(_serviceReload)
-    _srvStatusAlts.append(_serviceStatus)
-    _srvIsManagedAlts.append(_serviceIsManaged)
-
-
-try:
-    _CHKCONFIG.cmd
-except OSError:
-    pass
-else:
-    @_sysvNative
-    def _chkconfigDisable(srvName):
-        cmd = [_CHKCONFIG.cmd, srvName, "off"]
-        return execCmd(cmd)
-
-    _srvDisableAlts.append(_chkconfigDisable)
-
-
-try:
-    _UPDATERC.cmd
-except OSError:
-    pass
-else:
-    @_sysvNative
-    def _updatercDisable(srvName):
-        cmd = [_UPDATERC.cmd, srvName, "disable"]
-        return execCmd(cmd)
-
-    _srvDisableAlts.append(_updatercDisable)
 
 
 def _runAlts(alts, srvName, *args, **kwarg):
