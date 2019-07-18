@@ -243,13 +243,14 @@ def initSANLock(
         sdUUID, idsPath, lease, alignment=sc.ALIGNMENT_1M,
         block_size=sc.BLOCK_SIZE_512):
     initSANLockLog.debug("Initializing SANLock for domain %s", sdUUID)
-
+    lockspace_name = sdUUID.encode("utf-8")
+    resource_name = lease.name.encode("utf-8")
     try:
         sanlock.write_lockspace(
-            sdUUID, idsPath, align=alignment, sector=block_size)
+            lockspace_name, idsPath, align=alignment, sector=block_size)
         sanlock.write_resource(
-            sdUUID,
-            lease.name,
+            lockspace_name,
+            resource_name,
             [(lease.path, lease.offset)],
             align=alignment,
             sector=block_size)
@@ -294,6 +295,10 @@ class SANLock(object):
     def supports_multiple_leases(self):
         return True
 
+    @property
+    def _lockspace_name(self):
+        return self._sdUUID.encode("utf-8")
+
     def initLock(self, lease):
         initSANLock(
             self._sdUUID,
@@ -319,8 +324,11 @@ class SANLock(object):
         with self._lock:
             try:
                 with utils.stopwatch("sanlock.add_lockspace"):
-                    sanlock.add_lockspace(self._sdUUID, hostId, self._idsPath,
-                                          **{'async': not wait})
+                    sanlock.add_lockspace(
+                        self._lockspace_name,
+                        hostId,
+                        self._idsPath,
+                        **{'async': not wait})
             except sanlock.SanlockException as e:
                 if e.errno == errno.EINPROGRESS:
                     # if the request is not asynchronous wait for the ongoing
@@ -328,8 +336,11 @@ class SANLock(object):
                     # the host id has been acquired or it's in the process of
                     # being acquired (async).
                     if wait:
-                        if not sanlock.inq_lockspace(self._sdUUID, hostId,
-                                                     self._idsPath, wait=True):
+                        if not sanlock.inq_lockspace(
+                                self._lockspace_name,
+                                hostId,
+                                self._idsPath,
+                                wait=True):
                             raise se.AcquireHostIdFailure(self._sdUUID, e)
                         self.log.info("Host id for domain %s successfully "
                                       "acquired (id=%s, wait=%s)",
@@ -358,8 +369,9 @@ class SANLock(object):
 
         with self._lock:
             try:
-                sanlock.rem_lockspace(self._sdUUID, hostId, self._idsPath,
-                                      unused=unused, **{'async': not wait})
+                sanlock.rem_lockspace(self._lockspace_name, hostId,
+                                      self._idsPath, unused=unused,
+                                      **{'async': not wait})
             except sanlock.SanlockException as e:
                 if e.errno != errno.ENOENT:
                     raise se.ReleaseHostIdFailure(self._sdUUID, e)
@@ -370,8 +382,8 @@ class SANLock(object):
     def hasHostId(self, hostId):
         with self._lock:
             try:
-                has_host_id = sanlock.inq_lockspace(self._sdUUID, hostId,
-                                                    self._idsPath)
+                has_host_id = sanlock.inq_lockspace(
+                    self._lockspace_name, hostId, self._idsPath)
             except sanlock.SanlockException:
                 self.log.debug("Unable to inquire sanlock lockspace "
                                "status, returning False", exc_info=True)
@@ -390,7 +402,7 @@ class SANLock(object):
 
     def getHostStatus(self, hostId):
         try:
-            hosts = sanlock.get_hosts(self._sdUUID, hostId)
+            hosts = sanlock.get_hosts(self._lockspace_name, hostId)
         except sanlock.SanlockException as e:
             self.log.debug("Unable to get host %d status in lockspace %s: %s",
                            hostId, self._sdUUID, e)
@@ -427,8 +439,9 @@ class SANLock(object):
                             self._sdUUID, e.errno,
                             "Cannot register to sanlock", str(e))
 
+                resource_name = lease.name.encode("utf-8")
                 try:
-                    sanlock.acquire(self._sdUUID, lease.name,
+                    sanlock.acquire(self._lockspace_name, resource_name,
                                     [(lease.path, lease.offset)],
                                     slkfd=SANLock._sanlock_fd)
                 except sanlock.SanlockException as e:
@@ -449,12 +462,14 @@ class SANLock(object):
             lease.offset,
             align=self._alignment,
             sector=self._block_size)
-        if resource["resource"] != lease.name:
+
+        resource_name = lease.name.encode("utf-8")
+        if resource["resource"] != resource_name:
             raise InvalidLeaseName(resource["resource"], lease)
 
         owners = sanlock.read_resource_owners(
-            self._sdUUID,
-            lease.name,
+            self._lockspace_name,
+            resource_name,
             [(lease.path, lease.offset)],
             align=self._alignment,
             sector=self._block_size)
@@ -471,7 +486,7 @@ class SANLock(object):
         resource_version = resource["version"]
         host_id = resource_owner["host_id"]
         try:
-            host = sanlock.get_hosts(self._sdUUID, host_id)[0]
+            host = sanlock.get_hosts(self._lockspace_name, host_id)[0]
         except sanlock.SanlockException as e:
             if e.errno == errno.ENOENT:
                 # add_lockspace has not been completed yet,
@@ -514,8 +529,9 @@ class SANLock(object):
     def release(self, lease):
         self.log.info("Releasing %s", lease)
         with self._lock:
+            resource_name = lease.name.encode("utf-8")
             try:
-                sanlock.release(self._sdUUID, lease.name,
+                sanlock.release(self._lockspace_name, resource_name,
                                 [(lease.path, lease.offset)],
                                 slkfd=SANLock._sanlock_fd)
             except sanlock.SanlockException as e:

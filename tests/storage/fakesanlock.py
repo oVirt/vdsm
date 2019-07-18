@@ -133,7 +133,7 @@ class FakeSanlock(object):
         timeout for the specific lockspace, overriding the default value
         (see the sanlock daemon parameter -o).
         """
-
+        self._validate_bytes(lockspace)
         self.check_lockspace_initialized(lockspace)
         ls = self.spaces[lockspace]
         self.check_lockspace_location(ls, path, offset)
@@ -182,6 +182,7 @@ class FakeSanlock(object):
         fail (EBUSY) if there is at least one acquired resource in the
         lockspace (instead of automatically release it).
         """
+        self._validate_bytes(lockspace)
         wait = not kwargs.get('async', False)
         ls = self.spaces[lockspace]
 
@@ -223,6 +224,7 @@ class FakeSanlock(object):
         function will block until the host_id is either acquired or
         released.
         """
+        self._validate_bytes(lockspace)
         try:
             ls = self.spaces[lockspace]
         except KeyError:
@@ -239,6 +241,9 @@ class FakeSanlock(object):
     def write_resource(self, lockspace, resource, disks, max_hosts=0,
                        num_hosts=0, align=ALIGN_SIZE[0],
                        sector=SECTOR_SIZE[0]):
+        # Validate lockspace and resource names are given as bytes.
+        self._validate_bytes(lockspace)
+        self._validate_bytes(resource)
         # We never use more then one disk, not sure why sanlock supports more
         # then one. Fail if called with multiple disks.
         assert len(disks) == 1
@@ -286,6 +291,9 @@ class FakeSanlock(object):
         version of the lease that must be acquired or fail.  The disks
         must be in the format: [(path, offset), ... ].
         """
+        # Validate lockspace and resource names are given as bytes.
+        self._validate_bytes(lockspace)
+        self._validate_bytes(resource)
         # Do we have a lockspace?
         try:
             ls = self.spaces[lockspace]
@@ -317,6 +325,9 @@ class FakeSanlock(object):
         Release a resource lease for the current process.  The disks
         must be in the format: [(path, offset), ... ].
         """
+        # Validate lockspace and resource names are given as bytes.
+        self._validate_bytes(lockspace)
+        self._validate_bytes(resource)
         # Do we have a lockspace?
         try:
             self.spaces[lockspace]
@@ -338,6 +349,9 @@ class FakeSanlock(object):
     def read_resource_owners(
             self, lockspace, resource, disks, align=ALIGN_SIZE[0],
             sector=SECTOR_SIZE[0]):
+        # Validate lockspace and resource name are given as bytes.
+        self._validate_bytes(lockspace)
+        self._validate_bytes(resource)
         try:
             self.spaces[lockspace]
         except KeyError:
@@ -368,6 +382,7 @@ class FakeSanlock(object):
         }]
 
     def get_hosts(self, lockspace, host_id=0):
+        self._validate_bytes(lockspace)
         try:
             self.spaces[lockspace]
         except KeyError:
@@ -383,6 +398,7 @@ class FakeSanlock(object):
         Initialize a device to be used as sanlock lock space.
         In our case, we just create empty dictionary for a lockspace.
         """
+        self._validate_bytes(lockspace)
         self.check_align_and_sector(align, sector)
 
         ls = {
@@ -396,3 +412,7 @@ class FakeSanlock(object):
 
         # Real sanlock just overwrites lockspace if it was already initialized.
         self.spaces[lockspace] = ls
+
+    def _validate_bytes(self, arg):
+        if not isinstance(arg, bytes):
+            raise TypeError("Argument type is not bytes: %r" % arg)

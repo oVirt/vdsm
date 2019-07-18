@@ -266,8 +266,8 @@ class TestIndex:
             resource = "%04d" % i
             offset = xlease.lease_offset(i, tmp_vol.alignment)
             fake_sanlock.write_resource(
-                tmp_vol.lockspace,
-                resource,
+                tmp_vol.lockspace.encode("utf-8"),
+                resource.encode("utf-8"),
                 [(tmp_vol.path, offset)],
                 align=tmp_vol.alignment,
                 sector=tmp_vol.block_size)
@@ -357,8 +357,8 @@ class TestIndex:
                 lease.offset,
                 align=tmp_vol.alignment,
                 sector=tmp_vol.block_size)
-            assert res["lockspace"] == lease.lockspace
-            assert res["resource"] == lease.resource
+            assert res["lockspace"] == lease.lockspace.encode("utf-8")
+            assert res["resource"] == lease.resource.encode("utf-8")
 
     def test_add_write_failure(self, tmp_vol):
         backend = FailingWriter(tmp_vol.path)
@@ -430,8 +430,8 @@ class TestIndex:
                 lease.offset,
                 align=tmp_vol.alignment,
                 sector=tmp_vol.block_size)
-            assert res["lockspace"] == lease.lockspace
-            assert res["resource"] == lease.resource
+            assert res["lockspace"] == lease.lockspace.encode("utf-8")
+            assert res["resource"] == lease.resource.encode("utf-8")
 
     def test_lookup_exists(self, tmp_vol, fake_sanlock):
         vol = xlease.LeasesVolume(
@@ -463,8 +463,8 @@ class TestIndex:
                 sector=tmp_vol.block_size)
             # There is no sanlock api for removing a resource, so we mark a
             # removed resource with empty (invalid) lockspace and lease id.
-            assert res["lockspace"] == ""
-            assert res["resource"] == ""
+            assert res["lockspace"] == b""
+            assert res["resource"] == b""
 
     def test_remove_missing(self, tmp_vol):
         vol = xlease.LeasesVolume(
@@ -514,8 +514,8 @@ class TestIndex:
                 lease["offset"],
                 align=tmp_vol.alignment,
                 sector=tmp_vol.block_size)
-            assert res["lockspace"] == vol.lockspace
-            assert res["resource"] == lease_id
+            assert res["lockspace"] == vol.lockspace.encode("utf-8")
+            assert res["resource"] == lease_id.encode("utf-8")
 
     def test_add_first_free_slot(self, tmp_vol, fake_sanlock):
         vol = xlease.LeasesVolume(

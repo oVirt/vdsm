@@ -30,7 +30,7 @@ from vdsm.storage import exception as se
 
 from vdsm.storage.compat import sanlock
 
-LS_NAME = "sd-uuid"
+LS_NAME = b"sd-uuid"
 LS_PATH = "ids"
 LS_OFF = 0
 HOST_ID = 1
@@ -39,7 +39,7 @@ LEASE = clusterlock.Lease("SDM", "leases", 1024**2)
 
 @pytest.fixture
 def lock():
-    sanlock = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
+    sanlock = clusterlock.SANLock(LS_NAME.decode("utf-8"), LS_PATH, LEASE)
     sanlock.initLock(LEASE)
     return sanlock
 

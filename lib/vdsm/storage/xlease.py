@@ -595,8 +595,8 @@ class LeasesVolume(object):
         self._write_record(recnum, record)
 
         sanlock.write_resource(
-            self.lockspace,
-            lease_id,
+            self.lockspace.encode("utf-8"),
+            lease_id.encode("utf-8"),
             [(self._file.name, offset)],
             align=self._alignment,
             sector=self._block_size)
@@ -629,8 +629,8 @@ class LeasesVolume(object):
         # with empty resource and lockspace values.
         # TODO: Use SANLK_WRITE_CLEAR, expected in rhel 7.4.
         sanlock.write_resource(
-            "",
-            "",
+            b"",
+            b"",
             [(self._file.name, offset)],
             align=self._alignment,
             sector=self._block_size)
@@ -762,11 +762,14 @@ def read_resource(
         if e.errno != SANLK_LEADER_MAGIC:
             raise
         raise NoSuchResource(path, offset)
-    if res["resource"] == "":
+    if res["resource"] == b"":
         # lease deleted with a version of sanlock not supporting
         # resource clearning.
         raise NoSuchResource(path, offset)
-    return ResourceInfo(res["lockspace"], res["resource"], res["version"])
+    return ResourceInfo(
+        res["lockspace"].decode("utf-8"),
+        res["resource"].decode("utf-8"),
+        res["version"])
 
 
 def lease_offset(recnum, alignment):

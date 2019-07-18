@@ -295,8 +295,8 @@ class FileVolumeManifest(volume.VolumeManifest):
 
         manifest = sdCache.produce_manifest(sdUUID)
         sanlock.write_resource(
-            sdUUID,
-            volUUID,
+            sdUUID.encode("utf-8"),
+            volUUID.encode("utf-8"),
             [(leasePath, LEASE_FILEOFFSET)],
             align=manifest.alignment,
             sector=manifest.block_size)

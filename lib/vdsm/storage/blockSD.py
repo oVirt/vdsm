@@ -977,8 +977,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         path = self.getLeasesFilePath()
         offset = self.volume_lease_offset(slot)
         sanlock.write_resource(
-            self.sdUUID,
-            vol_id,
+            self.sdUUID.encode("utf-8"),
+            vol_id.encode("utf-8"),
             [(path, offset)],
             align=self.alignment,
             sector=self.block_size)
