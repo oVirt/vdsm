@@ -65,7 +65,10 @@ FileEntry.apply = file_entry_apply
 
 
 @pytest.fixture
-def fake_hooks_root(monkeypatch, tmpdir):
+def fake_hooks_root(monkeypatch, tmpdir, request):
+    entries = getattr(request, 'param', [])
+    for entry in entries:
+        entry.apply(tmpdir)
     with monkeypatch.context() as m:
         m.setattr(hooks, "P_VDSM_HOOKS", str(tmpdir) + "/")
         yield tmpdir
@@ -521,6 +524,43 @@ def test_get_script_info_should_return_checksum(hooks_dir, expected):
 ])
 def test_get_hook_info_should_return_info(hooks_dir, expected):
     assert hooks._getHookInfo(hooks_dir.basename) == expected
+
+
+@pytest.mark.parametrize("fake_hooks_root, expected",
+                         indirect=["fake_hooks_root"],
+                         argvalues=[
+    pytest.param(  # noqa: E122
+        [
+            DirEntry("after_vm_smth", 0o777, [
+                FileEntry("script1.py", 0o777, "abc"),
+                FileEntry("script2.py", 0o777, "def"),
+                FileEntry("non-script", 0o666, "kkk")
+            ]),
+            DirEntry("before_vm_smth", 0o777, [
+                FileEntry("script3.py", 0o777, "xyz")
+            ]),
+            DirEntry("empty_hook", 0o777, [])
+        ],
+        {
+            "after_vm_smth": {
+                "script1.py": {
+                    "md5": hashlib.md5(b"abc").hexdigest()
+                },
+                "script2.py": {
+                    "md5": hashlib.md5(b"def").hexdigest()
+                }
+            },
+            "before_vm_smth": {
+                "script3.py": {
+                    "md5": hashlib.md5(b"xyz").hexdigest()
+                }
+            },
+        },
+        id="example hooks"
+    ),
+])  # noqa: E122
+def test_installed_should_return_hooks_info(fake_hooks_root, expected):
+    assert hooks.installed() == expected
 
 
 class TestHooks(TestCaseBase):
