@@ -91,7 +91,7 @@ class TestZero:
             assert data == DATA
 
     @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
-    @pytest.mark.parametrize("size", [sc.BLOCK_SIZE, 250 * 4096])
+    @pytest.mark.parametrize("size", [sc.BLOCK_SIZE_4K, 250 * 4096])
     def test_special_volumes(self, size, loop_device):
         # Write some data to the device.
         with directio.open(loop_device.path, "r+") as f:

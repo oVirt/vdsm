@@ -57,7 +57,8 @@ def zero(device_path, size=None, task=_NullTask()):
     Arguments:
         device_path (str): Path to block device to wipe
         size (int): Number of bytes to write. If not specified, use the device
-            size. Size must be aligned to `vdsm.storage.constants.BLOCK_SIZE`.
+            size. Size must be aligned to
+            `vdsm.storage.constants.BLOCK_SIZE_4K`.
         task (`storage.task.Task`): Task running this operation. If specified,
             the zero operation will be aborted if the task is aborted.
 
@@ -66,12 +67,12 @@ def zero(device_path, size=None, task=_NullTask()):
         `vdsm.storage.exception.VolumesZeroingError` if writing to storage
             failed.
         `vdsm.storage.exception.InvalidParameterException` if size is not
-            aligned to `vdsm.storage.constants.BLOCK_SIZE`.
+            aligned to `vdsm.storage.constants.BLOCK_SIZE_4K`.
     """
     if size is None:
         # Always aligned to LVM extent size (128MiB).
         size = fsutils.size(device_path)
-    elif size % sc.BLOCK_SIZE:
+    elif size % sc.BLOCK_SIZE_4K:
         raise se.InvalidParameterException("size", size)
 
     log.info("Zeroing device %s (size=%d)", device_path, size)
