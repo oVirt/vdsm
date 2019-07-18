@@ -30,6 +30,7 @@ import types
 import weakref
 
 from functools import partial
+import six
 
 from vdsm import constants
 from vdsm.config import config
@@ -70,7 +71,7 @@ def stop():
 
 def cleanIdleIOProcesses(clientName):
     now = elapsed_time()
-    for name, (eol, proc) in _procPool.items():
+    for name, (eol, proc) in list(six.iteritems(_procPool)):
         if (eol < now and name != clientName):
             log.debug("Removing idle ioprocess %s", name)
             del _procPool[name]
