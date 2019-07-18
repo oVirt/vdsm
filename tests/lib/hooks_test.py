@@ -25,7 +25,6 @@ import hashlib
 import itertools
 import libvirt
 import logging
-import tempfile
 import textwrap
 import os
 import os.path
@@ -501,28 +500,30 @@ def test_get_script_info_should_return_checksum(hooks_dir, expected):
     assert hooks._getScriptInfo(path) == {"md5": expected}
 
 
+@pytest.mark.parametrize("hooks_dir, expected", indirect=["hooks_dir"],
+                         argvalues=[
+    pytest.param(
+        [
+            FileEntry("script.sh", 0o777, "abc"),
+            FileEntry("script2.sh", 0o777, "def")
+        ],
+        {
+            "script.sh": {"md5": hashlib.md5(b"abc").hexdigest()},
+            "script2.sh": {"md5": hashlib.md5(b"def").hexdigest()}
+        },
+        id="some scripts"
+    ),
+    pytest.param(
+        [],
+        {},
+        id="no scripts"
+    ),
+])
+def test_get_hook_info_should_return_info(hooks_dir, expected):
+    assert hooks._getHookInfo(hooks_dir.basename) == expected
+
+
 class TestHooks(TestCaseBase):
-
-    def createScript(self, dir='/tmp'):
-        script = tempfile.NamedTemporaryFile(dir=dir, delete=False)
-        code = """#! /bin/bash
-echo "81212590184644762"
-        """
-        script.write(code)
-        script.close()
-        os.chmod(script.name, 0o775)
-        return script.name, '683394fc34f6830dd1882418eefd9b66'
-
-    @pytest.mark.xfail(six.PY3, reason="needs porting to py3")
-    def test_getHookInfo(self):
-        with namedTemporaryDir() as dir:
-            sName, md5 = self.createScript(dir)
-            with tempfile.NamedTemporaryFile(dir=dir) as NEscript:
-                os.chmod(NEscript.name, 0o000)
-                info = hooks._getHookInfo(dir)
-                expectedRes = dict([(os.path.basename(sName), {'md5': md5})])
-                self.assertEqual(expectedRes, info)
-
     def test_pause_flags(self):
         vm_id = '042f6258-3446-4437-8034-0c93e3bcda1b'
         with namedTemporaryDir() as tmpDir:
