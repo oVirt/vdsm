@@ -114,10 +114,10 @@ else:
             if rc != 0:
                 raise ServiceOperationError(
                     "Error listing unit files", out, err)
-            fullName = srvName
+            fullName = srvName.encode('utf-8')
             # If unit file type was specified, don't override it.
             if srvName.count('.') < 1:
-                fullName = srvName + ".service"
+                fullName += b".service"
             for line in out.splitlines():
                 if fullName == line.split(b" ", 1)[0]:
                     return systemctlFun(fullName.decode('utf-8'))
