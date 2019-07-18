@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import hashlib
 import itertools
 import libvirt
 import logging
@@ -479,12 +480,28 @@ def test_rhd_should_make_import_hooking_possible(hooks_dir, hooking_client):
     hooks._runHooksDir(u"", hooks_dir.basename)
 
 
-class TestHooks(TestCaseBase):
+@pytest.mark.parametrize("hooks_dir, expected", indirect=["hooks_dir"],
+                         argvalues=[
+    pytest.param(
+        [
+            FileEntry("script.sh", 0o777, "abc")
+        ],
+        hashlib.md5(b"abc").hexdigest(),
+        id="simple script"
+    ),
+    pytest.param(
+        [],
+        "",
+        id="non-existent script"
+    ),
+])
+def test_get_script_info_should_return_checksum(hooks_dir, expected):
+    path = str(hooks_dir.join("script.sh"))
 
-    def test_getNEScriptInfo(self):
-        path = '/tmp/nonExistent'
-        info = hooks._getScriptInfo(path)
-        self.assertEqual({'md5': ''}, info)
+    assert hooks._getScriptInfo(path) == {"md5": expected}
+
+
+class TestHooks(TestCaseBase):
 
     def createScript(self, dir='/tmp'):
         script = tempfile.NamedTemporaryFile(dir=dir, delete=False)
@@ -495,13 +512,6 @@ echo "81212590184644762"
         script.close()
         os.chmod(script.name, 0o775)
         return script.name, '683394fc34f6830dd1882418eefd9b66'
-
-    @pytest.mark.xfail(six.PY3, reason="needs porting to py3")
-    def test_getScriptInfo(self):
-        sName, md5 = self.createScript()
-        info = hooks._getScriptInfo(sName)
-        os.unlink(sName)
-        self.assertEqual({'md5': md5}, info)
 
     @pytest.mark.xfail(six.PY3, reason="needs porting to py3")
     def test_getHookInfo(self):
