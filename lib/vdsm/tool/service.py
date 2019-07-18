@@ -44,10 +44,6 @@ _SYSTEMCTL = CommandPath("systemctl",
                          "/usr/bin/systemctl",
                          )
 
-_INITCTL = CommandPath("initctl",
-                       "/sbin/initctl",
-                       )
-
 _SERVICE = CommandPath("service",
                        "/sbin/service",
                        "/usr/sbin/service",
@@ -171,87 +167,6 @@ else:
 def _isStopped(message):
     stopRegex = r"\bstopped\b|\bstop\b|\bwaiting\b|\bnot running\b"
     return bool(re.search(stopRegex, message, re.MULTILINE))
-
-try:
-    _INITCTL.cmd
-except OSError:
-    pass
-else:
-    def _initctlNative(initctlFun):
-        @functools.wraps(initctlFun)
-        def wrapper(srvName):
-            cmd = [_INITCTL.cmd, "usage", srvName]
-            rc, out, err = execCmd(cmd)
-            if rc != 0:
-                raise ServiceNotExistError("%s is not an Upstart service" %
-                                           srvName)
-
-            return initctlFun(srvName)
-        return wrapper
-
-    @_initctlNative
-    def _initctlStart(srvName):
-        cmd = [_INITCTL.cmd, "start", srvName]
-        alreadyRunRegex = r"\bis already running\b"
-        rc, out, err = execCmd(cmd)
-        if rc != 0:
-            # initctl returns an error if the job is already started
-            # here we ignore it and return 0 if the job is already running
-            rc = int(not re.search(alreadyRunRegex, err, re.MULTILINE))
-        return (rc, out, err)
-
-    @_initctlNative
-    def _initctlStop(srvName):
-        cmd = [_INITCTL.cmd, "stop", srvName]
-        alreadyStoppedRegex = r'\bUnknown instance\b'
-        rc, out, err = execCmd(cmd)
-        if rc != 0:
-            # initctl returns an error if the job is already stopped
-            # here we ignore it and return 0 if the job is already stopped
-            rc = int(not re.search(alreadyStoppedRegex, err, re.MULTILINE))
-        return (rc, out, err)
-
-    @_initctlNative
-    def _initctlStatus(srvName):
-        cmd = [_INITCTL.cmd, "status", srvName]
-        rc, out, err = execCmd(cmd)
-        if rc == 0:
-            # initctl rc is 0 even though the service is stopped
-            rc = _isStopped(out)
-        return (rc, out, err)
-
-    @_initctlNative
-    def _initctlRestart(srvName):
-        # "initctl restart someSrv" will not restart the service if it is
-        # already running, so we force it to do so
-        _initctlStop(srvName)
-        return _initctlStart(srvName)
-
-    @_initctlNative
-    def _initctlReload(srvName):
-        cmd = [_INITCTL.cmd, "reload", srvName]
-        rc, out, err = execCmd(cmd)
-        return (rc, out, err)
-
-    @_initctlNative
-    def _initctlDisable(srvName):
-        if not os.path.isfile("/etc/init/%s.conf" % srvName):
-            return 1, "", ""
-        with open("/etc/init/%s.override" % srvName, "a") as f:
-            f.write("manual\n")
-        return 0, "", ""
-
-    @_initctlNative
-    def _initctlIsManaged(srvName):
-        return (0, '', '')
-
-    _srvStartAlts.append(_initctlStart)
-    _srvStopAlts.append(_initctlStop)
-    _srvStatusAlts.append(_initctlStatus)
-    _srvRestartAlts.append(_initctlRestart)
-    _srvReloadAlts.append(_initctlReload)
-    _srvDisableAlts.append(_initctlDisable)
-    _srvIsManagedAlts.append(_initctlIsManaged)
 
 
 def _sysvNative(sysvFun):
