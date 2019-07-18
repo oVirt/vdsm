@@ -37,13 +37,13 @@ IPv4_ADDRESS1 = '192.0.2.1'
 IPv4_NETMASK1 = '255.255.255.0'
 IPv4_PREFIX1 = 24
 IPv6_ADDRESS1 = 'fdb3:84e5:4ff4:55e3::1'
-IPv6_PREFIX1 = '64'
+IPv6_PREFIX1 = 64
 
 IPv4_ADDRESS2 = '192.0.3.1'
 IPv4_NETMASK2 = '255.255.255.0'
 IPv4_PREFIX2 = 24
 IPv6_ADDRESS2 = 'fdb3:84e5:4ff4:88e3::1'
-IPv6_PREFIX2 = '64'
+IPv6_PREFIX2 = 64
 
 
 parametrize_bridged = pytest.mark.parametrize('bridged', [False, True],
@@ -95,7 +95,7 @@ def test_translate_nets_with_ip(bridged):
             'bridged': bridged,
             'ipaddr': IPv4_ADDRESS1,
             'netmask': IPv4_NETMASK1,
-            'ipv6addr': IPv6_ADDRESS1 + '/' + IPv6_PREFIX1,
+            'ipv6addr': IPv6_ADDRESS1 + '/' + str(IPv6_PREFIX1),
             'switch': 'legacy'
         },
         'testnet2': {
@@ -103,7 +103,7 @@ def test_translate_nets_with_ip(bridged):
             'bridged': bridged,
             'ipaddr': IPv4_ADDRESS2,
             'netmask': IPv4_NETMASK2,
-            'ipv6addr': IPv6_ADDRESS2 + '/' + IPv6_PREFIX2,
+            'ipv6addr': IPv6_ADDRESS2 + '/' + str(IPv6_PREFIX2),
             'switch': 'legacy'
         }
     }
@@ -189,7 +189,7 @@ def test_translate_net_with_ip_on_bond(bridged):
             'bridged': bridged,
             'ipaddr': IPv4_ADDRESS1,
             'netmask': IPv4_NETMASK1,
-            'ipv6addr': IPv6_ADDRESS1 + '/' + IPv6_PREFIX1,
+            'ipv6addr': IPv6_ADDRESS1 + '/' + str(IPv6_PREFIX1),
             'switch': 'legacy'
         }
     }
@@ -266,7 +266,7 @@ def test_translate_net_with_ip_on_vlan_on_bond(bridged):
             'vlan': VLAN101,
             'ipaddr': IPv4_ADDRESS1,
             'netmask': IPv4_NETMASK1,
-            'ipv6addr': IPv6_ADDRESS1 + '/' + IPv6_PREFIX1,
+            'ipv6addr': IPv6_ADDRESS1 + '/' + str(IPv6_PREFIX1),
             'switch': 'legacy'
         }
     }

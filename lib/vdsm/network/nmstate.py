@@ -259,7 +259,7 @@ def _generate_iface_static_ipv6_state(iface_state, ipv6addr):
     address, prefix = ipv6addr.split('/')
     iface_ipv6_state['address'] = [{
         'ip': address,
-        'prefix-length': prefix
+        'prefix-length': int(prefix)
     }]
     iface_state['ipv6'] = iface_ipv6_state
 
