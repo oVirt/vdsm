@@ -83,12 +83,9 @@ class TestZero:
             assert data == b"x" * DEFAULT_BLOCK_SIZE
 
     @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
-    @pytest.mark.parametrize("size", [
-        (sc.BLOCK_SIZE),
-        (DEFAULT_BLOCK_SIZE - sc.BLOCK_SIZE),
-        (DEFAULT_BLOCK_SIZE + sc.BLOCK_SIZE),
-    ])
+    @pytest.mark.parametrize("size", [sc.BLOCK_SIZE_4K, 250 * 4096])
     def test_special_volumes(self, size, loop_device, zero_method):
+
         # Zero size bytes
         blockdev.zero(loop_device.path, size=size)
         with io.open(loop_device.backing_file, "rb") as f:
