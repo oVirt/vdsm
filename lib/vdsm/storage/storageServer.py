@@ -701,7 +701,7 @@ class ConnectionFactory(object):
     def createConnection(cls, conInfo):
         conType = conInfo.type
         params = misc.namedtuple2dict(conInfo.params)
-        for param in params.keys():
+        for param in list(params):
             if params[param] is None:
                 del params[param]
         try:
