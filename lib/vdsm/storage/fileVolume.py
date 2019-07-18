@@ -45,8 +45,6 @@ from vdsm.storage.volumemetadata import VolumeMetadata
 META_FILEEXT = ".meta"
 LEASE_FILEOFFSET = 0
 
-BLOCK_SIZE = sc.BLOCK_SIZE
-
 
 def getDomUuidFromVolumePath(volPath):
     # fileVolume path has pattern:
@@ -211,7 +209,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         on underlying storage
         """
         volPath = self.getVolumePath()
-        return int(int(self.oop.os.stat(volPath).st_blocks) * BLOCK_SIZE)
+        return self.oop.os.stat(volPath).st_blocks * sc.STAT_BYTES_PER_BLOCK
 
     def setMetadata(self, meta, metaId=None, **overrides):
         """

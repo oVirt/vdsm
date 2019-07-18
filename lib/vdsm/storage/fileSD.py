@@ -68,9 +68,6 @@ FILE_SPECIAL_VOLUME_SIZES_MIB.update({
     sd.XLEASES: 0,
 })
 
-# Specific stat(2) block size as defined in the man page
-ST_BYTES_PER_BLOCK = 512
-
 _MOUNTLIST_IGNORE = ('/' + sd.BLOCKSD_DIR, '/' + sd.GLUSTERSD_DIR)
 
 
@@ -197,7 +194,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
                                imgUUID, volUUID)
         stat = self.oop.os.stat(volPath)
 
-        return stat.st_blocks * ST_BYTES_PER_BLOCK
+        return stat.st_blocks * sc.STAT_BYTES_PER_BLOCK
 
     def getLeasesFilePath(self):
         return os.path.join(self.getMDPath(), sd.LEASES)

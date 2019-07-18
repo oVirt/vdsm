@@ -43,6 +43,11 @@ COW_OVERHEAD = 1.1
 # when calculating volume optimal size.
 MIN_CHUNK = 8 * VG_EXTENT_SIZE_MB * constants.MEGAB  # 1 GB
 
+# TODO: This constant is usefull only file base storage, it should be moved to
+# some constant module specific to file based storage once we have such module.
+# Specific stat(2) block size as defined in the man page
+STAT_BYTES_PER_BLOCK = 512
+
 # At the moment this is static and it has been introduced to group all the
 # previous implicit references to the block size in FileVolume. In the future
 # it will depend on the storage domain.
