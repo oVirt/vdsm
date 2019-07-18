@@ -807,3 +807,20 @@ class TestDynamicBarrier(VdsmTestCase):
         barrier = misc.DynamicBarrier()
         self.assertTrue(barrier.enter())
         barrier.exit()
+
+
+@pytest.mark.parametrize("check_str,result", [
+    pytest.param(
+        u"The quick brown fox jumps over the lazy dog.", True, id="Ascii"),
+    pytest.param(u"\u05d0", False, id="Unicode"),
+    pytest.param(u"", True, id="Empty"),
+])
+def test_isAscii(check_str, result):
+    assert misc.isAscii(check_str) == result
+
+
+@pytest.mark.skipif(
+    six.PY2, reason="Bytes support both encode and decode calls")
+def test_checkBytes():
+    with pytest.raises(AttributeError):
+        misc.isAscii(b"bytes")

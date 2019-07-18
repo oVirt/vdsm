@@ -539,9 +539,9 @@ def itmap(func, iterable, maxthreads=UNLIMITED_THREADS):
 
 def isAscii(s):
     try:
-        s.decode('ascii')
+        s.encode('ascii')
         return True
-    except (UnicodeDecodeError, UnicodeEncodeError):
+    except UnicodeEncodeError:
         return False
 
 
