@@ -34,9 +34,6 @@ import six
 import sys
 
 from collections import namedtuple
-from monkeypatch import MonkeyPatchScope
-from testlib import VdsmTestCase as TestCaseBase
-from testlib import namedTemporaryDir
 
 from vdsm.common import exception
 from vdsm.common import hooks
@@ -563,19 +560,45 @@ def test_installed_should_return_hooks_info(fake_hooks_root, expected):
     assert hooks.installed() == expected
 
 
-class TestHooks(TestCaseBase):
-    def test_pause_flags(self):
-        vm_id = '042f6258-3446-4437-8034-0c93e3bcda1b'
-        with namedTemporaryDir() as tmpDir:
-            flags_path = os.path.join(tmpDir, '%s')
-            with MonkeyPatchScope([(hooks, '_LAUNCH_FLAGS_PATH', flags_path)]):
-                flags_file = hooks._LAUNCH_FLAGS_PATH % vm_id
-                for flag in [libvirt.VIR_DOMAIN_NONE,
-                             libvirt.VIR_DOMAIN_START_PAUSED]:
-                    self.assertFalse(os.path.exists(flags_file))
-                    hooks.dump_vm_launch_flags_to_file(vm_id, flag)
-                    read_flag = hooks.load_vm_launch_flags_from_file(vm_id)
-                    self.assertEqual(flag, read_flag)
-                    self.assertTrue(os.path.exists(flags_file))
-                    hooks.remove_vm_launch_flags_file(vm_id)
-                    self.assertFalse(os.path.exists(flags_file))
+@pytest.fixture
+def launch_flags_path(monkeypatch, tmpdir):
+    lfp = hooks._LAUNCH_FLAGS_PATH
+    if os.path.isabs(lfp):
+        lfp = lfp[1:]
+    new_lfp = os.path.join(str(tmpdir), lfp)
+    with monkeypatch.context() as m:
+        m.setattr(hooks, "_LAUNCH_FLAGS_PATH", new_lfp)
+        yield new_lfp
+
+
+@pytest.fixture
+def vm_id():
+    yield "my-vm-id"
+
+
+@pytest.fixture
+def flag_file(launch_flags_path, vm_id):
+    yield hooks._LAUNCH_FLAGS_PATH % vm_id
+
+
+@pytest.mark.parametrize("flag", [
+    pytest.param(
+        libvirt.VIR_DOMAIN_NONE,
+        id="libvirt.VIR_DOMAIN_NONE"
+    ),
+    pytest.param(
+        libvirt.VIR_DOMAIN_START_PAUSED,
+        id="libvirt.VIR_DOMAIN_START_PAUSED"
+    )
+])
+def test_vm_launch_flags(flag_file, flag, vm_id):
+    assert not os.path.exists(flag_file)
+
+    hooks.dump_vm_launch_flags_to_file(vm_id, flag)
+
+    assert hooks.load_vm_launch_flags_from_file(vm_id) == flag
+    assert os.path.exists(flag_file)
+
+    hooks.remove_vm_launch_flags_file(vm_id)
+
+    assert not os.path.exists(flag_file)
