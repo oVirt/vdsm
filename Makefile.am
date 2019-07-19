@@ -151,7 +151,7 @@ tests-%: tox
 
 .PHONY: tests-py37
 tests-py37: tox
-	tox -e "{lib,storage}-py37"
+	tox -e "{lib,storage,virt}-py37"
 
 .PHONY: storage
 storage:
