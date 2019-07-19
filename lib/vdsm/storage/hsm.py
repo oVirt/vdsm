@@ -1437,7 +1437,8 @@ class HSM(object):
                     initialSize))
         vars.task.setDefaultException(se.VolumeCreationError(argsStr))
 
-        # Engine 4.1 sends disktype=2 (integer), engine 4.2 sends diskType="2" (string).
+        # Engine 4.1 sends disktype=2 (integer), engine 4.2 sends diskType="2"
+        # (string).
         # https://bugzilla.redhat.com/1725390
         diskType = str(diskType)
 
