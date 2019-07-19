@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -312,12 +312,16 @@ def update_disk_element_from_object(disk_element, vm_drive, log,
         vmxml.set_attr(driver, 'type', drive_format)
         changes['format'] = (old_drive_format, drive_format)
 
-    # dynamic_ownership workaround
-    if (disk_type == storage.DISK_TYPE.FILE or
-            disk_type == storage.DISK_TYPE.BLOCK):
-        try:
-            vmxml.find_first(source, 'seclabel')
-        except vmxml.NotFound:
+    # dynamic_ownership workaround (required for 4.2 incoming migrations)
+    # not needed once we only support https://bugzilla.redhat.com/1666795
+    try:
+        vmxml.find_first(source, 'seclabel')
+    except vmxml.NotFound:
+        if disk_type == storage.DISK_TYPE.NETWORK and \
+                source.attrib.get('protocol') != 'gluster':
+            # skip for non-gluster drives (CINDER) as per LibvirtVmXmlBuilder
+            pass
+        else:
             storage.disable_dynamic_ownership(source)
 
     _log_changes(log, 'drive', vm_drive.name, changes)

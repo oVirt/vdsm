@@ -27,9 +27,17 @@ import xml.etree.ElementTree as ET
 from vdsm.virt.vmdevices import storage
 
 
+# dynamic_ownership workaround (required for 4.2 incoming migrations)
+# not needed once we only support https://bugzilla.redhat.com/1666795
 def _process_domxml(tree):
-    for disk_type in (storage.DISK_TYPE.BLOCK, storage.DISK_TYPE.FILE,):
-        xpath = "./devices//disk[@type='%s']//source" % (disk_type,)
+    for xpath in (
+            "./devices//disk[@type='%s']//source" %
+            (storage.DISK_TYPE.BLOCK,),
+            "./devices//disk[@type='%s']//source" %
+            (storage.DISK_TYPE.FILE,),
+            "./devices//disk[@type='%s']//source[@protocol='gluster']" %
+            (storage.DISK_TYPE.NETWORK,)
+    ):
         for element in tree.findall(xpath):
             storage.disable_dynamic_ownership(element)
 
