@@ -23,7 +23,6 @@ from __future__ import division
 
 from contextlib import contextmanager
 from collections import namedtuple
-from functools import partial
 
 import pytest
 
@@ -48,7 +47,6 @@ from vdsm.common import cmdutils
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
-from vdsm.storage import fileVolume
 from vdsm.storage import guarded
 from vdsm.storage import image
 from vdsm.storage import merge
@@ -61,23 +59,6 @@ from . marks import xfail_python3
 
 MB = 1024 ** 2
 GB = 1024 ** 3
-
-
-# XXX: Ideally we wouldn't fake these methods but the originals are defined in
-# the Volume class and use SPM rollbacks so we cannot use them.
-def fake_blockVolume_extendSize(env, vol_instance, new_size_blk):
-    new_size = new_size_blk * sc.BLOCK_SIZE
-    new_size_mb = (new_size + MB - 1) // MB
-    env.lvm.extendLV(env.sd_manifest.sdUUID, vol_instance.volUUID, new_size_mb)
-    vol_instance.setCapacity(new_size)
-
-
-def fake_fileVolume_extendSize(env, vol_instance, new_size_blk):
-    new_size = new_size_blk * sc.BLOCK_SIZE
-    vol_path = vol_instance.getVolumePath()
-    env.sd_manifest.oop.truncateFile(vol_path, new_size)
-    vol_instance.setCapacity(new_size)
-
 
 Volume = namedtuple("Volume", "format,virtual,physical")
 Expected = namedtuple("Expected", "virtual,physical")
@@ -121,12 +102,6 @@ def make_env(env_type, base, top):
                 image.Image, 'getChain',
                 lambda self, sdUUID, imgUUID:
                     [env.subchain.base_vol, env.subchain.top_vol])
-            mp.setattr(
-                blockVolume.BlockVolume, 'extendSize',
-                partial(fake_blockVolume_extendSize, env))
-            mp.setattr(
-                fileVolume.FileVolume, 'extendSize',
-                partial(fake_fileVolume_extendSize, env))
             yield env
 
 
