@@ -185,7 +185,7 @@ class TestEstimateQcow2Size:
         ("block", sc.COW_FORMAT, sc.PREALLOCATED_VOL, 10 * GIB, None),
         ("block", sc.RAW_FORMAT, sc.PREALLOCATED_VOL, 10 * GIB, None),
     ])
-    def test_calculate_initial_size_blk_file_raw_prealloc(
+    def test_calculate_initial_size_file_raw_prealloc(
             self, storage, format, prealloc, estimate, expected):
         img = image.Image("/path")
         initial_size = img.calculate_initial_size(
