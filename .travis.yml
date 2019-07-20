@@ -14,7 +14,7 @@ git:
 # TODO: add Fedora 29 python 3.7 build.
 env:
   matrix:
-    - DIST=centos     TARGETS="storage tests-py27"
+    - DIST=centos-7   TARGETS="storage tests-py27"
     - DIST=fedora-28  TARGETS="storage tests-py36"
     - DIST=fedora-29  TARGETS="lint"
     - DIST=fedora-29  TARGETS="storage tests-py27"
