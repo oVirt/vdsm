@@ -48,6 +48,7 @@ RUN yum install -y \
         sanlock-python \
         sudo \
         which \
+        xfsprogs \
         yum-utils \
     && yum clean all
 

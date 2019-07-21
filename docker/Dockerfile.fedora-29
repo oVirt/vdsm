@@ -69,6 +69,7 @@ RUN dnf install -y \
         systemd \
         systemd-udev \
         which \
+        xfsprogs \
     && dnf clean all
 
 # Add gdb python support.
