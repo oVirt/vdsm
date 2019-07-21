@@ -3,6 +3,7 @@ autoconf
 automake
 createrepo
 dbus-python
+e2fsprogs
 gdb
 git
 libguestfs-tools-c
@@ -36,5 +37,6 @@ rpm-build
 rpmlint
 sanlock-python
 sudo
+xfsprogs
 yum
 yum-utils

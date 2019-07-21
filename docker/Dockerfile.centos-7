@@ -44,6 +44,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     rpm-python \
     sanlock-python \
     which \
+    xfsprogs \
     && \
   debuginfo-install -y python && \
   easy_install pip && \
