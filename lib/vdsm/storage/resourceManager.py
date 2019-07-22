@@ -27,6 +27,8 @@ import weakref
 from functools import partial
 from uuid import uuid4
 
+import six
+
 from six.moves import queue
 
 from vdsm import utils
@@ -913,7 +915,7 @@ class Owner(object):
         try:
             self.cancelAll()
 
-            for res in self.resources.values():
+            for res in list(six.itervalues(self.resources)):
                 self.release(res.namespace, res.name)
         finally:
             self.lock.release()
