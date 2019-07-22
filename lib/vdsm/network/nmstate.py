@@ -56,16 +56,22 @@ def _generate_networks_state(networks, ifstates):
         if netattrs.get('remove'):
             _remove_network(netname, ifstates, rconfig)
         else:
-            _create_network(ifstates, netname, netattrs)
+            for ifstate in _create_network(netname, netattrs):
+                ifname = ifstate['name']
+                if ifname in ifstates:
+                    ifstates[ifname].update(ifstate)
+                else:
+                    ifstates[ifname] = ifstate
 
 
-def _create_network(ifstates, netname, netattrs):
+def _create_network(netname, netattrs):
     nic = netattrs.get('nic')
     bond = netattrs.get('bonding')
     vlan = netattrs.get('vlan')
     bridged = netattrs['bridged']
     vlan_iface_state = _generate_vlan_iface_state(nic, bond, vlan)
-    sb_iface_state = _generate_southbound_iface_state(ifstates, nic, bond)
+    sb_iface_state = _generate_southbound_iface_state(nic, bond)
+    bridge_iface_state = {}
     if bridged:
         bridge_port = vlan_iface_state or sb_iface_state
         bridge_iface_state = _generate_bridge_iface_state(netname,
@@ -79,11 +85,10 @@ def _create_network(ifstates, netname, netattrs):
         ip_iface_state = vlan_iface_state or sb_iface_state
     _generate_iface_ipv4_state(ip_iface_state, netattrs)
     _generate_iface_ipv6_state(ip_iface_state, netattrs)
-    ifstates[sb_iface_state['name']] = sb_iface_state
-    if vlan_iface_state:
-        ifstates[vlan_iface_state['name']] = vlan_iface_state
-    if bridged:
-        ifstates[bridge_iface_state['name']] = bridge_iface_state
+
+    return [
+        s for s in (sb_iface_state, vlan_iface_state, bridge_iface_state) if s
+    ]
 
 
 def _generate_vlan_iface_state(nic, bond, vlan):
@@ -101,15 +106,11 @@ def _generate_vlan_iface_state(nic, bond, vlan):
     return {}
 
 
-def _generate_southbound_iface_state(ifstates, nic, bond):
-    if nic:
-        iface_state = {}
-        iface_state['name'] = nic
-    else:
-        iface_state = ifstates[bond]
-        iface_state['name'] = bond
-    iface_state['state'] = 'up'
-    return iface_state
+def _generate_southbound_iface_state(nic, bond):
+    return {
+        'name': nic or bond,
+        'state': 'up',
+    }
 
 
 def _generate_bridge_iface_state(name, port):
