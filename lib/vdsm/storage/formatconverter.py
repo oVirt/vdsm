@@ -34,6 +34,8 @@ from __future__ import absolute_import
 
 import logging
 
+import six
+
 from vdsm import constants
 from vdsm.common import cmdutils
 from vdsm.storage import blockSD
@@ -187,7 +189,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                   metaMaxSlot, leasesSize)
 
         # Updating the volumes one by one, doesn't require activation
-        for volUUID, (imgUUIDs, parentUUID) in allVolumes.iteritems():
+        for volUUID, (imgUUIDs, parentUUID) in six.iteritems(allVolumes):
             # The first imgUUID is the imgUUID of the template or the only
             # imgUUID where the volUUID appears.
             vol = domain.produceVolume(imgUUIDs[0], volUUID)
@@ -228,7 +230,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
         v3ReallocateMetadataSlot(domain, allVolumes)
 
         # Updating the volumes one by one, doesn't require activation
-        for volUUID, (imgUUIDs, parentUUID) in allVolumes.iteritems():
+        for volUUID, (imgUUIDs, parentUUID) in six.iteritems(allVolumes):
             log.debug("Converting volume: %s", volUUID)
 
             # Maintaining a dict of {images: parent_image}
