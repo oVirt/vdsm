@@ -1282,7 +1282,7 @@ class StoragePool(object):
 
         # We should not rebuild non-active domains, because
         # they are probably disconnected from the host
-        domUUIDs = self.getDomains(activeOnly=True).keys()
+        domUUIDs = list(self.getDomains(activeOnly=True))
 
         # msdUUID should be present and active in getDomains result.
         try:
