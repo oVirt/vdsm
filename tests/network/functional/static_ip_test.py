@@ -82,6 +82,7 @@ class TestNetworkStaticIpBasic(object):
     def test_add_net_with_ip_based_on_nic(self, switch, bridged, families):
         self._test_add_net_with_ip(families, switch, bridged=bridged)
 
+    @pytest.mark.nmstate
     @parametrize_ip_families
     def test_add_net_with_ip_based_on_bond(self, switch, families):
         self._test_add_net_with_ip(families, switch, bonded=True)
