@@ -153,7 +153,7 @@ class DomainMonitor(object):
 
     @property
     def domains(self):
-        return self._monitors.keys()
+        return list(self._monitors)
 
     @property
     def poolDomains(self):
@@ -223,7 +223,7 @@ class DomainMonitor(object):
         id. To stop monitors and release the host id, use stopMonitoring().
         """
         log.info("Shutting down domain monitors")
-        self._stopMonitors(self._monitors.values(), shutdown=True)
+        self._stopMonitors(list(self._monitors.values()), shutdown=True)
         self._checker.stop()
 
     def _stopMonitors(self, monitors, shutdown=False):
