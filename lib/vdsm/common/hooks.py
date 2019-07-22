@@ -31,6 +31,7 @@ import logging
 import os
 import os.path
 import pkgutil
+import subprocess
 import sys
 import tempfile
 
@@ -111,8 +112,13 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
             scriptenv['_hook_json'] = data_filename
 
         for s in scripts:
-            rc, out, err = commands.execCmd([s], raw=True,
-                                            env=scriptenv)
+            p = commands.start([s], stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, env=scriptenv)
+
+            with commands.terminating(p):
+                (out, err) = p.communicate()
+
+            rc = p.returncode
             logging.info('%s: rc=%s err=%s', s, rc, err)
             if rc != 0:
                 errors.append(err)
