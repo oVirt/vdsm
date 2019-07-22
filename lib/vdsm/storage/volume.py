@@ -1261,7 +1261,7 @@ class Volume(object):
             vars.task.pushRecovery(
                 task.Recovery("Create volume metadata rollback", clsModule,
                               clsName, "createVolumeMetadataRollback",
-                              map(str, metaId))
+                              [str(x) for x in metaId])
             )
 
             cls.newMetadata(metaId, sdUUID, imgUUID, srcVolUUID, capacity,
