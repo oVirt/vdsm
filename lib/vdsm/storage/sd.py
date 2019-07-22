@@ -182,7 +182,7 @@ def getVolsOfImage(allVols, imgUUID):
     allVols: The getAllVols() return dict.
     """
 
-    return dict((volName, vol) for volName, vol in allVols.iteritems()
+    return dict((volName, vol) for volName, vol in six.iteritems(allVols)
                 if imgUUID in vol.imgs)
 
 
