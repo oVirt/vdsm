@@ -2594,7 +2594,7 @@ class HSM(object):
         poolInfo = pool.getInfo()
         doms = pool.getDomains()
         domInfo = self._getDomsStats(pool.domainMonitor, doms)
-        for sdUUID in doms.iterkeys():
+        for sdUUID in doms:
             if domInfo[sdUUID]['isoprefix']:
                 poolInfo['isoprefix'] = domInfo[sdUUID]['isoprefix']
                 break
