@@ -143,6 +143,8 @@ def test_rmfile(oop_cleanup, tmpdir):
     assert not os.path.exists(path)
 
 
+# External APIs
+
 def test_read_lines(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.join("file"))
@@ -291,3 +293,22 @@ def get_umask():
     current_umask = os.umask(0)
     os.umask(current_umask)
     return current_umask
+
+
+# glob APIs
+
+def test_glob(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir)
+
+    all_files = set()
+    for i in range(5):
+        filename = "file{}".format(i)
+        f = tmpdir.join(filename)
+        f.write("")
+        all_files.add(str(f))
+
+    assert set(iop.glob.glob(path + "/*")) == all_files
+    assert set(iop.glob.glob(path + "/file[0-4]")) == all_files
+    assert iop.glob.glob(path + "/file[5-9]") == []
+    assert iop.glob.glob(path + "/file[4-9]") == [str(tmpdir.join("file4"))]
