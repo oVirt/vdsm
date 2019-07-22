@@ -1530,7 +1530,7 @@ class StoragePool(object):
     @unsecured
     def getDomains(self, activeOnly=False):
         return dict((sdUUID, status) for sdUUID, status
-                    in self._backend.getDomainsMap().iteritems()
+                    in six.iteritems(self._backend.getDomainsMap())
                     if not activeOnly or status == sd.DOM_ACTIVE_STATUS)
 
     def checkBackupDomain(self):
