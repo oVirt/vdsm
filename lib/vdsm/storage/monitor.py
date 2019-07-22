@@ -24,6 +24,8 @@ import logging
 import threading
 import time
 
+import six
+
 from vdsm import utils
 from vdsm.common import concurrent
 from vdsm.config import config
@@ -203,7 +205,7 @@ class DomainMonitor(object):
 
     def getHostStatus(self, domains):
         status = {}
-        for sdUUID, hostId in domains.iteritems():
+        for sdUUID, hostId in list(six.iteritems(domains)):
             try:
                 monitor = self._monitors[sdUUID]
             except KeyError:
