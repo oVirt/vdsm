@@ -74,8 +74,12 @@ def _create_network(netname, netattrs):
     bridge_iface_state = {}
     if bridged:
         bridge_port = vlan_iface_state or sb_iface_state
-        bridge_iface_state = _generate_bridge_iface_state(netname,
-                                                          bridge_port['name'])
+        stp_enabled = netattrs['stp']
+        bridge_iface_state = _generate_bridge_iface_state(
+            netname,
+            bridge_port['name'],
+            options=_generate_bridge_options(stp_enabled)
+        )
 
         # Bridge port IP stacks need to be disabled.
         _generate_iface_ipv4_state(bridge_port, netattrs={})
@@ -113,8 +117,8 @@ def _generate_southbound_iface_state(nic, bond):
     }
 
 
-def _generate_bridge_iface_state(name, port):
-    return {
+def _generate_bridge_iface_state(name, port, options=None):
+    bridge_state = {
         'name': name,
         'type': 'linux-bridge',
         'state': 'up',
@@ -124,6 +128,17 @@ def _generate_bridge_iface_state(name, port):
                     'name': port,
                 }
             ]
+        }
+    }
+    if options:
+        bridge_state['bridge']['options'] = options
+    return bridge_state
+
+
+def _generate_bridge_options(stp_enabled):
+    return {
+        'stp': {
+            'enabled': stp_enabled,
         }
     }
 

@@ -59,8 +59,8 @@ def test_translate_empty_networks_and_bonds():
 @parametrize_bridged
 def test_translate_nets_without_ip(bridged):
     networks = {
-        'testnet1': {'nic': IFACE0, 'bridged': bridged, 'switch': 'legacy'},
-        'testnet2': {'nic': IFACE1, 'bridged': bridged, 'switch': 'legacy'}
+        'testnet1': _create_network_config('nic', IFACE0, bridged),
+        'testnet2': _create_network_config('nic', IFACE1, bridged)
     }
     state = nmstate.generate_state(networks=networks, bondings={})
 
@@ -76,8 +76,14 @@ def test_translate_nets_without_ip(bridged):
         ]
     }
     if bridged:
-        bridge1_state = _create_bridge_iface_state('testnet1', IFACE0)
-        bridge2_state = _create_bridge_iface_state('testnet2', IFACE1)
+        bridge1_state = _create_bridge_iface_state(
+            'testnet1', IFACE0, options=_generate_bridge_options(
+                stp_enabled=False)
+        )
+        bridge2_state = _create_bridge_iface_state(
+            'testnet2', IFACE1, options=_generate_bridge_options(
+                stp_enabled=False)
+        )
         _disable_iface_ip(bridge1_state, bridge2_state)
         expected_state[nmstate.INTERFACES].extend([
             bridge1_state,
@@ -90,22 +96,16 @@ def test_translate_nets_without_ip(bridged):
 @parametrize_bridged
 def test_translate_nets_with_ip(bridged):
     networks = {
-        'testnet1': {
-            'nic': IFACE0,
-            'bridged': bridged,
-            'ipaddr': IPv4_ADDRESS1,
-            'netmask': IPv4_NETMASK1,
-            'ipv6addr': IPv6_ADDRESS1 + '/' + str(IPv6_PREFIX1),
-            'switch': 'legacy'
-        },
-        'testnet2': {
-            'nic': IFACE1,
-            'bridged': bridged,
-            'ipaddr': IPv4_ADDRESS2,
-            'netmask': IPv4_NETMASK2,
-            'ipv6addr': IPv6_ADDRESS2 + '/' + str(IPv6_PREFIX2),
-            'switch': 'legacy'
-        }
+        'testnet1': _create_network_config(
+            'nic', IFACE0, bridged,
+            static_ip_configuration=_create_static_ip_configuration(
+                IPv4_ADDRESS1, IPv4_NETMASK1, IPv6_ADDRESS1, IPv6_PREFIX1)
+        ),
+        'testnet2': _create_network_config(
+            'nic', IFACE1, bridged,
+            static_ip_configuration=_create_static_ip_configuration(
+                IPv4_ADDRESS2, IPv4_NETMASK2, IPv6_ADDRESS2, IPv6_PREFIX2)
+        )
     }
     state = nmstate.generate_state(networks=networks, bondings={})
 
@@ -120,8 +120,14 @@ def test_translate_nets_with_ip(bridged):
     expected_state = {nmstate.INTERFACES: [eth0_state, eth1_state]}
     if bridged:
         _disable_iface_ip(eth0_state, eth1_state)
-        bridge1_state = _create_bridge_iface_state('testnet1', IFACE0)
-        bridge2_state = _create_bridge_iface_state('testnet2', IFACE1)
+        bridge1_state = _create_bridge_iface_state(
+            'testnet1', IFACE0, options=_generate_bridge_options(
+                stp_enabled=False)
+        )
+        bridge2_state = _create_bridge_iface_state(
+            'testnet2', IFACE1, options=_generate_bridge_options(
+                stp_enabled=False)
+        )
         bridge1_state.update(ip0_state)
         bridge2_state.update(ip1_state)
         expected_state[nmstate.INTERFACES].extend([
@@ -184,14 +190,10 @@ def test_translate_bond_with_two_slaves_and_options():
 @parametrize_bridged
 def test_translate_net_with_ip_on_bond(bridged):
     networks = {
-        'testnet1': {
-            'bonding': 'testbond0',
-            'bridged': bridged,
-            'ipaddr': IPv4_ADDRESS1,
-            'netmask': IPv4_NETMASK1,
-            'ipv6addr': IPv6_ADDRESS1 + '/' + str(IPv6_PREFIX1),
-            'switch': 'legacy'
-        }
+        'testnet1': _create_network_config(
+            'bonding', 'testbond0', bridged,
+            static_ip_configuration=_create_static_ip_configuration(
+                IPv4_ADDRESS1, IPv4_NETMASK1, IPv6_ADDRESS1, IPv6_PREFIX1))
     }
     bondings = {
         'testbond0': {
@@ -210,7 +212,10 @@ def test_translate_net_with_ip_on_bond(bridged):
     expected_state = {nmstate.INTERFACES: [bond0_state]}
     if bridged:
         _disable_iface_ip(bond0_state)
-        bridge1_state = _create_bridge_iface_state('testnet1', 'testbond0')
+        bridge1_state = _create_bridge_iface_state(
+            'testnet1', 'testbond0', options=_generate_bridge_options(
+                stp_enabled=False)
+        )
         bridge1_state.update(ip_state)
         expected_state[nmstate.INTERFACES].extend([bridge1_state])
     else:
@@ -222,14 +227,10 @@ def test_translate_net_with_ip_on_bond(bridged):
 @parametrize_bridged
 def test_translate_net_with_dynamic_ip(bridged):
     networks = {
-        'testnet1': {
-            'bonding': 'testbond0',
-            'bridged': bridged,
-            'bootproto': 'dhcp',
-            'dhcpv6': True,
-            'ipv6autoconf': True,
-            'switch': 'legacy'
-        }
+        'testnet1': _create_network_config(
+            'bonding', 'testbond0', bridged,
+            dynamic_ip_configuration=_create_dynamic_ip_configuration(
+                dhcpv4=True, dhcpv6=True, ipv6autoconf=True))
     }
     bondings = {
         'testbond0': {
@@ -248,7 +249,10 @@ def test_translate_net_with_dynamic_ip(bridged):
     expected_state = {nmstate.INTERFACES: [bond0_state]}
     if bridged:
         _disable_iface_ip(bond0_state)
-        bridge1_state = _create_bridge_iface_state('testnet1', 'testbond0')
+        bridge1_state = _create_bridge_iface_state(
+            'testnet1', 'testbond0', options=_generate_bridge_options(
+                stp_enabled=False)
+        )
         bridge1_state.update(ip_state)
         expected_state[nmstate.INTERFACES].extend([bridge1_state])
     else:
@@ -260,15 +264,11 @@ def test_translate_net_with_dynamic_ip(bridged):
 @parametrize_bridged
 def test_translate_net_with_ip_on_vlan_on_bond(bridged):
     networks = {
-        'testnet1': {
-            'bonding': 'testbond0',
-            'bridged': bridged,
-            'vlan': VLAN101,
-            'ipaddr': IPv4_ADDRESS1,
-            'netmask': IPv4_NETMASK1,
-            'ipv6addr': IPv6_ADDRESS1 + '/' + str(IPv6_PREFIX1),
-            'switch': 'legacy'
-        }
+        'testnet1': _create_network_config(
+            'bonding', 'testbond0', bridged,
+            static_ip_configuration=_create_static_ip_configuration(
+                IPv4_ADDRESS1, IPv4_NETMASK1, IPv6_ADDRESS1, IPv6_PREFIX1),
+            vlan=VLAN101)
     }
     bondings = {
         'testbond0': {
@@ -290,8 +290,11 @@ def test_translate_net_with_ip_on_vlan_on_bond(bridged):
     expected_state = {nmstate.INTERFACES: [bond0_state, vlan101_state]}
     if bridged:
         _disable_iface_ip(vlan101_state)
-        bridge1_state = _create_bridge_iface_state('testnet1',
-                                                   vlan101_state['name'])
+        bridge1_state = _create_bridge_iface_state(
+            'testnet1',
+            vlan101_state['name'],
+            options=_generate_bridge_options(stp_enabled=False)
+        )
         bridge1_state.update(ip1_state)
         expected_state[nmstate.INTERFACES].extend([bridge1_state])
     else:
@@ -472,15 +475,28 @@ def _create_bond_iface_state(name, mode, slaves, **options):
     return state
 
 
-def _create_bridge_iface_state(name, port):
-    return {
+def _create_bridge_iface_state(name, port, options=None):
+    bridge_state = {
         'name': name,
         'type': 'linux-bridge',
         'state': 'up',
         'bridge': {
-            'port': [{
-                'name': port
-            }]
+            'port': [
+                {
+                    'name': port,
+                }
+            ]
+        }
+    }
+    if options:
+        bridge_state['bridge']['options'] = options
+    return bridge_state
+
+
+def _generate_bridge_options(stp_enabled):
+    return {
+        'stp': {
+            'enabled': stp_enabled,
         }
     }
 
@@ -527,3 +543,49 @@ def _create_ipv6_state(address=None, prefix=None, dynamic=False):
             ]
         }
     return state
+
+
+def _create_network_config(if_type, if_name, bridged,
+                           static_ip_configuration=None,
+                           dynamic_ip_configuration=None,
+                           vlan=None):
+    network_config = _create_interface_network_config(if_type, if_name)
+    network_config.update(
+        _create_bridge_network_config(bridged, stp_enabled=False))
+    network_config.update(static_ip_configuration or {})
+    network_config.update(dynamic_ip_configuration or {})
+    network_config.update({'vlan': vlan} if vlan else {})
+    return network_config
+
+
+def _create_interface_network_config(if_type, if_name):
+    return {if_type: if_name, 'switch': 'legacy'}
+
+
+def _create_bridge_network_config(bridged, stp_enabled):
+    network_config = {'bridged': bridged}
+    if bridged:
+        network_config['stp'] = stp_enabled
+    return network_config
+
+
+def _create_static_ip_configuration(ipv4_address, ipv4_netmask, ipv6_address,
+                                    ipv6_prefix_length):
+    ip_config = {}
+    if ipv4_address and ipv4_netmask:
+        ip_config['ipaddr'] = ipv4_address
+        ip_config['netmask'] = ipv4_netmask
+    if ipv6_address and ipv6_prefix_length:
+        ip_config['ipv6addr'] = ipv6_address + '/' + str(ipv6_prefix_length)
+    return ip_config
+
+
+def _create_dynamic_ip_configuration(dhcpv4, dhcpv6, ipv6autoconf):
+    dynamic_ip_config = {}
+    if dhcpv4:
+        dynamic_ip_config['bootproto'] = 'dhcp'
+    if dhcpv6:
+        dynamic_ip_config['dhcpv6'] = True
+    if ipv6autoconf:
+        dynamic_ip_config['ipv6autoconf'] = True
+    return dynamic_ip_config

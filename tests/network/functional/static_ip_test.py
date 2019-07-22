@@ -76,6 +76,7 @@ parametrize_ip_families = pytest.mark.parametrize(
 @nftestlib.parametrize_switch
 class TestNetworkStaticIpBasic(object):
 
+    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @parametrize_ip_families
     def test_add_net_with_ip_based_on_nic(self, switch, bridged, families):
