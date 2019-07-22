@@ -30,7 +30,6 @@ import os
 import os.path
 import pickle
 import pytest
-import six
 import sys
 
 from collections import namedtuple
@@ -380,8 +379,7 @@ def env_dump(hooks_dir):
         {},
         {"abc": u"\udcfc"},
         {},
-        id="variable with invalid utf-8 should be ignored",
-        marks=pytest.mark.xfail(six.PY3, reason="wrong exception caught")
+        id="variable with invalid utf-8 should be ignored"
     ),
     pytest.param(
         {"vmId": "myvm"},

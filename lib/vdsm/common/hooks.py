@@ -97,7 +97,7 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
                     scriptenv[k] = v.encode('utf-8')
                 else:
                     scriptenv[k] = v
-            except UnicodeDecodeError:
+            except UnicodeEncodeError:
                 pass
 
         if vmconf.get('vmId'):
