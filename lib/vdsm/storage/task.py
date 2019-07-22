@@ -50,7 +50,6 @@ from __future__ import absolute_import
 import logging
 import os
 import threading
-import types
 import uuid
 
 from contextlib import contextmanager
@@ -280,13 +279,13 @@ class ParamList:
 
         if type(params) == list:
             for i in params:
-                if not isinstance(i, types.StringTypes):
+                if not isinstance(i, six.string_types):
                     raise ValueError("ParamsList: param item %s not a string"
                                      " (%s)" % (i, type(i)))
                 if sep in i:
                     raise ValueError("ParamsList: sep %s in %s" % (sep, i))
             self.params = params
-        elif isinstance(params, types.StringTypes):
+        elif isinstance(params, six.string_types):
             self.params = [s.strip() for s in params.split(sep)]
         else:
             raise ValueError("ParamList: params type not supported (%s)" %
