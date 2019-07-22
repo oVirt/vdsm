@@ -19,6 +19,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import six
+
 
 def to_str(value):
     """Convert textual value to native string.
@@ -26,14 +28,15 @@ def to_str(value):
     Passed value will be returned as a native str value (bytes in Python 2,
     unicode in Python 3).
     """
-    if isinstance(value, str):
-        return value
-    elif isinstance(value, bytes):
-        return value.decode('utf-8')
-    else:
+    if not isinstance(value, (six.text_type, six.binary_type)):
         raise ValueError(
             'Expected a textual value, given {} of type {}.'.format(
                 value, type(value)))
+    elif six.PY2 and isinstance(value, six.text_type):
+        return value.encode('utf-8')
+    elif six.PY3 and isinstance(value, six.binary_type):
+        return value.decode('utf-8')
+    return value
 
 
 def to_binary(value):
