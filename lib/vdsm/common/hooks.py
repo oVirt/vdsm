@@ -120,7 +120,7 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
             if rc == 2:
                 break
             elif rc > 2:
-                logging.warn('hook returned unexpected return code %s', rc)
+                logging.warning('hook returned unexpected return code %s', rc)
 
         if errors and raiseError:
             raise exception.HookError(err)
