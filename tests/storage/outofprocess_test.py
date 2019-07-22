@@ -108,9 +108,7 @@ def test_amount_of_instances_per_pool_name(oop_cleanup, monkeypatch):
 
 # fileUtils APIs
 
-def test_fileutils_call(oop_cleanup):
-    """fileUtils is a custom module and calling it might break even though
-    built in module calls aren't broken"""
+def test_fileutils_pathexists(oop_cleanup):
     iop = oop.getProcessPool("test")
     path = "/dev/null"
     assert iop.fileUtils.pathExists(path)
@@ -130,7 +128,7 @@ def test_os_path_islink_not_link(oop_cleanup, tmpdir):
     assert not iop.os.path.islink(str(tmpdir))
 
 
-def test_sub_module_call(oop_cleanup):
+def test_os_path_exists(oop_cleanup):
     path = "/dev/null"
     iop = oop.getProcessPool("test")
     assert iop.os.path.exists(path)
@@ -138,7 +136,7 @@ def test_sub_module_call(oop_cleanup):
 
 # utils APIs
 
-def test_rmfile(oop_cleanup, tmpdir):
+def test_utils_rmfile(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
 
     path = str(tmpdir.join("file"))
