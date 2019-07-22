@@ -315,7 +315,6 @@ def test_translate_remove_bridgeless_vlan_net(rconfig_mock):
         nmstate.INTERFACES: [
             {
                 'name': IFACE0 + '.' + str(VLAN101),
-                'type': 'vlan',
                 'state': 'absent',
             }
         ]
@@ -358,7 +357,6 @@ def test_translate_remove_bridgeless_net_on_bond(rconfig_mock):
         nmstate.INTERFACES: [
             {
                 'name': 'testbond0',
-                'type': 'bond',
                 'state': 'up',
                 'ipv4': {'enabled': False},
                 'ipv6': {'enabled': False}
@@ -389,7 +387,6 @@ def test_translate_remove_bridgeless_vlan_net_on_bond(rconfig_mock):
         nmstate.INTERFACES: [
             {
                 'name': 'testbond0.' + str(VLAN101),
-                'type': 'vlan',
                 'state': 'absent',
             }
         ]
@@ -403,7 +400,7 @@ def _sort_by_name(ifaces_states):
 
 
 def _create_ethernet_iface_state(name):
-    return {'name': name, 'type': 'ethernet', 'state': 'up'}
+    return {'name': name, 'state': 'up'}
 
 
 def _create_bond_iface_state(name, mode, slaves, **options):

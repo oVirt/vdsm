@@ -77,11 +77,9 @@ def _create_network(ifstates, netattrs):
     if nic:
         iface_state = {}
         iface_state['name'] = nic
-        iface_state['type'] = 'ethernet'
     else:
         iface_state = ifstates[bond]
         iface_state['name'] = bond
-        iface_state['type'] = 'bond'
     iface_state['state'] = 'up'
     ip_iface_state = vlan_iface_state if vlan else iface_state
     _generate_iface_ipv4_state(ip_iface_state, netattrs)
@@ -100,18 +98,22 @@ def _remove_network(netname, ifstates, rconfig):
     if vlan:
         iface_state = {
             'name': '.'.join([base_iface, str(vlan)]),
-            'type': 'vlan',
             'state': 'absent',
         }
     else:
         iface_state = {
             'name': base_iface,
-            'type': 'ethernet' if nic else 'bond',
             'state': 'up',
             'ipv4': {'enabled': False},
             'ipv6': {'enabled': False}
         }
     ifstates[iface_state['name']] = iface_state
+
+    if netconf['bridged']:
+        ifstates[netname] = {
+            'name': netname,
+            'state': 'absent'
+        }
 
 
 def _generate_bonds_state(bondings, ifstates):
