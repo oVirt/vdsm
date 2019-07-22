@@ -26,7 +26,6 @@ import stat
 
 import pytest
 
-from vdsm.storage import constants as sc
 from vdsm.storage import fileUtils
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
@@ -221,17 +220,3 @@ class TestNormalizePath(VdsmTestCase):
     ])
     def test_normalize_path_equals(self, path, normalized_path):
         self.assertEqual(normalized_path, fileUtils.normalize_path(path))
-
-
-@pytest.mark.parametrize("orig_size, expected_size", [
-    (4096 - 1, 4096),
-    (4096, 4096),
-    (4096 + 1, 4096 + sc.BLOCK_SIZE_4K),
-])
-def test_pad_to_block_size(tmpdir, orig_size, expected_size):
-    path = str(tmpdir.join("file"))
-    with open(path, "w") as f:
-        f.truncate(orig_size)
-    fileUtils.padToBlockSize(path)
-    padded_size = os.stat(path).st_size
-    assert padded_size == expected_size

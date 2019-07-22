@@ -63,7 +63,6 @@ from vdsm.common.logutils import SimpleLogAdapter, volume_chain_to_str
 from vdsm.network import api as net_api
 
 # TODO: remove these imports, code using this should use storage apis.
-from vdsm.storage import fileUtils
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import qemuimg
 from vdsm.storage import sd
@@ -4032,11 +4031,8 @@ class Vm(object):
             sdType = sd.name2type(
                 self.cif.irs.getStorageDomainInfo(sdUUID)['info']['type'])
             if sdType in sd.FILE_DOMAIN_TYPES:
-                if sdType == sd.NFS_DOMAIN:
-                    oop.getProcessPool(sdUUID).fileUtils. \
-                        padToBlockSize(memoryVolPath)
-                else:
-                    fileUtils.padToBlockSize(memoryVolPath)
+                iop = oop.getProcessPool(sdUUID)
+                iop.fileUtils.padToBlockSize(memoryVolPath)
 
         snap = vmxml.Element('domainsnapshot')
         disks = vmxml.Element('disks')

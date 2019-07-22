@@ -37,9 +37,7 @@ import sys
 import six
 
 from vdsm import constants
-from vdsm import utils
 from vdsm.common.network import address
-from vdsm.storage import constants as sc
 
 log = logging.getLogger('storage.fileUtils')
 
@@ -318,11 +316,3 @@ def copyUserModeToGroup(path):
         newMode = (mode & 0o707) | newGroupMode
         log.info("Changing mode for %s to %#o", path, newMode)
         os.chmod(path, newMode)
-
-
-def padToBlockSize(path):
-    with open(path, 'a') as f:
-        size = os.fstat(f.fileno()).st_size
-        newSize = utils.round(size, sc.BLOCK_SIZE_4K)
-        log.info("Truncating file %s to %d bytes", path, newSize)
-        os.ftruncate(f.fileno(), newSize)

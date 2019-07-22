@@ -106,6 +106,27 @@ def test_amount_of_instances_per_pool_name(oop_cleanup, monkeypatch):
 
 # fileUtils APIs
 
+@pytest.mark.parametrize("orig_size, expected_size", [
+    (4096 - 1, 4096),
+    (4096, 4096),
+    (4096 + 1, 4096 + 4096),
+])
+def test_fileutils_padtoblocksize(
+        oop_cleanup, tmpdir, orig_size, expected_size):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    orig_data = b"x" * orig_size
+    with open(path, "wb") as f:
+        f.write(orig_data)
+
+    iop.fileUtils.padToBlockSize(path)
+
+    with open(path, "rb") as f:
+        assert f.read(orig_size) == orig_data
+        assert f.read() == b"\0" * (expected_size - orig_size)
+
+
 def test_fileutils_pathexists(oop_cleanup):
     iop = oop.getProcessPool("test")
     path = "/dev/null"
