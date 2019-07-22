@@ -3332,7 +3332,7 @@ class HSM(object):
         if imgUUID == sc.BLANK_UUID:
             volUUIDs = vols.keys()
         else:
-            volUUIDs = [k for k, v in vols.iteritems() if imgUUID in v.imgs]
+            volUUIDs = [k for k, v in six.iteritems(vols) if imgUUID in v.imgs]
         return dict(uuidlist=volUUIDs)
 
     @public
@@ -3500,7 +3500,7 @@ class HSM(object):
         domInfo = {}
         repoStats = self._getRepoStats(domainMonitor)
 
-        for sdUUID, sdStatus in doms.iteritems():
+        for sdUUID, sdStatus in six.iteritems(doms):
             # Return statistics for active domains only
             domInfo[sdUUID] = {'status': sdStatus, 'alerts': [],
                                'isoprefix': ''}
