@@ -23,6 +23,8 @@ from __future__ import absolute_import
 import logging
 import weakref
 
+import six
+
 from vdsm.common import exception
 from vdsm.storage import blockSD
 from vdsm.storage import clusterlock
@@ -58,7 +60,7 @@ MAX_DOMAINS //= 48
 
 
 def _domainListEncoder(domDict):
-    domains = ','.join(['%s:%s' % (k, v) for k, v in domDict.iteritems()])
+    domains = ','.join(['%s:%s' % (k, v) for k, v in six.iteritems(domDict)])
     return domains
 
 
@@ -449,7 +451,7 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
 
     def setDomainsMap(self, domainsMap):
         self.domainsMap = dict(
-            ((k, v.capitalize()) for k, v in domainsMap.iteritems()))
+            ((k, v.capitalize()) for k, v in six.iteritems(domainsMap)))
         self.log.info(
             'new storage pool master version %s and domains map %s',
             self.masterVersion, self.domainsMap)
