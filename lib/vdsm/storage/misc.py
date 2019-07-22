@@ -41,6 +41,8 @@ import threading
 import uuid
 import weakref
 
+import six
+
 from functools import wraps, partial
 
 from six.moves import map
@@ -241,7 +243,7 @@ def validateSize(capacity, name):
     Raises InvalidParameterException if value is not a string or if it could
     not be converted to integer.
     """
-    if not isinstance(capacity, basestring):
+    if not isinstance(capacity, six.string_types):
         log.error("Number of blocks as int is not supported, use size in "
                   "bytes as string")
         raise se.InvalidParameterException(name, capacity)
