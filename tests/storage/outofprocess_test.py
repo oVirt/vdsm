@@ -42,18 +42,6 @@ def oop_cleanup():
     oop.stop()
 
 
-def test_os_path_islink(oop_cleanup, tmpdir):
-    iop = oop.getProcessPool("test")
-    link = str(tmpdir.join("link"))
-    os.symlink("/no/such/file", link)
-    assert iop.os.path.islink(link)
-
-
-def test_os_path_islink_not_link(oop_cleanup, tmpdir):
-    iop = oop.getProcessPool("test")
-    assert not iop.os.path.islink(str(tmpdir))
-
-
 # TODO: the following 2 tests use private instance variables that
 #  should not be used by tests.
 # oop.getProcessPool(pool)._ioproc
@@ -118,6 +106,8 @@ def test_amount_of_instances_per_pool_name(oop_cleanup, monkeypatch):
         raise
 
 
+# fileUtils APIs
+
 def test_fileutils_call(oop_cleanup):
     """fileUtils is a custom module and calling it might break even though
     built in module calls aren't broken"""
@@ -126,11 +116,27 @@ def test_fileutils_call(oop_cleanup):
     assert iop.fileUtils.pathExists(path)
 
 
+# os APIs
+
+def test_os_path_islink(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    link = str(tmpdir.join("link"))
+    os.symlink("/no/such/file", link)
+    assert iop.os.path.islink(link)
+
+
+def test_os_path_islink_not_link(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    assert not iop.os.path.islink(str(tmpdir))
+
+
 def test_sub_module_call(oop_cleanup):
     path = "/dev/null"
     iop = oop.getProcessPool("test")
     assert iop.os.path.exists(path)
 
+
+# utils APIs
 
 def test_rmfile(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
@@ -141,6 +147,25 @@ def test_rmfile(oop_cleanup, tmpdir):
     assert os.path.exists(path)
     iop.utils.rmFile(path)
     assert not os.path.exists(path)
+
+
+# glob APIs
+
+def test_glob(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir)
+
+    all_files = set()
+    for i in range(5):
+        filename = "file{}".format(i)
+        f = tmpdir.join(filename)
+        f.write("")
+        all_files.add(str(f))
+
+    assert set(iop.glob.glob(path + "/*")) == all_files
+    assert set(iop.glob.glob(path + "/file[0-4]")) == all_files
+    assert iop.glob.glob(path + "/file[5-9]") == []
+    assert iop.glob.glob(path + "/file[4-9]") == [str(tmpdir.join("file4"))]
 
 
 # External APIs
@@ -293,22 +318,3 @@ def get_umask():
     current_umask = os.umask(0)
     os.umask(current_umask)
     return current_umask
-
-
-# glob APIs
-
-def test_glob(oop_cleanup, tmpdir):
-    iop = oop.getProcessPool("test")
-    path = str(tmpdir)
-
-    all_files = set()
-    for i in range(5):
-        filename = "file{}".format(i)
-        f = tmpdir.join(filename)
-        f.write("")
-        all_files.add(str(f))
-
-    assert set(iop.glob.glob(path + "/*")) == all_files
-    assert set(iop.glob.glob(path + "/file[0-4]")) == all_files
-    assert iop.glob.glob(path + "/file[5-9]") == []
-    assert iop.glob.glob(path + "/file[4-9]") == [str(tmpdir.join("file4"))]
