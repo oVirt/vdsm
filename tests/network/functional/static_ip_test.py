@@ -121,6 +121,7 @@ class TestNetworkStaticIpBasic(object):
                 adapter.assertNetworkIp(NETWORK_NAME,
                                         netcreate[NETWORK_NAME])
 
+    @pytest.mark.nmstate
     def test_add_net_with_prefix(self, switch):
         with dummy_device() as nic:
             network_attrs = {'nic': nic,
@@ -133,6 +134,7 @@ class TestNetworkStaticIpBasic(object):
                 adapter.assertNetworkIp(NETWORK_NAME,
                                         netcreate[NETWORK_NAME])
 
+    @pytest.mark.nmstate
     def test_static_ip_configuration_v4_to_v6_and_back(self, switch):
         with dummy_devices(1) as (nic1,):
             net_ipv4_atts = {'nic': nic1,
@@ -153,6 +155,7 @@ class TestNetworkStaticIpBasic(object):
                 adapter.setupNetworks(net_ipv4, {}, NOCHK)
                 adapter.assertNetworkIp(NETWORK_NAME, net_ipv4_atts)
 
+    @pytest.mark.nmstate
     def test_edit_ipv4_address_on_bonded_network(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             net_attrs_ip1 = {'bonding': BOND_NAME,
@@ -352,6 +355,7 @@ class TestNetworkIPDefaultGateway(object):
 
 
 @nftestlib.parametrize_switch
+@pytest.mark.nmstate
 class TestAcquireNicsWithStaticIP(object):
 
     def test_attach_nic_with_ip_to_ipless_network(self, switch):
@@ -445,6 +449,7 @@ class TestIfacesWithMultiplesUsers(object):
 
 
 @nftestlib.parametrize_switch
+@pytest.mark.nmstate
 class TestIPValidation(object):
 
     def test_add_net_ip_missing_addresses_fails(self, switch):
