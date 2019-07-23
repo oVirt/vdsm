@@ -149,19 +149,25 @@ def _remove_network(netname, ifstates, rconfig):
     bond = netconf.get('bonding')
     base_iface = nic or bond
     vlan = netconf.get('vlan')
+    iface_state = {}
     if vlan:
+        vlan_interface = '.'.join([base_iface, str(vlan)])
         iface_state = {
-            'name': '.'.join([base_iface, str(vlan)]),
-            'state': 'absent',
+            vlan_interface: {
+                'name': vlan_interface,
+                'state': 'absent',
+            }
         }
-    else:
+    elif not ifstates.get(base_iface):
         iface_state = {
-            'name': base_iface,
-            'state': 'up',
-            'ipv4': {'enabled': False},
-            'ipv6': {'enabled': False}
+            base_iface: {
+                'name': base_iface,
+                'state': 'up',
+                'ipv4': {'enabled': False},
+                'ipv6': {'enabled': False}
+            }
         }
-    ifstates[iface_state['name']] = iface_state
+    ifstates.update(iface_state)
 
     if netconf['bridged']:
         ifstates[netname] = {
