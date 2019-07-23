@@ -12,7 +12,6 @@ lib/vdsm/gluster/gfapi.py
 lib/vdsm/gluster/storagedev.py
 lib/vdsm/gluster/thinstorage.py
 lib/vdsm/hook/hooking.py
-lib/vdsm/host/__init__.py
 lib/vdsm/mkimage.py
 lib/vdsm/storage/blockSD.py
 lib/vdsm/storage/clusterlock.py

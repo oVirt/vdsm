@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2017 Red Hat, Inc.
+# Copyright 2008-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,10 +23,10 @@ from __future__ import division
 
 import os
 import logging
+
 from vdsm.common import cpuarch
 from vdsm.common.cache import memoized
-from vdsm.common.commands import execCmd
-from vdsm import constants
+from vdsm import dmidecodeUtil
 
 P_VDSM_NODE_ID = '/etc/vdsm/vdsm.id'
 
@@ -42,18 +42,10 @@ def uuid():
         else:
             arch = cpuarch.real()
             if cpuarch.is_x86(arch):
-                ret, out, err = execCmd([constants.EXT_DMIDECODE,
-                                         "-s",
-                                         "system-uuid"],
-                                        raw=True,
-                                        sudo=True)
-                out = '\n'.join(line for line in out.splitlines()
-                                if not line.startswith('#'))
-
-                if ret == 0 and 'Not' not in out:
-                    # Avoid error string - 'Not Settable' or 'Not Present'
-                    host_UUID = out.strip()
-                else:
+                try:
+                    hw_info = dmidecodeUtil.getHardwareInfoStructure()
+                    host_UUID = hw_info['systemUUID'].lower()
+                except KeyError:
                     logging.warning('Could not find host UUID.')
             elif cpuarch.is_ppc(arch):
                 # eg. output IBM,03061C14A
