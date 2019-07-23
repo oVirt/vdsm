@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ import uuid
 
 from vdsm.common import libvirtconnection
 from vdsm.common import response
+from vdsm.common import xmlutils
 
 
 def register(secrets, clear=False):
@@ -151,7 +152,7 @@ class Secret(object):
         usage_type.text = self.usage_id
         usage.append(usage_type)
         secret.append(usage)
-        return etree.tostring(secret)
+        return xmlutils.tostring(secret)
 
     def __str__(self):
         return ("Secret(uuid={self.uuid}, "

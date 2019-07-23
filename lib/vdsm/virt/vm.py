@@ -2655,7 +2655,7 @@ class Vm(object):
                                  'VM devices' % devXml.get('type'))
             else:
                 devObj.setupPassword(devXml)
-        return ET.tostring(domObj)
+        return xmlutils.tostring(domObj)
 
     @api.guard(_not_migrating)
     def hotplugNic(self, params):

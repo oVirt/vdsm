@@ -1,4 +1,4 @@
-# Copyright 2011-2017 Red Hat, Inc.
+# Copyright 2011-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,8 @@ from xml.sax.saxutils import escape
 from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 
 from vdsm.common import libvirtconnection
+from vdsm.common import xmlutils
+
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
 
@@ -75,7 +77,7 @@ def createNetworkDef(network, bridged=True, iface=None):
         root.append(EtreeElement('bridge', name=network))
     else:
         forwardElem.append(EtreeElement('interface', dev=iface))
-    return etree.tostring(root)
+    return xmlutils.tostring(root)
 
 
 def create_network(netname, iface, user_reference=None):
