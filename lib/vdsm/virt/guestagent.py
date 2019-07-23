@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2017 Red Hat, Inc.
+# Copyright 2011-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -455,7 +455,9 @@ class GuestAgent(object):
         self.log.info("Stopping connection")
         self._stopped = True
         try:
-            self._channelListener.unregister(self._sock.fileno())
+            fileno = self._sock.fileno()
+            if fileno >= 0:
+                self._channelListener.unregister(fileno)
         except socket.error as e:
             if e.args[0] == errno.EBADF:
                 # socket was already closed
