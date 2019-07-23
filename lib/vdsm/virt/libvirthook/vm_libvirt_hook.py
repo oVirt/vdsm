@@ -24,6 +24,8 @@ from __future__ import absolute_import
 import sys
 import xml.etree.ElementTree as ET
 
+import six
+
 from vdsm.virt.vmdevices import storage
 
 
@@ -39,7 +41,8 @@ def main(domain, event, phase, stdin=sys.stdin, stdout=sys.stdout):
         sys.exit(0)
     tree = ET.parse(stdin)
     _process_domxml(tree)
-    tree.write(stdout)
+    encoding = None if six.PY2 else 'unicode'
+    tree.write(stdout, encoding=encoding)
 
 
 if __name__ == '__main__':
