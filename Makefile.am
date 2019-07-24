@@ -99,10 +99,6 @@ pylint-diff: tox
 flake8: tox
 	tox -e flake8
 
-.PHONY: imports
-imports: tox
-	tox -e imports
-
 .PHONY: tox
 tox:
 	out=`tox --version`; \
@@ -134,7 +130,7 @@ check-unit:
 
 .PHONY: lint
 # Note: dependencies ordered by time needed to run them
-lint: gitignore execcmd imports flake8 pylint-py3k pylint
+lint: gitignore execcmd flake8 pylint-py3k pylint
 
 .PHONY: tests-target
 tests-target: tests-$(VDSM_TARGET_PY_SHORT_VERSION)
