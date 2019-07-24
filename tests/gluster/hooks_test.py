@@ -21,8 +21,10 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import os
 import json
+import operator
+import os
+
 import pytest
 
 from vdsm.gluster import hooks
@@ -45,4 +47,5 @@ def test_hooksList(hookSetup):
     with open(path) as f:
         expected_out = json.load(f)
     ret = hooks.hooksList()
-    assert sorted(expected_out) == sorted(ret)
+    by_name = operator.itemgetter("name")
+    assert sorted(expected_out, key=by_name) == sorted(ret, key=by_name)
