@@ -79,4 +79,5 @@ class _StatsClient(object):
             stat (string): metric name decoded to utf-8
             value (int): numeric value for stat
         """
-        self._send('%s:%s|g' % (stat, value))
+        data = '%s:%s|g' % (stat, value)
+        self._send(data.encode('utf-8'))
