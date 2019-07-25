@@ -163,7 +163,9 @@ class Connection(object):
         def string_to_stub(xml_template, index):
             filled_template = xml_template.format(index)
             final_xml = filled_template.replace('  ', '').replace('\n', '')
-            return VirNodeDeviceStub(final_xml.encode('utf-8'))
+            if six.PY2:
+                final_xml = final_xml.encode('utf-8')
+            return VirNodeDeviceStub(final_xml)
 
         fakelib_path = os.path.realpath(__file__)
         dir_name = os.path.split(fakelib_path)[0]
