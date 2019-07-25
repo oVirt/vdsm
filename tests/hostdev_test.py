@@ -21,6 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import six
+
 from vdsm.common import exception
 from vdsm.common import xmlutils
 from vdsm.virt.vmdevices import hostdevice, network, hwclass
@@ -28,6 +30,7 @@ from vdsm.virt.vmdevices import hostdevice, network, hwclass
 from testlib import VdsmTestCase as TestCaseBase, XMLTestCase
 from testlib import permutations, expandPermutations
 from monkeypatch import MonkeyClass, MonkeyPatchScope
+from testValidation import skipif
 
 from vdsm.common import hooks
 from vdsm.common import hostdev
@@ -54,6 +57,9 @@ class HostdevTests(TestCaseBase):
             deviceXML
         )
 
+    @skipif(six.PY3, "Not relevant in Python 3 libvirt")
+    # libvirt in Python 3 returns strings, so we don't deal with
+    # invalid coding anymore.
     def testProcessDeviceParamsInvalidEncoding(self):
         deviceXML = hostdev._process_device_params(
             libvirtconnection.get().nodeDeviceLookupByName(
