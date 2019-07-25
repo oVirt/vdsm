@@ -161,7 +161,7 @@ class Listener(object):
         to connect their channel.
         """
         now = time.time()
-        for (fileno, obj) in self._unconnected.items():
+        for (fileno, obj) in list(self._unconnected.items()):
             if obj.get('cooldown'):
                 if (now - obj['cooldown_time']) >= self._timeout:
                     obj['cooldown'] = False
