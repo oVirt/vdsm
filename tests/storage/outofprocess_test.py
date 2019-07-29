@@ -106,6 +106,25 @@ def test_amount_of_instances_per_pool_name(oop_cleanup, monkeypatch):
 
 # fileUtils APIs
 
+@pytest.mark.parametrize("initial_mode, expected_mode", [
+    (0o770, 0o770),
+    (0o700, 0o770),
+    (0o750, 0o770),
+    (0o650, 0o660),
+])
+def test_fileutils_copyusermodetogroup(
+        oop_cleanup, tmpdir, initial_mode, expected_mode):
+    iop = oop.getProcessPool("test")
+    f = tmpdir.join("file")
+    f.write("")
+
+    path = str(f)
+    os.chmod(path, initial_mode)
+
+    iop.fileUtils.copyUserModeToGroup(path)
+    verify_file(path, mode=expected_mode)
+
+
 @pytest.mark.parametrize("orig_size, expected_size", [
     (4096 - 1, 4096),
     (4096, 4096),

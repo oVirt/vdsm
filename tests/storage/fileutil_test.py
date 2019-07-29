@@ -117,23 +117,6 @@ class TestChown(VdsmTestCase):
             self.assertTrue(stat.st_uid == stat.st_gid == 0)
 
 
-class TestCopyUserModeToGroup(VdsmTestCase):
-    MODE_MASK = 0o777
-
-    # format: initialMode, expectedMode
-    modesList = [
-        (0o770, 0o770), (0o700, 0o770), (0o750, 0o770), (0o650, 0o660),
-    ]
-
-    def testCopyUserModeToGroup(self):
-        with temporaryPath() as path:
-            for initialMode, expectedMode in self.modesList:
-                os.chmod(path, initialMode)
-                fileUtils.copyUserModeToGroup(path)
-                self.assertEqual(os.stat(path).st_mode & self.MODE_MASK,
-                                 expectedMode)
-
-
 class TestAtomicSymlink(VdsmTestCase):
 
     def test_create_new(self):
