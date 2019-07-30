@@ -22,7 +22,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import collections
 import os
 import shutil
 import stat
@@ -56,32 +55,23 @@ DETECT_BLOCK_SIZE = [
     pytest.param(False, id="explicit block size"),
 ]
 
-Storage = collections.namedtuple("Storage", "path, block_size, max_hosts")
-
 
 @pytest.fixture(
     params=[
         pytest.param(
-            (userstorage.PATHS["mount-512"], sc.HOSTS_512_1M),
-            id="mount-512-1m"),
+            (userstorage.PATHS["mount-512"], sc.HOSTS_512_1M, 5),
+            id="mount-512-1m-v5"),
         pytest.param(
-            (userstorage.PATHS["mount-4k"], sc.HOSTS_4K_1M),
-            id="mount-4k-1m"),
+            (userstorage.PATHS["mount-4k"], sc.HOSTS_4K_1M, 5),
+            id="mount-4k-1m-v5"),
         pytest.param(
-            (userstorage.PATHS["mount-4k"], sc.HOSTS_4K_2M),
-            id="mount-4k-2m"),
-    ],
+            (userstorage.PATHS["mount-4k"], sc.HOSTS_4K_2M, 5),
+            id="mount-4k-2m-v5"),
+    ]
 )
 def user_mount(request):
-    storage, max_hosts = request.param
-    if not storage.exists():
-        pytest.xfail("{} storage not available".format(storage.name))
-
-    tmp_dir = tempfile.mkdtemp(dir=storage.path)
-
-    yield Storage(tmp_dir, storage.sector_size, max_hosts)
-
-    shutil.rmtree(tmp_dir)
+    with Config(*request.param) as backend:
+        yield backend
 
 
 @pytest.mark.parametrize("version,block_size", [
@@ -840,3 +830,30 @@ def verify_volume_file(
         assert qemu_info['backingfile'] == backing_file
     else:
         assert 'backingfile' not in qemu_info
+
+
+class Config(object):
+    """
+    Wrap a userstorage.Path implementation, adding a block_size, max_hosts and
+    domain_version to simplify fixtures using storage for creating mounts
+    and domains.
+    """
+
+    def __init__(self, storage, max_hosts, domain_version):
+        if not storage.exists():
+            pytest.xfail("{} storage not available".format(storage.name))
+
+        self.path = tempfile.mkdtemp(dir=storage.path)
+        self.block_size = storage.sector_size
+        self.max_hosts = max_hosts
+        self.domain_version = domain_version
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        shutil.rmtree(self.path)
+
+    def __repr__(self):
+        "path: {}, block size: {}, max hosts: {}, domain version: {}".format(
+            self.path, self.block_size, self.max_hosts, self.domain_version)
