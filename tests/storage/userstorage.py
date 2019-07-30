@@ -167,8 +167,8 @@ class Mount(Path):
         return False
 
     def _create_filesystem(self):
-        # TODO: Use -t xfs (requires xfsprogs package).
-        subprocess.check_call(["sudo", "mkfs", "-q", self._loop.path])
+        subprocess.check_call(
+            ["sudo", "mkfs", "-t", "xfs", "-q", self._loop.path])
 
     def _mount_loop(self):
         subprocess.check_call(["sudo", "mount", self._loop.path, self.path])
