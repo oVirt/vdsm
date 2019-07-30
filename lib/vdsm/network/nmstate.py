@@ -29,9 +29,11 @@ from vdsm.network.link.setup import parse_bond_options
 try:
     from libnmstate import netapplier
     from libnmstate.schema import Interface
+    from libnmstate.schema import Route
 except ImportError:  # nmstate is not available
     netapplier = None
     Interface = None
+    Route = None
 
 
 def setup(desired_state, verify_change):
@@ -41,27 +43,40 @@ def setup(desired_state, verify_change):
 def generate_state(networks, bondings):
     """ Generate a new nmstate state given VDSM setup state format """
     ifstates = {}
-
+    route_states = []
     _generate_bonds_state(bondings, ifstates)
-    _generate_networks_state(networks, ifstates)
+    _generate_networks_state(networks, ifstates, route_states)
 
-    interfaces = [ifstate for ifstate in six.viewvalues(ifstates)]
-    return {Interface.KEY: sorted(interfaces, key=lambda d: d[Interface.NAME])}
+    return merge_state(ifstates, route_states)
 
 
-def _generate_networks_state(networks, ifstates):
+def _generate_networks_state(networks, ifstates, route_states):
     rconfig = RunningConfig()
 
     for netname, netattrs in six.viewitems(networks):
-        if netattrs.get('remove'):
-            _remove_network(netname, ifstates, rconfig)
+        if _is_remove(netattrs):
+            _remove_network(netname, ifstates, route_states, rconfig)
         else:
-            for ifstate in _create_network(netname, netattrs):
+            network_states = _create_network(netname, netattrs)
+            for ifstate in network_states[Interface.KEY]:
                 ifname = ifstate[Interface.NAME]
                 if ifname in ifstates:
                     ifstates[ifname].update(ifstate)
                 else:
                     ifstates[ifname] = ifstate
+            net_routes_state = network_states[Route.KEY]
+            if net_routes_state:
+                route_states.append(net_routes_state)
+
+
+def merge_state(interfaces_state, routes_state):
+    interfaces = [ifstate for ifstate in six.viewvalues(interfaces_state)]
+    state = {
+        Interface.KEY: sorted(interfaces, key=lambda d: d[Interface.NAME])
+    }
+    if routes_state:
+        state.update(routes={Route.CONFIG: routes_state})
+    return state
 
 
 def _create_network(netname, netattrs):
@@ -90,9 +105,13 @@ def _create_network(netname, netattrs):
     _generate_iface_ipv4_state(ip_iface_state, netattrs)
     _generate_iface_ipv6_state(ip_iface_state, netattrs)
 
-    return [
-        s for s in (sb_iface_state, vlan_iface_state, bridge_iface_state) if s
-    ]
+    return {
+        Interface.KEY: [
+            s for s in (sb_iface_state, vlan_iface_state, bridge_iface_state)
+            if s
+        ],
+        Route.KEY: _generate_add_routes_state(netname, netattrs)
+    }
 
 
 def _generate_vlan_iface_state(nic, bond, vlan):
@@ -143,7 +162,7 @@ def _generate_bridge_options(stp_enabled):
     }
 
 
-def _remove_network(netname, ifstates, rconfig):
+def _remove_network(netname, ifstates, route_states, rconfig):
     netconf = rconfig.networks[netname]
     nic = netconf.get('nic')
     bond = netconf.get('bonding')
@@ -168,6 +187,13 @@ def _remove_network(netname, ifstates, rconfig):
             }
         }
     ifstates.update(iface_state)
+
+    gateway = netconf.get('gateway')
+    default_route = netconf['defaultRoute']
+    if gateway and default_route:
+        next_hop_interface = _get_next_hop_interface(netname, netconf)
+        route_states.append(
+            _generate_remove_default_route_state(gateway, next_hop_interface))
 
     if netconf['bridged']:
         ifstates[netname] = {
@@ -251,6 +277,46 @@ def _generate_iface_dynamic_ipv4_state(iface_state):
     iface_state['ipv4'] = iface_ipv4_state
 
 
+def _generate_add_routes_state(net_name, net_attributes):
+    gateway = net_attributes.get('gateway')
+    is_default_route = net_attributes['defaultRoute']
+    next_hop_interface = _get_next_hop_interface(net_name, net_attributes)
+    if gateway and is_default_route:
+        return _add_default_route_info(gateway, next_hop_interface)
+    else:
+        return {}
+
+
+def _add_default_route_info(gateway, next_hop_interface):
+    return {
+        Route.NEXT_HOP_ADDRESS: gateway,
+        Route.NEXT_HOP_INTERFACE: next_hop_interface,
+        Route.DESTINATION: '0.0.0.0/0',
+        Route.TABLE_ID: Route.USE_DEFAULT_ROUTE_TABLE
+    }
+
+
+def _generate_remove_default_route_state(gateway, next_hop_interface):
+    return {
+        Route.NEXT_HOP_INTERFACE: next_hop_interface,
+        Route.NEXT_HOP_ADDRESS: gateway,
+        Route.DESTINATION: '0.0.0.0/0',
+        Route.STATE: Route.STATE_ABSENT,
+        Route.TABLE_ID: Route.USE_DEFAULT_ROUTE_TABLE
+    }
+
+
+def _get_next_hop_interface(net_name, net_attributes):
+    if net_attributes.get('bridged'):
+        return net_name
+    else:
+        return (
+            net_attributes.get('vlan') or
+            net_attributes.get('nic') or
+            net_attributes.get('bonding')
+        )
+
+
 def _generate_iface_ipv6_state(iface_state, netattrs):
     ipv6addr = netattrs.get('ipv6addr')
     dhcpv6 = netattrs.get('dhcpv6')
@@ -291,3 +357,7 @@ def _get_ipv4_prefix_from_mask(ipv4netmask):
         onebits = str(bin(int(octet))).strip('0b').rstrip('0')
         prefix += len(onebits)
     return prefix
+
+
+def _is_remove(net_attributes):
+    return net_attributes.get('remove', False)

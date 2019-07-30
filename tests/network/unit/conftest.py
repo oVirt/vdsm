@@ -40,7 +40,25 @@ class NMStateInterface(object):
     MTU = 'mtu'
 
 
+class NMStateRoute(object):
+    KEY = 'routes'
+
+    RUNNING = 'running'
+    CONFIG = 'config'
+    STATE = 'state'
+    STATE_ABSENT = 'absent'
+    TABLE_ID = 'table-id'
+    DESTINATION = 'destination'
+    NEXT_HOP_INTERFACE = 'next-hop-interface'
+    NEXT_HOP_ADDRESS = 'next-hop-address'
+    METRIC = 'metric'
+    USE_DEFAULT_METRIC = -1
+    USE_DEFAULT_ROUTE_TABLE = 0
+
+
 @pytest.fixture(scope='session', autouse=True)
 def nmstate_schema():
-    with mock.patch.object(nmstate, 'Interface', NMStateInterface):
+    patch_interface = mock.patch.object(nmstate, 'Interface', NMStateInterface)
+    patch_route = mock.patch.object(nmstate, 'Route', NMStateRoute)
+    with patch_interface, patch_route:
         yield

@@ -34,6 +34,7 @@ IFACE1 = 'eth1'
 VLAN101 = 101
 
 IPv4_ADDRESS1 = '192.0.2.1'
+IPv4_GATEWAY1 = '192.0.2.254'
 IPv4_NETMASK1 = '255.255.255.0'
 IPv4_PREFIX1 = 24
 IPv6_ADDRESS1 = 'fdb3:84e5:4ff4:55e3::1'
@@ -306,8 +307,12 @@ def test_translate_net_with_ip_on_vlan_on_bond(bridged):
 @mock.patch.object(nmstate, 'RunningConfig')
 def test_translate_remove_nets(rconfig_mock, bridged):
     rconfig_mock.return_value.networks = {
-        'testnet1': {'nic': IFACE0, 'bridged': bridged, 'switch': 'legacy'},
-        'testnet2': {'nic': IFACE1, 'bridged': bridged, 'switch': 'legacy'}
+        'testnet1': {
+            'nic': IFACE0, 'bridged': bridged, 'switch': 'legacy',
+            'defaultRoute': False},
+        'testnet2': {
+            'nic': IFACE1, 'bridged': bridged, 'switch': 'legacy',
+            'defaultRoute': False}
     }
     networks = {
         'testnet1': {'remove': True},
@@ -345,6 +350,7 @@ def test_translate_remove_vlan_net(rconfig_mock, bridged):
             'bridged': bridged,
             'vlan': VLAN101,
             'switch': 'legacy',
+            'defaultRoute': False
         }
     }
     networks = {
@@ -393,7 +399,8 @@ def test_translate_remove_bonds():
 def test_translate_remove_net_on_bond(rconfig_mock, bridged):
     rconfig_mock.return_value.networks = {
         'testnet1':
-            {'bonding': 'testbond0', 'bridged': bridged, 'switch': 'legacy'}
+            {'bonding': 'testbond0', 'bridged': bridged, 'switch': 'legacy',
+             'defaultRoute': False}
     }
     networks = {
         'testnet1': {'remove': True}
@@ -428,7 +435,8 @@ def test_translate_remove_vlan_net_on_bond(rconfig_mock, bridged):
                 'bonding': 'testbond0',
                 'bridged': bridged,
                 'vlan': VLAN101,
-                'switch': 'legacy'
+                'switch': 'legacy',
+                'defaultRoute': False
             }
     }
     networks = {
@@ -452,6 +460,78 @@ def test_translate_remove_vlan_net_on_bond(rconfig_mock, bridged):
             }
         ])
     _sort_by_name(expected_state[nmstate.Interface.KEY])
+    assert expected_state == state
+
+
+@parametrize_bridged
+def test_translate_add_network_with_default_route(bridged):
+    networks = {
+        'testnet1': _create_network_config(
+            'nic', IFACE0, bridged=bridged,
+            static_ip_configuration=_create_static_ip_configuration(
+                IPv4_ADDRESS1, IPv4_NETMASK1, IPv6_ADDRESS1, IPv6_PREFIX1
+            ), default_route=True, gateway=IPv4_GATEWAY1
+        )
+    }
+    state = nmstate.generate_state(networks=networks, bondings={})
+
+    eth0_state = _create_ethernet_iface_state(IFACE0)
+    ip0_state = _create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
+    ip0_state.update(_create_ipv6_state(IPv6_ADDRESS1, IPv6_PREFIX1))
+
+    expected_state = {nmstate.Interface.KEY: [eth0_state]}
+
+    if bridged:
+        _disable_iface_ip(eth0_state)
+        bridge1_state = _create_bridge_iface_state(
+            'testnet1', IFACE0, options=_generate_bridge_options(
+                stp_enabled=False)
+        )
+        bridge1_state.update(ip0_state)
+        expected_state[nmstate.Interface.KEY].append(bridge1_state)
+        if_with_default_route = 'testnet1'
+    else:
+        eth0_state.update(ip0_state)
+        if_with_default_route = IFACE0
+
+    expected_state[nmstate.Route.KEY] = _get_routes_config(
+        IPv4_GATEWAY1, if_with_default_route
+    )
+    assert state == expected_state
+
+
+@parametrize_bridged
+@mock.patch.object(nmstate, 'RunningConfig')
+def test_translate_remove_network_with_default_route(rconfig_mock, bridged):
+    rconfig_mock.return_value.networks = {
+        'testnet1':
+            {
+                'nic': IFACE0,
+                'bridged': bridged,
+                'switch': 'legacy',
+                'defaultRoute': True,
+                'gateway': IPv4_GATEWAY1
+            }
+    }
+    networks = {'testnet1': {'remove': True}}
+    state = nmstate.generate_state(networks=networks, bondings={})
+
+    eth0_state = _create_ethernet_iface_state(IFACE0)
+    _disable_iface_ip(eth0_state)
+
+    expected_state = {nmstate.Interface.KEY: [eth0_state]}
+
+    if bridged:
+        expected_state[nmstate.Interface.KEY].append(
+            {'name': 'testnet1', 'state': 'absent'}
+        )
+        if_with_default_route = 'testnet1'
+    else:
+        if_with_default_route = IFACE0
+
+    expected_state[nmstate.Route.KEY] = _get_routes_config(
+        IPv4_GATEWAY1, if_with_default_route, state=nmstate.Route.STATE_ABSENT
+    )
     assert expected_state == state
 
 
@@ -545,16 +625,36 @@ def _create_ipv6_state(address=None, prefix=None, dynamic=False):
     return state
 
 
+def _get_routes_config(gateway, next_hop, state=None):
+    return {
+        nmstate.Route.CONFIG: [_create_default_route(gateway, next_hop, state)]
+    }
+
+
+def _create_default_route(gateway, next_hop, state=None):
+    route_state = {
+        nmstate.Route.DESTINATION: '0.0.0.0/0',
+        nmstate.Route.NEXT_HOP_ADDRESS: gateway,
+        nmstate.Route.NEXT_HOP_INTERFACE: next_hop,
+        nmstate.Route.TABLE_ID: nmstate.Route.USE_DEFAULT_ROUTE_TABLE
+    }
+    if state:
+        route_state[nmstate.Route.STATE] = state
+    return route_state
+
+
 def _create_network_config(if_type, if_name, bridged,
                            static_ip_configuration=None,
                            dynamic_ip_configuration=None,
-                           vlan=None):
+                           vlan=None, default_route=False, gateway=None):
     network_config = _create_interface_network_config(if_type, if_name)
     network_config.update(
         _create_bridge_network_config(bridged, stp_enabled=False))
     network_config.update(static_ip_configuration or {})
     network_config.update(dynamic_ip_configuration or {})
     network_config.update({'vlan': vlan} if vlan else {})
+    network_config.update({'defaultRoute': default_route})
+    network_config.update({'gateway': gateway} if gateway else {})
     return network_config
 
 

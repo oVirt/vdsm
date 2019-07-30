@@ -211,6 +211,7 @@ class TestNetworkStaticIpBasic(object):
 @nftestlib.parametrize_switch
 class TestNetworkIPDefaultGateway(object):
 
+    @pytest.mark.nmstate
     def test_add_net_with_ipv4_default_gateway(self, switch, preserve_conf):
         with dummy_device() as nic:
             network_attrs = {'nic': nic,
