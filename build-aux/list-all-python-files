@@ -9,6 +9,7 @@ PYTHON_MODULES=$(find . -not -path '*/\.tox*' -type f -name '*.py')
 
 PYTHON_SCRIPTS=$(grep --color=never -rl "#\!/usr/bin/python" . | \
                      grep -v \
+                         -e "^\./\.git" \
                          -e "^\./\.tox*" \
                          -e "\.pyc\?$" \
                          -e "\.html$" \
