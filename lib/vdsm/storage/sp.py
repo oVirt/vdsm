@@ -487,7 +487,7 @@ class StoragePool(object):
                 self.log.debug("Marking active domains for upgrade")
                 domains = self.getDomains(activeOnly=True)
                 domains.pop(self.masterDomain.sdUUID, None)
-                self._domainsToUpgrade = domains.keys()
+                self._domainsToUpgrade = list(domains)
 
                 self.log.debug("Registering with state change event")
                 self.domainMonitor.onDomainStateChange.register(
