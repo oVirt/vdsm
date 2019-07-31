@@ -126,6 +126,11 @@ BuildRequires: python2-enum34
 %endif
 %endif
 
+%if 0%{?rhel} >= 8
+# we don't want BRP to change all our shebangs to platform-python
+%undefine __brp_mangle_shebangs
+%endif
+
 # Numactl is not available on s390[x] and ARM
 %ifnarch s390 s390x %{arm}
 Requires: numactl
