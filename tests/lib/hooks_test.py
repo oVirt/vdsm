@@ -403,7 +403,8 @@ def env_dump(hooks_dir):
 def test_rhd_should_assemble_environment_for_hooks(hooks_dir, env_dump, vmconf,
                                                    params, expected):
     hooks._runHooksDir(u"", hooks_dir.basename, vmconf, params=params)
-    env = pickle.load(open(env_dump, "rb"))
+    with open(env_dump, "rb") as f:
+        env = pickle.load(f)
 
     for k, v in expected.items():
         assert env[k] == v
@@ -436,7 +437,8 @@ def mkstemp_path(monkeypatch, hooks_dir):
 def test_rhd_should_pass_data_file_to_hooks(hooks_dir, env_dump, mkstemp_path,
                                             var_name, hook_type):
     hooks._runHooksDir(None, hooks_dir.basename, hookType=hook_type)
-    env = pickle.load(open(env_dump, "rb"))
+    with open(env_dump, "rb") as f:
+        env = pickle.load(f)
 
     assert env[var_name] == mkstemp_path
 
