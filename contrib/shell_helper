@@ -112,6 +112,7 @@ del_dummies() {
         sudo ip link del dev $dummy
     done
     sudo rm /etc/sysconfig/network-scripts/ifcfg-dummy*
+    sudo nmcli conn del $(nmcli -f name conn show | grep dummy)
 }
 
 del_veths() {
