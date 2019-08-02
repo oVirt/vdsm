@@ -317,11 +317,6 @@ def directTouch(ioproc, path, mode=0o777):
     ioproc.touch(path, flags, mode)
 
 
-def directReadLines(ioproc, path):
-    fileStr = ioproc.readfile(path, direct=True)
-    return fileStr.splitlines(True)
-
-
 def readLines(ioproc, path):
     return ioproc.readlines(path)
 
@@ -364,7 +359,6 @@ class _IOProcWrapper(types.ModuleType):
         self.os = _IOProcessOs(ioproc)
         self.utils = _IOProcessUtils(ioproc)
 
-        self.directReadLines = partial(directReadLines, ioproc)
         self.readLines = partial(readLines, ioproc)
         self.writeLines = partial(writeLines, ioproc)
         self.writeFile = partial(writeFile, ioproc)
