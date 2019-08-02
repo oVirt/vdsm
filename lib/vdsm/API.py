@@ -1432,7 +1432,7 @@ class Global(APIBase):
         # To improve complexity, convert 'vms' to set(vms)
         vmSet = set(vmList)
         vmlist = [v.status()
-                  for v in self._cif.vmContainer.values()
+                  for v in self._cif.getVMs().values()
                   if not vmSet or v.id in vmSet]
         return {'status': doneCode, 'vmList': vmlist}
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@ def _memUsageInfo(cif):
     # something very roughly meaningful until it's removed from Engine
     # completely -- that means just free memory and sum of VM sizes.
     committed = 0
-    for v in cif.vmContainer.values():
+    for v in cif.getVMs().values():
         committed += v.mem_size_mb() * Mbytes
     meminfo = utils.readMemInfo()
     freeOrCached = (meminfo['MemFree'] +
@@ -137,7 +137,7 @@ def _memFree():
 
 def _countVms(cif):
     count = active = incoming = outgoing = 0
-    for vmId, v in cif.vmContainer.items():
+    for vmId, v in cif.getVMs().items():
         try:
             count += 1
             status = v.lastStatus
