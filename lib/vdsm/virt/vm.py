@@ -4901,7 +4901,8 @@ class Vm(object):
         Clean VM from the system
         """
         try:
-            del self.cif.vmContainer[self.id]
+            with self.cif.vm_container_lock:
+                del self.cif.vmContainer[self.id]
         except KeyError:
             self.log.exception("Failed to delete VM %s", self.id)
         else:

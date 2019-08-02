@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -401,7 +401,7 @@ class VmDispatcherTests(TestCaseBase):
     @permutations(VM_IDS)
     def test_dispatch(self, failed_ids):
         for i in failed_ids:
-            with self.cif.vmContainerLock:
+            with self.cif.vm_container_lock:
                 vm_id = _fake_vm_id(i)
                 self.cif.vmContainer[vm_id].fail_required = True
 
@@ -410,7 +410,7 @@ class VmDispatcherTests(TestCaseBase):
     @permutations(VM_IDS)
     def test_skip_not_monitorable(self, unmonitorable_ids):
         for i in unmonitorable_ids:
-            with self.cif.vmContainerLock:
+            with self.cif.vm_container_lock:
                 vm_id = _fake_vm_id(i)
                 self.cif.vmContainer[vm_id].monitorable = False
 
@@ -453,7 +453,7 @@ class VmDispatcherTests(TestCaseBase):
     def _make_fake_vms(self):
         for i in range(VM_NUM):
             vm_id = _fake_vm_id(i)
-            with self.cif.vmContainerLock:
+            with self.cif.vm_container_lock:
                 self.cif.vmContainer[vm_id] = _FakeVM(
                     vm_id, vm_id)
 
