@@ -150,11 +150,13 @@ class FileVolumeManifest(volume.VolumeManifest):
         metaPath = self.getMetaVolumePath(volPath)
 
         try:
-            lines = self.oop.directReadLines(metaPath)
+            data = self.oop.readFile(metaPath, direct=True)
         except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
 
+        data = data.rstrip(b"\0")
+        lines = data.splitlines()
         md = VolumeMetadata.from_lines(lines)
         return md
 
