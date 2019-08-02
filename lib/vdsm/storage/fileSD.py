@@ -48,7 +48,6 @@ from vdsm.storage import xlease
 from vdsm.storage.persistent import PersistentDict, DictValidator
 
 from vdsm import constants
-from vdsm.utils import stripNewLines
 from vdsm.storage.constants import LEASE_FILEEXT, UUID_GLOB_PATTERN
 
 REMOTE_PATH = "REMOTE_PATH"
@@ -115,11 +114,14 @@ class FileMetadataRW(object):
 
     def readlines(self):
         try:
-            return stripNewLines(self._oop.directReadLines(self._metafile))
+            data = self._oop.readFile(self._metafile, direct=True)
         except (IOError, OSError) as e:
             if e.errno != errno.ENOENT:
                 raise
             return []
+        else:
+            data = data.rstrip(b"\0")
+            return data.splitlines()
 
     def writelines(self, metadata):
         for i, line in enumerate(metadata):

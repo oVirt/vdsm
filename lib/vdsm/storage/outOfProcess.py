@@ -371,3 +371,6 @@ class _IOProcWrapper(types.ModuleType):
         self.simpleWalk = partial(simpleWalk, ioproc)
         self.directTouch = partial(directTouch, ioproc)
         self.truncateFile = partial(truncateFile, ioproc)
+
+    def readFile(self, path, direct=False):
+        return self._ioproc.readfile(path, direct=direct)
