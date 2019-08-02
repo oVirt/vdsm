@@ -1471,7 +1471,7 @@ class Global(APIBase):
         # To improve complexity, convert 'vms' to set(vms)
         vmSet = set(vmList)
         vmlist = [v.status(fullStatus)
-                  for v in self._cif.vmContainer.values()
+                  for v in self._cif.getVMs().values()
                   if not vmSet or v.id in vmSet]
         if not fullStatus and onlyUUID:
             # BZ 1196735: api backward compatibility issue

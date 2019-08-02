@@ -566,11 +566,11 @@ class clientIF(object):
             return ret
 
     def getAllVmStats(self):
-        return [v.getStats() for v in self.vmContainer.values()]
+        return [v.getStats() for v in self.getVMs().values()]
 
     def getAllVmIoTunePolicies(self):
         vm_io_tune_policies = {}
-        for v in self.vmContainer.values():
+        for v in self.getVMs().values():
             info = v.io_tune_policy_values()
             if info:
                 vm_io_tune_policies[v.id] = info
@@ -696,7 +696,7 @@ class clientIF(object):
     def _waitForDomainsUp(self):
         while self._enabled:
             launching = sum(int(v.lastStatus == vmstatus.WAIT_FOR_LAUNCH)
-                            for v in self.vmContainer.values())
+                            for v in self.getVMs().values())
             if not launching:
                 break
             else:
@@ -712,7 +712,7 @@ class clientIF(object):
             time.sleep(5)
 
     def _preparePathsForRecoveredVMs(self):
-        vm_objects = self.vmContainer.values()
+        vm_objects = list(self.getVMs().values())
         num_vm_objects = len(vm_objects)
         for idx, vm_obj in enumerate(vm_objects):
             # Let's recover as much VMs as possible

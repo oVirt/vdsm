@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -248,7 +248,7 @@ def calculate_required_deallocation(vm_hugepages, vm_hugepagesz):
 
 def _all_vm_hugepages(cif, vm_hugepages, vm_hugepagesz):
     return sum(
-        [vm.nr_hugepages for vm in cif.vmContainer.values() if
+        [vm.nr_hugepages for vm in cif.getVMs().values() if
          vm.hugepagesz == vm_hugepagesz]
     ) - vm_hugepages
 
