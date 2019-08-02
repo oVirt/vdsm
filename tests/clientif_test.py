@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ class FakeClientIF(clientIF.clientIF):
         self.irs = fake.IRS()  # just to make sure nothing ever happens
         self.log = logging.getLogger('fake.ClientIF')
         self.channelListener = None
-        self.vmContainerLock = threading.Lock()
+        self.vm_container_lock = threading.Lock()
         self.vmContainer = {}
         self.vmRequests = {}
         self.servers = {}

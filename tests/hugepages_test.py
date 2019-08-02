@@ -408,6 +408,9 @@ class FakeClientIF(object):
     def __init__(self, vmContainer):
         self.vmContainer = vmContainer
 
+    def getVMs(self):
+        return self.vmContainer
+
 
 class FakeVM(object):
     def __init__(self, hugepages, hugepagesz):

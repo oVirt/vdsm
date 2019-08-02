@@ -329,7 +329,7 @@ class VM(APIBase):
         """
         self.log.debug('About to destroy VM %s', self._UUID)
 
-        with self._cif.vmContainerLock:
+        with self._cif.vm_start_stop_lock:
             res = self.vm.destroy(gracefulAttempts)
             status = utils.picklecopy(res)
             if status['status']['code'] == 0:

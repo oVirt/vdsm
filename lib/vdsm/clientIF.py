@@ -88,7 +88,8 @@ class clientIF(object):
         :param log: a log object to be used for this object's logging.
         :type log: :class:`logging.Logger`
         """
-        self.vmContainerLock = threading.Lock()
+        self.vm_container_lock = threading.Lock()
+        self.vm_start_stop_lock = threading.Lock()
         self._networkSemaphore = threading.Semaphore()
         self._shutdownSemaphore = threading.Semaphore()
         self.irs = irs
@@ -159,7 +160,7 @@ class clientIF(object):
         Get a snapshot of the currently registered VMs.
         Return value will be a dict of {vmUUID: VM_object}
         """
-        with self.vmContainerLock:
+        with self.vm_container_lock:
             return self.vmContainer.copy()
 
     def pop_unknown_vm_ids(self):
@@ -171,7 +172,7 @@ class clientIF(object):
 
         This is intended to serve for detection of external VMs.
         """
-        with self.vmContainerLock:
+        with self.vm_container_lock:
             unknown_vm_ids = [vm_id for vm_id in self._unknown_vm_ids
                               if vm_id not in self.vmContainer]
             self._unknown_vm_ids = set()
@@ -184,7 +185,7 @@ class clientIF(object):
         :param vm_id: VM id to add
         :type vm_id: basestring
         """
-        with self.vmContainerLock:
+        with self.vm_container_lock:
             self._unknown_vm_ids.add(vm_id)
 
     @property
@@ -239,8 +240,8 @@ class clientIF(object):
         libvirtVms = libvirtCon.listAllDomains(
             libvirt.VIR_CONNECT_LIST_DOMAINS_PAUSED)
 
-        with self.vmContainerLock:
-            self.log.info("vmContainerLock acquired")
+        with self.vm_start_stop_lock:
+            self.log.info("vm_start_stop_lock acquired")
             for libvirtVm in libvirtVms:
                 state = libvirtVm.state(0)
                 if state[1] == libvirt.VIR_DOMAIN_PAUSED_IOERROR:
@@ -553,14 +554,15 @@ class clientIF(object):
         return {'status': doneCode, 'alignment': aligning}
 
     def createVm(self, vmParams, vmRecover=False):
-        with self.vmContainerLock:
+        with self.vm_start_stop_lock:
             if not vmRecover:
                 if vmParams['vmId'] in self.vmContainer:
                     return errCode['exist']
             vm = Vm(self, vmParams, vmRecover)
             ret = vm.run()
             if not response.is_error(ret):
-                self.vmContainer[vm.id] = vm
+                with self.vm_container_lock:
+                    self.vmContainer[vm.id] = vm
             return ret
 
     def getAllVmStats(self):

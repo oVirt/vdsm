@@ -107,7 +107,7 @@ class ClientIF(object):
         self.irs = IRS()  # just to make sure nothing ever happens
         self.log = logging.getLogger('fake.ClientIF')
         self.channelListener = None
-        self.vmContainerLock = threading.Lock()
+        self.vm_container_lock = threading.Lock()
         self.vmContainer = {}
         self.vmRequests = {}
         self.bindings = {}
@@ -131,7 +131,7 @@ class ClientIF(object):
         pass
 
     def getVMs(self):
-        with self.vmContainerLock:
+        with self.vm_container_lock:
             return self.vmContainer.copy()
 
     def pop_unknown_vm_ids(self):
