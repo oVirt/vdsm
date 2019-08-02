@@ -240,7 +240,7 @@ class PersistentDict(object):
                     key, value = line.split("=", 1)
                     value = value.strip()
                 except ValueError:
-                    self.log.warn("Could not parse line `%s`.", line)
+                    self.log.warn("Could not parse line: %r", line)
                     continue
 
                 if key == SHA_CKSUM_TAG:
