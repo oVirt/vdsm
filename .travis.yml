@@ -15,7 +15,6 @@ git:
 env:
   matrix:
     - DIST=centos-7   TARGETS="storage tests-py27"
-    - DIST=fedora-28  TARGETS="storage tests-py36"
     - DIST=fedora-29  TARGETS="lint"
     - DIST=fedora-29  TARGETS="storage tests-py27"
 
