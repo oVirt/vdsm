@@ -214,14 +214,6 @@ class PersistentDict(object):
         with self.transaction():
             self._metadata.update(metadata)
 
-    def keys(self):
-        with self._accessWrapper():
-            return self._metadata.keys()
-
-    def iterkeys(self):
-        with self._accessWrapper():
-            return self._metadata.iterkeys()
-
     def __iter__(self):
         with self._accessWrapper():
             return iter(self._metadata)
