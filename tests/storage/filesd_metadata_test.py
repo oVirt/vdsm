@@ -178,6 +178,26 @@ def test_read(storage):
 
 
 @xfail_python3
+def test_read_strip_zero_padding(storage):
+    data = EXAMPLE_DATA[(storage.block_size, storage.alignment)]
+
+    # With Gluster we may get extra padding when reading metadata from storage.
+    # Simulate this by padding file data when writing.
+    # https://bugzilla.redhat.com/1737141
+    padded = data.ljust(storage.block_size, "\0")
+
+    with open(storage.path, "wb") as f:
+        f.write(padded.encode("utf-8"))
+
+    # Check that metadata loaded from storage.
+    md = fileSD.FileSDMetadata(storage.path)
+
+    metadata = make_metadata(storage)
+    assert md.copy() == metadata
+    assert md[sd.DMDK_VERSION] == metadata[sd.DMDK_VERSION]
+
+
+@xfail_python3
 def test_update(storage):
     data = EXAMPLE_DATA[(storage.block_size, storage.alignment)]
     with open(storage.path, "wb") as f:
