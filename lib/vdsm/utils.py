@@ -126,10 +126,6 @@ def convertToStr(val):
         return val
 
 
-def stripNewLines(lines):
-    return [l[:-1] if l.endswith('\n') else l for l in lines]
-
-
 class Canceled(BaseException):
     """
     Raised by methods decorated with @cancelpoint.
