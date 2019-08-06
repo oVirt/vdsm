@@ -34,6 +34,7 @@ from vdsm.network import ifacquire
 from vdsm.network import legacy_switch
 from vdsm.network import errors as ne
 from vdsm.network import nmstate
+from vdsm.network import sourceroute
 from vdsm.network.configurators.ifcfg import Ifcfg, ConfigWriter
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
@@ -182,7 +183,18 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
             name: attrs for name, attrs in six.viewitems(bondings)
             if not attrs.get('remove')
         }
+        _setup_src_routing(networks)
         connectivity.check(options)
+
+
+def _setup_src_routing(networks):
+    for net_name, net_attrs in six.viewitems(networks):
+        gateway = net_attrs.get('gateway')
+        if gateway:
+            ip_address = net_attrs.get('ipaddr')
+            netmask = net_attrs.get('netmask')
+            next_hop = nmstate.get_next_hop_interface(net_name, net_attrs)
+            sourceroute.add(next_hop, ip_address, netmask, gateway)
 
 
 def _setup_legacy(networks, bondings, options, net_info, in_rollback):

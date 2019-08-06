@@ -298,6 +298,7 @@ class TestNetworkIPDefaultGateway(object):
                     adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
                     adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
 
+    @pytest.mark.nmstate
     def test_create_net_without_default_route(self, switch, preserve_conf):
         with dummy_devices(1) as (nic1,):
             net1_attrs = {'nic': nic1,
