@@ -31,8 +31,11 @@ from vdsm.network import errors as ne
 from vdsm.network.initializer import init_unpriviliged_dhclient_monitor_ctx
 from vdsm.network.ipwrapper import linkSet, addrAdd
 
-from network.nettestlib import (dummy_device, dummy_devices,
-                                veth_pair, dnsmasq_run)
+from network.nettestlib import dummy_device
+from network.nettestlib import dummy_devices
+from network.nettestlib import veth_pair
+from network.nettestlib import dnsmasq_run
+from network.nettestlib import running_on_fedora
 
 from .netfunctestlib import NetFuncTestAdapter, SetupNetworksError, NOCHK
 
@@ -143,6 +146,8 @@ class TestIpSwitch(object):
                 adapter.assertBond(BOND_NAME, BONDSETUP_TARGET[BOND_NAME])
 
     def test_switch_change_bonded_network_with_dhclient(self, sw_src, sw_dst):
+        if sw_src == 'ovs' and sw_dst == 'legacy' and running_on_fedora(29):
+            pytest.xfail('Fails on Fedora 29')
         with veth_pair() as (server, nic1):
             with dummy_device() as nic2:
                 NETSETUP_SOURCE = {NET1_NAME: {

@@ -2,7 +2,7 @@
 
 source automation/common_network.sh
 
-init
+init "el7"
 trap collect_and_clean EXIT
 setup_env
 fake_ksm_in_vm

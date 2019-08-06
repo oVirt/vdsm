@@ -29,7 +29,7 @@ from vdsm.network.cmd import exec_sync
 from vdsm.network.link.iface import iface
 
 from . import netfunctestlib as nftestlib
-from network.nettestlib import dummy_devices, dummy_device
+from network.nettestlib import dummy_devices, dummy_device, running_on_fedora
 
 
 NETWORK_NAME = 'test-network'
@@ -50,6 +50,8 @@ class TestBridge(object):
     def test_add_bridge_with_stp(self, switch):
         if switch == 'ovs':
             pytest.xfail('stp is currently not implemented for ovs')
+        if switch == 'legacy' and running_on_fedora(29):
+            pytest.xfail('Fails on Fedora 29')
 
         with dummy_devices(1) as (nic,):
             NETCREATE = {NETWORK_NAME: {'nic': nic,
@@ -101,6 +103,9 @@ class TestBridge(object):
 
     @pytest.mark.nmstate
     @nftestlib.parametrize_legacy_switch
+    @pytest.mark.xfail(condition=running_on_fedora(29),
+                       reason='Failing on legacy switch, fedora 29',
+                       strict=True)
     def test_reconfigure_bridge_with_vanished_port(self, switch):
         with dummy_device() as nic1:
             NETCREATE = {NETWORK_NAME: {'nic': nic1,

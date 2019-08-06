@@ -24,7 +24,7 @@ import pytest
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestAdapter, NOCHK
-from network.nettestlib import dummy_device
+from network.nettestlib import dummy_device, running_on_fedora
 
 NETWORK1_NAME = 'test-network1'
 NETWORK2_NAME = 'test-network2'
@@ -43,6 +43,9 @@ def create_adapter(target):
 
 
 # TODO: When QoS will be available on OVS, enable the tests.
+@pytest.mark.xfail(condition=running_on_fedora(29),
+                   reason='Failing on legacy switch, fedora 29',
+                   strict=True)
 @nftestlib.parametrize_legacy_switch
 class TestNetworkHostQos(object):
 

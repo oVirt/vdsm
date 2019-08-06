@@ -60,3 +60,15 @@ stages:
               isolation-level: container
             distributions:
               - el7
+        - functional-linux-bridge-lib:
+            runtime-requirements:
+              support-nesting-level: 2
+              isolation-level: container
+            distributions:
+              - fc29
+        - functional-ovs-switch-lib:
+            runtime-requirements:
+              support-nesting-level: 2
+              isolation-level: container
+            distributions:
+              - fc29

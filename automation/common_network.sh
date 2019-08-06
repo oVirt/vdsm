@@ -14,11 +14,13 @@ function init() {
     || ln -s /usr/libexec/qemu-kvm /usr/bin/qemu-kvm
 
     # ENV vars
-    DISTRO='el7'
+    DISTRO="$1"
     VM_NAME="vdsm_functional_tests_host-${DISTRO}"
     AUTOMATION="$PWD"/automation
     PREFIX="$AUTOMATION"/vdsm_functional
     EXPORTS="$PWD"/exported-artifacts
+    SOURCES="$PWD"
+    VDSM_LIB="/usr/share/vdsm"
     readonly TESTS_OUT="/root/vdsm-tests"
 }
 
@@ -35,9 +37,14 @@ function setup_env {
     # Creates RPMS
     "$AUTOMATION"/build-artifacts.sh
 
+    if [[ $DISTRO == "fc29" ]]; then
+        mkdir -p /tmp
+        cp -r "$SOURCES" /tmp
+    fi
+
     lago init \
         "$PREFIX" \
-        "$AUTOMATION"/lago-env.yml
+        "$AUTOMATION"/lago-env_"${DISTRO}".yml
 
     cd "$PREFIX"
 
@@ -60,19 +67,92 @@ function install_test_dependencies {
     local res=0
     lago shell "$VM_NAME" -c \
         " \
-            pip install -U \
-                pytest==3.1.2 \
-                pytest-forked==0.2 \
-                xunitmerge==1.0.4
+            ${CI_PYTHON} -m pip install -U \
+            pytest==4.2.1 \
+            pytest-forked==0.2 \
+            xunitmerge==1.0.4
         " || res=$?
+    if [[ $res -eq 0 && $DISTRO == "fc29" ]]; then
+        lago shell "$VM_NAME" -c \
+            " \
+                dnf install \
+                dnsmasq \
+                gcc \
+                libvirt-devel \
+                network-scripts \
+                openvswitch \
+                pkgconf-pkg-config \
+                redhat-rpm-config \
+                python3-dateutil \
+                python3-devel \
+                python3-inotify \
+                python3-libvirt \
+                python3-netaddr \
+                python3-nose \
+                python3-pyyaml \
+                -y \
+            " || res=$?
+        copy_sources_to_vm
+        set_up_vdsm_user_and_groups
+        set_up_bonding_defaults_opts
+    fi
+
     return $res
+}
+
+function copy_sources_to_vm {
+    lago shell "$VM_NAME" -c "mkdir ${VDSM_LIB}"
+    lago copy-to-vm "$VM_NAME" /tmp/vdsm /usr/share
+}
+
+function set_up_vdsm_user_and_groups {
+    export vdsm_user=vdsm
+    export vdsm_group=kvm
+    export qemu_group=qemu
+    export snlk_group=sanlock
+    export cdrom_group=cdrom
+    export qemu_user=qemu
+
+    lago shell "$VM_NAME" -c \
+        " \
+        export PYTHONPATH='${VDSM_LIB}/lib:$PYTHONPATH'
+        adduser vdsm
+        adduser qemu
+
+        groupadd sanlock
+        groupadd qemu
+        groupadd cdrom
+
+        /usr/bin/getent passwd "${vdsm_user}" >/dev/null || /usr/sbin/useradd -r -u 36 -g "${vdsm_group}" -d /var/lib/vdsm -s /sbin/nologin -c 'Node Virtualization Manager' "${vdsm_user}"
+        /usr/sbin/usermod -a -G "${qemu_group}","${snlk_group}" "${vdsm_user}"
+        /usr/sbin/usermod -a -G "${cdrom_group}" "${qemu_user}"
+
+        install -d /var/run/vdsm/dhclientmon -m 755 -o vdsm -g kvm
+        install -d /var/run/vdsm/trackedInterfaces -m 755 -o vdsm -g kvm
+        "
+}
+
+function set_up_bonding_defaults_opts {
+    lago shell "$VM_NAME" -c \
+        "
+        export PYTHONPATH='${VDSM_LIB}/lib:$PYTHONPATH'
+
+        modprobe bonding
+        mkdir /var/run/vdsm
+
+        cd ${VDSM_LIB}/tests
+        python3 <<< cat <<EOF
+from vdsm.network.link.bond import sysfs_options_mapper
+sysfs_options_mapper.dump_bonding_options()
+EOF
+        "
 }
 
 function run_functional_network_test_linux_bridge {
     local res=0
     timeout $TEST_RUN_TIMEOUT lago shell "$VM_NAME" -c \
         " \
-            cd /usr/share/vdsm/tests
+            cd ${VDSM_LIB}/tests
             pytest \
                 --junitxml=$TESTS_OUT/tests-${DISTRO}-network-legacy.junit.xml \
                 -m legacy_switch \
@@ -85,10 +165,43 @@ function run_functional_network_test_ovs_switch {
     local res=0
     timeout $TEST_RUN_TIMEOUT lago shell "$VM_NAME" -c \
         " \
-            cd /usr/share/vdsm/tests
+            cd ${VDSM_LIB}/tests
             systemctl start openvswitch
             pytest \
                 --junitxml=$TESTS_OUT/tests-${DISTRO}-network-ovs.junit.xml \
+                -m ovs_switch \
+                network/functional
+        " || res=$?
+    return $res
+}
+
+function run_functional_network_test_linux_bridge_lib {
+    local res=0
+    timeout $TEST_RUN_TIMEOUT lago shell "$VM_NAME" -c \
+        " \
+            export PYTHONPATH='${VDSM_LIB}/lib:$PYTHONPATH'
+            cd ${VDSM_LIB}/tests
+            pytest \
+                --junitxml=$TESTS_OUT/tests-${DISTRO}-network-legacy.junit.xml \
+                --log-level=DEBUG \
+                --target-lib \
+                -m legacy_switch \
+                network/functional
+        " || res=$?
+    return $res
+}
+
+function run_functional_network_test_ovs_switch_lib {
+    local res=0
+    timeout $TEST_RUN_TIMEOUT lago shell "$VM_NAME" -c \
+        " \
+            export PYTHONPATH='${VDSM_LIB}/lib:$PYTHONPATH'
+            cd ${VDSM_LIB}/tests
+            systemctl start openvswitch
+            pytest \
+                --junitxml=$TESTS_OUT/tests-${DISTRO}-network-ovs.junit.xml \
+                --log-level=DEBUG \
+                --target-lib \
                 -m ovs_switch \
                 network/functional
         " || res=$?

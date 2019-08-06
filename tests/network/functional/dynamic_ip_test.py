@@ -29,7 +29,10 @@ from vdsm.network.ipwrapper import linkSet, addrAdd
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestAdapter, NOCHK
-from network.nettestlib import veth_pair, dnsmasq_run, dhclient_run
+from network.nettestlib import veth_pair
+from network.nettestlib import dnsmasq_run
+from network.nettestlib import dhclient_run
+from network.nettestlib import running_on_fedora
 
 NETWORK_NAME = 'test-network'
 VLAN = 10
@@ -85,6 +88,8 @@ parametrize_ip_families = pytest.mark.parametrize(
 class TestNetworkDhcpBasic(object):
 
     def test_add_net_with_dhcp(self, switch, families, bridged):
+        if switch == 'legacy' and running_on_fedora(29):
+            pytest.xfail('Fails on Fedora 29')
 
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
