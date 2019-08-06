@@ -18,7 +18,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from __future__ import absolute_import
 
 '''
 Hook to bind a vNIC into a Bridge
@@ -29,8 +28,9 @@ Syntax:
 Example:
    macbind={'00:1a:4a:60:d1:9a': 'br0', '00:1a:4a:60:c4:88': 'br1'}
 '''
-from __future__ import print_function
 
+from __future__ import absolute_import
+from __future__ import print_function
 
 _DEV_TYPE = frozenset(('bridge', 'openvswitch'))
 import ast
