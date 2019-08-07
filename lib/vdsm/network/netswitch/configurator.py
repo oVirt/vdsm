@@ -175,14 +175,18 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
     logging.info('Desired state: %s', desired_state)
     nmstate.setup(desired_state, verify_change=not in_rollback)
     with Transaction(in_rollback=in_rollback) as config:
-        config.networks = {
-            name: attrs for name, attrs in six.viewitems(networks)
-            if not attrs.get('remove')
-        }
-        config.bonds = {
-            name: attrs for name, attrs in six.viewitems(bondings)
-            if not attrs.get('remove')
-        }
+        for net_name, net_attrs in six.viewitems(networks):
+            if net_attrs.get('remove'):
+                config.removeNetwork(net_name)
+        for net_name, net_attrs in six.viewitems(networks):
+            if not net_attrs.get('remove'):
+                config.setNetwork(net_name, net_attrs)
+        for bond_name, bond_attrs in six.viewitems(bondings):
+            if bond_attrs.get('remove'):
+                config.removeBonding(bond_name)
+        for bond_name, bond_attrs in six.viewitems(bondings):
+            if not bond_attrs.get('remove'):
+                config.setBonding(bond_name, bond_attrs)
         _setup_src_routing(networks)
         connectivity.check(options)
 
