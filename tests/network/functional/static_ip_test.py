@@ -209,10 +209,10 @@ class TestNetworkStaticIpBasic(object):
                 adapter.assertNetworkIp(NETWORK2_NAME, network_attrs2)
 
 
+@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkIPDefaultGateway(object):
 
-    @pytest.mark.nmstate
     def test_add_net_with_ipv4_default_gateway(self, switch, preserve_conf):
         with dummy_device() as nic:
             network_attrs = {'nic': nic,
@@ -250,7 +250,6 @@ class TestNetworkIPDefaultGateway(object):
                     adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
                     adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
 
-    @pytest.mark.nmstate
     def test_add_net_without_default_route(self, switch, preserve_conf):
         with dummy_devices(2) as (nic1, nic2):
 
@@ -276,7 +275,6 @@ class TestNetworkIPDefaultGateway(object):
                     adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
                 adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
 
-    @pytest.mark.nmstate
     def test_add_net_without_gateway_and_default_route(self, switch,
                                                        preserve_conf):
         with dummy_devices(2) as (nic1, nic2):
@@ -300,7 +298,6 @@ class TestNetworkIPDefaultGateway(object):
                     adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
                     adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
 
-    @pytest.mark.nmstate
     def test_create_net_without_default_route(self, switch, preserve_conf):
         with dummy_devices(1) as (nic1,):
             net1_attrs = {'nic': nic1,
@@ -313,7 +310,6 @@ class TestNetworkIPDefaultGateway(object):
             with adapter.setupNetworks(net1create, {}, NOCHK):
                 adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
 
-    @pytest.mark.nmstate
     def test_remove_net_without_default_route(self, switch, preserve_conf):
         with dummy_devices(2) as (nic1, nic2):
             net1_attrs = {'nic': nic1,
@@ -337,7 +333,6 @@ class TestNetworkIPDefaultGateway(object):
                     adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
                 adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
 
-    @pytest.mark.nmstate
     def test_remove_net_with_default_route_and_gateway(self, switch,
                                                        preserve_conf):
         with dummy_devices(2) as (nic1, nic2):

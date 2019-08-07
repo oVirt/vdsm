@@ -110,7 +110,7 @@ def _create_network(netname, netattrs):
             s for s in (sb_iface_state, vlan_iface_state, bridge_iface_state)
             if s
         ],
-        Route.KEY: _generate_add_routes_state(netname, netattrs)
+        Route.KEY: _generate_routes_state(netname, netattrs)
     }
 
 
@@ -187,13 +187,6 @@ def _remove_network(netname, ifstates, route_states, rconfig):
             }
         }
     ifstates.update(iface_state)
-
-    gateway = netconf.get('gateway')
-    default_route = netconf['defaultRoute']
-    if gateway and default_route:
-        next_hop_interface = get_next_hop_interface(netname, netconf)
-        route_states.append(
-            _generate_remove_default_route_state(gateway, next_hop_interface))
 
     if netconf['bridged']:
         ifstates[netname] = {
@@ -277,17 +270,22 @@ def _generate_iface_dynamic_ipv4_state(iface_state):
     iface_state['ipv4'] = iface_ipv4_state
 
 
-def _generate_add_routes_state(net_name, net_attributes):
+def _generate_routes_state(net_name, net_attributes):
     gateway = net_attributes.get('gateway')
     is_default_route = net_attributes['defaultRoute']
     next_hop_interface = get_next_hop_interface(net_name, net_attributes)
-    if gateway and is_default_route:
-        return _add_default_route_info(gateway, next_hop_interface)
+    if gateway:
+        if is_default_route:
+            return _generate_add_default_route_info(gateway,
+                                                    next_hop_interface)
+        else:
+            return _generate_remove_default_route_state(gateway,
+                                                        next_hop_interface)
     else:
         return {}
 
 
-def _add_default_route_info(gateway, next_hop_interface):
+def _generate_add_default_route_info(gateway, next_hop_interface):
     return {
         Route.NEXT_HOP_ADDRESS: gateway,
         Route.NEXT_HOP_INTERFACE: next_hop_interface,

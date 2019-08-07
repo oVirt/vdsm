@@ -525,13 +525,7 @@ def test_translate_remove_network_with_default_route(rconfig_mock, bridged):
         expected_state[nmstate.Interface.KEY].append(
             {'name': 'testnet1', 'state': 'absent'}
         )
-        if_with_default_route = 'testnet1'
-    else:
-        if_with_default_route = IFACE0
 
-    expected_state[nmstate.Route.KEY] = _get_routes_config(
-        IPv4_GATEWAY1, if_with_default_route, state=nmstate.Route.STATE_ABSENT
-    )
     assert expected_state == state
 
 
