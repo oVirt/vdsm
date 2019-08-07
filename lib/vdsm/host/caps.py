@@ -33,6 +33,7 @@ from vdsm import numa
 from vdsm import osinfo
 from vdsm import utils
 from vdsm.common import cache
+from vdsm.common import commands
 from vdsm.common import cpuarch
 from vdsm.common import dsaversion
 from vdsm.common import hooks
@@ -146,6 +147,7 @@ def get():
     caps['vncEncrypted'] = _isVncEncrypted()
     caps['backupEnabled'] = False
     caps['tscFrequency'] = _getTscFrequency()
+    caps['fipsEnabled'] = _getFipsEnabled()
 
     try:
         caps["connector_info"] = managedvolume.connector_info()
@@ -242,3 +244,18 @@ def _getTscFrequencyLibvirt():
         return counter[0].get('frequency')[:-6]
     logging.debug('No TSC counter returned by Libvirt')
     return None
+
+
+def _getFipsEnabled():
+    """
+    Read FIPS status using sysctl
+    """
+    SYSCTL_FIPS_COMMAND = ["/usr/sbin/sysctl", "crypto.fips_enabled"],
+
+    try:
+        output = commands.run(*SYSCTL_FIPS_COMMAND)
+        enabled = output.split(b'=')[1].strip()
+        return enabled == b'1'
+    except Exception as e:
+        logging.error("Could not read FIPS status with sysctl: %s", e)
+        return False

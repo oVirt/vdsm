@@ -283,3 +283,17 @@ class TestCaps(TestCaseBase):
             d.write('[    0.000000] tsc: Detected 4321.123 MHz processor')
         freq = caps._getTscFrequency()
         self.assertEqual(freq, "4321.123")
+
+    @MonkeyPatch(commands, 'run', lambda x: b'crypto.fips_enabled = 1\n')
+    def test_getFipsEnabledOn(self):
+        self.assertTrue(caps._getFipsEnabled())
+
+    @MonkeyPatch(commands, 'run', lambda x: b'crypto.fips_enabled = 0\n')
+    def test_getFipsEnabledOff(self):
+        self.assertFalse(caps._getFipsEnabled())
+
+    # A hacky way to throw an exception from a lambda
+    @MonkeyPatch(commands, 'run',
+                 lambda x: (_ for _ in ()).throw(Exception("A problem")))
+    def test_getFipsEnabledOffWhenError(self):
+        self.assertFalse(caps._getFipsEnabled())
