@@ -33,21 +33,13 @@ EXT_IP = '/usr/sbin/ip'
 
 
 def createEphemeralBridge(bridgeName):
-    rc, out, err = commands.execCmd([
+    commands.run([
         EXT_IP, 'link', 'add', bridgeName, 'type', 'bridge'])
-    if rc != 0:
-        raise EnvironmentError(
-            'Failed to create ephemeral dummy bridge. Err: %s' % err
-        )
 
 
 def removeEphemeralBridge(bridgeName):
-    rc, out, err = commands.execCmd([
+    commands.run([
         EXT_IP, 'link', 'del', bridgeName, 'type', 'bridge'])
-    if rc != 0:
-        raise EnvironmentError(
-            'Failed to remove ephemeral dummy bridge. Err: %s' % err
-        )
 
 
 def addBridgeToLibvirt(bridgeName):
