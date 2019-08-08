@@ -28,10 +28,10 @@ from vdsm.network.link.setup import parse_bond_options
 
 try:
     from libnmstate import netapplier
+    from libnmstate.schema import Interface
 except ImportError:  # nmstate is not available
     netapplier = None
-
-INTERFACES = 'interfaces'
+    Interface = None
 
 
 def setup(desired_state, verify_change):
@@ -46,7 +46,7 @@ def generate_state(networks, bondings):
     _generate_networks_state(networks, ifstates)
 
     interfaces = [ifstate for ifstate in six.viewvalues(ifstates)]
-    return {INTERFACES: sorted(interfaces, key=lambda d: d['name'])}
+    return {Interface.KEY: sorted(interfaces, key=lambda d: d[Interface.NAME])}
 
 
 def _generate_networks_state(networks, ifstates):
@@ -57,7 +57,7 @@ def _generate_networks_state(networks, ifstates):
             _remove_network(netname, ifstates, rconfig)
         else:
             for ifstate in _create_network(netname, netattrs):
-                ifname = ifstate['name']
+                ifname = ifstate[Interface.NAME]
                 if ifname in ifstates:
                     ifstates[ifname].update(ifstate)
                 else:
@@ -77,7 +77,7 @@ def _create_network(netname, netattrs):
         stp_enabled = netattrs['stp']
         bridge_iface_state = _generate_bridge_iface_state(
             netname,
-            bridge_port['name'],
+            bridge_port[Interface.NAME],
             options=_generate_bridge_options(stp_enabled)
         )
 
@@ -99,29 +99,29 @@ def _generate_vlan_iface_state(nic, bond, vlan):
     if vlan:
         base_iface = nic or bond
         return {
-            'name': '.'.join([base_iface, str(vlan)]),
-            'type': 'vlan',
-            'state': 'up',
             'vlan': {
                 'id': vlan,
-                'base-iface': base_iface
-            }
+                'base-iface': base_iface,
+            },
+            Interface.NAME: '.'.join([base_iface, str(vlan)]),
+            Interface.TYPE: 'vlan',
+            Interface.STATE: 'up',
         }
     return {}
 
 
 def _generate_southbound_iface_state(nic, bond):
     return {
-        'name': nic or bond,
-        'state': 'up',
+        Interface.NAME: nic or bond,
+        Interface.STATE: 'up',
     }
 
 
 def _generate_bridge_iface_state(name, port, options=None):
     bridge_state = {
-        'name': name,
+        Interface.NAME: name,
         'type': 'linux-bridge',
-        'state': 'up',
+        Interface.STATE: 'up',
         'bridge': {
             'port': [
                 {
@@ -154,15 +154,15 @@ def _remove_network(netname, ifstates, rconfig):
         vlan_interface = '.'.join([base_iface, str(vlan)])
         iface_state = {
             vlan_interface: {
-                'name': vlan_interface,
-                'state': 'absent',
+                Interface.NAME: vlan_interface,
+                Interface.STATE: 'absent',
             }
         }
     elif not ifstates.get(base_iface):
         iface_state = {
             base_iface: {
-                'name': base_iface,
-                'state': 'up',
+                Interface.NAME: base_iface,
+                Interface.STATE: 'up',
                 'ipv4': {'enabled': False},
                 'ipv6': {'enabled': False}
             }
@@ -171,8 +171,8 @@ def _remove_network(netname, ifstates, rconfig):
 
     if netconf['bridged']:
         ifstates[netname] = {
-            'name': netname,
-            'state': 'absent'
+            Interface.NAME: netname,
+            Interface.STATE: 'absent'
         }
 
 
@@ -188,21 +188,21 @@ def _generate_bonds_state(bondings, ifstates):
 
 def _remove_bond(bondname):
     iface_state = {
-        'name': bondname,
-        'type': 'bond',
-        'state': 'absent'
+        Interface.NAME: bondname,
+        Interface.TYPE: 'bond',
+        Interface.STATE: 'absent'
     }
     return iface_state
 
 
 def _create_bond(bondname, bondattrs):
     iface_state = {
-        'name': bondname,
-        'type': 'bond',
-        'state': 'up',
+        Interface.NAME: bondname,
+        Interface.TYPE: 'bond',
+        Interface.STATE: 'up',
         'link-aggregation': {},
-        'ipv4': {'enabled': False},
-        'ipv6': {'enabled': False}
+        Interface.IPV4: {'enabled': False},
+        Interface.IPV6: {'enabled': False}
     }
     mac = bondattrs.get('hwaddr')
     if mac:

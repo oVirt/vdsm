@@ -53,7 +53,7 @@ parametrize_bridged = pytest.mark.parametrize('bridged', [False, True],
 def test_translate_empty_networks_and_bonds():
     state = nmstate.generate_state(networks={}, bondings={})
 
-    assert {nmstate.INTERFACES: []} == state
+    assert {nmstate.Interface.KEY: []} == state
 
 
 @parametrize_bridged
@@ -70,7 +70,7 @@ def test_translate_nets_without_ip(bridged):
     _disable_iface_ip(eth0_state, eth1_state)
 
     expected_state = {
-        nmstate.INTERFACES: [
+        nmstate.Interface.KEY: [
             eth0_state,
             eth1_state
         ]
@@ -85,11 +85,11 @@ def test_translate_nets_without_ip(bridged):
                 stp_enabled=False)
         )
         _disable_iface_ip(bridge1_state, bridge2_state)
-        expected_state[nmstate.INTERFACES].extend([
+        expected_state[nmstate.Interface.KEY].extend([
             bridge1_state,
             bridge2_state
         ])
-    _sort_by_name(expected_state[nmstate.INTERFACES])
+    _sort_by_name(expected_state[nmstate.Interface.KEY])
     assert expected_state == state
 
 
@@ -117,7 +117,7 @@ def test_translate_nets_with_ip(bridged):
     ip1_state = _create_ipv4_state(IPv4_ADDRESS2, IPv4_PREFIX2)
     ip1_state.update(_create_ipv6_state(IPv6_ADDRESS2, IPv6_PREFIX2))
 
-    expected_state = {nmstate.INTERFACES: [eth0_state, eth1_state]}
+    expected_state = {nmstate.Interface.KEY: [eth0_state, eth1_state]}
     if bridged:
         _disable_iface_ip(eth0_state, eth1_state)
         bridge1_state = _create_bridge_iface_state(
@@ -130,7 +130,7 @@ def test_translate_nets_with_ip(bridged):
         )
         bridge1_state.update(ip0_state)
         bridge2_state.update(ip1_state)
-        expected_state[nmstate.INTERFACES].extend([
+        expected_state[nmstate.Interface.KEY].extend([
             bridge1_state,
             bridge2_state
         ])
@@ -138,7 +138,7 @@ def test_translate_nets_with_ip(bridged):
         eth0_state.update(ip0_state)
         eth1_state.update(ip1_state)
 
-    _sort_by_name(expected_state[nmstate.INTERFACES])
+    _sort_by_name(expected_state[nmstate.Interface.KEY])
     assert expected_state == state
 
 
@@ -157,7 +157,7 @@ def test_translate_bond_with_two_slaves():
     _disable_iface_ip(bond0_state)
 
     expected_state = {
-        nmstate.INTERFACES: [
+        nmstate.Interface.KEY: [
             bond0_state,
         ]
     }
@@ -180,7 +180,7 @@ def test_translate_bond_with_two_slaves_and_options():
     _disable_iface_ip(bond0_state)
 
     expected_state = {
-        nmstate.INTERFACES: [
+        nmstate.Interface.KEY: [
             bond0_state,
         ]
     }
@@ -209,7 +209,7 @@ def test_translate_net_with_ip_on_bond(bridged):
     ip_state = _create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
     ip_state.update(_create_ipv6_state(IPv6_ADDRESS1, IPv6_PREFIX1))
 
-    expected_state = {nmstate.INTERFACES: [bond0_state]}
+    expected_state = {nmstate.Interface.KEY: [bond0_state]}
     if bridged:
         _disable_iface_ip(bond0_state)
         bridge1_state = _create_bridge_iface_state(
@@ -217,7 +217,7 @@ def test_translate_net_with_ip_on_bond(bridged):
                 stp_enabled=False)
         )
         bridge1_state.update(ip_state)
-        expected_state[nmstate.INTERFACES].extend([bridge1_state])
+        expected_state[nmstate.Interface.KEY].extend([bridge1_state])
     else:
         bond0_state.update(ip_state)
 
@@ -246,7 +246,7 @@ def test_translate_net_with_dynamic_ip(bridged):
     ip_state = _create_ipv4_state(dynamic=True)
     ip_state.update(_create_ipv6_state(dynamic=True))
 
-    expected_state = {nmstate.INTERFACES: [bond0_state]}
+    expected_state = {nmstate.Interface.KEY: [bond0_state]}
     if bridged:
         _disable_iface_ip(bond0_state)
         bridge1_state = _create_bridge_iface_state(
@@ -254,7 +254,7 @@ def test_translate_net_with_dynamic_ip(bridged):
                 stp_enabled=False)
         )
         bridge1_state.update(ip_state)
-        expected_state[nmstate.INTERFACES].extend([bridge1_state])
+        expected_state[nmstate.Interface.KEY].extend([bridge1_state])
     else:
         bond0_state.update(ip_state)
 
@@ -287,7 +287,7 @@ def test_translate_net_with_ip_on_vlan_on_bond(bridged):
     ip1_state = _create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
     ip1_state.update(_create_ipv6_state(IPv6_ADDRESS1, IPv6_PREFIX1))
 
-    expected_state = {nmstate.INTERFACES: [bond0_state, vlan101_state]}
+    expected_state = {nmstate.Interface.KEY: [bond0_state, vlan101_state]}
     if bridged:
         _disable_iface_ip(vlan101_state)
         bridge1_state = _create_bridge_iface_state(
@@ -296,7 +296,7 @@ def test_translate_net_with_ip_on_vlan_on_bond(bridged):
             options=_generate_bridge_options(stp_enabled=False)
         )
         bridge1_state.update(ip1_state)
-        expected_state[nmstate.INTERFACES].extend([bridge1_state])
+        expected_state[nmstate.Interface.KEY].extend([bridge1_state])
     else:
         vlan101_state.update(ip1_state)
     assert expected_state == state
@@ -320,9 +320,9 @@ def test_translate_remove_nets(rconfig_mock, bridged):
 
     _disable_iface_ip(eth0_state, eth1_state)
 
-    expected_state = {nmstate.INTERFACES: [eth0_state, eth1_state]}
+    expected_state = {nmstate.Interface.KEY: [eth0_state, eth1_state]}
     if bridged:
-        expected_state[nmstate.INTERFACES].extend([
+        expected_state[nmstate.Interface.KEY].extend([
             {
                 'name': 'testnet1',
                 'state': 'absent'
@@ -332,7 +332,7 @@ def test_translate_remove_nets(rconfig_mock, bridged):
                 'state': 'absent'
             }
         ])
-    _sort_by_name(expected_state[nmstate.INTERFACES])
+    _sort_by_name(expected_state[nmstate.Interface.KEY])
     assert expected_state == state
 
 
@@ -353,7 +353,7 @@ def test_translate_remove_vlan_net(rconfig_mock, bridged):
     state = nmstate.generate_state(networks=networks, bondings={})
 
     expected_state = {
-        nmstate.INTERFACES: [
+        nmstate.Interface.KEY: [
             {
                 'name': IFACE0 + '.' + str(VLAN101),
                 'state': 'absent',
@@ -361,11 +361,11 @@ def test_translate_remove_vlan_net(rconfig_mock, bridged):
         ]
     }
     if bridged:
-        expected_state[nmstate.INTERFACES].append({
+        expected_state[nmstate.Interface.KEY].append({
             'name': 'testnet1',
             'state': 'absent'
         })
-    _sort_by_name(expected_state[nmstate.INTERFACES])
+    _sort_by_name(expected_state[nmstate.Interface.KEY])
     assert expected_state == state
 
 
@@ -377,7 +377,7 @@ def test_translate_remove_bonds():
     state = nmstate.generate_state(networks={}, bondings=bondings)
 
     expected_state = {
-        nmstate.INTERFACES: [
+        nmstate.Interface.KEY: [
             {
                 'name': 'testbond0',
                 'type': 'bond',
@@ -401,7 +401,7 @@ def test_translate_remove_net_on_bond(rconfig_mock, bridged):
     state = nmstate.generate_state(networks=networks, bondings={})
 
     expected_state = {
-        nmstate.INTERFACES: [
+        nmstate.Interface.KEY: [
             {
                 'name': 'testbond0',
                 'state': 'up',
@@ -411,11 +411,11 @@ def test_translate_remove_net_on_bond(rconfig_mock, bridged):
         ]
     }
     if bridged:
-        expected_state[nmstate.INTERFACES].append({
+        expected_state[nmstate.Interface.KEY].append({
             'name': 'testnet1',
             'state': 'absent'
         })
-    _sort_by_name(expected_state[nmstate.INTERFACES])
+    _sort_by_name(expected_state[nmstate.Interface.KEY])
     assert expected_state == state
 
 
@@ -437,7 +437,7 @@ def test_translate_remove_vlan_net_on_bond(rconfig_mock, bridged):
     state = nmstate.generate_state(networks=networks, bondings={})
 
     expected_state = {
-        nmstate.INTERFACES: [
+        nmstate.Interface.KEY: [
             {
                 'name': 'testbond0.' + str(VLAN101),
                 'state': 'absent',
@@ -445,13 +445,13 @@ def test_translate_remove_vlan_net_on_bond(rconfig_mock, bridged):
         ]
     }
     if bridged:
-        expected_state[nmstate.INTERFACES].extend([
+        expected_state[nmstate.Interface.KEY].extend([
             {
                 'name': 'testnet1',
                 'state': 'absent'
             }
         ])
-    _sort_by_name(expected_state[nmstate.INTERFACES])
+    _sort_by_name(expected_state[nmstate.Interface.KEY])
     assert expected_state == state
 
 
