@@ -40,7 +40,7 @@ ZERO_PCI_ADDRESS = '0000:00:00.0'
 def update_numvfs(pci_path, numvfs):
     """pci_path is a string looking similar to "0000:00:19.0"
     """
-    with open(_SYSFS_SRIOV_NUMVFS.format(pci_path), 'w', 0) as f:
+    with open(_SYSFS_SRIOV_NUMVFS.format(pci_path), 'wb', 0) as f:
         # Zero needs to be written first in order to remove previous VFs.
         # Trying to just write the number (if n > 0 VF's existed before)
         # results in 'write error: Device or resource busy'
@@ -53,7 +53,7 @@ def update_numvfs(pci_path, numvfs):
                                              check_event=lambda event:
                                              _check_all_vfs_down(event,
                                                                  links)):
-                f.write('0')
+                f.write(b'0')
 
         if int(numvfs) > 0:
             vfs_up = []
@@ -65,7 +65,7 @@ def update_numvfs(pci_path, numvfs):
                                                                vfs_up,
                                                                int(numvfs),
                                                                pci_path)):
-                f.write(str(numvfs))
+                f.write(b'%d' % numvfs)
             _set_valid_vf_macs(pci_path, numvfs)
 
 
