@@ -1678,7 +1678,7 @@ class Global(APIBase):
             return errCode['haErr']
 
         try:
-            haClient.HAClient().set_maintenance_mode(mm, enabled)
+            haClient.HAClient().set_maintenance_mode(mm, enabled, timeout=60)
         except Exception:
             self.log.exception("error setting HA maintenance mode")
             return errCode['haErr']
