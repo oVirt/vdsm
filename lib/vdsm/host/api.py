@@ -178,7 +178,8 @@ def _getHaInfo():
             else:
                 return i
 
-            stats = instance.get_all_stats()
+            # TODO: move to a periodic worker and cache the result
+            stats = instance.get_all_stats(timeout=5)
             if 0 in stats:
                 i['globalMaintenance'] = stats[0].get(
                     haClient.HAClient.GlobalMdFlags.MAINTENANCE,
