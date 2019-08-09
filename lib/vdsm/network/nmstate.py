@@ -52,8 +52,11 @@ def generate_state(networks, bondings):
     """ Generate a new nmstate state given VDSM setup state format """
     ifstates = {}
     route_states = []
+    rconfig = RunningConfig()
+
     _generate_bonds_state(bondings, ifstates)
-    _generate_networks_state(networks, ifstates, route_states)
+    _disable_ip_for_new_bonds(bondings, ifstates, rconfig)
+    _generate_networks_state(networks, ifstates, route_states, rconfig)
 
     return merge_state(ifstates, route_states)
 
@@ -73,12 +76,10 @@ def is_dhcp_enabled(ifstate, family):
     return family_info[InterfaceIP.ENABLED] and family_info[InterfaceIP.DHCP]
 
 
-def _generate_networks_state(networks, ifstates, route_states):
-    rconfig = RunningConfig()
-
+def _generate_networks_state(networks, ifstates, route_states, running_config):
     for netname, netattrs in six.viewitems(networks):
         if _is_remove(netattrs):
-            _remove_network(netname, ifstates, route_states, rconfig)
+            _remove_network(netname, ifstates, route_states, running_config)
         else:
             network_states = _create_network(netname, netattrs)
             for ifstate in network_states[Interface.KEY]:
@@ -243,8 +244,6 @@ def _create_bond(bondname, bondattrs):
         Interface.TYPE: 'bond',
         Interface.STATE: 'up',
         'link-aggregation': {},
-        Interface.IPV4: {'enabled': False},
-        Interface.IPV6: {'enabled': False}
     }
     mac = bondattrs.get('hwaddr')
     if mac:
@@ -380,5 +379,14 @@ def _get_ipv4_prefix_from_mask(ipv4netmask):
     return prefix
 
 
-def _is_remove(net_attributes):
-    return net_attributes.get('remove', False)
+def _disable_ip_for_new_bonds(bondings, interfaces_state, running_config):
+    for bondname, bond_attrs in six.viewitems(bondings):
+        if _is_remove(bond_attrs):
+            continue
+        if bondname not in running_config.bonds:
+            interfaces_state[bondname][Interface.IPV4] = {'enabled': False}
+            interfaces_state[bondname][Interface.IPV6] = {'enabled': False}
+
+
+def _is_remove(interface_attrs):
+    return interface_attrs.get('remove', False)

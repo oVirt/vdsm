@@ -143,7 +143,7 @@ def test_translate_nets_with_ip(bridged):
     assert expected_state == state
 
 
-def test_translate_bond_with_two_slaves():
+def test_translate_new_bond_with_two_slaves():
     bondings = {
         'testbond0': {
             'nics': [IFACE0, IFACE1],
@@ -165,7 +165,30 @@ def test_translate_bond_with_two_slaves():
     assert expected_state == state
 
 
-def test_translate_bond_with_two_slaves_and_options():
+@mock.patch.object(nmstate, 'RunningConfig')
+def test_translate_edit_bond_with_slaves(rconfig_mock):
+    bondings = {
+        'testbond0': {
+            'nics': [IFACE0, IFACE1],
+            'switch': 'legacy'
+        }
+    }
+    rconfig_mock.return_value.bonds = bondings
+
+    state = nmstate.generate_state(networks={}, bondings=bondings)
+
+    bond0_state = _create_bond_iface_state(
+        'testbond0', 'balance-rr', [IFACE0, IFACE1])
+
+    expected_state = {
+        nmstate.Interface.KEY: [
+            bond0_state,
+        ]
+    }
+    assert expected_state == state
+
+
+def test_translate_new_bond_with_two_slaves_and_options():
     bondings = {
         'testbond0': {
             'nics': [IFACE0, IFACE1],

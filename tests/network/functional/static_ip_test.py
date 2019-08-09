@@ -73,21 +73,19 @@ parametrize_ip_families = pytest.mark.parametrize(
     ids=['IPv4', 'IPv6', 'IPv4&6'])
 
 
+@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkStaticIpBasic(object):
 
-    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @parametrize_ip_families
     def test_add_net_with_ip_based_on_nic(self, switch, bridged, families):
         self._test_add_net_with_ip(families, switch, bridged=bridged)
 
-    @pytest.mark.nmstate
     @parametrize_ip_families
     def test_add_net_with_ip_based_on_bond(self, switch, families):
         self._test_add_net_with_ip(families, switch, bonded=True)
 
-    @pytest.mark.nmstate
     @parametrize_ip_families
     def test_add_net_with_ip_based_on_vlan(self, switch, families):
         self._test_add_net_with_ip(families, switch, vlaned=True)
@@ -122,7 +120,6 @@ class TestNetworkStaticIpBasic(object):
                 adapter.assertNetworkIp(NETWORK_NAME,
                                         netcreate[NETWORK_NAME])
 
-    @pytest.mark.nmstate
     def test_add_net_with_prefix(self, switch):
         with dummy_device() as nic:
             network_attrs = {'nic': nic,
@@ -135,7 +132,6 @@ class TestNetworkStaticIpBasic(object):
                 adapter.assertNetworkIp(NETWORK_NAME,
                                         netcreate[NETWORK_NAME])
 
-    @pytest.mark.nmstate
     def test_static_ip_configuration_v4_to_v6_and_back(self, switch):
         with dummy_devices(1) as (nic1,):
             net_ipv4_atts = {'nic': nic1,
@@ -156,7 +152,6 @@ class TestNetworkStaticIpBasic(object):
                 adapter.setupNetworks(net_ipv4, {}, NOCHK)
                 adapter.assertNetworkIp(NETWORK_NAME, net_ipv4_atts)
 
-    @pytest.mark.nmstate
     def test_edit_ipv4_address_on_bonded_network(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             net_attrs_ip1 = {'bonding': BOND_NAME,
