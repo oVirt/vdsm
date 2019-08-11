@@ -5,6 +5,12 @@
 VDSM_SOURCE_DIR="${VDSM_SOURCE_DIR:-~/code/vdsm}"
 RPMDIR=`rpm --eval %_rpmdir`
 
+if grep -q 'CentOS Linux release 7' /etc/redhat-release; then
+    PYTHON='python2'
+else
+    PYTHON='python3'
+fi
+
 _latest_version() {
     ls "$RPMDIR"/*/vdsm-python* -t -w 1 | head -1 | sed 's/.*vdsm-[a-z]*-//;s/.noarch.rpm//'
 }
@@ -147,7 +153,7 @@ del_ovs_bridges() {
 }
 
 del_test_nets() {
-    cat << EOF | sudo python -
+    cat << EOF | sudo $PYTHON -
 from __future__ import print_function
 from vdsm.common import libvirtconnection
 c = libvirtconnection.get()
@@ -162,7 +168,7 @@ EOF
 }
 
 del_net_persistency() {
-cat << EOF | sudo python -
+cat << EOF | sudo $PYTHON -
 import os
 
 dirs = ('/var/lib/vdsm/staging/netconf/nets/',
