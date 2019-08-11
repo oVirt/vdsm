@@ -20,12 +20,38 @@
 
 from __future__ import absolute_import
 
+import functools
+
 import six
 
 from vdsm.common import compat
 
+
+def _wait_to_async(func):
+    """
+    Convert the wait=False argument to async=True.
+
+    Sanlock bindings for python 2 uses async=False, while python 3 version uses
+    wait=True. This decorator converts python 2 function to behave like python
+    3 version, so we can convert all code to use wait=True.
+
+    TODO: Remove when python 2 support is drooped.
+    """
+    @functools.wraps(func)
+    def decorator(*args, **kw):
+        wait = kw.pop("wait", None)
+        if wait is not None:
+            kw["async"] = not wait
+        return func(*args, **kw)
+    return decorator
+
+
 try:
     import sanlock
+
+    if six.PY2:
+        sanlock.add_lockspace = _wait_to_async(sanlock.add_lockspace)
+        sanlock.rem_lockspace = _wait_to_async(sanlock.rem_lockspace)
 except ImportError:
     if six.PY2:
         raise
