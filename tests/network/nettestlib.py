@@ -46,6 +46,7 @@ from vdsm.network.netinfo import routes
 from vdsm.network.netlink import monitor
 from vdsm.common.cache import memoized
 from vdsm.common.cmdutils import CommandPath
+from vdsm.common.config import config as vdsm_config
 from vdsm.common.proc import pgrep
 
 from . import dhcp
@@ -240,6 +241,9 @@ class Dummy(Interface):
         except IPRoute2Error as e:
             raise SkipTest("Unable to delete the dummy interface %s: %s" %
                            (self.devName, e))
+        finally:
+            if is_nmstate_enabled():
+                cmd.exec_sync(['nmcli', 'con', 'del', self.devName])
 
     def set_ip(self, ipaddr, netmask, family=4):
         try:
@@ -594,3 +598,7 @@ def running_on_fedora(ver=''):
 
 def running_on_travis_ci():
     return 'TRAVIS_CI' in os.environ
+
+
+def is_nmstate_enabled():
+    return vdsm_config.getboolean('vars', 'net_nmstate_enabled')
