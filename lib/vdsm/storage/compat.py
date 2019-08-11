@@ -20,54 +20,12 @@
 
 from __future__ import absolute_import
 
-import functools
-
 import six
 
 from vdsm.common import compat
-from vdsm.storage import constants as sc
-
-
-def compat_4k(func):
-    """
-    Decorate sanlock < 3.7.3 functions with align and sector arguments, so new
-    code can call sanlock in an uniform way.
-
-    Raises ValueError if calling old sanlock with incompatible align or sector
-    values.
-    """
-
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        # Remove and validate sector.
-        sector = kwargs.pop("sector", sc.BLOCK_SIZE_512)
-        if sector != sc.BLOCK_SIZE_512:
-            raise ValueError("Wrong sector size %d" % sector)
-
-        # Remove and validate align.
-        align = kwargs.pop("align", sc.ALIGNMENT_1M)
-        if align != sc.ALIGNMENT_1M:
-            raise ValueError("Wrong alignment %d" % align)
-
-        return func(*args, **kwargs)
-
-    return decorator
-
 
 try:
     import sanlock
-
-    # TODO: Remove when sanlock 3.7.3 is available.
-    if not hasattr(sanlock, "SECTOR_SIZE"):
-        sanlock.read_lockspace = compat_4k(sanlock.read_lockspace)
-        sanlock.write_lockspace = compat_4k(sanlock.write_lockspace)
-        sanlock.read_resource = compat_4k(sanlock.read_resource)
-        sanlock.read_resource_owners = compat_4k(sanlock.read_resource_owners)
-        sanlock.write_resource = compat_4k(sanlock.write_resource)
-
-        sanlock.SECTOR_SIZE = (sc.BLOCK_SIZE_512,)
-        sanlock.ALINGN_SIZE = (sc.ALIGNMENT_1M,)
-
 except ImportError:
     if six.PY2:
         raise
