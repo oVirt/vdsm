@@ -267,9 +267,7 @@ class PersistentDict(object):
                 return
 
             checksumCalculator = hashlib.sha1()
-            keys = newMD.keys()
-            keys.sort()
-            for key in keys:
+            for key in sorted(newMD):
                 value = newMD[key]
                 line = "%s=%s" % (key, value)
                 checksumCalculator.update(_preprocessLine(line))
@@ -291,9 +289,7 @@ class PersistentDict(object):
 
             checksumCalculator = hashlib.sha1()
             lines = []
-            keys = md.keys()
-            keys.sort()
-            for key in keys:
+            for key in sorted(md):
                 value = md[key]
                 line = "=".join([key, value.strip()])
                 checksumCalculator.update(_preprocessLine(line))
