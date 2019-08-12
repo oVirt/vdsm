@@ -95,6 +95,7 @@ class TestBridge(object):
                         adapter.assertNetwork(NETWORK_NAME,
                                               NETSETUP2[NETWORK_NAME])
 
+    @pytest.mark.nmstate
     @nftestlib.parametrize_legacy_switch
     def test_reconfigure_bridge_with_vanished_port(self, switch):
         with dummy_device() as nic1:
