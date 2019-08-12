@@ -447,10 +447,10 @@ def after_hostdev_list_by_caps(devices):
 def _getScriptInfo(path):
     try:
         with open(path, 'rb') as f:
-            md5 = hashlib.md5(f.read()).hexdigest()
+            digest = hashlib.sha256(f.read()).hexdigest()
     except EnvironmentError:
-        md5 = ''
-    return {'md5': md5}
+        digest = ''
+    return {'checksum': digest}
 
 
 def load_vm_launch_flags_from_file(vm_id):

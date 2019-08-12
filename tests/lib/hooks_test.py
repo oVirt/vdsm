@@ -469,7 +469,7 @@ def test_rhd_should_make_import_hooking_possible(hooks_dir, hooking_client):
         [
             FileEntry("script.sh", 0o777, "abc")
         ],
-        hashlib.md5(b"abc").hexdigest(),
+        hashlib.sha256(b"abc").hexdigest(),
         id="simple script"
     ),
     pytest.param(
@@ -481,7 +481,7 @@ def test_rhd_should_make_import_hooking_possible(hooks_dir, hooking_client):
 def test_get_script_info_should_return_checksum(hooks_dir, expected):
     path = str(hooks_dir.join("script.sh"))
 
-    assert hooks._getScriptInfo(path) == {"md5": expected}
+    assert hooks._getScriptInfo(path) == {"checksum": expected}
 
 
 @pytest.mark.parametrize("hooks_dir, expected", indirect=["hooks_dir"],
@@ -492,8 +492,8 @@ def test_get_script_info_should_return_checksum(hooks_dir, expected):
             FileEntry("script2.sh", 0o777, "def")
         ],
         {
-            "script.sh": {"md5": hashlib.md5(b"abc").hexdigest()},
-            "script2.sh": {"md5": hashlib.md5(b"def").hexdigest()}
+            "script.sh": {"checksum": hashlib.sha256(b"abc").hexdigest()},
+            "script2.sh": {"checksum": hashlib.sha256(b"def").hexdigest()},
         },
         id="some scripts"
     ),
@@ -525,15 +525,15 @@ def test_get_hook_info_should_return_info(hooks_dir, expected):
         {
             "after_vm_smth": {
                 "script1.py": {
-                    "md5": hashlib.md5(b"abc").hexdigest()
+                    "checksum": hashlib.sha256(b"abc").hexdigest()
                 },
                 "script2.py": {
-                    "md5": hashlib.md5(b"def").hexdigest()
+                    "checksum": hashlib.sha256(b"def").hexdigest()
                 }
             },
             "before_vm_smth": {
                 "script3.py": {
-                    "md5": hashlib.md5(b"xyz").hexdigest()
+                    "checksum": hashlib.sha256(b"xyz").hexdigest()
                 }
             },
         },
