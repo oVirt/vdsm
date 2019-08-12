@@ -1,5 +1,3 @@
-Cmnd_Alias VDSM_LIFECYCLE = \
-    @DMIDECODE_PATH@ -s system-uuid
 Cmnd_Alias VDSM_STORAGE = \
     @FSCK_PATH@ -p *, \
     @TUNE2FS_PATH@ -j *, \
@@ -13,6 +11,6 @@ Cmnd_Alias VDSM_STORAGE = \
     @SERVICE_PATH@ vdsmd *, \
     @REBOOT_PATH@ -f
 
-vdsm  ALL=(ALL) NOPASSWD: VDSM_LIFECYCLE, VDSM_STORAGE
+vdsm  ALL=(ALL) NOPASSWD: VDSM_STORAGE
 Defaults:vdsm !requiretty
 Defaults:vdsm !syslog
