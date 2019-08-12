@@ -73,12 +73,16 @@ class TestBridge(object):
                 adapter.assertBridgeOpts(NETWORK_NAME,
                                          NETCREATE[NETWORK_NAME])
 
+    @pytest.mark.nmstate
     @nftestlib.parametrize_legacy_switch
     def test_create_network_over_an_existing_unowned_bridge(self, switch):
         with _create_linux_bridge(NETWORK_NAME) as brname:
-            NETCREATE = {brname: {'bridged': True, 'switch': switch}}
-            with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
-                adapter.assertNetwork(brname, NETCREATE[brname])
+            with dummy_devices(1) as (nic,):
+                NETCREATE = {
+                    brname: {'bridged': True, 'nic': nic, 'switch': switch}
+                }
+                with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+                    adapter.assertNetwork(brname, NETCREATE[brname])
 
     @pytest.mark.skip(reason='Unstable link while NM is running (BZ#1498022) '
                              'and on CI even with NM down')
