@@ -33,7 +33,9 @@ from functools import partial
 import six
 
 from vdsm import constants
+from vdsm import utils
 from vdsm.config import config
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage.compat import ioprocess
 
@@ -179,7 +181,7 @@ class _IOProcessFileUtils(object):
 
     def padToBlockSize(self, path):
         size = _IOProcessOs(self._iop).stat(path).st_size
-        newSize = 512 * ((size + 511) / 512)
+        newSize = utils.round(size, sc.BLOCK_SIZE_4K)
         log.debug("Truncating file %s to %d bytes", path, newSize)
         truncateFile(self._iop, path, newSize)
 
