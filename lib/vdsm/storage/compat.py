@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ def _wait_to_async(func):
     wait=True. This decorator converts python 2 function to behave like python
     3 version, so we can convert all code to use wait=True.
 
-    TODO: Remove when python 2 support is drooped.
+    TODO: remove when dropping python 2.
     """
     @functools.wraps(func)
     def decorator(*args, **kw):
@@ -46,6 +46,25 @@ def _wait_to_async(func):
     return decorator
 
 
+class MissingSanlock(compat.MissingModule):
+    """
+    python3-sanlock is not available on CentOS 7. python2-sanlock will not be
+    avaialble in CentOS 8. However we can still test the modules using it with
+    fakesanlock.
+
+    Trying to acess aything but the class attributes will raise
+    vdsm.common.compat.MissingModule.
+
+    TODO: remove when dropping python 2.
+    """
+
+    HOST_UNKNOWN = 1
+    HOST_FREE = 2
+    HOST_LIVE = 3
+    HOST_FAIL = 4
+    HOST_DEAD = 5
+
+
 try:
     import sanlock
 
@@ -53,23 +72,7 @@ try:
         sanlock.add_lockspace = _wait_to_async(sanlock.add_lockspace)
         sanlock.rem_lockspace = _wait_to_async(sanlock.rem_lockspace)
 except ImportError:
-    if six.PY2:
-        raise
-
-    # sanlock is not avilable yet on python3, but we can still test the modules
-    # using it with fakesanlock, avoiding python3 regressions.
-    # TODO: remove when sanlock is available on python 3.
-
-    class SanlockModule(compat.MissingModule):
-
-        # Used during import, implement to make import pass.
-        HOST_UNKNOWN = 1
-        HOST_FREE = 2
-        HOST_LIVE = 3
-        HOST_FAIL = 4
-        HOST_DEAD = 5
-
-    sanlock = SanlockModule("sanlock is not available in python 3")
+    sanlock = MissingSanlock("sanlock is not available")
 
 try:
     import ioprocess
