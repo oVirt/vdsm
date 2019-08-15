@@ -328,7 +328,7 @@ class SANLock(object):
                         self._lockspace_name,
                         hostId,
                         self._idsPath,
-                        **{'async': not wait})
+                        wait=wait)
             except sanlock.SanlockException as e:
                 if e.errno == errno.EINPROGRESS:
                     # if the request is not asynchronous wait for the ongoing
@@ -371,7 +371,7 @@ class SANLock(object):
             try:
                 sanlock.rem_lockspace(self._lockspace_name, hostId,
                                       self._idsPath, unused=unused,
-                                      **{'async': not wait})
+                                      wait=wait)
             except sanlock.SanlockException as e:
                 if e.errno != errno.ENOENT:
                     raise se.ReleaseHostIdFailure(self._sdUUID, e)

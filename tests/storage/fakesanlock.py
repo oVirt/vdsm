@@ -125,9 +125,9 @@ class FakeSanlock(object):
 
     @maybefail
     def add_lockspace(self, lockspace, host_id, path, offset=0, iotimeout=0,
-                      **kwargs):
+                      wait=True):
         """
-        Add a lockspace, acquiring a host_id in it. If async is True the
+        Add a lockspace, acquiring a host_id in it. If wait is False the
         function will return immediatly and the status can be checked
         using inq_lockspace.  The iotimeout option configures the io
         timeout for the specific lockspace, overriding the default value
@@ -141,8 +141,6 @@ class FakeSanlock(object):
         if "host_id" in ls:
             raise self.SanlockException(
                 errno.EEXIST, "Sanlock lockspace add failure", "File exists")
-
-        wait = not kwargs.get('async', False)
 
         generation = 0
         host = self.hosts.get(host_id)
@@ -174,16 +172,15 @@ class FakeSanlock(object):
 
     @maybefail
     def rem_lockspace(self, lockspace, host_id, path, offset=0,
-                      unused=False, **kwargs):
+                      unused=False, wait=True):
         """
-        Remove a lockspace, releasing the acquired host_id. If async is
-        True the function will return immediately and the status can be
+        Remove a lockspace, releasing the acquired host_id. If wait is
+        False the function will return immediately and the status can be
         checked using inq_lockspace. If unused is True the command will
         fail (EBUSY) if there is at least one acquired resource in the
         lockspace (instead of automatically release it).
         """
         self._validate_bytes(lockspace)
-        wait = not kwargs.get('async', False)
         ls = self.spaces[lockspace]
 
         # Mark the locksapce as not ready, so callers of inq_lockspace will

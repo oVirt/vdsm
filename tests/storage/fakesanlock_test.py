@@ -86,7 +86,7 @@ def test_add_lockspace_options():
 def test_add_lockspace_async():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.add_lockspace(LOCKSPACE_NAME, 1, "path", **{'async': True})
+    fs.add_lockspace(LOCKSPACE_NAME, 1, "path", wait=False)
     ls = fs.spaces[LOCKSPACE_NAME]
     assert ls["iotimeout"] == 0
     assert not ls["ready"].is_set()
@@ -113,7 +113,7 @@ def test_rem_lockspace_async():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
-    fs.rem_lockspace(LOCKSPACE_NAME, 1, "path", **{'async': True})
+    fs.rem_lockspace(LOCKSPACE_NAME, 1, "path", wait=False)
     ls = fs.spaces[LOCKSPACE_NAME]
     assert not ls["ready"].is_set()
 
@@ -125,7 +125,7 @@ def test_rem_lockspace_while_holding_lock():
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
     fd = fs.register()
     fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], slkfd=fd)
-    fs.rem_lockspace(LOCKSPACE_NAME, 1, "path", **{'async': True})
+    fs.rem_lockspace(LOCKSPACE_NAME, 1, "path", wait=False)
 
     # Fake sanlock return special None value when sanlock is in process of
     # releasing host_id.
@@ -152,7 +152,7 @@ def test_inq_lockspace_acquired():
 def test_inq_lockspace_acquring_no_wait():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.add_lockspace(LOCKSPACE_NAME, 1, "path", **{'async': True})
+    fs.add_lockspace(LOCKSPACE_NAME, 1, "path", wait=False)
     acquired = fs.inq_lockspace(LOCKSPACE_NAME, 1, "path")
     assert acquired is None
 
@@ -160,7 +160,7 @@ def test_inq_lockspace_acquring_no_wait():
 def test_inq_lockspace_acquiring_wait():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.add_lockspace(LOCKSPACE_NAME, 1, "path", **{'async': True})
+    fs.add_lockspace(LOCKSPACE_NAME, 1, "path", wait=False)
 
     t = concurrent.thread(fs.complete_async, args=(LOCKSPACE_NAME,))
     t.start()
@@ -184,7 +184,7 @@ def test_inq_lockspace_releasing_no_wait():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
-    fs.rem_lockspace(LOCKSPACE_NAME, 1, "path", **{'async': True})
+    fs.rem_lockspace(LOCKSPACE_NAME, 1, "path", wait=False)
     acquired = fs.inq_lockspace(LOCKSPACE_NAME, 1, "path")
     assert not acquired
 
@@ -193,7 +193,7 @@ def test_inq_lockspace_releasing_wait():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
-    fs.rem_lockspace(LOCKSPACE_NAME, 1, "path", **{'async': True})
+    fs.rem_lockspace(LOCKSPACE_NAME, 1, "path", wait=False)
 
     t = concurrent.thread(fs.complete_async, args=(LOCKSPACE_NAME,))
     t.start()
@@ -328,7 +328,7 @@ def test_acquire_lockspace_adding():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
     fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
-    fs.add_lockspace(LOCKSPACE_NAME, 1, "path", **{'async': True})
+    fs.add_lockspace(LOCKSPACE_NAME, 1, "path", wait=False)
     fd = fs.register()
     with pytest.raises(fs.SanlockException) as e:
         fs.acquire(
