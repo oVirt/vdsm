@@ -241,6 +241,145 @@ def test_fileutils_padtoblocksize(
         assert f.read() == b"\0" * (expected_size - orig_size)
 
 
+DEFAULT_PERMISSIONS = os.R_OK | os.W_OK | os.X_OK
+ACCESS_PARAMS_DEFAULT_PERMISSION_SUCCESS = [0o755, 0o700]
+ACCESS_PARAMS_DEFAULT_PERMISSION_FAILURE = [0o300, 0o444, 0o500, 0o600]
+
+
+@pytest.mark.parametrize("mode", ACCESS_PARAMS_DEFAULT_PERMISSION_SUCCESS)
+@requires_unprivileged_user
+def test_fileutils_validateaccess_directory_default_permission_success(
+        oop_cleanup, tmpdir, mode):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.mkdir("subdir"))
+
+    with chmod(path, mode):
+        assert os.access(path, DEFAULT_PERMISSIONS)
+        iop.fileUtils.validateAccess(path)
+
+
+@pytest.mark.parametrize("mode", ACCESS_PARAMS_DEFAULT_PERMISSION_FAILURE)
+@requires_unprivileged_user
+def test_fileutils_validateaccess_directory_default_permission_failure(
+        oop_cleanup, tmpdir, mode):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.mkdir("subdir"))
+
+    with chmod(path, mode):
+        assert not os.access(path, DEFAULT_PERMISSIONS)
+        with pytest.raises(OSError) as e:
+            iop.fileUtils.validateAccess(path)
+        assert e.value.errno == errno.EACCES
+
+
+@pytest.mark.parametrize("mode", ACCESS_PARAMS_DEFAULT_PERMISSION_SUCCESS)
+@requires_unprivileged_user
+def test_fileutils_validateaccess_file_default_permission_success(
+        oop_cleanup, tmpdir, mode):
+    iop = oop.getProcessPool("test")
+
+    f = tmpdir.join("file")
+    f.write("")
+    path = str(f)
+
+    with chmod(path, mode):
+        assert os.access(path, DEFAULT_PERMISSIONS)
+        iop.fileUtils.validateAccess(path)
+
+
+@pytest.mark.parametrize("mode", ACCESS_PARAMS_DEFAULT_PERMISSION_FAILURE)
+@requires_unprivileged_user
+def test_fileutils_validateaccess_file_default_permission_failure(
+        oop_cleanup, tmpdir, mode):
+    iop = oop.getProcessPool("test")
+
+    f = tmpdir.join("file")
+    f.write("")
+    path = str(f)
+
+    with chmod(path, mode):
+        assert not os.access(path, DEFAULT_PERMISSIONS)
+        with pytest.raises(OSError) as e:
+            iop.fileUtils.validateAccess(path)
+        assert e.value.errno == errno.EACCES
+
+
+ACCESS_PARAMS_NON_DEFAULT_PERMISSION_SUCCESS = [
+    (0o755, os.R_OK),
+    (0o744, os.W_OK),
+    (0o755, os.X_OK),
+    (0o300, os.W_OK | os.X_OK),
+]
+ACCESS_PARAMS_NON_DEFAULT_PERMISSION_FAILURE = [
+    (0o300, os.R_OK),
+    (0o444, os.W_OK),
+    (0o400, os.X_OK),
+    (0o300, os.R_OK | os.W_OK | os.X_OK),
+]
+
+
+@pytest.mark.parametrize(
+    "mode, permissions", ACCESS_PARAMS_NON_DEFAULT_PERMISSION_SUCCESS)
+@requires_unprivileged_user
+def test_fileutils_validateaccess_directory_non_default_permission_success(
+        oop_cleanup, tmpdir, mode, permissions):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.mkdir("subdir"))
+
+    with chmod(path, mode):
+        assert os.access(path, permissions)
+        iop.fileUtils.validateAccess(path, permissions)
+
+
+@pytest.mark.parametrize(
+    "mode, permissions", ACCESS_PARAMS_NON_DEFAULT_PERMISSION_FAILURE)
+@requires_unprivileged_user
+def test_fileutils_validateaccess_directory_non_default_permission_failure(
+        oop_cleanup, tmpdir, mode, permissions):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.mkdir("subdir"))
+
+    with chmod(path, mode):
+        assert not os.access(path, permissions)
+        with pytest.raises(OSError) as e:
+            iop.fileUtils.validateAccess(path, permissions)
+        assert e.value.errno == errno.EACCES
+
+
+@pytest.mark.parametrize(
+    "mode, permissions", ACCESS_PARAMS_NON_DEFAULT_PERMISSION_SUCCESS)
+@requires_unprivileged_user
+def test_fileutils_validateaccess_file_non_default_permission_success(
+        oop_cleanup, tmpdir, mode, permissions):
+    iop = oop.getProcessPool("test")
+
+    f = tmpdir.join("file")
+    f.write("")
+    path = str(f)
+
+    with chmod(path, mode):
+        assert os.access(path, permissions)
+        iop.fileUtils.validateAccess(path, permissions)
+
+
+@pytest.mark.parametrize(
+    "mode, permissions", ACCESS_PARAMS_NON_DEFAULT_PERMISSION_FAILURE)
+@requires_unprivileged_user
+def test_fileutils_validateaccess_file_non_default_permission_failure(
+        oop_cleanup, tmpdir, mode, permissions):
+    iop = oop.getProcessPool("test")
+
+    f = tmpdir.join("file")
+    f.write("")
+    path = str(f)
+
+    with chmod(path, mode):
+        assert not os.access(path, permissions)
+        with pytest.raises(OSError) as e:
+            iop.fileUtils.validateAccess(path, permissions)
+        assert e.value.errno == errno.EACCES
+
+
 def test_fileutils_pathexists(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
 
