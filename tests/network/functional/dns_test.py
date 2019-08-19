@@ -32,7 +32,9 @@ from network.nettestlib import restore_resolv_conf
 from . import netfunctestlib as nftestlib
 
 NETWORK_NAME = 'test-network'
-NAMESERVERS = ['1.2.3.4', '2.3.4.5', '6.7.8.9']
+# FIXME: Add third dns when nmstate starts to support it
+# see https://nmstate.atlassian.net/browse/NMSTATE-220
+NAMESERVERS = ['1.2.3.4', '2.3.4.5']
 IPv4_ADDRESS = '192.0.2.1'
 IPv4_GATEWAY = '192.0.2.254'
 IPv4_NETMASK = '255.255.255.0'
@@ -52,6 +54,7 @@ def refresh_cache():
     adapter.refresh_netinfo()
 
 
+@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkDNS(object):
 

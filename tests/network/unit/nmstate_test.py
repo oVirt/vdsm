@@ -46,6 +46,8 @@ IPv4_PREFIX2 = 24
 IPv6_ADDRESS2 = 'fdb3:84e5:4ff4:88e3::1'
 IPv6_PREFIX2 = 64
 
+DNS_SERVERS1 = ['1.2.3.4', '5.6.7.8']
+DNS_SERVERS2 = ['9.10.11.12', '13.14.15.16']
 
 parametrize_bridged = pytest.mark.parametrize('bridged', [False, True],
                                               ids=['bridgeless', 'bridged'])
@@ -577,6 +579,106 @@ def test_translate_add_network_with_default_route_on_vlan_interface():
     assert expected_state == state
 
 
+class TestDns(object):
+
+    def test_dns_add_network_with_default_route(self):
+        networks = {
+            'test-network': _create_network_config(
+                'nic',
+                IFACE0,
+                bridged=True,
+                default_route=True,
+                gateway=IPv4_GATEWAY1,
+                nameservers=DNS_SERVERS1
+            )
+        }
+
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        expected_state = {'config': {'server': DNS_SERVERS1}}
+
+        assert expected_state == state['dns-resolver']
+
+    def test_dns_add_network_with_default_route_and_empty_dns(self):
+        networks = {
+            'test-network': _create_network_config(
+                'nic',
+                IFACE0,
+                bridged=True,
+                default_route=True,
+                gateway=IPv4_GATEWAY1,
+                nameservers=[]
+            )
+        }
+
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        expected_state = {'config': {'server': []}}
+
+        assert expected_state == state['dns-resolver']
+
+    def test_dns_add_network_without_default_route(self):
+        networks = {
+            'test-network': _create_network_config('nic', IFACE0, bridged=True)
+        }
+
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        assert state.get('dns-resolver') is None
+
+    @mock.patch.object(nmstate, 'RunningConfig')
+    def test_dns_remove_network_with_default_route(self, rconfig_mock):
+        rconfig_networks = {
+            'test-network': _create_network_config(
+                'nic',
+                IFACE0,
+                bridged=True,
+                default_route=True,
+                gateway=IPv4_GATEWAY1,
+                nameservers=DNS_SERVERS1
+            )
+        }
+        rconfig_mock.return_value.networks = rconfig_networks
+
+        networks = {'test-network': {'remove': True}}
+
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        expected_state = {'config': {'server': []}}
+
+        assert expected_state == state['dns-resolver']
+
+    @mock.patch.object(nmstate, 'RunningConfig')
+    def test_dns_replace_network_with_default_route(self, rconfig_mock):
+        rconfig_networks = {
+            'test-network': _create_network_config(
+                'nic',
+                IFACE0,
+                bridged=True,
+                default_route=True,
+                gateway=IPv4_GATEWAY1,
+                nameservers=DNS_SERVERS1
+            )
+        }
+        rconfig_mock.return_value.networks = rconfig_networks
+        networks = {
+            'test-network2': _create_network_config(
+                'nic',
+                IFACE1,
+                bridged=True,
+                default_route=True,
+                gateway=IPv4_GATEWAY1,
+                nameservers=DNS_SERVERS2
+            )
+        }
+
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        expected_state = {'config': {'server': DNS_SERVERS2}}
+
+        assert expected_state == state['dns-resolver']
+
+
 def _sort_by_name(ifaces_states):
     ifaces_states.sort(key=lambda d: d['name'])
 
@@ -688,7 +790,8 @@ def _create_default_route(gateway, next_hop, state=None):
 def _create_network_config(if_type, if_name, bridged,
                            static_ip_configuration=None,
                            dynamic_ip_configuration=None,
-                           vlan=None, default_route=False, gateway=None):
+                           vlan=None, default_route=False,
+                           gateway=None, nameservers=None):
     network_config = _create_interface_network_config(if_type, if_name)
     network_config.update(
         _create_bridge_network_config(bridged, stp_enabled=False))
@@ -697,6 +800,8 @@ def _create_network_config(if_type, if_name, bridged,
     network_config.update({'vlan': vlan} if vlan else {})
     network_config.update({'defaultRoute': default_route})
     network_config.update({'gateway': gateway} if gateway else {})
+    network_config.update(
+        {'nameservers': nameservers} if nameservers is not None else {})
     return network_config
 
 

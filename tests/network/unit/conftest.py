@@ -67,11 +67,20 @@ class NMStateInterfaceIP(object):
     AUTO_ROUTES = 'auto-routes'
 
 
+class NMStateDns(object):
+    KEY = 'dns-resolver'
+    RUNNING = 'running'
+    CONFIG = 'config'
+    SERVER = 'server'
+    SEARCH = 'search'
+
+
 @pytest.fixture(scope='session', autouse=True)
 def nmstate_schema():
     patch_interface = mock.patch.object(nmstate, 'Interface', NMStateInterface)
     patch_route = mock.patch.object(nmstate, 'Route', NMStateRoute)
     patch_interface_ip = mock.patch.object(nmstate, 'InterfaceIP',
                                            NMStateInterfaceIP)
-    with patch_interface, patch_route, patch_interface_ip:
+    patch_dns = mock.patch.object(nmstate, 'DNS', NMStateDns)
+    with patch_interface, patch_route, patch_interface_ip, patch_dns:
         yield

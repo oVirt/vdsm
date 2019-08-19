@@ -30,11 +30,13 @@ from vdsm.network.link.setup import parse_bond_options
 try:
     from libnmstate import netapplier
     from libnmstate import netinfo
+    from libnmstate.schema import DNS
     from libnmstate.schema import Interface
     from libnmstate.schema import InterfaceIP
     from libnmstate.schema import Route
 except ImportError:  # nmstate is not available
     netapplier = None
+    DNS = None
     Interface = None
     InterfaceIP = None
     Route = None
@@ -57,8 +59,37 @@ def generate_state(networks, bondings):
     _generate_bonds_state(bondings, ifstates)
     _disable_ip_for_new_bonds(bondings, ifstates, rconfig)
     _generate_networks_state(networks, ifstates, route_states, rconfig)
+    dns_state = _generate_dns_state(networks, rconfig)
 
-    return merge_state(ifstates, route_states)
+    return merge_state(ifstates, route_states, dns_state)
+
+
+def _generate_dns_state(networks, rconfig):
+    nameservers = next(
+        (
+            netattrs.get('nameservers', None)
+            for netname, netattrs in six.viewitems(networks) if
+            netattrs.get('defaultRoute')
+        ),
+        None
+    )
+    if nameservers is not None:
+        return {DNS.CONFIG: {DNS.SERVER: nameservers}}
+
+    removed_default_route = next(
+        (
+            netname
+            for netname, netattrs in six.viewitems(networks) if
+            _is_remove(netattrs) and
+            rconfig.networks[netname].get('defaultRoute') and
+            rconfig.networks[netname].get('nameservers')
+        ),
+        None
+    )
+    if removed_default_route:
+        return {DNS.CONFIG: {DNS.SERVER: []}}
+
+    return {}
 
 
 def show_interfaces(filter=None):
@@ -93,13 +124,15 @@ def _generate_networks_state(networks, ifstates, route_states, running_config):
                 route_states.append(net_routes_state)
 
 
-def merge_state(interfaces_state, routes_state):
+def merge_state(interfaces_state, routes_state, dns_state):
     interfaces = [ifstate for ifstate in six.viewvalues(interfaces_state)]
     state = {
         Interface.KEY: sorted(interfaces, key=lambda d: d[Interface.NAME])
     }
     if routes_state:
         state.update(routes={Route.CONFIG: routes_state})
+    if dns_state:
+        state[DNS.KEY] = dns_state
     return state
 
 
