@@ -79,7 +79,7 @@ def is_dhcp_enabled(ifstate, family):
 def _generate_networks_state(networks, ifstates, route_states, running_config):
     for netname, netattrs in six.viewitems(networks):
         if _is_remove(netattrs):
-            _remove_network(netname, ifstates, route_states, running_config)
+            _remove_network(netname, ifstates, running_config)
         else:
             network_states = _create_network(netname, netattrs)
             for ifstate in network_states[Interface.KEY]:
@@ -186,7 +186,7 @@ def _generate_bridge_options(stp_enabled):
     }
 
 
-def _remove_network(netname, ifstates, route_states, rconfig):
+def _remove_network(netname, ifstates, rconfig):
     netconf = rconfig.networks[netname]
     nic = netconf.get('nic')
     bond = netconf.get('bonding')
