@@ -330,11 +330,11 @@ def get_next_hop_interface(net_name, net_attributes):
     if net_attributes.get('bridged'):
         return net_name
     else:
-        return (
-            net_attributes.get('vlan') or
-            net_attributes.get('nic') or
-            net_attributes.get('bonding')
-        )
+        vlan = net_attributes.get('vlan')
+        next_hop_base_iface = (net_attributes.get('nic') or
+                               net_attributes.get('bonding'))
+        return (next_hop_base_iface if not vlan
+                else '{}.{}'.format(next_hop_base_iface, vlan))
 
 
 def _generate_iface_ipv6_state(iface_state, netattrs):

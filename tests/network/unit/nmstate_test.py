@@ -552,6 +552,31 @@ def test_translate_remove_network_with_default_route(rconfig_mock, bridged):
     assert expected_state == state
 
 
+def test_translate_add_network_with_default_route_on_vlan_interface():
+    networks = {
+        'testnet1': _create_network_config(
+            'nic', IFACE0, bridged=False,
+            static_ip_configuration=_create_static_ip_configuration(
+                IPv4_ADDRESS1, IPv4_NETMASK1, IPv6_ADDRESS1, IPv6_PREFIX1
+            ), default_route=True, gateway=IPv4_GATEWAY1, vlan=VLAN101
+        )
+    }
+    state = nmstate.generate_state(networks=networks, bondings={})
+
+    vlan101_state = _create_vlan_iface_state(IFACE0, VLAN101)
+    ip0_state = _create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
+    ip0_state.update(_create_ipv6_state(IPv6_ADDRESS1, IPv6_PREFIX1))
+    vlan101_state.update(ip0_state)
+
+    vlan_base_state = _create_ethernet_iface_state(IFACE0)
+    expected_state = {nmstate.Interface.KEY: [vlan_base_state, vlan101_state]}
+
+    expected_state[nmstate.Route.KEY] = _get_routes_config(
+        IPv4_GATEWAY1, vlan101_state['name']
+    )
+    assert expected_state == state
+
+
 def _sort_by_name(ifaces_states):
     ifaces_states.sort(key=lambda d: d['name'])
 
