@@ -1891,25 +1891,6 @@ class HSM(object):
         vars.task.getSharedLock(STORAGE, sdUUID)
         return pool.reconcileVolumeChain(sdUUID, imgUUID, leafVolUUID)
 
-    @deprecated
-    @public
-    def mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor,
-                       successor, postZero=False, discard=False):
-        """
-        Merge source volume to the destination volume.
-        """
-        argsStr = ("sdUUID=%s, spUUID=%s, vmUUID=%s, imgUUID=%s, "
-                   "ancestor=%s, successor=%s, postZero=%s, discard=%s" %
-                   (sdUUID, spUUID, vmUUID, imgUUID, ancestor, successor,
-                    postZero, discard))
-        vars.task.setDefaultException(se.MergeSnapshotsError("%s" % argsStr))
-        pool = self.getPool(spUUID)
-        sdCache.produce(sdUUID=sdUUID)
-        vars.task.getSharedLock(STORAGE, sdUUID)
-        self._spmSchedule(
-            spUUID, "mergeSnapshots", pool.mergeSnapshots, sdUUID, vmUUID,
-            imgUUID, ancestor, successor, misc.parseBool(postZero), discard)
-
     @public
     def reconstructMaster(self, spUUID, poolName, masterDom, domDict,
                           masterVersion, lockPolicy, lockRenewalIntervalSec,

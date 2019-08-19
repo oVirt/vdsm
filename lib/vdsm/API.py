@@ -866,13 +866,6 @@ class Image(APIBase):
     def getVolumes(self):
         return self._irs.getVolumesList(self._sdUUID, self._spUUID, self._UUID)
 
-    def mergeSnapshots(self, ancestor, successor, postZero, discard=False):
-        vmUUID = ''   # Not used
-        # XXX: On success, self._sdUUID needs to be updated
-        return self._irs.mergeSnapshots(self._sdUUID, self._spUUID, vmUUID,
-                                        self._UUID, ancestor, successor,
-                                        postZero, discard)
-
     def move(self, dstSdUUID, operation, postZero, force, discard=False):
         vmUUID = ''   # Not used
         # XXX: On success, self._sdUUID needs to be updated

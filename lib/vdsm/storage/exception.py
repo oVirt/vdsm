@@ -451,9 +451,9 @@ class MoveTemplateImageError(StorageException):
     message = "Cannot move template's image because it is used by a VM"
 
 
-class MergeVolumeRollbackError(StorageException):
-    code = 267
-    message = "Cannot rollback merge volume"
+# class MergeVolumeRollbackError(StorageException):
+#    code = 267
+#    message = "Cannot rollback merge volume"
 
 
 class ImageDoesNotExistInSD(StorageException):

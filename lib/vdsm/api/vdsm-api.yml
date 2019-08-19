@@ -9037,43 +9037,6 @@ Image.getVolumes:
         type:
         - *UUID
 
-Image.mergeSnapshots:
-    added: '3.1'
-    deprecated: '4.1'
-    description: Merge snapshot successor into ancestor.
-    params:
-    -   description: The UUID of the Image
-        name: imageID
-        type: *UUID
-
-    -   description: The UUID of the Storage Pool associated with the Image
-        name: storagepoolID
-        type: *UUID
-
-    -   description: The UUID of the Storage Domain associated with the Image
-        name: storagedomainID
-        type: *UUID
-
-    -   description: A Volume UUID representing the parent snapshot
-        name: ancestor
-        type: *UUID
-
-    -   description: A Volume UUID representing the child snapshot
-        name: successor
-        type: *UUID
-
-    -   description: If True, overwrite successor with zeroes after conversion
-        name: postZero
-        type: boolean
-
-    -   defaultvalue: false
-        description: If true, discard the successor after conversion
-        name: discard
-        type: boolean
-    return:
-        description: A task UUID
-        type: *UUID
-
 Image.move:
     added: '3.1'
     description: Move or copy an image to another Storage Domain within the

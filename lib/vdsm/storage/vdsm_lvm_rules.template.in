@@ -52,9 +52,6 @@ ENV{DM_LV_NAME}=="%(uuid)s", RUN+="@CHOWN_PATH@ @VDSMUSER@:@QEMUGROUP@ $env{DEVN
 # Temporary volumes - not accessed by libvirt/qemu
 ENV{DM_LV_NAME}=="%(uuid)s_MERGE", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
 
-# Deleted volumes
-ENV{DM_LV_NAME}=="_remove_me_%(temp)s_%(uuid)s", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
-
 # Special volumes used by vdsm
 ENV{DM_LV_NAME}=="metadata|inbox|outbox", MODE:="0600", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
 

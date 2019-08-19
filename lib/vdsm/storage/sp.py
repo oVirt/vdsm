@@ -1829,34 +1829,6 @@ class StoragePool(object):
             chain = img.reconcileVolumeChain(sdUUID, imgUUID, leafVolUUID)
         return dict(volumes=chain)
 
-    def mergeSnapshots(self, sdUUID, vmUUID, imgUUID, ancestor, successor,
-                       postZero, discard):
-        """
-        Merges the source volume to the destination volume.
-
-        :param sdUUID: The UUID of the storage domain that contains the images.
-        :type sdUUID: UUID
-        :param spUUID: The UUID of the storage pool that contains the images.
-        :type spUUID: UUID
-        :param imgUUID: The UUID of the new image you will be created after
-                        the merge.?
-        :type imgUUID: UUID
-        :param ancestor: The UUID of the source volume.?
-        :type ancestor: UUID
-        :param successor: The UUID of the destination volume.?
-        :type successor: UUID
-        :param postZero: ?
-        :type postZero: bool?
-        :param discard: discard the successor before removal
-        :type discard: bool
-        """
-        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
-
-        with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
-            img = image.Image(self.poolPath)
-            img.merge(sdUUID, vmUUID, imgUUID, ancestor, successor, postZero,
-                      discard)
-
     def prepareMerge(self, subchainInfo):
         """
         This operation is required before performing (cold) merge.

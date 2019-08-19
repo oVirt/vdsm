@@ -25,7 +25,6 @@ import logging
 from contextlib import contextmanager
 
 from vdsm import utils
-from vdsm.common import cmdutils
 from vdsm.common import exception
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
@@ -35,7 +34,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import guarded
-from vdsm.storage import misc
 from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import task
@@ -940,77 +938,6 @@ class Volume(object):
                     [metaID[0], str(metaID[1]), self.sdUUID, self.volUUID]))
         self.newVolumeLease(metaID, self.sdUUID, newUUID)
 
-    @classmethod
-    def rebaseVolumeRollback(cls, taskObj, sdUUID, srcImg,
-                             srcVol, dstFormat, srcParent, unsafe):
-        """
-        Rebase volume rollback
-        """
-        cls.log.info('rebase volume rollback (sdUUID=%s srcImg=%s srcVol=%s '
-                     'dstFormat=%s srcParent=%s)', sdUUID, srcImg, srcVol,
-                     dstFormat, srcParent)
-
-        imageResourcesNamespace = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
-        with rm.acquireResource(imageResourcesNamespace, srcImg, rm.EXCLUSIVE):
-            vol = sdCache.produce(sdUUID).produceVolume(srcImg, srcVol)
-            vol.prepare(rw=True, chainrw=True, setrw=True)
-
-            volumePath = vol.getVolumePath()
-            backingVolPath = getBackingVolumePath(srcImg, srcParent)
-
-            operation = qemuimg.rebase(volumePath,
-                                       backingVolPath,
-                                       sc.fmt2str(vol.getFormat()),
-                                       sc.fmt2str(int(dstFormat)),
-                                       misc.parseBool(unsafe))
-            try:
-                with vars.task.abort_callback(operation.abort):
-                    operation.run()
-                vol.setParent(srcParent)
-                vol.recheckIfLeaf()
-            except cmdutils.Error as e:
-                cls.log.exception('Rollback rebase failed: %s', e)
-                raise se.MergeVolumeRollbackError(srcVol)
-            finally:
-                vol.teardown(sdUUID, srcVol)
-
-    def rebase(self, backingVol, backingVolPath, backingFormat, unsafe,
-               rollback):
-        """
-        Rebase volume on top of new backing volume
-        """
-        if rollback:
-            pvol = self.getParentVolume()
-            if not pvol:
-                self.log.warn("Can't rebase volume %s, parent missing",
-                              self.volUUID)
-                return
-
-            name = "Merge volume: " + self.volUUID
-            vars.task.pushRecovery(
-                task.Recovery(name, "volume", "Volume",
-                              "rebaseVolumeRollback",
-                              [self.sdUUID, self.getImage(),
-                                  self.volUUID, str(pvol.getFormat()),
-                                  pvol.volUUID, str(True)]))
-
-        volumePath = self.getVolumePath()
-
-        operation = qemuimg.rebase(volumePath,
-                                   backingVolPath,
-                                   sc.fmt2str(self.getFormat()),
-                                   sc.fmt2str(backingFormat),
-                                   unsafe)
-        try:
-            with vars.task.abort_callback(operation.abort):
-                operation.run()
-        except cmdutils.Error as e:
-            self.log.exception('Rebase failed: %s', e)
-            raise se.MergeSnapshotsError(self.volUUID)
-
-        self.setParent(backingVol)
-        self.recheckIfLeaf()
-
     def clone(self, dstPath, volFormat, capacity):
         """
         Clone self volume to the specified dst_image_dir/dst_volUUID
@@ -1469,16 +1396,6 @@ class Volume(object):
         Recheck if I am a leaf.
         """
         return self._manifest.recheckIfLeaf()
-
-    @contextmanager
-    def scopedPrepare(self, rw=True, justme=False, chainrw=False, setrw=False,
-                      force=False):
-        self.prepare(rw=True, justme=False, chainrw=False, setrw=False,
-                     force=False)
-        try:
-            yield self
-        finally:
-            self.teardown(self.sdUUID, self.volUUID, justme)
 
     def prepare(self, rw=True, justme=False,
                 chainrw=False, setrw=False, force=False):

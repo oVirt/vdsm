@@ -33,9 +33,7 @@ import errno
 import itertools
 import logging
 import os
-import random
 import re
-import string
 import struct
 import threading
 import uuid
@@ -162,10 +160,6 @@ def _alignData(length, offset):
         iounit = iounit >> 1
 
     return (iounit, count, iooffset)
-
-
-def randomStr(strLen):
-    return "".join(random.sample(string.letters, strLen))
 
 
 def parseBool(var):
