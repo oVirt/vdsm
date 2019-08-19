@@ -29,11 +29,14 @@ from vdsm.network.link.setup import parse_bond_options
 
 try:
     from libnmstate import netapplier
+    from libnmstate import netinfo
     from libnmstate.schema import Interface
+    from libnmstate.schema import InterfaceIP
     from libnmstate.schema import Route
 except ImportError:  # nmstate is not available
     netapplier = None
     Interface = None
+    InterfaceIP = None
     Route = None
 
 
@@ -53,6 +56,21 @@ def generate_state(networks, bondings):
     _generate_networks_state(networks, ifstates, route_states)
 
     return merge_state(ifstates, route_states)
+
+
+def show_interfaces(filter=None):
+    net_info = netinfo.show()
+    filter_set = set(filter) if filter else set()
+    return {
+        ifstate[Interface.NAME]: ifstate
+        for ifstate in net_info[Interface.KEY]
+        if ifstate[Interface.NAME] in filter_set
+    }
+
+
+def is_dhcp_enabled(ifstate, family):
+    family_info = ifstate[family]
+    return family_info[InterfaceIP.ENABLED] and family_info[InterfaceIP.DHCP]
 
 
 def _generate_networks_state(networks, ifstates, route_states):

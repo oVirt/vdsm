@@ -27,6 +27,7 @@ import logging
 import six
 
 from vdsm.network import dns
+from vdsm.network import nmstate
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ipwrapper import getLinks
@@ -140,13 +141,28 @@ def _update_dhcp_info(nets_info, devices_info):
         for sub_devs in six.viewvalues(devices_info)
         for devname, devinfo in six.viewitems(sub_devs)
     }
-    dhcp_info = dhclient.dhcp_info(net_ifaces | frozenset(flat_devs_info))
+    devices = net_ifaces | frozenset(flat_devs_info)
+
+    if nmstate.is_nmstate_backend():
+        dhcp_info = _get_dhcp_info_nmstate(devices)
+    else:
+        dhcp_info = dhclient.dhcp_info(devices)
 
     for net_info in six.viewvalues(nets_info):
         net_info.update(dhcp_info[net_info['iface']])
 
     for devname, devinfo in six.viewitems(flat_devs_info):
         devinfo.update(dhcp_info[devname])
+
+
+def _get_dhcp_info_nmstate(devices):
+    return {
+        ifname: {
+            dhclient.DHCP4: nmstate.is_dhcp_enabled(ifstate, family='ipv4'),
+            dhclient.DHCP6: nmstate.is_dhcp_enabled(ifstate, family='ipv6')}
+        for ifname, ifstate in
+        six.viewitems(nmstate.show_interfaces(filter=devices))
+    }
 
 
 def _networks_report(vdsmnets, routes, ipaddrs, devices_info):

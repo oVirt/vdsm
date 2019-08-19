@@ -56,9 +56,22 @@ class NMStateRoute(object):
     USE_DEFAULT_ROUTE_TABLE = 0
 
 
+class NMStateInterfaceIP(object):
+    ENABLED = 'enabled'
+    ADDRESS = 'address'
+    ADDRESS_IP = 'ip'
+    ADDRESS_PREFIX_LENGTH = 'prefix-length'
+    DHCP = 'dhcp'
+    AUTO_DNS = 'auto-dns'
+    AUTO_GATEWAY = 'auto-gateway'
+    AUTO_ROUTES = 'auto-routes'
+
+
 @pytest.fixture(scope='session', autouse=True)
 def nmstate_schema():
     patch_interface = mock.patch.object(nmstate, 'Interface', NMStateInterface)
     patch_route = mock.patch.object(nmstate, 'Route', NMStateRoute)
-    with patch_interface, patch_route:
+    patch_interface_ip = mock.patch.object(nmstate, 'InterfaceIP',
+                                           NMStateInterfaceIP)
+    with patch_interface, patch_route, patch_interface_ip:
         yield
