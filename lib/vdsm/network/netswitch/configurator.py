@@ -26,7 +26,6 @@ import logging
 import six
 
 from vdsm.common.cache import memoized
-from vdsm.common.config import config as vdsm_config
 from vdsm.common.time import monotonic_time
 from vdsm.network import connectivity
 from vdsm.network import dns
@@ -122,7 +121,8 @@ def validate(networks, bondings, net_info):
     use_legacy_switch = legacy_nets or legacy_bonds
     use_ovs_switch = ovs_nets or ovs_bonds
 
-    if not _is_nmstate_backend() and use_legacy_switch and use_ovs_switch:
+    if (not nmstate.is_nmstate_backend() and
+            use_legacy_switch and use_ovs_switch):
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_PARAMS,
             'Mixing of legacy and OVS networks is not supported inside one '
@@ -135,7 +135,7 @@ def validate(networks, bondings, net_info):
 
 
 def setup(networks, bondings, options, net_info, in_rollback):
-    if _is_nmstate_backend():
+    if nmstate.is_nmstate_backend():
         _setup_nmstate(networks, bondings, options, in_rollback)
     else:
         _setup(networks, bondings, options, in_rollback, net_info)
@@ -583,7 +583,3 @@ def _lookup_default_route_net(nets):
         if attrs.get('defaultRoute'):
             return attrs
     return {}
-
-
-def _is_nmstate_backend():
-    return vdsm_config.getboolean('vars', 'net_nmstate_enabled')

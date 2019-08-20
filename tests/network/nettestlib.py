@@ -34,6 +34,7 @@ from nose.plugins.skip import SkipTest
 
 from vdsm.common import cpuarch
 from vdsm.network import cmd
+from vdsm.network import nmstate
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
@@ -46,7 +47,6 @@ from vdsm.network.netinfo import routes
 from vdsm.network.netlink import monitor
 from vdsm.common.cache import memoized
 from vdsm.common.cmdutils import CommandPath
-from vdsm.common.config import config as vdsm_config
 from vdsm.common.proc import pgrep
 
 from . import dhcp
@@ -242,7 +242,7 @@ class Dummy(Interface):
             raise SkipTest("Unable to delete the dummy interface %s: %s" %
                            (self.devName, e))
         finally:
-            if is_nmstate_enabled():
+            if nmstate.is_nmstate_backend():
                 cmd.exec_sync(['nmcli', 'con', 'del', self.devName])
 
     def set_ip(self, ipaddr, netmask, family=4):
@@ -598,7 +598,3 @@ def running_on_fedora(ver=''):
 
 def running_on_travis_ci():
     return 'TRAVIS_CI' in os.environ
-
-
-def is_nmstate_enabled():
-    return vdsm_config.getboolean('vars', 'net_nmstate_enabled')

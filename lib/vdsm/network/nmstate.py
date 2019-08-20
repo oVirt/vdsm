@@ -22,6 +22,7 @@ from __future__ import division
 
 import six
 
+from vdsm.common.config import config as vdsm_config
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NUMBER_TO_NAME
 from vdsm.network.link.setup import parse_bond_options
@@ -38,6 +39,10 @@ except ImportError:  # nmstate is not available
 
 def setup(desired_state, verify_change):
     netapplier.apply(desired_state, verify_change)
+
+
+def is_nmstate_backend():
+    return vdsm_config.getboolean('vars', 'net_nmstate_enabled')
 
 
 def generate_state(networks, bondings):
