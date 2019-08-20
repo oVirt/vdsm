@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,9 +32,11 @@ import xml.etree.ElementTree as etree
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common.compat import subprocess
-from vdsm.gluster import exception as ge
 from vdsm.network.netinfo import addresses
+
+from . import exception as ge
 from . import gluster_mgmt_api, gluster_api
+
 
 _glusterCommandPath = cmdutils.CommandPath("gluster",
                                            "/usr/sbin/gluster",
@@ -105,12 +107,13 @@ class SnapshotStatus:
 
 
 def _execGluster(cmd):
-    return commands.execCmd(cmd)
+    try:
+        return commands.run(cmd)
+    except cmdutils.Error as e:
+        raise ge.GlusterCmdFailedException(rc=e.rc, err=e.msg)
 
 
-def _getTree(rc, out, err):
-    if rc != 0:
-        raise ge.GlusterCmdExecFailedException(rc, out, err)
+def _getTree(out):
     try:
         tree = etree.fromstring(out)
         rv = int(tree.find('opRet').text)
@@ -128,8 +131,7 @@ def _getTree(rc, out, err):
 
 def _execGlusterXml(cmd):
     cmd.append('--xml')
-    rc, out, err = commands.execCmd(cmd, raw=True)
-    return _getTree(rc, out, err)
+    return _getTree(_execGluster(cmd))
 
 
 def _execGlusterXmlWithTimeout(cmd, timeout=_DEFAULT_TIMEOUT):
@@ -149,7 +151,7 @@ def _execGlusterXmlWithTimeout(cmd, timeout=_DEFAULT_TIMEOUT):
         raise ge.GlusterCmdExecFailedException(
             proc.returncode, out, err)
 
-    return _getTree(proc.returncode, out, err)
+    return _getTree(out)
 
 
 def _getLocalIpAddress():
@@ -169,14 +171,20 @@ def _getGlusterHostName():
 
 @gluster_mgmt_api
 def hostUUIDGet():
-    command = _getGlusterSystemCmd() + ["uuid", "get"]
-    rc, out, err = _execGluster(command)
-    if rc == 0:
-        for line in out:
-            if line.startswith('UUID: '):
-                return line[6:]
+    """
+    Gluster command returns as
+    $ gluster system:: uuid get
+    UUID: d6b27c29-dce0-420e-9982-42f855bca9cd
+    Strip the returned string starting from 6th char to fetch only uuid string
+    """
 
-    raise ge.GlusterHostUUIDNotFoundException()
+    command = _getGlusterSystemCmd() + ["uuid", "get"]
+    out = _execGluster(command)
+    out = out.decode("utf-8")
+    if not out.startswith('UUID: '):
+        raise ge.GlusterHostUUIDNotFoundException()
+
+    return out[6:].rstrip('\n')
 
 
 def _parseVolumeStatus(tree):
