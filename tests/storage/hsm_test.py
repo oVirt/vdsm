@@ -40,15 +40,12 @@ from vdsm.storage import exception as se
 from vdsm.storage import hsm
 from vdsm.storage import qemuimg
 
-from . marks import xfail_python3
-
 
 class FakeHSM(hsm.HSM):
     def __init__(self):
         pass
 
 
-@xfail_python3
 class TestVerifyUntrustedVolume(object):
     SIZE = 1024 * 1024
 
