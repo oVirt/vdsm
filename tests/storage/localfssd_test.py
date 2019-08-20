@@ -43,7 +43,6 @@ from vdsm.storage import sd
 
 from . import qemuio
 from . import userstorage
-from . marks import xfail_python3
 
 PREALLOCATED_VOL_SIZE = 10 * MEGAB
 SPARSE_VOL_SIZE = GIB
@@ -356,7 +355,6 @@ def test_volume_life_cycle(monkeypatch, user_domain):
     assert not os.path.isfile(meta_path)
 
 
-@xfail_python3
 def test_volume_metadata(user_domain):
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
@@ -386,14 +384,14 @@ def test_volume_metadata(user_domain):
     md = vol.getMetadata()
     md.description = "new description"
     vol.setMetadata(md)
-    with open(meta_path) as f:
+    with open(meta_path, "rb") as f:
         data = f.read()
     assert data == md.storage_format(user_domain.getVersion())
 
     # Test overriding with new keys.
     md = vol.getMetadata()
     vol.setMetadata(md, CAP=md.capacity)
-    with open(meta_path) as f:
+    with open(meta_path, "rb") as f:
         data = f.read()
     assert data == md.storage_format(user_domain.getVersion(), CAP=md.capacity)
 
