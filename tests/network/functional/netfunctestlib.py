@@ -609,7 +609,7 @@ class NetFuncTestAdapter(object):
         # Do not use KernelConfig.__eq__ to get a better exception if something
         # breaks.
         assert running_config['networks'] == kernel_config['networks']
-        if nmstate.is_nmstate_backend()():
+        if nmstate.is_nmstate_backend():
             self._assert_inclusive_bond_options(kernel_config, running_config)
         assert running_config['bonds'] == kernel_config['bonds']
 
