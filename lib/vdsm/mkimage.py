@@ -27,7 +27,6 @@ import shutil
 import stat
 import base64
 import errno
-import hashlib
 
 import six
 
@@ -85,7 +84,7 @@ def _commonCleanFs(dirname, media):
         shutil.rmtree(dirname)
 
 
-def getFileName(vmId, files):
+def getFileName(vmId):
     if not os.path.exists(_P_PAYLOAD_IMAGES):
         try:
             os.mkdir(_P_PAYLOAD_IMAGES)
@@ -95,9 +94,7 @@ def getFileName(vmId, files):
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-    content = ''.join(files.keys()).encode() + b''.join(files.values())
-    md5 = hashlib.md5(content).hexdigest()
-    path = os.path.join(_P_PAYLOAD_IMAGES, "%s.%s.img" % (vmId, md5))
+    path = os.path.join(_P_PAYLOAD_IMAGES, "%s.img" % (vmId,))
     return path
 
 
@@ -122,7 +119,7 @@ def injectFilesToFs(floppy, files, fstype='auto'):
 def mkFloppyFs(vmId, files, volumeName=None):
     floppy = None
     try:
-        floppy = getFileName(vmId, files)
+        floppy = getFileName(vmId)
         if os.path.exists(floppy):
             # mkfs.msdos refuses to overwrite existing images
             logging.warning('Removing stale floppy image: %s', floppy)
@@ -146,7 +143,7 @@ def mkIsoFs(vmId, files, volumeName=None):
     try:
         dirname = tempfile.mkdtemp()
         _decodeFilesIntoDir(files, dirname)
-        isopath = getFileName(vmId, files)
+        isopath = getFileName(vmId)
 
         command = [EXT_MKISOFS, '-R', '-J', '-o', isopath]
         if volumeName is not None:
