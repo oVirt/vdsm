@@ -29,8 +29,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import qemuimg
 from vdsm.storage import workarounds
 
-from . marks import xfail_python3
-
 md_formats = dict(raw=sc.RAW_FORMAT, cow=sc.COW_FORMAT)
 qemu_formats = dict(raw=qemuimg.FORMAT.RAW, cow=qemuimg.FORMAT.QCOW2)
 
@@ -45,7 +43,6 @@ def make_volume(env, size, md_fmt, real_fmt):
     return vol
 
 
-@xfail_python3
 class TestDetectFormat(VdsmTestCase):
 
     def test_bad_format_vm_conf_disk(self):
