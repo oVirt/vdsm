@@ -28,8 +28,7 @@ from six import iteritems
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm.gluster import exception as ge
-
+from . import exception as ge
 from . import gluster_mgmt_api
 
 
@@ -47,18 +46,17 @@ _vdoCommandPath = cmdutils.CommandPath("vdo",
 
 @gluster_mgmt_api
 def logicalVolumeList():
-    rc, out, err = commands.execCmd([_lvsCommandPath.cmd,
-                                     "--reportformat", "json",
-                                     "--units", "b",
-                                     "--nosuffix",
-                                     "-o",
-                                     "lv_size,data_percent,"
-                                     "lv_name,vg_name,pool_lv"])
-    if rc:
-        raise ge.GlusterCmdExecFailedException(rc, out, err)
-
+    try:
+        out = commands.run([_lvsCommandPath.cmd,
+                            "--reportformat", "json",
+                            "--units", "b",
+                            "--nosuffix",
+                            "-o",
+                            "lv_size,data_percent,lv_name,vg_name,pool_lv"])
+    except cmdutils.Error as e:
+        raise ge.GlusterCmdExecFailedException(e.rc, e.err)
     volumes = []
-    for lv in json.loads("".join(out))["report"][0]["lv"]:
+    for lv in json.loads(out)["report"][0]["lv"]:
         lv["lv_size"] = int(lv["lv_size"])
         if not lv["pool_lv"] and lv["data_percent"]:
             lv["lv_free"] = int(
@@ -73,23 +71,23 @@ def logicalVolumeList():
 
 @gluster_mgmt_api
 def physicalVolumeList():
-    rc, out, err = commands.execCmd([_pvsCommandPath.cmd,
-                                     "--reportformat", "json",
-                                     "--units", "b",
-                                     "--nosuffix",
-                                     "-o", "pv_name,vg_name"])
-    if rc:
-        raise ge.GlusterCmdExecFailedException(rc, out, err)
-    return json.loads("".join(out))["report"][0]["pv"]
+    try:
+        out = commands.run([_pvsCommandPath.cmd,
+                            "--reportformat", "json",
+                            "--units", "b", "--nosuffix",
+                            "-o", "pv_name,vg_name"])
+    except cmdutils.Error as e:
+        raise ge.GlusterCmdExecFailedException(e.rc, e.err)
+    return json.loads(out)["report"][0]["pv"]
 
 
 @gluster_mgmt_api
 def vdoVolumeList():
-    rc, out, err = commands.execCmd([_vdoCommandPath.cmd, "status"], raw=True)
-    if rc:
-        raise ge.GlusterCmdExecFailedException(rc, out, err)
+    try:
+        out = commands.run([_vdoCommandPath.cmd, "status"])
+    except cmdutils.Error as e:
+        raise ge.GlusterCmdExecFailedException(e.rc, e.err)
     vdoData = yaml.safe_load(out)
-
     result = []
     for vdo, data in iteritems(vdoData["VDOs"]):
         entry = {}

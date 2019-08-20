@@ -1,0 +1,45 @@
+VDO status:
+  Date: '2018-03-02 15:55:12+02:00'
+  Node: hc-tiger.eng.lab.tlv.redhat.com
+Kernel module:
+  Loaded: true
+  Name: kvdo
+  Version information:
+    kvdo version: 6.1.0.124
+Configuration:
+  File: /etc/vdoconf.yml
+  Last modified: '2018-02-14 16:34:08'
+VDOs:
+  vdodata:
+    Compression: enabled
+    Configured write policy: auto
+    Deduplication: enabled
+    Device mapper status: 0 104857600 dedupe
+    Emulate 512 byte: enabled
+    Storage device: /dev/vg0/vdobase
+    VDO statistics:
+      /dev/mapper/vdodata:
+        1K-blocks: 10485760
+        1K-blocks available: 6265428
+        1K-blocks used: 4220332
+        512 byte emulation: true
+        block size: 4096
+        write policy: async
+        logical blocks used: 20
+        data blocks used: 10
+  vdonext:
+    Compression: enabled
+    Deduplication: enabled
+    Device mapper status: 0 104857600 dedupe
+    Emulate 512 byte: enabled
+    Storage device: /dev/vg0/vdosecond
+    VDO statistics:
+      /dev/mapper/vdonext:
+        1K-blocks: 10485760
+        1K-blocks available: 6287208
+        1K-blocks used: 4198552
+        512 byte emulation: true
+        block size: 1024
+        logical blocks used: 40
+        data blocks used: 15
+        write policy: async

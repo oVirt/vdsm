@@ -23,6 +23,7 @@ from __future__ import division
 
 import json
 from functools import partial
+import os
 
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
@@ -34,8 +35,8 @@ _fake_vdoCommandPath = cmdutils.CommandPath("true",
                                             "/bin/true",)
 
 
-def fake_json_call(data, cmd, **kw):
-    return 0, [json.dumps(data)], []
+def fake_json_call(data, *args, **kw):
+    return json.dumps(data).encode('utf-8')
 
 
 class GlusterStorageDevTest(TestCaseBase):
@@ -95,7 +96,7 @@ class GlusterStorageDevTest(TestCaseBase):
             }
         ]
 
-        with MonkeyPatchScope([(commands, "execCmd",
+        with MonkeyPatchScope([(commands, "run",
                                 partial(fake_json_call, data))]):
             actual = thinstorage.logicalVolumeList()
             self.assertEqual(expected, actual)
@@ -124,60 +125,13 @@ class GlusterStorageDevTest(TestCaseBase):
             {"pv_name": "/dev/sdb1", "vg_name": "vg0"}
         ]
 
-        with MonkeyPatchScope([(commands, "execCmd",
+        with MonkeyPatchScope([(commands, "run",
                                 partial(fake_json_call, data))]):
             actual = thinstorage.physicalVolumeList()
             self.assertEqual(expected, actual)
 
     @MonkeyPatch(thinstorage, '_vdoCommandPath', _fake_vdoCommandPath)
     def test_vdo_volume_list(self):
-        data = [
-            "VDO status:",
-            "  Date: '2018-03-02 15:55:12+02:00'",
-            "  Node: hc-tiger.eng.lab.tlv.redhat.com",
-            "Kernel module:",
-            "  Loaded: true",
-            "  Name: kvdo",
-            "  Version information:",
-            "    kvdo version: 6.1.0.124",
-            "Configuration:",
-            "  File: /etc/vdoconf.yml",
-            "  Last modified: '2018-02-14 16:34:08'",
-            "VDOs:",
-            "  vdodata:",
-            "    Compression: enabled",
-            "    Configured write policy: auto",
-            "    Deduplication: enabled",
-            "    Device mapper status: 0 104857600 dedupe",
-            "    Emulate 512 byte: enabled",
-            "    Storage device: /dev/vg0/vdobase",
-            "    VDO statistics:",
-            "      /dev/mapper/vdodata:",
-            "        1K-blocks: 10485760",
-            "        1K-blocks available: 6265428",
-            "        1K-blocks used: 4220332",
-            "        512 byte emulation: true",
-            "        block size: 4096",
-            "        write policy: async",
-            "        logical blocks used: 20",
-            "        data blocks used: 10",
-            "  vdonext:",
-            "    Compression: enabled",
-            "    Deduplication: enabled",
-            "    Device mapper status: 0 104857600 dedupe",
-            "    Emulate 512 byte: enabled",
-            "    Storage device: /dev/vg0/vdosecond",
-            "    VDO statistics:",
-            "      /dev/mapper/vdonext:",
-            "        1K-blocks: 10485760",
-            "        1K-blocks available: 6287208",
-            "        1K-blocks used: 4198552",
-            "        512 byte emulation: true",
-            "        block size: 1024",
-            "        logical blocks used: 40",
-            "        data blocks used: 15",
-            "        write policy: async"
-        ]
 
         expected = [
             {
@@ -198,15 +152,15 @@ class GlusterStorageDevTest(TestCaseBase):
             }
         ]
 
-        def fake_execcmd(command, raw=False, **kwargs):
-            if raw:
-                out = "\n".join(data)
-                err = ""
-            else:
-                out = data
-                err = []
-            return 0, out, err
+        def fake_run(*args, **kwargs):
+            path = os.path.join(
+                os.path.dirname(__file__),
+                'gluster/results/fake_vdo_status.yml'
+            )
+            with open(path, "rb") as f:
+                out = f.read()
+            return out
 
-        with MonkeyPatchScope([(commands, "execCmd", fake_execcmd)]):
+        with MonkeyPatchScope([(commands, "run", fake_run)]):
             actual = thinstorage.vdoVolumeList()
             self.assertEqual(expected, actual)
