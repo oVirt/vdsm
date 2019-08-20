@@ -33,7 +33,6 @@ import stat
 import pytest
 
 from vdsm.storage import outOfProcess as oop
-from . marks import xfail_python3
 
 
 @pytest.fixture
@@ -74,7 +73,6 @@ def test_different_pool_name(oop_cleanup):
     assert pids[0] != pids[1]
 
 
-@xfail_python3
 def test_amount_of_instances_per_pool_name(oop_cleanup, monkeypatch):
     # TODO: This is very bad test, assuming the behavior
     #  of the gc module instead of testing our code behavior.
