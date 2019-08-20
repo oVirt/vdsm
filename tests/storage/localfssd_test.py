@@ -140,7 +140,6 @@ def test_unsupported_block_size_rejected(version, block_size):
             block_size=block_size)
 
 
-@xfail_python3
 @pytest.mark.parametrize("domain_version", [3, 4])
 def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     remote_path = str(tmpdir.mkdir("domain"))
@@ -176,7 +175,6 @@ def test_create_domain_metadata(tmpdir, tmp_repo, fake_access, domain_version):
     assert dom.block_size == sc.BLOCK_SIZE_512
 
 
-@xfail_python3
 @pytest.mark.parametrize("detect_block_size", DETECT_BLOCK_SIZE)
 def test_create_domain_metadata_v5(
         user_mount_v5, tmp_repo, fake_access, detect_block_size):
@@ -224,7 +222,6 @@ def test_create_domain_metadata_v5(
     assert dom.block_size == user_mount_v5.block_size
 
 
-@xfail_python3
 def test_create_storage_domain_block_size_mismatch(
         user_mount_v5, tmp_repo, fake_access):
     # Select the wrong block size for current storage.
@@ -242,7 +239,6 @@ def test_create_storage_domain_block_size_mismatch(
             remote_path=user_mount_v5.path)
 
 
-@xfail_python3
 def test_create_instance_block_size_mismatch(
         user_domain_v5, tmp_repo, fake_access):
     # Change metadata to report the wrong block size for current storage.
@@ -257,7 +253,6 @@ def test_create_instance_block_size_mismatch(
         localFsSD.LocalFsStorageDomain(user_domain_v5.domaindir)
 
 
-@xfail_python3
 @pytest.mark.parametrize("domain_version", [3, 4])
 def test_domain_lease(tmpdir, tmp_repo, fake_access, domain_version):
     dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
@@ -267,7 +262,6 @@ def test_domain_lease(tmpdir, tmp_repo, fake_access, domain_version):
     assert lease.offset == dom.alignment
 
 
-@xfail_python3
 @pytest.mark.parametrize("detect_block_size", DETECT_BLOCK_SIZE)
 def test_domain_lease_v5(
         user_mount_v5, tmp_repo, fake_access, detect_block_size):
@@ -292,7 +286,6 @@ def test_domain_lease_v5(
     assert lease.offset == alignment
 
 
-@xfail_python3
 def test_volume_life_cycle(monkeypatch, user_domain):
     # as creation of block storage domain and volume is quite time consuming,
     # we test several volume operations in one test to speed up the test suite
@@ -405,7 +398,6 @@ def test_volume_metadata(user_domain):
     assert data == md.storage_format(user_domain.getVersion(), CAP=md.capacity)
 
 
-@xfail_python3
 def test_volume_create_raw_prealloc(user_domain, local_fallocate):
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
@@ -445,7 +437,6 @@ def test_volume_create_raw_prealloc(user_domain, local_fallocate):
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
-@xfail_python3
 @pytest.mark.parametrize("initial_size", [0, INITIAL_VOL_SIZE])
 def test_volume_create_raw_prealloc_with_initial_size(
         user_domain, local_fallocate, initial_size):
@@ -488,7 +479,6 @@ def test_volume_create_raw_prealloc_with_initial_size(
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
-@xfail_python3
 @pytest.mark.parametrize("domain_version", [4, 5])
 @pytest.mark.parametrize("vol_format,prealloc", [
     (sc.RAW_FORMAT, sc.SPARSE_VOL),
@@ -517,7 +507,6 @@ def test_volume_create_initial_size_not_supported(
             initial_size=INITIAL_VOL_SIZE)
 
 
-@xfail_python3
 def test_volume_create_raw_sparse(user_domain, local_fallocate):
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
@@ -557,7 +546,6 @@ def test_volume_create_raw_sparse(user_domain, local_fallocate):
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
-@xfail_python3
 def test_volume_create_cow_sparse(user_domain, local_fallocate):
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
@@ -601,7 +589,6 @@ def test_volume_create_cow_sparse(user_domain, local_fallocate):
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
-@xfail_python3
 def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
     parent_img_uuid = str(uuid.uuid4())
     parent_vol_uuid = str(uuid.uuid4())
@@ -661,7 +648,6 @@ def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
-@xfail_python3
 @pytest.mark.parametrize("initial_size, expected_exception", [
     # initial size, expected exception
     [-1, se.InvalidParameterException],
@@ -689,7 +675,6 @@ def test_volume_create_raw_prealloc_invalid_initial_size(
             initial_size=initial_size)
 
 
-@xfail_python3
 def test_create_snapshot_size(user_domain, local_fallocate):
     img_uuid = str(uuid.uuid4())
     parent_vol_uuid = str(uuid.uuid4())
@@ -749,7 +734,6 @@ def test_create_snapshot_size(user_domain, local_fallocate):
     assert int(actual["capacity"]) == vol_capacity
 
 
-@xfail_python3
 def test_volume_metadata_capacity_corrupted(user_domain, local_fallocate):
     # This test verifies a flow in which volume metadata capacity is corrupted.
     # This can happen e.g. a result of bug https://bugzilla.redhat.com/1700623.
@@ -781,7 +765,6 @@ def test_volume_metadata_capacity_corrupted(user_domain, local_fallocate):
     assert int(actual["capacity"]) == 2 * SPARSE_VOL_SIZE
 
 
-@xfail_python3
 def test_volume_sync_metadata(user_domain, local_fallocate):
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
