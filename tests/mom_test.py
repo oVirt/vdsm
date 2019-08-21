@@ -38,6 +38,10 @@ MOM_SOCK = "test_mom_vdsm.sock"
 
 
 class DummyMomApi(object):
+    def __init__(self):
+        self.last_policy_name = None
+        self.last_policy_content = None
+
     def ping(self):
         return True
 
@@ -94,8 +98,9 @@ class MomPolicyTests(TestCase):
         return server, t, api
 
     def _stopMomServer(self, server, t):
-        server.shutdown()
-        t.join()
+        if t.is_alive():
+            server.shutdown()
+            t.join()
 
     def testSetPolicyParameters(self):
         server, thread, api = self._getMomServer()

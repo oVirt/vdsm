@@ -23,6 +23,7 @@ from __future__ import division
 
 import logging
 import socket
+import threading
 
 import six
 
@@ -31,11 +32,50 @@ from vdsm.config import config
 from vdsm import throttledlog
 
 from vdsm.common.cpuarch import PAGE_SIZE_BYTES
+from vdsm.common.time import monotonic_time
 from vdsm.common import unixrpc
 
 
 throttledlog.throttle('MomNotAvailable', 100)
 throttledlog.throttle('MomNotAvailableKSM', 100)
+
+CONNECTION_TIMEOUT_SEC = 2
+THROTTLE_INTERVAL = 5
+
+
+class ThrottledClient(object):
+    class Inactive(Exception):
+        pass
+
+    def __init__(self, client):
+        self._client = client
+        self._active = True
+        self._last_active = monotonic_time()
+        self._lock = threading.Lock()
+
+    def __getattr__(self, name):
+        def method(*args, **kwargs):
+            now = monotonic_time()
+
+            if not self._active and \
+               self._last_active + THROTTLE_INTERVAL < now:
+                with self._lock:
+                    if self._last_active + THROTTLE_INTERVAL < now:
+                        self._active = True
+
+            if not self._active:
+                raise ThrottledClient.Inactive()
+
+            client_method = getattr(self._client, name)
+            try:
+                return client_method(*args, **kwargs)
+            except Exception:
+                with self._lock:
+                    self._active = False
+                    self._last_active = monotonic_time()
+                raise
+
+        return method
 
 
 class MomClient(object):
@@ -51,9 +91,11 @@ class MomClient(object):
         if self._mom is not None:
             return
 
-        self.log.info("MOM: Using named unix socket: %s",
-                      self._sock_path)
-        self._mom = unixrpc.UnixXmlRpcClient(self._sock_path)
+        self.log.info("MOM: Using named unix socket: %s", self._sock_path)
+        self._mom = ThrottledClient(unixrpc.UnixXmlRpcClient(
+            self._sock_path,
+            CONNECTION_TIMEOUT_SEC
+        ))
 
     def getKsmStats(self):
         """
@@ -71,10 +113,12 @@ class MomClient(object):
             ret['memShared'] = stats['ksm_pages_sharing'] * PAGE_SIZE_BYTES
             ret['memShared'] //= Mbytes
             ret['ksmCpu'] = stats['ksmd_cpu_usage']
-        except (AttributeError, socket.error):
-            throttledlog.warning('MomNotAvailableKSM',
-                                 "MOM not available, "
-                                 "KSM stats will be missing.")
+        except (ThrottledClient.Inactive, AttributeError, socket.error) as e:
+            throttledlog.warning(
+                'MomNotAvailableKSM',
+                "MOM not available, KSM stats will be missing. Error: %s",
+                str(e)
+            )
 
         return ret
 
@@ -82,8 +126,11 @@ class MomClient(object):
         try:
             # mom.setPolicy will raise an exception on failure.
             self._mom.setPolicy(policyStr)
-        except (AttributeError, socket.error):
-            self.log.warning("MOM not available, Policy could not be set.")
+        except (ThrottledClient.Inactive, AttributeError, socket.error) as e:
+            self.log.warning(
+                "MOM not available, Policy could not be set. Error: %s",
+                str(e)
+            )
 
     def setPolicyParameters(self, key_value_store):
         # mom.setNamedPolicy will raise an exception on failure.
@@ -101,8 +148,11 @@ class MomClient(object):
         try:
             self._mom.setNamedPolicy(config.get("mom", "tuning_policy"),
                                      policy_string)
-        except (AttributeError, socket.error):
-            self.log.warning("MOM not available, Policy could not be set.")
+        except (ThrottledClient.Inactive, AttributeError, socket.error) as e:
+            self.log.warning(
+                "MOM not available, Policy could not be set. Error: %s",
+                str(e)
+            )
 
     def getStatus(self):
         try:
@@ -110,6 +160,10 @@ class MomClient(object):
                 return 'active'
             else:
                 return 'inactive'
-        except (AttributeError, socket.error):
-            throttledlog.warning('MomNotAvailable', "MOM not available.")
+        except (ThrottledClient.Inactive, AttributeError, socket.error) as e:
+            throttledlog.warning(
+                'MomNotAvailable',
+                "MOM not available. Error: %s",
+                str(e)
+            )
             return 'inactive'
