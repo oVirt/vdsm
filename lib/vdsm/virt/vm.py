@@ -5371,7 +5371,7 @@ class Vm(object):
         # another call to merge() where the job has been recorded but not yet
         # started.
         with self._jobsLock:
-            for storedJob in self._blockJobs.values():
+            for storedJob in list(self._blockJobs.values()):
                 jobID = storedJob['jobID']
                 self.log.debug("Checking job %s", jobID)
                 cleanThread = self._liveMergeCleanupThreads.get(jobID)
