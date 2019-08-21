@@ -214,13 +214,13 @@ class ClientError(Error):
 
 class ServerError(Error):
     msg = ("Command {self.cmd} with args {self.params} failed:\n"
-           "(code={self.code}, message={self.msg})")
+           "(code={self.code}, message={self.resp_msg})")
 
     def __init__(self, cmd, params, code, message):
         self.cmd = cmd
         self.params = params
         self.code = code
-        self.msg = message
+        self.resp_msg = message
 
 
 class Namespace(object):
