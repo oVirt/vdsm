@@ -120,13 +120,14 @@ _RESERVED_INTERFACES = ("default", "tcp", "iser")
 _iscsiadmLock = Lock()
 
 
-def _runCmd(args):
+def run_cmd(args):
     # FIXME: I don't use supervdsm because this entire module has to just be
     # run as root and there is no such feature yet in supervdsm. When such
     # feature exists please change this.
     with _iscsiadmLock:
         cmd = [constants.EXT_ISCSIADM] + args
-        return commands.run(cmd, sudo=True)
+        out = commands.run(cmd, sudo=True)
+        return out.decode("utf-8")
 
 
 def iface_exists(interfaceName):
@@ -143,7 +144,7 @@ def iface_new(name):
         raise ReservedInterfaceNameError(name)
 
     try:
-        _runCmd(["-m", "iface", "-I", name, "--op=new"])
+        run_cmd(["-m", "iface", "-I", name, "--op=new"])
     except cmdutils.Error as e:
         if iface_exists(name):
             raise IsciInterfaceAlreadyExistsError(name)
@@ -153,7 +154,7 @@ def iface_new(name):
 
 def iface_update(name, key, value):
     try:
-        _runCmd(["-m", "iface", "-I", name, "-n", key, "-v", value,
+        run_cmd(["-m", "iface", "-I", name, "-n", key, "-v", value,
                  "--op=update"])
     except cmdutils.Error as e:
         if not iface_exists(name):
@@ -164,7 +165,7 @@ def iface_update(name, key, value):
 
 def iface_delete(name):
     try:
-        _runCmd(["-m", "iface", "-I", name, "--op=delete"])
+        run_cmd(["-m", "iface", "-I", name, "--op=delete"])
     except cmdutils.Error:
         if not iface_exists(name):
             raise IscsiInterfaceDoesNotExistError(name)
@@ -180,7 +181,7 @@ def iface_list(out=None):
     #   <net_ifacename>,<initiatorname>
     if out is None:
         try:
-            out = _runCmd(["-m", "iface"])
+            out = run_cmd(["-m", "iface"])
         except cmdutils.Error as e:
             raise IscsiInterfaceListingError(e.rc, e.out, e.err)
 
@@ -193,7 +194,7 @@ def iface_info(name):
     # FIXME: This can be done more effciently by reading
     # /var/lib/iscsi/ifaces/<iface name>. Fix if ever a performance bottleneck.
     try:
-        out = _runCmd(["-m", "iface", "-I", name])
+        out = run_cmd(["-m", "iface", "-I", name])
     except cmdutils.Error as e:
         if not iface_exists(name):
             raise IscsiInterfaceDoesNotExistError(name)
@@ -217,7 +218,7 @@ def iface_info(name):
 
 def discoverydb_new(discoveryType, iface, portal):
     try:
-        _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
+        run_cmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
                  "-p", portal, "--op=new"])
     except cmdutils.Error as e:
         if not iface_exists(iface):
@@ -228,7 +229,7 @@ def discoverydb_new(discoveryType, iface, portal):
 
 def discoverydb_update(discoveryType, iface, portal, key, value):
     try:
-        _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
+        run_cmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
                  "-p", portal, "-n", key, "-v", value, "--op=update"])
     except cmdutils.Error as e:
         if not iface_exists(iface):
@@ -239,8 +240,9 @@ def discoverydb_update(discoveryType, iface, portal, key, value):
 
 def discoverydb_discover(discoveryType, iface, portal):
     try:
-        out = _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
-                       "-p", portal, "--discover"])
+        out = run_cmd(
+            ["-m", "discoverydb", "-t", discoveryType, "-I", iface, "-p",
+             portal, "--discover"])
     except cmdutils.Error as e:
         if not iface_exists(iface):
             raise IscsiInterfaceDoesNotExistError(iface)
@@ -262,7 +264,7 @@ def discoverydb_discover(discoveryType, iface, portal):
 
 def discoverydb_delete(discoveryType, iface, portal):
     try:
-        _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
+        run_cmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
                  "-p", portal, "--op=delete"])
     except cmdutils.Error as e:
         if not iface_exists(iface):
@@ -273,7 +275,7 @@ def discoverydb_delete(discoveryType, iface, portal):
 
 def node_new(iface, portal, targetName):
     try:
-        _runCmd(["-m", "node", "-T", targetName, "-I", iface,
+        run_cmd(["-m", "node", "-T", targetName, "-I", iface,
                  "-p", portal, "--op=new"])
     except cmdutils.Error as e:
         if not iface_exists(iface):
@@ -284,7 +286,7 @@ def node_new(iface, portal, targetName):
 
 def node_update(iface, portal, targetName, key, value):
     try:
-        _runCmd(["-m", "node", "-T", targetName, "-I", iface,
+        run_cmd(["-m", "node", "-T", targetName, "-I", iface,
                  "-p", portal, "-n", key, "-v", value, "--op=update"])
     except cmdutils.Error as e:
         if not iface_exists(iface):
@@ -295,7 +297,7 @@ def node_update(iface, portal, targetName, key, value):
 
 def node_delete(iface, portal, targetName):
     try:
-        _runCmd(["-m", "node", "-T", targetName, "-I", iface,
+        run_cmd(["-m", "node", "-T", targetName, "-I", iface,
                  "-p", portal, "--op=delete"])
     except cmdutils.Error as e:
         if not iface_exists(iface):
@@ -306,7 +308,7 @@ def node_delete(iface, portal, targetName):
 
 def node_disconnect(iface, portal, targetName):
     try:
-        _runCmd(["-m", "node", "-T", targetName, "-I", iface,
+        run_cmd(["-m", "node", "-T", targetName, "-I", iface,
                  "-p", portal, "-u"])
     except cmdutils.Error as e:
         if not iface_exists(iface):
@@ -320,7 +322,7 @@ def node_disconnect(iface, portal, targetName):
 
 def node_login(iface, portal, targetName):
     try:
-        _runCmd(["-m", "node", "-T", targetName, "-I", iface,
+        run_cmd(["-m", "node", "-T", targetName, "-I", iface,
                  "-p", portal, "-l"])
     except cmdutils.Error as e:
         if not iface_exists(iface):
@@ -367,6 +369,6 @@ def session_rescan(timeout=None):
 
 def session_logout(sessionId):
     try:
-        _runCmd(["-m", "session", "-r", str(sessionId), "-u"])
+        run_cmd(["-m", "session", "-r", str(sessionId), "-u"])
     except cmdutils.Error as e:
         raise IscsiSessionError(e.rc, e.out, e.err)
