@@ -6,6 +6,7 @@ dbus-python
 e2fsprogs
 gdb
 git
+iscsi-initiator-utils
 libguestfs-tools-c
 lshw
 make

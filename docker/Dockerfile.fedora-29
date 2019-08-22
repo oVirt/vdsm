@@ -18,6 +18,7 @@ RUN dnf install -y \
         git \
         glusterfs-api \
         iproute-tc \
+        iscsi-initiator-utils \
         libselinux-python \
         libselinux-python3 \
         lshw \

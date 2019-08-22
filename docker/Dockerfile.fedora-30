@@ -16,6 +16,7 @@ RUN dnf install -y \
         git \
         glusterfs-api \
         iproute-tc \
+        iscsi-initiator-utils \
         lshw \
         make \
         mom \

@@ -16,6 +16,7 @@ RUN yum install -y \
         genisoimage \
         git \
         glusterfs-api \
+        iscsi-initiator-utils \
         libselinux-python \
         libvirt-python \
         lshw \

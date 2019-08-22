@@ -8,6 +8,7 @@ gcc
 gdb
 git
 iproute-tc
+iscsi-initiator-utils
 libguestfs-tools-c
 libselinux-python3
 libvirt-python3
