@@ -51,18 +51,26 @@ def _headersToOptions(headers):
     return options
 
 
+def parse_headers(out):
+    lines = out.decode("iso-8859-1").splitlines(False)
+    # Besides headers curl returns also HTTP status as the first line and the
+    # last line is empty. Therefore we skip first and last line.
+    headers = lines[1:-1]
+    return dict([x.split(": ", 1) for x in headers])
+
+
 def head(url, headers={}):
     # Cannot be moved out because _curl.cmd is lazy-evaluated
     cmd = [_curl.cmd] + CURL_OPTIONS + ["--head", url]
-
     cmd.extend(_headersToOptions(headers))
-    rc, out, err = commands.execCmd(cmd)
 
-    if rc != 0:
-        raise CurlError(rc, out, err)
+    try:
+        out = commands.run(cmd)
+    except cmdutils.Error as e:
+        raise CurlError(e.rc, e.out, e.err)
 
     # Parse and return headers
-    return dict([x.split(": ", 1) for x in out[1:-1]])
+    return parse_headers(out)
 
 
 def download(url, path, headers={}):
