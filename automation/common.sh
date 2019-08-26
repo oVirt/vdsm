@@ -13,7 +13,9 @@ prepare_env() {
 }
 
 install_dependencies() {
-    tests/profile pip-install pip install -U tox==2.9.1
+    tests/profile pip-install pip install -U \
+        "more-itertools<6.0.0" \
+        tox==2.9.1
 }
 
 build_vdsm() {
