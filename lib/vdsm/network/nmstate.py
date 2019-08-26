@@ -30,10 +30,13 @@ from vdsm.network.link.setup import parse_bond_options
 try:
     from libnmstate import netapplier
     from libnmstate import netinfo
+    from libnmstate import schema
     from libnmstate.schema import DNS
     from libnmstate.schema import Interface
     from libnmstate.schema import InterfaceIP
     from libnmstate.schema import InterfaceIPv6
+    from libnmstate.schema import InterfaceState
+    from libnmstate.schema import InterfaceType
     from libnmstate.schema import Route
 except ImportError:  # nmstate is not available
     netapplier = None
@@ -41,7 +44,10 @@ except ImportError:  # nmstate is not available
     Interface = None
     InterfaceIP = None
     InterfaceIPv6 = None
+    InterfaceState = None
+    InterfaceType = None
     Route = None
+    schema = None
 
 
 def setup(desired_state, verify_change):
@@ -50,12 +56,10 @@ def setup(desired_state, verify_change):
 
 def generate_state(networks, bondings):
     """ Generate a new nmstate state given VDSM setup state format """
-    ifstates = {}
     route_states = []
     rconfig = RunningConfig()
 
-    _generate_bonds_state(bondings, ifstates)
-    _disable_ip_for_new_bonds(bondings, ifstates, rconfig)
+    ifstates = Bond.generate_state(bondings, rconfig.bonds)
     _generate_networks_state(networks, ifstates, route_states, rconfig)
     dns_state = _generate_dns_state(networks, rconfig)
 
@@ -85,6 +89,68 @@ def is_autoconf_enabled(ifstate):
     family_info = ifstate[Interface.IPV6]
     return (family_info[InterfaceIP.ENABLED] and
             family_info[InterfaceIPv6.AUTOCONF])
+
+
+class Bond(object):
+    def __init__(self, name, attrs):
+        self._name = name
+        self._attrs = attrs
+        self._to_remove = attrs.get('remove', False)
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def state(self):
+        iface_state = {
+            Interface.NAME: self._name,
+            Interface.TYPE: InterfaceType.BOND,
+        }
+
+        if self._to_remove:
+            extra_state = {Interface.STATE: InterfaceState.ABSENT}
+        else:
+            extra_state = self._create()
+
+        iface_state.update(extra_state)
+        return iface_state
+
+    def is_new(self, running_bonds):
+        return not self._to_remove and self._name not in running_bonds
+
+    @staticmethod
+    def generate_state(bondings, running_bonds):
+        bonds = (
+            Bond(bondname, bondattrs)
+            for bondname, bondattrs in six.viewitems(bondings)
+        )
+        state = {}
+        for bond in bonds:
+            ifstate = bond.state
+            if bond.is_new(running_bonds):
+                ifstate[Interface.IPV4] = {InterfaceIP.ENABLED: False}
+                ifstate[Interface.IPV6] = {InterfaceIP.ENABLED: False}
+            state[bond.name] = ifstate
+        return state
+
+    def _create(self):
+        iface_state = {Interface.STATE: InterfaceState.UP}
+        mac = self._attrs.get('hwaddr')
+        if mac:
+            iface_state[Interface.MAC] = mac
+        bond_state = iface_state[schema.Bond.CONFIG_SUBTREE] = {}
+        bond_state[schema.Bond.SLAVES] = sorted(self._attrs['nics'])
+
+        options = parse_bond_options(self._attrs.get('options'))
+        if options:
+            bond_state[schema.Bond.OPTIONS_SUBTREE] = options
+        mode = self._translate_mode(mode=options.pop('mode', 'balance-rr'))
+        bond_state[schema.Bond.MODE] = mode
+        return iface_state
+
+    def _translate_mode(self, mode):
+        return BONDING_MODES_NUMBER_TO_NAME[mode] if mode.isdigit() else mode
 
 
 def _generate_dns_state(networks, rconfig):
@@ -260,51 +326,6 @@ def _remove_network(netname, ifstates, rconfig):
         }
 
 
-def _generate_bonds_state(bondings, ifstates):
-    for bondname, bondattrs in six.viewitems(bondings):
-        if bondattrs.get('remove'):
-            iface_state = _remove_bond(bondname)
-        else:
-            iface_state = _create_bond(bondname, bondattrs)
-
-        ifstates[bondname] = iface_state
-
-
-def _remove_bond(bondname):
-    iface_state = {
-        Interface.NAME: bondname,
-        Interface.TYPE: 'bond',
-        Interface.STATE: 'absent'
-    }
-    return iface_state
-
-
-def _create_bond(bondname, bondattrs):
-    iface_state = {
-        Interface.NAME: bondname,
-        Interface.TYPE: 'bond',
-        Interface.STATE: 'up',
-        'link-aggregation': {},
-    }
-    mac = bondattrs.get('hwaddr')
-    if mac:
-        iface_state['mac-address'] = mac
-    iface_state['link-aggregation']['slaves'] = sorted(bondattrs['nics'])
-    bond_options = parse_bond_options(bondattrs.get('options'))
-    bond_mode = bond_options.pop('mode', 'balance-rr')
-    _set_bond_mode(iface_state, bond_mode)
-    if bond_options:
-        iface_state['link-aggregation']['options'] = bond_options
-
-    return iface_state
-
-
-def _set_bond_mode(iface_state, bond_mode):
-    if bond_mode.isdigit():
-        bond_mode = BONDING_MODES_NUMBER_TO_NAME[bond_mode]
-    iface_state['link-aggregation']['mode'] = bond_mode
-
-
 def _generate_iface_ipv4_state(iface_state, netattrs):
     ipv4addr = netattrs.get('ipaddr')
     dhcpv4 = netattrs.get('bootproto') == 'dhcp'
@@ -418,15 +439,6 @@ def _get_ipv4_prefix_from_mask(ipv4netmask):
         onebits = str(bin(int(octet))).strip('0b').rstrip('0')
         prefix += len(onebits)
     return prefix
-
-
-def _disable_ip_for_new_bonds(bondings, interfaces_state, running_config):
-    for bondname, bond_attrs in six.viewitems(bondings):
-        if _is_remove(bond_attrs):
-            continue
-        if bondname not in running_config.bonds:
-            interfaces_state[bondname][Interface.IPV4] = {'enabled': False}
-            interfaces_state[bondname][Interface.IPV6] = {'enabled': False}
 
 
 def _is_remove(interface_attrs):

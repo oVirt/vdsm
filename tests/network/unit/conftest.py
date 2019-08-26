@@ -40,6 +40,41 @@ class NMStateInterface(object):
     MTU = 'mtu'
 
 
+class NMStateInterfaceState(object):
+    KEY = NMStateInterface.STATE
+
+    DOWN = 'down'
+    UP = 'up'
+    ABSENT = 'absent'
+
+
+class NMStateInterfaceType(object):
+    KEY = NMStateInterface.TYPE
+
+    BOND = 'bond'
+    DUMMY = 'dummy'
+    ETHERNET = 'ethernet'
+    LINUX_BRIDGE = 'linux-bridge'
+    OVS_BRIDGE = 'ovs-bridge'
+    OVS_INTERFACE = 'ovs-interface'
+    OVS_PORT = 'ovs-port'
+    UNKNOWN = 'unknown'
+    VLAN = 'vlan'
+
+
+class NMStateBond(object):
+    KEY = NMStateInterfaceType.BOND
+    CONFIG_SUBTREE = 'link-aggregation'
+
+    MODE = 'mode'
+    SLAVES = 'slaves'
+    OPTIONS_SUBTREE = 'options'
+
+
+class NMStateSchema(object):
+    Bond = NMStateBond
+
+
 class NMStateRoute(object):
     KEY = 'routes'
 
@@ -82,11 +117,17 @@ class NMStateDns(object):
 @pytest.fixture(scope='session', autouse=True)
 def nmstate_schema():
     p_iface = mock.patch.object(nmstate, 'Interface', NMStateInterface)
+    p_ifstate = mock.patch.object(
+        nmstate, 'InterfaceState', NMStateInterfaceState)
+    p_iftype = mock.patch.object(
+        nmstate, 'InterfaceType', NMStateInterfaceType)
+    p_schema = mock.patch.object(nmstate, 'schema', NMStateSchema)
     p_route = mock.patch.object(nmstate, 'Route', NMStateRoute)
     p_iface_ip = mock.patch.object(nmstate, 'InterfaceIP', NMStateInterfaceIP)
     p_iface_ipv6 = mock.patch.object(nmstate, 'InterfaceIPv6',
                                      NMStateInterfaceIPv6)
     p_dns = mock.patch.object(nmstate, 'DNS', NMStateDns)
 
-    with p_iface, p_route, p_iface_ip, p_iface_ipv6, p_dns:
-        yield
+    with p_iface, p_ifstate, p_iftype:
+        with p_schema, p_route, p_iface_ip, p_iface_ipv6, p_dns:
+            yield
