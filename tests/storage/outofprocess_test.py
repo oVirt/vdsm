@@ -26,9 +26,9 @@ import gc
 import logging
 import os
 import re
+import stat
 import time
 import weakref
-import stat
 
 import pytest
 
@@ -247,7 +247,6 @@ def test_write_file_direct_true_unaligned(oop_cleanup, tmpdir):
     path = str(tmpdir.join("file"))
 
     with pytest.raises(OSError) as e:
-        # Expected to fail with "OSError: [Errno 22] Invalid argument".
         iop.writeFile(path, b"1\n2\n3\n", direct=True)
     assert e.value.errno == errno.EINVAL
 
@@ -308,8 +307,7 @@ def test_truncate_file_non_default_creatExcl(oop_cleanup, tmpdir):
     verify_file(path, mode, size)
 
     with pytest.raises(OSError) as e:
-        # Expected to fail with "OSError: [Errno 17] File exists",
-        # so the file and it's properties should stay the same.
+        # Expected to fail, so the file and its properties will stay the same.
         iop.truncateFile(path, size - 5, mode, creatExcl=True)
     assert e.value.errno == errno.EEXIST
     verify_file(path, mode, size)
