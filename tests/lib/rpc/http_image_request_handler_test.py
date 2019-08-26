@@ -26,7 +26,6 @@ import socket
 import time
 
 import pytest
-import six
 
 from six.moves import http_client
 
@@ -182,7 +181,6 @@ def irh_connection(server_thread):
         ),
     ]
 )
-@pytest.mark.skipif(six.PY3, reason="incompatible with py3's 'http' module")
 def test_irh_should_report_missing_headers(
         caplog, irh_connection, verb, headers, expected_error):
     response = irh_connection(verb, headers, b"").getresponse()
@@ -295,7 +293,6 @@ def put_headers():
         ),
     ]
 )
-@pytest.mark.skipif(six.PY3, reason="incompatible with py3's 'http' module")
 def test_irh_should_retrieve_image(
         irh_connection, api_image_mock, finish_image_upload, verb, headers,
         body, expected_status):
@@ -325,7 +322,6 @@ def test_irh_should_retrieve_image(
         )
     ]
 )
-@pytest.mark.skipif(six.PY3, reason="incompatible with py3's 'http' module")
 def test_irh_should_retrieve_partial_image(
         irh_connection, api_image_mock, finish_image_upload, verb, headers,
         body, expected_status):
@@ -353,7 +349,6 @@ def test_irh_should_retrieve_partial_image(
         ),
     ]
 )
-@pytest.mark.skipif(six.PY3, reason="incompatible with py3's 'http' module")
 def test_irh_should_save_image(
         irh_connection, api_image_mock, finish_image_download, verb, headers,
         body, expected_status):
@@ -386,7 +381,6 @@ def test_irh_should_save_image(
         ),
     ]
 )
-@pytest.mark.skipif(six.PY3, reason="incompatible with py3's 'http' module")
 def test_irh_should_respond_with_error_after_unsuccessful_image_operation(
         irh_connection, api_image_mock, upload_to_stream_mock,
         download_from_stream_mock, verb, headers, body,
@@ -420,7 +414,6 @@ def test_irh_should_respond_with_error_after_unsuccessful_image_operation(
         ),
     ]
 )
-@pytest.mark.skipif(six.PY3, reason="incompatible with py3's 'http' module")
 def test_irh_should_respond_with_error_after_unexpected_exception(
         irh_connection, api_image_mock, verb, headers, body):
     api_image_mock.side_effect = ValueError("smth went wrong")
