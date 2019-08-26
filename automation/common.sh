@@ -13,7 +13,9 @@ prepare_env() {
 }
 
 install_dependencies() {
-    ${CI_PYTHON} tests/profile pip-install ${CI_PYTHON} -m pip install -U tox==2.9.1
+    ${CI_PYTHON} tests/profile pip-install ${CI_PYTHON} -m pip install -U \
+        "more-itertools<6.0.0" \
+        "tox==2.9.1"
     export PATH="${PATH}:/usr/local/bin"
 }
 
