@@ -168,7 +168,7 @@ class Mount(Path):
 
     def _create_filesystem(self):
         subprocess.check_call(
-            ["sudo", "mkfs", "-t", "ext4", "-q", self._loop.path])
+            ["sudo", "mkfs", "-t", "xfs", "-q", self._loop.path])
 
     def _mount_loop(self):
         subprocess.check_call(["sudo", "mount", self._loop.path, self.path])
