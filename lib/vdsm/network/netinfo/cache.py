@@ -66,8 +66,17 @@ def _get(vdsmnets=None):
     devices_info = _devices_report(ipaddrs, routes)
     nets_info = _networks_report(vdsmnets, routes, ipaddrs, devices_info)
 
-    _update_dhcp_info(nets_info, devices_info)
     add_qos_info_to_devices(nets_info, devices_info)
+
+    flat_devs_info = _get_flat_devs_info(devices_info)
+    devices = _get_dev_names(nets_info, flat_devs_info)
+    extra_info = {}
+    if nmstate.is_nmstate_backend():
+        extra_info.update(_get_devices_info_from_nmstate(devices))
+    else:
+        extra_info.update(dhclient.dhcp_info(devices))
+
+    _update_caps_info(nets_info, flat_devs_info, extra_info)
 
     networking_report = {'networks': nets_info}
     networking_report.update(devices_info)
@@ -132,37 +141,38 @@ def _sort_devices_qos_by_vlan(devices_info, iface_type):
             iface_attrs['qos'].sort(key=lambda k: (k['vlan']))
 
 
-def _update_dhcp_info(nets_info, devices_info):
-    """Update DHCP info for both networks and devices"""
+def _get_devices_info_from_nmstate(devices):
+    return {
+        ifname: {
+            dhclient.DHCP4: nmstate.is_dhcp_enabled(ifstate,
+                                                    nmstate.Interface.IPV4),
+            dhclient.DHCP6: nmstate.is_dhcp_enabled(ifstate,
+                                                    nmstate.Interface.IPV6)
+        }
+        for ifname, ifstate in
+        six.viewitems(nmstate.show_interfaces(filter=devices))
+    }
 
-    net_ifaces = {net_info['iface'] for net_info in six.viewvalues(nets_info)}
-    flat_devs_info = {
+
+def _update_caps_info(nets_info, flat_devs_info, extra_info):
+    for net_info in six.viewvalues(nets_info):
+        net_info.update(extra_info[net_info['iface']])
+
+    for devname, devinfo in six.viewitems(flat_devs_info):
+        devinfo.update(extra_info[devname])
+
+
+def _get_flat_devs_info(devices_info):
+    return {
         devname: devinfo
         for sub_devs in six.viewvalues(devices_info)
         for devname, devinfo in six.viewitems(sub_devs)
     }
-    devices = net_ifaces | frozenset(flat_devs_info)
-
-    if nmstate.is_nmstate_backend():
-        dhcp_info = _get_dhcp_info_nmstate(devices)
-    else:
-        dhcp_info = dhclient.dhcp_info(devices)
-
-    for net_info in six.viewvalues(nets_info):
-        net_info.update(dhcp_info[net_info['iface']])
-
-    for devname, devinfo in six.viewitems(flat_devs_info):
-        devinfo.update(dhcp_info[devname])
 
 
-def _get_dhcp_info_nmstate(devices):
-    return {
-        ifname: {
-            dhclient.DHCP4: nmstate.is_dhcp_enabled(ifstate, family='ipv4'),
-            dhclient.DHCP6: nmstate.is_dhcp_enabled(ifstate, family='ipv6')}
-        for ifname, ifstate in
-        six.viewitems(nmstate.show_interfaces(filter=devices))
-    }
+def _get_dev_names(nets_info, flat_devs_info):
+    return {net_info['iface'] for net_info in
+            six.viewvalues(nets_info)} | frozenset(flat_devs_info)
 
 
 def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
