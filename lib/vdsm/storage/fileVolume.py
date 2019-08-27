@@ -461,18 +461,21 @@ class FileVolume(volume.Volume):
                 raise se.InvalidParameterException(
                     "initial size", initial_size)
 
-            alloc_size = initial_size
+            # Always allocate at least 4k, so qemu-img can allocated the first
+            # block of the image, helping qemu to probe the alignment later.
+            alloc_size = max(initial_size, sc.BLOCK_SIZE_4K)
 
-        cls._truncate_volume(vol_path, capacity, vol_id, dom)
+        cls._truncate_volume(vol_path, 0, vol_id, dom)
 
-        if preallocate == sc.PREALLOCATED_VOL and alloc_size != 0:
-            cls._fallocate_volume(vol_path, alloc_size)
+        cls._allocate_volume(vol_path, alloc_size, preallocate=preallocate)
+
+        if alloc_size < capacity:
+            qemuimg.resize(vol_path, capacity, format=qemuimg.FORMAT.RAW)
 
         cls.log.info("Request to create RAW volume %s with capacity = %s",
                      vol_path, capacity)
 
-        # Forcing the volume permissions in case one of the tools we use
-        # (dd, qemu-img, etc.) will mistakenly change the file permissions.
+        # Forcing volume permissions in case qemu-img changed the permissions.
         cls._set_permissions(vol_path, dom)
 
         return (vol_path,)
@@ -526,9 +529,19 @@ class FileVolume(volume.Volume):
             raise
 
     @classmethod
-    def _fallocate_volume(cls, vol_path, size):
+    def _allocate_volume(cls, vol_path, size, preallocate):
+        if preallocate == sc.PREALLOCATED_VOL:
+            preallocation = qemuimg.PREALLOCATION.FALLOC
+        else:
+            preallocation = qemuimg.PREALLOCATION.OFF
+
         try:
-            operation = fallocate.allocate(vol_path, size)
+            operation = qemuimg.create(
+                vol_path,
+                size=size,
+                format=qemuimg.FORMAT.RAW,
+                preallocation=preallocation)
+
             with vars.task.abort_callback(operation.abort):
                 with utils.stopwatch("Preallocating volume %s" % vol_path):
                     operation.run()
