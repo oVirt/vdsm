@@ -33,12 +33,14 @@ try:
     from libnmstate.schema import DNS
     from libnmstate.schema import Interface
     from libnmstate.schema import InterfaceIP
+    from libnmstate.schema import InterfaceIPv6
     from libnmstate.schema import Route
 except ImportError:  # nmstate is not available
     netapplier = None
     DNS = None
     Interface = None
     InterfaceIP = None
+    InterfaceIPv6 = None
     Route = None
 
 
@@ -105,6 +107,12 @@ def show_interfaces(filter=None):
 def is_dhcp_enabled(ifstate, family):
     family_info = ifstate[family]
     return family_info[InterfaceIP.ENABLED] and family_info[InterfaceIP.DHCP]
+
+
+def is_autoconf_enabled(ifstate):
+    family_info = ifstate[Interface.IPV6]
+    return (family_info[InterfaceIP.ENABLED] and
+            family_info[InterfaceIPv6.AUTOCONF])
 
 
 def _generate_networks_state(networks, ifstates, route_states, running_config):

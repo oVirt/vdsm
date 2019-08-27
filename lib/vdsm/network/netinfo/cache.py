@@ -147,7 +147,8 @@ def _get_devices_info_from_nmstate(devices):
             dhclient.DHCP4: nmstate.is_dhcp_enabled(ifstate,
                                                     nmstate.Interface.IPV4),
             dhclient.DHCP6: nmstate.is_dhcp_enabled(ifstate,
-                                                    nmstate.Interface.IPV6)
+                                                    nmstate.Interface.IPV6),
+            'ipv6autoconf': nmstate.is_autoconf_enabled(ifstate)
         }
         for ifname, ifstate in
         six.viewitems(nmstate.show_interfaces(filter=devices))
