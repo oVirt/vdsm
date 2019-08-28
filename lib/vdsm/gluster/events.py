@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +23,8 @@ from __future__ import division
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm.gluster import exception as ge
 
+from . import exception as ge
 from . import gluster_mgmt_api
 
 
@@ -38,9 +38,10 @@ def webhookAdd(url, bearerToken=None):
     command = [_glusterEventsApi.cmd, "webhook-add", url]
     if bearerToken:
         command.append('--bearer_token=%s' % bearerToken)
-    rc, out, err = commands.execCmd(command)
-    if rc:
-        raise ge.GlusterWebhookAddException(rc, out, err)
+    try:
+        out = commands.run(command)
+    except cmdutils.Error as e:
+        raise ge.GlusterWebhookAddException(e.rc, out, e.err)
     else:
         return True
 
@@ -50,9 +51,10 @@ def webhookUpdate(url, bearerToken=None):
     command = [_glusterEventsApi.cmd, "webhook-mod", url]
     if bearerToken:
         command.append('--bearer_token=%s' % bearerToken)
-    rc, out, err = commands.execCmd(command)
-    if rc:
-        raise ge.GlusterWebhookUpdateException(rc, out, err)
+    try:
+        out = commands.run(command)
+    except cmdutils.Error as e:
+        raise ge.GlusterWebhookUpdateException(e.rc, out, e.err)
     else:
         return True
 
@@ -60,9 +62,10 @@ def webhookUpdate(url, bearerToken=None):
 @gluster_mgmt_api
 def webhookSync():
     command = [_glusterEventsApi.cmd, "sync"]
-    rc, out, err = commands.execCmd(command)
-    if rc:
-        raise ge.GlusterWebhookSyncException(rc, out, err)
+    try:
+        out = commands.run(command)
+    except cmdutils.Error as e:
+        raise ge.GlusterWebhookSyncException(e.rc, out, e.err)
     else:
         return True
 
@@ -70,8 +73,9 @@ def webhookSync():
 @gluster_mgmt_api
 def webhookDelete(url):
     command = [_glusterEventsApi.cmd, "webhook-del", url]
-    rc, out, err = commands.execCmd(command)
-    if rc:
-        raise ge.GlusterWebhookDeleteException(rc, out, err)
+    try:
+        out = commands.run(command)
+    except cmdutils.Error as e:
+        raise ge.GlusterWebhookDeleteException(e.rc, out, e.err)
     else:
         return True
