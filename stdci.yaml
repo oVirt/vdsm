@@ -44,7 +44,7 @@ stages:
               host-distro: same
             distributions:
               - fc29
-  - check-network:
+  - check-network: &check-network
       archs:
         - x86_64
       substages:
@@ -72,3 +72,7 @@ stages:
               isolation-level: container
             distributions:
               - fc29
+  - poll-upstream-sources:
+      <<: *check-network
+      script:
+        from-file: automation/check-network.{{ substage }}.sh
