@@ -28,6 +28,7 @@ import six
 import pytest
 
 from vdsm.network import errors as ne
+from vdsm.network import nmstate
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestAdapter, NOCHK, SetupNetworksError
@@ -78,7 +79,7 @@ class TestBondBasic(object):
                 adapter.setupNetworks({}, BONDREMOVE, NOCHK)
                 adapter.assertNoBond(BOND_NAME)
 
-    @pytest.mark.xfail(condition=nftestlib.is_nmstate_enabled(),
+    @pytest.mark.xfail(condition=nmstate.is_nmstate_backend(),
                        reason='Links stability not supported by nmstate/NM',
                        raises=nftestlib.UnexpectedLinkStateChangeError,
                        strict=True)
