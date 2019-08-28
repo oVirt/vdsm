@@ -212,6 +212,7 @@ import argparse
 
 from vdsm import constants
 from vdsm.common import commands
+from vdsm.common import cmdutils
 
 
 @gluster_mgmt_api
@@ -229,9 +230,10 @@ def volumeStatvfs(volumeName, host=GLUSTER_VOL_HOST,
     env['PYTHONPATH'] = ":".join(map(os.path.abspath,
                                      env['PYTHONPATH'].split(":")))
 
-    rc, out, err = commands.execCmd(command, raw=True, env=env)
-    if rc != 0:
-        raise ge.GlfsStatvfsException(rc, [out], [err])
+    try:
+        out = commands.run(command, env=env)
+    except cmdutils.Error as e:
+        raise ge.GlfsStatvfsException(e.rc, [e.err])
     res = json.loads(out)
     return os.statvfs_result((res['f_bsize'],
                               res['f_frsize'],
@@ -260,9 +262,10 @@ def volumeEmptyCheck(volumeName, host=GLUSTER_VOL_HOST,
     env['PYTHONPATH'] = ":".join(map(os.path.abspath,
                                      env['PYTHONPATH'].split(":")))
 
-    rc, out, err = commands.execCmd(command, raw=True, env=env)
-    if rc != 0:
-        raise ge.GlusterVolumeEmptyCheckFailedException(rc, [out], [err])
+    try:
+        out = commands.run(command, env=env)
+    except cmdutils.Error as e:
+        raise ge.GlusterVolumeEmptyCheckFailedException(e.rc, [e.err])
     return out.upper() == "TRUE"
 
 

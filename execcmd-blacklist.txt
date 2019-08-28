@@ -7,7 +7,6 @@ lib/vdsm/common/commands.py
 lib/vdsm/gluster/api.py
 lib/vdsm/gluster/cli.py
 lib/vdsm/gluster/events.py
-lib/vdsm/gluster/gfapi.py
 lib/vdsm/gluster/storagedev.py
 lib/vdsm/gluster/thinstorage.py
 lib/vdsm/hook/hooking.py
