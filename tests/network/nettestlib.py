@@ -365,6 +365,10 @@ def veth_pair(prefix='veth_', max_length=15):
     try:
         linkAdd(left_side, linkType='veth',
                 args=('peer', 'name', right_side))
+        if nmstate.is_nmstate_backend():
+            cmd.exec_sync(['nmcli', 'dev', 'set', left_side, 'managed', 'yes'])
+            cmd.exec_sync(
+                ['nmcli', 'dev', 'set', right_side, 'managed', 'yes'])
     except IPRoute2Error as e:
         raise SkipTest('Failed to create a veth pair: %s', e)
     try:
@@ -372,6 +376,9 @@ def veth_pair(prefix='veth_', max_length=15):
     finally:
         # the peer device is removed by the kernel
         linkDel(left_side)
+        if nmstate.is_nmstate_backend():
+            cmd.exec_sync(['nmcli', 'con', 'del', left_side])
+            cmd.exec_sync(['nmcli', 'con', 'del', right_side])
 
 
 @contextmanager
@@ -515,6 +522,28 @@ def dhclient_run(iface, family=4):
         yield
     finally:
         dhclient.stop(iface, family)
+
+
+@contextmanager
+def dhcp_client_run(iface, family=4):
+    dhcp_client = (dhcp_nm_client if
+                   nmstate.is_nmstate_backend() else dhclient_run)
+    with dhcp_client(iface, family):
+        yield
+
+
+@contextmanager
+def dhcp_nm_client(iface, family=4):
+    cmd.exec_sync(
+        ['nmcli', 'con', 'modify', iface, 'ipv{}.method'.format(family),
+         'auto'])
+    cmd.exec_sync(['nmcli', 'con', 'up', iface])
+    try:
+        yield
+    finally:
+        cmd.exec_sync(['nmcli', 'con', 'modify', iface,
+                       'ipv{}.method'.format(family), 'disabled'])
+        cmd.exec_sync(['nmcli', 'con', 'up', iface])
 
 
 @contextmanager

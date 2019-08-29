@@ -83,6 +83,7 @@ impact the test results. To do so, the user should:
 ```bash
 # get rid of all dummy interfaces
 nmcli conn del $(nmcli -f name conn show | grep dummy)
+nmcli conn del $(nmcli -f name conn show | grep veth)
 
 # get rid of all other entities
 source contrib/shell_helper

@@ -31,7 +31,7 @@ from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestAdapter, NOCHK
 from network.nettestlib import veth_pair
 from network.nettestlib import dnsmasq_run
-from network.nettestlib import dhclient_run
+from network.nettestlib import dhcp_client_run
 from network.nettestlib import running_on_fedora
 
 NETWORK_NAME = 'test-network'
@@ -82,6 +82,7 @@ parametrize_ip_families = pytest.mark.parametrize(
     ids=['IPv4', 'IPv6', 'IPv4&6'])
 
 
+@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 @parametrize_ip_families
 @nftestlib.parametrize_bridged
@@ -95,6 +96,7 @@ class TestNetworkDhcpBasic(object):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
             addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, IpFamily.IPv6)
             linkSet(server, ['up'])
+            linkSet(client, ['up'])
             with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
                              DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO,
                              router=DHCPv4_GATEWAY):
@@ -116,6 +118,7 @@ class TestNetworkDhcpBasic(object):
                         NETWORK_NAME, netcreate[NETWORK_NAME])
 
 
+@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestStopDhclientOnUsedNics(object):
 
@@ -127,7 +130,7 @@ class TestStopDhclientOnUsedNics(object):
             with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
                              DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO,
                              router=DHCPv4_GATEWAY):
-                with dhclient_run(client):
+                with dhcp_client_run(client):
                     adapter.assertDhclient(client, family=IpFamily.IPv4)
                     adapter.assertDhclient(client, family=IpFamily.IPv6)
 
@@ -147,7 +150,7 @@ class TestStopDhclientOnUsedNics(object):
             linkSet(server, ['up'])
             with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
                              router=DHCPv4_GATEWAY):
-                with dhclient_run(client):
+                with dhcp_client_run(client):
                     adapter.assertDhclient(client, family=IpFamily.IPv4)
 
                     NETCREATE = {NETWORK_NAME: {
@@ -167,7 +170,7 @@ class TestStopDhclientOnUsedNics(object):
             addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, IpFamily.IPv6)
             linkSet(server, ['up'])
             with dnsmasq_run(server, DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO):
-                with dhclient_run(client, family=IpFamily.IPv6):
+                with dhcp_client_run(client, family=IpFamily.IPv6):
                     adapter.assertDhclient(client, family=IpFamily.IPv6)
 
                     NETCREATE = {NETWORK_NAME: {
