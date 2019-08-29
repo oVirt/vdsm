@@ -62,6 +62,20 @@ class SSLSocket(object):
         return result
     recv = read
 
+    def recv_into(self, memview, nbytes=None, flags=0):
+        if nbytes == 0 or nbytes is None:
+            readlen = len(memview)
+        elif nbytes < 0:
+            raise ValueError("negative buffersize in recvfrom_into")
+        elif nbytes > len(memview):
+            raise ValueError("nbytes is greater than the length of the buffer")
+        else:
+            readlen = nbytes
+        data = self.recv(readlen, flags)
+        datalen = len(data)
+        memview[:datalen] = data
+        return datalen
+
     def pending(self):
         pending = self.sock.pending()
         if self._data:
@@ -73,7 +87,7 @@ class SSLSocket(object):
 
     def makefile(self, mode='rb', bufsize=-1):
         if mode == 'rb':
-            return socket._fileobject(self, mode, bufsize)
+            return socket.socket.makefile(self, mode, bufsize)
         else:
             return self.sock.makefile(mode, bufsize)
 
