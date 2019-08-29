@@ -21,6 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from contextlib import contextmanager
+
 import pytest
 
 from vdsm.network import api as net_api
@@ -49,6 +51,25 @@ DHCPv6_RANGE_FROM = 'fdb3:84e5:4ff4:55e3::a'
 DHCPv6_RANGE_TO = 'fdb3:84e5:4ff4:55e3::64'
 
 
+class NetworkIPConfig(object):
+    def __init__(self, name, ipv4_address=None, ipv4_prefix_length=None,
+                 ipv6_address=None, ipv6_prefix_length=None):
+        self.name = name
+        self.ipv4_address = ipv4_address
+        self.ipv4_prefix_length = ipv4_prefix_length
+        self.ipv6_address = ipv6_address
+        self.ipv6_prefix_length = ipv6_prefix_length
+
+
+class DhcpConfig(object):
+    def __init__(self, ipv4_range_from, ipv4_range_to,
+                 ipv6_range_from=None, ipv6_range_to=None):
+        self.ipv4_range_from = ipv4_range_from
+        self.ipv4_range_to = ipv4_range_to
+        self.ipv6_range_from = ipv6_range_from
+        self.ipv6_range_to = ipv6_range_to
+
+
 adapter = None
 
 
@@ -63,6 +84,34 @@ def dhclient_monitor():
     event_sink = FakeNotifier()
     with init_unpriviliged_dhclient_monitor_ctx(event_sink, net_api):
         yield
+
+
+@pytest.fixture(scope='module', autouse=True)
+def network_configuration1():
+    yield NetworkIPConfig(NETWORK_NAME, ipv4_address=IPv4_ADDRESS,
+                          ipv4_prefix_length=IPv4_PREFIX_LEN)
+
+
+@pytest.fixture(scope='module', autouse=True)
+def network_configuration2():
+    yield NetworkIPConfig('test-network-2', ipv4_address='192.0.15.1',
+                          ipv4_prefix_length='24')
+
+
+@pytest.fixture
+def dynamic_ipv4_iface1(network_configuration1):
+    dhcp_config = DhcpConfig(DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO)
+    with _create_configured_dhcp_client_iface(
+            network_configuration1, dhcp_config) as configured_client:
+        yield configured_client
+
+
+@pytest.fixture
+def dynamic_ipv4_iface2(network_configuration2):
+    dhcp_config = DhcpConfig('192.0.15.2', '192.0.15.253')
+    with _create_configured_dhcp_client_iface(
+            network_configuration2, dhcp_config) as configured_client:
+        yield configured_client
 
 
 class FakeNotifier:
@@ -195,3 +244,54 @@ class TestStopDhclientOnUsedNics(object):
                         adapter.assertDHCPv6(net_netinfo)
                         adapter.assertDhclient(NETWORK_NAME,
                                                family=IpFamily.IPv6)
+
+
+@nftestlib.parametrize_switch
+@pytest.mark.nmstate
+def test_default_route_of_two_dynamic_ip_networks(switch,
+                                                  network_configuration1,
+                                                  network_configuration2,
+                                                  dynamic_ipv4_iface1,
+                                                  dynamic_ipv4_iface2):
+
+    net1 = {'bridged': True,
+            'nic': dynamic_ipv4_iface1,
+            'bootproto': 'dhcp',
+            'switch': switch,
+            'defaultRoute': True}
+    net2 = {'bridged': False,
+            'nic': dynamic_ipv4_iface2,
+            'bootproto': 'dhcp',
+            'switch': switch,
+            'defaultRoute': False}
+
+    with adapter.setupNetworks({network_configuration1.name: net1}, {}, NOCHK):
+        read_network1 = adapter.netinfo.networks[network_configuration1.name]
+        adapter.assertNetworkIp(network_configuration1.name, net1)
+
+        with adapter.setupNetworks({network_configuration2.name: net2}, {},
+                                   NOCHK):
+            assert not adapter.netinfo.networks[
+                network_configuration2.name]['ipv4defaultroute']
+            assert read_network1['ipv4defaultroute']
+
+
+@contextmanager
+def _create_configured_dhcp_client_iface(network_config, dhcp_config):
+    with _create_dhcp_client_server_peers(network_config) as (server, client):
+        dhcp_server = dnsmasq_run(server,
+                                  dhcp_range_from=dhcp_config.ipv4_range_from,
+                                  dhcp_range_to=dhcp_config.ipv4_range_to,
+                                  router=network_config.ipv4_address)
+        with dhcp_server:
+            yield client
+
+
+@contextmanager
+def _create_dhcp_client_server_peers(network_config):
+    with veth_pair() as (server, client):
+        addrAdd(server, network_config.ipv4_address,
+                network_config.ipv4_prefix_length)
+        linkSet(server, ['up'])
+        linkSet(client, ['up'])
+        yield server, client
