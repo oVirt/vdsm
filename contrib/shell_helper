@@ -128,6 +128,7 @@ del_veths() {
         sudo ip link del dev $veth
     done
     sudo rm /etc/sysconfig/network-scripts/ifcfg-veth*
+    sudo nmcli conn del $(nmcli -f name conn show | grep veth)
 }
 
 del_bonds() {
