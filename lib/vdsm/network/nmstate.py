@@ -353,7 +353,12 @@ class Network(object):
         ]
 
     def _create_dynamic_ipv4(self):
-        return {InterfaceIP.DHCP: self._netconf.dhcpv4}
+        return {
+            InterfaceIP.DHCP: self._netconf.dhcpv4,
+            InterfaceIP.AUTO_DNS: self.default_route,
+            InterfaceIP.AUTO_GATEWAY: self.default_route,
+            InterfaceIP.AUTO_ROUTES: self.default_route
+        }
 
     def _create_ipv6(self, enabled=True):
         ipstate = {InterfaceIP.ENABLED: enabled}
@@ -381,6 +386,9 @@ class Network(object):
         return {
             InterfaceIP.DHCP: self._netconf.dhcpv6,
             InterfaceIPv6.AUTOCONF: self._netconf.ipv6autoconf,
+            InterfaceIP.AUTO_DNS: self.default_route,
+            InterfaceIP.AUTO_GATEWAY: self.default_route,
+            InterfaceIP.AUTO_ROUTES: self.default_route
         }
 
     def _create_routes(self):

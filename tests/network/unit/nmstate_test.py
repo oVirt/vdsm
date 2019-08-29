@@ -783,11 +783,17 @@ def _disable_iface_ip(*ifaces_states):
         iface_state.update(ip_disabled_state)
 
 
-def _create_ipv4_state(address=None, prefix=None, dynamic=False):
+def _create_ipv4_state(address=None, prefix=None, dynamic=False,
+                       default_route=False):
     state = {nmstate.Interface.IPV4: {nmstate.InterfaceIP.ENABLED: False}}
     if dynamic:
-        state[nmstate.Interface.IPV4] = {nmstate.InterfaceIP.ENABLED: True,
-                                         nmstate.InterfaceIP.DHCP: True}
+        state[nmstate.Interface.IPV4] = {
+            nmstate.InterfaceIP.ENABLED: True,
+            nmstate.InterfaceIP.DHCP: True,
+            nmstate.InterfaceIP.AUTO_DNS: default_route,
+            nmstate.InterfaceIP.AUTO_GATEWAY: default_route,
+            nmstate.InterfaceIP.AUTO_ROUTES: default_route
+        }
     elif address and prefix:
         state[nmstate.Interface.IPV4] = {
             nmstate.InterfaceIP.ENABLED: True,
@@ -799,12 +805,18 @@ def _create_ipv4_state(address=None, prefix=None, dynamic=False):
     return state
 
 
-def _create_ipv6_state(address=None, prefix=None, dynamic=False):
+def _create_ipv6_state(address=None, prefix=None, dynamic=False,
+                       default_route=False):
     state = {nmstate.Interface.IPV6: {nmstate.InterfaceIP.ENABLED: False}}
     if dynamic:
-        state[nmstate.Interface.IPV6] = {nmstate.InterfaceIP.ENABLED: True,
-                                         nmstate.InterfaceIP.DHCP: True,
-                                         'autoconf': True}
+        state[nmstate.Interface.IPV6] = {
+            nmstate.InterfaceIP.ENABLED: True,
+            nmstate.InterfaceIP.DHCP: True,
+            'autoconf': True,
+            nmstate.InterfaceIP.AUTO_DNS: default_route,
+            nmstate.InterfaceIP.AUTO_GATEWAY: default_route,
+            nmstate.InterfaceIP.AUTO_ROUTES: default_route
+        }
     elif address and prefix:
         state[nmstate.Interface.IPV6] = {
             nmstate.InterfaceIP.ENABLED: True,
