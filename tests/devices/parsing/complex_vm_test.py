@@ -20,19 +20,9 @@ class TestVmDevicesXmlParsing(XMLTestCase, verify.DeviceMixin):
             'displaySecurePort': '-1', 'memSize': '256', 'displayPort': '-1',
             'display': 'qxl'}
 
-        devices = [{'device': 'ac97', 'type': 'sound'},
-                   {'device': 'ich6', 'type': 'sound'},
-                   {'device': 'qxl', 'type': 'video'},
-                   {'device': 'qxl', 'type': 'video'},
-                   {'device': 'spice', 'type': 'graphics'},
-                   {'device': 'virtio-serial', 'type': 'controller'},
-                   {'device': 'usb', 'type': 'controller'},
+        devices = [{'device': 'spice', 'type': 'graphics'},
                    {'device': 'memballoon', 'specParams': {'model': 'virtio'},
                     'type': 'balloon'},
-                   {'device': 'watchdog', 'type': 'watchdog'},
-                   {'device': 'smartcard', 'specParams':
-                    {'type': 'spicevmc', 'mode': 'passthrough'},
-                    'type': 'smartcard'},
                    {'device': 'console', 'type': 'console'},
                    {'device': 'bridge', 'nicModel': 'virtio',
                     'macAddr': '52:54:00:59:F5:3F', 'type': 'interface',
@@ -40,10 +30,6 @@ class TestVmDevicesXmlParsing(XMLTestCase, verify.DeviceMixin):
                    {'device': 'bridge', 'nicModel': 'virtio',
                     'macAddr': '52:54:00:59:FF:FF', 'type': 'interface',
                     'network': ''},
-                   {'device': 'rng', 'specParams': {'source': 'random'},
-                    'model': 'virtio', 'type': 'rng'},
-                   {'device': 'rng', 'specParams': {'source': 'random'},
-                    'model': 'virtio', 'type': 'rng'},
                    {'device': 'memory', 'type': 'memory', 'size': 524288,
                     'alias': 'dimm0', 'address': '0x100000000'}]
 
@@ -71,8 +57,7 @@ class TestSRiovXmlParsing(XMLTestCase, verify.DeviceMixin):
             'displaySecurePort': '-1', 'memSize': '256', 'displayPort': '-1',
             'display': 'qxl'}
 
-        devices = [{'device': 'virtio-serial', 'type': 'controller'},
-                   {'device': 'memballoon', 'specParams': {'model': 'virtio'},
+        devices = [{'device': 'memballoon', 'specParams': {'model': 'virtio'},
                     'type': 'balloon'},
                    {'device': 'bridge', 'nicModel': 'virtio',
                     'macAddr': '52:54:00:59:FF:FF', 'type': 'interface',
@@ -102,7 +87,7 @@ class TestSRiovXmlParsing(XMLTestCase, verify.DeviceMixin):
 
     def _assert_host_address_is_reported(self, devices, vm):
         reported = _reported_host_device(vm)
-        self.assertEqual(reported['hostdev'], devices[3]['hostdev'])
+        self.assertEqual(reported['hostdev'], devices[2]['hostdev'])
 
     def _assert_guest_device_adress_is_reported(self, vm):
         reported = _reported_host_device(vm)

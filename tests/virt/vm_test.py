@@ -809,7 +809,7 @@ class TestVmDeviceHandling(TestCaseBase):
         devices = [fake.Device('device_{}'.format(i)) for i in range(3)]
 
         with fake.VM(self.conf, create_device_objects=True) as testvm:
-            testvm._devices[hwclass.GENERAL] = devices
+            testvm._devices['general'] = devices
             self.assertNotRaises(testvm._setup_devices)
             self.assertEqual(devices[0].state, fake.SETUP)
             self.assertEqual(devices[1].state, fake.SETUP)
@@ -820,7 +820,7 @@ class TestVmDeviceHandling(TestCaseBase):
                    [fake.Device('device_{}'.format(i)) for i in range(1, 3)])
 
         with fake.VM(self.conf, create_device_objects=True) as testvm:
-            testvm._devices[hwclass.GENERAL] = devices
+            testvm._devices['general'] = devices
             self.assertRaises(ExpectedError, testvm._setup_devices)
             self.assertEqual(devices[0].state, fake.SETUP)
             self.assertEqual(devices[1].state, fake.CREATED)
@@ -832,7 +832,7 @@ class TestVmDeviceHandling(TestCaseBase):
                    fake.Device('device_2')]
 
         with fake.VM(self.conf, create_device_objects=True) as testvm:
-            testvm._devices[hwclass.GENERAL] = devices
+            testvm._devices['general'] = devices
             self.assertRaises(ExpectedError, testvm._setup_devices)
             self.assertEqual(devices[0].state, fake.TEARDOWN)
             self.assertEqual(devices[1].state, fake.SETUP)
@@ -843,7 +843,7 @@ class TestVmDeviceHandling(TestCaseBase):
                    fake.Device('device_2', fail_setup=ExpectedError)]
 
         with fake.VM(self.conf, create_device_objects=True) as testvm:
-            testvm._devices[hwclass.GENERAL] = devices
+            testvm._devices['general'] = devices
             self.assertRaises(ExpectedError, testvm._setup_devices)
             self.assertEqual(devices[0].state, fake.TEARDOWN)
             self.assertEqual(devices[1].state, fake.TEARDOWN)
@@ -857,7 +857,7 @@ class TestVmDeviceHandling(TestCaseBase):
                    fake.Device('device_2', fail_setup=UnexpectedError)]
 
         with fake.VM(self.conf, create_device_objects=True) as testvm:
-            testvm._devices[hwclass.GENERAL] = devices
+            testvm._devices['general'] = devices
             self.assertRaises(ExpectedError, testvm._setup_devices)
             self.assertEqual(devices[0].state, fake.TEARDOWN)
             self.assertEqual(devices[1].state, fake.SETUP)
@@ -867,7 +867,7 @@ class TestVmDeviceHandling(TestCaseBase):
         devices = [fake.Device('device_{}'.format(i)) for i in range(3)]
 
         with fake.VM(self.conf, create_device_objects=True) as testvm:
-            testvm._devices[hwclass.GENERAL] = devices
+            testvm._devices['general'] = devices
             self.assertNotRaises(testvm._setup_devices)
             self.assertNotRaises(testvm._teardown_devices)
             self.assertEqual(devices[0].state, fake.TEARDOWN)
@@ -880,7 +880,7 @@ class TestVmDeviceHandling(TestCaseBase):
                    for i in range(3)]
 
         with fake.VM(self.conf, create_device_objects=True) as testvm:
-            testvm._devices[hwclass.GENERAL] = devices
+            testvm._devices['general'] = devices
             self.assertNotRaises(testvm._setup_devices)
             self.assertNotRaises(testvm._teardown_devices)
             self.assertEqual(devices[0].state, fake.TEARDOWN)
@@ -943,7 +943,7 @@ class TestVmDeviceHandling(TestCaseBase):
     def test_xml_device_processing(self):
         with fake.VM({'xml': self.xml_conf}) as vm:
             devices = vm._make_devices()
-            self.assertEqual(sum([len(v) for v in devices.values()]), 4)
+            self.assertEqual(sum([len(v) for v in devices.values()]), 2)
 
 
 VM_EXITS = tuple(product((define.NORMAL, define.ERROR),

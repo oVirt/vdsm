@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -85,10 +85,7 @@ class DevicesFromXMLTests(VdsmTestCase):
   </devices>
 </domain>''')
         for dev_type, dev_objs in dev_map.items():
-            if dev_type == vmdevices.hwclass.VIDEO:
-                self.assertEqual(len(dev_objs), 1)
-            else:
-                self.assertEqual(dev_objs, [])
+            self.assertEqual(dev_objs, [])
 
     def test_skip_uninteresting_devices(self):
         """
@@ -115,7 +112,6 @@ class DevicesFromXMLTests(VdsmTestCase):
 </domain>''')
         for dev_type, dev_objs in dev_map.items():
             if dev_type in (
-                vmdevices.hwclass.VIDEO,
                 vmdevices.hwclass.BALLOON
             ):
                 self.assertEqual(len(dev_objs), 1)

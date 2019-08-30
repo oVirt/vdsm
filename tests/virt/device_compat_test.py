@@ -1,6 +1,6 @@
 # encoding: utf-8
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,26 +28,6 @@ from testlib import XMLTestCase
 
 
 class TestDeviceCompat(XMLTestCase):
-
-    def test_core_device(self):
-        dev_xml = u"""<rng model="virtio">
-            <rate bytes="1234" period="2000"/>
-            <backend model="random">/dev/random</backend>
-        </rng>"""
-        dev_conf = {
-            'type': 'rng',
-            'device': 'virtio',
-            'model': 'virtio',
-            'specParams': {
-                'period': '2000',
-                'bytes': '1234',
-                'source': 'random'
-            }
-        }
-        dev_meta = {'vmid': 'testvm', 'vm_custom': {'foo': 'bar'}}
-        self._assertDeviceCorrect(
-            vmdevices.core.Rng, dev_xml, dev_conf, dev_meta
-        )
 
     def test_interface(self):
         dev_xml = u"""<interface type="bridge">

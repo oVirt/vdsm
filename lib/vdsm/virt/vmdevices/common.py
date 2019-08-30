@@ -82,37 +82,20 @@ def update_device_info(vm, devices):
     """
     network.Interface.update_device_info(vm, devices[hwclass.NIC])
     storage.Drive.update_device_info(vm, devices[hwclass.DISK])
-    core.Sound.update_device_info(vm, devices[hwclass.SOUND])
     graphics.Graphics.update_device_info(vm, devices[hwclass.GRAPHICS])
-    core.Video.update_device_info(vm, devices[hwclass.VIDEO])
-    core.Controller.update_device_info(vm, devices[hwclass.CONTROLLER])
     core.Balloon.update_device_info(vm, devices[hwclass.BALLOON])
-    core.Watchdog.update_device_info(vm, devices[hwclass.WATCHDOG])
-    core.Smartcard.update_device_info(vm, devices[hwclass.SMARTCARD])
-    core.Rng.update_device_info(vm, devices[hwclass.RNG])
     core.Console.update_device_info(vm, devices[hwclass.CONSOLE])
     hostdevice.HostDevice.update_device_info(vm, devices[hwclass.HOSTDEV])
     core.Memory.update_device_info(vm, devices[hwclass.MEMORY])
     lease.Device.update_device_info(vm, devices[hwclass.LEASE])
-    # Obtain info of all unknown devices. Must be last!
-    _update_unknown_device_info(vm)
 
 
 _DEVICE_MAPPING = {
     hwclass.DISK: storage.Drive,
     hwclass.NIC: network.Interface,
-    hwclass.SOUND: core.Sound,
-    hwclass.VIDEO: core.Video,
     hwclass.GRAPHICS: graphics.Graphics,
-    hwclass.CONTROLLER: core.Controller,
-    hwclass.GENERAL: core.Generic,
     hwclass.BALLOON: core.Balloon,
-    hwclass.WATCHDOG: core.Watchdog,
     hwclass.CONSOLE: core.Console,
-    hwclass.REDIR: core.Redir,
-    hwclass.RNG: core.Rng,
-    hwclass.SMARTCARD: core.Smartcard,
-    hwclass.TPM: core.Tpm,
     hwclass.HOSTDEV: hostdevice.HostDevice,
     hwclass.MEMORY: core.Memory,
     hwclass.LEASE: lease.Device,

@@ -608,53 +608,6 @@ class ConsoleTests(TestCaseBase):
             self.assertEqual(self._cleaned_path, self._expected_path)
 
 
-@expandPermutations
-class RngTests(TestCaseBase):
-
-    def setUp(self):
-        self.conf = {
-            'vmName': 'testVm',
-            'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
-            'smp': '8', 'maxVCpus': '160',
-            'memSize': '1024', 'memGuaranteedSize': '512',
-        }
-
-    @permutations([
-        # config, source
-        ['random', '/dev/random'],
-        ['hwrng', '/dev/hwrng'],
-    ])
-    def test_matching_source(self, config, source):
-        conf = {
-            'type': 'rng',
-            'model': 'virtio',
-            'specParams': {
-                'period': '2000',
-                'bytes': '1234',
-                'source': config,
-            },
-        }
-        self.assertTrue(vmdevices.core.Rng.matching_source(conf, source))
-
-    @permutations([
-        # config, source
-        ['random', '/dev/random'],
-        ['hwrng', '/dev/hwrng'],
-    ])
-    def test_uses_source(self, config, source):
-        dev_conf = {
-            'type': 'rng',
-            'model': 'virtio',
-            'specParams': {
-                'period': '2000',
-                'bytes': '1234',
-                'source': config,
-            },
-        }
-        rng = vmdevices.core.Rng(self.log, **dev_conf)
-        self.assertTrue(rng.uses_source(source))
-
-
 class BrokenSuperVdsm(fake.SuperVdsm):
 
     def setPortMirroring(self, network, nic_name):
@@ -1028,14 +981,6 @@ class TestRestorePaths(TestCaseBase):
             vm._normalizeVdsmImg = lambda *args: None
             devices = vm._make_devices()
             vm_xml = vm.conf['xml']
-        # Check that unrelated devices are taken from the snapshot untouched,
-        # not from the XML provided from Engine:
-        for d in devices[hwclass.RNG]:
-            self.assertEqual(d.specParams['source'],
-                             os.path.basename(snapshot_params['device']))
-            break
-        else:
-            raise Exception('RNG device not found')
         tested_drives = (('1234', engine_params['path'],),
                          ('5678', second_disk_path,),)
         for serial, path in tested_drives:
