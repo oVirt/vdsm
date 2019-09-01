@@ -414,6 +414,47 @@ class TestBondedNetwork(object):
         _sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
+    @parametrize_bridged
+    @mock.patch.object(nmstate, 'RunningConfig')
+    def test_translate_remove_bridged_net_and_bond(self,
+                                                   rconfig_mock, bridged):
+        rconfig_mock.return_value.networks = {
+            TESTNET1:
+                {
+                    'bonding': TESTBOND0,
+                    'bridged': bridged,
+                    'switch': 'legacy',
+                    'defaultRoute': False
+                }
+        }
+
+        networks = {
+            TESTNET1: {'remove': True}
+        }
+        bondings = {
+            TESTBOND0: {'remove': True}
+        }
+
+        state = nmstate.generate_state(networks=networks, bondings=bondings)
+
+        expected_state = {
+            nmstate.Interface.KEY: [
+                {
+                    'name': TESTBOND0,
+                    'type': 'bond',
+                    'state': 'absent',
+                }
+            ]
+        }
+        if bridged:
+            expected_state[nmstate.Interface.KEY].append(
+                {
+                    'name': TESTNET1,
+                    'state': 'absent'
+                }
+            )
+        assert expected_state == state
+
 
 @parametrize_bridged
 @mock.patch.object(nmstate, 'RunningConfig')
