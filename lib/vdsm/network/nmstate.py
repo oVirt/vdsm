@@ -41,6 +41,7 @@ try:
     from libnmstate.schema import InterfaceType
     from libnmstate.schema import LinuxBridge
     from libnmstate.schema import Route
+    from libnmstate.schema import VLAN
 except ImportError:  # nmstate is not available
     netapplier = None
     DNS = None
@@ -51,6 +52,7 @@ except ImportError:  # nmstate is not available
     InterfaceType = None
     LinuxBridge = None
     Route = None
+    VLAN = None
     schema = None
 
 
@@ -279,9 +281,9 @@ class Network(object):
         if vlan:
             base_iface = self._netconf.base_iface
             return {
-                'vlan': {
-                    'id': vlan,
-                    'base-iface': base_iface,
+                VLAN.CONFIG_SUBTREE: {
+                    VLAN.ID: vlan,
+                    VLAN.BASE_IFACE: base_iface,
                 },
                 Interface.NAME: self._netconf.vlan_iface,
                 Interface.TYPE: InterfaceType.VLAN,
