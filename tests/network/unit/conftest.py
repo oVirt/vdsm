@@ -71,6 +71,29 @@ class NMStateBond(object):
     OPTIONS_SUBTREE = 'options'
 
 
+class NMStateLinuxBridge(object):
+    TYPE = 'linux-bridge'
+    CONFIG_SUBTREE = 'bridge'
+
+    OPTIONS_SUBTREE = 'options'
+    MAC_AGEING_TIME = 'mac-ageing-time'
+    GROUP_FORWARD_MASK = 'group-forward-mask'
+    MULTICAST_SNOOPING = 'multicast-snooping'
+
+    STP_SUBTREE = 'stp'
+    STP_ENABLED = 'enabled'
+    STP_PRIORITY = 'priority'
+    STP_FORWARD_DELAY = 'forward-delay'
+    STP_HELLO_TIME = 'hello-time'
+    STP_MAX_AGE = 'max-age'
+
+    PORT_SUBTREE = 'port'
+    PORT_NAME = 'name'
+    PORT_STP_PRIORITY = 'stp-priority'
+    PORT_STP_HAIRPIN_MODE = 'stp-hairpin-mode'
+    PORT_STP_PATH_COST = 'stp-path-cost'
+
+
 class NMStateSchema(object):
     Bond = NMStateBond
 
@@ -121,6 +144,7 @@ def nmstate_schema():
         nmstate, 'InterfaceState', NMStateInterfaceState)
     p_iftype = mock.patch.object(
         nmstate, 'InterfaceType', NMStateInterfaceType)
+    p_bridge = mock.patch.object(nmstate, 'LinuxBridge', NMStateLinuxBridge)
     p_schema = mock.patch.object(nmstate, 'schema', NMStateSchema)
     p_route = mock.patch.object(nmstate, 'Route', NMStateRoute)
     p_iface_ip = mock.patch.object(nmstate, 'InterfaceIP', NMStateInterfaceIP)
@@ -128,6 +152,6 @@ def nmstate_schema():
                                      NMStateInterfaceIPv6)
     p_dns = mock.patch.object(nmstate, 'DNS', NMStateDns)
 
-    with p_iface, p_ifstate, p_iftype:
+    with p_iface, p_ifstate, p_iftype, p_bridge:
         with p_schema, p_route, p_iface_ip, p_iface_ipv6, p_dns:
             yield

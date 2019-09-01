@@ -39,6 +39,7 @@ try:
     from libnmstate.schema import InterfaceIPv6
     from libnmstate.schema import InterfaceState
     from libnmstate.schema import InterfaceType
+    from libnmstate.schema import LinuxBridge
     from libnmstate.schema import Route
 except ImportError:  # nmstate is not available
     netapplier = None
@@ -48,6 +49,7 @@ except ImportError:  # nmstate is not available
     InterfaceIPv6 = None
     InterfaceState = None
     InterfaceType = None
+    LinuxBridge = None
     Route = None
     schema = None
 
@@ -298,14 +300,19 @@ class Network(object):
             Interface.NAME: self._name,
             Interface.TYPE: InterfaceType.LINUX_BRIDGE,
             Interface.STATE: InterfaceState.UP,
-            'bridge': {'port': [{'name': port}]}
+            LinuxBridge.CONFIG_SUBTREE:
+                {LinuxBridge.PORT_SUBTREE: [{LinuxBridge.PORT_NAME: port}]}
         }
         if options:
-            bridge_state['bridge']['options'] = options
+            brstate = bridge_state[LinuxBridge.CONFIG_SUBTREE]
+            brstate[LinuxBridge.OPTIONS_SUBTREE] = options
         return bridge_state
 
     def _create_bridge_options(self):
-        return {'stp': {'enabled': self._netconf.stp}}
+        return {
+            LinuxBridge.STP_SUBTREE:
+                {LinuxBridge.STP_ENABLED: self._netconf.stp}
+        }
 
     def _add_ip(self, sb_iface, vlan_iface, bridge_iface):
         ipv4_state = self._create_ipv4()
