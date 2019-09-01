@@ -48,10 +48,6 @@ def setup(desired_state, verify_change):
     netapplier.apply(desired_state, verify_change)
 
 
-def is_nmstate_backend():
-    return vdsm_config.getboolean('vars', 'net_nmstate_enabled')
-
-
 def generate_state(networks, bondings):
     """ Generate a new nmstate state given VDSM setup state format """
     ifstates = {}
@@ -64,6 +60,31 @@ def generate_state(networks, bondings):
     dns_state = _generate_dns_state(networks, rconfig)
 
     return merge_state(ifstates, route_states, dns_state)
+
+
+def show_interfaces(filter=None):
+    net_info = netinfo.show()
+    filter_set = set(filter) if filter else set()
+    return {
+        ifstate[Interface.NAME]: ifstate
+        for ifstate in net_info[Interface.KEY]
+        if ifstate[Interface.NAME] in filter_set
+    }
+
+
+def is_nmstate_backend():
+    return vdsm_config.getboolean('vars', 'net_nmstate_enabled')
+
+
+def is_dhcp_enabled(ifstate, family):
+    family_info = ifstate[family]
+    return family_info[InterfaceIP.ENABLED] and family_info[InterfaceIP.DHCP]
+
+
+def is_autoconf_enabled(ifstate):
+    family_info = ifstate[Interface.IPV6]
+    return (family_info[InterfaceIP.ENABLED] and
+            family_info[InterfaceIPv6.AUTOCONF])
 
 
 def _generate_dns_state(networks, rconfig):
@@ -92,27 +113,6 @@ def _generate_dns_state(networks, rconfig):
         return {DNS.CONFIG: {DNS.SERVER: []}}
 
     return {}
-
-
-def show_interfaces(filter=None):
-    net_info = netinfo.show()
-    filter_set = set(filter) if filter else set()
-    return {
-        ifstate[Interface.NAME]: ifstate
-        for ifstate in net_info[Interface.KEY]
-        if ifstate[Interface.NAME] in filter_set
-    }
-
-
-def is_dhcp_enabled(ifstate, family):
-    family_info = ifstate[family]
-    return family_info[InterfaceIP.ENABLED] and family_info[InterfaceIP.DHCP]
-
-
-def is_autoconf_enabled(ifstate):
-    family_info = ifstate[Interface.IPV6]
-    return (family_info[InterfaceIP.ENABLED] and
-            family_info[InterfaceIPv6.AUTOCONF])
 
 
 def _generate_networks_state(networks, ifstates, route_states, running_config):
