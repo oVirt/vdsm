@@ -197,8 +197,19 @@ def _setup_src_routing(networks):
         if gateway:
             ip_address = net_attrs.get('ipaddr')
             netmask = net_attrs.get('netmask')
-            next_hop = nmstate.get_next_hop_interface(net_name, net_attrs)
+            next_hop = get_next_hop_interface(net_name, net_attrs)
             sourceroute.add(next_hop, ip_address, netmask, gateway)
+
+
+def get_next_hop_interface(net_name, net_attributes):
+    if net_attributes.get('bridged'):
+        return net_name
+    else:
+        vlan = net_attributes.get('vlan')
+        next_hop_base_iface = (net_attributes.get('nic') or
+                               net_attributes.get('bonding'))
+        return (next_hop_base_iface if not vlan
+                else '{}.{}'.format(next_hop_base_iface, vlan))
 
 
 def _setup_legacy(networks, bondings, options, net_info, in_rollback):
