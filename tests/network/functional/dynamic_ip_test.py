@@ -81,16 +81,26 @@ parametrize_ip_families = pytest.mark.parametrize(
                  (IpFamily.IPv4, IpFamily.IPv6)],
     ids=['IPv4', 'IPv6', 'IPv4&6'])
 
+parametrize_def_route = pytest.mark.parametrize(
+    'def_route',
+    [True, False],
+    ids=['withDefRoute', 'withoutDefRoute']
+)
+
 
 @pytest.mark.nmstate
 @nftestlib.parametrize_switch
 @parametrize_ip_families
 @nftestlib.parametrize_bridged
+@parametrize_def_route
 class TestNetworkDhcpBasic(object):
 
-    def test_add_net_with_dhcp(self, switch, families, bridged):
+    def test_add_net_with_dhcp(self, switch, families, bridged, def_route):
         if switch == 'legacy' and running_on_fedora(29):
             pytest.xfail('Fails on Fedora 29')
+        if families == (IpFamily.IPv6,) and def_route:
+            pytest.skip('Skipping default route + dynamic with IPv6 '
+                        'see https://bugzilla.redhat.com/1467332')
 
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
@@ -104,7 +114,8 @@ class TestNetworkDhcpBasic(object):
                 network_attrs = {'bridged': bridged,
                                  'nic': client,
                                  'blockingdhcp': True,
-                                 'switch': switch}
+                                 'switch': switch,
+                                 'defaultRoute': def_route}
 
                 if IpFamily.IPv4 in families:
                     network_attrs['bootproto'] = 'dhcp'
