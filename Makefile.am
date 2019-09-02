@@ -172,6 +172,7 @@ rpm: dist
 		--define="with_hooks $(HOOKS)" \
 		--define="with_vhostmd $(VHOSTMD)" \
 		--define="with_openvswitch $(OPENVSWITCH)" \
+		--define="with_4k_support $(ENABLE_4K_SUPPORT)" \
 		--define="target_py $(VDSM_TARGET_PY_MAJOR_SHORT_VERSION)" \
 		--define="vdsm_version $(PACKAGE_VERSION)" \
 		--define="vdsm_release $(PACKAGE_RELEASE)" \

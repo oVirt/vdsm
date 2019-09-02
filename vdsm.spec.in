@@ -16,6 +16,7 @@
 %{!?with_gluster_mgmt: %global with_gluster_mgmt 1}
 %{!?with_hooks: %global with_hooks 0}
 %{!?with_vhostmd: %global with_vhostmd 0}
+%{!?with_4k_support: %global with_4k_support 0}
 
 %ifarch ppc64le
 %global with_openvswitch_default 0
@@ -856,7 +857,12 @@ autoreconf -if
 %else
 %define enable_vhostmd no
 %endif
-%configure --with-qemu-user=%{qemu_user} --with-qemu-group=%{qemu_group} --enable-ovirt-imageio=%{enable_ovirt_imageio} --enable-ovirt-vmconsole=%{enable_ovirt_vmconsole} --enable-gluster-mgmt=%{enable_gluster_mgmt} --enable-hooks=%{enable_hooks} --enable-vhostmd=%{enable_vhostmd} --with-data-center=%{vdsm_repo} --with-only-python=%{python2_or_python3}
+%if %{with_4k_support}
+%define enable_4k_support yes
+%else
+%define enable_4k_support no
+%endif
+%configure --with-qemu-user=%{qemu_user} --with-qemu-group=%{qemu_group} --enable-ovirt-imageio=%{enable_ovirt_imageio} --enable-ovirt-vmconsole=%{enable_ovirt_vmconsole} --enable-gluster-mgmt=%{enable_gluster_mgmt} --enable-hooks=%{enable_hooks} --enable-vhostmd=%{enable_vhostmd} --enable-4k-support=%{enable_4k_support} --with-data-center=%{vdsm_repo} --with-only-python=%{python2_or_python3}
 make
 
 %install
