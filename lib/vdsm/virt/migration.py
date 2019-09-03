@@ -100,7 +100,8 @@ class SourceThread(object):
                  mode=MODE_REMOTE, method=METHOD_ONLINE,
                  tunneled=False, dstqemu='', abortOnError=False,
                  consoleAddress=None, compressed=False,
-                 autoConverge=False, recovery=False, **kwargs):
+                 autoConverge=False, recovery=False, encrypted=False,
+                 **kwargs):
         self.log = vm.log
         self._vm = vm
         self._dst = dst
@@ -111,6 +112,7 @@ class SourceThread(object):
         # conversions should be handled properly in the API layer
         self._consoleAddress = consoleAddress
         self._dstqemu = dstqemu
+        self._encrypted = encrypted
         self._maxBandwidth = int(
             kwargs.get('maxBandwidth') or
             config.getint('vars', 'migration_max_bandwidth')
@@ -150,10 +152,9 @@ class SourceThread(object):
         abortOnError = conv.tobool(abortOnError)
         compressed = conv.tobool(compressed)
         autoConverge = conv.tobool(autoConverge)
-        self._migration_flags = self._calculate_migration_flags(tunneled,
-                                                                abortOnError,
-                                                                compressed,
-                                                                autoConverge)
+        self._migration_flags = self._calculate_migration_flags(
+            tunneled, abortOnError, compressed, autoConverge, encrypted
+        )
 
     def start(self):
         self._thread.start()
@@ -425,6 +426,7 @@ class SourceThread(object):
                             'method': METHOD_ONLINE,
                             'dstparams': self._dstparams,
                             'dstqemu': self._dstqemu,
+                            'encrypted': self._encrypted,
                         }
                         self._startUnderlyingMigration(
                             time.time(), migrationParams, machineParams
@@ -506,7 +508,24 @@ class SourceThread(object):
             duri = 'qemu+{}://{}/system'.format(
                 transport, normalize_literal_addr(self.remoteHost))
 
-            dstqemu = migrationParams['dstqemu']
+            encrypted = migrationParams['encrypted']
+            if encrypted:
+                # TODO: Stop using host names here and set the host
+                # name based certificate verification parameter once
+                # the corresponding functionality is available in
+                # libvirt, see https://bugzilla.redhat.com/1754533
+                #
+                # When an encrypted migration is requested, we must
+                # use the host name (stored in 'dst') rather than the
+                # IP address (stored in 'dstqemu') in order to match
+                # the target certificate.  That means that encrypted
+                # migrations are incompatible with setups that require
+                # an IP address to identify the host properly, such as
+                # when a separate migration network should be used or
+                # when using IPv4/IPv6 dual stack configurations.
+                dstqemu = self.remoteHost
+            else:
+                dstqemu = migrationParams['dstqemu']
             if dstqemu:
                 muri = 'tcp://{}'.format(
                     normalize_literal_addr(dstqemu))
@@ -568,7 +587,7 @@ class SourceThread(object):
         return self._migration_flags
 
     def _calculate_migration_flags(self, tunneled, abort_on_error,
-                                   compressed, auto_converge):
+                                   compressed, auto_converge, encrypted):
         flags = libvirt.VIR_MIGRATE_LIVE | libvirt.VIR_MIGRATE_PEER2PEER
         if tunneled:
             flags |= libvirt.VIR_MIGRATE_TUNNELLED
@@ -578,6 +597,8 @@ class SourceThread(object):
             flags |= libvirt.VIR_MIGRATE_COMPRESSED
         if auto_converge:
             flags |= libvirt.VIR_MIGRATE_AUTO_CONVERGE
+        if encrypted:
+            flags |= libvirt.VIR_MIGRATE_TLS
         if self._vm.min_cluster_version(4, 2):
             flags |= libvirt.VIR_MIGRATE_PERSIST_DEST
         # Migration may fail immediately when VIR_MIGRATE_POSTCOPY flag is

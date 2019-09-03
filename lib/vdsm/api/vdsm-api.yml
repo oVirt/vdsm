@@ -3474,6 +3474,12 @@ types:
             name: tunneled
             type: boolean
 
+        -   name: encrypted
+            type: boolean
+            defaultvalue: false
+            description: whether to use TLS migration
+            added: '4.4'
+
         -   defaultvalue: needs updating
             description: initial actions and actions to perform when stalling
             name: convergenceSchedule

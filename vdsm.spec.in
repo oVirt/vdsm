@@ -1069,6 +1069,7 @@ exit 0
 %dir %{_sysconfdir}/pki/%{vdsm_name}
 %dir %{_sysconfdir}/pki/%{vdsm_name}/keys
 %dir %{_sysconfdir}/pki/%{vdsm_name}/certs
+%{_sysconfdir}/pki/%{vdsm_name}/libvirt-migrate
 %dir %{_sysconfdir}/pki/%{vdsm_name}/libvirt-spice
 %config(noreplace) %{_sysconfdir}/pki/%{vdsm_name}/keys/libvirt_password
 %dir %{_localstatedir}/lib/%{vdsm_name}

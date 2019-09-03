@@ -450,6 +450,7 @@ class VM(APIBase):
             *convergenceSchedule* - actions to perform when stalling
             *outgoingLimit* - max number of outgoing migrations, must be > 0.
             *incomingLimit* - max number of incoming migrations, must be > 0.
+            *encrypted* - whether to use TLS migrations
         """
         params['vmId'] = self._UUID
         self.log.debug(params)

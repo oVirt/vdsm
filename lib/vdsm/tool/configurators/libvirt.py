@@ -235,8 +235,9 @@ def _libvirt_uses_socket_activation():
 # version != PACKAGE_VERSION since we do not want to update configuration
 # on every update. see 'configuration versioning:' at Configfile.py for
 # details.
-CONF_VERSION = '4.30.0'
+CONF_VERSION = '4.40.0'
 
+LM_CERT_DIR = os.path.join(pki.PKI_DIR, 'libvirt-migrate')
 LS_CERT_DIR = os.path.join(pki.PKI_DIR, 'libvirt-spice')
 
 # be sure to update CONF_VERSION accordingly when updating FILES.
@@ -315,6 +316,15 @@ FILES = {
                 },
                 'content': {
                     'spice_tls': 0,
+                },
+
+            },
+            {
+                'conditions': {
+                    "ssl_enabled": True,
+                },
+                'content': {
+                    'migrate_tls_x509_cert_dir': '\"' + LM_CERT_DIR + '\"',
                 },
 
             },
