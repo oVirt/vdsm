@@ -24,11 +24,13 @@ from __future__ import division
 
 import os.path
 import threading
+import xml.etree.ElementTree as etree
 
 from vdsm import constants
 from vdsm import utils
 from vdsm.common import conv
 from vdsm.common import supervdsm
+from vdsm.common import xmlutils
 from vdsm.virt import vmxml
 from vdsm.virt.utils import cleanup_guest_socket
 
@@ -359,94 +361,41 @@ class Console(Base):
             yield self.getSerialDeviceXML()
 
 
-class Memory(Base):
-    __slots__ = ('address', 'size', 'node')
+def memory_xml(params):
+    """
+    Return <memory> device XML string specified by `params`.
 
-    @classmethod
-    def from_xml_tree(cls, log, dev, meta):
-        params = {
-            'device': dev.tag,
-            'type': find_device_type(dev),
-        }
-        update_device_params(params, dev)
-        target = vmxml.find_first(dev, 'target')
-        params['size'] = (
-            int(vmxml.text(vmxml.find_first(target, 'size'))) // 1024
-        )
-        params['node'] = vmxml.text(vmxml.find_first(target, 'node'))
-        update_device_params_from_meta(params, meta)
-        return cls(log, **params)
+    :param params (dict): dictionary of device parameters as sent by Engine
+    :returns: XML string
 
-    def __init__(self, log, **kwargs):
-        super(Memory, self).__init__(log, **kwargs)
-        # we get size in mb and send in kb
-        self.size = int(kwargs.get('size')) * 1024
-        self.node = kwargs.get('node')
+    Example XML string:
 
-    @classmethod
-    def update_device_info(cls, vm, device_conf):
-        conf_aliases = frozenset([getattr(conf, 'alias')
-                                  for conf in device_conf
-                                  if hasattr(conf, 'alias')])
-        dev_aliases = frozenset([dev['alias']
-                                 for dev in vm.conf['devices']
-                                 if 'alias' in dev])
-        for element in vm.domain.get_device_elements('memory'):
-            address = find_device_guest_address(element)
-            alias = find_device_alias(element)
-            node = int(vmxml.text(vmxml.find_first(element, 'node')))
-            size = int(vmxml.text(vmxml.find_first(element, 'size')))
-            if alias not in conf_aliases:
-                for conf in device_conf:
-                    if not hasattr(conf, 'alias') and \
-                       conf.node == node and \
-                       conf.size == size:
-                        conf.address = address
-                        conf.alias = alias
-                        break
-            if alias not in dev_aliases:
-                for dev in vm.conf['devices']:
-                    if dev['type'] == hwclass.MEMORY and \
-                       dev.get('alias') is None and \
-                       dev.get('node') == node and \
-                       dev.get('size', 0) * 1024 == size:
-                        dev['address'] = address
-                        dev['alias'] = alias
-                        break
+      <memory model='dimm'>
+        <target>
+          <size unit='KiB'>524287</size>
+          <node>1</node>
+        </target>
+        <alias name='dimm0'/>
+        <address type='dimm' slot='0' base='0x100000000'/>
+      </memory>
+    """
+    # We get size in MB and send in KB
+    size = int(params['size']) * 1024
+    node = params['node']
+    alias = params.get('alias')
+    address = params.get('address')
 
-    def getXML(self):
-        """
-        <memory model='dimm'>
-            <target>
-                <size unit='KiB'>524287</size>
-                <node>1</node>
-            </target>
-            <alias name='dimm0'/>
-            <address type='dimm' slot='0' base='0x100000000'/>
-        </memory>
-        """
-
-        mem = self.createXmlElem('memory', None)
-        mem.setAttrs(model='dimm')
-        target = self.createXmlElem('target', None)
-        mem.appendChild(target)
-        size = self.createXmlElem('size', None)
-        size.setAttrs(unit='KiB')
-        size.appendTextNode(str(self.size))
-        target.appendChild(size)
-        node = self.createXmlElem('node', None)
-        node.appendTextNode(str(self.node))
-        target.appendChild(node)
-        if hasattr(self, 'alias'):
-            alias = self.createXmlElem('alias', None)
-            alias.setAttrs(name=self.alias)
-            mem.appendChild(alias)
-        if hasattr(self, 'address'):
-            address = self.createXmlElem('address', None)
-            address.setAttrs(**self.address)
-            mem.appendChild(address)
-
-        return mem
+    e_memory = etree.Element('memory', model='dimm')
+    e_target = etree.SubElement(e_memory, 'target')
+    e_size = etree.SubElement(e_target, 'size', unit='KiB')
+    e_size.text = str(size)
+    e_node = etree.SubElement(e_target, 'node')
+    e_node.text = str(node)
+    if alias is not None:
+        etree.SubElement(e_memory, 'alias', name=alias)
+    if address:
+        etree.SubElement(e_memory, 'address', attrib=address)
+    return xmlutils.tostring(e_memory)
 
 
 def find_device_alias(dev):

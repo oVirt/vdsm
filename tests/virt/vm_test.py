@@ -1110,16 +1110,22 @@ class TestLibVirtCallbacks(TestCaseBase):
             self.assertIsNone(testvm._pause_code)  # no error recorded
 
     @permutations([
-        ['dimm0', set(('balloon',))],
-        ['balloon', set(('dimm0', 'balloon',))],
-        ['missing', set(('dimm0', 'balloon',))],
+        ['net1', set(('balloon',))],
+        ['balloon', set(('net1', 'balloon',))],
+        ['missing', set(('net1', 'balloon',))],
     ])
     def test_onDeviceRemoved(self, alias, kept_aliases):
         devices = '''
-<memory model="dimm">
-  <alias name="dimm0"/>
-  <target><size unit='KiB'>524288</size><node>1</node></target>
-</memory>
+<interface type='bridge'>
+  <alias name="net1"/>
+  <mac address='00:11:22:33:44:55'/>
+  <source bridge='ovirtmgmt'/>
+  <target dev='vnet0'/>
+  <model type='virtio'/>
+    <filterref filter='vdsm-no-mac-spoofing'/>
+    <address type='pci' domain='0x0000' bus='0x00' slot='0x03'
+             function='0x0'/>
+</interface>
 <memballoon model="none">
   <alias name="balloon"/>
 </memballoon>

@@ -86,7 +86,6 @@ def update_device_info(vm, devices):
     core.Balloon.update_device_info(vm, devices[hwclass.BALLOON])
     core.Console.update_device_info(vm, devices[hwclass.CONSOLE])
     hostdevice.HostDevice.update_device_info(vm, devices[hwclass.HOSTDEV])
-    core.Memory.update_device_info(vm, devices[hwclass.MEMORY])
     lease.Device.update_device_info(vm, devices[hwclass.LEASE])
 
 
@@ -97,7 +96,6 @@ _DEVICE_MAPPING = {
     hwclass.BALLOON: core.Balloon,
     hwclass.CONSOLE: core.Console,
     hwclass.HOSTDEV: hostdevice.HostDevice,
-    hwclass.MEMORY: core.Memory,
     hwclass.LEASE: lease.Device,
 }
 

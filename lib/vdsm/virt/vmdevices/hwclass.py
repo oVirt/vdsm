@@ -28,7 +28,6 @@ GRAPHICS = 'graphics'
 BALLOON = 'balloon'
 CONSOLE = 'console'
 HOSTDEV = 'hostdev'
-MEMORY = 'memory'
 LEASE = 'lease'
 
 
@@ -41,4 +40,4 @@ TO_REFRESH = (
     NIC,  # needed by many network-related hooks (vmfex, ovn)
 )
 
-HOTPLUGGABLE = (DISK, NIC, HOSTDEV, MEMORY, LEASE,)
+HOTPLUGGABLE = (DISK, NIC, HOSTDEV, LEASE,)

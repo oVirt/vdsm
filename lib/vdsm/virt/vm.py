@@ -3045,47 +3045,31 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def hotplugMemory(self, params):
-        memParams = params.get('memory', {})
-        device = vmdevices.core.Memory(self.log, **memParams)
-
-        deviceXml = xmlutils.tostring(device.getXML())
-        deviceXml = hooks.before_memory_hotplug(deviceXml, self._custom)
-        device._deviceXML = deviceXml
-        self.log.debug("Hotplug memory xml: %s", deviceXml)
+        mem_params = params.get('memory', {})
+        device_xml = vmdevices.core.memory_xml(mem_params)
+        device_xml = hooks.before_memory_hotplug(device_xml, self._custom)
+        self.log.debug("Hotplug memory xml: %s", device_xml)
 
         try:
-            self._dom.attachDevice(deviceXml)
+            self._dom.attachDevice(device_xml)
         except libvirt.libvirtError as e:
             self.log.exception("hotplugMemory failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 raise exception.NoSuchVM()
             return response.error('hotplugMem', str(e))
 
-        self._devices[hwclass.MEMORY].append(device)
         self._updateDomainDescriptor()
-        device.update_device_info(self, self._devices[hwclass.MEMORY])
         self._update_mem_guaranteed_size(params)
-
-        hooks.after_memory_hotplug(deviceXml, self._custom)
+        hooks.after_memory_hotplug(device_xml, self._custom)
 
         return {'status': doneCode, 'vmList': {}}
 
     @api.guard(_not_migrating)
     def hotunplugMemory(self, params):
-        xml = params.get('xml')
-        try:
-            if xml is not None:
-                device = lookup.device_from_xml_alias(
-                    self._devices[hwclass.MEMORY][:],
-                    xml)
-            else:
-                device = lookup.device_by_alias(
-                    self._devices[hwclass.MEMORY][:],
-                    params['memory']['alias'])
-        except LookupError as e:
-            raise exception.HotunplugMemFailed(str(e), vmId=self.id)
-
-        device_xml = xmlutils.tostring(device.getXML())
+        device_xml = params.get('xml')
+        if device_xml is None:
+            mem_params = params['memory']
+            device_xml = vmdevices.core.memory_xml(mem_params)
         self.log.info("Hotunplug memory xml: %s", device_xml)
 
         try:

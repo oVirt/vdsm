@@ -177,8 +177,7 @@ class DeviceToXMLTests(XMLTestCase):
         """
         params = {'device': 'memory', 'type': 'memory',
                   'size': 1024, 'node': 0}
-        memory = vmdevices.core.Memory(self.log, **params)
-        self.assertXMLEqual(xmlutils.tostring(memory.getXML()), memoryXML)
+        self.assertXMLEqual(vmdevices.core.memory_xml(params), memoryXML)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
@@ -865,17 +864,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         self.assertEqual(dev.isSerial, is_serial)
         self.assertEqual(dev.vmid, vmid)
         self.assertTrue(dev.specParams['enableSocket'])
-
-    def test_memory(self):
-        memory_xml = u'''<memory model='dimm'>
-            <target>
-                <size unit='KiB'>524288</size>
-                <node>1</node>
-            </target>
-            <alias name='dimm0'/>
-            <address type='dimm' slot='0' base='0x100000000'/>
-        </memory>'''
-        self._check_roundtrip(vmdevices.core.Memory, memory_xml)
 
     def test_lease(self):
         lease_xml = u'''<lease>

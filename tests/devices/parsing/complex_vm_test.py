@@ -29,9 +29,7 @@ class TestVmDevicesXmlParsing(XMLTestCase, verify.DeviceMixin):
                     'network': ''},
                    {'device': 'bridge', 'nicModel': 'virtio',
                     'macAddr': '52:54:00:59:FF:FF', 'type': 'interface',
-                    'network': ''},
-                   {'device': 'memory', 'type': 'memory', 'size': 524288,
-                    'alias': 'dimm0', 'address': '0x100000000'}]
+                    'network': ''}]
 
         test_path = os.path.realpath(__file__)
         dir_name = os.path.split(test_path)[0]
