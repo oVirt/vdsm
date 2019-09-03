@@ -21,24 +21,29 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import six
+
+from collections import defaultdict
+
 from vdsm.common.exception import GeneralException
 from vdsm.storage import exception as storage_exception
 
-from testlib import VdsmTestCase
 
+def test_collisions():
+    codes = defaultdict(list)
 
-class TestStorageExceptions(VdsmTestCase):
-    def test_collisions(self):
-        codes = {}
+    for name in dir(storage_exception):
+        obj = getattr(storage_exception, name)
 
-        for name in dir(storage_exception):
-            obj = getattr(storage_exception, name)
+        if not isinstance(obj, type):
+            continue
 
-            if not isinstance(obj, type):
-                continue
+        if not issubclass(obj, GeneralException):
+            continue
 
-            if not issubclass(obj, GeneralException):
-                continue
+        codes[obj.code].append(name)
 
-            self.assertFalse(obj.code in codes)
-            self.assertTrue(obj.code < 5000)
+    problems = [(k, v) for k, v in six.iteritems(codes)
+                if len(v) != 1 or k >= 5000]
+
+    assert not problems, "Duplicated or invalid exception code"
