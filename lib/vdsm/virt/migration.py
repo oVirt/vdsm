@@ -420,16 +420,8 @@ class SourceThread(object):
                         self.log.debug("migration semaphore acquired "
                                        "after %d seconds",
                                        time.time() - startTime)
-                        migrationParams = {
-                            'dst': self._dst,
-                            'mode': self._mode,
-                            'method': METHOD_ONLINE,
-                            'dstparams': self._dstparams,
-                            'dstqemu': self._dstqemu,
-                            'encrypted': self._encrypted,
-                        }
                         self._startUnderlyingMigration(
-                            time.time(), migrationParams, machineParams
+                            time.time(), machineParams
                         )
                         self._finishSuccessfully(machineParams)
                 except libvirt.libvirtError as e:
@@ -450,8 +442,7 @@ class SourceThread(object):
             self._recover(str(e))
             self.log.exception("Failed to migrate")
 
-    def _startUnderlyingMigration(self, startTime, migrationParams,
-                                  machineParams):
+    def _startUnderlyingMigration(self, startTime, machineParams):
         if self.hibernating:
             self._started = True
             self._vm.hibernate(self._dst)
@@ -508,8 +499,7 @@ class SourceThread(object):
             duri = 'qemu+{}://{}/system'.format(
                 transport, normalize_literal_addr(self.remoteHost))
 
-            encrypted = migrationParams['encrypted']
-            if encrypted:
+            if self._encrypted:
                 # TODO: Stop using host names here and set the host
                 # name based certificate verification parameter once
                 # the corresponding functionality is available in
@@ -525,7 +515,7 @@ class SourceThread(object):
                 # when using IPv4/IPv6 dual stack configurations.
                 dstqemu = self.remoteHost
             else:
-                dstqemu = migrationParams['dstqemu']
+                dstqemu = self._dstqemu
             if dstqemu:
                 muri = 'tcp://{}'.format(
                     normalize_literal_addr(dstqemu))
