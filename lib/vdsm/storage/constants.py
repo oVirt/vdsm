@@ -123,6 +123,9 @@ HECI_DISKTYPE = "HECI"  # Hosted Engine configuration image
 # or by a newer engine with a cluster compatibility level of 4.1.
 LEGACY_DATA_DISKTYPE = "2"     # Data disk
 
+# virt-v2v -o rhv/vdsm created data disks with wrong disk type
+LEGACY_V2V_DATA_DISKTYPE = "1"
+
 VOL_DISKTYPE = frozenset([
     DATA_DISKTYPE,
     ISOF_DISKTYPE,
@@ -134,6 +137,7 @@ VOL_DISKTYPE = frozenset([
     HEMD_DISKTYPE,
     HECI_DISKTYPE,
     LEGACY_DATA_DISKTYPE,
+    LEGACY_V2V_DATA_DISKTYPE,
 ])
 
 VOLUME_TYPES = {UNKNOWN_VOL: 'UNKNOWN', PREALLOCATED_VOL: 'PREALLOCATED',
