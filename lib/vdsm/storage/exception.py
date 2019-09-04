@@ -61,8 +61,11 @@ class InvalidParameterException(GeneralException):
     code = 1000
     message = "Invalid parameter"
 
-    def __init__(self, name, value):
-        self.value = "%s=%s" % (name, value)
+    def __init__(self, name, value, reason=None):
+        if reason is None:
+            self.value = "%s=%s" % (name, value)
+        else:
+            self.value = "%s=%s (%s)" % (name, value, reason)
 
 
 class InvalidDefaultExceptionException(GeneralException):
@@ -1156,14 +1159,6 @@ class StorageServerAccessPermissionError(StorageException):
     message = "Permission settings on the specified path do not allow"\
               " access to the storage. Verify permission settings"\
               " on the specified storage path."
-
-    def __init__(self, targetPath):
-        self.value = "path = %s" % targetPath
-
-
-class StorageServerLocalNotDirError(StorageException):
-    code = 469
-    message = "The specified local path is not a directory."
 
     def __init__(self, targetPath):
         self.value = "path = %s" % targetPath

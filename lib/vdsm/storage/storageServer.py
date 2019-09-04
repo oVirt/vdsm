@@ -637,7 +637,8 @@ class LocalDirectoryConnection(object):
 
     def checkTarget(self):
         if not os.path.isdir(self._path):
-            raise se.StorageServerLocalNotDirError(self._path)
+            raise se.InvalidParameterException(
+                'path', self._path, "not a directory")
         fileSD.validateDirAccess(self._path)
         return True
 
