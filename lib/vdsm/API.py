@@ -83,6 +83,7 @@ USER_SHUTDOWN_MESSAGE = 'System going down'
 
 
 throttledlog.throttle('getAllVmStats', 100)
+throttledlog.throttle('getStats', 100)
 
 
 class APIBase(object):
@@ -1383,10 +1384,11 @@ class Global(APIBase):
         """
         Report host statistics.
         """
-        return {'status': doneCode,
-                'info': hostapi.get_stats(self._cif,
-                                          sampling.host_samples.stats(),
-                                          multipath=True)}
+        info = hostapi.get_stats(self._cif,
+                                 sampling.host_samples.stats(),
+                                 multipath=True)
+        throttledlog.info('getStats', "Current getStats: %s", info)
+        return {'status': doneCode, 'info': logutils.Suppressed(info)}
 
     @api.logged(on="api.host")
     def setLogLevel(self, level, name=''):
