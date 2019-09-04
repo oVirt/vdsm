@@ -31,6 +31,8 @@ from vdsm.network.ipwrapper import linkSet, addrAdd
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestAdapter, NOCHK
+from .netfunctestlib import parametrize_ip_families
+from .netfunctestlib import IpFamily
 from network.nettestlib import veth_pair
 from network.nettestlib import dnsmasq_run
 from network.nettestlib import dhcp_client_run
@@ -118,17 +120,6 @@ class FakeNotifier:
     def notify(self, event_id, params=None):
         pass
 
-
-class IpFamily(object):
-    IPv4 = 4
-    IPv6 = 6
-
-
-parametrize_ip_families = pytest.mark.parametrize(
-    'families', [(IpFamily.IPv4,),
-                 (IpFamily.IPv6,),
-                 (IpFamily.IPv4, IpFamily.IPv6)],
-    ids=['IPv4', 'IPv6', 'IPv4&6'])
 
 parametrize_def_route = pytest.mark.parametrize(
     'def_route',

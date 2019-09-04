@@ -27,6 +27,8 @@ from vdsm.network import errors as ne
 from vdsm.network.ipwrapper import addrAdd
 
 from . import netfunctestlib as nftestlib
+from .netfunctestlib import parametrize_ip_families
+from .netfunctestlib import IpFamily
 from .netfunctestlib import NetFuncTestAdapter, NOCHK, SetupNetworksError
 from network.nettestlib import dummy_device, dummy_devices
 from network.nettestlib import preserve_default_route
@@ -59,18 +61,6 @@ def create_adapter(target):
 def preserve_conf():
     with restore_resolv_conf(), preserve_default_route():
         yield
-
-
-class IpFamily(object):
-    IPv4 = 4
-    IPv6 = 6
-
-
-parametrize_ip_families = pytest.mark.parametrize(
-    'families', [(IpFamily.IPv4,),
-                 (IpFamily.IPv6,),
-                 (IpFamily.IPv4, IpFamily.IPv6)],
-    ids=['IPv4', 'IPv6', 'IPv4&6'])
 
 
 @pytest.mark.nmstate

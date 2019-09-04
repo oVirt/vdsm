@@ -62,6 +62,12 @@ TIMEOUT_CHK = {'connectivityCheck': True, 'connectivityTimeout': 0.1}
 IFCFG_DIR = '/etc/sysconfig/network-scripts/'
 IFCFG_PREFIX = IFCFG_DIR + 'ifcfg-'
 
+
+class IpFamily(object):
+    IPv4 = 4
+    IPv6 = 6
+
+
 parametrize_switch = pytest.mark.parametrize(
     'switch', [pytest.param('legacy', marks=pytest.mark.legacy_switch()),
                pytest.param('ovs', marks=pytest.mark.ovs_switch())])
@@ -74,6 +80,12 @@ parametrize_bridged = pytest.mark.parametrize('bridged', [False, True],
 
 parametrize_bonded = pytest.mark.parametrize('bonded', [False, True],
                                              ids=['unbonded', 'bonded'])
+
+parametrize_ip_families = pytest.mark.parametrize(
+    'families', [(IpFamily.IPv4,),
+                 (IpFamily.IPv6,),
+                 (IpFamily.IPv4, IpFamily.IPv6)],
+    ids=['IPv4', 'IPv6', 'IPv4&6'])
 
 
 def requires_ipaddress():
