@@ -139,10 +139,18 @@ _mk_console_path() {
     "@CHCON_PATH@" "system_u:object_r:qemu_var_run_t:s0" "${console_path}" > /dev/null 2>&1
 }
 
+
+_mk_transient_disks_path() {
+    local transient_disks_path="@VDSMTRANSIENTDISKSDIR@"
+    @MKDIR_P@ "${transient_disks_path}"
+    "@CHOWN_PATH@" @VDSMUSER@:@VDSMGROUP@ "${transient_disks_path}"
+}
+
 task_mkdirs(){
     _mk_data_center
     _mk_run_path
     _mk_console_path
+    _mk_transient_disks_path
 }
 
 

@@ -83,6 +83,7 @@ from vdsm.storage import securable
 from vdsm.storage import sp
 from vdsm.storage import storageServer
 from vdsm.storage import taskManager
+from vdsm.storage import transientdisk
 from vdsm.storage import udev
 from vdsm.storage import validators
 from vdsm.storage.constants import STORAGE
@@ -3726,6 +3727,23 @@ class HSM(object):
     @public
     def stop_nbd_server(self, server_id):
         nbd.stop_server(server_id)
+
+    # Transient disk
+
+    @public
+    def create_transient_disk(self, owner_name, disk_name, size):
+        disk_info = transientdisk.create_disk(
+            owner_name, disk_name, size)
+        return dict(result=disk_info)
+
+    @public
+    def remove_transient_disk(self, owner_name, disk_name):
+        transientdisk.remove_disk(owner_name, disk_name)
+
+    @public
+    def list_transient_disks(self, owner_name):
+        disks = transientdisk.list_disks(owner_name)
+        return dict(result=disks)
 
     # Validations
 

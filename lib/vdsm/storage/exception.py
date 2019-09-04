@@ -1969,3 +1969,18 @@ class NoSuchLease(StorageException):
 
     def __init__(self, lease_id):
         self.value = "lease={}".format(lease_id)
+
+
+#################################################
+#  Transient disks Errors
+#  Range: 941-945
+#################################################
+
+
+class TransientDiskAlreadyExists(StorageException):
+    code = 941
+    message = "Transient disk already exists"
+    expected = True
+
+    def __init__(self, disk_path):
+        self.value = "disk_path={}".format(disk_path)
