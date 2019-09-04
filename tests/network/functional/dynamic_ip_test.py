@@ -31,6 +31,7 @@ from vdsm.network.ipwrapper import linkSet, addrAdd
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestAdapter, NOCHK
+from .netfunctestlib import parametrize_def_route
 from .netfunctestlib import parametrize_ip_families
 from .netfunctestlib import IpFamily
 from network.nettestlib import veth_pair
@@ -119,13 +120,6 @@ def dynamic_ipv4_iface2(network_configuration2):
 class FakeNotifier:
     def notify(self, event_id, params=None):
         pass
-
-
-parametrize_def_route = pytest.mark.parametrize(
-    'def_route',
-    [True, False],
-    ids=['withDefRoute', 'withoutDefRoute']
-)
 
 
 @pytest.mark.nmstate

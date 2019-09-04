@@ -87,6 +87,12 @@ parametrize_ip_families = pytest.mark.parametrize(
                  (IpFamily.IPv4, IpFamily.IPv6)],
     ids=['IPv4', 'IPv6', 'IPv4&6'])
 
+parametrize_def_route = pytest.mark.parametrize(
+    'def_route',
+    [True, False],
+    ids=['withDefRoute', 'withoutDefRoute']
+)
+
 
 def requires_ipaddress():
     """
