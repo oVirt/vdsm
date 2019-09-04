@@ -307,22 +307,32 @@ Requires: selinux-policy-targeted >= 3.13-1
 Requires: policycoreutils >= 2.1.13-55
 %endif
 
-%if 0%{?rhel}
+# qemu-kvm
+
 %if 0%{?rhel} >= 8
+# 4k not supported yet on rhel 8.
+# https://bugzilla.redhat.com/1749134
 Requires: qemu-kvm >= 15:3.1.0-20.module+el8+2888+cdc893a8
-%else
+%endif
+
+%if 0%{?rhel} == 7
+# 4k not supported yet on rhel 7.
+# https://bugzilla.redhat.com/1745443
 # CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
 Requires: qemu-kvm-rhev >= 10:2.12.0-18.el7_6.5
 %endif
-%else # fedora
-# qemu-kvm 2.12 is Fedora 28 virt-preview baseline
-# but virt-preview is not available on s390 arch
-%ifnarch s390 s390x
-Requires: qemu-kvm >= 2:2.12
-%else
+
+%if 0%{?fedora}
+%ifarch s390 s390x
+# virt-preview is not available on s390 arch.
 Requires: qemu-kvm >= 2:2.11.2
-%endif
-%endif
+%else
+# For 4k support:
+# - https://bugzilla.redhat.com/1737256
+# - https://bugzilla.redhat.com/1738657
+Requires: qemu-kvm >= 2:4.1.0-2
+%endif # s390
+%endif # fedora
 
 # GlusterFS client-side RPMs needed for Gluster SD
 %ifnarch ppc64le
