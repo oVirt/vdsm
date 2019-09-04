@@ -24,7 +24,10 @@ import six
 
 from vdsm.storage import iscsiadm
 
+from . marks import requires_root
 
+
+@requires_root
 def test_run_cmd():
     out = iscsiadm.run_cmd(["--version"])
     assert isinstance(out, six.text_type)
