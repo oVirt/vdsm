@@ -120,6 +120,7 @@ class TestNetworkBasic(object):
                 adapter.assertNoVlan(nic, VLANID)
 
     @nftestlib.parametrize_bridged
+    @pytest.mark.nmstate
     def test_add_net_with_multi_vlans_over_a_nic(self, switch, bridged):
         VLAN_COUNT = 3
 

@@ -619,6 +619,24 @@ def test_translate_add_network_with_default_route_on_vlan_interface():
     assert expected_state == state
 
 
+def test_translate_vlan_id_0():
+    networks = {
+        TESTNET1: _create_network_config('nic', IFACE0, bridged=False, vlan=0)
+    }
+    state = nmstate.generate_state(networks=networks, bondings={})
+
+    vlan0_state = _create_vlan_iface_state(IFACE0, 0)
+    ipv4_state = _create_ipv4_state()
+    ipv6_state = _create_ipv6_state()
+    vlan0_state.update(ipv4_state)
+    vlan0_state.update(ipv6_state)
+
+    vlan_base_state = _create_ethernet_iface_state(IFACE0)
+    expected_state = {nmstate.Interface.KEY: [vlan_base_state, vlan0_state]}
+
+    assert expected_state == state
+
+
 @mock.patch.object(nmstate, 'RunningConfig')
 def test_update_network_from_bridged_to_bridgeless(rconfig_mock):
     networks = {TESTNET1: _create_network_config('nic', IFACE0, bridged=True)}
@@ -875,7 +893,7 @@ def _create_network_config(if_type, if_name, bridged,
         _create_bridge_network_config(bridged, stp_enabled=False))
     network_config.update(static_ip_configuration or {})
     network_config.update(dynamic_ip_configuration or {})
-    network_config.update({'vlan': vlan} if vlan else {})
+    network_config.update({'vlan': vlan} if vlan is not None else {})
     network_config.update({'defaultRoute': default_route})
     network_config.update({'gateway': gateway} if gateway else {})
     network_config.update(

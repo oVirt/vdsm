@@ -188,7 +188,7 @@ class NetworkConfig(object):
         self.remove = attrs.get('remove', False)
 
         self.base_iface = self.nic or self.bond
-        if self.vlan:
+        if self.vlan is not None:
             self.vlan_iface = '{}.{}'.format(self.base_iface, self.vlan)
         else:
             self.vlan_iface = None
@@ -277,7 +277,7 @@ class Network(object):
 
     def _create_vlan_iface(self):
         vlan = self._netconf.vlan
-        if vlan:
+        if vlan is not None:
             base_iface = self._netconf.base_iface
             return {
                 'vlan': {
