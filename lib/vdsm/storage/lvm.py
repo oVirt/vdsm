@@ -255,11 +255,11 @@ class LVMCache(object):
 
     # Warnings written to LVM stderr that should not be logged as warnings.
     SUPPRESS_WARNINGS = re.compile(
-        b"|".join([
-            b"WARNING: This metadata update is NOT backed up",
+        "|".join([
+            "WARNING: This metadata update is NOT backed up",
             # TODO: remove when https://bugzilla.redhat.com/1639360 is fixed.
-            b"WARNING: Combining activation change with other commands is "
-            b"not advised",
+            "WARNING: Combining activation change with other commands is "
+            "not advised",
         ]),
         re.IGNORECASE)
 
@@ -383,7 +383,10 @@ class LVMCache(object):
         We log warnings only for successful commands since callers are already
         handling failures.
         """
-        rc, out, err = misc.execCmd(cmd, sudo=True)
+        rc, out, err = misc.execCmd(cmd, sudo=True, raw=True)
+
+        out = out.decode("utf-8").splitlines()
+        err = err.decode("utf-8").splitlines()
 
         err = [s for s in err if not self.SUPPRESS_WARNINGS.search(s)]
 

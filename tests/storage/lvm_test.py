@@ -37,7 +37,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import misc
 
-from . marks import requires_root, xfail_python3
+from . marks import requires_root
 
 
 # TODO: replace the filter tests with cmd tests.
@@ -166,7 +166,7 @@ class FakeRunner(object):
     To validate the call, inspect the calls instance variable.
     """
 
-    def __init__(self, rc=0, out=(), err=(), retries=0, delay=0.0):
+    def __init__(self, rc=0, out=b"", err=b"", retries=0, delay=0.0):
         self.rc = rc
         self.out = out
         self.err = err
@@ -182,7 +182,7 @@ class FakeRunner(object):
 
         if self.retries > 0:
             self.retries -= 1
-            return 1, [], [b"fake error"]
+            return 1, b"", b"fake error"
 
         return self.rc, self.out, self.err
 
@@ -214,7 +214,7 @@ def test_cmd_success(fake_devices, fake_runner):
         "-o", "+tags",
     ]
 
-    assert kwargs == {"sudo": True}
+    assert kwargs == {"sudo": True, "raw": True}
 
 
 def test_cmd_error(fake_devices, fake_runner):
@@ -262,7 +262,7 @@ def test_cmd_retry_filter_stale(fake_devices, fake_runner):
             dev_filter=lvm._buildFilter(initial_devices),
             locking_type="1"),
     ]
-    assert kwargs == {"sudo": True}
+    assert kwargs == {"sudo": True, "raw": True}
 
     # The seocnd call used a wider filter.
     cmd, kwargs = fake_runner.calls[1]
@@ -274,7 +274,7 @@ def test_cmd_retry_filter_stale(fake_devices, fake_runner):
             dev_filter=lvm._buildFilter(fake_devices),
             locking_type="1"),
     ]
-    assert kwargs == {"sudo": True}
+    assert kwargs == {"sudo": True, "raw": True}
 
 
 def test_cmd_read_only(fake_devices, fake_runner):
@@ -353,7 +353,7 @@ def test_cmd_read_only_filter_stale(fake_devices, fake_runner):
             dev_filter=lvm._buildFilter(initial_devices),
             locking_type="4"),
     ]
-    assert kwargs == {"sudo": True}
+    assert kwargs == {"sudo": True, "raw": True}
 
     # The seocnd call used a wider filter.
     cmd, kwargs = fake_runner.calls[1]
@@ -365,7 +365,7 @@ def test_cmd_read_only_filter_stale(fake_devices, fake_runner):
             dev_filter=lvm._buildFilter(fake_devices),
             locking_type="4"),
     ]
-    assert kwargs == {"sudo": True}
+    assert kwargs == {"sudo": True, "raw": True}
 
     # And then indentical retries with the wider filter.
     assert len(set(repr(c) for c in fake_runner.calls[1:])) == 1
@@ -393,17 +393,16 @@ def test_cmd_read_only_filter_stale_fail(fake_devices, fake_runner):
 
 
 def test_suppress_warnings(fake_devices, fake_runner):
-    fake_runner.err = [
-        b"  before",
-        b"  WARNING: This metadata update is NOT backed up.",
-        b"  WARNING: Combining activation change with other commands is "
-        b"not advised.",
-        b"  after",
-    ]
+    fake_runner.err = b"""\
+  before
+  WARNING: This metadata update is NOT backed up.
+  WARNING: Combining activation change with other commands is not advised.
+  after"""
+
     lc = lvm.LVMCache()
     rc, out, err = lc.cmd(["fake"])
     assert rc == 0
-    assert err == [b"  before", b"  after"]
+    assert err == [u"  before", u"  after"]
 
 
 class Workers(object):
@@ -497,7 +496,6 @@ def test_change_read_only_mode(fake_devices, fake_runner, workers):
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_vg_create_remove_single_device(tmp_storage, read_only):
@@ -544,7 +542,6 @@ def test_vg_create_remove_single_device(tmp_storage, read_only):
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_vg_create_multiple_devices(tmp_storage, read_only):
@@ -602,7 +599,6 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 def test_vg_extend_reduce(tmp_storage):
     dev_size = 10 * 1024**3
@@ -649,7 +645,6 @@ def test_vg_extend_reduce(tmp_storage):
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 def test_vg_add_delete_tags(tmp_storage):
     dev_size = 20 * 1024**3
@@ -694,7 +689,6 @@ def test_vg_check(tmp_storage, read_only):
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_lv_create_remove(tmp_storage, read_only):
@@ -751,7 +745,6 @@ def test_lv_create_remove(tmp_storage, read_only):
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 def test_lv_add_delete_tags(tmp_storage):
     dev_size = 20 * 1024**3
@@ -776,7 +769,6 @@ def test_lv_add_delete_tags(tmp_storage):
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_lv_activate_deactivate(tmp_storage, read_only):
@@ -807,7 +799,6 @@ def test_lv_activate_deactivate(tmp_storage, read_only):
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 def test_lv_extend_reduce(tmp_storage):
     dev_size = 20 * 1024**3
@@ -833,7 +824,6 @@ def test_lv_extend_reduce(tmp_storage):
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_lv_refresh(tmp_storage, read_only):
@@ -879,7 +869,6 @@ def test_lv_refresh(tmp_storage, read_only):
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 def test_lv_rename(tmp_storage):
     dev_size = 20 * 1024**3
@@ -902,7 +891,6 @@ def test_lv_rename(tmp_storage):
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_bootstrap(tmp_storage, read_only):
@@ -954,7 +942,6 @@ def test_bootstrap(tmp_storage, read_only):
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 def test_retry_with_wider_filter(tmp_storage):
     lvm.set_read_only(False)
