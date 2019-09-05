@@ -53,6 +53,7 @@ userstorage.py tool.
 
 The userstorage.py tool creates this directory layout:
 
+```
 $ tree /var/tmp/vdsm-storage/
 /var/tmp/vdsm-storage/
 ├── backing.file-4k
@@ -63,6 +64,7 @@ $ tree /var/tmp/vdsm-storage/
 │   └── file
 └── mount.file-512
     └── file
+```
 
 The symbolic links (e.g. loop.file-4k) link to the loop devices created
 by the helper (/dev/loop4), and used to tear down the storage.
