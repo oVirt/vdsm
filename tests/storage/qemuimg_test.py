@@ -201,21 +201,35 @@ class TestInfo:
 
 class TestCreate:
 
-    @pytest.mark.parametrize("image_format,allocation_mode,allocated_bytes", [
-        (qemuimg.FORMAT.RAW, qemuimg.PREALLOCATION.OFF, 0),
-        (qemuimg.FORMAT.RAW, qemuimg.PREALLOCATION.FALLOC, 16 * 1024 * 1024),
-        (qemuimg.FORMAT.RAW, qemuimg.PREALLOCATION.FULL, 16 * 1024 * 1024),
+    @pytest.mark.parametrize("preallocation", [
+        qemuimg.PREALLOCATION.FALLOC,
+        qemuimg.PREALLOCATION.FULL,
     ])
-    def test_allocate(self, image_format, allocation_mode, allocated_bytes):
-        size = 16 * 1024 * 1024
+    def test_preallocation(self, preallocation):
+        virtual_size = 10 * 1024**2
         with temporaryPath() as image:
-            op = qemuimg.create(image,
-                                size=size,
-                                format=image_format,
-                                preallocation=allocation_mode)
+            op = qemuimg.create(
+                image,
+                size=virtual_size,
+                format=qemuimg.FORMAT.RAW,
+                preallocation=preallocation)
             op.run()
-            allocated = os.stat(image).st_blocks * 512
-            assert allocated == allocated_bytes
+            check_raw_preallocated_image(image, virtual_size)
+
+    @pytest.mark.parametrize("preallocation", [
+        None,
+        qemuimg.PREALLOCATION.OFF
+    ])
+    def test_preallocation_off(self, preallocation):
+        virtual_size = 10 * 1024**2
+        with temporaryPath() as image:
+            op = qemuimg.create(
+                image,
+                size=virtual_size,
+                format=qemuimg.FORMAT.RAW,
+                preallocation=preallocation)
+            op.run()
+            check_raw_sparse_image(image, virtual_size)
 
     def test_no_format(self):
         size = 4096
@@ -492,13 +506,12 @@ class TestConvertUnorderedWrites:
 
 class TestConvertPreallocation:
 
-    @pytest.mark.parametrize("preallocation,virtual_size,actual_size", [
-        (None, 10 * 1024**2, 0),
-        (qemuimg.PREALLOCATION.OFF, 10 * 1024**2, 0),
-        (qemuimg.PREALLOCATION.FALLOC, 10 * 1024**2, 10 * 1024**2),
-        (qemuimg.PREALLOCATION.FULL, 10 * 1024**2, 10 * 1024**2),
+    @pytest.mark.parametrize("preallocation", [
+        qemuimg.PREALLOCATION.FALLOC,
+        qemuimg.PREALLOCATION.FULL,
     ])
-    def test_raw_to_raw(self, preallocation, virtual_size, actual_size):
+    def test_raw_to_raw_preallocation(self, preallocation):
+        virtual_size = 10 * 1024**2
         with namedTemporaryDir() as tmpdir:
             src = os.path.join(tmpdir, 'src')
             dst = os.path.join(tmpdir, 'dst')
@@ -509,18 +522,32 @@ class TestConvertPreallocation:
             op = qemuimg.convert(src, dst, srcFormat="raw", dstFormat="raw",
                                  preallocation=preallocation)
             op.run()
+            check_raw_preallocated_image(dst, virtual_size)
 
-            stat = os.stat(dst)
-            assert stat.st_size == virtual_size
-            assert stat.st_blocks * 512 == actual_size
-
-    @pytest.mark.parametrize("preallocation,virtual_size,actual_size", [
-        (None, 10 * 1024**2, 0),
-        (qemuimg.PREALLOCATION.OFF, 10 * 1024**2, 0),
-        (qemuimg.PREALLOCATION.FALLOC, 10 * 1024**2, 10 * 1024**2),
-        (qemuimg.PREALLOCATION.FULL, 10 * 1024**2, 10 * 1024**2),
+    @pytest.mark.parametrize("preallocation", [
+        None,
+        qemuimg.PREALLOCATION.OFF
     ])
-    def test_qcow2_to_raw(self, preallocation, virtual_size, actual_size):
+    def test_raw_to_raw_preallocation_off(self, preallocation):
+        virtual_size = 10 * 1024**2
+        with namedTemporaryDir() as tmpdir:
+            src = os.path.join(tmpdir, 'src')
+            dst = os.path.join(tmpdir, 'dst')
+
+            with io.open(src, "wb") as f:
+                f.truncate(virtual_size)
+
+            op = qemuimg.convert(src, dst, srcFormat="raw", dstFormat="raw",
+                                 preallocation=preallocation)
+            op.run()
+            check_raw_sparse_image(dst, virtual_size)
+
+    @pytest.mark.parametrize("preallocation", [
+        qemuimg.PREALLOCATION.FALLOC,
+        qemuimg.PREALLOCATION.FULL,
+    ])
+    def test_qcow2_to_raw_preallocated(self, preallocation):
+        virtual_size = 10 * 1024**2
         with namedTemporaryDir() as tmpdir:
             src = os.path.join(tmpdir, 'src')
             dst = os.path.join(tmpdir, 'dst')
@@ -531,10 +558,25 @@ class TestConvertPreallocation:
             op = qemuimg.convert(src, dst, srcFormat="qcow2", dstFormat="raw",
                                  preallocation=preallocation)
             op.run()
+            check_raw_preallocated_image(dst, virtual_size)
 
-            stat = os.stat(dst)
-            assert stat.st_size == virtual_size
-            assert stat.st_blocks * 512 == actual_size
+    @pytest.mark.parametrize("preallocation", [
+        None,
+        qemuimg.PREALLOCATION.OFF
+    ])
+    def test_qcow2_to_raw_sparse(self, preallocation):
+        virtual_size = 10 * 1024**2
+        with namedTemporaryDir() as tmpdir:
+            src = os.path.join(tmpdir, 'src')
+            dst = os.path.join(tmpdir, 'dst')
+
+            op = qemuimg.create(src, size=virtual_size, format="qcow2")
+            op.run()
+
+            op = qemuimg.convert(src, dst, srcFormat="qcow2", dstFormat="raw",
+                                 preallocation=preallocation)
+            op.run()
+            check_raw_sparse_image(dst, virtual_size)
 
     def test_raw_invalid_preallocation(self):
         with pytest.raises(ValueError):
@@ -560,6 +602,23 @@ class TestConvertPreallocation:
 
             assert actual_size > virtual_size
             assert disk_size < virtual_size
+
+
+def check_raw_sparse_image(path, virtual_size):
+    # Recent qemu-img always allocate the first block of an image;
+    # older versions allocate nothing.
+    # https://github.com/qemu/qemu/commit/3a20013fbb26
+    image_stat = os.stat(path)
+    allocated = image_stat.st_blocks * 512
+    filesystem_block_size = os.statvfs(path).f_bsize
+    assert image_stat.st_size == virtual_size
+    assert allocated <= filesystem_block_size
+
+
+def check_raw_preallocated_image(path, virtual_size):
+    image_stat = os.stat(path)
+    assert image_stat.st_size == virtual_size
+    assert image_stat.st_blocks * 512 == virtual_size
 
 
 class TestCheck:
