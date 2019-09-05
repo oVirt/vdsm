@@ -128,6 +128,14 @@ run_tests() {
     # (i.e. 'python3') so it points to proper package
     ${CI_PYTHON} tests/profile debuginfo-install debuginfo-install -y ${CI_PYTHON}
 
+    local py_pkg_ver="$(rpm -qa --queryformat "%{VERSION}-%{RELEASE}" ${CI_PYTHON})"
+    local py_dbg_pkg_ver="$(rpm -qa --queryformat "%{VERSION}-%{RELEASE}" ${CI_PYTHON}-debuginfo)"
+
+    if [ -z ${py_pkg_ver} ] || [ ${py_pkg_ver} != ${py_dbg_pkg_ver} ]; then
+        echo "WARNING: ${CI_PYTHON}-debuginfo-${py_dbg_pkg_ver} doesn't match ${CI_PYTHON}-${py_pkg_ver}!" \
+            "Backtraces for timed-out tests won't be available!"
+    fi
+
     # Make sure we have enough loop device nodes. Using 16 devices since with 8
     # devices we have random mount failures.
     create_loop_devices 16

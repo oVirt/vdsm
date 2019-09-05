@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,25 +21,39 @@ from __future__ import absolute_import
 from __future__ import division
 
 import errno
+import logging
 import os
-import re
 import signal
 import sys
 
 import pytest
 
+from vdsm.common import cache
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common.compat import subprocess
 
 
-def on_fedora():
-    with open("/etc/redhat-release") as f:
-        return re.search(r"Fedora release 2[89]", f.readline())
+log = logging.getLogger("test")
 
 
-def on_ovirt_ci():
-    return 'OVIRT_CI' in os.environ
+@cache.memoized
+def has_py_gdb_support():
+    try:
+        py_pkg_ver = commands.run([
+            "rpm", "-qa", "--queryformat", "%{VERSION}-%{RELEASE}",
+            "python{}".format(sys.version_info.major)
+        ]).decode("utf-8")
+
+        py_dbg_pkg_ver = commands.run([
+            "rpm", "-qa", "--queryformat", "%{VERSION}-%{RELEASE}",
+            "python{}-debuginfo".format(sys.version_info.major)
+        ]).decode("utf-8")
+
+        return py_dbg_pkg_ver != "" and py_dbg_pkg_ver == py_pkg_ver
+    except cmdutils.Error as e:
+        log.warning("Package version check failed: %s", e)
+        return False
 
 
 class TestPyWatch(object):
@@ -59,9 +73,11 @@ class TestPyWatch(object):
         assert b'Terminating watched process' in e.value.out
         assert e.value.rc == 128 + signal.SIGTERM
 
-    @pytest.mark.xfail(on_fedora(), reason="py-bt is broken on Fedora")
-    @pytest.mark.xfail(on_ovirt_ci(),
-                       reason="py-bt randomly unavailable on EL7 nodes")
+    @pytest.mark.xfail(
+        not has_py_gdb_support(),
+        reason=("gdb support missing - python debuginfo package unavailable "
+                "or has wrong version")
+    )
     def test_timeout_backtrace(self):
         script = '''
 import time
@@ -78,8 +94,8 @@ outer()
             commands.run([
                 sys.executable, 'py-watch', '0.1', sys.executable,
                 '-c', script])
-        assert b'in inner ()' in e.value.out
-        assert b'in outer ()' in e.value.out
+        assert b'line 8, in inner' in e.value.out
+        assert b'line 5, in outer' in e.value.out
 
     def test_kill_grandkids(self):
         # watch a bash process that starts a grandchild bash process.
