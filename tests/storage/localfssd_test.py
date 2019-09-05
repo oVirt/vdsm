@@ -544,6 +544,33 @@ def test_volume_create_raw_sparse(user_domain, local_fallocate):
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
+@pytest.mark.parametrize("disktype", [
+    sc.LEGACY_V2V_DATA_DISKTYPE, sc.LEGACY_DATA_DISKTYPE
+])
+def test_volume_create_with_legacy_disk_types(user_domain, disktype):
+    # validate that creating and reading volume info with legacy disk types
+    # works, so we can copy existing disks with legacy DISKTYPE.
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    user_domain.createVolume(
+        imgUUID=img_uuid,
+        capacity=SPARSE_VOL_SIZE,
+        volFormat=sc.RAW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType=disktype,
+        volUUID=vol_uuid,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    vol = user_domain.produceVolume(img_uuid, vol_uuid)
+
+    # Verify actual volume metadata
+    actual = vol.getInfo()
+    assert actual["disktype"] == disktype
+
+
 def test_volume_create_cow_sparse(user_domain, local_fallocate):
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
