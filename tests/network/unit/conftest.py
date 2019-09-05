@@ -94,14 +94,6 @@ class NMStateLinuxBridge(object):
     PORT_STP_PATH_COST = 'stp-path-cost'
 
 
-class NMStateVLAN(object):
-    TYPE = NMStateInterfaceType.VLAN
-    CONFIG_SUBTREE = 'vlan'
-
-    ID = 'id'
-    BASE_IFACE = 'base-iface'
-
-
 class NMStateSchema(object):
     Bond = NMStateBond
 
@@ -153,7 +145,6 @@ def nmstate_schema():
     p_iftype = mock.patch.object(
         nmstate, 'InterfaceType', NMStateInterfaceType)
     p_bridge = mock.patch.object(nmstate, 'LinuxBridge', NMStateLinuxBridge)
-    p_vlan = mock.patch.object(nmstate, 'VLAN', NMStateVLAN)
     p_schema = mock.patch.object(nmstate, 'schema', NMStateSchema)
     p_route = mock.patch.object(nmstate, 'Route', NMStateRoute)
     p_iface_ip = mock.patch.object(nmstate, 'InterfaceIP', NMStateInterfaceIP)
@@ -161,6 +152,6 @@ def nmstate_schema():
                                      NMStateInterfaceIPv6)
     p_dns = mock.patch.object(nmstate, 'DNS', NMStateDns)
 
-    with p_iface, p_ifstate, p_iftype, p_bridge, p_vlan:
+    with p_iface, p_ifstate, p_iftype, p_bridge:
         with p_schema, p_route, p_iface_ip, p_iface_ipv6, p_dns:
             yield
