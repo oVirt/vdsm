@@ -352,10 +352,6 @@ def remove_networks(networks, bondings, configurator, _netinfo):
             _del_broken_network(network, running_nets[network],
                                 configurator=configurator)
             _netinfo.updateDevices()
-        elif 'remove' in attrs:
-            raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete "
-                                     "network %r: It doesn't exist in the "
-                                     "system" % network)
 
 
 def _del_broken_network(network, netAttr, configurator):

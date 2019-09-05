@@ -193,3 +193,34 @@ class ValidationTests(unittest.TestCase):
                 'bond1', {'remove': True}, nets, running_nets,
                 fake_kernel_nics)
         self.assertEqual(e.exception.args[0], ne.ERR_USED_BOND)
+
+    def test_remove_missing_net_fails(self):
+        net_name = 'net1'
+        net_attrs = {'remove': True}
+        bonds = desired_bonds = {}
+        nics = {}
+
+        with self.assertRaises(ne.ConfigNetworkError) as cne:
+            validator.validate_net_configuration(net_name,
+                                                 net_attrs,
+                                                 desired_bonds,
+                                                 bonds,
+                                                 nics,
+                                                 netinfo_networks={},
+                                                 running_config_networks={})
+        self.assertEqual(cne.exception.args[0], ne.ERR_BAD_BRIDGE)
+
+    def test_remove_broken_net_succeeds(self):
+        net_name = 'net1'
+        net_attrs = {'remove': True}
+        bonds = desired_bonds = {}
+        nics = {}
+
+        validator.validate_net_configuration(net_name,
+                                             net_attrs,
+                                             desired_bonds,
+                                             bonds,
+                                             nics,
+                                             running_config_networks={
+                                                 net_name: {'nic': 'eth0'}}
+                                             )

@@ -23,6 +23,7 @@ from __future__ import division
 import six
 
 from vdsm.network import errors as ne
+from vdsm.network.configurators import RunningConfig
 from vdsm.network.kernelconfig import KernelConfig
 from vdsm.network.link import dpdk
 from vdsm.network.link.bond import Bond
@@ -92,14 +93,21 @@ def validate_network_setup(nets, bonds, net_info):
     kernel_bonds = Bond.bonds()
     for net, attrs in six.iteritems(nets):
         validate_net_configuration(
-            net, attrs, bonds, kernel_bonds, kernel_nics)
+            net,
+            attrs,
+            bonds,
+            kernel_bonds,
+            kernel_nics,
+            net_info['networks'],
+            RunningConfig().networks)
     for bond, attrs in six.iteritems(bonds):
         validate_bond_configuration(
             bond, attrs, nets, net_info['networks'], kernel_nics)
 
 
 def validate_net_configuration(
-        net, netattrs, desired_bonds, current_bonds, current_nics):
+        net, netattrs, desired_bonds, current_bonds, current_nics,
+        netinfo_networks=None, running_config_networks=None):
     """Test if network meets logical Vdsm requiremets.
 
     Bridgeless networks are allowed in order to support Engine requirements.
@@ -107,8 +115,10 @@ def validate_net_configuration(
     Checked by OVS:
         - only one vlan per tag
     """
-    _validate_network_remove(netattrs)
-
+    _validate_network_remove(net,
+                             netattrs,
+                             netinfo_networks or {},
+                             running_config_networks or {})
     nic = netattrs.get('nic')
     bond = netattrs.get('bonding')
     vlan = netattrs.get('vlan')
@@ -153,13 +163,26 @@ def _validate_vlan_id(id):
         )
 
 
-def _validate_network_remove(netattrs):
+def _validate_network_remove(netname,
+                             netattrs,
+                             netinfo_networks,
+                             running_config_networks):
     netattrs_set = set(netattrs)
-    if 'remove' in netattrs_set and netattrs_set - set(['remove', 'custom']):
+    is_remove = netattrs.get('remove')
+    if is_remove and netattrs_set - set(['remove', 'custom']):
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_PARAMS,
             'Cannot specify any attribute when removing (except custom)).'
         )
+    if is_remove:
+        if (
+                netname not in netinfo_networks and
+                netname not in running_config_networks
+        ):
+            raise ne.ConfigNetworkError(ne.ERR_BAD_BRIDGE,
+                                        "Cannot delete "
+                                        "network %r: It doesn't exist in the "
+                                        "system" % netname)
 
 
 def _validate_bond_options(bond_options):

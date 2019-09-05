@@ -95,7 +95,7 @@ class TestConfigNetwork(TestCaseBase):
             }
         }
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
-            validator.validate_network_setup(networks, {}, {})
+            validator.validate_network_setup(networks, {}, {'networks': {}})
         self.assertEqual(cneContext.exception.errCode, errors.ERR_BAD_PARAMS)
 
 

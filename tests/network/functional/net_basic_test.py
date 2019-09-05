@@ -92,6 +92,7 @@ class TestNetworkBasic(object):
                 pass
         assert cm.value.status == ne.ERR_BAD_NIC
 
+    @pytest.mark.nmstate
     def test_remove_missing_net_fails(self, switch):
         NETREMOVE = {NETWORK_NAME: {'remove': True}}
         with pytest.raises(SetupNetworksError) as cm:
