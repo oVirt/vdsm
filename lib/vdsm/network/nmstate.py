@@ -267,7 +267,7 @@ class Network(object):
         if self._netconf.bridged:
             bridge_port = vlan_iface_state or sb_iface_state
             bridge_iface_state = self._create_bridge_iface(
-                bridge_port[Interface.NAME],
+                bridge_port[Interface.NAME] if bridge_port else None,
                 options=self._create_bridge_options()
             )
         else:
@@ -294,15 +294,16 @@ class Network(object):
         return {
             Interface.NAME: self._netconf.base_iface,
             Interface.STATE: InterfaceState.UP,
-        }
+        } if self._netconf.base_iface else {}
 
     def _create_bridge_iface(self, port, options=None):
+        port_state = [{LinuxBridge.PORT_NAME: port}] if port else []
         bridge_state = {
             Interface.NAME: self._name,
             Interface.TYPE: InterfaceType.LINUX_BRIDGE,
             Interface.STATE: InterfaceState.UP,
             LinuxBridge.CONFIG_SUBTREE:
-                {LinuxBridge.PORT_SUBTREE: [{LinuxBridge.PORT_NAME: port}]}
+                {LinuxBridge.PORT_SUBTREE: port_state}
         }
         if options:
             brstate = bridge_state[LinuxBridge.CONFIG_SUBTREE]
@@ -321,11 +322,12 @@ class Network(object):
         port_iface = vlan_iface or sb_iface
         if self._netconf.bridged:
             # Bridge port IP stacks need to be disabled.
-            port_iface[Interface.IPV4] = self._create_ipv4(enabled=False)
-            port_iface[Interface.IPV6] = self._create_ipv6(enabled=False)
+            if port_iface:
+                port_iface[Interface.IPV4] = self._create_ipv4(enabled=False)
+                port_iface[Interface.IPV6] = self._create_ipv6(enabled=False)
             bridge_iface[Interface.IPV4] = ipv4_state
             bridge_iface[Interface.IPV6] = ipv6_state
-        else:
+        elif port_iface:
             port_iface[Interface.IPV4] = ipv4_state
             port_iface[Interface.IPV6] = ipv6_state
 
@@ -468,6 +470,7 @@ class Network(object):
         for net in nets:
             init_base_iface = (
                 net.to_remove and
+                net.base_iface and
                 not (net.has_vlan or net.base_iface in interfaces_state)
             )
             if init_base_iface:

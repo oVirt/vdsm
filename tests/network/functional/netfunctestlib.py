@@ -212,7 +212,12 @@ class NetFuncTestAdapter(object):
         self.assertSouthboundIface(netname, netattrs)
         self.assertVlan(netattrs)
         self.assertNetworkIp(netname, netattrs)
-        self.assertLinksUp(netname, netattrs)
+
+        sb_iface_exists = netattrs.get('nic') or netattrs.get('bonding')
+        check_admin_state = bridged and not sb_iface_exists
+        self.assertLinksUp(netname,
+                           netattrs,
+                           check_oper_state=not check_admin_state)
         self.assertNetworkSwitchType(netname, netattrs)
         self.assertNetworkMtu(netname, netattrs)
 
@@ -589,7 +594,7 @@ class NetFuncTestAdapter(object):
         assert is_default_route_requested == ipinfo['ipv4defaultroute']
 
     @retry_assert
-    def assertLinksUp(self, net, attrs):
+    def assertLinksUp(self, net, attrs, check_oper_state=True):
         switch = attrs.get('switch', 'legacy')
         if switch == 'legacy':
             expected_links = _gather_expected_legacy_links(
@@ -599,7 +604,11 @@ class NetFuncTestAdapter(object):
                 net, attrs, self.netinfo)
         if expected_links:
             for dev in expected_links:
-                assert iface(dev).is_oper_up(), 'Dev {} is DOWN'.format(dev)
+                check_is_up = (
+                    iface(dev).is_oper_up if check_oper_state
+                    else iface(dev).is_admin_up
+                )
+                assert check_is_up(), 'Dev {} is DOWN'.format(dev)
 
     def assertNameservers(self, nameservers):
         assert nameservers == self.netinfo.nameservers[:len(nameservers)]

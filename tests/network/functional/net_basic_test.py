@@ -52,16 +52,15 @@ def create_adapter(target):
 
 
 @nftestlib.parametrize_switch
+@pytest.mark.nmstate
 class TestNetworkBasic(object):
 
-    @pytest.mark.nmstate
     def test_add_net_based_on_nic(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': switch}}
             with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                 adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
-    @pytest.mark.nmstate
     def test_remove_net_based_on_nic(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': switch}}
@@ -71,7 +70,6 @@ class TestNetworkBasic(object):
                 adapter.assertNoNetwork(NETWORK_NAME)
 
     @nftestlib.parametrize_bridged
-    @pytest.mark.nmstate
     def test_add_net_twice(self, switch, bridged):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic,
@@ -82,7 +80,6 @@ class TestNetworkBasic(object):
                 adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     @nftestlib.parametrize_bridged
-    @pytest.mark.nmstate
     def test_add_net_missing_nic_fails(self, switch, bridged):
         NETCREATE = {NETWORK_NAME: {'nic': 'missing_nic',
                                     'bridged': bridged,
@@ -92,7 +89,6 @@ class TestNetworkBasic(object):
                 pass
         assert cm.value.status == ne.ERR_BAD_NIC
 
-    @pytest.mark.nmstate
     def test_remove_missing_net_fails(self, switch):
         NETREMOVE = {NETWORK_NAME: {'remove': True}}
         with pytest.raises(SetupNetworksError) as cm:
@@ -100,7 +96,6 @@ class TestNetworkBasic(object):
                 pass
         assert cm.value.status == ne.ERR_BAD_BRIDGE
 
-    @pytest.mark.nmstate
     def test_add_net_based_on_vlan(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLANID,
@@ -108,7 +103,6 @@ class TestNetworkBasic(object):
             with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                 adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
-    @pytest.mark.nmstate
     def test_remove_net_based_on_vlan(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLANID,
@@ -120,7 +114,6 @@ class TestNetworkBasic(object):
                 adapter.assertNoVlan(nic, VLANID)
 
     @nftestlib.parametrize_bridged
-    @pytest.mark.nmstate
     def test_add_net_with_multi_vlans_over_a_nic(self, switch, bridged):
         VLAN_COUNT = 3
 
@@ -145,7 +138,6 @@ class TestNetworkBasic(object):
         with adapter.setupNetworks(NETCREATE, {}, NOCHK):
             adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
-    @pytest.mark.nmstate
     def test_add_bridgeless_net_missing_sb_device_fails(self, switch):
         NETCREATE = {NETWORK_NAME: {'bridged': False, 'switch': switch}}
         with pytest.raises(SetupNetworksError) as err:
@@ -153,7 +145,6 @@ class TestNetworkBasic(object):
                 pass
         assert err.value.status == ne.ERR_BAD_PARAMS
 
-    @pytest.mark.nmstate
     def test_add_bridged_vlaned_net_missing_sb_device_fails(self, switch):
         NETCREATE = {NETWORK_NAME: {'bridged': True,
                                     'vlan': VLANID,
@@ -163,7 +154,6 @@ class TestNetworkBasic(object):
                 pass
         assert err.value.status == ne.ERR_BAD_VLAN
 
-    @pytest.mark.nmstate
     def test_add_bridgeless_vlaned_net_missing_sb_device_fails(self, switch):
         NETCREATE = {NETWORK_NAME: {'bridged': False,
                                     'vlan': VLANID,
@@ -174,7 +164,6 @@ class TestNetworkBasic(object):
         assert err.value.status == ne.ERR_BAD_VLAN
 
     @nftestlib.parametrize_bridged
-    @pytest.mark.nmstate
     def test_add_vlaned_and_non_vlaned_nets_same_nic(self, switch, bridged):
         with dummy_device() as nic:
             net_1_attrs = self._create_net_attrs(nic, bridged, switch)
@@ -183,17 +172,14 @@ class TestNetworkBasic(object):
             self._assert_nets(net_1_attrs, net_2_attrs)
 
     @nftestlib.parametrize_bridged
-    @pytest.mark.nmstate
     def test_add_multiple_nets_on_the_same_nic_fails(self, switch, bridged):
         self._test_add_multiple_nets_fails(switch, bridged)
 
     @nftestlib.parametrize_bridged
-    @pytest.mark.nmstate
     def test_add_identical_vlan_id_nets_same_nic_fails(self, switch, bridged):
         self._test_add_multiple_nets_fails(switch, bridged, vlan_id=VLANID)
 
     @nftestlib.parametrize_bridged
-    @pytest.mark.nmstate
     def test_add_identical_vlan_id_nets_with_two_nics(self, switch, bridged):
         with dummy_devices(2) as (nic1, nic2):
             net_1_attrs = self._create_net_attrs(nic1, bridged, switch, VLANID)
@@ -201,7 +187,6 @@ class TestNetworkBasic(object):
 
             self._assert_nets(net_1_attrs, net_2_attrs)
 
-    @pytest.mark.nmstate
     def test_remove_bridgeless_net_with_a_nic_used_by_a_vlan_net(self, switch):
         with dummy_device() as nic:
             netcreate = {
@@ -224,7 +209,6 @@ class TestNetworkBasic(object):
                 adapter.assertNoNetwork(NET_1)
                 adapter.assertNetwork(NET_2, netcreate[NET_2])
 
-    @pytest.mark.nmstate
     def test_switch_between_bridgeless_and_bridged_vlaned_net(self, switch):
         with dummy_device() as nic:
             netattrs = {'nic': nic,
