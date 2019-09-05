@@ -21,8 +21,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import six
-
 from vdsm.storage import curlImgWrap
 
 
@@ -56,9 +54,5 @@ def test_parse_headers(tmpdir):
 
     # In the vdsm code we use only Content-Length and X-Image-Meta-Size headers
     # so we test only these headers.
-    assert "Content-Length" in headers
-    assert "X-Image-Meta-Size" in headers
-    assert isinstance(headers["Content-Length"], six.text_type)
-    assert isinstance(headers["X-Image-Meta-Size"], six.text_type)
-    assert headers["Content-Length"] == "0"
-    assert headers["X-Image-Meta-Size"] == "307494912"
+    assert headers[u"Content-Length"] == u"0"
+    assert headers[u"X-Image-Meta-Size"] == u"307494912"
