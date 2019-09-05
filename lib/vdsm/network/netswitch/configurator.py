@@ -29,6 +29,7 @@ from vdsm.common.cache import memoized
 from vdsm.common.time import monotonic_time
 from vdsm.network import connectivity
 from vdsm.network import dns
+from vdsm.network import ifacetracking
 from vdsm.network import ifacquire
 from vdsm.network import legacy_switch
 from vdsm.network import errors as ne
@@ -173,6 +174,7 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
     logging.info('Processing setup through nmstate')
     desired_state = nmstate.generate_state(networks, bondings)
     logging.info('Desired state: %s', desired_state)
+    _setup_dynamic_src_routing(networks)
     nmstate.setup(desired_state, verify_change=not in_rollback)
     with Transaction(in_rollback=in_rollback) as config:
         for net_name, net_attrs in six.viewitems(networks):
@@ -187,11 +189,11 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
         for bond_name, bond_attrs in six.viewitems(bondings):
             if not bond_attrs.get('remove'):
                 config.setBonding(bond_name, bond_attrs)
-        _setup_src_routing(networks)
+        _setup_static_src_routing(networks)
         connectivity.check(options)
 
 
-def _setup_src_routing(networks):
+def _setup_static_src_routing(networks):
     for net_name, net_attrs in six.viewitems(networks):
         gateway = net_attrs.get('gateway')
         if gateway:
@@ -210,6 +212,24 @@ def get_next_hop_interface(net_name, net_attributes):
                                net_attributes.get('bonding'))
         return (next_hop_base_iface if not vlan
                 else '{}.{}'.format(next_hop_base_iface, vlan))
+
+
+def _setup_dynamic_src_routing(networks):
+    for net_name, net_attrs in six.viewitems(networks):
+        is_remove = net_attrs.get('remove', False)
+        is_dynamic = net_attrs.get('bootproto') == 'dhcp'
+        if is_dynamic and not is_remove:
+            ifacetracking.add(_get_network_iface(net_name, net_attrs))
+
+
+def _get_network_iface(net_name, net_attrs):
+    bridged = net_attrs.get('bridged')
+    vlan = net_attrs.get('vlan')
+    nic = net_attrs.get('nic')
+    bond = net_attrs.get('bond')
+    base_iface = nic or bond
+    return (net_name if bridged else
+            '{}.{}'.format(base_iface, vlan) if vlan else base_iface)
 
 
 def _setup_legacy(networks, bondings, options, net_info, in_rollback):
