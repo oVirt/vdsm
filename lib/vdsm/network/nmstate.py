@@ -264,13 +264,14 @@ class Network(object):
     def _create_ifaces(self):
         vlan_iface_state = self._create_vlan_iface()
         sb_iface_state = self._create_southbound_iface()
-        bridge_iface_state = {}
         if self._netconf.bridged:
             bridge_port = vlan_iface_state or sb_iface_state
             bridge_iface_state = self._create_bridge_iface(
                 bridge_port[Interface.NAME],
                 options=self._create_bridge_options()
             )
+        else:
+            bridge_iface_state = self._remove_bridge_iface()
 
         return sb_iface_state, vlan_iface_state, bridge_iface_state
 

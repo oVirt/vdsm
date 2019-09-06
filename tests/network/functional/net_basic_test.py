@@ -223,6 +223,7 @@ class TestNetworkBasic(object):
                 adapter.assertNoNetwork(NET_1)
                 adapter.assertNetwork(NET_2, netcreate[NET_2])
 
+    @pytest.mark.nmstate
     def test_switch_between_bridgeless_and_bridged_vlaned_net(self, switch):
         with dummy_device() as nic:
             netattrs = {'nic': nic,

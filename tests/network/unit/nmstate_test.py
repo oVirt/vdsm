@@ -619,6 +619,27 @@ def test_translate_add_network_with_default_route_on_vlan_interface():
     assert expected_state == state
 
 
+@mock.patch.object(nmstate, 'RunningConfig')
+def test_update_network_from_bridged_to_bridgeless(rconfig_mock):
+    networks = {TESTNET1: _create_network_config('nic', IFACE0, bridged=True)}
+    rconfig_mock.return_value.networks = networks
+
+    updated_network = {
+        TESTNET1: _create_network_config('nic', IFACE0, bridged=False)
+    }
+    state = nmstate.generate_state(networks=updated_network, bondings={})
+
+    eth0_state = _create_ethernet_iface_state(IFACE0)
+    _disable_iface_ip(eth0_state)
+
+    remove_bridge_state = _create_bridge_iface_state(TESTNET1, port=None,
+                                                     state='absent')
+
+    expected_state = {nmstate.Interface.KEY: [eth0_state, remove_bridge_state]}
+
+    assert expected_state == state
+
+
 class TestDns(object):
 
     def test_dns_add_network_with_default_route(self):
@@ -741,19 +762,17 @@ def _create_bond_iface_state(name, mode, slaves, **options):
     return state
 
 
-def _create_bridge_iface_state(name, port, options=None):
+def _create_bridge_iface_state(name, port, state='up', options=None):
     bridge_state = {
         nmstate.Interface.NAME: name,
-        nmstate.Interface.TYPE: 'linux-bridge',
-        nmstate.Interface.STATE: 'up',
-        'bridge': {
-            'port': [
-                {
-                    'name': port,
-                }
-            ]
-        }
+        nmstate.Interface.STATE: state
     }
+
+    if state == 'up':
+        bridge_state[nmstate.Interface.TYPE] = 'linux-bridge'
+    if port:
+        bridge_state[nmstate.LinuxBridge.CONFIG_SUBTREE] = {
+            'port': [{'name': port}]}
     if options:
         bridge_state['bridge']['options'] = options
     return bridge_state
