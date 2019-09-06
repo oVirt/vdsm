@@ -224,3 +224,11 @@ class ValidationTests(unittest.TestCase):
                                              running_config_networks={
                                                  net_name: {'nic': 'eth0'}}
                                              )
+
+    def test_is_bridge_name_valid(self):
+        invalid_bridge_name = ('', '-abc', 'abcdefghijklmnop', 'a:b', 'a.b')
+        for invalid_name in invalid_bridge_name:
+            with self.assertRaises(ne.ConfigNetworkError) as cne_context:
+                validator.validate_bridge_name(invalid_name)
+            self.assertEqual(cne_context.exception.errCode,
+                             ne.ERR_BAD_BRIDGE)

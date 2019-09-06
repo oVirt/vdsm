@@ -48,14 +48,6 @@ class TestNetmodels(TestCaseBase):
         self.assertEqual(Vlan.validateTag(0), None)
         self.assertEqual(Vlan.validateTag(Vlan.MAX_ID), None)
 
-    def testIsBridgeNameValid(self):
-        invalidBrName = ('', '-abc', 'abcdefghijklmnop', 'a:b', 'a.b')
-        for i in invalidBrName:
-            with self.assertRaises(errors.ConfigNetworkError) as cneContext:
-                Bridge.validateName(i)
-            self.assertEqual(cneContext.exception.errCode,
-                             errors.ERR_BAD_BRIDGE)
-
     def testIsNicValid(self):
         invalidNicName = ('toni', 'livnat', 'dan')
 

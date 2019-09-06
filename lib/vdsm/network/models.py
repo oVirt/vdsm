@@ -160,12 +160,9 @@ class Vlan(NetDevice):
 
 class Bridge(NetDevice):
     '''This class represents traditional kernel bridges.'''
-    MAX_NAME_LEN = 15
-    ILLEGAL_CHARS = frozenset(':. \t')
 
     def __init__(self, name, configurator, ipv4=None, ipv6=None,
                  blockingdhcp=False, mtu=None, port=None, stp=None):
-        self.validateName(name)
         if port:
             port.master = self
         self.port = port
@@ -189,14 +186,6 @@ class Bridge(NetDevice):
     def remove(self):
         logging.debug('Removing bridge %r', self)
         self.configurator.removeBridge(self)
-
-    @classmethod
-    def validateName(cls, name):
-        if not (name and 0 < len(name) <= cls.MAX_NAME_LEN and
-                len(set(name) & cls.ILLEGAL_CHARS) == 0 and
-                not name.startswith('-')):
-            raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
-                                     "Bridge name isn't valid: %r" % name)
 
 
 class Bond(NetDevice):

@@ -268,6 +268,7 @@ class TestNetworkBasic(object):
 
 
 @pytest.mark.legacy_switch
+@pytest.mark.nmstate
 class TestNetworkBasicLegacy(object):
 
     NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
