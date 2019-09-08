@@ -55,7 +55,6 @@ from vdsm.storage import exception as se
 from vdsm.storage import nbd
 from vdsm.storage import qemuimg
 
-from . marks import xfail_python3
 from . storagetestlib import fake_env
 
 # TODO: Move to actual code when we support preallocated qcow2 images.
@@ -201,7 +200,6 @@ def test_readonly(nbd_env, format, allocation):
         qemuimg.info(nbd_url)
 
 
-@xfail_python3
 def test_shared_volume():
     with fake_env("file") as env:
         img_id = str(uuid.uuid4())
