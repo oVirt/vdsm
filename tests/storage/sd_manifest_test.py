@@ -39,7 +39,6 @@ from storage.storagetestlib import (
     make_file_volume,
 )
 
-from . marks import xfail_python3
 
 MB = 1048576
 
@@ -48,7 +47,6 @@ MB = 1048576
 VOLSIZE = 256 * MB
 
 
-@xfail_python3
 class ManifestMixin(object):
 
     def test_init_failure_raises(self, monkeypatch):
@@ -62,7 +60,6 @@ class ManifestMixin(object):
                 env.sd_manifest.initDomainLock()
 
 
-@xfail_python3
 class TestFileManifest(ManifestMixin):
     env = fake_file_env
 
@@ -131,7 +128,6 @@ class TestFileManifest(ManifestMixin):
             env.sd_manifest.purgeImage(sd_id, img_id, [vol_id], False)
 
 
-@xfail_python3
 class TestBlockManifest(ManifestMixin):
     env = fake_block_env
 
@@ -162,7 +158,6 @@ class TestBlockManifest(ManifestMixin):
                     env.sd_manifest.getMetaParam(sd.DMDK_SDUUID))
 
 
-@xfail_python3
 class TestBlockDomainMetadataSlot:
 
     # Note: the first 4 slots (0-3) are reserved for domain metadata in V3,4
