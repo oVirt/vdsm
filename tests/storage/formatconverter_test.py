@@ -62,14 +62,12 @@ def vol(request):
         yield vol
 
 
-@xfail_python3
 def test_v3_reset_meta_vol_size_metadata_no_change_needed(vol):
     original_capacity = vol.getCapacity()
     _v3_reset_meta_volsize(vol)
     assert vol.getCapacity() == original_capacity
 
 
-@xfail_python3
 def test_v3_reset_meta_vol_size_metadata_wrong(vol):
     original_capacity = vol.getCapacity()
     vol.setCapacity(original_capacity // 2)
@@ -77,7 +75,6 @@ def test_v3_reset_meta_vol_size_metadata_wrong(vol):
     assert vol.getCapacity() == original_capacity
 
 
-@xfail_python3
 def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
     dom = tmp_repo.create_localfs_domain(name="domain", version=3)
 
