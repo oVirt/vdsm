@@ -1,0 +1,4 @@
+fc30-updates-debuginfo,http://download.fedoraproject.org/pub/fedora/linux/updates/$releasever/Everything/$basearch/debug/
+tested,http://resources.ovirt.org/repos/ovirt/tested/master/rpm/$distro
+vdo,https://copr-be.cloud.fedoraproject.org/results/rhawalsh/dm-vdo/fedora-$releasever-$basearch/
+virt-preview,https://copr-be.cloud.fedoraproject.org/results/@virtmaint-sig/virt-preview/fedora-$releasever-$basearch/

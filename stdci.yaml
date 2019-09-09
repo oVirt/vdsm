@@ -41,7 +41,7 @@ stages:
             runtime-requirements:
               host-distro: same
             distributions:
-              - fc29
+              - fc30
   - check-network: &check-network
       archs:
         - x86_64
