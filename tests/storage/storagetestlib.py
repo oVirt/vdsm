@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import binascii
 import os
 import shutil
 import tempfile
@@ -284,7 +285,7 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
 
 
 def get_random_devices(count=NR_PVS):
-    return ['/dev/mapper/{0}'.format(os.urandom(16).encode('hex'))
+    return ['/dev/mapper/{0}'.format(binascii.hexlify(os.urandom(16)))
             for _ in range(count)]
 
 
