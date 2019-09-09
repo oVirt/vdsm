@@ -197,7 +197,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
 
     if out is None:
         # Prevent splitlines() from barfing later on
-        out = ""
+        out = b""
 
     execCmdLogger.debug(retcode_log_line(p.returncode, err=err))
 
