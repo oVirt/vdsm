@@ -121,8 +121,10 @@ class ClientIF(object):
     def getInstance(self):
         return self
 
-    def prepareVolumePath(self, drive, vmId=None):
-        if isinstance(drive, dict):
+    def prepareVolumePath(self, drive, vmId=None, path=None):
+        if path is not None:
+            return path
+        elif isinstance(drive, dict):
             return drive['path']
         else:
             return drive

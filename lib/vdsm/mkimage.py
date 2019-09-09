@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -119,10 +119,10 @@ def injectFilesToFs(floppy, files, fstype='auto'):
         _commonCleanFs(dirname, floppy)
 
 
-def mkFloppyFs(vmId, files, volumeName=None):
+def mkFloppyFs(vmId, files, volumeName=None, path=None):
     floppy = None
     try:
-        floppy = getFileName(vmId, files)
+        floppy = path or getFileName(vmId, files)
         if os.path.exists(floppy):
             # mkfs.msdos refuses to overwrite existing images
             logging.warning('Removing stale floppy image: %s', floppy)
@@ -141,12 +141,12 @@ def mkFloppyFs(vmId, files, volumeName=None):
     return floppy
 
 
-def mkIsoFs(vmId, files, volumeName=None):
+def mkIsoFs(vmId, files, volumeName=None, path=None):
     dirname = isopath = None
     try:
         dirname = tempfile.mkdtemp()
         _decodeFilesIntoDir(files, dirname)
-        isopath = getFileName(vmId, files)
+        isopath = path or getFileName(vmId, files)
 
         command = [EXT_MKISOFS, '-R', '-J', '-o', isopath]
         if volumeName is not None:

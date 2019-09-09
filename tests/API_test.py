@@ -207,7 +207,7 @@ class FakeClientIF(object):
     def getInstance(self):
         return self
 
-    def prepareVolumePath(self, paramFilespec):
+    def prepareVolumePath(self, paramFilespec, path=None):
         return paramFilespec
 
     def teardownVolumePath(self, paramFilespec):

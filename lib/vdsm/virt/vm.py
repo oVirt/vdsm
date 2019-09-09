@@ -1023,7 +1023,18 @@ class Vm(object):
                 if self._destroy_requested.is_set():
                     # A destroy request has been issued, exit early
                     break
-                drive['path'] = self.cif.prepareVolumePath(drive, self.id)
+                if self._altered_state.origin is not None:
+                    # We must use the original payload path in
+                    # incoming migrations, otherwise the generated
+                    # payload path may not match the one from the
+                    # domain XML (when migrating from Vdsm versions
+                    # using different payload paths).
+                    path = drive.get('path')
+                else:
+                    path = None
+                drive['path'] = self.cif.prepareVolumePath(
+                    drive, self.id, path=path
+                )
                 if isVdsmImage(drive):
                     # This is the only place we support manipulation of a
                     # prepared image, required for the localdisk hook. The hook
