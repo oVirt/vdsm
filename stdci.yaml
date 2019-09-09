@@ -20,6 +20,9 @@ stages:
   - build-artifacts:
       substages:
         - build-py27
+        - build-py37:
+            distributions:
+              - fc30
   - check-patch:
       archs:
         - x86_64
