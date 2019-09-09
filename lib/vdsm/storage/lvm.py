@@ -171,14 +171,14 @@ def _buildConfig(dev_filter, locking_type):
 
 #
 # Make sure that "args" is suitable for consumption in interfaces
-# that expect an iterabale argument. The string is treated a single
-# argument an converted into list, containing that string.
-# Strings have not __iter__ attribute.
+# that expect an iterabale argument. As we pass as an argument on of
+# None, list or string, we check only None and string.
+# Once we enforce iterables in all functions, this function should be removed.
 #
 def normalize_args(args=None):
     if args is None:
         args = []
-    elif not hasattr(args, "__iter__"):
+    elif isinstance(args, six.string_types):
         args = [args]
 
     return args

@@ -979,7 +979,6 @@ def test_retry_with_wider_filter(tmp_storage):
     assert vg.pv_name == (dev,)
 
 
-@xfail_python3
 def test_normalize_args():
     assert lvm.normalize_args(u"arg") == [u"arg"]
     assert lvm.normalize_args("arg") == [u"arg"]
