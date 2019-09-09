@@ -4817,7 +4817,10 @@ class Vm(object):
         for drive in self._devices[hwclass.DISK]:
             if (hasattr(drive, 'specParams') and
                     'vmPayload' in drive.specParams):
-                supervdsm.getProxy().removeFs(drive.path)
+                try:
+                    supervdsm.getProxy().removeFs(drive.path)
+                except:
+                    self.log.exception("Failed to remove a payload file")
 
         with self._releaseLock:
             if self._released.is_set():
