@@ -15,8 +15,6 @@ release_branches:
     - ovirt-master
   ovirt-4.3:
     - ovirt-4.3
-  ovirt-4.2:
-    - ovirt-4.2
 
 stages:
   - build-artifacts:
