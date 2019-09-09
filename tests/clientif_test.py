@@ -243,7 +243,7 @@ class ClientIFTests(TestCaseBase):
 
     @MonkeyPatch(clientIF, 'supervdsm', FakeSuperVdsm())
     def testSuperVdsmFailure(self):
-        def fail(*args):
+        def fail(*args, **kwargs):
             raise RuntimeError('Injected fail')
         sv = clientIF.supervdsm.getProxy()
         sv.mkIsoFs = fail

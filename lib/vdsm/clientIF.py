@@ -404,7 +404,17 @@ class clientIF(object):
                                         name='Reactor thread')
         self.thread.start()
 
-    def prepareVolumePath(self, drive, vmId=None):
+    def prepareVolumePath(self, drive, vmId=None, path=None):
+        """
+        :param drive: the drive to prepare path for
+        :type drive: dict, string or None
+        :param vmId: VM UUID
+        :type vmId: string or None
+        :param path: defines payload path for devices providing
+            payload; if omitted and `drive` is a payload device then
+            the path will be generated
+        :type path: string or None
+        """
         if type(drive) is dict:
             device = drive['device']
             # PDIV drive format
@@ -469,7 +479,7 @@ class clientIF(object):
                 params = drive['specParams']
                 if 'vmPayload' in params:
                     volPath = self._prepareVolumePathFromPayload(
-                        vmId, device, params['vmPayload'])
+                        vmId, device, params['vmPayload'], path)
                 # next line can be removed in future, when < 3.3 engine
                 # is not supported
                 elif (params.get('path', '') == '' and
@@ -502,22 +512,21 @@ class clientIF(object):
         self.log.info("prepared volume path: %s", volPath)
         return volPath
 
-    def _prepareVolumePathFromPayload(self, vmId, device, payload):
+    def _prepareVolumePathFromPayload(self, vmId, device, payload, path):
         """
-        param vmId:
-            VM UUID or None
-        param device:
-            either 'floppy' or 'cdrom'
-        param payload:
-            a dict formed like this:
+        :param vmId: VM UUID or None
+        :param device: either 'floppy' or 'cdrom'
+        :param payload: a dict formed like this:
             {'volId': 'volume id',   # volId is optional
              'file': {'filename': 'content', ...}}
+        :param path: payload path as a string; if not given, it will
+           be generated
         """
         funcs = {'cdrom': 'mkIsoFs', 'floppy': 'mkFloppyFs'}
         if device not in funcs:
             raise vm.VolumeError("Unsupported 'device': %s" % device)
         func = getattr(supervdsm.getProxy(), funcs[device])
-        return func(vmId, payload['file'], payload.get('volId'))
+        return func(vmId, payload['file'], payload.get('volId'), path=path)
 
     def teardownVolumePath(self, drive):
         res = {'status': doneCode}
