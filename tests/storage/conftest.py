@@ -31,6 +31,7 @@ from contextlib import closing
 
 import pytest
 
+from vdsm import jobs
 from vdsm.common import threadlocal
 from vdsm.storage import blockSD
 from vdsm.storage import clusterlock
@@ -45,6 +46,7 @@ from vdsm.storage import outOfProcess as oop
 from vdsm.storage import task
 from vdsm.storage.sdc import sdCache
 
+import fakelib
 from .fakesanlock import FakeSanlock
 from . import tmpfs
 from . import tmprepo
@@ -185,3 +187,12 @@ def fake_sanlock(monkeypatch):
 @pytest.fixture
 def local_fallocate(monkeypatch):
     monkeypatch.setattr(fallocate, '_FALLOCATE', '../helpers/fallocate')
+
+
+@pytest.fixture
+def fake_scheduler():
+    scheduler = fakelib.FakeScheduler()
+    notifier = fakelib.FakeNotifier()
+    jobs.start(scheduler, notifier)
+    yield
+    jobs._clear()

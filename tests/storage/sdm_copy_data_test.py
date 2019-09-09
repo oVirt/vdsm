@@ -22,7 +22,11 @@ from __future__ import absolute_import
 from __future__ import division
 
 import threading
+import uuid
+
 from contextlib import contextmanager
+
+import pytest
 
 from fakelib import FakeNotifier
 from fakelib import FakeScheduler
@@ -49,6 +53,7 @@ from testlib import start_thread
 
 from vdsm import jobs
 from vdsm.common import exception
+from vdsm.constants import GIB, MEGAB
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -355,6 +360,104 @@ class TestCopyDataDIV(VdsmTestCase):
 
     # TODO: Missing tests:
     # Copy between 2 different domains
+
+
+@xfail_python3
+@pytest.mark.parametrize(
+    "dest_format", [sc.COW_FORMAT, sc.RAW_FORMAT])
+def test_copy_data_collapse(
+        tmpdir, tmp_repo, fake_access, fake_rescan,
+        tmp_db, fake_task, fake_scheduler, monkeypatch,
+        dest_format):
+    dom = tmp_repo.create_localfs_domain(
+        name="domain",
+        version=5)
+
+    chain_size = 3
+    volumes = create_chain(dom, chain_size)
+    dest_img_id = str(uuid.uuid4())
+    dest_vol_id = str(uuid.uuid4())
+
+    length = MEGAB
+
+    # Write some data to each layer
+    for i, vol in enumerate(volumes):
+        qemuio.write_pattern(
+            vol.getVolumePath(),
+            sc.fmt2str(vol.getFormat()),
+            offset=(i * length))
+
+    # The last volume in the chain is the leaf
+    source_leaf_vol = volumes[-1]
+    dest_vol = create_volume(
+        dom,
+        dest_img_id,
+        dest_vol_id,
+        dest_format)
+
+    source = dict(
+        endpoint_type='div',
+        sd_id=source_leaf_vol.sdUUID,
+        img_id=source_leaf_vol.imgUUID,
+        vol_id=source_leaf_vol.volUUID)
+    dest = dict(
+        endpoint_type='div',
+        sd_id=source_leaf_vol.sdUUID,
+        img_id=dest_img_id,
+        vol_id=dest_vol_id)
+
+    # Run copy_data from the source chain to dest_vol, essentially
+    # executing qemu-img convert
+    job = copy_data.Job(str(uuid.uuid4()), 0, source, dest)
+    monkeypatch.setattr(guarded, 'context', fake_guarded_context())
+    job.run()
+
+    # verify the data written to the source chain is available on the
+    # collapsed target volume
+    for i in range(chain_size):
+        qemuio.verify_pattern(dest_vol.getVolumePath(),
+                              sc.fmt2str(dest_vol.getFormat()),
+                              offset=(i * length))
+
+
+def create_volume(
+        dom, imgUUID, volUUID, srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID, volFormat=sc.COW_FORMAT,
+        capacity=GIB):
+    dom.createVolume(
+        imgUUID=imgUUID,
+        capacity=capacity,
+        volFormat=volFormat,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=volUUID,
+        desc="test_volume",
+        srcImgUUID=srcImgUUID,
+        srcVolUUID=srcVolUUID)
+
+    return dom.produceVolume(imgUUID, volUUID)
+
+
+def create_chain(dom, chain_size=2):
+    volumes = []
+    img_id = str(uuid.uuid4())
+    parent_vol_id = sc.BLANK_UUID
+    vol_format = sc.RAW_FORMAT
+
+    for vol_index in range(chain_size):
+        vol_id = str(uuid.uuid4())
+        vol = create_volume(
+            dom,
+            img_id,
+            vol_id,
+            img_id,
+            parent_vol_id,
+            vol_format)
+        volumes.append(vol)
+        vol_format = sc.COW_FORMAT
+        parent_vol_id = vol_id
+
+    return volumes
 
 
 class FakeQemuConvertChecker(object):
