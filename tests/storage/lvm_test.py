@@ -35,7 +35,6 @@ from vdsm.common import constants
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
-from vdsm.storage import misc
 
 from . marks import requires_root
 
@@ -174,8 +173,8 @@ class FakeRunner(object):
         self.delay = delay
         self.calls = []
 
-    def __call__(self, cmd, **kwargs):
-        self.calls.append((cmd, kwargs))
+    def run(self, cmd):
+        self.calls.append(cmd)
 
         if self.delay:
             time.sleep(self.delay)
@@ -188,22 +187,20 @@ class FakeRunner(object):
 
 
 @pytest.fixture
-def fake_runner(monkeypatch):
-    runner = FakeRunner()
-    monkeypatch.setattr(misc, "execCmd", runner)
+def no_delay(monkeypatch):
     # Disable delay to speed up testing.
     monkeypatch.setattr(lvm.LVMCache, "RETRY_DELAY", 0)
-    return runner
 
 
-def test_cmd_success(fake_devices, fake_runner):
-    lc = lvm.LVMCache()
+def test_cmd_success(fake_devices, no_delay):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
     rc, out, err = lc.cmd(["lvs", "-o", "+tags"])
 
     assert rc == 0
     assert len(fake_runner.calls) == 1
 
-    cmd, kwargs = fake_runner.calls[0]
+    cmd = fake_runner.calls[0]
     assert cmd == [
         constants.EXT_LVM,
         "lvs",
@@ -214,11 +211,10 @@ def test_cmd_success(fake_devices, fake_runner):
         "-o", "+tags",
     ]
 
-    assert kwargs == {"sudo": True, "raw": True}
 
-
-def test_cmd_error(fake_devices, fake_runner):
-    lc = lvm.LVMCache()
+def test_cmd_error(fake_devices, no_delay):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
 
     # Require 2 calls to succeed.
     assert lc.READ_ONLY_RETRIES > 1
@@ -232,10 +228,11 @@ def test_cmd_error(fake_devices, fake_runner):
     assert len(fake_runner.calls) == 1
 
 
-def test_cmd_retry_filter_stale(fake_devices, fake_runner):
+def test_cmd_retry_filter_stale(fake_devices, no_delay):
     # Make a call to load the cache.
     initial_devices = fake_devices[:]
-    lc = lvm.LVMCache()
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
     lc.cmd(["fake"])
     del fake_runner.calls[:]
 
@@ -253,7 +250,7 @@ def test_cmd_retry_filter_stale(fake_devices, fake_runner):
     assert len(fake_runner.calls) == 2
 
     # The first call used the stale cache filter.
-    cmd, kwargs = fake_runner.calls[0]
+    cmd = fake_runner.calls[0]
     assert cmd == [
         constants.EXT_LVM,
         "fake",
@@ -262,10 +259,9 @@ def test_cmd_retry_filter_stale(fake_devices, fake_runner):
             dev_filter=lvm._buildFilter(initial_devices),
             locking_type="1"),
     ]
-    assert kwargs == {"sudo": True, "raw": True}
 
     # The seocnd call used a wider filter.
-    cmd, kwargs = fake_runner.calls[1]
+    cmd = fake_runner.calls[1]
     assert cmd == [
         constants.EXT_LVM,
         "fake",
@@ -274,11 +270,11 @@ def test_cmd_retry_filter_stale(fake_devices, fake_runner):
             dev_filter=lvm._buildFilter(fake_devices),
             locking_type="1"),
     ]
-    assert kwargs == {"sudo": True, "raw": True}
 
 
-def test_cmd_read_only(fake_devices, fake_runner):
-    lc = lvm.LVMCache()
+def test_cmd_read_only(fake_devices, no_delay):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
     lc.set_read_only(True)
 
     # Require 3 calls to succeed.
@@ -293,8 +289,9 @@ def test_cmd_read_only(fake_devices, fake_runner):
     assert len(set(repr(c) for c in fake_runner.calls)) == 1
 
 
-def test_cmd_read_only_max_retries(fake_devices, fake_runner):
-    lc = lvm.LVMCache()
+def test_cmd_read_only_max_retries(fake_devices, no_delay):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
     lc.set_read_only(True)
 
     # Require max retries to succeed.
@@ -307,8 +304,9 @@ def test_cmd_read_only_max_retries(fake_devices, fake_runner):
     assert len(set(repr(c) for c in fake_runner.calls)) == 1
 
 
-def test_cmd_read_only_max_retries_fail(fake_devices, fake_runner):
-    lc = lvm.LVMCache()
+def test_cmd_read_only_max_retries_fail(fake_devices, no_delay):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
     lc.set_read_only(True)
 
     # Require max retries + 1 to succeed.
@@ -321,10 +319,11 @@ def test_cmd_read_only_max_retries_fail(fake_devices, fake_runner):
     assert len(fake_runner.calls) == lc.READ_ONLY_RETRIES + 1
 
 
-def test_cmd_read_only_filter_stale(fake_devices, fake_runner):
+def test_cmd_read_only_filter_stale(fake_devices, no_delay):
     # Make a call to load the cache.
     initial_devices = fake_devices[:]
-    lc = lvm.LVMCache()
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
     lc.cmd(["fake"])
     del fake_runner.calls[:]
 
@@ -344,7 +343,7 @@ def test_cmd_read_only_filter_stale(fake_devices, fake_runner):
     assert len(fake_runner.calls) == lc.READ_ONLY_RETRIES + 2
 
     # The first call used the stale cache filter.
-    cmd, kwargs = fake_runner.calls[0]
+    cmd = fake_runner.calls[0]
     assert cmd == [
         constants.EXT_LVM,
         "fake",
@@ -353,10 +352,9 @@ def test_cmd_read_only_filter_stale(fake_devices, fake_runner):
             dev_filter=lvm._buildFilter(initial_devices),
             locking_type="4"),
     ]
-    assert kwargs == {"sudo": True, "raw": True}
 
     # The seocnd call used a wider filter.
-    cmd, kwargs = fake_runner.calls[1]
+    cmd = fake_runner.calls[1]
     assert cmd == [
         constants.EXT_LVM,
         "fake",
@@ -365,15 +363,15 @@ def test_cmd_read_only_filter_stale(fake_devices, fake_runner):
             dev_filter=lvm._buildFilter(fake_devices),
             locking_type="4"),
     ]
-    assert kwargs == {"sudo": True, "raw": True}
 
     # And then indentical retries with the wider filter.
     assert len(set(repr(c) for c in fake_runner.calls[1:])) == 1
 
 
-def test_cmd_read_only_filter_stale_fail(fake_devices, fake_runner):
+def test_cmd_read_only_filter_stale_fail(fake_devices, no_delay):
     # Make a call to load the cache.
-    lc = lvm.LVMCache()
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
     lc.cmd(["fake"])
     del fake_runner.calls[:]
 
@@ -392,14 +390,15 @@ def test_cmd_read_only_filter_stale_fail(fake_devices, fake_runner):
     assert len(fake_runner.calls) == lc.READ_ONLY_RETRIES + 2
 
 
-def test_suppress_warnings(fake_devices, fake_runner):
+def test_suppress_warnings(fake_devices, no_delay):
+    fake_runner = FakeRunner()
     fake_runner.err = b"""\
   before
   WARNING: This metadata update is NOT backed up.
   WARNING: Combining activation change with other commands is not advised.
   after"""
 
-    lc = lvm.LVMCache()
+    lc = lvm.LVMCache(fake_runner)
     rc, out, err = lc.cmd(["fake"])
     assert rc == 0
     assert err == [u"  before", u"  after"]
@@ -430,9 +429,10 @@ def workers():
 
 
 @pytest.mark.parametrize("read_only", [True, False])
-def test_command_concurrency(fake_devices, fake_runner, workers, read_only):
+def test_command_concurrency(fake_devices, no_delay, workers, read_only):
     # Test concurrent commands to reveal locking issues.
-    lc = lvm.LVMCache()
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
     lc.set_read_only(read_only)
 
     fake_runner.delay = 0.2
@@ -452,10 +452,11 @@ def test_command_concurrency(fake_devices, fake_runner, workers, read_only):
     assert elapsed < fake_runner.delay * count / lc.MAX_COMMANDS + 1.0
 
 
-def test_change_read_only_mode(fake_devices, fake_runner, workers):
+def test_change_read_only_mode(fake_devices, no_delay, workers):
     # Test that changing read only wait for running commands, and new commands
     # wait for the read only change.
-    lc = lvm.LVMCache()
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
 
     def run_after(delay, func, *args):
         time.sleep(delay)
@@ -484,11 +485,11 @@ def test_change_read_only_mode(fake_devices, fake_runner, workers):
     assert len(fake_runner.calls) == 4
 
     # The first 2 commands should run in read-write mode.
-    for cmd, kwargs in fake_runner.calls[:2]:
+    for cmd in fake_runner.calls[:2]:
         assert " locking_type=1 " in cmd[3]
 
     # The last 2 command should run in not read-only mode.
-    for cmd, kwargs in fake_runner.calls[2:]:
+    for cmd in fake_runner.calls[2:]:
         assert " locking_type=4 " in cmd[3]
 
     # The last 2 command can start only after the first 2 command finished.

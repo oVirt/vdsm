@@ -45,6 +45,9 @@ import six
 
 from vdsm import constants
 from vdsm.common import errors
+from vdsm.common import cmdutils
+from vdsm.common import commands
+from vdsm.common.compat import subprocess
 
 from vdsm.storage import devicemapper
 from vdsm.storage import constants as sc
@@ -236,6 +239,27 @@ def makeLV(*args):
     return LV(*args)
 
 
+class CommandRunner(object):
+    """
+    Does actual execution of the command.
+    """
+
+    def run(self, cmd):
+        p = commands.start(
+            cmd,
+            sudo=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+
+        with commands.terminating(p):
+            out, err = p.communicate()
+
+        log.debug(cmdutils.retcode_log_line(p.returncode, err=err))
+
+        return p.returncode, out, err
+
+
 class LVMCache(object):
     """
     Keep all the LVM information.
@@ -263,7 +287,7 @@ class LVMCache(object):
         ]),
         re.IGNORECASE)
 
-    def __init__(self):
+    def __init__(self, cmd_runner=CommandRunner()):
         self._read_only_lock = rwlock.RWLock()
         self._read_only = False
         self._filter = None
@@ -277,6 +301,7 @@ class LVMCache(object):
         self._pvs = {}
         self._vgs = {}
         self._lvs = {}
+        self._runner = cmd_runner
 
     def set_read_only(self, value):
         """
@@ -383,7 +408,8 @@ class LVMCache(object):
         We log warnings only for successful commands since callers are already
         handling failures.
         """
-        rc, out, err = misc.execCmd(cmd, sudo=True, raw=True)
+
+        rc, out, err = self._runner.run(cmd)
 
         out = out.decode("utf-8").splitlines()
         err = err.decode("utf-8").splitlines()
