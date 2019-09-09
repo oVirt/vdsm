@@ -977,3 +977,23 @@ def test_retry_with_wider_filter(tmp_storage):
 
     vg = lvm.getVG(vg_name)
     assert vg.pv_name == (dev,)
+
+
+@xfail_python3
+def test_normalize_args():
+    assert lvm.normalize_args(u"arg") == [u"arg"]
+    assert lvm.normalize_args("arg") == [u"arg"]
+
+    assert lvm.normalize_args(("arg1", "arg2")) == (u"arg1", u"arg2")
+    assert lvm.normalize_args((u"arg1", u"arg2")) == (u"arg1", u"arg2")
+    assert lvm.normalize_args(["arg1", "arg2"]) == [u"arg1", u"arg2"]
+    assert lvm.normalize_args([u"arg1", u"arg2"]) == [u"arg1", u"arg2"]
+
+    assert list(lvm.normalize_args(iter(("arg1", "arg2")))) == [
+        u"arg1", u"arg2"]
+    assert list(lvm.normalize_args(iter((u"arg1", u"arg2")))) == [
+        u"arg1", u"arg2"]
+    assert list(lvm.normalize_args(iter(["arg1", "arg2"]))) == [
+        u"arg1", u"arg2"]
+    assert list(lvm.normalize_args(iter([u"arg1", u"arg2"]))) == [
+        u"arg1", u"arg2"]

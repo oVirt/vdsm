@@ -77,7 +77,7 @@ class FakeLVM(object):
         for dev in devices:
             self._create_pv(dev, vgName, self._PV_SIZE)
         pv_name = (tuple(_fqpvname(pdev)
-                         for pdev in real_lvm._normalizeargs(devices)))
+                         for pdev in real_lvm.normalize_args(devices)))
         extent_count = self._calc_vg_pe_count(vgName)
         size = extent_count * self._PV_PE_SIZE
 

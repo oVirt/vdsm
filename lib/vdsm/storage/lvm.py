@@ -175,7 +175,7 @@ def _buildConfig(dev_filter, locking_type):
 # argument an converted into list, containing that string.
 # Strings have not __iter__ attribute.
 #
-def _normalizeargs(args=None):
+def normalize_args(args=None):
     if args is None:
         args = []
     elif not hasattr(args, "__iter__"):
@@ -405,7 +405,7 @@ class LVMCache(object):
 
     def _reloadpvs(self, pvName=None):
         cmd = list(PVS_CMD)
-        pvNames = _normalizeargs(pvName)
+        pvNames = normalize_args(pvName)
         cmd.extend(pvNames)
 
         rc, out, err = self.cmd(cmd)
@@ -461,7 +461,7 @@ class LVMCache(object):
 
     def _reloadvgs(self, vgName=None):
         cmd = list(VGS_CMD)
-        vgNames = _normalizeargs(vgName)
+        vgNames = normalize_args(vgName)
         cmd.extend(vgNames)
 
         rc, out, err = self.cmd(cmd, self._getVGDevs(vgNames))
@@ -521,7 +521,7 @@ class LVMCache(object):
         return updatedVGs
 
     def _reloadlvs(self, vgName, lvNames=None):
-        lvNames = _normalizeargs(lvNames)
+        lvNames = normalize_args(lvNames)
         cmd = list(LVS_CMD)
         if lvNames:
             cmd.extend(["%s/%s" % (vgName, lvName) for lvName in lvNames])
@@ -602,7 +602,7 @@ class LVMCache(object):
         return dict(self._lvs)
 
     def _invalidatepvs(self, pvNames):
-        pvNames = _normalizeargs(pvNames)
+        pvNames = normalize_args(pvNames)
         with self._lock:
             for pvName in pvNames:
                 self._pvs[pvName] = Stub(pvName, True)
@@ -613,7 +613,7 @@ class LVMCache(object):
             self._pvs.clear()
 
     def _invalidatevgs(self, vgNames):
-        vgNames = _normalizeargs(vgNames)
+        vgNames = normalize_args(vgNames)
         with self._lock:
             for vgName in vgNames:
                 self._vgs[vgName] = Stub(vgName, True)
@@ -624,7 +624,7 @@ class LVMCache(object):
             self._vgs.clear()
 
     def _invalidatelvs(self, vgName, lvNames=None):
-        lvNames = _normalizeargs(lvNames)
+        lvNames = normalize_args(lvNames)
         with self._lock:
             # Invalidate LVs in a specific VG
             if lvNames:
@@ -900,7 +900,7 @@ def removeVgMapping(vgName):
 # Activation of the whole vg is assumed to be used nowhere.
 # This is a separate function just in case.
 def _setVgAvailability(vgs, available):
-    vgs = _normalizeargs(vgs)
+    vgs = normalize_args(vgs)
     cmd = ["vgchange", "--available", available] + vgs
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs(vgs))
     for vg in vgs:
@@ -930,7 +930,7 @@ def changelv(vg, lvs, attrs):
     but lvchange returns an error (RC=5) when activating rw if already rw
     """
 
-    lvs = _normalizeargs(lvs)
+    lvs = normalize_args(lvs)
     # If it fails or not we (may be) change the lv,
     # so we invalidate cache to reload these volumes on first occasion
     lvnames = tuple("%s/%s" % (vg, lv) for lv in lvs)
@@ -1121,7 +1121,7 @@ def set_read_only(read_only):
 #
 
 def createVG(vgName, devices, initialTag, metadataSize, force=False):
-    pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
+    pvs = [_fqpvname(pdev) for pdev in normalize_args(devices)]
     _checkpvsblksize(pvs)
 
     _initpvs(pvs, metadataSize, force)
@@ -1170,7 +1170,7 @@ def removeVGbyUUID(vgUUID):
 
 
 def extendVG(vgName, devices, force):
-    pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
+    pvs = [_fqpvname(pdev) for pdev in normalize_args(devices)]
     _checkpvsblksize(pvs, getVGBlockSizes(vgName))
     vg = _lvminfo.getVg(vgName)
 
@@ -1324,7 +1324,7 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
 
 
 def removeLVs(vgName, lvNames):
-    lvNames = _normalizeargs(lvNames)
+    lvNames = normalize_args(lvNames)
     log.info("Removing LVs (vg=%s, lvs=%s)", vgName, lvNames)
     # Assert that the LVs are inactive before remove.
     for lvName in lvNames:
