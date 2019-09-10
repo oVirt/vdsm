@@ -21,6 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import six
+
 from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 
@@ -58,7 +60,7 @@ class TestUnicode(VdsmTestCase):
 
     @permutations(DECODE)
     def test_unicode(self, value, decoded):
-        self.assertEqual(unicode(value), decoded)
+        self.assertEqual(six.text_type(value), decoded)
 
     def test_mix_add(self):
         self.assertEqual(u'\u05d0' + '\xd7\x91', u'\u05d0\u05d1')

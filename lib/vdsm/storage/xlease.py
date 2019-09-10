@@ -1042,7 +1042,7 @@ class DirectFile(object):
         pos = 0
         while pos < len(buf):
             if six.PY2:
-                wbuf = buffer(buf, pos)
+                wbuf = buffer(buf, pos)  # noqa: F821
             else:
                 wbuf = memoryview(buf)[pos:]
             pos += uninterruptible(self._file.write, wbuf)
