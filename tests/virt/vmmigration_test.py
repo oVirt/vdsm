@@ -351,6 +351,9 @@ class FakeVM(object):
     def isPersistent(self):
         return True
 
+    def payload_drives(self):
+        return []
+
 
 class FakeProgress(object):
 

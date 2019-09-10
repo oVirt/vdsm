@@ -36,6 +36,7 @@ from vdsm import sslutils
 from vdsm import utils
 from vdsm import jsonrpcvdscli
 from vdsm.config import config
+from vdsm.common import xmlutils
 from vdsm.common.compat import pickle
 from vdsm.common.define import NORMAL, Mbytes
 from vdsm.common.network.address import normalize_literal_addr
@@ -129,6 +130,7 @@ class SourceThread(object):
         self._migrationCanceledEvt = threading.Event()
         self._monitorThread = None
         self._destServer = None
+        self._legacy_payload_path = None
         if 'convergenceSchedule' in kwargs:
             self._convergence_schedule = kwargs['convergenceSchedule']
         else:
@@ -476,6 +478,27 @@ class SourceThread(object):
 
             self._started = True
 
+            # REQUIRED_FOR: destination Vdsm < 4.4
+            if not self._vm.min_cluster_version(4, 4):
+                payload_drives = self._vm.payload_drives()
+                if payload_drives:
+                    # Currently, only a single payload device may be present
+                    payload_alias = payload_drives[0].alias
+                    result = self._destServer.fullList(
+                        vmList=(self._vm.id,)
+                    )
+                    vm_list = result.get('items')
+                    remote_devices = vm_list[0].get('devices')
+                    if remote_devices is not None:
+                        payload_path = next(
+                            (d['path'] for d in remote_devices
+                             if d.get('alias') == payload_alias),
+                            None
+                        )
+                        if payload_path is not None:
+                            self._legacy_payload_path = \
+                                (payload_alias, payload_path)
+
             if config.getboolean('vars', 'ssl'):
                 transport = 'tls'
             else:
@@ -525,6 +548,15 @@ class SourceThread(object):
             params[libvirt.VIR_MIGRATE_PARAM_GRAPHICS_URI] = str(
                 '%s://%s' % (graphics, self._consoleAddress)
             )
+        # REQUIRED_FOR: destination Vdsm < 4.4
+        if self._legacy_payload_path is not None:
+            alias, path = self._legacy_payload_path
+            dom = xmlutils.fromstring(self._vm.migratable_domain_xml())
+            source = dom.find(".//alias[@name='%s']/../source" % (alias,))
+            source.set('file', path)
+            xml = xmlutils.tostring(dom)
+            self._vm.log.debug("Migrating domain XML: %s", xml)
+            params[libvirt.VIR_MIGRATE_PARAM_DEST_XML] = xml
         return params
 
     @property

@@ -1836,6 +1836,16 @@ class Vm(object):
             ),
         }
 
+    def migratable_domain_xml(self):
+        """
+        Return domain XML suitable for migration destinations.
+
+        Unlike a normal domain XML, this domain XML may be slightly
+        modified by libvirt and will not be rejected by the migration
+        end.
+        """
+        return self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_MIGRATABLE)
+
     def _get_vm_migration_progress(self):
         return self.migrateStatus()['progress']
 
@@ -4041,8 +4051,7 @@ class Vm(object):
             """Returns the needed vm configuration with the memory snapshot"""
 
             return {'restoreFromSnapshot': True,
-                    '_srcDomXML': self._dom.XMLDesc(
-                        libvirt.VIR_DOMAIN_XML_MIGRATABLE),
+                    '_srcDomXML': self.migratable_domain_xml(),
                     'elapsedTimeOffset': time.time() - self._startTime}
 
         def _padMemoryVolume(memoryVolPath, sdUUID):
