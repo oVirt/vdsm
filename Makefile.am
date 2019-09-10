@@ -132,9 +132,19 @@ check-all:
 check-unit:
 	$(MAKE) -C tests/ check NOSE_EVAL_ATTR="type=='unit'"
 
+lint-py2: gitignore execcmd flake8 pylint-py3k pylint
+
+lint-py3: gitignore execcmd black
+
+.PHONY: lint-target
+lint-target: $(VDSM_TARGET_PY_MAJOR_SHORT_VERSION:%=lint-%)
+
+.PHONY: lint-all
+lint-all: $(VDSM_SUPPORTED_PY_MAJOR_SHORT_VERSIONS:%=lint-%)
+
 .PHONY: lint
 # Note: dependencies ordered by time needed to run them
-lint: gitignore execcmd black flake8 pylint-py3k pylint
+lint: lint-all
 
 .PHONY: tests-target
 tests-target: tests-$(VDSM_TARGET_PY_SHORT_VERSION)

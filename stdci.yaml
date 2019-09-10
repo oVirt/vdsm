@@ -43,6 +43,7 @@ stages:
         - linters:
             distributions:
               - fc29
+              - fc30
         - tests-py27:
             runtime-requirements:
               host-distro: same
