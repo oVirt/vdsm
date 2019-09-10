@@ -38,7 +38,7 @@ from vdsm.storage import sd
 from vdsm.storage.sdc import sdCache
 
 from . import qemuio
-from . marks import requires_root, xfail_python3
+from . marks import requires_root
 from storage.storagefakelib import fake_spm
 from storage.storagefakelib import fake_vg
 
@@ -186,7 +186,6 @@ def test_create_domain_unsupported_version():
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 def test_attach_domain_unsupported_version(
         monkeypatch, tmp_storage, tmp_repo, fake_task, fake_sanlock):
@@ -228,7 +227,7 @@ TYPE=LOCALFS
 VERSION=0
 """.format(sd_uuid)
     with open("/dev/{}/metadata".format(vg.name), "wb") as f:
-        f.write(metadata)
+        f.write(metadata.encode("utf-8"))
 
     spm = fake_spm(
         tmp_repo.pool_id,
@@ -243,7 +242,6 @@ VERSION=0
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("domain_version", [3, 4, 5])
 def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
@@ -345,8 +343,8 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
     assert resource == {
         "acquired": False,
         "align": dom.alignment,
-        "lockspace": dom.sdUUID,
-        "resource": lease.name,
+        "lockspace": dom.sdUUID.encode("utf-8"),
+        "resource": lease.name.encode("utf-8"),
         "sector": dom.block_size,
         "version": 0,
     }
@@ -369,7 +367,6 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
         assert int(lv.size) == 1024 * dom.alignment
 
 
-@xfail_python3
 @requires_root
 @pytest.mark.root
 def test_create_instance_block_size_mismatch(
@@ -397,7 +394,6 @@ def test_create_instance_block_size_mismatch(
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("domain_version", [3, 4, 5])
 def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
@@ -469,8 +465,8 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
     assert resource == {
         "acquired": False,
         "align": dom.alignment,
-        "lockspace": vol.sdUUID,
-        "resource": vol.volUUID,
+        "lockspace": vol.sdUUID.encode("utf-8"),
+        "resource": vol.volUUID.encode("utf-8"),
         "sector": dom.block_size,
         "version": 0,
     }
@@ -526,7 +522,6 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("domain_version", [4, 5])
 def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
@@ -589,24 +584,23 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
     md = vol.getMetadata()
     md.description = "new description"
     vol.setMetadata(md)
-    with open(meta_path) as f:
+    with open(meta_path, "rb") as f:
         f.seek(offset)
         data = f.read(sc.METADATA_SIZE)
-    data = data.rstrip("\0")
+    data = data.rstrip(b"\0")
     assert data == md.storage_format(domain_version)
 
     # Add additioanl metadata.
     md = vol.getMetadata()
     vol.setMetadata(md, CAP=md.capacity)
-    with open(meta_path) as f:
+    with open(meta_path, "rb") as f:
         f.seek(offset)
         data = f.read(sc.METADATA_SIZE)
-    data = data.rstrip("\0")
+    data = data.rstrip(b"\0")
     assert data == md.storage_format(domain_version, CAP=md.capacity)
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("domain_version", [4, 5])
 def test_create_snapshot_size(
