@@ -95,7 +95,9 @@ pylint-diff: tox
 	modules=`git diff-tree --no-commit-id --name-only -r HEAD | egrep '\.py$$'`; \
 	if [ -n "$$modules" ]; then tox -e pylint $$modules; fi
 
-.PHONY: flake8
+flake8-py2: tox
+	tox -e flake8-py2
+
 flake8: tox
 	tox -e flake8
 
@@ -132,9 +134,9 @@ check-all:
 check-unit:
 	$(MAKE) -C tests/ check NOSE_EVAL_ATTR="type=='unit'"
 
-lint-py2: gitignore execcmd flake8 pylint-py3k pylint
+lint-py2: gitignore execcmd flake8-py2 pylint-py3k pylint
 
-lint-py3: gitignore execcmd black
+lint-py3: gitignore execcmd black flake8
 
 .PHONY: lint-target
 lint-target: $(VDSM_TARGET_PY_MAJOR_SHORT_VERSION:%=lint-%)
