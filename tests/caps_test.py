@@ -68,6 +68,17 @@ def _getLibvirtConnStubEmpty():
     return ConnStub()
 
 
+def _getLibvirtConnStubForTscScaling(scaling):
+    class ConnStub:
+        def getCapabilities(self):
+            return "<capabilities><host><cpu>" \
+                   "<counter name='tsc' frequency='1234000000' scaling='" + \
+                   scaling + \
+                   "'/>" \
+                   "</cpu></host></capabilities>"
+    return ConnStub()
+
+
 class TestCaps(TestCaseBase):
 
     def tearDown(self):
@@ -297,3 +308,15 @@ class TestCaps(TestCaseBase):
                  lambda x: (_ for _ in ()).throw(Exception("A problem")))
     def test_getFipsEnabledOffWhenError(self):
         self.assertFalse(caps._getFipsEnabled())
+
+    @MonkeyPatch(libvirtconnection, 'get',
+                 lambda: _getLibvirtConnStubForTscScaling('yes'))
+    def test_getTscScalingYes(self):
+        scaling = caps._getTscScaling()
+        self.assertTrue(scaling)
+
+    @MonkeyPatch(libvirtconnection, 'get',
+                 lambda: _getLibvirtConnStubForTscScaling('no'))
+    def test_getTscScalingNo(self):
+        scaling = caps._getTscScaling()
+        self.assertFalse(scaling)

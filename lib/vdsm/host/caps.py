@@ -146,8 +146,9 @@ def get():
     caps['kernelFeatures'] = osinfo.kernel_features()
     caps['vncEncrypted'] = _isVncEncrypted()
     caps['backupEnabled'] = False
-    caps['tscFrequency'] = _getTscFrequency()
     caps['fipsEnabled'] = _getFipsEnabled()
+    caps['tscFrequency'] = _getTscFrequency()
+    caps['tscScaling'] = _getTscScaling()
 
     try:
         caps["connector_info"] = managedvolume.connector_info()
@@ -259,3 +260,17 @@ def _getFipsEnabled():
     except Exception as e:
         logging.error("Could not read FIPS status with sysctl: %s", e)
         return False
+
+
+def _getTscScaling():
+    """
+    Read TSC Scaling from libvirt. This is only available in
+    libvirt >= 5.5.0 (and 4.5.0-21 for RHEL7)
+    """
+    conn = libvirtconnection.get()
+    caps = xmlutils.fromstring(conn.getCapabilities())
+    counter = caps.findall("./host/cpu/counter[@name='tsc']")
+    if len(counter) > 0:
+        return counter[0].get('scaling') == 'yes'
+    logging.debug('No TSC counter returned by Libvirt')
+    return False

@@ -7224,10 +7224,22 @@ types:
             type: *SupportedBlockSizeMap
             added: '4.3.6'
 
+        -   defaultvalue: false
+            description: Indicates if the host is running in the FIPS mode
+            name: fipsEnabled
+            type: boolean
+            added: '4.3'
+
         -   defaultvalue: ''
             description: TSC frequency of the CPU
             name: tscFrequency
             type: string
+            added: '4.4'
+
+        -   defaultvalue: false
+            description: "Indicates if the host's CPU supports TSC scaling"
+            name: tscScaling
+            type: boolean
             added: '4.4'
 
         type: object
