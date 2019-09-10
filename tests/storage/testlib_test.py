@@ -55,14 +55,15 @@ from . marks import xfail_python3
 MB = 1024 ** 2
 
 
-@xfail_python3
 @expandPermutations
 class TestFakeFileEnv(VdsmTestCase):
 
+    @xfail_python3
     def test_no_fakelvm(self):
         with fake_file_env() as env:
             self.assertFalse(hasattr(env, 'lvm'))
 
+    @xfail_python3
     def test_repo_location(self):
         with fake_file_env() as env:
             # Verify that the environment uses expected tmp dir.
@@ -78,12 +79,14 @@ class TestFakeFileEnv(VdsmTestCase):
             mountpoint = os.path.join(sc.REPO_MOUNT_DIR, "server:_path")
             self.assertEqual(dom.mountpoint, mountpoint)
 
+    @xfail_python3
     def test_domain_structure(self):
         with fake_file_env() as env:
             self.assertTrue(os.path.exists(env.sd_manifest.metafile))
             images_dir = os.path.dirname(env.sd_manifest.getImagePath('foo'))
             self.assertTrue(os.path.exists(images_dir))
 
+    @xfail_python3
     def test_domain_metadata_io(self):
         with fake_file_env() as env:
             desc = 'foo'
@@ -95,6 +98,7 @@ class TestFakeFileEnv(VdsmTestCase):
             self.assertEqual(desc, manifest.getMetaParam(sd.DMDK_DESCRIPTION))
 
     @permutations((("file",), ("block",),))
+    @xfail_python3
     def test_default_domain_version(self, env_type):
         with fake_env(env_type) as env:
             self.assertEqual(3, env.sd_manifest.getVersion())
@@ -106,10 +110,12 @@ class TestFakeFileEnv(VdsmTestCase):
         ("block", 3),
         ("block", 4),
     ))
+    @xfail_python3
     def test_domain_version(self, env_type, sd_version):
         with fake_env(env_type, sd_version=sd_version) as env:
             self.assertEqual(sd_version, env.sd_manifest.getVersion())
 
+    @xfail_python3
     def test_volume_structure(self):
         with fake_file_env() as env:
             img_id = make_uuid()
@@ -127,6 +133,7 @@ class TestFakeFileEnv(VdsmTestCase):
         (sc.LEAF_VOL, ),
         (sc.INTERNAL_VOL, ),
     ))
+    @xfail_python3
     def test_volume_type(self, vol_type):
         with fake_file_env() as env:
             img_id = make_uuid()
@@ -136,6 +143,7 @@ class TestFakeFileEnv(VdsmTestCase):
             vol = env.sd_manifest.produceVolume(img_id, vol_id)
             self.assertEqual(vol.getVolType(), sc.type2name(vol_type))
 
+    @xfail_python3
     def test_volume_metadata_io(self):
         with fake_file_env() as env:
             size = 1 * MB
@@ -151,14 +159,15 @@ class TestFakeFileEnv(VdsmTestCase):
             self.assertEqual(desc, vol.getDescription())
 
 
-@xfail_python3
 @expandPermutations
 class TestFakeBlockEnv(VdsmTestCase):
 
+    @xfail_python3
     def test_repopath_location(self):
         with fake_block_env() as env:
             self.assertTrue(env.sd_manifest.getRepoPath().startswith(TEMPDIR))
 
+    @xfail_python3
     def test_domain_structure(self):
         with fake_block_env() as env:
             vg_name = env.sd_manifest.sdUUID
@@ -180,6 +189,7 @@ class TestFakeBlockEnv(VdsmTestCase):
             self.assertEqual(env.sd_manifest.domaindir,
                              os.readlink(domain_link))
 
+    @xfail_python3
     def test_domain_metadata_io(self):
         with fake_block_env() as env:
             desc = 'foo'
@@ -195,6 +205,7 @@ class TestFakeBlockEnv(VdsmTestCase):
         (sc.LEAF_VOL, ),
         (sc.INTERNAL_VOL, ),
     ))
+    @xfail_python3
     def test_volume_type(self, vol_type):
         with fake_block_env() as env:
             img_id = make_uuid()
@@ -211,6 +222,7 @@ class TestFakeBlockEnv(VdsmTestCase):
         ((sc.VG_EXTENT_SIZE_MB - 1) * MB,),
         (sc.VG_EXTENT_SIZE_MB * MB + 1,),
     ))
+    @xfail_python3
     def test_volume_size_alignment(self, size_param):
         with fake_block_env() as env:
             sd_id = env.sd_manifest.sdUUID
@@ -228,6 +240,7 @@ class TestFakeBlockEnv(VdsmTestCase):
             lv_file_size = os.stat(env.lvm.lvPath(sd_id, vol_id)).st_size
             self.assertEqual(expected_size, lv_file_size)
 
+    @xfail_python3
     def test_volume_metadata_io(self):
         with fake_block_env() as env:
             sd_id = env.sd_manifest.sdUUID
@@ -248,6 +261,7 @@ class TestFakeBlockEnv(VdsmTestCase):
             vol = env.sd_manifest.produceVolume(img_id, vol_id)
             self.assertEqual(desc, vol.getDescription())
 
+    @xfail_python3
     def test_volume_accessibility(self):
         with fake_block_env() as env:
             sd_id = env.sd_manifest.sdUUID
@@ -275,7 +289,6 @@ class TestFakeBlockEnv(VdsmTestCase):
             self.assertTrue(os.path.samefile(repo_path, domain_path))
 
 
-@xfail_python3
 @expandPermutations
 class TestChainVerification(VdsmTestCase):
 
@@ -284,6 +297,7 @@ class TestChainVerification(VdsmTestCase):
         ('file', ),
         ('block', )
     ))
+    @xfail_python3
     def test_make_qemu_chain(self, storage_type):
         with fake_env(storage_type) as env:
             vol_list = make_qemu_chain(env, 0, sc.RAW_FORMAT, 2)
@@ -297,6 +311,7 @@ class TestChainVerification(VdsmTestCase):
     # Although these tests use file and block environments, due to the
     # underlying implementation, all reads and writes are to regular files.
     @permutations((('file',), ('block',)))
+    @xfail_python3
     def test_verify_chain(self, storage_type):
         with fake_env(storage_type) as env:
             vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
@@ -304,6 +319,7 @@ class TestChainVerification(VdsmTestCase):
             verify_qemu_chain(vol_list)
 
     @permutations((('file',), ('block',)))
+    @xfail_python3
     def test_reversed_chain_raises(self, storage_type):
         with fake_env(storage_type) as env:
             vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
@@ -312,6 +328,7 @@ class TestChainVerification(VdsmTestCase):
                               verify_qemu_chain, vol_list)
 
     @permutations((('file',), ('block',)))
+    @xfail_python3
     def test_pattern_written_to_base_raises(self, storage_type):
         with fake_env(storage_type) as env:
             vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 3)
