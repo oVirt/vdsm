@@ -954,6 +954,10 @@ class Vm(object):
         for drive in drives:
             self._createTransientDisk(drive)
 
+    def payload_drives(self):
+        return [drive for drive in self._devices[hwclass.DISK]
+                if vmdevices.storage.is_payload_drive(drive)]
+
     def _getShutdownReason(self, stopped_shutdown):
         exit_code = NORMAL
         with self._shutdownLock:
@@ -4811,13 +4815,11 @@ class Vm(object):
         """
 
         # delete the payload devices
-        for drive in self._devices[hwclass.DISK]:
-            if (hasattr(drive, 'specParams') and
-                    'vmPayload' in drive.specParams):
-                try:
-                    supervdsm.getProxy().removeFs(drive.path)
-                except:
-                    self.log.exception("Failed to remove a payload file")
+        for drive in self.payload_drives():
+            try:
+                supervdsm.getProxy().removeFs(drive.path)
+            except:
+                self.log.exception("Failed to remove a payload file")
 
         with self._releaseLock:
             if self._released.is_set():

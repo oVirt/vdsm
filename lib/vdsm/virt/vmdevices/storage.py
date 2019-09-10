@@ -943,6 +943,17 @@ def disable_dynamic_ownership(element):
     element.append(seclabel)
 
 
+def is_payload_drive(drive):
+    """
+    Return true iff the given disk device is a payload device.
+
+    Arguments:
+      drive: 'Drive' instance
+    """
+    return (hasattr(drive, 'specParams') and
+            'vmPayload' in drive.specParams)
+
+
 def _getSourceXML(drive):
     """
     Makes a libvirt <source> element for specified drive.
