@@ -213,7 +213,6 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
 
 
 @requires_root
-@xfail_python3
 @pytest.mark.root
 @pytest.mark.parametrize("src_version", [3, 4])
 def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
@@ -349,7 +348,7 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
         vol_md = volumes_md[vol.volUUID]
         _, slot = vol.getMetadataId()
         data = dom.manifest.read_metadata_block(slot)
-        data = data.rstrip("\0")
+        data = data.rstrip(b"\0")
         assert data == vol_md.storage_format(5)
 
     # Verify that invalid metadata was copied to v5 area.
@@ -366,4 +365,4 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
     offset = blockSD.METADATA_BASE_V4
     size = blockSD.METADATA_BASE_V5 - blockSD.METADATA_BASE_V4
     data = misc.readblock(meta_path, offset, size)
-    assert data == "\0" * size
+    assert data == b"\0" * size
