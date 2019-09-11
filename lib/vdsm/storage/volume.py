@@ -513,7 +513,7 @@ class VolumeManifest(object):
         # will corrupt the image later when qemu try to access data beyond the
         # wrong virtual size (https://bugzilla.redhat.com/1700189).
         if capacity < virtual_size:
-            self.log.warn(
+            self.log.warning(
                 "Repairing wrong %s for volume %s stored=%d actual=%d",
                 sc.CAPACITY, self.volUUID, capacity, virtual_size)
             self.setMetaParam(sc.CAPACITY, virtual_size)
@@ -537,8 +537,8 @@ class VolumeManifest(object):
             # volume (One of metadata corruptions may be
             # previous volume deletion failure).
             # So, there is no reasons to avoid its deletion
-            self.log.warn("Volume %s metadata error (%s)",
-                          self.volUUID, str(e))
+            self.log.warning("Volume %s metadata error (%s)",
+                             self.volUUID, str(e))
         if self.getChildren():
             raise se.VolumeImageHasChildren(self)
 
