@@ -55,15 +55,12 @@ from vdsm.storage import resourceManager as rm
 from vdsm.storage import volume
 from vdsm.storage.sdm.api import merge as api_merge
 
-from . marks import xfail_python3
-
 
 class FakeImage(object):
     def __init__(self, repoPath):
         pass
 
 
-@xfail_python3
 @expandPermutations
 class TestMergeSubchain(VdsmTestCase):
 

@@ -64,10 +64,7 @@ from vdsm.storage import volume
 from vdsm.storage import workarounds
 from vdsm.storage.sdm.api import copy_data
 
-from . marks import xfail_python3
 
-
-@xfail_python3
 @expandPermutations
 class TestCopyDataDIV(VdsmTestCase):
     DEFAULT_SIZE = 1048576
@@ -362,7 +359,6 @@ class TestCopyDataDIV(VdsmTestCase):
     # Copy between 2 different domains
 
 
-@xfail_python3
 @pytest.mark.parametrize(
     "dest_format", [sc.COW_FORMAT, sc.RAW_FORMAT])
 def test_copy_data_collapse(

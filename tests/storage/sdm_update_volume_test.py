@@ -47,10 +47,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import guarded
 from vdsm.storage.sdm.api import copy_data, update_volume
 
-from . marks import xfail_python3
 
-
-@xfail_python3
 @expandPermutations
 class TestUpdateVolume(VdsmTestCase):
     DEFAULT_SIZE = 1048576
