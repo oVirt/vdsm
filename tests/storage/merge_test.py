@@ -57,6 +57,7 @@ from vdsm.storage import volume
 
 from . marks import xfail_python3
 
+
 MB = 1024 ** 2
 GB = 1024 ** 3
 
@@ -207,7 +208,6 @@ class TestSubchainInfo:
 
 class TestPrepareMerge:
 
-    @xfail_python3
     @pytest.mark.parametrize("base, top, expected", [
         # No capacity update, no allocation update
         (Volume('raw', 1, 1), Volume('cow', 1, 1), Expected(1, 1)),
@@ -228,7 +228,6 @@ class TestPrepareMerge:
             assert expected.virtual * GB == new_base_size
             assert expected.physical * GB == new_base_alloc
 
-    @xfail_python3
     @pytest.mark.xfail(reason="cannot create a domain object in the tests")
     @pytest.mark.parametrize("base, top, expected", [
         # Update capacity and fully allocate LV
@@ -331,9 +330,9 @@ class TestFinalizeMerge:
 
     @pytest.mark.parametrize("sd_type, chain_len, base_index, top_index", [
         pytest.param('file', 2, 0, 1),
-        pytest.param('block', 2, 0, 1, marks=xfail_python3),
+        pytest.param('block', 2, 0, 1),
         pytest.param('file', 4, 1, 2, marks=xfail_python3),
-        pytest.param('block', 4, 1, 2, marks=xfail_python3),
+        pytest.param('block', 4, 1, 2),
     ])
     def test_finalize(self, sd_type, chain_len, base_index, top_index):
         with self.make_env(sd_type=sd_type, chain_len=chain_len) as env:
@@ -364,7 +363,6 @@ class TestFinalizeMerge:
 
             assert base_vol.getLegality() == sc.LEGAL_VOL
 
-    @xfail_python3
     @pytest.mark.parametrize("volume", ["base", "top"])
     def test_finalize_illegal_volume(self, volume):
         with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
@@ -405,7 +403,6 @@ class TestFinalizeMerge:
             assert subchain.top_vol.getLegality() == sc.LEGAL_VOL
             assert subchain.top_vol.getParent() == base_vol.volUUID
 
-    @xfail_python3
     def test_rollback_volume_legallity_failed(self):
         with self.make_env(sd_type='block', chain_len=4) as env:
             base_vol = env.chain[1]
@@ -433,7 +430,6 @@ class TestFinalizeMerge:
 
             assert subchain.top_vol.getLegality() == sc.ILLEGAL_VOL
 
-    @xfail_python3
     def test_reduce_chunked(self):
         with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
             base_vol = env.chain[1]
@@ -478,7 +474,6 @@ class TestFinalizeMerge:
             # called
             assert len(calls) == 0
 
-    @xfail_python3
     def test_reduce_failure(self):
         with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
             base_vol = env.chain[0]
@@ -502,7 +497,6 @@ class TestFinalizeMerge:
             # verify syncVolumeChain arguments
             self.check_sync_volume_chain(subchain, env.chain[-1].volUUID)
 
-    @xfail_python3
     @pytest.mark.parametrize("base_fmt", ["raw", "cow"])
     def test_chain_after_finalize(self, base_fmt):
         with self.make_env(format=base_fmt, chain_len=3) as env:
