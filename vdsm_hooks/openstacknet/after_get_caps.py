@@ -64,7 +64,7 @@ def _get_open_vswitch_odl_os_hostconfig_hostid():
     """
     rc, out, err = _get_ovs_external_id('odl_os_hostconfig_hostid')
     if rc == 0:
-        return out[0].replace('"', '')
+        return out[0].decode('utf-8').replace('"', '')
 
     return None
 
@@ -90,7 +90,7 @@ def _get_open_vswitch_hostname():
     """
     rc, out, err = _get_ovs_external_id('hostname')
     if rc == 0:
-        return out[0].replace('"', '')
+        return out[0].decode('utf-8').replace('"', '')
 
     hooking.log('Failed to get Open vSwitch hostname. err = %s' % (err))
     return None
