@@ -49,8 +49,6 @@ from vdsm.storage import fileSD
 from vdsm.storage import fileVolume
 from vdsm.storage import sd
 
-from . marks import xfail_python3
-
 
 MB = 1024 ** 2
 
@@ -191,7 +189,6 @@ def test_domain_metadata_io_block_env():
 
 
 @pytest.mark.parametrize("vol_type", [sc.LEAF_VOL, sc.INTERNAL_VOL])
-@xfail_python3
 def test_volume_type_block_env(vol_type):
     with fake_block_env() as env:
         img_id = make_uuid()
@@ -209,7 +206,6 @@ def test_volume_type_block_env(vol_type):
     (sc.VG_EXTENT_SIZE_MB - 1) * MB,
     sc.VG_EXTENT_SIZE_MB * MB + 1,
 ])
-@xfail_python3
 def test_volume_size_alignment(size_param):
     with fake_block_env() as env:
         sd_id = env.sd_manifest.sdUUID
@@ -226,7 +222,6 @@ def test_volume_size_alignment(size_param):
         assert expected_size == lv_file_size
 
 
-@xfail_python3
 def test_volume_metadata_io_block_env():
     with fake_block_env() as env:
         sd_id = env.sd_manifest.sdUUID
@@ -247,7 +242,6 @@ def test_volume_metadata_io_block_env():
         assert desc == vol.getDescription()
 
 
-@xfail_python3
 def test_volume_accessibility():
     with fake_block_env() as env:
         sd_id = env.sd_manifest.sdUUID
@@ -277,13 +271,7 @@ def test_volume_accessibility():
 
 # Test chain verification
 
-ENV_PARAM_LIST = [
-    pytest.param("file"),
-    pytest.param("block", marks=xfail_python3),
-]
-
-
-@pytest.mark.parametrize("storage_type", ENV_PARAM_LIST)
+@pytest.mark.parametrize("storage_type", ["file", "block"])
 def test_make_qemu_chain(storage_type):
     with fake_env(storage_type) as env:
         vol_list = make_qemu_chain(env, 0, sc.RAW_FORMAT, 2)
@@ -295,7 +283,7 @@ def test_make_qemu_chain(storage_type):
 
 # Although these tests use file and block environments, due to the
 # underlying implementation, all reads and writes are to regular files.
-@pytest.mark.parametrize("storage_type", ENV_PARAM_LIST)
+@pytest.mark.parametrize("storage_type", ["file", "block"])
 def test_verify_chain(storage_type):
     with fake_env(storage_type) as env:
         vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
@@ -303,7 +291,7 @@ def test_verify_chain(storage_type):
         verify_qemu_chain(vol_list)
 
 
-@pytest.mark.parametrize("storage_type", ENV_PARAM_LIST)
+@pytest.mark.parametrize("storage_type", ["file", "block"])
 def test_reversed_chain_raises(storage_type):
     with fake_env(storage_type) as env:
         vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
@@ -312,7 +300,7 @@ def test_reversed_chain_raises(storage_type):
             verify_qemu_chain(vol_list)
 
 
-@pytest.mark.parametrize("storage_type", ENV_PARAM_LIST)
+@pytest.mark.parametrize("storage_type", ["file", "block"])
 def test_pattern_written_to_base_raises(storage_type):
     with fake_env(storage_type) as env:
         vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 3)
