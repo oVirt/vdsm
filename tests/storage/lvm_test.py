@@ -152,7 +152,7 @@ def test_build_command_read_only(fake_devices):
     assert " locking_type=4 " in cmd[3]
 
 
-class FakeRunner(object):
+class FakeRunner(lvm.LVMRunner):
     """
     Simulate a command failing multiple times before suceeding. This is the
     case when running lvm read-only command with a very busy SPM.
@@ -173,7 +173,7 @@ class FakeRunner(object):
         self.delay = delay
         self.calls = []
 
-    def run(self, cmd):
+    def _run_command(self, cmd):
         self.calls.append(cmd)
 
         if self.delay:

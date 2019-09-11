@@ -239,12 +239,50 @@ def makeLV(*args):
     return LV(*args)
 
 
-class CommandRunner(object):
+class LVMRunner(object):
     """
-    Does actual execution of the command.
+    Does actual execution of the LVM command and handle output, e.g. decode
+    output or log warnings.
     """
 
+    # Warnings written to LVM stderr that should not be logged as warnings.
+    SUPPRESS_WARNINGS = re.compile(
+        "|".join([
+            "WARNING: This metadata update is NOT backed up",
+            # TODO: remove when https://bugzilla.redhat.com/1639360 is fixed.
+            "WARNING: Combining activation change with other commands is "
+            "not advised",
+        ]),
+        re.IGNORECASE)
+
     def run(self, cmd):
+        """
+        Run LVM command, logging warnings for successful commands.
+
+        An example case is when LVM decide to fix VG metadata when running a
+        command that should not change the metadata on non-SPM host. In this
+        case LVM will log this warning:
+
+            WARNING: Inconsistent metadata found for VG xxx-yyy-zzz - updating
+            to use version 42
+
+        We log warnings only for successful commands since callers are already
+        handling failures.
+        """
+
+        rc, out, err = self._run_command(cmd)
+
+        out = out.decode("utf-8").splitlines()
+        err = err.decode("utf-8").splitlines()
+
+        err = [s for s in err if not self.SUPPRESS_WARNINGS.search(s)]
+
+        if rc == 0 and err:
+            log.warning("Command %s succeeded with warnings: %s", cmd, err)
+
+        return rc, out, err
+
+    def _run_command(self, cmd):
         p = commands.start(
             cmd,
             sudo=True,
@@ -277,17 +315,7 @@ class LVMCache(object):
     RETRY_DELAY = 0.01
     RETRY_BACKUP_OFF = 2
 
-    # Warnings written to LVM stderr that should not be logged as warnings.
-    SUPPRESS_WARNINGS = re.compile(
-        "|".join([
-            "WARNING: This metadata update is NOT backed up",
-            # TODO: remove when https://bugzilla.redhat.com/1639360 is fixed.
-            "WARNING: Combining activation change with other commands is "
-            "not advised",
-        ]),
-        re.IGNORECASE)
-
-    def __init__(self, cmd_runner=CommandRunner()):
+    def __init__(self, cmd_runner=LVMRunner()):
         self._read_only_lock = rwlock.RWLock()
         self._read_only = False
         self._filter = None
@@ -355,7 +383,7 @@ class LVMCache(object):
             # 1. Try the command with fast specific filter including the
             # specified devices.
             full_cmd = self._addExtraCfg(cmd, devices)
-            rc, out, err = self._run_lvm(full_cmd)
+            rc, out, err = self._runner.run(full_cmd)
             if rc == 0:
                 return rc, out, err
 
@@ -370,7 +398,7 @@ class LVMCache(object):
                     full_cmd, rc, err)
                 full_cmd = wider_cmd
 
-                rc, out, err = self._run_lvm(full_cmd)
+                rc, out, err = self._runner.run(full_cmd)
                 if rc == 0:
                     return rc, out, err
 
@@ -388,38 +416,11 @@ class LVMCache(object):
                     time.sleep(delay)
                     delay *= self.RETRY_BACKUP_OFF
 
-                    rc, out, err = self._run_lvm(full_cmd)
+                    rc, out, err = self._runner.run(full_cmd)
                     if rc == 0:
                         return rc, out, err
 
             return rc, out, err
-
-    def _run_lvm(self, cmd):
-        """
-        Run LVM command, logging warnings for successful commands.
-
-        An example case is when LVM decide to fix VG metadata when running a
-        command that should not change the metadata on non-SPM host. In this
-        case LVM will log this warning:
-
-            WARNING: Inconsistent metadata found for VG xxx-yyy-zzz - updating
-            to use version 42
-
-        We log warnings only for successful commands since callers are already
-        handling failures.
-        """
-
-        rc, out, err = self._runner.run(cmd)
-
-        out = out.decode("utf-8").splitlines()
-        err = err.decode("utf-8").splitlines()
-
-        err = [s for s in err if not self.SUPPRESS_WARNINGS.search(s)]
-
-        if rc == 0 and err:
-            log.warning("Command %s succeeded with warnings: %s", cmd, err)
-
-        return rc, out, err
 
     def __str__(self):
         return ("PVS:\n%s\n\nVGS:\n%s\n\nLVS:\n%s" %
