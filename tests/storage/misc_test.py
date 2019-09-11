@@ -52,7 +52,6 @@ from vdsm.storage import outOfProcess as oop
 from monkeypatch import MonkeyPatch
 from testValidation import checkSudo
 
-from . marks import xfail_python3
 
 EXT_DD = "/bin/dd"
 
@@ -816,11 +815,11 @@ def test_checkBytes():
 
 
 @pytest.mark.parametrize("length, offset, expected", [
-    pytest.param(100, 100, (4, 25, 25), marks=xfail_python3),
-    pytest.param(512, 512, (512, 1, 1), marks=xfail_python3),
-    pytest.param(1, 1024, (1, 1, 1024)),
-    pytest.param(10240, 512, (512, 20, 1), marks=xfail_python3),
-    pytest.param(1, 1, (1, 1, 1)),
+    (100, 100, (4, 25, 25)),
+    (512, 512, (512, 1, 1)),
+    (1, 1024, (1, 1, 1024)),
+    (10240, 512, (512, 20, 1)),
+    (1, 1, (1, 1, 1)),
 ])
 def test_align_data(length, offset, expected):
     alignment = misc._alignData(length, offset)

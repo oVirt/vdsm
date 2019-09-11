@@ -148,14 +148,14 @@ def _alignData(length, offset):
         # IO can be direct + single shot
         count = 1
         iounit = length
-        iooffset = offset / iounit
+        iooffset = offset // iounit
         return (iounit, count, iooffset)
 
     # Compute largest chunk possible up to 1M for IO
     while iounit > 1:
         if (length >= iounit) and (offset % iounit == 0):
-            count = length / iounit
-            iooffset = offset / iounit
+            count = length // iounit
+            iooffset = offset // iounit
             break
         iounit = iounit >> 1
 
