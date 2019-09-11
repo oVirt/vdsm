@@ -243,11 +243,13 @@ def test_default_route_of_two_dynamic_ip_networks(switch,
             'nic': dynamic_ipv4_iface1,
             'bootproto': 'dhcp',
             'switch': switch,
+            'blockingdhcp': True,
             'defaultRoute': True}
     net2 = {'bridged': False,
             'nic': dynamic_ipv4_iface2,
             'bootproto': 'dhcp',
             'switch': switch,
+            'blockingdhcp': True,
             'defaultRoute': False}
 
     with adapter.setupNetworks({network_configuration1.name: net1}, {}, NOCHK):
