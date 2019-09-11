@@ -22,7 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
-import xml.etree.cElementTree as etree
+import xml.etree.ElementTree as etree
 
 from collections import namedtuple
 from contextlib import contextmanager

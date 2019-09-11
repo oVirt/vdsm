@@ -27,7 +27,7 @@ import hashlib
 import operator
 import os
 import uuid
-import xml.etree.cElementTree as etree
+import xml.etree.ElementTree as etree
 
 import libvirt
 import six

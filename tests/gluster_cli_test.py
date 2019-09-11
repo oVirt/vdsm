@@ -27,7 +27,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from testValidation import skipif
 from vdsm.gluster import cli as gcli
 from vdsm.gluster import exception
-import xml.etree.cElementTree as etree
+import xml.etree.ElementTree as etree
 import glusterTestData
 
 

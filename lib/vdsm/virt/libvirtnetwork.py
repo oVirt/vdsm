@@ -25,7 +25,7 @@ import logging
 import threading
 
 import six
-import xml.etree.cElementTree as etree
+import xml.etree.ElementTree as etree
 from xml.sax.saxutils import escape
 
 from libvirt import libvirtError, VIR_ERR_NO_NETWORK

@@ -27,7 +27,7 @@ import logging
 import os
 import socket
 import time
-import xml.etree.cElementTree as etree
+import xml.etree.ElementTree as etree
 
 from vdsm.common import cmdutils
 from vdsm.common import commands

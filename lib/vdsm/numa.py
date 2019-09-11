@@ -22,7 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 from collections import defaultdict, namedtuple
-import xml.etree.cElementTree as ET
+import xml.etree.ElementTree as ET
 
 from vdsm import taskset
 from vdsm.common import cache
