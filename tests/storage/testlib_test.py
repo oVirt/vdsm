@@ -22,10 +22,10 @@ from __future__ import division
 
 import os
 
-from testlib import expandPermutations, permutations
 from testlib import make_uuid
-from testlib import VdsmTestCase
 from testlib import TEMPDIR
+
+import pytest
 
 from storage.storagetestlib import (
     Aborting,
@@ -55,289 +55,283 @@ from . marks import xfail_python3
 MB = 1024 ** 2
 
 
-@expandPermutations
-class TestFakeFileEnv(VdsmTestCase):
+# Test fake file environment
 
-    @xfail_python3
-    def test_no_fakelvm(self):
-        with fake_file_env() as env:
-            self.assertFalse(hasattr(env, 'lvm'))
-
-    @xfail_python3
-    def test_repo_location(self):
-        with fake_file_env() as env:
-            # Verify that the environment uses expected tmp dir.
-            self.assertTrue(env.tmpdir.startswith(TEMPDIR))
-
-            # Verify that global REPO consntats are patched.
-            self.assertEqual(sc.REPO_DATA_CENTER, env.tmpdir)
-            repo_mnt_dir = os.path.join(sc.REPO_DATA_CENTER, "mnt")
-            self.assertEqual(sc.REPO_MOUNT_DIR, repo_mnt_dir)
-
-            # And domain is mounted in the patched envrionment.
-            dom = env.sd_manifest
-            mountpoint = os.path.join(sc.REPO_MOUNT_DIR, "server:_path")
-            self.assertEqual(dom.mountpoint, mountpoint)
-
-    @xfail_python3
-    def test_domain_structure(self):
-        with fake_file_env() as env:
-            self.assertTrue(os.path.exists(env.sd_manifest.metafile))
-            images_dir = os.path.dirname(env.sd_manifest.getImagePath('foo'))
-            self.assertTrue(os.path.exists(images_dir))
-
-    @xfail_python3
-    def test_domain_metadata_io(self):
-        with fake_file_env() as env:
-            desc = 'foo'
-            set_domain_metaparams(env.sd_manifest, {sd.DMDK_DESCRIPTION: desc})
-
-            # Test that metadata is persisted to our temporary storage area
-            domain_dir = env.sd_manifest.domaindir
-            manifest = fileSD.FileStorageDomainManifest(domain_dir)
-            self.assertEqual(desc, manifest.getMetaParam(sd.DMDK_DESCRIPTION))
-
-    @permutations((("file",), ("block",),))
-    @xfail_python3
-    def test_default_domain_version(self, env_type):
-        with fake_env(env_type) as env:
-            self.assertEqual(3, env.sd_manifest.getVersion())
-
-    @permutations((
-        # env_type, sd_version
-        ("file", 3),
-        ("file", 4),
-        ("block", 3),
-        ("block", 4),
-    ))
-    @xfail_python3
-    def test_domain_version(self, env_type, sd_version):
-        with fake_env(env_type, sd_version=sd_version) as env:
-            self.assertEqual(sd_version, env.sd_manifest.getVersion())
-
-    @xfail_python3
-    def test_volume_structure(self):
-        with fake_file_env() as env:
-            img_id = make_uuid()
-            vol_id = make_uuid()
-            make_file_volume(env.sd_manifest, 0, img_id, vol_id)
-            image_dir = env.sd_manifest.getImagePath(img_id)
-            files = (vol_id, vol_id + sc.LEASE_FILEEXT,
-                     vol_id + fileVolume.META_FILEEXT)
-            for f in files:
-                path = os.path.join(image_dir, f)
-                self.assertTrue(os.path.exists(path))
-
-    @permutations((
-        # vol_type
-        (sc.LEAF_VOL, ),
-        (sc.INTERNAL_VOL, ),
-    ))
-    @xfail_python3
-    def test_volume_type(self, vol_type):
-        with fake_file_env() as env:
-            img_id = make_uuid()
-            vol_id = make_uuid()
-            make_file_volume(env.sd_manifest, 0, img_id, vol_id,
-                             vol_type=vol_type)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
-            self.assertEqual(vol.getVolType(), sc.type2name(vol_type))
-
-    @xfail_python3
-    def test_volume_metadata_io(self):
-        with fake_file_env() as env:
-            size = 1 * MB
-            img_id = make_uuid()
-            vol_id = make_uuid()
-            make_file_volume(env.sd_manifest, size, img_id, vol_id)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
-            desc = 'foo'
-            vol.setDescription(desc)
-
-            # Test that metadata is persisted to our temporary storage area
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
-            self.assertEqual(desc, vol.getDescription())
+@xfail_python3
+def test_no_fakelvm():
+    with fake_file_env() as env:
+        assert not hasattr(env, 'lvm')
 
 
-@expandPermutations
-class TestFakeBlockEnv(VdsmTestCase):
+@xfail_python3
+def test_repo_location():
+    with fake_file_env() as env:
+        # Verify that the environment uses expected tmp dir.
+        assert env.tmpdir.startswith(TEMPDIR)
 
-    @xfail_python3
-    def test_repopath_location(self):
-        with fake_block_env() as env:
-            self.assertTrue(env.sd_manifest.getRepoPath().startswith(TEMPDIR))
+        # Verify that global REPO consntats are patched.
+        assert sc.REPO_DATA_CENTER == env.tmpdir
+        repo_mnt_dir = os.path.join(sc.REPO_DATA_CENTER, "mnt")
+        assert sc.REPO_MOUNT_DIR == repo_mnt_dir
 
-    @xfail_python3
-    def test_domain_structure(self):
-        with fake_block_env() as env:
-            vg_name = env.sd_manifest.sdUUID
-            md_path = env.lvm.lvPath(vg_name, sd.METADATA)
-            self.assertTrue(os.path.exists(md_path))
-
-            version = env.sd_manifest.getVersion()
-            for lv in env.sd_manifest.special_volumes(version):
-                self.assertEqual(lv, env.lvm.getLV(vg_name, lv).name)
-
-            images_dir = os.path.join(env.sd_manifest.domaindir,
-                                      sd.DOMAIN_IMAGES)
-            self.assertTrue(os.path.exists(images_dir))
-
-            # Check the storage repository
-            repo_path = env.sd_manifest.getRepoPath()
-            domain_link = os.path.join(repo_path, env.sd_manifest.sdUUID)
-            self.assertTrue(os.path.islink(domain_link))
-            self.assertEqual(env.sd_manifest.domaindir,
-                             os.readlink(domain_link))
-
-    @xfail_python3
-    def test_domain_metadata_io(self):
-        with fake_block_env() as env:
-            desc = 'foo'
-            set_domain_metaparams(env.sd_manifest, {sd.DMDK_DESCRIPTION: desc})
-
-            # Test that metadata is persisted to our temporary storage area
-            sd_id = env.sd_manifest.sdUUID
-            manifest = blockSD.BlockStorageDomainManifest(sd_id)
-            self.assertEqual(desc, manifest.getMetaParam(sd.DMDK_DESCRIPTION))
-
-    @permutations((
-        # vol_type
-        (sc.LEAF_VOL, ),
-        (sc.INTERNAL_VOL, ),
-    ))
-    @xfail_python3
-    def test_volume_type(self, vol_type):
-        with fake_block_env() as env:
-            img_id = make_uuid()
-            vol_id = make_uuid()
-            make_block_volume(env.lvm, env.sd_manifest, 0,
-                              img_id, vol_id, vol_type=vol_type)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
-            self.assertEqual(vol.getVolType(), sc.type2name(vol_type))
-
-    @permutations((
-        (MB,),
-        (2 * MB - 1,),
-        (1,),
-        ((sc.VG_EXTENT_SIZE_MB - 1) * MB,),
-        (sc.VG_EXTENT_SIZE_MB * MB + 1,),
-    ))
-    @xfail_python3
-    def test_volume_size_alignment(self, size_param):
-        with fake_block_env() as env:
-            sd_id = env.sd_manifest.sdUUID
-            img_id = make_uuid()
-            vol_id = make_uuid()
-            make_block_volume(env.lvm, env.sd_manifest, size_param,
-                              img_id, vol_id)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
-
-            extent_size = sc.VG_EXTENT_SIZE_MB * MB
-            expected_size = utils.round(size_param, extent_size)
-            self.assertEqual(expected_size, vol.getCapacity())
-            self.assertEqual(expected_size,
-                             int(env.lvm.getLV(sd_id, vol_id).size))
-            lv_file_size = os.stat(env.lvm.lvPath(sd_id, vol_id)).st_size
-            self.assertEqual(expected_size, lv_file_size)
-
-    @xfail_python3
-    def test_volume_metadata_io(self):
-        with fake_block_env() as env:
-            sd_id = env.sd_manifest.sdUUID
-            img_id = make_uuid()
-            vol_id = make_uuid()
-            size_mb = sc.VG_EXTENT_SIZE_MB
-            size = size_mb * MB
-            make_block_volume(env.lvm, env.sd_manifest, size,
-                              img_id, vol_id)
-
-            self.assertEqual(vol_id, env.lvm.getLV(sd_id, vol_id).name)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
-            self.assertEqual(size, vol.getCapacity())
-            desc = 'foo'
-            vol.setDescription(desc)
-
-            # Test that metadata is persisted to our temporary storage area
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
-            self.assertEqual(desc, vol.getDescription())
-
-    @xfail_python3
-    def test_volume_accessibility(self):
-        with fake_block_env() as env:
-            sd_id = env.sd_manifest.sdUUID
-            img_id = make_uuid()
-            vol_id = make_uuid()
-            make_block_volume(env.lvm, env.sd_manifest, 1 * MB, img_id, vol_id)
-
-            self.assertTrue(os.path.isfile(env.lvm.lvPath(sd_id, vol_id)))
-
-            domain_path = os.path.join(env.sd_manifest.domaindir,
-                                       sd.DOMAIN_IMAGES,
-                                       img_id,
-                                       vol_id)
-            repo_path = os.path.join(env.sd_manifest.getRepoPath(),
-                                     sd_id,
-                                     sd.DOMAIN_IMAGES,
-                                     img_id,
-                                     vol_id)
-            self.assertNotEqual(repo_path, domain_path)
-            # The links to the dev are created only when producing the volume
-            self.assertFalse(os.path.isfile(domain_path))
-            self.assertFalse(os.path.isfile(repo_path))
-
-            env.sd_manifest.produceVolume(img_id, vol_id)
-            self.assertTrue(os.path.samefile(repo_path, domain_path))
+        # And domain is mounted in the patched environment.
+        dom = env.sd_manifest
+        mountpoint = os.path.join(sc.REPO_MOUNT_DIR, "server:_path")
+        assert dom.mountpoint == mountpoint
 
 
-@expandPermutations
-class TestChainVerification(VdsmTestCase):
+@xfail_python3
+def test_domain_structure_file_env():
+    with fake_file_env() as env:
+        assert os.path.exists(env.sd_manifest.metafile)
+        images_dir = os.path.dirname(env.sd_manifest.getImagePath('foo'))
+        assert os.path.exists(images_dir)
 
-    @permutations((
-        # storage_type
-        ('file', ),
-        ('block', )
-    ))
-    @xfail_python3
-    def test_make_qemu_chain(self, storage_type):
-        with fake_env(storage_type) as env:
-            vol_list = make_qemu_chain(env, 0, sc.RAW_FORMAT, 2)
-            self.assertTrue(vol_list[0].isInternal(),
-                            "Internal volume has wrong type: %s"
-                            % vol_list[0].getVolType())
-            self.assertTrue(vol_list[1].isLeaf(),
-                            "Leaf volume has wrong type: %s"
-                            % vol_list[1].getVolType())
 
-    # Although these tests use file and block environments, due to the
-    # underlying implementation, all reads and writes are to regular files.
-    @permutations((('file',), ('block',)))
-    @xfail_python3
-    def test_verify_chain(self, storage_type):
-        with fake_env(storage_type) as env:
-            vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
-            write_qemu_chain(vol_list)
+@xfail_python3
+def test_domain_metadata_io_file_env():
+    with fake_file_env() as env:
+        desc = 'foo'
+        set_domain_metaparams(env.sd_manifest, {sd.DMDK_DESCRIPTION: desc})
+
+        # Test that metadata is persisted to our temporary storage area.
+        domain_dir = env.sd_manifest.domaindir
+        manifest = fileSD.FileStorageDomainManifest(domain_dir)
+        assert desc == manifest.getMetaParam(sd.DMDK_DESCRIPTION)
+
+
+@pytest.mark.parametrize("env_type", ["file", "block"])
+@xfail_python3
+def test_default_domain_version(env_type):
+    with fake_env(env_type) as env:
+        assert 3 == env.sd_manifest.getVersion()
+
+
+@pytest.mark.parametrize("env_type, sd_version", [
+    ("file", 3),
+    ("file", 4),
+    ("block", 3),
+    ("block", 4),
+])
+@xfail_python3
+def test_domain_version(env_type, sd_version):
+    with fake_env(env_type, sd_version=sd_version) as env:
+        assert sd_version == env.sd_manifest.getVersion()
+
+
+@xfail_python3
+def test_volume_structure():
+    with fake_file_env() as env:
+        img_id = make_uuid()
+        vol_id = make_uuid()
+        make_file_volume(env.sd_manifest, 0, img_id, vol_id)
+        image_dir = env.sd_manifest.getImagePath(img_id)
+        files = (vol_id,
+                 vol_id + sc.LEASE_FILEEXT,
+                 vol_id + fileVolume.META_FILEEXT)
+        for f in files:
+            path = os.path.join(image_dir, f)
+            assert os.path.exists(path)
+
+
+@pytest.mark.parametrize("vol_type", [sc.LEAF_VOL, sc.INTERNAL_VOL])
+@xfail_python3
+def test_volume_type_file_env(vol_type):
+    with fake_file_env() as env:
+        img_id = make_uuid()
+        vol_id = make_uuid()
+        make_file_volume(env.sd_manifest, 0, img_id, vol_id, vol_type=vol_type)
+        vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        assert vol.getVolType() == sc.type2name(vol_type)
+
+
+@xfail_python3
+def test_volume_metadata_io_file_env():
+    with fake_file_env() as env:
+        size = 1 * MB
+        img_id = make_uuid()
+        vol_id = make_uuid()
+        make_file_volume(env.sd_manifest, size, img_id, vol_id)
+        vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        desc = 'foo'
+        vol.setDescription(desc)
+
+        # Test that metadata is persisted to our temporary storage area.
+        vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        assert desc == vol.getDescription()
+
+
+# Test fake block environment
+
+@xfail_python3
+def test_repopath_location():
+    with fake_block_env() as env:
+        assert env.sd_manifest.getRepoPath().startswith(TEMPDIR)
+
+
+@xfail_python3
+def test_domain_structure_block_env():
+    with fake_block_env() as env:
+        vg_name = env.sd_manifest.sdUUID
+        md_path = env.lvm.lvPath(vg_name, sd.METADATA)
+        assert os.path.exists(md_path)
+
+        version = env.sd_manifest.getVersion()
+        for lv in env.sd_manifest.special_volumes(version):
+            assert lv == env.lvm.getLV(vg_name, lv).name
+
+        images_dir = os.path.join(env.sd_manifest.domaindir, sd.DOMAIN_IMAGES)
+        assert os.path.exists(images_dir)
+
+        # Check the storage repository.
+        repo_path = env.sd_manifest.getRepoPath()
+        domain_link = os.path.join(repo_path, env.sd_manifest.sdUUID)
+        assert os.path.islink(domain_link)
+        assert env.sd_manifest.domaindir == os.readlink(domain_link)
+
+
+@xfail_python3
+def test_domain_metadata_io_block_env():
+    with fake_block_env() as env:
+        desc = 'foo'
+        set_domain_metaparams(env.sd_manifest, {sd.DMDK_DESCRIPTION: desc})
+
+        # Test that metadata is persisted to our temporary storage area.
+        sd_id = env.sd_manifest.sdUUID
+        manifest = blockSD.BlockStorageDomainManifest(sd_id)
+        assert desc == manifest.getMetaParam(sd.DMDK_DESCRIPTION)
+
+
+@pytest.mark.parametrize("vol_type", [sc.LEAF_VOL, sc.INTERNAL_VOL])
+@xfail_python3
+def test_volume_type_block_env(vol_type):
+    with fake_block_env() as env:
+        img_id = make_uuid()
+        vol_id = make_uuid()
+        make_block_volume(
+            env.lvm, env.sd_manifest, 0, img_id, vol_id, vol_type=vol_type)
+        vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        assert vol.getVolType() == sc.type2name(vol_type)
+
+
+@pytest.mark.parametrize("size_param", [
+    MB,
+    2 * MB - 1,
+    1,
+    (sc.VG_EXTENT_SIZE_MB - 1) * MB,
+    sc.VG_EXTENT_SIZE_MB * MB + 1,
+])
+@xfail_python3
+def test_volume_size_alignment(size_param):
+    with fake_block_env() as env:
+        sd_id = env.sd_manifest.sdUUID
+        img_id = make_uuid()
+        vol_id = make_uuid()
+        make_block_volume(env.lvm, env.sd_manifest, size_param, img_id, vol_id)
+        vol = env.sd_manifest.produceVolume(img_id, vol_id)
+
+        extent_size = sc.VG_EXTENT_SIZE_MB * MB
+        expected_size = utils.round(size_param, extent_size)
+        assert expected_size == vol.getCapacity()
+        assert expected_size == int(env.lvm.getLV(sd_id, vol_id).size)
+        lv_file_size = os.stat(env.lvm.lvPath(sd_id, vol_id)).st_size
+        assert expected_size == lv_file_size
+
+
+@xfail_python3
+def test_volume_metadata_io_block_env():
+    with fake_block_env() as env:
+        sd_id = env.sd_manifest.sdUUID
+        img_id = make_uuid()
+        vol_id = make_uuid()
+        size_mb = sc.VG_EXTENT_SIZE_MB
+        size = size_mb * MB
+        make_block_volume(env.lvm, env.sd_manifest, size, img_id, vol_id)
+
+        assert vol_id == env.lvm.getLV(sd_id, vol_id).name
+        vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        assert size == vol.getCapacity()
+        desc = 'foo'
+        vol.setDescription(desc)
+
+        # Test that metadata is persisted to our temporary storage area.
+        vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        assert desc == vol.getDescription()
+
+
+@xfail_python3
+def test_volume_accessibility():
+    with fake_block_env() as env:
+        sd_id = env.sd_manifest.sdUUID
+        img_id = make_uuid()
+        vol_id = make_uuid()
+        make_block_volume(env.lvm, env.sd_manifest, 1 * MB, img_id, vol_id)
+
+        assert os.path.isfile(env.lvm.lvPath(sd_id, vol_id))
+
+        domain_path = os.path.join(env.sd_manifest.domaindir,
+                                   sd.DOMAIN_IMAGES,
+                                   img_id,
+                                   vol_id)
+        repo_path = os.path.join(env.sd_manifest.getRepoPath(),
+                                 sd_id,
+                                 sd.DOMAIN_IMAGES,
+                                 img_id,
+                                 vol_id)
+        assert repo_path != domain_path
+        # The links to the dev are created only when producing the volume.
+        assert not os.path.isfile(domain_path)
+        assert not os.path.isfile(repo_path)
+
+        env.sd_manifest.produceVolume(img_id, vol_id)
+        assert os.path.samefile(repo_path, domain_path)
+
+
+# Test chain verification
+
+@pytest.mark.parametrize("storage_type", ["file", "block"])
+@xfail_python3
+def test_make_qemu_chain(storage_type):
+    with fake_env(storage_type) as env:
+        vol_list = make_qemu_chain(env, 0, sc.RAW_FORMAT, 2)
+        msg = "Internal volume has wrong type: %s" % vol_list[0].getVolType()
+        assert vol_list[0].isInternal(), msg
+        msg = "Leaf volume has wrong type: %s" % vol_list[1].getVolType()
+        assert vol_list[1].isLeaf(), msg
+
+
+# Although these tests use file and block environments, due to the
+# underlying implementation, all reads and writes are to regular files.
+@pytest.mark.parametrize("storage_type", ["file", "block"])
+@xfail_python3
+def test_verify_chain(storage_type):
+    with fake_env(storage_type) as env:
+        vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
+        write_qemu_chain(vol_list)
+        verify_qemu_chain(vol_list)
+
+
+@pytest.mark.parametrize("storage_type", ["file", "block"])
+@xfail_python3
+def test_reversed_chain_raises(storage_type):
+    with fake_env(storage_type) as env:
+        vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
+        write_qemu_chain(reversed(vol_list))
+        with pytest.raises(qemuio.VerificationError):
             verify_qemu_chain(vol_list)
 
-    @permutations((('file',), ('block',)))
-    @xfail_python3
-    def test_reversed_chain_raises(self, storage_type):
-        with fake_env(storage_type) as env:
-            vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
-            write_qemu_chain(reversed(vol_list))
-            self.assertRaises(qemuio.VerificationError,
-                              verify_qemu_chain, vol_list)
 
-    @permutations((('file',), ('block',)))
-    @xfail_python3
-    def test_pattern_written_to_base_raises(self, storage_type):
-        with fake_env(storage_type) as env:
-            vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 3)
+@pytest.mark.parametrize("storage_type", ["file", "block"])
+@xfail_python3
+def test_pattern_written_to_base_raises(storage_type):
+    with fake_env(storage_type) as env:
+        vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 3)
 
-            # Writes the entire pattern into the base volume
-            bad_list = vol_list[:1] * 3
-            write_qemu_chain(bad_list)
-            self.assertRaises(qemuio.VerificationError,
-                              verify_qemu_chain, vol_list)
+        # Writes the entire pattern into the base volume.
+        bad_list = vol_list[:1] * 3
+        write_qemu_chain(bad_list)
+        with pytest.raises(qemuio.VerificationError):
+            verify_qemu_chain(vol_list)
 
 
 def set_domain_metaparams(manifest, params):
@@ -350,70 +344,76 @@ class OtherFakeLock(FakeGuardedLock):
     pass
 
 
-@expandPermutations
-class TestFakeGuardedLock(VdsmTestCase):
+# Test FakeGuardedLock
 
-    def test_properties(self):
-        a = FakeGuardedLock('ns', 'name', 'mode', [])
-        self.assertEqual('ns', a.ns)
-        self.assertEqual('name', a.name)
-        self.assertEqual('mode', a.mode)
-
-    def test_different_types_not_equal(self):
-        a = FakeGuardedLock('ns', 'name', 'mode', [])
-        b = OtherFakeLock('ns', 'name', 'mode', [])
-        self.assertFalse(a.__eq__(b))
-        self.assertTrue(a.__ne__(b))
-
-    def test_different_types_sortable(self):
-        a = FakeGuardedLock('nsA', 'name', 'mode', [])
-        b = OtherFakeLock('nsB', 'name', 'mode', [])
-        self.assertTrue(a < b)
-        self.assertFalse(b < a)
-        self.assertEqual([a, b], sorted([b, a]))
-
-    @permutations((
-        (('nsA', 'nameA', 'mode'), ('nsB', 'nameA', 'mode')),
-        (('nsA', 'nameA', 'mode'), ('nsA', 'nameB', 'mode')),
-    ))
-    def test_less_than(self, a, b):
-        ns_a, name_a, mode_a = a
-        ns_b, name_b, mode_b = b
-        b = FakeGuardedLock(ns_b, name_b, mode_b, [])
-        a = FakeGuardedLock(ns_a, name_a, mode_a, [])
-        self.assertLess(a, b)
-
-    def test_equality(self):
-        a = FakeGuardedLock('ns', 'name', 'mode', [])
-        b = FakeGuardedLock('ns', 'name', 'mode', [])
-        self.assertEqual(a, b)
-
-    def test_mode_used_for_equality(self):
-        a = FakeGuardedLock('nsA', 'nameA', 'modeA', [])
-        b = FakeGuardedLock('nsA', 'nameA', 'modeB', [])
-        self.assertNotEqual(a, b)
-
-    def test_mode_ignored_for_sorting(self):
-        a = FakeGuardedLock('nsA', 'nameA', 'modeA', [])
-        b = FakeGuardedLock('nsA', 'nameA', 'modeB', [])
-        self.assertFalse(a < b)
-        self.assertFalse(b < a)
-
-    def test_acquire_and_release(self):
-        log = []
-        expected = [('acquire', 'ns', 'name', 'mode'),
-                    ('release', 'ns', 'name', 'mode')]
-        lock = FakeGuardedLock('ns', 'name', 'mode', log)
-        lock.acquire()
-        self.assertEqual(expected[:1], log)
-        lock.release()
-        self.assertEqual(expected, log)
+def test_properties():
+    a = FakeGuardedLock('ns', 'name', 'mode', [])
+    assert 'ns' == a.ns
+    assert 'name' == a.name
+    assert 'mode' == a.mode
 
 
-class TestAborting(VdsmTestCase):
+def test_different_types_not_equal():
+    a = FakeGuardedLock('ns', 'name', 'mode', [])
+    b = OtherFakeLock('ns', 'name', 'mode', [])
+    assert not a.__eq__(b)
+    assert a.__ne__(b)
 
-    def test_aborting_flow(self):
-        aborting = Aborting(5)
-        for i in range(5):
-            self.assertEqual(aborting(), False)
-        self.assertEqual(aborting(), True)
+
+def test_different_types_sortable():
+    a = FakeGuardedLock('nsA', 'name', 'mode', [])
+    b = OtherFakeLock('nsB', 'name', 'mode', [])
+    assert a < b
+    assert not b < a
+    assert [a, b] == sorted([b, a])
+
+
+@pytest.mark.parametrize("a, b", [
+    (('nsA', 'nameA', 'mode'), ('nsB', 'nameA', 'mode')),
+    (('nsA', 'nameA', 'mode'), ('nsA', 'nameB', 'mode')),
+])
+def test_less_than(a, b):
+    ns_a, name_a, mode_a = a
+    ns_b, name_b, mode_b = b
+    b = FakeGuardedLock(ns_b, name_b, mode_b, [])
+    a = FakeGuardedLock(ns_a, name_a, mode_a, [])
+    assert a < b
+
+
+def test_equality():
+    a = FakeGuardedLock('ns', 'name', 'mode', [])
+    b = FakeGuardedLock('ns', 'name', 'mode', [])
+    assert a == b
+
+
+def test_mode_used_for_equality():
+    a = FakeGuardedLock('nsA', 'nameA', 'modeA', [])
+    b = FakeGuardedLock('nsA', 'nameA', 'modeB', [])
+    assert a != b
+
+
+def test_mode_ignored_for_sorting():
+    a = FakeGuardedLock('nsA', 'nameA', 'modeA', [])
+    b = FakeGuardedLock('nsA', 'nameA', 'modeB', [])
+    assert not a < b
+    assert not b < a
+
+
+def test_acquire_and_release():
+    log = []
+    expected = [('acquire', 'ns', 'name', 'mode'),
+                ('release', 'ns', 'name', 'mode')]
+    lock = FakeGuardedLock('ns', 'name', 'mode', log)
+    lock.acquire()
+    assert expected[:1] == log
+    lock.release()
+    assert expected == log
+
+
+# Test Aborting
+
+def test_aborting_flow():
+    aborting = Aborting(5)
+    for i in range(5):
+        assert aborting() is False
+    assert aborting() is True
