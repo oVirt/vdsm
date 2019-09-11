@@ -239,7 +239,6 @@ class TestVolumeMetadata:
         md = volume.VolumeMetadata.from_lines(lines)
         assert sc.DEFAULT_GENERATION == md.generation
 
-    @pytest.mark.xfail(six.PY3, reason="bytes handled incorrectly")
     def test_cleared_metadata(self):
         lines = CLEARED_VOLUME_METADATA.rstrip(b"\0").splitlines()
         with pytest.raises(se.MetadataCleared):
