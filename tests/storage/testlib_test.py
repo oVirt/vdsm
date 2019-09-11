@@ -57,13 +57,11 @@ MB = 1024 ** 2
 
 # Test fake file environment
 
-@xfail_python3
 def test_no_fakelvm():
     with fake_file_env() as env:
         assert not hasattr(env, 'lvm')
 
 
-@xfail_python3
 def test_repo_location():
     with fake_file_env() as env:
         # Verify that the environment uses expected tmp dir.
@@ -80,7 +78,6 @@ def test_repo_location():
         assert dom.mountpoint == mountpoint
 
 
-@xfail_python3
 def test_domain_structure_file_env():
     with fake_file_env() as env:
         assert os.path.exists(env.sd_manifest.metafile)
@@ -88,7 +85,6 @@ def test_domain_structure_file_env():
         assert os.path.exists(images_dir)
 
 
-@xfail_python3
 def test_domain_metadata_io_file_env():
     with fake_file_env() as env:
         desc = 'foo'
@@ -101,7 +97,6 @@ def test_domain_metadata_io_file_env():
 
 
 @pytest.mark.parametrize("env_type", ["file", "block"])
-@xfail_python3
 def test_default_domain_version(env_type):
     with fake_env(env_type) as env:
         assert 3 == env.sd_manifest.getVersion()
@@ -113,13 +108,11 @@ def test_default_domain_version(env_type):
     ("block", 3),
     ("block", 4),
 ])
-@xfail_python3
 def test_domain_version(env_type, sd_version):
     with fake_env(env_type, sd_version=sd_version) as env:
         assert sd_version == env.sd_manifest.getVersion()
 
 
-@xfail_python3
 def test_volume_structure():
     with fake_file_env() as env:
         img_id = make_uuid()
@@ -135,7 +128,6 @@ def test_volume_structure():
 
 
 @pytest.mark.parametrize("vol_type", [sc.LEAF_VOL, sc.INTERNAL_VOL])
-@xfail_python3
 def test_volume_type_file_env(vol_type):
     with fake_file_env() as env:
         img_id = make_uuid()
@@ -145,7 +137,6 @@ def test_volume_type_file_env(vol_type):
         assert vol.getVolType() == sc.type2name(vol_type)
 
 
-@xfail_python3
 def test_volume_metadata_io_file_env():
     with fake_file_env() as env:
         size = 1 * MB
@@ -163,13 +154,11 @@ def test_volume_metadata_io_file_env():
 
 # Test fake block environment
 
-@xfail_python3
 def test_repopath_location():
     with fake_block_env() as env:
         assert env.sd_manifest.getRepoPath().startswith(TEMPDIR)
 
 
-@xfail_python3
 def test_domain_structure_block_env():
     with fake_block_env() as env:
         vg_name = env.sd_manifest.sdUUID
@@ -190,7 +179,6 @@ def test_domain_structure_block_env():
         assert env.sd_manifest.domaindir == os.readlink(domain_link)
 
 
-@xfail_python3
 def test_domain_metadata_io_block_env():
     with fake_block_env() as env:
         desc = 'foo'
@@ -289,8 +277,13 @@ def test_volume_accessibility():
 
 # Test chain verification
 
-@pytest.mark.parametrize("storage_type", ["file", "block"])
-@xfail_python3
+ENV_PARAM_LIST = [
+    pytest.param("file"),
+    pytest.param("block", marks=xfail_python3),
+]
+
+
+@pytest.mark.parametrize("storage_type", ENV_PARAM_LIST)
 def test_make_qemu_chain(storage_type):
     with fake_env(storage_type) as env:
         vol_list = make_qemu_chain(env, 0, sc.RAW_FORMAT, 2)
@@ -302,8 +295,7 @@ def test_make_qemu_chain(storage_type):
 
 # Although these tests use file and block environments, due to the
 # underlying implementation, all reads and writes are to regular files.
-@pytest.mark.parametrize("storage_type", ["file", "block"])
-@xfail_python3
+@pytest.mark.parametrize("storage_type", ENV_PARAM_LIST)
 def test_verify_chain(storage_type):
     with fake_env(storage_type) as env:
         vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
@@ -311,8 +303,7 @@ def test_verify_chain(storage_type):
         verify_qemu_chain(vol_list)
 
 
-@pytest.mark.parametrize("storage_type", ["file", "block"])
-@xfail_python3
+@pytest.mark.parametrize("storage_type", ENV_PARAM_LIST)
 def test_reversed_chain_raises(storage_type):
     with fake_env(storage_type) as env:
         vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
@@ -321,8 +312,7 @@ def test_reversed_chain_raises(storage_type):
             verify_qemu_chain(vol_list)
 
 
-@pytest.mark.parametrize("storage_type", ["file", "block"])
-@xfail_python3
+@pytest.mark.parametrize("storage_type", ENV_PARAM_LIST)
 def test_pattern_written_to_base_raises(storage_type):
     with fake_env(storage_type) as env:
         vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 3)
