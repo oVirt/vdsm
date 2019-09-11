@@ -1631,7 +1631,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
                     self.log.debug("Reading v4 metadata slot %s offset=%s",
                                    slot, v4_off)
-                    v4_data = src[v4_off:v4_off + sc.METADATA_SIZE]
+                    v4_data = bytes(src[v4_off:v4_off + sc.METADATA_SIZE])
 
                     try:
                         md = VolumeMetadata.from_lines(
@@ -1643,7 +1643,7 @@ class BlockStorageDomain(sd.StorageDomain):
                         v5_data = v4_data
                     else:
                         v5_data = md.storage_format(5).ljust(
-                            sc.METADATA_SIZE, "\0")
+                            sc.METADATA_SIZE, b"\0")
 
                     v5_off = self._manifest.metadata_offset(slot, version=5)
 

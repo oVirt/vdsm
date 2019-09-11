@@ -231,7 +231,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         _, slot = metaId
 
         data = meta.storage_format(sd.getVersion(), **overrides)
-        data += "\0" * (sc.METADATA_SIZE - len(data))
+        data = data.ljust(sc.METADATA_SIZE, b"\0")
         sd.write_metadata_block(slot, data)
 
     def changeVolumeTag(self, tagPrefix, uuid):

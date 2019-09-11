@@ -97,7 +97,7 @@ def readblock(name, offset, size):
         raise se.MiscBlockReadException(name, offset, size)
 
     left = size
-    ret = ""
+    ret = bytearray()
     baseoffset = offset
 
     while left > 0:
