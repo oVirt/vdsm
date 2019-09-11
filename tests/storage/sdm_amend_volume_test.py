@@ -49,20 +49,12 @@ from vdsm.storage import qemuimg
 from vdsm.storage.sdm import volume_info
 from vdsm.storage.sdm.api import amend_volume, copy_data
 
-from . marks import xfail_python3
-
 
 def failure(*args, **kwargs):
     raise cmdutils.Error("code", "out", "err", "Fail amend")
 
 
 DEFAULT_SIZE = 1048576
-
-
-ENV_PARAM_LIST = [
-    pytest.param('file'),
-    pytest.param('block', marks=xfail_python3),
-]
 
 
 @contextmanager
@@ -82,7 +74,7 @@ def make_env(storage_type, fmt, chain_length=1,
             yield env
 
 
-@pytest.mark.parametrize("env_type", ENV_PARAM_LIST)
+@pytest.mark.parametrize("env_type", ["file", "block"])
 def test_amend(fake_scheduler, env_type):
     fmt = sc.name2type('cow')
     job_id = make_uuid()
@@ -102,7 +94,7 @@ def test_amend(fake_scheduler, env_type):
         assert env_vol.getMetaParam(sc.GENERATION) == generation + 1
 
 
-@pytest.mark.parametrize("env_type", ENV_PARAM_LIST)
+@pytest.mark.parametrize("env_type", ["file", "block"])
 def test_vol_type_not_qcow(fake_scheduler, env_type):
     fmt = sc.name2type('raw')
     job_id = make_uuid()
@@ -121,7 +113,7 @@ def test_vol_type_not_qcow(fake_scheduler, env_type):
         assert env_vol.getMetaParam(sc.GENERATION) == generation
 
 
-@pytest.mark.parametrize("env_type", ENV_PARAM_LIST)
+@pytest.mark.parametrize("env_type", ["file", "block"])
 def test_qemu_amend_failure(fake_scheduler, monkeypatch, env_type):
     monkeypatch.setattr(qemuimg, "amend", failure)
     fmt = sc.name2type('raw')
@@ -141,7 +133,7 @@ def test_qemu_amend_failure(fake_scheduler, monkeypatch, env_type):
         assert env_vol.getMetaParam(sc.GENERATION) == generation
 
 
-@pytest.mark.parametrize("env_type", ENV_PARAM_LIST)
+@pytest.mark.parametrize("env_type", ["file", "block"])
 def test_sd_version_no_support_compat(fake_scheduler, env_type):
     fmt = sc.name2type('cow')
     job_id = make_uuid()
