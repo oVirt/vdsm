@@ -20,8 +20,10 @@
 
 %ifarch ppc64le
 %global with_openvswitch 0
+%global arch_ppc64le 0
 %else
 %global with_openvswitch @OPENVSWITCH@
+%global arch_ppc64le 1
 %endif
 
 %if 0%{?centos} || 0%{?fedora}
@@ -244,10 +246,15 @@ Requires: policycoreutils >= 2.1.13-55
 # qemu-kvm
 
 %if 0%{?rhel}
-# 4k not supported yet on rhel 7.
-# https://bugzilla.redhat.com/1745443
+%if 0%{?centos} || %{arch_ppc64le}
+# 4k not supported yet on centos, and on ppc64le we are limited to rhel 7.6.
 # CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
 Requires: qemu-kvm-rhev >= 10:2.12.0-18.el7_6.5
+%else
+# For 4k support
+# https://bugzilla.redhat.com/1745443
+Requires: qemu-kvm-rhev >= 10:2.12.0-33.el7_7.3
+%endif # centos or ppc64le
 %endif
 
 %if 0%{?fedora}
