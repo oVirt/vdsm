@@ -25,6 +25,7 @@ import os
 
 from vdsm import constants
 from vdsm import utils
+from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import exception
 from vdsm.common.compat import glob_escape
@@ -57,14 +58,15 @@ def getDomUuidFromVolumePath(volPath):
 def grep_files(pattern, paths):
     cmd = [constants.EXT_GREP, '-E', '-H', pattern]
     cmd.extend(paths)
-    rc, out, err = commands.execCmd(cmd)
-    if rc == 0:
-        matches = out  # A list of matching lines
-    elif rc == 1:
-        matches = []  # pattern not found
-    else:
-        raise ValueError("rc: %s, out: %s, err: %s" % (rc, out, err))
-    return matches
+
+    try:
+        out = commands.run(cmd)
+        return out.splitlines()
+    except cmdutils.Error as e:
+        if e.rc == 1:
+            return []  # pattern not found
+        else:
+            raise
 
 
 class FileVolumeManifest(volume.VolumeManifest):
