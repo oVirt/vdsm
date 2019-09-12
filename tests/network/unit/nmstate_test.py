@@ -837,7 +837,8 @@ def _create_ipv4_state(address=None, prefix=None, dynamic=False,
             nmstate.InterfaceIP.ADDRESS: [
                 {nmstate.InterfaceIP.ADDRESS_IP: address,
                  nmstate.InterfaceIP.ADDRESS_PREFIX_LENGTH: prefix}
-            ]
+            ],
+            nmstate.InterfaceIP.DHCP: False
         }
     return state
 
@@ -860,7 +861,9 @@ def _create_ipv6_state(address=None, prefix=None, dynamic=False,
             nmstate.InterfaceIP.ADDRESS: [
                 {nmstate.InterfaceIP.ADDRESS_IP: address,
                  nmstate.InterfaceIP.ADDRESS_PREFIX_LENGTH: prefix}
-            ]
+            ],
+            nmstate.InterfaceIP.DHCP: False,
+            nmstate.InterfaceIPv6.AUTOCONF: False
         }
     return state
 

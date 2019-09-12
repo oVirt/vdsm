@@ -337,6 +337,7 @@ class Network(object):
             if self._netconf.ipv4addr:
                 ipv4_address = self._create_static_ipv4_address()
                 ipstate[InterfaceIP.ADDRESS] = ipv4_address
+                ipstate[InterfaceIP.DHCP] = False
             elif self._netconf.dhcpv4:
                 ipstate.update(self._create_dynamic_ipv4())
             else:
@@ -367,6 +368,8 @@ class Network(object):
             if self._netconf.ipv6addr:
                 ipv6_address = self._create_static_ipv6_address()
                 ipstate[InterfaceIP.ADDRESS] = ipv6_address
+                ipstate[InterfaceIP.DHCP] = False
+                ipstate[InterfaceIPv6.AUTOCONF] = False
             elif self._netconf.dhcpv6 or self._netconf.ipv6autoconf:
                 ipstate.update(self._create_dynamic_ipv6())
             else:

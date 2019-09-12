@@ -43,9 +43,13 @@ NETWORK_NAME = 'test-network'
 VLAN = 10
 
 IPv4_ADDRESS = '192.0.3.1'
+IPv4_ADDRESS2 = '192.0.15.1'
 IPv4_PREFIX_LEN = '24'
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1'
+IPv6_ADDRESS2 = 'fdb3:84e5:4ff4:77e3::1'
 IPv6_CIDR = '64'
+IPv4_NETMASK = '255.255.255.0'
+IPv6_ADDRESS_AND_PREFIX_LEN = IPv6_ADDRESS2 + '/' + IPv6_CIDR
 
 DHCPv4_RANGE_FROM = '192.0.3.2'
 DHCPv4_RANGE_TO = '192.0.3.253'
@@ -97,8 +101,19 @@ def network_configuration1():
 
 @pytest.fixture(scope='module', autouse=True)
 def network_configuration2():
-    yield NetworkIPConfig('test-network-2', ipv4_address='192.0.15.1',
-                          ipv4_prefix_length='24')
+    yield NetworkIPConfig('test-network-2', ipv4_address=IPv4_ADDRESS2,
+                          ipv4_prefix_length=IPv4_PREFIX_LEN)
+
+
+@pytest.fixture(scope='module', autouse=True)
+def network_configuration_ipv4_and_ipv6():
+    yield NetworkIPConfig(
+        NETWORK_NAME,
+        ipv4_address=IPv4_ADDRESS,
+        ipv4_prefix_length=IPv4_PREFIX_LEN,
+        ipv6_address=IPv6_ADDRESS,
+        ipv6_prefix_length=IPv6_CIDR,
+    )
 
 
 @pytest.fixture
@@ -114,6 +129,17 @@ def dynamic_ipv4_iface2(network_configuration2):
     dhcp_config = DhcpConfig('192.0.15.2', '192.0.15.253')
     with _create_configured_dhcp_client_iface(
             network_configuration2, dhcp_config) as configured_client:
+        yield configured_client
+
+
+@pytest.fixture
+def dynamic_ipv4_ipv6_iface1(network_configuration_ipv4_and_ipv6):
+    dhcp_config = DhcpConfig(
+        DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO, DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO
+    )
+    with _create_configured_dhcp_client_iface(
+            network_configuration_ipv4_and_ipv6, dhcp_config
+    ) as configured_client:
         yield configured_client
 
 
@@ -263,13 +289,51 @@ def test_default_route_of_two_dynamic_ip_networks(switch,
             assert read_network1['ipv4defaultroute']
 
 
+@pytest.mark.nmstate
+@parametrize_ip_families
+@nftestlib.parametrize_bridged
+@nftestlib.parametrize_switch
+def test_dynamic_ip_switch_to_static(
+    switch, families, bridged, dynamic_ipv4_ipv6_iface1
+):
+    network_attrs = {
+        'bridged': bridged,
+        'nic': dynamic_ipv4_ipv6_iface1,
+        'blockingdhcp': True,
+        'switch': switch,
+    }
+    has_ipv4 = IpFamily.IPv4 in families
+    has_ipv6 = IpFamily.IPv6 in families
+    if has_ipv4:
+        network_attrs['bootproto'] = 'dhcp'
+    if has_ipv6:
+        network_attrs['dhcpv6'] = True
+    netcreate = {NETWORK_NAME: network_attrs}
+    with adapter.setupNetworks(netcreate, {}, NOCHK):
+        adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+        if has_ipv4:
+            network_attrs['bootproto'] = 'none'
+            network_attrs['ipaddr'] = IPv4_ADDRESS2
+            network_attrs['netmask'] = IPv4_NETMASK
+        if has_ipv6:
+            network_attrs['dhcpv6'] = False
+            network_attrs['ipv6autoconf'] = False
+            network_attrs['ipv6addr'] = IPv6_ADDRESS_AND_PREFIX_LEN
+        adapter.setupNetworks(netcreate, {}, NOCHK)
+        adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+
+
 @contextmanager
 def _create_configured_dhcp_client_iface(network_config, dhcp_config):
     with _create_dhcp_client_server_peers(network_config) as (server, client):
-        dhcp_server = dnsmasq_run(server,
-                                  dhcp_range_from=dhcp_config.ipv4_range_from,
-                                  dhcp_range_to=dhcp_config.ipv4_range_to,
-                                  router=network_config.ipv4_address)
+        dhcp_server = dnsmasq_run(
+            server,
+            dhcp_config.ipv4_range_from,
+            dhcp_config.ipv4_range_to,
+            dhcp_config.ipv6_range_from,
+            dhcp_config.ipv6_range_to,
+            router=network_config.ipv4_address,
+        )
         with dhcp_server:
             yield client
 
@@ -279,6 +343,9 @@ def _create_dhcp_client_server_peers(network_config):
     with veth_pair() as (server, client):
         addrAdd(server, network_config.ipv4_address,
                 network_config.ipv4_prefix_length)
+        if network_config.ipv6_address:
+            addrAdd(server, network_config.ipv6_address,
+                    network_config.ipv6_prefix_length, IpFamily.IPv6)
         linkSet(server, ['up'])
         linkSet(client, ['up'])
         yield server, client
