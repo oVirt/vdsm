@@ -22,6 +22,9 @@ from __future__ import absolute_import
 import logging
 import socket
 import ssl
+
+import six
+
 from netaddr import IPAddress
 from netaddr.core import AddrFormatError
 
@@ -87,7 +90,10 @@ class SSLSocket(object):
 
     def makefile(self, mode='rb', bufsize=-1):
         if mode == 'rb':
-            return socket.socket.makefile(self, mode, bufsize)
+            if six.PY2:
+                return socket._fileobject(self, mode, bufsize)
+            else:
+                return socket.socket.makefile(self, mode, bufsize)
         else:
             return self.sock.makefile(mode, bufsize)
 
