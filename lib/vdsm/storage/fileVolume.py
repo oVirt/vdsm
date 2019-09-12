@@ -25,8 +25,8 @@ import os
 
 from vdsm import constants
 from vdsm import utils
+from vdsm.common import commands
 from vdsm.common import exception
-from vdsm.common.commands import grepCmd
 from vdsm.common.compat import glob_escape
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
@@ -52,6 +52,19 @@ def getDomUuidFromVolumePath(volPath):
     sdPath = os.path.normpath(volPath).rsplit('/images/', 1)[0]
     target, sdUUID = os.path.split(sdPath)
     return sdUUID
+
+
+def grep_files(pattern, paths):
+    cmd = [constants.EXT_GREP, '-E', '-H', pattern]
+    cmd.extend(paths)
+    rc, out, err = commands.execCmd(cmd)
+    if rc == 0:
+        matches = out  # A list of matching lines
+    elif rc == 1:
+        matches = []  # pattern not found
+    else:
+        raise ValueError("rc: %s, out: %s, err: %s" % (rc, out, err))
+    return matches
 
 
 class FileVolumeManifest(volume.VolumeManifest):
@@ -175,7 +188,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         metaPattern = os.path.join(glob_escape(imgDir), "*.meta")
         metaPaths = oop.getProcessPool(self.sdUUID).glob.glob(metaPattern)
         pattern = "%s.*%s" % (sc.PUUID, self.volUUID)
-        matches = grepCmd(pattern, metaPaths)
+        matches = grep_files(pattern, metaPaths)
         if matches:
             children = []
             for line in matches:
