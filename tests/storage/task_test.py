@@ -24,8 +24,10 @@ from __future__ import division
 from contextlib import contextmanager
 
 from vdsm.common import concurrent
-from vdsm.storage.task import Job, Task, TaskCleanType
+from vdsm.storage import outOfProcess as oop
+from vdsm.storage.task import Job, Recovery, Task, TaskCleanType
 
+from . marks import xfail_python3
 from . storagetestlib import Callable
 
 
@@ -59,6 +61,7 @@ def async_task(called, task_id):
     finally:
         called.finish()
         t.join(timeout=1)
+        oop.stop()
 
 
 def test_task_prepare():
@@ -146,3 +149,117 @@ def test_task_queued():
 
     # Check that job callable was called
     assert c.is_finished()
+
+
+def test_task_rollback(add_recovery):
+    # Run async task
+    c = Callable(hang=True)
+    with async_task(c, "task-id") as t:
+        # Set automatic recovery
+        t.setRecoveryPolicy("auto")
+
+        # Add recoveries to task
+        r1 = add_recovery(t, "fakerecovery1", ["arg1", "arg2"])
+        r2 = add_recovery(t, "fakerecovery2", "arg")
+
+        assert r1.args is None
+        assert r2.args is None
+
+        # Test abort flow
+        with t.abort_callback(c.finish):
+            t.stop()
+
+        assert t.wait(timeout=1), "Task failed to stop"
+
+        # Check that recovery procedures were done
+        assert r1.args == ("arg1", "arg2")
+        assert r2.args == ("arg",)
+
+        # Check final task status
+        status = t.getStatus()
+        assert status == {
+            "result": "",
+            "state": {
+                "code": 0,
+                "message": ("Task prepare failed: Task is aborted: "
+                            "'Unknown error encountered' - code 411")
+            },
+            "task": {"id": "task-id", "state": "recovered"}
+        }
+
+
+@xfail_python3
+def test_task_save_load(tmpdir, add_recovery):
+    # Run async task
+    c = Callable(hang=True)
+    with async_task(c, "task-id") as orig_task:
+        orig_task.setRecoveryPolicy("auto")
+
+        # Set persistency for task
+        store = str(tmpdir)
+        orig_task.setPersistence(store)
+
+        # Add recovery to task
+        r = add_recovery(orig_task, "fakerecovery", ["arg1", "arg2"])
+
+        # Simulate original task being interrupted by improper shutdown
+        orig_task.store = None
+
+    # Load task from storage
+    loaded_task = Task.loadTask(store, "task-id")
+
+    # Recover loaded task
+    assert r.args is None
+    loaded_task.recover()
+
+    # Wait for recovery to finish
+    assert loaded_task.wait(timeout=1), "Task failed to finish"
+
+    # Assert recovery procedure was executed
+    assert r.args == ("arg1", "arg2")
+
+    # Check task final status
+    status = loaded_task.getStatus()
+    # TODO: Figure why task message still indicates initialization
+    assert status == {
+        "result": "",
+        "state": {"code": 0, "message": "Task is initializing"},
+        "task": {"id": "task-id", "state": "recovered"}
+    }
+
+
+def test_recovery_list():
+    # Check push pop single recovery
+    t = Task(id="task-id")
+    recovery1 = Recovery(
+        "name_1",
+        "storage_1",
+        "task_1",
+        "func_1",
+        []
+    )
+    t.pushRecovery(recovery1)
+    assert t.popRecovery() is recovery1
+
+    # Check replace recovery by another
+    t.pushRecovery(recovery1)
+    recovery2 = Recovery(
+        "name_2",
+        "storage_2",
+        "task_2",
+        "func_2",
+        []
+    )
+    t.replaceRecoveries(recovery2)
+    assert t.popRecovery() is recovery2
+    assert t.popRecovery() is None
+
+    # Check replace recovery over an empty list
+    t.replaceRecoveries(recovery1)
+    assert t.popRecovery() is recovery1
+
+    # Check clearing recoveries
+    t.pushRecovery(recovery1)
+    t.pushRecovery(recovery2)
+    t.clearRecoveries()
+    assert t.popRecovery() is None
