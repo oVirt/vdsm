@@ -177,3 +177,71 @@ def test_volume_size_unaligned(monkeypatch, tmpdir, tmp_repo, fake_access,
 
     assert qcow2_info["virtualsize"] == expected_vol_capacity
     assert vol.getCapacity() == expected_vol_capacity
+
+
+MD_WITH_PARENT = b"""\
+CAP=46137344
+CTIME=1557522135
+DESCRIPTION=
+DISKTYPE=DATA
+DOMAIN=696be7a4-fe13-4cca-8023-1a1997080176
+FORMAT=COW
+GEN=0
+IMAGE=4d1b596a-6d55-46ff-aaf3-59888ec5e9a3
+LEGALITY=LEGAL
+PUUID=8cae9a0f-f5c6-41c3-a275-25afe6cfa4b2
+TYPE=SPARSE
+VOLTYPE=LEAF
+"""
+
+MD_WITHOUT_PARENT = b"""\
+CAP=134217728
+CTIME=1557523017
+DESCRIPTION={"Updated":true,"Size":51200,"Last Updated"}
+DISKTYPE=OVFS
+DOMAIN=696be7a4-fe13-4cca-8023-1a1997080176
+FORMAT=RAW
+GEN=0
+IMAGE=b18ee1ce-a7aa-45eb-beed-e98aaeefd257
+LEGALITY=LEGAL
+PUUID=00000000-0000-0000-0000-000000000000
+TYPE=PREALLOCATED
+VOLTYPE=LEAF
+"""
+
+BROKEN_METADATA = b"""\
+broken
+metadata
+"""
+
+GREP_MATCH = "PUUID=8cae9a0f-f5c6-41c3-a275-25afe6cfa4b2"
+
+
+@pytest.mark.parametrize("metadata_contents, matched_lines", [
+    # grep one metadata file which has matching line
+    ((MD_WITH_PARENT,), [GREP_MATCH]),
+    # grep two metadata files which have matching line
+    ((MD_WITH_PARENT, MD_WITH_PARENT), [GREP_MATCH, GREP_MATCH]),
+    # grep two metadata files, one of them having matching line
+    ((MD_WITH_PARENT, MD_WITHOUT_PARENT), [GREP_MATCH]),
+    # grep metadata file which hasn't matching line
+    ((MD_WITHOUT_PARENT,), []),
+    # grep file which hasn't metadata format (or matadata are broken)
+    ((BROKEN_METADATA,), []),
+])
+def test_grep_files(tmpdir, metadata_contents, matched_lines):
+    paths = []
+    for md in metadata_contents:
+        md_name = "{}.meta".format(uuid.uuid4())
+        md_path = str(tmpdir.join(md_name))
+        with open(md_path, 'wb') as f:
+            f.write(md)
+        paths.append(md_path)
+
+    matches = ["{}:{}".format(path, line)
+               for path, line in zip(paths, matched_lines)]
+
+    lines = fileVolume.grep_files(GREP_MATCH, paths)
+    lines = [line.decode("utf-8") for line in lines]
+
+    assert lines == matches
