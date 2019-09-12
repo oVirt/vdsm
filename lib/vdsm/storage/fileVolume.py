@@ -61,7 +61,7 @@ def grep_files(pattern, paths):
 
     try:
         out = commands.run(cmd)
-        return out.splitlines()
+        return out.decode("utf-8").splitlines()
     except cmdutils.Error as e:
         if e.rc == 1:
             return []  # pattern not found

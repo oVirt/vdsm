@@ -39,8 +39,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import fileVolume
 from vdsm.storage import qemuimg
 
-from . marks import xfail_python3
-
 
 class TestGetDomUuidFromVolumePath(object):
     def test(self):
@@ -96,7 +94,6 @@ class TestFileVolumeManifest(object):
 
             assert vol.getImageVolumes(sduuid, img_id) == [vol_id]
 
-    @xfail_python3
     def test_get_children(self):
         remote_path = "[2001:db8:85a3::8a2e:370:7334]:1234:/path"
         size = 5 * MEGAB
@@ -124,7 +121,6 @@ class TestFileVolumeManifest(object):
             vol.updateInvalidatedSize()
             assert vol.getMetadata().capacity == expected_capacity
 
-    @xfail_python3
     def test_new_volume_lease(self, fake_sanlock):
         size = 5 * MEGAB
         with self.make_volume(size=size, format=sc.COW_FORMAT) as vol:
@@ -136,7 +132,7 @@ class TestFileVolumeManifest(object):
             # sanlock lockspace has to be initialized (as it calls
             # read_resource_owners for a lease), so initialize lockspace
             # manually here.
-            fake_sanlock.write_lockspace(sd_uuid, "test_path")
+            fake_sanlock.write_lockspace(sd_uuid.encode("utf-8"), "test_path")
             vol.newVolumeLease(md_id, sd_uuid, vol_uuid)
             info = vol.getInfo()
 
@@ -242,6 +238,4 @@ def test_grep_files(tmpdir, metadata_contents, matched_lines):
                for path, line in zip(paths, matched_lines)]
 
     lines = fileVolume.grep_files(GREP_MATCH, paths)
-    lines = [line.decode("utf-8") for line in lines]
-
     assert lines == matches

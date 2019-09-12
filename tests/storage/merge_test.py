@@ -55,8 +55,6 @@ from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import volume
 
-from . marks import xfail_python3
-
 
 MB = 1024 ** 2
 GB = 1024 ** 3
@@ -331,7 +329,7 @@ class TestFinalizeMerge:
     @pytest.mark.parametrize("sd_type, chain_len, base_index, top_index", [
         pytest.param('file', 2, 0, 1),
         pytest.param('block', 2, 0, 1),
-        pytest.param('file', 4, 1, 2, marks=xfail_python3),
+        pytest.param('file', 4, 1, 2),
         pytest.param('block', 4, 1, 2),
     ])
     def test_finalize(self, sd_type, chain_len, base_index, top_index):
@@ -451,7 +449,6 @@ class TestFinalizeMerge:
                 ('reduce', (base_vol.optimal_size(),), {}),
             ]
 
-    @xfail_python3
     def test_reduce_not_chunked(self):
         with self.make_env(sd_type='file', format='cow', chain_len=4) as env:
             base_vol = env.chain[1]

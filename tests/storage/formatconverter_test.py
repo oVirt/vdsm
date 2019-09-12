@@ -40,7 +40,7 @@ from .storagetestlib import (
 )
 
 from . constants import CLEARED_VOLUME_METADATA
-from . marks import requires_root, xfail_python3
+from . marks import requires_root
 
 # This metadata is missing required keys (DOMAIN, VOLTYPE, LEGALITY).
 INVALID_VOLUME_METADATA = b"""\
@@ -94,7 +94,6 @@ def test_convert_from_v3_to_v4_localfs(tmpdir, tmp_repo, fake_access):
     assert dom.getVersion() == 4
 
 
-@xfail_python3
 @pytest.mark.parametrize("src_version", [3, 4])
 def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
                                fake_rescan, fake_task, src_version):
@@ -197,7 +196,7 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
             continue
         vol_md = volumes_md[vol.volUUID]
         meta_path = vol.getMetaVolumePath()
-        with open(meta_path) as f:
+        with open(meta_path, "rb") as f:
             data = f.read()
         assert data == vol_md.storage_format(5)
 
