@@ -27,7 +27,6 @@ from vdsm.common import concurrent
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage.task import Job, Recovery, Task, TaskCleanType
 
-from . marks import xfail_python3
 from . storagetestlib import Callable
 
 
@@ -188,7 +187,6 @@ def test_task_rollback(add_recovery):
         }
 
 
-@xfail_python3
 def test_task_save_load(tmpdir, add_recovery):
     # Run async task
     c = Callable(hang=True)

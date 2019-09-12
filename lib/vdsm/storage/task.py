@@ -638,7 +638,7 @@ class Task:
         try:
             for line in getProcPool().readLines(filename):
                 # process current line
-                line = line.encode('utf8')
+                line = line.decode('utf-8')
                 if line.find(KEY_SEPARATOR) < 0:
                     continue
                 parts = line.split(KEY_SEPARATOR)
