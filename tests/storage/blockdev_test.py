@@ -35,6 +35,7 @@ from vdsm.storage import directio
 from vdsm.storage import exception as se
 
 from . import loopback
+from . marks import requires_root
 
 # Zeroing and discarding block device is instant, so we can use real lv size.
 FILE_SIZE = 128 * 1024**2
@@ -55,7 +56,7 @@ def loop_device(tmpdir):
 
 class TestZero:
 
-    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
+    @requires_root
     def test_entire_device(self, loop_device):
         # Write some data to the device.
         with directio.open(loop_device.path, "r+") as f:
@@ -74,7 +75,7 @@ class TestZero:
             data = f.read(len(ZERO))
             assert data == ZERO
 
-    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
+    @requires_root
     def test_size(self, loop_device):
         # Write some data to the device.
         with directio.open(loop_device.path, "r+") as f:
@@ -90,7 +91,7 @@ class TestZero:
             data = f.read(len(DATA))
             assert data == DATA
 
-    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
+    @requires_root
     @pytest.mark.parametrize("size", [sc.BLOCK_SIZE_4K, 250 * 4096])
     def test_special_volumes(self, size, loop_device):
         # Write some data to the device.
@@ -147,7 +148,7 @@ class TestDiscard:
             data = f.read(len(DATA))
             assert data == DATA
 
-    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
+    @requires_root
     def test_supported(self, loop_device):
         # Write some data to the device.
         with directio.open(loop_device.path, "r+") as f:

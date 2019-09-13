@@ -43,6 +43,8 @@ from testValidation import broken_on_ci
 from testValidation import skipif
 import monkeypatch
 
+from . marks import requires_root
+
 FLOPPY_SIZE = (2 ** 20) * 4
 
 
@@ -140,7 +142,7 @@ def loop_mount(m):
 class TestMount(VdsmTestCase):
 
     @skipif(six.PY3, "needs porting to python 3")
-    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
+    @requires_root
     @broken_on_ci("mount check fails after successful mount", name="TRAVIS_CI")
     def testLoopMount(self):
         with namedTemporaryDir() as mpath:
@@ -151,7 +153,7 @@ class TestMount(VdsmTestCase):
                     self.assertTrue(m.isMounted())
 
     @skipif(six.PY3, "needs porting to python 3")
-    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
+    @requires_root
     @broken_on_ci("mount check fails after successful mount", name="TRAVIS_CI")
     def testSymlinkMount(self):
         with namedTemporaryDir() as root_dir:

@@ -33,6 +33,7 @@ from vdsm.storage import udev
 from vdsm.utils import running
 
 from . import loopback
+from . marks import requires_root
 
 EVENT = udev.MultipathEvent(type=udev.MPATH_REMOVED,
                             mpath_uuid="fake-uuid-3",
@@ -411,7 +412,7 @@ def test_failing_event():
 @pytest.mark.xfail(
     os.environ.get("TRAVIS_CI"),
     reason="udev events not available")
-@pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")
+@requires_root
 def test_loopback_event(tmpdir):
     listener = udev.MultipathListener()
     received = threading.Event()

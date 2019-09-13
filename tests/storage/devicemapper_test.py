@@ -23,15 +23,17 @@ from __future__ import division
 
 import glob
 import os
-import pytest
 
 from vdsm.storage import devicemapper
 from vdsm.storage.devicemapper import PathStatus
 
+from . marks import requires_root
+
+
 FAKE_DMSETUP = os.path.join(os.path.dirname(__file__), "fake-dmsetup")
 
 
-@pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")
+@requires_root
 def test_dm_status(monkeypatch):
     monkeypatch.setattr(devicemapper, "EXT_DMSETUP", FAKE_DMSETUP)
     monkeypatch.setenv("FAKE_STDOUT", FAKE_DMSETUP + ".status.out")

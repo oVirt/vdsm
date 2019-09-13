@@ -30,6 +30,8 @@ import pytest
 from vdsm.storage import lvmfilter
 from vdsm.storage.lvmfilter import MountInfo
 
+from . marks import requires_root
+
 FAKE_LSBLK = os.path.join(os.path.dirname(__file__), "fake-lsblk")
 FAKE_DEVICES = ("/dev/sda2",)
 
@@ -98,7 +100,7 @@ def test_format_option():
     assert lvmfilter.format_option(lvm_filter) == expected
 
 
-@pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")
+@requires_root
 def test_real_find_lvm_mounts():
     mounts = lvmfilter.find_lvm_mounts()
     # This will return different results on any host, but we expect to find a
@@ -108,7 +110,7 @@ def test_real_find_lvm_mounts():
             assert mnt.devices != []
 
 
-@pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")
+@requires_root
 def test_real_build_filter():
     mounts = lvmfilter.find_lvm_mounts()
     lvm_filter = lvmfilter.build_filter(mounts)

@@ -24,14 +24,12 @@ from __future__ import division
 import os
 import stat
 
-import pytest
-
 from vdsm.storage import fileUtils
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 from testlib import namedTemporaryDir
 from testlib import temporaryPath
-from . marks import xfail_python37, requires_unprivileged_user
+from . marks import xfail_python37, requires_unprivileged_user, requires_root
 
 
 class TestCreatedir(VdsmTestCase):
@@ -93,7 +91,7 @@ class TestCreatedir(VdsmTestCase):
 
 
 class TestChown(VdsmTestCase):
-    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
+    @requires_root
     def test(self):
         targetId = 666
         with temporaryPath() as srcPath:
@@ -101,7 +99,7 @@ class TestChown(VdsmTestCase):
             stat = os.stat(srcPath)
             self.assertTrue(stat.st_uid == stat.st_gid == targetId)
 
-    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
+    @requires_root
     def testNames(self):
         # I convert to some id because I have no
         # idea what users are defined and what
