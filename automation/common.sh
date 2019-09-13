@@ -116,6 +116,36 @@ install_lvmlocal_conf() {
     cp docker/lvmlocal.conf /etc/lvm/
 }
 
+# Query package info and return "version-release" string.
+package_version() {
+    # Using slow "rpm -qa" since on CentOS 7 "rpm -q" always succeeds and
+    # writes "package python2 is not installed" to stdout, while "rpm -qa"
+    # returns empty string if the package is not installed.
+    rpm -qa --queryformat "%{VERSION}-%{RELEASE}" $1
+}
+
+install_python_debuginfo() {
+    local pkg_name=${CI_PYTHON}
+    local pkg_ver="$(package_version ${pkg_name})"
+
+    # 'CI_PYTHON' is either "python2" or "python3", but on CentOS we don't have
+    # "python2" package and we must query and install "python" and
+    # "python-debuginfo" packages.
+    if [ "${pkg_name}" = "python2" -a -z "$pkg_ver" ]; then
+        pkg_name="python"
+        pkg_ver="$(package_version ${pkg_name})"
+    fi
+
+    ${CI_PYTHON} tests/profile debuginfo-install debuginfo-install -y ${pkg_name}
+
+    local pkg_dbg_ver="$(package_version ${pkg_name}-debuginfo)"
+
+    if [ -z "${pkg_dbg_ver}" -o "${pkg_ver}" != "${pkg_dbg_ver}" ]; then
+        echo "WARNING: ${pkg_name}-debuginfo-${pkg_dbg_ver} doesn't match ${pkg_name}-${pkg_ver}!" \
+            "Backtraces for timed-out tests won't be available!"
+    fi
+}
+
 run_tests() {
     if [ -z "$EXPORT_DIR" ]; then
         (>&2 echo "*** EXPORT_DIR must be set to run tests!")
@@ -124,17 +154,7 @@ run_tests() {
 
     trap teardown EXIT
 
-    # 'CI_PYTHON' variable needs to have a 'pythonMAJOR' form
-    # (i.e. 'python3') so it points to proper package
-    ${CI_PYTHON} tests/profile debuginfo-install debuginfo-install -y ${CI_PYTHON}
-
-    local py_pkg_ver="$(rpm -qa --queryformat "%{VERSION}-%{RELEASE}" ${CI_PYTHON})"
-    local py_dbg_pkg_ver="$(rpm -qa --queryformat "%{VERSION}-%{RELEASE}" ${CI_PYTHON}-debuginfo)"
-
-    if [ -z ${py_pkg_ver} ] || [ ${py_pkg_ver} != ${py_dbg_pkg_ver} ]; then
-        echo "WARNING: ${CI_PYTHON}-debuginfo-${py_dbg_pkg_ver} doesn't match ${CI_PYTHON}-${py_pkg_ver}!" \
-            "Backtraces for timed-out tests won't be available!"
-    fi
+    install_python_debuginfo
 
     # Make sure we have enough loop device nodes. Using 16 devices since with 8
     # devices we have random mount failures.

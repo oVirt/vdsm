@@ -37,23 +37,37 @@ from vdsm.common.compat import subprocess
 log = logging.getLogger("test")
 
 
+def package_version(pkg_name):
+    """
+    Query package version info and return "version-release" string, or empty
+    string if the query fails.
+    """
+    # Using slow "rpm -qa" since on CentOS 7 "rpm -q" always succeeds and
+    # writes "package python2 is not installed" to stdout, while "rpm -qa"
+    # returns empty string if the package is not installed.
+    out = commands.run(
+        ["rpm", "-qa", "--queryformat", "%{VERSION}-%{RELEASE}", pkg_name])
+    return out.decode("utf-8")
+
+
 @cache.memoized
 def has_py_gdb_support():
-    try:
-        py_pkg_ver = commands.run([
-            "rpm", "-qa", "--queryformat", "%{VERSION}-%{RELEASE}",
-            "python{}".format(sys.version_info.major)
-        ]).decode("utf-8")
+    """
+    Return True if python-debuginfo package is installed and has the same
+    version-release as python package.
+    """
+    pkg_name = "python{}".format(sys.version_info.major)
+    pkg_ver = package_version(pkg_name)
 
-        py_dbg_pkg_ver = commands.run([
-            "rpm", "-qa", "--queryformat", "%{VERSION}-%{RELEASE}",
-            "python{}-debuginfo".format(sys.version_info.major)
-        ]).decode("utf-8")
+    # On CentOS we we don't have "python2" package and we must query "python"
+    # and "python-debuginfo".
+    if pkg_name == "python2" and not pkg_ver:
+        pkg_name = "python"
+        pkg_ver = package_version(pkg_name)
 
-        return py_dbg_pkg_ver != "" and py_dbg_pkg_ver == py_pkg_ver
-    except cmdutils.Error as e:
-        log.warning("Package version check failed: %s", e)
-        return False
+    pkg_dbg_ver = package_version("{}-debuginfo".format(pkg_name))
+
+    return pkg_dbg_ver != "" and pkg_dbg_ver == pkg_ver
 
 
 class TestPyWatch(object):
