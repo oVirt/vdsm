@@ -175,7 +175,7 @@ def getPathsStatus():
     except cmdutils.Error as e:
         raise Error("Could not get device statuses: {}".format(e))
 
-    lines = out.splitlines()
+    lines = out.decode("utf-8").splitlines()
 
     res = {}
     for statusLine in lines:

@@ -29,7 +29,7 @@ import pytest
 from vdsm.storage import devicemapper
 from vdsm.storage.devicemapper import PathStatus
 
-from . marks import requires_root, xfail_python3
+from . marks import requires_root
 
 
 FAKE_DMSETUP = os.path.join(os.path.dirname(__file__), "fake-dmsetup")
@@ -64,7 +64,6 @@ def test_dm_status(fake_dmsetup):
     assert res == expected
 
 
-@xfail_python3
 @requires_root
 def test_get_paths_status(fake_dmsetup):
     res = devicemapper.getPathsStatus()
