@@ -161,7 +161,7 @@ def _validate_vlan_id(id):
     except ValueError:
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_VLAN,
-            'VLAN id must be a number between 0 and ' + MAX_ID
+            'VLAN id must be a number between 0 and {}'.format(MAX_ID)
         )
 
     if not 0 <= vlan_id <= MAX_ID:

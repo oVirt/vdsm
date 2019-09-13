@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import pytest
 import unittest
 
 from vdsm.network import errors as ne
@@ -232,3 +233,26 @@ class ValidationTests(unittest.TestCase):
                 validator.validate_bridge_name(invalid_name)
             self.assertEqual(cne_context.exception.errCode,
                              ne.ERR_BAD_BRIDGE)
+
+
+@pytest.mark.parametrize(
+    'vlan_id',
+    ['bad id', 5000],
+    ids=['invalid type', 'invalid range'])
+def test_network_with_invalid_vlan_id(vlan_id):
+    net_name = 'net1'
+    net_attrs = {
+        'vlan': vlan_id,
+        'bridged': True,
+        'legacy': True,
+        'nic': 'eth0'
+    }
+    bonds = desired_bonds = {}
+    nics = {}
+    with pytest.raises(ne.ConfigNetworkError) as cne_context:
+        validator.validate_net_configuration(net_name,
+                                             net_attrs,
+                                             desired_bonds,
+                                             bonds,
+                                             nics)
+    assert cne_context.value.errCode == ne.ERR_BAD_VLAN
