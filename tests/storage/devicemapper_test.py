@@ -24,6 +24,8 @@ from __future__ import division
 import glob
 import os
 
+import pytest
+
 from vdsm.storage import devicemapper
 from vdsm.storage.devicemapper import PathStatus
 
@@ -33,13 +35,16 @@ from . marks import requires_root
 FAKE_DMSETUP = os.path.join(os.path.dirname(__file__), "fake-dmsetup")
 
 
-@requires_root
-def test_dm_status(monkeypatch):
+@pytest.fixture
+def fake_dmsetup(monkeypatch):
     monkeypatch.setattr(devicemapper, "EXT_DMSETUP", FAKE_DMSETUP)
     monkeypatch.setenv("FAKE_STDOUT", FAKE_DMSETUP + ".status.out")
     monkeypatch.setattr(
         devicemapper, "device_name", lambda major_minor: major_minor)
 
+
+@requires_root
+def test_dm_status(fake_dmsetup):
     res = devicemapper._multipath_status()
     expected = {
         '360014053d0b83eff3d347c48509fc426':
