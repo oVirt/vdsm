@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 
 import errno
+import logging
 import os
 import re
 
@@ -29,13 +30,21 @@ from glob import glob
 
 from vdsm.common import cmdutils
 from vdsm.common import supervdsm
+from vdsm.common import commands
 from vdsm.constants import EXT_DMSETUP
-from vdsm.storage import misc
+
 
 DMPATH_PREFIX = "/dev/mapper/"
 
 
 PathStatus = namedtuple("PathStatus", "name, status")
+
+
+log = logging.getLogger("storage.devicemapper")
+
+
+class Error(Exception):
+    """ device mapper operation failed """
 
 
 def getDmId(deviceMultipathName):
@@ -126,9 +135,10 @@ def removeMapping(deviceName):
         return supervdsm.getProxy().devicemapper_removeMapping()
 
     cmd = [EXT_DMSETUP, "remove", deviceName]
-    rc = misc.execCmd(cmd)[0]
-    if rc != 0:
-        raise Exception("Could not remove mapping `%s`" % deviceName)
+    try:
+        commands.run(cmd)
+    except cmdutils.Error as e:
+        raise Error("Could not remove mapping {!r}: {}".format(deviceName, e))
 
 
 def getAllMappedDevices():
@@ -160,12 +170,15 @@ def getPathsStatus():
         return supervdsm.getProxy().devicemapper_getPathsStatus()
 
     cmd = [EXT_DMSETUP, "status", "--target", "multipath"]
-    rc, out, err = misc.execCmd(cmd)
-    if rc != 0:
-        raise Exception("Could not get device statuses")
+    try:
+        out = commands.run(cmd)
+    except cmdutils.Error as e:
+        raise Error("Could not get device statuses: {}".format(e))
+
+    lines = out.splitlines()
 
     res = {}
-    for statusLine in out:
+    for statusLine in lines:
         try:
             devName, statusLine = statusLine.split(":", 1)
         except ValueError:
@@ -188,9 +201,10 @@ def multipath_status():
         return supervdsm.getProxy().devicemapper_multipath_status()
 
     cmd = [EXT_DMSETUP, "status", "--target", "multipath"]
-    rc, out, err = misc.execCmd(cmd, raw=True)
-    if rc != 0:
-        raise cmdutils.Error(cmd, rc, out, err)
+    try:
+        out = commands.run(cmd)
+    except cmdutils.Error as e:
+        raise Error("Cannot get multipath status: {}".format(e))
 
     res = {}
     lines = out.decode("utf-8").splitlines()

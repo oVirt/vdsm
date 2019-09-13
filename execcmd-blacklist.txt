@@ -17,7 +17,6 @@ lib/vdsm/storage/blockSD.py
 lib/vdsm/storage/clusterlock.py
 lib/vdsm/storage/curl-img-wrap
 lib/vdsm/storage/curlImgWrap.py
-lib/vdsm/storage/devicemapper.py
 lib/vdsm/storage/fuser.py
 lib/vdsm/storage/lvm.py
 lib/vdsm/storage/mailbox.py
