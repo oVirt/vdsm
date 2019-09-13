@@ -32,10 +32,15 @@ from . import NO, MAYBE
 from vdsm import cpuinfo
 from vdsm.common import cpuarch
 from vdsm.common import pki
+from vdsm.common import systemctl
 from vdsm.tool import confutils
 from vdsm.tool import service
 from vdsm.tool.configfile import ParserWrapper
 from vdsm import constants
+
+
+_LIBVIRT_TCP_SOCKET_UNIT = "libvirtd-tcp.socket"
+_LIBVIRT_TLS_SOCKET_UNIT = "libvirtd-tls.socket"
 
 
 requires = frozenset(('certificates',))
@@ -71,6 +76,15 @@ def configure():
             if status == 0:
                 raise
 
+    if _libvirt_uses_socket_activation():
+        cfg = _read_libvirt_connection_config()
+
+        if cfg.listen_tcp != 0:
+            systemctl.enable(_LIBVIRT_TCP_SOCKET_UNIT)
+
+        if cfg.listen_tls != 0:
+            systemctl.enable(_LIBVIRT_TLS_SOCKET_UNIT)
+
 
 def validate():
     """
@@ -91,6 +105,19 @@ def isconfigured():
     if not _is_hugetlbfs_1g_mounted():
         ret = NO
 
+    if _libvirt_uses_socket_activation():
+        cfg = _read_libvirt_connection_config()
+
+        if cfg.listen_tcp != 0 and not _unit_enabled(_LIBVIRT_TCP_SOCKET_UNIT):
+            sys.stdout.write("{} unit is disabled\n".format(
+                _LIBVIRT_TCP_SOCKET_UNIT))
+            ret = NO
+
+        if cfg.listen_tls != 0 and not _unit_enabled(_LIBVIRT_TLS_SOCKET_UNIT):
+            sys.stdout.write("{} unit is disabled\n".format(
+                _LIBVIRT_TLS_SOCKET_UNIT))
+            ret = NO
+
     if ret == MAYBE:
         sys.stdout.write("libvirt is already configured for vdsm\n")
     else:
@@ -100,6 +127,11 @@ def isconfigured():
 
 def removeConf():
     confutils.remove_conf(FILES, CONF_VERSION)
+
+
+def _unit_enabled(unit_name):
+    props = systemctl.show(unit_name, ("UnitFileState",))
+    return props[0]["UnitFileState"] == "enabled"
 
 
 def _read_libvirt_connection_config():
@@ -173,10 +205,45 @@ def _is_hugetlbfs_1g_mounted(mtab_path='/etc/mtab'):
     return False
 
 
+def _find_libvirt_socket_units():
+    return systemctl.show("libvirtd*.socket", ("Names", "LoadState",))
+
+
+# https://bugzilla.redhat.com/1750340
+# Used in tests
+def _libvirt_uses_socket_activation():
+    socket_units = _find_libvirt_socket_units()
+
+    if len(socket_units) == 0:
+        sys.stdout.write("libvirtd doesn't use systemd socket activation\n")
+        return False
+
+    sys.stdout.write("libvirtd socket units status: {}\n".format(socket_units))
+
+    for su in socket_units:
+        if su["LoadState"] == "masked":
+            sys.stdout.write(("libvirtd doesn't use systemd socket activation"
+                              " - one or more of its socket units have been "
+                              "masked\n"))
+            return False
+
+    sys.stdout.write("libvirtd uses socket activation\n")
+    return True
+
+
+def _libvirtd_args():
+    args = {
+        'DAEMON_COREFILE_LIMIT': 'unlimited'
+    }
+    if not _libvirt_uses_socket_activation():
+        args['LIBVIRTD_ARGS'] = '--listen'
+    return args
+
+
 # version != PACKAGE_VERSION since we do not want to update configuration
 # on every update. see 'configuration versioning:' at Configfile.py for
 # details.
-CONF_VERSION = '4.20.0'
+CONF_VERSION = '4.30.0'
 
 LS_CERT_DIR = os.path.join(pki.PKI_DIR, 'libvirt-spice')
 
@@ -302,10 +369,7 @@ FILES = {
         'fragments': [
             {
                 'conditions': {},
-                'content': {
-                    'LIBVIRTD_ARGS': '--listen',
-                    'DAEMON_COREFILE_LIMIT': 'unlimited',
-                },
+                'content': _libvirtd_args(),
 
             }]
     },
