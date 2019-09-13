@@ -19,10 +19,6 @@ env:
     - DIST=fedora-29  PY=3.7  TARGETS="storage tests"
     - DIST=fedora-30  PY=3.7  TARGETS="storage tests"
 
-matrix:
-  allow_failures:
-    - env: DIST=fedora-30  PY=3.7  TARGETS="storage tests"
-
 before_install:
   - docker --version
   - docker pull ovirtorg/vdsm-test-$DIST
