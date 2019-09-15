@@ -31,7 +31,7 @@ from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 from testlib import namedTemporaryDir
 from testlib import temporaryPath
-from . marks import xfail_python37
+from . marks import xfail_python37, requires_unprivileged_user
 
 
 class TestCreatedir(VdsmTestCase):
@@ -64,7 +64,7 @@ class TestCreatedir(VdsmTestCase):
             self.assertEqual(actual_mode, mode)
 
     @xfail_python37
-    @pytest.mark.skipif(os.geteuid() == 0, reason="requires unprivileged user")
+    @requires_unprivileged_user
     def test_create_raise_errors(self):
         with namedTemporaryDir() as base:
             path = os.path.join(base, "a", "b")

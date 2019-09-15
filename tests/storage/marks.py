@@ -38,6 +38,9 @@ from vdsm.storage.compat import sanlock
 requires_root = pytest.mark.skipif(
     os.geteuid() != 0, reason="requires root")
 
+requires_unprivileged_user = pytest.mark.skipif(
+    os.geteuid() == 0, reason="This test can not run as root")
+
 requires_sanlock_python3 = pytest.mark.skipif(
     isinstance(sanlock, compat.MissingModule),
     reason="requires sanlock for python 3")
