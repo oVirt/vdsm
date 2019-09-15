@@ -28,12 +28,12 @@ import time
 import threading
 
 from vdsm.config import config
-from vdsm.common import supervdsm
 from vdsm.common.function import retry
 from vdsm import jsonrpcvdscli
 from vdsm.network import ipwrapper
-from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.netconfpersistence import RunningConfig
+from vdsm.network.netinfo.cache import CachingNetInfo
+from vdsm.network.restore_net_config import restore
 
 
 SUCCESS = 0
@@ -145,7 +145,7 @@ class _VdsProxy(object):
 
     @netinfo_altering
     def restoreNetConfig(self):
-        supervdsm.getProxy().restoreNetworks()
+        restore(force=True)
 
     @netinfo_altering
     def setupNetworks(self, networks, bonds, options):

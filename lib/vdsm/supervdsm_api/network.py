@@ -27,14 +27,8 @@ from vdsm.network.api import (setSafeNetworkConfig, setupNetworks,
                               network_caps, network_stats, ovs_bridge,
                               add_sourceroute, remove_sourceroute,
                               remove_ovs_port, get_lldp_info)
-from vdsm.network.restore_net_config import restore
 from vdsm.network.sysctl import set_rp_filter_loose, set_rp_filter_strict
 from vdsm.network.tc import setPortMirroring, unsetPortMirroring
-
-
-@expose
-def restoreNetworks(*args, **kwrags):
-    return restore(force=True)
 
 
 expose(setSafeNetworkConfig)
