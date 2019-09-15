@@ -48,6 +48,7 @@ from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.netlink import monitor
 from vdsm.network.netlink import waitfor
+from vdsm.network.restore_net_config import restore
 
 from functional.utils import getProxy, SUCCESS
 
@@ -194,6 +195,10 @@ class NetFuncTestAdapter(object):
             self._update_running_and_kernel_config,
             self._assert_kernel_vs_running_config,
         )
+
+    def restore_nets(self):
+        restore(force=True)
+        self.refresh_netinfo()
 
     def _update_running_and_kernel_config(self):
         self.update_netinfo()

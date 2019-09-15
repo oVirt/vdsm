@@ -458,33 +458,6 @@ class NetworkTest(TestCaseBase):
             # wait for Vdsm to update statistics
             self.retryAssert(assertStatsInRange, timeout=3)
 
-    @cleanupNet
-    @permutations([[True], [False]])
-    def testSafeNetworkConfig(self, bridged):
-        """
-        Checks that setSafeNetworkConfig saves
-        the configuration between restart.
-        """
-        with dummyIf(1) as nics:
-            nic, = nics
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'nic': nic, 'bridged': bridged}}, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
-
-            self.vdsm_net.save_config()
-
-            self.vdsm_net.restoreNetConfig()
-
-            self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.vdsm_net.save_config()
-
     @requiresUnifiedPersistence("with ifcfg persistence, this test is "
                                 "irrelevant")
     @cleanupNet

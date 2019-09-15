@@ -22,6 +22,8 @@ from __future__ import division
 import pytest
 
 from .netfunctestlib import NetFuncTestAdapter, NOCHK
+from .netfunctestlib import parametrize_bridged
+from .netfunctestlib import parametrize_switch
 from network.nettestlib import dummy_devices
 from testlib import mock
 
@@ -29,6 +31,7 @@ from vdsm.network import netrestore
 from vdsm.network.link.bond import Bond
 
 BOND_NAME = 'bond1'
+NETWORK_NAME = 'test-network'
 
 
 adapter = None
@@ -57,3 +60,29 @@ class TestRestoreOvsBond(object):
 
                     adapter.update_netinfo()
                     adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+
+
+@parametrize_switch
+class TestRestore(object):
+    @parametrize_bridged
+    def test_restore_missing_network_from_config(self, switch, bridged):
+        with dummy_devices(1) as (nic,):
+            SETUP_NET = {
+                NETWORK_NAME: {
+                    'nic': nic,
+                    'bridged': bridged,
+                    'switch': switch,
+                }
+            }
+            REMOVE_NET = {NETWORK_NAME: {'remove': True}}
+
+            with adapter.reset_persistent_config():
+                with adapter.setupNetworks(SETUP_NET, {}, NOCHK):
+                    adapter.setSafeNetworkConfig()
+                    adapter.setupNetworks(REMOVE_NET, {}, NOCHK)
+
+                    adapter.assertNoNetworkExists(NETWORK_NAME)
+
+                    adapter.restore_nets()
+
+                    adapter.assertNetworkExists(NETWORK_NAME)
