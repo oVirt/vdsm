@@ -508,6 +508,9 @@ class Task:
         self.nrecoveries = 0    # just utility count - used by save/load
         self.njobs = 0          # just utility count - used by save/load
 
+        # Used by tests to wait for a task from another thread.
+        self._is_done = threading.Event()
+
         self.log = SimpleLogAdapter(self.log, {"Task": self.id})
 
     def __del__(self):
@@ -1007,8 +1010,11 @@ class Task:
         self.lock.release()
 
         self.log.debug("ref %d aborting %s", ref, self.aborting())
-        if ref == 0 and self.aborting():
-            self._doAbort(force)
+        if ref == 0:
+            if self.aborting():
+                self._doAbort(force)
+            if self.state.isDone():
+                self._is_done.set()
         return ref
 
     ##########################################################################
@@ -1311,6 +1317,9 @@ class Task:
         finally:
             self._decref(force=True)
         self.log.debug('(recover): recovered: state %s', self.state)
+
+    def wait(self, timeout=None):
+        return self._is_done.wait(timeout)
 
     def getState(self):
         return str(self.state)
