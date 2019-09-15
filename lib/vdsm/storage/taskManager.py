@@ -84,11 +84,11 @@ class TaskManager:
             raise se.UnknownTask(taskID)
         return t
 
-    def prepareForShutdown(self):
-        """ Prepare to shutdown, stop all threads.
+    def prepareForShutdown(self, wait=False):
+        """ Prepare to shutdown and stop all threads.
         """
-        self.log.debug("Request to stop all threads")
-        self.tp.joinAll(waitForTasks=False, waitForThreads=False)
+        self.log.debug("Request to stop all threads (wait=%s)", wait)
+        self.tp.joinAll(waitForTasks=False, waitForThreads=wait)
 
     def getTaskStatus(self, taskID):
         """ Internal return Task status for a given task.
