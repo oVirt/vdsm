@@ -24,6 +24,7 @@ import binascii
 import os
 import shutil
 import tempfile
+import threading
 
 import six
 
@@ -536,3 +537,32 @@ class Aborting(object):
     def __call__(self):
         self.count -= 1
         return self.count < 0
+
+
+class Callable(object):
+
+    def __init__(self, hang=False):
+        self._hang = hang
+        self._running = threading.Event()
+        self._blocking = threading.Event()
+        self._done = threading.Event()
+
+    def __call__(self, timeout=None):
+        self._running.set()
+        if self._hang is True:
+            if not self._blocking.wait(timeout):
+                raise RuntimeError("Timeout waiting for task switch off")
+        self._done.set()
+        return {}
+
+    def finish(self, timeout=1):
+        self._blocking.set()
+        if not self._done.wait(timeout):
+            raise RuntimeError("Timeout waiting for task completion")
+
+    def wait_until_running(self, timeout=1):
+        if not self._running.wait(timeout):
+            raise RuntimeError("Timeout waiting for task to start")
+
+    def is_finished(self):
+        return self._done.is_set()
