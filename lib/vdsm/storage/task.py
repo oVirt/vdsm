@@ -918,6 +918,8 @@ class Task:
                     0, 'running job {0} of {1}'.format(i + 1, len(self.jobs)),
                     '')
                 result = self._run(j.run)
+                if self.aborting():
+                    raise se.TaskAborted("shutting down")
                 if result is None:
                     result = ""
                 i += 1
