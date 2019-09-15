@@ -26,6 +26,8 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import sys
+import types
 
 from contextlib import closing
 
@@ -43,8 +45,8 @@ from vdsm.storage import lvm
 from vdsm.storage import managedvolumedb
 from vdsm.storage import multipath
 from vdsm.storage import outOfProcess as oop
-from vdsm.storage import task
 from vdsm.storage.sdc import sdCache
+from vdsm.storage.task import Task, Recovery
 
 import fakelib
 from .fakesanlock import FakeSanlock
@@ -148,7 +150,7 @@ def fake_task(monkeypatch):
     Create fake task, expected in various places in the code. In the real code
     a task is created for every HSM public call by the dispatcher.
     """
-    monkeypatch.setattr(threadlocal.vars, 'task', task.Task("fake-task-id"))
+    monkeypatch.setattr(threadlocal.vars, 'task', Task("fake-task-id"))
 
 
 @pytest.fixture
@@ -196,3 +198,36 @@ def fake_scheduler():
     jobs.start(scheduler, notifier)
     yield
     jobs._clear()
+
+
+@pytest.fixture
+def add_recovery(monkeypatch):
+    def add_recovery_func(task, module_name, params):
+        class FakeRecovery(object):
+            task_proxy = None
+            args = None
+
+            @classmethod
+            def call(cls, task_proxy, *args):
+                cls.task_proxy = task_proxy
+                cls.args = args
+
+        # Create a recovery module with the passed module name
+        module = types.ModuleType(module_name)
+        module.FakeRecovery = FakeRecovery
+
+        # Verify that the fully qualified name of the module is unique
+        full_name = "vdsm.storage.{}".format(module_name)
+        if full_name in sys.modules:
+            raise RuntimeError("Module {} already exists".format(module_name))
+
+        # Set task's recovery lookup to refer to our local Recovery class
+        monkeypatch.setattr(full_name, module, raising=False)
+        monkeypatch.setitem(sys.modules, full_name, module)
+
+        r = Recovery(module_name, module_name, "FakeRecovery", "call", params)
+        task.pushRecovery(r)
+
+        return FakeRecovery
+
+    return add_recovery_func
