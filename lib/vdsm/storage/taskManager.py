@@ -77,7 +77,7 @@ class TaskManager:
         task.addJob(Job(jobName, func, *args))
         self.log.debug("scheduled job %s for task %s ", jobName, task.id)
 
-    def __getTask(self, taskID):
+    def _getTask(self, taskID):
         Task.validateID(taskID)
         t = self._tasks.get(taskID, None)
         if t is None:
@@ -94,7 +94,7 @@ class TaskManager:
         """ Internal return Task status for a given task.
         """
         self.log.debug("Entry. taskID: %s", taskID)
-        t = self.__getTask(taskID)
+        t = self._getTask(taskID)
         status = t.deprecated_getStatus()
         self.log.debug("Return. Response: %s", status)
         return status
@@ -146,7 +146,7 @@ class TaskManager:
         """ Stop a task according to given uuid.
         """
         self.log.debug("Entry. taskID: %s", taskID)
-        t = self.__getTask(taskID)
+        t = self._getTask(taskID)
         t.stop(force=force)
         self.log.debug("Return.")
         return True
@@ -154,7 +154,7 @@ class TaskManager:
     def revertTask(self, taskID):
         self.log.debug("Entry. taskID: %s", taskID)
         # TODO: Should we stop here implicitly ???
-        t = self.__getTask(taskID)
+        t = self._getTask(taskID)
         t.rollback()
         self.log.debug("Return.")
 
@@ -163,7 +163,7 @@ class TaskManager:
         """
         self.log.debug("Entry. taskID: %s", taskID)
         # TODO: Should we stop here implicitly ???
-        t = self.__getTask(taskID)
+        t = self._getTask(taskID)
         t.clean()
         del self._tasks[taskID]
         self.log.debug("Return.")
@@ -172,7 +172,7 @@ class TaskManager:
         """ Return task's data according to given uuid.
         """
         self.log.debug("Entry. taskID: %s", taskID)
-        t = self.__getTask(taskID)
+        t = self._getTask(taskID)
         info = t.getInfo()
         self.log.debug("Return. Response: %s", info)
         return info
