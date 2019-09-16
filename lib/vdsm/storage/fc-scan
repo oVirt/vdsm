@@ -20,15 +20,16 @@
 #
 
 """
-Usage: fc-scan [-v|-h]
+Usage: fc-scan [-v|-h] [--no-devices]
 
 Perform SCSI scan on Fibre Channel scsi_hosts and devices, adding new LUNs and
 updating sizes of existing devices. This procedure will not remove existing
 LUNs. Must run as root.
 
 Options:
-  -v        enable verbose logging
-  -h        display this help and exit
+  -v            enable verbose logging
+  -h            display this help and exit
+  --no-devices  do not scan devices
 
 Exit codes:
   0         scanned fc_hosts and devices successfully
@@ -50,8 +51,9 @@ log = logging.getLogger("fc-scan")
 
 class Scan(object):
 
-    def __init__(self, host):
+    def __init__(self, host, rescan_devices=False):
         self.host = host
+        self._should_rescan_devices = rescan_devices
         self._errors = 0
         self.thread = None
 
@@ -68,7 +70,8 @@ class Scan(object):
 
     def run(self):
         self._rescan_host()
-        self._rescan_devices()
+        if self._should_rescan_devices:
+            self._rescan_devices()
 
     def _rescan_host(self):
         """
@@ -136,10 +139,12 @@ def main(args):
         log.debug("No fc_host found")
         return 0
 
+    rescan_devices = "--no-devices" not in args
+
     scans = []
 
     for host in hosts:
-        s = Scan(host)
+        s = Scan(host, rescan_devices=rescan_devices)
         s.start()
         scans.append(s)
 
