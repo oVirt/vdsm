@@ -45,7 +45,7 @@ def fake_dmsetup(monkeypatch):
 
 @requires_root
 def test_dm_status(fake_dmsetup):
-    res = devicemapper._multipath_status()
+    res = devicemapper.multipath_status()
     expected = {
         '360014053d0b83eff3d347c48509fc426':
             [

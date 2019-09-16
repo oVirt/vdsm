@@ -27,8 +27,8 @@ import re
 from collections import namedtuple
 from glob import glob
 
-from vdsm.common.supervdsm import getProxy
 from vdsm.common import cmdutils
+from vdsm.common import supervdsm
 from vdsm.constants import EXT_DMSETUP
 from vdsm.storage import misc
 
@@ -122,10 +122,9 @@ def getAllSlaves():
 
 
 def removeMapping(deviceName):
-    return getProxy().removeDeviceMapping(deviceName)
+    if os.geteuid() != 0:
+        return supervdsm.getProxy().devicemapper_removeMapping()
 
-
-def _removeMapping(deviceName):
     cmd = [EXT_DMSETUP, "remove", deviceName]
     rc = misc.execCmd(cmd)[0]
     if rc != 0:
@@ -156,7 +155,10 @@ def removeMappingsHoldingDevice(slaveName):
 PATH_STATUS_RE = re.compile(r"(?P<devnum>\d+:\d+)\s+(?P<status>[AF])")
 
 
-def _getPathsStatus():
+def getPathsStatus():
+    if os.geteuid() != 0:
+        return supervdsm.getProxy().devicemapper_getPathsStatus()
+
     cmd = [EXT_DMSETUP, "status", "--target", "multipath"]
     rc, out, err = misc.execCmd(cmd)
     if rc != 0:
@@ -181,11 +183,10 @@ def _getPathsStatus():
     return res
 
 
-def getPathsStatus():
-    return getProxy().getPathsStatus()
+def multipath_status():
+    if os.geteuid() != 0:
+        return supervdsm.getProxy().devicemapper_multipath_status()
 
-
-def _multipath_status():
     cmd = [EXT_DMSETUP, "status", "--target", "multipath"]
     rc, out, err = misc.execCmd(cmd, raw=True)
     if rc != 0:
@@ -212,7 +213,3 @@ def _multipath_status():
         res[guid] = statuses
 
     return res
-
-
-def multipath_status():
-    return getProxy().multipath_status()

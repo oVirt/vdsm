@@ -57,11 +57,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import fuser
 from vdsm.storage import hba
 from vdsm.storage import mount
-from vdsm.storage.devicemapper import (
-    _removeMapping,
-    _getPathsStatus,
-    _multipath_status
-)
 from vdsm.storage.fileUtils import chown, resolveGid, resolveUid
 from vdsm.storage.fileUtils import validateAccess as _validateAccess
 from vdsm.storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
@@ -151,24 +146,12 @@ class _SuperVdsm(object):
         return multipath._resize_map(devName)
 
     @logDecorator
-    def removeDeviceMapping(self, devName):
-        return _removeMapping(devName)
-
-    @logDecorator
     def getdeviSCSIinfo(self, *args, **kwargs):
         return _getdeviSCSIinfo(*args, **kwargs)
 
     @logDecorator
     def readSessionInfo(self, sessionID):
         return _readSessionInfo(sessionID)
-
-    @logDecorator
-    def getPathsStatus(self):
-        return _getPathsStatus()
-
-    @logDecorator
-    def multipath_status(self):
-        return _multipath_status()
 
     def _runAs(self, user, groups, func, args=(), kwargs={}):
         def child(pipe):
