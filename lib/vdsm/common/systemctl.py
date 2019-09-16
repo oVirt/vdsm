@@ -43,6 +43,18 @@ def stop(pattern):
     return commands.run([SYSTEMCTL, 'stop', pattern])
 
 
+def enable(pattern):
+    """
+    Enable one or more units specified in pattern.
+
+    If not running as root, use supervdsm to invoke this function as root.
+    """
+    if os.geteuid() != 0:
+        return supervdsm.getProxy().systemctl_enable(pattern)
+
+    return commands.run([SYSTEMCTL, 'enable', pattern])
+
+
 def show(pattern=None, properties=()):
     """
     Show properties of one or more units, jobs, or the manager itself.

@@ -27,3 +27,8 @@ from . import expose
 @expose
 def systemctl_stop(name):
     return systemctl.stop(name)
+
+
+@expose
+def systemctl_enable(name):
+    return systemctl.enable(name)
