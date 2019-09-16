@@ -498,9 +498,19 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
     assert os.path.islink(vol_path)
     assert not os.path.exists(vol_path)
 
+    lv_size = int(lvm.getLV(sd_uuid, vol_uuid).size)
+
+    # Check volume size of unprepared volume - uses lvm.
+    size = dom.getVolumeSize(img_uuid, vol_uuid)
+    assert size.apparentsize == size.truesize == lv_size
+
     vol.prepare()
 
     assert os.path.exists(vol_path)
+
+    # Check volume size of prepared volume - uses seek.
+    size = dom.getVolumeSize(img_uuid, vol_uuid)
+    assert size.apparentsize == size.truesize == lv_size
 
     # verify we can really write and read to an image
     qemuio.write_pattern(vol_path, "qcow2")

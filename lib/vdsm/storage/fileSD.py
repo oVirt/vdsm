@@ -179,6 +179,14 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
     def getMonitoringPath(self):
         return self.metafile
 
+    def getVolumeSize(self, imgUUID, volUUID):
+        volPath = os.path.join(
+            self.mountpoint, self.sdUUID, 'images', imgUUID, volUUID)
+        stat = self.oop.os.stat(volPath)
+        return sd.VolumeSize(
+            apparentsize=stat.st_size,
+            truesize=stat.st_blocks * sc.STAT_BYTES_PER_BLOCK)
+
     def getVSize(self, imgUUID, volUUID):
         """ Returns file volume size in bytes. """
         volPath = os.path.join(self.mountpoint, self.sdUUID, 'images',

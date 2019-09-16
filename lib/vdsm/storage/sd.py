@@ -31,6 +31,7 @@ import six
 
 from vdsm import utils
 from vdsm.common import exception
+from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
 from vdsm.config import config
 from vdsm.storage import clusterlock
@@ -171,6 +172,16 @@ UNICODE_MINIMAL_VERSION = 3
 # upgrade from V1 to V3.
 SDM_LEASE_NAME = 'SDM'
 SDM_LEASE_SLOT = 1
+
+VolumeSize = namedtuple("VolumeSize", [
+    # The logical volume size in block storage and file size in file
+    # storage.
+    "apparentsize",
+
+    # The allocated size on storage. Same as apparentsize in block
+    # storage.
+    "truesize",
+])
 
 
 def getVolsOfImage(allVols, imgUUID):
@@ -770,10 +781,28 @@ class StorageDomain(object):
     def getMonitoringPath(self):
         return self._manifest.getMonitoringPath()
 
+    def getVolumeSize(self, imgUUID, volUUID):
+        """
+        Return VolumeSize named tuple for specified volume.
+        """
+        return self._manifest.getVolumeSize(imgUUID, volUUID)
+
+    @deprecated
     def getVSize(self, imgUUID, volUUID):
+        """
+        Return volume apparent size.
+
+        Deprecated - use getVolumeSize().apparentsize instead.
+        """
         return self._manifest.getVSize(imgUUID, volUUID)
 
+    @deprecated
     def getVAllocSize(self, imgUUID, volUUID):
+        """
+        Return volume true size.
+
+        Deprecated - use getVolumeSize().truesize instead.
+        """
         return self._manifest.getVAllocSize(imgUUID, volUUID)
 
     def deleteImage(self, sdUUID, imgUUID, volsImgs):

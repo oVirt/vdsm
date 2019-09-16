@@ -418,6 +418,10 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
     def getMonitoringPath(self):
         return lvm.lvPath(self.sdUUID, sd.METADATA)
 
+    def getVolumeSize(self, imgUUID, volUUID):
+        size = self.getVSize(imgUUID, volUUID)
+        return sd.VolumeSize(apparentsize=size, truesize=size)
+
     def getVSize(self, imgUUUID, volUUID):
         """ Return the block volume size in bytes. """
         try:

@@ -330,6 +330,10 @@ def test_volume_life_cycle(monkeypatch, user_domain):
     assert qcow2_info["actualsize"] < vol_capacity
     assert qcow2_info["virtualsize"] == vol_capacity
 
+    size = user_domain.getVolumeSize(img_uuid, vol_uuid)
+    assert size.apparentsize == os.path.getsize(vol_path)
+    assert size.truesize == qcow2_info["actualsize"]
+
     # test volume prepare, teardown does nothing in case of file volume
     vol.prepare()
 
