@@ -785,6 +785,9 @@ class SetupNetworks(object):
             self._update_configs()
             raise SetupNetworksError(status, msg)
 
+        if self._is_async_dynamic_ipv4():
+            time.sleep(1)
+            self.vdsm_proxy.refreshNetworkCapabilities()
         try:
             self._update_configs()
             self._assert_configs()
@@ -829,6 +832,13 @@ class SetupNetworks(object):
             fileutils.rm_file(IFCFG_PREFIX + nic)
 
         return status, msg
+
+    def _is_async_dynamic_ipv4(self):
+        for attr in six.viewvalues(self.setup_networks):
+            is_dhcpv4 = attr.get('bootproto') == 'dhcp'
+            if is_dhcpv4 and not attr.get('blockingdhcp'):
+                return True
+        return False
 
 
 @contextmanager

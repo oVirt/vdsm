@@ -37,7 +37,7 @@ from vdsm.network.ipwrapper import (
     routeExists, ruleExists, addrFlush, LinkType, getLinks, routeShowTable,
     linkDel, linkSet, addrAdd)
 from vdsm.network import kernelconfig
-from vdsm.network.netconfpersistence import PersistentConfig, RunningConfig
+from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.netinfo.bonding import BONDING_SLAVES
 from vdsm.network.netinfo.misc import NET_CONF_PREF
@@ -457,41 +457,6 @@ class NetworkTest(TestCaseBase):
 
             # wait for Vdsm to update statistics
             self.retryAssert(assertStatsInRange, timeout=3)
-
-    @requiresUnifiedPersistence("with ifcfg persistence, this test is "
-                                "irrelevant")
-    @cleanupNet
-    @RequireVethMod
-    @ValidateRunningAsRoot
-    def testRestoreToBlockingDHCP(self):
-        """
-        Test that restoration of dhcp based network is done synchronously.
-        With ifcfg persistence, this is what happens thanks to initscripts,
-        regardless of vdsm. Hence, this test is irrelevant there.
-        """
-        with veth_pair() as (server, client):
-            addrAdd(server, IP_ADDRESS, IP_CIDR)
-            linkSet(server, ['up'])
-            dhcp_async_net = {'nic': client, 'bridged': False,
-                              'bootproto': 'dhcp', 'blockingdhcp': False}
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: dhcp_async_net}, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertNetworkExists(NETWORK_NAME)
-
-            self.vdsm_net.save_config()
-
-            # Take dhcp down so restoration will take place.
-            dhclient.kill(client)
-
-            # Attempt to restore network without dhcp server.
-            # As we expect blockingdhcp to be set, it should fail the setup.
-            self.vdsm_net.restoreNetConfig()
-            self.assertNetworkDoesntExist(NETWORK_NAME)
-
-            # cleanup
-            PersistentConfig().delete()
 
     @requiresUnifiedPersistence("with ifcfg persistence, "
                                 "restoreNetConfig selective restoration"

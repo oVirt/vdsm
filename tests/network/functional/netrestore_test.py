@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,9 +25,11 @@ from .netfunctestlib import NetFuncTestAdapter, NOCHK
 from .netfunctestlib import parametrize_bridged
 from .netfunctestlib import parametrize_switch
 from network.nettestlib import dummy_devices
+from network.nettestlib import veth_pair
 from testlib import mock
 
 from vdsm.network import netrestore
+from vdsm.network.ipwrapper import linkSet
 from vdsm.network.link.bond import Bond
 
 BOND_NAME = 'bond1'
@@ -86,3 +88,34 @@ class TestRestore(object):
                     adapter.restore_nets()
 
                     adapter.assertNetworkExists(NETWORK_NAME)
+
+    def test_restore_dynamic_ipv4_network(self, switch):
+        if switch == 'ovs':
+            # With OVS, the restoration creates the network without an IP.
+            pytest.xfail('Inconsistent behaviour with OVS')
+
+        with veth_pair() as (server, client):
+            linkSet(server, ['up'])
+            SETUP_NET = {
+                NETWORK_NAME: {
+                    'nic': client,
+                    'bridged': False,
+                    'bootproto': 'dhcp',
+                    'switch': switch,
+                }
+            }
+            REMOVE_NET = {NETWORK_NAME: {'remove': True}}
+
+            with adapter.reset_persistent_config():
+                with adapter.setupNetworks(SETUP_NET, {}, NOCHK):
+                    adapter.setSafeNetworkConfig()
+                    adapter.setupNetworks(REMOVE_NET, {}, NOCHK)
+
+                    adapter.assertNoNetworkExists(NETWORK_NAME)
+
+                    adapter.restore_nets()
+
+                    # Attempt to restore network without dhcp server.
+                    # As expected, restoration occurs with blockingdhcp=True
+                    # and therefore it should fail the setup.
+                    adapter.assertNoNetworkExists(NETWORK_NAME)
