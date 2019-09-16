@@ -21,14 +21,12 @@ from __future__ import absolute_import
 from __future__ import division
 
 import pytest
-import unittest
 
 from vdsm.network import errors as ne
 from vdsm.network.netswitch import validator
 
 
-class ValidationTests(unittest.TestCase):
-
+class TestValidation(object):
     def test_adding_a_new_single_untagged_net(self):
         fake_running_bonds = {}
         fake_to_be_added_bonds = {}
@@ -60,21 +58,21 @@ class ValidationTests(unittest.TestCase):
         fake_running_bonds = {}
         fake_to_be_added_bonds = {}
         fake_kernel_nics = []
-        with self.assertRaises(ne.ConfigNetworkError) as e:
+        with pytest.raises(ne.ConfigNetworkError) as e:
             validator.validate_net_configuration(
                 'net1', {'nic': 'eth0', 'switch': 'ovs'},
                 fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
-        self.assertEqual(e.exception.args[0], ne.ERR_BAD_NIC)
+        assert e.value.errCode == ne.ERR_BAD_NIC
 
     def test_add_network_with_non_existing_bond(self):
         fake_running_bonds = {}
         fake_to_be_added_bonds = {}
         fake_kernel_nics = []
-        with self.assertRaises(ne.ConfigNetworkError) as e:
+        with pytest.raises(ne.ConfigNetworkError) as e:
             validator.validate_net_configuration(
                 'net1', {'bonding': 'bond1', 'switch': 'ovs'},
                 fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
-        self.assertEqual(e.exception.args[0], ne.ERR_BAD_BONDING)
+        assert e.value.errCode == ne.ERR_BAD_BONDING
 
     def test_add_network_with_to_be_added_bond(self):
         fake_running_bonds = {}
@@ -98,7 +96,7 @@ class ValidationTests(unittest.TestCase):
         fake_kernel_nics = []
         nets = {}
         running_nets = {}
-        with self.assertRaises(ne.ConfigNetworkError):
+        with pytest.raises(ne.ConfigNetworkError):
             validator.validate_bond_configuration(
                 'bond1', {'switch': 'ovs'}, nets, running_nets,
                 fake_kernel_nics)
@@ -134,7 +132,7 @@ class ValidationTests(unittest.TestCase):
         fake_kernel_nics = []
         nets = {}
         running_nets = {}
-        with self.assertRaises(ne.ConfigNetworkError):
+        with pytest.raises(ne.ConfigNetworkError):
             validator.validate_bond_configuration(
                 'bond1', {'nics': ['eth0', 'eth1'], 'switch': 'ovs'},
                 nets, running_nets, fake_kernel_nics)
@@ -143,7 +141,7 @@ class ValidationTests(unittest.TestCase):
         fake_kernel_nics = []
         nets = {}
         running_nets = {}
-        with self.assertRaises(ne.ConfigNetworkError):
+        with pytest.raises(ne.ConfigNetworkError):
             validator.validate_bond_configuration(
                 'bond1', {'nics': ['eth0', 'dpdk0'], 'switch': 'ovs'},
                 nets, running_nets, fake_kernel_nics)
@@ -170,11 +168,11 @@ class ValidationTests(unittest.TestCase):
         fake_kernel_nics = ['eth0', 'eth1']
         nets = {}
         running_nets = {'net1': {'southbound': 'bond1'}}
-        with self.assertRaises(ne.ConfigNetworkError) as e:
+        with pytest.raises(ne.ConfigNetworkError) as e:
             validator.validate_bond_configuration(
                 'bond1', {'remove': True}, nets, running_nets,
                 fake_kernel_nics)
-        self.assertEqual(e.exception.args[0], ne.ERR_USED_BOND)
+        assert e.value.errCode == ne.ERR_USED_BOND
 
     def test_remove_bond_attached_to_network_that_will_use_nic(self):
         fake_kernel_nics = ['eth0', 'eth1']
@@ -189,11 +187,11 @@ class ValidationTests(unittest.TestCase):
         fake_kernel_nics = ['eth0', 'eth1', 'eth2']
         nets = {'net1': {'nic': 'eth0'}, 'net2': {'bonding': 'bond1'}}
         running_nets = {'net1': {'southbound': 'bond1'}}
-        with self.assertRaises(ne.ConfigNetworkError) as e:
+        with pytest.raises(ne.ConfigNetworkError) as e:
             validator.validate_bond_configuration(
                 'bond1', {'remove': True}, nets, running_nets,
                 fake_kernel_nics)
-        self.assertEqual(e.exception.args[0], ne.ERR_USED_BOND)
+        assert e.value.errCode == ne.ERR_USED_BOND
 
     def test_remove_missing_net_fails(self):
         net_name = 'net1'
@@ -201,7 +199,7 @@ class ValidationTests(unittest.TestCase):
         bonds = desired_bonds = {}
         nics = {}
 
-        with self.assertRaises(ne.ConfigNetworkError) as cne:
+        with pytest.raises(ne.ConfigNetworkError) as cne:
             validator.validate_net_configuration(net_name,
                                                  net_attrs,
                                                  desired_bonds,
@@ -209,7 +207,7 @@ class ValidationTests(unittest.TestCase):
                                                  nics,
                                                  netinfo_networks={},
                                                  running_config_networks={})
-        self.assertEqual(cne.exception.args[0], ne.ERR_BAD_BRIDGE)
+        assert cne.value.errCode == ne.ERR_BAD_BRIDGE
 
     def test_remove_broken_net_succeeds(self):
         net_name = 'net1'
@@ -229,30 +227,28 @@ class ValidationTests(unittest.TestCase):
     def test_is_bridge_name_valid(self):
         invalid_bridge_name = ('', '-abc', 'abcdefghijklmnop', 'a:b', 'a.b')
         for invalid_name in invalid_bridge_name:
-            with self.assertRaises(ne.ConfigNetworkError) as cne_context:
+            with pytest.raises(ne.ConfigNetworkError) as cne_context:
                 validator.validate_bridge_name(invalid_name)
-            self.assertEqual(cne_context.exception.errCode,
-                             ne.ERR_BAD_BRIDGE)
+            assert cne_context.value.errCode == ne.ERR_BAD_BRIDGE
 
-
-@pytest.mark.parametrize(
-    'vlan_id',
-    ['bad id', 5000],
-    ids=['invalid type', 'invalid range'])
-def test_network_with_invalid_vlan_id(vlan_id):
-    net_name = 'net1'
-    net_attrs = {
-        'vlan': vlan_id,
-        'bridged': True,
-        'legacy': True,
-        'nic': 'eth0'
-    }
-    bonds = desired_bonds = {}
-    nics = {}
-    with pytest.raises(ne.ConfigNetworkError) as cne_context:
-        validator.validate_net_configuration(net_name,
-                                             net_attrs,
-                                             desired_bonds,
-                                             bonds,
-                                             nics)
-    assert cne_context.value.errCode == ne.ERR_BAD_VLAN
+    @pytest.mark.parametrize(
+        'vlan_id',
+        ['bad id', 5000],
+        ids=['invalid type', 'invalid range'])
+    def test_network_with_invalid_vlan_id(self, vlan_id):
+        net_name = 'net1'
+        net_attrs = {
+            'vlan': vlan_id,
+            'bridged': True,
+            'legacy': True,
+            'nic': 'eth0'
+        }
+        bonds = desired_bonds = {}
+        nics = {}
+        with pytest.raises(ne.ConfigNetworkError) as cne_context:
+            validator.validate_net_configuration(net_name,
+                                                 net_attrs,
+                                                 desired_bonds,
+                                                 bonds,
+                                                 nics)
+        assert cne_context.value.errCode == ne.ERR_BAD_VLAN
