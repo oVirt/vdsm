@@ -42,9 +42,11 @@ _PPC64LE_MACHINES = ['pseries',
                      'pseries-rhel7.3.0',
                      'pseries-rhel7.4.0',
                      'pseries-rhel7.5.0',
-                     'pseries-rhel7.5.0-sxxm']
+                     'pseries-rhel7.5.0-sxxm',
+                     'pseries-rhel7.6.0-sxxm']
 _X86_64_MACHINES = ['pc-i440fx-rhel7.1.0',
                     'rhel6.3.0',
+                    'pc-q35-rhel7.6.0',
                     'pc-q35-rhel7.5.0',
                     'pc-q35-rhel7.4.0',
                     'pc-q35-rhel7.3.0',
@@ -54,6 +56,7 @@ _X86_64_MACHINES = ['pc-i440fx-rhel7.1.0',
                     'rhel6.6.0',
                     'rhel6.2.0',
                     'pc',
+                    'pc-i440fx-rhel7.6.0',
                     'pc-i440fx-rhel7.5.0',
                     'pc-i440fx-rhel7.4.0',
                     'pc-i440fx-rhel7.3.0',
@@ -99,9 +102,9 @@ def _fake_caps_arch(caps, arch):
         flags = set(flag_list)
 
         caps['cpuFlags'] = ','.join(flags) + ',model_486,model_pentium,' \
-            'model_pentium2,model_pentium3,model_pentiumpro,' \
+            'spec_ctrl,ssbd,md_clear,model_Skylake-Client,' \
             'model_qemu32,model_coreduo,model_core2duo,model_n270,' \
-            'model_Conroe,model_Penryn,model_Nehalem,model_Opteron_G1'
+            'model_Conroe,model_Westmere,model_Nehalem,model_Opteron_G5'
     elif cpuarch.is_ppc(arch):
         caps['emulatedMachines'] = _PPC64LE_MACHINES
         caps['cpuModel'] = 'POWER 8(fake)'
