@@ -27,7 +27,6 @@ from __future__ import absolute_import
 import logging
 import threading
 
-from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import misc
@@ -63,12 +62,11 @@ class StorageDomainCache:
     STORAGE_STALE = 1
     STORAGE_REFRESHING = 2
 
-    def __init__(self, storage_repo):
+    def __init__(self):
         self._syncroot = threading.Condition()
         self.__domainCache = {}
         self.__inProgress = set()
         self.__staleStatus = self.STORAGE_STALE
-        self.storage_repo = storage_repo
         self.knownSDs = {}  # {sdUUID: mod.findDomain}
 
     def invalidateStorage(self):
@@ -202,4 +200,4 @@ class StorageDomainCache:
                 pass
 
 
-sdCache = StorageDomainCache(sc.REPO_DATA_CENTER)
+sdCache = StorageDomainCache()
