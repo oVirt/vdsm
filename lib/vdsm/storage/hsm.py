@@ -3092,7 +3092,7 @@ class HSM(object):
     def setVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, capacity):
         capacity = int(capacity)
         vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
-        capacity = utils.round(capacity, sc.BLOCK_SIZE_512)
+        capacity = utils.round(capacity, sc.BLOCK_SIZE_4K)
         vol.setCapacity(capacity)
 
     @public
