@@ -1,4 +1,4 @@
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ import os
 import uuid
 import sys
 
+from collections import namedtuple
+
 from vdsm.config import config
 
 from . import NO, MAYBE
@@ -39,6 +41,11 @@ from vdsm import constants
 requires = frozenset(('certificates',))
 
 services = ("vdsmd", "supervdsmd", "libvirtd")
+
+
+_LibvirtConnectionConfig = namedtuple(
+    "_LibvirtConnectionConfig",
+    "auth_tcp, listen_tcp, listen_tls, spice_tls")
 
 
 def configure():
@@ -95,13 +102,7 @@ def removeConf():
     confutils.remove_conf(FILES, CONF_VERSION)
 
 
-def _isSslConflict():
-    """
-    return True if libvirt configuration files match ssl configuration of
-    vdsm.conf.
-    """
-    ssl = config.getboolean('vars', 'ssl')
-
+def _read_libvirt_connection_config():
     lconf_p = ParserWrapper({
         'listen_tcp': '0',
         'auth_tcp': 'sasl',
@@ -114,10 +115,22 @@ def _isSslConflict():
     qconf_p = ParserWrapper({'spice_tls': '0'})
     qconf_p.read(confutils.get_file_path('QCONF', FILES))
     spice_tls = qconf_p.getboolean('spice_tls')
+    return _LibvirtConnectionConfig(
+        auth_tcp, listen_tcp, listen_tls, spice_tls)
+
+
+def _isSslConflict():
+    """
+    return True if libvirt configuration files match ssl configuration of
+    vdsm.conf.
+    """
+    ssl = config.getboolean('vars', 'ssl')
+
+    cfg = _read_libvirt_connection_config()
     ret = True
     if ssl:
-        if listen_tls != 0 and listen_tcp != 1 and auth_tcp != '"none"' and \
-                spice_tls != 0:
+        if (cfg.listen_tls != 0 and cfg.listen_tcp != 1
+                and cfg.auth_tcp != '"none"' and cfg.spice_tls != 0):
             sys.stdout.write(
                 "SUCCESS: ssl configured to true. No conflicts\n")
         else:
@@ -131,8 +144,8 @@ def _isSslConflict():
             )
             ret = False
     else:
-        if listen_tls == 0 and listen_tcp == 1 and auth_tcp == '"none"' and \
-                spice_tls == 0:
+        if (cfg.listen_tls == 0 and cfg.listen_tcp == 1
+                and cfg.auth_tcp == '"none"' and cfg.spice_tls == 0):
             sys.stdout.write(
                 "SUCCESS: ssl configured to false. No conflicts.\n")
         else:
