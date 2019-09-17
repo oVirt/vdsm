@@ -324,7 +324,9 @@ class SourceThread(object):
             try:
                 # Use r+ to avoid truncating the file, see BZ#1282239
                 with io.open(fname, "r+b") as f:
-                    pickle.dump(machineParams, f)
+                    # protocol=2 is needed for clusters < 4.4
+                    # (for Python 2 host compatibility)
+                    pickle.dump(machineParams, f, protocol=2)
             finally:
                 self._vm.cif.teardownVolumePath(self._dstparams)
 

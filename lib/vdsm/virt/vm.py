@@ -4119,7 +4119,9 @@ class Vm(object):
             try:
                 with open(vmConfVolPath, "rb+") as f:
                     vmConf = _vmConfForMemorySnapshot()
-                    data = pickle.dumps(vmConf)
+                    # protocol=2 is needed for clusters < 4.4
+                    # (for Python 2 host compatibility)
+                    data = pickle.dumps(vmConf, protocol=2)
 
                     # Ensure that the volume is aligned; qemu-img may segfault
                     # when converting unligned images.
