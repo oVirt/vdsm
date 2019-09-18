@@ -119,7 +119,9 @@ def _memUsageInfo(cif):
         committed += v.mem_size_mb() * Mbytes
     meminfo = utils.readMemInfo()
     freeOrCached = (meminfo['MemFree'] +
-                    meminfo['Cached'] + meminfo['Buffers']) * Kbytes
+                    meminfo['Cached'] +
+                    meminfo['Buffers'] +
+                    meminfo['SReclaimable']) * Kbytes
     available = (
         freeOrCached + config.getint('vars', 'host_mem_reserve') * Mbytes
     )
@@ -132,7 +134,9 @@ def _memFree():
     """
     meminfo = utils.readMemInfo()
     return (meminfo['MemFree'] +
-            meminfo['Cached'] + meminfo['Buffers']) * Kbytes
+            meminfo['Cached'] +
+            meminfo['Buffers'] +
+            meminfo['SReclaimable']) * Kbytes
 
 
 def _countVms(cif):
