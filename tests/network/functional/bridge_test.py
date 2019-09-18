@@ -54,26 +54,27 @@ class TestBridge(object):
             pytest.xfail('Fails on Fedora 29')
 
         with dummy_devices(1) as (nic,):
-            NETCREATE = {NETWORK_NAME: {'nic': nic,
-                                        'switch': switch,
-                                        'stp': True}}
+            NETCREATE = {
+                NETWORK_NAME: {'nic': nic, 'switch': switch, 'stp': True}
+            }
             with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                 adapter.assertNetworkExists(NETWORK_NAME)
                 adapter.assertNetworkBridged(NETWORK_NAME)
-                adapter.assertBridgeOpts(NETWORK_NAME,
-                                         NETCREATE[NETWORK_NAME])
+                adapter.assertBridgeOpts(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     @nftestlib.parametrize_legacy_switch
     def test_add_bridge_with_custom_opts(self, switch):
         with dummy_devices(1) as (nic,):
-            NETCREATE = {NETWORK_NAME: {
+            NET_ATTRS = {
                 'nic': nic,
                 'switch': switch,
                 'custom': {
-                    'bridge_opts': 'multicast_snooping=0 multicast_router=0'}}}
+                    'bridge_opts': 'multicast_snooping=0 multicast_router=0'
+                },
+            }
+            NETCREATE = {NETWORK_NAME: NET_ATTRS}
             with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
-                adapter.assertBridgeOpts(NETWORK_NAME,
-                                         NETCREATE[NETWORK_NAME])
+                adapter.assertBridgeOpts(NETWORK_NAME, NET_ATTRS)
 
     @pytest.mark.nmstate
     @nftestlib.parametrize_legacy_switch
@@ -86,8 +87,10 @@ class TestBridge(object):
                 with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                     adapter.assertNetwork(brname, NETCREATE[brname])
 
-    @pytest.mark.skip(reason='Unstable link while NM is running (BZ#1498022) '
-                             'and on CI even with NM down')
+    @pytest.mark.skip(
+        reason='Unstable link while NM is running (BZ#1498022) '
+        'and on CI even with NM down'
+    )
     @nftestlib.parametrize_legacy_switch
     def test_create_network_and_reuse_existing_owned_bridge(self, switch):
         with dummy_devices(2) as (nic1, nic2):
@@ -98,19 +101,22 @@ class TestBridge(object):
                     _attach_dev_to_bridge(tapdev, NETWORK_NAME)
                     with nftestlib.monitor_stable_link_state(NETWORK_NAME):
                         adapter.setupNetworks(NETSETUP2, {}, nftestlib.NOCHK)
-                        adapter.assertNetwork(NETWORK_NAME,
-                                              NETSETUP2[NETWORK_NAME])
+                        adapter.assertNetwork(
+                            NETWORK_NAME, NETSETUP2[NETWORK_NAME]
+                        )
 
     @pytest.mark.nmstate
     @nftestlib.parametrize_legacy_switch
-    @pytest.mark.xfail(condition=running_on_fedora(29),
-                       reason='Failing on legacy switch, fedora 29',
-                       strict=True)
+    @pytest.mark.xfail(
+        condition=running_on_fedora(29),
+        reason='Failing on legacy switch, fedora 29',
+        strict=True,
+    )
     def test_reconfigure_bridge_with_vanished_port(self, switch):
         with dummy_device() as nic1:
-            NETCREATE = {NETWORK_NAME: {'nic': nic1,
-                                        'bridged': True,
-                                        'switch': switch}}
+            NETCREATE = {
+                NETWORK_NAME: {'nic': nic1, 'bridged': True, 'switch': switch}
+            }
             with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                 with dummy_device() as nic2:
                     NETCREATE[NETWORK_NAME]['nic'] = nic2
@@ -130,7 +136,8 @@ def _attach_dev_to_bridge(tapdev, bridge):
     rc, _, err = exec_sync(['ip', 'link', 'set', tapdev, 'master', bridge])
     if rc != 0:
         pytest.fail(
-            'Filed to add {} to {}. err: {}'.format(tapdev, bridge, err))
+            'Filed to add {} to {}. err: {}'.format(tapdev, bridge, err)
+        )
 
 
 @contextmanager

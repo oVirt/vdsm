@@ -38,7 +38,6 @@ def create_adapter():
 
 @pytest.mark.ovsdpdk_switch
 class TestOvsDpdk(object):
-
     def test_dpdk0_device_exists(self):
         adapter.update_netinfo()
         assert 'dpdk0' in adapter.netinfo.nics

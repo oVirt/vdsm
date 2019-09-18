@@ -54,7 +54,6 @@ def create_adapter(target):
 
 @nftestlib.parametrize_switch
 class TestNetworkWithBond(object):
-
     def test_add_the_same_nic_to_net_and_bond_in_one_step(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': switch}}
@@ -87,7 +86,8 @@ class TestNetworkWithBond(object):
     def test_remove_bridged_net_and_keep_bond(self, switch):
         with dummy_devices(2) as nics:
             NETCREATE = {
-                NETWORK1_NAME: {'bonding': BOND_NAME, 'switch': switch}}
+                NETWORK1_NAME: {'bonding': BOND_NAME, 'switch': switch}
+            }
             BONDCREATE = {BOND_NAME: {'nics': nics, 'switch': switch}}
 
             with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
@@ -97,43 +97,59 @@ class TestNetworkWithBond(object):
                 adapter.assertNoNetwork(NETWORK1_NAME)
 
     @nftestlib.parametrize_bridged
-    def test_given_bonded_net_transfer_one_slave_to_new_net(self,
-                                                            switch,
-                                                            bridged):
+    def test_given_bonded_net_transfer_one_slave_to_new_net(
+        self, switch, bridged
+    ):
         with dummy_devices(3) as (nic1, nic2, nic3):
-            NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
-                                       'bridged': bridged,
-                                       'switch': switch}}
-            BONDBASE = {BOND_NAME: {'nics': [nic1, nic2, nic3],
-                                    'switch': switch}}
+            NETBASE = {
+                NETWORK1_NAME: {
+                    'bonding': BOND_NAME,
+                    'bridged': bridged,
+                    'switch': switch,
+                }
+            }
+            BONDBASE = {
+                BOND_NAME: {'nics': [nic1, nic2, nic3], 'switch': switch}
+            }
 
             with adapter.setupNetworks(NETBASE, BONDBASE, NOCHK):
-                NETNEW = {NETWORK2_NAME: {'nic': nic3,
-                                          'bridged': bridged,
-                                          'switch': switch}}
-                BONDEDIT = {BOND_NAME: {'nics': [nic1, nic2],
-                                        'switch': switch}}
+                NETNEW = {
+                    NETWORK2_NAME: {
+                        'nic': nic3,
+                        'bridged': bridged,
+                        'switch': switch,
+                    }
+                }
+                BONDEDIT = {
+                    BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}
+                }
                 with nftestlib.monitor_stable_link_state(BOND_NAME):
                     adapter.setupNetworks({}, BONDEDIT, NOCHK)
                 with adapter.setupNetworks(NETNEW, {}, NOCHK):
-                    adapter.assertNetwork(NETWORK1_NAME,
-                                          NETBASE[NETWORK1_NAME])
-                    adapter.assertNetwork(NETWORK2_NAME,
-                                          NETNEW[NETWORK2_NAME])
+                    adapter.assertNetwork(
+                        NETWORK1_NAME, NETBASE[NETWORK1_NAME]
+                    )
+                    adapter.assertNetwork(NETWORK2_NAME, NETNEW[NETWORK2_NAME])
                     adapter.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
 
     @nftestlib.parametrize_bridged
     def test_given_bonded_net_replace_bond_with_a_slave(self, switch, bridged):
         with dummy_devices(2) as (nic1, nic2):
-            NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
-                                       'bridged': bridged,
-                                       'switch': switch}}
+            NETBASE = {
+                NETWORK1_NAME: {
+                    'bonding': BOND_NAME,
+                    'bridged': bridged,
+                    'switch': switch,
+                }
+            }
             BONDBASE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
 
             with adapter.setupNetworks(NETBASE, BONDBASE, NOCHK):
-                NETBASE[NETWORK1_NAME] = {'nic': nic1,
-                                          'bridged': bridged,
-                                          'switch': switch}
+                NETBASE[NETWORK1_NAME] = {
+                    'nic': nic1,
+                    'bridged': bridged,
+                    'switch': switch,
+                }
                 BONDBASE[BOND_NAME] = {'remove': True}
                 adapter.setupNetworks(NETBASE, BONDBASE, NOCHK)
 
@@ -141,13 +157,12 @@ class TestNetworkWithBond(object):
                 adapter.assertNoBond(BOND_NAME)
 
     def test_add_net_with_invalid_bond_name_fails(self, switch):
-        INVALID_BOND_NAMES = ('bond',
-                              'bond bad',
-                              'jamesbond007')
+        INVALID_BOND_NAMES = ('bond', 'bond bad', 'jamesbond007')
 
         for bond_name in INVALID_BOND_NAMES:
-            NETCREATE = {NETWORK1_NAME: {'bonding': bond_name,
-                                         'switch': switch}}
+            NETCREATE = {
+                NETWORK1_NAME: {'bonding': bond_name, 'switch': switch}
+            }
             with pytest.raises(SetupNetworksError) as cm:
                 with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                     pass
@@ -160,10 +175,12 @@ class TestNetworkWithBond(object):
             VLAN_COUNT = 3
             for tag in range(VLAN_COUNT):
                 net_name = '{}{}'.format(NETWORK1_NAME, tag)
-                netsetup[net_name] = {'vlan': tag,
-                                      'bonding': BOND_NAME,
-                                      'bridged': bridged,
-                                      'switch': switch}
+                netsetup[net_name] = {
+                    'vlan': tag,
+                    'bonding': BOND_NAME,
+                    'bridged': bridged,
+                    'switch': switch,
+                }
             BONDCREATE = {BOND_NAME: {'nics': nics, 'switch': switch}}
 
             with adapter.setupNetworks(netsetup, BONDCREATE, NOCHK):
@@ -173,9 +190,13 @@ class TestNetworkWithBond(object):
     @nftestlib.parametrize_bridged
     def test_remove_bond_under_network(self, switch, bridged):
         with dummy_devices(1) as nics:
-            NETCREATE = {NETWORK1_NAME: {'bonding': BOND_NAME,
-                                         'bridged': bridged,
-                                         'switch': switch}}
+            NETCREATE = {
+                NETWORK1_NAME: {
+                    'bonding': BOND_NAME,
+                    'bridged': bridged,
+                    'switch': switch,
+                }
+            }
             BONDCREATE = {BOND_NAME: {'nics': nics, 'switch': switch}}
             with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
 
@@ -189,9 +210,13 @@ class TestNetworkWithBond(object):
 
     def test_remove_bonded_network_while_a_slave_is_missing(self, switch):
         with dummy_device() as nic1:
-            NETCREATE = {NETWORK1_NAME: {'bonding': BOND_NAME,
-                                         'bridged': False,
-                                         'switch': switch}}
+            NETCREATE = {
+                NETWORK1_NAME: {
+                    'bonding': BOND_NAME,
+                    'bridged': False,
+                    'switch': switch,
+                }
+            }
             BONDCREATE = {BOND_NAME: {'nics': [nic1], 'switch': switch}}
 
             with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
@@ -199,9 +224,11 @@ class TestNetworkWithBond(object):
                     BONDEDIT = {BOND_NAME: {'nics': [nic2], 'switch': switch}}
                     adapter.setupNetworks({}, BONDEDIT, NOCHK)
 
-                adapter.setupNetworks({NETWORK1_NAME: {'remove': True}},
-                                      {BOND_NAME: {'remove': True}},
-                                      NOCHK)
+                adapter.setupNetworks(
+                    {NETWORK1_NAME: {'remove': True}},
+                    {BOND_NAME: {'remove': True}},
+                    NOCHK,
+                )
 
                 adapter.assertNoNetwork(NETWORK1_NAME)
                 adapter.assertNoBond(BOND_NAME)
@@ -209,19 +236,26 @@ class TestNetworkWithBond(object):
 
 @nftestlib.parametrize_switch
 class TestReuseBond(object):
-
     def test_detach_used_bond_from_bridge(self, switch):
         with dummy_device() as nic:
             NETCREATE = {
                 NETWORK1_NAME: {'bonding': BOND_NAME, 'switch': switch},
-                NETWORK2_NAME: {'bonding': BOND_NAME, 'vlan': VLAN2,
-                                'switch': switch}}
+                NETWORK2_NAME: {
+                    'bonding': BOND_NAME,
+                    'vlan': VLAN2,
+                    'switch': switch,
+                },
+            }
             BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
 
             with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
                 NETEDIT = {
-                    NETWORK1_NAME: {'bonding': BOND_NAME, 'vlan': VLAN1,
-                                    'switch': switch}}
+                    NETWORK1_NAME: {
+                        'bonding': BOND_NAME,
+                        'vlan': VLAN1,
+                        'switch': switch,
+                    }
+                }
                 adapter.setupNetworks(NETEDIT, {}, NOCHK)
 
                 # For the legacy bridge, add an explicit ifdown/up step.
@@ -238,22 +272,32 @@ class TestReuseBond(object):
         if switch == 'ovs':
             pytest.xfail('Link is not stable when using OVS switch.')
         with dummy_device() as nic:
-            NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
-                                       'bridged': False,
-                                       'switch': switch}}
+            NETBASE = {
+                NETWORK1_NAME: {
+                    'bonding': BOND_NAME,
+                    'bridged': False,
+                    'switch': switch,
+                }
+            }
             BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
 
             with adapter.setupNetworks(NETBASE, BONDBASE, NOCHK):
                 with nftestlib.monitor_stable_link_state(BOND_NAME):
-                    NETVLAN = {NETWORK2_NAME: {'bonding': BOND_NAME,
-                                               'bridged': bridged,
-                                               'vlan': VLAN1,
-                                               'switch': switch}}
+                    NETVLAN = {
+                        NETWORK2_NAME: {
+                            'bonding': BOND_NAME,
+                            'bridged': bridged,
+                            'vlan': VLAN1,
+                            'switch': switch,
+                        }
+                    }
                     with adapter.setupNetworks(NETVLAN, {}, NOCHK):
-                        adapter.assertNetwork(NETWORK1_NAME,
-                                              NETBASE[NETWORK1_NAME])
-                        adapter.assertNetwork(NETWORK2_NAME,
-                                              NETVLAN[NETWORK2_NAME])
+                        adapter.assertNetwork(
+                            NETWORK1_NAME, NETBASE[NETWORK1_NAME]
+                        )
+                        adapter.assertNetwork(
+                            NETWORK2_NAME, NETVLAN[NETWORK2_NAME]
+                        )
 
     def test_add_net_on_existing_external_bond_preserving_mac(self, switch):
         if switch == 'ovs':
@@ -264,22 +308,30 @@ class TestReuseBond(object):
                 bond.create()
                 iface(BOND_NAME).set_address(HWADDRESS)
 
-                NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
-                                           'bridged': False,
-                                           'switch': switch}}
+                NETBASE = {
+                    NETWORK1_NAME: {
+                        'bonding': BOND_NAME,
+                        'bridged': False,
+                        'switch': switch,
+                    }
+                }
                 with adapter.setupNetworks(NETBASE, {}, NOCHK):
-                    adapter.assertNetwork(NETWORK1_NAME,
-                                          NETBASE[NETWORK1_NAME])
+                    adapter.assertNetwork(
+                        NETWORK1_NAME, NETBASE[NETWORK1_NAME]
+                    )
                     adapter.assertBond(
-                        BOND_NAME, {'nics': [nic1, nic2],
-                                    'hwaddr': HWADDRESS,
-                                    'switch': switch})
+                        BOND_NAME,
+                        {
+                            'nics': [nic1, nic2],
+                            'hwaddr': HWADDRESS,
+                            'switch': switch,
+                        },
+                    )
             adapter.setupNetworks({}, {BOND_NAME: {'remove': True}}, NOCHK)
 
 
 @pytest.mark.legacy_switch
 class TestReuseBondOnLegacySwitch(object):
-
     def test_add_net_on_existing_external_vlanned_bond(self):
         ADDRESS1 = '192.168.99.1'
         ADDRESS2 = '192.168.99.254'
@@ -293,23 +345,26 @@ class TestReuseBondOnLegacySwitch(object):
                     self._set_ip_address('1.1.1.1/29', nic1)
                     self._set_ip_address('1.1.1.2/29', nic2)
 
-                    self._set_ip_address(
-                        ADDRESS1 + '/' + PREFIX, bond.master)
-                    self._set_ip_address(
-                        ADDRESS2 + '/' + PREFIX, vlan.devName)
+                    self._set_ip_address(ADDRESS1 + '/' + PREFIX, bond.master)
+                    self._set_ip_address(ADDRESS2 + '/' + PREFIX, vlan.devName)
 
-                    NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
-                                               'bridged': True,
-                                               'ipaddr': ADDRESS1,
-                                               'prefix': PREFIX,
-                                               'switch': 'legacy'}}
+                    NETBASE = {
+                        NETWORK1_NAME: {
+                            'bonding': BOND_NAME,
+                            'bridged': True,
+                            'ipaddr': ADDRESS1,
+                            'prefix': PREFIX,
+                            'switch': 'legacy',
+                        }
+                    }
                     with adapter.setupNetworks(NETBASE, {}, NOCHK):
-                        adapter.assertNetwork(NETWORK1_NAME,
-                                              NETBASE[NETWORK1_NAME])
+                        adapter.assertNetwork(
+                            NETWORK1_NAME, NETBASE[NETWORK1_NAME]
+                        )
                         adapter.assertBond(
-                            BOND_NAME, {'nics': [nic1, nic2],
-                                        'switch': 'legacy'
-                                        })
+                            BOND_NAME,
+                            {'nics': [nic1, nic2], 'switch': 'legacy'},
+                        )
 
                         nic1_info = adapter.netinfo.nics[nic1]
                         nic2_info = adapter.netinfo.nics[nic2]
@@ -317,7 +372,8 @@ class TestReuseBondOnLegacySwitch(object):
                         assert nic1_info['ipv4addrs'] == []
                         assert nic2_info['ipv4addrs'] == []
                         assert vlan_info['ipv4addrs'] == [
-                            ADDRESS2 + '/' + PREFIX]
+                            ADDRESS2 + '/' + PREFIX
+                        ]
 
             adapter.setupNetworks({}, {BOND_NAME: {'remove': True}}, NOCHK)
 
@@ -327,10 +383,14 @@ class TestReuseBondOnLegacySwitch(object):
                 bond.create()
                 bond.up()
                 with vlan_device(nic1):
-                    NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
-                                               'bridged': True,
-                                               'switch': 'legacy',
-                                               'vlan': 17}}
+                    NETBASE = {
+                        NETWORK1_NAME: {
+                            'bonding': BOND_NAME,
+                            'bridged': True,
+                            'switch': 'legacy',
+                            'vlan': 17,
+                        }
+                    }
 
                     with pytest.raises(SetupNetworksError) as err:
                         with adapter.setupNetworks(NETBASE, {}, NOCHK):

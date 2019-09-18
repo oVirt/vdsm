@@ -69,28 +69,33 @@ class IpFamily(object):
 
 
 parametrize_switch = pytest.mark.parametrize(
-    'switch', [pytest.param('legacy', marks=pytest.mark.legacy_switch()),
-               pytest.param('ovs', marks=pytest.mark.ovs_switch())])
+    'switch',
+    [
+        pytest.param('legacy', marks=pytest.mark.legacy_switch()),
+        pytest.param('ovs', marks=pytest.mark.ovs_switch()),
+    ],
+)
 
 parametrize_legacy_switch = pytest.mark.parametrize(
-    'switch', [pytest.param('legacy', marks=pytest.mark.legacy_switch())])
+    'switch', [pytest.param('legacy', marks=pytest.mark.legacy_switch())]
+)
 
-parametrize_bridged = pytest.mark.parametrize('bridged', [False, True],
-                                              ids=['bridgeless', 'bridged'])
+parametrize_bridged = pytest.mark.parametrize(
+    'bridged', [False, True], ids=['bridgeless', 'bridged']
+)
 
-parametrize_bonded = pytest.mark.parametrize('bonded', [False, True],
-                                             ids=['unbonded', 'bonded'])
+parametrize_bonded = pytest.mark.parametrize(
+    'bonded', [False, True], ids=['unbonded', 'bonded']
+)
 
 parametrize_ip_families = pytest.mark.parametrize(
-    'families', [(IpFamily.IPv4,),
-                 (IpFamily.IPv6,),
-                 (IpFamily.IPv4, IpFamily.IPv6)],
-    ids=['IPv4', 'IPv6', 'IPv4&6'])
+    'families',
+    [(IpFamily.IPv4,), (IpFamily.IPv6,), (IpFamily.IPv4, IpFamily.IPv6)],
+    ids=['IPv4', 'IPv6', 'IPv4&6'],
+)
 
 parametrize_def_route = pytest.mark.parametrize(
-    'def_route',
-    [True, False],
-    ids=['withDefRoute', 'withoutDefRoute']
+    'def_route', [True, False], ids=['withDefRoute', 'withoutDefRoute']
 )
 
 
@@ -109,10 +114,11 @@ def retry_assert(func):
             try:
                 func(*args, **kwargs)
             except AssertionError:
-                    time.sleep(1)
+                time.sleep(1)
             else:
                 return
         func(*args, **kwargs)
+
     return retry
 
 
@@ -155,7 +161,6 @@ class TargetNotDefinedError(Exception):
 
 
 class NetFuncTestAdapter(object):
-
     def __init__(self, target=Target.SERVICE):
         self.netinfo = None
         self.running_config = None
@@ -184,9 +189,11 @@ class NetFuncTestAdapter(object):
 
     @property
     def setupNetworks(self):
-        return SetupNetworks(self._vdsm_proxy,
-                             self._update_running_and_kernel_config,
-                             self._assert_kernel_vs_running_config)
+        return SetupNetworks(
+            self._vdsm_proxy,
+            self._update_running_and_kernel_config,
+            self._assert_kernel_vs_running_config,
+        )
 
     def _update_running_and_kernel_config(self):
         self.update_netinfo()
@@ -215,9 +222,9 @@ class NetFuncTestAdapter(object):
 
         sb_iface_exists = netattrs.get('nic') or netattrs.get('bonding')
         check_admin_state = bridged and not sb_iface_exists
-        self.assertLinksUp(netname,
-                           netattrs,
-                           check_oper_state=not check_admin_state)
+        self.assertLinksUp(
+            netname, netattrs, check_oper_state=not check_admin_state
+        )
         self.assertNetworkSwitchType(netname, netattrs)
         self.assertNetworkMtu(netname, netattrs)
 
@@ -319,8 +326,12 @@ class NetFuncTestAdapter(object):
     def _assertCustomBridgeOpts(self, netattrs, bridge_caps):
         custom_attrs = netattrs.get('custom', {})
         if 'bridge_opts' in custom_attrs:
-            req_bridge_opts = dict([opt.split('=', 1) for opt in
-                                    custom_attrs['bridge_opts'].split(' ')])
+            req_bridge_opts = dict(
+                [
+                    opt.split('=', 1)
+                    for opt in custom_attrs['bridge_opts'].split(' ')
+                ]
+            )
             bridge_opts_caps = bridge_caps['opts']
             for br_opt, br_val in six.iteritems(req_bridge_opts):
                 assert br_val == bridge_opts_caps[br_opt]
@@ -469,9 +480,9 @@ class NetFuncTestAdapter(object):
         bond = attrs.get('bonding')
         nic = attrs.get('nic')
         switch = attrs.get('switch')
-        is_valid_attrs = (nic is not None or
-                          bond is not None or
-                          switch is not None)
+        is_valid_attrs = (
+            nic is not None or bond is not None or switch is not None
+        )
         assert is_valid_attrs
 
         if _ipv4_is_unused(attrs) and _ipv6_is_unused(attrs):
@@ -521,12 +532,12 @@ class NetFuncTestAdapter(object):
     def assertStaticIPv4(self, netattrs, ipinfo):
         requires_ipaddress()
         address = netattrs['ipaddr']
-        netmask = (netattrs.get('netmask') or
-                   prefix2netmask(int(netattrs.get('prefix'))))
+        netmask = netattrs.get('netmask') or prefix2netmask(
+            int(netattrs.get('prefix'))
+        )
         assert address == ipinfo['addr']
         assert netmask == ipinfo['netmask']
-        ipv4 = ipaddress.IPv4Interface(
-            u'{}/{}'.format(address, netmask))
+        ipv4 = ipaddress.IPv4Interface(u'{}/{}'.format(address, netmask))
         assert str(ipv4.with_prefixlen) in ipinfo['ipv4addrs']
 
     def assertStaticIPv6(self, netattrs, ipinfo):
@@ -587,10 +598,13 @@ class NetFuncTestAdapter(object):
 
     def assertDefaultRouteIPv4(self, netattrs, ipinfo):
         # When DHCP is used, route is assumed to be included in the response.
-        is_gateway_requested = (bool(netattrs.get('gateway')) or
-                                netattrs.get('bootproto') == 'dhcp')
-        is_default_route_requested = (netattrs.get('defaultRoute', False) and
-                                      is_gateway_requested)
+        is_gateway_requested = (
+            bool(netattrs.get('gateway'))
+            or netattrs.get('bootproto') == 'dhcp'
+        )
+        is_default_route_requested = (
+            netattrs.get('defaultRoute', False) and is_gateway_requested
+        )
         assert is_default_route_requested == ipinfo['ipv4defaultroute']
 
     @retry_assert
@@ -598,20 +612,23 @@ class NetFuncTestAdapter(object):
         switch = attrs.get('switch', 'legacy')
         if switch == 'legacy':
             expected_links = _gather_expected_legacy_links(
-                net, attrs, self.netinfo)
+                net, attrs, self.netinfo
+            )
         elif switch == 'ovs':
             expected_links = _gather_expected_ovs_links(
-                net, attrs, self.netinfo)
+                net, attrs, self.netinfo
+            )
         if expected_links:
             for dev in expected_links:
                 check_is_up = (
-                    iface(dev).is_oper_up if check_oper_state
+                    iface(dev).is_oper_up
+                    if check_oper_state
                     else iface(dev).is_admin_up
                 )
                 assert check_is_up(), 'Dev {} is DOWN'.format(dev)
 
     def assertNameservers(self, nameservers):
-        assert nameservers == self.netinfo.nameservers[:len(nameservers)]
+        assert nameservers == self.netinfo.nameservers[: len(nameservers)]
 
     def _assert_kernel_vs_running_config(self):
         """
@@ -651,7 +668,8 @@ class NetFuncTestAdapter(object):
         provided dicts, allowing further handling of the remaining data.
         """
         r_bonds_opts, k_bonds_opts = self._pop_bonds_options(
-            running_config, kernel_config)
+            running_config, kernel_config
+        )
         for r_opts, k_opts in zip(r_bonds_opts, k_bonds_opts):
             assert r_opts in k_opts
 
@@ -660,7 +678,8 @@ class NetFuncTestAdapter(object):
         k_bonds_opts = []
         for k_name, k_attrs in six.viewitems(kernel_config['bonds']):
             r_bonds_opts.append(
-                running_config['bonds'][k_name].pop('options', ''))
+                running_config['bonds'][k_name].pop('options', '')
+            )
             k_bonds_opts.append(k_attrs.pop('options', ''))
         return r_bonds_opts, k_bonds_opts
 
@@ -675,17 +694,20 @@ class NetFuncTestAdapter(object):
         provided dicts, allowing further handling of the remaining data.
         """
         r_nameservers_list, k_nameservers_list = self._pop_nameservers(
-            running_config, kernel_config)
-        for r_nameservers, k_nameservers in zip(r_nameservers_list,
-                                                k_nameservers_list):
-            assert r_nameservers == k_nameservers[:len(r_nameservers)]
+            running_config, kernel_config
+        )
+        for r_nameservers, k_nameservers in zip(
+            r_nameservers_list, k_nameservers_list
+        ):
+            assert r_nameservers == k_nameservers[: len(r_nameservers)]
 
     def _pop_nameservers(self, running_config, kernel_config):
         r_nameservers_list = []
         k_nameservers_list = []
         for k_name, k_attrs in six.viewitems(kernel_config['networks']):
             r_nameservers_list.append(
-                running_config['networks'][k_name].pop('nameservers', ''))
+                running_config['networks'][k_name].pop('nameservers', '')
+            )
             k_nameservers_list.append(k_attrs.pop('nameservers', ''))
         return r_nameservers_list, k_nameservers_list
 
@@ -708,11 +730,14 @@ def _extend_with_bridge_opts(kernel_config, running_config):
             continue
         running_opts_dict = bridge_opts_str_to_dict(running_opts_str)
         kernel_opts_dict = {
-            key: val for key, val in six.viewitems(bridges.bridge_options(net))
-            if key in running_opts_dict}
+            key: val
+            for key, val in six.viewitems(bridges.bridge_options(net))
+            if key in running_opts_dict
+        }
         kernel_opts_str = bridge_opts_dict_to_sorted_str(kernel_opts_dict)
-        kernel_config.networks[net].setdefault(
-            'custom', {})['bridge_opts'] = kernel_opts_str
+        kernel_config.networks[net].setdefault('custom', {})[
+            'bridge_opts'
+        ] = kernel_opts_str
 
 
 def _ipv4_is_unused(attrs):
@@ -720,8 +745,12 @@ def _ipv4_is_unused(attrs):
 
 
 def _ipv6_is_unused(attrs):
-    return ('ipv6addr' not in attrs and 'ipv6autoconf' not in attrs and
-            'dhcpv6' not in attrs and ipv6_supported())
+    return (
+        'ipv6addr' not in attrs
+        and 'ipv6autoconf' not in attrs
+        and 'dhcpv6' not in attrs
+        and ipv6_supported()
+    )
 
 
 class SetupNetworksError(Exception):
@@ -732,9 +761,12 @@ class SetupNetworksError(Exception):
 
 
 class SetupNetworks(object):
-
-    def __init__(self, vdsm_proxy,
-                 update_running_and_kernel_config, assert_kernel_vs_running):
+    def __init__(
+        self,
+        vdsm_proxy,
+        update_running_and_kernel_config,
+        assert_kernel_vs_running,
+    ):
         self.vdsm_proxy = vdsm_proxy
         self._update_configs = update_running_and_kernel_config
         self._assert_configs = assert_kernel_vs_running
@@ -769,15 +801,23 @@ class SetupNetworks(object):
     def _cleanup(self):
         networks_caps = self.vdsm_proxy.netinfo.networks
         bonds_caps = self.vdsm_proxy.netinfo.bondings
-        NETSETUP = {net: {'remove': True}
-                    for net in self.setup_networks if net in networks_caps}
-        BONDSETUP = {bond: {'remove': True}
-                     for bond in self.setup_bonds if bond in bonds_caps}
+        NETSETUP = {
+            net: {'remove': True}
+            for net in self.setup_networks
+            if net in networks_caps
+        }
+        BONDSETUP = {
+            bond: {'remove': True}
+            for bond in self.setup_bonds
+            if bond in bonds_caps
+        }
         status, msg = self.vdsm_proxy.setupNetworks(NETSETUP, BONDSETUP, NOCHK)
 
-        nics_used = [attr['nic']
-                     for attr in six.itervalues(self.setup_networks)
-                     if 'nic' in attr]
+        nics_used = [
+            attr['nic']
+            for attr in six.itervalues(self.setup_networks)
+            if 'nic' in attr
+        ]
         for attr in six.itervalues(self.setup_bonds):
             nics_used += attr.get('nics', [])
         for nic in nics_used:
@@ -803,7 +843,9 @@ def monitor_stable_link_state(device, wait_for_linkup=True):
             if state != original_state:
                 raise UnexpectedLinkStateChangeError(
                     '{} link state changed: {} -> {}'.format(
-                        device, original_state, state))
+                        device, original_state, state
+                    )
+                )
 
 
 def wait_bonds_lp_interval():
@@ -815,7 +857,8 @@ def wait_bonds_lp_interval():
     LACP_BOND_MODE = '4'
 
     default_lp_interval = int(
-        getDefaultBondingOptions(LACP_BOND_MODE)['lp_interval'][0])
+        getDefaultBondingOptions(LACP_BOND_MODE)['lp_interval'][0]
+    )
     time.sleep(default_lp_interval + GRACE_PERIOD)
 
 
@@ -848,8 +891,9 @@ def _normalize_qos_config(qos):
 def _normalize_bonds(configs):
     for cfg in configs:
         for bond_name, bond_attrs in six.viewitems(cfg['bonds']):
-            opts = dict(pair.split('=', 1)
-                        for pair in bond_attrs['options'].split())
+            opts = dict(
+                pair.split('=', 1) for pair in bond_attrs['options'].split()
+            )
 
             normalized_opts = _normalize_bond_opts(opts)
             bond_attrs['options'] = ' '.join(sorted(normalized_opts))
@@ -863,7 +907,8 @@ def _normalize_bond_opts(opts):
 def _normalize_arg_ip_target_option(opts):
     if "arp_ip_target" in opts.keys():
         opts['arp_ip_target'] = ','.join(
-            sorted(opts['arp_ip_target'].split(',')))
+            sorted(opts['arp_ip_target'].split(','))
+        )
 
 
 def _split_bond_options(opts):
@@ -880,7 +925,8 @@ def _numerize_bond_options(opts):
     optmap['mode'] = numeric_mode = bond_options.numerize_bond_mode(mode)
     for opname, opval in six.viewitems(optmap):
         numeric_val = bond_opts_mapper.get_bonding_option_numeric_val(
-            numeric_mode, opname, opval)
+            numeric_mode, opname, opval
+        )
         if numeric_val is not None:
             optmap[opname] = numeric_val
 

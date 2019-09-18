@@ -59,8 +59,14 @@ DHCPv6_RANGE_TO = 'fdb3:84e5:4ff4:55e3::64'
 
 
 class NetworkIPConfig(object):
-    def __init__(self, name, ipv4_address=None, ipv4_prefix_length=None,
-                 ipv6_address=None, ipv6_prefix_length=None):
+    def __init__(
+        self,
+        name,
+        ipv4_address=None,
+        ipv4_prefix_length=None,
+        ipv6_address=None,
+        ipv6_prefix_length=None,
+    ):
         self.name = name
         self.ipv4_address = ipv4_address
         self.ipv4_prefix_length = ipv4_prefix_length
@@ -69,8 +75,13 @@ class NetworkIPConfig(object):
 
 
 class DhcpConfig(object):
-    def __init__(self, ipv4_range_from, ipv4_range_to,
-                 ipv6_range_from=None, ipv6_range_to=None):
+    def __init__(
+        self,
+        ipv4_range_from,
+        ipv4_range_to,
+        ipv6_range_from=None,
+        ipv6_range_to=None,
+    ):
         self.ipv4_range_from = ipv4_range_from
         self.ipv4_range_to = ipv4_range_to
         self.ipv6_range_from = ipv6_range_from
@@ -95,14 +106,20 @@ def dhclient_monitor():
 
 @pytest.fixture(scope='module', autouse=True)
 def network_configuration1():
-    yield NetworkIPConfig(NETWORK_NAME, ipv4_address=IPv4_ADDRESS,
-                          ipv4_prefix_length=IPv4_PREFIX_LEN)
+    yield NetworkIPConfig(
+        NETWORK_NAME,
+        ipv4_address=IPv4_ADDRESS,
+        ipv4_prefix_length=IPv4_PREFIX_LEN,
+    )
 
 
 @pytest.fixture(scope='module', autouse=True)
 def network_configuration2():
-    yield NetworkIPConfig('test-network-2', ipv4_address=IPv4_ADDRESS2,
-                          ipv4_prefix_length=IPv4_PREFIX_LEN)
+    yield NetworkIPConfig(
+        'test-network-2',
+        ipv4_address=IPv4_ADDRESS2,
+        ipv4_prefix_length=IPv4_PREFIX_LEN,
+    )
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -120,7 +137,8 @@ def network_configuration_ipv4_and_ipv6():
 def dynamic_ipv4_iface1(network_configuration1):
     dhcp_config = DhcpConfig(DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO)
     with _create_configured_dhcp_client_iface(
-            network_configuration1, dhcp_config) as configured_client:
+        network_configuration1, dhcp_config
+    ) as configured_client:
         yield configured_client
 
 
@@ -128,7 +146,8 @@ def dynamic_ipv4_iface1(network_configuration1):
 def dynamic_ipv4_iface2(network_configuration2):
     dhcp_config = DhcpConfig('192.0.15.2', '192.0.15.253')
     with _create_configured_dhcp_client_iface(
-            network_configuration2, dhcp_config) as configured_client:
+        network_configuration2, dhcp_config
+    ) as configured_client:
         yield configured_client
 
 
@@ -138,7 +157,7 @@ def dynamic_ipv4_ipv6_iface1(network_configuration_ipv4_and_ipv6):
         DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO, DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO
     )
     with _create_configured_dhcp_client_iface(
-            network_configuration_ipv4_and_ipv6, dhcp_config
+        network_configuration_ipv4_and_ipv6, dhcp_config
     ) as configured_client:
         yield configured_client
 
@@ -154,28 +173,36 @@ class FakeNotifier:
 @nftestlib.parametrize_bridged
 @parametrize_def_route
 class TestNetworkDhcpBasic(object):
-
     def test_add_net_with_dhcp(self, switch, families, bridged, def_route):
         if switch == 'legacy' and running_on_fedora(29):
             pytest.xfail('Fails on Fedora 29')
         if families == (IpFamily.IPv6,) and def_route:
-            pytest.skip('Skipping default route + dynamic with IPv6 '
-                        'see https://bugzilla.redhat.com/1467332')
+            pytest.skip(
+                'Skipping default route + dynamic with IPv6 '
+                'see https://bugzilla.redhat.com/1467332'
+            )
 
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
             addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, IpFamily.IPv6)
             linkSet(server, ['up'])
             linkSet(client, ['up'])
-            with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
-                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO,
-                             router=DHCPv4_GATEWAY):
+            with dnsmasq_run(
+                server,
+                DHCPv4_RANGE_FROM,
+                DHCPv4_RANGE_TO,
+                DHCPv6_RANGE_FROM,
+                DHCPv6_RANGE_TO,
+                router=DHCPv4_GATEWAY,
+            ):
 
-                network_attrs = {'bridged': bridged,
-                                 'nic': client,
-                                 'blockingdhcp': True,
-                                 'switch': switch,
-                                 'defaultRoute': def_route}
+                network_attrs = {
+                    'bridged': bridged,
+                    'nic': client,
+                    'blockingdhcp': True,
+                    'switch': switch,
+                    'defaultRoute': def_route,
+                }
 
                 if IpFamily.IPv4 in families:
                     network_attrs['bootproto'] = 'dhcp'
@@ -186,27 +213,33 @@ class TestNetworkDhcpBasic(object):
 
                 with adapter.setupNetworks(netcreate, {}, NOCHK):
                     adapter.assertNetworkIp(
-                        NETWORK_NAME, netcreate[NETWORK_NAME])
+                        NETWORK_NAME, netcreate[NETWORK_NAME]
+                    )
 
 
 @pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestStopDhclientOnUsedNics(object):
-
     def test_attach_dhcp_nic_to_ipless_network(self, switch):
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
             addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, IpFamily.IPv6)
             linkSet(server, ['up'])
-            with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
-                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO,
-                             router=DHCPv4_GATEWAY):
+            with dnsmasq_run(
+                server,
+                DHCPv4_RANGE_FROM,
+                DHCPv4_RANGE_TO,
+                DHCPv6_RANGE_FROM,
+                DHCPv6_RANGE_TO,
+                router=DHCPv4_GATEWAY,
+            ):
                 with dhcp_client_run(client):
                     adapter.assertDhclient(client, family=IpFamily.IPv4)
                     adapter.assertDhclient(client, family=IpFamily.IPv6)
 
-                    NETCREATE = {NETWORK_NAME: {
-                        'nic': client, 'switch': switch}}
+                    NETCREATE = {
+                        NETWORK_NAME: {'nic': client, 'switch': switch}
+                    }
                     with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                         nic_netinfo = adapter.netinfo.nics[client]
                         adapter.assertDisabledIPv4(nic_netinfo)
@@ -219,22 +252,32 @@ class TestStopDhclientOnUsedNics(object):
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
             linkSet(server, ['up'])
-            with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
-                             router=DHCPv4_GATEWAY):
+            with dnsmasq_run(
+                server,
+                DHCPv4_RANGE_FROM,
+                DHCPv4_RANGE_TO,
+                router=DHCPv4_GATEWAY,
+            ):
                 with dhcp_client_run(client):
                     adapter.assertDhclient(client, family=IpFamily.IPv4)
 
-                    NETCREATE = {NETWORK_NAME: {
-                        'nic': client, 'bootproto': 'dhcp',
-                        'blockingdhcp': True, 'switch': switch}}
+                    NETCREATE = {
+                        NETWORK_NAME: {
+                            'nic': client,
+                            'bootproto': 'dhcp',
+                            'blockingdhcp': True,
+                            'switch': switch,
+                        }
+                    }
                     with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                         nic_netinfo = adapter.netinfo.nics[client]
                         adapter.assertDisabledIPv4(nic_netinfo)
                         adapter.assertNoDhclient(client, family=IpFamily.IPv4)
                         net_netinfo = adapter.netinfo.networks[NETWORK_NAME]
                         adapter.assertDHCPv4(net_netinfo)
-                        adapter.assertDhclient(NETWORK_NAME,
-                                               family=IpFamily.IPv4)
+                        adapter.assertDhclient(
+                            NETWORK_NAME, family=IpFamily.IPv4
+                        )
 
     def test_attach_dhcp_nic_to_dhcpv6_bridged_network(self, switch):
         with veth_pair() as (server, client):
@@ -244,48 +287,62 @@ class TestStopDhclientOnUsedNics(object):
                 with dhcp_client_run(client, family=IpFamily.IPv6):
                     adapter.assertDhclient(client, family=IpFamily.IPv6)
 
-                    NETCREATE = {NETWORK_NAME: {
-                        'nic': client, 'dhcpv6': True,
-                        'blockingdhcp': True, 'switch': switch}}
+                    NETCREATE = {
+                        NETWORK_NAME: {
+                            'nic': client,
+                            'dhcpv6': True,
+                            'blockingdhcp': True,
+                            'switch': switch,
+                        }
+                    }
                     with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                         nic_netinfo = adapter.netinfo.nics[client]
                         adapter.assertDisabledIPv6(nic_netinfo)
                         adapter.assertNoDhclient(client, family=IpFamily.IPv6)
                         net_netinfo = adapter.netinfo.networks[NETWORK_NAME]
                         adapter.assertDHCPv6(net_netinfo)
-                        adapter.assertDhclient(NETWORK_NAME,
-                                               family=IpFamily.IPv6)
+                        adapter.assertDhclient(
+                            NETWORK_NAME, family=IpFamily.IPv6
+                        )
 
 
 @nftestlib.parametrize_switch
 @pytest.mark.nmstate
-def test_default_route_of_two_dynamic_ip_networks(switch,
-                                                  network_configuration1,
-                                                  network_configuration2,
-                                                  dynamic_ipv4_iface1,
-                                                  dynamic_ipv4_iface2):
+def test_default_route_of_two_dynamic_ip_networks(
+    switch,
+    network_configuration1,
+    network_configuration2,
+    dynamic_ipv4_iface1,
+    dynamic_ipv4_iface2,
+):
 
-    net1 = {'bridged': True,
-            'nic': dynamic_ipv4_iface1,
-            'bootproto': 'dhcp',
-            'switch': switch,
-            'blockingdhcp': True,
-            'defaultRoute': True}
-    net2 = {'bridged': False,
-            'nic': dynamic_ipv4_iface2,
-            'bootproto': 'dhcp',
-            'switch': switch,
-            'blockingdhcp': True,
-            'defaultRoute': False}
+    net1 = {
+        'bridged': True,
+        'nic': dynamic_ipv4_iface1,
+        'bootproto': 'dhcp',
+        'switch': switch,
+        'blockingdhcp': True,
+        'defaultRoute': True,
+    }
+    net2 = {
+        'bridged': False,
+        'nic': dynamic_ipv4_iface2,
+        'bootproto': 'dhcp',
+        'switch': switch,
+        'blockingdhcp': True,
+        'defaultRoute': False,
+    }
 
     with adapter.setupNetworks({network_configuration1.name: net1}, {}, NOCHK):
         read_network1 = adapter.netinfo.networks[network_configuration1.name]
         adapter.assertNetworkIp(network_configuration1.name, net1)
 
-        with adapter.setupNetworks({network_configuration2.name: net2}, {},
-                                   NOCHK):
-            assert not adapter.netinfo.networks[
-                network_configuration2.name]['ipv4defaultroute']
+        with adapter.setupNetworks(
+            {network_configuration2.name: net2}, {}, NOCHK
+        ):
+            assert not adapter.netinfo.networks[network_configuration2.name][
+                'ipv4defaultroute'
+            ]
             assert read_network1['ipv4defaultroute']
 
 
@@ -341,11 +398,18 @@ def _create_configured_dhcp_client_iface(network_config, dhcp_config):
 @contextmanager
 def _create_dhcp_client_server_peers(network_config):
     with veth_pair() as (server, client):
-        addrAdd(server, network_config.ipv4_address,
-                network_config.ipv4_prefix_length)
+        addrAdd(
+            server,
+            network_config.ipv4_address,
+            network_config.ipv4_prefix_length,
+        )
         if network_config.ipv6_address:
-            addrAdd(server, network_config.ipv6_address,
-                    network_config.ipv6_prefix_length, IpFamily.IPv6)
+            addrAdd(
+                server,
+                network_config.ipv6_address,
+                network_config.ipv6_prefix_length,
+                IpFamily.IPv6,
+            )
         linkSet(server, ['up'])
         linkSet(client, ['up'])
         yield server, client

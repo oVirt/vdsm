@@ -51,13 +51,18 @@ def create_adapter(target):
 
 @nftestlib.parametrize_switch
 class TestNetworkRollback(object):
-
     def test_remove_broken_network(self, switch):
         with dummy_devices(2) as (nic1, nic2):
-            BROKEN_NETCREATE = {NETWORK_NAME: {
-                'bonding': BOND_NAME, 'bridged': True, 'vlan': VLAN,
-                'netmask': '300.300.300.300', 'ipaddr': '300.300.300.300',
-                'switch': switch}}
+            BROKEN_NETCREATE = {
+                NETWORK_NAME: {
+                    'bonding': BOND_NAME,
+                    'bridged': True,
+                    'vlan': VLAN,
+                    'netmask': '300.300.300.300',
+                    'ipaddr': '300.300.300.300',
+                    'switch': switch,
+                }
+            }
             BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
 
             with pytest.raises(SetupNetworksError):
@@ -72,36 +77,48 @@ class TestNetworkRollback(object):
 
     def test_rollback_to_initial_network_with_static_ip(self, switch):
         self._test_rollback_to_initial_network(
-            switch, ipaddr=IPv4_ADDRESS, netmask=IPv4_NETMASK)
+            switch, ipaddr=IPv4_ADDRESS, netmask=IPv4_NETMASK
+        )
 
     def _test_rollback_to_initial_network(self, switch, **kwargs):
         with dummy_devices(2) as (nic1, nic2):
-            NETCREATE = {NETWORK_NAME: {
-                'nic': nic1, 'bridged': False, 'switch': switch}}
+            NETCREATE = {
+                NETWORK_NAME: {'nic': nic1, 'bridged': False, 'switch': switch}
+            }
             NETCREATE[NETWORK_NAME].update(kwargs)
 
-            BROKEN_NETCREATE = {NETWORK_NAME: {
-                'bonding': BOND_NAME, 'bridged': True, 'vlan': VLAN,
-                'netmask': '300.300.300.300', 'ipaddr': '300.300.300.300',
-                'switch': switch}}
+            BROKEN_NETCREATE = {
+                NETWORK_NAME: {
+                    'bonding': BOND_NAME,
+                    'bridged': True,
+                    'vlan': VLAN,
+                    'netmask': '300.300.300.300',
+                    'ipaddr': '300.300.300.300',
+                    'switch': switch,
+                }
+            }
             BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
 
             with adapter.setupNetworks(NETCREATE, {}, NOCHK):
 
                 with pytest.raises(SetupNetworksError):
-                    adapter.setupNetworks(BROKEN_NETCREATE, BONDCREATE,
-                                          NOCHK)
+                    adapter.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
 
                     adapter.update_netinfo()
-                    adapter.assertNetwork(NETWORK_NAME,
-                                          NETCREATE[NETWORK_NAME])
+                    adapter.assertNetwork(
+                        NETWORK_NAME, NETCREATE[NETWORK_NAME]
+                    )
                     adapter.assertNoBond(BOND_NAME)
 
     def test_setup_network_fails_on_existing_bond(self, switch):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'bridged': True,
-                                        'bonding': BOND_NAME,
-                                        'switch': switch}}
+            NETCREATE = {
+                NETWORK_NAME: {
+                    'bridged': True,
+                    'bonding': BOND_NAME,
+                    'switch': switch,
+                }
+            }
 
             BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
 
@@ -116,8 +133,7 @@ class TestNetworkRollback(object):
     @nftestlib.parametrize_bonded
     def test_setup_new_network_fails(self, switch, bonded):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'bridged': True,
-                                        'switch': switch}}
+            NETCREATE = {NETWORK_NAME: {'bridged': True, 'switch': switch}}
             if bonded:
                 NETCREATE[NETWORK_NAME]['bonding'] = BOND_NAME
                 BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
@@ -136,21 +152,31 @@ class TestNetworkRollback(object):
     @nftestlib.parametrize_bonded
     def test_edit_network_fails(self, switch, bonded):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'bridged': True,
-                                        'mtu': 1500,
-                                        'switch': switch}}
-            NETEDIT = {NETWORK_NAME: {'bridged': True,
-                                      'mtu': 1600,
-                                      'switch': switch}}
+            NETCREATE = {
+                NETWORK_NAME: {'bridged': True, 'mtu': 1500, 'switch': switch}
+            }
+            NETEDIT = {
+                NETWORK_NAME: {'bridged': True, 'mtu': 1600, 'switch': switch}
+            }
 
             if bonded:
                 NETCREATE[NETWORK_NAME]['bonding'] = BOND_NAME
                 NETEDIT[NETWORK_NAME]['bonding'] = BOND_NAME
 
-                BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch,
-                                        'options': 'mode=4'}}
-                BONDEDIT = {BOND_NAME: {'nics': [nic], 'switch': switch,
-                                        'options': 'mode=0'}}
+                BONDBASE = {
+                    BOND_NAME: {
+                        'nics': [nic],
+                        'switch': switch,
+                        'options': 'mode=4',
+                    }
+                }
+                BONDEDIT = {
+                    BOND_NAME: {
+                        'nics': [nic],
+                        'switch': switch,
+                        'options': 'mode=0',
+                    }
+                }
             else:
                 NETCREATE[NETWORK_NAME]['nic'] = nic
                 NETEDIT[NETWORK_NAME]['nic'] = nic
@@ -172,13 +198,21 @@ class TestNetworkRollback(object):
             NET1_NAME = NETWORK_NAME + '1'
             NET2_NAME = NETWORK_NAME + '2'
 
-            NETCREATE = {NET1_NAME: {'bonding': BOND_NAME,
-                                     'bridged': True,
-                                     'switch': switch}}
-            NETFAIL = {NET2_NAME: {'nic': nic3,
-                                   'bridged': True,
-                                   'vlan': VLAN,
-                                   'switch': switch}}
+            NETCREATE = {
+                NET1_NAME: {
+                    'bonding': BOND_NAME,
+                    'bridged': True,
+                    'switch': switch,
+                }
+            }
+            NETFAIL = {
+                NET2_NAME: {
+                    'nic': nic3,
+                    'bridged': True,
+                    'vlan': VLAN,
+                    'switch': switch,
+                }
+            }
             BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
 
             with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):

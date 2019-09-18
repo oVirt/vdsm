@@ -47,14 +47,17 @@ def create_adapter(target):
 
 @nftestlib.parametrize_switch
 class TestNetworkMtu(object):
-
     @nftestlib.parametrize_bridged
     def test_add_net_with_mtu(self, switch, bridged):
         with dummy_devices(1) as (nic,):
-            NETCREATE = {NETWORK_NAME: {'nic': nic,
-                                        'bridged': bridged,
-                                        'mtu': 2000,
-                                        'switch': switch}}
+            NETCREATE = {
+                NETWORK_NAME: {
+                    'nic': nic,
+                    'bridged': bridged,
+                    'mtu': 2000,
+                    'switch': switch,
+                }
+            }
             with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                 adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
                 adapter.assertLinkMtu(nic, NETCREATE[NETWORK_NAME])
@@ -63,16 +66,22 @@ class TestNetworkMtu(object):
     @nftestlib.parametrize_bonded
     def test_removing_a_net_updates_the_mtu(self, switch, bridged, bonded):
         with dummy_devices(1) as (nic,):
-            NETWORK1_ATTRS = {'bridged': bridged,
-                              'vlan': VLAN1,
-                              'mtu': 1600,
-                              'switch': switch}
-            NETWORK2_ATTRS = {'bridged': bridged,
-                              'vlan': VLAN2,
-                              'mtu': 2000,
-                              'switch': switch}
-            NETBASE = {NETWORK1_NAME: NETWORK1_ATTRS,
-                       NETWORK2_NAME: NETWORK2_ATTRS}
+            NETWORK1_ATTRS = {
+                'bridged': bridged,
+                'vlan': VLAN1,
+                'mtu': 1600,
+                'switch': switch,
+            }
+            NETWORK2_ATTRS = {
+                'bridged': bridged,
+                'vlan': VLAN2,
+                'mtu': 2000,
+                'switch': switch,
+            }
+            NETBASE = {
+                NETWORK1_NAME: NETWORK1_ATTRS,
+                NETWORK2_NAME: NETWORK2_ATTRS,
+            }
             if bonded:
                 NETWORK1_ATTRS['bonding'] = BOND_NAME
                 NETWORK2_ATTRS['bonding'] = BOND_NAME
@@ -87,7 +96,8 @@ class TestNetworkMtu(object):
             with adapter.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
                 with nftestlib.monitor_stable_link_state(link2monitor):
                     adapter.setupNetworks(
-                        {NETWORK2_NAME: {'remove': True}}, {}, nftestlib.NOCHK)
+                        {NETWORK2_NAME: {'remove': True}}, {}, nftestlib.NOCHK
+                    )
                     adapter.assertNetwork(NETWORK1_NAME, NETWORK1_ATTRS)
                     adapter.assertLinkMtu(nic, NETWORK1_ATTRS)
 
@@ -103,14 +113,18 @@ class TestNetworkMtu(object):
     @nftestlib.parametrize_bonded
     def test_adding_a_net_updates_the_mtu(self, switch, bridged, bonded):
         with dummy_devices(1) as (nic,):
-            NETWORK1_ATTRS = {'bridged': bridged,
-                              'vlan': VLAN1,
-                              'mtu': 1600,
-                              'switch': switch}
-            NETWORK2_ATTRS = {'bridged': bridged,
-                              'vlan': VLAN2,
-                              'mtu': 2000,
-                              'switch': switch}
+            NETWORK1_ATTRS = {
+                'bridged': bridged,
+                'vlan': VLAN1,
+                'mtu': 1600,
+                'switch': switch,
+            }
+            NETWORK2_ATTRS = {
+                'bridged': bridged,
+                'vlan': VLAN2,
+                'mtu': 2000,
+                'switch': switch,
+            }
             NETBASE = {NETWORK1_NAME: NETWORK1_ATTRS}
             NETNEW = {NETWORK2_NAME: NETWORK2_ATTRS}
 
@@ -132,10 +146,12 @@ class TestNetworkMtu(object):
                         adapter.assertLinkMtu(nic, NETWORK2_ATTRS)
 
                         if bonded:
-                            vlan1 = BOND_NAME + '.' + str(
-                                NETWORK1_ATTRS['vlan'])
-                            vlan2 = BOND_NAME + '.' + str(
-                                NETWORK2_ATTRS['vlan'])
+                            vlan1 = (
+                                BOND_NAME + '.' + str(NETWORK1_ATTRS['vlan'])
+                            )
+                            vlan2 = (
+                                BOND_NAME + '.' + str(NETWORK2_ATTRS['vlan'])
+                            )
                             adapter.assertLinkMtu(BOND_NAME, NETWORK2_ATTRS)
                         else:
                             vlan1 = nic + '.' + str(NETWORK1_ATTRS['vlan'])
@@ -146,10 +162,14 @@ class TestNetworkMtu(object):
 
     def test_add_slave_to_a_bonded_network_with_non_default_mtu(self, switch):
         with dummy_devices(2) as (nic1, nic2):
-            NETBASE = {NETWORK_NAME: {'bonding': BOND_NAME,
-                                      'bridged': False,
-                                      'mtu': 2000,
-                                      'switch': switch}}
+            NETBASE = {
+                NETWORK_NAME: {
+                    'bonding': BOND_NAME,
+                    'bridged': False,
+                    'mtu': 2000,
+                    'switch': switch,
+                }
+            }
             BONDBASE = {BOND_NAME: {'nics': [nic1], 'switch': switch}}
 
             with adapter.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
@@ -159,17 +179,18 @@ class TestNetworkMtu(object):
 
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
-    def test_mtu_default_value_of_base_nic_after_all_nets_are_removed(self,
-                                                                      switch,
-                                                                      bridged,
-                                                                      bonded):
+    def test_mtu_default_value_of_base_nic_after_all_nets_are_removed(
+        self, switch, bridged, bonded
+    ):
         if switch == 'legacy' and bonded:
             pytest.xfail('BZ#1633528')
         with dummy_devices(1) as (nic,):
-            NETWORK1_ATTRS = {'bridged': bridged,
-                              'vlan': VLAN1,
-                              'mtu': 1600,
-                              'switch': switch}
+            NETWORK1_ATTRS = {
+                'bridged': bridged,
+                'vlan': VLAN1,
+                'mtu': 1600,
+                'switch': switch,
+            }
             NETBASE = {NETWORK1_NAME: NETWORK1_ATTRS}
             DEFAULT_MTU = {'mtu': 1500}
             if bonded:
@@ -181,7 +202,8 @@ class TestNetworkMtu(object):
 
             with adapter.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
                 adapter.setupNetworks(
-                    {NETWORK1_NAME: {'remove': True}}, {}, nftestlib.NOCHK)
+                    {NETWORK1_NAME: {'remove': True}}, {}, nftestlib.NOCHK
+                )
 
                 adapter.assertLinkMtu(nic, DEFAULT_MTU)
                 if bonded:
@@ -189,13 +211,16 @@ class TestNetworkMtu(object):
 
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
-    def test_adding_a_net_with_mtu_lower_than_base_nic_mtu(self, switch,
-                                                           bridged, bonded):
+    def test_adding_a_net_with_mtu_lower_than_base_nic_mtu(
+        self, switch, bridged, bonded
+    ):
         with dummy_devices(1) as (nic,):
-            NETWORK1_ATTRS = {'bridged': bridged,
-                              'vlan': VLAN1,
-                              'mtu': 1000,
-                              'switch': switch}
+            NETWORK1_ATTRS = {
+                'bridged': bridged,
+                'vlan': VLAN1,
+                'mtu': 1000,
+                'switch': switch,
+            }
             NETNEW = {NETWORK1_NAME: NETWORK1_ATTRS}
 
             if bonded:
@@ -212,8 +237,7 @@ class TestNetworkMtu(object):
                     adapter.assertLinkMtu(nic, NETWORK1_ATTRS)
 
                     if bonded:
-                        vlan1 = BOND_NAME + '.' + str(
-                            NETWORK1_ATTRS['vlan'])
+                        vlan1 = BOND_NAME + '.' + str(NETWORK1_ATTRS['vlan'])
                         adapter.assertLinkMtu(BOND_NAME, NETWORK1_ATTRS)
                     else:
                         vlan1 = nic + '.' + str(NETWORK1_ATTRS['vlan'])

@@ -28,8 +28,9 @@ from vdsm.network import initializer
 
 
 def pytest_addoption(parser):
-    parser.addoption('--target-service', action='store_const',
-                     const=Target.SERVICE)
+    parser.addoption(
+        '--target-service', action='store_const', const=Target.SERVICE
+    )
     parser.addoption('--target-lib', action='store_const', const=Target.LIB)
 
 

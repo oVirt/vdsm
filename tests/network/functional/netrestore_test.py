@@ -42,12 +42,10 @@ def create_adapter(target):
 
 @pytest.mark.ovs_switch
 class TestRestoreOvsBond(object):
-
     @mock.patch.object(netrestore, 'NETS_RESTORED_MARK', 'does/not/exist')
     def test_restore_bond(self):
         with dummy_devices(2) as (nic1, nic2):
-            BONDCREATE = {
-                BOND_NAME: {'nics': [nic1, nic2], 'switch': 'ovs'}}
+            BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': 'ovs'}}
 
             with adapter.reset_persistent_config():
                 with adapter.setupNetworks({}, BONDCREATE, NOCHK):
