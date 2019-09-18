@@ -216,8 +216,17 @@ Requires: lvm2 >= 2.02.145
 %endif
 
 %if 0%{?rhel}
+%if 0%{?centos}
 # CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
 Requires: kernel >= 3.10.0-957.12.2.el7
+%else # rhel
+%ifarch ppc64le
+# not ready yet
+%else # x86_64
+# CVE-2019-14835
+Requires: kernel >= 3.10.0-1062.1.2.el7
+%endif
+%endif
 Requires: e2fsprogs
 Requires: selinux-policy-targeted >= 3.13.1-166.el7_4.3
 %else # fedora
