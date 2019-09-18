@@ -365,7 +365,7 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
         os.makedirs(imagedir)
 
     lv_size = sd_manifest.getVolumeClass().calculate_volume_alloc_size(
-        prealloc, size, None)
+        prealloc, vol_format, size, None)
     lv_size_mb = (utils.round(lv_size, constants.MEGAB) // constants.MEGAB)
     lvm.createLV(sduuid, voluuid, lv_size_mb)
 

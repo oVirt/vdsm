@@ -58,26 +58,34 @@ CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
 class TestBlockVolumeSize(VdsmTestCase):
 
     @permutations([
-        # (preallocate, capacity, initial size), allocation size in bytes
-        # Preallocate, capacity 1 MiB, No initial size.
-        [(sc.PREALLOCATED_VOL, MEGAB, None), MEGAB],
-        # Preallocate, capacity 1 MiB + 1 byte, No initial size.
-        [(sc.PREALLOCATED_VOL, MEGAB + 1, None), MEGAB + 1],
-        # Preallocate, capacity 1 GiB, No initial size.
-        [(sc.PREALLOCATED_VOL, GIB, None), GIB],
-        # Sparse, capacity config.volume_utilization_chunk_mb - 1,
+        # (preallocate, format, capacity, initial size),
+        # allocation size in bytes
+        # Preallocate, raw, capacity 1 MiB, No initial size.
+        [(sc.PREALLOCATED_VOL, sc.RAW_FORMAT, MEGAB, None), MEGAB],
+        # Preallocate, raw, capacity 1 MiB + 1 byte, No initial size.
+        [(sc.PREALLOCATED_VOL, sc.RAW_FORMAT, MEGAB + 1, None), MEGAB + 1],
+        # Preallocate, raw, capacity 1 GiB, No initial size.
+        [(sc.PREALLOCATED_VOL, sc.RAW_FORMAT, GIB, None), GIB],
+        # Preallocate, cow, capacity 2 GIB, initial size GIB.
+        # Expected GIB allocated
+        [(sc.PREALLOCATED_VOL, sc.COW_FORMAT, 2 * GIB, GIB), GIB],
+        # Preallocate, cow, capacity 2 GIB, No initial size.
+        # Expected GIB allocated
+        [(sc.PREALLOCATED_VOL, sc.COW_FORMAT, GIB, None), GIB],
+        # Sparse, cow, capacity config.volume_utilization_chunk_mb - 1,
         # No initial size.
         # Expected 1024 Mb allocated (config.volume_utilization_chunk_mb)
-        [(sc.SPARSE_VOL, (config.getint("irs", "volume_utilization_chunk_mb") -
-                          1) * MEGAB, None), GIB],
-        # Sparse, capacity 4 GiB, initial size 952320 B.
-        [(sc.SPARSE_VOL, 4 * GIB, 952320),
+        [(sc.SPARSE_VOL, sc.COW_FORMAT, (config.getint(
+            "irs", "volume_utilization_chunk_mb") - 1) * MEGAB, None), GIB],
+        # Sparse, cow, capacity 4 GiB, initial size 952320 B.
+        [(sc.SPARSE_VOL, sc.COW_FORMAT, 4 * GIB, 952320),
          int(952320 * blockVolume.QCOW_OVERHEAD_FACTOR)],
-        # Sparse, capacity 4 GiB, initial size 1870.
-        [(sc.SPARSE_VOL, 4 * GIB, 957440),
+        # Sparse, cow, capacity 4 GiB, initial size 1870.
+        [(sc.SPARSE_VOL, sc.COW_FORMAT, 4 * GIB, 957440),
          int(957440 * blockVolume.QCOW_OVERHEAD_FACTOR)],
-        # Sparse, capacity 1 GiB, initial size 2359296.
-        [(sc.SPARSE_VOL, GIB, BlockVolume.max_size(GIB, sc.COW_FORMAT)),
+        # Sparse, cow, capacity 1 GiB, initial size 2359296.
+        [(sc.SPARSE_VOL, sc.COW_FORMAT, GIB,
+          BlockVolume.max_size(GIB, sc.COW_FORMAT)),
          int(BlockVolume.max_size(GIB, sc.COW_FORMAT) *
              blockVolume.QCOW_OVERHEAD_FACTOR)],
     ])
@@ -85,15 +93,16 @@ class TestBlockVolumeSize(VdsmTestCase):
         size = BlockVolume.calculate_volume_alloc_size(*args)
         self.assertEqual(size, result)
 
-    @permutations(
-        # preallocate
-        [[sc.PREALLOCATED_VOL],
-         [sc.SPARSE_VOL],
-         ])
-    def test_fail_invalid_block_volume_size(self, preallocate):
+    @permutations([
+        [sc.PREALLOCATED_VOL, sc.RAW_FORMAT],
+        [sc.PREALLOCATED_VOL, sc.COW_FORMAT],
+        [sc.SPARSE_VOL, sc.COW_FORMAT],
+    ])
+    def test_fail_invalid_block_volume_size(self, preallocate, vol_format):
         with self.assertRaises(se.InvalidParameterException):
-            max_size = BlockVolume.max_size(GIB, sc.COW_FORMAT)
+            max_size = BlockVolume.max_size(GIB, vol_format)
             BlockVolume.calculate_volume_alloc_size(preallocate,
+                                                    vol_format,
                                                     GIB,
                                                     max_size + 1)
 

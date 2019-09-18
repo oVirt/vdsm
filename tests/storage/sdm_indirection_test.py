@@ -569,7 +569,8 @@ class FakeBlockVolumeManifest(FakeVolumeManifest):
 
     @classmethod
     @recorded
-    def calculate_volume_alloc_size(cls, preallocate, capacity, initial_size):
+    def calculate_volume_alloc_size(cls, preallocate, vol_format, capacity,
+                                    initial_size):
         pass
 
 
@@ -869,7 +870,7 @@ class TestBlockVolume(VolumeTestMixin, VdsmTestCase):
         self.checker.check_method_call(fn, nargs)
 
     @permutations([
-        ['calculate_volume_alloc_size', 3],
+        ['calculate_volume_alloc_size', 4],
         ['max_size', 2],
     ])
     def test_block_classmethod(self, fn, nargs):
