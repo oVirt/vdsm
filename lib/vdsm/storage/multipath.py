@@ -127,17 +127,20 @@ def _resize_if_needed(guid):
 
     log.info("Resizing map %r (map_size=%d, slave_size=%d)",
              guid, map_size, slave_size)
-    supervdsm.getProxy().resizeMap(name)
+    resize_map(name)
     return True
 
 
-def _resize_map(name):
+def resize_map(name):
     """
     Invoke multipathd to resize a device
     Must run as root
 
     Raises Error if multipathd failed to resize the map.
     """
+    if os.geteuid() != 0:
+        return supervdsm.getProxy().multipath_resize_map(name)
+
     log.debug("Resizing map %r", name)
     cmd = [_MULTIPATHD.cmd, "resize", "map", name]
     with utils.stopwatch("Resized map %r" % name, log=log):
@@ -184,7 +187,10 @@ def read_int(path):
     return int(data)
 
 
-def getScsiSerial(physdev):
+def get_scsi_serial(physdev):
+    if os.geteuid() != 0:
+        return supervdsm.getProxy().multipath_get_scsi_serial(physdev)
+
     blkdev = os.path.join("/dev", physdev)
     cmd = [_SCSI_ID.cmd,
            "--page=0x80",
@@ -228,10 +234,7 @@ def getHBTL(physdev):
 def pathListIter(filterGuids=()):
     filterLen = len(filterGuids) if filterGuids else -1
     devsFound = 0
-
     knownSessions = {}
-
-    svdsm = supervdsm.getProxy()
     pathStatuses = devicemapper.getPathsStatus()
 
     for dmId, guid in getMPDevsIter():
@@ -247,7 +250,7 @@ def pathListIter(filterGuids=()):
             "guid": guid,
             "dm": dmId,
             "capacity": str(getDeviceSize(dmId)),
-            "serial": svdsm.getScsiSerial(dmId),
+            "serial": get_scsi_serial(dmId),
             "paths": [],
             "connections": [],
             "devtypes": [],

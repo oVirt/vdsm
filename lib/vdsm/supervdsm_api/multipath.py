@@ -1,5 +1,4 @@
-#
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,26 +12,23 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
-include $(top_srcdir)/build-aux/Makefile.subs
 
-supervdsm_apidir = $(vdsmpylibdir)/supervdsm_api
-dist_supervdsm_api_PYTHON = \
-	__init__.py \
-	devicemapper.py \
-	hwinfo.py \
-	ksm.py \
-	managedvolume.py \
-	mkimage.py \
-	multipath.py \
-	nbd.py \
-	network.py \
-	saslpasswd2.py \
-	systemctl.py \
-	test.py \
-	udev.py \
-	virt.py \
-	$(NULL)
+from __future__ import absolute_import
+from __future__ import division
+
+from vdsm.storage import multipath
+from . import expose
+
+
+@expose
+def multipath_resize_map(name):
+    return multipath.resize_map(name)
+
+
+@expose
+def multipath_get_scsi_serial(physdev):
+    return multipath.get_scsi_serial(physdev)

@@ -65,8 +65,6 @@ from vdsm.common.supervdsm import _SuperVdsmManager
 
 from vdsm.network.initializer import init_privileged_network_components
 
-from vdsm.storage.multipath import getScsiSerial as _getScsiSerial
-from vdsm.storage import multipath
 from vdsm.config import config
 
 RUN_AS_TIMEOUT = config.getint("irs", "process_pool_timeout")
@@ -128,10 +126,6 @@ class _SuperVdsm(object):
     log = logging.getLogger("SuperVdsm.ServerCallback")
 
     @logDecorator
-    def getScsiSerial(self, *args, **kwargs):
-        return _getScsiSerial(*args, **kwargs)
-
-    @logDecorator
     def mount(self, fs_spec, fs_file, mntOpts=None, vfstype=None,
               cgroup=None):
         mount._mount(fs_spec, fs_file, mntOpts=mntOpts, vfstype=vfstype,
@@ -140,10 +134,6 @@ class _SuperVdsm(object):
     @logDecorator
     def umount(self, fs_file, force=False, lazy=False, freeloop=False):
         mount._umount(fs_file, force=force, lazy=lazy, freeloop=freeloop)
-
-    @logDecorator
-    def resizeMap(self, devName):
-        return multipath._resize_map(devName)
 
     @logDecorator
     def getdeviSCSIinfo(self, *args, **kwargs):
