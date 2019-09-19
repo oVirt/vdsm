@@ -44,6 +44,31 @@ MULTIPATHD_SCRIPT = """\
 echo '{}'
 """
 
+FAKE_SCSI_ID_OUTPUT = """\
+D_SCSI=1
+ID_VENDOR=ATA
+ID_VENDOR_ENC=ATA\x20\x20\x20\x20\x20
+ID_MODEL=WDC_WD2502ABYS-1
+ID_MODEL_ENC=WDC\x20WD2502ABYS-1
+ID_REVISION=3B05
+ID_TYPE=disk
+ID_SERIAL=SATA_WDC_WD2502ABYS-1_WD-WMAT16865419
+ID_SERIAL_SHORT=WD-WMAT16865419
+"""
+
+SCSI_ID_SCRIPT = """\
+#!/bin/sh
+set -e
+
+# Run the real scsi_id to validate the arguments, dropping the output.
+# This path is valid on Fedora and CentOS, but as we test only on these OSs, it
+# should be fine.
+/usr/lib/udev/scsi_id "$@" > /dev/null
+
+# Fake the output
+echo '{}'
+"""
+
 
 @pytest.fixture
 def fake_multipathd(monkeypatch, fake_executeable):
@@ -54,6 +79,17 @@ def fake_multipathd(monkeypatch, fake_executeable):
     )
 
     return fake_executeable
+
+
+@pytest.fixture
+def fake_scsi_id(monkeypatch, fake_executeable):
+    fake_executeable.write(SCSI_ID_SCRIPT.format(FAKE_SCSI_ID_OUTPUT))
+
+    monkeypatch.setattr(
+        multipath,
+        "_SCSI_ID",
+        cmdutils.CommandPath("fake-scsi_id", str(fake_executeable))
+    )
 
 
 @xfail_python3
@@ -69,3 +105,10 @@ def test_resize_map_failed(fake_multipathd):
 
     with pytest.raises(multipath.Error):
         multipath.resize_map("fake_device")
+
+
+@xfail_python3
+@requires_root
+def test_scsi_id(fake_scsi_id):
+    scsi_serial = multipath.get_scsi_serial("fake_device")
+    assert scsi_serial == "SATA_WDC_WD2502ABYS-1_WD-WMAT16865419"
