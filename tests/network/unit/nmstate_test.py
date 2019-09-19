@@ -574,6 +574,8 @@ def test_translate_add_network_with_default_route_on_vlan_interface():
     vlan101_state.update(ip0_state)
 
     vlan_base_state = _create_ethernet_iface_state(IFACE0)
+    vlan_base_state.update(_create_ipv4_state())
+    vlan_base_state.update(_create_ipv6_state())
     expected_state = {nmstate.Interface.KEY: [vlan_base_state, vlan101_state]}
 
     expected_state[nmstate.Route.KEY] = _get_routes_config(
@@ -595,6 +597,8 @@ def test_translate_vlan_id_0():
     vlan0_state.update(ipv6_state)
 
     vlan_base_state = _create_ethernet_iface_state(IFACE0)
+    vlan_base_state.update(ipv4_state)
+    vlan_base_state.update(ipv6_state)
     expected_state = {nmstate.Interface.KEY: [vlan_base_state, vlan0_state]}
 
     assert expected_state == state

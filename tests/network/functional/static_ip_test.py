@@ -75,9 +75,10 @@ class TestNetworkStaticIpBasic(object):
     def test_add_net_with_ip_based_on_bond(self, switch, families):
         self._test_add_net_with_ip(families, switch, bonded=True)
 
+    @nftestlib.parametrize_bonded
     @parametrize_ip_families
-    def test_add_net_with_ip_based_on_vlan(self, switch, families):
-        self._test_add_net_with_ip(families, switch, vlaned=True)
+    def test_add_net_with_ip_based_on_vlan(self, switch, families, bonded):
+        self._test_add_net_with_ip(families, switch, bonded, vlaned=True)
 
     def _test_add_net_with_ip(
         self, families, switch, bonded=False, vlaned=False, bridged=False
@@ -109,6 +110,13 @@ class TestNetworkStaticIpBasic(object):
 
             with adapter.setupNetworks(netcreate, bondcreate, NOCHK):
                 adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+                if vlaned:
+                    base = (
+                        adapter.netinfo.bondings.get(BOND_NAME)
+                        or adapter.netinfo.nics[nic1]
+                    )
+                    adapter.assertDisabledIPv4(base)
+                    adapter.assertDisabledIPv6(base)
 
     def test_add_net_with_prefix(self, switch):
         with dummy_device() as nic:

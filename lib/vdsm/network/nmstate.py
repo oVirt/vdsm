@@ -78,11 +78,18 @@ def generate_state(networks, bondings):
 def show_interfaces(filter=None):
     net_info = netinfo.show()
     filter_set = set(filter) if filter else set()
-    return {
-        ifstate[Interface.NAME]: ifstate
+    ifaces = (
+        (ifstate[Interface.NAME], ifstate)
         for ifstate in net_info[Interface.KEY]
-        if ifstate[Interface.NAME] in filter_set
-    }
+    )
+    if filter:
+        return {
+            ifname: ifstate
+            for ifname, ifstate in ifaces
+            if ifname in filter_set
+        }
+    else:
+        return {ifname: ifstate for ifname, ifstate in ifaces}
 
 
 def is_nmstate_backend():
@@ -475,13 +482,21 @@ class Network(object):
                 dns_state[net.name] = net_dns_state
             if net.default_route:
                 droute_net = net
+        current_state = show_interfaces()
         for net in nets:
-            init_base_iface = (
-                net.to_remove
-                and net.base_iface
-                and not (net.has_vlan or net.base_iface in interfaces_state)
-            )
-            if init_base_iface:
+            if _disable_base_iface_ip_stack(
+                net,
+                interfaces_state.get(net.base_iface),
+                current_state.get(net.base_iface),
+            ):
+                interfaces_state[net.base_iface].update(
+                    {
+                        Interface.IPV4: {InterfaceIP.ENABLED: False},
+                        Interface.IPV6: {InterfaceIP.ENABLED: False},
+                    }
+                )
+
+            if _init_base_iface(net, interfaces_state):
                 interfaces_state[net.base_iface] = {
                     Interface.NAME: net.base_iface,
                     Interface.STATE: InterfaceState.UP,
@@ -530,3 +545,25 @@ def _get_ipv4_prefix_from_mask(ipv4netmask):
         onebits = str(bin(int(octet))).strip('0b').rstrip('0')
         prefix += len(onebits)
     return prefix
+
+
+def _disable_base_iface_ip_stack(net, desired_base_state, current_base_state):
+    return (
+        not net.to_remove
+        and net.has_vlan
+        and not _is_iface_up(current_base_state)
+        and Interface.IPV4 not in desired_base_state
+        and Interface.IPV6 not in desired_base_state
+    )
+
+
+def _is_iface_up(ifstate):
+    return ifstate and ifstate[Interface.STATE] == InterfaceState.UP
+
+
+def _init_base_iface(net, interfaces_state):
+    return (
+        net.to_remove
+        and net.base_iface
+        and not (net.has_vlan or net.base_iface in interfaces_state)
+    )
