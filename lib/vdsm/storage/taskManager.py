@@ -85,16 +85,9 @@ class TaskManager:
         return t
 
     def prepareForShutdown(self):
-        """ Prepare to shutdown. Stop all threads and asynchronous tasks
+        """ Prepare to shutdown, stop all threads.
         """
-        self.log.debug("Request to stop all tasks")
-
-        # Clear the task queue and terminate all pooled threads
-        for t in self._tasks:
-            if hasattr(t, 'stop'):
-                t.stop()
-            self.log.info(str(t))
-
+        self.log.debug("Request to stop all threads")
         self.tp.joinAll(waitForTasks=False, waitForThreads=False)
 
     def getTaskStatus(self, taskID):
