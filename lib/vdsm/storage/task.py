@@ -464,7 +464,8 @@ class Task:
 
     def __init__(self, id, name="", tag="",
                  recovery=TaskRecoveryType.none,
-                 priority=TaskPriority.low):
+                 priority=TaskPriority.low,
+                 abort_callback=None):
         """
         id - Unique ID
         name - human readable name
@@ -496,6 +497,8 @@ class Task:
         self.mng = None
         self._abort_lock = threading.Lock()
         self._abort_callbacks = set()
+        if abort_callback is not None:
+            self._abort_callbacks.add(abort_callback)
         self._aborting = False
         self._forceAbort = False
         self.ref = 0
