@@ -36,12 +36,12 @@ from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import supervdsm
 from vdsm.common import udevadm
+from vdsm.common.compat import subprocess
 from vdsm.config import config
 from vdsm.storage import devicemapper
 from vdsm.storage import hba
 from vdsm.storage import iscsi
 from vdsm.storage import managedvolumedb
-from vdsm.storage import misc
 
 DEV_ISCSI = "iSCSI"
 DEV_FCP = "FCP"
@@ -144,13 +144,20 @@ def resize_map(name):
     log.debug("Resizing map %r", name)
     cmd = [_MULTIPATHD.cmd, "resize", "map", name]
     with utils.stopwatch("Resized map %r" % name, log=log):
-        rc, out, err = commands.execCmd(cmd, raw=True, execCmdLogger=log)
-        # multipathd reports some errors using non-zero exit code and stderr
-        # (need to be root), but the command may return 0, and the result is
-        # reported using stdout.
-        if rc != 0 or out != "ok\n":
-            raise Error("Resizing map %r failed: out=%r err=%r"
-                        % (name, out, err))
+        p = commands.start(
+            cmd,
+            sudo=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        out, err = commands.communicate(p)
+
+        # multipathd reports some errors using non-zero exit code and
+        # stderr (need to be root), but the command may return 0, and
+        # the result is reported using stdout.
+        if p.returncode != 0 or out != "ok\n":
+            e = cmdutils.Error(cmd, p.returncode, out, err)
+            raise Error("Resizing map {!r} failed: {}".format(name, e))
 
 
 def deduceType(a, b):
@@ -198,11 +205,11 @@ def get_scsi_serial(physdev):
            "--export",
            "--replace-whitespace",
            "--device=" + blkdev]
-    (rc, out, err) = misc.execCmd(cmd)
-    if rc == 0:
-        for line in out:
-            if line.startswith("ID_SERIAL="):
-                return line.split("=")[1]
+    out = commands.run(cmd)
+
+    for line in out.splitlines():
+        if line.startswith("ID_SERIAL="):
+            return line.split("=", 1)[1]
     return ""
 
 HBTL = namedtuple("HBTL", "host bus target lun")
