@@ -27,7 +27,6 @@ from vdsm.storage import outOfProcess as oop
 from vdsm.storage import task
 from vdsm.storage import taskManager
 
-from . marks import xfail_python3
 from . storagetestlib import Callable
 
 
@@ -47,7 +46,6 @@ def task_manager():
         oop.stop()
 
 
-@xfail_python3
 def test_persistent_job(tmpdir, add_recovery):
     store = str(tmpdir)
     # Simulate SPM starting a persistent job and fencing out
@@ -87,7 +85,6 @@ def test_persistent_job(tmpdir, add_recovery):
         t.getState() == "recovered"
 
 
-@xfail_python3
 def test_revert_task(add_recovery):
     with task_manager() as tm:
         # Create a task

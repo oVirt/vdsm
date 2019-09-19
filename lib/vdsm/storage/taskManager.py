@@ -23,6 +23,8 @@ import os
 import logging
 import threading
 
+import six
+
 from vdsm.config import config
 from vdsm.storage import exception as se
 from vdsm.storage.task import Task, Job, TaskCleanType
@@ -137,7 +139,7 @@ class TaskManager:
         Remove Tasks from managed tasks list
         """
         self.log.debug("Entry.")
-        for taskID, task in self._tasks.items():
+        for taskID, task in list(six.iteritems(self._tasks)):
             if not tag or tag in task.getTags():
                 self._tasks.pop(taskID, None)
         self.log.debug("Return")
