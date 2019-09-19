@@ -152,6 +152,9 @@ def resize_map(name):
         )
         out, err = commands.communicate(p)
 
+        out = out.decode("utf-8")
+        err = err.decode("utf-8")
+
         # multipathd reports some errors using non-zero exit code and
         # stderr (need to be root), but the command may return 0, and
         # the result is reported using stdout.
@@ -207,7 +210,7 @@ def get_scsi_serial(physdev):
            "--device=" + blkdev]
     out = commands.run(cmd)
 
-    for line in out.splitlines():
+    for line in out.decode("utf-8").splitlines():
         if line.startswith("ID_SERIAL="):
             return line.split("=", 1)[1]
     return ""

@@ -26,7 +26,7 @@ import pytest
 from vdsm.common import cmdutils
 from vdsm.storage import multipath
 
-from . marks import requires_root, xfail_python3
+from . marks import requires_root
 
 MULTIPATHD_SCRIPT = """\
 #!/bin/sh
@@ -92,7 +92,6 @@ def fake_scsi_id(monkeypatch, fake_executeable):
     )
 
 
-@xfail_python3
 @requires_root
 def test_resize_map(fake_multipathd):
     fake_multipathd.write(MULTIPATHD_SCRIPT.format("ok"))
@@ -107,7 +106,6 @@ def test_resize_map_failed(fake_multipathd):
         multipath.resize_map("fake_device")
 
 
-@xfail_python3
 @requires_root
 def test_scsi_id(fake_scsi_id):
     scsi_serial = multipath.get_scsi_serial("fake_device")
