@@ -29,21 +29,30 @@ from testlib import mock
 from vdsm.network.ip import dhclient
 
 DEVNAME = 'eth99'
-DHCLIENT_CMDLINE_WITH_HOST_AT_TAIL = '\0'.join([
-    '/sbin/dhclient', '-6', '-1',
-    '-lf', '/var/lib/dhclient/dhclient6--veth_y6Bn2k.lease',
-    '-pf', '/var/run/dhclient6-veth_y6BPRwrn2k.pid',
-    'eth99',
-    '-H', 'vdsm_functional_tests_host-el7'])
+DHCLIENT_CMDLINE_WITH_HOST_AT_TAIL = '\0'.join(
+    [
+        '/sbin/dhclient',
+        '-6',
+        '-1',
+        '-lf',
+        '/var/lib/dhclient/dhclient6--veth_y6Bn2k.lease',
+        '-pf',
+        '/var/run/dhclient6-veth_y6BPRwrn2k.pid',
+        'eth99',
+        '-H',
+        'vdsm_functional_tests_host-el7',
+    ]
+)
 
 
 @attr(type='unit')
 class IPDhclientTest(VdsmTestCase):
-
     @mock.patch.object(
-        dhclient, 'open',
+        dhclient,
+        'open',
         mock.mock_open(read_data=DHCLIENT_CMDLINE_WITH_HOST_AT_TAIL),
-        create=True)
+        create=True,
+    )
     @mock.patch.object(dhclient, 'pgrep', lambda x: (0,))
     def test_daemon_cmdline_with_last_arg_as_hostname(self):
         """

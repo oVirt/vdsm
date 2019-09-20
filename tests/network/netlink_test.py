@@ -61,7 +61,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
         dummy_name = dummy.create()
 
         def _set_and_remove_device():
-            time.sleep(.2)
+            time.sleep(0.2)
             dummy.up()
             dummy.remove()
 
@@ -84,10 +84,12 @@ class NetlinkEventMonitorTests(TestCaseBase):
 
     @ValidateRunningAsRoot
     def test_event_groups(self):
-        with monitor.Monitor(timeout=self.TIMEOUT,
-                             groups=('ipv4-ifaddr',)) as mon_a:
-            with monitor.Monitor(timeout=self.TIMEOUT,
-                                 groups=('link', 'ipv4-route')) as mon_l_r:
+        with monitor.Monitor(
+            timeout=self.TIMEOUT, groups=('ipv4-ifaddr',)
+        ) as mon_a:
+            with monitor.Monitor(
+                timeout=self.TIMEOUT, groups=('link', 'ipv4-route')
+            ) as mon_l_r:
                 dummy = Dummy()
                 dummy.create()
                 dummy.set_ip(IP_ADDRESS, IP_CIDR)
@@ -95,14 +97,22 @@ class NetlinkEventMonitorTests(TestCaseBase):
                 dummy.remove()
 
         for event in mon_a:
-            self.assertIn('_addr', event['event'], "Caught event '%s' is not "
-                          "related to address." % event['event'])
+            self.assertIn(
+                '_addr',
+                event['event'],
+                "Caught event '%s' is not "
+                "related to address." % event['event'],
+            )
 
         for event in mon_l_r:
-            link_or_route = ('_link' in event['event'] or
-                             '_route' in event['event'])
-            self.assertTrue(link_or_route, "Caught event '%s' is not related "
-                            "to link or route." % event['event'])
+            link_or_route = (
+                '_link' in event['event'] or '_route' in event['event']
+            )
+            self.assertTrue(
+                link_or_route,
+                "Caught event '%s' is not related "
+                "to link or route." % event['event'],
+            )
 
     @ValidateRunningAsRoot
     def test_iteration(self):
@@ -135,21 +145,23 @@ class NetlinkEventMonitorTests(TestCaseBase):
             events_add = [
                 {'event': 'new_link', 'name': nic},
                 {'event': 'new_addr', 'address': address + '/' + cidr},
-                {'event': 'new_link', 'name': nic}]
+                {'event': 'new_link', 'name': nic},
+            ]
             events_del = [
                 {'address': address + '/' + cidr, 'event': 'del_addr'},
                 {'destination': address, 'event': 'del_route'},
-                {'event': 'del_link', 'name': nic}]
+                {'event': 'del_link', 'name': nic},
+            ]
             events_ipv6 = [
                 {'event': 'new_addr', 'family': 'inet6'},
-                {'event': 'del_addr', 'family': 'inet6'}]
+                {'event': 'del_addr', 'family': 'inet6'},
+            ]
             if is_disabled_ipv6():
                 return deque(events_add + events_del)
             else:
                 return deque(events_add + events_ipv6 + events_del)
 
-        with monitor.Monitor(timeout=self.TIMEOUT,
-                             silent_timeout=True) as mon:
+        with monitor.Monitor(timeout=self.TIMEOUT, silent_timeout=True) as mon:
             dummy = Dummy()
             dummy_name = dummy.create()
             dummy.set_ip(IP_ADDRESS, IP_CIDR)
@@ -168,17 +180,22 @@ class NetlinkEventMonitorTests(TestCaseBase):
                     if len(expected_events) == 0:
                         break
 
-        self.assertEqual(0, len(expected_events), 'Expected events have not '
-                         'been caught (in the right order).\n'
-                         'Expected:\n%s.\nCaught:\n%s.' %
-                         ('\n'.join([str(d) for d in _expected]),
-                          '\n'.join([str(_simplify_event(d))
-                                     for d in _caught])))
+        self.assertEqual(
+            0,
+            len(expected_events),
+            'Expected events have not '
+            'been caught (in the right order).\n'
+            'Expected:\n%s.\nCaught:\n%s.'
+            % (
+                '\n'.join([str(d) for d in _expected]),
+                '\n'.join([str(_simplify_event(d)) for d in _caught]),
+            ),
+        )
 
     def test_timeout(self):
         with self.assertRaises(monitor.MonitorError):
             try:
-                with monitor.Monitor(timeout=.01) as mon:
+                with monitor.Monitor(timeout=0.01) as mon:
                     for event in mon:
                         pass
             except monitor.MonitorError as e:
@@ -188,7 +205,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
         self.assertTrue(mon.is_stopped())
 
     def test_timeout_silent(self):
-        with monitor.Monitor(timeout=.01, silent_timeout=True) as mon:
+        with monitor.Monitor(timeout=0.01, silent_timeout=True) as mon:
             for event in mon:
                 pass
 
@@ -216,7 +233,6 @@ class NetlinkEventMonitorTests(TestCaseBase):
 
 
 class TestSocketPool(TestCaseBase):
-
     def test_reuse_socket_per_thread(self):
         # The same thread should always get the same socket. Otherwise any
         # recusion in the code will lead to a deadlock.

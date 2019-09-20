@@ -28,9 +28,9 @@ from vdsm.network import driverloader
 
 @attr(type='unit')
 class DriverLoaderTest(VdsmTestCase):
-
     def test_load_non_existing_driver(self):
         _drivers = driverloader.load_drivers(
-            'ClassName', 'foo.bar', '/no/drivers')
+            'ClassName', 'foo.bar', '/no/drivers'
+        )
         with self.assertRaises(driverloader.NoDriverError):
             return driverloader.get_driver('shrubbery', _drivers)

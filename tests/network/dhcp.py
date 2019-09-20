@@ -31,8 +31,9 @@ from vdsm.common.cmdutils import CommandPath
 from vdsm.network import cmd
 
 _DNSMASQ_BINARY = CommandPath('dnsmasq', '/usr/sbin/dnsmasq')
-_DHCLIENT_BINARY = CommandPath('dhclient', '/usr/sbin/dhclient',
-                               '/sbin/dhclient')
+_DHCLIENT_BINARY = CommandPath(
+    'dhclient', '/usr/sbin/dhclient', '/sbin/dhclient'
+)
 _START_CHECK_TIMEOUT = 0.5
 _DHCLIENT_TIMEOUT = 10
 _WAIT_FOR_STOP_TIMEOUT = 2
@@ -44,13 +45,20 @@ class DhcpError(Exception):
     pass
 
 
-class Dnsmasq():
+class Dnsmasq(object):
     def __init__(self):
         self._popen = None
 
-    def start(self, interface, dhcp_range_from=None, dhcp_range_to=None,
-              dhcpv6_range_from=None, dhcpv6_range_to=None, router=None,
-              ipv6_slaac_prefix=None):
+    def start(
+        self,
+        interface,
+        dhcp_range_from=None,
+        dhcp_range_to=None,
+        dhcpv6_range_from=None,
+        dhcpv6_range_to=None,
+        router=None,
+        ipv6_slaac_prefix=None,
+    ):
         # --dhcp-authoritative      The only DHCP server on network
         # -p 0                      don't act as a DNS server
         # --dhcp-option=3,<router>  advertise a specific gateway (or None)
@@ -58,19 +66,32 @@ class Dnsmasq():
         # -d                        don't daemonize and log to stderr
         # --bind-dynamic            bind only the testing veth iface
         command = [
-            _DNSMASQ_BINARY.cmd, '--dhcp-authoritative',
-            '-p', '0',
+            _DNSMASQ_BINARY.cmd,
+            '--dhcp-authoritative',
+            '-p',
+            '0',
             '--dhcp-option=3' + (',{0}'.format(router) if router else ''),
             '--dhcp-option=6',
-            '-i', interface, '-I', 'lo', '-d', '--bind-dynamic',
+            '-i',
+            interface,
+            '-I',
+            'lo',
+            '-d',
+            '--bind-dynamic',
         ]
 
         if dhcp_range_from and dhcp_range_to:
-            command += ['--dhcp-range={0},{1},2m'.format(dhcp_range_from,
-                                                         dhcp_range_to)]
+            command += [
+                '--dhcp-range={0},{1},2m'.format(
+                    dhcp_range_from, dhcp_range_to
+                )
+            ]
         if dhcpv6_range_from and dhcpv6_range_to:
-            command += ['--dhcp-range={0},{1},2m'.format(dhcpv6_range_from,
-                                                         dhcpv6_range_to)]
+            command += [
+                '--dhcp-range={0},{1},2m'.format(
+                    dhcpv6_range_from, dhcpv6_range_to
+                )
+            ]
         if ipv6_slaac_prefix:
             command += ['--enable-ra']
             command += ['--dhcp-range={0},slaac,2m'.format(ipv6_slaac_prefix)]
@@ -78,8 +99,10 @@ class Dnsmasq():
         self._popen = Popen(command, close_fds=True, stderr=PIPE)
         sleep(_START_CHECK_TIMEOUT)
         if self._popen.poll():
-            raise DhcpError('Failed to start dnsmasq DHCP server.\n%s\n%s' %
-                            (self._popen.stderr, ' '.join(command)))
+            raise DhcpError(
+                'Failed to start dnsmasq DHCP server.\n%s\n%s'
+                % (self._popen.stderr, ' '.join(command))
+            )
 
     def stop(self):
         self._popen.kill()
@@ -97,8 +120,10 @@ class DhclientRunner(object):
     In the working directory (tmp_dir), which is managed by the caller.
     dhclient accepts the following date_formats: 'default' and 'local'.
     """
-    def __init__(self, interface, family, tmp_dir, date_format,
-                 default_route=False):
+
+    def __init__(
+        self, interface, family, tmp_dir, date_format, default_route=False
+    ):
         self._interface = interface
         self._family = family
         self._date_format = date_format
@@ -106,9 +131,20 @@ class DhclientRunner(object):
         self._pid_file = os.path.join(tmp_dir, 'test.pid')
         self.pid = None
         self.lease_file = os.path.join(tmp_dir, 'test.lease')
-        cmds = [_DHCLIENT_BINARY.cmd, '-' + str(family), '-1', '-v',
-                '-timeout', str(_DHCLIENT_TIMEOUT), '-cf', self._conf_file,
-                '-pf', self._pid_file, '-lf', self.lease_file]
+        cmds = [
+            _DHCLIENT_BINARY.cmd,
+            '-' + str(family),
+            '-1',
+            '-v',
+            '-timeout',
+            str(_DHCLIENT_TIMEOUT),
+            '-cf',
+            self._conf_file,
+            '-pf',
+            self._pid_file,
+            '-lf',
+            self.lease_file,
+        ]
         if not default_route:
             # Instruct Fedora/EL's dhclient-script not to set gateway on iface
             cmds += ['-e', 'DEFROUTE=no']
@@ -135,8 +171,9 @@ class DhclientRunner(object):
             return
         if self._try_kill(SIGKILL):
             return
-        raise ProcessCannotBeKilled('cmd=%s, pid=%s' % (' '.join(self._cmd),
-                                                        self.pid))
+        raise ProcessCannotBeKilled(
+            'cmd=%s, pid=%s' % (' '.join(self._cmd), self.pid)
+        )
 
     def _try_kill(self, signal, timeout=_WAIT_FOR_STOP_TIMEOUT):
         now = time()
@@ -170,11 +207,15 @@ class DhclientRunner(object):
 
 def delete_dhclient_leases(iface, dhcpv4=False, dhcpv6=False):
     if dhcpv4:
-        _delete_with_fallback(_DHCLIENT_LEASE.format('', iface),
-                              _DHCLIENT_LEASE_LEGACY.format('', iface))
+        _delete_with_fallback(
+            _DHCLIENT_LEASE.format('', iface),
+            _DHCLIENT_LEASE_LEGACY.format('', iface),
+        )
     if dhcpv6:
-        _delete_with_fallback(_DHCLIENT_LEASE.format('6', iface),
-                              _DHCLIENT_LEASE_LEGACY.format('6', iface))
+        _delete_with_fallback(
+            _DHCLIENT_LEASE.format('6', iface),
+            _DHCLIENT_LEASE_LEGACY.format('6', iface),
+        )
 
 
 def _delete_with_fallback(*file_names):

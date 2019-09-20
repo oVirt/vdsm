@@ -54,7 +54,6 @@ ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
 
 @attr(type='unit')
 class TestNetinfo(TestCaseBase):
-
     def test_netmask_conversions(self):
         path = os.path.join(os.path.dirname(__file__), "netmaskconversions")
         with open(path) as netmaskFile:
@@ -79,14 +78,16 @@ class TestNetinfo(TestCaseBase):
     @mock.patch.object(nics.io, 'open')
     def test_valid_nic_speed(self, mock_io_open, mock_iface):
         IS_UP = True
-        values = ((b'0', IS_UP, 0),
-                  (b'-10', IS_UP, 0),
-                  (six.b(str(2 ** 16 - 1)), IS_UP, 0),
-                  (six.b(str(2 ** 32 - 1)), IS_UP, 0),
-                  (b'123', IS_UP, 123),
-                  (b'', IS_UP, 0),
-                  (b'', not IS_UP, 0),
-                  (b'123', not IS_UP, 0))
+        values = (
+            (b'0', IS_UP, 0),
+            (b'-10', IS_UP, 0),
+            (six.b(str(2 ** 16 - 1)), IS_UP, 0),
+            (six.b(str(2 ** 32 - 1)), IS_UP, 0),
+            (b'123', IS_UP, 123),
+            (b'', IS_UP, 0),
+            (b'', not IS_UP, 0),
+            (b'123', not IS_UP, 0),
+        )
 
         for passed, is_nic_up, expected in values:
             mock_io_open.return_value = io.BytesIO(passed)
@@ -122,24 +123,31 @@ class TestNetinfo(TestCaseBase):
         self.assertEqual(result['vlans'], {})
 
     def test_ipv4_to_mapped(self):
-        self.assertEqual('::ffff:127.0.0.1',
-                         addresses.IPv4toMapped('127.0.0.1'))
+        self.assertEqual(
+            '::ffff:127.0.0.1', addresses.IPv4toMapped('127.0.0.1')
+        )
 
     def test_get_device_by_ip(self):
-        NL_ADDRESS4 = {'label': 'iface0',
-                       'address': '127.0.0.1/32',
-                       'family': 'inet'}
-        NL_ADDRESS6 = {'label': 'iface1',
-                       'address': '2001::1:1:1/48',
-                       'family': 'inet6'}
+        NL_ADDRESS4 = {
+            'label': 'iface0',
+            'address': '127.0.0.1/32',
+            'family': 'inet',
+        }
+        NL_ADDRESS6 = {
+            'label': 'iface1',
+            'address': '2001::1:1:1/48',
+            'family': 'inet6',
+        }
         NL_ADDRESSES = [NL_ADDRESS4, NL_ADDRESS6]
 
-        with mock.patch.object(addresses.nl_addr, 'iter_addrs',
-                               lambda: NL_ADDRESSES):
+        with mock.patch.object(
+            addresses.nl_addr, 'iter_addrs', lambda: NL_ADDRESSES
+        ):
             for nl_addr in NL_ADDRESSES:
                 self.assertEqual(
                     nl_addr['label'],
-                    addresses.getDeviceByIP(nl_addr['address'].split('/')[0]))
+                    addresses.getDeviceByIP(nl_addr['address'].split('/')[0]),
+                )
 
     @mock.patch.object(ipwrapper.Link, '_hiddenNics', ['hid*'])
     @mock.patch.object(ipwrapper.Link, '_hiddenBonds', ['jb*'])
@@ -162,35 +170,89 @@ class TestNetinfo(TestCaseBase):
     # dummies: fake and fake0
     # bonds: jbond (over me0 and me1)
     _LINKS_REPORT = [
-        ipwrapper.Link(address='f0:de:f1:da:aa:e7', index=2,
-                       linkType=ipwrapper.LinkType.NIC, mtu=1500,
-                       name='em', qdisc='pfifo_fast', state='up'),
-        ipwrapper.Link(address='ff:de:f1:da:aa:e7', index=3,
-                       linkType=ipwrapper.LinkType.NIC, mtu=1500,
-                       name='me', qdisc='pfifo_fast', state='up'),
-        ipwrapper.Link(address='ff:de:fa:da:aa:e7', index=4,
-                       linkType=ipwrapper.LinkType.NIC, mtu=1500,
-                       name='hid0', qdisc='pfifo_fast', state='up'),
-        ipwrapper.Link(address='ff:de:11:da:aa:e7', index=5,
-                       linkType=ipwrapper.LinkType.NIC, mtu=1500,
-                       name='hideous', qdisc='pfifo_fast', state='up'),
-        ipwrapper.Link(address='66:de:f1:da:aa:e7', index=6,
-                       linkType=ipwrapper.LinkType.NIC, mtu=1500,
-                       name='me0', qdisc='pfifo_fast', state='up',
-                       master='jbond'),
-        ipwrapper.Link(address='66:de:f1:da:aa:e7', index=7,
-                       linkType=ipwrapper.LinkType.NIC, mtu=1500,
-                       name='me1', qdisc='pfifo_fast', state='up',
-                       master='jbond'),
-        ipwrapper.Link(address='ff:aa:f1:da:aa:e7', index=34,
-                       linkType=ipwrapper.LinkType.DUMMY, mtu=1500,
-                       name='fake0', qdisc='pfifo_fast', state='up'),
-        ipwrapper.Link(address='ff:aa:f1:da:bb:e7', index=35,
-                       linkType=ipwrapper.LinkType.DUMMY, mtu=1500,
-                       name='fake', qdisc='pfifo_fast', state='up'),
-        ipwrapper.Link(address='66:de:f1:da:aa:e7', index=419,
-                       linkType=ipwrapper.LinkType.BOND, mtu=1500,
-                       name='jbond', qdisc='pfifo_fast', state='up')
+        ipwrapper.Link(
+            address='f0:de:f1:da:aa:e7',
+            index=2,
+            linkType=ipwrapper.LinkType.NIC,
+            mtu=1500,
+            name='em',
+            qdisc='pfifo_fast',
+            state='up',
+        ),
+        ipwrapper.Link(
+            address='ff:de:f1:da:aa:e7',
+            index=3,
+            linkType=ipwrapper.LinkType.NIC,
+            mtu=1500,
+            name='me',
+            qdisc='pfifo_fast',
+            state='up',
+        ),
+        ipwrapper.Link(
+            address='ff:de:fa:da:aa:e7',
+            index=4,
+            linkType=ipwrapper.LinkType.NIC,
+            mtu=1500,
+            name='hid0',
+            qdisc='pfifo_fast',
+            state='up',
+        ),
+        ipwrapper.Link(
+            address='ff:de:11:da:aa:e7',
+            index=5,
+            linkType=ipwrapper.LinkType.NIC,
+            mtu=1500,
+            name='hideous',
+            qdisc='pfifo_fast',
+            state='up',
+        ),
+        ipwrapper.Link(
+            address='66:de:f1:da:aa:e7',
+            index=6,
+            linkType=ipwrapper.LinkType.NIC,
+            mtu=1500,
+            name='me0',
+            qdisc='pfifo_fast',
+            state='up',
+            master='jbond',
+        ),
+        ipwrapper.Link(
+            address='66:de:f1:da:aa:e7',
+            index=7,
+            linkType=ipwrapper.LinkType.NIC,
+            mtu=1500,
+            name='me1',
+            qdisc='pfifo_fast',
+            state='up',
+            master='jbond',
+        ),
+        ipwrapper.Link(
+            address='ff:aa:f1:da:aa:e7',
+            index=34,
+            linkType=ipwrapper.LinkType.DUMMY,
+            mtu=1500,
+            name='fake0',
+            qdisc='pfifo_fast',
+            state='up',
+        ),
+        ipwrapper.Link(
+            address='ff:aa:f1:da:bb:e7',
+            index=35,
+            linkType=ipwrapper.LinkType.DUMMY,
+            mtu=1500,
+            name='fake',
+            qdisc='pfifo_fast',
+            state='up',
+        ),
+        ipwrapper.Link(
+            address='66:de:f1:da:aa:e7',
+            index=419,
+            linkType=ipwrapper.LinkType.BOND,
+            mtu=1500,
+            name='jbond',
+            qdisc='pfifo_fast',
+            state='up',
+        ),
     ]
 
     @attr(type='integration')
@@ -201,17 +263,21 @@ class TestNetinfo(TestCaseBase):
             with dummy_device() as d1:
                 fakes = set([d1, v1a, v1b])
                 _nics = nics.nics()
-                self.assertTrue(fakes.issubset(_nics),
-                                'Fake devices %s are not listed in nics '
-                                '%s' % (fakes, _nics))
+                self.assertTrue(
+                    fakes.issubset(_nics),
+                    'Fake devices %s are not listed in nics '
+                    '%s' % (fakes, _nics),
+                )
 
         with veth_pair(prefix='mehv_') as (v2a, v2b):
             with dummy_device(prefix='mehd_') as d2:
                 hiddens = set([d2, v2a, v2b])
                 _nics = nics.nics()
-                self.assertFalse(hiddens.intersection(_nics), 'Some of '
-                                 'hidden devices %s is shown in nics %s' %
-                                 (hiddens, _nics))
+                self.assertFalse(
+                    hiddens.intersection(_nics),
+                    'Some of '
+                    'hidden devices %s is shown in nics %s' % (hiddens, _nics),
+                )
 
     @mock.patch.object(misc, 'open', create=True)
     def test_get_ifcfg(self, mock_open):
@@ -235,8 +301,9 @@ class TestNetinfo(TestCaseBase):
 
         self.assertEqual(ifcfg, {})
 
-    @broken_on_ci('Bond options scanning is fragile on CI',
-                  exception=AssertionError)
+    @broken_on_ci(
+        'Bond options scanning is fragile on CI', exception=AssertionError
+    )
     @attr(type='integration')
     @ValidateRunningAsRoot
     @RequireBondingMod
@@ -250,17 +317,22 @@ class TestNetinfo(TestCaseBase):
 
             try:  # no error is anticipated but let's make sure we can clean up
                 self.assertEqual(
-                    self._bond_opts_without_mode(bondName), {},
+                    self._bond_opts_without_mode(bondName),
+                    {},
                     'This test fails when a new bonding option is added to '
                     'the kernel. Please run vdsm-tool dump-bonding-options` '
-                    'and retest.')
+                    'and retest.',
+                )
 
-                with open(bonding.BONDING_OPT % (bondName, 'miimon'),
-                          'w') as opt:
+                with open(
+                    bonding.BONDING_OPT % (bondName, 'miimon'), 'w'
+                ) as opt:
                     opt.write(INTERVAL)
 
-                self.assertEqual(self._bond_opts_without_mode(bondName),
-                                 {'miimon': INTERVAL})
+                self.assertEqual(
+                    self._bond_opts_without_mode(bondName),
+                    {'miimon': INTERVAL},
+                )
 
             finally:
                 bonds.write('-' + bondName)
@@ -274,26 +346,30 @@ class TestNetinfo(TestCaseBase):
     def test_get_gateway(self):
         TEST_IFACE = 'test_iface'
         # different tables but the gateway is the same so it should be reported
-        DUPLICATED_GATEWAY = {TEST_IFACE: [
-            {
-                'destination': 'none',
-                'family': 'inet',
-                'gateway': '12.34.56.1',
-                'oif': TEST_IFACE,
-                'oif_index': 8,
-                'scope': 'global',
-                'source': None,
-                'table': 203569230,  # lucky us, we got the address 12.34.56.78
-            }, {
-                'destination': 'none',
-                'family': 'inet',
-                'gateway': '12.34.56.1',
-                'oif': TEST_IFACE,
-                'oif_index': 8,
-                'scope': 'global',
-                'source': None,
-                'table': 254,
-            }]}
+        DUPLICATED_GATEWAY = {
+            TEST_IFACE: [
+                {
+                    'destination': 'none',
+                    'family': 'inet',
+                    'gateway': '12.34.56.1',
+                    'oif': TEST_IFACE,
+                    'oif_index': 8,
+                    'scope': 'global',
+                    'source': None,
+                    'table': 203569230,  # we got the address 12.34.56.78
+                },
+                {
+                    'destination': 'none',
+                    'family': 'inet',
+                    'gateway': '12.34.56.1',
+                    'oif': TEST_IFACE,
+                    'oif_index': 8,
+                    'scope': 'global',
+                    'source': None,
+                    'table': 254,
+                },
+            ]
+        }
         SINGLE_GATEWAY = {TEST_IFACE: [DUPLICATED_GATEWAY[TEST_IFACE][0]]}
 
         gateway = routes.get_gateway(SINGLE_GATEWAY, TEST_IFACE)
@@ -327,7 +403,8 @@ class TestNetinfo(TestCaseBase):
                 ipwrapper.addrAdd(device, IPV4_ADDR2, IPV4_PREFIX_LENGTH)
             with waitfor.waitfor_ipv6_addr(device, address=IPV6_ADDR_CIDR):
                 ipwrapper.addrAdd(
-                    device, IPV6_ADDR, IPV6_PREFIX_LENGTH, family=6)
+                    device, IPV6_ADDR, IPV6_PREFIX_LENGTH, family=6
+                )
 
             # 32 bit addresses are reported slashless by netlink
             with waitfor.waitfor_ipv4_addr(device, address=IPV4_ADDR3):
@@ -335,35 +412,65 @@ class TestNetinfo(TestCaseBase):
 
             self.assertEqual(
                 addresses.getIpInfo(device),
-                (IPV4_ADDR1, IPV4_NETMASK,
-                 [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
-                 [IPV6_ADDR_CIDR]))
+                (
+                    IPV4_ADDR1,
+                    IPV4_NETMASK,
+                    [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
+                    [IPV6_ADDR_CIDR],
+                ),
+            )
             self.assertEqual(
                 addresses.getIpInfo(device, ipv4_gateway=IPV4_GATEWAY1),
-                (IPV4_ADDR1, IPV4_NETMASK,
-                 [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
-                 [IPV6_ADDR_CIDR]))
+                (
+                    IPV4_ADDR1,
+                    IPV4_NETMASK,
+                    [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
+                    [IPV6_ADDR_CIDR],
+                ),
+            )
             self.assertEqual(
                 addresses.getIpInfo(device, ipv4_gateway=IPV4_GATEWAY2),
-                (IPV4_ADDR2, IPV4_NETMASK,
-                 [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
-                 [IPV6_ADDR_CIDR]))
+                (
+                    IPV4_ADDR2,
+                    IPV4_NETMASK,
+                    [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
+                    [IPV6_ADDR_CIDR],
+                ),
+            )
 
     def test_netinfo_ignoring_link_scope_ip(self):
-        v4_link = {'family': 'inet', 'address': '169.254.0.0/16',
-                   'scope': 'link', 'prefixlen': 16, 'flags': ['permanent']}
-        v4_global = {'family': 'inet', 'address': '192.0.2.2/24',
-                     'scope': 'global', 'prefixlen': 24,
-                     'flags': ['permanent']}
-        v6_link = {'family': 'inet6', 'address': 'fe80::5054:ff:fea3:f9f3/64',
-                   'scope': 'link', 'prefixlen': 64, 'flags': ['permanent']}
-        v6_global = {'family': 'inet6',
-                     'address': 'ee80::5054:ff:fea3:f9f3/64',
-                     'scope': 'global', 'prefixlen': 64,
-                     'flags': ['permanent']}
+        v4_link = {
+            'family': 'inet',
+            'address': '169.254.0.0/16',
+            'scope': 'link',
+            'prefixlen': 16,
+            'flags': ['permanent'],
+        }
+        v4_global = {
+            'family': 'inet',
+            'address': '192.0.2.2/24',
+            'scope': 'global',
+            'prefixlen': 24,
+            'flags': ['permanent'],
+        }
+        v6_link = {
+            'family': 'inet6',
+            'address': 'fe80::5054:ff:fea3:f9f3/64',
+            'scope': 'link',
+            'prefixlen': 64,
+            'flags': ['permanent'],
+        }
+        v6_global = {
+            'family': 'inet6',
+            'address': 'ee80::5054:ff:fea3:f9f3/64',
+            'scope': 'global',
+            'prefixlen': 64,
+            'flags': ['permanent'],
+        }
         ipaddrs = {'eth0': (v4_link, v4_global, v6_link, v6_global)}
-        ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = \
-            addresses.getIpInfo('eth0', ipaddrs=ipaddrs)
+        ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = addresses.getIpInfo(
+            'eth0', ipaddrs=ipaddrs
+        )
         self.assertEqual(ipv4addrs, ['192.0.2.2/24'])
         self.assertEqual(ipv6addrs, ['ee80::5054:ff:fea3:f9f3/64'])
 
@@ -371,8 +478,10 @@ class TestNetinfo(TestCaseBase):
         return '{}/{}'.format(ip_addr, prefix_length)
 
     def test_parse_bond_options(self):
-        self.assertEqual(bonding.parse_bond_options('mode=4 miimon=100'),
-                         {'mode': '4', 'miimon': '100'})
+        self.assertEqual(
+            bonding.parse_bond_options('mode=4 miimon=100'),
+            {'mode': '4', 'miimon': '100'},
+        )
 
 
 @attr(type='integration')
@@ -400,16 +509,18 @@ class TestIPv6Addresses(TestCaseBase):
             self.assertTrue(addresses.is_ipv6(ip_addrs[0]))
             self.assertTrue(not addresses.is_dynamic(ip_addrs[0]))
 
-    @broken_on_ci('Using dnsmasq for ipv6 RA is unstable on CI',
-                  name='OVIRT_CI')
+    @broken_on_ci(
+        'Using dnsmasq for ipv6 RA is unstable on CI', name='OVIRT_CI'
+    )
     @broken_on_ci('IPv6 not supported on travis', name='TRAVIS_CI')
     @ValidateRunningAsRoot
     def test_local_auto_with_dynamic_address_from_ra(self):
         IPV6_NETADDRESS = '2001:1:1:1'
         IPV6_NETPREFIX_LEN = '64'
         with veth_pair() as (server, client):
-            ipwrapper.addrAdd(server, IPV6_NETADDRESS + '::1',
-                              IPV6_NETPREFIX_LEN, family=6)
+            ipwrapper.addrAdd(
+                server, IPV6_NETADDRESS + '::1', IPV6_NETPREFIX_LEN, family=6
+            )
             ipwrapper.linkSet(server, ['up'])
             with dnsmasq_run(server, ipv6_slaac_prefix=IPV6_NETADDRESS + '::'):
                 with wait_for_ipv6(client):
@@ -417,13 +528,17 @@ class TestIPv6Addresses(TestCaseBase):
 
                 # Expecting link and global addresses on client iface
                 # The addresses are given randomly, so we sort them
-                ip_addrs = sorted(addresses.getIpAddrs()[client],
-                                  key=lambda ip: ip['address'])
+                ip_addrs = sorted(
+                    addresses.getIpAddrs()[client],
+                    key=lambda ip: ip['address'],
+                )
                 self.assertEqual(2, len(ip_addrs), ip_addrs)
 
                 self.assertTrue(addresses.is_dynamic(ip_addrs[0]))
                 self.assertEqual('global', ip_addrs[0]['scope'])
-                self.assertEqual(IPV6_NETADDRESS,
-                                 ip_addrs[0]['address'][:len(IPV6_NETADDRESS)])
+                self.assertEqual(
+                    IPV6_NETADDRESS,
+                    ip_addrs[0]['address'][: len(IPV6_NETADDRESS)],
+                )
 
                 self.assertEqual('link', ip_addrs[1]['scope'])

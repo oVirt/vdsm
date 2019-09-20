@@ -42,8 +42,11 @@ from testlib import VdsmTestCase as TestCaseBase
 NETWORK = 'luke'
 NETWORK_ATTRIBUTES = {'bonding': 'bond0', 'vlan': 1}
 BONDING = 'skywalker'
-BONDING_ATTRIBUTES = {'options': 'mode=4 miimon=100', 'nics': ['eth0', 'eth1'],
-                      'switch': 'legacy'}
+BONDING_ATTRIBUTES = {
+    'options': 'mode=4 miimon=100',
+    'nics': ['eth0', 'eth1'],
+    'switch': 'legacy',
+}
 DEVICE = 'dev0'
 DEVICE_ATTRIBUTES = {'sriov': {'numvfs': 2}}
 

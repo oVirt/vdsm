@@ -44,7 +44,6 @@ def _mock_os_stat_with_zeroed_time(unused):
 
 @attr(type='unit')
 class TestConnectivity(VdsmTestCase):
-
     def test_check_disabled(self):
         with self.assertNotRaises():
             connectivity.check({'connectivityCheck': False})

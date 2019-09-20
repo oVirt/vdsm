@@ -56,19 +56,50 @@ def _allow_dhcp(iface):
     """
     try:
         if _serviceRunning('iptables'):
-            _exec_cmd_checker([
-                _IPTABLES_BINARY.cmd, '--wait',
-                '-I', 'INPUT', '-i',
-                iface, '-p', 'udp', '--sport', '68', '--dport',
-                '67', '-j', 'ACCEPT'])  # DHCPv4
-            _exec_cmd_checker([
-                _IPTABLES_BINARY.cmd, '--wait',
-                '-I', 'INPUT', '-i',
-                iface, '-p', 'udp', '--sport', '546', '--dport',
-                '547', '-j', 'ACCEPT'])  # DHCPv6
+            _exec_cmd_checker(
+                [
+                    _IPTABLES_BINARY.cmd,
+                    '--wait',
+                    '-I',
+                    'INPUT',
+                    '-i',
+                    iface,
+                    '-p',
+                    'udp',
+                    '--sport',
+                    '68',
+                    '--dport',
+                    '67',
+                    '-j',
+                    'ACCEPT',
+                ]
+            )  # DHCPv4
+            _exec_cmd_checker(
+                [
+                    _IPTABLES_BINARY.cmd,
+                    '--wait',
+                    '-I',
+                    'INPUT',
+                    '-i',
+                    iface,
+                    '-p',
+                    'udp',
+                    '--sport',
+                    '546',
+                    '--dport',
+                    '547',
+                    '-j',
+                    'ACCEPT',
+                ]
+            )  # DHCPv6
         elif _serviceRunning('firewalld'):
-            _exec_cmd_checker([_FIREWALLD_BINARY.cmd, '--zone=trusted',
-                               '--change-interface=' + iface])
+            _exec_cmd_checker(
+                [
+                    _FIREWALLD_BINARY.cmd,
+                    '--zone=trusted',
+                    '--change-interface=' + iface,
+                ]
+            )
         else:
             logging.info('No firewall service detected.')
     except FirewallError as e:
@@ -86,15 +117,50 @@ def _forbid_dhcp(iface):
     If cleaning up fails the affected test must fail too (with FirewallError).
     """
     if _serviceRunning('iptables'):
-        _exec_cmd_checker([_IPTABLES_BINARY.cmd, '--wait', '-D', 'INPUT', '-i',
-                           iface, '-p', 'udp', '--sport', '68', '--dport',
-                           '67', '-j', 'ACCEPT'])  # DHCPv4
-        _exec_cmd_checker([_IPTABLES_BINARY.cmd, '--wait', '-D', 'INPUT', '-i',
-                           iface, '-p', 'udp', '--sport', '546', '--dport',
-                           '547', '-j', 'ACCEPT'])  # DHCPv6
+        _exec_cmd_checker(
+            [
+                _IPTABLES_BINARY.cmd,
+                '--wait',
+                '-D',
+                'INPUT',
+                '-i',
+                iface,
+                '-p',
+                'udp',
+                '--sport',
+                '68',
+                '--dport',
+                '67',
+                '-j',
+                'ACCEPT',
+            ]
+        )  # DHCPv4
+        _exec_cmd_checker(
+            [
+                _IPTABLES_BINARY.cmd,
+                '--wait',
+                '-D',
+                'INPUT',
+                '-i',
+                iface,
+                '-p',
+                'udp',
+                '--sport',
+                '546',
+                '--dport',
+                '547',
+                '-j',
+                'ACCEPT',
+            ]
+        )  # DHCPv6
     elif _serviceRunning('firewalld'):
-        _exec_cmd_checker([_FIREWALLD_BINARY.cmd, '--zone=trusted',
-                           '--remove-interface=' + iface])
+        _exec_cmd_checker(
+            [
+                _FIREWALLD_BINARY.cmd,
+                '--zone=trusted',
+                '--remove-interface=' + iface,
+            ]
+        )
     else:
         logging.warning('No firewall service detected.')
 
@@ -108,5 +174,6 @@ def _serviceRunning(name):
 def _exec_cmd_checker(command):
     ret, out, err = cmd.exec_sync(command)
     if ret:
-        raise FirewallError('Command {0} failed with {1}; {2}'.format(
-                            command, out, err))
+        raise FirewallError(
+            'Command {0} failed with {1}; {2}'.format(command, out, err)
+        )

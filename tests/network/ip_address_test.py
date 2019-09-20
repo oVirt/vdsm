@@ -59,7 +59,6 @@ IPV6_GATEWAY = '2001:99::99'
 
 @attr(type='unit')
 class TestAddressIP(VdsmTestCase):
-
     def test_ipv4_clean_init(self):
         ip = address.IPv4()
         self.assertFalse(ip)
@@ -82,7 +81,6 @@ class TestAddressIP(VdsmTestCase):
 
 @attr(type='integration')
 class TestAddressSetup(VdsmTestCase):
-
     def test_add_ipv4_address(self):
         ip = address.IPv4(address=IPV4_A_ADDRESS, netmask=IPV4_NETMASK)
         with dummy_device() as nic:
@@ -109,58 +107,80 @@ class TestAddressSetup(VdsmTestCase):
             self.assertEqual(IPV6_A_WITH_PREFIXLEN, ipv6addresses[0])
 
     def test_add_ipv4_address_with_gateway(self):
-        ip = address.IPv4(address=IPV4_A_ADDRESS, netmask=IPV4_NETMASK,
-                          gateway=IPV4_GATEWAY, defaultRoute=True)
+        ip = address.IPv4(
+            address=IPV4_A_ADDRESS,
+            netmask=IPV4_NETMASK,
+            gateway=IPV4_GATEWAY,
+            defaultRoute=True,
+        )
         with dummy_device() as nic:
             with preserve_default_route():
                 address.add(nic, ipv4=ip, ipv6=None)
-                self.assertTrue(routes.is_default_route(
-                    IPV4_GATEWAY, routes.get_routes()))
+                self.assertTrue(
+                    routes.is_default_route(IPV4_GATEWAY, routes.get_routes())
+                )
 
     def test_add_ipv6_address_with_gateway(self):
-        ip = address.IPv6(address=IPV6_A_WITH_PREFIXLEN, gateway=IPV6_GATEWAY,
-                          defaultRoute=True)
+        ip = address.IPv6(
+            address=IPV6_A_WITH_PREFIXLEN,
+            gateway=IPV6_GATEWAY,
+            defaultRoute=True,
+        )
         with dummy_device() as nic:
             with preserve_default_route():
                 address.add(nic, ipv4=None, ipv6=ip)
                 self.assertTrue(routes.is_ipv6_default_route(IPV6_GATEWAY))
 
     def test_add_ipv4_and_ipv6_address_with_gateways(self):
-        ipv4 = address.IPv4(address=IPV4_A_ADDRESS, netmask=IPV4_NETMASK,
-                            gateway=IPV4_GATEWAY, defaultRoute=True)
-        ipv6 = address.IPv6(address=IPV6_A_WITH_PREFIXLEN,
-                            gateway=IPV6_GATEWAY, defaultRoute=True)
+        ipv4 = address.IPv4(
+            address=IPV4_A_ADDRESS,
+            netmask=IPV4_NETMASK,
+            gateway=IPV4_GATEWAY,
+            defaultRoute=True,
+        )
+        ipv6 = address.IPv6(
+            address=IPV6_A_WITH_PREFIXLEN,
+            gateway=IPV6_GATEWAY,
+            defaultRoute=True,
+        )
         with dummy_device() as nic:
             with preserve_default_route():
                 address.add(nic, ipv4=ipv4, ipv6=ipv6)
                 addr, netmask, _, ipv6addresses = address.addrs_info(nic)
-                self.assertTrue(routes.is_default_route(
-                    IPV4_GATEWAY, routes.get_routes()))
+                self.assertTrue(
+                    routes.is_default_route(IPV4_GATEWAY, routes.get_routes())
+                )
                 self.assertTrue(routes.is_ipv6_default_route(IPV6_GATEWAY))
 
     def test_add_ipv6_gateway_given_existing_ipv4_and_ipv6_gateways(self):
-        ipv4 = address.IPv4(address=IPV4_A_ADDRESS, netmask=IPV4_NETMASK,
-                            gateway=IPV4_GATEWAY, defaultRoute=True)
-        ipv6 = address.IPv6(address=IPV6_A_WITH_PREFIXLEN,
-                            gateway=IPV6_GATEWAY, defaultRoute=True)
+        ipv4 = address.IPv4(
+            address=IPV4_A_ADDRESS,
+            netmask=IPV4_NETMASK,
+            gateway=IPV4_GATEWAY,
+            defaultRoute=True,
+        )
+        ipv6 = address.IPv6(
+            address=IPV6_A_WITH_PREFIXLEN,
+            gateway=IPV6_GATEWAY,
+            defaultRoute=True,
+        )
         with dummy_device() as nic:
             with preserve_default_route():
                 address.add(nic, ipv4=ipv4, ipv6=None)
                 address.add(nic, ipv4=None, ipv6=ipv6)
 
                 address.add(nic, ipv4=None, ipv6=ipv6)
-                self.assertTrue(routes.is_default_route(
-                    IPV4_GATEWAY, routes.get_routes()))
+                self.assertTrue(
+                    routes.is_default_route(IPV4_GATEWAY, routes.get_routes())
+                )
                 self.assertTrue(routes.is_ipv6_default_route(IPV6_GATEWAY))
 
 
 @attr(type='unit')
 class IPAddressDataTest(VdsmTestCase):
-
     def test_ipv4_init(self):
         ip_data = address.IPAddressData(
-            IPV4_A_WITH_PREFIXLEN,
-            device=DEVICE_NAME
+            IPV4_A_WITH_PREFIXLEN, device=DEVICE_NAME
         )
 
         self.assertEqual(ip_data.device, DEVICE_NAME)
@@ -173,14 +193,12 @@ class IPAddressDataTest(VdsmTestCase):
     def test_ipv4_init_invalid(self):
         with self.assertRaises(address.IPAddressDataError):
             address.IPAddressData(
-                IPV4_INVALID_WITH_PREFIXLEN,
-                device=DEVICE_NAME
+                IPV4_INVALID_WITH_PREFIXLEN, device=DEVICE_NAME
             )
 
     def test_ipv6_init(self):
         ip_data = address.IPAddressData(
-            IPV6_A_WITH_PREFIXLEN,
-            device=DEVICE_NAME
+            IPV6_A_WITH_PREFIXLEN, device=DEVICE_NAME
         )
 
         self.assertEqual(ip_data.device, DEVICE_NAME)
@@ -193,8 +211,7 @@ class IPAddressDataTest(VdsmTestCase):
     def test_ipv6_init_invalid(self):
         with self.assertRaises(address.IPAddressDataError):
             address.IPAddressData(
-                IPV6_INVALID_WITH_PREFIXLEN,
-                device=DEVICE_NAME
+                IPV6_INVALID_WITH_PREFIXLEN, device=DEVICE_NAME
             )
 
     def test_ipv4_init_with_scope_and_flags(self):
@@ -202,10 +219,7 @@ class IPAddressDataTest(VdsmTestCase):
         FLAGS = frozenset([address.Flags.SECONDARY, address.Flags.PERMANENT])
 
         ip_data = address.IPAddressData(
-            IPV4_A_WITH_PREFIXLEN,
-            device=DEVICE_NAME,
-            scope=SCOPE,
-            flags=FLAGS
+            IPV4_A_WITH_PREFIXLEN, device=DEVICE_NAME, scope=SCOPE, flags=FLAGS
         )
 
         self.assertEqual(ip_data.scope, SCOPE)
@@ -259,7 +273,8 @@ class IPAddressTest(VdsmTestCase):
     def _test_add_with_non_existing_device(self, ip):
         with self.assertRaises(address.IPAddressAddError):
             IPAddressTest.IPAddress.add(
-                address.IPAddressData(ip, device='tim the enchanter'))
+                address.IPAddressData(ip, device='tim the enchanter')
+            )
 
     def test_delete_non_existing_ipv4(self):
         self._test_delete_non_existing_ip(IPV4_A_WITH_PREFIXLEN)
@@ -271,34 +286,37 @@ class IPAddressTest(VdsmTestCase):
         with dummy_device() as nic:
             with self.assertRaises(address.IPAddressDeleteError):
                 IPAddressTest.IPAddress.delete(
-                    address.IPAddressData(ip, device=nic))
+                    address.IPAddressData(ip, device=nic)
+                )
 
     def test_list_ipv4(self):
         self._test_list(
             ipv4_addresses=[IPV4_A_WITH_PREFIXLEN, IPV4_B_WITH_PREFIXLEN],
-            ipv6_addresses=[]
+            ipv6_addresses=[],
         )
 
     @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
     def test_list_ipv6(self):
         self._test_list(
             ipv4_addresses=[],
-            ipv6_addresses=[IPV6_A_WITH_PREFIXLEN, IPV6_B_WITH_PREFIXLEN]
+            ipv6_addresses=[IPV6_A_WITH_PREFIXLEN, IPV6_B_WITH_PREFIXLEN],
         )
 
     @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
     def test_list_ipv4_ipv6(self):
         self._test_list(
             ipv4_addresses=[IPV4_A_WITH_PREFIXLEN],
-            ipv6_addresses=[IPV6_B_WITH_PREFIXLEN]
+            ipv6_addresses=[IPV6_B_WITH_PREFIXLEN],
         )
 
     def _test_list(self, ipv4_addresses, ipv6_addresses):
         with dummy_device() as nic:
             for addr in itertools.chain.from_iterable(
-                    [ipv4_addresses, ipv6_addresses]):
+                [ipv4_addresses, ipv6_addresses]
+            ):
                 IPAddressTest.IPAddress.add(
-                    address.IPAddressData(addr, device=nic))
+                    address.IPAddressData(addr, device=nic)
+                )
 
             all_addrs = list(IPAddressTest.IPAddress.addresses())
             ipv4_addrs = list(IPAddressTest.IPAddress.addresses(family=4))
@@ -327,9 +345,11 @@ class IPAddressTest(VdsmTestCase):
     def _test_list_by_device(self, ip_a_with_device, ip_b):
         with dummy_devices(2) as (nic1, nic2):
             IPAddressTest.IPAddress.add(
-                address.IPAddressData(ip_a_with_device, device=nic1))
+                address.IPAddressData(ip_a_with_device, device=nic1)
+            )
             IPAddressTest.IPAddress.add(
-                address.IPAddressData(ip_b, device=nic2))
+                address.IPAddressData(ip_b, device=nic2)
+            )
 
             addresses = list(IPAddressTest.IPAddress.addresses(device=nic1))
             self._assert_address_in(ip_a_with_device, addresses)

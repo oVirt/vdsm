@@ -91,68 +91,140 @@ End of LLDPDU TLV
 @attr(type='unit')
 class LldpadReportTests(VdsmTestCase):
     TLVS_REPORT = [
-        {'type': 1, 'name': 'Chassis ID',
-         'properties': {'chassis ID': '01:23:45:67:89:ab',
-                        'chassis ID subtype': 'MAC'}},
-        {'type': 2, 'name': 'Port ID',
-         'properties': {'port ID': '588', 'port ID subtype': 'Local'}},
-        {'type': 3, 'name': 'Time to Live',
-         'properties': {'time to live': '120'}},
-        {'type': 5, 'name': 'System Name',
-         'properties': {'system name': 'site1-row2-rack3'}},
-        {'type': 6, 'name': 'System Description', 'properties': {
-            'system description':
-                'manufacturer, Build date: 2016-01-20 05:03:06 UTC'}},
-        {'type': 7, 'name': 'System Capabilities',
-         'properties': {'system capabilities': 'Bridge, Router',
-                        'enabled capabilities': 'Bridge, Router'}},
-        {'type': 8, 'name': 'Management Address',
-         'properties': {'object identifier': '$',
-                        'interface numbering subtype': 'Ifindex',
-                        'interface numbering': '36',
-                        'management address subtype': 'IPv4',
-                        'management address': '10.21.0.40'}},
-        {'type': 4, 'name': 'Port Description',
-         'properties': {'port description': 'some important server, port 4'}},
-        {'type': 127, 'oui': 32962, 'subtype': 7, 'name': 'Link Aggregation',
-         'properties': {'Currently aggregated': 'True',
-                        'Aggregation capable': 'True',
-                        'Aggregated Port ID': '600'}},
-        {'type': 127, 'oui': 4623, 'subtype': 4, 'name': 'MTU',
-         'properties': {'mtu': '9216'}},
-        {'subtype': 1, 'oui': 32962, 'type': 127, 'name': 'Port VLAN ID',
-         'properties': {'Port VLAN ID': '2000'}},
-        {'subtype': 3, 'oui': 32962, 'type': 127, 'name': 'VLAN Name',
-         'properties': {'VLAN ID': '2000', 'VLAN Name': 'Name foo'}},
-        {'subtype': 3, 'oui': 32962, 'type': 127, 'name': 'VLAN Name',
-         'properties': {'VLAN ID': '2001', 'VLAN Name': 'Name bar'}}]
+        {
+            'type': 1,
+            'name': 'Chassis ID',
+            'properties': {
+                'chassis ID': '01:23:45:67:89:ab',
+                'chassis ID subtype': 'MAC',
+            },
+        },
+        {
+            'type': 2,
+            'name': 'Port ID',
+            'properties': {'port ID': '588', 'port ID subtype': 'Local'},
+        },
+        {
+            'type': 3,
+            'name': 'Time to Live',
+            'properties': {'time to live': '120'},
+        },
+        {
+            'type': 5,
+            'name': 'System Name',
+            'properties': {'system name': 'site1-row2-rack3'},
+        },
+        {
+            'type': 6,
+            'name': 'System Description',
+            'properties': {
+                'system description': 'manufacturer, Build date: '
+                '2016-01-20 05:03:06 UTC'
+            },
+        },
+        {
+            'type': 7,
+            'name': 'System Capabilities',
+            'properties': {
+                'system capabilities': 'Bridge, Router',
+                'enabled capabilities': 'Bridge, Router',
+            },
+        },
+        {
+            'type': 8,
+            'name': 'Management Address',
+            'properties': {
+                'object identifier': '$',
+                'interface numbering subtype': 'Ifindex',
+                'interface numbering': '36',
+                'management address subtype': 'IPv4',
+                'management address': '10.21.0.40',
+            },
+        },
+        {
+            'type': 4,
+            'name': 'Port Description',
+            'properties': {
+                'port description': 'some important server, port 4'
+            },
+        },
+        {
+            'type': 127,
+            'oui': 32962,
+            'subtype': 7,
+            'name': 'Link Aggregation',
+            'properties': {
+                'Currently aggregated': 'True',
+                'Aggregation capable': 'True',
+                'Aggregated Port ID': '600',
+            },
+        },
+        {
+            'type': 127,
+            'oui': 4623,
+            'subtype': 4,
+            'name': 'MTU',
+            'properties': {'mtu': '9216'},
+        },
+        {
+            'subtype': 1,
+            'oui': 32962,
+            'type': 127,
+            'name': 'Port VLAN ID',
+            'properties': {'Port VLAN ID': '2000'},
+        },
+        {
+            'subtype': 3,
+            'oui': 32962,
+            'type': 127,
+            'name': 'VLAN Name',
+            'properties': {'VLAN ID': '2000', 'VLAN Name': 'Name foo'},
+        },
+        {
+            'subtype': 3,
+            'oui': 32962,
+            'type': 127,
+            'name': 'VLAN Name',
+            'properties': {'VLAN ID': '2001', 'VLAN Name': 'Name bar'},
+        },
+    ]
 
-    @mock.patch.object(lldptool.cmd, 'exec_sync',
-                       lambda x: (0, LLDP_CHASSIS_ID_TLV, ''))
+    @mock.patch.object(
+        lldptool.cmd, 'exec_sync', lambda x: (0, LLDP_CHASSIS_ID_TLV, '')
+    )
     def test_get_single_lldp_tlv(self):
         expected = [self.TLVS_REPORT[0]]
         self.assertEqual(expected, lldptool.get_tlvs('iface0'))
 
-    @mock.patch.object(lldptool.cmd, 'exec_sync',
-                       lambda x: (0, LLDP_MANAGEMENT_ADDRESS_TLV, ''))
+    @mock.patch.object(
+        lldptool.cmd,
+        'exec_sync',
+        lambda x: (0, LLDP_MANAGEMENT_ADDRESS_TLV, ''),
+    )
     def test_get_management_address_tlv_without_oid(self):
         expected = [
-            {'type': 8, 'name': 'Management Address',
-             'properties': {'interface numbering subtype': 'Ifindex',
-                            'interface numbering': '83886080',
-                            'management address subtype': 'IPv4',
-                            'management address': '10.35.23.241'}}]
+            {
+                'type': 8,
+                'name': 'Management Address',
+                'properties': {
+                    'interface numbering subtype': 'Ifindex',
+                    'interface numbering': '83886080',
+                    'management address subtype': 'IPv4',
+                    'management address': '10.35.23.241',
+                },
+            }
+        ]
         self.assertEqual(expected, lldptool.get_tlvs('iface0'))
 
-    @mock.patch.object(lldptool.cmd, 'exec_sync',
-                       lambda x: (0, LLDP_MULTIPLE_TLVS, ''))
+    @mock.patch.object(
+        lldptool.cmd, 'exec_sync', lambda x: (0, LLDP_MULTIPLE_TLVS, '')
+    )
     def test_get_multiple_lldp_tlvs(self):
         self.assertEqual(self.TLVS_REPORT, lldptool.get_tlvs('iface0'))
 
 
 @attr(type='integration')
 class LldpadReportIntegTests(VdsmTestCase):
-
     @requires_systemctl
     def setUp(self):
         if not lldptool.is_lldpad_service_running():
@@ -170,9 +242,7 @@ class LldpadReportIntegTests(VdsmTestCase):
                 expected_ttl_tlv = {
                     'type': 3,
                     'name': 'Time to Live',
-                    'properties': {
-                        'time to live': '120'
-                    }
+                    'properties': {'time to live': '120'},
                 }
                 self.assertEqual(expected_ttl_tlv, tlvs[-1])
 

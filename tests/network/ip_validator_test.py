@@ -34,46 +34,61 @@ class DummyRunningConfig(object):
 
 @attr(type='unit')
 class TestIPNameserverValidator(VdsmTestCase):
-
     def test_ignore_remove_networks(self):
-        validator.validate({'NET0': {'remove': True,
-                                     'defaultRoute': False,
-                                     'nameservers': ['8.8.8.8']}})
+        validator.validate(
+            {
+                'NET0': {
+                    'remove': True,
+                    'defaultRoute': False,
+                    'nameservers': ['8.8.8.8'],
+                }
+            }
+        )
 
     def test_nameserver_defined_on_a_non_primary_network_fails(self):
         with self.assertRaises(ne.ConfigNetworkError) as cne:
-            validator.validate({'NET0': {'defaultRoute': False,
-                                         'nameservers': ['8.8.8.8']}})
+            validator.validate(
+                {'NET0': {'defaultRoute': False, 'nameservers': ['8.8.8.8']}}
+            )
         self.assertEqual(cne.exception.errCode, ne.ERR_BAD_PARAMS)
 
     def test_nameserver_faulty_ipv4_address(self):
         with self.assertRaises(ne.ConfigNetworkError) as cne:
-            validator.validate({'NET0': {'defaultRoute': True,
-                                         'nameservers': ['a.8.8.8']}})
+            validator.validate(
+                {'NET0': {'defaultRoute': True, 'nameservers': ['a.8.8.8']}}
+            )
         self.assertEqual(cne.exception.errCode, ne.ERR_BAD_ADDR)
 
     def test_nameserver_faulty_ipv6_address(self):
         with self.assertRaises(ne.ConfigNetworkError) as cne:
-            validator.validate({'NET0': {'defaultRoute': True,
-                                         'nameservers': ['2001:bla::1']}})
+            validator.validate(
+                {
+                    'NET0': {
+                        'defaultRoute': True,
+                        'nameservers': ['2001:bla::1'],
+                    }
+                }
+            )
         self.assertEqual(cne.exception.errCode, ne.ERR_BAD_ADDR)
 
     def test_nameserver_valid_ipv4_address(self):
-        validator.validate({'NET0': {'defaultRoute': True,
-                                     'nameservers': ['8.8.8.8']}})
+        validator.validate(
+            {'NET0': {'defaultRoute': True, 'nameservers': ['8.8.8.8']}}
+        )
 
     def test_nameserver_valid_ipv6_address(self):
-        validator.validate({'NET0': {'defaultRoute': True,
-                                     'nameservers': ['2001::1']}})
+        validator.validate(
+            {'NET0': {'defaultRoute': True, 'nameservers': ['2001::1']}}
+        )
 
     def test_nameserver_address_with_zone_identifier(self):
-        validator.validate({'NET0': {'defaultRoute': True,
-                                     'nameservers': ['fe80::1%eth1']}})
+        validator.validate(
+            {'NET0': {'defaultRoute': True, 'nameservers': ['fe80::1%eth1']}}
+        )
 
 
 @attr(type='unit')
 class TestStaticIpv4ConfigValidator(VdsmTestCase):
-
     def test_ip_address_without_netmask_fails(self):
         self._test_ip_config_fails(ipaddr='10.10.10.10')
 
@@ -84,32 +99,33 @@ class TestStaticIpv4ConfigValidator(VdsmTestCase):
         self._test_ip_config_fails(netmask='255.255.255.0')
 
     def test_invalid_ip_address_fails(self):
-        self._test_ip_config_fails(ipaddr='10.10.10.10.10',
-                                   netmask='255.255.255.0')
+        self._test_ip_config_fails(
+            ipaddr='10.10.10.10.10', netmask='255.255.255.0'
+        )
 
     def test_invalid_netmask_fails(self):
-        self._test_ip_config_fails(ipaddr='10.10.10.10',
-                                   netmask='355.255.255.0')
+        self._test_ip_config_fails(
+            ipaddr='10.10.10.10', netmask='355.255.255.0'
+        )
 
     def test_invalid_gateway_fails(self):
-        self._test_ip_config_fails(ipaddr='10.10.10.10',
-                                   netmask='255.255.255.0',
-                                   gateway='abcdef')
+        self._test_ip_config_fails(
+            ipaddr='10.10.10.10', netmask='255.255.255.0', gateway='abcdef'
+        )
 
     def test_static_and_dhcp_mix_fails(self):
-        self._test_ip_config_fails(ipaddr='10.10.10.10',
-                                   netmask='255.255.255.0',
-                                   bootproto='dhcp')
+        self._test_ip_config_fails(
+            ipaddr='10.10.10.10', netmask='255.255.255.0', bootproto='dhcp'
+        )
 
     def test_config_without_gateway(self):
-        STATIC_CONFIG = dict(ipaddr='10.10.10.10',
-                             netmask='255.255.255.0')
+        STATIC_CONFIG = dict(ipaddr='10.10.10.10', netmask='255.255.255.0')
         validator.validate_static_ipv4_config(STATIC_CONFIG)
 
     def test_config_with_gateway(self):
-        STATIC_CONFIG = dict(ipaddr='10.10.10.10',
-                             netmask='255.255.255.0',
-                             gateway='10.10.10.1')
+        STATIC_CONFIG = dict(
+            ipaddr='10.10.10.10', netmask='255.255.255.0', gateway='10.10.10.1'
+        )
         validator.validate_static_ipv4_config(STATIC_CONFIG)
 
     def _test_ip_config_fails(self, **setup):

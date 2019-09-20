@@ -39,7 +39,7 @@ IP_BINARY = CommandPath('ip', '/sbin/ip')
 class NMService(object):
     def __init__(self):
         rc, out, err = cmd.exec_sync([SYSTEMCTL.cmd, 'status', NM_SERVICE])
-        self.nm_init_state_is_up = (rc == 0)
+        self.nm_init_state_is_up = rc == 0
 
     def setup(self):
         if not self.nm_init_state_is_up:
@@ -60,8 +60,15 @@ def iface_name():
 
 
 @contextmanager
-def nm_connections(bond_name, ipv4addr, slaves, connection_name=None,
-                   con_count=1, vlan=None, save=False):
+def nm_connections(
+    bond_name,
+    ipv4addr,
+    slaves,
+    connection_name=None,
+    con_count=1,
+    vlan=None,
+    save=False,
+):
     """
     Setting up a connection with an IP address, removing it at exit.
     In case connection_name is not provided, it will use the name of the iface.
@@ -71,8 +78,13 @@ def nm_connections(bond_name, ipv4addr, slaves, connection_name=None,
 
     con_names = [connection_name + str(i) for i in range(con_count)]
     for con_name in con_names:
-        _create_connection(con_name, bond_name, save, TEST_LINK_TYPE,
-                           ipv4addr=(ipv4addr if vlan is None else None))
+        _create_connection(
+            con_name,
+            bond_name,
+            save,
+            TEST_LINK_TYPE,
+            ipv4addr=(ipv4addr if vlan is None else None),
+        )
 
     # For the bond to be operationally up (carrier-up), add a slave
     _add_slaves_to_bond(bond=bond_name, slaves=slaves)
@@ -80,8 +92,14 @@ def nm_connections(bond_name, ipv4addr, slaves, connection_name=None,
     if vlan is not None:
         vlan_iface = '.'.join([bond_name, vlan])
         _create_connection(
-            vlan_iface, vlan_iface, save, 'vlan',
-            vlan_parent=bond_name, vlan_id=vlan, ipv4addr=ipv4addr)
+            vlan_iface,
+            vlan_iface,
+            save,
+            'vlan',
+            vlan_parent=bond_name,
+            vlan_id=vlan,
+            ipv4addr=ipv4addr,
+        )
 
     try:
         yield con_names
@@ -93,11 +111,28 @@ def nm_connections(bond_name, ipv4addr, slaves, connection_name=None,
             _remove_connection(con_name)
 
 
-def _create_connection(connection_name, iface_name, save, type,
-                       ipv4addr=None, vlan_parent=None, vlan_id=None):
-    command = [NMCLI_BINARY.cmd, 'con', 'add', 'con-name', connection_name,
-               'ifname', iface_name, 'save', 'yes' if save else 'no',
-               'type', type]
+def _create_connection(
+    connection_name,
+    iface_name,
+    save,
+    type,
+    ipv4addr=None,
+    vlan_parent=None,
+    vlan_id=None,
+):
+    command = [
+        NMCLI_BINARY.cmd,
+        'con',
+        'add',
+        'con-name',
+        connection_name,
+        'ifname',
+        iface_name,
+        'save',
+        'yes' if save else 'no',
+        'type',
+        type,
+    ]
     if type == 'vlan' and vlan_parent and vlan_id is not None:
         command += ['vlan.id', vlan_id, 'dev', vlan_parent]
     if ipv4addr:

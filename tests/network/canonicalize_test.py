@@ -33,18 +33,14 @@ from vdsm.network import canonicalize
 from vdsm.network import errors as ne
 
 
-NET0_SETUP = {'NET0': {'nic': 'eth0',
-                       'switch': 'legacy'}}
-NET1_SETUP = {'NET1': {'nic': 'eth0',
-                       'switch': 'legacy'}}
-NET2_SETUP = {'NET2': {'nic': 'eth0',
-                       'switch': 'legacy'}}
+NET0_SETUP = {'NET0': {'nic': 'eth0', 'switch': 'legacy'}}
+NET1_SETUP = {'NET1': {'nic': 'eth0', 'switch': 'legacy'}}
+NET2_SETUP = {'NET2': {'nic': 'eth0', 'switch': 'legacy'}}
 
 
 @attr(type='unit')
 @mock.patch.object(canonicalize, 'RunningConfig')
 class TestDefaultRouteCanonicalization(VdsmTestCase):
-
     def test_request_one_defroute_no_existing_defroute(self, mockRConfig):
         running_config = self._nets_config(NET1_SETUP, default_route=False)
         requested_nets = self._nets_config(NET0_SETUP, default_route=True)
@@ -54,8 +50,9 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
 
         canonicalize.canonicalize_networks(requested_nets)
 
-        self._assert_default_route_keys(original_requested_nets,
-                                        requested_nets)
+        self._assert_default_route_keys(
+            original_requested_nets, requested_nets
+        )
 
     def test_request_one_defroute_no_existing_defroute_key(self, mockRConfig):
         running_config = self._nets_config(NET1_SETUP, default_route=None)
@@ -66,8 +63,9 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
 
         canonicalize.canonicalize_networks(requested_nets)
 
-        self._assert_default_route_keys(original_requested_nets,
-                                        requested_nets)
+        self._assert_default_route_keys(
+            original_requested_nets, requested_nets
+        )
 
     def test_request_no_defroute_no_existing_defroute(self, mockRConfig):
         running_config = self._nets_config(NET1_SETUP, default_route=False)
@@ -78,8 +76,9 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
 
         canonicalize.canonicalize_networks(requested_nets)
 
-        self._assert_default_route_keys(original_requested_nets,
-                                        requested_nets)
+        self._assert_default_route_keys(
+            original_requested_nets, requested_nets
+        )
 
     def test_request_one_defroute_existing_same_defroute(self, mockRConfig):
         running_config = self._nets_config(NET0_SETUP, default_route=True)
@@ -90,15 +89,17 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
 
         canonicalize.canonicalize_networks(requested_nets)
 
-        self._assert_default_route_keys(original_requested_nets,
-                                        requested_nets)
+        self._assert_default_route_keys(
+            original_requested_nets, requested_nets
+        )
 
     def test_request_one_defroute_removing_existing_different_defroute(
-            self, mockRConfig):
+        self, mockRConfig
+    ):
         running_config = self._nets_config(NET1_SETUP, default_route=True)
         requested_nets = _merge_dicts(
             self._nets_config(NET0_SETUP, default_route=True),
-            self._nets_config(NET1_SETUP, default_route=False)
+            self._nets_config(NET1_SETUP, default_route=False),
         )
         original_requested_nets = copy.deepcopy(requested_nets)
 
@@ -106,8 +107,9 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
 
         canonicalize.canonicalize_networks(requested_nets)
 
-        self._assert_default_route_keys(original_requested_nets,
-                                        requested_nets)
+        self._assert_default_route_keys(
+            original_requested_nets, requested_nets
+        )
 
     def test_request_multi_defroute(self, mockRConfig):
         mockRConfig.return_value.networks = {}
@@ -118,7 +120,8 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
             canonicalize.canonicalize_networks(requested_nets)
 
     def test_request_one_defroute_existing_different_defroute(
-            self, mockRConfig):
+        self, mockRConfig
+    ):
         running_config = self._nets_config(NET1_SETUP, default_route=True)
         requested_nets = self._nets_config(NET0_SETUP, default_route=True)
         original_requested_nets = copy.deepcopy(requested_nets)
@@ -128,19 +131,22 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
         canonicalize.canonicalize_networks(requested_nets)
 
         auto_generated_net = self._nets_config(NET1_SETUP, default_route=False)
-        expected_canonicalized_request = _merge_dicts(auto_generated_net,
-                                                      original_requested_nets)
+        expected_canonicalized_request = _merge_dicts(
+            auto_generated_net, original_requested_nets
+        )
 
-        self._assert_default_route_keys(expected_canonicalized_request,
-                                        requested_nets)
+        self._assert_default_route_keys(
+            expected_canonicalized_request, requested_nets
+        )
 
     def test_request_multi_defroute_removing_existing_different_defroute(
-            self, mockRConfig):
+        self, mockRConfig
+    ):
         running_config = self._nets_config(NET2_SETUP, default_route=True)
         requested_nets = _merge_dicts(
             self._nets_config(NET0_SETUP, default_route=True),
             self._nets_config(NET1_SETUP, default_route=True),
-            self._nets_config(NET2_SETUP, default_route=False)
+            self._nets_config(NET2_SETUP, default_route=False),
         )
 
         mockRConfig.return_value.networks = running_config
@@ -159,10 +165,13 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
     def _assert_default_route_keys(self, expected_setup, actual_setup):
         self.assertEqual(set(expected_setup), set(actual_setup))
         for net in expected_setup:
-            self.assertEqual(expected_setup[net]['defaultRoute'],
-                             actual_setup[net]['defaultRoute'],
-                             '{} != {}'.format({net: expected_setup[net]},
-                                               {net: actual_setup[net]}))
+            self.assertEqual(
+                expected_setup[net]['defaultRoute'],
+                actual_setup[net]['defaultRoute'],
+                '{} != {}'.format(
+                    {net: expected_setup[net]}, {net: actual_setup[net]}
+                ),
+            )
 
 
 def _merge_dicts(*dicts):

@@ -35,22 +35,30 @@ from .nettestlib import has_sysfs_bond_permission
 TESTS_STATIC_PATH = os.path.join(os.path.dirname(__file__), 'static')
 
 ALTERNATIVE_BONDING_DEFAULTS = os.path.join(
-    TESTS_STATIC_PATH, 'bonding-defaults.json')
+    TESTS_STATIC_PATH, 'bonding-defaults.json'
+)
 
 ALTERNATIVE_BONDING_NAME2NUMERIC_PATH = os.path.join(
-    TESTS_STATIC_PATH, 'bonding-name2numeric.json')
+    TESTS_STATIC_PATH, 'bonding-name2numeric.json'
+)
 
 bonding_dump_patchers = []
 
 
 def setup_package():
     bonding_dump_patchers.append(
-        mock.patch('vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
-                   ALTERNATIVE_BONDING_DEFAULTS))
+        mock.patch(
+            'vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
+            ALTERNATIVE_BONDING_DEFAULTS,
+        )
+    )
     bonding_dump_patchers.append(
-        mock.patch('vdsm.network.link.bond.sysfs_options_mapper.'
-                   'BONDING_NAME2NUMERIC_PATH',
-                   ALTERNATIVE_BONDING_NAME2NUMERIC_PATH))
+        mock.patch(
+            'vdsm.network.link.bond.sysfs_options_mapper.'
+            'BONDING_NAME2NUMERIC_PATH',
+            ALTERNATIVE_BONDING_NAME2NUMERIC_PATH,
+        )
+    )
 
     for patcher in bonding_dump_patchers:
         patcher.start()
@@ -76,6 +84,7 @@ def _pre_cleanup_stale_iprules():
         'bash',
         '-c',
         'while ip rule delete prio {} 2>/dev/null; do true; done'.format(
-            sourceroute.RULE_PRIORITY)
+            sourceroute.RULE_PRIORITY
+        ),
     ]
     cmd.exec_sync(commands)

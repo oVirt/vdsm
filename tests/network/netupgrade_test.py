@@ -34,53 +34,73 @@ from vdsm.network import netupgrade
 
 @attr(type='unit')
 @mock.patch.object(netupgrade.libvirtnetwork, 'networks', lambda: ())
-@mock.patch.object(netupgrade.ovs_info, 'is_ovs_service_running',
-                   lambda: False)
+@mock.patch.object(
+    netupgrade.ovs_info, 'is_ovs_service_running', lambda: False
+)
 @mock.patch.object(netupgrade, 'PersistentConfig')
 @mock.patch.object(netupgrade, 'RunningConfig')
 class NetUpgradeUnifiedConfigTest(VdsmTestCase):
-
     def test_old_config_with_no_networks(self, mockRConfig, mockPConfig):
         RAW_CONFIG = {}
         NORMALIZED_CONFIG = {}
 
         self._assert_upgrade_config(
-            RAW_CONFIG, NORMALIZED_CONFIG,
-            mockRConfig.return_value, mockPConfig.return_value)
+            RAW_CONFIG,
+            NORMALIZED_CONFIG,
+            mockRConfig.return_value,
+            mockPConfig.return_value,
+        )
 
     def test_old_config_with_ifcfg_keys(self, mockRConfig, mockPConfig):
-        RAW_CONFIG = {'net0': {'nic': 'eth0',
-                               'defaultRoute': False,
-                               'UNSUPPORTED_KEY0': 'n/a'}}
+        RAW_CONFIG = {
+            'net0': {
+                'nic': 'eth0',
+                'defaultRoute': False,
+                'UNSUPPORTED_KEY0': 'n/a',
+            }
+        }
         NORMALIZED_CONFIG = {'net0': DEFAULT_NET_ATTRS}
 
         self._assert_upgrade_config(
-            RAW_CONFIG, NORMALIZED_CONFIG,
-            mockRConfig.return_value, mockPConfig.return_value)
+            RAW_CONFIG,
+            NORMALIZED_CONFIG,
+            mockRConfig.return_value,
+            mockPConfig.return_value,
+        )
 
     def test_old_config_with_non_mgmt_net_and_missing_droute(
-            self, mockRConfig, mockPConfig):
+        self, mockRConfig, mockPConfig
+    ):
         RAW_CONFIG = {'net0': {'nic': 'eth0'}}
         NORMALIZED_CONFIG = {'net0': DEFAULT_NET_ATTRS}
 
         self._assert_upgrade_config(
-            RAW_CONFIG, NORMALIZED_CONFIG,
-            mockRConfig.return_value, mockPConfig.return_value)
+            RAW_CONFIG,
+            NORMALIZED_CONFIG,
+            mockRConfig.return_value,
+            mockPConfig.return_value,
+        )
 
-    @mock.patch('vdsm.network.canonicalize.dns.get_host_nameservers',
-                lambda: [])
+    @mock.patch(
+        'vdsm.network.canonicalize.dns.get_host_nameservers', lambda: []
+    )
     def test_old_config_with_mgmt_net_and_missing_droute(
-            self, mockRConfig, mockPConfig):
+        self, mockRConfig, mockPConfig
+    ):
         RAW_CONFIG = {'ovirtmgmt': {'nic': 'eth0'}}
         net_attrs = dict(DEFAULT_NET_ATTRS, defaultRoute=True)
         NORMALIZED_CONFIG = {'ovirtmgmt': net_attrs}
 
         self._assert_upgrade_config(
-            RAW_CONFIG, NORMALIZED_CONFIG,
-            mockRConfig.return_value, mockPConfig.return_value)
+            RAW_CONFIG,
+            NORMALIZED_CONFIG,
+            mockRConfig.return_value,
+            mockPConfig.return_value,
+        )
 
     def _assert_upgrade_config(
-            self, raw_config, normalized_config, rconfig, pconfig):
+        self, raw_config, normalized_config, rconfig, pconfig
+    ):
         rconfig.networks = raw_config
         pconfig.networks = raw_config
         rconfig.netconf_path = ''
@@ -100,17 +120,18 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
 @mock.patch.object(netupgrade, 'NetInfo', lambda x: None)
 @mock.patch.object(netupgrade, 'libvirt_vdsm_nets', lambda x: None)
 @mock.patch.object(netupgrade.libvirtnetwork, 'networks', lambda: ())
-@mock.patch.object(netupgrade.ovs_info, 'is_ovs_service_running',
-                   lambda: False)
+@mock.patch.object(
+    netupgrade.ovs_info, 'is_ovs_service_running', lambda: False
+)
 @mock.patch.object(netupgrade.Ifcfg, 'owned_device', return_value=True)
 @mock.patch.object(netupgrade, 'KernelConfig')
 @mock.patch.object(netupgrade, 'PersistentConfig')
 @mock.patch.object(netupgrade, 'RunningConfig')
 class NetCreateUnifiedConfigTest(VdsmTestCase):
-
     @mock.patch.object(netupgrade.config, 'get', lambda a, b: 'ifcfg')
     def test_create_unified_config_in_ifcfg_persistence_mode(
-            self, mockRConfig, mockPConfig, mockKConfig, mock_owned_device):
+        self, mockRConfig, mockPConfig, mockKConfig, mock_owned_device
+    ):
         rconfig = mockRConfig.return_value
         pconfig = mockPConfig.return_value
         kconfig = mockKConfig.return_value
@@ -125,7 +146,8 @@ class NetCreateUnifiedConfigTest(VdsmTestCase):
 
     @mock.patch.object(netupgrade.config, 'get', lambda a, b: 'unified')
     def test_create_unified_config_in_unified_persistence_mode(
-            self, mockRConfig, mockPConfig, mockKConfig, mock_owned_device):
+        self, mockRConfig, mockPConfig, mockKConfig, mock_owned_device
+    ):
         rconfig = mockRConfig.return_value
         pconfig = mockPConfig.return_value
         kconfig = mockKConfig.return_value
@@ -156,10 +178,10 @@ class NetCreateUnifiedConfigTest(VdsmTestCase):
 
 @attr(type='integration')
 @mock.patch.object(netupgrade.libvirtnetwork, 'networks', lambda: ())
-@mock.patch.object(netupgrade.ovs_info, 'is_ovs_service_running',
-                   lambda: False)
+@mock.patch.object(
+    netupgrade.ovs_info, 'is_ovs_service_running', lambda: False
+)
 class NetUpgradeVolatileRunConfig(VdsmTestCase):
-
     def test_upgrade_volatile_running_config(self):
 
         with create_running_config(volatile=True) as vol_rconfig:
@@ -184,13 +206,15 @@ def create_running_config(volatile):
             assert not os.path.exists(tempdir)
 
 
-DEFAULT_NET_ATTRS = {'bootproto': 'none',
-                     'bridged': True,
-                     'defaultRoute': False,
-                     'dhcpv6': False,
-                     'ipv6autoconf': False,
-                     'mtu': 1500,
-                     'nameservers': [],
-                     'nic': 'eth0',
-                     'stp': False,
-                     'switch': 'legacy'}
+DEFAULT_NET_ATTRS = {
+    'bootproto': 'none',
+    'bridged': True,
+    'defaultRoute': False,
+    'dhcpv6': False,
+    'ipv6autoconf': False,
+    'mtu': 1500,
+    'nameservers': [],
+    'nic': 'eth0',
+    'stp': False,
+    'switch': 'legacy',
+}

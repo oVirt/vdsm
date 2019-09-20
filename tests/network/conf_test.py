@@ -69,12 +69,15 @@ class ifcfgConfigWriterTests(TestCaseBase):
 
     def setUp(self):
         self._tempdir = tempfile.mkdtemp()
-        self._files = tuple((os.path.join(self._tempdir, bn), init, makeDirty)
-                            for bn, init, makeDirty in
-                            (('ifcfg-eth0', self.INITIAL_CONTENT, True),
-                             ('ifcfg-eth1', None, True),
-                             ('ifcfg-eth2', None, False),
-                             ('ifcfg-eth3', self.INITIAL_CONTENT, False),))
+        self._files = tuple(
+            (os.path.join(self._tempdir, bn), init, makeDirty)
+            for bn, init, makeDirty in (
+                ('ifcfg-eth0', self.INITIAL_CONTENT, True),
+                ('ifcfg-eth1', None, True),
+                ('ifcfg-eth2', None, False),
+                ('ifcfg-eth3', self.INITIAL_CONTENT, False),
+            )
+        )
         self._cw = ifcfg.ConfigWriter()
 
     def tearDown(self):
@@ -96,20 +99,30 @@ class ifcfgConfigWriterTests(TestCaseBase):
     @MonkeyPatch(os, 'chown', lambda *x: 0)
     def testPersistentBackup(self):
 
-        with MonkeyPatchScope([
-            (ifcfg, 'NET_CONF_BACK_DIR',
-             os.path.join(self._tempdir, 'netback')),
-            (ifcfg, 'NET_CONF_DIR', self._tempdir),
-            (ifcfg, 'NET_CONF_PREF',
-             os.path.join(self._tempdir, 'ifcfg-')),
-            (ifcfg, 'ifdown', lambda x: 0),
-            (ifcfg, '_exec_ifup', lambda *x: 0),
-        ]):
+        with MonkeyPatchScope(
+            [
+                (
+                    ifcfg,
+                    'NET_CONF_BACK_DIR',
+                    os.path.join(self._tempdir, 'netback'),
+                ),
+                (ifcfg, 'NET_CONF_DIR', self._tempdir),
+                (
+                    ifcfg,
+                    'NET_CONF_PREF',
+                    os.path.join(self._tempdir, 'ifcfg-'),
+                ),
+                (ifcfg, 'ifdown', lambda x: 0),
+                (ifcfg, '_exec_ifup', lambda *x: 0),
+            ]
+        ):
             # after vdsm package is installed, the 'vdsm' account will be
             # created if no 'vdsm' account, we should skip this test
             if 'vdsm' not in [val.pw_name for val in pwd.getpwall()]:
-                raise SkipTest("'vdsm' is not in user account database, "
-                               "install vdsm package to create the vdsm user")
+                raise SkipTest(
+                    "'vdsm' is not in user account database, "
+                    "install vdsm package to create the vdsm user"
+                )
 
             self._createFiles()
 
@@ -173,47 +186,46 @@ ONBOOT=yes
 @mock.patch.object(ifcfg_acquire.glob, 'iglob')
 @mock.patch.object(ifcfg_acquire.misc, 'open', create=True)
 class IfcfgAcquireNMofflineTests(TestCaseBase):
-
-    def test_acquire_iface_given_non_standard_filename(self,
-                                                       mock_open,
-                                                       mock_list_files,
-                                                       mock_rename,
-                                                       mock_rmfile):
+    def test_acquire_iface_given_non_standard_filename(
+        self, mock_open, mock_list_files, mock_rename, mock_rmfile
+    ):
         mock_open.return_value.__enter__.side_effect = lambda: StringIO(
-            IFCFG_ETH_CONF)
+            IFCFG_ETH_CONF
+        )
         mock_list_files.return_value = ['filename1']
 
         ifcfg_acquire.IfcfgAcquire.acquire_device('testdevice')
 
         mock_rename.assert_called_once_with(
-            'filename1', ifcfg_acquire.NET_CONF_PREF + 'testdevice')
+            'filename1', ifcfg_acquire.NET_CONF_PREF + 'testdevice'
+        )
 
-    def test_acquire_iface_given_multiple_files_for_the_iface(self,
-                                                              mock_open,
-                                                              mock_list_files,
-                                                              mock_rename,
-                                                              mock_rmfile):
+    def test_acquire_iface_given_multiple_files_for_the_iface(
+        self, mock_open, mock_list_files, mock_rename, mock_rmfile
+    ):
         mock_open.return_value.__enter__.side_effect = lambda: StringIO(
-            IFCFG_ETH_CONF)
+            IFCFG_ETH_CONF
+        )
         mock_list_files.return_value = ['filename1', 'filename2']
 
         ifcfg_acquire.IfcfgAcquire.acquire_device('testdevice')
 
         mock_rename.assert_called_once_with(
-            'filename1', ifcfg_acquire.NET_CONF_PREF + 'testdevice')
+            'filename1', ifcfg_acquire.NET_CONF_PREF + 'testdevice'
+        )
         mock_rmfile.assert_called_once_with('filename2')
 
-    def test_acquire_vlan_iface_given_nm_unique_config(self,
-                                                       mock_open,
-                                                       mock_list_files,
-                                                       mock_rename,
-                                                       mock_rmfile):
+    def test_acquire_vlan_iface_given_nm_unique_config(
+        self, mock_open, mock_list_files, mock_rename, mock_rmfile
+    ):
         mock_open.return_value.__enter__.side_effect = lambda: StringIO(
-            IFCFG_VLAN_CONF)
+            IFCFG_VLAN_CONF
+        )
         mock_list_files.return_value = ['filename1', 'filename2']
 
         ifcfg_acquire.IfcfgAcquire.acquire_vlan_device('testdevice.100')
 
         mock_rename.assert_called_once_with(
-            'filename1', ifcfg_acquire.NET_CONF_PREF + 'testdevice.100')
+            'filename1', ifcfg_acquire.NET_CONF_PREF + 'testdevice.100'
+        )
         mock_rmfile.assert_called_once_with('filename2')
