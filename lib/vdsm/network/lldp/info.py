@@ -34,8 +34,7 @@ def get_info(filter):
 
 
 def _get_info(device):
-    dev_info = {'enabled': False,
-                'tlvs': []}
+    dev_info = {'enabled': False, 'tlvs': []}
     if iface(device).is_oper_up() and Lldp.is_lldp_enabled_on_iface(device):
         dev_info['enabled'] = True
         dev_info['tlvs'] = Lldp.get_tlvs(device)

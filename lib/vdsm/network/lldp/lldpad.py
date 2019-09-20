@@ -26,7 +26,6 @@ from . import LldpAPI
 
 
 class Lldp(LldpAPI):
-
     @staticmethod
     def enable_lldp_on_iface(iface, rx_only=True):
         lldptool.enable_lldp_on_iface(iface, rx_only)
@@ -45,5 +44,7 @@ class Lldp(LldpAPI):
 
     @staticmethod
     def is_active():
-        return (lldptool.is_lldpad_service_running() and
-                lldptool.is_lldptool_functional())
+        return (
+            lldptool.is_lldpad_service_running()
+            and lldptool.is_lldptool_functional()
+        )
