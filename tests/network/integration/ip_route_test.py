@@ -36,8 +36,11 @@ class IPRouteTest(unittest.TestCase):
     def test_add_delete_and_read_route(self):
         route = IPRouteData(to=IPV4_ADDRESS, via=None, family=4, device='lo')
         with self.create_route(route):
-            routes = [r for r in IPRouteTest.IPRoute.routes(table='main')
-                      if r.to == IPV4_ADDRESS]
+            routes = [
+                r
+                for r in IPRouteTest.IPRoute.routes(table='main')
+                if r.to == IPV4_ADDRESS
+            ]
             self.assertEqual(1, len(routes))
             self.assertEqual(routes[0].device, 'lo')
             self.assertEqual(routes[0].table, 'main')

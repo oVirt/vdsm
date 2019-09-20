@@ -62,13 +62,13 @@ class TestFilters(unittest.TestCase):
 
 
 class TestSourceRoute(unittest.TestCase):
-
     def test_sourceroute_add_remove_and_read(self):
         with dummy_device() as nic:
             addrAdd(nic, IPV4_ADDRESS, IPV4_MASK)
 
-            with create_sourceroute(device=nic, ip=IPV4_ADDRESS,
-                                    mask=IPV4_MASK, gateway=IPV4_GW):
+            with create_sourceroute(
+                device=nic, ip=IPV4_ADDRESS, mask=IPV4_MASK, gateway=IPV4_GW
+            ):
                 dsroute = DynamicSourceRoute(nic, None, None, None)
                 routes, rules = dsroute.current_srconfig()
 
@@ -92,8 +92,9 @@ class TestSourceRoute(unittest.TestCase):
         with dummy_device() as nic:
             addrAdd(nic, IPV4_ADDRESS, IPV4_MASK)
 
-            with create_sourceroute(device=nic, ip=IPV4_ADDRESS,
-                                    mask=IPV4_MASK, gateway=IPV4_GW):
+            with create_sourceroute(
+                device=nic, ip=IPV4_ADDRESS, mask=IPV4_MASK, gateway=IPV4_GW
+            ):
                 sourceroute.add(nic, IPV4_ADDRESS, IPV4_MASK, IPV4_GW)
 
 

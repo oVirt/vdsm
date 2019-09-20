@@ -49,7 +49,6 @@ def _sorted_arp_ip_target(options):
 
 
 class LinkBondTests(unittest.TestCase):
-
     def test_bond_without_slaves(self):
         with bond_device() as bond:
             self.assertFalse(iface(bond.master).is_up())
@@ -149,7 +148,8 @@ class LinkBondTests(unittest.TestCase):
         OPTIONS = {
             'mode': '1',
             'arp_interval': '1000',
-            'arp_ip_target': '192.168.122.1'}
+            'arp_ip_target': '192.168.122.1',
+        }
 
         with bond_device() as bond:
             bond.set_options(OPTIONS)
@@ -160,23 +160,24 @@ class LinkBondTests(unittest.TestCase):
         OPTIONS = {
             'mode': '1',
             'arp_interval': '1000',
-            'arp_ip_target': '10.1.3.1,10.1.2.1'}
+            'arp_ip_target': '10.1.3.1,10.1.2.1',
+        }
 
         with bond_device() as bond:
             bond.set_options(OPTIONS)
             bond.refresh()
             self.assertEqual(
                 _sorted_arp_ip_target(bond.options),
-                _sorted_arp_ip_target(OPTIONS))
+                _sorted_arp_ip_target(OPTIONS),
+            )
 
     def test_bond_clear_arp_ip_target(self):
         OPTIONS_A = {
             'mode': '1',
             'arp_interval': '1000',
-            'arp_ip_target': '192.168.122.1'}
-        OPTIONS_B = {
-            'mode': '1',
-            'arp_interval': '1000'}
+            'arp_ip_target': '192.168.122.1',
+        }
+        OPTIONS_B = {'mode': '1', 'arp_interval': '1000'}
 
         with bond_device() as bond:
             bond.set_options(OPTIONS_A)
@@ -192,11 +193,13 @@ class LinkBondTests(unittest.TestCase):
         OPTIONS_A = {
             'mode': '1',
             'arp_interval': '1000',
-            'arp_ip_target': ','.join([preserved_addr, removed_addr])}
+            'arp_ip_target': ','.join([preserved_addr, removed_addr]),
+        }
         OPTIONS_B = {
             'mode': '1',
             'arp_interval': '1000',
-            'arp_ip_target': ','.join([preserved_addr, added_addr])}
+            'arp_ip_target': ','.join([preserved_addr, added_addr]),
+        }
 
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as bond:
@@ -211,7 +214,6 @@ class LinkBondTests(unittest.TestCase):
 
 
 class LinkBondSysFSTests(unittest.TestCase):
-
     def test_do_not_detach_slaves_while_changing_options(self):
         OPTIONS = {'miimon': '110'}
 
@@ -227,20 +229,21 @@ class LinkBondSysFSTests(unittest.TestCase):
     def test_bond_properties_with_filter(self):
         with bond_device() as bond:
             properties = sysfs_options.properties(
-                bond.master, filter_properties=('mode',))
+                bond.master, filter_properties=('mode',)
+            )
             self.assertTrue('mode' in properties)
             self.assertEqual(1, len(properties))
 
     def test_bond_properties_with_filter_out(self):
         with bond_device() as bond:
             properties = sysfs_options.properties(
-                bond.master, filter_out_properties=('mode',))
+                bond.master, filter_out_properties=('mode',)
+            )
             self.assertTrue('mode' not in properties)
             self.assertGreater(len(properties), 1)
 
 
 class TestBondingSysfsOptionsMapper(unittest.TestCase):
-
     def test_dump_bonding_name2numeric(self):
         BOND_MODE = '0'
         OPT_NAME = 'arp_validate'
@@ -251,8 +254,10 @@ class TestBondingSysfsOptionsMapper(unittest.TestCase):
             opt_map = sysfs_options_mapper._get_bonding_options_name2numeric()
         except IOError as e:
             if e.errno == errno.EBUSY:
-                raise SkipTest('Bond option mapping failed on EBUSY, '
-                               'Kernel version: %s' % os.uname()[2])
+                raise SkipTest(
+                    'Bond option mapping failed on EBUSY, '
+                    'Kernel version: %s' % os.uname()[2]
+                )
             raise
 
         self.assertIn(BOND_MODE, opt_map)
@@ -271,7 +276,8 @@ class TestBondingSysfsOptionsMapper(unittest.TestCase):
     def _get_bonding_option_num_val(self, option_name, val_name):
         mode_num = sysfs_options.BONDING_MODES_NAME_TO_NUMBER['balance-rr']
         opt_num_val = sysfs_options_mapper.get_bonding_option_numeric_val(
-            mode_num, option_name, val_name)
+            mode_num, option_name, val_name
+        )
         return opt_num_val
 
 

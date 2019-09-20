@@ -61,7 +61,6 @@ def teardown_module():
 
 
 class TestNMConnectionSettings(unittest.TestCase):
-
     def setUp(self):
         self.nm_settings = NMDbusSettings()
         self.iface = iface_name()
@@ -77,8 +76,9 @@ class TestNMConnectionSettings(unittest.TestCase):
 
     def test_delete_one_of_two_connections(self):
         with dummy_devices(1) as nics:
-            with nm_connections(self.iface, IPV4ADDR,
-                                slaves=nics, con_count=2) as connames:
+            with nm_connections(
+                self.iface, IPV4ADDR, slaves=nics, con_count=2
+            ) as connames:
 
                 con0 = self._get_connection(connames[0])
                 con0.delete()
@@ -94,7 +94,6 @@ class TestNMConnectionSettings(unittest.TestCase):
 
 
 class TestNMActiveConnections(unittest.TestCase):
-
     def test_active_connections_properties_existence(self):
         nm_active_cons = NMDbusActiveConnections()
 
@@ -129,7 +128,6 @@ class TestNMActiveConnections(unittest.TestCase):
 
 
 class TestNMDevice(unittest.TestCase):
-
     def test_device_attributes_existence(self):
         nm_device = NMDbusDevice()
         nm_settings = NMDbusSettings()
@@ -171,8 +169,9 @@ class TestNMDevice(unittest.TestCase):
 
         iface = iface_name()
         with dummy_devices(1) as nics:
-            with nm_connections(iface, IPV4ADDR, slaves=nics,
-                                con_count=con_count):
+            with nm_connections(
+                iface, IPV4ADDR, slaves=nics, con_count=con_count
+            ):
                 device = nm_device.device(iface)
                 for connection_path in device.connections_path():
                     settings_con = nm_settings.connection(connection_path)
@@ -186,7 +185,6 @@ class TestNMDevice(unittest.TestCase):
 
 
 class TestNMConnectionCreation(unittest.TestCase):
-
     def test_nm_connection_lifetime(self):
         nm_act_cons = NMDbusActiveConnections()
         nm_device = NMDbusDevice()
@@ -200,8 +198,10 @@ class TestNMConnectionCreation(unittest.TestCase):
                 active_con = nm_act_cons.connection(active_con_path)
 
                 self.assertEqual(TEST_LINK_TYPE, str(active_con.type()))
-                self.assertEqual(nmtypes.NMActiveConnectionState.ACTIVATED,
-                                 active_con.state())
+                self.assertEqual(
+                    nmtypes.NMActiveConnectionState.ACTIVATED,
+                    active_con.state(),
+                )
 
         self._assert_no_device(iface)
 

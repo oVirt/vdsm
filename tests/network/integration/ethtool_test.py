@@ -29,7 +29,6 @@ from network.nettestlib import bridge_device
 
 
 class TestEthtoolDeviceInfo(unittest.TestCase):
-
     def test_detect_device_driver(self):
         with bridge_device() as br:
             self.assertEqual('bridge', ethtool.driver_name(br.devName))

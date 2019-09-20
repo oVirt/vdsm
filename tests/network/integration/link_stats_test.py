@@ -49,7 +49,7 @@ def _bridge_device():
         (_vlan_device, {}),
         (_bridge_device, {}),
     ],
-    ids=['nic', 'bond', 'vlan', 'bridge']
+    ids=['nic', 'bond', 'vlan', 'bridge'],
 )
 def test_report(device_ctx, device_ctx_args):
     with device_ctx(**device_ctx_args) as dev:
@@ -65,6 +65,6 @@ def test_report(device_ctx, device_ctx_args):
             'rxErrors',
             'txErrors',
             'speed',
-            'duplex'
+            'duplex',
         }
         assert expected_stat_names == set(stats[dev])

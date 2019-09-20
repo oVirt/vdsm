@@ -38,8 +38,9 @@ class IPRuleTest(unittest.TestCase):
     def test_add_delete_and_read_rule(self):
         rule = IPRuleData(to=IPV4_ADDRESS1, iif='lo', table='main', prio=999)
         with self.create_rule(rule):
-            rules = [r for r in IPRuleTest.IPRule.rules()
-                     if r.to == IPV4_ADDRESS1]
+            rules = [
+                r for r in IPRuleTest.IPRule.rules() if r.to == IPV4_ADDRESS1
+            ]
             self.assertEqual(1, len(rules))
             self.assertEqual(rules[0].iif, 'lo')
             self.assertEqual(rules[0].table, 'main')
@@ -52,7 +53,8 @@ class IPRuleTest(unittest.TestCase):
 
     def test_add_rule_with_invalid_address(self):
         rule = IPRuleData(
-            to=IPV4_ADDRESS1, iif='shrubbery_shruberry', table='main')
+            to=IPV4_ADDRESS1, iif='shrubbery_shruberry', table='main'
+        )
         with self.assertRaises(IPRuleAddError):
             with self.create_rule(rule):
                 pass

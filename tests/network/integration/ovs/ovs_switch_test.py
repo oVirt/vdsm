@@ -35,7 +35,6 @@ class MockedOvsInfo(ovs_info.OvsInfo):
 
 
 class SetupTransactionTests(unittest.TestCase):
-
     def test_dry_run(self):
         ovs_info = MockedOvsInfo()
         net_rem_setup = ovs_switch.NetsRemovalSetup(ovs_info)

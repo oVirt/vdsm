@@ -23,7 +23,7 @@ from __future__ import division
 from contextlib import contextmanager
 import unittest
 
-from network.nettestlib import dummy_device
+from network.nettestlib import dummy_devices
 from network.ovsnettestlib import TEST_BRIDGE
 from network.ovsnettestlib import TEST_BOND
 
@@ -31,7 +31,6 @@ from vdsm.network.ovs.driver import create, Drivers as OvsDrivers
 
 
 class TestOvsApiBase(unittest.TestCase):
-
     def test_instantiate_vsctl_implementation(self):
         self.assertIsNotNone(create(OvsDrivers.VSCTL))
 
@@ -64,7 +63,6 @@ class TestOvsApiBase(unittest.TestCase):
 
 
 class TestOvsApiWithSingleRealBridge(unittest.TestCase):
-
     def setUp(self):
         self.ovsdb = create()
         self.ovsdb.add_br(TEST_BRIDGE).execute()
@@ -85,17 +83,16 @@ class TestOvsApiWithSingleRealBridge(unittest.TestCase):
             t.add(self.ovsdb.del_vlan(100))
 
     def test_create_remove_bond(self):
-        with dummy_device() as dev0, dummy_device() as dev1:
+        with dummy_devices(2) as (dev0, dev1):
             with ovs_bond(self.ovsdb, TEST_BRIDGE, TEST_BOND, [dev0, dev1]):
-                self.assertEqual([TEST_BOND],
-                                 self.ovsdb.list_ports(TEST_BRIDGE).execute())
+                self.assertEqual(
+                    [TEST_BOND], self.ovsdb.list_ports(TEST_BRIDGE).execute()
+                )
 
             self.assertEqual([], self.ovsdb.list_ports(TEST_BRIDGE).execute())
 
     def test_add_slave_to_bond(self):
-        with dummy_device() as dev0,\
-                dummy_device() as dev1,\
-                dummy_device() as dev2:
+        with dummy_devices(3) as (dev0, dev1, dev2):
             with ovs_bond(self.ovsdb, TEST_BRIDGE, TEST_BOND, [dev0, dev1]):
                 with self.ovsdb.transaction() as t:
                     t.add(*self.ovsdb.attach_bond_slave(TEST_BOND, dev2))
@@ -105,11 +102,10 @@ class TestOvsApiWithSingleRealBridge(unittest.TestCase):
                 self.assertEqual(3, len(bond_data[0]['interfaces']))
 
     def test_remove_slave_from_bond(self):
-        with dummy_device() as dev0,\
-                dummy_device() as dev1,\
-                dummy_device() as dev2:
-            with ovs_bond(self.ovsdb, TEST_BRIDGE, TEST_BOND,
-                          [dev0, dev1, dev2]):
+        with dummy_devices(3) as (dev0, dev1, dev2):
+            with ovs_bond(
+                self.ovsdb, TEST_BRIDGE, TEST_BOND, [dev0, dev1, dev2]
+            ):
                 with self.ovsdb.transaction() as t:
                     t.add(*self.ovsdb.detach_bond_slave(TEST_BOND, dev2))
 
@@ -118,34 +114,37 @@ class TestOvsApiWithSingleRealBridge(unittest.TestCase):
                 self.assertEqual(2, len(bond_data[0]['interfaces']))
 
     def test_create_remove_port_mirroring(self):
-        with dummy_device() as dev0:
-            with ovs_port(self.ovsdb, TEST_BRIDGE, dev0),\
-                    ovs_mirror(self.ovsdb, TEST_BRIDGE, 'm0', dev0):
+        with dummy_devices(1) as (dev0,):
+            with ovs_port(self.ovsdb, TEST_BRIDGE, dev0), ovs_mirror(
+                self.ovsdb, TEST_BRIDGE, 'm0', dev0
+            ):
                 mirror_data = self.ovsdb.list_mirror_info().execute()
                 port_data = self.ovsdb.list_port_info(dev0).execute()
 
                 self.assertEqual(1, len(mirror_data))
-                self.assertEqual(port_data[0]['_uuid'],
-                                 mirror_data[0]['output_port'])
+                self.assertEqual(
+                    port_data[0]['_uuid'], mirror_data[0]['output_port']
+                )
 
             bridge_data = self.ovsdb.list_bridge_info(TEST_BRIDGE).execute()
-            self.assertNotIn(mirror_data[0]['_uuid'],
-                             bridge_data[0]['mirrors'])
+            self.assertNotIn(
+                mirror_data[0]['_uuid'], bridge_data[0]['mirrors']
+            )
 
     def test_set_mirrored_port(self):
-        with dummy_device() as dev0, dummy_device() as dev1:
-            with ovs_port(self.ovsdb, TEST_BRIDGE, dev0),\
-                    ovs_port(self.ovsdb, TEST_BRIDGE, dev1),\
-                    ovs_mirror(self.ovsdb, TEST_BRIDGE, 'm0', dev0):
+        with dummy_devices(2) as (dev0, dev1):
+            with ovs_port(self.ovsdb, TEST_BRIDGE, dev0), ovs_port(
+                self.ovsdb, TEST_BRIDGE, dev1
+            ), ovs_mirror(self.ovsdb, TEST_BRIDGE, 'm0', dev0):
                 mirror_data = self.ovsdb.list_mirror_info().execute()
                 port_data = self.ovsdb.list_port_info(dev1).execute()
 
                 mirror_id = mirror_data[0]['_uuid']
                 port_id = port_data[0]['_uuid']
 
-                self.ovsdb.set_mirror_attr(str(mirror_id),
-                                           'select-dst-port',
-                                           str(port_id)).execute()
+                self.ovsdb.set_mirror_attr(
+                    str(mirror_id), 'select-dst-port', str(port_id)
+                ).execute()
 
                 mirror_data = self.ovsdb.list_mirror_info().execute()
                 self.assertEqual(port_id, mirror_data[0]['select_dst_port'])

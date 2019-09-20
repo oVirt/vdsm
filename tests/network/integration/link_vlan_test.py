@@ -28,12 +28,13 @@ from vdsm.network.link import vlan
 
 
 class LinkIfaceTests(unittest.TestCase):
-
     def test_list_vlans_on_base_device(self):
         with dummy_device() as nic:
             with vlan_device(nic, tag=999) as vlan_dev:
-                self.assertEqual([vlan_dev.devName],
-                                 list(vlan.get_vlans_on_base_device(nic)))
+                self.assertEqual(
+                    [vlan_dev.devName],
+                    list(vlan.get_vlans_on_base_device(nic)),
+                )
 
     def test_identify_vlan_base_device(self):
         with dummy_device() as nic:

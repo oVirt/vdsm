@@ -28,7 +28,6 @@ from vdsm.network.link.iface import iface
 
 
 class LinkIfaceTests(unittest.TestCase):
-
     def test_iface_up(self):
         with dummy_device() as nic:
             _iface = iface(nic)

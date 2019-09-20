@@ -36,26 +36,33 @@ TEST_VLANED_NETWORK = 'test-network' + str(TEST_VLAN)
 
 @contextmanager
 def _setup_ovs_network(ovsdb, sb_iface):
-
     def _bridge():
         return ovsdb.add_br(TEST_BRIDGE)
 
     def _attach_southbound():
         commands = []
         commands.append(ovsdb.add_port(TEST_BRIDGE, sb_iface))
-        commands.append(ovsdb.set_port_attr(
-            sb_iface, 'other_config:vdsm_level', info.SOUTHBOUND))
+        commands.append(
+            ovsdb.set_port_attr(
+                sb_iface, 'other_config:vdsm_level', info.SOUTHBOUND
+            )
+        )
         return commands
 
     def _northbound_port():
         commands = []
         commands.append(ovsdb.add_port(TEST_BRIDGE, TEST_VLANED_NETWORK))
-        commands.append(ovsdb.set_port_attr(
-            TEST_VLANED_NETWORK, 'tag', TEST_VLAN))
-        commands.append(ovsdb.set_port_attr(
-            TEST_VLANED_NETWORK, 'other_config:vdsm_level', info.NORTHBOUND))
-        commands.append(ovsdb.set_interface_attr(
-            TEST_VLANED_NETWORK, 'type', 'internal'))
+        commands.append(
+            ovsdb.set_port_attr(TEST_VLANED_NETWORK, 'tag', TEST_VLAN)
+        )
+        commands.append(
+            ovsdb.set_port_attr(
+                TEST_VLANED_NETWORK, 'other_config:vdsm_level', info.NORTHBOUND
+            )
+        )
+        commands.append(
+            ovsdb.set_interface_attr(TEST_VLANED_NETWORK, 'type', 'internal')
+        )
         return commands
 
     with ovsdb.transaction() as t:
@@ -70,7 +77,6 @@ def _setup_ovs_network(ovsdb, sb_iface):
 
 
 class TestOvsInfo(unittest.TestCase):
-
     def setUp(self):
         self.ovsdb = create()
 
@@ -82,19 +88,13 @@ class TestOvsInfo(unittest.TestCase):
                         'stp': False,
                         'dpdk_enabled': False,
                         'ports': {
-                            nic: {
-                                'level': info.SOUTHBOUND,
-                                'tag': None
-                            },
+                            nic: {'level': info.SOUTHBOUND, 'tag': None},
                             TEST_VLANED_NETWORK: {
                                 'level': info.NORTHBOUND,
-                                'tag': TEST_VLAN
+                                'tag': TEST_VLAN,
                             },
-                            TEST_BRIDGE: {
-                                'level': None,
-                                'tag': None
-                            }
-                        }
+                            TEST_BRIDGE: {'level': None, 'tag': None},
+                        },
                     }
                 }
 
@@ -117,17 +117,11 @@ class TestOvsInfo(unittest.TestCase):
                             'ports': {
                                 TEST_VLANED_NETWORK: {
                                     'level': info.NORTHBOUND,
-                                    'tag': TEST_VLAN
+                                    'tag': TEST_VLAN,
                                 },
-                                TEST_BRIDGE: {
-                                    'level': None,
-                                    'tag': None
-                                },
-                                bond: {
-                                    'level': info.SOUTHBOUND,
-                                    'tag': None
-                                }
-                            }
+                                TEST_BRIDGE: {'level': None, 'tag': None},
+                                bond: {'level': info.SOUTHBOUND, 'tag': None},
+                            },
                         }
                     }
 
@@ -137,5 +131,6 @@ class TestOvsInfo(unittest.TestCase):
                     self.assertEqual(obtained_bridges, expected_bridges)
 
                     obtained_bridges_by_sb = ovs_info.bridges_by_sb
-                    self.assertEqual(obtained_bridges_by_sb,
-                                     {bond: TEST_BRIDGE})
+                    self.assertEqual(
+                        obtained_bridges_by_sb, {bond: TEST_BRIDGE}
+                    )
