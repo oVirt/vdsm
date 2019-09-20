@@ -221,7 +221,8 @@ Requires: lvm2 >= 2.02.145
 Requires: kernel >= 3.10.0-957.12.2.el7
 %else # rhel
 %ifarch ppc64le
-# not ready yet
+# CVE-2019-14835
+Requires: kernel >= 3.10.0-957.35.2.el7
 %else # x86_64
 # CVE-2019-14835
 Requires: kernel >= 3.10.0-1062.1.2.el7
