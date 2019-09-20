@@ -31,16 +31,23 @@ from vdsm.network import errors as ne
 from vdsm.network.errors import ConfigNetworkError, OvsDBConnectionError
 from vdsm.common.cmdutils import CommandPath
 
-from . import (OvsApi,
-               Transaction as DriverTransaction,
-               Command as DriverCommand)
+from . import (
+    OvsApi,
+    Transaction as DriverTransaction,
+    Command as DriverCommand,
+)
 
 # TODO: add a test which checks if following lists are mutual exclusive
 # if there is just one item in a list, it is reported as single item
 _DB_ENTRIES_WHICH_SHOULD_BE_LIST = {'ports', 'interfaces'}
 # if a single item entry is not defined, it is reported as empty list
 _DB_ENTRIES_WHICH_SHOULD_NOT_BE_LIST = {
-    'tag', 'bond_active_slave', 'bond_mode', 'lacp', 'mac_in_use'}
+    'tag',
+    'bond_active_slave',
+    'bond_mode',
+    'lacp',
+    'mac_in_use',
+}
 
 OUTPUT_FORMAT = ['--oneline', '--format=json']
 
@@ -48,7 +55,6 @@ DEFAULT_TIMEOUT = 5
 
 
 class Transaction(DriverTransaction):
-
     def __init__(self):
         self.commands = []
         self.timeout = DEFAULT_TIMEOUT
@@ -75,7 +81,8 @@ class Transaction(DriverTransaction):
             else:
                 raise ConfigNetworkError(
                     ne.ERR_BAD_PARAMS,
-                    'Executing commands failed: %s' % '\n'.join(err))
+                    'Executing commands failed: %s' % '\n'.join(err),
+                )
         if out is None:
             return
 
@@ -88,7 +95,6 @@ class Transaction(DriverTransaction):
 
 
 class Command(DriverCommand):
-
     def __init__(self, cmd):
         self.cmd = cmd
         self._result = None
@@ -108,7 +114,6 @@ class Command(DriverCommand):
 
 
 class DBResultCommand(Command):
-
     def set_raw_result(self, data):
         if not data:
             self._result = None
@@ -132,7 +137,6 @@ class DBResultCommand(Command):
 
 
 class Ovs(OvsApi):
-
     def transaction(self):
         return Transaction()
 
@@ -202,13 +206,23 @@ class Ovs(OvsApi):
         return Command(command)
 
     def set_dpdk_port(self, port, pci_addr):
-        command = ['set', 'Interface', port, 'type=dpdk',
-                   'options:dpdk-devargs=%s' % pci_addr]
+        command = [
+            'set',
+            'Interface',
+            port,
+            'type=dpdk',
+            'options:dpdk-devargs=%s' % pci_addr,
+        ]
         return Command(command)
 
     def set_vhostuser_iface(self, iface, socket_path):
-        command = ['set', 'Interface', iface, 'type=dpdkvhostuserclient',
-                   'options:vhost-server-path=%s' % socket_path]
+        command = [
+            'set',
+            'Interface',
+            iface,
+            'type=dpdkvhostuserclient',
+            'options:vhost-server-path=%s' % socket_path,
+        ]
         return Command(command)
 
     def del_port(self, port, bridge=None, if_exists=False):
@@ -226,9 +240,14 @@ class Ovs(OvsApi):
 
     def add_mirror(self, bridge, mirror, output_port):
         port_cmd = ['--id=@p_id', 'get', 'port', output_port]
-        mirror_cmd = ['--id=@m_id', 'create', 'mirror',
-                      'name=%s' % mirror, 'select-all=true',
-                      'output-port=@p_id']
+        mirror_cmd = [
+            '--id=@m_id',
+            'create',
+            'mirror',
+            'name=%s' % mirror,
+            'select-all=true',
+            'output-port=@p_id',
+        ]
         set_mirror_cmd = ['set', 'bridge', bridge, 'mirrors=@m_id']
         return Command(port_cmd), Command(mirror_cmd), Command(set_mirror_cmd)
 
@@ -285,6 +304,6 @@ def _normalize(heading, value):
 
 @memoized
 def _ovs_vsctl_cmd():
-    return CommandPath('ovs-vsctl',
-                       '/usr/sbin/ovs-vsctl',
-                       '/usr/bin/ovs-vsctl').cmd
+    return CommandPath(
+        'ovs-vsctl', '/usr/sbin/ovs-vsctl', '/usr/bin/ovs-vsctl'
+    ).cmd

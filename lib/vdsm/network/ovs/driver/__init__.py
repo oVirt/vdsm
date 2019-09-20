@@ -30,7 +30,6 @@ from vdsm.network import driverloader
 
 @six.add_metaclass(abc.ABCMeta)
 class Transaction(object):
-
     @abc.abstractmethod
     def commit(self):
         """Apply all Commands in the Transaction."""
@@ -50,6 +49,7 @@ class Transaction(object):
 @six.add_metaclass(abc.ABCMeta)
 class Command(object):
     """An OVS Command which is to be executed in Transaction."""
+
     @abc.abstractmethod
     def execute(self, timeout):
         pass
@@ -61,6 +61,7 @@ class OvsApi(object):
     Abstact class for driver implementations.
     Each method returns a Command instance.
     """
+
     @abc.abstractmethod
     def transaction(self):
         pass

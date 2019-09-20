@@ -96,7 +96,8 @@ class NetsRemovalSetup(object):
 
     def _set_mtu(self, port, mtu):
         self._transaction.add(
-            ovsdb.set_interface_attr(port, 'mtu_request', mtu))
+            ovsdb.set_interface_attr(port, 'mtu_request', mtu)
+        )
 
 
 class NetsAdditionSetup(object):
@@ -125,7 +126,8 @@ class NetsAdditionSetup(object):
                 self._set_vlan(net, vlan)
 
             self._prepare_network_sb_mtu(
-                sb, sb_exists, attrs['mtu'], sb_max_mtu_map)
+                sb, sb_exists, attrs['mtu'], sb_max_mtu_map
+            )
 
             # FIXME: What about an existing bond?
             if nic is not None and vlan is None:
@@ -160,10 +162,14 @@ class NetsAdditionSetup(object):
 
     def _create_nb(self, bridge, port):
         self._transaction.add(ovsdb.add_port(bridge, port))
-        self._transaction.add(ovsdb.set_port_attr(
-            port, 'other_config:vdsm_level', info.NORTHBOUND))
-        self._transaction.add(ovsdb.set_interface_attr(
-            port, 'type', 'internal'))
+        self._transaction.add(
+            ovsdb.set_port_attr(
+                port, 'other_config:vdsm_level', info.NORTHBOUND
+            )
+        )
+        self._transaction.add(
+            ovsdb.set_interface_attr(port, 'type', 'internal')
+        )
 
     @staticmethod
     def _prepare_network_sb_mtu(sb, sb_exists, desired_mtu, sb_max_mtu_map):
@@ -180,23 +186,26 @@ class NetsAdditionSetup(object):
 
     def _set_mtu(self, port, mtu):
         self._transaction.add(
-            ovsdb.set_interface_attr(port, 'mtu_request', mtu))
+            ovsdb.set_interface_attr(port, 'mtu_request', mtu)
+        )
 
     def _set_vlan(self, net, vlan):
         self._transaction.add(ovsdb.set_port_attr(net, 'tag', vlan))
 
     def _copy_nic_hwaddr_to_nb(self, net, nic):
         nic_mac = _get_mac(nic)
-        self._transaction.add(ovsdb.set_interface_attr(
-            net, 'mac', nic_mac))
+        self._transaction.add(ovsdb.set_interface_attr(net, 'mac', nic_mac))
 
     def _create_bridge(self, dpdk_enabled=False):
         bridge = self._create_br_name()
         self._transaction.add(ovsdb.add_br(bridge))
         if dpdk_enabled:
             self._transaction.add(ovsdb.set_dpdk_bridge(bridge))
-        self._transaction.add(ovsdb.set_bridge_attr(
-            bridge, 'other-config:hwaddr', _random_unicast_local_mac()))
+        self._transaction.add(
+            ovsdb.set_bridge_attr(
+                bridge, 'other-config:hwaddr', _random_unicast_local_mac()
+            )
+        )
         return bridge
 
     @staticmethod
@@ -208,8 +217,11 @@ class NetsAdditionSetup(object):
         if dpdk_enabled:
             pci_addr = dpdk.pci_addr(nic)
             self._transaction.add(ovsdb.set_dpdk_port(nic, pci_addr))
-        self._transaction.add(ovsdb.set_port_attr(
-            nic, 'other_config:vdsm_level', info.SOUTHBOUND))
+        self._transaction.add(
+            ovsdb.set_port_attr(
+                nic, 'other_config:vdsm_level', info.SOUTHBOUND
+            )
+        )
 
 
 def update_network_to_bridge_mappings(ovs_info):
@@ -224,12 +236,13 @@ def update_network_to_bridge_mappings(ovs_info):
 
 
 def _random_unicast_local_mac():
-    macaddr = random.randint(0x000000000000, 0xffffffffffff)
+    macaddr = random.randint(0x000000000000, 0xFFFFFFFFFFFF)
     macaddr |= 0x020000000000  # locally administered
-    macaddr &= 0xfeffffffffff  # unicast
+    macaddr &= 0xFEFFFFFFFFFF  # unicast
     macaddr_str = '{:0>12x}'.format(macaddr)
-    return ':'.join([macaddr_str[i:i + 2]
-                     for i in range(0, len(macaddr_str), 2)])
+    return ':'.join(
+        [macaddr_str[i : (i + 2)] for i in range(0, len(macaddr_str), 2)]
+    )
 
 
 def _get_mac(iface):
