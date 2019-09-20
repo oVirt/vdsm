@@ -104,59 +104,69 @@ class TestOvsVsctlCommand(unittest.TestCase):
      "sflow",
      "status",
      "stp_enable"]}
-    """.replace('\n', '').replace(' ', '')
+    """.replace(
+        '\n', ''
+    ).replace(
+        ' ', ''
+    )
 
     PROCESSED_VSCTL_LIST_BRIDGE_OUTPUT = [
-        {u'datapath_id': u'0000fedf5a069f47',
-         u'datapath_type': u'',
-         u'mirrors': [],
-         u'rstp_status': {},
-         u'netflow': [],
-         u'rstp_enable': False,
-         u'flood_vlans': [],
-         u'datapath_version': u'<unknown>',
-         u'status': {},
-         u'ipfix': [],
-         u'_uuid': UUID('065adffd-e37e-479f-94b4-1cf72e51d18a'),
-         u'controller': [],
-         u'auto_attach': [],
-         u'mcast_snooping_enable': False,
-         u'external_ids': {},
-         u'protocols': [],
-         u'fail_mode': [],
-         u'name': u'ovstest1',
-         u'sflow': [],
-         u'other_config': {},
-         u'flow_tables': {},
-         u'ports': [UUID('ac6dfc76-a346-4de0-a234-f2ebc4c9269f')],
-         u'stp_enable': False},
-        {u'datapath_id': u'00000e74a24a7847',
-         u'datapath_type': u'',
-         u'mirrors': [],
-         u'rstp_status': {},
-         u'netflow': [],
-         u'rstp_enable': False,
-         u'flood_vlans': [],
-         u'datapath_version': u'<unknown>',
-         u'status': {},
-         u'ipfix': [],
-         u'_uuid': UUID('4aa2740e-e28f-4778-95c9-427df114c6a2'),
-         u'controller': [],
-         u'auto_attach': [],
-         u'mcast_snooping_enable': False,
-         u'external_ids': {},
-         u'protocols': [],
-         u'fail_mode': [],
-         u'name': u'ovstest0',
-         u'sflow': [],
-         u'other_config': {},
-         u'flow_tables': {},
-         u'ports': [UUID('a7c4c945-b8da-44c2-b911-4f43d9f71bc7')],
-         u'stp_enable': False}]
+        {
+            u'datapath_id': u'0000fedf5a069f47',
+            u'datapath_type': u'',
+            u'mirrors': [],
+            u'rstp_status': {},
+            u'netflow': [],
+            u'rstp_enable': False,
+            u'flood_vlans': [],
+            u'datapath_version': u'<unknown>',
+            u'status': {},
+            u'ipfix': [],
+            u'_uuid': UUID('065adffd-e37e-479f-94b4-1cf72e51d18a'),
+            u'controller': [],
+            u'auto_attach': [],
+            u'mcast_snooping_enable': False,
+            u'external_ids': {},
+            u'protocols': [],
+            u'fail_mode': [],
+            u'name': u'ovstest1',
+            u'sflow': [],
+            u'other_config': {},
+            u'flow_tables': {},
+            u'ports': [UUID('ac6dfc76-a346-4de0-a234-f2ebc4c9269f')],
+            u'stp_enable': False,
+        },
+        {
+            u'datapath_id': u'00000e74a24a7847',
+            u'datapath_type': u'',
+            u'mirrors': [],
+            u'rstp_status': {},
+            u'netflow': [],
+            u'rstp_enable': False,
+            u'flood_vlans': [],
+            u'datapath_version': u'<unknown>',
+            u'status': {},
+            u'ipfix': [],
+            u'_uuid': UUID('4aa2740e-e28f-4778-95c9-427df114c6a2'),
+            u'controller': [],
+            u'auto_attach': [],
+            u'mcast_snooping_enable': False,
+            u'external_ids': {},
+            u'protocols': [],
+            u'fail_mode': [],
+            u'name': u'ovstest0',
+            u'sflow': [],
+            u'other_config': {},
+            u'flow_tables': {},
+            u'ports': [UUID('a7c4c945-b8da-44c2-b911-4f43d9f71bc7')],
+            u'stp_enable': False,
+        },
+    ]
 
     def test_db_result_command_parser(self):
         cmd = vsctl.DBResultCommand(['fake', 'command'])
         cmd.set_raw_result(TestOvsVsctlCommand.RAW_VSCTL_LIST_BRIDGE_OUTPUT)
 
         self.assertEqual(
-            TestOvsVsctlCommand.PROCESSED_VSCTL_LIST_BRIDGE_OUTPUT, cmd.result)
+            TestOvsVsctlCommand.PROCESSED_VSCTL_LIST_BRIDGE_OUTPUT, cmd.result
+        )

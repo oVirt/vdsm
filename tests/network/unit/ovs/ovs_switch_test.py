@@ -30,7 +30,6 @@ from network.compat import mock
 @mock.patch('vdsm.network.ovs.switch.ovsdb')
 @mock.patch('vdsm.network.ovs.info.OvsInfo')
 class ListOVSAcquiredIfacesTests(unittest.TestCase):
-
     def test_add_network_with_nic(self, mock_ovs_info, mock_ovsdb):
         _init_ovs_info(mock_ovs_info)
         _init_ovsdb_mock(mock_ovsdb)
@@ -38,7 +37,8 @@ class ListOVSAcquiredIfacesTests(unittest.TestCase):
         self._assert_acquired_ifaces_post_switch_setup(
             mock_ovs_info,
             nets2add={'net': {'nic': 'eth0', 'mtu': 1500}},
-            expected_ifaces={'eth0'})
+            expected_ifaces={'eth0'},
+        )
 
     def test_add_network_with_bond(self, mock_ovs_info, mock_ovsdb):
         _init_ovs_info(mock_ovs_info)
@@ -47,15 +47,20 @@ class ListOVSAcquiredIfacesTests(unittest.TestCase):
         self._assert_acquired_ifaces_post_switch_setup(
             mock_ovs_info,
             nets2add={'net': {'bonding': 'bond1', 'mtu': 1500}},
-            expected_ifaces={'bond1'})
+            expected_ifaces={'bond1'},
+        )
 
     def _assert_acquired_ifaces_post_switch_setup(
-            self, _ovs_info, nets2add, expected_ifaces):
+        self, _ovs_info, nets2add, expected_ifaces
+    ):
 
-        with mock.patch('vdsm.network.ovs.driver.vsctl.Transaction.commit',
-                        return_value=None), \
-            mock.patch('vdsm.network.ovs.switch.link.get_link',
-                       return_value={'address': '01:23:45:67:89:ab'}):
+        with mock.patch(
+            'vdsm.network.ovs.driver.vsctl.Transaction.commit',
+            return_value=None,
+        ), mock.patch(
+            'vdsm.network.ovs.switch.link.get_link',
+            return_value={'address': '01:23:45:67:89:ab'},
+        ):
 
             setup = switch.NetsAdditionSetup(_ovs_info)
             setup.prepare_setup(nets2add)

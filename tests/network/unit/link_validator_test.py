@@ -31,11 +31,9 @@ NETWORK1_NAME = 'test-network1'
 VLANID = 10
 
 
-class TestBondNameValidation():
+class TestBondNameValidation:
 
-    INVALID_BOND_NAMES = ('bond',
-                          'bond bad',
-                          'jamesbond007')
+    INVALID_BOND_NAMES = ('bond', 'bond bad', 'jamesbond007')
 
     def test_name_validation_of_net_sb_bond(self):
         NETSETUP = {NETWORK1_NAME: {'bonding': BOND_NAME}}
@@ -48,7 +46,8 @@ class TestBondNameValidation():
     def test_bad_name_validation_of_net_sb_bond_fails(self):
         for bond_name in self.INVALID_BOND_NAMES:
             self._test_bad_name_validation_fails(
-                {NETWORK1_NAME: {'bonding': bond_name}}, {})
+                {NETWORK1_NAME: {'bonding': bond_name}}, {}
+            )
 
     def test_bad_name_validation_of_created_bond_fails(self):
         for bond_name in self.INVALID_BOND_NAMES:
@@ -60,18 +59,17 @@ class TestBondNameValidation():
         assert cne.value.errCode == ne.ERR_BAD_BONDING
 
 
-class TestBondConfigValidation():
-
+class TestBondConfigValidation:
     def test_bond_without_nics_fails(self):
         with pytest.raises(ne.ConfigNetworkError) as cne:
             validator.validate_bond_configuration({BOND_NAME: {'nics': []}})
         assert cne.value.errCode == ne.ERR_BAD_PARAMS
 
 
-class TestVlanConfigValidation():
-
+class TestVlanConfigValidation:
     def test_vlan_without_sb_device_fails(self):
         with pytest.raises(ne.ConfigNetworkError) as cne:
             validator.validate_vlan_configuration(
-                {NETWORK1_NAME: {'vlan': VLANID}})
+                {NETWORK1_NAME: {'vlan': VLANID}}
+            )
         assert cne.value.errCode == ne.ERR_BAD_VLAN

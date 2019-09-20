@@ -45,23 +45,14 @@ class MockedOvsInfo(info.OvsInfo):
             TEST_BRIDGE: {
                 'stp': False,
                 'ports': {
-                    TEST_NETWORK: {
-                        'level': info.NORTHBOUND,
-                        'tag': None
-                    },
+                    TEST_NETWORK: {'level': info.NORTHBOUND, 'tag': None},
                     TEST_VLANED_NETWORK: {
                         'level': info.NORTHBOUND,
-                        'tag': TEST_VLAN
+                        'tag': TEST_VLAN,
                     },
-                    TEST_BRIDGE: {
-                        'level': None,
-                        'tag': None
-                    },
-                    TEST_NIC: {
-                        'level': info.SOUTHBOUND,
-                        'tag': None
-                    }
-                }
+                    TEST_BRIDGE: {'level': None, 'tag': None},
+                    TEST_NIC: {'level': info.SOUTHBOUND, 'tag': None},
+                },
             }
         }
 
@@ -95,7 +86,7 @@ class TestOvsNetInfo(unittest.TestCase):
                 'southbound': TEST_NIC,
                 'ports': [TEST_NIC],
                 'stp': False,
-                'switch': 'ovs'
+                'switch': 'ovs',
             },
             TEST_VLANED_NETWORK: {
                 'addr': TEST_ADDRESS,
@@ -115,8 +106,8 @@ class TestOvsNetInfo(unittest.TestCase):
                 'ports': [TEST_VLANED_NIC],
                 'stp': False,
                 'switch': 'ovs',
-                'vlanid': TEST_VLAN
-            }
+                'vlanid': TEST_VLAN,
+            },
         },
         'bridges': {
             TEST_NETWORK: {
@@ -132,7 +123,7 @@ class TestOvsNetInfo(unittest.TestCase):
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
                 'ports': [TEST_NIC],
-                'stp': False
+                'stp': False,
             },
             TEST_VLANED_NETWORK: {
                 'addr': TEST_ADDRESS,
@@ -147,8 +138,8 @@ class TestOvsNetInfo(unittest.TestCase):
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
                 'ports': [TEST_VLANED_NIC],
-                'stp': False
-            }
+                'stp': False,
+            },
         },
         'vlans': {
             TEST_VLANED_NIC: {
@@ -164,9 +155,9 @@ class TestOvsNetInfo(unittest.TestCase):
                 'ipv6gateway': '',
                 'mtu': 1500,
                 'netmask': '',
-                'vlanid': TEST_VLAN
+                'vlanid': TEST_VLAN,
             }
-        }
+        },
     }
 
     TEST_BRIDGELESS_OVS_NETINFO = {
@@ -188,7 +179,7 @@ class TestOvsNetInfo(unittest.TestCase):
                 'southbound': TEST_NIC,
                 'ports': [TEST_NIC],
                 'stp': False,
-                'switch': 'ovs'
+                'switch': 'ovs',
             },
             TEST_VLANED_NETWORK: {
                 'addr': TEST_ADDRESS,
@@ -208,8 +199,8 @@ class TestOvsNetInfo(unittest.TestCase):
                 'ports': [TEST_VLANED_NIC],
                 'stp': False,
                 'switch': 'ovs',
-                'vlanid': TEST_VLAN
-            }
+                'vlanid': TEST_VLAN,
+            },
         },
         'bridges': {},
         'vlans': {
@@ -226,9 +217,9 @@ class TestOvsNetInfo(unittest.TestCase):
                 'ipv6gateway': '::',
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
-                'vlanid': TEST_VLAN
+                'vlanid': TEST_VLAN,
             }
-        }
+        },
     }
 
     TEST_KERNEL_NETINFO = {
@@ -245,9 +236,9 @@ class TestOvsNetInfo(unittest.TestCase):
                 'ipv6autoconf': True,
                 'ipv6gateway': '::',
                 'mtu': 1500,
-                'netmask': ''
+                'netmask': '',
             }
-        }
+        },
     }
 
     TEST_BRIDGELESS_KERNEL_NETINFO = {
@@ -264,19 +255,28 @@ class TestOvsNetInfo(unittest.TestCase):
                 'ipv6autoconf': True,
                 'ipv6gateway': '::',
                 'mtu': 1500,
-                'netmask': TEST_NETMASK
+                'netmask': TEST_NETMASK,
             }
-        }
+        },
     }
 
     @mock.patch.object(info, 'iflink', fake_iflink)
     @mock.patch.object(info, 'is_ipv6_local_auto', lambda *args: True)
     @mock.patch.object(
-        info, 'get_gateway',
-        lambda *args, **kwargs: ('' if kwargs.get('family') == 4 else '::'))
-    @mock.patch.object(info, 'getIpInfo',
-                       lambda *args: (TEST_ADDRESS, TEST_NETMASK,
-                                      [TEST_ADDRESS_WITH_PREFIX], []))
+        info,
+        'get_gateway',
+        lambda *args, **kwargs: ('' if kwargs.get('family') == 4 else '::'),
+    )
+    @mock.patch.object(
+        info,
+        'getIpInfo',
+        lambda *args: (
+            TEST_ADDRESS,
+            TEST_NETMASK,
+            [TEST_ADDRESS_WITH_PREFIX],
+            [],
+        ),
+    )
     @mock.patch.object(info, 'OvsInfo', MockedOvsInfo)
     def test_ovs_netinfo(self):
         obtained_netinfo = info.get_netinfo()
@@ -284,13 +284,19 @@ class TestOvsNetInfo(unittest.TestCase):
 
     def test_fake_bridgeless(self):
         fake_running_bridgeless_ovs_networks = {
-            TEST_NETWORK, TEST_VLANED_NETWORK}
+            TEST_NETWORK,
+            TEST_VLANED_NETWORK,
+        }
         test_ovs_netinfo = deepcopy(self.TEST_OVS_NETINFO)
         test_kernel_netinfo = deepcopy(self.TEST_KERNEL_NETINFO)
 
-        info.fake_bridgeless(test_ovs_netinfo, test_kernel_netinfo,
-                             fake_running_bridgeless_ovs_networks)
+        info.fake_bridgeless(
+            test_ovs_netinfo,
+            test_kernel_netinfo,
+            fake_running_bridgeless_ovs_networks,
+        )
 
         self.assertEqual(test_ovs_netinfo, self.TEST_BRIDGELESS_OVS_NETINFO)
-        self.assertEqual(test_kernel_netinfo,
-                         self.TEST_BRIDGELESS_KERNEL_NETINFO)
+        self.assertEqual(
+            test_kernel_netinfo, self.TEST_BRIDGELESS_KERNEL_NETINFO
+        )
