@@ -365,3 +365,6 @@ class _IOProcWrapper(types.ModuleType):
 
     def readFile(self, path, direct=False):
         return self._ioproc.readfile(path, direct=direct)
+
+    def probe_block_size(self, dir_path):
+        return self._ioproc.probe_block_size(dir_path)

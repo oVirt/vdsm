@@ -21,7 +21,7 @@ python3-dateutil
 python3-dbus
 python3-decorator
 python3-devel
-python3-ioprocess
+python3-ioprocess-1.3.0
 python3-libselinux
 python3-libvirt
 python3-magic

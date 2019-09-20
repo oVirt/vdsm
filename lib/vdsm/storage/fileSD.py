@@ -834,43 +834,30 @@ class FileStorageDomain(sd.StorageDomain):
         """
         Detect filesystem block size and validate direct I/O usage.
 
-        There is no way to get the underlying storage logical block size, but
-        since direct I/O must be aligned to the logical block size, we can
-        detect the capability by trying to write a file using direct I/O.
-
-        This creates a file __DIRECT_IO_TEST__ in the mountpoint. Removing this
-        file is racy so we leave it.
+        There is no way to get the underlying block size, but ioprocess can
+        detect it by writing to storage using direct I/O.
 
         Raises:
-            se.StorageDomainTargetUnsupported if direct I/O fails for all
-                supported block sizes.
-            OSError if writing failed because of another error.
+            se.StorageDomainTargetUnsupported if the underlying storage does
+                not support direct I/O.
+            OSError if probing block size failed because of another error.
             ioprocess.Timeout if writing to storage timed out.
 
         Returns:
             the detected block size (1, 512, 4096)
         """
-
         log = logging.getLogger("storage.fileSD")
-        path = os.path.join(mountpoint, "__DIRECT_IO_TEST__")
         iop = oop.getProcessPool(sd_id)
+        try:
+            block_size = iop.probe_block_size(mountpoint)
+        except OSError as e:
+            if e.errno != errno.EINVAL:
+                raise
+            raise se.StorageDomainTargetUnsupported(
+                "Failed to probe block size on {}: {}".format(mountpoint, e))
 
-        for block_size in (
-                sc.BLOCK_SIZE_NONE, sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K):
-            log.debug("Trying block size %s", block_size)
-            data = b"\0" * block_size
-            try:
-                iop.writeFile(path, data, direct=True)
-            except OSError as e:
-                if e.errno != errno.EINVAL:
-                    raise
-            else:
-                log.debug("Detected domain %s block size %s",
-                          sd_id, block_size)
-                return block_size
-
-        raise se.StorageDomainTargetUnsupported(
-            "Failed to write to {} using direct I/O".format(path))
+        log.debug("Detected domain %s block size %s", sd_id, block_size)
+        return block_size
 
 
 def _getMountsList(pattern="*"):
