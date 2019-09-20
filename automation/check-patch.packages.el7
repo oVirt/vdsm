@@ -21,7 +21,6 @@ python-devel
 python-dmidecode
 python-enum34
 python-inotify
-python-ioprocess
 python-ipaddress
 python-magic
 python-mock
@@ -32,6 +31,7 @@ python-pyudev
 python-requests
 python-six
 python-subprocess32
+python2-ioprocess-1.3.0
 rpm-build
 rpmlint
 sanlock-python

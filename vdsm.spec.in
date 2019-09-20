@@ -102,8 +102,6 @@ Requires: logrotate
 Requires: lshw
 Requires: xz
 Requires: python-netaddr
-# Requires lstat() support, see https://bugzilla.redhat.com/1560460
-Requires: python2-ioprocess >= 1.1.1
 Requires: python-pthreading >= 0.1.3-3
 Requires: python-six >= 1.9.0
 Requires: python-requests
@@ -423,8 +421,8 @@ VDSM network python libraries
 Summary:        VDSM python libraries
 Requires:       %{name}-api = %{version}-%{release}
 BuildArch:      noarch
-# For 4k support, see https://bugzilla.redhat.com/1592916
-Requires:       python-ioprocess >= 1.2.1
+# Provides probe_block_size(), see https://bugzilla.redhat.com/1753898
+Requires:       python2-ioprocess >= 1.3.0
 Requires:       %{name}-common = %{version}-%{release}
 Requires:       %{name}-network = %{version}-%{release}
 

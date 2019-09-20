@@ -379,3 +379,6 @@ class _IOProcWrapper(types.ModuleType):
         self.simpleWalk = partial(simpleWalk, ioproc)
         self.directTouch = partial(directTouch, ioproc)
         self.truncateFile = partial(truncateFile, ioproc)
+
+    def probe_block_size(self, dir_path):
+        return self._ioproc.probe_block_size(dir_path)
