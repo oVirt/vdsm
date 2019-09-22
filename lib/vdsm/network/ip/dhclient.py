@@ -49,18 +49,28 @@ DHCP6 = 'dhcpv6'
 class DhcpClient(object):
     PID_FILE = '/var/run/dhclient%s-%s.pid'
 
-    def __init__(self, iface, family=4, default_route=False, duid_source=None,
-                 cgroup=DHCLIENT_CGROUP):
+    def __init__(
+        self,
+        iface,
+        family=4,
+        default_route=False,
+        duid_source=None,
+        cgroup=DHCLIENT_CGROUP,
+    ):
         self.iface = iface
         self.family = family
         self.default_route = default_route
-        self.duid_source_file = None if duid_source is None else (
-            LEASE_FILE.format('' if family == 4 else '6', duid_source))
+        self.duid_source_file = (
+            None
+            if duid_source is None
+            else (LEASE_FILE.format('' if family == 4 else '6', duid_source))
+        )
         self.pidFile = self.PID_FILE % (family, self.iface)
         if not os.path.exists(LEASE_DIR):
             os.mkdir(LEASE_DIR)
         self.leaseFile = LEASE_FILE.format(
-            '' if family == 4 else '6', self.iface)
+            '' if family == 4 else '6', self.iface
+        )
         self._cgroup = cgroup
 
     def _dhclient(self):
@@ -68,8 +78,15 @@ class DhcpClient(object):
             kill(self.iface, self.family)
             address.flush(self.iface, family=self.family)
 
-        cmds = [DHCLIENT_BINARY.cmd, '-%s' % self.family, '-1', '-pf',
-                self.pidFile, '-lf', self.leaseFile]
+        cmds = [
+            DHCLIENT_BINARY.cmd,
+            '-%s' % self.family,
+            '-1',
+            '-pf',
+            self.pidFile,
+            '-lf',
+            self.leaseFile,
+        ]
         if not self.default_route:
             # Instruct Fedora/EL's dhclient-script not to set gateway on iface
             cmds += ['-e', 'DEFROUTE=no']
@@ -82,8 +99,9 @@ class DhcpClient(object):
         if blocking:
             return self._dhclient()
         else:
-            t = concurrent.thread(self._dhclient,
-                                  name='dhclient/%s' % self.iface)
+            t = concurrent.thread(
+                self._dhclient, name='dhclient/%s' % self.iface
+            )
             t.start()
 
     def shutdown(self):
@@ -185,18 +203,23 @@ def supports_duid_file():
     refer dhclient to a new lease file with a device name substituted.
     """
     _, _, err = cmd.exec_sync(
-        [DHCLIENT_BINARY.cmd,  # dhclient doesn't have -h/--help
-         '-do-you-support-loading-duid-from-lease-files?'])
+        [
+            DHCLIENT_BINARY.cmd,  # dhclient doesn't have -h/--help
+            '-do-you-support-loading-duid-from-lease-files?',
+        ]
+    )
     return '-df' in err
 
 
-def run(iface, family=4, default_route=False, duid_source=None,
-        blocking_dhcp=False):
+def run(
+    iface, family=4, default_route=False, duid_source=None, blocking_dhcp=False
+):
     dhclient = DhcpClient(iface, family, default_route, duid_source)
     ret = dhclient.start(blocking_dhcp)
     if blocking_dhcp and ret[0]:
         raise ne.ConfigNetworkError(
-            ne.ERR_FAILED_IFUP, 'dhclient%s failed' % family)
+            ne.ERR_FAILED_IFUP, 'dhclient%s failed' % family
+        )
 
 
 def stop(iface, family):

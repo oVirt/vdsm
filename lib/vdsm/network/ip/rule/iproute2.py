@@ -35,7 +35,6 @@ from . import IPRuleApi, IPRuleData, IPRuleAddError, IPRuleDeleteError
 
 
 class IPRule(IPRuleApi):
-
     @staticmethod
     def add(rule_data):
         r = rule_data
@@ -55,7 +54,8 @@ class IPRule(IPRuleApi):
             try:
                 r = Rule.fromText(rule_data)
                 yield IPRuleData(
-                    r.destination, r.source, r.srcDevice, r.table, r.prio)
+                    r.destination, r.source, r.srcDevice, r.table, r.prio
+                )
             except ValueError:
                 logging.warning('Could not parse rule %s', rule_data)
 
@@ -68,4 +68,5 @@ def _translate_iproute2_exception(new_exception, rule_data):
         _, value, tb = sys.exc_info()
         error_message = value.args[1][0]
         six.reraise(
-            new_exception, new_exception(str(rule_data), error_message), tb)
+            new_exception, new_exception(str(rule_data), error_message), tb
+        )

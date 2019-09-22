@@ -28,7 +28,6 @@ from vdsm.network import driverloader
 
 @six.add_metaclass(abc.ABCMeta)
 class IPRuleApi(object):
-
     @staticmethod
     def add(rule_data):
         """ Adding a rule entry described by an IPRuleData data object """
@@ -75,8 +74,10 @@ class IPRuleData(object):
         return self._prio
 
     def __repr__(self):
-        return ('IPRuleData(to={!r} src={!r} iif={!r} table={!r} prio={!r})'
-                .format(self.to, self.src, self.iif, self.table, self.prio))
+        text_fmt = 'IPRuleData(to={!r} src={!r} iif={!r} table={!r} prio={!r})'
+        return text_fmt.format(
+            self.to, self.src, self.iif, self.table, self.prio
+        )
 
 
 class IPRuleError(Exception):

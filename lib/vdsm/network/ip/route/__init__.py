@@ -28,7 +28,6 @@ from vdsm.network import driverloader
 
 @six.add_metaclass(abc.ABCMeta)
 class IPRouteApi(object):
-
     @staticmethod
     def add(route_data):
         """ Adding a route entry described by an IPRouteData data object """
@@ -80,10 +79,17 @@ class IPRouteData(object):
         return self._table
 
     def __repr__(self):
-        return ('IPRouteData(to={!r} via={!r} src={!r} family={!r} '
-                'device={!r} table={!r})'.format(
-                    self.to, self.via, self.src, self.family, self.device,
-                    self.table))
+        return (
+            'IPRouteData(to={!r} via={!r} src={!r} family={!r} '
+            'device={!r} table={!r})'.format(
+                self.to,
+                self.via,
+                self.src,
+                self.family,
+                self.device,
+                self.table,
+            )
+        )
 
 
 class IPRouteError(Exception):

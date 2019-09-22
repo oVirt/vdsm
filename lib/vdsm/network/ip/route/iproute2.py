@@ -35,7 +35,6 @@ from . import IPRouteAddError, IPRouteDeleteError, IPRouteData, IPRouteApi
 
 
 class IPRoute(IPRouteApi):
-
     @staticmethod
     def add(route_data):
         r = route_data
@@ -57,7 +56,8 @@ class IPRoute(IPRouteApi):
                 family = 6 if _is_ipv6_addr_soft_check(r.network) else 4
                 rtable = r.table if table == 'all' else table
                 yield IPRouteData(
-                    r.network, r.via, family, r.src, r.device, rtable)
+                    r.network, r.via, family, r.src, r.device, rtable
+                )
             except ValueError:
                 logging.warning('Could not parse route %s', route_data)
 
@@ -70,7 +70,8 @@ def _translate_iproute2_exception(new_exception, route_data):
         _, value, tb = sys.exc_info()
         error_message = value.args[1][0]
         six.reraise(
-            new_exception, new_exception(str(route_data), error_message), tb)
+            new_exception, new_exception(str(route_data), error_message), tb
+        )
 
 
 def _is_ipv6_addr_soft_check(addr):

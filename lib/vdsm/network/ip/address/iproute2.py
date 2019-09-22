@@ -32,13 +32,14 @@ from . import IPAddressData, IPAddressApi
 
 
 class IPAddress(IPAddressApi):
-
     @staticmethod
     def add(addr_data):
         with _translate_iproute2_exception(IPAddressAddError, addr_data):
             ipwrapper.addrAdd(
                 addr_data.device,
-                addr_data.address, addr_data.prefixlen, addr_data.family
+                addr_data.address,
+                addr_data.prefixlen,
+                addr_data.family,
             )
 
     @staticmethod
@@ -46,7 +47,9 @@ class IPAddress(IPAddressApi):
         with _translate_iproute2_exception(IPAddressDeleteError, addr_data):
             ipwrapper.addrDel(
                 addr_data.device,
-                addr_data.address, addr_data.prefixlen, addr_data.family
+                addr_data.address,
+                addr_data.prefixlen,
+                addr_data.family,
             )
 
     @staticmethod
@@ -54,20 +57,24 @@ class IPAddress(IPAddressApi):
         addrs = nl_addr.iter_addrs()
         filtered = IPAddress._filter_addresses(addrs, device, family)
         for address in filtered:
-            yield IPAddressData(address=address['address'],
-                                device=address['label'],
-                                flags=address['flags'],
-                                scope=address['scope'])
+            yield IPAddressData(
+                address=address['address'],
+                device=address['label'],
+                flags=address['flags'],
+                scope=address['scope'],
+            )
 
     @staticmethod
     def _filter_addresses(addrs, device_name, family_number):
         family_name = (
             IPAddress._address_family_name(family_number)
-            if family_number is not None else None
+            if family_number is not None
+            else None
         )
         for address in addrs:
-            if ((device_name is None or address['label'] == device_name) and
-                    (family_name is None or address['family'] == family_name)):
+            if (device_name is None or address['label'] == device_name) and (
+                family_name is None or address['family'] == family_name
+            ):
                 yield address
 
     @staticmethod
@@ -78,7 +85,8 @@ class IPAddress(IPAddressApi):
             return 'inet6'
         else:
             raise AttributeError(
-                'Unknown IP family number [{}].'.format(family_number))
+                'Unknown IP family number [{}].'.format(family_number)
+            )
 
 
 @contextlib.contextmanager
@@ -89,4 +97,5 @@ def _translate_iproute2_exception(new_exception, address_data):
         _, value, tb = sys.exc_info()
         error_message = value.args[1][0]
         six.reraise(
-            new_exception, new_exception(str(address_data), error_message), tb)
+            new_exception, new_exception(str(address_data), error_message), tb
+        )
