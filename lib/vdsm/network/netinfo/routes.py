@@ -63,11 +63,13 @@ def is_default_route(gateway, routes):
         return False
 
     for route in itertools.chain.from_iterable(six.viewvalues(routes)):
-        if (route.get('table') == RtKnownTables.RT_TABLE_MAIN and
-                route['family'] == 'inet' and
-                route['scope'] == 'global' and
-                route['gateway'] == gateway and
-                route['destination'] == 'none'):
+        if (
+            route.get('table') == RtKnownTables.RT_TABLE_MAIN
+            and route['family'] == 'inet'
+            and route['scope'] == 'global'
+            and route['gateway'] == gateway
+            and route['destination'] == 'none'
+        ):
             return True
     return False
 
@@ -81,7 +83,8 @@ def is_ipv6_default_route(gateway):
 
 
 def get_gateway(
-        routes_by_dev, dev, family=4, table=RtKnownTables.RT_TABLE_UNSPEC):
+    routes_by_dev, dev, family=4, table=RtKnownTables.RT_TABLE_UNSPEC
+):
     """
     Return the default gateway for a device and an address family
     :param routes_by_dev: dictionary from device names to a list of routes.
@@ -92,12 +95,14 @@ def get_gateway(
     # VDSM's source routing thread creates a separate table (with an ID derived
     # currently from an IPv4 address) for each device so we have to look for
     # the gateway in all tables (RT_TABLE_UNSPEC), not just the 'main' one.
-    gateways = [r for r in routes if r['destination'] == 'none' and
-                (r.get('table') == table or
-                 table == RtKnownTables.RT_TABLE_UNSPEC) and
-                r['scope'] == 'global' and
-                r['family'] == ('inet6' if family == 6 else 'inet')
-                ]
+    gateways = [
+        r
+        for r in routes
+        if r['destination'] == 'none'
+        and (r.get('table') == table or table == RtKnownTables.RT_TABLE_UNSPEC)
+        and r['scope'] == 'global'
+        and r['family'] == ('inet6' if family == 6 else 'inet')
+    ]
     if not gateways:
         return '::' if family == 6 else ''
     elif len(gateways) == 1:
@@ -106,15 +111,21 @@ def get_gateway(
         unique_gateways = frozenset(route['gateway'] for route in gateways)
         if len(unique_gateways) == 1:
             gateway, = unique_gateways
-            logging.debug('The gateway %s is duplicated for the device %s',
-                          gateway, dev)
+            logging.debug(
+                'The gateway %s is duplicated for the device %s', gateway, dev
+            )
             return gateway
         else:
             # We could pick the first gateway or the one with the lowest metric
             # but, in general, there are also routing rules in the game so we
             # should probably ask the kernel somehow.
-            logging.error('Multiple IPv%s gateways for the device %s in table '
-                          '%s: %r', family, dev, table, gateways)
+            logging.error(
+                'Multiple IPv%s gateways for the device %s in table ' '%s: %r',
+                family,
+                dev,
+                table,
+                gateways,
+            )
             return '::' if family == 6 else ''
 
 

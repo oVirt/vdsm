@@ -95,10 +95,15 @@ def add_qos_info_to_devices(nets_info, devices_info):
 
 
 def _get_qos_info_from_net(nets_info):
-    return [dict(host_qos=attrs['hostQos'],
-                 southbound=attrs['southbound'],
-                 net_name=net)
-            for net, attrs in six.viewitems(nets_info) if 'hostQos' in attrs]
+    return [
+        dict(
+            host_qos=attrs['hostQos'],
+            southbound=attrs['southbound'],
+            net_name=net,
+        )
+        for net, attrs in six.viewitems(nets_info)
+        if 'hostQos' in attrs
+    ]
 
 
 def _add_qos_info_to_southbound(qos_list, devices_info):
@@ -116,9 +121,11 @@ def _add_qos_info_to_southbound(qos_list, devices_info):
         elif southbound in devices_info['bondings']:
             devices = devices_info['bondings']
         else:
-            logging.warning('Qos exists on network {},'
-                            'but no corresponding nic/bond device ({})'
-                            'was found'.format(net_name, southbound))
+            logging.warning(
+                'Qos exists on network {},'
+                'but no corresponding nic/bond device ({})'
+                'was found'.format(net_name, southbound)
+            )
             continue
 
         devices_sb_info = devices[southbound]
@@ -144,14 +151,17 @@ def _sort_devices_qos_by_vlan(devices_info, iface_type):
 def _get_devices_info_from_nmstate(devices):
     return {
         ifname: {
-            dhclient.DHCP4: nmstate.is_dhcp_enabled(ifstate,
-                                                    nmstate.Interface.IPV4),
-            dhclient.DHCP6: nmstate.is_dhcp_enabled(ifstate,
-                                                    nmstate.Interface.IPV6),
-            'ipv6autoconf': nmstate.is_autoconf_enabled(ifstate)
+            dhclient.DHCP4: nmstate.is_dhcp_enabled(
+                ifstate, nmstate.Interface.IPV4
+            ),
+            dhclient.DHCP6: nmstate.is_dhcp_enabled(
+                ifstate, nmstate.Interface.IPV6
+            ),
+            'ipv6autoconf': nmstate.is_autoconf_enabled(ifstate),
         }
-        for ifname, ifstate in
-        six.viewitems(nmstate.show_interfaces(filter=devices))
+        for ifname, ifstate in six.viewitems(
+            nmstate.show_interfaces(filter=devices)
+        )
     }
 
 
@@ -172,8 +182,9 @@ def _get_flat_devs_info(devices_info):
 
 
 def _get_dev_names(nets_info, flat_devs_info):
-    return {net_info['iface'] for net_info in
-            six.viewvalues(nets_info)} | frozenset(flat_devs_info)
+    return {
+        net_info['iface'] for net_info in six.viewvalues(nets_info)
+    } | frozenset(flat_devs_info)
 
 
 def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
@@ -222,8 +233,10 @@ def _devices_report(ipaddrs, routes):
             devinfo.update(bonding.get_bond_agg_info(dev.name))
             devinfo.update(LEGACY_SWITCH)
         elif dev.isVLAN():
-            devinfo = devs_report['vlans'][dev.name] = {'iface': dev.device,
-                                                        'vlanid': dev.vlanid}
+            devinfo = devs_report['vlans'][dev.name] = {
+                'iface': dev.device,
+                'vlanid': dev.vlanid,
+            }
         else:
             continue
         devinfo.update(_devinfo(dev, routes, ipaddrs))
@@ -308,17 +321,20 @@ def libvirt_vdsm_nets(nets):
 def _devinfo(link, routes, ipaddrs):
     gateway = get_gateway(routes, link.name)
     ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
-        link.name, ipaddrs, gateway)
+        link.name, ipaddrs, gateway
+    )
 
-    return {'addr': ipv4addr,
-            'ipv4addrs': ipv4addrs,
-            'ipv6addrs': ipv6addrs,
-            'ipv6autoconf': is_ipv6_local_auto(link.name),
-            'gateway': gateway,
-            'ipv6gateway': get_gateway(routes, link.name, family=6),
-            'mtu': link.mtu,
-            'netmask': ipv4netmask,
-            'ipv4defaultroute': is_default_route(gateway, routes)}
+    return {
+        'addr': ipv4addr,
+        'ipv4addrs': ipv4addrs,
+        'ipv6addrs': ipv6addrs,
+        'ipv6autoconf': is_ipv6_local_auto(link.name),
+        'gateway': gateway,
+        'ipv6gateway': get_gateway(routes, link.name, family=6),
+        'mtu': link.mtu,
+        'netmask': ipv4netmask,
+        'ipv4defaultroute': is_default_route(gateway, routes),
+    }
 
 
 def _getNetInfo(iface, bridged, routes, ipaddrs):
@@ -327,8 +343,12 @@ def _getNetInfo(iface, bridged, routes, ipaddrs):
     data = {}
     try:
         if bridged:
-            data.update({'ports': bridges.ports(iface),
-                         'stp': bridges.stp_state(iface)})
+            data.update(
+                {
+                    'ports': bridges.ports(iface),
+                    'stp': bridges.stp_state(iface),
+                }
+            )
         else:
             # ovirt-engine-3.1 expects to see the "interface" attribute iff the
             # network is bridgeless. Please remove the attribute and this
@@ -337,17 +357,24 @@ def _getNetInfo(iface, bridged, routes, ipaddrs):
 
         gateway = get_gateway(routes, iface)
         ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
-            iface, ipaddrs, gateway)
+            iface, ipaddrs, gateway
+        )
 
-        data.update({'iface': iface, 'bridged': bridged,
-                     'addr': ipv4addr, 'netmask': ipv4netmask,
-                     'ipv4addrs': ipv4addrs,
-                     'ipv6addrs': ipv6addrs,
-                     'ipv6autoconf': is_ipv6_local_auto(iface),
-                     'gateway': gateway,
-                     'ipv6gateway': get_gateway(routes, iface, family=6),
-                     'ipv4defaultroute': is_default_route(gateway, routes),
-                     'mtu': link_iface.iface(iface).mtu()})
+        data.update(
+            {
+                'iface': iface,
+                'bridged': bridged,
+                'addr': ipv4addr,
+                'netmask': ipv4netmask,
+                'ipv4addrs': ipv4addrs,
+                'ipv6addrs': ipv6addrs,
+                'ipv6autoconf': is_ipv6_local_auto(iface),
+                'gateway': gateway,
+                'ipv6gateway': get_gateway(routes, iface, family=6),
+                'ipv4defaultroute': is_default_route(gateway, routes),
+                'mtu': link_iface.iface(iface).mtu(),
+            }
+        )
     except (IOError, OSError) as e:
         if e.errno == errno.ENOENT or e.errno == errno.ENODEV:
             logging.info('Obtaining info for net %s.', iface, exc_info=True)
@@ -386,8 +413,12 @@ class NetInfo(object):
     def getNetworkForIface(self, iface):
         """ Return the network attached to nic/bond """
         for network, netdict in six.iteritems(self.networks):
-            if ('ports' in netdict and iface in netdict['ports'] or
-                    'iface' in netdict and iface == netdict['iface']):
+            if (
+                'ports' in netdict
+                and iface in netdict['ports']
+                or 'iface' in netdict
+                and iface == netdict['iface']
+            ):
                 return network
 
     def getBridgedNetworkForIface(self, iface):
@@ -401,11 +432,15 @@ class NetInfo(object):
         return bondAttrs['slaves']
 
     def getBondingForNic(self, nic):
-        bondings = [b for (b, attrs) in six.iteritems(self.bondings) if
-                    nic in attrs['slaves']]
+        bondings = [
+            b
+            for (b, attrs) in six.iteritems(self.bondings)
+            if nic in attrs['slaves']
+        ]
         if bondings:
-            assert len(bondings) == 1, \
-                "Unexpected configuration: More than one bonding per nic"
+            assert (
+                len(bondings) == 1
+            ), "Unexpected configuration: More than one bonding per nic"
             return bondings[0]
         return None
 
@@ -445,8 +480,11 @@ class NetInfo(object):
             elif sb in self.nics:
                 lnics = [sb]
             vlanid = self.networks[network].get('vlanid')
-            vlan = ('%s.%s' % (bonding or lnics[0], vlanid)
-                    if vlanid is not None else None)
+            vlan = (
+                '%s.%s' % (bonding or lnics[0], vlanid)
+                if vlanid is not None
+                else None
+            )
 
         return lnics, vlan, vlanid, bonding
 

@@ -27,7 +27,8 @@ import shlex
 from vdsm.network.ipwrapper import getLinks
 
 _IFCFG_ZERO_SUFFIXED = frozenset(
-    ('IPADDR0', 'GATEWAY0', 'PREFIX0', 'NETMASK0'))
+    ('IPADDR0', 'GATEWAY0', 'PREFIX0', 'NETMASK0')
+)
 # TODO: once the unification of vdsm under site-packges is done, this duplicate
 # TODO: of ifcfg.NET_CONF_DIR and ifcfg.NET_CONF_PREF can be removed
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
@@ -55,5 +56,6 @@ def ifcfg_config(ifcfg_file):
 def visible_devs(predicate):
     """Returns a list of visible (vdsm manageable) links for which the
     predicate is True"""
-    return [dev.name for dev in getLinks() if predicate(dev) and
-            not dev.isHidden()]
+    return [
+        dev.name for dev in getLinks() if predicate(dev) and not dev.isHidden()
+    ]

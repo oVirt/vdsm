@@ -83,5 +83,4 @@ def stp_booleanize(value):
 
 
 def info(link):
-    return {'ports': ports(link.name),
-            'stp': stp_state(link.name)}
+    return {'ports': ports(link.name), 'stp': stp_state(link.name)}

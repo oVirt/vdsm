@@ -96,17 +96,20 @@ def getDeviceByIP(ip):
     """
     for addr in nl_addr.iter_addrs():
         address = addr['address'].split('/')[0]
-        if ((addr['family'] == 'inet' and
-             ip in (address, IPv4toMapped(address))) or (
-                addr['family'] == 'inet6' and ip == address)):
+        if (
+            addr['family'] == 'inet' and ip in (address, IPv4toMapped(address))
+        ) or (addr['family'] == 'inet6' and ip == address):
             return addr['label']
     return ''
 
 
 def getIpAddresses():
     "Return a list of the host's IPv4 addresses"
-    return [addr['address'] for addr in nl_addr.iter_addrs() if
-            addr['family'] == 'inet']
+    return [
+        addr['address']
+        for addr in nl_addr.iter_addrs()
+        if addr['family'] == 'inet'
+    ]
 
 
 def is_ipv4(nladdr):

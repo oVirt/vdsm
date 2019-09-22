@@ -35,6 +35,7 @@ from vdsm.network.link.bond import sysfs_options
 from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
 from vdsm.network.link.bond.sysfs_options import getAllDefaultBondingOptions
 from vdsm.network.link.setup import parse_bond_options
+
 getDefaultBondingOptions
 getAllDefaultBondingOptions
 parse_bond_options
@@ -64,16 +65,21 @@ def get_bond_agg_info(bond_name):
     ad_mac_path = BONDING_OPT % (bond_name, 'ad_partner_mac')
     agg_id = _file_value(agg_id_path)
     agg_mac = _file_value(ad_mac_path)
-    return {
-        'ad_aggregator_id': agg_id, 'ad_partner_mac': agg_mac
-    } if agg_id and agg_mac else {}
+    return (
+        {'ad_aggregator_id': agg_id, 'ad_partner_mac': agg_mac}
+        if agg_id and agg_mac
+        else {}
+    )
 
 
 def info(link):
     bond = Bond(link.name)
-    return {'hwaddr': link.address, 'slaves': list(bond.slaves),
-            'active_slave': bond.active_slave(),
-            'opts': bond.options}
+    return {
+        'hwaddr': link.address,
+        'slaves': list(bond.slaves),
+        'active_slave': bond.active_slave(),
+        'opts': bond.options,
+    }
 
 
 def bondOptsForIfcfg(opts):
@@ -82,8 +88,9 @@ def bondOptsForIfcfg(opts):
     the order symbolic name, numeric value, e.g. 'balance-rr 0'.
     Choose the numeric value from a list given by bondOpts().
     """
-    return ' '.join((opt + '=' + val for (opt, val)
-                     in sorted(six.iteritems(opts))))
+    return ' '.join(
+        (opt + '=' + val for (opt, val) in sorted(six.iteritems(opts)))
+    )
 
 
 def permanent_address():
@@ -92,9 +99,9 @@ def permanent_address():
         with open('/proc/net/bonding/' + b) as f:
             for line in f:
                 if line.startswith('Slave Interface: '):
-                    slave = line[len('Slave Interface: '):-1]
+                    slave = line[len('Slave Interface: ') : -1]
                 elif line.startswith('Permanent HW addr: ') and slave:
-                    paddr[slave] = line[len('Permanent HW addr: '):-1]
+                    paddr[slave] = line[len('Permanent HW addr: ') : -1]
     return paddr
 
 
