@@ -34,8 +34,12 @@ from vdsm.common.osutils import uninterruptible_poll
 from vdsm.common.osutils import uninterruptible
 from vdsm.common.time import monotonic_time
 
-from . import (_add_socket_memberships,
-               _close_socket, _drop_socket_memberships, _open_socket)
+from . import (
+    _add_socket_memberships,
+    _close_socket,
+    _drop_socket_memberships,
+    _open_socket,
+)
 from . import libnl
 from .addr import _addr_info
 from .link import _link_info
@@ -106,21 +110,24 @@ class Monitor(object):
     ipv4-route, ipv6-ifaddr, ipv6-mroute, ipv6-route, ipv6-ifinfo,
     decnet-ifaddr, decnet-route, ipv6-prefix
     """
+
     def __init__(self, groups=frozenset(), timeout=None, silent_timeout=False):
         self._time_start = None
         self._timeout = timeout
         self._silent_timeout = silent_timeout
         if groups:
             unknown_groups = frozenset(groups).difference(
-                frozenset(libnl.GROUPS))
+                frozenset(libnl.GROUPS)
+            )
             if unknown_groups:
                 raise AttributeError('Invalid groups: %s' % (unknown_groups,))
             self._groups = groups
         else:
             self._groups = frozenset(libnl.GROUPS.keys())
         self._queue = queue.Queue()
-        self._scan_thread = concurrent.thread(self._scan,
-                                              name="netlink/events")
+        self._scan_thread = concurrent.thread(
+            self._scan, name="netlink/events"
+        )
         self._scanning_started = threading.Event()
         self._scanning_stopped = threading.Event()
 
@@ -158,7 +165,8 @@ class Monitor(object):
             epoll = select.epoll()
             with closing(epoll):
                 with _monitoring_socket(
-                        self._queue, self._groups, epoll) as sock:
+                    self._queue, self._groups, epoll
+                ) as sock:
                     with _pipetrick(epoll) as self._pipetrick:
                         self._scanning_started.set()
                         while True:
@@ -172,8 +180,9 @@ class Monitor(object):
                             else:
                                 timeout = -1
 
-                            events = uninterruptible_poll(epoll.poll,
-                                                          timeout=timeout)
+                            events = uninterruptible_poll(
+                                epoll.poll, timeout=timeout
+                            )
                             # poll timeouted
                             if len(events) == 0:
                                 self._scanning_stopped.set()
@@ -229,6 +238,8 @@ def _object_input(obj, queue):
             logging.error('unexpected msg_type %s', msg_type)
         else:
             queue.put(Event(EventType.DATA, obj_dict))
+
+
 _c_object_input = libnl.prepare_cfunction_for_nl_msg_parse(_object_input)
 
 
@@ -239,6 +250,8 @@ def _event_input(msg, c_queue):
     """
     libnl.nl_msg_parse(msg, _c_object_input, c_queue)
     return libnl.NlCbAction.NL_STOP
+
+
 _c_event_input = libnl.prepare_cfunction_for_nl_socket_modify_cb(_event_input)
 
 

@@ -34,8 +34,9 @@ def get_link(name):
     with _pool.socket() as sock:
         with _get_link(name=name, sock=sock) as link:
             if not link:
-                raise IOError(errno.ENODEV, '%s is not present in the system' %
-                              name)
+                raise IOError(
+                    errno.ENODEV, '%s is not present in the system' % name
+                )
             link_info = _link_info(link)
         return link_info
 
@@ -85,8 +86,9 @@ def _link_info(link, cache=None):
     if underlying_device_index:
         info['device_index'] = underlying_device_index
         try:
-            info['device'] = _link_index_to_name(underlying_device_index,
-                                                 cache=cache)
+            info['device'] = _link_index_to_name(
+                underlying_device_index, cache=cache
+            )
         except IOError as err:
             if err.errno != errno.ENODEV:
                 raise
@@ -111,8 +113,11 @@ def _link_index_to_name(link_index, cache=None):
     if cache is None:
         with _get_link(index=link_index) as link:
             if link is None:
-                raise IOError(errno.ENODEV, 'Dev with index %s is not present '
-                                            'in the system' % link_index)
+                raise IOError(
+                    errno.ENODEV,
+                    'Dev with index %s is not present '
+                    'in the system' % link_index,
+                )
             name = libnl.rtnl_link_get_name(link)
         return name
     else:

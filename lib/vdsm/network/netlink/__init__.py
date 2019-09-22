@@ -38,6 +38,7 @@ _tls = threading.local()
 
 class NLSocketPool(object):
     """Pool of netlink sockets."""
+
     def __init__(self, size):
         if size <= 0:
             raise ValueError('Invalid socket pool size %r. Must be positive')
@@ -84,9 +85,13 @@ def _open_socket(callback_function=None, callback_arg=None):
     try:
         if callback_function is not None:
             libnl.nl_socket_disable_seq_check(sock)
-            libnl.nl_socket_modify_cb(sock, libnl.NlCbKind.NL_CB_DEFAULT,
-                                      libnl.NlCbKind.NL_CB_CUSTOM,
-                                      callback_function, callback_arg)
+            libnl.nl_socket_modify_cb(
+                sock,
+                libnl.NlCbKind.NL_CB_DEFAULT,
+                libnl.NlCbKind.NL_CB_CUSTOM,
+                callback_function,
+                callback_arg,
+            )
 
         libnl.nl_connect(sock, libnl.NETLINK_ROUTE)
         libnl.nl_socket_set_buffer_size(sock, _NL_SOCKET_BUFF_SIZE, 0)
@@ -115,14 +120,18 @@ def _cache_manager(cache_allocator, sock):
 def _socket_memberships(socket_membership_function, socket, groups):
     groups_codes = [libnl.GROUPS[g] for g in groups]
     groups_codes = groups_codes + [0] * (
-        len(libnl.GROUPS) - len(groups_codes) + 1)
+        len(libnl.GROUPS) - len(groups_codes) + 1
+    )
     try:
         socket_membership_function(socket, *groups_codes)
     except:
         libnl.nl_socket_free(socket)
         raise
 
-_add_socket_memberships = partial(_socket_memberships,
-                                  libnl.nl_socket_add_memberships)
-_drop_socket_memberships = partial(_socket_memberships,
-                                   libnl.nl_socket_drop_memberships)
+
+_add_socket_memberships = partial(
+    _socket_memberships, libnl.nl_socket_add_memberships
+)
+_drop_socket_memberships = partial(
+    _socket_memberships, libnl.nl_socket_drop_memberships
+)

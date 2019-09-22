@@ -50,7 +50,7 @@ def _addr_info(addr, link_cache=None):
         'prefixlen': libnl.rtnl_addr_get_prefixlen(addr),
         'scope': libnl.rtnl_scope2str(libnl.rtnl_addr_get_scope(addr)),
         'flags': _addr_flags(addr),
-        'address': libnl.nl_addr2str(local_address) if local_address else None
+        'address': libnl.nl_addr2str(local_address) if local_address else None,
     }
     try:
         data['label'] = _link_index_to_name(index, cache=link_cache)
@@ -81,7 +81,8 @@ def is_permanent(addr):
 def _addr_flags(addr):
     """Returns the textual representation of the address flags"""
     return frozenset(
-        libnl.rtnl_addr_flags2str(libnl.rtnl_addr_get_flags(addr)).split(','))
+        libnl.rtnl_addr_flags2str(libnl.rtnl_addr_get_flags(addr)).split(',')
+    )
 
 
 _nl_addr_cache = partial(_cache_manager, libnl.rtnl_addr_alloc_cache)

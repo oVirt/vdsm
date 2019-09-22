@@ -34,8 +34,9 @@ DELLINK_STATE_DOWN = {'event': 'del_link', 'state': 'down'}
 @contextmanager
 def waitfor_linkup(iface, oper_blocking=True, timeout=10):
     iface_up_check = _is_oper_up if oper_blocking else _is_admin_up
-    with monitor.Monitor(groups=('link',), timeout=timeout,
-                         silent_timeout=True) as mon:
+    with monitor.Monitor(
+        groups=('link',), timeout=timeout, silent_timeout=True
+    ) as mon:
         try:
             yield
         finally:
@@ -94,16 +95,18 @@ def waitfor_link_exists(iface, timeout=0.5):
 
 
 @contextmanager
-def wait_for_link_event(iface, expected_event, timeout,
-                        check_event=lambda event: True):
+def wait_for_link_event(
+    iface, expected_event, timeout, check_event=lambda event: True
+):
     groups = ('link',)
     with wait_for_event(iface, expected_event, groups, timeout, check_event):
         yield
 
 
 @contextmanager
-def wait_for_event(iface, expected_event, groups, timeout,
-                   check_event=lambda event: True):
+def wait_for_event(
+    iface, expected_event, groups, timeout, check_event=lambda event: True
+):
     with monitor.Monitor(groups=groups, timeout=timeout) as mon:
         try:
             yield
@@ -113,22 +116,29 @@ def wait_for_event(iface, expected_event, groups, timeout,
                 for event in mon:
                     caught_events.append(event)
                     if _is_subdict(expected_event, event) and check_event(
-                            event):
+                        event
+                    ):
                         return
             except monitor.MonitorError as e:
                 if e.args[0] == monitor.E_TIMEOUT:
-                    logging.warning('Expected event "%s" of interface "%s" '
-                                    'was not caught within %ssec. '
-                                    'Caught events: %s',
-                                    expected_event, iface, timeout,
-                                    caught_events)
+                    logging.warning(
+                        'Expected event "%s" of interface "%s" '
+                        'was not caught within %ssec. '
+                        'Caught events: %s',
+                        expected_event,
+                        iface,
+                        timeout,
+                        caught_events,
+                    )
                 else:
                     raise
 
 
 def _is_subdict(subdict, superdict):
-    return all(item in frozenset(superdict.items())
-               for item in frozenset(subdict.items()))
+    return all(
+        item in frozenset(superdict.items())
+        for item in frozenset(subdict.items())
+    )
 
 
 def _is_admin_up(iface):

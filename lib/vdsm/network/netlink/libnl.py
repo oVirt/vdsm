@@ -43,71 +43,71 @@ LIBNL = CDLL('libnl-3.so.200', use_errno=True)
 LIBNL_ROUTE = CDLL('libnl-route-3.so.200', use_errno=True)
 
 CHARBUFFSIZE = 40  # Increased to fit IPv6 expanded representations
-HWADDRSIZE = 60    # InfiniBand HW address needs 59+1 bytes
+HWADDRSIZE = 60  # InfiniBand HW address needs 59+1 bytes
 
 # include/linux-private/linux/netlink.h
 NETLINK_ROUTE = 0  # Routing/device hook
 
 # libnl/include/linux/rtnetlink.h
 GROUPS = {
-    'link': 1,             # RTNLGRP_LINK
-    'notify': 2,           # RTNPGRP_NOTIFY
-    'neigh': 3,            # RTNLGRP_NEIGH
-    'tc': 4,               # RTNLGRP_TC
-    'ipv4-ifaddr': 5,      # RTNLGRP_IPV4_IFADDR
-    'ipv4-mroute': 6,      # RTNLGRP_IPV4_MROUTE
-    'ipv4-route': 7,       # RTNLGRP_IPV4_ROUTE
-    'ipv6-ifaddr': 9,      # RTNLGRP_IPV6_IFADDR
-    'ipv6-mroute': 10,     # RTNLGRP_IPV6_MROUTE
-    'ipv6-route': 11,      # RTNLGRP_IPV6_ROUTE
-    'ipv6-ifinfo': 12,     # RTNLGRP_IPV6_IFINFO
-    'decnet-ifaddr': 13,   # RTNLGRP_DECnet_IFADDR
-    'decnet-route': 14,    # RTNLGRP_DECnet_ROUTE
-    'ipv6-prefix': 16      # RTNLGRP_IPV6_PREFIX
+    'link': 1,  # RTNLGRP_LINK
+    'notify': 2,  # RTNPGRP_NOTIFY
+    'neigh': 3,  # RTNLGRP_NEIGH
+    'tc': 4,  # RTNLGRP_TC
+    'ipv4-ifaddr': 5,  # RTNLGRP_IPV4_IFADDR
+    'ipv4-mroute': 6,  # RTNLGRP_IPV4_MROUTE
+    'ipv4-route': 7,  # RTNLGRP_IPV4_ROUTE
+    'ipv6-ifaddr': 9,  # RTNLGRP_IPV6_IFADDR
+    'ipv6-mroute': 10,  # RTNLGRP_IPV6_MROUTE
+    'ipv6-route': 11,  # RTNLGRP_IPV6_ROUTE
+    'ipv6-ifinfo': 12,  # RTNLGRP_IPV6_IFINFO
+    'decnet-ifaddr': 13,  # RTNLGRP_DECnet_IFADDR
+    'decnet-route': 14,  # RTNLGRP_DECnet_ROUTE
+    'ipv6-prefix': 16,  # RTNLGRP_IPV6_PREFIX
 }
 
 # libnl/include/linux/rtnetlink.h
 EVENTS = {
-    16: 'new_link',            # RTM_NEWLINK
-    17: 'del_link',            # RTM_DELLINK
-    18: 'get_link',            # RTM_GETLINK
-    19: 'set_link',            # RTM_SETLINK
-    20: 'new_addr',            # RTM_NEWADDR
-    21: 'del_addr',            # RTM_DELADDR
-    22: 'get_addr',            # RTM_GETADDR
-    24: 'new_route',           # RTM_NEWROUTE
-    25: 'del_route',           # RTM_DELROUTE
-    26: 'get_route',           # RTM_GETROUTE
-    28: 'new_neigh',           # RTM_NEWNEIGH
-    29: 'del_neigh',           # RTM_DELNEIGH
-    30: 'get_neigh',           # RTM_GETNEIGH
-    32: 'new_rule',            # RTM_NEWRULE
-    33: 'del_rule',            # RTM_DELRULE
-    34: 'get_rule',            # RTM_GETRULE
-    36: 'new_qdisc',           # RTM_NEWQDISC
-    37: 'del_qdisc',           # RTM_DELQDISC
-    38: 'get_qdisc',           # RTM_GETQDISC
-    40: 'new_tclass',          # RTM_NEWTCLASS
-    41: 'del_tclass',          # RTM_DELTCLASS
-    42: 'get_tclass',          # RTM_GETTCLASS
-    44: 'new_tfilter',         # RTM_NEWTFILTER
-    45: 'del_tfilter',         # RTM_DELTFILTER
-    46: 'get_tfilter',         # RTM_GETTFILTER
-    48: 'new_action',          # RTM_NEWACTION
-    49: 'del_action',          # RTM_DELACTION
-    50: 'get_action',          # RTM_GETACTION
-    52: 'new_prefix',          # RTM_NEWPREFIX
-    58: 'get_multicast',       # RTM_GETMULTICAST
-    62: 'get_anycast',         # RTM_GETANYCAST
-    64: 'new_neightbl',        # RTM_NEWNEIGHTBL
-    66: 'get_neightbl',        # RTM_GETNEIGHTBL
-    67: 'set_neightbl',        # RTM_SETNEIGHTBL
-    68: 'new_nduseropt',       # RTM_NEWNDUSEROPT
-    72: 'new_addrlabel',       # RTM_NEWADDRLABEL
-    73: 'del_addrlabel',       # RTM_DELADDRLABEL
-    74: 'get_addrlabel',       # RTM_GETADDRLABEL
-    78: 'get_dcb',             # RTM_GETDCB
-    79: 'set_dcb'              # RTM_SETDCB
+    16: 'new_link',  # RTM_NEWLINK
+    17: 'del_link',  # RTM_DELLINK
+    18: 'get_link',  # RTM_GETLINK
+    19: 'set_link',  # RTM_SETLINK
+    20: 'new_addr',  # RTM_NEWADDR
+    21: 'del_addr',  # RTM_DELADDR
+    22: 'get_addr',  # RTM_GETADDR
+    24: 'new_route',  # RTM_NEWROUTE
+    25: 'del_route',  # RTM_DELROUTE
+    26: 'get_route',  # RTM_GETROUTE
+    28: 'new_neigh',  # RTM_NEWNEIGH
+    29: 'del_neigh',  # RTM_DELNEIGH
+    30: 'get_neigh',  # RTM_GETNEIGH
+    32: 'new_rule',  # RTM_NEWRULE
+    33: 'del_rule',  # RTM_DELRULE
+    34: 'get_rule',  # RTM_GETRULE
+    36: 'new_qdisc',  # RTM_NEWQDISC
+    37: 'del_qdisc',  # RTM_DELQDISC
+    38: 'get_qdisc',  # RTM_GETQDISC
+    40: 'new_tclass',  # RTM_NEWTCLASS
+    41: 'del_tclass',  # RTM_DELTCLASS
+    42: 'get_tclass',  # RTM_GETTCLASS
+    44: 'new_tfilter',  # RTM_NEWTFILTER
+    45: 'del_tfilter',  # RTM_DELTFILTER
+    46: 'get_tfilter',  # RTM_GETTFILTER
+    48: 'new_action',  # RTM_NEWACTION
+    49: 'del_action',  # RTM_DELACTION
+    50: 'get_action',  # RTM_GETACTION
+    52: 'new_prefix',  # RTM_NEWPREFIX
+    58: 'get_multicast',  # RTM_GETMULTICAST
+    62: 'get_anycast',  # RTM_GETANYCAST
+    64: 'new_neightbl',  # RTM_NEWNEIGHTBL
+    66: 'get_neightbl',  # RTM_GETNEIGHTBL
+    67: 'set_neightbl',  # RTM_SETNEIGHTBL
+    68: 'new_nduseropt',  # RTM_NEWNDUSEROPT
+    72: 'new_addrlabel',  # RTM_NEWADDRLABEL
+    73: 'del_addrlabel',  # RTM_DELADDRLABEL
+    74: 'get_addrlabel',  # RTM_GETADDRLABEL
+    78: 'get_dcb',  # RTM_GETDCB
+    79: 'set_dcb',  # RTM_SETDCB
 }
 
 
@@ -123,13 +123,13 @@ class RtKnownTables(object):
 
 # include/linux-private/linux/if.h
 class IfaceStatus(object):
-    IFF_UP = 1 << 0             # Device administrative status.
+    IFF_UP = 1 << 0  # Device administrative status.
     IFF_BROADCAST = 1 << 1
     IFF_DEBUG = 1 << 2
     IFF_LOOPBACK = 1 << 3
     IFF_POINTOPOINT = 1 << 4
     IFF_NOTRAILERS = 1 << 5
-    IFF_RUNNING = 1 << 6        # Device operational_status
+    IFF_RUNNING = 1 << 6  # Device operational_status
     IFF_NOARP = 1 << 7
     IFF_PROMISC = 1 << 8
     IFF_ALLMULTI = 1 << 9
@@ -185,7 +185,8 @@ def nl_addr2str(addr):
     @return Address represented as string
     """
     _nl_addr2str = _libnl(
-        'nl_addr2str', c_char_p, c_void_p, c_char_p, c_size_t)
+        'nl_addr2str', c_char_p, c_void_p, c_char_p, c_size_t
+    )
     buf = (c_char * HWADDRSIZE)()
     address = _nl_addr2str(addr, buf, sizeof(buf))
     return py2to3.to_str(address)
@@ -212,7 +213,8 @@ def rtnl_scope2str(scope):
     @return Address scope represented as string
     """
     _rtnl_scope2str = _libnl_route(
-        'rtnl_scope2str', c_char_p, c_int, c_char_p, c_size_t)
+        'rtnl_scope2str', c_char_p, c_int, c_char_p, c_size_t
+    )
     buf = (c_char * CHARBUFFSIZE)()
     address_scope = _rtnl_scope2str(scope, buf, sizeof(buf))
     return py2to3.to_str(address_scope)
@@ -260,8 +262,9 @@ def nl_socket_set_buffer_size(socket, rx_buf_size, tx_buf_size):
     @arg rx_buf_size     RX buffer size or 0 for default
     @arg tx_buf_size     TX buffer size or 0 for default
     """
-    _nl_socket_set_buffer_size = _libnl('nl_socket_set_buffer_size',
-                                        c_int, c_void_p, c_int, c_int)
+    _nl_socket_set_buffer_size = _libnl(
+        'nl_socket_set_buffer_size', c_int, c_void_p, c_int, c_int
+    )
     err = _nl_socket_set_buffer_size(socket, rx_buf_size, tx_buf_size)
     if err:
         raise IOError(-err, nl_geterror(err))
@@ -292,7 +295,10 @@ def nl_socket_add_memberships(socket, *groups):
     """
     _nl_socket_add_memberships = _libnl(
         'nl_socket_add_memberships',
-        c_int, c_void_p, *((c_int,) * (len(GROUPS) + 1)))
+        c_int,
+        c_void_p,
+        *((c_int,) * (len(GROUPS) + 1))
+    )
     err = _nl_socket_add_memberships(socket, *groups)
     if err:
         raise IOError(-err, nl_geterror(err))
@@ -306,7 +312,10 @@ def nl_socket_drop_memberships(socket, *groups):
     """
     _nl_socket_drop_memberships = _libnl(
         'nl_socket_drop_memberships',
-        c_int, c_void_p, *((c_int,) * (len(GROUPS) + 1)))
+        c_int,
+        c_void_p,
+        *((c_int,) * (len(GROUPS) + 1))
+    )
     err = _nl_socket_drop_memberships(socket, *groups)
     if err:
         raise IOError(-err, nl_geterror(err))
@@ -323,7 +332,13 @@ def nl_socket_modify_cb(socket, cb_type, kind, function, argument):
     """
     _nl_socket_modify_cb = _libnl(
         'nl_socket_modify_cb',
-        c_int, c_void_p, c_int, c_int, c_void_p, py_object)
+        c_int,
+        c_void_p,
+        c_int,
+        c_int,
+        c_void_p,
+        py_object,
+    )
     err = _nl_socket_modify_cb(socket, cb_type, kind, function, argument)
     if err:
         raise IOError(-err, nl_geterror(err))
@@ -352,7 +367,8 @@ def nl_socket_disable_seq_check(socket):
     a preceding request message, e.g. netlink events.
     """
     _nl_socket_disable_seq_check = _libnl(
-        'nl_socket_disable_seq_check', c_void_p, c_void_p)
+        'nl_socket_disable_seq_check', c_void_p, c_void_p
+    )
     _nl_socket_disable_seq_check(socket)
 
 
@@ -463,7 +479,8 @@ def rtnl_addr_alloc_cache(socket):
     @return Newly allocated cache with addresses obtained from kernel.
     """
     _rtnl_addr_alloc_cache = _libnl_route(
-        'rtnl_addr_alloc_cache', c_int, c_void_p, c_void_p)
+        'rtnl_addr_alloc_cache', c_int, c_void_p, c_void_p
+    )
     cache = c_void_p()
     err = _rtnl_addr_alloc_cache(socket, byref(cache))
     if err:
@@ -479,7 +496,8 @@ def rtnl_addr_get_ifindex(rtnl_address):
     @return Interface index.
     """
     _rtnl_addr_get_ifindex = _libnl_route(
-        'rtnl_addr_get_ifindex', c_int, c_void_p)
+        'rtnl_addr_get_ifindex', c_int, c_void_p
+    )
     return _rtnl_addr_get_ifindex(rtnl_address)
 
 
@@ -491,7 +509,8 @@ def rtnl_addr_get_family(rtnl_address):
     @return Address family code, can be translated to string via nl_af2str.
     """
     _rtnl_addr_get_family = _libnl_route(
-        'rtnl_addr_get_family', c_int, c_void_p)
+        'rtnl_addr_get_family', c_int, c_void_p
+    )
     return _rtnl_addr_get_family(rtnl_address)
 
 
@@ -503,7 +522,8 @@ def rtnl_addr_get_prefixlen(rtnl_address):
     @return Address network prefix length.
     """
     _rtnl_addr_get_prefixlen = _libnl_route(
-        'rtnl_addr_get_prefixlen', c_int, c_void_p)
+        'rtnl_addr_get_prefixlen', c_int, c_void_p
+    )
     return _rtnl_addr_get_prefixlen(rtnl_address)
 
 
@@ -538,7 +558,8 @@ def rtnl_addr_get_local(rtnl_address):
     @return Local address (as nl address object).
     """
     _rtnl_addr_get_local = _libnl_route(
-        'rtnl_addr_get_local', c_void_p, c_void_p)
+        'rtnl_addr_get_local', c_void_p, c_void_p
+    )
     return _rtnl_addr_get_local(rtnl_address)
 
 
@@ -550,7 +571,8 @@ def rtnl_addr_flags2str(flags_bitfield):
     @return String represantion of given flags in format "flag1,flag2,flag3".
     """
     _rtnl_addr_flags2str = _libnl_route(
-        'rtnl_addr_flags2str', c_char_p, c_int, c_char_p, c_size_t)
+        'rtnl_addr_flags2str', c_char_p, c_int, c_char_p, c_size_t
+    )
     buf = (c_char * (CHARBUFFSIZE * 2))()
     flags_str = _rtnl_addr_flags2str(flags_bitfield, buf, sizeof(buf))
     return py2to3.to_str(flags_str)
@@ -571,7 +593,8 @@ def rtnl_link_alloc_cache(socket, family):
     @return Newly allocated cache with links obtained from kernel.
     """
     _rtnl_link_alloc_cache = _libnl_route(
-        'rtnl_link_alloc_cache', c_int, c_void_p, c_int, c_void_p)
+        'rtnl_link_alloc_cache', c_int, c_void_p, c_int, c_void_p
+    )
     cache = c_void_p()
     err = _rtnl_link_alloc_cache(socket, family, byref(cache))
     if err:
@@ -599,7 +622,8 @@ def rtnl_link_vlan_get_id(link):
     @return VLAN ID.
     """
     _rtnl_link_vlan_get_id = _libnl_route(
-        'rtnl_link_vlan_get_id', c_int, c_void_p)
+        'rtnl_link_vlan_get_id', c_int, c_void_p
+    )
     vlan_id = _rtnl_link_vlan_get_id(link)
     if vlan_id < 0:
         raise IOError(-vlan_id, nl_geterror(vlan_id))
@@ -614,7 +638,8 @@ def rtnl_link_get_type(link):
     @return Name of link type or None if not specified.
     """
     _rtnl_link_get_type = _libnl_route(
-        'rtnl_link_get_type', c_char_p, c_void_p)
+        'rtnl_link_get_type', c_char_p, c_void_p
+    )
     link_type = _rtnl_link_get_type(link)
     return py2to3.to_str(link_type) if link_type else None
 
@@ -633,7 +658,8 @@ def rtnl_link_get_kernel(socket, ifindex, ifname):
     @return Link object.
     """
     _rtnl_link_get_kernel = _libnl_route(
-        'rtnl_link_get_kernel', c_int, c_void_p, c_int, c_char_p, c_void_p)
+        'rtnl_link_get_kernel', c_int, c_void_p, c_int, c_char_p, c_void_p
+    )
     link = c_void_p()
     b_ifname = py2to3.to_binary(ifname) if ifname else None
     err = _rtnl_link_get_kernel(socket, ifindex, b_ifname, byref(link))
@@ -652,7 +678,8 @@ def rtnl_link_get_addr(link):
     @return Link layer address or None if not set.
     """
     _rtnl_link_get_addr = _libnl_route(
-        'rtnl_link_get_addr', c_void_p, c_void_p)
+        'rtnl_link_get_addr', c_void_p, c_void_p
+    )
     return _rtnl_link_get_addr(link)
 
 
@@ -675,7 +702,8 @@ def rtnl_link_get_ifindex(link):
     @return Interface index or None if not set.
     """
     _rtnl_link_get_ifindex = _libnl_route(
-        'rtnl_link_get_ifindex', c_int, c_void_p)
+        'rtnl_link_get_ifindex', c_int, c_void_p
+    )
     ifindex = _rtnl_link_get_ifindex(link)
     if ifindex == 0:
         return None
@@ -704,7 +732,8 @@ def rtnl_link_get_master(link):
     @return Master interface index if there is any, None otherwise.
     """
     _rtnl_link_get_master = _libnl_route(
-        'rtnl_link_get_master', c_int, c_void_p)
+        'rtnl_link_get_master', c_int, c_void_p
+    )
     master_ifindex = _rtnl_link_get_master(link)
     if master_ifindex == 0:
         return None
@@ -733,7 +762,8 @@ def rtnl_link_get_name(link):
     @return Link name or None if name is not specified
     """
     _rtnl_link_get_name = _libnl_route(
-        'rtnl_link_get_name', c_char_p, c_void_p)
+        'rtnl_link_get_name', c_char_p, c_void_p
+    )
     name = _rtnl_link_get_name(link)
     return py2to3.to_str(name) if name else None
 
@@ -748,7 +778,8 @@ def rtnl_link_get_operstate(link):
     @return Opertional state code.
     """
     _rtnl_link_get_operstate = _libnl_route(
-        'rtnl_link_get_operstate', c_int, c_void_p)
+        'rtnl_link_get_operstate', c_int, c_void_p
+    )
     return _rtnl_link_get_operstate(link)
 
 
@@ -760,7 +791,8 @@ def rtnl_link_get_qdisc(link):
     @return Name of qdisc or None if not specified.
     """
     _rtnl_link_get_qdisc = _libnl_route(
-        'rtnl_link_get_qdisc', c_char_p, c_void_p)
+        'rtnl_link_get_qdisc', c_char_p, c_void_p
+    )
     qdisc = _rtnl_link_get_qdisc(link)
     return py2to3.to_str(qdisc) if qdisc else None
 
@@ -780,7 +812,8 @@ def rtnl_link_get_by_name(cache, name):
     @return Link object or None if no match was found.
     """
     _rtnl_link_get_by_name = _libnl_route(
-        'rtnl_link_get_by_name', c_void_p, c_void_p, c_char_p)
+        'rtnl_link_get_by_name', c_void_p, c_void_p, c_char_p
+    )
     return _rtnl_link_get_by_name(cache, name)
 
 
@@ -795,7 +828,8 @@ def rtnl_link_i2name(cache, ifindex):
     @return Name of link or None if no match was found.
     """
     _rtnl_link_i2name = _libnl_route(
-        'rtnl_link_i2name', c_char_p, c_void_p, c_int, c_char_p, c_size_t)
+        'rtnl_link_i2name', c_char_p, c_void_p, c_int, c_char_p, c_size_t
+    )
     buf = (c_char * CHARBUFFSIZE)()
     name = _rtnl_link_i2name(cache, ifindex, buf, sizeof(buf))
     return py2to3.to_str(name) if name else None
@@ -809,7 +843,8 @@ def rtnl_link_operstate2str(operstate_code):
     @return Operstate represented as string
     """
     _rtnl_link_operstate2str = _libnl_route(
-        'rtnl_link_operstate2str', c_char_p, c_int, c_char_p, c_size_t)
+        'rtnl_link_operstate2str', c_char_p, c_int, c_char_p, c_size_t
+    )
     buf = (c_char * CHARBUFFSIZE)()
     operstate = _rtnl_link_operstate2str(operstate_code, buf, sizeof(buf))
     return py2to3.to_str(operstate)
@@ -841,7 +876,8 @@ def rtnl_route_alloc_cache(socket, family, flags):
     @return Newly allocated cache with routes obtained from kernel.
     """
     _rtnl_route_alloc_cache = _libnl_route(
-        'rtnl_route_alloc_cache', c_int, c_void_p, c_int, c_int, c_void_p)
+        'rtnl_route_alloc_cache', c_int, c_void_p, c_int, c_int, c_void_p
+    )
     cache = c_void_p()
     err = _rtnl_route_alloc_cache(socket, family, flags, byref(cache))
     if err:
@@ -857,7 +893,8 @@ def rtnl_route_get_nnexthops(route):
     @return Number of next hops.
     """
     _rtnl_route_get_nnexthops = _libnl_route(
-        'rtnl_route_get_nnexthops', c_int, c_void_p)
+        'rtnl_route_get_nnexthops', c_int, c_void_p
+    )
     return _rtnl_route_get_nnexthops(route)
 
 
@@ -870,7 +907,8 @@ def rtnl_route_nexthop_n(route, index):
     @return Next hop object or None if there is None on given index.
     """
     _rtnl_route_get_nexthop_n = _libnl_route(
-        'rtnl_route_nexthop_n', c_void_p, c_void_p, c_int)
+        'rtnl_route_nexthop_n', c_void_p, c_void_p, c_int
+    )
     return _rtnl_route_get_nexthop_n(route, index)
 
 
@@ -883,7 +921,8 @@ def rtnl_route_get_dst(route):
             readable string via nl_addr2str).
     """
     _rtnl_route_get_dst = _libnl_route(
-        'rtnl_route_get_dst', c_void_p, c_void_p)
+        'rtnl_route_get_dst', c_void_p, c_void_p
+    )
     return _rtnl_route_get_dst(route)
 
 
@@ -896,7 +935,8 @@ def rtnl_route_get_src(route):
             readable string via nl_addr2str).
     """
     _rtnl_route_get_src = _libnl_route(
-        'rtnl_route_get_src', c_void_p, c_void_p)
+        'rtnl_route_get_src', c_void_p, c_void_p
+    )
     return _rtnl_route_get_src(route)
 
 
@@ -920,7 +960,8 @@ def rtnl_route_get_table(route):
     @return Routing table number.
     """
     _rtnl_route_get_table = _libnl_route(
-        'rtnl_route_get_table', c_int, c_void_p)
+        'rtnl_route_get_table', c_int, c_void_p
+    )
     return _rtnl_route_get_table(route)
 
 
@@ -933,7 +974,8 @@ def rtnl_route_get_scope(route):
             rtnl_scope2str).
     """
     _rtnl_route_get_scope = _libnl_route(
-        'rtnl_route_get_scope', c_int, c_void_p)
+        'rtnl_route_get_scope', c_int, c_void_p
+    )
     scope_code = _rtnl_route_get_scope(route)
     return scope_code
 
@@ -946,7 +988,8 @@ def rtnl_route_get_family(route):
     @return Address family code, can be translated to string via nl_af2str.
     """
     _rtnl_route_get_family = _libnl_route(
-        'rtnl_route_get_family', c_int, c_void_p)
+        'rtnl_route_get_family', c_int, c_void_p
+    )
     return _rtnl_route_get_family(route)
 
 
@@ -959,7 +1002,8 @@ def rtnl_route_nh_get_ifindex(next_hop):
             rtnl_link_get_name or rtnl_link_i2name).
     """
     _rtnl_route_nh_get_ifindex = _libnl_route(
-        'rtnl_route_nh_get_ifindex', c_int, c_void_p)
+        'rtnl_route_nh_get_ifindex', c_int, c_void_p
+    )
     return _rtnl_route_nh_get_ifindex(next_hop)
 
 
@@ -972,7 +1016,8 @@ def rtnl_route_nh_get_gateway(next_hop):
             readable string via nl_addr2str).
     """
     _rtnl_route_nh_get_gateway = _libnl_route(
-        'rtnl_route_nh_get_gateway', c_void_p, c_void_p)
+        'rtnl_route_nh_get_gateway', c_void_p, c_void_p
+    )
     return _rtnl_route_nh_get_gateway(next_hop)
 
 

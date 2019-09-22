@@ -51,7 +51,8 @@ def _route_info(route, link_cache=None):
         'gateway': libnl.nl_addr2str(gateway) if gateway else None,  # via
         'family': libnl.nl_af2str(libnl.rtnl_route_get_family(route)),
         'table': libnl.rtnl_route_get_table(route),
-        'scope': libnl.rtnl_scope2str(libnl.rtnl_route_get_scope(route))}
+        'scope': libnl.rtnl_scope2str(libnl.rtnl_route_get_scope(route)),
+    }
     oif_index = _rtnl_route_get_oif(route)
     if oif_index > 0:
         data['oif_index'] = oif_index
