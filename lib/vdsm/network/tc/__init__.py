@@ -54,8 +54,11 @@ def _delTarget(network, parent, target):
         return []
 
     devices = set(link.name for link in ipwrapper.getLinks())
-    acts = [act for act in filt.actions
-            if act.target in devices and act.target != target]
+    acts = [
+        act
+        for act in filt.actions
+        if act.target in devices and act.target != target
+    ]
 
     if acts:
         filt = Filter(prio=filt.prio, handle=filt.handle, actions=acts)
@@ -128,10 +131,17 @@ def _filter_replace(dev, parent, filt):
         kwargs = {}
     actions = []
     for a in filt.actions:
-        actions.append(['action', 'mirred', 'egress', 'mirror',
-                        'dev', a.target])
-    tc_filter.replace(dev, parent=parent, protocol='all',
-                      u32=['match', 'u8', '0', '0'], actions=actions, **kwargs)
+        actions.append(
+            ['action', 'mirred', 'egress', 'mirror', 'dev', a.target]
+        )
+    tc_filter.replace(
+        dev,
+        parent=parent,
+        protocol='all',
+        u32=['match', 'u8', '0', '0'],
+        actions=actions,
+        **kwargs
+    )
 
 
 def _qdiscs_of_device(dev):
@@ -162,9 +172,13 @@ def filters(dev, parent, out=None):
     for filt in _filters(dev, parent=parent, out=out):
         if 'u32' in filt and 'actions' in filt['u32']:
             yield Filter(
-                filt['pref'], filt['u32']['fh'],
-                [MirredAction(action['target']) for action in
-                 filt['u32']['actions']])
+                filt['pref'],
+                filt['u32']['fh'],
+                [
+                    MirredAction(action['target'])
+                    for action in filt['u32']['actions']
+                ],
+            )
 
 
 def _iterate(module, dev, out=None, **kwargs):

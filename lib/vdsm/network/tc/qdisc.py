@@ -134,11 +134,8 @@ _spec = {
         'quantum': _parser.parse_int,
         'target': _parser.parse_time,
     },
-    'hfsc': {
-        'default': partial(_parser.parse_int, base=16),
-    },
-    'ingress': {
-    },
+    'hfsc': {'default': partial(_parser.parse_int, base=16)},
+    'ingress': {},
     'pfifo_fast': {
         'bands': _parser.parse_int,
         'multiqueue': _parser.parse_str,

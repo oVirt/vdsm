@@ -34,8 +34,16 @@ _TC_PRIO_MAX = 15
 def add(dev, kind, parent, classid, **opts):
     """Adds a class to a device. Opts should be used with list values for
     complex inputs, e.g. {'ls': ['rate', '400kbps']}"""
-    command = ['class', 'add', 'dev', dev, 'parent', parent,
-               'classid', classid]
+    command = [
+        'class',
+        'add',
+        'dev',
+        dev,
+        'parent',
+        parent,
+        'classid',
+        classid,
+    ]
     command.append(kind)
     adapted_ops = _adapt_qos_options_link_share(opts)
     for key, value in _qos_to_str_dict(adapted_ops).items():
@@ -99,14 +107,22 @@ def parse(tokens):
 
 
 def _parse_hfsc_curve(tokens):
-    return dict((
-        (_parser.parse_str(tokens),  # Get and consume 'm1'
-         _parser.parse_rate(tokens)),
-        (_parser.parse_str(tokens),  # Get and consume 'd'
-         _parser.parse_time(tokens)),
-        (_parser.parse_str(tokens),  # Get and consume 'm2'
-         _parser.parse_rate(tokens)),
-    ))
+    return dict(
+        (
+            (
+                _parser.parse_str(tokens),  # Get and consume 'm1'
+                _parser.parse_rate(tokens),
+            ),
+            (
+                _parser.parse_str(tokens),  # Get and consume 'd'
+                _parser.parse_time(tokens),
+            ),
+            (
+                _parser.parse_str(tokens),  # Get and consume 'm2'
+                _parser.parse_rate(tokens),
+            ),
+        )
+    )
 
 
 def _qos_to_str_dict(qos):
@@ -114,8 +130,12 @@ def _qos_to_str_dict(qos):
     for curve, attrs in qos.items():
         data[curve] = []
         if 'm1' in attrs:
-            data[curve] += ['m1', '%sbit' % attrs.get('m1', 0),
-                            'd', '%sus' % attrs.get('d', 0)]
+            data[curve] += [
+                'm1',
+                '%sbit' % attrs.get('m1', 0),
+                'd',
+                '%sus' % attrs.get('d', 0),
+            ]
         if 'm2' in attrs:
             data[curve] += ['m2', '%sbit' % attrs.get('m2', 0)]
     return data
@@ -148,5 +168,5 @@ _spec = {
         'rt': _parse_hfsc_curve,
         'ls': _parse_hfsc_curve,
         'ul': _parse_hfsc_curve,
-    },
+    }
 }

@@ -34,8 +34,17 @@ def delete(dev, pref, parent=None, protocol=None):
     _wrapper.process_request(command)
 
 
-def replace(dev, root=False, parent=None, handle=None, pref=None,
-            protocol=None, estimator=None, actions=(), **opts):
+def replace(
+    dev,
+    root=False,
+    parent=None,
+    handle=None,
+    pref=None,
+    protocol=None,
+    estimator=None,
+    actions=(),
+    **opts
+):
     """Replaces a filter. actions should be an iterable of lists of action
     definition tokens. opts should be used for the matches (such as u32)"""
     command = ['filter', 'replace', 'dev', dev]
@@ -219,8 +228,10 @@ def _parse_mirred(tokens):
     if action == 'unkown':
         data['action'] = action
     else:
-        data['action'] = '%s_%s' % (action.lower(),
-                                    _parser.parse_str(tokens).lower())
+        data['action'] = '%s_%s' % (
+            action.lower(),
+            _parser.parse_str(tokens).lower(),
+        )
     _parser.consume(tokens, 'to')
     _parser.consume(tokens, 'device')
     data['target'] = _parser.parse_str(tokens)[:-1]
@@ -244,10 +255,27 @@ def _parse_action_order(tokens):
     return int(next(tokens)[:-1])
 
 
-_ACTIONS = {'csum': None, 'gact': None, 'ipt': None, 'mirred': _parse_mirred,
-            'nat': None, 'pedit': None, 'police': None, 'simple': None,
-            'skbedit': None, 'xt': None}
+_ACTIONS = {
+    'csum': None,
+    'gact': None,
+    'ipt': None,
+    'mirred': _parse_mirred,
+    'nat': None,
+    'pedit': None,
+    'police': None,
+    'simple': None,
+    'skbedit': None,
+    'xt': None,
+}
 
 
-_CLASSES = {'basic': _parse_ematch, 'cgroup': None, 'flow': None, 'fw': None,
-            'route': None, 'rsvp': None, 'tcindex': None, 'u32': _parse_u32}
+_CLASSES = {
+    'basic': _parse_ematch,
+    'cgroup': None,
+    'flow': None,
+    'fw': None,
+    'route': None,
+    'rsvp': None,
+    'tcindex': None,
+    'u32': _parse_u32,
+}
