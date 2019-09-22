@@ -21,11 +21,15 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import itertools
 import logging
 import sys
 import threading
 import traceback
+
 from collections import namedtuple
+
+from six.moves import queue
 
 from vdsm.common import pthread
 from vdsm.common import time
@@ -139,27 +143,88 @@ class Barrier(object):
 
 Result = namedtuple("Result", ["succeeded", "value"])
 
+_tmap_count = itertools.count()
 
-def tmap(func, iterable):
-    args = list(iterable)
-    results = [None] * len(args)
 
-    def worker(i, f, arg):
-        try:
-            results[i] = Result(True, f(arg))
-        except Exception as e:
-            results[i] = Result(False, e)
+def tmap(func, values, max_workers=10, name=None):
+    """
+    Execute func with every value in values in a thread pool.
 
-    threads = []
-    for i, arg in enumerate(args):
-        t = thread(worker, args=(i, func, arg), name="tmap/%d" % i)
-        t.start()
-        threads.append(t)
+    To consume the results as soon as they available:
 
-    for t in threads:
-        t.join()
+        for res in concurrent.tmap(func, values):
+            print res
 
-    return results
+    To wait until all results are available:
+
+        results = list(concurrent.tmap(func, values))
+
+    Arguments:
+        func (callable): callable object accepting one argument.
+        values (iterable): iterable of func arguments.
+        max_workers (int): maximum number of threads in the pool. Must be
+            larger than 0.
+        name (str): worker thread name prefix, "tmap-<count>" if not set.
+
+    Return:
+        Iterator of Result tuples; Result(True, result) if func succeeded or
+        Result(False, exception) if func raised an exception.
+    """
+    # Implementation notes
+    #
+    # To simplify the implemention, we consume all values in the iterable
+    # before starting the workers. If iterating values is slow, this will delay
+    # processing.
+    #
+    # Processing the results may be slow, so we yield the results immediately
+    # as they are available. This allows the caller to process the results
+    # while we process the pending values.
+    #
+    # Finally, since we use daemon threads joining the worker threads is not
+    # required, but it helps tests that monitor number of threads.
+
+    if max_workers < 1:
+        raise ValueError("max_workers {} < 1".format(max_workers))
+
+    if name is None:
+        name = "tmap-{}".format(next(_tmap_count))
+
+    pending = queue.Queue()
+    results = queue.Queue()
+
+    def worker():
+        while True:
+            try:
+                value = pending.get(block=False)
+            except queue.Empty:
+                break
+
+            try:
+                results.put(Result(True, func(value)))
+            except Exception as e:
+                results.put(Result(False, e))
+                del e
+
+            del value
+
+    values = tuple(values)
+    workers_needed = min(len(values), max_workers)
+
+    for value in values:
+        pending.put(value)
+
+    workers = []
+
+    for i in range(workers_needed):
+        w = thread(worker, name="{}/{}".format(name, i))
+        w.start()
+        workers.append(w)
+
+    for _ in values:
+        yield results.get()
+
+    for w in workers:
+        w.join()
 
 
 def thread(func, args=(), kwargs=None, name=None, daemon=True, log=None):
