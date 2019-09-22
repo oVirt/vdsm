@@ -44,7 +44,6 @@ def init():
 
 
 class Device(object):
-
     def __init__(self, device_name):
         self._name = device_name
 
@@ -82,8 +81,10 @@ class Device(object):
         device = self._nm_device_service.device(self._name)
         for connection_path in device.connections_path():
             connection = self._nm_settings.connection(connection_path)
-            if (not active_connection or
-                    connection.connection.uuid != active_connection.uuid()):
+            if (
+                not active_connection
+                or connection.connection.uuid != active_connection.uuid()
+            ):
                 yield self._nm_settings.connection(connection_path)
 
 

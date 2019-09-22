@@ -23,10 +23,10 @@ from __future__ import division
 
 class NMActiveConnectionState(object):
     UNKNOWN = 0
-    ACTIVATING = 1     # a network connection is being prepared
-    ACTIVATED = 2      # there is a connection to the network
-    DEACTIVATING = 3   # network connection is being torn down and cleaned up
-    DEACTIVATED = 4    # network connection is disconnected and will be removed
+    ACTIVATING = 1  # a network connection is being prepared
+    ACTIVATED = 2  # there is a connection to the network
+    DEACTIVATING = 3  # network connection is being torn down and cleaned up
+    DEACTIVATED = 4  # network connection is disconnected and will be removed
 
 
 class NMDeviceState(object):

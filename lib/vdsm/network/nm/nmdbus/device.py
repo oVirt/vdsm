@@ -40,7 +40,6 @@ class NMTimeoutDeviceStateNotReached(errors.NMTimeoutError):
 
 
 class NMDbusDevice(object):
-
     def __init__(self):
         self.manager = NMDbusManager()
 
@@ -98,7 +97,8 @@ class _NMDbusDeviceSyncOperations(object):
             time.sleep(WAITFOR_RESOLUTION)
 
         raise NMTimeoutDeviceStateNotReached(
-            'Actual: {}, Desired: {}', actual_state, state)
+            'Actual: {}, Desired: {}', actual_state, state
+        )
 
 
 def _round_up(number):

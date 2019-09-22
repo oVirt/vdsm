@@ -27,9 +27,11 @@ from vdsm.network.nm.errors import NMConnectionNotFoundError
 
 from . import NMDbus
 
-NO_INTERFACE_ERR = ("No such interface "
-                    "'org.freedesktop.NetworkManager.Settings.Connection' "
-                    "on object at path ")
+NO_INTERFACE_ERR = (
+    "No such interface "
+    "'org.freedesktop.NetworkManager.Settings.Connection' "
+    "on object at path "
+)
 
 
 class NMDbusSettings(object):
@@ -37,8 +39,9 @@ class NMDbusSettings(object):
     IF_NAME = 'org.freedesktop.NetworkManager.Settings'
 
     def __init__(self):
-        set_proxy = NMDbus.bus.get_object(NMDbus.BUS_NAME,
-                                          NMDbusSettings.OBJ_PATH)
+        set_proxy = NMDbus.bus.get_object(
+            NMDbus.BUS_NAME, NMDbusSettings.OBJ_PATH
+        )
         self._settings = dbus.Interface(set_proxy, NMDbusSettings.IF_NAME)
 
     def connections(self):
@@ -60,8 +63,9 @@ class _NMDbusConnectionSettings(object):
 
     def __init__(self, connection_path):
         con_proxy = NMDbus.bus.get_object(NMDbus.BUS_NAME, connection_path)
-        con_settings = dbus.Interface(con_proxy,
-                                      _NMDbusConnectionSettings.IF_NAME)
+        con_settings = dbus.Interface(
+            con_proxy, _NMDbusConnectionSettings.IF_NAME
+        )
         self._con_settings = con_settings
         try:
             self._config = con_settings.GetSettings()
@@ -83,8 +87,11 @@ class _NMDbusConnectionSettings(object):
         if _Setting8023Ethernet.GROUP in self._config:
             return _Setting8023Ethernet(self._config)
 
-        raise AttributeError('"{}" object has no attribute "{}"'.format(
-            type(self).__name__, 'ethernet'))
+        raise AttributeError(
+            '"{}" object has no attribute "{}"'.format(
+                type(self).__name__, 'ethernet'
+            )
+        )
 
     @property
     def ipv4(self):
@@ -135,8 +142,9 @@ class _SettingIP(object):
 
     def __init__(self, config, ip_ver_group):
         if ip_ver_group not in (_SettingIP.GROUP_IPV4, _SettingIP.GROUP_IPV6):
-            raise NMDbusConnectionSettingsGroupError('No such IP group:'
-                                                     '{}'.format(ip_ver_group))
+            raise NMDbusConnectionSettingsGroupError(
+                'No such IP group:' '{}'.format(ip_ver_group)
+            )
         self._config = config[ip_ver_group]
 
     @property

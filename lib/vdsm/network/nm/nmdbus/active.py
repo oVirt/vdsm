@@ -27,13 +27,13 @@ from . import NMDbus, NMDbusManager
 
 
 class NMDbusActiveConnections(object):
-
     def __init__(self):
         self.manager = NMDbusManager()
 
     def connections(self):
-        active_connections = self.manager.properties.Get(NMDbusManager.IF_NAME,
-                                                         'ActiveConnections')
+        active_connections = self.manager.properties.Get(
+            NMDbusManager.IF_NAME, 'ActiveConnections'
+        )
         for connection_path in active_connections:
             yield self.connection(connection_path)
 

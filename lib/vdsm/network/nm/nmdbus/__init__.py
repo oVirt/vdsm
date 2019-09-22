@@ -42,8 +42,9 @@ class NMDbusManager(object):
     OBJ_PATH = '/org/freedesktop/NetworkManager'
 
     def __init__(self):
-        mng_proxy = NMDbus.bus.get_object(NMDbus.BUS_NAME,
-                                          NMDbusManager.OBJ_PATH)
+        mng_proxy = NMDbus.bus.get_object(
+            NMDbus.BUS_NAME, NMDbusManager.OBJ_PATH
+        )
         self.properties = dbus.Interface(mng_proxy, DBUS_STD_PROPERTIES_IFNAME)
         self.interface = dbus.Interface(mng_proxy, NMDbusManager.IF_NAME)
 
@@ -52,14 +53,16 @@ class NMDbusIfcfgRH1(object):
     IF_NAME = 'com.redhat.ifcfgrh1'
     OBJ_PATH = '/com/redhat/ifcfgrh1'
 
-    ERROR_INV_CON = ["ifcfg file '{}' unknown",
-                     "ifcfg path '{}' is not an ifcfg base file"]
+    ERROR_INV_CON = [
+        "ifcfg file '{}' unknown",
+        "ifcfg path '{}' is not an ifcfg base file",
+    ]
 
     def __init__(self):
-        ifcfg_proxy = NMDbus.bus.get_object(NMDbusIfcfgRH1.IF_NAME,
-                                            NMDbusIfcfgRH1.OBJ_PATH)
-        self.ifcfg = dbus.Interface(ifcfg_proxy,
-                                    NMDbusIfcfgRH1.IF_NAME)
+        ifcfg_proxy = NMDbus.bus.get_object(
+            NMDbusIfcfgRH1.IF_NAME, NMDbusIfcfgRH1.OBJ_PATH
+        )
+        self.ifcfg = dbus.Interface(ifcfg_proxy, NMDbusIfcfgRH1.IF_NAME)
 
     def ifcfg2connection(self, ifcfg_path):
         """

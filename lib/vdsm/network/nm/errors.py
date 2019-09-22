@@ -44,10 +44,12 @@ class NMTimeoutError(Exception):
 
 
 def nmerror_dev_not_found():
-    return nmerror(src_exception=DBusException,
-                   dst_exception=NMDeviceNotFoundError,
-                   predicate=lambda ex: ex.args[0] == 'No device found for '
-                                                      'the requested iface.')
+    return nmerror(
+        src_exception=DBusException,
+        dst_exception=NMDeviceNotFoundError,
+        predicate=lambda ex: ex.args[0] == 'No device found for '
+        'the requested iface.',
+    )
 
 
 def nmerror_properties_not_found():
@@ -55,7 +57,8 @@ def nmerror_properties_not_found():
         src_exception=DBusException,
         dst_exception=NMPropertiesNotFoundError,
         predicate=lambda ex: ex.args[0].startswith(
-            "No such interface 'org.freedesktop.DBus.Properties' on object")
+            "No such interface 'org.freedesktop.DBus.Properties' on object"
+        ),
     )
 
 
@@ -70,5 +73,7 @@ def nmerror(src_exception, dst_exception, predicate):
                     _, value, tb = sys.exc_info()
                     six.reraise(dst_exception, dst_exception(*value.args), tb)
                 raise
+
         return wrapped_func
+
     return wrapper
