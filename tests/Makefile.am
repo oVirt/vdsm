@@ -34,7 +34,6 @@ SUBDIRS = \
 common_modules = \
 	common/cache_test.py \
 	common/cmdutils_test.py \
-	common/concurrent_test.py \
 	common/contextlib_test.py \
 	common/fileutils_test.py \
 	common/function_test.py \
