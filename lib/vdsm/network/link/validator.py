@@ -34,16 +34,21 @@ def validate(nets, bonds):
 
 
 def validate_bond_names(nets, bonds):
-    bad_bond_names = {bond for bond in bonds if
-                      not re.match('^bond\w+$', bond)}
-    bad_bond_names |= {net_attrs['bonding'] for net_attrs in
-                       six.viewvalues(nets) if 'bonding' in net_attrs and
-                       not re.match('^bond\w+$', net_attrs['bonding'])}
+    bad_bond_names = {
+        bond for bond in bonds if not re.match('^bond\w+$', bond)
+    }
+    bad_bond_names |= {
+        net_attrs['bonding']
+        for net_attrs in six.viewvalues(nets)
+        if 'bonding' in net_attrs
+        and not re.match('^bond\w+$', net_attrs['bonding'])
+    }
 
     if bad_bond_names:
-        raise ne.ConfigNetworkError(ne.ERR_BAD_BONDING,
-                                    'bad bond name(s): {}'.format(
-                                        ', '.join(bad_bond_names)))
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_BONDING,
+            'bad bond name(s): {}'.format(', '.join(bad_bond_names)),
+        )
 
 
 def validate_bond_configuration(bonds):
@@ -53,8 +58,10 @@ def validate_bond_configuration(bonds):
 
         nics = bond_attrs.get('nics', [])
         if not nics:
-            raise ne.ConfigNetworkError(ne.ERR_BAD_PARAMS, '{}: Must specify '
-                                        'nics for bonding'.format(bond_name))
+            raise ne.ConfigNetworkError(
+                ne.ERR_BAD_PARAMS,
+                '{}: Must specify ' 'nics for bonding'.format(bond_name),
+            )
 
 
 def validate_vlan_configuration(nets):
@@ -64,6 +71,8 @@ def validate_vlan_configuration(nets):
 
         if 'vlan' in net_attrs:
             if 'nic' not in net_attrs and 'bonding' not in net_attrs:
-                raise ne.ConfigNetworkError(ne.ERR_BAD_VLAN,
-                                            '{}: vlan device requires south'
-                                            'bound device'.format(net_name))
+                raise ne.ConfigNetworkError(
+                    ne.ERR_BAD_VLAN,
+                    '{}: vlan device requires south'
+                    'bound device'.format(net_name),
+                )

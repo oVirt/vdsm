@@ -34,18 +34,20 @@ BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 ARP_IP_TARGET = 'arp_ip_target'
 
 
-EXCLUDED_BONDING_ENTRIES = frozenset((
-    'slaves',
-    'active_slave',
-    'mii_status',
-    'queue_id',
-    'ad_aggregator',
-    'ad_num_ports',
-    'ad_actor_key',
-    'ad_partner_key',
-    'ad_partner_mac',
-    'ad_actor_system'
-))
+EXCLUDED_BONDING_ENTRIES = frozenset(
+    (
+        'slaves',
+        'active_slave',
+        'mii_status',
+        'queue_id',
+        'ad_aggregator',
+        'ad_num_ports',
+        'ad_actor_key',
+        'ad_partner_key',
+        'ad_partner_mac',
+        'ad_actor_system',
+    )
+)
 
 BONDING_MODES_NAME_TO_NUMBER = {
     'balance-rr': '0',
@@ -58,7 +60,8 @@ BONDING_MODES_NAME_TO_NUMBER = {
 }
 
 BONDING_MODES_NUMBER_TO_NAME = dict(
-    (v, k) for k, v in six.iteritems(BONDING_MODES_NAME_TO_NUMBER))
+    (v, k) for k, v in six.iteritems(BONDING_MODES_NAME_TO_NUMBER)
+)
 
 
 def set_options(bond, requested_options):
@@ -70,7 +73,8 @@ def set_options(bond, requested_options):
     current_options = get_options(properties(bond))
     _set_options(bond, requested_options, current_options)
     _set_untouched_options_to_defaults(
-        bond, desired_mode, requested_options, current_options)
+        bond, desired_mode, requested_options, current_options
+    )
 
 
 def _set_mode(bond, mode):
@@ -80,17 +84,21 @@ def _set_mode(bond, mode):
 def _set_options(bond, requested_options, current_options):
     for key, value in six.iteritems(requested_options):
         if key != 'mode' and (
-                key not in current_options or value != current_options[key]):
+            key not in current_options or value != current_options[key]
+        ):
             _set_option(bond, key, value, current_options.get(key))
 
 
 def _set_untouched_options_to_defaults(
-        bond, mode, requested_options, current_options):
+    bond, mode, requested_options, current_options
+):
     mode = numerize_bond_mode(mode)
     for key, value in six.iteritems(getDefaultBondingOptions(mode)):
-        if (key != 'mode' and
-                key not in requested_options and
-                key in current_options):
+        if (
+            key != 'mode'
+            and key not in requested_options
+            and key in current_options
+        ):
             v = value[-1] if value else ''
             _set_option(bond, key, v, current_options[key])
 
@@ -137,8 +145,9 @@ def get_options(bond_properties, filter_out_defaults=True, filter_opts=None):
     Bond options are a subset of bond properties and refer to properties that
     can be set and affect bond operation.
     """
-    opts_keys = (filter_opts or
-                 six.viewkeys(bond_properties) - EXCLUDED_BONDING_ENTRIES)
+    opts_keys = (
+        filter_opts or six.viewkeys(bond_properties) - EXCLUDED_BONDING_ENTRIES
+    )
 
     if filter_out_defaults:
         opts_keys = _filter_out_default_opts(bond_properties, opts_keys)
@@ -152,9 +161,9 @@ def _filter_out_default_opts(bond_properties, opts_keys):
     non_default_opts_keys = {
         opt
         for opt in opts_keys
-        if bond_properties[opt] and (
-            bond_properties[opt] != defaults.get(opt) or
-            opt == 'mode')}
+        if bond_properties[opt]
+        and (bond_properties[opt] != defaults.get(opt) or opt == 'mode')
+    }
     return non_default_opts_keys
 
 
@@ -177,9 +186,11 @@ def properties(bond_name, filter_properties=None, filter_out_properties=()):
 
     properties_path = ((os.path.basename(path), path) for path in paths)
 
-    props = {name: bond_opts_read_elements(path)
-             for name, path in properties_path
-             if name not in filter_out_properties}
+    props = {
+        name: bond_opts_read_elements(path)
+        for name, path in properties_path
+        if name not in filter_out_properties
+    }
 
     normalize_arp_ip_target(props)
 
@@ -230,5 +241,8 @@ def getAllDefaultBondingOptions():
 
 
 def numerize_bond_mode(mode):
-    return (mode if mode in BONDING_MODES_NUMBER_TO_NAME else
-            BONDING_MODES_NAME_TO_NUMBER[mode])
+    return (
+        mode
+        if mode in BONDING_MODES_NUMBER_TO_NAME
+        else BONDING_MODES_NAME_TO_NUMBER[mode]
+    )

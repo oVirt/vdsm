@@ -41,9 +41,12 @@ def speed(dev_name):
 
 
 def get_vlans_on_base_device(base_dev_name):
-    return (iface_properties['name'] for iface_properties in iface.list()
-            if iface_properties.get('device') == base_dev_name and
-            iface_properties.get('type') == iface.Type.VLAN)
+    return (
+        iface_properties['name']
+        for iface_properties in iface.list()
+        if iface_properties.get('device') == base_dev_name
+        and iface_properties.get('type') == iface.Type.VLAN
+    )
 
 
 def is_base_device(dev_name):

@@ -60,20 +60,27 @@ class SetupBonds(object):
         """
         logging.debug('Editing bonds: %s', list(self._bonds2edit))
         # TODO: Create a SetupBonds transaction.
-        init_bond_pool = [(Bond(bond_name), attrs)
-                          for bond_name, attrs in self._bonds2edit.items()]
+        init_bond_pool = [
+            (Bond(bond_name), attrs)
+            for bond_name, attrs in self._bonds2edit.items()
+        ]
 
         for bond, attrs in init_bond_pool:
             with bond:
-                slaves2remove = self._slaves2remove(bond.slaves,
-                                                    frozenset(attrs['nics']))
+                slaves2remove = self._slaves2remove(
+                    bond.slaves, frozenset(attrs['nics'])
+                )
                 bond.del_slaves(slaves2remove)
 
             # Saving only a partial bond config, overwritten in the next step.
             self._config.setBonding(
                 bond.master,
-                {'nics': sorted(bond.slaves), 'options': bond.options,
-                 'switch': attrs['switch']})
+                {
+                    'nics': sorted(bond.slaves),
+                    'options': bond.options,
+                    'switch': attrs['switch'],
+                },
+            )
 
         for bond, attrs in init_bond_pool:
             with bond:
@@ -96,8 +103,9 @@ class SetupBonds(object):
                 requested_options = parse_bond_options(attrs['options'])
             else:
                 requested_options = None
-            with Bond(bond_name, slaves=requested_slaves,
-                      options=requested_options) as bond:
+            with Bond(
+                bond_name, slaves=requested_slaves, options=requested_options
+            ) as bond:
                 bond.create()
 
             self._config.setBonding(bond_name, attrs)
@@ -134,11 +142,14 @@ def parse_bond_options(options):
     """
     Parse bonding options into a dictionary.
     """
+
     def _string_to_dict(str, div, eq):
         if options == '':
             return {}
-        return dict(option.split(eq, 1)
-                    for option in str.strip(div).split(div))
+        return dict(
+            option.split(eq, 1) for option in str.strip(div).split(div)
+        )
+
     if options:
         d_options = _string_to_dict(options, ' ', '=')
         return d_options

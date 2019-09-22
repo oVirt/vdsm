@@ -60,23 +60,22 @@ def invalidate_dpdk_devices():
 
 
 def info(dev):
-    return {
-        'hwaddr': _get_hw_addr(dev.name),
-        'pciaddr': dev.pci_addr
-    }
+    return {'hwaddr': _get_hw_addr(dev.name), 'pciaddr': dev.pci_addr}
 
 
 def link_info(dev_name, pci_addr=None):
     """Returns a dictionary with the information of the link object."""
-    return {'index': '',
-            'qdisc': '',
-            'name': dev_name,
-            'mtu': '',
-            'state': 'up',
-            'flags': '',
-            'address': _get_hw_addr(dev_name),
-            'type': 'dpdk',
-            'pci_addr': pci_addr}
+    return {
+        'index': '',
+        'qdisc': '',
+        'name': dev_name,
+        'mtu': '',
+        'state': 'up',
+        'flags': '',
+        'address': _get_hw_addr(dev_name),
+        'type': 'dpdk',
+        'pci_addr': pci_addr,
+    }
 
 
 def pci_addr(dev_name):
@@ -84,8 +83,9 @@ def pci_addr(dev_name):
 
 
 def is_dpdk(dev_name):
-    return (dev_name.startswith(PORT_PREFIX) and
-            not os.path.exists(os.path.join(NET_SYSFS, dev_name)))
+    return dev_name.startswith(PORT_PREFIX) and not os.path.exists(
+        os.path.join(NET_SYSFS, dev_name)
+    )
 
 
 def speed(dev_name):
@@ -115,17 +115,30 @@ def down(dev_name):
 @cache.memoized
 def _get_dpdk_devices():
     devices = _lshw_command()
-    return {PORT_PREFIX + str(i): {'pci_addr': devinfo['handle'][len('PCI:'):],
-                                   'driver': devinfo['configuration']['driver']
-                                   }
-            for i, devinfo in enumerate(_dpdk_devices_info(devices))}
+    return {
+        PORT_PREFIX
+        + str(i): {
+            'pci_addr': devinfo['handle'][len('PCI:') :],
+            'driver': devinfo['configuration']['driver'],
+        }
+        for i, devinfo in enumerate(_dpdk_devices_info(devices))
+    }
 
 
 def _lshw_command():
-    filter_out_hw = ['usb', 'pcmcia', 'isapnp', 'ide', 'scsi', 'dmi', 'memory',
-                     'cpuinfo']
-    filterout_cmd = list(itertools.chain.from_iterable(('-disable', x)
-                                                       for x in filter_out_hw))
+    filter_out_hw = [
+        'usb',
+        'pcmcia',
+        'isapnp',
+        'ide',
+        'scsi',
+        'dmi',
+        'memory',
+        'cpuinfo',
+    ]
+    filterout_cmd = list(
+        itertools.chain.from_iterable(('-disable', x) for x in filter_out_hw)
+    )
     rc, out, err = cmd.exec_sync(['lshw', '-json'] + filterout_cmd)
     if rc != 0:
         raise LshwError(err)
@@ -148,17 +161,20 @@ def _dpdk_devices_info(data):
 
 
 def _dpdk_devs_current(dpdk_devices):
-    devs_exist = all(_dev_exists(devinfo)
-                     for devinfo in six.viewvalues(dpdk_devices))
+    devs_exist = all(
+        _dev_exists(devinfo) for devinfo in six.viewvalues(dpdk_devices)
+    )
     unlisted_devices = _unlisted_devices(
-        [devinfo['pci_addr'] for devinfo in six.viewvalues(dpdk_devices)])
+        [devinfo['pci_addr'] for devinfo in six.viewvalues(dpdk_devices)]
+    )
 
     return devs_exist and not unlisted_devices
 
 
 def _dev_exists(dev):
     return os.path.exists(
-        os.path.join('/sys/bus/pci/drivers', dev['driver'], dev['pci_addr']))
+        os.path.join('/sys/bus/pci/drivers', dev['driver'], dev['pci_addr'])
+    )
 
 
 def _unlisted_devices(pci_addrs):
@@ -166,18 +182,24 @@ def _unlisted_devices(pci_addrs):
     for driver in DPDK_DRIVERS:
         driver_path = os.path.join('/sys/bus/pci/drivers', driver)
         if os.path.exists(driver_path):
-            pci_addr_files += [pci_addr for pci_addr in os.listdir(driver_path)
-                               if pci_addr.startswith('00')]
+            pci_addr_files += [
+                pci_addr
+                for pci_addr in os.listdir(driver_path)
+                if pci_addr.startswith('00')
+            ]
 
     new_devices = set(pci_addr_files) - set(pci_addrs)
     return bool(new_devices)
 
 
 def _is_dpdk_dev(dev):
-    return (dev.get('class') == 'network' and 'handle' in dev and
-            'logicalname' not in dev and
-            dev['configuration'].get('driver') in DPDK_DRIVERS and
-            'Virtual Function' not in dev.get('product', ''))
+    return (
+        dev.get('class') == 'network'
+        and 'handle' in dev
+        and 'logicalname' not in dev
+        and dev['configuration'].get('driver') in DPDK_DRIVERS
+        and 'Virtual Function' not in dev.get('product', '')
+    )
 
 
 def _normalize_lshw_result(result):
@@ -189,5 +211,5 @@ def _normalize_lshw_result(result):
 
 
 def _get_hw_addr(dev_name):
-    index = dev_name[len(PORT_PREFIX):]
+    index = dev_name[len(PORT_PREFIX) :]
     return '02:00:00:00:00:{:02x}'.format(int(index))

@@ -67,6 +67,7 @@ class IfaceAPI(object):
     """
     Link iface driver interface.
     """
+
     @abc.abstractmethod
     def up(self, admin_blocking=True, oper_blocking=False):
         """
@@ -134,6 +135,7 @@ class IfaceHybrid(IfaceAPI):
     """
     Link iface driver implemented by a mix of iproute2, netlink and sysfs.
     """
+
     def __init__(self):
         self._dev = None
         self._vfid = None
@@ -251,9 +253,10 @@ def iface(device, vfid=None):
 
 
 def list():
-    dpdk_links = (dpdk.link_info(dev_name, dev_info['pci_addr'])
-                  for dev_name, dev_info
-                  in six.viewitems(dpdk.get_dpdk_devices()))
+    dpdk_links = (
+        dpdk.link_info(dev_name, dev_info['pci_addr'])
+        for dev_name, dev_info in six.viewitems(dpdk.get_dpdk_devices())
+    )
     for properties in itertools.chain(link.iter_links(), dpdk_links):
         if 'type' not in properties:
             properties['type'] = get_alternative_type(properties['name'])
@@ -269,8 +272,7 @@ def random_iface_name(prefix='', max_length=15, digit_only=False):
     suffix_chars = string.digits
     if not digit_only:
         suffix_chars += string.ascii_letters
-    suffix = ''.join(random.choice(suffix_chars)
-                     for _ in range(suffix_len))
+    suffix = ''.join(random.choice(suffix_chars) for _ in range(suffix_len))
     return prefix + suffix
 
 
@@ -308,8 +310,9 @@ def _get_stat(device, stat_name):
             return int(stat_val)
         except ValueError:
             if stat_val != '':
-                logging.warning('Could not parse stats (%s) from %s',
-                                stat_path, stat_val)
+                logging.warning(
+                    'Could not parse stats (%s) from %s', stat_path, stat_val
+                )
             logging.debug('bad %s: (%s)', stat_path, stat_val)
             if attempt == 0:
                 raise

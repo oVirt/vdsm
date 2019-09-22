@@ -49,8 +49,9 @@ class BondSysFS(BondAPI):
 
     def __exit__(self, ex_type, ex_value, traceback):
         if ex_type is not None:
-            logging.info('Bond {} transaction failed, reverting...'.format(
-                self._master))
+            logging.info(
+                'Bond {} transaction failed, reverting...'.format(self._master)
+            )
             self._revert_transaction()
 
     def create(self):
@@ -74,8 +75,11 @@ class BondSysFS(BondAPI):
                 interface.down()
                 with open(self.BONDING_SLAVES % self._master, 'w') as f:
                     f.write('+%s' % slave)
-            logging.info('Slave {} has been added to bond {}.'.format(
-                slave, self._master))
+            logging.info(
+                'Slave {} has been added to bond {}.'.format(
+                    slave, self._master
+                )
+            )
             self._slaves.add(slave)
 
     def del_slaves(self, slaves):
@@ -84,16 +88,21 @@ class BondSysFS(BondAPI):
                 interface.down()
                 with open(self.BONDING_SLAVES % self._master, 'w') as f:
                     f.write('-%s' % slave)
-            logging.info('Slave {} has been removed from bond {}.'.format(
-                slave, self._master))
+            logging.info(
+                'Slave {} has been removed from bond {}.'.format(
+                    slave, self._master
+                )
+            )
             self._slaves.remove(slave)
 
     def set_options(self, options):
         self._properties = sysfs_options.properties(self.master)
         current_options = sysfs_options.get_options(self._properties)
         if options != current_options:
-            mode_will_be_changed = ('mode' in options and
-                                    current_options['mode'] != options['mode'])
+            mode_will_be_changed = (
+                'mode' in options
+                and current_options['mode'] != options['mode']
+            )
             if mode_will_be_changed:
                 with _preserve_iface_state(self._master) as interface:
                     interface.down()

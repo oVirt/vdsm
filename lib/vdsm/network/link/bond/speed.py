@@ -33,8 +33,9 @@ BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
 
 def speed(bond_name):
     """Return the bond speed if bond_name refers to a bond, 0 otherwise."""
-    opts = properties(bond_name,
-                      filter_properties=('slaves', 'active_slave', 'mode'))
+    opts = properties(
+        bond_name, filter_properties=('slaves', 'active_slave', 'mode')
+    )
     try:
         if opts['slaves']:
             if opts['mode'][1] in BONDING_FAILOVER_MODES:

@@ -29,6 +29,7 @@ from vdsm.network.link.iface import iface
 from vdsm.network.netlink import waitfor
 
 from .speed import speed
+
 speed
 
 
@@ -37,6 +38,7 @@ class BondAPI(object):
     """
     Bond driver interface.
     """
+
     def __init__(self, name, slaves=(), options=None):
         self._master = name
         self._slaves = set(slaves)

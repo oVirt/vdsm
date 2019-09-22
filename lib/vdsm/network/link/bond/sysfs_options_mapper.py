@@ -43,8 +43,9 @@ _MAX_BONDING_MODES = 6
 
 
 def dump_bonding_options():
-    jdump = partial(json.dump,
-                    sort_keys=True, indent=4, separators=(',', ': '))
+    jdump = partial(
+        json.dump, sort_keys=True, indent=4, separators=(',', ': ')
+    )
     with open(sysfs_options.BONDING_DEFAULTS, 'w') as f:
         jdump(_get_default_bonding_options(), f)
 
@@ -71,7 +72,8 @@ def _get_default_bonding_options():
         with _bond_device(bond_name, mode):
             opts[mode] = sysfs_options.properties(
                 bond_name,
-                filter_out_properties=sysfs_options.EXCLUDED_BONDING_ENTRIES)
+                filter_out_properties=sysfs_options.EXCLUDED_BONDING_ENTRIES,
+            )
             opts[mode]['mode'] = default_mode
 
     return opts
@@ -120,9 +122,13 @@ def _bond_opts_name2numeric_filtered(bond):
     Exclude entries that are not bonding options,
     e.g. 'ad_num_ports' or 'slaves'.
     """
-    return dict(((opt, val) for (opt, val)
-                 in six.iteritems(_bond_opts_name2numeric(bond))
-                 if opt not in sysfs_options.EXCLUDED_BONDING_ENTRIES))
+    return dict(
+        (
+            (opt, val)
+            for (opt, val) in six.iteritems(_bond_opts_name2numeric(bond))
+            if opt not in sysfs_options.EXCLUDED_BONDING_ENTRIES
+        )
+    )
 
 
 def get_bonding_option_numeric_val(mode_num, option_name, val_name):
@@ -148,15 +154,17 @@ def _bond_opts_name2numeric(bond):
     {'mode': ('balance-rr', '0'), 'xmit_hash_policy': ('layer2', '0')}
     """
     bond_mode_path = sysfs_options.BONDING_OPT % (bond, 'mode')
-    paths = (p for p in iglob(sysfs_options.BONDING_OPT % (bond, '*'))
-             if p != bond_mode_path)
+    paths = (
+        p
+        for p in iglob(sysfs_options.BONDING_OPT % (bond, '*'))
+        if p != bond_mode_path
+    )
     opts = {}
 
     for path in paths:
         elements = sysfs_options.bond_opts_read_elements(path)
         if len(elements) == 2:
-            opts[os.path.basename(path)] = \
-                _bond_opts_name2numeric_scan(path)
+            opts[os.path.basename(path)] = _bond_opts_name2numeric_scan(path)
     return opts
 
 
@@ -164,8 +172,9 @@ def _bond_opts_name2numeric_scan(opt_path):
     vals = {}
     with io.open(opt_path, 'wb', buffering=0) as opt_file:
         for numeric_val in range(32):
-            name, numeric = _bond_opts_name2numeric_getval(opt_path, opt_file,
-                                                           numeric_val)
+            name, numeric = _bond_opts_name2numeric_getval(
+                opt_path, opt_file, numeric_val
+            )
             if name is None:
                 break
 
