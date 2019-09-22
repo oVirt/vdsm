@@ -33,6 +33,7 @@ from contextlib import contextmanager
 import six
 
 from vdsm import utils
+from vdsm.common import concurrent
 from vdsm.common import supervdsm
 from vdsm.common.compat import glob_escape
 from vdsm.storage import clusterlock
@@ -40,7 +41,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import fileVolume
-from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import sd
@@ -917,11 +917,12 @@ def scanDomains(pattern="*"):
     # We Use 30% of the available slots.
     # TODO: calculate it right, now we use same value of max process per
     #       domain.
-    for res in misc.itmap(collectMetaFiles, mntList, oop.HELPERS_PER_DOMAIN):
-        if res is None:
+    for res in concurrent.tmap(
+            collectMetaFiles, mntList, max_workers=oop.HELPERS_PER_DOMAIN):
+        if res.value is None:
             continue
 
-        yield res
+        yield res.value
 
 
 def getStorageDomainsList():
