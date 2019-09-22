@@ -300,7 +300,7 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs, discard):
                   'volume %s task %s', volUUID, taskid)
 
     log.debug('Starting to zero image %s', imgUUID)
-    results = concurrent.tmap(zeroVolume, volUUIDs)
+    results = concurrent.tmap(zeroVolume, volUUIDs, max_workers=len(volUUIDs))
     errors = [str(res.value) for res in results if not res.succeeded]
     if errors:
         raise se.VolumesZeroingError(errors)
@@ -678,7 +678,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
         self.log.debug("Purging image %s", imgUUID)
         toDel = self._getImgExclusiveVols(imgUUID, volsImgs)
-        results = concurrent.tmap(purge_volume, toDel)
+        results = concurrent.tmap(purge_volume, toDel, max_workers=len(toDel))
         errors = [str(res.value) for res in results if not res.succeeded]
         if errors:
             raise se.CannotRemoveLogicalVolume(errors)

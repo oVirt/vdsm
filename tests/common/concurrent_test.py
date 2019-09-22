@@ -21,8 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import itertools
 import logging
-import random
 import threading
 import time
 
@@ -198,24 +198,18 @@ class TestTmap:
 
     def test_results(self):
         values = tuple(range(10))
-        results = concurrent.tmap(lambda x: x, values)
-        expected = [concurrent.Result(True, x) for x in values]
+        results = set(concurrent.tmap(lambda x: x, values))
+        expected = set(concurrent.Result(True, x) for x in values)
 
         assert results == expected
 
-    def test_results_order(self):
-        def func(x):
-            time.sleep(x)
-            return x
-        values = tuple(random.random() * 0.1 for x in range(10))
-        results = concurrent.tmap(func, values)
-        expected = [concurrent.Result(True, x) for x in values]
-
-        assert results == expected
+    def test_results_iter(self):
+        for res in concurrent.tmap(lambda x: x, [1, 2, 3, 4]):
+            assert res.succeeded
 
     def test_concurrency(self):
         start = monotonic_time()
-        concurrent.tmap(time.sleep, [0.5] * 10)
+        list(concurrent.tmap(time.sleep, [0.5] * 10))
         elapsed = monotonic_time() - start
 
         assert 0.5 <= elapsed < 1.0
@@ -226,10 +220,64 @@ class TestTmap:
         def func(x):
             raise error
 
-        results = concurrent.tmap(func, iter(range(10)))
+        results = list(concurrent.tmap(func, iter(range(10))))
         expected = [concurrent.Result(False, error)] * 10
 
         assert results == expected
+
+    def test_no_values(self):
+        results = list(concurrent.tmap(lambda x: x, []))
+        assert results == []
+
+    @pytest.mark.parametrize("values,max_workers,actual_workers", [
+        # Start len(values) workers.
+        (3, 4, 3),
+        # Start max_workers workers.
+        (10, 4, 4),
+    ])
+    def test_max_workers(self, values, max_workers, actual_workers):
+        workers = set()
+        done = threading.Event()
+        barrier = concurrent.Barrier(actual_workers)
+
+        def func(x):
+            # Ensure that all threads are used.
+            if not done.is_set():
+                barrier.wait(1)
+                done.set()
+            workers.add(threading.current_thread().ident)
+
+        list(concurrent.tmap(
+            func,
+            iter(range(values)),
+            max_workers=max_workers))
+
+        assert len(workers) == actual_workers
+
+    def test_thread_name(self):
+        thread_names = set()
+        barrier = concurrent.Barrier(4)
+
+        def func(x):
+            # Ensure that all threads are used.
+            barrier.wait(1)
+            thread_names.add(threading.current_thread().name)
+
+        list(concurrent.tmap(func, [1, 2, 3, 4], name="test"))
+
+        assert thread_names == {"test/0", "test/1", "test/2", "test/3"}
+
+    @pytest.mark.parametrize("max_workers", [1, 10, 50])
+    def test_many_values(self, max_workers):
+        results = concurrent.tmap(
+            lambda x: x,
+            itertools.repeat(True, 1000),
+            max_workers=max_workers)
+        assert all(r.value for r in results)
+
+    def test_invalid_max_workers(self):
+        with pytest.raises(ValueError):
+            list(concurrent.tmap(lambda x: x, [1], max_workers=0))
 
 
 class TestThread:
