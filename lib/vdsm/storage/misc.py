@@ -44,7 +44,6 @@ import six
 from functools import wraps, partial
 
 from six.moves import map
-from six.moves import queue
 
 from vdsm import constants
 from vdsm.common import commands
@@ -59,7 +58,6 @@ DIRECTFLAG = "direct"
 STR_UUID_SIZE = 36
 UUID_HYPHENS = [8, 13, 18, 23]
 MEGA = 1 << 20
-UNLIMITED_THREADS = -1
 
 log = logging.getLogger('storage.Misc')
 
@@ -477,58 +475,6 @@ def killall(name, signum, group=False):
 
     if exception is not _NO_ERROR:
         raise exception
-
-
-def itmap(func, iterable, maxthreads=UNLIMITED_THREADS):
-    """
-    Make an iterator that computes the function using
-    arguments from the iterable. It works similar to tmap
-    by running each operation in a different thread, this
-    causes the results not to return in any particular
-    order so it's good if you don't care about the order
-    of the results.
-    maxthreads stands for maximum threads that we can initiate simultaneosly.
-               If we reached to max threads the function waits for thread to
-               finish before initiate the next one.
-    """
-    if maxthreads < 1 and maxthreads != UNLIMITED_THREADS:
-        raise ValueError("Wrong input to function itmap: %s", maxthreads)
-
-    respQueue = queue.Queue()
-
-    def wrapper(value):
-        try:
-            respQueue.put(func(value))
-        except Exception as e:
-            respQueue.put(e)
-
-    threadsCreated = 0
-    threadsCount = 0
-    for arg in iterable:
-        if maxthreads != UNLIMITED_THREADS:
-            if maxthreads == 0:
-                # This not supposed to happened. If it does, it's a bug.
-                # maxthreads should get to 0 only after threadsCount is
-                # greater than 1
-                if threadsCount < 1:
-                    raise RuntimeError("No thread initiated")
-                else:
-                    yield respQueue.get()
-                    # if yield returns one thread stopped, so we can run
-                    # another thread in queue
-                    maxthreads += 1
-                    threadsCount -= 1
-
-        name = "itmap/%d" % threadsCreated
-        t = concurrent.thread(wrapper, args=(arg,), name=name)
-        t.start()
-        threadsCreated += 1
-        threadsCount += 1
-        maxthreads -= 1
-
-    # waiting for rest threads to end
-    for i in range(threadsCount):
-        yield respQueue.get()
 
 
 def isAscii(s):

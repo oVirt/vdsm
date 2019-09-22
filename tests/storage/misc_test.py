@@ -47,7 +47,6 @@ from vdsm.common import commands
 from vdsm.common.proc import pidstat
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
-from vdsm.storage import outOfProcess as oop
 
 from monkeypatch import MonkeyPatch
 from testValidation import checkSudo
@@ -171,50 +170,6 @@ class Receiver(object):
 
     def callback(self):
         self.flag.set()
-
-
-class TestITMap(VdsmTestCase):
-
-    def testMoreArgsThanThreads(self):
-        def dummy(arg):
-            time.sleep(TIMEOUT)
-            return arg
-        data = frozenset([1, 2, 3, 4])
-        currentTime = time.time()
-        # we provide 3 thread slots and the input contain 4 vals, means we
-        # need to wait for 1 thread to finish before processing all input.
-        ret = frozenset(misc.itmap(dummy, data, 3))
-        afterTime = time.time()
-        # the time should take at least TIMEOUT seconds to wait for 1 of the
-        # first 3 to finish and another TIMEOUT seconds for the last operation,
-        # not more than 4 TIMEOUTs (and I'm large here..)
-        self.assertFalse(afterTime - currentTime > TIMEOUT * 4,
-                         msg=("Operation took too long (more than 2 second). "
-                              "starts: %s ends: %s") %
-                         (currentTime, afterTime))
-        # Verify the operation waits at least for 1 thread to finish
-        self.assertFalse(afterTime - currentTime < TIMEOUT * 2,
-                         msg="Operation was too fast, not all threads were "
-                             "initiated as desired (with 1 thread delay)")
-        self.assertEqual(ret, data)
-
-    def testMaxAvailableProcesses(self):
-        def dummy(arg):
-            return arg
-        # here we launch the maximum threads we can initiate in every
-        # outOfProcess operation + 1. it let us know that oop and itmap operate
-        # properly with their limitations
-        data = frozenset(range(oop.HELPERS_PER_DOMAIN + 1))
-        ret = frozenset(misc.itmap(dummy, data, misc.UNLIMITED_THREADS))
-        self.assertEqual(ret, data)
-
-    def testMoreThreadsThanArgs(self):
-        data = [1]
-        self.assertEqual(list(misc.itmap(int, data, 80)), data)
-
-    def testInvalidITMapParams(self):
-        data = 1
-        self.assertRaises(ValueError, lambda: next(misc.itmap(int, data, 0)))
 
 
 class TestParseHumanReadableSize(VdsmTestCase):
