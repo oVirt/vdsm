@@ -34,8 +34,9 @@ from ..models import Bond, hierarchy_vlan_tag, hierarchy_backing_device
 
 
 class Configurator(object):
-    def __init__(self, configApplier, net_info, is_unipersistence,
-                 inRollback=False):
+    def __init__(
+        self, configApplier, net_info, is_unipersistence, inRollback=False
+    ):
         self.configApplier = configApplier
         self.net_info = net_info
         self._inRollback = inRollback
@@ -51,8 +52,10 @@ class Configurator(object):
         elif self._inRollback:
             # If we failed the rollback transaction, the networking system
             # is in no good state and we fail hard
-            logging.error('Failed rollback transaction last known good '
-                          'network.', exc_info=(type, value, traceback))
+            logging.error(
+                'Failed rollback transaction last known good ' 'network.',
+                exc_info=(type, value, traceback),
+            )
             self._clean_running_config_from_removed_nets()
         else:
             leftover = self.rollback()
@@ -135,8 +138,11 @@ class Configurator(object):
         """
         ifaceMtu = link_iface.iface(iface.name).mtu()
         ifaces = tuple(ifaceVlans)
-        maxMtu = (max(link_iface.iface(dev).mtu() for dev in ifaces)
-                  if ifaces else None)
+        maxMtu = (
+            max(link_iface.iface(dev).mtu() for dev in ifaces)
+            if ifaces
+            else None
+        )
         if maxMtu and maxMtu < ifaceMtu:
             if isinstance(iface, Bond):
                 self.configApplier.setBondingMtu(iface.name, maxMtu)
@@ -148,8 +154,9 @@ class Configurator(object):
         # Cleanup running config from networks that have been actually
         # removed but not yet removed from running config.
         running_config = RunningConfig()
-        nets2remove = (six.viewkeys(running_config.networks) -
-                       six.viewkeys(self.runningConfig.networks))
+        nets2remove = six.viewkeys(running_config.networks) - six.viewkeys(
+            self.runningConfig.networks
+        )
         for net in nets2remove:
             running_config.removeNetwork(net)
         running_config.save()

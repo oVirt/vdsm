@@ -84,10 +84,9 @@ class Ifcfg(Configurator):
     # TODO: Do all the configApplier interaction from here.
     def __init__(self, net_info, inRollback=False):
         is_unipersistence = config.get('vars', 'net_persistence') == 'unified'
-        super(Ifcfg, self).__init__(ConfigWriter(),
-                                    net_info,
-                                    is_unipersistence,
-                                    inRollback)
+        super(Ifcfg, self).__init__(
+            ConfigWriter(), net_info, is_unipersistence, inRollback
+        )
         self.runningConfig = RunningConfig()
 
     def rollback(self):
@@ -144,9 +143,11 @@ class Ifcfg(Configurator):
         with waitfor.waitfor_linkup(bond.name):
             pass
 
-        bond_attr = {'options': bond.options,
-                     'nics': sorted(s.name for s in bond.slaves),
-                     'switch': 'legacy'}
+        bond_attr = {
+            'options': bond.options,
+            'nics': sorted(s.name for s in bond.slaves),
+            'switch': 'legacy',
+        }
         if bond.hwaddr:
             bond_attr['hwaddr'] = bond.hwaddr
         self.runningConfig.setBonding(bond.name, bond_attr)
@@ -196,9 +197,11 @@ class Ifcfg(Configurator):
             _restore_default_bond_options(bond.name, bond.options)
             _exec_ifup(bond)
 
-        bond_attr = {'options': bond.options,
-                     'nics': sorted(s.name for s in bond.slaves),
-                     'switch': 'legacy'}
+        bond_attr = {
+            'options': bond.options,
+            'nics': sorted(s.name for s in bond.slaves),
+            'switch': 'legacy',
+        }
         if bond.hwaddr:
             bond_attr['hwaddr'] = bond.hwaddr
         self.runningConfig.setBonding(bond.name, bond_attr)
@@ -246,7 +249,8 @@ class Ifcfg(Configurator):
         if iface.ipv4.bootproto == 'dhcp':
             ifacetracking.add(iface.name)
         to_be_removed = remove_even_if_used or not self.net_info.ifaceUsers(
-            iface.name)
+            iface.name
+        )
         if to_be_removed:
             ifdown(iface.name)
         self._removeSourceRoute(iface)
@@ -256,18 +260,26 @@ class Ifcfg(Configurator):
         """For ifcfg tracking can be done together with route/rule addition"""
         ipv4 = netEnt.ipv4
         if ipv4.bootproto != 'dhcp' and netEnt.master is None:
-            valid_args = (ipv4.address and ipv4.netmask and
-                          ipv4.gateway not in (None, '0.0.0.0'))
+            valid_args = (
+                ipv4.address
+                and ipv4.netmask
+                and ipv4.gateway not in (None, '0.0.0.0')
+            )
             if valid_args:
-                sroute = StaticSourceRoute(netEnt.name, ipv4.address,
-                                           ipv4.netmask, ipv4.gateway)
+                sroute = StaticSourceRoute(
+                    netEnt.name, ipv4.address, ipv4.netmask, ipv4.gateway
+                )
                 self.configureSourceRoute(*sroute.requested_config())
 
             else:
                 logging.warning(
                     'Invalid input for source routing: '
                     'name=%s, addr=%s, netmask=%s, gateway=%s',
-                    netEnt.name, ipv4.address, ipv4.netmask, ipv4.gateway)
+                    netEnt.name,
+                    ipv4.address,
+                    ipv4.netmask,
+                    ipv4.gateway,
+                )
 
         if netEnt.ipv4.bootproto == 'dhcp':
             ifacetracking.add(netEnt.name)
@@ -310,8 +322,9 @@ class Ifcfg(Configurator):
 
             bond_used_by_net = self.net_info.getNetworkForIface(bonding.name)
             bond_info = self.net_info.bondings[bonding.name]
-            if (not bond_used_by_net and
-                    (bond_info['ipv4addrs'] or bond_info['ipv6addrs'])):
+            if not bond_used_by_net and (
+                bond_info['ipv4addrs'] or bond_info['ipv6addrs']
+            ):
                 ipwrapper.addrFlush(bonding.name)
 
     def removeNic(self, nic, remove_even_if_used=False):
@@ -410,15 +423,20 @@ class Ifcfg(Configurator):
                     _ifup(vlan, blocking=blocking)
 
             vlan_hwaddr = link_iface.iface(vlan.name).address()
-            slaves_hwaddr = [link_iface.iface(slave.name).address()
-                             for slave in bond.slaves]
+            slaves_hwaddr = [
+                link_iface.iface(slave.name).address() for slave in bond.slaves
+            ]
             if slaves_hwaddr[0] == vlan_hwaddr:
                 return
 
             bond_hwaddr = link_iface.iface(bond.name).address()
             logging.info(
                 '%s. vlan@bond hwaddr is not in sync (v/b/[s]): %s/%s/%s',
-                attempt, vlan_hwaddr, bond_hwaddr, slaves_hwaddr)
+                attempt,
+                vlan_hwaddr,
+                bond_hwaddr,
+                slaves_hwaddr,
+            )
 
             ifdown(vlan.name)
 
@@ -426,7 +444,8 @@ class Ifcfg(Configurator):
             ERR_BAD_BONDING,
             'While adding vlan {} over bond {}, '
             'the bond hwaddr was not in sync '
-            'whith its slaves.'.format(vlan.name, vlan.device.name))
+            'whith its slaves.'.format(vlan.name, vlan.device.name),
+        )
 
     @staticmethod
     def _get_bond_mode(bond):
@@ -438,8 +457,9 @@ class Ifcfg(Configurator):
 
 
 class ConfigWriter(object):
-    CONFFILE_HEADER = (CONFFILE_HEADER_SIGNATURE + ' ' +
-                       dsaversion.raw_version_revision)
+    CONFFILE_HEADER = (
+        CONFFILE_HEADER_SIGNATURE + ' ' + dsaversion.raw_version_revision
+    )
     DELETED_HEADER = '# original file did not exist'
 
     def __init__(self):
@@ -467,8 +487,10 @@ class ConfigWriter(object):
         with open(backup, 'w') as backupFile:
             backupFile.write(content)
         os.chown(backup, vdsm_uid, -1)
-        logging.debug("Persistently backed up %s "
-                      "(until next 'set safe config')", backup)
+        logging.debug(
+            "Persistently backed up %s " "(until next 'set safe config')",
+            backup,
+        )
 
     def _backup(self, filename):
         self._atomicBackup(filename)
@@ -496,8 +518,9 @@ class ConfigWriter(object):
         logging.info("Rolling back configuration (restoring atomic backup)")
         for confFilePath, content in six.iteritems(self._backups):
             if content is None:
-                logging.debug('Removing empty configuration backup %s',
-                              confFilePath)
+                logging.debug(
+                    'Removing empty configuration backup %s', confFilePath
+                )
                 self._removeFile(confFilePath)
             else:
                 with open(confFilePath, 'w') as confFile:
@@ -574,8 +597,9 @@ class ConfigWriter(object):
         self._backup(fileName)
         configuration = self.CONFFILE_HEADER + '\n' + configuration
 
-        logging.debug('Writing to file %s configuration:\n%s', fileName,
-                      configuration)
+        logging.debug(
+            'Writing to file %s configuration:\n%s', fileName, configuration
+        )
         with open(fileName, 'w') as confFile:
             confFile.write(configuration)
         os.chmod(fileName, 0o664)
@@ -584,11 +608,14 @@ class ConfigWriter(object):
             # restorecon expects string type
             selinux.restorecon(py2to3.to_str(fileName))
         except:
-            logging.debug('ignoring restorecon error in case '
-                          'SElinux is disabled', exc_info=True)
+            logging.debug(
+                'ignoring restorecon error in case ' 'SElinux is disabled',
+                exc_info=True,
+            )
 
-    def _createConfFile(self, conf, name, ipv4, ipv6, mtu, nameservers,
-                        **kwargs):
+    def _createConfFile(
+        self, conf, name, ipv4, ipv6, mtu, nameservers, **kwargs
+    ):
         """ Create ifcfg-* file with proper fields per device """
         cfg = 'DEVICE=%s\n' % pipes.quote(name)
         cfg += conf
@@ -611,8 +638,9 @@ class ConfigWriter(object):
 
         if mtu:
             cfg += 'MTU=%d\n' % mtu
-        is_default_route = ipv4.defaultRoute and (ipv4.gateway or
-                                                  ipv4.bootproto == 'dhcp')
+        is_default_route = ipv4.defaultRoute and (
+            ipv4.gateway or ipv4.bootproto == 'dhcp'
+        )
         cfg += 'DEFROUTE=%s\n' % _to_ifcfg_bool(is_default_route)
         cfg += 'NM_CONTROLLED=no\n'
         enable_ipv6 = ipv6.address or ipv6.ipv6autoconf or ipv6.dhcpv6
@@ -630,8 +658,7 @@ class ConfigWriter(object):
                 cfg += 'DNS{}={}\n'.format(i, nameserver)
 
         ifcfg_file = NET_CONF_PREF + name
-        hook_dict = {'ifcfg_file': ifcfg_file,
-                     'config': cfg}
+        hook_dict = {'ifcfg_file': ifcfg_file, 'config': cfg}
         hook_return = hooks.before_ifcfg_write(hook_dict)
         cfg = hook_return['config']
         self.writeConfFile(ifcfg_file, cfg)
@@ -646,14 +673,22 @@ class ConfigWriter(object):
         conf += 'ONBOOT=yes\n'
         if bridge.duid_source and dhclient.supports_duid_file():
             duid_source_file = dhclient.LEASE_FILE.format(
-                '', bridge.duid_source)
+                '', bridge.duid_source
+            )
             conf += 'DHCLIENTARGS="-df %s"\n' % duid_source_file
 
         if 'custom' in opts and 'bridge_opts' in opts['custom']:
             conf += 'BRIDGING_OPTS="%s"\n' % opts['custom']['bridge_opts']
 
-        self._createConfFile(conf, bridge.name, bridge.ipv4, bridge.ipv6,
-                             bridge.mtu, bridge.nameservers, **opts)
+        self._createConfFile(
+            conf,
+            bridge.name,
+            bridge.ipv4,
+            bridge.ipv6,
+            bridge.mtu,
+            bridge.nameservers,
+            **opts
+        )
 
     def addVlan(self, vlan, **opts):
         """ Create ifcfg-* file with proper fields for VLAN """
@@ -662,8 +697,15 @@ class ConfigWriter(object):
         if vlan.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(vlan.bridge.name)
         conf += 'ONBOOT=yes\n'
-        self._createConfFile(conf, vlan.name, vlan.ipv4, vlan.ipv6, vlan.mtu,
-                             vlan.nameservers, **opts)
+        self._createConfFile(
+            conf,
+            vlan.name,
+            vlan.ipv4,
+            vlan.ipv6,
+            vlan.mtu,
+            vlan.nameservers,
+            **opts
+        )
 
     def addBonding(self, bond, net_info, **opts):
         """ Create ifcfg-* file with proper fields for bond """
@@ -677,8 +719,9 @@ class ConfigWriter(object):
         conf += 'ONBOOT=yes\n'
 
         ipv4, ipv6, mtu, nameservers = self._getIfaceConfValues(bond, net_info)
-        self._createConfFile(conf, bond.name, ipv4, ipv6, mtu, nameservers,
-                             **opts)
+        self._createConfFile(
+            conf, bond.name, ipv4, ipv6, mtu, nameservers, **opts
+        )
 
         # create the bonding device to avoid initscripts noise
         with open(BONDING_MASTERS) as info:
@@ -704,8 +747,9 @@ class ConfigWriter(object):
             conf += 'ETHTOOL_OPTS=%s\n' % pipes.quote(ethtool_opts)
 
         ipv4, ipv6, mtu, nameservers = self._getIfaceConfValues(nic, net_info)
-        self._createConfFile(conf, nic.name, ipv4, ipv6, mtu, nameservers,
-                             **opts)
+        self._createConfFile(
+            conf, nic.name, ipv4, ipv6, mtu, nameservers, **opts
+        )
 
     @staticmethod
     def _getIfaceConfValues(iface, net_info):
@@ -715,9 +759,10 @@ class ConfigWriter(object):
         nameservers = iface.nameservers
         iface_users = net_info.ifaceUsers(iface.name)
         iface_users_excluding_bonds_and_bridges = (
-            ifuser for ifuser in iface_users
-            if (ifuser not in net_info.bridges) and
-               (ifuser not in net_info.bondings)
+            ifuser
+            for ifuser in iface_users
+            if (ifuser not in net_info.bridges)
+            and (ifuser not in net_info.bondings)
         )
         if iface_users:
             confParams = misc.getIfaceCfg(iface.name)
@@ -726,8 +771,10 @@ class ConfigWriter(object):
                 if mtu:
                     mtu = int(mtu)
             iface_master_bridge_or_bond = iface.bridge or iface.bond
-            if (any(iface_users_excluding_bonds_and_bridges) and
-                    not iface_master_bridge_or_bond):
+            if (
+                any(iface_users_excluding_bonds_and_bridges)
+                and not iface_master_bridge_or_bond
+            ):
                 if not ipv4.address and ipv4.bootproto != 'dhcp':
                     try:
                         ipv4.address = confParams['IPADDR']
@@ -739,24 +786,33 @@ class ConfigWriter(object):
                         ipv4.bootproto = confParams.get('BOOTPROTO')
                 if ipv4.defaultRoute is None and confParams.get('DEFROUTE'):
                     ipv4.defaultRoute = _from_ifcfg_bool(
-                        confParams['DEFROUTE'])
+                        confParams['DEFROUTE']
+                    )
                 if confParams.get('IPV6INIT') == 'yes':
                     ipv6.address = confParams.get('IPV6ADDR')
                     ipv6.gateway = confParams.get('IPV6_DEFAULTGW')
                     ipv6.ipv6autoconf = (
-                        confParams.get('IPV6_AUTOCONF') == 'yes')
+                        confParams.get('IPV6_AUTOCONF') == 'yes'
+                    )
                     ipv6.dhcpv6 = confParams.get('DHCPV6C') == 'yes'
                 if iface.nameservers is None:
-                    nameservers = [confParams[key] for key in ('DNS1', 'DNS2')
-                                   if key in confParams]
+                    nameservers = [
+                        confParams[key]
+                        for key in ('DNS1', 'DNS2')
+                        if key in confParams
+                    ]
         return ipv4, ipv6, mtu, nameservers
 
     def removeNic(self, nic):
         cf = NET_CONF_PREF + nic
         self._backup(cf)
         lines = [
-            self.CONFFILE_HEADER + '\n', 'DEVICE=%s\n' % nic, 'ONBOOT=yes\n',
-            'MTU=%s\n' % link_iface.DEFAULT_MTU, 'NM_CONTROLLED=no\n']
+            self.CONFFILE_HEADER + '\n',
+            'DEVICE=%s\n' % nic,
+            'ONBOOT=yes\n',
+            'MTU=%s\n' % link_iface.DEFAULT_MTU,
+            'NM_CONTROLLED=no\n',
+        ]
         with open(cf, 'w') as nicFile:
             nicFile.writelines(lines)
 
@@ -788,8 +844,11 @@ class ConfigWriter(object):
         Update conffile entry with the given value.
         """
         with open(conffile) as f:
-            entries = [line for line in f.readlines()
-                       if not line.startswith(entry + '=')]
+            entries = [
+                line
+                for line in f.readlines()
+                if not line.startswith(entry + '=')
+            ]
 
         if value is not None:
             if entries[-1][-1] != '\n':
@@ -819,12 +878,14 @@ class ConfigWriter(object):
             config_lines = f.readlines()
 
         config_lines_without_comments_and_bridge = [
-            line for line in config_lines
-            if (not line.startswith('#') and
-                not line.startswith('BRIDGE'))]
+            line
+            for line in config_lines
+            if (not line.startswith('#') and not line.startswith('BRIDGE'))
+        ]
 
-        self.writeConfFile(iface_conf_path,
-                           ''.join(config_lines_without_comments_and_bridge))
+        self.writeConfFile(
+            iface_conf_path, ''.join(config_lines_without_comments_and_bridge)
+        )
 
 
 def stop_devices(device_ifcfgs):
@@ -850,16 +911,18 @@ def start_devices(device_ifcfgs):
                         masters.write('+%s\n' % dev)
             _exec_ifup_by_name(dev)
         except ConfigNetworkError:
-            logging.error('Failed to ifup device %s during rollback.', dev,
-                          exc_info=True)
+            logging.error(
+                'Failed to ifup device %s during rollback.', dev, exc_info=True
+            )
 
 
 def _remove_device(device_name):
     try:
         ipwrapper.linkDel(device_name)
     except ipwrapper.IPRoute2NoDeviceError:
-        logging.debug('Failed to remove device %s, '
-                      'it does not exist' % (device_name,))
+        logging.debug(
+            'Failed to remove device %s, ' 'it does not exist' % (device_name,)
+        )
 
 
 def _is_bond_name(dev):
@@ -873,10 +936,7 @@ def _is_running_bond(bond):
 
 
 def _sort_device_ifcfgs(device_ifcfgs):
-    devices = {'Bridge': [],
-               'Vlan': [],
-               'Slave': [],
-               'Other': []}
+    devices = {'Bridge': [], 'Vlan': [], 'Slave': [], 'Other': []}
     for conf_file in device_ifcfgs:
         if not conf_file.startswith(NET_CONF_PREF):
             continue
@@ -888,7 +948,7 @@ def _sort_device_ifcfgs(device_ifcfgs):
                 continue
             else:
                 raise
-        dev = conf_file[len(NET_CONF_PREF):]
+        dev = conf_file[len(NET_CONF_PREF) :]
 
         devices[_dev_type(content)].append(dev)
 
@@ -963,8 +1023,10 @@ def _ignore_missing_device(device_name, enable_ipv6):
         yield
     except IOError as e:
         if e.errno == errno.ENOENT:
-            logging.warning("%s didn't exist (yet) and so IPv6 wasn't %sabled."
-                            % (device_name, 'en' if enable_ipv6 else 'dis'))
+            logging.warning(
+                "%s didn't exist (yet) and so IPv6 wasn't %sabled."
+                % (device_name, 'en' if enable_ipv6 else 'dis')
+            )
         else:
             raise
 
@@ -986,9 +1048,9 @@ def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP, blocking=None):
                 _exec_ifup(iface, cgroup)
     else:
         # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
-        t = concurrent.thread(_exec_ifup,
-                              name='ifup/%s' % iface,
-                              args=(iface, cgroup))
+        t = concurrent.thread(
+            _exec_ifup, name='ifup/%s' % iface, args=(iface, cgroup)
+        )
         t.start()
 
 
@@ -1031,9 +1093,10 @@ def configuredPorts(nets, bridge):
         with open(filePath) as confFile:
             for line in confFile:
                 if line.startswith('BRIDGE=' + bridge):
-                    port = filePath[filePath.rindex('-') + 1:]
-                    logging.debug('port %s found in ifcfg for %s', port,
-                                  bridge)
+                    port = filePath[filePath.rindex('-') + 1 :]
+                    logging.debug(
+                        'port %s found in ifcfg for %s', port, bridge
+                    )
                     ports.append(port)
                     break
     return ports

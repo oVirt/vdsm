@@ -57,9 +57,11 @@ class IfcfgAcquireNMonline(object):
             dev.syncoper.waitfor_activated_state()
             dev.cleanup_inactive_connections()
             active_connection = dev.active_connection
-        except (nmerrors.NMDeviceNotFoundError,
-                nmerrors.NMPropertiesNotFoundError,
-                nmerrors.NMTimeoutError):
+        except (
+            nmerrors.NMDeviceNotFoundError,
+            nmerrors.NMPropertiesNotFoundError,
+            nmerrors.NMTimeoutError,
+        ):
             return
 
         if not active_connection:
@@ -128,8 +130,9 @@ class IfcfgAcquireNMoffline(object):
         for ifcfg_file in paths:
             conf = misc.ifcfg_config(ifcfg_file)
             is_vlan_device = conf.get('TYPE', '').upper() == 'VLAN'
-            config_device = '{}.{}'.format(conf.get('PHYSDEV'),
-                                           conf.get('VLAN_ID'))
+            config_device = '{}.{}'.format(
+                conf.get('PHYSDEV'), conf.get('VLAN_ID')
+            )
             if is_vlan_device and config_device == device:
                 device_files.append(ifcfg_file)
         return device_files
