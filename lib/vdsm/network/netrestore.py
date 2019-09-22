@@ -67,10 +67,14 @@ def init_nets():
     for bond_name, attrs in six.iteritems(bonds):
         with _try2execute('Restoration of bond {} failed.'.format(bond_name)):
             requested_slaves = set(attrs['nics'])
-            requested_options = (setup.parse_bond_options(attrs['options'])
-                                 if 'options' in attrs else None)
-            with Bond(bond_name, slaves=requested_slaves,
-                      options=requested_options) as bond:
+            requested_options = (
+                setup.parse_bond_options(attrs['options'])
+                if 'options' in attrs
+                else None
+            )
+            with Bond(
+                bond_name, slaves=requested_slaves, options=requested_options
+            ) as bond:
                 bond.create()
 
     for bond, attrs in six.iteritems(bonds):
@@ -89,9 +93,11 @@ def init_nets():
 
 
 def _persisted_ovs_entries(persistent_entries):
-    return {entry: attrs
-            for entry, attrs in six.iteritems(persistent_entries)
-            if attrs.get('switch') == 'ovs'}
+    return {
+        entry: attrs
+        for entry, attrs in six.iteritems(persistent_entries)
+        if attrs.get('switch') == 'ovs'
+    }
 
 
 def _nets_already_restored(nets_restored_mark):

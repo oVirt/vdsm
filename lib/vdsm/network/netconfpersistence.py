@@ -90,9 +90,11 @@ class BaseConfig(object):
         """Returns a diff Config that shows what should be changed for
         going from other to self."""
         # TODO: The new devices config is not handled
-        diff = BaseConfig(self._confDictDiff(self.networks, other.networks),
-                          self._confDictDiff(self.bonds, other.bonds),
-                          {})
+        diff = BaseConfig(
+            self._confDictDiff(self.networks, other.networks),
+            self._confDictDiff(self.bonds, other.bonds),
+            {},
+        )
         return diff
 
     def __eq__(self, other):
@@ -104,7 +106,11 @@ class BaseConfig(object):
 
     def __repr__(self):
         return '%s(%s, %s, %s)' % (
-            self.__class__.__name__, self.networks, self.bonds, self.devices)
+            self.__class__.__name__,
+            self.networks,
+            self.bonds,
+            self.devices,
+        )
 
     def __bool__(self):
         # TODO: The new devices config is not handled
@@ -127,13 +133,18 @@ class BaseConfig(object):
 
     def as_unicode(self):
         # TODO: The new devices config is not handled
-        return {'networks': json.loads(json.dumps(self.networks)),
-                'bonds': json.loads(json.dumps(self.bonds))}
+        return {
+            'networks': json.loads(json.dumps(self.networks)),
+            'bonds': json.loads(json.dumps(self.bonds)),
+        }
 
     @staticmethod
     def _filter_out_net_attrs(netattrs):
-        attrs = {key: value for key, value in six.viewitems(netattrs)
-                 if value is not None}
+        attrs = {
+            key: value
+            for key, value in six.viewitems(netattrs)
+            if value is not None
+        }
 
         _filter_out_volatile_net_attrs(attrs)
         return attrs
@@ -170,16 +181,11 @@ class Config(BaseConfig):
         self._save_config(self.bonds, rand_bonds_path)
         self._save_config(self.devices, rand_devs_path)
 
-        _atomic_copytree(
-            rand_netconf_path, self.netconf_path, remove_src=True)
+        _atomic_copytree(rand_netconf_path, self.netconf_path, remove_src=True)
 
         logging.info(
-            'Saved new config %r to [%s,%s,%s]' % (
-                self,
-                self.networksPath,
-                self.bondingsPath,
-                self.devicesPath
-            )
+            'Saved new config %r to [%s,%s,%s]'
+            % (self, self.networksPath, self.bondingsPath, self.devicesPath)
         )
 
     def _save_config(self, configs, configpath):
@@ -188,8 +194,9 @@ class Config(BaseConfig):
             self._setConfig(attrs, os.path.join(configpath, configname))
 
     def config_exists(self):
-        return (os.path.exists(self.networksPath) or
-                os.path.exists(self.bondingsPath))
+        return os.path.exists(self.networksPath) or os.path.exists(
+            self.bondingsPath
+        )
 
     @staticmethod
     def _getConfigDict(path):
@@ -284,14 +291,16 @@ class Transaction(object):
         elif self.in_rollback:
             logging.error(
                 'Failed rollback transaction to last known good network.',
-                exc_info=(ex_type, ex_value, ex_traceback))
+                exc_info=(ex_type, ex_value, ex_traceback),
+            )
         else:
             config_diff = self.base_config.diffFrom(self.config)
             if config_diff:
                 logging.warning(
                     'Failed setup transaction,'
                     'reverting to last known good network.',
-                    exc_info=(ex_type, ex_value, ex_traceback))
+                    exc_info=(ex_type, ex_value, ex_traceback),
+                )
                 raise ne.RollbackIncomplete(config_diff, ex_type, ex_value)
 
 
@@ -350,9 +359,11 @@ def _atomic_copytree(srcpath, dstpath, remove_src=False):
 
 
 def _fsynctree(path):
-    filepaths = (os.path.join(rootdir, filename)
-                 for rootdir, _, file_names in os.walk(path)
-                 for filename in file_names)
+    filepaths = (
+        os.path.join(rootdir, filename)
+        for rootdir, _, file_names in os.walk(path)
+        for filename in file_names
+    )
 
     for f in filepaths:
         _fsyncpath(f)

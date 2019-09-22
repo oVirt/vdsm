@@ -51,10 +51,15 @@ def add_host_nameservers(servers):
 
 def _set_host_nameservers(servers):
     with fileutils.atomic_file_write(DNS_CONF_FILE, 'w') as file_object:
-        file_object.write(CONFFILE_HEADER_SIGNATURE + ' ' +
-                          dsaversion.raw_version_revision + '\n')
+        file_object.write(
+            CONFFILE_HEADER_SIGNATURE
+            + ' '
+            + dsaversion.raw_version_revision
+            + '\n'
+        )
         nameservers = '\n'.join(
-            ['{} {}'.format(DNS_NAMESERVER, server) for server in servers])
+            ['{} {}'.format(DNS_NAMESERVER, server) for server in servers]
+        )
         file_object.write(nameservers)
 
 

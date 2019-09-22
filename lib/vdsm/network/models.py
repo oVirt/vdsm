@@ -35,8 +35,15 @@ from . import errors as ne
 
 
 class NetDevice(object):
-    def __init__(self, name, configurator, ipv4=None, ipv6=None,
-                 blockingdhcp=False, mtu=None):
+    def __init__(
+        self,
+        name,
+        configurator,
+        ipv4=None,
+        ipv6=None,
+        blockingdhcp=False,
+        mtu=None,
+    ):
         self.name = name
         self.ipv4 = ipv4 if ipv4 is not None else IPv4()
         self.ipv6 = ipv6 if ipv6 is not None else IPv6()
@@ -80,8 +87,16 @@ class NetDevice(object):
 
 
 class Nic(NetDevice):
-    def __init__(self, name, configurator, ipv4=None, ipv6=None,
-                 blockingdhcp=False, mtu=None, _netinfo=None):
+    def __init__(
+        self,
+        name,
+        configurator,
+        ipv4=None,
+        ipv6=None,
+        blockingdhcp=False,
+        mtu=None,
+        _netinfo=None,
+    ):
         if _netinfo is None:
             _netinfo = CachingNetInfo()
         if name not in _netinfo.nics:
@@ -90,15 +105,18 @@ class Nic(NetDevice):
         if _netinfo.ifaceUsers(name):
             mtu = max(mtu or 0, link_iface.iface(name).mtu())
 
-        super(Nic, self).__init__(name, configurator, ipv4, ipv6, blockingdhcp,
-                                  mtu)
+        super(Nic, self).__init__(
+            name, configurator, ipv4, ipv6, blockingdhcp, mtu
+        )
 
     def configure(self, **opts):
         # in a limited condition, we should not touch the nic config
-        if (self.vlan and
-                nics.operstate(self.name) == nics.OPERSTATE_UP and
-                self.configurator.net_info.ifaceUsers(self.name) and
-                self.mtu <= link_iface.iface(self.name).mtu()):
+        if (
+            self.vlan
+            and nics.operstate(self.name) == nics.OPERSTATE_UP
+            and self.configurator.net_info.ifaceUsers(self.name)
+            and self.mtu <= link_iface.iface(self.name).mtu()
+        ):
             return
 
         self.configurator.configureNic(self, **opts)
@@ -120,16 +138,26 @@ class Nic(NetDevice):
 class Vlan(NetDevice):
     MAX_ID = 4094
 
-    def __init__(self, device, tag, configurator, ipv4=None, ipv6=None,
-                 blockingdhcp=False, mtu=None, name=None):
+    def __init__(
+        self,
+        device,
+        tag,
+        configurator,
+        ipv4=None,
+        ipv6=None,
+        blockingdhcp=False,
+        mtu=None,
+        name=None,
+    ):
         self.validateTag(tag)
         device.master = self
         self.device = device
         self.tag = tag
         # control for arbitrary vlan names
         name = '%s.%s' % (device.name, tag) if name is None else name
-        super(Vlan, self).__init__(name, configurator, ipv4, ipv6,
-                                   blockingdhcp, mtu)
+        super(Vlan, self).__init__(
+            name, configurator, ipv4, ipv6, blockingdhcp, mtu
+        )
 
     def __iter__(self):
         yield self
@@ -150,25 +178,38 @@ class Vlan(NetDevice):
         try:
             if not 0 <= int(tag) <= cls.MAX_ID:
                 raise ConfigNetworkError(
-                    ne.ERR_BAD_VLAN, 'vlan id out of range: %r, must be '
-                    '0..%s' % (tag, cls.MAX_ID))
+                    ne.ERR_BAD_VLAN,
+                    'vlan id out of range: %r, must be '
+                    '0..%s' % (tag, cls.MAX_ID),
+                )
         except ValueError:
-            raise ConfigNetworkError(ne.ERR_BAD_VLAN, 'vlan id must be a '
-                                     'number between 0 and %s' %
-                                     cls.MAX_ID)
+            raise ConfigNetworkError(
+                ne.ERR_BAD_VLAN,
+                'vlan id must be a ' 'number between 0 and %s' % cls.MAX_ID,
+            )
 
 
 class Bridge(NetDevice):
     '''This class represents traditional kernel bridges.'''
 
-    def __init__(self, name, configurator, ipv4=None, ipv6=None,
-                 blockingdhcp=False, mtu=None, port=None, stp=None):
+    def __init__(
+        self,
+        name,
+        configurator,
+        ipv4=None,
+        ipv6=None,
+        blockingdhcp=False,
+        mtu=None,
+        port=None,
+        stp=None,
+    ):
         if port:
             port.master = self
         self.port = port
         self.stp = stp
-        super(Bridge, self).__init__(name, configurator, ipv4, ipv6,
-                                     blockingdhcp, mtu)
+        super(Bridge, self).__init__(
+            name, configurator, ipv4, ipv6, blockingdhcp, mtu
+        )
 
     def __iter__(self):
         yield self
@@ -189,9 +230,19 @@ class Bridge(NetDevice):
 
 
 class Bond(NetDevice):
-    def __init__(self, name, configurator, ipv4=None, ipv6=None,
-                 blockingdhcp=False, mtu=None, slaves=(), options=None,
-                 hwaddr=None, on_removal_just_detach_from_network=False):
+    def __init__(
+        self,
+        name,
+        configurator,
+        ipv4=None,
+        ipv6=None,
+        blockingdhcp=False,
+        mtu=None,
+        slaves=(),
+        options=None,
+        hwaddr=None,
+        on_removal_just_detach_from_network=False,
+    ):
         for slave in slaves:
             slave.master = self
         self.slaves = slaves
@@ -199,10 +250,12 @@ class Bond(NetDevice):
         self.validateOptions(options)
         self.options = self._reorderOptions(options)
         self.hwaddr = hwaddr
-        self.on_removal_just_detach_from_network = \
+        self.on_removal_just_detach_from_network = (
             on_removal_just_detach_from_network
-        super(Bond, self).__init__(name, configurator, ipv4, ipv6,
-                                   blockingdhcp, mtu)
+        )
+        super(Bond, self).__init__(
+            name, configurator, ipv4, ipv6, blockingdhcp, mtu
+        )
 
     def __iter__(self):
         yield self
@@ -216,24 +269,30 @@ class Bond(NetDevice):
     def configure(self, **opts):
         # When the bond is up and we are not changing the configuration that
         # is already applied in any way, we can skip the configuring.
-        if (self.vlan and
-            self.name in bonding.bondings() and
-            (not self.configurator.unifiedPersistence or
-             self.name in self.configurator.runningConfig.bonds) and
-            nics.operstate(self.name) == nics.OPERSTATE_UP and
-            self.configurator.net_info.ifaceUsers(self.name) and
-            self.mtu <= link_iface.iface(self.name).mtu() and
-            not self._bond_hwaddr_changed() and
-            self.areOptionsApplied() and
-            frozenset(slave.name for slave in self.slaves) ==
-                frozenset(link_bond.Bond(self.name).slaves)):
-                return
+        if (
+            self.vlan
+            and self.name in bonding.bondings()
+            and (
+                not self.configurator.unifiedPersistence
+                or self.name in self.configurator.runningConfig.bonds
+            )
+            and nics.operstate(self.name) == nics.OPERSTATE_UP
+            and self.configurator.net_info.ifaceUsers(self.name)
+            and self.mtu <= link_iface.iface(self.name).mtu()
+            and not self._bond_hwaddr_changed()
+            and self.areOptionsApplied()
+            and frozenset(slave.name for slave in self.slaves)
+            == frozenset(link_bond.Bond(self.name).slaves)
+        ):
+            return
 
         self.configurator.configureBond(self, **opts)
 
     def _bond_hwaddr_changed(self):
-        return (self.hwaddr and
-                self.hwaddr != link_iface.iface(self.name).address())
+        return (
+            self.hwaddr
+            and self.hwaddr != link_iface.iface(self.name).address()
+        )
 
     def areOptionsApplied(self):
         # TODO: this method returns True iff self.options are a subset of the
@@ -244,7 +303,8 @@ class Bond(NetDevice):
             return True
         confOpts = [option.split('=', 1) for option in options.split(' ')]
         activeOpts = bond_options.properties(
-            self.name, filter_properties=(name for name, _ in confOpts))
+            self.name, filter_properties=(name for name, _ in confOpts)
+        )
 
         return all(value in activeOpts[name] for name, value in confOpts)
 
@@ -261,19 +321,30 @@ class Bond(NetDevice):
             nicBond = _netinfo.getBondingForNic(nic)
             if nicVlans or nicNet or nicBond and nicBond != name:
                 raise ConfigNetworkError(
-                    ne.ERR_USED_NIC, 'nic %s already used by %s' %
-                    (nic, nicVlans or nicNet or nicBond))
-            slaves.append(Nic(nic, configurator, mtu=mtu,
-                              _netinfo=_netinfo))
+                    ne.ERR_USED_NIC,
+                    'nic %s already used by %s'
+                    % (nic, nicVlans or nicNet or nicBond),
+                )
+            slaves.append(Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo))
         return slaves
 
     @classmethod
-    def objectivize(cls, name, configurator, options, nics, mtu, _netinfo,
-                    hwaddr, on_removal_just_detach_from_network=False):
+    def objectivize(
+        cls,
+        name,
+        configurator,
+        options,
+        nics,
+        mtu,
+        _netinfo,
+        hwaddr,
+        on_removal_just_detach_from_network=False,
+    ):
 
         if nics:  # New bonding or edit bonding.
-            slaves = cls._objectivizeSlaves(name, configurator, _nicSort(nics),
-                                            mtu, _netinfo)
+            slaves = cls._objectivizeSlaves(
+                name, configurator, _nicSort(nics), mtu, _netinfo
+            )
             if name in _netinfo.bondings:
                 if _netinfo.ifaceUsers(name):
                     mtu = max(mtu or 0, link_iface.iface(name).mtu())
@@ -285,18 +356,29 @@ class Bond(NetDevice):
             if _netinfo.ifaceUsers(name):
                 mtu = max(mtu or 0, link_iface.iface(name).mtu())
 
-            slaves = [Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
-                      for nic in _netinfo.getNicsForBonding(name)]
+            slaves = [
+                Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
+                for nic in _netinfo.getNicsForBonding(name)
+            ]
             options = _netinfo.bondings[name].get('opts')
             options = Bond._dict2list(options)
         else:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
-                                     'Missing required nics on a bonding %s '
-                                     'that is unknown to Vdsm ' % name)
+            raise ConfigNetworkError(
+                ne.ERR_BAD_PARAMS,
+                'Missing required nics on a bonding %s '
+                'that is unknown to Vdsm ' % name,
+            )
 
         detach = on_removal_just_detach_from_network  # argument is too long
-        return cls(name, configurator, slaves=slaves, options=options, mtu=mtu,
-                   hwaddr=hwaddr, on_removal_just_detach_from_network=detach)
+        return cls(
+            name,
+            configurator,
+            slaves=slaves,
+            options=options,
+            mtu=mtu,
+            hwaddr=hwaddr,
+            on_removal_just_detach_from_network=detach,
+        )
 
     @classmethod
     def validateOptions(cls, bondingOptions):
@@ -308,8 +390,10 @@ class Bond(NetDevice):
                 if key == 'mode':
                     mode = value
         except ValueError:
-            raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Error parsing '
-                                     'bonding options: %r' % bondingOptions)
+            raise ConfigNetworkError(
+                ne.ERR_BAD_BONDING,
+                'Error parsing ' 'bonding options: %r' % bondingOptions,
+            )
 
         mode = bonding.numerize_bond_mode(mode)
         defaults = bonding.getDefaultBondingOptions(mode)
@@ -317,8 +401,10 @@ class Bond(NetDevice):
         for option in bondingOptions.split():
             key, _ = option.split('=', 1)
             if key not in defaults:
-                raise ConfigNetworkError(ne.ERR_BAD_BONDING, '%r is not a '
-                                         'valid bonding option' % key)
+                raise ConfigNetworkError(
+                    ne.ERR_BAD_BONDING,
+                    '%r is not a ' 'valid bonding option' % key,
+                )
 
     @staticmethod
     def _reorderOptions(options):

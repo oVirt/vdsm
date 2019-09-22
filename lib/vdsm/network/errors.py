@@ -35,7 +35,7 @@ ERR_USED_BRIDGE = 28
 ERR_FAILED_IFUP = 29
 ERR_FAILED_IFDOWN = 30
 ERR_USED_BOND = 31
-ERR_LOST_CONNECTION = 10    # noConPeer
+ERR_LOST_CONNECTION = 10  # noConPeer
 ERR_OVS_CONNECTION = 32
 
 
@@ -49,8 +49,9 @@ class ConfigNetworkError(Exception):
 class OvsDBConnectionError(ConfigNetworkError):
     def __init__(self, *args):
         message = _get_message(args)
-        super(OvsDBConnectionError, self).__init__(errCode=ERR_OVS_CONNECTION,
-                                                   message=message)
+        super(OvsDBConnectionError, self).__init__(
+            errCode=ERR_OVS_CONNECTION, message=message
+        )
 
     @staticmethod
     def is_ovs_db_conn_error(err_msg):
@@ -64,6 +65,7 @@ class RollbackIncomplete(Exception):
     up.
     Note that it is never raised by the default ifcfg configurator.
     """
+
     def __init__(self, diff, exc_type, value):
         self.diff = diff
         self.exc_type = exc_type
@@ -72,7 +74,8 @@ class RollbackIncomplete(Exception):
 
     def __str__(self):
         return '{} : diff={} exc_type={} value={}'.format(
-            self.__class__.__name__, self.diff, self.exc_type, self.value)
+            self.__class__.__name__, self.diff, self.exc_type, self.value
+        )
 
 
 def _get_message(args):

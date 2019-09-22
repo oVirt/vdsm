@@ -50,8 +50,10 @@ class KernelConfig(BaseConfig):
 
     def __eq__(self, other):
         normalized_other = normalize(other)
-        return (self.networks == normalized_other.networks and
-                self.bonds == normalized_other.bonds)
+        return (
+            self.networks == normalized_other.networks
+            and self.bonds == normalized_other.bonds
+        )
 
     def __hash__(self):
         return hash((self.networks, self.bonds))
@@ -173,10 +175,11 @@ def _translate_netinfo_bond(bond_attr, bond_running_config):
     bond_conf = {
         'nics': sorted(bond_attr['slaves']),
         'options': bonding.bondOptsForIfcfg(bond_attr['opts']),
-        'switch': bond_attr['switch']
+        'switch': bond_attr['switch'],
     }
-    hwaddr_explicitly_set = (bond_running_config and
-                             'hwaddr' in bond_running_config)
+    hwaddr_explicitly_set = (
+        bond_running_config and 'hwaddr' in bond_running_config
+    )
     if hwaddr_explicitly_set:
         bond_conf['hwaddr'] = bond_attr['hwaddr']
     return bond_conf
@@ -185,7 +188,8 @@ def _translate_netinfo_bond(bond_attr, bond_running_config):
 def _translate_hostqos(attributes, net_attr):
     if net_attr.get('hostQos'):
         attributes['hostQos'] = _remove_zero_values_in_net_qos(
-            net_attr['hostQos'])
+            net_attr['hostQos']
+        )
 
 
 def _translate_switch_type(attributes, net_attr):
@@ -209,17 +213,16 @@ def _remove_zero_values_in_net_qos(net_qos):
     for part, part_config in six.viewitems(net_qos):
         stripped_qos[part] = dict(part_config)  # copy
         for curve, curve_config in six.viewitems(part_config):
-            stripped_qos[part][curve] = dict((k, v) for k, v
-                                             in six.viewitems(curve_config)
-                                             if v != 0)
+            stripped_qos[part][curve] = dict(
+                (k, v) for k, v in six.viewitems(curve_config) if v != 0
+            )
     return stripped_qos
 
 
 def _normalize_bonding_opts(config_copy):
     for bond, bond_attr in six.viewitems(config_copy.bonds):
         # TODO: globalize default bond options from Bond in models.py
-        normalized_opts = _parse_bond_options(
-            bond_attr.get('options'))
+        normalized_opts = _parse_bond_options(bond_attr.get('options'))
         if 'mode' not in normalized_opts:
             normalized_opts['mode'] = '0'
         normalized_opts.pop('custom', None)
@@ -250,17 +253,18 @@ def _parse_bond_options(opts):
 
     opts = dict((pair.split('=', 1) for pair in opts.split()))
 
-    mode = opts.get('mode',
-                    bonding.getAllDefaultBondingOptions()['0']['mode'][-1])
+    mode = opts.get(
+        'mode', bonding.getAllDefaultBondingOptions()['0']['mode'][-1]
+    )
     opts['mode'] = numeric_mode = bonding.numerize_bond_mode(mode)
 
     # Force a numeric value for an option
     for opname, opval in opts.items():
         numeric_val = bond_opts_mapper.get_bonding_option_numeric_val(
-            numeric_mode, opname, opval)
+            numeric_mode, opname, opval
+        )
         if numeric_val is not None:
             opts[opname] = numeric_val
 
     defaults = bonding.getDefaultBondingOptions(numeric_mode)
-    return dict(
-        (k, v) for k, v in six.viewitems(opts) if v != defaults.get(k))
+    return dict((k, v) for k, v in six.viewitems(opts) if v != defaults.get(k))

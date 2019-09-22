@@ -64,7 +64,8 @@ def generate_state(networks, bondings):
 
     bond_ifstates = Bond.generate_state(bondings, rconfig.bonds)
     net_ifstates, routes_state, dns_state = Network.generate_state(
-        networks, rconfig.networks)
+        networks, rconfig.networks
+    )
 
     for ifname, ifstate in six.viewitems(bond_ifstates):
         if ifstate.get(Interface.STATE) != InterfaceState.ABSENT:
@@ -95,8 +96,10 @@ def is_dhcp_enabled(ifstate, family):
 
 def is_autoconf_enabled(ifstate):
     family_info = ifstate[Interface.IPV6]
-    return (family_info[InterfaceIP.ENABLED] and
-            family_info[InterfaceIPv6.AUTOCONF])
+    return (
+        family_info[InterfaceIP.ENABLED]
+        and family_info[InterfaceIPv6.AUTOCONF]
+    )
 
 
 class Bond(object):
@@ -268,7 +271,7 @@ class Network(object):
             bridge_port = vlan_iface_state or sb_iface_state
             bridge_iface_state = self._create_bridge_iface(
                 bridge_port[Interface.NAME] if bridge_port else None,
-                options=self._create_bridge_options()
+                options=self._create_bridge_options(),
             )
         else:
             bridge_iface_state = self._remove_bridge_iface()
@@ -280,10 +283,7 @@ class Network(object):
         if vlan is not None:
             base_iface = self._netconf.base_iface
             return {
-                'vlan': {
-                    'id': vlan,
-                    'base-iface': base_iface,
-                },
+                'vlan': {'id': vlan, 'base-iface': base_iface},
                 Interface.NAME: self._netconf.vlan_iface,
                 Interface.TYPE: InterfaceType.VLAN,
                 Interface.STATE: InterfaceState.UP,
@@ -291,10 +291,14 @@ class Network(object):
         return {}
 
     def _create_southbound_iface(self):
-        return {
-            Interface.NAME: self._netconf.base_iface,
-            Interface.STATE: InterfaceState.UP,
-        } if self._netconf.base_iface else {}
+        return (
+            {
+                Interface.NAME: self._netconf.base_iface,
+                Interface.STATE: InterfaceState.UP,
+            }
+            if self._netconf.base_iface
+            else {}
+        )
 
     def _create_bridge_iface(self, port, options=None):
         port_state = [{LinuxBridge.PORT_NAME: port}] if port else []
@@ -302,8 +306,7 @@ class Network(object):
             Interface.NAME: self._name,
             Interface.TYPE: InterfaceType.LINUX_BRIDGE,
             Interface.STATE: InterfaceState.UP,
-            LinuxBridge.CONFIG_SUBTREE:
-                {LinuxBridge.PORT_SUBTREE: port_state}
+            LinuxBridge.CONFIG_SUBTREE: {LinuxBridge.PORT_SUBTREE: port_state},
         }
         if options:
             brstate = bridge_state[LinuxBridge.CONFIG_SUBTREE]
@@ -312,8 +315,9 @@ class Network(object):
 
     def _create_bridge_options(self):
         return {
-            LinuxBridge.STP_SUBTREE:
-                {LinuxBridge.STP_ENABLED: self._netconf.stp}
+            LinuxBridge.STP_SUBTREE: {
+                LinuxBridge.STP_ENABLED: self._netconf.stp
+            }
         }
 
     def _add_ip(self, sb_iface, vlan_iface, bridge_iface):
@@ -349,8 +353,9 @@ class Network(object):
         return [
             {
                 InterfaceIP.ADDRESS_IP: self._netconf.ipv4addr,
-                InterfaceIP.ADDRESS_PREFIX_LENGTH:
-                    _get_ipv4_prefix_from_mask(self._netconf.ipv4netmask),
+                InterfaceIP.ADDRESS_PREFIX_LENGTH: _get_ipv4_prefix_from_mask(
+                    self._netconf.ipv4netmask
+                ),
             }
         ]
 
@@ -359,7 +364,7 @@ class Network(object):
             InterfaceIP.DHCP: self._netconf.dhcpv4,
             InterfaceIP.AUTO_DNS: self.default_route,
             InterfaceIP.AUTO_GATEWAY: self.default_route,
-            InterfaceIP.AUTO_ROUTES: self.default_route
+            InterfaceIP.AUTO_ROUTES: self.default_route,
         }
 
     def _create_ipv6(self, enabled=True):
@@ -382,7 +387,7 @@ class Network(object):
         return [
             {
                 InterfaceIP.ADDRESS_IP: address,
-                InterfaceIP.ADDRESS_PREFIX_LENGTH: int(prefix)
+                InterfaceIP.ADDRESS_PREFIX_LENGTH: int(prefix),
             }
         ]
 
@@ -392,7 +397,7 @@ class Network(object):
             InterfaceIPv6.AUTOCONF: self._netconf.ipv6autoconf,
             InterfaceIP.AUTO_DNS: self.default_route,
             InterfaceIP.AUTO_GATEWAY: self.default_route,
-            InterfaceIP.AUTO_ROUTES: self.default_route
+            InterfaceIP.AUTO_ROUTES: self.default_route,
         }
 
     def _create_routes(self):
@@ -410,7 +415,7 @@ class Network(object):
             Route.NEXT_HOP_ADDRESS: self._netconf.gateway,
             Route.NEXT_HOP_INTERFACE: next_hop_interface,
             Route.DESTINATION: '0.0.0.0/0',
-            Route.TABLE_ID: Route.USE_DEFAULT_ROUTE_TABLE
+            Route.TABLE_ID: Route.USE_DEFAULT_ROUTE_TABLE,
         }
 
     def _create_remove_default_route(self, next_hop_interface):
@@ -419,7 +424,7 @@ class Network(object):
             Route.NEXT_HOP_INTERFACE: next_hop_interface,
             Route.DESTINATION: '0.0.0.0/0',
             Route.STATE: Route.STATE_ABSENT,
-            Route.TABLE_ID: Route.USE_DEFAULT_ROUTE_TABLE
+            Route.TABLE_ID: Route.USE_DEFAULT_ROUTE_TABLE,
         }
 
     def get_next_hop_interface(self):
@@ -448,7 +453,7 @@ class Network(object):
         nets = [
             Network(
                 NetworkConfig(netname, netattrs),
-                NetworkConfig(netname, running_networks.get(netname, {}))
+                NetworkConfig(netname, running_networks.get(netname, {})),
             )
             for netname, netattrs in six.viewitems(networks)
         ]
@@ -472,16 +477,16 @@ class Network(object):
                 droute_net = net
         for net in nets:
             init_base_iface = (
-                net.to_remove and
-                net.base_iface and
-                not (net.has_vlan or net.base_iface in interfaces_state)
+                net.to_remove
+                and net.base_iface
+                and not (net.has_vlan or net.base_iface in interfaces_state)
             )
             if init_base_iface:
                 interfaces_state[net.base_iface] = {
                     Interface.NAME: net.base_iface,
                     Interface.STATE: InterfaceState.UP,
                     Interface.IPV4: {InterfaceIP.ENABLED: False},
-                    Interface.IPV6: {InterfaceIP.ENABLED: False}
+                    Interface.IPV6: {InterfaceIP.ENABLED: False},
                 }
         # FIXME: Workaround to nmstate limitation when DNS entries are defined.
         if not droute_net:
@@ -501,7 +506,8 @@ def _merge_state(interfaces_state, routes_state, dns_state):
         state.update(routes={Route.CONFIG: routes_state})
     if dns_state:
         nameservers = itertools.chain.from_iterable(
-            ns for ns in six.viewvalues(dns_state))
+            ns for ns in six.viewvalues(dns_state)
+        )
         state[DNS.KEY] = {DNS.CONFIG: {DNS.SERVER: list(nameservers)}}
     return state
 

@@ -65,16 +65,31 @@ class StaticSourceRoute(object):
         return netaddr.IPAddress(ipaddr).value
 
     def _buildRoutes(self):
-        return [Route(network='0.0.0.0/0', via=self._gateway,
-                      device=self.device, table=self._table),
-                Route(network=self._network, via=self._ipaddr,
-                      device=self.device, table=self._table)]
+        return [
+            Route(
+                network='0.0.0.0/0',
+                via=self._gateway,
+                device=self.device,
+                table=self._table,
+            ),
+            Route(
+                network=self._network,
+                via=self._ipaddr,
+                device=self.device,
+                table=self._table,
+            ),
+        ]
 
     def _buildRules(self):
-        return [Rule(source=self._network, table=self._table,
-                     prio=RULE_PRIORITY),
-                Rule(destination=self._network, table=self._table,
-                     srcDevice=self.device, prio=RULE_PRIORITY)]
+        return [
+            Rule(source=self._network, table=self._table, prio=RULE_PRIORITY),
+            Rule(
+                destination=self._network,
+                table=self._table,
+                srcDevice=self.device,
+                prio=RULE_PRIORITY,
+            ),
+        ]
 
     def requested_config(self):
         return self._buildRoutes(), self._buildRules(), self.device
@@ -84,7 +99,6 @@ class StaticSourceRoute(object):
 
 
 class DynamicSourceRoute(StaticSourceRoute):
-
     @staticmethod
     def _getRoutes(table):
         routes = []
@@ -165,14 +179,33 @@ class DynamicSourceRoute(StaticSourceRoute):
         return routes, rules
 
     def requested_srconfig(self):
-        routes = [IPRouteData(to='0.0.0.0/0', via=self._gateway, family=4,
-                              device=self.device, table=self._table),
-                  IPRouteData(to=self._network, via=self._ipaddr, family=4,
-                              device=self.device, table=self._table)]
-        rules = [IPRuleData(src=self._network, table=self._table,
-                            prio=RULE_PRIORITY),
-                 IPRuleData(to=self._network, table=self._table,
-                            iif=self.device, prio=RULE_PRIORITY)]
+        routes = [
+            IPRouteData(
+                to='0.0.0.0/0',
+                via=self._gateway,
+                family=4,
+                device=self.device,
+                table=self._table,
+            ),
+            IPRouteData(
+                to=self._network,
+                via=self._ipaddr,
+                family=4,
+                device=self.device,
+                table=self._table,
+            ),
+        ]
+        rules = [
+            IPRuleData(
+                src=self._network, table=self._table, prio=RULE_PRIORITY
+            ),
+            IPRuleData(
+                to=self._network,
+                table=self._table,
+                iif=self.device,
+                prio=RULE_PRIORITY,
+            ),
+        ]
         return routes, rules
 
     def _sourceroute_rules(self):
@@ -180,8 +213,9 @@ class DynamicSourceRoute(StaticSourceRoute):
         device_rules = [r for r in IPRule.rules() if r.iif == self.device]
         if device_rules:
             to = device_rules[0].to
-            sroute_rules = tuple(device_rules +
-                                 [r for r in IPRule.rules() if r.src == to])
+            sroute_rules = tuple(
+                device_rules + [r for r in IPRule.rules() if r.src == to]
+            )
         return sroute_rules
 
     def _sourceroute_routes(self, rules):

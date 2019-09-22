@@ -39,11 +39,7 @@ def report():
 
         _normalize_network_stats(iface_stats)
 
-    return {
-        'network': stats,
-        'rxDropped': tx_dropped,
-        'txDropped': rx_dropped
-    }
+    return {'network': stats, 'rxDropped': tx_dropped, 'txDropped': rx_dropped}
 
 
 def _normalize_network_stats(iface_stats):
@@ -52,11 +48,13 @@ def _normalize_network_stats(iface_stats):
     expected format/type on Engine side.
     """
     iface_stats['speed'] = iface_stats['speed'] or 1000
-    for stat_name in ('speed',
-                      'tx',
-                      'rx',
-                      'rxErrors',
-                      'txErrors',
-                      'rxDropped',
-                      'txDropped'):
+    for stat_name in (
+        'speed',
+        'tx',
+        'rx',
+        'rxErrors',
+        'txErrors',
+        'rxDropped',
+        'txDropped',
+    ):
         iface_stats[stat_name] = str(iface_stats[stat_name])

@@ -68,8 +68,11 @@ def _lldp_init():
                 try:
                     Lldp.enable_lldp_on_iface(device.name)
                 except lldp.EnableLldpError:
-                    logging.warning('Ignoring failure to enable LLDP on %s',
-                                    device.name, exc_info=True)
+                    logging.warning(
+                        'Ignoring failure to enable LLDP on %s',
+                        device.name,
+                        exc_info=True,
+                    )
     else:
         logging.warning('LLDP is inactive, skipping LLDP initialization')
 
@@ -84,6 +87,7 @@ def _init_sourceroute(net_api):
     supervdsm proxy - enabling calls through the supervdsm service.
     api module object - enabling calls directly through the network api.
     """
+
     def _add_sourceroute(iface, ip, mask, route):
         net_api.add_sourceroute(iface, ip, mask, route)
 
@@ -93,14 +97,18 @@ def _init_sourceroute(net_api):
     dhclient_monitor.register_action_handler(
         action_type=dhclient_monitor.ActionType.CONFIGURE,
         action_function=_add_sourceroute,
-        required_fields=(dhclient_monitor.ResponseField.IFACE,
-                         dhclient_monitor.ResponseField.IPADDR,
-                         dhclient_monitor.ResponseField.IPMASK,
-                         dhclient_monitor.ResponseField.IPROUTE))
+        required_fields=(
+            dhclient_monitor.ResponseField.IFACE,
+            dhclient_monitor.ResponseField.IPADDR,
+            dhclient_monitor.ResponseField.IPMASK,
+            dhclient_monitor.ResponseField.IPROUTE,
+        ),
+    )
     dhclient_monitor.register_action_handler(
         action_type=dhclient_monitor.ActionType.REMOVE,
         action_function=_remove_sourceroute,
-        required_fields=(dhclient_monitor.ResponseField.IFACE,))
+        required_fields=(dhclient_monitor.ResponseField.IFACE,),
+    )
 
 
 def _register_notifications(cif):
@@ -112,6 +120,9 @@ def _register_notifications(cif):
     dhclient_monitor.register_action_handler(
         action_type=dhclient_monitor.ActionType.CONFIGURE,
         action_function=_notify,
-        required_fields=(dhclient_monitor.ResponseField.IFACE,
-                         dhclient_monitor.ResponseField.IPADDR,
-                         dhclient_monitor.ResponseField.IPMASK))
+        required_fields=(
+            dhclient_monitor.ResponseField.IFACE,
+            dhclient_monitor.ResponseField.IPADDR,
+            dhclient_monitor.ResponseField.IPMASK,
+        ),
+    )

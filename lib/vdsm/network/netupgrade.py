@@ -138,8 +138,11 @@ def _normalize_net_ifcfg_keys(networks):
     We filter them out here since they are not supported anymore.
     """
     for netname, netattrs in six.viewitems(networks):
-        networks[netname] = {k: v for k, v in six.viewitems(netattrs)
-                             if not _is_unsupported_ifcfg_key(k)}
+        networks[netname] = {
+            k: v
+            for k, v in six.viewitems(netattrs)
+            if not _is_unsupported_ifcfg_key(k)
+        }
 
 
 def _upgrade_sriov_config(devices, old_sriov_confpath):
@@ -186,9 +189,11 @@ def _filter_owned_bonds(kconfig_bonds):
     in case ifcfg persistence is set.
     """
     if config.get('vars', 'net_persistence') == 'ifcfg':
-        return {bond_name: bond_attrs
-                for bond_name, bond_attrs in six.viewitems(kconfig_bonds)
-                if Ifcfg.owned_device(bond_name)}
+        return {
+            bond_name: bond_attrs
+            for bond_name, bond_attrs in six.viewitems(kconfig_bonds)
+            if Ifcfg.owned_device(bond_name)
+        }
     return {}
 
 

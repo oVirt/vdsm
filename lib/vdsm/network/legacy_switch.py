@@ -56,20 +56,36 @@ def _get_persistence_module():
         return netconfpersistence
     else:
         from .configurators import ifcfg
+
         return ifcfg
 
 
 _persistence = _get_persistence_module()
 
 
-def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
-                         bondattr=None, nic=None, mtu=None, ipaddr=None,
-                         netmask=None, gateway=None, bootproto=None,
-                         ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
-                         dhcpv6=None, defaultRoute=None, nameservers=None,
-                         _netinfo=None,
-                         configurator=None, blockingdhcp=None,
-                         opts=None):
+def _objectivize_network(
+    bridge=None,
+    vlan=None,
+    vlan_id=None,
+    bonding=None,
+    bondattr=None,
+    nic=None,
+    mtu=None,
+    ipaddr=None,
+    netmask=None,
+    gateway=None,
+    bootproto=None,
+    ipv6addr=None,
+    ipv6gateway=None,
+    ipv6autoconf=None,
+    dhcpv6=None,
+    defaultRoute=None,
+    nameservers=None,
+    _netinfo=None,
+    configurator=None,
+    blockingdhcp=None,
+    opts=None,
+):
     """
     Constructs an object hierarchy that describes the network configuration
     that is passed in the parameters.
@@ -121,12 +137,15 @@ def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
             hwaddr=bondattr.get('hwaddr'),
             mtu=mtu,
             _netinfo=_netinfo,
-            on_removal_just_detach_from_network=True)
+            on_removal_just_detach_from_network=True,
+        )
     elif nic:
         bond = _netinfo.getBondingForNic(nic)
         if bond:
-            raise ConfigNetworkError(ne.ERR_USED_NIC, 'Nic %s already '
-                                     'enslaved to %s' % (nic, bond))
+            raise ConfigNetworkError(
+                ne.ERR_USED_NIC,
+                'Nic %s already ' 'enslaved to %s' % (nic, bond),
+            )
         top_net_dev = Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
     if vlan is not None:
         tag = _netinfo.vlans[vlan]['vlanid'] if vlan_id is None else vlan_id
@@ -135,20 +154,25 @@ def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
         top_net_dev = Vlan(top_net_dev, vlan_id, configurator, mtu=mtu)
     if bridge is not None:
         top_net_dev = Bridge(
-            bridge, configurator, port=top_net_dev, mtu=mtu,
-            stp=opts.get('stp', None))
+            bridge,
+            configurator,
+            port=top_net_dev,
+            mtu=mtu,
+            stp=opts.get('stp', None),
+        )
         # Inherit DUID from the port's possibly still active DHCP lease so the
         # bridge gets the same IP address. (BZ#1219429)
         if top_net_dev.port and bootproto == 'dhcp':
             top_net_dev.duid_source = top_net_dev.port.name
     if top_net_dev is None:
-        raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without '
-                                 'devices.')
+        raise ConfigNetworkError(
+            ne.ERR_BAD_PARAMS, 'Network defined without ' 'devices.'
+        )
     top_net_dev.ipv4 = IPv4(ipaddr, netmask, gateway, defaultRoute, bootproto)
     top_net_dev.ipv6 = IPv6(
-        ipv6addr, ipv6gateway, defaultRoute, ipv6autoconf, dhcpv6)
-    top_net_dev.blockingdhcp = (configurator._inRollback or
-                                tobool(blockingdhcp))
+        ipv6addr, ipv6gateway, defaultRoute, ipv6autoconf, dhcpv6
+    )
+    top_net_dev.blockingdhcp = configurator._inRollback or tobool(blockingdhcp)
     top_net_dev.nameservers = nameservers
     return top_net_dev
 
@@ -166,47 +190,93 @@ def _alter_running_config(func):
         else:
             configurator.runningConfig.setNetwork(network, kwargs)
         return func(network, configurator, net_info, bondattr, **kwargs)
+
     return wrapped
 
 
 @_alter_running_config
-def _add_network(network, configurator, _netinfo, bondattr, nameservers,
-                 vlan=None, bonding=None, nic=None, ipaddr=None,
-                 netmask=None, mtu=None, gateway=None,
-                 dhcpv6=None, ipv6addr=None, ipv6gateway=None,
-                 ipv6autoconf=None, bridged=True, hostQos=None,
-                 defaultRoute=None, blockingdhcp=False, **options):
+def _add_network(
+    network,
+    configurator,
+    _netinfo,
+    bondattr,
+    nameservers,
+    vlan=None,
+    bonding=None,
+    nic=None,
+    ipaddr=None,
+    netmask=None,
+    mtu=None,
+    gateway=None,
+    dhcpv6=None,
+    ipv6addr=None,
+    ipv6gateway=None,
+    ipv6autoconf=None,
+    bridged=True,
+    hostQos=None,
+    defaultRoute=None,
+    blockingdhcp=False,
+    **options
+):
     if dhcpv6 is not None:
         dhcpv6 = tobool(dhcpv6)
     if ipv6autoconf is not None:
         ipv6autoconf = tobool(ipv6autoconf)
 
     if network == '':
-        raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
-                                 'Empty network names are not valid')
+        raise ConfigNetworkError(
+            ne.ERR_BAD_BRIDGE, 'Empty network names are not valid'
+        )
 
     logging.debug('Validating network...')
     if network in _netinfo.networks:
         raise ConfigNetworkError(
-            ne.ERR_USED_BRIDGE, 'Network already exists (%s)' % (network,))
+            ne.ERR_USED_BRIDGE, 'Network already exists (%s)' % (network,)
+        )
 
-    logging.info('Adding network %s with vlan=%s, bonding=%s, nic=%s, '
-                 'mtu=%s, bridged=%s, defaultRoute=%s, options=%s', network,
-                 vlan, bonding, nic, mtu, bridged, defaultRoute, options)
+    logging.info(
+        'Adding network %s with vlan=%s, bonding=%s, nic=%s, '
+        'mtu=%s, bridged=%s, defaultRoute=%s, options=%s',
+        network,
+        vlan,
+        bonding,
+        nic,
+        mtu,
+        bridged,
+        defaultRoute,
+        options,
+    )
 
     bootproto = options.pop('bootproto', None)
 
     net_ent = _objectivize_network(
-        bridge=network if bridged else None, vlan_id=vlan, bonding=bonding,
-        bondattr=bondattr, nic=nic, mtu=mtu, ipaddr=ipaddr,
-        netmask=netmask, gateway=gateway, bootproto=bootproto, dhcpv6=dhcpv6,
-        blockingdhcp=blockingdhcp, ipv6addr=ipv6addr, ipv6gateway=ipv6gateway,
-        ipv6autoconf=ipv6autoconf, defaultRoute=defaultRoute,
+        bridge=network if bridged else None,
+        vlan_id=vlan,
+        bonding=bonding,
+        bondattr=bondattr,
+        nic=nic,
+        mtu=mtu,
+        ipaddr=ipaddr,
+        netmask=netmask,
+        gateway=gateway,
+        bootproto=bootproto,
+        dhcpv6=dhcpv6,
+        blockingdhcp=blockingdhcp,
+        ipv6addr=ipv6addr,
+        ipv6gateway=ipv6gateway,
+        ipv6autoconf=ipv6autoconf,
+        defaultRoute=defaultRoute,
         nameservers=nameservers,
-        _netinfo=_netinfo, configurator=configurator, opts=options)
+        _netinfo=_netinfo,
+        configurator=configurator,
+        opts=options,
+    )
 
-    if bridged and network in _netinfo.bridges and configurator.owned_device(
-            network):
+    if (
+        bridged
+        and network in _netinfo.bridges
+        and configurator.owned_device(network)
+    ):
         # The bridge already exists, update the configured entity to one level
         # below and update the mtu of the bridge.
         # The mtu is updated in the bridge configuration and on all the tap
@@ -254,33 +324,55 @@ def _assert_bridge_clean(bridge, vlan, bonding, nics):
     brifs = ports - ifaces
 
     if brifs:
-        raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'Bridge %s has interfaces'
-                                 ' %s connected' % (bridge, brifs))
+        raise ConfigNetworkError(
+            ne.ERR_USED_BRIDGE,
+            'Bridge %s has interfaces' ' %s connected' % (bridge, brifs),
+        )
 
 
 @_alter_running_config
-def _del_network(network, configurator, _netinfo, bondattr,
-                 bypass_validation=False, keep_bridge=False, **options):
+def _del_network(
+    network,
+    configurator,
+    _netinfo,
+    bondattr,
+    bypass_validation=False,
+    keep_bridge=False,
+    **options
+):
     nics, vlan, vlan_id, bonding = _netinfo.getNicsVlanAndBondingForNetwork(
-        network)
+        network
+    )
     bridged = _netinfo.networks[network]['bridged']
 
-    logging.info('Removing network %s with vlan=%s, bonding=%s, nics=%s,'
-                 'keep_bridge=%s options=%s', network, vlan, bonding,
-                 nics, keep_bridge, options)
+    logging.info(
+        'Removing network %s with vlan=%s, bonding=%s, nics=%s,'
+        'keep_bridge=%s options=%s',
+        network,
+        vlan,
+        bonding,
+        nics,
+        keep_bridge,
+        options,
+    )
 
     if not bypass_validation:
-        _validateDelNetwork(network, vlan, bonding, nics,
-                            bridged and not keep_bridge, _netinfo)
+        _validateDelNetwork(
+            network, vlan, bonding, nics, bridged and not keep_bridge, _netinfo
+        )
 
-    net_ent = _objectivize_network(bridge=network if bridged else None,
-                                   vlan=vlan, vlan_id=vlan_id, bonding=bonding,
-                                   nic=nics[0] if nics and not bonding
-                                   else None,
-                                   _netinfo=_netinfo,
-                                   configurator=configurator)
+    net_ent = _objectivize_network(
+        bridge=network if bridged else None,
+        vlan=vlan,
+        vlan_id=vlan_id,
+        bonding=bonding,
+        nic=nics[0] if nics and not bonding else None,
+        _netinfo=_netinfo,
+        configurator=configurator,
+    )
     net_ent.ipv4.bootproto = (
-        'dhcp' if _netinfo.networks[network]['dhcpv4'] else 'none')
+        'dhcp' if _netinfo.networks[network]['dhcpv4'] else 'none'
+    )
 
     if bridged and keep_bridge:
         # we now leave the bridge intact but delete everything underneath it
@@ -307,18 +399,22 @@ def _del_network(network, configurator, _netinfo, bondattr,
     # We must remove the QoS last so that no devices nor networks mark the
     # QoS as used
     backing_device = hierarchy_backing_device(net_ent)
-    if (backing_device is not None and
-            os.path.exists(NET_PATH + '/' + backing_device.name)):
+    if backing_device is not None and os.path.exists(
+        NET_PATH + '/' + backing_device.name
+    ):
         configurator.removeQoS(net_ent)
 
 
-def _validateDelNetwork(network, vlan, bonding, nics, bridge_should_be_clean,
-                        _netinfo):
+def _validateDelNetwork(
+    network, vlan, bonding, nics, bridge_should_be_clean, _netinfo
+):
     if bonding:
         if set(nics) != set(_netinfo.bondings[bonding]['slaves']):
-            raise ConfigNetworkError(ne.ERR_BAD_NIC, '_del_network: %s are '
-                                     'not all nics enslaved to %s' %
-                                     (nics, bonding))
+            raise ConfigNetworkError(
+                ne.ERR_BAD_NIC,
+                '_del_network: %s are '
+                'not all nics enslaved to %s' % (nics, bonding),
+            )
     if bridge_should_be_clean:
         _assert_bridge_clean(network, vlan, bonding, nics)
 
@@ -330,7 +426,8 @@ def _disconnect_bridge_port(port):
 def remove_networks(networks, bondings, configurator, _netinfo):
     kernel_config = kernelconfig.KernelConfig(_netinfo)
     normalized_config = kernelconfig.normalize(
-        netconfpersistence.BaseConfig(networks, bondings, {}))
+        netconfpersistence.BaseConfig(networks, bondings, {})
+    )
     running_nets = configurator.runningConfig.networks
 
     for network, attrs in networks.items():
@@ -339,18 +436,20 @@ def remove_networks(networks, bondings, configurator, _netinfo):
             keep_bridge = _should_keep_bridge(
                 network_attrs=normalized_config.networks[network],
                 currently_bridged=_netinfo.networks[network]['bridged'],
-                net_kernel_config=kernel_config.networks[network]
+                net_kernel_config=kernel_config.networks[network],
             )
 
-            _del_network(network, configurator, _netinfo, None,
-                         keep_bridge=keep_bridge)
+            _del_network(
+                network, configurator, _netinfo, None, keep_bridge=keep_bridge
+            )
             _netinfo.updateDevices()
         elif network in running_nets:
             # If the network was not in _netinfo but is in the persisted
             # networks, it means that we are dealing with a broken network.
             logging.debug('Removing broken network %r', network)
-            _del_broken_network(network, running_nets[network],
-                                configurator=configurator)
+            _del_broken_network(
+                network, running_nets[network], configurator=configurator
+            )
             _netinfo.updateDevices()
 
 
@@ -373,7 +472,8 @@ def _del_broken_network(network, netAttr, configurator):
         except AttributeError:
             nets = {}  # ifcfg does not need net definitions
         _netinfo.networks[network]['ports'] = _persistence.configuredPorts(
-            nets, network)
+            nets, network
+        )
     elif not os.path.exists('/sys/class/net/' + iface):
         # Bridgeless broken network without underlying device
         configurator.runningConfig.removeNetwork(network)
@@ -395,15 +495,19 @@ def _should_keep_bridge(network_attrs, currently_bridged, net_kernel_config):
     # special case as it is handled automatically by the os)
     def _bridge_only_config(conf):
         return dict(
-            (k, v) for k, v in six.iteritems(conf)
-            if k not in ('bonding', 'nic', 'mtu', 'vlan'))
+            (k, v)
+            for k, v in six.iteritems(conf)
+            if k not in ('bonding', 'nic', 'mtu', 'vlan')
+        )
 
     def _bridge_reconfigured(current_net_conf, required_net_conf):
-        return (_bridge_only_config(current_net_conf) !=
-                _bridge_only_config(required_net_conf))
+        return _bridge_only_config(current_net_conf) != _bridge_only_config(
+            required_net_conf
+        )
 
-    if currently_bridged and _bridge_reconfigured(net_kernel_config,
-                                                  network_attrs):
+    if currently_bridged and _bridge_reconfigured(
+        net_kernel_config, network_attrs
+    ):
         logging.debug('the bridge is being reconfigured')
         return False
 
@@ -429,20 +533,26 @@ def add_missing_networks(configurator, networks, bondings, _netinfo):
             _add_network(network, configurator, _netinfo, bondattr, **attrs)
         except ConfigNetworkError as cne:
             if cne.errCode == ne.ERR_FAILED_IFUP:
-                logging.debug('Adding network %r failed. Running '
-                              'orphan-devices cleanup', network)
-                _emergency_network_cleanup(network, attrs,
-                                           configurator)
+                logging.debug(
+                    'Adding network %r failed. Running '
+                    'orphan-devices cleanup',
+                    network,
+                )
+                _emergency_network_cleanup(network, attrs, configurator)
             raise
 
         _netinfo.updateDevices()  # Things like a bond mtu can change
 
 
 def order_networks(networks):
-    vlanned_nets = ((net, attr) for net, attr in six.viewitems(networks)
-                    if 'vlan'in attr)
-    non_vlanned_nets = ((net, attr) for net, attr in six.viewitems(networks)
-                        if 'vlan'not in attr)
+    vlanned_nets = (
+        (net, attr) for net, attr in six.viewitems(networks) if 'vlan' in attr
+    )
+    non_vlanned_nets = (
+        (net, attr)
+        for net, attr in six.viewitems(networks)
+        if 'vlan' not in attr
+    )
 
     for net, attr in vlanned_nets:
         yield net, attr
@@ -458,12 +568,19 @@ def _emergency_network_cleanup(network, networkAttrs, configurator):
     if 'bonding' in networkAttrs:
         if networkAttrs['bonding'] in _netinfo.bondings:
             top_net_dev = Bond.objectivize(
-                networkAttrs['bonding'], configurator, options=None, nics=None,
-                mtu=None, _netinfo=_netinfo, hwaddr=None)
+                networkAttrs['bonding'],
+                configurator,
+                options=None,
+                nics=None,
+                mtu=None,
+                _netinfo=_netinfo,
+                hwaddr=None,
+            )
     elif 'nic' in networkAttrs:
         if networkAttrs['nic'] in _netinfo.nics:
             top_net_dev = Nic(
-                networkAttrs['nic'], configurator, _netinfo=_netinfo)
+                networkAttrs['nic'], configurator, _netinfo=_netinfo
+            )
     if 'vlan' in networkAttrs and top_net_dev:
         vlan_name = '%s.%s' % (top_net_dev.name, networkAttrs['vlan'])
         if vlan_name in _netinfo.vlans:
@@ -484,12 +601,14 @@ def _check_bonding_availability(bond, bonds, _netinfo):
     already_existing = bond in _netinfo.bondings
     if not newly_built and not already_existing:
         raise ConfigNetworkError(
-            ne.ERR_BAD_PARAMS, 'Bond %s does not exist' % bond)
+            ne.ERR_BAD_PARAMS, 'Bond %s does not exist' % bond
+        )
 
 
 def bonds_setup(bonds, configurator, _netinfo, in_rollback):
-    logging.debug('Starting bondings setup. bonds=%s, in_rollback=%s',
-                  bonds, in_rollback)
+    logging.debug(
+        'Starting bondings setup. bonds=%s, in_rollback=%s', bonds, in_rollback
+    )
     _netinfo.updateDevices()
     remove, edit, add = _bonds_classification(bonds, _netinfo)
     _bonds_remove(remove, configurator, _netinfo, in_rollback)
@@ -519,8 +638,14 @@ def _bonds_remove(bonds, configurator, _netinfo, in_rollback):
     for name in bonds:
         if _is_bond_valid_for_removal(name, _netinfo, in_rollback):
             bond = Bond.objectivize(
-                name, configurator, options=None, nics=None, mtu=None,
-                _netinfo=_netinfo, hwaddr=None)
+                name,
+                configurator,
+                options=None,
+                nics=None,
+                mtu=None,
+                _netinfo=_netinfo,
+                hwaddr=None,
+            )
             logging.debug('Removing bond %r', bond)
             _netinfo.del_bonding(name)
             bond.remove()
@@ -529,20 +654,26 @@ def _bonds_remove(bonds, configurator, _netinfo, in_rollback):
 def _is_bond_valid_for_removal(bond, _netinfo, in_rollback):
     if bond not in _netinfo.bondings:
         if in_rollback:
-            logging.error('Cannot remove bonding %s during rollback: '
-                          'does not exist', bond)
+            logging.error(
+                'Cannot remove bonding %s during rollback: ' 'does not exist',
+                bond,
+            )
             return False
         else:
-            raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Cannot remove '
-                                     'bonding %s: does not exist' % bond)
+            raise ConfigNetworkError(
+                ne.ERR_BAD_BONDING,
+                'Cannot remove ' 'bonding %s: does not exist' % bond,
+            )
 
     # Networks removal takes place before bondings handling, therefore all
     # assigned networks (bond_users) should be already removed.
     bond_users = _netinfo.ifaceUsers(bond)
     if bond_users:
         raise ConfigNetworkError(
-            ne.ERR_USED_BOND, 'Cannot remove bonding %s: used by another '
-            'interfaces %s' % (bond, bond_users))
+            ne.ERR_USED_BOND,
+            'Cannot remove bonding %s: used by another '
+            'interfaces %s' % (bond, bond_users),
+        )
 
     return True
 
@@ -551,10 +682,12 @@ def _bonds_edit(bonds, configurator, _netinfo):
     _netinfo.updateDevices()
 
     for name, attrs in six.iteritems(bonds):
-        slaves_to_remove = (set(_netinfo.bondings[name]['slaves']) -
-                            set(attrs.get('nics')))
-        logging.debug('Editing bond %r, removing slaves %s', name,
-                      slaves_to_remove)
+        slaves_to_remove = set(_netinfo.bondings[name]['slaves']) - set(
+            attrs.get('nics')
+        )
+        logging.debug(
+            'Editing bond %r, removing slaves %s', name, slaves_to_remove
+        )
         _remove_slaves(slaves_to_remove, configurator, _netinfo)
 
     # we need bonds to be slaveless in _netinfo
@@ -562,8 +695,14 @@ def _bonds_edit(bonds, configurator, _netinfo):
 
     for name, attrs in six.iteritems(bonds):
         bond = Bond.objectivize(
-            name, configurator, attrs.get('options'), attrs.get('nics'),
-            mtu=None, _netinfo=_netinfo, hwaddr=attrs.get('hwaddr'))
+            name,
+            configurator,
+            attrs.get('options'),
+            attrs.get('nics'),
+            mtu=None,
+            _netinfo=_netinfo,
+            hwaddr=attrs.get('hwaddr'),
+        )
         logging.debug('Editing %r with options %r', bond, bond.options)
         configurator.editBonding(bond, _netinfo)
 
@@ -577,8 +716,14 @@ def _remove_slaves(slaves_to_remove, configurator, _netinfo):
 def _bonds_add(bonds, configurator, _netinfo):
     for name, attrs in six.iteritems(bonds):
         bond = Bond.objectivize(
-            name, configurator, attrs.get('options'), attrs.get('nics'),
-            mtu=None, _netinfo=_netinfo, hwaddr=attrs.get('hwaddr'))
+            name,
+            configurator,
+            attrs.get('options'),
+            attrs.get('nics'),
+            mtu=None,
+            _netinfo=_netinfo,
+            hwaddr=attrs.get('hwaddr'),
+        )
         logging.debug('Creating %r with options %r', bond, bond.options)
         configurator.configureBond(bond)
 
@@ -592,4 +737,5 @@ def _validate_nic_not_dpdk(nic):
     if nic and dpdk.is_dpdk(nic):
         raise ConfigNetworkError(
             ne.ERR_BAD_NIC,
-            '%s is a dpdk device and supported only with OVS' % nic)
+            '%s is a dpdk device and supported only with OVS' % nic,
+        )

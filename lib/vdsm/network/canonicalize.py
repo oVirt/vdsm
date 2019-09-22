@@ -72,8 +72,11 @@ def _entities_to_canonicalize(entities):
 
     :param entities: Network or Bond requested configuration dicts
     """
-    return ((name, attrs) for name, attrs in six.viewitems(entities)
-            if not _canonicalize_remove(attrs))
+    return (
+        (name, attrs)
+        for name, attrs in six.viewitems(entities)
+        if not _canonicalize_remove(attrs)
+    )
 
 
 def canonicalize_external_bonds_used_by_nets(nets, bonds):
@@ -87,7 +90,7 @@ def canonicalize_external_bonds_used_by_nets(nets, bonds):
                 bonds[bondname] = {
                     'nics': list(bond_dev.slaves),
                     'options': bonding.bondOptsForIfcfg(bond_dev.options),
-                    'switch': netattrs['switch']
+                    'switch': netattrs['switch'],
                 }
 
 
@@ -138,8 +141,10 @@ def _canonicalize_stp(data):
         try:
             data['stp'] = bridges.stp_booleanize(stp)
         except ValueError:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, '"%s" is not '
-                                     'a valid bridge STP value.' % stp)
+            raise ConfigNetworkError(
+                ne.ERR_BAD_PARAMS,
+                '"%s" is not ' 'a valid bridge STP value.' % stp,
+            )
 
 
 def _canonicalize_bridge_opts(data):
@@ -155,8 +160,9 @@ def bridge_opts_str_to_dict(opts_str):
 
 
 def bridge_opts_dict_to_sorted_str(opts_dict):
-    opts_pairs = ['{}={}'.format(key, val)
-                  for key, val in six.viewitems(opts_dict)]
+    opts_pairs = [
+        '{}={}'.format(key, val) for key, val in six.viewitems(opts_dict)
+    ]
     opts_pairs.sort()
     return ' '.join(opts_pairs)
 
@@ -176,7 +182,8 @@ def _canonicalize_ipv4_netmask(data):
     if prefix:
         if 'netmask' in data:
             raise ConfigNetworkError(
-                ne.ERR_BAD_PARAMS, 'Both PREFIX and NETMASK supplied')
+                ne.ERR_BAD_PARAMS, 'Both PREFIX and NETMASK supplied'
+            )
         try:
             data['netmask'] = prefix2netmask(int(prefix))
         except ValueError as ve:
@@ -215,8 +222,10 @@ def _canonicalize_ip_default_route(nets):
 
         custom_default_route = _rget(data, ('custom', 'default_route'))
         if custom_default_route is not None:
-            logging.warning('Custom property default_route is deprecated. '
-                            'please use default route role.')
+            logging.warning(
+                'Custom property default_route is deprecated. '
+                'please use default route role.'
+            )
             data['defaultRoute'] = tobool(custom_default_route)
 
         if data['defaultRoute']:
@@ -225,7 +234,8 @@ def _canonicalize_ip_default_route(nets):
     if len(default_route_nets) > 1:
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_PARAMS,
-            'Only a single default route network is allowed.')
+            'Only a single default route network is allowed.',
+        )
     elif default_route_nets:
         existing_net_with_default_route = _net_with_default_route_from_config()
         if existing_net_with_default_route:

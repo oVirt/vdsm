@@ -36,8 +36,9 @@ from vdsm.network.kernelconfig import networks_northbound_ifaces
 
 
 MONITOR_FOLDER = os.path.join(P_VDSM_RUN, 'dhclientmon')
-MONITOR_STOP_SIG_FILE = os.path.join(MONITOR_FOLDER,
-                                     'dhclient-stop-monitoring')
+MONITOR_STOP_SIG_FILE = os.path.join(
+    MONITOR_FOLDER, 'dhclient-stop-monitoring'
+)
 
 _action_handler_db = []
 
@@ -56,8 +57,9 @@ class ResponseField(object):
 
 
 def start():
-    thread = threading.Thread(target=_monitor_dhcp_responses,
-                              name='dhclient-monitor')
+    thread = threading.Thread(
+        target=_monitor_dhcp_responses, name='dhclient-monitor'
+    )
     thread.daemon = True
     thread.start()
     return thread

@@ -82,8 +82,12 @@ def is_ipv6_local_auto(dev):
         else:
             raise
 
-    return bool(not is_disabled and
-                is_autoconf and is_accept_ra and is_accept_redirects)
+    return bool(
+        not is_disabled
+        and is_autoconf
+        and is_accept_ra
+        and is_accept_redirects
+    )
 
 
 def enable_ipv6_local_auto(dev):

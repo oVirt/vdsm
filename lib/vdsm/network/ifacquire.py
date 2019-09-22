@@ -39,7 +39,8 @@ ACQUIRED_IFCFG_PREFIX = [
     ACQUIRED_IFCFG_TAG,
     '# Please do not do any changes here while the device is used by VDSM.\n',
     '# Once it is detached from VDSM, remove this prefix before applying\n',
-    '# any changes.\n']
+    '# any changes.\n',
+]
 
 
 class Transaction(object):
@@ -48,9 +49,13 @@ class Transaction(object):
     In case of an unexpected failure, rollback acquired ifcfg-persisted
     interfaces.
     """
+
     def __init__(self, netinfo_nets):
-        self._owned_ports = frozenset(itertools.chain.from_iterable(
-            [attrs['ports'] for attrs in six.itervalues(netinfo_nets)]))
+        self._owned_ports = frozenset(
+            itertools.chain.from_iterable(
+                [attrs['ports'] for attrs in six.itervalues(netinfo_nets)]
+            )
+        )
         self._ifaces = {}  # {name: ifcfg_lines OR None}
 
     def __enter__(self):
@@ -72,8 +77,10 @@ class Transaction(object):
         self._release_ifaces()
 
     def _rollback(self):
-        logging.debug('Acquiring transaction failed, '
-                      'reverting ifaces: %s', list(self._ifaces))
+        logging.debug(
+            'Acquiring transaction failed, ' 'reverting ifaces: %s',
+            list(self._ifaces),
+        )
         for iface, ifcfg_lines in six.iteritems(self._ifaces):
             if ifcfg_lines:
                 _rollback_ifcfg_iface(iface, ifcfg_lines)
@@ -82,8 +89,10 @@ class Transaction(object):
         for iface in ifaces:
             if iface not in self._owned_ports:
                 self._ifaces[iface] = (
-                    _get_ifcfg_config(iface) if _is_ifcfg_controlled(iface)
-                    else None)
+                    _get_ifcfg_config(iface)
+                    if _is_ifcfg_controlled(iface)
+                    else None
+                )
 
     def _release_ifaces(self):
         for iface, ifcfg_lines in six.iteritems(self._ifaces):
@@ -132,9 +141,11 @@ def _set_ifcfg_param(iface, key, value):
             lines.append('{}={}  # Set by VDSM\n'.format(key, value))
         else:
             if current_value != value:
-                lines[line_index] = (
-                    '{}={}  # Changed by VDSM, original: {}'.format(
-                        key, value, lines[line_index]))
+                lines[
+                    line_index
+                ] = '{}={}  # Changed by VDSM, original: {}'.format(
+                    key, value, lines[line_index]
+                )
 
         f.seek(0)
         f.writelines(lines)

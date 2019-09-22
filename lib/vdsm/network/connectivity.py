@@ -37,8 +37,9 @@ P_VDSM_CLIENT_LOG = constants.P_VDSM_RUN + 'client.log'
 
 
 def _get_connectivity_timeout(options):
-    return int(options.get('connectivityTimeout',
-                           CONNECTIVITY_TIMEOUT_DEFAULT))
+    return int(
+        options.get('connectivityTimeout', CONNECTIVITY_TIMEOUT_DEFAULT)
+    )
 
 
 def check(options):
@@ -46,8 +47,9 @@ def check(options):
         logging.debug('Checking connectivity...')
         if not _client_seen(_get_connectivity_timeout(options)):
             logging.info('Connectivity check failed, rolling back')
-            raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
-                                     'connectivity check failed')
+            raise ConfigNetworkError(
+                ne.ERR_LOST_CONNECTION, 'connectivity check failed'
+            )
 
 
 def confirm():

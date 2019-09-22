@@ -45,21 +45,23 @@ _IP_BINARY = CommandPath('ip', '/sbin/ip')
 
 NET_SYSFS = '/sys/class/net'
 DUMMY_BRIDGE = ';vdsmdummy;'
-_ROUTE_FLAGS = frozenset((
-    # copied from iproute2's rtnl_rtntype_n2a()
-    'unicast',
-    'local',
-    'broadcast',
-    'anycast',
-    'multicast',
-    'blackhole',
-    'unreachable',
-    'prohibit',
-    'throw',
-    'nat',
-    'xresolve',
-    'Deleted',  # copied from iproute.c
-))
+_ROUTE_FLAGS = frozenset(
+    (
+        # copied from iproute2's rtnl_rtntype_n2a()
+        'unicast',
+        'local',
+        'broadcast',
+        'anycast',
+        'multicast',
+        'blackhole',
+        'unreachable',
+        'prohibit',
+        'throw',
+        'nat',
+        'xresolve',
+        'Deleted',  # copied from iproute.c
+    )
+)
 
 
 def _isValid(ip, verifier):
@@ -74,12 +76,14 @@ def _isValid(ip, verifier):
 def equals(cls):
     def __eq__(self, other):
         return type(other) == cls and self.__dict__ == other.__dict__
+
     cls.__eq__ = __eq__
     return cls
 
 
 class LinkType(object):
     """Representation of the different link types"""
+
     NIC = 'nic'
     VLAN = 'vlan'
     BOND = 'bond'
@@ -98,14 +102,27 @@ class LinkType(object):
 @equals
 class Link(object):
     """Represents link information obtained from iproute2"""
+
     _fakeNics = config.get('vars', 'fake_nics').split(',')
     _hiddenBonds = config.get('vars', 'hidden_bonds').split(',')
     _hiddenNics = config.get('vars', 'hidden_nics').split(',')
     _hiddenVlans = config.get('vars', 'hidden_vlans').split(',')
 
-    def __init__(self, address, index, linkType, mtu, name, qdisc, state,
-                 vlanid=None, vlanprotocol=None, master=None, device=None,
-                 **kwargs):
+    def __init__(
+        self,
+        address,
+        index,
+        linkType,
+        mtu,
+        name,
+        qdisc,
+        state,
+        vlanid=None,
+        vlanprotocol=None,
+        master=None,
+        device=None,
+        **kwargs
+    ):
         self.address = address
         self.index = index
         self.type = linkType
@@ -124,13 +141,18 @@ class Link(object):
             setattr(self, key, value)
 
     def __repr__(self):
-        return '%s: %s(%s) %s' % (self.index, self.name, self.type,
-                                  self.address)
+        return '%s: %s(%s) %s' % (
+            self.index,
+            self.name,
+            self.type,
+            self.address,
+        )
 
     @classmethod
     def fromDict(cls, data):
-        data['linkType'] = (data['type'] if 'type' in data else
-                            cls._detectType(data['name']))
+        data['linkType'] = (
+            data['type'] if 'type' in data else cls._detectType(data['name'])
+        )
         return cls(**data)
 
     @staticmethod
@@ -149,8 +171,14 @@ class Link(object):
                 return detectedType
             else:
                 raise  # Reraise other errors like ENODEV
-        if driver in (LinkType.BRIDGE, LinkType.MACVLAN, LinkType.TUN,
-                      LinkType.OVS, LinkType.TEAM, LinkType.VETH):
+        if driver in (
+            LinkType.BRIDGE,
+            LinkType.MACVLAN,
+            LinkType.TUN,
+            LinkType.OVS,
+            LinkType.TEAM,
+            LinkType.VETH,
+        ):
             detectedType = driver
         elif driver == 'bonding':
             detectedType = LinkType.BOND
@@ -206,10 +234,15 @@ class Link(object):
         if self.isVLAN():
             return _any_fnmatch(self.name, self._hiddenVlans)
         elif self.isNICLike():
-            return (_any_fnmatch(self.name, self._hiddenNics) or
-                    (self.master and _bondExists(self.master) and
-                     _any_fnmatch(self.master, self._hiddenBonds)) or
-                    (self.isVF() and self._isVFhidden()))
+            return (
+                _any_fnmatch(self.name, self._hiddenNics)
+                or (
+                    self.master
+                    and _bondExists(self.master)
+                    and _any_fnmatch(self.master, self._hiddenBonds)
+                )
+                or (self.isVF() and self._isVFhidden())
+            )
         elif self.isBOND():
             return _any_fnmatch(self.name, self._hiddenBonds)
         elif self.isBRIDGE():
@@ -225,8 +258,11 @@ class Link(object):
         # as host nics
         for path in iglob('/sys/class/net/*/address'):
             dev = os.path.basename(os.path.dirname(path))
-            if (dev != self.name and _read_stripped(path) == self.address and
-                    self._detectType(dev) == LinkType.MACVLAN):
+            if (
+                dev != self.name
+                and _read_stripped(path) == self.address
+                and self._detectType(dev) == LinkType.MACVLAN
+            ):
                 return True
         return False
 
@@ -238,11 +274,13 @@ class Link(object):
         if dpdk.is_dpdk(self.name):
             return dpdk.is_oper_up(self.name)
         return bool(
-            link.get_link(self.name)['flags'] & libnl.IfaceStatus.IFF_RUNNING)
+            link.get_link(self.name)['flags'] & libnl.IfaceStatus.IFF_RUNNING
+        )
 
     def get_promisc(self):
         return bool(
-            link.get_link(self.name)['flags'] & libnl.IfaceStatus.IFF_PROMISC)
+            link.get_link(self.name)['flags'] & libnl.IfaceStatus.IFF_PROMISC
+        )
 
     def set_promisc(self, value):
         """Takes a boolean to enable/disable Link promiscuity"""
@@ -263,9 +301,10 @@ def _bondExists(bondName):
 
 def getLinks():
     """Return an iterator of Link objects, each per a link in the system."""
-    dpdk_links = (dpdk.link_info(dev_name, dev_info['pci_addr'])
-                  for dev_name, dev_info
-                  in six.viewitems(dpdk.get_dpdk_devices()))
+    dpdk_links = (
+        dpdk.link_info(dev_name, dev_info['pci_addr'])
+        for dev_name, dev_info in six.viewitems(dpdk.get_dpdk_devices())
+    )
     for data in itertools.chain(link.iter_links(), dpdk_links):
         try:
             yield Link.fromDict(data)
@@ -306,7 +345,7 @@ class Route(object):
         """
         route = text.split()
         try:
-            route = route[:route.index('\\')]
+            route = route[: route.index('\\')]
         except ValueError:
             pass
 
@@ -317,7 +356,7 @@ class Route(object):
 
         network = route[0]
 
-        data = dict(route[i:i + 2] for i in range(1, len(route), 2))
+        data = dict(route[i : i + 2] for i in range(1, len(route), 2))
         data['network'] = '0.0.0.0/0' if network == 'default' else network
         data.update(flags)
         return data
@@ -346,8 +385,9 @@ class Route(object):
             raise ValueError('Route %s: Routes require a device.' % text)
         table = data.get('table')
 
-        return cls(data['network'], via=via, src=src, device=device,
-                   table=table)
+        return cls(
+            data['network'], via=via, src=src, device=device, table=table
+        )
 
     def __str__(self):
         output = str(self.network)
@@ -373,19 +413,33 @@ class Route(object):
 
 @equals
 class Rule(object):
-    def __init__(self, table, source=None, destination=None, srcDevice=None,
-                 detached=False, prio=None):
+    def __init__(
+        self,
+        table,
+        source=None,
+        destination=None,
+        srcDevice=None,
+        detached=False,
+        prio=None,
+    ):
         if source:
-            if not (_isValid(source, IPAddress) or
-                    _isValid(source, IPNetwork)):
-                raise ValueError('Source %s invalid: Not an ip address '
-                                 'or network.' % source)
+            if not (
+                _isValid(source, IPAddress) or _isValid(source, IPNetwork)
+            ):
+                raise ValueError(
+                    'Source %s invalid: Not an ip address '
+                    'or network.' % source
+                )
 
         if destination:
-            if not (_isValid(destination, IPAddress) or
-                    _isValid(destination, IPNetwork)):
-                raise ValueError('Destination %s invalid: Not an ip address '
-                                 'or network.' % destination)
+            if not (
+                _isValid(destination, IPAddress)
+                or _isValid(destination, IPNetwork)
+            ):
+                raise ValueError(
+                    'Destination %s invalid: Not an ip address '
+                    'or network.' % destination
+                )
 
         self.table = table
         self.source = source
@@ -402,11 +456,14 @@ class Rule(object):
         parameters = rule[1:]
 
         if len(rule) % 2 == 0:
-            raise ValueError('Rule %s: The length of a textual representation '
-                             'of a rule must be odd. ' % text)
+            raise ValueError(
+                'Rule %s: The length of a textual representation '
+                'of a rule must be odd. ' % text
+            )
 
-        values = \
-            dict(parameters[i:i + 2] for i in range(0, len(parameters), 2))
+        values = dict(
+            parameters[i : i + 2] for i in range(0, len(parameters), 2)
+        )
         values['detached'] = isDetached
         values['prio'] = prio
         return values
@@ -428,13 +485,15 @@ class Rule(object):
         try:
             table = data['lookup']
         except KeyError:
-            raise ValueError('Rule %s: Rules require "lookup" information. ' %
-                             text)
+            raise ValueError(
+                'Rule %s: Rules require "lookup" information. ' % text
+            )
         try:
             source = data['from']
         except KeyError:
-            raise ValueError('Rule %s: Rules require "from" information. ' %
-                             text)
+            raise ValueError(
+                'Rule %s: Rules require "from" information. ' % text
+            )
 
         destination = data.get('to')
         if source == 'all':
@@ -445,8 +504,14 @@ class Rule(object):
         detached = data['detached']
         prio = data['prio']
 
-        return cls(table, source=source, destination=destination,
-                   srcDevice=srcDevice, detached=detached, prio=prio)
+        return cls(
+            table,
+            source=source,
+            destination=destination,
+            srcDevice=srcDevice,
+            detached=detached,
+            prio=prio,
+        )
 
     def __str__(self):
         output = 'from '
@@ -497,14 +562,29 @@ def _exec_cmd(command):
 
 
 def routeShowGateways(table):
-    command = [_IP_BINARY.cmd, 'route', 'show', 'to', '0.0.0.0/0', 'table',
-               table]
+    command = [
+        _IP_BINARY.cmd,
+        'route',
+        'show',
+        'to',
+        '0.0.0.0/0',
+        'table',
+        table,
+    ]
     return _exec_cmd(command)
 
 
 def route6_show_gateways(table):
-    command = [_IP_BINARY.cmd, '-6', 'route', 'show', 'to', '::/0', 'table',
-               table]
+    command = [
+        _IP_BINARY.cmd,
+        '-6',
+        'route',
+        'show',
+        'to',
+        '::/0',
+        'table',
+        table,
+    ]
     return _exec_cmd(command)
 
 
@@ -542,8 +622,9 @@ def _getValidEntries(constructor, iterable):
 
 
 def routeExists(route):
-    return route in _getValidEntries(constructor=Route.fromText,
-                                     iterable=routeShowTable('all'))
+    return route in _getValidEntries(
+        constructor=Route.fromText, iterable=routeShowTable('all')
+    )
 
 
 def ruleList():
@@ -564,19 +645,34 @@ def ruleDel(rule):
 
 
 def ruleExists(rule):
-    return rule in _getValidEntries(constructor=Rule.fromText,
-                                    iterable=ruleList())
+    return rule in _getValidEntries(
+        constructor=Rule.fromText, iterable=ruleList()
+    )
 
 
 def addrAdd(dev, ipaddr, netmask, family=4):
-    command = [_IP_BINARY.cmd, '-%s' % family, 'addr', 'add', 'dev', dev,
-               '%s/%s' % (ipaddr, netmask)]
+    command = [
+        _IP_BINARY.cmd,
+        '-%s' % family,
+        'addr',
+        'add',
+        'dev',
+        dev,
+        '%s/%s' % (ipaddr, netmask),
+    ]
     _exec_cmd(command)
 
 
 def addrDel(dev, ipaddr, netmask, family):
-    command = [_IP_BINARY.cmd, '-%s' % family, 'addr', 'del', 'dev', dev,
-               '%s/%s' % (ipaddr, netmask)]
+    command = [
+        _IP_BINARY.cmd,
+        '-%s' % family,
+        'addr',
+        'del',
+        'dev',
+        dev,
+        '%s/%s' % (ipaddr, netmask),
+    ]
     _exec_cmd(command)
 
 
@@ -588,8 +684,11 @@ def addrFlush(dev, family='both'):
     Link-local address must be kept not to harm DHCPv6 functionality.
     """
     family_param = ['-%s' % family] if family in (4, 6) else []
-    command = [_IP_BINARY.cmd] + family_param + ['addr', 'flush', 'dev', dev,
-                                                 'scope', 'global']
+    command = (
+        [_IP_BINARY.cmd]
+        + family_param
+        + ['addr', 'flush', 'dev', dev, 'scope', 'global']
+    )
     _exec_cmd(command)
 
 

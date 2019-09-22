@@ -40,8 +40,8 @@ from vdsm.network.link import sriov
 from vdsm.network.lldp import info as lldp_info
 
 from . import canonicalize
-from . ip import address as ipaddress
-from . errors import RollbackIncomplete
+from .ip import address as ipaddress
+from .errors import RollbackIncomplete
 from . import netconfpersistence
 
 
@@ -69,8 +69,9 @@ def change_numvfs(pci_path, numvfs, devname):
     The persistence is stored in the same place as other network persistence is
     stored. A call to setSafeNetworkConfig() will persist it across reboots.
     """
-    logging.info('Changing number of vfs on device %s -> %s.',
-                 pci_path, numvfs)
+    logging.info(
+        'Changing number of vfs on device %s -> %s.', pci_path, numvfs
+    )
     sriov.update_numvfs(pci_path, numvfs)
     sriov.persist_numvfs(devname, numvfs)
 
@@ -117,16 +118,21 @@ def ovs_bridge(network_name):
 
 def _build_setup_hook_dict(req_networks, req_bondings, req_options):
 
-    hook_dict = {'request': {'networks': dict(req_networks),
-                             'bondings': dict(req_bondings),
-                             'options': dict(req_options)}}
+    hook_dict = {
+        'request': {
+            'networks': dict(req_networks),
+            'bondings': dict(req_bondings),
+            'options': dict(req_options),
+        }
+    }
 
     return hook_dict
 
 
 def _apply_hook(bondings, networks, options):
     results = hooks.before_network_setup(
-        _build_setup_hook_dict(networks, bondings, options))
+        _build_setup_hook_dict(networks, bondings, options)
+    )
     # gather any changes that could have been done by the hook scripts
     networks = results['request']['networks']
     bondings = results['request']['bondings']
@@ -144,8 +150,11 @@ def _rollback():
             # diff holds the difference between RunningConfig on disk and
             # the one in memory with the addition of {'remove': True}
             # hence, the next call to setupNetworks will perform a cleanup.
-            setupNetworks(roi.diff.networks, roi.diff.bonds,
-                          {'inRollback': True, 'connectivityCheck': 0})
+            setupNetworks(
+                roi.diff.networks,
+                roi.diff.bonds,
+                {'inRollback': True, 'connectivityCheck': 0},
+            )
         except Exception:
             logging.error('Memory rollback failed.', exc_info=True)
         finally:
@@ -205,13 +214,15 @@ def setupNetworks(networks, bondings, options):
     bondings = copy.deepcopy(bondings)
     options = copy.deepcopy(options)
 
-    logging.info('Setting up network according to configuration: '
-                 'networks:%r, bondings:%r, options:%r' % (networks,
-                                                           bondings, options))
+    logging.info(
+        'Setting up network according to configuration: '
+        'networks:%r, bondings:%r, options:%r' % (networks, bondings, options)
+    )
     try:
         canonicalize.canonicalize_networks(networks)
-        canonicalize.canonicalize_external_bonds_used_by_nets(networks,
-                                                              bondings)
+        canonicalize.canonicalize_external_bonds_used_by_nets(
+            networks, bondings
+        )
         canonicalize.canonicalize_bondings(bondings)
 
         net_info = netswitch.configurator.netinfo()
@@ -220,23 +231,29 @@ def setupNetworks(networks, bondings, options):
 
         running_config = netconfpersistence.RunningConfig()
         if netswitch.configurator.switch_type_change_needed(
-                networks, bondings, running_config):
+            networks, bondings, running_config
+        ):
             _change_switch_type(
-                networks, bondings, options, running_config, net_info)
+                networks, bondings, options, running_config, net_info
+            )
         else:
             _setup_networks(networks, bondings, options, net_info)
     except:
         # TODO: it might be useful to pass failure description in 'response'
         # field
         network_config_dict = {
-            'request': {'networks': dict(networks),
-                        'bondings': dict(bondings),
-                        'options': dict(options)}}
+            'request': {
+                'networks': dict(networks),
+                'bondings': dict(bondings),
+                'options': dict(options),
+            }
+        }
         hooks.after_network_setup_fail(network_config_dict)
         raise
     else:
         hooks.after_network_setup(
-            _build_setup_hook_dict(networks, bondings, options))
+            _build_setup_hook_dict(networks, bondings, options)
+        )
 
 
 def _setup_networks(networks, bondings, options, net_info):
@@ -245,14 +262,16 @@ def _setup_networks(networks, bondings, options, net_info):
     in_rollback = options.get('_inRollback', False)
     with _rollback():
         netswitch.configurator.setup(
-            networks, bondings, options, net_info, in_rollback)
+            networks, bondings, options, net_info, in_rollback
+        )
 
 
 def _change_switch_type(networks, bondings, options, running_config, net_info):
     logging.debug('Applying switch type change')
 
     netswitch.configurator.validate_switch_type_change(
-        networks, bondings, running_config)
+        networks, bondings, running_config
+    )
 
     in_rollback = options.get('_inRollback', False)
 
@@ -265,10 +284,13 @@ def _change_switch_type(networks, bondings, options, running_config, net_info):
         with _rollback():
             net_info = netswitch.configurator.netinfo()
             netswitch.configurator.setup(
-                networks, bondings, options, net_info, in_rollback)
+                networks, bondings, options, net_info, in_rollback
+            )
     except:
-        logging.exception('Requested switch setup failed, rolling back to '
-                          'initial configuration')
+        logging.exception(
+            'Requested switch setup failed, rolling back to '
+            'initial configuration'
+        )
         diff = running_config.diffFrom(netconfpersistence.RunningConfig())
         try:
             net_info = netswitch.configurator.netinfo()
@@ -277,7 +299,7 @@ def _change_switch_type(networks, bondings, options, running_config, net_info):
                 diff.bonds,
                 {'connectivityCheck': False},
                 net_info,
-                in_rollback=True
+                in_rollback=True,
             )
         except:
             logging.exception('Failed during rollback')
@@ -293,7 +315,7 @@ def _remove_nets_and_bonds(nets, bonds, net_info, in_rollback):
         bonds_removal,
         {'connectivityCheck': False},
         net_info,
-        in_rollback
+        in_rollback,
     )
 
 

@@ -31,7 +31,9 @@ def to_str(value):
     if not isinstance(value, (six.text_type, six.binary_type)):
         raise ValueError(
             'Expected a textual value, given {} of type {}.'.format(
-                value, type(value)))
+                value, type(value)
+            )
+        )
     elif six.PY2 and isinstance(value, six.text_type):
         return value.encode('utf-8')
     elif six.PY3 and isinstance(value, six.binary_type):
