@@ -254,6 +254,9 @@ class EnumType(object):
     def __ne__(self, x):
         return not self.__eq__(x)
 
+    def __hash__(self):
+        return hash(self.value)
+
 
 class TaskPersistType(EnumType):
     none = "none"
