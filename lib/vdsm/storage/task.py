@@ -231,6 +231,9 @@ class State:
     def __ne__(self, state):
         return self.state != state
 
+    def __hash__(self):
+        return hash(self.state)
+
 
 class EnumType(object):
     def __init__(self, enum):
