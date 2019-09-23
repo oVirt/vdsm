@@ -599,8 +599,10 @@ def volumeDelete(volumeName):
 
 @gluster_mgmt_api
 def volumeSet(volumeName, option, value):
-    if option == 'cluster.granular-entry-heal'\
-            or option == 'granular-entry-heal':
+    heal_is_set = option in ('cluster.granular-entry-heal',
+                             'granular-entry-heal')
+    volume_created = _checkIfVolumeCreated(volumeName)
+    if heal_is_set and volume_created:
         command = _getGlusterVolCmd() + ['heal', volumeName,
                                          'granular-entry-heal', value]
     else:
@@ -610,6 +612,16 @@ def volumeSet(volumeName, option, value):
         return True
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeSetFailedException(rc=e.rc, err=e.err)
+
+
+def _checkIfVolumeCreated(volumeName):
+    vol_info_cmd = _getGlusterVolCmd() + ["info"] + volumeName
+    xmltree = _execGlusterXml(vol_info_cmd)
+    vol_info = xmltree.find('volInfo/volumes/volume')
+    status = vol_info.find('statusStr').text.upper()
+    if status == "CREATED":
+        return True
+    return False
 
 
 def _parseVolumeSetHelpXml(out):
