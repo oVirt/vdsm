@@ -260,7 +260,7 @@ class VolumeManifest(object):
                     leaseinfo.update(leasestatus)
                 info['lease'] = leaseinfo
         except se.StorageException as e:
-            self.log.debug("exception: %s:%s" % (str(e.message), str(e.value)))
+            self.log.debug("Failed to get volume info: %s", e)
             info['apparentsize'] = "0"
             info['truesize'] = "0"
             info['status'] = "INVALID"
