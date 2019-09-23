@@ -471,8 +471,8 @@ class SourceThread(object):
 
             self._started = True
 
-            # REQUIRED_FOR: destination Vdsm < 4.4
-            if not self._vm.min_cluster_version(4, 4):
+            # REQUIRED_FOR: destination Vdsm < 4.3
+            if not self._vm.min_cluster_version(4, 3):
                 payload_drives = self._vm.payload_drives()
                 if payload_drives:
                     # Currently, only a single payload device may be present
@@ -557,7 +557,7 @@ class SourceThread(object):
             params[libvirt.VIR_MIGRATE_PARAM_GRAPHICS_URI] = str(
                 '%s://%s' % (graphics, self._consoleAddress)
             )
-        # REQUIRED_FOR: destination Vdsm < 4.4
+        # REQUIRED_FOR: destination Vdsm < 4.3
         if self._legacy_payload_path is not None:
             alias, path = self._legacy_payload_path
             dom = xmlutils.fromstring(self._vm.migratable_domain_xml())
