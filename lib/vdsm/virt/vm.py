@@ -3937,16 +3937,9 @@ class Vm(object):
 
     @backup.requires_libvirt_support()
     @api.guard(_not_migrating)
-    def start_backup(self, backup_id, disks,
-                     from_checkpoint_id=None, to_checkpoint_id=None):
+    def start_backup(self, config):
         dom = backup.DomainAdapter(self)
-        return backup.start_backup(
-            self,
-            dom,
-            backup_id=backup_id,
-            disks=disks,
-            from_checkpoint_id=from_checkpoint_id,
-            to_checkpoint_id=to_checkpoint_id)
+        return backup.start_backup(self, dom, config)
 
     @backup.requires_libvirt_support()
     @api.guard(_not_migrating)

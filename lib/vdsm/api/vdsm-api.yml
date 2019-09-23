@@ -8239,6 +8239,39 @@ types:
                 type: *StringMap
         type: object
 
+    BackupConfig: &BackupConfig
+        added: '4.4'
+        description: Backup configuration.
+        name: BackupConfig
+        properties:
+        -   description: A UUID of the backup
+            name: backup_id
+            type: *UUID
+
+        -   description: List of disks which should be backed up.
+                If 'to_checkpoint_id' is specified, these disks will
+                be included in the checkpoint. A new bitmap will be
+                created on all the disks.
+            name: disks
+            type:
+            - *VolumeInfo
+
+        -   defaultvalue: null
+            description: If specified, perform incremental backup
+                including all checkpoints since that checkpoint
+                (including this checkpoint).
+            name: from_checkpoint_id
+            type: *UUID
+
+        -   defaultvalue: null
+            description: If specified, create a new checkpoint
+                when starting the backup. The next backup can use
+                the new checkpoint to perform incremental backup.
+                The backup does not include the data referenced by
+                this checkpoint.
+            name: to_checkpoint_id
+            type: *UUID
+
 Host.setupNetworks:
     added: '3.1'
     description: Reconfigure host networking by adding, removing, and editing
@@ -11466,30 +11499,10 @@ VM.start_backup:
         name: vmID
         type: *UUID
 
-    -   description: A UUID of the backup
-        name: backup_id
-        type: *UUID
+    -   description: The backup configuration
+        name: config
+        type: *BackupConfig
 
-    -   description: List of disks which should be backed up.
-            If 'to_checkpont_id' is specified, these disks will be included
-            in the checkpoint. A new bitmap will be created on all the disks.
-        name: disks
-        type:
-        - *VolumeInfo
-
-    -   defaultvalue: null
-        description: If specified, perform incremental backup including all
-            checkpoints since that checkpoint (including this checkpoint).
-        name: from_checkpoint_id
-        type: *UUID
-
-    -   defaultvalue: null
-        description: If specified, create a new checkpoint when starting
-            the backup. The next backup can use the new checkpoint to
-            perform incremental backup. The backup does not include the
-            data referenced by this checkpoint.
-        name: to_checkpoint_id
-        type: *UUID
     return:
         description: Information about the started backup.
         type: *BackupInfo

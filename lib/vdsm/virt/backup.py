@@ -25,6 +25,7 @@ import functools
 import libvirt
 
 from vdsm.common import exception
+from vdsm.common import properties
 
 from vdsm.virt import virdomain
 
@@ -68,9 +69,31 @@ if backup_enabled:
             self._vm = vm
 
 
-def start_backup(
-        vm, dom, backup_id, disks,
-        from_checkpoint_id=None, to_checkpoint_id=None):
+class DiskConfig(properties.Owner):
+    vol_id = properties.UUID(required=True)
+    img_id = properties.UUID(required=True)
+    dom_id = properties.UUID(required=True)
+
+    def __init__(self, disk_config):
+        self.vol_id = disk_config.get("volumeID")
+        self.img_id = disk_config.get("imageID")
+        self.dom_id = disk_config.get("domainID")
+
+
+class BackupConfig(properties.Owner):
+
+    backup_id = properties.String(required=True)
+    from_checkpoint_id = properties.String(required='')
+    to_checkpoint_id = properties.String(default='')
+
+    def __init__(self, backup_config):
+        self.backup_id = backup_config.get("backup_id")
+        self.from_checkpoint_id = backup_config.get("from_checkpoint_id")
+        self.to_checkpoint_id = backup_config.get("to_checkpoint_id")
+        self.disks = [DiskConfig(d) for d in backup_config.get("disks", ())]
+
+
+def start_backup(vm, dom, config):
     raise exception.MethodNotImplemented()
 
 

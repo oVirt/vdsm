@@ -656,10 +656,8 @@ class VM(APIBase):
 
     @api.logged(on="api.virt")
     @api.method
-    def start_backup(self, backup_id, disks,
-                     from_checkpoint_id=None, to_checkpoint_id=None):
-        return self.vm.start_backup(backup_id, disks,
-                                    from_checkpoint_id, to_checkpoint_id)
+    def start_backup(self, config):
+        return self.vm.start_backup(config)
 
     @api.logged(on="api.virt")
     @api.method
