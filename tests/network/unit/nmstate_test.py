@@ -552,6 +552,112 @@ def test_translate_remove_network_with_default_route(rconfig_mock, bridged):
     assert expected_state == state
 
 
+@parametrize_bridged
+@mock.patch.object(nmstate, 'RunningConfig')
+def test_translate_default_route_network_static_to_dhcp(rconfig_mock, bridged):
+    rconfig_mock.return_value.networks = {
+        TESTNET1: {
+            'nic': IFACE0,
+            'bridged': bridged,
+            'switch': 'legacy',
+            'defaultRoute': True,
+            'gateway': IPv4_GATEWAY1,
+            'ipaddr': IPv4_ADDRESS1,
+            'netmask': IPv4_NETMASK1,
+        }
+    }
+    networks = {
+        TESTNET1: _create_network_config(
+            'nic',
+            IFACE0,
+            bridged,
+            dynamic_ip_configuration=_create_dynamic_ip_configuration(
+                dhcpv4=True, dhcpv6=False, ipv6autoconf=False
+            ),
+            default_route=True,
+        )
+    }
+    state = nmstate.generate_state(networks=networks, bondings={})
+
+    eth0_state = _create_ethernet_iface_state(IFACE0)
+    ip0_state = _create_ipv4_state(dynamic=True, default_route=True)
+    ip0_state.update(_create_ipv6_state())
+
+    expected_state = {nmstate.Interface.KEY: [eth0_state]}
+
+    if bridged:
+        _disable_iface_ip(eth0_state)
+        bridge1_state = _create_bridge_iface_state(
+            TESTNET1,
+            IFACE0,
+            options=_generate_bridge_options(stp_enabled=False),
+        )
+        bridge1_state.update(ip0_state)
+        expected_state[nmstate.Interface.KEY].append(bridge1_state)
+        if_with_default_route = TESTNET1
+    else:
+        eth0_state.update(ip0_state)
+        if_with_default_route = IFACE0
+
+    expected_state[nmstate.Route.KEY] = _get_routes_config(
+        IPv4_GATEWAY1, if_with_default_route, nmstate.Route.STATE_ABSENT
+    )
+    assert state == expected_state
+
+
+@parametrize_bridged
+@mock.patch.object(nmstate, 'RunningConfig')
+def test_translate_remove_default_route_from_network(rconfig_mock, bridged):
+    rconfig_mock.return_value.networks = {
+        TESTNET1: {
+            'nic': IFACE0,
+            'bridged': bridged,
+            'switch': 'legacy',
+            'defaultRoute': True,
+            'gateway': IPv4_GATEWAY1,
+            'ipaddr': IPv4_ADDRESS1,
+            'netmask': IPv4_NETMASK1,
+        }
+    }
+    networks = {
+        TESTNET1: _create_network_config(
+            'nic',
+            IFACE0,
+            bridged,
+            static_ip_configuration=_create_static_ip_configuration(
+                IPv4_ADDRESS1, IPv4_NETMASK1, None, None
+            ),
+            default_route=False,
+        )
+    }
+    state = nmstate.generate_state(networks=networks, bondings={})
+
+    eth0_state = _create_ethernet_iface_state(IFACE0)
+    ip0_state = _create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
+    ip0_state.update(_create_ipv6_state())
+
+    expected_state = {nmstate.Interface.KEY: [eth0_state]}
+
+    if bridged:
+        _disable_iface_ip(eth0_state)
+        bridge1_state = _create_bridge_iface_state(
+            TESTNET1,
+            IFACE0,
+            options=_generate_bridge_options(stp_enabled=False),
+        )
+        bridge1_state.update(ip0_state)
+        expected_state[nmstate.Interface.KEY].append(bridge1_state)
+        if_with_default_route = TESTNET1
+    else:
+        eth0_state.update(ip0_state)
+        if_with_default_route = IFACE0
+
+    expected_state[nmstate.Route.KEY] = _get_routes_config(
+        IPv4_GATEWAY1, if_with_default_route, nmstate.Route.STATE_ABSENT
+    )
+    assert state == expected_state
+
+
 def test_translate_add_network_with_default_route_on_vlan_interface():
     networks = {
         TESTNET1: _create_network_config(

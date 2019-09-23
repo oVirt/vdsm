@@ -414,7 +414,24 @@ class Network(object):
             if self._netconf.default_route:
                 routes.append(self._create_add_default_route(next_hop))
             else:
-                routes.append(self._create_remove_default_route(next_hop))
+                routes.append(
+                    self._create_remove_default_route(
+                        next_hop, self._netconf.gateway
+                    )
+                )
+        elif (
+            not self.to_remove
+            and self._runconf.gateway
+            and self._runconf.default_route
+            and (self._netconf.dhcpv4 or not self._netconf.default_route)
+        ):
+            next_hop = self.get_next_hop_interface()
+            routes.append(
+                self._create_remove_default_route(
+                    next_hop, self._runconf.gateway
+                )
+            )
+
         return routes
 
     def _create_add_default_route(self, next_hop_interface):
@@ -425,9 +442,10 @@ class Network(object):
             Route.TABLE_ID: Route.USE_DEFAULT_ROUTE_TABLE,
         }
 
-    def _create_remove_default_route(self, next_hop_interface):
+    @staticmethod
+    def _create_remove_default_route(next_hop_interface, gateway):
         return {
-            Route.NEXT_HOP_ADDRESS: self._netconf.gateway,
+            Route.NEXT_HOP_ADDRESS: gateway,
             Route.NEXT_HOP_INTERFACE: next_hop_interface,
             Route.DESTINATION: '0.0.0.0/0',
             Route.STATE: Route.STATE_ABSENT,
