@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,10 +20,14 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import errno
+import logging
+import os
 
 from vdsm.common import cpuarch
 from . import expose
+
+
+CPU_VULNERABILITY_DIR = '/sys/devices/system/cpu/vulnerabilities'
 
 
 @expose
@@ -40,42 +44,25 @@ def getHardwareInfo(*args, **kwargs):
         return {}
 
 
-def read_debugfs_property(path):
-    try:
-        with open(path) as f:
-            return f.read().strip()
-    except IOError as e:
-        if e.errno == errno.ENOENT:
-            return -1
+def read_fs_property(path):
+    with open(path) as f:
+        return f.read().strip()
 
 
 def read_string_property(path):
-    result = read_debugfs_property(path)
-    if result != -1:
-        result = '(%s)' % (result,)
-    return result
+    try:
+        result = read_fs_property(path)
+    except Exception:
+        logging.exception("Could not read file: %s", path)
+        return -1
+    return '(%s)' % (result,)
 
 
 @expose
-def get_pti(*args, **kwargs):
-    return read_debugfs_property('/sys/kernel/debug/x86/pti_enabled')
-
-
-@expose
-def get_retp(*args, **kwargs):
-    return read_debugfs_property('/sys/kernel/debug/x86/retp_enabled')
-
-
-@expose
-def get_ibrs(*args, **kwargs):
-    return read_debugfs_property('/sys/kernel/debug/x86/ibrs_enabled')
-
-
-@expose
-def get_ssbd(*args, **kwargs):
-    return read_debugfs_property('/sys/kernel/debug/x86/ssbd_enabled')
-
-
-@expose
-def get_mds(*args, **kwargs):
-    return read_string_property('/sys/devices/system/cpu/vulnerabilities/mds')
+def get_cpu_vulnerabilities():
+    vulnerabilities = {}
+    for file_name in os.listdir(CPU_VULNERABILITY_DIR):
+        path = os.path.join(CPU_VULNERABILITY_DIR, file_name)
+        if os.path.isfile(path):
+            vulnerabilities[file_name.upper()] = read_string_property(path)
+    return vulnerabilities
