@@ -23,7 +23,6 @@ from __future__ import division
 
 import os
 import logging
-import re
 
 from vdsm import cpuinfo
 from vdsm import host
@@ -196,43 +195,6 @@ def _isVncEncrypted():
 
 @cache.memoized
 def _getTscFrequency():
-    # libvirt 5.5 will allow reading this value.
-    # TODO remove fallback to dmesg when all supported systems have
-    #      libvirt with tsc counter support
-    # also, for RHEL 7.7 it's backported to libvirt-4.5.0-21.el7
-    # and rhel-av-8.0.1 will have it in libvirt-5.0.0-10.el8
-    # (Do we need to support it in 7.7?)
-    # See: https://bugzilla.redhat.com/show_bug.cgi?id=1641702
-
-    frequency = _getTscFrequencyLibvirt()
-    if frequency is None:
-        # Fallback to dmesg for systems with legacy Libvirt
-        frequency = _getTscFrequencyDmesg()
-    return frequency
-
-
-DMESG_PATH = '/var/log/dmesg'
-
-
-def _getTscFrequencyDmesg():
-    """
-    Reads TSC Frequency from dmesg log
-    """
-    tscRe = re.compile('.*tsc:\D*(?P<freq>[.\d]+) MHz.*')
-    try:
-        with open(DMESG_PATH) as f:
-            for line in f:
-                m = tscRe.match(line)
-                if m is None:
-                    continue
-                return m.group('freq')
-    except:
-        logging.warning('Could not read TSC frequency from ' + DMESG_PATH,
-                        exc_info=True)
-        return ''
-
-
-def _getTscFrequencyLibvirt():
     """
     Read TSC Frequency from libvirt. This is only available in
     libvirt >= 5.5.0 (and 4.5.0-21 for RHEL7)
@@ -244,7 +206,7 @@ def _getTscFrequencyLibvirt():
         # Libvirt reports frequency in Hz, cut off last six digits to get MHz
         return counter[0].get('frequency')[:-6]
     logging.debug('No TSC counter returned by Libvirt')
-    return None
+    return ""
 
 
 def _getFipsEnabled():

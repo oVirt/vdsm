@@ -288,12 +288,9 @@ class TestCaps(TestCaseBase):
         self.assertEqual(freq, "1234")
 
     @MonkeyPatch(libvirtconnection, 'get', _getLibvirtConnStubEmpty)
-    @MonkeyPatch(caps, 'DMESG_PATH', '/tmp/test_dmesg')
-    def test_getTscFrequency_dmesg(self):
-        with open('/tmp/test_dmesg', 'w') as d:
-            d.write('[    0.000000] tsc: Detected 4321.123 MHz processor')
+    def test_getTscFrequency_no_counter(self):
         freq = caps._getTscFrequency()
-        self.assertEqual(freq, "4321.123")
+        self.assertEqual(freq, "")
 
     @MonkeyPatch(commands, 'run', lambda x: b'crypto.fips_enabled = 1\n')
     def test_getFipsEnabledOn(self):
