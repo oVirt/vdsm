@@ -469,13 +469,21 @@ class Network(object):
         dns_state = {}
         droute_net = None
         for net in nets:
-            interfaces_state.update(
-                {
-                    iface[Interface.NAME]: iface
-                    for iface in net.interfaces_state
-                    if iface
-                }
+            ifaces = (
+                (iface[Interface.NAME], iface)
+                for iface in net.interfaces_state
+                if iface
             )
+            for ifname, iface in ifaces:
+                if ifname in interfaces_state:
+                    # In case there is already state of interface present
+                    # we should just update the state to prevent overwriting
+                    # e.g. {'name': 'eth0', 'state': 'up',
+                    # 'ipv4': {..}, 'ipv6': {..}}
+                    # by {'name': 'eth0', 'state': 'up'}
+                    interfaces_state[ifname].update(iface)
+                else:
+                    interfaces_state[ifname] = iface
             routes_state += net.routes_state
             net_dns_state = net.dns_state
             if net_dns_state is not None:
