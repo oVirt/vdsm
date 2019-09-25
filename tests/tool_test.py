@@ -613,15 +613,39 @@ class LibvirtModuleConfigureTests(TestCase):
             mock.call(libvirt._LIBVIRT_TLS_SOCKET_UNIT)
         ])
 
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: False)
-    def testLibvirtArgsShouldNotPassListenFlag(self):
-        self.assertIn('LIBVIRTD_ARGS', libvirt._libvirtd_args())
-
+    @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
                              lambda: True)
-    def testLibvirtArgsShouldPassListenFlag(self):
-        self.assertNotIn('LIBVIRTD_ARGS', libvirt._libvirtd_args())
+    @monkeypatch.MonkeyPatch(systemctl, 'enable', mock.Mock())
+    def testLibvirtConfigureSysconfigWithSocketActivation(self):
+        _setConfig(self,
+                   ('LCONF', 'lconf_ssl'),
+                   ('QCONF', 'qemu_ssl'),
+                   )
+        libvirt.configure()
+
+        with open(self.test_env['LDCONF']) as f:
+            text = f.read()
+
+        self.assertIn("DAEMON_COREFILE_LIMIT=unlimited\n", text)
+        self.assertNotIn("LIBVIRTD_ARGS=", text)
+
+    @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
+    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
+                             lambda: False)
+    @monkeypatch.MonkeyPatch(systemctl, 'enable', mock.Mock())
+    def testLibvirtConfigureSysconfigWithoutSocketActivation(self):
+        _setConfig(self,
+                   ('LCONF', 'lconf_ssl'),
+                   ('QCONF', 'qemu_ssl'),
+                   )
+        libvirt.configure()
+
+        with open(self.test_env['LDCONF']) as f:
+            text = f.read()
+
+        self.assertIn("DAEMON_COREFILE_LIMIT=unlimited\n", text)
+        self.assertIn("LIBVIRTD_ARGS=--listen\n", text)
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',

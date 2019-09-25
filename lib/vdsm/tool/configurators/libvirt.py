@@ -58,6 +58,7 @@ def configure():
     confutils.remove_conf(FILES, CONF_VERSION)
 
     vdsmConfiguration = {
+        'socket_activation': _libvirt_uses_socket_activation(),
         'ssl_enabled': config.getboolean('vars', 'ssl'),
         'sanlock_enabled': constants.SANLOCK_ENABLED,
         'libvirt_selinux': constants.LIBVIRT_SELINUX
@@ -231,15 +232,6 @@ def _libvirt_uses_socket_activation():
     return True
 
 
-def _libvirtd_args():
-    args = {
-        'DAEMON_COREFILE_LIMIT': 'unlimited'
-    }
-    if not _libvirt_uses_socket_activation():
-        args['LIBVIRTD_ARGS'] = '--listen'
-    return args
-
-
 # version != PACKAGE_VERSION since we do not want to update configuration
 # on every update. see 'configuration versioning:' at Configfile.py for
 # details.
@@ -369,9 +361,21 @@ FILES = {
         'fragments': [
             {
                 'conditions': {},
-                'content': _libvirtd_args(),
+                'content': {
+                    'DAEMON_COREFILE_LIMIT': 'unlimited'
+                }
 
-            }]
+            },
+            {
+                'conditions': {
+                    'socket_activation': False
+                },
+                'content': {
+                    'LIBVIRTD_ARGS': '--listen'
+                }
+
+            }
+        ]
     },
 
     'QLCONF': {
