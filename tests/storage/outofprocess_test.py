@@ -108,6 +108,18 @@ def test_amount_of_instances_per_pool_name(oop_cleanup, monkeypatch):
 
 # fileUtils APIs
 
+def test_fileutils_fsyncPath(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+
+    # No easy way to test that we actually fsync this path.
+    # Lets just call it to make sure it does not fail.
+    iop.fileUtils.fsyncPath(str(tmpdir))
+
+    with pytest.raises(OSError) as e:
+        iop.fileUtils.fsyncPath(str(tmpdir.join("no such directory")))
+    assert e.value.errno == errno.ENOENT
+
+
 @pytest.mark.parametrize("initial_mode, expected_mode", [
     (0o770, 0o770),
     (0o700, 0o770),
