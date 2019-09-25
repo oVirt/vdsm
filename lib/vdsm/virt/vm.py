@@ -3070,8 +3070,10 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def hotplugMemory(self, params):
-        mem_params = params.get('memory', {})
-        device_xml = vmdevices.core.memory_xml(mem_params)
+        device_xml = params.get('xml')
+        if device_xml is None:
+            mem_params = params.get('memory', {})
+            device_xml = vmdevices.core.memory_xml(mem_params)
         device_xml = hooks.before_memory_hotplug(device_xml, self._custom)
         self.log.debug("Hotplug memory xml: %s", device_xml)
 
