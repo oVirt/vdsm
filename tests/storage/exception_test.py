@@ -25,7 +25,9 @@ import six
 
 from collections import defaultdict
 
+from vdsm.common.compat import get_args_spec
 from vdsm.common.exception import GeneralException
+from vdsm.common.exception import VdsmException
 from vdsm.storage import exception as storage_exception
 
 
@@ -52,3 +54,29 @@ def test_collisions():
                 if len(v) != 1 or k >= 5000]
 
     assert not problems, "Duplicated or invalid exception code"
+
+
+def test_info():
+    for obj in find_module_exceptions(storage_exception, VdsmException):
+        # Inspect exception object initialization parameters.
+        args, varargs, kwargs = get_args_spec(obj.__init__)
+
+        # Prepare fake parameters for object initialization.
+        # We ignore the 'self' argument from counting.
+        args = [FakeArg(i) for i in range(len(args) - 1)]
+        if varargs:
+            args.append(FakeArg(len(args)))
+            args.append(FakeArg(len(args)))
+        kwargs = {kwargs: FakeArg(len(args))} if kwargs else {}
+
+        # Instantiate the traversed exception object.
+        e = obj(*args, **kwargs)
+        assert e.info() == {
+            "code": e.code,
+            "message": str(e)
+        }
+
+
+class FakeArg(int):
+    def __getitem__(self, name):
+        return self
