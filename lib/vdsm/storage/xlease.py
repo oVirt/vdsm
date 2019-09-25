@@ -1042,6 +1042,7 @@ class DirectFile(object):
         pos = 0
         while pos < len(buf):
             if six.PY2:
+                # pylint: disable=undefined-variable
                 wbuf = buffer(buf, pos)  # noqa: F821
             else:
                 wbuf = memoryview(buf)[pos:]
