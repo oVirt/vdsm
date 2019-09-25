@@ -23,7 +23,6 @@ class TestVmDevicesXmlParsing(XMLTestCase, verify.DeviceMixin):
         devices = [{'device': 'spice', 'type': 'graphics'},
                    {'device': 'memballoon', 'specParams': {'model': 'virtio'},
                     'type': 'balloon'},
-                   {'device': 'console', 'type': 'console'},
                    {'device': 'bridge', 'nicModel': 'virtio',
                     'macAddr': '52:54:00:59:F5:3F', 'type': 'interface',
                     'network': ''},

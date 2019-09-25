@@ -28,7 +28,6 @@ import xml.etree.ElementTree as etree
 
 from vdsm import constants
 from vdsm import utils
-from vdsm.common import conv
 from vdsm.common import supervdsm
 from vdsm.common import xmlutils
 from vdsm.virt import vmxml
@@ -36,6 +35,9 @@ from vdsm.virt.utils import cleanup_guest_socket
 
 from . import hwclass
 from . import compat
+
+
+_CONSOLE_EXTENSION = '.sock'
 
 
 class SkipDevice(Exception):
@@ -239,126 +241,29 @@ class Balloon(Base):
                         dev['alias'] = alias
 
 
-class Console(Base):
-    __slots__ = ('_path',)
+def console_path(dom, vmid):
+    if dom.attrib.get('type') == 'unix':
+        path = os.path.join(
+            constants.P_OVIRT_VMCONSOLES,
+            vmid + _CONSOLE_EXTENSION
+        )
+    else:
+        path = None
+    return path
 
-    CONSOLE_EXTENSION = '.sock'
 
-    @classmethod
-    def from_xml_tree(cls, log, dev, meta):
-        has_sock = dev.attrib.get('type', 'pty') == 'unix'
-        params = {
-            'device': dev.tag,
-            'type': dev.tag,
-        }
-        update_device_params(params, dev)
-        params['specParams'] = {
-            'consoleType': vmxml.find_attr(dev, 'target', 'type'),
-            'enableSocket': has_sock,
-        }
-        update_device_params_from_meta(params, meta)
-        params['vmid'] = meta['vmid']
-        return cls(log, **params)
+def prepare_console(dom, vmid):
+    path = console_path(dom, vmid)
+    if path:
+        supervdsm.getProxy().prepareVmChannel(
+            path, constants.OVIRT_VMCONSOLE_GROUP
+        )
 
-    def __init__(self, *args, **kwargs):
-        super(Console, self).__init__(*args, **kwargs)
-        if not hasattr(self, 'specParams'):
-            self.specParams = {}
 
-        if conv.tobool(self.specParams.get('enableSocket', False)):
-            self._path = os.path.join(
-                constants.P_OVIRT_VMCONSOLES,
-                self.vmid + self.CONSOLE_EXTENSION
-            )
-        else:
-            self._path = None
-
-    def prepare(self):
-        if self._path:
-            supervdsm.getProxy().prepareVmChannel(
-                self._path,
-                constants.OVIRT_VMCONSOLE_GROUP)
-
-    def cleanup(self):
-        if self._path:
-            cleanup_guest_socket(self._path)
-
-    @property
-    def isSerial(self):
-        return self.specParams.get('consoleType', 'virtio') == 'serial'
-
-    def getSerialDeviceXML(self):
-        """
-        Add a serial port for the console device if it exists and is a
-        'serial' type device.
-
-        <serial type='pty'>
-            <target port='0'>
-        </serial>
-
-        or
-
-        <serial type='unix'>
-            <source mode='bind'
-              path='/var/run/ovirt-vmconsole-console/${VMID}.sock'/>
-            <target port='0'/>
-        </serial>
-        """
-        if self._path:
-            s = self.createXmlElem('serial', 'unix')
-            s.appendChildWithArgs('source', mode='bind', path=self._path)
-        else:
-            s = self.createXmlElem('serial', 'pty')
-        s.appendChildWithArgs('target', port='0')
-        return s
-
-    def getXML(self):
-        """
-        Create domxml for a console device.
-
-        <console type='pty'>
-          <target type='serial' port='0'/>
-        </console>
-
-        or:
-
-        <console type='pty'>
-          <target type='virtio' port='0'/>
-        </console>
-
-        or
-
-        <console type='unix'>
-          <source mode='bind' path='/path/to/${vmid}.sock'>
-          <target type='virtio' port='0'/>
-        </console>
-        """
-        if self._path:
-            m = self.createXmlElem('console', 'unix')
-            m.appendChildWithArgs('source', mode='bind', path=self._path)
-        else:
-            m = self.createXmlElem('console', 'pty')
-        consoleType = self.specParams.get('consoleType', 'virtio')
-        m.appendChildWithArgs('target', type=consoleType, port='0')
-        return m
-
-    @classmethod
-    def update_device_info(cls, vm, device_conf):
-        for x in vm.domain.get_device_elements('console'):
-            # All we care about is the alias
-            alias = find_device_alias(x)
-            for dev in device_conf:
-                if not hasattr(dev, 'alias'):
-                    dev.alias = alias
-
-            for dev in vm.conf['devices']:
-                if dev['device'] == hwclass.CONSOLE and \
-                        not dev.get('alias'):
-                    dev['alias'] = alias
-
-    def get_extra_xmls(self):
-        if self.isSerial:
-            yield self.getSerialDeviceXML()
+def cleanup_console(dom, vmid):
+    path = console_path(dom, vmid)
+    if path:
+        cleanup_guest_socket(path)
 
 
 def memory_xml(params):

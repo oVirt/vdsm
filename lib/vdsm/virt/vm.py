@@ -2131,8 +2131,8 @@ class Vm(object):
         self._teardown_devices()
         cleanup_guest_socket(self._qemuguestSocketFile)
         self._cleanupStatsCache()
-        for con in self._devices[hwclass.CONSOLE]:
-            con.cleanup()
+        for con in self._domain.get_device_elements('console'):
+            vmdevices.core.cleanup_console(con, self.id)
         if self.hugepages:
             self._cleanup_hugepages()
 
@@ -2282,8 +2282,8 @@ class Vm(object):
         # Drop enableGuestEvents from conf - Not required from here anymore
         self.conf.pop('enableGuestEvents', None)
 
-        for con in self._devices[hwclass.CONSOLE]:
-            con.prepare()
+        for con in self._domain.get_device_elements('console'):
+            vmdevices.core.prepare_console(con, self.id)
 
         self._guestCpuRunning = self._isDomainRunning()
         self._logGuestCpuStatus('domain initialization')

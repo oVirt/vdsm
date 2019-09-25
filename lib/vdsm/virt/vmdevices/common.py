@@ -84,7 +84,6 @@ def update_device_info(vm, devices):
     storage.Drive.update_device_info(vm, devices[hwclass.DISK])
     graphics.Graphics.update_device_info(vm, devices[hwclass.GRAPHICS])
     core.Balloon.update_device_info(vm, devices[hwclass.BALLOON])
-    core.Console.update_device_info(vm, devices[hwclass.CONSOLE])
     hostdevice.HostDevice.update_device_info(vm, devices[hwclass.HOSTDEV])
     lease.Device.update_device_info(vm, devices[hwclass.LEASE])
 
@@ -94,7 +93,6 @@ _DEVICE_MAPPING = {
     hwclass.NIC: network.Interface,
     hwclass.GRAPHICS: graphics.Graphics,
     hwclass.BALLOON: core.Balloon,
-    hwclass.CONSOLE: core.Console,
     hwclass.HOSTDEV: hostdevice.HostDevice,
     hwclass.LEASE: lease.Device,
 }

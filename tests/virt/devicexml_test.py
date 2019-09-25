@@ -24,7 +24,6 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
-import os.path
 import xml.etree.ElementTree as ET
 
 from vdsm.virt.domain_descriptor import DomainDescriptor
@@ -33,7 +32,6 @@ from vdsm.virt.vmdevices import lookup
 from vdsm.virt import metadata
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
-from vdsm import constants
 from vdsm.common import hostdev
 from vdsm.common import xmlutils
 
@@ -66,99 +64,6 @@ class DeviceToXMLTests(XMLTestCase):
             'memSize': '1024',
             'memGuaranteedSize': '512',
         }
-
-    def test_console_virtio(self):
-        consoleXML = """
-            <console type="pty">
-                <target port="0" type="virtio"/>
-            </console>"""
-        dev = {
-            'device': 'console',
-            'specParams': {'consoleType': 'virtio'},
-            'vmid': self.conf['vmId'],
-        }
-        console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(xmlutils.tostring(console.getXML()), consoleXML)
-
-    def test_console_serial(self):
-        consoleXML = """
-            <console type="pty">
-                <target port="0" type="serial"/>
-            </console>"""
-        dev = {
-            'device': 'console',
-            'specParams': {'consoleType': 'serial'},
-            'vmid': self.conf['vmId'],
-        }
-        console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(xmlutils.tostring(console.getXML()), consoleXML)
-
-    def test_console_default(self):
-        consoleXML = """
-            <console type="pty">
-                <target port="0" type="virtio"/>
-            </console>"""
-        dev = {
-            'device': 'console',
-            'vmid': self.conf['vmId'],
-        }
-        console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(xmlutils.tostring(console.getXML()), consoleXML)
-
-    def test_serial_device(self):
-        serialXML = """
-            <serial type="pty">
-                <target port="0"/>
-            </serial>"""
-        dev = {
-            'device': 'console',
-            'vmid': self.conf['vmId'],
-        }
-        console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(xmlutils.tostring(console.getSerialDeviceXML()),
-                            serialXML)
-
-    def test_unix_socket_serial_device(self):
-        path = "/var/run/ovirt-vmconsole-console/%s.sock" % self.conf['vmId']
-        serialXML = """
-            <serial type="unix">
-                <source mode="bind" path="%s" />
-                <target port="0" />
-            </serial>""" % path
-        dev = {
-            'vmid': self.conf['vmId'],
-            'device': 'console',
-            'specParams': {
-                'enableSocket': True
-            }
-        }
-        console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(xmlutils.tostring(console.getSerialDeviceXML()),
-                            serialXML)
-
-    @permutations([[None], [{}], [{'enableSocket': False}]])
-    def test_console_pty(self, specParams):
-        consoleXML = """
-            <console type="pty">
-                <target port="0" type="virtio"/>
-            </console>"""
-        dev = {'device': 'console'}
-        if specParams is not None:
-            dev['specParams'] = specParams
-        console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(xmlutils.tostring(console.getXML()), consoleXML)
-
-    def test_console_socket(self):
-        consoleXML = """
-            <console type="unix">
-                <source mode="bind" path="%s%s.sock" />
-                <target port="0" type="virtio"/>
-            </console>""" % (constants.P_OVIRT_VMCONSOLES,
-                             self.conf['vmId'])
-        dev = {'device': 'console', 'specParams': {'enableSocket': True}}
-        dev['vmid'] = self.conf['vmId']
-        console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(xmlutils.tostring(console.getXML()), consoleXML)
 
     def test_balloon(self):
         balloonXML = '<memballoon model="virtio"/>'
@@ -794,76 +699,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
            function='0x0'/>
         </memballoon>'''
         self._check_roundtrip(vmdevices.core.Balloon, balloon_xml)
-
-    @permutations([
-        # console_type, is_serial
-        ['virtio', False],
-        ['serial', True],
-    ])
-    def test_console_pty(self, console_type, is_serial):
-        console_xml = u'''<console type="pty">
-            <target port="0" type="%s" />
-        </console>''' % console_type
-        self._check_roundtrip(
-            vmdevices.core.Console, console_xml, meta={'vmid': 'VMID'}
-        )
-
-    @permutations([
-        # console_type, is_serial
-        ['virtio', False],
-        ['serial', True],
-    ])
-    def test_console_pty_properties(self, console_type, is_serial):
-        console_xml = u'''<console type="pty">
-            <target port="0" type="%s" />
-        </console>''' % console_type
-        dev = vmdevices.core.Console.from_xml_tree(
-            self.log,
-            xmlutils.fromstring(console_xml),
-            meta={'vmid': 'VMID'}
-        )
-        self.assertEqual(dev.isSerial, is_serial)
-
-    @permutations([
-        # console_type, is_serial
-        ['virtio', False],
-        ['serial', True],
-    ])
-    def test_console_unix_socket(self, console_type, is_serial):
-        vmid = 'VMID'
-        console_xml = u'''<console type='unix'>
-          <source mode='bind' path='{sockpath}.sock' />
-          <target type='{console_type}' port='0' />
-        </console>'''.format(
-            sockpath=os.path.join(constants.P_OVIRT_VMCONSOLES, vmid),
-            console_type=console_type
-        )
-        self._check_roundtrip(
-            vmdevices.core.Console, console_xml, meta={'vmid': vmid}
-        )
-
-    @permutations([
-        # console_type, is_serial
-        ['virtio', False],
-        ['serial', True],
-    ])
-    def test_console_unix_socket_properties(self, console_type, is_serial):
-        vmid = 'VMID'
-        console_xml = u'''<console type='unix'>
-          <source mode='bind' path='{sockpath}.sock' />
-          <target type='{console_type}' port='0' />
-        </console>'''.format(
-            sockpath=os.path.join(constants.P_OVIRT_VMCONSOLES, vmid),
-            console_type=console_type
-        )
-        dev = vmdevices.core.Console.from_xml_tree(
-            self.log,
-            xmlutils.fromstring(console_xml),
-            meta={'vmid': vmid}
-        )
-        self.assertEqual(dev.isSerial, is_serial)
-        self.assertEqual(dev.vmid, vmid)
-        self.assertTrue(dev.specParams['enableSocket'])
 
     def test_lease(self):
         lease_xml = u'''<lease>

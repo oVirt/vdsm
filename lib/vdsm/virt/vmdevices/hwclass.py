@@ -26,7 +26,6 @@ DISK = 'disk'
 NIC = 'interface'
 GRAPHICS = 'graphics'
 BALLOON = 'balloon'
-CONSOLE = 'console'
 HOSTDEV = 'hostdev'
 LEASE = 'lease'
 

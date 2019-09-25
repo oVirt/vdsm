@@ -550,26 +550,27 @@ class ConsoleTests(TestCaseBase):
     def test_console_pty_not_prepare_path(self):
         supervdsm = fake.SuperVdsm()
         with MonkeyPatchScope([(vmdevices.core, 'supervdsm', supervdsm)]):
-            dev = {
-                'device': 'console',
-                'vmid': self.cfg['vmId'],
-            }
-            con = vmdevices.core.Console(self.log, **dev)
-            con.prepare()
-
+            dom = xmlutils.fromstring("""
+        <console type="pty">
+            <source path="/abc/def"/>
+            <target port="0" type="serial"/>
+            <alias name="ua-1234"/>
+        </console>
+""")
+            vmdevices.core.prepare_console(dom, self.cfg['vmId'])
             self.assertEqual(supervdsm.prepared_path, None)
 
     def test_console_usock_prepare_path(self):
         supervdsm = fake.SuperVdsm()
         with MonkeyPatchScope([(vmdevices.core, 'supervdsm', supervdsm)]):
-            dev = {
-                'device': 'console',
-                'specParams': {'enableSocket': True},
-                'vmid': self.cfg['vmId'],
-            }
-            con = vmdevices.core.Console(self.log, **dev)
-            con.prepare()
-
+            dom = xmlutils.fromstring("""
+        <console type="unix">
+            <source mode="bind" path="%s"/>
+            <target port="0" type="serial"/>
+            <alias name="ua-1234"/>
+        </console>
+""" % (self._expected_path,))
+            vmdevices.core.prepare_console(dom, self.cfg['vmId'])
             self.assertEqual(supervdsm.prepared_path,
                              self._expected_path)
             self.assertEqual(supervdsm.prepared_path_group,
@@ -581,13 +582,14 @@ class ConsoleTests(TestCaseBase):
 
         with MonkeyPatchScope([(vmdevices.core,
                                 'cleanup_guest_socket', _fake_cleanup)]):
-            dev = {
-                'device': 'console',
-                'vmId': self.cfg['vmId'],
-            }
-            con = vmdevices.core.Console(self.log, **dev)
-            con.cleanup()
-
+            dom = xmlutils.fromstring("""
+        <console type="pty">
+            <source path="/abc/def"/>
+            <target port="0" type="serial"/>
+            <alias name="ua-1234"/>
+        </console>
+""")
+            vmdevices.core.cleanup_console(dom, self.cfg['vmId'])
             self.assertEqual(self._cleaned_path, None)
 
     def test_console_usock_cleanup_path(self):
@@ -597,14 +599,14 @@ class ConsoleTests(TestCaseBase):
         with MonkeyPatchScope([(vmdevices.core,
                                 'cleanup_guest_socket', _fake_cleanup)]):
 
-            dev = {
-                'device': 'console',
-                'specParams': {'enableSocket': True},
-                'vmid': self.cfg['vmId'],
-            }
-            con = vmdevices.core.Console(self.log, **dev)
-            con.cleanup()
-
+            dom = xmlutils.fromstring("""
+        <console type="unix">
+            <source mode="bind" path="%s"/>
+            <target port="0" type="serial"/>
+            <alias name="ua-1234"/>
+        </console>
+""" % (self._expected_path,))
+            vmdevices.core.cleanup_console(dom, self.cfg['vmId'])
             self.assertEqual(self._cleaned_path, self._expected_path)
 
 
