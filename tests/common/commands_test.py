@@ -136,6 +136,48 @@ class TestStart:
         assert p.wait() == -signal.SIGTERM
 
 
+class TestCommunicate:
+
+    def test_out(self):
+        p = commands.start(["echo", "-n", "it works"], stdout=subprocess.PIPE)
+        out, err = commands.communicate(p)
+        assert p.returncode == 0
+        assert out == b"it works"
+        assert err is None
+
+    def test_err(self):
+        cmd = ["sh", "-c", "echo -n fail >&2; exit 1"]
+        p = commands.start(cmd, stderr=subprocess.PIPE)
+        out, err = commands.communicate(p)
+        assert p.returncode == 1
+        assert out is None
+        assert err == b"fail"
+
+    def test_int_out(self):
+        cmd = ["cat"]
+        p = commands.start(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        out, err = commands.communicate(p, b"data")
+        assert p.returncode == 0
+        assert out == b"data"
+        assert err is None
+
+    def test_in_err(self):
+        cmd = ["sh", "-c", "cat >&2; exit 1"]
+        p = commands.start(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = commands.communicate(p, b"data")
+        assert p.returncode == 1
+        assert out is None
+        assert err == b"data"
+
+    def test_out_err(self):
+        cmd = ["sh", "-c", "echo -n 'test out' >&1; echo -n fail >&2; exit 1"]
+        p = commands.start(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = commands.communicate(p)
+        assert p.returncode == 1
+        assert out == b"test out"
+        assert err == b"fail"
+
+
 class TestRun:
 
     def test_run(self):

@@ -165,6 +165,28 @@ def start(args, stdin=None, stdout=None, stderr=None, cwd=None, env=None,
         env=env)
 
 
+def communicate(proc, input=None):
+    """
+    A wrapper for subprocess.communicate() which waits for process to be
+    finished and logs the returned code (and error output if any).
+
+    Arguments:
+        proc: subprocess.Popen instance or commands.PrivilegedPopen if
+            subprocess was created with sudo enabled.
+        input (str): input data to be sent to the child process, or None, if
+            no data should be sent to the process.
+
+    Returns:
+        Tuple of process standard output and error output.
+    """
+    with terminating(proc):
+        out, err = proc.communicate(input)
+
+    log.debug(cmdutils.retcode_log_line(proc.returncode, err=err))
+
+    return out, err
+
+
 @deprecated
 def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
             printable=None, env=None, nice=None, ioclass=None,
