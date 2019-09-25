@@ -27,7 +27,7 @@ import sys
 import os
 import threading
 
-from ovirt_imageio_common import directio
+from ovirt_imageio_common import directio  # pylint: disable=import-error
 
 from vdsm.common import concurrent
 from vdsm.common import libvirtconnection

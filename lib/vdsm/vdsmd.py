@@ -14,7 +14,7 @@ import sys
 # When using Python 2, we must monkey patch threading module before importing
 # any other module.
 if sys.version_info[0] == 2:
-    import pthreading
+    import pthreading  # pylint: disable=import-error
     pthreading.monkey_patch()
 
 import os

@@ -79,7 +79,7 @@ except ImportError:
     import json  # NOQA: F401 (unused import)
 
 if six.PY2:
-    import subprocess32 as subprocess
+    import subprocess32 as subprocess  # pylint: disable=import-error
 else:
     import subprocess  # NOQA: F401 (unused import)
 
