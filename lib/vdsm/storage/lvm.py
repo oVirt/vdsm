@@ -45,7 +45,6 @@ import six
 
 from vdsm import constants
 from vdsm.common import errors
-from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common.compat import subprocess
 
@@ -289,12 +288,7 @@ class LVMRunner(object):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
-
-        with commands.terminating(p):
-            out, err = p.communicate()
-
-        log.debug(cmdutils.retcode_log_line(p.returncode, err=err))
-
+        out, err = commands.communicate(p)
         return p.returncode, out, err
 
 
