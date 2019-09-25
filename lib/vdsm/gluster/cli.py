@@ -116,7 +116,7 @@ def _getTree(rc, out, err):
         rv = int(tree.find('opRet').text)
         msg = tree.find('opErrstr').text
         errNo = int(tree.find('opErrno').text)
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=out)
     if rv == 0:
         return tree
@@ -387,7 +387,7 @@ def volumeStatus(volumeName, brick=None, option=None):
             return _parseVolumeStatusMem(xmltree)
         else:
             return _parseVolumeStatus(xmltree)
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -532,7 +532,7 @@ def volumeInfo(volumeName=None, remoteServer=None):
         raise ge.GlusterVolumesListFailedException(rc=e.rc, err=e.err)
     try:
         return _parseVolumeInfo(xmltree)
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -559,7 +559,7 @@ def volumeCreate(volumeName, brickList, replicaCount=0, stripeCount=0,
         raise ge.GlusterVolumeCreateFailedException(rc=e.rc, err=e.err)
     try:
         return {'uuid': xmltree.find('volCreate/volume/id').text}
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -691,7 +691,7 @@ def volumeRebalanceStart(volumeName, rebalanceType="", force=False):
                                                             err=e.err)
     try:
         return {'taskId': xmltree.find('volRebalance/task-id').text}
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -708,7 +708,7 @@ def volumeRebalanceStop(volumeName, force=False):
 
     try:
         return _parseVolumeRebalanceRemoveBrickStatus(xmltree, 'rebalance')
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -778,7 +778,7 @@ def volumeRebalanceStatus(volumeName):
                                                              err=e.err)
     try:
         return _parseVolumeRebalanceRemoveBrickStatus(xmltree, 'rebalance')
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -808,7 +808,7 @@ def volumeRemoveBrickStart(volumeName, brickList, replicaCount=0):
                                                               err=e.err)
     try:
         return {'taskId': xmltree.find('volRemoveBrick/task-id').text}
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -826,7 +826,7 @@ def volumeRemoveBrickStop(volumeName, brickList, replicaCount=0):
 
     try:
         return _parseVolumeRebalanceRemoveBrickStatus(xmltree, 'remove-brick')
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -843,7 +843,7 @@ def volumeRemoveBrickStatus(volumeName, brickList, replicaCount=0):
                                                                err=e.err)
     try:
         return _parseVolumeRebalanceRemoveBrickStatus(xmltree, 'remove-brick')
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -934,7 +934,7 @@ def peerStatus():
         return _parsePeerStatus(xmltree,
                                 _getLocalIpAddress() or _getGlusterHostName(),
                                 hostUUIDGet(), HostStatus.CONNECTED)
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -1025,7 +1025,7 @@ def volumeProfileInfo(volumeName, nfs=False):
         raise ge.GlusterVolumeProfileInfoFailedException(rc=e.rc, err=e.err)
     try:
         return _parseVolumeProfileInfo(xmltree, nfs)
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -1073,7 +1073,7 @@ def volumeTasks(volumeName="all"):
         raise ge.GlusterVolumeTasksFailedException(rc=e.rc, err=e.err)
     try:
         return _parseVolumeTasks(xmltree)
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -1215,7 +1215,7 @@ def volumeGeoRepStatus(volumeName=None, remoteHost=None,
         raise ge.GlusterGeoRepStatusFailedException(rc=e.rc, err=e.err)
     try:
         return _parseGeoRepStatus(xmltree)
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -1294,7 +1294,7 @@ def volumeGeoRepConfig(volumeName, remoteHost,
         raise ge.GlusterGeoRepConfigFailedException(rc=e.rc, err=e.err)
     try:
         return _parseVolumeGeoRepConfig(xmltree)
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -1316,7 +1316,7 @@ def snapshotCreate(volumeName, snapName,
     try:
         return {'uuid': xmltree.find('snapCreate/snapshot/uuid').text,
                 'name': xmltree.find('snapCreate/snapshot/name').text}
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -1390,7 +1390,7 @@ def snapshotRestore(snapName):
         raise ge.GlusterSnapshotRestoreFailedException(rc=e.rc, err=e.err)
     try:
         return _parseRestoredSnapshot(xmltree)
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -1441,7 +1441,7 @@ def snapshotConfig(volumeName=None, optionName=None, optionValue=None):
         raise ge.GlusterSnapshotConfigFailedException(rc=e.rc, err=e.err)
     try:
         return _parseSnapshotConfigList(xmltree)
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -1559,7 +1559,7 @@ def snapshotInfo(volumeName=None):
             return _parseVolumeSnapshotList(xmltree)
         else:
             return _parseAllVolumeSnapshotList(xmltree)
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -1643,7 +1643,7 @@ def volumeHealInfo(volumeName=None):
         return _parseVolumeHealInfo(xmltree)
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeHealInfoFailedException(rc=e.rc, err=e.err)
-    except _etreeExceptions:
+    except _etreeExceptions:  # pylint: disable=catching-non-exception
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
