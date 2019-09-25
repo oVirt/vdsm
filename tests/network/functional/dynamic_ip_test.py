@@ -38,6 +38,7 @@ from network.nettestlib import veth_pair
 from network.nettestlib import dnsmasq_run
 from network.nettestlib import dhcp_client_run
 from network.nettestlib import running_on_fedora
+from network.nettestlib import vlan_device
 
 NETWORK_NAME = 'test-network'
 VLAN = 10
@@ -147,6 +148,15 @@ def dynamic_ipv4_iface2(network_configuration2):
     dhcp_config = DhcpConfig('192.0.15.2', '192.0.15.253')
     with _create_configured_dhcp_client_iface(
         network_configuration2, dhcp_config
+    ) as configured_client:
+        yield configured_client
+
+
+@pytest.fixture
+def dynamic_vlaned_ipv4_iface(network_configuration1):
+    dhcp_config = DhcpConfig(DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO)
+    with _create_configured_dhcp_client_iface(
+        network_configuration1, dhcp_config, vlan_id=VLAN
     ) as configured_client:
         yield configured_client
 
@@ -380,9 +390,34 @@ def test_dynamic_ip_switch_to_static(
         adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
 
 
+@nftestlib.parametrize_switch
+@pytest.mark.nmstate
+def test_dynamic_ip_bonded_vlanned_network(switch, dynamic_vlaned_ipv4_iface):
+    bond_name = 'bond0'
+    network_attrs = {
+        'bridged': True,
+        'bonding': bond_name,
+        'bootproto': 'dhcp',
+        'blockingdhcp': True,
+        'switch': switch,
+        'vlan': VLAN,
+    }
+    bondcreate = {
+        bond_name: {'nics': [dynamic_vlaned_ipv4_iface], 'switch': switch}
+    }
+    netcreate = {NETWORK_NAME: network_attrs}
+    with adapter.setupNetworks(netcreate, bondcreate, NOCHK):
+        adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+
+
 @contextmanager
-def _create_configured_dhcp_client_iface(network_config, dhcp_config):
-    with _create_dhcp_client_server_peers(network_config) as (server, client):
+def _create_configured_dhcp_client_iface(
+    network_config, dhcp_config, vlan_id=None
+):
+    with _create_dhcp_client_server_peers(network_config, vlan_id) as (
+        server,
+        client,
+    ):
         dhcp_server = dnsmasq_run(
             server,
             dhcp_config.ipv4_range_from,
@@ -396,20 +431,31 @@ def _create_configured_dhcp_client_iface(network_config, dhcp_config):
 
 
 @contextmanager
-def _create_dhcp_client_server_peers(network_config):
-    with veth_pair() as (server, client):
-        addrAdd(
-            server,
-            network_config.ipv4_address,
-            network_config.ipv4_prefix_length,
-        )
-        if network_config.ipv6_address:
-            addrAdd(
-                server,
-                network_config.ipv6_address,
-                network_config.ipv6_prefix_length,
-                IpFamily.IPv6,
-            )
+def _create_dhcp_client_server_peers(network_config, vlan_id):
+    with veth_pair(max_length=10) as (server, client):
         linkSet(server, ['up'])
         linkSet(client, ['up'])
-        yield server, client
+
+        if vlan_id:
+            with vlan_device(server, vlan_id) as vlan_iface:
+                vlan_iface_name = vlan_iface.devName
+                _configure_iface_ip(vlan_iface_name, network_config)
+                yield vlan_iface_name, client
+        else:
+            _configure_iface_ip(server, network_config)
+            yield server, client
+
+
+def _configure_iface_ip(iface_name, network_config):
+    addrAdd(
+        iface_name,
+        network_config.ipv4_address,
+        network_config.ipv4_prefix_length,
+    )
+    if network_config.ipv6_address:
+        addrAdd(
+            iface_name,
+            network_config.ipv6_address,
+            network_config.ipv6_prefix_length,
+            IpFamily.IPv6,
+        )
