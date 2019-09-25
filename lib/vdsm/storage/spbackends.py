@@ -332,6 +332,7 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
     def forceFreeSpm(self):
         # DO NOT USE, STUPID, HERE ONLY FOR BC
         # TODO: SCSI Fence the 'lastOwner'
+        # pylint: disable=unexpected-keyword-arg
         self.setSpmStatus(LVER_INVALID, SPM_ID_FREE, __securityOverride=True)
         self.pool.spmRole = SPM_FREE
 
@@ -493,4 +494,5 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
         self.log.debug('updating domain version to %s and domains map '
                        'to %s', masterVersion, domainsMap)
         self.masterVersion = masterVersion
+        # pylint: disable=unexpected-keyword-arg
         self.setDomainsMap(domainsMap, __securityOverride=True)
