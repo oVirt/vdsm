@@ -241,9 +241,24 @@ def test_fileutils_padtoblocksize(
         assert f.read() == b"\0" * (expected_size - orig_size)
 
 
-def test_fileutils_pathexists(oop_cleanup):
+def test_fileutils_pathexists(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
+
+    # Test for null device.
     path = "/dev/null"
+    assert iop.fileUtils.pathExists(path)
+
+    # Test for existing directory.
+    path = str(tmpdir)
+    assert iop.fileUtils.pathExists(path)
+
+    # Test for non-existing file (not yet created).
+    f = tmpdir.join("file")
+    path = str(f)
+    assert not iop.fileUtils.pathExists(path)
+
+    # Test for existing file.
+    f.write("")
     assert iop.fileUtils.pathExists(path)
 
 
