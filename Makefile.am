@@ -64,6 +64,13 @@ CLEANFILES = \
 	$(DIST_ARCHIVES) \
 	$(NULL)
 
+PYLINT_TARGETS = \
+	static/usr/share/vdsm/sitecustomize.py \
+	lib/vdsm \
+	lib/vdsmclient \
+	lib/yajsonrpc \
+	$(NULL)
+
 .PHONY: gitignore
 gitignore:
 	@echo "Checking that .in files are ignored..."
@@ -77,14 +84,12 @@ gitignore:
 .PHONY: pylint
 pylint: tox
 	tox -e pylint \
-		static/usr/share/vdsm/sitecustomize.py \
-		lib/vdsm \
-		lib/vdsmclient \
-		lib/yajsonrpc \
-		$(NULL)
+		$(PYLINT_TARGETS)
 
-pylint-py3k: tox
-	tox -e pylint-py3k `build-aux/pylint-py3k-whitelist`
+.PHONY: pylint-py2
+pylint-py2: tox
+	tox -e pylint-py2 \
+		$(PYLINT_TARGETS)
 
 execcmd:
 	! git --no-pager grep execCmd `git ls-files | grep -v -F -f execcmd-blacklist.txt`
@@ -134,9 +139,9 @@ check-all:
 check-unit:
 	$(MAKE) -C tests/ check NOSE_EVAL_ATTR="type=='unit'"
 
-lint-py2: gitignore execcmd flake8-py2 pylint-py3k pylint
+lint-py2: gitignore execcmd flake8-py2 pylint-py2
 
-lint-py3: gitignore execcmd black flake8
+lint-py3: gitignore execcmd black flake8 pylint
 
 .PHONY: lint-target
 lint-target: $(VDSM_TARGET_PY_MAJOR_SHORT_VERSION:%=lint-%)
