@@ -30,6 +30,8 @@ import stat
 import time
 import weakref
 
+from contextlib import contextmanager
+
 import pytest
 
 from vdsm.storage import outOfProcess as oop
@@ -334,7 +336,7 @@ def test_simple_walk(oop_cleanup, tmpdir):
 
 
 def verify_file(path, mode=None, size=None, content=None):
-    assert os.path.exists(path)
+    assert os.path.isfile(path)
 
     if size is not None:
         assert os.stat(path).st_size == size
@@ -348,7 +350,70 @@ def verify_file(path, mode=None, size=None, content=None):
             assert f.read() == content
 
 
+def verify_directory(path, mode=None):
+    assert os.path.isdir(path)
+
+    if mode is not None:
+        actual_mode = stat.S_IMODE(os.stat(path).st_mode)
+        assert oct(actual_mode) == oct(mode)
+
+
 def get_umask():
     current_umask = os.umask(0)
     os.umask(current_umask)
     return current_umask
+
+
+@contextmanager
+def chmod(path, mode):
+    """
+    Changes path permissions.
+
+    Change the permissions of path to the numeric mode before entering the
+    context, and restore the original value when exiting from the context.
+
+    Arguments:
+        path (str): file/directory path
+        mode (int): new mode
+    """
+
+    orig_mode = stat.S_IMODE(os.stat(path).st_mode)
+
+    os.chmod(path, mode)
+    try:
+        yield
+    finally:
+        try:
+            os.chmod(path, orig_mode)
+        except Exception as e:
+            logging.error("Failed to restore %r mode: %s", path, e)
+
+
+@contextmanager
+def chown(path, uid=-1, gid=-1):
+    """
+    Changes path owner (must run as root).
+
+    Change the owner and group id of path to the numeric uid and gid before
+    entering the context, and restore the original value when exiting from
+    the context.
+    To leave one of the ids unchanged, set it to -1.
+
+    Arguments:
+        path (str): file path
+        uid (int): new Owner ID
+        gid (int): new Group ID
+    """
+
+    orig_uid = os.stat(path).st_uid
+    orig_gid = os.stat(path).st_gid
+
+    os.chown(path, uid, gid)
+    try:
+        yield
+    finally:
+        try:
+            os.chown(path, orig_uid, orig_gid)
+        except Exception as e:
+            logging.error("Failed to restore %r to uid %d gid %d: %s",
+                          path, orig_uid, orig_gid, e)
