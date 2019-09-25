@@ -25,6 +25,7 @@ import errno
 import logging
 import os
 import selinux
+import six
 
 import blivet
 import blivet.formats
@@ -300,8 +301,13 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         log.error("fstype %s is currently unsupported" % fsType)
         raise ge.GlusterHostStorageDeviceMkfsFailedException(fsType)
 
-    format = blivet.formats.getFormat(DEFAULT_FS_TYPE, device=thinlv.path,
-                                      mountopts=DEFAULT_MOUNT_OPTIONS)
+    if six.PY2:
+        get_format = blivet.formats.getFormat  # pylint: disable=no-member
+    else:
+        get_format = blivet.formats.get_format  # pylint: disable=no-member
+
+    format = get_format(DEFAULT_FS_TYPE, device=thinlv.path,
+                        mountopts=DEFAULT_MOUNT_OPTIONS)
     format._defaultFormatOptions = ["-f", "-i", "size=512", "-n", "size=8192"]
     if raidParams.get('type') == '6':
         format._defaultFormatOptions += ["-d", "sw=%s,su=%sk" % (
