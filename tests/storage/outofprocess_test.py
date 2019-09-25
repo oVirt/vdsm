@@ -35,6 +35,9 @@ from contextlib import contextmanager
 import pytest
 
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage.exception import MiscDirCleanupFailure
+
+from . marks import requires_unprivileged_user
 
 
 @pytest.fixture
@@ -118,6 +121,70 @@ def test_fileutils_fsyncPath(oop_cleanup, tmpdir):
     with pytest.raises(OSError) as e:
         iop.fileUtils.fsyncPath(str(tmpdir.join("no such directory")))
     assert e.value.errno == errno.ENOENT
+
+
+def test_fileutils_cleanupdir_success(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    dirty = tmpdir.mkdir("dirty")
+
+    d = dirty
+    for i in range(2):
+        d.join("file").write("")
+        d = d.mkdir("dir")
+
+    dirty_path = str(dirty)
+    iop.fileUtils.cleanupdir(dirty_path)
+    assert not os.path.exists(dirty_path)
+
+
+def test_fileutils_cleanupdir_failed_no_such_dir(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    no_such_path = str(tmpdir.join("no such directory"))
+
+    # Test on a non-existing path without specify ignoreErrors, fail silently.
+    iop.fileUtils.cleanupdir(no_such_path)
+
+    # Test on a non-existing path while ignoring errors, fail silently.
+    iop.fileUtils.cleanupdir(no_such_path, ignoreErrors=True)
+
+    # Test on a non-existing path while raising errors.
+    with pytest.raises(OSError) as e:
+        iop.fileUtils.cleanupdir(no_such_path, ignoreErrors=False)
+    assert e.value.errno == errno.ENOENT
+
+
+@requires_unprivileged_user
+def test_fileutils_cleanupdir_failed_due_to_permissions(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    dirty = tmpdir.mkdir("dirty")
+
+    # Create directory tree with a non-empty inner most directory.
+    d = dirty
+    for i in range(2):
+        d = d.mkdir("dir")
+        d.join("file").write("")
+
+    outer_dir = str(dirty)
+    inner_dir = str(d)
+
+    # Change mode of the inner sub-directory to have no 'write' permissions.
+    with chmod(inner_dir, 0o555):
+        # Test 'cleanupdir' without specify ignoreErrors, fail silently.
+        iop.fileUtils.cleanupdir(outer_dir)
+        assert os.path.exists(outer_dir)
+
+        # Test 'cleanupdir' while ignoring errors, fail silently.
+        iop.fileUtils.cleanupdir(outer_dir, ignoreErrors=True)
+        assert os.path.exists(outer_dir)
+
+        # Test 'cleanupdir' while raising errors.
+        with pytest.raises(MiscDirCleanupFailure):
+            iop.fileUtils.cleanupdir(outer_dir, ignoreErrors=False)
+        assert os.path.exists(outer_dir)
+
+    # After changing to original permissions, "cleanupdir" should succeed!
+    iop.fileUtils.cleanupdir(outer_dir, ignoreErrors=False)
+    assert not os.path.exists(outer_dir)
 
 
 @pytest.mark.parametrize("initial_mode, expected_mode", [
