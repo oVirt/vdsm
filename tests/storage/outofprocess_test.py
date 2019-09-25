@@ -37,7 +37,7 @@ import pytest
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage.exception import MiscDirCleanupFailure
 
-from . marks import requires_unprivileged_user
+from . marks import requires_root, requires_unprivileged_user
 
 
 @pytest.fixture
@@ -260,6 +260,45 @@ def test_fileutils_pathexists(oop_cleanup, tmpdir):
     # Test for existing file.
     f.write("")
     assert iop.fileUtils.pathExists(path)
+
+
+@requires_root
+def test_fileutils_validateqemureadable_other_group(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+
+    f = tmpdir.join("file")
+    f.write("")
+    path = str(f)
+
+    # Change mode to have 'other read' permissions.
+    with chmod(path, 0o755):
+        iop.fileUtils.validateQemuReadable(path)
+
+    # Change mode to have no 'other read' permissions.
+    with chmod(path, 0o750):
+        with pytest.raises(OSError) as e:
+            iop.fileUtils.validateQemuReadable(path)
+        assert e.value.errno == errno.EACCES
+
+
+@pytest.mark.parametrize("gid, mode", [
+    (107, 0o750),   # qemu
+    (36, 0o750),    # kvm
+])
+@requires_root
+def test_fileutils_validateqemureadable_qemu_or_kvm_group(
+        oop_cleanup, tmpdir, gid, mode):
+    iop = oop.getProcessPool("test")
+
+    f = tmpdir.join("file")
+    f.write("")
+    path = str(f)
+
+    # Change owner (to either qemu or kvm).
+    with chown(path, gid=gid):
+        # Change mode to have 'group read' permissions.
+        with chmod(path, mode):
+            iop.fileUtils.validateQemuReadable(path)
 
 
 # os APIs
