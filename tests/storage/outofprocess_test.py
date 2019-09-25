@@ -206,6 +206,20 @@ def test_fileutils_copyusermodetogroup(
     verify_file(path, mode=expected_mode)
 
 
+def test_fileutils_createdir(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    d1 = str(tmpdir.join("subdir1"))
+    d2 = str(tmpdir.join("subdir2"))
+
+    # The test describes the current behavior of ioprocess.fileUtils.createdir:
+    # the default mode is 0o775 (depends on umask).
+    iop.fileUtils.createdir(d1)
+    verify_directory(d1, mode=0o775 & ~get_umask())
+
+    iop.fileUtils.createdir(d2, mode=0o666)
+    verify_directory(d2, mode=0o666 & ~get_umask())
+
+
 @pytest.mark.parametrize("orig_size, expected_size", [
     (4096 - 1, 4096),
     (4096, 4096),
