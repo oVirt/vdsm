@@ -80,36 +80,6 @@ class TestNetworkRollback(object):
             switch, ipaddr=IPv4_ADDRESS, netmask=IPv4_NETMASK
         )
 
-    def _test_rollback_to_initial_network(self, switch, **kwargs):
-        with dummy_devices(2) as (nic1, nic2):
-            NETCREATE = {
-                NETWORK_NAME: {'nic': nic1, 'bridged': False, 'switch': switch}
-            }
-            NETCREATE[NETWORK_NAME].update(kwargs)
-
-            BROKEN_NETCREATE = {
-                NETWORK_NAME: {
-                    'bonding': BOND_NAME,
-                    'bridged': True,
-                    'vlan': VLAN,
-                    'netmask': '300.300.300.300',
-                    'ipaddr': '300.300.300.300',
-                    'switch': switch,
-                }
-            }
-            BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
-
-            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
-
-                with pytest.raises(SetupNetworksError):
-                    adapter.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
-
-                    adapter.update_netinfo()
-                    adapter.assertNetwork(
-                        NETWORK_NAME, NETCREATE[NETWORK_NAME]
-                    )
-                    adapter.assertNoBond(BOND_NAME)
-
     def test_setup_network_fails_on_existing_bond(self, switch):
         with dummy_device() as nic:
             NETCREATE = {
@@ -222,3 +192,33 @@ class TestNetworkRollback(object):
                 adapter.assertNoNetwork(NET2_NAME)
                 adapter.assertNetwork(NET1_NAME, NETCREATE[NET1_NAME])
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+
+    def _test_rollback_to_initial_network(self, switch, **kwargs):
+        with dummy_devices(2) as (nic1, nic2):
+            NETCREATE = {
+                NETWORK_NAME: {'nic': nic1, 'bridged': False, 'switch': switch}
+            }
+            NETCREATE[NETWORK_NAME].update(kwargs)
+
+            BROKEN_NETCREATE = {
+                NETWORK_NAME: {
+                    'bonding': BOND_NAME,
+                    'bridged': True,
+                    'vlan': VLAN,
+                    'netmask': '300.300.300.300',
+                    'ipaddr': '300.300.300.300',
+                    'switch': switch,
+                }
+            }
+            BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
+
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+
+                with pytest.raises(SetupNetworksError):
+                    adapter.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
+
+                    adapter.update_netinfo()
+                    adapter.assertNetwork(
+                        NETWORK_NAME, NETCREATE[NETWORK_NAME]
+                    )
+                    adapter.assertNoBond(BOND_NAME)
