@@ -51,6 +51,7 @@ def create_adapter(target):
 
 @nftestlib.parametrize_switch
 class TestNetworkRollback(object):
+    @pytest.mark.nmstate
     def test_remove_broken_network(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             BROKEN_NETCREATE = {
@@ -72,9 +73,11 @@ class TestNetworkRollback(object):
             adapter.assertNoNetwork(NETWORK_NAME)
             adapter.assertNoBond(BOND_NAME)
 
+    @pytest.mark.nmstate
     def test_rollback_to_initial_basic_network(self, switch):
         self._test_rollback_to_initial_network(switch)
 
+    @pytest.mark.nmstate
     def test_rollback_to_initial_network_with_static_ip(self, switch):
         self._test_rollback_to_initial_network(
             switch, ipaddr=IPv4_ADDRESS, netmask=IPv4_NETMASK
