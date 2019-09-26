@@ -37,6 +37,25 @@ from vdsm.network import legacy_switch
 from vdsm.network.models import Bond, Bridge, Nic, Vlan
 from vdsm.network.netswitch import validator
 
+NICS = [f'eth{i}' for i in range(11)]
+
+BOND0 = 'bond00'
+BOND0_SLAVES = ['eth5', 'eth6']
+BONDS = [BOND0]
+
+
+class BondMock:
+    def __init__(self, name):
+        pass
+
+    @staticmethod
+    def bonds():
+        return BONDS
+
+    @property
+    def slaves(self):
+        return set(BOND0_SLAVES)
+
 
 def _raiseInvalidOpException(*args, **kwargs):
     return RuntimeError(
@@ -51,6 +70,7 @@ class TestConfigNetwork(object):
 
         with pytest.raises(errors.ConfigNetworkError) as cneContext:
             canonicalize_networks({netName: opts})
+            validator.validate_network_setup({netName: opts}, {}, FAKE_NETINFO)
             legacy_switch._add_network(
                 netName, configurator, fakeInfo, None, **opts
             )
@@ -63,6 +83,8 @@ class TestConfigNetwork(object):
     @mock.patch.object(Bridge, 'configure', _raiseInvalidOpException)
     @mock.patch.object(Nic, 'configure', _raiseInvalidOpException)
     @mock.patch.object(Vlan, 'configure', _raiseInvalidOpException)
+    @mock.patch.object(validator, 'nics', lambda: NICS)
+    @mock.patch.object(validator, 'Bond', BondMock)
     def testAddNetworkValidation(self):
 
         # Test for already existing bridge.
@@ -101,23 +123,34 @@ class TestConfigNetwork(object):
 
 FAKE_NETINFO = {
     'networks': {
-        'fakent': {'iface': 'fakeint', 'bridged': False},
+        'fakent': {
+            'iface': 'fakeint',
+            'bridged': False,
+            'southbound': 'fakeint',
+        },
         'fakebrnet': {
             'iface': 'fakebr',
             'bridged': True,
             'ports': ['eth0', 'eth1'],
+            'southbound': 'eth0',
         },
         'fakebrnet1': {
             'iface': 'fakebr1',
             'bridged': True,
             'ports': ['bond00'],
+            'southbound': 'bond00',
         },
         'fakebrnet2': {
             'iface': 'fakebr2',
             'bridged': True,
             'ports': ['eth7.1'],
+            'southbound': 'eth7.1',
         },
-        'fakebrnet3': {'iface': 'eth8', 'bridged': False},
+        'fakebrnet3': {
+            'iface': 'eth8',
+            'bridged': False,
+            'southbound': 'eth8',
+        },
     },
     'vlans': {
         'eth3.2': {
@@ -133,24 +166,12 @@ FAKE_NETINFO = {
             'mtu': 1500,
         },
     },
-    'nics': [
-        'eth0',
-        'eth1',
-        'eth2',
-        'eth3',
-        'eth4',
-        'eth5',
-        'eth6',
-        'eth7',
-        'eth8',
-        'eth9',
-        'eth10',
-    ],
+    'nics': NICS,
     'bridges': {
         'fakebr': {'ports': ['eth0', 'eth1']},
         'fakebr1': {'ports': ['bond00']},
         'fakebr2': {'ports': ['eth7.1']},
     },
-    'bondings': {'bond00': {'slaves': ['eth5', 'eth6']}},
+    'bondings': {BOND0: {'slaves': BOND0_SLAVES}},
     'nameservers': [],
 }

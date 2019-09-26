@@ -1,4 +1,4 @@
-# Copyright 2011-2017 Red Hat, Inc.
+# Copyright 2011-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -140,12 +140,6 @@ def _objectivize_network(
             on_removal_just_detach_from_network=True,
         )
     elif nic:
-        bond = _netinfo.getBondingForNic(nic)
-        if bond:
-            raise ConfigNetworkError(
-                ne.ERR_USED_NIC,
-                'Nic %s already ' 'enslaved to %s' % (nic, bond),
-            )
         top_net_dev = Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
     if vlan is not None:
         tag = _netinfo.vlans[vlan]['vlanid'] if vlan_id is None else vlan_id

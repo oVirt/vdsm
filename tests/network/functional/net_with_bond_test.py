@@ -54,6 +54,7 @@ def create_adapter(target):
 
 @nftestlib.parametrize_switch
 class TestNetworkWithBond(object):
+    @pytest.mark.nmstate
     def test_add_the_same_nic_to_net_and_bond_in_one_step(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': switch}}
@@ -63,6 +64,7 @@ class TestNetworkWithBond(object):
                 adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK)
             assert e.value.status == ne.ERR_USED_NIC
 
+    @pytest.mark.nmstate
     def test_add_bond_with_nic_that_is_already_used_by_network(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': switch}}
@@ -73,6 +75,7 @@ class TestNetworkWithBond(object):
                     adapter.setupNetworks({}, BONDCREATE, NOCHK)
                 assert e.value.status == ne.ERR_USED_NIC
 
+    @pytest.mark.nmstate
     def test_add_network_with_nic_that_is_already_used_by_bond(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': switch}}

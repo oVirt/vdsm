@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -86,7 +86,9 @@ def validate_nic_usage(
     for net_attr in six.itervalues(req_nets):
         if 'remove' in net_attr:
             continue
-        request_nets_nics |= set([net_attr.get('nic')] or [])
+        nic = net_attr.get('nic')
+        if nic:
+            request_nets_nics |= {nic}
 
     shared_nics = (request_bonds_slaves | kernel_bonds_slaves) & (
         request_nets_nics | kernel_nets_nics
@@ -100,6 +102,7 @@ def validate_nic_usage(
 def validate_network_setup(nets, bonds, net_info):
     kernel_nics = nics()
     kernel_bonds = Bond.bonds()
+    current_nets = net_info['networks']
     for net, attrs in six.iteritems(nets):
         validate_net_configuration(
             net,
@@ -107,13 +110,19 @@ def validate_network_setup(nets, bonds, net_info):
             bonds,
             kernel_bonds,
             kernel_nics,
-            net_info['networks'],
+            current_nets,
             RunningConfig().networks,
         )
     for bond, attrs in six.iteritems(bonds):
         validate_bond_configuration(
-            bond, attrs, nets, net_info['networks'], kernel_nics
+            bond, attrs, nets, current_nets, kernel_nics
         )
+    validate_nic_usage(
+        nets,
+        bonds,
+        _get_kernel_nets_nics(current_nets, kernel_bonds, nets),
+        _get_kernel_bonds_slaves(kernel_bonds, bonds),
+    )
 
 
 def validate_net_configuration(
@@ -164,6 +173,23 @@ def validate_bond_configuration(
 
     if 'options' in bondattrs:
         _validate_bond_options(bondattrs['options'])
+
+
+def _get_kernel_nets_nics(networks, kernel_bonds, req_nets):
+    return {
+        netattr['southbound']
+        for netname, netattr in networks.items()
+        if netattr['southbound'] not in kernel_bonds
+        and not req_nets.get(netname, {}).get('remove', False)
+    }
+
+
+def _get_kernel_bonds_slaves(kernel_bonds, req_bonds):
+    kernel_bonds_slaves = set()
+    for bond_name in kernel_bonds:
+        if not req_bonds.get(bond_name, {}).get('remove', False):
+            kernel_bonds_slaves |= Bond(bond_name).slaves
+    return kernel_bonds_slaves
 
 
 def _validate_vlan_id(id):
