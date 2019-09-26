@@ -30,6 +30,7 @@ import traceback
 from collections import namedtuple
 
 from six.moves import queue
+from six.moves import range
 
 from vdsm.common import pthread
 from vdsm.common import time
@@ -207,12 +208,11 @@ def tmap(func, values, max_workers=10, name=None):
 
             del value
 
-    values = tuple(values)
-    workers_needed = min(len(values), max_workers)
-
     for value in values:
         pending.put(value)
 
+    count = pending.qsize()
+    workers_needed = min(count, max_workers)
     workers = []
 
     for i in range(workers_needed):
@@ -220,7 +220,7 @@ def tmap(func, values, max_workers=10, name=None):
         w.start()
         workers.append(w)
 
-    for _ in values:
+    for _ in range(count):
         yield results.get()
 
     for w in workers:
