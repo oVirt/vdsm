@@ -61,8 +61,9 @@ from vdsm.storage import sd
 from vdsm.storage import volume
 
 
-NR_PVS = 2       # The number of fake PVs we use to make a fake VG by default
-MB = 1024 ** 2   # Used to convert bytes to MB
+NR_PVS = 2        # The number of fake PVs we use to make a fake VG by default
+MB = 1024 ** 2    # Used to convert bytes to MB
+WAIT_TIMEOUT = 5  # Used for Callable event default wait timeout
 
 
 @contextmanager
@@ -555,12 +556,12 @@ class Callable(object):
         self._done.set()
         return {}
 
-    def finish(self, timeout=1):
+    def finish(self, timeout=WAIT_TIMEOUT):
         self._blocking.set()
         if not self._done.wait(timeout):
             raise RuntimeError("Timeout waiting for task completion")
 
-    def wait_until_running(self, timeout=1):
+    def wait_until_running(self, timeout=WAIT_TIMEOUT):
         if not self._running.wait(timeout):
             raise RuntimeError("Timeout waiting for task to start")
 
