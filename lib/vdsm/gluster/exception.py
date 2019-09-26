@@ -556,7 +556,7 @@ class GlusterHookAlreadyExistException(GlusterHookException):
             (hookName, glusterCmd, level)
 
 
-class GlusterHookCheckSumMismatchException(GlusterException):
+class GlusterHookCheckSumMismatchException(GlusterHookException):
     code = 4508
 
     def __init__(self, computedMd5Sum=None, expectedMd5Sum=None):
