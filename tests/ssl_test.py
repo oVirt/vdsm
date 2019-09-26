@@ -27,8 +27,6 @@ import ssl
 
 import pytest
 
-from integration.sslhelper import KEY_FILE, CRT_FILE
-
 from vdsm import utils
 from vdsm.common import cmdutils
 from vdsm.common import concurrent
@@ -36,6 +34,9 @@ from vdsm.common import commands
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.sslutils import CLIENT_PROTOCOL, SSLContext, SSLHandshakeDispatcher
 from yajsonrpc.betterAsyncore import Reactor
+
+from integration.sslhelper import KEY_FILE, CRT_FILE
+from testing import on_centos
 
 
 @pytest.fixture
@@ -143,7 +144,24 @@ def test_tls_unsupported_protocols(client_cmd, protocol):
         client_cmd(protocol)
 
 
-@pytest.mark.parametrize('protocol', ['-tls1', '-tls1_1', '-tls1_2'])
+@pytest.mark.parametrize('protocol', [
+    pytest.param(
+        '-tls1',
+        id='tls1',
+        marks=pytest.mark.skipif(on_centos(8),
+                                 reason="blocked by crypto policy")
+    ),
+    pytest.param(
+        '-tls1_1',
+        id='tls1.1',
+        marks=pytest.mark.skipif(on_centos(8),
+                                 reason="blocked by crypto policy")
+    ),
+    pytest.param(
+        '-tls1_2',
+        id='tls1.2'
+    ),
+])
 def test_tls_protocols(client_cmd, protocol):
     assert b"Verify return code: 0 (ok)" in client_cmd(protocol)
 

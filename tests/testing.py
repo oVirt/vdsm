@@ -27,9 +27,9 @@ from __future__ import division
 import os
 
 
-def on_centos():
+def on_centos(ver=''):
     with open('/etc/redhat-release') as f:
-        return 'CentOS Linux release' in f.readline()
+        return 'CentOS Linux release {}'.format(ver) in f.readline()
 
 
 def on_fedora(ver=''):
