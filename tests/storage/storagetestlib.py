@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import binascii
+import logging
 import os
 import shutil
 import tempfile
@@ -60,10 +61,11 @@ from vdsm.storage import qemuimg
 from vdsm.storage import sd
 from vdsm.storage import volume
 
-
 NR_PVS = 2        # The number of fake PVs we use to make a fake VG by default
 MB = 1024 ** 2    # Used to convert bytes to MB
 WAIT_TIMEOUT = 5  # Used for Callable event default wait timeout
+
+log = logging.getLogger("test")
 
 
 @contextmanager
@@ -550,18 +552,23 @@ class Callable(object):
 
     def __call__(self, timeout=None):
         self._running.set()
+        log.info("callable is running (hang=%s)", self._hang)
         if self._hang is True:
+            log.info("callable is waiting (timeout=%s)", timeout)
             if not self._blocking.wait(timeout):
                 raise RuntimeError("Timeout waiting for task switch off")
         self._done.set()
+        log.info("callable is finished")
         return {}
 
     def finish(self, timeout=WAIT_TIMEOUT):
         self._blocking.set()
+        log.info("finishing callable (timeout=%s)", timeout)
         if not self._done.wait(timeout):
             raise RuntimeError("Timeout waiting for task completion")
 
     def wait_until_running(self, timeout=WAIT_TIMEOUT):
+        log.info("waiting for callable to run (timeout=%s)", timeout)
         if not self._running.wait(timeout):
             raise RuntimeError("Timeout waiting for task to start")
 
