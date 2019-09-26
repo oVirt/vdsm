@@ -32,7 +32,11 @@ import blivet.formats
 import blivet.formats.fs
 import blivet.size
 from blivet.devices import LVMLogicalVolumeDevice
-from blivet.devices import LVMThinLogicalVolumeDevice
+
+if six.PY2:
+    # pylint: disable=no-name-in-module
+    from blivet.devices import LVMThinLogicalVolumeDevice
+
 from blivet import udev
 
 from vdsm.common import cmdutils
@@ -290,10 +294,20 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
                            poolDataSize)
     # Size of the thin LV should be same as the size of Thinpool to avoid
     # over allocation. Refer bz#1412455 for more info.
-    thinlv = LVMThinLogicalVolumeDevice(
-        brickName, parents=[pool],
-        size=blivet.size.Size('%d KiB' % poolDataSize),
-        grow=True)
+    if six.PY2:
+        thinlv = LVMThinLogicalVolumeDevice(
+            brickName,
+            parents=[pool],
+            size=blivet.size.Size('%d KiB' % poolDataSize),
+            grow=True)
+    else:
+        thinlv = LVMLogicalVolumeDevice(
+            brickName,
+            parents=[pool],
+            size=blivet.size.Size('%d KiB' % poolDataSize),
+            grow=True,
+            seg_type="thin")
+
     blivetEnv.createDevice(thinlv)
     blivetEnv.doIt()
 
