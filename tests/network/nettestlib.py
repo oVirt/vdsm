@@ -243,6 +243,10 @@ class Dummy(Interface):
     def create(self):
         try:
             linkAdd(self.devName, linkType='dummy')
+            if nmstate.is_nmstate_backend():
+                cmd.exec_sync(
+                    ['nmcli', 'dev', 'set', self.devName, 'managed', 'yes']
+                )
         except IPRoute2Error as e:
             raise SkipTest(
                 'Failed to create a dummy interface %s: %s' % (self.devName, e)

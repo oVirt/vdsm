@@ -51,17 +51,6 @@ ensuring the VDSM configuration file - i.e. ```/etc/vdsm/vdsm.conf``` - features
 net_nmstate_enabled = true
 ```
 
-* Configure NetworkManager to manage ```dummy``` devices
-Furthermore, the NetworkManager configuration **must** also be updated,
-explicitly indicating the dummy interfaces used by the network functional
-tests **are to** be managed by NetworkManager. That is achieved by adding the
-following to /etc/NetworkManager/conf.d/vdsm-nmstate-func-net-tests.conf
-```
-[device]
-match-device=dummy*
-managed=1
-```
-
 * Install nmstate
 This step is described in the project's
 [install page](https://github.com/nmstate/nmstate/blob/master/README.install.md#nmstate-installation),
