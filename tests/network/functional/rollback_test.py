@@ -68,9 +68,9 @@ class TestNetworkRollback(object):
             with pytest.raises(SetupNetworksError):
                 adapter.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
 
-                adapter.update_netinfo()
-                adapter.assertNoNetwork(NETWORK_NAME)
-                adapter.assertNoBond(BOND_NAME)
+            adapter.update_netinfo()
+            adapter.assertNoNetwork(NETWORK_NAME)
+            adapter.assertNoBond(BOND_NAME)
 
     def test_rollback_to_initial_basic_network(self, switch):
         self._test_rollback_to_initial_network(switch)
@@ -217,8 +217,6 @@ class TestNetworkRollback(object):
                 with pytest.raises(SetupNetworksError):
                     adapter.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
 
-                    adapter.update_netinfo()
-                    adapter.assertNetwork(
-                        NETWORK_NAME, NETCREATE[NETWORK_NAME]
-                    )
-                    adapter.assertNoBond(BOND_NAME)
+                adapter.update_netinfo()
+                adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+                adapter.assertNoBond(BOND_NAME)

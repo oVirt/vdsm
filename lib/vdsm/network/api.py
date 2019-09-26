@@ -153,7 +153,7 @@ def _rollback():
             setupNetworks(
                 roi.diff.networks,
                 roi.diff.bonds,
-                {'inRollback': True, 'connectivityCheck': 0},
+                {'_inRollback': True, 'connectivityCheck': 0},
             )
         except Exception:
             logging.error('Memory rollback failed.', exc_info=True)
