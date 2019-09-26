@@ -30,6 +30,9 @@ from vdsm.storage import taskManager
 from . storagetestlib import Callable
 
 
+WAIT_TIMEOUT = 5  # Used for task done wait timeout
+
+
 @contextmanager
 def task_manager():
     tm = taskManager.TaskManager(tpSize=1)
@@ -76,7 +79,7 @@ def test_persistent_job(tmpdir, add_recovery):
 
         # Wait for recovery to finish
         t = tm._getTask("task-id")
-        assert t.wait(timeout=1), "Task is not finished"
+        assert t.wait(timeout=WAIT_TIMEOUT), "Task is not finished"
 
         # Check that recovery was called
         assert r.args == ("arg1", "arg2", "arg3")
@@ -101,7 +104,7 @@ def test_revert_task(add_recovery):
 
         # Finish the running task
         c.finish()
-        assert t.wait(timeout=1), "Task is not finished"
+        assert t.wait(timeout=WAIT_TIMEOUT), "Task is not finished"
 
         # Revert the task and run recovery rollback
         assert r.args is None
@@ -131,7 +134,7 @@ def test_stop_clear_task(add_recovery):
         tm.stopTask("task-id")
 
         # Wait for task to finish
-        assert t.wait(timeout=1), "Task is not finished"
+        assert t.wait(timeout=WAIT_TIMEOUT), "Task is not finished"
         assert c.is_finished()
 
         # Assert that recovery was run
