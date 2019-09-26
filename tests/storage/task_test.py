@@ -30,6 +30,9 @@ from vdsm.storage.task import Job, Recovery, Task, TaskCleanType
 from . storagetestlib import Callable
 
 
+WAIT_TIMEOUT = 5  # Used for task done wait timeout
+
+
 class TaskManager(object):
 
     def __init__(self):
@@ -94,7 +97,7 @@ def test_task_abort():
         with t.abort_callback(c.finish):
             t.stop()
 
-        assert t.wait(timeout=1), "Task is not stopped"
+        assert t.wait(timeout=WAIT_TIMEOUT), "Task is not stopped"
 
         # Check task's final status
         assert c.is_finished()
@@ -168,7 +171,7 @@ def test_task_rollback(add_recovery):
         with t.abort_callback(c.finish):
             t.stop()
 
-        assert t.wait(timeout=1), "Task failed to stop"
+        assert t.wait(timeout=WAIT_TIMEOUT), "Task failed to stop"
 
         # Check that recovery procedures were done
         assert r1.args == ("arg1", "arg2")
@@ -211,7 +214,7 @@ def test_task_save_load(tmpdir, add_recovery):
     loaded_task.recover()
 
     # Wait for recovery to finish
-    assert loaded_task.wait(timeout=1), "Task failed to finish"
+    assert loaded_task.wait(timeout=WAIT_TIMEOUT), "Task failed to finish"
 
     # Assert recovery procedure was executed
     assert r.args == ("arg1", "arg2")
