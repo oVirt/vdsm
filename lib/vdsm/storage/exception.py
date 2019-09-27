@@ -469,10 +469,14 @@ class MoveTemplateImageError(StorageException):
 
 
 class ImageDoesNotExistInSD(StorageException):
-    def __init__(self, imgUUID, sdUUID):
-        self.value = "image=%s, domain=%s" % (imgUUID, sdUUID)
     code = 268
     message = "Image does not exist in domain"
+
+    def __init__(
+            self, imgUUID, sdUUID, tmpImgUUID=None, tmpVolUUID=None):
+        self.value = "image=%s, domain=%s" % (imgUUID, sdUUID)
+        self.tmpImgUUID = tmpImgUUID
+        self.tmpVolUUID = tmpVolUUID
 
 
 #################################################

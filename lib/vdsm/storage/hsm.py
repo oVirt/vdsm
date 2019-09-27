@@ -1631,10 +1631,11 @@ class HSM(object):
                     self.log.error(
                         "img %s can't be moved to dom %s because template "
                         "%s is absent on it", imgUUID, dstDom.sdUUID, tName)
-                    e = se.ImageDoesNotExistInSD(imgUUID, dstDom.sdUUID)
-                    e.absentTemplateUUID = tName
-                    e.absentTemplateImageUUID = tImgs[0]
-                    raise e
+                    raise se.ImageDoesNotExistInSD(
+                        imgUUID,
+                        dstDom.sdUUID,
+                        tmpImgUUID=tImgs[0],
+                        tmpVolUUID=tName)
                 elif imgUUID == tImgs[0] and not srcDom.isBackup():
                     raise se.MoveTemplateImageError(imgUUID)
                 break
@@ -1668,12 +1669,9 @@ class HSM(object):
                 raise
             else:
                 # Create an ad-hoc fake template only on a backup SD
-                tName = e.absentTemplateUUID
-                tImgUUID = e.absentTemplateImageUUID
-                tParams = srcDom.produceVolume(tImgUUID,
-                                               tName).getVolumeParams()
-                image.Image(os.path.join(sc.REPO_DATA_CENTER, spUUID)
-                            ).createFakeTemplate(dstDom.sdUUID, tParams)
+                tmpVol = srcDom.produceVolume(e.tmpImgUUID, e.tmpVolUUID)
+                img = image.Image(os.path.join(sc.REPO_DATA_CENTER, spUUID))
+                img.createFakeTemplate(dstDom.sdUUID, tmpVol.getVolumeParams())
 
         domains = [srcDomUUID, dstDomUUID]
         domains.sort()
