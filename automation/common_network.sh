@@ -35,7 +35,7 @@ function setup_env {
     fi
 
     # Creates RPMS
-    "$AUTOMATION"/build-artifacts.sh
+    "$AUTOMATION"/build.sh
 
     if [[ $DISTRO == "fc29" ]]; then
         mkdir -p /tmp

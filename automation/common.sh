@@ -65,7 +65,7 @@ check_install() {
         exit 1
     fi
 
-    ${CI_PYTHON} tests/profile build-artifacts $PWD/automation/build-artifacts.sh
+    ${CI_PYTHON} tests/profile build-artifacts $PWD/automation/build.sh
 
     tests/check_distpkg.sh "$(ls "$EXPORT_DIR"/vdsm*.tar.gz)"
     tests/check_rpms.sh "$EXPORT_DIR"

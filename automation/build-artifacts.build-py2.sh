@@ -1,1 +1,1 @@
-build-artifacts.sh
+build.sh
