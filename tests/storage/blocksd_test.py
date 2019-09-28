@@ -91,7 +91,7 @@ def fakeGetLV(vgName):
     with open(lvs_output) as f:
         for line in f:
             fields = [field.strip() for field in line.split(lvm.SEPARATOR)]
-            lvs.append(lvm.makeLV(*fields))
+            lvs.append(lvm.LV.fromlvm(*fields))
     return lvs
 
 

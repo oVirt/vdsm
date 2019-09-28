@@ -95,6 +95,15 @@ class InvalidOutputLine(errors.Base):
 class PV(namedtuple("_PV", PV_FIELDS + ",guid")):
     __slots__ = ()
 
+    @classmethod
+    def fromlvm(cls, *args):
+        """
+        Create PV from lvm pvs command output.
+        """
+        guid = os.path.basename(args[1])
+        args += (guid,)
+        return cls(*args)
+
     def is_stale(self):
         return False
 
@@ -102,12 +111,55 @@ class PV(namedtuple("_PV", PV_FIELDS + ",guid")):
 class VG(namedtuple("_VG", VG_FIELDS + ",writeable,partial")):
     __slots__ = ()
 
+    @classmethod
+    def fromlvm(cls, *args):
+        """
+        Create VG from lvm vgs command output.
+        """
+        args = list(args)
+        # Convert tag string into tuple.
+        tags = _tags2Tuple(args[VG._fields.index("tags")])
+        args[VG._fields.index("tags")] = tags
+        # Convert attr string into named tuple fields.
+        # tuple("wz--n-") = ('w', 'z', '-', '-', 'n', '-')
+        sAttr = args[VG._fields.index("attr")]
+        attr_values = tuple(sAttr[:len(VG_ATTR._fields)])
+        attrs = VG_ATTR(*attr_values)
+        args[VG._fields.index("attr")] = attrs
+        # Convert pv_names list to tuple.
+        args[VG._fields.index("pv_name")] = \
+            tuple(args[VG._fields.index("pv_name")])
+        # Add properties. Should be ordered as VG_PROPERTIES.
+        args.append(attrs.permission == "w")  # Writable
+        args.append(VG_OK if attrs.partial == "-" else VG_PARTIAL)  # Partial
+        return cls(*args)
+
     def is_stale(self):
         return False
 
 
 class LV(namedtuple("_LV", LV_FIELDS + ",writeable,opened,active")):
     __slots__ = ()
+
+    @classmethod
+    def fromlvm(cls, *args):
+        """
+        Create LV from lvm pvs command output.
+        """
+        args = list(args)
+        # Convert tag string into tuple.
+        tags = _tags2Tuple(args[cls._fields.index("tags")])
+        args[LV._fields.index("tags")] = tags
+        # Convert attr string into named tuple fields.
+        sAttr = args[cls._fields.index("attr")]
+        attr_values = tuple(sAttr[:len(LV_ATTR._fields)])
+        attrs = LV_ATTR(*attr_values)
+        args[cls._fields.index("attr")] = attrs
+        # Add properties. Should be ordered as VG_PROPERTIES.
+        args.append(attrs.permission == "w")  # writable
+        args.append(attrs.devopen == "o")     # opened
+        args.append(attrs.state == "a")       # active
+        return cls(*args)
 
     def is_stale(self):
         return False
@@ -232,49 +284,6 @@ def _tags2Tuple(sTags):
     Return an empty tuple for sTags == ""
     """
     return tuple(sTags.split(",")) if sTags else tuple()
-
-
-def makePV(*args):
-    guid = os.path.basename(args[1])
-    args += (guid,)
-    return PV(*args)
-
-
-def makeVG(*args):
-    args = list(args)
-    # Convert tag string into tuple.
-    tags = _tags2Tuple(args[VG._fields.index("tags")])
-    args[VG._fields.index("tags")] = tags
-    # Convert attr string into named tuple fields.
-    # tuple("wz--n-") = ('w', 'z', '-', '-', 'n', '-')
-    sAttr = args[VG._fields.index("attr")]
-    attr_values = tuple(sAttr[:len(VG_ATTR._fields)])
-    attrs = VG_ATTR(*attr_values)
-    args[VG._fields.index("attr")] = attrs
-    # Convert pv_names list to tuple.
-    args[VG._fields.index("pv_name")] = \
-        tuple(args[VG._fields.index("pv_name")])
-    # Add properties. Should be ordered as VG_PROPERTIES.
-    args.append(attrs.permission == "w")  # Writable
-    args.append(VG_OK if attrs.partial == "-" else VG_PARTIAL)  # Partial
-    return VG(*args)
-
-
-def makeLV(*args):
-    args = list(args)
-    # Convert tag string into tuple.
-    tags = _tags2Tuple(args[LV._fields.index("tags")])
-    args[LV._fields.index("tags")] = tags
-    # Convert attr string into named tuple fields.
-    sAttr = args[LV._fields.index("attr")]
-    attr_values = tuple(sAttr[:len(LV_ATTR._fields)])
-    attrs = LV_ATTR(*attr_values)
-    args[LV._fields.index("attr")] = attrs
-    # Add properties. Should be ordered as VG_PROPERTIES.
-    args.append(attrs.permission == "w")  # writable
-    args.append(attrs.devopen == "o")     # opened
-    args.append(attrs.state == "a")       # active
-    return LV(*args)
 
 
 class LVMRunner(object):
@@ -536,7 +545,7 @@ class LVMCache(object):
                 if len(fields) != PV_FIELDS_LEN:
                     raise InvalidOutputLine("pvs", line)
 
-                pv = makePV(*fields)
+                pv = PV.fromlvm(*fields)
                 if pv.name == UNKNOWN:
                     log.error("Missing pv: %s in vg: %s", pv.uuid, pv.vg_name)
                     continue
@@ -619,7 +628,7 @@ class LVMCache(object):
                 else:
                     vgsFields[uuid][pvNameIdx].append(pv_name)
             for fields in six.itervalues(vgsFields):
-                vg = makeVG(*fields)
+                vg = VG.fromlvm(*fields)
                 if int(vg.pv_count) != len(vg.pv_name):
                     log.error("vg %s has pv_count %s but pv_names %s",
                               vg.name, vg.pv_count, vg.pv_name)
@@ -681,7 +690,7 @@ class LVMCache(object):
                 if len(fields) != LV_FIELDS_LEN:
                     raise InvalidOutputLine("lvs", line)
 
-                lv = makeLV(*fields)
+                lv = LV.fromlvm(*fields)
                 # For LV we are only interested in its first extent
                 if lv.seg_start_pe == "0":
                     self._lvs[(lv.vg_name, lv.name)] = lv
@@ -720,7 +729,7 @@ class LVMCache(object):
                 if len(fields) != LV_FIELDS_LEN:
                     raise InvalidOutputLine("lvs", line)
 
-                lv = makeLV(*fields)
+                lv = LV.fromlvm(*fields)
                 # For LV we are only interested in its first extent
                 if lv.seg_start_pe == "0":
                     new_lvs[(lv.vg_name, lv.name)] = lv

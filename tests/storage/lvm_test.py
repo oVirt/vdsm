@@ -1694,7 +1694,7 @@ def test_normalize_args():
 
 
 def make_lv(lv_name, vg_name):
-    return lvm.makeLV(
+    return lvm.LV.fromlvm(
         "uuid",
         lv_name,
         vg_name,
