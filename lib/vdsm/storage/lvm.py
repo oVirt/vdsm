@@ -85,7 +85,6 @@ VG = namedtuple("VG", VG_FIELDS + ",writeable,partial")
 VG_ATTR = namedtuple("VG_ATTR", VG_ATTR_BITS)
 LV = namedtuple("LV", LV_FIELDS + ",writeable,opened,active")
 LV_ATTR = namedtuple("LV_ATTR", LV_ATTR_BITS)
-Stub = namedtuple("Stub", "name, stale")
 
 
 class InvalidOutputLine(errors.Base):
@@ -94,6 +93,9 @@ class InvalidOutputLine(errors.Base):
     def __init__(self, command, line):
         self.command = command
         self.line = line
+
+
+Stub = namedtuple("Stub", "name")
 
 
 class Unreadable(Stub):
@@ -497,7 +499,7 @@ class LVMCache(object):
                 pvNames = pvNames if pvNames else self._pvs
                 for p in pvNames:
                     if isinstance(self._pvs.get(p), Stub):
-                        pv = Unreadable(self._pvs[p].name, True)
+                        pv = Unreadable(self._pvs[p].name)
                         self._pvs[p] = pv
                         updatedPVs[p] = pv
 
@@ -568,7 +570,7 @@ class LVMCache(object):
                     vgNames, rc, out, err)
                 for v in (vgNames or self._vgs):
                     if isinstance(self._vgs.get(v), Stub):
-                        vg = Unreadable(self._vgs[v].name, True)
+                        vg = Unreadable(self._vgs[v].name)
                         self._vgs[v] = vg
                         updatedVGs[v] = vg
 
@@ -639,7 +641,7 @@ class LVMCache(object):
                     lvNames = (lvn for vgn, lvn in self._lvs if vgn == vgName)
                 for lvName in lvNames:
                     if isinstance(self._lvs.get((vgName, lvName)), Stub):
-                        lv = Unreadable(lvName, True)
+                        lv = Unreadable(lvName)
                         self._lvs[(vgName, lvName)] = lv
                         updatedLVs[(vgName, lvName)] = lv
 
@@ -704,13 +706,13 @@ class LVMCache(object):
         pvNames = normalize_args(pvNames)
         with self._lock:
             for pvName in pvNames:
-                self._pvs[pvName] = Stub(pvName, True)
+                self._pvs[pvName] = Stub(pvName)
 
     def _invalidatevgpvs(self, vgName):
         with self._lock:
             for pv in self._pvs.values():
                 if not isinstance(pv, Stub) and pv.vg_name == vgName:
-                    self._pvs[pv.name] = Stub(pv.name, True)
+                    self._pvs[pv.name] = Stub(pv.name)
 
     def _invalidateAllPvs(self):
         with self._lock:
@@ -721,7 +723,7 @@ class LVMCache(object):
         vgNames = normalize_args(vgNames)
         with self._lock:
             for vgName in vgNames:
-                self._vgs[vgName] = Stub(vgName, True)
+                self._vgs[vgName] = Stub(vgName)
 
     def _invalidateAllVgs(self):
         with self._lock:
@@ -735,13 +737,13 @@ class LVMCache(object):
             if lvNames:
                 # Invalidate a specific LVs
                 for lvName in lvNames:
-                    self._lvs[(vgName, lvName)] = Stub(lvName, True)
+                    self._lvs[(vgName, lvName)] = Stub(lvName)
             else:
                 # Invalidate all the LVs in a given VG
                 for lv in self._lvs.values():
                     if not isinstance(lv, Stub):
                         if lv.vg_name == vgName:
-                            self._lvs[(vgName, lv.name)] = Stub(lv.name, True)
+                            self._lvs[(vgName, lv.name)] = Stub(lv.name)
 
     def _invalidateAllLvs(self):
         with self._lock:

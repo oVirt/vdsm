@@ -915,7 +915,7 @@ def test_vg_invalidate(tmp_storage):
 
     assert lvm._lvminfo._pvs == {dev1: pv1, dev2: pv2}
     assert lvm._lvminfo._vgs == {
-        vg1_name: lvm.Stub(vg1_name, True),
+        vg1_name: lvm.Stub(vg1_name),
         vg2_name: vg2,
     }
     assert lvm._lvminfo._lvs == {
@@ -956,8 +956,8 @@ def test_vg_invalidate_lvs(tmp_storage):
     lvm.invalidateVG(vg_name)
 
     assert lvm._lvminfo._pvs == {dev: pv}
-    assert lvm._lvminfo._vgs == {vg_name: lvm.Stub(vg_name, True)}
-    assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stub("lv1", True)}
+    assert lvm._lvminfo._vgs == {vg_name: lvm.Stub(vg_name)}
+    assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stub("lv1")}
 
 
 @requires_root
@@ -991,8 +991,8 @@ def test_vg_invalidate_lvs_pvs(tmp_storage):
     # Invalidate VG including LVs and PVs.
     lvm.invalidateVG(vg_name, invalidatePVs=True)
 
-    assert lvm._lvminfo._vgs == {vg_name: lvm.Stub(vg_name, True)}
-    assert lvm._lvminfo._pvs == {dev: lvm.Stub(dev, True)}
+    assert lvm._lvminfo._vgs == {vg_name: lvm.Stub(vg_name)}
+    assert lvm._lvminfo._pvs == {dev: lvm.Stub(dev)}
 
     clear_stats()
     lvm._lvminfo.getPvs(vg_name)
@@ -1000,7 +1000,7 @@ def test_vg_invalidate_lvs_pvs(tmp_storage):
     # There are stale PVs for the VG so getPVs() will have another cache miss.
     check_stats(hits=0, misses=2)
 
-    assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stub("lv1", True)}
+    assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stub("lv1")}
 
 
 @requires_root
@@ -1535,16 +1535,16 @@ def test_lv_reload_error_one_stub(fake_devices, no_delay):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
     lc._lvs = {
-        ("vg-name", "lv-name"): lvm.Stub("lv-name", True),
-        ("vg-name", "other-lv"): lvm.Stub("other-lv", True),
+        ("vg-name", "lv-name"): lvm.Stub("lv-name"),
+        ("vg-name", "other-lv"): lvm.Stub("other-lv"),
     }
     lv = lc.getLv("vg-name", "lv-name")
 
     # Mark lv as unreadable. Because we always reload all lvs, the other lvs is
     # also marked as unreadable.
     assert lc._lvs == {
-        ("vg-name", "lv-name"): lvm.Unreadable("lv-name", True),
-        ("vg-name", "other-lv"): lvm.Unreadable("other-lv", True),
+        ("vg-name", "lv-name"): lvm.Unreadable("lv-name"),
+        ("vg-name", "other-lv"): lvm.Unreadable("other-lv"),
     }
 
     # Report the unreadbale lv.
@@ -1556,8 +1556,8 @@ def test_lv_reload_error_one_stub_other_vg(fake_devices, no_delay):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
     lc._lvs = {
-        ("vg-name", "lv-name"): lvm.Stub("lv-name", True),
-        ("other-vg", "other-lv"): lvm.Stub("other-lv", True),
+        ("vg-name", "lv-name"): lvm.Stub("lv-name"),
+        ("other-vg", "other-lv"): lvm.Stub("other-lv"),
     }
     lc.getLv("vg-name", "lv-name")
 
@@ -1575,11 +1575,11 @@ def test_lv_reload_error_all(fake_devices, no_delay):
 def test_lv_reload_error_all_other_vg(fake_devices, no_delay):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
-    lc._lvs = {("vg-name", "lv-name"): lvm.Stub("lv-name", True)}
+    lc._lvs = {("vg-name", "lv-name"): lvm.Stub("lv-name")}
     lvs = lc.getLv("vg-name")
 
     # Mark lv as unreadable.
-    assert lc._lvs == {("vg-name", "lv-name"): lvm.Unreadable("lv-name", True)}
+    assert lc._lvs == {("vg-name", "lv-name"): lvm.Unreadable("lv-name")}
 
     # Currnetly we don't report stubs or unreadables lvs. This is not
     # consistent with getLv(vg_name, lv_name).
@@ -1590,8 +1590,8 @@ def test_lv_reload_error_all_stub_other_vgs(fake_devices, no_delay):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
     lc._lvs = {
-        ("vg-name", "lv-name"): lvm.Stub("lv-name", True),
-        ("other-vg", "other-lv"): lvm.Stub("other-lv", True),
+        ("vg-name", "lv-name"): lvm.Stub("lv-name"),
+        ("other-vg", "other-lv"): lvm.Stub("other-lv"),
     }
     lc.getLv("vg-name")
 
