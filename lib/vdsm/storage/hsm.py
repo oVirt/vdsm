@@ -1195,7 +1195,7 @@ class HSM(object):
 
         vars.task.getExclusiveLock(STORAGE, pool.spUUID)
         # Find out domain list from the pool metadata
-        domList = sorted(pool.getDomains().keys())
+        domList = sorted(pool.getDomains())
         for sdUUID in domList:
             vars.task.getExclusiveLock(STORAGE, sdUUID)
 
@@ -1627,7 +1627,7 @@ class HSM(object):
                 # This is the template. Should be only one.
                 tName, tImgs = volName, imgsPar.imgs
                 # Template self image is the 1st entry
-                if imgUUID != tImgs[0] and tName not in dstAllVols.keys():
+                if imgUUID != tImgs[0] and tName not in dstAllVols:
                     self.log.error(
                         "img %s can't be moved to dom %s because template "
                         "%s is absent on it", imgUUID, dstDom.sdUUID, tName)
@@ -2612,7 +2612,7 @@ class HSM(object):
         misc.validateUUID(sdUUID, 'sdUUID')
         self.validateNonDomain(sdUUID)
 
-        if domClass not in sd.DOMAIN_CLASSES.keys():
+        if domClass not in sd.DOMAIN_CLASSES:
             raise se.StorageDomainClassError()
 
         # getSharedLock(connectionsResource...)
@@ -2705,7 +2705,7 @@ class HSM(object):
         except se.StoragePoolNotConnected:
             pass
         else:
-            if sdUUID in domDict.keys():
+            if sdUUID in domDict:
                 raise se.CannotFormatStorageDomainInConnectedPool(sdUUID)
 
         # For domains that attached to disconnected pool, format domain if
@@ -2814,8 +2814,7 @@ class HSM(object):
             remotePath = fileUtils.normalize_path(remotePath)
             local_path = fileUtils.transformPath(remotePath)
         if spUUID and spUUID != sc.BLANK_UUID:
-            domList = self.getPool(spUUID).getDomains()
-            domains = domList.keys()
+            domains = list(self.getPool(spUUID).getDomains())
         else:
             # getSharedLock(connectionsResource...)
             domains = sdCache.getUUIDs()
@@ -3210,7 +3209,7 @@ class HSM(object):
         dom = sdCache.produce(sdUUID)
         allVols = dom.getAllVolumes()
         # Filter volumes related to this image
-        imgVolumes = sd.getVolsOfImage(allVols, imgUUID).keys()
+        imgVolumes = list(sd.getVolsOfImage(allVols, imgUUID))
 
         if leafUUID not in imgVolumes:
             raise se.VolumeDoesNotExist(leafUUID)
@@ -3300,7 +3299,7 @@ class HSM(object):
         dom = sdCache.produce(sdUUID=sdUUID)
         vols = dom.getAllVolumes()
         if imgUUID == sc.BLANK_UUID:
-            volUUIDs = vols.keys()
+            volUUIDs = list(vols)
         else:
             volUUIDs = [k for k, v in six.iteritems(vols) if imgUUID in v.imgs]
         return dict(uuidlist=volUUIDs)
@@ -3344,7 +3343,7 @@ class HSM(object):
         vars.task.getSharedLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         # Find out domain list from the pool metadata
-        activeDoms = sorted(pool.getDomains(activeOnly=True).keys())
+        activeDoms = sorted(pool.getDomains(activeOnly=True))
         imgDomains = []
         for sdUUID in activeDoms:
             dom = sdCache.produce(sdUUID=sdUUID)
