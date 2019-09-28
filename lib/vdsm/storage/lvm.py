@@ -107,6 +107,15 @@ class PV(namedtuple("_PV", PV_FIELDS + ",guid")):
     def is_stale(self):
         return False
 
+    def is_metadata_pv(self):
+        """
+        This method returns boolean indicating whether this pv is used for
+        storing the vg metadata. When we create a vg we create on all the pvs 2
+        metadata areas but enable them only on one of the pvs, for that pv the
+        mda_used_count should be therefore 2 - see createVG().
+        """
+        return self.mda_used_count == '2'
+
 
 class VG(namedtuple("_VG", VG_FIELDS + ",writeable,partial")):
     __slots__ = ()
@@ -1795,22 +1804,12 @@ def getFirstExt(vg, lv):
 def getVgMetadataPv(vgName):
     pvs = _lvminfo.getPvs(vgName)
     mdpvs = [pv for pv in pvs
-             if not pv.is_stale() and _isMetadataPv(pv)]
+             if not pv.is_stale() and pv.is_metadata_pv()]
     if len(mdpvs) != 1:
         raise se.UnexpectedVolumeGroupMetadata("Expected one metadata pv in "
                                                "vg: %s, vg pvs: %s" %
                                                (vgName, pvs))
     return mdpvs[0].name
-
-
-def _isMetadataPv(pv):
-    """
-    This method returns boolean indicating whether the passed pv is used for
-    storing the vg metadata. When we create a vg we create on all the pvs 2
-    metadata areas but enable them only on one of the pvs, for that pv the
-    mda_used_count should be therefore 2 - see createVG().
-    """
-    return pv.mda_used_count == '2'
 
 
 def listPVNames(vgName):
