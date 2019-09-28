@@ -95,10 +95,10 @@ class InvalidOutputLine(errors.Base):
         self.line = line
 
 
-Stub = namedtuple("Stub", "name")
+Stale = namedtuple("Stale", "name")
 
 
-class Unreadable(Stub):
+class Unreadable(Stale):
     __slots__ = ()
 
     def __getattr__(self, attrName):
@@ -498,7 +498,7 @@ class LVMCache(object):
                     pvNames, rc, out, err)
                 pvNames = pvNames if pvNames else self._pvs
                 for p in pvNames:
-                    if isinstance(self._pvs.get(p), Stub):
+                    if isinstance(self._pvs.get(p), Stale):
                         pv = Unreadable(self._pvs[p].name)
                         self._pvs[p] = pv
                         updatedPVs[p] = pv
@@ -537,7 +537,7 @@ class LVMCache(object):
             for name in vgNames:
                 try:
                     pvs = self._vgs[name].pv_name  # pv_names tuple
-                except (KeyError, AttributeError):  # Yet unknown VG, stub
+                except (KeyError, AttributeError):  # Yet unknown VG, stale
                     devices = tuple()
                     break  # unknownVG = True
                 else:
@@ -569,7 +569,7 @@ class LVMCache(object):
                     "Reloading VGs failed vgs=%r rc=%r out=%r err=%r",
                     vgNames, rc, out, err)
                 for v in (vgNames or self._vgs):
-                    if isinstance(self._vgs.get(v), Stub):
+                    if isinstance(self._vgs.get(v), Stale):
                         vg = Unreadable(self._vgs[v].name)
                         self._vgs[v] = vg
                         updatedVGs[v] = vg
@@ -640,7 +640,7 @@ class LVMCache(object):
                 if not lvNames:
                     lvNames = (lvn for vgn, lvn in self._lvs if vgn == vgName)
                 for lvName in lvNames:
-                    if isinstance(self._lvs.get((vgName, lvName)), Stub):
+                    if isinstance(self._lvs.get((vgName, lvName)), Stale):
                         lv = Unreadable(lvName)
                         self._lvs[(vgName, lvName)] = lv
                         updatedLVs[(vgName, lvName)] = lv
@@ -706,13 +706,13 @@ class LVMCache(object):
         pvNames = normalize_args(pvNames)
         with self._lock:
             for pvName in pvNames:
-                self._pvs[pvName] = Stub(pvName)
+                self._pvs[pvName] = Stale(pvName)
 
     def _invalidatevgpvs(self, vgName):
         with self._lock:
             for pv in self._pvs.values():
-                if not isinstance(pv, Stub) and pv.vg_name == vgName:
-                    self._pvs[pv.name] = Stub(pv.name)
+                if not isinstance(pv, Stale) and pv.vg_name == vgName:
+                    self._pvs[pv.name] = Stale(pv.name)
 
     def _invalidateAllPvs(self):
         with self._lock:
@@ -723,7 +723,7 @@ class LVMCache(object):
         vgNames = normalize_args(vgNames)
         with self._lock:
             for vgName in vgNames:
-                self._vgs[vgName] = Stub(vgName)
+                self._vgs[vgName] = Stale(vgName)
 
     def _invalidateAllVgs(self):
         with self._lock:
@@ -737,13 +737,13 @@ class LVMCache(object):
             if lvNames:
                 # Invalidate a specific LVs
                 for lvName in lvNames:
-                    self._lvs[(vgName, lvName)] = Stub(lvName)
+                    self._lvs[(vgName, lvName)] = Stale(lvName)
             else:
                 # Invalidate all the LVs in a given VG
                 for lv in self._lvs.values():
-                    if not isinstance(lv, Stub):
+                    if not isinstance(lv, Stale):
                         if lv.vg_name == vgName:
-                            self._lvs[(vgName, lv.name)] = Stub(lv.name)
+                            self._lvs[(vgName, lv.name)] = Stale(lv.name)
 
     def _invalidateAllLvs(self):
         with self._lock:
@@ -758,7 +758,7 @@ class LVMCache(object):
     def getPv(self, pvName):
         # Get specific PV
         pv = self._pvs.get(pvName)
-        if not pv or isinstance(pv, Stub):
+        if not pv or isinstance(pv, Stale):
             self._stats.miss()
             pvs = self._reloadpvs(pvName)
             pv = pvs.get(pvName)
@@ -774,7 +774,7 @@ class LVMCache(object):
         else:
             pvs = dict(self._pvs)
             stalepvs = [pv.name for pv in six.itervalues(pvs)
-                        if isinstance(pv, Stub)]
+                        if isinstance(pv, Stale)]
             if stalepvs:
                 self._stats.miss()
                 for name in stalepvs:
@@ -795,7 +795,7 @@ class LVMCache(object):
         vg = self.getVg(vgName)
         for pvName in vg.pv_name:
             pv = self._pvs.get(pvName)
-            if pv is None or isinstance(pv, Stub):
+            if pv is None or isinstance(pv, Stale):
                 stalepvs.append(pvName)
             else:
                 pvs.append(pv)
@@ -811,7 +811,7 @@ class LVMCache(object):
     def getVg(self, vgName):
         # Get specific VG
         vg = self._vgs.get(vgName)
-        if not vg or isinstance(vg, Stub):
+        if not vg or isinstance(vg, Stale):
             self._stats.miss()
             vgs = self._reloadvgs(vgName)
             vg = vgs.get(vgName)
@@ -838,7 +838,7 @@ class LVMCache(object):
         else:
             vgs = dict(self._vgs)
             stalevgs = [vg.name for vg in six.itervalues(vgs)
-                        if isinstance(vg, Stub)]
+                        if isinstance(vg, Stale)]
             if stalevgs:
                 self._stats.miss()
                 for name in stalevgs:
@@ -857,8 +857,8 @@ class LVMCache(object):
         cost us around same efforts anyhow and these stale LVs can
         be in the vg.
 
-        We never return Stub or Unreadable LVs when
-        getting all LVs for a VG, but may return a Stub or an Unreadable
+        We never return Stale or Unreadable LVs when
+        getting all LVs for a VG, but may return a Stale or an Unreadable
         LV when LV name is specified as argument.
 
         Arguments:
@@ -873,7 +873,7 @@ class LVMCache(object):
         if lvName:
             # vgName, lvName
             lv = self._lvs.get((vgName, lvName))
-            if not lv or isinstance(lv, Stub):
+            if not lv or isinstance(lv, Stale):
                 self._stats.miss()
                 # while we here reload all the LVs in the VG
                 lvs = self._reloadlvs(vgName)
@@ -891,7 +891,7 @@ class LVMCache(object):
             lvs = dict(self._lvs)
 
         lvs = [lv for lv in lvs.values()
-               if not isinstance(lv, Stub) and (lv.vg_name == vgName)]
+               if not isinstance(lv, Stale) and (lv.vg_name == vgName)]
         return lvs
 
     @property
@@ -902,7 +902,7 @@ class LVMCache(object):
         if self._stalelv:
             return True
 
-        return any(isinstance(lv, Stub)
+        return any(isinstance(lv, Stale)
                    for (vgn, _), lv in self._lvs.items()
                    if vgn == vg_name)
 
@@ -1323,7 +1323,7 @@ def removeVG(vgName):
     cmd = ["vgremove", "-f", vgName]
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     pvs = tuple(pvName for pvName, pv in six.iteritems(_lvminfo._pvs)
-                if not isinstance(pv, Stub) and pv.vg_name == vgName)
+                if not isinstance(pv, Stale) and pv.vg_name == vgName)
     # PVS needs to be reloaded anyhow: if vg is removed they are staled,
     # if vg remove failed, something must be wrong with devices and we want
     # cache updated as well
@@ -1508,7 +1508,7 @@ def removeLVs(vgName, lvNames):
             log.warning("Removing active volume %s/%s" % (vgName, lvName))
 
     # LV exists or not in cache, attempting to remove it.
-    # Removing Stubs also. Active Stubs should raise.
+    # Removing Stales also. Active Stales should raise.
     # Destroy LV
     # Fix me:removes active LVs too. "-f" should be removed.
     cmd = ["lvremove", "-f"]
@@ -1760,7 +1760,7 @@ def getFirstExt(vg, lv):
 def getVgMetadataPv(vgName):
     pvs = _lvminfo.getPvs(vgName)
     mdpvs = [pv for pv in pvs
-             if not isinstance(pv, Stub) and _isMetadataPv(pv)]
+             if not isinstance(pv, Stale) and _isMetadataPv(pv)]
     if len(mdpvs) != 1:
         raise se.UnexpectedVolumeGroupMetadata("Expected one metadata pv in "
                                                "vg: %s, vg pvs: %s" %

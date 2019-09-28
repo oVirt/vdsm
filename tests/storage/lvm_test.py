@@ -697,7 +697,7 @@ def stale_pv(tmp_storage):
 
 @requires_root
 @pytest.mark.root
-def test_pv_stale_reload_one_stub(stale_pv):
+def test_pv_stale_reload_one_stale(stale_pv):
     vg_name, good_pv_name, stale_pv_name = stale_pv
 
     # Invalidate VG and its PVs.
@@ -731,7 +731,7 @@ def test_pv_stale_reload_one_clear(stale_pv):
 
 @requires_root
 @pytest.mark.root
-def test_pv_stale_reload_all_stub(stale_pv):
+def test_pv_stale_reload_all_stale(stale_pv):
     vg_name, good_pv_name, stale_pv_name = stale_pv
 
     # Invalidate VG and its PVs.
@@ -915,7 +915,7 @@ def test_vg_invalidate(tmp_storage):
 
     assert lvm._lvminfo._pvs == {dev1: pv1, dev2: pv2}
     assert lvm._lvminfo._vgs == {
-        vg1_name: lvm.Stub(vg1_name),
+        vg1_name: lvm.Stale(vg1_name),
         vg2_name: vg2,
     }
     assert lvm._lvminfo._lvs == {
@@ -956,8 +956,8 @@ def test_vg_invalidate_lvs(tmp_storage):
     lvm.invalidateVG(vg_name)
 
     assert lvm._lvminfo._pvs == {dev: pv}
-    assert lvm._lvminfo._vgs == {vg_name: lvm.Stub(vg_name)}
-    assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stub("lv1")}
+    assert lvm._lvminfo._vgs == {vg_name: lvm.Stale(vg_name)}
+    assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stale("lv1")}
 
 
 @requires_root
@@ -991,8 +991,8 @@ def test_vg_invalidate_lvs_pvs(tmp_storage):
     # Invalidate VG including LVs and PVs.
     lvm.invalidateVG(vg_name, invalidatePVs=True)
 
-    assert lvm._lvminfo._vgs == {vg_name: lvm.Stub(vg_name)}
-    assert lvm._lvminfo._pvs == {dev: lvm.Stub(dev)}
+    assert lvm._lvminfo._vgs == {vg_name: lvm.Stale(vg_name)}
+    assert lvm._lvminfo._pvs == {dev: lvm.Stale(dev)}
 
     clear_stats()
     lvm._lvminfo.getPvs(vg_name)
@@ -1000,7 +1000,7 @@ def test_vg_invalidate_lvs_pvs(tmp_storage):
     # There are stale PVs for the VG so getPVs() will have another cache miss.
     check_stats(hits=0, misses=2)
 
-    assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stub("lv1")}
+    assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stale("lv1")}
 
 
 @requires_root
@@ -1132,7 +1132,7 @@ def stale_vg(tmp_storage):
 
 @requires_root
 @pytest.mark.root
-def test_vg_stale_reload_one_stub(stale_vg):
+def test_vg_stale_reload_one_stale(stale_vg):
     good_vg_name, stale_vg_name = stale_vg
 
     # Invalidate vgs.
@@ -1167,7 +1167,7 @@ def test_vg_stale_reload_one_clear(stale_vg):
 
 @requires_root
 @pytest.mark.root
-def test_vg_stale_reload_all_stub(stale_vg):
+def test_vg_stale_reload_all_stale(stale_vg):
     good_vg_name, stale_vg_name = stale_vg
 
     # Invalidate vgs.
@@ -1459,7 +1459,7 @@ def test_lv_stale_cache_all(stale_lv):
 
 @requires_root
 @pytest.mark.root
-def test_lv_stale_reload_one_stub(stale_lv):
+def test_lv_stale_reload_one_stale(stale_lv):
     vg_name, good_lv_name, stale_lv_name = stale_lv
 
     # Invalidate all lvs in single vg.
@@ -1493,7 +1493,7 @@ def test_lv_stale_reload_one_clear(stale_lv):
 
 @requires_root
 @pytest.mark.root
-def test_lv_stale_reload_all_stub(stale_lv):
+def test_lv_stale_reload_all_stale(stale_lv):
     vg_name, good_lv_name, stale_lv_name = stale_lv
 
     # Invalidate all lvs in single vg.
@@ -1527,16 +1527,16 @@ def test_lv_reload_error_one(fake_devices, no_delay):
     # Should raise, but currently return None.
     assert lc.getLv("vg-name", "lv-name") is None
 
-    # Other lv is not affected since it was not a stub.
+    # Other lv is not affected since it was not a stale.
     assert lc._lvs == {("vg-name", "other-lv"): other_lv}
 
 
-def test_lv_reload_error_one_stub(fake_devices, no_delay):
+def test_lv_reload_error_one_stale(fake_devices, no_delay):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
     lc._lvs = {
-        ("vg-name", "lv-name"): lvm.Stub("lv-name"),
-        ("vg-name", "other-lv"): lvm.Stub("other-lv"),
+        ("vg-name", "lv-name"): lvm.Stale("lv-name"),
+        ("vg-name", "other-lv"): lvm.Stale("other-lv"),
     }
     lv = lc.getLv("vg-name", "lv-name")
 
@@ -1552,12 +1552,12 @@ def test_lv_reload_error_one_stub(fake_devices, no_delay):
     assert isinstance(lv, lvm.Unreadable)
 
 
-def test_lv_reload_error_one_stub_other_vg(fake_devices, no_delay):
+def test_lv_reload_error_one_stale_other_vg(fake_devices, no_delay):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
     lc._lvs = {
-        ("vg-name", "lv-name"): lvm.Stub("lv-name"),
-        ("other-vg", "other-lv"): lvm.Stub("other-lv"),
+        ("vg-name", "lv-name"): lvm.Stale("lv-name"),
+        ("other-vg", "other-lv"): lvm.Stale("other-lv"),
     }
     lc.getLv("vg-name", "lv-name")
 
@@ -1575,23 +1575,23 @@ def test_lv_reload_error_all(fake_devices, no_delay):
 def test_lv_reload_error_all_other_vg(fake_devices, no_delay):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
-    lc._lvs = {("vg-name", "lv-name"): lvm.Stub("lv-name")}
+    lc._lvs = {("vg-name", "lv-name"): lvm.Stale("lv-name")}
     lvs = lc.getLv("vg-name")
 
     # Mark lv as unreadable.
     assert lc._lvs == {("vg-name", "lv-name"): lvm.Unreadable("lv-name")}
 
-    # Currnetly we don't report stubs or unreadables lvs. This is not
+    # Currnetly we don't report stales or unreadables lvs. This is not
     # consistent with getLv(vg_name, lv_name).
     assert lvs == []
 
 
-def test_lv_reload_error_all_stub_other_vgs(fake_devices, no_delay):
+def test_lv_reload_error_all_stale_other_vgs(fake_devices, no_delay):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
     lc._lvs = {
-        ("vg-name", "lv-name"): lvm.Stub("lv-name"),
-        ("other-vg", "other-lv"): lvm.Stub("other-lv"),
+        ("vg-name", "lv-name"): lvm.Stale("lv-name"),
+        ("other-vg", "other-lv"): lvm.Stale("other-lv"),
     }
     lc.getLv("vg-name")
 
