@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from collections import defaultdict
 import itertools
 
 import six
@@ -511,30 +512,18 @@ class Network(object):
             )
             for netname, netattrs in six.viewitems(networks)
         ]
-        interfaces_state = {}
+        interfaces_state = Network._merge_sb_ifaces(nets)
         routes_state = []
         dns_state = {}
         droute_net = None
         for net in nets:
-            ifaces = (
-                (iface[Interface.NAME], iface)
-                for iface in (
-                    net.southbound_iface_state,
-                    net.vlan_iface_state,
-                    net.bridge_iface_state,
-                )
-                if iface
-            )
-            for ifname, iface in ifaces:
-                if ifname in interfaces_state:
-                    # In case there is already state of interface present
-                    # we should just update the state to prevent overwriting
-                    # e.g. {'name': 'eth0', 'state': 'up',
-                    # 'ipv4': {..}, 'ipv6': {..}}
-                    # by {'name': 'eth0', 'state': 'up'}
-                    interfaces_state[ifname].update(iface)
-                else:
-                    interfaces_state[ifname] = iface
+            if net.vlan_iface_state:
+                vlan_iface_name = net.vlan_iface_state[Interface.NAME]
+                interfaces_state[vlan_iface_name] = net.vlan_iface_state
+            if net.bridge_iface_state:
+                bridge_iface_name = net.bridge_iface_state[Interface.NAME]
+                interfaces_state[bridge_iface_name] = net.bridge_iface_state
+
             routes_state += net.routes_state
             net_dns_state = net.dns_state
             if net_dns_state is not None:
@@ -569,6 +558,29 @@ class Network(object):
                 interfaces_state[ifnet] = {Interface.NAME: ifnet}
 
         return interfaces_state, routes_state, dns_state
+
+    @staticmethod
+    def _merge_sb_ifaces(nets):
+        sb_ifaces_by_name = Network._collect_sb_ifaces_by_name(nets)
+
+        sb_ifaces = {}
+        for ifname, ifstates in six.viewitems(sb_ifaces_by_name):
+            sb_ifaces[ifname] = {}
+            for ifstate in ifstates:
+                # Combine southbound interface states into one.
+                # These may appear as a base of a vlan on one hand and a
+                # bridgeless network top interface on the other hand.
+                sb_ifaces[ifname].update(ifstate)
+        return sb_ifaces
+
+    @staticmethod
+    def _collect_sb_ifaces_by_name(nets):
+        sb_ifaces_by_name = defaultdict(list)
+        for net in nets:
+            if net.southbound_iface_state:
+                sb_name = net.southbound_iface_state[Interface.NAME]
+                sb_ifaces_by_name[sb_name].append(net.southbound_iface_state)
+        return sb_ifaces_by_name
 
 
 def _merge_state(interfaces_state, routes_state, dns_state):
