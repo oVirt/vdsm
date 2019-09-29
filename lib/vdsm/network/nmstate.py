@@ -215,6 +215,16 @@ class Network(object):
         self._name = netconf.name
         self._to_remove = netconf.remove
 
+        self._sb_iface_state = None
+        self._vlan_iface_state = None
+        self._bridge_iface_state = None
+        self._route_state = None
+        self._dns_state = None
+
+        self._create_interfaces_state()
+        self._create_routes()
+        self._create_dns()
+
     @property
     def name(self):
         return self._name
@@ -242,20 +252,26 @@ class Network(object):
         return self._to_remove
 
     @property
-    def interfaces_state(self):
-        if self._to_remove:
-            return {}, self._remove_vlan_iface(), self._remove_bridge_iface()
+    def southbound_iface_state(self):
+        return self._sb_iface_state
 
-        sb_iface, vlan_iface, bridge_iface = ifaces = self._create_ifaces()
-        self._add_ip(sb_iface, vlan_iface, bridge_iface)
-        return ifaces
+    @property
+    def vlan_iface_state(self):
+        return self._vlan_iface_state
+
+    @property
+    def bridge_iface_state(self):
+        return self._bridge_iface_state
 
     @property
     def routes_state(self):
-        return self._create_routes()
+        return self._route_state
 
     @property
     def dns_state(self):
+        return self._dns_state
+
+    def _create_dns(self):
         """
         The DNS state may include one of the following outputs:
             - None: The network does not include any DNS info.
@@ -269,7 +285,20 @@ class Network(object):
             nameservers = self._netconf.nameservers
         elif self._runconf.default_route and self._runconf.nameservers:
             nameservers = []
-        return nameservers
+        self._dns_state = nameservers
+
+    def _create_interfaces_state(self):
+        if self._to_remove:
+            sb_iface = {}
+            vlan_iface = self._remove_vlan_iface()
+            bridge_iface = self._remove_bridge_iface()
+        else:
+            sb_iface, vlan_iface, bridge_iface = self._create_ifaces()
+            self._add_ip(sb_iface, vlan_iface, bridge_iface)
+
+        self._sb_iface_state = sb_iface
+        self._vlan_iface_state = vlan_iface
+        self._bridge_iface_state = bridge_iface
 
     def _create_ifaces(self):
         vlan_iface_state = self._create_vlan_iface()
@@ -432,7 +461,7 @@ class Network(object):
                 )
             )
 
-        return routes
+        self._route_state = routes
 
     def _create_add_default_route(self, next_hop_interface):
         return {
@@ -489,7 +518,11 @@ class Network(object):
         for net in nets:
             ifaces = (
                 (iface[Interface.NAME], iface)
-                for iface in net.interfaces_state
+                for iface in (
+                    net.southbound_iface_state,
+                    net.vlan_iface_state,
+                    net.bridge_iface_state,
+                )
                 if iface
             )
             for ifname, iface in ifaces:
