@@ -30,7 +30,6 @@ from vdsm.clientIF import clientIF
 from vdsm.common import response
 from vdsm.common import exception
 from vdsm.virt import vm
-from vdsm.virt.drivemonitor import DriveMonitor
 from vdsm.virt.vmdevices import hwclass
 
 
@@ -171,7 +170,7 @@ class FakeVm(vm.Vm):
     def __init__(self, devices=[]):
         self._devices = {hwclass.DISK: devices}
         self.id = "testvm"
-        self.drive_monitor = FakeDriveMonitor(log)
+        self.drive_monitor = FakeDriveMonitor()
         self._dom = FakeDomain()
         self.cif = FakeClientIF(log)
         # We don't always pass the destination drive
@@ -210,7 +209,15 @@ class FakeClientIF(clientIF):
         self.log = log
 
 
-class FakeDriveMonitor(DriveMonitor):
+class FakeDriveMonitor(object):
 
-    def __init__(self, log):
-        self._log = log
+    def __init__(self):
+        self.enabled = False
+        self.was_disabled = False
+
+    def disable(self):
+        self.was_disabled = True
+        self.enabled = False
+
+    def enable(self):
+        self.enabled = True
