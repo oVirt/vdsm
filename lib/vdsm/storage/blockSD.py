@@ -1413,9 +1413,9 @@ class BlockStorageDomain(sd.StorageDomain):
 
         try:
             masterMount.mount(vfstype=mount.VFS_EXT3)
-        except mount.MountError as ex:
-            rc, out = ex
-            raise se.BlockStorageDomainMasterMountError(masterfsdev, rc, out)
+        except mount.MountError as e:
+            raise se.BlockStorageDomainMasterMountError(
+                masterfsdev, e.rc, e.out, e.err)
 
         cmd = [constants.EXT_CHOWN, "%s:%s" %
                (constants.METADATA_USER, constants.METADATA_GROUP), masterDir]

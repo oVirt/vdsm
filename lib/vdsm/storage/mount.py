@@ -30,6 +30,7 @@ from collections import namedtuple
 
 from vdsm import constants
 from vdsm import utils
+from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import supervdsm
 from vdsm.common import systemd
@@ -95,8 +96,10 @@ def _unescape_spaces(path):
     return _ESCAPED_SPACES.sub(lambda s: chr(int(s.group()[1:], 8)), path)
 
 
-class MountError(RuntimeError):
-    pass
+class MountError(cmdutils.Error):
+    """
+    Raised when "mount" or "umount" command failed.
+    """
 
 
 def _resolveLoopDevice(path):
@@ -302,4 +305,4 @@ def _runcmd(cmd):
     if rc == 0:
         return
 
-    raise MountError(rc, b";".join((out, err)))
+    raise MountError(cmd, rc, out, err)

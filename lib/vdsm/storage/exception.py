@@ -756,10 +756,12 @@ class BlockStorageDomainMasterFSCKError(StorageException):
 
 
 class BlockStorageDomainMasterMountError(StorageException):
-    def __init__(self, masterfsdev, rc, out):
-        self.value = "masterfsdev=%s, rc=%s out=%s" % (masterfsdev, rc, out)
     code = 368
     message = "BlockSD master file system mount error"
+
+    def __init__(self, masterfsdev, rc, out, err):
+        self.value = ("masterfsdev={}, rc={}, out={!r}, err={!r}"
+                      .format(masterfsdev, rc, out, err))
 
 
 class StorageDomainNotActive(StorageException):
