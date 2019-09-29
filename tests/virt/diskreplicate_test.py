@@ -129,6 +129,9 @@ def test_diskreplicatefinish_job_not_finished():
 
     assert result == response.error("unavail")
 
+    # if pivot was not called the monitor should not have been disabled
+    assert not _vm.drive_monitor.was_disabled
+
 
 def test_blockjobabort_failed(monkeypatch):
     def raising_blockjobabort():
@@ -159,6 +162,10 @@ def test_replicatefinish_successful():
     assert len(_vm._devices) == 1
     assert (_vm._devices[hwclass.DISK][0]['domainID'] ==
             dst_drive_conf['domainID'])
+
+    # we need to check whether the monitor was disabled during the
+    # run of diskReplicateFinish
+    assert _vm.drive_monitor.was_disabled
 
 
 def make_drive(drive_conf, shared_type=storage.DRIVE_SHARED_TYPE.EXCLUSIVE):
