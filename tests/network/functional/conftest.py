@@ -20,9 +20,13 @@
 
 from __future__ import absolute_import
 
+from contextlib import contextmanager
+
 import pytest
 
 from .netfunctestlib import Target
+from . import netfunctestlib as nftestlib
+from testlib import mock
 
 from vdsm.network import initializer
 
@@ -32,6 +36,9 @@ def pytest_addoption(parser):
         '--target-service', action='store_const', const=Target.SERVICE
     )
     parser.addoption('--target-lib', action='store_const', const=Target.LIB)
+    parser.addoption(
+        '--skip-stable-link-monitor', action='store_const', const=True
+    )
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -55,3 +62,26 @@ def target(request):
 @pytest.fixture(scope='session', autouse=True)
 def init_lib():
     initializer.init_privileged_network_components()
+
+
+@pytest.fixture(scope='session')
+def skip_stable_link_monitor(request):
+    return request.config.getoption(
+        '--skip-stable-link-monitor', default=False
+    )
+
+
+@pytest.fixture(scope='session', autouse=True)
+def patch_stable_link_monitor(skip_stable_link_monitor):
+    if skip_stable_link_monitor:
+        with mock.patch.object(
+            nftestlib, 'monitor_stable_link_state', nullcontext
+        ):
+            yield
+            return
+    yield
+
+
+@contextmanager
+def nullcontext(*args, **kwargs):
+    yield

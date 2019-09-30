@@ -97,6 +97,7 @@ class TestNetworkWithBond(object):
                 adapter.assertNoNetwork(NETWORK1_NAME)
 
     @nftestlib.parametrize_bridged
+    @pytest.mark.nmstate
     def test_given_bonded_net_transfer_one_slave_to_new_net(
         self, switch, bridged
     ):
@@ -268,6 +269,7 @@ class TestReuseBond(object):
                     adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
     @nftestlib.parametrize_bridged
+    @pytest.mark.nmstate
     def test_add_vlaned_network_on_existing_bond(self, switch, bridged):
         if switch == 'ovs':
             pytest.xfail('Link is not stable when using OVS switch.')
