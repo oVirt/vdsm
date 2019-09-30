@@ -7,8 +7,9 @@ build_vdsm
 
 cp $PWD/lib/vdsm/api/vdsm-api.html "$EXPORT_DIR"
 
-# tests will be done elsewhere
-yum-builddep ./vdsm.spec
+# 'target_py' macro is set to 'py2' or 'py3' depending
+# on the value of 'CI_PYTHON' env variable. Tests will be done elsewhere.
+yum-builddep --define "target_py ${CI_PYTHON/thon/}" ./vdsm.spec
 make rpm
 
 find "$BUILDS" \
