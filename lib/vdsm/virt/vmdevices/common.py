@@ -318,7 +318,7 @@ def _device_elements(dom_desc, log):
         try:
             dev_type, dev_class = identify_from_xml_elem(dev_elem)
         except core.SkipDevice:
-            log.debug('skipping unhandled device: %r', dev_elem.tag)
+            pass
         else:
             yield dev_type, dev_class, dev_elem
 
