@@ -19,10 +19,10 @@ release_branches:
 stages:
   - build-artifacts:
       substages:
-        - build-py27:
+        - build-py2:
             distributions:
               - el7
-        - build-py37:
+        - build-py3:
             distributions:
               - fc30
   - check-patch:
