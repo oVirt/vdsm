@@ -24,6 +24,7 @@ stages:
               - el7
         - build-py3:
             distributions:
+              - el8
               - fc30
   - check-patch:
       archs:
