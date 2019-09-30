@@ -134,6 +134,7 @@ class TestNetworkWithBond(object):
                     adapter.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
 
     @nftestlib.parametrize_bridged
+    @pytest.mark.nmstate
     def test_given_bonded_net_replace_bond_with_a_slave(self, switch, bridged):
         with dummy_devices(2) as (nic1, nic2):
             NETBASE = {
@@ -157,6 +158,7 @@ class TestNetworkWithBond(object):
                 adapter.assertNetwork(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
                 adapter.assertNoBond(BOND_NAME)
 
+    @pytest.mark.nmstate
     def test_add_net_with_invalid_bond_name_fails(self, switch):
         INVALID_BOND_NAMES = ('bond', 'bond bad', 'jamesbond007')
 
@@ -170,6 +172,7 @@ class TestNetworkWithBond(object):
             assert cm.value.status == ne.ERR_BAD_BONDING
 
     @nftestlib.parametrize_bridged
+    @pytest.mark.nmstate
     def test_add_net_with_multi_vlans_over_a_bond(self, switch, bridged):
         with dummy_devices(2) as nics:
             netsetup = {}
@@ -189,6 +192,7 @@ class TestNetworkWithBond(object):
                     adapter.assertNetwork(netname, netattrs)
 
     @nftestlib.parametrize_bridged
+    @pytest.mark.nmstate
     def test_remove_bond_under_network(self, switch, bridged):
         with dummy_devices(1) as nics:
             NETCREATE = {
@@ -209,6 +213,7 @@ class TestNetworkWithBond(object):
                 adapter.assertNetwork(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
+    @pytest.mark.nmstate
     def test_remove_bonded_network_while_a_slave_is_missing(self, switch):
         with dummy_device() as nic1:
             NETCREATE = {
@@ -237,6 +242,7 @@ class TestNetworkWithBond(object):
 
 @nftestlib.parametrize_switch
 class TestReuseBond(object):
+    @pytest.mark.nmstate
     def test_detach_used_bond_from_bridge(self, switch):
         with dummy_device() as nic:
             NETCREATE = {
