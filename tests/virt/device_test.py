@@ -51,50 +51,23 @@ class TestVmDevices(XMLTestCase):
     PCI_ADDR_DICT = {'slot': '0x03', 'bus': '0x00', 'domain': '0x0000',
                      'function': '0x0', 'type': 'pci'}
 
-    GRAPHICS_XMLS = [
-        """
-        <graphics autoport="yes" defaultMode="secure"
-                  keymap="en-us" passwd="*****"
-                  passwdValidTo="1970-01-01T00:00:01" port="-1" type="vnc">
-            <listen network="vdsm-vmDisplay" type="network"/>
-        </graphics>""",
-
-        """
-        <graphics autoport="yes" defaultMode="secure"
-                  listen="0" passwd="*****"
-                  passwdValidTo="1970-01-01T00:00:01" port="-1"
-                  tlsPort="-1" type="spice">
-            <channel mode="secure" name="main"/>
-            <channel mode="secure" name="inputs"/>
-            <channel mode="secure" name="cursor"/>
-            <channel mode="secure" name="playback"/>
-            <channel mode="secure" name="record"/>
-            <channel mode="secure" name="display"/>
-        </graphics>""",
-
-        """
-        <graphics autoport="yes" defaultMode="secure"
-                  listen="0" passwd="*****"
-                  passwdValidTo="1970-01-01T00:00:01" port="-1"
-                  tlsPort="-1" type="spice">
-            <channel mode="secure" name="main"/>
-        </graphics>""",
-
-        """
-        <graphics autoport="yes" defaultMode="secure"
-                  listen="0" passwd="*****"
-                  passwdValidTo="1970-01-01T00:00:01" port="-1"
-                  tlsPort="-1" type="spice">
-            <clipboard copypaste="no"/>
-        </graphics>""",
-
-        """
-        <graphics autoport="yes" defaultMode="secure"
-                listen="0" passwd="*****"
-                passwdValidTo="1970-01-01T00:00:01" port="-1"
-                tlsPort="-1" type="spice">
-            <filetransfer enable="no"/>
-        </graphics>"""]
+    GRAPHICS_NO_DISPLAY_NETWORK = """
+        <graphics autoport="yes" passwd="xxx"
+                  passwdValidTo="1970-01-01T00:00:01"
+                  port="-1" tlsPort="-1" type="spice">
+          <channel mode="secure" name="main"/>
+          <listen type="address" address="1.2.3.4"/>
+        </graphics>
+    """
+    GRAPHICS_DISPLAY_NETWORK = """
+        <graphics autoport="yes" passwd="xxx"
+                  passwdValidTo="1970-01-01T00:00:01"
+                  port="5900" tlsPort="5901" type="spice">
+          <channel mode="secure" name="main"/>
+          <listen network="vdsm-ovirtmgmt" type="network"
+                  address="1.2.3.4"/>
+        </graphics>
+    """
 
     def setUp(self):
         self.conf = {
@@ -130,31 +103,6 @@ class TestVmDevices(XMLTestCase):
         self.graphics_devices = (self.vnc_graphics +
                                  self.spice_graphics)
 
-    def test_createXmlElem(self):
-        devices = '''
-          <graphics type="spice">
-            <listen type="network" network="vdsm-ovirtmgmt"/>
-          </graphics>
-        '''
-        expected_xml = '''<?xml version=\'1.0\' encoding=\'utf-8\'?>
-        <graphics device="spice" type="test" />'''
-        with fake.VM(self.conf, xmldevices=devices,
-                     create_device_objects=True) as testvm:
-            graphics = testvm._devices[hwclass.GRAPHICS][0]
-            element = graphics.createXmlElem('graphics', 'test',
-                                             attributes=('device', 'foo',))
-            result = xmlutils.tostring(element)
-            self.assertXMLEqual(result, expected_xml)
-
-    def testGraphicsDevice(self):
-        for dev in self.graphics_devices:
-            with fake.VM(xmldevices=dev, create_device_objects=True) as testvm:
-                self.assertTrue(testvm._devices[hwclass.GRAPHICS])
-
-    def testGraphicDeviceHeadless(self):
-        with fake.VM(create_device_objects=True) as testvm:
-            self.assertFalse(testvm._devices[hwclass.GRAPHICS])
-
     def testGraphicDeviceHeadlessSupported(self):
         conf = {}
         conf.update(self.conf)
@@ -166,15 +114,6 @@ class TestVmDevices(XMLTestCase):
         conf['xml'] = read_data('domain.xml')
         with fake.VM(conf) as testvm:
             self.assertTrue(testvm.hasSpice)
-
-    @permutations([['vnc', 'spice'], ['spice', 'vnc']])
-    def testGraphicsDeviceMultiple(self, primary, secondary):
-        devices = '\n'.join(['''
-<graphics type="{type_}" port="-1">
-  <listen type="network" network="vdsm-ovirtmgmt"/>
-</graphics>'''.format(type_=type_) for type_ in (primary, secondary)])
-        with fake.VM(xmldevices=devices, create_device_objects=True) as testvm:
-            self.assertEqual(len(testvm._devices['graphics']), 2)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: MockedProxy())
@@ -395,91 +334,6 @@ class TestVmDevices(XMLTestCase):
         finally:
             iface.teardown()
 
-    def testGetUnderlyingGraphicsDeviceInfo(self):
-        port = '6000'
-        tlsPort = '6001'
-        graphicsXML = """<?xml version="1.0" encoding="utf-8"?>
-        <domain type="kvm"
-          xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
-          <devices>
-            <graphics autoport="yes" keymap="en-us" passwd="*****"
-                  passwdValidTo="1970-01-01T00:00:01" port="%s"
-                  tlsPort="%s" type="spice">
-              <listen network="vdsm-vmDisplay" type="network"/>
-            </graphics>
-         </devices>
-        </domain>""" % (port, tlsPort)
-        with fake.VM() as testvm:
-            graphConf = {
-                'type': hwclass.GRAPHICS, 'device': 'spice',
-                'port': '-1', 'tlsPort': '-1'}
-            graphDev = vmdevices.graphics.Graphics(
-                testvm.log,
-                device='spice', port='-1', tlsPort='-1')
-
-            testvm.conf['devices'] = [graphConf]
-            device_conf = [graphDev]
-            testvm._domain = DomainDescriptor(graphicsXML)
-
-            vmdevices.graphics.Graphics.update_device_info(testvm, device_conf)
-
-            self.assertEqual(graphDev.port, port)
-            self.assertEqual(graphDev.tlsPort, tlsPort)
-            self.assertEqual(graphDev.port, graphConf['port'])
-            self.assertEqual(graphDev.tlsPort, graphConf['tlsPort'])
-
-    @MonkeyPatch(graphics, 'config', make_config([('vars', 'ssl', 'true')]))
-    def testGraphicsDeviceXML(self):
-        vmConfs = [
-            {'devices': [{
-                'type': 'graphics', 'device': 'vnc', 'port': '-1',
-                'specParams': {
-                    'displayNetwork': 'vmDisplay',
-                    'keyMap': 'en-us'}}]},
-
-            {'devices': [{
-                'type': 'graphics', 'device': 'spice', 'port': '-1',
-                'tlsPort': '-1', 'specParams': {
-                    'spiceSecureChannels':
-                        'smain,sinputs,scursor,splayback,srecord,sdisplay'}}]},
-
-            {'devices': [{
-                'type': 'graphics', 'device': 'spice', 'port': '-1',
-                'tlsPort': '-1', 'specParams': {
-                    'spiceSecureChannels': 'smain'}}]},
-
-            {'devices': [{
-                'type': 'graphics', 'device': 'spice', 'port': '-1',
-                'tlsPort': '-1', 'specParams': {
-                    'copyPasteEnable': 'false'}}]},
-
-            {'devices': [{
-                'type': 'graphics', 'device': 'spice', 'port': '-1',
-                'tlsPort': '-1', 'specParams': {
-                    'fileTransferEnable': 'false'}}]}]
-
-        for vmConf, xml in zip(vmConfs, self.GRAPHICS_XMLS):
-            self._verifyGraphicsXML(vmConf, xml)
-
-    def _verifyGraphicsXML(self, vmConf, xml):
-        spiceChannelXML = """
-            <channel type="spicevmc">
-                <target name="com.redhat.spice.0" type="virtio"/>
-            </channel>"""
-
-        vmConf.update(self.conf)
-        with fake.VM() as testvm:
-            dev = testvm._dev_spec_update_with_vm_conf(vmConf['devices'][0])
-        with MonkeyPatchScope([
-            (vmdevices.graphics.libvirtnetwork, 'networks', lambda: {})
-        ]):
-            graph = vmdevices.graphics.Graphics(self.log, **dev)
-        self.assert_dom_xml_equal(graph.getXML(), xml)
-
-        if graph.device == 'spice':
-            self.assert_dom_xml_equal(graph.getSpiceVmcChannelsXML(),
-                                      spiceChannelXML)
-
     @permutations([['''<hostdev managed="no" mode="subsystem" type="usb">
                           <alias name="testusb"/>
                           <source>
@@ -519,20 +373,35 @@ class TestVmDevices(XMLTestCase):
             self.assertEqual(getattr(details, f),
                              'graphics-card-1' if f == 'name' else '')
 
-    def testGraphicsNoDisplayNetwork(self):
-        with fake.VM() as testvm:
-            graphDev = vmdevices.graphics.Graphics(testvm.log)
+    def test_graphics_no_display_network(self):
+        dom = xmlutils.fromstring(self.GRAPHICS_NO_DISPLAY_NETWORK)
+        device = vmdevices.graphics.Graphics(dom, 'vmid')
+        self.assertIsNone(device._display_network())
 
-            self.assertNotIn('displayNetwork', graphDev.specParams)
+    def test_graphics_display_network(self):
+        dom = xmlutils.fromstring(self.GRAPHICS_DISPLAY_NETWORK)
+        device = vmdevices.graphics.Graphics(dom, '1234')
+        self.assertEqual(device._display_network(), 'ovirtmgmt')
 
-    def testGraphicsDisplayNetworkFromSpecParams(self):
-        with fake.VM() as testvm:
-            graphDev = vmdevices.graphics.Graphics(
-                testvm.log,
-                specParams={'displayNetwork': 'vmDisplaySpecParams'})
+    def test_display_info_no_display_network(self):
+        xml = ('<domain><devices>%s</devices></domain>' %
+               (self.GRAPHICS_NO_DISPLAY_NETWORK,))
+        domain = DomainDescriptor(xml)
+        info = vmdevices.graphics.display_info(domain)
+        self.assertEqual(info, [{'type': 'spice',
+                                 'port': '-1',
+                                 'tlsPort': '-1',
+                                 'ipAddress': '1.2.3.4'}])
 
-            self.assertEqual(graphDev.specParams['displayNetwork'],
-                             'vmDisplaySpecParams')
+    def test_display_info_display_network(self):
+        xml = ('<domain><devices>%s</devices></domain>' %
+               (self.GRAPHICS_DISPLAY_NETWORK,))
+        domain = DomainDescriptor(xml)
+        info = vmdevices.graphics.display_info(domain)
+        self.assertEqual(info, [{'type': 'spice',
+                                 'port': '5900',
+                                 'tlsPort': '5901',
+                                 'ipAddress': '1.2.3.4'}])
 
 
 class ConsoleTests(TestCaseBase):

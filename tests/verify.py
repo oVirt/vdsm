@@ -44,13 +44,6 @@ class DeviceMixin(object):
                     device['specParams'].get('iommuPlaceholder', False)):
                 continue
 
-            # Graphics device is a bit specific in a sense that it doesn't
-            # have alias or address. Port or tlsPort has to be present,
-            # everything else is unrelated to graphics devices
-            if device['type'] == hwclass.GRAPHICS:
-                self.assertTrue('port' in device or 'tlsPort' in device)
-                continue
-
             # Each device has alias.
             self.assertIn('alias', device)
             aliases.append(device['alias'])

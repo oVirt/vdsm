@@ -26,7 +26,6 @@ from vdsm.virt import metadata
 from vdsm.virt import vmxml
 
 from . import core
-from . import graphics
 from . import hostdevice
 from . import hwclass
 from . import lease
@@ -82,7 +81,6 @@ def update_device_info(vm, devices):
     """
     network.Interface.update_device_info(vm, devices[hwclass.NIC])
     storage.Drive.update_device_info(vm, devices[hwclass.DISK])
-    graphics.Graphics.update_device_info(vm, devices[hwclass.GRAPHICS])
     core.Balloon.update_device_info(vm, devices[hwclass.BALLOON])
     hostdevice.HostDevice.update_device_info(vm, devices[hwclass.HOSTDEV])
     lease.Device.update_device_info(vm, devices[hwclass.LEASE])
@@ -91,7 +89,6 @@ def update_device_info(vm, devices):
 _DEVICE_MAPPING = {
     hwclass.DISK: storage.Drive,
     hwclass.NIC: network.Interface,
-    hwclass.GRAPHICS: graphics.Graphics,
     hwclass.BALLOON: core.Balloon,
     hwclass.HOSTDEV: hostdevice.HostDevice,
     hwclass.LEASE: lease.Device,
@@ -111,21 +108,6 @@ def empty_dev_map():
 
 # metadata used by the devices. Unless otherwise specified, type and meaning
 # are the same as specified in vdsm-api.yml
-#
-# * graphics.Graphics:
-#    = match by: none, implicit matching. Only one SPICE device is allowed
-#                and the VNC device ignores the metadata
-#    = keys:
-#      - display_network
-#
-#    = example:
-#      <metadata xmlns:ovirt-vm='http://ovirt.org/vm/1.0'>
-#        <ovirt-vm:vm>
-#          <ovirt-vm:device type='graphics'>
-#            <ovirt-vm:display_network>ovirtmgmt</ovirt-vm:display_network>
-#          </ovirt-vm:device>
-#        </ovirt-vm:vm>
-#      </metadata>
 #
 # * network.Interface:
 #    = match by: 'mac_address'

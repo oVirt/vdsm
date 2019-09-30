@@ -20,8 +20,7 @@ class TestVmDevicesXmlParsing(XMLTestCase, verify.DeviceMixin):
             'displaySecurePort': '-1', 'memSize': '256', 'displayPort': '-1',
             'display': 'qxl'}
 
-        devices = [{'device': 'spice', 'type': 'graphics'},
-                   {'device': 'memballoon', 'specParams': {'model': 'virtio'},
+        devices = [{'device': 'memballoon', 'specParams': {'model': 'virtio'},
                     'type': 'balloon'},
                    {'device': 'bridge', 'nicModel': 'virtio',
                     'macAddr': '52:54:00:59:F5:3F', 'type': 'interface',

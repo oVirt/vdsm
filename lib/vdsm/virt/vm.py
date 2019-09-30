@@ -24,7 +24,6 @@ from __future__ import division
 # stdlib imports
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
-import itertools
 import json
 import logging
 import os
@@ -653,9 +652,6 @@ class Vm(object):
 
     def _dev_spec_update_with_vm_conf(self, dev):
         dev['vmid'] = self.id
-        if dev['type'] == hwclass.GRAPHICS:
-            if 'specParams' not in dev:
-                dev['specParams'] = {}
         if dev['type'] in (hwclass.DISK, hwclass.NIC):
             vm_custom = self._custom['custom']
             self.log.debug('device %s: adding VM custom properties %s',
@@ -1850,19 +1846,7 @@ class Vm(object):
         return self.migrateStatus()['progress']
 
     def _getGraphicsStats(self):
-        def getInfo(dev):
-            return {
-                'type': dev.device,
-                'port': dev.port,
-                'tlsPort': dev.tlsPort,
-                'ipAddress': dev.specParams.get('displayIp', '0'),
-            }
-
-        display_info = [
-            getInfo(dev) for dev in self._devices[hwclass.GRAPHICS]
-        ]
-
-        return {'displayInfo': display_info}
+        return {'displayInfo': vmdevices.graphics.display_info(self.domain)}
 
     def _getGuestStats(self):
         stats = self.guestAgent.getGuestInfo()
@@ -2165,7 +2149,7 @@ class Vm(object):
         Runs after the underlying libvirt domain was destroyed.
         """
         if devices is None:
-            devices = list(itertools.chain(*self._devices.values()))
+            devices = list(self._tracked_devices())
 
         for device in devices:
             try:
@@ -2173,6 +2157,14 @@ class Vm(object):
             except Exception:
                 self.log.exception('Failed to tear down device %s, device in '
                                    'inconsistent state', device.device)
+
+        for device in self._domain.get_device_elements('graphics'):
+            try:
+                vmdevices.graphics.Graphics(device, self.id).teardown()
+            except Exception:
+                self.log.exception('Failed to tear down device %s, device in '
+                                   'inconsistent state',
+                                   xmlutils.tostring(device, pretty=True))
 
     def _undefine_domain(self):
         if self._external:
@@ -2349,6 +2341,13 @@ class Vm(object):
         self._updateVcpuTuneInfo()
         self._updateVcpuLimit()
 
+    def _tracked_devices(self):
+        for dom in self._domain.get_device_elements('graphics'):
+            yield vmdevices.graphics.Graphics(dom, self.id)
+        for dev_objects in self._devices.values():
+            for dev_object in dev_objects[:]:
+                yield dev_object
+
     def _setup_devices(self):
         """
         Runs before the underlying libvirt domain is created.
@@ -2359,18 +2358,16 @@ class Vm(object):
         raised as we cannot continue the VM creation due to device failures.
         """
         done = []
-
-        for dev_objects in self._devices.values():
-            for dev_object in dev_objects[:]:
-                try:
-                    dev_object.setup()
-                except Exception:
-                    self.log.exception("Failed to setup device %s",
-                                       dev_object.device)
-                    self._teardown_devices(done)
-                    raise
-                else:
-                    done.append(dev_object)
+        for dev_object in self._tracked_devices():
+            try:
+                dev_object.setup()
+            except Exception:
+                self.log.exception("Failed to setup device %s",
+                                   dev_object.device)
+                self._teardown_devices(done)
+                raise
+            else:
+                done.append(dev_object)
 
     def _make_devices(self):
         disk_objs = self._perform_host_local_adjustment()
@@ -2671,15 +2668,7 @@ class Vm(object):
 
         domObj = ET.fromstring(domXML)
         for devXml in domObj.findall('.//devices/graphics'):
-            try:
-                devObj = self._lookupDeviceByIdentification(
-                    hwclass.GRAPHICS, devXml.get('type'))
-            except LookupError:
-                self.log.warning('configuration mismatch: graphics device '
-                                 'type %s found in domain XML, but not among '
-                                 'VM devices' % devXml.get('type'))
-            else:
-                devObj.setupPassword(devXml)
+            vmdevices.graphics.reset_password(devXml)
         return xmlutils.tostring(domObj)
 
     @api.guard(_not_migrating)
@@ -2747,16 +2736,6 @@ class Vm(object):
                        'xml': self._domain.xml,
                        }
         return {'status': doneCode, 'vmList': device_info}
-
-    def _lookupDeviceByIdentification(self, devType, devIdent):
-        for dev in self._devices[devType][:]:
-            try:
-                if dev.device == devIdent:
-                    return dev
-            except AttributeError:
-                continue
-        raise LookupError('Device object for device identified as %s '
-                          'of type %s not found' % (devIdent, devType))
 
     def _hotunplug_device(self, device_xml, device, device_hwclass,
                           update_metadata=False):
@@ -5246,12 +5225,6 @@ class Vm(object):
             alias = vmdevices.core.find_device_alias(deviceXML)
             if alias in aliasToDevice:
                 aliasToDevice[alias]._deviceXML = xmlutils.tostring(deviceXML)
-            elif vmxml.tag(deviceXML) == hwclass.GRAPHICS:
-                # graphics device do not have aliases, must match by type
-                graphicsType = vmxml.attr(deviceXML, 'type')
-                for devObj in self._devices[hwclass.GRAPHICS]:
-                    if devObj.device == graphicsType:
-                        devObj._deviceXML = xmlutils.tostring(deviceXML)
 
     def waitForMigrationDestinationPrepare(self):
         """Wait until paths are prepared for migration destination"""

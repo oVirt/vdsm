@@ -41,7 +41,6 @@ from vdsm.common import cpuarch
 from vdsm.common import define
 from vdsm.common import exception
 from vdsm.common import libvirtconnection
-from vdsm.common import password
 from vdsm.common import response
 from vdsm.common import xmlutils
 
@@ -90,15 +89,6 @@ _VM_PARAMS = {
 _TICKET_PARAMS = {
     'userName': 'admin',
     'userId': 'fdfc627c-d875-11e0-90f0-83df133b58cc'
-}
-
-
-_GRAPHICS_DEVICE_PARAMS = {
-    'deviceType': hwclass.GRAPHICS,
-    'password': password.ProtectedPassword('12345678'),
-    'ttl': 0,
-    'existingConnAction': 'disconnect',
-    'params': _TICKET_PARAMS
 }
 
 

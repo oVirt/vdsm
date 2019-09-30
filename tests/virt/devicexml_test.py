@@ -36,7 +36,6 @@ from vdsm.common import hostdev
 from vdsm.common import xmlutils
 
 from monkeypatch import MonkeyPatchScope, MonkeyPatch
-from testlib import make_config
 from testlib import permutations, expandPermutations
 from testlib import read_data
 from testlib import XMLTestCase
@@ -420,51 +419,6 @@ _CONTROLLERS_XML = [
      u"</controller>"],
 ]
 
-_GRAPHICS_DATA = [
-    # graphics_xml, display_ip, meta, src_ports, expected_ports
-    # both port requested, some features disabled
-    [
-        u'''<graphics type='spice' port='{port}' tlsPort='{tls_port}'
-                  autoport='yes' keymap='en-us'
-                  defaultMode='secure' passwd='*****'
-                  passwdValidTo='1970-01-01T00:00:01'>
-          <clipboard copypaste='no'/>
-          <filetransfer enable='no'/>
-          <listen type='network' network='vdsm-ovirtmgmt'/>
-        </graphics>''',
-        '127.0.0.1',
-        {},
-        {'port': '5900', 'tls_port': '5901'},
-        {'port': '-1', 'tls_port': '-1'},
-    ],
-    # only insecure port requested
-    [
-        u'''<graphics type='vnc' port='{port}' autoport='yes'
-                   keymap='en-us'
-                   defaultMode="secure" passwd="*****"
-                   passwdValidTo='1970-01-01T00:00:01'>
-           <listen type='network' network='vdsm-ovirtmgmt'/>
-        </graphics>''',
-        '192.168.1.1',
-        {},
-        {'port': '5900', 'tls_port': '5901'},
-        {'port': '-1', 'tls_port': '-1'},
-    ],
-    # listening on network, preserving autoselect
-    [
-        u'''<graphics type='vnc' port='{port}' autoport='yes'
-                   keymap='en-us'
-                   defaultMode="secure" passwd="*****"
-                   passwdValidTo='1970-01-01T00:00:01'>
-           <listen type='network' network='vdsm-ovirtmgmt'/>
-        </graphics>''',
-        '192.168.1.1',
-        {},
-        {'port': '-1', 'tls_port': '-1'},
-        {'port': '-1', 'tls_port': '-1'},
-    ],
-
-]
 _TRANSIENT_STORAGE_TEST_DATA = [
     [u'''<disk device="disk" snapshot="no" type="block">
         <source dev="/var/lib/vdsm/transient">
@@ -708,26 +662,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                     path="/dev/c2a6d7c8-8d81-4e01-9ed4-7eb670713448/leases"/>
         </lease>'''
         self._check_roundtrip(vmdevices.lease.Device, lease_xml)
-
-    @permutations(_GRAPHICS_DATA)
-    def test_graphics(self, graphics_xml, display_ip, meta,
-                      src_ports, expected_ports):
-        meta['vmid'] = 'VMID'
-        with MonkeyPatchScope([
-            (vmdevices.graphics, '_getNetworkIp', lambda net: display_ip),
-            (vmdevices.graphics.displaynetwork,
-                'create_network', lambda net, vmid: None),
-            (vmdevices.graphics.displaynetwork,
-                'delete_network', lambda net, vmid: None),
-            (vmdevices.graphics, 'config',
-                make_config([('vars', 'ssl', 'true')])),
-        ]):
-            self._check_roundtrip(
-                vmdevices.graphics.Graphics,
-                graphics_xml.format(**src_ports),
-                meta=meta,
-                expected_xml=graphics_xml.format(**expected_ports)
-            )
 
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
@@ -1269,17 +1203,10 @@ class DeviceFromXMLTests(XMLTestCase):
 
     def test_erroneous_device_init(self):
         dom_desc = DomainDescriptor(_INVALID_DEVICE_XML)
-        md_desc = metadata.Descriptor.from_xml(_INVALID_DEVICE_XML)
-        with self.assertRaises(vmxml.NotFound):
-            vmdevices.common.dev_map_from_domain_xml(
-                '1234', dom_desc, md_desc, self.log
-            )
-
-    def test_erroneous_device_init_ignored(self):
-        dom_desc = DomainDescriptor(_INVALID_DEVICE_XML)
-        md_desc = metadata.Descriptor.from_xml(_INVALID_DEVICE_XML)
-        self.assertNotRaises(vmdevices.common.dev_map_from_domain_xml,
-                             '1234', dom_desc, md_desc, self.log, noerror=True)
+        for dom in dom_desc.get_device_elements('graphics'):
+            dev = vmdevices.graphics.Graphics(dom, '1234')
+            with self.assertRaises(vmxml.NotFound):
+                dev._display_network()
 
 
 # invalid domain with only the relevant sections added
