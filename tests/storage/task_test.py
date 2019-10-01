@@ -108,7 +108,8 @@ def test_task_abort():
             "state": {
                 "code": 0,
                 "message": ("Task prepare failed: Task is aborted: "
-                            "'Unknown error encountered' - code 411")
+                            "'value=Unknown error encountered "
+                            "abortedcode=411'")
             },
             "task": {"id": "task-id", "state": "failed"}
         }
@@ -186,7 +187,8 @@ def test_task_rollback(add_recovery):
             "state": {
                 "code": 0,
                 "message": ("Task prepare failed: Task is aborted: "
-                            "'Unknown error encountered' - code 411")
+                            "'value=Unknown error encountered "
+                            "abortedcode=411'")
             },
             "task": {"id": "task-id", "state": "recovered"}
         }

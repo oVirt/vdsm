@@ -1011,12 +1011,8 @@ class TaskAborted(GeneralException):
     message = "Task is aborted"
 
     def __init__(self, value, abortedcode=code):
-        self.value = value
+        self.value = "value={} abortedcode={}".format(value, abortedcode)
         self.abortedcode = abortedcode
-
-    def __str__(self):
-        return ("%s: %s - code %s" %
-                (self.message, repr(self.value), self.abortedcode))
 
 
 class UnmanagedTask(GeneralException):
