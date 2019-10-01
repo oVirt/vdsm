@@ -405,7 +405,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     def readMetadataMapping(self):
         meta = self.getMetadata()
-        for key in meta.keys():
+        for key in list(meta):
             if not DMDK_PV_REGEX.match(key):
                 del meta[key]
 
@@ -539,7 +539,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         with self._metadata.transaction():
             mapping = self.getMetaDataMapping(self.sdUUID,
                                               self.readMetadataMapping())
-            for key in set(self._metadata.keys() + mapping.keys()):
+            for key in set(self._metadata) | set(mapping):
                 if DMDK_PV_REGEX.match(key):
                     if key in mapping:
                         self._metadata[key] = mapping[key]
