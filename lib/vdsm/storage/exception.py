@@ -84,12 +84,10 @@ class StorageException(GeneralException):
 
 class ResourceException(GeneralException):
     code = 3000
+    message = "Resource operation failed"
 
     def __init__(self, UUID):
-        self.value = UUID
-
-    def __str__(self):
-        return "%s, UUID: %s" % (self.message, repr(self.value))
+        self.value = "UUID={}".format(UUID)
 
 
 class VolumeGeneralException(GeneralException):
