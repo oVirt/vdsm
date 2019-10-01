@@ -48,7 +48,7 @@ class GlusterException(VdsmException):
 
     def __str__(self):
         return '{}: rc={} out={!r} err={!r}'.format(
-            self.message, self.rc, self.out, self.err)
+            self.msg, self.rc, self.out, self.err)
 
     def info(self):
         return {'code': self.code,
