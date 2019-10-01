@@ -29,19 +29,24 @@ from vdsm.common.exception import GeneralException
 from vdsm.storage import exception as storage_exception
 
 
-def test_collisions():
-    codes = defaultdict(list)
-
-    for name in dir(storage_exception):
-        obj = getattr(storage_exception, name)
+def find_module_exceptions(module, base_class=None):
+    for name in dir(module):
+        obj = getattr(module, name)
 
         if not isinstance(obj, type):
             continue
 
-        if not issubclass(obj, GeneralException):
+        if base_class and not issubclass(obj, base_class):
             continue
 
-        codes[obj.code].append(name)
+        yield obj
+
+
+def test_collisions():
+    codes = defaultdict(list)
+
+    for obj in find_module_exceptions(storage_exception, GeneralException):
+        codes[obj.code].append(obj.__name__)
 
     problems = [(k, v) for k, v in six.iteritems(codes)
                 if len(v) != 1 or k >= 5000]
