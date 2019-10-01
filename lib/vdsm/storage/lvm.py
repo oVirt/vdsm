@@ -439,7 +439,7 @@ class LVMCache(object):
             if rc != 0:
                 log.warning("lvm pvs failed: %s %s %s", str(rc), str(out),
                             str(err))
-                pvNames = pvNames if pvNames else self._pvs.keys()
+                pvNames = pvNames if pvNames else self._pvs
                 for p in pvNames:
                     if isinstance(self._pvs.get(p), Stub):
                         self._pvs[p] = Unreadable(self._pvs[p].name, True)
@@ -461,7 +461,7 @@ class LVMCache(object):
             if not pvName:
                 self._stalepv = False
                 # Remove stalePVs
-                stalePVs = [staleName for staleName in self._pvs.keys()
+                stalePVs = [staleName for staleName in self._pvs
                             if staleName not in updatedPVs]
                 for staleName in stalePVs:
                     log.warning("Removing stale PV: %s", staleName)
@@ -499,7 +499,7 @@ class LVMCache(object):
                 log.warning(
                     "Reloading VGs failed (vgs=%s rc=%s out=%r err=%r)",
                     vgNames, rc, out, err)
-                vgNames = vgNames if vgNames else self._vgs.keys()
+                vgNames = vgNames if vgNames else self._vgs
                 for v in vgNames:
                     if isinstance(self._vgs.get(v), Stub):
                         self._vgs[v] = Unreadable(self._vgs[v].name, True)
@@ -536,7 +536,7 @@ class LVMCache(object):
             if not vgName:
                 self._stalevg = False
                 # Remove stale VGs
-                staleVGs = [staleName for staleName in self._vgs.keys()
+                staleVGs = [staleName for staleName in self._vgs
                             if staleName not in updatedVGs]
                 for staleName in staleVGs:
                     removeVgMapping(staleName)
@@ -563,7 +563,7 @@ class LVMCache(object):
                 log.warning(
                     "Reloading LVs failed (vg=%s lvs=%s rc=%s out=%r err=%r)",
                     vgName, lvNames, rc, out, err)
-                lvNames = lvNames if lvNames else self._lvs.keys()
+                lvNames = lvNames if lvNames else self._lvs
                 for l in lvNames:
                     if isinstance(self._lvs.get(l), Stub):
                         self._lvs[l] = Unreadable(self._lvs[l].name, True)
@@ -587,7 +587,7 @@ class LVMCache(object):
                             if (vgName, lvName) not in updatedLVs)
             else:
                 # All the LVs in the VG
-                staleLVs = (lvName for v, lvName in self._lvs.keys()
+                staleLVs = (lvName for v, lvName in self._lvs
                             if (v == vgName) and
                             ((vgName, lvName) not in updatedLVs))
 
@@ -619,10 +619,9 @@ class LVMCache(object):
                     updatedLVs.add((lv.vg_name, lv.name))
 
             # Remove stales
-            for vgName, lvName in self._lvs.keys():
-                if (vgName, lvName) not in updatedLVs:
-                    self._lvs.pop((vgName, lvName), None)
-                    log.error("Removing stale lv: %s/%s", vgName, lvName)
+            for vgName, lvName in frozenset(self._lvs) - updatedLVs:
+                self._lvs.pop((vgName, lvName), None)
+                log.error("Removing stale lv: %s/%s", vgName, lvName)
             self._stalelv = False
         return dict(self._lvs)
 
