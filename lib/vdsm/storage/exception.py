@@ -92,6 +92,7 @@ class ResourceException(GeneralException):
 
 class VolumeGeneralException(GeneralException):
     code = 4000
+    message = "Volume exception"
 
     def __init__(self, volume, *args):
         try:
