@@ -36,7 +36,10 @@ TESTNET2 = 'testnet2'
 
 TESTBOND0 = 'testbond0'
 
+DEFAULT_MTU = 1500
+
 VLAN101 = 101
+VLAN102 = 102
 
 IPv4_ADDRESS1 = '192.0.2.1'
 IPv4_GATEWAY1 = '192.0.2.254'
@@ -57,6 +60,13 @@ DNS_SERVERS2 = ['9.10.11.12', '13.14.15.16']
 parametrize_bridged = pytest.mark.parametrize(
     'bridged', [False, True], ids=['bridgeless', 'bridged']
 )
+
+
+@pytest.fixture(autouse=True)
+def current_state_mock():
+    with mock.patch.object(nmstate, 'state_show') as state:
+        state.return_value = {nmstate.Interface.KEY: []}
+        yield state.return_value
 
 
 @parametrize_bridged
@@ -154,7 +164,7 @@ class TestBond(object):
         state = nmstate.generate_state(networks={}, bondings=bondings)
 
         bond0_state = _create_bond_iface_state(
-            TESTBOND0, 'balance-rr', [IFACE0, IFACE1]
+            TESTBOND0, 'balance-rr', [IFACE0, IFACE1], mtu=None
         )
 
         _disable_iface_ip(bond0_state)
@@ -170,7 +180,7 @@ class TestBond(object):
         state = nmstate.generate_state(networks={}, bondings=bondings)
 
         bond0_state = _create_bond_iface_state(
-            TESTBOND0, 'balance-rr', [IFACE0, IFACE1]
+            TESTBOND0, 'balance-rr', [IFACE0, IFACE1], mtu=None
         )
 
         expected_state = {nmstate.Interface.KEY: [bond0_state]}
@@ -187,7 +197,7 @@ class TestBond(object):
         state = nmstate.generate_state(networks={}, bondings=bondings)
 
         bond0_state = _create_bond_iface_state(
-            TESTBOND0, '802.3ad', [IFACE0, IFACE1], miimon='150'
+            TESTBOND0, '802.3ad', [IFACE0, IFACE1], mtu=None, miimon='150'
         )
 
         _disable_iface_ip(bond0_state)
@@ -330,7 +340,20 @@ class TestBondedNetwork(object):
 
     @parametrize_bridged
     @mock.patch.object(nmstate, 'RunningConfig')
-    def test_translate_remove_net_on_bond(self, rconfig_mock, bridged):
+    def test_translate_remove_net_on_bond(
+        self, rconfig_mock, bridged, current_state_mock
+    ):
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states.append(
+            {
+                'name': TESTBOND0,
+                nmstate.Interface.TYPE: nmstate.InterfaceType.BOND,
+                'state': 'up',
+                nmstate.Interface.MTU: DEFAULT_MTU,
+                'ipv4': {'enabled': False},
+                'ipv6': {'enabled': False},
+            }
+        )
         rconfig_mock.return_value.networks = {
             TESTNET1: {
                 'bonding': TESTBOND0,
@@ -347,6 +370,7 @@ class TestBondedNetwork(object):
                 {
                     'name': TESTBOND0,
                     'state': 'up',
+                    nmstate.Interface.MTU: DEFAULT_MTU,
                     'ipv4': {'enabled': False},
                     'ipv6': {'enabled': False},
                 }
@@ -389,8 +413,19 @@ class TestBondedNetwork(object):
     @parametrize_bridged
     @mock.patch.object(nmstate, 'RunningConfig')
     def test_translate_remove_bridged_net_and_bond(
-        self, rconfig_mock, bridged
+        self, rconfig_mock, bridged, current_state_mock
     ):
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states.append(
+            {
+                'name': TESTBOND0,
+                nmstate.Interface.TYPE: nmstate.InterfaceType.BOND,
+                'state': 'up',
+                nmstate.Interface.MTU: DEFAULT_MTU,
+                'ipv4': {'enabled': False},
+                'ipv6': {'enabled': False},
+            }
+        )
         rconfig_mock.return_value.networks = {
             TESTNET1: {
                 'bonding': TESTBOND0,
@@ -419,7 +454,26 @@ class TestBondedNetwork(object):
 
 @parametrize_bridged
 @mock.patch.object(nmstate, 'RunningConfig')
-def test_translate_remove_nets(rconfig_mock, bridged):
+def test_translate_remove_nets(rconfig_mock, bridged, current_state_mock):
+    current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+    current_ifaces_states += [
+        {
+            nmstate.Interface.NAME: IFACE0,
+            nmstate.Interface.TYPE: nmstate.InterfaceType.ETHERNET,
+            nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+            nmstate.Interface.MTU: DEFAULT_MTU,
+            nmstate.Interface.IPV4: {nmstate.InterfaceIP.ENABLED: False},
+            nmstate.Interface.IPV6: {nmstate.InterfaceIP.ENABLED: False},
+        },
+        {
+            nmstate.Interface.NAME: IFACE1,
+            nmstate.Interface.TYPE: nmstate.InterfaceType.ETHERNET,
+            nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+            nmstate.Interface.MTU: DEFAULT_MTU,
+            nmstate.Interface.IPV4: {nmstate.InterfaceIP.ENABLED: False},
+            nmstate.Interface.IPV6: {nmstate.InterfaceIP.ENABLED: False},
+        },
+    ]
     rconfig_mock.return_value.networks = {
         TESTNET1: {
             'nic': IFACE0,
@@ -526,7 +580,20 @@ def test_translate_add_network_with_default_route(bridged):
 
 @parametrize_bridged
 @mock.patch.object(nmstate, 'RunningConfig')
-def test_translate_remove_network_with_default_route(rconfig_mock, bridged):
+def test_translate_remove_network_with_default_route(
+    rconfig_mock, bridged, current_state_mock
+):
+    current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+    current_ifaces_states.append(
+        {
+            nmstate.Interface.NAME: IFACE0,
+            nmstate.Interface.TYPE: nmstate.InterfaceType.ETHERNET,
+            nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+            nmstate.Interface.MTU: DEFAULT_MTU,
+            nmstate.Interface.IPV4: {nmstate.InterfaceIP.ENABLED: False},
+            nmstate.Interface.IPV6: {nmstate.InterfaceIP.ENABLED: False},
+        }
+    )
     rconfig_mock.return_value.networks = {
         TESTNET1: {
             'nic': IFACE0,
@@ -813,7 +880,20 @@ class TestDns(object):
         assert state.get(nmstate.DNS.KEY) is None
 
     @mock.patch.object(nmstate, 'RunningConfig')
-    def test_dns_remove_network_with_default_route(self, rconfig_mock):
+    def test_dns_remove_network_with_default_route(
+        self, rconfig_mock, current_state_mock
+    ):
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states.append(
+            {
+                nmstate.Interface.NAME: IFACE0,
+                nmstate.Interface.TYPE: nmstate.InterfaceType.ETHERNET,
+                nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+                nmstate.Interface.MTU: DEFAULT_MTU,
+                nmstate.Interface.IPV4: {nmstate.InterfaceIP.ENABLED: False},
+                nmstate.Interface.IPV6: {nmstate.InterfaceIP.ENABLED: False},
+            }
+        )
         rconfig_networks = {
             TESTNET1: _create_network_config(
                 'nic',
@@ -867,27 +947,411 @@ class TestDns(object):
         assert expected_state == state[nmstate.DNS.KEY]
 
 
+class TestMtu(object):
+    def test_single_network_with_specific_mtu(self, current_state_mock):
+        mtu = 2000
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states += self._create_bond_slaves_states(
+            DEFAULT_MTU, include_type=True
+        )
+
+        networks = {
+            TESTNET1: _create_network_config(
+                'bonding', TESTBOND0, bridged=True, vlan=VLAN101, mtu=mtu
+            )
+        }
+        bondings = _create_bonding_config(slaves=[IFACE0, IFACE1])
+        state = nmstate.generate_state(networks=networks, bondings=bondings)
+
+        expected_slaves_states = self._create_bond_slaves_states(mtu)
+        expected_bond_state = self._create_bond_state(mtu)
+        expected_vlan_state = self._create_vlan_state(VLAN101, mtu)
+        expected_bridge_state = self._create_bridge_state(
+            TESTNET1, expected_vlan_state[nmstate.Interface.NAME], mtu
+        )
+        expected_state = {
+            nmstate.Interface.KEY: expected_slaves_states
+            + [expected_bond_state, expected_vlan_state, expected_bridge_state]
+        }
+        _sort_by_name(expected_state[nmstate.Interface.KEY])
+        assert expected_state == state
+
+    def test_two_networks_with_different_mtu_on_same_southbound_iface(
+        self, current_state_mock
+    ):
+        mtu_max = 2000
+        mtu_min = 1600
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states += self._create_bond_slaves_states(
+            DEFAULT_MTU, include_type=True
+        )
+
+        networks = {
+            TESTNET1: _create_network_config(
+                'bonding', TESTBOND0, bridged=True, vlan=VLAN101, mtu=mtu_max
+            ),
+            TESTNET2: _create_network_config(
+                'bonding', TESTBOND0, bridged=True, vlan=VLAN102, mtu=mtu_min
+            ),
+        }
+        bondings = _create_bonding_config(slaves=[IFACE0, IFACE1])
+        state = nmstate.generate_state(networks=networks, bondings=bondings)
+
+        expected_slaves_states = self._create_bond_slaves_states(mtu_max)
+        expected_bond_state = self._create_bond_state(mtu_max)
+        expected_vlan101_state = self._create_vlan_state(VLAN101, mtu_max)
+        expected_vlan102_state = self._create_vlan_state(VLAN102, mtu_min)
+        expected_bridge1_state = self._create_bridge_state(
+            TESTNET1, expected_vlan101_state[nmstate.Interface.NAME], mtu_max
+        )
+        expected_bridge2_state = self._create_bridge_state(
+            TESTNET2, expected_vlan102_state[nmstate.Interface.NAME], mtu_min
+        )
+        expected_state = {
+            nmstate.Interface.KEY: expected_slaves_states
+            + [
+                expected_bond_state,
+                expected_vlan101_state,
+                expected_vlan102_state,
+                expected_bridge1_state,
+                expected_bridge2_state,
+            ]
+        }
+        _sort_by_name(expected_state[nmstate.Interface.KEY])
+        assert expected_state == state
+
+    def test_add_network_with_higher_mtu(self, current_state_mock):
+        mtu = DEFAULT_MTU + 500
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states += self._create_bond_with_slaves_ifaces_states(
+            DEFAULT_MTU, include_type=True
+        )
+        current_ifaces_states += self._create_vlan_with_bridge_ifaces_states(
+            VLAN101, TESTNET1, DEFAULT_MTU
+        )
+
+        networks = {
+            TESTNET2: _create_network_config(
+                'bonding', TESTBOND0, bridged=True, vlan=VLAN102, mtu=mtu
+            )
+        }
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        expected_ifaces_states = self._create_vlan_with_bridge_ifaces_states(
+            VLAN102, TESTNET2, mtu
+        )
+        expected_ifaces_states += self._create_bond_slaves_states(mtu)
+        expected_bond_state = {
+            nmstate.Interface.NAME: TESTBOND0,
+            nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+            nmstate.Interface.MTU: mtu,
+        }
+        expected_ifaces_states.append(expected_bond_state)
+
+        _sort_by_name(expected_ifaces_states)
+        assert {nmstate.Interface.KEY: expected_ifaces_states} == state
+
+    def test_add_network_with_lower_mtu(self, current_state_mock):
+        mtu = DEFAULT_MTU - 500
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states += self._create_bond_with_slaves_ifaces_states(
+            DEFAULT_MTU, include_type=True
+        )
+        current_ifaces_states += self._create_vlan_with_bridge_ifaces_states(
+            VLAN101, TESTNET1, DEFAULT_MTU
+        )
+
+        networks = {
+            TESTNET2: _create_network_config(
+                'bonding', TESTBOND0, bridged=True, vlan=VLAN102, mtu=mtu
+            )
+        }
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        expected_ifaces_states = self._create_vlan_with_bridge_ifaces_states(
+            VLAN102, TESTNET2, mtu
+        )
+        expected_bond_state = {
+            nmstate.Interface.NAME: TESTBOND0,
+            nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+            nmstate.Interface.MTU: DEFAULT_MTU,
+        }
+        expected_ifaces_states.append(expected_bond_state)
+
+        _sort_by_name(expected_ifaces_states)
+        assert {nmstate.Interface.KEY: expected_ifaces_states} == state
+
+    @mock.patch.object(nmstate, 'RunningConfig')
+    def test_remove_network_with_highest_mtu(
+        self, rconfig_mock, current_state_mock
+    ):
+        high_mtu = DEFAULT_MTU + 500
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states += self._create_bond_with_slaves_ifaces_states(
+            high_mtu, include_type=True
+        )
+        current_ifaces_states += self._create_vlan_with_bridge_ifaces_states(
+            VLAN101, TESTNET1, DEFAULT_MTU
+        )
+        current_ifaces_states += self._create_vlan_with_bridge_ifaces_states(
+            VLAN102, TESTNET2, high_mtu
+        )
+
+        rconfig_mock.return_value.networks = {
+            TESTNET1: _create_network_config(
+                'bonding',
+                TESTBOND0,
+                bridged=True,
+                vlan=VLAN101,
+                mtu=DEFAULT_MTU,
+            ),
+            TESTNET2: _create_network_config(
+                'bonding', TESTBOND0, bridged=True, vlan=VLAN102, mtu=high_mtu
+            ),
+        }
+        networks = {TESTNET2: {'remove': True}}
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        expected_ifaces_states = [
+            {
+                nmstate.Interface.NAME: TESTNET2,
+                nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+            },
+            {
+                nmstate.Interface.NAME: '{}.{}'.format(TESTBOND0, VLAN102),
+                nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+            },
+        ]
+        expected_ifaces_states += self._create_bond_slaves_states(DEFAULT_MTU)
+        expected_bond_state = {
+            nmstate.Interface.NAME: TESTBOND0,
+            nmstate.Interface.MTU: DEFAULT_MTU,
+        }
+        expected_ifaces_states.append(expected_bond_state)
+
+        _sort_by_name(expected_ifaces_states)
+        assert {nmstate.Interface.KEY: expected_ifaces_states} == state
+
+    @mock.patch.object(nmstate, 'RunningConfig')
+    def test_remove_network_with_lowest_mtu(
+        self, rconfig_mock, current_state_mock
+    ):
+        low_mtu = DEFAULT_MTU - 500
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states += self._create_bond_with_slaves_ifaces_states(
+            DEFAULT_MTU, include_type=True
+        )
+        current_ifaces_states += self._create_vlan_with_bridge_ifaces_states(
+            VLAN101, TESTNET1, DEFAULT_MTU
+        )
+        current_ifaces_states += self._create_vlan_with_bridge_ifaces_states(
+            VLAN102, TESTNET2, low_mtu
+        )
+
+        rconfig_mock.return_value.networks = {
+            TESTNET1: _create_network_config(
+                'bonding',
+                TESTBOND0,
+                bridged=True,
+                vlan=VLAN101,
+                mtu=DEFAULT_MTU,
+            ),
+            TESTNET2: _create_network_config(
+                'bonding', TESTBOND0, bridged=True, vlan=VLAN102, mtu=low_mtu
+            ),
+        }
+        networks = {TESTNET2: {'remove': True}}
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        expected_ifaces_states = [
+            {
+                nmstate.Interface.NAME: TESTNET2,
+                nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+            },
+            {
+                nmstate.Interface.NAME: '{}.{}'.format(TESTBOND0, VLAN102),
+                nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+            },
+            {
+                nmstate.Interface.NAME: TESTBOND0,
+                nmstate.Interface.MTU: DEFAULT_MTU,
+            },
+        ]
+        _sort_by_name(expected_ifaces_states)
+        assert {nmstate.Interface.KEY: expected_ifaces_states} == state
+
+    @mock.patch.object(nmstate, 'RunningConfig')
+    def test_edit_network_to_higher_mtu(
+        self, rconfig_mock, current_state_mock
+    ):
+        high_mtu = DEFAULT_MTU + 500
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states += self._create_bond_with_slaves_ifaces_states(
+            DEFAULT_MTU, include_type=True
+        )
+        current_ifaces_states += self._create_vlan_with_bridge_ifaces_states(
+            VLAN101, TESTNET1, DEFAULT_MTU
+        )
+        current_ifaces_states += self._create_vlan_with_bridge_ifaces_states(
+            VLAN102, TESTNET2, DEFAULT_MTU
+        )
+
+        rconfig_mock.return_value.networks = {
+            TESTNET1: _create_network_config(
+                'bonding',
+                TESTBOND0,
+                bridged=True,
+                vlan=VLAN101,
+                mtu=DEFAULT_MTU,
+            ),
+            TESTNET2: _create_network_config(
+                'bonding',
+                TESTBOND0,
+                bridged=True,
+                vlan=VLAN102,
+                mtu=DEFAULT_MTU,
+            ),
+        }
+        networks = {
+            TESTNET2: _create_network_config(
+                'bonding', TESTBOND0, bridged=True, vlan=VLAN102, mtu=high_mtu
+            )
+        }
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        expected_ifaces_states = self._create_vlan_with_bridge_ifaces_states(
+            VLAN102, TESTNET2, high_mtu
+        )
+        expected_ifaces_states += self._create_bond_slaves_states(high_mtu)
+        expected_bond_state = {
+            nmstate.Interface.NAME: TESTBOND0,
+            nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+            nmstate.Interface.MTU: high_mtu,
+        }
+        expected_ifaces_states.append(expected_bond_state)
+        _sort_by_name(expected_ifaces_states)
+        assert {nmstate.Interface.KEY: expected_ifaces_states} == state
+
+    @mock.patch.object(nmstate, 'RunningConfig')
+    def test_edit_network_to_lower_mtu(self, rconfig_mock, current_state_mock):
+        lower_mtu = DEFAULT_MTU - 500
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states += self._create_bond_with_slaves_ifaces_states(
+            DEFAULT_MTU, include_type=True
+        )
+        current_ifaces_states += self._create_vlan_with_bridge_ifaces_states(
+            VLAN101, TESTNET1, DEFAULT_MTU
+        )
+        current_ifaces_states += self._create_vlan_with_bridge_ifaces_states(
+            VLAN102, TESTNET2, DEFAULT_MTU
+        )
+
+        rconfig_mock.return_value.networks = {
+            TESTNET1: _create_network_config(
+                'bonding',
+                TESTBOND0,
+                bridged=True,
+                vlan=VLAN101,
+                mtu=DEFAULT_MTU,
+            ),
+            TESTNET2: _create_network_config(
+                'bonding',
+                TESTBOND0,
+                bridged=True,
+                vlan=VLAN102,
+                mtu=DEFAULT_MTU,
+            ),
+        }
+        networks = {
+            TESTNET2: _create_network_config(
+                'bonding', TESTBOND0, bridged=True, vlan=VLAN102, mtu=lower_mtu
+            )
+        }
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        expected_ifaces_states = self._create_vlan_with_bridge_ifaces_states(
+            VLAN102, TESTNET2, lower_mtu
+        )
+        expected_bond_state = {
+            nmstate.Interface.NAME: TESTBOND0,
+            nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+            nmstate.Interface.MTU: DEFAULT_MTU,
+        }
+        expected_ifaces_states.append(expected_bond_state)
+        _sort_by_name(expected_ifaces_states)
+        assert {nmstate.Interface.KEY: expected_ifaces_states} == state
+
+    def _create_bond_with_slaves_ifaces_states(self, mtu, include_type=False):
+        ifstates = self._create_bond_slaves_states(mtu, include_type)
+        ifstates.append(self._create_bond_state(mtu))
+        return ifstates
+
+    def _create_vlan_with_bridge_ifaces_states(self, vlan_id, brname, mtu):
+        vlan_state = self._create_vlan_state(vlan_id, mtu)
+        vlan_ifname = vlan_state[nmstate.Interface.NAME]
+        return [
+            vlan_state,
+            self._create_bridge_state(brname, vlan_ifname, mtu),
+        ]
+
+    def _create_bond_slaves_states(self, mtu, include_type=False):
+        eth0_state = _create_ethernet_iface_state(IFACE0, include_type, mtu)
+        eth1_state = _create_ethernet_iface_state(IFACE1, include_type, mtu)
+        return [eth0_state, eth1_state]
+
+    def _create_bond_state(self, mtu):
+        bond0_state = _create_bond_iface_state(
+            TESTBOND0, 'balance-rr', [IFACE0, IFACE1], mtu
+        )
+        _disable_iface_ip(bond0_state)
+        return bond0_state
+
+    def _create_vlan_state(self, vlan_id, mtu):
+        vlan_state = _create_vlan_iface_state(TESTBOND0, vlan_id, mtu)
+        _disable_iface_ip(vlan_state)
+        return vlan_state
+
+    def _create_bridge_state(self, brname, portname, mtu):
+        bridge1_state = _create_bridge_iface_state(
+            brname,
+            portname,
+            mtu=mtu,
+            options=_generate_bridge_options(stp_enabled=False),
+        )
+        _disable_iface_ip(bridge1_state)
+        return bridge1_state
+
+
 def _sort_by_name(ifaces_states):
     ifaces_states.sort(key=lambda d: d['name'])
 
 
-def _create_ethernet_iface_state(name):
-    return {nmstate.Interface.NAME: name, nmstate.Interface.STATE: 'up'}
+def _create_ethernet_iface_state(name, include_type=False, mtu=DEFAULT_MTU):
+    state = {nmstate.Interface.NAME: name, nmstate.Interface.STATE: 'up'}
+    if include_type:
+        state[nmstate.Interface.TYPE] = nmstate.InterfaceType.ETHERNET
+    if mtu is not None:
+        state[nmstate.Interface.MTU] = mtu
+    return state
 
 
-def _create_bond_iface_state(name, mode, slaves, **options):
+def _create_bond_iface_state(name, mode, slaves, mtu=DEFAULT_MTU, **options):
     state = {
         nmstate.Interface.NAME: name,
         nmstate.Interface.TYPE: 'bond',
         nmstate.Interface.STATE: 'up',
         'link-aggregation': {'mode': mode, 'slaves': slaves},
     }
+    if mtu is not None:
+        state[nmstate.Interface.MTU] = mtu
     if options:
         state['link-aggregation']['options'] = options
     return state
 
 
-def _create_bridge_iface_state(name, port, state='up', options=None):
+def _create_bridge_iface_state(
+    name, port, state='up', mtu=DEFAULT_MTU, options=None
+):
     bridge_state = {
         nmstate.Interface.NAME: name,
         nmstate.Interface.STATE: state,
@@ -895,6 +1359,7 @@ def _create_bridge_iface_state(name, port, state='up', options=None):
 
     if state == 'up':
         bridge_state[nmstate.Interface.TYPE] = 'linux-bridge'
+        bridge_state[nmstate.Interface.MTU] = mtu
     if port:
         bridge_state[nmstate.LinuxBridge.CONFIG_SUBTREE] = {
             'port': [{'name': port}]
@@ -908,11 +1373,12 @@ def _generate_bridge_options(stp_enabled):
     return {'stp': {'enabled': stp_enabled}}
 
 
-def _create_vlan_iface_state(base, vlan):
+def _create_vlan_iface_state(base, vlan, mtu=DEFAULT_MTU):
     return {
         nmstate.Interface.NAME: base + '.' + str(vlan),
         nmstate.Interface.TYPE: 'vlan',
         nmstate.Interface.STATE: 'up',
+        nmstate.Interface.MTU: mtu,
         'vlan': {'id': vlan, 'base-iface': base},
     }
 
@@ -996,6 +1462,10 @@ def _create_default_route(gateway, next_hop, state=None):
     return route_state
 
 
+def _create_bonding_config(slaves):
+    return {TESTBOND0: {'nics': slaves, 'switch': 'legacy'}}
+
+
 def _create_network_config(
     if_type,
     if_name,
@@ -1003,6 +1473,7 @@ def _create_network_config(
     static_ip_configuration=None,
     dynamic_ip_configuration=None,
     vlan=None,
+    mtu=None,
     default_route=False,
     gateway=None,
     nameservers=None,
@@ -1014,6 +1485,7 @@ def _create_network_config(
     network_config.update(static_ip_configuration or {})
     network_config.update(dynamic_ip_configuration or {})
     network_config.update({'vlan': vlan} if vlan is not None else {})
+    network_config.update({'mtu': mtu} if mtu is not None else {})
     network_config.update({'defaultRoute': default_route})
     network_config.update({'gateway': gateway} if gateway else {})
     network_config.update(

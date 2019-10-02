@@ -150,9 +150,6 @@ def nmstate_schema():
         nmstate, 'InterfaceIPv6', NMStateInterfaceIPv6
     )
     p_dns = mock.patch.object(nmstate, 'DNS', NMStateDns)
-    p_show_interfaces = mock.patch.object(
-        nmstate, 'show_interfaces', lambda filter=None: {}
-    )
-    with p_iface, p_ifstate, p_iftype, p_bridge, p_show_interfaces:
+    with p_iface, p_ifstate, p_iftype, p_bridge:
         with p_bond, p_route, p_iface_ip, p_iface_ipv6, p_dns:
             yield

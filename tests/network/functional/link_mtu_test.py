@@ -47,6 +47,7 @@ def create_adapter(target):
 
 @nftestlib.parametrize_switch
 class TestNetworkMtu(object):
+    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     def test_add_net_with_mtu(self, switch, bridged):
         with dummy_devices(1) as (nic,):
@@ -62,6 +63,7 @@ class TestNetworkMtu(object):
                 adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
                 adapter.assertLinkMtu(nic, NETCREATE[NETWORK_NAME])
 
+    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_removing_a_net_updates_the_mtu(self, switch, bridged, bonded):
@@ -109,6 +111,7 @@ class TestNetworkMtu(object):
 
                     adapter.assertLinkMtu(vlan, NETWORK1_ATTRS)
 
+    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_adding_a_net_updates_the_mtu(self, switch, bridged, bonded):
@@ -209,6 +212,7 @@ class TestNetworkMtu(object):
                 if bonded:
                     adapter.assertLinkMtu(BOND_NAME, DEFAULT_MTU)
 
+    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_adding_a_net_with_mtu_lower_than_base_nic_mtu(

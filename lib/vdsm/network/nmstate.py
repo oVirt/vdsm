@@ -56,6 +56,9 @@ except ImportError:  # nmstate is not available
     state_show = None
 
 
+DEFAULT_MTU = 1500
+
+
 def setup(desired_state, verify_change):
     state_apply(desired_state, verify_change)
 
@@ -63,18 +66,114 @@ def setup(desired_state, verify_change):
 def generate_state(networks, bondings):
     """ Generate a new nmstate state given VDSM setup state format """
     rconfig = RunningConfig()
+    current_ifaces_state = show_interfaces()
 
     bond_ifstates = Bond.generate_state(bondings, rconfig.bonds)
     net_ifstates, routes_state, dns_state = Network.generate_state(
-        networks, rconfig.networks
+        networks, rconfig.networks, current_ifaces_state
     )
 
+    ifstates = _merge_bond_and_net_ifaces_states(bond_ifstates, net_ifstates)
+
+    _set_vlans_base_mtu(ifstates, current_ifaces_state)
+    _set_bond_slaves_mtu(ifstates, current_ifaces_state)
+
+    return _merge_state(ifstates, routes_state, dns_state)
+
+
+def _set_vlans_base_mtu(desired_ifstates, current_ifstates):
+    vlans_base_mtus = defaultdict(list)
+    ifaces_to_remove = set(
+        ifname
+        for ifname, ifstate in six.viewitems(desired_ifstates)
+        if ifstate.get(Interface.STATE) == InterfaceState.ABSENT
+    )
+    current_remaining_ifnames = set(current_ifstates) - ifaces_to_remove
+
+    current_remaining_vlan_ifaces = (
+        (ifname, ifstate)
+        for ifname, ifstate in six.viewitems(current_ifstates)
+        if ifname not in ifaces_to_remove
+        and ifstate[Interface.TYPE] == InterfaceType.VLAN
+    )
+    for ifname, ifstate in current_remaining_vlan_ifaces:
+        base_vlan = ifstate['vlan']['base-iface']
+        vlan_mtu = ifstate[Interface.MTU]
+        if base_vlan in current_remaining_ifnames:
+            vlans_base_mtus[base_vlan].append(vlan_mtu)
+
+    for base_ifname, vlans_mtus in six.viewitems(vlans_base_mtus):
+        mtu_max = max(vlans_mtus)
+        if base_ifname not in desired_ifstates:
+            desired_ifstates[base_ifname] = {Interface.NAME: base_ifname}
+        else:
+            mtu_max = max(
+                mtu_max, desired_ifstates[base_ifname][Interface.MTU]
+            )
+        desired_ifstates[base_ifname][Interface.MTU] = mtu_max
+
+
+def _set_bond_slaves_mtu(desired_ifstates, current_ifstates):
+    new_ifstates = {}
+    bond_desired_ifstates = (
+        (ifname, ifstate)
+        for ifname, ifstate in six.viewitems(desired_ifstates)
+        if (
+            ifstate.get(Interface.TYPE) == InterfaceType.BOND
+            or (
+                current_ifstates.get(ifname, {}).get(Interface.TYPE)
+                == InterfaceType.BOND
+            )
+        )
+    )
+    for bond_ifname, bond_ifstate in bond_desired_ifstates:
+        if not _is_iface_absent(bond_ifstate):
+            # The mtu is not defined when the bond is not part of a network.
+            bond_mtu = bond_ifstate.get(Interface.MTU, DEFAULT_MTU)
+            bond_config_state = bond_ifstate.get(
+                BondSchema.CONFIG_SUBTREE
+            ) or current_ifstates.get(bond_ifname, {}).get(
+                BondSchema.CONFIG_SUBTREE, {}
+            )
+            slaves = bond_config_state.get(BondSchema.SLAVES, ())
+            for slave in slaves:
+                current_slave_state = current_ifstates.get(slave)
+                desired_slave_state = desired_ifstates.get(slave)
+                if desired_slave_state:
+                    _set_slaves_mtu_based_on_bond(slave, bond_mtu)
+                elif (
+                    current_slave_state
+                    and bond_mtu != current_slave_state[Interface.MTU]
+                ):
+                    new_ifstates[slave] = {
+                        Interface.NAME: slave,
+                        Interface.STATE: InterfaceState.UP,
+                        Interface.MTU: bond_mtu,
+                    }
+    desired_ifstates.update(new_ifstates)
+
+
+def _set_slaves_mtu_based_on_bond(slave_state, bond_mtu):
+    """
+    In rare cases, a bond slave may be also a base of a VLAN.
+    For such cases, choose the highest MTU between the bond one and the one
+    that is already specified on the slave.
+    Note: It assumes that the slave has been assigned a mtu based on the
+    VLAN/s defined over it.
+    Note2: oVirt is not formally supporting such setups (VLAN/s over bond
+    slaves), the scenario is handled here for completeness.
+    """
+    if not _is_iface_absent(slave_state):
+        slave_mtu = slave_state[Interface.MTU]
+        slave_state[Interface.MTU] = max(bond_mtu, slave_mtu)
+
+
+def _merge_bond_and_net_ifaces_states(bond_ifstates, net_ifstates):
     for ifname, ifstate in six.viewitems(bond_ifstates):
-        if ifstate.get(Interface.STATE) != InterfaceState.ABSENT:
+        if not _is_iface_absent(ifstate):
             ifstate.update(net_ifstates.get(ifname, {}))
     net_ifstates.update(bond_ifstates)
-
-    return _merge_state(net_ifstates, routes_state, dns_state)
+    return net_ifstates
 
 
 def show_interfaces(filter=None):
@@ -183,6 +282,7 @@ class NetworkConfig(object):
         self.bond = attrs.get('bonding')
         self.bridged = attrs.get('bridged')
         self.stp = attrs.get('stp')
+        self.mtu = attrs.get('mtu', DEFAULT_MTU)
 
         self.ipv4addr = attrs.get('ipaddr')
         self.ipv4netmask = attrs.get('netmask')
@@ -211,6 +311,7 @@ class Network(object):
         """
         netconf: NetworkConfig object, representing a requested network setup.
         runconf: NetworkConfig object, representing an existing network setup.
+        current_ifaces_state: Dict, representing {name: iface-state}.
         """
         self._netconf = netconf
         self._runconf = runconf
@@ -325,6 +426,7 @@ class Network(object):
                 Interface.NAME: self._netconf.vlan_iface,
                 Interface.TYPE: InterfaceType.VLAN,
                 Interface.STATE: InterfaceState.UP,
+                Interface.MTU: self._netconf.mtu,
             }
         return {}
 
@@ -333,6 +435,7 @@ class Network(object):
             {
                 Interface.NAME: self._netconf.base_iface,
                 Interface.STATE: InterfaceState.UP,
+                Interface.MTU: self._netconf.mtu,
             }
             if self._netconf.base_iface
             else {}
@@ -344,6 +447,7 @@ class Network(object):
             Interface.NAME: self._name,
             Interface.TYPE: InterfaceType.LINUX_BRIDGE,
             Interface.STATE: InterfaceState.UP,
+            Interface.MTU: self._netconf.mtu,
             LinuxBridge.CONFIG_SUBTREE: {LinuxBridge.PORT_SUBTREE: port_state},
         }
         if options:
@@ -505,7 +609,7 @@ class Network(object):
         return {}
 
     @staticmethod
-    def generate_state(networks, running_networks):
+    def generate_state(networks, running_networks, current_ifaces_state):
         nets = [
             Network(
                 NetworkConfig(netname, netattrs),
@@ -531,12 +635,11 @@ class Network(object):
                 dns_state[net.name] = net_dns_state
             if net.default_route:
                 droute_net = net
-        current_state = show_interfaces()
         for net in nets:
             if _disable_base_iface_ip_stack(
                 net,
                 interfaces_state.get(net.base_iface),
-                current_state.get(net.base_iface),
+                current_ifaces_state.get(net.base_iface),
             ):
                 interfaces_state[net.base_iface].update(
                     {
@@ -546,9 +649,11 @@ class Network(object):
                 )
 
             if _init_base_iface(net, interfaces_state):
+                curr_mtu = current_ifaces_state[net.base_iface][Interface.MTU]
                 interfaces_state[net.base_iface] = {
                     Interface.NAME: net.base_iface,
                     Interface.STATE: InterfaceState.UP,
+                    Interface.MTU: curr_mtu,
                     Interface.IPV4: {InterfaceIP.ENABLED: False},
                     Interface.IPV6: {InterfaceIP.ENABLED: False},
                 }
@@ -572,6 +677,9 @@ class Network(object):
                 # These may appear as a base of a vlan on one hand and a
                 # bridgeless network top interface on the other hand.
                 sb_ifaces[ifname].update(ifstate)
+
+            mtu = max(ifstate[Interface.MTU] for ifstate in ifstates)
+            sb_ifaces[ifname][Interface.MTU] = mtu
         return sb_ifaces
 
     @staticmethod
@@ -627,6 +735,10 @@ def _disable_base_iface_ip_stack(net, desired_base_state, current_base_state):
         and Interface.IPV4 not in desired_base_state
         and Interface.IPV6 not in desired_base_state
     )
+
+
+def _is_iface_absent(ifstate):
+    return ifstate and ifstate.get(Interface.STATE) == InterfaceState.ABSENT
 
 
 def _is_iface_up(ifstate):
