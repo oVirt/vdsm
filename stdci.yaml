@@ -44,10 +44,10 @@ stages:
             distributions:
               - fc29
               - fc30
-        - tests-py27:
+        - tests-py2:
             runtime-requirements:
               host-distro: same
-        - tests-py37:
+        - tests-py3:
             runtime-requirements:
               host-distro: same
             distributions:
