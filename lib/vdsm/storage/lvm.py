@@ -144,7 +144,8 @@ backup {
 }
 """
 
-USER_DEV_LIST = filter(None, config.get("irs", "lvm_dev_whitelist").split(","))
+USER_DEV_LIST = [d for d in config.get("irs", "lvm_dev_whitelist").split(",")
+                 if d is not None]
 
 
 def _buildFilter(devices):
