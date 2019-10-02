@@ -128,17 +128,13 @@ test_modules = \
 	zombiereaper_test.py \
 	$(NULL)
 
-blacklisted_modules_py36 = \
+blacklisted_modules_py3 = \
 	bridge_test.py \
 	protocoldetector_test.py \
 	stompasyncdispatcher_test.py \
 	stomp_test.py \
 	unicode_test.py \
 	utils_test.py \
-	$(NULL)
-
-blacklisted_modules_py37 = \
-	$(blacklisted_modules_py36) \
 	$(NULL)
 
 CLEANFILES = \
@@ -272,10 +268,10 @@ check-$(1): BLACKLISTED_MODULES = $(blacklisted_modules_$(1))
 endef
 
 # Determine variable values for all 'check-py*' targets
-# (i.e. 'check-py36: PYTHON_EXE = python3.6').
+# (i.e. 'check-py3: PYTHON_EXE = python3').
 $(foreach i,\
-          $(shell seq $(words $(VDSM_SUPPORTED_PY_VERSIONS))),\
-		  $(eval $(call define_check_vars,$(word $(i), $(VDSM_SUPPORTED_PY_SHORT_VERSIONS)),$(word $(i), $(VDSM_SUPPORTED_PY_VERSIONS)))))
+          $(shell seq $(words $(VDSM_SUPPORTED_PY_MAJOR_VERSIONS))),\
+		  $(eval $(call define_check_vars,$(word $(i), $(VDSM_SUPPORTED_PY_MAJOR_SHORT_VERSIONS)),$(word $(i), $(VDSM_SUPPORTED_PY_MAJOR_VERSIONS)))))
 
 # Disable builtin (recursive) check target.
 check-recursive:
@@ -292,16 +288,16 @@ check-virt:
 	@$(top_srcdir)/tests/run_tests_local.sh $(virt_modules)
 
 .PHONY: check-target
-check-target: check-$(VDSM_TARGET_PY_SHORT_VERSION)
+check-target: check-$(VDSM_TARGET_PY_MAJOR_SHORT_VERSION)
 
 .PHONY: check-all
-check-all: $(VDSM_SUPPORTED_PY_SHORT_VERSIONS:%=check-%)
+check-all: $(VDSM_SUPPORTED_PY_MAJOR_SHORT_VERSIONS:%=check-%)
 
 .PHONY: check
 check: check-all
 
 # To run checks for specific interpreter version use
-# i.e. 'make -C tests check-py36' from root dir
+# i.e. 'make -C tests check-py3' from root dir
 check-%:
 	@echo '=== Running "$(@)" target with "$(PYTHON_EXE)" interpreter version.   ==='
 	@echo '=== To skip this step place "NOSE_EXCLUDE=.*" into your environment.    ==='
