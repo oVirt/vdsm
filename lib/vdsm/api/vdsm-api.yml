@@ -9865,17 +9865,6 @@ StoragePool.disconnectStorageServer:
         type:
         - *ConnectStorageServerStatus
 
-StoragePool.fence:
-    added: '3.1'
-    description: Fence the SPM host via the storage.
-    params:
-    -   description: The UUID of the Storage Pool
-        name: storagepoolID
-        type: *UUID
-    return:
-        description: SPM status information for the Storage Pool
-        type: *SpmStatus
-
 StoragePool.getBackedUpVmsInfo:
     added: '3.1'
     description: Get information about backed-up virtual machines from a Backup

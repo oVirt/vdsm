@@ -1079,11 +1079,6 @@ class StoragePool(APIBase):
         return self._irs.disconnectStorageServer(domainType, self._UUID,
                                                  connectionParams)
 
-    def fence(self):
-        lastOwner = None   # Unused
-        lastLver = None   # Unused
-        return self._irs.fenceSpmStorage(self._UUID, lastOwner, lastLver)
-
     def getBackedUpVmsInfo(self, storagedomainID, vmList):
         return self._irs.getVmsInfo(self._UUID, storagedomainID, vmList)
 

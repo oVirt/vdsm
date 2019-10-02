@@ -1680,10 +1680,10 @@ class SpmStatusError(StorageException):
     code = 654
     message = "Not SPM"
 
-
-class SpmFenceError(StorageException):
-    code = 655
-    message = "Error fencing SPM"
+# Removed Exception. Commented for code number reference.
+# class SpmFenceError(StorageException):
+#     code = 655
+#     message = "Error fencing SPM"
 
 
 class IsSpm(StorageException):

@@ -3431,31 +3431,6 @@ class HSM(object):
         misc.killall(lockCmd, signal.SIGKILL, group=True)
 
     @public
-    def fenceSpmStorage(self, spUUID, lastOwner, lastLver, options=None):
-        """
-        Fences the SPM via the storage. ?
-        Right now it just clears the owner and last ver fields.
-
-        :param spUUID: The UUID of the storage pool you want to modify.
-        :type spUUID: UUID
-        :param lastOwner: obsolete
-        :param lastLver: obsolete
-        :param options: ?
-
-        :returns: a dict containing the spms state?
-        :rtype: dict
-        """
-        vars.task.setDefaultException(
-            se.SpmFenceError("spUUID=%s, lastOwner=%s, lastLver=%s" %
-                             (spUUID, lastOwner, lastLver)))
-        pool = self.getPool(spUUID)
-        if isinstance(pool.getBackend(), StoragePoolDiskBackend):
-            pool.getBackend().invalidateMetadata()
-            vars.task.getExclusiveLock(STORAGE, spUUID)
-            pool.getBackend().forceFreeSpm()
-        return dict(spm_st=self._getSpmStatusInfo(pool))
-
-    @public
     def upgradeStoragePool(self, spUUID, targetDomVersion):
         targetDomVersion = int(targetDomVersion)
         # This lock has to be mutual with the pool metadata operations (like

@@ -37,7 +37,6 @@ from vdsm.storage.securable import secured
 from vdsm.storage.securable import unsecured
 from vdsm.storage.sp import LVER_INVALID
 from vdsm.storage.sp import SPM_ACQUIRED
-from vdsm.storage.sp import SPM_FREE
 from vdsm.storage.sp import SPM_ID_FREE
 from vdsm.config import config
 
@@ -327,14 +326,6 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
         }
 
     # Backend Specific Methods
-
-    @unsecured
-    def forceFreeSpm(self):
-        # DO NOT USE, STUPID, HERE ONLY FOR BC
-        # TODO: SCSI Fence the 'lastOwner'
-        # pylint: disable=unexpected-keyword-arg
-        self.setSpmStatus(LVER_INVALID, SPM_ID_FREE, __securityOverride=True)
-        self.pool.spmRole = SPM_FREE
 
     @classmethod
     def _getPoolMD(cls, domain):
