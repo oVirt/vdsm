@@ -40,8 +40,7 @@ script:
     docker run \
     --env TRAVIS_CI=1 \
     --env PYLINT_JOBS=1 \
-    --env NETWORK_PY27_COVERAGE=38 \
-    --env NETWORK_PY36_COVERAGE=38 \
+    --env NETWORK_COVERAGE=38 \
     --privileged \
     --rm \
     -it \
