@@ -50,8 +50,9 @@ stages:
               - fc29
         - tests-py3:
             runtime-requirements:
-              host-distro: same
+              host-distro: newer
             distributions:
+              - el8
               - fc30
   - check-network: &check-network
       archs:
