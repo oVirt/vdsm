@@ -1,15 +1,3 @@
-archs:
-  - ppc64le:
-      distributions:
-        - el7
-  - s390x:
-      distributions:
-        - fc29
-  - x86_64:
-      distributions:
-        - el7
-        - fc29
-
 release_branches:
   master:
     - ovirt-master
@@ -20,15 +8,19 @@ stages:
   - build-artifacts:
       substages:
         - build-py2:
-            distributions:
-              - el7
             archs:
-              - ppc64le
-              - x86_64
+              - ppc64le:
+                  distributions:
+                    - el7
+              - x86_64:
+                  distributions:
+                    - el7
         - build-py3:
-            distributions:
-              - el8
-              - fc30
+            archs:
+              - x86_64:
+                  distributions:
+                    - el8
+                    - fc30
   - check-patch:
       archs:
         - x86_64
@@ -40,6 +32,9 @@ stages:
                 - '*Makefile.am'
                 - 'automation/*'
                 - 'build-aux/*'
+            distributions:
+              - el7
+              - fc29
         - linters:
             distributions:
               - fc29
@@ -47,6 +42,9 @@ stages:
         - tests-py2:
             runtime-requirements:
               host-distro: same
+            distributions:
+              - el7
+              - fc29
         - tests-py3:
             runtime-requirements:
               host-distro: same
