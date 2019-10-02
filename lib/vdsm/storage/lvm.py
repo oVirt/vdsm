@@ -691,7 +691,7 @@ class LVMCache(object):
             if stalepvs:
                 reloaded = self._reloadpvs(stalepvs)
                 pvs.update(reloaded)
-        return pvs.values()
+        return list(six.itervalues(pvs))
 
     def getPvs(self, vgName):
         """
@@ -742,7 +742,7 @@ class LVMCache(object):
             if stalevgs:
                 reloaded = self._reloadvgs(stalevgs)
                 vgs.update(reloaded)
-        return vgs.values()
+        return list(six.itervalues(vgs))
 
     def getLv(self, vgName, lvName=None):
         # Checking self._stalelv here is suboptimal, because
@@ -790,7 +790,7 @@ class LVMCache(object):
             lvs = self._reloadAllLvs()
         else:
             lvs = dict(self._lvs)
-        return lvs.values()
+        return list(six.itervalues(lvs))
 
 _lvminfo = LVMCache()
 
