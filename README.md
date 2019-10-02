@@ -79,6 +79,31 @@ To update your system with local build's RPM:
     (cd ~/rpmbuild/RPMS && sudo yum upgrade */vdsm*.rpm)
 
 
+## CI
+
+Running tests locally is convenient, but before your changes can be
+merged, we need to test them on all supported distributions and
+architectures.
+
+When you submit patches to gerrit, oVirt's Jenkins CI will run its tests
+according to configuration in the stdci.yaml file.
+
+### Travis CI for storage patches
+
+oVirt's Jenkins CI is the integrated method for testing Vdsm patches,
+however for storage related patches we have to cover also 4k tests which
+are not covered currently by Jenkins CI. This can be achieved in a fast
+way manually and independently from gerrit by invoking Travis CI on your
+github branch:
+
+- Fork the project on github.
+- Visit https://travis-ci.org, register using your github account, and
+  enable builds for your Vdsm fork.
+- Push your changes to your github fork to trigger a build.
+
+See .travis.yml file for tested Travis platforms and tests configurations.
+
+
 ## Getting Help
 
 There are two mailing lists for discussions:
