@@ -90,12 +90,13 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
         env_update = [six.iteritems(params),
                       six.iteritems(vmconf.get('custom', {}))]
 
-        # Encode custom properties to UTF-8 and save them to scriptenv
-        # Pass str objects (byte-strings) without any conversion
+        # On py2 encode custom properties with default system encoding
+        # and save them to scriptenv. Pass str objects (byte-strings)
+        # without any conversion
         for k, v in itertools.chain(*env_update):
             try:
-                if isinstance(v, six.text_type):
-                    scriptenv[k] = v.encode('utf-8')
+                if six.PY2 and isinstance(v, six.text_type):
+                    scriptenv[k] = v.encode(sys.getfilesystemencoding())
                 else:
                     scriptenv[k] = v
             except UnicodeEncodeError:

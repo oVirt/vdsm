@@ -38,6 +38,11 @@ from vdsm.common import exception
 from vdsm.common import hooks
 
 
+def on_ascii_locale():
+    locale = sys.getfilesystemencoding().upper()
+    return locale == "ASCII" or locale == "ANSI_X3.4-1968"
+
+
 DirEntry = namedtuple("DirEntry", "name, mode, contents")
 FileEntry = namedtuple("FileEntry", "name, mode, contents")
 
@@ -349,12 +354,13 @@ def env_dump(hooks_dir):
         import os
         import pickle
         import six
+        import sys
 
         with open("{}", "wb") as dump_file:
             env = dict()
             for k, v in os.environ.items():
-                if isinstance(v, six.binary_type):
-                    v = v.decode("utf-8")
+                if six.PY2:
+                    v = v.decode(sys.getfilesystemencoding())
                 env[k] = v
             pickle.dump(env, dump_file)
         """).format(sys.executable, dump_path)
@@ -373,7 +379,9 @@ def env_dump(hooks_dir):
         {},
         {"abc": b"\xc4\x85b\xc4\x87".decode("utf-8")},
         {"abc": b"\xc4\x85b\xc4\x87".decode("utf-8")},
-        id="variable with local chars"
+        id="variable with local chars",
+        marks=pytest.mark.xfail(on_ascii_locale(),
+                                reason="no support for localized chars")
     ),
     pytest.param(
         {},
