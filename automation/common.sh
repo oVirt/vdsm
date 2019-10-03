@@ -95,10 +95,8 @@ generate_combined_coverage_report() {
     pwd
     ls .cov*
 
-    # 'CI_PYTHON' variable needs to take a 'pythonMAJOR' form
-    # (i.e. 'python3') to make running '${CI_PYTHON}-coverage' work
-    ${CI_PYTHON}-coverage combine .coverage-*
-    ${CI_PYTHON} ./profile coverage ${CI_PYTHON}-coverage html -d "$EXPORT_DIR/htmlcov"
+    ${CI_PYTHON} -m coverage combine .coverage-*
+    ${CI_PYTHON} ./profile coverage ${CI_PYTHON} -m coverage html -d "$EXPORT_DIR/htmlcov"
     popd
 
     # Export subsystem coverage reports for viewing in jenkins.
