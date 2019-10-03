@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,9 @@ from __future__ import division
 
 import io
 import os
+
+import pytest
+import six
 
 from vdsm import jobs
 from vdsm import virtsysprep
@@ -84,6 +87,7 @@ class SealJobTest(VdsmTestCase):
     def tearDownClass(cls):
         jobs.stop()
 
+    @pytest.mark.skipif(six.PY2, reason="test no longer supported on Python 2")
     @MonkeyPatch(virtsysprep, '_VIRTSYSPREP', FAKE_VIRTSYSPREP)
     def test_job(self):
         job_id = make_uuid()
