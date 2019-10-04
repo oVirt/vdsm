@@ -750,8 +750,8 @@ class Image:
                     dst_vol_allocation)
 
                 self.log.info(
-                    "Copy source %s:%s:%s to destination %s:%s:%s size=%s, "
-                    "initial size=%s",
+                    "Copy source %s:%s:%s to destination %s:%s:%s "
+                    "capacity=%s, initial size=%s",
                     sdUUID,
                     srcImgUUID,
                     srcVolUUID,
