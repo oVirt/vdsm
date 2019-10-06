@@ -50,12 +50,12 @@ from vdsm.storage import exception
 @expandPermutations
 class TestDirectioChecker(VdsmTestCase):
 
-    def setUp(self):
+    def setup_method(self, m):
         self.loop = asyncevent.EventLoop()
         self.results = []
         self.checks = 1
 
-    def tearDown(self):
+    def teardown_method(self, m):
         self.loop.close()
 
     def complete(self, result):
@@ -71,7 +71,8 @@ class TestDirectioChecker(VdsmTestCase):
         self.loop.run_forever()
         pprint.pprint(self.results)
         result = self.results[0]
-        self.assertRaises(exception.MiscFileReadException, result.delay)
+        with pytest.raises(exception.MiscFileReadException):
+            result.delay()
 
     def test_path_ok(self):
         self.checks = 1
@@ -83,7 +84,7 @@ class TestDirectioChecker(VdsmTestCase):
             result = self.results[0]
             delay = result.delay()
             print("delay:", delay)
-            self.assertEqual(type(delay), float)
+            assert type(delay) == float
 
     @MonkeyPatch(constants, "EXT_DD", "/no/such/executable")
     def test_executable_missing(self):
@@ -94,7 +95,8 @@ class TestDirectioChecker(VdsmTestCase):
             self.loop.run_forever()
             pprint.pprint(self.results)
             result = self.results[0]
-            self.assertRaises(exception.MiscFileReadException, result.delay)
+            with pytest.raises(exception.MiscFileReadException):
+                result.delay()
 
     @MonkeyPatch(constants, "EXT_TASKSET", "/no/such/executable")
     def test_taskset_missing(self):
@@ -105,7 +107,8 @@ class TestDirectioChecker(VdsmTestCase):
             self.loop.run_forever()
             pprint.pprint(self.results)
             result = self.results[0]
-            self.assertRaises(exception.MiscFileReadException, result.delay)
+            with pytest.raises(exception.MiscFileReadException):
+                result.delay()
 
     @pytest.mark.slow
     @permutations([
@@ -126,7 +129,7 @@ class TestDirectioChecker(VdsmTestCase):
                 r1 = self.results[i]
                 r2 = self.results[i + 1]
                 actual = r2.time - r1.time
-                self.assertAlmostEqual(actual, expected, delta=clock_res)
+                assert actual == pytest.approx(expected, abs=clock_res)
 
     # Handling timeout
 
@@ -147,10 +150,10 @@ class TestDirectioChecker(VdsmTestCase):
             checker.start()
             self.loop.run_forever()
 
-        self.assertEqual(len(self.results), 1)
-        with self.assertRaises(exception.MiscFileReadException) as e:
+        assert len(self.results) == 1
+        with pytest.raises(exception.MiscFileReadException) as e:
             self.results[0].delay()
-        self.assertIn("Read timeout", str(e.exception))
+        assert "Read timeout" in str(e.value)
 
     @MonkeyPatch(check, "_log", FakeLogger(logging.WARNING))
     def test_block_warnings(self):
@@ -173,11 +176,11 @@ class TestDirectioChecker(VdsmTestCase):
             checker.start()
             self.loop.run_forever()
 
-        self.assertEqual(len(check._log.messages), 1)
+        assert len(check._log.messages) == 1
         # Matching time value is too fragile
         r = re.compile(r"Checker '/path' is blocked for .+ seconds")
         msg = check._log.messages[0][1]
-        self.assertRegexpMatches(msg, r)
+        assert re.match(r, msg)
 
     # In the idle state the checker is not running so there is nothing to
     # cleanup.
@@ -185,14 +188,14 @@ class TestDirectioChecker(VdsmTestCase):
     def test_idle_stop_ignored(self):
         checker = check.DirectioChecker(self.loop, "/path", self.complete)
         checker.stop()  # Will be ignored
-        self.assertFalse(checker.is_running())
+        assert not checker.is_running()
 
     def test_idle_repr(self):
         checker = check.DirectioChecker(self.loop, "/path", self.complete)
         print(checker)
-        self.assertIn("/path", str(checker))
-        self.assertIn(check.IDLE, str(checker))
-        self.assertNotIn("next_check=", str(checker))
+        assert "/path" in str(checker)
+        assert check.IDLE in str(checker)
+        assert "next_check=" not in str(checker)
 
     # In the running state, the checker complete callback will stop the event
     # loop. We need to run the loop until it is stopped.
@@ -201,7 +204,8 @@ class TestDirectioChecker(VdsmTestCase):
         checker = check.DirectioChecker(self.loop, "/path", self.complete)
         checker.start()
         try:
-            self.assertRaises(RuntimeError, checker.start)
+            with pytest.raises(RuntimeError):
+                checker.start()
         finally:
             self.loop.run_forever()
 
@@ -210,9 +214,9 @@ class TestDirectioChecker(VdsmTestCase):
         checker.start()
         try:
             print(checker)
-            self.assertIn("/path", str(checker))
-            self.assertIn(check.RUNNING, str(checker))
-            self.assertIn("next_check=", str(checker))
+            assert "/path" in str(checker)
+            assert check.RUNNING in str(checker)
+            assert "next_check=" in str(checker)
         finally:
             self.loop.run_forever()
 
@@ -225,7 +229,7 @@ class TestDirectioChecker(VdsmTestCase):
         try:
             checker.stop()
             checker.stop()  # Will be ignored
-            self.assertTrue(checker.is_running())
+            assert checker.is_running()
         finally:
             start_thread(self.wait_for_checker, checker)
             self.loop.run_forever()
@@ -235,7 +239,8 @@ class TestDirectioChecker(VdsmTestCase):
         checker.start()
         try:
             checker.stop()
-            self.assertRaises(RuntimeError, checker.start)
+            with pytest.raises(RuntimeError):
+                checker.start()
         finally:
             start_thread(self.wait_for_checker, checker)
             self.loop.run_forever()
@@ -246,9 +251,9 @@ class TestDirectioChecker(VdsmTestCase):
         try:
             checker.stop()
             print(checker)
-            self.assertIn("/path", str(checker))
-            self.assertIn(check.STOPPING, str(checker))
-            self.assertNotIn("next_check=", str(checker))
+            assert "/path" in str(checker)
+            assert check.STOPPING in str(checker)
+            assert "next_check=" not in str(checker)
         finally:
             start_thread(self.wait_for_checker, checker)
             self.loop.run_forever()
@@ -261,13 +266,13 @@ class TestDirectioChecker(VdsmTestCase):
 @expandPermutations
 class TestDirectioCheckerWaiting(VdsmTestCase):
 
-    def setUp(self):
+    def setup_method(self, m):
         self.loop = asyncevent.EventLoop()
         self.thread = concurrent.thread(self.loop.run_forever)
         self.thread.start()
         self.completed = threading.Event()
 
-    def tearDown(self):
+    def teardown_method(self, m):
         self.loop.call_soon_threadsafe(self.loop.stop)
         self.thread.join()
         self.loop.close()
@@ -278,10 +283,10 @@ class TestDirectioCheckerWaiting(VdsmTestCase):
     def test_running_stop_during_wait(self):
         checker = check.DirectioChecker(self.loop, "/path", self.complete)
         self.loop.call_soon_threadsafe(checker.start)
-        self.assertTrue(self.completed.wait(1.0))
+        assert self.completed.wait(1.0)
         self.loop.call_soon_threadsafe(checker.stop)
-        self.assertTrue(checker.wait(1.0))
-        self.assertFalse(checker.is_running())
+        assert checker.wait(1.0)
+        assert not checker.is_running()
 
     @pytest.mark.slow
     def test_running_stop_during_check(self):
@@ -289,9 +294,9 @@ class TestDirectioCheckerWaiting(VdsmTestCase):
             checker = check.DirectioChecker(self.loop, "/path", self.complete)
             self.loop.call_soon_threadsafe(checker.start)
             self.loop.call_soon_threadsafe(checker.stop)
-            self.assertTrue(checker.wait(1.0))
-            self.assertFalse(self.completed.is_set())
-            self.assertFalse(checker.is_running())
+            assert checker.wait(1.0)
+            assert not self.completed.is_set()
+            assert not checker.is_running()
 
     @pytest.mark.slow
     def test_stopping_timeout(self):
@@ -299,18 +304,18 @@ class TestDirectioCheckerWaiting(VdsmTestCase):
             checker = check.DirectioChecker(self.loop, "/path", self.complete)
             self.loop.call_soon_threadsafe(checker.start)
             self.loop.call_soon_threadsafe(checker.stop)
-            self.assertFalse(checker.wait(0.1))
-            self.assertTrue(checker.is_running())
+            assert not checker.wait(0.1)
+            assert checker.is_running()
 
 
 @expandPermutations
 class TestDirectioCheckerTimings(VdsmTestCase):
 
-    def setUp(self):
+    def setup_method(self):
         self.loop = asyncevent.EventLoop()
         self.results = []
 
-    def tearDown(self):
+    def teardown_method(self):
         self.loop.close()
 
     def complete(self, result):
@@ -329,7 +334,7 @@ class TestDirectioCheckerTimings(VdsmTestCase):
                 checker.start()
             self.loop.run_forever()
             elapsed = time.time() - start
-            self.assertEqual(len(self.results), self.checkers)
+            assert len(self.results) == self.checkers
             print("%d checkers: %f seconds" % (checkers, elapsed))
             # Make sure all succeeded
             for res in self.results:
@@ -346,11 +351,12 @@ class TestDirectioCheckerTimings(VdsmTestCase):
             checker.start()
         self.loop.run_forever()
         elapsed = time.time() - start
-        self.assertEqual(len(self.results), self.checkers)
+        assert len(self.results) == self.checkers
         print("%d checkers: %f seconds" % (checkers, elapsed))
         # Make sure all failed
         for res in self.results:
-            self.assertRaises(exception.MiscFileReadException, res.delay)
+            with pytest.raises(exception.MiscFileReadException):
+                res.delay()
 
 
 @expandPermutations
@@ -382,16 +388,16 @@ class TestCheckResult(VdsmTestCase):
     ])
     def test_success(self, err, seconds):
         result = check.CheckResult("/path", 0, err, 0, 0)
-        self.assertEqual(result.delay(), seconds)
+        assert result.delay() == seconds
 
     def test_non_zero_exit_code(self):
         path = "/path"
         reason = "REASON"
         result = check.CheckResult(path, 1, reason, 0, 0)
-        with self.assertRaises(exception.MiscFileReadException) as ctx:
+        with pytest.raises(exception.MiscFileReadException) as ctx:
             result.delay()
-        self.assertIn(path, str(ctx.exception))
-        self.assertIn(reason, str(ctx.exception))
+        assert path in str(ctx.value)
+        assert reason in str(ctx.value)
 
     @permutations([
         (b"",),
@@ -403,18 +409,19 @@ class TestCheckResult(VdsmTestCase):
     ])
     def test_unexpected_output(self, err):
         result = check.CheckResult("/path", 0, err, 0, 0)
-        self.assertRaises(exception.MiscFileReadException, result.delay)
+        with pytest.raises(exception.MiscFileReadException):
+            result.delay()
 
 
 class TestCheckService(VdsmTestCase):
 
-    def setUp(self):
+    def setup_method(self, m):
         self.service = check.CheckService()
         self.service.start()
         self.result = None
         self.completed = threading.Event()
 
-    def tearDown(self):
+    def teardown_method(self, m):
         self.service.stop()
 
     def complete(self, result):
@@ -424,38 +431,38 @@ class TestCheckService(VdsmTestCase):
     def test_start_checking(self):
         with fake_dd(0.0):
             self.service.start_checking("/path", self.complete)
-            self.assertTrue(self.service.is_checking("/path"))
-            self.assertTrue(self.completed.wait(1.0))
-            self.assertEqual(self.result.rc, 0)
+            assert self.service.is_checking("/path")
+            assert self.completed.wait(1.0)
+            assert self.result.rc == 0
 
     def test_start_checking_already_watched(self):
         with fake_dd(0.0):
             self.service.start_checking("/path", self.complete)
-            with self.assertRaises(RuntimeError):
+            with pytest.raises(RuntimeError):
                 self.service.start_checking("/path", self.complete)
 
     def test_stop_checking(self):
         with fake_dd(0.0):
             self.service.start_checking("/path", self.complete)
             self.service.stop_checking("/path")
-            self.assertFalse(self.service.is_checking("/path"))
+            assert not self.service.is_checking("/path")
 
     def test_stop_checking_not_watched(self):
-        with self.assertRaises(KeyError):
+        with pytest.raises(KeyError):
             self.service.stop_checking("/path")
 
     def test_stop_checking_and_wait(self):
         with fake_dd(0.0):
             self.service.start_checking("/path", self.complete)
-            self.assertTrue(self.service.stop_checking("/path", timeout=1.0))
-            self.assertFalse(self.service.is_checking("/path"))
+            assert self.service.stop_checking("/path", timeout=1.0)
+            assert not self.service.is_checking("/path")
 
     @pytest.mark.slow
     def test_stop_checking_timeout(self):
         with fake_dd(0.2):
             self.service.start_checking("/path", self.complete)
-            self.assertFalse(self.service.stop_checking("/path", timeout=0.1))
-            self.assertFalse(self.service.is_checking("/path"))
+            assert not self.service.stop_checking("/path", timeout=0.1)
+            assert not self.service.is_checking("/path")
 
 
 @contextmanager
