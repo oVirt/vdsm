@@ -28,15 +28,10 @@ import pprint
 import re
 import threading
 import time
-from contextlib import contextmanager
 
 import pytest
 
 from fakelib import FakeLogger
-from monkeypatch import MonkeyPatch
-from monkeypatch import MonkeyPatchScope
-from testlib import VdsmTestCase
-from testlib import expandPermutations, permutations
 from testlib import start_thread
 from testlib import temporaryPath
 
@@ -47,8 +42,7 @@ from vdsm.storage import asyncevent
 from vdsm.storage import exception
 
 
-@expandPermutations
-class TestDirectioChecker(VdsmTestCase):
+class TestDirectioChecker:
 
     def setup_method(self, m):
         self.loop = asyncevent.EventLoop()
@@ -86,8 +80,8 @@ class TestDirectioChecker(VdsmTestCase):
             print("delay:", delay)
             assert type(delay) == float
 
-    @MonkeyPatch(constants, "EXT_DD", "/no/such/executable")
-    def test_executable_missing(self):
+    def test_executable_missing(self, monkeypatch):
+        monkeypatch.setattr(constants, "EXT_DD", "/no/such/executable")
         self.checks = 1
         with temporaryPath(data=b"blah") as path:
             checker = check.DirectioChecker(self.loop, path, self.complete)
@@ -98,8 +92,8 @@ class TestDirectioChecker(VdsmTestCase):
             with pytest.raises(exception.MiscFileReadException):
                 result.delay()
 
-    @MonkeyPatch(constants, "EXT_TASKSET", "/no/such/executable")
-    def test_taskset_missing(self):
+    def test_taskset_missing(self, monkeypatch):
+        monkeypatch.setattr(constants, "EXT_TASKSET", "/no/such/executable")
         self.checks = 1
         with temporaryPath(data=b"blah") as path:
             checker = check.DirectioChecker(self.loop, path, self.complete)
@@ -111,29 +105,32 @@ class TestDirectioChecker(VdsmTestCase):
                 result.delay()
 
     @pytest.mark.slow
-    @permutations([
-        # interval, delay, expected
+    @pytest.mark.parametrize('interval, delay, expected', [
         (0.20, 0.10, 0.20),
         (0.10, 0.12, 0.20),
     ])
-    def test_interval(self, interval, delay, expected):
+    def test_interval(self, fake_dd, interval, delay, expected):
         self.checks = 5
         clock_res = 0.01
-        with fake_dd(delay):
-            checker = check.DirectioChecker(self.loop, "/path", self.complete,
-                                            interval=interval)
-            checker.start()
-            self.loop.run_forever()
-            pprint.pprint(self.results)
-            for i in range(self.checks - 1):
-                r1 = self.results[i]
-                r2 = self.results[i + 1]
-                actual = r2.time - r1.time
-                assert actual == pytest.approx(expected, abs=clock_res)
+        fake_dd.configure(delay=delay)
+        checker = check.DirectioChecker(
+            self.loop,
+            "/path",
+            self.complete,
+            interval=interval)
+
+        checker.start()
+        self.loop.run_forever()
+        pprint.pprint(self.results)
+        for i in range(self.checks - 1):
+            r1 = self.results[i]
+            r2 = self.results[i + 1]
+            actual = r2.time - r1.time
+            assert actual == pytest.approx(expected, abs=clock_res)
 
     # Handling timeout
 
-    def test_timeout(self):
+    def test_timeout(self, fake_dd):
         # Expected events:
         # +0.0 start checker
         # +0.3 fail with timeout
@@ -144,19 +141,22 @@ class TestDirectioChecker(VdsmTestCase):
             self.results.append(result)
             self.loop.call_later(0.2, self.loop.stop)
 
-        with fake_dd(0.4):
-            checker = check.DirectioChecker(self.loop, "/path", complete,
-                                            interval=0.3)
-            checker.start()
-            self.loop.run_forever()
+        fake_dd.configure(delay=0.4)
+        checker = check.DirectioChecker(
+            self.loop,
+            "/path",
+            complete,
+            interval=0.3)
+        checker.start()
+        self.loop.run_forever()
 
         assert len(self.results) == 1
         with pytest.raises(exception.MiscFileReadException) as e:
             self.results[0].delay()
         assert "Read timeout" in str(e.value)
 
-    @MonkeyPatch(check, "_log", FakeLogger(logging.WARNING))
-    def test_block_warnings(self):
+    def test_block_warnings(self, monkeypatch, fake_dd):
+        monkeypatch.setattr(check, "_log", FakeLogger(logging.WARNING))
         # Expected events:
         # +0.0 start checker
         # +0.2 fail with timeout
@@ -170,11 +170,14 @@ class TestDirectioChecker(VdsmTestCase):
             self.loop.call_later(0.3, checker.stop)
             self.loop.call_later(0.4, self.loop.stop)
 
-        with fake_dd(0.6):
-            checker = check.DirectioChecker(self.loop, "/path", complete,
-                                            interval=0.2)
-            checker.start()
-            self.loop.run_forever()
+        fake_dd.configure(delay=0.6)
+        checker = check.DirectioChecker(
+            self.loop,
+            "/path",
+            complete,
+            interval=0.2)
+        checker.start()
+        self.loop.run_forever()
 
         assert len(check._log.messages) == 1
         # Matching time value is too fragile
@@ -263,8 +266,7 @@ class TestDirectioChecker(VdsmTestCase):
         self.loop.call_soon_threadsafe(self.loop.stop)
 
 
-@expandPermutations
-class TestDirectioCheckerWaiting(VdsmTestCase):
+class TestDirectioCheckerWaiting:
 
     def setup_method(self, m):
         self.loop = asyncevent.EventLoop()
@@ -289,27 +291,26 @@ class TestDirectioCheckerWaiting(VdsmTestCase):
         assert not checker.is_running()
 
     @pytest.mark.slow
-    def test_running_stop_during_check(self):
-        with fake_dd(0.2):
-            checker = check.DirectioChecker(self.loop, "/path", self.complete)
-            self.loop.call_soon_threadsafe(checker.start)
-            self.loop.call_soon_threadsafe(checker.stop)
-            assert checker.wait(1.0)
-            assert not self.completed.is_set()
-            assert not checker.is_running()
+    def test_running_stop_during_check(self, fake_dd):
+        fake_dd.configure(delay=0.2)
+        checker = check.DirectioChecker(self.loop, "/path", self.complete)
+        self.loop.call_soon_threadsafe(checker.start)
+        self.loop.call_soon_threadsafe(checker.stop)
+        assert checker.wait(1.0)
+        assert not self.completed.is_set()
+        assert not checker.is_running()
 
     @pytest.mark.slow
-    def test_stopping_timeout(self):
-        with fake_dd(0.2):
-            checker = check.DirectioChecker(self.loop, "/path", self.complete)
-            self.loop.call_soon_threadsafe(checker.start)
-            self.loop.call_soon_threadsafe(checker.stop)
-            assert not checker.wait(0.1)
-            assert checker.is_running()
+    def test_stopping_timeout(self, fake_dd):
+        fake_dd.configure(delay=0.2)
+        checker = check.DirectioChecker(self.loop, "/path", self.complete)
+        self.loop.call_soon_threadsafe(checker.start)
+        self.loop.call_soon_threadsafe(checker.stop)
+        assert not checker.wait(0.1)
+        assert checker.is_running()
 
 
-@expandPermutations
-class TestDirectioCheckerTimings(VdsmTestCase):
+class TestDirectioCheckerTimings:
 
     def setup_method(self):
         self.loop = asyncevent.EventLoop()
@@ -324,7 +325,7 @@ class TestDirectioCheckerTimings(VdsmTestCase):
             self.loop.stop()
 
     @pytest.mark.slow
-    @permutations([[1], [50], [100], [200]])
+    @pytest.mark.parametrize('checkers', [1, 50, 100, 200])
     def test_path_ok(self, checkers):
         self.checkers = checkers
         with temporaryPath(data=b"blah") as path:
@@ -341,7 +342,7 @@ class TestDirectioCheckerTimings(VdsmTestCase):
                 res.delay()
 
     @pytest.mark.slow
-    @permutations([[1], [50], [100], [200]])
+    @pytest.mark.parametrize('checkers', [1, 50, 100, 200])
     def test_path_missing(self, checkers):
         self.checkers = checkers
         start = time.time()
@@ -359,32 +360,30 @@ class TestDirectioCheckerTimings(VdsmTestCase):
                 res.delay()
 
 
-@expandPermutations
-class TestCheckResult(VdsmTestCase):
+class TestCheckResult:
 
-    @permutations([
-        # err, seconds
+    @pytest.mark.parametrize('err, seconds', [
         (b"1\n2\n1 byte (1 B) copied, 1 s, 1 B/s\n",
-            1.0),
+         1.0),
         (b"1\n2\n1024 bytes (1 kB) copied, 1 s, 1 kB/s\n",
-            1.0),
+         1.0),
         (b"1\n2\n1572864 bytes (1.5 MB) copied, 1.5 s, 1 MB/s\n",
-            1.5),
+         1.5),
         (b"1\n2\n1610612736 bytes (1.5 GB) copied, 1000.5 s, 1.53 MB/s\n",
-            1000.5),
+         1000.5),
         (b"1\n2\n479 bytes (479 B) copied, 5.6832e-05 s, 8.4 MB/s\n",
-            5.6832e-05),
+         5.6832e-05),
         (b"1\n2\n512 bytes (512e-3 MB) copied, 1 s, 512e-3 MB/s\n",
-            1.0),
+         1.0),
         (b"1\n2\n524288 bytes (512e3 B) copied, 1 s, 512e3 B/s\n",
-            1.0),
+         1.0),
         (b"1\n2\n517 bytes (517 B) copied, 0 s, Infinity B/s\n",
-            0.0),
+         0.0),
         (b"1\n2\n4096 bytes (4.1 kB, 4.0 KiB) copied, "
          b"0.00887814 s, 461 kB/s\n",
-            0.00887814),
+         0.00887814),
         (b"1\n2\n30 bytes copied, 0.00156704 s, 19.1 kB/s",
-            0.00156704),
+         0.00156704),
     ])
     def test_success(self, err, seconds):
         result = check.CheckResult("/path", 0, err, 0, 0)
@@ -399,13 +398,13 @@ class TestCheckResult(VdsmTestCase):
         assert path in str(ctx.value)
         assert reason in str(ctx.value)
 
-    @permutations([
-        (b"",),
-        (b"1\n2\n\n",),
-        (b"1\n2\n1024 bytes (1 kB) copied, BAD, 1 kB/s\n",),
-        (b"1\n2\n1024 bytes (1 kB) copied, BAD s, 1 kB/s\n",),
-        (b"1\n2\n1024 bytes (1 kB) copied, -1- s, 1 kB/s\n",),
-        (b"1\n2\n1024 bytes (1 kB) copied, e3- s, 1 kB/s\n",),
+    @pytest.mark.parametrize('err', [
+        b"",
+        b"1\n2\n\n",
+        b"1\n2\n1024 bytes (1 kB) copied, BAD, 1 kB/s\n",
+        b"1\n2\n1024 bytes (1 kB) copied, BAD s, 1 kB/s\n",
+        b"1\n2\n1024 bytes (1 kB) copied, -1- s, 1 kB/s\n",
+        b"1\n2\n1024 bytes (1 kB) copied, e3- s, 1 kB/s\n",
     ])
     def test_unexpected_output(self, err):
         result = check.CheckResult("/path", 0, err, 0, 0)
@@ -413,7 +412,7 @@ class TestCheckResult(VdsmTestCase):
             result.delay()
 
 
-class TestCheckService(VdsmTestCase):
+class TestCheckService:
 
     def setup_method(self, m):
         self.service = check.CheckService()
@@ -428,57 +427,64 @@ class TestCheckService(VdsmTestCase):
         self.result = result
         self.completed.set()
 
-    def test_start_checking(self):
-        with fake_dd(0.0):
-            self.service.start_checking("/path", self.complete)
-            assert self.service.is_checking("/path")
-            assert self.completed.wait(1.0)
-            assert self.result.rc == 0
+    def test_start_checking(self, fake_dd):
+        fake_dd.configure(delay=0.0)
+        self.service.start_checking("/path", self.complete)
+        assert self.service.is_checking("/path")
+        assert self.completed.wait(1.0)
+        assert self.result.rc == 0
 
-    def test_start_checking_already_watched(self):
-        with fake_dd(0.0):
+    def test_start_checking_already_watched(self, fake_dd):
+        fake_dd.configure(delay=0.0)
+        self.service.start_checking("/path", self.complete)
+        with pytest.raises(RuntimeError):
             self.service.start_checking("/path", self.complete)
-            with pytest.raises(RuntimeError):
-                self.service.start_checking("/path", self.complete)
 
-    def test_stop_checking(self):
-        with fake_dd(0.0):
-            self.service.start_checking("/path", self.complete)
-            self.service.stop_checking("/path")
-            assert not self.service.is_checking("/path")
+    def test_stop_checking(self, fake_dd):
+        fake_dd.configure(delay=0.0)
+        self.service.start_checking("/path", self.complete)
+        self.service.stop_checking("/path")
+        assert not self.service.is_checking("/path")
 
     def test_stop_checking_not_watched(self):
         with pytest.raises(KeyError):
             self.service.stop_checking("/path")
 
-    def test_stop_checking_and_wait(self):
-        with fake_dd(0.0):
-            self.service.start_checking("/path", self.complete)
-            assert self.service.stop_checking("/path", timeout=1.0)
-            assert not self.service.is_checking("/path")
+    def test_stop_checking_and_wait(self, fake_dd):
+        fake_dd.configure(delay=0.0)
+        self.service.start_checking("/path", self.complete)
+        assert self.service.stop_checking("/path", timeout=1.0)
+        assert not self.service.is_checking("/path")
 
     @pytest.mark.slow
-    def test_stop_checking_timeout(self):
-        with fake_dd(0.2):
-            self.service.start_checking("/path", self.complete)
-            assert not self.service.stop_checking("/path", timeout=0.1)
-            assert not self.service.is_checking("/path")
+    def test_stop_checking_timeout(self, fake_dd):
+        fake_dd.configure(delay=0.2)
+        self.service.start_checking("/path", self.complete)
+        assert not self.service.stop_checking("/path", timeout=0.1)
+        assert not self.service.is_checking("/path")
 
 
-@contextmanager
-def fake_dd(delay):
-    """
-    Simulate slow dd read
-    """
-    rate = int(100 / delay) if delay else "Infinity"
-    script = """#!/bin/sh
+class FakeDD(object):
+    def __init__(self, path):
+        self._path = path
+        self.configure(delay=0)
+        os.chmod(self._path, 0o700)
+
+    def configure(self, delay):
+        rate = int(100 / delay) if delay else "Infinity"
+        script_template = """#!/bin/sh
 sleep {delay}
 echo 0+1 records in >&2
 echo 0+1 records out >&2
 echo 100 bytes copied, {delay} s, {rate} B/s >&2
-""".format(delay=delay, rate=rate)
-    script = script.encode('ascii')
-    with temporaryPath(data=script) as fake_dd:
-        os.chmod(fake_dd, 0o700)
-        with MonkeyPatchScope([(constants, "EXT_DD", fake_dd)]):
-            yield
+"""
+        data = script_template.format(delay=delay, rate=rate)
+        with open(self._path, "w") as f:
+            f.write(data)
+
+
+@pytest.fixture
+def fake_dd(tmpdir, monkeypatch):
+    path = str(tmpdir.join("fake-dd"))
+    monkeypatch.setattr(constants, "EXT_DD", path)
+    return FakeDD(path)
