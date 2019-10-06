@@ -55,18 +55,17 @@ class FakeResponse(object):
         return self.file.read(amt)
 
 
-class FakeUHTTP(object):
-
-    DELETE = "DELETE"
-    GET = "GET"
-    PATCH = "PATCH"
-    PUT = "PUT"
+class FakeUnixHTTPConnection(object):
 
     def __init__(self, response=None):
+        self.path = None
+        self.timeout = None
         self.closed = False
         self.response = response or FakeResponse()
 
-    def UnixHTTPConnection(self, sock_path):
+    def __call__(self, path, timeout=None):
+        self.path = path
+        self.timeout = timeout
         return self
 
     @recorded
@@ -83,7 +82,7 @@ class FakeUHTTP(object):
 @expandPermutations
 class TestImageTickets(VdsmTestCase):
 
-    @MonkeyPatch(imagetickets, 'uhttp', False)
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', "/no/such/path")
     @permutations([
         ["add_ticket", [{}]],
         ["extend_ticket", ["uuid", 300]],
@@ -94,7 +93,8 @@ class TestImageTickets(VdsmTestCase):
             func = getattr(imagetickets, method)
             func(*args)
 
-    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
+    @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
     def test_add_ticket(self):
         ticket = create_ticket(uuid="uuid")
         body = json.dumps(ticket).encode("utf8")
@@ -102,24 +102,26 @@ class TestImageTickets(VdsmTestCase):
             ("request", ("PUT", "/tickets/uuid"), {"body": body}),
         ]
         imagetickets.add_ticket(ticket)
-        self.assertEqual(imagetickets.uhttp.__calls__, expected)
-        self.assertTrue(imagetickets.uhttp.closed)
+        self.assertEqual(imagetickets.UnixHTTPConnection.__calls__, expected)
+        self.assertTrue(imagetickets.UnixHTTPConnection.closed)
 
-    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
+    @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
     def test_get_ticket(self):
         filename = u"\u05d0.raw"  # hebrew aleph
         ticket = create_ticket(uuid="uuid", filename=filename)
         data = json.dumps(ticket).encode("utf8")
-        imagetickets.uhttp.response = FakeResponse(data=data)
+        imagetickets.UnixHTTPConnection.response = FakeResponse(data=data)
         expected = [
             ("request", ("GET", "/tickets/uuid"), {"body": None}),
         ]
         result = imagetickets.get_ticket(ticket_id="uuid")
         self.assertEqual(result, ticket)
-        self.assertEqual(imagetickets.uhttp.__calls__, expected)
-        self.assertTrue(imagetickets.uhttp.closed)
+        self.assertEqual(imagetickets.UnixHTTPConnection.__calls__, expected)
+        self.assertTrue(imagetickets.UnixHTTPConnection.closed)
 
-    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
+    @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
     def test_extend_ticket(self):
         timeout = 300
         imagetickets.extend_ticket("uuid", timeout)
@@ -129,54 +131,59 @@ class TestImageTickets(VdsmTestCase):
              {"body": body.encode("utf8")}),
         ]
 
-        self.assertEqual(imagetickets.uhttp.__calls__, expected)
-        self.assertTrue(imagetickets.uhttp.closed)
+        self.assertEqual(imagetickets.UnixHTTPConnection.__calls__, expected)
+        self.assertTrue(imagetickets.UnixHTTPConnection.closed)
 
-    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
+    @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
     def test_remove_ticket(self):
         # New imageio daemon will not return Content-Length header, as
         # specified in RFC 7230.
-        imagetickets.uhttp.response = FakeResponse(
+        imagetickets.UnixHTTPConnection.response = FakeResponse(
             status=204, reason="No Content", headers={})
         imagetickets.remove_ticket("uuid")
         expected = [
             ("request", ("DELETE", "/tickets/uuid"), {"body": None}),
         ]
 
-        self.assertEqual(imagetickets.uhttp.__calls__, expected)
-        self.assertTrue(imagetickets.uhttp.closed)
+        self.assertEqual(imagetickets.UnixHTTPConnection.__calls__, expected)
+        self.assertTrue(imagetickets.UnixHTTPConnection.closed)
 
-    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
+    @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
     def test_remove_ticket_with_content_length(self):
         # Legacy imageio daemon used to return "Content-Length: 0". This is not
         # correct according to RFC 7230, but we must support it.
-        imagetickets.uhttp.response = FakeResponse(
+        imagetickets.UnixHTTPConnection.response = FakeResponse(
             status=204, reason="No Content")
         imagetickets.remove_ticket("uuid")
         expected = [
             ("request", ("DELETE", "/tickets/uuid"), {"body": None}),
         ]
 
-        self.assertEqual(imagetickets.uhttp.__calls__, expected)
-        self.assertTrue(imagetickets.uhttp.closed)
+        self.assertEqual(imagetickets.UnixHTTPConnection.__calls__, expected)
+        self.assertTrue(imagetickets.UnixHTTPConnection.closed)
 
-    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
+    @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
     def test_res_header_error(self):
-        imagetickets.uhttp.response = FakeResponse(
+        imagetickets.UnixHTTPConnection.response = FakeResponse(
             status=300, headers={"content-length": "invalid"})
         with self.assertRaises(se.ImageDaemonError):
             imagetickets.remove_ticket("uuid")
 
-    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
+    @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
     def test_res_invalid_json_ret(self):
-        imagetickets.uhttp.response = FakeResponse(
+        imagetickets.UnixHTTPConnection.response = FakeResponse(
             status=300, data=b"not a json string")
         with self.assertRaises(se.ImageDaemonError):
             imagetickets.remove_ticket("uuid")
 
-    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
+    @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
     def test_image_daemon_error_ret(self):
-        imagetickets.uhttp.response = FakeResponse(
+        imagetickets.UnixHTTPConnection.response = FakeResponse(
             status=300, data=b'{"image_daemon_message":"content"}')
         try:
             imagetickets.remove_ticket("uuid")
@@ -184,23 +191,25 @@ class TestImageTickets(VdsmTestCase):
             self.assertTrue(six.text_type("image_daemon_message") in e.value)
             self.assertTrue(six.text_type("content") in e.value)
 
-    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
+    @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
     def test_res_read_error(self):
-        imagetickets.uhttp.response = FakeResponse(
+        imagetickets.UnixHTTPConnection.response = FakeResponse(
             status=300, data=b'{"image_daemon_message":"ignored"}')
         err_msg = "Environment error message"
 
         def read(amt=None):
             raise EnvironmentError(err_msg)
 
-        imagetickets.uhttp.response.read = read
+        imagetickets.UnixHTTPConnection.response.read = read
 
         try:
             imagetickets.remove_ticket("uuid")
         except se.ImageDaemonError as e:
             self.assertTrue(err_msg in e.value)
 
-    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
+    @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
     @permutations([[http_client.HTTPException], [socket.error], [OSError]])
     def test_image_tickets_error(self, exc_type):
         ticket = create_ticket(uuid="uuid")
@@ -208,21 +217,23 @@ class TestImageTickets(VdsmTestCase):
         def request(method, path, body=None):
             raise exc_type
 
-        imagetickets.uhttp.request = request
+        imagetickets.UnixHTTPConnection.request = request
         with self.assertRaises(se.ImageTicketsError):
             imagetickets.add_ticket(ticket)
 
-    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
+    @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
     def test_request_with_response(self):
         ticket = create_ticket(uuid="uuid")
         data = json.dumps(ticket).encode("utf8")
-        imagetickets.uhttp.response = FakeResponse(data=data)
-        response = imagetickets.request(imagetickets.uhttp.GET, "uuid")
+        imagetickets.UnixHTTPConnection.response = FakeResponse(data=data)
+        response = imagetickets.request("GET", "uuid")
         self.assertEqual(response, ticket)
 
-    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
+    @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
     def test_request_with_empty_dict_response(self):
-        response = imagetickets.request(imagetickets.uhttp.DELETE, "uuid")
+        response = imagetickets.request("DELETE", "uuid")
         self.assertEqual(response, {})
 
 

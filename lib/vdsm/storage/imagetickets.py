@@ -24,14 +24,12 @@ import functools
 import json
 import logging
 import os
+import socket
 
 from contextlib import closing
-from six.moves import http_client
 
-try:
-    from ovirt_imageio_daemon import uhttp
-except ImportError:
-    uhttp = None
+import six
+from six.moves import http_client
 
 from vdsm import constants
 from vdsm.storage import exception as se
@@ -41,10 +39,30 @@ DAEMON_SOCK = os.path.join(constants.P_VDSM_RUN, "ovirt-imageio-daemon.sock")
 log = logging.getLogger('storage.imagetickets')
 
 
+class UnixHTTPConnection(http_client.HTTPConnection):
+    """
+    HTTP connection over unix domain socket.
+    """
+
+    def __init__(self, path, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+        self.path = path
+        extra = {}
+        if six.PY2:
+            extra['strict'] = True
+        http_client.HTTPConnection.__init__(
+            self, "localhost", timeout=timeout, **extra)
+
+    def connect(self):
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        if self.timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
+            self.sock.settimeout(self.timeout)
+        self.sock.connect(self.path)
+
+
 def requires_image_daemon(func):
     @functools.wraps(func)
     def wrapper(*args, **kw):
-        if not uhttp:
+        if not os.path.exists(DAEMON_SOCK):
             raise se.ImageDaemonUnsupported()
         return func(*args, **kw)
 
@@ -54,23 +72,23 @@ def requires_image_daemon(func):
 @requires_image_daemon
 def add_ticket(ticket):
     body = json.dumps(ticket)
-    request(uhttp.PUT, ticket["uuid"], body)
+    request("PUT", ticket["uuid"], body)
 
 
 @requires_image_daemon
 def get_ticket(ticket_id):
-    return request(uhttp.GET, ticket_id)
+    return request("GET", ticket_id)
 
 
 @requires_image_daemon
 def extend_ticket(uuid, timeout):
     body = json.dumps({"timeout": timeout})
-    request(uhttp.PATCH, uuid, body)
+    request("PATCH", uuid, body)
 
 
 @requires_image_daemon
 def remove_ticket(uuid):
-    request(uhttp.DELETE, uuid)
+    request("DELETE", uuid)
 
 
 def request(method, uuid, body=None):
@@ -78,7 +96,7 @@ def request(method, uuid, body=None):
               method, uuid, body)
     if body is not None:
         body = body.encode("utf8")
-    con = uhttp.UnixHTTPConnection(DAEMON_SOCK)
+    con = UnixHTTPConnection(DAEMON_SOCK)
     with closing(con):
         try:
             con.request(method, "/tickets/%s" % uuid, body=body)
