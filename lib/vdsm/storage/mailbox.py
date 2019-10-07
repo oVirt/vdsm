@@ -321,8 +321,8 @@ class HSM_MailMonitor(object):
                 self._used_slots_array[i] = 0
                 self._msgCounter -= 1
                 self._outgoingMail = self._outgoingMail[0:start] + \
-                    MESSAGE_SIZE * "\0" + self._outgoingMail[start +
-                                                             MESSAGE_SIZE:]
+                    MESSAGE_SIZE * b"\0" + self._outgoingMail[start +
+                                                              MESSAGE_SIZE:]
                 continue
 
             msg = self._activeMessages[i]

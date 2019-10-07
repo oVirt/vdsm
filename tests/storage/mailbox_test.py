@@ -32,7 +32,6 @@ import time
 from functools import partial
 
 import pytest
-import six
 
 from testlib import make_uuid
 
@@ -291,8 +290,6 @@ class TestCommunicate:
 
             assert filled.wait(MAILER_TIMEOUT * 2)
 
-    @pytest.mark.xfail(
-        six.PY3, reason="Pending fix for message clearing", run=False)
     @pytest.mark.parametrize("delay", [0, 0.05])
     @pytest.mark.parametrize("messages", [
         1,
