@@ -360,58 +360,6 @@ class TestDirectioCheckerTimings:
                 res.delay()
 
 
-class TestCheckResult:
-
-    @pytest.mark.parametrize('err, seconds', [
-        (b"1\n2\n1 byte (1 B) copied, 1 s, 1 B/s\n",
-         1.0),
-        (b"1\n2\n1024 bytes (1 kB) copied, 1 s, 1 kB/s\n",
-         1.0),
-        (b"1\n2\n1572864 bytes (1.5 MB) copied, 1.5 s, 1 MB/s\n",
-         1.5),
-        (b"1\n2\n1610612736 bytes (1.5 GB) copied, 1000.5 s, 1.53 MB/s\n",
-         1000.5),
-        (b"1\n2\n479 bytes (479 B) copied, 5.6832e-05 s, 8.4 MB/s\n",
-         5.6832e-05),
-        (b"1\n2\n512 bytes (512e-3 MB) copied, 1 s, 512e-3 MB/s\n",
-         1.0),
-        (b"1\n2\n524288 bytes (512e3 B) copied, 1 s, 512e3 B/s\n",
-         1.0),
-        (b"1\n2\n517 bytes (517 B) copied, 0 s, Infinity B/s\n",
-         0.0),
-        (b"1\n2\n4096 bytes (4.1 kB, 4.0 KiB) copied, "
-         b"0.00887814 s, 461 kB/s\n",
-         0.00887814),
-        (b"1\n2\n30 bytes copied, 0.00156704 s, 19.1 kB/s",
-         0.00156704),
-    ])
-    def test_success(self, err, seconds):
-        result = check.CheckResult("/path", 0, err, 0, 0)
-        assert result.delay() == seconds
-
-    def test_non_zero_exit_code(self):
-        path = "/path"
-        reason = "REASON"
-        result = check.CheckResult(path, 1, reason, 0, 0)
-        with pytest.raises(exception.MiscFileReadException) as ctx:
-            result.delay()
-        assert path in str(ctx.value)
-        assert reason in str(ctx.value)
-
-    @pytest.mark.parametrize('err', [
-        b"",
-        b"1\n2\n\n",
-        b"1\n2\n1024 bytes (1 kB) copied, BAD, 1 kB/s\n",
-        b"1\n2\n1024 bytes (1 kB) copied, BAD s, 1 kB/s\n",
-        b"1\n2\n1024 bytes (1 kB) copied, -1- s, 1 kB/s\n",
-        b"1\n2\n1024 bytes (1 kB) copied, e3- s, 1 kB/s\n",
-    ])
-    def test_unexpected_output(self, err):
-        result = check.CheckResult("/path", 0, err, 0, 0)
-        with pytest.raises(exception.MiscFileReadException):
-            result.delay()
-
-
 class TestCheckService:
 
     def setup_method(self, m):
@@ -462,6 +410,58 @@ class TestCheckService:
         self.service.start_checking("/path", self.complete)
         assert not self.service.stop_checking("/path", timeout=0.1)
         assert not self.service.is_checking("/path")
+
+
+@pytest.mark.parametrize('err, seconds', [
+    (b"1\n2\n1 byte (1 B) copied, 1 s, 1 B/s\n",
+     1.0),
+    (b"1\n2\n1024 bytes (1 kB) copied, 1 s, 1 kB/s\n",
+     1.0),
+    (b"1\n2\n1572864 bytes (1.5 MB) copied, 1.5 s, 1 MB/s\n",
+     1.5),
+    (b"1\n2\n1610612736 bytes (1.5 GB) copied, 1000.5 s, 1.53 MB/s\n",
+     1000.5),
+    (b"1\n2\n479 bytes (479 B) copied, 5.6832e-05 s, 8.4 MB/s\n",
+     5.6832e-05),
+    (b"1\n2\n512 bytes (512e-3 MB) copied, 1 s, 512e-3 MB/s\n",
+     1.0),
+    (b"1\n2\n524288 bytes (512e3 B) copied, 1 s, 512e3 B/s\n",
+     1.0),
+    (b"1\n2\n517 bytes (517 B) copied, 0 s, Infinity B/s\n",
+     0.0),
+    (b"1\n2\n4096 bytes (4.1 kB, 4.0 KiB) copied, "
+     b"0.00887814 s, 461 kB/s\n",
+     0.00887814),
+    (b"1\n2\n30 bytes copied, 0.00156704 s, 19.1 kB/s",
+     0.00156704),
+])
+def test_check_result_success(err, seconds):
+    result = check.CheckResult("/path", 0, err, 0, 0)
+    assert result.delay() == seconds
+
+
+def test_check_result_non_zero_exit_code():
+    path = "/path"
+    reason = "REASON"
+    result = check.CheckResult(path, 1, reason, 0, 0)
+    with pytest.raises(exception.MiscFileReadException) as ctx:
+        result.delay()
+    assert path in str(ctx.value)
+    assert reason in str(ctx.value)
+
+
+@pytest.mark.parametrize('err', [
+    b"",
+    b"1\n2\n\n",
+    b"1\n2\n1024 bytes (1 kB) copied, BAD, 1 kB/s\n",
+    b"1\n2\n1024 bytes (1 kB) copied, BAD s, 1 kB/s\n",
+    b"1\n2\n1024 bytes (1 kB) copied, -1- s, 1 kB/s\n",
+    b"1\n2\n1024 bytes (1 kB) copied, e3- s, 1 kB/s\n",
+])
+def test_unexpected_output(err):
+    result = check.CheckResult("/path", 0, err, 0, 0)
+    with pytest.raises(exception.MiscFileReadException):
+        result.delay()
 
 
 class FakeDD(object):
