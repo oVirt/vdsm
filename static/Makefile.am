@@ -230,6 +230,3 @@ install-data-local: install-libvirtpasswordDATA
 	touch $(DESTDIR)$(vdsmlogdir)/mom.log
 	touch $(DESTDIR)$(vdsmlogdir)/supervdsm.log
 	touch $(DESTDIR)$(vdsmlogdir)/vdsm.log
-	ln -s ../certs/cacert.pem $(DESTDIR)$(vdsmtsdir)/libvirt-migrate/ca-cert.pem
-	ln -s ../certs/vdsmcert.pem $(DESTDIR)$(vdsmtsdir)/libvirt-migrate/server-cert.pem
-	ln -s ../keys/vdsmkey.pem $(DESTDIR)$(vdsmtsdir)/libvirt-migrate/server-key.pem
