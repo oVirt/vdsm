@@ -31,9 +31,9 @@ from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NUMBER_TO_NAME
 from vdsm.network.link.setup import parse_bond_options
 
 try:
-    from libnmstate import netapplier
-    from libnmstate import netinfo
-    from libnmstate import schema
+    from libnmstate import apply as state_apply
+    from libnmstate import show as state_show
+    from libnmstate.schema import Bond as BondSchema
     from libnmstate.schema import DNS
     from libnmstate.schema import Interface
     from libnmstate.schema import InterfaceIP
@@ -43,7 +43,7 @@ try:
     from libnmstate.schema import LinuxBridge
     from libnmstate.schema import Route
 except ImportError:  # nmstate is not available
-    netapplier = None
+    BondSchema = None
     DNS = None
     Interface = None
     InterfaceIP = None
@@ -52,11 +52,12 @@ except ImportError:  # nmstate is not available
     InterfaceType = None
     LinuxBridge = None
     Route = None
-    schema = None
+    state_apply = None
+    state_show = None
 
 
 def setup(desired_state, verify_change):
-    netapplier.apply(desired_state, verify_change)
+    state_apply(desired_state, verify_change)
 
 
 def generate_state(networks, bondings):
@@ -77,7 +78,7 @@ def generate_state(networks, bondings):
 
 
 def show_interfaces(filter=None):
-    net_info = netinfo.show()
+    net_info = state_show()
     filter_set = set(filter) if filter else set()
     ifaces = (
         (ifstate[Interface.NAME], ifstate)
@@ -158,14 +159,14 @@ class Bond(object):
         mac = self._attrs.get('hwaddr')
         if mac:
             iface_state[Interface.MAC] = mac
-        bond_state = iface_state[schema.Bond.CONFIG_SUBTREE] = {}
-        bond_state[schema.Bond.SLAVES] = sorted(self._attrs['nics'])
+        bond_state = iface_state[BondSchema.CONFIG_SUBTREE] = {}
+        bond_state[BondSchema.SLAVES] = sorted(self._attrs['nics'])
 
         options = parse_bond_options(self._attrs.get('options'))
         if options:
-            bond_state[schema.Bond.OPTIONS_SUBTREE] = options
+            bond_state[BondSchema.OPTIONS_SUBTREE] = options
         mode = self._translate_mode(mode=options.pop('mode', 'balance-rr'))
-        bond_state[schema.Bond.MODE] = mode
+        bond_state[BondSchema.MODE] = mode
         return iface_state
 
     def _translate_mode(self, mode):

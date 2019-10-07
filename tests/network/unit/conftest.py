@@ -94,10 +94,6 @@ class NMStateLinuxBridge(object):
     PORT_STP_PATH_COST = 'stp-path-cost'
 
 
-class NMStateSchema(object):
-    Bond = NMStateBond
-
-
 class NMStateRoute(object):
     KEY = 'routes'
 
@@ -147,7 +143,7 @@ def nmstate_schema():
         nmstate, 'InterfaceType', NMStateInterfaceType
     )
     p_bridge = mock.patch.object(nmstate, 'LinuxBridge', NMStateLinuxBridge)
-    p_schema = mock.patch.object(nmstate, 'schema', NMStateSchema)
+    p_bond = mock.patch.object(nmstate, 'BondSchema', NMStateBond)
     p_route = mock.patch.object(nmstate, 'Route', NMStateRoute)
     p_iface_ip = mock.patch.object(nmstate, 'InterfaceIP', NMStateInterfaceIP)
     p_iface_ipv6 = mock.patch.object(
@@ -158,5 +154,5 @@ def nmstate_schema():
         nmstate, 'show_interfaces', lambda filter=None: {}
     )
     with p_iface, p_ifstate, p_iftype, p_bridge, p_show_interfaces:
-        with p_schema, p_route, p_iface_ip, p_iface_ipv6, p_dns:
+        with p_bond, p_route, p_iface_ip, p_iface_ipv6, p_dns:
             yield
