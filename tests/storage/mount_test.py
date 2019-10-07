@@ -29,7 +29,6 @@ import os
 import time
 
 import pytest
-import six
 
 from vdsm.storage import mount
 from vdsm.storage.misc import execCmd
@@ -40,7 +39,6 @@ from testlib import VdsmTestCase
 from testlib import namedTemporaryDir, temporaryPath
 from testlib import expandPermutations, permutations
 from testValidation import broken_on_ci
-from testValidation import skipif
 import monkeypatch
 
 from . marks import requires_root
@@ -141,7 +139,6 @@ def loop_mount(m):
 @expandPermutations
 class TestMount(VdsmTestCase):
 
-    @skipif(six.PY3, "needs porting to python 3")
     @requires_root
     @broken_on_ci("mount check fails after successful mount", name="TRAVIS_CI")
     def testLoopMount(self):
@@ -152,7 +149,6 @@ class TestMount(VdsmTestCase):
                 with loop_mount(m):
                     self.assertTrue(m.isMounted())
 
-    @skipif(six.PY3, "needs porting to python 3")
     @requires_root
     @broken_on_ci("mount check fails after successful mount", name="TRAVIS_CI")
     def testSymlinkMount(self):
@@ -189,25 +185,24 @@ class TestMount(VdsmTestCase):
         """
         Verifies that both fs_spec and fs_file match the mounted target.
         """
-        with fake_mounts([b"server:/path /mnt/server:_path nfs defaults 0 0"]):
+        with fake_mounts(["server:/path /mnt/server:_path nfs defaults 0 0"]):
             mnt = mount.Mount(fs_spec, fs_file)
             self.assertEqual(mnt.isMounted(), equality)
 
     @permutations([
         # NFS4 using fsid=0 - kernel display mount as server://path instead of
         # normalized server:/path
-        (b"server://a/b /mnt/server:_a_b nfs defaults 0 0",),
+        ("server://a/b /mnt/server:_a_b nfs defaults 0 0",),
 
         # Not seen yet, but it should work now
-        (b"server:/a//b /mnt/server:_a_b nfs defaults 0 0",),
-        (b"server:/a/b// /mnt/server:_a_b nfs defaults 0 0",),
+        ("server:/a//b /mnt/server:_a_b nfs defaults 0 0",),
+        ("server:/a/b// /mnt/server:_a_b nfs defaults 0 0",),
     ])
     def test_is_mounted_normalize_kernel_mounts(self, mount_line):
         with fake_mounts([mount_line]):
             mnt = mount.Mount("server:/a/b", "/mnt/server:_a_b")
             self.assertTrue(mnt.isMounted())
 
-    @skipif(six.PY3, "needs porting to python 3")
     def test_is_mounted_with_symlink(self):
         with namedTemporaryDir() as dir:
             file = os.path.join(dir, "file")
@@ -215,15 +210,15 @@ class TestMount(VdsmTestCase):
             link_to_file = os.path.join(dir, "link_to_file")
             os.symlink(file, link_to_file)
             mountpoint = "/mnt/mountpoint"
-            with fake_mounts([b"%s %s nfs defaults 0 0" %
+            with fake_mounts(["%s %s nfs defaults 0 0" %
                               (link_to_file, mountpoint)]):
                 mnt = mount.Mount(link_to_file, mountpoint)
                 self.assertTrue(mnt.isMounted())
 
     def test_is_mounted_gluster_with_rdma(self):
         with fake_mounts(
-                [b"server:/volume.rdma /mnt/server:volume fuse.glusterfs "
-                 b"defaults 0 0"]):
+                ["server:/volume.rdma /mnt/server:volume fuse.glusterfs "
+                 "defaults 0 0"]):
             mnt = mount.Mount("server:/volume", "/mnt/server:volume")
             self.assertTrue(mnt.isMounted())
 
@@ -240,8 +235,8 @@ def fake_mounts(mount_lines):
     with fake_mounts([mount_line_1, mount_line_2]):
         <do something with /proc/mounts or /etc/mtab>
     """
-    data = b"".join(line + b"\n" for line in mount_lines)
-    with temporaryPath(data=data) as fake_mounts:
+    data = "".join(line + "\n" for line in mount_lines)
+    with temporaryPath(data=data.encode("utf-8")) as fake_mounts:
         with monkeypatch.MonkeyPatchScope([
             (mount, '_PROC_MOUNTS_PATH', fake_mounts),
         ]):
@@ -250,66 +245,60 @@ def fake_mounts(mount_lines):
 
 class TestRemoteSdIsMounted(VdsmTestCase):
 
-    @skipif(six.PY3, "needs porting to python 3")
     def test_is_mounted(self):
-        with fake_mounts([b"server:/path "
-                          b"/rhev/data-center/mnt/server:_path "
-                          b"nfs4 defaults 0 0"]):
+        with fake_mounts(["server:/path "
+                          "/rhev/data-center/mnt/server:_path "
+                          "nfs4 defaults 0 0"]):
             self.assertTrue(mount.isMounted(
-                            b"/rhev/data-center/mnt/server:_path"))
+                            "/rhev/data-center/mnt/server:_path"))
 
-    @skipif(six.PY3, "needs porting to python 3")
     def test_is_mounted_deleted(self):
-        with fake_mounts([b"server:/path "
-                          br"/rhev/data-center/mnt/server:_path\040(deleted) "
-                          b"nfs4 defaults 0 0"]):
+        with fake_mounts([u"server:/path "
+                          u"/rhev/data-center/mnt/server:_path\\040(deleted) "
+                          u"nfs4 defaults 0 0"]):
             self.assertTrue(mount.isMounted(
-                            b"/rhev/data-center/mnt/server:_path"))
+                            "/rhev/data-center/mnt/server:_path"))
 
-    @skipif(six.PY3, "needs porting to python 3")
     def test_path_with_spaces(self):
         with fake_mounts(
-                [br"server:/a\040b /mnt/server:_a\040b nfs4 opts 0 0"]):
-            self.assertTrue(mount.isMounted(b"/mnt/server:_a b"))
-            self.assertFalse(mount.isMounted(br"/mnt/server:_a\040b"))
+                [u"server:/a\\040b /mnt/server:_a\\040b nfs4 opts 0 0"]):
+            self.assertTrue(mount.isMounted("/mnt/server:_a b"))
+            self.assertFalse(mount.isMounted(u"/mnt/server:_a\\040b"))
 
-    @skipif(six.PY3, "needs porting to python 3")
     def test_path_with_backslash(self):
         with fake_mounts(
-                [br"server:/a\134040b /mnt/server:_a\134040b nfs4 opts 0 0"]):
-            self.assertTrue(mount.isMounted(br"/mnt/server:_a\040b"))
-            self.assertFalse(mount.isMounted(br"/mnt/server:_a\134040b"))
+                [u"server:/a\\134040b /mnt/server:_a\\134040b nfs4 opts 0 0"]):
+            self.assertTrue(mount.isMounted(u"/mnt/server:_a\\040b"))
+            self.assertFalse(mount.isMounted(u"/mnt/server:_a\\134040b"))
 
-    @skipif(six.PY3, "needs porting to python 3")
     def test_is_not_mounted(self):
-        with fake_mounts([b"server:/path "
-                          b"/rhev/data-center/mnt/server:_path "
-                          b"nfs4 defaults 0 0"]):
+        with fake_mounts(["server:/path "
+                          "/rhev/data-center/mnt/server:_path "
+                          "nfs4 defaults 0 0"]):
             self.assertFalse(mount.isMounted(
-                             b"/rhev/data-center/mnt/server:_other_path"))
+                             "/rhev/data-center/mnt/server:_other_path"))
 
 
 @expandPermutations
 class TestIsMountedTiming(VdsmTestCase):
 
-    @skipif(six.PY3, "needs porting to python 3")
     @pytest.mark.stress
     @permutations([[1], [50], [100], [1000]])
     def test_is_mounted(self, count):
-        server = b"foobar.baz.qux.com:/var/lib/exports/%04d"
-        mountpoint = (b"/rhev/data-center/mnt/foobar.baz.qux.com:_var_lib"
-                      b"_exports_%04d")
-        options = (b"rw,relatime,vers=3,rsize=524288,wsize=524288,namlen=255,"
-                   b"soft,nosharecache,proto=tcp,timeo=600,retrans=6,sec=sys,"
-                   b"mountaddr=10.35.0.102,mountvers=3,mountport=892,"
-                   b"mountproto=udp,local_lock=none,addr=10.35.0.102")
-        version = b"nfs"
-        freq = b"0"
-        passno = b"0"
+        server = "foobar.baz.qux.com:/var/lib/exports/%04d"
+        mountpoint = ("/rhev/data-center/mnt/foobar.baz.qux.com:_var_lib"
+                      "_exports_%04d")
+        options = ("rw,relatime,vers=3,rsize=524288,wsize=524288,namlen=255,"
+                   "soft,nosharecache,proto=tcp,timeo=600,retrans=6,sec=sys,"
+                   "mountaddr=10.35.0.102,mountvers=3,mountport=892,"
+                   "mountproto=udp,local_lock=none,addr=10.35.0.102")
+        version = "nfs"
+        freq = "0"
+        passno = "0"
         lines = []
         for i in range(count):
-            line = b" ".join((server % i, mountpoint % i, options, version,
-                              freq, passno))
+            line = " ".join((server % i, mountpoint % i, options, version,
+                             freq, passno))
             lines.append(line)
         with fake_mounts(lines):
             start = time.time()
