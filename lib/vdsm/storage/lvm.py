@@ -605,24 +605,27 @@ class LVMCache(object):
         """
         cmd = list(LVS_CMD)
         rc, out, err = self.cmd(cmd)
-        if rc == 0:
-            updatedLVs = set()
-            for line in out:
-                fields = [field.strip() for field in line.split(SEPARATOR)]
-                if len(fields) != LV_FIELDS_LEN:
-                    raise InvalidOutputLine("lvs", line)
 
-                lv = makeLV(*fields)
-                # For LV we are only interested in its first extent
-                if lv.seg_start_pe == "0":
-                    self._lvs[(lv.vg_name, lv.name)] = lv
-                    updatedLVs.add((lv.vg_name, lv.name))
+        with self._lock:
+            if rc == 0:
+                updatedLVs = set()
+                for line in out:
+                    fields = [field.strip() for field in line.split(SEPARATOR)]
+                    if len(fields) != LV_FIELDS_LEN:
+                        raise InvalidOutputLine("lvs", line)
 
-            # Remove stales
-            for vgName, lvName in frozenset(self._lvs) - updatedLVs:
-                self._lvs.pop((vgName, lvName), None)
-                log.error("Removing stale lv: %s/%s", vgName, lvName)
-            self._stalelv = False
+                    lv = makeLV(*fields)
+                    # For LV we are only interested in its first extent
+                    if lv.seg_start_pe == "0":
+                        self._lvs[(lv.vg_name, lv.name)] = lv
+                        updatedLVs.add((lv.vg_name, lv.name))
+
+                # Remove stales
+                for vgName, lvName in frozenset(self._lvs) - updatedLVs:
+                    self._lvs.pop((vgName, lvName), None)
+                    log.error("Removing stale lv: %s/%s", vgName, lvName)
+                self._stalelv = False
+
         return dict(self._lvs)
 
     def _invalidatepvs(self, pvNames):
