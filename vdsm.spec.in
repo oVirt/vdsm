@@ -873,7 +873,6 @@ make DESTDIR=%{buildroot} install
 %if %{target_py} == py3
 %py_byte_compile python3 %{buildroot}/%{_datadir}/%{vdsm_name}/sitecustomize.py
 %py_byte_compile python3 %{buildroot}/%{_datadir}/%{vdsm_name}/tests
-%py_byte_compile python3 %{buildroot}/%{_datadir}/yum-plugins/vdsmupgrade.py
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_device_create/openstacknet_utils.py
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/openstacknet_utils.py
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/openstacknet_utils.py
@@ -1057,6 +1056,12 @@ exit 0
 %endif
 %dir %{_libexecdir}/%{vdsm_name}/hooks
 %dir %{_libexecdir}/%{vdsm_name}/hooks/*
+%if %{target_py} == py3 && ( ! 0%{?rhel} || 0%{?rhel} >= 8 )
+%{python3_sitelib}/dnf-plugins/*.py
+%{python3_sitelib}/dnf-plugins/__pycache__/*
+%else
+%exclude %{python_sitelib}/dnf-plugins
+%endif
 
 %{_libexecdir}/%{vdsm_name}/get-conf-item
 %{_udevrulesdir}/12-vdsm-lvm.rules
@@ -1087,11 +1092,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/lvmlocal.conf
 %{_datadir}/%{vdsm_name}/autounattend/
 
-%{_sysconfdir}/yum/pluginconf.d/vdsmupgrade.conf
-%{_datadir}/yum-plugins/*.py*
-%if %{target_py} == py3
-%{_datadir}/yum-plugins/__pycache__/*
-%endif
 
 %files common
 %{python_sitelib}/%{vdsm_name}/__init__.py*

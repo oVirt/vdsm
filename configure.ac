@@ -466,6 +466,7 @@ AC_OUTPUT([
 	init/Makefile
 	init/systemd/Makefile
 	lib/Makefile
+        lib/dnf-plugins/Makefile
 	lib/vdsm/Makefile
 	lib/vdsm/api/Makefile
 	lib/vdsm/common/Makefile

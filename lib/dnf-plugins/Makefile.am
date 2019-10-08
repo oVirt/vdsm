@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2019 Red Hat, Inc.
+# Copyright 2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
+dnfpluginsdir = $(pythondir)/dnf-plugins
 
-SUBDIRS = dnf-plugins vdsm vdsmclient yajsonrpc
+dist_dnfplugins_PYTHON = \
+	vdsmupgrade.py \
+	$(NULL)
+
