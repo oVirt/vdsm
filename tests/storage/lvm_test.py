@@ -967,7 +967,6 @@ def test_retry_with_wider_filter(tmp_storage):
     assert vg.pv_name == (dev,)
 
 
-@pytest.mark.xfail(reason="bug: dictionary changed size during iteration")
 @requires_root
 @pytest.mark.root
 def test_reload_lvs_with_stale_lv(tmp_storage):

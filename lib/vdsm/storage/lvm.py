@@ -583,13 +583,13 @@ class LVMCache(object):
 
             # Determine if there are stale LVs
             if lvNames:
-                staleLVs = (lvName for lvName in lvNames
-                            if (vgName, lvName) not in updatedLVs)
+                staleLVs = [lvName for lvName in lvNames
+                            if (vgName, lvName) not in updatedLVs]
             else:
                 # All the LVs in the VG
-                staleLVs = (lvName for v, lvName in self._lvs
+                staleLVs = [lvName for v, lvName in self._lvs
                             if (v == vgName) and
-                            ((vgName, lvName) not in updatedLVs))
+                            ((vgName, lvName) not in updatedLVs)]
 
             for lvName in staleLVs:
                 log.warning("Removing stale lv: %s/%s", vgName, lvName)
