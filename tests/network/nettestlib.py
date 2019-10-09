@@ -146,6 +146,8 @@ class Vlan(Interface):
     def delDevice(self):
         self._down()
         linkDel(self.devName)
+        if nmstate.is_nmstate_backend():
+            cmd.exec_sync(['nmcli', 'con', 'del', self.devName])
 
 
 @contextmanager
