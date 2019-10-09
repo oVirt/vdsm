@@ -447,6 +447,8 @@ class Vm(object):
         self._migration_downtime = None
         self._pause_code = None
         self._last_disk_mapping_hash = None
+        self._balloon_minimum = None
+        self._balloon_target = None
 
     @property
     def _hugepages_shared(self):
@@ -681,9 +683,8 @@ class Vm(object):
         elif len(balloon_devs) > 1:
             self.log.warning("Multiple balloon devices present")
             return
-        dev = balloon_devs[0]
-        dev.target = self.mem_size_mb(current=self.recovering) * 1024
-        dev.minimum = self._mem_guaranteed_size_mb * 1024
+        self._balloon_target = self.mem_size_mb(current=self.recovering) * 1024
+        self._balloon_minimum = self._mem_guaranteed_size_mb * 1024
 
     def updateDriveIndex(self, drv):
         drv['index'] = self.__getNextIndex(self._usedIndices[
@@ -2500,7 +2501,9 @@ class Vm(object):
 
         self._devices = self._make_devices()
         # We (re)initialize the balloon values in all the flows.
-        self._initialize_balloon(self._devices[hwclass.BALLOON])
+        self._initialize_balloon(
+            list(self._domain.get_device_elements('memballoon'))
+        )
 
         initDomain = self._altered_state.origin != _MIGRATION_ORIGIN
         # we need to complete the initialization, including
@@ -3038,8 +3041,7 @@ class Vm(object):
     def _update_mem_guaranteed_size(self, params):
         if 'memGuaranteedSize' in params:
             self._mem_guaranteed_size_mb = params["memGuaranteedSize"]
-            self._devices[hwclass.BALLOON][0].minimum = \
-                self._mem_guaranteed_size_mb * 1024
+            self._balloon_minimum = self._mem_guaranteed_size_mb * 1024
             self._update_metadata()
 
     def update_guest_agent_api_version(self):
@@ -5002,9 +5004,8 @@ class Vm(object):
             return response.success()
 
     def setBalloonTarget(self, target):
-
-        dev = self._devices[hwclass.BALLOON][0]
-        if dev.specParams['model'] == 'none':
+        dev = next(self._domain.get_device_elements('memballoon'))
+        if dev.attrib.get('model') == 'none':
             return
 
         if not self._dom.connected:
@@ -5020,22 +5021,17 @@ class Vm(object):
             raise exception.BalloonError(str(e))
         else:
             # TODO: update metadata once we build devices with engine XML
-            self._devices[hwclass.BALLOON][0].target = target
+            self._balloon_target = target
 
     def get_balloon_info(self):
-        try:
-            # we will always have exactly one memballoon device
-            dev = self._devices[hwclass.BALLOON][0]
-        except IndexError:
-            # except if getStats() is called concurrently when the
-            # VM is being created, in this case no balloon device is
-            # available
+        if self._balloon_minimum is None or self._balloon_target is None:
+            # getStats() is called concurrently when the VM is being
+            # created, in this case no balloon device is available
             return {}
-        else:
-            return {
-                'target': dev.target,
-                'minimum': dev.minimum,
-            }
+        return {
+            'target': self._balloon_target,
+            'minimum': self._balloon_minimum,
+        }
 
     def setCpuTuneQuota(self, quota):
         try:

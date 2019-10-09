@@ -111,12 +111,7 @@ class DevicesFromXMLTests(VdsmTestCase):
   </devices>
 </domain>''')
         for dev_type, dev_objs in dev_map.items():
-            if dev_type in (
-                vmdevices.hwclass.BALLOON
-            ):
-                self.assertEqual(len(dev_objs), 1)
-            else:
-                self.assertEqual(dev_objs, [])
+            self.assertEqual(dev_objs, [])
 
     def prepare_map(self, dom_xml):
         xml_str = dom_xml.format(self=self)

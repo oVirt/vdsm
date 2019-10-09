@@ -64,13 +64,6 @@ class DeviceToXMLTests(XMLTestCase):
             'memGuaranteedSize': '512',
         }
 
-    def test_balloon(self):
-        balloonXML = '<memballoon model="virtio"/>'
-        dev = {'device': 'memballoon', 'type': 'balloon',
-               'specParams': {'model': 'virtio'}}
-        balloon = vmdevices.core.Balloon(self.log, **dev)
-        self.assertXMLEqual(xmlutils.tostring(balloon.getXML()), balloonXML)
-
     def test_memory_device(self):
         memoryXML = """<memory model='dimm'>
             <target>
@@ -646,13 +639,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             raise AssertionError('from_xml_tree raise unexpected %s', ex)
         else:
             raise AssertionError('from_xml_tree implemented')
-
-    def test_balloon(self):
-        balloon_xml = u'''<memballoon model='virtio'>
-          <address type='pci' domain='0x0000' bus='0x00' slot='0x04'
-           function='0x0'/>
-        </memballoon>'''
-        self._check_roundtrip(vmdevices.core.Balloon, balloon_xml)
 
     def test_lease(self):
         lease_xml = u'''<lease>

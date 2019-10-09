@@ -25,7 +25,6 @@ from __future__ import division
 DISK = 'disk'
 NIC = 'interface'
 GRAPHICS = 'graphics'
-BALLOON = 'balloon'
 HOSTDEV = 'hostdev'
 LEASE = 'lease'
 

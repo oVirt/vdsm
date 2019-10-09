@@ -33,7 +33,6 @@ from vdsm.common import xmlutils
 from vdsm.virt import vmxml
 from vdsm.virt.utils import cleanup_guest_socket
 
-from . import hwclass
 from . import compat
 
 
@@ -186,61 +185,6 @@ class Base(vmxml.Device):
         return []
 
 
-class Balloon(Base):
-    __slots__ = ('address', 'target', 'minimum',)
-
-    @classmethod
-    def from_xml_tree(cls, log, dev, meta):
-        params = {
-            'device': dev.tag,
-            'type': hwclass.BALLOON,
-        }
-        update_device_params_from_meta(params, meta)
-        update_device_params(params, dev)
-        params['specParams'] = parse_device_attrs(dev, ('model',))
-        return cls(log, **params)
-
-    def __init__(self, *args, **kwargs):
-        super(Balloon, self).__init__(*args, **kwargs)
-        if not hasattr(self, 'target'):
-            self.target = None
-        if not hasattr(self, 'minimum'):
-            self.minimum = 0
-
-    def getXML(self):
-        """
-        Create domxml for a memory balloon device.
-
-        <memballoon model='virtio'>
-          <address type='pci' domain='0x0000' bus='0x00' slot='0x04'
-           function='0x0'/>
-        </memballoon>
-        """
-        m = self.createXmlElem(self.device, None, ['address'])
-        m.setAttrs(model=self.specParams['model'])
-        return m
-
-    @classmethod
-    def update_device_info(cls, vm, device_conf):
-        for x in vm.domain.get_device_elements('memballoon'):
-            # Ignore balloon devices without address.
-            address = find_device_guest_address(x)
-            alias = find_device_alias(x)
-
-            for dev in device_conf:
-                if address and not hasattr(dev, 'address'):
-                    dev.address = address
-                if alias and not hasattr(dev, 'alias'):
-                    dev.alias = alias
-
-            for dev in vm.conf['devices']:
-                if dev['type'] == hwclass.BALLOON:
-                    if address and not dev.get('address'):
-                        dev['address'] = address
-                    if alias and not dev.get('alias'):
-                        dev['alias'] = alias
-
-
 def console_path(dom, vmid):
     if dom.attrib.get('type') == 'unix':
         path = os.path.join(
@@ -377,14 +321,8 @@ def find_device_type(dev):
     return dev.attrib.get('type', None) or dev.tag
 
 
-_LIBVIRT_TO_OVIRT_NAME = {
-    'memballoon': hwclass.BALLOON,
-}
-
-
 def dev_class_from_dev_elem(dev_elem):
-    dev_type = dev_elem.tag
-    return _LIBVIRT_TO_OVIRT_NAME.get(dev_type, dev_type)
+    return dev_elem.tag
 
 
 def update_device_params(params, dev, attrs=None):

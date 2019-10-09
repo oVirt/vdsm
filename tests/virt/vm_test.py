@@ -978,8 +978,6 @@ _VM_PARAMS = {'displayPort': -1, 'displaySecurePort': -1,
 
 class TestVmStats(TestCaseBase):
 
-    DEV_BALLOON = [{'type': 'balloon', 'specParams': {'model': 'virtio'}}]
-
     def testGetNicStats(self):
         GBPS = 10 ** 9 // 8
         MAC = '52:54:00:59:F5:3F'
@@ -1100,9 +1098,8 @@ class TestLibVirtCallbacks(TestCaseBase):
             self.assertIsNone(testvm._pause_code)  # no error recorded
 
     @permutations([
-        ['net1', set(('balloon',))],
-        ['balloon', set(('net1', 'balloon',))],
-        ['missing', set(('net1', 'balloon',))],
+        ['net1', set()],
+        ['missing', set(('net1',))],
     ])
     def test_onDeviceRemoved(self, alias, kept_aliases):
         devices = '''
@@ -1116,9 +1113,6 @@ class TestLibVirtCallbacks(TestCaseBase):
     <address type='pci' domain='0x0000' bus='0x00' slot='0x03'
              function='0x0'/>
 </interface>
-<memballoon model="none">
-  <alias name="balloon"/>
-</memballoon>
 '''
         with fake.VM(_VM_PARAMS, xmldevices=devices,
                      create_device_objects=True) as testvm:
@@ -1223,7 +1217,6 @@ class TestVmBalloon(TestCaseBase):
 
     def testGetBalloonInfo(self):
         with fake.VM() as testvm:
-            self.assertEqual(testvm._devices[hwclass.BALLOON], [])
             self.assertEqual(testvm.get_balloon_info(), {})
 
     def testSkipBalloonModelNone(self):
