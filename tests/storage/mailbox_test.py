@@ -24,10 +24,15 @@ from __future__ import division
 import collections
 import contextlib
 import io
+import logging
 import threading
 import struct
+import time
+
+from functools import partial
 
 import pytest
+import six
 
 from testlib import make_uuid
 
@@ -45,6 +50,8 @@ SPUUID = '5d928855-b09b-47a7-b920-bd2d2eb5808c'
 
 
 MboxFiles = collections.namedtuple("MboxFiles", "inbox, outbox")
+
+log = logging.getLogger("test")
 
 
 def volume_data(volume_id=None):
@@ -283,6 +290,63 @@ class TestCommunicate:
                 hsm_mb.sendExtendMsg(volume_data(make_uuid()), 100)
 
             assert filled.wait(MAILER_TIMEOUT * 2)
+
+    @pytest.mark.xfail(
+        six.PY3, reason="Pending fix for message clearing", run=False)
+    @pytest.mark.parametrize("delay", [0, 0.05])
+    @pytest.mark.parametrize("messages", [
+        1,
+        2,
+        4,
+        8,
+        # From 9 failures and on the code sleeps for a minute
+        16,
+        32,
+        sm.MESSAGES_PER_MAILBOX,
+    ])
+    def test_roundtrip(self, mboxfiles, delay, messages):
+        timeout = MAILER_TIMEOUT + messages * (1.0 + delay)
+        with make_hsm_mailbox(mboxfiles, 7) as hsm_mb:
+            with make_spm_mailbox(mboxfiles) as spm_mm:
+                pool = FakePool(spm_mm)
+                spm_callback = partial(
+                    sm.SPM_Extend_Message.processRequest, pool)
+                spm_mm.registerMessageType(sm.EXTEND_CODE, spm_callback)
+
+                done = threading.Event()
+                start = {}
+                end = {}
+
+                def reply_msg_callback(vol_data):
+                    vol_id = vol_data['volumeID']
+                    assert vol_id in start, "Missing request"
+                    assert vol_id not in end, "Duplicate request"
+
+                    end[vol_id] = time.time()
+                    log.info("got extension reply for volume %s, elapsed %s",
+                             vol_id, end[vol_id] - start[vol_id])
+                    if len(end) == messages:
+                        log.info("done gathering all replies")
+                        done.set()
+
+                for _ in range(messages):
+                    vol_id = make_uuid()
+                    start[vol_id] = time.time()
+                    log.info("requesting to extend volume %s (delay=%.3f)",
+                             vol_id, delay)
+                    hsm_mb.sendExtendMsg(
+                        volume_data(vol_id),
+                        2 * constants.GIB,
+                        callbackFunction=reply_msg_callback)
+                    time.sleep(delay)
+
+                log.info("waiting for replies clearing")
+                assert done.wait(timeout), "Roundtrip did not finish"
+
+        times = [end[k] - start[k] for k in start]
+        times.sort()
+        log.info("stats: messages=%d delay=%.3f best=%.3f worst=%.3f avg=%.3f",
+                 messages, delay, times[0], times[-1], sum(times) / len(times))
 
 
 class TestExtendMessage:
