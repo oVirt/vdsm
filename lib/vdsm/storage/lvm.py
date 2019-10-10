@@ -426,7 +426,7 @@ class LVMCache(object):
     def bootstrap(self):
         self._reloadpvs()
         self._reloadvgs()
-        self._reloadAllLvs()
+        self._loadAllLvs()
 
     def _reloadpvs(self, pvName=None):
         cmd = list(PVS_CMD)
@@ -599,31 +599,27 @@ class LVMCache(object):
 
         return updatedLVs
 
-    def _reloadAllLvs(self):
+    def _loadAllLvs(self):
         """
         Used only during bootstrap.
         """
         cmd = list(LVS_CMD)
         rc, out, err = self.cmd(cmd)
 
-        with self._lock:
-            if rc == 0:
-                updatedLVs = set()
-                for line in out:
-                    fields = [field.strip() for field in line.split(SEPARATOR)]
-                    if len(fields) != LV_FIELDS_LEN:
-                        raise InvalidOutputLine("lvs", line)
+        if rc == 0:
+            new_lvs = {}
+            for line in out:
+                fields = [field.strip() for field in line.split(SEPARATOR)]
+                if len(fields) != LV_FIELDS_LEN:
+                    raise InvalidOutputLine("lvs", line)
 
-                    lv = makeLV(*fields)
-                    # For LV we are only interested in its first extent
-                    if lv.seg_start_pe == "0":
-                        self._lvs[(lv.vg_name, lv.name)] = lv
-                        updatedLVs.add((lv.vg_name, lv.name))
+                lv = makeLV(*fields)
+                # For LV we are only interested in its first extent
+                if lv.seg_start_pe == "0":
+                    new_lvs[(lv.vg_name, lv.name)] = lv
 
-                # Remove stales
-                for vgName, lvName in frozenset(self._lvs) - updatedLVs:
-                    self._lvs.pop((vgName, lvName), None)
-                    log.error("Removing stale lv: %s/%s", vgName, lvName)
+            with self._lock:
+                self._lvs = new_lvs
                 self._stalelv = False
 
         return dict(self._lvs)
