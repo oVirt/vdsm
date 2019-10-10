@@ -783,14 +783,6 @@ class LVMCache(object):
             res = lvs
         return res
 
-    def getAllLvs(self):
-        # None, None
-        if self._stalelv or any(isinstance(lv, Stub)
-                                for lv in self._lvs.values()):
-            lvs = self._reloadAllLvs()
-        else:
-            lvs = dict(self._lvs)
-        return list(six.itervalues(lvs))
 
 _lvminfo = LVMCache()
 
