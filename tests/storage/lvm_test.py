@@ -967,6 +967,45 @@ def test_retry_with_wider_filter(tmp_storage):
     assert vg.pv_name == (dev,)
 
 
+@pytest.mark.xfail(reason="bug: dictionary changed size during iteration")
+@requires_root
+@pytest.mark.root
+def test_reload_lvs_with_stale_lv(tmp_storage):
+    dev_size = 10 * 1024**3
+    dev1 = tmp_storage.create_device(dev_size)
+    dev2 = tmp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lv1 = "lv1"
+    lv2 = "lv2"
+
+    # Creating VG and LV requires read-write mode.
+    lvm.set_read_only(False)
+    lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
+
+    # Create the LVs.
+    lvm.createLV(vg_name, lv1, 1024)
+    lvm.createLV(vg_name, lv2, 1024)
+
+    # Make sure that LVs are in the cache.
+    expected_lv1 = lvm.getLV(vg_name, lv1)
+    expected_lv2 = lvm.getLV(vg_name, lv2)
+
+    # Simulate LV removed on the SPM while this host keeps it in the cache.
+    commands.run([
+        "lvremove", "-f",
+        "--config", tmp_storage.lvm_config(),
+        "{}/{}".format(vg_name, lv2)
+    ])
+
+    # Test removing staled LVs in LVMCache._reloadlvs() which can be invoked
+    # e.g. by calling lvm.getLv(vg_name).
+    lvs = lvm.getLV(vg_name)
+
+    # And verify that first LV is still correctly reported.
+    assert expected_lv1 in lvs
+    assert expected_lv2 not in lvs
+
+
 def test_normalize_args():
     assert lvm.normalize_args(u"arg") == [u"arg"]
     assert lvm.normalize_args("arg") == [u"arg"]
