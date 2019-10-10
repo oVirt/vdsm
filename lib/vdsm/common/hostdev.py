@@ -737,10 +737,6 @@ def despawn_mdev(mdev_uuid):
         pass
 
 
-def get_mdev_uuid(vm_id):
-    return str(uuid.uuid3(_OVIRT_MDEV_NAMESPACE, vm_id))
-
-
 def _format_address(dev_type, address):
     if dev_type == 'pci':
         address = validate.normalize_pci_address(**address)

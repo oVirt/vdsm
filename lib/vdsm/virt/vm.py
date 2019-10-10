@@ -41,7 +41,6 @@ import six
 from vdsm.common import api
 from vdsm.common import cpuarch
 from vdsm.common import exception
-from vdsm.common import hostdev
 from vdsm.common import libvirtconnection
 from vdsm.common import logutils
 from vdsm.common import response
@@ -362,8 +361,6 @@ class Vm(object):
         self._pause_time = None
         self._guest_agent_api_version = None
         self._blockJobs = {}
-        # REQUIRED_FOR: Engine < 4.2.6
-        self._mdev_type = params.get('custom', {}).get('mdev_type')
         self._md_desc = metadata.Descriptor.from_xml(self.conf['xml'])
         self._init_from_metadata()
         self._destroy_requested = threading.Event()
@@ -516,9 +513,6 @@ class Vm(object):
 
     def _init_from_metadata(self):
         self._custom['custom'] = self._md_desc.custom
-        if self._mdev_type is None:
-            # REQUIRED_FOR: Engine < 4.2.6
-            self._mdev_type = self._custom['custom'].get('mdev_type')
         with self._md_desc.values() as md:
             self._destroy_on_reboot = (
                 md.get('destroy_on_reboot', False) or
@@ -2098,10 +2092,6 @@ class Vm(object):
 
         domxml_preprocess.update_leases_xml_from_disk_objs(
             self, dom, self._devices[hwclass.DISK])
-        if self._mdev_type is not None:
-            # REQUIRED_FOR: Engine < 4.2.6
-            mdev_uuid = hostdev.get_mdev_uuid(self.id)
-            domxml_preprocess.add_mediated_device(dom, mdev_uuid)
         domxml_preprocess.replace_device_xml_with_hooks_xml(
             dom, self.id, self._custom)
 
@@ -2372,15 +2362,7 @@ class Vm(object):
 
     def _make_devices(self):
         disk_objs = self._perform_host_local_adjustment()
-        devices = self._make_devices_from_xml(disk_objs)
-        if self._mdev_type is not None:
-            # REQUIRED_FOR: Engine < 4.2.6
-            # Mediated devices used to be handled by a hook, so they are not
-            # handled by older Engines in the usual way.
-            vmdevices.hostdevice.append_mediated_device(
-                devices, self.log, self._mdev_type, self.id
-            )
-        return devices
+        return self._make_devices_from_xml(disk_objs)
 
     def _perform_host_local_adjustment(self):
         """

@@ -28,8 +28,7 @@ from vdsm.common import conv
 from vdsm.common import validate
 from vdsm.common.hostdev import get_device_params, detach_detachable, \
     pci_address_to_name, scsi_address_to_adapter, reattach_detachable, \
-    device_name_from_address, spawn_mdev, despawn_mdev, get_mdev_uuid, \
-    MdevPlacement
+    device_name_from_address, spawn_mdev, despawn_mdev, MdevPlacement
 from vdsm.virt import libvirtxml
 from vdsm.virt import vmxml
 
@@ -468,26 +467,3 @@ def _update_hostdev_params(params, dev):
     driver = vmxml.find_attr(dev, 'driver', 'name')
     if driver:
         params['driver'] = driver
-
-
-def append_mediated_device(devices, log, mdev_type, vm_id):
-    mdev_uuid = get_mdev_uuid(vm_id)
-    old_device_id = None
-    for dev in devices[hwclass.HOSTDEV]:
-        # REQUIRED_FOR: Engine < 4.2
-        # Legacy Engine tracks the mdev device once it is created and sends it
-        # in device parameters on the next VM run.  However the sent device is
-        # incomplete and inaccurate (and we must handle devices created by
-        # former vfio-mdev hook) and the easiest way to deal with that is to
-        # replace it.  We must be careful not to change the device id,
-        # otherwise Engine would track it as an additional device together with
-        # the original device.
-        if getattr(dev, 'address', {}).get('uuid') == mdev_uuid:
-            old_device_id = dev.deviceId
-            devices[hwclass.HOSTDEV].remove(dev)
-            break
-    mdev_dom = libvirtxml.make_mdev_element(mdev_uuid)
-    mdev = HostDevice.from_xml_tree(log, mdev_dom, {'mdevType': mdev_type})
-    if old_device_id is not None:
-        mdev.deviceId = old_device_id
-    devices[hwclass.HOSTDEV].append(mdev)
