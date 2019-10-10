@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import sys
 import six
 
 from testlib import VdsmTestCase as TestCaseBase
@@ -1250,19 +1251,20 @@ class GlusterCliTests(TestCaseBase):
         self.assertEqual(healInfo, glusterTestData.GLUSTER_VOLUME_HEAL_INFO)
 
     def test_execGlusterXml(self):
-        tree = gcli._execGlusterXml(["./fake-gluster-cli"])
+        tree = gcli._execGlusterXml([sys.executable, "./fake-gluster-cli"])
         el = tree.find('volStatus/volumes/volume/volName').text
         self.assertEqual(el, 'vol-2')
 
     def test_execGlusterXmlWithTimeout(self):
-        tree = gcli._execGlusterXmlWithTimeout(["./slow-gluster-cli"],
-                                               timeout=20)
+        tree = gcli._execGlusterXmlWithTimeout(
+            [sys.executable, "./slow-gluster-cli"], timeout=20)
         el = tree.find('volStatus/volumes/volume/volName').text
         self.assertEqual(el, 'vol-2')
 
     def test_execGlusterXmlWithTimeoutFail(self):
         with self.assertRaises(exception.GlusterCommandTimeoutException):
-            gcli._execGlusterXmlWithTimeout(["./slow-gluster-cli"], timeout=5)
+            gcli._execGlusterXmlWithTimeout(
+                [sys.executable, "./slow-gluster-cli"], timeout=5)
 
     def test_parseGlobalVolumeOptions(self):
         with open("glusterGlobalVolumeOptions.xml") as f:
