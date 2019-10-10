@@ -311,10 +311,14 @@ Requires: policycoreutils >= 2.1.13-55
 # qemu-kvm
 
 %if 0%{?rhel} >= 8
+%if 0%{?centos}
+Requires: qemu-kvm
+%else
 # 4k not supported yet on rhel 8.
 # https://bugzilla.redhat.com/1749134
 Requires: qemu-kvm >= 15:3.1.0-20.module+el8+2888+cdc893a8
-%endif
+%endif #centos
+%endif #rhel
 
 %if 0%{?rhel} == 7
 # 4k not supported yet on rhel 7.
