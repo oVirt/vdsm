@@ -45,6 +45,14 @@ SPUUID = '5d928855-b09b-47a7-b920-bd2d2eb5808c'
 MboxFiles = collections.namedtuple("MboxFiles", "inbox, outbox")
 
 
+def volume_data(volume_id=None):
+    if volume_id is None:
+        volume_id = 'd772f1c6-3ebb-43c3-a42e-73fcd8255a5f'
+    return dict(poolID=SPUUID,
+                domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
+                volumeID=volume_id)
+
+
 @pytest.fixture()
 def mboxfiles(tmpdir):
     data = sm.EMPTYMAILBOX * MAX_HOSTS
@@ -166,13 +174,8 @@ class TestCommunicate:
         with make_hsm_mailbox(mboxfiles, 7) as hsm_mb:
             with make_spm_mailbox(mboxfiles) as spm_mm:
                 spm_mm.registerMessageType(sm.EXTEND_CODE, spm_callback)
-                VOL_DATA = dict(
-                    poolID=SPUUID,
-                    domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
-                    volumeID='d772f1c6-3ebb-43c3-a42e-73fcd8255a5f')
                 REQUESTED_SIZE = 100
-
-                hsm_mb.sendExtendMsg(VOL_DATA, REQUESTED_SIZE)
+                hsm_mb.sendExtendMsg(volume_data(), REQUESTED_SIZE)
 
                 if not msg_processed.wait(10 * MONITOR_INTERVAL):
                     expired = True
@@ -189,11 +192,7 @@ class TestCommunicate:
 
         with make_hsm_mailbox(mboxfiles, HOST_ID):
             with make_spm_mailbox(mboxfiles) as spm_mm:
-                VOL_DATA = dict(
-                    poolID=SPUUID,
-                    domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
-                    volumeID='d772f1c6-3ebb-43c3-a42e-73fcd8255a5f')
-                msg = sm.SPM_Extend_Message(VOL_DATA, 0)
+                msg = sm.SPM_Extend_Message(volume_data(), 0)
                 spm_mm.sendReply(MSG_ID, msg)
 
         inbox, outbox = read_mbox(mboxfiles)
@@ -212,20 +211,15 @@ class TestCommunicate:
 
 class TestExtendMessage:
 
-    VOL_DATA = dict(
-        poolID=SPUUID,
-        domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
-        volumeID='d772f1c6-3ebb-43c3-a42e-73fcd8255a5f')
-
     def test_no_domain(self):
-        vol_data = dict(self.VOL_DATA)
+        vol_data = volume_data()
         del vol_data['domainID']
         with pytest.raises(sm.InvalidParameterException):
             sm.SPM_Extend_Message(vol_data, 0)
 
     def test_bad_size(self):
         with pytest.raises(sm.InvalidParameterException):
-            sm.SPM_Extend_Message(self.VOL_DATA, -1)
+            sm.SPM_Extend_Message(volume_data(), -1)
 
     def test_process_request(self):
         PAYLOAD = (
@@ -240,8 +234,9 @@ class TestExtendMessage:
             pool=pool, msgID=MSG_ID, payload=PAYLOAD)
 
         assert ret == {'status': {'code': 0, 'message': 'Done'}}
+        vol_data = volume_data()
         pool.extendVolume.assert_called_with(
-            self.VOL_DATA['domainID'], self.VOL_DATA['volumeID'], 4242)
+            vol_data['domainID'], vol_data['volumeID'], 4242)
 
         called_name, called_args, called_kwargs = pool.mock_calls[1]
         assert called_name == 'spmMailer.sendReply'
