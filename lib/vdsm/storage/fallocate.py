@@ -24,6 +24,7 @@ fallocate wrapping module
 
 from __future__ import absolute_import
 
+import sys
 from vdsm.storage import operation
 
 _FALLOCATE = "/usr/libexec/vdsm/fallocate"
@@ -42,7 +43,10 @@ def allocate(image, size, offset=0):
            specified in bytes.
     :return operation object, encapsulating fallocate helper call
     """
-    cmd = [_FALLOCATE]
+    # This is the only sane way to run python scripts that work with both
+    # python2 and python3 in the tests.
+    # TODO: Remove when we drop python 2.
+    cmd = [sys.executable, _FALLOCATE]
 
     if offset > 0:
         cmd.extend(("--offset", str(offset)))

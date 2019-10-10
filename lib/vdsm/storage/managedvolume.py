@@ -34,6 +34,8 @@ import functools
 import json
 import logging
 import os
+import sys
+
 from contextlib import closing
 
 # TODO: Change to simple import when os_brick is available
@@ -180,7 +182,11 @@ def run_helper(sub_cmd, cmd_input=None):
     try:
         if cmd_input:
             cmd_input = json.dumps(cmd_input).encode("utf-8")
-        result = commands.run([HELPER, sub_cmd], input=cmd_input)
+        # This is the only sane way to run python scripts that work with both
+        # python2 and python3 in the tests.
+        # TODO: Remove when we drop python 2.
+        cmd = [sys.executable, HELPER, sub_cmd]
+        result = commands.run(cmd, input=cmd_input)
     except cmdutils.Error as e:
         raise se.ManagedVolumeHelperFailed("Error executing helper: %s" % e)
     try:
