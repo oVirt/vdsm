@@ -9,14 +9,16 @@ prepare_env() {
     export OVIRT_CI=1
     export BUILDS=$PWD/rpmbuild
     export EXPORT_DIR="$PWD/exported-artifacts"
+    export PATH="/usr/local/bin:$PATH"
     mkdir -p $EXPORT_DIR
 }
 
 install_dependencies() {
-    ${CI_PYTHON} tests/profile pip-install ${CI_PYTHON} -m pip install -U \
-        "more-itertools<6.0.0" \
-        "tox==2.9.1"
-    export PATH="${PATH}:/usr/local/bin"
+    ${CI_PYTHON} tests/profile pip-upgrade ${CI_PYTHON} -m pip \
+        install --upgrade pip
+
+    ${CI_PYTHON} tests/profile pip-install ${CI_PYTHON} -m pip \
+        install --upgrade "tox==2.9.1"
 }
 
 build_vdsm() {

@@ -35,6 +35,7 @@ RUN dnf install -y \
         python3-magic \
         python3-netaddr \
         python3-nose \
+        python3-pip \
         python3-pyudev \
         python3-rpm \
         python3-sanlock \
@@ -53,7 +54,9 @@ RUN debuginfo-install -y python3 \
     && dnf clean all
 
 # Add development packages
-RUN python3 -m pip install nose==1.3.7 tox==2.9.1 yappi==0.93
+COPY requirements.txt requirements.txt
+RUN python3 -m pip install --upgrade pip \
+    && python3 -m pip install --requirement requirements.txt
 
 # Add lvm configuration.
 COPY lvmlocal.conf /etc/lvm/

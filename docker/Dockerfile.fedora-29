@@ -78,7 +78,9 @@ RUN debuginfo-install -y python2 python3 \
     && dnf clean all
 
 # Add development packages
-RUN pip install nose==1.3.7 tox==2.9.1 yappi==0.93
+COPY requirements.txt requirements.txt
+RUN python2 -m pip install --upgrade pip \
+    && python2 -m pip install --requirement requirements.txt mock
 
 # Add lvm configuration.
 COPY lvmlocal.conf /etc/lvm/
