@@ -2740,6 +2740,9 @@ class Vm(object):
             self._updateDomainDescriptor()
 
     @api.guard(_not_migrating)
+    # This hot plug must be able to take multiple devices so that
+    # IOMMU placeholders and/or different devices in shared groups can
+    # be added.
     def hostdevHotplug(self, dev_specs):
         dev_objects = []
         for dev_spec in dev_specs:
