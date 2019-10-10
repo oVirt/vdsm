@@ -24,57 +24,57 @@ from __future__ import division
 import io
 import os
 
-from monkeypatch import MonkeyPatch
-from testlib import VdsmTestCase
-from testlib import temporaryPath
-from testlib import namedTemporaryDir
+import pytest
+
 from vdsm.common import cmdutils
 from vdsm.storage import fallocate
 
 
-class TestFallocate(VdsmTestCase):
+def test_allocate(tmpdir, monkeypatch):
+    # Test that allocate call made correctly
+    monkeypatch.setattr(fallocate, '_FALLOCATE', '../helpers/fallocate')
+    size = 4096
+    image = str(tmpdir.join("image"))
 
-    @MonkeyPatch(fallocate, '_FALLOCATE', '../helpers/fallocate')
-    def test_allocate(self):
-        # Test that allocate call made correctly
-        size = 4096
-        with namedTemporaryDir() as tmpdir:
-            image = os.path.join(tmpdir, "image")
+    fallocate.allocate(image, size).run()
 
-            fallocate.allocate(image, size).run()
+    allocated = os.stat(image).st_blocks * 512
+    assert allocated == size
 
-            allocated = os.stat(image).st_blocks * 512
-            self.assertEqual(allocated, size)
 
-    @MonkeyPatch(fallocate, '_FALLOCATE', '../helpers/fallocate')
-    def test_negative_size(self):
-        # Test that fallocate call throws exception on error
-        with namedTemporaryDir() as tmpdir:
-            image = os.path.join(tmpdir, "image")
-            with self.assertRaises(cmdutils.Error):
-                fallocate.allocate(image, -1).run()
+def test_negative_size(tmpdir, monkeypatch):
+    # Test that fallocate call throws exception on error
+    monkeypatch.setattr(fallocate, '_FALLOCATE', '../helpers/fallocate')
+    image = str(tmpdir.join("image"))
+    with pytest.raises(cmdutils.Error):
+        fallocate.allocate(image, -1).run()
 
-    @MonkeyPatch(fallocate, '_FALLOCATE', '../helpers/fallocate')
-    def test_zero_size(self):
-        # Test that fallocate call throws exception on error
-        with namedTemporaryDir() as tmpdir:
-            image = os.path.join(tmpdir, "image")
-            with self.assertRaises(cmdutils.Error):
-                fallocate.allocate(image, 0).run()
 
-    @MonkeyPatch(fallocate, '_FALLOCATE', '../helpers/fallocate')
-    def test_resize(self):
-        # Test that resize call actually works
-        size = 4096
-        with temporaryPath(data=b'x' * size) as image:
-            fallocate.allocate(image, size, offset=size).run()
+def test_zero_size(tmpdir, monkeypatch):
+    # Test that fallocate call throws exception on error
+    monkeypatch.setattr(fallocate, '_FALLOCATE', '../helpers/fallocate')
+    image = str(tmpdir.join("image"))
+    with pytest.raises(cmdutils.Error):
+        fallocate.allocate(image, 0).run()
 
-            with io.open(image, 'rb') as f:
-                actual = f.read()
 
-            expected = b'x' * size + b'\0' * size
+def test_resize(tmpdir, monkeypatch):
+    # Test that resize call actually works
+    monkeypatch.setattr(fallocate, '_FALLOCATE', '../helpers/fallocate')
+    size = 4096
+    image = str(tmpdir.join("image"))
 
-            self.assertEqual(expected, actual)
+    with io.open(image, "wb") as f:
+        f.write(b'x' * size)
 
-            allocated = os.stat(image).st_blocks * 512
-            self.assertEqual(allocated, size * 2)
+    fallocate.allocate(image, size, offset=size).run()
+
+    with io.open(image, 'rb') as f:
+        actual = f.read()
+
+    expected = b'x' * size + b'\0' * size
+
+    assert expected == actual
+
+    allocated = os.stat(image).st_blocks * 512
+    assert allocated == size * 2
