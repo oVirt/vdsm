@@ -2749,6 +2749,7 @@ class Vm(object):
                 dev_object.setup()
             except libvirt.libvirtError:
                 # We couldn't detach one of the devices. Halt.
+                # No cleanup needed, detaching a detached device is noop.
                 self.log.exception('Could not detach a device from a host.')
                 return response.error('hostdevDetachErr')
 
