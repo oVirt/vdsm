@@ -75,7 +75,6 @@ test_modules = \
 	exception_test.py \
 	executor_test.py \
 	eventfd_test.py \
-	fallocate_test.py \
 	filecontrol_test.py \
 	fuser_test.py \
 	glob_test.py \
