@@ -18,7 +18,7 @@ install_dependencies() {
         install --upgrade pip
 
     ${CI_PYTHON} tests/profile pip-install ${CI_PYTHON} -m pip \
-        install --upgrade "tox==2.9.1"
+        install --upgrade "tox==3.14"
 }
 
 build_vdsm() {
