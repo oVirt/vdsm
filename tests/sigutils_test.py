@@ -25,13 +25,14 @@ import errno
 import os
 import signal
 import subprocess
+import sys
 import time
 
 from nose import tools
 from testValidation import broken_on_ci
 from testlib import VdsmTestCase
 
-CHILD_SCRIPT = 'tests_child.py'
+CHILD_SCRIPT = os.path.abspath('tests_child.py')
 
 
 def assert_read(stream, expected):
@@ -48,7 +49,7 @@ def assert_read(stream, expected):
 @contextlib.contextmanager
 def child_test(*args):
     proc = subprocess.Popen(
-        [os.path.abspath(CHILD_SCRIPT)] + list(args),
+        [sys.executable, "-u", CHILD_SCRIPT] + list(args),
         stdout=subprocess.PIPE,
         cwd=os.path.dirname(__file__)
     )
