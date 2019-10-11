@@ -80,44 +80,6 @@ class TestNetworkStaticIpBasic(object):
     def test_add_net_with_ip_based_on_vlan(self, switch, families, bonded):
         self._test_add_net_with_ip(families, switch, bonded, vlaned=True)
 
-    def _test_add_net_with_ip(
-        self, families, switch, bonded=False, vlaned=False, bridged=False
-    ):
-        IPv6_ADDRESS_AND_PREFIX_LEN = IPv6_ADDRESS + '/' + IPv6_PREFIX_LEN
-
-        with dummy_devices(2) as (nic1, nic2):
-            network_attrs = {'bridged': bridged, 'switch': switch}
-
-            if IpFamily.IPv4 in families:
-                network_attrs['ipaddr'] = IPv4_ADDRESS
-                network_attrs['netmask'] = IPv4_NETMASK
-            if IpFamily.IPv6 in families:
-                network_attrs['ipv6addr'] = IPv6_ADDRESS_AND_PREFIX_LEN
-
-            if bonded:
-                bondcreate = {
-                    BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}
-                }
-                network_attrs['bonding'] = BOND_NAME
-            else:
-                bondcreate = {}
-                network_attrs['nic'] = nic1
-
-            if vlaned:
-                network_attrs['vlan'] = VLAN
-
-            netcreate = {NETWORK_NAME: network_attrs}
-
-            with adapter.setupNetworks(netcreate, bondcreate, NOCHK):
-                adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
-                if vlaned:
-                    base = (
-                        adapter.netinfo.bondings.get(BOND_NAME)
-                        or adapter.netinfo.nics[nic1]
-                    )
-                    adapter.assertDisabledIPv4(base)
-                    adapter.assertDisabledIPv6(base)
-
     def test_add_net_with_prefix(self, switch):
         with dummy_device() as nic:
             network_attrs = {
@@ -215,6 +177,44 @@ class TestNetworkStaticIpBasic(object):
                 adapter.setupNetworks(net2, bond, NOCHK)
                 adapter.assertNetworkIp(NETWORK_NAME, network_attrs1)
                 adapter.assertNetworkIp(NETWORK2_NAME, network_attrs2)
+
+    def _test_add_net_with_ip(
+        self, families, switch, bonded=False, vlaned=False, bridged=False
+    ):
+        IPv6_ADDRESS_AND_PREFIX_LEN = IPv6_ADDRESS + '/' + IPv6_PREFIX_LEN
+
+        with dummy_devices(2) as (nic1, nic2):
+            network_attrs = {'bridged': bridged, 'switch': switch}
+
+            if IpFamily.IPv4 in families:
+                network_attrs['ipaddr'] = IPv4_ADDRESS
+                network_attrs['netmask'] = IPv4_NETMASK
+            if IpFamily.IPv6 in families:
+                network_attrs['ipv6addr'] = IPv6_ADDRESS_AND_PREFIX_LEN
+
+            if bonded:
+                bondcreate = {
+                    BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}
+                }
+                network_attrs['bonding'] = BOND_NAME
+            else:
+                bondcreate = {}
+                network_attrs['nic'] = nic1
+
+            if vlaned:
+                network_attrs['vlan'] = VLAN
+
+            netcreate = {NETWORK_NAME: network_attrs}
+
+            with adapter.setupNetworks(netcreate, bondcreate, NOCHK):
+                adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+                if vlaned:
+                    base = (
+                        adapter.netinfo.bondings.get(BOND_NAME)
+                        or adapter.netinfo.nics[nic1]
+                    )
+                    adapter.assertDisabledIPv4(base)
+                    adapter.assertDisabledIPv6(base)
 
 
 @pytest.mark.nmstate
