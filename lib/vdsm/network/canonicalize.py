@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ import six
 from .netinfo import bonding, bridges
 from vdsm.common.conv import tobool
 from vdsm.network import dns
+from vdsm.network.ip.address import IPAddressData
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link import bond
 from vdsm.network.link import iface
@@ -195,6 +196,14 @@ def _canonicalize_ipv6(data):
         data['dhcpv6'] = False
     if 'ipv6autoconf' not in data:
         data['ipv6autoconf'] = False
+    ipv6_addr = data.get('ipv6addr')
+    if ipv6_addr:
+        data['ipv6addr'] = _compress_ipv6_address(ipv6_addr)
+
+
+def _compress_ipv6_address(ipv6_addr):
+    wrapped_ipv6_address = IPAddressData(ipv6_addr, device=None)
+    return wrapped_ipv6_address.address_with_prefixlen
 
 
 def _canonicalize_switch_type_net(data):
