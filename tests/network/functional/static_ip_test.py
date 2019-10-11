@@ -178,6 +178,22 @@ class TestNetworkStaticIpBasic(object):
                 adapter.assertNetworkIp(NETWORK_NAME, network_attrs1)
                 adapter.assertNetworkIp(NETWORK2_NAME, network_attrs2)
 
+    @pytest.mark.xfail(
+        reason='https://bugzilla.redhat.com/1760800', strict=True
+    )
+    def test_add_static_ipv6_expanded_notation(self, switch):
+        exploded_ipv6_address = '2001:0db8:85a3:0000:0000:8a2e:0370:7331'
+        with dummy_device() as nic:
+            network_attrs = {
+                'nic': nic,
+                'ipv6addr': exploded_ipv6_address + '/' + IPv6_PREFIX_LEN,
+                'switch': switch,
+            }
+            netcreate = {NETWORK_NAME: network_attrs}
+
+            with adapter.setupNetworks(netcreate, {}, NOCHK):
+                adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+
     def _test_add_net_with_ip(
         self, families, switch, bonded=False, vlaned=False, bridged=False
     ):
