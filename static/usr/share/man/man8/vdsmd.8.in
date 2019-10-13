@@ -221,7 +221,7 @@ after_get_stats receives the complete host statistics dictionary within
 _hook_json.
 
 .SS Hook execution
-before_vdsm_start and after_vdsm_stop scripts are executed as user
+before_vdsm_start script is executed as user
 .I root.
 All the other hooks are executed as user
 .I vdsm.

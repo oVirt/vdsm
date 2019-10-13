@@ -38,6 +38,7 @@ from vdsm import metrics
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import dsaversion
+from vdsm.common import hooks
 from vdsm.common import lockfile
 from vdsm.common import libvirtconnection
 from vdsm.common import sigutils
@@ -125,6 +126,7 @@ def serve_clients(log):
             cif.prepareForShutdown()
             jobs.stop()
             scheduler.stop()
+            run_stop_hook()
     finally:
         libvirtconnection.stop_event_loop(wait=False)
 
@@ -261,6 +263,16 @@ def __set_cpu_affinity():
 
     log.info('VDSM will run with cpu affinity: %s', cpu_set)
     taskset.set(os.getpid(), cpu_set, all_tasks=True)
+
+
+def run_stop_hook():
+    # TODO: Move to vdsmd.service ExecStopPost when systemd is fixed.
+    # https://bugzilla.redhat.com/1761260
+    log = logging.getLogger('vds')
+    try:
+        hooks.after_vdsm_stop()
+    except Exception:
+        log.exception("Error running stop hook")
 
 
 def main():
