@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# Lists all Python files which are pylint-py3k-clean
-
-DIR="$(dirname $0)"
-VALID_PYTHON_FILES=$("${DIR}/list-all-python-files" | grep -v -x -F -f "${DIR}/../py3-blacklist.txt")
-echo "${VALID_PYTHON_FILES}"
