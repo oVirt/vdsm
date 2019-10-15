@@ -165,7 +165,7 @@ class TestCommunicate:
 
         with make_hsm_mailbox(mboxfiles, 7) as hsm_mb:
             with make_spm_mailbox(mboxfiles) as spm_mm:
-                spm_mm.registerMessageType(b"xtnd", spm_callback)
+                spm_mm.registerMessageType(sm.EXTEND_CODE, spm_callback)
                 VOL_DATA = dict(
                     poolID=SPUUID,
                     domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',

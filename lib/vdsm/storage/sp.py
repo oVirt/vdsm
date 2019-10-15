@@ -365,9 +365,9 @@ class StoragePool(object):
                     self.spmMailer = mailbox.SPM_MailMonitor(
                         self, maxHostID, inbox, outbox)
                     self.spmMailer.start()
-                    self.spmMailer.registerMessageType('xtnd', partial(
-                        mailbox.SPM_Extend_Message.processRequest,
-                        self))
+                    self.spmMailer.registerMessageType(
+                        mailbox.EXTEND_CODE, partial(
+                            mailbox.SPM_Extend_Message.processRequest, self))
                     self.log.debug("SPM mailbox ready for pool %s on master "
                                    "domain %s", self.spUUID,
                                    self.masterDomain.sdUUID)
