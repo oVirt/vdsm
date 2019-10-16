@@ -615,7 +615,7 @@ def volumeSet(volumeName, option, value):
 
 
 def _checkIfVolumeCreated(volumeName):
-    vol_info_cmd = _getGlusterVolCmd() + ["info"] + volumeName
+    vol_info_cmd = _getGlusterVolCmd() + ["info", volumeName]
     xmltree = _execGlusterXml(vol_info_cmd)
     vol_info = xmltree.find('volInfo/volumes/volume')
     status = vol_info.find('statusStr').text.upper()
