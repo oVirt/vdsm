@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2019 Red Hat, Inc.
+# Copyright 2014-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import six
 
 from vdsm.common import exception
 from vdsm.common import xmlutils
-from vdsm.virt.vmdevices import hostdevice, network, hwclass
+from vdsm.virt.vmdevices import network, hwclass
 
 from testlib import VdsmTestCase as TestCaseBase, XMLTestCase
 from testlib import permutations, expandPermutations
@@ -174,30 +174,6 @@ class HostdevCreationTests(XMLTestCase):
             'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
             'smp': '8', 'maxVCpus': '160',
             'memSize': '1024', 'memGuaranteedSize': '512'}
-
-    @permutations([
-        [device_name]
-        for device_name in hostdevlib.PCI_DEVICES +
-        hostdevlib.USB_DEVICES + [hostdevlib.SCSI_DEVICES[2]]
-    ])
-    def testCreateHostDevice(self, device_name):
-        dev_spec = {'type': 'hostdev', 'device': device_name}
-        device = hostdevice.HostDevice(self.log, **dev_spec)
-        self.assertXMLEqual(xmlutils.tostring(device.getXML()),
-                            hostdevlib.DEVICE_XML[device_name] % ('',))
-
-    @permutations([
-        [device_name]
-        for device_name in hostdevlib.PCI_DEVICES
-    ])
-    def testCreatePCIHostDeviceWithAddress(self, device_name):
-        dev_spec = {'type': 'hostdev', 'device': device_name, 'address':
-                    self._PCI_ADDRESS}
-        device = hostdevice.HostDevice(self.log, **dev_spec)
-        self.assertXMLEqual(
-            xmlutils.tostring(device.getXML()),
-            hostdevlib.DEVICE_XML[device_name] %
-            (self._PCI_ADDRESS_XML))
 
     # TODO: next 2 tests should reside in their own module (interfaceTests.py)
     def testCreateSRIOVVF(self):

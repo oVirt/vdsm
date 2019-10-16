@@ -364,13 +364,13 @@ class VM(APIBase):
 
     @api.logged(on="api.virt")
     @api.method
-    def hostdevHotplug(self, devices):
-        return self.vm.hostdevHotplug(devices)
+    def hotplugHostdev(self, devices):
+        return self.vm.hotplugHostdev(devices)
 
     @api.logged(on="api.virt")
     @api.method
-    def hostdevHotunplug(self, devices):
-        return self.vm.hostdevHotunplug(devices)
+    def hotunplugHostdev(self, devices):
+        return self.vm.hotunplugHostdev(devices)
 
     @api.logged(on="api.virt")
     @api.method

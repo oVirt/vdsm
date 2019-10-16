@@ -334,39 +334,6 @@ class TestVmDevices(XMLTestCase):
         finally:
             iface.teardown()
 
-    @permutations([['''<hostdev managed="no" mode="subsystem" type="usb">
-                          <alias name="testusb"/>
-                          <source>
-                             <address bus="1" device="2"/>
-                          </source>
-                        </hostdev>''',
-                    {'type': hwclass.HOSTDEV, 'device': 'usb_1_1'}],
-                   ['''<hostdev managed="no" mode="subsystem" type="pci">
-                         <alias name="testpci"/>
-                         <source>
-                           <address bus="0" domain="0" function="0" slot="2"/>
-                         </source>
-                         <address bus="0" domain="0" function="0" slot="3"/>
-                       </hostdev>''',
-                    {'type': hwclass.HOSTDEV, 'device': 'pci_0000_00_02_0'}]])
-    def testGetUpdateHostDeviceInfo(self, device_xml, conf):
-        xml = """<?xml version="1.0" encoding="utf-8"?>
-        <domain type="kvm"
-          xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
-          <devices>
-            %s
-          </devices>
-        </domain>""" % (device_xml,)
-        with fake.VM() as testvm:
-            device = vmdevices.hostdevice.HostDevice(testvm.log, **conf)
-
-            testvm.conf['devices'] = [conf]
-            device_conf = [device]
-            testvm._domain = DomainDescriptor(xml)
-
-            vmdevices.hostdevice.HostDevice.update_device_info(testvm,
-                                                               device_conf)
-
     def test_mdev_details_(self):
         details = hostdev._mdev_type_details('graphics-card-1', '/nonexistent')
         for f in hostdev._MDEV_FIELDS:

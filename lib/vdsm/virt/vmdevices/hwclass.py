@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2019 Red Hat, Inc.
+# Copyright 2014-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,4 +38,4 @@ TO_REFRESH = (
     NIC,  # needed by many network-related hooks (vmfex, ovn)
 )
 
-HOTPLUGGABLE = (DISK, NIC, HOSTDEV, LEASE,)
+HOTPLUGGABLE = (DISK, NIC, LEASE,)

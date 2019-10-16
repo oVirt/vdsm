@@ -654,9 +654,8 @@ def _suitable_device_for_mdev_type(target_mdev_type, mdev_placement, log):
 
 def device_name_from_address(address_type, device_address):
     _, address_to_name = _get_devices_from_libvirt()
-    return address_to_name[
-        _format_address(address_type, device_address)
-    ]
+    address = _format_address(address_type, device_address)
+    return address_to_name.get(address)
 
 
 def list_by_caps(caps=None):

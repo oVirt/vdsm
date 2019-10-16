@@ -100,7 +100,6 @@ from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket
 from vdsm.virt.utils import extract_cluster_version
 from vdsm.virt.utils import TimedAcquireLock
 from six.moves import range
-from six.moves import zip
 
 
 # A libvirt constant for undefined cpu quota
@@ -2331,6 +2330,11 @@ class Vm(object):
     def _tracked_devices(self):
         for dom in self._domain.get_device_elements('graphics'):
             yield vmdevices.graphics.Graphics(dom, self.id)
+        for dom in self._domain.get_device_elements('hostdev'):
+            meta = vmdevices.common.dev_meta_from_elem(
+                dom, self.id, self._md_desc
+            )
+            yield vmdevices.hostdevice.HostDevice(dom, meta, self.log)
         for dev_objects in self._devices.values():
             for dev_object in dev_objects[:]:
                 yield dev_object
@@ -2739,87 +2743,48 @@ class Vm(object):
     # This hot plug must be able to take multiple devices so that
     # IOMMU placeholders and/or different devices in shared groups can
     # be added.
-    def hostdevHotplug(self, dev_specs):
-        dev_objects = []
-        for dev_spec in dev_specs:
-            dev_object = vmdevices.hostdevice.HostDevice(self.log, **dev_spec)
-            dev_objects.append(dev_object)
+    def hotplugHostdev(self, device_xmls):
+        for xml in device_xmls:
+            _cls, dom, meta = vmdevices.common.dev_elems_from_xml(self, xml)
             try:
-                dev_object.setup()
+                vmdevices.hostdevice.setup_device(dom, meta, self.log)
             except libvirt.libvirtError:
                 # We couldn't detach one of the devices. Halt.
                 # No cleanup needed, detaching a detached device is noop.
-                self.log.exception('Could not detach a device from a host.')
+                self.log.exception('Could not detach a device from a host: %s',
+                                   xml)
                 return response.error('hostdevDetachErr')
-
         assigned_devices = []
-
-        # Hard part is done, we have detached all devices without errors.
-        # We now have to add devices to the VM while ignoring placeholders.
-        for dev_spec, dev_object in zip(dev_specs, dev_objects):
-            try:
-                dev_xml = xmlutils.tostring(dev_object.getXML())
-            except vmdevices.core.SkipDevice:
-                self.log.info('Skipping device %s.', dev_object.device)
-                continue
-
-            dev_object._deviceXML = dev_xml
-            self.log.info("Hotplug hostdev xml: %s", dev_xml)
-
+        for xml in device_xmls:
+            self.log.info("Hotplug hostdev xml: %s", xml)
+            _cls, dom, _meta = vmdevices.common.dev_elems_from_xml(self, xml)
+            dev_xml = xmlutils.tostring(dom)
             try:
                 self._dom.attachDevice(dev_xml)
             except libvirt.libvirtError:
-                self.log.exception('Skipping device %s.', dev_object.device)
+                self.log.exception('Skipping device %s.', dev_xml)
                 continue
-
-            assigned_devices.append(dev_object.device)
-
-            self._devices[hwclass.HOSTDEV].append(dev_object)
-
             self._updateDomainDescriptor()
-            vmdevices.hostdevice.HostDevice.update_device_info(
-                self, self._devices[hwclass.HOSTDEV])
-
+            assigned_devices.append(xml)
         return response.success(assignedDevices=assigned_devices)
 
     @api.guard(_not_migrating)
-    def hostdevHotunplug(self, dev_names):
-        device_objects = []
+    def hotunplugHostdev(self, device_xmls):
         unplugged_devices = []
-
-        for dev_name in dev_names:
-            dev_object = None
-            for dev in self._devices[hwclass.HOSTDEV][:]:
-                if dev.device == dev_name:
-                    dev_object = dev
-                    device_objects.append(dev)
-                    break
-
-            if dev_object:
-                device_xml = xmlutils.tostring(dev_object.getXML())
-                self.log.debug('Hotunplug hostdev xml: %s', device_xml)
-            else:
-                self.log.error('Hotunplug hostdev failed (continuing) - '
-                               'device not found: %s', dev_name)
-                continue
-
+        # TODO: Hot unplug the devices concurrently?
+        for xml in device_xmls:
+            cls, dom, meta = vmdevices.common.dev_elems_from_xml(self, xml)
+            alias = vmdevices.core.find_device_alias(dom)
+            dev_object = cls(dom, meta, self.log)
+            if alias:
+                self._hotunplugged_devices[alias] = dev_object
+            dev_xml = xmlutils.tostring(dom)
             try:
-                self._hotunplug_device(device_xml, dev_object,
-                                       hwclass.HOSTDEV)
-            except HotunplugTimeout:
-                self._hostdev_hotunplug_restore(dev_object)
+                self._hotunplug_device(dev_xml, dev_object, hwclass.HOSTDEV)
+            except (HotunplugTimeout, libvirt.libvirtError):
                 continue
-            except libvirt.libvirtError:
-                self._hostdev_hotunplug_restore(dev_object)
-                continue
-
-            unplugged_devices.append(dev_name)
-
+            unplugged_devices.append(xml)
         return response.success(unpluggedDevices=unplugged_devices)
-
-    def _hostdev_hotunplug_restore(self, dev_object):
-        self._devices[hwclass.HOSTDEV].append(dev_object)
-        self._updateDomainDescriptor()
 
     def _lookupDeviceByPath(self, path):
         for dev in self._devices[hwclass.DISK][:]:

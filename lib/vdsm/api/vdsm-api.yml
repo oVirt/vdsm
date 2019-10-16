@@ -10426,37 +10426,37 @@ VM.updateDevice:
         description: The VM definition, as updated
         type: *VmDefinition
 
-VM.hostdevHotplug:
-    added: '4.0'
+VM.hotplugHostdev:
+    added: '4.4'
     description: Add a new host device to a running VM.
     params:
     -   description: The UUID of the VM
         name: vmID
         type: *UUID
 
-    -   description: List of host device specifications
+    -   description: List of device XMLs
         name: devices
         type:
-        - *VmHostDevice
+        - string
     return:
-        description: List of hotplugged libvirt device names
+        description: List of hot plugged device XMLs
         type:
         - string
 
-VM.hostdevHotunplug:
-    added: '4.0'
+VM.hotunplugHostdev:
+    added: '4.4'
     description: Remove a host device from a running VM
     params:
     -   description: The UUID of the VM
         name: vmID
         type: *UUID
 
-    -   description: List of device libvirt names
+    -   description: List of device XMLs
         name: devices
         type:
         - string
     return:
-        description: List of libvirt device names, indicating which
+        description: List of device XMLs, indicating which
             devices were successfully hotunplugged.
         type:
         - string

@@ -48,11 +48,6 @@ class DeviceMixin(object):
             self.assertIn('alias', device)
             aliases.append(device['alias'])
 
-            # Also, each device has an address with an exception of console,
-            # balloon (which we treat as "none" balloon) and possibly a hostdev
-            if device['type'] not in (hwclass.HOSTDEV,):
-                self.assertIn('address', device)
-
             # NIC devices have an additional name and linkActive attributes
             if device['type'] == hwclass.NIC:
                 self.assertIn('name', device)

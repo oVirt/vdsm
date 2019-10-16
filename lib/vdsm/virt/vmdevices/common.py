@@ -81,7 +81,6 @@ def update_device_info(vm, devices):
     """
     network.Interface.update_device_info(vm, devices[hwclass.NIC])
     storage.Drive.update_device_info(vm, devices[hwclass.DISK])
-    hostdevice.HostDevice.update_device_info(vm, devices[hwclass.HOSTDEV])
     lease.Device.update_device_info(vm, devices[hwclass.LEASE])
 
 
@@ -97,7 +96,6 @@ _LEGACY_DEVICE_CLASSES = [
     hwclass.DISK,
     hwclass.NIC,
     hwclass.LEASE,
-    hwclass.HOSTDEV,
 ]
 
 
