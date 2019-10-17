@@ -47,7 +47,7 @@ class Detector(object):
     REQUIRED_SIZE = None
 
     def detect(self, data):
-        return data.startswith(self.NAME)
+        return data.startswith(self.NAME.encode("utf-8"))
 
     def handle_socket(self, client_socket, socket_address):
 
@@ -56,8 +56,8 @@ class Detector(object):
             # socket after the socket was removed from the event loop.
             time.sleep(0.05)
             try:
-                request = ""
-                while "\n" not in request:
+                request = b""
+                while b"\n" not in request:
                     chunk = client_socket.recv(1024)
                     if not chunk:
                         return
@@ -118,7 +118,7 @@ class AcceptorTests(VdsmTestCase):
     def test_reject_ssl_accept_error(self):
         self.start_acceptor(use_ssl=True)
         with self.connect(use_ssl=False) as client:
-            client.sendall("this is not ssl handshake\n")
+            client.sendall(b"this is not ssl handshake\n")
             self.assertRaises(socket.error, client.recv, self.BUFSIZE)
 
     @permutations(PERMUTATIONS)
@@ -134,26 +134,26 @@ class AcceptorTests(VdsmTestCase):
     @permutations(PERMUTATIONS)
     def test_detect_echo(self, use_ssl):
         self.start_acceptor(use_ssl)
-        data = "echo testing is fun\n"
+        data = b"echo testing is fun\n"
         self.check_detect(use_ssl, data, data)
 
     @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
     @permutations(PERMUTATIONS)
     def test_detect_echo6(self, use_ssl):
         self.start_acceptor(use_ssl, address='::1')
-        data = "echo testing is fun\n"
+        data = b"echo testing is fun\n"
         self.check_detect(use_ssl, data, data)
 
     @permutations(PERMUTATIONS)
     def test_detect_uppercase(self, use_ssl):
         self.start_acceptor(use_ssl)
-        data = "uppercase testing is fun\n"
+        data = b"uppercase testing is fun\n"
         self.check_detect(use_ssl, data, data.upper())
 
     @permutations(PERMUTATIONS)
     def test_detect_concurrency(self, use_ssl):
         self.start_acceptor(use_ssl)
-        data = "echo testing is fun\n"
+        data = b"echo testing is fun\n"
         self.check_concurrently(self.check_detect, use_ssl, data, data)
 
     @permutations(PERMUTATIONS)
@@ -186,20 +186,20 @@ class AcceptorTests(VdsmTestCase):
 
     def check_reject(self, use_ssl):
         with self.connect(use_ssl) as client:
-            client.sendall("no such protocol\n")
+            client.sendall(b"no such protocol\n")
             self.check_disconnected(client)
 
     def check_slow_client(self, use_ssl):
         with self.connect(use_ssl) as client:
             time.sleep(self.acceptor.TIMEOUT - self.GRACETIME)
-            data = "echo let me in\n"
+            data = b"echo let me in\n"
             client.sendall(data)
             self.assertEqual(client.recv(self.BUFSIZE), data)
 
     def check_very_slow_client(self, use_ssl):
         with self.connect(use_ssl) as client:
             time.sleep(self.acceptor.TIMEOUT * 2 + self.GRACETIME)
-            client.sendall("echo too slow probably\n")
+            client.sendall(b"echo too slow probably\n")
             self.check_disconnected(client)
 
     def check_disconnected(self, client):
@@ -208,7 +208,7 @@ class AcceptorTests(VdsmTestCase):
         except socket.error as e:
             self.assertEqual(e.errno, errno.ECONNRESET)
         else:
-            self.assertEqual(data, '')
+            self.assertEqual(data, b'')
 
     # Helpers
 

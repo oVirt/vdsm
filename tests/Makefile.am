@@ -99,7 +99,6 @@ test_modules = \
 	osutils_test.py \
 	passwords_test.py \
 	permutation_test.py \
-	protocoldetector_test.py \
 	response_test.py \
 	rngsources_test.py \
 	schedule_test.py \
@@ -128,7 +127,6 @@ test_modules = \
 
 blacklisted_modules_py3 = \
 	bridge_test.py \
-	protocoldetector_test.py \
 	stomp_test.py \
 	unicode_test.py \
 	$(NULL)
