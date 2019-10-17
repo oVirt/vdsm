@@ -31,9 +31,6 @@ import sys
 import time
 import timeit
 
-import pytest
-import six
-
 from vdsm import taskset
 from vdsm import utils
 from vdsm.common import cmdutils
@@ -263,7 +260,6 @@ class TestRetry(TestCaseBase):
 
 class TestGetCmdArgs(TestCaseBase):
 
-    @pytest.mark.xfail(six.PY3, reason="broken on py3")
     def test(self):
         args = [EXT_SLEEP, "4"]
         sproc = commands.start(args)
@@ -271,7 +267,7 @@ class TestGetCmdArgs(TestCaseBase):
             cmd_args = utils.getCmdArgs(sproc.pid)
             # let's ignore optional taskset at the beginning
             self.assertEqual(cmd_args[-len(args):],
-                             tuple(args))
+                             tuple(a.encode() for a in args))
         finally:
             sproc.kill()
             sproc.wait()
@@ -296,8 +292,11 @@ class TestGeneralUtils(TestCaseBase):
         dir_name = os.path.dirname(test_path)
         panic_helper = os.path.join(dir_name, "..", "panic_helper.py")
         cmd = [sys.executable, panic_helper]
-        rc, out, err = commands.execCmd(cmd)
-        self.assertEqual(rc, -9)
+
+        with self.assertRaises(cmdutils.Error) as cm:
+            commands.run(cmd)
+
+        self.assertEqual(cm.exception.rc, -9)
 
     def testReadMemInfo(self):
         meminfo = utils.readMemInfo()
