@@ -106,7 +106,6 @@ test_modules = \
 	sparsify_test.py \
 	stompadapter_test.py \
 	stompasyncclient_test.py \
-	stomp_test.py \
 	sysprep_test.py \
 	taskset_test.py \
 	testlib_test.py \
@@ -125,7 +124,6 @@ test_modules = \
 	$(NULL)
 
 blacklisted_modules_py3 = \
-	stomp_test.py \
 	unicode_test.py \
 	$(NULL)
 
