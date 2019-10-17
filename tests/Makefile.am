@@ -116,7 +116,6 @@ test_modules = \
 	tool_test.py \
 	throttledlog_test.py \
 	unicode_test.py \
-	utils_test.py \
 	validate_test.py \
 	vdsmapi_test.py \
 	vdsmdumpchains_test.py \
@@ -132,7 +131,6 @@ blacklisted_modules_py3 = \
 	protocoldetector_test.py \
 	stomp_test.py \
 	unicode_test.py \
-	utils_test.py \
 	$(NULL)
 
 CLEANFILES = \

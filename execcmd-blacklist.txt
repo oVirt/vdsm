@@ -41,7 +41,7 @@ tests/storage/misc_test.py
 tests/storage/mount_test.py
 tests/storage/qemuimg_test.py
 tests/storage/qemuio.py
-tests/utils_test.py
+tests/lib/utils_test.py
 tests/virt/boot_hostdev_test.py
 tests/virt/v2v_test.py
 vdsm_hooks/ethtool_options/ethtool_options.py

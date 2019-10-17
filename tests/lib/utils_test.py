@@ -31,6 +31,9 @@ import sys
 import time
 import timeit
 
+import pytest
+import six
+
 from vdsm import taskset
 from vdsm import utils
 from vdsm.common import cmdutils
@@ -259,6 +262,8 @@ class TestRetry(TestCaseBase):
 
 
 class TestGetCmdArgs(TestCaseBase):
+
+    @pytest.mark.xfail(six.PY3, reason="broken on py3")
     def test(self):
         args = [EXT_SLEEP, "4"]
         sproc = commands.start(args)
@@ -287,7 +292,10 @@ class TestGetCmdArgs(TestCaseBase):
 class TestGeneralUtils(TestCaseBase):
 
     def test_panic(self):
-        cmd = [sys.executable, "panic_helper.py"]
+        test_path = os.path.realpath(__file__)
+        dir_name = os.path.dirname(test_path)
+        panic_helper = os.path.join(dir_name, "..", "panic_helper.py")
+        cmd = [sys.executable, panic_helper]
         rc, out, err = commands.execCmd(cmd)
         self.assertEqual(rc, -9)
 
@@ -306,7 +314,7 @@ class TestGeneralUtils(TestCaseBase):
     def testParseMemInfo(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.dirname(testPath)
-        path = os.path.join(dirName, "mem_info.out")
+        path = os.path.join(dirName, "..", "mem_info.out")
         with open(path) as f:
             meminfo = utils._parseMemInfo(f.readlines())
         # testing some random fields
