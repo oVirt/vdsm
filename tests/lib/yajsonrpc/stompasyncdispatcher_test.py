@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 
 from __future__ import absolute_import
 from __future__ import division
+
+import json
 
 from testlib import VdsmTestCase as TestCaseBase
 from stomp_test_utils import (
@@ -53,8 +55,11 @@ class AsyncDispatcherTest(TestCaseBase):
                    Headers.DESTINATION: 'jms.topic.vdsm_responses',
                    Headers.CONTENT_TYPE: 'application/json',
                    Headers.SUBSCRIPTION: 'ad052acb-a934-4e10-8ec3-00c7417ef8d'}
-        body = ('{"jsonrpc": "2.0", "id": "e8a936a6-d886-4cfa-97b9-2d54209053f'
-                'f", "result": []}')
+        body = json.dumps({
+            "jsonrpc": "2.0",
+            "id": "e8a936a6-d886-4cfa-97b9-2d54209053ff",
+            "result": [],
+        }).encode("utf-8")
         frame = Frame(command=Command.MESSAGE, headers=headers, body=body)
         dispatcher = AsyncDispatcher(FakeConnection(), frame_handler)
         dispatcher.handle_read(FakeAsyncDispatcher(None, data=frame.encode()))
@@ -125,8 +130,11 @@ class AsyncDispatcherTest(TestCaseBase):
                    Headers.DESTINATION: 'jms.topic.vdsm_responses',
                    Headers.CONTENT_TYPE: 'application/json',
                    Headers.SUBSCRIPTION: 'ad052acb-a934-4e10-8ec3-00c7417ef8d'}
-        body = ('{"jsonrpc": "2.0", "id": "e8a936a6-d886-4cfa-97b9-2d54209053f'
-                'f", "result": []}')
+        body = json.dumps({
+            "jsonrpc": "2.0",
+            "id": "e8a936a6-d886-4cfa-97b9-2d54209053ff",
+            "result": [],
+        }).encode("utf-8")
         frame = Frame(command=Command.MESSAGE, headers=headers, body=body)
         frame_handler = FakeFrameHandler()
         frame_handler.handle_frame(None, frame)
