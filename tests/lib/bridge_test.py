@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,9 @@
 from __future__ import absolute_import
 from __future__ import division
 import imp
+
+import pytest
+import six
 
 from vdsm.common.exception import GeneralException, VdsmException
 from vdsm.rpc.Bridge import DynamicBridge
@@ -138,6 +141,7 @@ def _get_api_instance(self, className, argObj):
     return apiObj(*ctorArgs)
 
 
+@pytest.mark.xfail(six.PY3, reason="broken on py3")
 class BridgeTests(TestCaseBase):
 
     @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)

@@ -63,7 +63,6 @@ test_modules = \
 	API_test.py \
 	alignmentscan_test.py \
 	api_response_test.py \
-	bridge_test.py \
 	caps_test.py \
 	client_test.py \
 	clientif_test.py \
@@ -126,7 +125,6 @@ test_modules = \
 	$(NULL)
 
 blacklisted_modules_py3 = \
-	bridge_test.py \
 	stomp_test.py \
 	unicode_test.py \
 	$(NULL)
