@@ -21,7 +21,8 @@
 
 from __future__ import absolute_import
 from __future__ import division
-import imp
+
+import importlib
 
 import pytest
 import six
@@ -109,8 +110,9 @@ class StorageDomain():
 
 
 def getFakeAPI():
-    _newAPI = imp.new_module('API')
-    _vdsm = __import__('vdsm', globals(), locals(), {}, -1)
+    spec = importlib.machinery.ModuleSpec("vdsm.API", None)
+    _newAPI = importlib.util.module_from_spec(spec)
+    _vdsm = __import__('vdsm', globals(), locals())
     _API = _vdsm.API
     setattr(_newAPI, 'Global', Host)
     setattr(_newAPI, 'StorageDomain', StorageDomain)
@@ -141,7 +143,7 @@ def _get_api_instance(self, className, argObj):
     return apiObj(*ctorArgs)
 
 
-@pytest.mark.xfail(six.PY3, reason="broken on py3")
+@pytest.mark.xfail(six.PY2, reason="unsupported on py2")
 class BridgeTests(TestCaseBase):
 
     @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
