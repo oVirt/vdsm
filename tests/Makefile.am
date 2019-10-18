@@ -123,9 +123,6 @@ test_modules = \
 	zombiereaper_test.py \
 	$(NULL)
 
-blacklisted_modules_py3 = \
-	$(NULL)
-
 CLEANFILES = \
 	$(nodist_vdsmtests_PYTHON) \
 	$(dist_noinst_DATA) \
@@ -250,18 +247,6 @@ run_modules += $(network_modules)
 run_modules += $(device_modules)
 run_modules += $(common_modules)
 
-define define_check_vars
-check-$(1): PYTHON_EXE = $(2)
-check-$(1): PYTHON_SHORT_NAME = $(1)
-check-$(1): BLACKLISTED_MODULES = $(blacklisted_modules_$(1))
-endef
-
-# Determine variable values for all 'check-py*' targets
-# (i.e. 'check-py3: PYTHON_EXE = python3').
-$(foreach i,\
-          $(shell seq $(words $(VDSM_SUPPORTED_PY_MAJOR_VERSIONS))),\
-		  $(eval $(call define_check_vars,$(word $(i), $(VDSM_SUPPORTED_PY_MAJOR_SHORT_VERSIONS)),$(word $(i), $(VDSM_SUPPORTED_PY_MAJOR_VERSIONS)))))
-
 # Disable builtin (recursive) check target.
 check-recursive:
 	@true
@@ -285,18 +270,24 @@ check-all: $(VDSM_SUPPORTED_PY_MAJOR_SHORT_VERSIONS:%=check-%)
 .PHONY: check
 check: check-all
 
-# To run checks for specific interpreter version use
-# i.e. 'make -C tests check-py3' from root dir
-check-%:
-	@echo '=== Running "$(@)" target with "$(PYTHON_EXE)" interpreter version.   ==='
+check-py2:
+	@echo '=== Running check-py2 target with python2 interpreter version.          ==='
 	@echo '=== To skip this step place "NOSE_EXCLUDE=.*" into your environment.    ==='
-	$(if $(BLACKLISTED_MODULES),@printf '=== Disabling blacklisted module: %37s ===\n' $(shell echo $(BLACKLISTED_MODULES)),)
 	@echo '=== Do not submit untested code!                                        ==='
-	PYTHON_EXE=$(PYTHON_EXE) \
-		$(top_srcdir)/tests/run_tests_local.sh \
-		$(filter-out $(BLACKLISTED_MODULES),$(run_modules)) && \
+	PYTHON_EXE=python2 \
+		$(top_srcdir)/tests/run_tests_local.sh $(run_modules) && \
 	if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
-		mv .coverage .coverage-nose-$(PYTHON_SHORT_NAME); \
+		mv .coverage .coverage-nose-py2; \
+	fi
+
+check-py3:
+	@echo '=== Running check-py3 target with python3 interpreter version.          ==='
+	@echo '=== To skip this step place "NOSE_EXCLUDE=.*" into your environment.    ==='
+	@echo '=== Do not submit untested code!                                        ==='
+	PYTHON_EXE=python3 \
+		$(top_srcdir)/tests/run_tests_local.sh $(run_modules) && \
+	if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
+		mv .coverage .coverage-nose-py3; \
 	fi
 
 # Disable builtin %.out rule, overrwriting out files
