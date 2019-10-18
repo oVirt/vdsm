@@ -201,6 +201,7 @@ class Parser(object):
     _STATE_CMD = "Parsing command"
     _STATE_HEADER = "Parsing headers"
     _STATE_BODY = "Receiving body"
+    _FRAME_TERMINATOR = b"\x00" if six.PY2 else 0
 
     def __init__(self):
         self._states = {
@@ -305,7 +306,7 @@ class Parser(object):
         if ndata < (cl + 1):
             return False
 
-        if buf[cl:] != b"\0":
+        if buf[cl] != self._FRAME_TERMINATOR:
             raise RuntimeError("Frame doesn't end with NULL byte")
 
         self._flush()

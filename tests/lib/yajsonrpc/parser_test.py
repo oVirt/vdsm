@@ -80,6 +80,22 @@ def test_parsing_frame_with_headers_and_body(body):
     assert parsed_frame.body == body
 
 
+def test_parsing_multiple_frames_with_headers_and_body():
+    parser = Parser()
+    frame = Frame(Command.CONNECT, {"abc": "def"}, b"zorro")
+    parser.parse(frame.encode() * 2)
+
+    for _ in range(2):
+        parsed_frame = parser.pop_frame()
+
+        assert parsed_frame.command == Command.CONNECT
+        assert "abc" in parsed_frame.headers
+        assert parsed_frame.headers["abc"] == "def"
+        assert "content-length" in parsed_frame.headers
+        assert int(parsed_frame.headers["content-length"]) == len(b"zorro")
+        assert parsed_frame.body == b"zorro"
+
+
 def test_parser_should_accept_frames_with_crlf_eols():
     parser = Parser()
     frame = Frame(Command.CONNECT, {"abc": "def"}, b"zorro")

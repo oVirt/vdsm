@@ -100,9 +100,6 @@ class StompTests(TestCaseBase):
                                                    str(uuid4())),
                                  data)
 
-    # See https://gerrit.ovirt.org/c/95899 for experimental fix.
-    @broken_on_ci("Fails randomly in oVirt CI", name="OVIRT_CI")
-    @broken_on_ci("Fails consistently in Travis CI", name="TRAVIS_CI")
     @permutations(_USE_SSL)
     def test_event(self, use_ssl):
         with constructAcceptor(self.log, use_ssl, _SampleBridge(),
