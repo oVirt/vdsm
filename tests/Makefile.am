@@ -124,7 +124,6 @@ test_modules = \
 	$(NULL)
 
 blacklisted_modules_py3 = \
-	unicode_test.py \
 	$(NULL)
 
 CLEANFILES = \

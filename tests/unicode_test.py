@@ -25,6 +25,7 @@ import six
 
 from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
+from testValidation import skipif
 
 ENCODE = [
     # value, encoded (utf8)
@@ -46,27 +47,34 @@ DECODE = [
 @expandPermutations
 class TestUnicode(VdsmTestCase):
 
+    @skipif(six.PY3, "not relevant on py3")
     @permutations(ENCODE)
     def test_encode(self, value, encoded):
         self.assertEqual(value.encode("utf8"), encoded)
 
+    @skipif(six.PY3, "not relevant on py3")
     @permutations(ENCODE)
     def test_str(self, value, encoded):
         self.assertEqual(str(value), encoded)
 
+    @skipif(six.PY3, "not relevant on py3")
     @permutations(DECODE)
     def test_decode(self, value, decoded):
         self.assertEqual(value.decode("utf8"), decoded)
 
+    @skipif(six.PY3, "not relevant on py3")
     @permutations(DECODE)
     def test_unicode(self, value, decoded):
         self.assertEqual(six.text_type(value), decoded)
 
+    @skipif(six.PY3, "not relevant on py3")
     def test_mix_add(self):
         self.assertEqual(u'\u05d0' + '\xd7\x91', u'\u05d0\u05d1')
 
+    @skipif(six.PY3, "not relevant on py3")
     def test_mix_format_str(self):
         self.assertEqual(u'\u05d0%s' % '\xd7\x91', u'\u05d0\u05d1')
 
+    @skipif(six.PY3, "not relevant on py3")
     def test_mix_format_unicode(self):
         self.assertEqual('\xd7\x90%s' % u'\u05d1', u'\u05d0\u05d1')
