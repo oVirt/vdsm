@@ -150,7 +150,7 @@ def validate(networks, bondings, net_info):
 
 def setup(networks, bondings, options, net_info, in_rollback):
     if nmstate.is_nmstate_backend():
-        _setup_nmstate(networks, bondings, options, in_rollback, net_info)
+        _setup_nmstate(networks, bondings, options, in_rollback)
     else:
         _setup(networks, bondings, options, in_rollback, net_info)
 
@@ -177,7 +177,7 @@ def _setup(networks, bondings, options, in_rollback, net_info):
         _setup_ovs(ovs_nets, ovs_bonds, options, net_info, in_rollback)
 
 
-def _setup_nmstate(networks, bondings, options, in_rollback, net_info):
+def _setup_nmstate(networks, bondings, options, in_rollback):
     """
     Setup the networks using nmstate as the backend provider.
     nmstate handles the rollback by itself in case of an error during the
@@ -190,15 +190,8 @@ def _setup_nmstate(networks, bondings, options, in_rollback, net_info):
     desired_state = nmstate.generate_state(networks, bondings)
     logging.info('Desired state: %s', desired_state)
     _setup_dynamic_src_routing(networks)
-
-    vlan_ifaces_states = _generate_vlan_ifaces_states(desired_state, net_info)
-    logging.info('Reapply VLANs desired state: %s', vlan_ifaces_states)
-
     nmstate.setup(desired_state, verify_change=not in_rollback)
-    if vlan_ifaces_states:
-        nmstate.setup(
-            {'interfaces': vlan_ifaces_states}, verify_change=not in_rollback
-        )
+
     with Transaction(in_rollback=in_rollback) as config:
         for net_name, net_attrs in six.viewitems(networks):
             if net_attrs.get('remove'):
@@ -214,31 +207,6 @@ def _setup_nmstate(networks, bondings, options, in_rollback, net_info):
                 config.setBonding(bond_name, bond_attrs)
         _setup_static_src_routing(networks)
         connectivity.check(options)
-
-
-def _generate_vlan_ifaces_states(desired_state, net_info):
-    """
-    Nmstate may change the VLAN MTU states when their base interface is touched
-    Therefore, all the vlans are collected in order to re-apply their mtu state
-    again as an workaround.
-    Ref: https://bugzilla.redhat.com/1751695
-    """
-    desired_ifaces_states = {
-        ifstate['name']: ifstate for ifstate in desired_state['interfaces']
-    }
-    vlan_ifaces_states = []
-    for ifname in net_info['vlans']:
-        vlan_dstate = desired_ifaces_states.get(ifname, {})
-        if vlan_dstate.get('state') == 'absent':
-            continue
-        vlan_ifaces_states.append(
-            {
-                'name': ifname,
-                'mtu': vlan_dstate.get('mtu')
-                or net_info['vlans'][ifname]['mtu'],
-            }
-        )
-    return vlan_ifaces_states
 
 
 def _setup_static_src_routing(networks):
