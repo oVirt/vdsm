@@ -41,7 +41,7 @@ from monkeypatch import Patch
 from testlib import VdsmTestCase, permutations, expandPermutations
 from testValidation import checkSudo, ValidateRunningAsRoot
 
-from vdsm.common.commands import execCmd
+from vdsm.common.commands import run
 from vdsm.common.fileutils import rm_file
 from vdsm.constants import EXT_MKFS_MSDOS
 from vdsm.storage import mount
@@ -155,9 +155,8 @@ class MkimageTestCase(VdsmTestCase):
         if label is None:
             return
         cmd = ['blkid', '-s', 'LABEL', imgPath]
-        (ret, out, err) = execCmd(cmd, raw=True)
+        out = run(cmd)
 
-        self.assertEqual(ret, 0)
         partitions = out.rpartition(b'LABEL=')
         self.assertEqual(len(partitions), 3)
         self.assertEqual(partitions[2].strip(), b'"' + label.encode() + b'"')
@@ -180,7 +179,7 @@ class MkimageTestCase(VdsmTestCase):
         floppy = mkimage.getFileName("vmId_inject")
         command = [EXT_MKFS_MSDOS, '-C', floppy, '1440']
         try:
-            rc, out, err = execCmd(command, raw=True)
+            run(command)
 
             mkimage.injectFilesToFs(floppy, self.files, fstype)
 
@@ -203,7 +202,7 @@ class MkimageTestCase(VdsmTestCase):
         floppy = mkimage.getFileName("vmId_inject")
         command = [EXT_MKFS_MSDOS, '-C', floppy, '1440']
         try:
-            rc, out, err = execCmd(command, raw=True)
+            run(command)
 
             with self.assertRaises(MountError):
                 mkimage.injectFilesToFs(floppy, self.files, 'ext3')

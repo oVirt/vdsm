@@ -33,7 +33,6 @@ tests/alignmentscan_test.py
 tests/common/cmdutils_test.py
 tests/common/commands_test.py
 tests/gluster_thinstorage_test.py
-tests/mkimage_test.py
 tests/modprobe.py
 tests/prlimit_test.py
 tests/storage/lvm_test.py
