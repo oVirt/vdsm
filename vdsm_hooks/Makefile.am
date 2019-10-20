@@ -47,7 +47,6 @@ SUBDIRS += \
 	httpsisoboot \
 	macbind \
 	nestedvt \
-	promisc \
 	scratchpad \
 	smbios \
 	spiceoptions \

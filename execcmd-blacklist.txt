@@ -50,6 +50,4 @@ vdsm_hooks/localdisk/after_disk_prepare
 vdsm_hooks/localdisk/localdisk-helper
 vdsm_hooks/openstacknet/after_get_caps.py
 vdsm_hooks/openstacknet/openstacknet_utils.py
-vdsm_hooks/promisc/after_vm_start.py
-vdsm_hooks/promisc/before_vm_destroy.py
 vdsm_hooks/scratchpad/before_vm_start.py

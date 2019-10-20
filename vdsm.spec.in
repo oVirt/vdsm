@@ -721,14 +721,6 @@ BuildArch:      noarch
 %description hook-openstacknet
 Hook for OpenStack Network vNICs.
 
-%package hook-promisc
-Summary:        Network interface promiscuous mode support for VDSM
-BuildArch:      noarch
-
-%description hook-promisc
-VDSM promiscuous mode let user define a VM interface that will capture
-all network traffic.
-
 %package hook-qemucmdline
 Summary:        QEMU cmdline hook for VDSM
 BuildArch:      noarch
@@ -1314,11 +1306,6 @@ exit 0
 %files hook-nestedvt
 %{_sysconfdir}/modprobe.d/vdsm-nestedvt.conf
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_nestedvt
-
-%files hook-promisc
-%{_sysconfdir}/sudoers.d/50_vdsm_hook_promisc
-%{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/50_promisc
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_destroy/50_promisc
 
 %files hook-scratchpad
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_scratchpad

@@ -1,1 +1,0 @@
-vdsm  ALL=(ALL) NOPASSWD: /sbin/tc, /sbin/ifconfig

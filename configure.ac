@@ -550,7 +550,6 @@ AC_OUTPUT([
 	vdsm_hooks/macbind/Makefile
 	vdsm_hooks/nestedvt/Makefile
 	vdsm_hooks/openstacknet/Makefile
-	vdsm_hooks/promisc/Makefile
 	vdsm_hooks/qemucmdline/Makefile
 	vdsm_hooks/scratchpad/Makefile
 	vdsm_hooks/smbios/Makefile
