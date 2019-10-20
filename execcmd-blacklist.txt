@@ -25,7 +25,6 @@ lib/vdsm/storage/mount.py
 lib/vdsm/storage/multipath.py
 lib/vdsm/storage/qemuimg.py
 lib/vdsm/storage/xlease.py
-lib/vdsm/taskset.py
 lib/vdsm/tool/service.py
 lib/vdsm/tool/transient.py
 lib/vdsm/v2v.py

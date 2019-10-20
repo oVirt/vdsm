@@ -20,7 +20,6 @@
 
 from __future__ import absolute_import
 
-from vdsm.common import cmdutils
 from vdsm.common import commands
 from . import constants
 
@@ -42,10 +41,7 @@ def get(pid):
     """
     command = [constants.EXT_TASKSET, '--pid', str(pid)]
 
-    rc, out, err = commands.execCmd(command, resetCpuAffinity=False)
-
-    if rc != 0:
-        raise cmdutils.Error(command, rc, out, err)
+    out = commands.run(command, reset_cpu_affinity=False).splitlines()
 
     return _cpu_set_from_output(out[-1])
 
@@ -70,10 +66,7 @@ def set(pid, cpu_set, all_tasks=False):
                    str(pid)
                    ))
 
-    rc, out, err = commands.execCmd(command, resetCpuAffinity=False)
-
-    if rc != 0:
-        raise cmdutils.Error(command, rc, out, err)
+    commands.run(command, reset_cpu_affinity=False)
 
 
 def online_cpus():
