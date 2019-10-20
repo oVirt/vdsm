@@ -103,6 +103,4 @@ def trigger(attr_matches=(), property_matches=(), subsystem_matches=()):
 def _run_command(args):
     cmd = [_UDEVADM.cmd]
     cmd.extend(args)
-    rc, out, err = commands.execCmd(cmd, raw=True)
-    if rc != 0:
-        raise cmdutils.Error(cmd, rc, out, err)
+    commands.run(cmd)

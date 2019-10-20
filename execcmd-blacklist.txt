@@ -4,7 +4,6 @@ lib/vdsm/API.py
 lib/vdsm/alignmentScan.py
 lib/vdsm/common/cmdutils.py
 lib/vdsm/common/commands.py
-lib/vdsm/common/udevadm.py
 lib/vdsm/gluster/api.py
 lib/vdsm/gluster/cli.py
 lib/vdsm/gluster/events.py
