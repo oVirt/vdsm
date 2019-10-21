@@ -29,17 +29,8 @@ import syslog
 import textwrap
 import traceback
 
-########################################################################
-# Hack for vdsm-4.16.x installation
-# To avoid import vdsm-tool verbs from old location (/usr/lib64) on
-# upgrade we need to explicit import vdsm.tool from /usr/lib. Otherwise
-# all tool's verbs are loaded from the old vdsm code during upgrade.
-lib_dir = os.path.join(os.path.dirname(os.__file__).
-                       replace('lib64', 'lib'), 'site-packages')
-vdsm = imp.load_module('vdsm', *imp.find_module('vdsm', [lib_dir]))
-vdsm.tool = imp.load_module('vdsm.tool',
-                            *imp.find_module('tool', vdsm.__path__))
-########################################################################
+import vdsm.tool
+
 
 tool_modules = []
 tool_command = {}
@@ -218,11 +209,11 @@ def main():
 
     try:
         return tool_command[cmd]["command"](*args)
-    except vdsm.tool.UsageError as e:
-        print('Error: ', e, '\n', file=sys.stderr)
-        return 1
     except vdsm.tool.ExtraArgsError as e:
         print_command_usage(tool_command[cmd]["command"], sys.stderr)
+        return 1
+    except vdsm.tool.UsageError as e:
+        print('Error: ', e, '\n', file=sys.stderr)
         return 1
     except Exception:
         traceback.print_exc(file=sys.stderr)
