@@ -65,6 +65,7 @@ CLEANFILES = \
 	$(NULL)
 
 PYLINT_TARGETS = \
+	static/usr/bin/vdsm-tool \
 	static/usr/share/vdsm/sitecustomize.py \
 	lib/vdsm \
 	lib/vdsmclient \
