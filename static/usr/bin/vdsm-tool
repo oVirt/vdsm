@@ -21,7 +21,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import getopt
-import imp
+import importlib
 import logging
 import os
 import sys
@@ -77,10 +77,8 @@ def load_modules():
         if mod_name.startswith("_"):
             continue
 
-        mod_fobj, mod_absp, mod_desc = imp.find_module(mod_name, [mod_path])
         try:
-            module = imp.load_module(package_name + '.' + mod_name, mod_fobj,
-                                     mod_absp, mod_desc)
+            module = importlib.import_module(package_name + '.' + mod_name)
         except Exception:
             # py module was failed to load. report to syslog and continue
             syslog.syslog("module %s could not load to vdsm-tool: %s" %
