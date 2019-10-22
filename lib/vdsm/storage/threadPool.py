@@ -47,17 +47,17 @@ class ThreadPool:
             newThread.start()
             self.__threads.append(newThread)
 
-    def queueTask(self, id, task, args=None, taskCallback=None):
+    def queueTask(self, id, task, args=None):
 
         """Insert a task into the queue.  task must be callable;
-        args and taskCallback can be None."""
+        args can be None. """
 
         if self.__isJoining:
             return False
         if not callable(task):
             return False
 
-        self.__tasks.put((id, task, args, taskCallback))
+        self.__tasks.put((id, task, args))
 
         return True
 
@@ -68,15 +68,13 @@ class ThreadPool:
         id = None
         cmd = None
         args = None
-        callback = None
 
         try:
-            id, cmd, args, callback = self.__tasks.get(True,
-                                                       self.__waitTimeout)
+            id, cmd, args = self.__tasks.get(True, self.__waitTimeout)
         except queue.Empty:
             pass
 
-        return id, cmd, args, callback
+        return id, cmd, args
 
     def _task_started(self):
         """
@@ -136,36 +134,28 @@ class WorkerThread(object):
         self._thread.join()
 
     def _processNextTask(self):
-        id, cmd, args, callback = self.__pool.getNextTask()
+        id, cmd, args = self.__pool.getNextTask()
         try:
             if id is None:  # should retry.
                 pass
             elif self.__isDying:
                 # return the task into the queue, since we abort.
-                self.__pool.__tasks.put((id, cmd, args, callback))
-            elif callback is None:
+                self.__pool.__tasks.put((id, cmd, args))
+            else:
                 self.__pool._task_started()
                 self.log.info("START task %s (cmd=%r, args=%r)",
                               id, cmd, args)
                 cmd(args)
                 self.log.info("FINISH task %s", id)
                 self.__pool._task_finished()
-            else:
-                self.__pool._task_started()
-                self.log.info("START task %s (callback=%r, cmd=%r, args=%r)",
-                              id, callback, cmd, args)
-                callback(cmd(args))
-                self.log.info("FINISH task %s", id)
-                self.__pool._task_finished()
         except Exception:
-            self.log.exception("FINISH task %s failed (callback=%r, "
-                               "cmd=%r, args=%r)",
-                               id, callback, cmd, args)
+            self.log.exception(
+                "FINISH task %s failed (cmd=%r, args=%r)", id, cmd, args)
 
     def run(self):
 
         """ Until told to quit, retrieve the next task and execute
-        it, calling the callback if any.  """
+        it. """
 
         while not self.__isDying:
             self._processNextTask()
