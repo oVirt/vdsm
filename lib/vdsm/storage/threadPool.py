@@ -13,7 +13,6 @@ import logging
 import threading
 
 from six.moves import queue
-from time import sleep
 
 from vdsm.common import concurrent
 
@@ -94,18 +93,13 @@ class ThreadPool:
 
         return id, cmd, args, callback
 
-    def joinAll(self, waitForTasks=True, waitForThreads=True):
+    def joinAll(self, waitForThreads=True):
 
         """ Clear the task queue and terminate all pooled threads,
         optionally allowing the tasks and threads to finish."""
 
         # Mark the pool as joining to prevent any more task queuing
         self.__isJoining = True
-
-        # Wait for tasks to finish
-        if waitForTasks:
-            while not self.__tasks.empty():
-                sleep(0.1)
 
         # Tell all the threads to quit
         self.__resizeLock.acquire()

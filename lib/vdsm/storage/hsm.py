@@ -3381,7 +3381,7 @@ class HSM(object):
             try:
                 if self._pool.spmMailer:
                     self._pool.spmMailer.stop()
-                    self._pool.spmMailer.tp.joinAll(waitForTasks=False)
+                    self._pool.spmMailer.tp.joinAll()
 
                 if self._pool.hsmMailer:
                     self._pool.hsmMailer.stop()

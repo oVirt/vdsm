@@ -214,7 +214,7 @@ class HSM_Mailbox:
     def stop(self):
         if self._mailman:
             self._mailman.immStop()
-            self._mailman.tp.joinAll(waitForTasks=False)
+            self._mailman.tp.joinAll()
         else:
             self.log.warning("HSM_MailboxMonitor - No mail monitor object "
                              "available to stop")
@@ -762,7 +762,7 @@ class SPM_MailMonitor:
                 time.sleep(self._monitorInterval)
         finally:
             self._stopped = True
-            self.tp.joinAll(waitForTasks=False)
+            self.tp.joinAll()
             self.log.info("SPM_MailMonitor - Incoming mail monitoring thread "
                           "stopped")
 

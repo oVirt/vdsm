@@ -90,7 +90,7 @@ class TaskManager:
         """ Prepare to shutdown and stop all threads.
         """
         self.log.debug("Request to stop all threads (wait=%s)", wait)
-        self.tp.joinAll(waitForTasks=False, waitForThreads=wait)
+        self.tp.joinAll(waitForThreads=wait)
 
     def getTaskStatus(self, taskID):
         """ Internal return Task status for a given task.
