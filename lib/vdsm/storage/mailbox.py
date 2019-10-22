@@ -385,10 +385,10 @@ class HSM_MailMonitor(object):
 
     def _handleMessage(self, message):
         # TODO: add support for multiple mailboxes
-        freeSlot = False
+        freeSlot = None
         for i in range(0, MESSAGES_PER_MAILBOX):
             if self._used_slots_array[i] == 0:
-                if not freeSlot:
+                if freeSlot is None:
                     freeSlot = i
                 continue
             duplicate = True
@@ -400,7 +400,7 @@ class HSM_MailMonitor(object):
                 self.log.debug("HSM_MailMonitor - ignoring duplicate message "
                                "%s" % (repr(message)))
                 return
-        if not freeSlot:
+        if freeSlot is None:
             raise RuntimeError("HSM_MailMonitor - Active messages list full, "
                                "cannot add new message")
 

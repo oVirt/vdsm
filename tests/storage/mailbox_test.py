@@ -241,7 +241,7 @@ class TestCommunicate:
                     expired = True
 
         assert not expired, 'message was not processed on time'
-        assert received_messages == [(449, extend_message(REQUESTED_SIZE))]
+        assert received_messages == [(448, extend_message(REQUESTED_SIZE))]
 
     def test_send_reply(self, mboxfiles):
         HOST_ID = 3
@@ -262,7 +262,6 @@ class TestCommunicate:
         assert outbox[msg_offset + 0x40:] == b'\0' * (
             0x1000 * MAX_HOSTS - 0x40 - msg_offset)
 
-    @pytest.mark.xfail(reason="Cannot utilize first message slot")
     def test_fill_slots(self, mboxfiles, monkeypatch):
 
         filled = threading.Event()
