@@ -29,8 +29,6 @@ import struct
 
 import pytest
 
-from testlib import mock
-
 import vdsm.storage.mailbox as sm
 
 from vdsm.common import constants
@@ -118,6 +116,39 @@ def make_spm_mailbox(mboxfiles):
         mailbox.stop()
         if not mailbox.wait(timeout=MAILER_TIMEOUT):
             raise RuntimeError('Timemout waiting for spm mailbox')
+
+
+class FakeSPMMailer(object):
+    """
+    Fake SPM mailer class for sending reply message when
+    pool extend volume request handling is done.
+    """
+    def __init__(self):
+        self.msg_id = None
+        self.msg = None
+
+    def sendReply(self, msg_id, msg):
+        self.msg_id = msg_id
+        self.msg = msg
+
+
+class FakePool(object):
+    """
+    Fake storage pool class implementing the extend volume interface used by
+    storage mailbox code.
+    """
+    spUUID = SPUUID
+
+    def __init__(self, mailer):
+        self.spmMailer = mailer
+        self.volume_data = None
+
+    def extendVolume(self, sdUUID, volUUID, newSize):
+        self.volume_data = {
+            'domainID': sdUUID,
+            'volumeID': volUUID,
+            'size': newSize
+        }
 
 
 class TestSPMMailMonitor:
@@ -236,23 +267,22 @@ class TestExtendMessage:
     def test_process_request(self):
         MSG_ID = 7
         SIZE = constants.GIB
-        pool = mock.MagicMock()
-        pool.spUUID = SPUUID
+        spm_mailer = FakeSPMMailer()
+        pool = FakePool(spm_mailer)
 
         ret = sm.SPM_Extend_Message.processRequest(
             pool=pool, msgID=MSG_ID, payload=extend_message(SIZE))
 
         assert ret == {'status': {'code': 0, 'message': 'Done'}}
         vol_data = volume_data()
-        pool.extendVolume.assert_called_with(
-            vol_data['domainID'], vol_data['volumeID'], SIZE)
-
-        called_name, called_args, called_kwargs = pool.mock_calls[1]
-        assert called_name == 'spmMailer.sendReply'
-        called_msgid, called_msg = called_args
-        assert called_msgid == MSG_ID
-        assert called_msg.payload == extend_message(SIZE)
-        assert called_msg.callback is None
+        assert pool.volume_data == {
+            'volumeID': vol_data['volumeID'],
+            'domainID': vol_data['domainID'],
+            'size': SIZE
+        }
+        assert spm_mailer.msg_id == MSG_ID
+        assert spm_mailer.msg.payload == extend_message(SIZE)
+        assert spm_mailer.msg.callback is None
 
 
 class TestValidation:
