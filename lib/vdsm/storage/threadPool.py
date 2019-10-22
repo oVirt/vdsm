@@ -47,21 +47,6 @@ class ThreadPool:
             newThread.start()
             self.__threads.append(newThread)
 
-    def setRunningTask(self, addTask):
-
-        """ Internal method to increase or decrease a counter of current
-        executing tasks."""
-
-        self.__runningTasksLock.acquire()
-        try:
-            if addTask:
-                self.__runningTasks += 1
-            else:
-                self.__runningTasks -= 1
-            self.log.debug("Number of running tasks: %s", self.__runningTasks)
-        finally:
-            self.__runningTasksLock.release()
-
     def queueTask(self, id, task, args=None, taskCallback=None):
 
         """Insert a task into the queue.  task must be callable;
@@ -92,6 +77,22 @@ class ThreadPool:
             pass
 
         return id, cmd, args, callback
+
+    def _task_started(self):
+        """
+        Called from worker threads when task is started.
+        """
+        with self.__runningTasksLock:
+            self.__runningTasks += 1
+            self.log.debug("Number of running tasks: %s", self.__runningTasks)
+
+    def _task_finished(self):
+        """
+        Called from worker threads when task is finished.
+        """
+        with self.__runningTasksLock:
+            self.__runningTasks -= 1
+            self.log.debug("Number of running tasks: %s", self.__runningTasks)
 
     def joinAll(self, waitForThreads=True):
 
@@ -143,19 +144,19 @@ class WorkerThread(object):
                 # return the task into the queue, since we abort.
                 self.__pool.__tasks.put((id, cmd, args, callback))
             elif callback is None:
-                self.__pool.setRunningTask(True)
+                self.__pool._task_started()
                 self.log.info("START task %s (cmd=%r, args=%r)",
                               id, cmd, args)
                 cmd(args)
                 self.log.info("FINISH task %s", id)
-                self.__pool.setRunningTask(False)
+                self.__pool._task_finished()
             else:
-                self.__pool.setRunningTask(True)
+                self.__pool._task_started()
                 self.log.info("START task %s (callback=%r, cmd=%r, args=%r)",
                               id, callback, cmd, args)
                 callback(cmd(args))
                 self.log.info("FINISH task %s", id)
-                self.__pool.setRunningTask(False)
+                self.__pool._task_finished()
         except Exception:
             self.log.exception("FINISH task %s failed (callback=%r, "
                                "cmd=%r, args=%r)",
