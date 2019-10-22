@@ -34,7 +34,7 @@ from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.sslutils import SSLContext, SSLHandshakeDispatcher
 from yajsonrpc.betterAsyncore import Reactor
 
-from integration.sslhelper import KEY_FILE, CRT_FILE
+from integration.sslhelper import key_cert_pair  # noqa: F401
 from testing import on_centos, on_fedora
 
 
@@ -98,12 +98,13 @@ def dummy_register_protocol_detector(monkeypatch):
                         lambda d: d.close())
 
 
-@pytest.fixture
-def listener(dummy_register_protocol_detector, request):
+@pytest.fixture  # noqa: F811
+def listener(dummy_register_protocol_detector, key_cert_pair, request):
+    key_file, cert_file = key_cert_pair
     reactor = Reactor()
 
-    sslctx = SSLContext(cert_file=CRT_FILE, key_file=KEY_FILE,
-                        ca_certs=CRT_FILE)
+    sslctx = SSLContext(cert_file=cert_file, key_file=key_file,
+                        ca_certs=cert_file)
 
     acceptor = MultiProtocolAcceptor(
         reactor,
@@ -122,13 +123,14 @@ def listener(dummy_register_protocol_detector, request):
         t.join()
 
 
-@pytest.fixture
-def client_cmd(listener):
+@pytest.fixture  # noqa: F811
+def client_cmd(listener, key_cert_pair):
+    key_file, cert_file = key_cert_pair
 
     def wrapper(protocol):
         (host, port) = listener
         cmd = ['openssl', 's_client', '-connect', '%s:%s' % (host, port),
-               '-CAfile', CRT_FILE, '-cert', CRT_FILE, '-key', KEY_FILE,
+               '-CAfile', cert_file, '-cert', cert_file, '-key', key_file,
                protocol]
         return commands.run(cmd)
 
