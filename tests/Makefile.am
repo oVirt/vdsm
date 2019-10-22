@@ -142,14 +142,8 @@ server_certificates = \
 	server.key \
 	server.p12
 
-other_certificates = \
-	other.crt \
-	other.csr \
-	other.key
-
 dist_noinst_DATA = \
-	$(server_certificates) \
-	$(other_certificates)
+	$(server_certificates)
 
 dist_noinst_SCRIPTS = \
 	run_tests_local.sh
@@ -233,7 +227,7 @@ dist_vdsmtests_SCRIPTS = \
 all-local: \
 	$(nodist_vdsmtests_PYTHON)
 
-$(server_certificates) $(other_certificates): make_certificates
+$(server_certificates): make_certificates
 
 .PHONY: make_certificates
 make_certificates: makecert.sh

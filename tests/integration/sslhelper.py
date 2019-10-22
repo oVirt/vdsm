@@ -16,8 +16,6 @@ from vdsm.sslutils import SSLContext
 CERT_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 CRT_FILE = os.path.join(CERT_DIR, "server.crt")
 KEY_FILE = os.path.join(CERT_DIR, "server.key")
-OTHER_CRT_FILE = os.path.join(CERT_DIR, "other.crt")
-OTHER_KEY_FILE = os.path.join(CERT_DIR, "other.key")
 
 DEAFAULT_SSL_CONTEXT = SSLContext(cert_file=CRT_FILE, key_file=KEY_FILE,
                                   ca_certs=CRT_FILE)
