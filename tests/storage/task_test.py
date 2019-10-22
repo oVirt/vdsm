@@ -67,13 +67,14 @@ def async_task(called, task_id):
 
 
 def test_task_prepare():
-    c = Callable()
+    result = object()
+    c = Callable(result=result)
     t = Task(id="task-id")
     t.prepare(c)
 
     status = t.getStatus()
     assert status == {
-        "result": {},
+        "result": result,
         "state": {"code": 0, "message": "OK"},
         "task": {"id": "task-id", "state": "finished"}
     }
@@ -116,7 +117,8 @@ def test_task_abort():
 def test_task_queued():
     t = Task(id="task-id")
     tm = TaskManager()
-    c = Callable()
+    result = object()
+    c = Callable(result=result)
 
     # Simulate async storage APIs scheduling another function with the
     # task manager.
@@ -144,7 +146,7 @@ def test_task_queued():
     # Check task final status
     status = t.getStatus()
     assert status == {
-        "result": {},
+        "result": result,
         "state": {"code": 0, "message": "1 jobs completed successfully"},
         "task": {"id": "task-id", "state": "finished"}
     }
