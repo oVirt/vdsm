@@ -549,8 +549,10 @@ class Callable(object):
         self._running = threading.Event()
         self._blocking = threading.Event()
         self._done = threading.Event()
+        self.args = None
 
-    def __call__(self):
+    def __call__(self, args=None):
+        self.args = args
         self._running.set()
         log.info("callable is running")
         if self._hang_timeout:
@@ -571,6 +573,9 @@ class Callable(object):
         log.info("waiting for callable to run (timeout=%s)", timeout)
         if not self._running.wait(timeout):
             raise RuntimeError("Timeout waiting for task to start")
+
+    def was_called(self):
+        return self._running.is_set()
 
     def is_finished(self):
         return self._done.is_set()
