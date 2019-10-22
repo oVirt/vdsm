@@ -9,7 +9,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import itertools
 import logging
 import threading
 
@@ -35,7 +34,6 @@ class ThreadPool:
                        "maxTasks: %s",
                        name, numThreads, waitTimeout, maxTasks)
         self._name = name
-        self._count = itertools.count()
         self.__threads = []
         self.__resizeLock = threading.Condition(threading.Lock())
         self.__runningTasksLock = threading.Condition(threading.Lock())
@@ -43,7 +41,12 @@ class ThreadPool:
         self.__isJoining = False
         self.__runningTasks = 0
         self.__waitTimeout = waitTimeout
-        self.setThreadCount(numThreads)
+
+        for i in range(numThreads):
+            name = "%s/%d" % (self._name, i)
+            newThread = WorkerThread(self, name)
+            newThread.start()
+            self.__threads.append(newThread)
 
     def setRunningTask(self, addTask):
 
@@ -59,40 +62,6 @@ class ThreadPool:
             self.log.debug("Number of running tasks: %s", self.__runningTasks)
         finally:
             self.__runningTasksLock.release()
-
-    def setThreadCount(self, newNumThreads):
-
-        """ External method to set the current pool size.  Acquires
-        the resizing lock, then calls the internal version to do real
-        work."""
-
-        # Can't change the thread count if we're shutting down the pool!
-        if self.__isJoining:
-            return False
-
-        self.__resizeLock.acquire()
-        try:
-            self.__setThreadCountNolock(newNumThreads)
-        finally:
-            self.__resizeLock.release()
-        return True
-
-    def __setThreadCountNolock(self, newNumThreads):
-
-        """Set the current pool size, spawning or terminating threads
-        if necessary.  Internal use only; assumes the resizing lock is
-        held."""
-
-        # If we need to grow the pool, do so
-        while newNumThreads > len(self.__threads):
-            name = "%s/%d" % (self._name, next(self._count))
-            newThread = WorkerThread(self, name)
-            self.__threads.append(newThread)
-            newThread.start()
-        # If we need to shrink the pool, do so
-        while newNumThreads < len(self.__threads):
-            self.__threads[0].goAway()
-            del self.__threads[0]
 
     def queueTask(self, id, task, args=None, taskCallback=None):
 
@@ -147,9 +116,7 @@ class ThreadPool:
                     t.goAway()
                 for t in self.__threads:
                     t.join()
-#                    print t,"joined"
-                    del t
-            self.__setThreadCountNolock(0)
+                del self.__threads[:]
         finally:
             self.__resizeLock.release()
 
