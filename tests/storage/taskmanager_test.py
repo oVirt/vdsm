@@ -34,8 +34,8 @@ WAIT_TIMEOUT = 5  # Used for task done wait timeout
 
 
 @contextmanager
-def task_manager():
-    tm = taskManager.TaskManager(tpSize=1)
+def task_manager(workers=1):
+    tm = taskManager.TaskManager(tpSize=workers, waitTimeout=0.05)
     try:
         yield tm
     finally:
