@@ -30,7 +30,7 @@ from vdsm.storage.task import Job, Recovery, Task, TaskCleanType
 from . storagetestlib import Callable
 
 
-WAIT_TIMEOUT = 5  # Used for task done wait timeout
+WAIT_TIMEOUT = 5  # Used for task done or hang timeout
 
 
 class TaskManager(object):
@@ -82,7 +82,7 @@ def test_task_prepare():
 
 def test_task_abort():
     # Run async task
-    c = Callable(hang=True)
+    c = Callable(hang_timeout=WAIT_TIMEOUT)
     with async_task(c, "task-id") as t:
         # Check it is preparing
         status = t.getStatus()
@@ -155,7 +155,7 @@ def test_task_queued():
 
 def test_task_rollback(add_recovery):
     # Run async task
-    c = Callable(hang=True)
+    c = Callable(hang_timeout=WAIT_TIMEOUT)
     with async_task(c, "task-id") as t:
         # Set automatic recovery
         t.setRecoveryPolicy("auto")
@@ -192,7 +192,7 @@ def test_task_rollback(add_recovery):
 
 def test_task_save_load(tmpdir, add_recovery):
     # Run async task
-    c = Callable(hang=True)
+    c = Callable(hang_timeout=WAIT_TIMEOUT)
     with async_task(c, "task-id") as orig_task:
         orig_task.setRecoveryPolicy("auto")
 

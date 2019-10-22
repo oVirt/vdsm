@@ -30,7 +30,7 @@ from vdsm.storage import taskManager
 from . storagetestlib import Callable
 
 
-WAIT_TIMEOUT = 5  # Used for task done wait timeout
+WAIT_TIMEOUT = 5  # Used for task done or hang timeout
 
 
 @contextmanager
@@ -54,7 +54,7 @@ def test_persistent_job(tmpdir, add_recovery):
     # Simulate SPM starting a persistent job and fencing out
     with task_manager() as tm:
         # Create a task
-        c = Callable(hang=True)
+        c = Callable(hang_timeout=WAIT_TIMEOUT)
         t = task.Task(id="task-id", abort_callback=c.finish)
 
         # Add recovery for task
@@ -91,7 +91,7 @@ def test_persistent_job(tmpdir, add_recovery):
 def test_revert_task(add_recovery):
     with task_manager() as tm:
         # Create a task
-        c = Callable(hang=True)
+        c = Callable(hang_timeout=WAIT_TIMEOUT)
         t = task.Task(id="task-id", abort_callback=c.finish)
 
         # Add recovery to task
@@ -118,7 +118,7 @@ def test_revert_task(add_recovery):
 def test_stop_clear_task(add_recovery):
     with task_manager() as tm:
         # Create a task
-        c = Callable(hang=True)
+        c = Callable(hang_timeout=WAIT_TIMEOUT)
         t = task.Task(id="task-id", abort_callback=c.finish)
 
         # Add recovery to task
