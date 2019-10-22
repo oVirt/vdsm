@@ -37,7 +37,6 @@ class ThreadPool:
         self._name = name
         self._count = itertools.count()
         self.__threads = []
-        self._taskThread = {}
         self.__resizeLock = threading.Condition(threading.Lock())
         self.__runningTasksLock = threading.Condition(threading.Lock())
         self.__tasks = queue.Queue(maxTasks)
@@ -60,9 +59,6 @@ class ThreadPool:
             self.log.debug("Number of running tasks: %s", self.__runningTasks)
         finally:
             self.__runningTasksLock.release()
-
-    def getRunningTasks(self):
-        return self.__runningTasks
 
     def setThreadCount(self, newNumThreads):
 
@@ -98,16 +94,6 @@ class ThreadPool:
             self.__threads[0].goAway()
             del self.__threads[0]
 
-    def getThreadCount(self):
-
-        """Return the number of threads in the pool."""
-
-        self.__resizeLock.acquire()
-        try:
-            return len(self.__threads)
-        finally:
-            self.__resizeLock.release()
-
     def queueTask(self, id, task, args=None, taskCallback=None):
 
         """Insert a task into the queue.  task must be callable;
@@ -139,9 +125,6 @@ class ThreadPool:
 
         return id, cmd, args, callback
 
-    def stopThread(self):
-        return self.__tasks.put((None, None, None, None))
-
     def joinAll(self, waitForTasks=True, waitForThreads=True):
 
         """ Clear the task queue and terminate all pooled threads,
@@ -167,10 +150,6 @@ class ThreadPool:
 #                    print t,"joined"
                     del t
             self.__setThreadCountNolock(0)
-            self.__isJoining = True
-
-            # Reset the pool for potential reuse
-            self.__isJoining = False
         finally:
             self.__resizeLock.release()
 
