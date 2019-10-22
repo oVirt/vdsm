@@ -135,22 +135,25 @@ class WorkerThread(object):
 
     def _processNextTask(self):
         id, cmd, args = self.__pool.getNextTask()
+
+        if id is None:  # should retry.
+            return
+
+        if self.__isDying:
+            # return the task into the queue, since we abort.
+            self.__pool.__tasks.put((id, cmd, args))
+            return
+
+        self.__pool._task_started()
         try:
-            if id is None:  # should retry.
-                pass
-            elif self.__isDying:
-                # return the task into the queue, since we abort.
-                self.__pool.__tasks.put((id, cmd, args))
-            else:
-                self.__pool._task_started()
-                self.log.info("START task %s (cmd=%r, args=%r)",
-                              id, cmd, args)
-                cmd(args)
-                self.log.info("FINISH task %s", id)
-                self.__pool._task_finished()
+            self.log.info("START task %s (cmd=%r, args=%r)", id, cmd, args)
+            cmd(args)
+            self.log.info("FINISH task %s", id)
         except Exception:
             self.log.exception(
                 "FINISH task %s failed (cmd=%r, args=%r)", id, cmd, args)
+        finally:
+            self.__pool._task_finished()
 
     def run(self):
 
