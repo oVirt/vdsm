@@ -23,6 +23,5 @@ vdsmintegrationtestsdir = ${vdsmtestsdir}/integration
 dist_vdsmintegrationtests_PYTHON = \
 	__init__.py \
 	jsonRpcHelper.py \
-	jsonRpcTests.py \
 	sslhelper.py \
 	$(NULL)
