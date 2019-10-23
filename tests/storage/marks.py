@@ -41,9 +41,9 @@ requires_root = pytest.mark.skipif(
 requires_unprivileged_user = pytest.mark.skipif(
     os.geteuid() == 0, reason="This test can not run as root")
 
-requires_sanlock_python3 = pytest.mark.skipif(
+requires_sanlock = pytest.mark.skipif(
     isinstance(sanlock, compat.MissingModule),
-    reason="requires sanlock for python 3")
+    reason="sanlock is not available")
 
 xfail_python3 = pytest.mark.xfail(
     six.PY3, reason="needs porting to python 3")

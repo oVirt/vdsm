@@ -28,10 +28,10 @@ from vdsm.storage import localFsSD
 from vdsm.storage import nfsSD
 from vdsm.storage.compat import sanlock
 
-from . marks import requires_sanlock_python3
+from . marks import requires_sanlock
 
 
-@requires_sanlock_python3
+@requires_sanlock
 def test_supported_block_size_new_sanlock(monkeypatch):
     monkeypatch.setattr(sanlock, "SECTOR_SIZE", (512, 4096))
     assert backends.supported_block_size() == {
@@ -44,7 +44,7 @@ def test_supported_block_size_new_sanlock(monkeypatch):
     }
 
 
-@requires_sanlock_python3
+@requires_sanlock
 def test_supported_block_size_old_sanlock(monkeypatch):
     monkeypatch.setattr(sanlock, "SECTOR_SIZE", (512,))
     assert backends.supported_block_size() == {
