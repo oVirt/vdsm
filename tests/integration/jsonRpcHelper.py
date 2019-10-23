@@ -42,10 +42,8 @@ from vdsm import utils
 
 from monkeypatch import MonkeyPatchScope
 
-from integration.sslhelper import DEAFAULT_SSL_CONTEXT
 from testlib import ipv6_enabled
 
-PERMUTATIONS = [[True], [False]]
 
 TIMEOUT = 3
 
@@ -133,8 +131,7 @@ def constructAcceptor(log, ssl_ctx, jsonBridge,
 
 
 @contextmanager
-def constructClient(log, bridge, ssl, dest=SUBSCRIPTION_ID_RESPONSE):
-    ssl_ctx = DEAFAULT_SSL_CONTEXT if ssl else None
+def constructClient(log, bridge, ssl_ctx, dest=SUBSCRIPTION_ID_RESPONSE):
     with constructAcceptor(log, ssl_ctx, bridge, dest) as acceptor:
         reactor = acceptor._handlers[0]._reactor
 

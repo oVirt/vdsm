@@ -26,6 +26,7 @@ import time
 from six.moves import queue
 
 from integration.jsonRpcHelper import constructClient
+from integration.sslhelper import generate_key_cert_pair, create_ssl_context
 
 from testlib import \
     VdsmTestCase, \
@@ -114,13 +115,15 @@ class VdsmClientTests(VdsmTestCase):
     @contextmanager
     def _create_client(self):
         bridge = _Bridge()
-        ssl = True
-        with constructClient(self.log, bridge, ssl) as clientFactory:
-            json_client = clientFactory()
-            try:
-                yield _MockedClient(json_client, CALL_TIMEOUT, False)
-            finally:
-                json_client.close()
+        with generate_key_cert_pair() as key_cert_pair:
+            key_file, cert_file = key_cert_pair
+            ssl_ctx = create_ssl_context(key_file, cert_file)
+            with constructClient(self.log, bridge, ssl_ctx) as clientFactory:
+                json_client = clientFactory()
+                try:
+                    yield _MockedClient(json_client, CALL_TIMEOUT, False)
+                finally:
+                    json_client.close()
 
     def _get_with_timeout(self, event_queue):
         try:
