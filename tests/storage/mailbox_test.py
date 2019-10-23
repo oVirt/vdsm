@@ -343,6 +343,16 @@ class TestCommunicate:
                 log.info("waiting for replies clearing")
                 assert done.wait(timeout), "Roundtrip did not finish"
 
+                log.info("waiting for messages clearing in SPM inbox")
+                deadline = time.time() + MAILER_TIMEOUT
+                while True:
+                    with io.open(mboxfiles.inbox, "rb") as f:
+                        # check that SPM inbox was cleared
+                        if f.read(sm.MAILBOX_SIZE) == sm.EMPTYMAILBOX:
+                            break
+                    assert time.time() < deadline, "Timeout clearing SPM inbox"
+                    time.sleep(0.1)
+
         times = [end[k] - start[k] for k in start]
         times.sort()
         log.info("stats: messages=%d delay=%.3f best=%.3f worst=%.3f avg=%.3f",
