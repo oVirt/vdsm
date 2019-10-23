@@ -33,7 +33,7 @@ from vdsm.protocoldetector import MultiProtocolAcceptor
 from testValidation import broken_on_ci
 from testlib import VdsmTestCase, expandPermutations, permutations
 
-from integration.sslhelper import KEY_FILE, CRT_FILE, DEAFAULT_SSL_CONTEXT
+from integration.sslhelper import generate_key_cert_pair, create_ssl_context
 
 
 class Detector(object):
@@ -101,8 +101,13 @@ class AcceptorTests(VdsmTestCase):
     GRACETIME = 0.5
     CONCURRENCY = 5
     PERMUTATIONS = ((False,), (True,))
-    SSLCTX = DEAFAULT_SSL_CONTEXT
     BUFSIZE = 512
+
+    def run(self, result=None):
+        with generate_key_cert_pair() as key_cert_pair:
+            self.key_file, self.cert_file = key_cert_pair
+            self.ssl_ctx = create_ssl_context(self.key_file, self.cert_file)
+            super(VdsmTestCase, self).run(result)
 
     def setUp(self):
         self.reactor = None
@@ -218,7 +223,7 @@ class AcceptorTests(VdsmTestCase):
             self.reactor,
             address,
             0,
-            sslctx=self.SSLCTX if use_ssl else None
+            sslctx=self.ssl_ctx if use_ssl else None
         )
         self.acceptor.TIMEOUT = 1
         self.acceptor.add_detector(Echo())
@@ -239,8 +244,8 @@ class AcceptorTests(VdsmTestCase):
         try:
             s.settimeout(self.TIMEOUT)
             if use_ssl:
-                s = ssl.wrap_socket(s, KEY_FILE, CRT_FILE, ca_certs=CRT_FILE,
-                                    server_side=False)
+                s = ssl.wrap_socket(s, self.key_file, self.cert_file,
+                                    ca_certs=self.cert_file, server_side=False)
             s.connect(sockaddr)
             yield s
         finally:

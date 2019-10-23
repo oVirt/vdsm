@@ -81,6 +81,11 @@ def key_cert_pair():
         yield key_cert
 
 
+def create_ssl_context(key_file, cert_file):
+    return SSLContext(cert_file=cert_file, key_file=key_file,
+                      ca_certs=cert_file)
+
+
 def get_server_socket(key_file, cert_file, socket):
     return ssl.wrap_socket(socket,
                            keyfile=key_file,
