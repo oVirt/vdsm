@@ -455,8 +455,8 @@ class TestReadBlock(VdsmTestCase):
         """
         Test that when all arguments are correct the method works smoothly.
         """
-        writeData = "DON'T THINK OF IT AS DYING, said Death." + \
-                    "JUST THINK OF IT AS LEAVING EARLY TO AVOID THE RUSH."
+        writeData = ("DON'T THINK OF IT AS DYING, said Death. "
+                     "JUST THINK OF IT AS LEAVING EARLY TO AVOID THE RUSH.")
         # (C) Terry Pratchet - Good Omens
         dataLength = len(writeData)
 
@@ -469,8 +469,8 @@ class TestReadBlock(VdsmTestCase):
         timesInSize = int(size / dataLength) + 1
         relOffset = offset % dataLength
         expectedResultData = (writeData * timesInSize)
-        expectedResultData = \
-            (expectedResultData[relOffset:] + expectedResultData[:relOffset])
+        expectedResultData = (expectedResultData[relOffset:] +
+                              expectedResultData[:relOffset])
         expectedResultData = expectedResultData[:size]
         block = misc.readblock(path, offset, size)
 
@@ -499,8 +499,8 @@ class TestReadBlock(VdsmTestCase):
         See that correct exception is raised when trying to read more then the
         file has to offer.
         """
-        writeData = "History, contrary to popular theories, " + \
-                    "is kings and dates and battles."
+        writeData = ("History, contrary to popular theories, "
+                     "is kings and dates and battles.")
         # (C) Terry Pratchet - Small Gods
 
         offset = 512
@@ -614,8 +614,8 @@ class TestExecCmd(VdsmTestCase):
         Tests that execCmd correctly returns the standard output of the prog it
         executes.
         """
-        line = "All I wanted was to have some pizza, hang out with dad, " + \
-               "and not let your weirdness mess up my day"
+        line = ("All I wanted was to have some pizza, hang out with dad, "
+                "and not let your weirdness mess up my day")
         # (C) Nickolodeon - Invader Zim
         ret, stdout, stderr = commands.execCmd((EXT_ECHO, line))
         self.assertEqual(stdout[0].decode("ascii"), line)
