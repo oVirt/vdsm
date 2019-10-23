@@ -19,7 +19,6 @@
 #
 
 from __future__ import absolute_import
-import array
 import os
 import errno
 import time
@@ -61,11 +60,9 @@ SLOTS_PER_MAILBOX = int(MAILBOX_SIZE // MESSAGE_SIZE)
 MESSAGES_PER_MAILBOX = SLOTS_PER_MAILBOX - 1
 
 
-def checksum(string, numBytes):
+def checksum(data, numBytes):
     bits = 8 * numBytes
-    tmpArray = array.array('B')
-    tmpArray.fromstring(string)
-    csum = sum(tmpArray)
+    csum = sum(bytearray(data))
     return csum - (csum >> bits << bits)
 
 
