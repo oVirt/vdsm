@@ -103,10 +103,6 @@ class StompError(RuntimeError):
         return "Error in frame %s: %s" % (self.frame, self.msg)
 
 
-class Disconnected(RuntimeError):
-    pass
-
-
 class _HeartbeatFrame(object):
     def encode(self):
         return b"\n"
