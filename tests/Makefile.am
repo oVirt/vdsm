@@ -62,7 +62,6 @@ test_modules = \
 	alignmentscan_test.py \
 	api_response_test.py \
 	caps_test.py \
-	client_test.py \
 	clientif_test.py \
 	cmdutils_test.py \
 	config_test.py \

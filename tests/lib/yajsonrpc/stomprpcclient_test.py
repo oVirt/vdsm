@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,20 +23,16 @@ from __future__ import division
 from contextlib import contextmanager
 import logging
 import time
-import six
 from six.moves import queue
 
-try:
-    from integration.jsonRpcHelper import constructClient
-except:  # Import will fail in python3
-    pass
+from integration.jsonRpcHelper import constructClient
 
 from testlib import \
     VdsmTestCase, \
     dummyTextGenerator, \
     mock
 
-from testValidation import skipif, slowtest
+from testValidation import slowtest
 
 from vdsm.client import \
     _Client, \
@@ -132,7 +128,6 @@ class VdsmClientTests(VdsmTestCase):
         except queue.Empty:
             self.fail("Event queue timed out.")
 
-    @skipif(six.PY3, "Needs porting to python 3")
     def test_call(self):
         with self._create_client() as client:
             msg = dummyTextGenerator(1024)
@@ -140,7 +135,6 @@ class VdsmClientTests(VdsmTestCase):
 
             self.assertEqual(msg, res)
 
-    @skipif(six.PY3, "Needs porting to python 3")
     def test_failing_call(self):
         with self._create_client() as client:
             with self.assertRaises(ServerError) as ex:
@@ -152,7 +146,6 @@ class VdsmClientTests(VdsmTestCase):
             )
             self.assertIn("Test failure", str(ex.exception))
 
-    @skipif(six.PY3, "Needs porting to python 3")
     def test_missing_method(self):
         with self._create_client() as client:
             with self.assertRaises(ServerError) as ex:
@@ -162,13 +155,11 @@ class VdsmClientTests(VdsmTestCase):
                 ex.exception.code, JsonRpcMethodNotFoundError("").code)
             self.assertIn("missingMethod", ex.exception.resp_msg)
 
-    @skipif(six.PY3, "Needs porting to python 3")
     def test_missing_namespace(self):
         with self._create_client() as client:
             with self.assertRaises(AttributeError):
                 client.MissingNamespace.missingMethod()
 
-    @skipif(six.PY3, "Needs porting to python 3")
     def test_bad_parameters(self):
         with self._create_client() as client:
             with self.assertRaises(ServerError) as ex:
@@ -176,7 +167,6 @@ class VdsmClientTests(VdsmTestCase):
 
             self.assertEqual(ex.exception.code, JsonRpcInternalError().code)
 
-    @skipif(six.PY3, "Needs porting to python 3")
     @mock.patch.object(stompclient.ClientRpcTransportAdapter, 'send')
     def test_client_should_use_flow_id_in(self, send_mock):
         # Here we just care about whether 'flow_id' was forwarded or not
@@ -204,14 +194,12 @@ class VdsmClientTests(VdsmTestCase):
 
             send_mock.assert_called_with(mock.ANY, flow_id="zorro")
 
-    @skipif(six.PY3, "Needs porting to python 3")
     @slowtest
     def test_slow_call(self):
         with self._create_client() as client:
             with self.assertRaises(TimeoutError):
                 client.Test.slowCall()
 
-    @skipif(six.PY3, "Needs porting to python 3")
     def test_event_handler(self):
         with self._create_client() as client:
             event_queue = queue.Queue()
@@ -229,7 +217,6 @@ class VdsmClientTests(VdsmTestCase):
                 None
             )
 
-    @skipif(six.PY3, "Needs porting to python 3")
     def test_multiple_queues(self):
         with self._create_client() as client:
             event_queue1 = queue.Queue()
@@ -259,7 +246,6 @@ class VdsmClientTests(VdsmTestCase):
                 None
             )
 
-    @skipif(six.PY3, "Needs porting to python 3")
     @slowtest
     def test_unsubscribe(self):
         with self._create_client() as client:
@@ -274,7 +260,6 @@ class VdsmClientTests(VdsmTestCase):
                 None
             )
 
-    @skipif(six.PY3, "Needs porting to python 3")
     def test_notify(self):
         with self._create_client() as client:
             event_queue = queue.Queue()
