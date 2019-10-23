@@ -257,7 +257,6 @@ class TestValidateInt(VdsmTestCase):
         self.assertRaises(expectedException, misc.validateInt, "2-1", "a")
 
 
-@pytest.mark.skipif(six.PY3, reason="name 'basestring' is not defined")
 @expandPermutations
 class TestValidateSize(VdsmTestCase):
 
@@ -429,7 +428,6 @@ class TestValidateDDBytes(VdsmTestCase):
                           ["I AM", "PRETENDING TO", "BE DD"], 32)
 
 
-@pytest.mark.skipif(six.PY3, reason="try to write text to binary file")
 class TestReadBlock(VdsmTestCase):
 
     def _createTempFile(self, neededFileSize, writeData):
@@ -455,8 +453,8 @@ class TestReadBlock(VdsmTestCase):
         """
         Test that when all arguments are correct the method works smoothly.
         """
-        writeData = ("DON'T THINK OF IT AS DYING, said Death. "
-                     "JUST THINK OF IT AS LEAVING EARLY TO AVOID THE RUSH.")
+        writeData = (b"DON'T THINK OF IT AS DYING, said Death. "
+                     b"JUST THINK OF IT AS LEAVING EARLY TO AVOID THE RUSH.")
         # (C) Terry Pratchet - Good Omens
         dataLength = len(writeData)
 
@@ -499,8 +497,8 @@ class TestReadBlock(VdsmTestCase):
         See that correct exception is raised when trying to read more then the
         file has to offer.
         """
-        writeData = ("History, contrary to popular theories, "
-                     "is kings and dates and battles.")
+        writeData = (b"History, contrary to popular theories, "
+                     b"is kings and dates and battles.")
         # (C) Terry Pratchet - Small Gods
 
         offset = 512
@@ -639,7 +637,6 @@ class TestExecCmd(VdsmTestCase):
         ret, stdout, stderr = commands.execCmd(cmd, sudo=True)
         self.assertEqual(stdout[0].decode("ascii"), SUDO_USER)
 
-    @pytest.mark.skipif(six.PY3, reason="uses AsyncProc")
     def testNice(self):
         cmd = ["sleep", "10"]
         proc = commands.start(cmd, nice=10)
