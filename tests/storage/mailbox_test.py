@@ -29,6 +29,8 @@ import struct
 
 import pytest
 
+from testlib import make_uuid
+
 import vdsm.storage.mailbox as sm
 
 from vdsm.common import constants
@@ -259,6 +261,29 @@ class TestCommunicate:
         assert outbox[msg_offset:msg_offset + 0x40] == extend_message(SIZE)
         assert outbox[msg_offset + 0x40:] == b'\0' * (
             0x1000 * MAX_HOSTS - 0x40 - msg_offset)
+
+    @pytest.mark.xfail(reason="Cannot utilize first message slot")
+    def test_fill_slots(self, mboxfiles, monkeypatch):
+
+        filled = threading.Event()
+        orig_cmd = sm._mboxExecCmd
+
+        def mbox_cmd_hook(*args, **kwargs):
+            data = kwargs.get('data')
+            if data and all(
+                data[i:i + 1] != b"\0"
+                for i in range(0, sm.MESSAGES_PER_MAILBOX, sm.MESSAGE_SIZE)
+            ):
+                filled.set()
+            return orig_cmd(*args, **kwargs)
+
+        monkeypatch.setattr(sm, "_mboxExecCmd", mbox_cmd_hook)
+
+        with make_hsm_mailbox(mboxfiles, 1) as hsm_mb:
+            for _ in range(sm.MESSAGES_PER_MAILBOX):
+                hsm_mb.sendExtendMsg(volume_data(make_uuid()), 100)
+
+            assert filled.wait(MAILER_TIMEOUT * 2)
 
 
 class TestExtendMessage:
