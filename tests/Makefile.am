@@ -127,22 +127,12 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	conf/svdsm.logger.conf \
-	makecert.sh \
 	panic_helper.py \
 	py-watch \
 	profile \
 	profile-analyze \
 	tests_child.py \
 	$(NULL)
-
-server_certificates = \
-	server.crt \
-	server.csr \
-	server.key \
-	server.p12
-
-dist_noinst_DATA = \
-	$(server_certificates)
 
 dist_noinst_SCRIPTS = \
 	run_tests_local.sh
@@ -225,12 +215,6 @@ dist_vdsmtests_SCRIPTS = \
 
 all-local: \
 	$(nodist_vdsmtests_PYTHON)
-
-$(server_certificates): make_certificates
-
-.PHONY: make_certificates
-make_certificates: makecert.sh
-	$(srcdir)/makecert.sh
 
 run_modules  = $(test_modules)
 run_modules += $(device_modules)
