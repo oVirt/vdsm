@@ -88,15 +88,14 @@ class FakeClientIf(object):
 
 
 @contextmanager
-def constructAcceptor(log, ssl, jsonBridge,
+def constructAcceptor(log, ssl_ctx, jsonBridge,
                       dest=SUBSCRIPTION_ID_RESPONSE):
-    sslctx = DEAFAULT_SSL_CONTEXT if ssl else None
     reactor = Reactor()
     acceptor = MultiProtocolAcceptor(
         reactor,
         "::1" if ipv6_enabled() else "127.0.0.1",
         0,
-        sslctx,
+        ssl_ctx,
     )
 
     scheduler = schedule.Scheduler(name="test.Scheduler",
@@ -135,8 +134,8 @@ def constructAcceptor(log, ssl, jsonBridge,
 
 @contextmanager
 def constructClient(log, bridge, ssl, dest=SUBSCRIPTION_ID_RESPONSE):
-    sslctx = DEAFAULT_SSL_CONTEXT if ssl else None
-    with constructAcceptor(log, ssl, bridge, dest) as acceptor:
+    ssl_ctx = DEAFAULT_SSL_CONTEXT if ssl else None
+    with constructAcceptor(log, ssl_ctx, bridge, dest) as acceptor:
         reactor = acceptor._handlers[0]._reactor
 
         def client(client_socket):
@@ -150,7 +149,7 @@ def constructClient(log, bridge, ssl, dest=SUBSCRIPTION_ID_RESPONSE):
             return client(utils.create_connected_socket(
                 acceptor._host,
                 acceptor._port,
-                sslctx=sslctx,
+                sslctx=ssl_ctx,
                 timeout=TIMEOUT
             ))
 

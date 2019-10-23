@@ -35,7 +35,7 @@ from integration.jsonRpcHelper import constructAcceptor
 from yajsonrpc.stompclient import StandAloneRpcClient
 from vdsm import utils
 
-from integration.sslhelper import DEAFAULT_SSL_CONTEXT
+from integration.sslhelper import generate_key_cert_pair, create_ssl_context
 
 
 CALL_TIMEOUT = 15
@@ -74,6 +74,12 @@ class _SampleBridge(object):
 @expandPermutations
 class StompTests(TestCaseBase):
 
+    def run(self, result=None):
+        with generate_key_cert_pair() as key_cert_pair:
+            key_file, cert_file = key_cert_pair
+            self.ssl_ctx = create_ssl_context(key_file, cert_file)
+            super(TestCaseBase, self).run(result)
+
     @broken_on_ci(
         "Fails randomly in oVirt CI, see https://gerrit.ovirt.org/c/95899/")
     @permutations([
@@ -87,29 +93,29 @@ class StompTests(TestCaseBase):
     ])
     def test_echo(self, size, use_ssl):
         data = dummyTextGenerator(size)
+        ssl_ctx = self.ssl_ctx if use_ssl else None
 
-        with constructAcceptor(self.log, use_ssl, _SampleBridge()) as acceptor:
-            sslctx = DEAFAULT_SSL_CONTEXT if use_ssl else None
-
+        with constructAcceptor(self.log, ssl_ctx, _SampleBridge()) as acceptor:
             with utils.closing(StandAloneRpcClient(acceptor._host,
                                                    acceptor._port,
                                                    'jms.topic.vdsm_requests',
                                                    str(uuid4()),
-                                                   sslctx, False)) as client:
+                                                   ssl_ctx, False)) as client:
                 self.assertEqual(client.callMethod('echo', (data,),
                                                    str(uuid4())),
                                  data)
 
     @permutations(_USE_SSL)
     def test_event(self, use_ssl):
-        with constructAcceptor(self.log, use_ssl, _SampleBridge(),
+        ssl_ctx = self.ssl_ctx if use_ssl else None
+
+        with constructAcceptor(self.log, ssl_ctx, _SampleBridge(),
                                'jms.queue.events') as acceptor:
-            sslctx = DEAFAULT_SSL_CONTEXT if use_ssl else None
             with utils.closing(StandAloneRpcClient(acceptor._host,
                                                    acceptor._port,
                                                    'jms.topic.vdsm_requests',
                                                    'jms.queue.events',
-                                                   sslctx, False)) as client:
+                                                   ssl_ctx, False)) as client:
 
                 event_queue = queue.Queue()
                 custom_topic = 'jms.queue.events'
