@@ -209,7 +209,7 @@ vdsm_flake8() {
 
 vdsm_unit () {
     cd $VDSM_SOURCE_DIR && \
-    ./autogen.sh --system && make && \
+    ./autogen.sh --system && make && make -C tests run_tests_local.sh && \
     cd tests && sudo ./run_tests_local.sh $1
 }
 

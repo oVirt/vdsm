@@ -20,18 +20,6 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS = \
-	  common \
-	  cpuinfo \
-	  functional \
-	  devices \
-	  integration \
-	  network \
-	  storage \
-	  virt \
-	  gluster \
-	  $(NULL)
-
 common_modules = \
 	common/cache_test.py \
 	common/cmdutils_test.py \
@@ -120,100 +108,8 @@ test_modules = \
 	$(NULL)
 
 CLEANFILES = \
-	$(nodist_vdsmtests_PYTHON) \
-	$(dist_noinst_DATA) \
-	$(dist_noinst_SCRIPTS) \
+	run_tests_local.sh \
 	$(NULL)
-
-EXTRA_DIST = \
-	conf/svdsm.logger.conf \
-	panic_helper.py \
-	py-watch \
-	profile \
-	profile-analyze \
-	tests_child.py \
-	$(NULL)
-
-dist_noinst_SCRIPTS = \
-	run_tests_local.sh
-
-dist_vdsmtests_DATA = \
-	README \
-	cpu_info.out \
-	caps_libvirt_intel_E5649.out \
-	caps_libvirt_amd_6274.out \
-	caps_libvirt_ibm_S822L.out \
-	caps_libvirt_ibm_S822L_le.out \
-	caps_libvirt_intel_E31220.out \
-	caps_libvirt_intel_E5606.out \
-	caps_libvirt_intel_i73770.out \
-	caps_libvirt_intel_i73770_nosnap.out \
-	caps_libvirt_multiqemu.out \
-	caps_libvirt_s390x.out \
-	caps_numactl_4_nodes.out \
-	domcaps_libvirt_ppc64le.out \
-	domcaps_libvirt_s390x.out \
-	domcaps_libvirt_x86_64.out \
-	fake-virt-v2v.err \
-	fake-virt-v2v.out \
-	glusterGeoRepStatus.xml \
-	glusterSnapshotConfig.xml \
-	glusterSnapshotRestore.xml \
-	glusterVolumeGeoRepConfigList.xml \
-	glusterSnapshotList.xml \
-	glusterVolumeSnapshotList.xml \
-	glusterSnapshotListEmpty.xml \
-	glusterVolumeSnapshotListEmpty.xml \
-	glusterVolumeProfileInfo.xml \
-	glusterVolumeProfileInfoNfs.xml \
-	glusterVolumeRebalanceStatus.xml \
-	glusterVolumeRemoveBricksStatus.xml \
-	glusterVolumeTasks.xml \
-        glusterVolumeHealInfo.xml \
-	mem_info.out \
-	toolTests_CCPP.conf \
-	toolTests_abrt-action-save-package-data.conf \
-	toolTests_abrt.conf \
-	toolTests_empty.conf \
-	toolTests_lconf_ssl.conf \
-	toolTests_libvirtd.conf \
-	toolTests_mtab_1g \
-	toolTests_mtab_default \
-	toolTests_mtab_nohugetlbfs \
-	toolTests_qemu_sanlock.conf \
-	toolTests_qemu_ssl.conf \
-	toolTests_vdsm_no_ssl.conf \
-	toolTests_vdsm_ssl.conf \
-	toolTests_vmcore.conf \
-	$(NULL)
-
-dist_vdsmtests_PYTHON = \
-	$(test_modules) \
-	apiData.py \
-	check_imports.py \
-	hookValidation.py \
-	fakelib.py \
-	hostdevlib.py \
-	monkeypatch.py \
-	testlib.py \
-	testrunner.py \
-	testValidation.py \
-	vmfakecon.py \
-	vmfakelib.py \
-	$(NULL)
-
-dist_vdsmtests_SCRIPTS = \
-	check_distpkg.sh \
-	check_rpms.sh \
-	fake-virt-sysprep \
-	fake-virt-v2v \
-	fake-ssh-add \
-	fake-ssh-agent \
-	mom_policy_validator.py \
-	$(NULL)
-
-all-local: \
-	$(nodist_vdsmtests_PYTHON)
 
 run_modules  = $(test_modules)
 run_modules += $(device_modules)

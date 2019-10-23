@@ -86,7 +86,6 @@ check_install() {
         vdsm-$vr\* \
         vdsm-client-$vr\* \
         vdsm-hook-\*-$vr\* \
-        vdsm-tests-$vr\* \
         vdsm-gluster-$vr\*
 }
 

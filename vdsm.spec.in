@@ -554,22 +554,6 @@ Requires:       %{name}-network = %{version}-%{release}
 %description python
 Shared libraries between the various VDSM packages.
 
-%package tests
-Summary:        VDSM Test Suite
-BuildArch:      noarch
-Requires:       %{name} = %{version}-%{release}
-Requires:       %{name}-common = %{version}-%{release}
-Requires:       %{name}-network = %{version}-%{release}
-Requires:       dracut
-Requires:       %{python_or_python3}-nose
-Requires:       %{python_pyyaml}
-%if %{target_py} == py2
-Requires:       python-ipaddress
-%endif
-
-%description tests
-A test suite for verifying the functionality of a running vdsm instance
-
 %package hook-allocate_net
 Summary:        random_network allocation hook for VDSM
 BuildArch:      noarch
@@ -873,7 +857,6 @@ make DESTDIR=%{buildroot} install
 
 %if %{target_py} == py3
 %py_byte_compile python3 %{buildroot}/%{_datadir}/%{vdsm_name}/sitecustomize.py
-%py_byte_compile python3 %{buildroot}/%{_datadir}/%{vdsm_name}/tests
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_device_create/openstacknet_utils.py
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/openstacknet_utils.py
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/openstacknet_utils.py
@@ -1192,10 +1175,6 @@ exit 0
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/cli.*.pyc
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/exception.*.pyc
 %endif
-
-%files tests
-%doc %{_datadir}/%{vdsm_name}/tests/README
-%{_datadir}/%{vdsm_name}/tests
 
 %files hook-openstacknet
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_openstacknet

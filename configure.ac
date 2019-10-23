@@ -511,25 +511,6 @@ AC_OUTPUT([
 	lib/yajsonrpc/Makefile
 	static/Makefile
 	tests/Makefile
-	tests/common/Makefile
-	tests/cpuinfo/Makefile
-	tests/devices/Makefile
-	tests/devices/data/Makefile
-	tests/devices/parsing/Makefile
-	tests/functional/Makefile
-	tests/gluster/Makefile
-	tests/gluster/results/Makefile
-	tests/integration/Makefile
-	tests/network/Makefile
-	tests/network/functional/Makefile
-	tests/network/integration/Makefile
-	tests/network/integration/ovs/Makefile
-	tests/network/unit/Makefile
-	tests/network/unit/ovs/Makefile
-	tests/network/static/Makefile
-	tests/storage/Makefile
-	tests/virt/Makefile
-	tests/virt/data/Makefile
 	vdsm_hooks/Makefile
 	vdsm_hooks/allocate_net/Makefile
 	vdsm_hooks/boot_hostdev/Makefile
