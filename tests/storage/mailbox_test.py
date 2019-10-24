@@ -208,6 +208,11 @@ class TestHSMMailbox:
                 data = f.read()
             assert data == dirty_outbox
 
+    def test_skip_empty_response(self, mboxfiles):
+        with make_hsm_mailbox(mboxfiles, 1) as hsm_mb:
+            hsm_mb._mailman._used_slots_array = [1] * sm.MESSAGES_PER_MAILBOX
+            assert not hsm_mb._mailman._handleResponses(sm.EMPTYMAILBOX)
+
 
 class TestCommunicate:
 

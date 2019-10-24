@@ -291,12 +291,11 @@ class HSM_MailMonitor(object):
             if self._used_slots_array[i] == 0:
                 continue
 
-            # Skip empty return messages (messages with version 0)
             start = i * MESSAGE_SIZE
 
             # First byte of message is message version.
-            # Check return message version, if 0 then message is empty
-            if newMsgs[start] in ['\0', '0']:
+            # A null byte indicates an empty response message to be skipped.
+            if newMsgs[start:start + 1] == b"\0":
                 continue
 
             for j in range(start, start + MESSAGE_SIZE):
