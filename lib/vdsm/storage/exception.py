@@ -1247,10 +1247,8 @@ class ImageDaemonError(StorageException):
     message = "Image daemon request failed"
 
     def __init__(self, status, reason, error_info):
-        d = error_info.copy()
-        d['status'] = status
-        d['reason'] = reason
-        self.value = ", ".join("%s=%s" % (k, v) for k, v in d.items())
+        self.value = "status={}, reason={}, error={}".format(
+            status, reason, error_info)
 
 
 class ImageDaemonUnsupported(StorageException):

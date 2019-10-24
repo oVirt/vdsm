@@ -25,6 +25,8 @@ import json
 import socket
 import io
 
+import six
+
 from six.moves import http_client
 
 from monkeypatch import MonkeyPatch
@@ -179,7 +181,8 @@ class TestImageTickets(VdsmTestCase):
         try:
             imagetickets.remove_ticket("uuid")
         except se.ImageDaemonError as e:
-            self.assertTrue("image_daemon_message=content" in e.value)
+            self.assertTrue(six.text_type("image_daemon_message") in e.value)
+            self.assertTrue(six.text_type("content") in e.value)
 
     @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
     def test_res_read_error(self):
