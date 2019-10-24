@@ -17,6 +17,9 @@ stages:
                     - el7
         - build-py3:
             archs:
+              - ppc64le:
+                  distributions:
+                    - el8
               - x86_64:
                   distributions:
                     - el8
