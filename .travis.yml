@@ -15,8 +15,8 @@ env:
   matrix:
     - DIST=centos-7   PY=2.7  TARGETS="storage tests"
     - DIST=centos-8   PY=3.6  TARGETS="storage tests"
-    - DIST=fedora-29  PY=3.7  TARGETS="lint"
     - DIST=fedora-29  PY=2.7  TARGETS="storage tests"
+    - DIST=fedora-30  PY=3.7  TARGETS="lint"
     - DIST=fedora-30  PY=3.7  TARGETS="storage tests"
 
 matrix:
