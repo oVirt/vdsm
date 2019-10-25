@@ -101,11 +101,14 @@ def resize_devices():
     The slaves can be bigger if the LUN size has been increased on the storage
     server after the initial discovery.
     """
-    for dmId, guid in getMPDevsIter():
-        try:
-            _resize_if_needed(guid)
-        except Exception:
-            log.exception("Could not resize device %s", guid)
+    log.info("Resizing multipath devices")
+    with utils.stopwatch(
+            "Resizing multipath devices", level=logging.INFO, log=log):
+        for dmId, guid in getMPDevsIter():
+            try:
+                _resize_if_needed(guid)
+            except Exception:
+                log.exception("Could not resize device %s", guid)
 
 
 def _resize_if_needed(guid):
