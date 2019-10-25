@@ -210,7 +210,6 @@ dist_vdsmtests_SCRIPTS = \
 	fake-ssh-add \
 	fake-ssh-agent \
 	mom_policy_validator.py \
-	run_tests.sh \
 	$(NULL)
 
 all-local: \

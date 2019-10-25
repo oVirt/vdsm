@@ -20,7 +20,6 @@ for i in $(git ls-files \*.in); do
     for f in \
         static/libexec/vdsm/vdsm-gencerts.sh \
         static/usr/share/man/man1/vdsm-tool.1 \
-        tests/run_tests.sh \
         tests/run_tests_local.sh \
         vdsm.spec \
     ; do

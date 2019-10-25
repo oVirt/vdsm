@@ -49,12 +49,6 @@ vdsm_caps() {
     fi
 }
 
-vdsm_functional() {
-    pushd /usr/share/vdsm/tests && \
-    clear && sudo NOSE_TESTMATCH=$1 ./run_tests.sh -s functional/networkTests.py
-    popd
-}
-
 vdsm_check() {
     pushd $VDSM_SOURCE_DIR
     ./autogen.sh --system && make check

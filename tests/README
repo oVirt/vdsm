@@ -155,11 +155,6 @@ Running individual test module, test cases class or test function:
     ./run_tests_local.sh foo_test:TestBar
     ./run_tests_local.sh foo_test:TestBar.test_baz
 
-Running the tests from the test directory, using installed vdsm package
-(/usr/lib/python2.7/site-packages/vdsm).
-
-    ./run_tests.sh *.py
-
 Enabling slow tests:
 -------------------
 
