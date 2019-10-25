@@ -242,7 +242,7 @@ check-recursive:
 	@true
 
 .PHONY: check-virt
-check-virt:
+check-virt: run_tests_local.sh
 	@echo '=== Running virt tests. ==='
 	@$(top_srcdir)/tests/run_tests_local.sh $(virt_modules)
 
@@ -255,7 +255,7 @@ check-all: $(VDSM_SUPPORTED_PY_MAJOR_SHORT_VERSIONS:%=check-%)
 .PHONY: check
 check: check-all
 
-check-py2:
+check-py2: run_tests_local.sh
 	@echo '=== Running check-py2 target with python2 interpreter version.          ==='
 	@echo '=== To skip this step place "NOSE_EXCLUDE=.*" into your environment.    ==='
 	@echo '=== Do not submit untested code!                                        ==='
@@ -265,7 +265,7 @@ check-py2:
 		mv .coverage .coverage-nose-py2; \
 	fi
 
-check-py3:
+check-py3: run_tests_local.sh
 	@echo '=== Running check-py3 target with python3 interpreter version.          ==='
 	@echo '=== To skip this step place "NOSE_EXCLUDE=.*" into your environment.    ==='
 	@echo '=== Do not submit untested code!                                        ==='
