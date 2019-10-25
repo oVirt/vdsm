@@ -29,6 +29,7 @@ import logging
 import os
 
 from vdsm import constants
+from vdsm import utils
 from vdsm.common import commands
 from vdsm.common import supervdsm
 from vdsm.common import zombiereaper
@@ -56,13 +57,13 @@ def rescan():
     """
     Rescan HBAs discovering new devices.
     """
-    log.debug("Starting scan")
+    log.info("Scanning FC devices")
     try:
-        supervdsm.getProxy().hbaRescan()
+        with utils.stopwatch(
+                "Scanning FC devices", level=logging.INFO, log=log):
+            supervdsm.getProxy().hbaRescan()
     except Error as e:
-        log.error("Scan failed: %s", e)
-    else:
-        log.debug("Scan finished")
+        log.error("Scanning FC devices failed: %s", e)
 
 
 def _rescan():
