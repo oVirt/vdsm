@@ -36,6 +36,7 @@ from threading import RLock
 
 import six
 
+from vdsm import utils
 from vdsm.config import config
 from vdsm.common import supervdsm
 from vdsm.common.network.address import hosttail_join
@@ -438,13 +439,13 @@ def iterateIscsiInterfaces():
 @misc.samplingmethod
 def rescan():
     timeout = config.getint('irs', 'scsi_rescan_maximal_timeout')
-    log.debug("Performing SCSI scan, this will take up to %s seconds", timeout)
+    log.info("Scanning iSCSI devices")
     try:
-        iscsiadm.session_rescan(timeout=timeout)
+        with utils.stopwatch(
+                "Scanning iSCSI devices", level=logging.INFO, log=log):
+            iscsiadm.session_rescan(timeout=timeout)
     except iscsiadm.IscsiSessionError as e:
         log.error("Scan failed: %s", e)
-    else:
-        log.debug("Scan finished")
 
 
 def devIsiSCSI(dev):
