@@ -27,6 +27,7 @@ from __future__ import absolute_import
 import logging
 import threading
 
+from vdsm import utils
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import misc
@@ -70,24 +71,30 @@ class StorageDomainCache:
         self.knownSDs = {}  # {sdUUID: mod.findDomain}
 
     def invalidateStorage(self):
+        self.log.info("Invalidating storage domain cache")
         with self._syncroot:
             self.__staleStatus = self.STORAGE_STALE
 
     @misc.samplingmethod
     def refreshStorage(self, resize=True):
-        self.__staleStatus = self.STORAGE_REFRESHING
+        self.log.info("Refreshing storage domain cache (resize=%s)", resize)
+        with utils.stopwatch(
+                "Refreshing storage domain cache",
+                level=logging.INFO,
+                log=self.log):
+            self.__staleStatus = self.STORAGE_REFRESHING
 
-        multipath.rescan()
-        if resize:
-            multipath.resize_devices()
-        lvm.invalidateCache()
+            multipath.rescan()
+            if resize:
+                multipath.resize_devices()
+            lvm.invalidateCache()
 
-        # If a new invalidateStorage request came in after the refresh
-        # started then we cannot flag the storages as updated (force a
-        # new rescan later).
-        with self._syncroot:
-            if self.__staleStatus == self.STORAGE_REFRESHING:
-                self.__staleStatus = self.STORAGE_UPDATED
+            # If a new invalidateStorage request came in after the refresh
+            # started then we cannot flag the storages as updated (force a
+            # new rescan later).
+            with self._syncroot:
+                if self.__staleStatus == self.STORAGE_REFRESHING:
+                    self.__staleStatus = self.STORAGE_UPDATED
 
     def produce_manifest(self, sdUUID):
         """
@@ -154,22 +161,27 @@ class StorageDomainCache:
         from vdsm.storage import localFsSD
         from vdsm.storage import nfsSD
 
-        self.log.debug("looking for domain %s", sdUUID)
-
         # The order is somewhat important, it's ordered
         # by how quickly get can find the domain. For instance
         # if an nfs mount is unavailable we will get stuck
         # until it times out, this should affect fetching
         # of block\local domains. If for any case in the future
         # this changes, please update the order.
-        for mod in (blockSD, glusterSD, localFsSD, nfsSD):
-            try:
-                return mod.findDomain(sdUUID)
-            except se.StorageDomainDoesNotExist:
-                pass
-            except Exception:
-                self.log.error("Error while looking for domain `%s`", sdUUID,
-                               exc_info=True)
+
+        self.log.info("Looking up domain %s", sdUUID)
+        with utils.stopwatch(
+                "Looking up domain {}".format(sdUUID),
+                level=logging.INFO,
+                log=self.log):
+            for mod in (blockSD, glusterSD, localFsSD, nfsSD):
+                try:
+                    return mod.findDomain(sdUUID)
+                except se.StorageDomainDoesNotExist:
+                    pass
+                except Exception:
+                    self.log.error(
+                        "Error while looking for domain `%s`",
+                        sdUUID, exc_info=True)
 
         raise se.StorageDomainDoesNotExist(sdUUID)
 
@@ -184,15 +196,19 @@ class StorageDomainCache:
         return uuids
 
     def refresh(self):
+        self.log.info("Clearing storage domain cache")
         with self._syncroot:
             lvm.invalidateCache()
             self.__domainCache.clear()
 
     def manuallyAddDomain(self, domain):
+        self.log.info(
+            "Adding domain %s to storage domain cache", domain.sdUUID)
         with self._syncroot:
             self.__domainCache[domain.sdUUID] = domain
 
     def manuallyRemoveDomain(self, sdUUID):
+        self.log.info("Removing domain %s from storage domain cache", sdUUID)
         with self._syncroot:
             try:
                 del self.__domainCache[sdUUID]
