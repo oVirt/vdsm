@@ -619,9 +619,9 @@ class SPM_MailMonitor:
                 msgId = host * SLOTS_PER_MAILBOX + i
                 msgStart = msgId * MESSAGE_SIZE
 
-                # First byte of message is message version.  Check message
-                # version, if 0 then message is empty and can be skipped
-                if newMail[msgStart] in ['\0', '0']:
+                # First byte of message is message version.
+                # A null byte indicates an empty message to be skipped.
+                if newMail[msgStart:msgStart + 1] == b"\0":
                     continue
 
                 # Most mailboxes are probably empty so it costs less to check

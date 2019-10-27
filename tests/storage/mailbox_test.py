@@ -176,6 +176,10 @@ class TestSPMMailMonitor:
                 data = f.read()
             assert data == sm.EMPTYMAILBOX * MAX_HOSTS
 
+    def test_skip_empty_request(self, mboxfiles, monkeypatch):
+        with make_spm_mailbox(mboxfiles) as spm_mm:
+            assert not spm_mm._handleRequests(sm.EMPTYMAILBOX * MAX_HOSTS)
+
 
 class TestHSMMailbox:
 
