@@ -310,14 +310,34 @@ class TestValidation:
 
 class TestChecksum:
 
-    def test_consistency(self):
-        """
-        Test if when given the same input in different times the user will get
-        the same checksum.
-        """
-        with open("/dev/urandom", "rb") as f:
-            data = f.read(50)
-        assert sm.checksum(data, 16) == sm.checksum(data, 16)
+    @pytest.mark.parametrize("data,result", [
+        pytest.param(
+            sm.EMPTYMAILBOX,
+            0,
+            id="empty"),
+        pytest.param(
+            sm.CLEAN_MESSAGE * sm.MESSAGES_PER_MAILBOX + b"\0" * 62,
+            4032,
+            id="clean notifications"),
+        pytest.param(
+            b"\xff" * 4092,
+            1043460,
+            id="maximum value"),
+        pytest.param(
+            bytes(bytearray(i % 256 for i in range(4092))),
+            521226,
+            id="range pattern"),
+        pytest.param(
+            extend_message() + b"\0" * 4028,
+            6455,
+            id="extend message pad tail"),
+        pytest.param(
+            b"\0" * 4028 + extend_message(),
+            6455,
+            id="extend message pad head")
+    ])
+    def test_sanity(self, data, result):
+        assert sm.checksum(data, 4) == result
 
 
 class TestWaitTimeout:
