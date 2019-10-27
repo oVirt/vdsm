@@ -295,7 +295,7 @@ class TestValidation:
         msg = b"x" * sm.MESSAGE_SIZE
         padding = sm.MAILBOX_SIZE - sm.MESSAGE_SIZE - sm.CHECKSUM_BYTES
         data = msg + padding * b"\0"
-        n = sm.checksum(data, sm.CHECKSUM_BYTES)
+        n = sm.checksum(data)
         checksum = struct.pack('<l', n)
         mailbox = data + checksum
         assert sm.SPM_MailMonitor.validateMailbox(mailbox, 7)
@@ -337,7 +337,7 @@ class TestChecksum:
             id="extend message pad head")
     ])
     def test_sanity(self, data, result):
-        assert sm.checksum(data, 4) == result
+        assert sm.checksum(data) == result
 
 
 class TestWaitTimeout:

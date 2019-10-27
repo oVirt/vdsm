@@ -60,13 +60,13 @@ SLOTS_PER_MAILBOX = int(MAILBOX_SIZE // MESSAGE_SIZE)
 MESSAGES_PER_MAILBOX = SLOTS_PER_MAILBOX - 1
 
 
-def checksum(data, numBytes):
-    bits = 8 * numBytes
+def checksum(data):
     csum = sum(bytearray(data))
-    return csum - (csum >> bits << bits)
+    # Trim sum to be CHECKSUM_BYTES bytes long
+    return csum & (2**(CHECKSUM_BYTES * 8) - 1)
 
 
-_zeroCheck = checksum(EMPTYMAILBOX, CHECKSUM_BYTES)
+_zeroCheck = checksum(EMPTYMAILBOX)
 # Assumes CHECKSUM_BYTES equals 4!!!
 pZeroChecksum = struct.pack('<l', _zeroCheck)
 
@@ -375,9 +375,7 @@ class HSM_MailMonitor(object):
     def _sendMail(self):
         self.log.info("HSM_MailMonitor sending mail to SPM - " +
                       str(self._outCmd))
-        chk = checksum(
-            self._outgoingMail[0:MAILBOX_SIZE - CHECKSUM_BYTES],
-            CHECKSUM_BYTES)
+        chk = checksum(self._outgoingMail[0:MAILBOX_SIZE - CHECKSUM_BYTES])
         pChk = struct.pack('<l', chk)  # Assumes CHECKSUM_BYTES equals 4!!!
         self._outgoingMail = \
             self._outgoingMail[0:MAILBOX_SIZE - CHECKSUM_BYTES] + pChk
@@ -591,7 +589,7 @@ class SPM_MailMonitor:
         assert len(mailbox) == MAILBOX_SIZE
         data = mailbox[:-CHECKSUM_BYTES]
         csum = mailbox[-CHECKSUM_BYTES:]
-        n = checksum(data, CHECKSUM_BYTES)
+        n = checksum(data)
         expected = struct.pack('<l', n)  # Assumes CHECKSUM_BYTES equals 4!!!
         if csum != expected:
             self.log.error(
