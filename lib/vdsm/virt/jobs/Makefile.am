@@ -25,4 +25,5 @@ vdsm_virt_jobsdir = $(vdsmpylibdir)/virt/jobs
 dist_vdsm_virt_jobs_PYTHON = \
 	__init__.py \
 	seal.py \
+	snapshot.py \
 	$(NULL)

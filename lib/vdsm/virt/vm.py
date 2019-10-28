@@ -45,8 +45,10 @@ from vdsm.common import libvirtconnection
 from vdsm.common import logutils
 from vdsm.common import response
 import vdsm.common.time
+import vdsm.virt.jobs
 from vdsm import constants
 from vdsm import hugepages
+from vdsm import jobs
 from vdsm import utils
 from vdsm.config import config
 from vdsm.common import concurrent
@@ -54,15 +56,12 @@ from vdsm.common import conv
 from vdsm.common import hooks
 from vdsm.common import supervdsm
 from vdsm.common import xmlutils
-from vdsm.common.compat import pickle
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.common.logutils import SimpleLogAdapter, volume_chain_to_str
 from vdsm.network import api as net_api
 
 # TODO: remove these imports, code using this should use storage apis.
-from vdsm.storage import outOfProcess as oop
 from vdsm.storage import qemuimg
-from vdsm.storage import sd
 from vdsm.storage import sdc
 
 from vdsm.virt import backup
@@ -85,6 +84,7 @@ from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.domain_descriptor import MutableDomainDescriptor
+from vdsm.virt.jobs import snapshot
 from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import drivename
 from vdsm.virt.vmdevices import lookup
@@ -3915,245 +3915,12 @@ class Vm(object):
             self, dom, checkpoints=checkpoints)
 
     @api.guard(_not_migrating)
-    def snapshot(self, snap_drives, memory_params, frozen=False):
-        """Live snapshot command"""
-
-        def norm_snap_drive_params(drive):
-            """Normalize snapshot parameters"""
-
-            if "baseVolumeID" in drive:
-                base_drv = {"device": "disk",
-                            "domainID": drive["domainID"],
-                            "imageID": drive["imageID"],
-                            "volumeID": drive["baseVolumeID"]}
-                target_drv = base_drv.copy()
-                target_drv["volumeID"] = drive["volumeID"]
-
-            elif "baseGUID" in drive:
-                base_drv = {"GUID": drive["baseGUID"]}
-                target_drv = {"GUID": drive["GUID"]}
-
-            elif "baseUUID" in drive:
-                base_drv = {"UUID": drive["baseUUID"]}
-                target_drv = {"UUID": drive["UUID"]}
-
-            else:
-                base_drv, target_drv = (None, None)
-
-            return base_drv, target_drv
-
-        def rollback_drives(new_drives):
-            """Rollback the prepared volumes for the snapshot"""
-
-            for vm_dev_name, drive in six.iteritems(new_drives):
-                try:
-                    self.cif.teardownVolumePath(drive)
-                except Exception:
-                    self.log.exception("Unable to teardown drive: %s",
-                                       vm_dev_name)
-
-        def memory_snapshot(memory_volume_path):
-            """Libvirt snapshot XML"""
-
-            return vmxml.Element('memory',
-                                 snapshot='external',
-                                 file=memory_volume_path)
-
-        def vm_conf_for_memory_snapshot():
-            """Returns the needed vm configuration with the memory snapshot"""
-
-            return {'restoreFromSnapshot': True,
-                    '_srcDomXML': self.migratable_domain_xml(),
-                    'elapsedTimeOffset': time.time() - self._startTime}
-
-        def pad_memory_volume(memory_vol_path, sd_uuid):
-            sd_type = sd.name2type(
-                self.cif.irs.getStorageDomainInfo(sd_uuid)['info']['type'])
-            if sd_type in sd.FILE_DOMAIN_TYPES:
-                iop = oop.getProcessPool(sd_uuid)
-                iop.fileUtils.padToBlockSize(memory_vol_path)
-
-        snap = vmxml.Element('domainsnapshot')
-        disks = vmxml.Element('disks')
-        new_drives = {}
-        vm_drives = {}
-
-        for drive in snap_drives:
-            base_drv, tget_drv = norm_snap_drive_params(drive)
-
-            try:
-                self.findDriveByUUIDs(tget_drv)
-            except LookupError:
-                # The vm is not already using the requested volume for the
-                # snapshot, continuing.
-                pass
-            else:
-                # The snapshot volume is the current one, skipping
-                self.log.debug("The volume is already in use: %s", tget_drv)
-                continue  # Next drive
-
-            try:
-                vm_drive = self.findDriveByUUIDs(base_drv)
-            except LookupError:
-                # The volume we want to snapshot doesn't exist
-                self.log.error("The base volume doesn't exist: %s", base_drv)
-                return response.error('snapshotErr')
-
-            if vm_drive.hasVolumeLeases:
-                self.log.error('disk %s has volume leases', vm_drive.name)
-                return response.error('noimpl')
-
-            if vm_drive.transientDisk:
-                self.log.error('disk %s is a transient disk', vm_drive.name)
-                return response.error('transientErr')
-
-            vm_dev_name = vm_drive.name
-
-            new_drives[vm_dev_name] = tget_drv.copy()
-            new_drives[vm_dev_name]["type"] = "disk"
-            new_drives[vm_dev_name]["diskType"] = vm_drive.diskType
-            new_drives[vm_dev_name]["poolID"] = vm_drive.poolID
-            new_drives[vm_dev_name]["name"] = vm_dev_name
-            new_drives[vm_dev_name]["format"] = "cow"
-
-            # We need to keep track of the drive object because
-            # it keeps original data and used to generate snapshot element.
-            # We keep the old volume ID so we can clear the block threshold.
-            vm_drives[vm_dev_name] = (vm_drive, base_drv["volumeID"])
-
-        prepared_drives = {}
-
-        for vm_dev_name, vm_device in six.iteritems(new_drives):
-            # Adding the device before requesting to prepare it as we want
-            # to be sure to teardown it down even when prepareVolumePath
-            # failed for some unknown issue that left the volume active.
-            prepared_drives[vm_dev_name] = vm_device
-            try:
-                new_drives[vm_dev_name]["path"] = \
-                    self.cif.prepareVolumePath(new_drives[vm_dev_name])
-            except Exception:
-                self.log.exception('unable to prepare the volume path for '
-                                   'disk %s', vm_dev_name)
-                rollback_drives(prepared_drives)
-                return response.error('snapshotErr')
-
-            drive, _ = vm_drives[vm_dev_name]
-            snapelem = drive.get_snapshot_xml(vm_device)
-            disks.appendChild(snapelem)
-
-        snap.appendChild(disks)
-
-        snap_flags = (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT
-                      | libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_NO_METADATA)
-
-        if memory_params:
-            # Save the needed vm configuration
-            # TODO: this, as other places that use pickle.dump
-            # directly to files, should be done with outOfProcess
-            vm_conf_vol = memory_params['dstparams']
-            vm_conf_vol_path = self.cif.prepareVolumePath(vm_conf_vol)
-            try:
-                with open(vm_conf_vol_path, "rb+") as f:
-                    vm_conf = vm_conf_for_memory_snapshot()
-                    # protocol=2 is needed for clusters < 4.4
-                    # (for Python 2 host compatibility)
-                    data = pickle.dumps(vm_conf, protocol=2)
-
-                    # Ensure that the volume is aligned; qemu-img may segfault
-                    # when converting unligned images.
-                    # https://bugzilla.redhat.com/1649788
-                    aligned_length = utils.round(len(data), 4096)
-                    data = data.ljust(aligned_length, b"\0")
-
-                    f.write(data)
-                    f.flush()
-                    os.fsync(f.fileno())
-            finally:
-                self.cif.teardownVolumePath(vm_conf_vol)
-
-            # Adding the memory volume to the snapshot xml
-            memory_vol = memory_params['dst']
-            memory_vol_path = self.cif.prepareVolumePath(memory_vol)
-            snap.appendChild(memory_snapshot(memory_vol_path))
-        else:
-            snap_flags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY
-
-        # When creating memory snapshot libvirt will pause the vm
-        should_freeze = not (memory_params or frozen)
-
-        snapxml = xmlutils.tostring(snap)
-        # TODO: this is debug information. For 3.6.x we still need to
-        # see the XML even with 'info' as default level.
-        self.log.info("%s", snapxml)
-
-        # We need to stop the drive monitoring for two reasons, one is to
-        # prevent spurious libvirt errors about missing drive paths (since
-        # we're changing them), and also to prevent to trigger a drive
-        # extension for the new volume with the apparent size of the old one
-        # (the apparentsize is updated as last step in updateDriveParameters)
-        self.drive_monitor.disable()
-
-        try:
-            if should_freeze:
-                freezed = self.freeze()
-            try:
-                self.log.info("Taking a live snapshot (drives=%s, memory=%s)",
-                              ', '.join(drive["name"] for drive in
-                                        new_drives.values()),
-                              memory_params is not None)
-                self.run_dom_snapshot(snapxml, snap_flags)
-                self.log.info("Completed live snapshot")
-            except libvirt.libvirtError:
-                self.log.exception("Unable to take snapshot")
-                return response.error('snapshotErr')
-            finally:
-                # Must always thaw, even if freeze failed; in case the guest
-                # did freeze the filesystems, but failed to reply in time.
-                # Libvirt is using same logic (see src/qemu/qemu_driver.c).
-                if should_freeze:
-                    self.thaw()
-
-            # We are padding the memory volume with block size of zeroes
-            # because qemu-img truncates files such that their size is
-            # round down to the closest multiple of block size (bz 970559).
-            # This code should be removed once qemu-img will handle files
-            # with size that is not multiple of block size correctly.
-            if memory_params:
-                pad_memory_volume(memory_vol_path, memory_vol['domainID'])
-
-            for drive in new_drives.values():  # Update the drive information
-                _, old_volume_id = vm_drives[drive["name"]]
-                try:
-                    self.updateDriveParameters(drive)
-                except Exception:
-                    # Here it's too late to fail, the switch already happened
-                    # and there's nothing we can do, we must to proceed anyway
-                    # to report the live snapshot success.
-                    self.log.exception("Failed to update drive information"
-                                       " for '%s'", drive)
-
-                drive_obj = lookup.drive_by_name(
-                    self.getDiskDevices()[:], drive["name"])
-                self.clear_drive_threshold(drive_obj, old_volume_id)
-
-                try:
-                    self.updateDriveVolume(drive_obj)
-                except StorageUnavailableError as e:
-                    # Will be recovered on the next monitoring cycle
-                    self.log.error("Unable to update drive %r volume size: %s",
-                                   drive["name"], e)
-
-        finally:
-            self.drive_monitor.enable()
-            if memory_params:
-                self.cif.teardownVolumePath(memory_vol)
-            if config.getboolean('vars', 'time_sync_snapshot_enable'):
-                self.syncGuestTime()
-
-        # Returning quiesce to notify the manager whether the guest agent
-        # froze and flushed the filesystems or not.
-        quiesce = should_freeze and freezed["status"]["code"] == 0
-        return {'status': doneCode, 'quiesce': quiesce}
+    def snapshot(self, snap_drives, memory_params, frozen, job_uuid):
+        job_id = job_uuid or str(uuid.uuid4())
+        job = snapshot.Job(self, snap_drives, memory_params, frozen, job_id)
+        jobs.add(job)
+        vdsm.virt.jobs.schedule(job)
+        return {'status': doneCode}
 
     def diskReplicateStart(self, srcDisk, dstDisk):
         try:

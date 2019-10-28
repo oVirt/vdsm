@@ -681,7 +681,8 @@ class VM(APIBase):
 
     @api.logged(on="api.virt")
     @api.method
-    def snapshot(self, snapDrives, snapMemory=None, frozen=False):
+    def snapshot(self, snapDrives, snapMemory=None,
+                 frozen=False, jobUUID=None):
         # for backward compatibility reasons, we need to
         # do the instance check before to run the hooks.
         vm = self.vm
@@ -691,7 +692,7 @@ class VM(APIBase):
             memoryParams['dst'], memoryParams['dstparams'] = \
                 self._getHibernationPathsFromString(snapMemory)
 
-        return vm.snapshot(snapDrives, memoryParams, frozen=frozen)
+        return vm.snapshot(snapDrives, memoryParams, frozen, jobUUID)
 
     @api.logged(on="api.virt")
     @api.method

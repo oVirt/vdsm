@@ -10748,6 +10748,13 @@ VM.snapshot:
         type: boolean
         added: '3.6'
 
+    -   defaultvalue: null
+        description: Assign a UUID to this operation which can be used to
+            identify it in VmStats
+        name: jobUUID
+        type: *UUID
+        added: '4.4'
+
 VM.setBalloonTarget:
     added: '3.1'
     description: Dynamically change the target amount of physical memory
