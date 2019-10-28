@@ -1,2 +1,3 @@
 ovirt-master-snapshot,http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/$distro
 sbonazzo-el8-collection,https://copr-be.cloud.fedoraproject.org/results/sbonazzo/EL8_collection/epel-8-$basearch/
+nmstate,https://copr-be.cloud.fedoraproject.org/results/nmstate/nmstate-git-fedora/epel-8-$basearch/
