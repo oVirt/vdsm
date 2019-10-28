@@ -1033,6 +1033,7 @@ exit 0
 %{_sysconfdir}/dhcp/dhclient.d/dhclientmon.sh
 %{_sysconfdir}/modprobe.d/vdsm-bonding-modprobe.conf
 %{_sysconfdir}/NetworkManager/conf.d/vdsm.conf
+%{_sysconfdir}/dracut.conf.d/99-vdsm_protect_ifcfg.conf
 %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
 %{_sysconfdir}/libvirt/hooks/qemu
