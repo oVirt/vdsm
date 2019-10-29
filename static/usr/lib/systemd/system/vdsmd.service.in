@@ -23,7 +23,7 @@ User=@VDSMUSER@
 Group=@VDSMGROUP@
 PermissionsStartOnly=true
 TimeoutStopSec=@SERVICE_STOP_TIMEOUT@
-KillMode=mixed
+KillMode=control-group
 LimitNOFILE=4096
 @SYSTEMD_LIMIT_MEMLOCK@
 
