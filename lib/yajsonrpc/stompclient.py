@@ -24,7 +24,7 @@ from uuid import uuid4
 from vdsm import utils
 from vdsm.common import concurrent
 from vdsm.common import pki
-from vdsm.sslutils import CLIENT_PROTOCOL, SSLSocket, SSLContext
+from vdsm.sslutils import SSLSocket, SSLContext
 from yajsonrpc.stomp import \
     AckMode, \
     Command, \
@@ -419,8 +419,7 @@ def SimpleClient(host, port=54321, ssl=True,
     if ssl:
         sslctx = SSLContext(key_file=pki.KEY_FILE,
                             cert_file=pki.CERT_FILE,
-                            ca_certs=pki.CA_FILE,
-                            protocol=CLIENT_PROTOCOL)
+                            ca_certs=pki.CA_FILE)
     return StandAloneRpcClient(host, port, "jms.topic.vdsm_requests",
                                str(uuid4()), sslctx, False,
                                incoming_heartbeat, outgoing_heartbeat,

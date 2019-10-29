@@ -33,9 +33,6 @@ from vdsm.common import pki
 from vdsm.common.time import monotonic_time
 from .config import config
 
-# ssl.PROTOCOL_TLS is not available on all platform so we use:
-CLIENT_PROTOCOL = ssl.PROTOCOL_SSLv23
-
 
 class SSLSocket(object):
     def __init__(self, sock):
@@ -101,25 +98,19 @@ class SSLSocket(object):
 
 class SSLContext(object):
 
-    def __init__(self, cert_file, key_file, ca_certs=None,
-                 excludes=0, protocol=CLIENT_PROTOCOL):
+    def __init__(self, cert_file, key_file, ca_certs=None):
         self.cert_file = cert_file
         self.key_file = key_file
         self.ca_certs = ca_certs
-        self.excludes = excludes
-        self.protocol = protocol
 
     def wrapSocket(self, sock):
-        ciphers = config.get('vars', 'ssl_ciphers')
         return SSLSocket(
             ssl.wrap_socket(sock,
                             keyfile=self.key_file,
                             certfile=self.cert_file,
                             server_side=False,
                             cert_reqs=ssl.CERT_REQUIRED,
-                            ssl_version=self.protocol,
-                            ca_certs=self.ca_certs,
-                            ciphers=ciphers if ciphers else None)
+                            ca_certs=self.ca_certs)
         )
 
 
@@ -156,17 +147,10 @@ class SSLHandshakeDispatcher(object):
     def _set_up_socket(self, dispatcher):
         client_socket = dispatcher.socket
 
-        context = ssl.SSLContext(self._sslctx.protocol)
-        ciphers = config.get('vars', 'ssl_ciphers')
-        if ciphers:
-            context.set_ciphers(ciphers)
         # pylint: disable=no-member
-        context.options |= ssl.OP_NO_SSLv3
-
-        excludes = self._sslctx.excludes
-        if excludes != 0:
-            context.options |= excludes
-
+        protocol = ssl.PROTOCOL_TLSv1_2 if six.PY2 else ssl.PROTOCOL_TLS
+        # TODO: Drop 'protocol' param when purging py2
+        context = ssl.SSLContext(protocol)
         context.load_verify_locations(self._sslctx.ca_certs, None, None)
         context.verify_mode = ssl.CERT_REQUIRED
         context.load_cert_chain(self._sslctx.cert_file, self._sslctx.key_file)
@@ -299,31 +283,7 @@ class SSLHandshakeDispatcher(object):
 def create_ssl_context():
         sslctx = None
         if config.getboolean('vars', 'ssl'):
-            # pylint: disable=no-member
-            protocol = (
-                ssl.PROTOCOL_SSLv23
-                if config.get('vars', 'ssl_protocol') == 'sslv23'
-                else ssl.PROTOCOL_TLSv1_2
-            )
-
-            excludes = protocol_name_to_int()
             sslctx = SSLContext(key_file=pki.KEY_FILE,
                                 cert_file=pki.CERT_FILE,
-                                ca_certs=pki.CA_FILE,
-                                protocol=protocol,
-                                excludes=excludes)
+                                ca_certs=pki.CA_FILE)
         return sslctx
-
-
-def protocol_name_to_int():
-    excludes = 0
-
-    for no_protocol in config.get('vars', 'ssl_excludes').split(','):
-        if no_protocol != '':
-            excludes |= getattr(ssl, no_protocol.strip())
-
-    # Forcefully disable no-longer-secure TLSv1 and TLSv1.1 protocols
-    excludes |= getattr(ssl, 'OP_NO_TLSv1')
-    excludes |= getattr(ssl, 'OP_NO_TLSv1_1')
-
-    return excludes

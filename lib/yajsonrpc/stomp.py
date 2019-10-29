@@ -24,7 +24,7 @@ from collections import deque
 from vdsm.common import api
 from vdsm.common import pki
 from vdsm.common import time
-from vdsm.sslutils import CLIENT_PROTOCOL, SSLSocket, SSLContext
+from vdsm.sslutils import SSLSocket, SSLContext
 import re
 
 DEFAULT_INTERVAL = 30
@@ -612,7 +612,7 @@ class StompConnection(object):
 
     def _create_ssl_context(self):
         return SSLContext(key_file=pki.KEY_FILE, cert_file=pki.CERT_FILE,
-                          ca_certs=pki.CA_FILE, protocol=CLIENT_PROTOCOL)
+                          ca_certs=pki.CA_FILE)
 
     def send_raw(self, msg):
         self._async_client.queue_frame(msg)

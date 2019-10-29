@@ -23,20 +23,19 @@ from __future__ import division
 from __future__ import print_function
 
 import socket
-import ssl
 
 import pytest
+import six
 
-from vdsm import utils
 from vdsm.common import cmdutils
 from vdsm.common import concurrent
 from vdsm.common import commands
 from vdsm.protocoldetector import MultiProtocolAcceptor
-from vdsm.sslutils import CLIENT_PROTOCOL, SSLContext, SSLHandshakeDispatcher
+from vdsm.sslutils import SSLContext, SSLHandshakeDispatcher
 from yajsonrpc.betterAsyncore import Reactor
 
 from integration.sslhelper import KEY_FILE, CRT_FILE
-from testing import on_centos
+from testing import on_centos, on_fedora
 
 
 @pytest.fixture
@@ -103,10 +102,8 @@ def dummy_register_protocol_detector(monkeypatch):
 def listener(dummy_register_protocol_detector, request):
     reactor = Reactor()
 
-    excludes = getattr(request, 'param', 0)
     sslctx = SSLContext(cert_file=CRT_FILE, key_file=KEY_FILE,
-                        ca_certs=CRT_FILE, excludes=excludes,
-                        protocol=CLIENT_PROTOCOL)
+                        ca_certs=CRT_FILE)
 
     acceptor = MultiProtocolAcceptor(
         reactor,
@@ -138,7 +135,28 @@ def client_cmd(listener):
     return wrapper
 
 
-@pytest.mark.parametrize('protocol', ['-ssl2', '-ssl3'])
+@pytest.mark.parametrize('protocol', [
+    pytest.param(
+        '-ssl2',
+        id='ssl2'
+    ),
+    pytest.param(
+        '-ssl3',
+        id='ssl3'
+    ),
+    pytest.param(
+        '-tls1',
+        id='tls1',
+        marks=pytest.mark.skipif(six.PY3 and on_fedora(),
+                                 reason="permissive crypto policy")
+    ),
+    pytest.param(
+        '-tls1_1',
+        id='tls1.1',
+        marks=pytest.mark.skipif(six.PY3 and on_fedora(),
+                                 reason="permissive crypto policy")
+    )
+])
 def test_tls_unsupported_protocols(client_cmd, protocol):
     with pytest.raises(cmdutils.Error):
         client_cmd(protocol)
@@ -148,14 +166,16 @@ def test_tls_unsupported_protocols(client_cmd, protocol):
     pytest.param(
         '-tls1',
         id='tls1',
-        marks=pytest.mark.skipif(on_centos(8),
-                                 reason="blocked by crypto policy")
+        marks=pytest.mark.skipif(six.PY2 or on_centos(8),
+                                 reason=("unsupported or blocked "
+                                         "by crypto policy"))
     ),
     pytest.param(
         '-tls1_1',
         id='tls1.1',
-        marks=pytest.mark.skipif(on_centos(8),
-                                 reason="blocked by crypto policy")
+        marks=pytest.mark.skipif(six.PY2 or on_centos(8),
+                                 reason=("unsupported or blocked "
+                                         "by crypto policy"))
     ),
     pytest.param(
         '-tls1_2',
@@ -164,30 +184,3 @@ def test_tls_unsupported_protocols(client_cmd, protocol):
 ])
 def test_tls_protocols(client_cmd, protocol):
     assert b"Verify return code: 0 (ok)" in client_cmd(protocol)
-
-
-@pytest.fixture
-def use_client(listener):
-
-    def wrapper(protocol):
-        (host, port) = listener
-        sslctx = SSLContext(cert_file=CRT_FILE, key_file=KEY_FILE,
-                            ca_certs=CRT_FILE, protocol=protocol)
-        return utils.create_connected_socket(host, port, sslctx=sslctx)
-
-    return wrapper
-
-
-def test_client_tlsv1(use_client):
-    assert bool(use_client(ssl.PROTOCOL_SSLv23))
-
-
-@pytest.mark.parametrize('listener',
-                         [ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2],
-                         indirect=True)
-def test_client_tlsv12(use_client):
-    with pytest.raises(ssl.SSLError) as e:
-        use_client(ssl.PROTOCOL_TLSv1_2)
-
-    # WRONG_VERSION_NUMBER
-    assert e.value.errno == 1

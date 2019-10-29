@@ -217,22 +217,6 @@ parameters = [
         ('transient_disks_repository', '@VDSMLIBDIR@/transient',  # NOQA: E501 (potentially long line)
             'Local path to the transient disks repository.'),
 
-        ('ssl_protocol', 'sslv23',
-            'SSL protocol used by encrypted connection'),
-
-        ('ssl_excludes', '',
-            'Comma separated protocol values as defined in '
-            'https://docs.python.org/2/library/ssl.html. '
-            'e.g. OP_NO_TLSv1_2 '
-            'Only TLSv1.2+ are supported (depends on underlying openssl '
-            'version).'),
-
-        ('ssl_ciphers', '',
-            'By default we use empty to use python default ciphers set. '
-            'If one is willing to use more secure ciphers one can use '
-            'HIGH or other cipher strings as defined in '
-            'https://www.openssl.org/docs/man1.0.2/apps/ciphers.html.'),
-
         ('verify_client_cert', 'false',
             'Enables whether to verify client fqdn or ip stored '
             'in a certificate.'),
