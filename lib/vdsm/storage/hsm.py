@@ -22,6 +22,7 @@
 This is the Host Storage Manager module.
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import os
 import logging
@@ -2121,8 +2122,8 @@ class HSM(object):
         # Minimal size check
         if size < MINIMALVGSIZE:
             raise se.VolumeGroupSizeError(
-                "VG size must be more than %s MiB" %
-                str(MINIMALVGSIZE / MiB))
+                "VG size must be at least %s MiB" %
+                str(MINIMALVGSIZE // MiB))
 
         lvm.createVG(vgname, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG,
                      metadataSize=blockSD.VG_METADATASIZE,
