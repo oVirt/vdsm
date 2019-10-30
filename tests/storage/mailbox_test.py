@@ -310,34 +310,41 @@ class TestValidation:
 
 class TestChecksum:
 
-    @pytest.mark.parametrize("data,result", [
+    @pytest.mark.parametrize("data,result,packed_result", [
         pytest.param(
             sm.EMPTYMAILBOX,
             0,
+            b"\x00\x00\x00\x00",
             id="empty"),
         pytest.param(
             sm.CLEAN_MESSAGE * sm.MESSAGES_PER_MAILBOX + b"\0" * 62,
             4032,
+            b"\xc0\x0f\x00\x00",
             id="clean notifications"),
         pytest.param(
             b"\xff" * 4092,
             1043460,
+            b"\x04\xec\x0f\x00",
             id="maximum value"),
         pytest.param(
             bytes(bytearray(i % 256 for i in range(4092))),
             521226,
+            b"\x0a\xf4\x07\x00",
             id="range pattern"),
         pytest.param(
             extend_message() + b"\0" * 4028,
             6455,
+            b"\x37\x19\x00\x00",
             id="extend message pad tail"),
         pytest.param(
             b"\0" * 4028 + extend_message(),
             6455,
+            b"\x37\x19\x00\x00",
             id="extend message pad head")
     ])
-    def test_sanity(self, data, result):
+    def test_sanity(self, data, result, packed_result):
         assert sm.checksum(data) == result
+        assert sm.packed_checksum(data) == packed_result
 
 
 class TestWaitTimeout:

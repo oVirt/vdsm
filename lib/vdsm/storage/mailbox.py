@@ -66,9 +66,12 @@ def checksum(data):
     return csum & (2**(CHECKSUM_BYTES * 8) - 1)
 
 
-_zeroCheck = checksum(EMPTYMAILBOX)
-# Assumes CHECKSUM_BYTES equals 4!!!
-pZeroChecksum = struct.pack('<l', _zeroCheck)
+def packed_checksum(data):
+    # Assumes CHECKSUM_BYTES equals 4!!!
+    return struct.pack('<l', checksum(data))
+
+
+pZeroChecksum = packed_checksum(EMPTYMAILBOX)
 
 
 def runTask(args):
@@ -375,8 +378,8 @@ class HSM_MailMonitor(object):
     def _sendMail(self):
         self.log.info("HSM_MailMonitor sending mail to SPM - " +
                       str(self._outCmd))
-        chk = checksum(self._outgoingMail[0:MAILBOX_SIZE - CHECKSUM_BYTES])
-        pChk = struct.pack('<l', chk)  # Assumes CHECKSUM_BYTES equals 4!!!
+        pChk = packed_checksum(
+            self._outgoingMail[0:MAILBOX_SIZE - CHECKSUM_BYTES])
         self._outgoingMail = \
             self._outgoingMail[0:MAILBOX_SIZE - CHECKSUM_BYTES] + pChk
         _mboxExecCmd(self._outCmd, data=self._outgoingMail)
@@ -589,8 +592,7 @@ class SPM_MailMonitor:
         assert len(mailbox) == MAILBOX_SIZE
         data = mailbox[:-CHECKSUM_BYTES]
         csum = mailbox[-CHECKSUM_BYTES:]
-        n = checksum(data)
-        expected = struct.pack('<l', n)  # Assumes CHECKSUM_BYTES equals 4!!!
+        expected = packed_checksum(data)
         if csum != expected:
             self.log.error(
                 "mailbox %s checksum failed, not clearing mailbox, clearing "
