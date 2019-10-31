@@ -658,6 +658,11 @@ parameters = [
             ' mapping.'),
 
     ]),
+
+    # Section: [nowait]
+    ('nowait', [
+        ('enabled', 'false', 'enable or disable the nowait functionality'),
+    ]),
 ]
 
 

@@ -51,6 +51,7 @@ _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
 _METRICS_ENABLED = config.getboolean('metrics', 'enabled')
+_NOWAIT_ENABLED = config.getboolean('nowait', 'enabled')
 
 
 class TotalCpuSample(object):
@@ -414,7 +415,9 @@ class VMBulkstatsMonitor(object):
         # *is* costly so we should avoid it if we can.
         fast_path = acquired and not self._skip_doms
         doms = []  # whitelist, meaningful only in the slow path
-        flags = libvirt.VIR_CONNECT_GET_ALL_DOMAINS_STATS_RUNNING  # shortcut
+        flags = libvirt.VIR_CONNECT_GET_ALL_DOMAINS_STATS_RUNNING
+        if _NOWAIT_ENABLED:
+            flags |= libvirt.VIR_CONNECT_GET_ALL_DOMAINS_STATS_NOWAIT
         try:
             if fast_path:
                 # This is expected to be the common case.
