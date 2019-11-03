@@ -329,7 +329,7 @@ class TestCopyDataDIV(VdsmTestCase):
                     raise RuntimeError("Timeout waiting for thread")
                 job.abort()
                 t.join(1)
-                if t.isAlive():
+                if t.is_alive():
                     raise RuntimeError("Timeout waiting for thread")
                 self.assertEqual(jobs.STATUS.ABORTED, job.status)
                 self.assertEqual(sc.ILLEGAL_VOL, dst_vol.getLegality())
