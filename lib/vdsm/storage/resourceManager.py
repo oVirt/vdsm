@@ -157,7 +157,7 @@ class RequestRef(object):
         if not isinstance(other, RequestRef):
             return False
 
-        return (self._realRequset == other._realRequset)
+        return self._realRequset == other._realRequset
 
 
 class Request(object):
@@ -968,7 +968,7 @@ class Owner(object):
         return [(r.namespace, r.name, r.locktype) for r in reqs]
 
     def requestsGranted(self):
-        return (len(self.requests) == 0)
+        return len(self.requests) == 0
 
     @classmethod
     def validate(cls, obj):

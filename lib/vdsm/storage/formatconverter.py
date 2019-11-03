@@ -59,7 +59,7 @@ def _v3_reset_meta_volsize(vol):
         vol (Volume): Volume to reset
     """
 
-    # BZ811880 Verifiying that the volume size is the same size advertised
+    # BZ811880 Verifying that the volume size is the same size advertised
     # by the metadata
     log.debug("Checking the volume size for the volume %s", vol.volUUID)
 

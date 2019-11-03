@@ -512,7 +512,7 @@ class SPM_MailMonitor:
 
     def __init__(self, poolID, maxHostID, inbox, outbox, monitorInterval=2):
         """
-        Note: inbox paramerter here should point to the HSM's outbox
+        Note: inbox parameter here should point to the HSM's outbox
         mailbox file, and vice versa.
         """
         self._messageTypes = {}
@@ -766,7 +766,7 @@ class SPM_MailMonitor:
 def wait_timeout(monitor_interval):
     """
     Designed to return 3 seconds wait timeout for monitor interval of 2
-    seconds, keeping the behaivor in runtime the same as it was in the last 8
+    seconds, keeping the behavior in runtime the same as it was in the last 8
     years, while allowing shorter times for testing.
     """
     return monitor_interval * 3 / 2
