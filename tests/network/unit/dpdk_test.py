@@ -28,7 +28,7 @@ from testlib import mock
 from vdsm.network.link import dpdk
 
 
-class ReportDpdkPortsTests(VdsmTestCase):
+class TestReportDpdkPorts(VdsmTestCase):
     def test_vfio_pci_driver(self):
         self._test_one_dpdk_device('vfio-pci')
 
