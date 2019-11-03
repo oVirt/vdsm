@@ -53,8 +53,6 @@ device_modules = \
 	devices/parsing/complex_vm_test.py \
 	$(NULL)
 
-network_modules = network/*_test.py
-
 virt_modules = virt/*_test.py
 
 gluster_modules = gluster/*_test.py
@@ -243,18 +241,12 @@ make_certificates: makecert.sh
 	$(srcdir)/makecert.sh
 
 run_modules  = $(test_modules)
-run_modules += $(network_modules)
 run_modules += $(device_modules)
 run_modules += $(common_modules)
 
 # Disable builtin (recursive) check target.
 check-recursive:
 	@true
-
-.PHONY: check-net
-check-net:
-	@echo '=== Running networking tests. ==='
-	@$(top_srcdir)/tests/run_tests_local.sh $(network_modules)
 
 .PHONY: check-virt
 check-virt:

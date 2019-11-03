@@ -29,4 +29,5 @@ dist_vdsmnetworkunittests_PYTHON = \
 
 dist_vdsmnetworkunittests_DATA = \
 	netmaskconversions \
+    tc_filter_show.out \
 	$(NULL)

@@ -24,7 +24,6 @@ vdsmnetworktestsdir = ${vdsmtestsdir}/network
 
 dist_vdsmnetworktests_PYTHON = \
 	__init__.py \
-	$(srcdir)/*_test.py \
 	compat.py \
 	dhcp.py \
 	firewall.py \
@@ -32,8 +31,3 @@ dist_vdsmnetworktests_PYTHON = \
 	nmnettestlib.py \
 	ovsnettestlib.py \
 	$(NULL)
-
-dist_vdsmnetworktests_DATA = \
-	tc_filter_show.out \
-	$(NULL)
-
