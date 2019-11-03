@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
 
 from __future__ import absolute_import
 from __future__ import division
-
-from nose.plugins.attrib import attr
 
 from vdsm.network import ifacquire
 
@@ -64,8 +62,7 @@ class TestException(Exception):
     pass
 
 
-@attr(type='unit')
-class AcquireNicTest(VdsmTestCase):
+class TestAcquireNic(VdsmTestCase):
     @mock.patch.object(ifacquire.address, 'flush')
     @mock.patch.object(ifacquire.dhclient, 'kill')
     @mock.patch.object(ifacquire.ifcfg, 'ifdown')
