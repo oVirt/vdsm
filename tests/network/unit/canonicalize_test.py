@@ -25,8 +25,6 @@ import copy
 
 import six
 
-from nose.plugins.attrib import attr
-
 from testlib import VdsmTestCase, mock
 
 from vdsm.network import canonicalize
@@ -38,7 +36,6 @@ NET1_SETUP = {'NET1': {'nic': 'eth0', 'switch': 'legacy'}}
 NET2_SETUP = {'NET2': {'nic': 'eth0', 'switch': 'legacy'}}
 
 
-@attr(type='unit')
 @mock.patch.object(canonicalize, 'RunningConfig')
 class TestDefaultRouteCanonicalization(VdsmTestCase):
     def test_request_one_defroute_no_existing_defroute(self, mockRConfig):
