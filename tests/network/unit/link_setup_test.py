@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from nose.plugins.attrib import attr
-
 from testlib import VdsmTestCase, mock
 
 from vdsm.network.link import setup as linksetup
@@ -29,12 +27,11 @@ from vdsm.network.link import setup as linksetup
 BOND1_NAME = 'bond1'
 
 
-@attr(type='unit')
 @mock.patch('vdsm.network.netconfpersistence.RunningConfig')
 @mock.patch.object(linksetup, 'address')
 @mock.patch.object(linksetup, 'dhclient')
 @mock.patch.object(linksetup, 'Bond')
-class LinkSetupBondTests(VdsmTestCase):
+class TestLinkSetupBond(VdsmTestCase):
     def test_add_bonds(self, BondMock, dhclient_mock, address_mock, ConfMock):
         config_mock = ConfMock()
 
