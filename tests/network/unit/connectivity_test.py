@@ -25,8 +25,6 @@ from collections import namedtuple
 import os
 from time import time
 
-from nose.plugins.attrib import attr
-
 from vdsm.network import connectivity
 from vdsm.network.errors import ConfigNetworkError
 
@@ -42,7 +40,6 @@ def _mock_os_stat_with_zeroed_time(unused):
     return namedtuple('st', ['st_mtime'])(0)
 
 
-@attr(type='unit')
 class TestConnectivity(VdsmTestCase):
     def test_check_disabled(self):
         with self.assertNotRaises():
