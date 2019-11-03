@@ -49,7 +49,7 @@ DEVICE = 'dev0'
 DEVICE_ATTRIBUTES = {'sriov': {'numvfs': 2}}
 
 
-class TestException(Exception):
+class FailTest(Exception):
     pass
 
 
@@ -210,29 +210,29 @@ class TransactionTests(TestCaseBase):
                 _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
                 _config.setBonding(BONDING, BONDING_ATTRIBUTES)
                 _config.set_device(DEVICE, DEVICE_ATTRIBUTES)
-                raise TestException()
+                raise FailTest()
 
         diff = roi.exception.diff
         self.assertEqual(diff.networks[NETWORK], {'remove': True})
         self.assertEqual(diff.bonds[BONDING], {'remove': True})
         self.assertEqual(diff.devices, {})
-        self.assertEqual(roi.exception.exc_type, TestException)
+        self.assertEqual(roi.exception.exc_type, FailTest)
         self.assertFalse(os.path.exists(self.net_path))
         self.assertFalse(os.path.exists(self.bond_path))
         self.assertFalse(os.path.exists(self.device_path))
 
     def test_failed_setup_with_no_diff(self):
-        with self.assertRaises(TestException):
+        with self.assertRaises(FailTest):
             with Transaction(config=self.config):
-                raise TestException()
+                raise FailTest()
 
     def test_failed_setup_in_rollback(self):
-        with self.assertRaises(TestException):
+        with self.assertRaises(FailTest):
             with Transaction(config=self.config, in_rollback=True) as _config:
                 _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
                 _config.setBonding(BONDING, BONDING_ATTRIBUTES)
                 _config.set_device(DEVICE, DEVICE_ATTRIBUTES)
-                raise TestException()
+                raise FailTest()
 
         self.assertFalse(os.path.exists(self.net_path))
         self.assertFalse(os.path.exists(self.bond_path))

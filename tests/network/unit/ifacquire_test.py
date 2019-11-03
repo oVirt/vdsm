@@ -58,7 +58,7 @@ FULLY_ACQUIRED_NIC_IFCFG = (
 NETINFO_NETS = {'net1': {'ports': [NIC_NAME, 'vnet0']}}
 
 
-class TestException(Exception):
+class FailTest(Exception):
     pass
 
 
@@ -165,11 +165,11 @@ class TestAcquireNic(VdsmTestCase):
         open_file.readlines.return_value = NIC_IFCFG
         atomic_write_file.readlines.return_value = NIC_IFCFG
 
-        with self.assertRaises(TestException):
+        with self.assertRaises(FailTest):
             with ifacquire.Transaction(netinfo_nets={}) as a:
                 a.acquire(ifaces=[NIC_NAME])
 
-                raise TestException()
+                raise FailTest()
 
         atomic_write_file.writelines.assert_called_with(NIC_IFCFG)
         mock_ifup.assert_called_with(NIC_NAME)
