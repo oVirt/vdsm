@@ -31,6 +31,7 @@ Version 4 is different from version 3 by supporting qcow version 1.1 as
 well the old qcow 0.10 version which was supported in version 3 and below.
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import logging
 
@@ -118,7 +119,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                       "domain %s", domain.sdUUID)
             return
 
-        leasesSize = domain.getLeasesFileSize() / constants.MEGAB
+        leasesSize = domain.getLeasesFileSize() // constants.MEGAB
         metaMaxSlot = leasesSize - blockSD.RESERVED_LEASES - 1
 
         log.debug("Starting metadata reallocation check for domain %s with "
