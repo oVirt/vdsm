@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,26 +20,18 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from contextlib import contextmanager
-import os
-import tempfile
-
-from nose.plugins.attrib import attr
-
 from testlib import VdsmTestCase, mock
 
-from vdsm.network import netconfpersistence as netconf
 from vdsm.network import netupgrade
 
 
-@attr(type='unit')
 @mock.patch.object(netupgrade.libvirtnetwork, 'networks', lambda: ())
 @mock.patch.object(
     netupgrade.ovs_info, 'is_ovs_service_running', lambda: False
 )
 @mock.patch.object(netupgrade, 'PersistentConfig')
 @mock.patch.object(netupgrade, 'RunningConfig')
-class NetUpgradeUnifiedConfigTest(VdsmTestCase):
+class TestNetUpgradeUnifiedConfig(VdsmTestCase):
     def test_old_config_with_no_networks(self, mockRConfig, mockPConfig):
         RAW_CONFIG = {}
         NORMALIZED_CONFIG = {}
@@ -115,7 +107,6 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
             pconfig.save.assert_called_once_with()
 
 
-@attr(type='unit')
 @mock.patch.object(netupgrade, 'netinfo', lambda x: None)
 @mock.patch.object(netupgrade, 'NetInfo', lambda x: None)
 @mock.patch.object(netupgrade, 'libvirt_vdsm_nets', lambda x: None)
@@ -127,7 +118,7 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
 @mock.patch.object(netupgrade, 'KernelConfig')
 @mock.patch.object(netupgrade, 'PersistentConfig')
 @mock.patch.object(netupgrade, 'RunningConfig')
-class NetCreateUnifiedConfigTest(VdsmTestCase):
+class TestNetCreateUnifiedConfig(VdsmTestCase):
     @mock.patch.object(netupgrade.config, 'get', lambda a, b: 'ifcfg')
     def test_create_unified_config_in_ifcfg_persistence_mode(
         self, mockRConfig, mockPConfig, mockKConfig, mock_owned_device
@@ -174,36 +165,6 @@ class NetCreateUnifiedConfigTest(VdsmTestCase):
 
         rconfig.save.assert_called_once_with()
         mockRConfig.store.assert_called_once_with()
-
-
-@attr(type='integration')
-@mock.patch.object(netupgrade.libvirtnetwork, 'networks', lambda: ())
-@mock.patch.object(
-    netupgrade.ovs_info, 'is_ovs_service_running', lambda: False
-)
-class NetUpgradeVolatileRunConfig(VdsmTestCase):
-    def test_upgrade_volatile_running_config(self):
-
-        with create_running_config(volatile=True) as vol_rconfig:
-            with create_running_config(volatile=False) as pers_rconfig:
-                vol_rconfig.save()
-                netupgrade.upgrade()
-
-                self.assertFalse(vol_rconfig.config_exists())
-                self.assertTrue(pers_rconfig.config_exists())
-
-
-@contextmanager
-def create_running_config(volatile):
-    conf_dir_to_mock = 'CONF_VOLATILE_RUN_DIR' if volatile else 'CONF_RUN_DIR'
-    tempdir = tempfile.mkdtemp()
-    with mock.patch.object(netconf, conf_dir_to_mock, tempdir):
-        try:
-            rconfig = netconf.RunningConfig(volatile)
-            yield rconfig
-        finally:
-            rconfig.delete()
-            assert not os.path.exists(tempdir)
 
 
 DEFAULT_NET_ATTRS = {
