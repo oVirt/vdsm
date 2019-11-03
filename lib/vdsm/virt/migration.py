@@ -828,9 +828,9 @@ class MonitorThread(object):
             if not self._vm.switch_migration_to_post_copy():
                 # Do nothing for now; the next action will be invoked after a
                 # while
-                vm.log.warn('Failed to switch to post-copy migration')
+                vm.log.warning('Failed to switch to post-copy migration')
         elif action == CONVERGENCE_SCHEDULE_SET_ABORT:
-            vm.log.warn('Aborting migration')
+            vm.log.warning('Aborting migration')
             vm._dom.abortJob()
             self.stop()
 
