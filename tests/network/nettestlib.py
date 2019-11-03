@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -431,20 +431,7 @@ def enable_lldp_on_ifaces(ifaces, rx_only):
             lldptool.disable_lldp_on_iface(interface)
 
 
-def requires_nm_stopped(message):
-    def decorator(function):
-        @functools.wraps(function)
-        def wrapper(*args, **kwargs):
-            if _nm_is_running():
-                raise SkipTest(message)
-            return function(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
-def _nm_is_running():
+def nm_is_running():
     return len(pgrep('NetworkManager')) > 0
 
 

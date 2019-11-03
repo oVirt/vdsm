@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,20 +21,18 @@ from __future__ import absolute_import
 from __future__ import division
 
 import itertools
+import os
 
-from nose.plugins.attrib import attr
+import pytest
 
-from testValidation import broken_on_ci
 from testlib import VdsmTestCase
 
-from .nettestlib import dummy_device, dummy_devices, preserve_default_route
-from .nettestlib import requires_nm_stopped
+from ..nettestlib import dummy_device, dummy_devices, preserve_default_route
+from ..nettestlib import nm_is_running
 
 from vdsm.network.ip import address
 from vdsm.network.netinfo import routes
 
-
-DEVICE_NAME = 'foo'
 
 IPV4_PREFIX = 29
 IPV4_NETMASK = address.prefix2netmask(IPV4_PREFIX)
@@ -42,44 +40,21 @@ IPV4_A_ADDRESS = '192.168.99.1'
 IPV4_A_WITH_PREFIXLEN = '{}/{}'.format(IPV4_A_ADDRESS, IPV4_PREFIX)
 IPV4_B_ADDRESS = '192.168.98.1'
 IPV4_B_WITH_PREFIXLEN = '{}/{}'.format(IPV4_B_ADDRESS, IPV4_PREFIX)
-IPV4_INVALID_ADDRESS = '333.333.333.333'
-IPV4_INVALID_WITH_PREFIXLEN = '{}/{}'.format(IPV4_INVALID_ADDRESS, IPV4_PREFIX)
 IPV4_GATEWAY = '192.168.99.6'
 
 IPV6_PREFIX = 64
-IPV6_NETMASK = 'ffff:ffff:ffff:ffff::'
 IPV6_A_ADDRESS = '2001:99::1'
 IPV6_A_WITH_PREFIXLEN = '{}/{}'.format(IPV6_A_ADDRESS, IPV6_PREFIX)
 IPV6_B_ADDRESS = '2002:99::1'
 IPV6_B_WITH_PREFIXLEN = '{}/{}'.format(IPV6_B_ADDRESS, IPV6_PREFIX)
-IPV6_INVALID_ADDRESS = '2001::99::1'
-IPV6_INVALID_WITH_PREFIXLEN = '{}/{}'.format(IPV6_INVALID_ADDRESS, IPV6_PREFIX)
 IPV6_GATEWAY = '2001:99::99'
 
 
-@attr(type='unit')
-class TestAddressIP(VdsmTestCase):
-    def test_ipv4_clean_init(self):
-        ip = address.IPv4()
-        self.assertFalse(ip)
-        self._assert_ip_clean_init(ip)
-        self.assertEqual(None, ip.bootproto)
-        self.assertEqual(None, ip.netmask)
-
-    def test_ipv6_clean_init(self):
-        ip = address.IPv6()
-        self.assertFalse(ip)
-        self._assert_ip_clean_init(ip)
-        self.assertEqual(None, ip.ipv6autoconf)
-        self.assertEqual(None, ip.dhcpv6)
-
-    def _assert_ip_clean_init(self, ip):
-        self.assertEqual(None, ip.address)
-        self.assertEqual(None, ip.gateway)
-        self.assertEqual(None, ip.defaultRoute)
+ipv6_broken_on_travis_ci = pytest.mark.skipif(
+    'TRAVIS_CI' in os.environ, reason='IPv6 not supported on travis'
+)
 
 
-@attr(type='integration')
 class TestAddressSetup(VdsmTestCase):
     def test_add_ipv4_address(self):
         ip = address.IPv4(address=IPV4_A_ADDRESS, netmask=IPV4_NETMASK)
@@ -176,71 +151,21 @@ class TestAddressSetup(VdsmTestCase):
                 self.assertTrue(routes.is_ipv6_default_route(IPV6_GATEWAY))
 
 
-@attr(type='unit')
-class IPAddressDataTest(VdsmTestCase):
-    def test_ipv4_init(self):
-        ip_data = address.IPAddressData(
-            IPV4_A_WITH_PREFIXLEN, device=DEVICE_NAME
-        )
-
-        self.assertEqual(ip_data.device, DEVICE_NAME)
-        self.assertEqual(ip_data.family, 4)
-        self.assertEqual(ip_data.address, IPV4_A_ADDRESS)
-        self.assertEqual(ip_data.netmask, IPV4_NETMASK)
-        self.assertEqual(ip_data.prefixlen, IPV4_PREFIX)
-        self.assertEqual(ip_data.address_with_prefixlen, IPV4_A_WITH_PREFIXLEN)
-
-    def test_ipv4_init_invalid(self):
-        with self.assertRaises(address.IPAddressDataError):
-            address.IPAddressData(
-                IPV4_INVALID_WITH_PREFIXLEN, device=DEVICE_NAME
-            )
-
-    def test_ipv6_init(self):
-        ip_data = address.IPAddressData(
-            IPV6_A_WITH_PREFIXLEN, device=DEVICE_NAME
-        )
-
-        self.assertEqual(ip_data.device, DEVICE_NAME)
-        self.assertEqual(ip_data.family, 6)
-        self.assertEqual(ip_data.address, IPV6_A_ADDRESS)
-        self.assertEqual(ip_data.netmask, IPV6_NETMASK)
-        self.assertEqual(ip_data.prefixlen, IPV6_PREFIX)
-        self.assertEqual(ip_data.address_with_prefixlen, IPV6_A_WITH_PREFIXLEN)
-
-    def test_ipv6_init_invalid(self):
-        with self.assertRaises(address.IPAddressDataError):
-            address.IPAddressData(
-                IPV6_INVALID_WITH_PREFIXLEN, device=DEVICE_NAME
-            )
-
-    def test_ipv4_init_with_scope_and_flags(self):
-        SCOPE = 'local'
-        FLAGS = frozenset([address.Flags.SECONDARY, address.Flags.PERMANENT])
-
-        ip_data = address.IPAddressData(
-            IPV4_A_WITH_PREFIXLEN, device=DEVICE_NAME, scope=SCOPE, flags=FLAGS
-        )
-
-        self.assertEqual(ip_data.scope, SCOPE)
-        self.assertEqual(ip_data.flags, FLAGS)
-        self.assertFalse(ip_data.is_primary())
-        self.assertTrue(ip_data.is_permanent())
-
-
-@attr(type='integration')
-class IPAddressTest(VdsmTestCase):
+class TestIPAddress(VdsmTestCase):
     IPAddress = address.driver(address.Drivers.IPROUTE2)
 
     def test_add_delete_ipv4(self):
         self._test_add_delete(IPV4_A_WITH_PREFIXLEN, IPV4_B_WITH_PREFIXLEN)
 
-    @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
+    @ipv6_broken_on_travis_ci
     def test_add_delete_ipv6(self):
         self._test_add_delete(IPV6_A_WITH_PREFIXLEN, IPV6_B_WITH_PREFIXLEN)
 
-    @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
-    @requires_nm_stopped('Fails randomly when NM is running. See BZ#1512316')
+    @ipv6_broken_on_travis_ci
+    @pytest.mark.skipif(
+        nm_is_running(),
+        reason='Fails randomly when NM is running. See BZ#1512316',
+    )
     def test_add_delete_ipv4_ipv6(self):
         self._test_add_delete(IPV4_A_WITH_PREFIXLEN, IPV6_B_WITH_PREFIXLEN)
 
@@ -249,18 +174,18 @@ class IPAddressTest(VdsmTestCase):
             ip_a_data = address.IPAddressData(ip_a, device=nic)
             ip_b_data = address.IPAddressData(ip_b, device=nic)
 
-            IPAddressTest.IPAddress.add(ip_a_data)
+            TestIPAddress.IPAddress.add(ip_a_data)
             self._assert_has_address(nic, ip_a)
 
-            IPAddressTest.IPAddress.add(ip_b_data)
+            TestIPAddress.IPAddress.add(ip_b_data)
             self._assert_has_address(nic, ip_a)
             self._assert_has_address(nic, ip_b)
 
-            IPAddressTest.IPAddress.delete(ip_b_data)
+            TestIPAddress.IPAddress.delete(ip_b_data)
             self._assert_has_address(nic, ip_a)
             self._assert_has_no_address(nic, ip_b)
 
-            IPAddressTest.IPAddress.delete(ip_a_data)
+            TestIPAddress.IPAddress.delete(ip_a_data)
             self._assert_has_no_address(nic, ip_a)
             self._assert_has_no_address(nic, ip_b)
 
@@ -272,7 +197,7 @@ class IPAddressTest(VdsmTestCase):
 
     def _test_add_with_non_existing_device(self, ip):
         with self.assertRaises(address.IPAddressAddError):
-            IPAddressTest.IPAddress.add(
+            TestIPAddress.IPAddress.add(
                 address.IPAddressData(ip, device='tim the enchanter')
             )
 
@@ -285,7 +210,7 @@ class IPAddressTest(VdsmTestCase):
     def _test_delete_non_existing_ip(self, ip):
         with dummy_device() as nic:
             with self.assertRaises(address.IPAddressDeleteError):
-                IPAddressTest.IPAddress.delete(
+                TestIPAddress.IPAddress.delete(
                     address.IPAddressData(ip, device=nic)
                 )
 
@@ -295,14 +220,14 @@ class IPAddressTest(VdsmTestCase):
             ipv6_addresses=[],
         )
 
-    @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
+    @ipv6_broken_on_travis_ci
     def test_list_ipv6(self):
         self._test_list(
             ipv4_addresses=[],
             ipv6_addresses=[IPV6_A_WITH_PREFIXLEN, IPV6_B_WITH_PREFIXLEN],
         )
 
-    @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
+    @ipv6_broken_on_travis_ci
     def test_list_ipv4_ipv6(self):
         self._test_list(
             ipv4_addresses=[IPV4_A_WITH_PREFIXLEN],
@@ -314,13 +239,13 @@ class IPAddressTest(VdsmTestCase):
             for addr in itertools.chain.from_iterable(
                 [ipv4_addresses, ipv6_addresses]
             ):
-                IPAddressTest.IPAddress.add(
+                TestIPAddress.IPAddress.add(
                     address.IPAddressData(addr, device=nic)
                 )
 
-            all_addrs = list(IPAddressTest.IPAddress.addresses())
-            ipv4_addrs = list(IPAddressTest.IPAddress.addresses(family=4))
-            ipv6_addrs = list(IPAddressTest.IPAddress.addresses(family=6))
+            all_addrs = list(TestIPAddress.IPAddress.addresses())
+            ipv4_addrs = list(TestIPAddress.IPAddress.addresses(family=4))
+            ipv6_addrs = list(TestIPAddress.IPAddress.addresses(family=6))
 
         for addr in ipv4_addresses:
             self._assert_address_in(addr, all_addrs)
@@ -344,23 +269,23 @@ class IPAddressTest(VdsmTestCase):
 
     def _test_list_by_device(self, ip_a_with_device, ip_b):
         with dummy_devices(2) as (nic1, nic2):
-            IPAddressTest.IPAddress.add(
+            TestIPAddress.IPAddress.add(
                 address.IPAddressData(ip_a_with_device, device=nic1)
             )
-            IPAddressTest.IPAddress.add(
+            TestIPAddress.IPAddress.add(
                 address.IPAddressData(ip_b, device=nic2)
             )
 
-            addresses = list(IPAddressTest.IPAddress.addresses(device=nic1))
+            addresses = list(TestIPAddress.IPAddress.addresses(device=nic1))
             self._assert_address_in(ip_a_with_device, addresses)
             self._assert_address_not_in(ip_b, addresses)
 
     def _assert_has_address(self, device, address_with_prefixlen):
-        addresses = IPAddressTest.IPAddress.addresses(device)
+        addresses = TestIPAddress.IPAddress.addresses(device)
         self._assert_address_in(address_with_prefixlen, addresses)
 
     def _assert_has_no_address(self, device, address_with_prefixlen):
-        addresses = IPAddressTest.IPAddress.addresses(device)
+        addresses = TestIPAddress.IPAddress.addresses(device)
         self._assert_address_not_in(address_with_prefixlen, addresses)
 
     def _assert_address_in(self, address_with_prefixlen, addresses):
