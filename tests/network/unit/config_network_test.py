@@ -23,8 +23,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from nose.plugins.attrib import attr
-
 from vdsm.network import netinfo
 from vdsm.network.link.iface import DEFAULT_MTU
 
@@ -46,7 +44,6 @@ def _raiseInvalidOpException(*args, **kwargs):
     )
 
 
-@attr(type='unit')
 class TestConfigNetwork(TestCaseBase):
     def _addNetworkWithExc(self, netName, opts, errCode):
         fakeInfo = netinfo.cache.CachingNetInfo(FAKE_NETINFO)
