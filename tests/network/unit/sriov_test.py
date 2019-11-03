@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +24,6 @@ from __future__ import division
 from contextlib import contextmanager
 import io
 
-from nose.plugins.attrib import attr
-
 from testlib import mock
 from testlib import VdsmTestCase
 
@@ -39,7 +37,6 @@ PCI2 = '0000.1234.1.2'
 NUMVFS = 2
 
 
-@attr(type='unit')
 class TestSriov(VdsmTestCase):
     @mock.patch.object(sriov.netconfpersistence, 'RunningConfig')
     def test_persist_config(self, mock_rconfig):
@@ -87,7 +84,6 @@ def _wait_for_event(*args, **kwargs):
             break
 
 
-@attr(type='unit')
 @mock.patch.object(sriov.waitfor, 'wait_for_link_event', _wait_for_event)
 @mock.patch.object(
     sriov, 'physical_function_to_pci_address', lambda dev_name: PCI1
