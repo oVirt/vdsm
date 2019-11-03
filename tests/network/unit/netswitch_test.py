@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,15 +25,13 @@ from vdsm.network import netswitch
 from vdsm.network.netinfo.cache import NetInfo
 
 from testlib import VdsmTestCase as TestCaseBase
-from nose.plugins.attrib import attr
 
 
 BOND_NAME = 'bond1'
 NETWORK1_NAME = 'test-network1'
 
 
-@attr(type='unit')
-class SplitSetupActionsTests(TestCaseBase):
+class TestSplitSetupActions(TestCaseBase):
     def test_split_nets(self):
         net_query = {
             'net2add': {'nic': 'eth0'},
@@ -69,8 +67,7 @@ class SplitSetupActionsTests(TestCaseBase):
         self.assertEqual(bonds2remove, {'bond2remove': {'remove': True}})
 
 
-@attr(type='unit')
-class SouthboundValidationTests(TestCaseBase):
+class TestSouthboundValidation(TestCaseBase):
     def test_two_bridgless_ovs_nets_with_used_nic_fails(self):
         self._assert_net_setup_fails_bad_params(
             'fakebrnet2', 'ovs', {'nic': 'eth0'}
