@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2018 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
 
 from __future__ import absolute_import
 from __future__ import division
-
-from nose.plugins.attrib import attr
 
 from testlib import VdsmTestCase
 from testlib import mock
@@ -45,8 +43,7 @@ DHCLIENT_CMDLINE_WITH_HOST_AT_TAIL = '\0'.join(
 )
 
 
-@attr(type='unit')
-class IPDhclientTest(VdsmTestCase):
+class TestIPDhclient(VdsmTestCase):
     @mock.patch.object(
         dhclient,
         'open',
