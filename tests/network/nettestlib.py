@@ -29,6 +29,7 @@ import struct
 import time
 from contextlib import contextmanager
 from multiprocessing import Process
+import logging
 
 from nose.plugins.skip import SkipTest
 
@@ -668,6 +669,32 @@ def has_sysfs_bond_permission():
     except IOError:
         return False
     return True
+
+
+class KernelModule(object):
+    SYSFS_MODULE_PATH = '/sys/module'
+    CMD_MODPROBE = 'modprobe'
+
+    def __init__(self, name):
+        self._name = name
+
+    def exists(self):
+        return os.path.exists(
+            os.path.join(KernelModule.SYSFS_MODULE_PATH, self._name)
+        )
+
+    def load(self):
+        if not self.exists():
+            ret, out, err = cmd.exec_sync(
+                [KernelModule.CMD_MODPROBE, self._name]
+            )
+            if ret != 0:
+                logging.warning(
+                    'Unable to load %s module, out=%s, err=%s',
+                    self._name,
+                    out,
+                    err,
+                )
 
 
 def _requires_systemctl():

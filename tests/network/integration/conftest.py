@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,8 +32,8 @@ from vdsm.network.link.bond import sysfs_options_mapper
 
 import network as network_tests
 from network.compat import mock
+from network.nettestlib import KernelModule
 from network.nettestlib import has_sysfs_bond_permission
-
 
 IPV4_ADDRESS1 = '192.168.99.1'  # Tracking the address used in ip_rule_test
 
@@ -44,13 +44,26 @@ def requires_root():
         pytest.skip('Integration tests require root')
 
 
+@pytest.fixture(scope='session')
+def bond_module():
+    bonding_kmod = KernelModule('bonding')
+    bonding_kmod.load()
+
+    if not bonding_kmod.exists():
+        return None
+    if not has_sysfs_bond_permission():
+        logging.warning('No permission on sysfs bonding')
+        return None
+    return bonding_kmod
+
+
 @pytest.fixture(scope='session', autouse=True)
-def bond_option_mapping():
+def bond_option_mapping(bond_module):
     file1 = tempfile.NamedTemporaryFile()
     file2 = tempfile.NamedTemporaryFile()
     with file1 as f_bond_defaults, file2 as f_bond_name2numeric:
 
-        if has_sysfs_bond_permission():
+        if bond_module:
             ALTERNATIVE_BONDING_DEFAULTS = f_bond_defaults.name
             ALTERNATIVE_BONDING_NAME2NUMERIC_PATH = f_bond_name2numeric.name
         else:
@@ -76,7 +89,7 @@ def bond_option_mapping():
         )
 
         with patch_bonding_defaults, patch_bonding_name2num:
-            if has_sysfs_bond_permission():
+            if bond_module:
                 sysfs_options_mapper.dump_bonding_options()
             yield
 
