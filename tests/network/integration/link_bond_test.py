@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,9 +23,9 @@ from __future__ import division
 from contextlib import contextmanager
 import errno
 import os
-
-from nose.plugins.skip import SkipTest
 import unittest
+
+import pytest
 
 from network.compat import mock
 from network.nettestlib import dummy_devices, check_sysfs_bond_permission
@@ -254,7 +254,7 @@ class TestBondingSysfsOptionsMapper(unittest.TestCase):
             opt_map = sysfs_options_mapper._get_bonding_options_name2numeric()
         except IOError as e:
             if e.errno == errno.EBUSY:
-                raise SkipTest(
+                pytest.skip(
                     'Bond option mapping failed on EBUSY, '
                     'Kernel version: %s' % os.uname()[2]
                 )

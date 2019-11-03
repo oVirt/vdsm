@@ -32,7 +32,6 @@ from multiprocessing import Process
 import logging
 
 import pytest
-from nose.plugins.skip import SkipTest
 
 from vdsm.common import cpuarch
 from vdsm.network import cmd
@@ -195,7 +194,7 @@ class Tap(Interface):
     elif cpuarch.is_ppc(arch):
         _TUNSETIFF = 0x800454CA
     else:
-        raise SkipTest("Unsupported Architecture %s" % arch)
+        pytest.skip("Unsupported Architecture %s" % arch)
 
     _deviceListener = None
 
@@ -250,7 +249,7 @@ class Dummy(Interface):
                     ['nmcli', 'dev', 'set', self.devName, 'managed', 'yes']
                 )
         except IPRoute2Error as e:
-            raise SkipTest(
+            pytest.skip(
                 'Failed to create a dummy interface %s: %s' % (self.devName, e)
             )
         else:
@@ -263,7 +262,7 @@ class Dummy(Interface):
         try:
             linkDel(self.devName)
         except IPRoute2Error as e:
-            raise SkipTest(
+            pytest.skip(
                 "Unable to delete the dummy interface %s: %s"
                 % (self.devName, e)
             )
@@ -285,7 +284,7 @@ class Dummy(Interface):
                     "disable_ipv6 flag on the device, please see e.g. "
                     "RH BZ #1102064"
                 )
-            raise SkipTest(message)
+            pytest.skip(message)
 
 
 class IperfServer(object):
@@ -409,7 +408,7 @@ def veth_pair(prefix='veth_', max_length=15):
                 ['nmcli', 'dev', 'set', right_side, 'managed', 'yes']
             )
     except IPRoute2Error as e:
-        raise SkipTest('Failed to create a veth pair: %s', e)
+        pytest.skip('Failed to create a veth pair: %s', e)
     try:
         yield left_side, right_side
     finally:
@@ -443,7 +442,7 @@ def check_tc():
     try:
         check_call([EXT_TC, 'qdisc', 'add', 'dev', dev.devName, 'ingress'])
     except ExecError as e:
-        raise SkipTest(
+        pytest.skip(
             "%r has failed: %s\nDo you have Traffic Control kernel "
             "modules installed?" % (EXT_TC, e.err)
         )
@@ -462,7 +461,7 @@ def requires_tc(f):
 
 def _check_iperf():
     if not os.access(_IPERF3_BINARY.cmd, os.X_OK):
-        raise SkipTest(
+        pytest.skip(
             "Cannot run %r: %s\nDo you have iperf3 installed?"
             % _IPERF3_BINARY._cmd
         )
@@ -532,7 +531,7 @@ def requires_tun(f):
     @functools.wraps(f)
     def wrapper(*a, **kw):
         if not os.path.exists("/dev/net/tun"):
-            raise SkipTest("This test requires tun device")
+            pytest.skip("This test requires tun device")
         return f(*a, **kw)
 
     return wrapper
@@ -630,7 +629,7 @@ def restore_resolv_conf():
 
 def check_sysfs_bond_permission():
     if not has_sysfs_bond_permission():
-        raise SkipTest('This test requires sysfs bond write access')
+        pytest.skip('This test requires sysfs bond write access')
 
 
 @contextmanager
@@ -705,12 +704,12 @@ def _requires_systemctl():
     rc, _, err = cmd.exec_sync([_SYSTEMCTL.cmd, 'status', 'foo'])
     run_chroot_err = 'Running in chroot, ignoring request'
     if rc == 1 or run_chroot_err in err:
-        raise SkipTest('systemctl is not available')
+        pytest.skip('systemctl is not available')
 
 
 def _requires_root(msg='This test must be run as root'):
     if os.geteuid() != 0:
-        raise SkipTest(msg)
+        pytest.skip(msg)
 
 
 def running_on_centos():

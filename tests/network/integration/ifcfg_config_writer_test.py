@@ -29,11 +29,12 @@ import shutil
 import subprocess
 import tempfile
 
+import pytest
+
 from vdsm.network.configurators import ifcfg
 
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
-from nose.plugins.skip import SkipTest
 from testlib import VdsmTestCase as TestCaseBase
 
 
@@ -113,7 +114,7 @@ class TestIfcfgConfigWriter(TestCaseBase):
             # after vdsm package is installed, the 'vdsm' account will be
             # created if no 'vdsm' account, we should skip this test
             if 'vdsm' not in [val.pw_name for val in pwd.getpwall()]:
-                raise SkipTest(
+                pytest.skip(
                     "'vdsm' is not in user account database, "
                     "install vdsm package to create the vdsm user"
                 )
