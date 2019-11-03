@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from nose.plugins.attrib import attr
-
 from testlib import VdsmTestCase
 
 from vdsm.network import errors as ne
@@ -32,7 +30,6 @@ class DummyRunningConfig(object):
     networks = {}
 
 
-@attr(type='unit')
 class TestIPNameserverValidator(VdsmTestCase):
     def test_ignore_remove_networks(self):
         validator.validate(
@@ -87,7 +84,6 @@ class TestIPNameserverValidator(VdsmTestCase):
         )
 
 
-@attr(type='unit')
 class TestStaticIpv4ConfigValidator(VdsmTestCase):
     def test_ip_address_without_netmask_fails(self):
         self._test_ip_config_fails(ipaddr='10.10.10.10')
