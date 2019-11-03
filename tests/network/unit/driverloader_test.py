@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,15 +19,12 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from nose.plugins.attrib import attr
-
 from testlib import VdsmTestCase
 
 from vdsm.network import driverloader
 
 
-@attr(type='unit')
-class DriverLoaderTest(VdsmTestCase):
+class TestDriverLoader(VdsmTestCase):
     def test_load_non_existing_driver(self):
         _drivers = driverloader.load_drivers(
             'ClassName', 'foo.bar', '/no/drivers'
