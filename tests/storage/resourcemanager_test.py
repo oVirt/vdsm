@@ -439,7 +439,7 @@ class TestResourceManager:
         log.info("Waiting for autoclean")
         while True:
             resStatus = rm._getResourceStatus("storage", "resource")
-            if resStatus == rm.LockState.free:
+            if resStatus == rm.STATUS_FREE:
                 break
             time.sleep(1)
 
@@ -452,14 +452,14 @@ class TestResourceManager:
 
     def testResourceStatuses(self, tmp_manager):
         status = rm._getResourceStatus("storage", "resource")
-        assert status == rm.LockState.free
+        assert status == rm.STATUS_FREE
         exclusive1 = rm.acquireResource("storage", "resource", rm.EXCLUSIVE)
         status = rm._getResourceStatus("storage", "resource")
-        assert status == rm.LockState.locked
+        assert status == rm.STATUS_LOCKED
         exclusive1.release()
         shared1 = rm.acquireResource("storage", "resource", rm.SHARED)
         status = rm._getResourceStatus("storage", "resource")
-        assert status == rm.LockState.shared
+        assert status == rm.STATUS_SHARED
         shared1.release()
         with pytest.raises(KeyError):
             status = rm._getResourceStatus("null", "resource")

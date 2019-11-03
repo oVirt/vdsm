@@ -76,46 +76,22 @@ class ResourceDoesNotExist(ResourceManagerError):
 #        enums.
 
 
+# Lock types.
 SHARED = "shared"
 EXCLUSIVE = "exclusive"
 
+# Lock statuses.
+STATUS_FREE = "free"
+STATUS_SHARED = "shared"
+STATUS_LOCKED = "locked"
 
-class LockState:
-    free = "free"
-    shared = "shared"
-    locked = "locked"
 
-    def __init__(self, state=free):
-        self.validate(state)
-        self.state = state
-
-    def __str__(self):
-        return self.state
-
-    def __eq__(self, x):
-        if type(x) == str:
-            return self.state == x
-        if isinstance(x, self):
-            return x.state == self.state
-
-    def __ne__(self, x):
-        return not self.__eq__(x)
-
-    @classmethod
-    def fromType(cls, locktype):
-        if str(locktype) == SHARED:
-            return cls.shared
-        if str(locktype) == EXCLUSIVE:
-            return cls.locked
-        raise InvalidLockType("Invalid locktype %r was used" % locktype)
-
-    @classmethod
-    def validate(cls, state):
-        try:
-            if type(getattr(cls, state)) != str:
-                raise ValueError
-        except:
-            raise ValueError("invalid lock state %s" % state)
+def _statusFromType(locktype):
+    if str(locktype) == SHARED:
+        return STATUS_SHARED
+    if str(locktype) == EXCLUSIVE:
+        return STATUS_LOCKED
+    raise InvalidLockType("Invalid locktype %r was used" % locktype)
 
 
 # TODO : Integrate all factory functionality to manager
@@ -409,9 +385,9 @@ class _ResourceManager(object):
                                                                  name))
 
                 if name not in resources:
-                    return LockState.free
+                    return STATUS_FREE
 
-                return LockState.fromType(resources[name].currentLock)
+                return _statusFromType(resources[name].currentLock)
 
     def _switchLockType(self, resourceInfo, newLockType):
         switchLock = (resourceInfo.currentLock != newLockType)
