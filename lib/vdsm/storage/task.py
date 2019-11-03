@@ -235,6 +235,9 @@ class State:
         return hash(self.state)
 
 
+# TODO: Consider removing some of these enum classes to simplify the code.
+#  If we never compare instances of the classes, they can be removed.
+#  Immediate suspects: EnumType and 3 its subclasses (Task*Type) below.
 class EnumType(object):
     def __init__(self, enum):
         if not getattr(self, enum, None):
@@ -246,8 +249,11 @@ class EnumType(object):
 
     def __eq__(self, x):
         if type(x) == str:
+            # TODO: This is really bad usage of __eq__, it should not succeed
+            #  when passing object with different type. If fixed should be done
+            #  carefully, may break code due to poor tests.
             return self.value == x
-        if isinstance(x, self):
+        if isinstance(x, type(self)):
             return x.value == self.value
         return False
 

@@ -25,7 +25,8 @@ from contextlib import contextmanager
 
 from vdsm.common import concurrent
 from vdsm.storage import outOfProcess as oop
-from vdsm.storage.task import Job, Recovery, Task, TaskCleanType
+from vdsm.storage.task import Job, Recovery, Task, TaskCleanType,\
+    TaskPersistType, TaskRecoveryType
 
 from . storagetestlib import Callable
 
@@ -268,3 +269,29 @@ def test_recovery_list():
     t.pushRecovery(recovery2)
     t.clearRecoveries()
     assert t.popRecovery() is None
+
+
+def test_enum_type():
+    # Same enums, same values.
+    assert TaskPersistType(TaskPersistType.none) ==\
+        TaskPersistType(TaskPersistType.none)
+    assert TaskPersistType(TaskPersistType.none) ==\
+        TaskPersistType.none
+
+    # Same enums, different values.
+    assert TaskPersistType(TaskPersistType.manual) !=\
+        TaskPersistType(TaskPersistType.auto)
+    assert TaskPersistType(TaskPersistType.manual) !=\
+        TaskPersistType.auto
+
+    # Different enums, different values.
+    assert TaskPersistType(TaskPersistType.none) !=\
+        TaskCleanType(TaskCleanType.manual)
+    assert TaskPersistType(TaskPersistType.none) !=\
+        TaskCleanType.manual
+
+    # Different enums, same values.
+    assert TaskPersistType(TaskPersistType.auto) !=\
+        TaskRecoveryType(TaskRecoveryType.auto)
+    assert TaskPersistType(TaskPersistType.auto) ==\
+        TaskRecoveryType.auto
