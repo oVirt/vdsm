@@ -24,8 +24,6 @@ import json
 import os
 import tempfile
 
-from nose.plugins.attrib import attr
-
 from vdsm.common import fileutils
 from vdsm.network import errors as ne
 from vdsm.network.canonicalize import canonicalize_networks
@@ -67,14 +65,12 @@ def setup_module():
     canonicalize_networks({'net': NETWORK_ATTRIBUTES})
 
 
-@attr(type='unit')
 class TestNetConfBaseConfig(TestCaseBase):
     def test_empty_config(self):
         config = BaseConfig({}, {}, {})
         self.assertFalse(config)
 
 
-@attr(type='unit')
 class NetConfPersistenceTests(TestCaseBase):
     def setUp(self):
         self.tempdir = _create_netconf()
@@ -176,7 +172,6 @@ class NetConfPersistenceTests(TestCaseBase):
         self.assertIn(NETWORK, diff.networks)
 
 
-@attr(type='unit')
 class TransactionTests(TestCaseBase):
     def setUp(self):
         self.tempdir = _create_netconf()
