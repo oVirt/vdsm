@@ -21,27 +21,31 @@
 from __future__ import absolute_import
 from __future__ import division
 from collections import deque
+import os
 import time
+
+import pytest
 
 from vdsm.common.time import monotonic_time
 
-from .nettestlib import Dummy
+from ..nettestlib import Dummy
 from vdsm.network.netlink import NLSocketPool
 from vdsm.network.netlink import monitor
 from vdsm.network.sysctl import is_disabled_ipv6
 
-from testValidation import ValidateRunningAsRoot, broken_on_ci
 from testlib import start_thread, VdsmTestCase as TestCaseBase
 
 IP_ADDRESS = '192.0.2.1'
 IP_CIDR = '24'
 
 
-class NetlinkEventMonitorTests(TestCaseBase):
+running_on_ovirt_ci = 'OVIRT_CI' in os.environ
+
+
+class TestNetlinkEventMonitor(TestCaseBase):
 
     TIMEOUT = 5
 
-    @ValidateRunningAsRoot
     def test_iterate_after_events(self):
         with monitor.Monitor(timeout=self.TIMEOUT) as mon:
             dummy = Dummy()
@@ -51,7 +55,6 @@ class NetlinkEventMonitorTests(TestCaseBase):
                 if event.get('name') == dummy_name:
                     break
 
-    @ValidateRunningAsRoot
     def test_iterate_while_events(self):
         """Tests if monitor is able to catch event while iterating. Before the
         iteration we start _set_and_remove_device, which is delayed for .2
@@ -72,7 +75,6 @@ class NetlinkEventMonitorTests(TestCaseBase):
                     break
             add_device_thread.join()
 
-    @ValidateRunningAsRoot
     def test_stopped(self):
         with monitor.Monitor(timeout=self.TIMEOUT) as mon:
             dummy = Dummy()
@@ -82,7 +84,6 @@ class NetlinkEventMonitorTests(TestCaseBase):
         found = any(event.get('name') == dummy_name for event in mon)
         self.assertTrue(found, 'Expected event was not caught.')
 
-    @ValidateRunningAsRoot
     def test_event_groups(self):
         with monitor.Monitor(
             timeout=self.TIMEOUT, groups=('ipv4-ifaddr',)
@@ -114,7 +115,6 @@ class NetlinkEventMonitorTests(TestCaseBase):
                 "to link or route." % event['event'],
             )
 
-    @ValidateRunningAsRoot
     def test_iteration(self):
         with monitor.Monitor(timeout=self.TIMEOUT) as mon:
             iterator = iter(mon)
@@ -131,8 +131,12 @@ class NetlinkEventMonitorTests(TestCaseBase):
             while True:
                 next(iterator)
 
-    @broken_on_ci('Sometimes we miss some events on CI', AssertionError)
-    @ValidateRunningAsRoot
+    @pytest.mark.xfail(
+        condition=running_on_ovirt_ci,
+        raises=AssertionError,
+        reason='Sometimes we miss some events on CI',
+        strict=False,
+    )
     def test_events_keys(self):
         def _simplify_event(event):
             """ Strips event keys except event, address, name, destination,
@@ -211,7 +215,6 @@ class NetlinkEventMonitorTests(TestCaseBase):
 
         self.assertTrue(mon.is_stopped())
 
-    @ValidateRunningAsRoot
     def test_timeout_not_triggered(self):
         time_start = monotonic_time()
         with monitor.Monitor(timeout=self.TIMEOUT) as mon:
