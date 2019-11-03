@@ -217,7 +217,7 @@ class Drive(core.Base):
                            'readonly': str(readonly)}
                 if bootOrder:
                     diskDev['bootOrder'] = bootOrder
-                vm.log.warn('Found unknown drive: %s', diskDev)
+                vm.log.warning('Found unknown drive: %s', diskDev)
                 vm.conf['devices'].append(diskDev)
 
     def __init__(self, log, **kwargs):
