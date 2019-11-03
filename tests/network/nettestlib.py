@@ -31,6 +31,7 @@ from contextlib import contextmanager
 from multiprocessing import Process
 import logging
 
+import pytest
 from nose.plugins.skip import SkipTest
 
 from vdsm.common import cpuarch
@@ -517,11 +518,14 @@ def dnsmasq_run(
         ipv6_slaac_prefix,
     )
 
-    with firewall.allow_dhcp(interface):
-        try:
-            yield
-        finally:
-            server.stop()
+    try:
+        with firewall.allow_dhcp(interface):
+            try:
+                yield
+            finally:
+                server.stop()
+    except firewall.FirewallError as e:
+        pytest.skip('Failed to allow DHCP traffic in firewall: %s' % e)
 
 
 def requires_tun(f):

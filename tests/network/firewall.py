@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2017 Red Hat, Inc.
+# Copyright 2013-2019 Red Hat, Inc.
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -22,8 +22,6 @@ from __future__ import division
 
 from contextlib import contextmanager
 import logging
-
-from nose.plugins.skip import SkipTest
 
 from vdsm.common.cmdutils import CommandPath
 from vdsm.network import cmd
@@ -54,56 +52,53 @@ def _allow_dhcp(iface):
     With firewalld, the whole interface is moved to the 'trusted',
     unrestricted zone.
     """
-    try:
-        if _serviceRunning('iptables'):
-            _exec_cmd_checker(
-                [
-                    _IPTABLES_BINARY.cmd,
-                    '--wait',
-                    '-I',
-                    'INPUT',
-                    '-i',
-                    iface,
-                    '-p',
-                    'udp',
-                    '--sport',
-                    '68',
-                    '--dport',
-                    '67',
-                    '-j',
-                    'ACCEPT',
-                ]
-            )  # DHCPv4
-            _exec_cmd_checker(
-                [
-                    _IPTABLES_BINARY.cmd,
-                    '--wait',
-                    '-I',
-                    'INPUT',
-                    '-i',
-                    iface,
-                    '-p',
-                    'udp',
-                    '--sport',
-                    '546',
-                    '--dport',
-                    '547',
-                    '-j',
-                    'ACCEPT',
-                ]
-            )  # DHCPv6
-        elif _serviceRunning('firewalld'):
-            _exec_cmd_checker(
-                [
-                    _FIREWALLD_BINARY.cmd,
-                    '--zone=trusted',
-                    '--change-interface=' + iface,
-                ]
-            )
-        else:
-            logging.info('No firewall service detected.')
-    except FirewallError as e:
-        raise SkipTest('Failed to allow DHCP traffic in firewall: %s' % e)
+    if _serviceRunning('iptables'):
+        _exec_cmd_checker(
+            [
+                _IPTABLES_BINARY.cmd,
+                '--wait',
+                '-I',
+                'INPUT',
+                '-i',
+                iface,
+                '-p',
+                'udp',
+                '--sport',
+                '68',
+                '--dport',
+                '67',
+                '-j',
+                'ACCEPT',
+            ]
+        )  # DHCPv4
+        _exec_cmd_checker(
+            [
+                _IPTABLES_BINARY.cmd,
+                '--wait',
+                '-I',
+                'INPUT',
+                '-i',
+                iface,
+                '-p',
+                'udp',
+                '--sport',
+                '546',
+                '--dport',
+                '547',
+                '-j',
+                'ACCEPT',
+            ]
+        )  # DHCPv6
+    elif _serviceRunning('firewalld'):
+        _exec_cmd_checker(
+            [
+                _FIREWALLD_BINARY.cmd,
+                '--zone=trusted',
+                '--change-interface=' + iface,
+            ]
+        )
+    else:
+        logging.info('No firewall service detected.')
 
 
 def _forbid_dhcp(iface):
