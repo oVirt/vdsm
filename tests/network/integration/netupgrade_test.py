@@ -24,7 +24,8 @@ from contextlib import contextmanager
 import os
 import tempfile
 
-from testlib import VdsmTestCase, mock
+from network.compat import mock
+from testlib import VdsmTestCase
 
 from vdsm.network import netconfpersistence as netconf
 from vdsm.network import netupgrade

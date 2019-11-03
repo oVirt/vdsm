@@ -24,9 +24,9 @@ from contextlib import contextmanager
 
 import pytest
 
-from .netfunctestlib import Target
 from . import netfunctestlib as nftestlib
-from testlib import mock
+from .netfunctestlib import Target
+from network.compat import mock
 
 from vdsm.network import initializer
 

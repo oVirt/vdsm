@@ -24,7 +24,7 @@ from __future__ import division
 from contextlib import contextmanager
 import io
 
-from testlib import mock
+from network.compat import mock
 from testlib import VdsmTestCase
 
 from vdsm.network.link import sriov

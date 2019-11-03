@@ -21,7 +21,7 @@ from __future__ import division
 
 import pytest
 
-from testlib import mock
+from network.compat import mock
 
 from vdsm.network import nmstate
 

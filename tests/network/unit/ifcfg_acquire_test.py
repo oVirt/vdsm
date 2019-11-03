@@ -26,7 +26,8 @@ from six import StringIO
 
 from vdsm.network.configurators import ifcfg_acquire
 
-from testlib import VdsmTestCase as TestCaseBase, mock
+from network.compat import mock
+from testlib import VdsmTestCase as TestCaseBase
 
 
 IFCFG_ETH_CONF = """DEVICE="testdevice"

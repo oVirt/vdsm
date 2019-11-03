@@ -28,12 +28,12 @@ from binascii import unhexlify
 
 import six
 
+from network.compat import mock
 from testlib import (
     VdsmTestCase as TestCaseBase,
     permutations,
     expandPermutations,
 )
-from testlib import mock
 from testValidation import stresstest, skipif
 from ..nettestlib import (
     Bridge,

@@ -35,7 +35,7 @@ from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo import addresses, bonding, nics
 from vdsm.network.netlink import waitfor
 
-from testlib import mock
+from network.compat import mock
 from testlib import VdsmTestCase as TestCaseBase
 
 from ..nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6

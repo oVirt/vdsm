@@ -23,7 +23,8 @@ from __future__ import division
 
 from vdsm.network import ifacquire
 
-from testlib import VdsmTestCase, mock
+from network.compat import mock
+from testlib import VdsmTestCase
 
 
 NIC_NAME = 'eth3'

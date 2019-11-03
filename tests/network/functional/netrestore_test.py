@@ -24,9 +24,9 @@ import pytest
 from .netfunctestlib import NetFuncTestAdapter, NOCHK
 from .netfunctestlib import parametrize_bridged
 from .netfunctestlib import parametrize_switch
+from network.compat import mock
 from network.nettestlib import dummy_devices
 from network.nettestlib import veth_pair
-from testlib import mock
 
 from vdsm.network import netrestore
 from vdsm.network.ipwrapper import linkSet

@@ -25,7 +25,8 @@ import copy
 
 import six
 
-from testlib import VdsmTestCase, mock
+from network.compat import mock
+from testlib import VdsmTestCase
 
 from vdsm.network import canonicalize
 from vdsm.network import errors as ne

@@ -20,7 +20,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from testlib import VdsmTestCase, mock
+from network.compat import mock
+from testlib import VdsmTestCase
 
 from vdsm.network.link import setup as linksetup
 

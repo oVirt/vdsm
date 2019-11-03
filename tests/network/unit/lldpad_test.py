@@ -23,7 +23,8 @@ from __future__ import division
 
 from vdsm.network.lldpad import lldptool
 
-from testlib import VdsmTestCase, mock
+from network.compat import mock
+from testlib import VdsmTestCase
 
 
 LLDP_CHASSIS_ID_TLV = 'Chassis ID TLV\n\tMAC: 01:23:45:67:89:ab'

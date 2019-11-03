@@ -22,7 +22,7 @@ from __future__ import division
 
 import six
 
-from testlib import mock
+from network.compat import mock
 from testlib import VdsmTestCase
 
 from vdsm.network import dns

@@ -33,7 +33,7 @@ from vdsm.network.link.bond import Bond
 from vdsm.network.netinfo import addresses, bonding, misc, nics, routes
 from vdsm.network.netinfo.cache import get
 
-from testlib import mock
+from network.compat import mock
 from testlib import VdsmTestCase as TestCaseBase
 
 

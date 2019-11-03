@@ -21,8 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from network.compat import mock
 from testlib import VdsmTestCase
-from testlib import mock
 
 from vdsm.network.ip import dhclient
 

@@ -22,8 +22,8 @@ from __future__ import division
 
 import json
 
+from network.compat import mock
 from testlib import VdsmTestCase
-from testlib import mock
 
 from vdsm.network.link import dpdk
 
