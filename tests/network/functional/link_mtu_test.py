@@ -163,6 +163,7 @@ class TestNetworkMtu(object):
                         adapter.assertLinkMtu(vlan1, NETWORK1_ATTRS)
                         adapter.assertLinkMtu(vlan2, NETWORK2_ATTRS)
 
+    @pytest.mark.nmstate
     def test_add_slave_to_a_bonded_network_with_non_default_mtu(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             NETBASE = {

@@ -30,6 +30,7 @@ from network.compat import mock
 
 IFACE0 = 'eth0'
 IFACE1 = 'eth1'
+IFACE2 = 'eth2'
 
 TESTNET1 = 'testnet1'
 TESTNET2 = 'testnet2'
@@ -59,6 +60,10 @@ DNS_SERVERS2 = ['9.10.11.12', '13.14.15.16']
 
 parametrize_bridged = pytest.mark.parametrize(
     'bridged', [False, True], ids=['bridgeless', 'bridged']
+)
+
+parametrize_vlanned = pytest.mark.parametrize(
+    'vlanned', [False, True], ids=['without-vlan', 'with-vlan']
 )
 
 
@@ -1278,6 +1283,67 @@ class TestMtu(object):
             nmstate.Interface.MTU: DEFAULT_MTU,
         }
         expected_ifaces_states.append(expected_bond_state)
+        _sort_by_name(expected_ifaces_states)
+        assert {nmstate.Interface.KEY: expected_ifaces_states} == state
+
+    @parametrize_vlanned
+    @mock.patch.object(nmstate, 'RunningConfig')
+    def test_add_slave_to_bonded_network_with_non_default_mtu(
+        self, rconfig_mock, vlanned, current_state_mock
+    ):
+        mtu = DEFAULT_MTU - 500
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states += self._create_bond_with_slaves_ifaces_states(
+            mtu, include_type=True
+        )
+        current_ifaces_states.append(
+            _create_ethernet_iface_state(IFACE2, include_type=True)
+        )
+        if vlanned:
+            vlan_state = self._create_vlan_state(VLAN101, mtu)
+            current_ifaces_states.append(vlan_state)
+            vlan_ifname = vlan_state[nmstate.Interface.NAME]
+            current_ifaces_states.append(
+                self._create_bridge_state(TESTNET1, vlan_ifname, mtu)
+            )
+        else:
+            current_ifaces_states.append(
+                self._create_bridge_state(TESTNET1, TESTBOND0, mtu)
+            )
+        rconfig_mock.return_value.networks = {
+            TESTNET1: _create_network_config(
+                'bonding',
+                TESTBOND0,
+                bridged=True,
+                vlan=VLAN101 if vlanned else None,
+                mtu=mtu,
+            )
+        }
+        rconfig_mock.return_value.bonds = {
+            TESTBOND0: {'nics': [IFACE0, IFACE1], 'switch': 'legacy'}
+        }
+
+        bondings = _create_bonding_config(slaves=[IFACE0, IFACE1, IFACE2])
+        state = nmstate.generate_state(networks={}, bondings=bondings)
+
+        slaves = [IFACE0, IFACE1, IFACE2]
+        bond0_state = {
+            nmstate.Interface.NAME: TESTBOND0,
+            nmstate.Interface.TYPE: nmstate.InterfaceType.BOND,
+            nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+            nmstate.BondSchema.CONFIG_SUBTREE: {
+                nmstate.BondSchema.MODE: 'balance-rr',
+                nmstate.BondSchema.SLAVES: slaves,
+            },
+        }
+        if vlanned:
+            bond0_state[nmstate.Interface.MTU] = mtu
+        slave2_state = {
+            nmstate.Interface.NAME: IFACE2,
+            nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+            nmstate.Interface.MTU: mtu,
+        }
+        expected_ifaces_states = [bond0_state, slave2_state]
         _sort_by_name(expected_ifaces_states)
         assert {nmstate.Interface.KEY: expected_ifaces_states} == state
 

@@ -108,7 +108,7 @@ def _set_vlans_base_mtu(desired_ifstates, current_ifstates):
             desired_ifstates[base_ifname] = {Interface.NAME: base_ifname}
         else:
             mtu_max = max(
-                mtu_max, desired_ifstates[base_ifname][Interface.MTU]
+                mtu_max, desired_ifstates[base_ifname].get(Interface.MTU, 0)
             )
         desired_ifstates[base_ifname][Interface.MTU] = mtu_max
 
@@ -129,7 +129,11 @@ def _set_bond_slaves_mtu(desired_ifstates, current_ifstates):
     for bond_ifname, bond_ifstate in bond_desired_ifstates:
         if not _is_iface_absent(bond_ifstate):
             # The mtu is not defined when the bond is not part of a network.
-            bond_mtu = bond_ifstate.get(Interface.MTU, DEFAULT_MTU)
+            bond_mtu = bond_ifstate.get(
+                Interface.MTU,
+                current_ifstates.get(bond_ifname, {}).get(Interface.MTU)
+                or DEFAULT_MTU,
+            )
             bond_config_state = bond_ifstate.get(
                 BondSchema.CONFIG_SUBTREE
             ) or current_ifstates.get(bond_ifname, {}).get(
