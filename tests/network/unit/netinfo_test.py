@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,33 +26,17 @@ import io
 
 import six
 
-from nose.plugins.attrib import attr
-
 from vdsm.network import ipwrapper
-from vdsm.network import sysctl
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link import nic
 from vdsm.network.link.bond import Bond
-from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
-from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo import addresses, bonding, misc, nics, routes
 from vdsm.network.netinfo.cache import get
-from vdsm.network.netlink import waitfor
 
-from modprobe import RequireBondingMod
 from testlib import mock
 from testlib import VdsmTestCase as TestCaseBase
-from testValidation import ValidateRunningAsRoot
-from testValidation import broken_on_ci
-
-from .nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
 
 
-# speeds defined in ethtool
-ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
-
-
-@attr(type='unit')
 class TestNetinfo(TestCaseBase):
     def test_netmask_conversions(self):
         path = os.path.join(os.path.dirname(__file__), "netmaskconversions")
@@ -64,15 +48,6 @@ class TestNetinfo(TestCaseBase):
                 self.assertEqual(prefix2netmask(int(bitmask)), address)
         self.assertRaises(ValueError, prefix2netmask, -1)
         self.assertRaises(ValueError, prefix2netmask, 33)
-
-    def test_speed_on_an_iface_that_does_not_support_speed(self):
-        self.assertEqual(nic.speed('lo'), 0)
-
-    def test_speed_in_range(self):
-        for d in nics.nics():
-            s = nic.speed(d)
-            self.assertFalse(s < 0)
-            self.assertTrue(s in ETHTOOL_SPEEDS or s == 0)
 
     @mock.patch.object(nic, 'iface')
     @mock.patch.object(nics.io, 'open')
@@ -255,30 +230,6 @@ class TestNetinfo(TestCaseBase):
         ),
     ]
 
-    @attr(type='integration')
-    @ValidateRunningAsRoot
-    @mock.patch.object(ipwrapper.Link, '_fakeNics', ['veth_*', 'dummy_*'])
-    def test_fake_nics(self):
-        with veth_pair() as (v1a, v1b):
-            with dummy_device() as d1:
-                fakes = set([d1, v1a, v1b])
-                _nics = nics.nics()
-                self.assertTrue(
-                    fakes.issubset(_nics),
-                    'Fake devices %s are not listed in nics '
-                    '%s' % (fakes, _nics),
-                )
-
-        with veth_pair(prefix='mehv_') as (v2a, v2b):
-            with dummy_device(prefix='mehd_') as d2:
-                hiddens = set([d2, v2a, v2b])
-                _nics = nics.nics()
-                self.assertFalse(
-                    hiddens.intersection(_nics),
-                    'Some of '
-                    'hidden devices %s is shown in nics %s' % (hiddens, _nics),
-                )
-
     @mock.patch.object(misc, 'open', create=True)
     def test_get_ifcfg(self, mock_open):
         gateway = '1.1.1.1'
@@ -300,42 +251,6 @@ class TestNetinfo(TestCaseBase):
         ifcfg = misc.getIfaceCfg('eth0')
 
         self.assertEqual(ifcfg, {})
-
-    @broken_on_ci(
-        'Bond options scanning is fragile on CI', exception=AssertionError
-    )
-    @attr(type='integration')
-    @ValidateRunningAsRoot
-    @RequireBondingMod
-    def test_get_bonding_options(self):
-        INTERVAL = '12345'
-        bondName = random_iface_name()
-
-        with open(BONDING_MASTERS, 'w') as bonds:
-            bonds.write('+' + bondName)
-            bonds.flush()
-
-            try:  # no error is anticipated but let's make sure we can clean up
-                self.assertEqual(
-                    self._bond_opts_without_mode(bondName),
-                    {},
-                    'This test fails when a new bonding option is added to '
-                    'the kernel. Please run vdsm-tool dump-bonding-options` '
-                    'and retest.',
-                )
-
-                with open(
-                    bonding.BONDING_OPT % (bondName, 'miimon'), 'w'
-                ) as opt:
-                    opt.write(INTERVAL)
-
-                self.assertEqual(
-                    self._bond_opts_without_mode(bondName),
-                    {'miimon': INTERVAL},
-                )
-
-            finally:
-                bonds.write('-' + bondName)
 
     @staticmethod
     def _bond_opts_without_mode(bond_name):
@@ -377,67 +292,6 @@ class TestNetinfo(TestCaseBase):
         gateway = routes.get_gateway(DUPLICATED_GATEWAY, TEST_IFACE)
         self.assertEqual(gateway, '12.34.56.1')
 
-    @broken_on_ci('IPv6 not supported on travis', name='TRAVIS_CI')
-    @attr(type='integration')
-    @ValidateRunningAsRoot
-    def test_ip_info(self):
-        IPV4_ADDR1 = '192.168.99.2'
-        IPV4_GATEWAY1 = '192.168.99.1'
-        IPV4_ADDR2 = '192.168.199.2'
-        IPV4_GATEWAY2 = '192.168.199.1'
-        IPV4_ADDR3 = '192.168.200.2'
-        IPV4_NETMASK = '255.255.255.0'
-        IPV4_PREFIX_LENGTH = 24
-        IPV6_ADDR = '2607:f0d0:1002:51::4'
-        IPV6_PREFIX_LENGTH = 64
-
-        IPV4_ADDR1_CIDR = self._cidr_form(IPV4_ADDR1, IPV4_PREFIX_LENGTH)
-        IPV4_ADDR2_CIDR = self._cidr_form(IPV4_ADDR2, IPV4_PREFIX_LENGTH)
-        IPV4_ADDR3_CIDR = self._cidr_form(IPV4_ADDR3, 32)
-        IPV6_ADDR_CIDR = self._cidr_form(IPV6_ADDR, IPV6_PREFIX_LENGTH)
-
-        with dummy_device() as device:
-            with waitfor.waitfor_ipv4_addr(device, address=IPV4_ADDR1_CIDR):
-                ipwrapper.addrAdd(device, IPV4_ADDR1, IPV4_PREFIX_LENGTH)
-            with waitfor.waitfor_ipv4_addr(device, address=IPV4_ADDR2_CIDR):
-                ipwrapper.addrAdd(device, IPV4_ADDR2, IPV4_PREFIX_LENGTH)
-            with waitfor.waitfor_ipv6_addr(device, address=IPV6_ADDR_CIDR):
-                ipwrapper.addrAdd(
-                    device, IPV6_ADDR, IPV6_PREFIX_LENGTH, family=6
-                )
-
-            # 32 bit addresses are reported slashless by netlink
-            with waitfor.waitfor_ipv4_addr(device, address=IPV4_ADDR3):
-                ipwrapper.addrAdd(device, IPV4_ADDR3, 32)
-
-            self.assertEqual(
-                addresses.getIpInfo(device),
-                (
-                    IPV4_ADDR1,
-                    IPV4_NETMASK,
-                    [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
-                    [IPV6_ADDR_CIDR],
-                ),
-            )
-            self.assertEqual(
-                addresses.getIpInfo(device, ipv4_gateway=IPV4_GATEWAY1),
-                (
-                    IPV4_ADDR1,
-                    IPV4_NETMASK,
-                    [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
-                    [IPV6_ADDR_CIDR],
-                ),
-            )
-            self.assertEqual(
-                addresses.getIpInfo(device, ipv4_gateway=IPV4_GATEWAY2),
-                (
-                    IPV4_ADDR2,
-                    IPV4_NETMASK,
-                    [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
-                    [IPV6_ADDR_CIDR],
-                ),
-            )
-
     def test_netinfo_ignoring_link_scope_ip(self):
         v4_link = {
             'family': 'inet',
@@ -474,71 +328,8 @@ class TestNetinfo(TestCaseBase):
         self.assertEqual(ipv4addrs, ['192.0.2.2/24'])
         self.assertEqual(ipv6addrs, ['ee80::5054:ff:fea3:f9f3/64'])
 
-    def _cidr_form(self, ip_addr, prefix_length):
-        return '{}/{}'.format(ip_addr, prefix_length)
-
     def test_parse_bond_options(self):
         self.assertEqual(
             bonding.parse_bond_options('mode=4 miimon=100'),
             {'mode': '4', 'miimon': '100'},
         )
-
-
-@attr(type='integration')
-class TestIPv6Addresses(TestCaseBase):
-    @ValidateRunningAsRoot
-    def test_local_auto_when_ipv6_is_disabled(self):
-        with dummy_device() as dev:
-            sysctl.disable_ipv6(dev)
-            self.assertFalse(addresses.is_ipv6_local_auto(dev))
-
-    @broken_on_ci('IPv6 not supported on travis', name='TRAVIS_CI')
-    @ValidateRunningAsRoot
-    def test_local_auto_without_router_advertisement_server(self):
-        with dummy_device() as dev:
-            self.assertTrue(addresses.is_ipv6_local_auto(dev))
-
-    @broken_on_ci('IPv6 not supported on travis', name='TRAVIS_CI')
-    @ValidateRunningAsRoot
-    def test_local_auto_with_static_address_without_ra_server(self):
-        with dummy_device() as dev:
-            ipwrapper.addrAdd(dev, '2001::88', '64', family=6)
-            ip_addrs = addresses.getIpAddrs()[dev]
-            self.assertTrue(addresses.is_ipv6_local_auto(dev))
-            self.assertEqual(2, len(ip_addrs), ip_addrs)
-            self.assertTrue(addresses.is_ipv6(ip_addrs[0]))
-            self.assertTrue(not addresses.is_dynamic(ip_addrs[0]))
-
-    @broken_on_ci(
-        'Using dnsmasq for ipv6 RA is unstable on CI', name='OVIRT_CI'
-    )
-    @broken_on_ci('IPv6 not supported on travis', name='TRAVIS_CI')
-    @ValidateRunningAsRoot
-    def test_local_auto_with_dynamic_address_from_ra(self):
-        IPV6_NETADDRESS = '2001:1:1:1'
-        IPV6_NETPREFIX_LEN = '64'
-        with veth_pair() as (server, client):
-            ipwrapper.addrAdd(
-                server, IPV6_NETADDRESS + '::1', IPV6_NETPREFIX_LEN, family=6
-            )
-            ipwrapper.linkSet(server, ['up'])
-            with dnsmasq_run(server, ipv6_slaac_prefix=IPV6_NETADDRESS + '::'):
-                with wait_for_ipv6(client):
-                    ipwrapper.linkSet(client, ['up'])
-
-                # Expecting link and global addresses on client iface
-                # The addresses are given randomly, so we sort them
-                ip_addrs = sorted(
-                    addresses.getIpAddrs()[client],
-                    key=lambda ip: ip['address'],
-                )
-                self.assertEqual(2, len(ip_addrs), ip_addrs)
-
-                self.assertTrue(addresses.is_dynamic(ip_addrs[0]))
-                self.assertEqual('global', ip_addrs[0]['scope'])
-                self.assertEqual(
-                    IPV6_NETADDRESS,
-                    ip_addrs[0]['address'][: len(IPV6_NETADDRESS)],
-                )
-
-                self.assertEqual('link', ip_addrs[1]['scope'])

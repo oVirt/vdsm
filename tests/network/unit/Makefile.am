@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,4 +25,8 @@ vdsmnetworkunittestsdir = ${vdsmtestsdir}/network/unit
 dist_vdsmnetworkunittests_PYTHON = \
 	__init__.py \
 	$(srcdir)/*_test.py \
+	$(NULL)
+
+dist_vdsmnetworkunittests_DATA = \
+	netmaskconversions \
 	$(NULL)
