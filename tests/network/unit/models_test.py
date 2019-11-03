@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2013, IBM Corporation
-# Copyright (C) 2013-2017, Red Hat, Inc.
+# Copyright (C) 2013-2019, Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +23,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from nose.plugins.attrib import attr
-
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network import errors
 from vdsm.network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
@@ -33,7 +31,6 @@ from vdsm.network.models import _nicSort
 from testlib import VdsmTestCase as TestCaseBase
 
 
-@attr(type='unit')
 class TestNetmodels(TestCaseBase):
     def testIsVlanIdValid(self):
         vlanIds = ('badValue', Vlan.MAX_ID + 1)
