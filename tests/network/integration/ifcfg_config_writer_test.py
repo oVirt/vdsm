@@ -33,71 +33,79 @@ import pytest
 from vdsm.network.configurators import ifcfg
 
 from network.compat import mock
-from testlib import VdsmTestCase as TestCaseBase
 
 
-class TestIfcfgConfigWriter(TestCaseBase):
+@pytest.fixture
+def tempdir():
+    temp_dir = tempfile.mkdtemp()
+    yield temp_dir
+    shutil.rmtree(temp_dir)
+
+
+@pytest.fixture
+def files(tempdir):
+    return tuple(
+        (os.path.join(tempdir, bn), init, makeDirty)
+        for bn, init, makeDirty in (
+            ('ifcfg-eth0', TestIfcfgConfigWriter.INITIAL_CONTENT, True),
+            ('ifcfg-eth1', None, True),
+            ('ifcfg-eth2', None, False),
+            ('ifcfg-eth3', TestIfcfgConfigWriter.INITIAL_CONTENT, False),
+        )
+    )
+
+
+@pytest.fixture
+def config_writer():
+    return ifcfg.ConfigWriter()
+
+
+class TestIfcfgConfigWriter(object):
     INITIAL_CONTENT = '123-testing'
     SOME_GARBAGE = '456'
 
-    def _createFiles(self):
-        for fn, content, _ in self._files:
+    def _createFiles(self, files):
+        for fn, content, _ in files:
             if content is not None:
                 with open(fn, 'w') as f:
                     f.write(content)
 
-    def _makeFilesDirty(self):
-        for fn, _, makeDirty in self._files:
+    def _makeFilesDirty(self, files):
+        for fn, _, makeDirty in files:
             if makeDirty:
                 with open(fn, 'w') as f:
                     f.write(self.SOME_GARBAGE)
 
-    def _assertFilesRestored(self):
-        for fn, content, _ in self._files:
+    def _assertFilesRestored(self, files):
+        for fn, content, _ in files:
             if content is None:
-                self.assertFalse(os.path.exists(fn))
+                assert not os.path.exists(fn)
             else:
                 with open(fn) as f:
                     restoredContent = f.read()
-                self.assertEqual(content, restoredContent)
+                assert content == restoredContent
 
-    def setUp(self):
-        self._tempdir = tempfile.mkdtemp()
-        self._files = tuple(
-            (os.path.join(self._tempdir, bn), init, makeDirty)
-            for bn, init, makeDirty in (
-                ('ifcfg-eth0', self.INITIAL_CONTENT, True),
-                ('ifcfg-eth1', None, True),
-                ('ifcfg-eth2', None, False),
-                ('ifcfg-eth3', self.INITIAL_CONTENT, False),
-            )
-        )
-        self._cw = ifcfg.ConfigWriter()
+    def testAtomicRestore(self, config_writer, files):
+        self._createFiles(files)
 
-    def tearDown(self):
-        shutil.rmtree(self._tempdir)
+        for fn, _, _ in files:
+            config_writer._atomicBackup(fn)
 
-    def testAtomicRestore(self):
-        self._createFiles()
+        self._makeFilesDirty(files)
 
-        for fn, _, _ in self._files:
-            self._cw._atomicBackup(fn)
-
-        self._makeFilesDirty()
-
-        self._cw.restoreAtomicBackup()
-        self._assertFilesRestored()
+        config_writer.restoreAtomicBackup()
+        self._assertFilesRestored(files)
 
     @mock.patch.object(ifcfg, 'ifdown', lambda x: 0)
     @mock.patch.object(ifcfg, '_exec_ifup', lambda *x: 0)
-    def testPersistentBackup(self):
+    def testPersistentBackup(self, config_writer, tempdir, files):
 
-        netback_path = os.path.join(self._tempdir, 'netback')
-        ifcfg_prefix = os.path.join(self._tempdir, 'ifcfg-')
+        netback_path = os.path.join(tempdir, 'netback')
+        ifcfg_prefix = os.path.join(tempdir, 'ifcfg-')
         netback_mock = mock.patch.object(
             ifcfg, 'NET_CONF_BACK_DIR', netback_path
         )
-        netdir_mock = mock.patch.object(ifcfg, 'NET_CONF_DIR', self._tempdir)
+        netdir_mock = mock.patch.object(ifcfg, 'NET_CONF_DIR', tempdir)
         netpref_mock = mock.patch.object(ifcfg, 'NET_CONF_PREF', ifcfg_prefix)
         with netback_mock, netdir_mock, netpref_mock:
             # after vdsm package is installed, the 'vdsm' account will be
@@ -108,13 +116,13 @@ class TestIfcfgConfigWriter(TestCaseBase):
                     "install vdsm package to create the vdsm user"
                 )
 
-            self._createFiles()
+            self._createFiles(files)
 
-            for fn, _, _ in self._files:
-                self._cw._persistentBackup(fn)
+            for fn, _, _ in files:
+                config_writer._persistentBackup(fn)
 
-            self._makeFilesDirty()
+            self._makeFilesDirty(files)
 
-            self._cw.restorePersistentBackup()
+            config_writer.restorePersistentBackup()
 
-            self._assertFilesRestored()
+            self._assertFilesRestored(files)
