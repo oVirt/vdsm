@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,34 +18,25 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+"""
+Common fixtures that can be used without importing anything.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 
-import tempfile
-
-from testlib import VdsmTestCase
-from testlib import permutations, expandPermutations
-
-from vdsm import osinfo
+import pytest
 
 
-@expandPermutations
-class TestOsinfo(VdsmTestCase):
+@pytest.fixture
+def fake_executeable(tmpdir):
+    """
+    Prepares shell script which can be used by another fixture to fake a binary
+    that is called in the test. Typical usage is to fake the binary output in
+    the script.
+    """
+    path = tmpdir.join("fake-executable")
+    path.ensure()
+    path.chmod(0o755)
 
-    @permutations([
-        [b'', ''],
-        [b'\n', ''],
-        [b'a', 'a'],
-        [b'a\n', 'a'],
-        [b'a\nb', 'a']
-    ])
-    def test_kernel_args(self, test_input, expected_result):
-        with tempfile.NamedTemporaryFile() as f:
-            f.write(test_input)
-            f.flush()
-            self.assertEqual(osinfo.kernel_args(f.name),
-                             expected_result)
-
-    def test_package_versions(self):
-        pkgs = osinfo.package_versions()
-        self.assertIn('kernel', pkgs)
+    return path

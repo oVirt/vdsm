@@ -7257,6 +7257,12 @@ types:
             type: boolean
             added: '4.4'
 
+        -   defaultvalue: null
+            description: Boot partition UUID
+            name: boot_uuid
+            type: string
+            added: '4.4'
+
         type: object
 
     VdsmNetworkCapabilities: &VdsmNetworkCapabilities

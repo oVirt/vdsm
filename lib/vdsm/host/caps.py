@@ -146,6 +146,10 @@ def get():
     caps['vncEncrypted'] = _isVncEncrypted()
     caps['backupEnabled'] = backup.backup_enabled
     caps['fipsEnabled'] = _getFipsEnabled()
+    try:
+        caps['boot_uuid'] = osinfo.boot_uuid()
+    except Exception:
+        logging.exception("Can not find boot uuid")
     caps['tscFrequency'] = _getTscFrequency()
     caps['tscScaling'] = _getTscScaling()
 

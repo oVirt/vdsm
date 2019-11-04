@@ -33,6 +33,7 @@ import six
 
 from vdsm import utils
 from vdsm.common import cache
+from vdsm.common import commands
 from vdsm.common import cpuarch
 from vdsm.common import supervdsm
 
@@ -60,6 +61,7 @@ except ImportError:
 KernelFlags = namedtuple('KernelFlags', 'version, realtime')
 NestedVirtualization = namedtuple('NestedVirtualization',
                                   'enabled, kvm_module')
+_FINDMNT = "findmnt"
 
 
 class OSName:
@@ -359,3 +361,14 @@ def nested_virtualization():
 
 def kernel_features():
     return supervdsm.getProxy().get_cpu_vulnerabilities()
+
+
+@cache.memoized
+def boot_uuid():
+    """
+    Get the OS boot partition UUID
+    """
+    cmd = [_FINDMNT, "--output=UUID", "--noheadings", "--target=/boot"]
+
+    output = commands.run(cmd)
+    return output.decode("utf-8").strip()

@@ -79,7 +79,6 @@ test_modules = \
 	monkeypatch_test.py \
 	mom_test.py \
 	mompolicy_test.py \
-	osinfo_test.py \
 	osutils_test.py \
 	passwords_test.py \
 	permutation_test.py \
