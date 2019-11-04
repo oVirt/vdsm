@@ -19,6 +19,8 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
+
 import os
 import errno
 import time
@@ -769,4 +771,4 @@ def wait_timeout(monitor_interval):
     seconds, keeping the behavior in runtime the same as it was in the last 8
     years, while allowing shorter times for testing.
     """
-    return monitor_interval * 3 / 2
+    return monitor_interval * 1.5

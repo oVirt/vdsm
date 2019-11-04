@@ -454,8 +454,12 @@ class TestChecksum:
 
 class TestWaitTimeout:
 
-    def test_production_config(self):
-        assert pytest.approx(3.0) == sm.wait_timeout(2)
-
-    def test_testing_config(self):
-        assert pytest.approx(0.15) == sm.wait_timeout(0.1)
+    @pytest.mark.parametrize("monitor_interval, expected_timeout", [
+        (2, 3.0),     # production config
+        (3, 4.5),     # production config
+        (0.1, 0.15),  # testing config
+        (0.2, 0.3),   # testing config
+    ])
+    def test_config(self, monitor_interval, expected_timeout):
+        actual_timeout = sm.wait_timeout(monitor_interval)
+        assert actual_timeout == pytest.approx(expected_timeout)
