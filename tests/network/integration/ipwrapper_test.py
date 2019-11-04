@@ -32,39 +32,34 @@ from vdsm.network.netlink import monitor
 from vdsm.network.netlink.libnl import IfaceStatus
 
 from ..nettestlib import Bridge, bridge_device
-from testlib import VdsmTestCase as TestCaseBase
 
 
-class TestLinks(TestCaseBase):
-    def testGetLink(self):
-        with bridge_device() as bridge:
-            link = ipwrapper.getLink(bridge.devName)
-            self.assertTrue(link.isBRIDGE)
-            self.assertTrue(link.oper_up)
-            self.assertEqual(link.master, None)
-            self.assertEqual(link.name, bridge.devName)
+@pytest.fixture
+def bridge0():
+    with bridge_device() as br:
+        yield br
+
+
+class TestLinks(object):
+    def testGetLink(self, bridge0):
+        link = ipwrapper.getLink(bridge0.devName)
+        assert link.isBRIDGE
+        assert link.oper_up
+        assert link.master is None
+        assert link.name == bridge0.devName
 
     def test_missing_bridge_removal_fails(self):
-        with self.assertRaises(ipwrapper.IPRoute2NoDeviceError):
+        with pytest.raises(ipwrapper.IPRoute2NoDeviceError):
             ipwrapper.linkDel('missing_bridge')
 
 
-class TestDrvinfo(TestCaseBase):
-    def setUp(self):
-        self._bridge = Bridge()
-        self._bridge.addDevice()
+class TestDrvinfo(object):
+    def testBridgeEthtoolDrvinfo(self, bridge0):
+        bridge_name = bridge0.devName
+        assert ethtool.driver_name(bridge_name) == ipwrapper.LinkType.BRIDGE
 
-    def tearDown(self):
-        self._bridge.delDevice()
-
-    def testBridgeEthtoolDrvinfo(self):
-        self.assertEqual(
-            ethtool.driver_name(self._bridge.devName),
-            ipwrapper.LinkType.BRIDGE,
-        )
-
-    def testEnablePromisc(self):
-        link = ipwrapper.getLink(self._bridge.devName)
+    def testEnablePromisc(self, bridge0):
+        link = ipwrapper.getLink(bridge0.devName)
         with monitor.Monitor(timeout=2, silent_timeout=True) as mon:
             link.promisc = True
             for event in mon:
@@ -75,17 +70,17 @@ class TestDrvinfo(TestCaseBase):
                     return
         self.fail("Could not enable promiscuous mode.")
 
-    def testDisablePromisc(self):
-        ipwrapper.getLink(self._bridge.devName).promisc = True
-        ipwrapper.getLink(self._bridge.devName).promisc = False
-        self.assertFalse(
-            ipwrapper.getLink(self._bridge.devName).promisc,
-            "Could not disable promiscuous mode.",
-        )
+    def testDisablePromisc(self, bridge0):
+        ipwrapper.getLink(bridge0.devName).promisc = True
+        ipwrapper.getLink(bridge0.devName).promisc = False
+        assert not ipwrapper.getLink(
+            bridge0.devName
+        ).promisc, "Could not disable promiscuous mode."
 
 
-class TestUnicodeDrvinfo(TestCaseBase):
-    def setUp(self):
+class TestUnicodeDrvinfo(object):
+    @pytest.fixture
+    def unicode_bridge(self):
         if six.PY3:
             pytest.skip(
                 'Passing non-ascii chars to cmdline is broken in Python 3'
@@ -94,14 +89,13 @@ class TestUnicodeDrvinfo(TestCaseBase):
         # First 3 Hebrew letters, in native string format
         # See http://unicode.org/charts/PDF/U0590.pdf
         bridge_name = py2to3.to_str(b'\xd7\x90\xd7\x91\xd7\x92')
-        self._bridge = Bridge(bridge_name)
-        self._bridge.addDevice()
+        br = Bridge(bridge_name)
+        br.addDevice()
+        try:
+            yield br
+        finally:
+            br.delDevice()
 
-    def tearDown(self):
-        self._bridge.delDevice()
-
-    def testUtf8BridgeEthtoolDrvinfo(self):
-        self.assertEqual(
-            ethtool.driver_name(self._bridge.devName),
-            ipwrapper.LinkType.BRIDGE,
-        )
+    def testUtf8BridgeEthtoolDrvinfo(self, unicode_bridge):
+        driver_name = ethtool.driver_name(unicode_bridge.devName)
+        assert driver_name == ipwrapper.LinkType.BRIDGE
