@@ -25,7 +25,6 @@ import os
 import tempfile
 
 from network.compat import mock
-from testlib import VdsmTestCase
 
 from vdsm.network import netconfpersistence as netconf
 from vdsm.network import netupgrade
@@ -35,7 +34,7 @@ from vdsm.network import netupgrade
 @mock.patch.object(
     netupgrade.ovs_info, 'is_ovs_service_running', lambda: False
 )
-class TestNetUpgradeVolatileRunConfig(VdsmTestCase):
+class TestNetUpgradeVolatileRunConfig(object):
     def test_upgrade_volatile_running_config(self):
 
         with create_running_config(volatile=True) as vol_rconfig:
@@ -43,8 +42,8 @@ class TestNetUpgradeVolatileRunConfig(VdsmTestCase):
                 vol_rconfig.save()
                 netupgrade.upgrade()
 
-                self.assertFalse(vol_rconfig.config_exists())
-                self.assertTrue(pers_rconfig.config_exists())
+                assert not vol_rconfig.config_exists()
+                assert pers_rconfig.config_exists()
 
 
 @contextmanager

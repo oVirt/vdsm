@@ -25,8 +25,6 @@ import os
 
 import pytest
 
-from testlib import VdsmTestCase
-
 from ..nettestlib import dummy_device, dummy_devices, preserve_default_route
 from ..nettestlib import nm_is_running
 
@@ -55,21 +53,21 @@ ipv6_broken_on_travis_ci = pytest.mark.skipif(
 )
 
 
-class TestAddressSetup(VdsmTestCase):
+class TestAddressSetup(object):
     def test_add_ipv4_address(self):
         ip = address.IPv4(address=IPV4_A_ADDRESS, netmask=IPV4_NETMASK)
         with dummy_device() as nic:
             address.add(nic, ipv4=ip, ipv6=None)
             addr, netmask, _, _ = address.addrs_info(nic)
-            self.assertEqual(IPV4_A_ADDRESS, addr)
-            self.assertEqual(IPV4_NETMASK, netmask)
+            assert IPV4_A_ADDRESS == addr
+            assert IPV4_NETMASK == netmask
 
     def test_add_ipv6_address(self):
         ip = address.IPv6(address=IPV6_A_WITH_PREFIXLEN)
         with dummy_device() as nic:
             address.add(nic, ipv4=None, ipv6=ip)
             _, _, _, ipv6addresses = address.addrs_info(nic)
-            self.assertEqual(IPV6_A_WITH_PREFIXLEN, ipv6addresses[0])
+            assert IPV6_A_WITH_PREFIXLEN == ipv6addresses[0]
 
     def test_add_ipv4_and_ipv6_address(self):
         ipv4 = address.IPv4(address=IPV4_A_ADDRESS, netmask=IPV4_NETMASK)
@@ -77,9 +75,9 @@ class TestAddressSetup(VdsmTestCase):
         with dummy_device() as nic:
             address.add(nic, ipv4=ipv4, ipv6=ipv6)
             addr, netmask, _, ipv6addresses = address.addrs_info(nic)
-            self.assertEqual(IPV4_A_ADDRESS, addr)
-            self.assertEqual(IPV4_NETMASK, netmask)
-            self.assertEqual(IPV6_A_WITH_PREFIXLEN, ipv6addresses[0])
+            assert IPV4_A_ADDRESS == addr
+            assert IPV4_NETMASK == netmask
+            assert IPV6_A_WITH_PREFIXLEN == ipv6addresses[0]
 
     def test_add_ipv4_address_with_gateway(self):
         ip = address.IPv4(
@@ -91,8 +89,8 @@ class TestAddressSetup(VdsmTestCase):
         with dummy_device() as nic:
             with preserve_default_route():
                 address.add(nic, ipv4=ip, ipv6=None)
-                self.assertTrue(
-                    routes.is_default_route(IPV4_GATEWAY, routes.get_routes())
+                assert routes.is_default_route(
+                    IPV4_GATEWAY, routes.get_routes()
                 )
 
     def test_add_ipv6_address_with_gateway(self):
@@ -104,7 +102,7 @@ class TestAddressSetup(VdsmTestCase):
         with dummy_device() as nic:
             with preserve_default_route():
                 address.add(nic, ipv4=None, ipv6=ip)
-                self.assertTrue(routes.is_ipv6_default_route(IPV6_GATEWAY))
+                assert routes.is_ipv6_default_route(IPV6_GATEWAY)
 
     def test_add_ipv4_and_ipv6_address_with_gateways(self):
         ipv4 = address.IPv4(
@@ -122,10 +120,10 @@ class TestAddressSetup(VdsmTestCase):
             with preserve_default_route():
                 address.add(nic, ipv4=ipv4, ipv6=ipv6)
                 addr, netmask, _, ipv6addresses = address.addrs_info(nic)
-                self.assertTrue(
-                    routes.is_default_route(IPV4_GATEWAY, routes.get_routes())
+                assert routes.is_default_route(
+                    IPV4_GATEWAY, routes.get_routes()
                 )
-                self.assertTrue(routes.is_ipv6_default_route(IPV6_GATEWAY))
+                assert routes.is_ipv6_default_route(IPV6_GATEWAY)
 
     def test_add_ipv6_gateway_given_existing_ipv4_and_ipv6_gateways(self):
         ipv4 = address.IPv4(
@@ -145,13 +143,13 @@ class TestAddressSetup(VdsmTestCase):
                 address.add(nic, ipv4=None, ipv6=ipv6)
 
                 address.add(nic, ipv4=None, ipv6=ipv6)
-                self.assertTrue(
-                    routes.is_default_route(IPV4_GATEWAY, routes.get_routes())
+                assert routes.is_default_route(
+                    IPV4_GATEWAY, routes.get_routes()
                 )
-                self.assertTrue(routes.is_ipv6_default_route(IPV6_GATEWAY))
+                assert routes.is_ipv6_default_route(IPV6_GATEWAY)
 
 
-class TestIPAddress(VdsmTestCase):
+class TestIPAddress(object):
     IPAddress = address.driver(address.Drivers.IPROUTE2)
 
     def test_add_delete_ipv4(self):
@@ -196,7 +194,7 @@ class TestIPAddress(VdsmTestCase):
         self._test_add_with_non_existing_device(IPV6_A_WITH_PREFIXLEN)
 
     def _test_add_with_non_existing_device(self, ip):
-        with self.assertRaises(address.IPAddressAddError):
+        with pytest.raises(address.IPAddressAddError):
             TestIPAddress.IPAddress.add(
                 address.IPAddressData(ip, device='tim the enchanter')
             )
@@ -209,7 +207,7 @@ class TestIPAddress(VdsmTestCase):
 
     def _test_delete_non_existing_ip(self, ip):
         with dummy_device() as nic:
-            with self.assertRaises(address.IPAddressDeleteError):
+            with pytest.raises(address.IPAddressDeleteError):
                 TestIPAddress.IPAddress.delete(
                     address.IPAddressData(ip, device=nic)
                 )
@@ -290,8 +288,8 @@ class TestIPAddress(VdsmTestCase):
 
     def _assert_address_in(self, address_with_prefixlen, addresses):
         addresses_list = [addr.address_with_prefixlen for addr in addresses]
-        self.assertIn(address_with_prefixlen, addresses_list)
+        assert address_with_prefixlen in addresses_list
 
     def _assert_address_not_in(self, address_with_prefixlen, addresses):
         addresses_list = [addr.address_with_prefixlen for addr in addresses]
-        self.assertNotIn(address_with_prefixlen, addresses_list)
+        assert address_with_prefixlen not in addresses_list

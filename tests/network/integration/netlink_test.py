@@ -33,7 +33,7 @@ from vdsm.network.netlink import NLSocketPool
 from vdsm.network.netlink import monitor
 from vdsm.network.sysctl import is_disabled_ipv6
 
-from testlib import start_thread, VdsmTestCase as TestCaseBase
+from testlib import start_thread
 
 IP_ADDRESS = '192.0.2.1'
 IP_CIDR = '24'
@@ -42,7 +42,7 @@ IP_CIDR = '24'
 running_on_ovirt_ci = 'OVIRT_CI' in os.environ
 
 
-class TestNetlinkEventMonitor(TestCaseBase):
+class TestNetlinkEventMonitor(object):
 
     TIMEOUT = 5
 
@@ -82,7 +82,7 @@ class TestNetlinkEventMonitor(TestCaseBase):
             dummy.remove()
 
         found = any(event.get('name') == dummy_name for event in mon)
-        self.assertTrue(found, 'Expected event was not caught.')
+        assert found, 'Expected event was not caught.'
 
     def test_event_groups(self):
         with monitor.Monitor(
@@ -98,21 +98,18 @@ class TestNetlinkEventMonitor(TestCaseBase):
                 dummy.remove()
 
         for event in mon_a:
-            self.assertIn(
-                '_addr',
-                event['event'],
+            assert '_addr' in event['event'], (
                 "Caught event '%s' is not "
-                "related to address." % event['event'],
+                "related to address." % event['event']
             )
 
         for event in mon_l_r:
             link_or_route = (
                 '_link' in event['event'] or '_route' in event['event']
             )
-            self.assertTrue(
-                link_or_route,
+            assert link_or_route, (
                 "Caught event '%s' is not related "
-                "to link or route." % event['event'],
+                "to link or route." % event['event']
             )
 
     def test_iteration(self):
@@ -127,7 +124,7 @@ class TestNetlinkEventMonitor(TestCaseBase):
             dummy.remove()
             next(iterator)
 
-        with self.assertRaises(StopIteration):
+        with pytest.raises(StopIteration):
             while True:
                 next(iterator)
 
@@ -184,9 +181,7 @@ class TestNetlinkEventMonitor(TestCaseBase):
                     if len(expected_events) == 0:
                         break
 
-        self.assertEqual(
-            0,
-            len(expected_events),
+        assert 0 == len(expected_events), (
             'Expected events have not '
             'been caught (in the right order).\n'
             'Expected:\n%s.\nCaught:\n%s.'
@@ -197,23 +192,23 @@ class TestNetlinkEventMonitor(TestCaseBase):
         )
 
     def test_timeout(self):
-        with self.assertRaises(monitor.MonitorError):
+        with pytest.raises(monitor.MonitorError):
             try:
                 with monitor.Monitor(timeout=0.01) as mon:
                     for event in mon:
                         pass
             except monitor.MonitorError as e:
-                self.assertEqual(e.args[0], monitor.E_TIMEOUT)
+                assert e.args[0] == monitor.E_TIMEOUT
                 raise
 
-        self.assertTrue(mon.is_stopped())
+        assert mon.is_stopped()
 
     def test_timeout_silent(self):
         with monitor.Monitor(timeout=0.01, silent_timeout=True) as mon:
             for event in mon:
                 pass
 
-        self.assertTrue(mon.is_stopped())
+        assert mon.is_stopped()
 
     def test_timeout_not_triggered(self):
         time_start = monotonic_time()
@@ -225,24 +220,23 @@ class TestNetlinkEventMonitor(TestCaseBase):
             for event in mon:
                 break
 
-        self.assertTrue((monotonic_time() - time_start) <= self.TIMEOUT)
-        self.assertTrue(mon.is_stopped())
+        assert (monotonic_time() - time_start) <= self.TIMEOUT
+        assert mon.is_stopped()
 
     def test_passing_invalid_groups(self):
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             monitor.Monitor(groups=('blablabla',))
-        with self.assertNotRaises():
-            monitor.Monitor(groups=('link',))
+        monitor.Monitor(groups=('link',))
 
 
-class TestSocketPool(TestCaseBase):
+class TestSocketPool(object):
     def test_reuse_socket_per_thread(self):
         # The same thread should always get the same socket. Otherwise any
         # recusion in the code will lead to a deadlock.
         pool = NLSocketPool(3)
         with pool.socket() as s1:
             with pool.socket() as s2:
-                self.assertIs(s1, s2)
+                assert s1 is s2
 
 
 def _is_subdict(subset, superset):

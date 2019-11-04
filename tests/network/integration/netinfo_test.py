@@ -36,7 +36,6 @@ from vdsm.network.netinfo import addresses, bonding, nics
 from vdsm.network.netlink import waitfor
 
 from network.compat import mock
-from testlib import VdsmTestCase as TestCaseBase
 
 from ..nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
 
@@ -61,15 +60,15 @@ def bonding_available(bond_module):
     is_bonding_available = bond_module
 
 
-class TestNetinfo(TestCaseBase):
+class TestNetinfo(object):
     def test_speed_on_an_iface_that_does_not_support_speed(self):
-        self.assertEqual(nic.speed('lo'), 0)
+        assert nic.speed('lo') == 0
 
     def test_speed_in_range(self):
         for d in nics.nics():
             s = nic.speed(d)
-            self.assertFalse(s < 0)
-            self.assertTrue(s in ETHTOOL_SPEEDS or s == 0)
+            assert not s < 0
+            assert s in ETHTOOL_SPEEDS or s == 0
 
     @mock.patch.object(ipwrapper.Link, '_fakeNics', ['veth_*', 'dummy_*'])
     def test_fake_nics(self):
@@ -77,21 +76,17 @@ class TestNetinfo(TestCaseBase):
             with dummy_device() as d1:
                 fakes = set([d1, v1a, v1b])
                 _nics = nics.nics()
-                self.assertTrue(
-                    fakes.issubset(_nics),
-                    'Fake devices %s are not listed in nics '
-                    '%s' % (fakes, _nics),
-                )
+            errmsg = 'Fake devices {} are not listed in nics {}'
+            assert fakes.issubset(_nics), errmsg.format(fakes, _nics)
 
         with veth_pair(prefix='mehv_') as (v2a, v2b):
             with dummy_device(prefix='mehd_') as d2:
                 hiddens = set([d2, v2a, v2b])
                 _nics = nics.nics()
-                self.assertFalse(
-                    hiddens.intersection(_nics),
-                    'Some of '
-                    'hidden devices %s is shown in nics %s' % (hiddens, _nics),
-                )
+            errmsg = 'Some of hidden devices {} is shown in nics {}'
+            assert not hiddens.intersection(_nics), errmsg.format(
+                hiddens, _nics
+            )
 
     @pytest.mark.xfail(
         condition=running_on_ovirt_ci,
@@ -111,12 +106,10 @@ class TestNetinfo(TestCaseBase):
             bonds.flush()
 
             try:  # no error is anticipated but let's make sure we can clean up
-                self.assertEqual(
-                    self._bond_opts_without_mode(bondName),
-                    {},
+                assert self._bond_opts_without_mode(bondName) == {}, (
                     'This test fails when a new bonding option is added to '
                     'the kernel. Please run vdsm-tool dump-bonding-options` '
-                    'and retest.',
+                    'and retest.'
                 )
 
                 with open(
@@ -124,10 +117,9 @@ class TestNetinfo(TestCaseBase):
                 ) as opt:
                     opt.write(INTERVAL)
 
-                self.assertEqual(
-                    self._bond_opts_without_mode(bondName),
-                    {'miimon': INTERVAL},
-                )
+                assert self._bond_opts_without_mode(bondName) == {
+                    'miimon': INTERVAL
+                }
 
             finally:
                 bonds.write('-' + bondName)
@@ -169,58 +161,49 @@ class TestNetinfo(TestCaseBase):
             with waitfor.waitfor_ipv4_addr(device, address=IPV4_ADDR3):
                 ipwrapper.addrAdd(device, IPV4_ADDR3, 32)
 
-            self.assertEqual(
-                addresses.getIpInfo(device),
-                (
-                    IPV4_ADDR1,
-                    IPV4_NETMASK,
-                    [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
-                    [IPV6_ADDR_CIDR],
-                ),
+            assert addresses.getIpInfo(device) == (
+                IPV4_ADDR1,
+                IPV4_NETMASK,
+                [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
+                [IPV6_ADDR_CIDR],
             )
-            self.assertEqual(
-                addresses.getIpInfo(device, ipv4_gateway=IPV4_GATEWAY1),
-                (
-                    IPV4_ADDR1,
-                    IPV4_NETMASK,
-                    [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
-                    [IPV6_ADDR_CIDR],
-                ),
+            assert addresses.getIpInfo(device, ipv4_gateway=IPV4_GATEWAY1) == (
+                IPV4_ADDR1,
+                IPV4_NETMASK,
+                [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
+                [IPV6_ADDR_CIDR],
             )
-            self.assertEqual(
-                addresses.getIpInfo(device, ipv4_gateway=IPV4_GATEWAY2),
-                (
-                    IPV4_ADDR2,
-                    IPV4_NETMASK,
-                    [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
-                    [IPV6_ADDR_CIDR],
-                ),
+            assert addresses.getIpInfo(device, ipv4_gateway=IPV4_GATEWAY2) == (
+                IPV4_ADDR2,
+                IPV4_NETMASK,
+                [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
+                [IPV6_ADDR_CIDR],
             )
 
     def _cidr_form(self, ip_addr, prefix_length):
         return '{}/{}'.format(ip_addr, prefix_length)
 
 
-class TestIPv6Addresses(TestCaseBase):
+class TestIPv6Addresses(object):
     def test_local_auto_when_ipv6_is_disabled(self):
         with dummy_device() as dev:
             sysctl.disable_ipv6(dev)
-            self.assertFalse(addresses.is_ipv6_local_auto(dev))
+            assert not addresses.is_ipv6_local_auto(dev)
 
     @ipv6_broken_on_travis_ci
     def test_local_auto_without_router_advertisement_server(self):
         with dummy_device() as dev:
-            self.assertTrue(addresses.is_ipv6_local_auto(dev))
+            assert addresses.is_ipv6_local_auto(dev)
 
     @ipv6_broken_on_travis_ci
     def test_local_auto_with_static_address_without_ra_server(self):
         with dummy_device() as dev:
             ipwrapper.addrAdd(dev, '2001::88', '64', family=6)
             ip_addrs = addresses.getIpAddrs()[dev]
-            self.assertTrue(addresses.is_ipv6_local_auto(dev))
-            self.assertEqual(2, len(ip_addrs), ip_addrs)
-            self.assertTrue(addresses.is_ipv6(ip_addrs[0]))
-            self.assertTrue(not addresses.is_dynamic(ip_addrs[0]))
+            assert addresses.is_ipv6_local_auto(dev)
+            assert 2 == len(ip_addrs), ip_addrs
+            assert addresses.is_ipv6(ip_addrs[0])
+            assert not addresses.is_dynamic(ip_addrs[0])
 
     @pytest.mark.skipif(
         running_on_ovirt_ci,
@@ -245,13 +228,11 @@ class TestIPv6Addresses(TestCaseBase):
                     addresses.getIpAddrs()[client],
                     key=lambda ip: ip['address'],
                 )
-                self.assertEqual(2, len(ip_addrs), ip_addrs)
+                assert 2, len(ip_addrs) == ip_addrs
 
-                self.assertTrue(addresses.is_dynamic(ip_addrs[0]))
-                self.assertEqual('global', ip_addrs[0]['scope'])
-                self.assertEqual(
-                    IPV6_NETADDRESS,
-                    ip_addrs[0]['address'][: len(IPV6_NETADDRESS)],
-                )
+                assert addresses.is_dynamic(ip_addrs[0])
+                assert 'global' == ip_addrs[0]['scope']
+                ip_address = ip_addrs[0]['address'][: len(IPV6_NETADDRESS)]
+                assert IPV6_NETADDRESS == ip_address
 
-                self.assertEqual('link', ip_addrs[1]['scope'])
+                assert 'link' == ip_addrs[1]['scope']

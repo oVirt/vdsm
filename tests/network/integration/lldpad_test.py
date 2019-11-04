@@ -26,34 +26,34 @@ import pytest
 from vdsm.network.link.iface import iface
 from vdsm.network.lldpad import lldptool
 
-from testlib import VdsmTestCase
-
 from ..nettestlib import veth_pair
 from ..nettestlib import enable_lldp_on_ifaces
 from .netintegtestlib import requires_systemctl
 
 
-class TestLldpadReportInteg(VdsmTestCase):
-    @requires_systemctl
-    def setUp(self):
-        if not lldptool.is_lldpad_service_running():
-            pytest.skip('LLDPAD service is not running.')
+@pytest.fixture(scope='module', autouse=True)
+def lldpad_service():
+    if not lldptool.is_lldpad_service_running():
+        pytest.skip('LLDPAD service is not running.')
 
+
+class TestLldpadReportInteg(object):
+    @requires_systemctl
     def test_get_lldp_tlvs(self):
         with veth_pair() as (nic1, nic2):
             iface(nic1).up()
             iface(nic2).up()
             with enable_lldp_on_ifaces((nic1, nic2), rx_only=False):
-                self.assertTrue(lldptool.is_lldp_enabled_on_iface(nic1))
-                self.assertTrue(lldptool.is_lldp_enabled_on_iface(nic2))
+                assert lldptool.is_lldp_enabled_on_iface(nic1)
+                assert lldptool.is_lldp_enabled_on_iface(nic2)
                 tlvs = lldptool.get_tlvs(nic1)
-                self.assertEqual(3, len(tlvs))
+                assert 3 == len(tlvs)
                 expected_ttl_tlv = {
                     'type': 3,
                     'name': 'Time to Live',
                     'properties': {'time to live': '120'},
                 }
-                self.assertEqual(expected_ttl_tlv, tlvs[-1])
+                assert expected_ttl_tlv == tlvs[-1]
 
                 tlvs = lldptool.get_tlvs(nic2)
-                self.assertEqual(3, len(tlvs))
+                assert 3 == len(tlvs)
