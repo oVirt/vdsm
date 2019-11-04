@@ -136,6 +136,12 @@ networkmanager_DATA = \
 	./etc/NetworkManager/conf.d/vdsm.conf \
 	$(NULL)
 
+dracutdir = $(libdir)/dracut/dracut.conf.d
+
+dracut_DATA = \
+	./usr/lib/dracut/dracut.conf.d/99-vdsm_protect_ifcfg.conf \
+	$(NULL)
+
 dhclientmondir = $(sysconfdir)/dhcp/dhclient.d
 dist_dhclientmon_SCRIPTS = \
 	./etc/dhcp/dhclient.d/dhclientmon.sh \
@@ -184,6 +190,7 @@ EXTRA_DIST = \
 	$(modprobe_DATA) \
 	$(modulesload_DATA) \
 	$(networkmanager_DATA) \
+	$(dracut_DATA) \
 	$(sysctl_DATA) \
 	$(vdsmconfrotate_DATA) \
 	$(vdsm_DATA) \
