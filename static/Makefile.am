@@ -136,10 +136,10 @@ networkmanager_DATA = \
 	./etc/NetworkManager/conf.d/vdsm.conf \
 	$(NULL)
 
-dracutdir = $(sysconfdir)/dracut.conf.d
+dracutdir = $(libdir)/dracut/dracut.conf.d
 
 dracut_DATA = \
-	./etc/dracut.conf.d/99-vdsm_protect_ifcfg.conf \
+	./usr/lib/dracut/dracut.conf.d/99-vdsm_protect_ifcfg.conf \
 	$(NULL)
 
 dhclientmondir = $(sysconfdir)/dhcp/dhclient.d
