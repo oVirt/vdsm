@@ -24,7 +24,6 @@ from __future__ import division
 from vdsm.network.lldpad import lldptool
 
 from network.compat import mock
-from testlib import VdsmTestCase
 
 
 LLDP_CHASSIS_ID_TLV = 'Chassis ID TLV\n\tMAC: 01:23:45:67:89:ab'
@@ -81,7 +80,7 @@ End of LLDPDU TLV
 """
 
 
-class TestLldpadReport(VdsmTestCase):
+class TestLldpadReport(object):
     TLVS_REPORT = [
         {
             'type': 1,
@@ -186,7 +185,7 @@ class TestLldpadReport(VdsmTestCase):
     )
     def test_get_single_lldp_tlv(self):
         expected = [self.TLVS_REPORT[0]]
-        self.assertEqual(expected, lldptool.get_tlvs('iface0'))
+        assert expected == lldptool.get_tlvs('iface0')
 
     @mock.patch.object(
         lldptool.cmd,
@@ -206,10 +205,10 @@ class TestLldpadReport(VdsmTestCase):
                 },
             }
         ]
-        self.assertEqual(expected, lldptool.get_tlvs('iface0'))
+        assert expected == lldptool.get_tlvs('iface0')
 
     @mock.patch.object(
         lldptool.cmd, 'exec_sync', lambda x: (0, LLDP_MULTIPLE_TLVS, '')
     )
     def test_get_multiple_lldp_tlvs(self):
-        self.assertEqual(self.TLVS_REPORT, lldptool.get_tlvs('iface0'))
+        assert self.TLVS_REPORT == lldptool.get_tlvs('iface0')

@@ -25,7 +25,6 @@ from contextlib import contextmanager
 import io
 
 from network.compat import mock
-from testlib import VdsmTestCase
 
 from vdsm.network.link import sriov
 
@@ -37,7 +36,7 @@ PCI2 = '0000.1234.1.2'
 NUMVFS = 2
 
 
-class TestSriov(VdsmTestCase):
+class TestSriov(object):
     @mock.patch.object(sriov.netconfpersistence, 'RunningConfig')
     def test_persist_config(self, mock_rconfig):
         sriov.persist_numvfs(PCI1, NUMVFS)
@@ -56,7 +55,7 @@ class TestSriov(VdsmTestCase):
 
         pci_list = sriov.list_sriov_pci_devices()
 
-        self.assertEqual(pci_list, set([PCI1, PCI2]))
+        assert pci_list == set([PCI1, PCI2])
 
     @mock.patch.object(
         sriov,
@@ -72,7 +71,7 @@ class TestSriov(VdsmTestCase):
             DEV0: {'sriov': {'numvfs': 2}},
             DEV1: {'sriov': {'numvfs': 5}},
         }
-        self.assertEqual(new_cfg, expected_new_cfg)
+        assert new_cfg == expected_new_cfg
 
 
 @contextmanager
@@ -89,34 +88,34 @@ def _wait_for_event(*args, **kwargs):
     sriov, 'physical_function_to_pci_address', lambda dev_name: PCI1
 )
 @mock.patch.object(sriov, 'open', create=True)
-class TestSriovNumVfs(VdsmTestCase):
+class TestSriovNumVfs(object):
     @mock.patch.object(sriov, 'get_all_vf_names', lambda pci: [DEV0])
     def test_update_numvfs_1_to_2(self, mock_open):
         fd = _create_fd(mock_open)
         sriov.update_numvfs(PCI1, NUMVFS)
         _assert_open_was_called(mock_open)
-        self.assertEqual(fd.getvalue(), b'0%d' % NUMVFS)
+        assert fd.getvalue() == b'0%d' % NUMVFS
 
     @mock.patch.object(sriov, 'get_all_vf_names', lambda pci: [DEV0, DEV1])
     def test_update_numvfs_2_to_0(self, mock_open):
         fd = _create_fd(mock_open)
         sriov.update_numvfs(PCI1, 0)
         _assert_open_was_called(mock_open)
-        self.assertEqual(fd.getvalue(), b'0')
+        assert fd.getvalue() == b'0'
 
     @mock.patch.object(sriov, 'get_all_vf_names', lambda pci: [])
     def test_update_numvfs_0_to_2(self, mock_open):
         fd = _create_fd(mock_open)
         sriov.update_numvfs(PCI1, NUMVFS)
         _assert_open_was_called(mock_open)
-        self.assertEqual(fd.getvalue(), b'%d' % NUMVFS)
+        assert fd.getvalue() == b'%d' % NUMVFS
 
     @mock.patch.object(sriov, 'get_all_vf_names', lambda pci: [])
     def test_update_numvfs_0_to_0(self, mock_open):
         fd = _create_fd(mock_open)
         sriov.update_numvfs(PCI1, 0)
         _assert_open_was_called(mock_open)
-        self.assertEqual(fd.getvalue(), b'')
+        assert fd.getvalue() == b''
 
 
 def _assert_open_was_called(mock_open):

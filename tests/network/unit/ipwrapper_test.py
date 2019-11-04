@@ -21,15 +21,14 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import pytest
 import six
 
 from vdsm.network.ipwrapper import Route
 from vdsm.network.ipwrapper import Rule
 
-from testlib import VdsmTestCase as TestCaseBase
 
-
-class TestIpwrapper(TestCaseBase):
+class TestIpwrapper(object):
     def testRouteFromText(self):
         _getRouteAttrs = lambda x: (x.network, x.via, x.device, x.table)
         good_routes = {
@@ -80,7 +79,7 @@ class TestIpwrapper(TestCaseBase):
 
         for text, attributes in six.viewitems(good_routes):
             route = Route.fromText(text)
-            self.assertEqual(_getRouteAttrs(route), attributes)
+            assert _getRouteAttrs(route) == attributes
 
         bad_routes = [
             'default via 192.168.99.257 dev eth0 table foo',  # Misformed via
@@ -90,7 +89,7 @@ class TestIpwrapper(TestCaseBase):
             'local dev eth0 table bar',
         ]  # local with no address
         for text in bad_routes:
-            self.assertRaises(ValueError, Route.fromText, text)
+            pytest.raises(ValueError, Route.fromText, text)
 
     def testRuleFromText(self):
         _getRuleAttrs = lambda x: (
@@ -138,7 +137,7 @@ class TestIpwrapper(TestCaseBase):
         }
         for text, attributes in six.viewitems(good_rules):
             rule = Rule.fromText(text)
-            self.assertEqual(_getRuleAttrs(rule), attributes)
+            assert _getRuleAttrs(rule) == attributes
 
         bad_rules = [
             '32766:    from all lookup main foo',
@@ -147,4 +146,4 @@ class TestIpwrapper(TestCaseBase):
             '32:    from 10.0.0.0/8 to 264.0.0.0/8 lookup table_100',
         ]
         for text in bad_rules:
-            self.assertRaises(ValueError, Rule.fromText, text)
+            pytest.raises(ValueError, Rule.fromText, text)

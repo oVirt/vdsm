@@ -19,15 +19,12 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from testlib import VdsmTestCase
+import pytest
 
 from vdsm.network import driverloader
 
 
-class TestDriverLoader(VdsmTestCase):
-    def test_load_non_existing_driver(self):
-        _drivers = driverloader.load_drivers(
-            'ClassName', 'foo.bar', '/no/drivers'
-        )
-        with self.assertRaises(driverloader.NoDriverError):
-            return driverloader.get_driver('shrubbery', _drivers)
+def test_load_non_existing_driver():
+    _drivers = driverloader.load_drivers('ClassName', 'foo.bar', '/no/drivers')
+    with pytest.raises(driverloader.NoDriverError):
+        return driverloader.get_driver('shrubbery', _drivers)

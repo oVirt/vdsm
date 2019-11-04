@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,12 +23,11 @@ from __future__ import division
 import six
 
 from network.compat import mock
-from testlib import VdsmTestCase
 
 from vdsm.network import dns
 
 
-class TestNetworkDnsUnit(VdsmTestCase):
+class TestNetworkDnsUnit(object):
     @mock.patch.object(dns, 'open', create=True)
     def test_get_host_nameservers(self, mock_open):
         RESOLV_CONF = (
@@ -44,13 +43,11 @@ class TestNetworkDnsUnit(VdsmTestCase):
         mock_open.return_value.__enter__.return_value = resolv_conf_stream
 
         resulted_nameservers = dns.get_host_nameservers()
-
-        self.assertEqual(expected_nameservers, resulted_nameservers)
+        assert expected_nameservers == resulted_nameservers
 
     @mock.patch.object(dns, 'open', create=True)
     def test_get_host_nameservers_no_resolvconf(self, mock_open):
         mock_open.return_value.__enter__.side_effect = IOError()
 
         nameservers = dns.get_host_nameservers()
-
-        self.assertEqual(nameservers, [])
+        assert nameservers == []

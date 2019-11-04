@@ -23,10 +23,11 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import pytest
+
 from vdsm.network import netinfo
 from vdsm.network.link.iface import DEFAULT_MTU
 
-from testlib import VdsmTestCase as TestCaseBase
 from network.compat import mock
 
 from vdsm.network import errors
@@ -43,17 +44,17 @@ def _raiseInvalidOpException(*args, **kwargs):
     )
 
 
-class TestConfigNetwork(TestCaseBase):
+class TestConfigNetwork(object):
     def _addNetworkWithExc(self, netName, opts, errCode):
         fakeInfo = netinfo.cache.CachingNetInfo(FAKE_NETINFO)
         configurator = ifcfg.Ifcfg(fakeInfo)
 
-        with self.assertRaises(errors.ConfigNetworkError) as cneContext:
+        with pytest.raises(errors.ConfigNetworkError) as cneContext:
             canonicalize_networks({netName: opts})
             legacy_switch._add_network(
                 netName, configurator, fakeInfo, None, **opts
             )
-        self.assertEqual(cneContext.exception.errCode, errCode)
+        assert cneContext.value.errCode == errCode
 
     # Monkey patch the real network detection from the netinfo module.
     @mock.patch.object(ifcfg, 'ifdown', _raiseInvalidOpException)
@@ -93,9 +94,9 @@ class TestConfigNetwork(TestCaseBase):
         networks = {
             'test-network': {'nic': 'dummy', 'remove': True, 'bridged': True}
         }
-        with self.assertRaises(errors.ConfigNetworkError) as cneContext:
+        with pytest.raises(errors.ConfigNetworkError) as cneContext:
             validator.validate_network_setup(networks, {}, {'networks': {}})
-        self.assertEqual(cneContext.exception.errCode, errors.ERR_BAD_PARAMS)
+        assert cneContext.value.errCode == errors.ERR_BAD_PARAMS
 
 
 FAKE_NETINFO = {

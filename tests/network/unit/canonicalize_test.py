@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,10 +23,10 @@ from __future__ import division
 
 import copy
 
+import pytest
 import six
 
 from network.compat import mock
-from testlib import VdsmTestCase
 
 from vdsm.network import canonicalize
 from vdsm.network import errors as ne
@@ -38,7 +38,7 @@ NET2_SETUP = {'NET2': {'nic': 'eth0', 'switch': 'legacy'}}
 
 
 @mock.patch.object(canonicalize, 'RunningConfig')
-class TestDefaultRouteCanonicalization(VdsmTestCase):
+class TestDefaultRouteCanonicalization(object):
     def test_request_one_defroute_no_existing_defroute(self, mockRConfig):
         running_config = self._nets_config(NET1_SETUP, default_route=False)
         requested_nets = self._nets_config(NET0_SETUP, default_route=True)
@@ -114,7 +114,7 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
         nets_base_setup = _merge_dicts(NET0_SETUP, NET1_SETUP)
         requested_nets = self._nets_config(nets_base_setup, default_route=True)
 
-        with self.assertRaises(ne.ConfigNetworkError):
+        with pytest.raises(ne.ConfigNetworkError):
             canonicalize.canonicalize_networks(requested_nets)
 
     def test_request_one_defroute_existing_different_defroute(
@@ -149,7 +149,7 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
 
         mockRConfig.return_value.networks = running_config
 
-        with self.assertRaises(ne.ConfigNetworkError):
+        with pytest.raises(ne.ConfigNetworkError):
             canonicalize.canonicalize_networks(requested_nets)
 
     def _nets_config(self, nets_config, default_route):
@@ -161,15 +161,13 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
         return config
 
     def _assert_default_route_keys(self, expected_setup, actual_setup):
-        self.assertEqual(set(expected_setup), set(actual_setup))
+        assert set(expected_setup) == set(actual_setup)
         for net in expected_setup:
-            self.assertEqual(
-                expected_setup[net]['defaultRoute'],
-                actual_setup[net]['defaultRoute'],
-                '{} != {}'.format(
-                    {net: expected_setup[net]}, {net: actual_setup[net]}
-                ),
+            errmsg = '{} != {}'.format(
+                {net: expected_setup[net]}, {net: actual_setup[net]}
             )
+            expected_droute = expected_setup[net]['defaultRoute']
+            assert expected_droute == actual_setup[net]['defaultRoute'], errmsg
 
 
 def _merge_dicts(*dicts):

@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from testlib import VdsmTestCase
+import pytest
 
 from vdsm.network.ip import address
 
@@ -42,42 +42,42 @@ IPV6_INVALID_ADDRESS = '2001::99::1'
 IPV6_INVALID_WITH_PREFIXLEN = '{}/{}'.format(IPV6_INVALID_ADDRESS, IPV6_PREFIX)
 
 
-class TestAddressIP(VdsmTestCase):
+class TestAddressIP(object):
     def test_ipv4_clean_init(self):
         ip = address.IPv4()
-        self.assertFalse(ip)
+        assert not ip
         self._assert_ip_clean_init(ip)
-        self.assertEqual(None, ip.bootproto)
-        self.assertEqual(None, ip.netmask)
+        assert ip.bootproto is None
+        assert ip.netmask is None
 
     def test_ipv6_clean_init(self):
         ip = address.IPv6()
-        self.assertFalse(ip)
+        assert not ip
         self._assert_ip_clean_init(ip)
-        self.assertEqual(None, ip.ipv6autoconf)
-        self.assertEqual(None, ip.dhcpv6)
+        assert ip.ipv6autoconf is None
+        assert ip.dhcpv6 is None
 
     def _assert_ip_clean_init(self, ip):
-        self.assertEqual(None, ip.address)
-        self.assertEqual(None, ip.gateway)
-        self.assertEqual(None, ip.defaultRoute)
+        assert ip.address is None
+        assert ip.gateway is None
+        assert ip.defaultRoute is None
 
 
-class TestIPAddressData(VdsmTestCase):
+class TestIPAddressData(object):
     def test_ipv4_init(self):
         ip_data = address.IPAddressData(
             IPV4_A_WITH_PREFIXLEN, device=DEVICE_NAME
         )
 
-        self.assertEqual(ip_data.device, DEVICE_NAME)
-        self.assertEqual(ip_data.family, 4)
-        self.assertEqual(ip_data.address, IPV4_A_ADDRESS)
-        self.assertEqual(ip_data.netmask, IPV4_NETMASK)
-        self.assertEqual(ip_data.prefixlen, IPV4_PREFIX)
-        self.assertEqual(ip_data.address_with_prefixlen, IPV4_A_WITH_PREFIXLEN)
+        assert ip_data.device == DEVICE_NAME
+        assert ip_data.family == 4
+        assert ip_data.address == IPV4_A_ADDRESS
+        assert ip_data.netmask == IPV4_NETMASK
+        assert ip_data.prefixlen == IPV4_PREFIX
+        assert ip_data.address_with_prefixlen == IPV4_A_WITH_PREFIXLEN
 
     def test_ipv4_init_invalid(self):
-        with self.assertRaises(address.IPAddressDataError):
+        with pytest.raises(address.IPAddressDataError):
             address.IPAddressData(
                 IPV4_INVALID_WITH_PREFIXLEN, device=DEVICE_NAME
             )
@@ -87,15 +87,15 @@ class TestIPAddressData(VdsmTestCase):
             IPV6_A_WITH_PREFIXLEN, device=DEVICE_NAME
         )
 
-        self.assertEqual(ip_data.device, DEVICE_NAME)
-        self.assertEqual(ip_data.family, 6)
-        self.assertEqual(ip_data.address, IPV6_A_ADDRESS)
-        self.assertEqual(ip_data.netmask, IPV6_NETMASK)
-        self.assertEqual(ip_data.prefixlen, IPV6_PREFIX)
-        self.assertEqual(ip_data.address_with_prefixlen, IPV6_A_WITH_PREFIXLEN)
+        assert ip_data.device == DEVICE_NAME
+        assert ip_data.family == 6
+        assert ip_data.address == IPV6_A_ADDRESS
+        assert ip_data.netmask == IPV6_NETMASK
+        assert ip_data.prefixlen == IPV6_PREFIX
+        assert ip_data.address_with_prefixlen == IPV6_A_WITH_PREFIXLEN
 
     def test_ipv6_init_invalid(self):
-        with self.assertRaises(address.IPAddressDataError):
+        with pytest.raises(address.IPAddressDataError):
             address.IPAddressData(
                 IPV6_INVALID_WITH_PREFIXLEN, device=DEVICE_NAME
             )
@@ -108,7 +108,7 @@ class TestIPAddressData(VdsmTestCase):
             IPV4_A_WITH_PREFIXLEN, device=DEVICE_NAME, scope=SCOPE, flags=FLAGS
         )
 
-        self.assertEqual(ip_data.scope, SCOPE)
-        self.assertEqual(ip_data.flags, FLAGS)
-        self.assertFalse(ip_data.is_primary())
-        self.assertTrue(ip_data.is_permanent())
+        assert ip_data.scope == SCOPE
+        assert ip_data.flags == FLAGS
+        assert not ip_data.is_primary()
+        assert ip_data.is_permanent()

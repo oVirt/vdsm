@@ -25,12 +25,12 @@ from collections import namedtuple
 import os
 from time import time
 
+import pytest
+
 from network.compat import mock
 
 from vdsm.network import connectivity
 from vdsm.network.errors import ConfigNetworkError
-
-from testlib import VdsmTestCase
 
 
 def _mock_os_stat_with_current_time(unused):
@@ -41,22 +41,19 @@ def _mock_os_stat_with_zeroed_time(unused):
     return namedtuple('st', ['st_mtime'])(0)
 
 
-class TestConnectivity(VdsmTestCase):
+class TestConnectivity(object):
     def test_check_disabled(self):
-        with self.assertNotRaises():
-            connectivity.check({'connectivityCheck': False})
+        connectivity.check({'connectivityCheck': False})
 
     @mock.patch.object(os, 'stat', _mock_os_stat_with_current_time)
     def test_check_default_timeout_success(self):
-        with self.assertNotRaises():
-            connectivity.check({})
+        connectivity.check({})
 
     @mock.patch.object(os, 'stat', _mock_os_stat_with_current_time)
     def test_check_timeout_success(self):
-        with self.assertNotRaises():
-            connectivity.check({'connectivityTimeout': 2})
+        connectivity.check({'connectivityTimeout': 2})
 
     @mock.patch.object(os, 'stat', _mock_os_stat_with_zeroed_time)
     def test_check_timeout_fail(self):
-        with self.assertRaises(ConfigNetworkError):
+        with pytest.raises(ConfigNetworkError):
             connectivity.check({'connectivityTimeout': 0})

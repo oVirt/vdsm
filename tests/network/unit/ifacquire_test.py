@@ -21,10 +21,11 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import pytest
+
 from vdsm.network import ifacquire
 
 from network.compat import mock
-from testlib import VdsmTestCase
 
 
 NIC_NAME = 'eth3'
@@ -63,7 +64,7 @@ class FailTest(Exception):
     pass
 
 
-class TestAcquireNic(VdsmTestCase):
+class TestAcquireNic(object):
     @mock.patch.object(ifacquire.address, 'flush')
     @mock.patch.object(ifacquire.dhclient, 'kill')
     @mock.patch.object(ifacquire.ifcfg, 'ifdown')
@@ -166,7 +167,7 @@ class TestAcquireNic(VdsmTestCase):
         open_file.readlines.return_value = NIC_IFCFG
         atomic_write_file.readlines.return_value = NIC_IFCFG
 
-        with self.assertRaises(FailTest):
+        with pytest.raises(FailTest):
             with ifacquire.Transaction(netinfo_nets={}) as a:
                 a.acquire(ifaces=[NIC_NAME])
 

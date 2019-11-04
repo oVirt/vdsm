@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,12 +23,11 @@ from __future__ import division
 import json
 
 from network.compat import mock
-from testlib import VdsmTestCase
 
 from vdsm.network.link import dpdk
 
 
-class TestReportDpdkPorts(VdsmTestCase):
+class TestReportDpdkPorts(object):
     def test_vfio_pci_driver(self):
         self._test_one_dpdk_device('vfio-pci')
 
@@ -84,7 +83,7 @@ class TestReportDpdkPorts(VdsmTestCase):
             expected_ports = {
                 'dpdk0': {'pci_addr': '0000:02:00.1', 'driver': driver}
             }
-            self.assertEqual(expected_ports, dpdk.get_dpdk_devices())
+            assert expected_ports == dpdk.get_dpdk_devices()
 
     def test_two_different_dpdk_devices(self):
         lshw_output = json.dumps(
@@ -140,7 +139,7 @@ class TestReportDpdkPorts(VdsmTestCase):
                 'dpdk0': {'pci_addr': '0000:02:00.1', 'driver': 'vfio-pci'},
                 'dpdk1': {'pci_addr': '0000:02:00.2', 'driver': 'igb_uio'},
             }
-            self.assertEqual(expected_ports, dpdk.get_dpdk_devices())
+            assert expected_ports == dpdk.get_dpdk_devices()
 
     def test_vf(self):
         lshw_output = json.dumps(
@@ -183,7 +182,7 @@ class TestReportDpdkPorts(VdsmTestCase):
 
             dpdk.invalidate_dpdk_devices()
             expected_ports = {}
-            self.assertEqual(expected_ports, dpdk.get_dpdk_devices())
+            assert expected_ports == dpdk.get_dpdk_devices()
 
     def test_no_dpdk_devices(self):
         lshw_output = json.dumps(
@@ -225,13 +224,13 @@ class TestReportDpdkPorts(VdsmTestCase):
 
             dpdk.invalidate_dpdk_devices()
             expected_ports = {}
-            self.assertEqual(expected_ports, dpdk.get_dpdk_devices())
+            assert expected_ports == dpdk.get_dpdk_devices()
 
     def test_is_dpdk_true(self):
-        self.assertTrue(dpdk.is_dpdk(dev_name='dpdk0'))
+        assert dpdk.is_dpdk(dev_name='dpdk0')
 
     def test_is_dpdk_false(self):
-        self.assertFalse(dpdk.is_dpdk(dev_name='not_dpdk_dev'))
+        assert not dpdk.is_dpdk(dev_name='not_dpdk_dev')
 
     def test_link_info_without_pci_addr(self):
         link_info = {
@@ -254,7 +253,7 @@ class TestReportDpdkPorts(VdsmTestCase):
             },
         ):
 
-            self.assertEqual(link_info, dpdk.link_info('dpdk0'))
+            assert link_info == dpdk.link_info('dpdk0')
 
     def test_link_info_with_pci_addr(self):
         link_info = {
@@ -277,6 +276,4 @@ class TestReportDpdkPorts(VdsmTestCase):
             },
         ):
 
-            self.assertEqual(
-                link_info, dpdk.link_info('dpdk0', '0000:02:00.1')
-            )
+            assert link_info == dpdk.link_info('dpdk0', '0000:02:00.1')

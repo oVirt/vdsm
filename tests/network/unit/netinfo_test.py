@@ -24,6 +24,7 @@ from __future__ import division
 import os
 import io
 
+import pytest
 import six
 
 from vdsm.network import ipwrapper
@@ -34,10 +35,9 @@ from vdsm.network.netinfo import addresses, bonding, misc, nics, routes
 from vdsm.network.netinfo.cache import get
 
 from network.compat import mock
-from testlib import VdsmTestCase as TestCaseBase
 
 
-class TestNetinfo(TestCaseBase):
+class TestNetinfo(object):
     def test_netmask_conversions(self):
         path = os.path.join(os.path.dirname(__file__), "netmaskconversions")
         with open(path) as netmaskFile:
@@ -45,9 +45,9 @@ class TestNetinfo(TestCaseBase):
                 if line.startswith('#'):
                     continue
                 bitmask, address = [value.strip() for value in line.split()]
-                self.assertEqual(prefix2netmask(int(bitmask)), address)
-        self.assertRaises(ValueError, prefix2netmask, -1)
-        self.assertRaises(ValueError, prefix2netmask, 33)
+                assert prefix2netmask(int(bitmask)) == address
+        pytest.raises(ValueError, prefix2netmask, -1)
+        pytest.raises(ValueError, prefix2netmask, 33)
 
     @mock.patch.object(nic, 'iface')
     @mock.patch.object(nics.io, 'open')
@@ -68,13 +68,13 @@ class TestNetinfo(TestCaseBase):
             mock_io_open.return_value = io.BytesIO(passed)
             mock_iface.return_value.is_oper_up.return_value = is_nic_up
 
-            self.assertEqual(nic.speed('fake_nic'), expected)
+            assert nic.speed('fake_nic') == expected
 
     def test_dpdk_device_speed(self):
-        self.assertEqual(nic.speed('dpdk0'), 0)
+        assert nic.speed('dpdk0') == 0
 
     def test_dpdk_operstate_always_up(self):
-        self.assertEqual(nics.operstate('dpdk0'), nics.OPERSTATE_UP)
+        assert nics.operstate('dpdk0') == nics.OPERSTATE_UP
 
     @mock.patch.object(bonding, 'permanent_address', lambda: {})
     @mock.patch('vdsm.network.netinfo.cache.RunningConfig')
@@ -91,16 +91,14 @@ class TestNetinfo(TestCaseBase):
     def test_get_empty(self, mock_networks, mock_getLinks):
         result = {}
         result.update(get())
-        self.assertEqual(result['networks'], {})
-        self.assertEqual(result['bridges'], {})
-        self.assertEqual(result['nics'], {})
-        self.assertEqual(result['bondings'], {})
-        self.assertEqual(result['vlans'], {})
+        assert result['networks'] == {}
+        assert result['bridges'] == {}
+        assert result['nics'] == {}
+        assert result['bondings'] == {}
+        assert result['vlans'] == {}
 
     def test_ipv4_to_mapped(self):
-        self.assertEqual(
-            '::ffff:127.0.0.1', addresses.IPv4toMapped('127.0.0.1')
-        )
+        assert '::ffff:127.0.0.1' == addresses.IPv4toMapped('127.0.0.1')
 
     def test_get_device_by_ip(self):
         NL_ADDRESS4 = {
@@ -119,10 +117,8 @@ class TestNetinfo(TestCaseBase):
             addresses.nl_addr, 'iter_addrs', lambda: NL_ADDRESSES
         ):
             for nl_addr in NL_ADDRESSES:
-                self.assertEqual(
-                    nl_addr['label'],
-                    addresses.getDeviceByIP(nl_addr['address'].split('/')[0]),
-                )
+                lbl = addresses.getDeviceByIP(nl_addr['address'].split('/')[0])
+                assert nl_addr['label'] == lbl
 
     @mock.patch.object(ipwrapper.Link, '_hiddenNics', ['hid*'])
     @mock.patch.object(ipwrapper.Link, '_hiddenBonds', ['jb*'])
@@ -138,7 +134,7 @@ class TestNetinfo(TestCaseBase):
         """
         mock_getLinks.return_value = self._LINKS_REPORT
 
-        self.assertEqual(set(nics.nics()), set(['em', 'me', 'fake', 'fake0']))
+        assert set(nics.nics()) == set(['em', 'me', 'fake', 'fake0'])
 
     # Creates a test fixture so that nics() reports:
     # physical nics: em, me, me0, me1, hid0 and hideous
@@ -241,8 +237,8 @@ class TestNetinfo(TestCaseBase):
 
         resulted_ifcfg = misc.getIfaceCfg('eth0')
 
-        self.assertEqual(resulted_ifcfg['GATEWAY'], gateway)
-        self.assertEqual(resulted_ifcfg['NETMASK'], netmask)
+        assert resulted_ifcfg['GATEWAY'] == gateway
+        assert resulted_ifcfg['NETMASK'] == netmask
 
     @mock.patch.object(misc, 'open', create=True)
     def test_missing_ifcfg_file(self, mock_open):
@@ -250,7 +246,7 @@ class TestNetinfo(TestCaseBase):
 
         ifcfg = misc.getIfaceCfg('eth0')
 
-        self.assertEqual(ifcfg, {})
+        assert ifcfg == {}
 
     @staticmethod
     def _bond_opts_without_mode(bond_name):
@@ -288,9 +284,9 @@ class TestNetinfo(TestCaseBase):
         SINGLE_GATEWAY = {TEST_IFACE: [DUPLICATED_GATEWAY[TEST_IFACE][0]]}
 
         gateway = routes.get_gateway(SINGLE_GATEWAY, TEST_IFACE)
-        self.assertEqual(gateway, '12.34.56.1')
+        assert gateway == '12.34.56.1'
         gateway = routes.get_gateway(DUPLICATED_GATEWAY, TEST_IFACE)
-        self.assertEqual(gateway, '12.34.56.1')
+        assert gateway == '12.34.56.1'
 
     def test_netinfo_ignoring_link_scope_ip(self):
         v4_link = {
@@ -325,11 +321,9 @@ class TestNetinfo(TestCaseBase):
         ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = addresses.getIpInfo(
             'eth0', ipaddrs=ipaddrs
         )
-        self.assertEqual(ipv4addrs, ['192.0.2.2/24'])
-        self.assertEqual(ipv6addrs, ['ee80::5054:ff:fea3:f9f3/64'])
+        assert ipv4addrs == ['192.0.2.2/24']
+        assert ipv6addrs == ['ee80::5054:ff:fea3:f9f3/64']
 
     def test_parse_bond_options(self):
-        self.assertEqual(
-            bonding.parse_bond_options('mode=4 miimon=100'),
-            {'mode': '4', 'miimon': '100'},
-        )
+        expected = {'mode': '4', 'miimon': '100'}
+        assert expected == bonding.parse_bond_options('mode=4 miimon=100')

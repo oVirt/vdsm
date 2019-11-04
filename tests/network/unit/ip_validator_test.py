@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from testlib import VdsmTestCase
+import pytest
 
 from vdsm.network import errors as ne
 from vdsm.network.ip import validator
@@ -30,7 +30,7 @@ class DummyRunningConfig(object):
     networks = {}
 
 
-class TestIPNameserverValidator(VdsmTestCase):
+class TestIPNameserverValidator(object):
     def test_ignore_remove_networks(self):
         validator.validate(
             {
@@ -43,21 +43,21 @@ class TestIPNameserverValidator(VdsmTestCase):
         )
 
     def test_nameserver_defined_on_a_non_primary_network_fails(self):
-        with self.assertRaises(ne.ConfigNetworkError) as cne:
+        with pytest.raises(ne.ConfigNetworkError) as cne:
             validator.validate(
                 {'NET0': {'defaultRoute': False, 'nameservers': ['8.8.8.8']}}
             )
-        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_PARAMS)
+        assert cne.value.errCode == ne.ERR_BAD_PARAMS
 
     def test_nameserver_faulty_ipv4_address(self):
-        with self.assertRaises(ne.ConfigNetworkError) as cne:
+        with pytest.raises(ne.ConfigNetworkError) as cne:
             validator.validate(
                 {'NET0': {'defaultRoute': True, 'nameservers': ['a.8.8.8']}}
             )
-        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_ADDR)
+        assert cne.value.errCode == ne.ERR_BAD_ADDR
 
     def test_nameserver_faulty_ipv6_address(self):
-        with self.assertRaises(ne.ConfigNetworkError) as cne:
+        with pytest.raises(ne.ConfigNetworkError) as cne:
             validator.validate(
                 {
                     'NET0': {
@@ -66,7 +66,7 @@ class TestIPNameserverValidator(VdsmTestCase):
                     }
                 }
             )
-        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_ADDR)
+        assert cne.value.errCode == ne.ERR_BAD_ADDR
 
     def test_nameserver_valid_ipv4_address(self):
         validator.validate(
@@ -84,7 +84,7 @@ class TestIPNameserverValidator(VdsmTestCase):
         )
 
 
-class TestStaticIpv4ConfigValidator(VdsmTestCase):
+class TestStaticIpv4ConfigValidator(object):
     def test_ip_address_without_netmask_fails(self):
         self._test_ip_config_fails(ipaddr='10.10.10.10')
 
@@ -125,6 +125,6 @@ class TestStaticIpv4ConfigValidator(VdsmTestCase):
         validator.validate_static_ipv4_config(STATIC_CONFIG)
 
     def _test_ip_config_fails(self, **setup):
-        with self.assertRaises(ne.ConfigNetworkError) as cne:
+        with pytest.raises(ne.ConfigNetworkError) as cne:
             validator.validate_static_ipv4_config(setup)
-        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_ADDR)
+        assert cne.value.errCode == ne.ERR_BAD_ADDR

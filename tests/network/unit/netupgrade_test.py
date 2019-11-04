@@ -21,7 +21,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 from network.compat import mock
-from testlib import VdsmTestCase
 
 from vdsm.network import netupgrade
 
@@ -32,7 +31,7 @@ from vdsm.network import netupgrade
 )
 @mock.patch.object(netupgrade, 'PersistentConfig')
 @mock.patch.object(netupgrade, 'RunningConfig')
-class TestNetUpgradeUnifiedConfig(VdsmTestCase):
+class TestNetUpgradeUnifiedConfig(object):
     def test_old_config_with_no_networks(self, mockRConfig, mockPConfig):
         RAW_CONFIG = {}
         NORMALIZED_CONFIG = {}
@@ -101,8 +100,8 @@ class TestNetUpgradeUnifiedConfig(VdsmTestCase):
 
         netupgrade.upgrade()
 
-        self.assertEqual(normalized_config, rconfig.networks)
-        self.assertEqual(normalized_config, pconfig.networks)
+        assert normalized_config == rconfig.networks
+        assert normalized_config == pconfig.networks
         if normalized_config:
             rconfig.save.assert_called_once_with()
             pconfig.save.assert_called_once_with()
@@ -119,7 +118,7 @@ class TestNetUpgradeUnifiedConfig(VdsmTestCase):
 @mock.patch.object(netupgrade, 'KernelConfig')
 @mock.patch.object(netupgrade, 'PersistentConfig')
 @mock.patch.object(netupgrade, 'RunningConfig')
-class TestNetCreateUnifiedConfig(VdsmTestCase):
+class TestNetCreateUnifiedConfig(object):
     @mock.patch.object(netupgrade.config, 'get', lambda a, b: 'ifcfg')
     def test_create_unified_config_in_ifcfg_persistence_mode(
         self, mockRConfig, mockPConfig, mockKConfig, mock_owned_device
@@ -161,8 +160,8 @@ class TestNetCreateUnifiedConfig(VdsmTestCase):
         pconfig.config_exists.return_value = False
 
     def _assert_unified_config_created(self, kconfig, rconfig, mockRConfig):
-        self.assertEqual(kconfig.networks, rconfig.networks)
-        self.assertEqual(kconfig.bonds, rconfig.bonds)
+        assert kconfig.networks == rconfig.networks
+        assert kconfig.bonds == rconfig.bonds
 
         rconfig.save.assert_called_once_with()
         mockRConfig.store.assert_called_once_with()

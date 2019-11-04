@@ -22,7 +22,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 from network.compat import mock
-from testlib import VdsmTestCase
 
 from vdsm.network.ip import dhclient
 
@@ -43,7 +42,7 @@ DHCLIENT_CMDLINE_WITH_HOST_AT_TAIL = '\0'.join(
 )
 
 
-class TestIPDhclient(VdsmTestCase):
+class TestIPDhclient(object):
     @mock.patch.object(
         dhclient,
         'open',
@@ -60,4 +59,4 @@ class TestIPDhclient(VdsmTestCase):
         """
         dhcp_info = dhclient.dhcp_info(devices=(DEVNAME,))
         expected = {DEVNAME: {dhclient.DHCP4: False, dhclient.DHCP6: True}}
-        self.assertEqual(expected, dhcp_info)
+        assert expected == dhcp_info

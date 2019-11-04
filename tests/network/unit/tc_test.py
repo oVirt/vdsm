@@ -25,12 +25,10 @@ import os
 
 from six.moves import zip_longest
 
-from testlib import VdsmTestCase as TestCaseBase
-
 from vdsm.network import tc
 
 
-class TestFilters(TestCaseBase):
+class TestFilters(object):
     def test_filter_objs(self):
         dirName = os.path.dirname(os.path.realpath(__file__))
         path = os.path.join(dirName, "tc_filter_show.out")
@@ -56,9 +54,7 @@ class TestFilters(TestCaseBase):
                 ],
             ),
         )
-        self.assertEqual(
-            tuple(tc.filters('bridge', 'parent', out=out)), PARSED_FILTERS
-        )
+        assert tuple(tc.filters('bridge', 'parent', out=out)) == PARSED_FILTERS
 
     def test_filters(self):
         filters = (
@@ -223,7 +219,7 @@ class TestFilters(TestCaseBase):
         for parsed, correct in zip_longest(
             tc._filters(None, out=data), filters
         ):
-            self.assertEqual(parsed, correct)
+            assert parsed == correct
 
     def test_qdiscs(self):
         data_lines = (
@@ -321,7 +317,7 @@ class TestFilters(TestCaseBase):
             },
         )
         for parsed, correct in zip_longest(tc.qdiscs(None, out=data), qdiscs):
-            self.assertEqual(parsed, correct)
+            assert parsed == correct
 
     def test_classes(self):
         cmd_line_ls_10 = 3200
@@ -400,4 +396,4 @@ class TestFilters(TestCaseBase):
         for parsed, correct in zip_longest(
             tc.classes(None, out=data), classes
         ):
-            self.assertEqual(parsed, correct)
+            assert parsed == correct

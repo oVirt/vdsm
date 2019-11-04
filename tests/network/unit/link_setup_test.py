@@ -21,7 +21,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 from network.compat import mock
-from testlib import VdsmTestCase
 
 from vdsm.network.link import setup as linksetup
 
@@ -32,7 +31,7 @@ BOND1_NAME = 'bond1'
 @mock.patch.object(linksetup, 'address')
 @mock.patch.object(linksetup, 'dhclient')
 @mock.patch.object(linksetup, 'Bond')
-class TestLinkSetupBond(VdsmTestCase):
+class TestLinkSetupBond(object):
     def test_add_bonds(self, BondMock, dhclient_mock, address_mock, ConfMock):
         config_mock = ConfMock()
 
@@ -47,9 +46,8 @@ class TestLinkSetupBond(VdsmTestCase):
         setup_bonds = linksetup.SetupBonds(setup_new_bond, {}, {}, config_mock)
         setup_bonds.add_bonds()
 
-        self.assertEqual(
-            set(bond_slaves + [BOND1_NAME]), setup_bonds.ifaces_for_acquirement
-        )
+        expected_ifaces = set(bond_slaves + [BOND1_NAME])
+        assert expected_ifaces == setup_bonds.ifaces_for_acquirement
         BondMock.assert_called_once_with(
             BOND1_NAME,
             slaves=set(bond_slaves),
@@ -95,9 +93,7 @@ class TestLinkSetupBond(VdsmTestCase):
 
         setup_bonds.edit_bonds()
 
-        self.assertEqual(
-            bond_slaves | {BOND1_NAME}, setup_bonds.ifaces_for_acquirement
-        )
+        assert bond_slaves | {BOND1_NAME} == setup_bonds.ifaces_for_acquirement
         BondMock.assert_called_with(BOND1_NAME)
         BondMock.return_value.add_slaves.assert_called_once_with(bond_slaves)
         config_mock.setBonding.assert_called_with(BOND1_NAME, bond_attrs)

@@ -27,7 +27,6 @@ from six import StringIO
 from vdsm.network.configurators import ifcfg_acquire
 
 from network.compat import mock
-from testlib import VdsmTestCase as TestCaseBase
 
 
 IFCFG_ETH_CONF = """DEVICE="testdevice"
@@ -78,7 +77,7 @@ ONBOOT=yes
 @mock.patch.object(ifcfg_acquire.os, 'rename')
 @mock.patch.object(ifcfg_acquire.glob, 'iglob')
 @mock.patch.object(ifcfg_acquire.misc, 'open', create=True)
-class TestIfcfgAcquireNMoffline(TestCaseBase):
+class TestIfcfgAcquireNMoffline(object):
     def test_acquire_iface_given_non_standard_filename(
         self, mock_open, mock_list_files, mock_rename, mock_rmfile
     ):

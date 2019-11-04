@@ -20,18 +20,18 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import pytest
+
 from vdsm.network import errors
 from vdsm.network import netswitch
 from vdsm.network.netinfo.cache import NetInfo
-
-from testlib import VdsmTestCase as TestCaseBase
 
 
 BOND_NAME = 'bond1'
 NETWORK1_NAME = 'test-network1'
 
 
-class TestSplitSetupActions(TestCaseBase):
+class TestSplitSetupActions(object):
     def test_split_nets(self):
         net_query = {
             'net2add': {'nic': 'eth0'},
@@ -45,9 +45,9 @@ class TestSplitSetupActions(TestCaseBase):
         )
         nets2add, nets2edit, nets2remove = nets
 
-        self.assertEqual(nets2add, {'net2add': {'nic': 'eth0'}})
-        self.assertEqual(nets2edit, {'net2edit': {'nic': 'eth1'}})
-        self.assertEqual(nets2remove, {'net2remove': {'remove': True}})
+        assert nets2add == {'net2add': {'nic': 'eth0'}}
+        assert nets2edit == {'net2edit': {'nic': 'eth1'}}
+        assert nets2remove == {'net2remove': {'remove': True}}
 
     def test_split_bonds(self):
         bond_query = {
@@ -62,12 +62,12 @@ class TestSplitSetupActions(TestCaseBase):
         )
         bonds2add, bonds2edit, bonds2remove = nets
 
-        self.assertEqual(bonds2add, {'bond2add': {'nics': ['eth0', 'eth1']}})
-        self.assertEqual(bonds2edit, {'bond2edit': {'nics': ['eth2', 'eth3']}})
-        self.assertEqual(bonds2remove, {'bond2remove': {'remove': True}})
+        assert bonds2add == {'bond2add': {'nics': ['eth0', 'eth1']}}
+        assert bonds2edit == {'bond2edit': {'nics': ['eth2', 'eth3']}}
+        assert bonds2remove == {'bond2remove': {'remove': True}}
 
 
-class TestSouthboundValidation(TestCaseBase):
+class TestSouthboundValidation(object):
     def test_two_bridgless_ovs_nets_with_used_nic_fails(self):
         self._assert_net_setup_fails_bad_params(
             'fakebrnet2', 'ovs', {'nic': 'eth0'}
@@ -123,13 +123,11 @@ class TestSouthboundValidation(TestCaseBase):
         if vlan is not None:
             net_setup[net_name]['vlan'] = vlan
 
-            with self.assertRaises(errors.ConfigNetworkError) as cne_context:
+            with pytest.raises(errors.ConfigNetworkError) as cne_context:
                 netswitch.validator.validate_southbound_devices_usages(
                     net_setup, _create_fake_netinfo(switch)
                 )
-            self.assertEqual(
-                cne_context.exception.errCode, errors.ERR_BAD_PARAMS
-            )
+            assert cne_context.value.errCode == errors.ERR_BAD_PARAMS
 
 
 def _create_fake_netinfo(switch):
