@@ -403,13 +403,13 @@ class VM(APIBase):
     @api.logged(on="api.virt")
     @api.method
     def hotplugMemory(self, params):
-        validate.require_keys(params, ('vmId', 'memory'))
+        validate.require_keys(params, ('vmId',))
         return self.vm.hotplugMemory(params)
 
     @api.logged(on="api.virt")
     @api.method
     def hotunplugMemory(self, params):
-        validate.require_keys(params, ('vmId', 'memory'))
+        validate.require_keys(params, ('vmId',))
         return self.vm.hotunplugMemory(params)
 
     @api.logged(on="api.virt")

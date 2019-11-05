@@ -2929,6 +2929,15 @@ types:
         -   description: The memory device specification
             name: memory
             type: *VmMemoryDevice
+            defaultvalue: null
+            modified: '4.4'
+
+        -   name: xml
+            description: XML snippet containing <devices> element with exactly
+                    one memory device.
+            type: string
+            defaultvalue: null
+            added: '4.4'
         type: object
 
     VmInterfaceDeviceSpecParams: &VmInterfaceDeviceSpecParams
