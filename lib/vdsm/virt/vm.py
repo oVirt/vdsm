@@ -360,6 +360,8 @@ class Vm(object):
         self._cluster_version = None
         self._pause_time = None
         self._guest_agent_api_version = None
+        self._balloon_minimum = None
+        self._balloon_target = None
         self._blockJobs = {}
         self._md_desc = metadata.Descriptor.from_xml(self.conf['xml'])
         self._init_from_metadata()
@@ -444,8 +446,6 @@ class Vm(object):
         self._migration_downtime = None
         self._pause_code = None
         self._last_disk_mapping_hash = None
-        self._balloon_minimum = None
-        self._balloon_target = None
 
     @property
     def _hugepages_shared(self):
@@ -541,6 +541,7 @@ class Vm(object):
             self._resume_behavior = md.get('resumeBehavior',
                                            ResumeBehavior.AUTO_RESUME)
             self._pause_time = md.get('pauseTime')
+            self._balloon_target = md.get('balloonTarget')
 
     def min_cluster_version(self, major, minor):
         """
@@ -677,7 +678,9 @@ class Vm(object):
         elif len(balloon_devs) > 1:
             self.log.warning("Multiple balloon devices present")
             return
-        self._balloon_target = self.mem_size_mb(current=self.recovering) * 1024
+        if self._balloon_target is None:
+            self._balloon_target = \
+                self.mem_size_mb(current=self.recovering) * 1024
         self._balloon_minimum = self._mem_guaranteed_size_mb * 1024
 
     def updateDriveIndex(self, drv):
@@ -4764,6 +4767,7 @@ class Vm(object):
                 vm['guestAgentAPIVersion'] = self._guest_agent_api_version
             vm['destroy_on_reboot'] = self._destroy_on_reboot
             vm['memGuaranteedSize'] = self._mem_guaranteed_size_mb
+            vm['balloonTarget'] = self._balloon_target
             if self._pause_time is None:
                 try:
                     del vm['pauseTime']
@@ -5006,8 +5010,8 @@ class Vm(object):
                 raise exception.NoSuchVM()
             raise exception.BalloonError(str(e))
         else:
-            # TODO: update metadata once we build devices with engine XML
             self._balloon_target = target
+            self._update_metadata()
 
     def get_balloon_info(self):
         if self._balloon_minimum is None or self._balloon_target is None:
