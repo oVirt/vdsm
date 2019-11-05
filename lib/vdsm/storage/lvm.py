@@ -125,6 +125,15 @@ LVS_CMD = ("lvs",) + LVM_FLAGS + ("-o", LV_FIELDS)
 # metadata volumes
 USER_GROUP = constants.DISKIMAGE_USER + ":" + constants.DISKIMAGE_GROUP
 
+# Set hints="none" to prevent from lvm to remember which
+# devices are PVs so that lvm can avoid scanning other
+# devices that are not PVs, since we create and remove PVs
+# from other hosts, then the hints might be wrong.
+# Finally because oVirt host is like to use strict lvm filter,
+# the hints are not needed.
+# Disable hints for lvm commands run by vdsm, even if hints
+# are enabled on the host.
+
 LVMCONF_TEMPLATE = """
 devices {
  preferred_names=["^/dev/mapper/"]
@@ -132,6 +141,7 @@ devices {
  write_cache_state=0
  disable_after_error_count=3
  filter=%(filter)s
+ hints="none"
 }
 global {
  locking_type=%(locking_type)s

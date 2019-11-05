@@ -78,6 +78,7 @@ def test_build_config():
         ' write_cache_state=0 '
         ' disable_after_error_count=3 '
         ' filter=["a|^/dev/a$|^/dev/b$|", "r|.*|"] '
+        ' hints="none" '
         '} '
         'global { '
         ' locking_type=1 '
