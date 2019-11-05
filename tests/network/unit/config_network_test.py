@@ -1,6 +1,6 @@
 #
 # Copyright 2012 IBM, Inc.
-# Copyright 2012-2018 Red Hat, Inc.
+# Copyright 2012-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@ from vdsm.network import netinfo
 from vdsm.network.link.iface import DEFAULT_MTU
 
 from testlib import VdsmTestCase as TestCaseBase
-from monkeypatch import MonkeyPatch
 from network.compat import mock
 
 from vdsm.network import errors
@@ -57,12 +56,12 @@ class TestConfigNetwork(TestCaseBase):
         self.assertEqual(cneContext.exception.errCode, errCode)
 
     # Monkey patch the real network detection from the netinfo module.
-    @MonkeyPatch(ifcfg, 'ifdown', lambda *x: _raiseInvalidOpException())
-    @MonkeyPatch(ifcfg, '_exec_ifup', lambda *x: _raiseInvalidOpException())
-    @MonkeyPatch(Bond, 'configure', lambda *x: _raiseInvalidOpException())
-    @MonkeyPatch(Bridge, 'configure', lambda *x: _raiseInvalidOpException())
-    @MonkeyPatch(Nic, 'configure', lambda *x: _raiseInvalidOpException())
-    @MonkeyPatch(Vlan, 'configure', lambda *x: _raiseInvalidOpException())
+    @mock.patch.object(ifcfg, 'ifdown', _raiseInvalidOpException)
+    @mock.patch.object(ifcfg, '_exec_ifup', _raiseInvalidOpException)
+    @mock.patch.object(Bond, 'configure', _raiseInvalidOpException)
+    @mock.patch.object(Bridge, 'configure', _raiseInvalidOpException)
+    @mock.patch.object(Nic, 'configure', _raiseInvalidOpException)
+    @mock.patch.object(Vlan, 'configure', _raiseInvalidOpException)
     def testAddNetworkValidation(self):
 
         # Test for already existing bridge.

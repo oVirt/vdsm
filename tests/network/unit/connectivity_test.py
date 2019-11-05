@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,10 +25,11 @@ from collections import namedtuple
 import os
 from time import time
 
+from network.compat import mock
+
 from vdsm.network import connectivity
 from vdsm.network.errors import ConfigNetworkError
 
-from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase
 
 
@@ -45,17 +46,17 @@ class TestConnectivity(VdsmTestCase):
         with self.assertNotRaises():
             connectivity.check({'connectivityCheck': False})
 
-    @MonkeyPatch(os, 'stat', _mock_os_stat_with_current_time)
+    @mock.patch.object(os, 'stat', _mock_os_stat_with_current_time)
     def test_check_default_timeout_success(self):
         with self.assertNotRaises():
             connectivity.check({})
 
-    @MonkeyPatch(os, 'stat', _mock_os_stat_with_current_time)
+    @mock.patch.object(os, 'stat', _mock_os_stat_with_current_time)
     def test_check_timeout_success(self):
         with self.assertNotRaises():
             connectivity.check({'connectivityTimeout': 2})
 
-    @MonkeyPatch(os, 'stat', _mock_os_stat_with_zeroed_time)
+    @mock.patch.object(os, 'stat', _mock_os_stat_with_zeroed_time)
     def test_check_timeout_fail(self):
         with self.assertRaises(ConfigNetworkError):
             connectivity.check({'connectivityTimeout': 0})

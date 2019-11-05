@@ -33,8 +33,7 @@ import pytest
 
 from vdsm.network.configurators import ifcfg
 
-from monkeypatch import MonkeyPatch
-from monkeypatch import MonkeyPatchScope
+from network.compat import mock
 from testlib import VdsmTestCase as TestCaseBase
 
 
@@ -79,7 +78,7 @@ class TestIfcfgConfigWriter(TestCaseBase):
     def tearDown(self):
         shutil.rmtree(self._tempdir)
 
-    @MonkeyPatch(subprocess, 'Popen', lambda x: None)
+    @mock.patch.object(subprocess, 'Popen', lambda x: None)
     def testAtomicRestore(self):
         self._createFiles()
 
@@ -91,26 +90,19 @@ class TestIfcfgConfigWriter(TestCaseBase):
         self._cw.restoreAtomicBackup()
         self._assertFilesRestored()
 
-    @MonkeyPatch(os, 'chown', lambda *x: 0)
+    @mock.patch.object(os, 'chown', lambda *x: 0)
+    @mock.patch.object(ifcfg, 'ifdown', lambda x: 0)
+    @mock.patch.object(ifcfg, '_exec_ifup', lambda *x: 0)
     def testPersistentBackup(self):
 
-        with MonkeyPatchScope(
-            [
-                (
-                    ifcfg,
-                    'NET_CONF_BACK_DIR',
-                    os.path.join(self._tempdir, 'netback'),
-                ),
-                (ifcfg, 'NET_CONF_DIR', self._tempdir),
-                (
-                    ifcfg,
-                    'NET_CONF_PREF',
-                    os.path.join(self._tempdir, 'ifcfg-'),
-                ),
-                (ifcfg, 'ifdown', lambda x: 0),
-                (ifcfg, '_exec_ifup', lambda *x: 0),
-            ]
-        ):
+        netback_path = os.path.join(self._tempdir, 'netback')
+        ifcfg_prefix = os.path.join(self._tempdir, 'ifcfg-')
+        netback_mock = mock.patch.object(
+            ifcfg, 'NET_CONF_BACK_DIR', netback_path
+        )
+        netdir_mock = mock.patch.object(ifcfg, 'NET_CONF_DIR', self._tempdir)
+        netpref_mock = mock.patch.object(ifcfg, 'NET_CONF_PREF', ifcfg_prefix)
+        with netback_mock, netdir_mock, netpref_mock:
             # after vdsm package is installed, the 'vdsm' account will be
             # created if no 'vdsm' account, we should skip this test
             if 'vdsm' not in [val.pw_name for val in pwd.getpwall()]:
