@@ -26,7 +26,6 @@ from __future__ import division
 import os
 import pwd
 import shutil
-import subprocess
 import tempfile
 
 import pytest
@@ -78,7 +77,6 @@ class TestIfcfgConfigWriter(TestCaseBase):
     def tearDown(self):
         shutil.rmtree(self._tempdir)
 
-    @mock.patch.object(subprocess, 'Popen', lambda x: None)
     def testAtomicRestore(self):
         self._createFiles()
 
@@ -90,7 +88,6 @@ class TestIfcfgConfigWriter(TestCaseBase):
         self._cw.restoreAtomicBackup()
         self._assertFilesRestored()
 
-    @mock.patch.object(os, 'chown', lambda *x: 0)
     @mock.patch.object(ifcfg, 'ifdown', lambda x: 0)
     @mock.patch.object(ifcfg, '_exec_ifup', lambda *x: 0)
     def testPersistentBackup(self):
