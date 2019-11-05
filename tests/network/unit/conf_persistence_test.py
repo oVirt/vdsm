@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2018 Red Hat, Inc.
+# Copyright 2013-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@ import json
 import os
 import tempfile
 
+import pytest
+
 from vdsm.common import fileutils
 from vdsm.network import errors as ne
 from vdsm.network.canonicalize import canonicalize_networks
@@ -33,8 +35,6 @@ from vdsm.network.netconfpersistence import Transaction
 from vdsm.network.netconfpersistence import NETCONF_NETS
 from vdsm.network.netconfpersistence import NETCONF_BONDS
 from vdsm.network.netconfpersistence import NETCONF_DEVS
-
-from testlib import VdsmTestCase as TestCaseBase
 
 
 NETWORK = 'luke'
@@ -53,35 +53,34 @@ class FailTest(Exception):
     pass
 
 
-def _create_netconf():
+@pytest.fixture
+def netconf_dir():
     tempdir = tempfile.mkdtemp()
-    os.mkdir(os.path.join(tempdir, NETCONF_NETS))
-    os.mkdir(os.path.join(tempdir, NETCONF_BONDS))
-    os.mkdir(os.path.join(tempdir, NETCONF_DEVS))
-    return tempdir
+    try:
+        os.mkdir(os.path.join(tempdir, NETCONF_NETS))
+        os.mkdir(os.path.join(tempdir, NETCONF_BONDS))
+        os.mkdir(os.path.join(tempdir, NETCONF_DEVS))
+        yield tempdir
+    finally:
+        fileutils.rm_tree(tempdir)
 
 
-def setup_module():
+@pytest.fixture(scope='module', autouse=True)
+def canonicalize_networks_attributes():
     canonicalize_networks({'net': NETWORK_ATTRIBUTES})
 
 
-class TestNetConfBaseConfig(TestCaseBase):
+class TestNetConfBaseConfig(object):
     def test_empty_config(self):
         config = BaseConfig({}, {}, {})
-        self.assertFalse(config)
+        assert not config
 
 
-class NetConfPersistenceTests(TestCaseBase):
-    def setUp(self):
-        self.tempdir = _create_netconf()
-
-    def tearDown(self):
-        fileutils.rm_tree(self.tempdir)
-
-    def testInit(self):
-        net_path = os.path.join(self.tempdir, NETCONF_NETS, NETWORK)
-        bond_path = os.path.join(self.tempdir, NETCONF_BONDS, BONDING)
-        device_path = os.path.join(self.tempdir, NETCONF_DEVS, DEVICE)
+class TestNetConfPersistence(object):
+    def testInit(self, netconf_dir):
+        net_path = os.path.join(netconf_dir, NETCONF_NETS, NETWORK)
+        bond_path = os.path.join(netconf_dir, NETCONF_BONDS, BONDING)
+        device_path = os.path.join(netconf_dir, NETCONF_DEVS, DEVICE)
         with open(net_path, 'w') as f:
             json.dump(NETWORK_ATTRIBUTES, f)
         with open(bond_path, 'w') as f:
@@ -89,70 +88,70 @@ class NetConfPersistenceTests(TestCaseBase):
         with open(device_path, 'w') as f:
             json.dump(DEVICE_ATTRIBUTES, f)
 
-        persistence = Config(self.tempdir)
-        self.assertEqual(persistence.networks[NETWORK], NETWORK_ATTRIBUTES)
-        self.assertEqual(persistence.bonds[BONDING], BONDING_ATTRIBUTES)
-        self.assertEqual(persistence.devices[DEVICE], DEVICE_ATTRIBUTES)
+        persistence = Config(netconf_dir)
+        assert persistence.networks[NETWORK] == NETWORK_ATTRIBUTES
+        assert persistence.bonds[BONDING] == BONDING_ATTRIBUTES
+        assert persistence.devices[DEVICE] == DEVICE_ATTRIBUTES
 
-    def testSetAndRemoveNetwork(self):
-        persistence = Config(self.tempdir)
+    def testSetAndRemoveNetwork(self, netconf_dir):
+        persistence = Config(netconf_dir)
         persistence.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
-        self.assertEqual(persistence.networks[NETWORK], NETWORK_ATTRIBUTES)
+        assert persistence.networks[NETWORK] == NETWORK_ATTRIBUTES
         persistence.removeNetwork(NETWORK)
-        self.assertTrue(persistence.networks.get(NETWORK) is None)
+        assert persistence.networks.get(NETWORK) is None
 
-    def testSetAndRemoveBonding(self):
-        persistence = Config(self.tempdir)
+    def testSetAndRemoveBonding(self, netconf_dir):
+        persistence = Config(netconf_dir)
         persistence.setBonding(BONDING, BONDING_ATTRIBUTES)
-        self.assertEqual(persistence.bonds[BONDING], BONDING_ATTRIBUTES)
+        assert persistence.bonds[BONDING] == BONDING_ATTRIBUTES
         persistence.removeBonding(BONDING)
-        self.assertTrue(persistence.bonds.get(BONDING) is None)
+        assert persistence.bonds.get(BONDING) is None
 
-    def testSetAndRemoveDevice(self):
-        persistence = Config(self.tempdir)
+    def testSetAndRemoveDevice(self, netconf_dir):
+        persistence = Config(netconf_dir)
         persistence.set_device(DEVICE, DEVICE_ATTRIBUTES)
-        self.assertEqual(persistence.devices[DEVICE], DEVICE_ATTRIBUTES)
+        assert persistence.devices[DEVICE] == DEVICE_ATTRIBUTES
         persistence.remove_device(DEVICE)
-        self.assertTrue(persistence.devices.get(DEVICE) is None)
+        assert persistence.devices.get(DEVICE) is None
 
-    def testSaveAndDelete(self):
-        persistence = Config(self.tempdir)
+    def testSaveAndDelete(self, netconf_dir):
+        persistence = Config(netconf_dir)
         persistence.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
         persistence.setBonding(BONDING, BONDING_ATTRIBUTES)
         persistence.set_device(DEVICE, DEVICE_ATTRIBUTES)
 
-        net_path = os.path.join(self.tempdir, NETCONF_NETS, NETWORK)
-        bond_path = os.path.join(self.tempdir, NETCONF_BONDS, BONDING)
-        device_path = os.path.join(self.tempdir, NETCONF_DEVS, DEVICE)
-        self.assertFalse(os.path.exists(net_path))
-        self.assertFalse(os.path.exists(bond_path))
-        self.assertFalse(os.path.exists(device_path))
+        net_path = os.path.join(netconf_dir, NETCONF_NETS, NETWORK)
+        bond_path = os.path.join(netconf_dir, NETCONF_BONDS, BONDING)
+        device_path = os.path.join(netconf_dir, NETCONF_DEVS, DEVICE)
+        assert not os.path.exists(net_path)
+        assert not os.path.exists(bond_path)
+        assert not os.path.exists(device_path)
 
         persistence.save()
-        self.assertTrue(os.path.exists(net_path))
-        self.assertTrue(os.path.exists(bond_path))
-        self.assertTrue(os.path.exists(device_path))
+        assert os.path.exists(net_path)
+        assert os.path.exists(bond_path)
+        assert os.path.exists(device_path)
 
         persistence.delete()
-        self.assertFalse(os.path.exists(net_path))
-        self.assertFalse(os.path.exists(bond_path))
-        self.assertFalse(os.path.exists(device_path))
+        assert not os.path.exists(net_path)
+        assert not os.path.exists(bond_path)
+        assert not os.path.exists(device_path)
 
-    def testDiff(self):
-        configA = Config(self.tempdir)
+    def testDiff(self, netconf_dir):
+        configA = Config(netconf_dir)
         configA.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
         configA.setBonding(BONDING, BONDING_ATTRIBUTES)
         configA.set_device(DEVICE, DEVICE_ATTRIBUTES)
 
-        configB = Config(self.tempdir)
+        configB = Config(netconf_dir)
         configB.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
         configB.setBonding(BONDING, BONDING_ATTRIBUTES)
         configB.set_device(DEVICE, DEVICE_ATTRIBUTES)
 
         diff = configA.diffFrom(configB)
-        self.assertEqual(diff.networks, {})
-        self.assertEqual(diff.bonds, {})
-        self.assertEqual(diff.devices, {})
+        assert diff.networks == {}
+        assert diff.bonds == {}
+        assert diff.devices == {}
 
         EVIL_NETWORK = 'jarjar'
         EVIL_BONDING_ATTRIBUTES = {'options': 'mode=3', 'nics': ['eth3']}
@@ -162,78 +161,88 @@ class NetConfPersistenceTests(TestCaseBase):
         configB.set_device(EVIL_DEVICE, DEVICE_ATTRIBUTES)
 
         diff = configA.diffFrom(configB)
-        self.assertEqual(diff.networks[EVIL_NETWORK], {'remove': True})
-        self.assertEqual(diff.bonds[BONDING], BONDING_ATTRIBUTES)
+        assert diff.networks[EVIL_NETWORK] == {'remove': True}
+        assert diff.bonds[BONDING] == BONDING_ATTRIBUTES
         # Devices diff is not yet supported.
-        self.assertEqual(diff.devices, {})
+        assert diff.devices == {}
 
         configB.removeNetwork(NETWORK)
         diff = configA.diffFrom(configB)
-        self.assertIn(NETWORK, diff.networks)
+        assert NETWORK in diff.networks
 
 
-class TransactionTests(TestCaseBase):
-    def setUp(self):
-        self.tempdir = _create_netconf()
-        self.config = Config(self.tempdir)
-        self.net_path = os.path.join(self.tempdir, NETCONF_NETS, NETWORK)
-        self.bond_path = os.path.join(self.tempdir, NETCONF_BONDS, BONDING)
-        self.device_path = os.path.join(self.tempdir, NETCONF_DEVS, DEVICE)
+@pytest.fixture
+def config(netconf_dir):
+    config = Config(netconf_dir)
+    yield config
+    config.delete()
+    assert not os.path.exists(netconf_dir)
 
-    def tearDown(self):
-        self.config.delete()
-        self.assertFalse(os.path.exists(self.tempdir))
 
-    def test_successful_setup(self):
-        with Transaction(config=self.config) as _config:
+@pytest.fixture
+def groups_paths(netconf_dir):
+    return (
+        os.path.join(netconf_dir, NETCONF_NETS, NETWORK),
+        os.path.join(netconf_dir, NETCONF_BONDS, BONDING),
+        os.path.join(netconf_dir, NETCONF_DEVS, DEVICE),
+    )
+
+
+class TestTransaction(object):
+    def test_successful_setup(self, config, groups_paths):
+        with Transaction(config=config) as _config:
             _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
             _config.setBonding(BONDING, BONDING_ATTRIBUTES)
             _config.set_device(DEVICE, DEVICE_ATTRIBUTES)
 
-        self.assertTrue(os.path.exists(self.net_path))
-        self.assertTrue(os.path.exists(self.bond_path))
-        self.assertTrue(os.path.exists(self.device_path))
+        net_path, bond_path, dev_path = groups_paths
+        assert os.path.exists(net_path)
+        assert os.path.exists(bond_path)
+        assert os.path.exists(dev_path)
 
-    def test_successful_non_persistent_setup(self):
-        with Transaction(config=self.config, persistent=False) as _config:
+    def test_successful_non_persistent_setup(self, config, groups_paths):
+        with Transaction(config=config, persistent=False) as _config:
             _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
             _config.setBonding(BONDING, BONDING_ATTRIBUTES)
             _config.set_device(DEVICE, DEVICE_ATTRIBUTES)
 
-        self.assertFalse(os.path.exists(self.net_path))
-        self.assertFalse(os.path.exists(self.bond_path))
-        self.assertFalse(os.path.exists(self.device_path))
+        net_path, bond_path, dev_path = groups_paths
+        assert not os.path.exists(net_path)
+        assert not os.path.exists(bond_path)
+        assert not os.path.exists(dev_path)
 
-    def test_failed_setup(self):
-        with self.assertRaises(ne.RollbackIncomplete) as roi:
-            with Transaction(config=self.config) as _config:
+    def test_failed_setup(self, config, groups_paths):
+        with pytest.raises(ne.RollbackIncomplete) as roi:
+            with Transaction(config=config) as _config:
                 _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
                 _config.setBonding(BONDING, BONDING_ATTRIBUTES)
                 _config.set_device(DEVICE, DEVICE_ATTRIBUTES)
                 raise FailTest()
 
-        diff = roi.exception.diff
-        self.assertEqual(diff.networks[NETWORK], {'remove': True})
-        self.assertEqual(diff.bonds[BONDING], {'remove': True})
-        self.assertEqual(diff.devices, {})
-        self.assertEqual(roi.exception.exc_type, FailTest)
-        self.assertFalse(os.path.exists(self.net_path))
-        self.assertFalse(os.path.exists(self.bond_path))
-        self.assertFalse(os.path.exists(self.device_path))
+        diff = roi.value.diff
+        assert diff.networks[NETWORK] == {'remove': True}
+        assert diff.bonds[BONDING] == {'remove': True}
+        assert diff.devices == {}
+        assert roi.value.exc_type == FailTest
+        net_path, bond_path, dev_path = groups_paths
+        assert not os.path.exists(net_path)
+        assert not os.path.exists(bond_path)
+        assert not os.path.exists(dev_path)
 
-    def test_failed_setup_with_no_diff(self):
-        with self.assertRaises(FailTest):
-            with Transaction(config=self.config):
+    def test_failed_setup_with_no_diff(self, config):
+        with pytest.raises(FailTest):
+            with Transaction(config=config):
                 raise FailTest()
 
-    def test_failed_setup_in_rollback(self):
-        with self.assertRaises(FailTest):
-            with Transaction(config=self.config, in_rollback=True) as _config:
+    def test_failed_setup_in_rollback(self, config, groups_paths):
+        with pytest.raises(FailTest):
+            with Transaction(config=config, in_rollback=True) as _config:
                 _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
                 _config.setBonding(BONDING, BONDING_ATTRIBUTES)
                 _config.set_device(DEVICE, DEVICE_ATTRIBUTES)
                 raise FailTest()
 
-        self.assertFalse(os.path.exists(self.net_path))
-        self.assertFalse(os.path.exists(self.bond_path))
-        self.assertFalse(os.path.exists(self.device_path))
+        net_path, bond_path, dev_path = groups_paths
+        assert not os.path.exists(net_path)
+        assert not os.path.exists(bond_path)
+        assert not os.path.exists(dev_path)
