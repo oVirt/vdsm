@@ -42,8 +42,6 @@ from vdsm.network.ipwrapper import (
     linkAdd,
     linkDel,
     IPRoute2Error,
-    netns_add,
-    netns_delete,
 )
 from vdsm.network.link import iface as linkiface, bond as linkbond
 from vdsm.network.link.iface import random_iface_name
@@ -140,15 +138,6 @@ def vlan_device(link, tag=16):
             # if the underlying device was removed beforehand, the vlan device
             # would be gone by now.
             pass
-
-
-@contextmanager
-def network_namespace(name):
-    netns_add(name)
-    try:
-        yield name
-    finally:
-        netns_delete(name)
 
 
 def _listenOnDevice(fd, icmp):

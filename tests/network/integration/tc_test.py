@@ -38,13 +38,13 @@ from ..nettestlib import (
     Tap,
     bridge_device,
     dummy_device,
-    network_namespace,
     veth_pair,
     vlan_device,
 )
 from .iperf import IperfServer
 from .iperf import IperfClient
 from .iperf import requires_iperf3
+from .netintegtestlib import network_namespace
 from ..nettestlib import running
 
 from vdsm.network import cmd

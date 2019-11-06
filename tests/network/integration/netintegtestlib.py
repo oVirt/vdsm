@@ -23,10 +23,13 @@ from __future__ import division
 
 import functools
 import os
+from contextlib import contextmanager
 
 import pytest
 
 from vdsm.network import cmd
+from vdsm.network.ipwrapper import netns_add
+from vdsm.network.ipwrapper import netns_delete
 
 
 _SYSTEMCTL = 'systemctl'
@@ -61,3 +64,12 @@ def _requires_systemctl():
 def _requires_root(msg='This test must be run as root'):
     if os.geteuid() != 0:
         pytest.skip(msg)
+
+
+@contextmanager
+def network_namespace(name):
+    netns_add(name)
+    try:
+        yield name
+    finally:
+        netns_delete(name)
