@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2018 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ from __future__ import division
 
 import unittest
 
-from network.nettestlib import requires_systemdrun
+from .netintegtestlib import requires_systemdrun
 
 from vdsm.network import cmd
 

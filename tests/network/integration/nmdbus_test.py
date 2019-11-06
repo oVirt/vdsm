@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,9 +25,9 @@ import unittest
 from dbus.exceptions import DBusException
 
 from network.nettestlib import dummy_devices
-from network.nettestlib import requires_systemctl
 from network.nmnettestlib import iface_name, TEST_LINK_TYPE, NMService
 from network.nmnettestlib import nm_connections
+from .netintegtestlib import requires_systemctl
 
 from vdsm.network.nm import errors
 from vdsm.network.nm.nmdbus import NMDbus

@@ -64,7 +64,6 @@ from . import firewall
 EXT_IP = "/sbin/ip"
 EXT_TC = "/sbin/tc"
 _IPERF3_BINARY = CommandPath('iperf3', '/usr/bin/iperf3')
-_SYSTEMCTL = CommandPath('systemctl', '/bin/systemctl', '/usr/bin/systemctl')
 
 
 class ExecError(RuntimeError):
@@ -476,25 +475,6 @@ def requires_iperf3(f):
     return wrapper
 
 
-def requires_systemctl(function):
-    @functools.wraps(function)
-    def wrapper(*args, **kwargs):
-        _requires_systemctl()
-        return function(*args, **kwargs)
-
-    return wrapper
-
-
-def requires_systemdrun(function):
-    @functools.wraps(function)
-    def wrapper(*args, **kwargs):
-        _requires_root('systemd-run requires root')
-        _requires_systemctl()
-        return function(*args, **kwargs)
-
-    return wrapper
-
-
 @contextmanager
 def dnsmasq_run(
     interface,
@@ -698,18 +678,6 @@ class KernelModule(object):
                     out,
                     err,
                 )
-
-
-def _requires_systemctl():
-    rc, _, err = cmd.exec_sync([_SYSTEMCTL.cmd, 'status', 'foo'])
-    run_chroot_err = 'Running in chroot, ignoring request'
-    if rc == 1 or run_chroot_err in err:
-        pytest.skip('systemctl is not available')
-
-
-def _requires_root(msg='This test must be run as root'):
-    if os.geteuid() != 0:
-        pytest.skip(msg)
 
 
 def running_on_centos():

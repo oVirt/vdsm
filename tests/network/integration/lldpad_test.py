@@ -30,7 +30,7 @@ from testlib import VdsmTestCase
 
 from ..nettestlib import veth_pair
 from ..nettestlib import enable_lldp_on_ifaces
-from ..nettestlib import requires_systemctl
+from .netintegtestlib import requires_systemctl
 
 
 class TestLldpadReportInteg(VdsmTestCase):
