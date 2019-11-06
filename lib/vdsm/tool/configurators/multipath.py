@@ -39,9 +39,10 @@ _CONF_FILE = "/etc/multipath.conf"
 # "VDSM REVISION X.Y" tag.  Note that older version used "RHEV REVISION X.Y"
 # format.
 
-_CURRENT_TAG = "# VDSM REVISION 1.8"
+_CURRENT_TAG = "# VDSM REVISION 1.9"
 
 _OLD_TAGS = (
+    "# VDSM REVISION 1.8",
     "# VDSM REVISION 1.7",
     "# VDSM REVISION 1.6",
     "# VDSM REVISION 1.5",
@@ -242,25 +243,12 @@ blacklist {
         protocol "(scsi:adt|scsi:sbp)"
 }
 
-# Remove devices entries when overrides section is available.
-devices {
-    device {
-        # These settings overrides built-in devices settings. It does
-        # not apply to devices without built-in settings (these use the
-        # settings in the "defaults" section), or to devices defined in
-        # the "devices" section.
-        all_devs                yes
-        no_path_retry           %(no_path_retry)d
-    }
-}
-
-# Enable when this section is available on all supported platforms.
 # Options defined here override device specific options embedded into
 # multipathd.
-#
-# overrides {
-#      no_path_retry            %(no_path_retry)d
-# }
+
+overrides {
+      no_path_retry            %(no_path_retry)d
+}
 
 """ % {"current_tag": _CURRENT_TAG,
        "no_path_retry": _NO_PATH_RETRY}
