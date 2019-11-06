@@ -35,16 +35,16 @@ from network.compat import mock
 
 from ..nettestlib import (
     Bridge,
-    IperfClient,
-    IperfServer,
     Tap,
     bridge_device,
     dummy_device,
     network_namespace,
-    requires_iperf3,
     veth_pair,
     vlan_device,
 )
+from .iperf import IperfServer
+from .iperf import IperfClient
+from .iperf import requires_iperf3
 from ..nettestlib import running
 
 from vdsm.network import cmd
