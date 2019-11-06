@@ -29,6 +29,7 @@ import pytest
 
 from vdsm.network import errors as ne
 from vdsm.network import ipwrapper
+from vdsm.network import nmstate
 from vdsm.network.link import iface as link_iface
 
 from . import netfunctestlib as nftestlib
@@ -232,6 +233,26 @@ class TestNetworkBasic(object):
                 netattrs['bridged'] = False
                 adapter.setupNetworks(netsetup, {}, NOCHK)
                 adapter.assertNetwork(NETWORK_NAME, netattrs)
+
+    @pytest.mark.xfail(
+        condition=nmstate.is_nmstate_backend(),
+        raises=AssertionError,
+        reason='sb vlan iface not removed on nmstate backend',
+        strict=True,
+    )
+    def test_move_vlan_from_one_iface_to_another(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+            net_attrs = {
+                'bridged': False,
+                'nic': nic1,
+                'vlan': VLANID,
+                'switch': switch,
+            }
+            with adapter.setupNetworks({NET_1: net_attrs}, {}, NOCHK):
+                net_attrs.update(nic=nic2)
+                adapter.setupNetworks({NET_1: net_attrs}, {}, NOCHK)
+                adapter.assertNetwork(NET_1, net_attrs)
+                adapter.assertNoVlan(nic1, VLANID)
 
     def _test_add_multiple_nets_fails(self, switch, bridged, vlan_id=None):
         with dummy_device() as nic:
