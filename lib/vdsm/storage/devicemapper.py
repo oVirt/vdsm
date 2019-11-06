@@ -132,7 +132,7 @@ def getAllSlaves():
 
 def removeMapping(deviceName):
     if os.geteuid() != 0:
-        return supervdsm.getProxy().devicemapper_removeMapping()
+        return supervdsm.getProxy().devicemapper_removeMapping(deviceName)
 
     cmd = [EXT_DMSETUP, "remove", deviceName]
     try:
