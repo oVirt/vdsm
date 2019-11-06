@@ -21,36 +21,31 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from collections import namedtuple
-import time
-import sys
-from binascii import unhexlify
 
+from binascii import unhexlify
+from collections import namedtuple
+import os
+import sys
+import time
+
+import pytest
 import six
 
 from network.compat import mock
-from testlib import (
-    VdsmTestCase as TestCaseBase,
-    permutations,
-    expandPermutations,
-)
-from testValidation import stresstest, skipif
+
 from ..nettestlib import (
     Bridge,
-    Dummy,
     IperfClient,
     IperfServer,
     Tap,
     bridge_device,
+    dummy_device,
     network_namespace,
     requires_iperf3,
-    requires_tc,
-    requires_tun,
     veth_pair,
     vlan_device,
 )
 from ..nettestlib import running
-from ..nettestlib import EXT_TC
 
 from vdsm.network import cmd
 from vdsm.network import tc
@@ -59,43 +54,53 @@ from vdsm.network.ipwrapper import addrAdd, linkSet, netns_exec, link_set_netns
 from vdsm.network.netinfo.qos import DEFAULT_CLASSID
 
 
-class TestQdisc(TestCaseBase):
-    @requires_tc
-    def setUp(self):
-        self._bridge = Bridge()
-        self._bridge.addDevice()
+EXT_TC = "/sbin/tc"
 
-    def tearDown(self):
-        self._bridge.delDevice()
 
-    def _showQdisc(self):
+@pytest.fixture
+def bridge_dev():
+    with bridge_device() as dev:
+        yield dev
+
+
+@pytest.fixture
+def requires_tc(bridge_dev):
+    cmds = [EXT_TC, 'qdisc', 'add', 'dev', bridge_dev.devName, 'ingress']
+    rc, out, err = cmd.exec_sync(cmds)
+    if rc != 0:
+        pytest.skip(
+            '%r has failed: %s\nDo you have Traffic Control kernel '
+            'modules installed?' % (EXT_TC, err)
+        )
+
+
+class TestQdisc(object):
+    def _showQdisc(self, bridge):
         _, out, _ = cmd.exec_sync(
-            [EXT_TC, "qdisc", "show", "dev", self._bridge.devName]
+            [EXT_TC, "qdisc", "show", "dev", bridge.devName]
         )
         return out
 
-    def _addIngress(self):
-        tc._qdisc_replace_ingress(self._bridge.devName)
-        self.assertIn("qdisc ingress", self._showQdisc())
+    def _addIngress(self, bridge):
+        tc._qdisc_replace_ingress(bridge.devName)
+        assert 'qdisc ingress' in self._showQdisc(bridge)
 
-    def testToggleIngress(self):
-        self._addIngress()
-        tc._qdisc_del(self._bridge.devName, 'ingress')
-        self.assertNotIn("qdisc ingress", self._showQdisc())
+    def testToggleIngress(self, bridge_dev):
+        self._addIngress(bridge_dev)
+        tc._qdisc_del(bridge_dev.devName, 'ingress')
+        assert 'qdisc ingress' not in self._showQdisc(bridge_dev)
 
-    def testQdiscsOfDevice(self):
-        self._addIngress()
-        self.assertEqual(
-            ("ffff:",), tuple(tc._qdiscs_of_device(self._bridge.devName))
-        )
+    def testQdiscsOfDevice(self, bridge_dev):
+        self._addIngress(bridge_dev)
+        assert ('ffff:',) == tuple(tc._qdiscs_of_device(bridge_dev.devName))
 
-    def testReplacePrio(self):
-        self._addIngress()
-        tc.qdisc.replace(self._bridge.devName, 'prio', parent=None)
-        self.assertIn("root", self._showQdisc())
+    def testReplacePrio(self, bridge_dev):
+        self._addIngress(bridge_dev)
+        tc.qdisc.replace(bridge_dev.devName, 'prio', parent=None)
+        assert 'root' in self._showQdisc(bridge_dev)
 
     def testException(self):
-        self.assertRaises(
+        pytest.raises(
             tc.TrafficControlException,
             tc._qdisc_del,
             "__nosuchiface__",
@@ -103,7 +108,10 @@ class TestQdisc(TestCaseBase):
         )
 
 
-class TestPortMirror(TestCaseBase):
+@pytest.mark.skipif(
+    not os.path.exists('/dev/net/tun'), reason='No tun device available'
+)
+class TestPortMirror(object):
 
     """
     Tests port mirroring of IP traffic between two bridges.
@@ -153,9 +161,8 @@ class TestPortMirror(TestCaseBase):
         '00123456789'
     )  # Payload
 
-    @requires_tc
-    @requires_tun
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, requires_tc):
         self._tap0 = Tap()
         self._tap1 = Tap()
         self._tap2 = Tap()
@@ -189,7 +196,8 @@ class TestPortMirror(TestCaseBase):
                     self.log.exception("Error removing device %s" % iface)
             six.reraise(t, v, tb)
 
-    def tearDown(self):
+        yield
+
         failed = False
         for iface in self._devices:
             try:
@@ -212,21 +220,18 @@ class TestPortMirror(TestCaseBase):
         else:
             return True
 
-    @skipif(six.PY3, "needs porting to python 3")
+    @pytest.mark.skipif(six.PY3, reason='needs porting to python 3')
     def testMirroring(self):
         tc.setPortMirroring(self._bridge0.devName, self._bridge1.devName)
-        self.assertTrue(
-            self._sendPing(), "Bridge received no mirrored ping " "requests."
-        )
+        assert self._sendPing(), 'Bridge received no mirrored ping requests.'
 
         tc.unsetPortMirroring(self._bridge0.devName, self._bridge1.devName)
-        self.assertFalse(
-            self._sendPing(),
-            "Bridge received mirrored ping "
-            "requests, but mirroring is unset.",
+        assert not self._sendPing(), (
+            'Bridge received mirrored ping '
+            'requests, but mirroring is unset.'
         )
 
-    @skipif(six.PY3, "needs porting to python 3")
+    @pytest.mark.skipif(six.PY3, reason='needs porting to python 3')
     def testMirroringWithDistraction(self):
         "setting another mirror action should not obstract the first one"
         tc.setPortMirroring(self._bridge0.devName, self._bridge2.devName)
@@ -248,71 +253,59 @@ TcQdiscs = namedtuple('TcQdiscs', 'leaf_qdiscs, ingress_qdisc, root_qdisc')
 TcFilters = namedtuple('TcFilters', 'untagged_filters, tagged_filters')
 
 
-@expandPermutations
-class TestConfigureOutbound(TestCaseBase):
-    def setUp(self):
-        self.device = Dummy()
-        self.device.create()
-        self.device.up()
-        self.device_name = self.device.devName
+@pytest.fixture
+def dummy():
+    with dummy_device() as dev_name:
+        yield dev_name
 
+
+class TestConfigureOutbound(object):
     # TODO:
     # test remove_outbound
 
-    def tearDown(self):
-        self.device.remove()
+    def test_single_non_vlan(self, dummy):
+        qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, None)
+        tc_entities = self._analyse_qos_and_general_assertions(dummy)
+        tc_classes, tc_filters, tc_qdiscs = tc_entities
+        assert tc_classes.classes == []
 
-    def test_single_non_vlan(self):
-        qos.configure_outbound(HOST_QOS_OUTBOUND, self.device_name, None)
-        tc_classes, tc_filters, tc_qdiscs = (
-            self._analyse_qos_and_general_assertions()
-        )
-        self.assertEqual(tc_classes.classes, [])
-
-        self.assertEqual(len(tc_qdiscs.leaf_qdiscs), 1)
-        self.assertIsNotNone(self._non_vlan_qdisc(tc_qdiscs.leaf_qdiscs))
+        assert len(tc_qdiscs.leaf_qdiscs) == 1
+        assert self._non_vlan_qdisc(tc_qdiscs.leaf_qdiscs) is not None
         self._assert_parent(tc_qdiscs.leaf_qdiscs, tc_classes.default_class)
 
-        self.assertEqual(len(tc_filters.tagged_filters), 0)
+        assert len(tc_filters.tagged_filters) == 0
 
-    @permutations([[1], [2]])
+    @pytest.mark.parametrize('repeating_calls', [1, 2])
     @mock.patch('vdsm.network.netinfo.bonding.permanent_address', lambda: {})
-    def test_single_vlan(self, repeating_calls):
-        with vlan_device(self.device_name) as vlan:
+    def test_single_vlan(self, dummy, repeating_calls):
+        with vlan_device(dummy) as vlan:
             for _ in range(repeating_calls):
-                qos.configure_outbound(
-                    HOST_QOS_OUTBOUND, self.device_name, vlan.tag
-                )
-            tc_classes, tc_filters, tc_qdiscs = (
-                self._analyse_qos_and_general_assertions()
-            )
-            self.assertEqual(len(tc_classes.classes), 1)
+                qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, vlan.tag)
+            tc_entities = self._analyse_qos_and_general_assertions(dummy)
+            tc_classes, tc_filters, tc_qdiscs = tc_entities
+            assert len(tc_classes.classes) == 1
 
-            self.assertEqual(len(tc_qdiscs.leaf_qdiscs), 2)
+            assert len(tc_qdiscs.leaf_qdiscs) == 2
             vlan_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan.tag)
             vlan_class = self._vlan_class(tc_classes.classes, vlan.tag)
             self._assert_parent([vlan_qdisc], vlan_class)
 
-            self.assertEqual(len(tc_filters.tagged_filters), 1)
-            self.assertEqual(
-                int(tc_filters.tagged_filters[0]['basic']['value']), vlan.tag
-            )
+            tag_filters = tc_filters.tagged_filters
+            assert len(tag_filters) == 1
+            assert int(tag_filters[0]['basic']['value']) == vlan.tag
 
     @mock.patch('vdsm.network.netinfo.bonding.permanent_address', lambda: {})
-    def test_multiple_vlans(self):
-        with vlan_device(self.device_name, tag=16) as vlan1:
-            with vlan_device(self.device_name, tag=17) as vlan2:
+    def test_multiple_vlans(self, dummy):
+        with vlan_device(dummy, tag=16) as vlan1:
+            with vlan_device(dummy, tag=17) as vlan2:
                 for v in (vlan1, vlan2):
-                    qos.configure_outbound(
-                        HOST_QOS_OUTBOUND, self.device_name, v.tag
-                    )
+                    qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, v.tag)
 
-                tc_classes, tc_filters, tc_qdiscs = (
-                    self._analyse_qos_and_general_assertions()
-                )
-                self.assertEqual(len(tc_classes.classes), 2)
+                tc_entities = self._analyse_qos_and_general_assertions(dummy)
+                tc_classes, tc_filters, tc_qdiscs = tc_entities
+                assert len(tc_classes.classes) == 2
 
-                self.assertEqual(len(tc_qdiscs.leaf_qdiscs), 3)
+                assert len(tc_qdiscs.leaf_qdiscs) == 3
                 v1_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan1.tag)
                 v2_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan2.tag)
                 v1_class = self._vlan_class(tc_classes.classes, vlan1.tag)
@@ -320,7 +313,7 @@ class TestConfigureOutbound(TestCaseBase):
                 self._assert_parent([v1_qdisc], v1_class)
                 self._assert_parent([v2_qdisc], v2_class)
 
-                self.assertEqual(len(tc_filters.tagged_filters), 2)
+                assert len(tc_filters.tagged_filters) == 2
                 current_tagged_filters_flow_id = set(
                     f['basic']['flowid'] for f in tc_filters.tagged_filters
                 )
@@ -328,14 +321,11 @@ class TestConfigureOutbound(TestCaseBase):
                     '%s%x' % (qos._ROOT_QDISC_HANDLE, v.tag)
                     for v in (vlan1, vlan2)
                 )
-                self.assertEqual(
-                    current_tagged_filters_flow_id, expected_flow_ids
-                )
+                assert current_tagged_filters_flow_id == expected_flow_ids
 
-    @stresstest
     @requires_iperf3
-    @requires_tc
-    def test_iperf_upper_limit(self):
+    @pytest.mark.xfail(reason='Not maintained stress test', run=False)
+    def test_iperf_upper_limit(self, requires_tc):
         # Upper limit is not an accurate measure. This is because it converges
         # over time and depends on current machine hardware (CPU).
         # Hence, it is hard to make hard assertions on it. The test should run
@@ -392,12 +382,12 @@ class TestConfigureOutbound(TestCaseBase):
                         for interval in client.out['intervals']
                     ]
                 )
-                self.assertTrue(0 < max_rate < limit_kbps * 1.5)
+                assert 0 < max_rate < limit_kbps * 1.5
 
-    def _analyse_qos_and_general_assertions(self):
-        tc_classes = self._analyse_classes()
-        tc_qdiscs = self._analyse_qdiscs()
-        tc_filters = self._analyse_filters()
+    def _analyse_qos_and_general_assertions(self, device_name):
+        tc_classes = self._analyse_classes(device_name)
+        tc_qdiscs = self._analyse_qdiscs(device_name)
+        tc_filters = self._analyse_filters(device_name)
         self._assertions_on_classes(
             tc_classes.classes, tc_classes.default_class, tc_classes.root_class
         )
@@ -409,36 +399,32 @@ class TestConfigureOutbound(TestCaseBase):
         )
         return tc_classes, tc_filters, tc_qdiscs
 
-    def _analyse_classes(self):
-        all_classes = list(tc.classes(self.device_name))
+    def _analyse_classes(self, device_name):
+        all_classes = list(tc.classes(device_name))
         root_class = self._root_class(all_classes)
         default_class = self._default_class(all_classes)
         all_classes.remove(root_class)
         all_classes.remove(default_class)
         return TcClasses(all_classes, default_class, root_class)
 
-    def _analyse_qdiscs(self):
-        all_qdiscs = list(tc.qdiscs(self.device_name))
+    def _analyse_qdiscs(self, device_name):
+        all_qdiscs = list(tc.qdiscs(device_name))
         ingress_qdisc = self._ingress_qdisc(all_qdiscs)
         root_qdisc = self._root_qdisc(all_qdiscs)
         leaf_qdiscs = self._leaf_qdiscs(all_qdiscs)
-        self.assertEqual(len(leaf_qdiscs) + 2, len(all_qdiscs))
+        assert len(leaf_qdiscs) + 2 == len(all_qdiscs)
         return TcQdiscs(leaf_qdiscs, ingress_qdisc, root_qdisc)
 
-    def _analyse_filters(self):
-        filters = list(tc._filters(self.device_name))
+    def _analyse_filters(self, device_name):
+        filters = list(tc._filters(device_name))
         untagged_filters = self._untagged_filters(filters)
         tagged_filters = self._tagged_filters(filters)
         return TcFilters(untagged_filters, tagged_filters)
 
     def _assertions_on_classes(self, all_classes, default_class, root_class):
-        self.assertTrue(
-            all(
-                cls.get('kind') == qos._SHAPING_QDISC_KIND
-                for cls in all_classes
-            ),
-            str(all_classes),
-        )
+        assert all(
+            cls.get('kind') == qos._SHAPING_QDISC_KIND for cls in all_classes
+        ), str(all_classes)
 
         self._assertions_on_root_class(root_class)
 
@@ -451,44 +437,40 @@ class TestConfigureOutbound(TestCaseBase):
                 self._assert_upper_limit(cls)
 
     def _assertions_on_qdiscs(self, ingress_qdisc, root_qdisc):
-        self.assertEqual(root_qdisc['kind'], qos._SHAPING_QDISC_KIND)
+        assert root_qdisc['kind'] == qos._SHAPING_QDISC_KIND
         self._assert_root_handle(root_qdisc)
-        self.assertEqual(ingress_qdisc['handle'], tc.QDISC_INGRESS)
+        assert ingress_qdisc['handle'] == tc.QDISC_INGRESS
 
     def _assertions_on_filters(self, untagged_filters, tagged_filters):
-        self.assertTrue(all(f['protocol'] == 'all' for f in tagged_filters))
+        assert all(f['protocol'] == 'all' for f in tagged_filters)
         self._assert_parent_handle(
             tagged_filters + untagged_filters, qos._ROOT_QDISC_HANDLE
         )
-        self.assertEqual(len(untagged_filters), 1, msg=untagged_filters)
-        self.assertEqual(untagged_filters[0]['protocol'], 'all')
+        assert len(untagged_filters) == 1, untagged_filters
+        assert untagged_filters[0]['protocol'] == 'all'
 
     def _assert_upper_limit(self, default_class):
-        self.assertEqual(
-            default_class[qos._SHAPING_QDISC_KIND]['ul']['m2'],
-            HOST_QOS_OUTBOUND['ul']['m2'],
-        )
+        dclass = default_class[qos._SHAPING_QDISC_KIND]['ul']['m2']
+        assert dclass == HOST_QOS_OUTBOUND['ul']['m2']
 
     def _assertions_on_default_class(self, default_class):
         self._assert_parent_handle([default_class], qos._ROOT_QDISC_HANDLE)
-        self.assertEqual(default_class['leaf'], DEFAULT_CLASSID + ':')
-        self.assertEqual(
-            default_class[qos._SHAPING_QDISC_KIND]['ls'],
-            HOST_QOS_OUTBOUND['ls'],
-        )
+        assert default_class['leaf'] == DEFAULT_CLASSID + ':'
+        dclass = default_class[qos._SHAPING_QDISC_KIND]['ls']
+        assert dclass == HOST_QOS_OUTBOUND['ls']
 
     def _assertions_on_root_class(self, root_class):
-        self.assertIsNotNone(root_class)
+        assert root_class is not None
         self._assert_root_handle(root_class)
 
     def _assert_root_handle(self, entity):
-        self.assertEqual(entity['handle'], qos._ROOT_QDISC_HANDLE)
+        assert entity['handle'] == qos._ROOT_QDISC_HANDLE
 
     def _assert_parent(self, entities, parent):
-        self.assertTrue(all(e['parent'] == parent['handle'] for e in entities))
+        assert all(e['parent'] == parent['handle'] for e in entities)
 
     def _assert_parent_handle(self, entities, parent_handle):
-        self.assertTrue(all(e['parent'] == parent_handle for e in entities))
+        assert all(e['parent'] == parent_handle for e in entities)
 
     def _root_class(self, classes):
         return _find_entity(lambda c: c.get('root'), classes)

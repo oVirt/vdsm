@@ -62,25 +62,7 @@ from . import firewall
 
 
 EXT_IP = "/sbin/ip"
-EXT_TC = "/sbin/tc"
 _IPERF3_BINARY = CommandPath('iperf3', '/usr/bin/iperf3')
-
-
-class ExecError(RuntimeError):
-    def __init__(self, msg, out, err):
-        super(ExecError, self).__init__(msg)
-        self.out = out
-        self.err = err
-
-
-def check_call(cmds):
-    rc, out, err = cmd.exec_sync(cmds)
-    if rc != 0:
-        raise ExecError(
-            'Command %s returned non-zero exit status %s.' % (cmds, rc),
-            out,
-            err,
-        )
 
 
 class Interface(object):
@@ -435,29 +417,6 @@ def nm_is_running():
     return len(pgrep('NetworkManager')) > 0
 
 
-def check_tc():
-    dev = Bridge()
-    dev.addDevice()
-    try:
-        check_call([EXT_TC, 'qdisc', 'add', 'dev', dev.devName, 'ingress'])
-    except ExecError as e:
-        pytest.skip(
-            "%r has failed: %s\nDo you have Traffic Control kernel "
-            "modules installed?" % (EXT_TC, e.err)
-        )
-    finally:
-        dev.delDevice()
-
-
-def requires_tc(f):
-    @functools.wraps(f)
-    def wrapper(*a, **kw):
-        check_tc()
-        return f(*a, **kw)
-
-    return wrapper
-
-
 def _check_iperf():
     if not os.access(_IPERF3_BINARY.cmd, os.X_OK):
         pytest.skip(
@@ -505,16 +464,6 @@ def dnsmasq_run(
                 server.stop()
     except firewall.FirewallError as e:
         pytest.skip('Failed to allow DHCP traffic in firewall: %s' % e)
-
-
-def requires_tun(f):
-    @functools.wraps(f)
-    def wrapper(*a, **kw):
-        if not os.path.exists("/dev/net/tun"):
-            pytest.skip("This test requires tun device")
-        return f(*a, **kw)
-
-    return wrapper
 
 
 @contextmanager
