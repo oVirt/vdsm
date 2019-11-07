@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,10 @@
 
 from __future__ import absolute_import
 from __future__ import division
+
 from collections import deque
 import os
+import threading
 import time
 
 import pytest
@@ -32,8 +34,6 @@ from ..nettestlib import Dummy
 from vdsm.network.netlink import NLSocketPool
 from vdsm.network.netlink import monitor
 from vdsm.network.sysctl import is_disabled_ipv6
-
-from testlib import start_thread
 
 IP_ADDRESS = '192.0.2.1'
 IP_CIDR = '24'
@@ -69,7 +69,7 @@ class TestNetlinkEventMonitor(object):
             dummy.remove()
 
         with monitor.Monitor(timeout=self.TIMEOUT) as mon:
-            add_device_thread = start_thread(_set_and_remove_device)
+            add_device_thread = _start_thread(_set_and_remove_device)
             for event in mon:
                 if event.get('name') == dummy_name:
                     break
@@ -237,6 +237,13 @@ class TestSocketPool(object):
         with pool.socket() as s1:
             with pool.socket() as s2:
                 assert s1 is s2
+
+
+def _start_thread(func, *args, **kwargs):
+    t = threading.Thread(target=func, args=args, kwargs=kwargs)
+    t.daemon = True
+    t.start()
+    return t
 
 
 def _is_subdict(subset, superset):
