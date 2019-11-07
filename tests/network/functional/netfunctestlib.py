@@ -547,7 +547,9 @@ class NetFuncTestAdapter(object):
 
     def assertStaticIPv6(self, netattrs, ipinfo):
         requires_ipaddress()
-        ipv6_address = str(ipaddress.IPv6Interface(netattrs['ipv6addr']))
+        ipv6_address = str(
+            ipaddress.IPv6Interface(six.text_type(netattrs['ipv6addr']))
+        )
         assert ipv6_address in ipinfo['ipv6addrs']
 
     def assertDHCPv4(self, ipinfo):
