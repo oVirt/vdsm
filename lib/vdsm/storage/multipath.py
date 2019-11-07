@@ -211,12 +211,20 @@ def get_scsi_serial(physdev):
            "--export",
            "--replace-whitespace",
            "--device=" + blkdev]
-    out = commands.run(cmd)
 
-    for line in out.decode("utf-8").splitlines():
-        if line.startswith("ID_SERIAL="):
-            return line.split("=", 1)[1]
-    return ""
+    try:
+        out = commands.run(cmd)
+    except cmdutils.Error as e:
+        # Currently we haven't proper cleanup of LVs when we disconnect SD.
+        # This can result in keeping multipath devices without any valid path.
+        # For such devices scsi_id fails. Until we have proper cleanup in
+        # place, we ignore these failing devices.
+        log.debug("Ignoring scsi_id failure for device %s: %e", blkdev, e)
+    else:
+        for line in out.decode("utf-8").splitlines():
+            if line.startswith("ID_SERIAL="):
+                return line.split("=", 1)[1]
+    return ""  # Fallback if command failed or no ID_SERIAL found
 
 HBTL = namedtuple("HBTL", "host bus target lun")
 
