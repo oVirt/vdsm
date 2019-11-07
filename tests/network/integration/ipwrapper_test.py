@@ -31,7 +31,8 @@ from vdsm.network import py2to3
 from vdsm.network.netlink import monitor
 from vdsm.network.netlink.libnl import IfaceStatus
 
-from ..nettestlib import Bridge, bridge_device
+from .netintegtestlib import Bridge
+from .netintegtestlib import bridge_device
 
 
 @pytest.fixture

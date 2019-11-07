@@ -79,29 +79,6 @@ class Interface(object):
         return "<{0} {1!r}>".format(self.__class__.__name__, self.devName)
 
 
-class Bridge(Interface):
-    def addDevice(self):
-        linkAdd(self.devName, 'bridge')
-        self.up()
-
-    def delDevice(self):
-        self._down()
-        linkDel(self.devName)
-
-    def addIf(self, dev):
-        linkSet(dev, ['master', self.devName])
-
-
-@contextmanager
-def bridge_device():
-    bridge = Bridge()
-    bridge.addDevice()
-    try:
-        yield bridge
-    finally:
-        bridge.delDevice()
-
-
 class Vlan(Interface):
     def __init__(self, backing_device_name, tag):
         self.tag = tag

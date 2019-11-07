@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2018 Red Hat, Inc.
+# Copyright 2017-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import unittest
 
 from vdsm.network import ethtool
 
-from network.nettestlib import bridge_device
+from .netintegtestlib import bridge_device
 
 
 class TestEthtoolDeviceInfo(unittest.TestCase):

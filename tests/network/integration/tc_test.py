@@ -33,17 +33,15 @@ import six
 
 from network.compat import mock
 
-from ..nettestlib import (
-    Bridge,
-    Tap,
-    bridge_device,
-    dummy_device,
-    veth_pair,
-    vlan_device,
-)
+from ..nettestlib import Tap
+from ..nettestlib import dummy_device
+from ..nettestlib import veth_pair
+from ..nettestlib import vlan_device
 from .iperf import IperfServer
 from .iperf import IperfClient
 from .iperf import requires_iperf3
+from .netintegtestlib import Bridge
+from .netintegtestlib import bridge_device
 from .netintegtestlib import network_namespace
 from ..nettestlib import running
 
