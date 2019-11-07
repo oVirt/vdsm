@@ -24,8 +24,8 @@ from contextlib import contextmanager
 import unittest
 
 from network.nettestlib import dummy_devices
-from network.ovsnettestlib import TEST_BRIDGE
-from network.ovsnettestlib import TEST_BOND
+from .ovsnettestlib import TEST_BRIDGE
+from .ovsnettestlib import TEST_BOND
 
 from vdsm.network.ovs.driver import create, Drivers as OvsDrivers
 

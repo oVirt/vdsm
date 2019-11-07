@@ -24,7 +24,6 @@ from copy import deepcopy
 import unittest
 
 from network.compat import mock
-from network.ovsnettestlib import TEST_BRIDGE
 
 from vdsm.network.ovs import info
 
@@ -37,6 +36,8 @@ TEST_NIC = 'eth0'
 TEST_VLAN = 10
 TEST_VLANED_NIC = '%s.%s' % (TEST_NIC, TEST_VLAN)
 TEST_VLANED_NETWORK = 'test-network' + str(TEST_VLAN)
+
+TEST_BRIDGE = 'vdsmbr_test'
 
 
 class MockedOvsInfo(info.OvsInfo):

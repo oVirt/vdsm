@@ -24,4 +24,5 @@ dist_vdsmnetworkintegrationovstests_PYTHON = \
 	__init__.py \
 	$(srcdir)/*_test.py \
 	conftest.py \
+	ovsnettestlib.py \
 	$(NULL)

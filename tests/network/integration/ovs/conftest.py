@@ -26,8 +26,8 @@ from contextlib import contextmanager
 import pytest
 
 from network.nettestlib import running_on_travis_ci
-from network.ovsnettestlib import cleanup_bridges
-from network.ovsnettestlib import OvsService
+from .ovsnettestlib import cleanup_bridges
+from .ovsnettestlib import OvsService
 
 
 @pytest.fixture(scope='session', autouse=True)
