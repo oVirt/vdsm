@@ -836,6 +836,39 @@ def test_update_network_from_bridged_to_bridgeless(rconfig_mock):
     assert expected_state == state
 
 
+@mock.patch.object(nmstate, 'RunningConfig')
+def test_move_vlan_to_another_iface(rconfig_mock):
+    rconfig_mock.return_value.networks = {
+        TESTNET1: _create_network_config(
+            'nic', IFACE0, bridged=False, vlan=VLAN101
+        )
+    }
+
+    networks = {
+        TESTNET1: _create_network_config(
+            'nic', IFACE1, bridged=False, vlan=VLAN101
+        )
+    }
+    state = nmstate.generate_state(networks=networks, bondings={})
+    eth1_vlan_state = _create_vlan_iface_state(IFACE1, VLAN101)
+    _disable_iface_ip(eth1_vlan_state)
+    eth1_state = _create_ethernet_iface_state(IFACE1)
+    _disable_iface_ip(eth1_state)
+    remove_vlan_eth0_state = {
+        nmstate.Interface.NAME: 'eth0.101',
+        nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+    }
+    expected_state = {
+        nmstate.Interface.KEY: [
+            eth1_vlan_state,
+            remove_vlan_eth0_state,
+            eth1_state,
+        ]
+    }
+    _sort_by_name(expected_state[nmstate.Interface.KEY])
+    assert expected_state == state
+
+
 class TestDns(object):
     def test_dns_add_network_with_default_route(self):
         networks = {

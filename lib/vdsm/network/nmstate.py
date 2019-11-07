@@ -378,6 +378,17 @@ class Network(object):
     def dns_state(self):
         return self._dns_state
 
+    @property
+    def is_base_iface_changed(self):
+        return (
+            self._runconf.vlan_iface
+            and self._runconf.base_iface != self._netconf.base_iface
+        )
+
+    @property
+    def purge_old_base_iface(self):
+        return self._remove_vlan_iface()
+
     def _create_dns(self):
         """
         The DNS state may include one of the following outputs:
@@ -661,6 +672,7 @@ class Network(object):
                     Interface.IPV4: {InterfaceIP.ENABLED: False},
                     Interface.IPV6: {InterfaceIP.ENABLED: False},
                 }
+        _purge_orphaned_base_vlan_ifaces(nets, interfaces_state)
         # FIXME: Workaround to nmstate limitation when DNS entries are defined.
         if not droute_net:
             ifnet = _get_default_route_interface(running_networks)
@@ -755,3 +767,16 @@ def _init_base_iface(net, interfaces_state):
         and net.base_iface
         and not (net.has_vlan or net.base_iface in interfaces_state)
     )
+
+
+def _purge_orphaned_base_vlan_ifaces(nets, interfaces_state):
+    base_ifaces_state_which_changed = (
+        net.purge_old_base_iface for net in nets if net.is_base_iface_changed
+    )
+    changed_ifaces_purge_state = {
+        ifstate[Interface.NAME]: ifstate
+        for ifstate in base_ifaces_state_which_changed
+    }
+    purged_ifaces = set(changed_ifaces_purge_state) - set(interfaces_state)
+    for ifname in purged_ifaces:
+        interfaces_state[ifname] = changed_ifaces_purge_state[ifname]

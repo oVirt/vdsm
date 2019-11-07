@@ -29,7 +29,6 @@ import pytest
 
 from vdsm.network import errors as ne
 from vdsm.network import ipwrapper
-from vdsm.network import nmstate
 from vdsm.network.link import iface as link_iface
 
 from . import netfunctestlib as nftestlib
@@ -234,12 +233,6 @@ class TestNetworkBasic(object):
                 adapter.setupNetworks(netsetup, {}, NOCHK)
                 adapter.assertNetwork(NETWORK_NAME, netattrs)
 
-    @pytest.mark.xfail(
-        condition=nmstate.is_nmstate_backend(),
-        raises=AssertionError,
-        reason='sb vlan iface not removed on nmstate backend',
-        strict=True,
-    )
     def test_move_vlan_from_one_iface_to_another(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             net_attrs = {
