@@ -33,6 +33,8 @@ from testlib import mock
 
 import vdsm.storage.mailbox as sm
 
+from vdsm.common import constants
+
 MAX_HOSTS = 10
 MAILER_TIMEOUT = 6
 
@@ -51,6 +53,22 @@ def volume_data(volume_id=None):
     return dict(poolID=SPUUID,
                 domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
                 volumeID=volume_id)
+
+
+def extend_message(size=128 * constants.MEGAB):
+    # Generates a 64 bytes long extend message, with extend size given
+    # as parameter. The message volume data is the default result of
+    # volume_data().
+    message = (
+        b"\x31\x78\x74\x6e\x64\xe1\x5f\xfe"
+        b"\x65\x54\x8a\x18\xb3\xe0\x4a\x54"
+        b"\xe5\x5e\xc8\xdb\x8a\x5f\x5a\x25"
+        b"\x25\xd8\xfc\x73\x2e\xa4\xc3\x43"
+        b"\xbb\x3e\xc6\xf1\x72\xd7\x30\x30"
+        b"\x30\x30\x30\x30\x30\x30%08x\x30"
+        b"\x30\x30\x30\x30\x30\x30\x30\x30"
+        b"\x30\x30") % size
+    return message
 
 
 @pytest.fixture()
@@ -174,25 +192,22 @@ class TestCommunicate:
         with make_hsm_mailbox(mboxfiles, 7) as hsm_mb:
             with make_spm_mailbox(mboxfiles) as spm_mm:
                 spm_mm.registerMessageType(sm.EXTEND_CODE, spm_callback)
-                REQUESTED_SIZE = 100
+                REQUESTED_SIZE = 128 * constants.MEGAB
                 hsm_mb.sendExtendMsg(volume_data(), REQUESTED_SIZE)
 
                 if not msg_processed.wait(10 * MONITOR_INTERVAL):
                     expired = True
 
         assert not expired, 'message was not processed on time'
-        assert received_messages == [(449, (
-            b"1xtnd\xe1_\xfeeT\x8a\x18\xb3\xe0JT\xe5^\xc8\xdb\x8a_Z%"
-            b"\xd8\xfcs.\xa4\xc3C\xbb>\xc6\xf1r\xd700000000000000640"
-            b"0000000000"))]
+        assert received_messages == [(449, extend_message(REQUESTED_SIZE))]
 
     def test_send_reply(self, mboxfiles):
         HOST_ID = 3
         MSG_ID = HOST_ID * sm.SLOTS_PER_MAILBOX + 12
-
+        SIZE = 2 * constants.GIB
         with make_hsm_mailbox(mboxfiles, HOST_ID):
             with make_spm_mailbox(mboxfiles) as spm_mm:
-                msg = sm.SPM_Extend_Message(volume_data(), 0)
+                msg = sm.SPM_Extend_Message(volume_data(), SIZE)
                 spm_mm.sendReply(MSG_ID, msg)
 
         inbox, outbox = read_mbox(mboxfiles)
@@ -201,10 +216,7 @@ class TestCommunicate:
         # proper MSG_ID is written, anything else is intact
         msg_offset = 0x40 * MSG_ID
         assert outbox[:msg_offset] == b'\0' * msg_offset
-        assert outbox[msg_offset:msg_offset + 0x40] == (
-            b'1xtnd\xe1_\xfeeT\x8a\x18\xb3\xe0JT\xe5^\xc8\xdb\x8a_Z%'
-            b'\xd8\xfcs.\xa4\xc3C\xbb>\xc6\xf1r\xd700000000000000000'
-            b'0000000000')
+        assert outbox[msg_offset:msg_offset + 0x40] == extend_message(SIZE)
         assert outbox[msg_offset + 0x40:] == b'\0' * (
             0x1000 * MAX_HOSTS - 0x40 - msg_offset)
 
@@ -222,30 +234,24 @@ class TestExtendMessage:
             sm.SPM_Extend_Message(volume_data(), -1)
 
     def test_process_request(self):
-        PAYLOAD = (
-            b'1xtnd\xe1_\xfeeT\x8a\x18\xb3\xe0JT\xe5^\xc8\xdb\x8a_Z%'
-            b'\xd8\xfcs.\xa4\xc3C\xbb>\xc6\xf1r\xd7'
-            b'000000000000109200000000000')
         MSG_ID = 7
+        SIZE = constants.GIB
         pool = mock.MagicMock()
         pool.spUUID = SPUUID
 
         ret = sm.SPM_Extend_Message.processRequest(
-            pool=pool, msgID=MSG_ID, payload=PAYLOAD)
+            pool=pool, msgID=MSG_ID, payload=extend_message(SIZE))
 
         assert ret == {'status': {'code': 0, 'message': 'Done'}}
         vol_data = volume_data()
         pool.extendVolume.assert_called_with(
-            vol_data['domainID'], vol_data['volumeID'], 4242)
+            vol_data['domainID'], vol_data['volumeID'], SIZE)
 
         called_name, called_args, called_kwargs = pool.mock_calls[1]
         assert called_name == 'spmMailer.sendReply'
         called_msgid, called_msg = called_args
         assert called_msgid == MSG_ID
-        assert called_msg.payload == (
-            b'1xtnd\xe1_\xfeeT\x8a\x18\xb3\xe0JT\xe5^\xc8\xdb\x8a_Z%'
-            b'\xd8\xfcs.\xa4\xc3C\xbb>\xc6\xf1r\xd700000000000010920'
-            b'0000000000')
+        assert called_msg.payload == extend_message(SIZE)
         assert called_msg.callback is None
 
 
