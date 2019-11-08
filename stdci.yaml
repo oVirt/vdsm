@@ -37,17 +37,15 @@ stages:
                 - 'build-aux/*'
             distributions:
               - el7
-              - fc29
+              - fc30
         - linters:
             distributions:
-              - fc29
               - fc30
         - tests-py2:
             runtime-requirements:
               host-distro: same
             distributions:
               - el7
-              - fc29
         - tests-py3:
             runtime-requirements:
               host-distro: newer
