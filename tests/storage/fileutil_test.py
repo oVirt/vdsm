@@ -24,6 +24,8 @@ from __future__ import division
 import os
 import stat
 
+import pytest
+
 from vdsm.storage import fileUtils
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
@@ -37,18 +39,18 @@ class TestCreatedir(VdsmTestCase):
     def test_create_dirs_no_mode(self):
         with namedTemporaryDir() as base:
             path = os.path.join(base, "a", "b")
-            self.assertFalse(os.path.isdir(path))
+            assert not os.path.isdir(path)
             fileUtils.createdir(path)
-            self.assertTrue(os.path.isdir(path))
+            assert os.path.isdir(path)
 
     def test_create_dirs_with_mode(self):
         with namedTemporaryDir() as base:
             path = os.path.join(base, "a", "b")
             mode = 0o700
             fileUtils.createdir(path, mode=mode)
-            self.assertTrue(os.path.isdir(path))
+            assert os.path.isdir(path)
             actual_mode = stat.S_IMODE(os.lstat(path).st_mode)
-            self.assertEqual(actual_mode, mode)
+            assert actual_mode == mode
 
     @xfail_python37
     def test_create_dirs_with_mode_intermediate(self):
@@ -57,16 +59,17 @@ class TestCreatedir(VdsmTestCase):
             path = os.path.join(intermediate, "b")
             mode = 0o700
             fileUtils.createdir(path, mode=mode)
-            self.assertTrue(os.path.isdir(path))
+            assert os.path.isdir(path)
             actual_mode = stat.S_IMODE(os.lstat(intermediate).st_mode)
-            self.assertEqual(actual_mode, mode)
+            assert actual_mode == mode
 
     @xfail_python37
     @requires_unprivileged_user
     def test_create_raise_errors(self):
         with namedTemporaryDir() as base:
             path = os.path.join(base, "a", "b")
-            self.assertRaises(OSError, fileUtils.createdir, path, 0o400)
+            with pytest.raises(OSError):
+                fileUtils.createdir(path, mode=0o400)
 
     def test_directory_exists_no_mode(self):
         with namedTemporaryDir() as base:
@@ -74,20 +77,23 @@ class TestCreatedir(VdsmTestCase):
 
     def test_directory_exists_other_mode(self):
         with namedTemporaryDir() as base:
-            self.assertRaises(OSError, fileUtils.createdir, base, 0o755)
+            with pytest.raises(OSError):
+                fileUtils.createdir(base, mode=0o755)
 
     def test_file_exists_with_mode(self):
         with namedTemporaryDir() as base:
             path = os.path.join(base, "file")
             with open(path, "w"):
                 mode = stat.S_IMODE(os.lstat(path).st_mode)
-                self.assertRaises(OSError, fileUtils.createdir, path, mode)
+                with pytest.raises(OSError):
+                    fileUtils.createdir(path, mode=mode)
 
     def test_file_exists_no_mode(self):
         with namedTemporaryDir() as base:
             path = os.path.join(base, "file")
             with open(path, "w"):
-                self.assertRaises(OSError, fileUtils.createdir, path)
+                with pytest.raises(OSError):
+                    fileUtils.createdir(path)
 
 
 class TestChown(VdsmTestCase):
@@ -97,7 +103,7 @@ class TestChown(VdsmTestCase):
         with temporaryPath() as srcPath:
             fileUtils.chown(srcPath, targetId, targetId)
             stat = os.stat(srcPath)
-            self.assertTrue(stat.st_uid == stat.st_gid == targetId)
+            assert stat.st_uid == stat.st_gid == targetId
 
     @requires_root
     def testNames(self):
@@ -108,11 +114,11 @@ class TestChown(VdsmTestCase):
         with temporaryPath() as srcPath:
             fileUtils.chown(srcPath, tmpId, tmpId)
             stat = os.stat(srcPath)
-            self.assertTrue(stat.st_uid == stat.st_gid == tmpId)
+            assert stat.st_uid == stat.st_gid == tmpId
 
             fileUtils.chown(srcPath, "root", "root")
             stat = os.stat(srcPath)
-            self.assertTrue(stat.st_uid == stat.st_gid == 0)
+            assert stat.st_uid == stat.st_gid == 0
 
 
 class TestAtomicSymlink(VdsmTestCase):
@@ -122,8 +128,8 @@ class TestAtomicSymlink(VdsmTestCase):
             target = os.path.join(tmpdir, "target")
             link = os.path.join(tmpdir, "link")
             fileUtils.atomic_symlink(target, link)
-            self.assertEqual(os.readlink(link), target)
-            self.assertFalse(os.path.exists(link + ".tmp"))
+            assert os.readlink(link) == target
+            assert not os.path.exists(link + ".tmp")
 
     def test_keep_current(self):
         with namedTemporaryDir() as tmpdir:
@@ -131,8 +137,8 @@ class TestAtomicSymlink(VdsmTestCase):
             link = os.path.join(tmpdir, "link")
             fileUtils.atomic_symlink(target, link)
             fileUtils.atomic_symlink(target, link)
-            self.assertEqual(os.readlink(link), target)
-            self.assertFalse(os.path.exists(link + ".tmp"))
+            assert os.readlink(link) == target
+            assert not os.path.exists(link + ".tmp")
 
     def test_replace_stale(self):
         with namedTemporaryDir() as tmpdir:
@@ -140,8 +146,8 @@ class TestAtomicSymlink(VdsmTestCase):
             link = os.path.join(tmpdir, "link")
             fileUtils.atomic_symlink("stale", link)
             fileUtils.atomic_symlink(target, link)
-            self.assertEqual(os.readlink(link), target)
-            self.assertFalse(os.path.exists(link + ".tmp"))
+            assert os.readlink(link) == target
+            assert not os.path.exists(link + ".tmp")
 
     def test_replace_stale_temporary_link(self):
         with namedTemporaryDir() as tmpdir:
@@ -150,8 +156,8 @@ class TestAtomicSymlink(VdsmTestCase):
             tmp_link = link + ".tmp"
             fileUtils.atomic_symlink("stale", tmp_link)
             fileUtils.atomic_symlink(target, link)
-            self.assertEqual(os.readlink(link), target)
-            self.assertFalse(os.path.exists(tmp_link))
+            assert os.readlink(link) == target
+            assert not os.path.exists(tmp_link)
 
     def test_error_isfile(self):
         with namedTemporaryDir() as tmpdir:
@@ -159,14 +165,16 @@ class TestAtomicSymlink(VdsmTestCase):
             link = os.path.join(tmpdir, "link")
             with open(link, 'w') as f:
                 f.write('data')
-            self.assertRaises(OSError, fileUtils.atomic_symlink, target, link)
+            with pytest.raises(OSError):
+                fileUtils.atomic_symlink(target, link)
 
     def test_error_isdir(self):
         with namedTemporaryDir() as tmpdir:
             target = os.path.join(tmpdir, "target")
             link = os.path.join(tmpdir, "link")
             os.mkdir(link)
-            self.assertRaises(OSError, fileUtils.atomic_symlink, target, link)
+            with pytest.raises(OSError):
+                fileUtils.atomic_symlink(target, link)
 
 
 @expandPermutations
@@ -200,4 +208,4 @@ class TestNormalizePath(VdsmTestCase):
         ("path//to///device/", "path/to/device"),
     ])
     def test_normalize_path_equals(self, path, normalized_path):
-        self.assertEqual(normalized_path, fileUtils.normalize_path(path))
+        assert normalized_path == fileUtils.normalize_path(path)
