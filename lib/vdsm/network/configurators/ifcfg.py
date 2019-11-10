@@ -213,7 +213,12 @@ class Ifcfg(Configurator):
         self._addSourceRoute(nic)
         if nic.bond is None:
             if not link_vlan.is_base_device(nic.name):
-                ifdown(nic.name)
+                if nic.bridge is not None:
+                    dhclient.stop(nic.name, 4)
+                    dhclient.stop(nic.name, 6)
+                    ipwrapper.linkSet(nic.name, ['down'])
+                else:
+                    ifdown(nic.name)
             _ifup(nic)
 
     def removeBridge(self, bridge):
