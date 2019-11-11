@@ -23,13 +23,15 @@ from __future__ import division
 
 import os
 import stat
+import sys
 
 import pytest
 
 from vdsm.storage import fileUtils
 from testlib import namedTemporaryDir
 from testlib import temporaryPath
-from . marks import xfail_python37, requires_unprivileged_user, requires_root
+from . marks import requires_unprivileged_user, requires_root
+from . storagetestlib import get_umask
 
 # createdir tests
 
@@ -52,7 +54,6 @@ def test_createdir_with_mode():
         assert actual_mode == mode
 
 
-@xfail_python37
 def test_createdir_with_mode_intermediate():
     with namedTemporaryDir() as base:
         intermediate = os.path.join(base, "a")
@@ -61,16 +62,34 @@ def test_createdir_with_mode_intermediate():
         fileUtils.createdir(path, mode=mode)
         assert os.path.isdir(path)
         actual_mode = stat.S_IMODE(os.lstat(intermediate).st_mode)
-        assert actual_mode == mode
+        # TODO: remove when all platforms support python-3.7
+        if sys.version_info[:2] == (3, 6):
+            assert actual_mode == mode
+        else:
+            # os.makedirs() behavior changed since python 3.7,
+            # os.makedirs() will not respect the 'mode' parameter for
+            # intermediate directories and will create them with the
+            # default mode=0o777
+            assert oct(actual_mode) == oct(0o777 & ~get_umask())
 
 
-@xfail_python37
 @requires_unprivileged_user
 def test_createdir_raise_errors():
     with namedTemporaryDir() as base:
         path = os.path.join(base, "a", "b")
-        with pytest.raises(OSError):
-            fileUtils.createdir(path, mode=0o400)
+        mode = 0o400
+        # TODO: remove when all platforms support    python-3.7
+        if sys.version_info[:2] == (3, 6):
+            with pytest.raises(OSError):
+                fileUtils.createdir(path, mode=mode)
+        else:
+            # os.makedirs() behavior changed since python 3.7,
+            # os.makedirs() will not respect the 'mode' parameter for
+            # intermediate directories and will create them with the
+            # default mode=0o777
+            fileUtils.createdir(path, mode=mode)
+            actual_mode = stat.S_IMODE(os.lstat(path).st_mode)
+            assert oct(actual_mode) == oct(mode & ~get_umask())
 
 
 def test_createdir_directory_exists_no_mode():
