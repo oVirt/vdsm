@@ -50,7 +50,13 @@ from vdsm.network.netlink import monitor
 from vdsm.network.netlink import waitfor
 from vdsm.network.restore_net_config import restore
 
-from functional.utils import getProxy, SUCCESS
+try:
+    from functional.utils import getProxy, SUCCESS
+except ImportError:
+    # When running without VDSM installed, some dependencies are missing.
+    # When running against the lib, there is no need for the full VDSM install.
+    getProxy = None
+    SUCCESS = 0
 
 try:
     import ipaddress
