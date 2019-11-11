@@ -20,13 +20,14 @@
 
 from __future__ import absolute_import
 
-import inspect
 import logging
 import threading
 
 import pyudev
 
 from collections import namedtuple
+
+from vdsm.common.compat import get_args_spec
 
 from vdsm.storage import devicemapper
 
@@ -44,8 +45,8 @@ def create_observer(monitor, callback, name):
     The 'callback' parameter has been introduced in 0.16.
     TODO: Remove when using pyudev >= 0.16 on all platforms.
     """
-    argspec = inspect.getargspec(pyudev.MonitorObserver.__init__)
-    if "callback" in argspec.args:
+    args, _, _ = get_args_spec(pyudev.MonitorObserver.__init__)
+    if "callback" in args:
         # pylint: disable=no-value-for-parameter
         return pyudev.MonitorObserver(monitor,
                                       callback=callback,
