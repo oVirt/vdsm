@@ -36,7 +36,7 @@ import vdsm.storage.mailbox as sm
 from vdsm.common import constants
 
 MAX_HOSTS = 10
-MAILER_TIMEOUT = 6
+MAILER_TIMEOUT = 10
 
 # We used 0.1 seconds for several years, and it proved flaky, failing randomly.
 MONITOR_INTERVAL = 0.2
@@ -237,7 +237,7 @@ class TestCommunicate:
                 REQUESTED_SIZE = 128 * constants.MEGAB
                 hsm_mb.sendExtendMsg(volume_data(), REQUESTED_SIZE)
 
-                if not msg_processed.wait(10 * MONITOR_INTERVAL):
+                if not msg_processed.wait(MAILER_TIMEOUT):
                     expired = True
 
         assert not expired, 'message was not processed on time'
