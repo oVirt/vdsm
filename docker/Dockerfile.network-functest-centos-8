@@ -1,0 +1,64 @@
+FROM centos:8
+
+# Enable systemd.
+# This Dockerfile is based on the recommendations provided in the
+# Fedora official repository
+# (https://hub.docker.com/r/fedora/systemd-systemd/).
+# It enables systemd to be operational.
+RUN dnf -y install systemd \
+    && \
+    (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+    rm -f /lib/systemd/system/multi-user.target.wants/*;\
+    rm -f /etc/systemd/system/*.wants/*;\
+    rm -f /lib/systemd/system/local-fs.target.wants/*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+    rm -f /lib/systemd/system/basic.target.wants/*;\
+    rm -f /lib/systemd/system/anaconda.target.wants/*;
+
+
+# Add runtime dependencies.
+RUN dnf install -y \
+        http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm \
+    && \
+    # Make NM upgrade available
+    dnf -y install dnf-plugins-core \
+    && \
+    dnf copr enable networkmanager/NetworkManager-1.20 -y \
+    && \
+    dnf update -y \
+    && \
+    dnf install -y \
+        NetworkManager \
+        NetworkManager-ovs \
+        autoconf \
+        automake \
+        dnsmasq \
+        git \
+        iproute-tc \
+        make \
+        python3 \
+        python3-dbus \
+        python3-devel \
+        python3-pip \
+        python3-yaml \
+        systemd-udev \
+        # Install vdsm-network for its dependencies
+        vdsm-network \
+    && \
+    dnf remove -y --noautoremove vdsm-network \
+    && \
+    dnf clean all
+
+# Upgrade initscripts
+RUN git clone -b '10.00.4' --single-branch --depth 1 https://github.com/fedora-sysv/initscripts.git \
+    && \
+    cd initscripts && make install-network-scripts
+
+# Add pytest
+RUN python3 -m pip install --upgrade pip \
+    && \
+    python3 -m pip install pytest
+
+VOLUME [ "/sys/fs/cgroup" ]
+CMD ["/usr/sbin/init"]

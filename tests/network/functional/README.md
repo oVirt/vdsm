@@ -1,5 +1,45 @@
 # VDSM network functional tests
 
+### Running the tests in a container
+
+This section describes the steps needed to run the functional tests
+locally in a container.
+Multiple runs may be executed in parallel.
+
+#### Build the container image
+To build the container, under the vdsm/docker folder, run:
+```
+sudo podman build \
+  --rm \
+  -t \
+  ovirtorg/vdsm-network-functest-centos-8 \
+  -f Dockerfile.network-functest-centos-8 \
+  .
+```
+Note: Building the container image is needed only if the Dockerfile
+changes.
+
+#### Usage examples
+- Run tests based on linux-bridge:
+  `sudo ./tests/network/functional/run-tests.sh`
+
+- Open the container shell without executing the test run:
+  `sudo ./tests/network/functional/run-tests.sh --shell`
+  - At the container shell, you can run the tests:
+  ```
+  pytest \
+    -x \
+    -vv \
+    --log-level=DEBUG \
+    --target-lib \
+    --skip-stable-link-monitor \
+    -m legacy_switch tests/network/functional
+  ```
+
+- Run tests based on ovs-switch:
+  `sudo bash -c "TEST_OVS=1 ./tests/network/functional/run-tests.sh"`
+
+
 ### Manually running the tests
 
 To run the functional network tests manually on Jenkins, go to:
