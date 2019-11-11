@@ -44,6 +44,7 @@ MULTIPATHD_SCRIPT = """\
 echo '{}'
 """
 
+# scsi_id output from existing device which has ID_SERIAL
 FAKE_SCSI_ID_OUTPUT = """\
 ID_SCSI=1
 ID_VENDOR=ATA
@@ -54,6 +55,28 @@ ID_REVISION=3B05
 ID_TYPE=disk
 ID_SERIAL=SATA_WDC_WD2502ABYS-1_WD-WMAT16865419
 ID_SERIAL_SHORT=WD-WMAT16865419
+"""
+
+# scsi_id output from existing device which hasn't ID_SERIAL
+FAKE_SCSI_ID_NO_SERIAL = """\
+ID_SCSI=1
+ID_VENDOR=Lenovo
+ID_VENDOR_ENC=Lenovo\x20\x20
+ID_MODEL=CDROM
+ID_MODEL_ENC=CDROM\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20
+ID_REVISION=2.31
+ID_TYPE=cd
+"""
+
+# scsi_id output run against device which doesn't exist
+FAKE_SCSI_ID_MISSING_DEVICE = """\
+ID_SCSI=1
+ID_VENDOR=
+ID_VENDOR_ENC=
+ID_MODEL=
+ID_MODEL_ENC=
+ID_REVISION=
+ID_TYPE=
 """
 
 SCSI_ID_SCRIPT = """\
@@ -112,3 +135,24 @@ def test_scsi_id(fake_scsi_id):
 
     scsi_serial = multipath.get_scsi_serial("fake_device")
     assert scsi_serial == "SATA_WDC_WD2502ABYS-1_WD-WMAT16865419"
+
+
+@requires_root
+def test_scsi_id_no_serial(fake_scsi_id):
+    fake_scsi_id.write(SCSI_ID_SCRIPT.format(FAKE_SCSI_ID_NO_SERIAL))
+
+    scsi_serial = multipath.get_scsi_serial("fake_device")
+    assert scsi_serial == ""
+
+    fake_scsi_id.write(SCSI_ID_SCRIPT.format(FAKE_SCSI_ID_MISSING_DEVICE))
+
+    scsi_serial = multipath.get_scsi_serial("fake_device")
+    assert scsi_serial == ""
+
+
+@requires_root
+def test_scsi_id_fails(fake_scsi_id):
+    fake_scsi_id.write("#!/bin/sh\nexit 1\n")
+
+    scsi_serial = multipath.get_scsi_serial("fake_device")
+    assert scsi_serial == ""
