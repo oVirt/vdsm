@@ -83,13 +83,13 @@ def fake_multipathd(monkeypatch, fake_executeable):
 
 @pytest.fixture
 def fake_scsi_id(monkeypatch, fake_executeable):
-    fake_executeable.write(SCSI_ID_SCRIPT.format(FAKE_SCSI_ID_OUTPUT))
-
     monkeypatch.setattr(
         multipath,
         "_SCSI_ID",
         cmdutils.CommandPath("fake-scsi_id", str(fake_executeable))
     )
+
+    return fake_executeable
 
 
 @requires_root
@@ -108,5 +108,7 @@ def test_resize_map_failed(fake_multipathd):
 
 @requires_root
 def test_scsi_id(fake_scsi_id):
+    fake_scsi_id.write(SCSI_ID_SCRIPT.format(FAKE_SCSI_ID_OUTPUT))
+
     scsi_serial = multipath.get_scsi_serial("fake_device")
     assert scsi_serial == "SATA_WDC_WD2502ABYS-1_WD-WMAT16865419"
