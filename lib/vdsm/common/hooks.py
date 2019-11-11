@@ -26,7 +26,6 @@ import glob
 import hashlib
 import itertools
 import json
-import libvirt
 import logging
 import os
 import os.path
@@ -459,7 +458,8 @@ def load_vm_launch_flags_from_file(vm_id):
     if os.path.isfile(flags_file):
         with open(flags_file) as f:
             return int(f.readline())
-    return libvirt.VIR_DOMAIN_NONE
+    # The following return value must match libvirt.VIR_DOMAIN_NONE
+    return 0
 
 
 def dump_vm_launch_flags_to_file(vm_id, flags):
