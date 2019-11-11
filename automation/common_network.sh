@@ -68,7 +68,7 @@ function install_test_dependencies {
     lago shell "$VM_NAME" -c \
         " \
             ${CI_PYTHON} -m pip install -U \
-            pytest==4.2.1 \
+            pytest==4.6.5 \
             pytest-forked==0.2 \
             xunitmerge==1.0.4
         " || res=$?
