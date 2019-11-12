@@ -52,13 +52,13 @@ vdsm-api.html: schema_to_html.py vdsm-api.pickle
 	@echo "  Generate $@"
 	chmod u+w $(srcdir)
 	PYTHONPATH=$(srcdir)/../../:$(srcdir)/../../vdsm \
-		$(VDSM_TARGET_PY_VERSION) $(srcdir)/schema_to_html.py vdsm-api $(srcdir)/$@
+		$(srcdir)/schema_to_html.py vdsm-api $(srcdir)/$@
 
 %.pickle: %.yml schema_to_pickle.py
 	@echo "  Generate $@"
 	chmod u+w $(srcdir)
 	PYTHONPATH=$(srcdir)/../../:$(srcdir)/../../vdsm \
-		$(VDSM_TARGET_PY_VERSION) $(srcdir)/schema_to_pickle.py $< $@
+		$(srcdir)/schema_to_pickle.py $< $@
 
 install-data-local: install-dist_vdsmrpcDATA
 	chmod 444 "$(DESTDIR)$(vdsmrpcdir)"/*.pickle

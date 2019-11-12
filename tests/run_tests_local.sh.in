@@ -1,6 +1,6 @@
 #!/bin/sh
 if [ -z "$PYTHON_EXE" ]; then
-    PYTHON_EXE="@VDSM_TARGET_PY_VERSION@"
+    PYTHON_EXE="python3"
 fi
 
 function terminate_jobs {

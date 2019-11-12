@@ -26,7 +26,6 @@ AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_HOST
 
 m4_include([m4/ax_python_module.m4])
-m4_include([m4/vdsm_python_helpers.m4])
 
 # Package release
 AC_ARG_ENABLE(
@@ -62,10 +61,7 @@ AM_INIT_AUTOMAKE([-Wno-portability])
 # Checking for build tools
 AC_PROG_LN_S
 
-TARGET_PYTHON_VERSION="python3"
-CHECKED_PYTHON_VERSIONS="python3"
-
-VDSM_CHECK_PY_VERSIONS([${TARGET_PYTHON_VERSION}], [${CHECKED_PYTHON_VERSIONS}])
+AM_PATH_PYTHON([3])
 
 AC_ARG_ENABLE(
     [hooks],
@@ -338,15 +334,11 @@ fi
 
 AC_SUBST([CONFIGURE_FLAGS], ["$configure_flags"])
 
-for _py_major_version in ${VDSM_SUPPORTED_PY_MAJOR_VERSIONS}; do
-    AX_PYTHON_MODULE([six], [fatal], ${_py_major_version})
-done
+AX_PYTHON_MODULE([six], [fatal], python3)
 
-# Checking for pythonX-devel, we need it only
-# for the version of the interpreter we're targeting
-AC_PATH_PROG([PYTHON_CONFIG], ["${VDSM_TARGET_PY_MAJOR_VERSION}-config"])
+AC_PATH_PROG([PYTHON_CONFIG], ["python3-config"])
 if test "x$PYTHON_CONFIG" = "x"; then
-  AC_MSG_ERROR([${VDSM_TARGET_PY_MAJOR_VERSION}-devel not found, please install it.])
+  AC_MSG_ERROR([python3-devel not found, please install it.])
 fi
 
 # External programs (sorted, please keep in order)

@@ -112,7 +112,7 @@ tox:
 		exit 1; \
 	fi; \
 	version=`echo $$out | cut -d' ' -f1`; \
-	if $(VDSM_TARGET_PY_VERSION) build-aux/vercmp $$version $(TOX_MIN_VERSION); then \
+	if build-aux/vercmp $$version $(TOX_MIN_VERSION); then \
 		echo "Error: tox is too old, please install tox \
 		$(TOX_MIN_VERSION) or later"; \
 		exit 1; \
@@ -141,7 +141,7 @@ tests: tox
 
 .PHONY: storage
 storage:
-	${VDSM_TARGET_PY_VERSION} tests/storage/userstorage.py setup
+	python3 tests/storage/userstorage.py setup
 
 all-local: \
 	vdsm.spec
@@ -163,7 +163,7 @@ rpm: dist
 		--define="with_vhostmd $(VHOSTMD)" \
 		--define="with_openvswitch $(OPENVSWITCH)" \
 		--define="with_4k_support $(ENABLE_4K_SUPPORT)" \
-		--define="target_py $(VDSM_TARGET_PY_MAJOR_SHORT_VERSION)" \
+		--define="target_py py3" \
 		--define="vdsm_version $(PACKAGE_VERSION)" \
 		--define="vdsm_release $(PACKAGE_RELEASE)" \
 		$(DIST_ARCHIVES)
