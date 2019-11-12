@@ -57,6 +57,8 @@ def configure():
         # lvmlocal.conf.
         _backup_file(_LVMLOCAL_CUR)
         _install_file(_LVMLOCAL_VDSM, _LVMLOCAL_CUR)
+    # TODO: remove disabling lvmetad once we don't support Fedora 30. On
+    # Fedora 31 and RHEL8 lvmetad is not supported anymore.
     if not _lvmetad_configured():
         _systemctl("mask", _LVMETAD_SERVICE, _LVMETAD_SOCKET)
         _systemctl("disable", _LVMETAD_SERVICE, _LVMETAD_SOCKET)
@@ -69,6 +71,8 @@ def isconfigured():
     /etc/lvm/lvmlocal.conf is using the correct version, or is marked as
     private. Otherwise return NO.
     """
+    # TODO: we don't need to check if lvmetad is disabled once we don't support
+    # Fedora 30. On Fedora 31 and RHEL8 lvmetad is not supported anymore.
     if _lvm_conf_configured() and _lvmetad_configured():
         _log("lvm is configured for vdsm")
         return YES
@@ -115,6 +119,9 @@ def _lvmetad_configured():
     """
     Return True if both lvmetad service and socket are masked and disabled,
     otherwise return False.
+
+    TODO: remove this function once we don't support Fedora 30. On Fedora 31
+    and RHEL8 lvmetad is not supported anymore.
     """
     out = _systemctl("show", "--property=Names,LoadState,ActiveState",
                      _LVMETAD_SERVICE, _LVMETAD_SOCKET)
