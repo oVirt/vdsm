@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 """Wait until VDSM devices get their IPv4 addresses
 
 Wait up to 10 seconds for vdsm-controlled interfaces with static IP to obtain

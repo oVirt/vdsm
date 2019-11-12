@@ -30,10 +30,6 @@ else
 EOF
     cat $SPEC_FILE_IN >>$SPEC_FILE
 
-# TODO remove when (mostly just) hooks are converted
-    sed -i -E -e 's+^#!/usr/bin/python[23]?+#!/usr/bin/python3+' \
-        $(./build-aux/list-all-python-files)
-
     cd ..
     TAR_FILE="$DISTDIR.tar.gz"
     tar cfz "$TAR_FILE" "$DISTDIR"

@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 # Copyright (C) 2012-2016 Adam Litke, IBM Corporation
 # Copyright 2016 Red Hat, Inc.

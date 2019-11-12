@@ -757,7 +757,7 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @ValidatesHook('before_network_setup', 'testBeforeNetworkSetup.py', True,
-                   "#!/usr/bin/python2\n"
+                   "#!/usr/bin/python3\n"
                    "import json\n"
                    "import os\n"
                    "\n"
