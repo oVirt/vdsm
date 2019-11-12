@@ -62,7 +62,7 @@ AM_INIT_AUTOMAKE([-Wno-portability])
 # Checking for build tools
 AC_PROG_LN_S
 
-TARGET_PYTHON_VERSION="python2.7"
+TARGET_PYTHON_VERSION="python3"
 CHECKED_PYTHON_VERSIONS="python2.7 python3"
 
 AS_IF([test -n "${with_target_python}"],
