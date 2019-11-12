@@ -124,23 +124,15 @@ check-virt: run_tests_local.sh
 	@echo '=== Running virt tests. ==='
 	@$(top_srcdir)/tests/run_tests_local.sh $(virt_modules)
 
-.PHONY: check-target
-check-target: check-$(VDSM_TARGET_PY_MAJOR_SHORT_VERSION)
-
-.PHONY: check-all
-check-all: $(VDSM_SUPPORTED_PY_MAJOR_SHORT_VERSIONS:%=check-%)
-
 .PHONY: check
-check: check-all
-
-check-py3: run_tests_local.sh
-	@echo '=== Running check-py3 target with python3 interpreter version.          ==='
+check: run_tests_local.sh
+	@echo '=== Running check target with python3 interpreter version.              ==='
 	@echo '=== To skip this step place "NOSE_EXCLUDE=.*" into your environment.    ==='
 	@echo '=== Do not submit untested code!                                        ==='
 	PYTHON_EXE=python3 \
 		$(top_srcdir)/tests/run_tests_local.sh $(run_modules) && \
 	if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
-		mv .coverage .coverage-nose-py3; \
+		mv .coverage .coverage-nose; \
 	fi
 
 # Disable builtin %.out rule, overrwriting out files

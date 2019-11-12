@@ -132,34 +132,12 @@ check-all:
 check-unit:
 	$(MAKE) -C tests/ check NOSE_EVAL_ATTR="type=='unit'"
 
-lint-py3: gitignore execcmd black flake8 pylint
-
-.PHONY: lint-target
-lint-target: $(VDSM_TARGET_PY_MAJOR_SHORT_VERSION:%=lint-%)
-
-.PHONY: lint-all
-lint-all: $(VDSM_SUPPORTED_PY_MAJOR_SHORT_VERSIONS:%=lint-%)
-
 .PHONY: lint
-# Note: dependencies ordered by time needed to run them
-lint: lint-all
-
-.PHONY: tests-target
-tests-target: tests-$(VDSM_TARGET_PY_SHORT_VERSION)
-
-.PHONY: tests-all
-tests-all: $(VDSM_SUPPORTED_PY_SHORT_VERSIONS:%=tests-%)
+lint: gitignore execcmd black flake8 pylint
 
 .PHONY: tests
-tests: tests-all
-
-# To run tests for specific interpreter version use i.e. 'make tests-py36'
-tests-%: tox
-	tox -e "{tests,storage,lib,network,virt,gluster}-$(@:tests-%=%)"
-
-.PHONY: tests-py37
-tests-py37: tox
-	tox -e "{tests,storage,lib,network,virt,gluster}-py37"
+tests: tox
+	tox -e "tests,storage,lib,network,virt,gluster"
 
 .PHONY: storage
 storage:
