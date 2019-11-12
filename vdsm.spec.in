@@ -20,10 +20,10 @@
 
 %ifarch ppc64le
 %global with_openvswitch 0
-%global arch_ppc64le 0
+%global arch_ppc64le 1
 %else
 %global with_openvswitch @OPENVSWITCH@
-%global arch_ppc64le 1
+%global arch_ppc64le 0
 %endif
 
 %if 0%{?centos} || 0%{?fedora}
