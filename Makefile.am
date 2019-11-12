@@ -87,11 +87,6 @@ pylint: tox
 	tox -e pylint \
 		$(PYLINT_TARGETS)
 
-.PHONY: pylint-py2
-pylint-py2: tox
-	tox -e pylint-py2 \
-		$(PYLINT_TARGETS)
-
 execcmd:
 	! git --no-pager grep execCmd `git ls-files | grep -v -F -f execcmd-blacklist.txt`
 
@@ -100,9 +95,6 @@ execcmd:
 pylint-diff: tox
 	modules=`git diff-tree --no-commit-id --name-only -r HEAD | egrep '\.py$$'`; \
 	if [ -n "$$modules" ]; then tox -e pylint $$modules; fi
-
-flake8-py2: tox
-	tox -e flake8-py2
 
 flake8: tox
 	tox -e flake8
@@ -139,8 +131,6 @@ check-all:
 .PHONY: check-unit
 check-unit:
 	$(MAKE) -C tests/ check NOSE_EVAL_ATTR="type=='unit'"
-
-lint-py2: gitignore execcmd flake8-py2 pylint-py2
 
 lint-py3: gitignore execcmd black flake8 pylint
 
