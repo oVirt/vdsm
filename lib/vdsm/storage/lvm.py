@@ -253,6 +253,8 @@ class LVMRunner(object):
             # TODO: remove when https://bugzilla.redhat.com/1639360 is fixed.
             "WARNING: Combining activation change with other commands is "
             "not advised",
+            # TODO: remove once we don't support Fedora 30.
+            "Configuration setting \"global/event_activation\" unknown",
         ]),
         re.IGNORECASE)
 
