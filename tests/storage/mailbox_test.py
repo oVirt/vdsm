@@ -259,14 +259,15 @@ class TestCommunicate:
                 spm_mm.sendReply(MSG_ID, msg)
 
         inbox, outbox = read_mbox(mboxfiles)
-        assert inbox == b'\0' * 0x1000 * MAX_HOSTS
+        assert inbox == b'\0' * sm.MAILBOX_SIZE * MAX_HOSTS
 
         # proper MSG_ID is written, anything else is intact
-        msg_offset = 0x40 * MSG_ID
+        msg_offset = sm.MESSAGE_SIZE * MSG_ID
         assert outbox[:msg_offset] == b'\0' * msg_offset
-        assert outbox[msg_offset:msg_offset + 0x40] == extend_message(SIZE)
-        assert outbox[msg_offset + 0x40:] == b'\0' * (
-            0x1000 * MAX_HOSTS - 0x40 - msg_offset)
+        msg_end = msg_offset + sm.MESSAGE_SIZE
+        assert outbox[msg_offset:msg_end] == extend_message(SIZE)
+        assert outbox[msg_end:] == b'\0' * (
+            sm.MAILBOX_SIZE * MAX_HOSTS - sm.MESSAGE_SIZE - msg_offset)
 
     def test_fill_slots(self, mboxfiles, monkeypatch):
 
