@@ -7,14 +7,6 @@ release_branches:
 stages:
   - build-artifacts:
       substages:
-        - build-py2:
-            archs:
-              - ppc64le:
-                  distributions:
-                    - el7
-              - x86_64:
-                  distributions:
-                    - el7
         - build-py3:
             archs:
               - ppc64le:
@@ -36,16 +28,10 @@ stages:
                 - 'automation/*'
                 - 'build-aux/*'
             distributions:
-              - el7
               - fc30
         - linters:
             distributions:
               - fc30
-        - tests-py2:
-            runtime-requirements:
-              host-distro: same
-            distributions:
-              - el7
         - tests-py3:
             runtime-requirements:
               host-distro: newer
