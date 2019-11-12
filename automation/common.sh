@@ -164,7 +164,9 @@ run_tests() {
 
     setup_storage
 
-    TIMEOUT=600 make tests NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
+    # Jenkins slaves randomly time out storage tests with 600 seconds timeout.
+    # Use larger timeout to avoid failures when the slaves are too slow.
+    make tests NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib" TIMEOUT=600 STORAGE_TIMEOUT=1200
 }
 
 # Set up storage for storage tests. The storage is tore down in teardown().
