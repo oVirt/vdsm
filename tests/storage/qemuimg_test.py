@@ -812,13 +812,14 @@ class TestMap:
             self.check_map(qemuimg.map(image), expected)
 
     @pytest.mark.parametrize("qcow2_compat", ["0.10", "1.1"])
-    @pytest.mark.parametrize("offset,length,expected_length", [
-        (64 * 1024, 4 * 1024, 65536),
-        (64 * 1024, 72 * 1024, 131072),
-    ])
-    def test_one_block(self, offset, length, expected_length, qcow2_compat):
+    def test_one_cluster(self, qcow2_compat):
         with namedTemporaryDir() as tmpdir:
+            # Write full clusters so we dont fail when qemu change the
+            # implemention of writing partial cluster.
+            offset = 64 * 1024
+            length = 64 * 1024
             size = 1048576
+
             image = os.path.join(tmpdir, "base.img")
             op = qemuimg.create(image, size=size, format=self.FORMAT,
                                 qcow2Compat=qcow2_compat)
@@ -835,21 +836,21 @@ class TestMap:
                 # run 1 - empty
                 {
                     "start": 0,
-                    "length": offset,
+                    "length": length,
                     "data": False,
                     "zero": True,
                 },
                 # run 2 - data
                 {
                     "start": offset,
-                    "length": expected_length,
+                    "length": length,
                     "data": True,
                     "zero": False,
                 },
                 # run 3 - empty
                 {
-                    "start": offset + expected_length,
-                    "length": size - offset - expected_length,
+                    "start": offset + length,
+                    "length": size - offset - length,
                     "data": False,
                     "zero": True,
                 },
