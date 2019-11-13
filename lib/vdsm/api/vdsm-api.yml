@@ -9105,40 +9105,6 @@ Image.move:
         description: A task UUID
         type: *UUID
 
-Image.sparsify:
-    added: '3.6'
-    description: Create a copy of a sparse volume to a destination volume
-        within the sameStorage Pool with free space removed from the source
-        volume.
-    params:
-    -   description: The UUID of the Image
-        name: imageID
-        type: *UUID
-
-    -   description: The UUID of the Storage Pool associated with the Image
-        name: storagepoolID
-        type: *UUID
-
-    -   description: The UUID of the Storage Domain associated with the Image
-        name: storagedomainID
-        type: *UUID
-
-    -   description: The UUID of the snapshot volume
-        name: tmpVolUUID
-        type: *UUID
-
-    -   description: The UUID of the destination storage domain
-        name: dstSdUUID
-        type: *UUID
-
-    -   description: The UUID of the destination image
-        name: dstImgUUID
-        type: *UUID
-
-    -   description: The UUID of the destination volume
-        name: dstVolUUID
-        type: *UUID
-
 Image.cloneStructure:
     added: '3.2'
     description: Clone an image structure from a source domain to a destination

@@ -101,7 +101,6 @@ test_modules = \
 	schedule_test.py \
 	schemavalidation_test.py \
 	sigutils_test.py \
-	sparsify_test.py \
 	stompadapter_test.py \
 	stompasyncclient_test.py \
 	sysprep_test.py \

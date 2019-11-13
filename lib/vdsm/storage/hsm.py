@@ -1685,25 +1685,6 @@ class HSM(object):
             misc.parseBool(force), discard)
 
     @public
-    def sparsifyImage(self, spUUID, tmpSdUUID, tmpImgUUID, tmpVolUUID,
-                      dstSdUUID, dstImgUUID, dstVolUUID):
-        """
-        Reduce sparse image size by converting free space on image to free
-        space on storage domain using virt-sparsify.
-        """
-
-        pool = self.getPool(spUUID)
-
-        sdUUIDs = sorted(set((tmpSdUUID, dstSdUUID)))
-
-        for dom in sdUUIDs:
-            vars.task.getSharedLock(STORAGE, dom)
-
-        self._spmSchedule(spUUID, "sparsifyImage", pool.sparsifyImage,
-                          tmpSdUUID, tmpImgUUID, tmpVolUUID, dstSdUUID,
-                          dstImgUUID, dstVolUUID)
-
-    @public
     def cloneImageStructure(self, spUUID, sdUUID, imgUUID, dstSdUUID):
         """
         Clone an image structure (volume chain) to a destination domain within

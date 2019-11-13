@@ -28,30 +28,6 @@ _VIRTSPARSIFY = CommandPath("virt-sparsify",
                             "/usr/bin/virt-sparsify",)
 
 
-def sparsify(src_vol, tmp_vol, dst_vol, src_format=None, dst_format=None):
-    """
-    Sparsify the 'src_vol' volume (src_format) to 'dst_vol' volume (dst_format)
-    using libguestfs virt-sparsify
-
-    src_vol: path of base volume
-    tmp_vol: path of temporary volume created with src_vol as backing volume
-    dst_vol: path of destination volume
-    src_format: format of base volume ('raw' or `qcow2')
-    src_format: format of destination volume ('raw' or `qcow2')
-    """
-    cmd = [_VIRTSPARSIFY.cmd, '--tmp', 'prebuilt:' + tmp_vol]
-
-    if src_format:
-        cmd.extend(("--format", src_format))
-
-    if dst_format:
-        cmd.extend(("--convert", dst_format))
-
-    cmd.extend((src_vol, dst_vol))
-
-    commands.run(cmd)
-
-
 def sparsify_inplace(vol_path):
     """
     Sparsify the volume in place

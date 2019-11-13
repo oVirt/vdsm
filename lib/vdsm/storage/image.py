@@ -27,7 +27,6 @@ from contextlib import contextmanager
 
 from vdsm import constants
 from vdsm import utils
-from vdsm import virtsparsify
 from vdsm.config import config
 from vdsm.common import cmdutils
 from vdsm.common import logutils
@@ -545,74 +544,6 @@ class Image:
                       OP_TYPES[op], imgUUID)
         return True
 
-    def _getSparsifyVolume(self, sdUUID, imgUUID, volUUID):
-        # FIXME:
-        # sdCache.produce.produceVolume gives volumes that return getVolumePath
-        # with a colon (:) for NFS servers. So, we're using volClass().
-        # https://bugzilla.redhat.com/1128942
-        # If, and when the bug gets solved, use
-        # sdCache.produce(...).produceVolume(...) to create the volumes.
-        volClass = sdCache.produce(sdUUID).getVolumeClass()
-        return volClass(self.repoPath, sdUUID, imgUUID, volUUID)
-
-    def sparsify(self, tmpSdUUID, tmpImgUUID, tmpVolUUID, dstSdUUID,
-                 dstImgUUID, dstVolUUID):
-        """
-        Reduce sparse image size by converting free space on image to free
-        space on storage domain using virt-sparsify.
-        """
-        self.log.info("tmpSdUUID=%s, tmpImgUUID=%s, tmpVolUUID=%s, "
-                      "dstSdUUID=%s, dstImgUUID=%s, dstVolUUID=%s", tmpSdUUID,
-                      tmpImgUUID, tmpVolUUID, dstSdUUID, dstImgUUID,
-                      dstVolUUID)
-
-        tmpVolume = self._getSparsifyVolume(tmpSdUUID, tmpImgUUID, tmpVolUUID)
-        dstVolume = self._getSparsifyVolume(dstSdUUID, dstImgUUID, dstVolUUID)
-
-        if not dstVolume.isSparse():
-            raise se.VolumeNotSparse()
-
-        srcVolume = self._getSparsifyVolume(tmpSdUUID, tmpImgUUID,
-                                            tmpVolume.getParent())
-
-        tmpVolume.prepare()
-        try:
-            dstVolume.prepare()
-            try:
-                # By definition "sparsification" is implemented writing a file
-                # with zeroes as large as the entire file-system. So at least
-                # tmpVolume needs to be as large as the virtual disk size for
-                # the worst case.
-                # TODO: Some extra space may be needed for QCOW2 headers
-                tmpVolume.extend(tmpVolume.getCapacity())
-                # For the dstVolume we may think of an optimization where the
-                # extension is as large as the source (and at the end we
-                # shrinkToOptimalSize).
-                # TODO: Extend the dstVolume only as much as the actual size of
-                # srcVolume
-                # TODO: Some extra space may be needed for QCOW2 headers
-                dstVolume.extend(tmpVolume.getCapacity())
-
-                srcFormat = sc.fmt2str(srcVolume.getFormat())
-                dstFormat = sc.fmt2str(dstVolume.getFormat())
-
-                virtsparsify.sparsify(srcVolume.getVolumePath(),
-                                      tmpVolume.getVolumePath(),
-                                      dstVolume.getVolumePath(),
-                                      src_format=srcFormat,
-                                      dst_format=dstFormat)
-            except Exception:
-                self.log.exception('Unexpected error sparsifying %s',
-                                   tmpVolUUID)
-                raise se.CannotSparsifyVolume(tmpVolUUID)
-            finally:
-                dstVolume.teardown(sdUUID=dstSdUUID, volUUID=dstVolUUID)
-        finally:
-            tmpVolume.teardown(sdUUID=tmpSdUUID, volUUID=tmpVolUUID)
-
-        self._shrinkVolumeToOptimalSize(tmpVolume)
-        self._shrinkVolumeToOptimalSize(dstVolume)
-
     def cloneStructure(self, sdUUID, imgUUID, dstSdUUID):
         self._createTargetImage(sdCache.produce(dstSdUUID), sdUUID, imgUUID)
 
@@ -997,18 +928,6 @@ class Image:
 
         dom.deactivateImage(imgUUID)
         return actualVolumes
-
-    def _shrinkVolumeToOptimalSize(self, vol):
-        if not vol.chunked():
-            return
-
-        vol.prepare()
-        try:
-            optimal_size = vol.optimal_size()
-        finally:
-            vol.teardown(vol.sdUUID, vol.volUUID)
-
-        vol.reduce(optimal_size)
 
     def _activateVolumeForImportExport(self, domain, imgUUID, volUUID=None):
         chain = self.getChain(domain.sdUUID, imgUUID, volUUID)

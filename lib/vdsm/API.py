@@ -875,11 +875,6 @@ class Image(APIBase):
                                    self._UUID, vmUUID, operation, postZero,
                                    force, discard)
 
-    def sparsify(self, tmpVolUUID, dstSdUUID, dstImgUUID, dstVolUUID):
-        return self._irs.sparsifyImage(self._spUUID, self._sdUUID, self._UUID,
-                                       tmpVolUUID, dstSdUUID, dstImgUUID,
-                                       dstVolUUID)
-
     def cloneStructure(self, dstSdUUID):
         return self._irs.cloneImageStructure(self._spUUID, self._sdUUID,
                                              self._UUID, dstSdUUID)
