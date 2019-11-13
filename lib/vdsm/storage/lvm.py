@@ -365,6 +365,8 @@ class LVMCache(object):
         else:
             dev_filter = self._getCachedFilter()
 
+        # TODO: remove locking type configuration
+        # once we require only lvm-2.03
         conf = _buildConfig(
             dev_filter=dev_filter,
             locking_type="4" if self._read_only else "1")

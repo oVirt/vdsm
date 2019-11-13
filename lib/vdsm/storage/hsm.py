@@ -447,7 +447,7 @@ class HSM(object):
                 sudo=True
             )
         except cmdutils.Error as e:
-            self.log.error("Can't validate lvm locking_type: %s", e)
+            self.log.debug("Can't validate lvm locking_type: %s", e)
             return False
 
         out = out.decode("utf-8").strip()
