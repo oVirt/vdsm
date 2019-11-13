@@ -124,8 +124,13 @@ def _lvmetad_configured():
     and RHEL8 lvmetad is not supported anymore.
     """
     out = _systemctl("show", "--property=Names,LoadState,ActiveState",
-                     _LVMETAD_SERVICE, _LVMETAD_SOCKET)
+                     "lvm2-lvmetad*")
     out = out.decode("utf-8")
+    out = out.strip()
+
+    if out == "":
+        # There's no lvmetad and thus nothing to configure
+        return True
 
     # Convert systemctl output:
     # Names=lvm2-lvmetad.service\nLoadState=masked\nActiveState=inactive\n\n
