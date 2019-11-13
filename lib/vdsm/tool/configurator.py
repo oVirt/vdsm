@@ -290,7 +290,7 @@ def _parse_args(*args):
             '(e.g %s).\n'
             'If non is specified, operation will run for '
             'all related modules.'
-            % six.iterkeys(_CONFIGURATORS)
+            % list(_CONFIGURATORS)
         ),
     )
     if action == "configure":
