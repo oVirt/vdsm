@@ -849,7 +849,7 @@ autoreconf -if
 %else
 %define enable_4k_support no
 %endif
-%configure --with-qemu-user=%{qemu_user} --with-qemu-group=%{qemu_group} --enable-ovirt-imageio=%{enable_ovirt_imageio} --enable-ovirt-vmconsole=%{enable_ovirt_vmconsole} --enable-gluster-mgmt=%{enable_gluster_mgmt} --enable-hooks=%{enable_hooks} --enable-vhostmd=%{enable_vhostmd} --enable-4k-support=%{enable_4k_support} --with-data-center=%{vdsm_repo} --with-only-python=%{python2_or_python3}
+%configure --with-qemu-user=%{qemu_user} --with-qemu-group=%{qemu_group} --enable-ovirt-imageio=%{enable_ovirt_imageio} --enable-ovirt-vmconsole=%{enable_ovirt_vmconsole} --enable-gluster-mgmt=%{enable_gluster_mgmt} --enable-hooks=%{enable_hooks} --enable-vhostmd=%{enable_vhostmd} --enable-4k-support=%{enable_4k_support} --with-data-center=%{vdsm_repo}
 make
 
 %install

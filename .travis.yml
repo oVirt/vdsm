@@ -13,9 +13,9 @@ git:
 # issues on CentOS but the chance is very low.
 env:
   matrix:
-    - DIST=centos-8   PY=3.6  TARGETS="storage tests"
-    - DIST=fedora-30  PY=3.7  TARGETS="lint"
-    - DIST=fedora-30  PY=3.7  TARGETS="storage tests"
+    - DIST=centos-8   TARGETS="storage tests"
+    - DIST=fedora-30  TARGETS="lint"
+    - DIST=fedora-30  TARGETS="storage tests"
 
 before_install:
   - docker --version
@@ -41,4 +41,4 @@ script:
     --volume `pwd`:/vdsm:Z \
     --volume /run/udev:/run/udev:Z \
     ovirtorg/vdsm-test-$DIST \
-    bash -c "cd /vdsm && ./autogen.sh --system --with-only-python=python$PY && make all $TARGETS"
+    bash -c "cd /vdsm && ./autogen.sh --system && make all $TARGETS"

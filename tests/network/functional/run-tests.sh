@@ -67,7 +67,7 @@ function setup_vdsm_sources_for_testing {
         && \
         git clean -dxf \
         &&
-        ./autogen.sh --system --with-only-python=python3 \
+        ./autogen.sh --system \
         && \
         make
     "

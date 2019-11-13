@@ -63,31 +63,9 @@ AM_INIT_AUTOMAKE([-Wno-portability])
 AC_PROG_LN_S
 
 TARGET_PYTHON_VERSION="python3"
-CHECKED_PYTHON_VERSIONS="python2.7 python3"
-
-AS_IF([test -n "${with_target_python}"],
-    AS_IF([test "${with_target_python}" = "yes" -o "${with_target_python}" = "no"],
-        [AC_MSG_ERROR(['--with-target-python' option needs a value i.e. '--with-target-python=python3'])],
-        [TARGET_PYTHON_VERSION="${with_target_python}"]
-    )
-)
-
-AS_IF([test -n "${with_only_python}"],
-    AS_IF([test "${with_only_python}" = "yes" -o "${with_only_python}" = "no"],
-        [AC_MSG_ERROR(['--with-only-python' option needs a value i.e. '--with-only-python=python3'])], [
-            TARGET_PYTHON_VERSION="${with_only_python}"
-            CHECKED_PYTHON_VERSIONS="${with_only_python}"
-        ]
-    )
-)
+CHECKED_PYTHON_VERSIONS="python3"
 
 VDSM_CHECK_PY_VERSIONS([${TARGET_PYTHON_VERSION}], [${CHECKED_PYTHON_VERSIONS}])
-
-AS_IF([test z"${enable_python3}" = "zno"],
-      VDSM_DISABLE_PY3_VERSIONS)
-
-AS_IF([test z"${enable_python2}" = "zno"],
-      VDSM_DISABLE_PY2_VERSIONS)
 
 AC_ARG_ENABLE(
     [hooks],
@@ -115,34 +93,6 @@ AC_ARG_ENABLE(
 AS_IF([test "${enable_vhostmd}" = "yes"],
       AC_SUBST([VHOSTMD], ['1']),
       AC_SUBST([VHOSTMD], ['0']))
-
-AC_ARG_WITH(
-    [target-python],
-    [AS_HELP_STRING([--with-target-python=pythonX.Y],
-                    [use 'pythonX.Y' interpreter to build RPMs])]
-)
-
-AC_ARG_WITH(
-    [only-python],
-    [AS_HELP_STRING([--with-only-python=pythonX.Y],
-                    [use 'pythonX.Y' as the target and the only supported interpreter version])]
-)
-
-AC_ARG_ENABLE(
-    [python2],
-    [AS_HELP_STRING(
-        [--disable-python2],
-        [disable support for version 2 Python interpreters]
-    )]
-)
-
-AC_ARG_ENABLE(
-    [python3],
-    [AS_HELP_STRING(
-        [--disable-python3],
-        [disable support for version 3 Python interpreters]
-    )]
-)
 
 AC_ARG_ENABLE(
     [gluster-mgmt],
@@ -368,18 +318,6 @@ if test "$HOOKS" == "1"; then
 fi
 if test "$GLUSTER_MGMT" == "0"; then
     configure_flags+=" --disable-gluster-mgmt"
-fi
-if test z"$enable_python2" = "zno"; then
-    configure_flags+=" --disable-python2"
-fi
-if test z"$enable_python3" = "zno"; then
-    configure_flags+=" --disable-python3"
-fi
-if test -n "$with_target_python"; then
-    configure_flags+=" --with-target-python=$with_target_python"
-fi
-if test -n "$with_only_python"; then
-    configure_flags+=" --with-only-python=$with_only_python"
 fi
 if test "$OVIRT_IMAGEIO" == "0"; then
     configure_flags+=" --disable-ovirt-imageio"

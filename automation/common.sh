@@ -26,8 +26,7 @@ build_vdsm() {
         ${CI_PYTHON} tests/profile autogen ./autogen.sh \
             --system \
             --enable-hooks \
-            --enable-vhostmd \
-            --with-only-python=${CI_PYTHON}
+            --enable-vhostmd
     fi
 
     ${CI_PYTHON} tests/profile make make
