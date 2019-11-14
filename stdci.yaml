@@ -28,6 +28,7 @@ stages:
                 - 'automation/*'
                 - 'build-aux/*'
             distributions:
+              - el8
               - fc30
         - linters:
             distributions:
