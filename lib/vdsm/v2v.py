@@ -286,7 +286,7 @@ def get_jobs_status():
     for job_id, job in items:
         ret[job_id] = {
             'status': job.status,
-            'description': job.description,
+            'description': job.description.decode('utf-8'),
             'progress': job.progress
         }
     return ret
