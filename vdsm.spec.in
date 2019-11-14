@@ -1036,7 +1036,7 @@ exit 0
 %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
 %{_sysconfdir}/libvirt/hooks/qemu
-%{_libdir}/dracut/dracut.conf.d/99-vdsm_protect_ifcfg.conf
+%{_exec_prefix}/lib/dracut/dracut.conf.d/99-vdsm_protect_ifcfg.conf
 %{_libexecdir}/%{vdsm_name}/curl-img-wrap
 %{_libexecdir}/%{vdsm_name}/fc-scan
 %{_libexecdir}/%{vdsm_name}/managedvolume-helper

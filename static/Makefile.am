@@ -136,7 +136,7 @@ networkmanager_DATA = \
 	./etc/NetworkManager/conf.d/vdsm.conf \
 	$(NULL)
 
-dracutdir = $(libdir)/dracut/dracut.conf.d
+dracutdir = $(exec_prefix)/lib/dracut/dracut.conf.d
 
 dracut_DATA = \
 	./usr/lib/dracut/dracut.conf.d/99-vdsm_protect_ifcfg.conf \
