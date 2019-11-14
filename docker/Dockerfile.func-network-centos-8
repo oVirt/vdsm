@@ -26,10 +26,13 @@ RUN dnf install -y \
     && \
     dnf copr enable networkmanager/NetworkManager-1.20 -y \
     && \
+    dnf copr enable nmstate/nmstate-git -y \
+    && \
     dnf update -y \
     && \
     dnf install -y \
         NetworkManager \
+        NetworkManager-config-server \
         NetworkManager-ovs \
         autoconf \
         automake \
@@ -37,6 +40,7 @@ RUN dnf install -y \
         git \
         iproute-tc \
         make \
+        nmstate \
         python3 \
         python3-dbus \
         python3-devel \

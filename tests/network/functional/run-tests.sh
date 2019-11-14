@@ -52,7 +52,8 @@ function setup_vdsm_runtime_environment {
         && \
         install -d /var/run/vdsm/dhclientmon -m 755 -o vdsm && \
         install -d /var/run/vdsm/trackedInterfaces -m 755 -o vdsm && \
-        cp $CONTAINER_WORKSPACE/static/etc/dhcp/dhclient.d/dhclientmon.sh /etc/dhcp/dhclient.d/
+        cp $CONTAINER_WORKSPACE/static/etc/dhcp/dhclient.d/dhclientmon.sh /etc/dhcp/dhclient.d/ && \
+        cp $CONTAINER_WORKSPACE/static/etc/NetworkManager/conf.d/vdsm.conf /etc/NetworkManager/conf.d/
     "
 }
 
@@ -79,8 +80,8 @@ trap run_exit EXIT
 
 wait_for_active_service "dbus"
 start_service "systemd-udevd"
-restart_service "NetworkManager"
 setup_vdsm_runtime_environment
+restart_service "NetworkManager"
 setup_vdsm_sources_for_testing
 
 if [ "$1" == "--shell" ];then
@@ -95,6 +96,14 @@ else
     SWITCH_TYPE="legacy_switch"
 fi
 
+if [ -n "$TEST_NMSTATE" ];then
+  SWITCH_TYPE="${SWITCH_TYPE} and nmstate"
+  podman_exec "
+          mkdir /etc/vdsm && \
+          echo -e \"[vars]\nnet_nmstate_enabled = true\n\" >> /etc/vdsm/vdsm.conf
+  "
+fi
+
 podman_exec "
     cd /$VDSM_WORKDIR/$PROJECT \
     && \
@@ -103,6 +112,6 @@ podman_exec "
       --log-level=DEBUG \
       --target-lib \
       --skip-stable-link-monitor \
-      -m $SWITCH_TYPE \
+      -m \"$SWITCH_TYPE\" \
       tests/network/functional
 "

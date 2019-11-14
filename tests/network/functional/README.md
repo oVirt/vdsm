@@ -39,6 +39,9 @@ changes.
 - Run tests based on ovs-switch:
   `sudo bash -c "TEST_OVS=1 ./tests/network/functional/run-tests.sh"`
 
+ - Run tests based on nmstate backend:
+  `sudo bash -c "TEST_NMSTATE=1 ./tests/network/functional/run-tests.sh"`
+
 
 ### Manually running the tests
 
