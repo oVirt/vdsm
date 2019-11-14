@@ -254,6 +254,29 @@ class TestNetworkBasic(object):
                 adapter.assertNetwork(NET_1, net_attrs)
                 adapter.assertNoVlan(nic1, VLANID)
 
+    def test_move_vlan_and_create_new_network_on_old_iface(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+            initital_net_attrs = {
+                'bridged': False,
+                'nic': nic1,
+                'vlan': VLANID,
+                'switch': switch,
+            }
+            with adapter.setupNetworks({NET_1: initital_net_attrs}, {}, NOCHK):
+                updated_net_attributes = {
+                    'bridged': False,
+                    'nic': nic2,
+                    'vlan': VLANID,
+                    'switch': switch,
+                }
+                with adapter.setupNetworks(
+                    {NET_1: updated_net_attributes, NET_2: initital_net_attrs},
+                    {},
+                    NOCHK,
+                ):
+                    adapter.assertNetwork(NET_1, updated_net_attributes)
+                    adapter.assertNetwork(NET_2, initital_net_attrs)
+
     def _test_add_multiple_nets_fails(self, switch, bridged, vlan_id=None):
         with dummy_device() as nic:
             net_1_attrs = net_2_attrs = self._create_net_attrs(
