@@ -76,7 +76,7 @@ check_install() {
 
     local vr=$(build-aux/pkg-version --version)-$(build-aux/pkg-version --release)
 
-    if grep -q 'Fedora' /etc/redhat-release; then
+    if [ -x /usr/bin/dnf ]; then
         DNF=dnf
     else
         DNF=yum
