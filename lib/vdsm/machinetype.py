@@ -70,6 +70,31 @@ def emulated_machines(arch, capabilities=None):
             _emulated_machines_from_caps_arch(arch, caps))
 
 
+def _get_domain_capabilities(conn, arch):
+    """
+    Read libvirt domain capabilities and parse them.
+
+    Arguments:
+        conn(libvirtconnection) - libvirt connection object for the
+                                  hypervisor to be queried for CPU models.
+        arch(string) - CPU architecture, one of cpuarch constants
+
+    Returns:
+        ET.Element instance of dom capabilities or None
+    """
+    if config.getboolean('vars', 'fake_kvm_support'):
+        virt_type = 'qemu'
+    else:
+        virt_type = 'kvm'
+    try:
+        domcaps = conn.getDomainCapabilities(None, arch, None, virt_type, 0)
+    except libvirt.libvirtError:
+        logging.exception('Error while getting domain capabilities')
+        return None
+
+    return ET.fromstring(domcaps)
+
+
 def domain_cpu_models(conn, arch, cpu_mode):
     """
     Parse libvirt domain capabilities to get cpu models known by the
@@ -91,21 +116,12 @@ def domain_cpu_models(conn, arch, cpu_mode):
     Example:
         {'z13' : 'unknown', 'zEC12': 'no', 'z196': 'yes'}
     """
-    if config.getboolean('vars', 'fake_kvm_support'):
-        virt_type = 'qemu'
-    else:
-        virt_type = 'kvm'
-    try:
-        domcaps = conn.getDomainCapabilities(None, arch, None, virt_type, 0)
-    except libvirt.libvirtError:
-        logging.exception('Error while getting domain capabilities')
-        return {}
-    if not domcaps:
+    xmldomcaps = _get_domain_capabilities(conn, arch)
+    if xmldomcaps is None:
         logging.error('Error while getting CPU models: '
                       'no domain capabilities found')
         return {}
 
-    xmldomcaps = ET.fromstring(domcaps)
     cpucaps = xmldomcaps.find('cpu')
     if cpucaps is None:
         logging.error('Error while getting CPU models: '
@@ -155,6 +171,39 @@ def compatible_cpu_models():
        'POWER8' not in compatible_models:
         compatible_models.append('POWER8')
     return list(set(["model_" + model for model in compatible_models]))
+
+
+@cache.memoized
+def cpu_features():
+    """
+    Read CPU features from dom capabilities.
+
+    Returns:
+        A list of strings indicating CPU features.
+    """
+    c = libvirtconnection.get()
+    arch = cpuarch.real()
+    xmldomcaps = _get_domain_capabilities(c, arch)
+    if xmldomcaps is None:
+        logging.error('Error while getting CPU features: '
+                      'no domain capabilities found')
+        return []
+
+    cpucaps = xmldomcaps.find('cpu')
+    if cpucaps is None:
+        logging.error('Error while getting CPU features: '
+                      'no domain CPU capabilities found')
+        return []
+
+    features = []
+    for mode in cpucaps.findall('mode'):
+        if mode.get('name') == _CpuMode.HOST_MODEL:
+            for feature in mode.findall('feature'):
+                if feature.get('policy') == 'require':
+                    features.append(feature.get('name'))
+    logging.debug('CPU features: %s', features)
+
+    return features
 
 
 def _emulated_machines_from_caps_node(node):

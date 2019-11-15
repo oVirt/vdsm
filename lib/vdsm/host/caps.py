@@ -90,8 +90,7 @@ def get():
     caps['onlineCpus'] = ','.join(cpu_topology.online_cpus)
     caps['cpuSpeed'] = cpuinfo.frequency()
     caps['cpuModel'] = cpuinfo.model()
-    caps['cpuFlags'] = ','.join(cpuinfo.flags() +
-                                machinetype.compatible_cpu_models())
+    caps['cpuFlags'] = ','.join(_getFlagsAndFeatures())
 
     caps.update(dsaversion.version_info)
 
@@ -236,3 +235,18 @@ def _getTscScaling():
         return counter[0].get('scaling') == 'yes'
     logging.debug('No TSC counter returned by Libvirt')
     return False
+
+
+def _getFlagsAndFeatures():
+    """
+    Read CPU flags from cpuinfo and CPU features from domcapabilities,
+    and combine them into a single list.
+    """
+    # We need to use both flags (cpuinfo.flags()) and domcapabilites
+    # (machinetype.cpu_features) because they return different sets
+    # of flags (domcapabilities also return the content of
+    # arch_capabilities). The sets overlap, so we convert
+    # list -> set -> list to remove duplicates.
+    flags_and_features = list(set(cpuinfo.flags() +
+                                  machinetype.cpu_features()))
+    return flags_and_features + machinetype.compatible_cpu_models()

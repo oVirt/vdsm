@@ -30,6 +30,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
 from vdsm.host import caps
+from vdsm import cpuinfo
 from vdsm import numa
 from vdsm import machinetype
 from vdsm import osinfo
@@ -317,3 +318,22 @@ class TestCaps(TestCaseBase):
     def test_getTscScalingNo(self):
         scaling = caps._getTscScaling()
         self.assertFalse(scaling)
+
+    @MonkeyPatch(cpuinfo, 'flags', lambda: ['flag_1', 'flag_2', 'flag_3'])
+    @MonkeyPatch(machinetype, 'cpu_features',
+                 lambda: ['flag_3', 'feature_1', 'feature_2'])
+    @MonkeyPatch(machinetype, 'compatible_cpu_models', lambda: [])
+    def test_getFlagsAndFeatures(self):
+        flags = caps._getFlagsAndFeatures()
+        expected = ['flag_1', 'flag_2', 'flag_3', 'feature_1', 'feature_2']
+        self.assertEqual(5, len(flags))
+        self.assertTrue(all([x in flags for x in expected]))
+
+    @MonkeyPatch(cpuinfo, 'flags', lambda: ['flag_1', 'flag_2', 'flag_3'])
+    @MonkeyPatch(machinetype, 'cpu_features', lambda: [])
+    @MonkeyPatch(machinetype, 'compatible_cpu_models', lambda: [])
+    def test_getFlagsAndFeaturesEmptyFeatures(self):
+        flags = caps._getFlagsAndFeatures()
+        expected = ['flag_1', 'flag_2', 'flag_3']
+        self.assertEqual(3, len(flags))
+        self.assertTrue(all([x in flags for x in expected]))

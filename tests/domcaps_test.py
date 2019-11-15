@@ -84,6 +84,18 @@ _EXPECTED_CPU_MODELS_S390X = (
     'z114-base', 'z196-base', 'z13-base', 'z890',
 )
 
+_EXPECTED_CPU_FEATURES_X86_64 = [
+    'vme', 'ss', 'pclmuldq', 'pcid', 'x2apic', 'tsc-deadline', 'hypervisor',
+    'arat', 'tsc_adjust', 'stibp', 'pdpe1gb', 'rdtscp', 'invtsc',
+]
+_EXPECTED_CPU_FEATURES_PPC_64 = []
+_EXPECTED_CPU_FEATURES_S390X = [
+    'aen', 'cmmnt', 'aefsi', 'mepoch', 'msa8', 'msa7', 'msa6', 'msa5', 'msa4',
+    'msa3', 'msa2', 'msa1', 'sthyi', 'edat', 'ri', 'edat2', 'vx', 'ipter',
+    'vxeh', 'vxpd', 'esop', 'iep', 'cte', 'gs', 'zpci', 'sea_esop2', 'te',
+    'cmm',
+]
+
 
 @expandPermutations
 class TestDomCaps(TestCaseBase):
@@ -121,4 +133,28 @@ class TestDomCaps(TestCaseBase):
                  lambda: FailingConnection()),
         ]):
             result = machinetype.compatible_cpu_models()
+            self.assertEqual(result, [])
+
+    @permutations([
+        # arch, expected_features
+        [cpuarch.X86_64, _EXPECTED_CPU_FEATURES_X86_64],
+        [cpuarch.PPC64LE, _EXPECTED_CPU_FEATURES_PPC_64],
+        [cpuarch.S390X, _EXPECTED_CPU_FEATURES_S390X],
+    ])
+    def test_cpu_features(self, arch, expected_features):
+        machinetype.cpu_features.invalidate()
+        conn = FakeConnection(arch)
+        with MonkeyPatchScope([
+                (machinetype.cpuarch, 'real', lambda: arch),
+                (machinetype.libvirtconnection, 'get', lambda: conn), ]):
+            result = machinetype.cpu_features()
+            self.assertEqual(result, expected_features)
+
+    def test_libvirt_exception_cpu_features(self):
+        machinetype.cpu_features.invalidate()
+        with MonkeyPatchScope([
+                (machinetype.libvirtconnection, 'get',
+                 lambda: FailingConnection()),
+        ]):
+            result = machinetype.cpu_features()
             self.assertEqual(result, [])
