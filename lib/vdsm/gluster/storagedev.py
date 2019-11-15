@@ -75,6 +75,27 @@ DEFAULT_FS_TYPE = "xfs"
 DEFAULT_MOUNT_OPTIONS = "inode64,noatime"
 
 
+def _is_parent(device):
+    if six.PY2:
+        return device.kids > 0
+    else:
+        return len(device.children) > 0
+
+
+def _get_sysfs_path(device):
+    if six.PY2:
+        return getattr(device, 'sysfsPath')
+    else:
+        return getattr(device, 'sysfs_path')
+
+
+def _get_convert_to(device):
+    if six.PY2:
+        return getattr(device.size, 'convertTo')
+    else:
+        return getattr(device.size, 'convert_to')
+
+
 # This method helps to convert the size to given Unittype.
 # This is required since there an incompatible change in blivet API
 # size.convertTo. Older versions required string param but newer versions
@@ -83,7 +104,8 @@ def _getDeviceSize(device, unitType='MiB'):
     if hasattr(blivet.size, 'MiB'):
         # New Blivet requires size constants from blivet.size
         unit = getattr(blivet.size, unitType)
-        return device.size.convertTo(unit)
+        convert_to = _get_convert_to(device)
+        return convert_to(unit)
     else:
         # Older blivet needs spec string
         return device.size.convertTo(spec=unitType)
@@ -113,13 +135,13 @@ def _getDeviceDict(device, createBrick=False):
         info['uuid'] = device.format.uuid or ''
         # lvm vg will not have sysfs path
         if hasattr(udev, 'get_device'):
-            dev = udev.get_device(device.sysfsPath) or {}
+            dev = udev.get_device(_get_sysfs_path(device)) or {}
         elif hasattr(udev, 'udev_get_device'):
             # The code is valid, calling udev_get_devices only if the attribute
             # exists, but pylint is confused by this.
             # TODO: rewrite so pylint does not complain.
             # pylint: disable=no-member
-            dev = udev.udev_get_device(device.sysfsPath) or {}
+            dev = udev.udev_get_device(_get_sysfs_path(device)) or {}
         else:
             dev = {}
         info['fsType'] = device.format.type or dev.get('ID_FS_TYPE', '')
@@ -136,7 +158,7 @@ def _parseDevices(devices):
 
 
 def _canCreateBrick(device):
-    if not device or device.kids > 0 or device.format.type or \
+    if not device or _is_parent(device) or device.format.type or \
        hasattr(device.format, 'mountpoint') or \
        device.type in ['cdrom', 'lvmvg', 'lvmthinpool', 'lvmlv', 'lvmthinlv']:
         return False
