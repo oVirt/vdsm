@@ -29,6 +29,7 @@ import time
 
 from vdsm.tool import confmeta
 from vdsm.common import commands
+from vdsm.common import systemctl
 from vdsm.common.cmdutils import CommandPath
 
 from . import YES, NO
@@ -123,41 +124,19 @@ def _lvmetad_configured():
     TODO: remove this function once we don't support Fedora 30. On Fedora 31
     and RHEL8 lvmetad is not supported anymore.
     """
-    out = _systemctl("show", "--property=Names,LoadState,ActiveState",
-                     "lvm2-lvmetad*")
-    out = out.decode("utf-8")
-    out = out.strip()
+    pattern = "lvm2-lvmetad*"
+    properties = ("Names", "LoadState", "ActiveState")
+    units = systemctl.show(pattern, properties=properties)
 
-    if out == "":
+    if not units:
         # There's no lvmetad and thus nothing to configure
         return True
 
-    # Convert systemctl output:
-    # Names=lvm2-lvmetad.service\nLoadState=masked\nActiveState=inactive\n\n
-    # Names=lvm2-lvmetad.socket\nLoadState=masked\nActiveState=inactive\n
-    # To:
-    # {
-    #     "lvm2-lvmetad.service": {
-    #         "LoadState": "masksed",
-    #         "ActiveState": "inactive"
-    #     },
-    #     "lvm2-lvmetad.socket": {
-    #         "LoadState": "masksed",
-    #         "ActiveState": "inactive"
-    #     },
-    # }
-    units = {}
-    for unit in out.strip().split("\n\n"):
-        info = dict(prop.split("=", 1) for prop in unit.split("\n"))
-        names = info.pop("Names")
-        for name in names.split(","):
-            units[name] = info
-
-    not_configured = {}
-    for name, state in units.items():
+    not_configured = []
+    for unit in units:
         # ActiveState may be "inactive" or "failed", both are good.
-        if state["LoadState"] != "masked" or state["ActiveState"] == "active":
-            not_configured[name] = state
+        if unit["LoadState"] != "masked" or unit["ActiveState"] == "active":
+            not_configured.append(unit)
 
     if not_configured:
         _log("Units need configuration: %s", not_configured)
