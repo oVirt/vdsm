@@ -698,9 +698,6 @@ create that file in target machine.
 %package hook-httpsisoboot
 Summary:        Allow directly booting from an https available ISO
 BuildArch:      noarch
-%if 0%{?rhel}
-Requires:       qemu-kvm-rhev >= 10:2.1.2-3
-%endif
 
 %description hook-httpsisoboot
 Let the VM boot from an ISO image made available via an https URL without
