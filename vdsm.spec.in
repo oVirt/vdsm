@@ -689,7 +689,7 @@ To enable this hook on your host, set vars.fake_vmstats_enable=true in your
 %package hook-fileinject
 Summary:        Allow uploading file to VMs disk
 BuildArch:      noarch
-Requires:       python-libguestfs
+Requires:       %{python_or_python3}-libguestfs
 
 %description hook-fileinject
 Hook is getting target file name and its content and
