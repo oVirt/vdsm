@@ -278,7 +278,7 @@ def _get_network_iface(net_name, net_attrs):
     bridged = net_attrs.get('bridged')
     vlan = net_attrs.get('vlan')
     nic = net_attrs.get('nic')
-    bond = net_attrs.get('bond')
+    bond = net_attrs.get('bonding')
     base_iface = nic or bond
     return (
         net_name

@@ -410,6 +410,26 @@ def test_dynamic_ip_bonded_vlanned_network(switch, dynamic_vlaned_ipv4_iface):
         adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
 
 
+@nftestlib.parametrize_switch
+@pytest.mark.nmstate
+def test_dynamic_ip_bonded_network(switch, dynamic_ipv4_ipv6_iface1):
+    bond_name = 'bond0'
+    network_attrs = {
+        'bridged': False,
+        'bonding': bond_name,
+        'bootproto': 'dhcp',
+        'blockingdhcp': True,
+        'dhcpv6': True,
+        'switch': switch,
+    }
+    bondcreate = {
+        bond_name: {'nics': [dynamic_ipv4_ipv6_iface1], 'switch': switch}
+    }
+    netcreate = {NETWORK_NAME: network_attrs}
+    with adapter.setupNetworks(netcreate, bondcreate, NOCHK):
+        adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+
+
 @contextmanager
 def _create_configured_dhcp_client_iface(
     network_config, dhcp_config, vlan_id=None
