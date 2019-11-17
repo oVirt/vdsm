@@ -267,10 +267,11 @@ class FileVolumeManifest(volume.VolumeManifest):
 
         data = meta.storage_format(sd.getVersion(), **overrides)
 
-        with open(metaPath + ".new", "wb") as f:
-            f.write(data)
+        iop = oop.getProcessPool(meta.domain)
+        tmpFilePath = metaPath + ".new"
 
-        oop.getProcessPool(meta.domain).os.rename(metaPath + ".new", metaPath)
+        iop.writeFile(tmpFilePath, data)
+        iop.os.rename(tmpFilePath, metaPath)
 
     def setImage(self, imgUUID):
         """
