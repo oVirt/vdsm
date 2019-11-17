@@ -39,6 +39,7 @@ from vdsm.network.canonicalize import bridge_opts_dict_to_sorted_str
 from vdsm.network.canonicalize import bridge_opts_str_to_dict
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported, prefix2netmask
+from vdsm.network.ifacetracking import is_tracked as iface_is_tracked
 from vdsm.network.link.iface import iface
 from vdsm.network.link.bond import sysfs_options as bond_options
 from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
@@ -795,8 +796,8 @@ class SetupNetworks(object):
             self._update_configs()
             raise SetupNetworksError(status, msg)
 
-        if self._is_async_dynamic_ipv4():
-            time.sleep(1)
+        if self._is_dynamic_ipv4():
+            self._wait_for_dhcp_response()
             self.vdsm_proxy.refreshNetworkCapabilities()
         try:
             self._update_configs()
@@ -843,12 +844,32 @@ class SetupNetworks(object):
 
         return status, msg
 
-    def _is_async_dynamic_ipv4(self):
+    def _is_dynamic_ipv4(self):
         for attr in six.viewvalues(self.setup_networks):
-            is_dhcpv4 = attr.get('bootproto') == 'dhcp'
-            if is_dhcpv4 and not attr.get('blockingdhcp'):
+            if attr.get('bootproto') == 'dhcp':
                 return True
         return False
+
+    def _wait_for_dhcp_response(self, timeout=5):
+        dev_names = self._collect_all_dhcp_interfaces()
+        for attempt in range(timeout):
+            if _did_every_dhcp_server_responded(dev_names):
+                break
+            time.sleep(1)
+
+    def _collect_all_dhcp_interfaces(self):
+        return [
+            _get_network_iface_name(name, attr)
+            for name, attr in six.viewitems(self.setup_networks)
+            if attr.get('bootproto') == 'dhcp'
+        ]
+
+
+def _did_every_dhcp_server_responded(dev_names):
+    for dev_name in dev_names:
+        if iface_is_tracked(dev_name):
+            return False
+    return True
 
 
 @contextmanager
@@ -959,25 +980,30 @@ def _numerize_bond_options(opts):
 
 
 def _gather_expected_legacy_links(net, attrs, netinfo):
-    bridged = attrs.get('bridged', True)
-    vlan = attrs.get('vlan')
     bond = attrs.get('bonding')
-    nic = attrs.get('nic')
-
     devs = set()
-    if bridged:
-        devs.add(net)
-    if vlan is not None:
-        vlan_name = '{}.{}'.format(bond or nic, vlan)
-        devs.add(vlan_name)
+
+    devs.add(_get_network_iface_name(net, attrs))
     if bond:
-        devs.add(bond)
         slaves = netinfo.bondings[bond]['slaves']
         devs.update(slaves)
-    elif nic:
-        devs.add(nic)
 
     return devs
+
+
+def _get_network_iface_name(net_name, net_attrs):
+    bridged = net_attrs.get('bridged', True)
+    vlan = net_attrs.get('vlan')
+    nic = net_attrs.get('nic')
+    bond = net_attrs.get('bonding')
+    base_iface = nic or bond
+    return (
+        net_name
+        if bridged
+        else '{}.{}'.format(base_iface, vlan)
+        if vlan
+        else base_iface
+    )
 
 
 def _gather_expected_ovs_links(net, attrs, netinfo):
