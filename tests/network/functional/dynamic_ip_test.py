@@ -37,7 +37,6 @@ from .netfunctestlib import IpFamily
 from network.nettestlib import veth_pair
 from network.nettestlib import dnsmasq_run
 from network.nettestlib import dhcp_client_run
-from network.nettestlib import running_on_fedora
 from network.nettestlib import vlan_device
 
 NETWORK_NAME = 'test-network'
@@ -208,8 +207,6 @@ class FakeNotifier:
 @parametrize_def_route
 class TestNetworkDhcpBasic(object):
     def test_add_net_with_dhcp(self, switch, families, bridged, def_route):
-        if switch == 'legacy' and running_on_fedora(29):
-            pytest.xfail('Fails on Fedora 29')
         if switch == 'ovs' and IpFamily.IPv6 in families:
             pytest.xfail(
                 'IPv6 dynamic fails with OvS'

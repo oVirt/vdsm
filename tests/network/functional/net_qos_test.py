@@ -1,4 +1,4 @@
-# Copyright 2017-2019 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import pytest
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestAdapter, NOCHK
-from network.nettestlib import dummy_device, running_on_fedora
+from network.nettestlib import dummy_device
 
 NETWORK1_NAME = 'test-network1'
 NETWORK2_NAME = 'test-network2'
@@ -43,11 +43,6 @@ def create_adapter(target):
 
 
 # TODO: When QoS will be available on OVS, enable the tests.
-@pytest.mark.xfail(
-    condition=running_on_fedora(29),
-    reason='Failing on legacy switch, fedora 29',
-    strict=True,
-)
 @nftestlib.parametrize_legacy_switch
 @pytest.mark.nmstate
 class TestNetworkHostQos(object):

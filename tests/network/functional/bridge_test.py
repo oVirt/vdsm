@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2018 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ import pytest
 from vdsm.network.cmd import exec_sync
 
 from . import netfunctestlib as nftestlib
-from network.nettestlib import dummy_devices, dummy_device, running_on_fedora
+from network.nettestlib import dummy_devices, dummy_device
 
 
 NETWORK_NAME = 'test-network'
@@ -49,8 +49,6 @@ class TestBridge(object):
     def test_add_bridge_with_stp(self, switch):
         if switch == 'ovs':
             pytest.xfail('stp is currently not implemented for ovs')
-        if switch == 'legacy' and running_on_fedora(29):
-            pytest.xfail('Fails on Fedora 29')
 
         with dummy_devices(1) as (nic,):
             NETCREATE = {
@@ -108,11 +106,6 @@ class TestBridge(object):
 
     @pytest.mark.nmstate
     @nftestlib.parametrize_legacy_switch
-    @pytest.mark.xfail(
-        condition=running_on_fedora(29),
-        reason='Failing on legacy switch, fedora 29',
-        strict=True,
-    )
     def test_reconfigure_bridge_with_vanished_port(self, switch):
         with dummy_device() as nic1:
             NETCREATE = {
