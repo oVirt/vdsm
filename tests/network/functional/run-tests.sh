@@ -84,11 +84,6 @@ setup_vdsm_runtime_environment
 restart_service "NetworkManager"
 setup_vdsm_sources_for_testing
 
-if [ "$1" == "--shell" ];then
-    podman_exec "bash"
-    exit 0
-fi
-
 if [ -n "$TEST_OVS" ];then
     SWITCH_TYPE="ovs_switch"
     start_service "openvswitch"
@@ -102,6 +97,11 @@ if [ -n "$TEST_NMSTATE" ];then
           mkdir /etc/vdsm && \
           echo -e \"[vars]\nnet_nmstate_enabled = true\n\" >> /etc/vdsm/vdsm.conf
   "
+fi
+
+if [ "$1" == "--shell" ];then
+    podman_exec "bash"
+    exit 0
 fi
 
 podman_exec "
