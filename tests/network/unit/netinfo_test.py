@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2019 Red Hat, Inc.
+# Copyright 2012-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,16 @@ from vdsm.network.link.bond import Bond
 from vdsm.network.netinfo import addresses, bonding, misc, nics, routes
 from vdsm.network.netinfo.cache import get
 
+from vdsm.network import nmstate
+
 from network.compat import mock
+
+
+@pytest.fixture
+def current_state_mock():
+    with mock.patch.object(nmstate, 'state_show') as state:
+        state.return_value = {nmstate.Interface.KEY: [], nmstate.DNS.KEY: {}}
+        yield state.return_value
 
 
 class TestNetinfo(object):
@@ -78,7 +87,9 @@ class TestNetinfo(object):
 
     @mock.patch.object(bonding, 'permanent_address', lambda: {})
     @mock.patch('vdsm.network.netinfo.cache.RunningConfig')
-    def test_get_non_existing_bridge_info(self, mock_runningconfig):
+    def test_get_non_existing_bridge_info(
+        self, mock_runningconfig, current_state_mock
+    ):
         # Getting info of non existing bridge should not raise an exception,
         # just log a traceback. If it raises an exception the test will fail as
         # it should.
@@ -88,7 +99,7 @@ class TestNetinfo(object):
     @mock.patch.object(bonding, 'permanent_address', lambda: {})
     @mock.patch('vdsm.network.netinfo.cache.getLinks')
     @mock.patch('vdsm.network.netinfo.cache.RunningConfig')
-    def test_get_empty(self, mock_networks, mock_getLinks):
+    def test_get_empty(self, mock_networks, mock_getLinks, current_state_mock):
         result = {}
         result.update(get())
         assert result['networks'] == {}

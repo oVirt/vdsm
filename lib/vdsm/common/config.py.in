@@ -72,7 +72,7 @@ parameters = [
         ('net_persistence', 'unified',
             'Whether to use "ifcfg" or "unified" persistence for networks.'),
 
-        ('net_nmstate_enabled', 'false',
+        ('net_nmstate_enabled', 'true',
             'Control nmstate network backend provider.'),
 
         ('ethtool_opts', '',
