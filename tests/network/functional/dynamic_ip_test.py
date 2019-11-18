@@ -186,6 +186,11 @@ class TestNetworkDhcpBasic(object):
     def test_add_net_with_dhcp(self, switch, families, bridged, def_route):
         if switch == 'legacy' and running_on_fedora(29):
             pytest.xfail('Fails on Fedora 29')
+        if switch == 'ovs' and IpFamily.IPv6 in families:
+            pytest.xfail(
+                'IPv6 dynamic fails with OvS'
+                'see https://bugzilla.redhat.com/1773471'
+            )
         if families == (IpFamily.IPv6,) and def_route:
             pytest.skip(
                 'Skipping default route + dynamic with IPv6 '
@@ -290,6 +295,11 @@ class TestStopDhclientOnUsedNics(object):
                         )
 
     def test_attach_dhcp_nic_to_dhcpv6_bridged_network(self, switch):
+        if switch == 'ovs':
+            pytest.xfail(
+                'IPv6 dynamic fails with OvS'
+                'see https://bugzilla.redhat.com/1773471'
+            )
         with veth_pair() as (server, client):
             addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, IpFamily.IPv6)
             linkSet(server, ['up'])
@@ -363,6 +373,11 @@ def test_default_route_of_two_dynamic_ip_networks(
 def test_dynamic_ip_switch_to_static(
     switch, families, bridged, dynamic_ipv4_ipv6_iface1
 ):
+    if switch == 'ovs' and IpFamily.IPv6 in families:
+        pytest.xfail(
+            'IPv6 dynamic fails with OvS'
+            'see https://bugzilla.redhat.com/1773471'
+        )
     network_attrs = {
         'bridged': bridged,
         'nic': dynamic_ipv4_ipv6_iface1,
@@ -413,6 +428,11 @@ def test_dynamic_ip_bonded_vlanned_network(switch, dynamic_vlaned_ipv4_iface):
 @nftestlib.parametrize_switch
 @pytest.mark.nmstate
 def test_dynamic_ip_bonded_network(switch, dynamic_ipv4_ipv6_iface1):
+    if switch == 'ovs':
+        pytest.xfail(
+            'IPv6 dynamic fails with OvS'
+            'see https://bugzilla.redhat.com/1773471'
+        )
     bond_name = 'bond0'
     network_attrs = {
         'bridged': False,
