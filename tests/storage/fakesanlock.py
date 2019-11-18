@@ -53,8 +53,11 @@ class FakeSanlock(object):
 
     # Tuples with supported alignment and sector size.
     # Copied from python/sanlock.c
-    ALIGN_SIZE = (1048576, 2097152, 4194304, 8388608)
-    SECTOR_SIZE = (512, 4096)
+    ALIGN_SIZE = (sc.ALIGNMENT_1M,
+                  sc.ALIGNMENT_2M,
+                  sc.ALIGNMENT_4M,
+                  sc.ALIGNMENT_8M)
+    SECTOR_SIZE = (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K)
 
     class SanlockException(Exception):
         @property
