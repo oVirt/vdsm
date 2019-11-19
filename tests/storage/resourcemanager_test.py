@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import logging
 import time
 from weakref import proxy
 from random import Random
@@ -38,6 +39,8 @@ from monkeypatch import MonkeyPatch
 from storage.storagefakelib import FakeResourceManager
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase
+
+log = logging.getLogger("test")
 
 
 class NullResourceFactory(rm.SimpleResourceFactory):
@@ -446,18 +449,18 @@ class TestResourceManager(VdsmTestCase):
 
     @MonkeyPatch(rm, "_manager", manager())
     def testResourceAutorelease(self):
-        self.log.info("Acquiring resource", extra={'resource': "bob"})
+        log.info("Acquiring resource", extra={'resource': "bob"})
         res = rm.acquireResource("storage", "resource", rm.SHARED)
         resProxy = proxy(res)
         res = None
         # wait for object to die
-        self.log.info("Waiting for request")
+        log.info("Waiting for request")
         try:
             while True:
                 resProxy.granted()
         except:
             pass
-        self.log.info("Waiting for autoclean")
+        log.info("Waiting for autoclean")
         while True:
             resStatus = rm._getResourceStatus("storage", "resource")
             if resStatus == rm.LockState.free:
