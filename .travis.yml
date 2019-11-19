@@ -17,10 +17,6 @@ env:
     - DIST=fedora-30  PY=3.7  TARGETS="lint"
     - DIST=fedora-30  PY=3.7  TARGETS="storage tests"
 
-matrix:
-  allow_failures:
-    - env: DIST=centos-8   PY=3.6  TARGETS="storage tests"
-
 before_install:
   - docker --version
   - docker pull ovirtorg/vdsm-test-$DIST
