@@ -48,7 +48,7 @@ from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import brokentest
 
-EXT_SLEEP = "sleep"
+EXT_SLEEP = "/usr/bin/sleep"
 
 
 class FakeMonotonicTime(object):
