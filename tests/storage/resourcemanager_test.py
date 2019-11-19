@@ -142,7 +142,7 @@ class TestResourceManager(VdsmTestCase):
     def testErrorInFactory(self):
         req = rm._registerResource(
             "error", "resource", rm.EXCLUSIVE, lambda req, res: 1)
-        self.assertTrue(req.canceled())
+        assert req.canceled()
 
     @MonkeyPatch(rm, "_manager", manager())
     def testRegisterInvalidNamespace(self):
@@ -165,13 +165,13 @@ class TestResourceManager(VdsmTestCase):
         sharedReq1 = rm._registerResource(
             "failAfterSwitch", "resource", rm.SHARED, callback)
         exclusive1.release()
-        self.assertTrue(sharedReq1.canceled())
-        self.assertEqual(resources[0], None)
+        assert sharedReq1.canceled()
+        assert resources[0] is None
 
     @MonkeyPatch(rm, "_manager", manager())
     def testRegisterExistingNamespace(self):
-        self.assertRaises(rm.NamespaceRegistered, rm.registerNamespace,
-                          "storage", rm.SimpleResourceFactory())
+        with pytest.raises(rm.NamespaceRegistered):
+            rm.registerNamespace("storage", rm.SimpleResourceFactory())
 
     @MonkeyPatch(rm, "_manager", manager())
     def testResourceSwitchLockTypeFail(self):
@@ -179,17 +179,17 @@ class TestResourceManager(VdsmTestCase):
 
     @MonkeyPatch(rm, "_manager", manager())
     def testRequestInvalidResource(self):
-        self.assertRaises(ValueError, rm.acquireResource,
-                          "storage", "DOT.DOT", rm.SHARED)
-        self.assertRaises(ValueError, rm.acquireResource,
-                          "DOT.DOT", "resource", rm.SHARED)
+        with pytest.raises(ValueError):
+            rm.acquireResource("storage", "DOT.DOT", rm.SHARED)
+        with pytest.raises(ValueError):
+            rm.acquireResource("DOT.DOT", "resource", rm.SHARED)
 
     @MonkeyPatch(rm, "_manager", manager())
     def testReleaseInvalidResource(self):
-        self.assertRaises(ValueError, rm.releaseResource,
-                          "DONT_EXIST", "resource")
-        self.assertRaises(ValueError, rm.releaseResource, "storage",
-                          "DOT")
+        with pytest.raises(ValueError):
+            rm.releaseResource("DONT_EXIST", "resource")
+        with pytest.raises(ValueError):
+            rm.releaseResource("storage", "DOT")
 
     @MonkeyPatch(rm, "_manager", manager())
     def testResourceWrapper(self):
@@ -198,7 +198,7 @@ class TestResourceManager(VdsmTestCase):
             for attr in dir(s):
                 if attr == "close":
                     continue
-                self.assertTrue(hasattr(resource, attr))
+                assert hasattr(resource, attr)
 
     @MonkeyPatch(rm, "_manager", manager())
     def testAccessAttributeNotExposedByWrapper(self):
@@ -263,22 +263,22 @@ class TestResourceManager(VdsmTestCase):
         req2 = rm._registerResource(
             "string", "resource", rm.EXCLUSIVE, callback)
 
-        self.assertNotEqual(req1, req2)
-        self.assertEqual(req1, req1)
-        self.assertEqual(req2, req2)
+        assert req1 != req2
+        assert req1 == req1
+        assert req2 == req2
         req1.wait()
         req1Clone = requests.pop()
-        self.assertEqual(req1, req1Clone)
-        self.assertNotEqual(req1Clone, req2)
+        assert req1 == req1Clone
+        assert req1Clone != req2
         resources.pop().release()
         req2.wait()
         req2Clone = requests.pop()
-        self.assertEqual(req2, req2Clone)
-        self.assertNotEqual(req1, req2Clone)
-        self.assertNotEqual(req1Clone, req2Clone)
+        assert req2 == req2Clone
+        assert req1 != req2Clone
+        assert req1Clone != req2Clone
         resources[0].release()
 
-        self.assertNotEqual(req1, "STUFF")
+        assert req1 != "STUFF"
 
     @MonkeyPatch(rm, "_manager", manager())
     def testRequestRecancel(self):
@@ -293,7 +293,8 @@ class TestResourceManager(VdsmTestCase):
 
         req.cancel()
 
-        self.assertRaises(rm.RequestAlreadyProcessedError, req.cancel)
+        with pytest.raises(rm.RequestAlreadyProcessedError):
+            req.cancel()
 
         blocker.release()
 
@@ -306,7 +307,8 @@ class TestResourceManager(VdsmTestCase):
 
         req = rm.Request("namespace", "name", rm.EXCLUSIVE, callback)
         req.grant()
-        self.assertRaises(rm.RequestAlreadyProcessedError, req.grant)
+        with pytest.raises(rm.RequestAlreadyProcessedError):
+            req.grant()
 
     @MonkeyPatch(rm, "_manager", manager())
     def testRequestWithBadCallbackOnCancel(self):
@@ -356,27 +358,27 @@ class TestResourceManager(VdsmTestCase):
         sharedReq4 = rm._registerResource(
             "string", "resource", rm.SHARED, callback)
 
-        self.assertFalse(sharedReq1.granted())
-        self.assertFalse(sharedReq2.granted())
-        self.assertFalse(exclusiveReq1.granted())
-        self.assertFalse(sharedReq3.granted())
-        self.assertFalse(sharedReq4.granted())
+        assert not sharedReq1.granted()
+        assert not sharedReq2.granted()
+        assert not exclusiveReq1.granted()
+        assert not sharedReq3.granted()
+        assert not sharedReq4.granted()
 
         exclusiveReq1.cancel()
         resources.pop()
 
-        self.assertFalse(sharedReq1.granted())
-        self.assertFalse(sharedReq2.granted())
-        self.assertFalse(exclusiveReq1.granted())
-        self.assertTrue(exclusiveReq1.canceled())
-        self.assertFalse(sharedReq3.granted())
-        self.assertFalse(sharedReq4.granted())
+        assert not sharedReq1.granted()
+        assert not sharedReq2.granted()
+        assert not exclusiveReq1.granted()
+        assert exclusiveReq1.canceled()
+        assert not sharedReq3.granted()
+        assert not sharedReq4.granted()
 
         exclusive1.release()
-        self.assertTrue(sharedReq1.granted())
-        self.assertTrue(sharedReq2.granted())
-        self.assertTrue(sharedReq3.granted())
-        self.assertTrue(sharedReq4.granted())
+        assert sharedReq1.granted()
+        assert sharedReq2.granted()
+        assert sharedReq3.granted()
+        assert sharedReq4.granted()
 
         while len(resources) > 0:
             resources.pop().release()
@@ -404,17 +406,17 @@ class TestResourceManager(VdsmTestCase):
         sharedReq3 = rm._registerResource(
             namespace, "resource", rm.SHARED, callback)
 
-        self.assertEqual(exclusive1.read(), "resource:exclusive")
+        assert exclusive1.read() == "resource:exclusive"
         exclusive1.release()
-        self.assertEqual(resources[-1].read(), "resource:shared")
+        assert resources[-1].read() == "resource:shared"
         resources.pop().release()
-        self.assertEqual(resources[-1].read(), "")
+        assert resources[-1].read() == ""
         resources.pop().release()
-        self.assertEqual(resources[-1].read(), "resource:exclusive")
+        assert resources[-1].read() == "resource:exclusive"
         resources.pop().release()
-        self.assertEqual(resources[-1].read(), "")
+        assert resources[-1].read() == ""
         resources.pop().release()
-        self.assertEqual(resources[-1].read(), "resource:shared")
+        assert resources[-1].read() == "resource:shared"
         resources.pop().release()
 
         # Silense flake8 unused local variables warnings.
@@ -427,15 +429,14 @@ class TestResourceManager(VdsmTestCase):
     @MonkeyPatch(rm, "_manager", manager())
     def testResourceAcquireTimeout(self):
         exclusive1 = rm.acquireResource("string", "resource", rm.EXCLUSIVE)
-        self.assertRaises(rm.RequestTimedOutError,
-                          rm.acquireResource, "string", "resource",
-                          rm.EXCLUSIVE, 1)
+        with pytest.raises(rm.RequestTimedOutError):
+            rm.acquireResource("string", "resource", rm.EXCLUSIVE, 1)
         exclusive1.release()
 
     @MonkeyPatch(rm, "_manager", manager())
     def testResourceAcquireInvalidTimeout(self):
-        self.assertRaises(TypeError, rm.acquireResource, "string",
-                          "resource", rm.EXCLUSIVE, "A")
+        with pytest.raises(TypeError):
+            rm.acquireResource("string", "resource", rm.EXCLUSIVE, "A")
 
     @MonkeyPatch(rm, "_manager", manager())
     def testResourceInvalidation(self):
@@ -445,7 +446,8 @@ class TestResourceManager(VdsmTestCase):
         except:
             self.fail()
         resource.release()
-        self.assertRaises(Exception, resource.write, "test")
+        with pytest.raises(Exception):
+            resource.write("test")
 
     @MonkeyPatch(rm, "_manager", manager())
     def testResourceAutorelease(self):
@@ -477,19 +479,19 @@ class TestResourceManager(VdsmTestCase):
 
     @MonkeyPatch(rm, "_manager", manager())
     def testResourceStatuses(self):
-        self.assertEqual(rm._getResourceStatus("storage", "resource"),
-                         rm.LockState.free)
+        status = rm._getResourceStatus("storage", "resource")
+        assert status == rm.LockState.free
         exclusive1 = rm.acquireResource("storage", "resource", rm.EXCLUSIVE)
-        self.assertEqual(rm._getResourceStatus("storage", "resource"),
-                         rm.LockState.locked)
+        status = rm._getResourceStatus("storage", "resource")
+        assert status == rm.LockState.locked
         exclusive1.release()
         shared1 = rm.acquireResource("storage", "resource", rm.SHARED)
-        self.assertEqual(rm._getResourceStatus("storage", "resource"),
-                         rm.LockState.shared)
+        status = rm._getResourceStatus("storage", "resource")
+        assert status == rm.LockState.shared
         shared1.release()
         try:
-            self.assertEqual(rm._getResourceStatus("null", "resource"),
-                             rm.LockState.free)
+            status = rm._getResourceStatus("null", "resource")
+            assert status == rm.LockState.free
         except KeyError:
             return
 
@@ -521,27 +523,27 @@ class TestResourceManager(VdsmTestCase):
         exclusiveReq2 = rm._registerResource(
             "storage", "resource", rm.EXCLUSIVE, callback)
 
-        self.assertFalse(sharedReq1.granted())
-        self.assertFalse(sharedReq2.granted())
-        self.assertFalse(exclusiveReq1.granted())
-        self.assertFalse(exclusiveReq2.granted())
+        assert not sharedReq1.granted()
+        assert not sharedReq2.granted()
+        assert not exclusiveReq1.granted()
+        assert not exclusiveReq2.granted()
         exclusive1.release()
 
-        self.assertTrue(sharedReq1.granted())
-        self.assertTrue(sharedReq2.granted())
-        self.assertFalse(exclusiveReq1.granted())
-        self.assertFalse(exclusiveReq2.granted())
+        assert sharedReq1.granted()
+        assert sharedReq2.granted()
+        assert not exclusiveReq1.granted()
+        assert not exclusiveReq2.granted()
         resources.pop().release()  # Shared 1
 
-        self.assertFalse(exclusiveReq1.granted())
-        self.assertFalse(exclusiveReq2.granted())
+        assert not exclusiveReq1.granted()
+        assert not exclusiveReq2.granted()
         resources.pop().release()  # Shared 2
 
-        self.assertTrue(exclusiveReq1.granted())
-        self.assertFalse(exclusiveReq2.granted())
+        assert exclusiveReq1.granted()
+        assert not exclusiveReq2.granted()
         resources.pop().release()  # exclusiveReq 1
 
-        self.assertTrue(exclusiveReq2.granted())
+        assert exclusiveReq2.granted()
         resources.pop().release()  # exclusiveReq 2
 
     @MonkeyPatch(rm, "_manager", manager())
@@ -558,17 +560,17 @@ class TestResourceManager(VdsmTestCase):
         exclusiveReq3 = rm._registerResource(
             "storage", "resource", rm.EXCLUSIVE, callback)
 
-        self.assertTrue(exclusiveReq1.granted())
-        self.assertFalse(exclusiveReq2.canceled())
-        self.assertFalse(exclusiveReq3.granted())
+        assert exclusiveReq1.granted()
+        assert not exclusiveReq2.canceled()
+        assert not exclusiveReq3.granted()
 
         exclusiveReq2.cancel()
-        self.assertTrue(exclusiveReq2.canceled())
-        self.assertEqual(resources.pop(), None)  # exclusiveReq 2
+        assert exclusiveReq2.canceled()
+        assert resources.pop() is None  # exclusiveReq 2
 
         resources.pop().release()  # exclusiveReq 1
 
-        self.assertTrue(exclusiveReq3.granted())
+        assert exclusiveReq3.granted()
         resources.pop().release()  # exclusiveReq 3
 
     @MonkeyPatch(rm, "_manager", manager())
@@ -600,7 +602,7 @@ class TestResourceManager(VdsmTestCase):
             threadLimit.release()
 
         def releaseShared(req, res):
-            self.assertEqual(req.lockType, rm.SHARED)
+            assert req.lockType == rm.SHARED
             res.release()
             threadLimit.release()
 
@@ -664,9 +666,9 @@ class TestResourceManagerLock(VdsmTestCase):
 
     def test_properties(self):
         a = rm.ResourceManagerLock('ns', 'name', 'mode')
-        self.assertEqual('ns', a.ns)
-        self.assertEqual('name', a.name)
-        self.assertEqual('mode', a.mode)
+        assert a.ns == 'ns'
+        assert a.name == 'name'
+        assert a.mode == 'mode'
 
     @permutations((
         (('nsA', 'nameA', 'mode'), ('nsB', 'nameA', 'mode')),
@@ -675,23 +677,23 @@ class TestResourceManagerLock(VdsmTestCase):
     def test_less_than(self, a, b):
         b = rm.ResourceManagerLock(*b)
         a = rm.ResourceManagerLock(*a)
-        self.assertLess(a, b)
+        assert a < b
 
     def test_equality(self):
         a = rm.ResourceManagerLock('ns', 'name', 'mode')
         b = rm.ResourceManagerLock('ns', 'name', 'mode')
-        self.assertEqual(a, b)
+        assert a == b
 
     def test_mode_used_for_equality(self):
         a = rm.ResourceManagerLock('nsA', 'nameA', 'modeA')
         b = rm.ResourceManagerLock('nsA', 'nameA', 'modeB')
-        self.assertNotEqual(a, b)
+        assert a != b
 
     def test_mode_ignored_for_sorting(self):
         a = rm.ResourceManagerLock('nsA', 'nameA', 'modeA')
         b = rm.ResourceManagerLock('nsA', 'nameA', 'modeB')
-        self.assertFalse(a < b)
-        self.assertFalse(b < a)
+        assert not a < b
+        assert not b < a
 
     @MonkeyPatch(rm, "_manager", FakeResourceManager())
     def test_acquire_release(self):
@@ -701,17 +703,17 @@ class TestResourceManagerLock(VdsmTestCase):
         expected.append(('acquireResource',
                          (lock.ns, lock.name, lock.mode),
                          {"timeout": None}))
-        self.assertEqual(expected, rm._manager.__calls__)
+        assert expected == rm._manager.__calls__
         lock.release()
         expected.append(('releaseResource', (lock.ns, lock.name), {}))
-        self.assertEqual(expected, rm._manager.__calls__)
+        assert expected == rm._manager.__calls__
 
     def test_repr(self):
         mode = rm.SHARED
         lock = rm.ResourceManagerLock('ns', 'name', mode)
         lock_string = str(lock)
-        self.assertIn("ResourceManagerLock", lock_string)
-        self.assertIn("ns=ns", lock_string)
-        self.assertIn("name=name", lock_string)
-        self.assertIn("mode=" + mode, lock_string)
-        self.assertIn("%x" % id(lock), lock_string)
+        assert "ResourceManagerLock" in lock_string
+        assert "ns=ns" in lock_string
+        assert "name=name" in lock_string
+        assert "mode=" + mode in lock_string
+        assert "%x" % id(lock) in lock_string
