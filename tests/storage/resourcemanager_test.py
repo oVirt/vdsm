@@ -37,8 +37,6 @@ from vdsm.storage import resourceManager as rm
 
 from monkeypatch import MonkeyPatch
 from storage.storagefakelib import FakeResourceManager
-from testlib import expandPermutations, permutations
-from testlib import VdsmTestCase
 
 log = logging.getLogger("test")
 
@@ -136,7 +134,7 @@ def manager():
     return manager
 
 
-class TestResourceManager(VdsmTestCase):
+class TestResourceManager:
 
     @MonkeyPatch(rm, "_manager", manager())
     def testErrorInFactory(self):
@@ -646,8 +644,7 @@ class TestResourceManager(VdsmTestCase):
             t.join()
 
 
-@expandPermutations
-class TestResourceManagerLock(VdsmTestCase):
+class TestResourceManagerLock:
 
     def test_properties(self):
         a = rm.ResourceManagerLock('ns', 'name', 'mode')
@@ -655,10 +652,10 @@ class TestResourceManagerLock(VdsmTestCase):
         assert a.name == 'name'
         assert a.mode == 'mode'
 
-    @permutations((
+    @pytest.mark.parametrize('a, b', [
         (('nsA', 'nameA', 'mode'), ('nsB', 'nameA', 'mode')),
         (('nsA', 'nameA', 'mode'), ('nsA', 'nameB', 'mode')),
-    ))
+    ])
     def test_less_than(self, a, b):
         b = rm.ResourceManagerLock(*b)
         a = rm.ResourceManagerLock(*a)
