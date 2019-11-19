@@ -52,6 +52,7 @@ from vdsm.common import supervdsm
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
 from vdsm.common.time import monotonic_time
+from vdsm.common.units import MiB, GiB
 from vdsm.config import config
 from vdsm.storage import blockSD
 from vdsm.storage import clusterlock
@@ -700,8 +701,8 @@ class HSM(object):
                 "spUUID=%s, sdUUID=%s, volumeUUID=%s, size=%s" %
                 (spUUID, sdUUID, volumeUUID, size)))
         size = misc.validateN(size, "size")
-        # ExtendVolume expects size in MB
-        size = math.ceil(size / 2 ** 20)
+        # ExtendVolume expects size in MiB.
+        size = math.ceil(size / MiB)
 
         pool = self.getPool(spUUID)
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
@@ -927,7 +928,7 @@ class HSM(object):
 
         """
         newSize = misc.validateN(newSize, "newSize")
-        newSize = utils.round(newSize, constants.MEGAB) // constants.MEGAB
+        newSize = utils.round(newSize, MiB) // MiB
         try:
             pool = self.getPool(spUUID)
         except se.StoragePoolUnknown:
@@ -2095,7 +2096,7 @@ class HSM(object):
         # TODO: remove support for string value
         force = force in (True, "true", "True")
 
-        MINIMALVGSIZE = 10 * 1024 * constants.MEGAB
+        MINIMALVGSIZE = 10 * GiB
 
         vars.task.setDefaultException(
             se.VolumeGroupCreateError(str(vgname), str(devlist)))
@@ -2121,7 +2122,7 @@ class HSM(object):
         if size < MINIMALVGSIZE:
             raise se.VolumeGroupSizeError(
                 "VG size must be more than %s MiB" %
-                str(MINIMALVGSIZE / constants.MEGAB))
+                str(MINIMALVGSIZE / MiB))
 
         lvm.createVG(vgname, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG,
                      metadataSize=blockSD.VG_METADATASIZE,

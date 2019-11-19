@@ -35,6 +35,7 @@ from storage.storagetestlib import (
     make_qemu_chain,
 )
 
+from vdsm.common.units import MiB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import hsm
@@ -47,7 +48,7 @@ class FakeHSM(hsm.HSM):
 
 
 class TestVerifyUntrustedVolume(object):
-    SIZE = 1024 * 1024
+    SIZE = MiB
 
     @pytest.mark.parametrize('vol_fmt,', [sc.RAW_FORMAT, sc.COW_FORMAT])
     def test_ok(self, vol_fmt):
