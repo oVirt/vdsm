@@ -132,6 +132,88 @@ def test_remove_mapping(zero_dm_device):
     assert not os.path.exists(device_path)
 
 
+@broken_on_ci
+@requires_root
+def test_dm_id(zero_dm_device):
+    # Resolve the dm link and get dm name of the device.
+    device_path = "{}{}".format(DMPATH_PREFIX, zero_dm_device)
+    real_path = os.path.realpath(device_path)
+    device_name = real_path.split("/")[-1]
+
+    dm_id = devicemapper.getDmId(zero_dm_device)
+    assert device_name == dm_id
+
+    # Test also devicemapper.resolveDevName() as it returns device_name
+    # directly.
+    resolved_name = devicemapper.resolveDevName(device_name)
+    assert device_name == resolved_name
+
+    # Or returns dm_id().
+    resolved_name = devicemapper.resolveDevName(zero_dm_device)
+    assert device_name == resolved_name
+
+
+@broken_on_ci
+@requires_root
+def test_dev_name(zero_dm_device):
+    dm_id = devicemapper.getDmId(zero_dm_device)
+    device_name = devicemapper.getDevName(dm_id)
+    assert zero_dm_device == device_name
+
+
+@broken_on_ci
+@requires_root
+def test_is_virtual_device(zero_dm_device):
+    dm_id = devicemapper.getDmId(zero_dm_device)
+    assert devicemapper.isVirtualDevice(dm_id)
+
+
+@broken_on_ci
+@requires_root
+def test_is_block_device(zero_dm_device):
+    dm_id = devicemapper.getDmId(zero_dm_device)
+    assert devicemapper.isBlockDevice(dm_id)
+
+
+@broken_on_ci
+@requires_root
+def test_is_dm_device(zero_dm_device):
+    dm_id = devicemapper.getDmId(zero_dm_device)
+    assert devicemapper.isDmDevice(dm_id)
+
+
+@broken_on_ci
+@requires_root
+def test_get_all_mapped_devices(zero_dm_device):
+    devices = devicemapper.getAllMappedDevices()
+    assert zero_dm_device in devices
+
+
+@broken_on_ci
+@requires_root
+def test_get_all_slaves(zero_dm_device):
+    slaves = devicemapper.getAllSlaves()
+    assert zero_dm_device in slaves
+    # Zero device mapping has no slaves.
+    assert slaves[zero_dm_device] == []
+
+
+@broken_on_ci
+@requires_root
+def test_get_slaves(zero_dm_device):
+    slaves = devicemapper.getSlaves(zero_dm_device)
+    # Zero device mapping has no slaves.
+    assert slaves == []
+
+
+@broken_on_ci
+@requires_root
+def test_get_holders(zero_dm_device):
+    holders = devicemapper.getHolders(zero_dm_device)
+    # Zero device mapping has no holders.
+    assert holders == []
+
+
 def test_block_device_name():
     devs = glob.glob("/sys/block/*/dev")
     dev_name = os.path.basename(os.path.dirname(devs[0]))
