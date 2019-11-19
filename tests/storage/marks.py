@@ -34,6 +34,8 @@ from vdsm.common import compat
 
 from vdsm.storage.compat import sanlock
 
+from testing import on_travis_ci, on_ovirt_ci
+
 
 requires_root = pytest.mark.skipif(
     os.geteuid() != 0, reason="requires root")
@@ -50,6 +52,9 @@ xfail_python3 = pytest.mark.xfail(
 
 xfail_python37 = pytest.mark.xfail(
     sys.version_info[:2] == (3, 7), reason="needs porting to python 3.7")
+
+broken_on_ci = pytest.mark.skipif(
+    on_ovirt_ci() or on_travis_ci(), reason="fails on CI")
 
 
 @cache.memoized

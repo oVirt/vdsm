@@ -55,6 +55,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import nbd
 from vdsm.storage import qemuimg
 
+from . marks import broken_on_ci
 from . storagetestlib import fake_env
 
 # TODO: Move to actual code when we support preallocated qcow2 images.
@@ -77,8 +78,7 @@ requires_privileges = pytest.mark.skipif(
     reason="requires root or running supervdsm")
 
 
-broken_on_ci = pytest.mark.skipif(
-    "OVIRT_CI" in os.environ or "TRAVIS_CI" in os.environ,
+broken_on_ci = broken_on_ci.with_args(
     reason="requires systemd daemon able to run services")
 
 
