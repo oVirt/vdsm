@@ -23,11 +23,18 @@ from __future__ import division
 
 import glob
 import os
+import uuid
 
 import pytest
 
+from vdsm.common import cmdutils
+from vdsm.common import commands
+from vdsm.constants import EXT_DMSETUP
 from vdsm.storage import devicemapper
+from vdsm.storage.devicemapper import DMPATH_PREFIX
+from vdsm.storage.devicemapper import Error
 from vdsm.storage.devicemapper import PathStatus
+
 
 from . marks import requires_root
 
@@ -41,6 +48,39 @@ def fake_dmsetup(monkeypatch):
     monkeypatch.setenv("FAKE_STDOUT", FAKE_DMSETUP + ".status.out")
     monkeypatch.setattr(
         devicemapper, "device_name", lambda major_minor: major_minor)
+
+
+@pytest.fixture
+def zero_dm_device():
+    """
+    Create test device mapper mapping backed by zero target. Zero target is
+    used for tests and it acts similarly to /dev/zero - writes are discarded
+    and reads return nothing (binary zero). For now, the size of the device
+    is fixed to 1 GiB (1 GiB = 2097152 * 512 B sectors).
+
+    The tests using this fixture need to be run with the root privileges, as
+    dmsetup utility requires root.
+    """
+    device_name = str(uuid.uuid4())
+
+    cmd = [EXT_DMSETUP, "create", device_name, "--table", "0 2097152 zero"]
+    try:
+        commands.run(cmd)
+    except cmdutils.Error as e:
+        raise Error("Could not create mapping {!r}: {}".format(device_name, e))
+
+    try:
+        yield device_name
+    finally:
+        # If the test didn't do the cleanup, remove the mapping.
+        device_path = "{}{}".format(DMPATH_PREFIX, device_name)
+        if os.path.exists(device_path):
+            cmd = [EXT_DMSETUP, "remove", device_name]
+            try:
+                commands.run(cmd)
+            except cmdutils.Error as e:
+                raise Error(
+                    "Could not remove mapping {!r}: {}".format(device_name, e))
 
 
 @requires_root
