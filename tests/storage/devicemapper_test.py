@@ -36,10 +36,13 @@ from vdsm.storage.devicemapper import Error
 from vdsm.storage.devicemapper import PathStatus
 
 
-from . marks import requires_root
+from . marks import requires_root, broken_on_ci
 
 
 FAKE_DMSETUP = os.path.join(os.path.dirname(__file__), "fake-dmsetup")
+
+broken_on_ci = broken_on_ci.with_args(
+    reason="device mapper doesn't work properly in containers")
 
 
 @pytest.fixture
@@ -117,6 +120,16 @@ def test_get_paths_status(fake_dmsetup):
         "66:176": "failed",
     }
     assert res == expected
+
+
+@broken_on_ci
+@requires_root
+def test_remove_mapping(zero_dm_device):
+    device_path = "{}{}".format(DMPATH_PREFIX, zero_dm_device)
+    assert os.path.exists(device_path)
+
+    devicemapper.removeMapping(zero_dm_device)
+    assert not os.path.exists(device_path)
 
 
 def test_block_device_name():
