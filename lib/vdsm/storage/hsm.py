@@ -32,7 +32,6 @@ from functools import partial
 import errno
 import time
 import signal
-import math
 import numbers
 import stat
 
@@ -702,7 +701,7 @@ class HSM(object):
                 (spUUID, sdUUID, volumeUUID, size)))
         size = misc.validateN(size, "size")
         # ExtendVolume expects size in MiB.
-        size = math.ceil(size / MiB)
+        size = utils.round(size, MiB) // MiB
 
         pool = self.getPool(spUUID)
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)

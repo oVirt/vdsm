@@ -207,3 +207,35 @@ class TestVerifyUntrustedVolume(object):
             make_file_volume(env.sd_manifest, self.SIZE, img_id, vol_id,
                              vol_format=vol_fmt)
             yield env.sd_manifest.produceVolume(img_id, vol_id)
+
+
+class FakePool(object):
+    """
+    Fake storage pool class implementing the extend volume interface.
+    """
+    spUUID = '5d928855-b09b-47a7-b920-bd2d2eb5808c'
+
+    def __init__(self):
+        self.size = None
+
+    def extendVolume(self, sdUUID, volUUID, size, isShuttingDown):
+        self.size = size
+
+    def is_connected(self):
+        return True
+
+
+@pytest.mark.parametrize("size, expected_size_mb", [
+    (100 * MiB, 100),
+    (100 * MiB - 1, 100),
+    (100 * MiB + 1, 101),
+])
+def test_extend_volume(monkeypatch, fake_task, size, expected_size_mb):
+    h = FakeHSM()
+    pool = FakePool()
+
+    monkeypatch.setattr(hsm.HSM, "getPool", lambda self, spUUID: pool)
+    h.extendVolume(
+        sdUUID=None, spUUID=None, imgUUID=None, volumeUUID=None, size=size)
+
+    assert pool.size == expected_size_mb
