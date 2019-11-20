@@ -25,8 +25,8 @@ import os
 import six
 
 from vdsm import constants
-from vdsm.storage import qemuimg
 from vdsm.common.config import config
+from vdsm.storage import qemuimg
 
 
 # ResourceManager Lock Namespaces

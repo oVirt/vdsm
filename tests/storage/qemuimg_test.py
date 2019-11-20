@@ -33,16 +33,16 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
 from . import qemuio
 
-from testlib import make_config
-from testlib import namedTemporaryDir
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import constants
-from testlib import temporaryPath
 from vdsm.common import exception
-from vdsm.common.constants import GIB
-from vdsm.common.constants import MEGAB
+from vdsm.common.constants import MEGAB, GIB
 from vdsm.storage import qemuimg
+
+from testlib import make_config
+from testlib import namedTemporaryDir
+from testlib import temporaryPath
 
 CLUSTER_SIZE = 64 * 1024
 
