@@ -12,7 +12,7 @@ To build the container, under the vdsm/docker folder, run:
 sudo podman build \
   --rm \
   -t \
-  ovirtorg/vdsm-test-func-network-centos-8 \
+  ovirt/vdsm-test-func-network-centos-8 \
   -f Dockerfile.func-network-centos-8 \
   .
 ```

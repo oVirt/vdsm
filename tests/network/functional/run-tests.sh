@@ -3,7 +3,7 @@
 PROJECT=${PROJECT:-${PWD##*/}}
 PROJECT_PATH="$PWD"
 CONTAINER_WORKSPACE="/workspace/$PROJECT"
-CONTAINER_IMAGE="${CONTAINER_IMAGE:=ovirtorg/$PROJECT-test-func-network-centos-8}"
+CONTAINER_IMAGE="${CONTAINER_IMAGE:=ovirt/$PROJECT-test-func-network-centos-8}"
 VDSM_WORKDIR="/vdsm-tmp"
 
 test -t 1 && USE_TTY="-t"
