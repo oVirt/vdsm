@@ -689,7 +689,7 @@ class HSM(object):
         :type imgUUID: UUID
         :param volumeUUID: The UUID of the volume you want to extend.
         :type volumeUUID: UUID
-        :param size: Target volume size in MB (desired final size, not by
+        :param size: Target volume size in bytes (desired final size, not by
                      how much to increase)
         :type size: number (anything parsable by int(size))
         :param isShuttingDown: ?
@@ -705,6 +705,11 @@ class HSM(object):
         size = utils.round(size, MiB) // MiB
 
         pool = self.getPool(spUUID)
+        # TODO: extendVolume should use bytes, not MiB.
+        #  When we moved from sectors to bytes we left the code using MiB.
+        #  But we should really convert all code to use bytes.
+        #  Using MiB for lvm is not correct anyway since
+        #  lvm default extent size is 4 MiB, and we use extent size of 128 MiB.
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
 
     @public
