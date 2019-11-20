@@ -271,8 +271,8 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
                          initialTags=(sc.TAG_VOL_UNINIT,))
             deltags = (sc.TAG_VOL_UNINIT,)
             addtags = ("FOO",)
-            lvm.changeLVTags(self.VG_NAME, self.LV_NAME,
-                             delTags=deltags, addTags=addtags)
+            lvm.changeLVsTags(self.VG_NAME, (self.LV_NAME,),
+                              delTags=deltags, addTags=addtags)
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
             self.assertEqual(addtags, lv.tags)
 
@@ -402,7 +402,7 @@ class TestFakeLVMSimpleVG(VdsmTestCase):
     def test_lvsbytag(self):
         with self.base_config() as lvm:
             lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB)
-            lvm.changeLVTags(self.VG_NAME, self.LV_NAME, addTags=('foo',))
+            lvm.changeLVsTags(self.VG_NAME, (self.LV_NAME,), addTags=('foo',))
             lvs = lvm.lvsByTag(self.VG_NAME, 'foo')
             self.assertEqual(1, len(lvs))
             self.assertEqual(self.LV_NAME, lvs[0].name)
@@ -427,7 +427,7 @@ class TestFakeLVMGeneral(VdsmTestCase):
         [se.CannotCreateLogicalVolume, 'createLV', ['vg', 'lv', 1024]],
         [se.LogicalVolumeDoesNotExistError, 'getLV', ['vg', 'lv']],
         [se.InaccessiblePhysDev, 'getPV', ['pv']],
-        [se.LogicalVolumeReplaceTagError, 'changeLVTags', ['vg', 'lv']],
+        [se.LogicalVolumeReplaceTagError, 'changeLVsTags', ['vg', '(lv,)']],
     ])
     def test_bad_args(self, exception, fn, args):
         with namedTemporaryDir() as tmpdir:

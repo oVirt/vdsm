@@ -209,18 +209,21 @@ class FakeLVM(object):
             raise se.MissingTagOnLogicalVolume("%s/%s" % (vg, lv), tag)
         lv_md['tags'] += (tag,)
 
-    def changeLVTags(self, vg, lv, delTags=(), addTags=()):
-        try:
-            lv_md = self.lvmd[(vg, lv)]
-        except KeyError:
-            raise se.LogicalVolumeReplaceTagError("LV %s does not exist",
-                                                  "%s/%s" % (vg, lv))
+    def changeLVsTags(self, vg, lvs, delTags=(), addTags=()):
+        lv_mds = []
+        for lv in lvs:
+            try:
+                lv_mds.append(self.lvmd[(vg, lv)])
+            except KeyError:
+                raise se.LogicalVolumeReplaceTagError("LV %s does not exist",
+                                                      "%s/%s" % (vg, lv))
 
-        # Adding an existing tag or removing a nonexistent tag are ignored
-        tags = set(lv_md['tags'])
-        tags |= set(addTags)
-        tags -= set(delTags)
-        lv_md['tags'] = tuple(tags)
+        for lv_md in lv_mds:
+            # Adding an existing tag or removing a nonexistent tag are ignored
+            tags = set(lv_md['tags'])
+            tags |= set(addTags)
+            tags -= set(delTags)
+            lv_md['tags'] = tuple(tags)
 
     def lvsByTag(self, vgName, tag):
         return [lv for lv in self.getLV(vgName) if tag in lv.tags]

@@ -1543,34 +1543,29 @@ def addtag(vg, lv, tag):
         raise se.MissingTagOnLogicalVolume("%s/%s" % (vg, lv), tag)
 
 
-def changeLVTags(vg, lv, delTags=(), addTags=()):
-    log.info("Change LV tags (vg=%s, lv=%s, delTags=%s, addTags=%s)",
-             vg, lv, delTags, addTags)
-    lvname = '%s/%s' % (vg, lv)
+def changeLVsTags(vg, lvs, delTags=(), addTags=()):
+    log.info("Change LVs tags (vg=%s, lvs=%s, delTags=%s, addTags=%s)",
+             vg, lvs, delTags, addTags)
+
     delTags = set(delTags)
     addTags = set(addTags)
     if delTags.intersection(addTags):
         raise se.LogicalVolumeReplaceTagError(
-            "Cannot add and delete the same tag lv: `%s` tags: `%s`" %
-            (lvname, ", ".join(delTags.intersection(addTags))))
+            "Cannot add and delete the same tag lvs: `%s` tags: `%s`" %
+            (lvs, ", ".join(delTags.intersection(addTags))))
 
-    cmd = ['lvchange']
-    cmd.extend(LVM_NOBACKUP)
-
+    attrs = []
     for tag in delTags:
-        cmd.extend(("--deltag", tag))
-
+        attrs.extend(("--deltag", tag))
     for tag in addTags:
-        cmd.extend(('--addtag', tag))
+        attrs.extend(('--addtag', tag))
 
-    cmd.append(lvname)
-
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vg, )))
-    _lvminfo._invalidatelvs(vg, lv)
-    if rc != 0:
+    try:
+        changelv(vg, lvs, attrs)
+    except se.StorageException as e:
         raise se.LogicalVolumeReplaceTagError(
-            'lv: `%s` add: `%s` del: `%s` (%s)' %
-            (lvname, ", ".join(addTags), ", ".join(delTags), err[-1]))
+            'lvs: `%s` add: `%s` del: `%s` (%s)' %
+            (lvs, ", ".join(addTags), ", ".join(delTags), e))
 
 
 #

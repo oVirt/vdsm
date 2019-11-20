@@ -523,8 +523,11 @@ class BlockVolume(volume.Volume):
             mdTags = ["%s%s" % (sc.TAG_PREFIX_MD, slot),
                       "%s%s" % (sc.TAG_PREFIX_PARENT, srcVolUUID),
                       "%s%s" % (sc.TAG_PREFIX_IMAGE, imgUUID)]
-            lvm.changeLVTags(dom.sdUUID, volUUID, delTags=[sc.TAG_VOL_UNINIT],
-                             addTags=mdTags)
+            lvm.changeLVsTags(
+                dom.sdUUID,
+                (volUUID,),
+                delTags=[sc.TAG_VOL_UNINIT],
+                addTags=mdTags)
 
         try:
             lvm.deactivateLVs(dom.sdUUID, [volUUID])

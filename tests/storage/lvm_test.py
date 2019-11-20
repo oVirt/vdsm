@@ -768,22 +768,26 @@ def test_lv_add_delete_tags(tmp_storage):
     dev_size = 20 * 1024**3
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
-    lv_name = str(uuid.uuid4())
+    lv1_name = str(uuid.uuid4())
+    lv2_name = str(uuid.uuid4())
 
     lvm.set_read_only(False)
 
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
 
-    lvm.createLV(vg_name, lv_name, 1024, activate=False)
+    lvm.createLV(vg_name, lv1_name, 1024, activate=False)
+    lvm.createLV(vg_name, lv2_name, 1024, activate=False)
 
-    lvm.changeLVTags(
+    lvm.changeLVsTags(
         vg_name,
-        lv_name,
+        (lv1_name, lv2_name),
         delTags=("initial-tag",),
         addTags=("new-tag-1", "new-tag-2"))
 
-    lv = lvm.getLV(vg_name, lv_name)
-    assert sorted(lv.tags) == ["new-tag-1", "new-tag-2"]
+    lv1 = lvm.getLV(vg_name, lv1_name)
+    lv2 = lvm.getLV(vg_name, lv2_name)
+    assert sorted(lv1.tags) == ["new-tag-1", "new-tag-2"]
+    assert sorted(lv2.tags) == ["new-tag-1", "new-tag-2"]
 
 
 @requires_root
