@@ -284,10 +284,14 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs, discard):
 
         path = lvm.lvPath(sdUUID, volUUID)
 
-        blockdev.zero(path, task=task)
+        lvm.activateLVs(sdUUID, (volUUID,))
+        try:
+            blockdev.zero(path, task=task)
 
-        if discard:
-            blockdev.discard(path)
+            if discard:
+                blockdev.discard(path)
+        finally:
+            lvm.deactivateLVs(sdUUID, (volUUID,))
 
         try:
             log.debug('Removing volume %s task %s', volUUID, taskid)
@@ -629,7 +633,6 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                 volUUIDs,
                 (sc.TAG_PREFIX_IMAGE + imgUUID, ),
                 (sc.TAG_PREFIX_IMAGE + opTag + imgUUID,))
-            lvm.activateLVs(sdUUID, volUUIDs)
         except se.StorageException as e:
             log.error("Can't activate or change LV tags in SD %s. "
                       "failing Image %s %s operation for vols: %s. %s",
