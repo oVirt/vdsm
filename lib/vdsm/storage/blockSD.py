@@ -624,11 +624,12 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         operation and is resilient to open LVs, etc.
         """
         try:
-            lvm.changelv(sdUUID, volUUIDs,
-                         (("--deltag", sc.TAG_PREFIX_IMAGE + imgUUID),
-                          ("--addtag", sc.TAG_PREFIX_IMAGE +
-                           opTag + imgUUID)))
-            lvm.changelv(sdUUID, volUUIDs, ("-a", "y"))
+            lvm.changeLVsTags(
+                sdUUID,
+                volUUIDs,
+                (sc.TAG_PREFIX_IMAGE + imgUUID, ),
+                (sc.TAG_PREFIX_IMAGE + opTag + imgUUID,))
+            lvm.activateLVs(sdUUID, volUUIDs)
         except se.StorageException as e:
             log.error("Can't activate or change LV tags in SD %s. "
                       "failing Image %s %s operation for vols: %s. %s",
