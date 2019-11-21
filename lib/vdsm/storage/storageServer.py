@@ -39,7 +39,6 @@ from vdsm.storage import exception as se
 from vdsm.storage import fileSD
 from vdsm.storage import fileUtils
 from vdsm.storage import iscsi
-from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage.mount import MountError
 
@@ -701,7 +700,7 @@ class ConnectionFactory(object):
     @classmethod
     def createConnection(cls, conInfo):
         conType = conInfo.type
-        params = misc.namedtuple2dict(conInfo.params)
+        params = conInfo.params._asdict()
         for param in list(params):
             if params[param] is None:
                 del params[param]

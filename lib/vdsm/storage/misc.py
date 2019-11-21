@@ -43,8 +43,6 @@ import six
 
 from functools import wraps, partial
 
-from six.moves import map
-
 from vdsm import constants
 from vdsm.common import commands
 from vdsm.common import concurrent
@@ -60,10 +58,6 @@ UUID_HYPHENS = [8, 13, 18, 23]
 MEGA = 1 << 20
 
 log = logging.getLogger('storage.Misc')
-
-
-def namedtuple2dict(nt):
-    return dict(map(lambda f: (f, getattr(nt, f)), nt._fields))
 
 
 execCmdLogger = logging.getLogger('storage.Misc.excCmd')
