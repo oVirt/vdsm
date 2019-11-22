@@ -329,6 +329,17 @@ def _process_mdev_params(device_xml):
         except AttributeError:
             supported_types[name] = {}
             continue
+        device_path = device_xml.find('./path').text
+        description_path = os.path.join(device_path, 'mdev_supported_types',
+                                        name, 'description')
+        # The presence of description file is optional and we also
+        # shouldn't fail if it can't be read for any reason.
+        try:
+            description = open(description_path).read().strip()
+        except IOError:
+            pass
+        else:
+            supported_types[name]['description'] = description
 
     # Remove mdev types that we can't handle.
     supported_types = {k: v for k, v in supported_types.items() if v}
