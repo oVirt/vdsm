@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cliOutput>
+  <opRet>0</opRet>
+  <opErrno>0</opErrno>
+  <opErrstr/>
+  <uuidGenerate>
+    <uuid>d6b27c29-dce0-420e-9982-42f855bca9cd</uuid>
+  </uuidGenerate>
+</cliOutput>
