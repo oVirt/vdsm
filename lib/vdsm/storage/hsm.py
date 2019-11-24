@@ -702,7 +702,7 @@ class HSM(object):
                 (spUUID, sdUUID, volumeUUID, size)))
         size = misc.validateN(size, "size")
         # ExtendVolume expects size in MiB.
-        size = utils.round(size, MiB) // MiB
+        size_mb = utils.round(size, MiB) // MiB
 
         pool = self.getPool(spUUID)
         # TODO: extendVolume should use bytes, not MiB.
@@ -710,7 +710,7 @@ class HSM(object):
         #  But we should really convert all code to use bytes.
         #  Using MiB for lvm is not correct anyway since
         #  lvm default extent size is 4 MiB, and we use extent size of 128 MiB.
-        pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
+        pool.extendVolume(sdUUID, volumeUUID, size_mb, isShuttingDown)
 
     @public
     def reduceVolume(self, spUUID, sdUUID, imgUUID, volUUID,
@@ -933,14 +933,14 @@ class HSM(object):
 
         """
         newSize = misc.validateN(newSize, "newSize")
-        newSize = utils.round(newSize, MiB) // MiB
+        newSize_mb = utils.round(newSize, MiB) // MiB
         try:
             pool = self.getPool(spUUID)
         except se.StoragePoolUnknown:
             pass
         else:
             if pool.hsmMailer:
-                pool.hsmMailer.sendExtendMsg(volDict, newSize, callbackFunc)
+                pool.hsmMailer.sendExtendMsg(volDict, newSize_mb, callbackFunc)
 
     def _spmSchedule(self, spUUID, name, func, *args):
         pool = self.getPool(spUUID)
