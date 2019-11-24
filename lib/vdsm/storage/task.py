@@ -549,8 +549,9 @@ class Task:
         pass
 
     def __state_acquiring(self, fromState):
-        if self.resOwner.requestsGranted():
-            self._updateState(State.queued)
+        # TODO: see if acquiring state can be removed since we always move
+        # into a queued state.
+        self._updateState(State.queued)
 
     def __state_queued(self, fromState):
         try:
@@ -580,8 +581,9 @@ class Task:
         pass
 
     def __state_racquiring(self, fromState):
-        if self.resOwner.requestsGranted():
-            self._updateState(State.recovering)
+        # TODO: see if racquiring state can be removed since we always move to
+        # recovering state.
+        self._updateState(State.recovering)
 
     def __state_recovering(self, fromState):
         self._recover()

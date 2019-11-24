@@ -680,7 +680,6 @@ class Owner(object):
 
     def __init__(self, ownerobject, raiseonfailure=False):
         self.ownerobject = ownerobject
-        self.requests = {}
         self.resources = {}
         self.lock = threading.RLock()
         self.raiseonfailure = raiseonfailure
@@ -738,8 +737,7 @@ class Owner(object):
             self.lock.release()
 
     def releaseAll(self):
-        self.log.debug("Owner.releaseAll requests %s resources %s",
-                       self.requests, self.resources)
+        self.log.debug("Owner.releaseAll resources %s", self.resources)
         self.lock.acquire()
         try:
             for res in list(six.itervalues(self.resources)):
@@ -776,13 +774,6 @@ class Owner(object):
     def ownedResources(self):
         res = self.resources.values()
         return [(r.namespace, r.name, r.getStatus()) for r in res]
-
-    def requestedResources(self):
-        reqs = self.requests.values()
-        return [(r.namespace, r.name, r.locktype) for r in reqs]
-
-    def requestsGranted(self):
-        return len(self.requests) == 0
 
     @classmethod
     def validate(cls, obj):
