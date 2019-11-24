@@ -948,7 +948,6 @@ class Task:
                     self.log.warning("Task._doAbort %s: ignoring - "
                                      "at state %s", self, self.state)
                     return
-                self.resOwner.cancelAll()
                 if self.state.canAbort():
                     self._updateState(State.aborting)
                 else:

@@ -742,8 +742,6 @@ class Owner(object):
                        self.requests, self.resources)
         self.lock.acquire()
         try:
-            self.cancelAll()
-
             for res in list(six.itervalues(self.resources)):
                 self.release(res.namespace, res.name)
         finally:
@@ -774,19 +772,6 @@ class Owner(object):
         if hasattr(self.ownerobject, "resourceReleased"):
             self.ownerobject.resourceReleased(resource.namespace,
                                               resource.name)
-
-    def cancelAll(self):
-        self.log.debug("Owner.cancelAll requests %s", self.requests)
-        self.lock.acquire()
-        try:
-            for req in self.requests.values():
-                try:
-                    req.cancel()
-                except RequestAlreadyProcessedError:
-                    # It must already be canceled
-                    pass
-        finally:
-            self.lock.release()
 
     def ownedResources(self):
         res = self.resources.values()
