@@ -771,10 +771,6 @@ class Owner(object):
             self.ownerobject.resourceReleased(resource.namespace,
                                               resource.name)
 
-    def ownedResources(self):
-        res = self.resources.values()
-        return [(r.namespace, r.name, r.getStatus()) for r in res]
-
     @classmethod
     def validate(cls, obj):
         return isinstance(obj, cls)
