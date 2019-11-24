@@ -685,62 +685,6 @@ class Owner(object):
         self.lock = threading.RLock()
         self.raiseonfailure = raiseonfailure
 
-    def _granted(self, request, resource):
-        """ internal callback used by Request
-            Resource is asynchronously granted or granted after waiting
-        """
-        if not isinstance(request, Request):
-            raise TypeError("%s is not request" % request)
-
-        self.log.debug("%s: request granted for resource '%s'", self,
-                       resource.fullName)
-        self.lock.acquire()
-        try:
-            if request not in self.requests:
-                self.log.warning("request %s not requested by %s", request,
-                                 self)
-                resource.release()
-                return
-
-            del self.requests[resource.fullName]
-
-            if resource.fullName in self.resources:
-                resource.release()
-                raise ValueError("%s is already acquired by %s" %
-                                 (request.resource, self))
-
-            self.resources[resource.fullName] = resource
-        finally:
-            self.lock.release()
-
-            if not resource.isValid:
-                return
-
-            ns = resource.namespace
-            name = resource.name
-            locktype = request.locktype
-            if hasattr(self.ownerobject, "resourceAcquired") and ns and name:
-                self.ownerobject.resourceAcquired(ns, name, locktype)
-
-    def _canceled(self, request):
-        """ internal callback used by Request.
-            May be called under resource lock, so pay attention.
-        """
-        if not isinstance(request, Request):
-            raise TypeError("%s is not request" % request)
-
-        self.log.debug("%s: request canceled %s", self, request)
-        self.lock.acquire()
-        try:
-            if request.fullName not in self.requests:
-                self.log.warning("request %s not requested by %s", request,
-                                 self)
-                return
-
-            del self.requests[request.fullName]
-        finally:
-            self.lock.release()
-
     def acquire(self, namespace, name, locktype, timeout_ms,
                 raiseonfailure=None):
         fullName = "%s.%s" % (namespace, name)
@@ -792,52 +736,6 @@ class Owner(object):
             return True
         finally:
             self.lock.release()
-
-    def _onRequestFinished(self, req, res):
-        if req.granted():
-            self._granted(req, res)
-        elif req.canceled() and res is None:
-            self._canceled(req)
-        else:
-            self.log.warn("%s: request '%s' returned in a weird state", self,
-                          req)
-
-    def register(self, namespace, name, locktype):
-        fullName = "%s.%s" % (namespace, name)
-        if fullName in self.resources:
-            raise ValueError("Owner %s: acquire: resource %s is already "
-                             "acquired" % (self, fullName))
-
-        self.lock.acquire()
-        try:
-            if fullName in self.requests:
-                raise ValueError("request %s is already requested by %s" %
-                                 (fullName, self))
-
-            try:
-                request = _registerResource(namespace, name, locktype,
-                                            self._onRequestFinished)
-            except ValueError as ex:
-                self.log.debug("%s: request for '%s' could not be processed "
-                               "(%s)", self, fullName, ex)
-                raise se.InvalidResourceName()
-            except KeyError:
-                self.log.debug("%s: resource '%s' does not exist", self,
-                               fullName)
-                raise se.ResourceDoesNotExist()
-            except Exception:
-                self.log.warn("Unexpected exception caught while owner '%s' "
-                              "tried to acquire '%s'", self, fullName,
-                              exc_info=True)
-                raise se.ResourceException(fullName)
-
-            if hasattr(self.ownerobject, "resourceRegistered"):
-                self.ownerobject.resourceRegistered(namespace, name, locktype)
-
-            self.requests[fullName] = request
-        finally:
-            self.lock.release()
-        self.log.debug("%s: request registered %s", self, request)
 
     def cancel(self, namespace, name):
         """

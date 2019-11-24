@@ -866,23 +866,6 @@ class Task:
         finally:
             self._decref()
 
-    def resourceRegistered(self, namespace, resource, locktype):
-        self._incref()
-        try:
-            self.callbackLock.acquire()
-            try:
-                # Callback from resourceManager.Owner. May be called
-                # by another thread.
-                self.log.debug("_resourcesAcquired: %s.%s (%s)",
-                               namespace, resource, locktype)
-                # Protect against races with stop/abort
-                if self.state == State.preparing:
-                    self._updateState(State.blocked)
-            finally:
-                self.callbackLock.release()
-        finally:
-            self._decref()
-
     def _setError(self, e=se.TaskAborted("Unknown error encountered"),
                   expected=False):
         if not expected:

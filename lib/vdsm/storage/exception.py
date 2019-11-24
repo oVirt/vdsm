@@ -1828,9 +1828,9 @@ class ResourceTimeout(GeneralException):
     msg = "Resource timeout"
 
 
-class ResourceDoesNotExist(GeneralException):
-    code = 852
-    msg = "Resource does not exist"
+# class ResourceDoesNotExist(GeneralException):
+#    code = 852
+#    msg = "Resource does not exist"
 
 
 class InvalidResourceName(GeneralException):
