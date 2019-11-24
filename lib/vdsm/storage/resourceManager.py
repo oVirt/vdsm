@@ -737,27 +737,6 @@ class Owner(object):
         finally:
             self.lock.release()
 
-    def wait(self, namespace, name, timeout_ms):
-        fullName = "%s.%s" % (namespace, name)
-        self.log.debug("%s: waiting for resource '%s' for %s ms", self,
-                       fullName, timeout_ms)
-
-        if timeout_ms is not None:
-            timeout = timeout_ms / 1000.0
-
-        if fullName in self.requests:
-            req = self.requests[fullName]
-            return req.wait(timeout)
-
-        # req not found - check that it is not granted
-        for fullName in self.resources:
-            return True
-
-        # Note that there is a risk of another thread that is racing with us
-        # and releases this resource - but this should be synced above us
-        raise ValueError("Owner %s: %s.%s is not requested" %
-                         (self, namespace, name))
-
     def releaseAll(self):
         self.log.debug("Owner.releaseAll requests %s resources %s",
                        self.requests, self.resources)
