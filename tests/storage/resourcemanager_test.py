@@ -146,12 +146,11 @@ class TestResourceManager(VdsmTestCase):
 
     @MonkeyPatch(rm, "_manager", manager())
     def testRegisterInvalidNamespace(self):
-        try:
+        with pytest.raises(
+            ValueError,
+            message="Managed to register an invalid namespace"
+        ):
             rm.registerNamespace("I.HEART.DOTS", rm.SimpleResourceFactory())
-        except ValueError:
-            return
-
-        self.fail("Managed to register an invalid namespace")
 
     @MonkeyPatch(rm, "_manager", manager())
     def testFailCreateAfterSwitch(self):
@@ -203,16 +202,11 @@ class TestResourceManager(VdsmTestCase):
     @MonkeyPatch(rm, "_manager", manager())
     def testAccessAttributeNotExposedByWrapper(self):
         with rm.acquireResource("string", "test", rm.EXCLUSIVE) as resource:
-            try:
+            with pytest.raises(
+                AttributeError,
+                message="Managed to access an attribute not exposed by wrapper"
+            ):
                 resource.THERE_IS_NO_WAY_I_EXIST
-            except AttributeError:
-                return
-            except Exception as ex:
-                self.fail("Wrong exception was raised. "
-                          "Expected AttributeError got %s",
-                          ex.__class__.__name__)
-
-        self.fail("Managed to access an attribute not exposed by wrapper")
 
     @MonkeyPatch(rm, "_manager", manager())
     def testAccessAttributeNotExposedByRequestRef(self):
@@ -222,18 +216,15 @@ class TestResourceManager(VdsmTestCase):
             resources.insert(0, res)
 
         req = rm._registerResource("string", "resource", rm.SHARED, callback)
-        try:
-            req.grant()
-        except AttributeError:
-            return
-        except Exception as ex:
-            self.fail("Wrong exception was raised. "
-                      "Expected AttributeError got %s", ex.__class__.__name__)
-        finally:
-            req.wait()
-            resources[0].release()
-
-        self.fail("Managed to access an attribute not exposed by wrapper")
+        with pytest.raises(
+                AttributeError,
+                message="Managed to access an attribute not exposed by wrapper"
+        ):
+            try:
+                req.grant()
+            finally:
+                req.wait()
+                resources[0].release()
 
     @MonkeyPatch(rm, "_manager", manager())
     def testRequestRefStr(self):
@@ -441,10 +432,7 @@ class TestResourceManager(VdsmTestCase):
     @MonkeyPatch(rm, "_manager", manager())
     def testResourceInvalidation(self):
         resource = rm.acquireResource("string", "test", rm.EXCLUSIVE)
-        try:
-            resource.write("dsada")
-        except:
-            self.fail()
+        resource.write("dsada")
         resource.release()
         with pytest.raises(Exception):
             resource.write("test")
@@ -489,22 +477,19 @@ class TestResourceManager(VdsmTestCase):
         status = rm._getResourceStatus("storage", "resource")
         assert status == rm.LockState.shared
         shared1.release()
-        try:
+        with pytest.raises(
+            KeyError,
+            message="Managed to get status on a non existing resource"
+        ):
             status = rm._getResourceStatus("null", "resource")
-            assert status == rm.LockState.free
-        except KeyError:
-            return
-
-        self.fail("Managed to get status on a non existing resource")
 
     @MonkeyPatch(rm, "_manager", manager())
     def testAcquireNonExistingResource(self):
-        try:
+        with pytest.raises(
+            KeyError,
+            message="Managed to get status on a non existing resource"
+        ):
             rm.acquireResource("null", "resource", rm.EXCLUSIVE)
-        except KeyError:
-            return
-
-        self.fail("Managed to get status on a non existing resource")
 
     @MonkeyPatch(rm, "_manager", manager())
     def testAcquireResourceExclusive(self):
