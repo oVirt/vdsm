@@ -737,32 +737,6 @@ class Owner(object):
         finally:
             self.lock.release()
 
-    def cancel(self, namespace, name):
-        """
-        Cancel a pending request. Note that cancel may race with grant and in
-        this case it is not ensured that the resource is not owned. In
-        addition it is not allowed to release any resources granted due to the
-        above race - the owning thread may not be aware of this!
-        """
-        fullName = "%s.%s" % (namespace, name)
-        self.log.debug("%s: Trying to cancel request for '%s'", self, fullName)
-        self.lock.acquire()
-        try:
-            if fullName not in self.requests:
-                self.log.warning("%s: Tried to cancel resource '%s' but it was"
-                                 " not requested or already canceled", self,
-                                 fullName)
-                return False
-
-            request = self.requests[fullName]
-            try:
-                request.cancel()
-                return True
-            except RequestAlreadyProcessedError:
-                return request.canceled()
-        finally:
-            self.lock.release()
-
     def wait(self, namespace, name, timeout_ms):
         fullName = "%s.%s" % (namespace, name)
         self.log.debug("%s: waiting for resource '%s' for %s ms", self,
