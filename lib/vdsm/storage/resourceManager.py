@@ -743,11 +743,11 @@ class Owner(object):
         self.lock.acquire()
         try:
             for res in list(six.itervalues(self.resources)):
-                self.release(res.namespace, res.name)
+                self._release(res.namespace, res.name)
         finally:
             self.lock.release()
 
-    def release(self, namespace, name):
+    def _release(self, namespace, name):
         fullName = "%s.%s" % (namespace, name)
         self.lock.acquire()
         try:
