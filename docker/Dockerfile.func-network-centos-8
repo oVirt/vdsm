@@ -1,4 +1,5 @@
 FROM centos:8
+ENV container docker
 
 # Enable systemd.
 # This Dockerfile is based on the recommendations provided in the
