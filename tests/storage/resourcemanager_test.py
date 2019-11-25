@@ -134,6 +134,18 @@ def manager():
     return manager
 
 
+class OwnerObject(object):
+
+    def __init__(self):
+        self.actions = []
+
+    def resourceAcquired(self, namespace, resource, locktype):
+        self.actions.append(("acquired", namespace, resource, locktype))
+
+    def resourceReleased(self, namespace, resource):
+        self.actions.append(("released", namespace, resource))
+
+
 class TestResourceManager:
 
     @MonkeyPatch(rm, "_manager", manager())
@@ -699,3 +711,37 @@ class TestResourceManagerLock:
         assert "name=name" in lock_string
         assert "mode=" + mode in lock_string
         assert "%x" % id(lock) in lock_string
+
+
+class TestResourceOwner:
+
+    def test_acquire_release_resources(self, monkeypatch):
+        monkeypatch.setattr(rm, "_manager", manager())
+        resources = [
+            ("storage", "A", rm.SHARED),
+            ("storage", "B", rm.SHARED),
+            ("storage", "C", rm.EXCLUSIVE),
+        ]
+        actions = [
+            ("acquired", "storage", "A", rm.SHARED),
+            ("acquired", "storage", "B", rm.SHARED),
+            ("acquired", "storage", "C", rm.EXCLUSIVE),
+            ("released", "storage", "A"),
+            ("released", "storage", "B"),
+            ("released", "storage", "C"),
+        ]
+        owner_object = OwnerObject()
+        owner = rm.Owner(owner_object, raiseonfailure=True)
+
+        for namespace, resources, locktype in resources:
+            owner.acquire(namespace, resources, locktype, timeout_ms=5000)
+        owner.releaseAll()
+
+        assert owner_object.actions == actions
+
+    def test_release_empty_resources(self, monkeypatch):
+        monkeypatch.setattr(rm, "_manager", manager())
+        owner_object = OwnerObject()
+        owner = rm.Owner(owner_object, raiseonfailure=True)
+        owner.releaseAll()
+        assert owner_object.actions == []
