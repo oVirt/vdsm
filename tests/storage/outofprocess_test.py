@@ -38,6 +38,7 @@ from vdsm.storage import outOfProcess as oop
 from vdsm.storage.exception import MiscDirCleanupFailure
 
 from . marks import requires_root, requires_unprivileged_user
+from . storagetestlib import get_umask
 
 
 @pytest.fixture
@@ -642,12 +643,6 @@ def verify_directory(path, mode=None):
     if mode is not None:
         actual_mode = stat.S_IMODE(os.stat(path).st_mode)
         assert oct(actual_mode) == oct(mode)
-
-
-def get_umask():
-    current_umask = os.umask(0)
-    os.umask(current_umask)
-    return current_umask
 
 
 @contextmanager

@@ -584,3 +584,10 @@ class Callable(object):
 
     def is_finished(self):
         return self._done.is_set()
+
+
+def get_umask():
+    # Note that get_umask() is not thread safe
+    current_umask = os.umask(0)
+    os.umask(current_umask)
+    return current_umask
