@@ -1573,10 +1573,6 @@ def changeLVTags(vg, lv, delTags=(), addTags=()):
             (lvname, ", ".join(addTags), ", ".join(delTags), err[-1]))
 
 
-def addLVTags(vg, lv, addTags):
-    changeLVTags(vg, lv, addTags=addTags)
-
-
 #
 # Helper functions
 #
