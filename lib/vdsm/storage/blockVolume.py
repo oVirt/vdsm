@@ -468,7 +468,7 @@ class BlockVolume(volume.Volume):
         else:
             if sc.TAG_VOL_UNINIT in tags:
                 try:
-                    lvm.removeLVs(sdUUID, volUUID)
+                    lvm.removeLVs(sdUUID, (volUUID,))
                 except se.CannotRemoveLogicalVolume as e:
                     cls.log.warning("Remove logical volume failed %s/%s %s",
                                     sdUUID, volUUID, str(e))
@@ -631,7 +631,7 @@ class BlockVolume(volume.Volume):
                                 sc.REMOVED_IMAGE_PREFIX)
 
         try:
-            lvm.removeLVs(self.sdUUID, self.volUUID)
+            lvm.removeLVs(self.sdUUID, (self.volUUID,))
         except se.CannotRemoveLogicalVolume as e:
             self.log.exception("Failed to delete volume %s/%s. The "
                                "logical volume must be removed manually.",

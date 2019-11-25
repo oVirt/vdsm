@@ -1354,7 +1354,7 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
 
 
 def removeLVs(vgName, lvNames):
-    lvNames = normalize_args(lvNames)
+    assert isinstance(lvNames, (list, tuple))
     log.info("Removing LVs (vg=%s, lvs=%s)", vgName, lvNames)
     # Assert that the LVs are inactive before remove.
     for lvName in lvNames:

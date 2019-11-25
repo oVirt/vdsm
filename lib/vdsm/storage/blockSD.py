@@ -295,7 +295,7 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs, discard):
 
         try:
             log.debug('Removing volume %s task %s', volUUID, taskid)
-            deleteVolumes(sdUUID, volUUID)
+            deleteVolumes(sdUUID, (volUUID,))
         except se.CannotRemoveLogicalVolume as e:
             log.exception("Removing volume %s task %s failed: %s",
                           volUUID, taskid, e)
@@ -679,7 +679,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                 blockdev.discard(path)
 
             self.log.debug('Removing volume %s task %s', volUUID, taskid)
-            deleteVolumes(sdUUID, volUUID)
+            deleteVolumes(sdUUID, (volUUID,))
 
             self.log.debug('Purge volume thread finished for '
                            'volume %s task %s', volUUID, taskid)
@@ -1236,7 +1236,7 @@ class BlockStorageDomain(sd.StorageDomain):
         for lv in lvs:
             # Fix me: Should raise and get resource lock.
             try:
-                lvm.removeLVs(sdUUID, lv.name)
+                lvm.removeLVs(sdUUID, (lv.name,))
             except se.CannotRemoveLogicalVolume as e:
                 cls.log.warning("Remove logical volume failed %s/%s %s",
                                 sdUUID, lv.name, str(e))
