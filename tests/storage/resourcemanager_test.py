@@ -33,6 +33,7 @@ from six.moves._thread import error as ThreadError
 
 import pytest
 
+from vdsm.storage import exception as se
 from vdsm.storage import resourceManager as rm
 
 from monkeypatch import MonkeyPatch
@@ -745,3 +746,52 @@ class TestResourceOwner:
         owner = rm.Owner(owner_object, raiseonfailure=True)
         owner.releaseAll()
         assert owner_object.actions == []
+
+    @pytest.mark.parametrize('old_locktype, new_locktype', [
+        pytest.param(rm.SHARED, rm.SHARED,
+                     id="double acquire for shared lock"),
+        pytest.param(rm.EXCLUSIVE, rm.EXCLUSIVE,
+                     id="double acquire for exclusive lock"),
+        pytest.param(rm.SHARED, rm.EXCLUSIVE,
+                     id="switch from shared to exclusive lock"),
+        pytest.param(rm.EXCLUSIVE, rm.SHARED,
+                     id="switch from exclusive to shared lock"),
+    ])
+    def test_acquire_twice(self, old_locktype, new_locktype, monkeypatch):
+        monkeypatch.setattr(rm, "_manager", manager())
+        owner_object = OwnerObject()
+        owner = rm.Owner(owner_object, raiseonfailure=True)
+        owner.acquire("storage", "resource", old_locktype, timeout_ms=5000)
+        with pytest.raises(ValueError):
+            owner.acquire("storage", "resource", new_locktype, timeout_ms=1)
+        owner.releaseAll()
+
+    @pytest.mark.parametrize('locktype', [
+        rm.SHARED,
+        rm.EXCLUSIVE,
+    ])
+    def test_acquire_missing_resource(self, locktype, monkeypatch):
+        monkeypatch.setattr(rm, "_manager", manager())
+        owner_object = OwnerObject()
+        owner = rm.Owner(owner_object, raiseonfailure=True)
+        # The null resource factory always determines that the requested
+        # resource does not exist, hence a KeyError is raised for the calling
+        # ResourceManager.registerResource(), the Owner.acquire() flow wraps
+        # this call and logs the information, not acquiring the resource as
+        # a result.
+        owner.acquire("null", "no_such_resource", locktype, timeout_ms=5000)
+        assert owner_object.actions == []
+
+    @pytest.mark.parametrize('locktype', [
+        rm.SHARED,
+        rm.EXCLUSIVE,
+    ])
+    def test_acquire_error(self, locktype, monkeypatch):
+        monkeypatch.setattr(rm, "_manager", manager())
+        owner_object = OwnerObject()
+        owner = rm.Owner(owner_object, raiseonfailure=True)
+        # The error resource factory is expected to raise a ResourceException
+        # upon creation of any resource.
+        with pytest.raises(se.ResourceException):
+            owner.acquire("error", "any", locktype, timeout_ms=1)
+        owner.releaseAll()
