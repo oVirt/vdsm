@@ -14,8 +14,8 @@
 %{!?with_ovirt_imageio: %global with_ovirt_imageio 1}
 %{!?with_ovirt_vmconsole: %global with_ovirt_vmconsole 1}
 %{!?with_gluster_mgmt: %global with_gluster_mgmt 1}
-%{!?with_hooks: %global with_hooks 0}
-%{!?with_vhostmd: %global with_vhostmd 0}
+%{!?with_hooks: %global with_hooks 1}
+%{!?with_vhostmd: %global with_vhostmd 1}
 %{!?with_4k_support: %global with_4k_support 0}
 
 %ifarch ppc64le
