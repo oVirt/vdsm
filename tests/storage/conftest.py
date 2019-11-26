@@ -234,7 +234,7 @@ def add_recovery(monkeypatch):
 
 
 @pytest.fixture
-def fake_executeable(tmpdir):
+def fake_executable(tmpdir):
     """
     Prepares shell script which can be used by another fixture to fake a binary
     that is called in the test. Typical usage is to fake the binary output in

@@ -94,25 +94,25 @@ echo '{}'
 
 
 @pytest.fixture
-def fake_multipathd(monkeypatch, fake_executeable):
+def fake_multipathd(monkeypatch, fake_executable):
     monkeypatch.setattr(
         multipath,
         "_MULTIPATHD",
-        cmdutils.CommandPath("fake-multipathd", str(fake_executeable))
+        cmdutils.CommandPath("fake-multipathd", str(fake_executable))
     )
 
-    return fake_executeable
+    return fake_executable
 
 
 @pytest.fixture
-def fake_scsi_id(monkeypatch, fake_executeable):
+def fake_scsi_id(monkeypatch, fake_executable):
     monkeypatch.setattr(
         multipath,
         "_SCSI_ID",
-        cmdutils.CommandPath("fake-scsi_id", str(fake_executeable))
+        cmdutils.CommandPath("fake-scsi_id", str(fake_executable))
     )
 
-    return fake_executeable
+    return fake_executable
 
 
 @requires_root
