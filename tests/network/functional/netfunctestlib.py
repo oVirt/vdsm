@@ -797,7 +797,13 @@ class SetupNetworks(object):
             raise SetupNetworksError(status, msg)
 
         if self._is_dynamic_ipv4():
-            self._wait_for_dhcp_response()
+            self._wait_for_dhcp_response(10)
+            self.vdsm_proxy.refreshNetworkCapabilities()
+        # FIXME This is just workaround, eventually we need to fix this by
+        # adding proper support for IPv6 dhcp monitoring
+        # (https://projects.engineering.redhat.com/browse/RHV-17589)
+        if self._is_dynamic_ipv6() and nmstate.is_nmstate_backend():
+            time.sleep(10)
             self.vdsm_proxy.refreshNetworkCapabilities()
         try:
             self._update_configs()
@@ -847,6 +853,12 @@ class SetupNetworks(object):
     def _is_dynamic_ipv4(self):
         for attr in six.viewvalues(self.setup_networks):
             if attr.get('bootproto') == 'dhcp':
+                return True
+        return False
+
+    def _is_dynamic_ipv6(self):
+        for attr in six.viewvalues(self.setup_networks):
+            if attr.get('dhcpv6'):
                 return True
         return False
 
