@@ -79,18 +79,16 @@
 %global python_libvirt python3-libvirt
 %endif
 
-# Version and release must be generated dynamically and that can't be done here.
-# They must be either:
+# Release must be generated dynamically and that can't be done here.
+# It must be either:
 # - filled in by configure
 # - generated using ./build-aux/make-dist script
 # - passed to rpmbuild as
-#   --define="version $(./build-aux/pkg-version --version)"
 #   --define="release $(./build-aux/pkg-version --release)"
-%{!?vdsm_version: %global vdsm_version @PACKAGE_VERSION@}
 %{!?vdsm_release: %global vdsm_release @PACKAGE_RELEASE@}
 
 Name:           %{vdsm_name}
-Version:        %{vdsm_version}
+Version:        4.40.0
 Release:        %{vdsm_release}%{?dist}%{?extra_release}
 Summary:        Virtual Desktop Server Manager
 
