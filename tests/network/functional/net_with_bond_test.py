@@ -52,9 +52,9 @@ def create_adapter(target):
     adapter = NetFuncTestAdapter(target)
 
 
+@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkWithBond(object):
-    @pytest.mark.nmstate
     def test_add_the_same_nic_to_net_and_bond_in_one_step(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': switch}}
@@ -64,7 +64,6 @@ class TestNetworkWithBond(object):
                 adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK)
             assert e.value.status == ne.ERR_USED_NIC
 
-    @pytest.mark.nmstate
     def test_add_bond_with_nic_that_is_already_used_by_network(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': switch}}
@@ -75,7 +74,6 @@ class TestNetworkWithBond(object):
                     adapter.setupNetworks({}, BONDCREATE, NOCHK)
                 assert e.value.status == ne.ERR_USED_NIC
 
-    @pytest.mark.nmstate
     def test_add_network_with_nic_that_is_already_used_by_bond(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': switch}}
@@ -100,7 +98,6 @@ class TestNetworkWithBond(object):
                 adapter.assertNoNetwork(NETWORK1_NAME)
 
     @nftestlib.parametrize_bridged
-    @pytest.mark.nmstate
     def test_given_bonded_net_transfer_one_slave_to_new_net(
         self, switch, bridged
     ):
@@ -137,7 +134,6 @@ class TestNetworkWithBond(object):
                     adapter.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
 
     @nftestlib.parametrize_bridged
-    @pytest.mark.nmstate
     def test_given_bonded_net_replace_bond_with_a_slave(self, switch, bridged):
         with dummy_devices(2) as (nic1, nic2):
             NETBASE = {
@@ -161,7 +157,6 @@ class TestNetworkWithBond(object):
                 adapter.assertNetwork(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
                 adapter.assertNoBond(BOND_NAME)
 
-    @pytest.mark.nmstate
     def test_add_net_with_invalid_bond_name_fails(self, switch):
         INVALID_BOND_NAMES = ('bond', 'bond bad', 'jamesbond007')
 
@@ -175,7 +170,6 @@ class TestNetworkWithBond(object):
             assert cm.value.status == ne.ERR_BAD_BONDING
 
     @nftestlib.parametrize_bridged
-    @pytest.mark.nmstate
     def test_add_net_with_multi_vlans_over_a_bond(self, switch, bridged):
         with dummy_devices(2) as nics:
             netsetup = {}
@@ -195,7 +189,6 @@ class TestNetworkWithBond(object):
                     adapter.assertNetwork(netname, netattrs)
 
     @nftestlib.parametrize_bridged
-    @pytest.mark.nmstate
     def test_remove_bond_under_network(self, switch, bridged):
         with dummy_devices(1) as nics:
             NETCREATE = {
@@ -216,7 +209,6 @@ class TestNetworkWithBond(object):
                 adapter.assertNetwork(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
-    @pytest.mark.nmstate
     def test_remove_bonded_network_while_a_slave_is_missing(self, switch):
         with dummy_device() as nic1:
             NETCREATE = {
@@ -243,9 +235,9 @@ class TestNetworkWithBond(object):
                 adapter.assertNoBond(BOND_NAME)
 
 
+@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestReuseBond(object):
-    @pytest.mark.nmstate
     def test_detach_used_bond_from_bridge(self, switch):
         with dummy_device() as nic:
             NETCREATE = {
@@ -278,7 +270,6 @@ class TestReuseBond(object):
                     adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
     @nftestlib.parametrize_bridged
-    @pytest.mark.nmstate
     def test_add_vlaned_network_on_existing_bond(self, switch, bridged):
         if switch == 'ovs':
             pytest.xfail('Link is not stable when using OVS switch.')
@@ -343,6 +334,7 @@ class TestReuseBond(object):
 
 @pytest.mark.legacy_switch
 class TestReuseBondOnLegacySwitch(object):
+    @pytest.mark.nmstate
     def test_add_net_on_existing_external_vlanned_bond(self):
         ADDRESS1 = '192.168.99.1'
         ADDRESS2 = '192.168.99.254'
