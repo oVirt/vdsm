@@ -45,11 +45,11 @@ Set local git clone:
 
 Install additional packages for Fedora:
 
-    sudo dnf install -y `cat automation/check-patch.packages.fc28`
+    sudo dnf install -y `cat automation/check-patch.packages.fc30`
 
 Install additional packages for CentOS:
 
-    sudo yum install -y `cat automation/check-patch.packages.el7`
+    sudo yum install -y `cat automation/check-patch.packages.el8`
     easy_install pip
 
 Install tox:
