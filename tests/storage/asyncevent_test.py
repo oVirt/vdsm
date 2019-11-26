@@ -35,6 +35,7 @@ import pytest
 from vdsm.common import concurrent
 from vdsm.common import osutils
 import vdsm.common.time
+from vdsm.common.units import KiB
 from vdsm.storage import asyncevent
 
 
@@ -543,10 +544,10 @@ class TestBufferedReader:
     @pytest.mark.parametrize("size, bufsize", [
         (0, 1),
         (1, 32),
-        (1024, 256),
-        (4096, 1024),
-        (16384, 4096),
-        (65536, 16384),
+        (1 * KiB, 256),
+        (4 * KiB, 1 * KiB),
+        (16 * KiB, 4 * KiB),
+        (64 * KiB, 16 * KiB),
     ])
     def test_read(self, size, bufsize):
         data = b"x" * size
