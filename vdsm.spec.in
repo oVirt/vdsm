@@ -902,6 +902,7 @@ exit 0
 %doc README.md
 %doc lib/vdsm/vdsm.conf.sample
 %doc README.logging
+%doc ChangeLog
 %license COPYING
 %{_presetdir}/85-vdsmd.preset
 %{_unitdir}/dev-hugepages1G.mount
@@ -1623,20 +1624,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.pickle
 %endif
 
-
 %changelog
-* Wed Aug 03 2016 Yaniv Bronhaim <ybronhei@redhat.com> - 4.18.999
-- Re-review of vdsm.spec to return it to fedora Bug #1361659
-
-* Sun Oct 13 2013 Yaniv Bronhaim <ybronhei@redhat.com> - 4.13.0
-- Removing vdsm-python-cpopen from the spec
-- Adding dependency on formal cpopen package
-
-* Sun Apr 07 2013 Yaniv Bronhaim <ybronhei@redhat.com> - 4.9.0-1
-- Adding cpopen package
-
-* Wed Oct 12 2011 Federico Simoncelli <fsimonce@redhat.com> - 4.9.0-0
-- Initial upstream release
-
-* Thu Nov 02 2006 Simon Grinberg <simong@qumranet.com> -  0.0-1
-- Initial build
+* Tue Feb 6 2018 Francesco Romani <fromani@redhat.com> - 4.30
+- See %{_docdir}/%{vdsm_name}/ChangeLog for the complete list of Vdsm changes.
