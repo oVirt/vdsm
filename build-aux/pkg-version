@@ -25,7 +25,21 @@ AWK_RELEASE='
       else if (NF == 4) print $2, $3, "git" substr($4, 2)
     }'
 
+AWK_SPEC_VERSION='
+    $1 == "Version:" {
+      print "v" $2
+      exit
+    }
+'
+
 PKG_VERSION=`cat VERSION 2> /dev/null || git describe --tags --match "v[0-9]*"`
+if [ -d .git ]; then
+    SPEC_VERSION=`awk "$AWK_SPEC_VERSION" vdsm.spec.in`
+    if [ "$PKG_VERSION" != "$SPEC_VERSION" ] && [ "${PKG_VERSION#$SPEC_VERSION-}" = "$PKG_VERSION" ]; then
+        # New version, not yet tagged.
+        PKG_VERSION="$SPEC_VERSION"
+    fi
+fi
 
 if test "x$1" = "x--full"; then
     echo $PKG_VERSION | tr -d '[:space:]'

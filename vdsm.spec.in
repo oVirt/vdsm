@@ -49,7 +49,7 @@
 %global debug_package %{nil}
 
 Name:           %{vdsm_name}
-Version:        @PACKAGE_VERSION@
+Version:        4.30.38
 Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
 Summary:        Virtual Desktop Server Manager
 
