@@ -12,17 +12,19 @@ AWK_VERSION='
     }'
 
 # tags and output releases:
-#   - v4.9.0   => 0 (upstream clean)
+#   - v4.9.0   => 1 (upstream clean)
 #   - v4.9.0-1 => 1 (downstream clean)
-#   - v4.9.0-2-g34e62f1   => 2.[201903241419.]git34e62f1 (upstream dirty)
-#   - v4.9.0-1-2-g34e62f1 => 1.2.[201903241419.]git34e62f1 (downstream dirty)
+#   - v4.9.0-2-g34e62f1   => 2.git34e62f1 (upstream dirty)
+#   - v4.9.0-2-g34e62f1   => 201903241419.git34e62f1 (timestamped upstream dirty)
+#   - v4.9.0-1-2-g34e62f1 => 1.2.git34e62f1 (downstream dirty)
+#   - v4.9.0-1-2-g34e62f1 => 201903241419.git34e62f1 (timestamped downstream dirty)
 AWK_RELEASE='
     BEGIN { FS="-"; OFS="." }
     /^v[0-9]/ {
       if (NF == 1) print 1
       else if (NF == 2) print $2
-      else if (NF == 3) print $2, timestamp "git" substr($3, 2)
-      else if (NF == 4) print $2, $3, timestamp "git" substr($4, 2)
+      else if (NF == 3) print (timestamp ? timestamp : $2 ".") "git" substr($3, 2)
+      else if (NF == 4) print (timestamp ? timestamp : $2 "." $3 ".") "git" substr($4, 2)
     }'
 
 AWK_SPEC_VERSION='
