@@ -56,6 +56,10 @@ class RequestAlreadyProcessedError(ResourceManagerError):
 class RequestTimedOutError(ResourceManagerError):
     pass
 
+
+class ResourceAlreadyAcquired(ResourceManagerError):
+    pass
+
 # TODO : Consider changing when we decided on a unified way of representing
 #        enums.
 
@@ -699,9 +703,9 @@ class Owner(object):
 
             try:
                 if fullName in self.resources:
-                    raise ValueError("Owner %s: acquire: resource %s is "
-                                     "already acquired" % (self, fullName))
-
+                    raise ResourceAlreadyAcquired(
+                        "%s is already acquired by %s",
+                        fullName, self.ownerobject.getID())
                 try:
                     resource = acquireResource(namespace, name, locktype,
                                                timeout)

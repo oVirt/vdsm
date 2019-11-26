@@ -146,6 +146,9 @@ class OwnerObject(object):
     def resourceReleased(self, namespace, resource):
         self.actions.append(("released", namespace, resource))
 
+    def getID(self):
+        return "fake_id"
+
 
 class TestResourceManager:
 
@@ -761,10 +764,18 @@ class TestResourceOwner:
         monkeypatch.setattr(rm, "_manager", manager())
         owner_object = OwnerObject()
         owner = rm.Owner(owner_object, raiseonfailure=True)
+        # Acquire a resource within time period allowing it to happen
         owner.acquire("storage", "resource", old_locktype, timeout_ms=5000)
-        with pytest.raises(ValueError):
+
+        # Requiring an already acquired resource should fail immediately
+        with pytest.raises(rm.ResourceAlreadyAcquired) as e:
             owner.acquire("storage", "resource", new_locktype, timeout_ms=1)
         owner.releaseAll()
+
+        error_str = str(e)
+        assert "storage" in error_str
+        assert "resource" in error_str
+        assert "fake_id" in error_str
 
     @pytest.mark.parametrize('locktype', [
         rm.SHARED,
