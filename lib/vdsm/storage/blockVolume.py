@@ -23,11 +23,11 @@ from __future__ import absolute_import
 import os
 import logging
 
-from vdsm import constants
 from vdsm import utils
 from vdsm.common import fileutils
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
+from vdsm.common.units import MiB
 from vdsm.config import config
 from vdsm.storage import blockdev
 from vdsm.storage import constants as sc
@@ -44,7 +44,7 @@ from vdsm.storage.volumemetadata import VolumeMetadata
 QCOW_OVERHEAD_FACTOR = 1.1
 
 # Minimal padding to be added to internal volume optimal size.
-MIN_PADDING = constants.MEGAB
+MIN_PADDING = MiB
 
 log = logging.getLogger('storage.Volume')
 
@@ -55,7 +55,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
     DISK_TYPE = "block"
 
     # On block storage volume are composed of lvm extents, 128m by default.
-    align_size = sc.VG_EXTENT_SIZE_MB * constants.MEGAB
+    align_size = sc.VG_EXTENT_SIZE_MB * MiB
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         volume.VolumeManifest.__init__(self, repoPath, sdUUID, imgUUID,
@@ -351,7 +351,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
             else:
                 chunk_size_mb = config.getint("irs",
                                               "volume_utilization_chunk_mb")
-                alloc_size = chunk_size_mb * constants.MEGAB
+                alloc_size = chunk_size_mb * MiB
         else:
             # Preallocated qcow2
             alloc_size = initial_size if initial_size else capacity
@@ -428,7 +428,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
             # For leaf volumes, the padding is one chunk.
             chnuk_size_mb = int(config.get("irs",
                                            "volume_utilization_chunk_mb"))
-            padding = chnuk_size_mb * constants.MEGAB
+            padding = chnuk_size_mb * MiB
             self.log.debug("Leaf volume, using padding: %s", padding)
 
             potential_optimal_size = actual_size + padding
@@ -497,7 +497,7 @@ class BlockVolume(volume.Volume):
 
         lv_size = cls.calculate_volume_alloc_size(
             preallocate, volFormat, capacity, initial_size)
-        lv_size_mb = (utils.round(lv_size, constants.MEGAB) // constants.MEGAB)
+        lv_size_mb = utils.round(lv_size, MiB) // MiB
 
         lvm.createLV(dom.sdUUID, volUUID, lv_size_mb, activate=True,
                      initialTags=(sc.TAG_VOL_UNINIT,))
@@ -661,7 +661,7 @@ class BlockVolume(volume.Volume):
                       self.sdUUID, new_size)
         # we should return: Success/Failure
         # Backend APIs:
-        sizemb = utils.round(new_size, constants.MEGAB) // constants.MEGAB
+        sizemb = utils.round(new_size, MiB) // MiB
         lvm.extendLV(self.sdUUID, self.volUUID, sizemb)
 
     def reduce(self, new_size, allowActive=False):
@@ -675,7 +675,7 @@ class BlockVolume(volume.Volume):
         self.log.info("Request to reduce LV %s of image %s in VG %s with "
                       "size = %s allowActive = %s", self.volUUID,
                       self.imgUUID, self.sdUUID, new_size, allowActive)
-        sizemb = utils.round(new_size, constants.MEGAB) // constants.MEGAB
+        sizemb = utils.round(new_size, MiB) // MiB
         lvm.reduceLV(self.sdUUID, self.volUUID, sizemb, force=allowActive)
 
     @classmethod
@@ -752,8 +752,7 @@ class BlockVolume(volume.Volume):
         # Since this method relies on lvm.extendLV (lvextend) when the
         # requested size is equal or smaller than the current size, the
         # request is siliently ignored.
-        new_capacity_mb = (utils.round(new_capacity, constants.MEGAB) //
-                           constants.MEGAB)
+        new_capacity_mb = utils.round(new_capacity, MiB) // MiB
         lvm.extendLV(self.sdUUID, self.volUUID, new_capacity_mb)
 
 
