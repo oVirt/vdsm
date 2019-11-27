@@ -33,6 +33,7 @@ from vdsm import utils
 from vdsm.common import exception
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
+from vdsm.common.units import MiB, GiB
 from vdsm.config import config
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
@@ -261,9 +262,9 @@ def name2class(name):
 
 def sizeStr2Int(size_str):
     if size_str.endswith("M") or size_str.endswith("m"):
-        size = int(size_str[:-1]) * (1 << 20)
+        size = int(size_str[:-1]) * MiB
     elif size_str.endswith("G") or size_str.endswith("g"):
-        size = int(size_str[:-1]) * (1 << 30)
+        size = int(size_str[:-1]) * GiB
     else:
         size = int(size_str)
 
