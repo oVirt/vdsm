@@ -41,6 +41,7 @@ from vdsm.common import concurrent
 from vdsm.common import exception
 from vdsm.common import proc
 from vdsm.common.threadlocal import vars
+from vdsm.common.units import KiB, MiB
 from vdsm.config import config
 from vdsm import constants
 from vdsm import utils
@@ -111,7 +112,7 @@ log = logging.getLogger("storage.BlockSD")
 # Metadata LV reserved size:
 # 0-1 MiB: V4 metadata area.
 # 1-17 MiB: V5 metadata area.
-RESERVED_METADATA_SIZE = 17 * constants.MEGAB
+RESERVED_METADATA_SIZE = 17 * MiB
 
 RESERVED_MAILBOX_SIZE = MAILBOX_SIZE * clusterlock.MAX_HOST_ID
 METADATA_BASE_SIZE = 378
@@ -129,8 +130,8 @@ if MAX_PVS > MAX_PVS_LIMIT:
 
 PVS_METADATA_SIZE = MAX_PVS * 142
 
-SD_METADATA_SIZE = 2048
-DEFAULT_BLOCKSIZE = 512
+SD_METADATA_SIZE = 2 * KiB
+DEFAULT_BLOCKSIZE = KiB // 2
 
 DMDK_VGUUID = "VGUUID"
 DMDK_PV_REGEX = re.compile(r"^PV\d+$")
@@ -145,19 +146,19 @@ RESERVED_LEASES = 100
 METADATA_BASE_V4 = 0
 
 # Size of metadata slot in v4
-METADATA_SLOT_SIZE_V4 = 512
+METADATA_SLOT_SIZE_V4 = KiB // 2
 
-# Starting version 5, first 1 MB is still reserved for version 4 (but
+# Starting version 5, first 1 MiB is still reserved for version 4 (but
 # zeroed) and therefore when computing metadata offset in version 5,
-# we have to add 1 MB offset. Metadata slot size is 512B in version 4
-# and 8kB starting version 5. However, actual metadata size
+# we have to add 1 MiB offset. Metadata slot size is 512B in version 4
+# and 8KiB starting version 5. However, actual metadata size
 # (sc.METADATA_SIZE) is always 512B.
 
 # Metadata area start offset v5
-METADATA_BASE_V5 = constants.MEGAB
+METADATA_BASE_V5 = MiB
 
 # Size of metadata slot in v5
-METADATA_SLOT_SIZE_V5 = 8192
+METADATA_SLOT_SIZE_V5 = 8 * KiB
 
 
 def encodePVInfo(pvInfo):
@@ -367,7 +368,7 @@ def metadataValidity(vg):
     mda_size = int(vg.vg_mda_size)
     mda_free = int(vg.vg_mda_free)
 
-    mda_size_ok = mda_size >= VG_METADATASIZE * constants.MEGAB // 2
+    mda_size_ok = mda_size >= VG_METADATASIZE * MiB // 2
     mda_free_ok = mda_free >= mda_size * VG_MDA_MIN_THRESHOLD
 
     return {'mdathreshold': mda_free_ok, 'mdavalid': mda_size_ok}
@@ -397,7 +398,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     @classmethod
     def special_volumes_size_mb(cls, alignment):
-        alignment_mb = alignment // constants.MEGAB
+        alignment_mb = alignment // MiB
         sizes_mb = dict(sd.SPECIAL_VOLUME_SIZES_MIB)
         sizes_mb[sd.LEASES] = sd.LEASES_SLOTS * alignment_mb
         sizes_mb[sd.XLEASES] = sd.XLEASES_SLOTS * alignment_mb

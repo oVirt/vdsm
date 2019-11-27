@@ -29,7 +29,7 @@ import string
 
 import pytest
 
-from vdsm import constants
+from vdsm.common.units import MiB, GiB
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -47,7 +47,7 @@ TESTDIR = os.path.dirname(__file__)
 
 class TestMetadataValidity:
 
-    MIN_MD_SIZE = blockSD.VG_METADATASIZE * constants.MEGAB // 2
+    MIN_MD_SIZE = blockSD.VG_METADATASIZE * MiB // 2
     MIN_MD_FREE = MIN_MD_SIZE * blockSD.VG_MDA_MIN_THRESHOLD
 
     def test_valid_ok(self):
@@ -191,7 +191,7 @@ def test_attach_domain_unsupported_version(
         monkeypatch, tmp_storage, tmp_repo, fake_task, fake_sanlock):
     sd_uuid = str(uuid.uuid4())
 
-    dev = tmp_storage.create_device(20 * 1024 ** 3)
+    dev = tmp_storage.create_device(20 * GiB)
     lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
     vg = lvm.getVG(sd_uuid)
 
@@ -249,8 +249,8 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
     sd_uuid = str(uuid.uuid4())
     domain_name = "loop-domain"
 
-    dev1 = tmp_storage.create_device(10 * 1024**3)
-    dev2 = tmp_storage.create_device(10 * 1024**3)
+    dev1 = tmp_storage.create_device(10 * GiB)
+    dev2 = tmp_storage.create_device(10 * GiB)
     lvm.createVG(sd_uuid, [dev1, dev2], blockSD.STORAGE_UNREADY_DOMAIN_TAG,
                  128)
     vg = lvm.getVG(sd_uuid)
@@ -326,7 +326,7 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
     assert dev1 == lvm.getVgMetadataPv(dom.sdUUID)
 
     lv = lvm.getLV(dom.sdUUID, sd.METADATA)
-    assert int(lv.size) == blockSD.METADATA_LV_SIZE_MB * constants.MEGAB
+    assert int(lv.size) == blockSD.METADATA_LV_SIZE_MB * MiB
 
     # Test the domain lease.
     lease = dom.getClusterLease()
@@ -354,17 +354,17 @@ def test_create_domain_metadata(tmp_storage, tmp_repo, fake_sanlock,
     for name in (sd.IDS, sd.INBOX, sd.OUTBOX, sd.METADATA):
         lv = lvm.getLV(dom.sdUUID, name)
         # This is the minimal LV size on block storage.
-        assert int(lv.size) == 128 * 1024**2
+        assert int(lv.size) == 128 * MiB
 
     lv = lvm.getLV(dom.sdUUID, blockSD.MASTERLV)
-    assert int(lv.size) == constants.GIB
+    assert int(lv.size) == GiB
 
     lv = lvm.getLV(dom.sdUUID, sd.LEASES)
-    assert int(lv.size) == 2048 * dom.alignment
+    assert int(lv.size) == sd.LEASES_SLOTS * dom.alignment
 
     if domain_version > 3:
         lv = lvm.getLV(dom.sdUUID, sd.XLEASES)
-        assert int(lv.size) == 1024 * dom.alignment
+        assert int(lv.size) == sd.XLEASES_SLOTS * dom.alignment
 
 
 @requires_root
@@ -373,7 +373,7 @@ def test_create_instance_block_size_mismatch(
         tmp_storage, tmp_repo, fake_sanlock):
     sd_uuid = str(uuid.uuid4())
 
-    dev = tmp_storage.create_device(10 * 1024**3)
+    dev = tmp_storage.create_device(10 * GiB)
     lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
     vg = lvm.getVG(sd_uuid)
 
@@ -405,7 +405,7 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
     sd_uuid = str(uuid.uuid4())
     domain_name = "domain"
 
-    dev = tmp_storage.create_device(20 * 1024 ** 3)
+    dev = tmp_storage.create_device(20 * GiB)
     lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
     vg = lvm.getVG(sd_uuid)
 
@@ -422,7 +422,7 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
 
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
-    vol_capacity = 10 * 1024**3
+    vol_capacity = 10 * GiB
     vol_desc = "Test volume"
 
     # Create domain directory structure.
@@ -538,7 +538,7 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
                          tmp_db, fake_task, fake_sanlock, domain_version):
     sd_uuid = str(uuid.uuid4())
 
-    dev = tmp_storage.create_device(20 * 1024 ** 3)
+    dev = tmp_storage.create_device(20 * GiB)
     lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
     vg = lvm.getVG(sd_uuid)
 
@@ -564,7 +564,7 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
         diskType="DATA",
         imgUUID=img_uuid,
         preallocate=sc.SPARSE_VOL,
-        capacity=10 * 1024 ** 3,
+        capacity=10 * GiB,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
@@ -584,11 +584,11 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
     meta_path = dom.manifest.metadata_volume_path()
 
     # Check capacity
-    assert 10 * 1024 ** 3 == vol.getCapacity()
+    assert 10 * GiB == vol.getCapacity()
     vol.setCapacity(0)
     with pytest.raises(se.MetaDataValidationError):
         vol.getCapacity()
-    vol.setCapacity(10 * 1024 ** 3)
+    vol.setCapacity(10 * GiB)
 
     # Change metadata.
     md = vol.getMetadata()
@@ -623,7 +623,7 @@ def test_create_snapshot_size(
     # let's test this flow also in this test.
     sd_uuid = str(uuid.uuid4())
 
-    dev = tmp_storage.create_device(20 * 1024 ** 3)
+    dev = tmp_storage.create_device(20 * GiB)
     lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
     vg = lvm.getVG(sd_uuid)
 
@@ -643,7 +643,7 @@ def test_create_snapshot_size(
 
     img_uuid = str(uuid.uuid4())
     parent_vol_uuid = str(uuid.uuid4())
-    parent_vol_capacity = constants.GIB
+    parent_vol_capacity = GiB
     vol_uuid = str(uuid.uuid4())
     vol_capacity = 2 * parent_vol_capacity
 
