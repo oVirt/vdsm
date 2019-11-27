@@ -27,6 +27,8 @@ import os
 from contextlib import closing
 from contextlib import contextmanager
 
+from vdsm.common.units import KiB
+
 log = logging.getLogger('storage.directio')
 
 libc = ctypes.CDLL("libc.so.6", use_errno=True)
@@ -141,7 +143,7 @@ class DirectFile(object):
             return ptr[:numRead]
 
     def readall(self):
-        buffsize = 1024
+        buffsize = KiB
         res = io.BytesIO()
         with closing(res):
             while True:
