@@ -26,6 +26,7 @@ import six
 
 from vdsm import constants
 from vdsm.common.config import config
+from vdsm.common.units import MiB
 from vdsm.storage import qemuimg
 
 
@@ -41,9 +42,9 @@ COW_OVERHEAD = 1.1
 
 # The minimal size used to limit internal volume size. This is mainly used
 # when calculating volume optimal size.
-MIN_CHUNK = 8 * VG_EXTENT_SIZE_MB * constants.MEGAB  # 1 GB
+MIN_CHUNK = 8 * VG_EXTENT_SIZE_MB * MiB
 
-# TODO: This constant is usefull only file base storage, it should be moved to
+# TODO: This constant is useful only file base storage, it should be moved to
 # some constant module specific to file based storage once we have such module.
 # Specific stat(2) block size as defined in the man page
 STAT_BYTES_PER_BLOCK = 512
@@ -71,10 +72,10 @@ BLOCK_SIZE_NONE = 1
 # - SANLK_RES_ALIGN2M | SANLK_RES_SECTOR4K:  max_hosts 500
 # - SANLK_RES_ALIGN4M | SANLK_RES_SECTOR4K:  max_hosts 1000
 # - SANLK_RES_ALIGN8M | SANLK_RES_SECTOR4K:  max_hosts 2000
-ALIGNMENT_1M = 1024 ** 2
-ALIGNMENT_2M = 2 * ALIGNMENT_1M
-ALIGNMENT_4M = 4 * ALIGNMENT_1M
-ALIGNMENT_8M = 8 * ALIGNMENT_1M
+ALIGNMENT_1M = 1 * MiB
+ALIGNMENT_2M = 2 * MiB
+ALIGNMENT_4M = 4 * MiB
+ALIGNMENT_8M = 8 * MiB
 
 # block size/alignment mapping to the number of hosts
 HOSTS_512_1M = 2000
@@ -198,7 +199,7 @@ GENERATION = "GEN"  # Added in 4.1
 # Since a disk may be created on file storage, and moved to block
 # storage, the metadata size must be limited on all types of storage.
 #
-# The desription field is limited to 500 characters in the engine side.
+# The description field is limited to 500 characters in the engine side.
 # Since ovirt 3.5, the description field is using JSON format, keeping
 # both alias and description. In OVF_STORE disks, the description field
 # holds additional data such as content size and date.
