@@ -36,6 +36,7 @@ from vdsm import utils
 from vdsm.common import concurrent
 from vdsm.common import supervdsm
 from vdsm.common.compat import glob_escape
+from vdsm.common.units import MiB
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -403,8 +404,7 @@ class FileStorageDomain(sd.StorageDomain):
 
     def prepareMailbox(self):
         for mailboxFile in (sd.INBOX, sd.OUTBOX):
-            mailboxByteSize = (FILE_SPECIAL_VOLUME_SIZES_MIB[mailboxFile] *
-                               constants.MEGAB)
+            mailboxByteSize = FILE_SPECIAL_VOLUME_SIZES_MIB[mailboxFile] * MiB
             mailboxFilePath = os.path.join(self.domaindir,
                                            sd.DOMAIN_META_DATA, mailboxFile)
 
@@ -445,7 +445,7 @@ class FileStorageDomain(sd.StorageDomain):
                 try:
                     procPool.truncateFile(
                         os.path.join(metadataDir, name),
-                        size_mb * constants.MEGAB, METADATA_PERMISSIONS)
+                        size_mb * MiB, METADATA_PERMISSIONS)
                 except Exception as e:
                     raise se.StorageDomainMetadataCreationError(
                         "create meta file '%s' failed: %s" % (name, str(e)))
@@ -779,7 +779,7 @@ class FileStorageDomain(sd.StorageDomain):
         """
         proc = oop.getProcessPool(self.sdUUID)
         path = self.external_leases_path()
-        size = FILE_SPECIAL_VOLUME_SIZES_MIB[sd.XLEASES] * constants.MEGAB
+        size = FILE_SPECIAL_VOLUME_SIZES_MIB[sd.XLEASES] * MiB
         self.log.info("Creating external leases volume %s", path)
         try:
             proc.truncateFile(path, size, METADATA_PERMISSIONS, creatExcl=True)
