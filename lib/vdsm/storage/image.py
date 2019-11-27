@@ -30,6 +30,7 @@ from vdsm import utils
 from vdsm.config import config
 from vdsm.common import cmdutils
 from vdsm.common import logutils
+from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -544,9 +545,11 @@ class Image:
                       OP_TYPES[op], imgUUID)
         return True
 
+    @deprecated
     def cloneStructure(self, sdUUID, imgUUID, dstSdUUID):
         self._createTargetImage(sdCache.produce(dstSdUUID), sdUUID, imgUUID)
 
+    @deprecated
     def syncData(self, sdUUID, imgUUID, dstSdUUID, syncType):
         srcChain = self.getChain(sdUUID, imgUUID)
         log_str = logutils.volume_chain_to_str(vol.volUUID for vol in srcChain)

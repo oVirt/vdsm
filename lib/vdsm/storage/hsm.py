@@ -1772,6 +1772,7 @@ class HSM(object):
                           pool.downloadImageFromStream, methodArgs, callback,
                           sdUUID, imgUUID, volUUID)
 
+    @deprecated
     @public
     def copyImage(
             self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,

@@ -9107,8 +9107,8 @@ Image.move:
 
 Image.cloneStructure:
     added: '3.2'
-    description: Clone an image structure from a source domain to a destination
-        domainwithin the same Storage Pool.
+    description: Deprecated. Clone an image structure from a source domain to a
+        destination domainwithin the same Storage Pool.
     params:
     -   description: The UUID of the Image
         name: imageID
@@ -9131,8 +9131,8 @@ Image.cloneStructure:
 
 Image.syncData:
     added: '3.2'
-    description: Synchronize image data between storage domains within same
-        Storage Pool.
+    description: Deprecated. Synchronize image data between storage domains
+        within same Storage Pool.
     params:
     -   description: The UUID of the Image
         name: imageID
@@ -10840,7 +10840,8 @@ VM.seal:
 
 Volume.copy:
     added: '3.1'
-    description: Duplicate a volume to produce a new template image.
+    description: Deprecated. Duplicate a volume to produce a new template
+        image.
     params:
     -   description: The UUID of the Volume
         name: volumeID
