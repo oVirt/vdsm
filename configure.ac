@@ -21,7 +21,7 @@
 # Autoconf initialization
 AC_INIT([vdsm],
         [m4_esyscmd([build-aux/pkg-version --version])],
-        [vdsm-devel@lists.fedorahosted.org])
+        [devel@ovirt.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_HOST
 
