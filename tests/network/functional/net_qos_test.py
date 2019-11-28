@@ -49,6 +49,7 @@ def create_adapter(target):
     strict=True,
 )
 @nftestlib.parametrize_legacy_switch
+@pytest.mark.nmstate
 class TestNetworkHostQos(object):
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded

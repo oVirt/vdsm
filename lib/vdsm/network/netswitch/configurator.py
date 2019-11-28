@@ -36,6 +36,7 @@ from vdsm.network import errors as ne
 from vdsm.network import nmstate
 from vdsm.network import sourceroute
 from vdsm.network.configurators.ifcfg import Ifcfg, ConfigWriter
+from vdsm.network.configurators import qos
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.link import dpdk
@@ -191,8 +192,10 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
     logging.info('Desired state: %s', desired_state)
     _setup_dynamic_src_routing(networks)
     nmstate.setup(desired_state, verify_change=not in_rollback)
+    net_info = NetInfo(netinfo_get())
 
     with Transaction(in_rollback=in_rollback, persistent=False) as config:
+        _setup_qos(networks, net_info, config.networks)
         for net_name, net_attrs in six.viewitems(networks):
             if net_attrs.get('remove'):
                 config.removeNetwork(net_name)
@@ -220,6 +223,14 @@ def _setup_static_src_routing(networks):
             sourceroute.add(next_hop, ip_address, netmask, gateway)
 
 
+def _setup_qos(networks, net_info, rnetworks):
+    for net_name, net_attrs in _order_networks(networks):
+        if net_attrs.get('remove'):
+            _remove_qos(rnetworks[net_name], net_info)
+        else:
+            _configure_qos(net_attrs)
+
+
 def get_next_hop_interface(net_name, net_attributes):
     if net_attributes.get('bridged'):
         return net_name
@@ -239,6 +250,25 @@ def _setup_dynamic_src_routing(networks):
         is_dynamic = net_attrs.get('bootproto') == 'dhcp'
         if is_dynamic and not is_remove:
             ifacetracking.add(_get_network_iface(net_name, net_attrs))
+
+
+def _configure_qos(net_attrs):
+    out = net_attrs.get('hostQos', {}).get('out')
+    if out:
+        vlan = net_attrs.get('vlan')
+        base_iface = _get_base_iface(net_attrs)
+        qos.configure_outbound(out, base_iface, vlan)
+
+
+def _remove_qos(net_attrs, net_info):
+    vlan = net_attrs.get('vlan')
+    base_iface = _get_base_iface(net_attrs)
+    if (
+        base_iface in net_info.nics
+        or base_iface in net_info.bondings
+        and net_attrs.get('hostQos')
+    ):
+        qos.remove_outbound(base_iface, vlan, net_info)
 
 
 def _get_network_iface(net_name, net_attrs):
@@ -274,10 +304,26 @@ def _setup_legacy(networks, bondings, options, net_info, in_rollback):
         )
 
         legacy_switch.add_missing_networks(
-            configurator, networks, bondings, _netinfo
+            configurator, _order_networks(networks), bondings, _netinfo
         )
 
         connectivity.check(options)
+
+
+def _order_networks(networks):
+    vlanned_nets = (
+        (net, attr) for net, attr in six.viewitems(networks) if 'vlan' in attr
+    )
+    non_vlanned_nets = (
+        (net, attr)
+        for net, attr in six.viewitems(networks)
+        if 'vlan' not in attr
+    )
+
+    for net, attr in vlanned_nets:
+        yield net, attr
+    for net, attr in non_vlanned_nets:
+        yield net, attr
 
 
 def _setup_ovs(networks, bondings, options, net_info, in_rollback):

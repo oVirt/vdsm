@@ -512,7 +512,7 @@ def add_missing_networks(configurator, networks, bondings, _netinfo):
     # We need to use the newest host info
     _netinfo.updateDevices()
 
-    for network, attrs in order_networks(networks):
+    for network, attrs in networks:
         if 'remove' in attrs:
             continue
 
@@ -536,22 +536,6 @@ def add_missing_networks(configurator, networks, bondings, _netinfo):
             raise
 
         _netinfo.updateDevices()  # Things like a bond mtu can change
-
-
-def order_networks(networks):
-    vlanned_nets = (
-        (net, attr) for net, attr in six.viewitems(networks) if 'vlan' in attr
-    )
-    non_vlanned_nets = (
-        (net, attr)
-        for net, attr in six.viewitems(networks)
-        if 'vlan' not in attr
-    )
-
-    for net, attr in vlanned_nets:
-        yield net, attr
-    for net, attr in non_vlanned_nets:
-        yield net, attr
 
 
 def _emergency_network_cleanup(network, networkAttrs, configurator):
