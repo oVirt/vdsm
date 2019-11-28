@@ -1530,19 +1530,6 @@ def _refreshLVs(vgName, lvNames):
         raise se.LogicalVolumeRefreshError("%s failed" % list2cmdline(cmd))
 
 
-# Fix me: Function name should mention LV or unify with VG version.
-# may be for all the LVs in the whole VG?
-def addtag(vg, lv, tag):
-    log.info("Add LV tag (vg=%s, lv=%s, tag=%s)", vg, lv, tag)
-    lvname = "%s/%s" % (vg, lv)
-    cmd = ("lvchange",) + LVM_NOBACKUP + ("--addtag", tag) + (lvname,)
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vg, )))
-    _lvminfo._invalidatelvs(vg, lv)
-    if rc != 0:
-        # Fix me: should be se.ChangeLogicalVolumeError but this not exists.
-        raise se.MissingTagOnLogicalVolume("%s/%s" % (vg, lv), tag)
-
-
 def changeLVsTags(vg, lvs, delTags=(), addTags=()):
     log.info("Change LVs tags (vg=%s, lvs=%s, delTags=%s, addTags=%s)",
              vg, lvs, delTags, addTags)

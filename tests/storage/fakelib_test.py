@@ -423,7 +423,6 @@ class TestFakeLVMGeneral(VdsmTestCase):
     @permutations([
         [se.VolumeGroupDoesNotExist, 'getVG', ['vg']],
         [se.CannotActivateLogicalVolume, 'activateLVs', ['vg', ['lv']]],
-        [se.MissingTagOnLogicalVolume, 'addtag', ['vg', 'lv', 'tag']],
         [se.CannotCreateLogicalVolume, 'createLV', ['vg', 'lv', 1024]],
         [se.LogicalVolumeDoesNotExistError, 'getLV', ['vg', 'lv']],
         [se.InaccessiblePhysDev, 'getPV', ['pv']],

@@ -202,13 +202,6 @@ class FakeLVM(object):
         lv_md['active'] = False
         lv_md['attr']['state'] = '-'
 
-    def addtag(self, vg, lv, tag):
-        try:
-            lv_md = self.lvmd[(vg, lv)]
-        except KeyError:
-            raise se.MissingTagOnLogicalVolume("%s/%s" % (vg, lv), tag)
-        lv_md['tags'] += (tag,)
-
     def changeLVsTags(self, vg, lvs, delTags=(), addTags=()):
         lv_mds = []
         for lv in lvs:
