@@ -225,9 +225,7 @@ def get_next_hop_interface(net_name, net_attributes):
         return net_name
     else:
         vlan = net_attributes.get('vlan')
-        next_hop_base_iface = net_attributes.get('nic') or net_attributes.get(
-            'bonding'
-        )
+        next_hop_base_iface = _get_base_iface(net_attributes)
         return (
             next_hop_base_iface
             if not vlan
@@ -246,9 +244,7 @@ def _setup_dynamic_src_routing(networks):
 def _get_network_iface(net_name, net_attrs):
     bridged = net_attrs.get('bridged')
     vlan = net_attrs.get('vlan')
-    nic = net_attrs.get('nic')
-    bond = net_attrs.get('bonding')
-    base_iface = nic or bond
+    base_iface = _get_base_iface(net_attrs)
     return (
         net_name
         if bridged
@@ -256,6 +252,10 @@ def _get_network_iface(net_name, net_attrs):
         if vlan
         else base_iface
     )
+
+
+def _get_base_iface(net_attrs):
+    return net_attrs.get('nic') or net_attrs.get('bonding')
 
 
 def _setup_legacy(networks, bondings, options, net_info, in_rollback):
