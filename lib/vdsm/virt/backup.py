@@ -55,7 +55,7 @@ def requires_libvirt_support():
 if backup_enabled:
     @virdomain.expose(
         "backupBegin",
-        "backupEnd",
+        "abortJob",
         "backupGetXMLDesc",
         "checkpointCreateXML"
     )
