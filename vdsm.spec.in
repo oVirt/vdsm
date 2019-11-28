@@ -84,7 +84,7 @@
 # - filled in by configure
 # - generated using ./build-aux/make-dist script
 # - passed to rpmbuild as
-#   --define="release $(./build-aux/pkg-version --release)"
+#   --define="vdsm_release $(./build-aux/pkg-version --release)"
 %{!?vdsm_release: %global vdsm_release @PACKAGE_RELEASE@}
 
 Name:           %{vdsm_name}
