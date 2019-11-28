@@ -250,7 +250,11 @@ class BlockVolumeManifest(volume.VolumeManifest):
 
         newTag = tagPrefix + uuid
         if oldTag != newTag:
-            lvm.replaceLVTag(self.sdUUID, self.volUUID, oldTag, newTag)
+            lvm.changeLVsTags(
+                self.sdUUID,
+                (self.volUUID,),
+                delTags=(oldTag,),
+                addTags=(newTag,))
 
     def setParentMeta(self, puuid):
         """

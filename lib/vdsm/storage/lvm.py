@@ -1667,20 +1667,3 @@ def lvsByTag(vgName, tag):
 
 def invalidateFilter():
     _lvminfo.invalidateFilter()
-
-
-# Fix me: unify with addTag
-def replaceLVTag(vg, lv, deltag, addtag):
-    """
-    Removes and add tags atomically.
-    """
-    log.info("Replacing LV tag (vg=%s, lv=%s, deltag=%s, addtag=%s)",
-             vg, lv, deltag, addtag)
-    lvname = "%s/%s" % (vg, lv)
-    cmd = (("lvchange",) + LVM_NOBACKUP + ("--deltag", deltag) +
-           ("--addtag", addtag) + (lvname,))
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vg, )))
-    _lvminfo._invalidatelvs(vg, lv)
-    if rc != 0:
-        raise se.LogicalVolumeReplaceTagError("%s/%s" % (vg, lv),
-                                              "%s,%s" % (deltag, addtag))
