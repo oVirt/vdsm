@@ -892,9 +892,9 @@ def scanDomains(pattern="*"):
 
     def collectMetaFiles(mountPoint):
         try:
-            # /rhev/*/mnt/server:_path -> /server:_path
-            # /rhev/*/mnt/glusterSD/server:_path -> /glusterSD/server:_path
-            client_name = mountPoint.replace(sc.REPO_MOUNT_DIR, "")
+            # /rhev/*/mnt/server:_path -> server:_path
+            # /rhev/*/mnt/glusterSD/server:_path -> glusterSD/server:_path
+            client_name = mountPoint.replace(sc.REPO_MOUNT_DIR, "").lstrip("/")
 
             # Since glob treats values between brackets as character ranges,
             # and since IPV6 addresses contain brackets, we should escape the
