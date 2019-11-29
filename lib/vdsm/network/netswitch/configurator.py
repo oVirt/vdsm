@@ -192,7 +192,7 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
     _setup_dynamic_src_routing(networks)
     nmstate.setup(desired_state, verify_change=not in_rollback)
 
-    with Transaction(in_rollback=in_rollback) as config:
+    with Transaction(in_rollback=in_rollback, persistent=False) as config:
         for net_name, net_attrs in six.viewitems(networks):
             if net_attrs.get('remove'):
                 config.removeNetwork(net_name)
@@ -206,6 +206,7 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
             if not bond_attrs.get('remove'):
                 config.setBonding(bond_name, bond_attrs)
         _setup_static_src_routing(networks)
+        config.save()
         connectivity.check(options)
 
 
