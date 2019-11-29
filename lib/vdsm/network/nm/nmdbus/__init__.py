@@ -56,6 +56,7 @@ class NMDbusIfcfgRH1(object):
     ERROR_INV_CON = [
         "ifcfg file '{}' unknown",
         "ifcfg path '{}' is not an ifcfg base file",
+        "ifcfg file '{}' not managed by NetworkManager",
     ]
 
     def __init__(self):
