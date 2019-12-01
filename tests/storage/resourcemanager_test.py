@@ -187,10 +187,6 @@ class TestResourceManager:
             rm.registerNamespace("storage", rm.SimpleResourceFactory())
 
     @MonkeyPatch(rm, "_manager", manager())
-    def testResourceSwitchLockTypeFail(self):
-        self.testResourceLockSwitch("switchfail")
-
-    @MonkeyPatch(rm, "_manager", manager())
     def testRequestInvalidResource(self):
         with pytest.raises(ValueError):
             rm.acquireResource("storage", "DOT.DOT", rm.SHARED)
@@ -389,11 +385,8 @@ class TestResourceManager:
             resources.pop().release()
 
     @MonkeyPatch(rm, "_manager", manager())
-    def testCrashOnSwitch(self):
-        self.testResourceLockSwitch("crashy")
-
-    @MonkeyPatch(rm, "_manager", manager())
-    def testResourceLockSwitch(self, namespace="string"):
+    @pytest.mark.parametrize("namespace", ["string", "crashy", "switchfail"])
+    def testResourceLockSwitch(self, namespace):
         resources = []
 
         def callback(req, res):
