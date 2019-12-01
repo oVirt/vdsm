@@ -36,7 +36,6 @@ import pytest
 from vdsm.storage import exception as se
 from vdsm.storage import resourceManager as rm
 
-from monkeypatch import MonkeyPatch
 from storage.storagefakelib import FakeResourceManager
 
 log = logging.getLogger("test")
@@ -659,8 +658,8 @@ class TestResourceManagerLock:
         assert not a < b
         assert not b < a
 
-    @MonkeyPatch(rm, "_manager", FakeResourceManager())
-    def test_acquire_release(self):
+    def test_acquire_release(self, monkeypatch):
+        monkeypatch.setattr(rm, "_manager", FakeResourceManager())
         lock = rm.ResourceManagerLock('ns_A', 'name_A', rm.SHARED)
         expected = []
         lock.acquire()
