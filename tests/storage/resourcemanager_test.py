@@ -120,7 +120,8 @@ class FailAfterSwitchFactory(rm.SimpleResourceFactory):
         return s
 
 
-def manager():
+@pytest.fixture
+def tmp_manager(monkeypatch):
     """
     Create fresh _ResourceManager instance for testing.
     """
@@ -132,7 +133,7 @@ def manager():
     manager.registerNamespace("switchfail", SwitchFailFactory())
     manager.registerNamespace("crashy", CrashOnCloseFactory())
     manager.registerNamespace("failAfterSwitch", FailAfterSwitchFactory())
-    return manager
+    monkeypatch.setattr(rm, "_manager", manager)
 
 
 class OwnerObject(object):
@@ -152,22 +153,19 @@ class OwnerObject(object):
 
 class TestResourceManager:
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testErrorInFactory(self):
+    def testErrorInFactory(self, tmp_manager):
         req = rm._registerResource(
             "error", "resource", rm.EXCLUSIVE, lambda req, res: 1)
         assert req.canceled()
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testRegisterInvalidNamespace(self):
+    def testRegisterInvalidNamespace(self, tmp_manager):
         with pytest.raises(
             ValueError,
             message="Managed to register an invalid namespace"
         ):
             rm.registerNamespace("I.HEART.DOTS", rm.SimpleResourceFactory())
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testFailCreateAfterSwitch(self):
+    def testFailCreateAfterSwitch(self, tmp_manager):
         resources = []
 
         def callback(req, res):
@@ -181,27 +179,23 @@ class TestResourceManager:
         assert sharedReq1.canceled()
         assert resources[0] is None
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testRegisterExistingNamespace(self):
+    def testRegisterExistingNamespace(self, tmp_manager):
         with pytest.raises(rm.NamespaceRegistered):
             rm.registerNamespace("storage", rm.SimpleResourceFactory())
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testRequestInvalidResource(self):
+    def testRequestInvalidResource(self, tmp_manager):
         with pytest.raises(ValueError):
             rm.acquireResource("storage", "DOT.DOT", rm.SHARED)
         with pytest.raises(ValueError):
             rm.acquireResource("DOT.DOT", "resource", rm.SHARED)
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testReleaseInvalidResource(self):
+    def testReleaseInvalidResource(self, tmp_manager):
         with pytest.raises(ValueError):
             rm.releaseResource("DONT_EXIST", "resource")
         with pytest.raises(ValueError):
             rm.releaseResource("storage", "DOT")
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testResourceWrapper(self):
+    def testResourceWrapper(self, tmp_manager):
         s = six.StringIO
         with rm.acquireResource("string", "test", rm.EXCLUSIVE) as resource:
             for attr in dir(s):
@@ -209,8 +203,7 @@ class TestResourceManager:
                     continue
                 assert hasattr(resource, attr)
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testAccessAttributeNotExposedByWrapper(self):
+    def testAccessAttributeNotExposedByWrapper(self, tmp_manager):
         with rm.acquireResource("string", "test", rm.EXCLUSIVE) as resource:
             with pytest.raises(
                 AttributeError,
@@ -218,8 +211,7 @@ class TestResourceManager:
             ):
                 resource.THERE_IS_NO_WAY_I_EXIST
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testAccessAttributeNotExposedByRequestRef(self):
+    def testAccessAttributeNotExposedByRequestRef(self, tmp_manager):
         resources = []
 
         def callback(req, res):
@@ -236,8 +228,7 @@ class TestResourceManager:
                 req.wait()
                 resources[0].release()
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testRequestRefStr(self):
+    def testRequestRefStr(self, tmp_manager):
         resources = []
 
         def callback(req, res):
@@ -250,8 +241,7 @@ class TestResourceManager:
             req.wait()
             resources[0].release()
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testRequestRefCmp(self):
+    def testRequestRefCmp(self, tmp_manager):
         resources = []
         requests = []
 
@@ -281,8 +271,7 @@ class TestResourceManager:
 
         assert req1 != "STUFF"
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testRequestRecancel(self):
+    def testRequestRecancel(self, tmp_manager):
         resources = []
 
         def callback(req, res):
@@ -299,8 +288,7 @@ class TestResourceManager:
 
         blocker.release()
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testRequestRegrant(self):
+    def testRequestRegrant(self, tmp_manager):
         resources = []
 
         def callback(req, res):
@@ -311,8 +299,7 @@ class TestResourceManager:
         with pytest.raises(rm.RequestAlreadyProcessedError):
             req.grant()
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testRequestWithBadCallbackOnCancel(self):
+    def testRequestWithBadCallbackOnCancel(self, tmp_manager):
         def callback(req, res):
             raise Exception("BUY MILK!")
 
@@ -324,8 +311,7 @@ class TestResourceManager:
 
         blocker.release()
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testRequestWithBadCallbackOnGrant(self):
+    def testRequestWithBadCallbackOnGrant(self, tmp_manager):
         def callback(req, res):
             res.release()
             raise Exception("BUY MILK!")
@@ -334,14 +320,12 @@ class TestResourceManager:
             "string", "resource", rm.EXCLUSIVE, callback)
         req.wait()
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testRereleaseResource(self):
+    def testRereleaseResource(self, tmp_manager):
         res = rm.acquireResource("string", "resource", rm.EXCLUSIVE)
         res.release()
         res.release()
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testCancelExclusiveBetweenShared(self):
+    def testCancelExclusiveBetweenShared(self, tmp_manager):
         resources = []
 
         def callback(req, res):
@@ -384,9 +368,8 @@ class TestResourceManager:
         while len(resources) > 0:
             resources.pop().release()
 
-    @MonkeyPatch(rm, "_manager", manager())
     @pytest.mark.parametrize("namespace", ["string", "crashy", "switchfail"])
-    def testResourceLockSwitch(self, namespace):
+    def testResourceLockSwitch(self, namespace, tmp_manager):
         resources = []
 
         def callback(req, res):
@@ -424,28 +407,24 @@ class TestResourceManager:
         exclusive3
         sharedReq3
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testResourceAcquireTimeout(self):
+    def testResourceAcquireTimeout(self, tmp_manager):
         exclusive1 = rm.acquireResource("string", "resource", rm.EXCLUSIVE)
         with pytest.raises(rm.RequestTimedOutError):
             rm.acquireResource("string", "resource", rm.EXCLUSIVE, 1)
         exclusive1.release()
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testResourceAcquireInvalidTimeout(self):
+    def testResourceAcquireInvalidTimeout(self, tmp_manager):
         with pytest.raises(TypeError):
             rm.acquireResource("string", "resource", rm.EXCLUSIVE, "A")
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testResourceInvalidation(self):
+    def testResourceInvalidation(self, tmp_manager):
         resource = rm.acquireResource("string", "test", rm.EXCLUSIVE)
         resource.write("dsada")
         resource.release()
         with pytest.raises(Exception):
             resource.write("test")
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testResourceAutorelease(self):
+    def testResourceAutorelease(self, tmp_manager):
         log.info("Acquiring resource", extra={'resource': "bob"})
         res = rm.acquireResource("storage", "resource", rm.SHARED)
         resProxy = proxy(res)
@@ -464,16 +443,14 @@ class TestResourceManager:
                 break
             time.sleep(1)
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testAcquireResourceShared(self):
+    def testAcquireResourceShared(self, tmp_manager):
         res1 = rm.acquireResource("storage", "resource", rm.SHARED)
         res2 = rm.acquireResource("storage", "resource", rm.SHARED, 10)
 
         res1.release()
         res2.release()
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testResourceStatuses(self):
+    def testResourceStatuses(self, tmp_manager):
         status = rm._getResourceStatus("storage", "resource")
         assert status == rm.LockState.free
         exclusive1 = rm.acquireResource("storage", "resource", rm.EXCLUSIVE)
@@ -490,16 +467,14 @@ class TestResourceManager:
         ):
             status = rm._getResourceStatus("null", "resource")
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testAcquireNonExistingResource(self):
+    def testAcquireNonExistingResource(self, tmp_manager):
         with pytest.raises(
             KeyError,
             message="Managed to get status on a non existing resource"
         ):
             rm.acquireResource("null", "resource", rm.EXCLUSIVE)
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testAcquireResourceExclusive(self):
+    def testAcquireResourceExclusive(self, tmp_manager):
         resources = []
 
         def callback(req, res):
@@ -538,8 +513,7 @@ class TestResourceManager:
         assert exclusiveReq2.granted()
         resources.pop().release()  # exclusiveReq 2
 
-    @MonkeyPatch(rm, "_manager", manager())
-    def testCancelRequest(self):
+    def testCancelRequest(self, tmp_manager):
         resources = []
 
         def callback(req, res):
@@ -565,10 +539,9 @@ class TestResourceManager:
         assert exclusiveReq3.granted()
         resources.pop().release()  # exclusiveReq 3
 
-    @MonkeyPatch(rm, "_manager", manager())
     @pytest.mark.slow
     @pytest.mark.stress
-    def testStressTest(self):
+    def testStressTest(self, tmp_manager):
         """
         This tests raises thousands of threads and tries to acquire the same
         resource.
@@ -712,8 +685,7 @@ class TestResourceManagerLock:
 
 class TestResourceOwner:
 
-    def test_acquire_release_resources(self, monkeypatch):
-        monkeypatch.setattr(rm, "_manager", manager())
+    def test_acquire_release_resource(self, tmp_manager):
         resources = [
             ("storage", "A", rm.SHARED),
             ("storage", "B", rm.SHARED),
@@ -736,8 +708,7 @@ class TestResourceOwner:
 
         assert owner_object.actions == actions
 
-    def test_release_empty_resources(self, monkeypatch):
-        monkeypatch.setattr(rm, "_manager", manager())
+    def test_release_empty_resources(self, tmp_manager):
         owner_object = OwnerObject()
         owner = rm.Owner(owner_object, raiseonfailure=True)
         owner.releaseAll()
@@ -753,8 +724,7 @@ class TestResourceOwner:
         pytest.param(rm.EXCLUSIVE, rm.SHARED,
                      id="switch from exclusive to shared lock"),
     ])
-    def test_acquire_twice(self, old_locktype, new_locktype, monkeypatch):
-        monkeypatch.setattr(rm, "_manager", manager())
+    def test_acquire_twice(self, old_locktype, new_locktype, tmp_manager):
         owner_object = OwnerObject()
         owner = rm.Owner(owner_object, raiseonfailure=True)
         # Acquire a resource within time period allowing it to happen
@@ -774,8 +744,7 @@ class TestResourceOwner:
         rm.SHARED,
         rm.EXCLUSIVE,
     ])
-    def test_acquire_missing_resource(self, locktype, monkeypatch):
-        monkeypatch.setattr(rm, "_manager", manager())
+    def test_acquire_missing_resource(self, locktype, tmp_manager):
         owner_object = OwnerObject()
         owner = rm.Owner(owner_object, raiseonfailure=True)
         # The null resource factory always determines that the requested
@@ -790,8 +759,7 @@ class TestResourceOwner:
         rm.SHARED,
         rm.EXCLUSIVE,
     ])
-    def test_acquire_error(self, locktype, monkeypatch):
-        monkeypatch.setattr(rm, "_manager", manager())
+    def test_acquire_error(self, locktype, tmp_manager):
         owner_object = OwnerObject()
         owner = rm.Owner(owner_object, raiseonfailure=True)
         # The error resource factory is expected to raise a ResourceException
