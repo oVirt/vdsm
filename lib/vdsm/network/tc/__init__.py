@@ -120,6 +120,8 @@ def _qdisc_replace_ingress(dev):
     except TrafficControlException as e:
         if e.errCode == errno.EEXIST:
             pass
+        elif e.errCode == errno.ENOENT and 'Exclusivity flag on' in e.msg:
+            pass
         else:
             raise
 
