@@ -110,7 +110,7 @@ def _execGluster(cmd):
     try:
         return commands.run(cmd)
     except cmdutils.Error as e:
-        raise ge.GlusterCmdFailedException(rc=e.rc, err=e.msg)
+        raise ge.GlusterCmdFailedException(rc=e.rc, err=[e.msg])
 
 
 def _getTree(out):
