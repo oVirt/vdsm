@@ -49,7 +49,7 @@
 # Disable debuginfo package, since vdsm is a meta-package
 %global debug_package %{nil}
 
-%{!?target_py: %global target_py py2}
+%{!?target_py: %global target_py py3}
 
 %if %{target_py} == py2
 %global python2_or_python3 python2
