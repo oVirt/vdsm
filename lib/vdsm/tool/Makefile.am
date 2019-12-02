@@ -37,6 +37,7 @@ dist_vdsmtool_PYTHON = \
 	transient.py \
 	upgrade.py \
 	vdsm-id.py \
+	vdsm_config.py \
 	common.py \
 	check_volume_leases.py \
 	xleases.py \
