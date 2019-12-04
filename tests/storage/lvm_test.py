@@ -31,6 +31,7 @@ import pytest
 from vdsm.common import commands
 from vdsm.common import concurrent
 from vdsm.common import constants
+from vdsm.common.units import MiB, GiB
 
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -517,7 +518,7 @@ def test_change_read_only_mode(fake_devices, no_delay, workers):
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_vg_create_remove_single_device(tmp_storage, read_only):
-    dev_size = 20 * 1024**3
+    dev_size = 20 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
 
@@ -532,7 +533,7 @@ def test_vg_create_remove_single_device(tmp_storage, read_only):
     assert vg.name == vg_name
     assert vg.pv_name == (dev,)
     assert vg.tags == ("initial-tag",)
-    assert int(vg.extent_size) == 128 * 1024**2
+    assert int(vg.extent_size) == 128 * MiB
 
     pv = lvm.getPV(dev)
     assert pv.name == dev
@@ -563,7 +564,7 @@ def test_vg_create_remove_single_device(tmp_storage, read_only):
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_vg_create_multiple_devices(tmp_storage, read_only):
-    dev_size = 10 * 1024**3
+    dev_size = 10 * GiB
     dev1 = tmp_storage.create_device(dev_size)
     dev2 = tmp_storage.create_device(dev_size)
     dev3 = tmp_storage.create_device(dev_size)
@@ -619,7 +620,7 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
 @requires_root
 @pytest.mark.root
 def test_vg_extend_reduce(tmp_storage):
-    dev_size = 10 * 1024**3
+    dev_size = 10 * GiB
     dev1 = tmp_storage.create_device(dev_size)
     dev2 = tmp_storage.create_device(dev_size)
     dev3 = tmp_storage.create_device(dev_size)
@@ -665,7 +666,7 @@ def test_vg_extend_reduce(tmp_storage):
 @requires_root
 @pytest.mark.root
 def test_vg_add_delete_tags(tmp_storage):
-    dev_size = 20 * 1024**3
+    dev_size = 20 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
 
@@ -691,7 +692,7 @@ def test_vg_add_delete_tags(tmp_storage):
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_vg_check(tmp_storage, read_only):
-    dev_size = 10 * 1024**3
+    dev_size = 10 * GiB
     dev1 = tmp_storage.create_device(dev_size)
     dev2 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
@@ -710,7 +711,7 @@ def test_vg_check(tmp_storage, read_only):
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_lv_create_remove(tmp_storage, read_only):
-    dev_size = 10 * 1024**3
+    dev_size = 10 * GiB
     dev1 = tmp_storage.create_device(dev_size)
     dev2 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
@@ -730,7 +731,7 @@ def test_lv_create_remove(tmp_storage, read_only):
     lv = lvm.getLV(vg_name, lv_any)
     assert lv.name == lv_any
     assert lv.vg_name == vg_name
-    assert int(lv.size) == 1024**3
+    assert int(lv.size) == GiB
     assert lv.tags == ()
     assert lv.writeable
     assert not lv.opened
@@ -765,7 +766,7 @@ def test_lv_create_remove(tmp_storage, read_only):
 @requires_root
 @pytest.mark.root
 def test_lv_add_delete_tags(tmp_storage):
-    dev_size = 20 * 1024**3
+    dev_size = 20 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv1_name = str(uuid.uuid4())
@@ -794,7 +795,7 @@ def test_lv_add_delete_tags(tmp_storage):
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_lv_activate_deactivate(tmp_storage, read_only):
-    dev_size = 20 * 1024**3
+    dev_size = 20 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
@@ -823,7 +824,7 @@ def test_lv_activate_deactivate(tmp_storage, read_only):
 @requires_root
 @pytest.mark.root
 def test_lv_extend_reduce(tmp_storage):
-    dev_size = 20 * 1024**3
+    dev_size = 20 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
@@ -837,7 +838,7 @@ def test_lv_extend_reduce(tmp_storage):
     lvm.extendLV(vg_name, lv_name, 2048)
 
     lv = lvm.getLV(vg_name, lv_name)
-    assert int(lv.size) == 2 * 1024**3
+    assert int(lv.size) == 2 * GiB
 
     # Extending LV to same does nothing.
 
@@ -845,7 +846,7 @@ def test_lv_extend_reduce(tmp_storage):
 
     lvm.invalidateVG(vg_name)
     lv = lvm.getLV(vg_name, lv_name)
-    assert int(lv.size) == 2 * 1024**3
+    assert int(lv.size) == 2 * GiB
 
     # Extending LV to smaller size does nothing.
 
@@ -853,19 +854,19 @@ def test_lv_extend_reduce(tmp_storage):
 
     lvm.invalidateVG(vg_name)
     lv = lvm.getLV(vg_name, lv_name)
-    assert int(lv.size) == 2 * 1024**3
+    assert int(lv.size) == 2 * GiB
 
     # Reducing active LV requires force.
     lvm.reduceLV(vg_name, lv_name, 1024, force=True)
     lv = lvm.getLV(vg_name, lv_name)
-    assert int(lv.size) == 1 * 1024**3
+    assert int(lv.size) == 1 * GiB
 
 
 @requires_root
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_lv_refresh(tmp_storage, read_only):
-    dev_size = 20 * 1024**3
+    dev_size = 20 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
@@ -890,7 +891,7 @@ def test_lv_refresh(tmp_storage, read_only):
     # Refreshing LV invalidates the cache to pick up changes from storage.
     lvm.refreshLVs(vg_name, [lv_name])
     lv = lvm.getLV(vg_name, lv_name)
-    assert int(lv.size) == 2 * 1024**3
+    assert int(lv.size) == 2 * GiB
 
     # Simulate extending the LV on the SPM.
     commands.run([
@@ -903,13 +904,13 @@ def test_lv_refresh(tmp_storage, read_only):
     # Activate active LV refreshes it.
     lvm.activateLVs(vg_name, [lv_name])
     lv = lvm.getLV(vg_name, lv_name)
-    assert int(lv.size) == 3 * 1024**3
+    assert int(lv.size) == 3 * GiB
 
 
 @requires_root
 @pytest.mark.root
 def test_lv_rename(tmp_storage):
-    dev_size = 20 * 1024**3
+    dev_size = 20 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
@@ -932,7 +933,7 @@ def test_lv_rename(tmp_storage):
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_bootstrap(tmp_storage, read_only):
-    dev_size = 20 * 1024**3
+    dev_size = 20 * GiB
 
     lvm.set_read_only(False)
 
@@ -989,7 +990,7 @@ def test_retry_with_wider_filter(tmp_storage):
     lvm.getAllPVs()
 
     # Create a device - this device in not the lvm cached filter yet.
-    dev = tmp_storage.create_device(20 * 1024**3)
+    dev = tmp_storage.create_device(20 * GiB)
 
     # We run vgcreate with explicit devices argument, so the filter is correct
     # and it succeeds.
@@ -1007,7 +1008,7 @@ def test_retry_with_wider_filter(tmp_storage):
 @requires_root
 @pytest.mark.root
 def test_reload_lvs_with_stale_lv(tmp_storage):
-    dev_size = 10 * 1024**3
+    dev_size = 10 * GiB
     dev1 = tmp_storage.create_device(dev_size)
     dev2 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())

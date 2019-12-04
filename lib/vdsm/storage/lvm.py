@@ -48,6 +48,7 @@ from vdsm import utils
 from vdsm.common import errors
 from vdsm.common import commands
 from vdsm.common.compat import subprocess
+from vdsm.common.units import MiB
 
 from vdsm.storage import devicemapper
 from vdsm.storage import constants as sc
@@ -1211,7 +1212,7 @@ def extendVG(vgName, devices, force):
         raise se.VolumeGroupExtendError(vgName, pvs)
 
     # Format extension PVs as all the other already in the VG
-    _initpvs(pvs, int(vg.vg_mda_size) // constants.MEGAB, force)
+    _initpvs(pvs, int(vg.vg_mda_size) // MiB, force)
 
     cmd = ["vgextend", vgName] + pvs
     devs = tuple(_lvminfo._getVGDevs((vgName, )) + tuple(pvs))
@@ -1308,7 +1309,7 @@ def getVGBlockSizes(vgUUID):
 def createLV(vgName, lvName, size, activate=True, contiguous=False,
              initialTags=(), device=None):
     """
-    Size units: MB (1024 ** 2 = 2 ** 20)B.
+    Size units: MiB.
     """
     # WARNING! From man vgs:
     # All sizes are output in these units: (h)uman-readable, (b)ytes,
@@ -1394,8 +1395,7 @@ def extendLV(vgName, lvName, size_mb):
 
     # Convert sizes to extents to match lvm behavior.
     lv_extents = int(lv.size) // extent_size
-    requested_extents = utils.round(
-        size_mb * constants.MEGAB, extent_size) // extent_size
+    requested_extents = utils.round(size_mb * MiB, extent_size) // extent_size
 
     # Check if lv is large enough before trying to extend it to avoid warnings,
     # filter invalidation and pointless retries if the lv is already large
@@ -1455,8 +1455,8 @@ def reduceLV(vgName, lvName, size_mb, force=False):
         # Convert sizes to extents
         extent_size = int(vg.extent_size)
         lv_extents = int(lv.size) // extent_size
-        requested_size = size_mb * constants.MEGAB
-        requested_extents = (requested_size + extent_size - 1) // extent_size
+        requested_extents = utils.round(
+            size_mb * MiB, extent_size) // extent_size
 
         if lv_extents <= requested_extents:
             log.debug("LV %s/%s already reduced (extents=%d, requested=%d)",
