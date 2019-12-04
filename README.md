@@ -79,6 +79,34 @@ To update your system with local build's RPM:
     (cd ~/rpmbuild/RPMS && sudo yum upgrade */vdsm*.rpm)
 
 
+## Making new releases
+
+Release process of Vdsm version `VERSION` consists of the following
+steps:
+
+- Changing `Version:` field value in `vdsm.spec.in` to `VERSION`.
+
+- Updating `%changelog` line in `vdsm.spec.in` to the current date,
+  the committer, and `VERSION`.
+
+- Committing these changes, with subject "New release: `VERSION`" and
+  posting the patch to gerrit.
+
+- Verifying the patch by checking that the Jenkins build produced a
+  correct set of rpm's with the correct version.
+
+- Merging the patch (no review needed).
+
+- Tagging the commit immediately after merge with an annotated tag:
+  `git tag -a vVERSION`
+
+- Setting "Keep this build forever" for the check-merge Jenkins build.
+
+- Updating releng-tools with the new Vdsm version.  See releng-tools
+  repo (`git clone https://gerrit.ovirt.org/releng-tools`) and Vdsm
+  related patches there for examples.
+
+
 ## CI
 
 Running tests locally is convenient, but before your changes can be
