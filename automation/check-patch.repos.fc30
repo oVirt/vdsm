@@ -2,5 +2,5 @@ fc30-updates-debuginfo,http://download.fedoraproject.org/pub/fedora/linux/update
 tested,http://resources.ovirt.org/repos/ovirt/tested/master/rpm/$distro
 vdo,https://copr-be.cloud.fedoraproject.org/results/rhawalsh/dm-vdo/fedora-$releasever-$basearch/
 virt-preview,https://copr-be.cloud.fedoraproject.org/results/@virtmaint-sig/virt-preview/fedora-$releasever-$basearch/
-nmstate,https://copr-be.cloud.fedoraproject.org/results/nmstate/nmstate-git-fedora/fedora-$releasever-$basearch/
+nmstate,https://copr-be.cloud.fedoraproject.org/results/nmstate/nmstate-0.1/fedora-$releasever-$basearch/
 networkmanager,https://copr-be.cloud.fedoraproject.org/results/networkmanager/NetworkManager-1.20/fedora-$releasever-$basearch/
