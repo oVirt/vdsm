@@ -221,7 +221,8 @@ Requires: %{python_libvirt} >= 4.5.0-1.el7
 # CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
 Requires: libvirt-daemon-kvm >= 4.5.0-10.el7_6.9
 %else # RHEL 8
-Requires: libvirt-daemon-kvm
+# Need a libvirt version with socket activation
+Requires: libvirt-daemon-kvm >= 5.6
 Requires: %{python_libvirt}
 %endif
 %else # fedora
