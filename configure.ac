@@ -121,10 +121,10 @@ AC_ARG_ENABLE(
     [4k-support],
     [AS_HELP_STRING(
         [--enable-4k-support],
-        [enable 4k storage support @<:@default=no@:>@]
+        [enable 4k storage support @<:@default=yes@:>@]
     )],
     ,
-    [enable_4k_support="no"]
+    [enable_4k_support="yes"]
 )
 AS_IF([test "${enable_4k_support}" = "yes"],
       AC_SUBST([ENABLE_4K_SUPPORT], ['1']),
