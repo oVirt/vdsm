@@ -60,6 +60,10 @@ class RequestTimedOutError(ResourceManagerError):
 class ResourceAlreadyAcquired(ResourceManagerError):
     pass
 
+
+class InvalidLockType(ResourceManagerError):
+    pass
+
 # TODO : Consider changing when we decided on a unified way of representing
 #        enums.
 
@@ -95,7 +99,7 @@ class LockState:
             return cls.shared
         if str(locktype) == EXCLUSIVE:
             return cls.locked
-        raise ValueError("invalid locktype %s" % locktype)
+        raise InvalidLockType("Invalid locktype %r was used" % locktype)
 
     @classmethod
     def validate(cls, state):
@@ -473,7 +477,7 @@ class _ResourceManager(object):
             raise se.InvalidResourceName(name)
 
         if lockType not in (SHARED, EXCLUSIVE):
-            raise ValueError("invalid lock type %r" % lockType)
+            raise InvalidLockType("Invalid locktype %r was used" % lockType)
 
         request = Request(namespace, name, lockType, callback)
         self._log.debug("Trying to register resource '%s' for lock type '%s'",

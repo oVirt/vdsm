@@ -475,6 +475,11 @@ class TestResourceManager:
         ):
             rm.acquireResource("null", "resource", rm.EXCLUSIVE)
 
+    def testAcquireInvalidLockType(self, tmp_manager):
+        with pytest.raises(rm.InvalidLockType) as e:
+            rm.acquireResource("storage", "resource", "invalid_locktype")
+        assert "invalid_locktype" in str(e)
+
     def testAcquireResourceExclusive(self, tmp_manager):
         resources = []
 
@@ -768,3 +773,11 @@ class TestResourceOwner:
         with pytest.raises(se.ResourceException):
             owner.acquire("error", "any", locktype, timeout_ms=1)
         owner.releaseAll()
+
+    @pytest.mark.parametrize('locktype', ["invalid_lock_type", 7, -1])
+    def test_acquire_invalid_locktype(self, locktype, tmp_manager):
+        owner_object = OwnerObject()
+        owner = rm.Owner(owner_object, raiseonfailure=True)
+        with pytest.raises(se.ResourceException):
+            owner.acquire("storage", "resource", locktype, timeout_ms=1)
+        assert owner_object.actions == []
