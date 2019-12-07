@@ -1837,6 +1837,9 @@ class InvalidResourceName(GeneralException):
     code = 853
     msg = "Invalid resource name"
 
+    def __init__(self, name):
+        self.value = "name=%r" % name
+
 
 class ResourceReferenceInvalid(GeneralException):
     code = 854

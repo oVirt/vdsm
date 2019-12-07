@@ -183,8 +183,10 @@ class TestResourceManager:
             rm.registerNamespace("storage", rm.SimpleResourceFactory())
 
     def testRequestInvalidResource(self, tmp_manager):
-        with pytest.raises(ValueError):
+        with pytest.raises(se.InvalidResourceName) as e:
             rm.acquireResource("storage", "DOT.DOT", rm.SHARED)
+        assert "DOT.DOT" in str(e)
+
         with pytest.raises(ValueError):
             rm.acquireResource("DOT.DOT", "resource", rm.SHARED)
 

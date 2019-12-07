@@ -376,7 +376,7 @@ class _ResourceManager(object):
 
     def getResourceStatus(self, namespace, name):
         if not self._resourceNameValidator.match(name):
-            raise ValueError("Invalid resource name '%s'" % name)
+            raise se.InvalidResourceName(name)
 
         with self._syncRoot.shared:
             try:
@@ -470,7 +470,7 @@ class _ResourceManager(object):
         fullName = "%s.%s" % (namespace, name)
 
         if not self._resourceNameValidator.match(name):
-            raise ValueError("Invalid resource name '%s'" % name)
+            raise se.InvalidResourceName(name)
 
         if lockType not in (SHARED, EXCLUSIVE):
             raise ValueError("invalid lock type %r" % lockType)
@@ -721,7 +721,7 @@ class Owner(object):
                 except ValueError as ex:
                     self.log.debug("%s: request for '%s' could not be "
                                    "processed (%s)", self, fullName, ex)
-                    raise se.InvalidResourceName()
+                    raise se.InvalidResourceName(name)
                 except KeyError:
                     self.log.debug("%s: resource '%s' does not exist", self,
                                    fullName)
