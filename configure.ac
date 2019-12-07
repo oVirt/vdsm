@@ -118,19 +118,6 @@ AS_IF([test "${enable_ovirt_imageio}" = "yes"],
       AC_SUBST([OVIRT_IMAGEIO], ['0']))
 
 AC_ARG_ENABLE(
-    [4k-support],
-    [AS_HELP_STRING(
-        [--enable-4k-support],
-        [enable 4k storage support @<:@default=yes@:>@]
-    )],
-    ,
-    [enable_4k_support="yes"]
-)
-AS_IF([test "${enable_4k_support}" = "yes"],
-      AC_SUBST([ENABLE_4K_SUPPORT], ['1']),
-      AC_SUBST([ENABLE_4K_SUPPORT], ['0']))
-
-AC_ARG_ENABLE(
     [ovirt-vmconsole],
     [AS_HELP_STRING(
         [--disable-ovirt-vmconsole],
@@ -317,9 +304,6 @@ if test "$GLUSTER_MGMT" == "0"; then
 fi
 if test "$OVIRT_IMAGEIO" == "0"; then
     configure_flags+=" --disable-ovirt-imageio"
-fi
-if test "$ENABLE_4K_SUPPORT" == "1"; then
-    configure_flags+=" --enable-4k-support"
 fi
 if test "$OPENVSWITCH" == "0"; then
     configure_flags+=" --disable-openvswitch"
