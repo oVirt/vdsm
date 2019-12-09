@@ -23,7 +23,6 @@ from __future__ import division
 import copy
 import six
 
-from vdsm.network import dns
 from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
 from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo import bridges
@@ -112,7 +111,7 @@ def _translate_netinfo_net(net, net_attr, netinfo_, _routes):
     _translate_ipaddr(attributes, net_attr)
     _translate_hostqos(attributes, net_attr)
     _translate_switch_type(attributes, net_attr)
-    _translate_nameservers(attributes)
+    _translate_nameservers(attributes, netinfo_)
 
     return attributes
 
@@ -196,8 +195,8 @@ def _translate_switch_type(attributes, net_attr):
     attributes['switch'] = net_attr['switch']
 
 
-def _translate_nameservers(attributes):
-    nservers = dns.get_host_nameservers() if attributes['defaultRoute'] else []
+def _translate_nameservers(attributes, netinfo):
+    nservers = netinfo.nameservers if attributes['defaultRoute'] else []
     attributes['nameservers'] = nservers
 
 

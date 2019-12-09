@@ -80,8 +80,10 @@ def _get(vdsmnets=None):
 
     networking_report = {'networks': nets_info}
     networking_report.update(devices_info)
-
-    networking_report['nameservers'] = dns.get_host_nameservers()
+    if nmstate.is_nmstate_backend():
+        networking_report['nameservers'] = nmstate.show_nameservers()
+    else:
+        networking_report['nameservers'] = dns.get_host_nameservers()
     networking_report['supportsIPv6'] = ipv6_supported()
 
     return networking_report

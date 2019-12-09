@@ -197,6 +197,11 @@ def show_interfaces(filter=None):
         return {ifname: ifstate for ifname, ifstate in ifaces}
 
 
+def show_nameservers():
+    state = state_show()
+    return state[DNS.KEY].get(DNS.RUNNING, {}).get(DNS.SERVER, [])
+
+
 def is_nmstate_backend():
     return vdsm_config.getboolean('vars', 'net_nmstate_enabled')
 
