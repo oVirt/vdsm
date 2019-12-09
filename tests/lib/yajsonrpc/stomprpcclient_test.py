@@ -33,6 +33,7 @@ from testlib import \
     dummyTextGenerator, \
     mock
 
+from testValidation import broken_on_ci
 from testValidation import slowtest
 
 from vdsm.client import \
@@ -138,6 +139,7 @@ class VdsmClientTests(VdsmTestCase):
 
             self.assertEqual(msg, res)
 
+    @broken_on_ci("Fails randomly in CI")
     def test_failing_call(self):
         with self._create_client() as client:
             with self.assertRaises(ServerError) as ex:
@@ -149,6 +151,7 @@ class VdsmClientTests(VdsmTestCase):
             )
             self.assertIn("Test failure", str(ex.exception))
 
+    @broken_on_ci("Fails randomly in CI")
     def test_missing_method(self):
         with self._create_client() as client:
             with self.assertRaises(ServerError) as ex:
