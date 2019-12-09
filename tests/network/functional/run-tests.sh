@@ -75,7 +75,7 @@ function setup_vdsm_sources_for_testing {
 
 load_kernel_modules
 
-CONTAINER_ID="$(podman run --privileged -d --dns=none -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --env PYTHONPATH=lib $CONTAINER_IMAGE)"
+CONTAINER_ID="$(podman run --privileged -d --dns=8.8.8.8 --dns=8.8.4.4 -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --env PYTHONPATH=lib $CONTAINER_IMAGE)"
 trap run_exit EXIT
 
 wait_for_active_service "dbus"
