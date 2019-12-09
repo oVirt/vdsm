@@ -24,6 +24,7 @@ import uuid
 
 import pytest
 
+from vdsm.common.units import MiB, GiB
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -34,11 +35,7 @@ from vdsm.storage import sd
 from vdsm.storage.formatconverter import _v3_reset_meta_volsize
 from vdsm.storage.sdc import sdCache
 
-from .storagetestlib import (
-    fake_volume,
-    MB
-)
-
+from . storagetestlib import fake_volume
 from . constants import CLEARED_VOLUME_METADATA
 from . marks import requires_root
 
@@ -58,7 +55,7 @@ EOF
 
 @pytest.fixture(params=[sc.RAW_FORMAT, sc.COW_FORMAT])
 def vol(request):
-    with fake_volume(format=request.param, size=MB) as vol:
+    with fake_volume(format=request.param, size=MiB) as vol:
         yield vol
 
 
@@ -106,7 +103,7 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
             diskType="DATA",
             imgUUID=str(uuid.uuid4()),
             preallocate=sc.SPARSE_VOL,
-            capacity=10 * 1024 ** 3,
+            capacity=10 * GiB,
             srcImgUUID=sc.BLANK_UUID,
             srcVolUUID=sc.BLANK_UUID,
             volFormat=sc.COW_FORMAT,
@@ -127,7 +124,7 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
         diskType="DATA",
         imgUUID=img_id,
         preallocate=sc.SPARSE_VOL,
-        capacity=10 * 1024 ** 3,
+        capacity=10 * GiB,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
@@ -149,7 +146,7 @@ def test_convert_to_v5_localfs(tmpdir, tmp_repo, tmp_db, fake_access,
         diskType="DATA",
         imgUUID=img_id,
         preallocate=sc.SPARSE_VOL,
-        capacity=10 * 1024 ** 3,
+        capacity=10 * GiB,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
@@ -219,7 +216,7 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
                              src_version):
     sd_uuid = str(uuid.uuid4())
 
-    dev = tmp_storage.create_device(20 * 1024 ** 3)
+    dev = tmp_storage.create_device(20 * GiB)
     lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
     vg = lvm.getVG(sd_uuid)
 
@@ -247,7 +244,7 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
             diskType="DATA",
             imgUUID=str(uuid.uuid4()),
             preallocate=sc.SPARSE_VOL,
-            capacity=10 * 1024 ** 3,
+            capacity=10 * GiB,
             srcImgUUID=sc.BLANK_UUID,
             srcVolUUID=sc.BLANK_UUID,
             volFormat=sc.COW_FORMAT,
@@ -268,7 +265,7 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
         diskType="DATA",
         imgUUID=img_id,
         preallocate=sc.SPARSE_VOL,
-        capacity=10 * 1024 ** 3,
+        capacity=10 * GiB,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
@@ -289,7 +286,7 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
         diskType="DATA",
         imgUUID=img_id,
         preallocate=sc.SPARSE_VOL,
-        capacity=10 * 1024 ** 3,
+        capacity=10 * GiB,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
@@ -333,8 +330,8 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
     assert old_dom_md == new_dom_md
 
     # Verify that xleases volume is created when upgrading from version < 4.
-    xleases_vol = lvm.getLV(sd_uuid, "xleases")
-    assert int(xleases_vol.size) == 1024 * dom.alignment
+    xleases_vol = lvm.getLV(sd_uuid, sd.XLEASES)
+    assert int(xleases_vol.size) == sd.XLEASES_SLOTS * dom.alignment
 
     with pytest.raises(se.NoSuchLease):
         dom.manifest.lease_info("no-such-lease")
