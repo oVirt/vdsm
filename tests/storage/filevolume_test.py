@@ -33,8 +33,7 @@ from storage.storagetestlib import (
 )
 
 from testlib import make_uuid
-from vdsm.constants import GIB
-from vdsm.constants import MEGAB
+from vdsm.common.units import MiB, GiB
 from vdsm.storage import constants as sc
 from vdsm.storage import fileVolume
 from vdsm.storage import qemuimg
@@ -59,23 +58,23 @@ class TestFileVolumeManifest(object):
             yield vol
 
     def test_max_size_raw(self):
-        max_size = fileVolume.FileVolume.max_size(1 * GIB, sc.RAW_FORMAT)
+        max_size = fileVolume.FileVolume.max_size(1 * GiB, sc.RAW_FORMAT)
         # verify that max size equals to virtual size.
-        assert max_size == 1 * GIB
+        assert max_size == 1 * GiB
 
     def test_max_size_cow(self):
-        max_size = fileVolume.FileVolume.max_size(10 * GIB, sc.COW_FORMAT)
+        max_size = fileVolume.FileVolume.max_size(10 * GiB, sc.COW_FORMAT)
         # verify that max size equals to virtual size with estimated cow
         # overhead, aligned to MiB.
         assert max_size == 11811160064
 
     def test_optimal_size_raw(self):
-        size = 5 * MEGAB
+        size = 5 * MiB
         with self.make_volume(size=size) as vol:
             assert vol.optimal_size() == size
 
     def test_optimal_size_cow(self):
-        size = 5 * MEGAB
+        size = 5 * MiB
         with self.make_volume(size=size, format=sc.COW_FORMAT) as vol:
             assert vol.optimal_size() == vol.getVolumeSize()
 
@@ -83,7 +82,7 @@ class TestFileVolumeManifest(object):
         img_id = make_uuid()
         vol_id = make_uuid()
         remote_path = "[2001:db8:85a3::8a2e:370:7334]:1234:/path"
-        size = 5 * MEGAB
+        size = 5 * MiB
 
         # Simulate a domain with an ipv6 address
         with fake_env(storage_type='file', remote_path=remote_path) as env:
@@ -96,7 +95,7 @@ class TestFileVolumeManifest(object):
 
     def test_get_children(self):
         remote_path = "[2001:db8:85a3::8a2e:370:7334]:1234:/path"
-        size = 5 * MEGAB
+        size = 5 * MiB
 
         # Simulate a domain with an ipv6 address
         with fake_env(storage_type='file', remote_path=remote_path) as env:
@@ -106,10 +105,10 @@ class TestFileVolumeManifest(object):
 
     @pytest.mark.parametrize("capacity, virtual_size, expected_capacity", [
         # capacity, virtual_size, expected_capacity
-        (0, 128 * MEGAB, 128 * MEGAB),  # failed resize, repair capacity
-        (128 * MEGAB, 256 * MEGAB, 256 * MEGAB),  # invalid size, repair cap
-        (128 * MEGAB, 128 * MEGAB, 128 * MEGAB),  # normal case, no change
-        (256 * MEGAB, 128 * MEGAB, 256 * MEGAB),  # cap > actual, no change
+        (0, 128 * MiB, 128 * MiB),  # failed resize, repair capacity
+        (128 * MiB, 256 * MiB, 256 * MiB),  # invalid size, repair cap
+        (128 * MiB, 128 * MiB, 128 * MiB),  # normal case, no change
+        (256 * MiB, 128 * MiB, 256 * MiB),  # cap > actual, no change
     ])
     def test_repair_capacity(self, capacity, virtual_size, expected_capacity):
         with self.make_volume(virtual_size, format=sc.COW_FORMAT) as vol:
@@ -122,7 +121,7 @@ class TestFileVolumeManifest(object):
             assert vol.getMetadata().capacity == expected_capacity
 
     def test_new_volume_lease(self, fake_sanlock):
-        size = 5 * MEGAB
+        size = 5 * MiB
         with self.make_volume(size=size, format=sc.COW_FORMAT) as vol:
             md_id = vol.getMetadataId()
             sd_uuid = vol.sdUUID
@@ -154,8 +153,8 @@ def test_volume_size_unaligned(monkeypatch, tmpdir, tmp_repo, fake_access,
     vol_uuid = str(uuid.uuid4())
 
     # Creating with unaligned size should align to 4k.
-    unaligned_vol_capacity = 10 * 1024**3 + sc.BLOCK_SIZE_512
-    expected_vol_capacity = 10 * 1024**3 + sc.BLOCK_SIZE_4K
+    unaligned_vol_capacity = 10 * GiB + sc.BLOCK_SIZE_512
+    expected_vol_capacity = 10 * GiB + sc.BLOCK_SIZE_4K
 
     dom.createVolume(
         imgUUID=img_uuid,

@@ -31,6 +31,7 @@ from vdsm.common import exception
 from vdsm.common.compat import glob_escape
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
+from vdsm.common.units import MiB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fallocate
@@ -77,7 +78,7 @@ class FileVolumeManifest(volume.VolumeManifest):
     # Raw volumes should be aligned to block size, which is 512 or 4096
     # (not supported yet). qcow2 images should be aligned to cluster size
     # (64K default). To simplify, we use 1M alignment.
-    align_size = constants.MEGAB
+    align_size = MiB
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         volume.VolumeManifest.__init__(self, repoPath, sdUUID, imgUUID,
