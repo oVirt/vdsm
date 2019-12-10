@@ -1,9 +1,10 @@
-#!/bin/bash -e
+#!/bin/bash -xe
 
 PROJECT=${PROJECT:-${PWD##*/}}
 PROJECT_PATH="$PWD"
 CONTAINER_WORKSPACE="/workspace/$PROJECT"
 CONTAINER_IMAGE="${CONTAINER_IMAGE:=ovirt/$PROJECT-test-func-network-centos-8}"
+CONTAINER_CMD=${CONTAINER_CMD:=podman}
 VDSM_WORKDIR="/vdsm-tmp"
 
 test -t 1 && USE_TTY="-t"
@@ -15,11 +16,11 @@ function run_exit {
 function remove_container {
     res=$?
     [ "$res" -ne 0 ] && echo "*** ERROR: $res"
-    podman rm -f "$CONTAINER_ID"
+    ${CONTAINER_CMD} rm -f "$CONTAINER_ID"
 }
 
-function podman_exec {
-    podman exec "$USE_TTY" -i "$CONTAINER_ID" /bin/bash -c "$1"
+function container_exec {
+    ${CONTAINER_CMD} exec "$USE_TTY" -i "$CONTAINER_ID" /bin/bash -c "$1"
 }
 
 function load_kernel_modules {
@@ -29,25 +30,25 @@ function load_kernel_modules {
 }
 
 function wait_for_active_service {
-    podman_exec "while ! systemctl is-active "$1"; do sleep 1; done"
+    container_exec "while ! systemctl is-active "$1"; do sleep 1; done"
 }
 
 function start_service {
-    podman_exec "
+    container_exec "
         systemctl start '$1' && \
         while ! systemctl is-active '$1'; do sleep 1; done
     "
 }
 
 function restart_service {
-    podman_exec "
+    container_exec "
         systemctl restart '$1' && \
         while ! systemctl is-active '$1'; do sleep 1; done
     "
 }
 
 function setup_vdsm_runtime_environment {
-    podman_exec "
+    container_exec "
         adduser vdsm \
         && \
         install -d /var/run/vdsm/dhclientmon -m 755 -o vdsm && \
@@ -58,7 +59,7 @@ function setup_vdsm_runtime_environment {
 }
 
 function setup_vdsm_sources_for_testing {
-    podman_exec "
+    container_exec "
         mkdir $VDSM_WORKDIR \
         && \
         cp -rf $CONTAINER_WORKSPACE $VDSM_WORKDIR/ \
@@ -75,7 +76,7 @@ function setup_vdsm_sources_for_testing {
 
 load_kernel_modules
 
-CONTAINER_ID="$(podman run --privileged -d --dns=8.8.8.8 --dns=8.8.4.4 -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --env PYTHONPATH=lib $CONTAINER_IMAGE)"
+CONTAINER_ID="$($CONTAINER_CMD run --privileged -d --dns=8.8.8.8 --dns=8.8.4.4 -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --env PYTHONPATH=lib $CONTAINER_IMAGE)"
 trap run_exit EXIT
 
 wait_for_active_service "dbus"
@@ -87,24 +88,25 @@ setup_vdsm_sources_for_testing
 if [ -n "$TEST_OVS" ];then
     SWITCH_TYPE="ovs_switch"
     start_service "openvswitch"
+    container_exec "umount /etc/resolv.conf"
 else
     SWITCH_TYPE="legacy_switch"
 fi
 
 if [ -n "$TEST_NMSTATE" ];then
   SWITCH_TYPE="${SWITCH_TYPE} and nmstate"
-  podman_exec "
+  container_exec "
           mkdir /etc/vdsm && \
           echo -e \"[vars]\nnet_nmstate_enabled = true\n\" >> /etc/vdsm/vdsm.conf
   "
 fi
 
 if [ "$1" == "--shell" ];then
-    podman_exec "bash"
+    container_exec "bash"
     exit 0
 fi
 
-podman_exec "
+container_exec "
     cd /$VDSM_WORKDIR/$PROJECT \
     && \
     pytest \
