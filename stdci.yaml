@@ -66,6 +66,11 @@ stages:
               isolation-level: container
             distributions:
               - fc29
+        - functional-linux-bridge-nmstate:
+            runtime-requirements:
+              host-distro: newer
+            distributions:
+              - fc30
   - poll-upstream-sources:
       <<: *check-network
       script:
