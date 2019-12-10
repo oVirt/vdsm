@@ -317,12 +317,12 @@ def main(args):
                 with connection.Client(address, authkey=_AUTHKEY) as conn:
                     server.shutdown(conn)
                 server_thread.join()
-            except:
+            except Exception:
                 # We ignore any errors here to avoid a situation where systemd
                 # restarts supervdsmd just at the end of shutdown stage. We're
                 # prepared to handle any mess (like existing outdated socket
                 # file) in the startup stage.
-                pass
+                log.exception("Error while shutting down supervdsm")
 
     except Exception as e:
         syslog.syslog("Supervdsm failed to start: %s" % e)
