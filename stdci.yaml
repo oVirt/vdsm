@@ -62,10 +62,9 @@ stages:
               - fc30
         - functional-ovs-switch-lib:
             runtime-requirements:
-              support-nesting-level: 2
-              isolation-level: container
+              host-distro: newer
             distributions:
-              - fc29
+              - fc30
         - functional-linux-bridge-nmstate:
             runtime-requirements:
               host-distro: newer
