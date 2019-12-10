@@ -34,6 +34,7 @@ from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 from testlib import recorded
 
+from vdsm.common.units import GiB
 from vdsm.storage import exception as se
 from vdsm.storage import imagetickets
 
@@ -238,7 +239,7 @@ class TestImageTickets(VdsmTestCase):
 
 
 def create_ticket(uuid, ops=("read", "write"), timeout=300,
-                  size=1024**3, path="/path/to/image", filename=None):
+                  size=GiB, path="/path/to/image", filename=None):
     ticket = {
         "uuid": uuid,
         "timeout": timeout,
