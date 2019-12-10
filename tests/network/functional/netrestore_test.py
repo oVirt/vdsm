@@ -67,6 +67,7 @@ class TestRestoreOvsBond(object):
 @parametrize_switch
 class TestRestore(object):
     @parametrize_bridged
+    @pytest.mark.nmstate
     def test_restore_missing_network_from_config(self, switch, bridged):
         with dummy_devices(1) as (nic,):
             SETUP_NET = {
