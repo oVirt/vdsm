@@ -32,6 +32,7 @@ from testlib import make_file, recorded
 from testlib import namedTemporaryDir
 
 from vdsm import utils
+from vdsm.common.units import MiB, GiB
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -54,9 +55,9 @@ VG = collections.namedtuple("VG", [
 
 class FakeLVM(object):
     # We pretend all PVs are 10G in size
-    _PV_SIZE = 10 << 30
+    _PV_SIZE = 10 * GiB
     # Found via inspection of real environment
-    _PV_PE_SIZE = sc.VG_EXTENT_SIZE_MB << 20
+    _PV_PE_SIZE = sc.VG_EXTENT_SIZE_MB * MiB
     # The number of PEs used for metadata areas
     _PV_MDA_COUNT = 2
     # 2 PE for metadata + 1 PE to hold a header
@@ -70,9 +71,9 @@ class FakeLVM(object):
         self.lvmd = {}
 
     def createVG(self, vgName, devices, initialTag, metadataSize, force=False):
-        # Convert params from MB to bytes to match other fields
-        metadataSize <<= 20
-        extentsize = sc.VG_EXTENT_SIZE_MB << 20
+        # Convert params from MiB to bytes to match other fields
+        metadataSize *= MiB
+        extentsize = sc.VG_EXTENT_SIZE_MB * MiB
 
         for dev in devices:
             self._create_pv(dev, vgName, self._PV_SIZE)
@@ -112,10 +113,10 @@ class FakeLVM(object):
         pass
 
     def _size_param_to_bytes(self, size):
-        # Size is received as a string in MB.  We need to convert it to bytes
+        # Size is received as a string in MiB.  We need to convert it to bytes
         # and round it up to a multiple of the VG extent size.
-        extent_size = sc.VG_EXTENT_SIZE_MB << 20
-        size = int(size) << 20
+        extent_size = sc.VG_EXTENT_SIZE_MB * MiB
+        size = int(size) * MiB
         return utils.round(size, extent_size)
 
     def _create_lv_file(self, vgName, lvName, active, size):
