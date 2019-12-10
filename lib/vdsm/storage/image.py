@@ -25,13 +25,13 @@ import logging
 import threading
 from contextlib import contextmanager
 
-from vdsm import constants
 from vdsm import utils
 from vdsm.config import config
 from vdsm.common import cmdutils
 from vdsm.common import logutils
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
+from vdsm.common.units import MiB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import imageSharing
@@ -118,7 +118,7 @@ class Image:
         # Adds extra room so we don't have to extend this disk immediately
         # when a vm is started.
         chunk_size_mb = config.getint("irs", "volume_utilization_chunk_mb")
-        chunk_size = chunk_size_mb * constants.MEGAB
+        chunk_size = chunk_size_mb * MiB
         required = (qemu_measure["required"] + chunk_size)
         # Limit estimates size by maximum size.
         vol_class = sdCache.produce(dst_sd_id).getVolumeClass()
