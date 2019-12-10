@@ -7,7 +7,7 @@ CONTAINER_IMAGE="${CONTAINER_IMAGE:=ovirt/$PROJECT-test-func-network-centos-8}"
 CONTAINER_CMD=${CONTAINER_CMD:=podman}
 VDSM_WORKDIR="/vdsm-tmp"
 
-test -t 1 && USE_TTY="-t"
+test -t 1 && USE_TTY="t"
 
 function run_exit {
     remove_container
@@ -20,13 +20,18 @@ function remove_container {
 }
 
 function container_exec {
-    ${CONTAINER_CMD} exec "$USE_TTY" -i "$CONTAINER_ID" /bin/bash -c "$1"
+    ${CONTAINER_CMD} exec "-i$USE_TTY" "$CONTAINER_ID" /bin/bash -c "$1"
 }
 
 function load_kernel_modules {
     modprobe 8021q
     modprobe bonding
     modprobe openvswitch
+}
+
+function enable_bonding_driver {
+    ip link add bond0000 type bond
+    ip link delete bond0000
 }
 
 function wait_for_active_service {
@@ -74,7 +79,11 @@ function setup_vdsm_sources_for_testing {
     "
 }
 
-load_kernel_modules
+if [ -n "$CI" ]; then
+    enable_bonding_driver
+else
+    load_kernel_modules
+fi
 
 CONTAINER_ID="$($CONTAINER_CMD run --privileged -d --dns=8.8.8.8 --dns=8.8.4.4 -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --env PYTHONPATH=lib $CONTAINER_IMAGE)"
 trap run_exit EXIT

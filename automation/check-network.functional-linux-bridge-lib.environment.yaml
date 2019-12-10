@@ -1,1 +1,8 @@
-py3.environment.yaml
+ - name: 'CI_PYTHON'  # This variable needs to be in a 'pythonMAJOR' form because it's
+   value: 'python3'   # used to run commands like 'python3-coverage' and for package names
+ - name: 'CONTAINER_IMAGE'
+   value: 'quay.io/ovirt/vdsm-test-func-network-centos-8'
+ - name: 'CI'
+   value: 'true'
+ - name: 'CONTAINER_CMD'
+   value: 'docker'
