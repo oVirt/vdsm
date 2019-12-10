@@ -25,6 +25,7 @@ from vdsm import constants
 from vdsm import utils
 from vdsm.common import commands
 from vdsm.common.compat import subprocess
+from vdsm.common.units import KiB, MiB
 from vdsm.storage import curlImgWrap
 from vdsm.storage import exception as se
 
@@ -34,11 +35,11 @@ log = logging.getLogger("storage.ImageSharing")
 # access the storage.
 WAIT_TIMEOUT = 30
 # Number of bytes to read from the socket and write
-# to dd stdin trough the pipe. Based on default socket buffer
+# to dd stdin through the pipe. Based on default socket buffer
 # size(~80KB) and default pipe buffer size (64K), this should
 # minimize system call overhead without consuming too much
 # memory.
-BUFFER_SIZE = 65536
+BUFFER_SIZE = 64 * KiB
 
 
 def httpGetSize(methodArgs):
@@ -86,7 +87,7 @@ def copyToImage(dstImgPath, methodArgs):
     cmd = [
         constants.EXT_DD,
         "of=%s" % dstImgPath,
-        "bs=%s" % constants.MEGAB,
+        "bs=%s" % MiB,
         # Ensure that data reach physical storage before returning.
         "conv=fsync",
     ]
@@ -117,8 +118,8 @@ def copyFromImage(dstImgPath, methodArgs):
     cmd = [
         constants.EXT_DD,
         "if=%s" % dstImgPath,
-        "bs=%s" % constants.MEGAB,
-        "count=%s" % (total_size // constants.MEGAB + 1),
+        "bs=%s" % MiB,
+        "count=%s" % (total_size // MiB + 1),
         "iflag=direct",
     ]
 
