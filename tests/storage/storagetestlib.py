@@ -44,8 +44,8 @@ from . import qemuio
 
 from monkeypatch import MonkeyPatchScope
 
-from vdsm import constants
 from vdsm import utils
+from vdsm.common.units import KiB, MiB
 from vdsm.storage import blockSD
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
@@ -62,7 +62,6 @@ from vdsm.storage import sd
 from vdsm.storage import volume
 
 NR_PVS = 2        # The number of fake PVs we use to make a fake VG by default
-MB = 1024 ** 2    # Used to convert bytes to MB
 WAIT_TIMEOUT = 5  # Used for Callable event default wait timeout
 
 log = logging.getLogger("test")
@@ -186,7 +185,7 @@ def fake_env(storage_type, sd_version=3, data_center=None,
 
 
 @contextmanager
-def fake_volume(storage_type='file', size=MB, format=sc.RAW_FORMAT):
+def fake_volume(storage_type='file', size=MiB, format=sc.RAW_FORMAT):
     img_id = make_uuid()
     vol_id = make_uuid()
     with fake_env(storage_type) as env:
@@ -370,7 +369,7 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
 
     lv_size = sd_manifest.getVolumeClass().calculate_volume_alloc_size(
         prealloc, vol_format, size, None)
-    lv_size_mb = (utils.round(lv_size, constants.MEGAB) // constants.MEGAB)
+    lv_size_mb = (utils.round(lv_size, MiB) // MiB)
     lvm.createLV(sduuid, voluuid, lv_size_mb)
 
     # LVM may create the volume with a larger size due to extent granularity
@@ -431,13 +430,13 @@ def write_qemu_chain(vol_list):
     # This allows us to verify the integrity of the whole chain.
     for i, vol in enumerate(vol_list):
         vol_fmt = sc.fmt2str(vol.getFormat())
-        offset = i * 1024
+        offset = i * KiB
         pattern = 0xf0 + i
         qemuio.write_pattern(
             vol.volumePath,
             vol_fmt,
             offset=offset,
-            len=1024,
+            len=KiB,
             pattern=pattern)
 
 
@@ -448,7 +447,7 @@ def verify_qemu_chain(vol_list):
     top_vol = vol_list[-1]
     top_vol_fmt = sc.fmt2str(top_vol.getFormat())
     for i, vol in enumerate(vol_list):
-        offset = i * 1024
+        offset = i * KiB
         pattern = 0xf0 + i
 
         # Check that the correct pattern can be read through the top volume
@@ -456,7 +455,7 @@ def verify_qemu_chain(vol_list):
             top_vol.volumePath,
             top_vol_fmt,
             offset=offset,
-            len=1024,
+            len=KiB,
             pattern=pattern)
 
         # Check the volume where the pattern was originally written
@@ -465,18 +464,18 @@ def verify_qemu_chain(vol_list):
             vol.volumePath,
             vol_fmt,
             offset=offset,
-            len=1024,
+            len=KiB,
             pattern=pattern)
 
         # Check that the next offset contains zeroes.  If we know this layer
         # has zeroes at next_offset we can be sure that data read at the same
         # offset in the next layer belongs to that layer.
-        next_offset = (i + 1) * 1024
+        next_offset = (i + 1) * KiB
         qemuio.verify_pattern(
             vol.volumePath,
             vol_fmt,
             offset=next_offset,
-            len=1024,
+            len=KiB,
             pattern=0)
 
 

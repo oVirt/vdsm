@@ -43,14 +43,12 @@ from storage.storagetestlib import (
 from . import qemuio
 
 from vdsm import utils
+from vdsm.common.units import MiB
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import fileSD
 from vdsm.storage import fileVolume
 from vdsm.storage import sd
-
-
-MB = 1024 ** 2
 
 
 # Test fake file environment
@@ -137,7 +135,7 @@ def test_volume_type_file_env(vol_type):
 
 def test_volume_metadata_io_file_env():
     with fake_file_env() as env:
-        size = 1 * MB
+        size = 1 * MiB
         img_id = make_uuid()
         vol_id = make_uuid()
         make_file_volume(env.sd_manifest, size, img_id, vol_id)
@@ -200,11 +198,11 @@ def test_volume_type_block_env(vol_type):
 
 
 @pytest.mark.parametrize("size_param", [
-    MB,
-    2 * MB - 1,
+    MiB,
+    2 * MiB - 1,
     1,
-    (sc.VG_EXTENT_SIZE_MB - 1) * MB,
-    sc.VG_EXTENT_SIZE_MB * MB + 1,
+    (sc.VG_EXTENT_SIZE_MB - 1) * MiB,
+    sc.VG_EXTENT_SIZE_MB * MiB + 1,
 ])
 def test_volume_size_alignment(size_param):
     with fake_block_env() as env:
@@ -214,7 +212,7 @@ def test_volume_size_alignment(size_param):
         make_block_volume(env.lvm, env.sd_manifest, size_param, img_id, vol_id)
         vol = env.sd_manifest.produceVolume(img_id, vol_id)
 
-        extent_size = sc.VG_EXTENT_SIZE_MB * MB
+        extent_size = sc.VG_EXTENT_SIZE_MB * MiB
         expected_size = utils.round(size_param, extent_size)
         assert expected_size == vol.getCapacity()
         assert expected_size == int(env.lvm.getLV(sd_id, vol_id).size)
@@ -228,7 +226,7 @@ def test_volume_metadata_io_block_env():
         img_id = make_uuid()
         vol_id = make_uuid()
         size_mb = sc.VG_EXTENT_SIZE_MB
-        size = size_mb * MB
+        size = size_mb * MiB
         make_block_volume(env.lvm, env.sd_manifest, size, img_id, vol_id)
 
         assert vol_id == env.lvm.getLV(sd_id, vol_id).name
@@ -247,7 +245,7 @@ def test_volume_accessibility():
         sd_id = env.sd_manifest.sdUUID
         img_id = make_uuid()
         vol_id = make_uuid()
-        make_block_volume(env.lvm, env.sd_manifest, 1 * MB, img_id, vol_id)
+        make_block_volume(env.lvm, env.sd_manifest, 1 * MiB, img_id, vol_id)
 
         assert os.path.isfile(env.lvm.lvPath(sd_id, vol_id))
 
@@ -286,7 +284,7 @@ def test_make_qemu_chain(storage_type):
 @pytest.mark.parametrize("storage_type", ["file", "block"])
 def test_verify_chain(storage_type):
     with fake_env(storage_type) as env:
-        vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
+        vol_list = make_qemu_chain(env, MiB, sc.RAW_FORMAT, 2)
         write_qemu_chain(vol_list)
         verify_qemu_chain(vol_list)
 
@@ -294,7 +292,7 @@ def test_verify_chain(storage_type):
 @pytest.mark.parametrize("storage_type", ["file", "block"])
 def test_reversed_chain_raises(storage_type):
     with fake_env(storage_type) as env:
-        vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
+        vol_list = make_qemu_chain(env, MiB, sc.RAW_FORMAT, 2)
         write_qemu_chain(reversed(vol_list))
         with pytest.raises(qemuio.VerificationError):
             verify_qemu_chain(vol_list)
@@ -303,7 +301,7 @@ def test_reversed_chain_raises(storage_type):
 @pytest.mark.parametrize("storage_type", ["file", "block"])
 def test_pattern_written_to_base_raises(storage_type):
     with fake_env(storage_type) as env:
-        vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 3)
+        vol_list = make_qemu_chain(env, MiB, sc.RAW_FORMAT, 3)
 
         # Writes the entire pattern into the base volume.
         bad_list = vol_list[:1] * 3
