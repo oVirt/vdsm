@@ -43,18 +43,6 @@ stages:
       archs:
         - x86_64
       substages:
-        - functional-linux-bridge:
-            runtime-requirements:
-              support-nesting-level: 2
-              isolation-level: container
-            distributions:
-              - el7
-        - functional-ovs-switch:
-            runtime-requirements:
-              support-nesting-level: 2
-              isolation-level: container
-            distributions:
-              - el7
         - functional-linux-bridge-lib:
             runtime-requirements:
               host-distro: newer
