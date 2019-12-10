@@ -225,10 +225,18 @@ def _setup_static_src_routing(networks):
 
 def _setup_qos(networks, net_info, rnetworks):
     for net_name, net_attrs in _order_networks(networks):
-        if net_attrs.get('remove'):
-            _remove_qos(rnetworks[net_name], net_info)
-        else:
-            _configure_qos(net_attrs)
+        rnet_attrs = rnetworks.get(net_name, {})
+        out = _get_qos_out(net_attrs)
+        rout = _get_qos_out(rnet_attrs)
+
+        if net_attrs.get('remove') or (rout and not out):
+            _remove_qos(rnet_attrs, net_info)
+        elif out:
+            _configure_qos(net_attrs, out)
+
+
+def _get_qos_out(net_attrs):
+    return net_attrs.get('hostQos', {}).get('out')
 
 
 def get_next_hop_interface(net_name, net_attributes):
@@ -252,12 +260,10 @@ def _setup_dynamic_src_routing(networks):
             ifacetracking.add(_get_network_iface(net_name, net_attrs))
 
 
-def _configure_qos(net_attrs):
-    out = net_attrs.get('hostQos', {}).get('out')
-    if out:
-        vlan = net_attrs.get('vlan')
-        base_iface = _get_base_iface(net_attrs)
-        qos.configure_outbound(out, base_iface, vlan)
+def _configure_qos(net_attrs, out):
+    vlan = net_attrs.get('vlan')
+    base_iface = _get_base_iface(net_attrs)
+    qos.configure_outbound(out, base_iface, vlan)
 
 
 def _remove_qos(net_attrs, net_info):

@@ -173,6 +173,24 @@ class TestNetworkHostQos(object):
                         NETWORK2_NAME, NETVLAN[NETWORK2_NAME]
                     )
 
+    def test_add_and_remove_qos_from_nic(self, switch):
+        HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
+        with dummy_device() as nic:
+            network_attrs = {
+                'nic': nic,
+                'switch': switch,
+                'hostQos': HOST_QOS_CONFIG1,
+            }
+            with adapter.setupNetworks(
+                {NETWORK1_NAME: network_attrs}, {}, NOCHK
+            ):
+                adapter.assertHostQos(NETWORK1_NAME, network_attrs)
+                network_attrs.pop('hostQos')
+                adapter.setupNetworks(
+                    {NETWORK1_NAME: network_attrs}, {}, NOCHK
+                )
+                adapter.assertNoQosOnNic(nic)
+
 
 def rate(rate_in_mbps):
     return rate_in_mbps * 1000 ** 2
