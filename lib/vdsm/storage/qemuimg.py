@@ -27,6 +27,7 @@ import re
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import exception
+from vdsm.common.units import GiB
 from vdsm.config import config
 from vdsm.storage import operation
 
@@ -108,7 +109,7 @@ def info(image, format=None, unsafe=False, trusted_image=True):
         # TODO: It does not make sense that qemu-img will need 30 seconds of
         # cpu time for reading valid image qcow2 header, or checking the size
         # of a raw image. Investigate why we need these values.
-        cmd = cmdutils.prlimit(cmd, cpu_time=30, address_space=1024**3)
+        cmd = cmdutils.prlimit(cmd, cpu_time=30, address_space=GiB)
 
     out = _run_cmd(cmd)
 
