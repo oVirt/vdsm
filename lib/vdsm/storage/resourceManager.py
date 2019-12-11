@@ -195,7 +195,7 @@ class Request(object):
     def cancel(self):
         with self._syncRoot:
             if not self._isActive:
-                self._log.warn("Tried to cancel a processed request")
+                self._log.warning("Tried to cancel a processed request")
                 raise RequestAlreadyProcessedError("Cannot cancel a processed "
                                                    "request")
 
@@ -206,8 +206,8 @@ class Request(object):
             try:
                 self._callback(RequestRef(self), None)
             except Exception:
-                self._log.warn("Request callback threw an exception",
-                               exc_info=True)
+                self._log.warning("Request callback threw an exception",
+                                  exc_info=True)
             self._callback = None
             self._doneEvent.set()
 
@@ -225,7 +225,7 @@ class Request(object):
     def grant(self):
         with self._syncRoot:
             if not self._isActive:
-                self._log.warn("Tried to grant a processed request")
+                self._log.warning("Tried to grant a processed request")
                 raise RequestAlreadyProcessedError("Cannot grant a processed "
                                                    "request")
 
@@ -238,8 +238,8 @@ class Request(object):
             ref = RequestRef(self)
             self._callback(ref, resource)
         except Exception:
-            self._log.warn("Request callback threw an exception",
-                           exc_info=True)
+            self._log.warning("Request callback threw an exception",
+                              exc_info=True)
 
     def wait(self, timeout=None):
         return self._doneEvent.wait(timeout)
@@ -304,8 +304,8 @@ class ResourceRef(object):
         with self._syncRoot.exclusive:
             self.__wrappedObject = None
             if not self._isValid:
-                self._log.warn("Tried to re-release a resource. Request "
-                               "ignored.")
+                self._log.warning("Tried to re-release a resource. Request "
+                                  "ignored.")
                 return
 
             releaseResource(self.namespace, self.name)
@@ -323,8 +323,8 @@ class ResourceRef(object):
     def __del__(self):
         if self._isValid and self.autoRelease:
             def release(log, namespace, name):
-                log.warn("Resource reference was not properly released. "
-                         "Autoreleasing.")
+                log.warning("Resource reference was not properly released. "
+                            "Autoreleasing.")
                 # In Python, objects are refcounted and are deleted immediately
                 # when the last reference is freed. This means the __del__
                 # method can be called inside of any context. The
@@ -412,9 +412,11 @@ class _ResourceManager(object):
                     resourceInfo.realObj.switchLockType(newLockType)
                     return
                 except:
-                    self._log.warn("Lock type switch failed on resource '%s'. "
-                                   "Falling back to object recreation.",
-                                   resourceInfo.fullName, exc_info=True)
+                    self._log.warning(
+                        "Lock type switch failed on resource '%s'. "
+                        "Falling back to object recreation.",
+                        resourceInfo.fullName,
+                        exc_info=True)
 
             # If the resource can't switch we just release it and create it
             # again under a different locktype
@@ -429,8 +431,8 @@ class _ResourceManager(object):
             try:
                 resourceInfo.realObj.close()
             except:
-                self._log.warn("Couldn't close resource '%s'.",
-                               resourceInfo.fullName, exc_info=True)
+                self._log.warning("Couldn't close resource '%s'.",
+                                  resourceInfo.fullName, exc_info=True)
 
     def acquireResource(self, namespace, name, lockType, timeout=None):
         """
@@ -527,9 +529,9 @@ class _ResourceManager(object):
                 try:
                     obj = namespaceObj.factory.createResource(name, lockType)
                 except:
-                    self._log.warn("Resource factory failed to create resource"
-                                   " '%s'. Canceling request.", fullName,
-                                   exc_info=True)
+                    self._log.warning(
+                        "Resource factory failed to create resource"
+                        " '%s'. Canceling request.", fullName, exc_info=True)
                     contextCleanup.defer(request.cancel)
                     return RequestRef(request)
 
@@ -606,9 +608,10 @@ class _ResourceManager(object):
                             self._switchLockType(resource,
                                                  nextRequest.lockType)
                         except Exception:
-                            self._log.warn("Resource factory failed to create "
-                                           "resource '%s'. Canceling request.",
-                                           fullName, exc_info=True)
+                            self._log.warning(
+                                "Resource factory failed to create "
+                                "resource '%s'. Canceling request.",
+                                fullName, exc_info=True)
                             nextRequest.cancel()
                             continue
 
@@ -730,9 +733,10 @@ class Owner(object):
                     self.log.debug("%s: resource '%s' does not exist", self,
                                    fullName)
                 except Exception:
-                    self.log.warn("Unexpected exception caught while owner "
-                                  "'%s' tried to acquire '%s'", self, fullName,
-                                  exc_info=True)
+                    self.log.warning(
+                        "Unexpected exception caught while owner "
+                        "'%s' tried to acquire '%s'",
+                        self, fullName, exc_info=True)
                     raise se.ResourceException(fullName)
             except:
                 if raiseonfailure:
@@ -764,8 +768,8 @@ class Owner(object):
             resource = self.resources[fullName]
 
             if not resource.isValid:
-                self.log.warn("%s: Tried to release an already released "
-                              "resource '%s'", self, resource.fullName)
+                self.log.warning("%s: Tried to release an already released "
+                                 "resource '%s'", self, resource.fullName)
                 return
 
             resource.release()
