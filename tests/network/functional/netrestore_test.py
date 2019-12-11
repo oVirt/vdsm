@@ -65,9 +65,9 @@ class TestRestoreOvsBond(object):
 
 
 @parametrize_switch
+@pytest.mark.nmstate
 class TestRestore(object):
     @parametrize_bridged
-    @pytest.mark.nmstate
     def test_restore_missing_network_from_config(self, switch, bridged):
         with dummy_devices(1) as (nic,):
             SETUP_NET = {
@@ -90,6 +90,9 @@ class TestRestore(object):
 
                     adapter.assertNetworkExists(NETWORK_NAME)
 
+    @pytest.mark.xfail(
+        reason='https://bugzilla.redhat.com/1782680', strict=True
+    )
     def test_restore_dynamic_ipv4_network(self, switch):
         if switch == 'ovs':
             # With OVS, the restoration creates the network without an IP.
