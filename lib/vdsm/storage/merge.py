@@ -36,9 +36,9 @@ from contextlib import contextmanager
 
 import logging
 
-from vdsm import constants
 from vdsm import utils
 from vdsm.common import properties
+from vdsm.common.units import MiB
 from vdsm.config import config
 
 from vdsm.storage import constants as sc
@@ -209,15 +209,14 @@ def _extend_base_allocation(base_vol, top_vol):
 
     base_alloc = base_vol.getVolumeSize()
     top_alloc = top_vol.getVolumeSize()
-    vol_chunk_size = (config.getint('irs', 'volume_utilization_chunk_mb') *
-                      constants.MEGAB)
+    vol_chunk_size = config.getint('irs', 'volume_utilization_chunk_mb') * MiB
     potential_alloc = base_alloc + top_alloc + vol_chunk_size
     # TODO: add chunk_size only if top is leaf.
     capacity = base_vol.getCapacity()
-    max_alloc = utils.round(capacity * sc.COW_OVERHEAD, constants.MEGAB)
+    max_alloc = utils.round(capacity * sc.COW_OVERHEAD, MiB)
     actual_alloc = min(potential_alloc, max_alloc)
-    actual_alloc = utils.round(actual_alloc, constants.MEGAB)
-    actual_alloc_mb = actual_alloc // constants.MEGAB
+    actual_alloc = utils.round(actual_alloc, MiB)
+    actual_alloc_mb = actual_alloc // MiB
     dom = sdCache.produce(base_vol.sdUUID)
     dom.extendVolume(base_vol.volUUID, actual_alloc_mb)
 
