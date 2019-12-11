@@ -158,10 +158,7 @@ class TestResourceManager:
         assert req.canceled()
 
     def testRegisterInvalidNamespace(self, tmp_manager):
-        with pytest.raises(
-            ValueError,
-            message="Managed to register an invalid namespace"
-        ):
+        with pytest.raises(ValueError):
             rm.registerNamespace("I.HEART.DOTS", rm.SimpleResourceFactory())
 
     def testFailCreateAfterSwitch(self, tmp_manager):
@@ -206,10 +203,7 @@ class TestResourceManager:
 
     def testAccessAttributeNotExposedByWrapper(self, tmp_manager):
         with rm.acquireResource("string", "test", rm.EXCLUSIVE) as resource:
-            with pytest.raises(
-                AttributeError,
-                message="Managed to access an attribute not exposed by wrapper"
-            ):
+            with pytest.raises(AttributeError):
                 resource.THERE_IS_NO_WAY_I_EXIST
 
     def testAccessAttributeNotExposedByRequestRef(self, tmp_manager):
@@ -219,10 +213,7 @@ class TestResourceManager:
             resources.insert(0, res)
 
         req = rm._registerResource("string", "resource", rm.SHARED, callback)
-        with pytest.raises(
-                AttributeError,
-                message="Managed to access an attribute not exposed by wrapper"
-        ):
+        with pytest.raises(AttributeError):
             try:
                 req.grant()
             finally:
@@ -462,17 +453,11 @@ class TestResourceManager:
         status = rm._getResourceStatus("storage", "resource")
         assert status == rm.LockState.shared
         shared1.release()
-        with pytest.raises(
-            KeyError,
-            message="Managed to get status on a non existing resource"
-        ):
+        with pytest.raises(KeyError):
             status = rm._getResourceStatus("null", "resource")
 
     def testAcquireNonExistingResource(self, tmp_manager):
-        with pytest.raises(
-            KeyError,
-            message="Managed to get status on a non existing resource"
-        ):
+        with pytest.raises(KeyError):
             rm.acquireResource("null", "resource", rm.EXCLUSIVE)
 
     def testAcquireInvalidLockType(self, tmp_manager):
