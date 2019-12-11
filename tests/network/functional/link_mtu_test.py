@@ -27,6 +27,8 @@ from network.nettestlib import dummy_devices
 
 from . import netfunctestlib as nftestlib
 
+from vdsm.network import nmstate
+
 
 NETWORK_NAME = 'test-network'
 NETWORK1_NAME = 'test-network1'
@@ -205,12 +207,13 @@ class TestNetworkMtu(object):
                 adapter.setupNetworks({}, BONDBASE, nftestlib.NOCHK)
                 adapter.assertLinkMtu(nic2, NETBASE[NETWORK_NAME])
 
+    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_mtu_default_value_of_base_nic_after_all_nets_are_removed(
         self, switch, bridged, bonded
     ):
-        if switch == 'legacy' and bonded:
+        if switch == 'legacy' and bonded and not nmstate.is_nmstate_backend():
             pytest.xfail('BZ#1633528')
         with dummy_devices(1) as (nic,):
             NETWORK1_ATTRS = {
@@ -237,12 +240,13 @@ class TestNetworkMtu(object):
                 if bonded:
                     adapter.assertLinkMtu(BOND_NAME, DEFAULT_MTU)
 
+    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_base_iface_mtu_is_preserved_when_not_all_nets_on_top_are_deleted(
         self, switch, bridged, bonded
     ):
-        if switch == 'legacy' and bonded:
+        if switch == 'legacy' and bonded and not nmstate.is_nmstate_backend():
             pytest.xfail('BZ#1633528')
 
         common_net_mtu = 1600

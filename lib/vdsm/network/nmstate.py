@@ -678,6 +678,10 @@ class Network(object):
                     Interface.IPV6: {InterfaceIP.ENABLED: False},
                 }
         _purge_orphaned_base_vlan_ifaces(nets, interfaces_state)
+        _reset_iface_mtus_on_network_dettach(
+            nets, running_networks, interfaces_state
+        )
+
         # FIXME: Workaround to nmstate limitation when DNS entries are defined.
         if not droute_net:
             ifnet = _get_default_route_interface(running_networks)
@@ -785,3 +789,31 @@ def _purge_orphaned_base_vlan_ifaces(nets, interfaces_state):
     purged_ifaces = set(changed_ifaces_purge_state) - set(interfaces_state)
     for ifname in purged_ifaces:
         interfaces_state[ifname] = changed_ifaces_purge_state[ifname]
+
+
+def _reset_iface_mtus_on_network_dettach(
+    networks, running_networks, interfaces_state
+):
+    stale_ifaces = _get_stale_ifaces(networks, running_networks)
+    for net in stale_ifaces:
+        sb_iface_state = interfaces_state.get(net)
+        if not sb_iface_state:
+            sb_iface_state = {Interface.NAME: net}
+            interfaces_state[net] = sb_iface_state
+
+        sb_iface_state[Interface.MTU] = DEFAULT_MTU
+
+
+def _get_stale_ifaces(networks, running_networks):
+    networks_to_remove = (net.name for net in networks if net.to_remove)
+    base_ifaces_to_remove = {
+        net.base_iface for net in networks if net.to_remove
+    }
+    base_ifaces_to_add = {net for net in networks if not net.to_remove}
+    base_ifaces_to_keep = {
+        NetworkConfig(rnet_name, rnet_attrs).base_iface
+        for rnet_name, rnet_attrs in running_networks.items()
+        if rnet_name not in networks_to_remove
+    }
+
+    return base_ifaces_to_remove - base_ifaces_to_add - base_ifaces_to_keep

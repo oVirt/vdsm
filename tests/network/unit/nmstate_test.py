@@ -405,7 +405,11 @@ class TestBondedNetwork(object):
 
         expected_state = {
             nmstate.Interface.KEY: [
-                {'name': TESTBOND0 + '.' + str(VLAN101), 'state': 'absent'}
+                {'name': TESTBOND0 + '.' + str(VLAN101), 'state': 'absent'},
+                {
+                    nmstate.Interface.NAME: TESTBOND0,
+                    nmstate.Interface.MTU: DEFAULT_MTU,
+                },
             ]
         }
         if bridged:
@@ -530,7 +534,11 @@ def test_translate_remove_vlan_net(rconfig_mock, bridged):
 
     expected_state = {
         nmstate.Interface.KEY: [
-            {'name': IFACE0 + '.' + str(VLAN101), 'state': 'absent'}
+            {'name': IFACE0 + '.' + str(VLAN101), 'state': 'absent'},
+            {
+                nmstate.Interface.NAME: IFACE0,
+                nmstate.Interface.MTU: DEFAULT_MTU,
+            },
         ]
     }
     if bridged:
@@ -1379,6 +1387,43 @@ class TestMtu(object):
         expected_ifaces_states = [bond0_state, slave2_state]
         _sort_by_name(expected_ifaces_states)
         assert {nmstate.Interface.KEY: expected_ifaces_states} == state
+
+    @mock.patch.object(nmstate, 'RunningConfig')
+    @parametrize_bridged
+    def test_mtu_reset_on_network_dettach(
+        self, rconfig_mock, bridged, current_state_mock
+    ):
+        mtu = DEFAULT_MTU * 4
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states.append(
+            _create_ethernet_iface_state(IFACE0, include_type=True, mtu=mtu)
+        )
+        if bridged:
+            current_ifaces_states.append(
+                self._create_bridge_state(TESTNET1, IFACE0, mtu)
+            )
+
+        rconfig_mock.return_value.bonds = {}
+        rconfig_mock.return_value.networks = {
+            TESTNET1: _create_network_config(
+                'nic', IFACE0, bridged=bridged, mtu=mtu
+            )
+        }
+        remove_network = {TESTNET1: {'remove': True}}
+        state = nmstate.generate_state(networks=remove_network, bondings={})
+
+        expected_iface_state = _create_ethernet_iface_state(IFACE0)
+        _disable_iface_ip(expected_iface_state)
+        expected_iface_states = [expected_iface_state]
+
+        if bridged:
+            expected_iface_states.append(
+                {
+                    nmstate.Interface.NAME: TESTNET1,
+                    nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+                }
+            )
+        assert {nmstate.Interface.KEY: expected_iface_states} == state
 
     def _create_bond_with_slaves_ifaces_states(self, mtu, include_type=False):
         ifstates = self._create_bond_slaves_states(mtu, include_type)
