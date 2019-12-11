@@ -1,0 +1,90 @@
+#!/usr/bin/python3
+#
+# Copyright 2019 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+import optparse
+import os
+import platform
+import shutil
+import subprocess
+import sys
+
+parser = optparse.OptionParser(usage="make-target [options] NAME")
+
+parser.add_option("-n", "--lun-count", dest='lun_count', type='int',
+                  help="Number of LUNs (default 10)")
+parser.add_option("-r", "--root-dir", dest='root_dir',
+                  help="root directory (default /home/target)")
+parser.add_option("-i", "--iqn-base", dest='iqn_base',
+                  help="iqn base name (default iqn.2003-01.org)")
+
+parser.set_defaults(
+    root_dir="/target",
+    lun_count=10,
+    iqn_base="iqn.2003-01.org")
+
+opts, args = parser.parse_args()
+
+if not args:
+    parser.error("target name required")
+
+target_name = args[0]
+
+host_name = platform.node()
+if "." in host_name:
+    host_name = host_name.split(".", 1)[0]
+
+target_iqn = opts.iqn_base + "." + host_name + "." + target_name
+target_dir = os.path.join(opts.root_dir, target_name)
+
+print()
+print("Deleting target")
+print("  target_name:   %s" % target_name)
+print("  target_iqn:    %s" % target_iqn)
+print("  target_dir:    %s" % target_dir)
+print("  lun_count:     %s" % opts.lun_count)
+print()
+
+reply = input("Delete target? [N/y]: ")
+
+if reply.strip().lower() != "y":
+    sys.exit(0)
+
+print("Deleting disks")
+fileio_path = "/backstores/fileio"
+
+for n in range(opts.lun_count):
+    file_name = "%02d" % n
+    file_path = os.path.join(target_dir, file_name)
+    backstore_name = target_name + "-" + file_name
+    backstore_path = os.path.join(fileio_path, backstore_name)
+
+    print("Deleting backing store %r" % backstore_path)
+    subprocess.check_call(["targetcli", fileio_path, "delete", backstore_name])
+
+print("Deleting target %r" % target_iqn)
+subprocess.check_call(["targetcli", "/iscsi", "delete", target_iqn])
+
+print("Removing target directory %r" % target_dir)
+shutil.rmtree(target_dir)
+
+print("Saving configuration")
+subprocess.check_call(["targetcli", "saveconfig"])
+
+print("Target deleted successfully")
