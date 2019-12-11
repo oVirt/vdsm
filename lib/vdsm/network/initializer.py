@@ -27,6 +27,7 @@ import time
 from vdsm.common.config import config
 from vdsm.network import dhclient_monitor
 from vdsm.network import lldp
+from vdsm.network import nmstate
 from vdsm.network.dhclient_monitor import dhclient_monitor_ctx
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.nm import networkmanager
@@ -113,8 +114,9 @@ def _init_sourceroute(net_api):
 
 def _register_notifications(cif):
     def _notify(**kwargs):
-        # Delay the notification in order to allow the ifup job to finish
-        time.sleep(5)
+        if not nmstate.is_nmstate_backend():
+            # Delay the notification in order to allow the ifup job to finish
+            time.sleep(5)
         cif.notify('|net|host_conn|no_id')
 
     dhclient_monitor.register_action_handler(
