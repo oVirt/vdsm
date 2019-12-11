@@ -37,7 +37,7 @@ from testlib import make_uuid
 
 import vdsm.storage.mailbox as sm
 
-from vdsm.common import constants
+from vdsm.common.units import MiB, GiB
 
 MAX_HOSTS = 10
 MAILER_TIMEOUT = 10
@@ -61,7 +61,7 @@ def volume_data(volume_id=None):
                 volumeID=volume_id)
 
 
-def extend_message(size=128 * constants.MEGAB):
+def extend_message(size=128 * MiB):
     # Generates a 64 bytes long extend message, with extend size given
     # as parameter. The message volume data is the default result of
     # volume_data().
@@ -240,7 +240,7 @@ class TestCommunicate:
         with make_hsm_mailbox(mboxfiles, 7) as hsm_mb:
             with make_spm_mailbox(mboxfiles) as spm_mm:
                 spm_mm.registerMessageType(sm.EXTEND_CODE, spm_callback)
-                REQUESTED_SIZE = 128 * constants.MEGAB
+                REQUESTED_SIZE = 128 * MiB
                 hsm_mb.sendExtendMsg(volume_data(), REQUESTED_SIZE)
 
                 if not msg_processed.wait(MAILER_TIMEOUT):
@@ -252,7 +252,7 @@ class TestCommunicate:
     def test_send_reply(self, mboxfiles):
         HOST_ID = 3
         MSG_ID = HOST_ID * sm.SLOTS_PER_MAILBOX + 12
-        SIZE = 2 * constants.GIB
+        SIZE = 2 * GiB
         with make_hsm_mailbox(mboxfiles, HOST_ID):
             with make_spm_mailbox(mboxfiles) as spm_mm:
                 msg = sm.SPM_Extend_Message(volume_data(), SIZE)
@@ -334,7 +334,7 @@ class TestCommunicate:
                              vol_id, delay)
                     hsm_mb.sendExtendMsg(
                         volume_data(vol_id),
-                        2 * constants.GIB,
+                        2 * GiB,
                         callbackFunction=reply_msg_callback)
                     time.sleep(delay)
 
@@ -371,7 +371,7 @@ class TestExtendMessage:
 
     def test_process_request(self):
         MSG_ID = 7
-        SIZE = constants.GIB
+        SIZE = GiB
         spm_mailer = FakeSPMMailer()
         pool = FakePool(spm_mailer)
 

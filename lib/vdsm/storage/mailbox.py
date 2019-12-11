@@ -32,6 +32,7 @@ import uuid
 
 from six.moves import queue
 
+from vdsm.common.units import KiB
 from vdsm.config import config
 from vdsm.storage import misc
 from vdsm.storage import task
@@ -46,7 +47,7 @@ __date__ = "$Mar 9, 2009 5:25:07 PM$"
 
 
 CHECKSUM_BYTES = 4
-MAILBOX_SIZE = 4096
+MAILBOX_SIZE = 4 * KiB
 PACKED_UUID_SIZE = 16
 VOLUME_MAX_SIZE = 0xFFFFFFFF  # 64 bit unsigned max size
 SIZE_CHARS = 16
