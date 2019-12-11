@@ -34,6 +34,8 @@ from testlib import VdsmTestCase as TestCaseBase, \
     permutations, \
     dummyTextGenerator
 
+from testValidation import broken_on_ci
+
 from integration.sslhelper import generate_key_cert_pair, create_ssl_context
 
 from integration.jsonRpcHelper import \
@@ -207,6 +209,7 @@ class JsonRpcServerTests(TestCaseBase):
                                  JsonRpcInternalError().code)
 
     @permutations(USE_SSL)
+    @broken_on_ci("fails randomly in CI")
     def testMethodReturnsNullAndServerReturnsTrue(self, use_ssl):
         ssl_ctx = self.ssl_ctx if use_ssl else None
         bridge = _DummyBridge()
