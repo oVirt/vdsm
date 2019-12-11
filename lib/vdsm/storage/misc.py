@@ -48,6 +48,7 @@ from vdsm.common import commands
 from vdsm.common import concurrent
 from vdsm.common import logutils
 from vdsm.common import proc
+from vdsm.common.units import KiB, MiB, GiB, TiB
 
 from vdsm.storage import exception as se
 
@@ -55,7 +56,6 @@ IOUSER = "vdsm"
 DIRECTFLAG = "direct"
 STR_UUID_SIZE = 36
 UUID_HYPHENS = [8, 13, 18, 23]
-MEGA = 1 << 20
 
 log = logging.getLogger('storage.Misc')
 
@@ -131,12 +131,12 @@ def validateDDBytes(ddstderr, size):
 
 
 def _alignData(length, offset):
-    iounit = MEGA
+    iounit = MiB
     count = length
     iooffset = offset
 
     # Keep small IOps in single shot if possible
-    if (length < MEGA) and (offset % length == 0) and (length % 512 == 0):
+    if (length < MiB) and (offset % length == 0) and (length % 512 == 0):
         # IO can be direct + single shot
         count = 1
         iounit = length
@@ -247,19 +247,19 @@ def parseHumanReadableSize(size):
 
     if size.endswith("T"):
         if size[:-1].isdigit():
-            return int(size[:-1]) << 40
+            return int(size[:-1]) * TiB
 
     if size.endswith("G"):
         if size[:-1].isdigit():
-            return int(size[:-1]) << 30
+            return int(size[:-1]) * GiB
 
     if size.endswith("M"):
         if size[:-1].isdigit():
-            return int(size[:-1]) << 20
+            return int(size[:-1]) * MiB
 
     if size.endswith("K"):
         if size[:-1].isdigit():
-            return int(size[:-1]) << 10
+            return int(size[:-1]) * KiB
 
     # Failing all the above we'd better just return 0
     return 0
