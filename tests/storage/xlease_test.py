@@ -29,8 +29,8 @@ import timeit
 
 import pytest
 
-from vdsm import constants
 from vdsm import utils
+from vdsm.common.units import GiB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import outOfProcess as oop
@@ -108,7 +108,7 @@ class TemporaryVolume(object):
     def zero_storage(self):
         # TODO: suport block storage.
         with io.open(self.path, "wb") as f:
-            f.truncate(constants.GIB)
+            f.truncate(GiB)
 
     def format_index(self):
         xlease.format_index(
@@ -646,10 +646,10 @@ class TestDirectFile:
 
     def test_size(self, user_storage, direct_file):
         with io.open(user_storage.path, "wb") as f:
-            f.truncate(constants.GIB)
+            f.truncate(GiB)
         file = direct_file(user_storage.path)
         with utils.closing(file):
-            assert file.size() == constants.GIB
+            assert file.size() == GiB
 
     @pytest.mark.parametrize("offset,size", [
         (0, 1024),      # some content
