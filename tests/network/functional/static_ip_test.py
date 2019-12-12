@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,8 +45,9 @@ IPv4_NETMASK = '255.255.255.0'
 IPv4_PREFIX_LEN = '24'
 IPv4_GATEWAY = '192.0.2.254'
 IPv4_GATEWAY2 = '192.0.3.254'
-IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1'
+IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1010'
 IPv6_PREFIX_LEN = '64'
+IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::1'
 
 adapter = None
 
@@ -241,6 +242,33 @@ class TestNetworkIPDefaultGateway(object):
                 'netmask': IPv4_NETMASK,
                 'gateway': IPv4_GATEWAY,
                 'defaultRoute': True,
+                'switch': switch,
+            }
+            netcreate = {NETWORK_NAME: network_attrs}
+
+            with adapter.setupNetworks(netcreate, {}, NOCHK):
+                adapter.assertNetworkIp(NETWORK_NAME, network_attrs)
+
+    def test_add_net_with_ipv6_default_gateway(self, switch, preserve_conf):
+        if switch == 'ovs':
+            pytest.xfail(
+                'OvS does not support ipv6 gateway'
+                'see https://bugzilla.redhat.com/1467332'
+            )
+        with dummy_device() as nic:
+            network_attrs = {
+                'nic': nic,
+                #  In order to use def. route true we need to assign IPv4
+                #  address, as defaultRoute reported by caps reports
+                #  only presence of IPv4 gateway see
+                #  https://bugzilla.redhat.com/791555
+                'ipaddr': IPv4_ADDRESS,
+                'netmask': IPv4_NETMASK,
+                'gateway': IPv4_GATEWAY,
+                'ipv6addr': IPv6_ADDRESS + '/' + IPv6_PREFIX_LEN,
+                'ipv6gateway': IPv6_GATEWAY,
+                'defaultRoute': True,
+                'nameservers': [],
                 'switch': switch,
             }
             netcreate = {NETWORK_NAME: network_attrs}

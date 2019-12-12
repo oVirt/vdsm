@@ -22,7 +22,8 @@ import pytest
 
 from vdsm.network import nmstate
 
-
+IPv4_FAMILY = 4
+IPv6_FAMILY = 6
 IFACE0 = 'eth0'
 IFACE1 = 'eth1'
 IFACE2 = 'eth2'
@@ -43,6 +44,7 @@ IPv4_NETMASK2 = '255.255.255.0'
 IPv4_PREFIX2 = 24
 IPv6_ADDRESS2 = 'fdb3:84e5:4ff4:88e3::1'
 IPv6_PREFIX2 = 64
+IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::ffee'
 DNS_SERVERS1 = ['1.2.3.4', '5.6.7.8']
 DNS_SERVERS2 = ['9.10.11.12', '13.14.15.16']
 
@@ -177,15 +179,19 @@ def create_ipv6_state(
     return state
 
 
-def get_routes_config(gateway, next_hop, state=None):
-    return {
-        nmstate.Route.CONFIG: [_create_default_route(gateway, next_hop, state)]
-    }
+def get_routes_config(gateway, next_hop, ipv6gateway=None, state=None):
+    routes = [_create_default_route(gateway, next_hop, IPv4_FAMILY, state)]
+    if ipv6gateway:
+        routes.append(
+            _create_default_route(ipv6gateway, next_hop, IPv6_FAMILY, state)
+        )
+    return {nmstate.Route.CONFIG: routes}
 
 
-def _create_default_route(gateway, next_hop, state=None):
+def _create_default_route(gateway, next_hop, family, state=None):
+    destination = '0.0.0.0/0' if family == IPv4_FAMILY else '::/0'
     route_state = {
-        nmstate.Route.DESTINATION: '0.0.0.0/0',
+        nmstate.Route.DESTINATION: destination,
         nmstate.Route.NEXT_HOP_ADDRESS: gateway,
         nmstate.Route.NEXT_HOP_INTERFACE: next_hop,
         nmstate.Route.TABLE_ID: nmstate.Route.USE_DEFAULT_ROUTE_TABLE,
@@ -209,6 +215,7 @@ def create_network_config(
     mtu=None,
     default_route=False,
     gateway=None,
+    ipv6gateway=None,
     nameservers=None,
 ):
     network_config = _create_interface_network_config(if_type, if_name)
@@ -221,6 +228,7 @@ def create_network_config(
     network_config.update({'mtu': mtu} if mtu is not None else {})
     network_config.update({'defaultRoute': default_route})
     network_config.update({'gateway': gateway} if gateway else {})
+    network_config.update({'ipv6gateway': ipv6gateway} if ipv6gateway else {})
     network_config.update(
         {'nameservers': nameservers} if nameservers is not None else {}
     )
