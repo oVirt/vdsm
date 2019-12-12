@@ -40,7 +40,8 @@ NETWORK_NAME = 'test-network'
 NET_1 = NETWORK_NAME + '1'
 NET_2 = NETWORK_NAME + '2'
 VLANID = 100
-
+VLAN1 = VLANID + 1
+VLAN2 = VLANID + 2
 
 adapter = None
 
@@ -67,6 +68,29 @@ class TestNetworkBasic(object):
             with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                 adapter.setupNetworks(NETREMOVE, {}, NOCHK)
                 adapter.assertNoNetwork(NETWORK_NAME)
+
+    @nftestlib.parametrize_bridged
+    def test_change_vlan_tag_on_net(self, switch, bridged):
+        with dummy_device() as nic:
+            NETCREATE = {
+                NETWORK_NAME: {
+                    'nic': nic,
+                    'switch': switch,
+                    'bridged': bridged,
+                    'vlan': VLAN1,
+                }
+            }
+            NETEDIT = {
+                NETWORK_NAME: {
+                    'nic': nic,
+                    'switch': switch,
+                    'bridged': bridged,
+                    'vlan': VLAN2,
+                }
+            }
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                adapter.setupNetworks(NETEDIT, {}, NOCHK)
+                adapter.assertVlan(NETEDIT[NETWORK_NAME])
 
     @nftestlib.parametrize_bridged
     def test_add_net_twice(self, switch, bridged):
