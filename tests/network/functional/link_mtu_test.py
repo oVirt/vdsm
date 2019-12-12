@@ -65,6 +65,30 @@ class TestNetworkMtu(object):
 
     @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
+    def test_edit_mtu_on_network(self, switch, bridged):
+        with dummy_devices(1) as (nic,):
+            NETCREATE = {
+                NETWORK_NAME: {
+                    'nic': nic,
+                    'bridged': bridged,
+                    'mtu': 2000,
+                    'switch': switch,
+                }
+            }
+            NETEDIT = {
+                NETWORK_NAME: {
+                    'nic': nic,
+                    'bridged': bridged,
+                    'mtu': 2100,
+                    'switch': switch,
+                }
+            }
+            with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+                adapter.setupNetworks(NETEDIT, {}, nftestlib.NOCHK)
+                adapter.assertLinkMtu(nic, NETEDIT[NETWORK_NAME])
+
+    @pytest.mark.nmstate
+    @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_removing_a_net_updates_the_mtu(self, switch, bridged, bonded):
         with dummy_devices(1) as (nic,):
