@@ -740,12 +740,12 @@ class TestResourceOwner:
         owner_object = OwnerObject()
         owner = rm.Owner(owner_object, raiseonfailure=True)
         # The null resource factory always determines that the requested
-        # resource does not exist, hence a KeyError is raised for the calling
-        # ResourceManager.registerResource(), the Owner.acquire() flow wraps
-        # this call and logs the information, not acquiring the resource as
-        # a result.
-        owner.acquire("null", "no_such_resource", locktype, timeout_ms=5000)
-        assert owner_object.actions == []
+        # resource does not exist, hence ResourceDoesNotExist is expected.
+        with pytest.raises(rm.ResourceDoesNotExist) as e:
+            owner.acquire("null", "no_such_resource", locktype, timeout_ms=1)
+        error_str = str(e)
+        assert "no_such_resource" in error_str
+        assert "null" in error_str
 
     @pytest.mark.parametrize('locktype', [
         rm.SHARED,

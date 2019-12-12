@@ -68,6 +68,10 @@ class InvalidLockType(ResourceManagerError):
 class InvalidNamespace(ResourceManagerError):
     pass
 
+
+class ResourceDoesNotExist(ResourceManagerError):
+    pass
+
 # TODO : Consider changing when we decided on a unified way of representing
 #        enums.
 
@@ -736,6 +740,8 @@ class Owner(object):
                 except KeyError:
                     self.log.debug("%s: resource '%s' does not exist", self,
                                    full_name)
+                    raise ResourceDoesNotExist("Resource %s does not exist"
+                                               % full_name)
                 except Exception:
                     self.log.warning(
                         "Unexpected exception caught while owner "
