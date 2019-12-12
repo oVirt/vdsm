@@ -64,6 +64,10 @@ class ResourceAlreadyAcquired(ResourceManagerError):
 class InvalidLockType(ResourceManagerError):
     pass
 
+
+class InvalidNamespace(ResourceManagerError):
+    pass
+
 # TODO : Consider changing when we decided on a unified way of representing
 #        enums.
 
@@ -363,7 +367,7 @@ class _ResourceManager(object):
 
     def registerNamespace(self, namespace, factory):
         if not self._namespaceValidator.match(namespace):
-            raise ValueError("Illegal namespace '%s'" % namespace)
+            raise InvalidNamespace("Invalid namespace name %r" % namespace)
 
         if namespace in self._namespaces:
             raise NamespaceRegistered("Namespace '%s' already registered"

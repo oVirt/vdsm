@@ -158,8 +158,9 @@ class TestResourceManager:
         assert req.canceled()
 
     def testRegisterInvalidNamespace(self, tmp_manager):
-        with pytest.raises(ValueError):
+        with pytest.raises(rm.InvalidNamespace) as e:
             rm.registerNamespace("I.HEART.DOTS", rm.SimpleResourceFactory())
+        assert "I.HEART.DOTS" in str(e)
 
     def testFailCreateAfterSwitch(self, tmp_manager):
         resources = []
