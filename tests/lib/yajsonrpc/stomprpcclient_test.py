@@ -223,6 +223,7 @@ class VdsmClientTests(VdsmTestCase):
                 None
             )
 
+    @broken_on_ci(reason="Fails randomly in CI")
     def test_multiple_queues(self):
         with self._create_client() as client:
             event_queue1 = queue.Queue()
@@ -266,6 +267,7 @@ class VdsmClientTests(VdsmTestCase):
                 None
             )
 
+    @broken_on_ci(reason="Fails randomly in CI")
     def test_notify(self):
         with self._create_client() as client:
             event_queue = queue.Queue()
