@@ -261,7 +261,7 @@ class TestRun:
         monkeypatch.setattr(cmdutils, "retcode_log_line", mock.MagicMock())
         cmdutils.command_log_line.return_value = "log line"
         cmdutils.retcode_log_line.return_value = "error line"
-        args = ["exit 1"]
+        args = ["false"]
         try:
             commands.run(args)
         except cmdutils.Error:
