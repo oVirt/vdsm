@@ -157,3 +157,17 @@ class TestRestore(object):
                     adapter.restore_nets()
 
                     adapter.assertNetworkIp(NETWORK_NAME, NET_WITH_IP_ATTRS)
+
+    def test_restore_missing_bond(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+            BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
+            BONDREMOVE = {BOND_NAME: {'remove': True}}
+
+            with adapter.reset_persistent_config():
+                with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                    adapter.setSafeNetworkConfig()
+                    adapter.setupNetworks({}, BONDREMOVE, NOCHK)
+
+                    adapter.restore_nets()
+
+                    adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])

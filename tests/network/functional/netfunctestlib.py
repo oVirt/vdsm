@@ -198,6 +198,9 @@ class NetFuncTestAdapter(object):
     def update_running_config(self):
         self.running_config = self._vdsm_proxy.config
 
+    def refresh_running_config(self):
+        self.running_config = RunningConfig()
+
     def setSafeNetworkConfig(self):
         self._vdsm_proxy.setSafeNetworkConfig()
 
@@ -212,6 +215,7 @@ class NetFuncTestAdapter(object):
     def restore_nets(self):
         restore(force=True)
         self.refresh_netinfo()
+        self.refresh_running_config()
 
     def getNetworkStatistics(self):
         status, msg, result = self._vdsm_proxy.getVdsStats()
