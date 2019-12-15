@@ -34,6 +34,8 @@ from vdsm.network.ipwrapper import linkSet
 from vdsm.network.link.bond import Bond
 
 BOND_NAME = 'bond1'
+IPv4_ADDRESS = '192.0.2.1'
+IPv4_PREFIX_LEN = '24'
 NETWORK_NAME = 'test-network'
 
 
@@ -126,3 +128,32 @@ class TestRestore(object):
                     # As expected, restoration occurs with blockingdhcp=True
                     # and therefore it should fail the setup.
                     adapter.assertNoNetworkExists(NETWORK_NAME)
+
+    @parametrize_bridged
+    def test_restore_network_static_ip_from_config(self, switch, bridged):
+        with dummy_devices(1) as (nic,):
+            NET_WITH_IP_ATTRS = {
+                'nic': nic,
+                'bridged': bridged,
+                'ipaddr': IPv4_ADDRESS,
+                'prefix': IPv4_PREFIX_LEN,
+                'switch': switch,
+            }
+            NET_WITHOUT_IP_ATTRS = {
+                'nic': nic,
+                'bridged': bridged,
+                'switch': switch,
+            }
+            NET_WITH_IP = {NETWORK_NAME: NET_WITH_IP_ATTRS}
+            NET_WITHOUT_IP = {NETWORK_NAME: NET_WITHOUT_IP_ATTRS}
+
+            with adapter.reset_persistent_config():
+                with adapter.setupNetworks(NET_WITH_IP, {}, NOCHK):
+                    adapter.setSafeNetworkConfig()
+                    adapter.setupNetworks(NET_WITHOUT_IP, {}, NOCHK)
+
+                    adapter.assertNetworkIp(NETWORK_NAME, NET_WITHOUT_IP_ATTRS)
+
+                    adapter.restore_nets()
+
+                    adapter.assertNetworkIp(NETWORK_NAME, NET_WITH_IP_ATTRS)
