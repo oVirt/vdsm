@@ -57,7 +57,7 @@ from hookValidation import ValidatesHook
 from modprobe import RequireDummyMod, RequireVethMod
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
-from testValidation import brokentest, slowtest, ValidateRunningAsRoot
+from testValidation import slowtest, ValidateRunningAsRoot
 from network.nettestlib import Dummy, veth_pair, dnsmasq_run, running
 from network import dhcp
 from .utils import SUCCESS, getProxy
@@ -392,69 +392,6 @@ class NetworkTest(TestCaseBase):
         # breaks.
         self.assertEqual(running_config['networks'], kernel_config['networks'])
         self.assertEqual(running_config['bonds'], kernel_config['bonds'])
-
-    @cleanupNet
-    @RequireVethMod
-    @ValidateRunningAsRoot
-    @brokentest('This test fails because of #1261457')
-    def test_getVdsStats(self):
-        """This Test will send an ARP request on a created veth interface
-        and checks that the TX bytes is in range between 42 and 384 bytes
-        the range is set due to DHCP packets that may corrupt the statistics"""
-        # TODO disable DHCP service on the veth
-        ARP_REQUEST_SIZE = 42
-        DHCP_PACKET_SIZE = 342
-
-        def assertTestDevStatsReported():
-            status, msg, hostStats = self.vdsm_net.getVdsStats()
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertIn('network', hostStats)
-            self.assertIn(
-                left, hostStats['network'], 'could not find veth %s' % left)
-
-        def getStatsFromInterface(iface):
-            status, msg, hostStats = self.vdsm_net.getVdsStats()
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertIn('network', hostStats)
-            self.assertIn(iface, hostStats['network'])
-            self.assertIn('tx', hostStats['network'][iface])
-            self.assertIn('rx', hostStats['network'][iface])
-            self.assertIn('sampleTime', hostStats['network'][iface])
-            return (int(hostStats['network'][iface]['tx']),
-                    hostStats['network'][iface]['sampleTime'])
-
-        def assertStatsInRange():
-            curTxStat, curTime = getStatsFromInterface(left)
-            self.assertTrue(
-                curTime > prevTime,
-                'sampleTime is not monotonically increasing')
-
-            diff = (curTxStat - prevTxStat)
-            self.assertTrue(ARP_REQUEST_SIZE <= diff <=
-                            (ARP_REQUEST_SIZE + DHCP_PACKET_SIZE),
-                            '%s is out of range' % diff)
-
-        with veth_pair() as (left, right):
-            # disabling IPv6 on Interface for removal of Router Solicitation
-            sysctl.disable_ipv6(left)
-            sysctl.disable_ipv6(right)
-            linkSet(left, ['up'])
-            linkSet(right, ['up'])
-
-            # Vdsm scans for new devices every 15 seconds
-            self.retryAssert(
-                assertTestDevStatsReported, timeout=20)
-
-            prevTxStat, prevTime = getStatsFromInterface(left)
-            # running ARP from the interface
-            try:
-                commands.run([_ARPPING_COMMAND.cmd, '-D', '-I', left,
-                              '-c', '1', IP_ADDRESS_IN_NETWORK])
-            except Exception as e:
-                raise SkipTest('Could not run arping: %s' % e)
-
-            # wait for Vdsm to update statistics
-            self.retryAssert(assertStatsInRange, timeout=3)
 
     @requiresUnifiedPersistence("with ifcfg persistence, "
                                 "restoreNetConfig selective restoration"

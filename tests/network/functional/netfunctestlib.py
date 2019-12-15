@@ -163,6 +163,12 @@ class LibProxy(object):
         caps = api.network_caps()
         self.netinfo = CachingNetInfo(caps)
 
+    def getNetworkStatistics(self):
+        net_stats = api.network_stats()
+        return SUCCESS, '', net_stats
+
+    getVdsStats = getNetworkStatistics
+
 
 class TargetNotDefinedError(Exception):
     pass
@@ -206,6 +212,12 @@ class NetFuncTestAdapter(object):
     def restore_nets(self):
         restore(force=True)
         self.refresh_netinfo()
+
+    def getNetworkStatistics(self):
+        status, msg, result = self._vdsm_proxy.getVdsStats()
+        if status != SUCCESS:
+            raise RuntimeError(status, msg)
+        return result
 
     def _update_running_and_kernel_config(self):
         self.update_netinfo()
