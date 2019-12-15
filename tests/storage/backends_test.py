@@ -23,6 +23,7 @@ from __future__ import division
 
 from vdsm.storage import backends
 from vdsm.storage import blockSD
+from vdsm.storage import constants as sc
 from vdsm.storage import glusterSD
 from vdsm.storage import localFsSD
 from vdsm.storage import nfsSD
@@ -33,7 +34,8 @@ from . marks import requires_sanlock
 
 @requires_sanlock
 def test_supported_block_size_new_sanlock(monkeypatch):
-    monkeypatch.setattr(sanlock, "SECTOR_SIZE", (512, 4096))
+    monkeypatch.setattr(
+        sanlock, "SECTOR_SIZE", (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K))
     assert backends.supported_block_size() == {
         "FCP": blockSD.BlockStorageDomain.supported_block_size,
         "GLUSTERFS": glusterSD.GlusterStorageDomain.supported_block_size,
@@ -46,12 +48,12 @@ def test_supported_block_size_new_sanlock(monkeypatch):
 
 @requires_sanlock
 def test_supported_block_size_old_sanlock(monkeypatch):
-    monkeypatch.setattr(sanlock, "SECTOR_SIZE", (512,))
+    monkeypatch.setattr(sanlock, "SECTOR_SIZE", (sc.BLOCK_SIZE_512,))
     assert backends.supported_block_size() == {
-        "FCP": (512,),
-        "GLUSTERFS": (512,),
-        "ISCSI": (512,),
-        "LOCALFS": (512,),
-        "NFS": (512,),
-        "POSIXFS": (512,),
+        "FCP": (sc.BLOCK_SIZE_512,),
+        "GLUSTERFS": (sc.BLOCK_SIZE_512,),
+        "ISCSI": (sc.BLOCK_SIZE_512,),
+        "LOCALFS": (sc.BLOCK_SIZE_512,),
+        "NFS": (sc.BLOCK_SIZE_512,),
+        "POSIXFS": (sc.BLOCK_SIZE_512,),
     }
