@@ -29,6 +29,7 @@ from contextlib import contextmanager
 import pytest
 
 from vdsm.common import exception
+from vdsm.common.units import KiB, MiB
 from vdsm.storage import blockdev
 from vdsm.storage import constants as sc
 from vdsm.storage import directio
@@ -38,11 +39,11 @@ from . import loopback
 from . marks import requires_root
 
 # Zeroing and discarding block device is instant, so we can use real lv size.
-FILE_SIZE = 128 * 1024**2
+FILE_SIZE = 128 * MiB
 
 # Read and write 128k chunks to keep the tests fast.
-DATA = b"x" * 128 * 1024
-ZERO = b"\0" * 128 * 1024
+DATA = b"x" * 128 * KiB
+ZERO = b"\0" * 128 * KiB
 
 
 @pytest.fixture
@@ -92,7 +93,10 @@ class TestZero:
             assert data == DATA
 
     @requires_root
-    @pytest.mark.parametrize("size", [sc.BLOCK_SIZE_4K, 250 * 4096])
+    @pytest.mark.parametrize("size", [
+        sc.BLOCK_SIZE_4K,
+        250 * sc.BLOCK_SIZE_4K
+    ])
     def test_special_volumes(self, size, loop_device):
         # Write some data to the device.
         with directio.open(loop_device.path, "r+") as f:
@@ -126,7 +130,7 @@ class TestZero:
             data = f.read(FILE_SIZE)
             assert data == b"x" * FILE_SIZE
 
-    @pytest.mark.parametrize("size", [1024**2 - 1, 1024**2 + 1])
+    @pytest.mark.parametrize("size", [MiB - 1, MiB + 1])
     def test_unaligned_size(self, size):
         with pytest.raises(se.InvalidParameterException):
             blockdev.zero("/no/such/path", size=size)
