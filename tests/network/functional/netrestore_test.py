@@ -29,6 +29,7 @@ from network.nettestlib import dummy_devices
 from network.nettestlib import veth_pair
 
 from vdsm.network import netrestore
+from vdsm.network import nmstate
 from vdsm.network.ipwrapper import linkSet
 from vdsm.network.link.bond import Bond
 
@@ -91,9 +92,11 @@ class TestRestore(object):
                     adapter.assertNetworkExists(NETWORK_NAME)
 
     @pytest.mark.xfail(
-        reason='https://bugzilla.redhat.com/1782680', strict=True
+        condition=nmstate.is_nmstate_backend(),
+        reason='https://bugzilla.redhat.com/1782680',
+        strict=True,
     )
-    def test_restore_dynamic_ipv4_network(self, switch):
+    def test_restore_missing_dynamic_ipv4_network(self, switch):
         if switch == 'ovs':
             # With OVS, the restoration creates the network without an IP.
             pytest.xfail('Inconsistent behaviour with OVS')
