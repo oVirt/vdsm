@@ -171,3 +171,21 @@ class TestRestore(object):
                     adapter.restore_nets()
 
                     adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+
+    @parametrize_bridged
+    def test_restore_removes_unpersistent_network(self, switch, bridged):
+        with dummy_devices(1) as (nic,):
+            SETUP_NET = {
+                NETWORK_NAME: {
+                    'nic': nic,
+                    'bridged': bridged,
+                    'switch': switch,
+                }
+            }
+
+            with adapter.reset_persistent_config():
+                with adapter.setupNetworks(SETUP_NET, {}, NOCHK):
+
+                    adapter.restore_nets()
+
+                    adapter.assertNoNetworkExists(NETWORK_NAME)

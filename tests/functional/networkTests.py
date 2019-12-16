@@ -391,24 +391,6 @@ class NetworkTest(TestCaseBase):
         self.assertEqual(running_config['networks'], kernel_config['networks'])
         self.assertEqual(running_config['bonds'], kernel_config['bonds'])
 
-    @cleanupNet
-    @permutations([[True], [False]])
-    def testVolatileConfig(self, bridged):
-        """
-        Checks that the network doesn't persist over restart
-        """
-        with dummyIf(1) as nics:
-            nic, = nics
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'nic': nic, 'bridged': bridged}}, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
-
-            self.vdsm_net.restoreNetConfig()
-
-            self.assertNetworkDoesntExist(NETWORK_NAME)
-
     @permutations([[True], [False]])
     @cleanupNet
     def testStaticSourceRouting(self, bridged=True):
