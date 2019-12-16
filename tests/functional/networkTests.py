@@ -391,33 +391,6 @@ class NetworkTest(TestCaseBase):
         self.assertEqual(running_config['networks'], kernel_config['networks'])
         self.assertEqual(running_config['bonds'], kernel_config['bonds'])
 
-    @permutations([[True], [False]])
-    @cleanupNet
-    def testStaticSourceRouting(self, bridged=True):
-        with dummyIf(1) as nics:
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME:
-                    {'nic': nics[0], 'bridged': bridged, 'ipaddr': IP_ADDRESS,
-                     'netmask': IP_MASK, 'gateway': IP_GATEWAY}},
-                {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME, bridged)
-
-            deviceName = NETWORK_NAME if bridged else nics[0]
-            ip_addr = self.vdsm_net.netinfo.networks[NETWORK_NAME]['addr']
-            self.assertSourceRoutingConfiguration(deviceName, ip_addr)
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            # Assert that routes and rules don't exist
-            source_route = _get_source_route(deviceName, ip_addr)
-            for route in source_route._buildRoutes():
-                self.assertRouteDoesNotExist(route)
-            for rule in source_route._buildRules():
-                self.assertRuleDoesNotExist(rule)
-
     @cleanupNet
     @ValidatesHook('before_network_setup', 'testBeforeNetworkSetup.py', True,
                    "#!/usr/bin/python3\n"
