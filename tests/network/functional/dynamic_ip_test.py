@@ -421,10 +421,9 @@ def _test_dynamic_ip_switch_to_static(
             'IPv6 dynamic fails with OvS'
             'see https://bugzilla.redhat.com/1773471'
         )
-    if not is_dhcp_server_enabled:
+    if not is_dhcp_server_enabled and not nftestlib.is_nmstate_backend():
         pytest.xfail(
-            'switching from dynamic IP to static IP '
-            'requires a running DHCP server'
+            'With ifcfg backend and no server, tests need to be adjusted.'
         )
 
     network_attrs = {

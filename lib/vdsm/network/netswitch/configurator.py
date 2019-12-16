@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -151,7 +151,7 @@ def validate(networks, bondings, net_info):
 
 def setup(networks, bondings, options, net_info, in_rollback):
     if nmstate.is_nmstate_backend():
-        _setup_nmstate(networks, bondings, options, in_rollback)
+        _setup_nmstate(networks, bondings, options, in_rollback, net_info)
     else:
         _setup(networks, bondings, options, in_rollback, net_info)
 
@@ -178,7 +178,7 @@ def _setup(networks, bondings, options, in_rollback, net_info):
         _setup_ovs(ovs_nets, ovs_bonds, options, net_info, in_rollback)
 
 
-def _setup_nmstate(networks, bondings, options, in_rollback):
+def _setup_nmstate(networks, bondings, options, in_rollback, net_info):
     """
     Setup the networks using nmstate as the backend provider.
     nmstate handles the rollback by itself in case of an error during the
@@ -188,6 +188,10 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
     used (the Transaction context).
     """
     logging.info('Processing setup through nmstate')
+
+    # FIXME: workaround for https://bugzilla.redhat.com/1782680
+    _switch_network_from_dhcp(networks, NetInfo(net_info))
+
     desired_state = nmstate.generate_state(networks, bondings)
     logging.info('Desired state: %s', desired_state)
     _setup_dynamic_src_routing(networks)
@@ -211,6 +215,41 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
         _setup_static_src_routing(networks)
         config.save()
         connectivity.check(options)
+
+
+def _switch_network_from_dhcp(networks, net_info):
+    interfaces_switching_away_from_dhcp = _filter_networks_switching_from_dhcp(
+        networks, net_info
+    )
+    if interfaces_switching_away_from_dhcp:
+        ifaces_needing_reset = nmstate.generate_ifaces_remove_state(
+            interfaces_switching_away_from_dhcp
+        )
+        logging.info('Interfaces needing DHCP reset: %s', ifaces_needing_reset)
+        nmstate.setup(ifaces_needing_reset, verify_change=True)
+
+
+def _filter_networks_switching_from_dhcp(networks, net_info):
+    interfaces_switching_away = []
+    for net_name, net_attrs in net_info.networks.items():
+        network = networks.get(net_name)
+        if network and (
+            _is_network_waiting_dhcp_answer(4, net_attrs)
+            or _is_network_waiting_dhcp_answer(6, net_attrs)
+        ):
+            is_bridged_network = net_attrs['bridged']
+            iface_needing_reset = (
+                net_name if is_bridged_network else net_attrs['iface']
+            )
+            if iface_needing_reset:
+                interfaces_switching_away.append(iface_needing_reset)
+    return interfaces_switching_away
+
+
+def _is_network_waiting_dhcp_answer(ip_family, network_attrs):
+    ip_addresses = network_attrs.get(f'ipv{ip_family}addrs')
+    dhcp_enabled = network_attrs.get(f'dhcpv{ip_family}')
+    return dhcp_enabled and not ip_addresses
 
 
 def _setup_static_src_routing(networks):

@@ -1,4 +1,4 @@
-# Copyright 2019 Red Hat, Inc.
+# Copyright 2019-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -822,3 +822,12 @@ def _get_stale_ifaces(networks, running_networks):
     }
 
     return base_ifaces_to_remove - base_ifaces_to_add - base_ifaces_to_keep
+
+
+def generate_ifaces_remove_state(interfaces):
+    return {
+        Interface.KEY: [
+            {Interface.NAME: iface, Interface.STATE: InterfaceState.ABSENT}
+            for iface in interfaces
+        ]
+    }

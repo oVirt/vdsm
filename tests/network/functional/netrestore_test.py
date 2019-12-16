@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -93,22 +93,21 @@ class TestRestore(object):
 
                     adapter.assertNetworkExists(NETWORK_NAME)
 
-    @pytest.mark.xfail(
-        condition=nmstate.is_nmstate_backend(),
-        reason='https://bugzilla.redhat.com/1782680',
-        strict=True,
-    )
-    def test_restore_missing_dynamic_ipv4_network(self, switch):
+    @parametrize_bridged
+    def test_restore_missing_dynamic_ipv4_network(self, switch, bridged):
         if switch == 'ovs':
             # With OVS, the restoration creates the network without an IP.
             pytest.xfail('Inconsistent behaviour with OVS')
+        elif bridged and not nmstate.is_nmstate_backend():
+            pytest.xfail('https://bugzilla.redhat.com/1790392')
 
         with veth_pair() as (server, client):
             linkSet(server, ['up'])
+            linkSet(client, ['up'])
             SETUP_NET = {
                 NETWORK_NAME: {
                     'nic': client,
-                    'bridged': False,
+                    'bridged': bridged,
                     'bootproto': 'dhcp',
                     'switch': switch,
                 }
@@ -124,10 +123,16 @@ class TestRestore(object):
 
                     adapter.restore_nets()
 
-                    # Attempt to restore network without dhcp server.
-                    # As expected, restoration occurs with blockingdhcp=True
-                    # and therefore it should fail the setup.
-                    adapter.assertNoNetworkExists(NETWORK_NAME)
+                    if nmstate.is_nmstate_backend():
+                        # nmstate successfully restores a network without
+                        # a dhcp server in place.
+                        adapter.assertNetworkExists(NETWORK_NAME)
+                    else:
+                        # Attempt to restore network without dhcp server.
+                        # As expected, restoration occurs with
+                        # blockingdhcp=True and therefore it should fail the
+                        # setup.
+                        adapter.assertNoNetworkExists(NETWORK_NAME)
 
     @parametrize_bridged
     def test_restore_network_static_ip_from_config(self, switch, bridged):

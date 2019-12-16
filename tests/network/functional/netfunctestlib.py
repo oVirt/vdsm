@@ -108,6 +108,10 @@ parametrize_def_route = pytest.mark.parametrize(
 )
 
 
+def is_nmstate_backend():
+    return nmstate.is_nmstate_backend()
+
+
 def requires_ipaddress():
     """
     ipaddress package is a part of the Python std from PY3.3, on PY2 we need
