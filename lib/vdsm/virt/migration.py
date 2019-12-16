@@ -499,24 +499,7 @@ class SourceThread(object):
                 transport = 'tcp'
             duri = 'qemu+{}://{}/system'.format(
                 transport, normalize_literal_addr(self.remoteHost))
-
-            if self._encrypted:
-                # TODO: Stop using host names here and set the host
-                # name based certificate verification parameter once
-                # the corresponding functionality is available in
-                # libvirt, see https://bugzilla.redhat.com/1754533
-                #
-                # When an encrypted migration is requested, we must
-                # use the host name (stored in 'dst') rather than the
-                # IP address (stored in 'dstqemu') in order to match
-                # the target certificate.  That means that encrypted
-                # migrations are incompatible with setups that require
-                # an IP address to identify the host properly, such as
-                # when a separate migration network should be used or
-                # when using IPv4/IPv6 dual stack configurations.
-                dstqemu = self.remoteHost
-            else:
-                dstqemu = self._dstqemu
+            dstqemu = self._dstqemu
             if dstqemu:
                 muri = 'tcp://{}'.format(
                     normalize_literal_addr(dstqemu))
@@ -558,6 +541,13 @@ class SourceThread(object):
             params[libvirt.VIR_MIGRATE_PARAM_GRAPHICS_URI] = str(
                 '%s://%s' % (graphics, self._consoleAddress)
             )
+        if self._encrypted:
+            # Use the standard host name or IP address when checking
+            # the remote certificate.  Not the migration destination,
+            # which may be e.g. an IP address from a migration
+            # network, not present in the certificate.
+            params[libvirt.VIR_MIGRATE_PARAM_TLS_DESTINATION] = \
+                normalize_literal_addr(self.remoteHost)
         # REQUIRED_FOR: destination Vdsm < 4.3
         if self._legacy_payload_path is not None:
             alias, path = self._legacy_payload_path
