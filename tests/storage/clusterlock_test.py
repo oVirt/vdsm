@@ -24,6 +24,7 @@ from __future__ import division
 import time
 import pytest
 from vdsm.common import concurrent
+from vdsm.common.units import MiB
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -34,7 +35,7 @@ LS_NAME = b"sd-uuid"
 LS_PATH = "ids"
 LS_OFF = 0
 HOST_ID = 1
-LEASE = clusterlock.Lease("SDM", "leases", 1024**2)
+LEASE = clusterlock.Lease("SDM", "leases", MiB)
 
 
 @pytest.fixture
