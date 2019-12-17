@@ -31,8 +31,7 @@ import uuid
 
 import pytest
 
-from vdsm.constants import GIB
-from vdsm.constants import MEGAB
+from vdsm.common.units import MiB, GiB
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -44,9 +43,9 @@ from vdsm.storage import sd
 from . import qemuio
 from . import userstorage
 
-PREALLOCATED_VOL_SIZE = 10 * MEGAB
-SPARSE_VOL_SIZE = GIB
-INITIAL_VOL_SIZE = 1 * MEGAB
+PREALLOCATED_VOL_SIZE = 10 * MiB
+SPARSE_VOL_SIZE = GiB
+INITIAL_VOL_SIZE = MiB
 
 
 DETECT_BLOCK_SIZE = [
@@ -291,7 +290,7 @@ def test_volume_life_cycle(monkeypatch, user_domain):
 
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
-    vol_capacity = 10 * 1024**3
+    vol_capacity = 10 * GiB
     vol_desc = "Test volume"
 
     with monkeypatch.context() as mc:
@@ -368,7 +367,7 @@ def test_volume_metadata(user_domain):
         diskType=sc.DATA_DISKTYPE,
         imgUUID=img_uuid,
         preallocate=sc.SPARSE_VOL,
-        capacity=10 * 1024 ** 3,
+        capacity=10 * GiB,
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
         volFormat=sc.COW_FORMAT,
@@ -378,11 +377,11 @@ def test_volume_metadata(user_domain):
     meta_path = vol.getMetaVolumePath()
 
     # Check capacity
-    assert 10 * 1024 ** 3 == vol.getCapacity()
+    assert 10 * GiB == vol.getCapacity()
     vol.setCapacity(0)
     with pytest.raises(se.MetaDataValidationError):
         vol.getCapacity()
-    vol.setCapacity(10 * 1024 ** 3)
+    vol.setCapacity(10 * GiB)
 
     # Change volume metadata.
     md = vol.getMetadata()
@@ -608,7 +607,7 @@ def test_volume_create_cow_sparse(user_domain, local_fallocate):
 
     # Check the volume specific actual size is fragile,
     # will easily break on CI or when qemu change the implementation.
-    assert qemu_info['actualsize'] < MEGAB
+    assert qemu_info['actualsize'] < MiB
 
     # Verify actual volume metadata
     actual = vol.getInfo()
@@ -619,7 +618,7 @@ def test_volume_create_cow_sparse(user_domain, local_fallocate):
     assert actual["uuid"] == vol_uuid
     # Check the volume specific apparent size is fragile,
     # will easily break on CI or when qemu change the implementation.
-    assert int(actual["apparentsize"]) < MEGAB
+    assert int(actual["apparentsize"]) < MiB
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
@@ -667,7 +666,7 @@ def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
 
     # Check the volume specific actual size is fragile,
     # will easily break on CI or when qemu change the implementation.
-    assert qemu_info['actualsize'] < MEGAB
+    assert qemu_info['actualsize'] < MiB
 
     # Verify actual volume metadata
     actual = vol.getInfo()
@@ -678,7 +677,7 @@ def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
     assert actual["uuid"] == vol_uuid
     # Check the volume specific apparent size is fragile,
     # will easily break on CI or when qemu change the implementation.
-    assert int(actual["apparentsize"]) < MEGAB
+    assert int(actual["apparentsize"]) < MiB
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
