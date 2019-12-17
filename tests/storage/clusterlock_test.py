@@ -238,10 +238,28 @@ def test_sanlock_alignment(block_size, max_hosts, alignment):
 
 
 @pytest.mark.parametrize('block_size, max_hosts', [
-    (511, 250),
-    (512, -1),
-    (512, 2001),
+    (sc.BLOCK_SIZE_512 - 1, sc.HOSTS_512_1M),
+    (sc.BLOCK_SIZE_512 + 1, sc.HOSTS_512_1M),
+    (sc.BLOCK_SIZE_4K - 1, sc.HOSTS_4K_8M),
+    (sc.BLOCK_SIZE_4K + 1, sc.HOSTS_4K_1M),
 ])
-def test_sanlock_invalid_alignment(block_size, max_hosts):
-    with pytest.raises(se.InvalidParameterException):
+def test_sanlock_invalid_block_size(block_size, max_hosts):
+    with pytest.raises(se.InvalidParameterException) as e:
         clusterlock.alignment(block_size, max_hosts)
+    error_str = str(e)
+    assert "block_size" in error_str
+    assert str(block_size) in error_str
+
+
+@pytest.mark.parametrize('block_size, max_hosts', [
+    (sc.BLOCK_SIZE_512, -1),
+    (sc.BLOCK_SIZE_4K, 0),
+    (sc.BLOCK_SIZE_512, sc.HOSTS_512_1M + 1),
+    (sc.BLOCK_SIZE_4K, sc.HOSTS_4K_8M + 1),
+])
+def test_sanlock_invalid_max_hosts(block_size, max_hosts):
+    with pytest.raises(se.InvalidParameterException) as e:
+        clusterlock.alignment(block_size, max_hosts)
+    error_str = str(e)
+    assert "max_hosts" in error_str
+    assert str(max_hosts) in error_str
