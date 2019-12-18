@@ -237,6 +237,51 @@ class TestNetworkMtu(object):
                 if bonded:
                     adapter.assertLinkMtu(BOND_NAME, DEFAULT_MTU)
 
+    @nftestlib.parametrize_bridged
+    @nftestlib.parametrize_bonded
+    def test_base_iface_mtu_is_preserved_when_not_all_nets_on_top_are_deleted(
+        self, switch, bridged, bonded
+    ):
+        if switch == 'legacy' and bonded:
+            pytest.xfail('BZ#1633528')
+
+        common_net_mtu = 1600
+        with dummy_devices(1) as (nic,):
+            vlaned_network = {
+                'bridged': bridged,
+                'vlan': VLAN1,
+                'mtu': common_net_mtu,
+                'switch': switch,
+            }
+            non_vlaned_network = {
+                'bridged': bridged,
+                'mtu': common_net_mtu,
+                'switch': switch,
+            }
+            all_networks = {
+                NETWORK1_NAME: vlaned_network,
+                NETWORK2_NAME: non_vlaned_network,
+            }
+
+            mtu_to_keep = {'mtu': common_net_mtu}
+            if bonded:
+                vlaned_network['bonding'] = BOND_NAME
+                non_vlaned_network['bonding'] = BOND_NAME
+                bonds = {BOND_NAME: {'nics': [nic], 'switch': switch}}
+            else:
+                vlaned_network['nic'] = nic
+                non_vlaned_network['nic'] = nic
+                bonds = {}
+
+            with adapter.setupNetworks(all_networks, bonds, nftestlib.NOCHK):
+                adapter.setupNetworks(
+                    {NETWORK1_NAME: {'remove': True}}, {}, nftestlib.NOCHK
+                )
+
+                adapter.assertLinkMtu(nic, mtu_to_keep)
+                if bonded:
+                    adapter.assertLinkMtu(BOND_NAME, mtu_to_keep)
+
     @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
