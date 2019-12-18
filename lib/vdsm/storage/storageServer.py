@@ -378,8 +378,27 @@ class NFSConnection(object):
         # Return -1 to signify the version has not been negotiated yet
         return -1
 
-    def __init__(self, id, export, timeout=600, retrans=6, version=None,
+    def __init__(self, id, export, timeout=100, retrans=3, version=None,
                  extraOptions=""):
+        """
+        According to nfs(5), NFS will retry a request after 100 deciseconds (10
+        seconds). After each retransmission, the timeout is increased by timeo
+        value (up to maximum of 600 seconds). After retrans retires, the NFS
+        client will fail with "server not responding" message.
+
+        With the default configuration we expect failures in 60 seconds, which
+        is about 3 times longer than multipath timeout (20 seconds) for block
+        storage.
+
+        00:00   retry 1 (10 seconds timeout)
+        00:10   retry 2 (20 seconds timeout)
+        00:30   retry 3 (30 seconds timeout)
+        01:00  request fail
+
+        WARNNING: timeout value must not be smaller than sanlock iotimeout (10
+        seconds). Using smaller value may cause sanlock to fail to renew
+        leases.
+        """
         self._remotePath = normpath(export)
         options = self.DEFAULT_OPTIONS[:]
         self._timeout = timeout
