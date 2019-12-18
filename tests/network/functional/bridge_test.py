@@ -87,9 +87,11 @@ class TestBridge(object):
                 with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                     adapter.assertNetwork(brname, NETCREATE[brname])
 
-    @pytest.mark.skip(
+    @pytest.mark.xfail(
         reason='Unstable link while NM is running (BZ#1498022) '
-        'and on CI even with NM down'
+        'and on CI even with NM down',
+        raises=nftestlib.UnexpectedLinkStateChangeError,
+        strict=False,
     )
     @nftestlib.parametrize_legacy_switch
     def test_create_network_and_reuse_existing_owned_bridge(self, switch):
