@@ -438,8 +438,9 @@ VDSM network python libraries
 Summary:        VDSM python libraries
 Requires:       %{name}-api = %{version}-%{release}
 BuildArch:      noarch
-# Provides probe_block_size(), see https://bugzilla.redhat.com/1753898
-Requires:       python2-ioprocess >= 1.3.0
+# Fix block size probling with gluster 6.0
+# See https://bugzilla.redhat.com/1780290
+Requires:       python2-ioprocess >= 1.3.1
 Requires:       %{name}-common = %{version}-%{release}
 Requires:       %{name}-network = %{version}-%{release}
 
