@@ -197,6 +197,7 @@ class JsonRpcServerTests(TestCaseBase):
                 self.assertIn(missing_method, cm.exception.msg)
 
     @permutations(USE_SSL)
+    @broken_on_ci("fails randomly in CI")
     def testMethodBadParameters(self, use_ssl):
         # Without a schema the server returns an internal error
         ssl_ctx = self.ssl_ctx if use_ssl else None
