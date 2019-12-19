@@ -29,6 +29,7 @@ import pytest
 
 from vdsm.network import errors as ne
 from vdsm.network import ipwrapper
+from vdsm.network import nmstate
 from vdsm.network.link import iface as link_iface
 
 from . import netfunctestlib as nftestlib
@@ -382,6 +383,34 @@ class TestNetworkBasicLegacy(object):
                 adapter.assertNoNetworkExists(NETWORK_NAME)
                 with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                     adapter.assertNetworkExists(NETWORK_NAME)
+
+    @pytest.mark.xfail(
+        condition=nmstate.is_nmstate_backend(),
+        reason="currently fails on nmstate",
+        strict=True,
+    )
+    def test_change_bridged_network_vlan_id_while_tap_device_attached(self):
+        with dummy_device() as nic:
+            NETCREATE = {
+                NETWORK_NAME: {
+                    'nic': nic,
+                    'switch': 'legacy',
+                    'vlan': 100,
+                    'bridged': True,
+                }
+            }
+            NETEDIT = {
+                NETWORK_NAME: {
+                    'nic': nic,
+                    'switch': 'legacy',
+                    'vlan': 110,
+                    'bridged': True,
+                }
+            }
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                with nftestlib.create_tap() as tapdev:
+                    nftestlib.attach_dev_to_bridge(tapdev, NETWORK_NAME)
+                    adapter.setupNetworks(NETEDIT, {}, NOCHK)
 
 
 @pytest.mark.legacy_switch
