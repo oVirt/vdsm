@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2019 Red Hat, Inc.
+# Copyright 2008-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1958,6 +1958,9 @@ class Vm(object):
             return self.lastStatus
 
     def migration_parameters(self):
+        # Guest agent API version must be updated before _srcDomXML
+        # is created to have the version in _srcDomXML metadata.
+        self.update_guest_agent_api_version()
         params = {
             '_srcDomXML': self._dom.XMLDesc(0),
             'elapsedTimeOffset': (
