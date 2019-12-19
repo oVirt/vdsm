@@ -18,6 +18,7 @@ if sys.version_info[0] == 2:
     pthreading.monkey_patch()
 
 import os
+import os.path
 import signal
 import getpass
 import pwd
@@ -228,6 +229,13 @@ def __assertVdsmUser():
         raise FatalError("Vdsm user is not in KVM group")
 
 
+def __assertVdsmHome():
+    home = os.path.expanduser("~")
+    if not os.access(home, os.F_OK | os.R_OK | os.W_OK | os.X_OK):
+        raise FatalError("Home directory: '%s' doesn't exist or doesn't "
+                         "have correct permissions" % home)
+
+
 def __assertSudoerPermissions():
     with tempfile.NamedTemporaryFile() as dst:
         # This cmd choice is arbitrary to validate that sudoers.d/50_vdsm file
@@ -279,6 +287,7 @@ def main():
     try:
         __assertSingleInstance()
         __assertVdsmUser()
+        __assertVdsmHome()
         __assertLogPermission()
         __assertSudoerPermissions()
 
