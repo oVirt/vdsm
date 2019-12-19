@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -503,7 +503,7 @@ class NetFuncTestAdapter(object):
         bond_ad_partner_mac = bond_caps[partner_bond]['ad_partner_mac']
         assert bond_hwaddr == bond_ad_partner_mac
 
-    def assertNetworkIp(self, net, attrs):
+    def assertNetworkIp(self, net, attrs, ignore_ip=False):
         bridged = attrs.get('bridged', True)
         vlan = attrs.get('vlan')
         bond = attrs.get('bonding')
@@ -533,8 +533,8 @@ class NetFuncTestAdapter(object):
             self.assertStaticIPv4(attrs, network_netinfo)
             self.assertStaticIPv4(attrs, topdev_netinfo)
         if attrs.get('bootproto') == 'dhcp':
-            self.assertDHCPv4(network_netinfo)
-            self.assertDHCPv4(topdev_netinfo)
+            self.assertDHCPv4(network_netinfo, ignore_ip)
+            self.assertDHCPv4(topdev_netinfo, ignore_ip)
         if _ipv4_is_unused(attrs):
             self.assertDisabledIPv4(network_netinfo)
             self.assertDisabledIPv4(topdev_netinfo)
@@ -543,8 +543,8 @@ class NetFuncTestAdapter(object):
             self.assertStaticIPv6(attrs, network_netinfo)
             self.assertStaticIPv6(attrs, topdev_netinfo)
         elif attrs.get('dhcpv6'):
-            self.assertDHCPv6(network_netinfo)
-            self.assertDHCPv6(topdev_netinfo)
+            self.assertDHCPv6(network_netinfo, ignore_ip)
+            self.assertDHCPv6(topdev_netinfo, ignore_ip)
         elif attrs.get('ipv6autoconf'):
             self.assertIPv6Autoconf(network_netinfo)
             self.assertIPv6Autoconf(topdev_netinfo)
@@ -552,11 +552,11 @@ class NetFuncTestAdapter(object):
             self.assertDisabledIPv6(network_netinfo)
             self.assertDisabledIPv6(topdev_netinfo)
 
-        self.assertRoutesIPv4(attrs, network_netinfo)
-        self.assertRoutesIPv4(attrs, topdev_netinfo)
+        self.assertRoutesIPv4(attrs, network_netinfo, ignore_ip)
+        self.assertRoutesIPv4(attrs, topdev_netinfo, ignore_ip)
 
-        self.assertRoutesIPv6(attrs, network_netinfo)
-        self.assertRoutesIPv6(attrs, topdev_netinfo)
+        self.assertRoutesIPv6(attrs, network_netinfo, ignore_ip)
+        self.assertRoutesIPv6(attrs, topdev_netinfo, ignore_ip)
 
     def assertStaticIPv4(self, netattrs, ipinfo):
         requires_ipaddress()
@@ -576,14 +576,16 @@ class NetFuncTestAdapter(object):
         )
         assert ipv6_address in ipinfo['ipv6addrs']
 
-    def assertDHCPv4(self, ipinfo):
+    def assertDHCPv4(self, ipinfo, ignore_ip=False):
         assert ipinfo['dhcpv4']
-        assert ipinfo['addr'] != ''
-        assert len(ipinfo['ipv4addrs']) > 0
+        if not ignore_ip:
+            assert ipinfo['addr'] != ''
+            assert len(ipinfo['ipv4addrs']) > 0
 
-    def assertDHCPv6(self, ipinfo):
+    def assertDHCPv6(self, ipinfo, ignore_ip=False):
         assert ipinfo['dhcpv6']
-        assert len(ipinfo['ipv6addrs']) > 0
+        if not ignore_ip:
+            assert len(ipinfo['ipv6addrs']) > 0
 
     def assertIPv6Autoconf(self, ipinfo):
         assert ipinfo['ipv6autoconf']
@@ -605,11 +607,11 @@ class NetFuncTestAdapter(object):
     def assertNoDhclient(self, iface, family):
         assert not self.assertDhclient(iface, family)
 
-    def assertRoutesIPv4(self, netattrs, ipinfo):
+    def assertRoutesIPv4(self, netattrs, ipinfo, ignore_ip=False):
         # TODO: Support sourceroute on OVS switches
         if netattrs.get('switch', 'legacy') == 'legacy':
             is_dynamic = netattrs.get('bootproto') == 'dhcp'
-            if is_dynamic:
+            if is_dynamic and not ignore_ip:
                 # When dynamic is used, route is assumed to be included.
                 assert ipinfo['gateway']
             else:
@@ -618,11 +620,11 @@ class NetFuncTestAdapter(object):
 
         self.assertDefaultRouteIPv4(netattrs, ipinfo)
 
-    def assertRoutesIPv6(self, netattrs, ipinfo):
+    def assertRoutesIPv6(self, netattrs, ipinfo, ignore_ip=False):
         # TODO: Support sourceroute for IPv6 networks
         if netattrs.get('defaultRoute', False):
             is_dynamic = netattrs.get('ipv6autoconf') or netattrs.get('dhcpv6')
-            if is_dynamic:
+            if is_dynamic and not ignore_ip:
                 # When dynamic is used, route is assumed to be included.
                 assert ipinfo['ipv6gateway']
             else:

@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -162,12 +162,27 @@ def dynamic_vlaned_ipv4_iface(network_configuration1):
 
 
 @pytest.fixture
-def dynamic_ipv4_ipv6_iface1(network_configuration_ipv4_and_ipv6):
+def dynamic_ipv4_ipv6_iface_with_dhcp_server(
+    network_configuration_ipv4_and_ipv6
+):
     dhcp_config = DhcpConfig(
         DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO, DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO
     )
     with _create_configured_dhcp_client_iface(
         network_configuration_ipv4_and_ipv6, dhcp_config
+    ) as configured_client:
+        yield configured_client
+
+
+@pytest.fixture
+def dynamic_ipv4_ipv6_iface_without_dhcp_server(
+    network_configuration_ipv4_and_ipv6
+):
+    dhcp_config = DhcpConfig(
+        DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO, DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO
+    )
+    with _create_configured_dhcp_client_iface(
+        network_configuration_ipv4_and_ipv6, dhcp_config, start_dhcp=False
     ) as configured_client:
         yield configured_client
 
@@ -370,17 +385,51 @@ def test_default_route_of_two_dynamic_ip_networks(
 @parametrize_ip_families
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_switch
-def test_dynamic_ip_switch_to_static(
-    switch, families, bridged, dynamic_ipv4_ipv6_iface1
+def test_dynamic_ip_switch_to_static_without_running_dhcp_server(
+    switch, families, bridged, dynamic_ipv4_ipv6_iface_without_dhcp_server
+):
+    _test_dynamic_ip_switch_to_static(
+        switch,
+        families,
+        bridged,
+        is_dhcp_server_enabled=False,
+        nic=dynamic_ipv4_ipv6_iface_without_dhcp_server,
+    )
+
+
+@pytest.mark.nmstate
+@parametrize_ip_families
+@nftestlib.parametrize_bridged
+@nftestlib.parametrize_switch
+def test_dynamic_ip_switch_to_static_with_running_dhcp_server(
+    switch, families, bridged, dynamic_ipv4_ipv6_iface_with_dhcp_server
+):
+    _test_dynamic_ip_switch_to_static(
+        switch,
+        families,
+        bridged,
+        is_dhcp_server_enabled=True,
+        nic=dynamic_ipv4_ipv6_iface_with_dhcp_server,
+    )
+
+
+def _test_dynamic_ip_switch_to_static(
+    switch, families, bridged, is_dhcp_server_enabled, nic
 ):
     if switch == 'ovs' and IpFamily.IPv6 in families:
         pytest.xfail(
             'IPv6 dynamic fails with OvS'
             'see https://bugzilla.redhat.com/1773471'
         )
+    if not is_dhcp_server_enabled:
+        pytest.xfail(
+            'switching from dynamic IP to static IP '
+            'requires a running DHCP server'
+        )
+
     network_attrs = {
         'bridged': bridged,
-        'nic': dynamic_ipv4_ipv6_iface1,
+        'nic': nic,
         'blockingdhcp': True,
         'switch': switch,
     }
@@ -392,7 +441,11 @@ def test_dynamic_ip_switch_to_static(
         network_attrs['dhcpv6'] = True
     netcreate = {NETWORK_NAME: network_attrs}
     with adapter.setupNetworks(netcreate, {}, NOCHK):
-        adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+        adapter.assertNetworkIp(
+            NETWORK_NAME,
+            netcreate[NETWORK_NAME],
+            ignore_ip=not is_dhcp_server_enabled,
+        )
         if has_ipv4:
             network_attrs['bootproto'] = 'none'
             network_attrs['ipaddr'] = IPv4_ADDRESS2
@@ -427,7 +480,9 @@ def test_dynamic_ip_bonded_vlanned_network(switch, dynamic_vlaned_ipv4_iface):
 
 @nftestlib.parametrize_switch
 @pytest.mark.nmstate
-def test_dynamic_ip_bonded_network(switch, dynamic_ipv4_ipv6_iface1):
+def test_dynamic_ip_bonded_network(
+    switch, dynamic_ipv4_ipv6_iface_with_dhcp_server
+):
     if switch == 'ovs':
         pytest.xfail(
             'IPv6 dynamic fails with OvS'
@@ -443,7 +498,10 @@ def test_dynamic_ip_bonded_network(switch, dynamic_ipv4_ipv6_iface1):
         'switch': switch,
     }
     bondcreate = {
-        bond_name: {'nics': [dynamic_ipv4_ipv6_iface1], 'switch': switch}
+        bond_name: {
+            'nics': [dynamic_ipv4_ipv6_iface_with_dhcp_server],
+            'switch': switch,
+        }
     }
     netcreate = {NETWORK_NAME: network_attrs}
     with adapter.setupNetworks(netcreate, bondcreate, NOCHK):
@@ -452,21 +510,24 @@ def test_dynamic_ip_bonded_network(switch, dynamic_ipv4_ipv6_iface1):
 
 @contextmanager
 def _create_configured_dhcp_client_iface(
-    network_config, dhcp_config, vlan_id=None
+    network_config, dhcp_config, vlan_id=None, start_dhcp=True
 ):
     with _create_dhcp_client_server_peers(network_config, vlan_id) as (
         server,
         client,
     ):
-        dhcp_server = dnsmasq_run(
-            server,
-            dhcp_config.ipv4_range_from,
-            dhcp_config.ipv4_range_to,
-            dhcp_config.ipv6_range_from,
-            dhcp_config.ipv6_range_to,
-            router=network_config.ipv4_address,
-        )
-        with dhcp_server:
+        if start_dhcp:
+            dhcp_server = dnsmasq_run(
+                server,
+                dhcp_config.ipv4_range_from,
+                dhcp_config.ipv4_range_to,
+                dhcp_config.ipv6_range_from,
+                dhcp_config.ipv6_range_to,
+                router=network_config.ipv4_address,
+            )
+            with dhcp_server:
+                yield client
+        else:
             yield client
 
 
