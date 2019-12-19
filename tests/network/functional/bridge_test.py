@@ -26,7 +26,6 @@ from contextlib import contextmanager
 import pytest
 
 from vdsm.network.cmd import exec_sync
-from vdsm.network.link.iface import iface
 
 from . import netfunctestlib as nftestlib
 from network.nettestlib import dummy_devices, dummy_device, running_on_fedora
@@ -99,8 +98,8 @@ class TestBridge(object):
             NETSETUP1 = {NETWORK_NAME: {'nic': nic1, 'switch': switch}}
             NETSETUP2 = {NETWORK_NAME: {'nic': nic2, 'switch': switch}}
             with adapter.setupNetworks(NETSETUP1, {}, nftestlib.NOCHK):
-                with _create_tap() as tapdev:
-                    _attach_dev_to_bridge(tapdev, NETWORK_NAME)
+                with nftestlib.create_tap() as tapdev:
+                    nftestlib.attach_dev_to_bridge(tapdev, NETWORK_NAME)
                     with nftestlib.monitor_stable_link_state(NETWORK_NAME):
                         adapter.setupNetworks(NETSETUP2, {}, nftestlib.NOCHK)
                         adapter.assertNetwork(
@@ -134,14 +133,6 @@ class TestBridge(object):
                 assert net_ports == [nic1]
 
 
-def _attach_dev_to_bridge(tapdev, bridge):
-    rc, _, err = exec_sync(['ip', 'link', 'set', tapdev, 'master', bridge])
-    if rc != 0:
-        pytest.fail(
-            'Filed to add {} to {}. err: {}'.format(tapdev, bridge, err)
-        )
-
-
 @contextmanager
 def _create_linux_bridge(brname):
     rc, _, err = exec_sync(['ip', 'link', 'add', brname, 'type', 'bridge'])
@@ -151,16 +142,3 @@ def _create_linux_bridge(brname):
         yield brname
     finally:
         exec_sync(['ip', 'link', 'del', brname])
-
-
-@contextmanager
-def _create_tap():
-    devname = '_tap99'
-    rc, _, err = exec_sync(['ip', 'tuntap', 'add', devname, 'mode', 'tap'])
-    if rc != 0:
-        pytest.fail('Unable to create tap device. err: {}'.format(err))
-    try:
-        iface(devname).up()
-        yield devname
-    finally:
-        exec_sync(['ip', 'tuntap', 'del', devname, 'mode', 'tap'])

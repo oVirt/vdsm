@@ -37,6 +37,7 @@ from vdsm.network import kernelconfig
 from vdsm.network import nmstate
 from vdsm.network.canonicalize import bridge_opts_dict_to_sorted_str
 from vdsm.network.canonicalize import bridge_opts_str_to_dict
+from vdsm.network.cmd import exec_sync
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported, prefix2netmask
 from vdsm.network.ifacetracking import is_tracked as iface_is_tracked
@@ -920,6 +921,27 @@ def monitor_stable_link_state(device, wait_for_linkup=True):
                         device, original_state, state
                     )
                 )
+
+
+@contextmanager
+def create_tap():
+    devname = '_tap99'
+    rc, _, err = exec_sync(['ip', 'tuntap', 'add', devname, 'mode', 'tap'])
+    if rc != 0:
+        pytest.fail('Unable to create tap device. err: {}'.format(err))
+    try:
+        iface(devname).up()
+        yield devname
+    finally:
+        exec_sync(['ip', 'tuntap', 'del', devname, 'mode', 'tap'])
+
+
+def attach_dev_to_bridge(tapdev, bridge):
+    rc, _, err = exec_sync(['ip', 'link', 'set', tapdev, 'master', bridge])
+    if rc != 0:
+        pytest.fail(
+            'Filed to add {} to {}. err: {}'.format(tapdev, bridge, err)
+        )
 
 
 def wait_bonds_lp_interval():
