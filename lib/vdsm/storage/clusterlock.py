@@ -689,8 +689,7 @@ class LocalLock(object):
 
 
 def alignment(block_size, max_hosts):
-    # HOSTS_512_1M/HOSTS_4K_8M is a maximum number of hosts
-    if max_hosts < 1 or max_hosts > sc.HOSTS_512_1M:
+    if max_hosts < 1 or max_hosts > sc.HOSTS_MAX:
         raise se.InvalidParameterException('max_hosts', max_hosts)
     if block_size not in (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K):
         raise se.InvalidParameterException('block_size', block_size)
