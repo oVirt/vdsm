@@ -57,7 +57,7 @@ class FakeLVM(object):
     # We pretend all PVs are 10G in size
     _PV_SIZE = 10 * GiB
     # Found via inspection of real environment
-    _PV_PE_SIZE = sc.VG_EXTENT_SIZE_MB * MiB
+    _PV_PE_SIZE = sc.VG_EXTENT_SIZE
     # The number of PEs used for metadata areas
     _PV_MDA_COUNT = 2
     # 2 PE for metadata + 1 PE to hold a header
@@ -73,7 +73,6 @@ class FakeLVM(object):
     def createVG(self, vgName, devices, initialTag, metadataSize, force=False):
         # Convert params from MiB to bytes to match other fields
         metadataSize *= MiB
-        extentsize = sc.VG_EXTENT_SIZE_MB * MiB
 
         for dev in devices:
             self._create_pv(dev, vgName, self._PV_SIZE)
@@ -93,7 +92,7 @@ class FakeLVM(object):
                      attr=vg_attr,
                      size=str(size),
                      free=str(size),
-                     extent_size=str(extentsize),
+                     extent_size=str(sc.VG_EXTENT_SIZE),
                      extent_count=str(extent_count),
                      free_count=str(extent_count),
                      tags=(initialTag,),
@@ -115,9 +114,8 @@ class FakeLVM(object):
     def _size_param_to_bytes(self, size):
         # Size is received as a string in MiB.  We need to convert it to bytes
         # and round it up to a multiple of the VG extent size.
-        extent_size = sc.VG_EXTENT_SIZE_MB * MiB
         size = int(size) * MiB
-        return utils.round(size, extent_size)
+        return utils.round(size, sc.VG_EXTENT_SIZE)
 
     def _create_lv_file(self, vgName, lvName, active, size):
         # Create an LV as a regular file so we have a place to write data

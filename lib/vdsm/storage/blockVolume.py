@@ -54,8 +54,8 @@ class BlockVolumeManifest(volume.VolumeManifest):
     # How this volume is presented to a vm.
     DISK_TYPE = "block"
 
-    # On block storage volume are composed of lvm extents, 128m by default.
-    align_size = sc.VG_EXTENT_SIZE_MB * MiB
+    # On block storage volume are composed of lvm extents, 128 MiB by default.
+    align_size = sc.VG_EXTENT_SIZE
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         volume.VolumeManifest.__init__(self, repoPath, sdUUID, imgUUID,

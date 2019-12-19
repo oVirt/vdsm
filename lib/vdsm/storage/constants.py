@@ -37,12 +37,12 @@ VOLUME_NAMESPACE = '02_vol'
 LVM_ACTIVATION_NAMESPACE = '03_lvm'
 VOLUME_LEASE_NAMESPACE = "04_lease"
 
-VG_EXTENT_SIZE_MB = 128
+VG_EXTENT_SIZE = 128 * MiB
 COW_OVERHEAD = 1.1
 
 # The minimal size used to limit internal volume size. This is mainly used
 # when calculating volume optimal size.
-MIN_CHUNK = 8 * VG_EXTENT_SIZE_MB * MiB
+MIN_CHUNK = 8 * VG_EXTENT_SIZE
 
 # TODO: This constant is useful only file base storage, it should be moved to
 # some constant module specific to file based storage once we have such module.

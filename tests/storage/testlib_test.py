@@ -201,8 +201,8 @@ def test_volume_type_block_env(vol_type):
     MiB,
     2 * MiB - 1,
     1,
-    (sc.VG_EXTENT_SIZE_MB - 1) * MiB,
-    sc.VG_EXTENT_SIZE_MB * MiB + 1,
+    sc.VG_EXTENT_SIZE - 1,
+    sc.VG_EXTENT_SIZE + 1,
 ])
 def test_volume_size_alignment(size_param):
     with fake_block_env() as env:
@@ -212,8 +212,7 @@ def test_volume_size_alignment(size_param):
         make_block_volume(env.lvm, env.sd_manifest, size_param, img_id, vol_id)
         vol = env.sd_manifest.produceVolume(img_id, vol_id)
 
-        extent_size = sc.VG_EXTENT_SIZE_MB * MiB
-        expected_size = utils.round(size_param, extent_size)
+        expected_size = utils.round(size_param, sc.VG_EXTENT_SIZE)
         assert expected_size == vol.getCapacity()
         assert expected_size == int(env.lvm.getLV(sd_id, vol_id).size)
         lv_file_size = os.stat(env.lvm.lvPath(sd_id, vol_id)).st_size
@@ -225,8 +224,7 @@ def test_volume_metadata_io_block_env():
         sd_id = env.sd_manifest.sdUUID
         img_id = make_uuid()
         vol_id = make_uuid()
-        size_mb = sc.VG_EXTENT_SIZE_MB
-        size = size_mb * MiB
+        size = sc.VG_EXTENT_SIZE
         make_block_volume(env.lvm, env.sd_manifest, size, img_id, vol_id)
 
         assert vol_id == env.lvm.getLV(sd_id, vol_id).name

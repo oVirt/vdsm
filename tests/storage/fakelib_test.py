@@ -440,9 +440,9 @@ class TestFakeLVMGeneral(VdsmTestCase):
             lvm = FakeLVM(tmpdir)
             lvm.createVG(vg_name, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG,
                          blockSD.VG_METADATASIZE)
-            lvm.createLV(vg_name, lv_name, sc.VG_EXTENT_SIZE_MB - 1)
+            lvm.createLV(vg_name, lv_name, sc.VG_EXTENT_SIZE // MiB - 1)
             lv = lvm.getLV(vg_name, lv_name)
-            self.assertEqual(sc.VG_EXTENT_SIZE_MB * MiB, int(lv.size))
+            self.assertEqual(sc.VG_EXTENT_SIZE, int(lv.size))
 
 
 class TestFakeResourceManager(VdsmTestCase):

@@ -1162,7 +1162,7 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
     if rc != 0:
         raise se.PhysDevInitializationError(pvs[0])
 
-    options = ["--physicalextentsize", "%dm" % sc.VG_EXTENT_SIZE_MB]
+    options = ["--physicalextentsize", "%dm" % (sc.VG_EXTENT_SIZE // MiB)]
     if initialTag:
         options.extend(("--addtag", initialTag))
     cmd = ["vgcreate"] + options + [vgName] + pvs
