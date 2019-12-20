@@ -112,7 +112,7 @@ class _ProtocolDetector(object):
             dispatcher.handle_error()
             return
 
-        if len(data) < self._required_size:
+        if data is None or len(data) < self._required_size:
             return
 
         for detector in self._detectors:
