@@ -22,7 +22,6 @@ from __future__ import absolute_import
 
 import argparse
 import os
-import sys
 
 from ctypes import CDLL, c_long
 
@@ -43,8 +42,8 @@ def main():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description=
-                                     'fallocate is used to preallocate blocks to a file.')
+    parser = argparse.ArgumentParser(
+        description='fallocate is used to preallocate blocks to a file.')
     parser.add_argument('--offset', dest='offset', type=int, default=0,
                         help='Offset in bytes to start allocation from')
     parser.add_argument('size', type=int, help='Size in bytes to allocate')

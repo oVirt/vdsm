@@ -39,8 +39,7 @@ def allocate(image, size, offset=0):
 
     :param str image: filename with path
     :param int size: expected file size in bytes
-    :param int offset: start allocating from that offset,
-           specified in bytes.
+    :param int offset: start allocating from that offset, specified in bytes.
     :return operation object, encapsulating fallocate helper call
     """
     # This is the only sane way to run python scripts that work with both

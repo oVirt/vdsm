@@ -31,7 +31,7 @@ from vdsm.storage import fallocate
 
 
 def test_allocate(tmpdir, monkeypatch):
-    # Test that allocate call made correctly
+    # Test that allocate call works correctly.
     monkeypatch.setattr(fallocate, '_FALLOCATE', '../helpers/fallocate')
     size = 4096
     image = str(tmpdir.join("image"))
