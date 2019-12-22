@@ -30,6 +30,7 @@ import time
 
 import pytest
 
+from vdsm.common.units import MiB, GiB
 from vdsm.storage import mount
 from vdsm.storage.misc import execCmd
 
@@ -43,7 +44,7 @@ import monkeypatch
 
 from . marks import requires_root
 
-FLOPPY_SIZE = (2 ** 20) * 4
+FLOPPY_SIZE = 4 * MiB
 
 
 @contextmanager
@@ -157,7 +158,7 @@ class TestMount(VdsmTestCase):
             link_to_image = os.path.join(root_dir, 'link_to_image')
             mountpoint = os.path.join(root_dir, 'mountpoint')
             with open(backing_image, 'w') as f:
-                os.ftruncate(f.fileno(), 1024 ** 3)
+                os.ftruncate(f.fileno(), GiB)
             rc, out, err = execCmd(['/sbin/mkfs.ext2', "-F", backing_image],
                                    raw=True)
             if rc != 0:
