@@ -23,6 +23,10 @@ function container_exec {
     ${CONTAINER_CMD} exec "-i$USE_TTY" "$CONTAINER_ID" /bin/bash -c "$1"
 }
 
+function container_shell {
+    ${CONTAINER_CMD} exec "-i$USE_TTY" "$CONTAINER_ID" /bin/bash
+}
+
 function load_kernel_modules {
     modprobe 8021q
     modprobe bonding
@@ -111,7 +115,7 @@ if [ -n "$TEST_NMSTATE" ];then
 fi
 
 if [ "$1" == "--shell" ];then
-    container_exec "bash"
+    container_shell
     exit 0
 fi
 
