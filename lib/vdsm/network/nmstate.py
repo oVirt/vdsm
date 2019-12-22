@@ -805,15 +805,20 @@ def _reset_iface_mtus_on_network_dettach(
 
 
 def _get_stale_ifaces(networks, running_networks):
-    networks_to_remove = (net.name for net in networks if net.to_remove)
+    networks_to_remove = {net for net in networks if net.to_remove}
     base_ifaces_to_remove = {
-        net.base_iface for net in networks if net.to_remove
+        net.base_iface for net in networks_to_remove if net.base_iface
     }
-    base_ifaces_to_add = {net for net in networks if not net.to_remove}
+    networks_to_add = set(networks) - networks_to_remove
+    base_ifaces_to_add = {
+        net.base_iface for net in networks_to_add if net.base_iface
+    }
+    networks_to_keep = set(running_networks) - {
+        net.name for net in networks_to_remove
+    }
     base_ifaces_to_keep = {
-        NetworkConfig(rnet_name, rnet_attrs).base_iface
-        for rnet_name, rnet_attrs in running_networks.items()
-        if rnet_name not in networks_to_remove
+        NetworkConfig(net_name, running_networks[net_name]).base_iface
+        for net_name in networks_to_keep
     }
 
     return base_ifaces_to_remove - base_ifaces_to_add - base_ifaces_to_keep
