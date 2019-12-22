@@ -27,15 +27,16 @@ import pytest
 
 from .fakesanlock import FakeSanlock
 from vdsm.common import concurrent
+from vdsm.common.units import KiB, MiB
 from vdsm.storage import constants as sc
 from vdsm.storage.compat import sanlock
 
 
 INVALID_ALIGN_SECTOR = [
     # Invalid alignment
-    (1024, sc.BLOCK_SIZE_512),
+    (KiB, sc.BLOCK_SIZE_512),
     # Invalid block size
-    (sc.ALIGNMENT_1M, 8 * 1024),
+    (sc.ALIGNMENT_1M, 8 * KiB),
 ]
 
 WRONG_ALIGN_SECTOR = [
@@ -121,10 +122,10 @@ def test_rem_lockspace_async():
 def test_rem_lockspace_while_holding_lock():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
     fd = fs.register()
-    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], slkfd=fd)
+    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
     fs.rem_lockspace(LOCKSPACE_NAME, 1, "path", wait=False)
 
     # Fake sanlock return special None value when sanlock is in process of
@@ -208,8 +209,8 @@ def test_inq_lockspace_releasing_wait():
 
 def test_write_read_resource():
     fs = FakeSanlock()
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
-    info = fs.read_resource("path", 1048576)
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
+    info = fs.read_resource("path", MiB)
     expected = {
         "resource": RESOURCE_NAME,
         "lockspace": LOCKSPACE_NAME,
@@ -224,7 +225,7 @@ def test_write_read_resource():
 def test_non_existing_resource():
     fs = FakeSanlock()
     with pytest.raises(fs.SanlockException) as e:
-        fs.read_resource("path", 1048576)
+        fs.read_resource("path", MiB)
     assert e.value.errno == fs.SANLK_LEADER_MAGIC
 
 
@@ -232,9 +233,9 @@ def test_write_resource_failure():
     fs = FakeSanlock()
     fs.errors["write_resource"] = ExpectedError
     with pytest.raises(ExpectedError):
-        fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+        fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     with pytest.raises(fs.SanlockException) as e:
-        fs.read_resource("path", 1048576)
+        fs.read_resource("path", MiB)
     assert e.value.errno == fs.SANLK_LEADER_MAGIC
 
 
@@ -260,25 +261,25 @@ def test_write_resource_wrong_sector(disk_sector, sanlock_sector):
 def test_read_resource_failure():
     fs = FakeSanlock()
     fs.errors["read_resource"] = ExpectedError
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     with pytest.raises(ExpectedError):
-        fs.read_resource("path", 1048576)
+        fs.read_resource("path", MiB)
 
 
 @pytest.mark.parametrize("align, sector", INVALID_ALIGN_SECTOR)
 def test_read_resource_invalid_align_sector(align, sector):
     fs = FakeSanlock()
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     with pytest.raises(ValueError):
-        fs.read_resource("path", 1048576, align=align, sector=sector)
+        fs.read_resource("path", MiB, align=align, sector=sector)
 
 
 @pytest.mark.parametrize("align, sector", WRONG_ALIGN_SECTOR)
 def test_read_resource_wrong_align_sector(align, sector):
     fs = FakeSanlock()
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     with pytest.raises(fs.SanlockException) as e:
-        fs.read_resource("path", 1048576, align=align, sector=sector)
+        fs.read_resource("path", MiB, align=align, sector=sector)
     assert e.value.errno == errno.EINVAL
 
 
@@ -287,9 +288,9 @@ def test_read_resource_wrong_align_sector(align, sector):
 def test_read_resource_wrong_sector(disk_sector, sanlock_sector):
     fs = FakeSanlock(disk_sector)
     fs.write_resource(
-        LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], sector=disk_sector)
+        LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], sector=disk_sector)
     with pytest.raises(fs.SanlockException) as e:
-        fs.read_resource("path", 1048576, sector=sanlock_sector)
+        fs.read_resource("path", MiB, sector=sanlock_sector)
     assert e.value.errno == errno.EINVAL
 
 
@@ -303,11 +304,11 @@ def test_register():
 def test_acquire():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
     fd = fs.register()
-    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], slkfd=fd)
-    res = fs.read_resource("path", 1048576)
+    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
+    res = fs.read_resource("path", MiB)
     assert res["acquired"]
     assert fs.spaces[LOCKSPACE_NAME]["host_id"] == res["host_id"]
     assert fs.hosts[1]["generation"] == res["generation"]
@@ -315,53 +316,47 @@ def test_acquire():
 
 def test_acquire_no_lockspace():
     fs = FakeSanlock()
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     fd = fs.register()
     with pytest.raises(fs.SanlockException) as e:
-        fs.acquire(
-            LOCKSPACE_NAME, RESOURCE_NAME, [
-                ("path", 1048576)], slkfd=fd)
+        fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
     assert e.value.errno == errno.ENOSPC
 
 
 def test_acquire_lockspace_adding():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path", wait=False)
     fd = fs.register()
     with pytest.raises(fs.SanlockException) as e:
-        fs.acquire(
-            LOCKSPACE_NAME, RESOURCE_NAME, [
-                ("path", 1048576)], slkfd=fd)
+        fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
     assert e.value.errno == errno.ENOSPC
 
 
 def test_acquire_an_acquired_resource():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
     fd = fs.register()
-    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], slkfd=fd)
+    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
     with pytest.raises(fs.SanlockException) as e:
-        fs.acquire(
-            LOCKSPACE_NAME, RESOURCE_NAME, [
-                ("path", 1048576)], slkfd=fd)
+        fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
     assert e.value.errno == errno.EEXIST
-    res = fs.read_resource("path", 1048576)
+    res = fs.read_resource("path", MiB)
     assert res["acquired"]
 
 
 def test_release():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
     fd = fs.register()
-    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], slkfd=fd)
-    fs.release(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], slkfd=fd)
-    res = fs.read_resource("path", 1048576)
+    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
+    fs.release(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
+    res = fs.read_resource("path", MiB)
     assert not res["acquired"]
     # The resource has been released and the owner is zeroed
     assert res["host_id"] == 0
@@ -371,53 +366,50 @@ def test_release():
 def test_release_not_acquired():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
     fd = fs.register()
     with pytest.raises(fs.SanlockException) as e:
-        fs.release(
-            LOCKSPACE_NAME, RESOURCE_NAME, [
-                ("path", 1048576)], slkfd=fd)
+        fs.release(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
     assert e.value.errno == errno.EPERM
 
 
 def test_release_no_lockspace():
     fs = FakeSanlock()
     with pytest.raises(fs.SanlockException) as e:
-        fs.release(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+        fs.release(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     assert e.value.errno == errno.ENOSPC
 
 
 def test_read_resource_owners_lockspace_not_initialized():
     fs = FakeSanlock()
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     with pytest.raises(fs.SanlockException) as e:
-        fs.read_resource_owners(
-            LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+        fs.read_resource_owners(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     assert e.value.errno == errno.EINVAL
 
 
 def test_read_resource_owners_no_owner():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
     owners = fs.read_resource_owners(LOCKSPACE_NAME,
                                      RESOURCE_NAME,
-                                     [("path", 1048576)])
+                                     [("path", MiB)])
     assert len(owners) == 0
 
 
 def test_read_resource_owners():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
     fd = fs.register()
-    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], slkfd=fd)
+    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
     owners = fs.read_resource_owners(LOCKSPACE_NAME,
                                      RESOURCE_NAME,
-                                     [("path", 1048576)])
+                                     [("path", MiB)])
     assert len(owners) == 1
     assert owners[0]["host_id"] == 1
     assert owners[0]["generation"] == 0
@@ -426,27 +418,27 @@ def test_read_resource_owners():
 def test_read_resource_owners_resource_released():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
     fd = fs.register()
-    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], slkfd=fd)
-    fs.release(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], slkfd=fd)
+    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
+    fs.release(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
     owners = fs.read_resource_owners(
-        LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+        LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     assert owners == []
 
 
 def test_read_resource_owners_lockspace_removed():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
     fd = fs.register()
-    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], slkfd=fd)
-    fs.release(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], slkfd=fd)
+    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
+    fs.release(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
     fs.rem_lockspace(LOCKSPACE_NAME, 1, "path")
     owners = fs.read_resource_owners(
-        LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+        LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     assert owners == []
 
 
@@ -454,8 +446,8 @@ def test_read_resource_owners_lockspace_removed():
 def test_read_resource_owners_invalid_align_sector(align, sector):
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
-    disks = [("path", 1048576)]
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
+    disks = [("path", MiB)]
     with pytest.raises(ValueError):
         fs.read_resource_owners(
             LOCKSPACE_NAME, RESOURCE_NAME, disks, align=align, sector=sector)
@@ -465,8 +457,8 @@ def test_read_resource_owners_invalid_align_sector(align, sector):
 def test_read_resource_owners_wrong_align_sector(align, sector):
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
-    disks = [("path", 1048576)]
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
+    disks = [("path", MiB)]
     with pytest.raises(fs.SanlockException) as e:
         fs.read_resource_owners(
             LOCKSPACE_NAME, RESOURCE_NAME, disks, align=align, sector=sector)
@@ -479,8 +471,8 @@ def test_read_resource_owners_wrong_sector(disk_sector, sanlock_sector):
     fs = FakeSanlock(disk_sector)
     fs.write_lockspace(LOCKSPACE_NAME, "path", sector=disk_sector)
     fs.write_resource(
-        LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)], sector=disk_sector)
-    disks = [("path", 1048576)]
+        LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], sector=disk_sector)
+    disks = [("path", MiB)]
     with pytest.raises(fs.SanlockException) as e:
         fs.read_resource_owners(
             LOCKSPACE_NAME, RESOURCE_NAME, disks, sector=sanlock_sector)
@@ -506,7 +498,7 @@ def test_get_hosts_no_lockspace():
 def test_add_lockspace_generation_increase():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
     fs.rem_lockspace(LOCKSPACE_NAME, 1, "path")
     fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
@@ -545,8 +537,8 @@ def test_write_lockspace_invalid_align_sector(align, sector):
 def test_write_resource():
     fs = FakeSanlock()
     fs.write_lockspace(LOCKSPACE_NAME, "path")
-    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", 1048576)])
-    info = fs.read_resource("path", 1048576)
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
+    info = fs.read_resource("path", MiB)
     expected = {
         "resource": RESOURCE_NAME,
         "lockspace": LOCKSPACE_NAME,
