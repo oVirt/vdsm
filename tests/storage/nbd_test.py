@@ -50,6 +50,7 @@ import pytest
 
 from vdsm.common import cmdutils
 from vdsm.common import supervdsm
+from vdsm.common.units import KiB, MiB, GiB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import nbd
@@ -92,13 +93,13 @@ def nbd_env(monkeypatch):
     data_center = "/var/tmp/vdsm/data-center"
 
     with fake_env("file", data_center=data_center) as env:
-        env.virtual_size = 1024**2
+        env.virtual_size = MiB
 
         # Source image for copying into the nbd server.
         env.src = os.path.join(env.tmpdir, "src")
         with io.open(env.src, "wb") as f:
             f.truncate(env.virtual_size)
-            f.seek(128 * 1024)
+            f.seek(128 * KiB)
             f.write(b"data from source image")
 
         # Destination for copying from nbd server.
@@ -204,7 +205,7 @@ def test_shared_volume():
     with fake_env("file") as env:
         img_id = str(uuid.uuid4())
         vol_id = str(uuid.uuid4())
-        env.make_volume(1024**3, img_id, vol_id)
+        env.make_volume(GiB, img_id, vol_id)
         vol = env.sd_manifest.produceVolume(img_id, vol_id)
         vol.setShared()
 
