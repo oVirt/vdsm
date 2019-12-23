@@ -26,7 +26,7 @@ from collections import namedtuple
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm.common import constants
+from vdsm.common.units import GiB
 from vdsm.storage import constants as sc
 
 from . cleanup import CleanupError
@@ -93,6 +93,6 @@ class FileSystem(namedtuple("FileSystem", ("fs_type", "block_size", "size"))):
     __slots__ = ()
 
     def __new__(cls, fs_type="ext4", block_size=sc.BLOCK_SIZE_512,
-                size=10 * constants.GIB):
+                size=10 * GiB):
         return super(FileSystem, cls).__new__(
             cls, fs_type=fs_type, block_size=block_size, size=size)
