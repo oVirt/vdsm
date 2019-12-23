@@ -610,11 +610,11 @@ def volumeSet(volumeName, option, value):
     heal_is_set = option in ('cluster.granular-entry-heal',
                              'granular-entry-heal')
     volume_created = _checkIfVolumeCreated(volumeName)
-    if heal_is_set and volume_created:
-        command = _getGlusterVolCmd() + ['heal', volumeName,
-                                         'granular-entry-heal', value]
+    command = _getGlusterVolCmd()
+    if heal_is_set and not volume_created:
+        command += ['heal', volumeName, 'granular-entry-heal', value]
     else:
-        command = _getGlusterVolCmd() + ["set", volumeName, option, value]
+        command += ['set', volumeName, option, value]
     try:
         _execGlusterXml(command)
         return True
@@ -634,7 +634,7 @@ def _checkIfVolumeCreated(volumeName):
 
 def _parseVolumeSetHelpXml(out):
     optionList = []
-    tree = etree.fromstring('\n'.join(out))
+    tree = etree.fromstring(out)
     for el in tree.findall('option'):
         option = {}
         for ch in el.getchildren():
