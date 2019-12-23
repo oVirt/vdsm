@@ -39,11 +39,10 @@ def webhookAdd(url, bearerToken=None):
     if bearerToken:
         command.append('--bearer_token=%s' % bearerToken)
     try:
-        out = commands.run(command)
+        commands.run(command)
     except cmdutils.Error as e:
-        raise ge.GlusterWebhookAddException(e.rc, out, e.err)
-    else:
-        return True
+        raise ge.GlusterWebhookAddException(rc=e.rc, err=e.err)
+    return True
 
 
 @gluster_mgmt_api
@@ -52,30 +51,27 @@ def webhookUpdate(url, bearerToken=None):
     if bearerToken:
         command.append('--bearer_token=%s' % bearerToken)
     try:
-        out = commands.run(command)
+        commands.run(command)
     except cmdutils.Error as e:
-        raise ge.GlusterWebhookUpdateException(e.rc, out, e.err)
-    else:
-        return True
+        raise ge.GlusterWebhookUpdateException(rc=e.rc, err=e.err)
+    return True
 
 
 @gluster_mgmt_api
 def webhookSync():
     command = [_glusterEventsApi.cmd, "sync"]
     try:
-        out = commands.run(command)
+        commands.run(command)
     except cmdutils.Error as e:
-        raise ge.GlusterWebhookSyncException(e.rc, out, e.err)
-    else:
-        return True
+        raise ge.GlusterWebhookSyncException(rc=e.rc, err=e.err)
+    return True
 
 
 @gluster_mgmt_api
 def webhookDelete(url):
     command = [_glusterEventsApi.cmd, "webhook-del", url]
     try:
-        out = commands.run(command)
+        commands.run(command)
     except cmdutils.Error as e:
-        raise ge.GlusterWebhookDeleteException(e.rc, out, e.err)
-    else:
-        return True
+        raise ge.GlusterWebhookDeleteException(rc=e.rc, err=e.err)
+    return True
