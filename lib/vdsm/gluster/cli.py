@@ -576,11 +576,11 @@ def volumeStart(volumeName, force=False):
     command = _getGlusterVolCmd() + ["start", volumeName]
     if force:
         command.append('force')
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterVolumeStartFailedException(rc, out, err)
-    else:
-        return True
+    try:
+        _execGluster(command)
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterVolumeStartFailedException(rc=e.rc, err=e.err)
+    return True
 
 
 @gluster_mgmt_api
@@ -645,11 +645,12 @@ def _parseVolumeSetHelpXml(out):
 
 @gluster_mgmt_api
 def volumeSetHelpXml():
-    rc, out, err = _execGluster(_getGlusterVolCmd() + ["set", 'help-xml'])
-    if rc:
-        raise ge.GlusterVolumeSetHelpXmlFailedException(rc, out, err)
-    else:
-        return _parseVolumeSetHelpXml(out)
+    command = _getGlusterVolCmd() + ["set", 'help-xml']
+    try:
+        out = _execGluster(command)
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterVolumeSetHelpXmlFailedException(e.rc, e.err)
+    return _parseVolumeSetHelpXml(out)
 
 
 @gluster_mgmt_api
@@ -1337,11 +1338,11 @@ def snapshotDelete(volumeName=None, snapName=None):
         command += ["volume", volumeName]
 
     # xml output not used because of BZ:1161416 in gluster cli
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterSnapshotDeleteFailedException(rc, out, err)
-    else:
-        return True
+    try:
+        _execGluster(command)
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterSnapshotDeleteFailedException(rc=e.rc, err=e.err)
+    return True
 
 
 @gluster_mgmt_api
@@ -1574,10 +1575,11 @@ def snapshotInfo(volumeName=None):
 @gluster_mgmt_api
 def executeGsecCreate():
     command = _getGlusterSystemCmd() + ["execute", "gsec_create"]
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterGeoRepPublicKeyFileCreateFailedException(rc,
-                                                                 out, err)
+    try:
+        _execGluster(command)
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterGeoRepPublicKeyFileCreateFailedException(
+            rc=e.rc, err=e.err)
     return True
 
 
@@ -1586,11 +1588,11 @@ def executeMountBrokerUserAdd(remoteUserName, remoteVolumeName):
     command = _getGlusterSystemCmd() + ["execute", "mountbroker",
                                         "user", remoteUserName,
                                         remoteVolumeName]
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterGeoRepExecuteMountBrokerUserAddFailedException(rc,
-                                                                       out,
-                                                                       err)
+    try:
+        _execGluster(command)
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterGeoRepExecuteMountBrokerUserAddFailedException(
+            rc=e.rc, err=e.err)
     return True
 
 
@@ -1599,10 +1601,11 @@ def executeMountBrokerOpt(optionName, optionValue):
     command = _getGlusterSystemCmd() + ["execute", "mountbroker",
                                         "opt", optionName,
                                         optionValue]
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterGeoRepExecuteMountBrokerOptFailedException(rc,
-                                                                   out, err)
+    try:
+        _execGluster(command)
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterGeoRepExecuteMountBrokerOptFailedException(
+            rc=e.rc, err=e.err)
     return True
 
 
@@ -1710,7 +1713,6 @@ def globalVolumeOptions():
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeGetGlobalOptionsFailedException(rc=e.rc,
                                                               err=e.err)
-
     return _parseGlobalVolumeOptions(xmltree)
 
 
