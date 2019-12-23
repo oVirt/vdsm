@@ -25,6 +25,7 @@ import uuid
 
 import pytest
 
+from vdsm.common.units import MiB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import clusterlock
@@ -40,11 +41,9 @@ from storage.storagetestlib import (
 )
 
 
-MB = 1048576
-
 # We want to create volumes larger than the minimum block volume size
-# (currently 128M)
-VOLSIZE = 256 * MB
+# (currently 128 MiB).
+VOLSIZE = 256 * MiB
 
 
 class ManifestMixin(object):
@@ -141,7 +140,7 @@ class TestBlockManifest(ManifestMixin):
         with self.env() as env:
             vg_name = env.sd_manifest.sdUUID
             lv_name = str(uuid.uuid4())
-            env.lvm.createLV(vg_name, lv_name, VOLSIZE // MB)
+            env.lvm.createLV(vg_name, lv_name, VOLSIZE // MiB)
             env.lvm.fake_lv_symlink_create(vg_name, lv_name)
             assert VOLSIZE == env.sd_manifest.getVSize('<imgUUID>', lv_name)
 
@@ -149,7 +148,7 @@ class TestBlockManifest(ManifestMixin):
         # Tests the path when the device file is not present
         with self.env() as env:
             lv_name = str(uuid.uuid4())
-            env.lvm.createLV(env.sd_manifest.sdUUID, lv_name, VOLSIZE // MB)
+            env.lvm.createLV(env.sd_manifest.sdUUID, lv_name, VOLSIZE // MiB)
             assert VOLSIZE == env.sd_manifest.getVSize('<imgUUID>', lv_name)
 
     def test_getmetaparam(self):
@@ -187,7 +186,7 @@ class TestBlockDomainMetadataSlot:
             for offset in used_slots:
                 lv = make_uuid()
                 sduuid = env.sd_manifest.sdUUID
-                env.lvm.createLV(sduuid, lv, VOLSIZE // MB)
+                env.lvm.createLV(sduuid, lv, VOLSIZE // MiB)
                 tag = sc.TAG_PREFIX_MD + str(offset)
                 env.lvm.changeLVsTags(sduuid, (lv,), addTags=(tag,))
             with env.sd_manifest.acquireVolumeMetadataSlot(None) as mdSlot:
