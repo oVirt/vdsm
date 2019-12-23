@@ -143,6 +143,12 @@ def start_transient_service(server_id, config):
         "--format", config.format,
         "--persistent",
 
+        # Allow up to 8 clients to share the device. Safe for readers, but for
+        # now, consistency is not guaranteed between multiple writers.  Eric
+        # Blake says it should be safe if clients write to distinct areas.
+        # https://patchwork.kernel.org/patch/11096321/
+        "--shared=8",
+
         # Use empty export name for nicer url: "nbd:unix:/path" instead of
         # "nbd:unix:/path:exportname=name".
         "--export-name=",
