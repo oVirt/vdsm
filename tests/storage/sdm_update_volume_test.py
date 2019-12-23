@@ -41,6 +41,7 @@ from testlib import make_uuid
 from testlib import VdsmTestCase, expandPermutations, permutations
 
 from vdsm import jobs
+from vdsm.common.units import MiB
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -50,7 +51,7 @@ from vdsm.storage.sdm.api import copy_data, update_volume
 
 @expandPermutations
 class TestUpdateVolume(VdsmTestCase):
-    DEFAULT_SIZE = 1048576
+    DEFAULT_SIZE = MiB
 
     def setUp(self):
         self.scheduler = FakeScheduler()

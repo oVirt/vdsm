@@ -41,6 +41,7 @@ from testlib import make_uuid
 
 from vdsm import jobs
 from vdsm.common import cmdutils
+from vdsm.common.units import MiB
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -54,7 +55,7 @@ def failure(*args, **kwargs):
     raise cmdutils.Error("code", "out", "err", "Fail amend")
 
 
-DEFAULT_SIZE = 1048576
+DEFAULT_SIZE = MiB
 
 
 @contextmanager

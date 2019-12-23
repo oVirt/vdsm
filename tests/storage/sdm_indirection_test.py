@@ -24,6 +24,7 @@ from contextlib import contextmanager
 
 from vdsm.storage import blockSD
 from vdsm.storage import blockVolume
+from vdsm.storage import constants as sc
 from vdsm.storage import fileSD
 from vdsm.storage import fileVolume
 
@@ -182,8 +183,8 @@ class FakeDomainManifest(object):
 
     @classmethod
     @recorded
-    def validateCreateVolumeParams(cls, volFormat, srcVolUUID, diskType=None,
-                                   preallocate=None):
+    def validateCreateVolumeParams(
+            cls, volFormat, srcVolUUID, diskType=None, preallocate=None):
         pass
 
     @recorded
@@ -194,8 +195,8 @@ class FakeDomainManifest(object):
 class FakeBlockDomainManifest(FakeDomainManifest):
     def __init__(self):
         FakeDomainManifest.__init__(self)
-        self.logBlkSize = 512
-        self.phyBlkSize = 512
+        self.logBlkSize = sc.BLOCK_SIZE_512
+        self.phyBlkSize = sc.BLOCK_SIZE_512
 
     @recorded
     def getMonitoringPath(self):

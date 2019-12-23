@@ -53,7 +53,7 @@ from testlib import start_thread
 
 from vdsm import jobs
 from vdsm.common import exception
-from vdsm.constants import GIB, MEGAB
+from vdsm.common.units import MiB, GiB
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -67,7 +67,7 @@ from vdsm.storage.sdm.api import copy_data
 
 @expandPermutations
 class TestCopyDataDIV(VdsmTestCase):
-    DEFAULT_SIZE = 1048576
+    DEFAULT_SIZE = MiB
 
     def setUp(self):
         self.scheduler = FakeScheduler()
@@ -374,7 +374,7 @@ def test_copy_data_collapse(
     dest_img_id = str(uuid.uuid4())
     dest_vol_id = str(uuid.uuid4())
 
-    length = MEGAB
+    length = MiB
 
     # Write some data to each layer
     for i, vol in enumerate(volumes):
@@ -419,7 +419,7 @@ def test_copy_data_collapse(
 def create_volume(
         dom, imgUUID, volUUID, srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID, volFormat=sc.COW_FORMAT,
-        capacity=GIB):
+        capacity=GiB):
     dom.createVolume(
         imgUUID=imgUUID,
         capacity=capacity,

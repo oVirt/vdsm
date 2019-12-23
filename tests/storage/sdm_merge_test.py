@@ -44,6 +44,7 @@ from testlib import expandPermutations, make_uuid, permutations
 from testlib import VdsmTestCase
 
 from vdsm import jobs
+from vdsm.common.units import KiB, MiB
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -74,7 +75,7 @@ class TestMergeSubchain(VdsmTestCase):
 
     @contextmanager
     def make_env(self, sd_type, chain_len=2):
-        size = 1048576
+        size = MiB
         base_fmt = sc.RAW_FORMAT
         with fake_env(sd_type) as env:
             rm = FakeResourceManager()
@@ -119,7 +120,7 @@ class TestMergeSubchain(VdsmTestCase):
 
             # Verify that the chain data was merged
             for i in range(base_index, top_index + 1):
-                offset = i * 1024
+                offset = i * KiB
                 pattern = 0xf0 + i
 
                 # We expect to read all data from top
@@ -127,7 +128,7 @@ class TestMergeSubchain(VdsmTestCase):
                     top_vol.volumePath,
                     qemuimg.FORMAT.QCOW2,
                     offset=offset,
-                    len=1024,
+                    len=KiB,
                     pattern=pattern)
 
                 # And base, since top was merged into base
@@ -135,7 +136,7 @@ class TestMergeSubchain(VdsmTestCase):
                     base_vol.volumePath,
                     sc.fmt2str(base_vol.getFormat()),
                     offset=offset,
-                    len=1024,
+                    len=KiB,
                     pattern=pattern)
 
             self.assertEqual(sorted(self.expected_locks(base_vol)),
@@ -213,8 +214,8 @@ class TestMergeSubchain(VdsmTestCase):
 
             # Check that validate is called *before* attempting - verify that
             # the chain data was *not* merged
-            offset = base_index * 1024
+            offset = base_index * KiB
             pattern = 0xf0 + base_index
             verify_pattern(base_vol.volumePath, qemuimg.FORMAT.RAW,
-                           offset=offset, len=1024, pattern=pattern)
+                           offset=offset, len=KiB, pattern=pattern)
             self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 0)
