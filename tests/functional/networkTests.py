@@ -761,28 +761,6 @@ class NetworkTest(TestCaseBase):
             # cleanup
             self.setupNetworks({NETWORK_NAME: {'remove': True}}, {}, NOCHK)
 
-    @cleanupNet
-    def testSetupNetworksRemoveSlavelessBond(self):
-        with dummyIf(2) as nics:
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME:
-                    {'bonding': BONDING_NAME, 'bridged': False}},
-                {BONDING_NAME: {'nics': nics}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME)
-            self.assertBondExists(BONDING_NAME, nics)
-
-            with open(BONDING_SLAVES % BONDING_NAME, 'w') as f:
-                for nic in nics:
-                    f.write('-%s\n' % nic)
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True}},
-                {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkDoesntExist(NETWORK_NAME)
-            self.assertBondDoesntExist(BONDING_NAME, nics)
-
     @requiresUnifiedPersistence("with ifcfg persistence, "
                                 "restoreNetConfig doesn't restore "
                                 "in-kernel state")

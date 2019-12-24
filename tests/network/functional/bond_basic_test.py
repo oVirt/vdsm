@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -78,6 +78,20 @@ class TestBondBasic(object):
             with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 adapter.setupNetworks({}, BONDREMOVE, NOCHK)
                 adapter.assertNoBond(BOND_NAME)
+
+    def test_remove_slaveless_bond(self, switch):
+        with dummy_devices(1) as (nic1,):
+            BONDCREATE = {BOND_NAME: {'nics': [nic1], 'switch': switch}}
+
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                with dummy_devices(2) as (nic2, nic3):
+                    BONDEDIT = {
+                        BOND_NAME: {'nics': [nic2, nic3], 'switch': switch}
+                    }
+                    adapter.setupNetworks({}, BONDEDIT, NOCHK)
+
+            adapter.refresh_netinfo()
+            adapter.assertNoBond(BOND_NAME)
 
     def test_change_bond_slaves(self, switch):
         with dummy_devices(3) as (nic1, nic2, nic3):
