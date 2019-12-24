@@ -29,13 +29,13 @@ import pytest
 
 from testlib import make_uuid
 
+from vdsm.common.units import MiB, GiB, PiB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import volume
 
 from . constants import CLEARED_VOLUME_METADATA
 
-MB = 1024 ** 2
 FAKE_TIME = 1461095629
 
 
@@ -44,7 +44,7 @@ def make_init_params(**kwargs):
         domain=make_uuid(),
         image=make_uuid(),
         puuid=make_uuid(),
-        capacity=1024 * MB,
+        capacity=GiB,
         format=sc.type2name(sc.RAW_FORMAT),
         type=sc.type2name(sc.SPARSE_VOL),
         voltype=sc.type2name(sc.LEAF_VOL),
@@ -223,7 +223,7 @@ class TestVolumeMetadata:
         lines.insert(0, b"SIZE=4096")
 
         md = volume.VolumeMetadata.from_lines(lines)
-        assert md.capacity == 2 * MB
+        assert md.capacity == 2 * MiB
 
     def test_from_lines_no_size_and_capacity(self):
         data = make_init_params()
@@ -253,7 +253,7 @@ class TestMDSize:
     MAX_DESCRIPTION = "x" * sc.DESCRIPTION_SIZE
     # We don't think that any one will actually preallocate
     # 1 PB in near future.
-    MAX_PREALLOCATED_SIZE = 1024**5
+    MAX_PREALLOCATED_SIZE = PiB
     MAX_VOLUME_SIZE = 2**63 - 1
 
     @pytest.mark.parametrize('size', [

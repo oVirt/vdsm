@@ -33,6 +33,7 @@ from storage.storagetestlib import (
 
 from testlib import recorded
 
+from vdsm.common.units import MiB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import resourceManager as rm
@@ -40,7 +41,6 @@ from vdsm.storage import volume
 
 
 HOST_ID = 1
-MB = 1048576
 
 
 class FakeSDManifest(object):
@@ -181,8 +181,8 @@ class TestVolumeManifest:
     def test_operation_modifying_metadata(self, vol):
         with vol.operation(requested_gen=0, set_illegal=False):
             vol.setMetaParam(sc.DESCRIPTION, "description")
-        # Metadata changes inside the context should not be overriden by
-        # wirting the new generation.
+        # Metadata changes inside the context should not be overridden by
+        # writing the new generation.
         assert "description" == vol.getMetaParam(sc.DESCRIPTION)
 
 
@@ -190,7 +190,7 @@ class TestVolumeSize:
 
     @pytest.fixture(params=[sc.RAW_FORMAT, sc.COW_FORMAT])
     def vol(self, request):
-        with fake_volume("file", size=MB, format=request.param) as vol:
+        with fake_volume("file", size=MiB, format=request.param) as vol:
             yield vol
 
     def test_get_info_size(self, monkeypatch, vol):
@@ -203,7 +203,7 @@ class TestVolumeSize:
         sd.getVolumeLease = getVolumeLease
 
         info = vol.getInfo()
-        assert info["capacity"] == str(MB)
+        assert info["capacity"] == str(MiB)
 
         st = os.stat(vol.getVolumePath())
         assert info["apparentsize"] == str(st.st_size)
