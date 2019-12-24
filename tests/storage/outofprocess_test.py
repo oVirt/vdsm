@@ -34,6 +34,7 @@ from contextlib import contextmanager
 
 import pytest
 
+from vdsm.storage import constants as sc
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage.exception import MiscDirCleanupFailure
 
@@ -222,9 +223,9 @@ def test_fileutils_createdir(oop_cleanup, tmpdir):
 
 
 @pytest.mark.parametrize("orig_size, expected_size", [
-    (4096 - 1, 4096),
-    (4096, 4096),
-    (4096 + 1, 4096 + 4096),
+    (sc.BLOCK_SIZE_4K - 1, sc.BLOCK_SIZE_4K),
+    (sc.BLOCK_SIZE_4K, sc.BLOCK_SIZE_4K),
+    (sc.BLOCK_SIZE_4K + 1, 2 * sc.BLOCK_SIZE_4K),
 ])
 def test_fileutils_padtoblocksize(
         oop_cleanup, tmpdir, orig_size, expected_size):
