@@ -60,8 +60,8 @@ class Monitor(udev.MultipathMonitor):
             "uuid-2": {
                 "valid_paths": 1,
                 "failed_paths": [
-                    "sdba",
-                    "sdbb"
+                    "8:112",
+                    "8:113"
                 ]
             }
         }
@@ -116,7 +116,7 @@ class Monitor(udev.MultipathMonitor):
     def _path_reinstated(self, event):
         with self._lock:
             mpath = self._status[event.mpath_uuid]
-            mpath.failed_paths.discard(event.path)
+            mpath.failed_paths.discard(event.dm_path)
             if event.dm_seqnum > mpath.dm_seqnum:
                 mpath.valid_paths = event.valid_paths
                 mpath.dm_seqnum = event.dm_seqnum
@@ -124,27 +124,27 @@ class Monitor(udev.MultipathMonitor):
                 self._status.pop(event.mpath_uuid)
                 log.info("Path %r reinstated for multipath device %r,"
                          " all paths are valid",
-                         event.path, event.mpath_uuid)
+                         event.dm_path, event.mpath_uuid)
             else:
                 log.info("Path %r reinstated for multipath device %r,"
                          " %d valid paths left",
-                         event.path, event.mpath_uuid, event.valid_paths)
+                         event.dm_path, event.mpath_uuid, event.valid_paths)
 
     def _path_failed(self, event):
         with self._lock:
             mpath = self._status[event.mpath_uuid]
-            mpath.failed_paths.add(event.path)
+            mpath.failed_paths.add(event.dm_path)
             if event.dm_seqnum > mpath.dm_seqnum:
                 mpath.valid_paths = event.valid_paths
                 mpath.dm_seqnum = event.dm_seqnum
             if event.valid_paths == 0:
                 log.warn("Path %r failed for multipath device %r,"
                          " no valid paths left",
-                         event.path, event.mpath_uuid)
+                         event.dm_path, event.mpath_uuid)
             else:
                 log.info("Path %r failed for multipath device %r,"
                          " %d valid paths left",
-                         event.path, event.mpath_uuid, event.valid_paths)
+                         event.dm_path, event.mpath_uuid, event.valid_paths)
 
     def _mpath_removed(self, event):
         with self._lock:

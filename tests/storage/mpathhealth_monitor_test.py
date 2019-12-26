@@ -36,13 +36,13 @@ def test_no_events():
 
 def test_failed_path():
     monitor = mpathhealth.Monitor()
-    event = udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sda", 1, 10)
+    event = udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:11", 1, 10)
     monitor.handle(event)
     expected = {
         "uuid-1": {
             "valid_paths": 1,
             "failed_paths": [
-                "sda"
+                "8:11"
             ]
         }
     }
@@ -51,7 +51,7 @@ def test_failed_path():
 
 def test_removed():
     monitor = mpathhealth.Monitor()
-    event = udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sda", 1, 10)
+    event = udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:11", 1, 10)
     monitor.handle(event)
     event = udev.MultipathEvent(udev.MPATH_REMOVED, "uuid-1", None, None, None)
     monitor.handle(event)
@@ -68,8 +68,8 @@ def test_removed_not_existing():
 def test_multiple_mpath():
     monitor = mpathhealth.Monitor()
     events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdaa", 1, 10),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "sdba", 2, 11)
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:111", 1, 10),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "9:112", 2, 11)
     ]
     for e in events:
         monitor.handle(e)
@@ -77,13 +77,13 @@ def test_multiple_mpath():
         "uuid-2": {
             "valid_paths": 2,
             "failed_paths": [
-                "sdba"
+                "9:112"
             ]
         },
         "uuid-1": {
             "valid_paths": 1,
             "failed_paths": [
-                "sdaa"
+                "8:111"
             ]
         }
     }
@@ -93,10 +93,10 @@ def test_multiple_mpath():
 def test_multiple_mpath_paths():
     monitor = mpathhealth.Monitor()
     events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdaa", 1, 10),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "sdba", 2, 11),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdab", 0, 12),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "sdbb", 1, 13)
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:111", 1, 10),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "9:112", 2, 11),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:112", 0, 12),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "9:113", 1, 13)
     ]
     for e in events:
         monitor.handle(e)
@@ -104,15 +104,15 @@ def test_multiple_mpath_paths():
         "uuid-2": {
             "valid_paths": 1,
             "failed_paths": [
-                "sdba",
-                "sdbb"
+                "9:112",
+                "9:113"
             ]
         },
         "uuid-1": {
             "valid_paths": 0,
             "failed_paths": [
-                "sdaa",
-                "sdab"
+                "8:111",
+                "8:112"
             ]
         }
     }
@@ -121,7 +121,7 @@ def test_multiple_mpath_paths():
 
 def test_reinstated_path_no_mpath():
     monitor = mpathhealth.Monitor()
-    event = udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "sdaa", 1, 10)
+    event = udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "8:111", 1, 10)
     monitor.handle(event)
     assert monitor.status() == {}
 
@@ -129,8 +129,8 @@ def test_reinstated_path_no_mpath():
 def test_reinstated_last_path():
     monitor = mpathhealth.Monitor()
     events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdaa", 1, 10),
-        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "sdaa", 2, 11)
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:111", 1, 10),
+        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "8:111", 2, 11)
     ]
     for e in events:
         monitor.handle(e)
@@ -140,9 +140,9 @@ def test_reinstated_last_path():
 def test_reinstated__path():
     monitor = mpathhealth.Monitor()
     events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdaa", 2, 10),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdab", 1, 11),
-        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "sdaa", 2, 12)
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:111", 2, 10),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:112", 1, 11),
+        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "8:111", 2, 12)
     ]
     for e in events:
         monitor.handle(e)
@@ -150,7 +150,7 @@ def test_reinstated__path():
         "uuid-1": {
             "valid_paths": 2,
             "failed_paths": [
-                "sdab"
+                "8:112"
             ]
         }
     }
@@ -163,9 +163,9 @@ def test_start_some_failed(monkeypatch):
         return {
             'uuid-1':
                 [
-                    PathStatus('sda', 'F'),
-                    PathStatus('sdb', 'A'),
-                    PathStatus('sdc', 'A')
+                    PathStatus('8:11', 'F'),
+                    PathStatus('8:12', 'A'),
+                    PathStatus('8:13', 'A')
                 ]
         }
 
@@ -177,7 +177,7 @@ def test_start_some_failed(monkeypatch):
         "uuid-1": {
             "valid_paths": 2,
             "failed_paths": [
-                "sda"
+                "8:11"
             ]
         }
     }
@@ -190,9 +190,9 @@ def test_start_all_active(monkeypatch):
         return {
             'uuid-1':
                 [
-                    PathStatus('sda', 'A'),
-                    PathStatus('sdb', 'A'),
-                    PathStatus('sdc', 'A')
+                    PathStatus('8:11', 'A'),
+                    PathStatus('8:12', 'A'),
+                    PathStatus('8:13', 'A')
                 ]
         }
 
@@ -209,9 +209,9 @@ def test_start_all_failed(monkeypatch):
         return {
             'uuid-1':
                 [
-                    PathStatus('sda', 'F'),
-                    PathStatus('sdb', 'F'),
-                    PathStatus('sdc', 'F')
+                    PathStatus('8:11', 'F'),
+                    PathStatus('8:12', 'F'),
+                    PathStatus('8:13', 'F')
                 ]
         }
 
@@ -223,9 +223,9 @@ def test_start_all_failed(monkeypatch):
         "uuid-1": {
             "valid_paths": 0,
             "failed_paths": [
-                "sda",
-                "sdb",
-                "sdc"
+                "8:11",
+                "8:12",
+                "8:13"
             ]
         }
     }
@@ -238,9 +238,9 @@ def test_events_after_start(monkeypatch):
         return {
             'uuid-1':
                 [
-                    PathStatus('sda', 'F'),
-                    PathStatus('sdb', 'A'),
-                    PathStatus('sdc', 'A')
+                    PathStatus('8:11', 'F'),
+                    PathStatus('8:12', 'A'),
+                    PathStatus('8:13', 'A')
                 ]
         }
 
@@ -250,9 +250,9 @@ def test_events_after_start(monkeypatch):
     monitor.start()
 
     events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdb", 1, 10),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdc", 0, 11),
-        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "sda", 1, 12)
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:12", 1, 10),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:13", 0, 11),
+        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "8:11", 1, 12)
     ]
     for e in events:
         monitor.handle(e)
@@ -260,8 +260,8 @@ def test_events_after_start(monkeypatch):
         "uuid-1": {
             "valid_paths": 1,
             "failed_paths": [
-                "sdb",
-                "sdc"
+                "8:12",
+                "8:13"
             ]
         }
     }
@@ -271,8 +271,8 @@ def test_events_after_start(monkeypatch):
 def test_multiple_mpath_paths_unordered():
     monitor = mpathhealth.Monitor()
     events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sda", 2, 13),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdb", 3, 12),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:11", 2, 13),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:12", 3, 12),
     ]
     for e in events:
         monitor.handle(e)
@@ -280,8 +280,8 @@ def test_multiple_mpath_paths_unordered():
         "uuid-1": {
             "valid_paths": 2,
             "failed_paths": [
-                "sda",
-                "sdb",
+                "8:11",
+                "8:12",
             ]
         }
     }
@@ -293,10 +293,10 @@ def test_multiple_mpath_paths_unordered_with_initial_status(monkeypatch):
         return {
             'uuid-1':
                 [
-                    PathStatus('sda', 'F'),
-                    PathStatus('sdb', 'A'),
-                    PathStatus('sdc', 'A'),
-                    PathStatus('sdd', 'A'),
+                    PathStatus('8:11', 'F'),
+                    PathStatus('8:12', 'A'),
+                    PathStatus('8:13', 'A'),
+                    PathStatus('8:14', 'A'),
                 ]
         }
 
@@ -306,8 +306,8 @@ def test_multiple_mpath_paths_unordered_with_initial_status(monkeypatch):
     monitor.start()
 
     events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdb", 1, 13),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdb", 2, 12),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:12", 1, 13),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:12", 2, 12),
     ]
     for e in events:
         monitor.handle(e)
@@ -315,8 +315,8 @@ def test_multiple_mpath_paths_unordered_with_initial_status(monkeypatch):
         "uuid-1": {
             "valid_paths": 1,
             "failed_paths": [
-                "sda",
-                "sdb",
+                "8:11",
+                "8:12",
             ]
         }
     }

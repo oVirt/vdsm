@@ -28,7 +28,6 @@ import threading
 
 import pytest
 
-from vdsm.storage import devicemapper
 from vdsm.storage import udev
 from vdsm.utils import running
 
@@ -37,7 +36,7 @@ from . marks import requires_root
 
 EVENT = udev.MultipathEvent(type=udev.MPATH_REMOVED,
                             mpath_uuid="fake-uuid-3",
-                            path=None,
+                            dm_path=None,
                             valid_paths=None,
                             dm_seqnum=None)
 
@@ -247,13 +246,13 @@ def test_hotunplug_monitor():
             ACTION="change",
             DM_ACTION="PATH_REINSTATED",
             DM_UUID="mpath-fake-uuid-1",
-            DM_PATH="sda",
+            DM_PATH="8:128",
             DM_NR_VALID_PATHS="1",
             DM_SEQNUM="10"),
         udev.MultipathEvent(
             type=udev.PATH_REINSTATED,
             mpath_uuid="fake-uuid-1",
-            path="sda",
+            dm_path="8:128",
             valid_paths=1,
             dm_seqnum=10)
     ),
@@ -269,7 +268,7 @@ def test_hotunplug_monitor():
         udev.MultipathEvent(
             type=udev.PATH_FAILED,
             mpath_uuid="fake-uuid-2",
-            path="sda",
+            dm_path="66:32",
             valid_paths=4,
             dm_seqnum=11)
     ),
@@ -281,14 +280,12 @@ def test_hotunplug_monitor():
         udev.MultipathEvent(
             type=udev.MPATH_REMOVED,
             mpath_uuid="fake-uuid-3",
-            path=None,
+            dm_path=None,
             valid_paths=None,
             dm_seqnum=None)
     ),
 ])
 def test_report_events(monkeypatch, device, expected):
-    # Avoid accessing non-existing devices
-    monkeypatch.setattr(devicemapper, "device_name", lambda x: "sda")
     listener = udev.MultipathListener()
     mon = Monitor()
     listener.register(mon)
@@ -398,7 +395,7 @@ def test_failing_event():
         ACTION="change",
         DM_ACTION="PATH_REINSTATED",
         DM_UUID="mpath-fake-uuid-1",
-        DM_PATH="sda",
+        DM_PATH="8:67",
         DM_NR_VALID_PATHS="sfsdfs")
     listener = udev.MultipathListener()
     mon = Monitor()

@@ -221,8 +221,7 @@ def multipath_status():
         statuses = []
         for m in PATH_STATUS_RE.finditer(paths):
             major_minor, status = m.groups()
-            name = device_name(major_minor)
-            statuses.append(PathStatus(name, status))
+            statuses.append(PathStatus(major_minor, status))
 
         res[guid] = statuses
 
