@@ -21,6 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from vdsm.common.units import KiB, MiB
+
 LINE_DELIMITER = 0
 
 
@@ -64,9 +66,9 @@ def parse_size(tokens):
     """Returns a numerical byte representation of the textual size in tokens"""
     size = next(tokens)
     if size[-2:] == 'Mb':
-        return int(float(size[:-2]) * 1024 ** 2)
+        return int(float(size[:-2]) * MiB)
     elif size[-2:] == 'Kb':
-        return int(float(size[:-2]) * 1024)
+        return int(float(size[:-2]) * KiB)
     else:  # bytes
         return int(size[:-1])
 
