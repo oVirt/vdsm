@@ -23,6 +23,7 @@ from __future__ import division
 import os
 import stat
 
+from vdsm.common.units import MiB
 from vdsm.storage import sdc
 from vdsm.storage import qemuimg
 
@@ -36,7 +37,7 @@ from testlib import make_config
 from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
 
-VIRTUAL_SIZE = 10 * 1024**2
+VIRTUAL_SIZE = 10 * MiB
 QCOW2_COMPAT = '1.1'
 
 

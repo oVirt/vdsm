@@ -27,14 +27,15 @@ import threading
 
 import libvirt
 
+from vdsm import utils
 from vdsm.common import response
+from vdsm.common.units import MiB, GiB
 from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE, BLOCK_THRESHOLD
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.utils import TimedAcquireLock
 from vdsm.virt import drivemonitor
 from vdsm.virt import vm
 from vdsm.virt import vmstatus
-from vdsm import utils
 
 from testlib import expandPermutations, permutations
 from testlib import make_config
@@ -45,11 +46,7 @@ import vmfakelib as fake
 from monkeypatch import MonkeyPatchScope
 
 
-MB = 1024 ** 2
-GB = 1024 ** 3
-
-
-CHUNK_SIZE = 1 * GB
+CHUNK_SIZE = 1 * GiB
 CHUNK_PCT = 50
 
 REPLICA_BASE_INDEX = 1000
@@ -107,14 +104,12 @@ class DiskExtensionTestBase(VdsmTestCase):
     # helpers
 
     BLOCK_INFOS = {
-        'capacity': 4 * GB, 'allocation': 1 * GB, 'physical': 2 * GB
+        'capacity': 4 * GiB, 'allocation': 1 * GiB, 'physical': 2 * GiB
     }
 
     DRIVE_INFOS = (
-        (drive_config(format='cow', diskType=DISK_TYPE.BLOCK),
-            BLOCK_INFOS),
-        (drive_config(format='cow', diskType=DISK_TYPE.BLOCK),
-            BLOCK_INFOS)
+        (drive_config(format='cow', diskType=DISK_TYPE.BLOCK), BLOCK_INFOS),
+        (drive_config(format='cow', diskType=DISK_TYPE.BLOCK), BLOCK_INFOS)
     )
 
     def check_extension(self, drive_info, drive_obj, extension_req):
@@ -156,10 +151,10 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
                 events_enabled=False,
                 drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
-            vda['allocation'] = 0 * MB
+            vda['allocation'] = 0 * MiB
             vdb = dom.block_info['/virtio/1']
             vdb['allocation'] = allocation_threshold_for_resize_mb(
-                vdb, drives[1]) - 1 * MB
+                vdb, drives[1]) - 1 * MiB
 
             extended = testvm.monitor_drives()
 
@@ -170,7 +165,7 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
                 events_enabled=False,
                 drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
-            vda['allocation'] = 0 * MB
+            vda['allocation'] = 0 * MiB
             vdb = dom.block_info['/virtio/1']
             max_size = drives[1].getMaxVolumeSize(vdb['capacity'])
             vdb['allocation'] = max_size
@@ -184,10 +179,10 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
                 events_enabled=False,
                 drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
-            vda['allocation'] = 0 * MB
+            vda['allocation'] = 0 * MiB
             vdb = dom.block_info['/virtio/1']
             vdb['allocation'] = allocation_threshold_for_resize_mb(
-                vdb, drives[1]) + 1 * MB
+                vdb, drives[1]) + 1 * MiB
 
             extended = testvm.monitor_drives()
 
@@ -203,7 +198,7 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
             vda['allocation'] = drives[0].getNextVolumeSize(
                 vda['physical'], vda['capacity'])
             vdb = dom.block_info['/virtio/1']
-            vdb['allocation'] = 0 * MB
+            vdb['allocation'] = 0 * MiB
             extended = testvm.monitor_drives()
 
         self.assertEqual(extended, True)
@@ -217,9 +212,9 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
             vda = dom.block_info['/virtio/0']
             vda['allocation'] = (
                 drives[0].getNextVolumeSize(
-                    vda['physical'], vda['capacity']) + 1 * MB)
+                    vda['physical'], vda['capacity']) + 1 * MiB)
             vdb = dom.block_info['/virtio/1']
-            vdb['allocation'] = 0 * MB
+            vdb['allocation'] = 0 * MiB
             extended = testvm.monitor_drives()
 
         self.assertEqual(extended, False)
@@ -233,10 +228,10 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
             testvm.pause()
 
             vda = dom.block_info['/virtio/0']
-            vda['allocation'] = 0 * MB
+            vda['allocation'] = 0 * MiB
             vdb = dom.block_info['/virtio/1']  # shortcut
             vdb['allocation'] = allocation_threshold_for_resize_mb(
-                vdb, drives[1]) + 1 * MB
+                vdb, drives[1]) + 1 * MiB
 
             extended = testvm.monitor_drives()
             self.assertEqual(extended, True)
@@ -272,13 +267,13 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             vdb = dom.block_info['/virtio/1']
 
             alloc = allocation_threshold_for_resize_mb(
-                vdb, drives[1]) + 1 * MB
+                vdb, drives[1]) + 1 * MiB
 
             vdb['allocation'] = alloc
 
             # Simulating block threshold event
             testvm.drive_monitor.on_block_threshold(
-                'vdb', '/virtio/1', alloc, 1 * MB)
+                'vdb', '/virtio/1', alloc, 1 * MiB)
 
             drv = drives[1]
             self.assertEqual(drv.threshold_state, BLOCK_THRESHOLD.EXCEEDED)
@@ -306,25 +301,25 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
         ((drive_config(
             format='cow',
             diskType=DISK_TYPE.FILE),
-         {'capacity': 4 * GB, 'allocation': 2 * GB, 'physical': 2 * GB}),
+         {'capacity': 4 * GiB, 'allocation': 2 * GiB, 'physical': 2 * GiB}),
          BLOCK_THRESHOLD.UNSET, None),
         # ditto
         ((drive_config(
             format='raw',
             diskType=DISK_TYPE.BLOCK),
-         {'capacity': 2 * GB, 'allocation': 0 * GB, 'physical': 2 * GB}),
+         {'capacity': 2 * GiB, 'allocation': 0 * GiB, 'physical': 2 * GiB}),
          BLOCK_THRESHOLD.UNSET, None),
         # ditto
         ((drive_config(
             format='raw',
             diskType=DISK_TYPE.FILE),
-         {'capacity': 2 * GB, 'allocation': 0 * GB, 'physical': 2 * GB}),
+         {'capacity': 2 * GiB, 'allocation': 0 * GiB, 'physical': 2 * GiB}),
          BLOCK_THRESHOLD.UNSET, None),
         # ditto
         ((drive_config(
             format='raw',
             diskType=DISK_TYPE.NETWORK),
-         {'capacity': 2 * GB, 'allocation': 0 * GB, 'physical': 2 * GB}),
+         {'capacity': 2 * GiB, 'allocation': 0 * GiB, 'physical': 2 * GiB}),
          BLOCK_THRESHOLD.UNSET, None),
         # non-chunked drive replicating to non-chunked drive
         ((drive_config(
@@ -333,7 +328,7 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             diskReplicate={
                 'format': 'cow',
                 'diskType': DISK_TYPE.FILE}),
-         {'capacity': 4 * GB, 'allocation': 2 * GB, 'physical': 2 * GB}),
+         {'capacity': 4 * GiB, 'allocation': 2 * GiB, 'physical': 2 * GiB}),
          BLOCK_THRESHOLD.UNSET, None),
         # non-chunked drive replicating to chunked-drive
         #
@@ -349,14 +344,14 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             diskReplicate={
                 'format': 'cow',
                 'diskType': DISK_TYPE.BLOCK}),
-         {'capacity': 4 * GB, 'allocation': 2 * GB, 'physical': 2 * GB}),
-         BLOCK_THRESHOLD.SET, 1 * GB),
+         {'capacity': 4 * GiB, 'allocation': 2 * GiB, 'physical': 2 * GiB}),
+         BLOCK_THRESHOLD.SET, 1 * GiB),
         # chunked drive
         ((drive_config(
             format='cow',
             diskType=DISK_TYPE.BLOCK),
-         {'capacity': 4 * GB, 'allocation': 1 * GB, 'physical': 2 * GB}),
-         BLOCK_THRESHOLD.SET, 1536 * MB),
+         {'capacity': 4 * GiB, 'allocation': 1 * GiB, 'physical': 2 * GiB}),
+         BLOCK_THRESHOLD.SET, 1536 * MiB),
         # chunked drive replicating to chunked drive
         ((drive_config(
             format='cow',
@@ -364,8 +359,8 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             diskReplicate={
                 'format': 'cow',
                 'diskType': DISK_TYPE.BLOCK}),
-         {'capacity': 4 * GB, 'allocation': 1 * GB, 'physical': 3 * GB}),
-         BLOCK_THRESHOLD.SET, 2 * GB),
+         {'capacity': 4 * GiB, 'allocation': 1 * GiB, 'physical': 3 * GiB}),
+         BLOCK_THRESHOLD.SET, 2 * GiB),
         # chunked drive replicating to non-chunked drive
         ((drive_config(
             format='cow',
@@ -373,8 +368,8 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             diskReplicate={
                 'format': 'cow',
                 'diskType': DISK_TYPE.FILE}),
-         {'capacity': 4 * GB, 'allocation': 1 * GB, 'physical': 3 * GB}),
-         BLOCK_THRESHOLD.SET, 2 * GB),
+         {'capacity': 4 * GiB, 'allocation': 1 * GiB, 'physical': 3 * GiB}),
+         BLOCK_THRESHOLD.SET, 2 * GiB),
     ])
     def test_set_new_threshold_when_state_unset(self, drive_info,
                                                 expected_state, threshold):
@@ -446,7 +441,7 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             vda = dom.block_info['/virtio/0']
             vda['allocation'] = allocation_threshold_for_resize_mb(
-                vda, drives[0]) + 1 * MB
+                vda, drives[0]) + 1 * MiB
 
             testvm.monitor_drives()
 
@@ -470,11 +465,11 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             vda = dom.block_info['/virtio/0']
 
             alloc = allocation_threshold_for_resize_mb(
-                vda, drives[0]) + 1 * MB
+                vda, drives[0]) + 1 * MiB
 
             # Simulating block threshold event
             testvm.drive_monitor.on_block_threshold(
-                'vda', '/virtio/0', alloc, 1 * MB)
+                'vda', '/virtio/0', alloc, 1 * MiB)
 
             testvm.monitor_drives()
 
@@ -497,7 +492,7 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             # The BLOCK_THRESHOLD event contains the highest allocated
             # block...
             alloc = allocation_threshold_for_resize_mb(
-                vdb, drives[1]) + 1 * MB
+                vdb, drives[1]) + 1 * MiB
 
             # ... but we repeat the check in monitor_drives(),
             # so we need to set both locations to the correct value.
@@ -505,7 +500,7 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             # Simulating block threshold event
             testvm.drive_monitor.on_block_threshold(
-                'vdb', '/virtio/1', alloc, 1 * MB)
+                'vdb', '/virtio/1', alloc, 1 * MiB)
 
             # Simulating periodic check
             testvm.monitor_drives()

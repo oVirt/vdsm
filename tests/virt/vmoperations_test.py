@@ -31,6 +31,7 @@ from vdsm.common import hooks
 from vdsm.common import libvirtconnection
 from vdsm.common import password
 from vdsm.common import response
+from vdsm.common.units import MiB
 from vdsm.config import config
 from vdsm.virt import saslpasswd2
 from vdsm.virt import virdomain
@@ -461,7 +462,7 @@ def _mem_committed(mem_size_mb):
     """
     memory = mem_size_mb
     memory += config.getint('vars', 'guest_ram_overhead')
-    return 2 ** 20 * memory
+    return memory * MiB
 
 
 class ChangingSchedulerDomain(object):

@@ -25,6 +25,7 @@ from __future__ import division
 from contextlib import contextmanager
 import logging
 
+from vdsm.common.units import MiB, GiB
 from vdsm.virt.vmdevices import storage
 from vdsm.virt import drivemonitor
 
@@ -33,10 +34,6 @@ from monkeypatch import MonkeyPatchScope
 from testlib import make_config
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
-
-
-MB = 1024 ** 2
-GB = 1024 ** 3
 
 
 @contextmanager
@@ -368,8 +365,8 @@ class TestDrivemonitor(VdsmTestCase):
             vda = make_drive(self.log, index=0, iface='virtio')
             vm.drives.append(vda)
 
-            apparentsize = 4 * GB
-            threshold = 512 * MB
+            apparentsize = 4 * GiB
+            threshold = 512 * MiB
 
             mon.set_threshold(vda, apparentsize)
             expected = apparentsize - threshold
@@ -384,7 +381,7 @@ class TestDrivemonitor(VdsmTestCase):
             vda = make_drive(self.log, index=0, iface='virtio')
             vm.drives.append(vda)
 
-            apparentsize = 128 * MB
+            apparentsize = 128 * MiB
 
             mon.set_threshold(vda, apparentsize)
             drive_name, value = vm._dom.thresholds[0]

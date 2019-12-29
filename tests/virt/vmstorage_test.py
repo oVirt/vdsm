@@ -36,8 +36,8 @@ from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
 from testValidation import xfail
 
-from vdsm import constants
 from vdsm.common import exception
+from vdsm.common.units import MiB, GiB
 from vdsm.common import xmlutils
 from vdsm import utils
 from vdsm.virt.vmdevices import storage
@@ -673,9 +673,9 @@ class ReplicaChunkedTests(VdsmTestCase):
 @expandPermutations
 class DriveVolumeSizeTests(VdsmTestCase):
 
-    CAPACITY = 8192 * constants.MEGAB
+    CAPACITY = 8 * GiB
 
-    @permutations([[1024 * constants.MEGAB], [2048 * constants.MEGAB]])
+    @permutations([[1 * GiB], [2 * GiB]])
     def test_next_size(self, cursize):
         conf = drive_config(format='cow', diskType=DISK_TYPE.BLOCK)
         drive = Drive(self.log, **conf)
@@ -692,8 +692,7 @@ class DriveVolumeSizeTests(VdsmTestCase):
     def test_max_size(self):
         conf = drive_config(format='cow', diskType=DISK_TYPE.BLOCK)
         drive = Drive(self.log, **conf)
-        size = utils.round(self.CAPACITY * drive.VOLWM_COW_OVERHEAD,
-                           constants.MEGAB)
+        size = utils.round(self.CAPACITY * drive.VOLWM_COW_OVERHEAD, MiB)
         self.assertEqual(drive.getMaxVolumeSize(self.CAPACITY), size)
 
 

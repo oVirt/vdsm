@@ -27,6 +27,7 @@ import uuid
 
 import six
 
+from vdsm.common.units import KiB, MiB, GiB
 from vdsm.virt import vmstats
 
 from fakelib import FakeLogger
@@ -439,16 +440,14 @@ class DiskStatsTests(VmStatsTestCase):
 
     def test_disk_all_keys_present(self):
         interval = 10  # seconds
-        drives = (FakeDrive(name='hdc', size=700 * 1024 * 1024),)
+        drives = (FakeDrive(name='hdc', size=700 * MiB),)
         testvm = FakeVM(drives=drives)
 
         stats = {}
         stats_before = copy.deepcopy(self.bulk_stats)
         stats_after = copy.deepcopy(self.bulk_stats)
-        _ensure_delta(stats_before, stats_after,
-                      'block.0.rd.reqs', 1024)
-        _ensure_delta(stats_before, stats_after,
-                      'block.0.rd.bytes', 128 * 1024)
+        _ensure_delta(stats_before, stats_after, 'block.0.rd.reqs', KiB)
+        _ensure_delta(stats_before, stats_after, 'block.0.rd.bytes', 128 * KiB)
         vmstats.disks(testvm, stats,
                       stats_before, stats_after,
                       interval)
@@ -460,7 +459,7 @@ class DiskStatsTests(VmStatsTestCase):
         # with zero interval, we won't have {read,write}Rate
         expected_keys = tuple(k for k in self._EXPECTED_KEYS
                               if k not in ('readRate', 'writeRate'))
-        drives = (FakeDrive(name='hdc', size=700 * 1024 * 1024),)
+        drives = (FakeDrive(name='hdc', size=700 * MiB),)
         testvm = FakeVM(drives=drives)
 
         stats = {}
@@ -478,7 +477,7 @@ class DiskStatsTests(VmStatsTestCase):
              'block.0.wr.bytes', 'block.1.wr.bytes'))
 
         interval = 10  # seconds
-        drives = (FakeDrive(name='hdc', size=700 * 1024 * 1024),)
+        drives = (FakeDrive(name='hdc', size=700 * MiB),)
         testvm = FakeVM(drives=drives)
 
         stats = {}
@@ -493,7 +492,7 @@ class DiskStatsTests(VmStatsTestCase):
              'block.0.wr.reqs', 'block.1.wr.reqs'))
 
         interval = 10  # seconds
-        drives = (FakeDrive(name='hdc', size=700 * 1024 * 1024),)
+        drives = (FakeDrive(name='hdc', size=700 * MiB),)
         testvm = FakeVM(drives=drives)
 
         stats = {}
@@ -511,7 +510,7 @@ class DiskStatsTests(VmStatsTestCase):
             'write_iops_sec': 0,
             'read_iops_sec': 0
         }
-        drive = FakeDrive(name='sda', size=8 * 1024 * 1024 * 1024)
+        drive = FakeDrive(name='sda', size=8 * GiB)
         drive.path = '/fake/path'
         drive.iotune = iotune
         testvm = FakeVM(drives=(drive,))
@@ -699,6 +698,6 @@ class FakeVM(object):
         # no specific meaning, just need to be realistic (e.g. not _1_)
         # unit is KiB
         return {
-            'target': 256 * 1024,
-            'minimum': 256 * 1024,
+            'target': 256 * KiB,
+            'minimum': 256 * KiB,
         }
