@@ -39,6 +39,16 @@ stages:
             distributions:
               - el8
               - fc30
+        - nmstate-func-tests:
+            run-if:
+              file-changed:
+                - 'lib/vdsm/network/*'
+                - 'lib/vdsm/common/network/*'
+                - 'tests/network/functional/*'
+            runtime-requirements:
+              host-distro: newer
+            distributions:
+            - fc30
   - check-network: &check-network
       archs:
         - x86_64
