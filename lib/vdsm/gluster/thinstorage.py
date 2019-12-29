@@ -28,6 +28,8 @@ from six import iteritems
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
+from vdsm.common.units import KiB
+
 from . import exception as ge
 from . import gluster_mgmt_api
 
@@ -95,8 +97,8 @@ def vdoVolumeList():
         for mapper, stats in iteritems(data["VDO statistics"]):
             blockSize = stats["block size"]
             entry["name"] = mapper
-            entry["size"] = stats["1K-blocks"] * 1024
-            entry["free"] = stats["1K-blocks available"] * 1024
+            entry["size"] = stats["1K-blocks"] * KiB
+            entry["free"] = stats["1K-blocks available"] * KiB
             entry["logicalBytesUsed"] = (
                 stats["logical blocks used"] * blockSize
             )
