@@ -934,6 +934,8 @@ def create_tap():
         yield devname
     finally:
         exec_sync(['ip', 'tuntap', 'del', devname, 'mode', 'tap'])
+        if nmstate.is_nmstate_backend():
+            exec_sync(['nmcli', 'con', 'del', devname])
 
 
 def attach_dev_to_bridge(tapdev, bridge):
