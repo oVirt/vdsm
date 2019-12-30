@@ -24,7 +24,7 @@ import logging
 import shutil
 import tempfile
 import threading
-from vdsm.common.define import Mbytes
+from vdsm.common.units import MiB
 from vdsm.momIF import MomClient
 import os.path
 import monkeypatch
@@ -170,7 +170,7 @@ class MomPolicyTests(TestCase):
             "ksmMergeAcrossNodes": True,
             "ksmState": False,
             "ksmPages": 5,
-            "memShared": 100 * cpuarch.PAGE_SIZE_BYTES // Mbytes
+            "memShared": 100 * cpuarch.PAGE_SIZE_BYTES // MiB
         }
 
         self.assertEqual(stats, expected)

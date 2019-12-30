@@ -27,7 +27,7 @@ import threading
 
 import six
 
-from vdsm.common.define import Mbytes
+from vdsm.common.units import MiB
 from vdsm.config import config
 from vdsm import throttledlog
 
@@ -111,7 +111,7 @@ class MomClient(object):
             ret['ksmPages'] = stats['ksm_pages_to_scan']
             ret['ksmMergeAcrossNodes'] = bool(stats['ksm_merge_across_nodes'])
             ret['memShared'] = stats['ksm_pages_sharing'] * PAGE_SIZE_BYTES
-            ret['memShared'] //= Mbytes
+            ret['memShared'] //= MiB
             ret['ksmCpu'] = stats['ksmd_cpu_usage']
         except (ThrottledClient.Inactive, AttributeError, socket.error) as e:
             throttledlog.warning(
