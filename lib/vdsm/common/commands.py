@@ -173,7 +173,7 @@ def communicate(proc, input=None):
     Arguments:
         proc: subprocess.Popen instance or commands.PrivilegedPopen if
             subprocess was created with sudo enabled.
-        input (str): input data to be sent to the child process, or None, if
+        input (bytes): input data to be sent to the child process, or None, if
             no data should be sent to the process.
 
     Returns:

@@ -38,6 +38,7 @@ from vdsm.common import constants
 from vdsm.common import commands
 from vdsm.common.compat import subprocess
 from vdsm.common.password import ProtectedPassword
+from vdsm.storage import constants as sc
 
 import fakelib
 
@@ -318,7 +319,7 @@ class TestExecCmdStress:
     CONCURRENCY = 50
     FUNC_DELAY = 0.01
     FUNC_CALLS = 40
-    BLOCK_SIZE = 4096
+    BLOCK_SIZE = sc.BLOCK_SIZE_4K
     BLOCK_COUNT = 256
 
     def setup_method(self, test_method):
