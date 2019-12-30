@@ -31,8 +31,8 @@ from vdsm.common import conv
 from vdsm.common import cpuarch
 from vdsm.common import errors
 from vdsm.common import exception
+from vdsm.common.units import MiB
 from vdsm.config import config
-from vdsm import constants
 from vdsm import utils
 from vdsm.virt import vmtune
 from vdsm.virt import vmxml
@@ -127,7 +127,7 @@ class Drive(core.Base):
                  'vm_custom', 'blockinfo', '_threshold_state', '_lock',
                  '_monitorable', 'guestName', '_iotune', 'RBD')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
-                        constants.MEGAB)
+                        MiB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
     VOLWM_CHUNK_REPLICATE_MULT = 2  # Chunk multiplier during replication
 
@@ -354,8 +354,7 @@ class Drive(core.Base):
         capacity is the maximum size of the volume. It can be discovered using
         libvirt.virDomain.blockInfo() or qemuimg.info().
         """
-        nextSize = utils.round(curSize + self.volExtensionChunk,
-                               constants.MEGAB)
+        nextSize = utils.round(curSize + self.volExtensionChunk, MiB)
         return min(nextSize, self.getMaxVolumeSize(capacity))
 
     def getMaxVolumeSize(self, capacity):
@@ -365,8 +364,7 @@ class Drive(core.Base):
         data. The actual lv size may be larger due to rounding to next lvm
         extent.
         """
-        return utils.round(capacity * self.VOLWM_COW_OVERHEAD,
-                           constants.MEGAB)
+        return utils.round(capacity * self.VOLWM_COW_OVERHEAD, MiB)
 
     @property
     def chunked(self):

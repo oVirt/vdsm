@@ -228,7 +228,7 @@ def memory_xml(params):
         <address type='dimm' slot='0' base='0x100000000'/>
       </memory>
     """
-    # We get size in MB and send in KB
+    # We get size in MiB and send in KiB.
     size = int(params['size']) * 1024
     node = params['node']
     alias = params.get('alias')
