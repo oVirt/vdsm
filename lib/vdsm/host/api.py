@@ -28,7 +28,7 @@ from . import stats
 from vdsm import utils
 from vdsm import metrics
 from vdsm.common import hooks
-from vdsm.common.define import Kbytes, Mbytes
+from vdsm.common.units import KiB, MiB
 from vdsm.config import config
 from vdsm.virt import vmstatus
 
@@ -41,7 +41,7 @@ except ImportError:
 
 def get_stats(cif, sample, multipath=False):
     """
-    Retreive host internal statistics
+    Retrieve host internal statistics.
     """
     hooks.before_get_stats()
     ret = {}
@@ -62,9 +62,9 @@ def get_stats(cif, sample, multipath=False):
         ret[var] = utils.convertToStr(decStats[var])
 
     avail, commit = _memUsageInfo(cif)
-    ret['memAvailable'] = avail // Mbytes
-    ret['memCommitted'] = commit // Mbytes
-    ret['memFree'] = _memFree() // Mbytes
+    ret['memAvailable'] = avail // MiB
+    ret['memCommitted'] = commit // MiB
+    ret['memFree'] = _memFree() // MiB
     ret['swapTotal'], ret['swapFree'] = _readSwapTotalFree()
     (ret['vmCount'], ret['vmActive'], ret['vmMigrating'],
      ret['incomingVmMigrations'], ret['outgoingVmMigrations']) = \
@@ -116,14 +116,14 @@ def _memUsageInfo(cif):
     # completely -- that means just free memory and sum of VM sizes.
     committed = 0
     for v in cif.getVMs().values():
-        committed += v.mem_size_mb() * Mbytes
+        committed += v.mem_size_mb() * MiB
     meminfo = utils.readMemInfo()
     freeOrCached = (meminfo['MemFree'] +
                     meminfo['Cached'] +
                     meminfo['Buffers'] +
-                    meminfo['SReclaimable']) * Kbytes
+                    meminfo['SReclaimable']) * KiB
     available = (
-        freeOrCached + config.getint('vars', 'host_mem_reserve') * Mbytes
+        freeOrCached + config.getint('vars', 'host_mem_reserve') * MiB
     )
     return available, committed
 
@@ -136,7 +136,7 @@ def _memFree():
     return (meminfo['MemFree'] +
             meminfo['Cached'] +
             meminfo['Buffers'] +
-            meminfo['SReclaimable']) * Kbytes
+            meminfo['SReclaimable']) * KiB
 
 
 def _countVms(cif):
