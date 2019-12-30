@@ -38,8 +38,9 @@ from vdsm import jsonrpcvdscli
 from vdsm.config import config
 from vdsm.common import xmlutils
 from vdsm.common.compat import pickle
-from vdsm.common.define import NORMAL, Mbytes
+from vdsm.common.define import NORMAL
 from vdsm.common.network.address import normalize_literal_addr
+from vdsm.common.units import MiB
 from vdsm.virt.utils import DynamicBoundedSemaphore
 
 from vdsm.virt import virdomain
@@ -61,9 +62,6 @@ incomingMigrations = DynamicBoundedSemaphore(
 CONVERGENCE_SCHEDULE_SET_DOWNTIME = "setDowntime"
 CONVERGENCE_SCHEDULE_POST_COPY = "postcopy"
 CONVERGENCE_SCHEDULE_SET_ABORT = "abort"
-
-
-_MiB_IN_GiB = 1024
 
 
 ADDRESS = '0'
@@ -782,7 +780,7 @@ class MonitorThread(object):
                 self._vm.log.warn(
                     'Migration stalling: remaining (%sMiB)'
                     ' > lowmark (%sMiB).',
-                    progress.data_remaining // Mbytes, lowmark // Mbytes)
+                    progress.data_remaining // MiB, lowmark // MiB)
 
             if not self._vm.post_copy and\
                progress.mem_iteration > last_iteration:
@@ -878,12 +876,12 @@ class Progress(_Progress):
             ' memory iteration: %i' % (
                 (self.time_elapsed / 1000),
                 self.percentage,
-                (self.data_total // Mbytes),
-                (self.data_processed // Mbytes),
-                (self.data_remaining // Mbytes),
-                (self.mem_bps // Mbytes),
+                (self.data_total // MiB),
+                (self.data_processed // MiB),
+                (self.data_remaining // MiB),
+                (self.mem_bps // MiB),
                 self.mem_constant,
-                (self.compression_bytes // Mbytes),
+                (self.compression_bytes // MiB),
                 self.dirty_rate,
                 self.mem_iteration,
             )

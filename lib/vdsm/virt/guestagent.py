@@ -36,6 +36,7 @@ import six
 from vdsm import utils
 from vdsm.common import filecontrol
 from vdsm.common import supervdsm
+from vdsm.common.units import MiB
 from vdsm.config import config
 from vdsm.virt import vmstatus
 
@@ -154,7 +155,7 @@ class GuestAgentEvents(object):
 
 
 class GuestAgent(object):
-    MAX_MESSAGE_SIZE = 2 ** 20  # 1 MiB for now
+    MAX_MESSAGE_SIZE = 1 * MiB  # for now
     SEEN_SHUTDOWN_TIMEOUT = config.getint('vars', 'sys_shutdown_timeout') * 2
 
     def __init__(self, socketName, channelListener, log, onStatusChange,

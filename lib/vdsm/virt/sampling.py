@@ -40,6 +40,7 @@ from vdsm import hugepages
 from vdsm import numa
 from vdsm import utils
 import vdsm.common.time
+from vdsm.common.units import KiB, MiB
 from vdsm.config import config
 from vdsm.constants import P_VDSM_RUN
 from vdsm.host import api as hostapi
@@ -146,7 +147,7 @@ class HostSample(object):
             free = 0
             try:
                 stat = os.statvfs(p)
-                free = stat.f_bavail * stat.f_bsize // (2 ** 20)
+                free = stat.f_bavail * stat.f_bsize // MiB
             except:
                 pass
             d[p] = {'free': str(free)}
@@ -167,7 +168,7 @@ class HostSample(object):
         freeOrCached = (meminfo['MemFree'] +
                         meminfo['Cached'] + meminfo['Buffers'])
         self.memUsed = 100 - int(100.0 * (freeOrCached) / meminfo['MemTotal'])
-        self.anonHugePages = meminfo.get('AnonHugePages', 0) // 1024
+        self.anonHugePages = meminfo.get('AnonHugePages', 0) // KiB
         try:
             with open('/proc/loadavg') as loadavg:
                 self.cpuLoad = loadavg.read().split()[1]
