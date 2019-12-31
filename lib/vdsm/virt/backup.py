@@ -114,8 +114,7 @@ class BackupConfig(properties.Owner):
 def start_backup(vm, dom, config):
     backup_cfg = BackupConfig(config)
 
-    if (backup_cfg.from_checkpoint_id is not None or
-            backup_cfg.to_checkpoint_id is not None):
+    if backup_cfg.from_checkpoint_id is not None:
         raise exception.BackupError(
             reason="Incremental backup not supported yet",
             vm_id=vm.id,
@@ -139,12 +138,13 @@ def start_backup(vm, dom, config):
     try:
         vm.freeze()
         backup_xml = create_backup_xml(nbd_addr, drives, scratch_disks)
+        checkpoint_xml = create_checkpoint_xml(backup_cfg, drives)
 
         vm.log.info(
-            "Starting backup for backup_id: %r, backup xml: %s",
-            backup_cfg.backup_id, backup_xml)
+            "Starting backup for backup_id: %r, "
+            "backup xml: %s\ncheckpoint xml: %s",
+            backup_cfg.backup_id, backup_xml, checkpoint_xml)
 
-        checkpoint_xml = None
         _begin_backup(vm, dom, backup_cfg, backup_xml, checkpoint_xml)
     except:
         # remove all the created scratch disks
@@ -320,6 +320,43 @@ def create_backup_xml(address, drives, scratch_disks):
     domainbackup.appendChild(disks)
 
     return xmlutils.tostring(domainbackup)
+
+
+def create_checkpoint_xml(backup_cfg, drives):
+    if backup_cfg.to_checkpoint_id is None:
+        return None
+
+    # create the checkpoint XML for a backup
+    checkpoint = vmxml.Element('domaincheckpoint')
+
+    name = vmxml.Element('name')
+    name.appendTextNode(backup_cfg.to_checkpoint_id)
+    checkpoint.appendChild(name)
+
+    cp_description = "checkpoint for backup '{}'".format(
+        backup_cfg.backup_id)
+    description = vmxml.Element('description')
+    description.appendTextNode(cp_description)
+    checkpoint.appendChild(description)
+
+    if backup_cfg.from_checkpoint_id is not None:
+        cp_parent = vmxml.Element('parent')
+        parent_name = vmxml.Element('name')
+        parent_name.appendTextNode(backup_cfg.from_checkpoint_id)
+        cp_parent.appendChild(parent_name)
+        checkpoint.appendChild(cp_parent)
+
+    disks = vmxml.Element('disks')
+    for disk in backup_cfg.disks:
+        if disk.checkpoint:
+            drive = drives[disk.img_id]
+            disk_elm = vmxml.Element(
+                'disk', name=drive.name, checkpoint='bitmap')
+            disks.appendChild(disk_elm)
+
+    checkpoint.appendChild(disks)
+
+    return xmlutils.tostring(checkpoint)
 
 
 def socket_path(backup_id):

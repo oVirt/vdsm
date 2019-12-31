@@ -49,6 +49,36 @@ requires_backup_support = pytest.mark.skipif(
     reason="libvirt does not support backup")
 
 BACKUP_ID = make_uuid()
+TO_CHECKPOINT_ID = make_uuid()
+FROM_CHECKPOINT_ID = make_uuid()
+
+CHECKPOINT_XML = """
+    <domaincheckpoint>
+      <name>{}</name>
+      <description>checkpoint for backup '{}'</description>
+      <parent>
+        <name>{}</name>
+      </parent>
+      <disks>
+        <disk name='sda' checkpoint='bitmap'/>
+        <disk name='vda' checkpoint='bitmap'/>
+      </disks>
+    </domaincheckpoint>
+    """.format(TO_CHECKPOINT_ID, BACKUP_ID, FROM_CHECKPOINT_ID)
+
+
+MIXED_CHECKPOINT_XML = """
+    <domaincheckpoint>
+      <name>{}</name>
+      <description>checkpoint for backup '{}'</description>
+      <parent>
+        <name>{}</name>
+      </parent>
+      <disks>
+        <disk name='sda' checkpoint='bitmap'/>
+      </disks>
+    </domaincheckpoint>
+    """.format(TO_CHECKPOINT_ID, BACKUP_ID, FROM_CHECKPOINT_ID)
 
 
 class FakeDrive(object):
@@ -165,6 +195,26 @@ def test_backup_xml(tmp_backupdir):
         </domainbackup>
         """.format(socket_path)
     assert indented(expected_xml) == indented(backup_xml)
+
+
+@pytest.mark.parametrize(
+    "disks_in_checkpoint, expected_xml", [
+        ([IMAGE_1_UUID, IMAGE_2_UUID], CHECKPOINT_XML),
+        ([IMAGE_1_UUID], MIXED_CHECKPOINT_XML),
+    ], ids=["cow", "mix"]
+)
+def test_checkpoint_xml(disks_in_checkpoint, expected_xml):
+    fake_disks = create_fake_disks(disks_in_checkpoint)
+    config = {
+        'backup_id': BACKUP_ID,
+        'disks': fake_disks,
+        'to_checkpoint_id': TO_CHECKPOINT_ID,
+        'from_checkpoint_id': FROM_CHECKPOINT_ID
+    }
+    backup_cfg = backup.BackupConfig(config)
+
+    checkpoint_xml = backup.create_checkpoint_xml(backup_cfg, FAKE_DRIVES)
+    assert indented(expected_xml) == indented(checkpoint_xml)
 
 
 @requires_backup_support
@@ -427,13 +477,13 @@ def verify_scratch_disks_removed(vm):
     assert res['result'] == []
 
 
-def create_fake_disks():
+def create_fake_disks(disks_in_checkpoint=(IMAGE_1_UUID, IMAGE_2_UUID)):
     fake_disks = []
     for img_id in FAKE_DRIVES:
         fake_disks.append({
             'domainID': make_uuid(),
             'imageID': img_id,
             'volumeID': make_uuid(),
-            'checkpoint': False
+            'checkpoint': img_id in disks_in_checkpoint
         })
     return fake_disks
