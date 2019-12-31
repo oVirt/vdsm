@@ -47,6 +47,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import hba
 from vdsm.storage import managedvolume
+from vdsm.virt import backup
 
 try:
     import ovirt_hosted_engine_ha.client.client as haClient
@@ -143,7 +144,7 @@ def get():
     caps['hugepages'] = hugepages.supported()
     caps['kernelFeatures'] = osinfo.kernel_features()
     caps['vncEncrypted'] = _isVncEncrypted()
-    caps['backupEnabled'] = False
+    caps['backupEnabled'] = backup.backup_enabled
     caps['fipsEnabled'] = _getFipsEnabled()
     caps['tscFrequency'] = _getTscFrequency()
     caps['tscScaling'] = _getTscScaling()
