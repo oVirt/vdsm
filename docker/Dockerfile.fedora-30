@@ -40,7 +40,6 @@ RUN dnf install -y \
         python3-nose \
         python3-pip \
         python3-policycoreutils \
-        python3-pyudev \
         python3-requests \
         python3-rpm \
         python3-sanlock \

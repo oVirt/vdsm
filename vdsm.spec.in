@@ -396,8 +396,6 @@ Requires: edk2-ovmf
 %endif
 %endif
 
-Requires: %{python_or_python3}-pyudev
-
 Conflicts: ovirt-hosted-engine-ha < 2.3.6
 
 Conflicts: vdsm-hook-sriov

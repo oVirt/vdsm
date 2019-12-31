@@ -22,302 +22,320 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import pytest
+import threading
+
 from vdsm.storage import devicemapper
 from vdsm.storage import mpathhealth
-from vdsm.storage import udev
-
 from vdsm.storage.devicemapper import PathStatus
 
-
-def test_no_events():
-    monitor = mpathhealth.Monitor()
-    assert monitor.status() == {}
+MONITOR_INTERVAL = 0.001
+CYCLE_TIMEOUT = 5
 
 
-def test_failed_path():
-    monitor = mpathhealth.Monitor()
-    event = udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:11", 1, 10)
-    monitor.handle(event)
-    expected = {
+class FakeMultipathStatus(object):
+
+    def __init__(self):
+        self.out = {}
+
+    def __call__(self):
+        return self.out
+
+
+class MonitorCallback(object):
+    """
+    Callable callback class used for synchronization of the health monitor
+    thread with tests.
+
+    Usage overview:
+
+    1. tmp_monitor fixture sets the monitor callback to a MonitorCallback
+       instance.
+    2. Test sets the fake status input for the monitor.
+    3. Test starts the monitor instance.
+    4. Test calls the monitor.callback.wait() to wait for monitor to finish
+       processing the fake status input.
+    5. Monitor calls callback() implementation and sets the done event to
+       signal the test it has finished processing the fake status input.
+    6. Monitor instance halts after its first cycle on provided callback()
+       implementation.
+    7. Test can now assert on the monitor status output.
+    8. For testing additional cycles of the same monitor, test calls
+       monitor.callback.resume() after setting the next cycle fake input.
+    """
+
+    def __init__(self):
+        self.ready = threading.Event()
+        self.done = threading.Event()
+
+    def __call__(self):
+        """
+        Called from monitor thread loop after every cycle, wait for status
+        to be set by the test before starting the next cycle.
+        """
+        self.done.set()
+        self.ready.wait()
+
+    def wait(self):
+        """
+        Called by tests to wait for monitor to finish its current cycle.
+        """
+        self.ready.clear()
+        self.done.wait()
+
+    def resume(self):
+        """
+        Called by tests to resume monitor from waiting for status setup.
+        """
+        self.done.clear()
+        self.ready.set()
+
+
+@pytest.fixture
+def tmp_monitor(monkeypatch):
+    monkeypatch.setattr(
+        devicemapper, "multipath_status", FakeMultipathStatus())
+    monitor = mpathhealth.Monitor(MONITOR_INTERVAL)
+    monitor.callback = MonitorCallback()
+    yield monitor
+    # Do not hang the monitor cycles when we are about to stop
+    monitor.callback.resume()
+    monitor.stop()
+    monitor.wait()
+
+
+def test_no_info(tmp_monitor):
+    tmp_monitor.start()
+    # Wait the first cycle default empty status
+    tmp_monitor.callback.wait()
+    assert tmp_monitor.status() == {}
+
+
+def test_failed_path(tmp_monitor):
+    devicemapper.multipath_status.out = {
+        "uuid-1": [
+            PathStatus("8:11", "F"),
+            PathStatus("6:66", "A")
+        ]
+    }
+    tmp_monitor.start()
+    tmp_monitor.callback.wait()
+
+    assert tmp_monitor.status() == {
         "uuid-1": {
-            "valid_paths": 1,
-            "failed_paths": [
-                "8:11"
-            ]
+            "failed_paths": ["8:11"],
+            "valid_paths": 1
         }
     }
-    assert monitor.status() == expected
 
 
-def test_removed():
-    monitor = mpathhealth.Monitor()
-    event = udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:11", 1, 10)
-    monitor.handle(event)
-    event = udev.MultipathEvent(udev.MPATH_REMOVED, "uuid-1", None, None, None)
-    monitor.handle(event)
-    assert monitor.status() == {}
+def test_removed_uuid(tmp_monitor):
+    devicemapper.multipath_status.out = {
+        "uuid-1": [PathStatus("8:11", "F")],
+        "uuid-2": [PathStatus("6:66", "A")],
+    }
+    tmp_monitor.start()
+    tmp_monitor.callback.wait()
+
+    assert tmp_monitor.status() == {
+        "uuid-1": {
+            "failed_paths": ["8:11"],
+            "valid_paths": 0
+        }
+    }
+
+    devicemapper.multipath_status.out = {
+        "uuid-2": [PathStatus("6:66", "A")]
+    }
+    tmp_monitor.callback.resume()
+    tmp_monitor.callback.wait()
+
+    assert tmp_monitor.status() == {}
 
 
-def test_removed_not_existing():
-    monitor = mpathhealth.Monitor()
-    event = udev.MultipathEvent(udev.MPATH_REMOVED, "uuid-1", None, None, None)
-    monitor.handle(event)
-    assert monitor.status() == {}
+def test_removed_device(tmp_monitor):
+    devicemapper.multipath_status.out = {
+        "uuid-1": [
+            PathStatus("8:44", "A"),
+            PathStatus("8:11", "A"),
+            PathStatus("8:32", "F")
+        ]
+    }
+    tmp_monitor.start()
+    tmp_monitor.callback.wait()
+
+    assert tmp_monitor.status() == {
+        "uuid-1": {
+            "failed_paths": ["8:32"],
+            "valid_paths": 2
+        }
+    }
+
+    devicemapper.multipath_status.out = {
+        "uuid-1": [
+            PathStatus("8:44", "A"),
+            PathStatus("8:32", "F")
+        ]
+    }
+    tmp_monitor.callback.resume()
+    tmp_monitor.callback.wait()
+
+    assert tmp_monitor.status() == {
+        "uuid-1": {
+            "failed_paths": ["8:32"],
+            "valid_paths": 1
+        }
+    }
 
 
-def test_multiple_mpath():
-    monitor = mpathhealth.Monitor()
-    events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:111", 1, 10),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "9:112", 2, 11)
-    ]
-    for e in events:
-        monitor.handle(e)
-    expected = {
+def test_multiple_mpath(tmp_monitor):
+
+    devicemapper.multipath_status.out = {
+        "uuid-1" : [
+            PathStatus("8:11", "F"),
+            PathStatus("6:66", "A")
+        ],
+        "uuid-2" : [
+            PathStatus("7:12", "A"),
+            PathStatus("8:32", "F"),
+            PathStatus("12:16", "A")
+        ]
+    }
+    tmp_monitor.start()
+    tmp_monitor.callback.wait()
+
+    assert tmp_monitor.status() == {
         "uuid-2": {
-            "valid_paths": 2,
-            "failed_paths": [
-                "9:112"
-            ]
+            "failed_paths": ["8:32"],
+            "valid_paths": 2
         },
         "uuid-1": {
-            "valid_paths": 1,
-            "failed_paths": [
-                "8:111"
-            ]
+            "failed_paths": ["8:11"],
+            "valid_paths": 1
         }
     }
-    assert monitor.status() == expected
 
 
-def test_multiple_mpath_paths():
-    monitor = mpathhealth.Monitor()
-    events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:111", 1, 10),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "9:112", 2, 11),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:112", 0, 12),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "9:113", 1, 13)
-    ]
-    for e in events:
-        monitor.handle(e)
-    expected = {
+def test_reinstated(tmp_monitor):
+    devicemapper.multipath_status.out = {
+        "uuid-1": [
+            PathStatus("8:11", "A"),
+            PathStatus("8:32", "F"),
+            PathStatus("6:66", "F")
+        ]
+    }
+    tmp_monitor.start()
+    tmp_monitor.callback.wait()
+
+    assert tmp_monitor.status() == {
+        "uuid-1": {
+            "failed_paths": ["6:66", "8:32"],
+            "valid_paths": 1
+        }
+    }
+
+    devicemapper.multipath_status.out = {
+        "uuid-1": [
+            PathStatus("8:11", "A"),
+            PathStatus("8:32", "A"),
+            PathStatus("6:66", "F")
+        ]
+    }
+    tmp_monitor.callback.resume()
+    tmp_monitor.callback.wait()
+
+    assert tmp_monitor.status() == {
+        "uuid-1": {
+            "failed_paths": ["6:66"],
+            "valid_paths": 2
+        }
+    }
+
+
+def test_reinstated_last_failed(tmp_monitor):
+    devicemapper.multipath_status.out = {
+        "uuid-1": [
+            PathStatus("8:11", "A"),
+            PathStatus("6:66", "F")
+        ]
+    }
+    tmp_monitor.start()
+    tmp_monitor.callback.wait()
+
+    assert tmp_monitor.status() == {
+        "uuid-1": {
+            "failed_paths": ["6:66"],
+            "valid_paths": 1
+        }
+    }
+
+    devicemapper.multipath_status.out = {
+        "uuid-1": [
+            PathStatus("8:11", "A"),
+            PathStatus("6:66", "A")
+        ]
+    }
+    tmp_monitor.callback.resume()
+    tmp_monitor.callback.wait()
+
+    assert tmp_monitor.status() == {}
+
+
+def test_error(tmp_monitor):
+
+    def fail():
+        raise RuntimeError
+
+    def status_before_fail():
+        return {
+            "uuid-1": [
+                PathStatus("8:11", "A"),
+                PathStatus("6:66", "F")
+            ]
+        }
+
+    def status_after_fail():
+        return {
+            "uuid-1": [
+                PathStatus("8:11", "A"),
+                PathStatus("6:66", "A")
+            ],
+            "uuid-2": [
+                PathStatus("3:34", "F"),
+                PathStatus("7:17", "A")
+            ]
+        }
+
+    initial_health_status = {
+        "uuid-1": {
+            "failed_paths": ["6:66"],
+            "valid_paths": 1
+        }
+    }
+
+    # Testing working cycle
+    devicemapper.multipath_status = status_before_fail
+    tmp_monitor.start()
+    tmp_monitor.callback.wait()
+
+    assert tmp_monitor.status() == initial_health_status
+
+    # Testing failing cycle
+    devicemapper.multipath_status = fail
+    tmp_monitor.callback.resume()
+    tmp_monitor.callback.wait()
+
+    # Expecting to have old status reported before failure
+    assert tmp_monitor.status() == initial_health_status
+
+    # Testing next working cycle after failure
+    devicemapper.multipath_status = status_after_fail
+    tmp_monitor.callback.resume()
+    tmp_monitor.callback.wait()
+
+    assert tmp_monitor.status() == {
         "uuid-2": {
-            "valid_paths": 1,
-            "failed_paths": [
-                "9:112",
-                "9:113"
-            ]
-        },
-        "uuid-1": {
-            "valid_paths": 0,
-            "failed_paths": [
-                "8:111",
-                "8:112"
-            ]
+            "failed_paths": ["3:34"],
+            "valid_paths": 1
         }
     }
-    assert monitor.status() == expected
-
-
-def test_reinstated_path_no_mpath():
-    monitor = mpathhealth.Monitor()
-    event = udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "8:111", 1, 10)
-    monitor.handle(event)
-    assert monitor.status() == {}
-
-
-def test_reinstated_last_path():
-    monitor = mpathhealth.Monitor()
-    events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:111", 1, 10),
-        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "8:111", 2, 11)
-    ]
-    for e in events:
-        monitor.handle(e)
-    assert monitor.status() == {}
-
-
-def test_reinstated__path():
-    monitor = mpathhealth.Monitor()
-    events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:111", 2, 10),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:112", 1, 11),
-        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "8:111", 2, 12)
-    ]
-    for e in events:
-        monitor.handle(e)
-    expected = {
-        "uuid-1": {
-            "valid_paths": 2,
-            "failed_paths": [
-                "8:112"
-            ]
-        }
-    }
-    assert monitor.status() == expected
-
-
-def test_start_some_failed(monkeypatch):
-
-    def fake_status():
-        return {
-            'uuid-1':
-                [
-                    PathStatus('8:11', 'F'),
-                    PathStatus('8:12', 'A'),
-                    PathStatus('8:13', 'A')
-                ]
-        }
-
-    monkeypatch.setattr(devicemapper, 'multipath_status', fake_status)
-
-    monitor = mpathhealth.Monitor()
-    monitor.start()
-    expected = {
-        "uuid-1": {
-            "valid_paths": 2,
-            "failed_paths": [
-                "8:11"
-            ]
-        }
-    }
-    assert monitor.status() == expected
-
-
-def test_start_all_active(monkeypatch):
-
-    def fake_status():
-        return {
-            'uuid-1':
-                [
-                    PathStatus('8:11', 'A'),
-                    PathStatus('8:12', 'A'),
-                    PathStatus('8:13', 'A')
-                ]
-        }
-
-    monkeypatch.setattr(devicemapper, 'multipath_status', fake_status)
-
-    monitor = mpathhealth.Monitor()
-    monitor.start()
-    assert monitor.status() == {}
-
-
-def test_start_all_failed(monkeypatch):
-
-    def fake_status():
-        return {
-            'uuid-1':
-                [
-                    PathStatus('8:11', 'F'),
-                    PathStatus('8:12', 'F'),
-                    PathStatus('8:13', 'F')
-                ]
-        }
-
-    monkeypatch.setattr(devicemapper, 'multipath_status', fake_status)
-
-    monitor = mpathhealth.Monitor()
-    monitor.start()
-    expected = {
-        "uuid-1": {
-            "valid_paths": 0,
-            "failed_paths": [
-                "8:11",
-                "8:12",
-                "8:13"
-            ]
-        }
-    }
-    assert monitor.status() == expected
-
-
-def test_events_after_start(monkeypatch):
-
-    def fake_status():
-        return {
-            'uuid-1':
-                [
-                    PathStatus('8:11', 'F'),
-                    PathStatus('8:12', 'A'),
-                    PathStatus('8:13', 'A')
-                ]
-        }
-
-    monkeypatch.setattr(devicemapper, 'multipath_status', fake_status)
-
-    monitor = mpathhealth.Monitor()
-    monitor.start()
-
-    events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:12", 1, 10),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:13", 0, 11),
-        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "8:11", 1, 12)
-    ]
-    for e in events:
-        monitor.handle(e)
-    expected = {
-        "uuid-1": {
-            "valid_paths": 1,
-            "failed_paths": [
-                "8:12",
-                "8:13"
-            ]
-        }
-    }
-    assert monitor.status() == expected
-
-
-def test_multiple_mpath_paths_unordered():
-    monitor = mpathhealth.Monitor()
-    events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:11", 2, 13),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:12", 3, 12),
-    ]
-    for e in events:
-        monitor.handle(e)
-    expected = {
-        "uuid-1": {
-            "valid_paths": 2,
-            "failed_paths": [
-                "8:11",
-                "8:12",
-            ]
-        }
-    }
-    assert monitor.status() == expected
-
-
-def test_multiple_mpath_paths_unordered_with_initial_status(monkeypatch):
-    def fake_status():
-        return {
-            'uuid-1':
-                [
-                    PathStatus('8:11', 'F'),
-                    PathStatus('8:12', 'A'),
-                    PathStatus('8:13', 'A'),
-                    PathStatus('8:14', 'A'),
-                ]
-        }
-
-    monkeypatch.setattr(devicemapper, 'multipath_status', fake_status)
-
-    monitor = mpathhealth.Monitor()
-    monitor.start()
-
-    events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:12", 1, 13),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "8:12", 2, 12),
-    ]
-    for e in events:
-        monitor.handle(e)
-    expected = {
-        "uuid-1": {
-            "valid_paths": 1,
-            "failed_paths": [
-                "8:11",
-                "8:12",
-            ]
-        }
-    }
-    assert monitor.status() == expected

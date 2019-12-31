@@ -84,7 +84,6 @@ from vdsm.storage import sp
 from vdsm.storage import storageServer
 from vdsm.storage import taskManager
 from vdsm.storage import transientdisk
-from vdsm.storage import udev
 from vdsm.storage import validators
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.sdc import sdCache
@@ -405,10 +404,9 @@ class HSM(object):
         except Exception:
             self.log.warn("Failed to clean Storage Repository.", exc_info=True)
 
-        self.multipathListener = udev.MultipathListener()
-        self.mpathhealth_monitor = mpathhealth.Monitor()
-        self.multipathListener.register(self.mpathhealth_monitor)
-        self.multipathListener.start()
+        monitorInterval = config.getint('irs', 'sd_health_check_delay')
+        self.mpathhealth_monitor = mpathhealth.Monitor(monitorInterval)
+        self.mpathhealth_monitor.start()
 
         def storageRefresh():
             sdCache.refreshStorage()
@@ -422,7 +420,6 @@ class HSM(object):
                                                  log=self.log)
         storageRefreshThread.start()
 
-        monitorInterval = config.getint('irs', 'sd_health_check_delay')
         self.domainMonitor = monitor.DomainMonitor(monitorInterval)
 
     @property
@@ -3386,7 +3383,7 @@ class HSM(object):
 
             self.taskMng.prepareForShutdown()
             oop.stop()
-            self.multipathListener.stop()
+            self.mpathhealth_monitor.stop()
         except:
             pass
 
