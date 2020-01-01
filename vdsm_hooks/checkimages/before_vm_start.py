@@ -13,10 +13,11 @@ import struct
 import threading
 import hooking
 
+from vdsm.common.units import GiB
+
 BLKGETSIZE64 = 0x80081272  # Obtain device size in bytes
 FORMAT = 'L'
 TIMEPERGIB = 0.02  # Approximate qemu-img check time (in seconds) to check 1GiB
-GIB = 2 ** 30  # GiB
 
 '''
 checkimages vdsm hook
@@ -69,7 +70,7 @@ def getImageSize(disk_image, driver_type):
         image_bytes = struct.unpack(FORMAT, dev_buffer)[0]
     elif driver_type == 'file':
         image_bytes = os.stat(disk_image).st_size
-    return float(image_bytes / GIB)
+    return float(image_bytes / GiB)
 
 
 def checkImage(path, timeout):

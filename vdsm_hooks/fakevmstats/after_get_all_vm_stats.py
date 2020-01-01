@@ -33,10 +33,10 @@ import hooking
 import codecs
 import random
 
+from vdsm.common.units import MiB, GiB
 from vdsm.config import config
 
-QUARTER_GB = 1024 * 1024 * 256
-GB = QUARTER_GB * 4
+QUARTER_GB = 256 * MiB
 
 # Config
 MAX_DYNAMIC_MOUNTS = 1
@@ -143,7 +143,8 @@ def randomizeRuntimeStats(stats):
     stats['session'] = 'Unknown'
     if 'memoryStats' not in stats:
         stats['memoryStats'] = {}
-        stats['memoryStats']['mem_total'] = str((2**random.randint(0, 5)) * GB)
+        stats['memoryStats']['mem_total'] = str(
+            (2**random.randint(0, 5)) * GiB)
     memUsed = int(random.uniform(0, int(stats['memoryStats']['mem_total'])))
     memUnused = int(random.uniform(0, memUsed))
 
@@ -157,13 +158,13 @@ def randomizeRuntimeStats(stats):
 
     # Generate mounts info
     diskUsage = []
-    diskUsage.append(createDiskUsage('/', 'ext4', 20 * GB))
-    diskUsage.append(createDiskUsage('/boot', 'ext4', 1 * GB))
-    diskUsage.append(createDiskUsage('/home', 'ext4', 50 * GB))
+    diskUsage.append(createDiskUsage('/', 'ext4', 20 * GiB))
+    diskUsage.append(createDiskUsage('/boot', 'ext4', 1 * GiB))
+    diskUsage.append(createDiskUsage('/home', 'ext4', 50 * GiB))
     # Add guest-specific number of extra mounts
     for i in range(next(vmDigest) % MAX_DYNAMIC_MOUNTS):
         diskUsage.append(createDiskUsage('/mount/dynamic-%d' % i, 'ext4',
-                                         next(vmDigest) * GB))
+                                         next(vmDigest) * GiB))
     stats['diskUsage'] = diskUsage
 
     # Each vm between 1 to 3 ifaces, not dynamic:
