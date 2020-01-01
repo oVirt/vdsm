@@ -56,7 +56,6 @@ from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage import multipath
 from vdsm.storage import rwlock
-from vdsm.storage.constants import VG_EXTENT_SIZE_MB, SUPPORTED_BLOCKSIZE
 
 from vdsm.config import config
 
@@ -1163,7 +1162,7 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
     if rc != 0:
         raise se.PhysDevInitializationError(pvs[0])
 
-    options = ["--physicalextentsize", "%dm" % VG_EXTENT_SIZE_MB]
+    options = ["--physicalextentsize", "%dm" % sc.VG_EXTENT_SIZE_MB]
     if initialTag:
         options.extend(("--addtag", initialTag))
     cmd = ["vgcreate"] + options + [vgName] + pvs
@@ -1270,7 +1269,7 @@ def _checkpvsblksize(pvs, vgBlkSize=None):
         pvBlkSize = _getpvblksize(pv)
         logPvBlkSize, phyPvBlkSize = pvBlkSize
 
-        if logPvBlkSize not in SUPPORTED_BLOCKSIZE:
+        if logPvBlkSize not in sc.SUPPORTED_BLOCKSIZE:
             raise se.DeviceBlockSizeError(pvBlkSize)
 
         if phyPvBlkSize < logPvBlkSize:
