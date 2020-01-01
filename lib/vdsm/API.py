@@ -842,6 +842,10 @@ class Volume(APIBase):
         return self._irs.setVolumeLegality(self._sdUUID, self._spUUID,
                                            self._imgUUID, self._UUID, legality)
 
+    def measure(self, dstVolFormat):
+        return self._irs.measure(
+            self._sdUUID, self._imgUUID, self._UUID, dstVolFormat)
+
 
 class Image(APIBase):
     ctorArgs = ['imageID', 'storagepoolID', 'storagedomainID']

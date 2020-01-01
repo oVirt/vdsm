@@ -3125,6 +3125,20 @@ class HSM(object):
         return dict(info=info)
 
     @public
+    def measure(self, sdUUID, imgUUID, volUUID, dest_format):
+        """
+        Measure the size of a volume using qemu-img
+        """
+        vol = self._produce_volume(sdUUID, imgUUID, volUUID)
+        result = qemuimg.measure(
+            vol.getVolumePath(),
+            format=sc.fmt2str(vol.getFormat()),
+            output_format=sc.fmt2str(dest_format)
+        )
+
+        return dict(result=result)
+
+    @public
     def appropriateDevice(self, guid, thiefId, deviceType):
         """
         Change ownership of the guid device to vdsm:qemu

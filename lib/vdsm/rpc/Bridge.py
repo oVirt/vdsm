@@ -427,6 +427,7 @@ command_info = {
     'Volume_getPath': {'ret': 'path'},
     'Volume_getSize': {'ret': Volume_getsize_Ret},
     'Volume_extendSize': {'ret': 'uuid'},
+    'Volume_measure': {'ret': 'result'},
     'Host_getAllTasks': {'ret': 'tasks'},
     'Host_getJobs': {'ret': 'jobs'},
     'Lease_create': {'ret': 'uuid'},

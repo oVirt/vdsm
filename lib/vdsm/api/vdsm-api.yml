@@ -8278,6 +8278,17 @@ types:
             name: to_checkpoint_id
             type: *UUID
 
+    VolumeMeasureResult: &VolumeMeasureResult
+        added: '4.4'
+        description: 'Volume size measured by qemu-img measure'
+        name: VolumeMeasureResult
+        properties:
+        -   description: The required size of the volume measured by qemu-img
+            name: required
+            type: int
+        type: object
+
+
 Host.setupNetworks:
     added: '3.1'
     description: Reconfigure host networking by adding, removing, and editing
@@ -11116,6 +11127,34 @@ Volume.getInfo:
     return:
         description: Volume information
         type: *VolumeInfoResponse
+
+Volume.measure:
+    added: '4.4'
+    description: Measure required allocation for copying source volume to
+      destination volume.
+    params:
+    -   description: The UUID of the source volume
+        name: volumeID
+        type: *UUID
+
+    -   description: The Storage Pool associated with the source volume
+        name: storagepoolID
+        type: *UUID
+
+    -   description: The Storage Domain associated with the source volume
+        name: storagedomainID
+        type: *UUID
+
+    -   description: The Image associated with the source volume
+        name: imageID
+        type: *UUID
+
+    -   description: The volume format to use for the destination volume
+        name: dstVolFormat
+        type: *VolumeFormat
+    return:
+        description: Measured result
+        type: *VolumeMeasureResult
 
 Volume.getQemuImageInfo:
     added: '4.1'
