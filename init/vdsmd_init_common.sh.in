@@ -35,10 +35,6 @@ task_wait_for_network() {
     return 0
 }
 
-task_configure_coredump() {
-    echo "|/usr/libexec/abrt-hook-ccpp %s %c %p %u %g %t %e %i" > /proc/sys/kernel/core_pattern
-}
-
 task_configure_vdsm_logs() {
     local vdsm_logs="
         @VDSMLOGDIR@/mom.log
@@ -228,7 +224,6 @@ case "$1" in
     --pre-start)
         run_tasks " \
             mkdirs \
-            configure_coredump \
             configure_vdsm_logs \
             wait_for_network \
             run_init_hooks \
