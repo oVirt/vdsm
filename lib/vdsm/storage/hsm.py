@@ -3097,13 +3097,7 @@ class HSM(object):
         :returns: a dict with the info of the volume.
         :rtype: dict
         """
-        vars.task.getSharedLock(STORAGE, sdUUID)
-        dom = sdCache.produce_manifest(sdUUID=sdUUID)
-        try:
-            vol = dom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
-        except se.VolumeDoesNotExist as e:
-            raise exception.expected(e)
-        info = vol.getInfo()
+        info = self._produce_volume(sdUUID, imgUUID, volUUID).getInfo()
         return dict(info=info)
 
     @public
@@ -3741,6 +3735,16 @@ class HSM(object):
     def list_transient_disks(self, owner_name):
         disks = transientdisk.list_disks(owner_name)
         return dict(result=disks)
+
+    # Helpers
+
+    def _produce_volume(self, sdUUID, imgUUID, volUUID):
+        vars.task.getSharedLock(STORAGE, sdUUID)
+        dom = sdCache.produce_manifest(sdUUID=sdUUID)
+        try:
+            return dom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
+        except se.VolumeDoesNotExist as e:
+            raise exception.expected(e)
 
     # Validations
 
