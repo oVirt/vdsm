@@ -61,7 +61,7 @@ class FakeLVM(object):
     # The number of PEs used for metadata areas
     _PV_MDA_COUNT = 2
     # 2 PE for metadata + 1 PE to hold a header
-    _PV_UNUSABLE = (_PV_PE_SIZE * (1 + _PV_MDA_COUNT))
+    _PV_UNUSABLE = _PV_PE_SIZE * (1 + _PV_MDA_COUNT)
 
     def __init__(self, root):
         self.root = root
@@ -111,11 +111,10 @@ class FakeLVM(object):
     def invalidateVG(self, vgName):
         pass
 
-    def _size_param_to_bytes(self, size):
-        # Size is received as a string in MiB.  We need to convert it to bytes
+    def _size_param_to_bytes(self, size_mb):
+        # Size is received in MiB. We need to convert it to bytes
         # and round it up to a multiple of the VG extent size.
-        size = int(size) * MiB
-        return utils.round(size, sc.VG_EXTENT_SIZE)
+        return utils.round(size_mb * MiB, sc.VG_EXTENT_SIZE)
 
     def _create_lv_file(self, vgName, lvName, active, size):
         # Create an LV as a regular file so we have a place to write data
