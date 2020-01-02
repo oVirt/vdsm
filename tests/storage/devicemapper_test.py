@@ -54,6 +54,9 @@ FAKE_DMSETUP_OUTPUT = """\
 3600140543cb8d7510d54f058c7b3f7ec: 0 209715200 multipath 2 0 1 0 3 1 A 0 1 1 65:224 A 0 0 E 0 1 1 65:160 A 0 0 E 0 1 1 66:176 F 1 0
 """  # NOQA: E501 (long line)
 
+# Output if there are no dm devices on the host.
+NO_DEVICE_MAPPER_DEVICES = "No devices found\n"
+
 broken_on_ci = broken_on_ci.with_args(
     reason="device mapper doesn't work properly in containers")
 
@@ -138,6 +141,13 @@ def test_get_paths_status(fake_dmsetup):
         "66:176": "failed",
     }
     assert res == expected
+
+
+@pytest.mark.xfail(reason="Reproducer for https://bugzilla.redhat.com/1766595")
+@requires_root
+def test_get_paths_status_no_device(fake_dmsetup):
+    fake_dmsetup.write(DMSETUP_SCRIPT.format(NO_DEVICE_MAPPER_DEVICES))
+    assert devicemapper.getPathsStatus() == {}
 
 
 @broken_on_ci
