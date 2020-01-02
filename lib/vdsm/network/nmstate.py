@@ -385,9 +385,9 @@ class Network(object):
 
     @property
     def is_base_iface_changed(self):
-        return (
-            self._runconf.vlan_iface
-            and self._runconf.base_iface != self._netconf.base_iface
+        return self._runconf.vlan_iface and (
+            self._runconf.base_iface != self._netconf.base_iface
+            or self._runconf.vlan_iface != self._netconf.vlan_iface
         )
 
     @property

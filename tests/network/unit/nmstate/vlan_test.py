@@ -34,6 +34,8 @@ from .testlib import (
     TESTNET1,
     TESTNET2,
     VLAN101,
+    VLAN102,
+    create_bridge_iface_state,
     create_ethernet_iface_state,
     create_ipv4_state,
     create_ipv6_state,
@@ -41,6 +43,7 @@ from .testlib import (
     create_static_ip_configuration,
     create_vlan_iface_state,
     disable_iface_ip,
+    generate_bridge_options,
     parametrize_bridged,
     sort_by_name,
 )
@@ -166,5 +169,48 @@ def test_move_vlan_to_another_iface(rconfig_mock):
             eth1_state,
         ]
     }
+    sort_by_name(expected_state[nmstate.Interface.KEY])
+    assert expected_state == state
+
+
+@mock.patch.object(nmstate, 'RunningConfig')
+@parametrize_bridged
+def test_edit_network_vlan_id(rconfig_mock, bridged):
+    rconfig_mock.return_value.networks = {
+        TESTNET1: create_network_config(
+            'nic', IFACE0, bridged=bridged, vlan=VLAN101
+        )
+    }
+
+    networks = {
+        TESTNET1: create_network_config(
+            'nic', IFACE0, bridged=bridged, vlan=VLAN102
+        )
+    }
+    state = nmstate.generate_state(networks=networks, bondings={})
+    vlan102_state = create_vlan_iface_state(IFACE0, VLAN102)
+    disable_iface_ip(vlan102_state)
+    base_nic_state = create_ethernet_iface_state(IFACE0)
+    disable_iface_ip(base_nic_state)
+    remove_vlan101_state = {
+        nmstate.Interface.NAME: f'{IFACE0}.{VLAN101}',
+        nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+    }
+    expected_state = {
+        nmstate.Interface.KEY: [
+            vlan102_state,
+            remove_vlan101_state,
+            base_nic_state,
+        ]
+    }
+    if bridged:
+        iface_bridge_state = create_bridge_iface_state(
+            TESTNET1,
+            f'{IFACE0}.{VLAN102}',
+            options=generate_bridge_options(stp_enabled=False),
+        )
+        disable_iface_ip(iface_bridge_state)
+        expected_state[nmstate.Interface.KEY].append(iface_bridge_state)
+
     sort_by_name(expected_state[nmstate.Interface.KEY])
     assert expected_state == state
