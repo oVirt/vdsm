@@ -143,7 +143,6 @@ def test_get_paths_status(fake_dmsetup):
     assert res == expected
 
 
-@pytest.mark.xfail(reason="Reproducer for https://bugzilla.redhat.com/1766595")
 @requires_root
 def test_get_paths_status_no_device(fake_dmsetup):
     fake_dmsetup.write(DMSETUP_SCRIPT.format(NO_DEVICE_MAPPER_DEVICES))

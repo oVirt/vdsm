@@ -182,7 +182,7 @@ def getPathsStatus():
         try:
             devName, statusLine = statusLine.split(":", 1)
         except ValueError:
-            if len(out) == 1:
+            if len(lines) == 1:
                 # return an empty dict when status output is: No devices found
                 return res
             else:
