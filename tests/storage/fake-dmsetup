@@ -1,8 +1,0 @@
-#!/bin/sh
-set -e
-
-# Run the real dmsetup to validate the arguments, dropping the output.
-dmsetup "$@" > /dev/null
-
-# Fake the output
-cat $FAKE_STDOUT
