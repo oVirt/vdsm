@@ -517,38 +517,6 @@ def test_translate_remove_nets(rconfig_mock, bridged, current_state_mock):
 
 
 @parametrize_bridged
-@mock.patch.object(nmstate, 'RunningConfig')
-def test_translate_remove_vlan_net(rconfig_mock, bridged):
-    rconfig_mock.return_value.networks = {
-        TESTNET1: {
-            'nic': IFACE0,
-            'bridged': bridged,
-            'vlan': VLAN101,
-            'switch': 'legacy',
-            'defaultRoute': False,
-        }
-    }
-    networks = {TESTNET1: {'remove': True}}
-    state = nmstate.generate_state(networks=networks, bondings={})
-
-    expected_state = {
-        nmstate.Interface.KEY: [
-            {'name': IFACE0 + '.' + str(VLAN101), 'state': 'absent'},
-            {
-                nmstate.Interface.NAME: IFACE0,
-                nmstate.Interface.MTU: DEFAULT_MTU,
-            },
-        ]
-    }
-    if bridged:
-        expected_state[nmstate.Interface.KEY].append(
-            {'name': TESTNET1, 'state': 'absent'}
-        )
-    sort_by_name(expected_state[nmstate.Interface.KEY])
-    assert expected_state == state
-
-
-@parametrize_bridged
 def test_translate_add_network_with_default_route(bridged):
     networks = {
         TESTNET1: create_network_config(
@@ -769,58 +737,6 @@ def test_translate_add_network_with_default_route_on_vlan_interface():
     assert expected_state == state
 
 
-def test_translate_vlan_id_0():
-    networks = {
-        TESTNET1: create_network_config('nic', IFACE0, bridged=False, vlan=0)
-    }
-    state = nmstate.generate_state(networks=networks, bondings={})
-
-    vlan0_state = create_vlan_iface_state(IFACE0, 0)
-    ipv4_state = create_ipv4_state()
-    ipv6_state = create_ipv6_state()
-    vlan0_state.update(ipv4_state)
-    vlan0_state.update(ipv6_state)
-
-    vlan_base_state = create_ethernet_iface_state(IFACE0)
-    vlan_base_state.update(ipv4_state)
-    vlan_base_state.update(ipv6_state)
-    expected_state = {nmstate.Interface.KEY: [vlan_base_state, vlan0_state]}
-
-    assert expected_state == state
-
-
-def test_bridgeless_and_vlan_networks_on_the_same_nic():
-    networks = {
-        TESTNET1: create_network_config(
-            'nic',
-            IFACE0,
-            bridged=False,
-            static_ip_configuration=create_static_ip_configuration(
-                IPv4_ADDRESS1, IPv4_NETMASK1, None, None
-            ),
-        ),
-        TESTNET2: create_network_config(
-            'nic', IFACE0, bridged=False, vlan=VLAN101
-        ),
-    }
-    state = nmstate.generate_state(networks=networks, bondings={})
-
-    bridgeless_state = create_ethernet_iface_state(IFACE0)
-    vlan0_state = create_vlan_iface_state(IFACE0, VLAN101)
-
-    ipv4_state = create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
-    ipv4_disabled_state = create_ipv4_state()
-    ipv6_disabled_state = create_ipv6_state()
-    bridgeless_state.update(ipv4_state)
-    bridgeless_state.update(ipv6_disabled_state)
-    vlan0_state.update(ipv4_disabled_state)
-    vlan0_state.update(ipv6_disabled_state)
-
-    expected_state = {nmstate.Interface.KEY: [bridgeless_state, vlan0_state]}
-
-    assert expected_state == state
-
-
 @mock.patch.object(nmstate, 'RunningConfig')
 def test_update_network_from_bridged_to_bridgeless(rconfig_mock):
     networks = {TESTNET1: create_network_config('nic', IFACE0, bridged=True)}
@@ -840,39 +756,6 @@ def test_update_network_from_bridged_to_bridgeless(rconfig_mock):
 
     expected_state = {nmstate.Interface.KEY: [eth0_state, remove_bridge_state]}
 
-    assert expected_state == state
-
-
-@mock.patch.object(nmstate, 'RunningConfig')
-def test_move_vlan_to_another_iface(rconfig_mock):
-    rconfig_mock.return_value.networks = {
-        TESTNET1: create_network_config(
-            'nic', IFACE0, bridged=False, vlan=VLAN101
-        )
-    }
-
-    networks = {
-        TESTNET1: create_network_config(
-            'nic', IFACE1, bridged=False, vlan=VLAN101
-        )
-    }
-    state = nmstate.generate_state(networks=networks, bondings={})
-    eth1_vlan_state = create_vlan_iface_state(IFACE1, VLAN101)
-    disable_iface_ip(eth1_vlan_state)
-    eth1_state = create_ethernet_iface_state(IFACE1)
-    disable_iface_ip(eth1_state)
-    remove_vlan_eth0_state = {
-        nmstate.Interface.NAME: 'eth0.101',
-        nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
-    }
-    expected_state = {
-        nmstate.Interface.KEY: [
-            eth1_vlan_state,
-            remove_vlan_eth0_state,
-            eth1_state,
-        ]
-    }
-    sort_by_name(expected_state[nmstate.Interface.KEY])
     assert expected_state == state
 
 
