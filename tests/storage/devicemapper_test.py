@@ -57,6 +57,9 @@ FAKE_DMSETUP_OUTPUT = """\
 # Output if there are no dm devices on the host.
 NO_DEVICE_MAPPER_DEVICES = "No devices found\n"
 
+# Output if no multipath device is found and there are dm devices on the host.
+NO_MULTIPATH_DEVICE = ""
+
 broken_on_ci = broken_on_ci.with_args(
     reason="device mapper doesn't work properly in containers")
 
@@ -127,6 +130,18 @@ def test_dm_status(fake_dmsetup):
 
 
 @requires_root
+def test_dm_status_no_device(fake_dmsetup):
+    fake_dmsetup.write(DMSETUP_SCRIPT.format(NO_DEVICE_MAPPER_DEVICES))
+    assert devicemapper.multipath_status() == {}
+
+
+@requires_root
+def test_dm_status_no_output(fake_dmsetup):
+    fake_dmsetup.write(DMSETUP_SCRIPT.format(NO_MULTIPATH_DEVICE))
+    assert devicemapper.multipath_status() == {}
+
+
+@requires_root
 def test_get_paths_status(fake_dmsetup):
     fake_dmsetup.write(DMSETUP_SCRIPT.format(FAKE_DMSETUP_OUTPUT))
 
@@ -146,6 +161,12 @@ def test_get_paths_status(fake_dmsetup):
 @requires_root
 def test_get_paths_status_no_device(fake_dmsetup):
     fake_dmsetup.write(DMSETUP_SCRIPT.format(NO_DEVICE_MAPPER_DEVICES))
+    assert devicemapper.getPathsStatus() == {}
+
+
+@requires_root
+def test_get_paths_status_no_mutltipath(fake_dmsetup):
+    fake_dmsetup.write(DMSETUP_SCRIPT.format(NO_MULTIPATH_DEVICE))
     assert devicemapper.getPathsStatus() == {}
 
 
