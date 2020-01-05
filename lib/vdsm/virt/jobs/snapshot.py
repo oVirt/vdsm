@@ -71,9 +71,71 @@ class Snapshot(properties.Owner):
         self.memory_params = memory_params
         self.frozen = frozen
         self.job_uuid = job_uuid
+        # When creating memory snapshot libvirt will pause the vm
+        self.should_freeze = not (self.memory_params or self.frozen)
 
-    def teardown(self):
-        pass
+    def _finalize_vm(self, memory_vol):
+        self.vm.drive_monitor.enable()
+        if self.memory_params:
+            self.vm.cif.teardownVolumePath(memory_vol)
+        if config.getboolean('vars', 'time_sync_snapshot_enable'):
+            self.vm.syncGuestTime()
+
+    def teardown(self, memory_vol_path, memory_vol, new_drives, vm_drives):
+        self.vm.log.info('Starting snapshot teardown')
+        result = True
+
+        def pad_memory_volume(memory_vol_path, sd_uuid):
+            sd_type = sd.name2type(
+                self.vm.cif.irs.getStorageDomainInfo(sd_uuid)['info']['type'])
+            if sd_type in sd.FILE_DOMAIN_TYPES:
+                iop = oop.getProcessPool(sd_uuid)
+                iop.fileUtils.padToBlockSize(memory_vol_path)
+
+        try:
+            # Must always thaw, even if freeze failed; in case the guest
+            # did freeze the filesystems, but failed to reply in time.
+            # Libvirt is using same logic (see src/qemu/qemu_driver.c).
+            if self.should_freeze:
+                self.vm.thaw()
+
+            # We are padding the memory volume with block size of zeroes
+            # because qemu-img truncates files such that their size is
+            # round down to the closest multiple of block size (bz 970559).
+            # This code should be removed once qemu-img will handle files
+            # with size that is not multiple of block size correctly.
+            if self.memory_params:
+                pad_memory_volume(memory_vol_path, memory_vol['domainID'])
+
+            for drive in new_drives.values():
+                # Update the drive information
+                _, old_volume_id = vm_drives[drive["name"]]
+                try:
+                    self.vm.updateDriveParameters(drive)
+                except Exception:
+                    # Here it's too late to fail, the switch already happened
+                    # and there's nothing we can do, we must to proceed anyway
+                    # to report the live snapshot success.
+                    self.vm.log.exception("Failed to update drive information"
+                                          " for '%s'", drive)
+
+                drive_obj = lookup.drive_by_name(
+                    self.vm.getDiskDevices()[:], drive["name"])
+                self.vm.clear_drive_threshold(drive_obj, old_volume_id)
+
+                try:
+                    self.vm.updateDriveVolume(drive_obj)
+                except vdsm.virt.vm.StorageUnavailableError as e:
+                    # Will be recovered on the next monitoring cycle
+                    self.vm.log.error("Unable to update drive %r "
+                                      "volume size: %s", drive["name"], e)
+        except Exception as e:
+            self.vm.log.error("Snapshot teardown error: %s, "
+                              "trying to continue teardown", e)
+            result = False
+        finally:
+            self._finalize_vm(memory_vol)
+        return result
 
     def __repr__(self):
         return ("<%s vm=%s job=%s 0x%s>" %
@@ -129,13 +191,6 @@ class Snapshot(properties.Owner):
             return {'restoreFromSnapshot': True,
                     '_srcDomXML': self.vm.migratable_domain_xml(),
                     'elapsedTimeOffset': time.time() - self.vm.start_time}
-
-        def pad_memory_volume(memory_vol_path, sd_uuid):
-            sd_type = sd.name2type(
-                self.vm.cif.irs.getStorageDomainInfo(sd_uuid)['info']['type'])
-            if sd_type in sd.FILE_DOMAIN_TYPES:
-                iop = oop.getProcessPool(sd_uuid)
-                iop.fileUtils.padToBlockSize(memory_vol_path)
 
         snap = vmxml.Element('domainsnapshot')
         disks = vmxml.Element('disks')
@@ -244,9 +299,6 @@ class Snapshot(properties.Owner):
             memory_vol = memory_vol_path = None
             snap_flags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY
 
-        # When creating memory snapshot libvirt will pause the vm
-        should_freeze = not (self.memory_params or self.frozen)
-
         snapxml = xmlutils.tostring(snap)
         # TODO: this is debug information. For 3.6.x we still need to
         # see the XML even with 'info' as default level.
@@ -260,7 +312,7 @@ class Snapshot(properties.Owner):
         self.vm.drive_monitor.disable()
 
         try:
-            if should_freeze:
+            if self.should_freeze:
                 self.vm.freeze()
             try:
                 self.vm.log.info("Taking a live snapshot (drives=%s,"
@@ -272,47 +324,17 @@ class Snapshot(properties.Owner):
                 self.vm.log.info("Completed live snapshot")
             except libvirt.libvirtError:
                 self.vm.log.exception("Unable to take snapshot")
-                return response.error('snapshotErr')
-            finally:
-                # Must always thaw, even if freeze failed; in case the guest
-                # did freeze the filesystems, but failed to reply in time.
-                # Libvirt is using same logic (see src/qemu/qemu_driver.c).
-                if should_freeze:
+                if self.should_freeze:
                     self.vm.thaw()
-
-            # We are padding the memory volume with block size of zeroes
-            # because qemu-img truncates files such that their size is
-            # round down to the closest multiple of block size (bz 970559).
-            # This code should be removed once qemu-img will handle files
-            # with size that is not multiple of block size correctly.
-            if self.memory_params:
-                pad_memory_volume(memory_vol_path, memory_vol['domainID'])
-
-            for drive in new_drives.values():  # Update the drive information
-                _, old_volume_id = vm_drives[drive["name"]]
-                try:
-                    self.vm.updateDriveParameters(drive)
-                except Exception:
-                    # Here it's too late to fail, the switch already happened
-                    # and there's nothing we can do, we must to proceed anyway
-                    # to report the live snapshot success.
-                    self.vm.log.exception("Failed to update drive information"
-                                          " for '%s'", drive)
-
-                drive_obj = lookup.drive_by_name(
-                    self.vm.getDiskDevices()[:], drive["name"])
-                self.vm.clear_drive_threshold(drive_obj, old_volume_id)
-
-                try:
-                    self.vm.updateDriveVolume(drive_obj)
-                except vdsm.virt.vm.StorageUnavailableError as e:
-                    # Will be recovered on the next monitoring cycle
-                    self.vm.log.error("Unable to update drive %r "
-                                      "volume size: %s", drive["name"], e)
-
-        finally:
-            self.vm.drive_monitor.enable()
-            if self.memory_params:
-                self.vm.cif.teardownVolumePath(memory_vol)
-            if config.getboolean('vars', 'time_sync_snapshot_enable'):
-                self.vm.syncGuestTime()
+                return response.error('snapshotErr')
+        except:
+            # In case the vm was shutdown in the middle of the snapshot
+            # operation we keep doing the finalizing and reporting the failure
+            self._finalize_vm(memory_vol)
+            res = False
+        else:
+            res = self.teardown(memory_vol_path, memory_vol,
+                                new_drives, vm_drives)
+        if not res:
+            raise RuntimeError("Failed to execute snapshot, "
+                               "considering the operation as failure")

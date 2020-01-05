@@ -5528,6 +5528,9 @@ class Vm(object):
     def run_dom_snapshot(self, snapxml, snap_flags):
         self._dom.snapshotCreateXML(snapxml, snap_flags)
 
+    def job_stats(self):
+        return self._dom.jobStats()
+
 
 class LiveMergeCleanupThread(object):
     def __init__(self, vm, job, drive, doPivot):
