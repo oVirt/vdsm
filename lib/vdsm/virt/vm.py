@@ -4640,7 +4640,7 @@ class Vm(object):
 
             if fips:
                 saslpasswd2.set_vnc_password(vnc_username, otp.value)
-            else:
+            elif vnc_username is not None:
                 saslpasswd2.remove_vnc_password(vnc_username)
 
         vmxml.set_attr(graphics, 'passwd', otp.value)
