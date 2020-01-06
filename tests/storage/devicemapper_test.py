@@ -31,46 +31,35 @@ from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.constants import EXT_DMSETUP
 from vdsm.storage import devicemapper
+from vdsm.storage import dmsetup
 from vdsm.storage.devicemapper import DMPATH_PREFIX
 from vdsm.storage.devicemapper import Error
 from vdsm.storage.devicemapper import PathStatus
 
-
 from . marks import requires_root, broken_on_ci
 
-DMSETUP_SCRIPT = """\
-#!/bin/sh
-set -e
-
-# Run the real dmsetup to validate the arguments, dropping the output.
-dmsetup "$@" > /dev/null
-
-# Fake the output
-echo -n '{}'
-"""
-
-FAKE_DMSETUP_OUTPUT = """\
-360014053d0b83eff3d347c48509fc426: 0 104857600 multipath 2 0 1 0 3 2 E 0 1 1 67:16 F 4 0 E 0 1 1 65:240 A 84 0 E 0 1 1 66:64 A 39 0
-3600140543cb8d7510d54f058c7b3f7ec: 0 209715200 multipath 2 0 1 0 3 1 A 0 1 1 65:224 A 0 0 E 0 1 1 65:160 A 0 0 E 0 1 1 66:176 F 1 0
-"""  # NOQA: E501 (long line)
-
-# Output if there are no dm devices on the host.
-NO_DEVICE_MAPPER_DEVICES = b"No devices found\n"
-
-# Output if no multipath device is found and there are dm devices on the host.
-NO_MULTIPATH_DEVICE = b""
+FAKE_DMSETUP_STATUS = [
+    ("360014053d0b83eff3d347c48509fc426", " 0 104857600 multipath 2 0 1 0 3 2 E 0 1 1 67:16 F 4 0 E 0 1 1 65:240 A 84 0 E 0 1 1 66:64 A 39 0"),  # NOQA: E501 (long line)
+    ("3600140543cb8d7510d54f058c7b3f7ec", " 0 209715200 multipath 2 0 1 0 3 1 A 0 1 1 65:224 A 0 0 E 0 1 1 65:160 A 0 0 E 0 1 1 66:176 F 1 0"),  # NOQA: E501 (long line)
+]
 
 broken_on_ci = broken_on_ci.with_args(
     reason="device mapper doesn't work properly in containers")
 
 
-@pytest.fixture
-def fake_dmsetup(monkeypatch, fake_executable):
-    monkeypatch.setattr(devicemapper, "EXT_DMSETUP", str(fake_executable))
-    monkeypatch.setattr(
-        devicemapper, "device_name", lambda major_minor: major_minor)
+class FakeDmSetupStatus(object):
 
-    return fake_executable
+    def __init__(self):
+        self.lines = []
+
+    def __call__(self, *args, **kwargs):
+        for name, status in self.lines:
+            yield name, status
+
+
+@pytest.fixture
+def fake_dmsetup_status(monkeypatch):
+    monkeypatch.setattr(dmsetup, "status", FakeDmSetupStatus())
 
 
 @pytest.fixture
@@ -106,9 +95,8 @@ def zero_dm_device():
                     "Could not remove mapping {!r}: {}".format(device_name, e))
 
 
-@requires_root
-def test_dm_status(fake_dmsetup):
-    fake_dmsetup.write(DMSETUP_SCRIPT.format(FAKE_DMSETUP_OUTPUT))
+def test_dm_status(fake_dmsetup_status):
+    dmsetup.status.lines = FAKE_DMSETUP_STATUS
 
     res = devicemapper.multipath_status()
     expected = {
@@ -129,21 +117,14 @@ def test_dm_status(fake_dmsetup):
     assert res == expected
 
 
-def test_dm_status_no_device(monkeypatch):
-    monkeypatch.setattr(
-        devicemapper, "run_dmsetup_status", lambda: NO_DEVICE_MAPPER_DEVICES)
+def test_dm_status_no_device(fake_dmsetup_status):
     assert devicemapper.multipath_status() == {}
 
 
-def test_dm_status_no_output(monkeypatch):
+def test_get_paths_status(monkeypatch, fake_dmsetup_status):
     monkeypatch.setattr(
-        devicemapper, "run_dmsetup_status", lambda: NO_MULTIPATH_DEVICE)
-    assert devicemapper.multipath_status() == {}
-
-
-@requires_root
-def test_get_paths_status(fake_dmsetup):
-    fake_dmsetup.write(DMSETUP_SCRIPT.format(FAKE_DMSETUP_OUTPUT))
+        devicemapper, "device_name", lambda major_minor: major_minor)
+    dmsetup.status.lines = FAKE_DMSETUP_STATUS
 
     res = devicemapper.getPathsStatus()
 
@@ -158,15 +139,7 @@ def test_get_paths_status(fake_dmsetup):
     assert res == expected
 
 
-def test_get_paths_status_no_device(monkeypatch):
-    monkeypatch.setattr(
-        devicemapper, "run_dmsetup_status", lambda: NO_DEVICE_MAPPER_DEVICES)
-    assert devicemapper.getPathsStatus() == {}
-
-
-def test_get_paths_status_no_mutltipath(monkeypatch):
-    monkeypatch.setattr(
-        devicemapper, "run_dmsetup_status", lambda: NO_MULTIPATH_DEVICE)
+def test_get_paths_status_no_device(fake_dmsetup_status):
     assert devicemapper.getPathsStatus() == {}
 
 

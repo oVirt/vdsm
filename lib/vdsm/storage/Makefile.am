@@ -39,6 +39,7 @@ dist_vdsmstorage_PYTHON = \
 	devicemapper.py \
 	directio.py \
 	dispatcher.py \
+	dmsetup.py \
 	exception.py \
 	fallocate.py \
 	fileSD.py \
