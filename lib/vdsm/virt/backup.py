@@ -137,24 +137,25 @@ def start_backup(vm, dom, config):
     scratch_disks = _create_scratch_disks(
         vm, dom, backup_cfg.backup_id, drives)
 
-    backup_xml = create_backup_xml(nbd_addr, drives, scratch_disks)
-
-    vm.log.info(
-        "Starting backup for backup_id: %r, backup xml: %s",
-        backup_cfg.backup_id, backup_xml)
-    checkpoint_xml = None
-    # pylint: disable=no-member
-    flags = libvirt.VIR_DOMAIN_BACKUP_BEGIN_REUSE_EXTERNAL
     try:
-        dom.backupBegin(backup_xml, checkpoint_xml, flags=flags)
-    except libvirt.libvirtError as e:
+        vm.freeze()
+        backup_xml = create_backup_xml(nbd_addr, drives, scratch_disks)
+
+        vm.log.info(
+            "Starting backup for backup_id: %r, backup xml: %s",
+            backup_cfg.backup_id, backup_xml)
+
+        checkpoint_xml = None
+        _begin_backup(vm, dom, backup_cfg, backup_xml, checkpoint_xml)
+    except:
         # remove all the created scratch disks
         _remove_scratch_disks(vm, backup_cfg.backup_id)
-
-        raise exception.BackupError(
-            reason="Error starting backup: {}".format(e),
-            vm_id=vm.id,
-            backup=backup_cfg)
+        raise
+    finally:
+        # Must always thaw, even if freeze failed; in case the guest
+        # did freeze the filesystems, but failed to reply in time.
+        # Libvirt is using same logic (see src/qemu/qemu_driver.c).
+        vm.thaw()
 
     disks_urls = {
         img_id: nbd_addr.url(drive.name)
@@ -228,6 +229,18 @@ def _get_backup_xml(vm_id, dom, backup_id):
             backup_id=backup_id)
 
     return backup_xml
+
+
+def _begin_backup(vm, dom, backup_cfg, backup_xml, checkpoint_xml):
+    # pylint: disable=no-member
+    flags = libvirt.VIR_DOMAIN_BACKUP_BEGIN_REUSE_EXTERNAL
+    try:
+        dom.backupBegin(backup_xml, checkpoint_xml, flags=flags)
+    except libvirt.libvirtError as e:
+        raise exception.BackupError(
+            reason="Error starting backup: {}".format(e),
+            vm_id=vm.id,
+            backup=backup_cfg)
 
 
 def _parse_backup_info(vm, backup_id, backup_xml):

@@ -29,6 +29,8 @@ import pytest
 
 from fakelib import FakeLogger
 from testlib import make_uuid
+from testlib import maybefail
+
 from virt.fakedomainadapter import FakeDomainAdapter
 
 from vdsm.common import exception
@@ -81,6 +83,9 @@ class FakeVm(object):
         self.id = "vm_id"
         self.log = FakeLogger()
         self.cif = FakeClientIF()
+        self.froze = False
+        self.thawed = False
+        self.errors = {}
 
     def findDriveByUUIDs(self, disk):
         return FAKE_DRIVES[disk['imageID']]
@@ -91,6 +96,13 @@ class FakeVm(object):
                 return fake_drive
 
         raise LookupError("Disk %s not found" % disk_name)
+
+    @maybefail
+    def freeze(self):
+        self.froze = True
+
+    def thaw(self):
+        self.thawed = True
 
 
 IMAGE_1_UUID = make_uuid()
@@ -173,6 +185,10 @@ def test_start_stop_backup(tmp_backupdir, tmp_basedir):
 
     verify_scratch_disks_exists(vm)
 
+    # verify that the vm froze and thawed during the backup
+    assert vm.froze
+    assert vm.thawed
+
     result_disks = res['result']['disks']
     verify_backup_urls(backup_id, result_disks)
 
@@ -203,6 +219,10 @@ def test_start_backup_disk_not_found():
     assert not dom.backing_up
     verify_scratch_disks_removed(vm)
 
+    # verify that the vm didn't froze or thawed during the backup
+    assert not vm.froze
+    assert not vm.thawed
+
 
 @requires_backup_support
 def test_backup_begin_failed(tmp_backupdir, tmp_basedir):
@@ -223,6 +243,35 @@ def test_backup_begin_failed(tmp_backupdir, tmp_basedir):
         backup.start_backup(vm, dom, config)
 
     verify_scratch_disks_removed(vm)
+
+    # verify that the vm froze and thawed during the backup
+    assert vm.froze
+    assert vm.thawed
+
+
+@requires_backup_support
+def test_backup_begin_freeze_failed(tmp_backupdir, tmp_basedir):
+    backup_id = 'backup_id'
+    vm = FakeVm()
+    vm.errors["freeze"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
+    dom = FakeDomainAdapter()
+
+    fake_disks = create_fake_disks()
+
+    config = {
+        'backup_id': backup_id,
+        'disks': fake_disks
+    }
+
+    with pytest.raises(libvirt.libvirtError):
+        backup.start_backup(vm, dom, config)
+
+    verify_scratch_disks_removed(vm)
+
+    # verify that the vm didn't froze but thawed during the backup
+    assert not vm.froze
+    assert vm.thawed
 
 
 def test_backup_begin_failed_no_disks(tmp_backupdir, tmp_basedir):
