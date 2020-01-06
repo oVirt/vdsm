@@ -166,28 +166,8 @@ PATH_STATUS_RE = re.compile(r"(?P<devnum>\d+:\d+)\s+(?P<status>[AF])")
 
 
 def getPathsStatus():
-    if os.geteuid() != 0:
-        return supervdsm.getProxy().devicemapper_getPathsStatus()
-
-    cmd = [EXT_DMSETUP, "status", "--target", "multipath"]
-    try:
-        out = commands.run(cmd)
-    except cmdutils.Error as e:
-        raise Error("Could not get device statuses: {}".format(e))
-
-    lines = out.decode("utf-8").splitlines()
-
     res = {}
-    for statusLine in lines:
-        try:
-            devName, statusLine = statusLine.split(":", 1)
-        except ValueError:
-            if len(lines) == 1:
-                # return an empty dict when status output is: No devices found
-                return res
-            else:
-                raise
-
+    for devName, statusLine in dmsetup_status():
         for m in PATH_STATUS_RE.finditer(statusLine):
             devNum, status = m.groups()
             physdevName = device_name(devNum)
@@ -197,27 +177,8 @@ def getPathsStatus():
 
 
 def multipath_status():
-    if os.geteuid() != 0:
-        return supervdsm.getProxy().devicemapper_multipath_status()
-
-    cmd = [EXT_DMSETUP, "status", "--target", "multipath"]
-    try:
-        out = commands.run(cmd)
-    except cmdutils.Error as e:
-        raise Error("Cannot get multipath status: {}".format(e))
-
     res = {}
-    lines = out.decode("utf-8").splitlines()
-    for line in lines:
-        try:
-            guid, paths = line.split(":", 1)
-        except ValueError:
-            # TODO check if this output is relevant
-            if len(lines) != 1:
-                raise
-            # return an empty dict when status output is: No devices found
-            return res
-
+    for guid, paths in dmsetup_status():
         statuses = []
         for m in PATH_STATUS_RE.finditer(paths):
             major_minor, status = m.groups()
@@ -226,3 +187,29 @@ def multipath_status():
         res[guid] = statuses
 
     return res
+
+
+def dmsetup_status():
+    lines = run_dmsetup_status().decode("utf-8").splitlines()
+
+    # Handle the special "No devices found" case.
+    # See https://bugzilla.redhat.com/1787541
+    if len(lines) == 1 and ":" not in lines[0]:
+        return
+
+    for line in lines:
+        name, status = line.split(":", 1)
+        yield name, status
+
+
+def run_dmsetup_status():
+    if os.geteuid() != 0:
+        return supervdsm.getProxy().devicemapper_run_dmsetup_status()
+
+    cmd = [EXT_DMSETUP, "status", "--target", "multipath"]
+    try:
+        out = commands.run(cmd)
+    except cmdutils.Error as e:
+        raise Error("Could not get device statuses: {}".format(e))
+
+    return out

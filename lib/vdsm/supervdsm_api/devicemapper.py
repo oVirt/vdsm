@@ -30,10 +30,5 @@ def devicemapper_removeMapping(deviceName):
 
 
 @expose
-def devicemapper_multipath_status():
-    return devicemapper.multipath_status()
-
-
-@expose
-def devicemapper_getPathsStatus():
-    return devicemapper.getPathsStatus()
+def run_dmsetup_status():
+    return devicemapper.run_dmsetup_status()

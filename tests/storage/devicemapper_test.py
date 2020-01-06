@@ -55,10 +55,10 @@ FAKE_DMSETUP_OUTPUT = """\
 """  # NOQA: E501 (long line)
 
 # Output if there are no dm devices on the host.
-NO_DEVICE_MAPPER_DEVICES = "No devices found\n"
+NO_DEVICE_MAPPER_DEVICES = b"No devices found\n"
 
 # Output if no multipath device is found and there are dm devices on the host.
-NO_MULTIPATH_DEVICE = ""
+NO_MULTIPATH_DEVICE = b""
 
 broken_on_ci = broken_on_ci.with_args(
     reason="device mapper doesn't work properly in containers")
@@ -129,15 +129,15 @@ def test_dm_status(fake_dmsetup):
     assert res == expected
 
 
-@requires_root
-def test_dm_status_no_device(fake_dmsetup):
-    fake_dmsetup.write(DMSETUP_SCRIPT.format(NO_DEVICE_MAPPER_DEVICES))
+def test_dm_status_no_device(monkeypatch):
+    monkeypatch.setattr(
+        devicemapper, "run_dmsetup_status", lambda: NO_DEVICE_MAPPER_DEVICES)
     assert devicemapper.multipath_status() == {}
 
 
-@requires_root
-def test_dm_status_no_output(fake_dmsetup):
-    fake_dmsetup.write(DMSETUP_SCRIPT.format(NO_MULTIPATH_DEVICE))
+def test_dm_status_no_output(monkeypatch):
+    monkeypatch.setattr(
+        devicemapper, "run_dmsetup_status", lambda: NO_MULTIPATH_DEVICE)
     assert devicemapper.multipath_status() == {}
 
 
@@ -158,15 +158,15 @@ def test_get_paths_status(fake_dmsetup):
     assert res == expected
 
 
-@requires_root
-def test_get_paths_status_no_device(fake_dmsetup):
-    fake_dmsetup.write(DMSETUP_SCRIPT.format(NO_DEVICE_MAPPER_DEVICES))
+def test_get_paths_status_no_device(monkeypatch):
+    monkeypatch.setattr(
+        devicemapper, "run_dmsetup_status", lambda: NO_DEVICE_MAPPER_DEVICES)
     assert devicemapper.getPathsStatus() == {}
 
 
-@requires_root
-def test_get_paths_status_no_mutltipath(fake_dmsetup):
-    fake_dmsetup.write(DMSETUP_SCRIPT.format(NO_MULTIPATH_DEVICE))
+def test_get_paths_status_no_mutltipath(monkeypatch):
+    monkeypatch.setattr(
+        devicemapper, "run_dmsetup_status", lambda: NO_MULTIPATH_DEVICE)
     assert devicemapper.getPathsStatus() == {}
 
 
