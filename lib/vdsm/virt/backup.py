@@ -84,11 +84,14 @@ class DiskConfig(properties.Owner):
     vol_id = properties.UUID(required=True)
     img_id = properties.UUID(required=True)
     dom_id = properties.UUID(required=True)
+    checkpoint = properties.Boolean(required=True)
 
     def __init__(self, disk_config):
         self.vol_id = disk_config.get("volumeID")
         self.img_id = disk_config.get("imageID")
         self.dom_id = disk_config.get("domainID")
+        # Mark if the disk is included in the checkpoint.
+        self.checkpoint = disk_config.get("checkpoint")
 
 
 class BackupConfig(properties.Owner):

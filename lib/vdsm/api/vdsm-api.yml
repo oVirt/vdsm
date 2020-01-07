@@ -8192,6 +8192,28 @@ types:
             type: *UUID
         type: object
 
+    BackupDisk: &BackupDisk
+        added: '4.4'
+        description: Backup disk descriptor.
+        name: BackupDisk
+        properties:
+        -   description: The UUID of the storage domain
+            name: sd_id
+            type: *UUID
+
+        -   description: The UUID of the image
+            name: img_id
+            type: *UUID
+
+        -   description: The UUID of the volume
+            name: vol_id
+            type: *UUID
+
+        -   description: Should the disk be included in a checkpoint
+            name: checkpoint
+            type: boolean
+        type: object
+
     NBDServerConfig: &NBDServerConfig
         added: '4.3'
         description: NBD server configuration.
@@ -8265,7 +8287,7 @@ types:
                 created on all the disks.
             name: disks
             type:
-            - *VolumeInfo
+            - *BackupDisk
 
         -   defaultvalue: null
             description: If specified, perform incremental backup

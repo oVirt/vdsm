@@ -204,7 +204,9 @@ def test_start_backup_disk_not_found():
     fake_disks.append({
         'domainID': make_uuid(),
         'imageID': make_uuid(),
-        'volumeID': make_uuid()})
+        'volumeID': make_uuid(),
+        'checkpoint': False
+    })
 
     config = {
         'backup_id': BACKUP_ID,
@@ -431,5 +433,7 @@ def create_fake_disks():
         fake_disks.append({
             'domainID': make_uuid(),
             'imageID': img_id,
-            'volumeID': make_uuid()})
+            'volumeID': make_uuid(),
+            'checkpoint': False
+        })
     return fake_disks
