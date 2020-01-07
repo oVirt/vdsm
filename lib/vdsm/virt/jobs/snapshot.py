@@ -28,8 +28,8 @@ import os
 import time
 
 import libvirt
-import six
 
+from vdsm.common import logutils
 from vdsm.common import response
 from vdsm import utils
 from vdsm.config import config
@@ -40,26 +40,34 @@ from vdsm.common.compat import pickle
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import sd
 
+from vdsm.virt import vmstatus
 from vdsm.virt import vmxml
+from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import lookup
+from vdsm.virt.vmdevices import storagexml
 import vdsm.virt.jobs
 import vdsm.virt.vm
 
 
 class Job(vdsm.virt.jobs.Job):
 
-    def __init__(self, vm, snap_drives, memory_params, frozen, job_uuid):
+    def __init__(self, vm, snap_drives, memory_params,
+                 frozen, job_uuid, recovery=False):
         super(Job, self).__init__(job_uuid, 'snapshot_vm')
         self.vm = vm
         self.snap_drives = snap_drives
         self.memory_params = memory_params
         self.frozen = frozen
         self.job_uuid = job_uuid
+        self.recovery = recovery
 
     def _run(self):
-        snap = Snapshot(self.vm, self.snap_drives, self.memory_params,
-                        self.frozen, self.job_uuid)
-        snap.snapshot()
+        if self.recovery:
+            LiveSnapshotRecovery(self.vm).run()
+        else:
+            snap = Snapshot(self.vm, self.snap_drives, self.memory_params,
+                            self.frozen, self.job_uuid)
+            snap.snapshot()
 
 
 class Snapshot(properties.Owner):
@@ -73,13 +81,24 @@ class Snapshot(properties.Owner):
         self.job_uuid = job_uuid
         # When creating memory snapshot libvirt will pause the vm
         self.should_freeze = not (self.memory_params or self.frozen)
+        self._snapshot_job = {"jobUUID": job_uuid,
+                              "frozen": self.frozen,
+                              "memoryParams": self.memory_params}
+        if self.snap_drives is not None:
+            # Regular flow, not recovery
+            self.vm.update_snapshot_metadata(self._snapshot_job)
 
     def _finalize_vm(self, memory_vol):
-        self.vm.drive_monitor.enable()
-        if self.memory_params:
-            self.vm.cif.teardownVolumePath(memory_vol)
-        if config.getboolean('vars', 'time_sync_snapshot_enable'):
-            self.vm.syncGuestTime()
+        try:
+            self.vm.drive_monitor.enable()
+            if self.memory_params:
+                self.vm.cif.teardownVolumePath(memory_vol)
+            if config.getboolean('vars', 'time_sync_snapshot_enable'):
+                self.vm.syncGuestTime()
+        finally:
+            # Cleaning snapshot job metadata
+            self._snapshot_job = None
+            self.vm.update_snapshot_metadata(self._snapshot_job)
 
     def teardown(self, memory_vol_path, memory_vol, new_drives, vm_drives):
         self.vm.log.info('Starting snapshot teardown')
@@ -171,7 +190,7 @@ class Snapshot(properties.Owner):
         def rollback_drives(new_drives):
             """Rollback the prepared volumes for the snapshot"""
 
-            for vm_dev_name, drive in six.iteritems(new_drives):
+            for vm_dev_name, drive in new_drives.items():
                 try:
                     self.vm.cif.teardownVolumePath(drive)
                 except Exception:
@@ -243,7 +262,7 @@ class Snapshot(properties.Owner):
 
         prepared_drives = {}
 
-        for vm_dev_name, vm_device in six.iteritems(new_drives):
+        for vm_dev_name, vm_device in new_drives.items():
             # Adding the device before requesting to prepare it as we want
             # to be sure to teardown it down even when prepareVolumePath
             # failed for some unknown issue that left the volume active.
@@ -304,6 +323,15 @@ class Snapshot(properties.Owner):
         # see the XML even with 'info' as default level.
         self.vm.log.info("%s", snapxml)
 
+        self._snapshot_job['memoryVolPath'] = memory_vol_path
+        self._snapshot_job['memoryVol'] = memory_vol
+        self._snapshot_job['newDrives'] = new_drives
+        vm_drives_serialized = {}
+        for k, v in vm_drives.items():
+            vm_drives_serialized[k] = [xmlutils.tostring(v[0].getXML()), v[1]]
+        self._snapshot_job['vmDrives'] = vm_drives_serialized
+        self.vm.update_snapshot_metadata(self._snapshot_job)
+
         # We need to stop the drive monitoring for two reasons, one is to
         # prevent spurious libvirt errors about missing drive paths (since
         # we're changing them), and also to prevent to trigger a drive
@@ -328,8 +356,8 @@ class Snapshot(properties.Owner):
                     self.vm.thaw()
                 return response.error('snapshotErr')
         except:
-            # In case the vm was shutdown in the middle of the snapshot
-            # operation we keep doing the finalizing and reporting the failure
+            # In case the VM was shutdown in the middle of the snapshot
+            # operation we keep doing the finalizing and reporting the failure.
             self._finalize_vm(memory_vol)
             res = False
         else:
@@ -337,4 +365,81 @@ class Snapshot(properties.Owner):
                                 new_drives, vm_drives)
         if not res:
             raise RuntimeError("Failed to execute snapshot, "
+                               "considering the operation as failure")
+
+
+class LiveSnapshotRecovery(object):
+    def __init__(self, vm):
+        self.vm = vm
+        self.job_stats = None
+        self._snapshot_job = self.vm.snapshot_metadata()
+        # The metadata stored in __init__ is in order to be able
+        # to perform teardown.
+        self.frozen = self._snapshot_job['frozen']
+        self.memory_params = self._snapshot_job['memoryParams']
+        self.job_uuid = self._snapshot_job['jobUUID']
+
+    @logutils.traceback()
+    def run(self):
+        self.vm.log.info("JOBMON: Checking job on VM: %s", self.vm.id)
+        while True:
+            try:
+                # Only one job can run per VM. Therefore, given the fact we
+                # have the metadata of the snapshot job and there is a job
+                # still running (or the job is gone),
+                # we can assume it was the snapshot job.
+                self.job_stats = self.vm.job_stats()
+            except libvirt.libvirtError:
+                # TODO: This is workaround for
+                #  https://bugzilla.redhat.com/1565552
+                pass
+            else:
+                if self.job_stats and \
+                        self.job_stats['type'] == libvirt.VIR_DOMAIN_JOB_NONE:
+                    break
+            self.vm.log.info("JOBMON: Snapshot is running")
+            time.sleep(10)
+
+        self.vm.log.info("JOBMON: Snapshot isn't running")
+        memory_vol_path = memory_vol = new_drives = vm_drives = None
+
+        # In recovery the VM is in actual pause status.
+        # We expect the VM will be reported as running by libvirt
+        # shortly after the job is finished.
+        # In that case, we will change the VM status to UP in VDSM.
+        # We will check libvirt status report for 10 times,
+        # every 1 seconds to eliminate possible race on the VM status.
+        if self.vm.lastStatus == vmstatus.PAUSED:
+            for _ in range(10):
+                if self.vm.isDomainRunning():
+                    self.vm.set_last_status(vmstatus.UP, vmstatus.PAUSED)
+                    self.vm.send_status_event()
+                    break
+                time.sleep(1)
+        try:
+            # Taking the values from the VM metadata.
+            # If we fail, then we are missing the data and will try
+            # to recovery without them. It might be that we didn't start
+            # the operation in libvirt and therefore we don't have them.
+            # We still must perform teardown in such a case,
+            # with incomplete metadata stored in __init__.
+            memory_vol_path = self._snapshot_job['memoryVolPath']
+            memory_vol = self._snapshot_job['memoryVol']
+            new_drives = self._snapshot_job['newDrives']
+            vm_drives = self._snapshot_job['vmDrives']
+            for k, v in vm_drives.items():
+                vm_drives[k] = (vmdevices.storage.Drive(
+                    self.vm.log, **storagexml.parse(
+                        xmlutils.fromstring(v[0]), {})
+                ), v[1])
+        except KeyError:
+            self.vm.log.error("Missing data on the snapshot job "
+                              "metadata.. calling teardown")
+        snap = Snapshot(
+            self.vm, None, self.memory_params, self.frozen, self.job_uuid
+        )
+        res = snap.teardown(memory_vol_path, memory_vol,
+                            new_drives, vm_drives)
+        if not res:
+            raise RuntimeError("Failed in snapshot recovery, "
                                "considering the operation as failure")

@@ -540,6 +540,7 @@ class Vm(object):
             self._launch_paused = conv.tobool(md.get('launchPaused', False))
             self._resume_behavior = md.get('resumeBehavior',
                                            ResumeBehavior.AUTO_RESUME)
+            self._snapshot_job = json.loads(md.get('snapshot_job', '{}'))
             self._pause_time = md.get('pauseTime')
             self._balloon_target = md.get('balloonTarget')
 
@@ -795,6 +796,10 @@ class Vm(object):
                     if self._lastStatus == vmstatus.MIGRATION_DESTINATION:
                         self._wait_for_incoming_postcopy_migration()
                         self.lastStatus = vmstatus.UP
+                    if self._snapshot_job:
+                        self.snapshot(None, None, None,
+                                      job_uuid=self._snapshot_job['jobUUID'],
+                                      recovery=True)
             else:
                 self.lastStatus = vmstatus.UP
             if self._initTimePauseCode:
@@ -3915,9 +3920,11 @@ class Vm(object):
             self, dom, checkpoints=checkpoints)
 
     @api.guard(_not_migrating)
-    def snapshot(self, snap_drives, memory_params, frozen, job_uuid):
+    def snapshot(self, snap_drives, memory_params, frozen,
+                 job_uuid, recovery=False):
         job_id = job_uuid or str(uuid.uuid4())
-        job = snapshot.Job(self, snap_drives, memory_params, frozen, job_id)
+        job = snapshot.Job(self, snap_drives, memory_params,
+                           frozen, job_id, recovery)
         jobs.add(job)
         vdsm.virt.jobs.schedule(job)
         return {'status': doneCode}
@@ -4483,6 +4490,17 @@ class Vm(object):
             else:
                 vm['pauseTime'] = self._pause_time
             vm.update(self._exit_info)
+            try:
+                if not self._snapshot_job or not jobs.get(
+                        self._snapshot_job['jobUUID']).active:
+                    try:
+                        del vm['snapshot_job']
+                    except KeyError:
+                        pass
+                else:
+                    vm['snapshot_job'] = json.dumps(self._snapshot_job)
+            except jobs.NoSuchJob:
+                del vm['snapshot_job']
         self._sync_metadata()
 
     def save_custom_properties(self):
@@ -5530,6 +5548,13 @@ class Vm(object):
 
     def job_stats(self):
         return self._dom.jobStats()
+
+    def update_snapshot_metadata(self, data):
+        self._snapshot_job = data
+        self._update_metadata()
+
+    def snapshot_metadata(self):
+        return self._snapshot_job
 
 
 class LiveMergeCleanupThread(object):
