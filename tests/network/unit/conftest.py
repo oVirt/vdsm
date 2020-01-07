@@ -81,17 +81,21 @@ class NMStateLinuxBridge(object):
     MULTICAST_SNOOPING = 'multicast-snooping'
 
     STP_SUBTREE = 'stp'
-    STP_ENABLED = 'enabled'
-    STP_PRIORITY = 'priority'
-    STP_FORWARD_DELAY = 'forward-delay'
-    STP_HELLO_TIME = 'hello-time'
-    STP_MAX_AGE = 'max-age'
+
+    class STP:
+        ENABLED = 'enabled'
+        FORWARD_DELAY = 'forward-delay'
+        HELLO_TIME = 'hello-time'
+        MAX_AGE = 'max-age'
+        PRIORITY = 'priority'
 
     PORT_SUBTREE = 'port'
-    PORT_NAME = 'name'
-    PORT_STP_PRIORITY = 'stp-priority'
-    PORT_STP_HAIRPIN_MODE = 'stp-hairpin-mode'
-    PORT_STP_PATH_COST = 'stp-path-cost'
+
+    class Port:
+        NAME = 'name'
+        STP_HAIRPIN_MODE = 'stp-hairpin-mode'
+        STP_PATH_COST = 'stp-path-cost'
+        STP_PRIORITY = 'stp-priority'
 
 
 class NMStateRoute(object):

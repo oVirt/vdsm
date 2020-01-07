@@ -462,7 +462,7 @@ class Network(object):
         )
 
     def _create_bridge_iface(self, port, options=None):
-        port_state = [{LinuxBridge.PORT_NAME: port}] if port else []
+        port_state = [{LinuxBridge.Port.NAME: port}] if port else []
         bridge_state = {
             Interface.NAME: self._name,
             Interface.TYPE: InterfaceType.LINUX_BRIDGE,
@@ -478,7 +478,7 @@ class Network(object):
     def _create_bridge_options(self):
         return {
             LinuxBridge.STP_SUBTREE: {
-                LinuxBridge.STP_ENABLED: self._netconf.stp
+                LinuxBridge.STP.ENABLED: self._netconf.stp
             }
         }
 
