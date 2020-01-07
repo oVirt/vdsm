@@ -1,6 +1,6 @@
 # encoding: utf-8
 #
-# Copyright 2018-2019 Red Hat, Inc.
+# Copyright 2018-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,6 +69,13 @@ class TestLookup(VdsmTestCase):
             {'alias': 'ac97', 'type': 'sound'}
         ]
         self.devices = common.empty_dev_map()
+        self.device_xml = xmlutils.fromstring("""
+            <devices>
+              <disk><alias name='ua-1'/></disk>
+              <hostdev><alias name='ua-2'/></hostdev>
+              <interface><alias name='ua-3'/></interface>
+            </devices>
+        """)
 
     def test_lookup_drive_by_name_found(self):
         drive = lookup.drive_by_name(self.drives, 'sda')
@@ -93,6 +100,16 @@ class TestLookup(VdsmTestCase):
     def test_lookup_device_by_alias_missing(self):
         self.assertRaises(
             LookupError, lookup.device_by_alias, self.drives, 'ua-UNKNOWN')
+
+    def test_lookup_xml_device_by_alias_found(self):
+        device = lookup.xml_device_by_alias(self.device_xml, 'ua-2')
+        assert device.tag == 'hostdev'
+
+    def test_lookup_xml_device_by_alias_missing(self):
+        self.assertRaises(
+            LookupError, lookup.xml_device_by_alias,
+            self.device_xml, 'ua-UNKNOWN'
+        )
 
     @permutations([[c] for c in hwclass.HOTPLUGGABLE])
     def test_hotpluggable_device_by_alias_found(self, device_class):

@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,6 +54,26 @@ def device_by_alias(devices, alias):
         if getattr(device, 'alias', None) == alias:
             return device
     raise LookupError("No such device: alias=%r" % alias)
+
+
+def xml_device_by_alias(device_xml, alias):
+    """
+    Return an XML device having the given alias.
+
+    :param device_xml: parsed <devices> element, typically taken
+      from DomainDescriptor.devices
+    :type device_xml: DOM object
+    :param alias: device alias
+    :type alias: string
+    :returns: DOM object of the device element having the given alias
+    :raises: `LookupError` if no device with `alias` is found
+    """
+    for dom in vmxml.children(device_xml):
+        xml_alias = core.find_device_alias(dom)
+        if xml_alias and xml_alias == alias:
+            return dom
+    raise LookupError("Unable to find matching XML for device %r" %
+                      (alias,))
 
 
 def hotpluggable_device_by_alias(device_dict, alias):

@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2019 Red Hat, Inc.
+# Copyright 2008-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -5568,19 +5568,13 @@ class Vm(object):
         return True
 
     def _driveGetActualVolumeChain(self, drives):
-        def lookupDeviceXMLByAlias(domXML, targetAlias):
-            for deviceXML in vmxml.children(DomainDescriptor(domXML).devices):
-                alias = vmdevices.core.find_device_alias(deviceXML)
-                if alias and alias == targetAlias:
-                    return deviceXML
-            raise LookupError("Unable to find matching XML for device %r" %
-                              targetAlias)
-
         ret = {}
         self._updateDomainDescriptor()
         for drive in drives:
             alias = drive['alias']
-            diskXML = lookupDeviceXMLByAlias(self._domain.xml, alias)
+            diskXML = vmdevices.lookup.xml_device_by_alias(
+                self._domain.devices, alias
+            )
             volChain = drive.parse_volume_chain(diskXML)
             if volChain:
                 ret[alias] = volChain
