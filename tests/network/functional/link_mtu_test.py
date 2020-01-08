@@ -34,6 +34,7 @@ NETWORK_NAME = 'test-network'
 NETWORK1_NAME = 'test-network1'
 NETWORK2_NAME = 'test-network2'
 BOND_NAME = 'bond1'
+BOND_NAME2 = 'bond2'
 VLAN1 = 10
 VLAN2 = 20
 DEFAULT_MTU = 1500
@@ -50,6 +51,11 @@ adapter = None
 def create_adapter(target):
     global adapter
     adapter = nftestlib.NetFuncTestAdapter(target)
+
+
+parametrize_vlan = pytest.mark.parametrize(
+    'vlan', [False, True], ids=['non-vlan', 'vlan']
+)
 
 
 @pytest.mark.nmstate
@@ -71,27 +77,37 @@ class TestNetworkMtu(object):
                 adapter.assertLinkMtu(nic, NETCREATE[NETWORK_NAME])
 
     @nftestlib.parametrize_bridged
-    def test_edit_mtu_on_network(self, switch, bridged):
+    @nftestlib.parametrize_bonded
+    @parametrize_vlan
+    @pytest.mark.parametrize(
+        'mtu', [MTU_2100, MTU_1600], ids=['mtu-higher', 'mtu-lower']
+    )
+    def test_edit_mtu_on_network(self, switch, bridged, bonded, vlan, mtu):
         with dummy_devices(1) as (nic,):
-            NETCREATE = {
-                NETWORK_NAME: {
-                    'nic': nic,
-                    'bridged': bridged,
-                    'mtu': MTU_2000,
-                    'switch': switch,
-                }
-            }
-            NETEDIT = {
-                NETWORK_NAME: {
-                    'nic': nic,
-                    'bridged': bridged,
-                    'mtu': MTU_2100,
-                    'switch': switch,
-                }
-            }
-            with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
-                adapter.setupNetworks(NETEDIT, {}, nftestlib.NOCHK)
-                adapter.assertLinkMtu(nic, NETEDIT[NETWORK_NAME])
+            net_attrs = {'bridged': bridged, 'mtu': MTU_2000, 'switch': switch}
+            if bonded:
+                base_iface = BOND_NAME
+                net_attrs['bonding'] = BOND_NAME
+                BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
+            else:
+                base_iface = nic
+                net_attrs['nic'] = nic
+                BONDBASE = {}
+            if vlan:
+                net_attrs['vlan'] = VLAN1
+            with adapter.setupNetworks(
+                {NETWORK_NAME: net_attrs}, BONDBASE, nftestlib.NOCHK
+            ):
+                net_attrs['mtu'] = mtu
+                adapter.setupNetworks(
+                    {NETWORK_NAME: net_attrs}, {}, nftestlib.NOCHK
+                )
+                adapter.assertNetwork(NETWORK_NAME, net_attrs)
+                if bonded:
+                    adapter.assertLinkMtu(BOND_NAME, net_attrs)
+                if vlan:
+                    adapter.assertLinkMtu(f'{base_iface}.{VLAN1}', net_attrs)
+                adapter.assertLinkMtu(nic, net_attrs)
 
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
@@ -319,3 +335,87 @@ class TestNetworkMtu(object):
                         vlan1 = nic + '.' + str(NETWORK1_ATTRS['vlan'])
 
                     adapter.assertLinkMtu(vlan1, NETWORK1_ATTRS)
+
+    @nftestlib.parametrize_bridged
+    @nftestlib.parametrize_bonded
+    @parametrize_vlan
+    def test_move_net_from_one_iface_to_another_with_non_default_mtu(
+        self, switch, bridged, bonded, vlan
+    ):
+        if switch == 'legacy' and bonded and not nmstate.is_nmstate_backend():
+            pytest.skip('Not supported with ifcfg BZ#1790761')
+        with dummy_devices(2) as (nic1, nic2):
+            net_attrs = {'bridged': bridged, 'mtu': MTU_2000, 'switch': switch}
+            default_mtu = {'mtu': DEFAULT_MTU}
+            if bonded:
+                net_attrs['bonding'] = BOND_NAME
+                BONDBASE = {
+                    BOND_NAME: {'nics': [nic1], 'switch': switch},
+                    BOND_NAME2: {'nics': [nic2], 'switch': switch},
+                }
+            else:
+                net_attrs['nic'] = nic1
+                BONDBASE = {}
+
+            if vlan:
+                net_attrs['vlan'] = VLAN1
+
+            with adapter.setupNetworks(
+                {NETWORK_NAME: net_attrs}, BONDBASE, nftestlib.NOCHK
+            ):
+                if bonded:
+                    net_attrs['bonding'] = BOND_NAME2
+                else:
+                    net_attrs['nic'] = nic2
+                adapter.setupNetworks(
+                    {NETWORK_NAME: net_attrs}, {}, nftestlib.NOCHK
+                )
+                adapter.assertNetwork(NETWORK_NAME, net_attrs)
+                if bonded:
+                    adapter.assertLinkMtu(BOND_NAME, default_mtu)
+                    adapter.assertLinkMtu(BOND_NAME2, net_attrs)
+                adapter.assertLinkMtu(nic1, default_mtu)
+                adapter.assertLinkMtu(nic2, net_attrs)
+
+    @nftestlib.parametrize_bridged
+    @nftestlib.parametrize_bonded
+    @parametrize_vlan
+    def test_move_net_between_bond_and_nic_with_non_default_mtu(
+        self, switch, bridged, bonded, vlan
+    ):
+        if switch == 'legacy' and not nmstate.is_nmstate_backend():
+            pytest.skip('Not supported with ifcfg BZ#1790761')
+        with dummy_devices(2) as (nic1, nic2):
+            net_attrs = {'bridged': bridged, 'mtu': MTU_2000, 'switch': switch}
+            BONDBASE = {BOND_NAME: {'nics': [nic1], 'switch': switch}}
+            default_mtu = {'mtu': DEFAULT_MTU}
+            if bonded:
+                net_attrs['bonding'] = BOND_NAME
+            else:
+                net_attrs['nic'] = nic2
+
+            if vlan:
+                net_attrs['vlan'] = VLAN1
+
+            with adapter.setupNetworks(
+                {NETWORK_NAME: net_attrs}, BONDBASE, nftestlib.NOCHK
+            ):
+                if bonded:
+                    net_attrs.pop('bonding')
+                    net_attrs['nic'] = nic2
+                else:
+                    net_attrs.pop('nic')
+                    net_attrs['bonding'] = BOND_NAME
+                adapter.setupNetworks(
+                    {NETWORK_NAME: net_attrs}, {}, nftestlib.NOCHK
+                )
+                adapter.assertNetwork(NETWORK_NAME, net_attrs)
+                adapter.assertLinkMtu(
+                    BOND_NAME, default_mtu if bonded else net_attrs
+                )
+                adapter.assertLinkMtu(
+                    nic1, default_mtu if bonded else net_attrs
+                )
+                adapter.assertLinkMtu(
+                    nic2, net_attrs if bonded else default_mtu
+                )

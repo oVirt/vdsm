@@ -98,7 +98,10 @@ def _set_vlans_base_mtu(desired_ifstates, current_ifstates):
     )
     for ifname, ifstate in current_remaining_vlan_ifaces:
         base_vlan = ifstate['vlan']['base-iface']
-        vlan_mtu = ifstate[Interface.MTU]
+        if ifname in desired_ifstates:
+            vlan_mtu = desired_ifstates[ifname][Interface.MTU]
+        else:
+            vlan_mtu = ifstate[Interface.MTU]
         if base_vlan in current_remaining_ifnames:
             vlans_base_mtus[base_vlan].append(vlan_mtu)
 
@@ -384,11 +387,19 @@ class Network(object):
         return self._dns_state
 
     @property
-    def is_base_iface_changed(self):
-        return self._runconf.vlan_iface and (
-            self._runconf.base_iface != self._netconf.base_iface
-            or self._runconf.vlan_iface != self._netconf.vlan_iface
+    def is_vlan_base_iface_change(self):
+        return (
+            self._runconf.vlan_iface
+            and self._runconf.vlan_iface != self._netconf.vlan_iface
         )
+
+    @property
+    def removed_base_iface(self):
+        iface_removed = (
+            self._runconf.base_iface
+            and self._runconf.base_iface != self._netconf.base_iface
+        ) or self.to_remove
+        return self._runconf.base_iface if iface_removed else None
 
     @property
     def purge_old_base_iface(self):
@@ -679,7 +690,7 @@ class Network(object):
                 }
         _purge_orphaned_base_vlan_ifaces(nets, interfaces_state)
         _reset_iface_mtus_on_network_dettach(
-            nets, running_networks, interfaces_state
+            nets, running_networks, interfaces_state, current_ifaces_state
         )
 
         # FIXME: Workaround to nmstate limitation when DNS entries are defined.
@@ -780,7 +791,9 @@ def _init_base_iface(net, interfaces_state):
 
 def _purge_orphaned_base_vlan_ifaces(nets, interfaces_state):
     base_ifaces_state_which_changed = (
-        net.purge_old_base_iface for net in nets if net.is_base_iface_changed
+        net.purge_old_base_iface
+        for net in nets
+        if net.is_vlan_base_iface_change
     )
     changed_ifaces_purge_state = {
         ifstate[Interface.NAME]: ifstate
@@ -792,36 +805,44 @@ def _purge_orphaned_base_vlan_ifaces(nets, interfaces_state):
 
 
 def _reset_iface_mtus_on_network_dettach(
-    networks, running_networks, interfaces_state
+    networks, running_networks, interfaces_state, current_interface_state
 ):
-    stale_ifaces = _get_stale_ifaces(networks, running_networks)
-    for net in stale_ifaces:
-        sb_iface_state = interfaces_state.get(net)
+    running_nets_by_base_iface = _nets_by_base_iface(running_networks)
+    for net in networks:
+        removed_base_iface = net.removed_base_iface
+        if not _is_stale_iface(removed_base_iface, running_nets_by_base_iface):
+            continue
+
+        current_state = current_interface_state.get(removed_base_iface, {})
+        if _is_default_mtu(current_state):
+            continue
+
+        sb_iface_state = interfaces_state.get(removed_base_iface)
         if not sb_iface_state:
-            sb_iface_state = {Interface.NAME: net}
-            interfaces_state[net] = sb_iface_state
+            sb_iface_state = {Interface.NAME: removed_base_iface}
+            interfaces_state[removed_base_iface] = sb_iface_state
 
         sb_iface_state[Interface.MTU] = DEFAULT_MTU
 
 
-def _get_stale_ifaces(networks, running_networks):
-    networks_to_remove = {net for net in networks if net.to_remove}
-    base_ifaces_to_remove = {
-        net.base_iface for net in networks_to_remove if net.base_iface
-    }
-    networks_to_add = set(networks) - networks_to_remove
-    base_ifaces_to_add = {
-        net.base_iface for net in networks_to_add if net.base_iface
-    }
-    networks_to_keep = set(running_networks) - {
-        net.name for net in networks_to_remove
-    }
-    base_ifaces_to_keep = {
-        NetworkConfig(net_name, running_networks[net_name]).base_iface
-        for net_name in networks_to_keep
-    }
+def _nets_by_base_iface(networks):
+    nets_by_base_iface = defaultdict(list)
+    for name, net_attrs in networks.items():
+        base_iface = NetworkConfig(name, net_attrs).base_iface
+        if base_iface:
+            nets_by_base_iface[base_iface].append(name)
+    return nets_by_base_iface
 
-    return base_ifaces_to_remove - base_ifaces_to_add - base_ifaces_to_keep
+
+def _is_stale_iface(removed_base_iface, nets_by_base_iface):
+    return (
+        removed_base_iface
+        and len(nets_by_base_iface.get(removed_base_iface, ())) == 1
+    )
+
+
+def _is_default_mtu(state):
+    return state.get(Interface.MTU, DEFAULT_MTU) == DEFAULT_MTU
 
 
 def generate_ifaces_remove_state(interfaces):

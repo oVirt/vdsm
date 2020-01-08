@@ -25,7 +25,6 @@ from vdsm.network import nmstate
 from unittest import mock
 
 from .testlib import (
-    DEFAULT_MTU,
     IFACE0,
     IFACE1,
     IPv4_ADDRESS1,
@@ -73,11 +72,7 @@ def test_translate_remove_vlan_net(rconfig_mock, bridged):
 
     expected_state = {
         nmstate.Interface.KEY: [
-            {'name': IFACE0 + '.' + str(VLAN101), 'state': 'absent'},
-            {
-                nmstate.Interface.NAME: IFACE0,
-                nmstate.Interface.MTU: DEFAULT_MTU,
-            },
+            {'name': IFACE0 + '.' + str(VLAN101), 'state': 'absent'}
         ]
     }
     if bridged:

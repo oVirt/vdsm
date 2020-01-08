@@ -404,11 +404,7 @@ class TestBondedNetwork(object):
 
         expected_state = {
             nmstate.Interface.KEY: [
-                {'name': TESTBOND0 + '.' + str(VLAN101), 'state': 'absent'},
-                {
-                    nmstate.Interface.NAME: TESTBOND0,
-                    nmstate.Interface.MTU: DEFAULT_MTU,
-                },
+                {'name': TESTBOND0 + '.' + str(VLAN101), 'state': 'absent'}
             ]
         }
         if bridged:
