@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2018 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,11 @@ NETWORK2_NAME = 'test-network2'
 BOND_NAME = 'bond1'
 VLAN1 = 10
 VLAN2 = 20
+DEFAULT_MTU = 1500
+MTU_2100 = 2100
+MTU_2000 = 2000
+MTU_1600 = 1600
+MTU_1000 = 1000
 
 
 adapter = None
@@ -47,9 +52,9 @@ def create_adapter(target):
     adapter = nftestlib.NetFuncTestAdapter(target)
 
 
+@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkMtu(object):
-    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     def test_add_net_with_mtu(self, switch, bridged):
         with dummy_devices(1) as (nic,):
@@ -57,7 +62,7 @@ class TestNetworkMtu(object):
                 NETWORK_NAME: {
                     'nic': nic,
                     'bridged': bridged,
-                    'mtu': 2000,
+                    'mtu': MTU_2000,
                     'switch': switch,
                 }
             }
@@ -65,7 +70,6 @@ class TestNetworkMtu(object):
                 adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
                 adapter.assertLinkMtu(nic, NETCREATE[NETWORK_NAME])
 
-    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     def test_edit_mtu_on_network(self, switch, bridged):
         with dummy_devices(1) as (nic,):
@@ -73,7 +77,7 @@ class TestNetworkMtu(object):
                 NETWORK_NAME: {
                     'nic': nic,
                     'bridged': bridged,
-                    'mtu': 2000,
+                    'mtu': MTU_2000,
                     'switch': switch,
                 }
             }
@@ -81,7 +85,7 @@ class TestNetworkMtu(object):
                 NETWORK_NAME: {
                     'nic': nic,
                     'bridged': bridged,
-                    'mtu': 2100,
+                    'mtu': MTU_2100,
                     'switch': switch,
                 }
             }
@@ -89,7 +93,6 @@ class TestNetworkMtu(object):
                 adapter.setupNetworks(NETEDIT, {}, nftestlib.NOCHK)
                 adapter.assertLinkMtu(nic, NETEDIT[NETWORK_NAME])
 
-    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_removing_a_net_updates_the_mtu(self, switch, bridged, bonded):
@@ -97,13 +100,13 @@ class TestNetworkMtu(object):
             NETWORK1_ATTRS = {
                 'bridged': bridged,
                 'vlan': VLAN1,
-                'mtu': 1600,
+                'mtu': MTU_1600,
                 'switch': switch,
             }
             NETWORK2_ATTRS = {
                 'bridged': bridged,
                 'vlan': VLAN2,
-                'mtu': 2000,
+                'mtu': MTU_2000,
                 'switch': switch,
             }
             NETBASE = {
@@ -137,7 +140,6 @@ class TestNetworkMtu(object):
 
                     adapter.assertLinkMtu(vlan, NETWORK1_ATTRS)
 
-    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_adding_a_net_updates_the_mtu(self, switch, bridged, bonded):
@@ -145,13 +147,13 @@ class TestNetworkMtu(object):
             NETWORK1_ATTRS = {
                 'bridged': bridged,
                 'vlan': VLAN1,
-                'mtu': 1600,
+                'mtu': MTU_1600,
                 'switch': switch,
             }
             NETWORK2_ATTRS = {
                 'bridged': bridged,
                 'vlan': VLAN2,
-                'mtu': 2000,
+                'mtu': MTU_2000,
                 'switch': switch,
             }
             NETBASE = {NETWORK1_NAME: NETWORK1_ATTRS}
@@ -189,14 +191,13 @@ class TestNetworkMtu(object):
                         adapter.assertLinkMtu(vlan1, NETWORK1_ATTRS)
                         adapter.assertLinkMtu(vlan2, NETWORK2_ATTRS)
 
-    @pytest.mark.nmstate
     def test_add_slave_to_a_bonded_network_with_non_default_mtu(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             NETBASE = {
                 NETWORK_NAME: {
                     'bonding': BOND_NAME,
                     'bridged': False,
-                    'mtu': 2000,
+                    'mtu': MTU_2000,
                     'switch': switch,
                 }
             }
@@ -207,7 +208,6 @@ class TestNetworkMtu(object):
                 adapter.setupNetworks({}, BONDBASE, nftestlib.NOCHK)
                 adapter.assertLinkMtu(nic2, NETBASE[NETWORK_NAME])
 
-    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_mtu_default_value_of_base_nic_after_all_nets_are_removed(
@@ -219,11 +219,11 @@ class TestNetworkMtu(object):
             NETWORK1_ATTRS = {
                 'bridged': bridged,
                 'vlan': VLAN1,
-                'mtu': 1600,
+                'mtu': MTU_1600,
                 'switch': switch,
             }
             NETBASE = {NETWORK1_NAME: NETWORK1_ATTRS}
-            DEFAULT_MTU = {'mtu': 1500}
+            default_mtu = {'mtu': DEFAULT_MTU}
             if bonded:
                 NETWORK1_ATTRS['bonding'] = BOND_NAME
                 BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
@@ -236,11 +236,10 @@ class TestNetworkMtu(object):
                     {NETWORK1_NAME: {'remove': True}}, {}, nftestlib.NOCHK
                 )
 
-                adapter.assertLinkMtu(nic, DEFAULT_MTU)
+                adapter.assertLinkMtu(nic, default_mtu)
                 if bonded:
-                    adapter.assertLinkMtu(BOND_NAME, DEFAULT_MTU)
+                    adapter.assertLinkMtu(BOND_NAME, default_mtu)
 
-    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_base_iface_mtu_is_preserved_when_not_all_nets_on_top_are_deleted(
@@ -249,7 +248,7 @@ class TestNetworkMtu(object):
         if switch == 'legacy' and bonded and not nmstate.is_nmstate_backend():
             pytest.xfail('BZ#1633528')
 
-        common_net_mtu = 1600
+        common_net_mtu = MTU_1600
         with dummy_devices(1) as (nic,):
             vlaned_network = {
                 'bridged': bridged,
@@ -286,7 +285,6 @@ class TestNetworkMtu(object):
                 if bonded:
                     adapter.assertLinkMtu(BOND_NAME, mtu_to_keep)
 
-    @pytest.mark.nmstate
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_adding_a_net_with_mtu_lower_than_base_nic_mtu(
@@ -296,7 +294,7 @@ class TestNetworkMtu(object):
             NETWORK1_ATTRS = {
                 'bridged': bridged,
                 'vlan': VLAN1,
-                'mtu': 1000,
+                'mtu': MTU_1000,
                 'switch': switch,
             }
             NETNEW = {NETWORK1_NAME: NETWORK1_ATTRS}
