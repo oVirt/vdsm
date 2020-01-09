@@ -93,9 +93,9 @@ class DiskConfig(properties.Owner):
 
 class BackupConfig(properties.Owner):
 
-    backup_id = properties.String(required=True)
-    from_checkpoint_id = properties.String(required='')
-    to_checkpoint_id = properties.String(default='')
+    backup_id = properties.UUID(required=True)
+    from_checkpoint_id = properties.UUID(required='')
+    to_checkpoint_id = properties.UUID(default='')
 
     def __init__(self, backup_config):
         self.backup_id = backup_config.get("backup_id")
