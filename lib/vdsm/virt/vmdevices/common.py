@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2019 Red Hat, Inc.
+# Copyright 2008-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -93,6 +93,14 @@ _DEVICE_MAPPING = {
 }
 
 
+_LEGACY_DEVICE_CLASSES = [
+    hwclass.DISK,
+    hwclass.NIC,
+    hwclass.LEASE,
+    hwclass.HOSTDEV,
+]
+
+
 def identify_from_xml_elem(dev_elem):
     dev_name = core.dev_class_from_dev_elem(dev_elem)
     if dev_name not in _DEVICE_MAPPING:
@@ -101,7 +109,7 @@ def identify_from_xml_elem(dev_elem):
 
 
 def empty_dev_map():
-    return {dev: [] for dev in _DEVICE_MAPPING}
+    return {dev: [] for dev in _LEGACY_DEVICE_CLASSES}
 
 
 # metadata used by the devices. Unless otherwise specified, type and meaning
@@ -298,7 +306,8 @@ def _device_elements(dom_desc, log):
         except core.SkipDevice:
             pass
         else:
-            yield dev_type, dev_class, dev_elem
+            if dev_type in _LEGACY_DEVICE_CLASSES:
+                yield dev_type, dev_class, dev_elem
 
 
 def _get_metadata_from_elem_xml(vmid, md_desc, dev_class, dev_elem):
