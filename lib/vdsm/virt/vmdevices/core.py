@@ -210,6 +210,30 @@ def cleanup_console(dom, vmid):
         cleanup_guest_socket(path)
 
 
+class HotpluggedDevice(object):
+
+    def __init__(self, dom, meta, log):
+        self._dom = dom
+        self._meta = meta
+        self._log = log
+        self.alias = find_device_alias(dom)
+        self.hotunplug_event = threading.Event()
+
+    @classmethod
+    def get_identifying_attrs(cls, dom):
+        return {}
+
+    @property
+    def device(self):
+        return xmlutils.tostring(self._dom, pretty=True)
+
+    def setup(self):
+        pass
+
+    def teardown(self):
+        pass
+
+
 def memory_xml(params):
     """
     Return <memory> device XML string specified by `params`.

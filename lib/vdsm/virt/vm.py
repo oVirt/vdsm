@@ -403,6 +403,7 @@ class Vm(object):
         self.stopped_migrated_event_processed = threading.Event()
         self._incoming_migration_prepared = threading.Event()
         self._devices = vmdevices.common.empty_dev_map()
+        self._hotunplugged_devices = {}  # { alias: device_object }
 
         self.drive_monitor = drivemonitor.DriveMonitor(
             self, self.log, enabled=False)
@@ -5682,14 +5683,21 @@ class Vm(object):
     def onDeviceRemoved(self, device_alias):
         self.log.info("Device removal reported: %s", device_alias)
         try:
-            device, device_hwclass = \
-                vmdevices.lookup.hotpluggable_device_by_alias(
-                    self._devices, device_alias)
-        except LookupError:
-            self.log.warning("Removed device not found in devices: %s",
-                             device_alias)
-            return
-        self._devices[device_hwclass].remove(device)
+            device = self._hotunplugged_devices.pop(device_alias)
+        except KeyError:
+            try:
+                device, device_hwclass = \
+                    vmdevices.lookup.hotpluggable_device_by_alias(
+                        self._devices, device_alias)
+            except LookupError:
+                # This may also happen if Vdsm is restarted between hot unplug
+                # initiation and this event; device cleanup is not performed in
+                # such a case.
+                self.log.warning("Removed device not found in devices: %s",
+                                 device_alias)
+                return
+            else:
+                self._devices[device_hwclass].remove(device)
         try:
             device.teardown()
         except libvirt.libvirtError as e:
