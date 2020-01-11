@@ -8431,6 +8431,15 @@ types:
             name: parent_checkpoint_id
             type: *UUID
 
+    CheckpointInfo: &CheckpointInfo
+        added: '4.4'
+        description: A checkpoint info entity.
+        name: CheckpointInfo
+        properties:
+            -   description: The XML description of the given checkpoint
+                name: checkpoint
+                type: string
+
     CheckpointsResponse: &CheckpointsResponse
         added: '4.4'
         description: Checkpoints operation response.
@@ -12037,3 +12046,20 @@ VM.list_checkpoints:
                      (from oldest to newest).
         type:
         - *UUID
+
+VM.dump_checkpoint:
+    added: '4.4'
+    description: Returns VM backup checkpoint XML.
+    params:
+    -   description: A UUID of the VM.
+        name: vmID
+        type: *UUID
+
+    -   description: A UUID of the checkpoint.
+        name: checkpoint_id
+        type: *UUID
+
+    return:
+        description: Requested checkpoint info.
+        type:
+        - *CheckpointInfo

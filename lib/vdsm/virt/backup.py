@@ -301,6 +301,18 @@ def list_checkpoints(vm, dom):
     return dict(result=result)
 
 
+def dump_checkpoint(dom, checkpoint_id):
+    try:
+        checkpoint = dom.checkpointLookupByName(checkpoint_id)
+        return dict(result={'checkpoint': checkpoint.getXMLDesc()})
+    except libvirt.libvirtError as e:
+        if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT:
+            raise exception.NoSuchCheckpointError(
+                reason="Failed to fetch checkpoint: {}".format(e),
+                checkpoint_id=checkpoint_id)
+        raise
+
+
 def _validate_parent_id(vm, dom, parent_checkpoint_id):
     leaf_checkpoint_id = _get_leaf_checkpoint_name(vm, dom)
     if parent_checkpoint_id != leaf_checkpoint_id:

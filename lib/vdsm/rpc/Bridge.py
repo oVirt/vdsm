@@ -445,4 +445,5 @@ command_info = {
     'VM_delete_checkpoints': {'ret': 'result'},
     'VM_redefine_checkpoints': {'ret': 'result'},
     'VM_list_checkpoints': {'ret': 'result'},
+    'VM_dump_checkpoint': {'ret': 'result'},
 }

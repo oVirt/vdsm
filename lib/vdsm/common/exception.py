@@ -500,3 +500,8 @@ class NoSuchBackupError(ContextException):
 class CheckpointError(ContextException):
     code = 1610
     message = "Checkpoint Error"
+
+
+class NoSuchCheckpointError(ContextException):
+    code = 1611
+    message = "No such checkpoint Error"

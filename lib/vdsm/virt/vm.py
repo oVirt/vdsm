@@ -3979,6 +3979,12 @@ class Vm(object):
         dom = backup.DomainAdapter(self)
         return backup.list_checkpoints(self, dom)
 
+    @backup.requires_libvirt_support()
+    def dump_checkpoint(self, checkpoint_id):
+        dom = backup.DomainAdapter(self)
+        return backup.dump_checkpoint(
+            dom, checkpoint_id=checkpoint_id)
+
     @api.guard(_not_migrating)
     def snapshot(self, snap_drives, memory_params, frozen,
                  job_uuid, recovery=False, timeout=30):
