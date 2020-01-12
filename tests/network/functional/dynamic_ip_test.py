@@ -153,10 +153,19 @@ def dynamic_ipv4_iface2(network_configuration2):
 
 
 @pytest.fixture
-def dynamic_vlaned_ipv4_iface(network_configuration1):
+def dynamic_vlaned_ipv4_iface_with_dhcp_server(network_configuration1):
     dhcp_config = DhcpConfig(DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO)
     with _create_configured_dhcp_client_iface(
         network_configuration1, dhcp_config, vlan_id=VLAN
+    ) as configured_client:
+        yield configured_client
+
+
+@pytest.fixture
+def dynamic_vlaned_ipv4_iface_without_dhcp_server(network_configuration1):
+    dhcp_config = DhcpConfig(DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO)
+    with _create_configured_dhcp_client_iface(
+        network_configuration1, dhcp_config, vlan_id=VLAN, start_dhcp=False
     ) as configured_client:
         yield configured_client
 
@@ -413,8 +422,42 @@ def test_dynamic_ip_switch_to_static_with_running_dhcp_server(
     )
 
 
+@pytest.mark.nmstate
+@nftestlib.parametrize_bridged
+@nftestlib.parametrize_switch
+def test_dynamic_ipv4_vlan_net_switch_to_static_without_running_dhcp_server(
+    switch, bridged, dynamic_vlaned_ipv4_iface_without_dhcp_server
+):
+    families = (IpFamily.IPv4,)
+    _test_dynamic_ip_switch_to_static(
+        switch,
+        families,
+        bridged,
+        is_dhcp_server_enabled=False,
+        nic=dynamic_vlaned_ipv4_iface_without_dhcp_server,
+        vlan=VLAN,
+    )
+
+
+@pytest.mark.nmstate
+@nftestlib.parametrize_bridged
+@nftestlib.parametrize_switch
+def test_dynamic_ipv4_vlan_net_switch_to_static_with_running_dhcp_server(
+    switch, bridged, dynamic_vlaned_ipv4_iface_with_dhcp_server
+):
+    families = (IpFamily.IPv4,)
+    _test_dynamic_ip_switch_to_static(
+        switch,
+        families,
+        bridged,
+        is_dhcp_server_enabled=True,
+        nic=dynamic_vlaned_ipv4_iface_with_dhcp_server,
+        vlan=VLAN,
+    )
+
+
 def _test_dynamic_ip_switch_to_static(
-    switch, families, bridged, is_dhcp_server_enabled, nic
+    switch, families, bridged, is_dhcp_server_enabled, nic, vlan=None
 ):
     if switch == 'ovs' and IpFamily.IPv6 in families:
         pytest.xfail(
@@ -432,6 +475,8 @@ def _test_dynamic_ip_switch_to_static(
         'blockingdhcp': True,
         'switch': switch,
     }
+    if vlan is not None:
+        network_attrs['vlan'] = vlan
     has_ipv4 = IpFamily.IPv4 in families
     has_ipv6 = IpFamily.IPv6 in families
     if has_ipv4:
@@ -459,7 +504,9 @@ def _test_dynamic_ip_switch_to_static(
 
 @nftestlib.parametrize_switch
 @pytest.mark.nmstate
-def test_dynamic_ip_bonded_vlanned_network(switch, dynamic_vlaned_ipv4_iface):
+def test_dynamic_ip_bonded_vlanned_network(
+    switch, dynamic_vlaned_ipv4_iface_with_dhcp_server
+):
     bond_name = 'bond0'
     network_attrs = {
         'bridged': True,
@@ -470,7 +517,10 @@ def test_dynamic_ip_bonded_vlanned_network(switch, dynamic_vlaned_ipv4_iface):
         'vlan': VLAN,
     }
     bondcreate = {
-        bond_name: {'nics': [dynamic_vlaned_ipv4_iface], 'switch': switch}
+        bond_name: {
+            'nics': [dynamic_vlaned_ipv4_iface_with_dhcp_server],
+            'switch': switch,
+        }
     }
     netcreate = {NETWORK_NAME: network_attrs}
     with adapter.setupNetworks(netcreate, bondcreate, NOCHK):
