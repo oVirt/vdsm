@@ -1427,7 +1427,7 @@ class Vm(object):
                 self.log.error('cannot cont while %s', self.lastStatus)
                 return response.error('unexpected')
             self._underlyingCont()
-            self._setGuestCpuRunning(self._isDomainRunning(),
+            self._setGuestCpuRunning(self.isDomainRunning(),
                                      guestCpuLocked=True)
             self._logGuestCpuStatus('continue')
             self._lastStatus = afterState
@@ -1435,7 +1435,7 @@ class Vm(object):
             self._pause_time = None
             if guestTimeSync or \
                config.getboolean('vars', 'time_sync_cont_enable'):
-                self._syncGuestTime()
+                self.syncGuestTime()
         finally:
             if not guestCpuLocked:
                 self._guestCpuLock.release()
@@ -1451,7 +1451,7 @@ class Vm(object):
         self._pause_code = pauseCode
         try:
             self._underlyingPause()
-            self._setGuestCpuRunning(self._isDomainRunning(),
+            self._setGuestCpuRunning(self.isDomainRunning(),
                                      guestCpuLocked=True)
             self._logGuestCpuStatus('pause')
             self._lastStatus = afterState
@@ -1483,7 +1483,7 @@ class Vm(object):
             if not guestCpuLocked:
                 self._guestCpuLock.release()
 
-    def _syncGuestTime(self):
+    def syncGuestTime(self):
         """
         Try to set VM time to the current value.  This is typically useful when
         clock wasn't running on the VM for some time (e.g. during suspension or
@@ -2166,7 +2166,7 @@ class Vm(object):
         except KeyError:
             self.log.warning('timestamp already removed from stats cache')
 
-    def _isDomainRunning(self):
+    def isDomainRunning(self):
         try:
             status = self._dom.info()
         except virdomain.NotConnectedError:
@@ -2252,7 +2252,7 @@ class Vm(object):
         for con in self._domain.get_device_elements('console'):
             vmdevices.core.prepare_console(con, self.id)
 
-        self._guestCpuRunning = self._isDomainRunning()
+        self._guestCpuRunning = self.isDomainRunning()
         self._logGuestCpuStatus('domain initialization')
         if self.lastStatus not in (vmstatus.MIGRATION_DESTINATION,
                                    vmstatus.RESTORING_STATE):
@@ -3915,149 +3915,149 @@ class Vm(object):
             self, dom, checkpoints=checkpoints)
 
     @api.guard(_not_migrating)
-    def snapshot(self, snapDrives, memoryParams, frozen=False):
+    def snapshot(self, snap_drives, memory_params, frozen=False):
         """Live snapshot command"""
 
-        def _normSnapDriveParams(drive):
+        def norm_snap_drive_params(drive):
             """Normalize snapshot parameters"""
 
             if "baseVolumeID" in drive:
-                baseDrv = {"device": "disk",
-                           "domainID": drive["domainID"],
-                           "imageID": drive["imageID"],
-                           "volumeID": drive["baseVolumeID"]}
-                tgetDrv = baseDrv.copy()
-                tgetDrv["volumeID"] = drive["volumeID"]
+                base_drv = {"device": "disk",
+                            "domainID": drive["domainID"],
+                            "imageID": drive["imageID"],
+                            "volumeID": drive["baseVolumeID"]}
+                target_drv = base_drv.copy()
+                target_drv["volumeID"] = drive["volumeID"]
 
             elif "baseGUID" in drive:
-                baseDrv = {"GUID": drive["baseGUID"]}
-                tgetDrv = {"GUID": drive["GUID"]}
+                base_drv = {"GUID": drive["baseGUID"]}
+                target_drv = {"GUID": drive["GUID"]}
 
             elif "baseUUID" in drive:
-                baseDrv = {"UUID": drive["baseUUID"]}
-                tgetDrv = {"UUID": drive["UUID"]}
+                base_drv = {"UUID": drive["baseUUID"]}
+                target_drv = {"UUID": drive["UUID"]}
 
             else:
-                baseDrv, tgetDrv = (None, None)
+                base_drv, target_drv = (None, None)
 
-            return baseDrv, tgetDrv
+            return base_drv, target_drv
 
-        def _rollbackDrives(newDrives):
+        def rollback_drives(new_drives):
             """Rollback the prepared volumes for the snapshot"""
 
-            for vmDevName, drive in six.iteritems(newDrives):
+            for vm_dev_name, drive in six.iteritems(new_drives):
                 try:
                     self.cif.teardownVolumePath(drive)
                 except Exception:
                     self.log.exception("Unable to teardown drive: %s",
-                                       vmDevName)
+                                       vm_dev_name)
 
-        def _memorySnapshot(memoryVolumePath):
+        def memory_snapshot(memory_volume_path):
             """Libvirt snapshot XML"""
 
             return vmxml.Element('memory',
                                  snapshot='external',
-                                 file=memoryVolumePath)
+                                 file=memory_volume_path)
 
-        def _vmConfForMemorySnapshot():
+        def vm_conf_for_memory_snapshot():
             """Returns the needed vm configuration with the memory snapshot"""
 
             return {'restoreFromSnapshot': True,
                     '_srcDomXML': self.migratable_domain_xml(),
                     'elapsedTimeOffset': time.time() - self._startTime}
 
-        def _padMemoryVolume(memoryVolPath, sdUUID):
-            sdType = sd.name2type(
-                self.cif.irs.getStorageDomainInfo(sdUUID)['info']['type'])
-            if sdType in sd.FILE_DOMAIN_TYPES:
-                iop = oop.getProcessPool(sdUUID)
-                iop.fileUtils.padToBlockSize(memoryVolPath)
+        def pad_memory_volume(memory_vol_path, sd_uuid):
+            sd_type = sd.name2type(
+                self.cif.irs.getStorageDomainInfo(sd_uuid)['info']['type'])
+            if sd_type in sd.FILE_DOMAIN_TYPES:
+                iop = oop.getProcessPool(sd_uuid)
+                iop.fileUtils.padToBlockSize(memory_vol_path)
 
         snap = vmxml.Element('domainsnapshot')
         disks = vmxml.Element('disks')
-        newDrives = {}
-        vmDrives = {}
+        new_drives = {}
+        vm_drives = {}
 
-        for drive in snapDrives:
-            baseDrv, tgetDrv = _normSnapDriveParams(drive)
+        for drive in snap_drives:
+            base_drv, tget_drv = norm_snap_drive_params(drive)
 
             try:
-                self.findDriveByUUIDs(tgetDrv)
+                self.findDriveByUUIDs(tget_drv)
             except LookupError:
                 # The vm is not already using the requested volume for the
                 # snapshot, continuing.
                 pass
             else:
                 # The snapshot volume is the current one, skipping
-                self.log.debug("The volume is already in use: %s", tgetDrv)
+                self.log.debug("The volume is already in use: %s", tget_drv)
                 continue  # Next drive
 
             try:
-                vmDrive = self.findDriveByUUIDs(baseDrv)
+                vm_drive = self.findDriveByUUIDs(base_drv)
             except LookupError:
                 # The volume we want to snapshot doesn't exist
-                self.log.error("The base volume doesn't exist: %s", baseDrv)
+                self.log.error("The base volume doesn't exist: %s", base_drv)
                 return response.error('snapshotErr')
 
-            if vmDrive.hasVolumeLeases:
-                self.log.error('disk %s has volume leases', vmDrive.name)
+            if vm_drive.hasVolumeLeases:
+                self.log.error('disk %s has volume leases', vm_drive.name)
                 return response.error('noimpl')
 
-            if vmDrive.transientDisk:
-                self.log.error('disk %s is a transient disk', vmDrive.name)
+            if vm_drive.transientDisk:
+                self.log.error('disk %s is a transient disk', vm_drive.name)
                 return response.error('transientErr')
 
-            vmDevName = vmDrive.name
+            vm_dev_name = vm_drive.name
 
-            newDrives[vmDevName] = tgetDrv.copy()
-            newDrives[vmDevName]["type"] = "disk"
-            newDrives[vmDevName]["diskType"] = vmDrive.diskType
-            newDrives[vmDevName]["poolID"] = vmDrive.poolID
-            newDrives[vmDevName]["name"] = vmDevName
-            newDrives[vmDevName]["format"] = "cow"
+            new_drives[vm_dev_name] = tget_drv.copy()
+            new_drives[vm_dev_name]["type"] = "disk"
+            new_drives[vm_dev_name]["diskType"] = vm_drive.diskType
+            new_drives[vm_dev_name]["poolID"] = vm_drive.poolID
+            new_drives[vm_dev_name]["name"] = vm_dev_name
+            new_drives[vm_dev_name]["format"] = "cow"
 
             # We need to keep track of the drive object because
             # it keeps original data and used to generate snapshot element.
             # We keep the old volume ID so we can clear the block threshold.
-            vmDrives[vmDevName] = (vmDrive, baseDrv["volumeID"])
+            vm_drives[vm_dev_name] = (vm_drive, base_drv["volumeID"])
 
-        preparedDrives = {}
+        prepared_drives = {}
 
-        for vmDevName, vmDevice in six.iteritems(newDrives):
+        for vm_dev_name, vm_device in six.iteritems(new_drives):
             # Adding the device before requesting to prepare it as we want
             # to be sure to teardown it down even when prepareVolumePath
             # failed for some unknown issue that left the volume active.
-            preparedDrives[vmDevName] = vmDevice
+            prepared_drives[vm_dev_name] = vm_device
             try:
-                newDrives[vmDevName]["path"] = \
-                    self.cif.prepareVolumePath(newDrives[vmDevName])
+                new_drives[vm_dev_name]["path"] = \
+                    self.cif.prepareVolumePath(new_drives[vm_dev_name])
             except Exception:
                 self.log.exception('unable to prepare the volume path for '
-                                   'disk %s', vmDevName)
-                _rollbackDrives(preparedDrives)
+                                   'disk %s', vm_dev_name)
+                rollback_drives(prepared_drives)
                 return response.error('snapshotErr')
 
-            drive, _ = vmDrives[vmDevName]
-            snapelem = drive.get_snapshot_xml(vmDevice)
+            drive, _ = vm_drives[vm_dev_name]
+            snapelem = drive.get_snapshot_xml(vm_device)
             disks.appendChild(snapelem)
 
         snap.appendChild(disks)
 
-        snapFlags = (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT |
-                     libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_NO_METADATA)
+        snap_flags = (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT
+                      | libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_NO_METADATA)
 
-        if memoryParams:
+        if memory_params:
             # Save the needed vm configuration
             # TODO: this, as other places that use pickle.dump
             # directly to files, should be done with outOfProcess
-            vmConfVol = memoryParams['dstparams']
-            vmConfVolPath = self.cif.prepareVolumePath(vmConfVol)
+            vm_conf_vol = memory_params['dstparams']
+            vm_conf_vol_path = self.cif.prepareVolumePath(vm_conf_vol)
             try:
-                with open(vmConfVolPath, "rb+") as f:
-                    vmConf = _vmConfForMemorySnapshot()
+                with open(vm_conf_vol_path, "rb+") as f:
+                    vm_conf = vm_conf_for_memory_snapshot()
                     # protocol=2 is needed for clusters < 4.4
                     # (for Python 2 host compatibility)
-                    data = pickle.dumps(vmConf, protocol=2)
+                    data = pickle.dumps(vm_conf, protocol=2)
 
                     # Ensure that the volume is aligned; qemu-img may segfault
                     # when converting unligned images.
@@ -4069,17 +4069,17 @@ class Vm(object):
                     f.flush()
                     os.fsync(f.fileno())
             finally:
-                self.cif.teardownVolumePath(vmConfVol)
+                self.cif.teardownVolumePath(vm_conf_vol)
 
             # Adding the memory volume to the snapshot xml
-            memoryVol = memoryParams['dst']
-            memoryVolPath = self.cif.prepareVolumePath(memoryVol)
-            snap.appendChild(_memorySnapshot(memoryVolPath))
+            memory_vol = memory_params['dst']
+            memory_vol_path = self.cif.prepareVolumePath(memory_vol)
+            snap.appendChild(memory_snapshot(memory_vol_path))
         else:
-            snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY
+            snap_flags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY
 
         # When creating memory snapshot libvirt will pause the vm
-        should_freeze = not (memoryParams or frozen)
+        should_freeze = not (memory_params or frozen)
 
         snapxml = xmlutils.tostring(snap)
         # TODO: this is debug information. For 3.6.x we still need to
@@ -4099,9 +4099,9 @@ class Vm(object):
             try:
                 self.log.info("Taking a live snapshot (drives=%s, memory=%s)",
                               ', '.join(drive["name"] for drive in
-                                        newDrives.values()),
-                              memoryParams is not None)
-                self._dom.snapshotCreateXML(snapxml, snapFlags)
+                                        new_drives.values()),
+                              memory_params is not None)
+                self.run_dom_snapshot(snapxml, snap_flags)
                 self.log.info("Completed live snapshot")
             except libvirt.libvirtError:
                 self.log.exception("Unable to take snapshot")
@@ -4118,11 +4118,11 @@ class Vm(object):
             # round down to the closest multiple of block size (bz 970559).
             # This code should be removed once qemu-img will handle files
             # with size that is not multiple of block size correctly.
-            if memoryParams:
-                _padMemoryVolume(memoryVolPath, memoryVol['domainID'])
+            if memory_params:
+                pad_memory_volume(memory_vol_path, memory_vol['domainID'])
 
-            for drive in newDrives.values():  # Update the drive information
-                _, old_volume_id = vmDrives[drive["name"]]
+            for drive in new_drives.values():  # Update the drive information
+                _, old_volume_id = vm_drives[drive["name"]]
                 try:
                     self.updateDriveParameters(drive)
                 except Exception:
@@ -4145,10 +4145,10 @@ class Vm(object):
 
         finally:
             self.drive_monitor.enable()
-            if memoryParams:
-                self.cif.teardownVolumePath(memoryVol)
+            if memory_params:
+                self.cif.teardownVolumePath(memory_vol)
             if config.getboolean('vars', 'time_sync_snapshot_enable'):
-                self._syncGuestTime()
+                self.syncGuestTime()
 
         # Returning quiesce to notify the manager whether the guest agent
         # froze and flushed the filesystems or not.
@@ -5757,6 +5757,9 @@ class Vm(object):
             raise StorageUnavailableError(
                 "Unable to set volume size to %s for domain %s volume %s" %
                 (size, domainID, volumeID))
+
+    def run_dom_snapshot(self, snapxml, snap_flags):
+        self._dom.snapshotCreateXML(snapxml, snap_flags)
 
 
 class LiveMergeCleanupThread(object):

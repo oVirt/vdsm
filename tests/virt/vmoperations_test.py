@@ -267,17 +267,17 @@ class TestVmOperations(XMLTestCase):
 
     def testDomainNotRunningWithoutDomain(self):
         with fake.VM() as testvm:
-            self.assertFalse(testvm._isDomainRunning())
+            self.assertFalse(testvm.isDomainRunning())
 
     def testDomainNotRunningByState(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_SHUTDOWN)
-            self.assertFalse(testvm._isDomainRunning())
+            self.assertFalse(testvm.isDomainRunning())
 
     def testDomainIsRunning(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_RUNNING)
-            self.assertTrue(testvm._isDomainRunning())
+            self.assertTrue(testvm.isDomainRunning())
 
     def testDomainIsReadyForCommands(self):
         with fake.VM() as testvm:

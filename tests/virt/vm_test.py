@@ -1760,7 +1760,7 @@ class SyncGuestTimeTests(TestCaseBase):
     @MonkeyPatch(time, 'time', lambda: 1234567890.125)
     def test_success(self):
         vm = self._make_vm()
-        vm._syncGuestTime()
+        vm.syncGuestTime()
         self.assertEqual(vm._dom.__calls__, [
             ('setTime', (), {'time': {'seconds': 1234567890,
                                       'nseconds': 125000000}})
@@ -1772,7 +1772,7 @@ class SyncGuestTimeTests(TestCaseBase):
     def test_swallow_expected_errors(self, virt_error):
         vm = self._make_vm(virt_error=virt_error)
         with self.assertNotRaises():
-            vm._syncGuestTime()
+            vm.syncGuestTime()
 
 
 @expandPermutations
