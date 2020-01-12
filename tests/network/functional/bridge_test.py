@@ -60,6 +60,7 @@ class TestBridge(object):
                 adapter.assertBridgeOpts(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     @nftestlib.parametrize_legacy_switch
+    @pytest.mark.nmstate
     def test_add_bridge_with_custom_opts(self, switch):
         with dummy_devices(1) as (nic,):
             NET_ATTRS = {

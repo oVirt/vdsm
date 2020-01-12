@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,3 +104,25 @@ class TestLinkSetupBond(object):
             dhclient_mock.kill.assert_any_call(slave, family=4)
             dhclient_mock.kill.assert_any_call(slave, family=6)
             address_mock.flush.assert_any_call(slave)
+
+
+def test_parse_nets_bridge_opts():
+    nets = {
+        'br1': {
+            'custom': {
+                'bridge_opts': 'multicast_router=0 multicast_snooping=0'
+            }
+        },
+        'br2': {
+            'custom': {
+                'bridge_opts': 'multicast_router=1 multicast_snooping=1'
+            }
+        },
+    }
+    expected = {
+        'br1': {'multicast_router': '0', 'multicast_snooping': '0'},
+        'br2': {'multicast_router': '1', 'multicast_snooping': '1'},
+    }
+
+    for name, opts in linksetup.parse_nets_bridge_opts(nets):
+        assert expected[name] == opts

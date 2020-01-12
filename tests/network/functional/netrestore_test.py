@@ -67,6 +67,45 @@ class TestRestoreOvsBond(object):
                     adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
 
+@pytest.mark.legacy_switch
+@pytest.mark.nmstate
+class TestRestoreLegacyBridge(object):
+    def test_restore_bridge_with_custom_opts(self):
+        with dummy_devices(1) as (nic,):
+            CUSTOM_OPTS1 = {
+                'bridge_opts': 'multicast_router=0 multicast_snooping=0'
+            }
+            CUSTOM_OPTS2 = {
+                'bridge_opts': 'multicast_router=0 multicast_snooping=1'
+            }
+            NETCREATE = {
+                NETWORK_NAME: {
+                    'nic': nic,
+                    'switch': 'legacy',
+                    'custom': CUSTOM_OPTS1,
+                }
+            }
+            NETEDIT = {
+                NETWORK_NAME: {
+                    'nic': nic,
+                    'switch': 'legacy',
+                    'custom': CUSTOM_OPTS2,
+                }
+            }
+            with adapter.reset_persistent_config():
+                with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                    adapter.setSafeNetworkConfig()
+                    adapter.setupNetworks(NETEDIT, {}, NOCHK)
+                    adapter.assertBridgeOpts(
+                        NETWORK_NAME, NETEDIT[NETWORK_NAME]
+                    )
+
+                    adapter.restore_nets()
+                    adapter.assertBridgeOpts(
+                        NETWORK_NAME, NETCREATE[NETWORK_NAME]
+                    )
+
+
 @parametrize_switch
 @pytest.mark.nmstate
 class TestRestore(object):

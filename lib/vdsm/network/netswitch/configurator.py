@@ -41,6 +41,7 @@ from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.link import dpdk
 from vdsm.network.link import nic
+from vdsm.network.link import setup as link_setup
 from vdsm.network.link.iface import iface as iface_obj
 from vdsm.network.netconfpersistence import RunningConfig, Transaction
 from vdsm.network.netlink import waitfor
@@ -210,6 +211,7 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
                 config.setBonding(bond_name, bond_attrs)
         _setup_static_src_routing(networks)
         config.save()
+        link_setup.setup_custom_bridge_opts(networks)
         connectivity.check(options)
 
 

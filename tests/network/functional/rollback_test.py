@@ -194,6 +194,20 @@ class TestNetworkRollback(object):
                 adapter.assertNetwork(NET1_NAME, NETCREATE[NET1_NAME])
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
+    def test_setup_invalid_bridge_opts_fails(self, switch):
+        with dummy_devices(1) as (nic,):
+            net_attrs = {
+                'nic': nic,
+                'switch': switch,
+                'custom': {'bridge_opts': 'foo=0'},
+            }
+
+            with pytest.raises(SetupNetworksError):
+                adapter.setupNetworks({NETWORK_NAME: net_attrs}, {}, NOCHK)
+
+            adapter.update_netinfo()
+            adapter.assertNoNetwork(NETWORK_NAME)
+
     def _test_rollback_to_initial_network(self, switch, **kwargs):
         with dummy_devices(2) as (nic1, nic2):
             NETCREATE = {

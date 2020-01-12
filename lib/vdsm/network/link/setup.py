@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import six
 
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
+from vdsm.network.link.bridge import Bridge
 
 from .bond import Bond
 
@@ -155,3 +156,18 @@ def parse_bond_options(options):
         return d_options
     else:
         return {}
+
+
+def setup_custom_bridge_opts(nets):
+    for name, opts in parse_nets_bridge_opts(nets):
+        Bridge(name, opts)
+
+
+def parse_nets_bridge_opts(nets):
+    for name, opts in nets.items():
+        opts_str = opts.get('custom', {}).get('bridge_opts')
+        if opts_str:
+            bridge_opts = dict(
+                opt.split('=', 1) for opt in opts_str.split(' ')
+            )
+            yield name, bridge_opts

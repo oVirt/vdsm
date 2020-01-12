@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Hat, Inc.
+# Copyright 2015-2020 Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +19,11 @@
 from __future__ import absolute_import
 from __future__ import division
 from functools import partial
-from glob import iglob
 import logging
 import os
 
 from vdsm.network.ipwrapper import Link
+from vdsm.network.link import bridge as br
 from .misc import visible_devs
 
 BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
@@ -45,19 +45,11 @@ def ports(bridge):
     return bridge_ports
 
 
-def bridge_options(bridge):
+def bridge_options(name):
     """Returns a dictionary of bridge option name and value. E.g.,
     {'max_age': '2000', 'gc_timer': '332'}"""
-    BR_KEY_BLACKLIST = ('flush',)
-    paths = iglob(BRIDGING_OPT % (bridge, '*'))
-    opts = {}
-    for path in paths:
-        key = os.path.basename(path)
-        if key in BR_KEY_BLACKLIST:
-            continue
-        with open(path) as optFile:
-            opts[key] = optFile.read().rstrip()
-    return opts
+    bridge = br.Bridge(name)
+    return bridge.options
 
 
 def stp_state(bridge):
