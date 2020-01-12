@@ -130,8 +130,8 @@ if MAX_PVS > MAX_PVS_LIMIT:
 
 PVS_METADATA_SIZE = MAX_PVS * 142
 
-SD_METADATA_SIZE = 2 * KiB
-DEFAULT_BLOCKSIZE = KiB // 2
+SD_METADATA_SIZE = 2048
+DEFAULT_BLOCKSIZE = 512
 
 DMDK_VGUUID = "VGUUID"
 DMDK_PV_REGEX = re.compile(r"^PV\d+$")
@@ -146,7 +146,7 @@ RESERVED_LEASES = 100
 METADATA_BASE_V4 = 0
 
 # Size of metadata slot in v4
-METADATA_SLOT_SIZE_V4 = KiB // 2
+METADATA_SLOT_SIZE_V4 = 512
 
 # Starting version 5, first 1 MiB is still reserved for version 4 (but
 # zeroed) and therefore when computing metadata offset in version 5,
