@@ -26,6 +26,7 @@ import os
 import tempfile
 from nose.tools import eq_, raises
 from nose.plugins.skip import SkipTest
+from vdsm.common.units import GiB
 from vdsm.storage.misc import execCmd
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import brokentest, slowtest
@@ -33,7 +34,7 @@ from vdsm.alignmentScan import runScanArgs, scanImage, VirtAlignError
 
 
 def mkimage(imagepath, aligned=True):
-    open(imagepath, "wb").truncate(4 * 1024 ** 3)
+    open(imagepath, "wb").truncate(4 * GiB)
     cmd = ["/sbin/sfdisk", "-uS", "--force", imagepath]
     cmd_input = "128,,\n" if aligned else "1,,\n"
     rc, out, err = execCmd(cmd, data=cmd_input)
