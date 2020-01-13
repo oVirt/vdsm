@@ -34,6 +34,7 @@ from vdsm.common import libvirtconnection
 from vdsm.common import response
 import vdsm.common.time
 from vdsm.common import xmlutils
+from vdsm.common.units import MiB
 from vdsm.virt import sampling
 from vdsm.virt import vm
 from vdsm.virt.vmdevices import core
@@ -255,7 +256,7 @@ class Domain(object):
     def memoryStats(self):
         self._failIfRequested()
         return {
-            'rss': 4 * 1024 * 1024
+            'rss': 4 * MiB
         }
 
     def destroy(self):
