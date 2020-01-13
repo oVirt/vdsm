@@ -55,6 +55,7 @@ from vdsm.common.config import config
 from vdsm.common.define import errCode, doneCode
 from vdsm.common.logutils import traceback
 from vdsm.common.time import monotonic_time
+from vdsm.common.units import MiB
 from vdsm.constants import P_VDSM_LOG, P_VDSM_RUN, EXT_KVM_2_OVIRT
 from vdsm.utils import NICENESS, IOCLASS
 
@@ -997,7 +998,7 @@ class OutputParser(object):
 def _mem_to_mib(size, unit):
     lunit = unit.lower()
     if lunit in ('bytes', 'b'):
-        return size // 1024 // 1024
+        return size // MiB
     elif lunit in ('kib', 'k'):
         return size // 1024
     elif lunit in ('mib', 'm'):
