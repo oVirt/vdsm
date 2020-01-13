@@ -33,6 +33,7 @@ from vdsm.common import concurrent
 from vdsm.common import libvirtconnection
 from vdsm.common import time
 from vdsm.common.password import ProtectedPassword
+from vdsm.common.units import MiB
 
 _start = None
 
@@ -99,7 +100,7 @@ def arguments(args):
                         required=True, help='Storage type (volume or path)')
     parser.add_argument('--vm-name', dest='vmname', required=True,
                         help='Libvirt source VM name')
-    parser.add_argument('--bufsize', dest='bufsize', default=1048576,
+    parser.add_argument('--bufsize', dest='bufsize', default=MiB,
                         type=int, help='Size of packets in bytes, default'
                         '1048676')
     parser.add_argument('--verbose', action='store_true',
