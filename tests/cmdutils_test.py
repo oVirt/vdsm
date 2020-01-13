@@ -31,6 +31,7 @@ from vdsm import constants
 from vdsm.common import cmdutils
 from vdsm.common.compat import subprocess
 from vdsm.common.time import monotonic_time
+from vdsm.common.units import MiB, GiB
 
 from testlib import VdsmTestCase
 
@@ -48,7 +49,7 @@ class TasksetTests(VdsmTestCase):
 class TestRecieveBench(VdsmTestCase):
 
     COUNT = 1024
-    BUFSIZE = 1024**2
+    BUFSIZE = MiB
 
     def test_plain_read(self):
         p = Popen(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
@@ -65,7 +66,7 @@ class TestRecieveBench(VdsmTestCase):
             received += len(data)
         p.wait()
         elapsed = monotonic_time() - start
-        received_gb = received / float(1024**3)
+        received_gb = received / float(GiB)
         print("%.2fg in %.2f seconds (%.2fg/s)"
               % (received_gb, elapsed, received_gb / elapsed), end=" ")
         self.assertEqual(received, self.COUNT * self.BUFSIZE)
@@ -83,7 +84,7 @@ class TestRecieveBench(VdsmTestCase):
             if src == cmdutils.OUT:
                 received += len(data)
         elapsed = monotonic_time() - start
-        received_gb = received / float(1024**3)
+        received_gb = received / float(GiB)
         print("%.2fg in %.2f seconds (%.2fg/s)"
               % (received_gb, elapsed, received_gb / elapsed), end=" ")
         self.assertEqual(received, self.COUNT * self.BUFSIZE)
@@ -110,7 +111,7 @@ class TestRecieveBench(VdsmTestCase):
         for _, data in cmdutils.receive(p, 10):
             pass
         elapsed = monotonic_time() - start
-        sent_gb = sent / float(1024**3)
+        sent_gb = sent / float(GiB)
         print("%.2fg in %.2f seconds (%.2fg/s)"
               % (sent_gb, elapsed, sent_gb / elapsed), end=" ")
         self.assertEqual(p.returncode, 0)
