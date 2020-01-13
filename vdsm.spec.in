@@ -316,7 +316,7 @@ Requires: policycoreutils >= 2.1.13-55
 %if 0%{?rhel} >= 8
 %if 0%{?centos}
 # Advanced virt stream not available yet on CentOS.
-Requires: qemu-kvm
+Requires: qemu-kvm >= 15:4.1.0-15
 %else
 # 4.4. Baseline.
 Requires: qemu-kvm >= 15:4.1.0-14.module+el8.1.0+4548+ed1300f4

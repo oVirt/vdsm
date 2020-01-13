@@ -13,12 +13,31 @@ prepare_env() {
     mkdir -p $EXPORT_DIR
 }
 
+add_advanced_virt() {
+    cat >>/etc/dnf/dnf.conf <<EOF
+
+
+[copr:copr.fedorainfracloud.org:sbonazzo:AdvancedVirtualization]
+name=Copr repo for AdvancedVirtualization owned by sbonazzo
+baseurl=https://copr-be.cloud.fedoraproject.org/results/sbonazzo/AdvancedVirtualization/centos-stream-\$basearch/
+type=rpm-md
+gpgcheck=1
+gpgkey=https://copr-be.cloud.fedoraproject.org/results/sbonazzo/AdvancedVirtualization/pubkey.gpg
+repo_gpgcheck=0
+enabled=1
+enabled_metadata=1
+module_hotfixes=1
+EOF
+}
+
 install_dependencies() {
     ${CI_PYTHON} tests/profile pip-upgrade ${CI_PYTHON} -m pip \
         install --upgrade pip
 
     ${CI_PYTHON} tests/profile pip-install ${CI_PYTHON} -m pip \
         install --upgrade "tox==3.14"
+
+    add_advanced_virt
 }
 
 build_vdsm() {
@@ -65,6 +84,8 @@ check_install() {
         (>&2 echo "*** EXPORT_DIR must be set to run check_install!")
         exit 1
     fi
+
+    add_advanced_virt
 
     ${CI_PYTHON} tests/profile build-artifacts $PWD/automation/build.sh
 
