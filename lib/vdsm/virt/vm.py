@@ -2152,14 +2152,6 @@ class Vm(object):
                 self.log.exception('Failed to tear down device %s, device in '
                                    'inconsistent state', device.device)
 
-        for device in self._domain.get_device_elements('graphics'):
-            try:
-                vmdevices.graphics.Graphics(device, self.id).teardown()
-            except Exception:
-                self.log.exception('Failed to tear down device %s, device in '
-                                   'inconsistent state',
-                                   xmlutils.tostring(device, pretty=True))
-
     def _undefine_domain(self):
         if self._external:
             # This is a grey area, see rhbz#1610917;
