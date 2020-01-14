@@ -37,7 +37,6 @@ from vdsm import utils
 from vdsm.common import filecontrol
 from vdsm.common import supervdsm
 from vdsm.common.units import MiB
-from vdsm.config import config
 from vdsm.virt import vmstatus
 
 _MAX_SUPPORTED_API_VERSION = 3
@@ -156,7 +155,6 @@ class GuestAgentEvents(object):
 
 class GuestAgent(object):
     MAX_MESSAGE_SIZE = 1 * MiB  # for now
-    SEEN_SHUTDOWN_TIMEOUT = config.getint('vars', 'sys_shutdown_timeout') * 2
 
     def __init__(self, socketName, channelListener, log, onStatusChange,
                  qgaCaps, qgaGuestInfo, api_version=None, user='Unknown',
@@ -190,17 +188,8 @@ class GuestAgent(object):
         self._completion_lock = threading.Lock()
         self._completion_events = {}
         self._first_connect = threading.Event()
-        self._seen_shutdown = None
         self._qgaCaps = qgaCaps
         self._qgaGuestInfo = qgaGuestInfo
-
-    def has_seen_shutdown(self):
-        if self._seen_shutdown is None:
-            return True
-        diff = time.time() - self._agentTimestamp
-        if diff < GuestAgent.SEEN_SHUTDOWN_TIMEOUT:
-            return self._seen_shutdown
-        return False
 
     def _on_completion(self, reply_id):
         with self._completion_lock:
@@ -373,8 +362,6 @@ class GuestAgent(object):
             # Only change the state AFTER all data of the heartbeat has been
             # consumed
             self.guestStatus = vmstatus.UP
-            if self._seen_shutdown:
-                self._seen_shutdown = False
         elif message == 'host-name':
             self.guestInfo['guestName'] = args['name']
         elif message == 'os-version':
@@ -426,12 +413,10 @@ class GuestAgent(object):
             self.log.debug("guest agent was uninstalled.")
             self.guestInfo['appsList'] = ()
         elif message == 'session-startup':
-            self._seen_shutdown = False
             self.log.debug("Guest system is started or restarted.")
         elif message == 'fqdn':
             self.guestInfo['guestFQDN'] = args['fqdn']
         elif message == 'session-shutdown':
-            self._seen_shutdown = True
             self.log.debug("Guest system shuts down.")
         elif message == 'containers':
             self.guestInfo['guestContainers'] = args['list']

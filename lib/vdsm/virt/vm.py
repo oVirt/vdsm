@@ -56,7 +56,6 @@ from vdsm.common import supervdsm
 from vdsm.common import xmlutils
 from vdsm.common.compat import pickle
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
-from vdsm.common.hostutils import host_in_shutdown
 from vdsm.common.logutils import SimpleLogAdapter, volume_chain_to_str
 from vdsm.network import api as net_api
 
@@ -952,26 +951,15 @@ class Vm(object):
         return [drive for drive in self._devices[hwclass.DISK]
                 if vmdevices.storage.is_payload_drive(drive)]
 
-    def _getShutdownReason(self, stopped_shutdown):
+    def _getShutdownReason(self):
         exit_code = NORMAL
         with self._shutdownLock:
             reason = self._shutdownReason
-        if stopped_shutdown:
-            # do not overwrite admin shutdown, if present
-            if reason is None:
-                # seen_shutdown is used to detect VMs that have been
-                # stopped by sending them SIG_TERM (e.g. system shutdown).
-                # In that case libvirt and qemu report a user initiated
-                # shutdown that is not correct.
-                # BZ on libvirt: https://bugzilla.redhat.com/1384007
-                seen_shutdown = not self.guestAgent or \
-                    self.guestAgent.has_seen_shutdown()
-                if seen_shutdown and not host_in_shutdown():
-                    reason = vmexitreason.USER_SHUTDOWN
-                else:
-                    reason = vmexitreason.HOST_SHUTDOWN
-                    exit_code = ERROR
-        if reason == vmexitreason.DESTROYED_ON_PAUSE_TIMEOUT:
+        # There are more shutdown reasons that are errors,
+        # but in those cases the code should not reach this method,
+        # so only two of them are handled here
+        if reason in (vmexitreason.DESTROYED_ON_PAUSE_TIMEOUT,
+                      vmexitreason.HOST_SHUTDOWN):
             exit_code = ERROR
         self.log.debug('shutdown reason: %s', reason)
         return exit_code, reason
@@ -5046,6 +5034,8 @@ class Vm(object):
             self._handle_libvirt_domain_suspended(detail)
         elif event == libvirt.VIR_DOMAIN_EVENT_RESUMED:
             self._handle_libvirt_domain_resumed(detail)
+        elif event == libvirt.VIR_DOMAIN_EVENT_SHUTDOWN:
+            self._handle_libvirt_domain_shutdown(detail)
 
     def _handle_libvirt_domain_stopped(self, detail):
         if (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_MIGRATED and
@@ -5062,8 +5052,7 @@ class Vm(object):
               self.lastStatus == vmstatus.SAVING_STATE):
             hooks.after_vm_hibernate(self._domain.xml, self._custom)
         else:
-            exit_code, reason = self._getShutdownReason(
-                detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN)
+            exit_code, reason = self._getShutdownReason()
             self._onQemuDeath(exit_code, reason)
 
     def _handle_libvirt_domain_suspended(self, detail):
@@ -5142,6 +5131,24 @@ class Vm(object):
             # status as incoming migration, which is what Engine
             # expects while the VM is still migrating.
             self.log.info("Migration switched to post-copy mode")
+
+    def _handle_libvirt_domain_shutdown(self, detail):
+        # Do not overwrite existing shutdown reason
+        if self._shutdownReason is None:
+            with self._shutdownLock:
+                if self._shutdownReason is None:
+                    if detail == libvirt.VIR_DOMAIN_EVENT_SHUTDOWN_HOST:
+                        self._shutdownReason = vmexitreason.HOST_SHUTDOWN
+                    elif detail == libvirt.VIR_DOMAIN_EVENT_SHUTDOWN_GUEST:
+                        self._shutdownReason = vmexitreason.USER_SHUTDOWN
+                    else:
+                        # If an unexpected 'detail' was received,
+                        # warn the user and set the default value.
+                        self.log.warning(
+                            "Unexpected host/user shutdown detail from"
+                            " libvirt: %s. Assuming user shutdown.", detail
+                        )
+                        self._shutdownReason = vmexitreason.USER_SHUTDOWN
 
     def _updateDevicesDomxmlCache(self, xml):
         """
