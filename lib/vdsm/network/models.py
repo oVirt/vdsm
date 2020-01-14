@@ -439,7 +439,7 @@ def _nicSort(nics):
     """
 
     nicsList = []
-    nicsRexp = re.compile("^(\D*)(\d*)(.*)$")
+    nicsRexp = re.compile(r'^(\D*)(\d*)(.*)$')
 
     for nicName in nics:
         nicSre = nicsRexp.match(nicName)
