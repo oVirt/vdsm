@@ -5041,99 +5041,107 @@ class Vm(object):
         self.log.debug('event %s detail %s opaque %s',
                        eventToString(event), detail, opaque)
         if event == libvirt.VIR_DOMAIN_EVENT_STOPPED:
-            if (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_MIGRATED and
-                    self.lastStatus == vmstatus.MIGRATION_SOURCE):
-                try:
-                    hooks.after_vm_migrate_source(
-                        self._domain.xml, self._custom)
-                    for dev in self._customDevices():
-                        hooks.after_device_migrate_source(
-                            dev._deviceXML, self._custom, dev.custom)
-                finally:
-                    self.stopped_migrated_event_processed.set()
-            elif (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SAVED and
-                    self.lastStatus == vmstatus.SAVING_STATE):
-                hooks.after_vm_hibernate(self._domain.xml, self._custom)
-            else:
-                exit_code, reason = self._getShutdownReason(
-                    detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN)
-                self._onQemuDeath(exit_code, reason)
+            self._handle_libvirt_domain_stopped(detail)
         elif event == libvirt.VIR_DOMAIN_EVENT_SUSPENDED:
-            self._setGuestCpuRunning(False, flow='event.suspend')
-            self._logGuestCpuStatus('onSuspend')
-            if detail in (
-                    libvirt.VIR_DOMAIN_EVENT_SUSPENDED_PAUSED,
-                    libvirt.VIR_DOMAIN_EVENT_SUSPENDED_IOERROR,
-            ):
-                if detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_IOERROR:
-                    try:
-                        self._pause_code = self._readPauseCode()
-                    except libvirt.libvirtError as e:
-                        self.log.warning(
-                            "Couldn't retrieve pause code from libvirt: %s", e)
-                # Libvirt sometimes send the SUSPENDED/SUSPENDED_PAUSED event
-                # after RESUMED/RESUMED_MIGRATED (when VM status is PAUSED
-                # when migration completes, see qemuMigrationFinish function).
-                # In this case self._dom is disconnected because the function
-                # _completeIncomingMigration didn't update it yet.
-                try:
-                    domxml = self._dom.XMLDesc(0)
-                except virdomain.NotConnectedError:
-                    pass
-                else:
-                    hooks.after_vm_pause(domxml, self._custom)
-            elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY:
-                self._post_copy = migration.PostCopyPhase.RUNNING
-                self.log.debug("Migration entered post-copy mode")
-                self._pause_code = 'POSTCOPY'
-                self.send_status_event(pauseCode='POSTCOPY')
-            elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY_FAILED:
-                # This event may be received only on the destination.
-                self.handle_failed_post_copy()
-
+            self._handle_libvirt_domain_suspended(detail)
         elif event == libvirt.VIR_DOMAIN_EVENT_RESUMED:
-            self._setGuestCpuRunning(True, flow='event.resume')
-            self._logGuestCpuStatus('onResume')
-            if detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_UNPAUSED:
-                # This is not a real solution however the safest way to handle
-                # this for now. Ultimately we need to change the way how we are
-                # creating self._dom.
-                # The event handler delivers the domain instance in the
-                # callback however we do not use it.
+            self._handle_libvirt_domain_resumed(detail)
+
+    def _handle_libvirt_domain_stopped(self, detail):
+        if (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_MIGRATED and
+                self.lastStatus == vmstatus.MIGRATION_SOURCE):
+            try:
+                hooks.after_vm_migrate_source(
+                    self._domain.xml, self._custom)
+                for dev in self._customDevices():
+                    hooks.after_device_migrate_source(
+                        dev._deviceXML, self._custom, dev.custom)
+            finally:
+                self.stopped_migrated_event_processed.set()
+        elif (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SAVED and
+              self.lastStatus == vmstatus.SAVING_STATE):
+            hooks.after_vm_hibernate(self._domain.xml, self._custom)
+        else:
+            exit_code, reason = self._getShutdownReason(
+                detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN)
+            self._onQemuDeath(exit_code, reason)
+
+    def _handle_libvirt_domain_suspended(self, detail):
+        self._setGuestCpuRunning(False, flow='event.suspend')
+        self._logGuestCpuStatus('onSuspend')
+        if detail in (
+                libvirt.VIR_DOMAIN_EVENT_SUSPENDED_PAUSED,
+                libvirt.VIR_DOMAIN_EVENT_SUSPENDED_IOERROR,
+        ):
+            if detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_IOERROR:
                 try:
-                    domxml = self._dom.XMLDesc(0)
-                except virdomain.NotConnectedError:
-                    pass
-                else:
-                    hooks.after_vm_cont(domxml, self._custom)
-            elif detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED:
-                if self.lastStatus == vmstatus.MIGRATION_DESTINATION:
-                    self._incoming_migration_vm_running.set()
-                    self._incomingMigrationFinished.set()
-                elif self.lastStatus == vmstatus.MIGRATION_SOURCE:
-                    # Failed migration on the source.  This is normally handled
-                    # within the source thread after the migrateToURI3 call
-                    # finishes.  But if the VM was migrating during recovery,
-                    # there is source thread running and there is no
-                    # migrateToURI3 call to wait for migration completion.
-                    # So we must tell the source thread to check for this
-                    # situation and perform migration cleanup if necessary
-                    # (most notably setting the VM status to UP).
-                    self._migrationSourceThread.recovery_cleanup()
-            elif (self.lastStatus == vmstatus.MIGRATION_DESTINATION and
-                  detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_POSTCOPY):
-                # When we enter post-copy mode, the VM starts actually
-                # running on the destination.  But libvirt doesn't
-                # like when we operate the VM as running, since the
-                # migration job is still running.  That prevents us
-                # from running other libvirt jobs, such as metadata
-                # updates, which can time out, fail, and cause (at
-                # least) migration failure.
-                # So let's just log the event here and keep waiting
-                # for migration completion.  Let's also keep the VM
-                # status as incoming migration, which is what Engine
-                # expects while the VM is still migrating.
-                self.log.info("Migration switched to post-copy mode")
+                    self._pause_code = self._readPauseCode()
+                except libvirt.libvirtError as e:
+                    self.log.warning(
+                        "Couldn't retrieve pause code from libvirt: %s", e)
+            # Libvirt sometimes send the SUSPENDED/SUSPENDED_PAUSED event
+            # after RESUMED/RESUMED_MIGRATED (when VM status is PAUSED
+            # when migration completes, see qemuMigrationFinish function).
+            # In this case self._dom is disconnected because the function
+            # _completeIncomingMigration didn't update it yet.
+            try:
+                domxml = self._dom.XMLDesc(0)
+            except virdomain.NotConnectedError:
+                pass
+            else:
+                hooks.after_vm_pause(domxml, self._custom)
+        elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY:
+            self._post_copy = migration.PostCopyPhase.RUNNING
+            self.log.debug("Migration entered post-copy mode")
+            self._pause_code = 'POSTCOPY'
+            self.send_status_event(pauseCode='POSTCOPY')
+        elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY_FAILED:
+            # This event may be received only on the destination.
+            self.handle_failed_post_copy()
+
+    def _handle_libvirt_domain_resumed(self, detail):
+        self._setGuestCpuRunning(True, flow='event.resume')
+        self._logGuestCpuStatus('onResume')
+        if detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_UNPAUSED:
+            # This is not a real solution however the safest way to handle
+            # this for now. Ultimately we need to change the way how we are
+            # creating self._dom.
+            # The event handler delivers the domain instance in the
+            # callback however we do not use it.
+            try:
+                domxml = self._dom.XMLDesc(0)
+            except virdomain.NotConnectedError:
+                pass
+            else:
+                hooks.after_vm_cont(domxml, self._custom)
+        elif detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED:
+            if self.lastStatus == vmstatus.MIGRATION_DESTINATION:
+                self._incoming_migration_vm_running.set()
+                self._incomingMigrationFinished.set()
+            elif self.lastStatus == vmstatus.MIGRATION_SOURCE:
+                # Failed migration on the source.  This is normally handled
+                # within the source thread after the migrateToURI3 call
+                # finishes.  But if the VM was migrating during recovery,
+                # there is source thread running and there is no
+                # migrateToURI3 call to wait for migration completion.
+                # So we must tell the source thread to check for this
+                # situation and perform migration cleanup if necessary
+                # (most notably setting the VM status to UP).
+                self._migrationSourceThread.recovery_cleanup()
+        elif (self.lastStatus == vmstatus.MIGRATION_DESTINATION and
+              detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_POSTCOPY):
+            # When we enter post-copy mode, the VM starts actually
+            # running on the destination.  But libvirt doesn't
+            # like when we operate the VM as running, since the
+            # migration job is still running.  That prevents us
+            # from running other libvirt jobs, such as metadata
+            # updates, which can time out, fail, and cause (at
+            # least) migration failure.
+            # So let's just log the event here and keep waiting
+            # for migration completion.  Let's also keep the VM
+            # status as incoming migration, which is what Engine
+            # expects while the VM is still migrating.
+            self.log.info("Migration switched to post-copy mode")
 
     def _updateDevicesDomxmlCache(self, xml):
         """
