@@ -168,22 +168,41 @@ class TestNetworkHostQos(object):
                         NETWORK2_NAME, NETVLAN[NETWORK2_NAME]
                     )
 
-    def test_add_and_remove_qos_from_nic(self, switch):
+    def test_add_edit_and_remove_qos_from_nic(self, switch):
         HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
-        with dummy_device() as nic:
-            network_attrs = {
-                'nic': nic,
-                'switch': switch,
-                'hostQos': HOST_QOS_CONFIG1,
+        HOST_QOS_CONFIG2 = {
+            'out': {
+                'ls': {
+                    'm1': rate(rate_in_mbps=4),
+                    'd': _100USEC,
+                    'm2': rate(rate_in_mbps=3),
+                },
+                'ul': {'m2': rate(rate_in_mbps=8)},
             }
-            with adapter.setupNetworks(
-                {NETWORK1_NAME: network_attrs}, {}, NOCHK
-            ):
-                adapter.assertHostQos(NETWORK1_NAME, network_attrs)
-                network_attrs.pop('hostQos')
-                adapter.setupNetworks(
-                    {NETWORK1_NAME: network_attrs}, {}, NOCHK
-                )
+        }
+        with dummy_device() as nic:
+            NETCREATE = {
+                NETWORK1_NAME: {
+                    'nic': nic,
+                    'switch': switch,
+                    'hostQos': HOST_QOS_CONFIG1,
+                }
+            }
+            NETQOSEDIT = {
+                NETWORK1_NAME: {
+                    'nic': nic,
+                    'switch': switch,
+                    'hostQos': HOST_QOS_CONFIG2,
+                }
+            }
+            NETQOSREMOVE = {NETWORK1_NAME: {'nic': nic, 'switch': switch}}
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                adapter.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
+
+                adapter.setupNetworks(NETQOSEDIT, {}, NOCHK)
+                adapter.assertHostQos(NETWORK1_NAME, NETQOSEDIT[NETWORK1_NAME])
+
+                adapter.setupNetworks(NETQOSREMOVE, {}, NOCHK)
                 adapter.assertNoQosOnNic(nic)
 
 
