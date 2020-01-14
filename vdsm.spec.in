@@ -510,7 +510,11 @@ Requires:       iproute
 Requires:       iproute-tc
 # remove when nmstate is finished
 Requires: network-scripts
-Requires: nmstate
+%if 0%{?fedora} < 32
+Requires: nmstate >= 0.1.3
+%else
+Requires: nmstate >= 0.2.1
+%endif
 Requires:       libnl3
 %if %{target_py} == py2
 Requires:       libselinux-python
