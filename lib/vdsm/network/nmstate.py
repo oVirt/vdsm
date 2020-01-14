@@ -96,24 +96,23 @@ def _set_vlans_base_mtu(desired_ifstates, current_ifstates):
         if ifname not in ifaces_to_remove
         and ifstate[Interface.TYPE] == InterfaceType.VLAN
     )
-    for ifname, ifstate in current_remaining_vlan_ifaces:
+    for vlan_iface, ifstate in current_remaining_vlan_ifaces:
         base_vlan = ifstate['vlan']['base-iface']
-        if ifname in desired_ifstates:
-            vlan_mtu = desired_ifstates[ifname][Interface.MTU]
+        if vlan_iface in desired_ifstates:
+            vlan_mtu = desired_ifstates[vlan_iface][Interface.MTU]
         else:
             vlan_mtu = ifstate[Interface.MTU]
         if base_vlan in current_remaining_ifnames:
             vlans_base_mtus[base_vlan].append(vlan_mtu)
-
-    for base_ifname, vlans_mtus in six.viewitems(vlans_base_mtus):
-        mtu_max = max(vlans_mtus)
-        if base_ifname not in desired_ifstates:
-            desired_ifstates[base_ifname] = {Interface.NAME: base_ifname}
-        else:
-            mtu_max = max(
-                mtu_max, desired_ifstates[base_ifname].get(Interface.MTU, 0)
+        if base_vlan in desired_ifstates:
+            vlans_base_mtus[base_vlan].append(
+                desired_ifstates[base_vlan].get(Interface.MTU, 0)
             )
-        desired_ifstates[base_ifname][Interface.MTU] = mtu_max
+
+    for base_vlan, vlans_mtus in vlans_base_mtus.items():
+        if base_vlan not in desired_ifstates:
+            desired_ifstates[base_vlan] = {Interface.NAME: base_vlan}
+        desired_ifstates[base_vlan][Interface.MTU] = max(vlans_mtus)
 
 
 def _set_bond_slaves_mtu(desired_ifstates, current_ifstates):
