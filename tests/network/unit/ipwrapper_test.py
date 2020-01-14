@@ -69,7 +69,7 @@ class TestIpwrapper(object):
                 'veth_23',
                 'local',
             ),
-            'ff02::2 dev veth_23  metric 0 \    cache': (
+            'ff02::2 dev veth_23  metric 0 \\    cache': (
                 'ff02::2',
                 None,
                 'veth_23',
