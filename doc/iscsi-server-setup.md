@@ -3,19 +3,20 @@
 For testing oVirt setups using iSCSI storage domain, take following steps:
 
 ## 1. Install prerequisits (Fedora 30):
-
+```
 yum install targetcli  python3-rtslib  iscsi-initiator-utils
-
+```
 
 ## 2. Create target LUNs:
 
+```
 cd contrib/target-tools/
 ./create-target  iqn1  -s 100 -r /target
-
+```
 Use -h for options list.
 
 Expected output:
-
+```
 Creating target
   target_name:   iqn1
   target_iqn:    iqn.2003-01.org.vm-18-58.iqn1
@@ -53,18 +54,18 @@ Parameter max_write_same_len is now '65335'.
 Adding lun for '/backstores/fileio/iqn1-01'
 Created LUN 1.
 ...
-
+```
 
 ## 3. Setup firewall for iSCSI service
-
+```
 sudo firewall-cmd --permanent --add-service iscsi-target
 sudo firewall-cmd --reload
-
+```
 
 ## 4. Enable target service:
-
+```
 sudo systemctl enable --now target.service
-
+```
 
 ## 5. Add iSCSI storage from oVirt Management
 
@@ -76,8 +77,8 @@ target machine from different network interfaces.
 
 
 ## 6. Cleanup
-
+```
 cd contrib/target_tools/
 ./delete-target  -r /target
-
+```
 Use -h for options list.
