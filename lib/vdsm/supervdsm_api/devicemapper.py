@@ -30,5 +30,5 @@ def devicemapper_removeMapping(deviceName):
 
 
 @expose
-def run_dmsetup_status():
+def devicemapper_run_dmsetup_status():
     return devicemapper.run_dmsetup_status()
