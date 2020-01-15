@@ -507,14 +507,10 @@ Requires:       dhclient
 Requires:       ethtool
 Requires:       initscripts
 Requires:       iproute
-%if 0%{?fedora} >= 25
 Requires:       iproute-tc
-%endif
-%if 0%{?fedora} >= 29 || 0%{?rhel} >= 8
 # remove when nmstate is finished
 Requires: network-scripts
 Requires: nmstate
-%endif
 Requires:       libnl3
 %if %{target_py} == py2
 Requires:       libselinux-python
