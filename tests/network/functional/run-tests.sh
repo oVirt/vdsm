@@ -107,11 +107,12 @@ else
 fi
 
 if [ -n "$TEST_NMSTATE" ];then
-  SWITCH_TYPE="${SWITCH_TYPE} and nmstate"
-  container_exec "
+    SWITCH_TYPE="${SWITCH_TYPE} and nmstate"
+else
+    container_exec "
           mkdir /etc/vdsm && \
-          echo -e \"[vars]\nnet_nmstate_enabled = true\n\" >> /etc/vdsm/vdsm.conf
-  "
+          echo -e \"[vars]\nnet_nmstate_enabled = false\n\" >> /etc/vdsm/vdsm.conf
+    "
 fi
 
 if [ "$1" == "--shell" ];then
