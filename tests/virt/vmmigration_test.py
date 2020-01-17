@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2019 Red Hat, Inc.
+# Copyright 2014-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -353,6 +353,9 @@ class FakeVM(object):
 
     def payload_drives(self):
         return []
+
+    def update_guest_agent_api_version(self):
+        pass
 
 
 class FakeProgress(object):
