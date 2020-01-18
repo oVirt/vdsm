@@ -31,8 +31,8 @@ import time
 import pytest
 
 from vdsm.common.units import MiB, GiB
+from vdsm.common import commands
 from vdsm.storage import mount
-from vdsm.storage.misc import execCmd
 
 from nose.plugins.skip import SkipTest
 
@@ -55,17 +55,15 @@ def createFloppyImage(size):
         f.write('\0')
 
     try:
-        rc, out, err = execCmd(['/sbin/mkfs.ext2', "-F", path])
+        commands.run(['/sbin/mkfs.ext2', "-F", path])
     except OSError:
         try:
-            rc, out, err = execCmd(['/usr/sbin/mkfs.ext2', "-F", path])
+            commands.run(['/usr/sbin/mkfs.ext2', "-F", path])
         except OSError as e:
             if e.errno == errno.ENOENT:
                 raise SkipTest("cannot execute mkfs.ext2")
             raise
 
-    if rc != 0:
-        raise Exception("Could not format image", out, err)
     try:
         yield path
     finally:
@@ -159,10 +157,7 @@ class TestMount(VdsmTestCase):
             mountpoint = os.path.join(root_dir, 'mountpoint')
             with open(backing_image, 'w') as f:
                 os.ftruncate(f.fileno(), GiB)
-            rc, out, err = execCmd(['/sbin/mkfs.ext2', "-F", backing_image],
-                                   raw=True)
-            if rc != 0:
-                raise RuntimeError("Error creating filesystem: %s" % err)
+            commands.run(['/sbin/mkfs.ext2', "-F", backing_image])
             os.symlink(backing_image, link_to_image)
             os.mkdir(mountpoint)
             m = mount.Mount(link_to_image, mountpoint)

@@ -25,7 +25,6 @@ tests/alignmentscan_test.py
 tests/common/cmdutils_test.py
 tests/common/commands_test.py
 tests/storage/misc_test.py
-tests/storage/mount_test.py
 tests/storage/qemuimg_test.py
 tests/storage/qemuio.py
 tests/virt/boot_hostdev_test.py
