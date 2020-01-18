@@ -16,7 +16,6 @@ lib/vdsm/storage/lvm.py
 lib/vdsm/storage/mailbox.py
 lib/vdsm/storage/misc.py
 lib/vdsm/storage/mount.py
-lib/vdsm/storage/multipath.py
 lib/vdsm/storage/qemuimg.py
 lib/vdsm/storage/xlease.py
 lib/vdsm/tool/service.py
@@ -25,9 +24,7 @@ lib/vdsm/v2v.py
 tests/alignmentscan_test.py
 tests/common/cmdutils_test.py
 tests/common/commands_test.py
-tests/gluster_thinstorage_test.py
 tests/prlimit_test.py
-tests/storage/lvm_test.py
 tests/storage/misc_test.py
 tests/storage/mount_test.py
 tests/storage/qemuimg_test.py
