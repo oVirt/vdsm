@@ -43,8 +43,9 @@ while n:
 """
     cmd = ["python", "-c", script]
     cmd = cmdutils.prlimit(cmd, cpu_time=1)
-    rc, out, err = commands.execCmd(cmd, raw=True)
-    assert rc == -9
+    with pytest.raises(cmdutils.Error) as e:
+        commands.run(cmd)
+    assert e.value.rc == -9
 
 
 def test_limit_rss():
@@ -52,13 +53,13 @@ def test_limit_rss():
     script = "s = 100 * 1024**2 * 'x'"
     cmd = ["python", "-c", script]
     cmd = cmdutils.prlimit(cmd, address_space=100 * MiB)
-    rc, out, err = commands.execCmd(cmd, raw=True)
-    assert rc == 1
-    assert b"MemoryError" in err
+    with pytest.raises(cmdutils.Error) as e:
+        commands.run(cmd)
+    assert e.value.rc == 1
+    assert b"MemoryError" in e.value.err
 
 
 def test_true():
     # true should succeed with these limits.
     cmd = cmdutils.prlimit(["true"], address_space=100 * MiB, cpu_time=1)
-    rc, out, err = commands.execCmd(cmd, raw=True)
-    assert rc == 0
+    assert commands.run(cmd) == b''
