@@ -177,6 +177,10 @@ def _get_volumes_info(cli, sd_uuid):
         raise NoConnectedStoragePoolError('There is no connected storage '
                                           'pool to this server')
     sp_uuid, = pools
+
+    # Call get stats first so domain cache will be refreshed.
+    cli.StorageDomain.getStats(storagedomainID=sd_uuid)
+
     images_uuids = cli.StorageDomain.getImages(storagedomainID=sd_uuid)
 
     volumes_info = {}

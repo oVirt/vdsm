@@ -1007,7 +1007,6 @@ def test_retry_with_wider_filter(tmp_storage):
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason="LVs are reloaded only on cache invalidation")
 def test_reload_lvs_with_stale_lv(tmp_storage):
     dev_size = 10 * GiB
     dev1 = tmp_storage.create_device(dev_size)

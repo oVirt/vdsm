@@ -610,6 +610,9 @@ class LVMCache(object):
                 log.warning("Removing stale lv: %s/%s", vgName, lvName)
                 self._lvs.pop((vgName, lvName), None)
 
+            if not lvNames:
+                self._stalelv = False
+
             log.debug("lvs reloaded")
 
         return updatedLVs
