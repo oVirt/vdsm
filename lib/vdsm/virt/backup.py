@@ -102,6 +102,10 @@ class BackupConfig(properties.Owner):
         self.from_checkpoint_id = backup_config.get("from_checkpoint_id")
         self.to_checkpoint_id = backup_config.get("to_checkpoint_id")
         self.disks = [DiskConfig(d) for d in backup_config.get("disks", ())]
+        if len(self.disks) == 0:
+            raise exception.BackupError(
+                reason="Cannot start a backup without disks",
+                backup=self.backup_id)
 
 
 def start_backup(vm, dom, config):

@@ -225,6 +225,20 @@ def test_backup_begin_failed(tmp_backupdir, tmp_basedir):
     verify_scratch_disks_removed(vm)
 
 
+def test_backup_begin_failed_no_disks(tmp_backupdir, tmp_basedir):
+    backup_id = 'backup_id'
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+
+    config = {
+        'backup_id': backup_id,
+        'disks': ()
+    }
+
+    with pytest.raises(exception.BackupError):
+        backup.start_backup(vm, dom, config)
+
+
 @requires_backup_support
 def test_stop_backup_failed(tmp_backupdir, tmp_basedir):
     backup_id = 'backup_id'
