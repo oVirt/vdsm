@@ -23,6 +23,8 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
+import os
+import pytest
 
 from fakelib import FakeLogger
 from testlib import make_uuid
@@ -31,6 +33,7 @@ from vdsm.common import nbdutils
 from vdsm.common.xmlutils import indented
 
 from vdsm.storage import hsm
+from vdsm.storage import transientdisk
 from vdsm.storage.dispatcher import Dispatcher
 
 from vdsm.virt import backup
@@ -97,19 +100,36 @@ FAKE_SCRATCH_DISKS = {
 }
 
 
-def test_backup_xml():
+@pytest.fixture
+def tmp_backupdir(tmpdir, monkeypatch):
+    path = str(tmpdir.join("backup"))
+    monkeypatch.setattr(backup, 'P_BACKUP', path)
+
+
+@pytest.fixture
+def tmp_basedir(tmpdir, monkeypatch):
+    path = str(tmpdir.join("transient_disks"))
+    monkeypatch.setattr(transientdisk, 'P_TRANSIENT_DISKS', path)
+
+
+def test_backup_xml(tmp_backupdir):
+    backup_id = 'backup_id'
+
     # drives must be sorted for the disks to appear
     # each time in the same order in the backup XML
     drives = collections.OrderedDict()
     drives["img-id-1"] = FakeDrive("sda", "img-id-1")
     drives["img-id-2"] = FakeDrive("vda", "img-id-2")
-    addr = nbdutils.UnixAddress("/path/to/sock")
+
+    socket_path = os.path.join(backup.P_BACKUP, backup_id)
+    addr = nbdutils.UnixAddress(socket_path)
+
     backup_xml = backup.create_backup_xml(
         addr, drives, FAKE_SCRATCH_DISKS)
 
     expected_xml = """
         <domainbackup mode='pull'>
-            <server transport='unix' socket='/path/to/sock'/>
+            <server transport='unix' socket='{}'/>
             <disks>
                 <disk name='sda' type='file'>
                     <scratch file='/path/to/scratch_sda'>
@@ -123,5 +143,5 @@ def test_backup_xml():
                 </disk>
             </disks>
         </domainbackup>
-        """
+        """.format(socket_path)
     assert indented(expected_xml) == indented(backup_xml)
