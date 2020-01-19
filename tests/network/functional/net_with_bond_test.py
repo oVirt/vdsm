@@ -260,8 +260,9 @@ class TestReuseBond(object):
                 }
                 adapter.setupNetworks(NETEDIT, {}, NOCHK)
 
-                # For the legacy bridge, add an explicit ifdown/up step.
-                if switch == 'legacy':
+                if switch == 'legacy' and not nftestlib.is_nmstate_backend():
+                    # For ifcfg backend, make sure ifcfg content is good.
+                    # https://bugzilla.redhat.com/1372798
                     ifdown(BOND_NAME)
                     ifup(BOND_NAME)
                     # netinfo must be updated explicitly after non-API changes
