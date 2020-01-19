@@ -267,7 +267,7 @@ class TestReuseBond(object):
                     # netinfo must be updated explicitly after non-API changes
                     adapter.update_netinfo()
 
-                    adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+                adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
     @nftestlib.parametrize_bridged
     def test_add_vlaned_network_on_existing_bond(self, switch, bridged):
