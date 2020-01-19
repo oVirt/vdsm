@@ -526,3 +526,9 @@ class Nic(object):
         self.name = name
         self.nicModel = model
         self.macAddr = mac_addr
+
+
+def libvirt_error(err, message):
+    e = libvirt.libvirtError(message)
+    e.err = err
+    return e
