@@ -891,6 +891,7 @@ class SetupNetworks(object):
             if _did_every_dhcp_server_responded(dev_names):
                 break
             time.sleep(1)
+        time.sleep(1)
 
     def _collect_all_dhcp_interfaces(self):
         return [
