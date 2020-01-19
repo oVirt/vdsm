@@ -24,17 +24,77 @@ from __future__ import print_function
 
 import collections
 
+from fakelib import FakeLogger
+from testlib import make_uuid
+
 from vdsm.common import nbdutils
 from vdsm.common.xmlutils import indented
+
+from vdsm.storage import hsm
+from vdsm.storage.dispatcher import Dispatcher
 
 from vdsm.virt import backup
 
 
 class FakeDrive(object):
-    def __init__(self, name, imageID):
+
+    def __init__(self, name, imageID, path=''):
         self.name = name
         self.imageID = imageID
         self.diskType = 'file'
+        self.path = path
+        self.format = 'cow'
+        self.domainID = 'domain_id'
+
+
+class FakeHSM(hsm.HSM):
+
+    def __init__(self):
+        self._ready = True
+
+    @property
+    def ready(self):
+        return self._ready
+
+
+class FakeClientIF(object):
+
+    def __init__(self):
+        self.irs = Dispatcher(FakeHSM())
+
+
+class FakeVm(object):
+
+    def __init__(self):
+        self.id = "vm_id"
+        self.log = FakeLogger()
+        self.cif = FakeClientIF()
+
+    def findDriveByUUIDs(self, disk):
+        return FAKE_DRIVES[disk['imageID']]
+
+    def find_device_by_name_or_path(self, disk_name):
+        for fake_drive in FAKE_DRIVES.values():
+            if fake_drive.name == disk_name:
+                return fake_drive
+
+        raise LookupError("Disk %s not found" % disk_name)
+
+
+IMAGE_1_UUID = make_uuid()
+IMAGE_2_UUID = make_uuid()
+
+FAKE_DRIVES = {
+    IMAGE_1_UUID:
+        FakeDrive(name="sda", imageID=IMAGE_1_UUID, path="/path/to/backing1"),
+    IMAGE_2_UUID:
+        FakeDrive(name="vda", imageID=IMAGE_2_UUID, path="/path/to/backing2"),
+}
+
+FAKE_SCRATCH_DISKS = {
+    "sda": "/path/to/scratch_sda",
+    "vda": "/path/to/scratch_vda",
+}
 
 
 def test_backup_xml():
@@ -43,13 +103,9 @@ def test_backup_xml():
     drives = collections.OrderedDict()
     drives["img-id-1"] = FakeDrive("sda", "img-id-1")
     drives["img-id-2"] = FakeDrive("vda", "img-id-2")
-    drives_scratch_disks = {
-        "sda": "/path/to/scratch_sda",
-        "vda": "/path/to/scratch_vda",
-    }
     addr = nbdutils.UnixAddress("/path/to/sock")
     backup_xml = backup.create_backup_xml(
-        addr, drives, drives_scratch_disks)
+        addr, drives, FAKE_SCRATCH_DISKS)
 
     expected_xml = """
         <domainbackup mode='pull'>
