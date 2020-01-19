@@ -248,18 +248,25 @@ class TestResourceManager:
             "string", "resource", rm.EXCLUSIVE, callback)
 
         assert req1 != req2
+        assert hash(req1) != hash(req2)
         assert req1 == req1
+        assert hash(req1) == hash(req1)
         assert req2 == req2
         req1.wait()
         req1Clone = requests.pop()
         assert req1 == req1Clone
+        assert hash(req1) == hash(req1Clone)
         assert req1Clone != req2
+        assert hash(req1Clone) != hash(req2)
         resources.pop().release()
         req2.wait()
         req2Clone = requests.pop()
         assert req2 == req2Clone
+        assert hash(req2) == hash(req2Clone)
         assert req1 != req2Clone
+        assert hash(req1) != hash(req2Clone)
         assert req1Clone != req2Clone
+        assert hash(req1Clone) != hash(req2Clone)
         resources[0].release()
 
         assert req1 != "STUFF"

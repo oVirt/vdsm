@@ -46,7 +46,7 @@ class ResourceManagerError(Exception):
 
 
 class NamespaceRegistered(ResourceManagerError):
-    """ Raised if a namesapce is already registered """
+    """ Raised if a namespace is already registered """
 
 
 class RequestAlreadyProcessedError(ResourceManagerError):
@@ -174,6 +174,12 @@ class RequestRef(object):
             return False
 
         return self._realRequset == other._realRequset
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash(self._realRequset)
 
 
 class Request(object):
