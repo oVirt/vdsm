@@ -135,9 +135,9 @@ def start_backup(vm, dom, config):
 
     backup_xml = create_backup_xml(nbd_addr, drives, scratch_disks)
 
-    vm.log.debug("VM backup XML request: %s", backup_xml)
     vm.log.info(
-        "Starting backup for backup_id: %r", backup_cfg.backup_id)
+        "Starting backup for backup_id: %r, backup xml: %s",
+        backup_cfg.backup_id, backup_xml)
     checkpoint_xml = None
     # pylint: disable=no-member
     flags = libvirt.VIR_DOMAIN_BACKUP_BEGIN_REUSE_EXTERNAL
