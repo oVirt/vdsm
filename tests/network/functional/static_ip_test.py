@@ -42,9 +42,10 @@ VLAN = 10
 IPv4_ADDRESS = '192.0.2.1'
 IPv4_ADDRESS2 = '192.0.3.1'
 IPv4_NETMASK = '255.255.255.0'
+IPv4_NETMASK2 = '255.255.255.128'
 IPv4_PREFIX_LEN = '24'
-IPv4_GATEWAY = '192.0.2.254'
-IPv4_GATEWAY2 = '192.0.3.254'
+IPv4_GATEWAY = '192.0.2.100'
+IPv4_GATEWAY2 = '192.0.3.100'
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1010'
 IPv6_PREFIX_LEN = '64'
 IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::1'
@@ -123,15 +124,17 @@ class TestNetworkStaticIpBasic(object):
             net_attrs_ip1 = {
                 'bonding': BOND_NAME,
                 'bridged': False,
-                'ipaddr': '1.1.1.1',
-                'prefix': '24',
+                'ipaddr': IPv4_ADDRESS,
+                'netmask': IPv4_NETMASK,
+                'gateway': IPv4_GATEWAY,
                 'switch': switch,
             }
             net_attrs_ip2 = {
                 'bonding': BOND_NAME,
                 'bridged': False,
-                'ipaddr': '1.1.1.2',
-                'prefix': '24',
+                'ipaddr': IPv4_ADDRESS2,
+                'netmask': IPv4_NETMASK2,
+                'gateway': IPv4_GATEWAY2,
                 'switch': switch,
             }
 
