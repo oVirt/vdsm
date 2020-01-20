@@ -49,6 +49,7 @@ IPv4_GATEWAY2 = '192.0.3.100'
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1010'
 IPv6_PREFIX_LEN = '64'
 IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::1'
+IPv6_GATEWAY2 = 'fdb3:84e5:4ff4:55e3::2'
 
 adapter = None
 
@@ -277,6 +278,37 @@ class TestNetworkIPDefaultGateway(object):
             netcreate = {NETWORK_NAME: network_attrs}
 
             with adapter.setupNetworks(netcreate, {}, NOCHK):
+                adapter.assertNetworkIp(NETWORK_NAME, network_attrs)
+
+    @parametrize_ip_families
+    def test_edit_default_gateway(self, switch, families, preserve_conf):
+        if switch == 'ovs' and IpFamily.IPv6 in families:
+            pytest.xfail(
+                'OvS does not support ipv6 gateway'
+                'see https://bugzilla.redhat.com/1467332'
+            )
+        with dummy_device() as nic:
+            network_attrs = {
+                'nic': nic,
+                'ipaddr': IPv4_ADDRESS,
+                'netmask': IPv4_NETMASK,
+                'gateway': IPv4_GATEWAY,
+                'ipv6addr': IPv6_ADDRESS + '/' + IPv6_PREFIX_LEN,
+                'ipv6gateway': IPv6_GATEWAY,
+                'defaultRoute': True,
+                'nameservers': [],
+                'switch': switch,
+            }
+            netcreate = {NETWORK_NAME: network_attrs}
+
+            with adapter.setupNetworks(netcreate, {}, NOCHK):
+                adapter.assertNetworkIp(NETWORK_NAME, network_attrs)
+                if IpFamily.IPv6 in families:
+                    network_attrs['ipv6gateway'] = IPv6_GATEWAY2
+                if IpFamily.IPv4 in families:
+                    network_attrs['gateway'] = IPv4_GATEWAY2
+                    network_attrs['ipaddr'] = IPv4_ADDRESS2
+                adapter.setupNetworks(netcreate, {}, NOCHK)
                 adapter.assertNetworkIp(NETWORK_NAME, network_attrs)
 
     def test_add_net_and_move_ipv4_default_gateway(

@@ -35,6 +35,7 @@ VLAN101 = 101
 VLAN102 = 102
 IPv4_ADDRESS1 = '192.0.2.1'
 IPv4_GATEWAY1 = '192.0.2.254'
+IPv4_GATEWAY2 = '192.0.2.1'
 IPv4_NETMASK1 = '255.255.255.0'
 IPv4_PREFIX1 = 24
 IPv6_ADDRESS1 = 'fdb3:84e5:4ff4:55e3::1'
@@ -44,7 +45,8 @@ IPv4_NETMASK2 = '255.255.255.0'
 IPv4_PREFIX2 = 24
 IPv6_ADDRESS2 = 'fdb3:84e5:4ff4:88e3::1'
 IPv6_PREFIX2 = 64
-IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::ffee'
+IPv6_GATEWAY1 = 'fdb3:84e5:4ff4:55e3::ffee'
+IPv6_GATEWAY2 = 'fdb3:84e5:4ff4:55e3::fffe'
 DNS_SERVERS1 = ['1.2.3.4', '5.6.7.8']
 DNS_SERVERS2 = ['9.10.11.12', '13.14.15.16']
 
@@ -185,7 +187,7 @@ def get_routes_config(gateway, next_hop, ipv6gateway=None, state=None):
         routes.append(
             _create_default_route(ipv6gateway, next_hop, IPv6_FAMILY, state)
         )
-    return {nmstate.Route.CONFIG: routes}
+    return routes
 
 
 def _create_default_route(gateway, next_hop, family, state=None):

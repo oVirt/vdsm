@@ -34,13 +34,15 @@ from .nmstate.testlib import (
     IPv4_ADDRESS1,
     IPv4_ADDRESS2,
     IPv4_GATEWAY1,
+    IPv4_GATEWAY2,
     IPv4_NETMASK1,
     IPv4_NETMASK2,
     IPv4_PREFIX1,
     IPv4_PREFIX2,
     IPv6_ADDRESS1,
     IPv6_ADDRESS2,
-    IPv6_GATEWAY,
+    IPv6_GATEWAY1,
+    IPv6_GATEWAY2,
     IPv6_PREFIX1,
     IPv6_PREFIX2,
     TESTBOND0,
@@ -525,7 +527,7 @@ def test_translate_add_network_with_default_route(bridged):
             ),
             default_route=True,
             gateway=IPv4_GATEWAY1,
-            ipv6gateway=IPv6_GATEWAY,
+            ipv6gateway=IPv6_GATEWAY1,
         )
     }
     state = nmstate.generate_state(networks=networks, bondings={})
@@ -550,9 +552,11 @@ def test_translate_add_network_with_default_route(bridged):
         eth0_state.update(ip0_state)
         if_with_default_route = IFACE0
 
-    expected_state[nmstate.Route.KEY] = get_routes_config(
-        IPv4_GATEWAY1, if_with_default_route, IPv6_GATEWAY
-    )
+    expected_state[nmstate.Route.KEY] = {
+        nmstate.Route.CONFIG: get_routes_config(
+            IPv4_GATEWAY1, if_with_default_route, IPv6_GATEWAY1
+        )
+    }
     assert state == expected_state
 
 
@@ -599,6 +603,73 @@ def test_translate_remove_network_with_default_route(
 
 @parametrize_bridged
 @mock.patch.object(nmstate, 'RunningConfig')
+def test_update_gateway_with_default_route(rconfig_mock, bridged):
+    rconfig_mock.return_value.networks = {
+        TESTNET1: {
+            'nic': IFACE0,
+            'ipaddr': IPv4_ADDRESS1,
+            'netmask': IPv4_NETMASK1,
+            'gateway': IPv4_GATEWAY1,
+            'ipv6addr': IPv6_ADDRESS1 + '/' + str(IPv6_PREFIX1),
+            'ipv6gateway': IPv6_GATEWAY1,
+            'defaultRoute': True,
+            'switch': 'legacy',
+        }
+    }
+    networks = {
+        TESTNET1: create_network_config(
+            'nic',
+            IFACE0,
+            bridged=bridged,
+            static_ip_configuration=create_static_ip_configuration(
+                IPv4_ADDRESS1, IPv4_NETMASK1, IPv6_ADDRESS1, IPv6_PREFIX1
+            ),
+            default_route=True,
+            gateway=IPv4_GATEWAY2,
+            ipv6gateway=IPv6_GATEWAY2,
+        )
+    }
+    state = nmstate.generate_state(networks=networks, bondings={})
+
+    eth0_state = create_ethernet_iface_state(IFACE0)
+    ip0_state = create_ipv4_state(IPv4_ADDRESS1, IPv4_PREFIX1)
+    ip0_state.update(create_ipv6_state(IPv6_ADDRESS1, IPv6_PREFIX1))
+
+    expected_state = {nmstate.Interface.KEY: [eth0_state]}
+
+    if bridged:
+        disable_iface_ip(eth0_state)
+        bridge1_state = create_bridge_iface_state(
+            TESTNET1,
+            IFACE0,
+            options=generate_bridge_options(stp_enabled=False),
+        )
+        bridge1_state.update(ip0_state)
+        expected_state[nmstate.Interface.KEY].append(bridge1_state)
+        if_with_default_route = TESTNET1
+    else:
+        eth0_state.update(ip0_state)
+        if_with_default_route = IFACE0
+    routes = get_routes_config(
+        IPv4_GATEWAY2, if_with_default_route, IPv6_GATEWAY2
+    )
+
+    routes.extend(
+        get_routes_config(
+            IPv4_GATEWAY1,
+            if_with_default_route,
+            IPv6_GATEWAY1,
+            state=nmstate.Route.STATE_ABSENT,
+        )
+    )
+    routes.sort(key=lambda route: len(route[nmstate.Route.NEXT_HOP_ADDRESS]))
+    expected_state[nmstate.Route.KEY] = {nmstate.Route.CONFIG: routes}
+
+    assert state == expected_state
+
+
+@parametrize_bridged
+@mock.patch.object(nmstate, 'RunningConfig')
 def test_translate_default_route_network_static_to_dhcp(rconfig_mock, bridged):
     rconfig_mock.return_value.networks = {
         TESTNET1: {
@@ -610,7 +681,7 @@ def test_translate_default_route_network_static_to_dhcp(rconfig_mock, bridged):
             'ipaddr': IPv4_ADDRESS1,
             'netmask': IPv4_NETMASK1,
             'ipv6addr': IPv6_ADDRESS1 + '/' + str(IPv6_PREFIX1),
-            'ipv6gateway': IPv6_GATEWAY,
+            'ipv6gateway': IPv6_GATEWAY1,
         }
     }
     networks = {
@@ -646,12 +717,14 @@ def test_translate_default_route_network_static_to_dhcp(rconfig_mock, bridged):
         eth0_state.update(ip0_state)
         if_with_default_route = IFACE0
 
-    expected_state[nmstate.Route.KEY] = get_routes_config(
-        IPv4_GATEWAY1,
-        if_with_default_route,
-        IPv6_GATEWAY,
-        state=nmstate.Route.STATE_ABSENT,
-    )
+    expected_state[nmstate.Route.KEY] = {
+        nmstate.Route.CONFIG: get_routes_config(
+            IPv4_GATEWAY1,
+            if_with_default_route,
+            IPv6_GATEWAY1,
+            state=nmstate.Route.STATE_ABSENT,
+        )
+    }
     assert state == expected_state
 
 
@@ -668,7 +741,7 @@ def test_translate_remove_default_route_from_network(rconfig_mock, bridged):
             'ipaddr': IPv4_ADDRESS1,
             'netmask': IPv4_NETMASK1,
             'ipv6addr': IPv6_ADDRESS1 + '/' + str(IPv6_PREFIX1),
-            'ipv6gateway': IPv6_GATEWAY,
+            'ipv6gateway': IPv6_GATEWAY1,
         }
     }
     networks = {
@@ -704,12 +777,14 @@ def test_translate_remove_default_route_from_network(rconfig_mock, bridged):
         eth0_state.update(ip0_state)
         if_with_default_route = IFACE0
 
-    expected_state[nmstate.Route.KEY] = get_routes_config(
-        IPv4_GATEWAY1,
-        if_with_default_route,
-        IPv6_GATEWAY,
-        state=nmstate.Route.STATE_ABSENT,
-    )
+    expected_state[nmstate.Route.KEY] = {
+        nmstate.Route.CONFIG: get_routes_config(
+            IPv4_GATEWAY1,
+            if_with_default_route,
+            IPv6_GATEWAY1,
+            state=nmstate.Route.STATE_ABSENT,
+        )
+    }
     assert state == expected_state
 
 
@@ -739,9 +814,11 @@ def test_translate_add_network_with_default_route_on_vlan_interface():
     vlan_base_state.update(create_ipv6_state())
     expected_state = {nmstate.Interface.KEY: [vlan_base_state, vlan101_state]}
 
-    expected_state[nmstate.Route.KEY] = get_routes_config(
-        IPv4_GATEWAY1, vlan101_state['name']
-    )
+    expected_state[nmstate.Route.KEY] = {
+        nmstate.Route.CONFIG: get_routes_config(
+            IPv4_GATEWAY1, vlan101_state['name']
+        )
+    }
     assert expected_state == state
 
 

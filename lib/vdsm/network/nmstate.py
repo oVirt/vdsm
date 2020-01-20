@@ -700,14 +700,21 @@ class Routes(object):
         next_hop = self._get_next_hop_interface()
         for family in (Routes.IPV4, Routes.IPV6):
             gateway = self._get_gateway_by_ip_family(self._netconf, family)
+            runconf_gateway = self._get_gateway_by_ip_family(
+                self._runconf, family
+            )
             if gateway:
                 routes.append(self._create_route(next_hop, gateway, family))
+                if self._gateway_has_changed(runconf_gateway, gateway):
+                    routes.append(
+                        self._create_remove_default_route(
+                            next_hop, runconf_gateway, family
+                        )
+                    )
             elif self._should_remove_def_route(family):
                 routes.append(
                     self._create_remove_default_route(
-                        next_hop,
-                        self._get_gateway_by_ip_family(self._runconf, family),
-                        family,
+                        next_hop, runconf_gateway, family
                     )
                 )
 
@@ -736,6 +743,10 @@ class Routes(object):
             and self._runconf.default_route
             and (dhcp or not self._netconf.default_route)
         )
+
+    @staticmethod
+    def _gateway_has_changed(runconf_gateway, netconf_gateway):
+        return runconf_gateway and runconf_gateway != netconf_gateway
 
     @staticmethod
     def _get_gateway_by_ip_family(source, family):
