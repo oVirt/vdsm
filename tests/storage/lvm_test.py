@@ -1007,6 +1007,7 @@ def test_retry_with_wider_filter(tmp_storage):
 
 @requires_root
 @pytest.mark.root
+@pytest.mark.xfail(reason="LVs are reloaded only on cache invalidation")
 def test_reload_lvs_with_stale_lv(tmp_storage):
     dev_size = 10 * GiB
     dev1 = tmp_storage.create_device(dev_size)
@@ -1040,6 +1041,16 @@ def test_reload_lvs_with_stale_lv(tmp_storage):
 
     # And verify that first LV is still correctly reported.
     assert expected_lv1 in lvs
+    # Second LV is still in cache until it is invalidated.
+    assert expected_lv2 in lvs
+
+    # Invalidate the LVM cache and retrieve the LVs.
+    lvm.invalidateCache()
+    lvs = lvm.getLV(vg_name)
+
+    # Verify that first LV is still correctly reported.
+    assert expected_lv1 in lvs
+    # Second LV should be no longer in reported lvs after cache update.
     assert expected_lv2 not in lvs
 
 
