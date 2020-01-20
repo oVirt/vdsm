@@ -878,12 +878,3 @@ def _is_stale_iface(removed_base_iface, nets_by_base_iface):
 
 def _is_default_mtu(state):
     return state.get(Interface.MTU, DEFAULT_MTU) == DEFAULT_MTU
-
-
-def generate_ifaces_remove_state(interfaces):
-    return {
-        Interface.KEY: [
-            {Interface.NAME: iface, Interface.STATE: InterfaceState.ABSENT}
-            for iface in interfaces
-        ]
-    }
