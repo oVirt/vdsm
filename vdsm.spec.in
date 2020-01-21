@@ -499,6 +499,7 @@ VDSM libraries that are imported by all subsystems
 %package network
 Summary:        VDSM network python libraries
 Requires:       NetworkManager-config-server
+Requires:       dhcp-client
 %if %{target_py} == py2
 Requires:       dbus-python
 %else
