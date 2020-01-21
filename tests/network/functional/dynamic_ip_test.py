@@ -202,10 +202,10 @@ class FakeNotifier:
 
 @pytest.mark.nmstate
 @nftestlib.parametrize_switch
-@parametrize_ip_families
-@nftestlib.parametrize_bridged
-@parametrize_def_route
 class TestNetworkDhcpBasic(object):
+    @parametrize_ip_families
+    @nftestlib.parametrize_bridged
+    @parametrize_def_route
     def test_add_net_with_dhcp(self, switch, families, bridged, def_route):
         if switch == 'ovs' and IpFamily.IPv6 in families:
             pytest.xfail(
@@ -251,6 +251,71 @@ class TestNetworkDhcpBasic(object):
                     adapter.assertNetworkIp(
                         NETWORK_NAME, netcreate[NETWORK_NAME]
                     )
+
+    @parametrize_ip_families
+    @pytest.mark.xfail(
+        reason='Cannot be tested for nmstate until NM 1.22',
+        condition=nftestlib.is_nmstate_backend(),
+        strict=False,
+    )
+    def test_move_nic_between_bridgeless_and_bridged_keep_ip(
+        self, switch, families
+    ):
+        if switch == 'ovs' and IpFamily.IPv6 in families:
+            pytest.xfail(
+                'IPv6 dynamic fails with OvS'
+                'see https://bugzilla.redhat.com/1773471'
+            )
+        if (
+            switch == 'legacy'
+            and IpFamily.IPv6 in families
+            and not nftestlib.is_nmstate_backend()
+        ):
+            pytest.xfail('Fails with ifcfg for IPv6')
+        with veth_pair() as (server, client):
+            addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+            addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, IpFamily.IPv6)
+            linkSet(server, ['up'])
+            linkSet(client, ['up'])
+            with dnsmasq_run(
+                server,
+                DHCPv4_RANGE_FROM,
+                DHCPv4_RANGE_TO,
+                DHCPv6_RANGE_FROM,
+                DHCPv6_RANGE_TO,
+                router=DHCPv4_GATEWAY,
+            ):
+
+                network_attrs = {
+                    'bridged': False,
+                    'nic': client,
+                    'blockingdhcp': True,
+                    'switch': switch,
+                }
+
+                if IpFamily.IPv4 in families:
+                    network_attrs['bootproto'] = 'dhcp'
+                if IpFamily.IPv6 in families:
+                    network_attrs['dhcpv6'] = True
+
+                netcreate = {NETWORK_NAME: network_attrs}
+
+                with adapter.setupNetworks(netcreate, {}, NOCHK):
+                    adapter.assertNetworkIp(
+                        NETWORK_NAME, netcreate[NETWORK_NAME]
+                    )
+                    client_info = adapter.netinfo.nics[client]
+                    ipv4_addr = client_info['ipv4addrs']
+                    ipv6_addr = client_info['ipv6addrs']
+
+                    network_attrs['bridged'] = True
+                    adapter.setupNetworks(netcreate, {}, NOCHK)
+                    adapter.assertNetworkIp(
+                        NETWORK_NAME, netcreate[NETWORK_NAME]
+                    )
+                    network_info = adapter.netinfo.networks[NETWORK_NAME]
+                    assert ipv4_addr == network_info['ipv4addrs']
+                    assert ipv6_addr == network_info['ipv6addrs']
 
 
 @pytest.mark.nmstate
