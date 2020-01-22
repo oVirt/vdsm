@@ -372,7 +372,7 @@ class Vm(object):
         self._statusLock = threading.Lock()
         self._creationThread = concurrent.thread(self._startUnderlyingVm,
                                                  name="vm/" + self.id[:8])
-        self._incomingMigrationFinished = threading.Event()
+        self._incoming_migration_finished = threading.Event()
         self._incoming_migration_vm_running = threading.Event()
         self._volPrepareLock = threading.Lock()
         self._initTimePauseCode = None
@@ -902,7 +902,7 @@ class Vm(object):
         # We must wait for a contingent post-copy migration to finish
         # in VM initialization before we can run libvirt jobs such as
         # write metadata or run periodic operations.
-        self._incomingMigrationFinished.wait(
+        self._incoming_migration_finished.wait(
             config.getint('vars', 'migration_destination_timeout'))
         # Wait a bit to increase the chance that downtime is reported
         # from the source before we report that the VM is UP on the
@@ -5058,7 +5058,10 @@ class Vm(object):
     def _handle_libvirt_domain_suspended(self, detail):
         self._setGuestCpuRunning(False, flow='event.suspend')
         self._logGuestCpuStatus('onSuspend')
-        if detail in (
+        if self.lastStatus == vmstatus.MIGRATION_DESTINATION and \
+           detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_PAUSED:
+            self._incoming_migration_completed()
+        elif detail in (
                 libvirt.VIR_DOMAIN_EVENT_SUSPENDED_PAUSED,
                 libvirt.VIR_DOMAIN_EVENT_SUSPENDED_IOERROR,
         ):
@@ -5105,8 +5108,7 @@ class Vm(object):
                 hooks.after_vm_cont(domxml, self._custom)
         elif detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED:
             if self.lastStatus == vmstatus.MIGRATION_DESTINATION:
-                self._incoming_migration_vm_running.set()
-                self._incomingMigrationFinished.set()
+                self._incoming_migration_completed()
             elif self.lastStatus == vmstatus.MIGRATION_SOURCE:
                 # Failed migration on the source.  This is normally handled
                 # within the source thread after the migrateToURI3 call
@@ -5204,6 +5206,10 @@ class Vm(object):
 
         hooks.before_vm_migrate_destination(srcDomXML, self._custom)
         return True
+
+    def _incoming_migration_completed(self):
+        self._incoming_migration_vm_running.set()
+        self._incoming_migration_finished.set()
 
     def getBlockJob(self, drive):
         for job in self._blockJobs.values():
