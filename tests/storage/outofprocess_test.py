@@ -444,6 +444,47 @@ def test_fileutils_validateqemureadable_qemu_or_kvm_group(
 
 # os APIs
 
+ACCESS_PARAMS = [
+    (0o755, os.R_OK, True),
+    (0o300, os.R_OK, False),
+    (0o744, os.W_OK, True),
+    (0o444, os.W_OK, False),
+    (0o755, os.X_OK, True),
+    (0o400, os.X_OK, False),
+    (0o300, os.W_OK | os.X_OK, True),
+    (0o7300, os.R_OK | os.W_OK | os.X_OK, False),
+]
+
+
+@pytest.mark.parametrize("mode, permission, expected_result", ACCESS_PARAMS)
+@requires_unprivileged_user
+def test_os_access_file(
+        oop_cleanup, tmpdir, mode, permission, expected_result):
+    iop = oop.getProcessPool("test")
+
+    f = tmpdir.join("file")
+    f.write("")
+    path = str(f)
+
+    with chmod(path, mode):
+        assert iop.os.access(path, permission) == expected_result
+
+
+@pytest.mark.parametrize("mode, permission, expected_result", ACCESS_PARAMS)
+@requires_unprivileged_user
+def test_os_access_directory(
+        oop_cleanup, tmpdir, mode, permission, expected_result):
+    iop = oop.getProcessPool("test")
+
+    d = tmpdir.mkdir("subdir")
+    path = str(d)
+
+    with chmod(path, mode):
+        assert iop.os.access(path, permission) == expected_result
+
+
+# os.path APIs
+
 def test_os_path_islink(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     link = str(tmpdir.join("link"))
