@@ -29,16 +29,12 @@ from nose.plugins.skip import SkipTest
 import six
 
 import vdsm.config
-from vdsm.network.configurators.ifcfg import EXT_IFDOWN, EXT_IFUP
 from vdsm.network import netswitch
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
     routeExists, ruleExists, addrFlush, LinkType, getLinks, routeShowTable,
     linkSet, addrAdd)
 from vdsm.network import kernelconfig
-from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
-from vdsm.network.netinfo.bonding import BONDING_SLAVES
-from vdsm.network.netinfo.misc import NET_CONF_PREF
 from vdsm.network.netinfo.nics import operstate, OPERSTATE_UNKNOWN
 from vdsm.network.netinfo.routes import getRouteDeviceTo
 from vdsm.network.netlink import monitor
@@ -46,7 +42,6 @@ from vdsm.network import sourceroute
 from vdsm.network import sysctl
 
 from vdsm.common.cmdutils import CommandPath
-from vdsm.common import commands
 from vdsm.common.proc import pgrep
 from vdsm.utils import RollbackContext
 
@@ -760,128 +755,3 @@ class NetworkTest(TestCaseBase):
 
             # cleanup
             self.setupNetworks({NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-
-    @requiresUnifiedPersistence("with ifcfg persistence, "
-                                "restoreNetConfig doesn't restore "
-                                "in-kernel state")
-    @cleanupNet
-    @ValidateRunningAsRoot
-    def test_setupNetworks_on_external_bond(self):
-        with dummyIf(2) as nics:
-            with _create_external_bond(BONDING_NAME, nics):
-                status, msg = self.setupNetworks(
-                    {NETWORK_NAME:
-                        {'bonding': BONDING_NAME, 'bridged': False}},
-                    {BONDING_NAME: {'nics': nics}}, NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
-                self.assertNetworkExists(NETWORK_NAME)
-                self.assertBondExists(BONDING_NAME, nics)
-
-            self.vdsm_net.save_config()
-            self.vdsm_net.restoreNetConfig()
-
-            self.assertNetworkExists(NETWORK_NAME)
-            self.assertBondExists(BONDING_NAME, nics)
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True}},
-                {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkDoesntExist(NETWORK_NAME)
-            self.assertBondDoesntExist(BONDING_NAME, nics)
-            self.vdsm_net.save_config()
-
-    @requiresUnifiedPersistence("with ifcfg persistence, "
-                                "restoreNetConfig doesn't restore "
-                                "in-kernel state")
-    @cleanupNet
-    @ValidateRunningAsRoot
-    def test_setupNetworks_on_external_vlaned_bond(self):
-        with dummyIf(2) as nics:
-            with self._create_external_ifcfg_bond(BONDING_NAME, nics, VLAN_ID):
-                status, msg = self.setupNetworks(
-                    {NETWORK_NAME: {'bonding': BONDING_NAME, 'bridged': True,
-                                    'vlan': VLAN_ID}}, {}, NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
-                self.assertNetworkExists(NETWORK_NAME)
-
-            self.vdsm_net.save_config()
-            self.vdsm_net.restoreNetConfig()
-
-            self.assertNetworkExists(NETWORK_NAME)
-            self.assertBondExists(BONDING_NAME, nics)
-            self.assertVlanExists(BONDING_NAME + '.' + VLAN_ID)
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True}},
-                {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkDoesntExist(NETWORK_NAME)
-            self.assertBondDoesntExist(BONDING_NAME, nics)
-            self.vdsm_net.save_config()
-
-    @contextmanager
-    def _create_external_ifcfg_bond(self, bond_name, nics, vlan_id):
-        IFCFG_SLAVE_TEMPLATE = """DEVICE=%s
-MASTER=%s
-SLAVE=yes
-ONBOOT=yes
-MTU=1500
-NM_CONTROLLED=no"""
-
-        IFCFG_BOND_TEMPLATE = """DEVICE=%s
-BONDING_OPTS='mode=802.3ad miimon=150'
-ONBOOT=yes
-BOOTPROTO=none
-DEFROUTE=yes
-NM_CONTROLLED=no
-HOTPLUG=no"""
-
-        IFCFG_VLAN_TEMPLATE = """DEVICE=%s.%s
-VLAN=yes
-ONBOOT=yes
-BOOTPROTO=static
-NM_CONTROLLED=no
-HOTPLUG=no"""
-
-        with open(NET_CONF_PREF + nics[0], 'w') as f:
-            f.write(IFCFG_SLAVE_TEMPLATE % (nics[0], bond_name))
-        with open(NET_CONF_PREF + nics[1], 'w') as f:
-            f.write(IFCFG_SLAVE_TEMPLATE % (nics[1], bond_name))
-        with open(NET_CONF_PREF + bond_name, 'w') as f:
-            f.write(IFCFG_BOND_TEMPLATE % bond_name)
-        with open(NET_CONF_PREF + bond_name + '.' + vlan_id, 'w') as f:
-            f.write(IFCFG_VLAN_TEMPLATE % (bond_name, vlan_id))
-
-        commands.run([EXT_IFUP, bond_name])
-        commands.run([EXT_IFUP, bond_name + '.' + vlan_id])
-
-        try:
-            yield
-        finally:
-            commands.run([EXT_IFDOWN, bond_name + '.' + vlan_id])
-            commands.run([EXT_IFDOWN, bond_name])
-
-            # The bond needs to be removed by force
-            with open(BONDING_MASTERS, 'w') as bonds:
-                bonds.write('-%s\n' % bond_name)
-
-            os.remove(NET_CONF_PREF + nics[0])
-            os.remove(NET_CONF_PREF + nics[1])
-            os.remove(NET_CONF_PREF + bond_name)
-            os.remove(NET_CONF_PREF + bond_name + '.' + vlan_id)
-
-
-@contextmanager
-def _create_external_bond(name, slaves):
-    with open(BONDING_MASTERS, 'w') as bonds:
-        bonds.write('+%s\n' % name)
-    try:
-        with open(BONDING_SLAVES % BONDING_NAME, 'w') as f:
-            for slave in slaves:
-                linkSet(slave, ['down'])
-                f.write('+%s\n' % slave)
-        yield
-    finally:
-        with open(BONDING_MASTERS, 'w') as bonds:
-            bonds.write('-%s\n' % name)
