@@ -464,6 +464,35 @@ def test_os_path_exists(oop_cleanup):
 
 # utils APIs
 
+def test_utils_forcelink_failed_no_such_file(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path_src = str(tmpdir.join("file"))
+    path_dst = path_src + ".link"
+
+    # Source does not exist, operation fails.
+    with pytest.raises(OSError) as e:
+        iop.utils.forceLink(path_src, path_dst)
+    assert e.value.errno == errno.ENOENT
+
+
+def test_utils_forcelink(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path_src1 = str(tmpdir.join("file1"))
+    path_src2 = str(tmpdir.join("file2"))
+    path_dst = str(tmpdir.join("file.link"))
+
+    open(path_src1, "w").close()
+    open(path_src2, "w").close()
+
+    # Link does not exist, created to point to "file1".
+    iop.utils.forceLink(path_src1, path_dst)
+    assert os.path.samefile(path_src1, path_dst)
+
+    # Link exists, overridden to point to "file2".
+    iop.utils.forceLink(path_src2, path_dst)
+    assert os.path.samefile(path_src2, path_dst)
+
+
 def test_utils_rmfile(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
 
