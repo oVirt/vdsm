@@ -470,9 +470,13 @@ def test_utils_rmfile(oop_cleanup, tmpdir):
     path = str(tmpdir.join("file"))
     open(path, "w").close()
 
+    # File exists, "rmFile" should succeed.
     assert os.path.exists(path)
     iop.utils.rmFile(path)
     assert not os.path.exists(path)
+
+    # File does not exist, "rmFile" should fail silently.
+    iop.utils.rmFile(path)
 
 
 # glob APIs
