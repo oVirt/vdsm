@@ -76,7 +76,7 @@ _SSH_ADD = cmdutils.CommandPath('ssh-add', '/usr/bin/ssh-add')
 _XEN_SSH_PROTOCOL = 'xen+ssh'
 _VMWARE_PROTOCOL = 'vpx'
 _KVM_PROTOCOL = 'qemu'
-_SSH_AUTH_RE = b'(SSH_AUTH_SOCK)=([^;]+).*;\nSSH_AGENT_PID=(\d+)'
+_SSH_AUTH_RE = br'(SSH_AUTH_SOCK)=([^;]+).*;\nSSH_AGENT_PID=(\d+)'
 _OVF_RESOURCE_CPU = 3
 _OVF_RESOURCE_MEMORY = 4
 _OVF_RESOURCE_NETWORK = 10
@@ -1407,22 +1407,22 @@ def _parse_allocation_units(units):
     base-units must be bytes.
     """
     # Format description
-    sp = '[ \t\n]?'
-    base_unit = 'byte'
-    operator = '[*]'  # we support only multiplication
-    number = '[+]?[0-9]+'  # we support only positive integers
-    exponent = '[+]?[0-9]+'  # we support only positive integers
-    modifier1 = '(?P<m1>{op}{sp}(?P<m1_num>{num}))'.format(
+    sp = r'[ \t\n]?'
+    base_unit = r'byte'
+    operator = r'[*]'  # we support only multiplication
+    number = r'[+]?[0-9]+'  # we support only positive integers
+    exponent = r'[+]?[0-9]+'  # we support only positive integers
+    modifier1 = r'(?P<m1>{op}{sp}(?P<m1_num>{num}))'.format(
         op=operator,
         num=number,
         sp=sp)
     modifier2 = \
-        '(?P<m2>{op}{sp}' \
-        '(?P<m2_base>[0-9]+){sp}\^{sp}(?P<m2_exp>{exp}))'.format(
+        r'(?P<m2>{op}{sp}' \
+        r'(?P<m2_base>[0-9]+){sp}\^{sp}(?P<m2_exp>{exp}))'.format(
             op=operator,
             exp=exponent,
             sp=sp)
-    r = '^{base_unit}({sp}{mod1})?({sp}{mod2})?$'.format(
+    r = r'^{base_unit}({sp}{mod1})?({sp}{mod2})?$'.format(
         base_unit=base_unit,
         mod1=modifier1,
         mod2=modifier2,
