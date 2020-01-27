@@ -45,6 +45,7 @@ import monkeypatch
 from . marks import requires_root
 
 FLOPPY_SIZE = 4 * MiB
+MKFS_EXEC = '/usr/sbin/mkfs.ext2'
 
 
 @contextmanager
@@ -55,14 +56,11 @@ def createFloppyImage(size):
         f.write('\0')
 
     try:
-        commands.run(['/sbin/mkfs.ext2', "-F", path])
-    except OSError:
-        try:
-            commands.run(['/usr/sbin/mkfs.ext2', "-F", path])
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                raise SkipTest("cannot execute mkfs.ext2")
-            raise
+        commands.run([MKFS_EXEC, "-F", path])
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            raise SkipTest("cannot execute " + MKFS_EXEC)
+        raise
 
     try:
         yield path
@@ -157,7 +155,7 @@ class TestMount(VdsmTestCase):
             mountpoint = os.path.join(root_dir, 'mountpoint')
             with open(backing_image, 'w') as f:
                 os.ftruncate(f.fileno(), GiB)
-            commands.run(['/sbin/mkfs.ext2', "-F", backing_image])
+            commands.run([MKFS_EXEC, "-F", backing_image])
             os.symlink(backing_image, link_to_image)
             os.mkdir(mountpoint)
             m = mount.Mount(link_to_image, mountpoint)
