@@ -980,7 +980,7 @@ class OutputParser(object):
             if not c:
                 raise OutputParserError('copy-disk stream closed unexpectedly')
             chunk += c
-            if c == b'\r':
+            if c in [b'\n', b'\r']:
                 yield chunk
                 chunk = b''
 

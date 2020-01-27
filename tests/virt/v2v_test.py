@@ -322,7 +322,11 @@ class v2vTests(TestCaseBase):
                   b'[   1.0] Creating an overlay to protect the f...\n'
                   b'[  88.0] Copying disk 1/2 to /tmp/v2v/0000000...\n'
                   b'    (0/100%)\r'
+                  b'some messages\r'
+                  b'    (25/100%)\r'
+                  b'more messages\n'
                   b'    (50/100%)\r'
+                  b'much much more messages\r\n'
                   b'    (100/100%)\r'
                   b'[ 180.0] Copying disk 2/2 to /tmp/v2v/100000-...\n'
                   b'    (0/100%)\r'
@@ -336,6 +340,7 @@ class v2vTests(TestCaseBase):
         self.assertEqual(events, [
             (v2v.ImportProgress(1, 2, b'Copying disk 1/2')),
             (v2v.DiskProgress(0)),
+            (v2v.DiskProgress(25)),
             (v2v.DiskProgress(50)),
             (v2v.DiskProgress(100)),
             (v2v.ImportProgress(2, 2, b'Copying disk 2/2')),
