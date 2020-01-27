@@ -396,8 +396,10 @@ class SourceThread(object):
         self._update_outgoing_limit()
         try:
             startTime = time.time()
-            machineParams = self._setupRemoteMachineParams()
+            # Guest agent API version must be updated before _srcDomXML
+            # is created to have the version in _srcDomXML metadata.
             self._vm.update_guest_agent_api_version()
+            machineParams = self._setupRemoteMachineParams()
             self._setupVdsConnection()
             self._prepareGuest()
 
