@@ -531,6 +531,37 @@ def test_os_chmod_dir(oop_cleanup, tmpdir):
     verify_directory(path, mode=expected_mode)
 
 
+def test_os_link_failed_no_such_file(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path_src = str(tmpdir.join("file"))
+    path_dst = path_src + ".link"
+
+    # Source does not exist, operation fails.
+    with pytest.raises(OSError) as e:
+        iop.os.link(path_src, path_dst)
+    assert e.value.errno == errno.ENOENT
+
+
+def test_os_link(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path_src1 = str(tmpdir.join("file1"))
+    path_src2 = str(tmpdir.join("file2"))
+    path_dst = str(tmpdir.join("file.link"))
+
+    open(path_src1, "w").close()
+    open(path_src2, "w").close()
+
+    # Link does not exist, created to point to "file1".
+    iop.os.link(path_src1, path_dst)
+    assert os.path.samefile(path_src1, path_dst)
+
+    # Link exists, attempt  to override to point to "file2" should fail.
+    with pytest.raises(OSError) as e:
+        iop.os.link(path_src2, path_dst)
+    assert e.value.errno == errno.EEXIST
+    assert os.path.samefile(path_src1, path_dst)
+
+
 # os.path APIs
 
 def test_os_path_islink(oop_cleanup, tmpdir):
