@@ -483,6 +483,54 @@ def test_os_access_directory(
         assert iop.os.access(path, permission) == expected_result
 
 
+def test_os_chmod_file_failed_no_such_file(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    new_mode = 0o444
+    path = str(tmpdir.join("file"))
+
+    # File does not exist, operation should fail.
+    with pytest.raises(OSError) as e:
+        iop.os.chmod(path, new_mode)
+    assert e.value.errno == errno.ENOENT
+
+
+def test_os_chmod_file(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    new_mode = 0o444
+    path = str(tmpdir.join("file"))
+
+    open(path, "w").close()
+
+    # File exists, operation should succeed.
+    iop.os.chmod(path, new_mode)
+    expected_mode = new_mode & ~get_umask()
+    verify_file(path, mode=expected_mode)
+
+
+def test_os_chmod_dir_failed_no_such_dir(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    new_mode = 0o555
+    path = str(tmpdir.join("subdir"))
+
+    # Directory does not exist, operation should fail.
+    with pytest.raises(OSError) as e:
+        iop.os.chmod(path, new_mode)
+    assert e.value.errno == errno.ENOENT
+
+
+def test_os_chmod_dir(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    new_mode = 0o555
+    path = str(tmpdir.join("subdir"))
+
+    tmpdir.mkdir("subdir")
+
+    # Directory exists, operation should succeed.
+    iop.os.chmod(path, new_mode)
+    expected_mode = new_mode & ~get_umask()
+    verify_directory(path, mode=expected_mode)
+
+
 # os.path APIs
 
 def test_os_path_islink(oop_cleanup, tmpdir):
