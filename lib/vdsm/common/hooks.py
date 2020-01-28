@@ -131,7 +131,7 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
         if errors and raiseError:
             raise exception.HookError(err)
 
-        with open(data_filename) as f:
+        with open(data_filename, encoding='utf-8') as f:
             final_data = f.read()
     finally:
         os.unlink(data_filename)
