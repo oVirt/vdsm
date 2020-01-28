@@ -562,6 +562,42 @@ def test_os_link(oop_cleanup, tmpdir):
     assert os.path.samefile(path_src1, path_dst)
 
 
+def test_os_mkdir_default_mode(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("subdir"))
+    # The test describes the current behavior of ioprocess.os.mkdir:
+    # the default mode is 0o775 (depends on umask).
+    default_mode = 0o775
+
+    # Folder does not exist and is created successfully.
+    iop.os.mkdir(path)
+    expected_mode = default_mode & ~get_umask()
+    verify_directory(path, mode=expected_mode)
+
+    # Folder exists, operation fails.
+    with pytest.raises(OSError) as e:
+        iop.os.mkdir(path)
+    assert e.value.errno == errno.EEXIST
+    verify_directory(path, mode=expected_mode)
+
+
+def test_os_mkdir_non_default_mode(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("subdir"))
+    mode = 0o766
+
+    # Folder does not exist and is created successfully.
+    iop.os.mkdir(path, mode=mode)
+    expected_mode = mode & ~get_umask()
+    verify_directory(path, mode=expected_mode)
+
+    # Folder exists, operation fails.
+    with pytest.raises(OSError) as e:
+        iop.os.mkdir(path, mode=mode)
+    assert e.value.errno == errno.EEXIST
+    verify_directory(path, mode=expected_mode)
+
+
 # os.path APIs
 
 def test_os_path_islink(oop_cleanup, tmpdir):
