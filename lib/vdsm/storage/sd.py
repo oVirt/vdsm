@@ -818,6 +818,9 @@ class StorageDomain(object):
     def getAllVolumes(self):
         return self._manifest.getAllVolumes()
 
+    def dump(self):
+        return self._manifest.dump()
+
     def iter_volumes(self):
         """
         Iterate over all volumes.

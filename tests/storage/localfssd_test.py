@@ -826,6 +826,23 @@ def test_volume_sync_metadata(user_domain, local_fallocate):
     assert int(actual["capacity"]) == 2 * SPARSE_VOL_SIZE
 
 
+def test_dump_sd_metadata(monkeypatch, tmp_repo, user_mount, user_domain):
+    expected_metadata = {
+        "alignment": user_domain.alignment,
+        "block_size": user_domain.block_size,
+        "class": "Data",
+        "name": "domain",
+        "pool": [tmp_repo.pool_id],
+        "remotePath": user_mount.path,
+        "role": sd.REGULAR_DOMAIN,
+        "type": "LOCALFS",
+        "uuid": user_domain.sdUUID,
+        "version": str(user_domain.getVersion())
+    }
+
+    assert user_domain.dump() == {"metadata": expected_metadata}
+
+
 def verify_volume_file(
         path, format, virtual_size, qemu_info, backing_file=None):
     assert qemu_info['format'] == format

@@ -8293,6 +8293,15 @@ types:
             type: int
         type: object
 
+    StorageDomainDump: &StorageDomainDump
+        added: '4.4'
+        description: Storage domain raw metadata.
+        name: StorageDomainDump
+        properties:
+        -   description: Storage domain metadata.
+            name: metadata
+            type: *StorageDomainInfo
+        type: object
 
 Host.setupNetworks:
     added: '3.1'
@@ -9733,6 +9742,17 @@ StorageDomain.validate:
     -   description: The UUID of the Storage Domain
         name: storagedomainID
         type: *UUID
+
+StorageDomain.dump:
+    added: '4.4'
+    description: Get raw storage domain metadata from storage.
+    params:
+    -   description: The UUID of the Storage Domain.
+        name: sd_id
+        type: *UUID
+    return:
+        description: Storage domain metadata.
+        type: *StorageDomainDump
 
 StoragePool.connect:
     added: '3.1'

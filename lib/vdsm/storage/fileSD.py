@@ -835,6 +835,11 @@ class FileStorageDomain(sd.StorageDomain):
                 continue
             vol.setMetadata(vol_md)
 
+    # Dump metadata
+
+    def dump(self):
+        return {"metadata": self.getInfo()}
+
     # Validating file system features
 
     @classmethod

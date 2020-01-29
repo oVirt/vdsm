@@ -1049,6 +1049,9 @@ class StorageDomain(APIBase):
     def validate(self, storagedomainID):
         return self._irs.validateStorageDomain(storagedomainID)
 
+    def dump(self, sd_id):
+        return self._irs.dumpStorageDomain(sd_id)
+
 
 class StoragePool(APIBase):
     ctorArgs = ['storagepoolID']

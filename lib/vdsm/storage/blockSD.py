@@ -1687,6 +1687,11 @@ class BlockStorageDomain(sd.StorageDomain):
             f.flush()
             os.fsync(f.fileno())
 
+    # Dump metadata
+
+    def dump(self):
+        return {"metadata": self.getInfo()}
+
 
 def _external_leases_path(sdUUID):
     return lvm.lvPath(sdUUID, sd.XLEASES)

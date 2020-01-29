@@ -724,6 +724,52 @@ def test_create_snapshot_size(
     assert int(actual["capacity"]) == parent_vol_capacity
 
 
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("domain_version", [4, 5])
+def test_dump_sd_metadata(
+        monkeypatch,
+        tmp_storage,
+        tmp_repo,
+        fake_sanlock,
+        fake_task,
+        domain_version):
+
+    sd_uuid = str(uuid.uuid4())
+    dev = tmp_storage.create_device(20 * GiB)
+    lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_uuid)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_uuid,
+        domainName="test",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=domain_version,
+        storageType=sd.ISCSI_DOMAIN)
+    dom.refresh()
+    dom.attach(tmp_repo.pool_id)
+
+    md_dev = os.path.basename(dev)
+    expected_metadata = {
+        'uuid': sd_uuid,
+        'type': 'ISCSI',
+        'class': 'Data',
+        'name': 'test',
+        'role': sd.REGULAR_DOMAIN,
+        'pool': [tmp_repo.pool_id],
+        'version': str(domain_version),
+        'block_size': sc.BLOCK_SIZE_512,
+        'alignment': sc.ALIGNMENT_1M,
+        'vguuid': vg.uuid,
+        'state': 'OK',
+        'metadataDevice': md_dev,
+        'vgMetadataDevice': md_dev
+    }
+
+    assert dom.dump() == {"metadata": expected_metadata}
+
+
 LVM_TAG_CHARS = string.ascii_letters + "0123456789_+.-/=!:#"
 
 LVM_TAGS = [
