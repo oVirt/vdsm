@@ -6139,7 +6139,8 @@ class LiveMergeCleanupThread(object):
         self.drive = drive
         self.doPivot = doPivot
         self.success = False
-        self._thread = concurrent.thread(self.run, name="merge/" + vm.id[:8])
+        self._thread = concurrent.thread(
+            self.run, name="merge/" + job["jobID"][:8])
 
     def start(self):
         self._thread.start()
