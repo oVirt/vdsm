@@ -697,6 +697,9 @@ class clientIF(object):
                 dev, path, threshold, excess = args[:-1]
                 v.drive_monitor.on_block_threshold(
                     dev, path, threshold, excess)
+            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB:
+                drive, job_type, job_status, _ = args
+                v.on_block_job_event(drive, job_type, job_status)
             else:
                 v.log.debug('unhandled libvirt event (event_name=%s, args=%s)',
                             events.event_name(eventid), args)
