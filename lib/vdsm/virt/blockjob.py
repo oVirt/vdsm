@@ -1,4 +1,5 @@
-# Copyright 2015-2019 Red Hat, Inc.
+#
+# Copyright 2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,48 +18,20 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
+from __future__ import absolute_import
+from __future__ import division
 
-SUBDIRS = jobs vmdevices
+import libvirt
 
-vdsmvirtdir = $(vdsmpylibdir)/virt
-dist_vdsmvirt_PYTHON = \
-	__init__.py \
-	blockjob.py \
-	collectd.py \
-	displaynetwork.py \
-	domain_descriptor.py \
-	domxml_preprocess.py \
-	drivemonitor.py \
-	events.py \
-	guestagent.py \
-	libvirtnetwork.py \
-	libvirtxml.py \
-	metadata.py \
-	migration.py \
-	periodic.py \
-	qemuguestagent.py \
-	guestagenthelpers.py \
-	recovery.py \
-	sampling.py \
-	saslpasswd2.py \
-	secret.py \
-	utils.py \
-	virdomain.py \
-	vm.py \
-	vmchannels.py \
-	vmexitreason.py \
-	vmpowerdown.py \
-	vmstats.py \
-	vmstatus.py \
-	vmtune.py \
-	vmxml.py \
-	xmlconstants.py \
-	$(NULL)
+# Map virDomainBlockJobType to name.
+_TYPE = {
+    libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_UNKNOWN: "UNKNOWN",
+    libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_PULL: "PULL",
+    libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_COPY: "COPY",
+    libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_COMMIT: "COMMIT",
+    libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT: "ACTIVE_COMMIT",
+}
 
-dist_vdsmexec_SCRIPTS = \
-	vm_libvirt_hook.py \
-	$(NULL)
 
-EXTRA_DIST = \
-	$(NULL)
+def type_name(job_type):
+    return _TYPE.get(job_type, "Unknown job type {}".format(job_type))

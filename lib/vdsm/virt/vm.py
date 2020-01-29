@@ -71,6 +71,7 @@ from vdsm.storage import qemuimg
 from vdsm.storage import sd
 from vdsm.storage import sdc
 
+from vdsm.virt import blockjob
 from vdsm.virt import domxml_preprocess
 from vdsm.virt import drivemonitor
 from vdsm.virt import guestagent
@@ -5816,6 +5817,34 @@ class Vm(object):
                         startCleanup(storedJob, drive, doPivot)
                 jobsRet[jobID] = entry
         return jobsRet
+
+    def on_block_job_event(self, drive, job_type, job_status):
+        """
+        Implement virConnectDomainEventBlockJobCallback.
+
+        Currently we only log the event; we may want to use this to optimize
+        waiting for completion.
+
+        For more info see:
+        https://libvirt.org/html/libvirt-libvirt-domain.html#virConnectDomainEventBlockJobCallback
+        """  # NOQA: E501 (long line)
+        type_name = blockjob.type_name(job_type)
+
+        if job_status == libvirt.VIR_DOMAIN_BLOCK_JOB_COMPLETED:
+            self.log.info("Block job %s for drive %s has completed",
+                          type_name, drive)
+        elif job_status == libvirt.VIR_DOMAIN_BLOCK_JOB_FAILED:
+            self.log.error("Block job %s for drive %s has failed",
+                           type_name, drive)
+        elif job_status == libvirt.VIR_DOMAIN_BLOCK_JOB_CANCELED:
+            self.log.error("Block job %s for drive %s was canceled",
+                           type_name, drive)
+        elif job_status == libvirt.VIR_DOMAIN_BLOCK_JOB_READY:
+            self.log.info("Block job %s for drive %s is ready",
+                          type_name, drive)
+        else:
+            self.log.error("Block job %s for drive %s: unexpected status %s",
+                           type_name, drive, job_status)
 
     def merge(self, driveSpec, baseVolUUID, topVolUUID, bandwidth, jobUUID):
         bandwidth = int(bandwidth)
