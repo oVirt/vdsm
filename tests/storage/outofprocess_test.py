@@ -208,18 +208,57 @@ def test_fileutils_copyusermodetogroup(
     verify_file(path, mode=expected_mode)
 
 
-def test_fileutils_createdir(oop_cleanup, tmpdir):
+def test_fileutils_createdir_default_mode(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
-    d1 = str(tmpdir.join("subdir1"))
-    d2 = str(tmpdir.join("subdir2"))
-
+    path = str(tmpdir.join("subdir1", "subdir2", "subdir3"))
     # The test describes the current behavior of ioprocess.fileUtils.createdir:
     # the default mode is 0o775 (depends on umask).
-    iop.fileUtils.createdir(d1)
-    verify_directory(d1, mode=0o775 & ~get_umask())
+    default_mode = 0o775
 
-    iop.fileUtils.createdir(d2, mode=0o666)
-    verify_directory(d2, mode=0o666 & ~get_umask())
+    # Folder does not exist and is created successfully.
+    iop.fileUtils.createdir(path)
+    expected_mode = default_mode & ~get_umask()
+    verify_directory(path, mode=expected_mode)
+
+    # Folder exists, mode matches, operation should fail silently.
+    iop.fileUtils.createdir(path)
+    verify_directory(path, mode=expected_mode)
+
+
+@pytest.mark.xfail(reason="There is a bug in outOfProcess.fileUtils.createdir")
+def test_fileutils_createdir_non_default_mode(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("subdir1", "subdir2", "subdir3"))
+    mode = 0o766
+
+    # Folder does not exist and is created successfully.
+    iop.fileUtils.createdir(path, mode=mode)
+    expected_mode = mode & ~get_umask()
+    verify_directory(path, mode=expected_mode)
+
+    # Folder exists, mode matches, operation should fail silently.
+    iop.fileUtils.createdir(path, mode=mode)
+    verify_directory(path, mode=expected_mode)
+
+    # Folder exists, mode doesn't match, operation should fail.
+    with pytest.raises(OSError) as e:
+        iop.fileUtils.createdir(path, mode=0o666)
+    assert e.value.errno == errno.EPERM
+
+
+@requires_unprivileged_user
+def test_fileutils_createdir_bad_permissions(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("subdir1", "subdir2", "subdir3"))
+    mode = 0o666
+
+    # Should create the first folder in the path and fail on the second one.
+    with pytest.raises(OSError) as e:
+        iop.fileUtils.createdir(path, mode=mode)
+    assert e.value.errno == errno.EACCES
+
+    assert os.path.exists(str(tmpdir.join("subdir1")))
+    assert not os.path.exists(str(tmpdir.join("subdir1", "subdir2")))
 
 
 @pytest.mark.parametrize("orig_size, expected_size", [
