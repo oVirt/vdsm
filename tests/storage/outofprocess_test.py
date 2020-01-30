@@ -619,6 +619,44 @@ def test_os_remove(oop_cleanup, tmpdir):
     assert not os.path.exists(path)
 
 
+def test_os_rename_failed_no_such_file(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path_src = str(tmpdir.join("file_src"))
+    path_dst = str(tmpdir.join("file_dst"))
+
+    # Source & destination do not exist, operation fails.
+    with pytest.raises(OSError) as e:
+        iop.os.rename(path_src, path_dst)
+    assert e.value.errno == errno.ENOENT
+
+    open(path_dst, "w").close()
+
+    # Source does not exist, destination exists, operation fails.
+    with pytest.raises(OSError) as e:
+        iop.os.rename(path_src, path_dst)
+    assert e.value.errno == errno.ENOENT
+
+
+def test_os_rename(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path_src = str(tmpdir.join("file_src"))
+    path_dst = str(tmpdir.join("file_dst"))
+
+    open(path_src, "w").close()
+
+    # Source exists, destination does not exist. Source renamed to destination.
+    iop.os.rename(path_src, path_dst)
+    assert not os.path.exists(path_src)
+    assert os.path.exists(path_dst)
+
+    open(path_src, "w").close()
+
+    # Source & destination exist, override the destination.
+    iop.os.rename(path_src, path_dst)
+    assert not os.path.exists(path_src)
+    assert os.path.exists(path_dst)
+
+
 # os.path APIs
 
 def test_os_path_islink(oop_cleanup, tmpdir):
