@@ -657,6 +657,25 @@ def test_os_rename(oop_cleanup, tmpdir):
     assert os.path.exists(path_dst)
 
 
+def test_os_rmdir_failed_no_such_dir(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("subdir"))
+
+    # Directory does not exist, operation should fail.
+    with pytest.raises(OSError) as e:
+        iop.os.rmdir(path)
+    assert e.value.errno == errno.ENOENT
+
+
+def test_os_rmdir(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.mkdir("subdir"))
+
+    # Directory exists, operation should succeed.
+    iop.os.rmdir(path)
+    assert not os.path.exists(path)
+
+
 # os.path APIs
 
 def test_os_path_islink(oop_cleanup, tmpdir):
