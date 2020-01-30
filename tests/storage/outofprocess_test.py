@@ -676,6 +676,27 @@ def test_os_rmdir(oop_cleanup, tmpdir):
     assert not os.path.exists(path)
 
 
+def test_os_unlink_no_such_file(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    # File does not exist, operation should fail.
+    with pytest.raises(OSError) as e:
+        iop.os.unlink(path)
+    assert e.value.errno == errno.ENOENT
+
+
+def test_os_unlink(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    open(path, "w").close()
+
+    # File exists, operation should succeed.
+    iop.os.unlink(path)
+    assert not os.path.exists(path)
+
+
 # os.path APIs
 
 def test_os_path_islink(oop_cleanup, tmpdir):
