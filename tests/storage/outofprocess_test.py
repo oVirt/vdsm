@@ -676,6 +676,28 @@ def test_os_rmdir(oop_cleanup, tmpdir):
     assert not os.path.exists(path)
 
 
+def test_os_stat_failed_no_such_file(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    # File does not exist, operation should fail.
+    with pytest.raises(OSError) as e:
+        iop.os.stat(path)
+    assert e.value.errno == errno.ENOENT
+
+
+def test_os_stat(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    open(path, "w").close()
+
+    # File exists, operation should succeed.
+    iop_stat = iop.os.stat(path)
+    os_stat = os.stat(path)
+    check_stat(iop_stat, os_stat)
+
+
 def test_os_statvfs_failed_no_such_file(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.join("file"))
@@ -984,6 +1006,23 @@ def chown(path, uid=-1, gid=-1):
         except Exception as e:
             logging.error("Failed to restore %r to uid %d gid %d: %s",
                           path, orig_uid, orig_gid, e)
+
+
+def check_stat(iop_stat, os_stat):
+    # TODO; similar problem as described in the below "TODO".
+    #  "st_blocks" doesn't appear in "os.stat(path)", but its "hasattr"
+    #  returns True as if the attribute does appear!
+    #  Comparison doesn't fail since both "getattr" return zero.
+    common_fields = [field
+                     for field in iop_stat._fields
+                     if hasattr(os_stat, field)]
+    for field in common_fields:
+        if field in ("st_atime", "st_mtime", "st_ctime"):
+            # These are float\double values and due to the many conversions
+            # the values experience during marshaling they cannot be equated.
+            # The rest of the fields are a good enough test.
+            continue
+        assert getattr(iop_stat, field) == getattr(os_stat, field)
 
 
 def check_statvfs(iop_statvfs, os_statvfs):
