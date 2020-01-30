@@ -676,6 +676,28 @@ def test_os_rmdir(oop_cleanup, tmpdir):
     assert not os.path.exists(path)
 
 
+def test_os_statvfs_failed_no_such_file(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    # File does not exist, operation should fail.
+    with pytest.raises(OSError) as e:
+        iop.os.statvfs(path)
+    assert e.value.errno == errno.ENOENT
+
+
+def test_os_statvfs(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    open(path, "w").close()
+
+    # File exists, operation should succeed.
+    iop_statvfs = iop.os.statvfs(path)
+    os_statvfs = os.statvfs(path)
+    check_statvfs(iop_statvfs, os_statvfs)
+
+
 def test_os_unlink_no_such_file(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.join("file"))
@@ -962,3 +984,16 @@ def chown(path, uid=-1, gid=-1):
         except Exception as e:
             logging.error("Failed to restore %r to uid %d gid %d: %s",
                           path, orig_uid, orig_gid, e)
+
+
+def check_statvfs(iop_statvfs, os_statvfs):
+    # TODO: need to understand why it doesn't work for "f_fsid".
+    #  For some reason "os.statvfs(path)" returns an object without "f_fsid",
+    #  but "hasattr" returns True as if the attribute does appear!
+    #  After that "getattr" returns some value that fails the below comparison.
+    common_fields = [field
+                     for field in iop_statvfs._fields
+                     if hasattr(os_statvfs, field) and field != "f_fsid"]
+
+    for field in common_fields:
+        assert getattr(iop_statvfs, field) == getattr(os_statvfs, field)
