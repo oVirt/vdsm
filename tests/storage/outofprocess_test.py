@@ -598,6 +598,27 @@ def test_os_mkdir_non_default_mode(oop_cleanup, tmpdir):
     verify_directory(path, mode=expected_mode)
 
 
+def test_os_remove_failed_no_such_file(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    # File does not exist, operation should fail.
+    with pytest.raises(OSError) as e:
+        iop.os.remove(path)
+    assert e.value.errno == errno.ENOENT
+
+
+def test_os_remove(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    open(path, "w").close()
+
+    # File exists, operation should succeed.
+    iop.os.remove(path)
+    assert not os.path.exists(path)
+
+
 # os.path APIs
 
 def test_os_path_islink(oop_cleanup, tmpdir):
