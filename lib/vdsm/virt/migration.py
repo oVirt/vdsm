@@ -653,7 +653,7 @@ class SourceThread(object):
     def _recovery_run(self):
         self.log.debug("Starting migration recovery thread")
         while True:
-            job_stats = self._vm._dom.jobStats()
+            job_stats = self._vm.job_stats()
             if not ongoing(job_stats):
                 break
             time.sleep(self._RECOVERY_LOOP_PAUSE)
@@ -744,7 +744,7 @@ class MonitorThread(object):
             if stopped:
                 break
 
-            job_stats = self._vm._dom.jobStats()
+            job_stats = self._vm.job_stats()
             # It may happen that the migration did not start yet
             # so we'll keep waiting
             if not ongoing(job_stats):
