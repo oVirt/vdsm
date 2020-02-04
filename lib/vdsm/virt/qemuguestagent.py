@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,8 +39,7 @@ import libvirt
 #   change state behind libvirt's back may cause libvirt to misbehave.
 #
 # So let's be careful and use the interface only to gather information and not
-# to change state of the guest. There's no evidence (in code or logs) that
-# using the interface should taint the guest.
+# to change state of the guest.
 #
 # [1] https://wiki.libvirt.org/page/Qemu_guest_agent
 import libvirt_qemu
@@ -82,6 +81,54 @@ _COMMAND_TIMEOUT = config.getint('guest_agent', 'qga_command_timeout')
 _TASK_TIMEOUT = config.getint('guest_agent', 'qga_task_timeout')
 _THROTTLING_INTERVAL = 60
 
+# TODO: Remove the try-except when we switch to newer libvirt. The constants
+#       are only available in 5.9.0 and newer.
+try:
+    from libvirt import \
+        VIR_DOMAIN_GUEST_INFO_USERS,  \
+        VIR_DOMAIN_GUEST_INFO_OS, \
+        VIR_DOMAIN_GUEST_INFO_TIMEZONE, \
+        VIR_DOMAIN_GUEST_INFO_HOSTNAME, \
+        VIR_DOMAIN_GUEST_INFO_FILESYSTEM
+except ImportError:
+    VIR_DOMAIN_GUEST_INFO_USERS = (1 << 0)
+    VIR_DOMAIN_GUEST_INFO_OS = (1 << 1)
+    VIR_DOMAIN_GUEST_INFO_TIMEZONE = (1 << 2)
+    VIR_DOMAIN_GUEST_INFO_HOSTNAME = (1 << 3)
+    VIR_DOMAIN_GUEST_INFO_FILESYSTEM = (1 << 4)
+
+# These values are needed internaly and are not defined by libvirt. Beware
+# that the values cannot colide with those for VIR_DOMAIN_GUEST_INFO_*
+# constants!
+VDSM_GUEST_INFO = (1 << 30)
+VDSM_GUEST_INFO_NETWORK = (1 << 31)
+
+_QEMU_COMMANDS = {
+    VDSM_GUEST_INFO_NETWORK: _QEMU_NETWORK_INTERFACES_COMMAND,
+    VIR_DOMAIN_GUEST_INFO_FILESYSTEM: _QEMU_FSINFO_COMMAND,
+    VIR_DOMAIN_GUEST_INFO_HOSTNAME: _QEMU_HOST_NAME_COMMAND,
+    VIR_DOMAIN_GUEST_INFO_OS: _QEMU_OSINFO_COMMAND,
+    VIR_DOMAIN_GUEST_INFO_TIMEZONE: _QEMU_TIMEZONE_COMMAND,
+    VIR_DOMAIN_GUEST_INFO_USERS: _QEMU_ACTIVE_USERS_COMMAND,
+}
+
+_QEMU_COMMAND_PERIODS = {
+    VDSM_GUEST_INFO:
+        config.getint('guest_agent', 'qga_info_period'),
+    VDSM_GUEST_INFO_NETWORK:
+        config.getint('guest_agent', 'qga_sysinfo_period'),
+    VIR_DOMAIN_GUEST_INFO_FILESYSTEM:
+        config.getint('guest_agent', 'qga_disk_info_period'),
+    VIR_DOMAIN_GUEST_INFO_HOSTNAME:
+        config.getint('guest_agent', 'qga_sysinfo_period'),
+    VIR_DOMAIN_GUEST_INFO_OS:
+        config.getint('guest_agent', 'qga_sysinfo_period'),
+    VIR_DOMAIN_GUEST_INFO_TIMEZONE:
+        config.getint('guest_agent', 'qga_sysinfo_period'),
+    VIR_DOMAIN_GUEST_INFO_USERS:
+        config.getint('guest_agent', 'qga_active_users_period'),
+}
+
 
 class QemuGuestAgentPoller(object):
 
@@ -101,63 +148,31 @@ class QemuGuestAgentPoller(object):
         self._guest_info = defaultdict(dict)
         self._last_failure_lock = threading.Lock()
         self._last_failure = {}
+        self._last_check_lock = threading.Lock()
+        # Key is tuple (vm_id, command)
+        self._last_check = defaultdict(lambda: 0)
+        self._get_guest_info = self._qga_get_all_info
 
     def start(self):
         if not config.getboolean('guest_agent', 'enable_qga_poller'):
             self.log.info('Not starting QEMU-GA poller. It is disabled in'
                           ' configuration')
             return
-
-        def per_vm_operation(job, period):
-            disp = periodic.VmDispatcher(
-                self._cif.getVMs, self._executor,
-                lambda vm: job(vm, self),
-                _TASK_TIMEOUT)
-            return periodic.Operation(
-                disp, period, self._scheduler, timeout=_TASK_TIMEOUT,
-                executor=self._executor)
-
-        self._operations = [
-
-            periodic.Operation(
-                self._cleanup,
-                config.getint('guest_agent', 'cleanup_period'),
-                self._scheduler, executor=self._executor),
-
-            # Monitor what QEMU-GA offers
-            per_vm_operation(
-                CapabilityCheck,
-                config.getint('guest_agent', 'qga_info_period')),
-
-            # Basic system information
-            per_vm_operation(
-                SystemInfoCheck,
-                config.getint('guest_agent', 'qga_sysinfo_period')),
-            per_vm_operation(
-                NetworkInterfacesCheck,
-                config.getint('guest_agent', 'qga_sysinfo_period')),
-
-            # List of active users
-            per_vm_operation(
-                ActiveUsersCheck,
-                config.getint('guest_agent', 'qga_active_users_period')),
-
-            # Filesystem info and disk mapping
-            per_vm_operation(
-                DiskInfoCheck,
-                config.getint('guest_agent', 'qga_disk_info_period')),
-        ]
-
+        self._operation = periodic.Operation(
+            self._poller,
+            config.getint('guest_agent', 'qga_polling_period'),
+            self._scheduler,
+            timeout=_TASK_TIMEOUT,
+            executor=self._executor,
+            exclusive=True)
         self.log.info("Starting QEMU-GA poller")
         self._executor.start()
-        for op in self._operations:
-            op.start()
+        self._operation.start()
 
     def stop(self):
         """"Stop the QEMU-GA poller execution"""
         self.log.info("Stopping QEMU-GA poller")
-        for op in self._operations:
-            op.stop()
+        self._operation.stop()
 
     def get_caps(self, vm_id):
         with self._capabilities_lock:
@@ -187,6 +202,15 @@ class QemuGuestAgentPoller(object):
     def set_failure(self, vm_id):
         with self._last_failure_lock:
             self._last_failure[vm_id] = monotonic_time()
+
+    def last_check(self, vm_id, command):
+        return self._last_check[(vm_id, command)]
+
+    def set_last_check(self, vm_id, command, time=None):
+        if time is None:
+            time = monotonic_time()
+        with self._last_check_lock:
+            self._last_check[(vm_id, command)] = time
 
     def call_qga_command(self, vm, command, args=None):
         """
@@ -235,11 +259,73 @@ class QemuGuestAgentPoller(object):
             return None
         return parsed['return']
 
-    def fake_appsList(self, vm_id, os_info=None):
+    def _poller(self):
+        for vm_id, vm_obj in six.viewitems(self._cif.getVMs()):
+            # Update capabilities
+            # TODO: check elapsed time (handle VM boot)
+            if not self._runnable_on_vm(vm_obj):
+                self.log.debug(
+                    'Skipping vm-id=%s in this run and not querying QEMU-GA',
+                    vm_id)
+                continue
+            self._qga_capability_check(vm_obj)
+            caps = self.get_caps(vm_id)
+            if caps is None:
+                continue
+            # Update guest info
+            types = 0
+            now = monotonic_time()
+            for command in _QEMU_COMMANDS.keys():
+                if _QEMU_COMMANDS[command] not in caps['commands']:
+                    continue
+                if now - self.last_check(vm_id, command) \
+                        < _QEMU_COMMAND_PERIODS[command]:
+                    continue
+                if command == VDSM_GUEST_INFO_NETWORK:
+                    self.update_guest_info(
+                        vm_id, self._qga_call_network_interfaces(vm_obj))
+                    self.set_last_check(vm_id, command, now)
+                else:
+                    types |= command
+            info = self._get_guest_info(vm_obj, types)
+            if info is None:
+                self.log.debug('Failed to query QEMU-GA for vm=%s', vm_id)
+                self.set_failure(vm_id)
+            else:
+                self.update_guest_info(vm_id, info)
+                for command in _QEMU_COMMANDS.keys():
+                    if types & command:
+                        self.set_last_check(vm_id, command, now)
+        # Remove stale info
+        self._cleanup()
+
+    def _qga_get_all_info(self, vm, types):
+        """
+        Get info by calling QEMU-GA directly. Interface emulates the
+        libvirt API.
+        """
+        guest_info = {}
+        if types == 0:
+            return guest_info
+        self.log.debug(
+            'qemu-ga: fetching info vm_id=%r types=%s', vm.id, bin(types))
+        if types & VIR_DOMAIN_GUEST_INFO_FILESYSTEM:
+            guest_info.update(self._qga_call_fsinfo(vm))
+        if types & VIR_DOMAIN_GUEST_INFO_HOSTNAME:
+            guest_info.update(self._qga_call_hostname(vm))
+        if types & VIR_DOMAIN_GUEST_INFO_OS:
+            guest_info.update(self._qga_call_osinfo(vm))
+        if types & VIR_DOMAIN_GUEST_INFO_TIMEZONE:
+            guest_info.update(self._qga_call_timezone(vm))
+        if types & VIR_DOMAIN_GUEST_INFO_USERS:
+            guest_info.update(self._qga_call_active_users(vm))
+        return guest_info
+
+    def fake_apps_list(self, vm_id, os_id=None, kernel_release=None):
         """ Create fake appsList entry in guest info """
         guest_info = {}
-        if os_info is not None:
-            if os_info.get(_OS_ID_FIELD) == _GUEST_OS_WINDOWS:
+        if os_id is not None:
+            if os_id == _GUEST_OS_WINDOWS:
                 guest_info['appsList'] = (
                     'QEMU guest agent',
                 )
@@ -247,7 +333,7 @@ class QemuGuestAgentPoller(object):
                 caps = self.get_caps(vm_id)
                 if caps is not None and caps['version'] is not None:
                     guest_info['appsList'] = (
-                        'kernel-%s' % os_info["kernel-release"],
+                        'kernel-%s' % kernel_release,
                         'qemu-guest-agent-%s' % caps['version'],
                     )
         else:
@@ -285,97 +371,80 @@ class QemuGuestAgentPoller(object):
                 if vm_id not in vm_container:
                     del self._last_failure[vm_id]
                     removed.add(vm_id)
-        self.log.debug('Cleaned up old data for VMs: %s', removed)
+        with self._last_check_lock:
+            for vm_id, command in copy.copy(self._last_check):
+                if vm_id not in vm_container:
+                    del self._last_check[(vm_id, command)]
+                    removed.add(vm_id)
+        if removed:
+            self.log.debug('Cleaned up old data for VMs: %s', removed)
 
-
-class _RunnableOnVmGuestAgent(periodic._RunnableOnVm):
-    def __init__(self, vm, qga_poller):
-        super(_RunnableOnVmGuestAgent, self).__init__(vm)
-        self._qga_poller = qga_poller
-
-    @property
-    def runnable(self):
-        if not self._vm.isDomainReadyForCommands():
-            return False
-        last_failure = self._qga_poller.last_failure(self._vm.id)
+    def _runnable_on_vm(self, vm):
+        last_failure = self.last_failure(vm.id)
         if last_failure is not None and \
                 (monotonic_time() - last_failure) < _THROTTLING_INTERVAL:
             return False
         return True
 
-
-class ActiveUsersCheck(_RunnableOnVmGuestAgent):
-    """
-    Get list of active users from the guest OS
-    """
-    def _execute(self):
+    def _qga_call_active_users(self, vm):
+        """ Get list of active users from the guest OS """
+        def format_user(user):
+            if user.get('domain', '') != '':
+                return user['user'] + '@' + user['domain']
+            else:
+                return user['user']
         guest_info = {}
-        ret = self._qga_poller.call_qga_command(
-            self._vm, _QEMU_ACTIVE_USERS_COMMAND)
+        ret = self.call_qga_command(vm, _QEMU_ACTIVE_USERS_COMMAND)
         if ret is None:
-            return
+            return {}
         try:
-            users = [self.format_user(u) for u in ret]
+            users = [format_user(u) for u in ret]
             guest_info['username'] = ', '.join(users)
         except:
-            self._qga_poller.log.warning(
+            self.log.warning(
                 'Invalid message returned to call \'%s\': %r',
                 _QEMU_ACTIVE_USERS_COMMAND, ret)
-        self._qga_poller.update_guest_info(self._vm.id, guest_info)
+        return guest_info
 
-    def format_user(self, user):
-        if user.get('domain', '') != '':
-            return user['user'] + '@' + user.get('domain', '')
-        else:
-            return user['user']
+    def _qga_capability_check(self, vm):
+        """
+        This check queries information about installed QEMU Guest Agent.
+        What interests us the most is the list of supported commands.
 
-
-class CapabilityCheck(_RunnableOnVmGuestAgent):
-    """
-    This check queries information about installed QEMU Guest Agent.
-    What interests us the most is the list of supported commands.
-
-    This cannot be a one-time check and we need periodic task for this. The
-    capabilities can change duringe the life-time of the VM. When QEMU-GA is
-    installed, upgraded or removed this will change the list of available
-    commands and we definitely don't want the user to start & stop the VM.
-    """
-    def _execute(self):
+        This cannot be a one-time check and we need periodic task for this.
+        The capabilities can change duringe the life-time of the VM. When
+        QEMU-GA is installed, upgraded or removed this will change the list of
+        available Commands and we definitely don't want the user to start &
+        stop the VM.
+        """
         caps = {
             'version': None,
             'commands': [],
         }
-        ret = self._qga_poller.call_qga_command(
-            self._vm,
-            _QEMU_GUEST_INFO_COMMAND)
+        ret = self.call_qga_command(vm, _QEMU_GUEST_INFO_COMMAND)
         if ret is not None:
             caps['version'] = ret['version']
-            caps['commands'] = set([
-                c['name'] for c in ret['supported_commands'] if c['enabled']])
-        self._qga_poller.log.debug('QEMU-GA caps (vm_id=%s): %r',
-                                   self._vm.id, caps)
-        self._qga_poller.update_caps(self._vm.id, caps)
-        info = self._qga_poller.get_caps(self._vm.id)
-        if 'appsList' not in info:
-            self._qga_poller.fake_appsList(self._vm.id)
+            caps['commands'] = set(
+                [c['name'] for c in ret['supported_commands']
+                    if c['enabled']])
+        self.log.debug('QEMU-GA caps (vm_id=%s): %r', vm.id, caps)
+        self.update_caps(vm.id, caps)
+        info = self.get_guest_info(vm.id)
+        if info is None or 'appsList' not in info:
+            self.fake_apps_list(vm.id)
 
-
-class DiskInfoCheck(_RunnableOnVmGuestAgent):
-    """
-    Get file system information and disk mapping
-    """
-    def _execute(self):
+    def _qga_call_fsinfo(self, vm):
+        """ Get file system information and disk mapping """
         disks = []
         mapping = {}
-        ret = self._qga_poller.call_qga_command(
-            self._vm, _QEMU_FSINFO_COMMAND)
+        ret = self.call_qga_command(vm, _QEMU_FSINFO_COMMAND)
         if ret is None:
-            return
+            return {}
         for fs in ret:
             try:
                 fsinfo = guestagenthelpers.translate_fsinfo(fs)
             except ValueError:
-                self._qga_poller.log.warning(
+                self.log.warning(
                     'Invalid message returned to call \'%s\': %r',
                     _QEMU_FSINFO_COMMAND, ret)
                 continue
@@ -390,86 +459,60 @@ class DiskInfoCheck(_RunnableOnVmGuestAgent):
                         _FS_DISK_DEVICE_FIELD in d:
                     mapping[d[_FS_DISK_SERIAL_FIELD]] = \
                         {'name': d[_FS_DISK_DEVICE_FIELD]}
-        self._qga_poller.update_guest_info(
-            self._vm.id,
-            {'disksUsage': disks, 'diskMapping': mapping})
+        return {'disksUsage': disks, 'diskMapping': mapping}
 
-
-class SystemInfoCheck(_RunnableOnVmGuestAgent):
-    """
-    Get the information about system configuration that does not change
-    too often.
-    """
-    def _execute(self):
-        guest_info = {}
-
-        # Host name
-        ret = self._qga_poller.call_qga_command(
-            self._vm, _QEMU_HOST_NAME_COMMAND)
+    def _qga_call_hostname(self, vm):
+        ret = self.call_qga_command(vm, _QEMU_HOST_NAME_COMMAND)
         if ret is not None:
             if _HOST_NAME_FIELD not in ret:
-                self._qga_poller.log.warning(
+                self.log.warning(
                     'Invalid message returned to call \'%s\': %r',
                     _QEMU_HOST_NAME_COMMAND, ret)
             else:
-                guest_info['guestName'] = ret[_HOST_NAME_FIELD]
-                guest_info['guestFQDN'] = ret[_HOST_NAME_FIELD]
+                return {'guestName': ret[_HOST_NAME_FIELD],
+                        'guestFQDN': ret[_HOST_NAME_FIELD]}
+        return {}
 
-        # OS version and architecture
-        ret = self._qga_poller.call_qga_command(self._vm, _QEMU_OSINFO_COMMAND)
+    def _qga_call_osinfo(self, vm):
+        ret = self.call_qga_command(vm, _QEMU_OSINFO_COMMAND)
         if ret is not None:
             if ret.get(_OS_ID_FIELD) == _GUEST_OS_WINDOWS:
-                guest_info.update(
-                    guestagenthelpers.translate_windows_osinfo(ret))
+                return guestagenthelpers.translate_windows_osinfo(ret)
             else:
-                guest_info.update(
-                    guestagenthelpers.translate_linux_osinfo(ret))
-            self._qga_poller.fake_appsList(self._vm.id, ret)
+                self.fake_apps_list(vm.id, ret['id'], ret['kernel-release'])
+                return guestagenthelpers.translate_linux_osinfo(ret)
+        return {}
 
-        # Timezone
-        ret = self._qga_poller.call_qga_command(
-            self._vm, _QEMU_TIMEZONE_COMMAND)
+    def _qga_call_timezone(self, vm):
+        ret = self.call_qga_command(vm, _QEMU_TIMEZONE_COMMAND)
         if ret is not None:
             if _TIMEZONE_OFFSET_FIELD not in ret:
-                self._qga_poller.log.warning(
+                self.log.warning(
                     'Invalid message returned to call \'%s\': %r',
                     _QEMU_TIMEZONE_COMMAND, ret)
             else:
-                guest_info['guestTimezone'] = {
+                return {'guestTimezone': {
                     'offset': ret[_TIMEZONE_OFFSET_FIELD] // 60,
                     'zone': ret.get(_TIMEZONE_ZONE_FIELD, 'unknown'),
-                }
+                }}
+        return {}
 
-        self._qga_poller.update_guest_info(self._vm.id, guest_info)
-
-
-class NetworkInterfacesCheck(_RunnableOnVmGuestAgent):
-    """
-    Get the information about network interfaces. There is a libvirt call
-    around the QEMU-GA command that we can use. But it still uses the QEMU-GA
-    so it makes sense to do all the pre-checks as if we were calling QEMU-GA
-    directly.
-    """
-    def _execute(self):
-        caps = self._qga_poller.get_caps(self._vm.id)
-        if caps is None or \
-                _QEMU_NETWORK_INTERFACES_COMMAND not in caps['commands']:
-            self._qga_poller.log.debug(
-                'Not querying network interfaces for vm_id=\'%s\'',
-                self._vm.id)
-            return
-
+    def _qga_call_network_interfaces(self, vm):
+        """
+        Get the information about network interfaces. There is a libvirt call
+        around the QEMU-GA command that we can use.
+        """
         # NOTE: The field guestIPs is not used in oVirt Engine since 4.2
         #       so don't even bother filling it.
         guest_info = {'netIfaces': [], 'guestIPs': ''}
         interfaces = {}
         try:
-            interfaces = self._vm._dom.interfaceAddresses(
+            self.log.debug('Requesting NIC info for vm=%s', vm.id)
+            interfaces = vm._dom.interfaceAddresses(
                 libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
         except libvirt.libvirtError:
-            self._qga_poller.set_failure(self._vm.id)
-            return
-
+            self.set_failure(vm.id)
+            return {}
         for ifname, ifparams in six.iteritems(interfaces):
             iface = {
                 'hw': ifparams.get('hwaddr', ''),
@@ -488,4 +531,4 @@ class NetworkInterfacesCheck(_RunnableOnVmGuestAgent):
                 elif iftype == libvirt.VIR_IP_ADDR_TYPE_IPV6:
                     iface['inet6'].append(address)
             guest_info['netIfaces'].append(iface)
-        self._qga_poller.update_guest_info(self._vm.id, guest_info)
+        return guest_info

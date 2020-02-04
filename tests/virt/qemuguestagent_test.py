@@ -193,6 +193,15 @@ class QemuGuestAgentTests(TestCaseBase):
         self.assertEqual(c1, c3)
         self.assertNotEqual(c2, c3)
 
+    def test_cmd_arrays(self):
+        """
+        Make sure the internal arrays are consistent.
+        """
+        self.assertTrue(
+            frozenset(qemuguestagent._QEMU_COMMANDS.keys())
+            .issubset(
+                frozenset(qemuguestagent._QEMU_COMMAND_PERIODS.keys())))
+
     def test_failure(self):
         """ Make sure failure timestamp is set on errors. """
         def _qga_command_fail(*args, **kwargs):
@@ -224,25 +233,20 @@ class QemuGuestAgentTests(TestCaseBase):
         self.qga_poller.update_caps(
             self.vm.id,
             {"version": "0.0", "commands": []})
-        caps = qemuguestagent.CapabilityCheck(self.vm, self.qga_poller)
-        caps._execute()
+        self.qga_poller._qga_capability_check(self.vm)
         c = self.qga_poller.get_caps(self.vm.id)
         self.assertEqual(c['version'], '1.2.3')
         self.assertTrue('guest-info' in c['commands'])
         self.assertFalse('guest-exec' in c['commands'])
 
     def test_active_users(self):
-        c = qemuguestagent.ActiveUsersCheck(self.vm, self.qga_poller)
-        c._execute()
         self.assertEqual(
-            self.qga_poller.get_guest_info(self.vm.id),
+            self.qga_poller._qga_call_active_users(self.vm),
             {'username': 'Calvin@DESKTOP-NG2EVRF, Hobbes'})
 
     def test_disk_info(self):
-        c = qemuguestagent.DiskInfoCheck(self.vm, self.qga_poller)
-        c._execute()
         self.assertEqual(
-            self.qga_poller.get_guest_info(self.vm.id),
+            self.qga_poller._qga_call_fsinfo(self.vm),
             {
                 'disksUsage': [{
                     'path': '/home',
@@ -256,13 +260,15 @@ class QemuGuestAgentTests(TestCaseBase):
             })
 
     def test_system_info(self):
-        c = qemuguestagent.SystemInfoCheck(self.vm, self.qga_poller)
-        c._execute()
         self.assertEqual(
-            self.qga_poller.get_guest_info(self.vm.id),
+            self.qga_poller._qga_call_hostname(self.vm),
             {
                 'guestName': 'test-host',
                 'guestFQDN': 'test-host',
+            })
+        self.assertEqual(
+            self.qga_poller._qga_call_osinfo(self.vm),
+            {
                 'guestOs': '4.13.9-300.fc27.x86_64',
                 'guestOsInfo': {
                     'kernel': '4.13.9-300.fc27.x86_64',
@@ -272,10 +278,17 @@ class QemuGuestAgentTests(TestCaseBase):
                     'type': 'linux',
                     'codename': 'Cloud Edition'
                 },
-                'appsList': (
-                    'kernel-4.13.9-300.fc27.x86_64',
-                    'qemu-guest-agent-0.0-test'
-                ),
+            })
+        # (fake) appsList should exists after _qga_call_osinfo()
+        self.assertEqual(
+            self.qga_poller.get_guest_info(self.vm.id)['appsList'],
+            (
+                'kernel-4.13.9-300.fc27.x86_64',
+                'qemu-guest-agent-0.0-test'
+            ))
+        self.assertEqual(
+            self.qga_poller._qga_call_timezone(self.vm),
+            {
                 'guestTimezone': {
                     'offset': 60,
                     'zone': 'CET',
@@ -283,9 +296,7 @@ class QemuGuestAgentTests(TestCaseBase):
             })
 
     def test_network_interfaces(self):
-        c = qemuguestagent.NetworkInterfacesCheck(self.vm, self.qga_poller)
-        c._execute()
-        info = self.qga_poller.get_guest_info(self.vm.id)
+        info = self.qga_poller._qga_call_network_interfaces(self.vm)
         ifaces = info['netIfaces']
         iflo = [x for x in ifaces if x['name'] == 'lo'][0]
         ifens2 = [x for x in ifaces if x['name'] == 'ens2'][0]

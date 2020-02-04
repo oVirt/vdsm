@@ -636,10 +636,6 @@ parameters = [
             'Maximum number of worker threads to serve the periodic tasks '
             'at the same time.'),
 
-        ('cleanup_period', '3600',
-            'How often do the household cleaning and free data about VMs'
-            ' that are no longer running.'),
-
         # WARNING: This should be as small as possible, we cannot wait for
         # unresponsive agent. When the call is blocked the libvirt domain is
         # locked and thus lots of other libvirt calls on the domain are blocked
@@ -649,10 +645,15 @@ parameters = [
             ' Guest Agent.'
             ' This is for internal usage and may change without warning'),
 
-        ('qga_task_timeout', '10',
+        ('qga_task_timeout', '30',
             'Time (in sec) to wait for completion of periodic task.'
             ' After this time the task is stopped and worker is discarded.'
             ),
+
+        ('qga_polling_period', '5',
+            'Period (in sec) with which to execute the polling worker.'
+            ' All the other qga_*_period options need to be multiples of this'
+            ' value.'),
 
         ('qga_info_period', '300',
             'Period (in sec) with which to query the information about'
