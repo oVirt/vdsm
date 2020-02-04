@@ -25,7 +25,7 @@ RUN dnf install -y \
     # Make NM upgrade available
     dnf -y install dnf-plugins-core \
     && \
-    dnf copr enable networkmanager/NetworkManager-1.20 -y \
+    dnf copr enable networkmanager/NetworkManager-1.22 -y \
     && \
     dnf update -y \
     && \
