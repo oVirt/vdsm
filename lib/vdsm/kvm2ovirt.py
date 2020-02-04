@@ -58,6 +58,16 @@ class StreamAdapter(object):
         self.read = stream.recv
         self._stream = stream
 
+    def readinto(self, b):
+        # This method is required for `io` module compatibility.
+        temp = self.read(len(b))
+        temp_len = len(temp)
+        if temp_len == 0:
+            return 0
+        else:
+            b[:temp_len] = temp
+            return temp_len
+
     def finish(self):
         self._stream.finish()
 
