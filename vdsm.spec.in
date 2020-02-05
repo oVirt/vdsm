@@ -512,10 +512,11 @@ Requires:       iproute
 Requires:       iproute-tc
 # remove when nmstate is finished
 Requires: network-scripts
-%if 0%{?fedora} < 32
-Requires: nmstate >= 0.0.8
-%else
+%if 0%{?rhel} || 0%{?fedora} >= 32
 Requires: nmstate >= 0.2.1
+%else
+# Temporary HACK to not block development on Fedora 30
+Requires: nmstate >= 0.0.8
 %endif
 Requires:       libnl3
 %if %{target_py} == py2
