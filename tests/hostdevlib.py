@@ -167,6 +167,7 @@ DEVICES_PROCESSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                        'address': {'bus': '0', 'host': '0',
                                                    'lun': '0', 'target': '0'},
                                        'udev_path': '/dev/sg0',
+                                       'block_path': '/dev/sdc',
                                        'product': 'SSD',
                                        'vendor': 'ATA'},
                      u'scsi_1_0_0_0': {'capability': 'scsi',
@@ -175,7 +176,8 @@ DEVICES_PROCESSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                        'is_assignable': 'true',
                                        'address': {'bus': '0', 'host': '1',
                                                    'lun': '0', 'target': '0'},
-                                       'udev_path': '/dev/sg1'},
+                                       'udev_path': '/dev/sg1',
+                                       'block_path': '/dev/sdd'},
                      u'scsi_2_0_0_0': {'capability': 'scsi',
                                        'driver': 'sd',
                                        'parent': 'scsi_target2_0_0',
@@ -293,6 +295,9 @@ DEVICES_PROCESSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                    'capability': 'usb_device',
                                    'driver': 'usb',
                                    'is_assignable': 'true'}}
+
+UDEV_BLOCK_MAP = {'/dev/sg0': '/dev/sdc',
+                  '/dev/sg1': '/dev/sdd'}
 
 ADDITIONAL_DEVICE_PROCESSED = {'product': '7500/5520/5500/X58 I/O Hub PCI '
                                'Express Root Port 9',

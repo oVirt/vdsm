@@ -24,6 +24,7 @@ from __future__ import division
 import collections
 import functools
 import hashlib
+import logging
 import operator
 import os
 import uuid
@@ -32,6 +33,7 @@ import xml.etree.ElementTree as etree
 import libvirt
 import six
 
+from vdsm.common import commands
 from vdsm.common import conv
 from vdsm.common import cpuarch
 from vdsm.common import exception
@@ -489,7 +491,27 @@ def _process_scsi_device_params(device_name, cache):
     if scsi_generic_dev_params:
         params['udev_path'] = scsi_generic_dev_params['udev_path']
 
+    if params.get('udev_path'):
+        mapping = _get_udev_block_mapping()
+        params['block_path'] = mapping.get(params['udev_path'])
+
     return params
+
+
+@memoized
+def _get_udev_block_mapping():
+    """
+    Read system udev path -> block path mapping
+    """
+    mapping_command = ["lsscsi", "-g"],
+
+    try:
+        output = commands.run(*mapping_command).strip().split("\n")
+        return {m.split()[-1]: m.split()[-2] for m in output}
+    except Exception as e:
+        logging.error(
+            "Could not read system udev path -> block path mapping: %s", e)
+        return {}
 
 
 def _process_device_params(device_xml):

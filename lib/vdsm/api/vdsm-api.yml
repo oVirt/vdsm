@@ -1771,6 +1771,11 @@ types:
             type: string
 
         -   defaultvalue: no-default
+            description: device block path
+            name: block_path
+            type: string
+
+        -   defaultvalue: no-default
             description: device address
             name: address
             type: *HostDeviceAddress

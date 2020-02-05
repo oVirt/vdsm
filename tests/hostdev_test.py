@@ -44,6 +44,8 @@ import hostdevlib
 @MonkeyClass(hostdev, '_sriov_totalvfs', hostdevlib.fake_totalvfs)
 @MonkeyClass(hostdev, '_pci_header_type', lambda _: 0)
 @MonkeyClass(hooks, 'after_hostdev_list_by_caps', lambda json: json)
+@MonkeyClass(hostdev, '_get_udev_block_mapping',
+             lambda: hostdevlib.UDEV_BLOCK_MAP)
 class HostdevTests(TestCaseBase):
 
     def testProcessDeviceParams(self):
