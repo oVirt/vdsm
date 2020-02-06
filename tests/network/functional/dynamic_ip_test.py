@@ -253,11 +253,6 @@ class TestNetworkDhcpBasic(object):
                     )
 
     @parametrize_ip_families
-    @pytest.mark.xfail(
-        reason='Cannot be tested for nmstate until NM 1.22',
-        condition=nftestlib.is_nmstate_backend(),
-        strict=False,
-    )
     def test_move_nic_between_bridgeless_and_bridged_keep_ip(
         self, switch, families
     ):
