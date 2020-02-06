@@ -85,16 +85,18 @@ class TestConversions(object):
         qdiscs = (
             root,
             {
-                'kind': 'sfq',
-                'handle': '10:',
-                'parent': '1:10',
-                'sfq': {'limit': 127, 'quantum': 1514},
+                'kind': 'hfsc',
+                'handle': '1:10',
+                'parent': '1:',
+                'leaf': '10:',
+                'hfsc': {'default': 0x8002},
             },
             {
-                'kind': 'sfq',
-                'handle': '20:',
-                'parent': '1:20',
-                'sfq': {'limit': 127, 'quantum': 1514},
+                'kind': 'hfsc',
+                'handle': '1:20',
+                'parent': '1:',
+                'leaf': '20:',
+                'hfsc': {'default': 0x8002},
             },
         )
         assert qos.get_root_qdisc(qdiscs) == root

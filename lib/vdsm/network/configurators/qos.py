@@ -20,8 +20,6 @@
 from __future__ import absolute_import
 from __future__ import division
 import errno
-import os
-from distutils.version import StrictVersion
 
 import six
 
@@ -30,11 +28,7 @@ from vdsm.network.netinfo import qos as netinfo_qos
 from vdsm.network.netinfo.cache import NetInfo, get as cache_get
 
 _ROOT_QDISC_HANDLE = '%x:' % 5001  # Leave 0 free for leaf qdisc of vlan tag 0
-_FAIR_QDISC_KIND = (
-    'fq_codel'
-    if (StrictVersion(os.uname()[2].split('-')[0]) > StrictVersion('3.5.0'))
-    else 'sfq'
-)
+_FAIR_QDISC_KIND = 'fq_codel'
 _SHAPING_QDISC_KIND = 'hfsc'
 _DEFAULT_CLASSID = netinfo_qos.DEFAULT_CLASSID  # shorthand
 _NON_VLANNED_ID = netinfo_qos.NON_VLANNED_ID  # shorthand
@@ -143,7 +137,7 @@ def _fresh_qdisc_conf_out(dev, vlan_tag, class_id, qos):
     if class_id != _DEFAULT_CLASSID:
         _add_vlan_filter(dev, vlan_tag, _ROOT_QDISC_HANDLE, class_id)
 
-    # Add inside intra-class fairness qdisc (fq_codel/sfq)
+    # Add inside intra-class fairness qdisc (fq_codel)
     _add_fair_qdisc(dev, _ROOT_QDISC_HANDLE, class_id)
     if class_id != _DEFAULT_CLASSID:
         _add_fair_qdisc(dev, _ROOT_QDISC_HANDLE, _DEFAULT_CLASSID)

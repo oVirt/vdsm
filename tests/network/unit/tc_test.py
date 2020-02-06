@@ -224,10 +224,6 @@ class TestFilters(object):
     def test_qdiscs(self):
         data_lines = (
             'qdisc hfsc 1: root refcnt 2 default 5000',
-            'qdisc sfq 10: parent 1:10 limit 127p quantum 1514b',
-            'qdisc sfq 20: parent 1:20 limit 127p quantum 1514b',
-            'qdisc sfq 30: parent 1:30 limit 127p quantum 30Kb perturb 3sec',
-            'qdisc sfq 40: parent 1:40 limit 127p quantum 20Mb perturb 5sec',
             'qdisc ingress ffff: parent ffff:fff1 ----------------',
             'qdisc mq 0: dev wlp3s0 root',
             'qdisc ingress ffff: dev vdsmtest-Z2TMO parent ffff:fff1 '
@@ -247,30 +243,6 @@ class TestFilters(object):
                 'handle': '1:',
                 'refcnt': 2,
                 'hfsc': {'default': 0x5000},
-            },
-            {
-                'kind': 'sfq',
-                'handle': '10:',
-                'parent': '1:10',
-                'sfq': {'limit': 127, 'quantum': 1514},
-            },
-            {
-                'kind': 'sfq',
-                'handle': '20:',
-                'parent': '1:20',
-                'sfq': {'limit': 127, 'quantum': 1514},
-            },
-            {
-                'kind': 'sfq',
-                'handle': '30:',
-                'parent': '1:30',
-                'sfq': {'limit': 127, 'quantum': 30 * 1024, 'perturb': 3},
-            },
-            {
-                'kind': 'sfq',
-                'handle': '40:',
-                'parent': '1:40',
-                'sfq': {'limit': 127, 'quantum': 20 * 1024 ** 2, 'perturb': 5},
             },
             {'kind': 'ingress', 'handle': 'ffff:', 'parent': 'ffff:fff1'},
             {'kind': 'mq', 'handle': '0:', 'dev': 'wlp3s0', 'root': True},

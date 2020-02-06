@@ -19,7 +19,6 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from fractions import Fraction
 from functools import partial
 
 from . import _parser
@@ -117,10 +116,6 @@ def _parse_limit(tokens):
     return int(next(tokens)[:-1])  # leave off the trailing 'p'
 
 
-def _parse_sfq_flows(tokens):
-    return Fraction(*[int(el for el in next(tokens).split('/'))])
-
-
 def _parse_pfifo_fast_priomap(tokens):
     return [int(next(tokens)) for _ in range(_TC_PRIO_MAX)]
 
@@ -140,19 +135,5 @@ _spec = {
         'bands': _parser.parse_int,
         'multiqueue': _parser.parse_str,
         'priomap': _parse_pfifo_fast_priomap,
-    },
-    'sfq': {
-        'depth': _parser.parse_int,
-        'divisor': _parser.parse_int,
-        'ecn': _parser.parse_true,
-        'ewma': _parser.parse_int,
-        'flows': _parse_sfq_flows,
-        'headdrop': _parser.parse_true,
-        'limit': _parse_limit,
-        'max': _parser.parse_size,
-        'min': _parser.parse_size,
-        'perturb': _parser.parse_sec,
-        'probability': _parser.parse_float,
-        'quantum': _parser.parse_size,
     },
 }
