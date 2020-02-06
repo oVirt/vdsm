@@ -60,7 +60,7 @@ DEFAULT_MTU = 1500
 
 
 def setup(desired_state, verify_change):
-    state_apply(desired_state, verify_change)
+    state_apply(desired_state, verify_change=verify_change)
 
 
 def generate_state(networks, bondings):
