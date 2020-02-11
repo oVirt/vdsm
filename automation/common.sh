@@ -32,7 +32,7 @@ EOF
 
 install_dependencies() {
     ${CI_PYTHON} tests/profile pip-upgrade ${CI_PYTHON} -m pip \
-        install --upgrade pip
+        install --upgrade pip "virtualenv==16.7.9"
 
     ${CI_PYTHON} tests/profile pip-install ${CI_PYTHON} -m pip \
         install --upgrade "tox==3.14"
