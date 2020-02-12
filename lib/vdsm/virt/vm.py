@@ -5212,23 +5212,35 @@ class Vm(object):
         For more info see:
         https://libvirt.org/html/libvirt-libvirt-domain.html#virConnectDomainEventBlockJobCallback
         """  # NOQA: E501 (long line)
+
+        job_id = "(untracked)"
+
+        # Only COMMIT and ACTIVE_COMMIT jobs are tracked.
+        if job_type in (libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_COMMIT,
+                        libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT):
+            with self._jobsLock:
+                for job in self._blockJobs.values():
+                    if job['drive'] == drive:
+                        job_id = job['jobID']
+
         type_name = blockjob.type_name(job_type)
 
         if job_status == libvirt.VIR_DOMAIN_BLOCK_JOB_COMPLETED:
-            self.log.info("Block job %s for drive %s has completed",
-                          type_name, drive)
+            self.log.info("Block job %s type %s for drive %s has completed",
+                          job_id, type_name, drive)
         elif job_status == libvirt.VIR_DOMAIN_BLOCK_JOB_FAILED:
-            self.log.error("Block job %s for drive %s has failed",
-                           type_name, drive)
+            self.log.error("Block job %s type %s for drive %s has failed",
+                           job_id, type_name, drive)
         elif job_status == libvirt.VIR_DOMAIN_BLOCK_JOB_CANCELED:
-            self.log.error("Block job %s for drive %s was canceled",
-                           type_name, drive)
+            self.log.error("Block job %s type %s for drive %s was canceled",
+                           job_id, type_name, drive)
         elif job_status == libvirt.VIR_DOMAIN_BLOCK_JOB_READY:
-            self.log.info("Block job %s for drive %s is ready",
-                          type_name, drive)
+            self.log.info("Block job %s type %s for drive %s is ready",
+                          job_id, type_name, drive)
         else:
-            self.log.error("Block job %s for drive %s: unexpected status %s",
-                           type_name, drive, job_status)
+            self.log.error(
+                "Block job %s type %s for drive %s: unexpected status %s",
+                job_id, type_name, drive, job_status)
 
     def merge(self, driveSpec, baseVolUUID, topVolUUID, bandwidth, jobUUID):
         bandwidth = int(bandwidth)
