@@ -174,8 +174,15 @@ class QemuGuestAgentPoller(object):
 
     def get_caps(self, vm_id):
         with self._capabilities_lock:
+            caps = self._capabilities.get(vm_id, None)
+            if caps is None:
+                caps = {
+                    'version': None,
+                    'commands': [],
+                }
+                self._capabilities[vm_id] = caps
             # Return a copy so the caller has a stable representation
-            return utils.picklecopy(self._capabilities.get(vm_id, None))
+            return utils.picklecopy(caps)
 
     def update_caps(self, vm_id, caps):
         if self._capabilities.get(vm_id, None) != caps:
@@ -220,7 +227,7 @@ class QemuGuestAgentPoller(object):
         # First make sure the command is supported by QEMU-GA
         if command != _QEMU_GUEST_INFO_COMMAND:
             caps = self.get_caps(vm.id)
-            if caps is None or command not in caps['commands']:
+            if command not in caps['commands']:
                 self.log.debug(
                     'Not sending QEMU-GA command \'%s\' to vm_id=\'%s\','
                     ' command is not supported', command, vm.id)
@@ -335,7 +342,7 @@ class QemuGuestAgentPoller(object):
                     )
         else:
             caps = self.get_caps(vm_id)
-            if caps is not None and caps['version'] is not None:
+            if caps['version'] is not None:
                 guest_info['appsList'] = (
                     'qemu-guest-agent-%s' % caps['version'],
                 )
