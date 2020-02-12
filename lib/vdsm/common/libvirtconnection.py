@@ -182,7 +182,12 @@ def get(target=None, killOnFailure=True):
                            libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE,
                            libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON,
                            libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS,
-                           libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB,
+                           # Report stable drive name (e.g. vda) in block job
+                           # events instead of the drive path which may change
+                           # after active commit or block copy.  See
+                           # virConnectDomainEventBlockJobCallback in libvirt
+                           # docs.
+                           libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB_2,
                            libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG,
                            libvirt.VIR_DOMAIN_EVENT_ID_JOB_COMPLETED,
                            libvirt.VIR_DOMAIN_EVENT_ID_DEVICE_REMOVED,
