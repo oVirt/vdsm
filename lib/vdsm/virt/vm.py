@@ -5013,7 +5013,8 @@ class Vm(object):
             except LookupError:
                 newJob = {'jobID': jobID, 'disk': driveSpec,
                           'baseVolume': base, 'topVolume': top,
-                          'strategy': strategy, 'blockJobType': 'commit'}
+                          'strategy': strategy, 'blockJobType': 'commit',
+                          'drive': drive.name}
                 self._blockJobs[jobID] = newJob
             else:
                 self.log.error("Cannot add block job %s.  A block job with id "
@@ -5156,7 +5157,8 @@ class Vm(object):
                 entry = {'id': jobID, 'jobType': 'block',
                          'blockJobType': storedJob['blockJobType'],
                          'bandwidth': 0, 'cur': '0', 'end': '0',
-                         'imgUUID': storedJob['disk']['imageID']}
+                         'imgUUID': storedJob['disk']['imageID'],
+                         'drive': storedJob['drive']}
 
                 liveInfo = None
                 if 'gone' not in storedJob:
