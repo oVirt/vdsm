@@ -41,6 +41,13 @@ def pytest_addoption(parser):
     )
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "legacy_switch")
+    config.addinivalue_line("markers", "nmstate")
+    config.addinivalue_line("markers", "ovs_switch")
+    config.addinivalue_line("markers", "ovsdpdk_switch")
+
+
 @pytest.fixture(scope='session', autouse=True)
 def target(request):
 
