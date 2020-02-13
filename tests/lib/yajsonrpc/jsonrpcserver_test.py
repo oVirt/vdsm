@@ -273,6 +273,7 @@ class JsonRpcServerTests(TestCaseBase):
                 self.assertEqual(event_params['content'], True)
 
     @permutations(USE_SSL)
+    @broken_on_ci("fails randomly in CI")
     def testClientNotify(self, use_ssl):
         ssl_ctx = self.ssl_ctx if use_ssl else None
         bridge = _DummyBridge()

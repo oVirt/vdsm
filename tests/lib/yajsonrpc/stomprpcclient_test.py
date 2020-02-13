@@ -132,6 +132,7 @@ class VdsmClientTests(VdsmTestCase):
         except queue.Empty:
             self.fail("Event queue timed out.")
 
+    @broken_on_ci("Fails randomly in CI")
     def test_call(self):
         with self._create_client() as client:
             msg = dummyTextGenerator(1024)
