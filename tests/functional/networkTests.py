@@ -32,14 +32,12 @@ import vdsm.config
 from vdsm.network import netswitch
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
-    routeExists, ruleExists, addrFlush, LinkType, getLinks, routeShowTable,
-    linkSet, addrAdd)
+    routeExists, ruleExists, LinkType, getLinks, routeShowTable, linkSet,
+    addrAdd)
 from vdsm.network import kernelconfig
 from vdsm.network.netinfo.nics import operstate, OPERSTATE_UNKNOWN
-from vdsm.network.netinfo.routes import getRouteDeviceTo
 from vdsm.network.netlink import monitor
 from vdsm.network import sourceroute
-from vdsm.network import sysctl
 
 from vdsm.common.cmdutils import CommandPath
 from vdsm.common.proc import pgrep
@@ -623,26 +621,6 @@ class NetworkTest(TestCaseBase):
             self.assertTrue(is_dhcpv4)
         else:
             self.assertTrue(is_dhcpv6)
-
-    def testGetRouteDeviceTo(self):
-        with dummyIf(1) as nics:
-            nic, = nics
-
-            addrAdd(nic, IP_ADDRESS, IP_CIDR)
-            try:
-                linkSet(nic, ['up'])
-                self.assertEqual(getRouteDeviceTo(IP_ADDRESS_IN_NETWORK), nic)
-            finally:
-                addrFlush(nic)
-
-            sysctl.disable_ipv6(nic, False)
-            addrAdd(nic, IPv6_ADDRESS, IPv6_CIDR, family=6)
-            try:
-                linkSet(nic, ['up'])
-                self.assertEqual(getRouteDeviceTo(IPv6_ADDRESS_IN_NETWORK),
-                                 nic)
-            finally:
-                addrFlush(nic)
 
     @slowtest
     @cleanupNet

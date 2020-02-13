@@ -22,6 +22,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import ipaddress
 import os
 
 import pytest
@@ -32,7 +33,7 @@ from vdsm.network.link import nic
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.iface import random_iface_name
-from vdsm.network.netinfo import addresses, bonding, nics
+from vdsm.network.netinfo import addresses, bonding, nics, routes
 from vdsm.network.netlink import waitfor
 
 from network.compat import mock
@@ -178,6 +179,23 @@ class TestNetinfo(object):
                 [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
                 [IPV6_ADDR_CIDR],
             )
+
+    @pytest.mark.parametrize(
+        "ip_addr, ip_netmask",
+        [(IPV4_ADDR1, IPV4_NETMASK), (IPV6_ADDR, IPV6_PREFIX_LENGTH)],
+        ids=['IPV4', 'IPV6'],
+    )
+    def test_routes_device_to(self, ip_addr, ip_netmask):
+        with dummy_device() as nic:
+            addr_in_net = ipaddress.ip_address(ip_addr) + 1
+            ip_version = addr_in_net.version
+
+            ipwrapper.addrAdd(nic, ip_addr, ip_netmask, family=ip_version)
+            try:
+                ipwrapper.linkSet(nic, ['up'])
+                assert routes.getRouteDeviceTo(str(addr_in_net)) == nic
+            finally:
+                ipwrapper.addrFlush(nic, ip_version)
 
 
 class TestIPv6Addresses(object):
