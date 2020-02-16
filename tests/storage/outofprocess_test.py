@@ -39,7 +39,7 @@ from vdsm.storage import outOfProcess as oop
 from vdsm.storage.exception import MiscDirCleanupFailure
 
 from . marks import requires_root, requires_unprivileged_user
-from . storagetestlib import get_umask
+from . storagetestlib import chmod, get_umask
 
 
 @pytest.fixture
@@ -644,31 +644,6 @@ def verify_directory(path, mode=None):
     if mode is not None:
         actual_mode = stat.S_IMODE(os.stat(path).st_mode)
         assert oct(actual_mode) == oct(mode)
-
-
-@contextmanager
-def chmod(path, mode):
-    """
-    Changes path permissions.
-
-    Change the permissions of path to the numeric mode before entering the
-    context, and restore the original value when exiting from the context.
-
-    Arguments:
-        path (str): file/directory path
-        mode (int): new mode
-    """
-
-    orig_mode = stat.S_IMODE(os.stat(path).st_mode)
-
-    os.chmod(path, mode)
-    try:
-        yield
-    finally:
-        try:
-            os.chmod(path, orig_mode)
-        except Exception as e:
-            logging.error("Failed to restore %r mode: %s", path, e)
 
 
 @contextmanager

@@ -23,6 +23,7 @@ from __future__ import division
 import binascii
 import logging
 import os
+import stat
 import shutil
 import tempfile
 import threading
@@ -592,3 +593,28 @@ def get_umask():
     current_umask = os.umask(0)
     os.umask(current_umask)
     return current_umask
+
+
+@contextmanager
+def chmod(path, mode):
+    """
+    Changes path permissions.
+
+    Change the permissions of path to the numeric mode before entering the
+    context, and restore the original value when exiting from the context.
+
+    Arguments:
+        path (str): file/directory path
+        mode (int): new mode
+    """
+
+    orig_mode = stat.S_IMODE(os.stat(path).st_mode)
+
+    os.chmod(path, mode)
+    try:
+        yield
+    finally:
+        try:
+            os.chmod(path, orig_mode)
+        except Exception as e:
+            logging.error("Failed to restore %r mode: %s", path, e)
