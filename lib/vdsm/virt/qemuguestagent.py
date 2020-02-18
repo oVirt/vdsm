@@ -79,12 +79,16 @@ try:
         VIR_DOMAIN_GUEST_INFO_TIMEZONE, \
         VIR_DOMAIN_GUEST_INFO_HOSTNAME, \
         VIR_DOMAIN_GUEST_INFO_FILESYSTEM
+    _USE_LIBVIRT = True
+    _LIBVIRT_EXPOSED = ["guestInfo", "interfaceAddresses"]
 except ImportError:
     VIR_DOMAIN_GUEST_INFO_USERS = (1 << 0)
     VIR_DOMAIN_GUEST_INFO_OS = (1 << 1)
     VIR_DOMAIN_GUEST_INFO_TIMEZONE = (1 << 2)
     VIR_DOMAIN_GUEST_INFO_HOSTNAME = (1 << 3)
     VIR_DOMAIN_GUEST_INFO_FILESYSTEM = (1 << 4)
+    _USE_LIBVIRT = False
+    _LIBVIRT_EXPOSED = ["interfaceAddresses"]
 
 # These values are needed internaly and are not defined by libvirt. Beware
 # that the values cannot colide with those for VIR_DOMAIN_GUEST_INFO_*
@@ -119,13 +123,17 @@ _QEMU_COMMAND_PERIODS = {
 }
 
 
-@virdomain.expose("interfaceAddresses")
+@virdomain.expose(*_LIBVIRT_EXPOSED)
 class QemuGuestAgentDomain(object):
     """Wrapper object exposing libvirt API."""
     def __init__(self, vm):
         self._vm = vm
 
     def interfaceAddresses(self, source):
+        """Method stub to make pylint happy."""
+        raise NotImplementedError("method stub")
+
+    def guestInfo(self, types, flags):
         """Method stub to make pylint happy."""
         raise NotImplementedError("method stub")
 
@@ -151,7 +159,14 @@ class QemuGuestAgentPoller(object):
         self._last_check_lock = threading.Lock()
         # Key is tuple (vm_id, command)
         self._last_check = defaultdict(lambda: 0)
-        self._get_guest_info = self._qga_get_all_info
+        self._initial_interval = config.getint(
+            'guest_agent', 'qga_initial_info_interval')
+        if _USE_LIBVIRT:
+            self._get_guest_info = self._libvirt_get_guest_info
+            self.log.info('Using libvirt for querying QEMU-GA')
+        else:
+            self._get_guest_info = self._qga_get_all_info
+            self.log.info('Using direct messages for querying QEMU-GA')
 
     def start(self):
         if not config.getboolean('guest_agent', 'enable_qga_poller'):
@@ -352,6 +367,74 @@ class QemuGuestAgentPoller(object):
         if types & VIR_DOMAIN_GUEST_INFO_USERS:
             guest_info.update(self._qga_call_active_users(vm))
         return guest_info
+
+    def _libvirt_get_guest_info(self, vm, types):
+        guest_info = {}
+        self.log.debug(
+            'libvirt: fetching guest info vm_id=%r types=%s',
+            vm.id, bin(types))
+        # TODO: set libvirt timeout
+        info = QemuGuestAgentDomain(vm).guestInfo(types, 0)
+        # Filesystem Info
+        if 'fs.count' in info:
+            guest_info.update(self._libvirt_fsinfo(info))
+        # Hostname
+        if 'hostname' in info:
+            guest_info['guestName'] = info['hostname']
+            guest_info['guestFQDN'] = info['hostname']
+        # OS Info
+        if 'os.id' in info:
+            if info.get('os.id') == _GUEST_OS_WINDOWS:
+                guest_info.update(
+                    guestagenthelpers.translate_windows_osinfo(info))
+            else:
+                self.fake_apps_list(
+                    vm.id, info['os.id'], info['os.kernel-release'])
+                guest_info.update(
+                    guestagenthelpers.translate_linux_osinfo(info))
+        # Timezone
+        if 'timezone.offset' in info:
+            guest_info['guestTimezone'] = {
+                'offset': info['timezone.offset'] // 60,
+                'zone': info.get('timezone.name', 'unknown'),
+            }
+        # User Info
+        if info.get('user.count', 0) > 0:
+            users = []
+            for i in range(info['user.count']):
+                prefix = 'user.%d' % i
+                if info.get(prefix + '.domain', '') != '':
+                    users.append(
+                        info[prefix + '.name'] + '@' +
+                        info[prefix + '.domain'])
+                else:
+                    users.append(info[prefix + '.name'])
+            guest_info['username'] = ', '.join(users)
+        return guest_info
+
+    def _libvirt_fsinfo(self, info):
+        disks = []
+        mapping = {}
+        for i in range(info.get('fs.count', 0)):
+            prefix = 'fs.{:d}.'.format(i)
+            try:
+                fsinfo = guestagenthelpers.translate_fsinfo(info, i)
+            except ValueError:
+                self.log.warning(
+                    'Invalid message returned to call \'%s\': %r',
+                    _QEMU_FSINFO_COMMAND, info)
+                continue
+            # Skip stats with missing info. This is e.g. the case of System
+            # Reserved volumes on Windows.
+            if fsinfo['total'] != '' and fsinfo['used'] != '':
+                disks.append(fsinfo)
+            for di in range(info.get(prefix + 'disk.count')):
+                disk_prefix = '{}disk.{:d}.'.format(prefix, di)
+                if (disk_prefix + 'serial') in info and \
+                        (disk_prefix + 'device') in info:
+                    mapping[info[disk_prefix + 'serial']] = \
+                        {'name': info[disk_prefix + 'device']}
+        return {'disksUsage': disks, 'diskMapping': mapping}
 
     def fake_apps_list(self, vm_id, os_id=None, kernel_release=None):
         """ Create fake appsList entry in guest info """

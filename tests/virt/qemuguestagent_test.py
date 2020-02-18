@@ -137,6 +137,38 @@ class FakeDomain(object):
                 'hwaddr': '00:00:00:00:00:00'}}
         return ifdata
 
+    def guestInfo(self, types, flags):
+        return {
+            'user.count': 2,
+            'user.0.name': 'root',
+            'user.1.name': 'frodo',
+            'user.1.domain': 'hobbits',
+            'os.id': 'rhel',
+            'os.name': 'Red Hat Enterprise Linux Server',
+            'os.pretty-name':
+                'Red Hat Enterprise Linux Server 7.8 Beta (Maipo)',
+            'os.version': '7.8 (Maipo)',
+            'os.version-id': '7.8',
+            'os.machine': 'x86_64',
+            'os.variant': 'Server',
+            'os.variant-id': 'server',
+            'os.kernel-release': '3.10.0-1101.el7.x86_64',
+            'os.kernel-version': '#1 SMP Sat Oct 5 04:50:26 EDT 2019',
+            'timezone.name': 'EDT',
+            'timezone.offset': -14400,
+            'hostname': 'localhost.localdomain',
+            'fs.count': 1,
+            'fs.0.name': 'vda1',
+            'fs.0.mountpoint': '/',
+            'fs.0.fstype': 'xfs',
+            'fs.0.disk.count': 1,
+            'fs.0.disk.0.alias': 'vda',
+            'fs.0.disk.0.serial': 'e7d27603-0a2e-47ab-8',
+            'fs.0.disk.0.device': '/dev/vda1',
+            'fs.0.total-bytes': 200,
+            'fs.0.used-bytes': 100,
+        }
+
 
 class FakeVM(object):
     def __init__(self):
@@ -151,10 +183,15 @@ class FakeVM(object):
             self._dom, command, timeout, flags)
 
 
+def _dom_guestInfo(self, types, flags):
+    return self._vm._dom.guestInfo(types, flags)
+
+
 @MonkeyClass(libvirt_qemu, "qemuAgentCommand", _fake_qemuAgentCommand)
 @MonkeyClass(qemuguestagent, 'config', make_config([
     ('guest_agent', 'periodic_workers', '1')
 ]))
+@MonkeyClass(qemuguestagent.QemuGuestAgentDomain, 'guestInfo', _dom_guestInfo)
 class QemuGuestAgentTests(TestCaseBase):
     def setUp(self):
         self.cif = fake.ClientIF()
@@ -320,3 +357,34 @@ class QemuGuestAgentTests(TestCaseBase):
                 'inet6': ['fe80::5054:ff:feed:9976'],
                 'name': 'ens2'
             })
+
+    def test_libvirt_guest_info(self):
+        info = self.qga_poller._libvirt_get_guest_info(self.vm, 0xffffffff)
+        # Disks/Filesystems
+        self.assertEqual(info['disksUsage'][0], {
+            'path': '/',
+            'total': '200',
+            'used': '100',
+            'fs': 'xfs',
+        })
+        self.assertEqual(info['diskMapping'], {
+            'e7d27603-0a2e-47ab-8': {'name': '/dev/vda1'},
+        })
+        # Hostname
+        self.assertEqual(info['guestFQDN'], 'localhost.localdomain')
+        self.assertEqual(info['guestName'], 'localhost.localdomain')
+        # OS
+        self.assertEqual(info['guestOs'], '3.10.0-1101.el7.x86_64')
+        self.assertEqual(info['guestOsInfo'], {
+            'type': 'linux',
+            'arch': 'x86_64',
+            'kernel': '3.10.0-1101.el7.x86_64',
+            'distribution': 'Red Hat Enterprise Linux Server',
+            'version': '7.8',
+            'codename': 'Server',
+        })
+        # Timezone
+        self.assertEqual(info['guestTimezone']['offset'], -240)
+        self.assertEqual(info['guestTimezone']['zone'], 'EDT')
+        # Users
+        self.assertEqual(info['username'], 'root, frodo@hobbits')
