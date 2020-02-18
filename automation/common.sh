@@ -15,7 +15,7 @@ prepare_env() {
 
 install_dependencies() {
     python2 tests/profile pip-upgrade python2 -m pip \
-        install --upgrade pip
+        install --upgrade pip "virtualenv==16.7.9"
 
     python2 tests/profile pip-install python2 -m pip \
         install --upgrade "tox==3.14"
