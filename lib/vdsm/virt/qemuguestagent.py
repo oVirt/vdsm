@@ -29,20 +29,6 @@ from collections import defaultdict
 import copy
 import json
 import libvirt
-#
-# As [1] says:
-#
-#   Libvirt does not guarantee any support of direct use of the guest agent. If
-#   you don't mind using libvirt-qemu.so, you can use the
-#   virDomainQemuAgentCommand API (exposed by virsh qemu-agent-command); but be
-#   aware that this is unsupported, and any changes you make to the agent that
-#   change state behind libvirt's back may cause libvirt to misbehave.
-#
-# So let's be careful and use the interface only to gather information and not
-# to change state of the guest.
-#
-# [1] https://wiki.libvirt.org/page/Qemu_guest_agent
-import libvirt_qemu
 import six
 import threading
 
@@ -52,6 +38,7 @@ from vdsm.common.time import monotonic_time
 from vdsm.config import config
 from vdsm.virt import periodic
 from vdsm.virt import guestagenthelpers
+from vdsm.virt import virdomain
 
 _QEMU_ACTIVE_USERS_COMMAND = 'guest-get-users'
 _QEMU_GUEST_INFO_COMMAND = 'guest-info'
@@ -128,6 +115,17 @@ _QEMU_COMMAND_PERIODS = {
     VIR_DOMAIN_GUEST_INFO_USERS:
         config.getint('guest_agent', 'qga_active_users_period'),
 }
+
+
+@virdomain.expose("interfaceAddresses")
+class QemuGuestAgentDomain(object):
+    """Wrapper object exposing libvirt API."""
+    def __init__(self, vm):
+        self._vm = vm
+
+    def interfaceAddresses(self, source):
+        """Method stub to make pylint happy."""
+        raise NotImplementedError("method stub")
 
 
 class QemuGuestAgentPoller(object):
@@ -236,8 +234,7 @@ class QemuGuestAgentPoller(object):
             self.log.debug(
                 'Calling QEMU-GA command for vm_id=\'%s\', command: %s',
                 vm.id, cmd)
-            ret = libvirt_qemu.qemuAgentCommand(vm._dom, cmd,
-                                                _COMMAND_TIMEOUT, 0)
+            ret = vm.qemu_agent_command(cmd, _COMMAND_TIMEOUT, 0)
             self.log.debug('Call returned: %r', ret)
         except libvirt.libvirtError:
             # Most likely the QEMU-GA is not installed or is unresponsive
@@ -508,7 +505,7 @@ class QemuGuestAgentPoller(object):
         interfaces = {}
         try:
             self.log.debug('Requesting NIC info for vm=%s', vm.id)
-            interfaces = vm._dom.interfaceAddresses(
+            interfaces = QemuGuestAgentDomain(vm).interfaceAddresses(
                 libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
         except libvirt.libvirtError:
             self.set_failure(vm.id)

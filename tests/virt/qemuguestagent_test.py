@@ -146,6 +146,10 @@ class FakeVM(object):
     def id(self):
         return "00000000-0000-0000-0000-000000000001"
 
+    def qemu_agent_command(self, command, timeout, flags):
+        return libvirt_qemu.qemuAgentCommand(
+            self._dom, command, timeout, flags)
+
 
 @MonkeyClass(libvirt_qemu, "qemuAgentCommand", _fake_qemuAgentCommand)
 @MonkeyClass(qemuguestagent, 'config', make_config([

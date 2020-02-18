@@ -35,6 +35,20 @@ import xml.etree.ElementTree as ET
 
 # 3rd party libs imports
 import libvirt
+#
+# As [1] says:
+#
+#   Libvirt does not guarantee any support of direct use of the guest agent. If
+#   you don't mind using libvirt-qemu.so, you can use the
+#   virDomainQemuAgentCommand API (exposed by virsh qemu-agent-command); but be
+#   aware that this is unsupported, and any changes you make to the agent that
+#   change state behind libvirt's back may cause libvirt to misbehave.
+#
+# So let's be careful and use the interface only to gather information and not
+# to change state of the guest.
+#
+# [1] https://wiki.libvirt.org/page/Qemu_guest_agent
+import libvirt_qemu
 import six
 
 # vdsm imports
@@ -5578,6 +5592,14 @@ class Vm(object):
 
     def abort_domjob(self):
         self._dom.abortJob()
+
+    def qemu_agent_command(self, command, timeout, flags):
+        # BEWARE: This interface has to be used only to gather information and
+        # not to change state of the guest! Always prefer libvirt API if
+        # it is available. See libvirt_qemu import above for further
+        # explanation.
+        return libvirt_qemu.qemuAgentCommand(
+            self._dom, command, timeout, flags)
 
 
 class LiveMergeCleanupThread(object):
