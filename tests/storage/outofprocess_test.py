@@ -264,7 +264,6 @@ def test_fileutils_createdir_non_default_mode(oop_cleanup, tmpdir):
     verify_directory(path_leaf, mode=expected_mode)
 
 
-@pytest.mark.xfail(reason="iop.fileUtils.createdir doesn't consider umask")
 def test_fileutils_createdir_non_default_mode_dir_exists_same_mode(
         oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")

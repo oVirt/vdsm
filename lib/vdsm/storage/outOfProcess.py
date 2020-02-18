@@ -34,6 +34,7 @@ import six
 
 from vdsm import constants
 from vdsm import utils
+from vdsm.common.osutils import get_umask
 from vdsm.config import config
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -172,14 +173,13 @@ class _IOProcessFileUtils(object):
                     raise OSError(errno.ENOTDIR,
                                   "Not a directory %s" % tmpPath)
                 if tmpPath == path and mode is not None:
-                    curMode = statinfo[stat.ST_MODE]
-                    if curMode != mode:
-                        raise OSError(errno.EPERM,
-                                      ("Existing %s "
-                                       "permissions %s are not as "
-                                       "requested %s") % (path,
-                                                          oct(curMode),
-                                                          oct(mode)))
+                    actual_mode = stat.S_IMODE(statinfo.st_mode)
+                    expected_mode = mode & ~get_umask()
+                    if actual_mode != expected_mode:
+                        raise OSError(
+                            errno.EPERM,
+                            "Existing {} permissions {:o} are not as requested"
+                            " {:o}".format(path, actual_mode, expected_mode))
 
     def padToBlockSize(self, path):
         size = _IOProcessOs(self._iop).stat(path).st_size
