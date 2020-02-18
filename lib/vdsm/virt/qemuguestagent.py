@@ -31,6 +31,7 @@ import json
 import libvirt
 import six
 import threading
+import time
 
 from vdsm import utils
 from vdsm import executor
@@ -65,6 +66,7 @@ _TASKS = _WORKERS * _TASK_PER_WORKER
 _MAX_WORKERS = config.getint('guest_agent', 'max_workers')
 
 _COMMAND_TIMEOUT = config.getint('guest_agent', 'qga_command_timeout')
+_INITIAL_INTERVAL = config.getint('guest_agent', 'qga_initial_info_interval')
 _TASK_TIMEOUT = config.getint('guest_agent', 'qga_task_timeout')
 _THROTTLING_INTERVAL = 60
 
@@ -204,6 +206,10 @@ class QemuGuestAgentPoller(object):
     def last_failure(self, vm_id):
         return self._last_failure.get(vm_id, None)
 
+    def reset_failure(self, vm_id):
+        with self._last_failure_lock:
+            self._last_failure[vm_id] = None
+
     def set_failure(self, vm_id):
         with self._last_failure_lock:
             self._last_failure[vm_id] = monotonic_time()
@@ -265,20 +271,42 @@ class QemuGuestAgentPoller(object):
 
     def _poller(self):
         for vm_id, vm_obj in six.viewitems(self._cif.getVMs()):
-            # Update capabilities
-            # TODO: check elapsed time (handle VM boot)
+            now = monotonic_time()
+            vm_elapsed_time = time.time() - vm_obj.start_time
+            # Ensure we know guest agent's capabilities
+            caps = self.get_caps(vm_id)
+            if caps['version'] is None and \
+                    vm_elapsed_time < _INITIAL_INTERVAL:
+                if vm_obj.isDomainRunning():
+                    # Enforce check during VM boot
+                    self._qga_capability_check(vm_obj)
+                    caps = self.get_caps(vm_id)
+                    if caps['version'] is not None:
+                        # Finally, the agent is up!
+                        self.reset_failure(vm_id)
+                        self.set_last_check(vm_id, VDSM_GUEST_INFO, now)
+                else:
+                    self.log.debug(
+                        'Not querying QEMU-GA yet, domain not running')
+                    continue
             if not self._runnable_on_vm(vm_obj):
                 self.log.debug(
                     'Skipping vm-id=%s in this run and not querying QEMU-GA',
                     vm_id)
                 continue
-            self._qga_capability_check(vm_obj)
-            caps = self.get_caps(vm_id)
-            if caps is None:
+            # Update capabilities -- if we just got the caps above then this
+            # will fall through
+            if (now - self.last_check(vm_id, VDSM_GUEST_INFO)
+                    >= _QEMU_COMMAND_PERIODS[VDSM_GUEST_INFO]):
+                self._qga_capability_check(vm_obj)
+                caps = self.get_caps(vm_id)
+                self.set_last_check(vm_id, VDSM_GUEST_INFO, now)
+            if caps['version'] is None:
+                # If we don't know about the agent there is no reason to
+                # proceed any further
                 continue
             # Update guest info
             types = 0
-            now = monotonic_time()
             for command in _QEMU_COMMANDS.keys():
                 if _QEMU_COMMANDS[command] not in caps['commands']:
                     continue

@@ -655,6 +655,12 @@ parameters = [
             ' All the other qga_*_period options need to be multiples of this'
             ' value.'),
 
+        ('qga_initial_info_interval', '120',
+            'Initial interval (in sec) after VM starts in which to ignore'
+            ' qga_info_period and try to query the guest agent every'
+            ' qga_polling_period seconds. This allows us to get the'
+            ' information from the agent as soon as possible.'),
+
         ('qga_info_period', '300',
             'Period (in sec) with which to query the information about'
             '  installed QEMU Guest Agent.'),
