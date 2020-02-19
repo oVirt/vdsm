@@ -957,7 +957,7 @@ class ISCSIConnection(APIBase):
 
 
 class StorageDomain(APIBase):
-    ctorArgs = ['storagedomainID']
+    ctorArgs = []
 
     class Types:
         UNKNOWN = vdsm.storage.sd.UNKNOWN_DOMAIN
@@ -976,66 +976,78 @@ class StorageDomain(APIBase):
 
     BLANK_UUID = vdsm.storage.sd.BLANK_UUID
 
-    def __init__(self, UUID):
-        APIBase.__init__(self)
-        self._UUID = UUID
+    def activate(self, storagedomainID, storagepoolID):
+        return self._irs.activateStorageDomain(storagedomainID, storagepoolID)
 
-    def activate(self, storagepoolID):
-        return self._irs.activateStorageDomain(self._UUID, storagepoolID)
+    def attach(self, storagedomainID, storagepoolID):
+        return self._irs.attachStorageDomain(storagedomainID, storagepoolID)
 
-    def attach(self, storagepoolID):
-        return self._irs.attachStorageDomain(self._UUID, storagepoolID)
-
-    def create(self, domainType, typeArgs, name, domainClass,
+    def create(self, stroagedomainID, domainType, typeArgs, name, domainClass,
                version=sc.SUPPORTED_DOMAIN_VERSIONS[0],
                blockSize=sc.BLOCK_SIZE_512, maxHosts=sc.HOSTS_512_1M):
-        return self._irs.createStorageDomain(domainType, self._UUID, name,
+        return self._irs.createStorageDomain(domainType, stroagedomainID, name,
                                              typeArgs, domainClass, version,
                                              blockSize, maxHosts)
 
-    def deactivate(self, storagepoolID, masterSdUUID, masterVersion):
-        return self._irs.deactivateStorageDomain(self._UUID, storagepoolID,
-                                                 masterSdUUID, masterVersion)
+    def deactivate(
+            self,
+            storagedomainID,
+            storagepoolID,
+            masterSdUUID,
+            masterVersion):
+        return self._irs.deactivateStorageDomain(
+            storagedomainID, storagepoolID, masterSdUUID, masterVersion)
 
-    def detach(self, storagepoolID, masterSdUUID=None, masterVersion=0,
-               force=False):
+    def detach(
+            self,
+            storagedomainID,
+            storagepoolID,
+            masterSdUUID=None,
+            masterVersion=0,
+            force=False):
         if force:
-            return self._irs.forcedDetachStorageDomain(self._UUID,
+            return self._irs.forcedDetachStorageDomain(storagedomainID,
                                                        storagepoolID)
         else:
-            return self._irs.detachStorageDomain(self._UUID, storagepoolID,
-                                                 masterSdUUID, masterVersion)
+            return self._irs.detachStorageDomain(
+                storagedomainID, storagepoolID, masterSdUUID, masterVersion)
 
-    def extend(self, storagepoolID, devlist, force=False):
-        return self._irs.extendStorageDomain(self._UUID, storagepoolID,
+    def extend(self, storagedomainID, storagepoolID, devlist, force=False):
+        return self._irs.extendStorageDomain(storagedomainID, storagepoolID,
                                              devlist, force)
 
-    def resizePV(self, storagepoolID, guid):
-        return self._irs.resizePV(self._UUID, storagepoolID, guid)
+    def resizePV(self, storagedomainID, storagepoolID, guid):
+        return self._irs.resizePV(storagedomainID, storagepoolID, guid)
 
-    def format(self, autoDetach):
-        return self._irs.formatStorageDomain(self._UUID, autoDetach)
+    def format(self, storagedomainID, autoDetach):
+        return self._irs.formatStorageDomain(storagedomainID, autoDetach)
 
-    def getFileStats(self, pattern, caseSensitive):
-        return self._irs.getFileStats(self._UUID, pattern, caseSensitive)
+    def getFileStats(self, storagedomainID, pattern, caseSensitive):
+        return self._irs.getFileStats(storagedomainID, pattern, caseSensitive)
 
-    def getImages(self):
-        return self._irs.getImagesList(self._UUID)
+    def getImages(self, storagedomainID):
+        return self._irs.getImagesList(storagedomainID)
 
-    def getInfo(self):
-        return self._irs.getStorageDomainInfo(self._UUID)
+    def getInfo(self, storagedomainID):
+        return self._irs.getStorageDomainInfo(storagedomainID)
 
-    def getStats(self):
-        return self._irs.getStorageDomainStats(self._UUID)
+    def getStats(self, storagedomainID):
+        return self._irs.getStorageDomainStats(storagedomainID)
 
-    def getVolumes(self, storagepoolID, imageID=Image.BLANK_UUID):
-        return self._irs.getVolumesList(self._UUID, storagepoolID, imageID)
+    def getVolumes(
+            self,
+            storagedomainID,
+            storagepoolID,
+            imageID=Image.BLANK_UUID):
+        return self._irs.getVolumesList(
+            storagedomainID, storagepoolID, imageID)
 
-    def setDescription(self, description):
-        return self._irs.setStorageDomainDescription(self._UUID, description)
+    def setDescription(self, storagedomainID, description):
+        return self._irs.setStorageDomainDescription(
+            storagedomainID, description)
 
-    def validate(self):
-        return self._irs.validateStorageDomain(self._UUID)
+    def validate(self, storagedomainID):
+        return self._irs.validateStorageDomain(storagedomainID)
 
 
 class StoragePool(APIBase):

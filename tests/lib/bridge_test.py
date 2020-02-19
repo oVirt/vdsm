@@ -95,12 +95,15 @@ class VM():
 
 
 class StorageDomain():
-    ctorArgs = ['storagedomainID']
+    ctorArgs = []
 
-    def __init__(self, UUID):
-        self._UUID = UUID
-
-    def detach(self, spUUID, masterSdUUID=None, masterVersion=0, force=False):
+    def detach(
+            self,
+            storagedomainID,
+            spUUID,
+            masterSdUUID=None,
+            masterVersion=0,
+            force=False):
         if (spUUID == '00000002-0002-0002-0002-0000000000f6' and
             masterSdUUID is None and masterVersion == 0 and
                 force is not False):
