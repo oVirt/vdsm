@@ -1392,6 +1392,47 @@ class TestMtu(object):
             )
         assert {nmstate.Interface.KEY: expected_iface_states} == state
 
+    @mock.patch.object(nmstate, 'RunningConfig')
+    def test_remove_bond_with_custom_mtu(
+        self, rconfig_mock, current_state_mock
+    ):
+        high_mtu = DEFAULT_MTU + 500
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states += self._create_bond_with_slaves_ifaces_states(
+            high_mtu, include_type=True
+        )
+        current_ifaces_states.append(
+            self._create_bridge_state(TESTNET1, TESTBOND0, high_mtu)
+        )
+
+        rconfig_mock.return_value.networks = {
+            TESTNET1: create_network_config(
+                'bonding', TESTBOND0, bridged=True, mtu=high_mtu
+            )
+        }
+        rconfig_mock.return_value.bonds = {
+            TESTBOND0: {'nics': [IFACE0, IFACE1], 'switch': 'legacy'}
+        }
+        networks = {TESTNET1: {'remove': True}}
+        bondings = {TESTBOND0: {'remove': True}}
+        state = nmstate.generate_state(networks=networks, bondings=bondings)
+
+        expected_ifaces_states = [
+            {
+                nmstate.Interface.NAME: TESTNET1,
+                nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+            },
+            {
+                nmstate.Interface.NAME: TESTBOND0,
+                nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+                nmstate.Interface.TYPE: nmstate.InterfaceType.BOND,
+            },
+        ]
+        expected_ifaces_states += self._create_bond_slaves_states(DEFAULT_MTU)
+
+        sort_by_name(expected_ifaces_states)
+        assert {nmstate.Interface.KEY: expected_ifaces_states} == state
+
     def _create_bond_with_slaves_ifaces_states(self, mtu, include_type=False):
         ifstates = self._create_bond_slaves_states(mtu, include_type)
         ifstates.append(self._create_bond_state(mtu))

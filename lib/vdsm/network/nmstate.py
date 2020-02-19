@@ -129,35 +129,36 @@ def _set_bond_slaves_mtu(desired_ifstates, current_ifstates):
         )
     )
     for bond_ifname, bond_ifstate in bond_desired_ifstates:
-        if not _is_iface_absent(bond_ifstate):
-            # The mtu is not defined when the bond is not part of a network.
-            bond_mtu = bond_ifstate.get(
+        # The mtu is not defined when the bond is not part of a network.
+        bond_mtu = (
+            bond_ifstate.get(
                 Interface.MTU,
                 current_ifstates.get(bond_ifname, {}).get(Interface.MTU)
                 or DEFAULT_MTU,
             )
-            bond_config_state = bond_ifstate.get(
-                BondSchema.CONFIG_SUBTREE
-            ) or current_ifstates.get(bond_ifname, {}).get(
-                BondSchema.CONFIG_SUBTREE, {}
-            )
-            slaves = bond_config_state.get(BondSchema.SLAVES, ())
-            for slave in slaves:
-                current_slave_state = current_ifstates.get(slave)
-                desired_slave_state = desired_ifstates.get(slave)
-                if desired_slave_state:
-                    _set_slaves_mtu_based_on_bond(
-                        desired_slave_state, bond_mtu
-                    )
-                elif (
-                    current_slave_state
-                    and bond_mtu != current_slave_state[Interface.MTU]
-                ):
-                    new_ifstates[slave] = {
-                        Interface.NAME: slave,
-                        Interface.STATE: InterfaceState.UP,
-                        Interface.MTU: bond_mtu,
-                    }
+            if not _is_iface_absent(bond_ifstate)
+            else DEFAULT_MTU
+        )
+        bond_config_state = bond_ifstate.get(
+            BondSchema.CONFIG_SUBTREE
+        ) or current_ifstates.get(bond_ifname, {}).get(
+            BondSchema.CONFIG_SUBTREE, {}
+        )
+        slaves = bond_config_state.get(BondSchema.SLAVES, ())
+        for slave in slaves:
+            current_slave_state = current_ifstates.get(slave)
+            desired_slave_state = desired_ifstates.get(slave)
+            if desired_slave_state:
+                _set_slaves_mtu_based_on_bond(desired_slave_state, bond_mtu)
+            elif (
+                current_slave_state
+                and bond_mtu != current_slave_state[Interface.MTU]
+            ):
+                new_ifstates[slave] = {
+                    Interface.NAME: slave,
+                    Interface.STATE: InterfaceState.UP,
+                    Interface.MTU: bond_mtu,
+                }
     desired_ifstates.update(new_ifstates)
 
 

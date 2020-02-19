@@ -224,6 +224,35 @@ class TestNetworkMtu(object):
                 adapter.setupNetworks({}, BONDBASE, nftestlib.NOCHK)
                 adapter.assertLinkMtu(nic2, NETBASE[NETWORK_NAME])
 
+    def test_bond_remove_with_non_default_mtu_resets_slaves(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+            net_attrs = {
+                'bonding': BOND_NAME,
+                'bridged': False,
+                'mtu': MTU_2100,
+                'switch': switch,
+            }
+            bond_attrs = {'nics': [nic1, nic2], 'switch': switch}
+            remove_attrs = {'remove': True}
+            default_mtu = {'mtu': DEFAULT_MTU}
+
+            with adapter.setupNetworks(
+                {NETWORK_NAME: net_attrs},
+                {BOND_NAME: bond_attrs},
+                nftestlib.NOCHK,
+            ):
+                adapter.assertLinkMtu(BOND_NAME, net_attrs)
+                adapter.assertLinkMtu(nic1, net_attrs)
+                adapter.assertLinkMtu(nic2, net_attrs)
+
+                adapter.setupNetworks(
+                    {NETWORK_NAME: remove_attrs},
+                    {BOND_NAME: remove_attrs},
+                    nftestlib.NOCHK,
+                )
+                adapter.assertLinkMtu(nic1, default_mtu)
+                adapter.assertLinkMtu(nic2, default_mtu)
+
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_mtu_default_value_of_base_nic_after_all_nets_are_removed(
