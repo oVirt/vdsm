@@ -406,3 +406,24 @@ class TestDictInterface:
         params = make_init_params()
         md = volume.VolumeMetadata(**params)
         assert md.get("INVALID_KEY", "TEST") == "TEST"
+
+    def test_dump(self, monkeypatch):
+        params = make_init_params()
+        monkeypatch.setattr(time, 'time', lambda: FAKE_TIME)
+        md = volume.VolumeMetadata(**params)
+
+        expected = {
+            'capacity': params['capacity'],
+            'ctime': FAKE_TIME,
+            'description': params['description'],
+            'disktype': params['disktype'],
+            'format': params['format'],
+            'generation': params['generation'],
+            'image': params['image'],
+            'legality': params['legality'],
+            'parent': params['puuid'],
+            'type': params['type'],
+            'voltype': params['voltype']
+        }
+
+        assert md.dump() == expected

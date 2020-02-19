@@ -267,3 +267,18 @@ class VolumeMetadata(object):
             return self[item]
         except KeyError:
             return default
+
+    def dump(self):
+        return {
+            "capacity": self.capacity,
+            "ctime": self.ctime,
+            "description": self.description,
+            "disktype": self.disktype,
+            "format": self.format,
+            "generation": self.generation,
+            "image": self.image,
+            "legality": self.legality,
+            "parent": self.puuid,
+            "type": self.type,
+            "voltype": self.voltype
+        }
