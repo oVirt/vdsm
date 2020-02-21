@@ -41,7 +41,7 @@ class TestCommandPath(TestCaseBase):
         """Tests if CommandPath can find the executable like the 'which' unix
         tool"""
         cp = cmdutils.CommandPath('sh', 'utter nonsense')
-        _, stdout, _ = commands.execCmd(['which', 'sh'])
+        stdout = commands.run(['which', 'sh'])
         self.assertIn(cp.cmd.encode(), stdout)
 
     def testMissing(self):

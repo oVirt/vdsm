@@ -22,7 +22,6 @@ lib/vdsm/tool/service.py
 lib/vdsm/tool/transient.py
 lib/vdsm/v2v.py
 tests/alignmentscan_test.py
-tests/common/cmdutils_test.py
 tests/common/commands_test.py
 tests/storage/misc_test.py
 tests/storage/qemuimg_test.py
