@@ -40,8 +40,8 @@ from v2v_testlib import MockVirConnect, _mac_from_uuid, BLOCK_DEV_PATH
 from vdsm import v2v
 from vdsm.common import libvirtconnection
 from vdsm.common import response
-from vdsm.common.cmdutils import CommandPath
-from vdsm.common.commands import execCmd, terminating
+from vdsm.common.cmdutils import CommandPath, exec_cmd
+from vdsm.common.commands import terminating
 from vdsm.common.password import ProtectedPassword
 
 from testlib import VdsmTestCase as TestCaseBase, recorded
@@ -484,7 +484,7 @@ class v2vTests(TestCaseBase):
                                                    self.domain_id),
                self.vm_name]
 
-        rc, output, error = execCmd(cmd, raw=True)
+        rc, output, error = exec_cmd(cmd)
         self.assertEqual(rc, 0)
 
         with io.open('fake-virt-v2v.out', 'rb') as f:

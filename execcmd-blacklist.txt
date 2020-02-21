@@ -28,7 +28,6 @@ tests/storage/misc_test.py
 tests/storage/qemuimg_test.py
 tests/storage/qemuio.py
 tests/virt/boot_hostdev_test.py
-tests/virt/v2v_test.py
 vdsm_hooks/ethtool_options/ethtool_options.py
 vdsm_hooks/extra_ipv4_addrs/extra_ipv4_addrs.py
 vdsm_hooks/fcoe/fcoe_before_network_setup.py
