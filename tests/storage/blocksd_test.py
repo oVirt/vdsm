@@ -90,6 +90,21 @@ def fakeGetLV(vgName):
     return lvs
 
 
+def make_lv(name=None, tags=()):
+    return lvm.LV(
+        tags=tags,
+        uuid=None,
+        name=name,
+        vg_name=None,
+        attr=None,
+        size=None,
+        seg_start_pe=None,
+        devices=None,
+        writeable=None,
+        opened=None,
+        active=None)
+
+
 class TestGetAllVolumes:
     # TODO: add more tests, see fileSDTests.py
 
@@ -104,6 +119,47 @@ class TestGetAllVolumes:
         sdName = "f9e55e18-67c4-4377-8e39-5833ca422bef"
         allVols = blockSD.getAllVolumes(sdName)
         assert len(allVols) == 2
+
+
+class TestParseLVTags:
+
+    def test_parse_tags(self):
+        lv = make_lv(
+            tags=("IU_6b055e16-337d-4cbe-9af9-d75f00f910c1",
+                  "MD_93",
+                  "PU_d6f2fcac-e98e-4330-9321-560146f40a84")
+        )
+        lvtags = blockSD.parse_lv_tags(lv)
+        assert lvtags == blockSD.LVTags(
+            mdslot=93,
+            image="6b055e16-337d-4cbe-9af9-d75f00f910c1",
+            parent="d6f2fcac-e98e-4330-9321-560146f40a84"
+        )
+
+    def test_parse_missing_tags(self):
+        lv = make_lv(
+            tags=("IU_6b055e16-337d-4cbe-9af9-d75f00f910c1",
+                  "PU_d6f2fcac-e98e-4330-9321-560146f40a84")
+        )
+        lvtags = blockSD.parse_lv_tags(lv)
+        assert lvtags == blockSD.LVTags(
+            mdslot=None,
+            image="6b055e16-337d-4cbe-9af9-d75f00f910c1",
+            parent="d6f2fcac-e98e-4330-9321-560146f40a84"
+        )
+
+    def test_parse_invalid_tag(self):
+        lv = make_lv(
+            tags=("IU_6b055e16-337d-4cbe-9af9-d75f00f910c1",
+                  "PU_d6f2fcac-e98e-4330-9321-560146f40a84",
+                  "MD_INVALID_INT")
+        )
+        lvtags = blockSD.parse_lv_tags(lv)
+        assert lvtags == blockSD.LVTags(
+            mdslot=None,
+            image="6b055e16-337d-4cbe-9af9-d75f00f910c1",
+            parent="d6f2fcac-e98e-4330-9321-560146f40a84"
+        )
 
 
 class TestDecodeValidity:

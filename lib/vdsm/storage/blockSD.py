@@ -106,6 +106,7 @@ METADATA_LV_SIZE_MB = 128
 MASTER_LV_SIZE_MB = 1024
 
 BlockSDVol = namedtuple("BlockSDVol", "name, image, parent")
+LVTags = namedtuple("LVTags", "mdslot, image, parent")
 
 log = logging.getLogger("storage.BlockSD")
 
@@ -214,22 +215,35 @@ def _getVolsTree(sdUUID):
             # Uninitialized LVs have no image or parent yet.
             continue
 
-        image = ""
-        parent = ""
-        for tag in lv.tags:
-            if tag.startswith(sc.TAG_PREFIX_IMAGE):
-                image = tag[len(sc.TAG_PREFIX_IMAGE):]
-            elif tag.startswith(sc.TAG_PREFIX_PARENT):
-                parent = tag[len(sc.TAG_PREFIX_PARENT):]
-            if parent and image:
-                vols[lv.name] = BlockSDVol(lv.name, image, parent)
-                break
+        lvtags = parse_lv_tags(lv)
+        if lvtags.parent and lvtags.image:
+            vols[lv.name] = BlockSDVol(lv.name, lvtags.image, lvtags.parent)
         else:
             log.warning(
                 "Ignoring volume %s that lacks minimal tag set: %s",
                 lv.name, lv.tags)
 
     return vols
+
+
+def parse_lv_tags(lv):
+    image = None
+    parent = None
+    mdslot = None
+
+    for tag in lv.tags:
+        if tag.startswith(sc.TAG_PREFIX_IMAGE):
+            image = tag[len(sc.TAG_PREFIX_IMAGE):]
+        elif tag.startswith(sc.TAG_PREFIX_PARENT):
+            parent = tag[len(sc.TAG_PREFIX_PARENT):]
+        elif tag.startswith(sc.TAG_PREFIX_MD):
+            try:
+                mdslot = int(tag[len(sc.TAG_PREFIX_MD):])
+            except ValueError:
+                log.warning("Invalid tag %r for lv %s/%s",
+                            tag, lv.vg_name, lv.name)
+
+    return LVTags(mdslot, image, parent)
 
 
 def getAllVolumes(sdUUID):
