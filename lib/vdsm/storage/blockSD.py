@@ -1729,7 +1729,87 @@ class BlockStorageDomain(sd.StorageDomain):
     # Dump metadata
 
     def dump(self):
-        return {"metadata": self.getInfo()}
+        # Invalidate the vg pvs and lvs here, to make sure we don't return
+        # stale data from the cache.
+        lvm.invalidateVG(self.sdUUID, invalidateLVs=True, invalidatePVs=True)
+
+        return {
+            "metadata": self.getInfo(),
+            "volumes": self._dump_volumes()
+        }
+
+    def _dump_volumes(self):
+        vols_md = {}
+        slots_md = self._parse_volumes_metadata()
+
+        for lv in _iter_volumes(self.sdUUID):
+            # Complement volume metadata from parsed slots by slot number.
+            try:
+                lvtags = parse_lv_tags(lv)
+                # Exclude removed volumes and zeroed volumes.
+                if lvtags.image.startswith(sc.REMOVED_IMAGE_PREFIX):
+                    continue
+                vol_md = slots_md[lvtags.mdslot]
+            except Exception as e:
+                self.log.warning(
+                    "Failed to get metadata from lv tags for lv %s/%s: %s",
+                    self.sdUUID, lv.name, e)
+                vol_md = {"status": sc.VOL_STATUS_INVALID}
+
+            # Complement metadata from tags in case it was missing from slots.
+            if vol_md["status"] != sc.VOL_STATUS_OK:
+                vol_md["image"] = lvtags.image
+                vol_md["parent"] = lvtags.parent
+
+            # Add the volume sizes information.
+            try:
+                vol_size = self.getVolumeSize(vol_md["image"], lv.name)
+                vol_md["truesize"] = vol_size.truesize
+                vol_md["apparentsize"] = vol_size.apparentsize
+            except Exception as e:
+                self.log.warning(
+                    "Failed to get size for lv %s/%s: %s",
+                    self.sdUUID, lv.name, e)
+
+            vols_md[lv.name] = vol_md
+
+        return vols_md
+
+    def _parse_volumes_metadata(self):
+        slots_md = {}
+        slots = _occupied_metadata_slots(self.sdUUID)
+        if len(slots) == 0:
+            return slots_md
+
+        # Slots are sorted in an increasing order,
+        # find slots start and end offsets to read from metadata.
+        start_offset = self._manifest.metadata_offset(slots[0])
+        end_offset = self._manifest.metadata_offset(
+            slots[-1]) + sc.METADATA_SIZE
+
+        # Read the metadata from starting offset to last offset end.
+        path = self._manifest.metadata_volume_path()
+        raw_md = misc.readblock(path, start_offset, end_offset - start_offset)
+
+        # Parse metadata per slot.
+        for slot in slots:
+            offset = self._manifest.metadata_offset(slot) - start_offset
+            slot_raw_md = raw_md[offset:offset + sc.METADATA_SIZE]
+
+            try:
+                md_lines = slot_raw_md.rstrip(b"\0").splitlines()
+                slot_md = VolumeMetadata.from_lines(md_lines).dump()
+                slot_md["status"] = sc.VOL_STATUS_OK
+            except Exception as e:
+                self.log.warning(
+                    "Failed to parse metadata slot %s offset=%s: %s",
+                    slot, offset, e)
+                slot_md = {"status": sc.VOL_STATUS_INVALID}
+
+            slot_md["mdslot"] = slot
+            slots_md[slot] = slot_md
+
+        return slots_md
 
 
 def _external_leases_path(sdUUID):

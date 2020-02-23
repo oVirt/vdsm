@@ -882,7 +882,56 @@ def test_dump_sd_metadata(
         'vgMetadataDevice': md_dev
     }
 
-    assert dom.dump() == {"metadata": expected_metadata}
+    assert dom.dump() == {
+        "metadata": expected_metadata,
+        "volumes": {}
+    }
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+    vol_capacity = 10 * GiB
+    vol_ctime = 1582196150
+
+    with monkeypatch.context() as mc:
+        mc.setattr(time, "time", lambda: vol_ctime)
+        dom.createVolume(
+            diskType=sc.DATA_DISKTYPE,
+            imgUUID=img_uuid,
+            preallocate=sc.SPARSE_VOL,
+            desc="test",
+            capacity=vol_capacity,
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID,
+            volFormat=sc.COW_FORMAT,
+            volUUID=vol_uuid)
+
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+    mdslot = vol.getMetaSlot()
+    vol_size = dom.getVolumeSize(img_uuid, vol_uuid)
+    expected_volumes_metadata = {
+        vol_uuid: {
+            'apparentsize': vol_size.apparentsize,
+            'capacity': vol_capacity,
+            'ctime': vol_ctime,
+            'description': 'test',
+            'disktype': sc.DATA_DISKTYPE,
+            'format': 'COW',
+            'generation': 0,
+            'image': img_uuid,
+            'legality': sc.LEGAL_VOL,
+            'mdslot': mdslot,
+            'status': sc.VOL_STATUS_OK,
+            'parent': sc.BLANK_UUID,
+            'type': 'SPARSE',
+            'voltype': 'LEAF',
+            'truesize': vol_size.truesize
+        }
+    }
+
+    assert dom.dump() == {
+        "metadata": expected_metadata,
+        "volumes": expected_volumes_metadata
+    }
 
 
 LVM_TAG_CHARS = string.ascii_letters + "0123456789_+.-/=!:#"

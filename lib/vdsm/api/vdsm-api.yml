@@ -8406,6 +8406,85 @@ types:
             type: int
         type: object
 
+    VolumeDump: &VolumeDump
+        added: '4.4'
+        description: Volume raw metadata.
+        name: VolumeDump
+        properties:
+        -   description: Advisory code indicating the Volume's planned usage.
+            name: disktype
+            type: *DiskType
+
+        -   description: Indicates whether the Volume and metadata are valid
+            name: status
+            type: *VolumeStatus
+
+        -   description: The size of the Volume in bytes.
+            name: capacity
+            type: uint
+
+        -   description: The direct ancestor of this Volume if it exists.
+            name: parent
+            type: *UUID
+
+        -   description: A human-readable description of the Volume.
+            name: description
+            type: string
+
+        -   description: Indicates whether the volume is legal to use.
+            name: legality
+            type: *VolumeLegality
+
+        -   description: The Volume creation time in seconds since the epoch.
+            name: ctime
+            type: int
+
+        -   description: The format used to write data to the Volume.
+            name: format
+            type: *VolumeFormat
+
+        -   description: The Image associated with the Volume.
+            name: image
+            type: *UUID
+
+        -   description: The Volume allocation type (sparse, preallocated).
+            name: type
+            type: *VolumeAllocation
+
+        -   defaultvalue: null
+            description: The metadata slot index, available only for a volume
+                         on ISCSI or FC storage domain.
+            name: mdslot
+            type: uint
+
+        -   description: A monotonically increasing number, incremented each
+                         time a volume operation is completed successfully.
+                         The maximum value is 999 and the next increment will
+                         reset the value to 0.
+            name: generation
+            type: uint
+
+        -   description: The Volume role
+            name: voltype
+            type: *VolumeRole
+
+        -   description: The amount of underlying storage allocated in bytes.
+            name: truesize
+            type: uint
+
+        -   description: The size of the disk in bytes.
+            name: apparentsize
+            type: uint
+        type: object
+
+    VolumesDumpMap: &VolumesDumpMap
+        added: '4.4'
+        description: A mapping of volumes UUIDs to their dumped raw metadata.
+        key-type: *UUID
+        name: VolumesDumpMap
+        type: map
+        value-type: *VolumeDump
+
     StorageDomainDump: &StorageDomainDump
         added: '4.4'
         description: Storage domain raw metadata.
@@ -8414,6 +8493,10 @@ types:
         -   description: Storage domain metadata.
             name: metadata
             type: *StorageDomainInfo
+
+        -   description: Volumes metadata.
+            name: volumes
+            type: *VolumesDumpMap
         type: object
 
 Host.setupNetworks:
