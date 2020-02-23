@@ -50,6 +50,7 @@ from vdsm.storage.persistent import PersistentDict, DictValidator
 
 from vdsm import constants
 from vdsm.storage.constants import LEASE_FILEEXT, UUID_GLOB_PATTERN
+from vdsm.storage.volumemetadata import VolumeMetadata
 
 REMOTE_PATH = "REMOTE_PATH"
 
@@ -838,7 +839,63 @@ class FileStorageDomain(sd.StorageDomain):
     # Dump metadata
 
     def dump(self):
-        return {"metadata": self.getInfo()}
+        return {
+            "metadata": self.getInfo(),
+            "volumes": self._dump_volumes()
+        }
+
+    def _dump_volumes(self):
+        result = {}
+        # Glob *.meta files directly without an iterator which
+        # may break if a metadata file fails on path validation.
+        meta_files_pattern = os.path.join(
+            glob_escape(self.mountpoint),
+            self.sdUUID,
+            sd.DOMAIN_IMAGES,
+            UUID_GLOB_PATTERN,
+            "*" + fileVolume.META_FILEEXT)
+
+        self.log.debug("Looking up files %s", meta_files_pattern)
+        for path in self.oop.glob.glob(meta_files_pattern):
+            # Skip removed images files.
+            img_dir = os.path.dirname(path)
+            if os.path.basename(img_dir).startswith(sc.REMOVED_IMAGE_PREFIX):
+                continue
+
+            vol_uuid, md = self._parse_metadata_file(path)
+            result[vol_uuid] = md
+
+        return result
+
+    def _parse_metadata_file(self, filepath):
+        img_dir, filename = os.path.split(filepath)
+        vol_uuid = os.path.splitext(filename)[0]
+        img_uuid = os.path.basename(img_dir)
+
+        try:
+            # Parse the meta file's key=value pairs and get the metadata dict.
+            data = self.oop.readFile(filepath, direct=True)
+            md_lines = data.rstrip(b"\0").splitlines()
+            md = VolumeMetadata.from_lines(md_lines).dump()
+            # Set volume status when done.
+            md["status"] = sc.VOL_STATUS_OK
+        except Exception as e:
+            self.log.warning("Failed to parse meta file for volume %s/%s: %s",
+                             self.sdUUID, vol_uuid, e)
+            md = {"status": sc.VOL_STATUS_INVALID}
+
+        # Get volume size.
+        try:
+            vol_size = self.getVolumeSize(img_uuid, vol_uuid)
+            md["truesize"] = vol_size.truesize
+            md["apparentsize"] = vol_size.apparentsize
+        except Exception as e:
+            self.log.warning(
+                "Failed to get size for volume %s/%s: %s",
+                self.sdUUID, vol_uuid, e)
+            md["status"] = sc.VOL_STATUS_INVALID
+
+        return vol_uuid, md
 
     # Validating file system features
 

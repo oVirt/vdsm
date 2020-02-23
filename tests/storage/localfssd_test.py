@@ -840,7 +840,68 @@ def test_dump_sd_metadata(monkeypatch, tmp_repo, user_mount, user_domain):
         "version": str(user_domain.getVersion())
     }
 
-    assert user_domain.dump() == {"metadata": expected_metadata}
+    assert user_domain.dump() == {
+        "metadata": expected_metadata,
+        "volumes": {}
+    }
+
+
+def test_dump_sd_volumes(monkeypatch, tmp_repo, user_mount, user_domain):
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+    vol_capacity = 2 * SPARSE_VOL_SIZE
+    vol_ctime = 1550522547
+
+    with monkeypatch.context() as mc:
+        mc.setattr(time, "time", lambda: vol_ctime)
+        user_domain.createVolume(
+            imgUUID=img_uuid,
+            capacity=vol_capacity,
+            volFormat=sc.RAW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType="DATA",
+            volUUID=vol_uuid,
+            desc="test",
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID)
+
+    expected_metadata = {
+        "alignment": user_domain.alignment,
+        "block_size": user_domain.block_size,
+        "class": "Data",
+        "name": "domain",
+        "pool": [tmp_repo.pool_id],
+        "remotePath": user_mount.path,
+        "role": sd.REGULAR_DOMAIN,
+        "type": "LOCALFS",
+        "uuid": user_domain.sdUUID,
+        "version": str(user_domain.getVersion())
+    }
+
+    vol_size = user_domain.getVolumeSize(img_uuid, vol_uuid)
+    expected_volumes_metadata = {
+        vol_uuid: {
+            "apparentsize": vol_size.apparentsize,
+            "capacity": vol_capacity,
+            "ctime": vol_ctime,
+            "description": "test",
+            "disktype": sc.DATA_DISKTYPE,
+            "format": "RAW",
+            "generation": 0,
+            "image": img_uuid,
+            "legality": sc.LEGAL_VOL,
+            "status": sc.VOL_STATUS_OK,
+            "parent": sc.BLANK_UUID,
+            "truesize": vol_size.truesize,
+            "type": "SPARSE",
+            "voltype": "LEAF"
+        }
+    }
+
+    assert user_domain.dump() == {
+        "metadata": expected_metadata,
+        "volumes": expected_volumes_metadata
+    }
 
 
 def verify_volume_file(
