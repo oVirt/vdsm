@@ -24,7 +24,6 @@ from __future__ import print_function
 
 import collections
 import libvirt
-import os
 import pytest
 
 from fakelib import FakeLogger
@@ -142,7 +141,7 @@ def test_backup_xml(tmp_backupdir):
     drives["img-id-1"] = FakeDrive("sda", "img-id-1")
     drives["img-id-2"] = FakeDrive("vda", "img-id-2")
 
-    socket_path = os.path.join(backup.P_BACKUP, backup_id)
+    socket_path = backup.socket_path(backup_id)
     addr = nbdutils.UnixAddress(socket_path)
 
     backup_xml = backup.create_backup_xml(
@@ -354,7 +353,7 @@ def test_backup_info(tmp_backupdir, tmp_basedir):
             <disk name='hdc' backup='no'/>
           </disks>
         </domainbackup>
-        """.format(os.path.join(backup.P_BACKUP, backup_id))
+        """.format(backup.socket_path(backup_id))
     dom = FakeDomainAdapter(expected_xml)
 
     fake_disks = create_fake_disks()
@@ -422,7 +421,7 @@ def verify_scratch_disks_exists(vm):
 
 def verify_backup_urls(backup_id, result_disks):
     for image_id, drive in FAKE_DRIVES.items():
-        socket_path = os.path.join(backup.P_BACKUP, backup_id)
+        socket_path = backup.socket_path(backup_id)
         exp_addr = nbdutils.UnixAddress(socket_path).url(drive.name)
         assert result_disks[image_id] == exp_addr
 

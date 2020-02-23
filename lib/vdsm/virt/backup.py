@@ -126,12 +126,8 @@ def start_backup(vm, dom, config):
             vm_id=vm.id,
             backup=backup_cfg)
 
-    # TODO: We need to create a vm directory in
-    # /run/vdsm/backup for each vm backup socket.
-    # This way we can prevent vms from accessing
-    # other vms backup socket with selinux.
-    socket_path = os.path.join(P_BACKUP, backup_cfg.backup_id)
-    nbd_addr = nbdutils.UnixAddress(socket_path)
+    path = socket_path(backup_cfg.backup_id)
+    nbd_addr = nbdutils.UnixAddress(path)
 
     # Create scratch disk for each drive
     scratch_disks = _create_scratch_disks(
@@ -321,6 +317,14 @@ def create_backup_xml(address, drives, scratch_disks):
     domainbackup.appendChild(disks)
 
     return xmlutils.tostring(domainbackup)
+
+
+def socket_path(backup_id):
+    # TODO: We need to create a vm directory in
+    # /run/vdsm/backup for each vm backup socket.
+    # This way we can prevent vms from accessing
+    # other vms backup socket with selinux.
+    return os.path.join(P_BACKUP, backup_id)
 
 
 def _create_scratch_disks(vm, dom, backup_id, drives):
