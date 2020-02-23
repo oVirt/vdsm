@@ -245,7 +245,7 @@ class VolumeManifest(object):
             avsize = self.getVolumeTrueSize()
             info['apparentsize'] = str(vsize)
             info['truesize'] = str(avsize)
-            info['status'] = "OK"
+            info['status'] = sc.VOL_STATUS_OK
             # 'lease' is an optional property with null as the default value.
             # If volume doesn't have 'lease', we will not return it as part
             # of the volume info.
@@ -263,7 +263,7 @@ class VolumeManifest(object):
             self.log.debug("Failed to get volume info: %s", e)
             info['apparentsize'] = "0"
             info['truesize'] = "0"
-            info['status'] = "INVALID"
+            info['status'] = sc.VOL_STATUS_INVALID
 
         # Both engine and dumpStorageTable don't use this option so
         # only keeping it to not break existing scripts that look for the key

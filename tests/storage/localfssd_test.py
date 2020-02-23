@@ -317,7 +317,7 @@ def test_volume_life_cycle(monkeypatch, user_domain):
     assert actual["domain"] == user_domain.sdUUID
     assert actual["format"] == sc.VOLUME_TYPES[sc.COW_FORMAT]
     assert actual["parent"] == sc.BLANK_UUID
-    assert actual["status"] == "OK"
+    assert actual["status"] == sc.VOL_STATUS_OK
     assert actual["type"] == "SPARSE"
     assert actual["voltype"] == "LEAF"
     assert actual["uuid"] == vol_uuid

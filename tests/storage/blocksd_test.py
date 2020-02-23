@@ -487,7 +487,7 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
         "version": None,
     }
     assert actual["parent"] == sc.BLANK_UUID
-    assert actual["status"] == "OK"
+    assert actual["status"] == sc.VOL_STATUS_OK
     assert actual["type"] == "SPARSE"
     assert actual["voltype"] == "LEAF"
     assert actual["uuid"] == vol_uuid
