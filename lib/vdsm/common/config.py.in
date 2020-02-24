@@ -285,7 +285,7 @@ parameters = [
             'Synchronization enabled due to concerns pertaining to '
             'performance, etc.'),
 
-        ('nowait_domain_stats', 'false',
+        ('nowait_domain_stats', 'true',
             'Enable incomplete domain stats retrieval rather than blocking '
             'on stats retrieval when some stats are temporarily unavailable.'),
     ]),
