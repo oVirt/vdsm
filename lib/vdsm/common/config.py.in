@@ -284,6 +284,10 @@ parameters = [
             'compatibility and for those users who may not want Guest Time '
             'Synchronization enabled due to concerns pertaining to '
             'performance, etc.'),
+
+        ('nowait_domain_stats', 'false',
+            'Enable incomplete domain stats retrieval rather than blocking '
+            'on stats retrieval when some stats are temporarily unavailable.'),
     ]),
 
     # Section: [rpc]
@@ -657,11 +661,6 @@ parameters = [
             'Period (in sec) for gathering filesystem information and disk'
             ' mapping.'),
 
-    ]),
-
-    # Section: [nowait]
-    ('nowait', [
-        ('enabled', 'false', 'enable or disable the nowait functionality'),
     ]),
 ]
 

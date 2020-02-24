@@ -51,7 +51,7 @@ _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
 _METRICS_ENABLED = config.getboolean('metrics', 'enabled')
-_NOWAIT_ENABLED = config.getboolean('nowait', 'enabled')
+_NOWAIT_ENABLED = config.getboolean('vars', 'nowait_domain_stats')
 
 
 class TotalCpuSample(object):
