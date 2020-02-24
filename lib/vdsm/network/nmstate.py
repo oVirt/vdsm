@@ -146,7 +146,9 @@ def _set_bond_slaves_mtu(desired_ifstates, current_ifstates):
                 current_slave_state = current_ifstates.get(slave)
                 desired_slave_state = desired_ifstates.get(slave)
                 if desired_slave_state:
-                    _set_slaves_mtu_based_on_bond(slave, bond_mtu)
+                    _set_slaves_mtu_based_on_bond(
+                        desired_slave_state, bond_mtu
+                    )
                 elif (
                     current_slave_state
                     and bond_mtu != current_slave_state[Interface.MTU]
