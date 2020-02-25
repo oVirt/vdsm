@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -233,6 +233,23 @@ class TestNetworkWithBond(object):
 
                 adapter.assertNoNetwork(NETWORK1_NAME)
                 adapter.assertNoBond(BOND_NAME)
+
+    @nftestlib.parametrize_bridged
+    def test_replace_network_nic_with_bond_that_includes_the_nic(
+        self, switch, bridged
+    ):
+        with dummy_devices(2) as (nic1, nic2):
+            net_attrs = {'bridged': bridged, 'switch': switch, 'nic': nic1}
+            bond_attrs = {'nics': [nic1, nic2], 'switch': switch}
+
+            with adapter.setupNetworks({NETWORK1_NAME: net_attrs}, {}, NOCHK):
+                net_attrs.pop('nic')
+                net_attrs['bonding'] = BOND_NAME
+                with adapter.setupNetworks(
+                    {NETWORK1_NAME: net_attrs}, {BOND_NAME: bond_attrs}, NOCHK
+                ):
+                    adapter.assertNetwork(NETWORK1_NAME, net_attrs)
+                    adapter.assertBond(BOND_NAME, bond_attrs)
 
 
 @pytest.mark.nmstate

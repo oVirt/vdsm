@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,28 @@ import pytest
 
 from vdsm.network import errors as ne
 from vdsm.network.netswitch import validator
+
+from . import testlib
+
+NET0 = 'net0'
+
+BOND0 = 'bond0'
+
+NICS = [f'eth{i}' for i in range(11)]
+
+
+@pytest.fixture(scope='function')
+def net_info():
+    return testlib.NetInfo.create(
+        networks={
+            NET0: testlib.NetInfo.create_network(
+                iface=NET0, southbound=NICS[0], ports=NICS[:1], bridged=True
+            )
+        },
+        nics=NICS,
+        bridges={NET0: testlib.NetInfo.create_bridge(ports=NICS[:1])},
+        bondings={BOND0: testlib.NetInfo.create_bond(slaves=NICS[1:3])},
+    )
 
 
 class TestValidation(object):
@@ -304,44 +326,28 @@ class TestValidation(object):
             )
         assert cne_context.value.errCode == ne.ERR_BAD_VLAN
 
-    def test_nic_used_by_new_network_and_current_bond(self):
-        bonds_to_add = {}
+    def test_nic_used_by_new_network_and_current_bond(self, net_info):
         nets_to_add = {'net1': {'nic': 'eth1'}}
-        kernel_nics = set()
-        kernel_bond_slaves = {'eth1', 'eth2'}
         with pytest.raises(ne.ConfigNetworkError) as cne_context:
-            validator.validate_nic_usage(
-                nets_to_add, bonds_to_add, kernel_nics, kernel_bond_slaves
-            )
+            valid = validator.Validator(nets_to_add, {}, net_info)
+            valid.validate_nic_usage()
         assert cne_context.value.errCode == ne.ERR_USED_NIC
 
-    def test_nic_used_by_current_network_and_new_bond(self):
-        bonds_to_add = {'bond1': {'nics': ['eth1', 'eth2']}}
-        nets_to_add = {}
-        kernel_nics = {'eth1'}
-        kernel_bond_slaves = set()
+    def test_nic_used_by_current_network_and_new_bond(self, net_info):
+        bonds_to_add = {'bond1': {'nics': ['eth0', 'eth3']}}
         with pytest.raises(ne.ConfigNetworkError) as cne_context:
-            validator.validate_nic_usage(
-                nets_to_add, bonds_to_add, kernel_nics, kernel_bond_slaves
-            )
+            valid = validator.Validator({}, bonds_to_add, net_info)
+            valid.validate_nic_usage()
         assert cne_context.value.errCode == ne.ERR_USED_NIC
 
-    def test_nic_used_by_new_network_only(self):
-        bonds_to_add = {}
-        nets_to_add = {'net2': {'nic': 'eth1'}}
-        kernel_nics = set()
-        kernel_bond_slaves = set()
+    def test_nic_used_by_new_network_only(self, net_info):
+        nets_to_add = {'net2': {'nic': 'eth3'}}
 
-        validator.validate_nic_usage(
-            nets_to_add, bonds_to_add, kernel_nics, kernel_bond_slaves
-        )
+        valid = validator.Validator(nets_to_add, {}, net_info)
+        valid.validate_nic_usage()
 
-    def test_nic_used_by_new_bond_only(self):
-        bonds_to_add = {'bond1': {'nics': ['eth1', 'eth2']}}
-        nets_to_add = {}
-        kernel_nics = set()
-        kernel_bond_slaves = set()
+    def test_nic_used_by_new_bond_only(self, net_info):
+        bonds_to_add = {'bond1': {'nics': ['eth3', 'eth4']}}
 
-        validator.validate_nic_usage(
-            nets_to_add, bonds_to_add, kernel_nics, kernel_bond_slaves
-        )
+        valid = validator.Validator({}, bonds_to_add, net_info)
+        valid.validate_nic_usage()

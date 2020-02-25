@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ from vdsm.network.kernelconfig import KernelConfig
 from vdsm.network.link import dpdk
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond import sysfs_options
+from vdsm.network.netinfo.cache import NetInfo
 from vdsm.network.netinfo.nics import nics
 
 
@@ -73,30 +74,45 @@ def validate_southbound_devices_usages(nets, ni):
         )
 
 
-def validate_nic_usage(
-    req_nets, req_bonds, kernel_nets_nics, kernel_bonds_slaves
-):
-    request_bonds_slaves = set()
-    for bond_attr in six.itervalues(req_bonds):
-        if 'remove' in bond_attr:
-            continue
-        request_bonds_slaves |= set(bond_attr['nics'])
+class Validator(object):
+    def __init__(self, nets, bonds, net_info):
+        self._nets = nets
+        self._bonds = bonds
+        self._net_info = NetInfo(net_info)
+        self._desired_config = self._create_desired_config()
 
-    request_nets_nics = set()
-    for net_attr in six.itervalues(req_nets):
-        if 'remove' in net_attr:
-            continue
-        nic = net_attr.get('nic')
-        if nic:
-            request_nets_nics |= {nic}
+    def validate_nic_usage(self):
+        used_bond_slaves = set()
+        for bond_attr in self._desired_config.bonds.values():
+            used_bond_slaves |= set(bond_attr['nics'])
 
-    shared_nics = (request_bonds_slaves | kernel_bonds_slaves) & (
-        request_nets_nics | kernel_nets_nics
-    )
-    if shared_nics:
-        raise ne.ConfigNetworkError(
-            ne.ERR_USED_NIC, 'Nics with multiple usages: %s' % shared_nics
-        )
+        used_net_nics = {
+            net_attr['nic']
+            for net_attr in self._desired_config.networks.values()
+            if net_attr.get('nic')
+        }
+
+        shared_nics = used_bond_slaves & used_net_nics
+        if shared_nics:
+            raise ne.ConfigNetworkError(
+                ne.ERR_USED_NIC, f'Nics with multiple usages: {shared_nics}'
+            )
+
+    def _create_desired_config(self):
+        desired_config = KernelConfig(self._net_info)
+
+        for net_name, net_attr in self._nets.items():
+            if 'remove' in net_attr:
+                desired_config.removeNetwork(net_name)
+            else:
+                desired_config.setNetwork(net_name, net_attr)
+
+        for bond_name, bond_attr in self._bonds.items():
+            if 'remove' in bond_attr:
+                desired_config.removeBonding(bond_name)
+            else:
+                desired_config.setBonding(bond_name, bond_attr)
+        return desired_config
 
 
 def validate_network_setup(nets, bonds, net_info):
@@ -117,12 +133,7 @@ def validate_network_setup(nets, bonds, net_info):
         validate_bond_configuration(
             bond, attrs, nets, current_nets, kernel_nics
         )
-    validate_nic_usage(
-        nets,
-        bonds,
-        _get_kernel_nets_nics(current_nets, kernel_bonds, nets),
-        _get_kernel_bonds_slaves(kernel_bonds, bonds),
-    )
+    Validator(nets, bonds, net_info).validate_nic_usage()
 
 
 def validate_net_configuration(
@@ -173,23 +184,6 @@ def validate_bond_configuration(
 
     if 'options' in bondattrs:
         _validate_bond_options(bondattrs['options'])
-
-
-def _get_kernel_nets_nics(networks, kernel_bonds, req_nets):
-    return {
-        netattr['southbound']
-        for netname, netattr in networks.items()
-        if netattr['southbound'] not in kernel_bonds
-        and not req_nets.get(netname, {}).get('remove', False)
-    }
-
-
-def _get_kernel_bonds_slaves(kernel_bonds, req_bonds):
-    kernel_bonds_slaves = set()
-    for bond_name in kernel_bonds:
-        if not req_bonds.get(bond_name, {}).get('remove', False):
-            kernel_bonds_slaves |= Bond(bond_name).slaves
-    return kernel_bonds_slaves
 
 
 def _validate_vlan_id(id):
