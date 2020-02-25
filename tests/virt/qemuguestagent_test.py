@@ -77,6 +77,28 @@ def _fake_qemuAgentCommand(domain, command, timeout, flags):
                 "used-bytes": 12345,
                 "type": "ext4"
             }, {
+                "name": "sr0",
+                "total-bytes": 411844608,
+                "mountpoint": "/mnt",
+                "disk": [
+                    {
+                    "serial": "QEMU_DVD-ROM_QM00003",
+                    "bus-type": "ide",
+                    "bus": 1,
+                    "unit": 0,
+                    "pci-controller": {
+                        "bus": 0,
+                        "slot": 1,
+                        "domain": 0,
+                        "function": 1
+                    },
+                    "dev": "/dev/sr0",
+                    "target": 0
+                    }
+                ],
+                "used-bytes": 411844608,
+                "type": "iso9660"
+            }, {
                 "name": "\\\\?\\Volume{6ab8dd61-0000-0000-0000-100000000000}\\",  # NOQA
                 "mountpoint": "System Reserved",
                 "disk": [],
@@ -289,14 +311,22 @@ class QemuGuestAgentTests(TestCaseBase):
         self.assertEqual(
             self.qga_poller._qga_call_fsinfo(self.vm),
             {
-                'disksUsage': [{
-                    'path': '/home',
-                    'fs': 'ext4',
-                    'total': '123456',
-                    'used': '12345',
-                }],
+                'disksUsage': [
+                    {
+                        'path': '/home',
+                        'fs': 'ext4',
+                        'total': '123456',
+                        'used': '12345',
+                    }, {
+                        'path': '/mnt',
+                        'fs': 'iso9660',
+                        'total': '411844608',
+                        'used': '411844608',
+                    }
+                ],
                 'diskMapping': {
-                    'SAMSUNG_MZ7LN512HCHP': {'name': '/dev/sda2'},
+                    'SAMSUNG_MZ7LN512HCHP': {'name': '/dev/sda'},
+                    'QEMU_DVD-ROM_QM00003': {'name': '/dev/sr0'},
                 },
             })
 

@@ -29,6 +29,7 @@ from collections import defaultdict
 import copy
 import json
 import libvirt
+import re
 import six
 import threading
 import time
@@ -121,6 +122,8 @@ _QEMU_COMMAND_PERIODS = {
     VIR_DOMAIN_GUEST_INFO_USERS:
         config.getint('guest_agent', 'qga_active_users_period'),
 }
+
+_DISK_DEVICE_RE = re.compile('^(/dev/[hsv]d[a-z]+)[0-9]+$')
 
 
 @virdomain.expose(*_LIBVIRT_EXPOSED)
@@ -572,8 +575,14 @@ class QemuGuestAgentPoller(object):
             for d in fs[_FS_DISK_FIELD]:
                 if _FS_DISK_SERIAL_FIELD in d and \
                         _FS_DISK_DEVICE_FIELD in d:
-                    mapping[d[_FS_DISK_SERIAL_FIELD]] = \
-                        {'name': d[_FS_DISK_DEVICE_FIELD]}
+                    dev = d[_FS_DISK_DEVICE_FIELD]
+                    m = _DISK_DEVICE_RE.match(dev)
+                    if m is not None:
+                        dev = m.group(1)
+                        self.log.debug(
+                            'Stripping partition number: %s -> %s',
+                            d[_FS_DISK_DEVICE_FIELD], dev)
+                    mapping[d[_FS_DISK_SERIAL_FIELD]] = {'name': dev}
         return {'disksUsage': disks, 'diskMapping': mapping}
 
     def _qga_call_hostname(self, vm):
