@@ -246,6 +246,18 @@ def validate_network_setup(nets, bonds, net_info):
     validator.validate_nic_usage()
 
 
+def validate_bridge_name(bridge_name):
+    if (
+        not bridge_name
+        or len(bridge_name) > MAX_NAME_LEN
+        or set(bridge_name) & ILLEGAL_CHARS
+        or bridge_name.startswith('-')
+    ):
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_BRIDGE, f'Bridge name isn\'t valid: {bridge_name}'
+        )
+
+
 def _validate_vlan_id(id):
     MAX_ID = 4094
 
@@ -292,16 +304,4 @@ def _validate_nic_exists(nic, current_nics):
     if nic not in current_nics:
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_NIC, 'Nic %s does not exist' % nic
-        )
-
-
-def validate_bridge_name(bridge_name):
-    if (
-        not bridge_name
-        or len(bridge_name) > MAX_NAME_LEN
-        or set(bridge_name) & ILLEGAL_CHARS
-        or bridge_name.startswith('-')
-    ):
-        raise ne.ConfigNetworkError(
-            ne.ERR_BAD_BRIDGE, "Bridge name isn't valid: %r" % bridge_name
         )
