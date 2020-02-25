@@ -28,10 +28,15 @@ from vdsm.network.netswitch import validator
 from . import testlib
 
 NET0 = 'net0'
+NET1 = 'net1'
 
 BOND0 = 'bond0'
+BOND1 = 'bond1'
+BOND2 = 'bond2'
 
 NICS = [f'eth{i}' for i in range(11)]
+FAKE_NIC = 'fakenic'
+DPDK_NIC0 = 'dpdk0'
 
 
 @pytest.fixture(scope='function')
@@ -40,11 +45,17 @@ def net_info():
         networks={
             NET0: testlib.NetInfo.create_network(
                 iface=NET0, southbound=NICS[0], ports=NICS[:1], bridged=True
-            )
+            ),
+            NET1: testlib.NetInfo.create_network(
+                iface=NET1, southbound=BOND0, ports=[BOND0], bridged=True
+            ),
         },
         nics=NICS,
         bridges={NET0: testlib.NetInfo.create_bridge(ports=NICS[:1])},
-        bondings={BOND0: testlib.NetInfo.create_bond(slaves=NICS[1:3])},
+        bondings={
+            BOND0: testlib.NetInfo.create_bond(slaves=NICS[1:3]),
+            BOND1: testlib.NetInfo.create_bond(salves=NICS[9:11]),
+        },
     )
 
 
@@ -142,129 +153,69 @@ class TestValidation(object):
             fake_kernel_nics,
         )
 
-    def test_add_bond_with_no_slaves(self):
-        fake_kernel_nics = []
-        nets = {}
-        running_nets = {}
+    @pytest.mark.parametrize(
+        'slaves',
+        [(), [NICS[0], FAKE_NIC]],
+        ids=['no slaves', 'not existing slave'],
+    )
+    def test_add_bond_with_slaves_fail(self, slaves, net_info):
+        bonds = {BOND2: {'switch': 'ovs'}}
+        if slaves:
+            bonds[BOND2]['nics'] = slaves
+
         with pytest.raises(ne.ConfigNetworkError):
-            validator.validate_bond_configuration(
-                'bond1',
-                {'switch': 'ovs'},
-                nets,
-                running_nets,
-                fake_kernel_nics,
-            )
+            valid = validator.Validator({}, bonds, net_info)
+            valid.validate_bond(BOND2)
 
-    def test_add_bond_with_one_slave(self):
-        fake_kernel_nics = ['eth0']
-        nets = {}
-        running_nets = {}
+    @pytest.mark.parametrize(
+        'slaves',
+        [NICS[:1], [NICS[0], NICS[0]], NICS[:2]],
+        ids=['one slave', 'same slave twice', 'two slaves'],
+    )
+    def test_add_bond_with_slaves_pass(self, slaves, net_info):
+        bonds = {BOND2: {'switch': 'ovs', 'nics': slaves}}
 
-        validator.validate_bond_configuration(
-            'bond1',
-            {'nics': ['eth0'], 'switch': 'ovs'},
-            nets,
-            running_nets,
-            fake_kernel_nics,
-        )
+        valid = validator.Validator({}, bonds, net_info)
+        valid.validate_bond(BOND2)
 
-    def test_add_bond_with_one_slave_twice(self):
-        fake_kernel_nics = ['eth0']
-        nets = {}
-        running_nets = {}
-
-        validator.validate_bond_configuration(
-            'bond1',
-            {'nics': ['eth0', 'eth0'], 'switch': 'ovs'},
-            nets,
-            running_nets,
-            fake_kernel_nics,
-        )
-
-    def test_add_bond_with_two_slaves(self):
-        fake_kernel_nics = ['eth0', 'eth1']
-        nets = {}
-        running_nets = {}
-
-        validator.validate_bond_configuration(
-            'bond1',
-            {'nics': ['eth0', 'eth1'], 'switch': 'ovs'},
-            nets,
-            running_nets,
-            fake_kernel_nics,
-        )
-
-    def test_add_bond_with_not_existing_slaves(self):
-        fake_kernel_nics = []
-        nets = {}
-        running_nets = {}
+    def test_add_bond_with_dpdk(self, net_info):
+        bonds = {BOND2: {'nics': [NICS[0], DPDK_NIC0], 'switch': 'ovs'}}
         with pytest.raises(ne.ConfigNetworkError):
-            validator.validate_bond_configuration(
-                'bond1',
-                {'nics': ['eth0', 'eth1'], 'switch': 'ovs'},
-                nets,
-                running_nets,
-                fake_kernel_nics,
-            )
+            valid = validator.Validator({}, bonds, net_info)
+            valid.validate_bond(BOND2)
 
-    def test_add_bond_with_dpdk(self):
-        fake_kernel_nics = []
-        nets = {}
-        running_nets = {}
-        with pytest.raises(ne.ConfigNetworkError):
-            validator.validate_bond_configuration(
-                'bond1',
-                {'nics': ['eth0', 'dpdk0'], 'switch': 'ovs'},
-                nets,
-                running_nets,
-                fake_kernel_nics,
-            )
+    def test_remove_bond_not_attached_to_a_network(self, net_info):
+        bonds = {BOND1: {'remove': True}}
+        valid = validator.Validator({}, bonds, net_info)
+        valid.validate_bond(BOND1)
 
-    def test_remove_bond_attached_to_a_network(self):
-        fake_kernel_nics = ['eth0', 'eth1']
-        nets = {}
-        running_nets = {}
+    def test_remove_bond_attached_to_network_that_was_removed(self, net_info):
+        bonds = {BOND0: {'remove': True}}
+        nets = {NET1: {'remove': True}}
+        valid = validator.Validator(nets, bonds, net_info)
+        valid.validate_bond(BOND0)
 
-        validator.validate_bond_configuration(
-            'bond1', {'remove': True}, nets, running_nets, fake_kernel_nics
-        )
-
-    def test_remove_bond_attached_to_network_that_was_removed(self):
-        fake_kernel_nics = ['eth0', 'eth1']
-        nets = {'net1': {'remove': True}}
-        running_nets = {'net1': {'southbound': 'bond1'}}
-
-        validator.validate_bond_configuration(
-            'bond1', {'remove': True}, nets, running_nets, fake_kernel_nics
-        )
-
-    def test_remove_bond_attached_to_network_that_was_not_removed(self):
-        fake_kernel_nics = ['eth0', 'eth1']
-        nets = {}
-        running_nets = {'net1': {'southbound': 'bond1'}}
+    def test_remove_bond_attached_to_network_that_was_not_removed(
+        self, net_info
+    ):
+        bonds = {BOND0: {'remove': True}}
         with pytest.raises(ne.ConfigNetworkError) as e:
-            validator.validate_bond_configuration(
-                'bond1', {'remove': True}, nets, running_nets, fake_kernel_nics
-            )
+            valid = validator.Validator({}, bonds, net_info)
+            valid.validate_bond(BOND0)
         assert e.value.errCode == ne.ERR_USED_BOND
 
-    def test_remove_bond_attached_to_network_that_will_use_nic(self):
-        fake_kernel_nics = ['eth0', 'eth1']
-        nets = {'net1': {'nic': 'eth0'}}
-        running_nets = {'net1': {'southbound': 'bond1'}}
+    def test_remove_bond_attached_to_network_that_will_use_nic(self, net_info):
+        bonds = {BOND0: {'remove': True}}
+        nets = {NET1: {'nic': NICS[0]}}
+        valid = validator.Validator(nets, bonds, net_info)
+        valid.validate_bond(BOND0)
 
-        validator.validate_bond_configuration(
-            'bond1', {'remove': True}, nets, running_nets, fake_kernel_nics
-        )
-
-    def test_remove_bond_reattached_to_another_network(self):
-        fake_kernel_nics = ['eth0', 'eth1', 'eth2']
-        nets = {'net1': {'nic': 'eth0'}, 'net2': {'bonding': 'bond1'}}
-        running_nets = {'net1': {'southbound': 'bond1'}}
+    def test_remove_bond_reattached_to_another_network(self, net_info):
+        bonds = {BOND0: {'remove': True}}
+        nets = {NET1: {'nic': NICS[0]}, NET0: {'bonding': BOND0}}
         with pytest.raises(ne.ConfigNetworkError) as e:
-            validator.validate_bond_configuration(
-                'bond1', {'remove': True}, nets, running_nets, fake_kernel_nics
-            )
+            valid = validator.Validator(nets, bonds, net_info)
+            valid.validate_bond(BOND0)
         assert e.value.errCode == ne.ERR_USED_BOND
 
     def test_remove_missing_net_fails(self):

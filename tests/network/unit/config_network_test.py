@@ -119,7 +119,7 @@ class TestConfigNetwork(object):
             'test-network': {'nic': 'dummy', 'remove': True, 'bridged': True}
         }
         with pytest.raises(errors.ConfigNetworkError) as cneContext:
-            validator.validate_network_setup(networks, {}, {'networks': {}})
+            validator.validate_network_setup(networks, {}, FAKE_NETINFO)
         assert cneContext.value.errCode == errors.ERR_BAD_PARAMS
 
 

@@ -81,6 +81,11 @@ class Validator(object):
         self._net_info = NetInfo(net_info)
         self._desired_config = self._create_desired_config()
 
+    def validate_bond(self, name):
+        _BondValidator(
+            name, self._bonds[name], self._desired_config, self._net_info
+        ).validate()
+
     def validate_nic_usage(self):
         used_bond_slaves = set()
         for bond_attr in self._desired_config.bonds.values():
@@ -115,10 +120,62 @@ class Validator(object):
         return desired_config
 
 
+class _BondValidator(object):
+    def __init__(self, name, attrs, desired_config, net_info):
+        self._name = name
+        self._desired_config = desired_config
+        self._net_info = net_info
+
+        self._remove = attrs.get('remove')
+        self._nics = attrs.get('nics')
+        self._options = attrs.get('options')
+
+    def validate(self):
+        if self._remove:
+            self._validate_bond_removal()
+            return
+
+        if self._nics:
+            self._validate_bond_addition()
+        else:
+            raise ne.ConfigNetworkError(
+                ne.ERR_BAD_NIC, 'Missing nics attribute'
+            )
+
+        if self._options:
+            _validate_bond_options(self._options)
+
+    def _validate_bond_removal(self):
+        nets_with_bond = {
+            net
+            for net, attrs in self._desired_config.networks.items()
+            if attrs.get('bonding') == self._name
+        }
+
+        if nets_with_bond:
+            raise ne.ConfigNetworkError(
+                ne.ERR_USED_BOND,
+                'Cannot remove bonding {}: used by network ({}).'.format(
+                    self._name, nets_with_bond
+                ),
+            )
+
+    def _validate_bond_addition(self):
+        for slave in self._nics:
+            _validate_nic_exists(slave, self._net_info.nics)
+            if dpdk.is_dpdk(slave):
+                raise ne.ConfigNetworkError(
+                    ne.ERR_BAD_NIC,
+                    '%s is a dpdk device and not supported as a slave of bond'
+                    % slave,
+                )
+
+
 def validate_network_setup(nets, bonds, net_info):
     kernel_nics = nics()
     kernel_bonds = Bond.bonds()
     current_nets = net_info['networks']
+    validator = Validator(nets, bonds, net_info)
     for net, attrs in six.iteritems(nets):
         validate_net_configuration(
             net,
@@ -129,11 +186,9 @@ def validate_network_setup(nets, bonds, net_info):
             current_nets,
             RunningConfig().networks,
         )
-    for bond, attrs in six.iteritems(bonds):
-        validate_bond_configuration(
-            bond, attrs, nets, current_nets, kernel_nics
-        )
-    Validator(nets, bonds, net_info).validate_nic_usage()
+    for bond in bonds.keys():
+        validator.validate_bond(bond)
+    validator.validate_nic_usage()
 
 
 def validate_net_configuration(
@@ -170,20 +225,6 @@ def validate_net_configuration(
 
     if bridged:
         validate_bridge_name(net)
-
-
-def validate_bond_configuration(
-    bond, bondattrs, desired_nets, current_nets, current_nics
-):
-    if 'remove' in bondattrs:
-        _validate_bond_removal(bond, desired_nets, current_nets)
-    elif 'nics' in bondattrs:
-        _validate_bond_addition(bondattrs['nics'], current_nics)
-    else:
-        raise ne.ConfigNetworkError(ne.ERR_BAD_NIC, 'Missing nics attribute')
-
-    if 'options' in bondattrs:
-        _validate_bond_options(bondattrs['options'])
 
 
 def _validate_vlan_id(id):
@@ -257,50 +298,6 @@ def _validate_bond_exists(bond, desired_bonds, running_bonds):
     if not running_bond and not bond2setup:
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_BONDING, 'Bond %s does not exist' % bond
-        )
-
-
-def _validate_bond_addition(nics, current_nics):
-    for nic in nics:
-        _validate_nic_exists(nic, current_nics)
-        if dpdk.is_dpdk(nic):
-            raise ne.ConfigNetworkError(
-                ne.ERR_BAD_NIC,
-                '%s is a dpdk device and not supported as a slave of bond'
-                % nic,
-            )
-
-
-def _validate_bond_removal(bond, desired_nets, current_nets):
-    current_nets_with_bond = {
-        net
-        for net, attrs in six.iteritems(current_nets)
-        if attrs['southbound'] == bond
-    }
-
-    add_nets_with_bond = set()
-    remove_nets_with_bond = set()
-    for net, attrs in six.iteritems(desired_nets):
-        if 'remove' in attrs:
-            if net in current_nets_with_bond:
-                remove_nets_with_bond.add(net)
-        elif net in current_nets:
-            if net in current_nets_with_bond:
-                remove_nets_with_bond.add(net)
-            if attrs.get('bonding') == bond:
-                add_nets_with_bond.add(net)
-        elif attrs.get('bonding') == bond:
-            add_nets_with_bond.add(net)
-
-    nets_with_bond = add_nets_with_bond or (
-        current_nets_with_bond - remove_nets_with_bond
-    )
-    if nets_with_bond:
-        raise ne.ConfigNetworkError(
-            ne.ERR_USED_BOND,
-            'Cannot remove bonding {}: used by network ({}).'.format(
-                bond, nets_with_bond
-            ),
         )
 
 
