@@ -144,7 +144,6 @@ def validate(networks, bondings, net_info):
             'setupNetworks() call.',
         )
 
-    validator.validate_southbound_devices_usages(networks, NetInfo(net_info))
     validator.validate_network_setup(networks, bondings, net_info)
     if use_legacy_switch:
         legacy_switch.validate_network_setup(legacy_nets)

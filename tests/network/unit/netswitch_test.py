@@ -24,7 +24,6 @@ import pytest
 
 from vdsm.network import errors
 from vdsm.network import netswitch
-from vdsm.network.netinfo.cache import NetInfo
 
 from .testlib import NetInfo as NetInfoLib
 
@@ -111,10 +110,10 @@ class TestSouthboundValidation(object):
             'fakebrnet2': {'nic': 'eth0', 'switch': switch},
             'fakebrnet1': {'remove': True},
         }
-
-        netswitch.validator.validate_southbound_devices_usages(
-            NETSETUP, _create_fake_netinfo(switch)
+        validator = netswitch.validator.Validator(
+            NETSETUP, {}, _create_fake_netinfo(switch)
         )
+        validator.validate_southbound_devices_usages()
 
     def _assert_net_setup_fails_bad_params(
         self, net_name, switch, sb_device, vlan=None
@@ -126,9 +125,10 @@ class TestSouthboundValidation(object):
             net_setup[net_name]['vlan'] = vlan
 
             with pytest.raises(errors.ConfigNetworkError) as cne_context:
-                netswitch.validator.validate_southbound_devices_usages(
-                    net_setup, _create_fake_netinfo(switch)
+                validator = netswitch.validator.Validator(
+                    net_setup, {}, _create_fake_netinfo(switch)
                 )
+                validator.validate_southbound_devices_usages()
             assert cne_context.value.errCode == errors.ERR_BAD_PARAMS
 
 
@@ -165,4 +165,4 @@ def _create_fake_netinfo(switch):
             )
         },
     )
-    return NetInfo(fake_netinfo)
+    return fake_netinfo

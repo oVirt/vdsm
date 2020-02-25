@@ -78,7 +78,7 @@ class TestConfigNetwork(object):
         self._addNetworkWithExc(
             'fakebrnet',
             dict(nic='eth2', mtu=DEFAULT_MTU),
-            errors.ERR_USED_BRIDGE,
+            errors.ERR_BAD_PARAMS,
         )
 
         # Test for already existing network.
@@ -88,12 +88,12 @@ class TestConfigNetwork(object):
 
         # Test for non existing nic.
         self._addNetworkWithExc(
-            'test', dict(nic='eth11', mtu=DEFAULT_MTU), errors.ERR_BAD_NIC
+            'test', dict(nic='eth11', mtu=DEFAULT_MTU), errors.ERR_BAD_PARAMS
         )
 
         # Test for nic already in a bond.
         self._addNetworkWithExc(
-            'test', dict(nic='eth6', mtu=DEFAULT_MTU), errors.ERR_USED_NIC
+            'test', dict(nic='eth6', mtu=DEFAULT_MTU), errors.ERR_BAD_PARAMS
         )
 
     def testValidateNetSetupRemoveParamValidation(self):

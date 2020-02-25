@@ -20,8 +20,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import six
-
 from vdsm.network import errors as ne
 from vdsm.network.configurators import RunningConfig
 from vdsm.network.kernelconfig import KernelConfig
@@ -32,44 +30,6 @@ from vdsm.network.netinfo.cache import NetInfo
 
 MAX_NAME_LEN = 15
 ILLEGAL_CHARS = frozenset(':. \t')
-
-
-def validate_southbound_devices_usages(nets, ni):
-    kernel_config = KernelConfig(ni)
-
-    for requested_net, net_info in six.viewitems(nets):
-        if 'remove' in net_info:
-            kernel_config.removeNetwork(requested_net)
-
-    for requested_net, net_info in six.viewitems(nets):
-        if 'remove' in net_info:
-            continue
-        kernel_config.setNetwork(requested_net, net_info)
-
-    underlying_devices = []
-    for net_name, net_attrs in six.viewitems(kernel_config.networks):
-        vlan = net_attrs.get('vlan')
-        if 'bonding' in net_attrs:
-            underlying_devices.append((net_attrs['bonding'], vlan))
-        elif 'nic' in net_attrs:
-            underlying_devices.append((net_attrs['nic'], vlan))
-        else:
-            if not net_attrs['bridged']:
-                raise ne.ConfigNetworkError(
-                    ne.ERR_BAD_PARAMS,
-                    'southbound device not specified for non-bridged '
-                    'network "{}"'.format(net_name),
-                )
-
-    if len(set(underlying_devices)) < len(underlying_devices):
-        raise ne.ConfigNetworkError(
-            ne.ERR_BAD_PARAMS,
-            'multiple networks/similar vlans cannot be'
-            ' defined on a single underlying device. '
-            'kernel networks: {}\nrequested networks: {}'.format(
-                kernel_config.networks, nets
-            ),
-        )
 
 
 class Validator(object):
@@ -93,6 +53,31 @@ class Validator(object):
             self._net_info,
             self._running_config,
         ).validate()
+
+    def validate_southbound_devices_usages(self):
+        underlying_devices = []
+        for (net_name, net_attrs) in self._desired_config.networks.items():
+            vlan = net_attrs.get('vlan')
+            if 'bonding' in net_attrs:
+                underlying_devices.append((net_attrs['bonding'], vlan))
+            elif 'nic' in net_attrs:
+                underlying_devices.append((net_attrs['nic'], vlan))
+            else:
+                if not net_attrs['bridged']:
+                    raise ne.ConfigNetworkError(
+                        ne.ERR_BAD_PARAMS,
+                        'southbound device not specified for non-bridged '
+                        f'network "{net_name}"',
+                    )
+
+        if len(set(underlying_devices)) < len(underlying_devices):
+            raise ne.ConfigNetworkError(
+                ne.ERR_BAD_PARAMS,
+                'multiple networks/similar vlans cannot be'
+                ' defined on a single underlying device. '
+                f'kernel networks: {self._desired_config.networks}\n'
+                f'requested networks: {self._nets}',
+            )
 
     def validate_nic_usage(self):
         used_bond_slaves = set()
@@ -239,6 +224,7 @@ class _BondValidator(object):
 
 def validate_network_setup(nets, bonds, net_info):
     validator = Validator(nets, bonds, net_info)
+    validator.validate_southbound_devices_usages()
     for net in nets.keys():
         validator.validate_net(net)
     for bond in bonds.keys():
