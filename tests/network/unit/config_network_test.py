@@ -46,19 +46,6 @@ BOND0_SLAVES = ['eth5', 'eth6']
 BONDS = [BOND0]
 
 
-class BondMock:
-    def __init__(self, name):
-        pass
-
-    @staticmethod
-    def bonds():
-        return BONDS
-
-    @property
-    def slaves(self):
-        return set(BOND0_SLAVES)
-
-
 def _raiseInvalidOpException(*args, **kwargs):
     return RuntimeError(
         'Attempted to apply network configuration during unit ' 'testing.'
@@ -85,8 +72,6 @@ class TestConfigNetwork(object):
     @mock.patch.object(Bridge, 'configure', _raiseInvalidOpException)
     @mock.patch.object(Nic, 'configure', _raiseInvalidOpException)
     @mock.patch.object(Vlan, 'configure', _raiseInvalidOpException)
-    @mock.patch.object(validator, 'nics', lambda: NICS)
-    @mock.patch.object(validator, 'Bond', BondMock)
     def testAddNetworkValidation(self):
 
         # Test for already existing bridge.
@@ -111,10 +96,7 @@ class TestConfigNetwork(object):
             'test', dict(nic='eth6', mtu=DEFAULT_MTU), errors.ERR_USED_NIC
         )
 
-    @mock.patch.object(validator, 'nics', lambda: [])
-    @mock.patch.object(validator, 'Bond')
-    def testValidateNetSetupRemoveParamValidation(self, bond_mock):
-        bond_mock.return_value.bonds.return_value = []
+    def testValidateNetSetupRemoveParamValidation(self):
         networks = {
             'test-network': {'nic': 'dummy', 'remove': True, 'bridged': True}
         }
