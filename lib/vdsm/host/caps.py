@@ -207,8 +207,7 @@ def _getTscFrequency():
     caps = xmlutils.fromstring(conn.getCapabilities())
     counter = caps.findall("./host/cpu/counter[@name='tsc']")
     if len(counter) > 0:
-        # Libvirt reports frequency in Hz, cut off last six digits to get MHz
-        return counter[0].get('frequency')[:-6]
+        return counter[0].get('frequency')
     logging.debug('No TSC counter returned by Libvirt')
     return ""
 

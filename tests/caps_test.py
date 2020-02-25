@@ -286,7 +286,7 @@ class TestCaps(TestCaseBase):
     @MonkeyPatch(libvirtconnection, 'get', _getLibvirtConnStub)
     def test_getTscFrequency_libvirt(self):
         freq = caps._getTscFrequency()
-        self.assertEqual(freq, "1234")
+        self.assertEqual(freq, "1234000000")
 
     @MonkeyPatch(libvirtconnection, 'get', _getLibvirtConnStubEmpty)
     def test_getTscFrequency_no_counter(self):
