@@ -513,7 +513,7 @@ Requires:       iproute-tc
 # remove when nmstate is finished
 Requires: network-scripts
 %if 0%{?rhel} || 0%{?fedora} >= 32
-Requires: nmstate >= 0.2.1
+Requires: nmstate >= 0.2.6
 %else
 # Temporary HACK to not block development on Fedora 30
 Requires: nmstate >= 0.0.8
