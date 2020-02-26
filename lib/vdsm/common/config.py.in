@@ -358,6 +358,15 @@ parameters = [
             'after connecting to iSCSI target, and after mounting and '
             'umounting file systems.'),
 
+        ('iscsi_login_timeout', '5',
+            'Maximum time to wait after logging in to an iSCSI node. '
+            'This is needed to avoid an issue where login has completed '
+            'but the devices are not visible by the host yet. '
+            'Set to 5 seconds by default after multiple tests have shown 1 '
+            'second to be enough, however this might not be enough for '
+            'overloaded systems, so the value is increased to be on the safe '
+            'side.'),
+
         ('sd_health_check_delay', '10',
             'Storage domain health check delay, the amount of seconds to '
             'wait between two successive run of the domain health check.'),
