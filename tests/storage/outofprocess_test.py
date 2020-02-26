@@ -782,6 +782,20 @@ def test_os_unlink(oop_cleanup, tmpdir):
 
 # os.path APIs
 
+def test_os_path_isdir(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+
+    path_dir = str(tmpdir.mkdir("subdir"))
+    assert iop.os.path.isdir(path_dir)
+
+    path_file = str(tmpdir.join("file"))
+    open(path_file, "w").close()
+    assert not iop.os.path.isdir(path_file)
+
+    path_no_such_dir = str(tmpdir.join("no such directory"))
+    assert not iop.os.path.isdir(path_no_such_dir)
+
+
 def test_os_path_islink(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     link = str(tmpdir.join("link"))
