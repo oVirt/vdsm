@@ -1624,9 +1624,9 @@ def volumeGeoRepSessionCreate(volumeName, remoteHost,
         command.append('force')
     try:
         _execGlusterXml(command)
-        return True
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterGeoRepSessionCreateFailedException(rc=e.rc, err=e.err)
+    return True
 
 
 @gluster_mgmt_api
@@ -1641,9 +1641,9 @@ def volumeGeoRepSessionDelete(volumeName, remoteHost, remoteVolumeName,
                                      "delete"]
     try:
         _execGlusterXml(command)
-        return True
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterGeoRepSessionDeleteFailedException(rc=e.rc, err=e.err)
+    return True
 
 
 @gluster_mgmt_api
@@ -1685,10 +1685,10 @@ def volumeResetBrickStart(volumeName, existingBrick):
                                      existingBrick, "start"]
     try:
         _execGlusterXml(command)
-        return True
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeResetBrickStartFailedException(rc=e.rc,
                                                              err=e.err)
+    return True
 
 
 @gluster_mgmt_api
@@ -1698,10 +1698,10 @@ def volumeResetBrickCommitForce(volumeName, existingBrick):
                                      "force"]
     try:
         _execGlusterXml(command)
-        return True
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeResetBrickCommitForceFailedException(rc=e.rc,
                                                                    err=e.err)
+    return True
 
 
 @gluster_mgmt_api
