@@ -258,6 +258,22 @@ class _AlteredState(object):
     __nonzero__ = __bool__
 
 
+def _undefine_vm_flags():
+    flags = libvirt.VIR_DOMAIN_UNDEFINE_NVRAM
+
+    # If incremental backup is supported by libvirt we should add
+    # VIR_DOMAIN_UNDEFINE_CHECKPOINTS_METADATA flag to make sure
+    # all checkpoint metadata will be removed also. If the VM doesn't
+    # have any backups with checkpoint this flag shouldn't have
+    # any effect.
+    #
+    # TODO: Remove check when we require libvirt 6.0 on all distros.
+    if hasattr(libvirt, "VIR_DOMAIN_UNDEFINE_CHECKPOINTS_METADATA"):
+        flags |= libvirt.VIR_DOMAIN_UNDEFINE_CHECKPOINTS_METADATA
+
+    return flags
+
+
 def _undefine_stale_domain(vm, connection):
     doms_to_remove = []
     try:
@@ -278,7 +294,8 @@ def _undefine_stale_domain(vm, connection):
         try:
             state, reason = dom.state(0)
             if state in vmstatus.LIBVIRT_DOWN_STATES:
-                dom.undefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_NVRAM)
+                flags = _undefine_vm_flags()
+                dom.undefineFlags(flags)
                 vm.log.debug("Stale domain removed: %s", (vm.id,))
             else:
                 raise exception.VMExists("VM %s is already running: %s" %
@@ -2158,7 +2175,8 @@ class Vm(object):
             return
 
         try:
-            self._dom.undefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_NVRAM)
+            flags = _undefine_vm_flags()
+            self._dom.undefineFlags(flags)
         except libvirt.libvirtError as e:
             self.log.warning("Failed to undefine VM '%s' (error=%i)",
                              self.id, e.get_error_code())
