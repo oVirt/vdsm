@@ -261,7 +261,7 @@ class _IOProcessOs(object):
 
         def islink(self, path):
             # Note: islink does not follow symlinks. This is not documented
-            # excplicitly, but it deos not make sense otherwise.
+            # explicitly, but it does not make sense otherwise.
             try:
                 res = self._iop.lstat(path)
             except OSError as e:

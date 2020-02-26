@@ -799,13 +799,26 @@ def test_os_path_isdir(oop_cleanup, tmpdir):
 def test_os_path_islink(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     link = str(tmpdir.join("link"))
+
     os.symlink("/no/such/file", link)
     assert iop.os.path.islink(link)
 
 
 def test_os_path_islink_not_link(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
-    assert not iop.os.path.islink(str(tmpdir))
+
+    # Link doesn't exist.
+    link = str(tmpdir.join("link"))
+    assert not iop.os.path.islink(link)
+
+    # File is not a link.
+    path_file = str(tmpdir.join("file"))
+    open(path_file, "w").close()
+    assert not iop.os.path.islink(path_file)
+
+    # Directory is not a link.
+    path_dir = str(tmpdir)
+    assert not iop.os.path.islink(path_dir)
 
 
 def test_os_path_exists(oop_cleanup):
