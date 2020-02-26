@@ -821,9 +821,13 @@ def test_os_path_islink_not_link(oop_cleanup, tmpdir):
     assert not iop.os.path.islink(path_dir)
 
 
-def test_os_path_exists(oop_cleanup):
-    path = "/dev/null"
+def test_os_path_exists(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    assert not iop.os.path.exists(path)
+
+    open(path, "w").close()
     assert iop.os.path.exists(path)
 
 
