@@ -821,6 +821,16 @@ def test_os_path_islink_not_link(oop_cleanup, tmpdir):
     assert not iop.os.path.islink(path_dir)
 
 
+def test_os_path_lexists(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    link = str(tmpdir.join("link"))
+
+    assert not iop.os.path.lexists(link)
+
+    os.symlink("/no/such/file", link)
+    assert iop.os.path.lexists(link)
+
+
 def test_os_path_exists(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.join("file"))
