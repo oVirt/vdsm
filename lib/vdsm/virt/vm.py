@@ -5576,6 +5576,9 @@ class Vm(object):
     def snapshot_metadata(self):
         return self._snapshot_job
 
+    def abort_domjob(self):
+        self._dom.abortJob()
+
 
 class LiveMergeCleanupThread(object):
     def __init__(self, vm, job, drive, doPivot):

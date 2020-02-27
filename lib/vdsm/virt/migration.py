@@ -643,7 +643,7 @@ class SourceThread(object):
         # call so no need to abortJob()
         try:
             self._migrationCanceledEvt.set()
-            self._vm._dom.abortJob()
+            self._vm.abort_domjob()
         except libvirt.libvirtError:
             if not self._preparingMigrationEvt:
                 raise
@@ -832,7 +832,7 @@ class MonitorThread(object):
                 vm.log.warning('Failed to switch to post-copy migration')
         elif action == CONVERGENCE_SCHEDULE_SET_ABORT:
             vm.log.warning('Aborting migration')
-            vm._dom.abortJob()
+            vm.abort_domjob()
             self.stop()
 
 
