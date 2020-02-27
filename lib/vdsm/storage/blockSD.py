@@ -204,17 +204,8 @@ def lvmTagDecode(s):
 
 
 def _getVolsTree(sdUUID):
-    lvs = lvm.getLV(sdUUID)
     vols = {}
-    for lv in lvs:
-        if lv.name in SPECIAL_LVS_V4:
-            # Special lvs are not user lvs.
-            continue
-
-        if sc.TAG_VOL_UNINIT in lv.tags:
-            # Uninitialized LVs have no image or parent yet.
-            continue
-
+    for lv in _iter_volumes(sdUUID):
         lvtags = parse_lv_tags(lv)
         if lvtags.parent and lvtags.image:
             vols[lv.name] = BlockSDVol(lv.name, lvtags.image, lvtags.parent)
@@ -224,6 +215,19 @@ def _getVolsTree(sdUUID):
                 lv.name, lv.tags)
 
     return vols
+
+
+def _iter_volumes(sdUUID):
+    for lv in lvm.getLV(sdUUID):
+        if lv.name in SPECIAL_LVS_V4:
+            # Exclude special volumes.
+            continue
+
+        if sc.TAG_VOL_UNINIT in lv.tags:
+            # Uninitialized LVs have no mapping yet.
+            continue
+
+        yield lv
 
 
 def parse_lv_tags(lv):
@@ -797,15 +801,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
     def occupied_metadata_slots(self):
         stripPrefix = lambda s, pfx: s[len(pfx):]
         occupiedSlots = []
-        special_lvs = self.special_volumes(self.getVersion())
-        for lv in lvm.getLV(self.sdUUID):
-            if lv.name in special_lvs:
-                # Special LVs have no mapping
-                continue
 
-            if sc.TAG_VOL_UNINIT in lv.tags:
-                # Uninitialized LVs have no mapping yet.
-                continue
+        for lv in _iter_volumes(self.sdUUID):
 
             offset = None
             for tag in lv.tags:

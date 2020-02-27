@@ -162,6 +162,26 @@ class TestParseLVTags:
         )
 
 
+class TestIterVolumes:
+
+    def test_iter_volumes(self, monkeypatch):
+        lvs = [
+            make_lv(name="lv1"),
+            make_lv(name="master"),
+            make_lv(name="lv2", tags=(sc.TAG_VOL_UNINIT,)),
+            make_lv(name="lv3")
+        ]
+        monkeypatch.setattr(lvm, 'getLV', lambda sd_uuid: lvs)
+
+        # Expecting to have only user initialized volumes.
+        expected_lvs = [
+            make_lv(name="lv1"),
+            make_lv(name="lv3")
+        ]
+
+        assert list(blockSD._iter_volumes("sd-id")) == expected_lvs
+
+
 class TestDecodeValidity:
 
     def test_all_keys(self):
