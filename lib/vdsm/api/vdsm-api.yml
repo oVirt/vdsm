@@ -10780,6 +10780,12 @@ VM.snapshot:
         type: *UUID
         added: '4.4'
 
+    -   defaultvalue: 30
+        description: Timeout in minutes for the snapshot operation
+        name: timeout
+        type: uint
+        added: '4.4'
+
 VM.setBalloonTarget:
     added: '3.1'
     description: Dynamically change the target amount of physical memory

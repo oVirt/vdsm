@@ -3939,10 +3939,10 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def snapshot(self, snap_drives, memory_params, frozen,
-                 job_uuid, recovery=False):
+                 job_uuid, recovery=False, timeout=30):
         job_id = job_uuid or str(uuid.uuid4())
         job = snapshot.Job(self, snap_drives, memory_params,
-                           frozen, job_id, recovery)
+                           frozen, job_id, recovery, timeout)
         jobs.add(job)
         vdsm.virt.jobs.schedule(job)
         return {'status': doneCode}
@@ -4509,8 +4509,8 @@ class Vm(object):
                 vm['pauseTime'] = self._pause_time
             vm.update(self._exit_info)
             try:
-                if not self._snapshot_job or not jobs.get(
-                        self._snapshot_job['jobUUID']).active:
+                if not self._snapshot_job or \
+                        not jobs.get(self._snapshot_job['jobUUID']).active:
                     try:
                         del vm['snapshot_job']
                     except KeyError:
