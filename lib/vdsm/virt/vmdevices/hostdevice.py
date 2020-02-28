@@ -113,6 +113,7 @@ class HostDevice(core.HotpluggedDevice):
             attrs['uuid'] = vmxml.device_address(dom)['uuid']
         else:
             attrs['name'] = core.find_device_alias(dom)
+        return attrs
 
     def setup(self):
         setup_device(self._dom, self._meta, self._log)
