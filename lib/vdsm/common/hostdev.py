@@ -640,6 +640,7 @@ def _mdev_type_devices(mdev_type, path):
 def _suitable_device_for_mdev_type(target_mdev_type, mdev_placement, log):
     target_device = None
 
+    log.debug("Looking for a mdev of type {}".format(target_mdev_type))
     for device in _each_mdev_device():
         vendor = _mdev_device_vendor(device)
         for mdev_type, path in _each_supported_mdev_type(device):
@@ -649,11 +650,16 @@ def _suitable_device_for_mdev_type(target_mdev_type, mdev_placement, log):
                 if vendor == '0x10de' and \
                    len(_mdev_type_devices(mdev_type, path)) > 0:
                     target_device = None
+                    log.debug("Mdev type {} is different from already "
+                              "allocated type {}, skipping device {}"
+                              .format(target_mdev_type, mdev_type, device))
                     break
                 continue
             elif mdev_placement == MdevPlacement.SEPARATE:
                 if len(_mdev_type_devices(mdev_type, path)) > 0:
                     target_device = None
+                    log.debug("Mdev {} already used and separate "
+                              "placement requested, skipping".format(device))
                     break
             # Make sure to cast to int as the value is read from sysfs.
             if int(
@@ -664,7 +670,10 @@ def _suitable_device_for_mdev_type(target_mdev_type, mdev_placement, log):
             target_device = device
 
         if target_device is not None:
+            log.debug("Matching mdev found: {}".format(target_device))
             return target_device
+        else:
+            log.debug("Mdev not suitable: {}".format(device))
 
     if target_device is None and mdev_placement == MdevPlacement.SEPARATE:
         log.info("Separate mdev placement failed, trying compact placement.")
