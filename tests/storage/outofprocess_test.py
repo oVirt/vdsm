@@ -211,35 +211,82 @@ def test_fileutils_copyusermodetogroup(
 
 def test_fileutils_createdir_default_mode(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
-    path = str(tmpdir.join("subdir1", "subdir2", "subdir3"))
+    path_intermediate = str(tmpdir.join("subdir1"))
+    path_leaf = str(tmpdir.join("subdir1", "subdir2"))
     # The test describes the current behavior of ioprocess.fileUtils.createdir:
     # the default mode is 0o775 (depends on umask).
     default_mode = 0o775
+    expected_mode = default_mode & ~get_umask()
 
     # Folder does not exist and is created successfully.
-    iop.fileUtils.createdir(path)
+    iop.fileUtils.createdir(path_leaf)
+    verify_directory(path_intermediate, mode=expected_mode)
+    verify_directory(path_leaf, mode=expected_mode)
+
+
+def test_fileutils_createdir_default_mode_dir_exists(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("subdir"))
+    # The test describes the current behavior of ioprocess.fileUtils.createdir:
+    # the default mode is 0o775 (depends on umask).
+    default_mode = 0o775
     expected_mode = default_mode & ~get_umask()
-    verify_directory(path, mode=expected_mode)
 
-    # Folder exists, mode matches, operation should fail silently.
+    os.mkdir(path)
+
+    # Folder exists, mode matches, operation should do nothing.
     iop.fileUtils.createdir(path)
     verify_directory(path, mode=expected_mode)
 
 
-@pytest.mark.xfail(reason="There is a bug in outOfProcess.fileUtils.createdir")
+@pytest.mark.xfail(reason="iop.fileUtils.createdir doesn't check 'if file'")
+def test_fileutils_createdir_default_mode_file_exists(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    open(path, "w").close()
+
+    # Path exists and is a file, operation should fail.
+    with pytest.raises(OSError) as e:
+        iop.fileUtils.createdir(path)
+    assert e.value.errno == errno.ENOTDIR
+
+
 def test_fileutils_createdir_non_default_mode(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
-    path = str(tmpdir.join("subdir1", "subdir2", "subdir3"))
+    path_intermediate = str(tmpdir.join("subdir1"))
+    path_leaf = str(tmpdir.join("subdir1", "subdir2"))
     mode = 0o766
+    expected_mode = mode & ~get_umask()
 
     # Folder does not exist and is created successfully.
-    iop.fileUtils.createdir(path, mode=mode)
+    iop.fileUtils.createdir(path_leaf, mode=mode)
+    verify_directory(path_intermediate, mode=expected_mode)
+    verify_directory(path_leaf, mode=expected_mode)
+
+
+@pytest.mark.xfail(reason="iop.fileUtils.createdir doesn't consider umask")
+def test_fileutils_createdir_non_default_mode_dir_exists_same_mode(
+        oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("subdir"))
+    mode = 0o766
     expected_mode = mode & ~get_umask()
+
+    os.mkdir(path, mode=mode)
+
+    # Folder exists, mode matches, operation should do nothing.
+    iop.fileUtils.createdir(path, mode=mode)
     verify_directory(path, mode=expected_mode)
 
-    # Folder exists, mode matches, operation should fail silently.
-    iop.fileUtils.createdir(path, mode=mode)
-    verify_directory(path, mode=expected_mode)
+
+def test_fileutils_createdir_non_default_mode_dir_exists_other_mode(
+        oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("subdir"))
+    mode = 0o766
+
+    os.mkdir(path, mode=mode)
 
     # Folder exists, mode doesn't match, operation should fail.
     with pytest.raises(OSError) as e:
@@ -247,10 +294,24 @@ def test_fileutils_createdir_non_default_mode(oop_cleanup, tmpdir):
     assert e.value.errno == errno.EPERM
 
 
+@pytest.mark.xfail(reason="iop.fileUtils.createdir doesn't check 'if file'")
+def test_fileutils_createdir_non_default_mode_file_exists(oop_cleanup, tmpdir):
+    iop = oop.getProcessPool("test")
+    path = str(tmpdir.join("file"))
+
+    open(path, "w").close()
+    mode = stat.S_IMODE(os.stat(path).st_mode)
+
+    # Path exists and is a file, operation should fail.
+    with pytest.raises(OSError) as e:
+        iop.fileUtils.createdir(path, mode=mode)
+    assert e.value.errno == errno.ENOTDIR
+
+
 @requires_unprivileged_user
 def test_fileutils_createdir_bad_permissions(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
-    path = str(tmpdir.join("subdir1", "subdir2", "subdir3"))
+    path = str(tmpdir.join("subdir1", "subdir2"))
     mode = 0o666
 
     # Should create the first folder in the path and fail on the second one.
