@@ -340,6 +340,7 @@ class FakeResourceManager(object):
 
     SHARED = rm.SHARED
     EXCLUSIVE = rm.EXCLUSIVE
+    RequestTimedOutError = rm.RequestTimedOutError
 
     @recorded
     @contextmanager
@@ -421,6 +422,58 @@ class fake_guarded_context(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
+class MonitorEvent(object):
+
+    def __init__(self):
+        self.callbacks = set()
+
+    def register(self, callback):
+        self.callbacks.add(callback)
+
+    def unregister(self, callback):
+        self.callbacks.remove(callback)
+
+
+class FakeDomainMonitor(object):
+    """
+    Test class implementing mock methods for a domain monitor,
+    originally used for testing SPM in blocksd_test.
+    This class cannot be used for tests relying over domain
+    monitor's functionality itself.
+    """
+    def __init__(self):
+        self.onDomainStateChange = MonitorEvent()
+        self.monitors = {}
+
+    @property
+    def poolDomains(self):
+        return [k for k, v in self.monitors.items() if v]
+
+    def startMonitoring(self, sdUUID, hostId, poolDomain=True):
+        self.monitors[sdUUID] = poolDomain
+
+    def stopMonitoring(self, sdUUIDs):
+        for k in sdUUIDs:
+            del self.monitors[k]
+
+    def isMonitoring(self, sdUUID):
+        return sdUUID in self.monitors
+
+
+class FakeTaskManager(object):
+    """
+    Test class implementing mock methods for a task manager,
+    originally used for testing SPM in blocksd_test.
+    This class cannot be used for tests relying over task
+    manager's functionality itself.
+    """
+    def loadDumpedTasks(self, task_dir):
+        pass
+
+    def recoverDumpedTasks(self):
         pass
 
 

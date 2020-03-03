@@ -31,16 +31,22 @@ import pytest
 
 from vdsm.common.units import MiB, GiB
 from vdsm.storage import blockSD
+from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
+from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
+from vdsm.storage import sp
 from vdsm.storage.sdc import sdCache
+from vdsm.storage.spbackends import StoragePoolDiskBackend
 
 from . import qemuio
 from . marks import requires_root
 from storage.storagefakelib import fake_spm
 from storage.storagefakelib import fake_vg
+from storage.storagefakelib import FakeDomainMonitor
+from storage.storagefakelib import FakeTaskManager
 
 TESTDIR = os.path.dirname(__file__)
 
@@ -889,3 +895,50 @@ def test_lvmtag_decode(encoded_tag, lvm_tag):
     ids=TEST_IDS)
 def test_lvmtag_encode(lvm_tag, encoded_tag):
     assert blockSD.lvmTagEncode(lvm_tag) == encoded_tag
+
+
+@requires_root
+@pytest.mark.root
+def test_spm_lifecycle(
+        tmp_storage,
+        tmp_repo,
+        fake_access,
+        fake_rescan,
+        tmp_db,
+        fake_task,
+        fake_sanlock):
+
+    msd_uuid = str(uuid.uuid4())
+
+    dev = tmp_storage.create_device(20 * GiB)
+    lvm.createVG(msd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(msd_uuid)
+
+    master_dom = blockSD.BlockStorageDomain.create(
+        sdUUID=msd_uuid,
+        domainName="domain",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=5,
+        storageType=sd.ISCSI_DOMAIN)
+
+    sdCache.knownSDs[msd_uuid] = blockSD.findDomain
+    sdCache.manuallyAddDomain(master_dom)
+
+    # TODO: move to tmp_repo and check if can replace fake resource manager.
+    rm.registerNamespace(sc.STORAGE, rm.SimpleResourceFactory())
+
+    pool = sp.StoragePool(
+        tmp_repo.pool_id,
+        FakeDomainMonitor(),
+        FakeTaskManager())
+    pool.setBackend(StoragePoolDiskBackend(pool))
+    pool.create(
+        poolName="pool",
+        msdUUID=msd_uuid,
+        domList=[msd_uuid],
+        masterVersion=0,
+        leaseParams=sd.DEFAULT_LEASE_PARAMS)
+
+    pool.startSpm(prevID=0, prevLVER=0, maxHostID=clusterlock.MAX_HOST_ID)
+    pool.stopSpm()
