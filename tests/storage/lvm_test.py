@@ -500,6 +500,28 @@ def test_command_concurrency(fake_devices, fake_runner, workers, read_only):
     assert elapsed < fake_runner.delay * count / lc.MAX_COMMANDS + 1.0
 
 
+def test_command_overwrite_concurrency(fake_devices, fake_runner, workers):
+    # Run concurrent commands and verify that overwriting read-only mode
+    # doesn't affect other commands.
+    lc = lvm.LVMCache()
+    lc.set_read_only(True)
+
+    fake_runner.delay = 0.2
+    count = 50
+    try:
+        for i in range(count):
+            read_only = None if i % 2 else False
+            workers.start_thread(lc.cmd, [i], read_only=read_only)
+    finally:
+        workers.join()
+
+    assert len(fake_runner.calls) == count
+
+    for cmd, kwargs in fake_runner.calls:
+        expected_lock_type = 4 if cmd[1] % 2 else 1
+        assert " locking_type=%i " % expected_lock_type in cmd[3]
+
+
 def test_change_read_only_mode(fake_devices, fake_runner, workers):
     # Test that changing read only wait for running commands, and new commands
     # wait for the read only change.
@@ -552,13 +574,9 @@ def test_vg_create_remove_single_device(tmp_storage, read_only):
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
 
-    lvm.set_read_only(False)
-
-    # TODO: should work also in read-only mode.
-    lvm.createVG(vg_name, [dev], "initial-tag", 128)
-
     lvm.set_read_only(read_only)
 
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
     vg = lvm.getVG(vg_name)
     assert vg.name == vg_name
     assert vg.pv_name == (dev,)
@@ -572,13 +590,7 @@ def test_vg_create_remove_single_device(tmp_storage, read_only):
     assert int(pv.mda_count) == 2
     assert int(pv.mda_used_count) == 2
 
-    lvm.set_read_only(False)
-
-    # TODO: should work also in read-only mode.
     lvm.removeVG(vg_name)
-
-    # TODO: check this also in read-only mode. vgs fail now after removing the
-    # vg, and this cause 4 retries that take 1.5 seconds.
 
     # We remove the VG
     with pytest.raises(se.VolumeGroupDoesNotExist):
@@ -601,13 +613,9 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
     dev3 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
 
-    lvm.set_read_only(False)
-
-    # TODO: should work also in read-only mode.
-    lvm.createVG(vg_name, [dev1, dev2, dev3], "initial-tag", 128)
-
     lvm.set_read_only(read_only)
 
+    lvm.createVG(vg_name, [dev1, dev2, dev3], "initial-tag", 128)
     vg = lvm.getVG(vg_name)
     assert vg.name == vg_name
     assert sorted(vg.pv_name) == sorted((dev1, dev2, dev3))
@@ -629,9 +637,6 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
         assert int(pv.mda_count) == 2
         assert int(pv.mda_used_count) == 0
 
-    lvm.set_read_only(False)
-
-    # TODO: should work also in read-only mode.
     lvm.removeVG(vg_name)
 
     # TODO: check this also in read-only mode. vgs fail now after removing the
@@ -651,14 +656,15 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_vg_extend_reduce(tmp_storage):
+@pytest.mark.parametrize("read_only", [True, False])
+def test_vg_extend_reduce(tmp_storage, read_only):
     dev_size = 10 * 1024**3
     dev1 = tmp_storage.create_device(dev_size)
     dev2 = tmp_storage.create_device(dev_size)
     dev3 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
 
-    lvm.set_read_only(False)
+    lvm.set_read_only(read_only)
 
     lvm.createVG(vg_name, [dev1], "initial-tag", 128)
 
@@ -686,9 +692,13 @@ def test_vg_extend_reduce(tmp_storage):
         assert int(pv.mda_count) == 2
         assert int(pv.mda_used_count) == 0
 
+    lvm.set_read_only(False)
+
     lvm.reduceVG(vg_name, dev2)
     vg = lvm.getVG(vg_name)
     assert sorted(vg.pv_name) == sorted((dev1, dev3))
+
+    lvm.set_read_only(True)
 
     lvm.removeVG(vg_name)
     with pytest.raises(se.VolumeGroupDoesNotExist):
@@ -730,13 +740,9 @@ def test_vg_check(tmp_storage, read_only):
     dev2 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
 
-    lvm.set_read_only(False)
-
-    # TODO: should work also in read-only mode.
-    lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
-
     lvm.set_read_only(read_only)
 
+    lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
     assert lvm.chkVG(vg_name)
 
 
@@ -752,14 +758,13 @@ def test_lv_create_remove(tmp_storage, read_only):
     lv_any = "lv-on-any-device"
     lv_specific = "lv-on-device-2"
 
-    # Creating VG and LV requires read-write mode.
-    lvm.set_read_only(False)
+    lvm.set_read_only(read_only)
+
     lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
 
-    # Create the first LV on any device.
+    # Create the first LV on any device. This requires read-write mode.
+    lvm.set_read_only(False)
     lvm.createLV(vg_name, lv_any, 1024)
-
-    # Getting lv must work in both read-only and read-write modes.
     lvm.set_read_only(read_only)
 
     lv = lvm.getLV(vg_name, lv_any)
@@ -832,11 +837,12 @@ def test_lv_activate_deactivate(tmp_storage, read_only):
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
 
-    lvm.set_read_only(False)
+    lvm.set_read_only(read_only)
 
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
-    lvm.createLV(vg_name, lv_name, 1024, activate=False)
 
+    lvm.set_read_only(False)
+    lvm.createLV(vg_name, lv_name, 1024, activate=False)
     lvm.set_read_only(read_only)
 
     lv = lvm.getLV(vg_name, lv_name)
@@ -895,7 +901,6 @@ def test_lv_refresh(tmp_storage, read_only):
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
 
     lvm.createLV(vg_name, lv_name, 1024)
-
     lvm.set_read_only(read_only)
 
     # Simulate extending the LV on the SPM.
@@ -955,7 +960,7 @@ def test_lv_rename(tmp_storage):
 def test_bootstrap(tmp_storage, read_only):
     dev_size = 20 * 1024**3
 
-    lvm.set_read_only(False)
+    lvm.set_read_only(read_only)
 
     dev1 = tmp_storage.create_device(dev_size)
     vg1_name = str(uuid.uuid4())
@@ -966,6 +971,8 @@ def test_bootstrap(tmp_storage, read_only):
     lvm.createVG(vg2_name, [dev2], "initial-tag", 128)
 
     vgs = (vg1_name, vg2_name)
+
+    lvm.set_read_only(False)
 
     for vg_name in vgs:
         # Create active lvs.

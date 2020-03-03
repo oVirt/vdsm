@@ -897,7 +897,9 @@ def _createpv(devices, metadataSize, options=tuple()):
                     "--metadatacopies", "2",
                     "--metadataignore", "y"))
     cmd.extend(devices)
-    rc, out, err = _lvminfo.cmd(cmd, devices)
+    # This is called during creating or extending VG which can be called also
+    # on non-SPM hosts, therefore we need to switch to read-write mode.
+    rc, out, err = _lvminfo.cmd(cmd, devices, read_only=False)
     return rc, out, err
 
 
@@ -1181,10 +1183,16 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
     _checkpvsblksize(pvs)
 
     _initpvs(pvs, metadataSize, force)
+
+    # When VG is created, it's not attached to SP and therefore this is not
+    # called on SPM, but can be called on any host, so we have to switch to
+    # read-write mode.
+    read_only = False
+
     # Activate the 1st PV metadata areas
     cmd = ["pvchange", "--metadataignore", "n"]
     cmd.append(pvs[0])
-    rc, out, err = _lvminfo.cmd(cmd, tuple(pvs))
+    rc, out, err = _lvminfo.cmd(cmd, tuple(pvs), read_only=read_only)
     if rc != 0:
         raise se.PhysDevInitializationError(pvs[0])
 
@@ -1192,7 +1200,7 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
     if initialTag:
         options.extend(("--addtag", initialTag))
     cmd = ["vgcreate"] + options + [vgName] + pvs
-    rc, out, err = _lvminfo.cmd(cmd, tuple(pvs))
+    rc, out, err = _lvminfo.cmd(cmd, tuple(pvs), read_only=read_only)
     if rc == 0:
         _lvminfo._invalidatepvs(pvs)
         _lvminfo._invalidatevgs(vgName)
@@ -1203,7 +1211,11 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
 
 def removeVG(vgName):
     cmd = ["vgremove", "-f", vgName]
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
+    # When VG is removed, it's not attached to SP any more and therefore
+    # vgremove is not called only on SPM, but can be called on any host, so we
+    # have to switch to read-write mode.
+    rc, out, err = _lvminfo.cmd(
+        cmd, _lvminfo._getVGDevs((vgName, )), read_only=False)
     pvs = tuple(pvName for pvName, pv in _lvminfo._pvs.iteritems()
                 if not isinstance(pv, Stub) and pv.vg_name == vgName)
     # PVS needs to be reloaded anyhow: if vg is removed they are staled,
@@ -1241,7 +1253,9 @@ def extendVG(vgName, devices, force):
 
     cmd = ["vgextend", vgName] + pvs
     devs = tuple(_lvminfo._getVGDevs((vgName, )) + tuple(pvs))
-    rc, out, err = _lvminfo.cmd(cmd, devs)
+    # VG extends can be called during image merge which can happen on any host,
+    # not only on SPM, therefore we have to switch to read-write mode here.
+    rc, out, err = _lvminfo.cmd(cmd, devs, read_only=False)
     if rc == 0:
         _lvminfo._invalidatepvs(pvs)
         _lvminfo._invalidatevgs(vgName)
