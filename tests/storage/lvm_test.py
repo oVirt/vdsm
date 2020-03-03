@@ -153,6 +153,24 @@ def test_build_command_read_only(fake_devices):
     assert " locking_type=4 " in cmd[3]
 
 
+def test_build_command_read_only_overwrite(fake_devices):
+    lc = lvm.LVMCache()
+    # When cache is in read-only mode but we overwrite it in the commands,
+    # use locking_type=1
+    lc.set_read_only(True)
+    cmd = lc._addExtraCfg(["lvs", "-o", "+tags"], read_only=False)
+    assert " locking_type=1 " in cmd[3]
+
+
+def test_build_command_read_write_overwrite(fake_devices):
+    lc = lvm.LVMCache()
+    # When cache is in read-write mode but we overwrite it in the commands,
+    # use locking_type=4
+    lc.set_read_only(False)
+    cmd = lc._addExtraCfg(["lvs", "-o", "+tags"], read_only=True)
+    assert " locking_type=4 " in cmd[3]
+
+
 class FakeRunner(object):
     """
     Simulate a command failing multiple times before suceeding. This is the
@@ -319,6 +337,37 @@ def test_cmd_read_only_max_retries_fail(fake_devices, fake_runner):
     # Call should fail (1 call + max retries).
     assert rc == 1
     assert len(fake_runner.calls) == lc.READ_ONLY_RETRIES + 1
+
+
+@pytest.mark.parametrize("module_read_only", [True, False])
+def test_cmd_overwrite_to_read_only_max_retries(
+        fake_devices, fake_runner, module_read_only):
+    lc = lvm.LVMCache()
+    lc.set_read_only(module_read_only)
+
+    # Require max retries to succeed.
+    fake_runner.retries = lc.READ_ONLY_RETRIES
+    rc, out, err = lc.cmd(["fake"], read_only=True)
+
+    # Call should succeed (1 call + max retries).
+    assert rc == 0
+    assert len(fake_runner.calls) == lc.READ_ONLY_RETRIES + 1
+    assert len(set(repr(c) for c in fake_runner.calls)) == 1
+
+
+@pytest.mark.parametrize("module_read_only", [True, False])
+def test_cmd_overwrite_to_read_write_max_retries(
+        fake_devices, fake_runner, module_read_only):
+    lc = lvm.LVMCache()
+    lc.set_read_only(module_read_only)
+
+    # Require max retries to succeed.
+    fake_runner.retries = lc.READ_ONLY_RETRIES
+    rc, out, err = lc.cmd(["fake"], read_only=False)
+
+    # Call should fail and shouldn't be retried.
+    assert rc == 1
+    assert len(fake_runner.calls) == 1
 
 
 def test_cmd_read_only_filter_stale(fake_devices, fake_runner):

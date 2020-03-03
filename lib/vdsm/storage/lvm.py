@@ -290,7 +290,7 @@ class LVMCache(object):
                 self._filterStale = False
             return self._filter
 
-    def _addExtraCfg(self, cmd, devices=tuple()):
+    def _addExtraCfg(self, cmd, devices=tuple(), read_only=None):
         newcmd = [constants.EXT_LVM, cmd[0]]
 
         if devices:
@@ -298,9 +298,16 @@ class LVMCache(object):
         else:
             dev_filter = self._getCachedFilter()
 
+        if (read_only is not None) and (read_only != self._read_only):
+            log.info("Overriding read_only mode current=%s override=%s",
+                     self._read_only, read_only)
+            read_only_mode = read_only
+        else:
+            read_only_mode = self._read_only
+
         conf = _buildConfig(
             dev_filter=dev_filter,
-            locking_type="4" if self._read_only else "1")
+            locking_type="4" if read_only_mode else "1")
 
         newcmd += ["--config", conf]
 
@@ -316,14 +323,34 @@ class LVMCache(object):
         self.invalidateFilter()
         self.flush()
 
-    def cmd(self, cmd, devices=tuple()):
+    def cmd(self, cmd, devices=tuple(), read_only=None):
+        """
+        Executes lvm command.
+
+        Arguments:
+            cmd(list): command to be executed
+            devices(tuple): devices for building lvm filter. Devices in
+                the tuple will be accepted, all other devices will be rejected.
+                If not specified, use lvm filter with all multipath devices.
+            read_only(bool): allows to overwrite mode (read-only/read-write)
+                in which lvm runs. If the value is None (default), global mode
+                set in LVMCache._read_only will be used (read-write for SPM
+                host, read-only for other hosts). If the value is specified,
+                the command will be run in required mode, no matter which value
+                is set in LVMCache._read_only.
+
+        Returns:
+            Tuple with return code if the command, its standard output and
+            error output.
+        """
         # Take a shared lock, so set_read_only() can wait for commands using
         # the previous mode.
         with self._cmd_sem, self._read_only_lock.shared:
 
             # 1. Try the command with fast specific filter including the
             # specified devices.
-            full_cmd = self._addExtraCfg(cmd, devices)
+            full_cmd = self._addExtraCfg(
+                cmd, devices=devices, read_only=read_only)
             rc, out, err = self._run_lvm(full_cmd)
             if rc == 0:
                 return rc, out, err
@@ -331,7 +358,7 @@ class LVMCache(object):
             # 2. Retry the command with a wider filter, in case the
             # failure was caused by a stale filter.
             self.invalidateFilter()
-            wider_cmd = self._addExtraCfg(cmd)
+            wider_cmd = self._addExtraCfg(cmd, read_only=read_only)
             if wider_cmd != full_cmd:
                 log.warning(
                     "Command with specific filter failed, retrying with "
@@ -346,7 +373,8 @@ class LVMCache(object):
             # 3. If we run in read-only mode, retry the command in case it
             # failed because VG metadata was modified while the command was
             # reading the metadata.
-            if self._read_only:
+            attempt_retry = self._read_only if read_only is None else read_only
+            if attempt_retry:
                 delay = self.RETRY_DELAY
                 for retry in range(1, self.READ_ONLY_RETRIES + 1):
                     log.warning(
