@@ -1,6 +1,6 @@
 #
 # Copyright 2012 IBM, Inc.
-# Copyright 2012-2019 Red Hat, Inc.
+# Copyright 2012-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,8 @@ from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network import legacy_switch
 from vdsm.network.models import Bond, Bridge, Nic, Vlan
 from vdsm.network.netswitch import validator
+
+from .testlib import NetInfo as NetInfoLib
 
 NICS = [f'eth{i}' for i in range(11)]
 
@@ -121,57 +123,48 @@ class TestConfigNetwork(object):
         assert cneContext.value.errCode == errors.ERR_BAD_PARAMS
 
 
-FAKE_NETINFO = {
-    'networks': {
-        'fakent': {
-            'iface': 'fakeint',
-            'bridged': False,
-            'southbound': 'fakeint',
-        },
-        'fakebrnet': {
-            'iface': 'fakebr',
-            'bridged': True,
-            'ports': ['eth0', 'eth1'],
-            'southbound': 'eth0',
-        },
-        'fakebrnet1': {
-            'iface': 'fakebr1',
-            'bridged': True,
-            'ports': ['bond00'],
-            'southbound': 'bond00',
-        },
-        'fakebrnet2': {
-            'iface': 'fakebr2',
-            'bridged': True,
-            'ports': ['eth7.1'],
-            'southbound': 'eth7.1',
-        },
-        'fakebrnet3': {
-            'iface': 'eth8',
-            'bridged': False,
-            'southbound': 'eth8',
-        },
+FAKE_NETINFO = NetInfoLib.create(
+    networks={
+        'fakent': NetInfoLib.create_network(
+            iface='fakeint', southbound='fakeint', bridged=False
+        ),
+        'fakebrnet': NetInfoLib.create_network(
+            iface='fakebr', southbound='eth0', bridged=True, ports=['eth0']
+        ),
+        'fakebrnet1': NetInfoLib.create_network(
+            iface='fakebr1', southbound=BOND0, bridged=True, ports=[BOND0]
+        ),
+        'fakebrnet2': NetInfoLib.create_network(
+            iface='fakebr2',
+            southbound='eth7.1',
+            bridged=True,
+            ports=['eth7.1'],
+        ),
+        'fakebrnet3': NetInfoLib.create_network(
+            iface='eth8', southbound='eth8', bridged=False
+        ),
     },
-    'vlans': {
-        'eth3.2': {
-            'iface': 'eth3',
-            'addr': '10.10.10.10',
-            'netmask': '255.255.0.0',
-            'mtu': 1500,
-        },
-        'eth7.1': {
-            'iface': 'eth7',
-            'addr': '192.168.100.1',
-            'netmask': '255.255.255.0',
-            'mtu': 1500,
-        },
+    vlans={
+        'eth3.2': NetInfoLib.create_vlan(
+            iface='eth3',
+            vlanid=2,
+            addr='10.10.10.10',
+            netmask='255.255.0.0',
+            mtu=1500,
+        ),
+        'eth7.1': NetInfoLib.create_vlan(
+            iface='eth7',
+            vlanid=1,
+            addr='192.168.100.1',
+            netmask='255.255.255.0',
+            mtu=1500,
+        ),
     },
-    'nics': NICS,
-    'bridges': {
-        'fakebr': {'ports': ['eth0', 'eth1']},
-        'fakebr1': {'ports': ['bond00']},
-        'fakebr2': {'ports': ['eth7.1']},
+    nics=NICS,
+    bridges={
+        'fakebr': NetInfoLib.create_bridge(ports=['eth0', 'eth1']),
+        'fakebr1': NetInfoLib.create_bridge(ports=['bond00']),
+        'fakebr2': NetInfoLib.create_bridge(ports=['eth7.1']),
     },
-    'bondings': {BOND0: {'slaves': BOND0_SLAVES}},
-    'nameservers': [],
-}
+    bondings={BOND0: NetInfoLib.create_bond(slaves=BOND0_SLAVES)},
+)

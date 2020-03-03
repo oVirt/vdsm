@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@ import pytest
 from vdsm.network import errors
 from vdsm.network import netswitch
 from vdsm.network.netinfo.cache import NetInfo
+
+from .testlib import NetInfo as NetInfoLib
 
 
 BOND_NAME = 'bond1'
@@ -131,61 +133,36 @@ class TestSouthboundValidation(object):
 
 
 def _create_fake_netinfo(switch):
-    common_net_attrs = {
-        'ipv6addrs': [],
-        'gateway': '',
-        'dhcpv4': False,
-        'netmask': '',
-        'ipv4defaultroute': False,
-        'stp': 'off',
-        'ipv4addrs': [],
-        'mtu': 1500,
-        'ipv6gateway': '::',
-        'dhcpv6': False,
-        'ipv6autoconf': False,
-        'addr': '',
-        'ports': [],
-        'switch': switch,
-    }
-
-    common_bond_attrs = {'opts': {'mode': '0'}, 'switch': switch}
-
-    fake_netinfo = {
-        'networks': {
-            'fakebrnet1': dict(
-                iface='eth0',
-                bridged=False,
-                southbound='eth0',
-                **common_net_attrs
+    fake_netinfo = NetInfoLib.create(
+        networks={
+            'fakebrnet1': NetInfoLib.create_network(
+                iface='eth0', bridged=False, southbound='eth0', switch=switch
             ),
-            'fakevlannet1': dict(
+            'fakevlannet1': NetInfoLib.create_network(
                 iface='eth1.1',
                 bridged=False,
                 southbound='eth1',
                 vlanid=1,
-                **common_net_attrs
+                switch=switch,
             ),
-            'fakebondnet1': dict(
-                iface='bond0',
-                bridged=False,
-                southbound='bond0',
-                **common_net_attrs
+            'fakebondnet1': NetInfoLib.create_network(
+                iface='bond0', bridged=False, southbound='bond0', switch=switch
             ),
         },
-        'vlans': {
-            'eth1.1': {
-                'iface': 'eth1',
-                'addr': '10.10.10.10',
-                'netmask': '255.255.0.0',
-                'mtu': 1500,
-                'vlanid': 1,
-            }
+        vlans={
+            'eth1.1': NetInfoLib.create_vlan(
+                iface='eth1',
+                addr='10.10.10.10',
+                netmask='255.255.0.0',
+                mtu=1500,
+                vlanid=1,
+            )
         },
-        'nics': ['eth0', 'eth1', 'eth2', 'eth3'],
-        'bridges': {},
-        'bondings': {
-            'bond0': dict(slaves=['eth2', 'eth3'], **common_bond_attrs)
+        nics=['eth0', 'eth1', 'eth2', 'eth3'],
+        bondings={
+            'bond0': NetInfoLib.create_bond(
+                slaves=['eth2', 'eth3'], switch=switch
+            )
         },
-        'nameservers': [],
-    }
+    )
     return NetInfo(fake_netinfo)
