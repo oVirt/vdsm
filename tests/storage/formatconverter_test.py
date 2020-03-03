@@ -245,6 +245,8 @@ def test_convert_to_v5_block(tmpdir, tmp_repo, tmp_storage, tmp_db,
     # Only attached domains are converted.
     dom.attach(tmp_repo.pool_id)
 
+    lvm.set_read_only(False)
+
     # Create some volumes in v4 format.
     for i in range(3):
         dom.createVolume(

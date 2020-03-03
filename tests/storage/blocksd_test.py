@@ -370,6 +370,8 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
     # Attache repo pool - SD expects at least one pool is attached.
     dom.attach(tmp_repo.pool_id)
 
+    lvm.set_read_only(False)
+
     with monkeypatch.context() as mc:
         mc.setattr(time, "time", lambda: 1550522547)
         dom.createVolume(
@@ -494,6 +496,8 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
 
+    lvm.set_read_only(False)
+
     dom.createVolume(
         desc="old description",
         diskType="DATA",
@@ -583,8 +587,9 @@ def test_create_snapshot_size(
     vol_uuid = str(uuid.uuid4())
     vol_capacity = 2 * parent_vol_capacity
 
-    # Create parent volume.
+    lvm.set_read_only(False)
 
+    # Create parent volume.
     dom.createVolume(
         imgUUID=img_uuid,
         capacity=parent_vol_capacity,
@@ -703,5 +708,14 @@ def test_spm_lifecycle(
         masterVersion=0,
         leaseParams=sd.DEFAULT_LEASE_PARAMS)
 
+    # By default a host is in a read-only lvm mode.
+    assert lvm.is_read_only()
+
     pool.startSpm(prevID=0, prevLVER=0, maxHostID=clusterlock.MAX_HOST_ID)
-    pool.stopSpm()
+    try:
+        # SPM host is in a read/write lvm mode.
+        assert not lvm.is_read_only()
+    finally:
+        pool.stopSpm()
+    # non-SPM host is in a read-only lvm mode.
+    assert lvm.is_read_only()

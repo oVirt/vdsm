@@ -41,6 +41,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import fileSD
 from vdsm.storage import fileUtils
 from vdsm.storage import image
+from vdsm.storage import lvm
 from vdsm.storage import mailbox
 from vdsm.storage import merge
 from vdsm.storage import misc
@@ -321,6 +322,11 @@ class StoragePool(object):
 
             self.log.debug("spm lock acquired successfully")
 
+            # After current host acquired the cluster lock, it is safe to allow
+            # it to have lvm read/write permissions, before it may need to
+            # upgrade the storage pool.
+            lvm.set_read_only(False)
+
             try:
                 self.lver = int(oldlver) + 1
 
@@ -448,6 +454,11 @@ class StoragePool(object):
                                                __securityOverride=True)
                 except:
                     pass  # The system can handle this inconsistency
+
+            # Set lvm back to read-only as next thing to happen is the release
+            # of the cluster lock which would allow another host to acquire it
+            # and run lvm commands in read/write mode.
+            lvm.set_read_only(True)
 
             try:
                 self.masterDomain.releaseClusterLock()

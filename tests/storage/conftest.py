@@ -94,7 +94,16 @@ def tmp_fs(tmp_storage):
 
 
 @pytest.fixture
-def tmp_storage(monkeypatch, tmpdir):
+def tmp_lvm():
+    lvm.set_read_only(True)
+    lvm.invalidateCache()
+    yield
+    lvm.set_read_only(True)
+    lvm.invalidateCache()
+
+
+@pytest.fixture
+def tmp_storage(monkeypatch, tmpdir, tmp_lvm):
     """
     Provide a temporary storage for creating temporary block devices, and patch
     vsdm to use it instead of multipath device.
@@ -111,13 +120,7 @@ def tmp_storage(monkeypatch, tmpdir):
     monkeypatch.setattr(sc, "P_VDSM_STORAGE", storage_dir)
 
     with closing(storage):
-        # Don't let other test break us...
-        lvm.invalidateCache()
-        try:
-            yield storage
-        finally:
-            # and don't break other tests.
-            lvm.invalidateCache()
+        yield storage
 
 
 @pytest.fixture

@@ -97,7 +97,7 @@ def test_build_config():
 
 
 @pytest.fixture
-def fake_devices(monkeypatch):
+def fake_devices(monkeypatch, tmp_lvm):
     devices = ["/dev/mapper/a", "/dev/mapper/b"]
 
     # Initial devices for LVMCache tests.
@@ -121,7 +121,7 @@ def test_build_command_long_filter(fake_devices):
         "--config",
         lvm._buildConfig(
             dev_filter=lvm._buildFilter(fake_devices),
-            locking_type="1"),
+            locking_type="4"),
         "-o", "+tags",
     ]
 
@@ -138,12 +138,13 @@ def test_rebuild_filter_after_invaliation(fake_devices):
     cmd = lc._addExtraCfg(["lvs"])
     assert cmd[3] == lvm._buildConfig(
         dev_filter=lvm._buildFilter(fake_devices),
-        locking_type="1")
+        locking_type="4")
 
 
 def test_build_command_read_only(fake_devices):
     # When cache in read-write mode, use locking_type=1
     lc = lvm.LVMCache()
+    lc.set_read_only(False)
     cmd = lc._addExtraCfg(["lvs", "-o", "+tags"])
     assert " locking_type=1 " in cmd[3]
 
@@ -228,7 +229,7 @@ def test_cmd_success(fake_devices, fake_runner):
         "--config",
         lvm._buildConfig(
             dev_filter=lvm._buildFilter(fake_devices),
-            locking_type="1"),
+            locking_type="4"),
         "-o", "+tags",
     ]
 
@@ -237,6 +238,7 @@ def test_cmd_success(fake_devices, fake_runner):
 
 def test_cmd_error(fake_devices, fake_runner):
     lc = lvm.LVMCache()
+    lc.set_read_only(False)
 
     # Require 2 calls to succeed.
     assert lc.READ_ONLY_RETRIES > 1
@@ -254,6 +256,7 @@ def test_cmd_retry_filter_stale(fake_devices, fake_runner):
     # Make a call to load the cache.
     initial_devices = fake_devices[:]
     lc = lvm.LVMCache()
+    lc.set_read_only(False)
     lc.cmd(["fake"])
     del fake_runner.calls[:]
 
@@ -526,6 +529,7 @@ def test_change_read_only_mode(fake_devices, fake_runner, workers):
     # Test that changing read only wait for running commands, and new commands
     # wait for the read only change.
     lc = lvm.LVMCache()
+    lc.set_read_only(False)
 
     def run_after(delay, func, *args):
         time.sleep(delay)

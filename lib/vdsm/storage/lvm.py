@@ -290,7 +290,7 @@ class LVMCache(object):
 
     def __init__(self):
         self._read_only_lock = rwlock.RWLock()
-        self._read_only = False
+        self._read_only = True
         self._filter = None
         self._filterStale = True
         self._filterLock = threading.Lock()
@@ -313,6 +313,9 @@ class LVMCache(object):
             if self._read_only != value:
                 log.info("Switching to read_only=%s", value)
                 self._read_only = value
+
+    def is_read_only(self):
+        return self._read_only
 
     def _getCachedFilter(self):
         with self._filterLock:
@@ -1178,6 +1181,13 @@ def set_read_only(read_only):
     See https://bugzilla.redhat.com/1553133 for more info.
     """
     _lvminfo.set_read_only(read_only)
+
+
+def is_read_only():
+    """
+    Get lvm module read-only mode indication.
+    """
+    return _lvminfo.is_read_only()
 
 
 #
