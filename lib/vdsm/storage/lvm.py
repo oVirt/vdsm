@@ -430,7 +430,10 @@ class LVMCache(object):
         pvNames = _normalizeargs(pvName)
         cmd.extend(pvNames)
 
-        rc, out, err = self.cmd(cmd)
+        # TODO: switch back to read-only mode once BZ #1809660 is fixed.
+        # pvs needs read-write mode to avoid failures (even if called with
+        # arguments).
+        rc, out, err = self.cmd(cmd, read_only=False)
 
         with self._lock:
             if rc != 0:
