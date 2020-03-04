@@ -167,17 +167,19 @@ class _IOProcessFileUtils(object):
             except OSError as e:
                 if e.errno != errno.EEXIST:
                     raise
-                else:
-                    if tmpPath == path and mode is not None:
-                        statinfo = self._iop.stat(path)
-                        curMode = statinfo[stat.ST_MODE]
-                        if curMode != mode:
-                            raise OSError(errno.EPERM,
-                                          ("Existing %s "
-                                           "permissions %s are not as "
-                                           "requested %s") % (path,
-                                                              oct(curMode),
-                                                              oct(mode)))
+                statinfo = self._iop.stat(tmpPath)
+                if not stat.S_ISDIR(statinfo.st_mode):
+                    raise OSError(errno.ENOTDIR,
+                                  "Not a directory %s" % tmpPath)
+                if tmpPath == path and mode is not None:
+                    curMode = statinfo[stat.ST_MODE]
+                    if curMode != mode:
+                        raise OSError(errno.EPERM,
+                                      ("Existing %s "
+                                       "permissions %s are not as "
+                                       "requested %s") % (path,
+                                                          oct(curMode),
+                                                          oct(mode)))
 
     def padToBlockSize(self, path):
         size = _IOProcessOs(self._iop).stat(path).st_size

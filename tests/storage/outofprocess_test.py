@@ -239,7 +239,6 @@ def test_fileutils_createdir_default_mode_dir_exists(oop_cleanup, tmpdir):
     verify_directory(path, mode=expected_mode)
 
 
-@pytest.mark.xfail(reason="iop.fileUtils.createdir doesn't check 'if file'")
 def test_fileutils_createdir_default_mode_file_exists(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.join("file"))
@@ -294,7 +293,6 @@ def test_fileutils_createdir_non_default_mode_dir_exists_other_mode(
     assert e.value.errno == errno.EPERM
 
 
-@pytest.mark.xfail(reason="iop.fileUtils.createdir doesn't check 'if file'")
 def test_fileutils_createdir_non_default_mode_file_exists(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
     path = str(tmpdir.join("file"))
