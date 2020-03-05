@@ -416,29 +416,29 @@ class LVMCache(object):
         self.invalidateFilter()
         self.flush()
 
-    def cmd(self, cmd, devices=tuple()):
+    def cmd(self, cmd, devices=tuple(), wants_output=False):
         # Take a shared lock, so set_read_only() can wait for commands using
         # the previous mode.
         with self._cmd_sem, self._read_only_lock.shared:
 
             # 1. Try the command with fast specific filter including the
-            # specified devices.
+            # specified devices. If the command succeeded and wanted output was
+            # returned we are done.
             full_cmd = self._addExtraCfg(cmd, devices)
             rc, out, err = self._runner.run(full_cmd)
-            if rc == 0:
+            if rc == 0 and (out or not wants_output):
                 return rc, out, err
 
-            # 2. Retry the command with a wider filter, in case the
-            # failure was caused by a stale filter.
+            # 2. Retry the command with a wider filter, in case the we failed
+            # or got no data because of a stale filter.
             self.invalidateFilter()
             wider_cmd = self._addExtraCfg(cmd)
             if wider_cmd != full_cmd:
                 log.warning(
-                    "Command with specific filter failed, retrying with "
-                    "a wider filter, cmd=%r rc=%r err=%r",
-                    full_cmd, rc, err)
+                    "Command with specific filter failed or returned no data, "
+                    "retrying with a wider filter, cmd=%r rc=%r out=%r err=%r",
+                    full_cmd, rc, out, err)
                 full_cmd = wider_cmd
-
                 rc, out, err = self._runner.run(full_cmd)
                 if rc == 0:
                     return rc, out, err
@@ -446,7 +446,7 @@ class LVMCache(object):
             # 3. If we run in read-only mode, retry the command in case it
             # failed because VG metadata was modified while the command was
             # reading the metadata.
-            if self._read_only:
+            if rc != 0 and self._read_only:
                 delay = self.RETRY_DELAY
                 for retry in range(1, self.READ_ONLY_RETRIES + 1):
                     log.warning(
@@ -476,10 +476,15 @@ class LVMCache(object):
 
     def _reloadpvs(self, pvName=None):
         cmd = list(PVS_CMD)
-        pvNames = normalize_args(pvName)
-        cmd.extend(pvNames)
 
-        rc, out, err = self.cmd(cmd)
+        pvNames = normalize_args(pvName)
+        if pvNames:
+            # --select 'pv_name = pv1 || pv_name = pv2'.
+            selection = " || ".join("pv_name = {}".format(n) for n in pvNames)
+            cmd.append("--select")
+            cmd.append(selection)
+
+        rc, out, err = self.cmd(cmd, wants_output=True)
 
         with self._lock:
             if rc != 0:
@@ -534,10 +539,16 @@ class LVMCache(object):
 
     def _reloadvgs(self, vgName=None):
         cmd = list(VGS_CMD)
-        vgNames = normalize_args(vgName)
-        cmd.extend(vgNames)
 
-        rc, out, err = self.cmd(cmd, self._getVGDevs(vgNames))
+        vgNames = normalize_args(vgName)
+        if vgNames:
+            # --select 'vg_name = vg1 || vg_name = vg2'.
+            selection = " || ".join("vg_name = {}".format(n) for n in vgNames)
+            cmd.append("--select")
+            cmd.append(selection)
+
+        rc, out, err = self.cmd(
+            cmd, self._getVGDevs(vgNames), wants_output=True)
 
         with self._lock:
             if rc != 0:
@@ -595,14 +606,20 @@ class LVMCache(object):
         return updatedVGs
 
     def _reloadlvs(self, vgName, lvNames=None):
-        lvNames = normalize_args(lvNames)
         cmd = list(LVS_CMD)
-        if lvNames:
-            cmd.extend(["%s/%s" % (vgName, lvName) for lvName in lvNames])
-        else:
-            cmd.append(vgName)
 
-        rc, out, err = self.cmd(cmd, self._getVGDevs((vgName,)))
+        # --select 'vg_name = vg1 && (lv_name = lv1 || lv_name = lv2)'.
+        selection = "vg_name = {}".format(vgName)
+        lvNames = normalize_args(lvNames)
+        if lvNames:
+            lvs = " || ".join("lv_name = {}".format(n) for n in lvNames)
+            selection += " && ({})".format(lvs)
+
+        cmd.append("--select")
+        cmd.append(selection)
+
+        rc, out, err = self.cmd(
+            cmd, self._getVGDevs((vgName,)), wants_output=True)
 
         with self._lock:
             if rc != 0:

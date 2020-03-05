@@ -554,8 +554,7 @@ def test_vg_create_remove_single_device(tmp_storage, read_only):
     # TODO: should work also in read-only mode.
     lvm.removeVG(vg_name)
 
-    # TODO: check this also in read-only mode. vgs fail now after removing the
-    # vg, and this cause 4 retries that take 1.5 seconds.
+    lvm.set_read_only(read_only)
 
     # We remove the VG
     with pytest.raises(se.VolumeGroupDoesNotExist):
@@ -613,13 +612,10 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
         assert int(pv.mda_count) == 2
         assert int(pv.mda_used_count) == 0
 
-    lvm.set_read_only(False)
-
     # TODO: should work also in read-only mode.
     lvm.removeVG(vg_name)
 
-    # TODO: check this also in read-only mode. vgs fail now after removing the
-    # vg, and this cause 4 retries that take 1.5 seconds.
+    lvm.set_read_only(read_only)
 
     # We remove the VG
     with pytest.raises(se.VolumeGroupDoesNotExist):
@@ -1001,8 +997,9 @@ def test_bootstrap(tmp_storage, read_only):
 
 @requires_root
 @pytest.mark.root
-def test_retry_with_wider_filter(tmp_storage):
-    lvm.set_read_only(False)
+@pytest.mark.parametrize("read_only", [True, False])
+def test_retry_with_wider_filter(tmp_storage, read_only):
+    lvm.set_read_only(read_only)
 
     # Force reload of the cache. The system does not know about any device at
     # this point.
@@ -1011,14 +1008,21 @@ def test_retry_with_wider_filter(tmp_storage):
     # Create a device - this device in not the lvm cached filter yet.
     dev = tmp_storage.create_device(20 * GiB)
 
+    # Creating VG requires read-write mode.
+    lvm.set_read_only(False)
+
     # We run vgcreate with explicit devices argument, so the filter is correct
     # and it succeeds.
     vg_name = str(uuid.uuid4())
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
 
+    # Checking VG must work in both read-only and read-write modes.
+    lvm.set_read_only(read_only)
+
     # The cached filter is stale at this point, and so is the vg metadata in
-    # the cache. Running "vgs vg-name" fails because of the stale filter, so we
-    # invalidate the filter and run it again.
+    # the cache. Running "vgs --select 'vg_name = vg-name'" will return no data
+    # because of the stale filter, so we invalidate the filter and run it
+    # again.
 
     vg = lvm.getVG(vg_name)
     assert vg.pv_name == (dev,)
