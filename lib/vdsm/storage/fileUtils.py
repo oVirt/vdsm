@@ -38,6 +38,7 @@ import six
 
 from vdsm import constants
 from vdsm.common.network import address
+from vdsm.common.osutils import get_umask
 
 log = logging.getLogger('storage.fileUtils')
 
@@ -205,11 +206,13 @@ def createdir(dirPath, mode=None):
             raise OSError(errno.ENOTDIR, "Not a directory %s" % dirPath)
         log.debug("Using existing directory: %s", dirPath)
         if mode is not None:
-            curMode = stat.S_IMODE(statinfo.st_mode)
-            if curMode != mode:
-                raise OSError(errno.EPERM,
-                              ("Existing %s permissions %o are not as "
-                               "requested %o") % (dirPath, curMode, mode))
+            actual_mode = stat.S_IMODE(statinfo.st_mode)
+            expected_mode = mode & ~get_umask()
+            if actual_mode != expected_mode:
+                raise OSError(
+                    errno.EPERM,
+                    "Existing {} permissions {:o} are not as requested"
+                    " {:o}".format(dirPath, actual_mode, expected_mode))
 
 
 def resolveUid(user):

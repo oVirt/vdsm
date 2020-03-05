@@ -111,7 +111,6 @@ def test_createdir_directory_exists_other_mode():
         assert e.value.errno == errno.EPERM
 
 
-@pytest.mark.xfail(reason="fileUtils.createdir doesn't consider umask")
 def test_createdir_directory_exists_same_mode():
     with namedTemporaryDir() as tmpdir:
         path = os.path.join(tmpdir, "subdir")
