@@ -497,9 +497,10 @@ class LVMCache(object):
 
         with self._lock:
             if rc != 0:
-                log.warning("lvm pvs failed: %s %s %s", str(rc), str(out),
-                            str(err))
-                pvNames = pvNames if pvNames else self._pvs.keys()
+                log.error(
+                    "Reloading PVs failed: pvs=%r rc=%r out=%r err=%r",
+                    pvNames, rc, out, err)
+                pvNames = pvNames if pvNames else self._pvs
                 for p in pvNames:
                     if isinstance(self._pvs.get(p), Stub):
                         self._pvs[p] = Unreadable(self._pvs[p].name, True)
@@ -561,16 +562,16 @@ class LVMCache(object):
 
         with self._lock:
             if rc != 0:
-                # This may be a real error (failure to reload existing VG) or
-                # no error at all (failure to reload non-existing VG), so we
-                # cannot make this an error.
-                log.warning(
-                    "Reloading VGs failed (vgs=%s rc=%s out=%r err=%r)",
+                log.error(
+                    "Reloading VGs failed vgs=%r rc=%r out=%r err=%r",
                     vgNames, rc, out, err)
                 for v in (vgNames or self._vgs):
                     if isinstance(self._vgs.get(v), Stub):
                         self._vgs[v] = Unreadable(self._vgs[v].name, True)
 
+            # TODO: Does not match _reloadpvs() and _reloadlvs(), and looks
+            # wrong. If LVM command failed, why are we using its (partial)
+            # output?
             if not len(out):
                 return dict(self._vgs)
 
@@ -632,11 +633,8 @@ class LVMCache(object):
 
         with self._lock:
             if rc != 0:
-                # This may be a real error (failure to reload existing LV) or
-                # no error at all (failure to reload non-existing LV), so we
-                # cannot make this an error.
-                log.warning(
-                    "Reloading LVs failed (vg=%s lvs=%s rc=%s out=%r err=%r)",
+                log.error(
+                    "Reloading LVs failed vg=%r lvs=%r rc=%s out=%r err=%r",
                     vgName, lvNames, rc, out, err)
                 lvNames = lvNames if lvNames else self._lvs.keys()
                 for l in lvNames:
