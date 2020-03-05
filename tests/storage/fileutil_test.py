@@ -53,20 +53,22 @@ def test_createdir_with_mode():
         fileUtils.createdir(path, mode=mode)
         assert os.path.isdir(path)
         actual_mode = stat.S_IMODE(os.lstat(path).st_mode)
-        assert actual_mode == mode
+        assert oct(actual_mode) == oct(mode)
 
 
 def test_createdir_with_mode_intermediate():
     with namedTemporaryDir() as base:
-        intermediate = os.path.join(base, "a")
-        path = os.path.join(intermediate, "b")
-        mode = 0o700
-        fileUtils.createdir(path, mode=mode)
-        assert os.path.isdir(path)
-        actual_mode = stat.S_IMODE(os.lstat(intermediate).st_mode)
+        intermediate_path = os.path.join(base, "a")
+        leaf_path = os.path.join(intermediate_path, "b")
+        leaf_mode = 0o700
+
+        fileUtils.createdir(leaf_path, mode=leaf_mode)
+        assert os.path.isdir(leaf_path)
+        actual_mode = stat.S_IMODE(os.lstat(intermediate_path).st_mode)
+
         # TODO: remove when all platforms support python-3.7
         if sys.version_info[:2] == (3, 6):
-            assert actual_mode == mode
+            assert oct(actual_mode) == oct(leaf_mode)
         else:
             # os.makedirs() behavior changed since python 3.7,
             # os.makedirs() will not respect the 'mode' parameter for
@@ -91,6 +93,8 @@ def test_createdir_raise_errors():
             # intermediate directories and will create them with the
             # default mode=0o777
             fileUtils.createdir(path, mode=mode)
+            assert os.path.isdir(path)
+
             actual_mode = stat.S_IMODE(os.lstat(path).st_mode)
             assert oct(actual_mode) == oct(mode & ~get_umask())
 
