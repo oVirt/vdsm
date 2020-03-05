@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import errno
 import os
 import stat
 import sys
@@ -79,10 +80,11 @@ def test_createdir_raise_errors():
     with namedTemporaryDir() as base:
         path = os.path.join(base, "a", "b")
         mode = 0o400
-        # TODO: remove when all platforms support    python-3.7
+        # TODO: remove when all platforms support python-3.7
         if sys.version_info[:2] == (3, 6):
-            with pytest.raises(OSError):
+            with pytest.raises(OSError) as e:
                 fileUtils.createdir(path, mode=mode)
+            assert e.value.errno == errno.EPERM
         else:
             # os.makedirs() behavior changed since python 3.7,
             # os.makedirs() will not respect the 'mode' parameter for
@@ -100,8 +102,9 @@ def test_createdir_directory_exists_no_mode():
 
 def test_createdir_directory_exists_other_mode():
     with namedTemporaryDir() as base:
-        with pytest.raises(OSError):
+        with pytest.raises(OSError) as e:
             fileUtils.createdir(base, mode=0o755)
+        assert e.value.errno == errno.EPERM
 
 
 def test_createdir_file_exists_with_mode():
@@ -109,16 +112,18 @@ def test_createdir_file_exists_with_mode():
         path = os.path.join(base, "file")
         with open(path, "w"):
             mode = stat.S_IMODE(os.lstat(path).st_mode)
-            with pytest.raises(OSError):
+            with pytest.raises(OSError) as e:
                 fileUtils.createdir(path, mode=mode)
+            assert e.value.errno == errno.ENOTDIR
 
 
 def test_createdir_file_exists_no_mode():
     with namedTemporaryDir() as base:
         path = os.path.join(base, "file")
         with open(path, "w"):
-            with pytest.raises(OSError):
+            with pytest.raises(OSError) as e:
                 fileUtils.createdir(path)
+            assert e.value.errno == errno.ENOTDIR
 
 # chown tests
 
@@ -196,8 +201,9 @@ def test_atomic_symlink_error_isfile():
         link = os.path.join(tmpdir, "link")
         with open(link, 'w') as f:
             f.write('data')
-        with pytest.raises(OSError):
+        with pytest.raises(OSError) as e:
             fileUtils.atomic_symlink(target, link)
+        assert e.value.errno == errno.EINVAL
 
 
 def test_atomic_symlink_error_isdir():
@@ -205,8 +211,9 @@ def test_atomic_symlink_error_isdir():
         target = os.path.join(tmpdir, "target")
         link = os.path.join(tmpdir, "link")
         os.mkdir(link)
-        with pytest.raises(OSError):
+        with pytest.raises(OSError) as e:
             fileUtils.atomic_symlink(target, link)
+        assert e.value.errno == errno.EINVAL
 
 # normalize path tests
 
