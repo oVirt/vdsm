@@ -670,8 +670,8 @@ class VM(APIBase):
 
     @api.logged(on="api.virt")
     @api.method
-    def backup_info(self, backup_id):
-        return self.vm.backup_info(backup_id)
+    def backup_info(self, backup_id, checkpoint_id=None):
+        return self.vm.backup_info(backup_id, checkpoint_id=checkpoint_id)
 
     @api.logged(on="api.virt")
     @api.method

@@ -185,7 +185,7 @@ def stop_backup(vm, dom, backup_id):
     _remove_scratch_disks(vm, backup_id)
 
 
-def backup_info(vm, dom, backup_id):
+def backup_info(vm, dom, backup_id, checkpoint_id=None):
     backup_xml = _get_backup_xml(vm.id, dom, backup_id)
     vm.log.debug("backup_id %r info: %s", backup_id, backup_xml)
 

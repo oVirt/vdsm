@@ -3933,9 +3933,10 @@ class Vm(object):
 
     @backup.requires_libvirt_support()
     @api.guard(_not_migrating)
-    def backup_info(self, backup_id):
+    def backup_info(self, backup_id, checkpoint_id=None):
         dom = backup.DomainAdapter(self)
-        return backup.backup_info(self, dom, backup_id=backup_id)
+        return backup.backup_info(
+            self, dom, backup_id=backup_id, checkpoint_id=checkpoint_id)
 
     @backup.requires_libvirt_support()
     @api.guard(_not_migrating)

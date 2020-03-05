@@ -8304,6 +8304,12 @@ types:
                     (imageId -> "nbd:unix:/path:exportname=sdx")
                 name: disks
                 type: *StringMap
+
+            -   description: Checkpoint XML description returned from libvirt.
+                             This XML can be used to redefine the
+                             checkpoint later.
+                name: checkpoint
+                type: string
         type: object
 
     BackupConfig: &BackupConfig
@@ -11668,6 +11674,13 @@ VM.backup_info:
 
     -   description: A UUID of the backup
         name: backup_id
+        type: *UUID
+
+    -   defaultvalue: null
+        description: A UUID of the checkpoint, must be the same value as
+                     to_checkpoint_id argument that was used for
+                     starting a backup (optional).
+        name: checkpoint_id
         type: *UUID
     return:
         description: Information about the backup identified by backup_id.
