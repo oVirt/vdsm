@@ -54,59 +54,59 @@ class Job(vdsm.virt.jobs.Job):
     def __init__(self, vm, snap_drives, memory_params,
                  frozen, job_uuid, recovery=False):
         super(Job, self).__init__(job_uuid, 'snapshot_vm')
-        self.vm = vm
-        self.snap_drives = snap_drives
-        self.memory_params = memory_params
-        self.frozen = frozen
-        self.job_uuid = job_uuid
-        self.recovery = recovery
+        self._vm = vm
+        self._snap_drives = snap_drives
+        self._memory_params = memory_params
+        self._frozen = frozen
+        self._job_uuid = job_uuid
+        self._recovery = recovery
 
     def _run(self):
-        if self.recovery:
-            LiveSnapshotRecovery(self.vm).run()
+        if self._recovery:
+            LiveSnapshotRecovery(self._vm).run()
         else:
-            snap = Snapshot(self.vm, self.snap_drives, self.memory_params,
-                            self.frozen, self.job_uuid)
+            snap = Snapshot(self._vm, self._snap_drives, self._memory_params,
+                            self._frozen, self._job_uuid)
             snap.snapshot()
 
 
 class Snapshot(properties.Owner):
-    job_uuid = properties.UUID(required=True)
+    _job_uuid = properties.UUID(required=True)
 
     def __init__(self, vm, snap_drives, memory_params, frozen, job_uuid):
-        self.vm = vm
-        self.snap_drives = snap_drives
-        self.memory_params = memory_params
-        self.frozen = frozen
-        self.job_uuid = job_uuid
+        self._vm = vm
+        self._snap_drives = snap_drives
+        self._memory_params = memory_params
+        self._frozen = frozen
+        self._job_uuid = job_uuid
         # When creating memory snapshot libvirt will pause the vm
-        self.should_freeze = not (self.memory_params or self.frozen)
+        self._should_freeze = not (self._memory_params or self._frozen)
         self._snapshot_job = {"jobUUID": job_uuid,
-                              "frozen": self.frozen,
-                              "memoryParams": self.memory_params}
-        if self.snap_drives is not None:
+                              "frozen": self._frozen,
+                              "memoryParams": self._memory_params}
+        if self._snap_drives is not None:
             # Regular flow, not recovery
-            self.vm.update_snapshot_metadata(self._snapshot_job)
+            self._vm.update_snapshot_metadata(self._snapshot_job)
 
     def _finalize_vm(self, memory_vol):
         try:
-            self.vm.drive_monitor.enable()
-            if self.memory_params:
-                self.vm.cif.teardownVolumePath(memory_vol)
+            self._vm.drive_monitor.enable()
+            if self._memory_params:
+                self._vm.cif.teardownVolumePath(memory_vol)
             if config.getboolean('vars', 'time_sync_snapshot_enable'):
-                self.vm.syncGuestTime()
+                self._vm.syncGuestTime()
         finally:
             # Cleaning snapshot job metadata
             self._snapshot_job = None
-            self.vm.update_snapshot_metadata(self._snapshot_job)
+            self._vm.update_snapshot_metadata(self._snapshot_job)
 
     def teardown(self, memory_vol_path, memory_vol, new_drives, vm_drives):
-        self.vm.log.info('Starting snapshot teardown')
+        self._vm.log.info('Starting snapshot teardown')
         result = True
 
         def pad_memory_volume(memory_vol_path, sd_uuid):
             sd_type = sd.name2type(
-                self.vm.cif.irs.getStorageDomainInfo(sd_uuid)['info']['type'])
+                self._vm.cif.irs.getStorageDomainInfo(sd_uuid)['info']['type'])
             if sd_type in sd.FILE_DOMAIN_TYPES:
                 iop = oop.getProcessPool(sd_uuid)
                 iop.fileUtils.padToBlockSize(memory_vol_path)
@@ -115,42 +115,42 @@ class Snapshot(properties.Owner):
             # Must always thaw, even if freeze failed; in case the guest
             # did freeze the filesystems, but failed to reply in time.
             # Libvirt is using same logic (see src/qemu/qemu_driver.c).
-            if self.should_freeze:
-                self.vm.thaw()
+            if self._should_freeze:
+                self._vm.thaw()
 
             # We are padding the memory volume with block size of zeroes
             # because qemu-img truncates files such that their size is
             # round down to the closest multiple of block size (bz 970559).
             # This code should be removed once qemu-img will handle files
             # with size that is not multiple of block size correctly.
-            if self.memory_params:
+            if self._memory_params:
                 pad_memory_volume(memory_vol_path, memory_vol['domainID'])
 
             for drive in new_drives.values():
                 # Update the drive information
                 _, old_volume_id = vm_drives[drive["name"]]
                 try:
-                    self.vm.updateDriveParameters(drive)
+                    self._vm.updateDriveParameters(drive)
                 except Exception:
                     # Here it's too late to fail, the switch already happened
                     # and there's nothing we can do, we must to proceed anyway
                     # to report the live snapshot success.
-                    self.vm.log.exception("Failed to update drive information"
-                                          " for '%s'", drive)
+                    self._vm.log.exception("Failed to update drive information"
+                                           " for '%s'", drive)
 
                 drive_obj = lookup.drive_by_name(
-                    self.vm.getDiskDevices()[:], drive["name"])
-                self.vm.clear_drive_threshold(drive_obj, old_volume_id)
+                    self._vm.getDiskDevices()[:], drive["name"])
+                self._vm.clear_drive_threshold(drive_obj, old_volume_id)
 
                 try:
-                    self.vm.updateDriveVolume(drive_obj)
+                    self._vm.updateDriveVolume(drive_obj)
                 except vdsm.virt.vm.StorageUnavailableError as e:
                     # Will be recovered on the next monitoring cycle
-                    self.vm.log.error("Unable to update drive %r "
-                                      "volume size: %s", drive["name"], e)
+                    self._vm.log.error("Unable to update drive %r "
+                                       "volume size: %s", drive["name"], e)
         except Exception as e:
-            self.vm.log.error("Snapshot teardown error: %s, "
-                              "trying to continue teardown", e)
+            self._vm.log.error("Snapshot teardown error: %s, "
+                               "trying to continue teardown", e)
             result = False
         finally:
             self._finalize_vm(memory_vol)
@@ -158,7 +158,8 @@ class Snapshot(properties.Owner):
 
     def __repr__(self):
         return ("<%s vm=%s job=%s 0x%s>" %
-                (self.__class__.__name__, self.vm.id, self.job_uuid, id(self)))
+                (self.__class__.__name__, self._vm.id,
+                 self._job_uuid, id(self)))
 
     def snapshot(self):
         """Live snapshot command"""
@@ -192,10 +193,10 @@ class Snapshot(properties.Owner):
 
             for vm_dev_name, drive in new_drives.items():
                 try:
-                    self.vm.cif.teardownVolumePath(drive)
+                    self._vm.cif.teardownVolumePath(drive)
                 except Exception:
-                    self.vm.log.exception("Unable to teardown drive: %s",
-                                          vm_dev_name)
+                    self._vm.log.exception("Unable to teardown drive: %s",
+                                           vm_dev_name)
 
         def memory_snapshot(memory_volume_path):
             """Libvirt snapshot XML"""
@@ -208,42 +209,44 @@ class Snapshot(properties.Owner):
             """Returns the needed vm configuration with the memory snapshot"""
 
             return {'restoreFromSnapshot': True,
-                    '_srcDomXML': self.vm.migratable_domain_xml(),
-                    'elapsedTimeOffset': time.time() - self.vm.start_time}
+                    '_srcDomXML': self._vm.migratable_domain_xml(),
+                    'elapsedTimeOffset': time.time() - self._vm.start_time}
 
         snap = vmxml.Element('domainsnapshot')
         disks = vmxml.Element('disks')
         new_drives = {}
         vm_drives = {}
 
-        for drive in self.snap_drives:
+        for drive in self._snap_drives:
             base_drv, tget_drv = norm_snap_drive_params(drive)
 
             try:
-                self.vm.findDriveByUUIDs(tget_drv)
+                self._vm.findDriveByUUIDs(tget_drv)
             except LookupError:
                 # The vm is not already using the requested volume for the
                 # snapshot, continuing.
                 pass
             else:
                 # The snapshot volume is the current one, skipping
-                self.vm.log.debug("The volume is already in use: %s", tget_drv)
+                self._vm.log.debug("The volume is already in use: %s",
+                                   tget_drv)
                 continue  # Next drive
 
             try:
-                vm_drive = self.vm.findDriveByUUIDs(base_drv)
+                vm_drive = self._vm.findDriveByUUIDs(base_drv)
             except LookupError:
                 # The volume we want to snapshot doesn't exist
-                self.vm.log.error("The base volume doesn't exist: %s",
-                                  base_drv)
+                self._vm.log.error("The base volume doesn't exist: %s",
+                                   base_drv)
                 return response.error('snapshotErr')
 
             if vm_drive.hasVolumeLeases:
-                self.vm.log.error('disk %s has volume leases', vm_drive.name)
+                self._vm.log.error('disk %s has volume leases', vm_drive.name)
                 return response.error('noimpl')
 
             if vm_drive.transientDisk:
-                self.vm.log.error('disk %s is a transient disk', vm_drive.name)
+                self._vm.log.error('disk %s is a transient disk',
+                                   vm_drive.name)
                 return response.error('transientErr')
 
             vm_dev_name = vm_drive.name
@@ -269,10 +272,10 @@ class Snapshot(properties.Owner):
             prepared_drives[vm_dev_name] = vm_device
             try:
                 new_drives[vm_dev_name]["path"] = \
-                    self.vm.cif.prepareVolumePath(new_drives[vm_dev_name])
+                    self._vm.cif.prepareVolumePath(new_drives[vm_dev_name])
             except Exception:
-                self.vm.log.exception('unable to prepare the volume path for '
-                                      'disk %s', vm_dev_name)
+                self._vm.log.exception('unable to prepare the volume path for '
+                                       'disk %s', vm_dev_name)
                 rollback_drives(prepared_drives)
                 return response.error('snapshotErr')
 
@@ -285,12 +288,12 @@ class Snapshot(properties.Owner):
         snap_flags = (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT
                       | libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_NO_METADATA)
 
-        if self.memory_params:
+        if self._memory_params:
             # Save the needed vm configuration
             # TODO: this, as other places that use pickle.dump
             # directly to files, should be done with outOfProcess
-            vm_conf_vol = self.memory_params['dstparams']
-            vm_conf_vol_path = self.vm.cif.prepareVolumePath(vm_conf_vol)
+            vm_conf_vol = self._memory_params['dstparams']
+            vm_conf_vol_path = self._vm.cif.prepareVolumePath(vm_conf_vol)
             try:
                 with open(vm_conf_vol_path, "rb+") as f:
                     vm_conf = vm_conf_for_memory_snapshot()
@@ -308,11 +311,11 @@ class Snapshot(properties.Owner):
                     f.flush()
                     os.fsync(f.fileno())
             finally:
-                self.vm.cif.teardownVolumePath(vm_conf_vol)
+                self._vm.cif.teardownVolumePath(vm_conf_vol)
 
             # Adding the memory volume to the snapshot xml
-            memory_vol = self.memory_params['dst']
-            memory_vol_path = self.vm.cif.prepareVolumePath(memory_vol)
+            memory_vol = self._memory_params['dst']
+            memory_vol_path = self._vm.cif.prepareVolumePath(memory_vol)
             snap.appendChild(memory_snapshot(memory_vol_path))
         else:
             memory_vol = memory_vol_path = None
@@ -321,7 +324,7 @@ class Snapshot(properties.Owner):
         snapxml = xmlutils.tostring(snap)
         # TODO: this is debug information. For 3.6.x we still need to
         # see the XML even with 'info' as default level.
-        self.vm.log.info("%s", snapxml)
+        self._vm.log.info("%s", snapxml)
 
         self._snapshot_job['memoryVolPath'] = memory_vol_path
         self._snapshot_job['memoryVol'] = memory_vol
@@ -330,30 +333,30 @@ class Snapshot(properties.Owner):
         for k, v in vm_drives.items():
             vm_drives_serialized[k] = [xmlutils.tostring(v[0].getXML()), v[1]]
         self._snapshot_job['vmDrives'] = vm_drives_serialized
-        self.vm.update_snapshot_metadata(self._snapshot_job)
+        self._vm.update_snapshot_metadata(self._snapshot_job)
 
         # We need to stop the drive monitoring for two reasons, one is to
         # prevent spurious libvirt errors about missing drive paths (since
         # we're changing them), and also to prevent to trigger a drive
         # extension for the new volume with the apparent size of the old one
         # (the apparentsize is updated as last step in updateDriveParameters)
-        self.vm.drive_monitor.disable()
+        self._vm.drive_monitor.disable()
 
         try:
-            if self.should_freeze:
-                self.vm.freeze()
+            if self._should_freeze:
+                self._vm.freeze()
             try:
-                self.vm.log.info("Taking a live snapshot (drives=%s,"
-                                 "memory=%s)", ', '
-                                 .join(drive["name"] for drive in
-                                       new_drives.values()),
-                                 self.memory_params is not None)
-                self.vm.run_dom_snapshot(snapxml, snap_flags)
-                self.vm.log.info("Completed live snapshot")
+                self._vm.log.info("Taking a live snapshot (drives=%s,"
+                                  "memory=%s)", ', '
+                                  .join(drive["name"] for drive in
+                                        new_drives.values()),
+                                  self._memory_params is not None)
+                self._vm.run_dom_snapshot(snapxml, snap_flags)
+                self._vm.log.info("Completed live snapshot")
             except libvirt.libvirtError:
-                self.vm.log.exception("Unable to take snapshot")
-                if self.should_freeze:
-                    self.vm.thaw()
+                self._vm.log.exception("Unable to take snapshot")
+                if self._should_freeze:
+                    self._vm.thaw()
                 return response.error('snapshotErr')
         except:
             # In case the VM was shutdown in the middle of the snapshot
@@ -370,37 +373,37 @@ class Snapshot(properties.Owner):
 
 class LiveSnapshotRecovery(object):
     def __init__(self, vm):
-        self.vm = vm
-        self.job_stats = None
-        self._snapshot_job = self.vm.snapshot_metadata()
+        self._vm = vm
+        self._job_stats = None
+        self._snapshot_job = self._vm.snapshot_metadata()
         # The metadata stored in __init__ is in order to be able
         # to perform teardown.
-        self.frozen = self._snapshot_job['frozen']
-        self.memory_params = self._snapshot_job['memoryParams']
-        self.job_uuid = self._snapshot_job['jobUUID']
+        self._frozen = self._snapshot_job['frozen']
+        self._memory_params = self._snapshot_job['memoryParams']
+        self._job_uuid = self._snapshot_job['jobUUID']
 
     @logutils.traceback()
     def run(self):
-        self.vm.log.info("JOBMON: Checking job on VM: %s", self.vm.id)
+        self._vm.log.info("JOBMON: Checking job on VM: %s", self._vm.id)
         while True:
             try:
                 # Only one job can run per VM. Therefore, given the fact we
                 # have the metadata of the snapshot job and there is a job
                 # still running (or the job is gone),
                 # we can assume it was the snapshot job.
-                self.job_stats = self.vm.job_stats()
+                self._job_stats = self._vm.job_stats()
             except libvirt.libvirtError:
                 # TODO: This is workaround for
                 #  https://bugzilla.redhat.com/1565552
                 pass
             else:
-                if self.job_stats and \
-                        self.job_stats['type'] == libvirt.VIR_DOMAIN_JOB_NONE:
+                if self._job_stats and \
+                        self._job_stats['type'] == libvirt.VIR_DOMAIN_JOB_NONE:
                     break
-            self.vm.log.info("JOBMON: Snapshot is running")
+            self._vm.log.info("JOBMON: Snapshot is running")
             time.sleep(10)
 
-        self.vm.log.info("JOBMON: Snapshot isn't running")
+        self._vm.log.info("JOBMON: Snapshot isn't running")
         memory_vol_path = memory_vol = new_drives = vm_drives = None
 
         # In recovery the VM is in actual pause status.
@@ -409,11 +412,11 @@ class LiveSnapshotRecovery(object):
         # In that case, we will change the VM status to UP in VDSM.
         # We will check libvirt status report for 10 times,
         # every 1 seconds to eliminate possible race on the VM status.
-        if self.vm.lastStatus == vmstatus.PAUSED:
+        if self._vm.lastStatus == vmstatus.PAUSED:
             for _ in range(10):
-                if self.vm.isDomainRunning():
-                    self.vm.set_last_status(vmstatus.UP, vmstatus.PAUSED)
-                    self.vm.send_status_event()
+                if self._vm.isDomainRunning():
+                    self._vm.set_last_status(vmstatus.UP, vmstatus.PAUSED)
+                    self._vm.send_status_event()
                     break
                 time.sleep(1)
         try:
@@ -429,14 +432,14 @@ class LiveSnapshotRecovery(object):
             vm_drives = self._snapshot_job['vmDrives']
             for k, v in vm_drives.items():
                 vm_drives[k] = (vmdevices.storage.Drive(
-                    self.vm.log, **storagexml.parse(
+                    self._vm.log, **storagexml.parse(
                         xmlutils.fromstring(v[0]), {})
                 ), v[1])
         except KeyError:
-            self.vm.log.error("Missing data on the snapshot job "
-                              "metadata.. calling teardown")
+            self._vm.log.error("Missing data on the snapshot job "
+                               "metadata.. calling teardown")
         snap = Snapshot(
-            self.vm, None, self.memory_params, self.frozen, self.job_uuid
+            self._vm, None, self._memory_params, self._frozen, self._job_uuid
         )
         res = snap.teardown(memory_vol_path, memory_vol,
                             new_drives, vm_drives)
