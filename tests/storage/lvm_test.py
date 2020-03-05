@@ -548,7 +548,7 @@ def test_vg_create_remove_single_device(tmp_storage, read_only):
     lvm.removeVG(vg_name)
 
     # TODO: check this also in read-only mode. vgs fail now after removing the
-    # vg, and this cause 10 retries that take 15 seconds.
+    # vg, and this cause 4 retries that take 1.5 seconds.
 
     # We remove the VG
     with pytest.raises(se.VolumeGroupDoesNotExist):
@@ -604,7 +604,7 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
     lvm.removeVG(vg_name)
 
     # TODO: check this also in read-only mode. vgs fail now after removing the
-    # vg, and this cause 10 retries that take 15 seconds.
+    # vg, and this cause 4 retries that take 1.5 seconds.
 
     # We remove the VG
     with pytest.raises(se.VolumeGroupDoesNotExist):
