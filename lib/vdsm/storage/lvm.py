@@ -248,8 +248,39 @@ class LVMCache(object):
     # Read-only commands may fail if the SPM modified VG metadata while
     # a read-only command was reading the metadata. We retry the command
     # with exponential back-off delay to recover for these failures.
-    READ_ONLY_RETRIES = 10
-    RETRY_DELAY = 0.01
+    #
+    # Testing with 10 times higher load compared with real systems show that
+    # 1.2% of the read-only commands failed and needed up to 3 retries to
+    # succeed. 97.45% of the failing commands succeeded after 1 retry. 2.3% of
+    # the failing commands needed 2 retries, and 0.21% of the commands needed 3
+    # retries.
+    #
+    # Here are stats from a test using tests/storage/stress/extend.py:
+    #
+    # $ python extend.py log-stats run-regular.log
+    # {
+    #   "activating": 5000,
+    #   "creating": 5000,
+    #   "deactivating": 4999,
+    #   "extend-rate": 4.684750527055517,
+    #   "extending": 99996,
+    #   "max-retry": 3,
+    #   "read-only": 109995,
+    #   "refreshing": 99996,
+    #   "removing": 4999,
+    #   "retries": 1374,
+    #   "retry 1": 1339,
+    #   "retry 2": 32,
+    #   "retry 3": 3,
+    #   "retry-rate": 0.012491476885312968,
+    #   "total-time": 21345,
+    #   "warnings": 3766
+    # }
+    #
+    # Use 4 retries for extra safety. This translates to typical delay of 0.1
+    # seconds, and worst case delay of 1.5 seconds.
+    READ_ONLY_RETRIES = 4
+    RETRY_DELAY = 0.1
     RETRY_BACKUP_OFF = 2
 
     # Warnings written to LVM stderr that should not be logged as warnings.
