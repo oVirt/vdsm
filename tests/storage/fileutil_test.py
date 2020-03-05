@@ -27,11 +27,12 @@ import sys
 
 import pytest
 
+from vdsm.common.osutils import get_umask
 from vdsm.storage import fileUtils
+
 from testlib import namedTemporaryDir
 from testlib import temporaryPath
 from . marks import requires_unprivileged_user, requires_root
-from . storagetestlib import get_umask
 
 # createdir tests
 

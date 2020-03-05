@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 import errno
 import os
+import re
 import select
 
 from vdsm.common import time
@@ -83,3 +84,21 @@ def uninterruptible_poll(pollfun, timeout=-1):
 
         if endtime is not None:
             timeout = max(0, endtime - time.monotonic_time())
+
+
+UMASK_RE = re.compile(r"^Umask:\t(\d+)$", re.M)
+
+
+def get_umask():
+    """
+    This is a thread-safe implementation of umask retrieval.
+    Same implementation to be used in both VDSM code and tests.
+    """
+    with open("/proc/self/status") as f:
+        status = f.read()
+
+    match = UMASK_RE.search(status)
+    if match is None:
+        raise RuntimeError("No umask in {!r}".format(status))
+
+    return int(match.group(1), base=8)

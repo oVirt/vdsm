@@ -133,3 +133,11 @@ class TestUninterruptiblePoll(TestCaseBase):
         proc.start()
         self._noIntrWatchFd(myPipe, isEpoll=False, mask=select.POLLIN)
         proc.join()
+
+    def testGetUmask(self):
+        # Retrieve umask in a not thread-safe way.
+        os_umask = os.umask(0)
+        os.umask(os_umask)
+
+        # Compare vs. a thread-safe implementation.
+        self.assertEqual(oct(os_umask), oct(osutils.get_umask()))

@@ -34,12 +34,13 @@ from contextlib import contextmanager
 
 import pytest
 
+from vdsm.common.osutils import get_umask
 from vdsm.storage import constants as sc
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage.exception import MiscDirCleanupFailure
 
 from . marks import requires_root, requires_unprivileged_user
-from . storagetestlib import chmod, get_umask
+from . storagetestlib import chmod
 
 
 @pytest.fixture
