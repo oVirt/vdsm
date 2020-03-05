@@ -126,15 +126,17 @@ class LVM(object):
     # When running read only commands on remote node, command may fail because
     # vg metadata header was modified on the manager node during the command.
     # There is no way to detect such failure, so the only way to recover is to
-    # retry the command. Testing show that in with extreme concurrenncy, we
-    # need at least 8 retries to recover.
-    READ_ONLY_RETRIES = 10
+    # retry the command.
+    #
+    # In related bugs we see lvm mdetadata chaged every 5 seconds. Testing
+    # using 10 times more load (5 metadata chagnes per second) show that we
+    # need up to 3 retries. Use higher value to allow testing higher loads.
+    READ_ONLY_RETRIES = 5
 
-    # If retry fail, wait for this amount before retrying again. With defualt
-    # RETRY_BACKUP_OFF, and READ_ONLY_RETRIES this will wait up to 10 seconds.
-    RETRY_DELAY = 0.01
+    # If a command fails, wait for this amount before retrying.
+    RETRY_DELAY = 0.1
 
-    # If retry fail again, increase the delay by this factor.
+    # If retry fails, increase the delay by this factor.
     RETRY_BACKUP_OFF = 2
 
     # This must match vdsm lvm configuration
