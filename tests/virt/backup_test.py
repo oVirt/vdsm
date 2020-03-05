@@ -237,6 +237,7 @@ def test_start_stop_backup(tmp_backupdir, tmp_basedir):
     assert vm.froze
     assert vm.thawed
 
+    assert 'checkpoint' not in res['result']
     result_disks = res['result']['disks']
     verify_backup_urls(BACKUP_ID, result_disks)
 
@@ -410,6 +411,7 @@ def test_backup_info(tmp_backupdir, tmp_basedir):
     res = backup.start_backup(vm, dom, config)
     backup_info = backup.backup_info(vm, dom, BACKUP_ID)
     assert res['result']['disks'] == backup_info['result']['disks']
+    assert 'checkpoint' not in backup_info['result']
 
 
 @requires_backup_support

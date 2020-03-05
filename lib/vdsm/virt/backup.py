@@ -68,7 +68,7 @@ if backup_enabled:
         "backupBegin",
         "abortJob",
         "backupGetXMLDesc",
-        "checkpointCreateXML",
+        "checkpointLookupByName",
         "blockInfo"
     )
     class DomainAdapter(object):
@@ -160,7 +160,13 @@ def start_backup(vm, dom, config):
         img_id: nbd_addr.url(drive.name)
         for img_id, drive in six.iteritems(drives)}
 
-    return {'result': {'disks': disks_urls}}
+    result = {'disks': disks_urls}
+
+    if backup_cfg.to_checkpoint_id is not None:
+        _add_checkpoint_xml(
+            vm, dom, backup_cfg.backup_id, backup_cfg.to_checkpoint_id, result)
+
+    return dict(result=result)
 
 
 def stop_backup(vm, dom, backup_id):
@@ -190,7 +196,12 @@ def backup_info(vm, dom, backup_id, checkpoint_id=None):
     vm.log.debug("backup_id %r info: %s", backup_id, backup_xml)
 
     disks_urls = _parse_backup_info(vm, backup_id, backup_xml)
-    return {'result': {'disks': disks_urls}}
+    result = {'disks': disks_urls}
+
+    if checkpoint_id is not None:
+        _add_checkpoint_xml(vm, dom, backup_id, checkpoint_id, result)
+
+    return dict(result=result)
 
 
 def delete_checkpoints(vm, dom, checkpoint_ids):
@@ -228,6 +239,21 @@ def _get_backup_xml(vm_id, dom, backup_id):
             backup_id=backup_id)
 
     return backup_xml
+
+
+def _add_checkpoint_xml(vm, dom, backup_id, checkpoint_id, result):
+    try:
+        checkpoint = dom.checkpointLookupByName(checkpoint_id)
+        result['checkpoint'] = checkpoint.getXMLDesc()
+    except libvirt.libvirtError as e:
+        if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT:
+            vm.log.exception(
+                "Checkpoint_id: %r for backup_id: %r, doesn't exist, "
+                "error: %s", checkpoint_id, backup_id, e)
+        else:
+            vm.log.exception(
+                "Failed to fetch checkpoint_id: %r for backup_id: %r, "
+                "error: %s", checkpoint_id, backup_id, e)
 
 
 def _begin_backup(vm, dom, backup_cfg, backup_xml, checkpoint_xml):
