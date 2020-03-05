@@ -503,15 +503,17 @@ class LVMCache(object):
                     continue
                 self._pvs[pv.name] = pv
                 updatedPVs[pv.name] = pv
+
+            # Remove stalePVs
+            stalePVs = [name for name in (pvNames or self._pvs)
+                        if name not in updatedPVs]
+            for name in stalePVs:
+                log.warning("Removing stale PV %s", name)
+                self._pvs.pop(name, None)
+
             # If we updated all the PVs drop stale flag
             if not pvName:
                 self._stalepv = False
-                # Remove stalePVs
-                stalePVs = [staleName for staleName in self._pvs
-                            if staleName not in updatedPVs]
-                for staleName in stalePVs:
-                    log.warning("Removing stale PV: %s", staleName)
-                    self._pvs.pop((staleName), None)
 
         return updatedPVs
 
@@ -545,8 +547,7 @@ class LVMCache(object):
                 log.warning(
                     "Reloading VGs failed (vgs=%s rc=%s out=%r err=%r)",
                     vgNames, rc, out, err)
-                vgNames = vgNames if vgNames else self._vgs
-                for v in vgNames:
+                for v in (vgNames or self._vgs):
                     if isinstance(self._vgs.get(v), Stub):
                         self._vgs[v] = Unreadable(self._vgs[v].name, True)
 
@@ -578,16 +579,18 @@ class LVMCache(object):
                               vg.name, vg.pv_count, vg.pv_name)
                 self._vgs[vg.name] = vg
                 updatedVGs[vg.name] = vg
+
+            # Remove stale VGs
+            staleVGs = [name for name in (vgNames or self._vgs)
+                        if name not in updatedVGs]
+            for name in staleVGs:
+                removeVgMapping(name)
+                log.warning("Removing stale VG %s", name)
+                self._vgs.pop(name, None)
+
             # If we updated all the VGs drop stale flag
             if not vgName:
                 self._stalevg = False
-                # Remove stale VGs
-                staleVGs = [staleName for staleName in self._vgs
-                            if staleName not in updatedVGs]
-                for staleName in staleVGs:
-                    removeVgMapping(staleName)
-                    log.warning("Removing stale VG: %s", staleName)
-                    self._vgs.pop((staleName), None)
 
         return updatedVGs
 
