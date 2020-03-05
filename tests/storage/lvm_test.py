@@ -535,7 +535,14 @@ def test_vg_create_remove_single_device(tmp_storage, read_only):
     assert vg.tags == ("initial-tag",)
     assert int(vg.extent_size) == 128 * MiB
 
+    # pvs is broken with read-only mode
+    # https://bugzilla.redhat.com/1809660.
+    lvm.set_read_only(False)
+
     pv = lvm.getPV(dev)
+
+    lvm.set_read_only(read_only)
+
     assert pv.name == dev
     assert pv.vg_name == vg_name
     assert int(pv.dev_size) == dev_size
@@ -553,6 +560,10 @@ def test_vg_create_remove_single_device(tmp_storage, read_only):
     # We remove the VG
     with pytest.raises(se.VolumeGroupDoesNotExist):
         lvm.getVG(vg_name)
+
+    # pvs is broken with read-only mode
+    # https://bugzilla.redhat.com/1809660.
+    lvm.set_read_only(False)
 
     # But keep the PVs, not sure why.
     pv = lvm.getPV(dev)
@@ -580,6 +591,10 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
     vg = lvm.getVG(vg_name)
     assert vg.name == vg_name
     assert sorted(vg.pv_name) == sorted((dev1, dev2, dev3))
+
+    # pvs is broken with read-only mode
+    # https://bugzilla.redhat.com/1809660.
+    lvm.set_read_only(False)
 
     # The first pv (metadata pv) will have the 2 used metadata areas.
     pv = lvm.getPV(dev1)
@@ -609,6 +624,10 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
     # We remove the VG
     with pytest.raises(se.VolumeGroupDoesNotExist):
         lvm.getVG(vg_name)
+
+    # pvs is broken with read-only mode
+    # https://bugzilla.redhat.com/1809660.
+    lvm.set_read_only(False)
 
     # But keep the PVs, not sure why.
     for dev in dev1, dev2, dev3:
