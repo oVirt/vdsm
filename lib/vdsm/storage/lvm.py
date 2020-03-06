@@ -285,7 +285,11 @@ class LVMCache(object):
 
     # Warnings written to LVM stderr that should not be logged as warnings.
     SUPPRESS_WARNINGS = re.compile(
-        br"WARNING: This metadata update is NOT backed up",
+        br"|".join([
+            br"WARNING: This metadata update is NOT backed up",
+            (br"Scan of VG \S+ from \S+ found metadata seqno \d+ vs previous "
+             br"\d+"),
+        ]),
         re.IGNORECASE)
 
     def __init__(self):

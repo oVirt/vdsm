@@ -448,6 +448,9 @@ def test_suppress_warnings(fake_devices, fake_runner):
     fake_runner.err = [
         b"  before",
         b"  WARNING: This metadata update is NOT backed up.",
+        (b"  Scan of VG 67de4154-1a46-4050-b1b3-ba8330d33457 from "
+         b"/dev/mapper/3600140524fa508b0f2f4884b361a9489 found metadata seqno "
+         b"7531 vs previous 7530."),
         b"  after",
     ]
     lc = lvm.LVMCache()
