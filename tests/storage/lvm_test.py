@@ -458,8 +458,8 @@ class Workers(object):
     def __init__(self):
         self.threads = []
 
-    def start_thread(self, func, *args):
-        t = concurrent.thread(func, args=args)
+    def start_thread(self, func, *args, **kwargs):
+        t = concurrent.thread(func, args=args, kwargs=kwargs)
         t.start()
         self.threads.append(t)
 
