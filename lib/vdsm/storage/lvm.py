@@ -1346,9 +1346,13 @@ def getVGBlockSizes(vgUUID):
 
 
 def createLV(vgName, lvName, size, activate=True, contiguous=False,
-             initialTags=(), device=None):
+             initialTags=(), device=None, read_only=None):
     """
     Size units: MB (1024 ** 2 = 2 ** 20)B.
+
+    Arguments:
+      read_only (bool): If specified, override read-only mode for the
+                        underlying lvcreate command.
     """
     # WARNING! From man vgs:
     # All sizes are output in these units: (h)uman-readable, (b)ytes,
@@ -1357,8 +1361,9 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
     # Capitalise to use multiples of 1000 (S.I.) instead of 1024.
 
     log.info("Creating LV (vg=%s, lv=%s, size=%sm, activate=%s, "
-             "contiguous=%s, initialTags=%s, device=%s)",
-             vgName, lvName, size, activate, contiguous, initialTags, device)
+             "contiguous=%s, initialTags=%s, device=%s, read_only=%s)",
+             vgName, lvName, size, activate, contiguous, initialTags, device,
+             read_only)
     cont = {True: "y", False: "n"}[contiguous]
     cmd = ["lvcreate"]
     cmd.extend(LVM_NOBACKUP)
@@ -1368,7 +1373,8 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
     cmd.extend(("--name", lvName, vgName))
     if device is not None:
         cmd.append(_fqpvname(device))
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
+    rc, out, err = _lvminfo.cmd(
+        cmd, _lvminfo._getVGDevs((vgName, )), read_only=read_only)
 
     if rc == 0:
         _lvminfo._invalidatevgs(vgName)
@@ -1393,9 +1399,15 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
         _setLVAvailability(vgName, lvName, "n")
 
 
-def removeLVs(vgName, lvNames):
+def removeLVs(vgName, lvNames, read_only=None):
+    """
+    Arguments:
+      read_only (bool): If specified, override read-only mode for the
+                        underlying lvremove command.
+    """
     lvNames = _normalizeargs(lvNames)
-    log.info("Removing LVs (vg=%s, lvs=%s)", vgName, lvNames)
+    log.info("Removing LVs (vg=%s, lvs=%s, read_only=%s)",
+             vgName, lvNames, read_only)
     # Assert that the LVs are inactive before remove.
     for lvName in lvNames:
         if _isLVActive(vgName, lvName):
@@ -1412,7 +1424,8 @@ def removeLVs(vgName, lvNames):
     cmd.extend(LVM_NOBACKUP)
     for lvName in lvNames:
         cmd.append("%s/%s" % (vgName, lvName))
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
+    rc, out, err = _lvminfo.cmd(
+        cmd, _lvminfo._getVGDevs((vgName, )), read_only=read_only)
     if rc == 0:
         for lvName in lvNames:
             # Remove the LV from the cache
@@ -1626,9 +1639,14 @@ def _isLVActive(vgName, lvName):
     return os.path.exists(lvPath(vgName, lvName))
 
 
-def changeVGTags(vgName, delTags=(), addTags=()):
-    log.info("Changing VG tags (vg=%s, delTags=%s, addTags=%s)",
-             vgName, delTags, addTags)
+def changeVGTags(vgName, delTags=(), addTags=(), read_only=None):
+    """"
+    Arguments:
+      read_only (bool): If specified, override read-only mode for the
+                        underlying vgchange command.
+    """
+    log.info("Changing VG tags (vg=%s, delTags=%s, addTags=%s, read_only=%s)",
+             vgName, delTags, addTags, read_only)
     delTags = set(delTags)
     addTags = set(addTags)
     if delTags.intersection(addTags):
@@ -1644,7 +1662,8 @@ def changeVGTags(vgName, delTags=(), addTags=()):
         cmd.extend(("--addtag", tag))
 
     cmd.append(vgName)
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
+    rc, out, err = _lvminfo.cmd(
+        cmd, _lvminfo._getVGDevs((vgName, )), read_only=read_only)
     _lvminfo._invalidatevgs(vgName)
     if rc != 0:
         raise se.VolumeGroupReplaceTagError(
@@ -1652,8 +1671,8 @@ def changeVGTags(vgName, delTags=(), addTags=()):
             (vgName, ", ".join(delTags), ", ".join(addTags), err[-1]))
 
 
-def replaceVGTag(vg, oldTag, newTag):
-    changeVGTags(vg, [oldTag], [newTag])
+def replaceVGTag(vg, oldTag, newTag, read_only=None):
+    changeVGTags(vg, [oldTag], [newTag], read_only=read_only)
 
 
 def getFirstExt(vg, lv):

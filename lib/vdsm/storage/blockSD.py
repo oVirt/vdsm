@@ -339,7 +339,14 @@ class VGTagMetadataRW(object):
 
         self.log.debug("Updating metadata adding=%s removing=%s",
                        ", ".join(toAdd), ", ".join(toRemove))
-        lvm.changeVGTags(self._vgName, delTags=toRemove, addTags=toAdd)
+
+        # VG tags are rewritten also as part of the createStorageDomain
+        # flow, which is carried by a non-SPM host, so we need to allow
+        # it to override the read-only lvm mode as read-write.
+        read_only = False
+
+        lvm.changeVGTags(
+            self._vgName, delTags=toRemove, addTags=toAdd, read_only=read_only)
 
 
 class LvMetadataRW(object):
@@ -1121,13 +1128,18 @@ class BlockStorageDomain(sd.StorageDomain):
             cls.log.debug("%d > %d", numOfPVs, MAX_PVS)
             raise se.StorageDomainIsMadeFromTooManyPVs()
 
+        # Storage domain creation may be called from a non-SPM host so we need
+        # to override its read-only lvm mode to read-write to succeed.
+        read_only = False
+
         # Create metadata service volume. Metadata have to be stored always on
         # the VG metadata device, which is always the first PV.
         lvm.createLV(
             vgName=vgName,
             lvName=sd.METADATA,
             size=METADATA_LV_SIZE_MB,
-            device=lvm.getVgMetadataPv(vgName))
+            device=lvm.getVgMetadataPv(vgName),
+            read_only=read_only)
 
         # Create the mapping right now so the index 0 is guaranteed to belong
         # to the metadata volume. Since the metadata is at least
@@ -1141,9 +1153,9 @@ class BlockStorageDomain(sd.StorageDomain):
         lvs_size_mb = cls.special_volumes_size_mb(alignment)
         for name, size_mb in six.iteritems(lvs_size_mb):
             if name in special_lvs:
-                lvm.createLV(vgName, name, size_mb)
+                lvm.createLV(vgName, name, size_mb, read_only=read_only)
 
-        lvm.createLV(vgName, MASTERLV, MASTER_LV_SIZE_MB)
+        lvm.createLV(vgName, MASTERLV, MASTER_LV_SIZE_MB, read_only=read_only)
 
         if cls.supports_external_leases(version):
             xleases_path = _external_leases_path(vgName)
@@ -1219,7 +1231,7 @@ class BlockStorageDomain(sd.StorageDomain):
         # Mark VG with Storage Domain Tag
         try:
             lvm.replaceVGTag(vgName, STORAGE_UNREADY_DOMAIN_TAG,
-                             STORAGE_DOMAIN_TAG)
+                             STORAGE_DOMAIN_TAG, read_only=read_only)
         except se.StorageException:
             raise se.VolumeGroupUninitialized(vgName)
 
@@ -1335,10 +1347,14 @@ class BlockStorageDomain(sd.StorageDomain):
         except se.LogicalVolumeDoesNotExistError:
             lvs = ()  # No LVs in this VG (domain)
 
+        # Formatting detached storage domain can be executed from a non-SPM
+        # host so we need to override its lvm read-only mode into read-write.
+        read_only = False
+
         for lv in lvs:
             # Fix me: Should raise and get resource lock.
             try:
-                lvm.removeLVs(sdUUID, lv.name)
+                lvm.removeLVs(sdUUID, lv.name, read_only=read_only)
             except se.CannotRemoveLogicalVolume as e:
                 cls.log.warning("Remove logical volume failed %s/%s %s",
                                 sdUUID, lv.name, str(e))

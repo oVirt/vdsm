@@ -708,24 +708,22 @@ def test_vg_extend_reduce(tmp_storage, read_only):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_vg_add_delete_tags(tmp_storage):
+@pytest.mark.parametrize("read_only", [True, False])
+def test_vg_add_delete_tags(tmp_storage, read_only):
     dev_size = 20 * 1024**3
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
 
-    lvm.set_read_only(False)
+    lvm.set_read_only(read_only)
 
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
 
+    read_only_override = False if read_only else None
     lvm.changeVGTags(
         vg_name,
         delTags=("initial-tag",),
-        addTags=("new-tag-1", "new-tag-2"))
-
-    lvm.changeVGTags(
-        vg_name,
-        delTags=["initial-tag"],
-        addTags=["new-tag-1", "new-tag-2"])
+        addTags=("new-tag-1", "new-tag-2"),
+        read_only=read_only_override)
 
     vg = lvm.getVG(vg_name)
     assert sorted(vg.tags) == ["new-tag-1", "new-tag-2"]
@@ -762,10 +760,9 @@ def test_lv_create_remove(tmp_storage, read_only):
 
     lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
 
-    # Create the first LV on any device. This requires read-write mode.
-    lvm.set_read_only(False)
-    lvm.createLV(vg_name, lv_any, 1024)
-    lvm.set_read_only(read_only)
+    # Create the first LV on any device.
+    read_only_override = False if read_only else None
+    lvm.createLV(vg_name, lv_any, 1024, read_only=read_only_override)
 
     lv = lvm.getLV(vg_name, lv_any)
     assert lv.name == lv_any
@@ -781,22 +778,16 @@ def test_lv_create_remove(tmp_storage, read_only):
     assert device in dev1, dev2
     assert extent == "0"
 
-    # Create the second LV on dev2 - reuquires read-write mode.
-    lvm.set_read_only(False)
-    lvm.createLV(vg_name, lv_specific, 1024, device=dev2)
-
-    # Testing LV must work in both read-only and read-write modes.
-    lvm.set_read_only(read_only)
+    # Create the second LV on dev2.
+    lvm.createLV(
+        vg_name, lv_specific, 1024, device=dev2, read_only=read_only_override)
 
     device, extent = lvm.getFirstExt(vg_name, lv_specific)
     assert device == dev2
 
     # Remove both LVs - requires read-write mode.
-    lvm.set_read_only(False)
-    lvm.removeLVs(vg_name, [lv_any, lv_specific])
+    lvm.removeLVs(vg_name, [lv_any, lv_specific], read_only=read_only_override)
 
-    # Testing if lv exists most work in both read-only and read-write.
-    lvm.set_read_only(read_only)
     for lv_name in (lv_any, lv_specific):
         with pytest.raises(se.LogicalVolumeDoesNotExistError):
             lvm.getLV(vg_name, lv_name)

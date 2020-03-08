@@ -128,7 +128,7 @@ class FakeLVM(object):
             f.truncate(size)
 
     def createLV(self, vgName, lvName, size, activate=True, contiguous=False,
-                 initialTags=()):
+                 initialTags=(), read_only=None):
         try:
             vg_md = self.vgmd[vgName]
         except KeyError:
@@ -254,7 +254,7 @@ class FakeLVM(object):
         vg_md['attr'] = vg_attr
         return real_lvm.VG(**vg_md)
 
-    def changeVGTags(self, vgName, delTags=(), addTags=()):
+    def changeVGTags(self, vgName, delTags=(), addTags=(), read_only=None):
         try:
             vg_md = self.vgmd[vgName]
         except KeyError:
