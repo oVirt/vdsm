@@ -35,7 +35,6 @@ from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
-from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
 from vdsm.storage import sp
 from vdsm.storage.sdc import sdCache
@@ -924,9 +923,6 @@ def test_spm_lifecycle(
 
     sdCache.knownSDs[msd_uuid] = blockSD.findDomain
     sdCache.manuallyAddDomain(master_dom)
-
-    # TODO: move to tmp_repo and check if can replace fake resource manager.
-    rm.registerNamespace(sc.STORAGE, rm.SimpleResourceFactory())
 
     pool = sp.StoragePool(
         tmp_repo.pool_id,

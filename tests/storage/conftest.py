@@ -45,6 +45,7 @@ from vdsm.storage import lvm
 from vdsm.storage import managedvolumedb
 from vdsm.storage import multipath
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage import resourceManager as rm
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.task import Task, Recovery
 
@@ -70,6 +71,11 @@ def tmp_repo(tmpdir, monkeypatch, tmp_fs):
     # Patch multipath discovery and resize
     monkeypatch.setattr(multipath, "rescan", lambda: None)
     monkeypatch.setattr(multipath, "resize_devices", lambda: None)
+
+    # Patch the resource manager.
+    manager = rm._ResourceManager()
+    manager.registerNamespace(sc.STORAGE, rm.SimpleResourceFactory())
+    monkeypatch.setattr(rm, "_manager", manager)
 
     # Invalidate sdCache so stale data from previous test will affect
     # this test.
