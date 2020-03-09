@@ -6,7 +6,7 @@ Requires=multipathd.service time-sync.target \
 After=multipathd.service iscsid.service rpcbind.service supervdsmd.service \
       sanlock.service vdsm-network.service
 Before=libvirt-guests.service
-Wants=mom-vdsm.service ovirt-imageio-daemon.service abrtd.service \
+Wants=mom-vdsm.service ovirt-imageio-daemon.service abrt-ccpp.service abrtd.service \
       dev-hugepages1G.mount libvirt-guests.service kdump.service
 
 [Service]
