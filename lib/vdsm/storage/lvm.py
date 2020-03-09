@@ -35,6 +35,7 @@ import glob
 import grp
 import logging
 from collections import namedtuple
+import platform
 import pprint as pp
 import threading
 import time
@@ -43,6 +44,7 @@ from itertools import chain
 from subprocess import list2cmdline
 
 from vdsm import constants
+from vdsm.common import cache
 from vdsm.common import errors
 
 from vdsm.storage import devicemapper
@@ -233,6 +235,19 @@ def makeLV(*args):
     args.append(attrs.devopen == "o")     # opened
     args.append(attrs.state == "a")       # active
     return LV(*args)
+
+
+@cache.memoized
+def _on_rhel():
+    # TODO: remove this helper once no longer need to tell between
+    # CentOS and RHEL release in _reloadpvs for setting read_only
+    # override.
+    try:
+        linux_dist = platform.linux_distribution()
+        return 'Red Hat Enterprise Linux' in linux_dist[0]
+    except Exception as e:
+        log.warning("Failed to get linux distribution: %s", e)
+        return False
 
 
 class LVMCache(object):
@@ -468,10 +483,12 @@ class LVMCache(object):
         pvNames = _normalizeargs(pvName)
         cmd.extend(pvNames)
 
-        # TODO: switch back to read-only mode once BZ #1809660 is fixed.
-        # pvs needs read-write mode to avoid failures (even if called with
-        # arguments).
-        rc, out, err = self.cmd(cmd, read_only=False)
+        # TODO: remove read-only override once BZ #1809660 is fixed.
+        # pvs command needs read-write mode to avoid failures on non-RHEL
+        # releases (even if called with arguments). For RHEL we use the patched
+        # lvm version which would allow to use pvs command in read-only mode.
+        read_only = None if _on_rhel() else False
+        rc, out, err = self.cmd(cmd, read_only=read_only)
 
         with self._lock:
             if rc != 0:

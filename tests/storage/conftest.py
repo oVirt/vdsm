@@ -97,9 +97,11 @@ def tmp_fs(tmp_storage):
 def tmp_lvm():
     lvm.set_read_only(True)
     lvm.invalidateCache()
+    lvm._on_rhel.invalidate()
     yield
     lvm.set_read_only(True)
     lvm.invalidateCache()
+    lvm._on_rhel.invalidate()
 
 
 @pytest.fixture

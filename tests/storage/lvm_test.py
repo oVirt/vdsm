@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import platform
 import time
 import uuid
 
@@ -1061,3 +1062,40 @@ def test_retry_with_wider_filter(tmp_storage):
 
     vg = lvm.getVG(vg_name)
     assert vg.pv_name == (dev,)
+
+
+@pytest.mark.parametrize("linux_dist, locking_type", [
+    (('Red Hat Enterprise Linux Server', '7.7', 'Maipo'), '4'),
+    (('Fedora', '30', 'Thirty'), '1'),
+    (('CentOS Linux', '7.7.1908', 'Core'), '1'),
+    (('', '', ''), '1')
+])
+def test_on_rhel(
+        linux_dist,
+        locking_type,
+        tmpdir,
+        fake_devices,
+        fake_runner,
+        monkeypatch):
+    monkeypatch.setattr(platform, "linux_distribution", lambda: linux_dist)
+
+    # Call _reloadpvs with locking_type according to rhel detection.
+    with pytest.raises(se.InaccessiblePhysDev):
+        lvm.getPV(fake_devices[0])
+
+    cmd, _ = fake_runner.calls[0]
+    assert " locking_type={} ".format(locking_type) in cmd[3]
+
+
+def test_on_rhel_error(tmpdir, fake_devices, fake_runner, monkeypatch):
+
+    def bad_linux_dist():
+        raise Exception()
+    monkeypatch.setattr(platform, "linux_distribution", bad_linux_dist)
+
+    # Call _reloadpvs with locking_type according to rhel detection.
+    with pytest.raises(se.InaccessiblePhysDev):
+        lvm.getPV(fake_devices[0])
+
+    cmd, _ = fake_runner.calls[0]
+    assert " locking_type=1 " in cmd[3]
