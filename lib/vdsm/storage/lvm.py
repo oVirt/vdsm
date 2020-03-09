@@ -329,6 +329,9 @@ class LVMCache(object):
             return self._filter
 
     def _addExtraCfg(self, cmd, devices=tuple(), read_only=None):
+        if read_only is None:
+            read_only = self._read_only
+
         newcmd = [constants.EXT_LVM, cmd[0]]
 
         if devices:
@@ -336,16 +339,9 @@ class LVMCache(object):
         else:
             dev_filter = self._getCachedFilter()
 
-        if (read_only is not None) and (read_only != self._read_only):
-            log.info("Overriding read_only mode current=%s override=%s",
-                     self._read_only, read_only)
-            read_only_mode = read_only
-        else:
-            read_only_mode = self._read_only
-
         conf = _buildConfig(
             dev_filter=dev_filter,
-            locking_type="4" if read_only_mode else "1")
+            locking_type="4" if read_only else "1")
 
         newcmd += ["--config", conf]
 
@@ -384,6 +380,11 @@ class LVMCache(object):
         # Take a shared lock, so set_read_only() can wait for commands using
         # the previous mode.
         with self._cmd_sem, self._read_only_lock.shared:
+            if read_only is None:
+                read_only = self._read_only
+            elif read_only != self._read_only:
+                log.info("Overriding read_only mode current=%s override=%s",
+                         self._read_only, read_only)
 
             # 1. Try the command with fast specific filter including the
             # specified devices.
@@ -411,8 +412,7 @@ class LVMCache(object):
             # 3. If we run in read-only mode, retry the command in case it
             # failed because VG metadata was modified while the command was
             # reading the metadata.
-            attempt_retry = self._read_only if read_only is None else read_only
-            if attempt_retry:
+            if read_only:
                 delay = self.RETRY_DELAY
                 for retry in range(1, self.READ_ONLY_RETRIES + 1):
                     log.warning(
