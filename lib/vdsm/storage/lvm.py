@@ -372,7 +372,7 @@ class LVMCache(object):
         self.invalidateFilter()
         self.flush()
 
-    def cmd(self, cmd, devices=tuple(), read_only=None):
+    def cmd(self, cmd, devices=tuple(), read_only=None, wants_output=False):
         """
         Executes lvm command.
 
@@ -402,24 +402,24 @@ class LVMCache(object):
                          self._read_only, read_only)
 
             # 1. Try the command with fast specific filter including the
-            # specified devices.
+            # specified devices. If the command succeeded and wanted output was
+            # returned we are done.
             full_cmd = self._addExtraCfg(
                 cmd, devices=devices, read_only=read_only)
             rc, out, err = self._run_lvm(full_cmd)
-            if rc == 0:
+            if rc == 0 and (out or not wants_output):
                 return rc, out, err
 
-            # 2. Retry the command with a wider filter, in case the
-            # failure was caused by a stale filter.
+            # 2. Retry the command with a wider filter, in case the we failed
+            # or got no data because of a stale filter.
             self.invalidateFilter()
             wider_cmd = self._addExtraCfg(cmd, read_only=read_only)
             if wider_cmd != full_cmd:
                 log.warning(
-                    "Command with specific filter failed, retrying with "
-                    "a wider filter, cmd=%r rc=%r err=%r",
-                    full_cmd, rc, err)
+                    "Command with specific filter failed or returned no data, "
+                    "retrying with a wider filter, cmd=%r rc=%r out=%r err=%r",
+                    full_cmd, rc, out, err)
                 full_cmd = wider_cmd
-
                 rc, out, err = self._run_lvm(full_cmd)
                 if rc == 0:
                     return rc, out, err
@@ -427,7 +427,7 @@ class LVMCache(object):
             # 3. If we run in read-only mode, retry the command in case it
             # failed because VG metadata was modified while the command was
             # reading the metadata.
-            if read_only:
+            if rc != 0 and read_only:
                 delay = self.RETRY_DELAY
                 for retry in range(1, self.READ_ONLY_RETRIES + 1):
                     log.warning(
@@ -480,15 +480,20 @@ class LVMCache(object):
 
     def _reloadpvs(self, pvName=None):
         cmd = list(PVS_CMD)
+
         pvNames = _normalizeargs(pvName)
-        cmd.extend(pvNames)
+        if pvNames:
+            # --select 'pv_name = pv1 || pv_name = pv2'.
+            selection = " || ".join("pv_name = {}".format(n) for n in pvNames)
+            cmd.append("--select")
+            cmd.append(selection)
 
         # TODO: remove read-only override once BZ #1809660 is fixed.
         # pvs command needs read-write mode to avoid failures on non-RHEL
         # releases (even if called with arguments). For RHEL we use the patched
         # lvm version which would allow to use pvs command in read-only mode.
         read_only = None if _on_rhel() else False
-        rc, out, err = self.cmd(cmd, read_only=read_only)
+        rc, out, err = self.cmd(cmd, read_only=read_only, wants_output=True)
 
         with self._lock:
             if rc != 0:
@@ -543,10 +548,16 @@ class LVMCache(object):
 
     def _reloadvgs(self, vgName=None):
         cmd = list(VGS_CMD)
-        vgNames = _normalizeargs(vgName)
-        cmd.extend(vgNames)
 
-        rc, out, err = self.cmd(cmd, self._getVGDevs(vgNames))
+        vgNames = _normalizeargs(vgName)
+        if vgNames:
+            # --select 'vg_name = vg1 || vg_name = vg2'.
+            selection = " || ".join("vg_name = {}".format(n) for n in vgNames)
+            cmd.append("--select")
+            cmd.append(selection)
+
+        rc, out, err = self.cmd(
+            cmd, self._getVGDevs(vgNames), wants_output=True)
 
         with self._lock:
             if rc != 0:
@@ -604,14 +615,20 @@ class LVMCache(object):
         return updatedVGs
 
     def _reloadlvs(self, vgName, lvNames=None):
-        lvNames = _normalizeargs(lvNames)
         cmd = list(LVS_CMD)
-        if lvNames:
-            cmd.extend(["%s/%s" % (vgName, lvName) for lvName in lvNames])
-        else:
-            cmd.append(vgName)
 
-        rc, out, err = self.cmd(cmd, self._getVGDevs((vgName,)))
+        # --select 'vg_name = vg1 && (lv_name = lv1 || lv_name = lv2)'.
+        selection = "vg_name = {}".format(vgName)
+        lvNames = _normalizeargs(lvNames)
+        if lvNames:
+            lvs = " || ".join("lv_name = {}".format(n) for n in lvNames)
+            selection += " && ({})".format(lvs)
+
+        cmd.append("--select")
+        cmd.append(selection)
+
+        rc, out, err = self.cmd(
+            cmd, self._getVGDevs((vgName,)), wants_output=True)
 
         with self._lock:
             if rc != 0:
