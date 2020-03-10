@@ -26,6 +26,17 @@ import libvirt
 
 from testlib import maybefail
 
+import vmfakelib as fake
+
+
+class FakeCheckpoint(object):
+
+    def __init__(self, checkpoint_xml):
+        self.xml = checkpoint_xml
+
+    def getXMLDesc(self):
+        return self.xml
+
 
 class FakeDomainAdapter(object):
     """
@@ -40,9 +51,10 @@ class FakeDomainAdapter(object):
     dom.errors['backupBegin'] = vmfakelib.libvirt_error(
         [libvirt.VIR_ERR_NO_DOMAIN_BACKUP], "Some libvirt error")
 
-    Another option is to return custom backup XML as a response
-    to backupGetXMLDesc() by providing backup_xml when creating
-    the FakeDomainAdapter instance.
+    Another option is to return custom backup XML or custom checkpoint XML
+    as a response to backupGetXMLDesc() or checkpointLookupByName() by
+    providing backup_xml/checkpoint_xml when creating the FakeDomainAdapter
+    instance.
 
     dom = FakeDomainAdapter(False)
 
@@ -58,9 +70,13 @@ class FakeDomainAdapter(object):
             ...
     """
 
-    def __init__(self, backup_xml=None):
+    def __init__(self, backup_xml=None, checkpoint_xml=None):
         self.backing_up = False
         self.backup_xml = backup_xml
+        if checkpoint_xml:
+            self.checkpoint = FakeCheckpoint(checkpoint_xml)
+        else:
+            self.checkpoint = None
         self.errors = {}
 
     @maybefail
@@ -94,3 +110,10 @@ class FakeDomainAdapter(object):
     @maybefail
     def blockInfo(self, drive_name, flags=None):
         return (1024, 0, 0)
+
+    @maybefail
+    def checkpointLookupByName(self, checkpoint_id):
+        if self.checkpoint is None:
+            raise fake.libvirt_error(
+                [libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT], "Checkpoint not found")
+        return self.checkpoint
