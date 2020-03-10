@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2019 Red Hat, Inc.
+# Copyright 2014-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -506,8 +506,9 @@ def _get_udev_block_mapping():
     mapping_command = ["lsscsi", "-g"],
 
     try:
-        output = commands.run(*mapping_command).strip().split("\n")
-        return {m.split()[-1]: m.split()[-2] for m in output}
+        output = commands.run(*mapping_command).decode('utf-8')
+        lines = output.strip().split("\n")
+        return {m.split()[-1]: m.split()[-2] for m in lines}
     except Exception as e:
         logging.error(
             "Could not read system udev path -> block path mapping: %s", e)
