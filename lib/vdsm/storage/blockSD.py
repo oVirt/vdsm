@@ -658,7 +658,9 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         self._validateNotVgMetadataDevice(src_device)
         # TODO: check if we can avoid using metadata_lock here
         with self.metadata_lock:
-            lvm.movePV(self.sdUUID, src_device, dst_devices)
+            # Moving data between PVs on a block SD can happen also on non-SPM
+            # hosts, therefore we need to switch to read write mode.
+            lvm.movePV(self.sdUUID, src_device, dst_devices, read_only=False)
 
     def reduceVG(self, guid):
         self._validatePVsPartOfVG(guid)
@@ -666,7 +668,10 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         self._validateNotVgMetadataDevice(guid)
         with self.metadata_lock:
             try:
-                lvm.reduceVG(self.sdUUID, guid)
+                # VG is reduce during reducing block SD, which can happen also
+                # on non-SPM hosts, therefore we need to switch to read write
+                # mode.
+                lvm.reduceVG(self.sdUUID, guid, read_only=False)
             except Exception:
                 exc = sys.exc_info()
             else:
