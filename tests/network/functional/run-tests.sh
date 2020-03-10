@@ -6,6 +6,10 @@ CONTAINER_WORKSPACE="/workspace/$PROJECT"
 CONTAINER_IMAGE="${CONTAINER_IMAGE:=ovirt/$PROJECT-test-func-network-centos-8}"
 CONTAINER_CMD=${CONTAINER_CMD:=podman}
 VDSM_WORKDIR="/vdsm-tmp"
+NMSTATE_WORKSPACE="/workspace/nmstate"
+NMSTATE_TMP="/nmstate-tmp"
+
+nmstate_mount=""
 
 test -t 1 && USE_TTY="t"
 
@@ -91,8 +95,36 @@ function replace_resolvconf {
     "
 }
 
+function install_nmstate_from_source {
+    container_exec "
+        mkdir $NMSTATE_TMP \
+        && \
+        cp -rf $NMSTATE_WORKSPACE $NMSTATE_TMP/ \
+        && \
+        cd $NMSTATE_TMP/nmstate \
+        && \
+        pip3 install --no-deps -U . \
+        && \
+        cd -
+    "
+}
+
+function clone_nmstate {
+    container_exec "
+        git clone --depth=50 https://github.com/nmstate/nmstate.git $NMSTATE_WORKSPACE \
+        && \
+        cd $NMSTATE_WORKSPACE \
+        && \
+        git fetch origin +refs/pull/$nmstate_pr/head: \
+        && \
+        git checkout -qf FETCH_HEAD \
+        && \
+        cd -
+    "
+}
+
 options=$(getopt --options "" \
-    --long help,shell\
+    --long help,shell,nmstate-pr:,nmstate-source:\
     -- "${@}")
 eval set -- "$options"
 while true; do
@@ -100,9 +132,18 @@ while true; do
     --shell)
         debug_shell="1"
         ;;
+    --nmstate-pr)
+        shift
+        nmstate_pr="$1"
+        ;;
+    --nmstate-source)
+        shift
+        nmstate_source="1"
+        nmstate_mount="-v $1:$NMSTATE_WORKSPACE:Z"
+        ;;
     --help)
         set +x
-        echo "$0 [--shell] [--help]"
+        echo "$0 [--shell] [--help] [--nmstate-pr=<PR_ID>] [--nmstate-source=<PATH_TO_NMSTATE_SRC>]"
         echo "  Supported env variables:"
         echo "     * none (default) - Will test legacy switch type"
         echo "     * TEST_OVS=1 - Will test OvS switch type"
@@ -123,7 +164,7 @@ else
     load_kernel_modules
 fi
 
-CONTAINER_ID="$($CONTAINER_CMD run --privileged -d -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --env PYTHONPATH=lib $CONTAINER_IMAGE)"
+CONTAINER_ID="$($CONTAINER_CMD run --privileged -d -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z $nmstate_mount --env PYTHONPATH=lib $CONTAINER_IMAGE)"
 trap run_exit EXIT
 
 wait_for_active_service "dbus"
@@ -131,6 +172,15 @@ start_service "systemd-udevd"
 setup_vdsm_runtime_environment
 restart_service "NetworkManager"
 setup_vdsm_sources_for_testing
+
+if [ -n "$nmstate_pr" ]; then
+  clone_nmstate
+  install_nmstate_from_source
+fi
+
+if [ -n "$nmstate_source" ]; then
+  install_nmstate_from_source
+fi
 
 replace_resolvconf
 

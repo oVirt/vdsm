@@ -46,6 +46,11 @@ changes.
  - Run tests based on nmstate backend:
   `sudo bash -c "TEST_NMSTATE=1 ./tests/network/functional/run-tests.sh"`
 
+- Run tests based on nmstate backend with nmstate installed from source:
+  `sudo bash -c "TEST_NMSTATE=1 ./tests/network/functional/run-tests.sh --nmstate-pr=<PR_ID>"`
+
+  - Run tests based on nmstate backend with local nmstate installed from source:
+  `sudo bash -c "TEST_NMSTATE=1 ./tests/network/functional/run-tests.sh --nmstate-source=<PATH_TO_NMSTATE_SRC>"`
 
 ### Manually running the tests
 
