@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2019 Red Hat, Inc.
+# Copyright 2012-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,6 +39,20 @@ from network.compat import mock
 
 from ..nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
 
+IPV4_ADDR1 = '192.168.99.2'
+IPV4_GATEWAY1 = '192.168.99.1'
+IPV4_ADDR2 = '192.168.199.2'
+IPV4_GATEWAY2 = '192.168.199.1'
+IPV4_ADDR3 = '192.168.200.2'
+IPV4_NETMASK = '255.255.255.0'
+IPV4_PREFIX_LENGTH = 24
+IPV6_ADDR = '2607:f0d0:1002:51::4'
+IPV6_PREFIX_LENGTH = 64
+
+IPV4_ADDR1_CIDR = f'{IPV4_ADDR1}/{IPV4_PREFIX_LENGTH}'
+IPV4_ADDR2_CIDR = f'{IPV4_ADDR2}/{IPV4_PREFIX_LENGTH}'
+IPV4_ADDR3_CIDR = f'{IPV4_ADDR3}/{32}'
+IPV6_ADDR_CIDR = f'{IPV6_ADDR}/{IPV6_PREFIX_LENGTH}'
 
 # speeds defined in ethtool
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
@@ -132,21 +146,6 @@ class TestNetinfo(object):
 
     @ipv6_broken_on_travis_ci
     def test_ip_info(self):
-        IPV4_ADDR1 = '192.168.99.2'
-        IPV4_GATEWAY1 = '192.168.99.1'
-        IPV4_ADDR2 = '192.168.199.2'
-        IPV4_GATEWAY2 = '192.168.199.1'
-        IPV4_ADDR3 = '192.168.200.2'
-        IPV4_NETMASK = '255.255.255.0'
-        IPV4_PREFIX_LENGTH = 24
-        IPV6_ADDR = '2607:f0d0:1002:51::4'
-        IPV6_PREFIX_LENGTH = 64
-
-        IPV4_ADDR1_CIDR = self._cidr_form(IPV4_ADDR1, IPV4_PREFIX_LENGTH)
-        IPV4_ADDR2_CIDR = self._cidr_form(IPV4_ADDR2, IPV4_PREFIX_LENGTH)
-        IPV4_ADDR3_CIDR = self._cidr_form(IPV4_ADDR3, 32)
-        IPV6_ADDR_CIDR = self._cidr_form(IPV6_ADDR, IPV6_PREFIX_LENGTH)
-
         with dummy_device() as device:
             with waitfor.waitfor_ipv4_addr(device, address=IPV4_ADDR1_CIDR):
                 ipwrapper.addrAdd(device, IPV4_ADDR1, IPV4_PREFIX_LENGTH)
@@ -179,9 +178,6 @@ class TestNetinfo(object):
                 [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
                 [IPV6_ADDR_CIDR],
             )
-
-    def _cidr_form(self, ip_addr, prefix_length):
-        return '{}/{}'.format(ip_addr, prefix_length)
 
 
 class TestIPv6Addresses(object):
