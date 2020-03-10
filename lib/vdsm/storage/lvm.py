@@ -1075,9 +1075,13 @@ def resizePV(vgName, guid):
     _lvminfo._invalidatevgs(vgName)
 
 
-def movePV(vgName, src_device, dst_devices):
+def movePV(vgName, src_device, dst_devices, read_only=None):
     """
     Moves the data stored on a PV to other PVs that are part of the VG.
+
+    Arguments:
+      read_only (bool): If specified, override read-only mode for the
+                        underlying pvmove command.
 
     Raises se.CouldNotMovePVData if pvmove fails
     """
@@ -1096,8 +1100,10 @@ def movePV(vgName, src_device, dst_devices):
     if dst_devices:
         cmd.extend(_fqpvname(pdev) for pdev in dst_devices)
 
-    log.info("Moving pv %s data (vg %s)", pvName, vgName)
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
+    log.info(
+        "Moving pv %s data (vg %s, read_only %s)", pvName, vgName, read_only)
+    rc, out, err = _lvminfo.cmd(
+        cmd, _lvminfo._getVGDevs((vgName, )), read_only=read_only)
     # We invalidate all the caches even on failure so we'll have up to date
     # data after moving data within the vg.
     _lvminfo._invalidatepvs(pvName)
@@ -1264,11 +1270,18 @@ def extendVG(vgName, devices, force):
         raise se.VolumeGroupExtendError(vgName, pvs)
 
 
-def reduceVG(vgName, device):
+def reduceVG(vgName, device, read_only=None):
+    """
+    Arguments:
+      read_only (bool): If specified, override read-only mode for the
+                        underlying vgreduce command.
+    """
     pvName = _fqpvname(device)
-    log.info("Removing pv %s from vg %s", pvName, vgName)
+    log.info(
+        "Removing pv %s from vg %s (read_only %s)", pvName, vgName, read_only)
     cmd = ["vgreduce", vgName, pvName]
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
+    rc, out, err = _lvminfo.cmd(
+        cmd, _lvminfo._getVGDevs((vgName, )), read_only=read_only)
     if rc != 0:
         raise se.VolumeGroupReduceError(vgName, pvName, err)
     _lvminfo._invalidatepvs(pvName)

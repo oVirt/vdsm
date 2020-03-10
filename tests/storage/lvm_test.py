@@ -565,6 +565,40 @@ def test_change_read_only_mode(fake_devices, fake_runner, workers):
     assert elapsed > fake_runner.delay * 2
 
 
+@pytest.mark.parametrize("read_only", [True, False])
+def test_movepv_lock_type_overwrite(
+        monkeypatch, fake_devices, fake_runner, read_only):
+    vg_uuid = str(uuid.uuid4())
+    pv_args = (
+        "/dev/mapper/a",
+        "fake pv",
+        str(constants.GIB),
+        vg_uuid, vg_uuid,
+        "1",
+        "100",
+        "10",
+        "1",
+        str(constants.GIB),
+        "1",
+        "a",
+    )
+    fake_pv = lvm.PV(*pv_args)
+
+    monkeypatch.setattr(lvm, "getPV", lambda x: fake_pv)
+
+    lvm.set_read_only(read_only)
+    read_only_override = False if read_only else None
+    lvm.movePV(
+        vg_uuid,
+        "/dev/mapper/a",
+        ["/dev/mapper/b"],
+        read_only=read_only_override)
+
+    assert len(fake_runner.calls) == 1
+    cmd, kwargs = fake_runner.calls[0]
+    assert " locking_type=1 " in cmd[3]
+
+
 @requires_root
 @xfail_python3
 @pytest.mark.root
@@ -692,9 +726,7 @@ def test_vg_extend_reduce(tmp_storage, read_only):
         assert int(pv.mda_count) == 2
         assert int(pv.mda_used_count) == 0
 
-    lvm.set_read_only(False)
-
-    lvm.reduceVG(vg_name, dev2)
+    lvm.reduceVG(vg_name, dev2, read_only=False)
     vg = lvm.getVG(vg_name)
     assert sorted(vg.pv_name) == sorted((dev1, dev3))
 
