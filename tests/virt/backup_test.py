@@ -247,6 +247,68 @@ def test_start_stop_backup(tmp_backupdir, tmp_basedir):
     verify_scratch_disks_removed(vm)
 
 
+@requires_backup_support
+def test_start_stop_backup_with_checkpoint(tmp_backupdir, tmp_basedir):
+    vm = FakeVm()
+    dom = FakeDomainAdapter(checkpoint_xml=CHECKPOINT_XML)
+
+    fake_disks = create_fake_disks()
+    config = {
+        'backup_id': BACKUP_ID,
+        'disks': fake_disks,
+        'to_checkpoint_id': TO_CHECKPOINT_ID
+    }
+
+    res = backup.start_backup(vm, dom, config)
+    assert dom.backing_up
+
+    verify_scratch_disks_exists(vm)
+
+    # verify that the vm froze and thawed during the backup
+    assert vm.froze
+    assert vm.thawed
+
+    assert res['result']['checkpoint'] == CHECKPOINT_XML
+    result_disks = res['result']['disks']
+    verify_backup_urls(BACKUP_ID, result_disks)
+
+    backup.stop_backup(vm, dom, BACKUP_ID)
+    assert not dom.backing_up
+
+    verify_scratch_disks_removed(vm)
+
+
+@requires_backup_support
+def test_start_backup_failed_get_checkpoint(tmp_backupdir, tmp_basedir):
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+
+    fake_disks = create_fake_disks()
+    config = {
+        'backup_id': BACKUP_ID,
+        'disks': fake_disks,
+        'to_checkpoint_id': TO_CHECKPOINT_ID
+    }
+
+    res = backup.start_backup(vm, dom, config)
+    assert dom.backing_up
+
+    verify_scratch_disks_exists(vm)
+
+    # verify that the vm froze and thawed during the backup
+    assert vm.froze
+    assert vm.thawed
+
+    assert 'checkpoint' not in res['result']
+    result_disks = res['result']['disks']
+    verify_backup_urls(BACKUP_ID, result_disks)
+
+    backup.stop_backup(vm, dom, BACKUP_ID)
+    assert not dom.backing_up
+
+    verify_scratch_disks_removed(vm)
+
+
 def test_start_backup_disk_not_found():
     vm = FakeVm()
     dom = FakeDomainAdapter()
