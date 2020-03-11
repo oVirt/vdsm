@@ -20,6 +20,10 @@ Note: Building the container image is needed only if the Dockerfile
 changes.
 
 #### Usage examples
+
+- Run to get the help message:
+  `sudo ./tests/network/functional/run-tests.sh --help`
+
 - Run tests based on linux-bridge:
   `sudo ./tests/network/functional/run-tests.sh`
 

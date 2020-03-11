@@ -91,6 +91,32 @@ function replace_resolvconf {
     "
 }
 
+options=$(getopt --options "" \
+    --long help,shell\
+    -- "${@}")
+eval set -- "$options"
+while true; do
+    case "$1" in
+    --shell)
+        debug_shell="1"
+        ;;
+    --help)
+        set +x
+        echo "$0 [--shell] [--help]"
+        echo "  Supported env variables:"
+        echo "     * none (default) - Will test legacy switch type"
+        echo "     * TEST_OVS=1 - Will test OvS switch type"
+        echo "     * TEST_NMSTATE=1 - Will test nmstate backend"
+        exit
+        ;;
+    --)
+        shift
+        break
+        ;;
+    esac
+    shift
+done
+
 if [ -n "$CI" ]; then
     enable_bonding_driver
 else
@@ -124,7 +150,7 @@ else
     "
 fi
 
-if [ "$1" == "--shell" ];then
+if [ -n "$debug_shell" ];then
     container_shell
     exit 0
 fi
