@@ -83,13 +83,21 @@ function setup_vdsm_sources_for_testing {
     "
 }
 
+function replace_resolvconf {
+    container_exec "
+        umount /etc/resolv.conf \
+        && \
+        echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > /etc/resolv.conf
+    "
+}
+
 if [ -n "$CI" ]; then
     enable_bonding_driver
 else
     load_kernel_modules
 fi
 
-CONTAINER_ID="$($CONTAINER_CMD run --privileged -d --dns=8.8.8.8 --dns=8.8.4.4 -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --env PYTHONPATH=lib $CONTAINER_IMAGE)"
+CONTAINER_ID="$($CONTAINER_CMD run --privileged -d -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --env PYTHONPATH=lib $CONTAINER_IMAGE)"
 trap run_exit EXIT
 
 wait_for_active_service "dbus"
@@ -98,10 +106,11 @@ setup_vdsm_runtime_environment
 restart_service "NetworkManager"
 setup_vdsm_sources_for_testing
 
+replace_resolvconf
+
 if [ -n "$TEST_OVS" ];then
     SWITCH_TYPE="ovs_switch"
     start_service "openvswitch"
-    container_exec "umount /etc/resolv.conf"
 else
     SWITCH_TYPE="legacy_switch"
 fi
