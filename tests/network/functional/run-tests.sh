@@ -11,6 +11,15 @@ NMSTATE_TMP="/nmstate-tmp"
 
 nmstate_mount=""
 
+SWITCH_TYPE_LINUX="linux-bridge"
+SWITCH_TYPE_OVS="ovs"
+
+BACKEND_LEGACY="legacy"
+BACKEND_NMSTATE="nmstate"
+
+SWITCH_TYPE="${SWITCH_TYPE:=$SWITCH_TYPE_LINUX}"
+BACKEND="${BACKEND:=$BACKEND_NMSTATE}"
+
 test -t 1 && USE_TTY="t"
 
 function run_exit {
@@ -123,14 +132,29 @@ function clone_nmstate {
     "
 }
 
+function disable_nmstate {
+    container_exec "
+          mkdir /etc/vdsm && \
+          echo -e \"[vars]\nnet_nmstate_enabled = false\n\" >> /etc/vdsm/vdsm.conf
+    "
+}
+
 options=$(getopt --options "" \
-    --long help,shell,nmstate-pr:,nmstate-source:\
+    --long help,shell,switch-type:,backend:,nmstate-pr:,nmstate-source:\
     -- "${@}")
 eval set -- "$options"
 while true; do
     case "$1" in
     --shell)
         debug_shell="1"
+        ;;
+    --switch-type)
+        shift
+        SWITCH_TYPE="$1"
+        ;;
+    --backend)
+        shift
+        BACKEND="$1"
         ;;
     --nmstate-pr)
         shift
@@ -143,11 +167,14 @@ while true; do
         ;;
     --help)
         set +x
-        echo "$0 [--shell] [--help] [--nmstate-pr=<PR_ID>] [--nmstate-source=<PATH_TO_NMSTATE_SRC>]"
-        echo "  Supported env variables:"
-        echo "     * none (default) - Will test legacy switch type"
-        echo "     * TEST_OVS=1 - Will test OvS switch type"
-        echo "     * TEST_NMSTATE=1 - Will test nmstate backend"
+        echo -n "$0 [--shell] [--help] [--switch-type=<SWITCH_TYPE>] [--backend=<BACKEND>] [--nmstate-pr=<PR_ID>] "
+        echo -n "[--nmstate-source=<PATH_TO_NMSTATE_SRC>]"
+        echo "  Valid SWITCH_TYPEs are:"
+        echo "     * $SWITCH_TYPE_LINUX (default)"
+        echo "     * $SWITCH_TYPE_OVS"
+        echo "  Valid BACKENDs are:"
+        echo "     * $BACKEND_NMSTATE (default)"
+        echo "     * $BACKEND_LEGACY"
         exit
         ;;
     --)
@@ -184,20 +211,17 @@ fi
 
 replace_resolvconf
 
-if [ -n "$TEST_OVS" ];then
-    SWITCH_TYPE="ovs_switch"
-    start_service "openvswitch"
-else
+if [ $SWITCH_TYPE == $SWITCH_TYPE_LINUX ];then
     SWITCH_TYPE="legacy_switch"
+elif [ $SWITCH_TYPE == $SWITCH_TYPE_OVS ];then
+    start_service "openvswitch"
+    SWITCH_TYPE="ovs_switch"
 fi
 
-if [ -n "$TEST_NMSTATE" ];then
-    SWITCH_TYPE="${SWITCH_TYPE} and nmstate"
-else
-    container_exec "
-          mkdir /etc/vdsm && \
-          echo -e \"[vars]\nnet_nmstate_enabled = false\n\" >> /etc/vdsm/vdsm.conf
-    "
+if [ $BACKEND == $BACKEND_LEGACY ];then
+    disable_nmstate
+elif [ $BACKEND == $BACKEND_NMSTATE ];then
+   SWITCH_TYPE="${SWITCH_TYPE} and nmstate"
 fi
 
 if [ -n "$debug_shell" ];then

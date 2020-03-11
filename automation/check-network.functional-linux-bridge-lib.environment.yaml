@@ -6,3 +6,7 @@
    value: 'true'
  - name: 'CONTAINER_CMD'
    value: 'docker'
+ - name: 'SWITCH_TYPE'
+   value: 'linux-bridge'
+ - name: 'BACKEND'
+   value: 'legacy'

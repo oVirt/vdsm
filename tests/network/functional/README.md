@@ -24,8 +24,14 @@ changes.
 - Run to get the help message:
   `sudo ./tests/network/functional/run-tests.sh --help`
 
-- Run tests based on linux-bridge:
+- Run tests based on nmstate backend:
   `sudo ./tests/network/functional/run-tests.sh`
+
+- Run tests based on nmstate backend with nmstate installed from source:
+  `sudo ./tests/network/functional/run-tests.sh --nmstate-pr=<PR_ID>`
+
+- Run tests based on nmstate backend with local nmstate installed from source:
+  `sudo ./tests/network/functional/run-tests.sh --nmstate-source=<PATH_TO_NMSTATE_SRC>`
 
 - Open the container shell without executing the test run:
   `sudo ./tests/network/functional/run-tests.sh --shell`
@@ -37,20 +43,14 @@ changes.
     --log-level=DEBUG \
     --target-lib \
     --skip-stable-link-monitor \
-    -m legacy_switch tests/network/functional
+    -m "legacy_switch and nmstate" tests/network/functional
   ```
 
+- Run tests based on linux-bridge:
+  `sudo ./tests/network/functional/run-tests.sh --switch-type=linux-bridge --backend=legacy`
+
 - Run tests based on ovs-switch:
-  `sudo bash -c "TEST_OVS=1 ./tests/network/functional/run-tests.sh"`
-
- - Run tests based on nmstate backend:
-  `sudo bash -c "TEST_NMSTATE=1 ./tests/network/functional/run-tests.sh"`
-
-- Run tests based on nmstate backend with nmstate installed from source:
-  `sudo bash -c "TEST_NMSTATE=1 ./tests/network/functional/run-tests.sh --nmstate-pr=<PR_ID>"`
-
-  - Run tests based on nmstate backend with local nmstate installed from source:
-  `sudo bash -c "TEST_NMSTATE=1 ./tests/network/functional/run-tests.sh --nmstate-source=<PATH_TO_NMSTATE_SRC>"`
+  `sudo ./tests/network/functional/run-tests.sh --switch-type=ovs --backend=legacy`
 
 ### Manually running the tests
 

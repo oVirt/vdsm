@@ -6,5 +6,3 @@
    value: 'true'
  - name: 'CONTAINER_CMD'
    value: 'docker'
- - name: 'TEST_NMSTATE'
-   value: 'true'
