@@ -178,6 +178,7 @@ class JsonRpcServerTests(TestCaseBase):
                                  {'text': data}, CALL_ID), data)
 
     @permutations(USE_SSL)
+    @broken_on_ci("fails randomly in CI")
     def testMethodMissingMethod(self, use_ssl):
         missing_method = "I_DO_NOT_EXIST :("
         ssl_ctx = self.ssl_ctx if use_ssl else None
