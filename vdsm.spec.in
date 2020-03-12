@@ -800,6 +800,7 @@ Requires: %{python_pyyaml}
 Requires: python2-blivet1 >= 1.20.4-1
 %else
 Requires: %{python_or_python3}-blivet
+Requires: libblockdev-plugins-all
 %endif
 Requires: xfsprogs
 %ifarch x86_64
