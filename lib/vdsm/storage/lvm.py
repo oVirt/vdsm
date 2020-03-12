@@ -514,8 +514,9 @@ class LVMCache(object):
             stalePVs = [name for name in (pvNames or self._pvs)
                         if name not in updatedPVs]
             for name in stalePVs:
-                log.warning("Removing stale PV %s", name)
-                self._pvs.pop(name, None)
+                if name in self._pvs:
+                    log.warning("Removing stale PV %s", name)
+                    del self._pvs[name]
 
             # If we updated all the PVs drop stale flag
             if not pvName:
@@ -596,9 +597,10 @@ class LVMCache(object):
             staleVGs = [name for name in (vgNames or self._vgs)
                         if name not in updatedVGs]
             for name in staleVGs:
-                removeVgMapping(name)
-                log.warning("Removing stale VG %s", name)
-                self._vgs.pop(name, None)
+                if name in self._vgs:
+                    log.warning("Removing stale VG %s", name)
+                    removeVgMapping(name)
+                    del self._vgs[name]
 
             # If we updated all the VGs drop stale flag
             if not vgName:
@@ -656,8 +658,9 @@ class LVMCache(object):
                             ((vgName, lvName) not in updatedLVs)]
 
             for lvName in staleLVs:
-                log.warning("Removing stale lv: %s/%s", vgName, lvName)
-                self._lvs.pop((vgName, lvName), None)
+                if (vgName, lvName) in self._lvs:
+                    log.warning("Removing stale lv: %s/%s", vgName, lvName)
+                    del self._lvs[(vgName, lvName)]
 
             log.debug("lvs reloaded")
 
