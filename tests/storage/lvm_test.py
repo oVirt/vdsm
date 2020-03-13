@@ -866,7 +866,6 @@ def test_vg_invalidate_lvs(tmp_storage, read_only):
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason="invalidating PVs reloads the VG")
 @pytest.mark.parametrize("read_only", [True, False])
 def test_vg_invalidate_lvs_pvs(tmp_storage, read_only):
     dev_size = 1 * 1024**3
