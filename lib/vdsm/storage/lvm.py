@@ -697,6 +697,12 @@ class LVMCache(object):
             for pvName in pvNames:
                 self._pvs[pvName] = Stub(pvName, True)
 
+    def _invalidatevgpvs(self, vgName):
+        with self._lock:
+            for pv in self._pvs.values():
+                if not isinstance(pv, Stub) and pv.vg_name == vgName:
+                    self._pvs[pv.name] = Stub(pv.name, True)
+
     def _invalidateAllPvs(self):
         with self._lock:
             self._stalepv = True
@@ -1307,8 +1313,7 @@ def invalidateVG(vgName, invalidateLVs=True, invalidatePVs=False):
     if invalidateLVs:
         _lvminfo._invalidatelvs(vgName)
     if invalidatePVs:
-        vgPvs = listPVNames(vgName)
-        _lvminfo._invalidatepvs(pvNames=vgPvs)
+        _lvminfo._invalidatevgpvs(vgName)
 
 
 def _getpvblksize(pv):

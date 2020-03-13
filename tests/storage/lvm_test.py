@@ -802,7 +802,6 @@ def test_vg_invalidate_lvs(tmp_storage):
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason="invalidating PVs reloads the VG")
 def test_vg_invalidate_lvs_pvs(tmp_storage):
     dev_size = 1 * GiB
     dev = tmp_storage.create_device(dev_size)
