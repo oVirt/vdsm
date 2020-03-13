@@ -694,6 +694,117 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
         assert pv.vg_name == ""
 
 
+@pytest.fixture
+def stale_pv(tmp_storage):
+    dev_size = 1 * 1024**3
+
+    good_pv_name = tmp_storage.create_device(dev_size)
+    stale_pv_name = tmp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
+    # Create VG with 2 PVs.
+    lvm.createVG(vg_name, [good_pv_name, stale_pv_name], "initial-tag", 128)
+
+    # Reload the cache.
+    pvs = sorted(pv.name for pv in lvm.getAllPVs())
+    assert pvs == sorted([good_pv_name, stale_pv_name])
+
+    # Simulate removal of the second PV on another host, leaving stale PV in
+    # the cache.
+    commands.run([
+        "vgreduce",
+        "--config", tmp_storage.lvm_config(),
+        vg_name,
+        stale_pv_name,
+    ])
+    commands.run([
+        "pvremove",
+        "--config", tmp_storage.lvm_config(),
+        stale_pv_name,
+    ])
+
+    # We still report both devies.
+    pvs = sorted(pv.name for pv in lvm.getAllPVs())
+    assert pvs == sorted([good_pv_name, stale_pv_name])
+
+    return vg_name, good_pv_name, stale_pv_name
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("read_only", [True, False])
+def test_pv_stale_reload_one_stub(stale_pv, read_only):
+    vg_name, good_pv_name, stale_pv_name = stale_pv
+
+    lvm.set_read_only(read_only)
+
+    # Invalidate VG and its PVs.
+    lvm.invalidateVG(vg_name, invalidatePVs=True)
+
+    # The good pv is still in the cache.
+    pv = lvm.getPV(good_pv_name)
+    assert pv.name == good_pv_name
+
+    # The stale pv shuld be removed.
+    with pytest.raises(se.InaccessiblePhysDev):
+        lvm.getPV(stale_pv_name)
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("read_only", [True, False])
+def test_pv_stale_reload_one_clear(stale_pv, read_only):
+    vg_name, good_pv_name, stale_pv_name = stale_pv
+
+    lvm.set_read_only(read_only)
+
+    # Drop all cache.
+    lvm.invalidateCache()
+
+    # The good pv is still in the cache.
+    pv = lvm.getPV(good_pv_name)
+    assert pv.name == good_pv_name
+
+    # The stale pv shuld be removed.
+    with pytest.raises(se.InaccessiblePhysDev):
+        lvm.getPV(stale_pv_name)
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.xfail(reason="getAllPvs returns stubs")
+@pytest.mark.parametrize("read_only", [True, False])
+def test_pv_stale_reload_all_stub(stale_pv, read_only):
+    vg_name, good_pv_name, stale_pv_name = stale_pv
+
+    lvm.set_read_only(read_only)
+
+    # Invalidate VG and its PVs.
+    lvm.invalidateVG(vg_name, invalidatePVs=True)
+
+    # Report only the good pv.
+    pv_names = [pv.name for pv in lvm.getAllPVs()]
+    assert pv_names == [good_pv_name]
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("read_only", [True, False])
+def test_pv_stale_reload_all_clear(stale_pv, read_only):
+    vg_name, good_pv_name, stale_pv_name = stale_pv
+
+    lvm.set_read_only(read_only)
+
+    # Drop all cache.
+    lvm.invalidateCache()
+
+    # Report only the good pv.
+    pv_names = [pv.name for pv in lvm.getAllPVs()]
+    assert pv_names == [good_pv_name]
+
+
 @requires_root
 @xfail_python3
 @pytest.mark.root
@@ -967,6 +1078,116 @@ def test_lv_add_delete_tags(tmp_storage):
     assert sorted(lv.tags) == ["new-tag-1", "new-tag-2"]
 
 
+@pytest.fixture
+def stale_vg(tmp_storage):
+    dev_size = 1 * 1024**3
+    dev1 = tmp_storage.create_device(dev_size)
+    dev2 = tmp_storage.create_device(dev_size)
+
+    good_vg_name = str(uuid.uuid4())
+    stale_vg_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
+    # Create 1 VGs
+    lvm.createVG(good_vg_name, [dev1], "initial-tag", 128)
+    lvm.createVG(stale_vg_name, [dev2], "initial-tag", 128)
+
+    # Reload the cache.
+    vgs = sorted(vg.name for vg in lvm.getAllVGs())
+    assert vgs == sorted([good_vg_name, stale_vg_name])
+
+    # Simulate removal of the second VG on another host, leaving stale VG in
+    # the cache.
+    commands.run([
+        "vgremove",
+        "--config", tmp_storage.lvm_config(),
+        stale_vg_name,
+    ])
+
+    # We still report both vgs.
+    vgs = sorted(vg.name for vg in lvm.getAllVGs())
+    assert vgs == sorted([good_vg_name, stale_vg_name])
+
+    return good_vg_name, stale_vg_name
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.xfail(reason="_reloadvgs return stub for missing vg")
+@pytest.mark.parametrize("read_only", [True, False])
+def test_vg_stale_reload_one_stub(stale_vg, read_only):
+    good_vg_name, stale_vg_name = stale_vg
+
+    lvm.set_read_only(read_only)
+
+    # Invalidate vgs.
+    lvm.invalidateVG(good_vg_name)
+    lvm.invalidateVG(stale_vg_name)
+
+    # The good vg is still in the cache.
+    vg = lvm.getVG(good_vg_name)
+    assert vg.name == good_vg_name
+
+    # The stale vg was removed.
+    with pytest.raises(se.VolumeGroupDoesNotExist):
+        lvm.getVG(stale_vg_name)
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("read_only", [True, False])
+def test_vg_stale_reload_one_clear(stale_vg, read_only):
+    good_vg_name, stale_vg_name = stale_vg
+
+    lvm.set_read_only(read_only)
+
+    # Drop all cache.
+    lvm.invalidateCache()
+
+    # The good vg is still in the cache.
+    vg = lvm.getVG(good_vg_name)
+    assert vg.name == good_vg_name
+
+    # The stale vg was removed.
+    with pytest.raises(se.VolumeGroupDoesNotExist):
+        lvm.getVG(stale_vg_name)
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.xfail(reason="getAllVGs return stubs")
+@pytest.mark.parametrize("read_only", [True, False])
+def test_vg_stale_reload_all_stub(stale_vg, read_only):
+    good_vg_name, stale_vg_name = stale_vg
+
+    lvm.set_read_only(read_only)
+
+    # Invalidate vgs.
+    lvm.invalidateVG(good_vg_name)
+    lvm.invalidateVG(stale_vg_name)
+
+    # Report only the good vg.
+    vgs = [vg.name for vg in lvm.getAllVGs()]
+    assert vgs == [good_vg_name]
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("read_only", [True, False])
+def test_vg_stale_reload_all_clear(stale_vg, read_only):
+    good_vg_name, stale_vg_name = stale_vg
+
+    lvm.set_read_only(read_only)
+
+    # Drop all cache.
+    lvm.invalidateCache()
+
+    # Report only the good vg.
+    vgs = [vg.name for vg in lvm.getAllVGs()]
+    assert vgs == [good_vg_name]
+
+
 @requires_root
 @xfail_python3
 @pytest.mark.root
@@ -1145,6 +1366,142 @@ def test_bootstrap(tmp_storage, read_only):
         for vg_name in vgs:
             lv = lvm.getLV(vg_name, "unused")
             assert not lv.active
+
+
+@pytest.fixture
+def stale_lv(tmp_storage):
+    dev_size = 1 * 1024**3
+    dev = tmp_storage.create_device(dev_size)
+
+    vg_name = str(uuid.uuid4())
+    good_lv_name = "good"
+    stale_lv_name = "stale"
+
+    lvm.set_read_only(False)
+
+    # Create VG with 2 lvs.
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    for lv_name in (good_lv_name, stale_lv_name):
+        lvm.createLV(vg_name, lv_name, 128, activate=False)
+
+    # Reload the cache.
+    good_lv = lvm.getLV(vg_name, good_lv_name)
+    stale_lv = lvm.getLV(vg_name, stale_lv_name)
+
+    # Simulate removal of the second LV on another host, leaving stale LV in
+    # the cache.
+    commands.run([
+        "lvremove",
+        "--config", tmp_storage.lvm_config(),
+        "{}/{}".format(vg_name, stale_lv_name),
+    ])
+
+    # The cache still keeps both lvs.
+    assert lvm._lvminfo._lvs == {
+        (vg_name, good_lv_name): good_lv,
+        (vg_name, stale_lv_name): stale_lv,
+    }
+
+    return vg_name, good_lv_name, stale_lv_name
+
+
+@requires_root
+@pytest.mark.root
+def test_lv_stale_cache_one(stale_lv):
+    vg_name, good_lv_name, stale_lv_name = stale_lv
+
+    # Until cache is invalidated, return lvs from cache.
+
+    good_lv = lvm.getLV(vg_name, good_lv_name)
+    assert good_lv.name == good_lv_name
+
+    stale_lv = lvm.getLV(vg_name, stale_lv_name)
+    assert stale_lv.name == stale_lv_name
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.xfail(reason="_getLV() do not use the cache")
+def test_lv_stale_cache_all(stale_lv):
+    vg_name, good_lv_name, stale_lv_name = stale_lv
+
+    # Until cache is invalidated, return lvs from cache.
+
+    lv_names = {lv.name for lv in lvm.getLV(vg_name)}
+    assert good_lv_name in lv_names
+    assert stale_lv_name in lv_names
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("read_only", [True, False])
+def test_lv_stale_reload_one_stub(stale_lv, read_only):
+    vg_name, good_lv_name, stale_lv_name = stale_lv
+
+    lvm.set_read_only(read_only)
+
+    # Invalidate all lvs in single vg.
+    lvm.invalidateVG(vg_name, invalidateLVs=True)
+
+    # The good lv is still in the cache.
+    lv = lvm.getLV(vg_name, good_lv_name)
+    assert lv.name == good_lv_name
+
+    # The stale lv should be removed.
+    with pytest.raises(se.LogicalVolumeDoesNotExistError):
+        lvm.getLV(vg_name, stale_lv_name)
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("read_only", [True, False])
+def test_lv_stale_reload_one_clear(stale_lv, read_only):
+    vg_name, good_lv_name, stale_lv_name = stale_lv
+
+    lvm.set_read_only(read_only)
+
+    # Drop all cache.
+    lvm.invalidateCache()
+
+    # The good lv is still in the cache.
+    lv = lvm.getLV(vg_name, good_lv_name)
+    assert lv.name == good_lv_name
+
+    # The stale lv should be removed.
+    with pytest.raises(se.LogicalVolumeDoesNotExistError):
+        lvm.getLV(vg_name, stale_lv_name)
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("read_only", [True, False])
+def test_lv_stale_reload_all_stub(stale_lv, read_only):
+    vg_name, good_lv_name, stale_lv_name = stale_lv
+
+    lvm.set_read_only(read_only)
+
+    # Invalidate all lvs in single vg.
+    lvm.invalidateVG(vg_name, invalidateLVs=True)
+
+    # Only the good lv is reported.
+    lvs = [lv.name for lv in lvm.getLV(vg_name)]
+    assert lvs == [good_lv_name]
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("read_only", [True, False])
+def test_lv_stale_reload_all_clear(stale_lv, read_only):
+    vg_name, good_lv_name, stale_lv_name = stale_lv
+
+    lvm.set_read_only(read_only)
+
+    # Drop all cache.
+    lvm.invalidateCache()
+
+    # Only the good lv is reported.
+    lvs = [lv.name for lv in lvm.getLV(vg_name)]
+    assert lvs == [good_lv_name]
 
 
 @requires_root
