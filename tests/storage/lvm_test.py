@@ -724,6 +724,114 @@ def test_vg_check(tmp_storage, read_only):
 
 @requires_root
 @pytest.mark.root
+def test_vg_invalidate(tmp_storage):
+    dev_size = 1 * GiB
+
+    dev1 = tmp_storage.create_device(dev_size)
+    dev2 = tmp_storage.create_device(dev_size)
+    vg1_name = str(uuid.uuid4())
+    vg2_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
+    lvm.createVG(vg1_name, [dev1], "initial-tag", 128)
+    lvm.createLV(vg1_name, "lv1", 128, activate=False)
+
+    lvm.createVG(vg2_name, [dev2], "initial-tag", 128)
+    lvm.createLV(vg2_name, "lv2", 128, activate=False)
+
+    # Reload cache.
+
+    pv1 = lvm.getPV(dev1)
+    vg1 = lvm.getVG(vg1_name)
+    lv1 = lvm.getLV(vg1_name)[0]
+
+    pv2 = lvm.getPV(dev2)
+    vg2 = lvm.getVG(vg2_name)
+    lv2 = lvm.getLV(vg2_name)[0]
+
+    assert lvm._lvminfo._pvs == {dev1: pv1, dev2: pv2}
+    assert lvm._lvminfo._vgs == {vg1_name: vg1, vg2_name: vg2}
+    assert lvm._lvminfo._lvs == {
+        (vg1_name, "lv1"): lv1,
+        (vg2_name, "lv2"): lv2,
+    }
+
+    # Invalidate VG including LVs.
+    lvm.invalidateVG(vg1_name, invalidateLVs=False)
+
+    assert lvm._lvminfo._pvs == {dev1: pv1, dev2: pv2}
+    assert lvm._lvminfo._vgs == {
+        vg1_name: lvm.Stub(vg1_name, True),
+        vg2_name: vg2,
+    }
+    assert lvm._lvminfo._lvs == {
+        (vg1_name, "lv1"): lv1,
+        (vg2_name, "lv2"): lv2,
+    }
+
+
+@requires_root
+@pytest.mark.root
+def test_vg_invalidate_lvs(tmp_storage):
+    dev_size = 1 * GiB
+    dev = tmp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    lvm.createLV(vg_name, "lv1", 128, activate=False)
+
+    # Reload cache.
+    pv = lvm.getPV(dev)
+    vg = lvm.getVG(vg_name)
+    lv = lvm.getLV(vg_name)[0]
+
+    assert lvm._lvminfo._pvs == {dev: pv}
+    assert lvm._lvminfo._vgs == {vg_name: vg}
+    assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lv}
+
+    # Invalidate VG including LVs.
+    lvm.invalidateVG(vg_name)
+
+    assert lvm._lvminfo._pvs == {dev: pv}
+    assert lvm._lvminfo._vgs == {vg_name: lvm.Stub(vg_name, True)}
+    assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stub("lv1", True)}
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.xfail(reason="invalidating PVs reloads the VG")
+def test_vg_invalidate_lvs_pvs(tmp_storage):
+    dev_size = 1 * GiB
+    dev = tmp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    lvm.createLV(vg_name, "lv1", 128, activate=False)
+
+    # Reload cache.
+    pv = lvm.getPV(dev)
+    vg = lvm.getVG(vg_name)
+    lv = lvm.getLV(vg_name)[0]
+
+    assert lvm._lvminfo._pvs == {dev: pv}
+    assert lvm._lvminfo._vgs == {vg_name: vg}
+    assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lv}
+
+    # Invalidate VG including LVs and PVs.
+    lvm.invalidateVG(vg_name, invalidatePVs=True)
+
+    assert lvm._lvminfo._vgs == {vg_name: lvm.Stub(vg_name, True)}
+    assert lvm._lvminfo._pvs == {dev: lvm.Stub(dev, True)}
+    assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stub("lv1", True)}
+
+
+@requires_root
+@pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_lv_create_remove(tmp_storage, read_only):
     dev_size = 10 * GiB
