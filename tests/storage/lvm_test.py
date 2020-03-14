@@ -774,7 +774,6 @@ def test_pv_stale_reload_one_clear(stale_pv, read_only):
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason="getAllPvs returns stubs")
 @pytest.mark.parametrize("read_only", [True, False])
 def test_pv_stale_reload_all_stub(stale_pv, read_only):
     vg_name, good_pv_name, stale_pv_name = stale_pv
@@ -1156,7 +1155,6 @@ def test_vg_stale_reload_one_clear(stale_vg, read_only):
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason="getAllVGs return stubs")
 @pytest.mark.parametrize("read_only", [True, False])
 def test_vg_stale_reload_all_stub(stale_vg, read_only):
     good_vg_name, stale_vg_name = stale_vg
