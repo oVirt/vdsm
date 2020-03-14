@@ -1047,7 +1047,6 @@ def stale_vg(tmp_storage):
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason="_reloadvgs return stub for missing vg")
 def test_vg_stale_reload_one_stub(stale_vg):
     good_vg_name, stale_vg_name = stale_vg
 
