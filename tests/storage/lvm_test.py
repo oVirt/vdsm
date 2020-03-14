@@ -706,7 +706,6 @@ def test_pv_stale_reload_one_clear(stale_pv):
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason="getAllPvs returns stubs")
 def test_pv_stale_reload_all_stub(stale_pv):
     vg_name, good_pv_name, stale_pv_name = stale_pv
 
@@ -1084,7 +1083,6 @@ def test_vg_stale_reload_one_clear(stale_vg):
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason="getAllVGs return stubs")
 def test_vg_stale_reload_all_stub(stale_vg):
     good_vg_name, stale_vg_name = stale_vg
 

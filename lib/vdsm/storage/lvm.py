@@ -761,6 +761,8 @@ class LVMCache(object):
             stalepvs = [pv.name for pv in six.itervalues(pvs)
                         if isinstance(pv, Stub)]
             if stalepvs:
+                for name in stalepvs:
+                    del pvs[name]
                 reloaded = self._reloadpvs(stalepvs)
                 pvs.update(reloaded)
         return list(six.itervalues(pvs))
@@ -812,6 +814,8 @@ class LVMCache(object):
             stalevgs = [vg.name for vg in six.itervalues(vgs)
                         if isinstance(vg, Stub)]
             if stalevgs:
+                for name in stalevgs:
+                    del vgs[name]
                 reloaded = self._reloadvgs(stalevgs)
                 vgs.update(reloaded)
         return list(six.itervalues(vgs))
