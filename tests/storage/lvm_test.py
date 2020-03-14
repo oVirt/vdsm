@@ -1113,7 +1113,6 @@ def stale_vg(tmp_storage):
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason="_reloadvgs return stub for missing vg")
 @pytest.mark.parametrize("read_only", [True, False])
 def test_vg_stale_reload_one_stub(stale_vg, read_only):
     good_vg_name, stale_vg_name = stale_vg

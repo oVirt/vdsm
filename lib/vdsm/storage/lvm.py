@@ -563,18 +563,14 @@ class LVMCache(object):
 
         with self._lock:
             if rc != 0:
+                # NOTE: vgs may return useful output even on failure, so we
+                # don't retrun here.
                 log.error(
                     "Reloading VGs failed vgs=%r rc=%r out=%r err=%r",
                     vgNames, rc, out, err)
                 for v in (vgNames or self._vgs):
                     if isinstance(self._vgs.get(v), Stub):
                         self._vgs[v] = Unreadable(self._vgs[v].name, True)
-
-            # TODO: Does not match _reloadpvs() and _reloadlvs(), and looks
-            # wrong. If LVM command failed, why are we using its (partial)
-            # output?
-            if not len(out):
-                return dict(self._vgs)
 
             updatedVGs = {}
             vgsFields = {}
