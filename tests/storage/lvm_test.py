@@ -1538,7 +1538,6 @@ def test_lv_reload_error_one_stub(fake_devices, fake_runner):
     assert isinstance(lv, lvm.Unreadable)
 
 
-@pytest.mark.xfail(reason="_reloadlvs mark all vgs as unreadable")
 def test_lv_reload_error_one_stub_other_vg(fake_devices, fake_runner):
     fake_runner.rc = 5
     fake_runner.err = [b"Fake lvm error"]
@@ -1576,7 +1575,6 @@ def test_lv_reload_error_all_other_vg(fake_devices, fake_runner):
     assert lvs == []
 
 
-@pytest.mark.xfail(reason="_reloadlvs mark all vgs as unreadable")
 def test_lv_reload_error_all_stub_other_vgs(fake_devices, fake_runner):
     fake_runner.rc = 5
     fake_runner.err = [b"Fake lvm error"]

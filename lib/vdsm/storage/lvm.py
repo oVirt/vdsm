@@ -641,10 +641,11 @@ class LVMCache(object):
                 log.error(
                     "Reloading LVs failed vg=%r lvs=%r rc=%s out=%r err=%r",
                     vgName, lvNames, rc, out, err)
-                lvNames = lvNames if lvNames else self._lvs.keys()
-                for l in lvNames:
-                    if isinstance(self._lvs.get(l), Stub):
-                        self._lvs[l] = Unreadable(self._lvs[l].name, True)
+                if not lvNames:
+                    lvNames = (lvn for vgn, lvn in self._lvs if vgn == vgName)
+                for lvName in lvNames:
+                    if isinstance(self._lvs.get((vgName, lvName)), Stub):
+                        self._lvs[(vgName, lvName)] = Unreadable(lvName, True)
                 return dict(self._lvs)
 
             updatedLVs = {}
