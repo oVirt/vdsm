@@ -1420,6 +1420,91 @@ def test_lv_stale_reload_all_clear(stale_lv):
     assert lvs == [good_lv_name]
 
 
+def test_lv_reload_error_one(fake_devices, no_delay):
+    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
+    lc = lvm.LVMCache(fake_runner)
+
+    other_lv = make_lv("other-lv", "vg-name")
+    lc._lvs = {("vg-name", "other-lv"): other_lv}
+
+    # Should raise, but currently return None.
+    assert lc.getLv("vg-name", "lv-name") is None
+
+    # Other lv is not affected since it was not a stub.
+    assert lc._lvs == {("vg-name", "other-lv"): other_lv}
+
+
+def test_lv_reload_error_one_stub(fake_devices, no_delay):
+    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
+    lc = lvm.LVMCache(fake_runner)
+    lc._lvs = {
+        ("vg-name", "lv-name"): lvm.Stub("lv-name", True),
+        ("vg-name", "other-lv"): lvm.Stub("other-lv", True),
+    }
+    lv = lc.getLv("vg-name", "lv-name")
+
+    # Mark lv as unreadable. Because we always reload all lvs, the other lvs is
+    # also marked as unreadable.
+    assert lc._lvs == {
+        ("vg-name", "lv-name"): lvm.Unreadable("lv-name", True),
+        ("vg-name", "other-lv"): lvm.Unreadable("other-lv", True),
+    }
+
+    # Report the unreadbale lv.
+    assert lv.name == "lv-name"
+    assert isinstance(lv, lvm.Unreadable)
+
+
+@pytest.mark.xfail(reason="_reloadlvs mark all vgs as unreadable")
+def test_lv_reload_error_one_stub_other_vg(fake_devices, no_delay):
+    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
+    lc = lvm.LVMCache(fake_runner)
+    lc._lvs = {
+        ("vg-name", "lv-name"): lvm.Stub("lv-name", True),
+        ("other-vg", "other-lv"): lvm.Stub("other-lv", True),
+    }
+    lc.getLv("vg-name", "lv-name")
+
+    # Should not affect other vg lvs.
+    other_lv = lc._lvs[("other-vg", "other-lv")]
+    assert not isinstance(other_lv, lvm.Unreadable)
+
+
+def test_lv_reload_error_all(fake_devices, no_delay):
+    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
+    lc = lvm.LVMCache(fake_runner)
+    assert lc.getLv("vg-name") == []
+
+
+def test_lv_reload_error_all_other_vg(fake_devices, no_delay):
+    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
+    lc = lvm.LVMCache(fake_runner)
+    lc._lvs = {("vg-name", "lv-name"): lvm.Stub("lv-name", True)}
+    lvs = lc.getLv("vg-name")
+
+    # Mark lv as unreadable.
+    assert lc._lvs == {("vg-name", "lv-name"): lvm.Unreadable("lv-name", True)}
+
+    # Currnetly we don't report stubs or unreadables lvs. This is not
+    # consistent with getLv(vg_name, lv_name).
+    assert lvs == []
+
+
+@pytest.mark.xfail(reason="_reloadlvs mark all vgs as unreadable")
+def test_lv_reload_error_all_stub_other_vgs(fake_devices, no_delay):
+    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
+    lc = lvm.LVMCache(fake_runner)
+    lc._lvs = {
+        ("vg-name", "lv-name"): lvm.Stub("lv-name", True),
+        ("other-vg", "other-lv"): lvm.Stub("other-lv", True),
+    }
+    lc.getLv("vg-name")
+
+    # Should not affect other vg lvs.
+    other_lv = lc._lvs[("other-vg", "other-lv")]
+    assert not isinstance(other_lv, lvm.Unreadable)
+
+
 @requires_root
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
@@ -1470,3 +1555,16 @@ def test_normalize_args():
         u"arg1", u"arg2"]
     assert list(lvm.normalize_args(iter([u"arg1", u"arg2"]))) == [
         u"arg1", u"arg2"]
+
+
+def make_lv(lv_name, vg_name):
+    return lvm.makeLV(
+        "uuid",
+        lv_name,
+        vg_name,
+        "-wi-------",
+        "128",
+        "0",
+        "/dev/mapper/a",
+        "IU_image-uid,PU_00000000,MD_1",
+    )
