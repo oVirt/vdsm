@@ -553,6 +553,8 @@ class LVMCache(object):
             cmd, self._getVGDevs(vgNames), wants_output=True)
 
         with self._lock:
+            updatedVGs = {}
+
             if rc != 0:
                 # NOTE: vgs may return useful output even on failure, so we
                 # don't retrun here.
@@ -561,10 +563,10 @@ class LVMCache(object):
                     vgNames, rc, out, err)
                 for v in (vgNames or self._vgs):
                     if isinstance(self._vgs.get(v), Stub):
-                        self._vgs[v] = Unreadable(self._vgs[v].name, True)
+                        vg = Unreadable(self._vgs[v].name, True)
+                        self._vgs[v] = vg
+                        updatedVGs[v] = vg
 
-
-            updatedVGs = {}
             vgsFields = {}
             for line in out:
                 fields = [field.strip() for field in line.split(SEPARATOR)]
