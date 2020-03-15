@@ -496,6 +496,8 @@ class LVMCache(object):
         rc, out, err = self.cmd(cmd, read_only=read_only, wants_output=True)
 
         with self._lock:
+            updatedPVs = {}
+
             if rc != 0:
                 log.error(
                     "Reloading PVs failed: pvs=%r rc=%r out=%r err=%r",
@@ -503,10 +505,12 @@ class LVMCache(object):
                 pvNames = pvNames if pvNames else self._pvs
                 for p in pvNames:
                     if isinstance(self._pvs.get(p), Stub):
-                        self._pvs[p] = Unreadable(self._pvs[p].name, True)
-                return dict(self._pvs)
+                        pv = Unreadable(self._pvs[p].name, True)
+                        self._pvs[p] = pv
+                        updatedPVs[p] = pv
 
-            updatedPVs = {}
+                return updatedPVs
+
             for line in out:
                 fields = [field.strip() for field in line.split(SEPARATOR)]
                 if len(fields) != PV_FIELDS_LEN:
