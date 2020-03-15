@@ -637,6 +637,8 @@ class LVMCache(object):
             cmd, self._getVGDevs((vgName,)), wants_output=True)
 
         with self._lock:
+            updatedLVs = {}
+
             if rc != 0:
                 log.error(
                     "Reloading LVs failed vg=%r lvs=%r rc=%s out=%r err=%r",
@@ -645,10 +647,12 @@ class LVMCache(object):
                     lvNames = (lvn for vgn, lvn in self._lvs if vgn == vgName)
                 for lvName in lvNames:
                     if isinstance(self._lvs.get((vgName, lvName)), Stub):
-                        self._lvs[(vgName, lvName)] = Unreadable(lvName, True)
-                return dict(self._lvs)
+                        lv = Unreadable(lvName, True)
+                        self._lvs[(vgName, lvName)] = lv
+                        updatedLVs[(vgName, lvName)] = lv
 
-            updatedLVs = {}
+                return updatedLVs
+
             for line in out:
                 fields = [field.strip() for field in line.split(SEPARATOR)]
                 if len(fields) != LV_FIELDS_LEN:
