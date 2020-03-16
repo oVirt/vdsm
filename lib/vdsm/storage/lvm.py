@@ -422,7 +422,7 @@ class LVMCache(object):
         self._cmd_sem = threading.BoundedSemaphore(self.MAX_COMMANDS)
         self._stalepv = True
         self._stalevg = True
-        self._stalelv = True
+        self._freshlv = set()
         self._pvs = {}
         self._vgs = {}
         self._lvs = {}
@@ -676,6 +676,8 @@ class LVMCache(object):
                 if name in self._vgs:
                     log.warning("Removing stale VG %s", name)
                     del self._vgs[name]
+                    # Remove fresh lvs indication of the vg removed from cache.
+                    self._freshlv.discard(name)
 
             # If we updated all the VGs drop stale flag
             if not vgName:
@@ -744,6 +746,9 @@ class LVMCache(object):
                     log.warning("Removing stale lv: %s/%s", vgName, lvName)
                     del self._lvs[(vgName, lvName)]
 
+            if not lvNames:
+                self._freshlv.add(vgName)
+
             log.debug("lvs reloaded")
 
         return updatedLVs
@@ -769,7 +774,7 @@ class LVMCache(object):
 
             with self._lock:
                 self._lvs = new_lvs
-                self._stalelv = False
+                self._freshlv = {vg_name for vg_name, _ in self._lvs}
 
         return self._lvs.copy()
 
@@ -800,6 +805,7 @@ class LVMCache(object):
         with self._lock:
             self._stalevg = True
             self._vgs.clear()
+            self._freshlv = set()
 
     def _invalidatelvs(self, vgName, lvNames=None):
         lvNames = normalize_args(lvNames)
@@ -817,7 +823,7 @@ class LVMCache(object):
 
     def _invalidateAllLvs(self):
         with self._lock:
-            self._stalelv = True
+            self._freshlv = set()
             self._lvs.clear()
 
     def _removelvs(self, vgName, lvNames=None):
@@ -978,7 +984,7 @@ class LVMCache(object):
         return lvs
 
     def _lvs_needs_reload(self, vg_name):
-        if self._stalelv:
+        if vg_name not in self._freshlv:
             return True
 
         return any(lv.is_stale()

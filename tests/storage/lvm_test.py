@@ -976,7 +976,14 @@ def test_vg_invalidate_lvs(tmp_storage):
     # Reload cache.
     pv = lvm.getPV(dev)
     vg = lvm.getVG(vg_name)
+
+    clear_stats()
     lv = lvm.getLV(vg_name)[0]
+    check_stats(hits=0, misses=1)
+
+    # Another call for getLV() will add cache hit.
+    lvm.getLV(vg_name)
+    check_stats(hits=1, misses=1)
 
     assert lvm._lvminfo._pvs == {dev: pv}
     assert lvm._lvminfo._vgs == {vg_name: vg}
@@ -988,6 +995,11 @@ def test_vg_invalidate_lvs(tmp_storage):
     assert lvm._lvminfo._pvs == {dev: pv}
     assert lvm._lvminfo._vgs == {vg_name: lvm.Stale(vg_name)}
     assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stale("lv1")}
+
+    # Calling getLV() will reload lvs since there are Stubs.
+    clear_stats()
+    lvm.getLV(vg_name)
+    check_stats(hits=0, misses=1)
 
 
 @requires_root
@@ -1476,7 +1488,6 @@ def test_lv_stale_cache_one(stale_lv):
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason="_getLV() do not use the cache")
 def test_lv_stale_cache_all(stale_lv):
     vg_name, good_lv_name, stale_lv_name = stale_lv
 
@@ -1628,6 +1639,43 @@ def test_lv_reload_error_all_stale_other_vgs(fake_devices, no_delay):
     # Should not affect other vg lvs.
     other_lv = lc._lvs[("other-vg", "other-lv")]
     assert not isinstance(other_lv, lvm.Unreadable)
+
+
+def test_lv_reload_fresh_vg(fake_devices, no_delay):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+    lv1 = make_lv("lv1", "vg1")
+
+    # vg1's lvs are fresh, vg2's lvs were invalidated.
+    lc._freshlv = {"vg1", "vg2"}
+    lc._lvs = {
+        ("vg1", "lv1"): lv1,
+        ("vg2", "lv2"): lvm.Stale("lv2"),
+    }
+
+    assert not lc._lvs_needs_reload("vg1")
+    assert lc._lvs_needs_reload("vg2")
+
+    # getLv for vg1 should use cache without reload lvs.
+    assert lc.getLv("vg1") == [lv1]
+    assert not lc._lvs_needs_reload("vg1")
+    assert lc._lvs_needs_reload("vg2")
+
+    # getLv for vg2 should reload lvs.
+    assert lc.getLv("vg2") == []
+    assert not lc._lvs_needs_reload("vg1")
+    assert not lc._lvs_needs_reload("vg2")
+
+
+def test_lv_reload_for_stale_vg(fake_devices, no_delay):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+
+    assert lc._lvs_needs_reload("vg")
+
+    # getLv call should call reload lvs.
+    lc.getLv("vg")
+    assert not lc._lvs_needs_reload("vg")
 
 
 @requires_root
