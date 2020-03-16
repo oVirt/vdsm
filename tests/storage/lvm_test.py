@@ -1536,6 +1536,36 @@ def test_retry_with_wider_filter(tmp_storage, read_only):
     assert vg.pv_name == (dev,)
 
 
+@requires_root
+@pytest.mark.root
+def test_get_lvs_after_sd_refresh(tmp_storage):
+    dev_size = 1 * GiB
+    dev1 = tmp_storage.create_device(dev_size)
+    dev2 = tmp_storage.create_device(dev_size)
+    vg1_name = str(uuid.uuid4())
+    vg2_name = str(uuid.uuid4())
+
+    # Create two VGs and LVs per each.
+    lvm.createVG(vg1_name, [dev1], "initial-tag", 128)
+    lvm.createVG(vg2_name, [dev2], "initial-tag", 128)
+
+    lvm.createLV(vg1_name, "lv1", 128, activate=False)
+    lvm.createLV(vg2_name, "lv2", 128, activate=False)
+
+    # Make sure that LVs are in LVM cache for both VGs.
+    lv1 = lvm.getLV(vg1_name)[0]
+    lv2 = lvm.getLV(vg2_name)[0]
+
+    # Simulate refresh SD.
+    lvm.invalidateCache()
+
+    # Reload lvs for vg1.
+    assert lvm.getLV(vg1_name) == [lv1]
+
+    # Reload lvs for vg2.
+    assert lvm.getLV(vg2_name) == [lv2]
+
+
 def test_normalize_args():
     assert lvm.normalize_args(u"arg") == [u"arg"]
     assert lvm.normalize_args("arg") == [u"arg"]
