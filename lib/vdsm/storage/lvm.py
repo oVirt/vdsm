@@ -849,10 +849,6 @@ class LVMCache(object):
         return list(six.itervalues(vgs))
 
     def getLv(self, vgName, lvName=None):
-        # Checking self._stalelv here is suboptimal, because
-        # unnecessary reloads
-        # are done.
-
         # Return vgName/lvName info
         # If both 'vgName' and 'lvName' are None then return everything
         # If only 'lvName' is None then return all the LVs in the given VG
@@ -876,8 +872,7 @@ class LVMCache(object):
             # be in the vg.
             # Will be better when the pvs dict will be part of the vg.
             # Fix me: should not be more stubs
-            if self._stalelv or any(isinstance(lv, Stub)
-                                    for lv in self._lvs.values()):
+            if self._lvs_needs_reload(vgName):
                 self._miss()
                 lvs = self._reloadlvs(vgName)
             else:
@@ -911,6 +906,14 @@ class LVMCache(object):
     def _hit(self):
         with self._lock:
             self._hits += 1
+
+    def _lvs_needs_reload(self, vg_name):
+        if self._stalelv:
+            return True
+
+        return any(isinstance(lv, Stub)
+                   for (vgn, _), lv in self._lvs.items()
+                   if vgn == vg_name)
 
 
 _lvminfo = LVMCache()
