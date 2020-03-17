@@ -635,7 +635,7 @@ class LVMCache(object):
                     "Reloading LVs failed vg=%r lvs=%r rc=%s out=%r err=%r",
                     vgName, lvNames, rc, out, err)
                 if not lvNames:
-                    lvNames = (lv.name for lv in self._lvs.values())
+                    lvNames = (lvn for vgn, lvn in self._lvs if vgn == vgName)
                 for lvName in lvNames:
                     if isinstance(self._lvs.get((vgName, lvName)), Stub):
                         lv = Unreadable(lvName, True)
