@@ -87,7 +87,7 @@
 %{!?vdsm_release: %global vdsm_release @PACKAGE_RELEASE@}
 
 Name:           %{vdsm_name}
-Version:        4.40.6
+Version:        4.40.7
 Release:        %{vdsm_release}%{?dist}%{?extra_release}
 Summary:        Virtual Desktop Server Manager
 
@@ -1400,5 +1400,5 @@ exit 0
 %endif
 
 %changelog
-* Fri Mar 13 2020 Milan Zamazal <mzamazal@redhat.com> - 4.40.6
+* Tue Mar 17 2020 Milan Zamazal <mzamazal@redhat.com> - 4.40.7
 - See %{_docdir}/%{vdsm_name}/ChangeLog for the complete list of Vdsm changes.
