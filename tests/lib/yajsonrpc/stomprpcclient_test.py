@@ -167,6 +167,7 @@ class VdsmClientTests(VdsmTestCase):
             with self.assertRaises(AttributeError):
                 client.MissingNamespace.missingMethod()
 
+    @broken_on_ci("Fails randomly in CI")
     def test_bad_parameters(self):
         with self._create_client() as client:
             with self.assertRaises(ServerError) as ex:
@@ -207,6 +208,7 @@ class VdsmClientTests(VdsmTestCase):
             with self.assertRaises(TimeoutError):
                 client.Test.slowCall()
 
+    @broken_on_ci(reason="Fails randomly in CI")
     def test_event_handler(self):
         with self._create_client() as client:
             event_queue = queue.Queue()

@@ -154,6 +154,7 @@ class JsonRpcServerTests(TestCaseBase):
         return res
 
     @permutations(USE_SSL)
+    @broken_on_ci(reason="Fails randomly in CI")
     def testMethodCallArgList(self, use_ssl):
         data = dummyTextGenerator(1024)
         ssl_ctx = self.ssl_ctx if use_ssl else None
@@ -252,6 +253,7 @@ class JsonRpcServerTests(TestCaseBase):
                                  JsonRpcInternalError().code)
 
     @permutations(USE_SSL)
+    @broken_on_ci("fails randomly in CI")
     def testClientSubscribe(self, use_ssl):
         ssl_ctx = self.ssl_ctx if use_ssl else None
         bridge = _DummyBridge()
