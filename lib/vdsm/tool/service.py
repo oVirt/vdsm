@@ -69,9 +69,9 @@ class ServiceError(UsageError):
     def __str__(self):
         s = ["%s: %s" % (self.__class__.__name__, self.msg)]
         if self.out:
-            s.append(self.out)
+            s.append(str(self.out))
         if self.err:
-            s.append(self.err)
+            s.append(str(self.err))
         return '\n'.join(s)
 
 
