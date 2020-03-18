@@ -369,6 +369,8 @@ class LVMCache(object):
         self._vgs = {}
         self._lvs = {}
         self._runner = cmd_runner
+        self._misses = 0
+        self._hits = 0
 
     def set_read_only(self, value):
         """
@@ -756,23 +758,30 @@ class LVMCache(object):
         # Get specific PV
         pv = self._pvs.get(pvName)
         if not pv or isinstance(pv, Stub):
+            self._miss()
             pvs = self._reloadpvs(pvName)
             pv = pvs.get(pvName)
+        else:
+            self._hit()
         return pv
 
     def getAllPvs(self):
         # Get everything we have
         if self._stalepv:
+            self._miss()
             pvs = self._reloadpvs()
         else:
             pvs = dict(self._pvs)
             stalepvs = [pv.name for pv in six.itervalues(pvs)
                         if isinstance(pv, Stub)]
             if stalepvs:
+                self._miss()
                 for name in stalepvs:
                     del pvs[name]
                 reloaded = self._reloadpvs(stalepvs)
                 pvs.update(reloaded)
+            else:
+                self._hit()
         return list(six.itervalues(pvs))
 
     def getPvs(self, vgName):
@@ -791,16 +800,22 @@ class LVMCache(object):
                 pvs.append(pv)
 
         if stalepvs:
+            self._miss()
             reloadedpvs = self._reloadpvs(pvName=stalepvs)
             pvs.extend(reloadedpvs.values())
+        else:
+            self._hit()
         return pvs
 
     def getVg(self, vgName):
         # Get specific VG
         vg = self._vgs.get(vgName)
         if not vg or isinstance(vg, Stub):
+            self._miss()
             vgs = self._reloadvgs(vgName)
             vg = vgs.get(vgName)
+        else:
+            self._hit()
         return vg
 
     def getVgs(self, vgNames):
@@ -810,22 +825,27 @@ class LVMCache(object):
         Fills the cache but not uses it.
         Only returns found VGs.
         """
+        self._miss()
         return [vg for vgName, vg in six.iteritems(self._reloadvgs(vgNames))
                 if vgName in vgNames]
 
     def getAllVgs(self):
         # Get everything we have
         if self._stalevg:
+            self._miss()
             vgs = self._reloadvgs()
         else:
             vgs = dict(self._vgs)
             stalevgs = [vg.name for vg in six.itervalues(vgs)
                         if isinstance(vg, Stub)]
             if stalevgs:
+                self._miss()
                 for name in stalevgs:
                     del vgs[name]
                 reloaded = self._reloadvgs(stalevgs)
                 vgs.update(reloaded)
+            else:
+                self._hit()
         return list(six.itervalues(vgs))
 
     def getLv(self, vgName, lvName=None):
@@ -842,9 +862,12 @@ class LVMCache(object):
             # vgName, lvName
             lv = self._lvs.get((vgName, lvName))
             if not lv or isinstance(lv, Stub):
+                self._miss()
                 # while we here reload all the LVs in the VG
                 lvs = self._reloadlvs(vgName)
                 lv = lvs.get((vgName, lvName))
+            else:
+                self._hit()
             res = lv
         else:
             # vgName, None
@@ -855,14 +878,39 @@ class LVMCache(object):
             # Fix me: should not be more stubs
             if self._stalelv or any(isinstance(lv, Stub)
                                     for lv in self._lvs.values()):
+                self._miss()
                 lvs = self._reloadlvs(vgName)
             else:
+                self._hit()
                 lvs = dict(self._lvs)
             # lvs = self._reloadlvs()
             lvs = [lv for lv in lvs.values()
                    if not isinstance(lv, Stub) and (lv.vg_name == vgName)]
             res = lvs
         return res
+
+    def stats(self):
+        with self._lock:
+            calls = self._hits + self._misses
+            hit_ratio = (100 * self._hits / calls) if calls > 0 else 0
+            return {
+                "hits": self._hits,
+                "misses": self._misses,
+                "hit_ratio": hit_ratio
+            }
+
+    def clear_stats(self):
+        with self._lock:
+            self._hits = 0
+            self._misses = 0
+
+    def _miss(self):
+        with self._lock:
+            self._misses += 1
+
+    def _hit(self):
+        with self._lock:
+            self._hits += 1
 
 
 _lvminfo = LVMCache()
@@ -1736,3 +1784,11 @@ def lvsByTag(vgName, tag):
 
 def invalidateFilter():
     _lvminfo.invalidateFilter()
+
+
+def cache_stats():
+    return _lvminfo.stats()
+
+
+def clear_stats():
+    _lvminfo.clear_stats()

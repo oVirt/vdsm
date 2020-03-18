@@ -25,6 +25,7 @@ Common fixtures that can be used without importing anything.
 from __future__ import absolute_import
 from __future__ import division
 
+import logging
 import os
 import sys
 import types
@@ -54,6 +55,9 @@ from .fakesanlock import FakeSanlock
 from . import tmpfs
 from . import tmprepo
 from . import tmpstorage
+
+
+log = logging.getLogger("test")
 
 
 @pytest.fixture
@@ -132,6 +136,9 @@ def tmp_storage(monkeypatch, tmpdir):
         finally:
             # and don't break other tests.
             lvm.invalidateCache()
+            stats = lvm.cache_stats()
+            log.info("LVM cache hit ratio: %.2f%% (hits: %d misses: %d)",
+                     stats["hit_ratio"], stats["hits"], stats["misses"])
 
 
 @pytest.fixture

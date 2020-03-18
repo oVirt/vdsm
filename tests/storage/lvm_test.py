@@ -529,7 +529,10 @@ def test_vg_create_remove_single_device(tmp_storage, read_only):
 
     lvm.set_read_only(read_only)
 
+    clear_stats()
     vg = lvm.getVG(vg_name)
+    check_stats(hits=0, misses=1)
+
     assert vg.name == vg_name
     assert vg.pv_name == (dev,)
     assert vg.tags == ("initial-tag",)
@@ -539,7 +542,13 @@ def test_vg_create_remove_single_device(tmp_storage, read_only):
     # https://bugzilla.redhat.com/1809660.
     lvm.set_read_only(False)
 
+    clear_stats()
     pv = lvm.getPV(dev)
+    check_stats(hits=0, misses=1)
+
+    # Call getPV again to see we also get cache hit.
+    lvm.getPV(dev)
+    check_stats(hits=1, misses=1)
 
     lvm.set_read_only(read_only)
 
@@ -557,15 +566,20 @@ def test_vg_create_remove_single_device(tmp_storage, read_only):
     lvm.set_read_only(read_only)
 
     # We remove the VG
+    clear_stats()
     with pytest.raises(se.VolumeGroupDoesNotExist):
         lvm.getVG(vg_name)
+    check_stats(hits=0, misses=1)
 
     # pvs is broken with read-only mode
     # https://bugzilla.redhat.com/1809660.
     lvm.set_read_only(False)
 
     # But keep the PVs, not sure why.
+    clear_stats()
     pv = lvm.getPV(dev)
+    check_stats(hits=0, misses=1)
+
     assert pv.name == dev
     assert pv.vg_name == ""
 
@@ -596,7 +610,10 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
     lvm.set_read_only(False)
 
     # The first pv (metadata pv) will have the 2 used metadata areas.
+    clear_stats()
     pv = lvm.getPV(dev1)
+    check_stats(hits=0, misses=1)
+
     assert pv.name == dev1
     assert pv.vg_name == vg_name
     assert int(pv.dev_size) == dev_size
@@ -605,7 +622,10 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
 
     # The rest of the pvs will have 2 unused metadata areas.
     for dev in dev2, dev3:
+        clear_stats()
         pv = lvm.getPV(dev)
+        check_stats(hits=0, misses=1)
+
         assert pv.name == dev
         assert pv.vg_name == vg_name
         assert int(pv.dev_size) == dev_size
@@ -618,8 +638,10 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
     lvm.set_read_only(read_only)
 
     # We remove the VG
+    clear_stats()
     with pytest.raises(se.VolumeGroupDoesNotExist):
         lvm.getVG(vg_name)
+    check_stats(hits=0, misses=1)
 
     # pvs is broken with read-only mode
     # https://bugzilla.redhat.com/1809660.
@@ -627,7 +649,10 @@ def test_vg_create_multiple_devices(tmp_storage, read_only):
 
     # But keep the PVs, not sure why.
     for dev in dev1, dev2, dev3:
+        clear_stats()
         pv = lvm.getPV(dev)
+        check_stats(hits=0, misses=1)
+
         assert pv.name == dev
         assert pv.vg_name == ""
 
@@ -743,15 +768,31 @@ def test_vg_extend_reduce(tmp_storage):
 
     lvm.createVG(vg_name, [dev1], "initial-tag", 128)
 
+    clear_stats()
     vg = lvm.getVG(vg_name)
+    check_stats(hits=0, misses=1)
+
+    # Call getVG() again will get cache hit.
+    lvm.getVG(vg_name)
+    check_stats(hits=1, misses=1)
+
     assert vg.pv_name == (dev1,)
 
     lvm.extendVG(vg_name, [dev2, dev3], force=False)
+
+    clear_stats()
     vg = lvm.getVG(vg_name)
+    # Calling getVG() after extendVG() does not use the cache.
+    # This happens because extendVG() invalidates the VG.
+    check_stats(hits=0, misses=1)
+
     assert sorted(vg.pv_name) == sorted((dev1, dev2, dev3))
 
+    clear_stats()
     # The first pv (metadata pv) will have the 2 used metadata areas.
     pv = lvm.getPV(dev1)
+    check_stats(hits=0, misses=1)
+
     assert pv.name == dev1
     assert pv.vg_name == vg_name
     assert int(pv.dev_size) == dev_size
@@ -760,7 +801,10 @@ def test_vg_extend_reduce(tmp_storage):
 
     # The rest of the pvs will have 2 unused metadata areas.
     for dev in dev2, dev3:
+        clear_stats()
         pv = lvm.getPV(dev)
+        check_stats(hits=0, misses=1)
+
         assert pv.name == dev
         assert pv.vg_name == vg_name
         assert int(pv.dev_size) == dev_size
@@ -768,12 +812,20 @@ def test_vg_extend_reduce(tmp_storage):
         assert int(pv.mda_used_count) == 0
 
     lvm.reduceVG(vg_name, dev2)
+    clear_stats()
     vg = lvm.getVG(vg_name)
+    # Calling getVG() after reduceVG() does not use the cache.
+    # This happens because reduceVG() invalidates the VG.
+    check_stats(hits=0, misses=1)
+
     assert sorted(vg.pv_name) == sorted((dev1, dev3))
 
     lvm.removeVG(vg_name)
+
+    clear_stats()
     with pytest.raises(se.VolumeGroupDoesNotExist):
         lvm.getVG(vg_name)
+    check_stats(hits=0, misses=1)
 
 
 @requires_root
@@ -797,7 +849,10 @@ def test_vg_add_delete_tags(tmp_storage):
         delTags=["initial-tag"],
         addTags=["new-tag-1", "new-tag-2"])
 
+    clear_stats()
     vg = lvm.getVG(vg_name)
+    check_stats(hits=0, misses=1)
+
     assert sorted(vg.tags) == ["new-tag-1", "new-tag-2"]
 
 
@@ -868,6 +923,13 @@ def test_vg_invalidate(tmp_storage):
         (vg2_name, "lv2"): lv2,
     }
 
+    # getVGs() always reloads the cache.
+    clear_stats()
+    lvm.getVGs([vg1_name, vg2_name])
+    check_stats(hits=0, misses=1)
+
+    assert lvm._lvminfo._vgs == {vg1_name: vg1, vg2_name: vg2}
+
 
 @requires_root
 @pytest.mark.root
@@ -916,6 +978,13 @@ def test_vg_invalidate_lvs_pvs(tmp_storage):
     lv = lvm.getLV(vg_name)[0]
 
     assert lvm._lvminfo._pvs == {dev: pv}
+
+    clear_stats()
+    lvm._lvminfo.getPvs(vg_name)
+    # getPVs() first finds the VG using getVG(), so there is a cache hit.
+    # No stale PVs for the VG so getPVs() will have another cache hit.
+    check_stats(hits=2, misses=0)
+
     assert lvm._lvminfo._vgs == {vg_name: vg}
     assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lv}
 
@@ -924,6 +993,13 @@ def test_vg_invalidate_lvs_pvs(tmp_storage):
 
     assert lvm._lvminfo._vgs == {vg_name: lvm.Stub(vg_name, True)}
     assert lvm._lvminfo._pvs == {dev: lvm.Stub(dev, True)}
+
+    clear_stats()
+    lvm._lvminfo.getPvs(vg_name)
+    # getPVs() will not find the invalidated VG in cache, so there is a miss.
+    # There are stale PVs for the VG so getPVs() will have another cache miss.
+    check_stats(hits=0, misses=2)
+
     assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stub("lv1", True)}
 
 
@@ -948,7 +1024,14 @@ def test_lv_create_remove(tmp_storage, read_only):
     # Getting lv must work in both read-only and read-write modes.
     lvm.set_read_only(read_only)
 
+    clear_stats()
     lv = lvm.getLV(vg_name, lv_any)
+    check_stats(hits=0, misses=1)
+
+    # Call getLV() again will have cache hit.
+    lvm.getLV(vg_name, lv_any)
+    check_stats(hits=1, misses=1)
+
     assert lv.name == lv_any
     assert lv.vg_name == vg_name
     assert int(lv.size) == GiB
@@ -979,8 +1062,10 @@ def test_lv_create_remove(tmp_storage, read_only):
     # Testing if lv exists most work in both read-only and read-write.
     lvm.set_read_only(read_only)
     for lv_name in (lv_any, lv_specific):
+        clear_stats()
         with pytest.raises(se.LogicalVolumeDoesNotExistError):
             lvm.getLV(vg_name, lv_name)
+        check_stats(hits=0, misses=1)
 
 
 @requires_root
@@ -1089,9 +1174,15 @@ def test_vg_stale_reload_all_stub(stale_vg):
     lvm.invalidateVG(good_vg_name)
     lvm.invalidateVG(stale_vg_name)
 
+    clear_stats()
     # Report only the good vg.
     vgs = [vg.name for vg in lvm.getAllVGs()]
     assert vgs == [good_vg_name]
+    check_stats(hits=0, misses=1)
+
+    # Second call for getAllVGs() will add cache hit.
+    lvm.getAllVGs()
+    check_stats(hits=1, misses=1)
 
 
 @requires_root
@@ -1102,9 +1193,15 @@ def test_vg_stale_reload_all_clear(stale_vg):
     # Drop all cache.
     lvm.invalidateCache()
 
+    clear_stats()
     # Report only the good vg.
     vgs = [vg.name for vg in lvm.getAllVGs()]
     assert vgs == [good_vg_name]
+    check_stats(hits=0, misses=1)
+
+    # Second call for getAllVGs() will add cache hit.
+    lvm.getAllVGs()
+    check_stats(hits=1, misses=1)
 
 
 @requires_root
@@ -1511,7 +1608,9 @@ def test_retry_with_wider_filter(tmp_storage, read_only):
 
     # Force reload of the cache. The system does not know about any device at
     # this point.
+    clear_stats()
     lvm.getAllPVs()
+    check_stats(hits=0, misses=1)
 
     # Create a device - this device in not the lvm cached filter yet.
     dev = tmp_storage.create_device(20 * GiB)
@@ -1523,6 +1622,15 @@ def test_retry_with_wider_filter(tmp_storage, read_only):
     # and it succeeds.
     vg_name = str(uuid.uuid4())
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
+
+    # Calling getAllPVs() have cache miss since createVG invalidates the PVs.
+    clear_stats()
+    lvm.getAllPVs()
+    check_stats(hits=0, misses=1)
+
+    # Second call for getAllPVs() adds cache hit since the new PV was reloaded.
+    lvm.getAllPVs()
+    check_stats(hits=1, misses=1)
 
     # Checking VG must work in both read-only and read-write modes.
     lvm.set_read_only(read_only)
@@ -1596,3 +1704,13 @@ def make_lv(lv_name, vg_name):
         "/dev/mapper/a",
         "IU_image-uid,PU_00000000,MD_1",
     )
+
+
+def clear_stats():
+    lvm.clear_stats()
+
+
+def check_stats(hits, misses):
+    stats = lvm.cache_stats()
+    assert stats["hits"] == hits
+    assert stats["misses"] == misses
