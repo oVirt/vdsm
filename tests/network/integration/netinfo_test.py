@@ -182,8 +182,15 @@ class TestNetinfo(object):
 
     @pytest.mark.parametrize(
         "ip_addr, ip_netmask",
-        [(IPV4_ADDR1, IPV4_NETMASK), (IPV6_ADDR, IPV6_PREFIX_LENGTH)],
-        ids=['IPV4', 'IPV6'],
+        [
+            pytest.param(IPV4_ADDR1, IPV4_NETMASK, id="IPV4"),
+            pytest.param(
+                IPV6_ADDR,
+                IPV6_PREFIX_LENGTH,
+                id="IPV6",
+                marks=ipv6_broken_on_travis_ci,
+            ),
+        ],
     )
     def test_routes_device_to(self, ip_addr, ip_netmask):
         with dummy_device() as nic:
