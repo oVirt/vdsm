@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -194,20 +194,6 @@ class TestNetworkRollback(object):
                 adapter.assertNetwork(NET1_NAME, NETCREATE[NET1_NAME])
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
-    def test_setup_invalid_bridge_opts_fails(self, switch):
-        with dummy_devices(1) as (nic,):
-            net_attrs = {
-                'nic': nic,
-                'switch': switch,
-                'custom': {'bridge_opts': 'foo=0'},
-            }
-
-            with pytest.raises(SetupNetworksError):
-                adapter.setupNetworks({NETWORK_NAME: net_attrs}, {}, NOCHK)
-
-            adapter.update_netinfo()
-            adapter.assertNoNetwork(NETWORK_NAME)
-
     def _test_rollback_to_initial_network(self, switch, **kwargs):
         with dummy_devices(2) as (nic1, nic2):
             NETCREATE = {
@@ -235,3 +221,20 @@ class TestNetworkRollback(object):
                 adapter.update_netinfo()
                 adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
                 adapter.assertNoBond(BOND_NAME)
+
+
+@pytest.mark.legacy_switch
+@pytest.mark.nmstate
+def test_setup_invalid_bridge_opts_fails():
+    with dummy_devices(1) as (nic,):
+        net_attrs = {
+            'nic': nic,
+            'switch': 'legacy',
+            'custom': {'bridge_opts': 'foo=0'},
+        }
+
+        with pytest.raises(SetupNetworksError):
+            adapter.setupNetworks({NETWORK_NAME: net_attrs}, {}, NOCHK)
+
+        adapter.update_netinfo()
+        adapter.assertNoNetwork(NETWORK_NAME)
