@@ -38,6 +38,7 @@ from vdsm.network import nmstate
 from vdsm.network.canonicalize import bridge_opts_dict_to_sorted_str
 from vdsm.network.canonicalize import bridge_opts_str_to_dict
 from vdsm.network.cmd import exec_sync
+from vdsm.network.dhcp_monitor import MonitoredItemPool
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported, prefix2netmask
 from vdsm.network.ifacetracking import is_tracked as iface_is_tracked
@@ -819,15 +820,14 @@ class SetupNetworks(object):
             self._update_configs()
             raise SetupNetworksError(status, msg)
 
-        if self._is_dynamic_ipv4():
-            self._wait_for_dhcpv4_response(10)
-            self.vdsm_proxy.refreshNetworkCapabilities()
-        # FIXME This is just workaround, eventually we need to fix this by
-        # adding proper support for IPv6 dhcp monitoring
-        # (https://projects.engineering.redhat.com/browse/RHV-17589)
-        if self._is_dynamic_ipv6() and nmstate.is_nmstate_backend():
-            time.sleep(10)
-            self.vdsm_proxy.refreshNetworkCapabilities()
+        if nmstate.is_nmstate_backend():
+            if self._is_dynamic():
+                _wait_for_dhcp_response(10)
+                self.vdsm_proxy.refreshNetworkCapabilities()
+        else:
+            if self._is_dynamic_ipv4():
+                self._wait_for_dhcpv4_response(10)
+                self.vdsm_proxy.refreshNetworkCapabilities()
         try:
             self._update_configs()
             self._assert_configs()
@@ -873,6 +873,9 @@ class SetupNetworks(object):
 
         return status, msg
 
+    def _is_dynamic(self):
+        return self._is_dynamic_ipv4() or self._is_dynamic_ipv6()
+
     def _is_dynamic_ipv4(self):
         for attr in six.viewvalues(self.setup_networks):
             if attr.get('bootproto') == 'dhcp':
@@ -904,6 +907,10 @@ def _did_every_dhcp_server_responded(dev_names):
         if iface_is_tracked(dev_name):
             return False
     return True
+
+
+def _wait_for_dhcp_response(timeout=5):
+    _wait_for_func(MonitoredItemPool.instance().is_pool_empty, timeout)
 
 
 def _wait_for_func(func, timeout=5, **func_kwargs):

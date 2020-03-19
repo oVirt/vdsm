@@ -26,6 +26,7 @@ import time
 
 from vdsm.common.config import config
 from vdsm.network import dhclient_monitor
+from vdsm.network import dhcp_monitor
 from vdsm.network import lldp
 from vdsm.network import nmstate
 from vdsm.network.dhclient_monitor import dhclient_monitor_ctx
@@ -41,20 +42,30 @@ def init_privileged_network_components():
 
 
 def init_unprivileged_network_components(cif, net_api):
-    _init_sourceroute(net_api)
-    _register_notifications(cif)
-    dhclient_monitor.start()
+    if nmstate.is_nmstate_backend():
+        dhcp_monitor.initialize_monitor(cif, net_api)
+    else:
+        _init_sourceroute(net_api)
+        _register_notifications(cif)
+        dhclient_monitor.start()
 
 
 def stop_unprivileged_network_components():
-    dhclient_monitor.stop()
+    if nmstate.is_nmstate_backend():
+        dhcp_monitor.Monitor.instance().stop()
+    else:
+        dhclient_monitor.stop()
 
 
 @contextmanager
 def init_unpriviliged_dhclient_monitor_ctx(event_sink, net_api):
-    _init_sourceroute(net_api)
-    _register_notifications(event_sink)
-    with dhclient_monitor_ctx():
+    if nmstate.is_nmstate_backend():
+        ctx = dhcp_monitor.initialize_monitor_ctx(event_sink, net_api)
+    else:
+        _init_sourceroute(net_api)
+        _register_notifications(event_sink)
+        ctx = dhclient_monitor_ctx()
+    with ctx:
         yield
 
 

@@ -29,7 +29,6 @@ from vdsm.common.cache import memoized
 from vdsm.common.time import monotonic_time
 from vdsm.network import connectivity
 from vdsm.network import dns
-from vdsm.network import ifacetracking
 from vdsm.network import ifacquire
 from vdsm.network import legacy_switch
 from vdsm.network import errors as ne
@@ -37,6 +36,7 @@ from vdsm.network import nmstate
 from vdsm.network import sourceroute
 from vdsm.network.configurators.ifcfg import Ifcfg, ConfigWriter
 from vdsm.network.configurators import qos
+from vdsm.network.dhcp_monitor import MonitoredItemPool
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.link import dpdk
@@ -255,11 +255,19 @@ def get_next_hop_interface(net_name, net_attributes):
 
 
 def _setup_dynamic_src_routing(networks):
+    pool = MonitoredItemPool.instance()
     for net_name, net_attrs in six.viewitems(networks):
         is_remove = net_attrs.get('remove', False)
-        is_dynamic = net_attrs.get('bootproto') == 'dhcp'
-        if is_dynamic and not is_remove:
-            ifacetracking.add(_get_network_iface(net_name, net_attrs))
+        is_dhcpv4 = net_attrs.get('bootproto') == 'dhcp'
+        is_dhcpv6 = net_attrs.get('dhcpv6', False)
+        iface = _get_network_iface(net_name, net_attrs)
+        if is_remove:
+            continue
+
+        if is_dhcpv4:
+            pool.add((iface, 4))
+        if is_dhcpv6:
+            pool.add((iface, 6))
 
 
 def _configure_qos(net_attrs, out):

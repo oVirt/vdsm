@@ -75,9 +75,13 @@ function setup_vdsm_runtime_environment {
         && \
         install -d /var/run/vdsm/dhclientmon -m 755 -o vdsm && \
         install -d /var/run/vdsm/trackedInterfaces -m 755 -o vdsm && \
-        cp $CONTAINER_WORKSPACE/static/etc/dhcp/dhclient.d/dhclientmon.sh /etc/dhcp/dhclient.d/ && \
         cp $CONTAINER_WORKSPACE/static/etc/NetworkManager/conf.d/vdsm.conf /etc/NetworkManager/conf.d/
     "
+    if [ $BACKEND == $BACKEND_LEGACY ];then
+        container_exec "cp $CONTAINER_WORKSPACE/static/etc/dhcp/dhclient.d/dhclientmon.sh /etc/dhcp/dhclient.d/"
+    elif [ $BACKEND == $BACKEND_NMSTATE ];then
+        container_exec "cp $CONTAINER_WORKSPACE/static/etc/NetworkManager/dispatcher.d/dhcp_monitor.py etc/NetworkManager/dispatcher.d/"
+    fi
 }
 
 function setup_vdsm_sources_for_testing {

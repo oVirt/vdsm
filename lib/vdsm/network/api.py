@@ -34,6 +34,7 @@ from vdsm.network import netstats
 from vdsm.network import netswitch
 from vdsm.network import sourceroute
 from vdsm.network import validator
+from vdsm.network.dhcp_monitor import MonitoredItemPool
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import iface as link_iface
 from vdsm.network.link import sriov
@@ -324,8 +325,22 @@ def setSafeNetworkConfig():
     netswitch.configurator.persist()
 
 
-def add_sourceroute(iface, ip, mask, route):
-    sourceroute.add(iface, ip, mask, route)
+def add_sourceroute(iface, ip, mask, route, family=None):
+    if not family:
+        family = 4
+    else:
+        pool = MonitoredItemPool.instance()
+        item = (iface, family)
+        if pool.is_item_in_pool(item):
+            pool.remove(item)
+        else:
+            logging.warning(
+                f'Nic {iface} is not configured for IPv{family} monitoring.'
+            )
+            return
+
+    if family == 4:
+        sourceroute.add(iface, ip, mask, route)
 
 
 def remove_sourceroute(iface):

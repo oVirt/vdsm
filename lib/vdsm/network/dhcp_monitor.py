@@ -131,9 +131,20 @@ class _MonitorHandler(socketserver.BaseRequestHandler):
 
 
 def initialize_monitor(cif, netapi):
+    def _src_route_handler(event):
+        netapi.add_sourceroute(
+            event[ResponseField.IFACE],
+            event[ResponseField.IPADDR],
+            event[ResponseField.IPMASK],
+            event[ResponseField.IPROUTE],
+            event[ResponseField.FAMILY],
+        )
+
     global _monitor_instance
     try:
         monitor = Monitor.instance()
+        monitor.add_handler(lambda event: cif.notify('|net|host_conn|no_id'))
+        monitor.add_handler(_src_route_handler)
         monitor.start()
     except Exception as e:
         _monitor_instance = None
