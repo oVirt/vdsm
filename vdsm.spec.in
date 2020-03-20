@@ -189,9 +189,10 @@ Requires: nfs-utils
 %endif
 
 %if %{with_ovirt_imageio}
-Requires: ovirt-imageio-common
-# For GET /tickets/*
-Requires: ovirt-imageio-daemon >= 1.2.0
+# For kvm2ovirt
+Requires: ovirt-imageio-common == 1.6.3
+# For controlling /tickets
+Requires: ovirt-imageio-daemon == 1.6.3
 %endif
 
 %if %{with_ovirt_vmconsole}
