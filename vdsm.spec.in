@@ -183,7 +183,7 @@ Obsoletes: %{name}-infra < 4.19
 %if 0%{?rhel}
 # Required for supporting minorversion mount option
 # See https://bugzilla.redhat.com/1547681 for details.
-Requires: nfs-utils >= 1.3.0-0.48.el7_4.2
+Requires: nfs-utils >= 1:1.3.0-0.48.el7_4.2
 %else # fedora
 Requires: nfs-utils
 %endif
@@ -286,7 +286,8 @@ Requires: cyrus-sasl-scram
 # Required for solving bug 1575762
 Requires: lvm2 >= 2.02.177-5
 %else
-Requires: lvm2 >= 2.02.145
+# EL 8.1 baseline.
+Requires: lvm2 >= 8:2.03
 %endif
 
 %if 0%{?rhel}
