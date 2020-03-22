@@ -849,11 +849,26 @@ class LVMCache(object):
         return list(six.itervalues(vgs))
 
     def getLv(self, vgName, lvName=None):
-        # Return vgName/lvName info
-        # If both 'vgName' and 'lvName' are None then return everything
-        # If only 'lvName' is None then return all the LVs in the given VG
-        # If only 'vgName' is None it is weird, so return nothing
-        # (we can consider returning all the LVs with a given name)
+        """
+        Get specific LV or all LVs in specified VG.
+
+        If there are any stale LVs reload the whole VG, since it would
+        cost us around same efforts anyhow and these stale LVs can
+        be in the vg.
+
+        We never return Stub or Unreadable LVs when
+        getting all LVs for a VG, but may return a Stub or an Unreadable
+        LV when LV name is specified as argument.
+
+        Arguments:
+            vgName (str): VG name to query.
+            lvName (str): Optional LV name.
+
+        Returns:
+            LV nameduple if lvName is specified, otherwise list of LV
+            namedtuple for all lvs in VG vgName.
+        """
+
         if lvName:
             # vgName, lvName
             lv = self._lvs.get((vgName, lvName))
@@ -864,25 +879,19 @@ class LVMCache(object):
                 lv = lvs.get((vgName, lvName))
             else:
                 self._hit()
-            res = lv
+
+            return lv
+
+        if self._lvs_needs_reload(vgName):
+            self._miss()
+            lvs = self._reloadlvs(vgName)
         else:
-            # vgName, None
-            # If there any stale LVs reload the whole VG, since it would
-            # cost us around same efforts anyhow and these stale LVs can
-            # be in the vg.
-            # Will be better when the pvs dict will be part of the vg.
-            # Fix me: should not be more stubs
-            if self._lvs_needs_reload(vgName):
-                self._miss()
-                lvs = self._reloadlvs(vgName)
-            else:
-                self._hit()
-                lvs = dict(self._lvs)
-            # lvs = self._reloadlvs()
-            lvs = [lv for lv in lvs.values()
-                   if not isinstance(lv, Stub) and (lv.vg_name == vgName)]
-            res = lvs
-        return res
+            self._hit()
+            lvs = dict(self._lvs)
+
+        lvs = [lv for lv in lvs.values()
+               if not isinstance(lv, Stub) and (lv.vg_name == vgName)]
+        return lvs
 
     def stats(self):
         with self._lock:
