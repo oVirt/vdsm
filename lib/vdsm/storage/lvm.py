@@ -845,9 +845,6 @@ class LVMCache(object):
                 # while we here reload all the LVs in the VG
                 lvs = self._reloadlvs(vgName)
                 lv = lvs.get((vgName, lvName))
-                if not lv:
-                    log.warning("lv: %s not found in lvs vg: %s response",
-                                lvName, vgName)
             res = lv
         else:
             # vgName, None
