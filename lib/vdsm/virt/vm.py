@@ -4416,7 +4416,7 @@ class Vm(object):
             hooks.after_vm_set_ticket(self._domain.xml, self._custom, params)
             return {}
 
-    def _reviveTicket(self, newlife):
+    def reviveTicket(self, newlife):
         """
         Revive an existing ticket, if it has expired or about to expire.
         Needs to be called only if Vm.hasSpice == True

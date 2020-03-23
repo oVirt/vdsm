@@ -86,6 +86,21 @@ class PostCopyPhase:
     RUNNING = 2
 
 
+@virdomain.expose(
+    "migrateToURI3",
+    "migrateSetMaxSpeed",
+    "state",
+    "migrateSetMaxDowntime",
+)
+class DomainAdapter(object):
+    """
+    VM wrapper class that expose only
+    libvirt backup related operations
+    """
+    def __init__(self, vm):
+        self._vm = vm
+
+
 class SourceThread(object):
     """
     A thread that takes care of migration on the source vdsm.
@@ -102,6 +117,7 @@ class SourceThread(object):
                  **kwargs):
         self.log = vm.log
         self._vm = vm
+        self._dom = DomainAdapter(self._vm)
         self._dst = dst
         self._mode = mode
         self._dstparams = dstparams
@@ -518,7 +534,7 @@ class SourceThread(object):
     def _perform_migration(self, duri, muri):
         if self._vm.hasSpice and self._vm.conf.get('clientIp'):
             SPICE_MIGRATION_HANDOVER_TIME = 120
-            self._vm._reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
+            self._vm.reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
 
         # FIXME: there still a race here with libvirt,
         # if we call stop() and libvirt migrateToURI3 didn't start
@@ -526,9 +542,10 @@ class SourceThread(object):
         # side
         self._preparingMigrationEvt = False
         if not self._migrationCanceledEvt.is_set():
-            self._vm._dom.migrateToURI3(duri,
-                                        self._migration_params(muri),
-                                        self._migration_flags)
+            # pylint: disable=no-member
+            self._dom.migrateToURI3(duri,
+                                    self._migration_params(muri),
+                                    self._migration_flags)
         else:
             self._raiseAbortError()
 
@@ -626,7 +643,7 @@ class SourceThread(object):
     def set_max_bandwidth(self, bandwidth):
         self._vm.log.debug('setting migration max bandwidth to %d', bandwidth)
         self._maxBandwidth = bandwidth
-        self._vm._dom.migrateSetMaxSpeed(bandwidth)
+        self._dom.migrateSetMaxSpeed(bandwidth)  # pylint: disable=no-member
 
     def stop(self):
         # if its locks we are before the migrateToURI3()
@@ -650,7 +667,8 @@ class SourceThread(object):
         self.log.debug("Recovered migration finished")
         # Successful migration is handled in VM.onJobCompleted, here we need
         # just to ensure that migration failures are detected and handled.
-        if self._vm._dom.state(0)[0] == libvirt.VIR_DOMAIN_RUNNING:
+        # pylint: disable=no-member
+        if self._dom.state(0)[0] == libvirt.VIR_DOMAIN_RUNNING:
             self.recovery_cleanup()
 
     def recovery_cleanup(self):
@@ -687,6 +705,7 @@ class MonitorThread(object):
         super(MonitorThread, self).__init__()
         self._stop = threading.Event()
         self._vm = vm
+        self._dom = DomainAdapter(self._vm)
         self._startTime = startTime
         self.daemon = True
         self.progress = None
@@ -814,7 +833,8 @@ class MonitorThread(object):
         if action == CONVERGENCE_SCHEDULE_SET_DOWNTIME:
             downtime = int(action_with_params['params'][0])
             vm.log.debug('Setting downtime to %d', downtime)
-            vm._dom.migrateSetMaxDowntime(downtime, 0)
+            # pylint: disable=no-member
+            self._dom.migrateSetMaxDowntime(downtime, 0)
         elif action == CONVERGENCE_SCHEDULE_POST_COPY:
             if not self._vm.switch_migration_to_post_copy():
                 # Do nothing for now; the next action will be invoked after a
