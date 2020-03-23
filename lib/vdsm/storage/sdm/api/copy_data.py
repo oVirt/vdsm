@@ -82,7 +82,8 @@ class Job(base.Job):
                         backingFormat=self._dest.backing_qemu_format,
                         preallocation=self._dest.preallocation,
                         unordered_writes=self._dest
-                            .recommends_unordered_writes)
+                            .recommends_unordered_writes,
+                        create=not self._dest.volume.is_block())
                     self._operation.run()
 
 

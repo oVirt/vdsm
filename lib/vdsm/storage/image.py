@@ -461,7 +461,10 @@ class Image:
                         backingFormat=backingFormat,
                         preallocation=preallocation,
                         unordered_writes=destDom.recommends_unordered_writes(
-                            dstVol.getFormat()))
+                            dstVol.getFormat()),
+                        create=(destDom.getStorageType() not in
+                                sd.BLOCK_DOMAIN_TYPES)
+                    )
                     with utils.stopwatch("Copy volume %s"
                                          % srcVol.volUUID):
                         self._run_qemuimg_operation(operation)
@@ -750,7 +753,10 @@ class Image:
                         dstQcow2Compat=destDom.qcow2_compat(),
                         preallocation=preallocation,
                         unordered_writes=destDom.recommends_unordered_writes(
-                            dstVolFormat))
+                            dstVolFormat),
+                        create=(destDom.getStorageType() not in
+                                sd.BLOCK_DOMAIN_TYPES)
+                    )
                     with utils.stopwatch("Copy volume %s"
                                          % srcVol.volUUID):
                         self._run_qemuimg_operation(operation)

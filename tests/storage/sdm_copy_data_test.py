@@ -64,10 +64,14 @@ from vdsm.storage import volume
 from vdsm.storage import workarounds
 from vdsm.storage.sdm.api import copy_data
 
+DEFAULT_SIZE = MiB
+
+xfail_block = pytest.mark.xfail(
+    reason="Doesn't work when -n flag is used by qemu-img")
+
 
 @expandPermutations
 class TestCopyDataDIV(VdsmTestCase):
-    DEFAULT_SIZE = MiB
 
     def setUp(self):
         self.scheduler = FakeScheduler()
@@ -76,86 +80,6 @@ class TestCopyDataDIV(VdsmTestCase):
 
     def tearDown(self):
         jobs._clear()
-
-    @contextmanager
-    def make_env(self, storage_type, src_fmt, dst_fmt, chain_length=1,
-                 size=DEFAULT_SIZE, sd_version=3,
-                 src_qcow2_compat='0.10', prealloc=sc.SPARSE_VOL):
-        with fake_env(storage_type, sd_version=sd_version) as env:
-            rm = FakeResourceManager()
-            with MonkeyPatchScope([
-                (guarded, 'context', fake_guarded_context()),
-                (copy_data, 'sdCache', env.sdcache),
-                (blockVolume, 'rm', rm),
-            ]):
-                # Create existing volume - may use compat 0.10 or 1.1.
-                src_vols = make_qemu_chain(env, size, src_fmt, chain_length,
-                                           qcow2_compat=src_qcow2_compat,
-                                           prealloc=prealloc)
-                # New volumes are always created using the domain
-                # prefered format.
-                sd_compat = env.sd_manifest.qcow2_compat()
-                dst_vols = make_qemu_chain(env, size, dst_fmt, chain_length,
-                                           qcow2_compat=sd_compat,
-                                           prealloc=prealloc)
-                env.src_chain = src_vols
-                env.dst_chain = dst_vols
-                yield env
-
-    def expected_locks(self, src_vol, dst_vol):
-        src_img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, src_vol.sdUUID)
-        dst_img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, dst_vol.sdUUID)
-        ret = [
-            # Domain lock for each volume
-            rm.ResourceManagerLock(sc.STORAGE, src_vol.sdUUID, rm.SHARED),
-            rm.ResourceManagerLock(sc.STORAGE, dst_vol.sdUUID, rm.SHARED),
-            # Image lock for each volume, exclusive for the destination
-            rm.ResourceManagerLock(src_img_ns, src_vol.imgUUID, rm.SHARED),
-            rm.ResourceManagerLock(dst_img_ns, dst_vol.imgUUID, rm.EXCLUSIVE),
-            # Volume lease for the destination volume
-            volume.VolumeLease(
-                0, dst_vol.sdUUID, dst_vol.imgUUID, dst_vol.volUUID)
-        ]
-        return ret
-
-    @permutations((
-        ('file', 'raw', 'raw'),
-        ('file', 'raw', 'cow'),
-        ('file', 'cow', 'raw'),
-        ('file', 'cow', 'cow'),
-        ('block', 'raw', 'raw'),
-        ('block', 'raw', 'cow'),
-        ('block', 'cow', 'raw'),
-        ('block', 'cow', 'cow'),
-    ))
-    def test_intra_domain_copy(self, env_type, src_fmt, dst_fmt):
-        src_fmt = sc.name2type(src_fmt)
-        dst_fmt = sc.name2type(dst_fmt)
-        job_id = make_uuid()
-
-        with self.make_env(env_type, src_fmt, dst_fmt) as env:
-            src_vol = env.src_chain[0]
-            dst_vol = env.dst_chain[0]
-            write_qemu_chain(env.src_chain)
-            self.assertRaises(qemuio.VerificationError,
-                              verify_qemu_chain, env.dst_chain)
-
-            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
-            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
-            job = copy_data.Job(job_id, 0, source, dest)
-
-            job.run()
-            self.assertEqual(sorted(self.expected_locks(src_vol, dst_vol)),
-                             sorted(guarded.context.locks))
-
-            self.assertEqual(jobs.STATUS.DONE, job.status)
-            self.assertEqual(100.0, job.progress)
-            self.assertNotIn('error', job.info())
-            verify_qemu_chain(env.dst_chain)
-            self.assertEqual(sc.fmt2str(dst_fmt),
-                             qemuimg.info(dst_vol.volumePath)['format'])
 
     @permutations((
         ('file', 'raw', 'raw', (0, 1)),
@@ -167,8 +91,8 @@ class TestCopyDataDIV(VdsmTestCase):
         src_fmt = sc.name2type(src_fmt)
         dst_fmt = sc.name2type(dst_fmt)
         nr_vols = len(copy_seq)
-        with self.make_env(env_type, src_fmt, dst_fmt,
-                           chain_length=nr_vols) as env:
+        with make_env(env_type, src_fmt, dst_fmt,
+                      chain_length=nr_vols) as env:
             write_qemu_chain(env.src_chain)
             for index in copy_seq:
                 job_id = make_uuid()
@@ -180,15 +104,15 @@ class TestCopyDataDIV(VdsmTestCase):
                             img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
                 job = copy_data.Job(job_id, 0, source, dest)
                 job.run()
-                self.assertEqual(sorted(self.expected_locks(src_vol, dst_vol)),
+                self.assertEqual(sorted(expected_locks(src_vol, dst_vol)),
                                  sorted(guarded.context.locks))
             verify_qemu_chain(env.dst_chain)
 
     def test_preallocated_file_volume_copy(self):
         job_id = make_uuid()
 
-        with self.make_env('file', sc.RAW_FORMAT, sc.RAW_FORMAT,
-                           prealloc=sc.PREALLOCATED_VOL) as env:
+        with make_env('file', sc.RAW_FORMAT, sc.RAW_FORMAT,
+                      prealloc=sc.PREALLOCATED_VOL) as env:
             write_qemu_chain(env.src_chain)
             src_vol = env.src_chain[0]
             dst_vol = env.dst_chain[0]
@@ -220,8 +144,8 @@ class TestCopyDataDIV(VdsmTestCase):
         dst_fmt = sc.name2type("cow")
         job_id = make_uuid()
 
-        with self.make_env(env_type, src_fmt, dst_fmt, sd_version=sd_version,
-                           src_qcow2_compat=qcow2_compat) as env:
+        with make_env(env_type, src_fmt, dst_fmt, sd_version=sd_version,
+                      src_qcow2_compat=qcow2_compat) as env:
             src_vol = env.src_chain[0]
             dst_vol = env.dst_chain[0]
             source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
@@ -250,8 +174,8 @@ class TestCopyDataDIV(VdsmTestCase):
 
         vm_conf_data = "VM Configuration".ljust(512)
 
-        with self.make_env('file', sc.COW_FORMAT, sc.COW_FORMAT,
-                           size=workarounds.VM_CONF_SIZE) as env:
+        with make_env('file', sc.COW_FORMAT, sc.COW_FORMAT,
+                      size=workarounds.VM_CONF_SIZE) as env:
             src_vol = env.src_chain[0]
             dst_vol = env.dst_chain[0]
 
@@ -283,7 +207,7 @@ class TestCopyDataDIV(VdsmTestCase):
                               final_legality, final_status, final_gen):
         job_id = make_uuid()
         fmt = sc.RAW_FORMAT
-        with self.make_env(env_type, fmt, fmt) as env:
+        with make_env(env_type, fmt, fmt) as env:
             src_vol = env.src_chain[0]
             dst_vol = env.dst_chain[0]
 
@@ -309,7 +233,7 @@ class TestCopyDataDIV(VdsmTestCase):
     @permutations((('file',), ('block',)))
     def test_abort_during_copy(self, env_type):
         fmt = sc.RAW_FORMAT
-        with self.make_env(env_type, fmt, fmt) as env:
+        with make_env(env_type, fmt, fmt) as env:
             src_vol = env.src_chain[0]
             dst_vol = env.dst_chain[0]
             gen_id = dst_vol.getMetaParam(sc.GENERATION)
@@ -337,7 +261,7 @@ class TestCopyDataDIV(VdsmTestCase):
 
     def test_wrong_generation(self):
         fmt = sc.RAW_FORMAT
-        with self.make_env('block', fmt, fmt) as env:
+        with make_env('block', fmt, fmt) as env:
             src_vol = env.src_chain[0]
             dst_vol = env.dst_chain[0]
             generation = dst_vol.getMetaParam(sc.GENERATION)
@@ -357,6 +281,46 @@ class TestCopyDataDIV(VdsmTestCase):
 
     # TODO: Missing tests:
     # Copy between 2 different domains
+
+
+@pytest.mark.parametrize("env_type,src_fmt,dst_fmt", [
+    pytest.param('file', 'raw', 'raw'),
+    pytest.param('file', 'raw', 'cow'),
+    pytest.param('file', 'cow', 'raw'),
+    pytest.param('file', 'cow', 'cow'),
+    pytest.param('block', 'raw', 'raw'),
+    pytest.param('block', 'raw', 'cow', marks=xfail_block),
+    pytest.param('block', 'cow', 'raw'),
+    pytest.param('block', 'cow', 'cow'),
+])
+def test_intra_domain_copy(env_type, src_fmt, dst_fmt):
+    src_fmt = sc.name2type(src_fmt)
+    dst_fmt = sc.name2type(dst_fmt)
+    job_id = make_uuid()
+
+    with make_env(env_type, src_fmt, dst_fmt) as env:
+        src_vol = env.src_chain[0]
+        dst_vol = env.dst_chain[0]
+        write_qemu_chain(env.src_chain)
+        with pytest.raises(qemuio.VerificationError):
+            verify_qemu_chain(env.dst_chain)
+
+        source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
+                      img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
+        dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
+                    img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+        job = copy_data.Job(job_id, 0, source, dest)
+
+        job.run()
+        assert (sorted(expected_locks(src_vol, dst_vol)) ==
+                sorted(guarded.context.locks))
+
+        assert jobs.STATUS.DONE == job.status
+        assert 100.0 == job.progress
+        assert 'error' not in job.info()
+        verify_qemu_chain(env.dst_chain)
+        assert (sc.fmt2str(dst_fmt) == qemuimg.info(
+            dst_vol.volumePath)['format'])
 
 
 @pytest.mark.parametrize(
@@ -454,6 +418,49 @@ def create_chain(dom, chain_size=2):
         parent_vol_id = vol_id
 
     return volumes
+
+
+@contextmanager
+def make_env(storage_type, src_fmt, dst_fmt, chain_length=1,
+             size=DEFAULT_SIZE, sd_version=3,
+             src_qcow2_compat='0.10', prealloc=sc.SPARSE_VOL):
+    with fake_env(storage_type, sd_version=sd_version) as env:
+        rm = FakeResourceManager()
+        with MonkeyPatchScope([
+            (guarded, 'context', fake_guarded_context()),
+            (copy_data, 'sdCache', env.sdcache),
+            (blockVolume, 'rm', rm),
+        ]):
+            # Create existing volume - may use compat 0.10 or 1.1.
+            src_vols = make_qemu_chain(env, size, src_fmt, chain_length,
+                                       qcow2_compat=src_qcow2_compat,
+                                       prealloc=prealloc)
+            # New volumes are always created using the domain
+            # prefered format.
+            sd_compat = env.sd_manifest.qcow2_compat()
+            dst_vols = make_qemu_chain(env, size, dst_fmt, chain_length,
+                                       qcow2_compat=sd_compat,
+                                       prealloc=prealloc)
+            env.src_chain = src_vols
+            env.dst_chain = dst_vols
+            yield env
+
+
+def expected_locks(src_vol, dst_vol):
+    src_img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, src_vol.sdUUID)
+    dst_img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, dst_vol.sdUUID)
+    ret = [
+        # Domain lock for each volume
+        rm.ResourceManagerLock(sc.STORAGE, src_vol.sdUUID, rm.SHARED),
+        rm.ResourceManagerLock(sc.STORAGE, dst_vol.sdUUID, rm.SHARED),
+        # Image lock for each volume, exclusive for the destination
+        rm.ResourceManagerLock(src_img_ns, src_vol.imgUUID, rm.SHARED),
+        rm.ResourceManagerLock(dst_img_ns, dst_vol.imgUUID, rm.EXCLUSIVE),
+        # Volume lease for the destination volume
+        volume.VolumeLease(
+            0, dst_vol.sdUUID, dst_vol.imgUUID, dst_vol.volUUID)
+    ]
+    return ret
 
 
 class FakeQemuConvertChecker(object):
