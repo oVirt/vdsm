@@ -649,7 +649,7 @@ def volumeSetHelpXml():
     try:
         out = _execGluster(command)
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterVolumeSetHelpXmlFailedException(e.rc, e.err)
+        raise ge.GlusterVolumeSetHelpXmlFailedException(rc=e.rc, err=e.err)
     return _parseVolumeSetHelpXml(out)
 
 
