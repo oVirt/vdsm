@@ -1503,34 +1503,6 @@ def test_lv_reload_error_all_stub_other_vgs(fake_devices, no_delay):
     assert not isinstance(other_lv, lvm.Unreadable)
 
 
-@pytest.mark.xfail(reason="Stub lv in one vg causes reload for another")
-def test_lv_reload_fresh_vg(fake_devices, no_delay):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
-    lv1 = make_lv("lv1", "vg1")
-
-    # vg1's lvs are fresh, vg2's lvs were invalidated.
-    lc._freshlv = set(["vg1", "vg2"])
-    lc._lvs = {
-        ("vg1", "lv1"): lv1,
-        ("vg2", "lv2"): lvm.Stub("lv2", True),
-    }
-
-    # getLv for vg1 should use cache without reload lvs.
-    assert lc.getLv("vg1") == [lv1]
-
-    # getLv for vg2 should reload lvs.
-    assert lc.getLv("vg2") == []
-
-
-def test_lv_reload_for_stale_vg(fake_devices, no_delay):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
-
-    # getLv call should call reload lvs.
-    lc.getLv("vg")
-
-
 @requires_root
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
