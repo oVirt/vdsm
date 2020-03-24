@@ -36,12 +36,12 @@ def test_encode_should_handle_strings(value, expected):
     assert encode_value(value) == expected
 
 
-@pytest.mark.xpass("needs to be removed - decoding doesn't do the opposite")
+# TODO: needs to be removed - decoding doesn't do the opposite
 def test_encode_should_handle_ints():
     assert encode_value(5) == b'5'
 
 
-@pytest.mark.xpass("to be removed when we go py3-only")
+# TODO: to be removed when we go py3-only
 def test_encode_should_accept_bytes():
     assert encode_value(b'abc') == b'abc'
 
