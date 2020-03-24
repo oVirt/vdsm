@@ -1576,6 +1576,10 @@ class BlockStorageDomain(sd.StorageDomain):
                     # Forcibly rebooting the SPM host would be safer. ???
                     raise se.StorageDomainMasterUnmountError(masterdir, 1)
 
+    @classmethod
+    def is_block(cls):
+        return True
+
     def unmountMaster(self):
         """
         Unmount the master metadata file system. Should be called only by SPM.

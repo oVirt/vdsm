@@ -462,8 +462,7 @@ class Image:
                         preallocation=preallocation,
                         unordered_writes=destDom.recommends_unordered_writes(
                             dstVol.getFormat()),
-                        create=(destDom.getStorageType() not in
-                                sd.BLOCK_DOMAIN_TYPES)
+                        create=not destDom.is_block(),
                     )
                     with utils.stopwatch("Copy volume %s"
                                          % srcVol.volUUID):
@@ -754,8 +753,7 @@ class Image:
                         preallocation=preallocation,
                         unordered_writes=destDom.recommends_unordered_writes(
                             dstVolFormat),
-                        create=(destDom.getStorageType() not in
-                                sd.BLOCK_DOMAIN_TYPES)
+                        create=not destDom.is_block(),
                     )
                     with utils.stopwatch("Copy volume %s"
                                          % srcVol.volUUID):

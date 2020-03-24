@@ -1387,6 +1387,13 @@ class StorageDomain(object):
                 alignment=alignment,
                 block_size=block_size)
 
+    @classmethod
+    def is_block(cls):
+        """
+        Returns whether a Storage Domain is block-based
+        """
+        return False
+
     def external_leases_path(self):
         return self._manifest.external_leases_path()
 
