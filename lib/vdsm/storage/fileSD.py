@@ -644,6 +644,10 @@ class FileStorageDomain(sd.StorageDomain):
 
         return True
 
+    @classmethod
+    def is_block(cls):
+        return False
+
     def getRemotePath(self):
         return self._manifest.remotePath
 
