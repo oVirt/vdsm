@@ -57,6 +57,8 @@ DHCPv4_GATEWAY = IPv4_ADDRESS
 DHCPv6_RANGE_FROM = 'fdb3:84e5:4ff4:55e3::a'
 DHCPv6_RANGE_TO = 'fdb3:84e5:4ff4:55e3::64'
 
+IPv4_DNS = ['1.1.1.1', '2.2.2.2']
+
 
 class NetworkIPConfig(object):
     def __init__(
@@ -511,6 +513,28 @@ def test_dynamic_ipv4_vlan_net_switch_to_static_with_running_dhcp_server(
         nic=dynamic_vlaned_ipv4_iface_with_dhcp_server,
         vlan=VLAN,
     )
+
+
+@nftestlib.parametrize_bridged
+@nftestlib.parametrize_legacy_switch
+@pytest.mark.nmstate
+@pytest.mark.xfail(
+    condition=nftestlib.is_nmstate_backend(), reason='BZ#1815112', strict=True
+)
+def test_add_static_dns_with_dhcp(dynamic_ipv4_iface1, switch, bridged):
+    network_attrs = {
+        'bridged': bridged,
+        'nic': dynamic_ipv4_iface1,
+        'blockingdhcp': True,
+        'switch': switch,
+        'defaultRoute': True,
+        'bootproto': 'dhcp',
+        'nameservers': IPv4_DNS,
+    }
+    netcreate = {NETWORK_NAME: network_attrs}
+
+    with adapter.setupNetworks(netcreate, {}, NOCHK):
+        adapter.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
 
 
 def _test_dynamic_ip_switch_to_static(

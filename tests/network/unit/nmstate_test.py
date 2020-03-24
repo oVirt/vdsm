@@ -959,6 +959,57 @@ class TestDns(object):
 
         assert expected_state == state[nmstate.DNS.KEY]
 
+    def test_dns_add_network_with_dynamic_ip(self):
+        networks = {
+            TESTNET1: create_network_config(
+                'nic',
+                IFACE0,
+                bridged=False,
+                default_route=True,
+                dynamic_ip_configuration=create_dynamic_ip_configuration(
+                    dhcpv4=True, dhcpv6=False, ipv6autoconf=False
+                ),
+            )
+        }
+        iface_state = create_ethernet_iface_state(name=IFACE0)
+        iface_state.update(create_ipv4_state(dynamic=True, default_route=True))
+        iface_state.update(create_ipv6_state())
+        expected_state = {nmstate.Interface.KEY: [iface_state]}
+
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        assert expected_state == state
+
+    def test_dns_add_network_with_dynamic_ip_and_static_dns(self):
+        networks = {
+            TESTNET1: create_network_config(
+                'nic',
+                IFACE0,
+                bridged=False,
+                default_route=True,
+                dynamic_ip_configuration=create_dynamic_ip_configuration(
+                    dhcpv4=True, dhcpv6=False, ipv6autoconf=False
+                ),
+                nameservers=DNS_SERVERS1,
+            )
+        }
+
+        iface_state = create_ethernet_iface_state(name=IFACE0)
+        iface_state.update(
+            create_ipv4_state(dynamic=True, default_route=True, auto_dns=False)
+        )
+        iface_state.update(create_ipv6_state())
+        expected_state = {
+            nmstate.Interface.KEY: [iface_state],
+            nmstate.DNS.KEY: {
+                nmstate.DNS.CONFIG: {nmstate.DNS.SERVER: DNS_SERVERS1}
+            },
+        }
+
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        assert expected_state == state
+
 
 class TestMtu(object):
     def test_single_network_with_specific_mtu(self, current_state_mock):

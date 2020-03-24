@@ -128,14 +128,18 @@ def disable_iface_ip(*ifaces_states):
 
 
 def create_ipv4_state(
-    address=None, prefix=None, dynamic=False, default_route=False
+    address=None,
+    prefix=None,
+    dynamic=False,
+    default_route=False,
+    auto_dns=True,
 ):
     state = {nmstate.Interface.IPV4: {nmstate.InterfaceIP.ENABLED: False}}
     if dynamic:
         state[nmstate.Interface.IPV4] = {
             nmstate.InterfaceIP.ENABLED: True,
             nmstate.InterfaceIP.DHCP: True,
-            nmstate.InterfaceIP.AUTO_DNS: default_route,
+            nmstate.InterfaceIP.AUTO_DNS: default_route and auto_dns,
             nmstate.InterfaceIP.AUTO_GATEWAY: default_route,
             nmstate.InterfaceIP.AUTO_ROUTES: default_route,
         }
@@ -154,7 +158,11 @@ def create_ipv4_state(
 
 
 def create_ipv6_state(
-    address=None, prefix=None, dynamic=False, default_route=False
+    address=None,
+    prefix=None,
+    dynamic=False,
+    default_route=False,
+    auto_dns=True,
 ):
     state = {nmstate.Interface.IPV6: {nmstate.InterfaceIP.ENABLED: False}}
     if dynamic:
@@ -162,7 +170,7 @@ def create_ipv6_state(
             nmstate.InterfaceIP.ENABLED: True,
             nmstate.InterfaceIP.DHCP: True,
             'autoconf': True,
-            nmstate.InterfaceIP.AUTO_DNS: default_route,
+            nmstate.InterfaceIP.AUTO_DNS: default_route and auto_dns,
             nmstate.InterfaceIP.AUTO_GATEWAY: default_route,
             nmstate.InterfaceIP.AUTO_ROUTES: default_route,
         }
