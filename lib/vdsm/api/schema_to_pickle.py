@@ -30,10 +30,10 @@ from vdsm.common.compat import pickle
 
 
 def _load_yaml_file(file_path):
-    if hasattr(yaml, 'CLoader'):
+    if hasattr(yaml, 'CSafeLoader'):
         loader = yaml.CLoader
     else:
-        loader = yaml.Loader
+        loader = yaml.SafeLoader
     yaml_file = yaml.load(file_path, Loader=loader)
     return yaml_file
 

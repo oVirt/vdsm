@@ -87,7 +87,7 @@ class FakeSchema(object):
 
     @staticmethod
     def _schema_from(yaml_str):
-        pickled_yaml = pickle.dumps(yaml.load(yaml_str))
+        pickled_yaml = pickle.dumps(yaml.safe_load(yaml_str))
         mocked_open = mock.mock_open(read_data=pickled_yaml)
         with mock.patch('{}.io.open'.format(vdsmapi.__name__),
                         mocked_open,
