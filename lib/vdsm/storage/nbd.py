@@ -44,6 +44,7 @@ from . import exception as se
 from . import fileUtils
 from . sdc import sdCache
 
+DEFAULT_SOCKET_MODE = 0o660
 QEMU_NBD = "/usr/bin/qemu-nbd"
 RUN_DIR = os.path.join(constants.P_VDSM_RUN, "nbd")
 
@@ -109,6 +110,8 @@ def start_server(server_id, config):
     if not _wait_for_socket(sock, 1.0):
         raise Timeout("Timeout starting NBD server {}: {}"
                       .format(server_id, config))
+
+    os.chmod(sock, DEFAULT_SOCKET_MODE)
     unix_address = nbdutils.UnixAddress(sock)
     return unix_address.url()
 

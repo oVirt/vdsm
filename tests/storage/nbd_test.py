@@ -42,6 +42,7 @@ from __future__ import division
 
 import io
 import os
+import stat
 import uuid
 
 from contextlib import contextmanager
@@ -199,6 +200,34 @@ def test_readonly(nbd_env, format, allocation):
     # Now the server should not be accessible.
     with pytest.raises(cmdutils.Error):
         qemuimg.info(nbd_url)
+
+
+@broken_on_ci
+@requires_privileges
+def test_server_socket_mode(nbd_env):
+    # Volume served by qemu-nd.
+    img_id = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+    nbd_env.make_volume(
+        nbd_env.virtual_size,
+        img_id,
+        vol_id,
+        vol_format=sc.COW_FORMAT,
+        prealloc=sc.SPARSE_VOL)
+
+    # Server configuration.
+    config = {
+        "sd_id": nbd_env.sd_manifest.sdUUID,
+        "img_id": img_id,
+        "vol_id": vol_id,
+    }
+
+    with nbd_server(config) as nbd_url:
+        # Remove "nbd:unix:" from nbd_url.
+        socket = nbd_url[9:]
+
+        actual_mode = stat.S_IMODE(os.stat(socket).st_mode)
+        assert oct(actual_mode) == oct(0o660)
 
 
 def test_shared_volume():
