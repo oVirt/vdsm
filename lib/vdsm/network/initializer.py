@@ -1,4 +1,4 @@
-# Copyright 2017-2018 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,6 +44,10 @@ def init_unprivileged_network_components(cif, net_api):
     _init_sourceroute(net_api)
     _register_notifications(cif)
     dhclient_monitor.start()
+
+
+def stop_unprivileged_network_components():
+    dhclient_monitor.stop()
 
 
 @contextmanager

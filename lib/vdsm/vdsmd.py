@@ -49,6 +49,7 @@ from vdsm.common import zombiereaper
 from vdsm.common.panic import panic
 from vdsm.config import config
 from vdsm.network.initializer import init_unprivileged_network_components
+from vdsm.network.initializer import stop_unprivileged_network_components
 from vdsm.profiling import profile
 from vdsm.storage.hsm import HSM
 from vdsm.storage.dispatcher import Dispatcher
@@ -121,6 +122,7 @@ def serve_clients(log):
 
             profile.stop()
         finally:
+            stop_unprivileged_network_components()
             metrics.stop()
             health.stop()
             periodic.stop()
