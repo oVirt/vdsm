@@ -22,6 +22,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from contextlib import contextmanager
 import os
 import time
 import uuid
@@ -108,6 +109,22 @@ def make_lv(name=None, tags=()):
         writeable=None,
         opened=None,
         active=None)
+
+
+@contextmanager
+def change_vol_tag(vol, tag_prefix, tag_value):
+    lv = lvm.getLV(vol.sdUUID, vol.volUUID)
+    add_tags = {tag_prefix + tag_value}
+    del_tags = {tag for tag in lv.tags
+                if tag.startswith(tag_prefix)}
+
+    lvm.changeLVsTags(
+        vol.sdUUID, vol.volUUID, delTags=del_tags, addTags=add_tags)
+    try:
+        yield
+    finally:
+        lvm.changeLVsTags(
+            vol.sdUUID, vol.volUUID, delTags=add_tags, addTags=del_tags)
 
 
 class TestGetAllVolumes:
@@ -931,6 +948,60 @@ def test_dump_sd_metadata(
     assert dom.dump() == {
         "metadata": expected_metadata,
         "volumes": expected_volumes_metadata
+    }
+
+    # Uninitialized volume is excluded from dump.
+    with change_vol_tag(vol, "", sc.TAG_VOL_UNINIT):
+        assert dom.dump() == {
+            "metadata": expected_metadata,
+            "volumes": {}
+        }
+
+    # Tagged as removed volume is excluded from dump.
+    img_tag = sc.REMOVED_IMAGE_PREFIX + img_uuid
+    with change_vol_tag(vol, sc.TAG_PREFIX_IMAGE, img_tag):
+        assert dom.dump() == {
+            "metadata": expected_metadata,
+            "volumes": {}
+        }
+
+    # Tagged as zeroed volume is excluded from dump.
+    img_tag = sc.ZEROED_IMAGE_PREFIX + img_uuid
+    with change_vol_tag(vol, sc.TAG_PREFIX_IMAGE, img_tag):
+        assert dom.dump() == {
+            "metadata": expected_metadata,
+            "volumes": {}
+        }
+
+    # Bad MD slot tag volume will be dumped with invalid status.
+    with change_vol_tag(vol, sc.TAG_PREFIX_MD, "bad-slot-number"):
+        assert dom.dump() == {
+            "metadata": expected_metadata,
+            "volumes": {
+                vol_uuid: {
+                    "apparentsize": vol_size.apparentsize,
+                    "image": img_uuid,
+                    "status": sc.VOL_STATUS_INVALID,
+                    "parent": sc.BLANK_UUID,
+                    "truesize": vol_size.truesize
+                }
+            }
+        }
+
+    # Volume with invalid metadata block will be stated as invalid.
+    vol.removeMetadata((sd_uuid, mdslot))
+    assert dom.dump() == {
+        "metadata": expected_metadata,
+        "volumes": {
+            vol_uuid: {
+                "apparentsize": vol_size.apparentsize,
+                "image": img_uuid,
+                "status": sc.VOL_STATUS_INVALID,
+                "parent": sc.BLANK_UUID,
+                "mdslot": mdslot,
+                "truesize": vol_size.truesize
+            }
+        }
     }
 
 
