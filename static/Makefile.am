@@ -147,6 +147,11 @@ dist_dhclientmon_SCRIPTS = \
 	./etc/dhcp/dhclient.d/dhclientmon.sh \
 	$(NULL)
 
+nmdispatcherdir = $(sysconfdir)/NetworkManager/dispatcher.d
+dist_nmdispatcher_SCRIPTS = \
+	./etc/NetworkManager/dispatcher.d/dhcp_monitor.py \
+	$(NULL)
+
 libvirthookdir = $(sysconfdir)/libvirt/hooks
 dist_libvirthook_SCRIPTS = \
 	./etc/libvirt/hooks/qemu \
