@@ -187,6 +187,40 @@ class TestIterVolumes:
         assert list(blockSD._iter_volumes("sd-id")) == expected_lvs
 
 
+class TestOccupiedSlots:
+
+    @pytest.mark.parametrize("lvs,expected", [
+        pytest.param(
+            [
+                make_lv(tags=("MD_1",)),
+                make_lv(tags=("MD_2",)),
+                make_lv(tags=("MD_3",)),
+            ],
+            [1, 2, 3],
+            id="parse-md-tags"),
+        pytest.param(
+            [
+                make_lv(tags=("MD_1",)),
+                make_lv(tags=("MD_bad-tag",)),
+                make_lv(tags=("MD_3",)),
+            ],
+            [1, 3],
+            id="bad-md-tag"),
+        pytest.param(
+            [
+                make_lv(tags=("MD_1",)),
+                make_lv(),
+                make_lv(tags=("MD_3",)),
+            ],
+            [1, 3],
+            id="missing-md-tag"),
+    ])
+    def test_occupied_slots(self, lvs, expected, monkeypatch):
+        monkeypatch.setattr(lvm, 'getLV', lambda sd_uuid: lvs)
+        occupied = blockSD._occupied_metadata_slots("sd-id")
+        assert occupied == expected
+
+
 class TestDecodeValidity:
 
     def test_all_keys(self):

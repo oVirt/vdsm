@@ -239,7 +239,12 @@ def _occupied_metadata_slots(sdUUID):
         offset = None
         for tag in lv.tags:
             if tag.startswith(sc.TAG_PREFIX_MD):
-                offset = int(stripPrefix(tag, sc.TAG_PREFIX_MD))
+                try:
+                    offset = int(stripPrefix(tag, sc.TAG_PREFIX_MD))
+                except Exception as e:
+                    log.warning(
+                        "Failed to parse metadata tag for lv %s/%s: %s",
+                        sdUUID, lv.name, e)
                 break
 
         if offset is None:
