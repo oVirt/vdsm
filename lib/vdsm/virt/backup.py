@@ -114,12 +114,6 @@ class BackupConfig(properties.Owner):
 def start_backup(vm, dom, config):
     backup_cfg = BackupConfig(config)
 
-    if backup_cfg.from_checkpoint_id is not None:
-        raise exception.BackupError(
-            reason="Incremental backup not supported yet",
-            vm_id=vm.id,
-            backup=backup_cfg)
-
     try:
         drives = _get_disks_drives(vm, backup_cfg.disks)
     except LookupError as e:
@@ -137,7 +131,8 @@ def start_backup(vm, dom, config):
 
     try:
         vm.freeze()
-        backup_xml = create_backup_xml(nbd_addr, drives, scratch_disks)
+        backup_xml = create_backup_xml(
+            nbd_addr, drives, scratch_disks, backup_cfg.from_checkpoint_id)
         checkpoint_xml = create_checkpoint_xml(backup_cfg, drives)
 
         vm.log.info(
@@ -318,8 +313,13 @@ def _raise_parse_error(vm_id, backup_id, backup_xml):
         backup_id=backup_id)
 
 
-def create_backup_xml(address, drives, scratch_disks):
+def create_backup_xml(address, drives, scratch_disks, from_checkpoint_id=None):
     domainbackup = vmxml.Element('domainbackup', mode='pull')
+
+    if from_checkpoint_id is not None:
+        incremental = vmxml.Element('incremental')
+        incremental.appendTextNode(from_checkpoint_id)
+        domainbackup.appendChild(incremental)
 
     server = vmxml.Element(
         'server', transport=address.transport, socket=address.path)

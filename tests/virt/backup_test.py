@@ -197,6 +197,41 @@ def test_backup_xml(tmp_backupdir):
     assert indented(expected_xml) == indented(backup_xml)
 
 
+def test_incremental_backup_xml(tmp_backupdir):
+    # drives must be sorted for the disks to appear
+    # each time in the same order in the backup XML
+    drives = collections.OrderedDict()
+    drives["img-id-1"] = FakeDrive("sda", "img-id-1")
+    drives["img-id-2"] = FakeDrive("vda", "img-id-2")
+
+    socket_path = backup.socket_path(BACKUP_ID)
+    addr = nbdutils.UnixAddress(socket_path)
+
+    backup_xml = backup.create_backup_xml(
+        addr, drives, FAKE_SCRATCH_DISKS,
+        from_checkpoint_id=FROM_CHECKPOINT_ID)
+
+    expected_xml = """
+        <domainbackup mode='pull'>
+            <incremental>{}</incremental>
+            <server transport='unix' socket='{}'/>
+            <disks>
+                <disk name='sda' type='file'>
+                    <scratch file='/path/to/scratch_sda'>
+                        <seclabel model="dac" relabel="no"/>
+                    </scratch>
+                </disk>
+                <disk name='vda' type='file'>
+                    <scratch file='/path/to/scratch_vda'>
+                        <seclabel model="dac" relabel="no"/>
+                    </scratch>
+                </disk>
+            </disks>
+        </domainbackup>
+        """.format(FROM_CHECKPOINT_ID, socket_path)
+    assert indented(expected_xml) == indented(backup_xml)
+
+
 @pytest.mark.parametrize(
     "disks_in_checkpoint, expected_xml", [
         ([IMAGE_1_UUID, IMAGE_2_UUID], CHECKPOINT_XML),
