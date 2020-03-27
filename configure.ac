@@ -105,19 +105,6 @@ AS_IF([test "${enable_gluster_mgmt}" = "yes"],
       AC_SUBST([GLUSTER_MGMT], ['0']))
 
 AC_ARG_ENABLE(
-    [ovirt-imageio],
-    [AS_HELP_STRING(
-        [--enable-ovirt-imageio],
-        [enable ovirt-imageio integration @<:@default=yes@:>@]
-    )],
-    ,
-    [enable_ovirt_imageio="yes"]
-)
-AS_IF([test "${enable_ovirt_imageio}" = "yes"],
-      AC_SUBST([OVIRT_IMAGEIO], ['1']),
-      AC_SUBST([OVIRT_IMAGEIO], ['0']))
-
-AC_ARG_ENABLE(
     [ovirt-vmconsole],
     [AS_HELP_STRING(
         [--disable-ovirt-vmconsole],
@@ -304,9 +291,6 @@ if test "$HOOKS" == "1"; then
 fi
 if test "$GLUSTER_MGMT" == "0"; then
     configure_flags+=" --disable-gluster-mgmt"
-fi
-if test "$OVIRT_IMAGEIO" == "0"; then
-    configure_flags+=" --disable-ovirt-imageio"
 fi
 if test "$OPENVSWITCH" == "0"; then
     configure_flags+=" --disable-openvswitch"

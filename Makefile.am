@@ -156,7 +156,6 @@ rpm: dist
 	rpmbuild -ta $(if $(BUILDID),--define="extra_release .$(BUILDID)") \
 		--define="qemu_user $(QEMUUSER)" \
 		--define="qemu_group $(QEMUGROUP)" \
-		--define="with_ovirt_imageio $(OVIRT_IMAGEIO)" \
 		--define="with_ovirt_vmconsole $(OVIRT_VMCONSOLE)" \
 		--define="with_gluster_mgmt $(GLUSTER_MGMT)" \
 		--define="with_hooks $(HOOKS)" \

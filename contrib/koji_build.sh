@@ -4,7 +4,6 @@ echo '============================================'
 make distclean
 ./autogen.sh \
     --system \
-    --disable-ovirt-imageio \
     --disable-ovirt-vmconsole \
     --enable-vhostmd \
     --enable-hooks \
