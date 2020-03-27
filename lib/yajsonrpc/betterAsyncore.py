@@ -23,6 +23,7 @@ import asyncore
 import errno
 import logging
 import socket
+import ssl
 
 import six
 
@@ -145,6 +146,12 @@ class Dispatcher(asyncore.dispatcher):
             if result == -1:
                 return 0
             return result
+        except sslutils.SSLError as e:
+            if e.errno == ssl.SSL_ERROR_WANT_WRITE:
+                return 0
+            self._log.debug('SSL error sending to %s: %s ', self, e)
+            self.handle_close()
+            return 0
         except socket.error as why:
             if why.args[0] in _BLOCKING_IO_ERRORS:
                 return 0
@@ -153,10 +160,6 @@ class Dispatcher(asyncore.dispatcher):
                 return 0
             else:
                 raise
-        except sslutils.SSLError as e:
-            self._log.debug('SSL error sending to %s: %s ', self, e)
-            self.handle_close()
-            return 0
 
     def del_channel(self, map=None):
         asyncore.dispatcher.del_channel(self, map)
