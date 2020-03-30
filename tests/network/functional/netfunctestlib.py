@@ -792,7 +792,7 @@ class SetupNetworks(object):
 
         if nmstate.is_nmstate_backend():
             if self._is_sync_dynamic():
-                _wait_for_dhcp_response(10)
+                _wait_for_dhcp_response(30)
                 self.vdsm_proxy.refreshNetworkCapabilities()
         else:
             if self._is_dynamic_ipv4():
