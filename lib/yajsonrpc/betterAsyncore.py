@@ -124,6 +124,12 @@ class Dispatcher(asyncore.dispatcher):
                 return ''
             else:
                 return data
+        except sslutils.SSLError as e:
+            if e.errno == ssl.SSL_ERROR_WANT_READ:
+                return None
+            self._log.debug('SSL error receiving from %s: %s', self, e)
+            self.handle_close()
+            return ''
         except socket.error as why:
             # winsock sometimes raises ENOTCONN
             # according to asyncore.dispatcher#recv docstring
@@ -135,10 +141,6 @@ class Dispatcher(asyncore.dispatcher):
                 return ''
             else:
                 raise
-        except sslutils.SSLError as e:
-            self._log.debug('SSL error receiving from %s: %s', self, e)
-            self.handle_close()
-            return ''
 
     def send(self, data):
         try:
