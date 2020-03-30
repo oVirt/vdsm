@@ -4532,7 +4532,11 @@ class Vm(object):
                 else:
                     vm['snapshot_job'] = json.dumps(self._snapshot_job)
             except jobs.NoSuchJob:
-                del vm['snapshot_job']
+                try:
+                    del vm['snapshot_job']
+                except KeyError:
+                    # It been cleared by a different flow on the metadata.
+                    pass
         self._sync_metadata()
 
     def save_custom_properties(self):
