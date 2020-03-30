@@ -369,8 +369,7 @@ class LVMCache(object):
         self._vgs = {}
         self._lvs = {}
         self._runner = cmd_runner
-        self._misses = 0
-        self._hits = 0
+        self._stats = CacheStats()
 
     def set_read_only(self, value):
         """
@@ -758,30 +757,30 @@ class LVMCache(object):
         # Get specific PV
         pv = self._pvs.get(pvName)
         if not pv or isinstance(pv, Stub):
-            self._miss()
+            self._stats.miss()
             pvs = self._reloadpvs(pvName)
             pv = pvs.get(pvName)
         else:
-            self._hit()
+            self._stats.hit()
         return pv
 
     def getAllPvs(self):
         # Get everything we have
         if self._stalepv:
-            self._miss()
+            self._stats.miss()
             pvs = self._reloadpvs()
         else:
             pvs = dict(self._pvs)
             stalepvs = [pv.name for pv in six.itervalues(pvs)
                         if isinstance(pv, Stub)]
             if stalepvs:
-                self._miss()
+                self._stats.miss()
                 for name in stalepvs:
                     del pvs[name]
                 reloaded = self._reloadpvs(stalepvs)
                 pvs.update(reloaded)
             else:
-                self._hit()
+                self._stats.hit()
         return list(six.itervalues(pvs))
 
     def getPvs(self, vgName):
@@ -800,22 +799,22 @@ class LVMCache(object):
                 pvs.append(pv)
 
         if stalepvs:
-            self._miss()
+            self._stats.miss()
             reloadedpvs = self._reloadpvs(pvName=stalepvs)
             pvs.extend(reloadedpvs.values())
         else:
-            self._hit()
+            self._stats.hit()
         return pvs
 
     def getVg(self, vgName):
         # Get specific VG
         vg = self._vgs.get(vgName)
         if not vg or isinstance(vg, Stub):
-            self._miss()
+            self._stats.miss()
             vgs = self._reloadvgs(vgName)
             vg = vgs.get(vgName)
         else:
-            self._hit()
+            self._stats.hit()
         return vg
 
     def getVgs(self, vgNames):
@@ -825,27 +824,27 @@ class LVMCache(object):
         Fills the cache but not uses it.
         Only returns found VGs.
         """
-        self._miss()
+        self._stats.miss()
         return [vg for vgName, vg in six.iteritems(self._reloadvgs(vgNames))
                 if vgName in vgNames]
 
     def getAllVgs(self):
         # Get everything we have
         if self._stalevg:
-            self._miss()
+            self._stats.miss()
             vgs = self._reloadvgs()
         else:
             vgs = dict(self._vgs)
             stalevgs = [vg.name for vg in six.itervalues(vgs)
                         if isinstance(vg, Stub)]
             if stalevgs:
-                self._miss()
+                self._stats.miss()
                 for name in stalevgs:
                     del vgs[name]
                 reloaded = self._reloadvgs(stalevgs)
                 vgs.update(reloaded)
             else:
-                self._hit()
+                self._stats.hit()
         return list(six.itervalues(vgs))
 
     def getLv(self, vgName, lvName=None):
@@ -873,27 +872,47 @@ class LVMCache(object):
             # vgName, lvName
             lv = self._lvs.get((vgName, lvName))
             if not lv or isinstance(lv, Stub):
-                self._miss()
+                self._stats.miss()
                 # while we here reload all the LVs in the VG
                 lvs = self._reloadlvs(vgName)
                 lv = lvs.get((vgName, lvName))
             else:
-                self._hit()
+                self._stats.hit()
 
             return lv
 
         if self._lvs_needs_reload(vgName):
-            self._miss()
+            self._stats.miss()
             lvs = self._reloadlvs(vgName)
         else:
-            self._hit()
+            self._stats.hit()
             lvs = dict(self._lvs)
 
         lvs = [lv for lv in lvs.values()
                if not isinstance(lv, Stub) and (lv.vg_name == vgName)]
         return lvs
 
+    @property
     def stats(self):
+        return self._stats
+
+    def _lvs_needs_reload(self, vg_name):
+        if self._stalelv:
+            return True
+
+        return any(isinstance(lv, Stub)
+                   for (vgn, _), lv in self._lvs.items()
+                   if vgn == vg_name)
+
+
+class CacheStats(object):
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._hits = 0
+        self._misses = 0
+
+    def info(self):
         with self._lock:
             calls = self._hits + self._misses
             hit_ratio = (100 * self._hits / calls) if calls > 0 else 0
@@ -903,26 +922,18 @@ class LVMCache(object):
                 "hit_ratio": hit_ratio
             }
 
-    def clear_stats(self):
+    def clear(self):
         with self._lock:
             self._hits = 0
             self._misses = 0
 
-    def _miss(self):
+    def miss(self):
         with self._lock:
             self._misses += 1
 
-    def _hit(self):
+    def hit(self):
         with self._lock:
             self._hits += 1
-
-    def _lvs_needs_reload(self, vg_name):
-        if self._stalelv:
-            return True
-
-        return any(isinstance(lv, Stub)
-                   for (vgn, _), lv in self._lvs.items()
-                   if vgn == vg_name)
 
 
 _lvminfo = LVMCache()
@@ -1799,8 +1810,8 @@ def invalidateFilter():
 
 
 def cache_stats():
-    return _lvminfo.stats()
+    return _lvminfo.stats.info()
 
 
 def clear_stats():
-    _lvminfo.clear_stats()
+    _lvminfo.stats.clear()
