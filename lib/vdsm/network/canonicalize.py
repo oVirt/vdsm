@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@ import six
 from .netinfo import bonding, bridges
 from vdsm.common.conv import tobool
 from vdsm.network import dns
-from vdsm.network import nmstate
 from vdsm.network.ip.address import IPAddressData
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link import bond
@@ -270,9 +269,6 @@ def _canonicalize_nameservers(data):
         # the management network)
         if data['defaultRoute'] and data['bootproto'] != 'dhcp':
             data['nameservers'] = dns.get_host_nameservers()
-            # FIXME https://bugzilla.redhat.com/1816043
-            if nmstate.is_nmstate_backend():
-                data['nameservers'] = data['nameservers'][:2]
         else:
             data['nameservers'] = []
 

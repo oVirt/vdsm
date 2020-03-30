@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,9 +32,7 @@ from network.nettestlib import restore_resolv_conf
 from . import netfunctestlib as nftestlib
 
 NETWORK_NAME = 'test-network'
-# FIXME: Add third dns when nmstate starts to support it
-# see https://nmstate.atlassian.net/browse/NMSTATE-220
-NAMESERVERS = ['1.2.3.4', '2.3.4.5']
+NAMESERVERS = ['1.2.3.4', '2.3.4.5', '6.7.8.9']
 IPv4_ADDRESS = '192.0.2.1'
 IPv4_GATEWAY = '192.0.2.254'
 IPv4_NETMASK = '255.255.255.0'
