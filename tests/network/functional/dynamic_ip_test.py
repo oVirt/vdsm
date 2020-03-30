@@ -518,9 +518,6 @@ def test_dynamic_ipv4_vlan_net_switch_to_static_with_running_dhcp_server(
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_legacy_switch
 @pytest.mark.nmstate
-@pytest.mark.xfail(
-    condition=nftestlib.is_nmstate_backend(), reason='BZ#1815112', strict=True
-)
 def test_add_static_dns_with_dhcp(dynamic_ipv4_iface1, switch, bridged):
     network_attrs = {
         'bridged': bridged,
