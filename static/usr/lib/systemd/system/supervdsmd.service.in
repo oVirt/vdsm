@@ -1,8 +1,8 @@
 [Unit]
 Description=Auxiliary vdsm service for running helper functions as root
-Requires=libvirtd.socket libvirtd-tcp.socket libvirtd-tls.socket
+Requires=libvirtd.service
 Wants=lldpad.service
-After=lldpad.service libvirtd.socket libvirtd-tcp.socket libvirtd-tls.socket
+After=lldpad.service libvirtd.service
 
 [Service]
 Type=simple
