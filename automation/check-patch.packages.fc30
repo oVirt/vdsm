@@ -14,7 +14,7 @@ lshw
 make
 mom
 openvswitch
-ovirt-imageio-common
+ovirt-imageio-daemon-2.0.2
 python3-augeas
 python3-blivet
 python3-coverage

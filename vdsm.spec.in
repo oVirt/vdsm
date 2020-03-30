@@ -9,6 +9,8 @@
 %global snlk_group sanlock
 %global snlk_user sanlock
 %global cdrom_group cdrom
+%global imageio_user ovirtimg
+%global imageio_group ovirtimg
 
 # Features
 %{!?with_ovirt_vmconsole: %global with_ovirt_vmconsole 1}
@@ -188,9 +190,9 @@ Requires: nfs-utils
 %endif
 
 # For kvm2ovirt
-Requires: ovirt-imageio-common == 1.6.3
+Requires: ovirt-imageio-common >= 2.0.2
 # For controlling /tickets
-Requires: ovirt-imageio-daemon == 1.6.3
+Requires: ovirt-imageio-daemon >= 2.0.2
 
 %if %{with_ovirt_vmconsole}
 Requires: ovirt-vmconsole >= 1.0.0-0
@@ -866,6 +868,12 @@ export LC_ALL=C
         -s /sbin/nologin -c "Node Virtualization Manager" %{vdsm_user}
 /usr/sbin/usermod -a -G %{qemu_group},%{snlk_group} %{vdsm_user}
 /usr/sbin/usermod -a -G %{cdrom_group} %{qemu_user}
+# imageio has to be part of kvm group to be able to read/write nbd
+# socket and part of qemu group to be able to access images.
+/usr/sbin/usermod -a -G %{qemu_group},%{vdsm_group} %{imageio_user}
+# vdsm has to be part of imageio group to be able to read/write imageio
+# control socket.
+/usr/sbin/usermod -a -G %{imageio_group} %{vdsm_user}
 
 # We keep the previous rpm version number in a file for managing upgrade flow
 if [ "$1" -gt 1 ]; then
@@ -1015,6 +1023,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logrotate/vdsm
 %config(noreplace) %{_sysconfdir}/sysctl.d/vdsm.conf
 %config(noreplace) %{_sysconfdir}/modules-load.d/vdsm.conf
+%config(noreplace) %{_sysconfdir}/ovirt-imageio/daemon.conf
 %{_tmpfilesdir}/%{vdsm_name}.conf
 %{_sysconfdir}/dhcp/dhclient.d/dhclientmon.sh
 %{_sysconfdir}/modprobe.d/vdsm-bonding-modprobe.conf

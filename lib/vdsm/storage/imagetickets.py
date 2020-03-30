@@ -31,10 +31,9 @@ from contextlib import closing
 import six
 from six.moves import http_client
 
-from vdsm import constants
 from vdsm.storage import exception as se
 
-DAEMON_SOCK = os.path.join(constants.P_VDSM_RUN, "ovirt-imageio-daemon.sock")
+DAEMON_SOCK = "/run/ovirt-imageio/sock"
 
 log = logging.getLogger('storage.imagetickets')
 

@@ -166,6 +166,12 @@ dist_systemdunit_DATA = \
 	./usr/lib/systemd/system/dev-hugepages1G.mount \
 	$(NULL)
 
+imageiodir = $(sysconfdir)/ovirt-imageio
+
+imageio_DATA = \
+	./etc/ovirt-imageio/daemon.conf \
+	$(NULL)
+
 CLEANFILES = \
 	$(sudoers_DATA) \
 	$(systemdunit_DATA) \
@@ -175,6 +181,7 @@ CLEANFILES = \
 	$(NULL)
 
 EXTRA_DIST = \
+	$(imageio_DATA) \
 	$(libvirtpassword_DATA) \
 	$(limits_DATA) \
 	$(modprobe_DATA) \
