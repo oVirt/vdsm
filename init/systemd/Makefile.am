@@ -30,7 +30,6 @@ CLEANFILES = \
 	$(NULL)
 
 EXTRA_DIST = \
-	85-vdsmd.preset \
 	vdsm-tmpfiles.d.conf.in \
 	unlimited-core.conf \
 	$(NULL)
@@ -47,10 +46,7 @@ install-data-local: vdsm-tmpfiles.d.conf
 	$(INSTALL_DATA) $(srcdir)/unlimited-core.conf \
 	    $(DESTDIR)/etc/systemd/system/libvirtd.service.d/unlimited-core.conf
 	$(MKDIR_P) $(DESTDIR)/usr/lib/systemd/system-preset
-	$(INSTALL_DATA) $(srcdir)/85-vdsmd.preset \
-	    $(DESTDIR)/usr/lib/systemd/system-preset/85-vdsmd.preset
 
 uninstall-local:
 	$(RM) $(DESTDIR)/usr/lib/tmpfiles.d/vdsm.conf
 	$(RM) $(DESTDIR)/etc/systemd/system/libvirtd.service.d/unlimited-core.conf
-	$(RM) $(DESTDIR)/usr/lib/systemd/system-preset/85-vdsmd.preset

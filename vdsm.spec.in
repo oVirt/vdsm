@@ -919,15 +919,6 @@ fi
 # refresh vdsm kernel modules requirements to start on boot
 /bin/systemctl restart systemd-modules-load.service >/dev/null 2>&1 || :
 
-# The following triggers vdsmd.preset file and enables vdsm required services
-%systemd_post dev-hugepages1G.mount
-%systemd_post vdsmd.service
-%systemd_post supervdsmd.service
-%systemd_post vdsm-network.service
-%systemd_post vdsm-network-init.service
-%systemd_post mom-vdsm.service
-%systemd_post ksmtuned.service
-
 # VDSM installs unit files - daemon-reload will refresh systemd
 /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 exit 0
@@ -984,7 +975,6 @@ exit 0
 %doc README.logging
 %doc ChangeLog
 %license COPYING
-%{_presetdir}/85-vdsmd.preset
 %{_unitdir}/dev-hugepages1G.mount
 %{_unitdir}/vdsmd.service
 %{_unitdir}/vdsm-network.service
