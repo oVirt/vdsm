@@ -27,6 +27,7 @@ import uuid
 
 from vdsm import constants
 from vdsm.common import conv
+from vdsm.common import hostdev
 from vdsm.common import supervdsm
 from vdsm.common import validate
 from vdsm.common.hostdev import get_device_params, detach_detachable, \
@@ -44,6 +45,8 @@ VHOST_SOCK_DIR = os.path.join(constants.P_VDSM_RUN, 'vhostuser')
 METADATA_KEYS = ('network',)
 
 METADATA_NESTED_KEYS = ('custom', 'portMirroring')
+
+PCI_LINK_UP_TIMEOUT = 5
 
 
 class UnsupportedAddress(Exception):
@@ -374,8 +377,13 @@ class Interface(core.Base):
         if self.is_hostdevice:
             self.log.info('Reattaching device %s to host.' % self.hostdev)
             try:
-                # TODO: avoid reattach when Engine can tell free VFs otherwise
-                reattach_detachable(self.hostdev)
+                pci_path = hostdev.name_to_pci_path(self.hostdev)
+                with net_api.wait_for_pci_link_up(
+                    pci_path, PCI_LINK_UP_TIMEOUT
+                ):
+                    # TODO: avoid reattach when Engine can tell free VFs
+                    # otherwise
+                    reattach_detachable(self.hostdev)
             except NoIOMMUSupportException:
                 self.log.exception('Could not reattach device %s back to host '
                                    'due to missing IOMMU support.',
