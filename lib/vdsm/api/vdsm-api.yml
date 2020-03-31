@@ -1488,6 +1488,34 @@ types:
             type: int
         type: object
 
+    GuestPCIDevice: &GuestPCIDevice
+        added: '4.4'
+        description: Infomation about PCI device and driver in the guest
+        name: GuestPCIDevice
+        properties:
+        -   description: PCI Device ID
+            name: device_id
+            type: int
+
+        -   defaultvalue: null
+            description: Creation date of the driver assigned to device
+            name: driver_date
+            type: string
+
+        -   description: Name of the driver assigned to device
+            name: driver_name
+            type: string
+
+        -   defaultvalue: null
+            description: Version of the driver assigned to device
+            name: driver_version
+            type: string
+
+        -   description: PCI Vendor ID
+            name: vendor_id
+            type: int
+        type: object
+
     GuestSessionState: &GuestSessionState
         added: '3.1'
         description: An enumeration of user session states.
@@ -5658,6 +5686,12 @@ types:
         -   description: The current VM status
             name: status
             type: *VmStatus
+
+        -   defaultvalue: null
+            description: List of PCI devices and their drivers
+            name: pci_devices
+            type:
+            - *GuestPCIDevice
         type: object
 
     SELinuxStatus: &SELinuxStatus

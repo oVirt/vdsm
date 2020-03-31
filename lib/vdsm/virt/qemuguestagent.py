@@ -43,6 +43,7 @@ from vdsm.virt import guestagenthelpers
 from vdsm.virt import virdomain
 
 _QEMU_ACTIVE_USERS_COMMAND = 'guest-get-users'
+_QEMU_DEVICES_COMMAND = 'guest-get-devices'
 _QEMU_GUEST_INFO_COMMAND = 'guest-info'
 _QEMU_HOST_NAME_COMMAND = 'guest-get-host-name'
 _QEMU_NETWORK_INTERFACES_COMMAND = 'guest-network-get-interfaces'
@@ -96,8 +97,10 @@ except ImportError:
 # constants!
 VDSM_GUEST_INFO = (1 << 30)
 VDSM_GUEST_INFO_NETWORK = (1 << 31)
+VDSM_GUEST_INFO_DRIVERS = (1 << 32)
 
 _QEMU_COMMANDS = {
+    VDSM_GUEST_INFO_DRIVERS: _QEMU_DEVICES_COMMAND,
     VDSM_GUEST_INFO_NETWORK: _QEMU_NETWORK_INTERFACES_COMMAND,
     VIR_DOMAIN_GUEST_INFO_FILESYSTEM: _QEMU_FSINFO_COMMAND,
     VIR_DOMAIN_GUEST_INFO_HOSTNAME: _QEMU_HOST_NAME_COMMAND,
@@ -109,6 +112,8 @@ _QEMU_COMMANDS = {
 _QEMU_COMMAND_PERIODS = {
     VDSM_GUEST_INFO:
         config.getint('guest_agent', 'qga_info_period'),
+    VDSM_GUEST_INFO_DRIVERS:
+        config.getint('guest_agent', 'qga_sysinfo_period'),
     VDSM_GUEST_INFO_NETWORK:
         config.getint('guest_agent', 'qga_sysinfo_period'),
     VIR_DOMAIN_GUEST_INFO_FILESYSTEM:
@@ -331,10 +336,16 @@ class QemuGuestAgentPoller(object):
                 if now - self.last_check(vm_id, command) \
                         < _QEMU_COMMAND_PERIODS[command]:
                     continue
-                if command == VDSM_GUEST_INFO_NETWORK:
+                # Commands that have special handling go here
+                if command == VDSM_GUEST_INFO_DRIVERS:
+                    self.update_guest_info(
+                        vm_id, self._qga_call_get_devices(vm_obj))
+                    self.set_last_check(vm_id, command, now)
+                elif command == VDSM_GUEST_INFO_NETWORK:
                     self.update_guest_info(
                         vm_id, self._qga_call_network_interfaces(vm_obj))
                     self.set_last_check(vm_id, command, now)
+                # Commands handled by libvirt guestInfo() go here
                 else:
                     types |= command
             info = self._get_guest_info(vm_obj, types)
@@ -656,3 +667,25 @@ class QemuGuestAgentPoller(object):
                     iface['inet6'].append(address)
             guest_info['netIfaces'].append(iface)
         return guest_info
+
+    def _qga_call_get_devices(self, vm):
+        ret = self.call_qga_command(vm, _QEMU_DEVICES_COMMAND)
+        if ret is not None:
+            devices = []
+            for device in ret:
+                if device.get('address', {}).get('type') == 'pci':
+                    d = guestagenthelpers.translate_pci_device(device)
+                    # Qemu-ga returns all devices exactly like they exist in
+                    # the VM. That means some devices, e.g. storage
+                    # controllers, can appear several times in the list. We
+                    # don't need to duplicate the info as engine knows exactly
+                    # what devices and in what count are in the VM. We just
+                    # care about the driver info.
+                    if d not in devices:
+                        devices.append(d)
+                else:
+                    self.log.debug('Skipping unknown device: %r', device)
+            return {'pci_devices': devices}
+        else:
+            self.set_failure(vm.id)
+            return {}

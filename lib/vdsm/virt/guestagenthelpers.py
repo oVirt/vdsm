@@ -167,3 +167,14 @@ def translate_windows_osinfo(os_info):
             'codename': os_info[prefix + 'pretty-name'],
         }
     }
+
+
+def translate_pci_device(device):
+    device = defaultdict(str, device)
+    return {
+        'device_id': int(device['address']['data']['device-id']),
+        'driver_date': device['driver-date'],
+        'driver_name': device['driver-name'],
+        'driver_version': device['driver-version'],
+        'vendor_id': int(device['address']['data']['vendor-id']),
+    }

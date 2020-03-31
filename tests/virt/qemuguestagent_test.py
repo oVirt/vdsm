@@ -52,6 +52,43 @@ def _fake_qemuAgentCommand(domain, command, timeout, flags):
                         "success-response": True
                     }]
             }})
+    if command == '{"execute": "guest-get-devices"}':
+        return json.dumps(
+            {"return": [{
+                'driver-date': '2019-08-12',
+                'driver-name': 'Red Hat VirtIO Ethernet Adapter',
+                'driver-version': '100.80.104.17300',
+                'address': {
+                    'type': 'pci',
+                    'data': {
+                        'device-id': 4096,
+                        'vendor-id': 6900,
+                    }
+                }
+            }, {
+                'driver-date': '2019-08-12',
+                'driver-name': 'VirtIO Balloon Driver',
+                'driver-version': '100.80.104.17300',
+                'address': {
+                    'type': 'pci',
+                    'data': {
+                        'device-id': 4098,
+                        'vendor-id': 6900
+                    }
+                }
+            }, {
+                'driver-date': '2019-08-12',
+                'driver-name': 'Red Hat VirtIO Ethernet Adapter',
+                'driver-version': '100.80.104.17300',
+                'address': {
+                    'type': 'pci',
+                    'data': {
+                        'device-id': 4096,
+                        'vendor-id': 6900,
+                    }
+                }
+            },
+            ]})
     if command == '{"execute": "guest-get-fsinfo"}':
         return json.dumps(
             {"return": [{
@@ -230,6 +267,7 @@ class QemuGuestAgentTests(TestCaseBase):
                 'version': '0.0-test',
                 'commands': [
                     qemuguestagent._QEMU_ACTIVE_USERS_COMMAND,
+                    qemuguestagent._QEMU_DEVICES_COMMAND,
                     qemuguestagent._QEMU_GUEST_INFO_COMMAND,
                     qemuguestagent._QEMU_FSINFO_COMMAND,
                     qemuguestagent._QEMU_HOST_NAME_COMMAND,
@@ -418,3 +456,25 @@ class QemuGuestAgentTests(TestCaseBase):
         self.assertEqual(info['guestTimezone']['zone'], 'EDT')
         # Users
         self.assertEqual(info['username'], 'root, frodo@hobbits')
+
+    def test_pci_devices(self):
+        devices = self.qga_poller._qga_call_get_devices(self.vm)['pci_devices']
+        # Ethernet is returned twice by the agent but should appear only
+        # once in the list
+        self.assertEqual(len(devices), 2)
+        eth = [d for d in devices if d['device_id'] == 4096][0]
+        self.assertEqual(eth, {
+            'device_id': 4096,
+            'driver_date': '2019-08-12',
+            'driver_name': 'Red Hat VirtIO Ethernet Adapter',
+            'driver_version': '100.80.104.17300',
+            'vendor_id': 6900,
+        })
+        balloon = [d for d in devices if d['device_id'] == 4098][0]
+        self.assertEqual(balloon, {
+            'device_id': 4098,
+            'driver_date': '2019-08-12',
+            'driver_name': 'VirtIO Balloon Driver',
+            'driver_version': '100.80.104.17300',
+            'vendor_id': 6900,
+        })

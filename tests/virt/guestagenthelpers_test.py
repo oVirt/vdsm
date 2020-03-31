@@ -128,4 +128,26 @@ class GuestAgentHelpersTest(TestCaseBase):
                 'path': '/home',
                 'total': '456',
                 'used': '123',
+            })
+
+    def test_translate_pci_device(self):
+        self.assertEqual(
+            guestagenthelpers.translate_pci_device({
+                'driver-date': '2019-08-12',
+                'driver-name': 'Red Hat VirtIO Ethernet Adapter',
+                'driver-version': '100.80.104.17300',
+                'address': {
+                    'type': 'pci',
+                    'data': {
+                        'device-id': 4096,
+                        'vendor-id': 6900,
+                    }
+                }
             }),
+            {
+                'device_id': 4096,
+                'driver_date': '2019-08-12',
+                'driver_name': 'Red Hat VirtIO Ethernet Adapter',
+                'driver_version': '100.80.104.17300',
+                'vendor_id': 6900,
+            })
