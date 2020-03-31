@@ -25,6 +25,7 @@ import logging
 import time
 
 from vdsm.common.config import config
+from vdsm.network import bond_monitor
 from vdsm.network import dhclient_monitor
 from vdsm.network import dhcp_monitor
 from vdsm.network import lldp
@@ -48,6 +49,7 @@ def init_unprivileged_network_components(cif, net_api):
         _init_sourceroute(net_api)
         _register_notifications(cif)
         dhclient_monitor.start()
+    bond_monitor.initialize_monitor(cif)
 
 
 def stop_unprivileged_network_components():
@@ -55,6 +57,8 @@ def stop_unprivileged_network_components():
         dhcp_monitor.Monitor.instance().stop()
     else:
         dhclient_monitor.stop()
+
+    bond_monitor.stop()
 
 
 @contextmanager

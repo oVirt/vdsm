@@ -519,3 +519,11 @@ def running_on_fedora(ver=''):
 
 def running_on_travis_ci():
     return 'TRAVIS_CI' in os.environ
+
+
+class FakeNotifier:
+    def __init__(self):
+        self.calls = []
+
+    def notify(self, event_id, params=None):
+        self.calls.append((event_id, params))

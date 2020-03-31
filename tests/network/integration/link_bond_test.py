@@ -23,6 +23,7 @@ from __future__ import division
 import errno
 import os
 import unittest
+import time
 
 import pytest
 
@@ -30,7 +31,9 @@ from network.compat import mock
 from network.nettestlib import bond_device
 from network.nettestlib import check_sysfs_bond_permission
 from network.nettestlib import dummy_devices
+from network.nettestlib import FakeNotifier
 
+from vdsm.network import bond_monitor
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond import sysfs_options
 from vdsm.network.link.bond import sysfs_options_mapper
@@ -212,6 +215,27 @@ class LinkBondTests(unittest.TestCase):
     def test_bond_properties_includes_non_options_keys(self):
         with bond_device() as bond:
             self.assertTrue('active_slave' in bond.properties)
+
+    def test_bond_monitor(self):
+        notifier = FakeNotifier()
+        with dummy_devices(2) as (nic1, nic2):
+            with bond_device(slaves=(nic1, nic2)) as bond:
+                bond.set_options({'mode': '1'})
+                bond.up()
+                bond.set_options({'active_slave': nic1})
+                bond_monitor.initialize_monitor(notifier)
+                try:
+                    bond.set_options({'active_slave': nic2})
+                    _wait_until(lambda: notifier.calls)
+                finally:
+                    bond_monitor.stop()
+        self.assertEqual(notifier.calls, [('|net|host_conn|no_id', None)])
+
+
+def _wait_until(condition, timeout=1, interval=0.1):
+    start = time.time()
+    while not condition() and time.time() - start < timeout:
+        time.sleep(interval)
 
 
 class LinkBondSysFSTests(unittest.TestCase):
