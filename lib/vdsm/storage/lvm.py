@@ -944,35 +944,35 @@ def bootstrap(skiplvs=()):
 
 
 def deactivateUnusedLVs(vgname, skiplvs=()):
-        deactivate = []
+    deactivate = []
 
-        # List prepared images LVs if any
-        pattern = "{}/{}/*/*".format(sc.P_VDSM_STORAGE, vgname)
-        prepared = frozenset(os.path.basename(n) for n in glob.iglob(pattern))
+    # List prepared images LVs if any
+    pattern = "{}/{}/*/*".format(sc.P_VDSM_STORAGE, vgname)
+    prepared = frozenset(os.path.basename(n) for n in glob.iglob(pattern))
 
-        for lv in _lvminfo.getLv(vgname):
-            if lv.active:
-                if lv.name in skiplvs:
-                    log.debug("Skipping active lv: vg=%s lv=%s",
-                              vgname, lv.name)
-                elif lv.name in prepared:
-                    log.debug("Skipping prepared volume lv: vg=%s lv=%s",
-                              vgname, lv.name)
-                elif lv.opened:
-                    log.debug("Skipping open lv: vg=%s lv=%s", vgname,
-                              lv.name)
-                else:
-                    deactivate.append(lv.name)
+    for lv in _lvminfo.getLv(vgname):
+        if lv.active:
+            if lv.name in skiplvs:
+                log.debug("Skipping active lv: vg=%s lv=%s",
+                          vgname, lv.name)
+            elif lv.name in prepared:
+                log.debug("Skipping prepared volume lv: vg=%s lv=%s",
+                          vgname, lv.name)
+            elif lv.opened:
+                log.debug("Skipping open lv: vg=%s lv=%s", vgname,
+                          lv.name)
+            else:
+                deactivate.append(lv.name)
 
-        if deactivate:
-            log.info("Deactivating lvs: vg=%s lvs=%s", vgname, deactivate)
-            try:
-                _setLVAvailability(vgname, deactivate, "n")
-            except se.CannotDeactivateLogicalVolume:
-                log.error("Error deactivating lvs: vg=%s lvs=%s", vgname,
-                          deactivate)
-            # Some lvs are inactive now
-            _lvminfo._invalidatelvs(vgname, deactivate)
+    if deactivate:
+        log.info("Deactivating lvs: vg=%s lvs=%s", vgname, deactivate)
+        try:
+            _setLVAvailability(vgname, deactivate, "n")
+        except se.CannotDeactivateLogicalVolume:
+            log.error("Error deactivating lvs: vg=%s lvs=%s", vgname,
+                      deactivate)
+        # Some lvs are inactive now
+        _lvminfo._invalidatelvs(vgname, deactivate)
 
 
 def invalidateCache():
