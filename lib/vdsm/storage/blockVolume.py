@@ -478,10 +478,14 @@ class BlockVolume(volume.Volume):
                     os.unlink(volPath)
 
     @classmethod
-    def createVolumeMetadataRollback(cls, taskObj, sdUUID, slot):
-        cls.log.info("Metadata rollback for sdUUID=%s slot=%s", sdUUID, slot)
+    def createVolumeMetadataRollback(cls, taskObj, sdUUID, slot_str):
+        """
+        This function is called only from tasks framework, with strings values.
+        """
+        cls.log.info("Metadata rollback for sdUUID=%s slot=%s", sdUUID,
+                     slot_str)
         sd = sdCache.produce_manifest(sdUUID)
-        sd.clear_metadata_block(slot)
+        sd.clear_metadata_block(int(slot_str))
 
     @classmethod
     def _create(cls, dom, imgUUID, volUUID, capacity, volFormat, preallocate,
