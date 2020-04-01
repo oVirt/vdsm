@@ -1,4 +1,3 @@
-sudo: required
 dist: xenial
 group: edge
 language: python
@@ -11,11 +10,11 @@ git:
 
 # Notes: we run the linters only on Fedora 29 to save time. This may miss some
 # issues on CentOS but the chance is very low.
-env:
-  matrix:
-    - DIST=centos-8   TARGETS="storage tests"
-    - DIST=fedora-30  TARGETS="lint"
-    - DIST=fedora-30  TARGETS="storage tests"
+jobs:
+  include:
+    - env: DIST=centos-8   TARGETS="storage tests"
+    - env: DIST=fedora-30  TARGETS="lint"
+    - env: DIST=fedora-30  TARGETS="storage tests"
 
 before_install:
   - docker --version
