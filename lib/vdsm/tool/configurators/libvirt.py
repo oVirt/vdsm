@@ -59,7 +59,6 @@ def configure():
 
     ssl = config.getboolean('vars', 'ssl')
     vdsmConfiguration = {
-        'socket_activation': _libvirt_uses_socket_activation(),
         'ssl_enabled': ssl,
         'sanlock_enabled': constants.SANLOCK_ENABLED,
         'libvirt_selinux': constants.LIBVIRT_SELINUX
@@ -78,11 +77,10 @@ def configure():
             if status == 0:
                 raise
 
-    if _libvirt_uses_socket_activation():
-        if ssl:
-            systemctl.enable(_LIBVIRT_TLS_SOCKET_UNIT)
-        else:
-            systemctl.enable(_LIBVIRT_TCP_SOCKET_UNIT)
+    if ssl:
+        systemctl.enable(_LIBVIRT_TLS_SOCKET_UNIT)
+    else:
+        systemctl.enable(_LIBVIRT_TCP_SOCKET_UNIT)
 
 
 def validate():
@@ -104,12 +102,11 @@ def isconfigured():
     if not _is_hugetlbfs_1g_mounted():
         ret = NO
 
-    if _libvirt_uses_socket_activation():
-        ssl = config.getboolean('vars', 'ssl')
-        unit = _LIBVIRT_TLS_SOCKET_UNIT if ssl else _LIBVIRT_TCP_SOCKET_UNIT
+    ssl = config.getboolean('vars', 'ssl')
+    unit = _LIBVIRT_TLS_SOCKET_UNIT if ssl else _LIBVIRT_TCP_SOCKET_UNIT
 
-        if not _check_socket_unit_state(unit):
-            ret = NO
+    if not _check_socket_unit_state(unit):
+        ret = NO
 
     if ret == MAYBE:
         sys.stdout.write("libvirt is already configured for vdsm\n")
@@ -197,32 +194,6 @@ def _is_hugetlbfs_1g_mounted(mtab_path='/etc/mtab'):
                 return True
 
     return False
-
-
-def _find_libvirt_socket_units():
-    return systemctl.show("libvirtd*.socket", ("Names", "LoadState",))
-
-
-# https://bugzilla.redhat.com/1750340
-# Used in tests
-def _libvirt_uses_socket_activation():
-    socket_units = _find_libvirt_socket_units()
-
-    if len(socket_units) == 0:
-        sys.stdout.write("libvirtd doesn't use systemd socket activation\n")
-        return False
-
-    sys.stdout.write("libvirtd socket units status: {}\n".format(socket_units))
-
-    for su in socket_units:
-        if su["LoadState"] == "masked":
-            sys.stdout.write(("libvirtd doesn't use systemd socket activation"
-                              " - one or more of its socket units have been "
-                              "masked\n"))
-            return False
-
-    sys.stdout.write("libvirtd uses socket activation\n")
-    return True
 
 
 # version != PACKAGE_VERSION since we do not want to update configuration
@@ -365,15 +336,6 @@ FILES = {
                 }
 
             },
-            {
-                'conditions': {
-                    'socket_activation': False
-                },
-                'content': {
-                    'LIBVIRTD_ARGS': '--listen'
-                }
-
-            }
         ]
     },
 

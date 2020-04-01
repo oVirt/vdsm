@@ -459,8 +459,6 @@ class LibvirtModuleConfigureTests(TestCase):
         fileutils.rm_tree(self._test_dir)
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: False)
     def testValidatePositive(self):
         self.vdsm_cfg.set('vars', 'ssl', 'true')
         _setConfig(self,
@@ -471,8 +469,6 @@ class LibvirtModuleConfigureTests(TestCase):
         self.assertTrue(libvirt.validate())
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: False)
     def testValidateNegative(self):
         self.vdsm_cfg.set('vars', 'ssl', 'false')
         _setConfig(self,
@@ -483,8 +479,7 @@ class LibvirtModuleConfigureTests(TestCase):
         self.assertFalse(libvirt.validate())
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: False)
+    @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled', lambda _: True)
     def testIsConfiguredPositive(self):
         _setConfig(self,
                    ('LCONF', 'lconf_ssl'),
@@ -496,8 +491,7 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: False)
+    @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled', lambda _: True)
     def testIsConfiguredNegative(self):
         _setConfig(self,
                    ('LCONF', 'lconf_ssl'),
@@ -509,8 +503,6 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: True)
     @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled',
                              lambda u: u != libvirt._LIBVIRT_TCP_SOCKET_UNIT)
     def testIsConfiguredTcpSocketDisabled(self):
@@ -525,8 +517,6 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: True)
     @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled',
                              lambda u: u == libvirt._LIBVIRT_TCP_SOCKET_UNIT)
     def testIsConfiguredTcpSocketEnabled(self):
@@ -541,8 +531,6 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: True)
     @monkeypatch.MonkeyPatch(libvirt, '_read_libvirt_connection_config',
                              lambda: LibvirtConnectionConfig(
                                  auth_tcp='',
@@ -560,8 +548,6 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: True)
     @monkeypatch.MonkeyPatch(libvirt, '_read_libvirt_connection_config',
                              lambda: LibvirtConnectionConfig(
                                  auth_tcp='',
@@ -579,8 +565,6 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: True)
     @monkeypatch.MonkeyPatch(systemctl, 'enable', mock.Mock())
     def testLibvirtConfigureShouldEnableTcpSocket(self):
         self.vdsm_cfg.set('vars', 'ssl', 'false')
@@ -595,8 +579,6 @@ class LibvirtModuleConfigureTests(TestCase):
         ])
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: True)
     @monkeypatch.MonkeyPatch(systemctl, 'enable', mock.Mock())
     def testLibvirtConfigureShouldEnableTlsSocket(self):
         self.vdsm_cfg.set('vars', 'ssl', 'true')
@@ -611,8 +593,6 @@ class LibvirtModuleConfigureTests(TestCase):
         ])
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: True)
     @monkeypatch.MonkeyPatch(systemctl, 'enable', mock.Mock())
     def testLibvirtConfigureSysconfigWithSocketActivation(self):
         _setConfig(self,
@@ -628,26 +608,14 @@ class LibvirtModuleConfigureTests(TestCase):
         self.assertIn("LIBVIRTD_ARGS=\n", text)
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: False)
     @monkeypatch.MonkeyPatch(systemctl, 'enable', mock.Mock())
-    def testLibvirtConfigureSysconfigWithoutSocketActivation(self):
-        _setConfig(self,
-                   ('LCONF', 'lconf_ssl'),
-                   ('QCONF', 'qemu_ssl'),
-                   )
-        libvirt.configure()
-
-        with open(self.test_env['LDCONF']) as f:
-            text = f.read()
-
-        self.assertIn("DAEMON_COREFILE_LIMIT=unlimited\n", text)
-        self.assertIn("LIBVIRTD_ARGS=--listen\n", text)
-
-    @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: False)
+    @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled', mock.Mock())
     def testLibvirtConfigureToSSLTrue(self):
+        enabled_units = set()
+
+        systemctl.enable = enabled_units.add
+        libvirt._unit_enabled = lambda name: name in enabled_units
+
         self.vdsm_cfg.set('vars', 'ssl', 'true')
         _setConfig(self,
                    ('LCONF', 'empty'),
@@ -667,9 +635,14 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
-                             lambda: False)
+    @monkeypatch.MonkeyPatch(systemctl, 'enable', mock.Mock())
+    @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled', mock.Mock())
     def testLibvirtConfigureToSSLFalse(self):
+        enabled_units = set()
+
+        systemctl.enable = enabled_units.add
+        libvirt._unit_enabled = lambda name: name in enabled_units
+
         self.vdsm_cfg.set('vars', 'ssl', 'false')
         _setConfig(self,
                    ('LCONF', 'empty'),
@@ -686,28 +659,6 @@ class LibvirtModuleConfigureTests(TestCase):
             libvirt.isconfigured(),
             MAYBE
         )
-
-    @monkeypatch.MonkeyPatch(libvirt, '_find_libvirt_socket_units', lambda: [])
-    def test_no_socket_activation_when_no_socket_units(self):
-        self.assertFalse(libvirt._libvirt_uses_socket_activation())
-
-    @monkeypatch.MonkeyPatch(libvirt, '_find_libvirt_socket_units', lambda: [
-        {
-            "Names": "libvirtd-tls.socket",
-            "LoadState": "masked"
-        }
-    ])
-    def test_no_socket_activation_when_socket_units_are_masked(self):
-        self.assertFalse(libvirt._libvirt_uses_socket_activation())
-
-    @monkeypatch.MonkeyPatch(libvirt, '_find_libvirt_socket_units', lambda: [
-        {
-            "Names": "libvirtd-tls.socket",
-            "LoadState": "loaded"
-        }
-    ])
-    def test_socket_activation_enabled(self):
-        self.assertTrue(libvirt._libvirt_uses_socket_activation())
 
     def test_hugetlbfs_mount_false(self):
         path_to_fake_mtab = os.path.join(self.srcPath, 'tests',
