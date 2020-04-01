@@ -50,16 +50,17 @@ services = ("vdsmd", "supervdsmd", "libvirtd")
 
 _LibvirtConnectionConfig = namedtuple(
     "_LibvirtConnectionConfig",
-    "auth_tcp, listen_tcp, listen_tls, spice_tls")
+    "auth_tcp, spice_tls")
 
 
 def configure():
     # Remove a previous configuration (if present)
     confutils.remove_conf(FILES, CONF_VERSION)
 
+    ssl = config.getboolean('vars', 'ssl')
     vdsmConfiguration = {
         'socket_activation': _libvirt_uses_socket_activation(),
-        'ssl_enabled': config.getboolean('vars', 'ssl'),
+        'ssl_enabled': ssl,
         'sanlock_enabled': constants.SANLOCK_ENABLED,
         'libvirt_selinux': constants.LIBVIRT_SELINUX
     }
@@ -78,13 +79,10 @@ def configure():
                 raise
 
     if _libvirt_uses_socket_activation():
-        cfg = _read_libvirt_connection_config()
-
-        if cfg.listen_tcp != 0:
-            systemctl.enable(_LIBVIRT_TCP_SOCKET_UNIT)
-
-        if cfg.listen_tls != 0:
+        if ssl:
             systemctl.enable(_LIBVIRT_TLS_SOCKET_UNIT)
+        else:
+            systemctl.enable(_LIBVIRT_TCP_SOCKET_UNIT)
 
 
 def validate():
@@ -107,16 +105,10 @@ def isconfigured():
         ret = NO
 
     if _libvirt_uses_socket_activation():
-        cfg = _read_libvirt_connection_config()
+        ssl = config.getboolean('vars', 'ssl')
+        unit = _LIBVIRT_TLS_SOCKET_UNIT if ssl else _LIBVIRT_TCP_SOCKET_UNIT
 
-        if cfg.listen_tcp != 0 and not _unit_enabled(_LIBVIRT_TCP_SOCKET_UNIT):
-            sys.stdout.write("{} unit is disabled\n".format(
-                _LIBVIRT_TCP_SOCKET_UNIT))
-            ret = NO
-
-        if cfg.listen_tls != 0 and not _unit_enabled(_LIBVIRT_TLS_SOCKET_UNIT):
-            sys.stdout.write("{} unit is disabled\n".format(
-                _LIBVIRT_TLS_SOCKET_UNIT))
+        if not _check_socket_unit_state(unit):
             ret = NO
 
     if ret == MAYBE:
@@ -135,21 +127,24 @@ def _unit_enabled(unit_name):
     return props[0]["UnitFileState"] == "enabled"
 
 
+def _check_socket_unit_state(unit_name):
+    if not _unit_enabled(unit_name):
+        sys.stdout.write("{} unit is disabled\n".format(unit_name))
+        return False
+    return True
+
+
 def _read_libvirt_connection_config():
     lconf_p = ParserWrapper({
-        'listen_tcp': '0',
         'auth_tcp': 'sasl',
-        'listen_tls': '1',
     })
     lconf_p.read(confutils.get_file_path('LCONF', FILES))
-    listen_tcp = lconf_p.getint('listen_tcp')
     auth_tcp = lconf_p.get('auth_tcp')
-    listen_tls = lconf_p.getint('listen_tls')
     qconf_p = ParserWrapper({'spice_tls': '0'})
     qconf_p.read(confutils.get_file_path('QCONF', FILES))
     spice_tls = qconf_p.getboolean('spice_tls')
     return _LibvirtConnectionConfig(
-        auth_tcp, listen_tcp, listen_tls, spice_tls)
+        auth_tcp, spice_tls)
 
 
 def _isSslConflict():
@@ -162,8 +157,7 @@ def _isSslConflict():
     cfg = _read_libvirt_connection_config()
     ret = True
     if ssl:
-        if (cfg.listen_tls != 0 and cfg.listen_tcp != 1
-                and cfg.auth_tcp != '"none"' and cfg.spice_tls != 0):
+        if (cfg.auth_tcp != '"none"' and cfg.spice_tls != 0):
             sys.stdout.write(
                 "SUCCESS: ssl configured to true. No conflicts\n")
         else:
@@ -172,13 +166,12 @@ def _isSslConflict():
                 "conflicting vdsm and libvirt-qemu tls configuration.\n"
                 "vdsm.conf with ssl=True "
                 "requires the following changes:\n"
-                "libvirtd.conf: listen_tcp=0, auth_tcp=\"sasl\", "
-                "listen_tls=1\nqemu.conf: spice_tls=1.\n"
+                "libvirtd.conf: auth_tcp=\"sasl\"\n"
+                "qemu.conf: spice_tls=1.\n"
             )
             ret = False
     else:
-        if (cfg.listen_tls == 0 and cfg.listen_tcp == 1
-                and cfg.auth_tcp == '"none"' and cfg.spice_tls == 0):
+        if (cfg.auth_tcp == '"none"' and cfg.spice_tls == 0):
             sys.stdout.write(
                 "SUCCESS: ssl configured to false. No conflicts.\n")
         else:
@@ -187,8 +180,8 @@ def _isSslConflict():
                 "conflicting vdsm and libvirt-qemu tls configuration.\n"
                 "vdsm.conf with ssl=False "
                 "requires the following changes:\n"
-                "libvirtd.conf: listen_tcp=1, auth_tcp=\"none\", "
-                "listen_tls=0\n qemu.conf: spice_tls=0.\n"
+                "libvirtd.conf: auth_tcp=\"none\"\n"
+                "qemu.conf: spice_tls=0.\n"
             )
             ret = False
     return ret
@@ -255,9 +248,6 @@ FILES = {
             {
                 'conditions': {},
                 'content': {
-                    'unix_sock_group': (
-                        '"' + constants.QEMU_PROCESS_GROUP + '"'),
-                    'unix_sock_rw_perms': '"0770"',
                     'auth_unix_rw': '"sasl"',
                     'host_uuid': '"' + str(uuid.uuid4()) + '"',
                     'keepalive_interval': -1,
@@ -269,8 +259,6 @@ FILES = {
                 },
                 'content': {
                     'auth_tcp': '"none"',
-                    'listen_tcp': 1,
-                    'listen_tls': 0,
                 },
 
             },

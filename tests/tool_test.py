@@ -511,15 +511,10 @@ class LibvirtModuleConfigureTests(TestCase):
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
                              lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_read_libvirt_connection_config',
-                             lambda: LibvirtConnectionConfig(
-                                 auth_tcp='',
-                                 listen_tcp=1,
-                                 listen_tls=0,
-                                 spice_tls=0))
     @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled',
                              lambda u: u != libvirt._LIBVIRT_TCP_SOCKET_UNIT)
     def testIsConfiguredTcpSocketDisabled(self):
+        self.vdsm_cfg.set('vars', 'ssl', 'false')
         _setConfig(self,
                    ('LCONF', 'lconf_ssl'),
                    ('QCONF', 'qemu_ssl'),
@@ -532,15 +527,10 @@ class LibvirtModuleConfigureTests(TestCase):
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
                              lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_read_libvirt_connection_config',
-                             lambda: LibvirtConnectionConfig(
-                                 auth_tcp='',
-                                 listen_tcp=1,
-                                 listen_tls=0,
-                                 spice_tls=0))
     @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled',
                              lambda u: u == libvirt._LIBVIRT_TCP_SOCKET_UNIT)
     def testIsConfiguredTcpSocketEnabled(self):
+        self.vdsm_cfg.set('vars', 'ssl', 'false')
         _setConfig(self,
                    ('LCONF', 'lconf_ssl'),
                    ('QCONF', 'qemu_ssl'),
@@ -556,8 +546,6 @@ class LibvirtModuleConfigureTests(TestCase):
     @monkeypatch.MonkeyPatch(libvirt, '_read_libvirt_connection_config',
                              lambda: LibvirtConnectionConfig(
                                  auth_tcp='',
-                                 listen_tcp=0,
-                                 listen_tls=1,
                                  spice_tls=0))
     @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled',
                              lambda u: u != libvirt._LIBVIRT_TLS_SOCKET_UNIT)
@@ -577,8 +565,6 @@ class LibvirtModuleConfigureTests(TestCase):
     @monkeypatch.MonkeyPatch(libvirt, '_read_libvirt_connection_config',
                              lambda: LibvirtConnectionConfig(
                                  auth_tcp='',
-                                 listen_tcp=0,
-                                 listen_tls=1,
                                  spice_tls=0))
     @monkeypatch.MonkeyPatch(libvirt, '_unit_enabled',
                              lambda u: u == libvirt._LIBVIRT_TLS_SOCKET_UNIT)
@@ -595,21 +581,32 @@ class LibvirtModuleConfigureTests(TestCase):
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
                              lambda: True)
-    @monkeypatch.MonkeyPatch(libvirt, '_read_libvirt_connection_config',
-                             lambda: LibvirtConnectionConfig(
-                                 auth_tcp='',
-                                 listen_tcp=1,
-                                 listen_tls=1,
-                                 spice_tls=0))
     @monkeypatch.MonkeyPatch(systemctl, 'enable', mock.Mock())
-    def testLibvirtConfigureShouldEnableSockets(self):
+    def testLibvirtConfigureShouldEnableTcpSocket(self):
+        self.vdsm_cfg.set('vars', 'ssl', 'false')
         _setConfig(self,
                    ('LCONF', 'lconf_ssl'),
                    ('QCONF', 'qemu_ssl'),
                    )
+
         libvirt.configure()
         systemctl.enable.assert_has_calls([
-            mock.call(libvirt._LIBVIRT_TCP_SOCKET_UNIT),
+            mock.call(libvirt._LIBVIRT_TCP_SOCKET_UNIT)
+        ])
+
+    @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
+    @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',
+                             lambda: True)
+    @monkeypatch.MonkeyPatch(systemctl, 'enable', mock.Mock())
+    def testLibvirtConfigureShouldEnableTlsSocket(self):
+        self.vdsm_cfg.set('vars', 'ssl', 'true')
+        _setConfig(self,
+                   ('LCONF', 'lconf_ssl'),
+                   ('QCONF', 'qemu_ssl'),
+                   )
+
+        libvirt.configure()
+        systemctl.enable.assert_has_calls([
             mock.call(libvirt._LIBVIRT_TLS_SOCKET_UNIT)
         ])
 
