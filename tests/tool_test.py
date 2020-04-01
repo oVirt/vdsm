@@ -628,7 +628,7 @@ class LibvirtModuleConfigureTests(TestCase):
             text = f.read()
 
         self.assertIn("DAEMON_COREFILE_LIMIT=unlimited\n", text)
-        self.assertNotIn("LIBVIRTD_ARGS=", text)
+        self.assertIn("LIBVIRTD_ARGS=\n", text)
 
     @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     @monkeypatch.MonkeyPatch(libvirt, '_libvirt_uses_socket_activation',

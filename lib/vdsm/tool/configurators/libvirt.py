@@ -372,7 +372,8 @@ FILES = {
             {
                 'conditions': {},
                 'content': {
-                    'DAEMON_COREFILE_LIMIT': 'unlimited'
+                    'DAEMON_COREFILE_LIMIT': 'unlimited',
+                    'LIBVIRTD_ARGS': ''
                 }
 
             },
