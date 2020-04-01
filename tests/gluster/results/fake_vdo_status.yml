@@ -43,3 +43,48 @@ VDOs:
         logical blocks used: 40
         data blocks used: 15
         write policy: async
+  vdo_empty:
+    Acknowledgement threads: 1
+    Activate: enabled
+    Bio rotation interval: 64
+    Bio submission threads: 4
+    Block map cache size: 128M
+    Block map period: 16380
+    Block size: 4096
+    CPU-work threads: 2
+    Compression: enabled
+    Configured write policy: auto
+    Deduplication: enabled
+    Device mapper status: not available
+    Emulate 512 byte: enabled
+    Hash zone threads: 1
+    Index checkpoint frequency: 0
+    Index memory setting: 0.25
+    Index parallel factor: 0
+    Index sparse: disabled
+    Index status: not available
+    Logical size: 5000G
+    Logical threads: 1
+    Physical size: 50G
+    Physical threads: 1
+    Read cache: enabled
+    Read cache size: 20M
+    Slab size: 32G
+    Storage device: /dev/sdd1
+    VDO statistics: not available
+  vdo_invalid:
+    Compression: enabled
+    Configured write policy: auto
+    Deduplication: enabled
+    Device mapper status: 0 104857600 dedupe
+    Emulate 512 byte: enabled
+    Storage device: /dev/vg0/vdoinvalid
+    VDO statistics:
+      /dev/mapper/vdoinvalid:
+        1K-blocks: 10485760
+        1K-blocks used: 4220332
+        512 byte emulation: true
+        block size: 4096
+        write policy: async
+        logical blocks used: 20
+        data blocks used: 10

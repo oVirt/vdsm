@@ -132,7 +132,6 @@ class GlusterStorageDevTest(TestCaseBase):
 
     @MonkeyPatch(thinstorage, '_vdoCommandPath', _fake_vdoCommandPath)
     def test_vdo_volume_list(self):
-
         expected = [
             {
                 "device": "/dev/vg0/vdobase",
