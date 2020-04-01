@@ -1,4 +1,4 @@
-# Copyright 2011-2018 Red Hat, Inc.
+# Copyright 2011-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -354,3 +354,9 @@ def get_lldp_info(filter):
         # TODO handle dpdk and OVS nics
         filter['devices'] = netswitch.configurator.netinfo()['nics'].keys()
     return lldp_info.get_info(filter)
+
+
+@contextmanager
+def wait_for_pci_link_up(pci_path, timeout):
+    with sriov.wait_for_pci_link_up(pci_path, timeout):
+        yield

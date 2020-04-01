@@ -1,4 +1,4 @@
-# Copyright 2017-2019 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from contextlib import contextmanager
 from glob import glob
 import logging
 import os
@@ -73,6 +74,22 @@ def persist_numvfs(device_name, numvfs):
     running_config = netconfpersistence.RunningConfig()
     running_config.set_device(device_name, {'sriov': {'numvfs': numvfs}})
     running_config.save()
+
+
+@contextmanager
+def wait_for_pci_link_up(pci_path, timeout=60):
+    with waitfor.wait_for_link_event(
+        '*',
+        waitfor.NEWLINK_STATE_UP,
+        timeout=timeout,
+        check_event=lambda event: _is_event_from_pci_path(event, pci_path),
+    ):
+        yield
+
+
+def _is_event_from_pci_path(event, pci_path):
+    dev_name = event.get('name')
+    return pci_path == devname2pciaddr(dev_name)
 
 
 def _set_valid_vf_macs(pci_path, numvfs):
