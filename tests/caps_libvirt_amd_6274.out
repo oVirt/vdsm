@@ -50,6 +50,8 @@
             <cpu id='6' socket_id='0' core_id='6' siblings='6-7'/>
             <cpu id='7' socket_id='0' core_id='7' siblings='6-7'/>
           </cpus>
+          <pages size='4'>2500</pages>
+          <pages size='2048'>100</pages>
         </cell>
         <cell id='1'>
           <cpus num='8'>
@@ -62,6 +64,8 @@
             <cpu id='14' socket_id='0' core_id='6' siblings='14-15'/>
             <cpu id='15' socket_id='0' core_id='7' siblings='14-15'/>
           </cpus>
+          <pages size='4'>2</pages>
+          <pages size='2048'>1</pages>
         </cell>
         <cell id='2'>
           <cpus num='8'>
@@ -74,6 +78,8 @@
             <cpu id='22' socket_id='1' core_id='6' siblings='22-23'/>
             <cpu id='23' socket_id='1' core_id='7' siblings='22-23'/>
           </cpus>
+          <pages size='4'>0</pages>
+          <pages size='2048'>0</pages>
         </cell>
         <cell id='3'>
           <cpus num='8'>
@@ -86,6 +92,8 @@
             <cpu id='30' socket_id='1' core_id='6' siblings='30-31'/>
             <cpu id='31' socket_id='1' core_id='7' siblings='30-31'/>
           </cpus>
+          <pages size='4'>2500</pages>
+          <pages size='2048'>100</pages>
         </cell>
       </cells>
     </topology>

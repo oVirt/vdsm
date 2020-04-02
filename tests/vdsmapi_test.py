@@ -185,7 +185,12 @@ class DataVerificationTests(TestCaseBase):
                                          u"cpuSys": u"0.40",
                                          u"cpuIdle": u"99.13"}},
                u"numaNodeMemFree": {u"0": {u"memPercent": 15,
-                                           u"memFree": u"13645"}},
+                                           u"memFree": u"13645",
+                                           u"hugepages": {
+                                               4: {
+                                                   u"freePages": u"10"},
+                                               2048: {
+                                                   u"freePages": u"20"}}}},
                u"memShared": 0,
                u"thpState": u"madvise",
                u"vmCount": 0,
@@ -632,8 +637,14 @@ class DataVerificationTests(TestCaseBase):
                'software_version': '4.18',
                'memSize': '15934',
                'cpuSpeed': '1600.125',
-               'numaNodes': {'0': {'totalMemory': '15934',
-                                   'cpus': [0, 1, 2, 3, 4, 5, 6, 7]}},
+               'numaNodes': {
+                       '0': {'totalMemory': '15934',
+                             'cpus': [0, 1, 2, 3, 4, 5, 6, 7],
+                             'hugepages': {
+                                 4: {
+                                     'totalPages': '2500'},
+                                 2048: {
+                                     'totalPages': '100'}}}},
                'cpuSockets': '1',
                'nameservers': [],
                'vlans': {},

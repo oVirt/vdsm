@@ -193,13 +193,25 @@ class TestCaps(TestCaseBase):
         # 2 x AMD 6272 (with Modules)
         t = numa.topology()
         expectedNumaInfo = {
-            '0': {'cpus': [0, 1, 2, 3, 4, 5, 6, 7], 'totalMemory': '49141'},
+            '0': {'cpus': [0, 1, 2, 3, 4, 5, 6, 7], 'totalMemory': '49141',
+                  'hugepages': {
+                      4: {'totalPages': '2500'},
+                      2048: {'totalPages': '100'}}},
             '1': {'cpus': [8, 9, 10, 11, 12, 13, 14, 15],
-                  'totalMemory': '49141'},
+                  'totalMemory': '49141',
+                  'hugepages': {
+                      4: {'totalPages': '2'},
+                      2048: {'totalPages': '1'}}},
             '2': {'cpus': [16, 17, 18, 19, 20, 21, 22, 23],
-                  'totalMemory': '49141'},
+                  'totalMemory': '49141',
+                  'hugepages': {
+                      4: {'totalPages': '0'},
+                      2048: {'totalPages': '0'}}},
             '3': {'cpus': [24, 25, 26, 27, 28, 29, 30, 31],
-                  'totalMemory': '49141'}}
+                  'totalMemory': '49141',
+                  'hugepages': {
+                      4: {'totalPages': '2500'},
+                      2048: {'totalPages': '100'}}}}
         self.assertEqual(t, expectedNumaInfo)
 
     @MonkeyPatch(numa, '_get_libvirt_caps', lambda: _getTestData(
