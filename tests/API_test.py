@@ -45,6 +45,7 @@ class TestVMCreate(TestCaseBase):
     def setUp(self):
         self.uuid = API.VM.BLANK_UUID
         self.cif = FakeClientIF()
+        self.domain_xml = vmfakelib.default_domain_xml(vm_id=self.uuid)
         self.vmParams = {
             'vmId': self.uuid,
             'vmName': 'TESTING',
@@ -53,10 +54,10 @@ class TestVMCreate(TestCaseBase):
             'display': 'qxl',
             'kvmEnable': 'true',
             'smp': '1',
-            'xml': vmfakelib.default_domain_xml(vm_id=self.uuid)
+            'xml': self.domain_xml,
         }
         with MonkeyPatchScope([(API, 'clientIF', self.cif)]):
-            self.vm = API.VM(self.uuid)
+            self.vm = API.VM(None)
         # to make testing easier
         threadlocal.vars.context = api.Context("flow_id", "1.2.3.4", 5678)
 
@@ -65,15 +66,16 @@ class TestVMCreate(TestCaseBase):
 
     def test_create_twice(self):
         vmParams = {
-            'vmId': self.uuid,
+            'vmId': None,
+            'xml': self.domain_xml,
         }
         vm = FakeVM(self.cif, vmParams)
-        self.cif.vmContainer[vm.id] = vm
+        self.cif.vmContainer[self.uuid] = vm
         try:
-            res = self.vm.create({})
+            res = self.vm.create(vmParams)
             self.assertTrue(response.is_error(res, 'exist'))
         finally:
-            del self.cif.vmContainer[vm.id]
+            del self.cif.vmContainer[self.uuid]
         self.assertEqual(self.cif.vmContainer, {})
 
     def test_create_unsupported_graphics(self):
@@ -82,6 +84,7 @@ class TestVMCreate(TestCaseBase):
             'memSize': 8 * 1024,
             'vmType': 'kvm',
             'display': 'unsupported',
+            'xml': self.domain_xml,
         }
         res = self.vm.create(vmParams)
         self.assertTrue(response.is_error(res, 'createErr'))

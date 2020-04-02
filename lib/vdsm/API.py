@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2012 Adam Litke, IBM Corporation
-# Copyright (C) 2012-2019 Red Hat, Inc.
+# Copyright (C) 2012-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ from vdsm.common.compat import pickle
 from vdsm.common.define import doneCode, errCode
 from vdsm.config import config
 from vdsm.virt import sampling
+from vdsm.virt.domain_descriptor import DomainDescriptor
 import vdsm.virt.jobs
 from vdsm.virt.jobs import seal
 from vdsm.virt.vmdevices import graphics
@@ -185,6 +186,9 @@ class VM(APIBase):
         :param vmParams: required and optional VM parameters.
         :type vmParams: dict
         """
+        # self._UUID is None in this call, it must be retrieved from XML
+        xml = vmParams.get('_srcDomXML') or vmParams['xml']
+        self._UUID = DomainDescriptor(xml).id
         vmParams['vmId'] = self._UUID
         try:
             if vmParams.get('vmId') in self._cif.vmContainer:
