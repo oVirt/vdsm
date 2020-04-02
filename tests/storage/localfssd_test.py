@@ -42,6 +42,8 @@ from vdsm.storage import sd
 
 from . import qemuio
 from . import userstorage
+from . marks import requires_unprivileged_user
+from . storagetestlib import chmod
 
 PREALLOCATED_VOL_SIZE = 10 * MiB
 SPARSE_VOL_SIZE = GiB
@@ -901,6 +903,241 @@ def test_dump_sd_volumes(monkeypatch, tmp_repo, user_mount, user_domain):
     assert user_domain.dump() == {
         "metadata": expected_metadata,
         "volumes": expected_volumes_metadata
+    }
+
+
+def test_dump_sd_volumes_invalid_md(
+        monkeypatch,
+        tmp_repo,
+        user_mount,
+        user_domain):
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+    vol_capacity = 2 * SPARSE_VOL_SIZE
+    vol_ctime = 1550522547
+
+    with monkeypatch.context() as mc:
+        mc.setattr(time, "time", lambda: vol_ctime)
+        user_domain.createVolume(
+            imgUUID=img_uuid,
+            capacity=vol_capacity,
+            volFormat=sc.RAW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType="DATA",
+            volUUID=vol_uuid,
+            desc="test",
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID)
+
+    # Corrupt the metadata of the volume.
+    vol = user_domain.produceVolume(img_uuid, vol_uuid)
+    meta_path = vol.getMetaVolumePath()
+    with open(meta_path, "wb") as f:
+        f.write(b"bad-key=bad-value")
+
+    expected_metadata = {
+        "alignment": user_domain.alignment,
+        "block_size": user_domain.block_size,
+        "class": "Data",
+        "name": "domain",
+        "pool": [tmp_repo.pool_id],
+        "remotePath": user_mount.path,
+        "role": sd.REGULAR_DOMAIN,
+        "type": "LOCALFS",
+        "uuid": user_domain.sdUUID,
+        "version": str(user_domain.getVersion())
+    }
+
+    # Only get the volume size and state it as invalid.
+    vol_size = user_domain.getVolumeSize(img_uuid, vol_uuid)
+    expected_volumes_metadata = {
+        vol_uuid: {
+            "apparentsize": vol_size.apparentsize,
+            "truesize": vol_size.truesize,
+            "status": "INVALID"
+        }
+    }
+
+    assert user_domain.dump() == {
+        "metadata": expected_metadata,
+        "volumes": expected_volumes_metadata
+    }
+
+
+@requires_unprivileged_user
+def test_dump_sd_volumes_no_md_access(
+        monkeypatch,
+        tmp_repo,
+        user_mount,
+        user_domain):
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+    vol_capacity = 2 * SPARSE_VOL_SIZE
+    vol_ctime = 1550522547
+
+    with monkeypatch.context() as mc:
+        mc.setattr(time, "time", lambda: vol_ctime)
+        user_domain.createVolume(
+            imgUUID=img_uuid,
+            capacity=vol_capacity,
+            volFormat=sc.RAW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType="DATA",
+            volUUID=vol_uuid,
+            desc="test",
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID)
+
+    # Make the meta file inaccessible for parsing.
+    vol = user_domain.produceVolume(img_uuid, vol_uuid)
+    meta_path = vol.getMetaVolumePath()
+    with chmod(meta_path, 0o000):
+        result = user_domain.dump()
+
+    expected_metadata = {
+        "alignment": user_domain.alignment,
+        "block_size": user_domain.block_size,
+        "class": "Data",
+        "name": "domain",
+        "pool": [tmp_repo.pool_id],
+        "remotePath": user_mount.path,
+        "role": sd.REGULAR_DOMAIN,
+        "type": "LOCALFS",
+        "uuid": user_domain.sdUUID,
+        "version": str(user_domain.getVersion())
+    }
+
+    # Only get the volume size and state it as invalid.
+    vol_size = user_domain.getVolumeSize(img_uuid, vol_uuid)
+    expected_volumes_metadata = {
+        vol_uuid: {
+            "apparentsize": vol_size.apparentsize,
+            "truesize": vol_size.truesize,
+            "status": "INVALID"
+        }
+    }
+
+    assert result == {
+        "metadata": expected_metadata,
+        "volumes": expected_volumes_metadata
+    }
+
+
+def test_dump_sd_volumes_failed_size_query(
+        monkeypatch,
+        tmp_repo,
+        user_mount,
+        user_domain):
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+    vol_capacity = 2 * SPARSE_VOL_SIZE
+    vol_ctime = 1550522547
+
+    with monkeypatch.context() as mc:
+        mc.setattr(time, "time", lambda: vol_ctime)
+        user_domain.createVolume(
+            imgUUID=img_uuid,
+            capacity=vol_capacity,
+            volFormat=sc.RAW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType="DATA",
+            volUUID=vol_uuid,
+            desc="test",
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID)
+
+    # Make volume size query raise an exception.
+    with monkeypatch.context() as mc:
+        def bad_vol_size():
+            raise Exception()
+        mc.setattr(fileSD.FileStorageDomain, "getVolumeSize", bad_vol_size)
+        result = user_domain.dump()
+
+    expected_metadata = {
+        "alignment": user_domain.alignment,
+        "block_size": user_domain.block_size,
+        "class": "Data",
+        "name": "domain",
+        "pool": [tmp_repo.pool_id],
+        "remotePath": user_mount.path,
+        "role": sd.REGULAR_DOMAIN,
+        "type": "LOCALFS",
+        "uuid": user_domain.sdUUID,
+        "version": str(user_domain.getVersion())
+    }
+
+    # Return the parsed metadata with INVALID volume status for the bad size.
+    expected_volumes_metadata = {
+        vol_uuid: {
+            "capacity": vol_capacity,
+            "ctime": vol_ctime,
+            "description": "test",
+            "disktype": sc.DATA_DISKTYPE,
+            "format": "RAW",
+            "generation": 0,
+            "image": img_uuid,
+            "legality": sc.LEGAL_VOL,
+            "status": sc.VOL_STATUS_INVALID,
+            "parent": sc.BLANK_UUID,
+            "type": "SPARSE",
+            "voltype": "LEAF"
+        }
+    }
+
+    assert result == {
+        "metadata": expected_metadata,
+        "volumes": expected_volumes_metadata
+    }
+
+
+def test_dump_sd_volumes_removed_image(
+        monkeypatch,
+        tmp_repo,
+        user_mount,
+        user_domain):
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+    vol_capacity = 2 * SPARSE_VOL_SIZE
+    vol_ctime = 1550522547
+
+    with monkeypatch.context() as mc:
+        mc.setattr(time, "time", lambda: vol_ctime)
+        user_domain.createVolume(
+            imgUUID=img_uuid,
+            capacity=vol_capacity,
+            volFormat=sc.RAW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType="DATA",
+            volUUID=vol_uuid,
+            desc="test",
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID)
+
+    # Mark the volume image as removed.
+    vol = user_domain.produceVolume(img_uuid, vol_uuid)
+    img_vols = [{vol_uuid: vol}]
+    user_domain.deleteImage(user_domain.sdUUID, img_uuid, img_vols)
+
+    expected_metadata = {
+        "alignment": user_domain.alignment,
+        "block_size": user_domain.block_size,
+        "class": "Data",
+        "name": "domain",
+        "pool": [tmp_repo.pool_id],
+        "remotePath": user_mount.path,
+        "role": sd.REGULAR_DOMAIN,
+        "type": "LOCALFS",
+        "uuid": user_domain.sdUUID,
+        "version": str(user_domain.getVersion())
+    }
+
+    assert user_domain.dump() == {
+        "metadata": expected_metadata,
+        "volumes": {}
     }
 
 
