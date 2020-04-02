@@ -117,6 +117,9 @@ class NumaNodeMemorySample(object):
             if int(memInfo['total']) != 0:
                 nodeMemSample['memPercent'] = 100 - \
                     int(100.0 * int(memInfo['free']) // int(memInfo['total']))
+            page_sizes = list(numaTopology[nodeIndex]['hugepages'].keys())
+            nodeMemSample['hugepages'] = \
+                numa.free_pages_by_cell(page_sizes, idx)
             self.nodesMemSample[nodeIndex] = nodeMemSample
 
 

@@ -31,6 +31,7 @@ from monkeypatch import MonkeyPatchScope
 
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
+import vmfakelib as fake
 
 
 @expandPermutations
@@ -241,31 +242,61 @@ class NumaNodeMemorySampleTests(TestCaseBase):
         def fakeNumaTopology():
             return {
                 node_id: {
-                    'cpus': [cpu_id]
+                    'cpus': [cpu_id],
+                    'hugepages': {
+                        4: {'totalPages': '2500'},
+                        2048: {'totalPages': '100'}}
                 }
             }
+
+        fakeConnection = fake.Connection()
+        fakeConnection.free_pages = {
+            '4': '5',
+            '2048': '10'
+        }
 
         return MonkeyPatchScope([(numa, 'topology',
                                   fakeNumaTopology),
                                  (numa, 'memory_by_cell',
-                                  fakeMemoryStats)])
+                                  fakeMemoryStats),
+                                 (numa.libvirtconnection,
+                                  'get',
+                                  lambda : fakeConnection)])
 
     def testMemoryStatsWithZeroMemoryAsString(self):
-        expected = {0: {'memPercent': 100, 'memFree': '0'}}
+        expected = {0: {
+            'memPercent': 100,
+            'memFree': '0',
+            'hugepages': {
+                    4: {'freePages': '5'},
+                    2048: {'freePages': '10'}
+                    }}}
 
         with self._monkeyPatchedMemorySample(freeMemory='0', totalMemory='0'):
             memorySample = sampling.NumaNodeMemorySample()
             self.assertEqual(memorySample.nodesMemSample, expected)
 
     def testMemoryStatsWithZeroMemoryAsInt(self):
-        expected = {0: {'memPercent': 100, 'memFree': '0'}}
+        expected = {0: {
+            'memPercent': 100,
+            'memFree': '0',
+            'hugepages': {
+                    4: {'freePages': '5'},
+                    2048: {'freePages': '10'}
+                    }}}
 
         with self._monkeyPatchedMemorySample(freeMemory='0', totalMemory=0):
             memorySample = sampling.NumaNodeMemorySample()
             self.assertEqual(memorySample.nodesMemSample, expected)
 
     def testMemoryStats(self):
-        expected = {0: {'memPercent': 40, 'memFree': '600'}}
+        expected = {0: {
+            'memPercent': 40,
+            'memFree': '600',
+            'hugepages': {
+                    4: {'freePages': '5'},
+                    2048: {'freePages': '10'}
+                    }}}
 
         with self._monkeyPatchedMemorySample(freeMemory='600',
                                              totalMemory='1000'):

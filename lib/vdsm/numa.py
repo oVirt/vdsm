@@ -120,6 +120,26 @@ def memory_by_cell(index):
     return meminfo
 
 
+def pages_by_cell(cell, index):
+    pages = {int(page.get('size')): {'totalPages': page.text}
+             for page in cell.findall('pages')}
+    return pages
+
+
+# Example of a value returned from conn.getFreePages:
+# {1: {2048: 250, 1048576: 0, 4: 862794}}
+def free_pages_by_cell(page_sizes, numa_index):
+        free_pages = {}
+        if page_sizes:
+            conn = libvirtconnection.get()
+            libvirt_freepages = conn.getFreePages(page_sizes, numa_index, 1)
+            free_pages = \
+                {int(page_size): {'freePages': free_pages}
+                 for page_size, free_pages in
+                    libvirt_freepages[numa_index].items()}
+        return free_pages
+
+
 @cache.memoized
 def _numa(capabilities=None):
     if capabilities is None:
@@ -143,6 +163,7 @@ def _numa(capabilities=None):
             idx = int(cell_id)
         meminfo = memory_by_cell(idx)
         topology[cell_id]['totalMemory'] = meminfo['total']
+        topology[cell_id]['hugepages'] = pages_by_cell(cell, idx)
         topology[cell_id]['cpus'] = []
         distances[cell_id] = []
 

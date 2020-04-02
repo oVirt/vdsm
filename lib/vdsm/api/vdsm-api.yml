@@ -1985,6 +1985,27 @@ types:
             type: *HostBandwidthParams
         type: object
 
+    NumaNodeHugePagesStats: &NumaNodeHugePagesStats
+        added: '4.4'
+        description: Statistics about the hugepages
+                of a given size for a numa node
+        name: NumaNodeHugePagesStats
+        properties:
+        -   description: The number of free hugepages
+                of a given size in a numa node
+            name: freePages
+            type: string
+        type: object
+
+    NumaNodeHugePagesStatsMap: &NumaNodeHugePagesStatsMap
+        added: '4.4'
+        description: A mapping of hugepages statistics
+                indexed by hugepages size in KiB
+        name: NumaNodeHugePageStatsMap
+        key-type: uint
+        type: map
+        value-type: *NumaNodeHugePagesStats
+
     NumaNodeMemoryStats: &NumaNodeMemoryStats
         added: '3.4'
         description: Statistics about the memory of a numa node.
@@ -1998,6 +2019,11 @@ types:
         -   description: The ratio of used memory
             name: memPercent
             type: uint
+
+        -   description: Hugepages statistics
+            added: '4.4'
+            name: hugepages
+            type: *NumaNodeHugePagesStatsMap
         type: object
 
     NumaNodeMemoryStatsMap: &NumaNodeMemoryStatsMap
@@ -5043,6 +5069,27 @@ types:
         type: map
         value-type: *NetworkInterfaceStats
 
+    NumaNodeHugePages: &NumaNodeHugePages
+        added: '4.4'
+        description: Information about hugepages
+                of a given size for a numa node
+        name: NumaNodeHugePages
+        properties:
+        -   description: The number of hugepages
+                of a given size in a numa node
+            name: totalPages
+            type: string
+        type: object
+
+    NumaNodeHugePagesMap: &NumaNodeHugePagesMap
+        added: '4.4'
+        description: A mapping of hugepages information
+                indexed by hugepages size in KiB
+        name: NumaNodeHugePagesMap
+        key-type: uint
+        type: map
+        value-type: *NumaNodeHugePages
+
     NumaNode: &NumaNode
         added: '3.4'
         description: Information about a host numa cell
@@ -5059,6 +5106,10 @@ types:
             name: totalMemory
             type: string
             datatype: uint
+        -   description: Hugepages statistics
+            added: '4.4'
+            name: hugepages
+            type: *NumaNodeHugePagesMap
         type: object
 
     NumaNodeDistanceMap: &NumaNodeDistanceMap

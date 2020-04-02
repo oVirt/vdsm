@@ -179,6 +179,11 @@ class Connection(object):
 
         return ret
 
+    free_pages = {}
+
+    def getFreePages(self, page_sizes, numa_index, cellCount):
+        return {numa_index: self.free_pages}
+
 
 class Secret(object):
 
