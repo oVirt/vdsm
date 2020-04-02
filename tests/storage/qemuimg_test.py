@@ -390,6 +390,37 @@ class TestConvert:
                             backing='bak', backingFormat='qcow2',
                             dstQcow2Compat='1.11')
 
+    def test_qcow2_backing_file_without_creation(self):
+        with namedTemporaryDir() as tmpdir:
+            base_vol = os.path.join(tmpdir, 'base.img')
+            make_image(base_vol, 100 * MiB, qemuimg.FORMAT.QCOW2, 1, '1.1', None)
+            top_vol = os.path.join(tmpdir, 'top.img')
+
+            op = qemuimg.create(top_vol,
+                            size=100 * MiB,
+                            format=qemuimg.FORMAT.QCOW2,
+                            qcow2Compat='1.1',
+                            backing=base_vol)
+            op.run()
+
+            dest_top_vol = os.path.join(tmpdir, 'dest_top.img')
+            op = qemuimg.create(dest_top_vol,
+                            size=100 * MiB,
+                            format=qemuimg.FORMAT.QCOW2,
+                            qcow2Compat='1.1',
+                            backing=base_vol)
+            op.run()
+
+            op = qemuimg.convert(top_vol, dest_top_vol, dstFormat='qcow2',
+                            backing=base_vol, dstQcow2Compat='1.1',
+                            create=True)
+            op.run()
+
+            top_info = qemuimg.check(top_vol)
+            dest_top_info = qemuimg.check(dest_top_vol)
+
+            assert top_info['offset'] == dest_top_info['offset']
+
 
 class TestConvertCompressed:
 
