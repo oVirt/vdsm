@@ -416,6 +416,10 @@ class LVMCache(object):
         self._runner = cmd_runner
         self._stats = CacheStats()
 
+    @property
+    def stats(self):
+        return self._stats
+
     def set_read_only(self, value):
         """
         Called when the SPM is started or stopped.
@@ -805,29 +809,29 @@ class LVMCache(object):
         # Get specific PV
         pv = self._pvs.get(pvName)
         if not pv or pv.is_stale():
-            self._stats.miss()
+            self.stats.miss()
             pvs = self._reloadpvs(pvName)
             pv = pvs.get(pvName)
         else:
-            self._stats.hit()
+            self.stats.hit()
         return pv
 
     def getAllPvs(self):
         # Get everything we have
         if self._stalepv:
-            self._stats.miss()
+            self.stats.miss()
             pvs = self._reloadpvs()
         else:
             pvs = dict(self._pvs)
             stalepvs = [pv.name for pv in six.itervalues(pvs) if pv.is_stale()]
             if stalepvs:
-                self._stats.miss()
+                self.stats.miss()
                 for name in stalepvs:
                     del pvs[name]
                 reloaded = self._reloadpvs(stalepvs)
                 pvs.update(reloaded)
             else:
-                self._stats.hit()
+                self.stats.hit()
         return list(six.itervalues(pvs))
 
     def getPvs(self, vgName):
@@ -846,22 +850,22 @@ class LVMCache(object):
                 pvs.append(pv)
 
         if stalepvs:
-            self._stats.miss()
+            self.stats.miss()
             reloadedpvs = self._reloadpvs(pvName=stalepvs)
             pvs.extend(reloadedpvs.values())
         else:
-            self._stats.hit()
+            self.stats.hit()
         return pvs
 
     def getVg(self, vgName):
         # Get specific VG
         vg = self._vgs.get(vgName)
         if not vg or vg.is_stale():
-            self._stats.miss()
+            self.stats.miss()
             vgs = self._reloadvgs(vgName)
             vg = vgs.get(vgName)
         else:
-            self._stats.hit()
+            self.stats.hit()
         return vg
 
     def getVgs(self, vgNames):
@@ -871,26 +875,26 @@ class LVMCache(object):
         Fills the cache but not uses it.
         Only returns found VGs.
         """
-        self._stats.miss()
+        self.stats.miss()
         return [vg for vgName, vg in six.iteritems(self._reloadvgs(vgNames))
                 if vgName in vgNames]
 
     def getAllVgs(self):
         # Get everything we have
         if self._stalevg:
-            self._stats.miss()
+            self.stats.miss()
             vgs = self._reloadvgs()
         else:
             vgs = dict(self._vgs)
             stalevgs = [vg.name for vg in six.itervalues(vgs) if vg.is_stale()]
             if stalevgs:
-                self._stats.miss()
+                self.stats.miss()
                 for name in stalevgs:
                     del vgs[name]
                 reloaded = self._reloadvgs(stalevgs)
                 vgs.update(reloaded)
             else:
-                self._stats.hit()
+                self.stats.hit()
         return list(six.itervalues(vgs))
 
     def getLv(self, vgName, lvName=None):
@@ -918,29 +922,25 @@ class LVMCache(object):
             # vgName, lvName
             lv = self._lvs.get((vgName, lvName))
             if not lv or lv.is_stale():
-                self._stats.miss()
+                self.stats.miss()
                 # while we here reload all the LVs in the VG
                 lvs = self._reloadlvs(vgName)
                 lv = lvs.get((vgName, lvName))
             else:
-                self._stats.hit()
+                self.stats.hit()
 
             return lv
 
         if self._lvs_needs_reload(vgName):
-            self._stats.miss()
+            self.stats.miss()
             lvs = self._reloadlvs(vgName)
         else:
-            self._stats.hit()
+            self.stats.hit()
             lvs = dict(self._lvs)
 
         lvs = [lv for lv in lvs.values()
                if not lv.is_stale() and (lv.vg_name == vgName)]
         return lvs
-
-    @property
-    def stats(self):
-        return self._stats
 
     def _lvs_needs_reload(self, vg_name):
         if self._stalelv:
