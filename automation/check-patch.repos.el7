@@ -1,12 +1,7 @@
 centos-debuginfo,http://debuginfo.centos.org/7/x86_64/
+centos-ovirt43,http://mirror.centos.org/centos/7/virt/x86_64/ovirt-4.3/
+centos-qemu-ev,http://mirror.centos.org/centos/7/virt/x86_64/kvm-common/
 glusterfs-3.12-el7,http://mirror.centos.org/centos/7/storage/x86_64/gluster-3.12/
-centos-ovirt-common-candidate,http://cbs.centos.org/repos/virt7-ovirt-common-candidate/$basearch/os/
-centos-ovirt-common-testing-ppc64le,https://cbs.centos.org/repos/virt7-ovirt-common-testing/ppc64le/os/
-centos-ovirt-common-testing-x86_64,https://cbs.centos.org/repos/virt7-ovirt-common-testing/x86_64/os/
-centos-ovirt42-testing-ppc64le,https://cbs.centos.org/repos/virt7-ovirt-42-testing/ppc64le/os/
-centos-ovirt42-testing-x86_64,https://cbs.centos.org/repos/virt7-ovirt-42-testing/x86_64/os/
-centos-ovirt43-testing,https://cbs.centos.org/repos/virt7-ovirt-43-testing/$basearch/os/
-kvm-common,https://cbs.centos.org/repos/virt7-kvm-common-release/$basearch/os/
 lago,http://resources.ovirt.org/repos/lago/stable/0.0/rpm/$distro
 ovirt-ci-tools,http://resources.ovirt.org/repos/ci-tools/$distro
 ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-4.3-snapshot-static/rpm/$distro
