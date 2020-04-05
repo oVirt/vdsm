@@ -551,12 +551,6 @@ parameters = [
             'false by default. Use environment file /etc/sysconfig/vdsm to '
             'set COVERAGE_PROCESS_START and COVERAGE_FILE variables.'),
 
-        ('health_monitor_enable', 'false',
-            'Enable Vdsm health monitoring.'),
-
-        ('health_check_interval', '60',
-            'Number of seconds to wait between health checks.'),
-
         ('m2c_debug_enable', 'false',
             'Enable state information about the SSL connections which is by '
             'default logged to stderr.'),
@@ -566,6 +560,15 @@ parameters = [
 
         ('xml_minimal_changes', 'true',
             'Perform minimal updates to the domain XML when starting a VM.'),
+    ]),
+
+    # Section: [health]
+    ('health', [
+        ('monitor_enable', 'true',
+            'Enable Vdsm health monitoring.'),
+
+        ('check_interval', '300',
+            'Number of seconds to wait between health checks.'),
     ]),
 
     # Section: [gluster]

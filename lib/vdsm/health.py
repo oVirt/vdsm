@@ -38,8 +38,8 @@ _monitor = None
 def start():
     global _monitor
     assert _monitor is None
-    if config.getboolean("devel", "health_monitor_enable"):
-        interval = config.getint("devel", "health_check_interval")
+    if config.getboolean("health", "monitor_enable"):
+        interval = config.getint("health", "check_interval")
         _monitor = Monitor(interval)
         _monitor.start()
 
