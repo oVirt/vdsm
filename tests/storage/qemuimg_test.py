@@ -390,6 +390,94 @@ class TestConvert:
                             backing='bak', backingFormat='qcow2',
                             dstQcow2Compat='1.11')
 
+    @pytest.mark.xfail(reason="qemu-img convert with -n and -o will copy the"
+                              " wrong amount of data")
+    def test_qcow2_backing_file_without_creation(self):
+        virtual_size = MiB
+        with namedTemporaryDir() as tmpdir:
+            # Create source chain.
+            src_base = os.path.join(tmpdir, 'src_base.img')
+            op = qemuimg.create(
+                src_base,
+                size=virtual_size,
+                format=qemuimg.FORMAT.QCOW2,
+                qcow2Compat='1.1'
+            )
+            op.run()
+
+            src_top = os.path.join(tmpdir, 'src_top.img')
+            op = qemuimg.create(
+                src_top,
+                size=virtual_size,
+                format=qemuimg.FORMAT.QCOW2,
+                qcow2Compat='1.1',
+                backing=src_base,
+                backingFormat='qcow2'
+            )
+            op.run()
+
+            # Create dest chain
+            dst_base = os.path.join(tmpdir, 'dst_base.img')
+            op = qemuimg.create(
+                dst_base,
+                size=virtual_size,
+                format=qemuimg.FORMAT.QCOW2,
+                qcow2Compat='1.1'
+            )
+            op.run()
+
+            dst_top = os.path.join(tmpdir, 'dst_top.img')
+            op = qemuimg.create(
+                dst_top,
+                size=virtual_size,
+                format=qemuimg.FORMAT.QCOW2,
+                qcow2Compat='1.1',
+                backing=dst_base,
+                backingFormat='qcow2'
+            )
+            op.run()
+
+            # Write data to the source chain.
+            cluster_size = 64 * KiB
+            for i, path in enumerate([src_base, src_top]):
+                qemuio.write_pattern(
+                    path,
+                    "qcow2",
+                    offset=i * cluster_size,
+                    len=cluster_size,
+                    pattern=0xf0 + i)
+
+            # Copy base to base.
+            op = qemuimg.convert(
+                src_base,
+                dst_base,
+                srcFormat='qcow2',
+                dstFormat='qcow2',
+                dstQcow2Compat='1.1',
+                create=False
+            )
+            op.run()
+
+            # Copy top to top.
+            op = qemuimg.convert(
+                src_top,
+                dst_top,
+                srcFormat='qcow2',
+                dstFormat='qcow2',
+                backing=dst_base,
+                dstQcow2Compat='1.1',
+                create=False
+            )
+            op.run()
+
+            # Run comparisons, if there is a mismatch in content or size
+            # op.run() will raise and fail the test.
+            op = qemuimg.compare(src_base, dst_base, strict=True)
+            op.run()
+
+            op = qemuimg.compare(src_top, dst_top, strict=True)
+            op.run()
+
 
 class TestConvertCompressed:
 
