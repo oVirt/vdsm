@@ -1199,9 +1199,6 @@ class BlockStorageDomain(sd.StorageDomain):
 
         if now - self._lastUncachedSelftest > timeout:
             self._lastUncachedSelftest = now
-            stats = lvm.cache_stats()
-            log.info("LVM cache hit ratio: %.2f%% (hits: %d misses: %d)",
-                     stats["hit_ratio"], stats["hits"], stats["misses"])
             lvm.chkVG(self.sdUUID)
         elif lvm.getVG(self.sdUUID).partial != lvm.VG_OK:
             raise se.StorageDomainAccessError(self.sdUUID)

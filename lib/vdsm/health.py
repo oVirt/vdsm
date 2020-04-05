@@ -28,6 +28,7 @@ import threading
 
 from vdsm.common import concurrent
 from vdsm.common import cpuarch
+from vdsm.storage import lvm
 
 from . config import config
 from . import metrics
@@ -92,6 +93,7 @@ class Monitor(object):
         self.log.debug("Checking health")
         self._check_garbage()
         self._check_resources()
+        self._check_lvm_stats()
         self._report_stats()
 
     def _check_garbage(self):
@@ -122,6 +124,11 @@ class Monitor(object):
                        "+" if delta_rss >= 0 else "-",
                        abs(delta_rss),
                        self._stats['threads'])
+
+    def _check_lvm_stats(self):
+        stats = lvm.cache_stats()
+        self.log.info("LVM cache hit ratio: %.2f%% (hits: %d misses: %d)",
+                      stats["hit_ratio"], stats["hits"], stats["misses"])
 
     def _report_stats(self):
         prefix = "hosts.vdsm"
