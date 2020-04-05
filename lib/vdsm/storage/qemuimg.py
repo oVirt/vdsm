@@ -243,7 +243,9 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
             This option improves performance, but is only recommended for
             preallocated devices like host devices or other raw block devices.
         create (bool): If True (default) the destination image is created. Must
-            be set to False when convert to NBD.
+            be set to False when convert to NBD. If create is False,
+            backingFormat, preallocated and dstQcow2Compat are ignored as
+            qemu-img ignores them and may return an error at some point
     """
     cmd = [_qemuimg.cmd, "convert", "-p", "-t", "none", "-T", "none"]
     options = []
@@ -270,10 +272,13 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
         if not os.path.isabs(backing):
             cwdPath = os.path.dirname(srcImage)
 
-        options.append('backing_file=' + str(backing))
+        if create:
+            options.append('backing_file=' + str(backing))
 
-        if backingFormat:
-            options.append('backing_fmt=' + str(backingFormat))
+            if backingFormat:
+                options.append('backing_fmt=' + str(backingFormat))
+        else:
+            cmd.extend(('-B', backing))
 
     if options:
         cmd.extend(('-o', ','.join(options)))

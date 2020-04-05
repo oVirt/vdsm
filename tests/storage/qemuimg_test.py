@@ -390,8 +390,6 @@ class TestConvert:
                             backing='bak', backingFormat='qcow2',
                             dstQcow2Compat='1.11')
 
-    @pytest.mark.xfail(reason="qemu-img convert with -n and -o will copy the"
-                              " wrong amount of data")
     def test_qcow2_backing_file_without_creation(self):
         virtual_size = MiB
         with namedTemporaryDir() as tmpdir:
