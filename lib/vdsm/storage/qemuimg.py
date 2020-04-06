@@ -420,6 +420,18 @@ def rebase(image, backing, format=None, backingFormat=None, unsafe=False):
     return operation.Command(cmd, cwd=cwdPath)
 
 
+def compare(image1, image2, strict=False):
+    cmd = [_qemuimg.cmd, "compare", "-p"]
+
+    if strict:
+        cmd.append("-s")
+
+    cmd.extend([image1, image2])
+    cwdPath = os.path.dirname(image1)
+
+    return operation.Command(cmd, cwd=cwdPath)
+
+
 def default_qcow2_compat():
     value = config.get('irs', 'qcow2_compat')
     if value not in _QCOW2_COMPAT_SUPPORTED:
