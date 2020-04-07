@@ -470,10 +470,22 @@ class TestConvert:
 
             # Run comparisons, if there is a mismatch in content or size
             # op.run() will raise and fail the test.
-            op = qemuimg.compare(src_base, dst_base, strict=True)
+            op = qemuimg.compare(
+                src_base,
+                dst_base,
+                img1_format='qcow2',
+                img2_format='qcow2',
+                strict=True
+            )
             op.run()
 
-            op = qemuimg.compare(src_top, dst_top, strict=True)
+            op = qemuimg.compare(
+                src_top,
+                dst_top,
+                img1_format='qcow2',
+                img2_format='qcow2',
+                strict=True
+            )
             op.run()
 
 

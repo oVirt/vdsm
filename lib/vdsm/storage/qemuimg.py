@@ -425,14 +425,20 @@ def rebase(image, backing, format=None, backingFormat=None, unsafe=False):
     return operation.Command(cmd, cwd=cwdPath)
 
 
-def compare(image1, image2, strict=False):
+def compare(img1, img2, img1_format=None, img2_format=None, strict=False):
     cmd = [_qemuimg.cmd, "compare", "-p"]
+
+    if img1_format:
+        cmd.extend(('-f', img1_format))
+
+    if img2_format:
+        cmd.extend(('-F', img2_format))
 
     if strict:
         cmd.append("-s")
 
-    cmd.extend([image1, image2])
-    cwdPath = os.path.dirname(image1)
+    cmd.extend([img1, img2])
+    cwdPath = os.path.dirname(img1)
 
     return operation.Command(cmd, cwd=cwdPath)
 
