@@ -8336,14 +8336,9 @@ types:
                 name: id
                 type: *UUID
 
-            -   description: List of disks to be backed up
-                name: disks
-                type:
-                - *VolumeInfo
-
-            -   descripton: Timestamp when checkpoint was created
-                name: created
-                type: uint
+            -   description: Checkpoint XML description returned from libvirt.
+                name: xml
+                type: string
         type: object
 
     BackupInfo: &BackupInfo
@@ -8395,6 +8390,22 @@ types:
                 this checkpoint.
             name: to_checkpoint_id
             type: *UUID
+
+    CheckpointsResponse: &CheckpointsResponse
+        added: '4.4'
+        description: Checkpoints operation response.
+        name: CheckpointsResponse
+        properties:
+        -   description: List of checkpoint UUIDs that were
+                     successfully performed by the operation.
+            name: checkpoint_ids
+            type: *UUID
+
+        -   defaultvalue: null
+            description: Optional error if operation failed.
+            name: error
+            type:
+            - *ErrorInfo
 
     VolumeMeasureResult: &VolumeMeasureResult
         added: '4.4'
@@ -11828,11 +11839,15 @@ VM.delete_checkpoints:
         name: vmID
         type: *UUID
 
-    -   description: List of checkpoints ids to delete, order from
+    -   description: List of checkpoints ids to delete, ordered from
             oldest to newest.
         name: checkpoint_ids
         type:
         - string
+    return:
+        description: Delete checkpoints response.
+        type:
+        - *CheckpointsResponse
 
 VM.redefine_checkpoints:
     added: '4.3'
@@ -11849,6 +11864,10 @@ VM.redefine_checkpoints:
         name: checkpoints
         type:
         - *Checkpoint
+    return:
+        description: Redefine checkpoints response.
+        type:
+        - *CheckpointsResponse
 
 VM.list_checkpoints:
     added: '4.4'

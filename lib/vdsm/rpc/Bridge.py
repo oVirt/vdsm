@@ -442,7 +442,7 @@ command_info = {
     'VM_start_backup': {'ret': 'result'},
     'VM_stop_backup': {'ret': 'status'},
     'VM_backup_info': {'ret': 'result'},
-    'VM_delete_checkpoints': {'ret': 'status'},
-    'VM_redefine_checkpoints': {'ret': 'status'},
+    'VM_delete_checkpoints': {'ret': 'result'},
+    'VM_redefine_checkpoints': {'ret': 'result'},
     'VM_list_checkpoints': {'ret': 'result'},
 }
