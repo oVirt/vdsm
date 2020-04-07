@@ -44,6 +44,7 @@ from vdsm.storage import fileUtils
 from vdsm.storage import fileVolume
 from vdsm.storage import mount
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage import sanlock_direct
 from vdsm.storage import sd
 from vdsm.storage import xlease
 from vdsm.storage.persistent import PersistentDict, DictValidator
@@ -839,10 +840,15 @@ class FileStorageDomain(sd.StorageDomain):
     # Dump metadata
 
     def dump(self):
-        return {
+        result = {
             "metadata": self.getInfo(),
             "volumes": self._dump_volumes()
         }
+
+        if self.hasVolumeLeases():
+            result["leases"] = self._dump_leases()
+
+        return result
 
     def _dump_volumes(self):
         result = {}
@@ -895,6 +901,14 @@ class FileStorageDomain(sd.StorageDomain):
             md["status"] = sc.VOL_STATUS_REMOVED
 
         return vol_uuid, md
+
+    def _dump_leases(self):
+        return list(sanlock_direct.dump_leases(
+            self.getLeasesFilePath(),
+            # Dump all reserved leases.
+            size=sd.RESERVED_LEASES * self.alignment,
+            block_size=self.block_size,
+            alignment=self.alignment))
 
     # Validating file system features
 
