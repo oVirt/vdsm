@@ -70,6 +70,7 @@ if backup_enabled:
         "backupGetXMLDesc",
         "checkpointLookupByName",
         "listAllCheckpoints",
+        "checkpointCreateXML",
         "blockInfo"
     )
     class DomainAdapter(object):
@@ -93,6 +94,15 @@ class DiskConfig(properties.Owner):
         self.dom_id = disk_config.get("domainID")
         # Mark if the disk is included in the checkpoint.
         self.checkpoint = disk_config.get("checkpoint")
+
+
+class CheckpointConfig(properties.Owner):
+    id = properties.UUID(required=True)
+    xml = properties.String(required=True)
+
+    def __init__(self, checkpoint_config):
+        self.id = checkpoint_config.get("id")
+        self.xml = checkpoint_config.get("xml")
 
 
 class BackupConfig(properties.Owner):
@@ -205,7 +215,32 @@ def delete_checkpoints(vm, dom, checkpoint_ids):
 
 
 def redefine_checkpoints(vm, dom, checkpoints):
-    raise exception.MethodNotImplemented()
+    checkpoint_ids = []
+    for checkpoint in checkpoints:
+        checkpoint_cfg = CheckpointConfig(checkpoint)
+        vm.log.info("Redefine VM %r checkpoint %r",
+                    vm.id, checkpoint_cfg.id)
+
+        flags = libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE
+        try:
+            dom.checkpointCreateXML(checkpoint_cfg.xml, flags)
+        except libvirt.libvirtError as e:
+            vm.log.error(
+                "Failed to redefine VM %r checkpoint %r: %s",
+                vm.id, checkpoint_cfg.id, e)
+            result = {
+                'checkpoint_ids': checkpoint_ids,
+                'error': {
+                    'code': e.get_error_code(),
+                    'message': e.get_error_message()
+                }
+            }
+            return dict(result=result)
+
+        checkpoint_ids.append(checkpoint_cfg.id)
+
+    result = {'checkpoint_ids': checkpoint_ids}
+    return dict(result=result)
 
 
 def list_checkpoints(vm, dom):
