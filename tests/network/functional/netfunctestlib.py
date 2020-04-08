@@ -820,7 +820,7 @@ class SetupNetworks(object):
             raise SetupNetworksError(status, msg)
 
         if self._is_dynamic_ipv4():
-            self._wait_for_dhcp_response(10)
+            self._wait_for_dhcpv4_response(10)
             self.vdsm_proxy.refreshNetworkCapabilities()
         # FIXME This is just workaround, eventually we need to fix this by
         # adding proper support for IPv6 dhcp monitoring
@@ -885,15 +885,13 @@ class SetupNetworks(object):
                 return True
         return False
 
-    def _wait_for_dhcp_response(self, timeout=5):
-        dev_names = self._collect_all_dhcp_interfaces()
-        for attempt in range(timeout):
-            if _did_every_dhcp_server_responded(dev_names):
-                break
-            time.sleep(1)
-        time.sleep(1)
+    def _wait_for_dhcpv4_response(self, timeout=5):
+        dev_names = self._collect_all_dhcpv4_interfaces()
+        _wait_for_func(
+            _did_every_dhcp_server_responded, timeout, dev_names=dev_names
+        )
 
-    def _collect_all_dhcp_interfaces(self):
+    def _collect_all_dhcpv4_interfaces(self):
         return [
             _get_network_iface_name(name, attr)
             for name, attr in six.viewitems(self.setup_networks)
@@ -906,6 +904,14 @@ def _did_every_dhcp_server_responded(dev_names):
         if iface_is_tracked(dev_name):
             return False
     return True
+
+
+def _wait_for_func(func, timeout=5, **func_kwargs):
+    for attempt in range(timeout):
+        if func(**func_kwargs):
+            break
+        time.sleep(1)
+    time.sleep(1)
 
 
 @contextmanager
