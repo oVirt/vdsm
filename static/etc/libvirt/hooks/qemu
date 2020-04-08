@@ -4,4 +4,5 @@ DOMAIN="$1"
 EVENT="$2"
 PHASE="$3"
 
+export LC_ALL=C.UTF-8
 exec /usr/libexec/vdsm/vm_libvirt_hook.py "$DOMAIN" "$EVENT" "$PHASE"
