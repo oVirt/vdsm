@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2018 Red Hat, Inc.
+# Copyright 2011-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -115,10 +115,12 @@ class UserGroupEnforcingHandler(logging.handlers.WatchedFileHandler):
     process,to make sure log is not created with wrong permissions by mistake.
     """
 
-    def __init__(self, user, group, *args, **kwargs):
+    def __init__(self, user, group, filename, encoding='utf-8', **kwargs):
         self._uid = pwd.getpwnam(user).pw_uid
         self._gid = grp.getgrnam(group).gr_gid
-        logging.handlers.WatchedFileHandler.__init__(self, *args, **kwargs)
+        logging.handlers.WatchedFileHandler.__init__(
+            self, filename, encoding=encoding, **kwargs
+        )
 
         # Used to defer flushing when used by ThreadedHandler.
         self.buffering = False
