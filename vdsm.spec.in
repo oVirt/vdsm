@@ -221,8 +221,13 @@ Requires: %{python_libvirt} >= 4.5.0-1.el7
 # CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
 Requires: libvirt-daemon-kvm >= 4.5.0-10.el7_6.9
 %else # RHEL 8
+%if 0%{?centos}
 # Need a libvirt version with socket activation
 Requires: libvirt-daemon-kvm >= 5.6
+%else
+# Advanced Virt fix for live snapshot, https://bugzilla.redhat.com/id=1820068
+Requires: libvirt-daemon-kvm >= 6.0.0-17.module+el8.2.0+6257+0d066c28
+%endif
 Requires: %{python_libvirt}
 %endif
 %else # fedora
@@ -321,7 +326,6 @@ Requires: policycoreutils >= 2.1.13-55
 Requires: qemu-kvm >= 15:4.1.0-16
 %else
 # 4.4, AV 8.2 - https://bugzilla.redhat.com/1811728
-# it's a libvirt bug, but let's use a matching qemu version to not split packages from same module
 Requires: qemu-kvm >= 15:4.2.0-14.module+el8.2.0+5995+d02a4eeb
 %endif #centos
 %endif #rhel
