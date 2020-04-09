@@ -221,6 +221,7 @@ def _setup_static_src_routing(networks):
             ip_address = net_attrs.get('ipaddr')
             netmask = net_attrs.get('netmask')
             next_hop = get_next_hop_interface(net_name, net_attrs)
+            sourceroute.remove(next_hop)
             sourceroute.add(next_hop, ip_address, netmask, gateway)
 
 
