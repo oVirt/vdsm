@@ -225,7 +225,7 @@ Requires: libvirt-daemon-kvm >= 4.5.0-10.el7_6.9
 # Need a libvirt version with socket activation
 Requires: libvirt-daemon-kvm >= 5.6
 %else
-# Advanced Virt fix for live snapshot, https://bugzilla.redhat.com/id=1820068
+# Advanced Virt fix for live snapshot, https://bugzilla.redhat.com/1820068
 Requires: libvirt-daemon-kvm >= 6.0.0-17.module+el8.2.0+6257+0d066c28
 %endif
 Requires: %{python_libvirt}
