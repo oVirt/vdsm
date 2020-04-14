@@ -255,12 +255,12 @@ def dummy_devices(amount, prefix='dummy_', max_length=11):
 
 
 @contextmanager
-def bond_device(slaves, prefix='bond', max_length=11):
+def bond_device(slaves=(), prefix='bond_', max_length=11):
     check_sysfs_bond_permission()
     name = random_iface_name(prefix, max_length)
     with linkbond.Bond(name, slaves) as bond:
         bond.create()
-        yield bond.master
+        yield bond
     bond.destroy()
 
 

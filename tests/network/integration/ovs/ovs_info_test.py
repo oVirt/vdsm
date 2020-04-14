@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -108,8 +108,8 @@ class TestOvsInfo(unittest.TestCase):
 
     def test_ovs_info_with_sb_bond(self):
         with dummy_device() as nic:
-            with bond_device([nic]) as bond:
-                with _setup_ovs_network(self.ovsdb, bond):
+            with bond_device(slaves=(nic,)) as bond:
+                with _setup_ovs_network(self.ovsdb, bond.master):
                     expected_bridges = {
                         TEST_BRIDGE: {
                             'stp': False,
@@ -120,7 +120,10 @@ class TestOvsInfo(unittest.TestCase):
                                     'tag': TEST_VLAN,
                                 },
                                 TEST_BRIDGE: {'level': None, 'tag': None},
-                                bond: {'level': info.SOUTHBOUND, 'tag': None},
+                                bond.master: {
+                                    'level': info.SOUTHBOUND,
+                                    'tag': None,
+                                },
                             },
                         }
                     }
@@ -132,5 +135,5 @@ class TestOvsInfo(unittest.TestCase):
 
                     obtained_bridges_by_sb = ovs_info.bridges_by_sb
                     self.assertEqual(
-                        obtained_bridges_by_sb, {bond: TEST_BRIDGE}
+                        obtained_bridges_by_sb, {bond.master: TEST_BRIDGE}
                     )

@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from contextlib import contextmanager
 import errno
 import os
 import unittest
@@ -28,7 +27,9 @@ import unittest
 import pytest
 
 from network.compat import mock
-from network.nettestlib import dummy_devices, check_sysfs_bond_permission
+from network.nettestlib import bond_device
+from network.nettestlib import check_sysfs_bond_permission
+from network.nettestlib import dummy_devices
 
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond import sysfs_options
@@ -279,14 +280,3 @@ class TestBondingSysfsOptionsMapper(unittest.TestCase):
             mode_num, option_name, val_name
         )
         return opt_num_val
-
-
-@contextmanager
-def bond_device(prefix='bond_', max_length=11):
-    bond_name = random_iface_name(prefix, max_length)
-    bond = Bond(bond_name)
-    bond.create()
-    try:
-        yield bond
-    finally:
-        bond.destroy()

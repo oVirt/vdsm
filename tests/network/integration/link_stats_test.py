@@ -1,4 +1,4 @@
-# Copyright 2019 Red Hat, Inc.
+# Copyright 2019-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,12 @@ from vdsm.network.link import stats as link_stats
 
 
 @contextmanager
+def _bond_device_master(slaves):
+    with nettestlib.bond_device(slaves) as bond:
+        yield bond.master
+
+
+@contextmanager
 def _vlan_device():
     with nettestlib.dummy_device() as nic:
         with nettestlib.vlan_device(nic, 101) as vlan:
@@ -46,7 +52,7 @@ def _bridge_device():
     'device_ctx, device_ctx_args',
     [
         (nettestlib.dummy_device, {}),
-        (nettestlib.bond_device, {'slaves': []}),
+        (_bond_device_master, {'slaves': ()}),
         (_vlan_device, {}),
         (_bridge_device, {}),
     ],
