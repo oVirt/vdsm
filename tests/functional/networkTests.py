@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2017 Red Hat, Inc.
+# Copyright 2013-2020 Red Hat, Inc.
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -129,7 +129,7 @@ def dummyIf(num):
 
 
 def _waitForKnownOperstate(device, timeout=1):
-    with monitor.Monitor(groups=('link',), timeout=timeout) as mon:
+    with monitor.object_monitor(groups=('link',), timeout=timeout) as mon:
         if operstate(device) == OPERSTATE_UNKNOWN:
             for event in mon:
                 if (event['name'] == device and
@@ -140,7 +140,7 @@ def _waitForKnownOperstate(device, timeout=1):
 def _waitForOperstate(device, state, timeout=1):
     """ :param state: please use OPERSTATE_* from lib/vdsm/network/netinfo
     """
-    with monitor.Monitor(groups=('link',), timeout=timeout) as mon:
+    with monitor.object_monitor(groups=('link',), timeout=timeout) as mon:
         if state != operstate(device):
             for event in mon:
                 if event['name'] == device and event['state'] == state:
@@ -156,7 +156,7 @@ def nonChangingOperstate(device):
     """Raises an exception if it detects that the device link state changes."""
     originalState = operstate(device).lower()
     try:
-        with monitor.Monitor(groups=('link',)) as mon:
+        with monitor.object_monitor(groups=('link',)) as mon:
             yield
     finally:
         changes = [(event['name'], event['state']) for event in mon

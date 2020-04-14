@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,8 @@ import pytest
 
 from vdsm.common.time import monotonic_time
 
+from ..nettestlib import bond_device
+from ..nettestlib import dummy_devices
 from ..nettestlib import Dummy
 from vdsm.network.netlink import NLSocketPool
 from vdsm.network.netlink import monitor
@@ -42,12 +44,19 @@ IP_CIDR = '24'
 running_on_ovirt_ci = 'OVIRT_CI' in os.environ
 
 
+@pytest.fixture(scope='function')
+def bond():
+    with dummy_devices(2) as (nic1, nic2):
+        with bond_device(slaves=(nic1, nic2)) as bond:
+            yield bond
+
+
 class TestNetlinkEventMonitor(object):
 
     TIMEOUT = 5
 
     def test_iterate_after_events(self):
-        with monitor.Monitor(timeout=self.TIMEOUT) as mon:
+        with monitor.object_monitor(timeout=self.TIMEOUT) as mon:
             dummy = Dummy()
             dummy_name = dummy.create()
             dummy.remove()
@@ -68,7 +77,7 @@ class TestNetlinkEventMonitor(object):
             dummy.up()
             dummy.remove()
 
-        with monitor.Monitor(timeout=self.TIMEOUT) as mon:
+        with monitor.object_monitor(timeout=self.TIMEOUT) as mon:
             add_device_thread = _start_thread(_set_and_remove_device)
             for event in mon:
                 if event.get('name') == dummy_name:
@@ -76,7 +85,7 @@ class TestNetlinkEventMonitor(object):
             add_device_thread.join()
 
     def test_stopped(self):
-        with monitor.Monitor(timeout=self.TIMEOUT) as mon:
+        with monitor.object_monitor(timeout=self.TIMEOUT) as mon:
             dummy = Dummy()
             dummy_name = dummy.create()
             dummy.remove()
@@ -85,10 +94,10 @@ class TestNetlinkEventMonitor(object):
         assert found, 'Expected event was not caught.'
 
     def test_event_groups(self):
-        with monitor.Monitor(
+        with monitor.object_monitor(
             timeout=self.TIMEOUT, groups=('ipv4-ifaddr',)
         ) as mon_a:
-            with monitor.Monitor(
+            with monitor.object_monitor(
                 timeout=self.TIMEOUT, groups=('link', 'ipv4-route')
             ) as mon_l_r:
                 dummy = Dummy()
@@ -113,7 +122,7 @@ class TestNetlinkEventMonitor(object):
             )
 
     def test_iteration(self):
-        with monitor.Monitor(timeout=self.TIMEOUT) as mon:
+        with monitor.object_monitor(timeout=self.TIMEOUT) as mon:
             iterator = iter(mon)
 
             # Generate events to avoid blocking
@@ -162,7 +171,9 @@ class TestNetlinkEventMonitor(object):
             else:
                 return deque(events_add + events_ipv6 + events_del)
 
-        with monitor.Monitor(timeout=self.TIMEOUT, silent_timeout=True) as mon:
+        with monitor.object_monitor(
+            timeout=self.TIMEOUT, silent_timeout=True
+        ) as mon:
             dummy = Dummy()
             dummy_name = dummy.create()
             dummy.set_ip(IP_ADDRESS, IP_CIDR)
@@ -194,7 +205,7 @@ class TestNetlinkEventMonitor(object):
     def test_timeout(self):
         with pytest.raises(monitor.MonitorError):
             try:
-                with monitor.Monitor(timeout=0.01) as mon:
+                with monitor.object_monitor(timeout=0.01) as mon:
                     for event in mon:
                         pass
             except monitor.MonitorError as e:
@@ -204,7 +215,7 @@ class TestNetlinkEventMonitor(object):
         assert mon.is_stopped()
 
     def test_timeout_silent(self):
-        with monitor.Monitor(timeout=0.01, silent_timeout=True) as mon:
+        with monitor.object_monitor(timeout=0.01, silent_timeout=True) as mon:
             for event in mon:
                 pass
 
@@ -212,7 +223,7 @@ class TestNetlinkEventMonitor(object):
 
     def test_timeout_not_triggered(self):
         time_start = monotonic_time()
-        with monitor.Monitor(timeout=self.TIMEOUT) as mon:
+        with monitor.object_monitor(timeout=self.TIMEOUT) as mon:
             dummy = Dummy()
             dummy.create()
             dummy.remove()
@@ -225,8 +236,21 @@ class TestNetlinkEventMonitor(object):
 
     def test_passing_invalid_groups(self):
         with pytest.raises(AttributeError):
-            monitor.Monitor(groups=('blablabla',))
-        monitor.Monitor(groups=('link',))
+            monitor.object_monitor(groups=('blablabla',))
+        monitor.object_monitor(groups=('link',))
+
+    def test_ifla_event(self, bond):
+        slaves = iter(bond.slaves)
+        bond.set_options({'mode': '1'})
+        bond.up()
+        bond.set_options({'active_slave': next(slaves)})
+        with monitor.ifla_monitor(
+            timeout=self.TIMEOUT, groups=('link',)
+        ) as mon:
+            bond.set_options({'active_slave': next(slaves)})
+            for event in mon:
+                if event.get('IFLA_EVENT') == 'IFLA_EVENT_BONDING_FAILOVER':
+                    break
 
 
 class TestSocketPool(object):

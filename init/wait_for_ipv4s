@@ -40,7 +40,9 @@ def _get_ipless_devs(devs):
 def _wait_for_ipv4(devs):
     """Wait for devs to get their IPv4 addresses with netlink Monitor"""
     try:
-        with monitor.Monitor(groups=('ipv4-ifaddr',), timeout=10) as mon:
+        with monitor.object_monitor(
+            groups=('ipv4-ifaddr',), timeout=10
+        ) as mon:
             ipless_devs = _get_ipless_devs(devs)
             if not ipless_devs:
                 return

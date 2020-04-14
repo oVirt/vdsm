@@ -66,7 +66,7 @@ class Interface(object):
         linkSet(self.devName, ['up'])
 
     def _down(self):
-        with monitor.Monitor(groups=('link',), timeout=2) as mon:
+        with monitor.object_monitor(groups=('link',), timeout=2) as mon:
             linkSet(self.devName, ['down'])
             for event in mon:
                 if (
@@ -349,7 +349,9 @@ def wait_for_ipv6(iface, wait_for_scopes=None):
     if not wait_for_scopes:
         wait_for_scopes = ['global', 'link']
     try:
-        with monitor.Monitor(groups=('ipv6-ifaddr',), timeout=20) as mon:
+        with monitor.object_monitor(
+            groups=('ipv6-ifaddr',), timeout=20
+        ) as mon:
             yield
             for event in mon:
                 logevents.append(event)

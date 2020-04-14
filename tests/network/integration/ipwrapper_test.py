@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2013-2019 Red Hat, Inc.
+# Copyright 2013-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ class TestDrvinfo(object):
 
     def testEnablePromisc(self, bridge0):
         link = ipwrapper.getLink(bridge0.devName)
-        with monitor.Monitor(timeout=2, silent_timeout=True) as mon:
+        with monitor.object_monitor(timeout=2, silent_timeout=True) as mon:
             link.promisc = True
             for event in mon:
                 if (

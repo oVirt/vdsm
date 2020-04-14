@@ -930,7 +930,7 @@ def monitor_stable_link_state(device, wait_for_linkup=True):
     iface_properties = iface(device).properties()
     original_state = iface_properties['state']
     try:
-        with monitor.Monitor(groups=('link',)) as mon:
+        with monitor.object_monitor(groups=('link',)) as mon:
             yield
     finally:
         state_changes = (e['state'] for e in mon if e['name'] == device)

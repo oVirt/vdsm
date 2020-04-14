@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,8 +33,21 @@ native Python manner.
 from __future__ import absolute_import
 from __future__ import division
 
-from ctypes import CDLL, CFUNCTYPE, sizeof, get_errno, byref
-from ctypes import c_char, c_char_p, c_int, c_void_p, c_size_t, py_object
+from ctypes import CDLL
+from ctypes import CFUNCTYPE
+from ctypes import POINTER
+from ctypes import Structure
+from ctypes import byref
+from ctypes import c_char
+from ctypes import c_char_p
+from ctypes import c_int
+from ctypes import c_size_t
+from ctypes import c_uint32
+from ctypes import c_ushort
+from ctypes import c_void_p
+from ctypes import get_errno
+from ctypes import py_object
+from ctypes import sizeof
 
 from vdsm.common.cache import memoized
 from vdsm.network import py2to3
@@ -110,6 +123,20 @@ EVENTS = {
     79: 'set_dcb',  # RTM_SETDCB
 }
 
+# libnl/include/linux-private/linux/if_link.h
+IFLA_EVENT = 44
+
+# libnl/include/linux-private/linux/if_link.h
+IFLA_EVENT_MAP = {
+    0: 'IFLA_EVENT_NONE',
+    1: 'FLA_EVENT_REBOOT',
+    2: 'IFLA_EVENT_FEATURES',
+    3: 'IFLA_EVENT_BONDING_FAILOVER',
+    4: 'IFLA_EVENT_NOTIFY_PEERS',
+    5: 'IFLA_EVENT_IGMP_RESEND',
+    6: 'IFLA_EVENT_BONDING_OPTIONS',
+}
+
 
 # libnl/include/linux-private/linux/rtnetlink.h
 class RtKnownTables(object):
@@ -163,6 +190,17 @@ class RtnlObjectType(object):
     BASE = 'route'
     ADDR = BASE + '/addr'  # libnl/lib/route/addr.c
     LINK = BASE + '/link'  # libnl/lib/route/link.c
+
+
+# linux/genetlink.h
+class GeNlMsgHdr(Structure):
+    _fields_ = [
+        ('nlmsg_len', c_uint32),
+        ('nlmsg_type', c_ushort),
+        ('nlmsg_flags', c_ushort),
+        ('nlmsg_seq', c_uint32),
+        ('nlmsg_pid', c_uint32),
+    ]
 
 
 def nl_geterror(error_code):
@@ -357,6 +395,19 @@ def prepare_cfunction_for_nl_socket_modify_cb(function):
     return c_function
 
 
+def prepare_cfunction_for_nl_socket_modify_cb_py(function):
+    """Prepare callback function for nl_socket_modify_cb.
+
+    @arg                  Python function accepting two objects (message and
+                          extra argument) as arguments and returns integer
+                          with libnl callback action.
+
+    @return C function prepared for nl_socket_modify_cb.
+    """
+    c_function = CFUNCTYPE(c_int, c_void_p, py_object)(function)
+    return c_function
+
+
 def nl_socket_disable_seq_check(socket):
     """Disable sequence number checking.
 
@@ -430,6 +481,48 @@ def nl_object_get_msgtype(obj):
     if message_type == 0:
         raise IOError(get_errno(), 'Failed to obtain message name.')
     return message_type
+
+
+def nlmsg_hdr(nl_msg):
+    """Returns the actual netlink message casted to the type of the netlink
+       message header.
+
+    @arg nl_msg          netlink message
+    @return The actual netlink message casted to the type of the netlink
+            message header.
+
+    """
+    _nlmsg_hdr = _libnl('nlmsg_hdr', POINTER(GeNlMsgHdr), c_void_p)
+    return _nlmsg_hdr(nl_msg)
+
+
+def size_of_genlmsghdr():
+    return sizeof(GeNlMsgHdr)
+
+
+def nla_get_u32(nla):
+    """Return payload of 32 bit integer attribute.
+
+    @arg nla             32 bit integer attribute.
+
+    @return Payload as 32 bit integer.
+    """
+    _nla_get_u32 = _libnl('nla_get_u32', c_uint32, c_void_p)
+    return _nla_get_u32(nla)
+
+
+def nlmsg_find_attr(hdr, hdrlen, attrtype):
+    """find a specific attribute in a netlink message
+
+    @arg nlh             netlink message header
+    @arg hdrlen          length of familiy specific header
+    @arg attrtype        type of attribute to look for
+    @:return The first attribute which matches the specified type.
+    """
+    _nlmsg_find_attr = _libnl(
+        'nlmsg_find_attr', c_void_p, c_void_p, c_int, c_int
+    )
+    return _nlmsg_find_attr(hdr, hdrlen, attrtype)
 
 
 def nl_msg_parse(message, function, argument):

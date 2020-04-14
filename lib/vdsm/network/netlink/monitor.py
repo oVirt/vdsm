@@ -1,4 +1,4 @@
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,7 +67,15 @@ class MonitorError(Exception):
     pass
 
 
-class Monitor(object):
+def object_monitor(groups=frozenset(), timeout=None, silent_timeout=False):
+    return Monitor(_c_event_input, groups, timeout, silent_timeout)
+
+
+def ifla_monitor(groups=frozenset(), timeout=None, silent_timeout=False):
+    return Monitor(_c_ifla_event_input, groups, timeout, silent_timeout)
+
+
+class Monitor:
     """Netlink monitor. Usage:
 
     Get events collected while the monitor was running:
@@ -111,7 +119,14 @@ class Monitor(object):
     decnet-ifaddr, decnet-route, ipv6-prefix
     """
 
-    def __init__(self, groups=frozenset(), timeout=None, silent_timeout=False):
+    def __init__(
+        self,
+        c_callback_function,
+        groups=frozenset(),
+        timeout=None,
+        silent_timeout=False,
+    ):
+        self._c_callback_function = c_callback_function
         self._time_start = None
         self._timeout = timeout
         self._silent_timeout = silent_timeout
@@ -165,7 +180,7 @@ class Monitor(object):
             epoll = select.epoll()
             with closing(epoll):
                 with _monitoring_socket(
-                    self._queue, self._groups, epoll
+                    self._queue, self._groups, epoll, self._c_callback_function
                 ) as sock:
                     with _pipetrick(epoll) as self._pipetrick:
                         self._scanning_started.set()
@@ -243,6 +258,36 @@ def _object_input(obj, queue):
 _c_object_input = libnl.prepare_cfunction_for_nl_msg_parse(_object_input)
 
 
+def _ifla_event_input(msg, queue):
+    """This function serves as a callback for netlink socket. When socket
+    recieves a message, it passes it to callback function with optional extra
+    argument (monitor's queue in this case)
+    """
+    hdr = libnl.nlmsg_hdr(msg)
+    if libnl.EVENTS.get(hdr[0].nlmsg_type) == 'new_link':
+        rta_attr = libnl.nlmsg_find_attr(
+            hdr, libnl.size_of_genlmsghdr(), libnl.IFLA_EVENT
+        )
+        if rta_attr:
+            queue.put(
+                Event(
+                    EventType.DATA,
+                    {
+                        'IFLA_EVENT': libnl.IFLA_EVENT_MAP.get(
+                            libnl.nla_get_u32(rta_attr)
+                        )
+                    },
+                )
+            )
+
+    return libnl.NlCbAction.NL_STOP
+
+
+_c_ifla_event_input = libnl.prepare_cfunction_for_nl_socket_modify_cb_py(
+    _ifla_event_input
+)
+
+
 def _event_input(msg, c_queue):
     """This function serves as a callback for netlink socket. When socket
     recieves a message, it passes it to callback function with optional extra
@@ -256,9 +301,11 @@ _c_event_input = libnl.prepare_cfunction_for_nl_socket_modify_cb(_event_input)
 
 
 @contextmanager
-def _monitoring_socket(queue, groups, epoll):
+def _monitoring_socket(queue, groups, epoll, c_callback_function):
     c_queue = libnl.c_object_argument(queue)
-    sock = _open_socket(callback_function=_c_event_input, callback_arg=c_queue)
+    sock = _open_socket(
+        callback_function=c_callback_function, callback_arg=c_queue
+    )
     try:
         _add_socket_memberships(sock, groups)
         try:
