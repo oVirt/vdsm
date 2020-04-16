@@ -24,6 +24,7 @@ from __future__ import print_function
 
 import collections
 import libvirt
+import os
 import pytest
 
 from fakelib import FakeLogger
@@ -34,6 +35,7 @@ from virt.fakedomainadapter import FakeDomainAdapter
 
 from vdsm.common import exception
 from vdsm.common import nbdutils
+from vdsm.common import xmlutils
 from vdsm.common.xmlutils import indented
 
 from vdsm.storage import hsm
@@ -164,39 +166,6 @@ def tmp_basedir(tmpdir, monkeypatch):
     monkeypatch.setattr(transientdisk, 'P_TRANSIENT_DISKS', path)
 
 
-def test_backup_xml(tmp_backupdir):
-    # drives must be sorted for the disks to appear
-    # each time in the same order in the backup XML
-    drives = collections.OrderedDict()
-    drives["img-id-1"] = FakeDrive("sda", "img-id-1")
-    drives["img-id-2"] = FakeDrive("vda", "img-id-2")
-
-    socket_path = backup.socket_path(BACKUP_ID)
-    addr = nbdutils.UnixAddress(socket_path)
-
-    backup_xml = backup.create_backup_xml(
-        addr, drives, FAKE_SCRATCH_DISKS)
-
-    expected_xml = """
-        <domainbackup mode='pull'>
-            <server transport='unix' socket='{}'/>
-            <disks>
-                <disk name='sda' type='file'>
-                    <scratch file='/path/to/scratch_sda'>
-                        <seclabel model="dac" relabel="no"/>
-                    </scratch>
-                </disk>
-                <disk name='vda' type='file'>
-                    <scratch file='/path/to/scratch_vda'>
-                        <seclabel model="dac" relabel="no"/>
-                    </scratch>
-                </disk>
-            </disks>
-        </domainbackup>
-        """.format(socket_path)
-    assert indented(expected_xml) == indented(backup_xml)
-
-
 def test_incremental_backup_xml(tmp_backupdir):
     # drives must be sorted for the disks to appear
     # each time in the same order in the backup XML
@@ -229,7 +198,7 @@ def test_incremental_backup_xml(tmp_backupdir):
             </disks>
         </domainbackup>
         """.format(FROM_CHECKPOINT_ID, socket_path)
-    assert indented(expected_xml) == indented(backup_xml)
+    assert xmlutils.indented(expected_xml) == xmlutils.indented(backup_xml)
 
 
 @pytest.mark.parametrize(
@@ -250,14 +219,40 @@ def test_checkpoint_xml(disks_in_checkpoint, expected_xml):
     backup_cfg = backup.BackupConfig(config)
 
     checkpoint_xml = backup.create_checkpoint_xml(backup_cfg, FAKE_DRIVES)
-    assert indented(expected_xml) == indented(checkpoint_xml)
+    assert xmlutils.indented(expected_xml) == xmlutils.indented(checkpoint_xml)
 
 
 @requires_backup_support
 def test_start_stop_backup(tmp_backupdir, tmp_basedir):
     vm = FakeVm()
-    dom = FakeDomainAdapter()
 
+    socket_path = backup.socket_path(BACKUP_ID)
+    scratch_disk_paths = []
+    for drive in FAKE_DRIVES.values():
+        scratch_disk_name = BACKUP_ID + "." + drive.name
+        scratch_disk_path = os.path.join(
+            transientdisk.P_TRANSIENT_DISKS, "vm_id", scratch_disk_name)
+        scratch_disk_paths.append(scratch_disk_path)
+
+    expected_xml = """
+        <domainbackup mode='pull'>
+            <server transport='unix' socket='{}'/>
+            <disks>
+                <disk name='sda' type='file'>
+                    <scratch file='{}'>
+                        <seclabel model="dac" relabel="no"/>
+                    </scratch>
+                </disk>
+                <disk name='vda' type='file'>
+                    <scratch file='{}'>
+                        <seclabel model="dac" relabel="no"/>
+                    </scratch>
+                </disk>
+            </disks>
+        </domainbackup>
+        """.format(socket_path, scratch_disk_paths[0], scratch_disk_paths[1])
+
+    dom = FakeDomainAdapter()
     fake_disks = create_fake_disks()
     config = {
         'backup_id': BACKUP_ID,
@@ -265,6 +260,7 @@ def test_start_stop_backup(tmp_backupdir, tmp_basedir):
     }
 
     res = backup.start_backup(vm, dom, config)
+    assert indented(expected_xml) == indented(dom.input_backup_xml)
     assert dom.backing_up
 
     verify_scratch_disks_exists(vm)
@@ -515,7 +511,7 @@ def test_backup_info(tmp_backupdir, tmp_basedir):
           </disks>
         </domainbackup>
         """.format(backup.socket_path(BACKUP_ID))
-    dom = FakeDomainAdapter(expected_xml)
+    dom = FakeDomainAdapter(output_backup_xml=expected_xml)
 
     fake_disks = create_fake_disks()
     config = {
@@ -558,7 +554,7 @@ def test_fail_parse_backup_xml(tmp_backupdir, tmp_basedir):
             <disks/>
         </domainbackup>
         """
-    dom = FakeDomainAdapter(INVALID_BACKUP_XML)
+    dom = FakeDomainAdapter(output_backup_xml=INVALID_BACKUP_XML)
 
     fake_disks = create_fake_disks()
     config = {

@@ -51,12 +51,12 @@ class FakeDomainAdapter(object):
     dom.errors['backupBegin'] = vmfakelib.libvirt_error(
         [libvirt.VIR_ERR_NO_DOMAIN_BACKUP], "Some libvirt error")
 
-    Another option is to return custom backup XML or custom checkpoint XML
-    as a response to backupGetXMLDesc() or checkpointLookupByName() by
-    providing backup_xml/checkpoint_xml when creating the FakeDomainAdapter
-    instance.
+    Another option is to set custom backup and/or checkpoint XML
+    as a response to backupGetXMLDesc() and/or checkpointLookupByName() by
+    providing output_backup_xml/checkpoint_xml when creating the
+    FakeDomainAdapter instance.
 
-    dom = FakeDomainAdapter(False)
+    dom = FakeDomainAdapter(output_backup_xml=output_backup_xml)
 
     To test a code using DomainAdapter:
 
@@ -70,9 +70,10 @@ class FakeDomainAdapter(object):
             ...
     """
 
-    def __init__(self, backup_xml=None, checkpoint_xml=None):
+    def __init__(self, output_backup_xml=None, checkpoint_xml=None):
         self.backing_up = False
-        self.backup_xml = backup_xml
+        self.input_backup_xml = None
+        self.output_backup_xml = output_backup_xml
         if checkpoint_xml:
             self.checkpoint = FakeCheckpoint(checkpoint_xml)
         else:
@@ -83,9 +84,9 @@ class FakeDomainAdapter(object):
     def backupBegin(self, backup_xml, checkpoint_xml, flags=None):
         if self.backing_up:
             raise libvirt.libvirtError("backup already running for that VM")
-        if backup_xml and not isinstance(backup_xml, str):
-            raise libvirt.libvirtError(
-                "wrong argument, backup_xml should be string")
+
+        self.input_backup_xml = backup_xml
+
         if checkpoint_xml and not isinstance(checkpoint_xml, str):
             raise libvirt.libvirtError(
                 "wrong argument, checkpoint_xml should be string")
@@ -105,7 +106,7 @@ class FakeDomainAdapter(object):
         if not self.backing_up:
             raise libvirt.libvirtError("no domain backup job found")
 
-        return self.backup_xml
+        return self.output_backup_xml
 
     @maybefail
     def blockInfo(self, drive_name, flags=None):
