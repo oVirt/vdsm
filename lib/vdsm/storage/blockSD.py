@@ -60,6 +60,7 @@ from vdsm.storage import mount
 from vdsm.storage import multipath
 from vdsm.storage import resourceFactories
 from vdsm.storage import resourceManager as rm
+from vdsm.storage import sanlock_direct
 from vdsm.storage import sd
 from vdsm.storage.compat import sanlock
 from vdsm.storage.mailbox import MAILBOX_SIZE
@@ -1733,7 +1734,10 @@ class BlockStorageDomain(sd.StorageDomain):
 
         return {
             "metadata": self.getInfo(),
-            "volumes": self._dump_volumes()
+            "volumes": self._dump_volumes(),
+            # As blockSD uses sanlock for managing its leases and lockspaces
+            # we always assume to have those.
+            "leases": self._dump_leases()
         }
 
     def _dump_volumes(self):
@@ -1811,6 +1815,25 @@ class BlockStorageDomain(sd.StorageDomain):
             slots_md[slot] = slot_md
 
         return slots_md
+
+    def _dump_leases(self):
+        path = self.getLeasesFilePath()
+        slots = _occupied_metadata_slots(self.sdUUID)
+
+        if len(slots) > 0:
+            # End offset of last used volume slot. Dumping beyond this point
+            # may return stale volume leases.
+            size = self._manifest.volume_lease_offset(
+                slots[-1]) + self.alignment
+        else:
+            # End offset of reserved slots.
+            size = self._manifest.volume_lease_offset(0)
+
+        return list(sanlock_direct.dump_leases(
+            path,
+            size=size,
+            block_size=self.block_size,
+            alignment=self.alignment))
 
 
 def _external_leases_path(sdUUID):

@@ -8496,6 +8496,41 @@ types:
         type: map
         value-type: *VolumeDump
 
+    LeaseDump: &LeaseDump
+        added: '4.4'
+        description: Lease metadata.
+        name: LeaseDump
+        properties:
+        -   description: Lease file offset.
+            name: offset
+            type: ulong
+
+        -   description: Lockspace name.
+            name: lockspace
+            type: string
+
+        -   description: Resource name.
+            name: resource
+            type: string
+
+        -   description: Modification timestamp.
+            name: timestamp
+            type: uint
+
+        -   description: Owner host id.
+            name: own
+            type: uint
+
+        -   description: Generation.
+            name: gen
+            type: uint
+
+        -   defaultvalue: null
+            description: Lease version. Only for volume leases.
+            name: lver
+            type: uint
+        type: object
+
     StorageDomainDump: &StorageDomainDump
         added: '4.4'
         description: Storage domain raw metadata.
@@ -8508,6 +8543,13 @@ types:
         -   description: Volumes metadata.
             name: volumes
             type: *VolumesDumpMap
+
+        -   defaultvalue: null
+            description: Leases metadata. For a storage domain using sanlock
+                to manage volumes leases, applies to non-local FS SD type
+                from version 3 or later.
+            name: leases
+            type: *LeaseDump
         type: object
 
 Host.setupNetworks:
