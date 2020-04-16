@@ -58,9 +58,6 @@ CHECKPOINT_XML = """
     <domaincheckpoint>
       <name>{}</name>
       <description>checkpoint for backup '{}'</description>
-      <parent>
-        <name>{}</name>
-      </parent>
       <disks>
         <disk name='sda' checkpoint='bitmap'/>
         <disk name='vda' checkpoint='bitmap'/>
@@ -73,9 +70,6 @@ MIXED_CHECKPOINT_XML = """
     <domaincheckpoint>
       <name>{}</name>
       <description>checkpoint for backup '{}'</description>
-      <parent>
-        <name>{}</name>
-      </parent>
       <disks>
         <disk name='sda' checkpoint='bitmap'/>
       </disks>
@@ -201,27 +195,6 @@ def test_incremental_backup_xml(tmp_backupdir):
     assert xmlutils.indented(expected_xml) == xmlutils.indented(backup_xml)
 
 
-@pytest.mark.parametrize(
-    "disks_in_checkpoint, expected_xml", [
-        ([IMAGE_1_UUID, IMAGE_2_UUID], CHECKPOINT_XML),
-        ([IMAGE_1_UUID], MIXED_CHECKPOINT_XML),
-    ], ids=["cow", "mix"]
-)
-def test_checkpoint_xml(disks_in_checkpoint, expected_xml):
-    fake_disks = create_fake_disks(disks_in_checkpoint)
-    config = {
-        'backup_id': BACKUP_ID,
-        'disks': fake_disks,
-        'to_checkpoint_id': TO_CHECKPOINT_ID,
-        'from_checkpoint_id': FROM_CHECKPOINT_ID,
-        'parent_checkpoint_id': FROM_CHECKPOINT_ID
-    }
-    backup_cfg = backup.BackupConfig(config)
-
-    checkpoint_xml = backup.create_checkpoint_xml(backup_cfg, FAKE_DRIVES)
-    assert xmlutils.indented(expected_xml) == xmlutils.indented(checkpoint_xml)
-
-
 @requires_backup_support
 def test_start_stop_backup(tmp_backupdir, tmp_basedir):
     vm = FakeVm()
@@ -280,11 +253,19 @@ def test_start_stop_backup(tmp_backupdir, tmp_basedir):
 
 
 @requires_backup_support
-def test_start_stop_backup_with_checkpoint(tmp_backupdir, tmp_basedir):
+@pytest.mark.parametrize(
+    "disks_in_checkpoint, expected_checkpoint_xml", [
+        ([IMAGE_1_UUID, IMAGE_2_UUID], CHECKPOINT_XML),
+        ([IMAGE_1_UUID], MIXED_CHECKPOINT_XML),
+    ], ids=["cow", "mix"]
+)
+def test_start_stop_backup_with_checkpoint(
+        tmp_backupdir, tmp_basedir,
+        disks_in_checkpoint, expected_checkpoint_xml):
     vm = FakeVm()
-    dom = FakeDomainAdapter(checkpoint_xml=CHECKPOINT_XML)
+    dom = FakeDomainAdapter()
 
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(disks_in_checkpoint)
     config = {
         'backup_id': BACKUP_ID,
         'disks': fake_disks,
@@ -293,6 +274,8 @@ def test_start_stop_backup_with_checkpoint(tmp_backupdir, tmp_basedir):
 
     res = backup.start_backup(vm, dom, config)
     assert dom.backing_up
+    assert indented(expected_checkpoint_xml) == (
+        indented(dom.input_checkpoint_xml))
 
     verify_scratch_disks_exists(vm)
 
@@ -300,7 +283,6 @@ def test_start_stop_backup_with_checkpoint(tmp_backupdir, tmp_basedir):
     assert vm.froze
     assert vm.thawed
 
-    assert res['result']['checkpoint'] == CHECKPOINT_XML
     result_disks = res['result']['disks']
     verify_backup_urls(BACKUP_ID, result_disks)
 
@@ -314,6 +296,8 @@ def test_start_stop_backup_with_checkpoint(tmp_backupdir, tmp_basedir):
 def test_start_backup_failed_get_checkpoint(tmp_backupdir, tmp_basedir):
     vm = FakeVm()
     dom = FakeDomainAdapter()
+    dom.errors["checkpointLookupByName"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
 
     fake_disks = create_fake_disks()
     config = {

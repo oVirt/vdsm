@@ -56,7 +56,9 @@ class FakeDomainAdapter(object):
     providing output_backup_xml/checkpoint_xml when creating the
     FakeDomainAdapter instance.
 
-    dom = FakeDomainAdapter(output_backup_xml=output_backup_xml)
+    dom = FakeDomainAdapter(
+        output_backup_xml=output_backup_xml,
+        output_checkpoint_xml=output_checkpoint_xml)
 
     To test a code using DomainAdapter:
 
@@ -70,14 +72,15 @@ class FakeDomainAdapter(object):
             ...
     """
 
-    def __init__(self, output_backup_xml=None, checkpoint_xml=None):
+    def __init__(self, output_backup_xml=None, output_checkpoint_xml=None):
         self.backing_up = False
         self.input_backup_xml = None
+        self.input_checkpoint_xml = None
         self.output_backup_xml = output_backup_xml
-        if checkpoint_xml:
-            self.checkpoint = FakeCheckpoint(checkpoint_xml)
+        if output_checkpoint_xml:
+            self.output_checkpoint_xml = FakeCheckpoint(output_checkpoint_xml)
         else:
-            self.checkpoint = None
+            self.output_checkpoint_xml = None
         self.errors = {}
 
     @maybefail
@@ -86,10 +89,8 @@ class FakeDomainAdapter(object):
             raise libvirt.libvirtError("backup already running for that VM")
 
         self.input_backup_xml = backup_xml
+        self.input_checkpoint_xml = checkpoint_xml
 
-        if checkpoint_xml and not isinstance(checkpoint_xml, str):
-            raise libvirt.libvirtError(
-                "wrong argument, checkpoint_xml should be string")
         self.backing_up = True
         return 0
 
@@ -114,10 +115,10 @@ class FakeDomainAdapter(object):
 
     @maybefail
     def checkpointLookupByName(self, checkpoint_id):
-        if self.checkpoint is None:
+        if self.input_checkpoint_xml is None:
             raise fake.libvirt_error(
                 [libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT], "Checkpoint not found")
-        return self.checkpoint
+        return FakeCheckpoint(self.input_checkpoint_xml)
 
     @maybefail
     def listAllCheckpoints(self, flags=None):
