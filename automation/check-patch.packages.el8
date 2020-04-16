@@ -38,6 +38,7 @@ python3-six
 python3-yaml
 rpm-build
 rpmlint
+sanlock
 sudo
 systemd-udev
 xfsprogs
