@@ -31,6 +31,7 @@ import logging
 import os
 import time
 
+from vdsm.common import cmdutils
 from vdsm.common import constants
 from vdsm.common import properties
 from vdsm.common import supervdsm
@@ -45,8 +46,10 @@ from . import fileUtils
 from . sdc import sdCache
 
 DEFAULT_SOCKET_MODE = 0o660
-QEMU_NBD = "/usr/bin/qemu-nbd"
 RUN_DIR = os.path.join(constants.P_VDSM_RUN, "nbd")
+
+QEMU_NBD = cmdutils.CommandPath(
+    "qemu-nbd", "/usr/local/bin/qemu-nbd", "/usr/bin/qemu-nbd")
 
 log = logging.getLogger("storage.nbd")
 
@@ -141,7 +144,7 @@ def start_transient_service(server_id, config):
     _verify_path(config.path)
 
     cmd = [
-        QEMU_NBD,
+        str(QEMU_NBD),
         "--socket", _socket_path(server_id),
         "--format", config.format,
         "--persistent",

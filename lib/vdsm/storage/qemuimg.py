@@ -31,7 +31,8 @@ from vdsm.common.units import GiB
 from vdsm.config import config
 from vdsm.storage import operation
 
-_qemuimg = cmdutils.CommandPath("qemu-img", "/usr/bin/qemu-img")
+_qemuimg = cmdutils.CommandPath(
+    "qemu-img", "/usr/local/bin/qemu-img", "/usr/bin/qemu-img")
 
 _log = logging.getLogger("QemuImg")
 
