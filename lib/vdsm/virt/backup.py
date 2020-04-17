@@ -73,8 +73,8 @@ if backup_enabled:
     )
     class DomainAdapter(object):
         """
-        VM wrapper class that expose only
-        libvirt backup related operations
+        VM wrapper class that exposes only
+        libvirt backup related operations.
         """
         def __init__(self, vm):
             self._vm = vm
