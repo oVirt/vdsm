@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1189,6 +1189,7 @@ class TestDiskSnapshotXml(XMLTestCase):
                         transport="tcp"/>
                     <host name="brick2.example.com" port="49153"
                         transport="tcp"/>
+                    <seclabel model="dac" relabel="no" type="none"/>
                 </source>
             </disk>
             """

@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2019 Red Hat, Inc.
+# Copyright 2008-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -972,6 +972,8 @@ def _getSourceXML(drive):
         needs_seclabel = True
         source.setAttrs(dev=drive["path"])
     elif drive["diskType"] == DISK_TYPE.NETWORK:
+        if drive["protocol"] == "gluster":
+            needs_seclabel = True
         source.setAttrs(protocol=drive["protocol"], name=drive["path"])
         for host in drive["hosts"]:
             source.appendChildWithArgs('host', **host)
