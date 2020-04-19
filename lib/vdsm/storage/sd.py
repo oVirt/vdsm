@@ -1180,6 +1180,8 @@ class StorageDomain(object):
         Activate a storage domain that is already a member in a storage pool.
         """
         if self.isBackup():
+            self.log.info("Storage Domain %s is of type backup, "
+                          "adding master directory", self.sdUUID)
             self.mountMaster()
             self.createMasterTree()
 
