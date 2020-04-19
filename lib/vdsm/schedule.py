@@ -85,7 +85,7 @@ class Scheduler(object):
 
         Arguments:
           name      Used as sheculer thread name
-          clock     Callable returning current time (defualt time.time)
+          clock     Callable returning current time (default time.time)
         """
         self._name = name
         self._clock = clock

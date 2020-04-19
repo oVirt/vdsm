@@ -31,7 +31,7 @@ from vdsm.common import password
 
 def read_int(path, default=None):
     """
-    Return integer value of a sysfs attribute, or defualt if default is
+    Return integer value of a sysfs attribute, or default if default is
     specified and the attribute does not exist.
 
     Raises:
@@ -45,7 +45,7 @@ def read_int(path, default=None):
 
 def read_password(path, default=None):
     """
-    Return ProtectedPassword wrapping value of a sysfs attribute, or defualt if
+    Return ProtectedPassword wrapping value of a sysfs attribute, or default if
     default is specified and the attribute does not exists.
 
     Raises:
@@ -58,7 +58,7 @@ def read_password(path, default=None):
 
 def read(path, default=None):
     """
-    Return the contents of a sysfs attribute, or defualt if default is
+    Return the contents of a sysfs attribute, or default if default is
     specified and the attribute does not exist.
 
     Raises:
