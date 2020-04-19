@@ -230,6 +230,29 @@ def _iter_volumes(sdUUID):
         yield lv
 
 
+def _occupied_metadata_slots(sdUUID):
+    stripPrefix = lambda s, pfx: s[len(pfx):]
+    occupiedSlots = []
+
+    for lv in _iter_volumes(sdUUID):
+
+        offset = None
+        for tag in lv.tags:
+            if tag.startswith(sc.TAG_PREFIX_MD):
+                offset = int(stripPrefix(tag, sc.TAG_PREFIX_MD))
+                break
+
+        if offset is None:
+            log.warning("Could not find mapping for lv %s/%s",
+                        sdUUID, lv.name)
+            continue
+
+        occupiedSlots.append(offset)
+
+    occupiedSlots.sort()
+    return occupiedSlots
+
+
 def parse_lv_tags(lv):
     image = None
     parent = None
@@ -783,7 +806,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             yield self._getFreeMetadataSlot()
 
     def _getFreeMetadataSlot(self):
-        occupied_slots = self.occupied_metadata_slots()
+        occupied_slots = _occupied_metadata_slots(self.sdUUID)
         free_slot = self._first_available_slot()
 
         # We have these cases:
@@ -797,28 +820,6 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
         self.log.debug("Found free slot %s in VG %s", free_slot, self.sdUUID)
         return free_slot
-
-    def occupied_metadata_slots(self):
-        stripPrefix = lambda s, pfx: s[len(pfx):]
-        occupiedSlots = []
-
-        for lv in _iter_volumes(self.sdUUID):
-
-            offset = None
-            for tag in lv.tags:
-                if tag.startswith(sc.TAG_PREFIX_MD):
-                    offset = int(stripPrefix(tag, sc.TAG_PREFIX_MD))
-                    break
-
-            if offset is None:
-                self.log.warning("Could not find mapping for lv %s/%s",
-                                 self.sdUUID, lv.name)
-                continue
-
-            occupiedSlots.append(offset)
-
-        occupiedSlots.sort()
-        return occupiedSlots
 
     def _first_available_slot(self):
         version = self.getVersion()
@@ -1668,7 +1669,7 @@ class BlockStorageDomain(sd.StorageDomain):
         with open(path, "rb+") as f:
             dst = mmap.mmap(f.fileno(), RESERVED_METADATA_SIZE)
             with closing(dst):
-                for slot in self._manifest.occupied_metadata_slots():
+                for slot in _occupied_metadata_slots(self.sdUUID):
                     v4_off = self._manifest.metadata_offset(slot)
 
                     self.log.debug("Reading v4 metadata slot %s offset=%s",
