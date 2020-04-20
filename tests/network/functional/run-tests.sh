@@ -220,6 +220,7 @@ if [ $SWITCH_TYPE == $SWITCH_TYPE_LINUX ];then
 elif [ $SWITCH_TYPE == $SWITCH_TYPE_OVS ];then
     start_service "openvswitch"
     SWITCH_TYPE="ovs_switch"
+    stable_link_skip="--skip-stable-link-monitor"
 fi
 
 if [ $BACKEND == $BACKEND_LEGACY ];then
@@ -240,7 +241,7 @@ container_exec "
       -vv \
       --log-level=DEBUG \
       --target-lib \
-      --skip-stable-link-monitor \
+      $stable_link_skip \
       -m \"$SWITCH_TYPE\" \
       tests/network/functional
 "
