@@ -46,7 +46,7 @@ def bond_module():
     return bonding_kmod
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='session', autouse=True)
 def bond_option_mapping(bond_module):
     file1 = tempfile.NamedTemporaryFile()
     file2 = tempfile.NamedTemporaryFile()

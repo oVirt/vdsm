@@ -41,11 +41,6 @@ def requires_root():
         pytest.skip('Integration tests require root')
 
 
-@pytest.fixture(scope='session', autouse=True)
-def _bond_option_mapping(bond_option_mapping):
-    return
-
-
 class StaleIPRulesError(Exception):
     pass
 

@@ -82,11 +82,6 @@ def patch_stable_link_monitor(skip_stable_link_monitor):
     yield
 
 
-@pytest.fixture(scope='session', autouse=True)
-def _bond_option_mapping(bond_option_mapping):
-    return
-
-
 @contextmanager
 def nullcontext(*args, **kwargs):
     yield
