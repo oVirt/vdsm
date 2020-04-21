@@ -477,7 +477,7 @@ class HookError(GeneralException):
 
 #################################################
 #  Backups Errors
-#  Range: 1600-1610
+#  Range: 1600-1609
 #################################################
 
 
@@ -489,3 +489,14 @@ class BackupError(ContextException):
 class NoSuchBackupError(ContextException):
     code = 1601
     message = "No such backup Error"
+
+
+#################################################
+#  Checkpoints Errors
+#  Range: 1610-1619
+#################################################
+
+
+class CheckpointError(ContextException):
+    code = 1610
+    message = "Checkpoint Error"

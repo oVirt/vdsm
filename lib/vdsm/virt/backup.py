@@ -69,6 +69,7 @@ if backup_enabled:
         "abortJob",
         "backupGetXMLDesc",
         "checkpointLookupByName",
+        "listAllCheckpoints",
         "blockInfo"
     )
     class DomainAdapter(object):
@@ -208,7 +209,16 @@ def redefine_checkpoints(vm, dom, checkpoints):
 
 
 def list_checkpoints(vm, dom):
-    raise exception.MethodNotImplemented()
+    flags = libvirt.VIR_DOMAIN_CHECKPOINT_LIST_TOPOLOGICAL
+    try:
+        checkpoints = dom.listAllCheckpoints(flags=flags)
+        result = [checkpoint.getName() for checkpoint in checkpoints]
+    except libvirt.libvirtError as e:
+        raise exception.CheckpointError(
+            reason="Failed to fetch defined checkpoints list: {}".format(e),
+            vm_id=vm.id)
+
+    return dict(result=result)
 
 
 def _get_disks_drives(vm, disks_cfg):
