@@ -685,6 +685,11 @@ class VM(APIBase):
 
     @api.logged(on="api.virt")
     @api.method
+    def list_checkpoints(self):
+        return self.vm.list_checkpoints()
+
+    @api.logged(on="api.virt")
+    @api.method
     def snapshot(self, snapDrives, snapMemory=None,
                  frozen=False, jobUUID=None, timeout=30):
         # for backward compatibility reasons, we need to

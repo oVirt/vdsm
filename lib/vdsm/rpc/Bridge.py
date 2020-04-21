@@ -444,4 +444,5 @@ command_info = {
     'VM_backup_info': {'ret': 'result'},
     'VM_delete_checkpoints': {'ret': 'status'},
     'VM_redefine_checkpoints': {'ret': 'status'},
+    'VM_list_checkpoints': {'ret': 'result'},
 }

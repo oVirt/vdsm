@@ -11849,3 +11849,17 @@ VM.redefine_checkpoints:
         name: checkpoints
         type:
         - *Checkpoint
+
+VM.list_checkpoints:
+    added: '4.4'
+    description: Returns a List of checkpoint ids defined on the VM.
+    params:
+    -   description: A UUID of the VM
+        name: vmID
+        type: *UUID
+
+    return:
+        description: List of checkpoint ids ordered by creation order
+                     (from oldest to newest).
+        type:
+        - *UUID

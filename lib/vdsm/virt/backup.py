@@ -207,6 +207,10 @@ def redefine_checkpoints(vm, dom, checkpoints):
     raise exception.MethodNotImplemented()
 
 
+def list_checkpoints(vm, dom):
+    raise exception.MethodNotImplemented()
+
+
 def _get_disks_drives(vm, disks_cfg):
     drives = {}
     for disk in disks_cfg:
