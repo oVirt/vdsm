@@ -43,8 +43,8 @@ def create_adapter(target):
     adapter = nftestlib.NetFuncTestAdapter(target)
 
 
+@pytest.mark.nmstate
 class TestBridge(object):
-    @pytest.mark.nmstate
     @nftestlib.parametrize_switch
     def test_add_bridge_with_stp(self, switch):
         if switch == 'ovs':
@@ -60,7 +60,6 @@ class TestBridge(object):
                 adapter.assertBridgeOpts(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     @nftestlib.parametrize_legacy_switch
-    @pytest.mark.nmstate
     def test_add_bridge_with_custom_opts(self, switch):
         with dummy_devices(1) as (nic,):
             NET_ATTRS = {
@@ -74,7 +73,6 @@ class TestBridge(object):
             with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                 adapter.assertBridgeOpts(NETWORK_NAME, NET_ATTRS)
 
-    @pytest.mark.nmstate
     @nftestlib.parametrize_legacy_switch
     def test_create_network_over_an_existing_unowned_bridge(self, switch):
         with _create_linux_bridge(NETWORK_NAME) as brname:
@@ -90,6 +88,7 @@ class TestBridge(object):
         'and on CI even with NM down',
         raises=nftestlib.UnexpectedLinkStateChangeError,
         strict=False,
+        condition=not nftestlib.is_nmstate_backend(),
     )
     @nftestlib.parametrize_legacy_switch
     def test_create_network_and_reuse_existing_owned_bridge(self, switch):
@@ -105,7 +104,6 @@ class TestBridge(object):
                             NETWORK_NAME, NETSETUP2[NETWORK_NAME]
                         )
 
-    @pytest.mark.nmstate
     @nftestlib.parametrize_legacy_switch
     def test_reconfigure_bridge_with_vanished_port(self, switch):
         with dummy_device() as nic1:
