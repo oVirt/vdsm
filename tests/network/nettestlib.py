@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Red Hat, Inc.
+# Copyright 2015-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -121,7 +121,7 @@ def _listenOnDevice(fd, icmp):
     while True:
         packet = os.read(fd, 2048)
         # check if it is an IP packet
-        if packet[12:14] == chr(0x08) + chr(0x00):
+        if packet[12:14] == b'\x08\x00':
             if packet == icmp:
                 return
 

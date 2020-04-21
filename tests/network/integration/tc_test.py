@@ -1,6 +1,6 @@
 #
 # Copyright 2012 Roman Fenkhuber.
-# Copyright 2012-2019 Red Hat, Inc.
+# Copyright 2012-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -218,7 +218,6 @@ class TestPortMirror(object):
         else:
             return True
 
-    @pytest.mark.skipif(six.PY3, reason='needs porting to python 3')
     def testMirroring(self):
         tc.setPortMirroring(self._bridge0.devName, self._bridge1.devName)
         assert self._sendPing(), 'Bridge received no mirrored ping requests.'
@@ -229,7 +228,6 @@ class TestPortMirror(object):
             'requests, but mirroring is unset.'
         )
 
-    @pytest.mark.skipif(six.PY3, reason='needs porting to python 3')
     def testMirroringWithDistraction(self):
         "setting another mirror action should not obstract the first one"
         tc.setPortMirroring(self._bridge0.devName, self._bridge2.devName)
