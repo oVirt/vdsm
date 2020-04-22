@@ -23,7 +23,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import pytest
-import six
 
 from vdsm.network import ethtool
 from vdsm.network import ipwrapper
@@ -82,11 +81,6 @@ class TestDrvinfo(object):
 class TestUnicodeDrvinfo(object):
     @pytest.fixture
     def unicode_bridge(self):
-        if six.PY3:
-            pytest.skip(
-                'Passing non-ascii chars to cmdline is broken in Python 3'
-            )
-
         # First 3 Hebrew letters, in native string format
         # See http://unicode.org/charts/PDF/U0590.pdf
         bridge_name = py2to3.to_str(b'\xd7\x90\xd7\x91\xd7\x92')
