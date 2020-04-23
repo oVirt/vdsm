@@ -95,7 +95,6 @@ test_modules = \
 	tool_confmeta_test.py \
 	tool_test.py \
 	throttledlog_test.py \
-	unicode_test.py \
 	validate_test.py \
 	vdsmapi_test.py \
 	vdsmdumpchains_test.py \
