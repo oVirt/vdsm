@@ -933,7 +933,8 @@ def test_dump_sd_metadata(
         "metadata": expected_metadata,
         "volumes": {},
         "leases": [expected_sd_lease],
-        "lockspace": expected_lockspace
+        "lockspace": expected_lockspace,
+        "xleases": {}
     }
 
     img_uuid = str(uuid.uuid4())
@@ -953,6 +954,17 @@ def test_dump_sd_metadata(
             srcVolUUID=sc.BLANK_UUID,
             volFormat=sc.COW_FORMAT,
             volUUID=vol_uuid)
+
+    # Create external lease.
+    dom.create_lease(vol_uuid)
+
+    lease_info = dom._manifest.lease_info(vol_uuid)
+    expected_xleases = {
+        vol_uuid: {
+            "offset": lease_info.offset,
+            "updating": False
+        }
+    }
 
     vol = dom.produceVolume(img_uuid, vol_uuid)
     mdslot = vol.getMetaSlot()
@@ -991,7 +1003,8 @@ def test_dump_sd_metadata(
         "metadata": expected_metadata,
         "volumes": expected_volumes_metadata,
         "leases": [expected_sd_lease, expected_vol_lease],
-        "lockspace": expected_lockspace
+        "lockspace": expected_lockspace,
+        "xleases": expected_xleases
     }
 
     # Uninitialized volume is excluded from dump.
@@ -1000,7 +1013,8 @@ def test_dump_sd_metadata(
             "metadata": expected_metadata,
             "volumes": {},
             "leases": [expected_sd_lease],
-            "lockspace": expected_lockspace
+            "lockspace": expected_lockspace,
+            "xleases": expected_xleases
         }
 
     # Tagged as removed volume is dumped with removed status.
@@ -1028,7 +1042,8 @@ def test_dump_sd_metadata(
                 }
             },
             "leases": [expected_sd_lease, expected_vol_lease],
-            "lockspace": expected_lockspace
+            "lockspace": expected_lockspace,
+            "xleases": expected_xleases
         }
 
     # Tagged as zeroed volume is dumped with removed status.
@@ -1056,7 +1071,8 @@ def test_dump_sd_metadata(
                 }
             },
             "leases": [expected_sd_lease, expected_vol_lease],
-            "lockspace": expected_lockspace
+            "lockspace": expected_lockspace,
+            "xleases": expected_xleases
         }
 
     # Bad MD slot tag volume will be dumped with invalid status.
@@ -1073,7 +1089,8 @@ def test_dump_sd_metadata(
                 }
             },
             "leases": [expected_sd_lease],
-            "lockspace": expected_lockspace
+            "lockspace": expected_lockspace,
+            "xleases": expected_xleases
         }
 
     # Volume with error on getting size will be dumped with invalid status.
@@ -1103,7 +1120,8 @@ def test_dump_sd_metadata(
                 }
             },
             "leases": [expected_sd_lease, expected_vol_lease],
-            "lockspace": expected_lockspace
+            "lockspace": expected_lockspace,
+            "xleases": expected_xleases
         }
 
     # Volume with invalid metadata block will be stated as invalid.
@@ -1121,7 +1139,8 @@ def test_dump_sd_metadata(
             }
         },
         "leases": [expected_sd_lease, expected_vol_lease],
-        "lockspace": expected_lockspace
+        "lockspace": expected_lockspace,
+        "xleases": expected_xleases
     }
 
 

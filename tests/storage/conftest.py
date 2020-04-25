@@ -47,6 +47,7 @@ from vdsm.storage import managedvolumedb
 from vdsm.storage import multipath
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import resourceManager as rm
+from vdsm.storage import xlease
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.task import Task, Recovery
 
@@ -196,6 +197,7 @@ def fake_sanlock(monkeypatch):
     monkeypatch.setattr(clusterlock, "sanlock", fs)
     monkeypatch.setattr(blockSD, "sanlock", fs)
     monkeypatch.setattr(fileVolume, "sanlock", fs)
+    monkeypatch.setattr(xlease, "sanlock", fs)
     return fs
 
 

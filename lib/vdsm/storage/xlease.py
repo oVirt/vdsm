@@ -665,6 +665,8 @@ class LeasesVolume(object):
                 }
         return leases
 
+    dump = leases
+
     def close(self):
         log.debug("Closing index for lockspace %r", self.lockspace)
         self._index.close()

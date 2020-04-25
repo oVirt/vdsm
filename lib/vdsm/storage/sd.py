@@ -1452,6 +1452,16 @@ class StorageDomain(object):
                     alignment=self._manifest.alignment,
                     block_size=self._manifest.block_size)
 
+    def dump_external_leases(self):
+        """
+        Dump the external leases volume index contents.
+
+        May be called on any host.
+        """
+        with self._manifest.external_leases_lock.shared:
+            with self._manifest.external_leases_volume() as vol:
+                return vol.dump()
+
     # Images
 
     def create_image(self, imgUUID):

@@ -8531,6 +8531,28 @@ types:
             type: uint
         type: object
 
+    XleaseDump: &XleaseDump
+        added: '4.4'
+        description: Xlease metadata.
+        name: XleaseDump
+        properties:
+        -   description: The offset of the lease in the xlease file.
+            name: offset
+            type: ulong
+
+        -   description: xlease update indicator.
+            name: updating
+            type: boolean
+        type: object
+
+    XleasesDumpMap: &XleasesDumpMap
+        added: '4.4'
+        description: A mapping of VM UUIDs to their xleases.
+        key-type: *UUID
+        name: XleasesDumpMap
+        type: map
+        value-type: *XleaseDump
+
     StorageDomainDump: &StorageDomainDump
         added: '4.4'
         description: Storage domain raw metadata.
@@ -8557,6 +8579,14 @@ types:
                 from version 3 or later.
             name: lockspace
             type: *LeaseDump
+
+        -   defaultvalue: null
+            description: External leases metadata. For a storage domain using
+                sanlock volumes leases, applies to non-local FS SD type
+                from version 4 or later.
+            name: xleases
+            type: *XleasesDumpMap
+
         type: object
 
 Host.setupNetworks:
