@@ -174,6 +174,12 @@ UNICODE_MINIMAL_VERSION = 3
 SDM_LEASE_NAME = 'SDM'
 SDM_LEASE_SLOT = 1
 
+# Reserved leases for special purposes:
+#  - 0       SPM (Backward comapatibility with V0 and V2)
+#  - 1       SDM (SANLock V3)
+#  - 2..100  (Unassigned)
+RESERVED_LEASES = 100
+
 VolumeSize = namedtuple("VolumeSize", [
     # The logical volume size in block storage and file size in file
     # storage.

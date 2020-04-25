@@ -585,7 +585,7 @@ def test_volume_life_cycle(monkeypatch, tmp_storage, tmp_repo, fake_access,
 
     assert lease.name == vol.volUUID
     assert lease.path == "/dev/{}/leases".format(sd_uuid)
-    assert lease.offset == (blockSD.RESERVED_LEASES + slot) * dom.alignment
+    assert lease.offset == (sd.RESERVED_LEASES + slot) * dom.alignment
 
     # Test that we created a sanlock resource for this volume.
     resource = fake_sanlock.read_resource(

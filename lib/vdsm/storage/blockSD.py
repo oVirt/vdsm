@@ -137,12 +137,6 @@ DEFAULT_BLOCKSIZE = 512
 DMDK_VGUUID = "VGUUID"
 DMDK_PV_REGEX = re.compile(r"^PV\d+$")
 
-# Reserved leases for special purposes:
-#  - 0       SPM (Backward comapatibility with V0 and V2)
-#  - 1       SDM (SANLock V3)
-#  - 2..100  (Unassigned)
-RESERVED_LEASES = 100
-
 # Metadata area start offset v4
 METADATA_BASE_V4 = 0
 
@@ -903,7 +897,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             sector=self.block_size)
 
     def volume_lease_offset(self, slot):
-        return (RESERVED_LEASES + slot) * self.alignment
+        return (sd.RESERVED_LEASES + slot) * self.alignment
 
     # Metadata volume
 
