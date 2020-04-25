@@ -45,6 +45,7 @@ from vdsm.storage import qemuimg
 from vdsm.storage import resourceFactories
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import rwlock
+from vdsm.storage import sanlock_direct
 from vdsm.storage import task
 from vdsm.storage import xlease
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
@@ -1537,3 +1538,15 @@ class StorageDomain(object):
         Must be implemented by concrete storge domains.
         """
         raise NotImplementedError
+
+    # Dumping storage domain
+
+    def dump_lockspace(self):
+        """
+        Dump lockspace records.
+        """
+        return list(sanlock_direct.dump_lockspace(
+            self.getIdsFilePath(),
+            size=self.alignment,
+            block_size=self.block_size,
+            alignment=self.alignment))

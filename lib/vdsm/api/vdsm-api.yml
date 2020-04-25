@@ -8550,6 +8550,13 @@ types:
                 from version 3 or later.
             name: leases
             type: *LeaseDump
+
+        -   defaultvalue: null
+            description: Lockspace metadata. For a storage domain using sanlock
+                to manage domain leases, applies to non-local FS SD type
+                from version 3 or later.
+            name: lockspace
+            type: *LeaseDump
         type: object
 
 Host.setupNetworks:

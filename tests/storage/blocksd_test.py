@@ -871,6 +871,8 @@ def test_dump_sd_metadata(
     # Allow to dump fake sanlock leases information created during the test.
     monkeypatch.setattr(
         sanlock_direct, "dump_leases", fake_sanlock.dump_leases)
+    monkeypatch.setattr(
+        sanlock_direct, "dump_lockspace", fake_sanlock.dump_lockspace)
 
     sd_uuid = str(uuid.uuid4())
     dev = tmp_storage.create_device(20 * GiB)
@@ -914,10 +916,24 @@ def test_dump_sd_metadata(
         'lver': 0
     }
 
+    # Real sanlock lockspace dump would have a unique host name for the
+    # resource field and a valid lock creation timestamp, owner host id and
+    # generation. For fake sanlock dump we only dump what fake sanlock
+    # registers for test purpose.
+    expected_lockspace = [{
+        'offset': 0,
+        'lockspace': sd_uuid,
+        'resource': 0,
+        'timestamp': 0,
+        'own': 0,
+        'gen': 0
+    }]
+
     assert dom.dump() == {
         "metadata": expected_metadata,
         "volumes": {},
-        "leases": [expected_sd_lease]
+        "leases": [expected_sd_lease],
+        "lockspace": expected_lockspace
     }
 
     img_uuid = str(uuid.uuid4())
@@ -974,7 +990,8 @@ def test_dump_sd_metadata(
     assert dom.dump() == {
         "metadata": expected_metadata,
         "volumes": expected_volumes_metadata,
-        "leases": [expected_sd_lease, expected_vol_lease]
+        "leases": [expected_sd_lease, expected_vol_lease],
+        "lockspace": expected_lockspace
     }
 
     # Uninitialized volume is excluded from dump.
@@ -982,7 +999,8 @@ def test_dump_sd_metadata(
         assert dom.dump() == {
             "metadata": expected_metadata,
             "volumes": {},
-            "leases": [expected_sd_lease]
+            "leases": [expected_sd_lease],
+            "lockspace": expected_lockspace
         }
 
     # Tagged as removed volume is dumped with removed status.
@@ -1009,7 +1027,8 @@ def test_dump_sd_metadata(
                     'truesize': vol_size.truesize
                 }
             },
-            "leases": [expected_sd_lease, expected_vol_lease]
+            "leases": [expected_sd_lease, expected_vol_lease],
+            "lockspace": expected_lockspace
         }
 
     # Tagged as zeroed volume is dumped with removed status.
@@ -1036,7 +1055,8 @@ def test_dump_sd_metadata(
                     'truesize': vol_size.truesize
                 }
             },
-            "leases": [expected_sd_lease, expected_vol_lease]
+            "leases": [expected_sd_lease, expected_vol_lease],
+            "lockspace": expected_lockspace
         }
 
     # Bad MD slot tag volume will be dumped with invalid status.
@@ -1052,7 +1072,8 @@ def test_dump_sd_metadata(
                     "truesize": vol_size.truesize
                 }
             },
-            "leases": [expected_sd_lease]
+            "leases": [expected_sd_lease],
+            "lockspace": expected_lockspace
         }
 
     # Volume with error on getting size will be dumped with invalid status.
@@ -1081,7 +1102,8 @@ def test_dump_sd_metadata(
                     'voltype': 'LEAF'
                 }
             },
-            "leases": [expected_sd_lease, expected_vol_lease]
+            "leases": [expected_sd_lease, expected_vol_lease],
+            "lockspace": expected_lockspace
         }
 
     # Volume with invalid metadata block will be stated as invalid.
@@ -1098,7 +1120,8 @@ def test_dump_sd_metadata(
                 "truesize": vol_size.truesize
             }
         },
-        "leases": [expected_sd_lease, expected_vol_lease]
+        "leases": [expected_sd_lease, expected_vol_lease],
+        "lockspace": expected_lockspace
     }
 
 

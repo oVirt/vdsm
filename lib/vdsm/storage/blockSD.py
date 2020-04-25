@@ -1737,7 +1737,8 @@ class BlockStorageDomain(sd.StorageDomain):
             "volumes": self._dump_volumes(),
             # As blockSD uses sanlock for managing its leases and lockspaces
             # we always assume to have those.
-            "leases": self._dump_leases()
+            "leases": self._dump_leases(),
+            "lockspace": self.dump_lockspace()
         }
 
     def _dump_volumes(self):
