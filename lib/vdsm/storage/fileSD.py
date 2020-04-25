@@ -847,6 +847,7 @@ class FileStorageDomain(sd.StorageDomain):
 
         if self.hasVolumeLeases():
             result["leases"] = self._dump_leases()
+            result["lockspace"] = self.dump_lockspace()
 
         return result
 
