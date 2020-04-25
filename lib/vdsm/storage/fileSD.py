@@ -849,6 +849,9 @@ class FileStorageDomain(sd.StorageDomain):
             result["leases"] = self._dump_leases()
             result["lockspace"] = self.dump_lockspace()
 
+        if self.supports_external_leases(self.getVersion()):
+            result["xleases"] = self.dump_external_leases()
+
         return result
 
     def _dump_volumes(self):
