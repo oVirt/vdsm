@@ -18,12 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
+import pytest
 from vdsm.common import time
-from testlib import VdsmTestCase
-from monkeypatch import MonkeyPatch
 
 
 class FakeTime(object):
@@ -35,76 +31,80 @@ class FakeTime(object):
         return self.time
 
 
-class TestClock(VdsmTestCase):
+@pytest.fixture
+def fake_time(monkeypatch):
+    fake_time = FakeTime()
+    monkeypatch.setattr(time, "monotonic_time", fake_time)
+    return fake_time
+
+
+class TestClock:
 
     def test_no_timers(self):
         c = time.Clock()
-        self.assertEqual(str(c), "<Clock()>")
+        assert str(c) == "<Clock()>"
 
     # Ccorrect usage
 
-    @MonkeyPatch(time, "monotonic_time", FakeTime())
-    def test_start_and_stop(self):
+    def test_start_and_stop(self, fake_time):
         c = time.Clock()
         c.start("total")
         c.start("step1")
-        time.monotonic_time.time += 3
+        fake_time.time += 3
         c.stop("step1")
         c.start("step2")
-        time.monotonic_time.time += 4
+        fake_time.time += 4
         c.stop("step2")
         c.stop("total")
-        self.assertEqual(str(c), "<Clock(total=7.00, step1=3.00, step2=4.00)>")
+        assert str(c) == "<Clock(total=7.00, step1=3.00, step2=4.00)>"
 
-    @MonkeyPatch(time, "monotonic_time", FakeTime())
-    def test_running(self):
+    def test_running(self, fake_time):
         c = time.Clock()
         c.start("foo")
-        time.monotonic_time.time += 3
+        fake_time.time += 3
         c.start("bar")
-        time.monotonic_time.time += 4
+        fake_time.time += 4
         c.stop("foo")
-        self.assertEqual(str(c), "<Clock(foo=7.00, bar=4.00*)>")
+        assert str(c) == "<Clock(foo=7.00, bar=4.00*)>"
 
-    @MonkeyPatch(time, "monotonic_time", FakeTime())
-    def test_run(self):
+    def test_run(self, fake_time):
         c = time.Clock()
         with c.run("foo"):
-            time.monotonic_time.time += 3
-        self.assertEqual(str(c), "<Clock(foo=3.00)>")
+            fake_time.time += 3
+        assert str(c) == "<Clock(foo=3.00)>"
 
-    @MonkeyPatch(time, "monotonic_time", FakeTime())
-    def test_run_nested(self):
+    def test_run_nested(self, fake_time):
         c = time.Clock()
         with c.run("outer"):
-            time.monotonic_time.time += 3
+            fake_time.time += 3
             with c.run("inner"):
-                time.monotonic_time.time += 4
-        self.assertEqual(str(c), "<Clock(outer=7.00, inner=4.00)>")
+                fake_time.time += 4
+        assert str(c) == "<Clock(outer=7.00, inner=4.00)>"
 
     # Inccorrect usage
 
     def test_start_started_clock(self):
         c = time.Clock()
         c.start("started")
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError):
             c.start("started")
 
     def test_stop_stooped_clock(self):
         c = time.Clock()
         c.start("stopped")
         c.stop("stopped")
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError):
             c.stop("stopped")
 
     def test_stop_missing_clock(self):
         c = time.Clock()
-        self.assertRaises(RuntimeError, c.stop, "foo")
+        with pytest.raises(RuntimeError):
+            c.stop("foo")
 
     def test_run_started(self):
         c = time.Clock()
         c.start("started")
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError):
             with c.run("started"):
                 pass
 
@@ -112,6 +112,6 @@ class TestClock(VdsmTestCase):
         c = time.Clock()
         with c.run("stopped"):
             pass
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError):
             with c.run("stopped"):
                 pass

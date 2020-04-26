@@ -33,7 +33,6 @@ common_modules = \
 	common/proc_test.py \
 	common/properties_test.py \
 	common/pthread_test.py \
-	common/time_test.py \
 	common/validate_test.py \
 	$(NULL)
 
