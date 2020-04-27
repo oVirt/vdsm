@@ -654,7 +654,7 @@ class Vm(object):
         Value provided by this method is used to order messages
         containing changed status on the engine side.
         """
-        return str(int(vdsm.common.time.monotonic_time() * 1000))
+        return str(vdsm.common.time.event_time())
 
     lastStatus = property(_get_lastStatus, set_last_status)
 

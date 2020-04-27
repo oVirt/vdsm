@@ -26,6 +26,17 @@ import collections
 from contextlib import contextmanager
 
 
+def event_time():
+    """
+    Clock used for notifications and VM status reports. The value is used to
+    process events in the correct order on engine side.
+
+    Returns:
+        integer value in milliseconds resolution.
+    """
+    return int(monotonic_time() * 1000)
+
+
 def monotonic_time():
     """
     Return the amount of time, in secs, elapsed since a fixed

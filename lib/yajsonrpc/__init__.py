@@ -23,7 +23,7 @@ from vdsm.common import exception as vdsmexception
 from vdsm.common.compat import json
 from vdsm.common.logutils import Suppressed, traceback
 from vdsm.common.threadlocal import vars
-from vdsm.common.time import monotonic_time
+from vdsm.common.time import monotonic_time, event_time
 from vdsm.common.password import protect_passwords, unprotect_passwords
 
 from yajsonrpc import exception
@@ -182,7 +182,7 @@ class Notification(object):
         self._cb(notification)
 
     def _add_notify_time(self, body):
-        body['notify_time'] = int(monotonic_time() * 1000)
+        body['notify_time'] = event_time()
 
 
 class _JsonRpcServeRequestContext(object):
