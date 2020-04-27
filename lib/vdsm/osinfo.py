@@ -260,6 +260,7 @@ def package_versions():
             'mom': ('mom',),
             'ovirt-hosted-engine-ha': ('ovirt-hosted-engine-ha',),
             'openvswitch': ('openvswitch', 'rhv-openvswitch'),
+            'nmstate': ('nmstate',),
             'qemu-img': ('qemu-img', 'qemu-img-rhev', 'qemu-img-ev'),
             'qemu-kvm': ('qemu-kvm', 'qemu-kvm-rhev', 'qemu-kvm-ev'),
             'spice-server': ('spice-server',),
