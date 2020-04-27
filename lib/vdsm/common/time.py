@@ -20,8 +20,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import os
 import collections
+import time
 
 from contextlib import contextmanager
 
@@ -34,25 +34,19 @@ def event_time():
     Returns:
         integer value in milliseconds resolution.
     """
-    return int(monotonic_time() * 1000)
+    # Older engines had broken parsing code, failing to parse time values
+    # smaller than INT_MAX. This issue was hiden because os.times()[4] starts
+    # at 2**32 / 1000 on boot, but time.monotonic() starts at 0.
+    base = 2**31 - 1
+
+    return base + int(monotonic_time() * 1000)
 
 
 def monotonic_time():
     """
-    Return the amount of time, in secs, elapsed since a fixed
-    arbitrary point in time in the past.
-    This function is useful if the client just
-    needs to use the difference between two given time points.
-
-    With respect to time.time():
-    * The resolution of this function is lower. On Linux,
-      the resolution is 1/_SC_CLK_TCK, which in turn depends on
-      the value of HZ configured in the kernel. A commonly
-      found resolution is 10 (ten) ms.
-    * This function is resilient with respect to system clock
-      adjustments.
+    Return monotonic time that cannot go backwards.
     """
-    return os.times()[4]
+    return time.monotonic()
 
 
 class Clock(object):
