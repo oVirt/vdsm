@@ -24,6 +24,8 @@ from __future__ import division
 import errno
 import threading
 
+from operator import itemgetter
+
 from testlib import maybefail
 
 from vdsm.storage import constants as sc
@@ -412,6 +414,54 @@ class FakeSanlock(object):
 
         # Real sanlock just overwrites lockspace if it was already initialized.
         self.spaces[lockspace] = ls
+
+    def dump_leases(
+            self, path, offset=0, size=None, block_size=None, alignment=None):
+        dump = []
+
+        for (rpath, roffset), rinfo in self.resources.items():
+            if rpath == path and self._in_range(roffset, offset, size):
+                rec = {
+                    'offset': roffset,
+                    'lockspace': rinfo['lockspace'].decode('utf-8'),
+                    'resource': rinfo['resource'].decode('utf-8'),
+                    'timestamp': 0,
+                    'own': 0,
+                    'gen': 0,
+                    'lver': 0
+                }
+                dump.append(rec)
+
+        dump.sort(key=itemgetter('offset'))
+        return iter(dump)
+
+    def dump_lockspace(
+            self, path, offset=0, size=None, block_size=None, alignment=None):
+        dump = []
+
+        for lsname, lsinfo in self.spaces.items():
+            loffset = lsinfo['offset']
+            lpath = lsinfo['path']
+            if lpath == path and self._in_range(loffset, offset, size):
+                rec = {
+                    'offset': loffset,
+                    'lockspace': lsname.decode('utf-8'),
+                    'resource': lsinfo.get('host_id', 0),
+                    'timestamp': 0,
+                    'own': 0,
+                    'gen': 0
+                }
+                dump.append(rec)
+
+        dump.sort(key=itemgetter('offset'))
+        return iter(dump)
+
+    def _in_range(self, offset, start=0, size=None):
+        if offset < start:
+            return False
+        if size is not None and offset >= start + size:
+            return False
+        return True
 
     def _validate_bytes(self, arg):
         if not isinstance(arg, bytes):

@@ -550,6 +550,83 @@ def test_write_resource():
     assert info == expected
 
 
+def test_dump_lockspace():
+    fs = FakeSanlock()
+    fs.write_lockspace(b'lockspace1', 'ids')
+    fs.write_lockspace(b'lockspace2', 'ids', offset=sc.ALIGNMENT_1M)
+
+    dump = list(fs.dump_lockspace('ids'))
+    assert dump == [{
+        'offset': i * sc.ALIGNMENT_1M,
+        'lockspace': 'lockspace{}'.format(i + 1),
+        'resource': 0,
+        'timestamp': 0,
+        'own': 0,
+        'gen': 0
+    } for i in range(2)]
+
+    dump = list(fs.dump_lockspace('ids', offset=sc.ALIGNMENT_1M))
+    assert dump == [{
+        'offset': sc.ALIGNMENT_1M,
+        'lockspace': 'lockspace2',
+        'resource': 0,
+        'timestamp': 0,
+        'own': 0,
+        'gen': 0
+    }]
+
+    dump = list(fs.dump_lockspace('ids', offset=0, size=sc.ALIGNMENT_1M))
+    assert dump == [{
+        'offset': 0,
+        'lockspace': 'lockspace1',
+        'resource': 0,
+        'timestamp': 0,
+        'own': 0,
+        'gen': 0
+    }]
+
+
+def test_dump_leases():
+    fs = FakeSanlock()
+    fs.write_lockspace(LOCKSPACE_NAME, 'ids')
+    fs.write_resource(LOCKSPACE_NAME, b'resource1', [('leases', 0)])
+    fs.write_resource(
+        LOCKSPACE_NAME, b'resource2', [('leases', sc.ALIGNMENT_1M)])
+
+    dump = list(fs.dump_leases('leases'))
+    assert dump == [{
+        'offset': i * sc.ALIGNMENT_1M,
+        'lockspace': LOCKSPACE_NAME.decode('utf-8'),
+        'resource': 'resource{}'.format(i + 1),
+        'timestamp': 0,
+        'own': 0,
+        'gen': 0,
+        'lver': 0
+    } for i in range(2)]
+
+    dump = list(fs.dump_leases('leases', offset=sc.ALIGNMENT_1M))
+    assert dump == [{
+        'offset': sc.ALIGNMENT_1M,
+        'lockspace': LOCKSPACE_NAME.decode('utf-8'),
+        'resource': 'resource2',
+        'timestamp': 0,
+        'own': 0,
+        'gen': 0,
+        'lver': 0
+    }]
+
+    dump = list(fs.dump_leases('leases', offset=0, size=sc.ALIGNMENT_1M))
+    assert dump == [{
+        'offset': 0,
+        'lockspace': LOCKSPACE_NAME.decode('utf-8'),
+        'resource': 'resource1',
+        'timestamp': 0,
+        'own': 0,
+        'gen': 0,
+        'lver': 0
+    }]
+
+
 def test_add_without_init_lockpsace():
     fs = FakeSanlock()
     with pytest.raises(fs.SanlockException) as e:
