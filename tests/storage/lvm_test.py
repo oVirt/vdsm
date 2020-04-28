@@ -1618,22 +1618,21 @@ def test_retry_with_wider_filter(tmp_storage, read_only):
     assert vg.pv_name == (dev,)
 
 
-@pytest.mark.parametrize("linux_dist, locking_type", [
-    (('Red Hat Enterprise Linux Server', '7.7', 'Maipo'), '4'),
-    (('Fedora', '30', 'Thirty'), '1'),
-    (('CentOS Linux', '7.7.1908', 'Core'), '1'),
-    (('', '', ''), '1')
+@pytest.mark.parametrize("machine, locking_type", [
+    ("x86_64", '4'),
+    ("ppc64le", '1'),
+    ("unknown", '1'),
 ])
-def test_on_rhel(
-        linux_dist,
+def test_on_x86_64(
+        machine,
         locking_type,
         tmpdir,
         fake_devices,
         fake_runner,
         monkeypatch):
-    monkeypatch.setattr(platform, "linux_distribution", lambda: linux_dist)
+    monkeypatch.setattr(platform, "machine", lambda: machine)
 
-    # Call _reloadpvs with locking_type according to rhel detection.
+    # Call _reloadpvs with locking_type according to machine detection.
     with pytest.raises(se.InaccessiblePhysDev):
         lvm.getPV(fake_devices[0])
 
@@ -1641,13 +1640,13 @@ def test_on_rhel(
     assert " locking_type={} ".format(locking_type) in cmd[3]
 
 
-def test_on_rhel_error(tmpdir, fake_devices, fake_runner, monkeypatch):
+def test_on_x86_64_error(tmpdir, fake_devices, fake_runner, monkeypatch):
 
-    def bad_linux_dist():
+    def bad_machine():
         raise Exception()
-    monkeypatch.setattr(platform, "linux_distribution", bad_linux_dist)
+    monkeypatch.setattr(platform, "machine", bad_machine)
 
-    # Call _reloadpvs with locking_type according to rhel detection.
+    # Call _reloadpvs with locking_type according to machine detection.
     with pytest.raises(se.InaccessiblePhysDev):
         lvm.getPV(fake_devices[0])
 

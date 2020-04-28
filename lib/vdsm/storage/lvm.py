@@ -238,15 +238,11 @@ def makeLV(*args):
 
 
 @cache.memoized
-def _on_rhel():
-    # TODO: remove this helper once no longer need to tell between
-    # CentOS and RHEL release in _reloadpvs for setting read_only
-    # override.
+def _on_x86_64():
     try:
-        linux_dist = platform.linux_distribution()
-        return 'Red Hat Enterprise Linux' in linux_dist[0]
+        return platform.machine() == "x86_64"
     except Exception as e:
-        log.warning("Failed to get linux distribution: %s", e)
+        log.warning("Failed to get platform machine: %s", e)
         return False
 
 
@@ -488,11 +484,10 @@ class LVMCache(object):
             cmd.append("--select")
             cmd.append(selection)
 
-        # TODO: remove read-only override once BZ #1809660 is fixed.
-        # pvs command needs read-write mode to avoid failures on non-RHEL
-        # releases (even if called with arguments). For RHEL we use the patched
-        # lvm version which would allow to use pvs command in read-only mode.
-        read_only = None if _on_rhel() else False
+        # POWER is stuck on RHEL 7.6, so we don't have a fix for BZ #1809660.
+        # WARNING: Using pvs command in read-write mode may cause data
+        # corruption.
+        read_only = None if _on_x86_64() else False
         rc, out, err = self.cmd(cmd, read_only=read_only, wants_output=True)
 
         with self._lock:

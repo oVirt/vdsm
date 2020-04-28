@@ -213,9 +213,10 @@ Requires: cyrus-sasl-scram
 Requires: lvm2 >= 2.02.177-5
 %else
 %if 0%{?rhel}
-%if 0%{?centos}
-Requires: lvm2 >= 7:2.02.145
-%else # rhel
+%ifarch ppc64le
+# Stuck on RHEL 7.6, use latest version.
+Requires: lvm2 >= 7:2.02.180-10.el7_6.1
+%else
 # For locking_type=4 support https://bugzilla.redhat.com/1809660
 Requires: lvm2 >= 7:2.02.186-7.el7_8.1
 %endif
