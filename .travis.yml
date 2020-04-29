@@ -9,14 +9,10 @@ services:
 git:
   depth: 1
 
-# Notes: we run the linters only on Fedora 29 to save time. This may miss some
-# issues on CentOS but the chance is very low.
-# TODO: add Fedora 29 python 3.7 build.
 env:
   matrix:
-    - DIST=centos-7   TARGETS="storage tests-py27"
-    - DIST=fedora-29  TARGETS="lint"
-    - DIST=fedora-29  TARGETS="storage tests-py27"
+    - DIST=centos-7 TARGETS="storage tests-py27"
+    - DIST=centos-7 TARGETS="lint"
 
 before_install:
   - docker --version
