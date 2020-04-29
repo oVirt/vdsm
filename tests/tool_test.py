@@ -34,7 +34,7 @@ from vdsm.tool import upgrade
 from vdsm import cpuinfo
 import monkeypatch
 from testlib import expandPermutations, make_config, VdsmTestCase
-from testValidation import ValidateRunningAsRoot
+from testValidation import ValidateRunningAsRoot, broken_on_ci
 from unittest import TestCase
 import io
 import tempfile
@@ -655,6 +655,7 @@ class ConfigFileTests(TestCase):
                                        "key4=val\n"
                                        "# end conf-3.4.4\n")
 
+    @broken_on_ci("importing sitecustomize fails", name="TRAVIS_CI")
     def testEncoding(self):
         self._writeConf("")
         with ConfigFile(self.tname,

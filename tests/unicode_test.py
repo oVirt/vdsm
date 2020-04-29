@@ -23,6 +23,7 @@ from __future__ import division
 
 from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
+from testValidation import broken_on_ci
 
 ENCODE = [
     # value, encoded (utf8)
@@ -40,31 +41,41 @@ DECODE = [
     (u'ascii', u'ascii'),
 ]
 
+broken_on_travis = broken_on_ci(
+    "importing sitecustomize fails", name="TRAVIS_CI")
+
 
 @expandPermutations
 class TestUnicode(VdsmTestCase):
 
     @permutations(ENCODE)
+    @broken_on_travis
     def test_encode(self, value, encoded):
         self.assertEqual(value.encode("utf8"), encoded)
 
     @permutations(ENCODE)
+    @broken_on_travis
     def test_str(self, value, encoded):
         self.assertEqual(str(value), encoded)
 
     @permutations(DECODE)
+    @broken_on_travis
     def test_decode(self, value, decoded):
         self.assertEqual(value.decode("utf8"), decoded)
 
     @permutations(DECODE)
+    @broken_on_travis
     def test_unicode(self, value, decoded):
         self.assertEqual(unicode(value), decoded)
 
+    @broken_on_travis
     def test_mix_add(self):
         self.assertEqual(u'\u05d0' + '\xd7\x91', u'\u05d0\u05d1')
 
+    @broken_on_travis
     def test_mix_format_str(self):
         self.assertEqual(u'\u05d0%s' % '\xd7\x91', u'\u05d0\u05d1')
 
+    @broken_on_travis
     def test_mix_format_unicode(self):
         self.assertEqual('\xd7\x90%s' % u'\u05d1', u'\u05d0\u05d1')
