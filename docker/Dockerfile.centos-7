@@ -1,5 +1,5 @@
 FROM centos:7
-RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm && \
+RUN yum install -y https://resources.ovirt.org/pub/yum-repo/ovirt-release43.rpm && \
   yum update -y && \
   yum install -y \
     PyYAML \
