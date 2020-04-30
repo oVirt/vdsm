@@ -24,6 +24,7 @@ import logging
 import socketserver
 import threading
 
+from vdsm.common import concurrent
 from vdsm.common.constants import P_VDSM_RUN
 
 SOCKET_DEFAULT = os.path.join(P_VDSM_RUN, 'dhcp-monitor.sock')
@@ -79,13 +80,11 @@ class Monitor(object):
         self._server = socketserver.UnixStreamServer(
             socket_path, _MonitorHandler
         )
-        self._thread = threading.Thread(
-            target=self._server.serve_forever, name='dhcp-monitor'
+        self._thread = concurrent.thread(
+            self._server.serve_forever, name='dhcp-monitor'
         )
         self._netapi = None
         self._cif = None
-
-        self._thread.setDaemon(True)
 
     @staticmethod
     def instance(**kwargs):
