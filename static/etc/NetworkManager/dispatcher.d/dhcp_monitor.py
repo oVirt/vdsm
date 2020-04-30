@@ -3,6 +3,7 @@
 import json
 import os
 import socket
+import sys
 
 UP_ACTIONS = ('up', 'dhcp4-change', 'dhcp6-change')
 
@@ -70,8 +71,11 @@ def create_up_content(ip, mask, iface, route, family):
 
 def send_configuration(content):
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
-        client.connect(SOCKET_PATH)
-        client.sendall(bytes(json.dumps(content), 'utf-8'))
+        try:
+            client.connect(SOCKET_PATH)
+            client.sendall(bytes(json.dumps(content), 'utf-8'))
+        except FileNotFoundError:
+            sys.exit(f'Cannot open {SOCKET_PATH} socket, vdsmd is not running')
 
 
 if __name__ == '__main__':
