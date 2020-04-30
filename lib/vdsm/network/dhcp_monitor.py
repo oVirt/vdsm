@@ -74,6 +74,8 @@ class Monitor(object):
     def __init__(self, socket_path=SOCKET_DEFAULT):
         self._socket = socket_path
         self._handlers = []
+
+        self._remove_socket()
         self._server = socketserver.UnixStreamServer(
             socket_path, _MonitorHandler
         )
@@ -100,12 +102,9 @@ class Monitor(object):
 
     def stop(self):
         logging.info('Stopping DHCP monitor.')
+        self._remove_socket()
         self._server.shutdown()
         self._thread.join()
-        try:
-            os.remove(self._socket)
-        except OSError:
-            logging.warning('DHCP monitor socket cannot be removed.')
 
     def add_handler(self, handler):
         self._handlers.append(handler)
@@ -113,6 +112,14 @@ class Monitor(object):
     def handle_event(self, event):
         for handler in self._handlers:
             handler(event)
+
+    def _remove_socket(self):
+        try:
+            os.remove(self._socket)
+        except FileNotFoundError:
+            pass
+        except OSError as e:
+            logging.warning('DHCP monitor socket cannot be removed: %s', e)
 
 
 class ResponseField(object):
