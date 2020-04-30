@@ -117,7 +117,7 @@ outer()
         # on timeout, py-watch should kill the process session spawned by it.
         with pytest.raises(cmdutils.Error) as e:
             commands.run([
-                sys.executable, 'py-watch', '0.2', 'bash',
+                sys.executable, 'py-watch', '1.0', 'bash',
                 '-c', 'bash -c "readlink /proc/self; sleep 10"'])
 
         # assert that the internal bash no longer exist
