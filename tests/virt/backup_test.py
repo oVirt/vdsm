@@ -92,6 +92,9 @@ MIXED_CHECKPOINT_XML = """
     </domaincheckpoint>
     """.format(CHECKPOINT_1_ID, BACKUP_1_ID)
 
+CHECKPOINT_1 = FakeCheckpoint(CHECKPOINT_1_XML, CHECKPOINT_1_ID)
+CHECKPOINT_2 = FakeCheckpoint(CHECKPOINT_2_XML, CHECKPOINT_2_ID)
+
 
 class FakeDrive(object):
 
@@ -162,6 +165,18 @@ FAKE_SCRATCH_DISKS = {
     "sda": "/path/to/scratch_sda",
     "vda": "/path/to/scratch_vda",
 }
+
+
+FAKE_CHECKPOINT_CFG = [
+    {
+        'id': CHECKPOINT_1_ID,
+        'xml': CHECKPOINT_1_XML
+    },
+    {
+        'id': CHECKPOINT_2_ID,
+        'xml': CHECKPOINT_2_XML
+    },
+]
 
 
 @pytest.fixture
@@ -319,8 +334,7 @@ def test_incremental_backup(tmp_backupdir, tmp_basedir):
         scratch_disk_paths[0],
         scratch_disk_paths[1])
 
-    checkpoint_1 = FakeCheckpoint(CHECKPOINT_1_XML, CHECKPOINT_1_ID)
-    dom.output_checkpoints = [checkpoint_1]
+    dom.output_checkpoints = [CHECKPOINT_1]
 
     config = {
         'backup_id': BACKUP_2_ID,
@@ -607,6 +621,81 @@ def test_fail_parse_backup_xml(tmp_backupdir, tmp_basedir):
 
     with pytest.raises(exception.BackupError):
         backup.backup_info(vm, dom, BACKUP_1_ID)
+
+
+@requires_backup_support
+def test_list_checkpoints():
+    dom = FakeDomainAdapter(output_checkpoints=[CHECKPOINT_1, CHECKPOINT_2])
+
+    vm = FakeVm()
+    res = backup.list_checkpoints(vm, dom)
+
+    assert res["result"] == [CHECKPOINT_1.getName(), CHECKPOINT_2.getName()]
+
+
+@requires_backup_support
+def test_list_empty_checkpoints():
+    dom = FakeDomainAdapter()
+    vm = FakeVm()
+    res = backup.list_checkpoints(vm, dom)
+
+    assert res["result"] == []
+
+
+@requires_backup_support
+def test_redefine_checkpoints_succeeded():
+    dom = FakeDomainAdapter(output_checkpoints=[CHECKPOINT_1, CHECKPOINT_2])
+
+    vm = FakeVm()
+    res = backup.redefine_checkpoints(vm, dom, FAKE_CHECKPOINT_CFG)
+
+    expected_result = {
+        'checkpoint_ids': [CHECKPOINT_1.getName(), CHECKPOINT_2.getName()],
+    }
+    assert res["result"] == expected_result
+
+
+@requires_backup_support
+def test_redefine_checkpoints_failed():
+    dom = FakeDomainAdapter()
+    # simulating an error that raised during
+    # checkpointCreateXML() method in libvirt.
+    error_msg = "Create checkpoint XML Error"
+    dom.errors["checkpointCreateXML"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_INTERNAL_ERROR, '', error_msg], "Fake libvirt error")
+    vm = FakeVm()
+
+    res = backup.redefine_checkpoints(vm, dom, FAKE_CHECKPOINT_CFG)
+
+    expected_result = {
+        'checkpoint_ids': [],
+        'error': {
+            'code': 1,
+            'message': error_msg
+        }
+    }
+    assert res["result"] == expected_result
+
+
+@requires_backup_support
+def test_redefine_checkpoints_failed_after_one_succeeded():
+    dom = FakeDomainAdapter(output_checkpoints=[CHECKPOINT_1, CHECKPOINT_2])
+
+    vm = FakeVm()
+    # Add non existing checkpoint to FAKE_CHECKPOINT_CFG
+    # to fail the validation in checkpointCreateXML
+    cfg = list(FAKE_CHECKPOINT_CFG)
+    cfg.append({'id': make_uuid(), 'xml': "<xml/>"})
+    res = backup.redefine_checkpoints(vm, dom, cfg)
+
+    expected_result = {
+        'checkpoint_ids': [CHECKPOINT_1.getName(), CHECKPOINT_2.getName()],
+        'error': {
+            'code': 102,
+            'message': "Invalid checkpoint error"
+        }
+    }
+    assert res["result"] == expected_result
 
 
 def verify_scratch_disks_exists(vm, backup_id=BACKUP_1_ID):
