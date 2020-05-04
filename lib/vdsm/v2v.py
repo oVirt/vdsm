@@ -60,9 +60,9 @@ from vdsm.constants import P_VDSM_LOG, P_VDSM_RUN, EXT_KVM_2_OVIRT
 from vdsm.utils import NICENESS, IOCLASS
 
 try:
-    import ovirt_imageio_common
+    import ovirt_imageio
 except ImportError:
-    ovirt_imageio_common = None
+    ovirt_imageio = None
 
 
 _lock = threading.Lock()
@@ -207,8 +207,8 @@ def convert_external_vm(uri, username, password, vminfo, job_id, irs):
         command = LibvirtCommand(uri, username, password, vminfo, job_id,
                                  irs)
     elif uri.startswith(_KVM_PROTOCOL):
-        if ovirt_imageio_common is None:
-            raise V2VError('Unsupported protocol KVM, ovirt_imageio_common'
+        if ovirt_imageio is None:
+            raise V2VError('Unsupported protocol KVM, ovirt_imageio '
                            'package is needed for importing KVM images')
         command = KVMCommand(uri, username, password, vminfo, job_id, irs)
     else:
