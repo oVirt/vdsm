@@ -26,6 +26,8 @@ import libvirt
 
 from testlib import maybefail
 
+from vdsm.common.xmlutils import indented
+
 import vmfakelib as fake
 
 
@@ -126,3 +128,22 @@ class FakeDomainAdapter(object):
     @maybefail
     def listAllCheckpoints(self, flags=None):
         return list(self.output_checkpoints)
+
+    @maybefail
+    def checkpointCreateXML(self, checkpoint_xml, flags=None):
+        assert flags == libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE
+
+        # validate the given checkpoint XML according to the
+        # initialized output_checkpoints, in case output_checkpoints
+        # isn't initialized the validation will be skipped
+        if self.output_checkpoints:
+            indented_checkpoint_xml = indented(checkpoint_xml)
+            for checkpoint in self.output_checkpoints:
+                expected_checkpoint_xml = indented(checkpoint.getXMLDesc())
+                if indented_checkpoint_xml == expected_checkpoint_xml:
+                    return
+
+            raise fake.libvirt_error(
+                [libvirt.VIR_ERR_INVALID_DOMAIN_CHECKPOINT,
+                 '', "Invalid checkpoint error"],
+                "Fake checkpoint error")
