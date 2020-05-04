@@ -1,6 +1,6 @@
 ovirt-master-snapshot,http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/$distro
 sbonazzo-el8-collection,https://copr-be.cloud.fedoraproject.org/results/sbonazzo/EL8_collection/epel-8-$basearch/
-glusterfs,https://download.gluster.org/pub/gluster/glusterfs/6/LATEST/RHEL/el-$releasever/$basearch/
+glusterfs,https://buildlogs.centos.org/centos/8/storage/$basearch/gluster-7/
 # TODO: get rid of nmstate / networkmanager once centOS 8.2 is out
 nmstate,https://copr-be.cloud.fedoraproject.org/results/nmstate/nmstate-0.2/epel-8-$basearch/
 networkmanager,https://copr-be.cloud.fedoraproject.org/results/networkmanager/NetworkManager-1.22/epel-8-$basearch/
