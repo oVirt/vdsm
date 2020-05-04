@@ -31,11 +31,15 @@ import vmfakelib as fake
 
 class FakeCheckpoint(object):
 
-    def __init__(self, checkpoint_xml):
+    def __init__(self, checkpoint_xml, name):
         self.xml = checkpoint_xml
+        self.name = name
 
     def getXMLDesc(self):
         return self.xml
+
+    def getName(self):
+        return self.name
 
 
 class FakeDomainAdapter(object):
@@ -53,12 +57,12 @@ class FakeDomainAdapter(object):
 
     Another option is to set custom backup and/or checkpoint XML
     as a response to backupGetXMLDesc() and/or checkpointLookupByName() by
-    providing output_backup_xml/checkpoint_xml when creating the
+    providing output_backup_xml/output_checkpoints when creating the
     FakeDomainAdapter instance.
 
     dom = FakeDomainAdapter(
         output_backup_xml=output_backup_xml,
-        output_checkpoint_xml=output_checkpoint_xml)
+        output_checkpoints=[fakeCheckpoint1, fakeCheckpoint2])
 
     To test a code using DomainAdapter:
 
@@ -72,15 +76,12 @@ class FakeDomainAdapter(object):
             ...
     """
 
-    def __init__(self, output_backup_xml=None, output_checkpoint_xml=None):
+    def __init__(self, output_backup_xml=None, output_checkpoints=()):
         self.backing_up = False
         self.input_backup_xml = None
         self.input_checkpoint_xml = None
         self.output_backup_xml = output_backup_xml
-        if output_checkpoint_xml:
-            self.output_checkpoint_xml = FakeCheckpoint(output_checkpoint_xml)
-        else:
-            self.output_checkpoint_xml = None
+        self.output_checkpoints = list(output_checkpoints)
         self.errors = {}
 
     @maybefail
@@ -115,13 +116,13 @@ class FakeDomainAdapter(object):
 
     @maybefail
     def checkpointLookupByName(self, checkpoint_id):
-        if self.input_checkpoint_xml is None:
-            raise fake.libvirt_error(
-                [libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT], "Checkpoint not found")
-        return FakeCheckpoint(self.input_checkpoint_xml)
+        for checkpoint in self.output_checkpoints:
+            if checkpoint.getName() == checkpoint_id:
+                return checkpoint
+
+        raise fake.libvirt_error(
+            [libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT], "Checkpoint not found")
 
     @maybefail
     def listAllCheckpoints(self, flags=None):
-        # TODO: will be implemented when adding tests
-        # for list and redefine checkpoints
-        return list()
+        return list(self.output_checkpoints)
