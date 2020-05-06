@@ -177,7 +177,7 @@ task_test_space() {
 
 
 task_test_lo() {
-    if ! LC_ALL=C "@IP_PATH@" link show lo | "@GREP_PATH@" -q UP; then
+    if ! LC_ALL=C.UTF8 "@IP_PATH@" link show lo | "@GREP_PATH@" -q UP; then
         echo "VDSMD: lo interface is down, can't run !"
         echo "VDSMD: lo interface is down, can't run !" > /dev/kmsg
         return 1

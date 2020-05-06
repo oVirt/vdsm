@@ -866,7 +866,7 @@ make DESTDIR=%{buildroot} install
 
 %pre
 # Force standard locale behavior (English)
-export LC_ALL=C
+export LC_ALL=C.UTF8
 
 /usr/bin/getent passwd %{vdsm_user} >/dev/null || \
     /usr/sbin/useradd -r -u 36 -g %{vdsm_group} -d /var/lib/vdsm \

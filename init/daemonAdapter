@@ -84,7 +84,7 @@ class DaemonAdapter(object):
                     'vars', 'libvirt_env_variable_log_filters'),
                 'LIBVIRT_LOG_OUTPUTS': config.get(
                     'vars', 'libvirt_env_variable_log_outputs'),
-                'LC_ALL': 'C',
+                'LC_ALL': 'C.UTF8',
                 'PYTHONPATH': pythonpath,
             })
 

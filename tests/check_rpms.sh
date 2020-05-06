@@ -5,7 +5,7 @@ shopt -s extglob
 
 ARTIFACTS_DIR=$1
 
-export LC_ALL=C  # no idea why this is suddenly needed
+export LC_ALL=C.UTF8  # no idea why this is suddenly needed
 
 rpmlint "$ARTIFACTS_DIR/"*.src.rpm
 

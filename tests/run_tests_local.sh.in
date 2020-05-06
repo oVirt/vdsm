@@ -13,7 +13,7 @@ function terminate_jobs {
 trap terminate_jobs EXIT
 
 export \
-    LC_ALL=C \
+    LC_ALL=C.UTF8 \
     NOSE_EVAL_ATTR \
     NOSE_LOGFORMAT='%(asctime)s %(levelname)-5s (%(threadName)s) [%(name)s] %(message)s (%(module)s:%(lineno)d)' \
     NOSE_VERBOSE=${NOSE_VERBOSE:-1} \
