@@ -20,6 +20,7 @@
 import logging
 import threading
 
+from vdsm.common import concurrent
 from vdsm.network.netlink import monitor
 
 _monitor_instance = None
@@ -30,8 +31,8 @@ class Monitor(object):
     def __init__(self):
         self._handlers = []
         self._nl_monitor = monitor.ifla_monitor(groups=('link',))
-        self._thread = threading.Thread(
-            target=self.serve_forever, name='bond-monitor', daemon=True
+        self._thread = concurrent.thread(
+            self.serve_forever, name='bond-monitor'
         )
 
     @staticmethod
