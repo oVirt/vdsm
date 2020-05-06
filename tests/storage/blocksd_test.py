@@ -114,17 +114,17 @@ def make_lv(name=None, tags=()):
 @contextmanager
 def change_vol_tag(vol, tag_prefix, tag_value):
     lv = lvm.getLV(vol.sdUUID, vol.volUUID)
-    add_tags = {tag_prefix + tag_value}
-    del_tags = {tag for tag in lv.tags
+    new_tags = {tag_prefix + tag_value}
+    old_tags = {tag for tag in lv.tags
                 if tag.startswith(tag_prefix)}
 
     lvm.changeLVsTags(
-        vol.sdUUID, vol.volUUID, delTags=del_tags, addTags=add_tags)
+        vol.sdUUID, vol.volUUID, delTags=old_tags, addTags=new_tags)
     try:
         yield
     finally:
         lvm.changeLVsTags(
-            vol.sdUUID, vol.volUUID, delTags=add_tags, addTags=del_tags)
+            vol.sdUUID, vol.volUUID, delTags=new_tags, addTags=old_tags)
 
 
 class TestGetAllVolumes:
