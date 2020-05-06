@@ -957,20 +957,56 @@ def test_dump_sd_metadata(
             "volumes": {}
         }
 
-    # Tagged as removed volume is excluded from dump.
+    # Tagged as removed volume is dumped with removed status.
     img_tag = sc.REMOVED_IMAGE_PREFIX + img_uuid
     with change_vol_tag(vol, sc.TAG_PREFIX_IMAGE, img_tag):
         assert dom.dump() == {
             "metadata": expected_metadata,
-            "volumes": {}
+            "volumes": {
+                vol_uuid: {
+                    'apparentsize': vol_size.apparentsize,
+                    'capacity': vol_capacity,
+                    'ctime': vol_ctime,
+                    'description': 'test',
+                    'disktype': sc.DATA_DISKTYPE,
+                    'format': 'COW',
+                    'generation': 0,
+                    'image': img_uuid,
+                    'legality': sc.LEGAL_VOL,
+                    'mdslot': mdslot,
+                    'status': sc.VOL_STATUS_REMOVED,
+                    'parent': sc.BLANK_UUID,
+                    'type': 'SPARSE',
+                    'voltype': 'LEAF',
+                    'truesize': vol_size.truesize
+                }
+            }
         }
 
-    # Tagged as zeroed volume is excluded from dump.
+    # Tagged as zeroed volume is dumped with removed status.
     img_tag = sc.ZEROED_IMAGE_PREFIX + img_uuid
     with change_vol_tag(vol, sc.TAG_PREFIX_IMAGE, img_tag):
         assert dom.dump() == {
             "metadata": expected_metadata,
-            "volumes": {}
+            "volumes": {
+                vol_uuid: {
+                    'apparentsize': vol_size.apparentsize,
+                    'capacity': vol_capacity,
+                    'ctime': vol_ctime,
+                    'description': 'test',
+                    'disktype': sc.DATA_DISKTYPE,
+                    'format': 'COW',
+                    'generation': 0,
+                    'image': img_uuid,
+                    'legality': sc.LEGAL_VOL,
+                    'mdslot': mdslot,
+                    'status': sc.VOL_STATUS_REMOVED,
+                    'parent': sc.BLANK_UUID,
+                    'type': 'SPARSE',
+                    'voltype': 'LEAF',
+                    'truesize': vol_size.truesize
+                }
+            }
         }
 
     # Bad MD slot tag volume will be dumped with invalid status.

@@ -1750,9 +1750,6 @@ class BlockStorageDomain(sd.StorageDomain):
             # Complement volume metadata from parsed slots by slot number.
             try:
                 lvtags = parse_lv_tags(lv)
-                # Exclude removed volumes and zeroed volumes.
-                if lvtags.image.startswith(sc.REMOVED_IMAGE_PREFIX):
-                    continue
                 vol_md = slots_md[lvtags.mdslot]
             except Exception as e:
                 self.log.warning(
@@ -1775,6 +1772,11 @@ class BlockStorageDomain(sd.StorageDomain):
                     "Failed to get size for lv %s/%s: %s",
                     self.sdUUID, lv.name, e)
                 vol_md["status"] = sc.VOL_STATUS_INVALID
+
+            # Check if volume was marked as removed and override status.
+            img = lvtags.image
+            if img is not None and img.startswith(sc.REMOVED_IMAGE_PREFIX):
+                vol_md["status"] = sc.VOL_STATUS_REMOVED
 
             vols_md[lv.name] = vol_md
 
