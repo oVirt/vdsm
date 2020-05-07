@@ -27,6 +27,7 @@ Periodic scheduler that polls QEMU Guest Agent for information.
 
 from collections import defaultdict
 import copy
+import ipaddress
 import json
 import libvirt
 import re
@@ -318,6 +319,27 @@ class QemuGuestAgentPoller(object):
             else:
                 self.log.debug(
                     'Not querying QEMU-GA yet, domain not running')
+                return
+        # This is a best-effort check for non-local networks. We cannot
+        # guarantee the network is up or working, but this should handle most
+        # of the cases with simple DHCP configuration.
+        local_ifaces = ['lo', 'docker0']
+        info = self.get_guest_info(vm.id)
+        have_some = False
+        for iface in info.get('netIfaces', []):
+            if iface['name'] in local_ifaces:
+                continue
+            for addr in iface['inet'] + iface['inet6']:
+                addr = ipaddress.ip_address(addr)
+                if not addr.is_loopback() and not addr.is_link_local():
+                    have_some = True
+                    break
+            if have_some:
+                break
+        if not have_some:
+            self.update_guest_info(
+                vm.id, self._qga_call_network_interfaces(vm))
+            self.set_last_check(vm.id, VDSM_GUEST_INFO_NETWORK, now)
 
     def _poller(self):
         for vm_id, vm_obj in six.viewitems(self._cif.getVMs()):
