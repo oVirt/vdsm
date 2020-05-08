@@ -723,7 +723,11 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             path = lvm.lvPath(sdUUID, volUUID)
 
             if discard:
-                blockdev.discard(path)
+                lvm.activateLVs(sdUUID, (volUUID,))
+                try:
+                    blockdev.discard(path)
+                finally:
+                    lvm.deactivateLVs(sdUUID, (volUUID,))
 
             self.log.debug('Removing volume %s task %s', volUUID, taskid)
             deleteVolumes(sdUUID, (volUUID,))
