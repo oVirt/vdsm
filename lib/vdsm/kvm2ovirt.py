@@ -27,7 +27,8 @@ import sys
 import os
 import threading
 
-from ovirt_imageio import directio
+# TODO: Stop using internal modules.
+from ovirt_imageio._internal import directio
 
 from vdsm.common import concurrent
 from vdsm.common import libvirtconnection

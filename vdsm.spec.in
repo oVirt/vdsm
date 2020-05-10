@@ -191,9 +191,9 @@ Requires: nfs-utils
 %endif
 
 # For kvm2ovirt
-Requires: ovirt-imageio-common = 2.0.5
+Requires: ovirt-imageio-common = 2.0.6
 # For controlling /tickets
-Requires: ovirt-imageio-daemon = 2.0.5
+Requires: ovirt-imageio-daemon = 2.0.6
 
 %if %{with_ovirt_vmconsole}
 Requires: ovirt-vmconsole >= 1.0.0-0
@@ -1018,7 +1018,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logrotate/vdsm
 %config(noreplace) %{_sysconfdir}/sysctl.d/vdsm.conf
 %config(noreplace) %{_sysconfdir}/modules-load.d/vdsm.conf
-%config(noreplace) %{_sysconfdir}/ovirt-imageio/daemon.conf
+%{_sysconfdir}/ovirt-imageio/conf.d/50-vdsm.conf
 %{_tmpfilesdir}/%{vdsm_name}.conf
 %{_sysconfdir}/dhcp/dhclient.d/dhclientmon.sh
 %{_sysconfdir}/modprobe.d/vdsm-bonding-modprobe.conf

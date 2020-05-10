@@ -171,10 +171,10 @@ dist_systemdunit_DATA = \
 	./usr/lib/systemd/system/dev-hugepages1G.mount \
 	$(NULL)
 
-imageiodir = $(sysconfdir)/ovirt-imageio
+imageiodir = $(sysconfdir)/ovirt-imageio/conf.d
 
 imageio_DATA = \
-	./etc/ovirt-imageio/daemon.conf \
+	./etc/ovirt-imageio/conf.d/50-vdsm.conf \
 	$(NULL)
 
 CLEANFILES = \
