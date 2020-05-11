@@ -34,7 +34,7 @@ from vdsm.storage import operation
 _qemuimg = cmdutils.CommandPath(
     "qemu-img", "/usr/local/bin/qemu-img", "/usr/bin/qemu-img")
 
-_log = logging.getLogger("QemuImg")
+_log = logging.getLogger("storage.qemuimg")
 
 
 class FORMAT:
