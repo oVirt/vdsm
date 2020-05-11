@@ -90,10 +90,17 @@ def do_download(pids, path, url, headers):
     curl_opt = get_curl_options(headers) + [url]
 
     pids.add(fork_exec(
-        CURL.cmd, CURL.name, *curl_opt, dup2args=(data_w, 1),
+        CURL.cmd,
+        CURL.name,
+        *curl_opt,
+        dup2args=(data_w, 1),
         closefd=(data_r,)))
     pids.add(fork_exec(
-        DD.cmd, DD.name, "bs=2M", "of=%s" % path, dup2args=(data_r, 0),
+        DD.cmd,
+        DD.name,
+        "bs=2M",
+        "of=%s" % path,
+        dup2args=(data_r, 0),
         closefd=(data_w,)))
 
     os.close(data_r)
@@ -105,10 +112,17 @@ def do_upload(pids, path, url, headers):
     curl_opt = get_curl_options(headers) + ["--upload-file", "-", url]
 
     pids.add(fork_exec(
-        DD.cmd, DD.name, "bs=2M", "if=%s" % path, dup2args=(data_w, 1),
+        DD.cmd,
+        DD.name,
+        "bs=2M",
+        "if=%s" % path,
+        dup2args=(data_w, 1),
         closefd=(data_r,)))
     pids.add(fork_exec(
-        CURL.cmd, CURL.name, *curl_opt, dup2args=(data_r, 0),
+        CURL.cmd,
+        CURL.name,
+        *curl_opt,
+        dup2args=(data_r, 0),
         closefd=(data_w,)))
 
     os.close(data_r)
