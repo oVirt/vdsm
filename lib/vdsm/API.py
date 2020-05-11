@@ -1525,6 +1525,10 @@ class Global(APIBase):
         try:
             self._cif._netConfigDirty = True
             supervdsm.getProxy().setupNetworks(networks, bondings, options)
+            if options.get('commitOnSuccess'):
+                # This option ensures that persist is called after
+                # setupNetworks
+                self._cif._netConfigDirty = False
             return {'status': doneCode}
         except ConfigNetworkError as e:
             self.log.error('%s', e.msg, exc_info=True)
