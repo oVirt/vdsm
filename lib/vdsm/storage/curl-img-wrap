@@ -98,8 +98,28 @@ def do_download(pids, path, url, headers):
     pids.add(fork_exec(
         DD.cmd,
         DD.name,
+        # Tested 2, 4, 8, 16, and 32 MiB buffers, using larger buffer does not
+        # improve transfer rates for using oflag=nocache,dsync. Using bs=16M
+        # has shown to improve transfer rates for oflag=direct mode which
+        # cannot be used due to alignment issues of uploaded images.
         "bs=2M",
         "of=%s" % path,
+        # Do not maintain written portions in cache (nocache) and flush data
+        # to storage on every block-sized write (dsync).
+        #
+        # using oflag=nocache spares the cache memory and keeps it at a stable
+        # level throughout the operation without showing degradation in trasfer
+        # rates compared to only using oflag=dsync:
+        #
+        # dd if=/dev/zero of=1 bs=2M count=1204 oflag=dsync conv=fsync
+        # vmstat's memory cache is increasing: 777436, 826744, ..., 1073072.
+        # 2524971008 bytes (2.5 GB, 2.4 GiB) copied, 76.8542 s, 32.9 MB/s
+        #
+        # dd if=/dev/zero of=1 bs=2M count=1204 oflag=nocache,dsync conv=fsync
+        # vmstat's memory cache is kept stable: 734668, 734672, ..., 734676.
+        # 2524971008 bytes (2.5 GB, 2.4 GiB) copied, 70.1152 s, 36.0 MB/s
+        #
+        "oflag=nocache,dsync",
         # Ensure that data reach physical storage before returning.
         "conv=fsync",
         dup2args=(data_r, 0),
