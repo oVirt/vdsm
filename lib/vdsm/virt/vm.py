@@ -3875,8 +3875,8 @@ class Vm(object):
 
     def freeze(self):
         """
-        Freeze every mounted filesystems within the guest (hence guest agent
-        may be required depending on hypervisor used).
+        Freeze every mounted filesystems within the guest. This is performed by
+        the QEMU Guest Agent inside the guest.
         """
         self.log.info("Freezing guest filesystems")
 
@@ -3898,8 +3898,8 @@ class Vm(object):
 
     def thaw(self):
         """
-        Thaw every mounted filesystems within the guest (hence guest agent may
-        be required depending on hypervisor used).
+        Thaw every mounted filesystems within the guest. This is performed
+        by the QEMU Guest Agent inside the guest.
         """
         self.log.info("Thawing guest filesystems")
 
