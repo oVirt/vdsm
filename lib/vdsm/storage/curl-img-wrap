@@ -100,6 +100,8 @@ def do_download(pids, path, url, headers):
         DD.name,
         "bs=2M",
         "of=%s" % path,
+        # Ensure that data reach physical storage before returning.
+        "conv=fsync",
         dup2args=(data_r, 0),
         closefd=(data_w,)))
 
