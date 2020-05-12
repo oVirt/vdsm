@@ -1135,9 +1135,31 @@ def test_dump_sd_volumes_removed_image(
         "version": str(user_domain.getVersion())
     }
 
+    # Dump the volume metadata and state it as removed.
+    vol_size = user_domain.getVolumeSize(
+        sc.REMOVED_IMAGE_PREFIX + img_uuid, vol_uuid)
+    expected_volumes_metadata = {
+        vol_uuid: {
+            "apparentsize": vol_size.apparentsize,
+            "capacity": vol_capacity,
+            "ctime": vol_ctime,
+            "description": "test",
+            "disktype": sc.DATA_DISKTYPE,
+            "format": "RAW",
+            "generation": 0,
+            "image": img_uuid,
+            "legality": sc.LEGAL_VOL,
+            "status": sc.VOL_STATUS_REMOVED,
+            "parent": sc.BLANK_UUID,
+            "truesize": vol_size.truesize,
+            "type": "SPARSE",
+            "voltype": "LEAF"
+        }
+    }
+
     assert user_domain.dump() == {
         "metadata": expected_metadata,
-        "volumes": {}
+        "volumes": expected_volumes_metadata
     }
 
 

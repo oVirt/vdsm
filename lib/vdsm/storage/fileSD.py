@@ -857,11 +857,6 @@ class FileStorageDomain(sd.StorageDomain):
 
         self.log.debug("Looking up files %s", meta_files_pattern)
         for path in self.oop.glob.glob(meta_files_pattern):
-            # Skip removed images files.
-            img_dir = os.path.dirname(path)
-            if os.path.basename(img_dir).startswith(sc.REMOVED_IMAGE_PREFIX):
-                continue
-
             vol_uuid, md = self._parse_metadata_file(path)
             result[vol_uuid] = md
 
@@ -894,6 +889,10 @@ class FileStorageDomain(sd.StorageDomain):
                 "Failed to get size for volume %s/%s: %s",
                 self.sdUUID, vol_uuid, e)
             md["status"] = sc.VOL_STATUS_INVALID
+
+        # Check if volume was marked as removed and override its status.
+        if img_uuid.startswith(sc.REMOVED_IMAGE_PREFIX):
+            md["status"] = sc.VOL_STATUS_REMOVED
 
         return vol_uuid, md
 
