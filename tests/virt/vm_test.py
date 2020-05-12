@@ -1897,6 +1897,70 @@ class MetadataTests(TestCaseBase):
             self.assertTrue(testvm._launch_paused)
 
 
+class TestQgaContext(TestCaseBase):
+
+    def test_default_timeout(self):
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain()
+            self.assertEqual(
+                testvm._dom._agent_timeout,
+                libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT)
+            with testvm.qga_context():
+                self.assertEqual(
+                    testvm._dom._agent_timeout,
+                    libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT)
+            self.assertEqual(
+                testvm._dom._agent_timeout,
+                libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT)
+
+    def test_reset_default_timeout(self):
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain()
+            with testvm.qga_context(10):
+                self.assertEqual(testvm._dom._agent_timeout, 10)
+            self.assertEqual(
+                testvm._dom._agent_timeout,
+                libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT)
+
+    def test_libvirtError_not_handled(self):
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain()
+            with self.assertRaises(libvirt.libvirtError):
+                with testvm.qga_context():
+                    # This exception should be propagated outside the context
+                    raise libvirt.libvirtError("Some error")
+
+    def test_unlock_clean(self):
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain()
+            with testvm.qga_context():
+                self.assertTrue(testvm._qga_lock.locked())
+            # Make sure the lock was released properly
+            self.assertFalse(testvm._qga_lock.locked())
+
+    def test_unlock_dirty(self):
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain()
+            with self.assertRaises(libvirt.libvirtError):
+                with testvm.qga_context():
+                    self.assertTrue(testvm._qga_lock.locked())
+                    # Simulate error condition
+                    raise libvirt.libvirtError("Some error")
+            # Make sure the lock was released properly
+            self.assertFalse(testvm._qga_lock.locked())
+
+    def test_handle_lock_timeout(self):
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain()
+            # Lock it before entering the context
+            testvm._qga_lock.acquire()
+            with self.assertRaises(exception.NonResponsiveGuestAgent):
+                with testvm.qga_context(1):
+                    # We should not get here because the attempt to lock should
+                    # time out and qga_context should raise an exception.
+                    pass
+
+
 class FakeLeaseDomain(object):
 
     def attachDevice(self, device_xml):

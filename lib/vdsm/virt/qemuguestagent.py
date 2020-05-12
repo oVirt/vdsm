@@ -37,6 +37,7 @@ import time
 
 from vdsm import utils
 from vdsm import executor
+from vdsm.common import exception
 from vdsm.common.time import monotonic_time
 from vdsm.config import config
 from vdsm.virt import periodic
@@ -382,12 +383,14 @@ class QemuGuestAgentPoller(object):
         self.log.debug(
             'libvirt: fetching guest info vm_id=%r types=%s',
             vm.id, bin(types))
-        # TODO: set libvirt timeout
         try:
-            info = QemuGuestAgentDomain(vm).guestInfo(types, 0)
-        except libvirt.libvirtError as e:
+            # Note: The timeout here is really for each command that will be
+            #       invoked and not for the guestInfo() call as whole.
+            with vm.qga_context(_COMMAND_TIMEOUT):
+                info = QemuGuestAgentDomain(vm).guestInfo(types, 0)
+        except (exception.NonResponsiveGuestAgent, libvirt.libvirtError) as e:
             self.log.info('Failed to get guest info for vm=%s, error: %s',
-                          vm.id, str(e))
+                          vm.id, e)
             self.set_failure(vm.id)
             return {}
         except virdomain.NotConnectedError:
@@ -567,9 +570,12 @@ class QemuGuestAgentPoller(object):
         interfaces = {}
         try:
             self.log.debug('Requesting NIC info for vm=%s', vm.id)
-            interfaces = QemuGuestAgentDomain(vm).interfaceAddresses(
-                libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
-        except libvirt.libvirtError:
+            with vm.qga_context(_COMMAND_TIMEOUT):
+                interfaces = QemuGuestAgentDomain(vm).interfaceAddresses(
+                    libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
+        except (exception.NonResponsiveGuestAgent, libvirt.libvirtError) as e:
+            self.log.info('Failed to get guest info for vm=%s, error: %s',
+                          vm.id, e)
             self.set_failure(vm.id)
             return {}
         except virdomain.NotConnectedError:

@@ -639,14 +639,14 @@ parameters = [
             'Maximum number of worker threads to serve the periodic tasks '
             'at the same time.'),
 
-        # WARNING: This should be as small as possible, we cannot wait for
-        # unresponsive agent. When the call is blocked the libvirt domain is
-        # locked and thus lots of other libvirt calls on the domain are blocked
-        # or unavailble!
         ('qga_command_timeout', '1',
             'Time (in sec) to wait for completion of single call to QEMU'
-            ' Guest Agent.'
-            ' This is for internal usage and may change without warning'),
+            ' Guest Agent. The one second timeout is generous enough for'
+            ' average guest (5x-10x more than needed), but if your guests'
+            ' are permanently under heavy load and queries are timing out'
+            ' you may wish to increase the value. Depending on the number'
+            ' of VMs it may be also necessary to increase qga_task_timeout'
+            ' too.'),
 
         ('qga_task_timeout', '30',
             'Time (in sec) to wait for completion of periodic task.'

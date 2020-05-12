@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from contextlib import contextmanager
 import json
 import libvirt
 import libvirt_qemu
@@ -153,6 +154,10 @@ class FakeVM(object):
     def qemu_agent_command(self, command, timeout, flags):
         return libvirt_qemu.qemuAgentCommand(
             self._dom, command, timeout, flags)
+
+    @contextmanager
+    def qga_context(self, timeout=-1):
+        yield
 
 
 def _dom_guestInfo(self, types, flags):

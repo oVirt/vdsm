@@ -164,6 +164,7 @@ class Domain(object):
         self._diskErrors = {}
         self._downtimes = []
         self.destroyed = False
+        self._agent_timeout = libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT
 
     @property
     def connected(self):
@@ -278,6 +279,9 @@ class Domain(object):
             dev = xmlutils.fromstring(device_xml)
             alias = core.find_device_alias(dev)
             self.vm.onDeviceRemoved(alias)
+
+    def agentSetResponseTimeout(self, timeout, flags):
+        self._agent_timeout = timeout
 
 
 class GuestAgent(object):
