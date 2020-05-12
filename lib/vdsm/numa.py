@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -147,9 +147,10 @@ def _numa(capabilities=None):
         distances[cell_id] = []
 
         for cpu in cell.findall('cpus/cpu'):
-            topology[cell_id]['cpus'].append(int(cpu.get('id')))
+            cpu_id = int(cpu.get('id'))
+            topology[cell_id]['cpus'].append(cpu_id)
             if cpu.get('siblings') and cpu.get('socket_id'):
-                online_cpus.append(cpu.get('id'))
+                online_cpus.append(cpu_id)
                 sockets.add(cpu.get('socket_id'))
                 siblings.add(cpu.get('siblings'))
 

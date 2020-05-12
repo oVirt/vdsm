@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2017 Red Hat, Inc.
+# Copyright 2011-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -86,7 +86,9 @@ def get():
 
     caps['cpuThreads'] = str(cpu_topology.threads)
     caps['cpuSockets'] = str(cpu_topology.sockets)
-    caps['onlineCpus'] = ','.join(cpu_topology.online_cpus)
+    caps['onlineCpus'] = ','.join(
+        [str(cpu_id) for cpu_id in cpu_topology.online_cpus]
+    )
     caps['cpuSpeed'] = cpuinfo.frequency()
     caps['cpuModel'] = cpuinfo.model()
     caps['cpuFlags'] = ','.join(cpuinfo.flags() +

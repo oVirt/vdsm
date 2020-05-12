@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -250,5 +250,4 @@ class TestCaps(TestCaseBase):
         self.assertEqual(t.threads, 8)
         self.assertEqual(t.cores, 4)
         self.assertEqual(t.sockets, 1)
-        self.assertEqual(t.online_cpus,
-                         ['0', '1', '2', '3', '4', '5', '6', '7'])
+        self.assertEqual(t.online_cpus, [0, 1, 2, 3, 4, 5, 6, 7])
