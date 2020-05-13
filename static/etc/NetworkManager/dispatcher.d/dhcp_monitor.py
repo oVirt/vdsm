@@ -57,16 +57,13 @@ def handle_up(device):
 
 
 def create_up_content(ip, mask, iface, route, family):
-    content = {ResponseField.FAMILY: family}
-    if ip:
-        content[ResponseField.IPADDR] = ip
-    if mask:
-        content[ResponseField.IPMASK] = mask
-    if iface:
-        content[ResponseField.IFACE] = iface
-    if route:
-        content[ResponseField.IPROUTE] = route
-    return content
+    return {
+        ResponseField.FAMILY: family,
+        ResponseField.IPADDR: ip,
+        ResponseField.IPMASK: mask,
+        ResponseField.IFACE: iface,
+        ResponseField.IPROUTE: route,
+    }
 
 
 def send_configuration(content):
