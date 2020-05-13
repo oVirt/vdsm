@@ -24,6 +24,7 @@ from __future__ import division
 import collections
 import functools
 import hashlib
+import json
 import logging
 import operator
 import os
@@ -707,9 +708,73 @@ def list_by_caps(caps=None):
 
     for devName, params in libvirt_devices.items():
         devices[devName] = {'params': params}
+    devices.update(list_nvdimms())
 
     devices = hooks.after_hostdev_list_by_caps(devices)
     return devices
+
+
+def list_nvdimms():
+    """
+    Return dictionary of available NVDIMM namespace devices.
+
+    Physical or virtual NVDIMM devices or their parts are organized
+    into regions, possibly spanning multiple physical devices, and
+    each region can have one or more namespaces. QEMU can be
+    instructed to make a virtual NVDIMM device in the guest from a
+    namespace NVDIMM device on the host.
+
+    Engine consumes the following parameters for each device:
+
+    - 'device_path' of the namespace device, to know where to access the
+      device
+    - 'device_size' of the device in bytes, to know what size to set
+    - 'align_size' in bytes, to specify the device alignment to libvirt
+    - 'mode' of the device, to know whether the device should be set as
+      persistent and to inform the user
+    - 'numa_node' of the device, to know the NUMA node to put the
+      device into
+
+    The returned dictionary is in a host device compatible format, the
+    same as in `list_by_caps()`.
+
+    NVDIMM devices are memory devices from the point of view of
+    libvirt but we report NVDIMM devices as host devices, of a
+    separate 'nvdimm' capability, as this is closer to the way they
+    are actually used.
+    """
+    ndctl_command = ['ndctl', 'list', '--namespaces', '-v']
+    try:
+        output = commands.run(ndctl_command)
+    except Exception:
+        logging.exception("Couldn't retrieve NVDIMM device data")
+        return {}
+    try:
+        data = json.loads(output)
+    except json.JSONDecodeError:
+        logging.exception("Couldn't parse NVDIMM device data")
+        return {}
+    nvdimms = {}
+    for device in data:
+        dev_file = device.get('blockdev') or device.get('chardev')
+        if not dev_file:
+            try:
+                dev_file = device['daxregion']['devices'][0]['chardev']
+            except (KeyError, IndexError,):
+                logging.warning("No NVDIMM device file: %s", device)
+                continue
+        parameters = {
+            'capability': 'nvdimm',
+            'parent': 'computer',
+            'device_path': '/dev/' + dev_file,
+            'numa_node': device['numa_node'],
+            'mode': device['mode'],
+            'device_size': int(device['size']),
+        }
+        if 'align' in device:
+            parameters['align_size'] = int(device['align'])
+        nvdimms[device['dev']] = {'params': parameters}
+    return nvdimms
 
 
 def get_device_params(device_name):

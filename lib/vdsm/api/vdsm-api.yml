@@ -1807,6 +1807,36 @@ types:
             description: device address
             name: address
             type: *HostDeviceAddress
+
+        -   defaultvalue: no-default
+            description: Device path
+            name: device_path
+            type: string
+            added: '4.4'
+
+        -   defaultvalue: no-default
+            description: NUMA node of the device
+            name: numa_node
+            type: string
+            added: '4.4'
+
+        -   defaultvalue: no-default
+            description: Device mode
+            name: mode
+            type: string
+            added: '4.4'
+
+        -   defaultvalue: no-default
+            description: Device alignment in bytes
+            name: align_size
+            type: ulong
+            added: '4.4'
+
+        -   defaultvalue: no-default
+            description: Size of the device in bytes
+            name: device_size
+            type: ulong
+            added: '4.4'
         type: object
 
     HostDevice: &HostDevice
