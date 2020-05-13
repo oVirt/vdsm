@@ -32,7 +32,6 @@ import libvirt
 
 from vdsm.common import exception
 from vdsm.common import logutils
-from vdsm.common import response
 from vdsm import utils
 from vdsm.config import config
 from vdsm.common import concurrent
@@ -119,6 +118,16 @@ class Job(vdsm.virt.jobs.Job):
                                 self._start_time, self._timeout,
                                 self._snapshot_job, self._lock)
                 snap.snapshot()
+        except:
+            # Setting the abort in cases where the snapshot job failed before
+            # starting the snapshot in libvirt, causing AbortSnapshot thread
+            # to finish. This is also safe for recovery, since it saved to the
+            # VMs metadata. The engine will see abort and failed as the same.
+            set_abort(self._vm, self._snapshot_job, self._completed,
+                      self._abort, self._lock)
+            # We need to raise an exception in order to make job framework
+            # report the current job as a failure.
+            raise exception.SnapshotFailed()
         finally:
             t.join()
 
@@ -337,16 +346,16 @@ class Snapshot(properties.Owner):
                 # The volume we want to snapshot doesn't exist
                 self._vm.log.error("The base volume doesn't exist: %s",
                                    base_drv)
-                return response.error('snapshotErr')
+                raise exception.SnapshotFailed()
 
             if vm_drive.hasVolumeLeases:
                 self._vm.log.error('disk %s has volume leases', vm_drive.name)
-                return response.error('noimpl')
+                raise exception.SnapshotFailed()
 
             if vm_drive.transientDisk:
                 self._vm.log.error('disk %s is a transient disk',
                                    vm_drive.name)
-                return response.error('transientErr')
+                raise exception.SnapshotFailed()
 
             vm_dev_name = vm_drive.name
 
@@ -376,7 +385,7 @@ class Snapshot(properties.Owner):
                 self._vm.log.exception('unable to prepare the volume path for '
                                        'disk %s', vm_dev_name)
                 rollback_drives(prepared_drives)
-                return response.error('snapshotErr')
+                raise exception.SnapshotFailed()
 
             drive, _ = vm_drives[vm_dev_name]
             snapelem = drive.get_snapshot_xml(vm_device)
