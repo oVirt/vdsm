@@ -137,7 +137,7 @@ lint: gitignore execcmd black flake8 pylint
 
 .PHONY: tests
 tests: tox
-	tox -e "tests,storage,lib,network,virt,gluster"
+	tox -e "tests,storage,lib,network,virt,gluster,hooks"
 
 .PHONY: storage
 storage:
