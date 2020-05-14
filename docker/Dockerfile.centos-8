@@ -42,6 +42,7 @@ RUN dnf install -y \
         python3-six \
         python3-yaml \
         redhat-rpm-config \
+        sanlock \
         sudo \
         systemd \
         systemd-udev \
