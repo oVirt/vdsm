@@ -1774,6 +1774,7 @@ class BlockStorageDomain(sd.StorageDomain):
                 self.log.warning(
                     "Failed to get size for lv %s/%s: %s",
                     self.sdUUID, lv.name, e)
+                vol_md["status"] = sc.VOL_STATUS_INVALID
 
             vols_md[lv.name] = vol_md
 

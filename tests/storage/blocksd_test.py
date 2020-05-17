@@ -988,6 +988,34 @@ def test_dump_sd_metadata(
             }
         }
 
+    # Volume with error on getting size will be dumped with invalid status.
+    with monkeypatch.context() as mc:
+        def bad_vol_size():
+            raise Exception()
+        mc.setattr(
+            blockSD.BlockStorageDomainManifest, "getVolumeSize", bad_vol_size)
+
+        assert dom.dump() == {
+            "metadata": expected_metadata,
+            "volumes": {
+                vol_uuid: {
+                    'capacity': vol_capacity,
+                    'ctime': vol_ctime,
+                    'description': 'test',
+                    'disktype': sc.DATA_DISKTYPE,
+                    'format': 'COW',
+                    'generation': 0,
+                    'image': img_uuid,
+                    'legality': sc.LEGAL_VOL,
+                    'mdslot': mdslot,
+                    'status': sc.VOL_STATUS_INVALID,
+                    'parent': sc.BLANK_UUID,
+                    'type': 'SPARSE',
+                    'voltype': 'LEAF'
+                }
+            }
+        }
+
     # Volume with invalid metadata block will be stated as invalid.
     vol.removeMetadata((sd_uuid, mdslot))
     assert dom.dump() == {
