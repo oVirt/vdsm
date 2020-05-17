@@ -17,7 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-TOX_MIN_VERSION = 3.14
+TOX_MIN_VERSION = 3.15
 
 # We don't want the standard gnu file setup (README, INSTALL, etc.)
 AUTOMAKE_OPTIONS = foreign

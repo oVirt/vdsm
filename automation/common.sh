@@ -35,7 +35,7 @@ install_dependencies() {
         install --upgrade pip "virtualenv<20"
 
     ${CI_PYTHON} tests/profile pip-install ${CI_PYTHON} -m pip \
-        install --upgrade "tox==3.14"
+        install --upgrade "tox==3.15"
 
     add_advanced_virt
 }
