@@ -305,9 +305,6 @@ class LVMRunner(object):
     SUPPRESS_WARNINGS = re.compile(
         "|".join([
             "WARNING: This metadata update is NOT backed up",
-            # TODO: remove when https://bugzilla.redhat.com/1639360 is fixed.
-            "WARNING: Combining activation change with other commands is "
-            "not advised",
             # TODO: remove once we don't support Fedora 30.
             "Configuration setting \"global/event_activation\" unknown",
         ]),
