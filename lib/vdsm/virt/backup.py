@@ -211,11 +211,45 @@ def backup_info(vm, dom, backup_id, checkpoint_id=None):
 
 
 def delete_checkpoints(vm, dom, checkpoint_ids):
-    raise exception.MethodNotImplemented()
+    deleted_checkpoint_ids = []
+    # The engine should send the list of
+    # checkpoints ordered from the base to the leaf
+    for checkpoint_id in checkpoint_ids:
+        vm.log.info("Delete VM %r checkpoint %r", vm.id, checkpoint_id)
+
+        try:
+            checkpoint = dom.checkpointLookupByName(checkpoint_id)
+            checkpoint.delete()
+        except libvirt.libvirtError as e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT:
+                vm.log.debug(
+                    "Checkpoint_id: %r doesn't exist, error: %s",
+                    checkpoint_id, e)
+
+            else:
+                vm.log.error(
+                    "Failed to delete VM %r checkpoint %r: %s",
+                    vm.id, checkpoint_id, e)
+
+                result = {
+                    'checkpoint_ids': deleted_checkpoint_ids,
+                    'error': {
+                        'code': e.get_error_code(),
+                        'message': e.get_error_message()
+                    }
+                }
+                return dict(result=result)
+
+        deleted_checkpoint_ids.append(checkpoint_id)
+
+    result = {'checkpoint_ids': deleted_checkpoint_ids}
+    return dict(result=result)
 
 
 def redefine_checkpoints(vm, dom, checkpoints):
     checkpoint_ids = []
+    # The engine should send the list of
+    # checkpoints ordered from the base to the leaf
     for checkpoint in checkpoints:
         checkpoint_cfg = CheckpointConfig(checkpoint)
         vm.log.info("Redefine VM %r checkpoint %r",
