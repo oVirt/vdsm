@@ -72,13 +72,10 @@ def test_dump_leases(storage):
         alignment=align)
     assert list(dump) == []
 
-    # Initialize lockspace.
-    _write_lockspace("LS", storage.path, 0, block_size, align)
-
     # Add resources.
+    _write_resource("LS", "RS0", storage.path, 0 * align, block_size, align)
     _write_resource("LS", "RS1", storage.path, 1 * align, block_size, align)
     _write_resource("LS", "RS2", storage.path, 2 * align, block_size, align)
-    _write_resource("LS", "RS3", storage.path, 3 * align, block_size, align)
 
     expected = [{
         "offset": i * storage.alignment,
@@ -88,7 +85,7 @@ def test_dump_leases(storage):
         "own": 0,
         "gen": 0,
         "lver": 0
-    } for i in range(1, 4)]
+    } for i in range(3)]
 
     dump = sanlock_direct.dump_leases(
         path=storage.path,
