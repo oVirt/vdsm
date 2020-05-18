@@ -47,6 +47,8 @@ from vdsm.common import response
 from vdsm.common import supervdsm
 from vdsm.common import validate
 from vdsm.common import conv
+from vdsm.common.commands import terminating
+from vdsm.common.compat import subprocess
 from vdsm.host import api as hostapi
 from vdsm.host import caps
 # TODO fix name conflict and use from vdsm.storage import sd
@@ -1177,7 +1179,13 @@ class Global(APIBase):
            action can be one of (status, on, off, reboot)."""
 
         def fence(script, inp):
-            rc, out, err = commands.execCmd([script], data=inp.encode('utf-8'))
+            cmd = commands.start([script], stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            data = inp.encode('utf-8')
+            with terminating(cmd):
+                out, err = cmd.communicate(data)
+                rc = cmd.returncode
             self.log.debug('rc %s inp %s out %s err %s', rc,
                            hidePasswd(inp), out, err)
             return rc, out, err
@@ -1263,6 +1271,9 @@ class Global(APIBase):
 
             return True
 
+        def getMessage(out, err):
+            return out.decode('utf-8') + err.decode('utf-8')
+
         self.log.debug('fenceNode(addr=%s,port=%s,agent=%s,user=%s,passwd=%s,'
                        'action=%s,secure=%s,options=%s,policy=%s)',
                        addr, port, agent, username, password, action, secure,
@@ -1295,7 +1306,7 @@ class Global(APIBase):
                        hidePasswd(inp), out, err)
         if not 0 <= rc <= 2:
             return {'status': {'code': 1,
-                               'message': out + err}}
+                               'message': getMessage(out, err)}}
         message = doneCode['message']
         ret = 0
         if action == 'status':
@@ -1305,12 +1316,12 @@ class Global(APIBase):
                 power = 'off'
             else:
                 power = 'unknown'
-                message = out + err
+                message = getMessage(out, err)
                 ret = rc
             return {'status': {'code': ret, 'message': message},
                     'power': power}
         if rc != 0:
-            message = out + err
+            message = getMessage(out, err)
         return {'status': {'code': rc, 'message': message},
                 'power': 'unknown', 'operationStatus': 'initiated'}
 
