@@ -133,39 +133,44 @@ def test_dump_ids(storage):
 
 @requires_root
 @pytest.mark.root
-def test_dump_hole(storage):
+def test_dump_holes(storage):
     block_size = storage.block_size
     align = storage.alignment
 
-    # Initialize lockspace.
-    _write_lockspace("LS", storage.path, 0, block_size, align)
+    # Simulated leases volume:
+    # slot   0: -
+    # slot   1: SDM
+    # slot   2: -
+    # slot   3: -
+    # slot   4: RS4
+    # slot   5: RS5
+    # slot   6: -
 
-    # Add resource lease at 1 alignment offset.
-    _write_resource("LS", "RS1", storage.path, align, block_size, align)
+    _write_resource("LS", "SDM", storage.path, 1 * align, block_size, align)
+    _write_resource("LS", "RS4", storage.path, 4 * align, block_size, align)
+    _write_resource("LS", "RS5", storage.path, 5 * align, block_size, align)
 
-    # Add second resource lease at 3 alignments offset,
-    # leaving the second offset empty.
-    _write_resource("LS", "RS2", storage.path, 3 * align, block_size, align)
-
-    # Without specifiying size the dump stops at the hole.
+    # Without specifiying size the dump stops at the hole at slot 0.
     dump = sanlock_direct.dump_leases(
         path=storage.path,
-        offset=0,
-        size=None,
         block_size=block_size,
         alignment=align)
-    resources = [rec["resource"] for rec in dump]
-    assert resources == ["RS1"]
 
-    # With specified size the dump passes the hole.
+    assert list(dump) == []
+
+    # With specified size the dump passes all holes.
     dump = sanlock_direct.dump_leases(
         path=storage.path,
-        offset=0,
-        size=4 * align,
+        size=6 * align,
         block_size=block_size,
         alignment=align)
-    resources = [rec["resource"] for rec in dump]
-    assert resources == ["RS1", "RS2"]
+
+    resources = [(r["offset"], r["resource"]) for r in dump]
+    assert resources == [
+        (1 * align, "SDM"),
+        (4 * align, "RS4"),
+        (5 * align, "RS5"),
+    ]
 
 
 def _write_lockspace(ls_name, dev, offset, block_size, alignment):
