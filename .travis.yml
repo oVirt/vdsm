@@ -39,5 +39,6 @@ script:
     -it \
     --volume `pwd`:/vdsm:Z \
     --volume /run/udev:/run/udev:Z \
+    --volume /dev/log:/dev/log:Z \
     ovirtorg/vdsm-test-$DIST \
     bash -c "cd /vdsm && ./autogen.sh --system && make all $TARGETS"
