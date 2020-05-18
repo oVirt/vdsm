@@ -1060,8 +1060,8 @@ class StorageDomain(APIBase):
     def validate(self, storagedomainID):
         return self._irs.validateStorageDomain(storagedomainID)
 
-    def dump(self, sd_id):
-        return self._irs.dumpStorageDomain(sd_id)
+    def dump(self, sd_id, full=False):
+        return self._irs.dumpStorageDomain(sd_id, full=full)
 
 
 class StoragePool(APIBase):

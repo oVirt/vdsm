@@ -3319,19 +3319,27 @@ class HSM(object):
         return dict(uuidlist=volUUIDs)
 
     @public
-    def dumpStorageDomain(self, sdUUID):
+    def dumpStorageDomain(self, sdUUID, full=False):
         """
         Gets a dictionary of storage domain raw metadata.
 
         :param sdUUID: The UUID of the storage domain you want to query.
+        :type  sdUUID: UUID.
+        :param full: If set to True, will also dump leases, lockspace and
+                     xleases information along with SD metadata and
+                     volumes info. Using the default setting would save
+                     time and bandwidth.
+        :type full: boolean.
 
-        :returns: a dict with a storage domain dumped metadata.
+        :returns: Storage domain dumped metadata and volumes along with its
+                  leases, lockspace and xleases information if full is True.
+        :rtype: dict.
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
         dom = sdCache.produce(sdUUID)
         # Make sure we are not reading stale metadata.
         dom.invalidateMetadata()
-        return dict(result=dom.dump())
+        return dict(result=dom.dump(full=full))
 
     @public
     def getImagesList(self, sdUUID, options=None):

@@ -1727,22 +1727,24 @@ class BlockStorageDomain(sd.StorageDomain):
 
     # Dump metadata
 
-    def dump(self):
+    def dump(self, full=False):
         # Invalidate the vg pvs and lvs here, to make sure we don't return
         # stale data from the cache.
         lvm.invalidateVG(self.sdUUID, invalidateLVs=True, invalidatePVs=True)
 
         result = {
             "metadata": self.getInfo(),
-            "volumes": self._dump_volumes(),
-            # As blockSD uses sanlock for managing its leases and lockspaces
-            # we always assume to have those.
-            "leases": self._dump_leases(),
-            "lockspace": self.dump_lockspace()
+            "volumes": self._dump_volumes()
         }
 
-        if self.supports_external_leases(self.getVersion()):
-            result["xleases"] = self.dump_external_leases()
+        if full:
+            # As blockSD uses sanlock for managing its leases and lockspaces
+            # we always assume to have those.
+            result["leases"] = self._dump_leases()
+            result["lockspace"] = self.dump_lockspace()
+
+            if self.supports_external_leases(self.getVersion()):
+                result["xleases"] = self.dump_external_leases()
 
         return result
 

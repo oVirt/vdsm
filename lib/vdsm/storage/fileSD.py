@@ -839,18 +839,19 @@ class FileStorageDomain(sd.StorageDomain):
 
     # Dump metadata
 
-    def dump(self):
+    def dump(self, full=False):
         result = {
             "metadata": self.getInfo(),
             "volumes": self._dump_volumes()
         }
 
-        if self.hasVolumeLeases():
-            result["leases"] = self._dump_leases()
-            result["lockspace"] = self.dump_lockspace()
+        if full:
+            if self.hasVolumeLeases():
+                result["leases"] = self._dump_leases()
+                result["lockspace"] = self.dump_lockspace()
 
-        if self.supports_external_leases(self.getVersion()):
-            result["xleases"] = self.dump_external_leases()
+            if self.supports_external_leases(self.getVersion()):
+                result["xleases"] = self.dump_external_leases()
 
         return result
 

@@ -8569,21 +8569,24 @@ types:
         -   defaultvalue: null
             description: Leases metadata. For a storage domain using sanlock
                 to manage volumes leases, applies to non-local FS SD type
-                from version 3 or later.
+                from version 3 or later. Available only when using
+                StorageDoamin.dump(full=True).
             name: leases
             type: *LeaseDump
 
         -   defaultvalue: null
             description: Lockspace metadata. For a storage domain using sanlock
                 to manage domain leases, applies to non-local FS SD type
-                from version 3 or later.
+                from version 3 or later. Available only when using
+                StorageDoamin.dump(full=True).
             name: lockspace
             type: *LeaseDump
 
         -   defaultvalue: null
             description: External leases metadata. For a storage domain using
                 sanlock volumes leases, applies to non-local FS SD type
-                from version 4 or later.
+                from version 4 or later. Available only when using
+                StorageDoamin.dump(full=True).
             name: xleases
             type: *XleasesDumpMap
 
@@ -10036,6 +10039,14 @@ StorageDomain.dump:
     -   description: The UUID of the Storage Domain.
         name: sd_id
         type: *UUID
+
+    -   defaultvalue: false
+        description: If set to True, will also dump leases, lockspace and
+           xleases information along with SD metadata and volumes information.
+           Taking a full dump may be up to 10 times slower.
+        name: full
+        type: boolean
+
     return:
         description: Storage domain metadata.
         type: *StorageDomainDump

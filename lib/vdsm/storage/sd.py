@@ -840,8 +840,8 @@ class StorageDomain(object):
     def getAllVolumes(self):
         return self._manifest.getAllVolumes()
 
-    def dump(self):
-        return self._manifest.dump()
+    def dump(self, full=False):
+        return self._manifest.dump(full=full)
 
     def iter_volumes(self):
         """
