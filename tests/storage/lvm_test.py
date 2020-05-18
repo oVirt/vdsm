@@ -407,6 +407,7 @@ def test_suppress_warnings(fake_devices, no_delay):
     assert err == [
         u"  before",
         u"  WARNING: Combining activation change with other commands is not advised.",  # NOQA: E501 (potentially long line)
+        u"  Configuration setting \"global/event_activation\" unknown.",
         u"  after"
     ]
 
@@ -415,9 +416,9 @@ def test_suppress_multiple_lvm_warnings(fake_devices, no_delay):
     fake_runner = FakeRunner()
     fake_runner.err = b"""\
   before
-  Configuration setting "global/event_activation" unknown.
-  Configuration setting "global/event_activation" unknown.
-  Configuration setting "global/event_activation" unknown.
+  WARNING: This metadata update is NOT backed up.
+  WARNING: This metadata update is NOT backed up.
+  WARNING: This metadata update is NOT backed up.
   after"""
 
     lc = lvm.LVMCache(fake_runner)
