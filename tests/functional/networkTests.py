@@ -65,7 +65,6 @@ DHCP_RANGE_FROM = '192.0.2.10'
 DHCP_RANGE_TO = '192.0.2.100'
 DHCPv6_RANGE_FROM = 'fdb3:84e5:4ff4:55e3::a'
 DHCPv6_RANGE_TO = 'fdb3:84e5:4ff4:55e3::64'
-CUSTOM_PROPS = {'linux': 'rules', 'vdsm': 'as well'}
 
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1'
 IPv6_CIDR = '64'
@@ -377,51 +376,6 @@ class NetworkTest(TestCaseBase):
         # breaks.
         self.assertEqual(running_config['networks'], kernel_config['networks'])
         self.assertEqual(running_config['bonds'], kernel_config['bonds'])
-
-    @cleanupNet
-    @ValidatesHook('before_network_setup', 'testBeforeNetworkSetup.py', True,
-                   "#!/usr/bin/python3\n"
-                   "import json\n"
-                   "import os\n"
-                   "\n"
-                   "# get the filename where settings are stored\n"
-                   "hook_data = os.environ['_hook_json']\n"
-                   "network_config = None\n"
-                   "with open(hook_data, 'r') as network_config_file:\n"
-                   "    network_config = json.load(network_config_file)\n"
-                   "\n"
-                   "network = network_config['request']['networks']['" +
-                   NETWORK_NAME + "']\n"
-                   "assert network['custom'] == " + str(CUSTOM_PROPS) + "\n"
-                   "\n"
-                   "# setup an output config file\n"
-                   "cookie_file = open('%(cookiefile)s','w')\n"
-                   "cookie_file.write(str(network_config) + '\\n')\n"
-                   "network['bridged'] = True\n"
-                   "\n"
-                   "# output modified config back to the hook_data file\n"
-                   "with open(hook_data, 'w') as network_config_file:\n"
-                   "    json.dump(network_config, network_config_file)\n"
-                   )
-    def testBeforeNetworkSetupHook(self, hook_cookiefile):
-        with dummyIf(1) as nics:
-            nic, = nics
-            # Test that the custom network properties reach the hook
-            networks = {NETWORK_NAME: {'nic': nic, 'bridged': False,
-                                       'custom': CUSTOM_PROPS,
-                                       'bootproto': 'none'}}
-            with self.vdsm_net.pinger():
-                status, msg = self.setupNetworks(
-                    networks, {}, {}, test_kernel_config=False)
-                self.assertEqual(status, SUCCESS, msg)
-                self.assertNetworkExists(NETWORK_NAME, bridged=True)
-
-                self.assertTrue(os.path.isfile(hook_cookiefile))
-
-                status, msg = self.setupNetworks(
-                    {NETWORK_NAME: {'remove': True, 'custom': CUSTOM_PROPS}},
-                    {}, {})
-                self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     @ValidatesHook('after_network_setup', 'testAfterNetworkSetup.sh', True,
