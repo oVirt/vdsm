@@ -27,9 +27,8 @@ class NMEnvVariables:
         SUBNET_MASK = 'DHCP4_SUBNET_MASK'
         ROUTERS = 'DHCP4_ROUTERS'
 
-    class DHCP6:
-        ADDRESS = 'DHCP6_IP6_ADDRESS'
-        PREFIX_LEN = 'DHCP6_IP6_PREFIXLEN'
+    class IPV6:
+        FIRST_ADDRESS = 'IP6_ADDRESS_0'
 
 
 def main():
@@ -44,15 +43,14 @@ def main():
 
 def handle_up(device):
     dhcpv4 = os.getenv(NMEnvVariables.DHCP4.ADDRESS)
-    dhcpv6 = os.getenv(NMEnvVariables.DHCP6.ADDRESS)
+    ipv6_address = os.getenv(NMEnvVariables.IPV6.FIRST_ADDRESS)
     if dhcpv4:
         mask = os.getenv(NMEnvVariables.DHCP4.SUBNET_MASK)
         route = os.getenv(NMEnvVariables.DHCP4.ROUTERS)
         content = create_up_content(dhcpv4, mask, device, route, 4)
         send_configuration(content)
-    if dhcpv6:
-        mask = os.getenv(NMEnvVariables.DHCP6.PREFIX_LEN)
-        content = create_up_content(dhcpv6, mask, device, None, 6)
+    if ipv6_address:
+        content = create_up_content(None, None, device, None, 6)
         send_configuration(content)
 
 
