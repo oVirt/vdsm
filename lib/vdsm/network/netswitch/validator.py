@@ -90,7 +90,14 @@ class Validator(object):
             if net_attr.get('nic')
         }
 
-        shared_nics = used_bond_slaves & used_net_nics
+        used_vlan_nics = {
+            vlan_attr['iface'] for vlan_attr in self._net_info.vlans.values()
+        }
+
+        shared_by_bond_and_nets = used_bond_slaves & used_net_nics
+        shared_by_vlan_and_bond = used_bond_slaves & used_vlan_nics
+
+        shared_nics = shared_by_vlan_and_bond or shared_by_bond_and_nets
         if shared_nics:
             raise ne.ConfigNetworkError(
                 ne.ERR_USED_NIC, f'Nics with multiple usages: {shared_nics}'

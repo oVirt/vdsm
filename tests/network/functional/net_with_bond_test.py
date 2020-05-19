@@ -398,6 +398,7 @@ class TestReuseBondOnLegacySwitch(object):
 
             adapter.setupNetworks({}, {BOND_NAME: {'remove': True}}, NOCHK)
 
+    @pytest.mark.nmstate
     def test_add_vlan_network_on_existing_external_bond_with_used_slave(self):
         with dummy_devices(2) as (nic1, nic2):
             with Bond(BOND_NAME, slaves=(nic1, nic2)) as bond:
@@ -418,7 +419,7 @@ class TestReuseBondOnLegacySwitch(object):
                             pass
 
                     assert err.value.status == ne.ERR_USED_NIC
-                    assert 'already used by' in err.value.msg
+                    assert 'Nics with multiple usages' in err.value.msg
                 bond.destroy()
 
     def _set_ip_address(self, ip_address, iface):

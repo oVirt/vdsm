@@ -36,7 +36,9 @@ BOND0 = 'bond0'
 BOND1 = 'bond1'
 BOND2 = 'bond2'
 
-NICS = [f'eth{i}' for i in range(11)]
+VLAN = '10'
+
+NICS = [f'eth{i}' for i in range(12)]
 FAKE_NIC = 'fakenic'
 FAKE_BOND = 'fakebond'
 DPDK_NIC0 = 'dpdk0'
@@ -65,6 +67,7 @@ def net_info():
             BOND0: testlib.NetInfo.create_bond(slaves=NICS[1:3]),
             BOND1: testlib.NetInfo.create_bond(salves=NICS[9:11]),
         },
+        vlans={VLAN: testlib.NetInfo.create_vlan(iface=NICS[11], vlanid=VLAN)},
     )
 
 
@@ -207,6 +210,13 @@ class TestValidation(object):
 
     def test_nic_used_by_current_network_and_new_bond(self, net_info):
         bonds_to_add = {'bond1': {'nics': ['eth0', 'eth3']}}
+        with pytest.raises(ne.ConfigNetworkError) as cne_context:
+            valid = validator.Validator({}, bonds_to_add, net_info)
+            valid.validate_nic_usage()
+        assert cne_context.value.errCode == ne.ERR_USED_NIC
+
+    def test_vlanned_nic_used_by_new_bond(self, net_info):
+        bonds_to_add = {'bond1': {'nics': ['eth10', 'eth11']}}
         with pytest.raises(ne.ConfigNetworkError) as cne_context:
             valid = validator.Validator({}, bonds_to_add, net_info)
             valid.validate_nic_usage()
