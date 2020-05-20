@@ -415,6 +415,36 @@ class TestIndex:
             }
             assert leases == expected
 
+    def test_leases_bad_record(self, tmp_vol, fake_sanlock):
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+
+        # Index three leases.
+        with utils.closing(vol):
+            vol.add("lease1")
+            vol.add("lease2")
+            vol.add("lease3")
+
+        # Corrupt index record of second lease on storage.
+        with io.open(tmp_vol.path, "r+b") as f:
+            index_record_offset = xlease.RECORD_BASE + 1 * xlease.RECORD_SIZE
+            f.seek(tmp_vol.alignment + index_record_offset)
+            f.write(b"!" * xlease.RECORD_SIZE)
+
+        # Reload the index to memory from storage.
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+
+        with utils.closing(vol):
+            # Dumping leases from index skips the second bad index record
+            # and gets to the last record.
+            leases = list(vol.leases().keys())
+            assert leases == ["lease1", "lease3"]
+
     def test_add_exists(self, tmp_vol, fake_sanlock):
         vol = xlease.LeasesVolume(
             tmp_vol.backend,

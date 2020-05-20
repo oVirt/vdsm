@@ -644,9 +644,17 @@ class LeasesVolume(object):
         log.debug("Getting all leases for lockspace %r", self.lockspace)
         leases = {}
         for recnum in range(MAX_RECORDS):
-            # TODO: handle bad records - currently will raise InvalidRecord and
-            # fail the request.
-            record = self._index.read_record(recnum)
+            # Bad records will raise InvalidRecord and fail the request.
+            # For dump API usage we would want to keep going over the next
+            # readable records and log the exception.
+            try:
+                record = self._index.read_record(recnum)
+            except InvalidRecord as e:
+                log.warning("Failed to read xlease index record %d: %s",
+                            recnum, e)
+                # TODO: Dump the bad records as well.
+                continue
+
             # Record can be:
             # - free - empty resource
             # - used - non empty resource, may be updating
