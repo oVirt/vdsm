@@ -77,6 +77,12 @@ def head(url, headers=None):
     return parse_headers(out)
 
 
+def get(url, headers=None):
+    # Cannot be moved out because _curl.cmd is lazy-evaluated
+    cmd = [_curl.cmd] + CURL_OPTIONS + [url]
+    return _run_curl(cmd, headers)
+
+
 def download(url, path, headers={}):
     cmd = [constants.EXT_CURL_IMG_WRAP, "--download"]
     cmd.extend(_headersToOptions(headers) + [path, url])
