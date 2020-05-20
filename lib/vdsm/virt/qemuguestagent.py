@@ -388,7 +388,13 @@ class QemuGuestAgentPoller(object):
             'libvirt: fetching guest info vm_id=%r types=%s',
             vm.id, bin(types))
         # TODO: set libvirt timeout
-        info = QemuGuestAgentDomain(vm).guestInfo(types, 0)
+        try:
+            info = QemuGuestAgentDomain(vm).guestInfo(types, 0)
+        except libvirt.libvirtError as e:
+            self.log.info('Failed to get guest info for vm=%s, error: %s',
+                          vm.id, str(e))
+            self.set_failure(vm.id)
+            return {}
         # Filesystem Info
         if 'fs.count' in info:
             guest_info.update(self._libvirt_fsinfo(info))
