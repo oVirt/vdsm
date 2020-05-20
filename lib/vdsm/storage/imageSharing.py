@@ -23,10 +23,12 @@ import logging
 
 from vdsm import constants
 from vdsm import utils
+
 from vdsm.common import commands
 from vdsm.common.compat import subprocess
 from vdsm.common.units import KiB, MiB
-from vdsm.storage import curlImgWrap
+
+from vdsm.storage import glance
 from vdsm.storage import exception as se
 
 log = logging.getLogger("storage.ImageSharing")
@@ -43,24 +45,10 @@ BUFFER_SIZE = 64 * KiB
 
 
 def httpGetSize(methodArgs):
-    headers = curlImgWrap.head(methodArgs.get('url'),
-                               headers=methodArgs.get("headers"))
-
-    size = None
-
-    if 'Content-Length' in headers:
-        size = int(headers['Content-Length'])
-
-    # OpenStack Glance returns Content-Length = 0 so we need to
-    # override the value with the content of the custom header
-    # X-Image-Meta-Size.
-    if 'X-Image-Meta-Size' in headers:
-        size = max(size, int(headers['X-Image-Meta-Size']))
-
-    if size is None:
-        raise RuntimeError("Unable to determine image size")
-
-    return size
+    image_info = glance.image_info(
+        methodArgs.get('url'),
+        headers=methodArgs.get("headers"))
+    return image_info["size"]
 
 
 def getLengthFromArgs(methodArgs):
@@ -68,13 +56,17 @@ def getLengthFromArgs(methodArgs):
 
 
 def httpDownloadImage(dstImgPath, methodArgs):
-    curlImgWrap.download(methodArgs.get('url'), dstImgPath,
-                         headers=methodArgs.get("headers"))
+    glance.download_image(
+        dstImgPath,
+        methodArgs.get('url'),
+        headers=methodArgs.get("headers"))
 
 
 def httpUploadImage(srcImgPath, methodArgs):
-    curlImgWrap.upload(methodArgs.get('url'), srcImgPath,
-                       headers=methodArgs.get("headers"))
+    glance.upload_image(
+        srcImgPath,
+        methodArgs.get('url'),
+        headers=methodArgs.get("headers"))
 
 
 def copyToImage(dstImgPath, methodArgs):
