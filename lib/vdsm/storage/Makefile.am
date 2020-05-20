@@ -48,6 +48,7 @@ dist_vdsmstorage_PYTHON = \
 	formatconverter.py \
 	fsutils.py \
 	fuser.py \
+	glance.py \
 	glusterSD.py \
 	glusterVolume.py \
 	guarded.py \
