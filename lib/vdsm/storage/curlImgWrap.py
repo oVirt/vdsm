@@ -51,6 +51,16 @@ def _headersToOptions(headers):
     return options
 
 
+def _run_curl(cmd, headers=None):
+    if headers:
+        cmd.extend(_headersToOptions(headers))
+
+    try:
+        return commands.run(cmd)
+    except cmdutils.Error as e:
+        raise CurlError(e.rc, e.out, e.err)
+
+
 def parse_headers(out):
     lines = out.decode("iso-8859-1").splitlines(False)
     # Besides headers curl returns also HTTP status as the first line and the
@@ -59,16 +69,10 @@ def parse_headers(out):
     return dict([x.split(": ", 1) for x in headers])
 
 
-def head(url, headers={}):
+def head(url, headers=None):
     # Cannot be moved out because _curl.cmd is lazy-evaluated
     cmd = [_curl.cmd] + CURL_OPTIONS + ["--head", url]
-    cmd.extend(_headersToOptions(headers))
-
-    try:
-        out = commands.run(cmd)
-    except cmdutils.Error as e:
-        raise CurlError(e.rc, e.out, e.err)
-
+    out = _run_curl(cmd, headers)
     # Parse and return headers
     return parse_headers(out)
 
