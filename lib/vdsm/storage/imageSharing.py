@@ -28,7 +28,6 @@ from vdsm.common import commands
 from vdsm.common.compat import subprocess
 from vdsm.common.units import KiB, MiB
 
-from vdsm.storage import glance
 from vdsm.storage import exception as se
 
 log = logging.getLogger("storage.ImageSharing")
@@ -44,29 +43,8 @@ WAIT_TIMEOUT = 30
 BUFFER_SIZE = 64 * KiB
 
 
-def httpGetSize(methodArgs):
-    image_info = glance.image_info(
-        methodArgs.get('url'),
-        headers=methodArgs.get("headers"))
-    return image_info["size"]
-
-
 def getLengthFromArgs(methodArgs):
     return methodArgs['length']
-
-
-def httpDownloadImage(dstImgPath, methodArgs):
-    glance.download_image(
-        dstImgPath,
-        methodArgs.get('url'),
-        headers=methodArgs.get("headers"))
-
-
-def httpUploadImage(srcImgPath, methodArgs):
-    glance.upload_image(
-        srcImgPath,
-        methodArgs.get('url'),
-        headers=methodArgs.get("headers"))
 
 
 def copyToImage(dstImgPath, methodArgs):
@@ -148,35 +126,3 @@ def _copyData(inFile, outFile, totalSize):
         outFile.flush()
 
         totalSize = totalSize - len(data)
-
-
-_METHOD_IMPLEMENTATIONS = {
-    'http': (httpGetSize, httpDownloadImage, httpUploadImage),
-}
-
-
-def _getSharingMethods(methodArgs):
-    try:
-        method = methodArgs['method']
-    except KeyError:
-        raise RuntimeError("Sharing method not specified")
-
-    try:
-        return _METHOD_IMPLEMENTATIONS[method]
-    except KeyError:
-        raise RuntimeError("Sharing method %s not found" % method)
-
-
-def getSize(methodArgs):
-    getSizeImpl, _, _ = _getSharingMethods(methodArgs)
-    return getSizeImpl(methodArgs)
-
-
-def download(dstImgPath, methodArgs):
-    _, downloadImageImpl, _ = _getSharingMethods(methodArgs)
-    downloadImageImpl(dstImgPath, methodArgs)
-
-
-def upload(srcImgPath, methodArgs):
-    _, _, uploadImageImpl = _getSharingMethods(methodArgs)
-    uploadImageImpl(srcImgPath, methodArgs)

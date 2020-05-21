@@ -34,6 +34,7 @@ from vdsm.common.threadlocal import vars
 from vdsm.common.units import MiB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import glance
 from vdsm.storage import imageSharing
 from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
@@ -955,7 +956,11 @@ class Image:
 
         vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)
         try:
-            imageSharing.upload(vol.getVolumePath(), methodArgs)
+            self._check_sharing_method(methodArgs)
+            glance.upload_image(
+                vol.getVolumePath(),
+                methodArgs["url"],
+                headers=methodArgs.get("headers"))
         finally:
             domain.deactivateImage(imgUUID)
 
@@ -964,9 +969,16 @@ class Image:
 
         vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)
         try:
+            self._check_sharing_method(methodArgs)
             # Extend the volume (if relevant) to the image size
-            vol.extend(imageSharing.getSize(methodArgs))
-            imageSharing.download(vol.getVolumePath(), methodArgs)
+            image_info = glance.image_info(
+                methodArgs.get('url'),
+                headers=methodArgs.get("headers"))
+            vol.extend(image_info["size"])
+            glance.download_image(
+                vol.getVolumePath(),
+                methodArgs["url"],
+                headers=methodArgs.get("headers"))
         finally:
             domain.deactivateImage(imgUUID)
 
@@ -989,3 +1001,12 @@ class Image:
             imageSharing.copyToImage(vol.getVolumePath(), methodArgs)
         finally:
             domain.deactivateImage(imgUUID)
+
+    def _check_sharing_method(self, method_args):
+        try:
+            method = method_args["method"]
+        except KeyError:
+            raise RuntimeError("Sharing method not specified")
+
+        if method != "http":
+            raise RuntimeError("Sharing method %s not found" % method)
