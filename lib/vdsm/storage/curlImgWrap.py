@@ -83,9 +83,11 @@ def get(url, headers=None):
     return _run_curl(cmd, headers)
 
 
-def download(url, path, headers={}):
+def download(url, path, headers=None):
     cmd = [constants.EXT_CURL_IMG_WRAP, "--download"]
-    cmd.extend(_headersToOptions(headers) + [path, url])
+    if headers:
+        cmd.extend(_headersToOptions(headers))
+    cmd.extend([path, url])
 
     rc, out, err = commands.execCmd(cmd)
 
@@ -93,9 +95,11 @@ def download(url, path, headers={}):
         raise CurlError(rc, out, err)
 
 
-def upload(url, path, headers={}):
+def upload(url, path, headers=None):
     cmd = [constants.EXT_CURL_IMG_WRAP, "--upload"]
-    cmd.extend(_headersToOptions(headers) + [path, url])
+    if headers:
+        cmd.extend(_headersToOptions(headers))
+    cmd.extend([path, url])
 
     rc, out, err = commands.execCmd(cmd)
 

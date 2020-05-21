@@ -44,7 +44,7 @@ BUFFER_SIZE = 64 * KiB
 
 def httpGetSize(methodArgs):
     headers = curlImgWrap.head(methodArgs.get('url'),
-                               methodArgs.get("headers", {}))
+                               headers=methodArgs.get("headers"))
 
     size = None
 
@@ -69,12 +69,12 @@ def getLengthFromArgs(methodArgs):
 
 def httpDownloadImage(dstImgPath, methodArgs):
     curlImgWrap.download(methodArgs.get('url'), dstImgPath,
-                         methodArgs.get("headers", {}))
+                         headers=methodArgs.get("headers"))
 
 
 def httpUploadImage(srcImgPath, methodArgs):
     curlImgWrap.upload(methodArgs.get('url'), srcImgPath,
-                       methodArgs.get("headers", {}))
+                       headers=methodArgs.get("headers"))
 
 
 def copyToImage(dstImgPath, methodArgs):
