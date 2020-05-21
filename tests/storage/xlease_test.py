@@ -442,8 +442,7 @@ class TestIndex:
         with utils.closing(vol):
             # Dumping leases from index skips the second bad index record
             # and gets to the last record.
-            leases = list(vol.leases().keys())
-            assert leases == ["lease1", "lease3"]
+            assert set(vol.leases()) == {"lease1", "lease3"}
 
     def test_add_exists(self, tmp_vol, fake_sanlock):
         vol = xlease.LeasesVolume(
