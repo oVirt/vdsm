@@ -19,7 +19,9 @@
 #
 
 import contextlib
+import json
 import os
+import tempfile
 
 import pytest
 
@@ -84,6 +86,19 @@ def before_network_setup_hook():
         yield
 
 
+@pytest.fixture
+def after_network_setup_hook():
+    _, cookie_file = tempfile.mkstemp()
+    with _create_hook_file(
+        'after_network_setup',
+        'test_after_network_setup.py',
+        '#!/bin/sh\n' f'cat $_hook_json > {cookie_file}\n',
+    ):
+        yield cookie_file
+
+    fileutils.rm_file(cookie_file)
+
+
 @contextlib.contextmanager
 def _create_hook_file(dir_name, hook_name, hook_script):
     with _create_hook_dir(dir_name) as dir_path:
@@ -131,3 +146,17 @@ class TestNetworkSetupHook(object):
             adapter.assertNetwork(
                 NETWORK_NAME, bridgeless_network[NETWORK_NAME]
             )
+
+    def test_after_network_setup_hook(
+        self, after_network_setup_hook, bridgeless_network
+    ):
+        with adapter.setupNetworks(bridgeless_network, {}, NOCHK):
+            pass
+
+        assert os.path.isfile(after_network_setup_hook)
+
+        with open(after_network_setup_hook, 'r') as cookie_file:
+            network_config = json.load(cookie_file)
+            assert 'networks' in network_config['request']
+            assert 'bondings' in network_config['request']
+            assert NETWORK_NAME in network_config['request']['networks']
