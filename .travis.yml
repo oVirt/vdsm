@@ -18,7 +18,7 @@ jobs:
 
 before_install:
   - docker --version
-  - docker pull ovirtorg/vdsm-test-$DIST
+  - docker pull quay.io/ovirt/vdsm-test-$DIST
 
 before_script:
   # autogen.sh needs a tag, but the last tag may be 100 commits in the past,
@@ -40,5 +40,5 @@ script:
     --volume `pwd`:/vdsm:Z \
     --volume /run/udev:/run/udev:Z \
     --volume /dev/log:/dev/log:Z \
-    ovirtorg/vdsm-test-$DIST \
+    quay.io/ovirt/vdsm-test-$DIST \
     bash -c "cd /vdsm && ./autogen.sh --system && make all $TARGETS"
