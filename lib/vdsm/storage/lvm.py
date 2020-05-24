@@ -305,6 +305,8 @@ class LVMRunner(object):
     SUPPRESS_WARNINGS = re.compile(
         "|".join([
             "WARNING: This metadata update is NOT backed up",
+            "WARNING: ignoring metadata seqno \d+ on /dev/mapper/\w+ for seqno \d+ on /dev/mapper/\w+ for VG \w+",  # NOQA: E501 (potentially long line)
+            "WARNING: Inconsistent metadata found for VG \w+"
         ]),
         re.IGNORECASE)
 
