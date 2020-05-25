@@ -698,6 +698,121 @@ def test_redefine_checkpoints_failed_after_one_succeeded():
     assert res["result"] == expected_result
 
 
+@requires_backup_support
+def test_delete_all_checkpoints():
+    dom = FakeDomainAdapter()
+    dom.output_checkpoints = [
+        FakeCheckpoint(CHECKPOINT_1_XML, CHECKPOINT_1_ID, dom=dom),
+        FakeCheckpoint(CHECKPOINT_2_XML, CHECKPOINT_2_ID, dom=dom)
+    ]
+
+    vm = FakeVm()
+    res = backup.delete_checkpoints(
+        vm, dom, [CHECKPOINT_1_ID, CHECKPOINT_2_ID])
+
+    expected_result = {
+        'checkpoint_ids': [CHECKPOINT_1_ID, CHECKPOINT_2_ID]
+    }
+    assert res["result"] == expected_result
+
+    res = backup.list_checkpoints(vm, dom)
+    assert res["result"] == []
+
+
+@requires_backup_support
+def test_delete_one_checkpoint():
+    dom = FakeDomainAdapter()
+    dom.output_checkpoints = [
+        FakeCheckpoint(CHECKPOINT_1_XML, CHECKPOINT_1_ID, dom=dom),
+        FakeCheckpoint(CHECKPOINT_2_XML, CHECKPOINT_2_ID, dom=dom)
+    ]
+
+    vm = FakeVm()
+    res = backup.delete_checkpoints(vm, dom, [CHECKPOINT_1_ID])
+
+    expected_result = {
+        'checkpoint_ids': [CHECKPOINT_1_ID]
+    }
+    assert res["result"] == expected_result
+
+    res = backup.list_checkpoints(vm, dom)
+    assert res["result"] == [CHECKPOINT_2_ID]
+
+
+@requires_backup_support
+def test_delete_missing_checkpoint():
+    dom = FakeDomainAdapter()
+    dom.output_checkpoints = [
+        FakeCheckpoint(CHECKPOINT_2_XML, CHECKPOINT_2_ID, dom=dom)
+    ]
+
+    vm = FakeVm()
+    res = backup.delete_checkpoints(
+        vm, dom, [CHECKPOINT_1_ID, CHECKPOINT_2_ID])
+
+    expected_result = {
+        'checkpoint_ids': [CHECKPOINT_1_ID, CHECKPOINT_2_ID]
+    }
+    # validate that the missing checkpoint reported as
+    # successfully removed
+    assert res["result"] == expected_result
+
+    res = backup.list_checkpoints(vm, dom)
+    assert res["result"] == []
+
+
+@requires_backup_support
+def test_delete_checkpoint_from_empty_chain():
+    dom = FakeDomainAdapter()
+    vm = FakeVm()
+
+    res = backup.delete_checkpoints(vm, dom, [CHECKPOINT_1_ID])
+
+    expected_result = {
+        'checkpoint_ids': [CHECKPOINT_1_ID]
+    }
+    # validate that the missing checkpoint reported as
+    # successfully removed
+    assert res["result"] == expected_result
+
+    res = backup.list_checkpoints(vm, dom)
+    assert res["result"] == []
+
+
+@requires_backup_support
+def test_failed_delete_checkpoint():
+    error_msg = "Internal delete error"
+
+    dom = FakeDomainAdapter()
+
+    checkpoint_2 = FakeCheckpoint(CHECKPOINT_2_XML, CHECKPOINT_2_ID, dom=dom)
+    # simulating an error that raised when calling the delete method
+    # of a specific checkpoint
+    checkpoint_2.errors["delete"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_INTERNAL_ERROR, '', error_msg], "Fake libvirt error")
+
+    dom.output_checkpoints = [
+        FakeCheckpoint(CHECKPOINT_1_XML, CHECKPOINT_1_ID, dom=dom),
+        checkpoint_2
+    ]
+
+    vm = FakeVm()
+    res = backup.delete_checkpoints(
+        vm, dom, [CHECKPOINT_1_ID, CHECKPOINT_2_ID])
+
+    expected_result = {
+        'checkpoint_ids': [CHECKPOINT_1_ID],
+        'error': {
+            'code': 1,
+            'message': error_msg
+        }
+    }
+    assert res["result"] == expected_result
+
+    res = backup.list_checkpoints(vm, dom)
+    assert res["result"] == [CHECKPOINT_2_ID]
+
+
 def verify_scratch_disks_exists(vm, backup_id=BACKUP_1_ID):
     res = vm.cif.irs.list_transient_disks(vm.id)
     assert res["status"]["code"] == 0

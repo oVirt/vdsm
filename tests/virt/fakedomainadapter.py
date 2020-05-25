@@ -33,15 +33,27 @@ import vmfakelib as fake
 
 class FakeCheckpoint(object):
 
-    def __init__(self, checkpoint_xml, name):
+    def __init__(self, checkpoint_xml, name, dom=None):
         self.xml = checkpoint_xml
         self.name = name
+        self.errors = {}
+        self.dom = dom
+
+    def __eq__(self, other):
+        return self.name == other.name
 
     def getXMLDesc(self):
         return self.xml
 
     def getName(self):
         return self.name
+
+    @maybefail
+    def delete(self):
+        # Deleting a checkpoint will not update the next checkpoint
+        # in the chain as libvirt does, this part is currently not tested.
+        self.dom.output_checkpoints.remove(self)
+        self.dom = None
 
 
 class FakeDomainAdapter(object):
