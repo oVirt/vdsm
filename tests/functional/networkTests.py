@@ -31,8 +31,7 @@ import six
 import vdsm.config
 from vdsm.network import netswitch
 from vdsm.network.ipwrapper import (
-    routeExists, ruleExists, LinkType, getLinks, routeShowTable, linkSet,
-    addrAdd)
+    routeExists, ruleExists, LinkType, getLinks, routeShowTable)
 from vdsm.network import kernelconfig
 from vdsm.network.netinfo.nics import operstate, OPERSTATE_UNKNOWN
 from vdsm.network.netlink import monitor
@@ -43,11 +42,10 @@ from vdsm.utils import RollbackContext
 
 from hookValidation import ValidatesHook
 
-from modprobe import RequireDummyMod, RequireVethMod
+from modprobe import RequireDummyMod
 from testlib import (VdsmTestCase as TestCaseBase, expandPermutations)
 from testValidation import ValidateRunningAsRoot
-from network.nettestlib import Dummy, veth_pair, dnsmasq_run
-from network import dhcp
+from network.nettestlib import Dummy
 from .utils import SUCCESS, getProxy
 
 
@@ -501,56 +499,3 @@ class NetworkTest(TestCaseBase):
                 {BONDING_NAME: {'remove': True}},
                 NOCHK)
             self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
-    @RequireVethMod
-    def testDhcpReplaceNicWithBridge(self):
-        with veth_pair() as (left, right):
-            addrAdd(left, IP_ADDRESS, IP_CIDR)
-            addrAdd(left, IPv6_ADDRESS, IPv6_CIDR, 6)
-            linkSet(left, ['up'])
-            with dnsmasq_run(left, DHCP_RANGE_FROM, DHCP_RANGE_TO,
-                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
-
-                # first, a network without a bridge should get a certain
-                # address
-
-                network = {NETWORK_NAME: {'nic': right, 'bridged': False,
-                                          'bootproto': 'dhcp',
-                                          'blockingdhcp': True}}
-                try:
-                    status, msg = self.setupNetworks(network, {}, NOCHK)
-                    self.assertEqual(status, SUCCESS, msg)
-                    self.assertNetworkExists(NETWORK_NAME)
-
-                    test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
-                    self.assertEqual(test_net['dhcpv4'], True)
-                    devs = self.vdsm_net.netinfo.nics
-                    device_name = right
-
-                    self.assertIn(device_name, devs)
-                    net_attrs = devs[device_name]
-                    self.assertEqual(net_attrs['dhcpv4'], True)
-
-                    self.assertEqual(test_net['gateway'], IP_GATEWAY)
-                    ip_addr = test_net['addr']
-                    self.assertSourceRoutingConfiguration(device_name, ip_addr)
-
-                    # now, a bridged network should get the same address
-                    # (because dhclient should send the same dhcp-client-
-                    #  identifier)
-
-                    network[NETWORK_NAME]['bridged'] = True
-                    status, msg = self.setupNetworks(network, {}, NOCHK)
-                    self.assertEqual(status, SUCCESS, msg)
-                    test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
-                    self.assertEqual(ip_addr, test_net['addr'])
-
-                    network = {NETWORK_NAME: {'remove': True}}
-                    status, msg = self.setupNetworks(network, {}, NOCHK)
-                    self.assertEqual(status, SUCCESS, msg)
-                    self.assertNetworkDoesntExist(NETWORK_NAME)
-
-                finally:
-                    dhcp.delete_dhclient_leases(right, True, False)
-                    dhcp.delete_dhclient_leases(NETWORK_NAME, True, False)
