@@ -18,6 +18,19 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+"""
+Tests for glance module.
+
+Some of the tests (e.g. image download test) are run against real production
+Glance server. Besides the fact that these tests can be slow, it's not polite
+to run automated tests against public production instances. These tests are
+marked as "integration" and by default are skipped. Such tests can be run
+manually with
+
+    tox -e storage -- tests/storage/glance_test.py -m integration
+
+"""
+
 import hashlib
 import json
 
@@ -74,6 +87,7 @@ def test_image_size(glance_image):
     assert info["size"] == glance_image["size"]
 
 
+@pytest.mark.integration
 def test_image_download(monkeypatch, tmpdir, glance_image):
     monkeypatch.setattr(
         constants, "EXT_CURL_IMG_WRAP", "../lib/vdsm/storage/curl-img-wrap")
