@@ -30,7 +30,6 @@ import six
 
 import vdsm.config
 from vdsm.network import netswitch
-from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
     routeExists, ruleExists, LinkType, getLinks, routeShowTable, linkSet,
     addrAdd)
@@ -45,10 +44,9 @@ from vdsm.utils import RollbackContext
 from hookValidation import ValidatesHook
 
 from modprobe import RequireDummyMod, RequireVethMod
-from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
-                     expandPermutations, permutations)
+from testlib import (VdsmTestCase as TestCaseBase, expandPermutations)
 from testValidation import ValidateRunningAsRoot
-from network.nettestlib import Dummy, veth_pair, dnsmasq_run, running
+from network.nettestlib import Dummy, veth_pair, dnsmasq_run
 from network import dhcp
 from .utils import SUCCESS, getProxy
 
@@ -593,30 +591,3 @@ class NetworkTest(TestCaseBase):
                     setup_test_network(dhcp=False)
                 finally:
                     dhcp.delete_dhclient_leases(NETWORK_NAME, dhcpv4=True)
-
-    @permutations([(4, 'default'), (4, 'local'), (6, None)])
-    @cleanupNet
-    @RequireVethMod
-    def testDhclientLeases(self, family, dateFormat):
-        with veth_pair() as (server, client):
-            addrAdd(server, IP_ADDRESS, IP_CIDR)
-            addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, 6)
-            linkSet(server, ['up'])
-
-            with dnsmasq_run(server, DHCP_RANGE_FROM, DHCP_RANGE_TO,
-                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
-
-                with namedTemporaryDir(dir='/var/lib/dhclient') as dir:
-                    dhclient_runner = dhcp.DhclientRunner(
-                        client, family, dir, dateFormat)
-                    try:
-                        with running(dhclient_runner):
-                            is_dhcpv4 = dhclient.is_active(client, family=4)
-                            is_dhcpv6 = dhclient.is_active(client, family=6)
-                    except dhcp.ProcessCannotBeKilled:
-                        raise SkipTest('dhclient could not be killed')
-
-        if family == 4:
-            self.assertTrue(is_dhcpv4)
-        else:
-            self.assertTrue(is_dhcpv6)
