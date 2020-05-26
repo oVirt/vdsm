@@ -53,11 +53,6 @@ RUN dnf install -y \
     && \
     dnf clean all
 
-# Upgrade initscripts
-RUN git clone -b '10.00.4' --single-branch --depth 1 https://github.com/fedora-sysv/initscripts.git \
-    && \
-    cd initscripts && make install-network-scripts
-
 # Add pytest
 RUN python3 -m pip install --upgrade pip \
     && \
