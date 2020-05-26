@@ -408,7 +408,8 @@ def test_suppress_warnings(fake_devices, no_delay):
     assert rc == 0
     assert err == [
         u"  before",
-        u"  WARNING: Combining activation change with other commands is not advised.",  # NOQA: E501 (potentially long line)
+        (u"  WARNING: Combining activation change with other commands is "
+         "not advised."),
         u"  Configuration setting \"global/event_activation\" unknown.",
         u"  after"
     ]
