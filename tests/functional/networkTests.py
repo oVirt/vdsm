@@ -47,7 +47,7 @@ from hookValidation import ValidatesHook
 from modprobe import RequireDummyMod, RequireVethMod
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
-from testValidation import slowtest, ValidateRunningAsRoot
+from testValidation import ValidateRunningAsRoot
 from network.nettestlib import Dummy, veth_pair, dnsmasq_run, running
 from network import dhcp
 from .utils import SUCCESS, getProxy
@@ -620,15 +620,3 @@ class NetworkTest(TestCaseBase):
             self.assertTrue(is_dhcpv4)
         else:
             self.assertTrue(is_dhcpv6)
-
-    @slowtest
-    @cleanupNet
-    def testHonorBlockingDhcp(self):
-        status, msg = self.setupNetworks(
-            {NETWORK_NAME: {'bridged': True, 'bootproto': 'dhcp',
-                            'blockingdhcp': True}}, {}, NOCHK)
-        # Without blocking dhcp, the setupNetworks command would return
-        # reporting success before knowing if dhclient succeeded. With blocking
-        # it must not report success
-        self.assertNotEqual(status, SUCCESS, msg)
-        self.assertBridgeDoesntExist(NETWORK_NAME)
