@@ -171,6 +171,11 @@ def _setup(networks, bondings, options, in_rollback, net_info):
     use_legacy_switch = legacy_nets or legacy_bonds
     use_ovs_switch = ovs_nets or ovs_bonds
     if use_legacy_switch:
+        logging.warning(
+            'Setup networks is going to be processed via network-scripts'
+            ' which is deprecated since version 4.4 and will be removed'
+            ' in next minor release.'
+        )
         _setup_legacy(
             legacy_nets, legacy_bonds, options, net_info, in_rollback
         )
