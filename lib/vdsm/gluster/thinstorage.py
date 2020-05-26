@@ -127,7 +127,7 @@ def vdoVolumeList():
     try:
         out = commands.run([_vdoCommandPath.cmd, "status"])
     except cmdutils.Error as e:
-        raise ge.GlusterCmdExecFailedException(e.rc, e.err)
+        raise ge.GlusterCmdExecFailedException(rc=e.rc, err=e.err)
     vdoData = yaml.safe_load(out)
     result = []
     for vdo, data in iteritems(vdoData["VDOs"]):
