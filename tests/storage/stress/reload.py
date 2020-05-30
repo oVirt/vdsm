@@ -137,6 +137,14 @@ import threading
 import time
 
 # Based on vdsm configuration, adapted to use device mapper delay devices.
+#
+# On RHEL 8.2 we see random failures in lvcreate and lvchange:
+#
+#   Failed to udev_enumerate_scan_devices
+#
+# David Teigland suggested to disable obtain_device_list_from_udev in
+# https://bugzilla.redhat.com/1812801#c3
+
 CONFIG_TEMPLATE = """
 devices {
  preferred_names=["^/dev/mapper/"]
@@ -144,6 +152,7 @@ devices {
  write_cache_state=0
  disable_after_error_count=3
  filter=["a|^/dev/mapper/delay[0-9]+$|", "r|.*|"]
+ obtain_device_list_from_udev=%(use_udev)s
  %(hints)s
 } global {
  locking_type=1
@@ -232,6 +241,13 @@ def parse_args():
         help="Number of milliseconds to delay I/O")
 
     p.add_argument(
+        "--no-udev",
+        dest="use_udev",
+        action="store_false",
+        help="Use udev to obtain device list in lvm commands (broken "
+             "on rhel 8.2)")
+
+    p.add_argument(
         "--debug",
         action="store_true",
         help="Show debug logs")
@@ -242,7 +258,7 @@ def parse_args():
 def cmd_setup(args):
     logging.info("Setting up storage args=%s", args)
 
-    lvm = LVMRunner()
+    lvm = LVMRunner(args)
 
     for i in range(args.vg_count):
         # Create backing file.
@@ -283,7 +299,7 @@ def cmd_setup(args):
 def cmd_teardown(args):
     logging.info("Tearing down storage args=%s", args)
 
-    lvm = LVMRunner()
+    lvm = LVMRunner(args)
 
     # Deactivate lvs.
     logging.info("Deactivating lvs")
@@ -324,7 +340,7 @@ def cmd_run(args):
 
     register_termination_signals()
 
-    lvm = LVMRunner()
+    lvm = LVMRunner(args)
 
     reloaders = []
 
@@ -484,9 +500,10 @@ def make_lv_name(i):
 
 class LVMRunner:
 
-    def __init__(self):
+    def __init__(self, args):
         config = CONFIG_TEMPLATE % {
             "hints": 'hints="none"' if self.version() == ("2", "03") else "",
+            "use_udev": "1" if args.use_udev else "0",
         }
         self.config = config.replace("\n", "")
 
