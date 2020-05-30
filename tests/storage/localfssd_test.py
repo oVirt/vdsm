@@ -949,13 +949,14 @@ def test_dump_sd_volumes_invalid_md(
         "version": str(user_domain.getVersion())
     }
 
-    # Only get the volume size and state it as invalid.
+    # Return volume info with INVALID status.
     vol_size = user_domain.getVolumeSize(img_uuid, vol_uuid)
     expected_volumes_metadata = {
         vol_uuid: {
             "apparentsize": vol_size.apparentsize,
             "truesize": vol_size.truesize,
-            "status": "INVALID"
+            "status": sc.VOL_STATUS_INVALID,
+            "image": img_uuid
         }
     }
 
@@ -1009,13 +1010,14 @@ def test_dump_sd_volumes_no_md_access(
         "version": str(user_domain.getVersion())
     }
 
-    # Only get the volume size and state it as invalid.
+    # Return volume info with INVALID status.
     vol_size = user_domain.getVolumeSize(img_uuid, vol_uuid)
     expected_volumes_metadata = {
         vol_uuid: {
             "apparentsize": vol_size.apparentsize,
             "truesize": vol_size.truesize,
-            "status": "INVALID"
+            "status": sc.VOL_STATUS_INVALID,
+            "image": img_uuid
         }
     }
 

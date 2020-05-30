@@ -888,7 +888,10 @@ class FileStorageDomain(sd.StorageDomain):
         except Exception as e:
             self.log.warning("Failed to parse meta file for volume %s/%s: %s",
                              self.sdUUID, vol_uuid, e)
-            md = {"status": sc.VOL_STATUS_INVALID}
+            md = {
+                "image": img_uuid,
+                "status": sc.VOL_STATUS_INVALID
+            }
 
         # Get volume size.
         try:

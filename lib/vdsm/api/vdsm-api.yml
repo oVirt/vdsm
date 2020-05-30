@@ -8464,7 +8464,8 @@ types:
             name: capacity
             type: uint
 
-        -   description: The direct ancestor of this Volume if it exists.
+        -   defaultvalue: null
+            description: The direct ancestor of this Volume if it exists.
             name: parent
             type: *UUID
 
