@@ -248,6 +248,12 @@ def parse_args():
              "on rhel 8.2)")
 
     p.add_argument(
+        "--no-select",
+        dest="use_select",
+        action="store_false",
+        help="Avoid using --select for reloading")
+
+    p.add_argument(
         "--debug",
         action="store_true",
         help="Show debug logs")
@@ -643,12 +649,18 @@ def pv_reloader(lvm, args):
         pv_name = make_pv_name(pv_number)
 
         logging.info("Reloading pv %s", pv_name)
-        selection = "pv_name = {}".format(pv_name)
-        reloads += 1
+        pvs_args = ["--noheadings"]
 
+        if args.use_select:
+            selection = "pv_name = {}".format(pv_name)
+            pvs_args.extend(("--select", selection))
+        else:
+            pvs_args.append(pv_name)
+
+        reloads += 1
         start = time.monotonic()
         try:
-            lvm.run("pvs", "--noheadings", "--select", selection)
+            lvm.run("pvs", *pvs_args)
         except Error as e:
             logging.error("Reloading pv failed: %s", e)
             errors += 1
@@ -670,12 +682,18 @@ def vg_reloader(lvm, args):
         vg_name = make_vg_name(vg_number)
 
         logging.info("Reloading vg %s", vg_name)
-        selection = "vg_name = {}".format(vg_name)
-        reloads += 1
+        vgs_args = ["--noheadings"]
 
+        if args.use_select:
+            selection = "vg_name = {}".format(vg_name)
+            vgs_args.extend(("--select", selection))
+        else:
+            vgs_args.append(vg_name)
+
+        reloads += 1
         start = time.monotonic()
         try:
-            lvm.run("vgs", "--noheadings", "--select", selection)
+            lvm.run("vgs", *vgs_args)
         except Error as e:
             logging.error("Reloading vg failed: %s", e)
             errors += 1
@@ -700,12 +718,22 @@ def lv_reloader(lvm, args):
         lv_name = make_lv_name(lv_number)
 
         logging.info("Reloading lv %s/%s", vg_name, lv_name)
-        selection = "vg_name = {} && lv_name = {}".format(vg_name, lv_name)
-        reloads += 1
+        lvs_args = ["--noheadings"]
 
+        if args.use_select:
+            # Select both vg and lv - process metatada of all vgs.
+            selection = "vg_name = {} && lv_name = {}".format(vg_name, lv_name)
+            lvs_args.extend(("--select", selection))
+        else:
+            # Selecting lv - process metadata of the specified vg.
+            selection = "lv_name = {}".format(lv_name)
+            lvs_args.extend(("--select", selection))
+            lvs_args.append(vg_name)
+
+        reloads += 1
         start = time.monotonic()
         try:
-            lvm.run("lvs", "--noheadings", "--select", selection)
+            lvm.run("lvs", *lvs_args)
         except Error as e:
             logging.error("Reloading lv failed: %s", e)
             errors += 1
