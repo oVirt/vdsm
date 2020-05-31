@@ -241,7 +241,8 @@ def parse_args():
 
 def cmd_setup(args):
     logging.info("Setting up storage args=%s", args)
-    lvm_config = make_lvm_config(args)
+
+    lvm = LVMRunner()
 
     for i in range(args.vg_count):
         # Create backing file.
@@ -273,30 +274,21 @@ def cmd_setup(args):
         logging.info("Creating symlink %s -> %s", delay_link, pv_name)
         os.symlink(pv_name, delay_link)
 
-        # Create a pv.
-        logging.info("Creating pv %s", pv_name)
-        run(["pvcreate", "--config", lvm_config, "--metadatasize", "128m",
-             "--metadatacopies", "2", pv_name])
-
-        # Create a vg.
+        # Create a pv and vg.
+        lvm.create_pv(pv_name)
         vg_name = make_vg_name(i)
-        logging.info("Creating vg %s on pv %s", vg_name, pv_name)
-        run(["vgcreate", "--config", lvm_config,
-             "--physicalextentsize", "128m", vg_name, pv_name])
+        lvm.create_vg(vg_name, pv_name)
 
 
 def cmd_teardown(args):
     logging.info("Tearing down storage args=%s", args)
-    lvm_config = make_lvm_config(args)
+
+    lvm = LVMRunner()
 
     # Deactivate lvs.
-    out = run(["vgs", "--config", lvm_config, "--noheadings", "-o", "vg_name",
-               "--select", "vg_name =~ ^{}-[0-9]+".format(VG_PREFIX)])
-    for line in out.splitlines():
-        vg_name = line.strip()
-
-        logging.info("Deactivating lvs in vg %s", vg_name)
-        run(["vgchange", "--config", lvm_config, "--activate", "n", vg_name])
+    logging.info("Deactivating lvs")
+    lvm.run("vgchange", "--activate", "n", "--select",
+            "vg_name =~ ^{}-[0-9]+".format(VG_PREFIX))
 
     # Wipe and remove the devices.
     for delay_link in glob.glob("delay_*"):
@@ -332,14 +324,14 @@ def cmd_run(args):
 
     register_termination_signals()
 
-    lvm_config = make_lvm_config(args)
+    lvm = LVMRunner()
 
     reloaders = []
 
     logging.info("Starting pv reloader")
     r = threading.Thread(
         target=pv_reloader,
-        args=(lvm_config, args),
+        args=(lvm, args),
         daemon=True,
         name="reload/pv",
     )
@@ -349,7 +341,7 @@ def cmd_run(args):
     logging.info("Starting vg reloader")
     r = threading.Thread(
         target=vg_reloader,
-        args=(lvm_config, args),
+        args=(lvm, args),
         daemon=True,
         name="reload/vg",
     )
@@ -359,7 +351,7 @@ def cmd_run(args):
     logging.info("Starting lv reloader")
     r = threading.Thread(
         target=lv_reloader,
-        args=(lvm_config, args),
+        args=(lvm, args),
         daemon=True,
         name="reload/lv",
     )
@@ -374,7 +366,7 @@ def cmd_run(args):
         logging.info("Starting worker for vg %s", vg_name)
         w = threading.Thread(
             target=worker,
-            args=(lvm_config, args, vg_name),
+            args=(lvm, args, vg_name),
             daemon=True,
             name="worker/{:02}".format(i),
         )
@@ -411,13 +403,13 @@ def terminate(signo, frame):
     terminated.set()
 
 
-def worker(lvm_config, args, vg_name):
+def worker(lvm, args, vg_name):
     logging.info("Worker started")
 
     for trial in range(1, args.trials + 1):
         logging.info("Starting trial %s/%s", trial, args.trials)
         try:
-            run_trial(lvm_config, args, vg_name)
+            run_trial(lvm, args, vg_name)
         except Terminated:
             logging.info("Trial %s terminated", trial)
             break
@@ -430,36 +422,36 @@ def worker(lvm_config, args, vg_name):
     logging.info("Worker finished")
 
 
-def run_trial(lvm_config, args, vg_name):
+def run_trial(lvm, args, vg_name):
     # Create lvs.
     for lv_name in iter_lvs(args):
-        create_lv(lvm_config, vg_name, lv_name)
-        change_lv_tags(
-            lvm_config, vg_name, lv_name,
+        lvm.create_lv(vg_name, lv_name)
+        lvm.change_lv_tags(
+            vg_name, lv_name,
             rem=[TAG_VOL_UNINIT],
             add=["IU_{}".format(lv_name), "PU_{}".format(BLANK_UUID)])
-        deactivate_lv(lvm_config, vg_name, lv_name)
+        lvm.deactivate_lv(vg_name, lv_name)
 
     # Simulate lv usage.
     for lv_name in iter_lvs(args):
-        activate_lv(lvm_config, vg_name, lv_name)
+        lvm.activate_lv(vg_name, lv_name)
         perform_io(vg_name, lv_name)
-        extend_lv(lvm_config, vg_name, lv_name)
-        deactivate_lv(lvm_config, vg_name, lv_name)
+        lvm.extend_lv(vg_name, lv_name, "+1g")
+        lvm.deactivate_lv(vg_name, lv_name)
 
     # Prepare lvs for removal.
     for lv_name in iter_lvs(args):
-        change_lv_tags(
-            lvm_config, vg_name, lv_name,
+        lvm.change_lv_tags(
+            vg_name, lv_name,
             rem=["IU_{}".format(lv_name)],
             add=["IU_{}{}".format(REMOVED_IMAGE_PREFIX, lv_name)])
 
     # Discard and remove lvs.
     for lv_name in iter_lvs(args):
-        activate_lv(lvm_config, vg_name, lv_name)
+        lvm.activate_lv(vg_name, lv_name)
         discard_lv(vg_name, lv_name)
-        deactivate_lv(lvm_config, vg_name, lv_name)
-        remove_lv(lvm_config, vg_name, lv_name)
+        lvm.deactivate_lv(vg_name, lv_name)
+        lvm.remove_lv(vg_name, lv_name)
 
 
 def iter_lvs(args):
@@ -490,81 +482,106 @@ def make_lv_name(i):
     return "lv-0000000000000000000000000000-{:04}".format(i)
 
 
-def create_lv(config, vg_name, lv_name):
-    logging.info("Creating lv %s/%s", vg_name, lv_name)
+class LVMRunner:
 
-    run([
-        "lvcreate",
-        "--config", config,
-        "--autobackup", "n",
-        "--contiguous", "n",
-        "--size", "1g",
-        "--addtag", TAG_VOL_UNINIT,
-        "--activate", "y",
-        "--name", lv_name,
-        vg_name
-    ])
+    def __init__(self):
+        config = CONFIG_TEMPLATE % {
+            "hints": 'hints="none"' if self.version() == ("2", "03") else "",
+        }
+        self.config = config.replace("\n", "")
 
+    def create_pv(self, pv_name):
+        logging.info("Creating pv %s", pv_name)
+        self.run(
+            "pvcreate",
+            "--metadatasize", "128m",
+            "--metadatacopies", "2",
+            pv_name
+        )
 
-def activate_lv(config, vg_name, lv_name):
-    logging.info("Activating lv %s/%s", vg_name, lv_name)
-    change_lv(config, vg_name, lv_name, activate="y")
+    def create_vg(self, vg_name, pv_name):
+        logging.info("Creating vg %s on pv %s", vg_name, pv_name)
+        self.run(
+            "vgcreate",
+            "--physicalextentsize", "128m",
+            vg_name,
+            pv_name
+        )
 
+    def create_lv(self, vg_name, lv_name):
+        logging.info("Creating lv %s/%s", vg_name, lv_name)
+        self.run(
+            "lvcreate",
+            "--autobackup", "n",
+            "--contiguous", "n",
+            "--size", "1g",
+            "--addtag", TAG_VOL_UNINIT,
+            "--activate", "y",
+            "--name", lv_name,
+            vg_name
+        )
 
-def deactivate_lv(config, vg_name, lv_name):
-    logging.info("Deactivating lv %s/%s", vg_name, lv_name)
-    change_lv(config, vg_name, lv_name, activate="n")
+    def activate_lv(self, vg_name, lv_name):
+        logging.info("Activating lv %s/%s", vg_name, lv_name)
+        self.change_lv(vg_name, lv_name, activate="y")
 
+    def deactivate_lv(self, vg_name, lv_name):
+        logging.info("Deactivating lv %s/%s", vg_name, lv_name)
+        self.change_lv(vg_name, lv_name, activate="n")
 
-def change_lv_tags(config, vg_name, lv_name, add=(), rem=()):
-    logging.info("Changing lv tags %s/%s", vg_name, lv_name)
-    change_lv(config, vg_name, lv_name, add_tags=add, del_tags=rem)
+    def change_lv_tags(self, vg_name, lv_name, add=(), rem=()):
+        logging.info("Changing lv tags %s/%s", vg_name, lv_name)
+        self.change_lv(vg_name, lv_name, add_tags=add, del_tags=rem)
 
+    def change_lv(self, vg_name, lv_name, activate=None, add_tags=(),
+                  del_tags=()):
+        args = ["--autobackup", "n"]
 
-def change_lv(config, vg_name, lv_name, activate=None, add_tags=(),
-              del_tags=()):
-    cmd = [
-        "lvchange",
-        "--config", config,
-        "--autobackup", "n",
-    ]
+        for tag in add_tags:
+            args.extend(("--addtag", tag))
 
-    for tag in add_tags:
-        cmd.extend(("--addtag", tag))
+        for tag in del_tags:
+            args.extend(("--deltag", tag))
 
-    for tag in del_tags:
-        cmd.extend(("--deltag", tag))
+        if activate:
+            args.extend(("--activate", activate))
 
-    if activate:
-        cmd.extend(("--activate", activate))
+        args.append("{}/{}".format(vg_name, lv_name))
 
-    cmd.append("{}/{}".format(vg_name, lv_name))
+        self.run("lvchange", *args)
 
-    run(cmd)
+    def extend_lv(self, vg_name, lv_name, size):
+        logging.info("Extending lv %s/%s", vg_name, lv_name)
+        self.run(
+            "lvextend",
+            "--autobackup", "n",
+            "--size", size,
+            "{}/{}".format(vg_name, lv_name)
+        )
 
+    def remove_lv(self, vg_name, lv_name):
+        logging.info("Removing %s/%s", vg_name, lv_name)
+        self.run(
+            "lvremove",
+            "--autobackup", "n",
+            "--force",
+            "{}/{}".format(vg_name, lv_name)
+        )
 
-def extend_lv(config, vg_name, lv_name):
-    logging.info("Extending lv %s/%s", vg_name, lv_name)
+    def run(self, cmd_name, *args):
+        cmd = [cmd_name, "--config", self.config]
+        cmd.extend(args)
+        return run(cmd)
 
-    run([
-        "lvextend",
-        "--config", config,
-        "--autobackup", "n",
-        "--size", "+1g",
-        "{}/{}".format(vg_name, lv_name)
-    ])
-
-
-def remove_lv(config, vg_name, lv_name):
-    logging.info("Removing %s/%s", vg_name, lv_name)
-
-    run([
-        "lvremove",
-        "--config", config,
-        "--autobackup", "n",
-        "--force",
-        "{}/{}".format(vg_name, lv_name)
-    ])
+    def version(self):
+        out = run(["lvm", "version"])
+        for line in out.splitlines():
+            if line.startswith("LVM version:"):
+                #  LVM version:     2.03.09(2) (2020-03-26)
+                _, _, version, date = line.split(None, 3)
+                major, minor, _ = version.split(".")
+                return major, minor
+        raise RuntimeError("Cannot get LVM version")
 
 
 def discard_lv(vg_name, lv_name):
@@ -597,7 +614,7 @@ def perform_io(vg_name, lv_name):
     ])
 
 
-def pv_reloader(lvm_config, args):
+def pv_reloader(lvm, args):
     logging.info("Reloader started")
 
     reloads = 0
@@ -614,8 +631,7 @@ def pv_reloader(lvm_config, args):
 
         start = time.monotonic()
         try:
-            run(["pvs", "--config", lvm_config, "--noheadings",
-                 "--select", selection])
+            lvm.run("pvs", "--noheadings", "--select", selection)
         except Error as e:
             logging.error("Reloading pv failed: %s", e)
             errors += 1
@@ -625,7 +641,7 @@ def pv_reloader(lvm_config, args):
     log_reload_stats(reloads, errors, times)
 
 
-def vg_reloader(lvm_config, args):
+def vg_reloader(lvm, args):
     logging.info("Reloader started")
 
     reloads = 0
@@ -642,8 +658,7 @@ def vg_reloader(lvm_config, args):
 
         start = time.monotonic()
         try:
-            run(["vgs", "--config", lvm_config, "--noheadings",
-                 "--select", selection])
+            lvm.run("vgs", "--noheadings", "--select", selection)
         except Error as e:
             logging.error("Reloading vg failed: %s", e)
             errors += 1
@@ -653,7 +668,7 @@ def vg_reloader(lvm_config, args):
     log_reload_stats(reloads, errors, times)
 
 
-def lv_reloader(lvm_config, args):
+def lv_reloader(lvm, args):
     logging.info("Reloader started")
 
     reloads = 0
@@ -673,8 +688,7 @@ def lv_reloader(lvm_config, args):
 
         start = time.monotonic()
         try:
-            run(["lvs", "--config", lvm_config, "--noheadings",
-                 "--select", selection])
+            lvm.run("lvs", "--noheadings", "--select", selection)
         except Error as e:
             logging.error("Reloading lv failed: %s", e)
             errors += 1
@@ -713,24 +727,6 @@ def log_reload_stats(reloads, errors, times):
 
 def gib(s):
     return int(s) * 1024**3
-
-
-def make_lvm_config(args):
-    config = CONFIG_TEMPLATE % {
-        "hints": 'hints="none"' if lvm_version() == ("2", "03") else "",
-    }
-    return config.replace("\n", "")
-
-
-def lvm_version():
-    out = run(["lvm", "version"])
-    for line in out.splitlines():
-        if line.startswith("LVM version:"):
-            #  LVM version:     2.03.09(2) (2020-03-26)
-            _, _, version, date = line.split(None, 3)
-            major, minor, _ = version.split(".")
-            return major, minor
-    raise RuntimeError("Cannot get LVM version")
 
 
 def run(args, input=None):
