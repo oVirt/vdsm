@@ -610,6 +610,8 @@ def pv_reloader(lvm_config, args):
 
         logging.info("Reloading pv %s", pv_name)
         selection = "pv_name = {}".format(pv_name)
+        reloads += 1
+
         start = time.monotonic()
         try:
             run(["pvs", "--config", lvm_config, "--noheadings",
@@ -617,9 +619,8 @@ def pv_reloader(lvm_config, args):
         except Error as e:
             logging.error("Reloading pv failed: %s", e)
             errors += 1
-        else:
+        finally:
             times.append(time.monotonic() - start)
-            reloads += 1
 
     log_reload_stats(reloads, errors, times)
 
@@ -637,6 +638,8 @@ def vg_reloader(lvm_config, args):
 
         logging.info("Reloading vg %s", vg_name)
         selection = "vg_name = {}".format(vg_name)
+        reloads += 1
+
         start = time.monotonic()
         try:
             run(["vgs", "--config", lvm_config, "--noheadings",
@@ -644,9 +647,8 @@ def vg_reloader(lvm_config, args):
         except Error as e:
             logging.error("Reloading vg failed: %s", e)
             errors += 1
-        else:
+        finally:
             times.append(time.monotonic() - start)
-            reloads += 1
 
     log_reload_stats(reloads, errors, times)
 
@@ -667,6 +669,8 @@ def lv_reloader(lvm_config, args):
 
         logging.info("Reloading lv %s/%s", vg_name, lv_name)
         selection = "vg_name = {} && lv_name = {}".format(vg_name, lv_name)
+        reloads += 1
+
         start = time.monotonic()
         try:
             run(["lvs", "--config", lvm_config, "--noheadings",
@@ -674,9 +678,8 @@ def lv_reloader(lvm_config, args):
         except Error as e:
             logging.error("Reloading lv failed: %s", e)
             errors += 1
-        else:
+        finally:
             times.append(time.monotonic() - start)
-            reloads += 1
 
     log_reload_stats(reloads, errors, times)
 
