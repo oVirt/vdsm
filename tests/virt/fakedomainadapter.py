@@ -117,3 +117,9 @@ class FakeDomainAdapter(object):
             raise fake.libvirt_error(
                 [libvirt.VIR_ERR_NO_DOMAIN_CHECKPOINT], "Checkpoint not found")
         return self.checkpoint
+
+    @maybefail
+    def listAllCheckpoints(self, flags=None):
+        # TODO: will be implemented when adding tests
+        # for list and redefine checkpoints
+        return list()

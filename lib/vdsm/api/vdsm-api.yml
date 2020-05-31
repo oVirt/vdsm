@@ -8421,6 +8421,16 @@ types:
             name: to_checkpoint_id
             type: *UUID
 
+        -   defaultvalue: null
+            description: If to_checkpoint_id is specified and
+                starting backup will create a new checkpoint,
+                use the specified checkpoint ID as the parent
+                checkpoint. The operation will fail if the
+                specified parent checkpoint ID is not the
+                leaf checkpoint reported by libvirt.
+            name: parent_checkpoint_id
+            type: *UUID
+
     CheckpointsResponse: &CheckpointsResponse
         added: '4.4'
         description: Checkpoints operation response.

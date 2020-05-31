@@ -110,11 +110,21 @@ class BackupConfig(properties.Owner):
     backup_id = properties.UUID(required=True)
     from_checkpoint_id = properties.UUID(required='')
     to_checkpoint_id = properties.UUID(default='')
+    parent_checkpoint_id = properties.UUID(default='')
 
     def __init__(self, backup_config):
         self.backup_id = backup_config.get("backup_id")
         self.from_checkpoint_id = backup_config.get("from_checkpoint_id")
         self.to_checkpoint_id = backup_config.get("to_checkpoint_id")
+        self.parent_checkpoint_id = backup_config.get("parent_checkpoint_id")
+
+        if self.from_checkpoint_id is not None and (
+                self.parent_checkpoint_id is None):
+            raise exception.BackupError(
+                reason="Cannot start an incremental backup without "
+                       "parent_checkpoint_id",
+                backup=self.backup_id)
+
         self.disks = [DiskConfig(d) for d in backup_config.get("disks", ())]
         if len(self.disks) == 0:
             raise exception.BackupError(
@@ -124,6 +134,7 @@ class BackupConfig(properties.Owner):
 
 def start_backup(vm, dom, config):
     backup_cfg = BackupConfig(config)
+    _validate_parent_id(vm, dom, backup_cfg.parent_checkpoint_id)
 
     try:
         drives = _get_disks_drives(vm, backup_cfg.disks)
@@ -290,6 +301,28 @@ def list_checkpoints(vm, dom):
     return dict(result=result)
 
 
+def _validate_parent_id(vm, dom, parent_checkpoint_id):
+    leaf_checkpoint_id = _get_leaf_checkpoint_name(vm, dom)
+    if parent_checkpoint_id != leaf_checkpoint_id:
+        raise exception.CheckpointError(
+            reason="Parent checkpoint ID does not "
+                   "match the actual leaf checkpoint",
+            parent_checkpoint_id=parent_checkpoint_id,
+            leaf_checkpoint_id=leaf_checkpoint_id,
+            vm_id=vm.id)
+
+
+def _get_leaf_checkpoint_name(vm, dom):
+    flags = libvirt.VIR_DOMAIN_CHECKPOINT_LIST_TOPOLOGICAL
+    try:
+        checkpoints = dom.listAllCheckpoints(flags=flags)
+        return checkpoints[-1].getName() if checkpoints else None
+    except libvirt.libvirtError as e:
+        raise exception.CheckpointError(
+            reason="Failed to fetch defined leaf checkpoint: {}".format(e),
+            vm_id=vm.id)
+
+
 def _get_disks_drives(vm, disks_cfg):
     drives = {}
     for disk in disks_cfg:
@@ -448,10 +481,10 @@ def create_checkpoint_xml(backup_cfg, drives):
     description.appendTextNode(cp_description)
     checkpoint.appendChild(description)
 
-    if backup_cfg.from_checkpoint_id is not None:
+    if backup_cfg.parent_checkpoint_id is not None:
         cp_parent = vmxml.Element('parent')
         parent_name = vmxml.Element('name')
-        parent_name.appendTextNode(backup_cfg.from_checkpoint_id)
+        parent_name.appendTextNode(backup_cfg.parent_checkpoint_id)
         cp_parent.appendChild(parent_name)
         checkpoint.appendChild(cp_parent)
 

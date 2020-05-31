@@ -244,7 +244,8 @@ def test_checkpoint_xml(disks_in_checkpoint, expected_xml):
         'backup_id': BACKUP_ID,
         'disks': fake_disks,
         'to_checkpoint_id': TO_CHECKPOINT_ID,
-        'from_checkpoint_id': FROM_CHECKPOINT_ID
+        'from_checkpoint_id': FROM_CHECKPOINT_ID,
+        'parent_checkpoint_id': FROM_CHECKPOINT_ID
     }
     backup_cfg = backup.BackupConfig(config)
 
@@ -344,6 +345,7 @@ def test_start_backup_failed_get_checkpoint(tmp_backupdir, tmp_basedir):
     verify_scratch_disks_removed(vm)
 
 
+@requires_backup_support
 def test_start_backup_disk_not_found():
     vm = FakeVm()
     dom = FakeDomainAdapter()
@@ -427,6 +429,21 @@ def test_backup_begin_failed_no_disks(tmp_backupdir, tmp_basedir):
     config = {
         'backup_id': BACKUP_ID,
         'disks': ()
+    }
+
+    with pytest.raises(exception.BackupError):
+        backup.start_backup(vm, dom, config)
+
+
+def test_backup_begin_failed_no_parent(tmp_backupdir, tmp_basedir):
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+    fake_disks = create_fake_disks()
+
+    config = {
+        'backup_id': BACKUP_ID,
+        'disks': fake_disks,
+        'from_checkpoint_id': FROM_CHECKPOINT_ID
     }
 
     with pytest.raises(exception.BackupError):
