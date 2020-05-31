@@ -8452,36 +8452,51 @@ types:
         description: Volume raw metadata.
         name: VolumeDump
         properties:
-        -   description: Advisory code indicating the Volume's planned usage.
+        -   defaultvalue: null
+            description: Advisory code indicating the Volume's planned usage.
+                         Available if volume metadata is valid.
             name: disktype
             type: *DiskType
 
-        -   description: Indicates whether the Volume and metadata are valid
+        -   description: Indicates whether the Volume and metadata are valid.
             name: status
             type: *VolumeStatus
 
-        -   description: The size of the Volume in bytes.
+        -   defaultvalue: null
+            description: The size of the Volume in bytes. Available if volume
+                         metadata is valid.
             name: capacity
             type: uint
 
         -   defaultvalue: null
             description: The direct ancestor of this Volume if it exists.
+                         Available if volume metadata is valid or LV has
+                         a parent UUID tag, in case of a volume in a FC
+                         or an ISCSI storage domain.
             name: parent
             type: *UUID
 
-        -   description: A human-readable description of the Volume.
+        -   defaultvalue: null
+            description: A human-readable description of the Volume.
+                         Available if volume metadata is valid
             name: description
             type: string
 
-        -   description: Indicates whether the volume is legal to use.
+        -   defaultvalue: null
+            description: Indicates whether the volume is legal to use.
+                         Available if volume metadata is valid.
             name: legality
             type: *VolumeLegality
 
-        -   description: The Volume creation time in seconds since the epoch.
+        -   defaultvalue: null
+            description: The Volume creation time in seconds since the epoch.
+                         Available if volume metadata is valid.
             name: ctime
             type: int
 
-        -   description: The format used to write data to the Volume.
+        -   defaultvalue: null
+            description: The format used to write data to the Volume.
+                         Available if volume metadata is valid.
             name: format
             type: *VolumeFormat
 
@@ -8489,32 +8504,41 @@ types:
             name: image
             type: *UUID
 
-        -   description: The Volume allocation type (sparse, preallocated).
+        -   defaultvalue: null
+            description: The Volume allocation type (sparse, preallocated).
+                         Available if volume metadata is valid.
             name: type
             type: *VolumeAllocation
 
         -   defaultvalue: null
             description: The metadata slot index, available only for a volume
-                         on ISCSI or FC storage domain.
+                         on ISCSI or FC storage domain. Available if volume
+                         has a metadata slot LV tag.
             name: mdslot
             type: uint
 
-        -   description: A monotonically increasing number, incremented each
+        -   defaultvalue: null
+            description: A monotonically increasing number, incremented each
                          time a volume operation is completed successfully.
                          The maximum value is 999 and the next increment will
-                         reset the value to 0.
+                         reset the value to 0. Available if volume metadata
+                         is valid.
             name: generation
             type: uint
 
-        -   description: The Volume role
+        -   defaultvalue: null
+            description: The Volume role. Available if volume metadata is
+                         valid.
             name: voltype
             type: *VolumeRole
 
         -   description: The amount of underlying storage allocated in bytes.
+                         Available of volume is accessible.
             name: truesize
             type: uint
 
-        -   description: The size of the disk in bytes.
+        -   description: The size of the disk in bytes. Availbale if volume
+                         is accessible.
             name: apparentsize
             type: uint
         type: object
