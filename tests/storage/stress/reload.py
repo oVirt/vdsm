@@ -192,6 +192,20 @@ class Error(Exception):
             "err={self.err!r}"
         ).format(self=self)
 
+    def dump(self, filename):
+        with open(filename, "w") as f:
+            f.write("Command:\n")
+            f.write("{}".format(self.cmd))
+            f.write("\n\n")
+            f.write("Exit code:\n")
+            f.write("{}".format(self.rc))
+            f.write("\n\n")
+            f.write("Stdout:\n")
+            f.write(self.out)
+            f.write("\n\n")
+            f.write("Stderr:\n")
+            f.write(self.err)
+
 
 def main():
     args = parse_args()
@@ -254,6 +268,14 @@ def parse_args():
         help="Avoid using --select for reloading")
 
     p.add_argument(
+        "--verbose",
+        choices=(1, 2, 3, 4),
+        type=int,
+        default=0,
+        help="Use lvm --verbose option for verbose errors and dump errors "
+             "to files (e.g. pvs-error-0042.txt)")
+
+    p.add_argument(
         "--debug",
         action="store_true",
         help="Show debug logs")
@@ -264,7 +286,7 @@ def parse_args():
 def cmd_setup(args):
     logging.info("Setting up storage args=%s", args)
 
-    lvm = LVMRunner(args)
+    lvm = LVMRunner()
 
     for i in range(args.vg_count):
         # Create backing file.
@@ -305,7 +327,7 @@ def cmd_setup(args):
 def cmd_teardown(args):
     logging.info("Tearing down storage args=%s", args)
 
-    lvm = LVMRunner(args)
+    lvm = LVMRunner()
 
     # Deactivate lvs.
     logging.info("Deactivating lvs")
@@ -346,14 +368,13 @@ def cmd_run(args):
 
     register_termination_signals()
 
-    lvm = LVMRunner(args)
-
+    reloaders_lvm = LVMRunner(use_udev=args.use_udev, verbose=args.verbose)
     reloaders = []
 
     logging.info("Starting pv reloader")
     r = threading.Thread(
         target=pv_reloader,
-        args=(lvm, args),
+        args=(reloaders_lvm, args),
         daemon=True,
         name="reload/pv",
     )
@@ -363,7 +384,7 @@ def cmd_run(args):
     logging.info("Starting vg reloader")
     r = threading.Thread(
         target=vg_reloader,
-        args=(lvm, args),
+        args=(reloaders_lvm, args),
         daemon=True,
         name="reload/vg",
     )
@@ -373,13 +394,14 @@ def cmd_run(args):
     logging.info("Starting lv reloader")
     r = threading.Thread(
         target=lv_reloader,
-        args=(lvm, args),
+        args=(reloaders_lvm, args),
         daemon=True,
         name="reload/lv",
     )
     r.start()
     reloaders.append(r)
 
+    workers_lvm = LVMRunner()
     workers = []
 
     for i in range(args.vg_count):
@@ -388,7 +410,7 @@ def cmd_run(args):
         logging.info("Starting worker for vg %s", vg_name)
         w = threading.Thread(
             target=worker,
-            args=(lvm, args, vg_name),
+            args=(workers_lvm, args, vg_name),
             daemon=True,
             name="worker/{:02}".format(i),
         )
@@ -506,12 +528,13 @@ def make_lv_name(i):
 
 class LVMRunner:
 
-    def __init__(self, args):
+    def __init__(self, use_udev=True, verbose=0):
         config = CONFIG_TEMPLATE % {
             "hints": 'hints="none"' if self.version() == ("2", "03") else "",
-            "use_udev": "1" if args.use_udev else "0",
+            "use_udev": "1" if use_udev else "0",
         }
         self.config = config.replace("\n", "")
+        self.verbose = verbose
 
     def create_pv(self, pv_name):
         logging.info("Creating pv %s", pv_name)
@@ -593,6 +616,11 @@ class LVMRunner:
 
     def run(self, cmd_name, *args):
         cmd = [cmd_name, "--config", self.config]
+
+        if self.verbose:
+            # verbose=4 -> -vvvv
+            cmd.append("-" + ("v" * self.verbose))
+
         cmd.extend(args)
         return run(cmd)
 
@@ -662,9 +690,16 @@ def pv_reloader(lvm, args):
         try:
             lvm.run("pvs", *pvs_args)
         except Error as e:
-            logging.error("Reloading pv failed: %s", e)
+            times.append(time.monotonic() - start)
             errors += 1
-        finally:
+            if args.verbose:
+                filename = "pvs-error-{:04}.txt".format(errors)
+                e.dump(filename)
+                logging.error("Reloading pv failed, see %s for more info",
+                              filename)
+            else:
+                logging.error("Reloading pv failed: %s", e)
+        else:
             times.append(time.monotonic() - start)
 
     log_reload_stats(reloads, errors, times)
@@ -695,9 +730,16 @@ def vg_reloader(lvm, args):
         try:
             lvm.run("vgs", *vgs_args)
         except Error as e:
-            logging.error("Reloading vg failed: %s", e)
+            times.append(time.monotonic() - start)
             errors += 1
-        finally:
+            if args.verbose:
+                filename = "vgs-error-{:04}.txt".format(errors)
+                e.dump(filename)
+                logging.error("Reloading vg failed, see %s for more info",
+                              filename)
+            else:
+                logging.error("Reloading vg failed: %s", e)
+        else:
             times.append(time.monotonic() - start)
 
     log_reload_stats(reloads, errors, times)
@@ -735,9 +777,16 @@ def lv_reloader(lvm, args):
         try:
             lvm.run("lvs", *lvs_args)
         except Error as e:
-            logging.error("Reloading lv failed: %s", e)
+            times.append(time.monotonic() - start)
             errors += 1
-        finally:
+            if args.verbose:
+                filename = "lvs-error-{:04}.txt".format(errors)
+                e.dump(filename)
+                logging.error("Reloading vg failed, see %s for more info",
+                              filename)
+            else:
+                logging.error("Reloading vg failed: %s", e)
+        else:
             times.append(time.monotonic() - start)
 
     log_reload_stats(reloads, errors, times)
@@ -789,12 +838,27 @@ def run(args, input=None):
     err = err.decode("utf-8").strip()
 
     logging.debug("Command completed rc=%s out=%r err=%r",
-                  p.returncode, out, err)
+                  p.returncode, Head(out), Head(err))
 
     if p.returncode != 0:
         raise Error(args, p.returncode, out, err)
 
     return out
+
+
+class Head:
+
+    def __init__(self, text, limit=200):
+        self.text = text
+        self.limit = limit
+
+    def __str__(self):
+        if len(self.text) > self.limit:
+            return self.text[:self.limit] + " ..."
+        return self.text
+
+    def __repr__(self):
+        return repr(str(self))
 
 
 if __name__ == "__main__":
