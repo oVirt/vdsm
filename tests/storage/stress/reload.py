@@ -155,7 +155,7 @@ devices {
  obtain_device_list_from_udev=%(use_udev)s
  %(hints)s
 } global {
- locking_type=1
+ locking_type=%(locking_type)s
  prioritise_write_locks=1
  wait_for_locks=1
  use_lvmetad=0
@@ -276,6 +276,12 @@ def parse_args():
              "to files (e.g. pvs-error-0042.txt)")
 
     p.add_argument(
+        "--read-only",
+        dest="read_only",
+        action="store_false",
+        help="Use read-only locking_type for pvs/vgs/lvs commands (false)")
+
+    p.add_argument(
         "--debug",
         action="store_true",
         help="Show debug logs")
@@ -368,7 +374,10 @@ def cmd_run(args):
 
     register_termination_signals()
 
-    reloaders_lvm = LVMRunner(use_udev=args.use_udev, verbose=args.verbose)
+    reloaders_lvm = LVMRunner(
+        use_udev=args.use_udev,
+        verbose=args.verbose,
+        read_only=args.read_only)
     reloaders = []
 
     logging.info("Starting pv reloader")
@@ -528,10 +537,11 @@ def make_lv_name(i):
 
 class LVMRunner:
 
-    def __init__(self, use_udev=True, verbose=0):
+    def __init__(self, use_udev=True, verbose=0, read_only=False):
         config = CONFIG_TEMPLATE % {
             "hints": 'hints="none"' if self.version() == ("2", "03") else "",
             "use_udev": "1" if use_udev else "0",
+            "locking_type": "4" if read_only else "1",
         }
         self.config = config.replace("\n", "")
         self.verbose = verbose
