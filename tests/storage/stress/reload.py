@@ -675,12 +675,18 @@ def perform_io(vg_name, lv_name):
     ])
 
 
+class ReloaderStats:
+
+    def __init__(self):
+        self.reloads = 0
+        self.errors = 0
+        self.retries = 0
+        self.times = []
+
+
 def pv_reloader(lvm, args):
     logging.info("Reloader started")
-
-    reloads = 0
-    errors = 0
-    times = []
+    stats = ReloaderStats()
 
     while not terminated.is_set():
         pv_number = random.randint(0, args.vg_count - 1)
@@ -695,32 +701,29 @@ def pv_reloader(lvm, args):
         else:
             pvs_args.append(pv_name)
 
-        reloads += 1
+        stats.reloads += 1
         start = time.monotonic()
         try:
             lvm.run("pvs", *pvs_args)
         except Error as e:
-            times.append(time.monotonic() - start)
-            errors += 1
+            stats.times.append(time.monotonic() - start)
+            stats.errors += 1
             if args.verbose:
-                filename = "pvs-error-{:04}.txt".format(errors)
+                filename = "pvs-error-{:04}.txt".format(stats.errors)
                 e.dump(filename)
                 logging.error("Reloading pv failed, see %s for more info",
                               filename)
             else:
                 logging.error("Reloading pv failed: %s", e)
         else:
-            times.append(time.monotonic() - start)
+            stats.times.append(time.monotonic() - start)
 
-    log_reload_stats(reloads, errors, times)
+    log_reload_stats(stats)
 
 
 def vg_reloader(lvm, args):
     logging.info("Reloader started")
-
-    reloads = 0
-    errors = 0
-    times = []
+    stats = ReloaderStats()
 
     while not terminated.is_set():
         vg_number = random.randint(0, args.vg_count - 1)
@@ -735,32 +738,29 @@ def vg_reloader(lvm, args):
         else:
             vgs_args.append(vg_name)
 
-        reloads += 1
+        stats.reloads += 1
         start = time.monotonic()
         try:
             lvm.run("vgs", *vgs_args)
         except Error as e:
-            times.append(time.monotonic() - start)
-            errors += 1
+            stats.times.append(time.monotonic() - start)
+            stats.errors += 1
             if args.verbose:
-                filename = "vgs-error-{:04}.txt".format(errors)
+                filename = "vgs-error-{:04}.txt".format(stats.errors)
                 e.dump(filename)
                 logging.error("Reloading vg failed, see %s for more info",
                               filename)
             else:
                 logging.error("Reloading vg failed: %s", e)
         else:
-            times.append(time.monotonic() - start)
+            stats.times.append(time.monotonic() - start)
 
-    log_reload_stats(reloads, errors, times)
+    log_reload_stats(stats)
 
 
 def lv_reloader(lvm, args):
     logging.info("Reloader started")
-
-    reloads = 0
-    errors = 0
-    times = []
+    stats = ReloaderStats()
 
     while not terminated.is_set():
         vg_number = random.randint(0, args.vg_count - 1)
@@ -782,28 +782,29 @@ def lv_reloader(lvm, args):
             lvs_args.extend(("--select", selection))
             lvs_args.append(vg_name)
 
-        reloads += 1
+        stats.reloads += 1
         start = time.monotonic()
         try:
             lvm.run("lvs", *lvs_args)
         except Error as e:
-            times.append(time.monotonic() - start)
-            errors += 1
+            stats.times.append(time.monotonic() - start)
+            stats.errors += 1
             if args.verbose:
-                filename = "lvs-error-{:04}.txt".format(errors)
+                filename = "lvs-error-{:04}.txt".format(stats.errors)
                 e.dump(filename)
                 logging.error("Reloading vg failed, see %s for more info",
                               filename)
             else:
                 logging.error("Reloading vg failed: %s", e)
         else:
-            times.append(time.monotonic() - start)
+            stats.times.append(time.monotonic() - start)
 
-    log_reload_stats(reloads, errors, times)
+    log_reload_stats(stats)
 
 
-def log_reload_stats(reloads, errors, times):
-    times.sort()
+def log_reload_stats(stats):
+    stats.times.sort()
+    times = stats.times
 
     min_time = times[0]
     max_time = times[-1]
@@ -819,9 +820,9 @@ def log_reload_stats(reloads, errors, times):
     logging.info(
         "Stats: reloads=%s errors=%s error_rate=%.2f%% avg_time=%.3f "
         "med_time=%.3f min_time=%.3f max_time=%.3f",
-        reloads,
-        errors,
-        errors / reloads * 100,
+        stats.reloads,
+        stats.errors,
+        stats.errors / stats.reloads * 100,
         avg_time,
         med_time,
         min_time,
