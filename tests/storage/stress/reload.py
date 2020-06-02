@@ -701,22 +701,7 @@ def pv_reloader(lvm, args):
         else:
             pvs_args.append(pv_name)
 
-        stats.reloads += 1
-        start = time.monotonic()
-        try:
-            lvm.run("pvs", *pvs_args)
-        except Error as e:
-            stats.times.append(time.monotonic() - start)
-            stats.errors += 1
-            if args.verbose:
-                filename = "pvs-error-{:04}.txt".format(stats.errors)
-                e.dump(filename)
-                logging.error("Reloading pv failed, see %s for more info",
-                              filename)
-            else:
-                logging.error("Reloading pv failed: %s", e)
-        else:
-            stats.times.append(time.monotonic() - start)
+        reload(lvm, "pvs", pvs_args, stats, args)
 
     log_reload_stats(stats)
 
@@ -738,22 +723,7 @@ def vg_reloader(lvm, args):
         else:
             vgs_args.append(vg_name)
 
-        stats.reloads += 1
-        start = time.monotonic()
-        try:
-            lvm.run("vgs", *vgs_args)
-        except Error as e:
-            stats.times.append(time.monotonic() - start)
-            stats.errors += 1
-            if args.verbose:
-                filename = "vgs-error-{:04}.txt".format(stats.errors)
-                e.dump(filename)
-                logging.error("Reloading vg failed, see %s for more info",
-                              filename)
-            else:
-                logging.error("Reloading vg failed: %s", e)
-        else:
-            stats.times.append(time.monotonic() - start)
+        reload(lvm, "vgs", vgs_args, stats, args)
 
     log_reload_stats(stats)
 
@@ -782,24 +752,28 @@ def lv_reloader(lvm, args):
             lvs_args.extend(("--select", selection))
             lvs_args.append(vg_name)
 
-        stats.reloads += 1
-        start = time.monotonic()
-        try:
-            lvm.run("lvs", *lvs_args)
-        except Error as e:
-            stats.times.append(time.monotonic() - start)
-            stats.errors += 1
-            if args.verbose:
-                filename = "lvs-error-{:04}.txt".format(stats.errors)
-                e.dump(filename)
-                logging.error("Reloading vg failed, see %s for more info",
-                              filename)
-            else:
-                logging.error("Reloading vg failed: %s", e)
-        else:
-            stats.times.append(time.monotonic() - start)
+        reload(lvm, "lvs", lvs_args, stats, args)
 
     log_reload_stats(stats)
+
+
+def reload(lvm, cmd, cmd_args, stats, args):
+    stats.reloads += 1
+    start = time.monotonic()
+    try:
+        lvm.run(cmd, *cmd_args)
+    except Error as e:
+        stats.times.append(time.monotonic() - start)
+        stats.errors += 1
+        if args.verbose:
+            filename = "{}-error-{:04}.txt".format(cmd, stats.errors)
+            e.dump(filename)
+            logging.error("Reloading %s failed, see %s for more info",
+                          cmd, filename)
+        else:
+            logging.error("Reloading %s failed: %s", cmd, e)
+    else:
+        stats.times.append(time.monotonic() - start)
 
 
 def log_reload_stats(stats):
