@@ -686,7 +686,7 @@ class ReloaderStats:
     def __init__(self):
         self.reloads = 0
         self.errors = 0
-        self.retries = 0
+        self.failures = 0
         self.times = []
 
 
@@ -780,12 +780,14 @@ def reload(lvm, cmd, cmd_args, stats, args):
             if args.verbose:
                 filename = "{}-error-{:04}.txt".format(cmd, stats.errors)
                 e.dump(filename)
-                logging.error("Reloading %s failed (attempt %d of %d), see "
-                              "%s for more info",
-                              cmd, attempt, args.retries + 1, filename)
-            else:
-                logging.error("Reloading %s failed (attempt %d of %d): %s",
-                              cmd, attempt, args.retries + 1, e)
+                e = "See {} for more info".format(filename)
+
+            logging.warning("Attempt %d of %d failed: %s",
+                            attempt, args.retries + 1, e)
+
+    # all attempts have failed
+    stats.failures += 1
+    logging.error("Reloading %s failed (%d failures)", cmd, stats.failures)
 
 
 def log_reload_stats(stats):
@@ -804,11 +806,12 @@ def log_reload_stats(stats):
     avg_time = sum(times) / len(times)
 
     logging.info(
-        "Stats: reloads=%s errors=%s error_rate=%.2f%% avg_time=%.3f "
-        "med_time=%.3f min_time=%.3f max_time=%.3f",
+        "Stats: reloads=%s errors=%s error_rate=%.2f%% failures=%s "
+        "avg_time=%.3f med_time=%.3f min_time=%.3f max_time=%.3f",
         stats.reloads,
         stats.errors,
         stats.errors / stats.reloads * 100,
+        stats.failures,
         avg_time,
         med_time,
         min_time,
