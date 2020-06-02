@@ -282,6 +282,12 @@ def parse_args():
         help="Use read-only locking_type for pvs/vgs/lvs commands (false)")
 
     p.add_argument(
+        "--retries",
+        type=int,
+        default=0,
+        help="Max retries for a failing pvs/vgs/lvs commands")
+
+    p.add_argument(
         "--debug",
         action="store_true",
         help="Show debug logs")
@@ -758,22 +764,28 @@ def lv_reloader(lvm, args):
 
 
 def reload(lvm, cmd, cmd_args, stats, args):
-    stats.reloads += 1
-    start = time.monotonic()
-    try:
-        lvm.run(cmd, *cmd_args)
-    except Error as e:
-        stats.times.append(time.monotonic() - start)
-        stats.errors += 1
-        if args.verbose:
-            filename = "{}-error-{:04}.txt".format(cmd, stats.errors)
-            e.dump(filename)
-            logging.error("Reloading %s failed, see %s for more info",
-                          cmd, filename)
-        else:
-            logging.error("Reloading %s failed: %s", cmd, e)
-    else:
-        stats.times.append(time.monotonic() - start)
+    delays = [(0.1 * 2**i) for i in range(args.retries)]
+    delays.append(0.0)  # no delay after last retry
+
+    for attempt, delay in enumerate(delays, 1):
+        stats.reloads += 1
+        try:
+            start = time.monotonic()
+            try:
+                return lvm.run(cmd, *cmd_args)
+            finally:
+                stats.times.append(time.monotonic() - start)
+        except Error as e:
+            stats.errors += 1
+            if args.verbose:
+                filename = "{}-error-{:04}.txt".format(cmd, stats.errors)
+                e.dump(filename)
+                logging.error("Reloading %s failed (attempt %d of %d), see "
+                              "%s for more info",
+                              cmd, attempt, args.retries + 1, filename)
+            else:
+                logging.error("Reloading %s failed (attempt %d of %d): %s",
+                              cmd, attempt, args.retries + 1, e)
 
 
 def log_reload_stats(stats):
