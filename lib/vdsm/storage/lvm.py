@@ -45,6 +45,7 @@ from subprocess import list2cmdline
 
 from vdsm import constants
 from vdsm.common import cache
+from vdsm.common import logutils
 from vdsm.common import errors
 
 from vdsm.storage import devicemapper
@@ -479,30 +480,31 @@ class LVMCache(object):
 
         pvNames = _normalizeargs(pvName)
         if pvNames:
-            # --select 'pv_name = pv1 || pv_name = pv2'.
-            selection = " || ".join("pv_name = {}".format(n) for n in pvNames)
-            cmd.append("--select")
-            cmd.append(selection)
+            cmd.extend(pvNames)
 
         # POWER is stuck on RHEL 7.6, so we don't have a fix for BZ #1809660.
         # WARNING: Using pvs command in read-write mode may cause data
         # corruption.
         read_only = None if _on_x86_64() else False
-        rc, out, err = self.cmd(cmd, read_only=read_only, wants_output=True)
+        rc, out, err = self.cmd(cmd, read_only=read_only)
 
         with self._lock:
             updatedPVs = {}
 
             if rc != 0:
-                log.error(
-                    "Reloading PVs failed: pvs=%r rc=%r out=%r err=%r",
-                    pvNames, rc, out, err)
                 pvNames = pvNames if pvNames else self._pvs
                 for p in pvNames:
                     if isinstance(self._pvs.get(p), Stub):
                         pv = Unreadable(self._pvs[p].name, True)
                         self._pvs[p] = pv
                         updatedPVs[p] = pv
+
+                # This may be a real error (failure to reload existing PV) or
+                # no error at all (failure to reload non-existing PV), so we
+                # cannot make this an error.
+                log.warning(
+                    "Marked pvs=%r as Unreadable due to reload failure",
+                    logutils.Head(updatedPVs, max_items=20))
 
                 return updatedPVs
 

@@ -747,9 +747,9 @@ def test_pv_stale_reload_one_stub(stale_pv, read_only):
     pv = lvm.getPV(good_pv_name)
     assert pv.name == good_pv_name
 
-    # The stale pv shuld be removed.
-    with pytest.raises(se.InaccessiblePhysDev):
-        lvm.getPV(stale_pv_name)
+    # Reloading the stale pv marks it as Unreadable.
+    pv = lvm.getPV(stale_pv_name)
+    assert pv == lvm.Unreadable(stale_pv_name, True)
 
 
 @requires_root
@@ -783,9 +783,12 @@ def test_pv_stale_reload_all_stub(stale_pv, read_only):
     # Invalidate VG and its PVs.
     lvm.invalidateVG(vg_name, invalidatePVs=True)
 
-    # Report only the good pv.
-    pv_names = [pv.name for pv in lvm.getAllPVs()]
-    assert pv_names == [good_pv_name]
+    # Reloading all PVs will return them as Unreadable due to missing
+    # stale PV.
+    assert set(lvm.getAllPVs()) == {
+        lvm.Unreadable(good_pv_name, True),
+        lvm.Unreadable(stale_pv_name, True)
+    }
 
 
 @requires_root
