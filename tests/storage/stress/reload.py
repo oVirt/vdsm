@@ -249,10 +249,16 @@ def parse_args():
         help="Size of pv in GiB")
 
     p.add_argument(
-        "--delay-msec",
+        "--read-delay-msec",
         type=int,
         default=10,
-        help="Number of milliseconds to delay I/O")
+        help="Number of milliseconds to delay read I/O")
+
+    p.add_argument(
+        "--write-delay-msec",
+        type=int,
+        default=10,
+        help="Number of milliseconds to delay write I/O")
 
     p.add_argument(
         "--no-udev",
@@ -320,8 +326,16 @@ def cmd_setup(args):
         delay_name = make_delay_name(i)
         logging.info("Creating delay device %s", delay_name)
         sectors = int(run(["blockdev", "--getsize", loop_device]))
-        table = "0 {} delay {} 0 {}".format(
-            sectors, loop_device, args.delay_msec)
+        table = (
+            "0 {sectors} delay "
+            "{device} 0 {read_delay} "
+            "{device} 0 {write_delay}"
+        ).format(
+            sectors=sectors,
+            device=loop_device,
+            read_delay=args.read_delay_msec,
+            write_delay=args.write_delay_msec
+        )
         run(["dmsetup", "create", delay_name], input=table.encode("utf-8"))
 
         # Create link to device so we can easily remove it later.
