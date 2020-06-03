@@ -45,8 +45,9 @@ import six
 
 from vdsm import constants
 from vdsm import utils
-from vdsm.common import errors
 from vdsm.common import commands
+from vdsm.common import errors
+from vdsm.common import logutils
 from vdsm.common.compat import subprocess
 from vdsm.common.units import MiB
 
@@ -527,20 +528,14 @@ class LVMCache(object):
 
         pvNames = normalize_args(pvName)
         if pvNames:
-            # --select 'pv_name = pv1 || pv_name = pv2'.
-            selection = " || ".join("pv_name = {}".format(n) for n in pvNames)
-            cmd.append("--select")
-            cmd.append(selection)
+            cmd.extend(pvNames)
 
-        rc, out, err = self.cmd(cmd, wants_output=True)
+        rc, out, err = self.cmd(cmd)
 
         with self._lock:
             updatedPVs = {}
 
             if rc != 0:
-                log.error(
-                    "Reloading PVs failed: pvs=%r rc=%r out=%r err=%r",
-                    pvNames, rc, out, err)
                 pvNames = pvNames if pvNames else self._pvs
                 for p in pvNames:
                     pv = self._pvs.get(p)
@@ -548,6 +543,13 @@ class LVMCache(object):
                         pv = Unreadable(pv.name)
                         self._pvs[p] = pv
                         updatedPVs[p] = pv
+
+                # This may be a real error (failure to reload existing PV) or
+                # no error at all (failure to reload non-existing PV), so we
+                # cannot make this an error.
+                log.warning(
+                    "Marked pvs=%r as Unreadable due to reload failure",
+                    logutils.Head(updatedPVs, max_items=20))
 
                 return updatedPVs
 
