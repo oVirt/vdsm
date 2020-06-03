@@ -1,6 +1,6 @@
 #
 # Copyright 2017 IBM Corp.
-# Copyright 2012-2019 Red Hat, Inc.
+# Copyright 2012-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,10 +36,11 @@ from vdsm.common import cpuarch
 
 class FakeConnection(object):
 
-    def __init__(self, arch):
+    def __init__(self, arch, file_name=None):
         test_path = os.path.realpath(__file__)
         dir_name = os.path.split(test_path)[0]
-        file_name = 'domcaps_libvirt_%s.out' % (arch,)
+        if file_name is None:
+            file_name = 'domcaps_libvirt_%s.out' % (arch,)
         self.domcapspath = os.path.join(dir_name, file_name)
         self.arch = arch
 
@@ -137,7 +138,7 @@ class TestDomCaps(TestCaseBase):
 
     @permutations([
         # arch, expected_features
-        [cpuarch.X86_64, _EXPECTED_CPU_FEATURES_X86_64],
+        [cpuarch.X86_64, _EXPECTED_CPU_FEATURES_X86_64 + ['spec_ctrl']],
         [cpuarch.PPC64LE, _EXPECTED_CPU_FEATURES_PPC_64],
         [cpuarch.S390X, _EXPECTED_CPU_FEATURES_S390X],
     ])
@@ -149,6 +150,16 @@ class TestDomCaps(TestCaseBase):
                 (machinetype.libvirtconnection, 'get', lambda: conn), ]):
             result = machinetype.cpu_features()
             self.assertEqual(result, expected_features)
+
+    def test_cpu_features_no_ibrs(self):
+        machinetype.cpu_features.invalidate()
+        conn = FakeConnection(cpuarch.X86_64,
+                              file_name='domcaps_libvirt_x86_64_noibrs.out')
+        with MonkeyPatchScope([
+                (machinetype.cpuarch, 'real', lambda: cpuarch.X86_64),
+                (machinetype.libvirtconnection, 'get', lambda: conn), ]):
+            result = machinetype.cpu_features()
+            self.assertEqual(result, _EXPECTED_CPU_FEATURES_X86_64)
 
     def test_libvirt_exception_cpu_features(self):
         machinetype.cpu_features.invalidate()

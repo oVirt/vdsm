@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -201,6 +201,14 @@ def cpu_features():
             for feature in mode.findall('feature'):
                 if feature.get('policy') == 'require':
                     features.append(feature.get('name'))
+            # Easier to add here than in Engine:
+            # If -IBRS suffix is present in the CPU model, we can assume
+            # spec_ctrl feature.
+            model = mode.find('model')
+            if model is not None and model.text.endswith('-IBRS'):
+                spec_ctrl = 'spec_ctrl'
+                if spec_ctrl not in features:
+                    features.append(spec_ctrl)
     logging.debug('CPU features: %s', features)
 
     return features
