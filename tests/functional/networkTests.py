@@ -30,8 +30,7 @@ import six
 
 import vdsm.config
 from vdsm.network import netswitch
-from vdsm.network.ipwrapper import (
-    routeExists, ruleExists, LinkType, getLinks, routeShowTable)
+from vdsm.network.ipwrapper import routeExists, ruleExists, routeShowTable
 from vdsm.network import kernelconfig
 from vdsm.network.netinfo.nics import operstate, OPERSTATE_UNKNOWN
 from vdsm.network.netlink import monitor
@@ -456,46 +455,3 @@ class NetworkTest(TestCaseBase):
                 delete_networks = {NETWORK_NAME: {'remove': True}}
                 status, msg = self.setupNetworks(delete_networks, {}, {})
                 self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
-    def testIpLinkWrapper(self):
-        """Tests that the created devices are properly parsed by the ipwrapper
-        Link class."""
-        BIG_MTU = 2000
-        VLAN_NAME = '%s.%s' % (BONDING_NAME, VLAN_ID)
-        with dummyIf(2) as nics:
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME:
-                    {'bonding': BONDING_NAME, 'bridged': True,
-                        'vlan': VLAN_ID, 'mtu': BIG_MTU}},
-                {BONDING_NAME:
-                    {'nics': nics}},
-                NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            deviceLinks = getLinks()
-            deviceNames = [device.name for device in deviceLinks]
-
-            # Test all devices to be there.
-            self.assertIn(NETWORK_NAME, deviceNames)
-            self.assertIn(BONDING_NAME, deviceNames)
-            self.assertIn(nics[0], deviceNames)
-            self.assertIn(nics[1], deviceNames)
-            self.assertIn(VLAN_NAME, deviceNames)
-
-            for device in deviceLinks:
-                if device.name == NETWORK_NAME:
-                    self.assertEqual(device.type, LinkType.BRIDGE)
-                elif device.name in nics:
-                    self.assertEqual(device.type, LinkType.DUMMY)
-                elif device.name == VLAN_NAME:
-                    self.assertEqual(device.type, LinkType.VLAN)
-                elif device.name == BONDING_NAME:
-                    self.assertEqual(device.type, LinkType.BOND)
-                    self.assertEqual(device.mtu, BIG_MTU)
-
-            # Cleanup
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True}},
-                {BONDING_NAME: {'remove': True}},
-                NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
