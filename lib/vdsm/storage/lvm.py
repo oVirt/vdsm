@@ -619,26 +619,18 @@ class LVMCache(object):
     def _reloadlvs(self, vgName, lvNames=None):
         cmd = list(LVS_CMD)
 
-        # --select 'vg_name = vg1 && (lv_name = lv1 || lv_name = lv2)'.
-        selection = "vg_name = {}".format(vgName)
         lvNames = _normalizeargs(lvNames)
         if lvNames:
-            lvs = " || ".join("lv_name = {}".format(n) for n in lvNames)
-            selection += " && ({})".format(lvs)
+            cmd.extend("%s/%s" % (vgName, lvName) for lvName in lvNames)
+        else:
+            cmd.append(vgName)
 
-        cmd.append("--select")
-        cmd.append(selection)
-
-        rc, out, err = self.cmd(
-            cmd, self._getVGDevs((vgName,)), wants_output=True)
+        rc, out, err = self.cmd(cmd, self._getVGDevs((vgName,)))
 
         with self._lock:
             updatedLVs = {}
 
             if rc != 0:
-                log.error(
-                    "Reloading LVs failed vg=%r lvs=%r rc=%s out=%r err=%r",
-                    vgName, lvNames, rc, out, err)
                 if not lvNames:
                     lvNames = (lvn for vgn, lvn in self._lvs if vgn == vgName)
                 for lvName in lvNames:
@@ -646,6 +638,13 @@ class LVMCache(object):
                         lv = Unreadable(lvName, True)
                         self._lvs[(vgName, lvName)] = lv
                         updatedLVs[(vgName, lvName)] = lv
+
+                # This may be a real error (failure to reload existing LV) or
+                # no error at all (failure to reload non-existing LV), so we
+                # cannot make this an error.
+                log.warning(
+                    "Marked lvs=%r lvs as Unreadable due to reload failure",
+                    logutils.Head(updatedLVs, max_items=20))
 
                 return updatedLVs
 
