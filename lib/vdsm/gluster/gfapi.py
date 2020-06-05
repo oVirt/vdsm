@@ -63,15 +63,15 @@ class DirentStruct(ctypes.Structure):
 
 
 def glfsInit(volumeId, host, port, protocol):
-    fs = _glfs_new(volumeId)
+    fs = _glfs_new(volumeId.encode('utf-8'))
     if fs is None:
         raise ge.GlfsInitException(
             err=['glfs_new(%s) failed' % volumeId]
         )
 
     rc = _glfs_set_volfile_server(fs,
-                                  protocol,
-                                  host,
+                                  protocol.encode('utf-8'),
+                                  host.encode('utf-8'),
                                   port)
     if rc != 0:
         raise ge.GlfsInitException(
@@ -106,8 +106,8 @@ def volumeStatvfsGet(volumeId, host=GLUSTER_VOL_HOST,
     statvfsdata = StatVfsStruct()
 
     fs = glfsInit(volumeId, host, port, protocol)
-
-    rc = _glfs_statvfs(fs, GLUSTER_VOL_PATH, ctypes.byref(statvfsdata))
+    rc = _glfs_statvfs(fs, GLUSTER_VOL_PATH.encode('utf-8'),
+                       ctypes.byref(statvfsdata))
     if rc != 0:
         raise ge.GlfsStatvfsException(rc=rc)
 
@@ -134,7 +134,7 @@ def checkVolumeEmpty(volumeId, host=GLUSTER_VOL_HOST,
     data = ctypes.POINTER(DirentStruct)()
     fs = glfsInit(volumeId, host, port, protocol)
 
-    fd = _glfs_opendir(fs, "/")
+    fd = _glfs_opendir(fs, b"/")
 
     if fd is None:
         glfsFini(fs, volumeId)
@@ -251,7 +251,7 @@ def volumeStatvfs(volumeName, host=GLUSTER_VOL_HOST,
 def volumeEmptyCheck(volumeName, host=GLUSTER_VOL_HOST,
                      port=GLUSTER_VOL_PORT,
                      protocol=GLUSTER_VOL_PROTOCOL):
-    module = "gluster.gfapi"
+    module = "vdsm.gluster.gfapi"
     command = [sys.executable, '-m', module, '-v', volumeName,
                '-p', str(port), '-H', host, '-t', protocol, '-c', 'readdir']
 
