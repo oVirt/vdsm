@@ -278,7 +278,7 @@ def parse_args():
     p.add_argument(
         "--read-only",
         dest="read_only",
-        action="store_false",
+        action="store_true",
         help="Use read-only locking_type for pvs/vgs/lvs commands (false)")
 
     p.add_argument(
