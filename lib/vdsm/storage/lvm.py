@@ -369,7 +369,7 @@ class LVMCache(object):
         self.invalidateFilter()
         self.flush()
 
-    def cmd(self, cmd, devices=tuple(), read_only=None, wants_output=False):
+    def cmd(self, cmd, devices=tuple(), read_only=None):
         """
         Executes lvm command.
 
@@ -404,7 +404,7 @@ class LVMCache(object):
             full_cmd = self._addExtraCfg(
                 cmd, devices=devices, read_only=read_only)
             rc, out, err = self._run_lvm(full_cmd)
-            if rc == 0 and (out or not wants_output):
+            if rc == 0:
                 return rc, out, err
 
             # 2. Retry the command with a wider filter, in case the we failed
