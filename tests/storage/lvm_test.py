@@ -1665,10 +1665,8 @@ def test_retry_with_wider_filter(tmp_storage, read_only):
     lvm.set_read_only(read_only)
 
     # The cached filter is stale at this point, and so is the vg metadata in
-    # the cache. Running "vgs --select 'vg_name = vg-name'" will return no data
-    # because of the stale filter, so we invalidate the filter and run it
-    # again.
-
+    # the cache. Running "vgs vg-name" fails because of the stale filter, so we
+    # invalidate the filter and run it again.
     vg = lvm.getVG(vg_name)
     assert vg.pv_name == (dev,)
 

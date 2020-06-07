@@ -465,7 +465,7 @@ class LVMCache(object):
         self.invalidateFilter()
         self.flush()
 
-    def cmd(self, cmd, devices=tuple(), wants_output=False):
+    def cmd(self, cmd, devices=tuple()):
         # Take a shared lock, so set_read_only() can wait for commands using
         # the previous mode.
         with self._cmd_sem, self._read_only_lock.shared:
@@ -475,7 +475,7 @@ class LVMCache(object):
             # returned we are done.
             full_cmd = self._addExtraCfg(cmd, devices)
             rc, out, err = self._runner.run(full_cmd)
-            if rc == 0 and (out or not wants_output):
+            if rc == 0:
                 return rc, out, err
 
             # 2. Retry the command with a wider filter, in case the we failed
