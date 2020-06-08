@@ -272,6 +272,11 @@ class QemuGuestAgentPoller(object):
                 vm.id, cmd)
             ret = vm.qemu_agent_command(cmd, _COMMAND_TIMEOUT, 0)
             self.log.debug('Call returned: %r', ret)
+        except virdomain.NotConnectedError:
+            self.log.debug(
+                'Not querying QEMU-GA because domain is not running ' +
+                'for vm-id=%s', vm.id)
+            return None
         except libvirt.libvirtError:
             # Most likely the QEMU-GA is not installed or is unresponsive
             self.set_failure(vm.id)
@@ -394,6 +399,11 @@ class QemuGuestAgentPoller(object):
             self.log.info('Failed to get guest info for vm=%s, error: %s',
                           vm.id, str(e))
             self.set_failure(vm.id)
+            return {}
+        except virdomain.NotConnectedError:
+            self.log.debug(
+                'Not querying QEMU-GA because domain is not running ' +
+                'for vm-id=%s', vm.id)
             return {}
         # Filesystem Info
         if 'fs.count' in info:
@@ -653,6 +663,11 @@ class QemuGuestAgentPoller(object):
                 libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
         except libvirt.libvirtError:
             self.set_failure(vm.id)
+            return {}
+        except virdomain.NotConnectedError:
+            self.log.debug(
+                'Not querying QEMU-GA because domain is not running ' +
+                'for vm-id=%s', vm.id)
             return {}
         for ifname, ifparams in six.iteritems(interfaces):
             iface = {
