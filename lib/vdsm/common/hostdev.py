@@ -749,6 +749,8 @@ def list_nvdimms():
     except Exception:
         logging.exception("Couldn't retrieve NVDIMM device data")
         return {}
+    if not output:
+        return {}
     try:
         data = json.loads(output)
     except json.JSONDecodeError:
