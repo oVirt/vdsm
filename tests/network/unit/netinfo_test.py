@@ -30,7 +30,7 @@ import six
 from vdsm.network import ipwrapper
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link import nic
-from vdsm.network.link.bond import Bond
+from vdsm.network.link.bond import Bond, bond_speed
 from vdsm.network.netinfo import addresses, bonding, misc, nics, routes
 from vdsm.network.netinfo.cache import get
 
@@ -58,6 +58,43 @@ class TestNetinfo(object):
                 assert prefix2netmask(int(bitmask)) == address
         pytest.raises(ValueError, prefix2netmask, -1)
         pytest.raises(ValueError, prefix2netmask, 33)
+
+    @mock.patch.object(nic, 'speed')
+    @mock.patch.object(bond_speed, 'properties')
+    def test_bond_speed(self, mock_properties, speed_mock):
+        values = (
+            ('bond1', [1000], 1000),
+            ('bond2', [1000, 2000], 3000),
+            ('bond3', [1000, 2000], 1000),
+            ('bond4', [1000, 1000], 0),
+            ('bond5', [1000, 2000], 0),
+        )
+        bonds_opts = {
+            'bond1': {
+                'mode': ['active-backup', '1'],
+                'slaves': ('dummy1', 'dummy2'),
+                'active_slave': 'dummy1',
+            },
+            'bond2': {
+                'mode': ['balance-xor', '2'],
+                'slaves': ('dummy1', 'dummy2'),
+            },
+            'bond3': {
+                'mode': ['broadcast', '3'],
+                'slaves': ('dummy1', 'dummy2'),
+            },
+            'bond4': {'mode': ['802.3ad', '4']},
+            'bond5': {
+                'mode': ['active-backup', '1'],
+                'slaves': ('dummy1', 'dummy2'),
+            },
+        }
+
+        for bond_name, nics_speeds, expected_speed in values:
+            mock_properties.return_value = bonds_opts[bond_name]
+            speed_mock.side_effect = nics_speeds
+
+            assert bond_speed.speed(bond_name) == expected_speed
 
     @mock.patch.object(nic, 'iface')
     @mock.patch.object(nics.io, 'open')
