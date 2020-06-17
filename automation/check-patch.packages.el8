@@ -1,5 +1,6 @@
 autoconf
 automake
+bash
 createrepo
 dnf
 dnf-utils
@@ -12,7 +13,6 @@ iscsi-initiator-utils
 libguestfs-tools-c
 lshw
 make
-openvswitch
 ovirt-imageio-common
 python3-augeas
 python3-blivet
@@ -40,5 +40,6 @@ rpm-build
 rpmlint
 sanlock
 sudo
+systemd
 systemd-udev
 xfsprogs
