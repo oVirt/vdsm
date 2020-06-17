@@ -1749,7 +1749,14 @@ class StoragePool(object):
             startEvent.wait()
 
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
-        with rm.acquireResource(img_ns, imgUUID, rm.SHARED):
+
+        # NOTE: We must take exclusive lock here since we can have concurrent
+        # readers, and each reader is activating the volume before the copy and
+        # deactivating the volume after the copy. Without an exclusive lock,
+        # one reader can deactivate the volume just after the other reader
+        # activated the volume.
+        # See https://bugzilla.redhat.com/1694972
+        with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             try:
                 img = image.Image(self.poolPath)
                 return img.copyFromImage(methodArgs, sdUUID, imgUUID, volUUID)
