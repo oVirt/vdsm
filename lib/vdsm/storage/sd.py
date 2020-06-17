@@ -1096,12 +1096,6 @@ class StorageDomain(object):
     def getMasterDir(self):
         return os.path.join(self.domaindir, MASTER_FS_DIR)
 
-    def invalidate(self):
-        """
-        Make sure that storage domain is inaccessible
-        """
-        pass
-
     def validateMaster(self):
         """Validate that the master storage domain is correct.
         """

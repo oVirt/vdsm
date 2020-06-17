@@ -1218,35 +1218,6 @@ class BlockStorageDomain(sd.StorageDomain):
         if not len(self.getMetadata()):
             raise se.StorageDomainAccessError(self.sdUUID)
 
-    def invalidate(self):
-        """
-        Make sure that storage domain is inaccessible.
-        1. Make sure master LV is not mounted
-        2. Deactivate all the volumes from the underlying VG
-        3. Destroy any possible dangling maps left in device mapper
-        """
-        try:
-            self.unmountMaster()
-        except se.StorageDomainMasterUnmountError:
-            self.log.warning("Unable to unmount master LV during invalidateSD")
-        except se.CannotDeactivateLogicalVolume:
-            # It could be that at this point there is no LV, so just ignore it
-            pass
-        except Exception:
-            # log any other exception, but keep going
-            self.log.error("Unexpected error", exc_info=True)
-
-        # FIXME: remove this and make sure nothing breaks
-        try:
-            lvm.deactivateVG(self.sdUUID)
-        except Exception:
-            # log any other exception, but keep going
-            self.log.error("Unexpected error", exc_info=True)
-
-        vgDir = os.path.join("/dev", self.sdUUID)
-        self.log.info("Removing VG directory %r", vgDir)
-        fileUtils.cleanupdir(vgDir)
-
     @classmethod
     def format(cls, sdUUID):
         """Format detached storage domain.
