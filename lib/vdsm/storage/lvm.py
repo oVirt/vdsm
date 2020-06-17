@@ -652,7 +652,6 @@ class LVMCache(object):
             for name in staleVGs:
                 if name in self._vgs:
                     log.warning("Removing stale VG %s", name)
-                    removeVgMapping(name)
                     del self._vgs[name]
 
             # If we updated all the VGs drop stale flag
