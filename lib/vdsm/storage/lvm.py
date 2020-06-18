@@ -599,26 +599,28 @@ class LVMCache(object):
 
         vgNames = normalize_args(vgName)
         if vgNames:
-            # --select 'vg_name = vg1 || vg_name = vg2'.
-            selection = " || ".join("vg_name = {}".format(n) for n in vgNames)
-            cmd.append("--select")
-            cmd.append(selection)
+            cmd.extend(vgNames)
 
-        rc, out, err = self.cmd(
-            cmd, self._getVGDevs(vgNames), wants_output=True)
+        rc, out, err = self.cmd(cmd, self._getVGDevs(vgNames))
 
         with self._lock:
-
             if rc != 0:
-                # NOTE: vgs may return useful output even on failure, so we
-                # don't retrun here.
-                log.error(
-                    "Reloading VGs failed vgs=%r rc=%r out=%r err=%r",
-                    vgNames, rc, out, err)
+                unreadable_vgs = []
                 for v in (vgNames or self._vgs):
                     vg = self._vgs.get(v)
                     if vg and vg.is_stale():
                         self._vgs[v] = Unreadable(vg.name)
+                        unreadable_vgs.append(vg.name)
+
+                # This may be a real error (failure to reload existing VG) or
+                # no error at all (failure to reload non-existing VG), so we
+                # cannot make this an error.
+                log.warning(
+                    "Marked vgs=%r as Unreadable due to reload failure",
+                    logutils.Head(unreadable_vgs, max_items=20))
+
+                # NOTE: vgs may return useful output even on failure, so we
+                # don't retrun here.
 
             updatedVGs = {}
             vgsFields = {}
