@@ -469,6 +469,7 @@ class LVMCache(object):
         # Take a shared lock, so set_read_only() can wait for commands using
         # the previous mode.
         with self._cmd_sem, self._read_only_lock.shared:
+            tries = 1
 
             # 1. Try the command with fast specific filter including the
             # specified devices. If the command succeeded and wanted output was
@@ -488,6 +489,7 @@ class LVMCache(object):
                     "retrying with a wider filter, cmd=%r rc=%r out=%r err=%r",
                     full_cmd, rc, out, err)
                 full_cmd = wider_cmd
+                tries += 1
                 rc, out, err = self._runner.run(full_cmd)
                 if rc == 0:
                     return rc, out, err
@@ -506,10 +508,13 @@ class LVMCache(object):
                     time.sleep(delay)
                     delay *= self.RETRY_BACKUP_OFF
 
+                    tries += 1
                     rc, out, err = self._runner.run(full_cmd)
                     if rc == 0:
                         return rc, out, err
 
+            log.warning("All %d tries have failed: cmd=%r rc=%r err=%r",
+                        tries, full_cmd, rc, err)
             return rc, out, err
 
     def __str__(self):
