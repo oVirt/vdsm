@@ -392,6 +392,8 @@ class LVMCache(object):
         # Take a shared lock, so set_read_only() can wait for commands using
         # the previous mode.
         with self._cmd_sem, self._read_only_lock.shared:
+            tries = 1
+
             if read_only is None:
                 read_only = self._read_only
             elif read_only != self._read_only:
@@ -417,6 +419,7 @@ class LVMCache(object):
                     "retrying with a wider filter, cmd=%r rc=%r out=%r err=%r",
                     full_cmd, rc, out, err)
                 full_cmd = wider_cmd
+                tries += 1
                 rc, out, err = self._run_lvm(full_cmd)
                 if rc == 0:
                     return rc, out, err
@@ -435,10 +438,13 @@ class LVMCache(object):
                     time.sleep(delay)
                     delay *= self.RETRY_BACKUP_OFF
 
+                    tries += 1
                     rc, out, err = self._run_lvm(full_cmd)
                     if rc == 0:
                         return rc, out, err
 
+            log.warning("All %d tries have failed: cmd=%r rc=%r err=%r",
+                        tries, full_cmd, rc, err)
             return rc, out, err
 
     def _run_lvm(self, cmd):
