@@ -248,6 +248,10 @@ class ImageRequestHandler(BaseHTTPRequestHandler):
         return self._getInt(last_byte) + 1
 
     def send_error(self, error, message, exc_info=False):
+        # When failing after sending the headers the client will get stuck
+        # waiting for data that will never be received, so we must close the
+        # connection.
+        self.close_connection = True
         try:
             self.log.error(message, exc_info=exc_info)
             self.send_response(error)
