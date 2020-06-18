@@ -722,6 +722,24 @@ def test_pv_stale_reload_one_stale(stale_pv):
 
 @requires_root
 @pytest.mark.root
+def test_pv_stale_reload_invalidated(stale_pv):
+    vg_name, good_pv_name, stale_pv_name = stale_pv
+
+    # Invalidate the good pv.
+    lvm._lvminfo._invalidatepvs(good_pv_name)
+    # Reloading the good pv returns it as valid.
+    pv = lvm.getPV(good_pv_name)
+    assert pv.name == good_pv_name
+
+    # Invalidate the stale pv.
+    lvm._lvminfo._invalidatepvs(stale_pv_name)
+    # Reloading the stale pv returns it as Unreadable.
+    pv = lvm.getPV(stale_pv_name)
+    assert pv == lvm.Unreadable(stale_pv_name)
+
+
+@requires_root
+@pytest.mark.root
 def test_pv_stale_reload_one_clear(stale_pv):
     vg_name, good_pv_name, stale_pv_name = stale_pv
 
