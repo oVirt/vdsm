@@ -21,6 +21,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import argparse
+
 from vdsm.storage import lvmconf
 from vdsm.storage import lvmfilter
 
@@ -37,6 +39,7 @@ def main(*args):
     Configure LVM filter allowing LVM to access only the local storage
     needed by the hypervisor, but not shared storage owned by Vdsm.
     """
+    args = parse_args(args)
 
     print("Analyzing host...")
 
@@ -82,8 +85,9 @@ device to the volume group, you will need to edit the filter manually.
 
     if advice.action == lvmfilter.CONFIGURE:
 
-        if not common.confirm("Configure LVM filter? [yes,NO] "):
-            return
+        if not args.assume_yes:
+            if not common.confirm("Configure LVM filter? [yes,NO] "):
+                return
 
         with lvmconf.LVMConfig() as config:
             config.setlist("devices", "filter", advice.filter)
@@ -106,3 +110,14 @@ Please edit /etc/lvm/lvm.conf and set the 'filter' option in the
 
 It is recommend to reboot after changing LVM filter.
 """)
+
+
+def parse_args(args):
+    parser = argparse.ArgumentParser(prog="vdsm-tool config-lvm-filter")
+
+    parser.add_argument(
+        "-y", "--assume-yes",
+        action="store_true",
+        help="Automatically answer yes for all questions")
+
+    return parser.parse_args(args[1:])
