@@ -18,8 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-
 import argparse
 import ctypes
 import errno
@@ -53,11 +51,39 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser(
         description='fallocate is used to preallocate blocks to a file.')
-    parser.add_argument('--offset', dest='offset', type=int, default=0,
-                        help='Offset in bytes to start allocation from')
-    parser.add_argument('size', type=int, help='Size in bytes to allocate')
-    parser.add_argument('filename', help='Name of file to allocate')
+
+    parser.add_argument(
+        '--offset',
+        type=size,
+        default=0,
+        help='Offset in bytes to start allocation from. Use t|g|m|k to '
+             'specify size in terabytes, gigabytes, megabytes or '
+             'kilobytes')
+
+    parser.add_argument(
+        'size',
+        type=size,
+        help='Size in bytes to allocate. Use t|g|m|k to specify size in '
+             'terabytes, gigabytes, megabytes or kilobytes')
+
+    parser.add_argument(
+        'filename',
+        help='Name of file to allocate')
+
     return parser.parse_args()
+
+
+def size(s):
+    if s.endswith("t"):
+        return int(s[:-1]) * 1024**4
+    elif s.endswith("g"):
+        return int(s[:-1]) * 1024**3
+    elif s.endswith("m"):
+        return int(s[:-1]) * 1024**2
+    elif s.endswith("k"):
+        return int(s[:-1]) * 1024**1
+    else:
+        return int(s)
 
 
 def native_fallocate(fd, offset, length):
