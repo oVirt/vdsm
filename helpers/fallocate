@@ -21,22 +21,31 @@
 from __future__ import absolute_import
 
 import argparse
+import ctypes
+import errno
+import io
+import mmap
 import os
 
-from ctypes import CDLL, c_long
+from contextlib import closing
 
 
 def main():
     options = parse_args()
 
-    libc = CDLL("libc.so.6")
-    fd = os.open(options.filename, os.O_RDWR | os.O_CREAT)
+    # Use direct I/O so writing zeroes do not delay other I/O on the system.
+    fd = os.open(options.filename, os.O_RDWR | os.O_CREAT | os.O_DIRECT)
     try:
-        err = libc.posix_fallocate(fd,
-                                   c_long(options.offset),
-                                   c_long(options.size))
-        if err != 0:
-            raise OSError(err, os.strerror(err), options.filename)
+        # First try native fallocate. On NFS 4.2, GlusterFS, XFS and ext4, this
+        # is practically free.
+        native_fallocate(fd, options.offset, options.size)
+    except OSError as e:
+        if e.errno != errno.EOPNOTSUPP:
+            raise
+
+        # On NFS < 4.2 fallback to writing zeroes. Surprisingly this is 2.5
+        # times faster than posix_fallocate() and use 12 times less cpu time.
+        write_zeroes(fd, options.offset, options.size)
     finally:
         os.close(fd)
 
@@ -49,6 +58,56 @@ def parse_args():
     parser.add_argument('size', type=int, help='Size in bytes to allocate')
     parser.add_argument('filename', help='Name of file to allocate')
     return parser.parse_args()
+
+
+def native_fallocate(fd, offset, length):
+    libc = ctypes.CDLL("libc.so.6", use_errno=True)
+
+    if not hasattr(libc, "fallocate"):
+        raise os_error(errno.EOPNOTSUPP)
+
+    err = libc.fallocate(
+        fd, 0, ctypes.c_longlong(offset), ctypes.c_longlong(length))
+    if err != 0:
+        raise os_error(ctypes.get_errno())
+
+
+def write_zeroes(fd, offset, length, buffer_size=8 * 1024**2):
+    """
+    Allocate file space by writing zeroes.
+
+    Note: offset and size must be aligned to underlying storage logical block
+    size.
+    """
+    buffer_size = min(buffer_size, length)
+
+    buf = mmap.mmap(-1, buffer_size, mmap.MAP_SHARED)
+    with closing(buf):
+        # fd is owned by caller.
+        f = io.FileIO(fd, "r+", closefd=False)
+        with closing(f):
+            f.seek(offset)
+
+            # Write complete buffers.
+            while length > len(buf):
+                try:
+                    length -= f.write(buf)
+                except InterruptedError:
+                    pass
+
+            # Write last buffer.
+            while length > 0:
+                with memoryview(buf)[:length] as v:
+                    try:
+                        length -= f.write(v)
+                    except InterruptedError:
+                        pass
+
+            os.fsync(fd)
+
+
+def os_error(err):
+    return OSError(err, os.strerror(err))
 
 
 if __name__ == '__main__':
