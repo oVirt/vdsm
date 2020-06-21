@@ -463,9 +463,7 @@ class FileVolume(volume.Volume):
         Specific implementation of _create() for RAW volumes.
         All the exceptions are properly handled and logged in volume.create()
         """
-        if initial_size is None:
-            alloc_size = capacity
-        else:
+        if initial_size is not None:
             if preallocate == sc.SPARSE_VOL:
                 cls.log.error("initial size is not supported for file-based "
                               "sparse volumes")
@@ -478,16 +476,16 @@ class FileVolume(volume.Volume):
                 raise se.InvalidParameterException(
                     "initial size", initial_size)
 
-            # Always allocate at least 4k, so qemu-img can allocated the first
-            # block of the image, helping qemu to probe the alignment later.
-            alloc_size = max(initial_size, sc.BLOCK_SIZE_4K)
+            # In the past engine called with initial_size=0 to deffer
+            # preallocation to qemu-img convert, but we learned that this is a
+            # bad idea on older NFS versions. We ignore initial_size now, and
+            # always allocate the entire image. qemu-img convert is always
+            # using -n so it does not affect image allocation.
+            cls.log.warning("Ignoring initial_size=%s", initial_size)
 
         cls._truncate_volume(vol_path, 0, vol_id, dom)
 
-        cls._allocate_volume(vol_path, alloc_size, preallocate=preallocate)
-
-        if alloc_size < capacity:
-            qemuimg.resize(vol_path, capacity, format=qemuimg.FORMAT.RAW)
+        cls._allocate_volume(vol_path, capacity, preallocate=preallocate)
 
         cls.log.info("Request to create RAW volume %s with capacity = %s",
                      vol_path, capacity)
@@ -547,21 +545,27 @@ class FileVolume(volume.Volume):
 
     @classmethod
     def _allocate_volume(cls, vol_path, size, preallocate):
-        if preallocate == sc.PREALLOCATED_VOL:
-            preallocation = qemuimg.PREALLOCATION.FALLOC
-        else:
-            preallocation = qemuimg.PREALLOCATION.OFF
-
         try:
-            operation = qemuimg.create(
-                vol_path,
-                size=size,
-                format=qemuimg.FORMAT.RAW,
-                preallocation=preallocation)
+            # Always create sparse image, since qemu-img create uses
+            # posix_fallocate() which is inefficient and harmful.
+            op = qemuimg.create(vol_path, size=size, format=qemuimg.FORMAT.RAW)
 
-            with vars.task.abort_callback(operation.abort):
-                with utils.stopwatch("Preallocating volume %s" % vol_path):
-                    operation.run()
+            # This is fast but it can get stuck if storage is inaccessible.
+            with vars.task.abort_callback(op.abort):
+                with utils.stopwatch("Creating image %s" % vol_path):
+                    op.run()
+
+            # If the image is preallocated, allocate the rest of the image
+            # using fallocate helper. qemu-img create always writes zeroes to
+            # the first block so we should skip it during preallocation.
+            if preallocate == sc.PREALLOCATED_VOL:
+                op = fallocate.allocate(vol_path, size - 4096, offset=4096)
+
+                # This is fast on NFS 4.2, GlusterFS, XFS and ext4, but can be
+                # extremely slow on NFS < 4.2, writing zeroes to entire image.
+                with vars.task.abort_callback(op.abort):
+                    with utils.stopwatch("Preallocating volume %s" % vol_path):
+                        op.run()
         except exception.ActionStopped:
             raise
         except Exception:

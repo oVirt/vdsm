@@ -441,29 +441,18 @@ class Image:
                     if parentVol is not None:
                         backing = volume.getBackingVolumePath(
                             imgUUID, parentVol.volUUID)
-                        backingFormat = sc.fmt2str(parentVol.getFormat())
                     else:
                         backing = None
-                        backingFormat = None
-
-                    if (destDom.supportsSparseness and
-                            dstVol.getType() == sc.PREALLOCATED_VOL):
-                        preallocation = qemuimg.PREALLOCATION.FALLOC
-                    else:
-                        preallocation = None
 
                     operation = qemuimg.convert(
                         srcVol.getVolumePath(),
                         dstVol.getVolumePath(),
                         srcFormat=srcFormat,
                         dstFormat=dstFormat,
-                        dstQcow2Compat=destDom.qcow2_compat(),
                         backing=backing,
-                        backingFormat=backingFormat,
-                        preallocation=preallocation,
                         unordered_writes=destDom.recommends_unordered_writes(
                             dstVol.getFormat()),
-                        create=not destDom.is_block(),
+                        create=False,
                     )
                     with utils.stopwatch("Copy volume %s"
                                          % srcVol.volUUID):
@@ -738,23 +727,15 @@ class Image:
                 # Start the actual copy image procedure
                 dstVol.prepare(rw=True, setrw=True)
 
-                if (destDom.supportsSparseness and
-                        dstVol.getType() == sc.PREALLOCATED_VOL):
-                    preallocation = qemuimg.PREALLOCATION.FALLOC
-                else:
-                    preallocation = None
-
                 try:
                     operation = qemuimg.convert(
                         volParams['path'],
                         dstVol.getVolumePath(),
                         srcFormat=sc.fmt2str(volParams['volFormat']),
                         dstFormat=sc.fmt2str(dstVolFormat),
-                        dstQcow2Compat=destDom.qcow2_compat(),
-                        preallocation=preallocation,
                         unordered_writes=destDom.recommends_unordered_writes(
                             dstVolFormat),
-                        create=not destDom.is_block(),
+                        create=False,
                     )
                     with utils.stopwatch("Copy volume %s"
                                          % srcVol.volUUID):

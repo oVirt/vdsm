@@ -440,12 +440,9 @@ def test_volume_create_raw_prealloc(user_domain, local_fallocate):
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
-@pytest.mark.parametrize("initial_size, actual_size", [
-    (0, sc.BLOCK_SIZE_4K),
-    (INITIAL_VOL_SIZE, INITIAL_VOL_SIZE)
-])
-def test_volume_create_raw_prealloc_with_initial_size(
-        user_domain, local_fallocate, initial_size, actual_size):
+@pytest.mark.parametrize("initial_size", [0, INITIAL_VOL_SIZE])
+def test_volume_create_raw_prealloc_initial_size_ignored(
+        user_domain, local_fallocate, initial_size):
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
 
@@ -472,7 +469,8 @@ def test_volume_create_raw_prealloc_with_initial_size(
         virtual_size=PREALLOCATED_VOL_SIZE,
         qemu_info=qemu_info)
 
-    assert qemu_info['actualsize'] == actual_size
+    # Initial_size is ignored since we stopped using qemu-img preallocation.
+    assert qemu_info['actualsize'] == PREALLOCATED_VOL_SIZE
 
     # Verify actual volume metadata
     actual = vol.getInfo()
