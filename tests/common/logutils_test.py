@@ -330,3 +330,19 @@ class TestThreadedHandler(TestCaseBase):
 
         print("Logged %d messages in %.2f seconds" % (
               len(target.messages), elapsed))
+
+
+@expandPermutations
+class TestHeadFormatter(TestCaseBase):
+    @permutations([
+        # items, limit, result
+        ({i : i for i in range(5)}, 2, "[0, 1, ...]"),
+        ({i : i for i in range(5)}, 5, "[0, 1, 2, 3, 4]"),
+        (list(range(5)), 2, "[0, 1, ...]"),
+        (list(range(5)), 5, "[0, 1, 2, 3, 4]"),
+        (iter(range(2**32)), 5, "[0, 1, 2, 3, 4, ...]"),
+        ((i for i in range(2**32)), 5, "[0, 1, 2, 3, 4, ...]"),
+        ([], 0, "[]"),
+    ])
+    def test_head(self, items, limit, result):
+        self.assertEqual(str(logutils.Head(items, max_items=limit)), result)
