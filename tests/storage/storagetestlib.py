@@ -325,7 +325,7 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
     # Create needed path components.
     make_file(volpath, size)
 
-    # Create qcow2 file if needed.
+    # Create the image.
     if vol_format == sc.COW_FORMAT:
         backing = parent_vol_id if parent_vol_id != sc.BLANK_UUID else None
         op = qemuimg.create(
@@ -334,6 +334,18 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
             format=qemuimg.FORMAT.QCOW2,
             qcow2Compat=qcow2_compat,
             backing=backing)
+        op.run()
+    else:
+        # TODO: Use fallocate helper like the real code.
+        if prealloc == sc.PREALLOCATED_VOL:
+            preallocation = qemuimg.PREALLOCATION.FALLOC
+        else:
+            preallocation = None
+        op = qemuimg.create(
+            volpath,
+            size=size,
+            format=qemuimg.FORMAT.RAW,
+            preallocation=preallocation)
         op.run()
 
     # Create meta files.
