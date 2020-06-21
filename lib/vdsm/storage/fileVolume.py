@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 
 import errno
+import logging
 import os
 
 from vdsm import constants
@@ -483,12 +484,12 @@ class FileVolume(volume.Volume):
             # using -n so it does not affect image allocation.
             cls.log.warning("Ignoring initial_size=%s", initial_size)
 
+        cls.log.info("Request to create RAW volume %s with capacity = %s",
+                     vol_path, capacity)
+
         cls._truncate_volume(vol_path, 0, vol_id, dom)
 
         cls._allocate_volume(vol_path, capacity, preallocate=preallocate)
-
-        cls.log.info("Request to create RAW volume %s with capacity = %s",
-                     vol_path, capacity)
 
         # Forcing volume permissions in case qemu-img changed the permissions.
         cls._set_permissions(vol_path, dom)
@@ -552,7 +553,10 @@ class FileVolume(volume.Volume):
 
             # This is fast but it can get stuck if storage is inaccessible.
             with vars.task.abort_callback(op.abort):
-                with utils.stopwatch("Creating image %s" % vol_path):
+                with utils.stopwatch(
+                        "Creating image {}".format(vol_path),
+                        level=logging.INFO,
+                        log=cls.log):
                     op.run()
 
             # If the image is preallocated, allocate the rest of the image
@@ -564,7 +568,10 @@ class FileVolume(volume.Volume):
                 # This is fast on NFS 4.2, GlusterFS, XFS and ext4, but can be
                 # extremely slow on NFS < 4.2, writing zeroes to entire image.
                 with vars.task.abort_callback(op.abort):
-                    with utils.stopwatch("Preallocating volume %s" % vol_path):
+                    with utils.stopwatch(
+                            "Preallocating volume {}".format(vol_path),
+                            level=logging.INFO,
+                            log=cls.log):
                         op.run()
         except exception.ActionStopped:
             raise
