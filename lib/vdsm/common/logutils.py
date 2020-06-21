@@ -25,6 +25,7 @@ import collections
 import datetime
 import functools
 import grp
+import itertools
 import logging
 import logging.handlers
 import os
@@ -76,6 +77,38 @@ def call2str(func, args, kwargs, printers={}):
         argsStrs.append("%s=%s" % (argName, printer(val)))
 
     return "%s(%s)" % (func.__name__, ", ".join(argsStrs))
+
+
+class Head:
+    """
+    Formatter class for shortening large list of items in log prints.
+
+    Usage example:
+
+        items = list(range(1000))
+        log.info("Handled items: %s", Head(items, max_items=10))
+
+    This would log:
+        "Handled items: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...]"
+    """
+
+    def __init__(self, items, max_items=20):
+        """
+        Args:
+            items (iterable): items to format.
+            max_items (int): number of items displayed in str() or repr().
+        """
+        self.items = items
+        self.max_items = max_items
+
+    def __repr__(self):
+        items = [str(item)
+                 for item in itertools.islice(self.items, self.max_items + 1)]
+        suffix = "]"
+        if len(items) > self.max_items:
+            items.pop()
+            suffix = ", ...]"
+        return "[" + ", ".join(items) + suffix
 
 
 class SimpleLogAdapter(logging.LoggerAdapter):
