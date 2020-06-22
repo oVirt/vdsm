@@ -29,6 +29,16 @@ function copy_sources_to_workdir {
     cp -rf $CONTAINER_WORKSPACE $VDSM_WORKDIR/"
 }
 
+function patch_dist_commons {
+    container_exec "
+        cp $VDSM_WORKDIR/vdsm/tests/network/static/constants.py $VDSM_WORKDIR/vdsm/lib/vdsm/common \
+        && \
+        cp $VDSM_WORKDIR/vdsm/tests/network/static/config.py $VDSM_WORKDIR/vdsm/lib/vdsm/common \
+        && \
+        cp $VDSM_WORKDIR/vdsm/tests/network/static/dsaversion.py $VDSM_WORKDIR/vdsm/lib/vdsm/common
+    "
+}
+
 function run_unit_tests {
     container_exec "
     cd $VDSM_WORKDIR/$PROJECT \
@@ -41,6 +51,7 @@ CONTAINER_ID="$($CONTAINER_CMD run -d -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --
 trap remove_container EXIT
 
 copy_sources_to_workdir
+patch_dist_commons
 
 if [ "$1" == "--shell" ];then
     container_shell
