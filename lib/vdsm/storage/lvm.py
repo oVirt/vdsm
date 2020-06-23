@@ -1127,8 +1127,8 @@ def removeVgMapping(vgName):
             continue
         try:
             devicemapper.removeMapping(mapping)
-        except Exception:
-            pass
+        except Exception as e:
+            log.error("Removing VG mapping failed: %s", e)
 
 
 # Activation of the whole vg is assumed to be used nowhere.

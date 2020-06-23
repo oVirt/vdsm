@@ -135,11 +135,12 @@ def removeMapping(deviceName):
     if os.geteuid() != 0:
         return supervdsm.getProxy().devicemapper_removeMapping(deviceName)
 
+    log.info("Removing device mapping %s", deviceName)
     cmd = [EXT_DMSETUP, "remove", deviceName]
     try:
         commands.run(cmd)
     except cmdutils.Error as e:
-        raise Error("Could not remove mapping {!r}: {}".format(deviceName, e))
+        raise Error("Could not remove mapping: {}".format(e))
 
 
 def getAllMappedDevices():
