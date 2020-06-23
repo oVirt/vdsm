@@ -31,7 +31,7 @@ parser.add_option("-s", "--lun-size", dest='lun_size', type='int',
 parser.add_option("-n", "--lun-count", dest='lun_count', type='int',
                   help="Number of LUNs (default 10)")
 parser.add_option("-r", "--root-dir", dest='root_dir',
-                  help="root directory (default /home/target)")
+                  help="root directory (default /target)")
 parser.add_option("-i", "--iqn-base", dest='iqn_base',
                   help="iqn base name (default iqn.2003-01.org)")
 
@@ -60,7 +60,7 @@ print("  target_name:   %s" % target_name)
 print("  target_iqn:    %s" % target_iqn)
 print("  target_dir:    %s" % target_dir)
 print("  lun_count:     %s" % opts.lun_count)
-print("  lun_size:      %s" % opts.lun_size)
+print("  lun_size:      %s GiB" % opts.lun_size)
 print()
 
 reply = input("Create target? [N/y]: ")
