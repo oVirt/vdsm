@@ -1534,7 +1534,13 @@ class Vm(object):
         seconds = int(t)
         nseconds = int((t - seconds) * 10**9)
         try:
-            self._dom.setTime(time={'seconds': seconds, 'nseconds': nseconds})
+            with self.qga_context():
+                self._dom.setTime(
+                    time={'seconds': seconds, 'nseconds': nseconds})
+        except exception.NonResponsiveGuestAgent:
+            self.log.warning(
+                "Failed to set time: QEMU agent unresponsive during "
+                "guest time synchronization")
         except libvirt.libvirtError as e:
             template = "Failed to set time: %s"
             code = e.get_error_code()
@@ -3904,7 +3910,11 @@ class Vm(object):
         self.log.info("Freezing guest filesystems")
 
         try:
-            frozen = self._dom.fsFreeze()
+            with self.qga_context():
+                frozen = self._dom.fsFreeze()
+        except exception.NonResponsiveGuestAgent as e:
+            self.log.warning("Unable to freeze guest filesystems: %s", e)
+            return response.error("nonresp", message=e.msg)
         except libvirt.libvirtError as e:
             self.log.warning("Unable to freeze guest filesystems: %s", e)
             code = e.get_error_code()
@@ -3927,7 +3937,11 @@ class Vm(object):
         self.log.info("Thawing guest filesystems")
 
         try:
-            thawed = self._dom.fsThaw()
+            with self.qga_context():
+                thawed = self._dom.fsThaw()
+        except exception.NonResponsiveGuestAgent as e:
+            self.log.warning("Unable to thaw guest filesystems: %s", e)
+            return response.error("nonresp", message=e.msg)
         except libvirt.libvirtError as e:
             self.log.warning("Unable to thaw guest filesystems: %s", e)
             code = e.get_error_code()
@@ -4734,7 +4748,13 @@ class Vm(object):
         with self._shutdownLock:
             self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
         try:
-            self._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_GUEST_AGENT)
+            with self.qga_context():
+                self._dom.shutdownFlags(
+                    libvirt.VIR_DOMAIN_SHUTDOWN_GUEST_AGENT)
+        except exception.NonResponsiveGuestAgent as e:
+            self.log.warning(
+                "Unable to perform shut down by guest agent: %s", e)
+            raise exception.NonResponsiveGuestAgent()
         except virdomain.NotConnectedError:
             # the VM was already shut off asynchronously,
             # so ignore error and quickly exit
@@ -4748,7 +4768,11 @@ class Vm(object):
 
     def qemuGuestAgentReboot(self):
         try:
-            self._dom.reboot(libvirt.VIR_DOMAIN_REBOOT_GUEST_AGENT)
+            with self.qga_context():
+                self._dom.reboot(libvirt.VIR_DOMAIN_REBOOT_GUEST_AGENT)
+        except exception.NonResponsiveGuestAgent as e:
+            self.log.warning("Unable to perform reboot by guest agent: %s", e)
+            raise exception.NonResponsiveGuestAgent()
         except virdomain.NotConnectedError:
             # the VM was already shut off asynchronously,
             # so ignore error and quickly exit

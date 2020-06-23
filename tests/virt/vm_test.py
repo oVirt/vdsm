@@ -1307,6 +1307,7 @@ class FakeVm(vm.Vm):
 
     def __init__(self, dom):
         self._dom = dom
+        self._qga_lock = threading.Lock()
 
 
 class FreezingTests(TestCaseBase):
