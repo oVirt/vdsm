@@ -2635,6 +2635,7 @@ class Vm(object):
         for element in domain.get_device_elements('disk'):
             if vmxml.attr(element, 'device') == 'disk':
                 change_disk(element, devices, self.log)
+                self._remove_backingstore_configuration(element)
 
         return domain.xml
 
@@ -2658,6 +2659,7 @@ class Vm(object):
             for element in domain.get_device_elements('disk'):
                 if vmxml.attr(element, 'device') == 'disk':
                     change_disk(element, devices, self.log)
+                    self._remove_backingstore_configuration(element)
 
                     _, dev_class = identify_from_xml_elem(element)
                     attrs = dev_class.get_identifying_attrs(element)
@@ -2681,6 +2683,26 @@ class Vm(object):
         for devXml in domObj.findall('.//devices/graphics'):
             vmdevices.graphics.reset_password(devXml)
         return xmlutils.tostring(domObj)
+
+    def _remove_backingstore_configuration(self, element):
+        """
+        Fix the configuration of disk device after resume.
+        Removes the backingStore element.
+        """
+        # When restoring from snapshot memory, it may contain wrong
+        # backingStore. We can remove this element, letting libvirt reset it.
+        # In older versions (< 4.4) we didn't have this element saved in the VM
+        # metadata. This change is due to VIR_DOMAIN_XML_MIGRATABLE flag output
+        # in libvirt >= 6 which is used to produce memory dump configuration
+        # file, and since the backing chain is now kept stable, it is now part
+        # of the output when this flag is used.
+        # https://bugzilla.redhat.com/1840609
+        try:
+            vmxml.remove_child(element,
+                               vmxml.find_first(element, 'backingStore'))
+            self.log.debug("backingStore removed from disk")
+        except vmxml.NotFound:
+            pass
 
     @api.guard(_not_migrating)
     def hotplugNic(self, params):
