@@ -990,7 +990,10 @@ class BlockStorageDomain(sd.StorageDomain):
         Ensure that all lvs are deactivated, avoiding stale devices.
         """
         log.info("Tearing down domain %s", self.sdUUID)
-        lvm.deactivateUnusedLVs(self.sdUUID)
+        lvm.deactivateVG(self.sdUUID)
+        # TODO: if it happens that there are still some LV's from the VG
+        # active but not open, we need to remove mapping here using
+        # devicemapper.removeMapping() (and file LVM bug for it).
 
     # Other
 
