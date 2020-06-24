@@ -38,6 +38,9 @@ install_dependencies() {
         install --upgrade "tox==3.15"
 
     add_advanced_virt
+
+    # needed by network test suite
+    dnf install -y openvswitch
 }
 
 build_vdsm() {
