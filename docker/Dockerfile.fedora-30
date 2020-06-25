@@ -22,7 +22,7 @@ RUN dnf install -y \
         make \
         mom \
         openvswitch \
-        ovirt-imageio-common-2.0.6 \
+        ovirt-imageio-common \
         psmisc \
         python3 \
         python3-augeas \
