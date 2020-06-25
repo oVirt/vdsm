@@ -17,13 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 from collections import defaultdict
 import itertools
-
-import six
 
 from vdsm.common.config import config as vdsm_config
 from vdsm.network.netconfpersistence import RunningConfig
@@ -77,14 +72,14 @@ def _set_vlans_base_mtu(desired_ifstates, current_ifstates):
     vlans_base_mtus = defaultdict(list)
     ifaces_to_remove = set(
         ifname
-        for ifname, ifstate in six.viewitems(desired_ifstates)
+        for ifname, ifstate in desired_ifstates.items()
         if ifstate.get(Interface.STATE) == InterfaceState.ABSENT
     )
     current_remaining_ifnames = set(current_ifstates) - ifaces_to_remove
 
     current_remaining_vlan_ifaces = (
         (ifname, ifstate)
-        for ifname, ifstate in six.viewitems(current_ifstates)
+        for ifname, ifstate in current_ifstates.items()
         if ifname not in ifaces_to_remove
         and ifstate[Interface.TYPE] == InterfaceType.VLAN
     )
@@ -111,7 +106,7 @@ def _set_bond_slaves_mtu(desired_ifstates, current_ifstates):
     new_ifstates = {}
     bond_desired_ifstates = (
         (ifname, ifstate)
-        for ifname, ifstate in six.viewitems(desired_ifstates)
+        for ifname, ifstate in desired_ifstates.items()
         if (
             ifstate.get(Interface.TYPE) == InterfaceType.BOND
             or (
@@ -170,7 +165,7 @@ def _set_slaves_mtu_based_on_bond(slave_state, bond_mtu):
 
 
 def _merge_bond_and_net_ifaces_states(bond_ifstates, net_ifstates):
-    for ifname, ifstate in six.viewitems(bond_ifstates):
+    for ifname, ifstate in bond_ifstates.items():
         if not _is_iface_absent(ifstate):
             ifstate.update(net_ifstates.get(ifname, {}))
     net_ifstates.update(bond_ifstates)
@@ -248,7 +243,7 @@ class Bond(object):
     def generate_state(bondings, running_bonds):
         bonds = (
             Bond(bondname, bondattrs)
-            for bondname, bondattrs in six.viewitems(bondings)
+            for bondname, bondattrs in bondings.items()
         )
         state = {}
         for bond in bonds:
@@ -599,7 +594,7 @@ class Network(object):
                 NetworkConfig(netname, netattrs),
                 NetworkConfig(netname, running_networks.get(netname, {})),
             )
-            for netname, netattrs in six.viewitems(networks)
+            for netname, netattrs in networks.items()
         ]
         interfaces_state = Network._merge_sb_ifaces(nets)
         routes_state = []
@@ -659,7 +654,7 @@ class Network(object):
         sb_ifaces_by_name = Network._collect_sb_ifaces_by_name(nets)
 
         sb_ifaces = {}
-        for ifname, ifstates in six.viewitems(sb_ifaces_by_name):
+        for ifname, ifstates in sb_ifaces_by_name.items():
             sb_ifaces[ifname] = {}
             for ifstate in ifstates:
                 # Combine southbound interface states into one.
@@ -774,7 +769,7 @@ class Routes(object):
 
 
 def _merge_state(interfaces_state, routes_state, dns_state):
-    interfaces = [ifstate for ifstate in six.viewvalues(interfaces_state)]
+    interfaces = [ifstate for ifstate in interfaces_state.values()]
     state = {
         Interface.KEY: sorted(interfaces, key=lambda d: d[Interface.NAME])
     }
@@ -782,14 +777,14 @@ def _merge_state(interfaces_state, routes_state, dns_state):
         state.update(routes={Route.CONFIG: routes_state})
     if dns_state:
         nameservers = itertools.chain.from_iterable(
-            ns for ns in six.viewvalues(dns_state)
+            ns for ns in dns_state.values()
         )
         state[DNS.KEY] = {DNS.CONFIG: {DNS.SERVER: list(nameservers)}}
     return state
 
 
 def _get_default_route_interface(running_networks):
-    for netname, attrs in six.viewitems(running_networks):
+    for netname, attrs in running_networks.items():
         netrun = NetworkConfig(netname, attrs)
         if netrun.default_route:
             if netrun.bridged:
