@@ -27,6 +27,7 @@ from vdsm.network import nmstate
 from vdsm.network.nmstate import api
 from vdsm.network.nmstate import bond
 from vdsm.network.nmstate import bridge_util
+from vdsm.network.nmstate import route
 
 
 class NMStateInterface(object):
@@ -200,4 +201,11 @@ def nmstate_util_module_schema():
         bridge_util, 'InterfaceState', NMStateInterfaceState
     )
     with p_iface, p_ifstate:
+        yield
+
+
+@pytest.fixture(scope='session', autouse=True)
+def nmstate_route_module_schema():
+    p_route = mock.patch.object(route, 'Route', NMStateRoute)
+    with p_route:
         yield

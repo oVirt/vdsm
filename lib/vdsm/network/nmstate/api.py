@@ -30,6 +30,7 @@ from .bridge_util import is_iface_up
 from .bridge_util import is_iface_absent
 from .bridge_util import is_default_mtu
 from .bridge_util import NetworkConfig
+from .route import Routes
 from .schema import BondSchema
 from .schema import DNS
 from .schema import Interface
@@ -579,98 +580,6 @@ class Network(object):
                 sb_name = net.southbound_iface_state[Interface.NAME]
                 sb_ifaces_by_name[sb_name].append(net.southbound_iface_state)
         return sb_ifaces_by_name
-
-
-class Routes(object):
-    IPV4 = 4
-    IPV6 = 6
-
-    def __init__(self, netconf, runconf):
-        self._netconf = netconf
-        self._runconf = runconf
-        self._state = self._create_routes()
-
-    @property
-    def state(self):
-        return self._state
-
-    def _create_routes(self):
-        routes = []
-        next_hop = self._get_next_hop_interface()
-        for family in (Routes.IPV4, Routes.IPV6):
-            gateway = self._get_gateway_by_ip_family(self._netconf, family)
-            runconf_gateway = self._get_gateway_by_ip_family(
-                self._runconf, family
-            )
-            if gateway:
-                routes.append(self._create_route(next_hop, gateway, family))
-                if self._gateway_has_changed(runconf_gateway, gateway):
-                    routes.append(
-                        self._create_remove_default_route(
-                            next_hop, runconf_gateway, family
-                        )
-                    )
-            elif self._should_remove_def_route(family):
-                routes.append(
-                    self._create_remove_default_route(
-                        next_hop, runconf_gateway, family
-                    )
-                )
-
-        return routes
-
-    def _create_route(self, next_hop, gateway, family):
-        if self._netconf.default_route:
-            return self._create_add_default_route(next_hop, gateway, family)
-        else:
-            return self._create_remove_default_route(next_hop, gateway, family)
-
-    def _get_next_hop_interface(self):
-        if self._netconf.bridged:
-            return self._netconf.name
-        return self._netconf.vlan_iface or self._netconf.base_iface
-
-    def _should_remove_def_route(self, family):
-        dhcp = (
-            self._netconf.dhcpv4
-            if family == self.IPV4
-            else self._netconf.dhcpv6
-        )
-        return (
-            not self._netconf.remove
-            and self._get_gateway_by_ip_family(self._runconf, family)
-            and self._runconf.default_route
-            and (dhcp or not self._netconf.default_route)
-        )
-
-    @staticmethod
-    def _gateway_has_changed(runconf_gateway, netconf_gateway):
-        return runconf_gateway and runconf_gateway != netconf_gateway
-
-    @staticmethod
-    def _get_gateway_by_ip_family(source, family):
-        return source.gateway if family == Routes.IPV4 else source.ipv6gateway
-
-    @staticmethod
-    def _create_add_default_route(next_hop_interface, gateway, family):
-        destination = '0.0.0.0/0' if family == Routes.IPV4 else '::/0'
-        return {
-            Route.NEXT_HOP_ADDRESS: gateway,
-            Route.NEXT_HOP_INTERFACE: next_hop_interface,
-            Route.DESTINATION: destination,
-            Route.TABLE_ID: Route.USE_DEFAULT_ROUTE_TABLE,
-        }
-
-    @staticmethod
-    def _create_remove_default_route(next_hop_interface, gateway, family):
-        destination = '0.0.0.0/0' if family == Routes.IPV4 else '::/0'
-        return {
-            Route.NEXT_HOP_ADDRESS: gateway,
-            Route.NEXT_HOP_INTERFACE: next_hop_interface,
-            Route.DESTINATION: destination,
-            Route.STATE: Route.STATE_ABSENT,
-            Route.TABLE_ID: Route.USE_DEFAULT_ROUTE_TABLE,
-        }
 
 
 def _merge_state(interfaces_state, routes_state, dns_state):
