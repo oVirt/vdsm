@@ -494,7 +494,9 @@ def _process_scsi_device_params(device_name, cache):
 
     if params.get('udev_path'):
         mapping = _get_udev_block_mapping()
-        params['block_path'] = mapping.get(params['udev_path'])
+        block_path = mapping.get(params['udev_path'])
+        if block_path:
+            params['block_path'] = block_path
 
     return params
 
