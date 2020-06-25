@@ -115,7 +115,7 @@ Vdsm cannot configure the filter automatically.
 Please edit /etc/lvm/lvm.conf and set the 'filter' option in the
 'devices' section to the recommended value.
 
-It is recommend to reboot after changing LVM filter.
+It is recommended to reboot after changing LVM filter.
 """)
         return CANNOT_CONFIG
 
