@@ -24,6 +24,12 @@ from vdsm.common.config import config as vdsm_config
 from vdsm.network.netconfpersistence import RunningConfig
 
 from .bond import Bond
+from .bridge_util import DEFAULT_MTU
+from .bridge_util import get_default_route_interface
+from .bridge_util import is_iface_up
+from .bridge_util import is_iface_absent
+from .bridge_util import is_default_mtu
+from .bridge_util import NetworkConfig
 from .schema import BondSchema
 from .schema import DNS
 from .schema import Interface
@@ -40,9 +46,6 @@ try:
 except ImportError:  # nmstate is not available
     state_apply = None
     state_show = None
-
-
-DEFAULT_MTU = 1500
 
 
 def setup(desired_state, verify_change):
@@ -122,7 +125,7 @@ def _set_bond_slaves_mtu(desired_ifstates, current_ifstates):
                 current_ifstates.get(bond_ifname, {}).get(Interface.MTU)
                 or DEFAULT_MTU,
             )
-            if not _is_iface_absent(bond_ifstate)
+            if not is_iface_absent(bond_ifstate)
             else DEFAULT_MTU
         )
         bond_config_state = bond_ifstate.get(
@@ -158,14 +161,14 @@ def _set_slaves_mtu_based_on_bond(slave_state, bond_mtu):
     Note2: oVirt is not formally supporting such setups (VLAN/s over bond
     slaves), the scenario is handled here for completeness.
     """
-    if not _is_iface_absent(slave_state):
+    if not is_iface_absent(slave_state):
         slave_mtu = slave_state[Interface.MTU]
         slave_state[Interface.MTU] = max(bond_mtu, slave_mtu)
 
 
 def _merge_bond_and_net_ifaces_states(bond_ifstates, net_ifstates):
     for ifname, ifstate in bond_ifstates.items():
-        if not _is_iface_absent(ifstate):
+        if not is_iface_absent(ifstate):
             ifstate.update(net_ifstates.get(ifname, {}))
     net_ifstates.update(bond_ifstates)
     return net_ifstates
@@ -208,41 +211,6 @@ def is_autoconf_enabled(ifstate):
         family_info[InterfaceIP.ENABLED]
         and family_info[InterfaceIPv6.AUTOCONF]
     )
-
-
-class NetworkConfig(object):
-    def __init__(self, name, attrs):
-        if not attrs:
-            name = None
-        self.name = name
-        self.vlan = attrs.get('vlan')
-        self.nic = attrs.get('nic')
-        self.bond = attrs.get('bonding')
-        self.bridged = attrs.get('bridged')
-        self.stp = attrs.get('stp')
-        self.mtu = attrs.get('mtu', DEFAULT_MTU)
-
-        self.ipv4addr = attrs.get('ipaddr')
-        self.ipv4netmask = attrs.get('netmask')
-        self.dhcpv4 = attrs.get('bootproto') == 'dhcp'
-
-        self.ipv6addr = attrs.get('ipv6addr')
-        self.dhcpv6 = attrs.get('dhcpv6', False)
-        self.ipv6autoconf = attrs.get('ipv6autoconf', False)
-        self.ipv6gateway = attrs.get('ipv6gateway')
-
-        self.gateway = attrs.get('gateway')
-        self.default_route = attrs.get('defaultRoute')
-
-        self.nameservers = attrs.get('nameservers')
-
-        self.remove = attrs.get('remove', False)
-
-        self.base_iface = self.nic or self.bond
-        if self.vlan is not None:
-            self.vlan_iface = '{}.{}'.format(self.base_iface, self.vlan)
-        else:
-            self.vlan_iface = None
 
 
 class Network(object):
@@ -580,7 +548,7 @@ class Network(object):
 
         # FIXME: Workaround to nmstate limitation when DNS entries are defined.
         if not droute_net:
-            ifnet = _get_default_route_interface(running_networks)
+            ifnet = get_default_route_interface(running_networks)
             if ifnet and ifnet not in interfaces_state:
                 interfaces_state[ifnet] = {Interface.NAME: ifnet}
 
@@ -720,18 +688,6 @@ def _merge_state(interfaces_state, routes_state, dns_state):
     return state
 
 
-def _get_default_route_interface(running_networks):
-    for netname, attrs in running_networks.items():
-        netrun = NetworkConfig(netname, attrs)
-        if netrun.default_route:
-            if netrun.bridged:
-                ifnet = netrun.name
-            else:
-                ifnet = netrun.vlan_iface or netrun.base_iface
-            return ifnet
-    return None
-
-
 def _get_ipv4_prefix_from_mask(ipv4netmask):
     prefix = 0
     for octet in ipv4netmask.split('.'):
@@ -744,18 +700,10 @@ def _disable_base_iface_ip_stack(net, desired_base_state, current_base_state):
     return (
         not net.to_remove
         and net.has_vlan
-        and not _is_iface_up(current_base_state)
+        and not is_iface_up(current_base_state)
         and Interface.IPV4 not in desired_base_state
         and Interface.IPV6 not in desired_base_state
     )
-
-
-def _is_iface_absent(ifstate):
-    return ifstate and ifstate.get(Interface.STATE) == InterfaceState.ABSENT
-
-
-def _is_iface_up(ifstate):
-    return ifstate and ifstate[Interface.STATE] == InterfaceState.UP
 
 
 def _init_base_iface(net, interfaces_state):
@@ -791,7 +739,7 @@ def _reset_iface_mtus_on_network_dettach(
             continue
 
         current_state = current_interface_state.get(removed_base_iface, {})
-        if _is_default_mtu(current_state):
+        if is_default_mtu(current_state):
             continue
 
         sb_iface_state = interfaces_state.get(removed_base_iface)
@@ -816,7 +764,3 @@ def _is_stale_iface(removed_base_iface, nets_by_base_iface):
         removed_base_iface
         and len(nets_by_base_iface.get(removed_base_iface, ())) == 1
     )
-
-
-def _is_default_mtu(state):
-    return state.get(Interface.MTU, DEFAULT_MTU) == DEFAULT_MTU

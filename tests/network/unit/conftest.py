@@ -26,6 +26,7 @@ from network.compat import mock
 from vdsm.network import nmstate
 from vdsm.network.nmstate import api
 from vdsm.network.nmstate import bond
+from vdsm.network.nmstate import bridge_util
 
 
 class NMStateInterface(object):
@@ -189,4 +190,14 @@ def nmstate_bond_module_schema():
     )
     p_iftype = mock.patch.object(bond, 'InterfaceType', NMStateInterfaceType)
     with p_iface, p_ifstate, p_iftype, p_bond, p_iface_ip:
+        yield
+
+
+@pytest.fixture(scope='session', autouse=True)
+def nmstate_util_module_schema():
+    p_iface = mock.patch.object(bridge_util, 'Interface', NMStateInterface)
+    p_ifstate = mock.patch.object(
+        bridge_util, 'InterfaceState', NMStateInterfaceState
+    )
+    with p_iface, p_ifstate:
         yield
