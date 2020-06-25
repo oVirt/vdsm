@@ -28,6 +28,7 @@ from vdsm.network.nmstate import api
 from vdsm.network.nmstate import bond
 from vdsm.network.nmstate import bridge_util
 from vdsm.network.nmstate import ip
+from vdsm.network.nmstate import linux_bridge
 from vdsm.network.nmstate import route
 
 
@@ -169,7 +170,6 @@ def nmstate_api_schema():
     p_iface = mock.patch.object(api, 'Interface', NMStateInterface)
     p_ifstate = mock.patch.object(api, 'InterfaceState', NMStateInterfaceState)
     p_iftype = mock.patch.object(api, 'InterfaceType', NMStateInterfaceType)
-    p_bridge = mock.patch.object(api, 'LinuxBridge', NMStateLinuxBridge)
     p_bond = mock.patch.object(api, 'BondSchema', NMStateBond)
     p_route = mock.patch.object(api, 'Route', NMStateRoute)
     p_iface_ip = mock.patch.object(api, 'InterfaceIP', NMStateInterfaceIP)
@@ -177,7 +177,7 @@ def nmstate_api_schema():
         api, 'InterfaceIPv6', NMStateInterfaceIPv6
     )
     p_dns = mock.patch.object(api, 'DNS', NMStateDns)
-    with p_iface, p_ifstate, p_iftype, p_bridge:
+    with p_iface, p_ifstate, p_iftype:
         with p_bond, p_route, p_iface_ip, p_iface_ipv6, p_dns:
             yield
 
@@ -217,4 +217,23 @@ def nmstate_ip_module_schema():
     p_iface_ip = mock.patch.object(ip, 'InterfaceIP', NMStateInterfaceIP)
     p_iface_ipv6 = mock.patch.object(ip, 'InterfaceIPv6', NMStateInterfaceIPv6)
     with p_iface_ip, p_iface_ipv6:
+        yield
+
+
+@pytest.fixture(scope='session', autouse=True)
+def nmstate_linux_bridge_network_module_schema():
+    p_iface = mock.patch.object(linux_bridge, 'Interface', NMStateInterface)
+    p_iface_ip = mock.patch.object(
+        linux_bridge, 'InterfaceIP', NMStateInterfaceIP
+    )
+    p_ifstate = mock.patch.object(
+        linux_bridge, 'InterfaceState', NMStateInterfaceState
+    )
+    p_iftype = mock.patch.object(
+        linux_bridge, 'InterfaceType', NMStateInterfaceType
+    )
+    p_bridge = mock.patch.object(
+        linux_bridge, 'LinuxBridge', NMStateLinuxBridge
+    )
+    with p_iface, p_ifstate, p_iftype, p_bridge, p_iface_ip:
         yield
