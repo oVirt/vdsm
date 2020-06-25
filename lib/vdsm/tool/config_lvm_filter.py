@@ -45,6 +45,16 @@ def main(*args):
     config-lvm-filter
     Configure LVM filter allowing LVM to access only the local storage
     needed by the hypervisor, but not shared storage owned by Vdsm.
+
+    Return codes:
+        0 - Successful completion.
+        1 - Exception caught during operation.
+        2 - Wrong arguments.
+        3 - LVM filter configuration was found to be required but could not be
+            completed since there is already another filter configured on the
+            host.
+        4 - User has chosen not to allow LVM filter reconfiguration, although
+            found as required.
     """
     args = parse_args(args)
 
