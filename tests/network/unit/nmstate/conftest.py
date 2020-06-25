@@ -21,18 +21,19 @@ import pytest
 from network.compat import mock
 
 from vdsm.network import nmstate
+from vdsm.network.nmstate import api
 
 
 @pytest.fixture(autouse=True)
 def current_state_mock():
-    with mock.patch.object(nmstate, 'state_show') as state:
+    with mock.patch.object(api, 'state_show') as state:
         state.return_value = {nmstate.Interface.KEY: []}
         yield state.return_value
 
 
 @pytest.fixture(autouse=True)
 def rconfig_mock():
-    with mock.patch.object(nmstate, 'RunningConfig') as rconfig:
+    with mock.patch.object(api, 'RunningConfig') as rconfig:
         rconfig.return_value.networks = {}
         rconfig.return_value.bonds = {}
         rconfig.return_value.devices = {}

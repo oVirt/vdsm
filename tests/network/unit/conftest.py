@@ -24,6 +24,7 @@ import pytest
 from network.compat import mock
 
 from vdsm.network import nmstate
+from vdsm.network.nmstate import api
 
 
 class NMStateInterface(object):
@@ -154,6 +155,24 @@ def nmstate_schema():
         nmstate, 'InterfaceIPv6', NMStateInterfaceIPv6
     )
     p_dns = mock.patch.object(nmstate, 'DNS', NMStateDns)
+    with p_iface, p_ifstate, p_iftype, p_bridge:
+        with p_bond, p_route, p_iface_ip, p_iface_ipv6, p_dns:
+            yield
+
+
+@pytest.fixture(scope='session', autouse=True)
+def nmstate_api_schema():
+    p_iface = mock.patch.object(api, 'Interface', NMStateInterface)
+    p_ifstate = mock.patch.object(api, 'InterfaceState', NMStateInterfaceState)
+    p_iftype = mock.patch.object(api, 'InterfaceType', NMStateInterfaceType)
+    p_bridge = mock.patch.object(api, 'LinuxBridge', NMStateLinuxBridge)
+    p_bond = mock.patch.object(api, 'BondSchema', NMStateBond)
+    p_route = mock.patch.object(api, 'Route', NMStateRoute)
+    p_iface_ip = mock.patch.object(api, 'InterfaceIP', NMStateInterfaceIP)
+    p_iface_ipv6 = mock.patch.object(
+        api, 'InterfaceIPv6', NMStateInterfaceIPv6
+    )
+    p_dns = mock.patch.object(api, 'DNS', NMStateDns)
     with p_iface, p_ifstate, p_iftype, p_bridge:
         with p_bond, p_route, p_iface_ip, p_iface_ipv6, p_dns:
             yield
