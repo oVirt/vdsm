@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from vdsm.network.link.iface import random_iface_name
+
 from .schema import Interface
 from .schema import InterfaceState
 
@@ -80,3 +82,7 @@ def is_iface_up(ifstate):
 
 def is_default_mtu(state):
     return state.get(Interface.MTU, DEFAULT_MTU) == DEFAULT_MTU
+
+
+def random_interface_name(iface_prefix):
+    return random_iface_name(prefix=iface_prefix)

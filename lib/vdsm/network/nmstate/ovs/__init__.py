@@ -16,10 +16,3 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
-SUBDIRS = ovs
-
-include $(top_srcdir)/build-aux/Makefile.subs
-
-vdsmnetworknmstatedir = $(vdsmpylibdir)/network/nmstate
-dist_vdsmnetworknmstate_PYTHON = $(srcdir)/*.py

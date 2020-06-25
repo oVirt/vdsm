@@ -30,6 +30,7 @@ from vdsm.network.nmstate import bridge_util
 from vdsm.network.nmstate import ip
 from vdsm.network.nmstate import linux_bridge
 from vdsm.network.nmstate import route
+from vdsm.network.nmstate.ovs import network as ovs_network
 
 
 class NMStateInterface(object):
@@ -143,6 +144,23 @@ class NMStateDns(object):
     SEARCH = 'search'
 
 
+class OvsBridgeType(object):
+    TYPE = "ovs-bridge"
+    CONFIG_SUBTREE = "bridge"
+    PORT_SUBTREE = "port"
+
+    class Port:
+        NAME = "name"
+        VLAN_SUBTREE = "vlan"
+
+        class Vlan:
+            TAG = "tag"
+            MODE = "mode"
+
+            class Mode:
+                ACCESS = "access"
+
+
 @pytest.fixture(scope='session', autouse=True)
 def nmstate_schema():
     p_iface = mock.patch.object(nmstate, 'Interface', NMStateInterface)
@@ -160,7 +178,8 @@ def nmstate_schema():
         nmstate, 'InterfaceIPv6', NMStateInterfaceIPv6
     )
     p_dns = mock.patch.object(nmstate, 'DNS', NMStateDns)
-    with p_iface, p_ifstate, p_iftype, p_bridge:
+    p_ovs = mock.patch.object(nmstate, 'OvsBridgeSchema', OvsBridgeType)
+    with p_iface, p_ifstate, p_iftype, p_bridge, p_ovs:
         with p_bond, p_route, p_iface_ip, p_iface_ipv6, p_dns:
             yield
 
@@ -236,4 +255,18 @@ def nmstate_linux_bridge_network_module_schema():
         linux_bridge, 'LinuxBridge', NMStateLinuxBridge
     )
     with p_iface, p_ifstate, p_iftype, p_bridge, p_iface_ip:
+        yield
+
+
+@pytest.fixture(scope='session', autouse=True)
+def nmstate_ovs_module_schema():
+    p_iface = mock.patch.object(ovs_network, 'Interface', NMStateInterface)
+    p_ifstate = mock.patch.object(
+        ovs_network, 'InterfaceState', NMStateInterfaceState
+    )
+    p_iftype = mock.patch.object(
+        ovs_network, 'InterfaceType', NMStateInterfaceType
+    )
+    p_ovs = mock.patch.object(ovs_network, 'OvsBridgeSchema', OvsBridgeType)
+    with p_iface, p_ifstate, p_iftype, p_ovs:
         yield

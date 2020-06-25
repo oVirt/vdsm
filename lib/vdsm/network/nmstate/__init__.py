@@ -35,6 +35,7 @@ from .schema import InterfaceIPv6
 from .schema import InterfaceState
 from .schema import InterfaceType
 from .schema import LinuxBridge
+from .schema import OvsBridgeSchema
 from .schema import Route
 
 
@@ -54,5 +55,6 @@ __all__ = [
     'InterfaceState',
     'InterfaceType',
     'LinuxBridge',
+    'OvsBridgeSchema',
     'Route',
 ]

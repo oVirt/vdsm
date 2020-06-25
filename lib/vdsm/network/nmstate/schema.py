@@ -26,6 +26,7 @@ try:
     from libnmstate.schema import InterfaceState
     from libnmstate.schema import InterfaceType
     from libnmstate.schema import LinuxBridge
+    from libnmstate.schema import OVSBridge as OvsBridgeSchema
     from libnmstate.schema import Route
 except ImportError:  # nmstate is not available
     BondSchema = None
@@ -36,4 +37,5 @@ except ImportError:  # nmstate is not available
     InterfaceState = None
     InterfaceType = None
     LinuxBridge = None
+    OvsBridgeSchema = None
     Route = None
