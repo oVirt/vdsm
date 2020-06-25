@@ -73,12 +73,6 @@
 %global python_sitelib %{python3_sitelib}
 %endif
 
-%if %{target_py} == py2
-%global python_libvirt libvirt-python
-%else
-%global python_libvirt python3-libvirt
-%endif
-
 # Release must be generated dynamically and that can't be done here.
 # It must be either:
 # - filled in by configure
@@ -218,34 +212,16 @@ Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
 
 %if 0%{?rhel}
-%if 0%{?rhel} < 8
-# 7.6 baseline
-Requires: %{python_libvirt} >= 4.5.0-1.el7
-# CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
-Requires: libvirt-daemon-kvm >= 4.5.0-10.el7_6.9
-%else # RHEL 8
 %if 0%{?centos}
-# Need a libvirt version with socket activation
-Requires: libvirt-daemon-kvm >= 5.6
+Requires: libvirt-daemon-kvm >= 6.0.0
 %else
 # Advanced Virt fix for live snapshots of read-only disks, https://bugzilla.redhat.com/1832204
 Requires: libvirt-daemon-kvm >= 6.0.0-20.module+el8.2.1+6621+ddee07d5
 %endif
-Requires: %{python_libvirt}
-%endif
+Requires: python3-libvirt
 %else # fedora
-%ifnarch s390 s390x
-# virt-preview is not available for s390
-# Required to fix order of VM life cycle events.
-# See https://bugzilla.redhat.com/1612943 for details.
-Requires: libvirt-daemon-kvm >= 4.9.0-1
-Requires: %{python_libvirt} >= 4.9
-%else
-Requires: libvirt-daemon-kvm
-# Required for preventing an HotPlug disk failure due to cgroups.
-# See https://bugzilla.redhat.com/1540872 for details.
-Requires: %{python_libvirt} >= 3.7.0
-%endif
+Requires: libvirt-daemon-kvm >= 6.1.0
+Requires: python3-libvirt
 %endif
 
 # iscsi-intiator versions
@@ -495,11 +471,11 @@ Requires:       python2-enum34
 %endif
 %if 0%{?rhel}
 Requires:       %{python_or_python3}-decorator
-Requires:       %{python_libvirt} >= 3.2.0-3.el7_4.1
+Requires:       python3-libvirt >= 3.2.0-3.el7_4.1
 %endif
 %if 0%{?fedora}
 Requires:       %{python2_or_python3}-decorator
-Requires:       %{python_libvirt} >= 3.7.0
+Requires:       python3-libvirt >= 3.7.0
 %endif
 
 %description common
