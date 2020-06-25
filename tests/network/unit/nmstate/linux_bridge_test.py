@@ -1,5 +1,5 @@
 #
-# Copyright 2019-2020 Red Hat, Inc.
+# Copyright 2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ from vdsm.network import nmstate
 
 from network.compat import mock
 
-from .nmstate.testlib import (
+from .testlib import (
     DEFAULT_MTU,
     DNS_SERVERS1,
     DNS_SERVERS2,
