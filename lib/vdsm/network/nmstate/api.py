@@ -30,6 +30,7 @@ from .bridge_util import is_iface_up
 from .bridge_util import is_iface_absent
 from .bridge_util import is_default_mtu
 from .bridge_util import NetworkConfig
+from .ip import IpAddress
 from .route import Routes
 from .schema import BondSchema
 from .schema import DNS
@@ -394,84 +395,24 @@ class Network(object):
         }
 
     def _add_ip(self, sb_iface, vlan_iface, bridge_iface):
-        ipv4_state = self._create_ipv4()
-        ipv6_state = self._create_ipv6()
+        ip_addr = IpAddress(self._netconf, self._auto_dns)
+        ipv4_state = ip_addr.create(IpAddress.IPV4)
+        ipv6_state = ip_addr.create(IpAddress.IPV6)
         port_iface = vlan_iface or sb_iface
         if self._netconf.bridged:
             # Bridge port IP stacks need to be disabled.
             if port_iface:
-                port_iface[Interface.IPV4] = self._create_ipv4(enabled=False)
-                port_iface[Interface.IPV6] = self._create_ipv6(enabled=False)
+                port_iface[Interface.IPV4] = ip_addr.create(
+                    IpAddress.IPV4, enabled=False
+                )
+                port_iface[Interface.IPV6] = ip_addr.create(
+                    IpAddress.IPV6, enabled=False
+                )
             bridge_iface[Interface.IPV4] = ipv4_state
             bridge_iface[Interface.IPV6] = ipv6_state
         elif port_iface:
             port_iface[Interface.IPV4] = ipv4_state
             port_iface[Interface.IPV6] = ipv6_state
-
-    def _create_ipv4(self, enabled=True):
-        ipstate = {InterfaceIP.ENABLED: enabled}
-        if enabled:
-            if self._netconf.ipv4addr:
-                ipv4_address = self._create_static_ipv4_address()
-                ipstate[InterfaceIP.ADDRESS] = ipv4_address
-                ipstate[InterfaceIP.DHCP] = False
-            elif self._netconf.dhcpv4:
-                ipstate.update(self._create_dynamic_ipv4())
-            else:
-                ipstate[InterfaceIP.ENABLED] = False
-
-        return ipstate
-
-    def _create_static_ipv4_address(self):
-        return [
-            {
-                InterfaceIP.ADDRESS_IP: self._netconf.ipv4addr,
-                InterfaceIP.ADDRESS_PREFIX_LENGTH: _get_ipv4_prefix_from_mask(
-                    self._netconf.ipv4netmask
-                ),
-            }
-        ]
-
-    def _create_dynamic_ipv4(self):
-        return {
-            InterfaceIP.DHCP: self._netconf.dhcpv4,
-            InterfaceIP.AUTO_DNS: self._auto_dns,
-            InterfaceIP.AUTO_GATEWAY: self.default_route,
-            InterfaceIP.AUTO_ROUTES: self.default_route,
-        }
-
-    def _create_ipv6(self, enabled=True):
-        ipstate = {InterfaceIP.ENABLED: enabled}
-        if enabled:
-            if self._netconf.ipv6addr:
-                ipv6_address = self._create_static_ipv6_address()
-                ipstate[InterfaceIP.ADDRESS] = ipv6_address
-                ipstate[InterfaceIP.DHCP] = False
-                ipstate[InterfaceIPv6.AUTOCONF] = False
-            elif self._netconf.dhcpv6 or self._netconf.ipv6autoconf:
-                ipstate.update(self._create_dynamic_ipv6())
-            else:
-                ipstate[InterfaceIP.ENABLED] = False
-
-        return ipstate
-
-    def _create_static_ipv6_address(self):
-        address, prefix = self._netconf.ipv6addr.split('/')
-        return [
-            {
-                InterfaceIP.ADDRESS_IP: address,
-                InterfaceIP.ADDRESS_PREFIX_LENGTH: int(prefix),
-            }
-        ]
-
-    def _create_dynamic_ipv6(self):
-        return {
-            InterfaceIP.DHCP: self._netconf.dhcpv6,
-            InterfaceIPv6.AUTOCONF: self._netconf.ipv6autoconf,
-            InterfaceIP.AUTO_DNS: self._auto_dns,
-            InterfaceIP.AUTO_GATEWAY: self.default_route,
-            InterfaceIP.AUTO_ROUTES: self.default_route,
-        }
 
     def _create_routes(self):
         routes = Routes(self._netconf, self._runconf)
@@ -595,14 +536,6 @@ def _merge_state(interfaces_state, routes_state, dns_state):
         )
         state[DNS.KEY] = {DNS.CONFIG: {DNS.SERVER: list(nameservers)}}
     return state
-
-
-def _get_ipv4_prefix_from_mask(ipv4netmask):
-    prefix = 0
-    for octet in ipv4netmask.split('.'):
-        onebits = str(bin(int(octet))).strip('0b').rstrip('0')
-        prefix += len(onebits)
-    return prefix
 
 
 def _disable_base_iface_ip_stack(net, desired_base_state, current_base_state):
