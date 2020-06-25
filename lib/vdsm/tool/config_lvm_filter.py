@@ -31,6 +31,13 @@ from . import common
 
 _NAME = 'config-lvm-filter'
 
+# Return codes:
+# rc=0 will be exited by vdsm-tool in case flow ended successfully.
+# rc=1 will be exited by vdsm-tool in case an exception was raised.
+# rc=2 will be exited from parse_args() in case of invalid usage.
+CANNOT_CONFIG = 3
+NEEDS_CONFIG = 4
+
 
 @expose(_NAME)
 def main(*args):
@@ -87,7 +94,7 @@ device to the volume group, you will need to edit the filter manually.
 
         if not args.assume_yes:
             if not common.confirm("Configure LVM filter? [yes,NO] "):
-                return
+                return NEEDS_CONFIG
 
         with lvmconf.LVMConfig() as config:
             config.setlist("devices", "filter", advice.filter)
@@ -110,6 +117,7 @@ Please edit /etc/lvm/lvm.conf and set the 'filter' option in the
 
 It is recommend to reboot after changing LVM filter.
 """)
+        return CANNOT_CONFIG
 
 
 def parse_args(args):
