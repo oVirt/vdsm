@@ -214,14 +214,26 @@ LVS_CMD = ("lvs",) + LVM_FLAGS + ("-o", LV_FIELDS)
 # metadata volumes
 USER_GROUP = constants.DISKIMAGE_USER + ":" + constants.DISKIMAGE_GROUP
 
-# Set hints="none" to prevent from lvm to remember which
-# devices are PVs so that lvm can avoid scanning other
-# devices that are not PVs, since we create and remove PVs
-# from other hosts, then the hints might be wrong.
-# Finally because oVirt host is like to use strict lvm filter,
-# the hints are not needed.
-# Disable hints for lvm commands run by vdsm, even if hints
-# are enabled on the host.
+# Runtime configuration notes
+# ===========================
+#
+# This configuration is used for all commands using --config option. This
+# overrides various options built into lvm comamnds, or defined in
+# /etc/lvm/lvm.conf or /etc/lvm/lvmlocl.conf.
+#
+# hints="none"
+# ------------
+# prevent from lvm to remember which devices are PVs so that lvm can avoid
+# scanning other devices that are not PVs, since we create and remove PVs from
+# other hosts, then the hints might be wrong.  Finally because oVirt host is
+# like to use strict lvm filter, the hints are not needed.  Disable hints for
+# lvm commands run by vdsm, even if hints are enabled on the host.
+#
+# obtain_device_list_from_udev=0
+# ------------------------------
+# Avoid random faiures in lvcreate an lvchange seen during stress tests
+# (using tests/storage/stress/reload.py). This was disabled in RHEL 6, and
+# enabled back in RHEL 7, and seems to be broken again in RHEL 8.
 
 LVMCONF_TEMPLATE = """
 devices {
@@ -231,6 +243,7 @@ devices {
  disable_after_error_count=3
  filter=%(filter)s
  hints="none"
+ obtain_device_list_from_udev=0
 }
 global {
  locking_type=%(locking_type)s

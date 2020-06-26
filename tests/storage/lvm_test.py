@@ -80,6 +80,7 @@ def test_build_config():
         ' disable_after_error_count=3 '
         ' filter=["a|^/dev/a$|^/dev/b$|", "r|.*|"] '
         ' hints="none" '
+        ' obtain_device_list_from_udev=0 '
         '} '
         'global { '
         ' locking_type=1 '
