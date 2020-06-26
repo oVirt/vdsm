@@ -89,93 +89,6 @@ def _fake_qemuAgentCommand(domain, command, timeout, flags):
                 }
             },
             ]})
-    if command == '{"execute": "guest-get-fsinfo"}':
-        return json.dumps(
-            {"return": [{
-                "name": "dm-3",
-                "total-bytes": 123456,
-                "mountpoint": "/home",
-                "disk": [
-                    {
-                        "serial": "SAMSUNG_MZ7LN512HCHP",
-                        "bus-type": "sata",
-                        "bus": 0,
-                        "unit": 0,
-                        "pci-controller": {
-                            "bus": 0,
-                            "slot": 31,
-                            "domain": 0,
-                            "function": 2
-                        },
-                        "dev": "/dev/sda2",
-                        "target": 0
-                    }
-                ],
-                "used-bytes": 12345,
-                "type": "ext4"
-            }, {
-                "name": "sr0",
-                "total-bytes": 411844608,
-                "mountpoint": "/mnt",
-                "disk": [
-                    {
-                    "serial": "QEMU_DVD-ROM_QM00003",
-                    "bus-type": "ide",
-                    "bus": 1,
-                    "unit": 0,
-                    "pci-controller": {
-                        "bus": 0,
-                        "slot": 1,
-                        "domain": 0,
-                        "function": 1
-                    },
-                    "dev": "/dev/sr0",
-                    "target": 0
-                    }
-                ],
-                "used-bytes": 411844608,
-                "type": "iso9660"
-            }, {
-                "name": "\\\\?\\Volume{6ab8dd61-0000-0000-0000-100000000000}\\",  # NOQA
-                "mountpoint": "System Reserved",
-                "disk": [],
-                "type": "NTFS"
-            }]})
-    if command == '{"execute": "guest-get-host-name"}':
-        return json.dumps(
-            {"return": {
-                "host-name": "test-host",
-            }})
-    if command == '{"execute": "guest-get-osinfo"}':
-        return json.dumps(
-            {"return": {
-                "id": "fedora",
-                "kernel-release": "4.13.9-300.fc27.x86_64",
-                "kernel-version": "#1 SMP Mon Oct 23 13:41:58 UTC 2017",
-                "machine": "x86_64",
-                "name": "Fedora",
-                "pretty-name": "Fedora 27 (Cloud Edition)",
-                "variant": "Cloud Edition",
-                "variant-id": "cloud",
-                "version": "27 (Cloud Edition)",
-                "version-id": "27",
-            }})
-    if command == '{"execute": "guest-get-timezone"}':
-        return json.dumps(
-            {"return": {
-                "zone": "CET",
-                "offset": 3600
-            }})
-    if command == '{"execute": "guest-get-users"}':
-        return json.dumps(
-            {"return": [{
-                "login-time": 1515975891.567572,
-                "domain": "DESKTOP-NG2EVRF",
-                "user": "Calvin"
-            }, {
-                "login-time": 1515975891.567572,
-                "user": "Hobbes"
-            }]})
     # Unknow command
     logging.error("Fake QEMU-GA cannot handle: %r", command)
     return '{"error": {"class": "CommandNotFound", "desc": "..."}}'
@@ -340,70 +253,6 @@ class QemuGuestAgentTests(TestCaseBase):
         self.assertTrue('guest-info' in c['commands'])
         self.assertFalse('guest-exec' in c['commands'])
 
-    def test_active_users(self):
-        self.assertEqual(
-            self.qga_poller._qga_call_active_users(self.vm),
-            {'username': 'Calvin@DESKTOP-NG2EVRF, Hobbes'})
-
-    def test_disk_info(self):
-        self.assertEqual(
-            self.qga_poller._qga_call_fsinfo(self.vm),
-            {
-                'disksUsage': [
-                    {
-                        'path': '/home',
-                        'fs': 'ext4',
-                        'total': '123456',
-                        'used': '12345',
-                    }, {
-                        'path': '/mnt',
-                        'fs': 'iso9660',
-                        'total': '411844608',
-                        'used': '411844608',
-                    }
-                ],
-                'diskMapping': {
-                    'SAMSUNG_MZ7LN512HCHP': {'name': '/dev/sda'},
-                    'QEMU_DVD-ROM_QM00003': {'name': '/dev/sr0'},
-                },
-            })
-
-    def test_system_info(self):
-        self.assertEqual(
-            self.qga_poller._qga_call_hostname(self.vm),
-            {
-                'guestName': 'test-host',
-                'guestFQDN': 'test-host',
-            })
-        self.assertEqual(
-            self.qga_poller._qga_call_osinfo(self.vm),
-            {
-                'guestOs': '4.13.9-300.fc27.x86_64',
-                'guestOsInfo': {
-                    'kernel': '4.13.9-300.fc27.x86_64',
-                    'arch': 'x86_64',
-                    'version': '27',
-                    'distribution': 'Fedora',
-                    'type': 'linux',
-                    'codename': 'Cloud Edition'
-                },
-            })
-        # (fake) appsList should exists after _qga_call_osinfo()
-        self.assertEqual(
-            self.qga_poller.get_guest_info(self.vm.id)['appsList'],
-            (
-                'kernel-4.13.9-300.fc27.x86_64',
-                'qemu-guest-agent-0.0-test'
-            ))
-        self.assertEqual(
-            self.qga_poller._qga_call_timezone(self.vm),
-            {
-                'guestTimezone': {
-                    'offset': 60,
-                    'zone': 'CET',
-                },
-            })
-
     def test_network_interfaces(self):
         info = self.qga_poller._qga_call_network_interfaces(self.vm)
         ifaces = info['netIfaces']
@@ -456,6 +305,13 @@ class QemuGuestAgentTests(TestCaseBase):
         self.assertEqual(info['guestTimezone']['zone'], 'EDT')
         # Users
         self.assertEqual(info['username'], 'root, frodo@hobbits')
+        # fake appsList should exists
+        self.assertEqual(
+            self.qga_poller.get_guest_info(self.vm.id)['appsList'],
+            (
+                'kernel-3.10.0-1101.el7.x86_64',
+                'qemu-guest-agent-0.0-test'
+            ))
 
     def test_pci_devices(self):
         devices = self.qga_poller._qga_call_get_devices(self.vm)['pci_devices']

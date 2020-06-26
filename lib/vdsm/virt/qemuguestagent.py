@@ -73,25 +73,12 @@ _INITIAL_INTERVAL = config.getint('guest_agent', 'qga_initial_info_interval')
 _TASK_TIMEOUT = config.getint('guest_agent', 'qga_task_timeout')
 _THROTTLING_INTERVAL = 60
 
-# TODO: Remove the try-except when we switch to newer libvirt. The constants
-#       are only available in 5.9.0 and newer.
-try:
-    from libvirt import \
-        VIR_DOMAIN_GUEST_INFO_USERS,  \
-        VIR_DOMAIN_GUEST_INFO_OS, \
-        VIR_DOMAIN_GUEST_INFO_TIMEZONE, \
-        VIR_DOMAIN_GUEST_INFO_HOSTNAME, \
-        VIR_DOMAIN_GUEST_INFO_FILESYSTEM
-    _USE_LIBVIRT = True
-    _LIBVIRT_EXPOSED = ["guestInfo", "interfaceAddresses"]
-except ImportError:
-    VIR_DOMAIN_GUEST_INFO_USERS = (1 << 0)
-    VIR_DOMAIN_GUEST_INFO_OS = (1 << 1)
-    VIR_DOMAIN_GUEST_INFO_TIMEZONE = (1 << 2)
-    VIR_DOMAIN_GUEST_INFO_HOSTNAME = (1 << 3)
-    VIR_DOMAIN_GUEST_INFO_FILESYSTEM = (1 << 4)
-    _USE_LIBVIRT = False
-    _LIBVIRT_EXPOSED = ["interfaceAddresses"]
+from libvirt import \
+    VIR_DOMAIN_GUEST_INFO_USERS,  \
+    VIR_DOMAIN_GUEST_INFO_OS, \
+    VIR_DOMAIN_GUEST_INFO_TIMEZONE, \
+    VIR_DOMAIN_GUEST_INFO_HOSTNAME, \
+    VIR_DOMAIN_GUEST_INFO_FILESYSTEM
 
 # These values are needed internaly and are not defined by libvirt. Beware
 # that the values cannot colide with those for VIR_DOMAIN_GUEST_INFO_*
@@ -132,7 +119,7 @@ _QEMU_COMMAND_PERIODS = {
 _DISK_DEVICE_RE = re.compile('^(/dev/[hsv]d[a-z]+)[0-9]+$')
 
 
-@virdomain.expose(*_LIBVIRT_EXPOSED)
+@virdomain.expose("guestInfo", "interfaceAddresses")
 class QemuGuestAgentDomain(object):
     """Wrapper object exposing libvirt API."""
     def __init__(self, vm):
@@ -170,12 +157,7 @@ class QemuGuestAgentPoller(object):
         self._last_check = defaultdict(lambda: 0)
         self._initial_interval = config.getint(
             'guest_agent', 'qga_initial_info_interval')
-        if _USE_LIBVIRT:
-            self._get_guest_info = self._libvirt_get_guest_info
-            self.log.info('Using libvirt for querying QEMU-GA')
-        else:
-            self._get_guest_info = self._qga_get_all_info
-            self.log.info('Using direct messages for querying QEMU-GA')
+        self.log.info('Using libvirt for querying QEMU-GA')
 
     def start(self):
         if not config.getboolean('guest_agent', 'enable_qga_poller'):
@@ -383,7 +365,7 @@ class QemuGuestAgentPoller(object):
                 # Commands handled by libvirt guestInfo() go here
                 else:
                     types |= command
-            info = self._get_guest_info(vm_obj, types)
+            info = self._libvirt_get_guest_info(vm_obj, types)
             if info is None:
                 self.log.debug('Failed to query QEMU-GA for vm=%s', vm_id)
                 self.set_failure(vm_id)
@@ -394,28 +376,6 @@ class QemuGuestAgentPoller(object):
                         self.set_last_check(vm_id, command, now)
         # Remove stale info
         self._cleanup()
-
-    def _qga_get_all_info(self, vm, types):
-        """
-        Get info by calling QEMU-GA directly. Interface emulates the
-        libvirt API.
-        """
-        guest_info = {}
-        if types == 0:
-            return guest_info
-        self.log.debug(
-            'qemu-ga: fetching info vm_id=%r types=%s', vm.id, bin(types))
-        if types & VIR_DOMAIN_GUEST_INFO_FILESYSTEM:
-            guest_info.update(self._qga_call_fsinfo(vm))
-        if types & VIR_DOMAIN_GUEST_INFO_HOSTNAME:
-            guest_info.update(self._qga_call_hostname(vm))
-        if types & VIR_DOMAIN_GUEST_INFO_OS:
-            guest_info.update(self._qga_call_osinfo(vm))
-        if types & VIR_DOMAIN_GUEST_INFO_TIMEZONE:
-            guest_info.update(self._qga_call_timezone(vm))
-        if types & VIR_DOMAIN_GUEST_INFO_USERS:
-            guest_info.update(self._qga_call_active_users(vm))
-        return guest_info
 
     def _libvirt_get_guest_info(self, vm, types):
         guest_info = {}
@@ -569,26 +529,6 @@ class QemuGuestAgentPoller(object):
             return False
         return True
 
-    def _qga_call_active_users(self, vm):
-        """ Get list of active users from the guest OS """
-        def format_user(user):
-            if user.get('domain', '') != '':
-                return user['user'] + '@' + user['domain']
-            else:
-                return user['user']
-        guest_info = {}
-        ret = self.call_qga_command(vm, _QEMU_ACTIVE_USERS_COMMAND)
-        if ret is None:
-            return {}
-        try:
-            users = [format_user(u) for u in ret]
-            guest_info['username'] = ', '.join(users)
-        except:
-            self.log.warning(
-                'Invalid message returned to call \'%s\': %r',
-                _QEMU_ACTIVE_USERS_COMMAND, ret)
-        return guest_info
-
     def _qga_capability_check(self, vm):
         """
         This check queries information about installed QEMU Guest Agent.
@@ -615,76 +555,6 @@ class QemuGuestAgentPoller(object):
         info = self.get_guest_info(vm.id)
         if info is None or 'appsList' not in info:
             self.fake_apps_list(vm.id)
-
-    def _qga_call_fsinfo(self, vm):
-        """ Get file system information and disk mapping """
-        disks = []
-        mapping = {}
-        ret = self.call_qga_command(vm, _QEMU_FSINFO_COMMAND)
-        if ret is None:
-            return {}
-        for fs in ret:
-            try:
-                fsinfo = guestagenthelpers.translate_fsinfo(fs)
-            except ValueError:
-                self.log.warning(
-                    'Invalid message returned to call \'%s\': %r',
-                    _QEMU_FSINFO_COMMAND, ret)
-                continue
-            # Skip stats with missing info. This is e.g. the case of System
-            # Reserved volumes on Windows.
-            if fsinfo['total'] != '' and fsinfo['used'] != '':
-                disks.append(fsinfo)
-            if _FS_DISK_FIELD not in fs:
-                continue
-            for d in fs[_FS_DISK_FIELD]:
-                if _FS_DISK_SERIAL_FIELD in d and \
-                        _FS_DISK_DEVICE_FIELD in d:
-                    dev = d[_FS_DISK_DEVICE_FIELD]
-                    m = _DISK_DEVICE_RE.match(dev)
-                    if m is not None:
-                        dev = m.group(1)
-                        self.log.debug(
-                            'Stripping partition number: %s -> %s',
-                            d[_FS_DISK_DEVICE_FIELD], dev)
-                    mapping[d[_FS_DISK_SERIAL_FIELD]] = {'name': dev}
-        return {'disksUsage': disks, 'diskMapping': mapping}
-
-    def _qga_call_hostname(self, vm):
-        ret = self.call_qga_command(vm, _QEMU_HOST_NAME_COMMAND)
-        if ret is not None:
-            if _HOST_NAME_FIELD not in ret:
-                self.log.warning(
-                    'Invalid message returned to call \'%s\': %r',
-                    _QEMU_HOST_NAME_COMMAND, ret)
-            else:
-                return {'guestName': ret[_HOST_NAME_FIELD],
-                        'guestFQDN': ret[_HOST_NAME_FIELD]}
-        return {}
-
-    def _qga_call_osinfo(self, vm):
-        ret = self.call_qga_command(vm, _QEMU_OSINFO_COMMAND)
-        if ret is not None:
-            if ret.get(_OS_ID_FIELD) == _GUEST_OS_WINDOWS:
-                return guestagenthelpers.translate_windows_osinfo(ret)
-            else:
-                self.fake_apps_list(vm.id, ret['id'], ret['kernel-release'])
-                return guestagenthelpers.translate_linux_osinfo(ret)
-        return {}
-
-    def _qga_call_timezone(self, vm):
-        ret = self.call_qga_command(vm, _QEMU_TIMEZONE_COMMAND)
-        if ret is not None:
-            if _TIMEZONE_OFFSET_FIELD not in ret:
-                self.log.warning(
-                    'Invalid message returned to call \'%s\': %r',
-                    _QEMU_TIMEZONE_COMMAND, ret)
-            else:
-                return {'guestTimezone': {
-                    'offset': ret[_TIMEZONE_OFFSET_FIELD] // 60,
-                    'zone': ret.get(_TIMEZONE_ZONE_FIELD, 'unknown'),
-                }}
-        return {}
 
     def _qga_call_network_interfaces(self, vm):
         """
