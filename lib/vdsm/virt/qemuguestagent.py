@@ -331,7 +331,7 @@ class QemuGuestAgentPoller(object):
                 continue
             for addr in iface['inet'] + iface['inet6']:
                 addr = ipaddress.ip_address(addr)
-                if not addr.is_loopback() and not addr.is_link_local():
+                if not addr.is_loopback and not addr.is_link_local:
                     have_some = True
                     break
             if have_some:
