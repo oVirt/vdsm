@@ -1,6 +1,6 @@
 #
 # Copyright 2012 IBM, Inc.
-# Copyright 2012-2019 Red Hat, Inc.
+# Copyright 2012-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 import pwd
 import shutil
@@ -30,9 +27,13 @@ import tempfile
 
 import pytest
 
+from network.compat import mock
+
 from vdsm.network.configurators import ifcfg
 
-from network.compat import mock
+
+INITIAL_CONTENT = '123-testing'
+SOME_GARBAGE = '456'
 
 
 @pytest.fixture
@@ -45,12 +46,12 @@ def tempdir():
 @pytest.fixture
 def files(tempdir):
     return tuple(
-        (os.path.join(tempdir, bn), init, makeDirty)
-        for bn, init, makeDirty in (
-            ('ifcfg-eth0', TestIfcfgConfigWriter.INITIAL_CONTENT, True),
+        (os.path.join(tempdir, bn), init, make_dirty)
+        for bn, init, make_dirty in (
+            ('ifcfg-eth0', INITIAL_CONTENT, True),
             ('ifcfg-eth1', None, True),
             ('ifcfg-eth2', None, False),
-            ('ifcfg-eth3', TestIfcfgConfigWriter.INITIAL_CONTENT, False),
+            ('ifcfg-eth3', INITIAL_CONTENT, False),
         )
     )
 
@@ -61,45 +62,41 @@ def config_writer():
 
 
 class TestIfcfgConfigWriter(object):
-    INITIAL_CONTENT = '123-testing'
-    SOME_GARBAGE = '456'
-
-    def _createFiles(self, files):
+    def _create_files(self, files):
         for fn, content, _ in files:
             if content is not None:
                 with open(fn, 'w') as f:
                     f.write(content)
 
-    def _makeFilesDirty(self, files):
-        for fn, _, makeDirty in files:
-            if makeDirty:
+    def _make_files_dirty(self, files):
+        for fn, _, make_dirty in files:
+            if make_dirty:
                 with open(fn, 'w') as f:
-                    f.write(self.SOME_GARBAGE)
+                    f.write(SOME_GARBAGE)
 
-    def _assertFilesRestored(self, files):
+    def _assert_files_restored(self, files):
         for fn, content, _ in files:
             if content is None:
                 assert not os.path.exists(fn)
             else:
                 with open(fn) as f:
-                    restoredContent = f.read()
-                assert content == restoredContent
+                    restored_content = f.read()
+                assert content == restored_content
 
-    def testAtomicRestore(self, config_writer, files):
-        self._createFiles(files)
+    def test_atomic_restore(self, config_writer, files):
+        self._create_files(files)
 
         for fn, _, _ in files:
             config_writer._atomicBackup(fn)
 
-        self._makeFilesDirty(files)
+        self._make_files_dirty(files)
 
         config_writer.restoreAtomicBackup()
-        self._assertFilesRestored(files)
+        self._assert_files_restored(files)
 
     @mock.patch.object(ifcfg, 'ifdown', lambda x: 0)
     @mock.patch.object(ifcfg, '_exec_ifup', lambda *x: 0)
-    def testPersistentBackup(self, config_writer, tempdir, files):
-
+    def test_persistent_backup(self, config_writer, tempdir, files):
         netback_path = os.path.join(tempdir, 'netback')
         ifcfg_prefix = os.path.join(tempdir, 'ifcfg-')
         netback_mock = mock.patch.object(
@@ -116,13 +113,13 @@ class TestIfcfgConfigWriter(object):
                     "install vdsm package to create the vdsm user"
                 )
 
-            self._createFiles(files)
+            self._create_files(files)
 
             for fn, _, _ in files:
                 config_writer._persistentBackup(fn)
 
-            self._makeFilesDirty(files)
+            self._make_files_dirty(files)
 
             config_writer.restorePersistentBackup()
 
-            self._assertFilesRestored(files)
+            self._assert_files_restored(files)
