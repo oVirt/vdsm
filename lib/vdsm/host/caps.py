@@ -95,7 +95,7 @@ def get():
     caps['cpuModel'] = cpuinfo.model()
     caps['cpuFlags'] = ','.join(_getFlagsAndFeatures())
 
-    caps.update(dsaversion.version_info)
+    caps.update(dsaversion.version_info())
 
     net_caps = supervdsm.getProxy().network_caps()
     caps.update(net_caps)

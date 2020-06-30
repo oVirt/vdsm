@@ -1,5 +1,5 @@
 #
-# Copyright 2007-2019 Red Hat, Inc.
+# Copyright 2007-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,15 +24,36 @@ python based components
 from __future__ import absolute_import
 from __future__ import division
 
+from vdsm import osinfo
+from vdsm.common import cache
+
+
 version_name = "Snow Man"
 software_version = "@PACKAGE_BASE_VERSION@"
 software_revision = "@PACKAGE_BASE_RELEASE@"
 raw_version_revision = "@PACKAGE_VERSION@.@PACKAGE_RELEASE@"
 
-version_info = {
-    'version_name': version_name,
-    'software_version': software_version,
-    'software_revision': software_revision,
-    'supportedENGINEs': ['4.2', '4.3', '4.4'],
-    'clusterLevels': ['4.2', '4.3', '4.4'],
-}
+
+def _has_libvirt_6_6():
+    packages = osinfo.package_versions()
+    libvirt_version = tuple(
+        int(v)
+        for v in packages['libvirt']['version'].split('.')
+    )
+    return libvirt_version[:2] >= (6, 6)
+
+
+@cache.memoized
+def version_info():
+    cluster_levels = ['4.2', '4.3', '4.4']
+
+    if _has_libvirt_6_6():
+        cluster_levels.append('4.5')
+
+    return {
+        'version_name': version_name,
+        'software_version': software_version,
+        'software_revision': software_revision,
+        'supportedENGINEs': ['4.2', '4.3', '4.4'],
+        'clusterLevels': cluster_levels,
+    }
