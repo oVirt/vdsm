@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2019 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,17 +18,19 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
-import unittest
+import pytest
 
 from vdsm.network import ethtool
 
 from .netintegtestlib import bridge_device
 
 
-class TestEthtoolDeviceInfo(unittest.TestCase):
-    def test_detect_device_driver(self):
-        with bridge_device() as br:
-            self.assertEqual('bridge', ethtool.driver_name(br.devName))
+@pytest.fixture
+def bridge():
+    with bridge_device() as br:
+        yield br
+
+
+class TestEthtoolDeviceInfo(object):
+    def test_detect_device_driver(self, bridge):
+        assert ethtool.driver_name(bridge.devName) == 'bridge'
