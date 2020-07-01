@@ -18,11 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import pytest
-
 from vdsm.network import nmstate
-
-from network.compat import mock
 
 from .testlib import (
     DEFAULT_MTU,
@@ -67,13 +63,6 @@ from .testlib import (
     parametrize_vlanned,
     sort_by_name,
 )
-
-
-@pytest.fixture(autouse=True)
-def current_state_mock():
-    with mock.patch.object(nmstate, 'state_show') as state:
-        state.return_value = {nmstate.Interface.KEY: []}
-        yield state.return_value
 
 
 @parametrize_bridged
@@ -286,7 +275,6 @@ class TestBondedNetwork(object):
         assert expected_state == state
 
     @parametrize_bridged
-    @mock.patch.object(nmstate, 'RunningConfig')
     def test_translate_remove_net_on_bond(
         self, rconfig_mock, bridged, current_state_mock
     ):
@@ -301,7 +289,7 @@ class TestBondedNetwork(object):
                 'ipv6': {'enabled': False},
             }
         )
-        rconfig_mock.return_value.networks = {
+        rconfig_mock.networks = {
             TESTNET1: {
                 'bonding': TESTBOND0,
                 'bridged': bridged,
@@ -331,9 +319,8 @@ class TestBondedNetwork(object):
         assert expected_state == state
 
     @parametrize_bridged
-    @mock.patch.object(nmstate, 'RunningConfig')
     def test_translate_remove_vlan_net_on_bond(self, rconfig_mock, bridged):
-        rconfig_mock.return_value.networks = {
+        rconfig_mock.networks = {
             TESTNET1: {
                 'bonding': TESTBOND0,
                 'bridged': bridged,
@@ -358,7 +345,6 @@ class TestBondedNetwork(object):
         assert expected_state == state
 
     @parametrize_bridged
-    @mock.patch.object(nmstate, 'RunningConfig')
     def test_translate_remove_bridged_net_and_bond(
         self, rconfig_mock, bridged, current_state_mock
     ):
@@ -373,7 +359,7 @@ class TestBondedNetwork(object):
                 'ipv6': {'enabled': False},
             }
         )
-        rconfig_mock.return_value.networks = {
+        rconfig_mock.networks = {
             TESTNET1: {
                 'bonding': TESTBOND0,
                 'bridged': bridged,
@@ -400,7 +386,6 @@ class TestBondedNetwork(object):
 
 
 @parametrize_bridged
-@mock.patch.object(nmstate, 'RunningConfig')
 def test_translate_remove_nets(rconfig_mock, bridged, current_state_mock):
     current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
     current_ifaces_states += [
@@ -421,7 +406,7 @@ def test_translate_remove_nets(rconfig_mock, bridged, current_state_mock):
             nmstate.Interface.IPV6: {nmstate.InterfaceIP.ENABLED: False},
         },
     ]
-    rconfig_mock.return_value.networks = {
+    rconfig_mock.networks = {
         TESTNET1: {
             'nic': IFACE0,
             'bridged': bridged,
@@ -501,7 +486,6 @@ def test_translate_add_network_with_default_route(bridged):
 
 
 @parametrize_bridged
-@mock.patch.object(nmstate, 'RunningConfig')
 def test_translate_remove_network_with_default_route(
     rconfig_mock, bridged, current_state_mock
 ):
@@ -516,7 +500,7 @@ def test_translate_remove_network_with_default_route(
             nmstate.Interface.IPV6: {nmstate.InterfaceIP.ENABLED: False},
         }
     )
-    rconfig_mock.return_value.networks = {
+    rconfig_mock.networks = {
         TESTNET1: {
             'nic': IFACE0,
             'bridged': bridged,
@@ -542,9 +526,8 @@ def test_translate_remove_network_with_default_route(
 
 
 @parametrize_bridged
-@mock.patch.object(nmstate, 'RunningConfig')
 def test_update_gateway_with_default_route(rconfig_mock, bridged):
-    rconfig_mock.return_value.networks = {
+    rconfig_mock.networks = {
         TESTNET1: {
             'nic': IFACE0,
             'ipaddr': IPv4_ADDRESS1,
@@ -609,9 +592,8 @@ def test_update_gateway_with_default_route(rconfig_mock, bridged):
 
 
 @parametrize_bridged
-@mock.patch.object(nmstate, 'RunningConfig')
 def test_translate_default_route_network_static_to_dhcp(rconfig_mock, bridged):
-    rconfig_mock.return_value.networks = {
+    rconfig_mock.networks = {
         TESTNET1: {
             'nic': IFACE0,
             'bridged': bridged,
@@ -669,9 +651,8 @@ def test_translate_default_route_network_static_to_dhcp(rconfig_mock, bridged):
 
 
 @parametrize_bridged
-@mock.patch.object(nmstate, 'RunningConfig')
 def test_translate_remove_default_route_from_network(rconfig_mock, bridged):
-    rconfig_mock.return_value.networks = {
+    rconfig_mock.networks = {
         TESTNET1: {
             'nic': IFACE0,
             'bridged': bridged,
@@ -762,10 +743,9 @@ def test_translate_add_network_with_default_route_on_vlan_interface():
     assert expected_state == state
 
 
-@mock.patch.object(nmstate, 'RunningConfig')
 def test_update_network_from_bridged_to_bridgeless(rconfig_mock):
     networks = {TESTNET1: create_network_config('nic', IFACE0, bridged=True)}
-    rconfig_mock.return_value.networks = networks
+    rconfig_mock.networks = networks
 
     updated_network = {
         TESTNET1: create_network_config('nic', IFACE0, bridged=False)
@@ -832,7 +812,6 @@ class TestDns(object):
 
         assert state.get(nmstate.DNS.KEY) is None
 
-    @mock.patch.object(nmstate, 'RunningConfig')
     def test_dns_remove_network_with_default_route(
         self, rconfig_mock, current_state_mock
     ):
@@ -857,7 +836,7 @@ class TestDns(object):
                 nameservers=DNS_SERVERS1,
             )
         }
-        rconfig_mock.return_value.networks = rconfig_networks
+        rconfig_mock.networks = rconfig_networks
 
         networks = {TESTNET1: {'remove': True}}
 
@@ -867,7 +846,6 @@ class TestDns(object):
 
         assert expected_state == state[nmstate.DNS.KEY]
 
-    @mock.patch.object(nmstate, 'RunningConfig')
     def test_dns_replace_network_with_default_route(self, rconfig_mock):
         rconfig_networks = {
             TESTNET1: create_network_config(
@@ -879,7 +857,7 @@ class TestDns(object):
                 nameservers=DNS_SERVERS1,
             )
         }
-        rconfig_mock.return_value.networks = rconfig_networks
+        rconfig_mock.networks = rconfig_networks
         networks = {
             TESTNET2: create_network_config(
                 'nic',
@@ -1085,7 +1063,6 @@ class TestMtu(object):
         sort_by_name(expected_ifaces_states)
         assert {nmstate.Interface.KEY: expected_ifaces_states} == state
 
-    @mock.patch.object(nmstate, 'RunningConfig')
     def test_remove_network_with_highest_mtu(
         self, rconfig_mock, current_state_mock
     ):
@@ -1101,7 +1078,7 @@ class TestMtu(object):
             VLAN102, TESTNET2, high_mtu
         )
 
-        rconfig_mock.return_value.networks = {
+        rconfig_mock.networks = {
             TESTNET1: create_network_config(
                 'bonding',
                 TESTBOND0,
@@ -1136,7 +1113,6 @@ class TestMtu(object):
         sort_by_name(expected_ifaces_states)
         assert {nmstate.Interface.KEY: expected_ifaces_states} == state
 
-    @mock.patch.object(nmstate, 'RunningConfig')
     def test_remove_network_with_lowest_mtu(
         self, rconfig_mock, current_state_mock
     ):
@@ -1152,7 +1128,7 @@ class TestMtu(object):
             VLAN102, TESTNET2, low_mtu
         )
 
-        rconfig_mock.return_value.networks = {
+        rconfig_mock.networks = {
             TESTNET1: create_network_config(
                 'bonding',
                 TESTBOND0,
@@ -1184,7 +1160,6 @@ class TestMtu(object):
         sort_by_name(expected_ifaces_states)
         assert {nmstate.Interface.KEY: expected_ifaces_states} == state
 
-    @mock.patch.object(nmstate, 'RunningConfig')
     def test_edit_network_to_higher_mtu(
         self, rconfig_mock, current_state_mock
     ):
@@ -1200,7 +1175,7 @@ class TestMtu(object):
             VLAN102, TESTNET2, DEFAULT_MTU
         )
 
-        rconfig_mock.return_value.networks = {
+        rconfig_mock.networks = {
             TESTNET1: create_network_config(
                 'bonding',
                 TESTBOND0,
@@ -1236,7 +1211,6 @@ class TestMtu(object):
         sort_by_name(expected_ifaces_states)
         assert {nmstate.Interface.KEY: expected_ifaces_states} == state
 
-    @mock.patch.object(nmstate, 'RunningConfig')
     def test_edit_network_to_lower_mtu(self, rconfig_mock, current_state_mock):
         lower_mtu = DEFAULT_MTU - 500
         current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
@@ -1250,7 +1224,7 @@ class TestMtu(object):
             VLAN102, TESTNET2, DEFAULT_MTU
         )
 
-        rconfig_mock.return_value.networks = {
+        rconfig_mock.networks = {
             TESTNET1: create_network_config(
                 'bonding',
                 TESTBOND0,
@@ -1286,7 +1260,6 @@ class TestMtu(object):
         assert {nmstate.Interface.KEY: expected_ifaces_states} == state
 
     @parametrize_vlanned
-    @mock.patch.object(nmstate, 'RunningConfig')
     def test_add_slave_to_bonded_network_with_non_default_mtu(
         self, rconfig_mock, vlanned, current_state_mock
     ):
@@ -1309,7 +1282,7 @@ class TestMtu(object):
             current_ifaces_states.append(
                 self._create_bridge_state(TESTNET1, TESTBOND0, mtu)
             )
-        rconfig_mock.return_value.networks = {
+        rconfig_mock.networks = {
             TESTNET1: create_network_config(
                 'bonding',
                 TESTBOND0,
@@ -1318,7 +1291,7 @@ class TestMtu(object):
                 mtu=mtu,
             )
         }
-        rconfig_mock.return_value.bonds = {
+        rconfig_mock.bonds = {
             TESTBOND0: {'nics': [IFACE0, IFACE1], 'switch': 'legacy'}
         }
 
@@ -1346,7 +1319,6 @@ class TestMtu(object):
         sort_by_name(expected_ifaces_states)
         assert {nmstate.Interface.KEY: expected_ifaces_states} == state
 
-    @mock.patch.object(nmstate, 'RunningConfig')
     @parametrize_bridged
     def test_mtu_reset_on_network_dettach(
         self, rconfig_mock, bridged, current_state_mock
@@ -1361,8 +1333,8 @@ class TestMtu(object):
                 self._create_bridge_state(TESTNET1, IFACE0, mtu)
             )
 
-        rconfig_mock.return_value.bonds = {}
-        rconfig_mock.return_value.networks = {
+        rconfig_mock.bonds = {}
+        rconfig_mock.networks = {
             TESTNET1: create_network_config(
                 'nic', IFACE0, bridged=bridged, mtu=mtu
             )
@@ -1383,7 +1355,6 @@ class TestMtu(object):
             )
         assert {nmstate.Interface.KEY: expected_iface_states} == state
 
-    @mock.patch.object(nmstate, 'RunningConfig')
     def test_remove_bond_with_custom_mtu(
         self, rconfig_mock, current_state_mock
     ):
@@ -1396,12 +1367,12 @@ class TestMtu(object):
             self._create_bridge_state(TESTNET1, TESTBOND0, high_mtu)
         )
 
-        rconfig_mock.return_value.networks = {
+        rconfig_mock.networks = {
             TESTNET1: create_network_config(
                 'bonding', TESTBOND0, bridged=True, mtu=high_mtu
             )
         }
-        rconfig_mock.return_value.bonds = {
+        rconfig_mock.bonds = {
             TESTBOND0: {'nics': [IFACE0, IFACE1], 'switch': 'legacy'}
         }
         networks = {TESTNET1: {'remove': True}}

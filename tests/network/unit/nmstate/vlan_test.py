@@ -18,11 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import pytest
-
 from vdsm.network import nmstate
-
-from unittest import mock
 
 from .testlib import (
     IFACE0,
@@ -48,17 +44,9 @@ from .testlib import (
 )
 
 
-@pytest.fixture(autouse=True)
-def current_state_mock():
-    with mock.patch.object(nmstate, 'state_show') as state:
-        state.return_value = {nmstate.Interface.KEY: []}
-        yield state.return_value
-
-
 @parametrize_bridged
-@mock.patch.object(nmstate, 'RunningConfig')
 def test_translate_remove_vlan_net(rconfig_mock, bridged):
-    rconfig_mock.return_value.networks = {
+    rconfig_mock.networks = {
         TESTNET1: {
             'nic': IFACE0,
             'bridged': bridged,
@@ -135,9 +123,8 @@ def test_bridgeless_and_vlan_networks_on_the_same_nic():
     assert expected_state == state
 
 
-@mock.patch.object(nmstate, 'RunningConfig')
 def test_move_vlan_to_another_iface(rconfig_mock):
-    rconfig_mock.return_value.networks = {
+    rconfig_mock.networks = {
         TESTNET1: create_network_config(
             'nic', IFACE0, bridged=False, vlan=VLAN101
         )
@@ -168,10 +155,9 @@ def test_move_vlan_to_another_iface(rconfig_mock):
     assert expected_state == state
 
 
-@mock.patch.object(nmstate, 'RunningConfig')
 @parametrize_bridged
 def test_edit_network_vlan_id(rconfig_mock, bridged):
-    rconfig_mock.return_value.networks = {
+    rconfig_mock.networks = {
         TESTNET1: create_network_config(
             'nic', IFACE0, bridged=bridged, vlan=VLAN101
         )

@@ -17,11 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import pytest
 
 from vdsm.network import nmstate
-
-from network.compat import mock
 
 from .testlib import (
     IFACE0,
@@ -30,13 +27,6 @@ from .testlib import (
     create_bond_iface_state,
     disable_iface_ip,
 )
-
-
-@pytest.fixture(autouse=True)
-def current_state_mock():
-    with mock.patch.object(nmstate, 'state_show') as state:
-        state.return_value = {nmstate.Interface.KEY: []}
-        yield state.return_value
 
 
 class TestBond(object):
@@ -53,10 +43,9 @@ class TestBond(object):
         expected_state = {nmstate.Interface.KEY: [bond0_state]}
         assert expected_state == state
 
-    @mock.patch.object(nmstate, 'RunningConfig')
     def test_translate_edit_bond_with_slaves(self, rconfig_mock):
         bondings = {TESTBOND0: {'nics': [IFACE0, IFACE1], 'switch': 'legacy'}}
-        rconfig_mock.return_value.bonds = bondings
+        rconfig_mock.bonds = bondings
 
         state = nmstate.generate_state(networks={}, bondings=bondings)
 
