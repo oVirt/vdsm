@@ -753,7 +753,13 @@ class MonitorThread(object):
             if stopped:
                 break
 
-            job_stats = self._vm.job_stats()
+            try:
+                job_stats = self._vm.job_stats()
+            except libvirt.libvirtError as e:
+                if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
+                    # The migration stopped just now
+                    break
+                raise
             # It may happen that the migration did not start yet
             # so we'll keep waiting
             if not ongoing(job_stats):
