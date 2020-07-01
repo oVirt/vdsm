@@ -19,9 +19,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 import pytest
 
 from network.nettestlib import bond_device
@@ -64,7 +61,7 @@ def nics():
 
 
 class TestLinks(object):
-    def testGetLink(self, bridge0):
+    def test_get_link(self, bridge0):
         link = ipwrapper.getLink(bridge0.devName)
         assert link.isBRIDGE()
         assert link.oper_up
@@ -92,11 +89,11 @@ class TestLinks(object):
 
 
 class TestDrvinfo(object):
-    def testBridgeEthtoolDrvinfo(self, bridge0):
+    def test_bridge_ethtool_drvinfo(self, bridge0):
         bridge_name = bridge0.devName
         assert ethtool.driver_name(bridge_name) == ipwrapper.LinkType.BRIDGE
 
-    def testEnablePromisc(self, bridge0):
+    def test_enable_promisc(self, bridge0):
         link = ipwrapper.getLink(bridge0.devName)
         with monitor.object_monitor(timeout=2, silent_timeout=True) as mon:
             link.promisc = True
@@ -106,14 +103,14 @@ class TestDrvinfo(object):
                     and event.get('flags', 0) & IfaceStatus.IFF_PROMISC
                 ):
                     return
-        self.fail("Could not enable promiscuous mode.")
+        assert False, 'Could not enable promiscuous mode.'
 
-    def testDisablePromisc(self, bridge0):
+    def test_disable_promisc(self, bridge0):
         ipwrapper.getLink(bridge0.devName).promisc = True
         ipwrapper.getLink(bridge0.devName).promisc = False
         assert not ipwrapper.getLink(
             bridge0.devName
-        ).promisc, "Could not disable promiscuous mode."
+        ).promisc, 'Could not disable promiscuous mode.'
 
 
 class TestUnicodeDrvinfo(object):
@@ -129,6 +126,6 @@ class TestUnicodeDrvinfo(object):
         finally:
             br.delDevice()
 
-    def testUtf8BridgeEthtoolDrvinfo(self, unicode_bridge):
+    def test_utf8_bridge_ethtool_drvinfo(self, unicode_bridge):
         driver_name = ethtool.driver_name(unicode_bridge.devName)
         assert driver_name == ipwrapper.LinkType.BRIDGE
