@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2018 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,51 +18,53 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 from contextlib import contextmanager
 
-import unittest
+import pytest
 
 from vdsm.network.ip import rule as ip_rule
+from vdsm.network.ip.rule import IPRuleAddError
 from vdsm.network.ip.rule import IPRuleData
-from vdsm.network.ip.rule import IPRuleAddError, IPRuleDeleteError
+from vdsm.network.ip.rule import IPRuleDeleteError
+
 
 IPV4_ADDRESS1 = '192.168.99.1'
 
 
-class IPRuleTest(unittest.TestCase):
-    IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
+@pytest.fixture(scope='module')
+def ip_rule_driver():
+    return ip_rule.driver(ip_rule.Drivers.IPROUTE2)
 
-    def test_add_delete_and_read_rule(self):
+
+class TestIPRule(object):
+    def test_add_delete_and_read_rule(self, ip_rule_driver):
         rule = IPRuleData(to=IPV4_ADDRESS1, iif='lo', table='main', prio=999)
-        with self.create_rule(rule):
+        with self._create_rule(ip_rule_driver, rule):
             rules = [
-                r for r in IPRuleTest.IPRule.rules() if r.to == IPV4_ADDRESS1
+                r for r in ip_rule_driver.rules() if r.to == IPV4_ADDRESS1
             ]
-            self.assertEqual(1, len(rules))
-            self.assertEqual(rules[0].iif, 'lo')
-            self.assertEqual(rules[0].table, 'main')
-            self.assertEqual(rules[0].prio, 999)
+            assert len(rules) == 1
+            assert rules[0].iif == 'lo'
+            assert rules[0].table == 'main'
+            assert rules[0].prio == 999
 
-    def test_delete_non_existing_rule(self):
+    def test_delete_non_existing_rule(self, ip_rule_driver):
         rule = IPRuleData(to=IPV4_ADDRESS1, iif='lo', table='main')
-        with self.assertRaises(IPRuleDeleteError):
-            IPRuleTest.IPRule.delete(rule)
+        with pytest.raises(IPRuleDeleteError):
+            ip_rule_driver.delete(rule)
 
-    def test_add_rule_with_invalid_address(self):
+    def test_add_rule_with_invalid_address(self, ip_rule_driver):
         rule = IPRuleData(
             to=IPV4_ADDRESS1, iif='shrubbery_shruberry', table='main'
         )
-        with self.assertRaises(IPRuleAddError):
-            with self.create_rule(rule):
+        with pytest.raises(IPRuleAddError):
+            with self._create_rule(ip_rule_driver, rule):
                 pass
 
     @contextmanager
-    def create_rule(self, rule_data):
-        IPRuleTest.IPRule.add(rule_data)
+    def _create_rule(self, rule_driver, rule_data):
+        rule_driver.add(rule_data)
         try:
             yield
         finally:
-            IPRuleTest.IPRule.delete(rule_data)
+            rule_driver.delete(rule_data)
