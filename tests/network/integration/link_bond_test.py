@@ -17,12 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 import errno
 import os
-import unittest
 import time
 
 import pytest
@@ -52,25 +48,25 @@ def _sorted_arp_ip_target(options):
     return options
 
 
-class LinkBondTests(unittest.TestCase):
+class TestLinkBond(object):
     def test_bond_without_slaves(self):
         with bond_device() as bond:
-            self.assertFalse(iface(bond.master).is_up())
+            assert not iface(bond.master).is_up()
 
     def test_bond_with_slaves(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as bond:
                 bond.add_slaves((nic1, nic2))
-                self.assertFalse(iface(bond.master).is_up())
+                assert not iface(bond.master).is_up()
 
     def test_bond_devices_are_up(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as bond:
                 bond.add_slaves((nic1, nic2))
                 bond.up()
-                self.assertTrue(iface(nic1).is_up())
-                self.assertTrue(iface(nic2).is_up())
-                self.assertTrue(iface(bond.master).is_up())
+                assert iface(nic1).is_up()
+                assert iface(nic2).is_up()
+                assert iface(bond.master).is_up()
 
     def test_bond_exists(self):
         OPTIONS = {'mode': '1', 'miimon': '300'}
@@ -81,14 +77,14 @@ class LinkBondTests(unittest.TestCase):
                 _bond.up()
 
                 bond = Bond(_bond.master)
-                self.assertEqual(bond.slaves, set((nic1, nic2)))
-                self.assertEqual(bond.options, OPTIONS)
+                assert bond.slaves == set((nic1, nic2))
+                assert bond.options == OPTIONS
 
     def test_bond_list(self):
         with bond_device() as b1, bond_device() as b2, bond_device() as b3:
             actual_bond_set = set(Bond.bonds())
             expected_bond_set = set([b1.master, b2.master, b3.master])
-            self.assertLessEqual(expected_bond_set, actual_bond_set)
+            assert expected_bond_set <= actual_bond_set
 
     def test_bond_create_failure_on_slave_add(self):
         with dummy_devices(2) as (nic1, nic2):
@@ -96,11 +92,11 @@ class LinkBondTests(unittest.TestCase):
                 base_bond.add_slaves((nic1, nic2))
 
                 bond_name = random_iface_name('bond_', max_length=11)
-                with self.assertRaises(IOError):
+                with pytest.raises(IOError):
                     with Bond(bond_name) as broken_bond:
                         broken_bond.create()
                         broken_bond.add_slaves((nic1, nic2))
-                self.assertFalse(Bond(bond_name).exists())
+                assert not Bond(bond_name).exists()
 
     def test_bond_edit_failure_on_slave_add(self):
         with dummy_devices(2) as (nic1, nic2):
@@ -108,12 +104,12 @@ class LinkBondTests(unittest.TestCase):
                 base_bond.add_slaves((nic1,))
                 edit_bond.add_slaves((nic2,))
 
-                with self.assertRaises(IOError):
+                with pytest.raises(IOError):
                     with Bond(edit_bond.master) as broken_bond:
-                        self.assertTrue(broken_bond.exists())
+                        assert broken_bond.exists()
                         broken_bond.add_slaves((nic1,))
-                self.assertTrue(edit_bond.exists())
-                self.assertEqual(set((nic2,)), edit_bond.slaves)
+                assert edit_bond.exists()
+                assert edit_bond.slaves == set((nic2,))
 
     def test_bond_set_options(self):
         OPTIONS = {'mode': '1', 'miimon': '300'}
@@ -125,7 +121,7 @@ class LinkBondTests(unittest.TestCase):
                 bond.up()
 
                 _bond = Bond(bond.master)
-                self.assertEqual(_bond.options, OPTIONS)
+                assert _bond.options == OPTIONS
 
     def test_bond_edit_options(self):
         OPTIONS_A = {'mode': '1', 'miimon': '300'}
@@ -137,16 +133,16 @@ class LinkBondTests(unittest.TestCase):
                 bond.set_options(OPTIONS_A)
                 bond.add_slaves((nic1, nic2))
                 _bond = Bond(bond.master)
-                self.assertEqual(_bond.options, OPTIONS_A)
+                assert _bond.options == OPTIONS_A
 
                 bond.set_options(OPTIONS_B)
                 _bond.refresh()
-                self.assertEqual(_bond.options, OPTIONS_B)
+                assert _bond.options == OPTIONS_B
 
                 bond.set_options(OPTIONS_C)
                 _bond.refresh()
                 OPTIONS_C['mode'] = '0'
-                self.assertEqual(_bond.options, OPTIONS_C)
+                assert _bond.options == OPTIONS_C
 
     def test_bond_set_one_arp_ip_target(self):
         OPTIONS = {
@@ -158,7 +154,7 @@ class LinkBondTests(unittest.TestCase):
         with bond_device() as bond:
             bond.set_options(OPTIONS)
             bond.refresh()
-            self.assertEqual(bond.options, OPTIONS)
+            assert bond.options == OPTIONS
 
     def test_bond_set_two_arp_ip_targets(self):
         OPTIONS = {
@@ -170,10 +166,9 @@ class LinkBondTests(unittest.TestCase):
         with bond_device() as bond:
             bond.set_options(OPTIONS)
             bond.refresh()
-            self.assertEqual(
-                _sorted_arp_ip_target(bond.options),
-                _sorted_arp_ip_target(OPTIONS),
-            )
+            sorted_bond_opts = _sorted_arp_ip_target(bond.options)
+            sorted_opts = _sorted_arp_ip_target(OPTIONS)
+            assert sorted_bond_opts == sorted_opts
 
     def test_bond_clear_arp_ip_target(self):
         OPTIONS_A = {
@@ -187,7 +182,7 @@ class LinkBondTests(unittest.TestCase):
             bond.set_options(OPTIONS_A)
             bond.set_options(OPTIONS_B)
             bond.refresh()
-            self.assertEqual(bond.options, OPTIONS_B)
+            assert bond.options == OPTIONS_B
 
     def test_bond_update_existing_arp_ip_targets(self):
         preserved_addr = '10.1.4.1'
@@ -210,11 +205,11 @@ class LinkBondTests(unittest.TestCase):
                 bond.set_options(OPTIONS_A)
                 bond.set_options(OPTIONS_B)
                 bond.refresh()
-                self.assertEqual(bond.options, OPTIONS_B)
+                assert bond.options == OPTIONS_B
 
     def test_bond_properties_includes_non_options_keys(self):
         with bond_device() as bond:
-            self.assertTrue('active_slave' in bond.properties)
+            assert 'active_slave' in bond.properties
 
     def test_bond_monitor(self):
         notifier = FakeNotifier()
@@ -229,7 +224,7 @@ class LinkBondTests(unittest.TestCase):
                     _wait_until(lambda: notifier.calls)
                 finally:
                     bond_monitor.stop()
-        self.assertEqual(notifier.calls, [('|net|host_conn|no_id', None)])
+        assert notifier.calls == [('|net|host_conn|no_id', None)]
 
 
 def _wait_until(condition, timeout=1, interval=0.1):
@@ -238,7 +233,7 @@ def _wait_until(condition, timeout=1, interval=0.1):
         time.sleep(interval)
 
 
-class LinkBondSysFSTests(unittest.TestCase):
+class TestLinkBondSysFS(object):
     def test_do_not_detach_slaves_while_changing_options(self):
         OPTIONS = {'miimon': '110'}
 
@@ -256,19 +251,19 @@ class LinkBondSysFSTests(unittest.TestCase):
             properties = sysfs_options.properties(
                 bond.master, filter_properties=('mode',)
             )
-            self.assertTrue('mode' in properties)
-            self.assertEqual(1, len(properties))
+            assert 'mode' in properties
+            assert len(properties) == 1
 
     def test_bond_properties_with_filter_out(self):
         with bond_device() as bond:
             properties = sysfs_options.properties(
                 bond.master, filter_out_properties=('mode',)
             )
-            self.assertTrue('mode' not in properties)
-            self.assertGreater(len(properties), 1)
+            assert 'mode' not in properties
+            assert len(properties) > 1
 
 
-class TestBondingSysfsOptionsMapper(unittest.TestCase):
+class TestBondingSysfsOptionsMapper(object):
     def test_dump_bonding_name2numeric(self):
         BOND_MODE = '0'
         OPT_NAME = 'arp_validate'
@@ -285,18 +280,18 @@ class TestBondingSysfsOptionsMapper(unittest.TestCase):
                 )
             raise
 
-        self.assertIn(BOND_MODE, opt_map)
-        self.assertIn(OPT_NAME, opt_map[BOND_MODE])
-        self.assertIn(VAL_NAME, opt_map[BOND_MODE][OPT_NAME])
-        self.assertEqual(opt_map[BOND_MODE][OPT_NAME][VAL_NAME], VAL_NUMERIC)
+        assert BOND_MODE in opt_map
+        assert OPT_NAME in opt_map[BOND_MODE]
+        assert VAL_NAME in opt_map[BOND_MODE][OPT_NAME]
+        assert opt_map[BOND_MODE][OPT_NAME][VAL_NAME] == VAL_NUMERIC
 
     def test_get_bonding_option_numeric_val_exists(self):
         opt_num_val = self._get_bonding_option_num_val('ad_select', 'stable')
-        self.assertNotEqual(opt_num_val, None)
+        assert opt_num_val is not None
 
     def test_get_bonding_option_numeric_val_does_not_exists(self):
         opt_num_val = self._get_bonding_option_num_val('no_such_opt', 'none')
-        self.assertEqual(opt_num_val, None)
+        assert opt_num_val is None
 
     def _get_bonding_option_num_val(self, option_name, val_name):
         mode_num = sysfs_options.BONDING_MODES_NAME_TO_NUMBER['balance-rr']
