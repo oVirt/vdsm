@@ -54,6 +54,7 @@ from vdsm.common.units import MiB
 from vdsm.storage import devicemapper
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import lsof
 from vdsm.storage import misc
 from vdsm.storage import multipath
 from vdsm.storage import rwlock
@@ -1185,13 +1186,25 @@ def changelv(vg, lvs, attrs):
 
 
 def _setLVAvailability(vg, lvs, available):
+    if available not in ("y", "n"):
+        raise se.VolumeGroupActionError("available=%r" % available)
     try:
         changelv(vg, lvs, ("--available", available))
     except se.StorageException as e:
-        error = ({"y": se.CannotActivateLogicalVolumes,
-                  "n": se.CannotDeactivateLogicalVolume}
-                 .get(available, se.VolumeGroupActionError))
-        raise error(str(e))
+        if available == "y":
+            raise se.CannotActivateLogicalVolumes(str(e))
+        else:
+            users = _lvs_proc_info(vg, lvs)
+            raise se.CannotDeactivateLogicalVolume(str(e), users)
+
+
+def _lvs_proc_info(vg, lvs):
+    """
+    Returns a proc info dict for proccesses currently
+    using the given lvs paths of the vg.
+    """
+    paths = [lvPath(vg, lv) for lv in lvs]
+    return {p: list(lsof.proc_info(p)) for p in paths}
 
 #
 # Public Object Accessors

@@ -1387,6 +1387,9 @@ class CannotDeactivateLogicalVolume(StorageException):
     code = 552
     msg = "Cannot deactivate Logical Volume"
 
+    def __init__(self, error, users):
+        self.value = "error=%s, users=%s" % (error, users)
+
 
 class CannotAccessLogicalVolume(StorageException):
     code = 553
