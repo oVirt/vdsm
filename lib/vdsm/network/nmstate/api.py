@@ -30,28 +30,20 @@ from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NUMBER_TO_NAME
 from vdsm.network.link.setup import parse_bond_options
 
+from .schema import BondSchema
+from .schema import DNS
+from .schema import Interface
+from .schema import InterfaceIP
+from .schema import InterfaceIPv6
+from .schema import InterfaceState
+from .schema import InterfaceType
+from .schema import LinuxBridge
+from .schema import Route
+
 try:
     from libnmstate import apply as state_apply
     from libnmstate import show as state_show
-    from libnmstate.schema import Bond as BondSchema
-    from libnmstate.schema import DNS
-    from libnmstate.schema import Interface
-    from libnmstate.schema import InterfaceIP
-    from libnmstate.schema import InterfaceIPv6
-    from libnmstate.schema import InterfaceState
-    from libnmstate.schema import InterfaceType
-    from libnmstate.schema import LinuxBridge
-    from libnmstate.schema import Route
 except ImportError:  # nmstate is not available
-    BondSchema = None
-    DNS = None
-    Interface = None
-    InterfaceIP = None
-    InterfaceIPv6 = None
-    InterfaceState = None
-    InterfaceType = None
-    LinuxBridge = None
-    Route = None
     state_apply = None
     state_show = None
 

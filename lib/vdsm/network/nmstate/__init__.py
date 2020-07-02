@@ -27,32 +27,32 @@ from .api import show_interfaces
 from .api import show_nameservers
 
 # Re-export nmstate schema
-from .api import BondSchema
-from .api import DNS
-from .api import Interface
-from .api import InterfaceIP
-from .api import InterfaceIPv6
-from .api import InterfaceState
-from .api import InterfaceType
-from .api import LinuxBridge
-from .api import Route
+from .schema import BondSchema
+from .schema import DNS
+from .schema import Interface
+from .schema import InterfaceIP
+from .schema import InterfaceIPv6
+from .schema import InterfaceState
+from .schema import InterfaceType
+from .schema import LinuxBridge
+from .schema import Route
 
 
 __all__ = [
-    "generate_state",
-    "is_autoconf_enabled",
-    "is_dhcp_enabled",
-    "is_nmstate_backend",
-    "setup",
-    "show_interfaces",
-    "show_nameservers",
-    "BondSchema",
-    "DNS",
-    "Interface",
-    "InterfaceIP",
-    "InterfaceIPv6",
-    "InterfaceState",
-    "InterfaceType",
-    "LinuxBridge",
-    "Route",
+    'generate_state',
+    'is_autoconf_enabled',
+    'is_dhcp_enabled',
+    'is_nmstate_backend',
+    'setup',
+    'show_interfaces',
+    'show_nameservers',
+    'BondSchema',
+    'DNS',
+    'Interface',
+    'InterfaceIP',
+    'InterfaceIPv6',
+    'InterfaceState',
+    'InterfaceType',
+    'LinuxBridge',
+    'Route',
 ]
