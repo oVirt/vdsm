@@ -1450,7 +1450,6 @@ def chkVG(vgName):
 
 
 def deactivateVG(vgName):
-    getVG(vgName)  # Check existence
     _setVgAvailability(vgName, available="n")
 
 
