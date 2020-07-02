@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,25 +17,39 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-include $(top_srcdir)/build-aux/Makefile.subs
 
-supervdsm_apidir = $(vdsmpylibdir)/supervdsm_api
-dist_supervdsm_api_PYTHON = \
-	__init__.py \
-	devicemapper.py \
-	dmsetup.py \
-	hwinfo.py \
-	ksm.py \
-	lsof.py \
-	managedvolume.py \
-	mkimage.py \
-	multipath.py \
-	nbd.py \
-	network.py \
-	sanlock_direct.py \
-	saslpasswd2.py \
-	systemctl.py \
-	test.py \
-	udev.py \
-	virt.py \
-	$(NULL)
+import os
+import pwd
+
+import pytest
+
+from vdsm.storage import lsof
+
+from .marks import requires_root
+
+
+@requires_root
+@pytest.mark.root
+def test_proc_info_used(tmpdir):
+    path = str(tmpdir.join("file"))
+    with open(path, "w") as f:
+        assert list(lsof.proc_info(path)) == [{
+            "command": "pytest",
+            "fd": f.fileno(),
+            "pid": os.getpid(),
+            "user": pwd.getpwuid(os.getuid())[0]
+        }]
+
+
+@requires_root
+@pytest.mark.root
+def test_proc_info_unused(tmpdir):
+    path = tmpdir.join("file")
+    path.write("")
+    assert list(lsof.proc_info(str(path))) == []
+
+
+@requires_root
+@pytest.mark.root
+def test_proc_info_no_such_file():
+    assert list(lsof.proc_info("/no/such/file")) == []

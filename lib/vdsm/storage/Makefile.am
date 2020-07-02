@@ -63,6 +63,7 @@ dist_vdsmstorage_PYTHON = \
 	lvm.py \
 	lvmconf.py \
 	lvmfilter.py \
+	lsof.py \
 	mailbox.py \
 	managedvolume.py \
 	managedvolumedb.py \
