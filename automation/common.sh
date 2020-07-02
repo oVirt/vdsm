@@ -19,10 +19,10 @@ add_advanced_virt() {
 
 [copr:copr.fedorainfracloud.org:sbonazzo:AdvancedVirtualization]
 name=Copr repo for AdvancedVirtualization owned by sbonazzo
-baseurl=https://copr-be.cloud.fedoraproject.org/results/sbonazzo/AdvancedVirtualization/centos-stream-\$basearch/
+mirrorlist=http://mirrorlist.centos.org/?arch=\$basearch&release=8&repo=virt-advanced-virtualization
 type=rpm-md
 gpgcheck=1
-gpgkey=https://copr-be.cloud.fedoraproject.org/results/sbonazzo/AdvancedVirtualization/pubkey.gpg
+gpgkey=https://www.centos.org/keys/RPM-GPG-KEY-CentOS-SIG-Virtualization
 repo_gpgcheck=0
 enabled=1
 enabled_metadata=1
