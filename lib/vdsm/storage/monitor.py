@@ -590,8 +590,8 @@ class MonitorThread(object):
             return
         try:
             self.domain.teardown()
-        except Exception:
-            log.exception("Error tearing down domain %s", self.sdUUID)
+        except Exception as e:
+            log.exception("Error tearing down domain %s: %s", self.sdUUID, e)
         self.domain = None
 
 
