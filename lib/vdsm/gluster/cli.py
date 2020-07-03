@@ -532,7 +532,7 @@ def volumeInfo(volumeName=None, remoteServer=None):
     command = _getGlusterVolCmd() + ["info"]
     if remoteServer:
         command += ['--remote-host=%s' % remoteServer]
-        if is_ipv6_fqdn(remoteServer):
+        if not is_ipv4_fqdn(remoteServer):
             command += ['--inet6']
     if volumeName:
         command.append(volumeName)
@@ -546,10 +546,10 @@ def volumeInfo(volumeName=None, remoteServer=None):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-def is_ipv6_fqdn(address):
+def is_ipv4_fqdn(address):
     try:
-        socket.getaddrinfo(address, None, family=socket.AF_INET6)
-    except OSError:  # cannot resolve to IPV6
+        socket.getaddrinfo(address, None, family=socket.AF_INET)
+    except OSError:  # cannot resolve to IPV4
         return False
     return True
 
