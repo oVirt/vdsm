@@ -95,8 +95,11 @@ for n in range(opts.lun_count):
     subprocess.check_call(["truncate", "-s", "%dG" % opts.lun_size, file_path])
 
     print("Creating backing store %r" % backstore_path)
+    # Using write_back=false to enable write-thru mode. This disables caching
+    # but lowers the chance for data loss. I also experienced lower stability
+    # with write_back=true.
     subprocess.check_call(["targetcli", fileio_path, "create", backstore_name,
-                           file_path])
+                           file_path, "write_back=false"])
 
     subprocess.check_call(["targetcli", backstore_path, "set", "attribute",
                            # Enable Thin Provisioning Unmap (blkdiscard).
