@@ -26,6 +26,7 @@ import six
 import sys
 import os
 import threading
+import stat
 
 # TODO: Stop using internal modules.
 from ovirt_imageio._internal import directio
@@ -183,6 +184,10 @@ def get_password(options):
         return ProtectedPassword(f.read())
 
 
+def is_block_device(path):
+    return stat.S_ISBLK(os.stat(path).st_mode)
+
+
 def handle_volume(con, diskno, src, dst, options):
     write_output('Copying disk %d/%d to %s' % (diskno, len(options.source),
                                                dst))
@@ -196,7 +201,11 @@ def handle_volume(con, diskno, src, dst, options):
     stream = con.newStream()
     preallocated = True
 
+    # Current code does not support writing to block storage using libvirt
+    # sparse stream API.
+    # Libvirt sparseness is only supported from version 3004000 and up.
     if options.allocation == "sparse" and \
+            not is_block_device(dst) and \
             con.getLibVersion() >= 3004000:
         try:
             preallocated = False
