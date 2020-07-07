@@ -243,6 +243,9 @@ class GuestAgent(object):
         return self._diskMappingHash
 
     def start(self):
+        if self._socketName is None:
+            self.log.info("Skipping connection to oVirt guest agent")
+            return
         self.log.info("Starting connection")
         self._prepare_socket()
         self._channelListener.register(

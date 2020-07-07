@@ -132,6 +132,8 @@ class ExpiringCache(object):
 
 
 def cleanup_guest_socket(sock):
+    if sock is None:
+        return
     if os.path.islink(sock):
         rm_file(os.path.realpath(sock))
     rm_file(sock)

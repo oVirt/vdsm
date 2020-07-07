@@ -49,7 +49,6 @@ import vdsm.common.time
 from vdsm.virt import periodic
 from vdsm.virt import virdomain
 from vdsm.virt import vm
-from vdsm.virt import vmchannels
 from vdsm.virt import vmdevices
 from vdsm.virt import vmexitreason
 from vdsm.virt import vmstats
@@ -609,10 +608,27 @@ class TestVm(XMLTestCase):
             self.assertEqual(machine.sdIds, set([domainID]))
 
     def testVmGuestSocketFile(self):
+        # No channel
         with fake.VM(self.conf) as testvm:
-            self.assertEqual(
-                testvm._guestSocketFile,
-                testvm._makeChannelPath(vmchannels.LEGACY_DEVICE_NAME))
+            self.assertIsNone(testvm._guestSocketFile)
+        # New name
+        channel = '''
+<channel type="unix">
+  <source mode="bind" path="/path/to/channel"/>
+  <target type="virtio" name="ovirt-guest-agent.0"/>
+</channel>
+        '''
+        with fake.VM(self.conf, xmldevices=channel) as testvm:
+            self.assertEqual(testvm._guestSocketFile, '/path/to/channel')
+        # Old name
+        channel = '''
+<channel type="unix">
+  <source mode="bind" path="/path/to/channel"/>
+  <target type="virtio" name="com.redhat.rhevm.vdsm"/>
+</channel>
+        '''
+        with fake.VM(self.conf, xmldevices=channel) as testvm:
+            self.assertEqual(testvm._guestSocketFile, '/path/to/channel')
 
     def test_spice_restore_set_passwd(self):
         devices = '''

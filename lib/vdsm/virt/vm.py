@@ -60,7 +60,6 @@ from vdsm.common import logutils
 from vdsm.common import response
 import vdsm.common.time
 import vdsm.virt.jobs
-from vdsm import constants
 from vdsm import hugepages
 from vdsm import jobs
 from vdsm import utils
@@ -336,7 +335,7 @@ class Vm(object):
         for name, path in self._domain.all_channels():
             if name == device_name:
                 return path
-        return constants.P_LIBVIRT_VMCHANNELS + self.id + '.' + device_name
+        return None
 
     def __init__(self, cif, params, recover=False):
         """
