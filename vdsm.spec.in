@@ -212,13 +212,16 @@ Requires: cyrus-sasl-scram
 # Required for solving bug 1575762
 Requires: lvm2 >= 2.02.177-5
 %else
-%if 0%{?rhel}
 %ifarch ppc64le
 # Stuck on RHEL 7.6, use latest version.
 Requires: lvm2 >= 7:2.02.180-10.el7_6.1
-%else
+%else #x86_64
+%if 0%{?centos}
 # For locking_type=4 support https://bugzilla.redhat.com/1809660
 Requires: lvm2 >= 7:2.02.186-7.el7_8.1
+%else #rhel
+# For pvs/vgs/lvs fails randomly under load https://bugzilla.redhat.com/1842600
+Requires: lvm2 >= 7:2.02.187-6.el7
 %endif
 %endif
 %endif
