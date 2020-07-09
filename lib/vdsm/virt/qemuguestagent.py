@@ -422,7 +422,7 @@ class QemuGuestAgentPoller(object):
                 'zone': info.get('timezone.name', 'unknown'),
             }
         # User Info
-        if info.get('user.count', 0) > 0:
+        if 'user.count' in info:
             users = []
             for i in range(info['user.count']):
                 prefix = 'user.%d' % i
