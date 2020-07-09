@@ -436,7 +436,7 @@ class QemuGuestAgentTests(TestCaseBase):
             'fs': 'xfs',
         })
         self.assertEqual(info['diskMapping'], {
-            'e7d27603-0a2e-47ab-8': {'name': '/dev/vda1'},
+            'e7d27603-0a2e-47ab-8': {'name': '/dev/vda'},
         })
         # Hostname
         self.assertEqual(info['guestFQDN'], 'localhost.localdomain')

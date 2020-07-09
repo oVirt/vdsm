@@ -492,8 +492,14 @@ class QemuGuestAgentPoller(object):
                 disk_prefix = '{}disk.{:d}.'.format(prefix, di)
                 if (disk_prefix + 'serial') in info and \
                         (disk_prefix + 'device') in info:
-                    mapping[info[disk_prefix + 'serial']] = \
-                        {'name': info[disk_prefix + 'device']}
+                    dev = info[disk_prefix + 'device']
+                    m = _DISK_DEVICE_RE.match(dev)
+                    if m is not None:
+                        dev = m.group(1)
+                        self.log.debug(
+                            'Stripping partition number: %s -> %s',
+                            info[disk_prefix + 'device'], dev)
+                    mapping[info[disk_prefix + 'serial']] = {'name': dev}
         return {'disksUsage': disks, 'diskMapping': mapping}
 
     def fake_apps_list(self, vm_id, os_id=None, kernel_release=None):
