@@ -17,27 +17,29 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-try:
-    from libnmstate.schema import Bond as BondSchema
-    from libnmstate.schema import DNS
-    from libnmstate.schema import Ethernet
-    from libnmstate.schema import Interface
-    from libnmstate.schema import InterfaceIP
-    from libnmstate.schema import InterfaceIPv6
-    from libnmstate.schema import InterfaceState
-    from libnmstate.schema import InterfaceType
-    from libnmstate.schema import LinuxBridge
-    from libnmstate.schema import OVSBridge as OvsBridgeSchema
-    from libnmstate.schema import Route
-except ImportError:  # nmstate is not available
-    BondSchema = None
-    DNS = None
-    Ethernet = None
-    Interface = None
-    InterfaceIP = None
-    InterfaceIPv6 = None
-    InterfaceState = None
-    InterfaceType = None
-    LinuxBridge = None
-    OvsBridgeSchema = None
-    Route = None
+from libnmstate.schema import Bond as BondSchema
+from libnmstate.schema import DNS
+from libnmstate.schema import Ethernet
+from libnmstate.schema import Interface
+from libnmstate.schema import InterfaceIP
+from libnmstate.schema import InterfaceIPv6
+from libnmstate.schema import InterfaceState
+from libnmstate.schema import InterfaceType
+from libnmstate.schema import LinuxBridge
+from libnmstate.schema import OVSBridge as OvsBridgeSchema
+from libnmstate.schema import Route
+
+
+__all__ = [
+    'BondSchema',
+    'DNS',
+    'Ethernet',
+    'Interface',
+    'InterfaceIP',
+    'InterfaceIPv6',
+    'InterfaceState',
+    'InterfaceType',
+    'LinuxBridge',
+    'OvsBridgeSchema',
+    'Route',
+]

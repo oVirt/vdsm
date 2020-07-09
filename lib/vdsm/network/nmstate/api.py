@@ -20,6 +20,9 @@
 from collections import defaultdict
 import itertools
 
+from libnmstate import apply as state_apply
+from libnmstate import show as state_show
+
 from vdsm.network.common.switch_util import split_switch_type
 from vdsm.network.netconfpersistence import RunningConfig
 
@@ -40,13 +43,6 @@ from .schema import InterfaceState
 from .schema import InterfaceType
 from .schema import Route
 from .sriov import create_sriov_state
-
-try:
-    from libnmstate import apply as state_apply
-    from libnmstate import show as state_show
-except ImportError:  # nmstate is not available
-    state_apply = None
-    state_show = None
 
 
 def setup(desired_state, verify_change):
