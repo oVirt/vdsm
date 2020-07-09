@@ -66,7 +66,7 @@ def nics():
 class TestLinks(object):
     def testGetLink(self, bridge0):
         link = ipwrapper.getLink(bridge0.devName)
-        assert link.isBRIDGE
+        assert link.isBRIDGE()
         assert link.oper_up
         assert link.master is None
         assert link.name == bridge0.devName
