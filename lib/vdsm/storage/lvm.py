@@ -817,6 +817,15 @@ class LVMCache(object):
             self._stalelv = True
             self._lvs.clear()
 
+    def _removelvs(self, vgName, lvNames=None):
+        lvNames = normalize_args(lvNames)
+        with self._lock:
+            if not lvNames:
+                # Find all LVs of the specified VG.
+                lvNames = (lvn for vgn, lvn in self._lvs if vgn == vgName)
+            for lvName in lvNames:
+                self._lvs.pop((vgName, lvName), None)
+
     def flush(self):
         self._invalidateAllPvs()
         self._invalidateAllVgs()
@@ -1589,11 +1598,10 @@ def removeLVs(vgName, lvNames):
         cmd.append("%s/%s" % (vgName, lvName))
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     if rc == 0:
-        for lvName in lvNames:
-            # Remove the LV from the cache
-            _lvminfo._lvs.pop((vgName, lvName), None)
-            # If lvremove succeeded it affected VG as well
-            _lvminfo._invalidatevgs(vgName)
+        # Remove the LV from the cache
+        _lvminfo._removelvs(vgName, lvNames)
+        # If lvremove succeeded it affected VG as well
+        _lvminfo._invalidatevgs(vgName)
     else:
         # Otherwise LV info needs to be refreshed
         _lvminfo._invalidatelvs(vgName, lvNames)
@@ -1725,7 +1733,7 @@ def renameLV(vg, oldlv, newlv):
     if rc != 0:
         raise se.LogicalVolumeRenameError("%s %s %s" % (vg, oldlv, newlv))
 
-    _lvminfo._lvs.pop((vg, oldlv), None)
+    _lvminfo._removelvs(vg, oldlv)
     _lvminfo._reloadlvs(vg, newlv)
 
 
