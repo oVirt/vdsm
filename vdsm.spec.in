@@ -146,6 +146,7 @@ Requires: which
 Requires: sudo >= 1.7.3
 Requires: logrotate
 Requires: lshw
+Requires: lsof
 Requires: ndctl
 Requires: swtpm-tools
 Requires: xz

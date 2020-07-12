@@ -12,6 +12,7 @@ iproute-tc
 iscsi-initiator-utils
 libguestfs-tools-c
 lshw
+lsof
 make
 ovirt-imageio-common
 python3-augeas

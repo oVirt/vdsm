@@ -11,6 +11,7 @@ iproute-tc
 iscsi-initiator-utils
 libguestfs-tools-c
 lshw
+lsof
 make
 mom
 ovirt-imageio-common
