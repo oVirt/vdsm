@@ -1410,12 +1410,10 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
 def removeVG(vgName):
     cmd = ["vgremove", "-f", vgName]
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
-    pvs = tuple(pvName for pvName, pv in six.iteritems(_lvminfo._pvs)
-                if not pv.is_stale() and pv.vg_name == vgName)
     # PVS needs to be reloaded anyhow: if vg is removed they are staled,
     # if vg remove failed, something must be wrong with devices and we want
     # cache updated as well
-    _lvminfo._invalidatepvs(pvs)
+    _lvminfo._invalidatevgpvs(vgName)
     # If vgremove failed reintroduce the VG into the cache
     if rc != 0:
         _lvminfo._invalidatevgs(vgName)
