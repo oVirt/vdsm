@@ -826,6 +826,12 @@ class LVMCache(object):
             for lvName in lvNames:
                 self._lvs.pop((vgName, lvName), None)
 
+    def _removevgs(self, vgNames):
+        vgNames = normalize_args(vgNames)
+        with self._lock:
+            for vgName in vgNames:
+                self._vgs.pop(vgName, None)
+
     def flush(self):
         self._invalidateAllPvs()
         self._invalidateAllVgs()
@@ -1416,7 +1422,7 @@ def removeVG(vgName):
         raise se.VolumeGroupRemoveError("VG %s remove failed." % vgName)
     else:
         # Remove the vg from the cache
-        _lvminfo._vgs.pop(vgName, None)
+        _lvminfo._removevgs(vgName)
 
 
 def removeVGbyUUID(vgUUID):
