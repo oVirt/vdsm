@@ -41,4 +41,4 @@ script:
     --volume /run/udev:/run/udev:Z \
     --volume /dev/log:/dev/log:Z \
     quay.io/ovirt/vdsm-test-$DIST \
-    bash -c "cd /vdsm && ./autogen.sh --system && make all $TARGETS"
+    bash -c "cd /vdsm && travis/test.sh $TARGETS"
