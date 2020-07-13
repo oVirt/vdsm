@@ -768,7 +768,7 @@ class LVMCache(object):
                 self._lvs = new_lvs
                 self._stalelv = False
 
-        return dict(self._lvs)
+        return self._lvs.copy()
 
     def _invalidatepvs(self, pvNames):
         pvNames = normalize_args(pvNames)
@@ -854,7 +854,7 @@ class LVMCache(object):
             self.stats.miss()
             pvs = self._reloadpvs()
         else:
-            pvs = dict(self._pvs)
+            pvs = self._pvs.copy()
             stalepvs = [pv.name for pv in six.itervalues(pvs) if pv.is_stale()]
             if stalepvs:
                 self.stats.miss()
@@ -917,7 +917,7 @@ class LVMCache(object):
             self.stats.miss()
             vgs = self._reloadvgs()
         else:
-            vgs = dict(self._vgs)
+            vgs = self._vgs.copy()
             stalevgs = [vg.name for vg in six.itervalues(vgs) if vg.is_stale()]
             if stalevgs:
                 self.stats.miss()
@@ -968,7 +968,7 @@ class LVMCache(object):
             lvs = self._reloadlvs(vgName)
         else:
             self.stats.hit()
-            lvs = dict(self._lvs)
+            lvs = self._lvs.copy()
 
         lvs = [lv for lv in lvs.values()
                if not lv.is_stale() and (lv.vg_name == vgName)]
