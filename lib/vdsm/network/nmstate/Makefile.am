@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Red Hat, Inc.
+# Copyright 2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = configurators ip link lldp lldpad netinfo netlink nmstate ovs tc nm netswitch
-
 include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetworkdir = $(vdsmpylibdir)/network
-dist_vdsmnetwork_PYTHON = $(srcdir)/*.py
+vdsmnetworknmstatedir = $(vdsmpylibdir)/network/nmstate
+dist_vdsmnetworknmstate_PYTHON = $(srcdir)/*.py
