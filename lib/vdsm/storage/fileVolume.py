@@ -750,12 +750,14 @@ class FileVolume(volume.Volume):
         if self.getType() == sc.PREALLOCATED_VOL:
             self.log.info("Preallocating volume %s to %s",
                           volPath, new_capacity)
-            operation = fallocate.allocate(volPath,
-                                           new_capacity - cur_capacity,
-                                           cur_capacity)
-            with vars.task.abort_callback(operation.abort):
-                with utils.stopwatch("Preallocating volume %s" % volPath):
-                    operation.run()
+            op = fallocate.allocate(
+                volPath, new_capacity - cur_capacity, offset=cur_capacity)
+            with vars.task.abort_callback(op.abort):
+                with utils.stopwatch(
+                        "Preallocating volume {}".format(volPath),
+                        level=logging.INFO,
+                        log=self.log):
+                    op.run()
         else:
             # for sparse files we can just truncate to the correct size
             # also good fallback for failed preallocation
