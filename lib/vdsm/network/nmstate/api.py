@@ -26,7 +26,8 @@ from vdsm.network.netconfpersistence import RunningConfig
 from .bond import Bond
 from .bridge_util import DEFAULT_MTU
 from .bridge_util import is_iface_absent
-from .linux_bridge import LinuxBridgeNetwork
+from .linux_bridge import LinuxBridgeNetwork as LinuxBrNet
+from .ovs.network import generate_state as ovs_generate_state
 from .schema import BondSchema
 from .schema import DNS
 from .schema import Interface
@@ -44,6 +45,11 @@ except ImportError:  # nmstate is not available
     state_show = None
 
 
+class SwitchType(object):
+    LINUX_BRIDGE = 'legacy'
+    OVS = 'ovs'
+
+
 def setup(desired_state, verify_change):
     state_apply(desired_state, verify_change=verify_change)
 
@@ -53,15 +59,29 @@ def generate_state(networks, bondings):
     rconfig = RunningConfig()
     current_ifaces_state = show_interfaces()
 
+    ovs_nets, linux_br_nets = _split_switch_type(networks, rconfig.networks)
+    ovs_bonds, linux_br_bonds = _split_switch_type(bondings, rconfig.bonds)
+    ovs_requested = ovs_nets or ovs_bonds
+    linux_br_requested = linux_br_nets or linux_br_bonds
+
     bond_ifstates = Bond.generate_state(bondings, rconfig.bonds)
-    net_ifstates, routes_state, dns_state = LinuxBridgeNetwork.generate_state(
-        networks, rconfig.networks, current_ifaces_state
-    )
+
+    if ovs_requested:
+        routes_state = None
+        dns_state = None
+        net_ifstates = ovs_generate_state(
+            networks, rconfig.networks, current_ifaces_state
+        )
+    else:
+        net_ifstates, routes_state, dns_state = LinuxBrNet.generate_state(
+            networks, rconfig.networks, current_ifaces_state
+        )
 
     ifstates = _merge_bond_and_net_ifaces_states(bond_ifstates, net_ifstates)
 
-    _set_vlans_base_mtu(ifstates, current_ifaces_state)
-    _set_bond_slaves_mtu(ifstates, current_ifaces_state)
+    if linux_br_requested:
+        _set_vlans_base_mtu(ifstates, current_ifaces_state)
+        _set_bond_slaves_mtu(ifstates, current_ifaces_state)
 
     return _merge_state(ifstates, routes_state, dns_state)
 
@@ -231,3 +251,28 @@ def _merge_state(interfaces_state, routes_state, dns_state):
         )
         state[DNS.KEY] = {DNS.CONFIG: {DNS.SERVER: list(nameservers)}}
     return state
+
+
+def _split_switch_type(desired_config, running_config):
+    ovs = []
+    linux_bridge = []
+    for name, attrs in desired_config.items():
+        if _to_remove(attrs):
+            switch = _get_switch_type(running_config[name])
+        else:
+            switch = _get_switch_type(attrs)
+
+        if switch == SwitchType.LINUX_BRIDGE:
+            linux_bridge.append(name)
+        elif switch == SwitchType.OVS:
+            ovs.append(name)
+
+    return ovs, linux_bridge
+
+
+def _to_remove(attrs):
+    return attrs.get('remove', False)
+
+
+def _get_switch_type(attrs):
+    return attrs.get('switch')

@@ -75,7 +75,10 @@ class TestBond(object):
         expected_state = {nmstate.Interface.KEY: [bond0_state]}
         assert expected_state == state
 
-    def test_translate_remove_bonds(self):
+    def test_translate_remove_bonds(self, rconfig_mock):
+        rconfig_mock.bonds = {
+            TESTBOND0: {'nics': [IFACE0, IFACE1], 'switch': 'legacy'}
+        }
         bondings = {TESTBOND0: {'remove': True}}
 
         state = nmstate.generate_state(networks={}, bondings=bondings)

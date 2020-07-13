@@ -367,6 +367,7 @@ class TestBondedNetwork(object):
                 'defaultRoute': False,
             }
         }
+        rconfig_mock.bonds = {TESTBOND0: {'nics': [], 'switch': 'legacy'}}
 
         networks = {TESTNET1: {'remove': True}}
         bondings = {TESTBOND0: {'remove': True}}
