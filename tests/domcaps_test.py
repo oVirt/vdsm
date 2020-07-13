@@ -138,7 +138,7 @@ class TestDomCaps(TestCaseBase):
 
     @permutations([
         # arch, expected_features
-        [cpuarch.X86_64, _EXPECTED_CPU_FEATURES_X86_64 + ['spec_ctrl']],
+        [cpuarch.X86_64, _EXPECTED_CPU_FEATURES_X86_64],
         [cpuarch.PPC64LE, _EXPECTED_CPU_FEATURES_PPC_64],
         [cpuarch.S390X, _EXPECTED_CPU_FEATURES_S390X],
     ])
@@ -150,16 +150,6 @@ class TestDomCaps(TestCaseBase):
                 (machinetype.libvirtconnection, 'get', lambda: conn), ]):
             result = machinetype.cpu_features()
             self.assertEqual(result, expected_features)
-
-    def test_cpu_features_no_ibrs(self):
-        machinetype.cpu_features.invalidate()
-        conn = FakeConnection(cpuarch.X86_64,
-                              file_name='domcaps_libvirt_x86_64_noibrs.out')
-        with MonkeyPatchScope([
-                (machinetype.cpuarch, 'real', lambda: cpuarch.X86_64),
-                (machinetype.libvirtconnection, 'get', lambda: conn), ]):
-            result = machinetype.cpu_features()
-            self.assertEqual(result, _EXPECTED_CPU_FEATURES_X86_64)
 
     def test_libvirt_exception_cpu_features(self):
         machinetype.cpu_features.invalidate()

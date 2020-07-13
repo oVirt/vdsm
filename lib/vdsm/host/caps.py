@@ -255,4 +255,14 @@ def _getFlagsAndFeatures():
     # list -> set -> list to remove duplicates.
     flags_and_features = list(set(cpuinfo.flags() +
                                   machinetype.cpu_features()))
-    return flags_and_features + machinetype.compatible_cpu_models()
+    cpu_models = machinetype.compatible_cpu_models()
+    # Easier to add here than in Engine:
+    # If -IBRS suffix is present in any of the compatible CPU models,
+    # we can assume spec_ctrl feature.
+    for model in cpu_models:
+        if model.endswith('-IBRS'):
+            spec_ctrl = 'spec_ctrl'
+            if spec_ctrl not in flags_and_features:
+                flags_and_features.append(spec_ctrl)
+            break
+    return flags_and_features + cpu_models
