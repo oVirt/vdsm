@@ -24,13 +24,13 @@ import logging
 import threading
 import time
 
-import six
 
 from vdsm import utils
 from vdsm.common import concurrent
 from vdsm.config import config
 from vdsm.storage import check
 from vdsm.storage import clusterlock
+from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage.sdc import sdCache
 
@@ -142,6 +142,8 @@ class DomainStatus(object):
 class DomainMonitor(object):
 
     def __init__(self, interval):
+        self._lock = threading.Lock()
+        self._shutting_down = False
         self._monitors = {}
         self._interval = interval
         # NOTE: This must be used in asynchronous mode to prevent blocking of
@@ -153,59 +155,75 @@ class DomainMonitor(object):
 
     @property
     def domains(self):
-        return list(self._monitors)
+        with self._lock:
+            return list(self._monitors)
 
     @property
     def poolDomains(self):
-        return [sdUUID for sdUUID, monitor in self._monitors.items()
-                if monitor.poolDomain]
+        with self._lock:
+            return [sdUUID for sdUUID, monitor in self._monitors.items()
+                    if monitor.poolDomain]
 
     def startMonitoring(self, sdUUID, hostId, poolDomain=True):
-        monitor = self._monitors.get(sdUUID)
+        with self._lock:
+            if self._shutting_down:
+                raise se.ShuttingDownError()
 
-        # TODO: Replace with explicit attach.
-        if monitor is not None:
-            if not poolDomain:
-                # Expected when hosted engine agent is restarting.
-                log.debug("Monitor for %s is already running", sdUUID)
+            monitor = self._monitors.get(sdUUID)
+
+            # TODO: Replace with explicit attach.
+            if monitor is not None:
+                if not poolDomain:
+                    # Expected when hosted engine agent is restarting.
+                    log.debug("Monitor for %s is already running", sdUUID)
+                    return
+
+                if monitor.poolDomain:
+                    log.warning("Monitor for %s is already attached to pool",
+                                sdUUID)
+                    return
+
+                # An external storage domain attached to the pool.
+                # From this point, the storage domain is managed by Vdsm.
+                # Expected during Vdsm startup when using hosted engine.
+                log.info("Attaching monitor for %s to the pool", sdUUID)
+                monitor.poolDomain = True
                 return
 
-            if monitor.poolDomain:
-                log.warning("Monitor for %s is already attached to pool",
-                            sdUUID)
-                return
-
-            # An external storage domain attached to the pool. From this point,
-            # the storage domain is managed by Vdsm.  Expected during Vdsm
-            # startup when using hosted engine.
-            log.info("Attaching monitor for %s to the pool", sdUUID)
-            monitor.poolDomain = True
-            return
-
-        log.info("Start monitoring %s", sdUUID)
-        monitor = MonitorThread(sdUUID, hostId, self._interval,
-                                self.onDomainStateChange, self._checker)
-        monitor.poolDomain = poolDomain
-        monitor.start()
-        # The domain should be added only after it succesfully started
-        self._monitors[sdUUID] = monitor
+            log.info("Start monitoring %s", sdUUID)
+            monitor = MonitorThread(
+                sdUUID,
+                hostId,
+                self._interval,
+                self.onDomainStateChange,
+                self._checker)
+            monitor.poolDomain = poolDomain
+            monitor.start()
+            # The domain should be added only after it successfully started.
+            self._monitors[sdUUID] = monitor
 
     def stopMonitoring(self, sdUUIDs):
-        sdUUIDs = frozenset(sdUUIDs)
-        monitors = [monitor for monitor in self._monitors.values()
-                    if monitor.sdUUID in sdUUIDs]
+        with self._lock:
+            if self._shutting_down:
+                raise se.ShuttingDownError()
+
+            sdUUIDs = frozenset(sdUUIDs)
+            monitors = [monitor for monitor in self._monitors.values()
+                        if monitor.sdUUID in sdUUIDs]
+
         self._stopMonitors(monitors)
 
     def isMonitoring(self, sdUUID):
         return sdUUID in self._monitors
 
     def getDomainsStatus(self):
-        for sdUUID, monitor in self._monitors.items():
-            yield sdUUID, monitor.getStatus()
+        with self._lock:
+            return [(sdUUID, monitor.getStatus()) for sdUUID, monitor in
+                    self._monitors.items()]
 
     def getHostStatus(self, domains):
         status = {}
-        for sdUUID, hostId in list(six.iteritems(domains)):
+        for sdUUID, hostId in domains.items():
             try:
                 monitor = self._monitors[sdUUID]
             except KeyError:
@@ -223,7 +241,17 @@ class DomainMonitor(object):
         id. To stop monitors and release the host id, use stopMonitoring().
         """
         log.info("Shutting down domain monitors")
-        self._stopMonitors(list(self._monitors.values()), shutdown=True)
+        with self._lock:
+            if self._shutting_down:
+                raise se.ShuttingDownError()
+
+            # Set the shutdown flag to prevent new calls for stop or start
+            # monitoring which would modify the monitor dicts. We don't
+            # want to hold the lock itself during entire shutdown not to hang
+            # other operations as it can take a while.
+            self._shutting_down = True
+
+        self._stopMonitors(self._monitors.values(), shutdown=True)
         self._checker.stop()
 
     def _stopMonitors(self, monitors, shutdown=False):

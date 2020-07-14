@@ -240,6 +240,26 @@ def monitor_env(shutdown=False, refresh=300):
                 log.error("Error joining thread: %s", e)
 
 
+class FakeMonitorThread(object):
+
+    def __init__(self, sd_uuid, host_id, interval, event, checker):
+        self.sdUUID = sd_uuid
+
+    def start(self):
+        pass
+
+    def stop(self, shutdown=False):
+        pass
+
+    def join(self):
+        pass
+
+    def getStatus(self):
+        return monitor.Status(
+            monitor.PathStatus(),
+            monitor.DomainStatus())
+
+
 class TestMonitorThreadIdle(VdsmTestCase):
 
     def test_initial_status(self):
@@ -887,3 +907,24 @@ class TestStatus(VdsmTestCase):
         status = monitor.Status(monitor.PathStatus(), monitor.DomainStatus())
         self.assertEqual(value, getattr(status, attr))
         self.assertRaises(AttributeError, setattr, status, attr, "new")
+
+
+class TestDomainMonitor:
+
+    def test_start_stop(self, monkeypatch):
+        monkeypatch.setattr(monitor, "MonitorThread", FakeMonitorThread)
+
+        mon = monitor.DomainMonitor(MONITOR_INTERVAL)
+        # Start monitoring SD.
+        mon.startMonitoring("uuid", "host-id")
+        assert mon.domains == ["uuid"]
+        assert mon.poolDomains == ["uuid"]
+        sd_uid, status = mon.getDomainsStatus()[0]
+        assert sd_uid == "uuid"
+        assert status.valid
+
+        # Stop monitoring SD.
+        mon.stopMonitoring(["uuid"])
+        assert mon.domains == []
+        assert mon.poolDomains == []
+        assert mon.getDomainsStatus() == []

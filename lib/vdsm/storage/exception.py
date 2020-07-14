@@ -90,6 +90,11 @@ class ResourceException(GeneralException):
         self.value = "UUID={}".format(UUID)
 
 
+class ShuttingDownError(GeneralException):
+    code = 3001
+    msg = "Shutdown in progress"
+
+
 class VolumeGeneralException(GeneralException):
     code = 4000
     msg = "Volume exception"
