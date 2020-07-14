@@ -19,31 +19,19 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 from binascii import unhexlify
 from collections import namedtuple
 import os
-import sys
 import time
 
 import pytest
-import six
 
 from network.compat import mock
-
-from ..nettestlib import Tap
-from ..nettestlib import dummy_device
-from ..nettestlib import veth_pair
-from ..nettestlib import vlan_device
-from .iperf import IperfServer
-from .iperf import IperfClient
-from .iperf import requires_iperf3
-from .netintegtestlib import Bridge
-from .netintegtestlib import bridge_device
-from .netintegtestlib import network_namespace
-from ..nettestlib import running
+from network.nettestlib import dummy_device
+from network.nettestlib import running
+from network.nettestlib import Tap
+from network.nettestlib import veth_pair
+from network.nettestlib import vlan_device
 
 from vdsm.network import cmd
 from vdsm.network import tc
@@ -51,8 +39,15 @@ from vdsm.network.configurators import qos
 from vdsm.network.ipwrapper import addrAdd, linkSet, netns_exec, link_set_netns
 from vdsm.network.netinfo.qos import DEFAULT_CLASSID
 
+from .iperf import IperfServer
+from .iperf import IperfClient
+from .iperf import requires_iperf3
+from .netintegtestlib import Bridge
+from .netintegtestlib import bridge_device
+from .netintegtestlib import network_namespace
 
-EXT_TC = "/sbin/tc"
+
+EXT_TC = '/sbin/tc'
 
 
 @pytest.fixture
@@ -64,44 +59,44 @@ def bridge_dev():
 @pytest.fixture
 def requires_tc(bridge_dev):
     cmds = [EXT_TC, 'qdisc', 'add', 'dev', bridge_dev.devName, 'ingress']
-    rc, out, err = cmd.exec_sync(cmds)
+    rc, _, err = cmd.exec_sync(cmds)
     if rc != 0:
         pytest.skip(
-            '%r has failed: %s\nDo you have Traffic Control kernel '
-            'modules installed?' % (EXT_TC, err)
+            f'\'{EXT_TC}\' has failed: {err}\n'
+            'Do you have Traffic Control kernel modules installed?'
         )
 
 
 class TestQdisc(object):
-    def _showQdisc(self, bridge):
+    def _show_qdisc(self, bridge):
         _, out, _ = cmd.exec_sync(
-            [EXT_TC, "qdisc", "show", "dev", bridge.devName]
+            [EXT_TC, 'qdisc', 'show', 'dev', bridge.devName]
         )
         return out
 
-    def _addIngress(self, bridge):
+    def _add_ingress(self, bridge):
         tc._qdisc_replace_ingress(bridge.devName)
-        assert 'qdisc ingress' in self._showQdisc(bridge)
+        assert 'qdisc ingress' in self._show_qdisc(bridge)
 
-    def testToggleIngress(self, bridge_dev):
-        self._addIngress(bridge_dev)
+    def test_toggle_ingress(self, bridge_dev):
+        self._add_ingress(bridge_dev)
         tc._qdisc_del(bridge_dev.devName, 'ingress')
-        assert 'qdisc ingress' not in self._showQdisc(bridge_dev)
+        assert 'qdisc ingress' not in self._show_qdisc(bridge_dev)
 
-    def testQdiscsOfDevice(self, bridge_dev):
-        self._addIngress(bridge_dev)
+    def test_qdiscs_of_device(self, bridge_dev):
+        self._add_ingress(bridge_dev)
         assert ('ffff:',) == tuple(tc._qdiscs_of_device(bridge_dev.devName))
 
-    def testReplacePrio(self, bridge_dev):
-        self._addIngress(bridge_dev)
+    def test_replace_prio(self, bridge_dev):
+        self._add_ingress(bridge_dev)
         tc.qdisc.replace(bridge_dev.devName, 'prio', parent=None)
-        assert 'root' in self._showQdisc(bridge_dev)
+        assert 'root' in self._show_qdisc(bridge_dev)
 
-    def testException(self):
+    def test_exception(self):
         pytest.raises(
             tc.TrafficControlException,
             tc._qdisc_del,
-            "__nosuchiface__",
+            '__nosuchiface__',
             'ingress',
         )
 
@@ -175,8 +170,7 @@ class TestPortMirror(object):
             self._bridge1,
             self._bridge2,
         ]
-        # If setUp raise, teardown is not called, so we should either succeed,
-        # or fail without leaving junk around.
+
         cleanup = []
         try:
             for iface in self._devices:
@@ -185,28 +179,19 @@ class TestPortMirror(object):
             self._bridge0.addIf(self._tap0.devName)
             self._bridge1.addIf(self._tap1.devName)
             self._bridge2.addIf(self._tap2.devName)
-        except:
-            t, v, tb = sys.exc_info()
+
+            yield
+        finally:
+            failed = []
             for iface in cleanup:
                 try:
                     iface.delDevice()
                 except Exception:
-                    self.log.exception("Error removing device %s" % iface)
-            six.reraise(t, v, tb)
+                    failed.append(str(iface))
+            if failed:
+                raise RuntimeError(f'Error removing devices: {failed}')
 
-        yield
-
-        failed = False
-        for iface in self._devices:
-            try:
-                iface.delDevice()
-            except Exception:
-                self.log.exception("Error removing device %s" % iface)
-                failed = True
-        if failed:
-            raise RuntimeError("Error tearing down interfaces")
-
-    def _sendPing(self):
+    def _send_ping(self):
         self._tap1.startListener(self._ICMP)
         self._tap0.writeToDevice(self._ICMP)
         # Attention: sleep is bad programming practice! Never use it for
@@ -218,20 +203,18 @@ class TestPortMirror(object):
         else:
             return True
 
-    def testMirroring(self):
+    def test_mirroring(self):
         tc.setPortMirroring(self._bridge0.devName, self._bridge1.devName)
-        assert self._sendPing(), 'Bridge received no mirrored ping requests.'
+        assert self._send_ping(), 'Bridge received no mirrored ping requests.'
 
         tc.unsetPortMirroring(self._bridge0.devName, self._bridge1.devName)
-        assert not self._sendPing(), (
-            'Bridge received mirrored ping '
-            'requests, but mirroring is unset.'
-        )
+        msg = 'Bridge received mirrored ping requests, but mirroring is unset.'
+        assert not self._send_ping(), msg
 
-    def testMirroringWithDistraction(self):
-        "setting another mirror action should not obstract the first one"
+    def test_mirroring_with_distraction(self):
+        # setting another mirror action should not obstract the first one
         tc.setPortMirroring(self._bridge0.devName, self._bridge2.devName)
-        self.testMirroring()
+        self.test_mirroring()
         tc.unsetPortMirroring(self._bridge0.devName, self._bridge2.devName)
 
 
