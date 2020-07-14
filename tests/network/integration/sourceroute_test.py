@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2019 Red Hat, Inc.
+# Copyright 2014-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,12 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 from contextlib import contextmanager
 import os
-import unittest
+
+import pytest
 
 import network as network_tests
 from network.compat import mock
@@ -40,7 +38,7 @@ DEVICE = 'test-network'
 IPV4_ADDRESS = '192.168.99.1'
 IPV4_GW = '192.168.99.2'
 IPV4_MASK = 29
-IPv4_NET = '192.168.99.0/29'
+IPV4_NET = '192.168.99.0/29'
 IPV4_TABLE = '3232260865'
 
 TESTS_STATIC_PATH = os.path.join(
@@ -48,58 +46,62 @@ TESTS_STATIC_PATH = os.path.join(
 )
 
 
-def _routeShowTableAll(table):
+@pytest.fixture
+def nic0():
+    with dummy_device() as nic:
+        yield nic
+
+
+def _route_show_table_all(table):
     f_iproute = os.path.join(TESTS_STATIC_PATH, 'ip_route_show_table_all.out')
     with open(f_iproute) as tabFile:
         return tabFile.readlines()
 
 
-class TestFilters(unittest.TestCase):
-    @mock.patch.object(sourceroute, 'routeShowTable', _routeShowTableAll)
+class TestFilters(object):
+    @mock.patch.object(sourceroute, 'routeShowTable', _route_show_table_all)
     def test_source_route_retrieval(self):
         routes = sourceroute.DynamicSourceRoute._getRoutes(TABLE)
-        self.assertEqual(len(routes), 2)
+        assert len(routes) == 2
         for route in routes:
-            self.assertEqual(route.table, TABLE)
+            assert route.table == TABLE
             if route.device is not None:
-                self.assertEqual(route.device, DEVICE)
+                assert route.device == DEVICE
 
 
-class TestSourceRoute(unittest.TestCase):
-    def test_sourceroute_add_remove_and_read(self):
-        with dummy_device() as nic:
-            addrAdd(nic, IPV4_ADDRESS, IPV4_MASK)
+class TestSourceRoute(object):
+    def test_sourceroute_add_remove_and_read(self, nic0):
+        addrAdd(nic0, IPV4_ADDRESS, IPV4_MASK)
 
-            with create_sourceroute(
-                device=nic, ip=IPV4_ADDRESS, mask=IPV4_MASK, gateway=IPV4_GW
-            ):
-                dsroute = DynamicSourceRoute(nic, None, None, None)
-                routes, rules = dsroute.current_srconfig()
+        with create_sourceroute(
+            device=nic0, ip=IPV4_ADDRESS, mask=IPV4_MASK, gateway=IPV4_GW
+        ):
+            dsroute = DynamicSourceRoute(nic0, None, None, None)
+            routes, rules = dsroute.current_srconfig()
 
-                self.assertEqual(2, len(routes), routes)
-                self.assertEqual(2, len(rules), rules)
+            assert len(routes) == 2
+            assert len(rules) == 2
 
-                self.assertEqual('0.0.0.0/0', routes[0].to)
-                self.assertEqual(nic, routes[0].device)
-                self.assertEqual(IPv4_NET, routes[1].to)
-                self.assertEqual(nic, routes[1].device)
+            assert routes[0].to == '0.0.0.0/0'
+            assert routes[0].device == nic0
+            assert routes[1].to == IPV4_NET
+            assert routes[1].device == nic0
 
-                self.assertEqual(IPv4_NET, rules[0].to)
-                self.assertEqual(IPV4_TABLE, rules[0].table)
-                self.assertEqual(nic, rules[0].iif)
-                self.assertEqual(rules[0].prio, sourceroute.RULE_PRIORITY)
-                self.assertEqual(IPv4_NET, rules[1].src)
-                self.assertEqual(IPV4_TABLE, rules[1].table)
-                self.assertEqual(rules[1].prio, sourceroute.RULE_PRIORITY)
+            assert rules[0].to == IPV4_NET
+            assert rules[0].table == IPV4_TABLE
+            assert rules[0].iif == nic0
+            assert rules[0].prio == sourceroute.RULE_PRIORITY
+            assert rules[1].src == IPV4_NET
+            assert rules[1].table == IPV4_TABLE
+            assert rules[1].prio == sourceroute.RULE_PRIORITY
 
-    def test_sourceroute_add_over_existing_route(self):
-        with dummy_device() as nic:
-            addrAdd(nic, IPV4_ADDRESS, IPV4_MASK)
+    def test_sourceroute_add_over_existing_route(self, nic0):
+        addrAdd(nic0, IPV4_ADDRESS, IPV4_MASK)
 
-            with create_sourceroute(
-                device=nic, ip=IPV4_ADDRESS, mask=IPV4_MASK, gateway=IPV4_GW
-            ):
-                sourceroute.add(nic, IPV4_ADDRESS, IPV4_MASK, IPV4_GW)
+        with create_sourceroute(
+            device=nic0, ip=IPV4_ADDRESS, mask=IPV4_MASK, gateway=IPV4_GW
+        ):
+            sourceroute.add(nic0, IPV4_ADDRESS, IPV4_MASK, IPV4_GW)
 
 
 @contextmanager
