@@ -49,6 +49,7 @@ IPv6_GATEWAY1 = 'fdb3:84e5:4ff4:55e3::ffee'
 IPv6_GATEWAY2 = 'fdb3:84e5:4ff4:55e3::fffe'
 DNS_SERVERS1 = ['1.2.3.4', '5.6.7.8']
 DNS_SERVERS2 = ['9.10.11.12', '13.14.15.16']
+OVS_BRIDGE = [f'ovs_br{i}' for i in range(10)]
 
 
 parametrize_bridged = pytest.mark.parametrize(
@@ -227,6 +228,7 @@ def create_network_config(
     gateway=None,
     ipv6gateway=None,
     nameservers=None,
+    switch='legacy',
 ):
     network_config = _create_interface_network_config(if_type, if_name)
     network_config.update(
@@ -242,6 +244,7 @@ def create_network_config(
     network_config.update(
         {'nameservers': nameservers} if nameservers is not None else {}
     )
+    network_config.update({'switch': switch})
     return network_config
 
 
@@ -277,3 +280,36 @@ def create_dynamic_ip_configuration(dhcpv4, dhcpv6, ipv6autoconf):
     if ipv6autoconf:
         dynamic_ip_config['ipv6autoconf'] = True
     return dynamic_ip_config
+
+
+def create_ovs_bridge_state(name, ports, state='up'):
+    bridge_state = {
+        nmstate.Interface.NAME: name,
+        nmstate.Interface.STATE: state,
+    }
+    if state == 'up':
+        bridge_state[nmstate.Interface.TYPE] = nmstate.InterfaceType.OVS_BRIDGE
+    if ports:
+        bridge_state[nmstate.OvsBridgeSchema.CONFIG_SUBTREE] = {
+            nmstate.OvsBridgeSchema.PORT_SUBTREE: ports
+        }
+
+    return bridge_state
+
+
+def create_ovs_port_state(name, vlan=None):
+    port_state = {nmstate.OvsBridgeSchema.Port.NAME: name}
+    if vlan:
+        port_state[nmstate.OvsBridgeSchema.Port.VLAN_SUBTREE] = {
+            nmstate.OvsBridgeSchema.Port.Vlan.MODE: 'access',
+            nmstate.OvsBridgeSchema.Port.Vlan.TAG: vlan,
+        }
+    return port_state
+
+
+def create_ovs_northbound_state(name, state='up'):
+    nb_state = {nmstate.Interface.NAME: name, nmstate.Interface.STATE: state}
+    if state == 'up':
+        nb_state[nmstate.Interface.TYPE] = nmstate.InterfaceType.OVS_INTERFACE
+
+    return nb_state
