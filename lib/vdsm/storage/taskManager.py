@@ -23,8 +23,6 @@ import os
 import logging
 import threading
 
-import six
-
 from vdsm.config import config
 from vdsm.storage import exception as se
 from vdsm.storage.task import Task, Job, TaskCleanType
@@ -41,7 +39,7 @@ class TaskManager:
         self.tp = ThreadPool("tasks", tpSize, waitTimeout, maxTasks)
         self._tasks = {}
         self._unqueuedTasks = []
-        self._insertTaskLock = threading.Lock()
+        self._lock = threading.Lock()
 
     def queue(self, task):
         return self._queueTask(task, task.commit)
@@ -50,7 +48,7 @@ class TaskManager:
         return self._queueTask(task, task.recover)
 
     def _queueTask(self, task, method):
-        with self._insertTaskLock:
+        with self._lock:
             if task.id in self._tasks:
                 raise se.AddTaskError(
                     'Task id already in use: {0}'.format(task.id))
@@ -61,7 +59,8 @@ class TaskManager:
         try:
             if not self.tp.queueTask(task.id, method):
                 self.log.error("unable to queue task: %s", task.dumpTask())
-                del self._tasks[task.id]
+                with self._lock:
+                    del self._tasks[task.id]
                 raise se.AddTaskError()
             self.log.debug("task queued: %s", task.id)
         except Exception:
@@ -106,15 +105,16 @@ class TaskManager:
         """
         self.log.debug("Entry.")
         subRes = {}
-        for taskID, task in self._tasks.items():
-            if not tag or tag in task.getTags():
-                try:
-                    subRes[taskID] = self.getTaskStatus(taskID)
-                except se.UnknownTask:
-                    # Return statuses for existing tasks only.
-                    self.log.warn("Unknown task %s. "
-                                  "Maybe task was already cleared.",
-                                  taskID)
+        with self._lock:
+            for taskID, task in self._tasks.items():
+                if not tag or tag in task.getTags():
+                    try:
+                        subRes[taskID] = self.getTaskStatus(taskID)
+                    except se.UnknownTask:
+                        # Return statuses for existing tasks only.
+                        self.log.warn("Unknown task %s. "
+                                      "Maybe task was already cleared.",
+                                      taskID)
         self.log.debug("Return: %s", subRes)
         return subRes
 
@@ -124,13 +124,14 @@ class TaskManager:
         """
         self.log.debug("Entry.")
         subRes = {}
-        for taskID, task in self._tasks.items():
-            try:
-                subRes[taskID] = task.getDetails()
-            except se.UnknownTask:
-                # Return info for existing tasks only.
-                self.log.warn("Unknown task %s. Maybe task was already "
-                              "cleared.", taskID)
+        with self._lock:
+            for taskID, task in self._tasks.items():
+                try:
+                    subRes[taskID] = task.getDetails()
+                except se.UnknownTask:
+                    # Return info for existing tasks only.
+                    self.log.warn("Unknown task %s. Maybe task was already "
+                                  "cleared.", taskID)
         self.log.debug("Return: %s", subRes)
         return subRes
 
@@ -139,9 +140,10 @@ class TaskManager:
         Remove Tasks from managed tasks list
         """
         self.log.debug("Entry.")
-        for taskID, task in list(six.iteritems(self._tasks)):
-            if not tag or tag in task.getTags():
-                self._tasks.pop(taskID, None)
+        with self._lock:
+            for taskID, task in list(self._tasks.items()):
+                if not tag or tag in task.getTags():
+                    self._tasks.pop(taskID, None)
         self.log.debug("Return")
 
     def stopTask(self, taskID, force=False):
@@ -166,8 +168,14 @@ class TaskManager:
         self.log.debug("Entry. taskID: %s", taskID)
         # TODO: Should we stop here implicitly ???
         t = self._getTask(taskID)
+
+        # Task clean procedure may block so we don't want to do it under tasks
+        # dict lock, instead use pop under lock in case the task was already
+        # removed by another call.
         t.clean()
-        del self._tasks[taskID]
+        with self._lock:
+            self._tasks.pop(taskID, None)
+
         self.log.debug("Return.")
 
     def getTaskInfo(self, taskID):
@@ -185,15 +193,16 @@ class TaskManager:
         """
         self.log.debug("Entry.")
         subRes = {}
-        for taskID, task in self._tasks.items():
-            if not tag or tag in task.getTags():
-                try:
-                    subRes[taskID] = self.getTaskInfo(taskID)
-                except se.UnknownTask:
-                    # Return info for existing tasks only.
-                    self.log.warn("Unknown task %s. "
-                                  "Maybe task was already cleared.",
-                                  taskID)
+        with self._lock:
+            for taskID, task in self._tasks.items():
+                if not tag or tag in task.getTags():
+                    try:
+                        subRes[taskID] = self.getTaskInfo(taskID)
+                    except se.UnknownTask:
+                        # Return info for existing tasks only.
+                        self.log.warn("Unknown task %s. "
+                                      "Maybe task was already cleared.",
+                                      taskID)
         self.log.debug("Return. Response: %s", subRes)
         return subRes
 
