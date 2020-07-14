@@ -27,8 +27,6 @@ import weakref
 from functools import partial
 from uuid import uuid4
 
-import six
-
 from six.moves import queue
 
 from vdsm import utils
@@ -744,7 +742,7 @@ class Owner(object):
         self.log.debug("Owner.releaseAll resources %s", self.resources)
         self.lock.acquire()
         try:
-            for res in list(six.itervalues(self.resources)):
+            for res in list(self.resources.values()):
                 self._release(res.namespace, res.name)
         finally:
             self.lock.release()
