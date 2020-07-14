@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,20 +18,18 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 import glob
 
-import unittest
+import pytest
 
 from dbus.exceptions import DBusException
 
-from network.nettestlib import dummy_devices
+from network.nettestlib import dummy_device
 from network.nmnettestlib import iface_name, NMService, nm_connections
-from .netintegtestlib import requires_systemctl
 
 from vdsm.network.nm import networkmanager
+
+from .netintegtestlib import requires_systemctl
 
 
 IPV4ADDR = '10.1.1.1/29'
@@ -47,39 +45,41 @@ def setup_module():
     try:
         networkmanager.init()
     except DBusException as ex:
-        # Unfortunately, nose labeling does not operate on module fixtures.
-        # We let the test fail if init was not successful.
         if 'Failed to connect to socket' not in ex.args[0]:
-            raise
+            pytest.skip('dbus socket or the NM service may not be available')
 
 
 def teardown_module():
     _nm_service.teardown()
 
 
-class TestNMService(unittest.TestCase):
+@pytest.fixture
+def nic0():
+    with dummy_device() as nic:
+        yield nic
+
+
+class TestNMService(object):
     def test_network_manager_service_is_running(self):
-        self.assertTrue(networkmanager.is_running())
+        assert networkmanager.is_running()
 
 
-class TestNMConnectionCleanup(unittest.TestCase):
-    def test_remove_all_non_active_connection_from_a_device(self):
+class TestNMConnectionCleanup(object):
+    def test_remove_all_non_active_connection_from_a_device(self, nic0):
         iface = iface_name()
-        with dummy_devices(1) as nics:
-            with nm_connections(iface, IPV4ADDR, slaves=nics, con_count=3):
+        with nm_connections(iface, IPV4ADDR, slaves=(nic0,), con_count=3):
+            device = networkmanager.Device(iface)
+            device.cleanup_inactive_connections()
 
-                device = networkmanager.Device(iface)
-                device.cleanup_inactive_connections()
-
-                self.assertEqual(1, sum(1 for _ in device.connections()))
+            assert sum(1 for _ in device.connections()) == 1
 
 
-class TestNMIfcfg2Connection(unittest.TestCase):
+class TestNMIfcfg2Connection(object):
 
     NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
     NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 
-    def test_detect_connection_based_on_ifcfg_file(self):
+    def test_detect_connection_based_on_ifcfg_file(self, nic0):
         """
         NM may use ifcfg files as its storage format for connections via the
         ifcfg-rh settings plugin.
@@ -91,21 +91,20 @@ class TestNMIfcfg2Connection(unittest.TestCase):
         given the filename.
         """
         iface = iface_name()
-        with dummy_devices(1) as nics:
-            with nm_connections(
-                iface, IPV4ADDR, slaves=nics, con_count=3, save=True
-            ):
-                device = networkmanager.Device(iface)
-                expected_uuids = {
-                    con.connection.uuid for con in device.connections()
-                }
+        with nm_connections(
+            iface, IPV4ADDR, slaves=(nic0,), con_count=3, save=True
+        ):
+            device = networkmanager.Device(iface)
+            expected_uuids = {
+                con.connection.uuid for con in device.connections()
+            }
 
-                actual_uuids = {
-                    networkmanager.ifcfg2connection(file)[0]
-                    for file in self._ifcfg_files()
-                }
+            actual_uuids = {
+                networkmanager.ifcfg2connection(file)[0]
+                for file in self._ifcfg_files()
+            }
 
-                self.assertLessEqual(expected_uuids, actual_uuids)
+            assert actual_uuids >= expected_uuids
 
     @staticmethod
     def _ifcfg_files():
