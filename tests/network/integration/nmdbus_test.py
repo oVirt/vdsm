@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,17 +17,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
-import unittest
+import pytest
 
 from dbus.exceptions import DBusException
 
-from network.nettestlib import dummy_devices
-from network.nmnettestlib import iface_name, TEST_LINK_TYPE, NMService
+from network.nettestlib import dummy_device
+from network.nmnettestlib import iface_name
+from network.nmnettestlib import NMService
 from network.nmnettestlib import nm_connections
-from .netintegtestlib import requires_systemctl
+from network.nmnettestlib import TEST_LINK_TYPE
 
 from vdsm.network.nm import errors
 from vdsm.network.nm.nmdbus import NMDbus
@@ -36,7 +34,10 @@ from vdsm.network.nm.nmdbus.active import NMDbusActiveConnections
 from vdsm.network.nm.nmdbus.device import NMDbusDevice
 from vdsm.network.nm.nmdbus.settings import NMDbusSettings
 
+from .netintegtestlib import requires_systemctl
 
+
+IFACE = iface_name()
 IPV4ADDR = '10.1.1.1/29'
 
 _nm_service = None
@@ -50,162 +51,147 @@ def setup_module():
     try:
         NMDbus.init()
     except DBusException as ex:
-        # Unfortunately, nose labeling does not operate on module fixtures.
-        # We let the test fail if init was not successful.
-        if 'Failed to connect to socket' not in ex.args[0]:
-            raise
+        if 'Failed to connect to socket' in ex.args[0]:
+            pytest.skip('dbus socket or the NM service may not be available')
 
 
 def teardown_module():
     _nm_service.teardown()
 
 
-class TestNMConnectionSettings(unittest.TestCase):
-    def setUp(self):
-        self.nm_settings = NMDbusSettings()
-        self.iface = iface_name()
+@pytest.fixture
+def nic0():
+    with dummy_device() as nic:
+        yield nic
 
-    def test_configured_connections_attributes_existence(self):
-        with dummy_devices(1) as nics:
-            with nm_connections(self.iface, IPV4ADDR, slaves=nics) as connames:
-                nm_con = self._get_connection(connames[0])
 
-                self.assertEqual(connames[0], nm_con.connection.id)
-                self.assertIsNotNone(nm_con.connection.uuid)
-                self.assertIsNotNone(nm_con.connection.type)
+@pytest.fixture(scope='module')
+def nmd_bus():
+    return {
+        'active_cons': NMDbusActiveConnections(),
+        'device': NMDbusDevice(),
+        'settings': NMDbusSettings(),
+    }
 
-    def test_delete_one_of_two_connections(self):
-        with dummy_devices(1) as nics:
-            with nm_connections(
-                self.iface, IPV4ADDR, slaves=nics, con_count=2
-            ) as connames:
 
-                con0 = self._get_connection(connames[0])
-                con0.delete()
-                self.assertIsNone(self._get_connection(connames[0]))
+class TestNMConnectionSettings(object):
+    def test_configured_connections_attributes_existence(self, nic0, nmd_bus):
+        with nm_connections(IFACE, IPV4ADDR, slaves=(nic0,)) as connames:
+            nm_con = self._get_connection(connames[0], nmd_bus)
 
-                con1 = self._get_connection(connames[1])
-                self.assertEqual(connames[1], con1.connection.id)
+            assert nm_con.connection.id == connames[0]
+            assert nm_con.connection.uuid is not None
+            assert nm_con.connection.type is not None
 
-    def _get_connection(self, con_name):
-        for nm_con in self.nm_settings.connections():
+    def test_delete_one_of_two_connections(self, nic0, nmd_bus):
+        with nm_connections(
+            IFACE, IPV4ADDR, slaves=(nic0,), con_count=2
+        ) as connames:
+
+            con0 = self._get_connection(connames[0], nmd_bus)
+            con0.delete()
+            assert self._get_connection(connames[0], nmd_bus) is None
+
+            con1 = self._get_connection(connames[1], nmd_bus)
+            assert con1.connection.id == connames[1]
+
+    def _get_connection(self, con_name, nmd_bus):
+        for nm_con in nmd_bus['settings'].connections():
             if nm_con.connection.id == con_name:
                 return nm_con
 
 
-class TestNMActiveConnections(unittest.TestCase):
-    def test_active_connections_properties_existence(self):
-        nm_active_cons = NMDbusActiveConnections()
+class TestNMActiveConnections(object):
+    def test_active_connections_properties_existence(self, nic0, nmd_bus):
+        with nm_connections(IFACE, IPV4ADDR, slaves=(nic0,)):
+            con_count = 0
+            for connection in nmd_bus['active_cons'].connections():
+                assert connection.id is not None
+                assert connection.uuid is not None
+                assert connection.type is not None
+                assert connection.master_con_path is not None
 
-        iface = iface_name()
-        with dummy_devices(1) as nics:
-            with nm_connections(iface, IPV4ADDR, slaves=nics):
-                con_count = 0
-                for connection in nm_active_cons.connections():
-                    assert connection.id is not None
-                    assert connection.uuid is not None
-                    assert connection.type is not None
-                    assert connection.master_con_path is not None
+                con_count += 1
 
-                    con_count += 1
+            assert con_count > 0
 
-                self.assertGreaterEqual(con_count, 1)
+    def test_active_connections_properties_vs_connection_settings(
+        self, nic0, nmd_bus
+    ):
+        with nm_connections(IFACE, IPV4ADDR, slaves=(nic0,)):
+            for active_con in nmd_bus['active_cons'].connections():
+                connection_path = active_con.con_path()
+                settings_con = nmd_bus['settings'].connection(connection_path)
 
-    def test_active_connections_properties_vs_connection_settings(self):
-        nm_active_cons = NMDbusActiveConnections()
-        nm_settings = NMDbusSettings()
-
-        iface = iface_name()
-        with dummy_devices(1) as nics:
-            with nm_connections(iface, IPV4ADDR, slaves=nics):
-                for active_con in nm_active_cons.connections():
-                    connection_path = active_con.con_path()
-                    settings_con = nm_settings.connection(connection_path)
-
-                    assert active_con.uuid() == settings_con.connection.uuid
-                    assert active_con.type() == settings_con.connection.type
-                    assert active_con.id() == settings_con.connection.id
+                assert active_con.uuid() == settings_con.connection.uuid
+                assert active_con.type() == settings_con.connection.type
+                assert active_con.id() == settings_con.connection.id
 
 
-class TestNMDevice(unittest.TestCase):
-    def test_device_attributes_existence(self):
-        nm_device = NMDbusDevice()
-        nm_settings = NMDbusSettings()
-
+class TestNMDevice(object):
+    def test_device_attributes_existence(self, nic0, nmd_bus):
         device_count = 0
-        iface = iface_name()
-        with dummy_devices(1) as nics:
-            with nm_connections(iface, IPV4ADDR, slaves=nics):
-                for device in nm_device.devices():
-                    try:
-                        assert device.interface() is not None
-                        assert device.state() is not None
-                        assert device.active_connection_path() is not None
-                        assert device.connections_path() is not None
-                    except errors.NMPropertiesNotFoundError:
-                        continue
+        with nm_connections(IFACE, IPV4ADDR, slaves=(nic0,)):
+            for device in nmd_bus['device'].devices():
+                try:
+                    assert device.interface() is not None
+                    assert device.state() is not None
+                    assert device.active_connection_path() is not None
+                    assert device.connections_path() is not None
+                except errors.NMPropertiesNotFoundError:
+                    continue
 
-                    for connection_path in device.connections_path():
-                        settings_con = nm_settings.connection(connection_path)
-                        assert settings_con.connection.uuid is not None
+                for connection_path in device.connections_path():
+                    settings_con = nmd_bus['settings'].connection(
+                        connection_path
+                    )
+                    assert settings_con.connection.uuid is not None
 
-                    device_count += 1
+                device_count += 1
 
-        self.assertGreaterEqual(device_count, 1)
+        assert device_count > 0
 
-    def test_device_with_single_connection(self):
-        self._test_device_with_n_connections(1)
+    def test_device_with_single_connection(self, nic0, nmd_bus):
+        self._test_device_with_n_connections(1, nic0, nmd_bus)
 
-    def test_device_with_multiple_connections(self):
-        self._test_device_with_n_connections(2)
+    def test_device_with_multiple_connections(self, nic0, nmd_bus):
+        self._test_device_with_n_connections(2, nic0, nmd_bus)
 
-    def _test_device_with_n_connections(self, con_count):
-        nm_device = NMDbusDevice()
-        nm_settings = NMDbusSettings()
-        nm_act_cons = NMDbusActiveConnections()
-
+    def _test_device_with_n_connections(self, con_count, nic, nmd_bus):
         configured_connections = set()
         active_connections = set()
+        with nm_connections(
+            IFACE, IPV4ADDR, slaves=(nic,), con_count=con_count
+        ):
+            device = nmd_bus['device'].device(IFACE)
+            for connection_path in device.connections_path():
+                settings_con = nmd_bus['settings'].connection(connection_path)
+                configured_connections.add(settings_con.connection.id)
 
-        iface = iface_name()
-        with dummy_devices(1) as nics:
-            with nm_connections(
-                iface, IPV4ADDR, slaves=nics, con_count=con_count
-            ):
-                device = nm_device.device(iface)
-                for connection_path in device.connections_path():
-                    settings_con = nm_settings.connection(connection_path)
-                    configured_connections.add(settings_con.connection.id)
+            active_con = nmd_bus['active_cons'].connection(
+                device.active_connection_path()
+            )
+            active_connections.add(active_con.id())
 
-                ac = nm_act_cons.connection(device.active_connection_path())
-                active_connections.add(ac.id())
-
-        self.assertEqual(con_count, len(configured_connections))
-        self.assertEqual(set([iface + '0']), active_connections)
+        assert len(configured_connections) == con_count
+        assert active_connections == {IFACE + '0'}
 
 
-class TestNMConnectionCreation(unittest.TestCase):
-    def test_nm_connection_lifetime(self):
-        nm_act_cons = NMDbusActiveConnections()
-        nm_device = NMDbusDevice()
-
-        iface = iface_name()
-        with dummy_devices(1) as nics:
-            with nm_connections(iface, IPV4ADDR, slaves=nics):
-                device = nm_device.device(iface)
+class TestNMConnectionCreation(object):
+    def test_nm_connection_lifetime(self, nmd_bus):
+        with dummy_device() as nic:
+            with nm_connections(IFACE, IPV4ADDR, slaves=(nic,)):
+                device = nmd_bus['device'].device(IFACE)
                 device.syncoper.waitfor_activated_state()
                 active_con_path = device.active_connection_path()
-                active_con = nm_act_cons.connection(active_con_path)
+                active_con = nmd_bus['active_cons'].connection(active_con_path)
 
-                self.assertEqual(TEST_LINK_TYPE, str(active_con.type()))
-                self.assertEqual(
-                    nmtypes.NMActiveConnectionState.ACTIVATED,
-                    active_con.state(),
-                )
+                assert str(active_con.type()) == TEST_LINK_TYPE
+                active_state = nmtypes.NMActiveConnectionState.ACTIVATED
+                assert active_con.state() == active_state
 
-        self._assert_no_device(iface)
+        self._assert_no_device(IFACE, nmd_bus['device'])
 
-    def _assert_no_device(self, iface):
-        nm_device = NMDbusDevice()
-        with self.assertRaises(errors.NMDeviceNotFoundError):
+    def _assert_no_device(self, iface, nm_device):
+        with pytest.raises(errors.NMDeviceNotFoundError):
             nm_device.device(iface)
