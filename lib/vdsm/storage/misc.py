@@ -407,7 +407,8 @@ class Event(object):
     def _emit(self, *args, **kwargs):
         self._log.debug("Emitting event")
         with self._syncRoot:
-            for funcId, (funcRef, oneshot) in self._registrar.items():
+            for funcId in list(self._registrar):
+                funcRef, oneshot = self._registrar[funcId]
                 func = funcRef()
                 if func is None or oneshot:
                     del self._registrar[funcId]
