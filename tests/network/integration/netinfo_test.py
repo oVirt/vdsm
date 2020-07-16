@@ -249,7 +249,7 @@ class TestIPv6Addresses(object):
                     addresses.getIpAddrs()[client],
                     key=lambda ip: ip['address'],
                 )
-                assert 2, len(ip_addrs) == ip_addrs
+                assert len(ip_addrs) == 2
 
                 assert addresses.is_dynamic(ip_addrs[0])
                 assert 'global' == ip_addrs[0]['scope']
