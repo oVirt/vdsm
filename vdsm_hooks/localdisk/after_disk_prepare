@@ -180,7 +180,10 @@ def copy_sparse(src_path, dst_path):
 
 def lv_info(lv_name):
     out = helper("list", lv_name)
-    lvs = json.loads(out)["report"][0]["lv"]
+    try:
+        lvs = json.loads(out)["report"][0]["lv"]
+    except:
+        lvs = None
     if not lvs:
         raise NoSuchLV
     lv = lvs[0]

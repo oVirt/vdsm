@@ -38,7 +38,7 @@ def list(args):
               "--select",
               "lv_name=\"" + args.lv_name + "\"",
               OVIRT_LOCAL_VG)
-    sys.stdout.write(out)
+    sys.stdout.write(str(out))
 
 
 def create(args):
