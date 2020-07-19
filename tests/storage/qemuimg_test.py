@@ -32,6 +32,7 @@ import pytest
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
 from . import qemuio
+from . import userstorage
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
@@ -49,6 +50,21 @@ CLUSTER_SIZE = 64 * KiB
 QEMU_IMG = qemuimg._qemuimg.cmd
 
 CONFIG = make_config([('irs', 'qcow2_compat', '0.10')])
+
+
+@pytest.fixture(
+    scope="module",
+    params=[
+        userstorage.PATHS["mount-512"],
+        userstorage.PATHS["mount-4k"],
+    ],
+    ids=str,
+)
+def user_mount(request):
+    mount = request.param
+    if not mount.exists():
+        pytest.xfail("{} storage not available".format(mount.name))
+    return mount
 
 
 def fake_json_call(data, cmd, **kw):
@@ -390,103 +406,167 @@ class TestConvert:
                             backing='bak', backingFormat='qcow2',
                             dstQcow2Compat='1.11')
 
-    def test_qcow2_backing_file_without_creation(self):
+    @pytest.mark.parametrize("dst_compat,create", [
+        ("0.10", True),
+        ("1.1", False),
+    ])
+    def test_qcow2(self, user_mount, dst_compat, create):
         virtual_size = MiB
-        with namedTemporaryDir() as tmpdir:
-            # Create source chain.
-            src_base = os.path.join(tmpdir, 'src_base.img')
-            op = qemuimg.create(
-                src_base,
-                size=virtual_size,
-                format=qemuimg.FORMAT.QCOW2,
-                qcow2Compat='1.1'
-            )
-            op.run()
+        # Create source chain.
+        src_base = os.path.join(user_mount.path, 'src_base.img')
+        op = qemuimg.create(
+            src_base,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
 
-            src_top = os.path.join(tmpdir, 'src_top.img')
-            op = qemuimg.create(
-                src_top,
-                size=virtual_size,
-                format=qemuimg.FORMAT.QCOW2,
-                qcow2Compat='1.1',
-                backing=src_base,
-                backingFormat='qcow2'
-            )
-            op.run()
+        src_top = os.path.join(user_mount.path, 'src_top.img')
+        op = qemuimg.create(
+            src_top,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1',
+            backing=src_base,
+            backingFormat='qcow2'
+        )
+        op.run()
 
-            # Create dest chain
-            dst_base = os.path.join(tmpdir, 'dst_base.img')
-            op = qemuimg.create(
-                dst_base,
-                size=virtual_size,
-                format=qemuimg.FORMAT.QCOW2,
-                qcow2Compat='1.1'
-            )
-            op.run()
+        # Create dest chain
+        dst_base = os.path.join(user_mount.path, 'dst_base.img')
+        op = qemuimg.create(
+            dst_base,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat=dst_compat,
+        )
+        op.run()
 
-            dst_top = os.path.join(tmpdir, 'dst_top.img')
-            op = qemuimg.create(
-                dst_top,
-                size=virtual_size,
-                format=qemuimg.FORMAT.QCOW2,
-                qcow2Compat='1.1',
-                backing=dst_base,
-                backingFormat='qcow2'
-            )
-            op.run()
+        dst_top = os.path.join(user_mount.path, 'dst_top.img')
+        op = qemuimg.create(
+            dst_top,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat=dst_compat,
+            backing=dst_base,
+            backingFormat='qcow2'
+        )
+        op.run()
 
-            # Write data to the source chain.
-            cluster_size = 64 * KiB
-            for i, path in enumerate([src_base, src_top]):
-                qemuio.write_pattern(
-                    path,
-                    "qcow2",
-                    offset=i * cluster_size,
-                    len=cluster_size,
-                    pattern=0xf0 + i)
+        # Write data to the source chain.
+        cluster_size = 64 * KiB
+        for i, path in enumerate([src_base, src_top]):
+            qemuio.write_pattern(
+                path,
+                "qcow2",
+                offset=i * cluster_size,
+                len=cluster_size,
+                pattern=0xf0 + i)
 
-            # Copy base to base.
-            op = qemuimg.convert(
-                src_base,
-                dst_base,
-                srcFormat='qcow2',
-                dstFormat='qcow2',
-                dstQcow2Compat='1.1',
-                create=False
-            )
-            op.run()
+        # Copy base to base.
+        op = qemuimg.convert(
+            src_base,
+            dst_base,
+            srcFormat='qcow2',
+            dstFormat='qcow2',
+            dstQcow2Compat=dst_compat,
+            create=create
+        )
+        op.run()
 
-            # Copy top to top.
-            op = qemuimg.convert(
-                src_top,
-                dst_top,
-                srcFormat='qcow2',
-                dstFormat='qcow2',
-                backing=dst_base,
-                dstQcow2Compat='1.1',
-                create=False
-            )
-            op.run()
+        # Copy top to top.
+        op = qemuimg.convert(
+            src_top,
+            dst_top,
+            srcFormat='qcow2',
+            dstFormat='qcow2',
+            backing=dst_base,
+            backingFormat='qcow2',
+            dstQcow2Compat=dst_compat,
+            # With a backing we can always use False.
+            create=False
+        )
+        op.run()
 
-            # Run comparisons, if there is a mismatch in content or size
-            # op.run() will raise and fail the test.
-            op = qemuimg.compare(
-                src_base,
-                dst_base,
-                img1_format='qcow2',
-                img2_format='qcow2',
-                strict=True
-            )
-            op.run()
+        # Run comparisons, if there is a mismatch in content or size
+        # op.run() will raise and fail the test.
+        op = qemuimg.compare(
+            src_base,
+            dst_base,
+            img1_format='qcow2',
+            img2_format='qcow2',
+            strict=True
+        )
+        op.run()
 
-            op = qemuimg.compare(
-                src_top,
-                dst_top,
-                img1_format='qcow2',
-                img2_format='qcow2',
-                strict=True
-            )
-            op.run()
+        op = qemuimg.compare(
+            src_top,
+            dst_top,
+            img1_format='qcow2',
+            img2_format='qcow2',
+            strict=True
+        )
+        op.run()
+
+    @pytest.mark.parametrize("dst_compat,create", [
+        ("0.10", True),
+        ("1.1", False),
+    ])
+    def test_qcow2_collapsed(self, user_mount, dst_compat, create):
+        virtual_size = MiB
+        # Create empty source chain.
+        src_base = os.path.join(user_mount.path, 'src_base.img')
+        op = qemuimg.create(
+            src_base,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+
+        src_top = os.path.join(user_mount.path, 'src_top.img')
+        op = qemuimg.create(
+            src_top,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1',
+            backing=src_base,
+            backingFormat='qcow2'
+        )
+        op.run()
+
+        # Create destination image.
+        dst = os.path.join(user_mount.path, 'dst.img')
+        op = qemuimg.create(
+            dst,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat=dst_compat,
+        )
+        op.run()
+
+        # Copy src chain to dst.
+        op = qemuimg.convert(
+            src_top,
+            dst,
+            srcFormat='qcow2',
+            dstFormat='qcow2',
+            dstQcow2Compat=dst_compat,
+            create=create
+        )
+        op.run()
+
+        # Since source is empty strict compare should work on both source
+        # chain and destination.
+        op = qemuimg.compare(
+            src_top,
+            dst,
+            img1_format='qcow2',
+            img2_format='qcow2',
+            strict=True
+        )
+        op.run()
 
 
 class TestConvertCompressed:
