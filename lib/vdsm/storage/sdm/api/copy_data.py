@@ -23,6 +23,8 @@ from contextlib import contextmanager
 import logging
 
 from vdsm import jobs
+from vdsm import utils
+
 from vdsm.common import properties
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
@@ -81,7 +83,11 @@ class Job(base.Job):
                         unordered_writes=self._dest
                             .recommends_unordered_writes,
                         create=False)
-                    self._operation.run()
+                    with utils.stopwatch(
+                            "Copy volume {}".format(self._source.path),
+                            level=logging.INFO,
+                            log=self.log):
+                        self._operation.run()
 
 
 def _create_endpoint(params, host_id, writable):
