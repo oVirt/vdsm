@@ -454,8 +454,10 @@ class Image:
                             dstVol.getFormat()),
                         create=False,
                     )
-                    with utils.stopwatch("Copy volume %s"
-                                         % srcVol.volUUID):
+                    with utils.stopwatch(
+                            "Copy volume {}".format(srcVol.volUUID),
+                            level=logging.INFO,
+                            log=self.log):
                         self._run_qemuimg_operation(operation)
                 except ActionStopped:
                     raise
@@ -737,8 +739,10 @@ class Image:
                             dstVolFormat),
                         create=False,
                     )
-                    with utils.stopwatch("Copy volume %s"
-                                         % srcVol.volUUID):
+                    with utils.stopwatch(
+                            "Copy volume {}".format(srcVol.volUUID),
+                            level=logging.INFO,
+                            log=self.log):
                         self._run_qemuimg_operation(operation)
                 except ActionStopped:
                     raise
