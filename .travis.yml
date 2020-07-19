@@ -8,13 +8,10 @@ services:
 git:
   depth: 1
 
-# Notes: we run the linters only on Fedora 29 to save time. This may miss some
-# issues on CentOS but the chance is very low.
 jobs:
   include:
-    - env: DIST=centos-8   TARGETS="storage tests"
-    - env: DIST=fedora-30  TARGETS="lint"
-    - env: DIST=fedora-30  TARGETS="storage tests"
+    - env: DIST=centos-8  TARGETS="storage tests"
+    - env: DIST=centos-8  TARGETS="lint"
 
 before_install:
   - docker --version
