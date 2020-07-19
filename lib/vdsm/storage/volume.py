@@ -798,6 +798,38 @@ class VolumeManifest(object):
     def getMetaSlot(self):
         raise NotImplementedError
 
+    # Copy volume helpers.
+
+    def requires_create(self):
+        """
+        Return True if we need to use qemuimg.convert(create=True) when this
+        volume is the target image.
+
+        We have 2 cases:
+
+        1. Raw sparse image on filesystem not supporting punching holes (e.g.
+           NFS < 4.2). qemu-img convert will fully allocate the entire image
+           when trying to punch holes in the unallocated areas.
+
+        2. qcow2 compat=0.10 when volume does not have a parent. qemu-img
+           convert will fully allocate the image instead of skipping the
+           unallocated areas.
+           TODO: Remove when qemu-5.1.0 is available.
+           https://bugzilla.redhat.com/1858632
+
+        When qemu-img convert creates the target image it knows that the image
+        is zeroed so it can skip the unallocated areas.
+        """
+        if self.getFormat() == sc.RAW_FORMAT:
+            return self.isSparse()
+        else:
+            puuid = self.getParent()
+            if puuid and puuid != sc.BLANK_UUID:
+                return False
+
+            dom = sdCache.produce(self.sdUUID)
+            return dom.qcow2_compat() == "0.10"
+
 
 class Volume(object):
     log = logging.getLogger('storage.Volume')
@@ -1485,6 +1517,9 @@ class Volume(object):
 
     def setParentTag(self, puuid):
         raise NotImplementedError
+
+    def requires_create(self):
+        return self._manifest.requires_create()
 
 
 class VolumeLease(guarded.AbstractLock):

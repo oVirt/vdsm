@@ -79,10 +79,12 @@ class Job(base.Job):
                         self._dest.path,
                         srcFormat=src_format,
                         dstFormat=dst_format,
+                        dstQcow2Compat=self._dest.qcow2_compat,
                         backing=self._dest.backing_path,
+                        backingFormat=self._dest.backing_qemu_format,
                         unordered_writes=self._dest
                             .recommends_unordered_writes,
-                        create=False)
+                        create=self._dest.requires_create)
                     with utils.stopwatch(
                             "Copy volume {}".format(self._source.path),
                             level=logging.INFO,
@@ -146,9 +148,25 @@ class CopyDataDivEndpoint(properties.Owner):
         return volume.getBackingVolumePath(self.img_id, parent_vol.volUUID)
 
     @property
+    def qcow2_compat(self):
+        dom = sdCache.produce_manifest(self.sd_id)
+        return dom.qcow2_compat()
+
+    @property
+    def backing_qemu_format(self):
+        parent_vol = self.volume.getParentVolume()
+        if not parent_vol:
+            return None
+        return sc.fmt2str(parent_vol.getFormat())
+
+    @property
     def recommends_unordered_writes(self):
         dom = sdCache.produce_manifest(self.sd_id)
         return dom.recommends_unordered_writes(self.volume.getFormat())
+
+    @property
+    def requires_create(self):
+        return self.volume.requires_create()
 
     @property
     def volume(self):

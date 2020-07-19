@@ -45,7 +45,6 @@ from storage.storagetestlib import (
     write_qemu_chain,
 )
 
-import testing
 from . import qemuio
 from . import userstorage
 
@@ -68,10 +67,6 @@ from vdsm.storage import workarounds
 from vdsm.storage.sdm.api import copy_data
 
 DEFAULT_SIZE = MiB
-
-
-xfail_block = pytest.mark.xfail(
-    reason="Doesn't work when -n flag is used by qemu-img")
 
 
 @pytest.fixture(
@@ -272,18 +267,8 @@ class TestCopyDataDIV(VdsmTestCase):
 @pytest.mark.parametrize("env_type,qcow2_compat,sd_version", [
     # env_type, src_compat, sd_version
     # Old storage domain, we supported only 0.10
-    pytest.param(
-        'file', '0.10', 3,
-        marks=pytest.mark.xfail(
-            reason="qemu-img allocates entire image",
-            # Test passes on oVirt CI.
-            strict=not testing.on_ovirt_ci())),
-    pytest.param(
-        'block', '0.10', 3,
-        marks=pytest.mark.xfail(
-            reason="qemu-img allocates entire image",
-            # Test passes on oVirt CI.
-            strict=not testing.on_ovirt_ci())),
+    ('file', '0.10', 3),
+    ('block', '0.10', 3),
     # New domain old volume
     ('file', '0.10', 4),
     ('block', '0.10', 4),
@@ -333,7 +318,7 @@ def test_qcow2_compat(
     pytest.param('file', 'cow', 'raw'),
     pytest.param('file', 'cow', 'cow'),
     pytest.param('block', 'raw', 'raw'),
-    pytest.param('block', 'raw', 'cow', marks=xfail_block),
+    pytest.param('block', 'raw', 'cow'),
     pytest.param('block', 'cow', 'raw'),
     pytest.param('block', 'cow', 'cow'),
 ])
@@ -368,13 +353,8 @@ def test_intra_domain_copy(env_type, src_fmt, dst_fmt):
 
 
 @pytest.mark.parametrize("dest_format,sd_version", [
-    (sc.COW_FORMAT, 5),    # compat=1.1.
-    pytest.param(
-        sc.COW_FORMAT, 3,  # compat=0.10.
-        marks=pytest.mark.xfail(
-            reason="qemu-img allocates entire image",
-            # Test passes on oVirt CI.
-            strict=not testing.on_ovirt_ci())),
+    (sc.COW_FORMAT, 5),  # compat=1.1.
+    (sc.COW_FORMAT, 3),  # compat=0.10.
     (sc.RAW_FORMAT, 5),
 ])
 def test_copy_data_collapse(

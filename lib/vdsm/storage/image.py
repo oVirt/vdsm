@@ -441,18 +441,22 @@ class Image:
                     if parentVol is not None:
                         backing = volume.getBackingVolumePath(
                             imgUUID, parentVol.volUUID)
+                        backingFormat = sc.fmt2str(parentVol.getFormat())
                     else:
                         backing = None
+                        backingFormat = None
 
                     operation = qemuimg.convert(
                         srcVol.getVolumePath(),
                         dstVol.getVolumePath(),
                         srcFormat=srcFormat,
                         dstFormat=dstFormat,
+                        dstQcow2Compat=destDom.qcow2_compat(),
                         backing=backing,
+                        backingFormat=backingFormat,
                         unordered_writes=destDom.recommends_unordered_writes(
                             dstVol.getFormat()),
-                        create=False,
+                        create=dstVol.requires_create(),
                     )
                     with utils.stopwatch(
                             "Copy volume {}".format(srcVol.volUUID),
@@ -735,9 +739,10 @@ class Image:
                         dstVol.getVolumePath(),
                         srcFormat=sc.fmt2str(volParams['volFormat']),
                         dstFormat=sc.fmt2str(dstVolFormat),
+                        dstQcow2Compat=destDom.qcow2_compat(),
                         unordered_writes=destDom.recommends_unordered_writes(
                             dstVolFormat),
-                        create=False,
+                        create=dstVol.requires_create(),
                     )
                     with utils.stopwatch(
                             "Copy volume {}".format(srcVol.volUUID),

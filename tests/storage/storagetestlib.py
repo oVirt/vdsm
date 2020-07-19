@@ -237,6 +237,9 @@ class FakeSD(object):
         if self.lvm:
             self.lvm.extendLV(self._manifest.sdUUID, volumeUUID, size)
 
+    def qcow2_compat(self):
+        return self._manifest.qcow2_compat()
+
 
 def make_sd_metadata(sduuid, version=3, dom_class=sd.DATA_DOMAIN, pools=None):
     md = FakeMetadata()
