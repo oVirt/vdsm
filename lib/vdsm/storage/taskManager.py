@@ -109,7 +109,7 @@ class TaskManager:
             for taskID, task in self._tasks.items():
                 if not tag or tag in task.getTags():
                     try:
-                        subRes[taskID] = self.getTaskStatus(taskID)
+                        subRes[taskID] = task.deprecated_getStatus()
                     except se.UnknownTask:
                         # Return statuses for existing tasks only.
                         self.log.warn("Unknown task %s. "
@@ -197,7 +197,7 @@ class TaskManager:
             for taskID, task in self._tasks.items():
                 if not tag or tag in task.getTags():
                     try:
-                        subRes[taskID] = self.getTaskInfo(taskID)
+                        subRes[taskID] = task.getInfo()
                     except se.UnknownTask:
                         # Return info for existing tasks only.
                         self.log.warn("Unknown task %s. "
