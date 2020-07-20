@@ -37,7 +37,8 @@ from vdsm.network.link.iface import iface
 from vdsm.network.link.iface import random_iface_name
 
 
-def setup_module():
+@pytest.fixture(scope='module', autouse=True)
+def setup():
     check_sysfs_bond_permission()
 
 

@@ -19,9 +19,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 import ipaddress
 import os
 
@@ -65,15 +62,6 @@ ipv6_broken_on_travis_ci = pytest.mark.skipif(
     running_on_travis_ci, reason='IPv6 not supported on travis'
 )
 
-# FIXME: Remove when the tests will use a pytest format (and not a nose one).
-is_bonding_available = False
-
-
-@pytest.fixture(scope='module', autouse=True)
-def bonding_available(bond_module):
-    global is_bonding_available
-    is_bonding_available = bond_module
-
 
 class TestNetinfo(object):
     def test_speed_on_an_iface_that_does_not_support_speed(self):
@@ -109,11 +97,11 @@ class TestNetinfo(object):
         reason='Bond options scanning is fragile on CI',
         strict=False,
     )
-    def test_get_bonding_options(self):
+    def test_get_bonding_options(self, bond_module):
         INTERVAL = '12345'
         bondName = random_iface_name()
 
-        if not is_bonding_available:
+        if not bond_module:
             pytest.skip('Bonding is not available')
 
         with open(BONDING_MASTERS, 'w') as bonds:

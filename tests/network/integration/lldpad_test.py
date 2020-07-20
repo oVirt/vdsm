@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2019 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,12 +33,12 @@ from .netintegtestlib import requires_systemctl
 
 @pytest.fixture(scope='module', autouse=True)
 def lldpad_service():
+    requires_systemctl()
     if not lldptool.is_lldpad_service_running():
         pytest.skip('LLDPAD service is not running.')
 
 
 class TestLldpadReportInteg(object):
-    @requires_systemctl
     def test_get_lldp_tlvs(self):
         with veth_pair() as (nic1, nic2):
             iface(nic1).up()

@@ -1,5 +1,5 @@
 #
-# Copyright 2019 Red Hat, Inc.
+# Copyright 2019-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +17,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
-from __future__ import absolute_import
-from __future__ import division
 
 import functools
 import os
@@ -40,26 +37,17 @@ from vdsm.network.ipwrapper import netns_delete
 _SYSTEMCTL = 'systemctl'
 
 
-def requires_systemctl(function):
-    @functools.wraps(function)
-    def wrapper(*args, **kwargs):
-        _requires_systemctl()
-        return function(*args, **kwargs)
-
-    return wrapper
-
-
 def requires_systemdrun(function):
     @functools.wraps(function)
     def wrapper(*args, **kwargs):
         _requires_root('systemd-run requires root')
-        _requires_systemctl()
+        requires_systemctl()
         return function(*args, **kwargs)
 
     return wrapper
 
 
-def _requires_systemctl():
+def requires_systemctl():
     rc, _, err = cmd.exec_sync([_SYSTEMCTL, 'status', 'foo'])
     run_chroot_err = 'Running in chroot, ignoring request'
     if rc == 1 or run_chroot_err in err:

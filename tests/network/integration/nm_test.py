@@ -34,23 +34,19 @@ from .netintegtestlib import requires_systemctl
 
 IPV4ADDR = '10.1.1.1/29'
 
-_nm_service = None
 
-
-@requires_systemctl
-def setup_module():
-    global _nm_service
-    _nm_service = NMService()
-    _nm_service.setup()
+@pytest.fixture(scope='module', autouse=True)
+def setup():
+    requires_systemctl()
+    nm_service = NMService()
+    nm_service.setup()
     try:
         networkmanager.init()
     except DBusException as ex:
         if 'Failed to connect to socket' not in ex.args[0]:
             pytest.skip('dbus socket or the NM service may not be available')
-
-
-def teardown_module():
-    _nm_service.teardown()
+    yield
+    nm_service.teardown()
 
 
 @pytest.fixture
