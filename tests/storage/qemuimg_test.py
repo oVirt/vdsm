@@ -327,7 +327,7 @@ class TestConvert:
     def test_no_create(self):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
-                        '-n', 'src', 'dst']
+                        'src', '-n', 'dst']
             assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'ProgressCommand', convert)]):

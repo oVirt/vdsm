@@ -252,9 +252,6 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
     options = []
     cwdPath = None
 
-    if not create:
-        cmd.append("-n")
-
     if srcFormat:
         cmd.extend(("-f", srcFormat))
 
@@ -262,12 +259,13 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
 
     if dstFormat:
         cmd.extend(("-O", dstFormat))
-        if dstFormat == FORMAT.QCOW2:
-            qcow2Compat = _validate_qcow2_compat(dstQcow2Compat)
-            options.append('compat=' + qcow2Compat)
-        if preallocation:
-            value = _get_preallocation(preallocation, dstFormat)
-            options.append("preallocation=" + value)
+        if create:
+            if dstFormat == FORMAT.QCOW2:
+                qcow2Compat = _validate_qcow2_compat(dstQcow2Compat)
+                options.append('compat=' + qcow2Compat)
+            if preallocation:
+                value = _get_preallocation(preallocation, dstFormat)
+                options.append("preallocation=" + value)
 
     if backing:
         if not os.path.isabs(backing):
@@ -281,8 +279,11 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
         else:
             cmd.extend(('-B', backing))
 
-    if options:
-        cmd.extend(('-o', ','.join(options)))
+    if create:
+        if options:
+            cmd.extend(('-o', ','.join(options)))
+    else:
+        cmd.append("-n")
 
     if compressed:
         cmd.append('-c')
