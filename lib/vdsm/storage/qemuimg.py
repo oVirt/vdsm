@@ -255,8 +255,6 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
     if srcFormat:
         cmd.extend(("-f", srcFormat))
 
-    cmd.append(srcImage)
-
     if dstFormat:
         cmd.extend(("-O", dstFormat))
         if create:
@@ -291,6 +289,7 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
     if unordered_writes:
         cmd.append('-W')
 
+    cmd.append(srcImage)
     cmd.append(dstImage)
 
     return ProgressCommand(cmd, cwd=cwdPath)

@@ -327,7 +327,7 @@ class TestConvert:
     def test_no_create(self):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
-                        'src', '-n', 'dst']
+                        '-n', 'src', 'dst']
             assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'ProgressCommand', convert)]):
@@ -336,7 +336,7 @@ class TestConvert:
     def test_qcow2_compat(self):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
-                        'src', '-O', 'qcow2', '-o', 'compat=0.10', 'dst']
+                        '-O', 'qcow2', '-o', 'compat=0.10', 'src', 'dst']
             assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
@@ -346,7 +346,7 @@ class TestConvert:
     def test_qcow2_compat_version3(self):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
-                        'src', '-O', 'qcow2', '-o', 'compat=1.1', 'dst']
+                        '-O', 'qcow2', '-o', 'compat=1.1', 'src', 'dst']
             assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
@@ -357,7 +357,7 @@ class TestConvert:
     def test_qcow2_no_backing_file(self):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
-                        'src', '-O', 'qcow2', '-o', 'compat=0.10', 'dst']
+                        '-O', 'qcow2', '-o', 'compat=0.10', 'src', 'dst']
             assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
@@ -367,8 +367,8 @@ class TestConvert:
     def test_qcow2_backing_file(self):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
-                        'src', '-O', 'qcow2', '-o',
-                        'compat=0.10,backing_file=bak', 'dst']
+                        '-O', 'qcow2', '-o', 'compat=0.10,backing_file=bak',
+                        'src', 'dst']
             assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
@@ -379,7 +379,7 @@ class TestConvert:
     def test_qcow2_backing_format(self):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
-                        'src', '-O', 'qcow2', '-o', 'compat=0.10', 'dst']
+                        '-O', 'qcow2', '-o', 'compat=0.10', 'src', 'dst']
             assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
@@ -390,9 +390,9 @@ class TestConvert:
     def test_qcow2_backing_file_and_format(self):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
-                        'src', '-O', 'qcow2', '-o',
+                        '-O', 'qcow2', '-o',
                         'compat=0.10,backing_file=bak,backing_fmt=qcow2',
-                        'dst']
+                        'src', 'dst']
             assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
