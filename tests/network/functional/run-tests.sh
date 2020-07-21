@@ -143,6 +143,10 @@ function disable_nmstate {
     "
 }
 
+function enable_ipv6 {
+    container_exec "echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6"
+}
+
 options=$(getopt --options "" \
     --long help,shell,switch-type:,backend:,nmstate-pr:,nmstate-source:\
     -- "${@}")
@@ -227,6 +231,11 @@ if [ $BACKEND == $BACKEND_LEGACY ];then
     disable_nmstate
 elif [ $BACKEND == $BACKEND_NMSTATE ];then
    SWITCH_TYPE="${SWITCH_TYPE} and nmstate"
+fi
+
+if [ "$TRAVIS" == "true" ]; then
+    # Workaround for https://github.com/travis-ci/travis-ci/issues/8891
+    enable_ipv6
 fi
 
 if [ -n "$debug_shell" ];then
