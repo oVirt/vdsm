@@ -64,6 +64,13 @@ def nic1():
         yield nic
 
 
+@pytest.fixture
+def hidden_nic():
+    # This nic is not visible to refresh caps
+    with dummy_device(prefix='_dummy') as nic:
+        yield nic
+
+
 @nftestlib.parametrize_switch
 @pytest.mark.nmstate
 class TestNetworkBasic(object):
@@ -387,8 +394,8 @@ class TestNetworkBasicLegacy(object):
             with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                 adapter.assertNetworkExists(NETWORK_NAME)
 
-    def test_change_bridged_network_vlan_id_while_tap_device_attached(
-        self, nic0
+    def test_change_bridged_network_vlan_id_while_additional_port_is_attached(
+        self, nic0, hidden_nic
     ):
         NETCREATE = {
             NETWORK_NAME: {
@@ -407,9 +414,8 @@ class TestNetworkBasicLegacy(object):
             }
         }
         with adapter.setupNetworks(NETCREATE, {}, NOCHK):
-            with nftestlib.create_tap() as tapdev:
-                nftestlib.attach_dev_to_bridge(tapdev, NETWORK_NAME)
-                adapter.setupNetworks(NETEDIT, {}, NOCHK)
+            nftestlib.attach_dev_to_bridge(hidden_nic, NETWORK_NAME)
+            adapter.setupNetworks(NETEDIT, {}, NOCHK)
 
 
 @pytest.mark.legacy_switch

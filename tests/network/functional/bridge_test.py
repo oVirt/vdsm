@@ -55,6 +55,13 @@ def nic1():
         yield nic
 
 
+@pytest.fixture
+def hidden_nic():
+    # This nic is not visible to refresh caps
+    with dummy_device(prefix='_dummy') as nic:
+        yield nic
+
+
 @pytest.mark.nmstate
 class TestBridge(object):
     @nftestlib.parametrize_switch
@@ -103,18 +110,15 @@ class TestBridge(object):
     )
     @nftestlib.parametrize_legacy_switch
     def test_create_network_and_reuse_existing_owned_bridge(
-        self, switch, nic0, nic1
+        self, switch, nic0, nic1, hidden_nic
     ):
         NETSETUP1 = {NETWORK_NAME: {'nic': nic0, 'switch': switch}}
         NETSETUP2 = {NETWORK_NAME: {'nic': nic1, 'switch': switch}}
         with adapter.setupNetworks(NETSETUP1, {}, nftestlib.NOCHK):
-            with nftestlib.create_tap() as tapdev:
-                nftestlib.attach_dev_to_bridge(tapdev, NETWORK_NAME)
-                with nftestlib.monitor_stable_link_state(NETWORK_NAME):
-                    adapter.setupNetworks(NETSETUP2, {}, nftestlib.NOCHK)
-                    adapter.assertNetwork(
-                        NETWORK_NAME, NETSETUP2[NETWORK_NAME]
-                    )
+            nftestlib.attach_dev_to_bridge(hidden_nic, NETWORK_NAME)
+            with nftestlib.monitor_stable_link_state(NETWORK_NAME):
+                adapter.setupNetworks(NETSETUP2, {}, nftestlib.NOCHK)
+                adapter.assertNetwork(NETWORK_NAME, NETSETUP2[NETWORK_NAME])
 
     @nftestlib.parametrize_legacy_switch
     def test_reconfigure_bridge_with_vanished_port(self, switch, nic0):
