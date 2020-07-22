@@ -28,7 +28,7 @@ import pytest
 from vdsm.network.cmd import exec_sync
 
 from . import netfunctestlib as nftestlib
-from network.nettestlib import dummy_devices, dummy_device
+from network.nettestlib import dummy_device
 
 
 NETWORK_NAME = 'test-network'
@@ -43,16 +43,27 @@ def create_adapter(target):
     adapter = nftestlib.NetFuncTestAdapter(target)
 
 
+@pytest.fixture
+def nic0():
+    with dummy_device() as nic:
+        yield nic
+
+
+@pytest.fixture
+def nic1():
+    with dummy_device() as nic:
+        yield nic
+
+
 @pytest.mark.nmstate
 class TestBridge(object):
     @nftestlib.parametrize_switch
-    def test_add_bridge_with_stp(self, switch):
+    def test_add_bridge_with_stp(self, switch, nic0):
         if switch == 'ovs':
             pytest.xfail('stp is currently not implemented for ovs')
 
-        with dummy_devices(1) as (nic,):
             NETCREATE = {
-                NETWORK_NAME: {'nic': nic, 'switch': switch, 'stp': True}
+                NETWORK_NAME: {'nic': nic0, 'switch': switch, 'stp': True}
             }
             with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                 adapter.assertNetworkExists(NETWORK_NAME)
@@ -60,28 +71,28 @@ class TestBridge(object):
                 adapter.assertBridgeOpts(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     @nftestlib.parametrize_legacy_switch
-    def test_add_bridge_with_custom_opts(self, switch):
-        with dummy_devices(1) as (nic,):
-            NET_ATTRS = {
-                'nic': nic,
-                'switch': switch,
-                'custom': {
-                    'bridge_opts': 'multicast_snooping=0 multicast_router=0'
-                },
-            }
-            NETCREATE = {NETWORK_NAME: NET_ATTRS}
-            with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
-                adapter.assertBridgeOpts(NETWORK_NAME, NET_ATTRS)
+    def test_add_bridge_with_custom_opts(self, switch, nic0):
+        NET_ATTRS = {
+            'nic': nic0,
+            'switch': switch,
+            'custom': {
+                'bridge_opts': 'multicast_snooping=0 multicast_router=0'
+            },
+        }
+        NETCREATE = {NETWORK_NAME: NET_ATTRS}
+        with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+            adapter.assertBridgeOpts(NETWORK_NAME, NET_ATTRS)
 
     @nftestlib.parametrize_legacy_switch
-    def test_create_network_over_an_existing_unowned_bridge(self, switch):
+    def test_create_network_over_an_existing_unowned_bridge(
+        self, switch, nic0
+    ):
         with _create_linux_bridge(NETWORK_NAME) as brname:
-            with dummy_devices(1) as (nic,):
-                NETCREATE = {
-                    brname: {'bridged': True, 'nic': nic, 'switch': switch}
-                }
-                with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
-                    adapter.assertNetwork(brname, NETCREATE[brname])
+            NETCREATE = {
+                brname: {'bridged': True, 'nic': nic0, 'switch': switch}
+            }
+            with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+                adapter.assertNetwork(brname, NETCREATE[brname])
 
     @pytest.mark.xfail(
         reason='Unstable link while NM is running (BZ#1498022) '
@@ -91,38 +102,38 @@ class TestBridge(object):
         condition=not nftestlib.is_nmstate_backend(),
     )
     @nftestlib.parametrize_legacy_switch
-    def test_create_network_and_reuse_existing_owned_bridge(self, switch):
-        with dummy_devices(2) as (nic1, nic2):
-            NETSETUP1 = {NETWORK_NAME: {'nic': nic1, 'switch': switch}}
-            NETSETUP2 = {NETWORK_NAME: {'nic': nic2, 'switch': switch}}
-            with adapter.setupNetworks(NETSETUP1, {}, nftestlib.NOCHK):
-                with nftestlib.create_tap() as tapdev:
-                    nftestlib.attach_dev_to_bridge(tapdev, NETWORK_NAME)
-                    with nftestlib.monitor_stable_link_state(NETWORK_NAME):
-                        adapter.setupNetworks(NETSETUP2, {}, nftestlib.NOCHK)
-                        adapter.assertNetwork(
-                            NETWORK_NAME, NETSETUP2[NETWORK_NAME]
-                        )
+    def test_create_network_and_reuse_existing_owned_bridge(
+        self, switch, nic0, nic1
+    ):
+        NETSETUP1 = {NETWORK_NAME: {'nic': nic0, 'switch': switch}}
+        NETSETUP2 = {NETWORK_NAME: {'nic': nic1, 'switch': switch}}
+        with adapter.setupNetworks(NETSETUP1, {}, nftestlib.NOCHK):
+            with nftestlib.create_tap() as tapdev:
+                nftestlib.attach_dev_to_bridge(tapdev, NETWORK_NAME)
+                with nftestlib.monitor_stable_link_state(NETWORK_NAME):
+                    adapter.setupNetworks(NETSETUP2, {}, nftestlib.NOCHK)
+                    adapter.assertNetwork(
+                        NETWORK_NAME, NETSETUP2[NETWORK_NAME]
+                    )
 
     @nftestlib.parametrize_legacy_switch
-    def test_reconfigure_bridge_with_vanished_port(self, switch):
-        with dummy_device() as nic1:
-            NETCREATE = {
-                NETWORK_NAME: {'nic': nic1, 'bridged': True, 'switch': switch}
-            }
-            with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
-                with dummy_device() as nic2:
-                    NETCREATE[NETWORK_NAME]['nic'] = nic2
-                    adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK)
-
-                adapter.refresh_netinfo()
-                assert adapter.netinfo.networks[NETWORK_NAME]['ports'] == []
-
+    def test_reconfigure_bridge_with_vanished_port(self, switch, nic0):
+        NETCREATE = {
+            NETWORK_NAME: {'nic': nic0, 'bridged': True, 'switch': switch}
+        }
+        with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+            with dummy_device() as nic1:
                 NETCREATE[NETWORK_NAME]['nic'] = nic1
                 adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK)
 
-                net_ports = adapter.netinfo.networks[NETWORK_NAME]['ports']
-                assert net_ports == [nic1]
+            adapter.refresh_netinfo()
+            assert adapter.netinfo.networks[NETWORK_NAME]['ports'] == []
+
+            NETCREATE[NETWORK_NAME]['nic'] = nic0
+            adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK)
+
+            net_ports = adapter.netinfo.networks[NETWORK_NAME]['ports']
+            assert net_ports == [nic0]
 
 
 @contextmanager
