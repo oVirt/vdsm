@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import os
 import threading
 import uuid
 
@@ -44,7 +45,9 @@ from storage.storagetestlib import (
     write_qemu_chain,
 )
 
+import testing
 from . import qemuio
+from . import userstorage
 
 from testValidation import broken_on_ci
 from testlib import make_uuid
@@ -66,8 +69,23 @@ from vdsm.storage.sdm.api import copy_data
 
 DEFAULT_SIZE = MiB
 
+
 xfail_block = pytest.mark.xfail(
     reason="Doesn't work when -n flag is used by qemu-img")
+
+
+@pytest.fixture(
+    scope="module",
+    params=[
+        userstorage.PATHS["mount-512"],
+    ],
+    ids=str,
+)
+def user_mount(request):
+    mount = request.param
+    if not mount.exists():
+        pytest.xfail("{} storage not available".format(mount.name))
+    return mount
 
 
 @expandPermutations
@@ -126,38 +144,6 @@ class TestCopyDataDIV(VdsmTestCase):
             self.assertEqual(
                 qemuimg.info(dst_vol.volumePath)['virtualsize'],
                 qemuimg.info(dst_vol.volumePath)['actualsize'])
-
-    @permutations((
-        # env_type, src_compat, sd_version
-        # Old storage domain, we supported only 0.10
-        ('file', '0.10', 3),
-        ('block', '0.10', 3),
-        # New domain old volume
-        ('file', '0.10', 4),
-        ('block', '0.10', 4),
-        # New domain, new volumes
-        ('file', '1.1', 4),
-        ('block', '1.1', 4),
-    ))
-    def test_qcow2_compat(self, env_type, qcow2_compat, sd_version):
-        src_fmt = sc.name2type("cow")
-        dst_fmt = sc.name2type("cow")
-        job_id = make_uuid()
-
-        with make_env(env_type, src_fmt, dst_fmt, sd_version=sd_version,
-                      src_qcow2_compat=qcow2_compat) as env:
-            src_vol = env.src_chain[0]
-            dst_vol = env.dst_chain[0]
-            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
-            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
-            job = copy_data.Job(job_id, 0, source, dest)
-
-            job.run()
-
-            actual_compat = qemuimg.info(dst_vol.volumePath)['compat']
-            self.assertEqual(actual_compat, env.sd_manifest.qcow2_compat())
 
     # TODO: Missing tests:
     # We should a test of copying from old domain (version=3)
@@ -283,6 +269,64 @@ class TestCopyDataDIV(VdsmTestCase):
     # Copy between 2 different domains
 
 
+@pytest.mark.parametrize("env_type,qcow2_compat,sd_version", [
+    # env_type, src_compat, sd_version
+    # Old storage domain, we supported only 0.10
+    pytest.param(
+        'file', '0.10', 3,
+        marks=pytest.mark.xfail(
+            reason="qemu-img allocates entire image",
+            # Test passes on oVirt CI.
+            strict=not testing.on_ovirt_ci())),
+    pytest.param(
+        'block', '0.10', 3,
+        marks=pytest.mark.xfail(
+            reason="qemu-img allocates entire image",
+            # Test passes on oVirt CI.
+            strict=not testing.on_ovirt_ci())),
+    # New domain old volume
+    ('file', '0.10', 4),
+    ('block', '0.10', 4),
+    # New domain, new volumes
+    ('file', '1.1', 4),
+    ('block', '1.1', 4),
+])
+def test_qcow2_compat(
+        user_mount, fake_scheduler, env_type, qcow2_compat, sd_version):
+    src_fmt = sc.name2type("cow")
+    dst_fmt = sc.name2type("cow")
+    job_id = make_uuid()
+    data_center = os.path.join(user_mount.path, "data-center")
+
+    with make_env(
+            env_type, src_fmt, dst_fmt,
+            sd_version=sd_version,
+            src_qcow2_compat=qcow2_compat,
+            data_center=data_center) as env:
+        src_vol = env.src_chain[0]
+        dst_vol = env.dst_chain[0]
+        source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
+                      img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
+        dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
+                    img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+        job = copy_data.Job(job_id, 0, source, dest)
+
+        job.run()
+
+        actual_compat = qemuimg.info(dst_vol.volumePath)['compat']
+        assert actual_compat == env.sd_manifest.qcow2_compat()
+
+        # After the copy, images must be exactly the same.
+        op = qemuimg.compare(
+            src_vol.getVolumePath(),
+            dst_vol.getVolumePath(),
+            img1_format='qcow2',
+            img2_format='qcow2',
+            strict=True
+        )
+        op.run()
+
+
 @pytest.mark.parametrize("env_type,src_fmt,dst_fmt", [
     pytest.param('file', 'raw', 'raw'),
     pytest.param('file', 'raw', 'cow'),
@@ -323,15 +367,23 @@ def test_intra_domain_copy(env_type, src_fmt, dst_fmt):
             dst_vol.volumePath)['format'])
 
 
-@pytest.mark.parametrize(
-    "dest_format", [sc.COW_FORMAT, sc.RAW_FORMAT])
+@pytest.mark.parametrize("dest_format,sd_version", [
+    (sc.COW_FORMAT, 5),    # compat=1.1.
+    pytest.param(
+        sc.COW_FORMAT, 3,  # compat=0.10.
+        marks=pytest.mark.xfail(
+            reason="qemu-img allocates entire image",
+            # Test passes on oVirt CI.
+            strict=not testing.on_ovirt_ci())),
+    (sc.RAW_FORMAT, 5),
+])
 def test_copy_data_collapse(
         tmpdir, tmp_repo, fake_access, fake_rescan,
         tmp_db, fake_task, fake_scheduler, monkeypatch,
-        dest_format):
+        dest_format, sd_version):
     dom = tmp_repo.create_localfs_domain(
         name="domain",
-        version=5)
+        version=sd_version)
 
     chain_size = 3
     volumes = create_chain(dom, chain_size)
@@ -353,7 +405,7 @@ def test_copy_data_collapse(
         dom,
         dest_img_id,
         dest_vol_id,
-        dest_format)
+        volFormat=dest_format)
 
     source = dict(
         endpoint_type='div',
@@ -372,12 +424,23 @@ def test_copy_data_collapse(
     monkeypatch.setattr(guarded, 'context', fake_guarded_context())
     job.run()
 
-    # verify the data written to the source chain is available on the
-    # collapsed target volume
-    for i in range(chain_size):
-        qemuio.verify_pattern(dest_vol.getVolumePath(),
-                              sc.fmt2str(dest_vol.getFormat()),
-                              offset=(i * length))
+    # Source chain and destination image must have the same data but allocation
+    # may differ.
+    op = qemuimg.compare(
+        source_leaf_vol.getVolumePath(),
+        dest_vol.getVolumePath(),
+        img1_format='qcow2',
+        img2_format=sc.fmt2str(dest_format),
+        strict=False
+    )
+    op.run()
+
+    # Destination actual size should be smaller than source chain actual size,
+    # since we have only one qcow2 header (qcow2), or no header (raw).
+    src_actual_size = sum(qemuimg.info(vol.getVolumePath())["actualsize"]
+                          for vol in volumes)
+    dst_actual_size = qemuimg.info(dest_vol.getVolumePath())["actualsize"]
+    assert dst_actual_size < src_actual_size
 
 
 def create_volume(
@@ -423,8 +486,12 @@ def create_chain(dom, chain_size=2):
 @contextmanager
 def make_env(storage_type, src_fmt, dst_fmt, chain_length=1,
              size=DEFAULT_SIZE, sd_version=3,
-             src_qcow2_compat='0.10', prealloc=sc.SPARSE_VOL):
-    with fake_env(storage_type, sd_version=sd_version) as env:
+             src_qcow2_compat='0.10', prealloc=sc.SPARSE_VOL,
+             data_center=None):
+    with fake_env(
+            storage_type,
+            sd_version=sd_version,
+            data_center=data_center) as env:
         rm = FakeResourceManager()
         with MonkeyPatchScope([
             (guarded, 'context', fake_guarded_context()),
