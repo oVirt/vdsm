@@ -41,6 +41,9 @@ install_dependencies() {
 
     # needed by network test suite
     dnf install -y openvswitch
+
+    # needed by virt test suite
+    dnf update -y python3-libvirt
 }
 
 build_vdsm() {
