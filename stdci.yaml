@@ -12,9 +12,11 @@ stages:
               - ppc64le:
                   distributions:
                     - el8
+                    - rhel8
               - x86_64:
                   distributions:
                     - el8
+                    - rhel8
                     - fc30
   - check-patch:
       archs:
@@ -29,6 +31,7 @@ stages:
                 - 'build-aux/*'
             distributions:
               - el8
+              - rhel8
               - fc30
         - linters:
             distributions:
@@ -38,6 +41,7 @@ stages:
               host-distro: newer
             distributions:
               - el8
+              - rhel8
               - fc30
         - nmstate-func-tests:
             run-if:
