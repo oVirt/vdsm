@@ -943,21 +943,6 @@ def monitor_stable_link_state(device, wait_for_linkup=True):
                 )
 
 
-@contextmanager
-def create_tap():
-    devname = '_tap99'
-    rc, _, err = exec_sync(['ip', 'tuntap', 'add', devname, 'mode', 'tap'])
-    if rc != 0:
-        pytest.fail('Unable to create tap device. err: {}'.format(err))
-    try:
-        iface(devname).up()
-        yield devname
-    finally:
-        exec_sync(['ip', 'tuntap', 'del', devname, 'mode', 'tap'])
-        if nmstate.is_nmstate_backend():
-            exec_sync(['nmcli', 'con', 'del', devname])
-
-
 def attach_dev_to_bridge(tapdev, bridge):
     rc, _, err = exec_sync(['ip', 'link', 'set', tapdev, 'master', bridge])
     if rc != 0:
