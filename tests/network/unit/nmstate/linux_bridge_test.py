@@ -1152,10 +1152,6 @@ class TestMtu(object):
                 nmstate.Interface.NAME: '{}.{}'.format(TESTBOND0, VLAN102),
                 nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
             },
-            {
-                nmstate.Interface.NAME: TESTBOND0,
-                nmstate.Interface.MTU: DEFAULT_MTU,
-            },
         ]
         sort_by_name(expected_ifaces_states)
         assert {nmstate.Interface.KEY: expected_ifaces_states} == state

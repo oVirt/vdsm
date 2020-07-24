@@ -95,9 +95,18 @@ def _set_vlans_base_mtu(desired_ifstates, current_ifstates):
             )
 
     for base_vlan, vlans_mtus in vlans_base_mtus.items():
+        max_mtu = max(vlans_mtus)
+        # No need to enforce the MTU if it didn't change
+        if (
+            base_vlan not in desired_ifstates
+            and base_vlan in current_ifstates
+            and current_ifstates[base_vlan][Interface.MTU] == max_mtu
+        ):
+            continue
+
         if base_vlan not in desired_ifstates:
             desired_ifstates[base_vlan] = {Interface.NAME: base_vlan}
-        desired_ifstates[base_vlan][Interface.MTU] = max(vlans_mtus)
+        desired_ifstates[base_vlan][Interface.MTU] = max_mtu
 
 
 def _set_bond_slaves_mtu(desired_ifstates, current_ifstates):
