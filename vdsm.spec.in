@@ -213,7 +213,9 @@ Requires: libvirt-lock-sanlock
 
 %if 0%{?rhel}
 %if 0%{?centos}
-Requires: libvirt-daemon-kvm >= 6.0.0
+# Advanced Virt fix for live merge, https://bugzilla.redhat.com/1840414
+# TODO: Depend on the same version as RHEL once it is available upstream.
+Requires: libvirt-daemon-kvm >= 6.0.0-17
 %else
 # Advanced Virt fix for live snapshots of read-only disks, https://bugzilla.redhat.com/1832204
 Requires: libvirt-daemon-kvm >= 6.0.0-20.module+el8.2.1+6621+ddee07d5
