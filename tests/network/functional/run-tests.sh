@@ -248,7 +248,6 @@ container_exec "
     && \
     pytest \
       -vv \
-      --log-level=DEBUG \
       --target-lib \
       $stable_link_skip \
       -m \"$SWITCH_TYPE\" \

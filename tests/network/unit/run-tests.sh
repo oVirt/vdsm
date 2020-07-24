@@ -43,7 +43,7 @@ function run_unit_tests {
     container_exec "
     cd $VDSM_WORKDIR/$PROJECT \
     && \
-    pytest -vv --log-level=DEBUG tests/network/unit
+    pytest -vv tests/network/unit
     "
 }
 

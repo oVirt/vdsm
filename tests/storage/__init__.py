@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,12 +21,3 @@
 
 from __future__ import absolute_import
 from __future__ import division
-
-import logging
-
-# Configure logging for the storage tests
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s %(levelname)-5s (%(threadName)s) [%(name)s] "
-           "%(message)s (%(module)s:%(lineno)d)"
-)

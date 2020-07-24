@@ -56,7 +56,8 @@ def configureLogging():
         logging.basicConfig(
             filename=TEST_LOG,
             filemode='a',
-            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+            format='%(asctime)s,%(msecs)03d %(levelname)-7s (%(threadName)s) '
+                   '[%(name)s] %(message)s (%(module)s:%(lineno)d)',
             datefmt='%H:%M:%S',
             level=logging.DEBUG)
 

@@ -42,7 +42,7 @@ function run_integration_tests {
     container_exec "
         cd $VDSM_WORKDIR/$PROJECT \
         && \
-        pytest -vv --log-level=DEBUG tests/network/integration
+        pytest -vv tests/network/integration
     "
 }
 
