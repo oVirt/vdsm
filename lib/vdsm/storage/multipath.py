@@ -219,7 +219,7 @@ def get_scsi_serial(physdev):
         # This can result in keeping multipath devices without any valid path.
         # For such devices scsi_id fails. Until we have proper cleanup in
         # place, we ignore these failing devices.
-        log.debug("Ignoring scsi_id failure for device %s: %e", blkdev, e)
+        log.debug("Ignoring scsi_id failure for device %s: %s", blkdev, e)
     else:
         for line in out.decode("utf-8").splitlines():
             if line.startswith("ID_SERIAL="):
