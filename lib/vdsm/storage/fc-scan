@@ -74,7 +74,11 @@ log = logging.getLogger("fc-scan")
 #
 # For more info see:
 # https://bugzilla.redhat.com/1598266#c63
-MAX_WORKERS = 64
+#
+# However on older systems with lower number of cpus, fc-scan seem to
+# take too many resources. Lets limit the number of workers to 1 worker
+# per cpu.
+MAX_WORKERS = min(64, os.sysconf('SC_NPROCESSORS_CONF'))
 
 
 class Error(Exception):
