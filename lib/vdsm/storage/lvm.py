@@ -563,12 +563,13 @@ class LVMCache(object):
                         self._pvs[p] = pv
                         updatedPVs[p] = pv
 
-                # This may be a real error (failure to reload existing PV) or
-                # no error at all (failure to reload non-existing PV), so we
-                # cannot make this an error.
-                log.warning(
-                    "Marked pvs=%r as Unreadable due to reload failure",
-                    logutils.Head(updatedPVs, max_items=20))
+                if updatedPVs:
+                    # This may be a real error (failure to reload existing PV)
+                    # or no error at all (failure to reload non-existing PV),
+                    # so we cannot make this an error.
+                    log.warning(
+                        "Marked pvs=%r as Unreadable due to reload failure",
+                        logutils.Head(updatedPVs, max_items=20))
 
                 return updatedPVs
 
@@ -631,12 +632,13 @@ class LVMCache(object):
                         self._vgs[v] = Unreadable(vg.name)
                         unreadable_vgs.append(vg.name)
 
-                # This may be a real error (failure to reload existing VG) or
-                # no error at all (failure to reload non-existing VG), so we
-                # cannot make this an error.
-                log.warning(
-                    "Marked vgs=%r as Unreadable due to reload failure",
-                    logutils.Head(unreadable_vgs, max_items=20))
+                if unreadable_vgs:
+                    # This may be a real error (failure to reload existing VG)
+                    # or no error at all (failure to reload non-existing VG),
+                    # so we cannot make this an error.
+                    log.warning(
+                        "Marked vgs=%r as Unreadable due to reload failure",
+                        logutils.Head(unreadable_vgs, max_items=20))
 
                 # NOTE: vgs may return useful output even on failure, so we
                 # don't retrun here.
@@ -706,12 +708,13 @@ class LVMCache(object):
                         self._lvs[key] = lv
                         updatedLVs[key] = lv
 
-                # This may be a real error (failure to reload existing LV) or
-                # no error at all (failure to reload non-existing LV), so we
-                # cannot make this an error.
-                log.warning(
-                    "Marked lvs=%r lvs as Unreadable due to reload failure",
-                    logutils.Head(updatedLVs, max_items=20))
+                if updatedLVs:
+                    # This may be a real error (failure to reload existing LV)
+                    # or no error at all (failure to reload non-existing LV),
+                    # so we cannot make this an error.
+                    log.warning(
+                        "Marked lvs=%r as Unreadable due to reload failure",
+                        logutils.Head(updatedLVs, max_items=20))
 
                 return updatedLVs
 
