@@ -25,8 +25,9 @@ function remove_container {
 
 function copy_sources_to_workdir {
     container_exec "
-    mkdir $VDSM_WORKDIR && \
-    cp -rf $CONTAINER_WORKSPACE $VDSM_WORKDIR/"
+        mkdir $VDSM_WORKDIR && \
+        cp -rf $CONTAINER_WORKSPACE $VDSM_WORKDIR/
+    "
 }
 
 function patch_dist_commons {
@@ -41,9 +42,9 @@ function patch_dist_commons {
 
 function run_unit_tests {
     container_exec "
-    cd $VDSM_WORKDIR/$PROJECT \
-    && \
-    pytest -vv tests/network/unit
+        cd $VDSM_WORKDIR/$PROJECT \
+        && \
+        pytest -vv tests/network/unit
     "
 }
 
