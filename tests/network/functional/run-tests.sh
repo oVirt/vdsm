@@ -148,7 +148,7 @@ function enable_ipv6 {
 }
 
 options=$(getopt --options "" \
-    --long help,shell,switch-type:,backend:,nmstate-pr:,nmstate-source:\
+    --long help,shell,switch-type:,backend:,nmstate-pr:,nmstate-source:,pytest-args:\
     -- "${@}")
 eval set -- "$options"
 while true; do
@@ -173,10 +173,14 @@ while true; do
         nmstate_source="1"
         nmstate_mount="-v $1:$NMSTATE_WORKSPACE:Z"
         ;;
+    --pytest-args)
+        shift
+        additional_pytest_args="$1"
+        ;;
     --help)
         set +x
         echo -n "$0 [--shell] [--help] [--switch-type=<SWITCH_TYPE>] [--backend=<BACKEND>] [--nmstate-pr=<PR_ID>] "
-        echo -n "[--nmstate-source=<PATH_TO_NMSTATE_SRC>]"
+        echo -n "[--nmstate-source=<PATH_TO_NMSTATE_SRC>] [--pytest-args=<ADDITIONAL_PYTEST_ARGUMENTS>]"
         echo "  Valid SWITCH_TYPEs are:"
         echo "     * $SWITCH_TYPE_LINUX (default)"
         echo "     * $SWITCH_TYPE_OVS"
@@ -251,5 +255,6 @@ container_exec "
       --target-lib \
       $stable_link_skip \
       -m \"$SWITCH_TYPE\" \
-      tests/network/functional
+      tests/network/functional \
+      $additional_pytest_args
 "
