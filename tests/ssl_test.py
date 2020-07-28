@@ -25,7 +25,6 @@ from __future__ import print_function
 import socket
 
 import pytest
-import six
 
 from vdsm.common import cmdutils
 from vdsm.common import concurrent
@@ -35,7 +34,7 @@ from vdsm.sslutils import SSLContext, SSLHandshakeDispatcher
 from yajsonrpc.betterAsyncore import Reactor
 
 from integration.sslhelper import key_cert_pair  # noqa: F401
-from testing import on_centos, on_fedora
+from testing import on_centos, on_fedora, on_rhel
 
 
 @pytest.fixture
@@ -149,13 +148,13 @@ def client_cmd(listener, key_cert_pair):
     pytest.param(
         '-tls1',
         id='tls1',
-        marks=pytest.mark.skipif(six.PY3 and on_fedora(),
+        marks=pytest.mark.skipif(on_fedora(),
                                  reason="permissive crypto policy")
     ),
     pytest.param(
         '-tls1_1',
         id='tls1.1',
-        marks=pytest.mark.skipif(six.PY3 and on_fedora(),
+        marks=pytest.mark.skipif(on_fedora(),
                                  reason="permissive crypto policy")
     )
 ])
@@ -168,14 +167,14 @@ def test_tls_unsupported_protocols(client_cmd, protocol):
     pytest.param(
         '-tls1',
         id='tls1',
-        marks=pytest.mark.skipif(six.PY2 or on_centos(8),
+        marks=pytest.mark.skipif(on_centos(8) or on_rhel(8),
                                  reason=("unsupported or blocked "
                                          "by crypto policy"))
     ),
     pytest.param(
         '-tls1_1',
         id='tls1.1',
-        marks=pytest.mark.skipif(six.PY2 or on_centos(8),
+        marks=pytest.mark.skipif(on_centos(8) or on_rhel(8),
                                  reason=("unsupported or blocked "
                                          "by crypto policy"))
     ),
