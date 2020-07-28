@@ -33,7 +33,7 @@ from vdsm.storage.lvmfilter import MountInfo
 from . marks import requires_root
 
 FAKE_LSBLK = os.path.join(os.path.dirname(__file__), "fake-lsblk")
-FAKE_DEVICES = ("/dev/sda2",)
+FAKE_DEVICES = ("/dev/disk/by-id/lvm-pv-uuid-FAKE-UUID",)
 
 log = logging.getLogger("test")
 

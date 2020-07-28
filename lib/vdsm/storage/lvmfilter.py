@@ -42,11 +42,13 @@ import collections
 import itertools
 import logging
 import operator
+import os
 
 from vdsm.common.compat import subprocess
 
 LSBLK = "/usr/bin/lsblk"
 LVM = "/usr/sbin/lvm"
+ID_LINK_PREFIX = "/dev/disk/by-id/lvm-pv-uuid-"
 
 log = logging.getLogger("lvmfilter")
 
@@ -315,10 +317,20 @@ def vg_devices(vg_name):
         # If the host has an incorrect filter, some devices needed by the host
         # may be hidden, preventing creating of a new correct filter.
         "--config", 'devices {filter=["a|.*|"]}',
-        "--options", "pv_name",
+        "--options", "pv_name,pv_uuid",
         vg_name
     ])
-    return sorted(line.strip() for line in out.splitlines())
+    pvs_info = (line.strip().split() for line in out.splitlines())
+    return sorted(_stable_name(name, uuid) for name, uuid in pvs_info)
+
+
+def _stable_name(pv_name, pv_uuid):
+    stable_name = ID_LINK_PREFIX + pv_uuid
+    # Make sure that device link is valid.
+    if os.path.realpath(stable_name) != os.path.realpath(pv_name):
+        raise RuntimeError("Cannot find stable name for {}".format(pv_name))
+
+    return stable_name
 
 
 def _run(args):
