@@ -27,8 +27,6 @@ import tempfile
 import time
 
 from . import YES, NO
-from vdsm.tool import service
-from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm import constants
 
@@ -285,19 +283,10 @@ def configure():
             os.unlink(f.name)
             raise
 
-    # Flush all unused multipath device maps. 'multipath'
-    # returns 1 if any of the devices is in use and unable to flush.
-    try:
-        commands.run([constants.EXT_MULTIPATH, "-F"])
-    except cmdutils.Error:
-        pass
-
-    try:
-        service.service_reload("multipathd")
-    except service.ServiceOperationError:
-        status = service.service_status("multipathd", False)
-        if status == 0:
-            raise
+    # 'multipath -r' will reload both configuration changes and the
+    # devices map. If multipathd is off, it will start it before
+    # reloading it.
+    commands.run([constants.EXT_MULTIPATH, "-r"])
 
 
 def isconfigured():
