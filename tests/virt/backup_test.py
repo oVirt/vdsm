@@ -813,6 +813,69 @@ def test_failed_delete_checkpoint():
     assert res["result"] == [CHECKPOINT_2_ID]
 
 
+@requires_backup_support
+def test_dump_checkpoint():
+    dom = FakeDomainAdapter()
+    dom.output_checkpoints = [
+        FakeCheckpoint(CHECKPOINT_1_XML, CHECKPOINT_1_ID),
+        FakeCheckpoint(CHECKPOINT_2_XML, CHECKPOINT_2_ID)
+    ]
+
+    for checkpoint_cfg in FAKE_CHECKPOINT_CFG:
+        res = backup.dump_checkpoint(dom, checkpoint_cfg['id'])
+
+        expected_result = {
+            'checkpoint': checkpoint_cfg['xml']
+        }
+        assert res["result"] == expected_result
+
+
+@requires_backup_support
+def test_dump_missing_checkpoint():
+    dom = FakeDomainAdapter()
+    dom.output_checkpoints = [
+        FakeCheckpoint(CHECKPOINT_1_XML, CHECKPOINT_1_ID),
+    ]
+
+    with pytest.raises(exception.NoSuchCheckpointError):
+        backup.dump_checkpoint(dom, CHECKPOINT_2_ID)
+
+
+@requires_backup_support
+def test_dump_checkpoint_lookup_failed():
+    dom = FakeDomainAdapter()
+    dom.errors["checkpointLookupByName"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
+    dom.output_checkpoints = [
+        FakeCheckpoint(CHECKPOINT_1_XML, CHECKPOINT_1_ID),
+        FakeCheckpoint(CHECKPOINT_2_XML, CHECKPOINT_2_ID)
+    ]
+
+    with pytest.raises(libvirt.libvirtError) as e:
+        backup.dump_checkpoint(dom, CHECKPOINT_1_ID)
+    assert e.value.get_error_code() == libvirt.VIR_ERR_INTERNAL_ERROR
+
+
+@requires_backup_support
+def test_dump_checkpoint_get_xml_failed():
+    checkpoint_2 = FakeCheckpoint(CHECKPOINT_2_XML, CHECKPOINT_2_ID)
+    # simulating an error that raised when calling the getXMLDesc method
+    # of a specific checkpoint
+    checkpoint_2.errors["getXMLDesc"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_INTERNAL_ERROR, '', 'Internal get XML error'],
+        "Fake libvirt error")
+
+    dom = FakeDomainAdapter()
+    dom.output_checkpoints = [
+        FakeCheckpoint(CHECKPOINT_1_XML, CHECKPOINT_1_ID),
+        checkpoint_2
+    ]
+
+    with pytest.raises(libvirt.libvirtError) as e:
+        backup.dump_checkpoint(dom, CHECKPOINT_2_ID)
+    assert e.value.get_error_code() == libvirt.VIR_ERR_INTERNAL_ERROR
+
+
 def verify_scratch_disks_exists(vm, backup_id=BACKUP_1_ID):
     res = vm.cif.irs.list_transient_disks(vm.id)
     assert res["status"]["code"] == 0

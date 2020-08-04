@@ -42,6 +42,7 @@ class FakeCheckpoint(object):
     def __eq__(self, other):
         return self.name == other.name
 
+    @maybefail
     def getXMLDesc(self):
         return self.xml
 
