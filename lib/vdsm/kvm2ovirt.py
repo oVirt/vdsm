@@ -40,7 +40,25 @@ from vdsm.common.units import MiB
 _start = None
 
 
-class VMAdapter(object):
+class _Adapter(object):
+    def readinto(self, b):
+        # This method is required for `io` module compatibility.
+        temp = self.read(len(b))
+        temp_len = len(temp)
+        if temp_len == 0:
+            return 0
+        else:
+            b[:temp_len] = temp
+            return temp_len
+
+    def read(self, size):
+        raise NotImplementedError
+
+    def finish(self):
+        pass
+
+
+class VMAdapter(_Adapter):
     def __init__(self, vm, src):
         self._vm = vm
         self._src = src
@@ -51,24 +69,11 @@ class VMAdapter(object):
         self._pos += len(buf)
         return buf
 
-    def finish(self):
-        pass
 
-
-class StreamAdapter(object):
+class StreamAdapter(_Adapter):
     def __init__(self, stream):
         self.read = stream.recv
         self._stream = stream
-
-    def readinto(self, b):
-        # This method is required for `io` module compatibility.
-        temp = self.read(len(b))
-        temp_len = len(temp)
-        if temp_len == 0:
-            return 0
-        else:
-            b[:temp_len] = temp
-            return temp_len
 
     def finish(self):
         self._stream.finish()
