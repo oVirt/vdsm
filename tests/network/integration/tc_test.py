@@ -238,6 +238,18 @@ def dummy():
         yield dev_name
 
 
+@pytest.fixture
+def vlan16(dummy):
+    with vlan_device(dummy, tag=16) as vlan:
+        yield vlan
+
+
+@pytest.fixture
+def vlan17(dummy):
+    with vlan_device(dummy, tag=17) as vlan:
+        yield vlan
+
+
 class TestConfigureOutbound(object):
     # TODO:
     # test remove_outbound
@@ -256,51 +268,48 @@ class TestConfigureOutbound(object):
 
     @pytest.mark.parametrize('repeating_calls', [1, 2])
     @mock.patch('vdsm.network.netinfo.bonding.permanent_address', lambda: {})
-    def test_single_vlan(self, dummy, repeating_calls):
-        with vlan_device(dummy) as vlan:
-            for _ in range(repeating_calls):
-                qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, vlan.tag)
-            tc_entities = self._analyse_qos_and_general_assertions(dummy)
-            tc_classes, tc_filters, tc_qdiscs = tc_entities
-            assert len(tc_classes.classes) == 1
+    def test_single_vlan(self, dummy, vlan16, repeating_calls):
+        for _ in range(repeating_calls):
+            qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, vlan16.tag)
+        tc_entities = self._analyse_qos_and_general_assertions(dummy)
+        tc_classes, tc_filters, tc_qdiscs = tc_entities
+        assert len(tc_classes.classes) == 1
 
-            assert len(tc_qdiscs.leaf_qdiscs) == 2
-            vlan_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan.tag)
-            vlan_class = self._vlan_class(tc_classes.classes, vlan.tag)
-            self._assert_parent([vlan_qdisc], vlan_class)
+        assert len(tc_qdiscs.leaf_qdiscs) == 2
+        vlan_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan16.tag)
+        vlan_class = self._vlan_class(tc_classes.classes, vlan16.tag)
+        self._assert_parent([vlan_qdisc], vlan_class)
 
-            tag_filters = tc_filters.tagged_filters
-            assert len(tag_filters) == 1
-            assert int(tag_filters[0]['basic']['value']) == vlan.tag
+        tag_filters = tc_filters.tagged_filters
+        assert len(tag_filters) == 1
+        assert int(tag_filters[0]['basic']['value']) == vlan16.tag
 
     @mock.patch('vdsm.network.netinfo.bonding.permanent_address', lambda: {})
-    def test_multiple_vlans(self, dummy):
-        with vlan_device(dummy, tag=16) as vlan1:
-            with vlan_device(dummy, tag=17) as vlan2:
-                for v in (vlan1, vlan2):
-                    qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, v.tag)
+    def test_multiple_vlans(self, dummy, vlan16, vlan17):
+        for vlan in (vlan16, vlan17):
+            qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, vlan.tag)
 
-                tc_entities = self._analyse_qos_and_general_assertions(dummy)
-                tc_classes, tc_filters, tc_qdiscs = tc_entities
-                assert len(tc_classes.classes) == 2
+        tc_entities = self._analyse_qos_and_general_assertions(dummy)
+        tc_classes, tc_filters, tc_qdiscs = tc_entities
+        assert len(tc_classes.classes) == 2
 
-                assert len(tc_qdiscs.leaf_qdiscs) == 3
-                v1_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan1.tag)
-                v2_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan2.tag)
-                v1_class = self._vlan_class(tc_classes.classes, vlan1.tag)
-                v2_class = self._vlan_class(tc_classes.classes, vlan2.tag)
-                self._assert_parent([v1_qdisc], v1_class)
-                self._assert_parent([v2_qdisc], v2_class)
+        assert len(tc_qdiscs.leaf_qdiscs) == 3
+        v1_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan16.tag)
+        v2_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan17.tag)
+        v1_class = self._vlan_class(tc_classes.classes, vlan16.tag)
+        v2_class = self._vlan_class(tc_classes.classes, vlan17.tag)
+        self._assert_parent([v1_qdisc], v1_class)
+        self._assert_parent([v2_qdisc], v2_class)
 
-                assert len(tc_filters.tagged_filters) == 2
-                current_tagged_filters_flow_id = set(
-                    f['basic']['flowid'] for f in tc_filters.tagged_filters
-                )
-                expected_flow_ids = set(
-                    '%s%x' % (qos._ROOT_QDISC_HANDLE, v.tag)
-                    for v in (vlan1, vlan2)
-                )
-                assert current_tagged_filters_flow_id == expected_flow_ids
+        assert len(tc_filters.tagged_filters) == 2
+        current_tagged_filters_flow_id = set(
+            f['basic']['flowid'] for f in tc_filters.tagged_filters
+        )
+        expected_flow_ids = set(
+            '%s%x' % (qos._ROOT_QDISC_HANDLE, vlan.tag)
+            for vlan in (vlan16, vlan17)
+        )
+        assert current_tagged_filters_flow_id == expected_flow_ids
 
     @requires_iperf3
     @pytest.mark.xfail(reason='Not maintained stress test', run=False)
