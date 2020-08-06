@@ -37,6 +37,8 @@ from vdsm import utils
 # constant should be introduced under lib publicly available
 _BLANK_UUID = '00000000-0000-0000-0000-000000000000'
 _NAME = 'dump-volume-chains'
+UNKNOWN_IMAGE = "unknown-image"
+UNKNOWN_PARENT = "unknown-parent"
 
 
 class DumpChainsError(Exception):
@@ -55,6 +57,16 @@ class ChainError(DumpChainsError):
 class DuplicateParentError(ChainError):
     description = ("more than one volume pointing to the same parent volume "
                    "e.g: (_BLANK_UUID<-a), (a<-b), (a<-c)")
+
+
+class UnknownParentError(ChainError):
+    description = ("there are volumes in the chain missing the parent info "
+                   "in their metadata, please check the metadata integrity")
+
+
+class UnknownImageError(ChainError):
+    description = ("there are volumes in the storage missing the image info "
+                   "in their metadata, these are listed here")
 
 
 class NoBaseVolume(ChainError):
@@ -169,31 +181,15 @@ def _iter_volumes_info(volumes_info):
 
 
 def _get_volumes_info(cli, sd_uuid):
-    """there can be only one storage pool in a single VDSM context"""
-    pools = cli.Host.getConnectedStoragePools()
-    if not pools:
-        raise NoConnectedStoragePoolError('There is no connected storage '
-                                          'pool to this server')
-    sp_uuid, = pools
-    images_uuids = cli.StorageDomain.getImages(storagedomainID=sd_uuid)
+    volumes_info = defaultdict(dict)
 
-    volumes_info = {}
-
-    for img_uuid in images_uuids:
-        img_volumes_info = {}
-
-        volumes_uuids = cli.StorageDomain.getVolumes(
-            storagedomainID=sd_uuid, storagepoolID=sp_uuid,
-            imageID=img_uuid)
-
-        for vol_uuid in volumes_uuids:
-            vol_info = cli.Volume.getInfo(
-                volumeID=vol_uuid, storagepoolID=sp_uuid,
-                storagedomainID=sd_uuid, imageID=img_uuid)
-
-            img_volumes_info[vol_uuid] = vol_info
-
-        volumes_info[img_uuid] = img_volumes_info
+    volumes = cli.StorageDomain.dump(sd_id=sd_uuid)["volumes"]
+    for vol_id, vol_info in volumes.items():
+        image_id = vol_info.get("image", UNKNOWN_IMAGE)
+        # in addition to missing, also handle 'None' and empty string
+        if image_id is None or not image_id.strip():
+            image_id = UNKNOWN_IMAGE
+        volumes_info[image_id][vol_id] = vol_info
 
     return volumes_info
 
@@ -206,12 +202,23 @@ def _get_volumes_chains(volumes_info):
         # to avoid 'double parent' bug here we don't use a dictionary
         volumes_children = []  # [(parent_vol_uuid, child_vol_uuid),]
         for vol_uuid, vol_info in volumes.items():
-            volumes_children.append((vol_info['parent'], vol_uuid))
+            parent = vol_info.get('parent', UNKNOWN_PARENT)
+            # in addition to missing, also handle 'None' and empty string
+            if parent is None or not parent.strip():
+                parent = UNKNOWN_PARENT
+            volumes_children.append((parent, vol_uuid))
 
-        try:
-            image_chains[img_uuid] = _build_volume_chain(volumes_children)
-        except ChainError as e:
-            image_chains[img_uuid] = e
+        if img_uuid == UNKNOWN_IMAGE:
+            # do not build chain of volumes with unknown image
+            image_chains[img_uuid] = UnknownImageError(volumes_children)
+        elif any(UNKNOWN_PARENT in volume for volume in volumes_children):
+            # do not build chain if any volume has unknown parent
+            image_chains[img_uuid] = UnknownParentError(volumes_children)
+        else:
+            try:
+                image_chains[img_uuid] = _build_volume_chain(volumes_children)
+            except ChainError as e:
+                image_chains[img_uuid] = e
 
     return image_chains
 
