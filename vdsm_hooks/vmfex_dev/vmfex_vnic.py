@@ -108,7 +108,7 @@ def isDirectPoolUpToDate(conn):
 def handleDirectPool(conn):
     """Takes care that a libvirt network that holds the VFs in a pool to allow
     migration of VMs that use VM-FEX exists or is created."""
-    with open('/var/run/vdsm/hook-vmfex.lock', 'w') as f:
+    with open('/run/vdsm/hook-vmfex.lock', 'w') as f:
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         try:
             if 'direct-pool' not in conn.listNetworks():

@@ -39,7 +39,7 @@ plot-dir:
 
 # Activate the RPC server on the designated port (-1 to disable).  RPC is
 # disabled by default until authentication is added to the protocol.
-rpc-port: /var/run/vdsm/mom-vdsm.sock
+rpc-port: @VDSMRUNDIR@/mom-vdsm.sock
 
 # At startup, load a policy from the given directory.  If empty, no policy is loaded
 policy-dir: @CONFDIR@/mom.d

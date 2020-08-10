@@ -127,8 +127,8 @@ function set_up_vdsm_user_and_groups {
         /usr/sbin/usermod -a -G "${qemu_group}","${snlk_group}" "${vdsm_user}"
         /usr/sbin/usermod -a -G "${cdrom_group}" "${qemu_user}"
 
-        install -d /var/run/vdsm/dhclientmon -m 755 -o vdsm -g kvm
-        install -d /var/run/vdsm/trackedInterfaces -m 755 -o vdsm -g kvm
+        install -d /run/vdsm/dhclientmon -m 755 -o vdsm -g kvm
+        install -d /run/vdsm/trackedInterfaces -m 755 -o vdsm -g kvm
         "
 }
 
@@ -138,7 +138,7 @@ function set_up_bonding_defaults_opts {
         export PYTHONPATH='${VDSM_LIB}/lib:$PYTHONPATH'
 
         modprobe bonding
-        mkdir /var/run/vdsm
+        mkdir /run/vdsm
 
         cd ${VDSM_LIB}/tests
         python3 <<< cat <<EOF

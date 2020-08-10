@@ -29,7 +29,7 @@ PKILL="/usr/bin/pkill"
 sdUUID=$2
 CHECKVDSM=${CHECKVDSM:-"/usr/bin/pgrep vdsm"}
 REBOOTCMD=${REBOOTCMD:-"sudo /sbin/reboot -f"}
-RENEWDIR="/var/run/vdsm/spmprotect/$$"
+RENEWDIR="@VDSMRUNDIR@/spmprotect/$$"
 
 function usage() {
     if [ -n "$1" ]; then

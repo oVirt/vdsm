@@ -20,8 +20,8 @@ sudo systemctl stop vsdmd
 # Enable whole process profiling (requires yappi profiler).
 cpu_profile_enable = true
 
-# Profile file name (/var/run/vdsm/vdsmd.prof)
-cpu_profile_filename = /var/run/vdsm/vdsmd.prof
+# Profile file name (/run/vdsm/vdsmd.prof)
+cpu_profile_filename = /run/vdsm/vdsmd.prof
 
 # Profile file format (pstat, callgrind, ystat)
 cpu_profile_format = pstat
@@ -94,5 +94,5 @@ sudo dnf install kcachegrind graphviz
 
 ## Notes
 
-- Remove `/var/run/vdsm/vdsmd.prof` between Vdsm restarts.
+- Remove `/run/vdsm/vdsmd.prof` between Vdsm restarts.
 - Comment back the cpu profile options in `/etc/vdsm/vdsm.conf` and restart Vdsm when done.

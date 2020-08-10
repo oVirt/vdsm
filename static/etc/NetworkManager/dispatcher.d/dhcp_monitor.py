@@ -7,7 +7,7 @@ import sys
 
 UP_ACTIONS = ('up', 'dhcp4-change', 'dhcp6-change')
 
-SOCKET_PATH = '/var/run/vdsm/dhcp-monitor.sock'
+SOCKET_PATH = '/run/vdsm/dhcp-monitor.sock'
 
 
 class ResponseField:

@@ -1337,7 +1337,7 @@ class BlockStorageDomain(sd.StorageDomain):
         to the parent. When creating the qcow layer, we pass a relative path
         which allows us to build a directory with links to all volumes in the
         chain anywhere we want. This method creates a directory with the image
-        uuid under /var/run/vdsm and creates sym links to all the volumes in
+        uuid under /run/vdsm and creates sym links to all the volumes in
         the chain.
 
         srcImgPath: Dir where the image volumes are.

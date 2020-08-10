@@ -238,7 +238,7 @@ the domain.
 
 before_vm_start and before_device_create may alter the vm start behavior by
 modifying the vm libvirt vm startup flags. The flag must be written to the
-/var/run/vdsm/hook/<vm id>/launchflags file, the required value being a decimal
+@VDSMRUNDIR@/hook/<vm id>/launchflags file, the required value being a decimal
 based on the libvirt virDomainCreateFlags enum values.
 
 Standard error of hook scripts is collected into VDSM's log, which may be used

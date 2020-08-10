@@ -7,7 +7,7 @@ IPROUTE_KEY="route"
 IFACE_KEY="iface"
 
 timeStamp=`date +%s.%N`
-DATA_PATH="/var/run/vdsm/dhclientmon"
+DATA_PATH="/run/vdsm/dhclientmon"
 DATA_PFILE="$DATA_PATH/$timeStamp"
 
 dhclientmon_config() {

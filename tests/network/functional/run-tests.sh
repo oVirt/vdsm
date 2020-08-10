@@ -73,8 +73,8 @@ function setup_vdsm_runtime_environment {
     container_exec "
         adduser vdsm \
         && \
-        install -d /var/run/vdsm/dhclientmon -m 755 -o vdsm && \
-        install -d /var/run/vdsm/trackedInterfaces -m 755 -o vdsm && \
+        install -d /run/vdsm/dhclientmon -m 755 -o vdsm && \
+        install -d /run/vdsm/trackedInterfaces -m 755 -o vdsm && \
         cp $CONTAINER_WORKSPACE/static/etc/NetworkManager/conf.d/vdsm.conf /etc/NetworkManager/conf.d/
     "
     if [ $BACKEND == $BACKEND_LEGACY ];then

@@ -75,7 +75,7 @@
     <emulator>/usr/libexec/qemu-kvm</emulator>
     <disk type='file' device='disk' snapshot='no'>
       <driver name='qemu' type='raw' cache='none' error_policy='stop' io='threads'/>
-      <source file='/var/run/vdsm/storage/7a9a1478-6a7c-465b-b0e5-598205be7faf/76b07256-29ce-4634-9f4a-db35d3bc61c6/0fa79d54-74ac-41bb-9936-c6ecdd947150'/>
+      <source file='/run/vdsm/storage/7a9a1478-6a7c-465b-b0e5-598205be7faf/76b07256-29ce-4634-9f4a-db35d3bc61c6/0fa79d54-74ac-41bb-9936-c6ecdd947150'/>
       <backingStore/>
       <target dev='vda' bus='virtio'/>
       <serial>76b07256-29ce-4634-9f4a-db35d3bc61c6</serial>

@@ -515,7 +515,7 @@ _STORAGE_TEST_DATA = [
         </disk>''',
      {}],
     [u'''<disk device="cdrom" snapshot="no" type="file">
-            <source file="/var/run/vdsm/payload/{guid}.{hashsum}.img"
+            <source file="/run/vdsm/payload/{guid}.{hashsum}.img"
                 startupPolicy="optional">
                 <seclabel model="dac" relabel="no" type="none" />
             </source>

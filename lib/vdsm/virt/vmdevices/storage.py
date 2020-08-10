@@ -266,7 +266,7 @@ class Drive(core.Base):
         if self.transientDisk:
             # Force the cache to be writethrough, which is qemu's default.
             # This is done to ensure that we don't ever use cache=none for
-            # transient disks, since we create them in /var/run/vdsm which
+            # transient disks, since we create them in /run/vdsm which
             # may end up on tmpfs and don't support O_DIRECT, and qemu uses
             # O_DIRECT when cache=none and hence hotplug might fail with
             # error that one can take eternity to debug the reason behind it!

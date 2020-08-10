@@ -28,7 +28,7 @@ The semantics of the directories and the search order is as follows:
   file if missing, and never touch this file during upgrade.
 - /etc/vdsm/vdsm.conf.d/ - for admin drop-in conf files.
 - /usr/lib/vdsm/vdsm.conf.d/ - for vendor drop-in configuration files.
-- /var/run/vdsm/vdsm.conf.d/ - for admin temporary configuration.
+- /run/vdsm/vdsm.conf.d/ - for admin temporary configuration.
 
 Files with a .conf suffix can be placed into any of the vdsm.conf.d drop-in
 directories.

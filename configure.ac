@@ -260,7 +260,7 @@ AS_IF([test "$host_cpu" = powerpc64le],
 AC_SUBST([vdsmdir], ['${datarootdir}/vdsm'])
 AC_SUBST([vdsmconfdir], ['${sysconfdir}/vdsm'])
 AC_SUBST([vdsmlogdir], ['${localstatedir}/log/vdsm'])
-AC_SUBST([vdsmrundir], ['${localstatedir}/run/vdsm'])
+AC_SUBST([vdsmrundir], ['/run/vdsm'])
 AC_SUBST([vdsmlibdir], ['${localstatedir}/lib/vdsm'])
 AC_SUBST([vdsmbackupdir], ['${vdsmlogdir}/backup'])
 AC_SUBST([vdsmexecdir], ['${libexecdir}/vdsm'])

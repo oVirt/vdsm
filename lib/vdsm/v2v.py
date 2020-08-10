@@ -148,7 +148,7 @@ class JobNotDone(ClientError):
 
 
 class NoSuchOvf(V2VError):
-    ''' Ovf path is not exists in /var/run/vdsm/v2v/ '''
+    ''' Ovf path is not exists in /run/vdsm/v2v/ '''
     err_name = 'V2VNoSuchOvf'
 
 
