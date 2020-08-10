@@ -31,6 +31,7 @@ from vdsm.network.nmstate import ip
 from vdsm.network.nmstate import linux_bridge
 from vdsm.network.nmstate import route
 from vdsm.network.nmstate.ovs import network as ovs_network
+from vdsm.network.nmstate.ovs import info as ovs_info
 
 
 class NMStateInterface(object):
@@ -259,7 +260,7 @@ def nmstate_linux_bridge_network_module_schema():
 
 
 @pytest.fixture(scope='session', autouse=True)
-def nmstate_ovs_module_schema():
+def nmstate_ovs_network_schema():
     p_iface = mock.patch.object(ovs_network, 'Interface', NMStateInterface)
     p_ifstate = mock.patch.object(
         ovs_network, 'InterfaceState', NMStateInterfaceState
@@ -269,4 +270,15 @@ def nmstate_ovs_module_schema():
     )
     p_ovs = mock.patch.object(ovs_network, 'OvsBridgeSchema', OvsBridgeType)
     with p_iface, p_ifstate, p_iftype, p_ovs:
+        yield
+
+
+@pytest.fixture(scope='session', autouse=True)
+def nmstate_ovs_info_schema():
+    p_iface = mock.patch.object(ovs_info, 'Interface', NMStateInterface)
+    p_iftype = mock.patch.object(
+        ovs_info, 'InterfaceType', NMStateInterfaceType
+    )
+    p_ovs = mock.patch.object(ovs_info, 'OvsBridgeSchema', OvsBridgeType)
+    with p_iface, p_iftype, p_ovs:
         yield

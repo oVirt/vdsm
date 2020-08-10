@@ -17,8 +17,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from collections import defaultdict
+from copy import deepcopy
 
+from .info import OvsInfo
 from ..bridge_util import NetworkConfig
 from ..bridge_util import random_interface_name
 from ..schema import Interface
@@ -93,22 +94,21 @@ class OvsNetwork(object):
 
 
 class OvsBridge(object):
-    def __init__(self, networks, running_networks, current_ifaces_state):
+    def __init__(self, networks, running_networks, ovs_info):
         """
         networks: List of NetworkConfig objects, representing a requested
         network setup.
         running_networks: List of NetworkConfig object, representing
         an existing network setup.
-        current_ifaces_state: Dict, representing {name: iface-state}.
+        ovs_info: OvsInfo, representing information about ovs netowrks.
         """
         self._networks = networks
         self._running_networks = running_networks
-        self._current_ifaces_state = current_ifaces_state
+        self._ovs_info = ovs_info
 
         self._desired_nb_by_sb = self._create_desired_nb_by_sb()
-        self._ports_by_bridge = self._get_ports_by_bridge()
         self._persisted_ports_by_bridge = self._get_persisted_ports_by_bridge()
-        self._bridge_by_sb = self._get_current_bridge_by_sb()
+        self._bridge_by_sb = deepcopy(ovs_info.bridge_by_sb)
 
         self._sb_ifaces_state = {}
         self._bridge_ifaces_state = {}
@@ -128,9 +128,7 @@ class OvsBridge(object):
         return self._sb_ifaces_state
 
     def _create_desired_nb_by_sb(self):
-        nb_by_sb = defaultdict(set)
-        for name, attrs in self._running_networks.items():
-            nb_by_sb[attrs.base_iface].add(name)
+        nb_by_sb = deepcopy(self._ovs_info.nb_by_sb)
 
         for name, attrs in self._networks.items():
             nb_moved = self._nb_has_moved(name, attrs, self._running_networks)
@@ -142,40 +140,16 @@ class OvsBridge(object):
 
         return nb_by_sb
 
-    def _get_ports_by_bridge(self):
-        return {
-            name: state[OvsBridgeSchema.CONFIG_SUBTREE][
-                OvsBridgeSchema.PORT_SUBTREE
-            ]
-            for name, state in self._current_ifaces_state.items()
-            if state[Interface.TYPE] == InterfaceType.OVS_BRIDGE
-            and self._bridge_has_ports(state)
-        }
-
     def _get_persisted_ports_by_bridge(self):
         net_names = list(self._networks.keys())
         persisted_ports_by_bridge = {}
-        for bridge, ports in self._ports_by_bridge.items():
+        for bridge, ports in self._ovs_info.ports_by_bridge.items():
             persisted_ports_by_bridge[bridge] = [
                 port
                 for port in ports
                 if not port[OvsBridgeSchema.Port.NAME] in net_names
             ]
         return persisted_ports_by_bridge
-
-    def _get_current_bridge_by_sb(self):
-        port_names_by_bridge = {
-            name: self._get_port_names(ports)
-            for name, ports in self._ports_by_bridge.items()
-        }
-        bridge_by_sb = {}
-        for sb in self._desired_nb_by_sb.keys():
-            for bridge, ports in port_names_by_bridge.items():
-                if sb in ports:
-                    bridge_by_sb[sb] = bridge
-                    break
-
-        return bridge_by_sb
 
     def _create_iface_state(self):
         desired_sbs = [attrs.base_iface for attrs in self._networks.values()]
@@ -225,11 +199,7 @@ class OvsBridge(object):
         return {OvsBridgeSchema.PORT_SUBTREE: ports}
 
     def _bridge_exists(self, sb):
-        return sb in self._bridge_by_sb
-
-    @staticmethod
-    def _get_port_names(ports):
-        return [port[OvsBridgeSchema.Port.NAME] for port in ports]
+        return sb in self._ovs_info.bridge_by_sb
 
     @staticmethod
     def _create_sb_iface_state(name):
@@ -240,21 +210,13 @@ class OvsBridge(object):
         base_iface = attrs.base_iface
         return name in rnets and rnets[name].base_iface != base_iface
 
-    @staticmethod
-    def _bridge_has_ports(state):
-        # The state when OvS bridge has no port section can happen only if we
-        # are trying to process bridges that are not managed by nmstate.
-        return (
-            OvsBridgeSchema.PORT_SUBTREE
-            in state[OvsBridgeSchema.CONFIG_SUBTREE]
-        )
-
 
 def generate_state(networks, running_networks, current_iface_state):
     nets_config = _translate_config(networks)
     rnets_config = _translate_config(running_networks)
 
-    bridges = OvsBridge(nets_config, rnets_config, current_iface_state)
+    ovs_info = OvsInfo(rnets_config, current_iface_state)
+    bridges = OvsBridge(nets_config, rnets_config, ovs_info)
     nets = [OvsNetwork(nets_config[netname]) for netname in networks.keys()]
 
     net_ifstates = bridges.bridge_ifaces_state
