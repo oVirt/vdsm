@@ -445,7 +445,8 @@ class FileVolume(volume.Volume):
 
     @classmethod
     def _create(cls, dom, imgUUID, volUUID, capacity, volFormat, preallocate,
-                volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None):
+                volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None,
+                add_bitmaps=False):
         """
         Class specific implementation of volumeCreate.
         """
@@ -455,7 +456,7 @@ class FileVolume(volume.Volume):
         else:
             return cls._create_cow_volume(
                 dom, volUUID, capacity, volPath, initial_size, volParent,
-                imgUUID, srcImgUUID, srcVolUUID)
+                imgUUID, srcImgUUID, srcVolUUID, add_bitmaps)
 
     @classmethod
     def _create_raw_volume(
@@ -499,7 +500,7 @@ class FileVolume(volume.Volume):
     @classmethod
     def _create_cow_volume(
             cls, dom, vol_id, capacity, vol_path, initial_size, vol_parent,
-            img_id, src_img_id, src_vol_id):
+            img_id, src_img_id, src_vol_id, add_bitmaps):
         """
         specific implementation of _create() for COW volumes.
         All the exceptions are properly handled and logged in volume.create()

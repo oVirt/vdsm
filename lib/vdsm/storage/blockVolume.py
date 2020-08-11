@@ -493,7 +493,8 @@ class BlockVolume(volume.Volume):
 
     @classmethod
     def _create(cls, dom, imgUUID, volUUID, capacity, volFormat, preallocate,
-                volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None):
+                volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None,
+                add_bitmaps=False):
         """
         Class specific implementation of volumeCreate. All the exceptions are
         properly handled and logged in volume.create()

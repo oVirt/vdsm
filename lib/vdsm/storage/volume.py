@@ -837,7 +837,8 @@ class Volume(object):
 
     @classmethod
     def _create(cls, dom, imgUUID, volUUID, capacity, volFormat, preallocate,
-                volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None):
+                volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None,
+                add_bitmaps=False):
         raise NotImplementedError
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
@@ -1093,7 +1094,7 @@ class Volume(object):
     @classmethod
     def create(cls, repoPath, sdUUID, imgUUID, capacity, volFormat,
                preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID,
-               initial_size=None):
+               initial_size=None, add_bitmaps=False):
         """
         Create a new volume with given size or snapshot
             'capacity' - in bytes
@@ -1104,6 +1105,7 @@ class Volume(object):
             'srcVolUUID' - source volume UUID
             'initial_size' - initial volume size in bytes,
                              in case of thin provisioning
+            'add_bitmaps' - add all the bitmaps from source volume
         """
         # Do the input values validation first.
         if initial_size is not None:
@@ -1122,7 +1124,8 @@ class Volume(object):
 
         dom = sdCache.produce(sdUUID)
         dom.validateCreateVolumeParams(
-            volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate)
+            volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate,
+            add_bitmaps=add_bitmaps)
 
         imgPath = dom.create_image(imgUUID)
 
@@ -1143,11 +1146,22 @@ class Volume(object):
 
                 volParent = cls(repoPath, sdUUID, srcImgUUID, srcVolUUID)
 
+                if add_bitmaps and volParent.getFormat() != sc.COW_FORMAT:
+                    raise se.UnsupportedOperation(
+                        "Cannot add bitmaps from parent volume with raw "
+                        "format", srcVolUUID=srcVolUUID)
+
                 if not volParent.isLegal():
                     raise se.createIllegalVolumeSnapshotError(
                         volParent.volUUID)
 
                 if imgUUID != srcImgUUID:
+                    if add_bitmaps:
+                        raise se.UnsupportedOperation(
+                            "Cannot add bitmaps from template volume",
+                            srcImgUUID=srcImgUUID,
+                            srcVolUUID=srcVolUUID)
+
                     volParent.share(imgPath)
                     volParent = cls(repoPath, sdUUID, imgUUID, srcVolUUID)
 
@@ -1192,7 +1206,8 @@ class Volume(object):
                 metaId = cls._create(dom, imgUUID, volUUID, capacity,
                                      volFormat, preallocate, volParent,
                                      srcImgUUID, srcVolUUID, volPath,
-                                     initial_size=initial_size)
+                                     initial_size=initial_size,
+                                     add_bitmaps=add_bitmaps)
             except (se.VolumeAlreadyExists, se.CannotCreateLogicalVolume,
                     se.VolumeCreationError, se.InvalidParameterException) as e:
                 cls.log.error("Failed to create volume %s: %s", volPath, e)

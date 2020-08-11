@@ -11422,6 +11422,16 @@ Volume.create:
         name: initialSize
         type: string
         added: '3.6'
+
+    -   defaultvalue: false
+        description: if specified, instruct to add new empty bitmaps
+            with the same names as they had in the source volume to the
+            newly created volume. Allowed only when creating a snapshot from
+            cow-sparse volume. Must not be used when a VM is running.
+            In this case libvirt adds the bitmaps when creating a snapshot.
+        name: addBitmaps
+        type: boolean
+        added: '4.4'
     return:
         description: A task UUID
         type: *UUID

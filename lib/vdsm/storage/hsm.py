@@ -1453,7 +1453,7 @@ class HSM(object):
                      preallocate, diskType, volUUID, desc,
                      srcImgUUID=sc.BLANK_UUID,
                      srcVolUUID=sc.BLANK_UUID,
-                     initialSize=None):
+                     initialSize=None, addBitmaps=False):
         """
         Create a new volume
             Function Type: SPM
@@ -1483,12 +1483,14 @@ class HSM(object):
             misc.validateUUID(srcVolUUID, 'srcVolUUID')
         # Validate volume type and format
         dom.validateCreateVolumeParams(
-            volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate)
+            volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate,
+            add_bitmaps=addBitmaps)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(spUUID, "createVolume", pool.createVolume, sdUUID,
                           imgUUID, capacity, volFormat, preallocate, diskType,
-                          volUUID, desc, srcImgUUID, srcVolUUID, initial_size)
+                          volUUID, desc, srcImgUUID, srcVolUUID, initial_size,
+                          addBitmaps)
 
     @public
     def deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False,
