@@ -505,3 +505,14 @@ class CheckpointError(ContextException):
 class NoSuchCheckpointError(ContextException):
     code = 1611
     message = "No such checkpoint Error"
+
+
+#################################################
+#  Bitmaps Errors
+#  Range: 1620-1629
+#################################################
+
+
+class AddBitmapError(ContextException):
+    code = 1620
+    message = "Failed to add bitmap"

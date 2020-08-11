@@ -29,6 +29,7 @@ from vdsm.common import exception
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
 
+from vdsm.storage import bitmaps
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -971,7 +972,7 @@ class Volume(object):
                     [metaID[0], str(metaID[1]), self.sdUUID, self.volUUID]))
         self.newVolumeLease(metaID, self.sdUUID, newUUID)
 
-    def clone(self, dstPath, volFormat, capacity):
+    def clone(self, dstPath, volFormat, capacity, add_bitmaps=False):
         """
         Clone self volume to the specified dst_image_dir/dst_volUUID
         """
@@ -1008,6 +1009,24 @@ class Volume(object):
             if wasleaf:
                 self.setLeaf()
             raise se.CannotCloneVolume(self.volumePath, dstPath, str(e))
+
+        if add_bitmaps:
+            self.prepare(rw=False, justme=False)
+            try:
+                bitmaps.add_bitmaps(self.getVolumePath(), dstPath)
+            except exception.AddBitmapError as e:
+                # In case of failure to add the bitmaps, only an
+                # error log is propagated, we don't want to fail the
+                # snapshot creation, doing so will require a manual
+                # intervention from the user to remove the backups
+                # in order to create a snapshot successfully.
+                self.log.error(
+                    "Failed to add bitmaps to %r, note that the next "
+                    "incremental backup is likely to fail so a full backup "
+                    "will be required. Error: %s",
+                    dstPath, e)
+            finally:
+                self.teardown(self.sdUUID, self.volUUID, justme=False)
 
     def _shareLease(self, dstImgPath):
         self._manifest._shareLease(dstImgPath)

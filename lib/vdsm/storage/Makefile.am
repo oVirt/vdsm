@@ -27,6 +27,7 @@ dist_vdsmstorage_PYTHON = \
 	asyncevent.py \
 	asyncutils.py \
 	backends.py \
+	bitmaps.py \
 	blkdiscard.py \
 	blockSD.py \
 	blockVolume.py \

@@ -42,6 +42,7 @@ from vdsm.storage import sd
 
 from . import qemuio
 from . import userstorage
+from . marks import requires_bitmaps_support
 from . marks import requires_unprivileged_user
 from . storagetestlib import chmod
 
@@ -1161,6 +1162,73 @@ def test_dump_sd_volumes_removed_image(
         "metadata": expected_metadata,
         "volumes": expected_volumes_metadata
     }
+
+
+@requires_bitmaps_support
+def test_create_volume_with_bitmaps(user_domain, local_fallocate):
+    if user_domain.getVersion() == 3:
+        pytest.skip("Bitmaps operations not supported in v3 domains")
+
+    parent_img_uuid = str(uuid.uuid4())
+    parent_vol_uuid = str(uuid.uuid4())
+    bitmap_names = ['bitmap1', 'bitmap2']
+
+    # Create base volume
+    user_domain.createVolume(
+        imgUUID=parent_img_uuid,
+        capacity=SPARSE_VOL_SIZE,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType="DATA",
+        volUUID=parent_vol_uuid,
+        desc="test",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    parent_vol = user_domain.produceVolume(
+        parent_img_uuid, parent_vol_uuid)
+    parent_vol_path = parent_vol.getVolumePath()
+
+    # Add new bitmaps to base volume
+    for bitmap_name in bitmap_names:
+        op = qemuimg.bitmap_add(
+            parent_vol_path,
+            bitmap_name,
+        )
+        op.run()
+
+    vol_uuid = str(uuid.uuid4())
+    # Create top volume
+    user_domain.createVolume(
+        imgUUID=parent_img_uuid,
+        capacity=SPARSE_VOL_SIZE,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=vol_uuid,
+        desc="Test volume",
+        srcImgUUID=parent_vol.imgUUID,
+        srcVolUUID=parent_vol.volUUID,
+        add_bitmaps=True
+    )
+
+    vol = user_domain.produceVolume(
+        parent_img_uuid, vol_uuid)
+    vol_path = vol.getVolumePath()
+    info = qemuimg.info(vol_path)
+
+    assert info['bitmaps'] == [
+        {
+            "flags": ["auto"],
+            "name": bitmap_names[0],
+            "granularity": 65536
+        },
+        {
+            "flags": ["auto"],
+            "name": bitmap_names[1],
+            "granularity": 65536
+        },
+    ]
 
 
 def verify_volume_file(

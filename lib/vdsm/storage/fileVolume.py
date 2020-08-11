@@ -526,7 +526,8 @@ class FileVolume(volume.Volume):
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s "
                          "with capacity %s",
                          img_id, vol_id, src_img_id, src_vol_id, capacity)
-            vol_parent.clone(vol_path, sc.COW_FORMAT, capacity)
+            vol_parent.clone(
+                vol_path, sc.COW_FORMAT, capacity, add_bitmaps=add_bitmaps)
 
         # Forcing the volume permissions in case one of the tools we use
         # (dd, qemu-img, etc.) will mistakenly change the file permissions.
