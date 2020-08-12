@@ -30,8 +30,9 @@ from . import YES, NO
 from vdsm.tool import service
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm import constants
 
+
+_MULTIPATHD = cmdutils.CommandPath("multipathd", "/usr/sbin/multipathd")
 
 _CONF_FILE = "/etc/multipath.conf"
 
@@ -285,19 +286,25 @@ def configure():
             os.unlink(f.name)
             raise
 
-    # Flush all unused multipath device maps. 'multipath'
-    # returns 1 if any of the devices is in use and unable to flush.
-    try:
-        commands.run([constants.EXT_MULTIPATH, "-F"])
-    except cmdutils.Error:
-        pass
-
-    try:
-        service.service_reload("multipathd")
-    except service.ServiceOperationError:
-        status = service.service_status("multipathd", False)
-        if status == 0:
-            raise
+    # Multipathd will not reconfigure immediatly after multipath.conf changes
+    # unless it is already running and ordered to be reconfigured.
+    # This was causing in BZ#1859876 for host using a multipath device as a
+    # boot device to have a wrong LVM filter set since it was using friendly
+    # /dev/mapper/mpath{X} device names on its initial configuration, which
+    # the configuation switched to /dev/mapper/{WWID} naming in the static
+    # configuration file, but since multipathd was not running at that time
+    # and could not be reloaded, the LVM filter setup followed with setting
+    # the friendly device name for the only device accepted by the filter.
+    # This has made the host unable to locate rootfs and failing to boot.
+    # For making sure multipathd is reconfigured immediatly after
+    # multipath.conf changes we first start the multipathd service, this has
+    # no implications if the service is already running and assures the
+    # multipathd reconfigure command to follow will succeed in reloading the
+    # new configuration and resets any existing device mappings. If any
+    # of those steps fails, we want to fail the configuration, not using wrong
+    # device name mappings for LVM filter configuration.
+    service.service_start("multipathd")
+    commands.run([_MULTIPATHD.cmd, "reconfigure"])
 
 
 def isconfigured():
