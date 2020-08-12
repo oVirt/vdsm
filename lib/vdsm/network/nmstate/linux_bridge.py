@@ -310,7 +310,13 @@ class LinuxBridgeNetwork(object):
         if not droute_net:
             ifnet = get_default_route_interface(running_networks)
             if ifnet and ifnet not in interfaces_state:
-                interfaces_state[ifnet] = {Interface.NAME: ifnet}
+                # Copy current mtu to solve the MTU dependency computation
+                # issue
+                curr_mtu = current_ifaces_state[ifnet][Interface.MTU]
+                interfaces_state[ifnet] = {
+                    Interface.NAME: ifnet,
+                    Interface.MTU: curr_mtu,
+                }
 
         return interfaces_state, routes_state, dns_state
 
