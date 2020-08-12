@@ -45,6 +45,8 @@ from testlib import make_config
 from testlib import namedTemporaryDir
 from testlib import temporaryPath
 
+from . marks import requires_bitmaps_support
+
 CLUSTER_SIZE = 64 * KiB
 
 QEMU_IMG = qemuimg._qemuimg.cmd
@@ -1160,6 +1162,83 @@ class TestMeasure:
         error_pct = 100 * float(estimated_size - actual_size) / virtual_size
         assert estimated_size >= actual_size
         assert error_pct <= 0.1, error_pct
+
+
+class TestBitmaps:
+
+    @requires_bitmaps_support
+    @pytest.mark.parametrize("granularity, exp_granularity", [
+        (None, 65536),
+        (8 * 64 * 1024, 8 * 64 * 1024)
+    ])
+    def test_add_remove_bitmap(
+            self, user_mount, granularity, exp_granularity):
+        virtual_size = MiB
+        bitmap_name = 'bitmap1'
+        # Create source file
+        src_path = os.path.join(user_mount.path, 'source.img')
+        op = qemuimg.create(
+            src_path,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+
+        # Add new bitmap to src
+        op = qemuimg.bitmap_add(
+            src_path,
+            bitmap_name,
+            granularity=granularity
+        )
+        op.run()
+
+        info = qemuimg.info(src_path)
+        assert info['bitmaps'] == [
+            {
+                "flags": ["auto"],
+                "name": bitmap_name,
+                "granularity": exp_granularity
+            },
+        ]
+
+        # Remove bitmap from src
+        op = qemuimg.bitmap_remove(src_path, bitmap_name)
+        op.run()
+
+        info = qemuimg.info(src_path)
+        assert 'bitmaps' not in info
+
+    @requires_bitmaps_support
+    def test_add_disabled_bitmap(self, user_mount):
+        virtual_size = MiB
+        bitmap_name = 'bitmap1'
+        # Create source file
+        src_path = os.path.join(user_mount.path, 'source.img')
+        op = qemuimg.create(
+            src_path,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+
+        # Add new disabled bitmap to src
+        op = qemuimg.bitmap_add(
+            src_path,
+            bitmap_name,
+            enable=False
+        )
+        op.run()
+
+        info = qemuimg.info(src_path)
+        assert info['bitmaps'] == [
+            {
+                "flags": [],
+                "name": bitmap_name,
+                "granularity": 65536
+            },
+        ]
 
 
 def converted_size(filename, compat):

@@ -24,6 +24,7 @@ import logging
 import os
 import re
 
+from vdsm.common import cache
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import exception
@@ -140,10 +141,14 @@ def info(image, format=None, unsafe=False, trusted_image=True):
     if 'backing-filename' in qemu_info:
         info['backingfile'] = qemu_info['backing-filename']
     if qemu_info['format'] == FORMAT.QCOW2:
+        specific_data = qemu_info['format-specific']['data']
         try:
-            info['compat'] = qemu_info['format-specific']['data']['compat']
+            info['compat'] = specific_data['compat']
         except KeyError:
             raise InvalidOutput(cmd, out, "'compat' expected but not found")
+
+        if 'bitmaps' in specific_data:
+            info['bitmaps'] = specific_data['bitmaps']
 
     return info
 
@@ -442,6 +447,40 @@ def compare(img1, img2, img1_format=None, img2_format=None, strict=False):
     cwdPath = os.path.dirname(img1)
 
     return operation.Command(cmd, cwd=cwdPath)
+
+
+def bitmap_add(image, bitmap, enable=True, granularity=None):
+    cmd = [_qemuimg.cmd, "bitmap", "--add"]
+
+    if enable:
+        cmd.append("--enable")
+    else:
+        cmd.append("--disable")
+
+    cmd.extend([image, bitmap])
+
+    if granularity:
+        cmd.extend(("-g", str(granularity)))
+
+    cwdPath = os.path.dirname(image)
+    return operation.Command(cmd, cwd=cwdPath)
+
+
+def bitmap_remove(image, bitmap):
+    cmd = [_qemuimg.cmd, "bitmap", "--remove", image, bitmap]
+
+    cwdPath = os.path.dirname(image)
+    return operation.Command(cmd, cwd=cwdPath)
+
+
+# TODO: remove when qemu-kvm >= 4.2.0-25 required
+@cache.memoized
+def bitmaps_supported():
+    cmd = [_qemuimg.cmd, "--help"]
+    out = _run_cmd(cmd)
+    match = re.search(
+        r"^\s+bitmap (.+) filename bitmap", out.decode("utf-8"), re.MULTILINE)
+    return match is not None
 
 
 def default_qcow2_compat():
