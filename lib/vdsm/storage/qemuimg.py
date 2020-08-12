@@ -242,7 +242,7 @@ def check(image, format=None):
 def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
             dstQcow2Compat=None, backing=None, backingFormat=None,
             preallocation=None, compressed=False, unordered_writes=False,
-            create=True):
+            create=True, bitmaps=False):
     """
     Arguments:
         unordered_writes (bool): Allow out-of-order writes to the destination.
@@ -293,6 +293,9 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
 
     if unordered_writes:
         cmd.append('-W')
+
+    if bitmaps:
+        cmd.append('--bitmaps')
 
     cmd.append(srcImage)
     cmd.append(dstImage)

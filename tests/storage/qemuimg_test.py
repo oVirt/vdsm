@@ -570,6 +570,199 @@ class TestConvert:
         )
         op.run()
 
+    @requires_bitmaps_support
+    def test_copy_bitmaps(self, user_mount):
+        virtual_size = MiB
+        base_bitmaps = ['base_bitmap1', 'base_bitmap2']
+        top_bitmaps = ['top_bitmap1', 'top_bitmap2']
+
+        # Create source chain.
+        src_base = os.path.join(user_mount.path, 'src_base.img')
+        op = qemuimg.create(
+            src_base,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+
+        # Add new bitmaps to src_base
+        for name in base_bitmaps:
+            op = qemuimg.bitmap_add(src_base, name)
+            op.run()
+
+        src_top = os.path.join(user_mount.path, 'src_top.img')
+        op = qemuimg.create(
+            src_top,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1',
+            backing=src_base,
+            backingFormat='qcow2'
+        )
+        op.run()
+
+        # Add new bitmaps to src_top
+        for name in top_bitmaps:
+            op = qemuimg.bitmap_add(src_top, name)
+            op.run()
+
+        # Create destination chain.
+        dst_base = os.path.join(user_mount.path, 'dst_base.img')
+        op = qemuimg.create(
+            dst_base,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+
+        dst_top = os.path.join(user_mount.path, 'dst_top.img')
+        op = qemuimg.create(
+            dst_top,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1',
+            backing=dst_base,
+            backingFormat='qcow2'
+        )
+        op.run()
+
+        # Convert src_base to dst_base with bitmaps
+        op = qemuimg.convert(
+            src_base,
+            dst_base,
+            srcFormat=qemuimg.FORMAT.QCOW2,
+            dstFormat=qemuimg.FORMAT.QCOW2,
+            dstQcow2Compat='1.1',
+            bitmaps=True
+        )
+        op.run()
+
+        # Convert src_top to dst_top with bitmaps
+        op = qemuimg.convert(
+            src_top,
+            dst_top,
+            srcFormat=qemuimg.FORMAT.QCOW2,
+            dstFormat=qemuimg.FORMAT.QCOW2,
+            dstQcow2Compat='1.1',
+            bitmaps=True
+        )
+        op.run()
+
+        # Verify that all layers have the expected bitmaps
+        for vol, bitmaps in (
+                [dst_base, base_bitmaps], [dst_top, top_bitmaps]):
+            info = qemuimg.info(vol)
+            assert info['bitmaps'] == [
+                {
+                    "flags": ["auto"],
+                    "name": bitmaps[0],
+                    "granularity": 65536
+                },
+                {
+                    "flags": ["auto"],
+                    "name": bitmaps[1],
+                    "granularity": 65536
+                },
+            ]
+
+    @requires_bitmaps_support
+    def test_convert_without_copy_bitmaps(self, user_mount):
+        virtual_size = MiB
+
+        # Create source chain.
+        src = os.path.join(user_mount.path, 'src.img')
+        op = qemuimg.create(
+            src,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+
+        # Add new bitmap to src_base
+        op = qemuimg.bitmap_add(src, 'bitmap')
+        op.run()
+
+        dst = os.path.join(user_mount.path, 'dst.img')
+        op = qemuimg.create(
+            dst,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1',
+        )
+        op.run()
+
+        op = qemuimg.convert(
+            src,
+            dst,
+            srcFormat=qemuimg.FORMAT.QCOW2,
+            dstFormat=qemuimg.FORMAT.QCOW2,
+            dstQcow2Compat='1.1',
+        )
+        op.run()
+
+        # validate that bitmaps doesn't copied to
+        # the leaf volume
+        info = qemuimg.info(dst)
+        assert 'bitmaps' not in info
+
+    @requires_bitmaps_support
+    def test_copy_with_disabled_bitmaps(self, user_mount):
+        virtual_size = MiB
+        bitmaps = [("a", True), ("b", False)]
+
+        # Create source chain.
+        src = os.path.join(user_mount.path, 'src.img')
+        op = qemuimg.create(
+            src,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+
+        # Add bitmaps to src
+        for name, enable in bitmaps:
+            op = qemuimg.bitmap_add(src, name, enable=enable)
+            op.run()
+
+        dst = os.path.join(user_mount.path, 'dst.img')
+        op = qemuimg.create(
+            dst,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1',
+        )
+        op.run()
+
+        op = qemuimg.convert(
+            src,
+            dst,
+            srcFormat=qemuimg.FORMAT.QCOW2,
+            dstFormat=qemuimg.FORMAT.QCOW2,
+            dstQcow2Compat='1.1',
+            bitmaps=True
+        )
+        op.run()
+
+        # validate that bitmaps were copied to the
+        # leaf volume including the invalid bitmap
+        info = qemuimg.info(dst)
+        assert info['bitmaps'] == [
+            {
+                "flags": ["auto"],
+                "name": "a",
+                "granularity": 65536
+            },
+            {
+                "flags": [],
+                "name": "b",
+                "granularity": 65536
+            },
+        ]
+
 
 class TestConvertCompressed:
 
