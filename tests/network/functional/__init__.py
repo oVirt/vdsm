@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +17,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
-from __future__ import absolute_import
-from __future__ import division
 
 import pytest
 

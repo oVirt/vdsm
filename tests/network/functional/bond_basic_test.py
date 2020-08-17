@@ -18,12 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 from contextlib import contextmanager
-
-import six
 
 import pytest
 
@@ -332,7 +327,7 @@ class TestBondOptions(object):
             }
             with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 nftestlib.wait_bonds_lp_interval()
-                for bond_name, bond_options in six.viewitems(BONDCREATE):
+                for bond_name, bond_options in BONDCREATE.items():
                     adapter.assertBond(bond_name, bond_options)
                 adapter.assertNoLACPConfigured(BONDCREATE, nics)
 

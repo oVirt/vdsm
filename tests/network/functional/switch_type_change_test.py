@@ -18,11 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 from copy import deepcopy
-import six
 
 import pytest
 
@@ -310,6 +306,6 @@ class TestSwitchValidation(object):
 
 def _change_switch_type(requests, target_switch):
     changed_requests = deepcopy(requests)
-    for attrs in six.itervalues(changed_requests):
+    for attrs in changed_requests.values():
         attrs['switch'] = target_switch
     return changed_requests

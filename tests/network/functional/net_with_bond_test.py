@@ -17,11 +17,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
-import six
-
 import pytest
 
 from vdsm.network import errors as ne
@@ -185,7 +180,7 @@ class TestNetworkWithBond(object):
             BONDCREATE = {BOND_NAME: {'nics': nics, 'switch': switch}}
 
             with adapter.setupNetworks(netsetup, BONDCREATE, NOCHK):
-                for netname, netattrs in six.iteritems(netsetup):
+                for netname, netattrs in netsetup.items():
                     adapter.assertNetwork(netname, netattrs)
 
     @nftestlib.parametrize_bridged

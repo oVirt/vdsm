@@ -18,12 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 import os
-
-import six
 
 import pytest
 
@@ -169,7 +164,7 @@ class TestNetworkBasic(object):
             }
 
         with adapter.setupNetworks(netsetup, {}, NOCHK):
-            for netname, netattrs in six.viewitems(netsetup):
+            for netname, netattrs in netsetup.items():
                 adapter.assertNetwork(netname, netattrs)
 
     def test_add_bridged_net_missing_sb_device(self, switch):

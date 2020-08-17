@@ -18,15 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 from contextlib import contextmanager
 from copy import deepcopy
+import ipaddress
 import time
-
-import six
-from six.moves import zip
 
 import pytest
 
@@ -60,11 +55,6 @@ except ImportError:
     # When running against the lib, there is no need for the full VDSM install.
     getProxy = None
     SUCCESS = 0
-
-try:
-    import ipaddress
-except ImportError:
-    ipaddress = None
 
 NOCHK = {'connectivityCheck': False}
 TIMEOUT_CHK = {'connectivityCheck': True, 'connectivityTimeout': 0.1}
@@ -111,15 +101,6 @@ parametrize_def_route = pytest.mark.parametrize(
 
 def is_nmstate_backend():
     return nmstate.is_nmstate_backend()
-
-
-def requires_ipaddress():
-    """
-    ipaddress package is a part of the Python std from PY3.3, on PY2 we need
-    the backported implementation installed.
-    """
-    if ipaddress is None:
-        pytest.skip('ipaddress package is not installed')
 
 
 def retry_assert(func):
@@ -367,7 +348,7 @@ class NetFuncTestAdapter(object):
                 ]
             )
             bridge_opts_caps = bridge_caps['opts']
-            for br_opt, br_val in six.iteritems(req_bridge_opts):
+            for br_opt, br_val in req_bridge_opts.items():
                 assert br_val == bridge_opts_caps[br_opt]
 
     def assertNoNetwork(self, netname):
@@ -553,7 +534,6 @@ class NetFuncTestAdapter(object):
         self.assertRoutesIPv6(attrs, topdev_netinfo, ignore_ip)
 
     def assertStaticIPv4(self, netattrs, ipinfo):
-        requires_ipaddress()
         address = netattrs['ipaddr']
         netmask = netattrs.get('netmask') or prefix2netmask(
             int(netattrs.get('prefix'))
@@ -564,10 +544,7 @@ class NetFuncTestAdapter(object):
         assert str(ipv4.with_prefixlen) in ipinfo['ipv4addrs']
 
     def assertStaticIPv6(self, netattrs, ipinfo):
-        requires_ipaddress()
-        ipv6_address = str(
-            ipaddress.IPv6Interface(six.text_type(netattrs['ipv6addr']))
-        )
+        ipv6_address = str(ipaddress.IPv6Interface(str(netattrs['ipv6addr'])))
         assert ipv6_address in ipinfo['ipv6addrs']
 
     def assertDHCPv4(self, ipinfo, ignore_ip=False):
@@ -705,7 +682,7 @@ class NetFuncTestAdapter(object):
     def _pop_bonds_options(self, running_config, kernel_config):
         r_bonds_opts = []
         k_bonds_opts = []
-        for k_name, k_attrs in six.viewitems(kernel_config['bonds']):
+        for k_name, k_attrs in kernel_config['bonds'].items():
             r_bonds_opts.append(
                 running_config['bonds'][k_name].pop('options', '')
             )
@@ -733,7 +710,7 @@ class NetFuncTestAdapter(object):
     def _pop_nameservers(self, running_config, kernel_config):
         r_nameservers_list = []
         k_nameservers_list = []
-        for k_name, k_attrs in six.viewitems(kernel_config['networks']):
+        for k_name, k_attrs in kernel_config['networks'].items():
             r_nameservers_list.append(
                 running_config['networks'][k_name].pop('nameservers', '')
             )
@@ -749,7 +726,7 @@ class NetFuncTestAdapter(object):
 
 
 def _extend_with_bridge_opts(kernel_config, running_config):
-    for net, attrs in six.viewitems(running_config['networks']):
+    for net, attrs in running_config['networks'].items():
         if not attrs['bridged']:
             continue
         if net not in kernel_config.networks:
@@ -760,7 +737,7 @@ def _extend_with_bridge_opts(kernel_config, running_config):
         running_opts_dict = bridge_opts_str_to_dict(running_opts_str)
         kernel_opts_dict = {
             key: val
-            for key, val in six.viewitems(bridges.bridge_options(net))
+            for key, val in bridges.bridge_options(net).items()
             if key in running_opts_dict
         }
         kernel_opts_str = bridge_opts_dict_to_sorted_str(kernel_opts_dict)
@@ -852,10 +829,10 @@ class SetupNetworks(object):
 
         nics_used = [
             attr['nic']
-            for attr in six.itervalues(self.setup_networks)
+            for attr in self.setup_networks.values()
             if 'nic' in attr
         ]
-        for attr in six.itervalues(self.setup_bonds):
+        for attr in self.setup_bonds.values():
             nics_used += attr.get('nics', [])
         for nic in nics_used:
             fileutils.rm_file(IFCFG_PREFIX + nic)
@@ -866,13 +843,13 @@ class SetupNetworks(object):
         return self._is_dynamic_ipv4() or self._is_dynamic_ipv6()
 
     def _is_dynamic_ipv4(self):
-        for attr in six.viewvalues(self.setup_networks):
+        for attr in self.setup_networks.values():
             if attr.get('bootproto') == 'dhcp':
                 return True
         return False
 
     def _is_dynamic_ipv6(self):
-        for attr in six.viewvalues(self.setup_networks):
+        for attr in self.setup_networks.values():
             if attr.get('dhcpv6'):
                 return True
         return False
@@ -886,7 +863,7 @@ class SetupNetworks(object):
     def _collect_all_dhcpv4_interfaces(self):
         return [
             _get_network_iface_name(name, attr)
-            for name, attr in six.viewitems(self.setup_networks)
+            for name, attr in self.setup_networks.items()
             if attr.get('bootproto') == 'dhcp'
         ]
 
@@ -964,15 +941,15 @@ def _normalize_caps(netinfo_from_caps):
     """
     netinfo = deepcopy(netinfo_from_caps)
     # TODO: When production code drops compatibility normalization, remove it.
-    for dev in six.itervalues(netinfo.networks):
+    for dev in netinfo.networks.values():
         dev['mtu'] = int(dev['mtu'])
 
     return netinfo
 
 
 def _normalize_qos_config(qos):
-    for value in six.viewvalues(qos):
-        for attrs in six.viewvalues(value):
+    for value in qos.values():
+        for attrs in value.values():
             if attrs.get('m1') == 0:
                 del attrs['m1']
             if attrs.get('d') == 0:
@@ -982,7 +959,7 @@ def _normalize_qos_config(qos):
 
 def _normalize_bonds(configs):
     for cfg in configs:
-        for bond_name, bond_attrs in six.viewitems(cfg['bonds']):
+        for bond_name, bond_attrs in cfg['bonds'].items():
             opts = dict(
                 pair.split('=', 1) for pair in bond_attrs['options'].split()
             )
@@ -993,7 +970,7 @@ def _normalize_bonds(configs):
 
 def _normalize_bond_opts(opts):
     _normalize_arg_ip_target_option(opts)
-    return [opt + '=' + val for (opt, val) in six.iteritems(opts)]
+    return [opt + '=' + val for (opt, val) in opts.items()]
 
 
 def _normalize_arg_ip_target_option(opts):
@@ -1015,7 +992,7 @@ def _numerize_bond_options(opts):
         return opts
 
     optmap['mode'] = numeric_mode = bond_options.numerize_bond_mode(mode)
-    for opname, opval in six.viewitems(optmap):
+    for opname, opval in optmap.items():
         numeric_val = bond_opts_mapper.get_bonding_option_numeric_val(
             numeric_mode, opname, opval
         )
