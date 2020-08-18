@@ -18,7 +18,7 @@
 
 import pytest
 
-from .netfunctestlib import NetFuncTestAdapter, NOCHK
+from .netfunctestlib import NOCHK
 from .netfunctestlib import parametrize_bridged
 from .netfunctestlib import parametrize_switch
 from network.compat import mock
@@ -36,19 +36,10 @@ IPv4_PREFIX_LEN = '24'
 NETWORK_NAME = 'test-network'
 
 
-adapter = None
-
-
-@pytest.fixture(scope='module', autouse=True)
-def create_adapter(target):
-    global adapter
-    adapter = NetFuncTestAdapter(target)
-
-
 @pytest.mark.ovs_switch
 class TestRestoreOvsBond(object):
     @mock.patch.object(netrestore, 'NETS_RESTORED_MARK', 'does/not/exist')
-    def test_restore_bond(self):
+    def test_restore_bond(self, adapter):
         with dummy_devices(2) as (nic1, nic2):
             BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': 'ovs'}}
 
@@ -67,7 +58,7 @@ class TestRestoreOvsBond(object):
 @pytest.mark.legacy_switch
 @pytest.mark.nmstate
 class TestRestoreLegacyBridge(object):
-    def test_restore_bridge_with_custom_opts(self):
+    def test_restore_bridge_with_custom_opts(self, adapter):
         with dummy_devices(1) as (nic,):
             CUSTOM_OPTS1 = {
                 'bridge_opts': 'multicast_router=0 multicast_snooping=0'
@@ -107,7 +98,9 @@ class TestRestoreLegacyBridge(object):
 @pytest.mark.nmstate
 class TestRestore(object):
     @parametrize_bridged
-    def test_restore_missing_network_from_config(self, switch, bridged):
+    def test_restore_missing_network_from_config(
+        self, adapter, switch, bridged
+    ):
         with dummy_devices(1) as (nic,):
             SETUP_NET = {
                 NETWORK_NAME: {
@@ -130,7 +123,9 @@ class TestRestore(object):
                     adapter.assertNetworkExists(NETWORK_NAME)
 
     @parametrize_bridged
-    def test_restore_missing_dynamic_ipv4_network(self, switch, bridged):
+    def test_restore_missing_dynamic_ipv4_network(
+        self, adapter, switch, bridged
+    ):
         if switch == 'ovs':
             # With OVS, the restoration creates the network without an IP.
             pytest.xfail('Inconsistent behaviour with OVS')
@@ -171,7 +166,9 @@ class TestRestore(object):
                         adapter.assertNoNetworkExists(NETWORK_NAME)
 
     @parametrize_bridged
-    def test_restore_network_static_ip_from_config(self, switch, bridged):
+    def test_restore_network_static_ip_from_config(
+        self, adapter, switch, bridged
+    ):
         with dummy_devices(1) as (nic,):
             NET_WITH_IP_ATTRS = {
                 'nic': nic,
@@ -199,7 +196,7 @@ class TestRestore(object):
 
                     adapter.assertNetworkIp(NETWORK_NAME, NET_WITH_IP_ATTRS)
 
-    def test_restore_missing_bond(self, switch):
+    def test_restore_missing_bond(self, adapter, switch):
         with dummy_devices(2) as (nic1, nic2):
             BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
             BONDREMOVE = {BOND_NAME: {'remove': True}}
@@ -214,7 +211,9 @@ class TestRestore(object):
                     adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
     @parametrize_bridged
-    def test_restore_removes_unpersistent_network(self, switch, bridged):
+    def test_restore_removes_unpersistent_network(
+        self, adapter, switch, bridged
+    ):
         with dummy_devices(1) as (nic,):
             SETUP_NET = {
                 NETWORK_NAME: {

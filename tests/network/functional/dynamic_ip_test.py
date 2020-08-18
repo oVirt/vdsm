@@ -27,7 +27,7 @@ from vdsm.network.initializer import init_unpriviliged_dhclient_monitor_ctx
 from vdsm.network.ipwrapper import linkSet, addrAdd
 
 from . import netfunctestlib as nftestlib
-from .netfunctestlib import NetFuncTestAdapter, NOCHK
+from .netfunctestlib import NOCHK
 from .netfunctestlib import parametrize_def_route
 from .netfunctestlib import parametrize_ip_families
 from .netfunctestlib import IpFamily
@@ -85,15 +85,6 @@ class DhcpConfig(object):
         self.ipv4_range_to = ipv4_range_to
         self.ipv6_range_from = ipv6_range_from
         self.ipv6_range_to = ipv6_range_to
-
-
-adapter = None
-
-
-@pytest.fixture(scope='module', autouse=True)
-def create_adapter(target):
-    global adapter
-    adapter = NetFuncTestAdapter(target)
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -205,7 +196,9 @@ class TestNetworkDhcpBasic(object):
     @parametrize_ip_families
     @nftestlib.parametrize_bridged
     @parametrize_def_route
-    def test_add_net_with_dhcp(self, switch, families, bridged, def_route):
+    def test_add_net_with_dhcp(
+        self, adapter, switch, families, bridged, def_route
+    ):
         if switch == 'ovs' and IpFamily.IPv6 in families:
             pytest.xfail(
                 'IPv6 dynamic fails with OvS'
@@ -253,7 +246,7 @@ class TestNetworkDhcpBasic(object):
 
     @parametrize_ip_families
     def test_move_nic_between_bridgeless_and_bridged_keep_ip(
-        self, switch, families
+        self, adapter, switch, families
     ):
         if switch == 'ovs' and IpFamily.IPv6 in families:
             pytest.xfail(
@@ -315,7 +308,7 @@ class TestNetworkDhcpBasic(object):
 @pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestStopDhclientOnUsedNics(object):
-    def test_attach_dhcp_nic_to_ipless_network(self, switch):
+    def test_attach_dhcp_nic_to_ipless_network(self, adapter, switch):
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
             addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, IpFamily.IPv6)
@@ -343,7 +336,7 @@ class TestStopDhclientOnUsedNics(object):
                         adapter.assertDisabledIPv4(net_netinfo)
                         adapter.assertDisabledIPv6(nic_netinfo)
 
-    def test_attach_dhcp_nic_to_dhcpv4_bridged_network(self, switch):
+    def test_attach_dhcp_nic_to_dhcpv4_bridged_network(self, adapter, switch):
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
             linkSet(server, ['up'])
@@ -374,7 +367,7 @@ class TestStopDhclientOnUsedNics(object):
                             NETWORK_NAME, family=IpFamily.IPv4
                         )
 
-    def test_attach_dhcp_nic_to_dhcpv6_bridged_network(self, switch):
+    def test_attach_dhcp_nic_to_dhcpv6_bridged_network(self, adapter, switch):
         if switch == 'ovs':
             pytest.xfail(
                 'IPv6 dynamic fails with OvS'
@@ -409,6 +402,7 @@ class TestStopDhclientOnUsedNics(object):
 @nftestlib.parametrize_switch
 @pytest.mark.nmstate
 def test_default_route_of_two_dynamic_ip_networks(
+    adapter,
     switch,
     network_configuration1,
     network_configuration2,
@@ -451,9 +445,14 @@ def test_default_route_of_two_dynamic_ip_networks(
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_switch
 def test_dynamic_ip_switch_to_static_without_running_dhcp_server(
-    switch, families, bridged, dynamic_ipv4_ipv6_iface_without_dhcp_server
+    adapter,
+    switch,
+    families,
+    bridged,
+    dynamic_ipv4_ipv6_iface_without_dhcp_server,
 ):
     _test_dynamic_ip_switch_to_static(
+        adapter,
         switch,
         families,
         bridged,
@@ -467,9 +466,14 @@ def test_dynamic_ip_switch_to_static_without_running_dhcp_server(
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_switch
 def test_dynamic_ip_switch_to_static_with_running_dhcp_server(
-    switch, families, bridged, dynamic_ipv4_ipv6_iface_with_dhcp_server
+    adapter,
+    switch,
+    families,
+    bridged,
+    dynamic_ipv4_ipv6_iface_with_dhcp_server,
 ):
     _test_dynamic_ip_switch_to_static(
+        adapter,
         switch,
         families,
         bridged,
@@ -482,10 +486,11 @@ def test_dynamic_ip_switch_to_static_with_running_dhcp_server(
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_switch
 def test_dynamic_ipv4_vlan_net_switch_to_static_without_running_dhcp_server(
-    switch, bridged, dynamic_vlaned_ipv4_iface_without_dhcp_server
+    adapter, switch, bridged, dynamic_vlaned_ipv4_iface_without_dhcp_server
 ):
     families = (IpFamily.IPv4,)
     _test_dynamic_ip_switch_to_static(
+        adapter,
         switch,
         families,
         bridged,
@@ -499,10 +504,11 @@ def test_dynamic_ipv4_vlan_net_switch_to_static_without_running_dhcp_server(
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_switch
 def test_dynamic_ipv4_vlan_net_switch_to_static_with_running_dhcp_server(
-    switch, bridged, dynamic_vlaned_ipv4_iface_with_dhcp_server
+    adapter, switch, bridged, dynamic_vlaned_ipv4_iface_with_dhcp_server
 ):
     families = (IpFamily.IPv4,)
     _test_dynamic_ip_switch_to_static(
+        adapter,
         switch,
         families,
         bridged,
@@ -515,7 +521,9 @@ def test_dynamic_ipv4_vlan_net_switch_to_static_with_running_dhcp_server(
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_legacy_switch
 @pytest.mark.nmstate
-def test_add_static_dns_with_dhcp(dynamic_ipv4_iface1, switch, bridged):
+def test_add_static_dns_with_dhcp(
+    adapter, dynamic_ipv4_iface1, switch, bridged
+):
     network_attrs = {
         'bridged': bridged,
         'nic': dynamic_ipv4_iface1,
@@ -532,7 +540,7 @@ def test_add_static_dns_with_dhcp(dynamic_ipv4_iface1, switch, bridged):
 
 
 def _test_dynamic_ip_switch_to_static(
-    switch, families, bridged, is_dhcp_server_enabled, nic, vlan=None
+    adapter, switch, families, bridged, is_dhcp_server_enabled, nic, vlan=None
 ):
     if switch == 'ovs' and IpFamily.IPv6 in families:
         pytest.xfail(
@@ -580,7 +588,7 @@ def _test_dynamic_ip_switch_to_static(
 @nftestlib.parametrize_switch
 @pytest.mark.nmstate
 def test_dynamic_ip_bonded_vlanned_network(
-    switch, dynamic_vlaned_ipv4_iface_with_dhcp_server
+    adapter, switch, dynamic_vlaned_ipv4_iface_with_dhcp_server
 ):
     bond_name = 'bond0'
     network_attrs = {
@@ -605,7 +613,7 @@ def test_dynamic_ip_bonded_vlanned_network(
 @nftestlib.parametrize_switch
 @pytest.mark.nmstate
 def test_dynamic_ip_bonded_network(
-    switch, dynamic_ipv4_ipv6_iface_with_dhcp_server
+    adapter, switch, dynamic_ipv4_ipv6_iface_with_dhcp_server
 ):
     if switch == 'ovs':
         pytest.xfail(

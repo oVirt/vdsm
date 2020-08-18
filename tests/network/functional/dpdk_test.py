@@ -18,28 +18,19 @@
 
 import pytest
 
-from .netfunctestlib import NetFuncTestAdapter, NOCHK
+from .netfunctestlib import NOCHK
 
 
 NETWORK_NAME = 'test-network'
 
 
-adapter = None
-
-
-@pytest.fixture(scope='module', autouse=True)
-def create_adapter():
-    global adapter
-    adapter = NetFuncTestAdapter()
-
-
 @pytest.mark.ovsdpdk_switch
 class TestOvsDpdk(object):
-    def test_dpdk0_device_exists(self):
+    def test_dpdk0_device_exists(self, adapter):
         adapter.update_netinfo()
         assert 'dpdk0' in adapter.netinfo.nics
 
-    def test_setup_ovs_dpdk(self):
+    def test_setup_ovs_dpdk(self, adapter):
         NETCREATE = {NETWORK_NAME: {'nic': 'dpdk0', 'switch': 'ovs'}}
         with adapter.setupNetworks(NETCREATE, {}, NOCHK):
             adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])

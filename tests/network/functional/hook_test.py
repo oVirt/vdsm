@@ -29,7 +29,7 @@ from vdsm.common import constants
 from vdsm.common import fileutils
 
 from . import netfunctestlib as nftestlib
-from .netfunctestlib import NetFuncTestAdapter, NOCHK
+from .netfunctestlib import NOCHK
 from network.nettestlib import dummy_device
 
 
@@ -49,14 +49,6 @@ canonicalize.canonicalize_networks(network_config['request']['networks'])
 
 hooking.write_json(network_config)
 """
-
-adapter = None
-
-
-@pytest.fixture(scope='module', autouse=True)
-def create_adapter(target):
-    global adapter
-    adapter = NetFuncTestAdapter(target)
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -139,7 +131,7 @@ def bridgeless_network(switch):
 @nftestlib.parametrize_switch
 class TestNetworkSetupHook(object):
     def test_before_network_setup_hook_enables_bridged(
-        self, before_network_setup_hook, bridgeless_network
+        self, adapter, before_network_setup_hook, bridgeless_network
     ):
         with adapter.setupNetworks(bridgeless_network, {}, NOCHK):
             bridgeless_network[NETWORK_NAME]['bridged'] = True
@@ -148,7 +140,7 @@ class TestNetworkSetupHook(object):
             )
 
     def test_after_network_setup_hook(
-        self, after_network_setup_hook, bridgeless_network
+        self, adapter, after_network_setup_hook, bridgeless_network
     ):
         with adapter.setupNetworks(bridgeless_network, {}, NOCHK):
             pass

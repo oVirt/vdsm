@@ -31,15 +31,6 @@ from network.nettestlib import dummy_device
 NETWORK_NAME = 'test-network'
 
 
-adapter = None
-
-
-@pytest.fixture(scope='module', autouse=True)
-def create_adapter(target):
-    global adapter
-    adapter = nftestlib.NetFuncTestAdapter(target)
-
-
 @pytest.fixture
 def nic0():
     with dummy_device() as nic:
@@ -62,7 +53,7 @@ def hidden_nic():
 @pytest.mark.nmstate
 class TestBridge(object):
     @nftestlib.parametrize_switch
-    def test_add_bridge_with_stp(self, switch, nic0):
+    def test_add_bridge_with_stp(self, adapter, switch, nic0):
         if switch == 'ovs':
             pytest.xfail('stp is currently not implemented for ovs')
 
@@ -75,7 +66,7 @@ class TestBridge(object):
                 adapter.assertBridgeOpts(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     @nftestlib.parametrize_legacy_switch
-    def test_add_bridge_with_custom_opts(self, switch, nic0):
+    def test_add_bridge_with_custom_opts(self, adapter, switch, nic0):
         NET_ATTRS = {
             'nic': nic0,
             'switch': switch,
@@ -89,7 +80,7 @@ class TestBridge(object):
 
     @nftestlib.parametrize_legacy_switch
     def test_create_network_over_an_existing_unowned_bridge(
-        self, switch, nic0
+        self, adapter, switch, nic0
     ):
         with _create_linux_bridge(NETWORK_NAME) as brname:
             NETCREATE = {
@@ -107,7 +98,7 @@ class TestBridge(object):
     )
     @nftestlib.parametrize_legacy_switch
     def test_create_network_and_reuse_existing_owned_bridge(
-        self, switch, nic0, nic1, hidden_nic
+        self, adapter, switch, nic0, nic1, hidden_nic
     ):
         NETSETUP1 = {NETWORK_NAME: {'nic': nic0, 'switch': switch}}
         NETSETUP2 = {NETWORK_NAME: {'nic': nic1, 'switch': switch}}
@@ -118,7 +109,9 @@ class TestBridge(object):
                 adapter.assertNetwork(NETWORK_NAME, NETSETUP2[NETWORK_NAME])
 
     @nftestlib.parametrize_legacy_switch
-    def test_reconfigure_bridge_with_vanished_port(self, switch, nic0):
+    def test_reconfigure_bridge_with_vanished_port(
+        self, adapter, switch, nic0
+    ):
         NETCREATE = {
             NETWORK_NAME: {'nic': nic0, 'bridged': True, 'switch': switch}
         }

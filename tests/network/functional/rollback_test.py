@@ -24,7 +24,6 @@ from vdsm.network import errors as ne
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import SetupNetworksError
-from .netfunctestlib import NetFuncTestAdapter
 from .netfunctestlib import NOCHK
 from .netfunctestlib import TIMEOUT_CHK
 from network.nettestlib import dummy_device, dummy_devices
@@ -37,19 +36,10 @@ IPv4_ADDRESS = '192.0.2.1'
 IPv4_NETMASK = '255.255.255.0'
 
 
-adapter = None
-
-
-@pytest.fixture(scope='module', autouse=True)
-def create_adapter(target):
-    global adapter
-    adapter = NetFuncTestAdapter(target)
-
-
 @nftestlib.parametrize_switch
 @pytest.mark.nmstate
 class TestNetworkRollback(object):
-    def test_remove_broken_network(self, switch):
+    def test_remove_broken_network(self, adapter, switch):
         with dummy_devices(2) as (nic1, nic2):
             BROKEN_NETCREATE = {
                 NETWORK_NAME: {
@@ -70,15 +60,15 @@ class TestNetworkRollback(object):
             adapter.assertNoNetwork(NETWORK_NAME)
             adapter.assertNoBond(BOND_NAME)
 
-    def test_rollback_to_initial_basic_network(self, switch):
-        self._test_rollback_to_initial_network(switch)
+    def test_rollback_to_initial_basic_network(self, adapter, switch):
+        self._test_rollback_to_initial_network(adapter, switch)
 
-    def test_rollback_to_initial_network_with_static_ip(self, switch):
+    def test_rollback_to_initial_network_with_static_ip(self, adapter, switch):
         self._test_rollback_to_initial_network(
-            switch, ipaddr=IPv4_ADDRESS, netmask=IPv4_NETMASK
+            adapter, switch, ipaddr=IPv4_ADDRESS, netmask=IPv4_NETMASK
         )
 
-    def test_setup_network_fails_on_existing_bond(self, switch):
+    def test_setup_network_fails_on_existing_bond(self, adapter, switch):
         with dummy_device() as nic:
             NETCREATE = {
                 NETWORK_NAME: {
@@ -99,7 +89,7 @@ class TestNetworkRollback(object):
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
     @nftestlib.parametrize_bonded
-    def test_setup_new_network_fails(self, switch, bonded):
+    def test_setup_new_network_fails(self, adapter, switch, bonded):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'bridged': True, 'switch': switch}}
             if bonded:
@@ -118,7 +108,7 @@ class TestNetworkRollback(object):
                 adapter.assertNoBond(BOND_NAME)
 
     @nftestlib.parametrize_bonded
-    def test_edit_network_fails(self, switch, bonded):
+    def test_edit_network_fails(self, adapter, switch, bonded):
         with dummy_device() as nic:
             NETCREATE = {
                 NETWORK_NAME: {'bridged': True, 'mtu': 1500, 'switch': switch}
@@ -161,7 +151,7 @@ class TestNetworkRollback(object):
                 if bonded:
                     adapter.assertBond(BOND_NAME, BONDBASE[BOND_NAME])
 
-    def test_setup_two_networks_second_fails(self, switch):
+    def test_setup_two_networks_second_fails(self, adapter, switch):
         with dummy_devices(3) as (nic1, nic2, nic3):
             NET1_NAME = NETWORK_NAME + '1'
             NET2_NAME = NETWORK_NAME + '2'
@@ -191,7 +181,7 @@ class TestNetworkRollback(object):
                 adapter.assertNetwork(NET1_NAME, NETCREATE[NET1_NAME])
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
-    def _test_rollback_to_initial_network(self, switch, **kwargs):
+    def _test_rollback_to_initial_network(self, adapter, switch, **kwargs):
         with dummy_devices(2) as (nic1, nic2):
             NETCREATE = {
                 NETWORK_NAME: {'nic': nic1, 'bridged': False, 'switch': switch}
@@ -222,7 +212,7 @@ class TestNetworkRollback(object):
 
 @pytest.mark.legacy_switch
 @pytest.mark.nmstate
-def test_setup_invalid_bridge_opts_fails():
+def test_setup_invalid_bridge_opts_fails(adapter):
     with dummy_devices(1) as (nic,):
         net_attrs = {
             'nic': nic,

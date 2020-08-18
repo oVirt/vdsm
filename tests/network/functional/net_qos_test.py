@@ -20,7 +20,7 @@
 import pytest
 
 from . import netfunctestlib as nftestlib
-from .netfunctestlib import NetFuncTestAdapter, NOCHK
+from .netfunctestlib import NOCHK
 from network.nettestlib import dummy_device
 
 NETWORK1_NAME = 'test-network1'
@@ -30,14 +30,6 @@ VLAN2 = 20
 BOND_NAME = 'bond1'
 _100USEC = 100 * 1000
 
-adapter = None
-
-
-@pytest.fixture(scope='module', autouse=True)
-def create_adapter(target):
-    global adapter
-    adapter = NetFuncTestAdapter(target)
-
 
 # TODO: When QoS will be available on OVS, enable the tests.
 @nftestlib.parametrize_legacy_switch
@@ -45,7 +37,7 @@ def create_adapter(target):
 class TestNetworkHostQos(object):
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
-    def test_add_vlan_network_with_qos(self, switch, bridged, bonded):
+    def test_add_vlan_network_with_qos(self, adapter, switch, bridged, bonded):
         HOST_QOS_CONFIG = {
             'out': {
                 'ls': {
@@ -81,7 +73,9 @@ class TestNetworkHostQos(object):
 
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
-    def test_add_non_vlan_network_with_qos(self, switch, bridged, bonded):
+    def test_add_non_vlan_network_with_qos(
+        self, adapter, switch, bridged, bonded
+    ):
         HOST_QOS_CONFIG = {
             'out': {
                 'ls': {
@@ -114,7 +108,7 @@ class TestNetworkHostQos(object):
             if not bonded:
                 adapter.assertNoQosOnNic(nic)
 
-    def test_add_two_networks_with_qos_on_shared_nic(self, switch):
+    def test_add_two_networks_with_qos_on_shared_nic(self, adapter, switch):
         HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
         HOST_QOS_CONFIG2 = {'out': {'ls': {'m2': rate(rate_in_mbps=5)}}}
         with dummy_device() as nic:
@@ -136,7 +130,7 @@ class TestNetworkHostQos(object):
                 adapter.assertHostQos(NETWORK2_NAME, NETCREATE[NETWORK2_NAME])
 
     def test_add_two_networks_with_qos_on_shared_nic_in_two_steps(
-        self, switch
+        self, adapter, switch
     ):
         HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
         HOST_QOS_CONFIG2 = {'out': {'ls': {'m2': rate(rate_in_mbps=5)}}}
@@ -165,7 +159,7 @@ class TestNetworkHostQos(object):
                         NETWORK2_NAME, NETVLAN[NETWORK2_NAME]
                     )
 
-    def test_add_edit_and_remove_qos_from_nic(self, switch):
+    def test_add_edit_and_remove_qos_from_nic(self, adapter, switch):
         HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
         HOST_QOS_CONFIG2 = {
             'out': {

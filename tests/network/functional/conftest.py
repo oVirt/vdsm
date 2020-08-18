@@ -23,6 +23,7 @@ from contextlib import contextmanager
 import pytest
 
 from . import netfunctestlib as nftestlib
+from .netfunctestlib import NetFuncTestAdapter
 from .netfunctestlib import Target
 from network.compat import mock
 
@@ -37,6 +38,11 @@ def pytest_addoption(parser):
     parser.addoption(
         '--skip-stable-link-monitor', action='store_const', const=True
     )
+
+
+@pytest.fixture(scope='session', autouse=True)
+def adapter(target):
+    yield NetFuncTestAdapter(target)
 
 
 @pytest.fixture(scope='session', autouse=True)

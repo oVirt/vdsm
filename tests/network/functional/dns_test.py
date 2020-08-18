@@ -35,24 +35,15 @@ IPv4_GATEWAY = '192.0.2.254'
 IPv4_NETMASK = '255.255.255.0'
 
 
-adapter = None
-
-
-@pytest.fixture(scope='module', autouse=True)
-def create_adapter(target):
-    global adapter
-    adapter = nftestlib.NetFuncTestAdapter(target)
-
-
 @pytest.fixture(autouse=True)
-def refresh_cache():
+def refresh_cache(adapter):
     adapter.refresh_netinfo()
 
 
 @pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkDNS(object):
-    def test_set_host_nameservers(self, switch):
+    def test_set_host_nameservers(self, adapter, switch):
         original_nameservers = adapter.netinfo.nameservers
         assert (
             original_nameservers != NAMESERVERS
@@ -73,7 +64,7 @@ class TestNetworkDNS(object):
                 with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                     adapter.assertNameservers(NAMESERVERS)
 
-    def test_preserve_host_nameservers(self, switch):
+    def test_preserve_host_nameservers(self, adapter, switch):
         original_nameservers = adapter.netinfo.nameservers
         with dummy_device() as nic:
             NETCREATE = {
@@ -90,7 +81,7 @@ class TestNetworkDNS(object):
                 with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                     adapter.assertNameservers(original_nameservers)
 
-    def test_set_nameservers_on_non_default_network(self, switch):
+    def test_set_nameservers_on_non_default_network(self, adapter, switch):
         with dummy_device() as nic:
             NETCREATE = {
                 NETWORK_NAME: {

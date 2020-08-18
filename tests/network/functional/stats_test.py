@@ -22,7 +22,7 @@ import pytest
 
 from network.nettestlib import veth_pair
 
-from .netfunctestlib import NetFuncTestAdapter, NOCHK
+from .netfunctestlib import NOCHK
 from .netfunctestlib import parametrize_switch
 
 
@@ -30,18 +30,9 @@ NETWORK_NAME1 = 'test-network-1'
 NETWORK_NAME2 = 'test-network-2'
 
 
-adapter = None
-
-
-@pytest.fixture(scope='module', autouse=True)
-def create_adapter(target):
-    global adapter
-    adapter = NetFuncTestAdapter(target)
-
-
 @pytest.mark.nmstate
 @parametrize_switch
-def test_interfaces_stats(switch):
+def test_interfaces_stats(adapter, switch):
     with veth_pair() as (nic1, nic2):
         NETSETUP1 = {
             NETWORK_NAME1: {'bridged': False, 'nic': nic1, 'switch': switch}
