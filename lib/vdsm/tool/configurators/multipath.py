@@ -286,23 +286,35 @@ def configure():
             os.unlink(f.name)
             raise
 
-    # Multipathd will not reconfigure immediatly after multipath.conf changes
-    # unless it is already running and ordered to be reconfigured.
-    # This was causing in BZ#1859876 for host using a multipath device as a
-    # boot device to have a wrong LVM filter set since it was using friendly
-    # /dev/mapper/mpath{X} device names on its initial configuration, which
-    # the configuation switched to /dev/mapper/{WWID} naming in the static
-    # configuration file, but since multipathd was not running at that time
-    # and could not be reloaded, the LVM filter setup followed with setting
-    # the friendly device name for the only device accepted by the filter.
-    # This has made the host unable to locate rootfs and failing to boot.
-    # For making sure multipathd is reconfigured immediatly after
-    # multipath.conf changes we first start the multipathd service, this has
-    # no implications if the service is already running and assures the
-    # multipathd reconfigure command to follow will succeed in reloading the
-    # new configuration and resets any existing device mappings. If any
-    # of those steps fails, we want to fail the configuration, not using wrong
-    # device name mappings for LVM filter configuration.
+    # We want to handle these cases:
+    #
+    # 1. multipathd is not running and the kernel module is not loaded. We
+    #    don't have any online multipath devices, so there is nothing to
+    #    reconfigure, but we want to make sure that multipathd is happy with
+    #    new multipath configuration.
+    #
+    # 2. multipathd is not running but the kernel module is loaded. We may have
+    #    online devices that need reconfiguration.
+    #
+    # 3. multipathd is running with older configuration not compatible with
+    #    vdsm configuration.
+    #
+    # 4. multipathd is running with older vdsm configuration. Reloading is
+    #    needed to update devices with new configuration.
+    #
+    # When we have online devices using incompatible configuration, they may
+    # use "user friendly" names (/dev/mapper/mpath{N}) instead of consistent
+    # names (/dev/mapper/{WWID}). Restarting multipathd with the new
+    # configuration will rename the devices, however due to multipathd bug,
+    # these devices may not pick all configuration changes. Reconfiguring
+    # multipathd ensures that all configurations changes are applied.
+    #
+    # To simplify handing of all cases, we first start multipathd service. This
+    # eliminates cases 1 and 2. Case 3 and 4 are handled by reconfiguring
+    # multipathd.
+    #
+    # If any of those steps fails, we want to fail the configuration.
+
     service.service_start("multipathd")
     commands.run([_MULTIPATHD.cmd, "reconfigure"])
 
