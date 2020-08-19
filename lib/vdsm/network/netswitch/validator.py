@@ -90,18 +90,28 @@ class Validator(object):
             if net_attr.get('nic')
         }
 
-        used_vlan_nics = {
-            vlan_attr['iface'] for vlan_attr in self._net_info.vlans.values()
-        }
+        # This should care only about vlans that are not owned by vdsm
+        used_unmanaged_vlan_nics = self._get_unmanaged_vlan_nics()
 
         shared_by_bond_and_nets = used_bond_slaves & used_net_nics
-        shared_by_vlan_and_bond = used_bond_slaves & used_vlan_nics
+        shared_by_vlan_and_bond = used_bond_slaves & used_unmanaged_vlan_nics
 
         shared_nics = shared_by_vlan_and_bond or shared_by_bond_and_nets
         if shared_nics:
             raise ne.ConfigNetworkError(
                 ne.ERR_USED_NIC, f'Nics with multiple usages: {shared_nics}'
             )
+
+    def _get_unmanaged_vlan_nics(self):
+        southbounds_managed_by_vdsm = {
+            net_attr['southbound']
+            for net_attr in self._net_info.networks.values()
+        }
+        return {
+            vlan_attr['iface']
+            for vlan, vlan_attr in self._net_info.vlans.items()
+            if vlan not in southbounds_managed_by_vdsm
+        }
 
     def _create_desired_config(self):
         desired_config = KernelConfig(self._net_info)

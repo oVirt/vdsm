@@ -235,12 +235,15 @@ class TestNetworkWithBond(object):
                 adapter.assertNoBond(BOND_NAME)
 
     @nftestlib.parametrize_bridged
+    @pytest.mark.parametrize('vlan', [False, True], ids=['non-vlan', 'vlan'])
     def test_replace_network_nic_with_bond_that_includes_the_nic(
-        self, switch, bridged
+        self, switch, bridged, vlan
     ):
         with dummy_devices(2) as (nic1, nic2):
             net_attrs = {'bridged': bridged, 'switch': switch, 'nic': nic1}
             bond_attrs = {'nics': [nic1, nic2], 'switch': switch}
+            if vlan:
+                net_attrs['vlan'] = VLAN1
 
             with adapter.setupNetworks({NETWORK1_NAME: net_attrs}, {}, NOCHK):
                 net_attrs.pop('nic')
