@@ -201,12 +201,11 @@ class TestLinkBond(object):
             'arp_ip_target': ','.join([preserved_addr, added_addr]),
         }
 
-        with dummy_devices(2) as (nic1, nic2):
-            with bond_device() as bond:
-                bond.set_options(OPTIONS_A)
-                bond.set_options(OPTIONS_B)
-                bond.refresh()
-                assert bond.options == OPTIONS_B
+        with bond_device() as bond:
+            bond.set_options(OPTIONS_A)
+            bond.set_options(OPTIONS_B)
+            bond.refresh()
+            assert bond.options == OPTIONS_B
 
     def test_bond_properties_includes_non_options_keys(self):
         with bond_device() as bond:
