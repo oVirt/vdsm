@@ -5684,7 +5684,7 @@ class Vm(object):
 
     @contextmanager
     def qga_context(self,
-                    timeout=libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT):
+                    timeout=libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK):
         """
         Invoke QEMU Guest Agent context and set the timeout for the command.
         The timeout is only valid for the duration of the context. To prevent
@@ -5704,16 +5704,21 @@ class Vm(object):
         Raises NonResponsiveGuestAgent if timeout is reached before acquiring
         the agent lock.
 
-        The `default` timeout generally means that libvirt waits for 5 seconds
-        for guest-sync command then (with some exceptions) blocks indefinitely
-        for the execution of the requested command. We wait for the internal
-        lock also for 5 seconds. This way, if the agent is blocked on a
-        command, we time out after 5 seconds just like libvirt would. However,
-        in certain unlikely cases (agent blocked on command and unresponsive
-        guest) this could lead to situations where it would take 10 seconds
-        before timing out (or executing the command). In situations where this
-        unclear behavior (5 vs. 10 seconds timeout) may be a problem one should
-        always specify a numeric timeout value instead of relying on default.
+        The blocking behavior waits 5 seconds for guest-sync command and then
+        blocks for the execution of the requested command. This means that even
+        with blocking behavior one should also be prepared to handle timeouts
+        and non-responsive agent.
+
+        The `default` timeout means that libvirt waits for 5 seconds for
+        guest-sync command then another 5 seconds for the execution of the
+        requested command. We wait for the internal lock also for 5 seconds.
+        This way, if the agent is blocked on a command, we time out after 5
+        seconds just like libvirt would. However, in certain unlikely cases
+        (agent blocked on command and unresponsive guest) this could lead to
+        situations where it would take 10 seconds before timing out (or
+        executing the command). In situations where this unclear behavior (5
+        vs. 10 seconds timeout) may be a problem one should always specify a
+        numeric timeout value instead of relying on default.
         """
         # The agent cannot handle multiple simultaneous connections so having a
         # lock here does not cause any additional bottleneck.
@@ -5724,7 +5729,7 @@ class Vm(object):
             # None while it in fact returns True/False.
             # pylint: disable=assignment-from-no-return
             if timeout == libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK:
-                acquired = self._qga_lock.acquire(blocking=True, timeout=-1)
+                acquired = self._qga_lock.acquire(blocking=True, timeout=5)
             elif timeout == libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT:
                 acquired = self._qga_lock.acquire(blocking=True, timeout=5)
             elif timeout == libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_NOWAIT:
@@ -5752,9 +5757,9 @@ class Vm(object):
         finally:
             if acquired:
                 self._qga_lock.release()
-            if timeout != libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT:
+            if timeout != libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK:
                 self._dom.agentSetResponseTimeout(
-                    libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT, 0)
+                    libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK, 0)
 
 
 class LiveMergeCleanupThread(object):

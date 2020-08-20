@@ -1905,14 +1905,14 @@ class TestQgaContext(TestCaseBase):
             testvm._dom = fake.Domain()
             self.assertEqual(
                 testvm._dom._agent_timeout,
-                libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT)
+                libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK)
             with testvm.qga_context():
                 self.assertEqual(
                     testvm._dom._agent_timeout,
-                    libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT)
+                    libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK)
             self.assertEqual(
                 testvm._dom._agent_timeout,
-                libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT)
+                libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK)
 
     def test_reset_default_timeout(self):
         with fake.VM() as testvm:
@@ -1921,7 +1921,7 @@ class TestQgaContext(TestCaseBase):
                 self.assertEqual(testvm._dom._agent_timeout, 10)
             self.assertEqual(
                 testvm._dom._agent_timeout,
-                libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT)
+                libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK)
 
     def test_libvirtError_not_handled(self):
         with fake.VM() as testvm:

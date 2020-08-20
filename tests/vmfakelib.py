@@ -166,7 +166,7 @@ class Domain(object):
         self._diskErrors = {}
         self._downtimes = []
         self.destroyed = False
-        self._agent_timeout = libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_DEFAULT
+        self._agent_timeout = libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK
 
     @property
     def connected(self):
