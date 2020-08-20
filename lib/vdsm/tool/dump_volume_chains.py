@@ -27,8 +27,6 @@ import json
 import sqlite3
 import sys
 
-import six
-
 from . import expose
 
 from vdsm import client
@@ -165,8 +163,8 @@ def _dump_sql(volumes_info, sql_file):
 
 
 def _iter_volumes_info(volumes_info):
-    for _, img_volumes in six.iteritems(volumes_info):
-        for _, vol_info in six.iteritems(img_volumes):
+    for _, img_volumes in volumes_info.items():
+        for _, vol_info in img_volumes.items():
             yield vol_info
 
 
@@ -203,11 +201,11 @@ def _get_volumes_info(cli, sd_uuid):
 def _get_volumes_chains(volumes_info):
     image_chains = {}
 
-    for img_uuid, volumes in six.iteritems(volumes_info):
+    for img_uuid, volumes in volumes_info.items():
 
         # to avoid 'double parent' bug here we don't use a dictionary
         volumes_children = []  # [(parent_vol_uuid, child_vol_uuid),]
-        for vol_uuid, vol_info in six.iteritems(volumes):
+        for vol_uuid, vol_info in volumes.items():
             volumes_children.append((vol_info['parent'], vol_uuid))
 
         try:
@@ -250,7 +248,7 @@ def _print_volume_chains(image_chains, volumes_info):
         return
     print()
     print('Images volume chains (base volume first)')
-    for img_uuid, vol_chain in six.iteritems(image_chains):
+    for img_uuid, vol_chain in image_chains.items():
         img_volumes_info = volumes_info[img_uuid]
         print()
         _print_line(img_uuid, 'image:')
