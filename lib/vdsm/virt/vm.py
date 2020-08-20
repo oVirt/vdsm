@@ -5755,11 +5755,13 @@ class Vm(object):
             self._dom.agentSetResponseTimeout(timeout, 0)
             yield
         finally:
-            if acquired:
-                self._qga_lock.release()
-            if timeout != libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK:
-                self._dom.agentSetResponseTimeout(
-                    libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK, 0)
+            try:
+                if timeout != libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK:
+                    self._dom.agentSetResponseTimeout(
+                        libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK, 0)
+            finally:
+                if acquired:
+                    self._qga_lock.release()
 
 
 class LiveMergeCleanupThread(object):
