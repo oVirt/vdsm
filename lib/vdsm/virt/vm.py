@@ -371,16 +371,17 @@ class Vm(object):
         self.arch = cpuarch.effective()
         self._src_domain_xml = params.get('_srcDomXML')
         if self._src_domain_xml is not None:
-            self._domain = DomainDescriptor(self._src_domain_xml)
+            self._domain = DomainDescriptor(self._src_domain_xml, initial=True)
         else:
-            self._domain = DomainDescriptor(params['xml'])
+            self._domain = DomainDescriptor(params['xml'], initial=True)
         self.id = self._domain.id
         if self._src_domain_xml is not None:
             if self._altered_state.from_snapshot:
                 self._src_domain_xml = \
                     self._correct_disk_volumes_from_xml(
                         self._src_domain_xml, params['xml'])
-                self._domain = DomainDescriptor(self._src_domain_xml)
+                self._domain = DomainDescriptor(self._src_domain_xml,
+                                                initial=True)
             self.conf['xml'] = self._src_domain_xml
         self.log = SimpleLogAdapter(self.log, {"vmId": self.id})
         self._dom = virdomain.Disconnected(self.id)
@@ -1766,8 +1767,10 @@ class Vm(object):
             stats.update(vmstats.translate(decStats))
 
         stats.update(self._getGraphicsStats())
-        stats['hash'] = str(hash((self._domain.devices_hash,
-                                  self.guestAgent.diskMappingHash)))
+        devices_hash = self._domain.devices_hash
+        if devices_hash is not None:
+            stats['hash'] = str(hash((devices_hash,
+                                      self.guestAgent.diskMappingHash)))
         if self._watchdogEvent:
             stats['watchdogEvent'] = self._watchdogEvent
         if self._vcpuLimit:
@@ -2656,7 +2659,7 @@ class Vm(object):
         or revert to snapshot.
         """
         domain = MutableDomainDescriptor(srcDomXML)
-        engine_domain = DomainDescriptor(engine_xml)
+        engine_domain = DomainDescriptor(engine_xml, initial=True)
         engine_md = metadata.Descriptor.from_xml(engine_xml)
         params = vmdevices.common.storage_device_params_from_domain_xml(
             self.id, engine_domain, engine_md, self.log)
@@ -4549,7 +4552,7 @@ class Vm(object):
 
     def _updateDomainDescriptor(self, xml=None):
         domxml = self._dom.XMLDesc(0) if xml is None else xml
-        self._domain = DomainDescriptor(domxml)
+        self._domain = DomainDescriptor(domxml, initial=(xml is not None))
 
     def _updateMetadataDescriptor(self):
         # load will overwrite any existing content, as per doc.

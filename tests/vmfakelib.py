@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2019 Red Hat, Inc.
+# Copyright 2013-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,8 @@ from vdsm.common import response
 import vdsm.common.time
 from vdsm.common import xmlutils
 from vdsm.common.units import MiB
+from vdsm.virt import domain_descriptor
+from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt import sampling
 from vdsm.virt import vm
 from vdsm.virt.vmdevices import core
@@ -348,6 +350,13 @@ def default_domain_xml(vm_id='TESTING', features='', devices='', metadata=''):
     )
 
 
+domain_descriptor_init = DomainDescriptor.__init__
+
+
+def fake_domain_descriptor_init(self, xmlStr, initial=False):
+    domain_descriptor_init(self, xmlStr)
+
+
 @contextmanager
 def VM(params=None, devices=None, runCpu=False,
        arch=cpuarch.X86_64, status=None,
@@ -356,9 +365,12 @@ def VM(params=None, devices=None, runCpu=False,
        resume_behavior=None, pause_time_offset=None,
        features='', xmldevices='', metadata=''):
     with namedTemporaryDir() as tmpDir:
-        with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir),
-                               (libvirtconnection, 'get', Connection),
-                               ]):
+        with MonkeyPatchScope([
+                (constants, 'P_VDSM_RUN', tmpDir),
+                (libvirtconnection, 'get', Connection),
+                (domain_descriptor.DomainDescriptor, '__init__',
+                 fake_domain_descriptor_init),
+        ]):
             if params is None:
                 params = {}
             if vmid is None:

@@ -5763,6 +5763,8 @@ types:
             name: hash
             type: string
             datatype: int
+            defaultvalue: no-default
+            modified: '4.4'
 
         -   description: The current VM status
             name: status

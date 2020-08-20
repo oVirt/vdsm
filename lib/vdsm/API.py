@@ -190,7 +190,7 @@ class VM(APIBase):
         """
         # self._UUID is None in this call, it must be retrieved from XML
         xml = vmParams.get('_srcDomXML') or vmParams['xml']
-        self._UUID = DomainDescriptor(xml).id
+        self._UUID = DomainDescriptor(xml, initial=True).id
         vmParams['vmId'] = self._UUID
         try:
             if vmParams.get('vmId') in self._cif.vmContainer:

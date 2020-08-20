@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -127,11 +127,25 @@ class MutableDomainDescriptor(object):
 
 class DomainDescriptor(MutableDomainDescriptor):
 
-    def __init__(self, xmlStr):
+    def __init__(self, xmlStr, initial=False):
+        """
+        :param xmlStr: Domain XML
+        :type xmlStr: string
+        :param initial: Iff true then the provided domain XML is
+          the initial domain XML provided by Engine and not yet filled
+          with information from libvirt, such as device addresses.
+          Device hash is None in such a case, to prevent Engine from
+          retrieving and processing incomplete device information.
+        :type initial: bool
+        """
         super(DomainDescriptor, self).__init__(xmlStr)
         self._xml = xmlStr
+        self._initial = initial
         self._devices = super(DomainDescriptor, self).devices
-        self._devices_hash = super(DomainDescriptor, self).devices_hash
+        if self._initial:
+            self._devices_hash = None
+        else:
+            self._devices_hash = super(DomainDescriptor, self).devices_hash
 
     @property
     def xml(self):
