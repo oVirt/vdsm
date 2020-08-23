@@ -174,7 +174,7 @@ dist_systemdunit_DATA = \
 imageiodir = $(sysconfdir)/ovirt-imageio/conf.d
 
 imageio_DATA = \
-	./etc/ovirt-imageio/conf.d/50-vdsm.conf \
+	./etc/ovirt-imageio/conf.d/60-vdsm.conf \
 	$(NULL)
 
 CLEANFILES = \

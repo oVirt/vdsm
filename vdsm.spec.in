@@ -999,7 +999,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logrotate/vdsm
 %config(noreplace) %{_sysconfdir}/sysctl.d/vdsm.conf
 %config(noreplace) %{_sysconfdir}/modules-load.d/vdsm.conf
-%{_sysconfdir}/ovirt-imageio/conf.d/50-vdsm.conf
+%{_sysconfdir}/ovirt-imageio/conf.d/60-vdsm.conf
 %{_tmpfilesdir}/%{vdsm_name}.conf
 %{_sysconfdir}/dhcp/dhclient.d/dhclientmon.sh
 %{_sysconfdir}/modprobe.d/vdsm-bonding-modprobe.conf
