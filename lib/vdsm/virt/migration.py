@@ -890,7 +890,7 @@ class Progress(_Progress):
             ' %s%% of data processed,'
             ' total data: %iMB,'
             ' processed data: %iMB, remaining data: %iMB,'
-            ' transfer speed %iMBps, zero pages: %iMB,'
+            ' transfer speed %iMbps, zero pages: %iMB,'
             ' compressed: %iMB, dirty rate: %i,'
             ' memory iteration: %i' % (
                 (self.time_elapsed / 1000),
@@ -898,7 +898,7 @@ class Progress(_Progress):
                 (self.data_total // MiB),
                 (self.data_processed // MiB),
                 (self.data_remaining // MiB),
-                (self.mem_bps // MiB),
+                (self.mem_bps * 8 // MiB),
                 self.mem_constant,
                 (self.compression_bytes // MiB),
                 self.dirty_rate,
