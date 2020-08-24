@@ -251,7 +251,7 @@ class DomainMonitor(object):
             # other operations as it can take a while.
             self._shutting_down = True
 
-        self._stopMonitors(self._monitors.values(), shutdown=True)
+        self._stopMonitors(list(self._monitors.values()), shutdown=True)
         self._checker.stop()
 
     def _stopMonitors(self, monitors, shutdown=False):
