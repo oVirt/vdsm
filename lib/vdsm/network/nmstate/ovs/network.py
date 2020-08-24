@@ -20,8 +20,8 @@
 from copy import deepcopy
 
 from .info import OvsInfo
-from ..bridge_util import NetworkConfig
 from ..bridge_util import random_interface_name
+from ..bridge_util import translate_config
 from ..schema import Interface
 from ..schema import InterfaceState
 from ..schema import InterfaceType
@@ -212,8 +212,8 @@ class OvsBridge(object):
 
 
 def generate_state(networks, running_networks, current_iface_state):
-    nets_config = _translate_config(networks)
-    rnets_config = _translate_config(running_networks)
+    nets_config = translate_config(networks)
+    rnets_config = translate_config(running_networks)
 
     ovs_info = OvsInfo(rnets_config, current_iface_state)
     bridges = OvsBridge(nets_config, rnets_config, ovs_info)
@@ -239,13 +239,6 @@ def generate_state(networks, running_networks, current_iface_state):
             _sort_ports_by_name(net_ifstates[bridge])
 
     return net_ifstates
-
-
-def _translate_config(networks):
-    return {
-        netname: NetworkConfig(netname, netattrs)
-        for netname, netattrs in networks.items()
-    }
 
 
 def _create_basic_port_state(name):

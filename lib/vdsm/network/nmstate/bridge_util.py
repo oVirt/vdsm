@@ -86,3 +86,10 @@ def is_default_mtu(state):
 
 def random_interface_name(iface_prefix):
     return random_iface_name(prefix=iface_prefix)
+
+
+def translate_config(networks):
+    return {
+        netname: NetworkConfig(netname, netattrs)
+        for netname, netattrs in networks.items()
+    }
