@@ -60,6 +60,11 @@ class NetworkConfig(object):
             self.vlan_iface = None
 
 
+class SwitchType(object):
+    LINUX_BRIDGE = 'legacy'
+    OVS = 'ovs'
+
+
 def get_default_route_interface(running_networks):
     for netname, attrs in running_networks.items():
         netrun = NetworkConfig(netname, attrs)

@@ -26,6 +26,7 @@ from vdsm.network.netconfpersistence import RunningConfig
 from .bond import Bond
 from .bridge_util import DEFAULT_MTU
 from .bridge_util import is_iface_absent
+from .bridge_util import SwitchType
 from .linux_bridge import LinuxBridgeNetwork as LinuxBrNet
 from .ovs.network import generate_state as ovs_generate_state
 from .schema import BondSchema
@@ -43,11 +44,6 @@ try:
 except ImportError:  # nmstate is not available
     state_apply = None
     state_show = None
-
-
-class SwitchType(object):
-    LINUX_BRIDGE = 'legacy'
-    OVS = 'ovs'
 
 
 def setup(desired_state, verify_change):
