@@ -509,29 +509,35 @@ def netcaps(compatibility):
 
 def netinfo(vdsmnets=None, compatibility=None):
     # TODO: Version requests by engine to ease handling of compatibility.
+    running_config = RunningConfig()
     _netinfo = netinfo_get(vdsmnets, compatibility)
-
     if _is_ovs_service_running():
+        _add_ovs_netinfo(running_config, _netinfo)
+    return _netinfo
+
+
+def _add_ovs_netinfo(running_config, netinfo):
+    if nmstate.is_nmstate_backend():
+        state = nmstate.state_show()
+        nmstate.ovs_netinfo(netinfo, running_config.networks, state)
+    else:
         try:
             ovs_netinfo = ovs_info.get_netinfo()
         except ne.OvsDBConnectionError:
             _is_ovs_service_running.invalidate()
             raise
 
-        running_networks = RunningConfig().networks
         bridgeless_ovs_nets = [
             net
-            for net, attrs in six.iteritems(running_networks)
+            for net, attrs in six.iteritems(running_config.networks)
             if attrs['switch'] == 'ovs' and not attrs['bridged']
         ]
-        ovs_info.fake_bridgeless(ovs_netinfo, _netinfo, bridgeless_ovs_nets)
+        ovs_info.fake_bridgeless(ovs_netinfo, netinfo, bridgeless_ovs_nets)
 
         for type, entries in six.iteritems(ovs_netinfo):
-            _netinfo[type].update(entries)
+            netinfo[type].update(entries)
 
-        _set_bond_type_by_usage(_netinfo)
-
-    return _netinfo
+    _set_bond_type_by_usage(netinfo)
 
 
 def _add_speed_device_info(net_caps):

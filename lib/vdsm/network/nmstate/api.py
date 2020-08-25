@@ -29,7 +29,10 @@ from .bridge_util import is_autoconf_enabled as util_is_autoconf_enabled
 from .bridge_util import is_dhcp_enabled as util_is_dhcp_enabled
 from .bridge_util import is_iface_absent
 from .bridge_util import SwitchType
+from .bridge_util import translate_config
 from .linux_bridge import LinuxBridgeNetwork as LinuxBrNet
+from .ovs.info import OvsInfo
+from .ovs.info import OvsNetInfo
 from .ovs.network import generate_state as ovs_generate_state
 from .schema import BondSchema
 from .schema import DNS
@@ -230,6 +233,21 @@ def is_dhcp_enabled(ifstate, family):
 def is_autoconf_enabled(ifstate):
     family_info = ifstate[Interface.IPV6]
     return util_is_autoconf_enabled(family_info)
+
+
+def ovs_netinfo(base_netinfo, running_networks, state):
+    rnets_config = translate_config(running_networks)
+    current_iface_state = get_interfaces(state)
+    current_routes_state = get_routes(state)
+    ovs_info = OvsInfo(rnets_config, current_iface_state)
+    netinfo = OvsNetInfo(
+        ovs_info,
+        base_netinfo,
+        rnets_config,
+        current_iface_state,
+        current_routes_state,
+    )
+    netinfo.create_netinfo()
 
 
 def _merge_state(interfaces_state, routes_state, dns_state):

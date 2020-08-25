@@ -25,6 +25,7 @@ from .api import get_routes
 from .api import is_autoconf_enabled
 from .api import is_dhcp_enabled
 from .api import is_nmstate_backend
+from .api import ovs_netinfo
 from .api import setup
 from .api import state_show
 
@@ -49,6 +50,7 @@ __all__ = [
     'is_autoconf_enabled',
     'is_dhcp_enabled',
     'is_nmstate_backend',
+    'ovs_netinfo',
     'setup',
     'state_show',
     'BondSchema',
