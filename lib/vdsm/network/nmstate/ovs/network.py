@@ -84,7 +84,7 @@ class OvsNetwork(object):
 
     def _create_port_state(self):
         port_state = _create_basic_port_state(self._name)
-        if self._netconf.vlan:
+        if self._netconf.vlan is not None:
             access_mode = OvsBridgeSchema.Port.Vlan.Mode.ACCESS
             port_state[OvsBridgeSchema.Port.VLAN_SUBTREE] = {
                 OvsBridgeSchema.Port.Vlan.MODE: access_mode,

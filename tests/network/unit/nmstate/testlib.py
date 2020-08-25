@@ -31,6 +31,7 @@ TESTNET1 = 'testnet1'
 TESTNET2 = 'testnet2'
 TESTBOND0 = 'testbond0'
 DEFAULT_MTU = 1500
+VLAN0 = 0
 VLAN101 = 101
 VLAN102 = 102
 IPv4_ADDRESS1 = '192.0.2.1'
@@ -299,7 +300,7 @@ def create_ovs_bridge_state(name, ports, state='up'):
 
 def create_ovs_port_state(name, vlan=None):
     port_state = {nmstate.OvsBridgeSchema.Port.NAME: name}
-    if vlan:
+    if vlan is not None:
         port_state[nmstate.OvsBridgeSchema.Port.VLAN_SUBTREE] = {
             nmstate.OvsBridgeSchema.Port.Vlan.MODE: 'access',
             nmstate.OvsBridgeSchema.Port.Vlan.TAG: vlan,

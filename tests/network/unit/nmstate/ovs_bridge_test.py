@@ -29,6 +29,7 @@ from .testlib import (
     IFACE0,
     IFACE1,
     OVS_BRIDGE,
+    VLAN0,
     VLAN101,
     VLAN102,
     TESTNET1,
@@ -52,9 +53,10 @@ def bridge_name_mock():
 
 
 @parametrize_bridged
-@parametrize_vlanned
-def test_add_single_net_without_ip(bridged, vlanned):
-    vlan = VLAN101 if vlanned else None
+@pytest.mark.parametrize(
+    'vlan', [VLAN0, VLAN101, None], ids=['vlan0', 'vlan101', 'non-vlan']
+)
+def test_add_single_net_without_ip(bridged, vlan):
     networks = {
         TESTNET1: create_network_config(
             'nic', IFACE0, bridged, switch='ovs', vlan=vlan
