@@ -65,6 +65,39 @@ class SwitchType(object):
     OVS = 'ovs'
 
 
+class NetInfoSchema(object):
+    NETWORKS = 'networks'
+    VLANS = 'vlans'
+    BONDS = 'bondings'
+    NICS = 'nics'
+    BRIDGES = 'bridges'
+
+
+class NetInfoIfaceSchema(object):
+    IFACE = 'iface'
+    BRIDGED = 'bridged'
+    SOUTHBOUND = 'southbound'
+    PORTS = 'ports'
+    STP = 'stp'
+    SWITCH = 'switch'
+    MTU = 'mtu'
+    VLAN = 'vlanid'
+
+    class IPv4(object):
+        PRIMARY_ADDR = 'addr'
+        ADRRS = 'ipv4addrs'
+        DEFAULT_ROUTE = 'ipv4defaultroute'
+        NETMASK = 'netmask'
+        GATEWAY = 'gateway'
+        DHCP = 'dhcpv4'
+
+    class IPv6(object):
+        ADDRS = 'ipv6addrs'
+        GATEWAY = 'ipv6gateway'
+        AUTOCONF = 'ipv6autoconf'
+        DHCP = 'dhcpv6'
+
+
 def get_default_route_interface(running_networks):
     for netname, attrs in running_networks.items():
         netrun = NetworkConfig(netname, attrs)
