@@ -20,6 +20,8 @@
 from vdsm.network.link.iface import random_iface_name
 
 from .schema import Interface
+from .schema import InterfaceIP
+from .schema import InterfaceIPv6
 from .schema import InterfaceState
 
 DEFAULT_MTU = 1500
@@ -131,3 +133,14 @@ def translate_config(networks):
         netname: NetworkConfig(netname, netattrs)
         for netname, netattrs in networks.items()
     }
+
+
+def is_dhcp_enabled(family_info):
+    return family_info[InterfaceIP.ENABLED] and family_info[InterfaceIP.DHCP]
+
+
+def is_autoconf_enabled(family_info):
+    return (
+        family_info[InterfaceIP.ENABLED]
+        and family_info[InterfaceIPv6.AUTOCONF]
+    )

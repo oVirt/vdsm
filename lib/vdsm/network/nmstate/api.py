@@ -25,6 +25,8 @@ from vdsm.network.netconfpersistence import RunningConfig
 
 from .bond import Bond
 from .bridge_util import DEFAULT_MTU
+from .bridge_util import is_autoconf_enabled as util_is_autoconf_enabled
+from .bridge_util import is_dhcp_enabled as util_is_dhcp_enabled
 from .bridge_util import is_iface_absent
 from .bridge_util import SwitchType
 from .linux_bridge import LinuxBridgeNetwork as LinuxBrNet
@@ -32,8 +34,6 @@ from .ovs.network import generate_state as ovs_generate_state
 from .schema import BondSchema
 from .schema import DNS
 from .schema import Interface
-from .schema import InterfaceIP
-from .schema import InterfaceIPv6
 from .schema import InterfaceState
 from .schema import InterfaceType
 from .schema import Route
@@ -223,15 +223,12 @@ def is_nmstate_backend():
 
 def is_dhcp_enabled(ifstate, family):
     family_info = ifstate[family]
-    return family_info[InterfaceIP.ENABLED] and family_info[InterfaceIP.DHCP]
+    return util_is_dhcp_enabled(family_info)
 
 
 def is_autoconf_enabled(ifstate):
     family_info = ifstate[Interface.IPV6]
-    return (
-        family_info[InterfaceIP.ENABLED]
-        and family_info[InterfaceIPv6.AUTOCONF]
-    )
+    return util_is_autoconf_enabled(family_info)
 
 
 def _merge_state(interfaces_state, routes_state, dns_state):

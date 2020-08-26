@@ -192,14 +192,9 @@ def nmstate_api_schema():
     p_iftype = mock.patch.object(api, 'InterfaceType', NMStateInterfaceType)
     p_bond = mock.patch.object(api, 'BondSchema', NMStateBond)
     p_route = mock.patch.object(api, 'Route', NMStateRoute)
-    p_iface_ip = mock.patch.object(api, 'InterfaceIP', NMStateInterfaceIP)
-    p_iface_ipv6 = mock.patch.object(
-        api, 'InterfaceIPv6', NMStateInterfaceIPv6
-    )
     p_dns = mock.patch.object(api, 'DNS', NMStateDns)
-    with p_iface, p_ifstate, p_iftype:
-        with p_bond, p_route, p_iface_ip, p_iface_ipv6, p_dns:
-            yield
+    with p_iface, p_ifstate, p_iftype, p_bond, p_route, p_dns:
+        yield
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -221,7 +216,13 @@ def nmstate_util_module_schema():
     p_ifstate = mock.patch.object(
         bridge_util, 'InterfaceState', NMStateInterfaceState
     )
-    with p_iface, p_ifstate:
+    p_iface_ip = mock.patch.object(
+        bridge_util, 'InterfaceIP', NMStateInterfaceIP
+    )
+    p_iface_ipv6 = mock.patch.object(
+        bridge_util, 'InterfaceIPv6', NMStateInterfaceIPv6
+    )
+    with p_iface, p_ifstate, p_iface_ip, p_iface_ipv6:
         yield
 
 
