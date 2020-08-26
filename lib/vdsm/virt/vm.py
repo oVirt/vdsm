@@ -56,6 +56,7 @@ import six
 from vdsm.common import api
 from vdsm.common import cpuarch
 from vdsm.common import exception
+from vdsm.common import errors
 from vdsm.common import libvirtconnection
 from vdsm.common import logutils
 from vdsm.common import response
@@ -133,18 +134,15 @@ class DoubleDownError(RuntimeError):
     pass
 
 
-class BlockJobExistsError(Exception):
-    pass
+class BlockJobExistsError(errors.Base):
+    msg = "Block job already exists"
 
 
-class BlockCopyActiveError(Exception):
+class BlockCopyActiveError(errors.Base):
     msg = "Block copy job {self.job_id} is not ready for commit"
 
     def __init__(self, job_id):
         self.job_id = job_id
-
-    def __str__(self):
-        return self.msg.format(self=self)
 
 
 VALID_STATES = (vmstatus.DOWN, vmstatus.MIGRATION_DESTINATION,
