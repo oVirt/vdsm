@@ -20,10 +20,17 @@
 from .schema import Route
 
 
-class Routes(object):
+class Family(object):
     IPV4 = 4
     IPV6 = 6
 
+
+class DefaultRouteDestination(object):
+    IPV4 = '0.0.0.0/0'
+    IPV6 = '::/0'
+
+
+class Routes(object):
     def __init__(self, netconf, runconf):
         self._netconf = netconf
         self._runconf = runconf
@@ -36,7 +43,7 @@ class Routes(object):
     def _create_routes(self):
         routes = []
         next_hop = self._get_next_hop_interface()
-        for family in (Routes.IPV4, Routes.IPV6):
+        for family in (Family.IPV4, Family.IPV6):
             gateway = self._get_gateway_by_ip_family(self._netconf, family)
             runconf_gateway = self._get_gateway_by_ip_family(
                 self._runconf, family
@@ -72,7 +79,7 @@ class Routes(object):
     def _should_remove_def_route(self, family):
         dhcp = (
             self._netconf.dhcpv4
-            if family == self.IPV4
+            if family == Family.IPV4
             else self._netconf.dhcpv6
         )
         return (
@@ -88,11 +95,15 @@ class Routes(object):
 
     @staticmethod
     def _get_gateway_by_ip_family(source, family):
-        return source.gateway if family == Routes.IPV4 else source.ipv6gateway
+        return source.gateway if family == Family.IPV4 else source.ipv6gateway
 
     @staticmethod
     def _create_add_default_route(next_hop_interface, gateway, family):
-        destination = '0.0.0.0/0' if family == Routes.IPV4 else '::/0'
+        destination = (
+            DefaultRouteDestination.IPV4
+            if family == Family.IPV4
+            else DefaultRouteDestination.IPV6
+        )
         return {
             Route.NEXT_HOP_ADDRESS: gateway,
             Route.NEXT_HOP_INTERFACE: next_hop_interface,
@@ -102,7 +113,11 @@ class Routes(object):
 
     @staticmethod
     def _create_remove_default_route(next_hop_interface, gateway, family):
-        destination = '0.0.0.0/0' if family == Routes.IPV4 else '::/0'
+        destination = (
+            DefaultRouteDestination.IPV4
+            if family == Family.IPV4
+            else DefaultRouteDestination.IPV6
+        )
         return {
             Route.NEXT_HOP_ADDRESS: gateway,
             Route.NEXT_HOP_INTERFACE: next_hop_interface,
