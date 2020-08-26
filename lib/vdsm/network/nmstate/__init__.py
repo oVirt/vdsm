@@ -19,12 +19,13 @@
 
 # Re-export public API
 from .api import generate_state
+from .api import get_interfaces
+from .api import get_nameservers
 from .api import is_autoconf_enabled
 from .api import is_dhcp_enabled
 from .api import is_nmstate_backend
 from .api import setup
-from .api import show_interfaces
-from .api import show_nameservers
+from .api import state_show
 
 # Re-export nmstate schema
 from .schema import BondSchema
@@ -41,12 +42,13 @@ from .schema import Route
 
 __all__ = [
     'generate_state',
+    'get_interfaces',
+    'get_nameservers',
     'is_autoconf_enabled',
     'is_dhcp_enabled',
     'is_nmstate_backend',
     'setup',
-    'show_interfaces',
-    'show_nameservers',
+    'state_show',
     'BondSchema',
     'DNS',
     'Interface',

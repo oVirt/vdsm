@@ -53,7 +53,7 @@ def setup(desired_state, verify_change):
 def generate_state(networks, bondings):
     """ Generate a new nmstate state given VDSM setup state format """
     rconfig = RunningConfig()
-    current_ifaces_state = show_interfaces()
+    current_ifaces_state = get_interfaces(state_show())
 
     ovs_nets, linux_br_nets = _split_switch_type(networks, rconfig.networks)
     ovs_bonds, linux_br_bonds = _split_switch_type(bondings, rconfig.bonds)
@@ -195,12 +195,10 @@ def _merge_bond_and_net_ifaces_states(bond_ifstates, net_ifstates):
     return net_ifstates
 
 
-def show_interfaces(filter=None):
-    net_info = state_show()
+def get_interfaces(state, filter=None):
     filter_set = set(filter) if filter else set()
     ifaces = (
-        (ifstate[Interface.NAME], ifstate)
-        for ifstate in net_info[Interface.KEY]
+        (ifstate[Interface.NAME], ifstate) for ifstate in state[Interface.KEY]
     )
     if filter:
         return {
@@ -212,8 +210,7 @@ def show_interfaces(filter=None):
         return {ifname: ifstate for ifname, ifstate in ifaces}
 
 
-def show_nameservers():
-    state = state_show()
+def get_nameservers(state):
     return state[DNS.KEY].get(DNS.RUNNING, {}).get(DNS.SERVER, [])
 
 
