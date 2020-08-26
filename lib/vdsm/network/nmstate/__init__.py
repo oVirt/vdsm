@@ -21,6 +21,7 @@
 from .api import generate_state
 from .api import get_interfaces
 from .api import get_nameservers
+from .api import get_routes
 from .api import is_autoconf_enabled
 from .api import is_dhcp_enabled
 from .api import is_nmstate_backend
@@ -44,6 +45,7 @@ __all__ = [
     'generate_state',
     'get_interfaces',
     'get_nameservers',
+    'get_routes',
     'is_autoconf_enabled',
     'is_dhcp_enabled',
     'is_nmstate_backend',

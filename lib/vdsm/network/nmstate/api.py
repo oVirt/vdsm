@@ -214,6 +214,10 @@ def get_nameservers(state):
     return state[DNS.KEY].get(DNS.RUNNING, {}).get(DNS.SERVER, [])
 
 
+def get_routes(state):
+    return state[Route.KEY].get(Route.RUNNING, {})
+
+
 def is_nmstate_backend():
     return vdsm_config.getboolean('vars', 'net_nmstate_enabled')
 

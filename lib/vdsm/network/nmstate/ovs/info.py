@@ -17,14 +17,21 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import ipaddress
 from collections import defaultdict
 
+from ..bridge_util import is_autoconf_enabled
+from ..bridge_util import is_dhcp_enabled
 from ..bridge_util import NetInfoIfaceSchema
 from ..bridge_util import NetInfoSchema
 from ..bridge_util import SwitchType
+from ..route import DefaultRouteDestination
+from ..route import Family
 from ..schema import Interface
+from ..schema import InterfaceIP
 from ..schema import InterfaceType
 from ..schema import OvsBridgeSchema
+from ..schema import Route
 
 
 EMPTY_INFO = {
@@ -53,6 +60,8 @@ SHARED_NETWORK_ATTRIBUTES = (
     NetInfoIfaceSchema.IPv6.GATEWAY,
     NetInfoIfaceSchema.IPv6.DHCP,
 )
+
+DEFAULT_TABLE_ID = 254
 
 
 class OvsInfo(object):
@@ -139,12 +148,18 @@ class OvsInfo(object):
 
 class OvsNetInfo(object):
     def __init__(
-        self, ovs_info, base_netinfo, running_networks, current_ifaces_state
+        self,
+        ovs_info,
+        base_netinfo,
+        running_networks,
+        current_ifaces_state,
+        current_routes_state,
     ):
         self._ovs_info = ovs_info
         self._base_netinfo = base_netinfo
         self._running_networks = running_networks
         self._current_ifaces_state = current_ifaces_state
+        self._current_routes_state = current_routes_state
 
     def create_netinfo(self):
         for sb, bridge in self._ovs_info.bridge_by_sb.items():
@@ -188,10 +203,44 @@ class OvsNetInfo(object):
         }
         if vlan is not None:
             network[NetInfoIfaceSchema.VLAN] = vlan
-        # TODO Support IP parameters
-        network.update(EMPTY_INFO)
+
+        network.update(self._get_ip_info(nb))
 
         return network
+
+    def _get_ip_info(self, nb):
+        netmask = None
+        ipv4_state = self._current_ifaces_state[nb][Interface.IPV4]
+        ipv6_state = self._current_ifaces_state[nb][Interface.IPV6]
+
+        ipv4_addrs = self._get_all_ip_addresses(ipv4_state)
+        ipv6_addrs = self._get_all_ip_addresses(ipv6_state)
+
+        ipv4_gateway = self._find_gateway(
+            self._current_routes_state, Family.IPV4, nb
+        )
+        ipv6_gateway = self._find_gateway(
+            self._current_routes_state, Family.IPV6, nb
+        )
+        primary_ip = self._get_primary_ip(ipv4_addrs, ipv4_gateway)
+        if primary_ip:
+            with_netmask = ipaddress.ip_interface(primary_ip).with_netmask
+            primary_ip, netmask = with_netmask.split('/')
+
+        return {
+            NetInfoIfaceSchema.IPv4.PRIMARY_ADDR: primary_ip or '',
+            NetInfoIfaceSchema.IPv4.ADRRS: ipv4_addrs,
+            NetInfoIfaceSchema.IPv4.GATEWAY: ipv4_gateway or '',
+            NetInfoIfaceSchema.IPv4.DEFAULT_ROUTE: self._is_default_route(
+                self._current_routes_state, ipv4_gateway, Family.IPV4, nb
+            ),
+            NetInfoIfaceSchema.IPv4.NETMASK: netmask or '',
+            NetInfoIfaceSchema.IPv4.DHCP: is_dhcp_enabled(ipv4_state),
+            NetInfoIfaceSchema.IPv6.ADDRS: ipv6_addrs,
+            NetInfoIfaceSchema.IPv6.AUTOCONF: is_autoconf_enabled(ipv6_state),
+            NetInfoIfaceSchema.IPv6.GATEWAY: ipv6_gateway or '::',
+            NetInfoIfaceSchema.IPv6.DHCP: is_dhcp_enabled(ipv4_state),
+        }
 
     def _fake_bridgeless(self, net):
         iface = net[NetInfoIfaceSchema.IFACE]
@@ -228,6 +277,75 @@ class OvsNetInfo(object):
         }
         bridge_info.update(_shared_net_attrs(net))
         return {nb: bridge_info}
+
+    @staticmethod
+    def _get_all_ip_addresses(family_info):
+        addresses = []
+        if not family_info[InterfaceIP.ENABLED]:
+            return addresses
+
+        for ip_info in family_info[InterfaceIP.ADDRESS]:
+            ip = (
+                f'{ip_info[InterfaceIP.ADDRESS_IP]}/'
+                f'{ip_info[InterfaceIP.ADDRESS_PREFIX_LENGTH]}'
+            )
+            iface = ipaddress.ip_interface(ip)
+            if not iface.ip.is_link_local:
+                addresses.append(ip)
+
+        return addresses
+
+    @staticmethod
+    def _find_gateway(routes_info, family, nb):
+        destination = (
+            DefaultRouteDestination.IPV4
+            if family == Family.IPV4
+            else DefaultRouteDestination.IPV6
+        )
+        gateways = [
+            state[Route.NEXT_HOP_ADDRESS]
+            for state in routes_info
+            if state[Route.DESTINATION] == destination
+            and state[Route.NEXT_HOP_INTERFACE] == nb
+        ]
+
+        if len(gateways) == 1 or len(set(gateways)) == 1:
+            return gateways[0]
+
+        return None
+
+    @staticmethod
+    def _is_default_route(routes_info, gateway, family, nb):
+        destination = (
+            DefaultRouteDestination.IPV4
+            if family == Family.IPV4
+            else DefaultRouteDestination.IPV6
+        )
+        return next(
+            (
+                True
+                for state in routes_info
+                if state[Route.DESTINATION] == destination
+                and state[Route.TABLE_ID] == DEFAULT_TABLE_ID
+                and state[Route.NEXT_HOP_INTERFACE] == nb
+                and state[Route.NEXT_HOP_ADDRESS] == gateway
+            ),
+            False,
+        )
+
+    @staticmethod
+    def _get_primary_ip(ip_addresses, gateway):
+        if len(ip_addresses) == 1 or (ip_addresses and not gateway):
+            return ip_addresses[0]
+
+        for ip in ip_addresses:
+            if (
+                ipaddress.ip_address(gateway)
+                in ipaddress.ip_interface(ip).network
+            ):
+                return ip
+
+        return None
 
 
 def _shared_net_attrs(attrs):

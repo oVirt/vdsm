@@ -281,5 +281,9 @@ def nmstate_ovs_info_schema():
         ovs_info, 'InterfaceType', NMStateInterfaceType
     )
     p_ovs = mock.patch.object(ovs_info, 'OvsBridgeSchema', OvsBridgeType)
-    with p_iface, p_iftype, p_ovs:
+    p_iface_ip = mock.patch.object(
+        linux_bridge, 'InterfaceIP', NMStateInterfaceIP
+    )
+    p_route = mock.patch.object(route, 'Route', NMStateRoute)
+    with p_iface, p_iftype, p_ovs, p_iface_ip, p_route:
         yield
