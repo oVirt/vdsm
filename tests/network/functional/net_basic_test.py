@@ -425,10 +425,10 @@ class TestNetworkBasicLegacy(object):
 class TestNetworkManagerLegacy(object):
     switch = 'legacy'
 
-    def setup_method(self, m):
+    @pytest.fixture(scope='class', autouse=True)
+    def setup(self, adapter, m):
         self.iface = nmnettestlib.iface_name()
-
-    def teardown_method(self, adapter, m):
+        yield
         # The bond was acquired, therefore VDSM needs to clean it.
         BONDREMOVE = {self.iface: {'remove': True}}
         adapter.setupNetworks({}, BONDREMOVE, NOCHK)
