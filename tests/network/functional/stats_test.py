@@ -30,29 +30,36 @@ NETWORK_NAME1 = 'test-network-1'
 NETWORK_NAME2 = 'test-network-2'
 
 
+@pytest.fixture
+def veth_nics():
+    with veth_pair() as nics:
+        yield nics
+
+
 @pytest.mark.nmstate
 @parametrize_switch
-def test_interfaces_stats(adapter, switch):
-    with veth_pair() as (nic1, nic2):
-        NETSETUP1 = {
-            NETWORK_NAME1: {'bridged': False, 'nic': nic1, 'switch': switch}
+def test_interfaces_stats(adapter, switch, veth_nics):
+    NETSETUP1 = {
+        NETWORK_NAME1: {
+            'bridged': False,
+            'nic': veth_nics[0],
+            'switch': switch,
         }
-        NETSETUP2 = {
-            NETWORK_NAME2: {'bridged': False, 'nic': nic2, 'switch': switch}
+    }
+    NETSETUP2 = {
+        NETWORK_NAME2: {
+            'bridged': False,
+            'nic': veth_nics[1],
+            'switch': switch,
         }
+    }
 
-        with adapter.setupNetworks(NETSETUP1, {}, NOCHK):
-            with adapter.setupNetworks(NETSETUP2, {}, NOCHK):
-                stats = adapter.getNetworkStatistics()
-                netstats = stats.get('network')
-                assert netstats
-                assert nic1 in netstats
-                assert nic2 in netstats
-                tx1 = int(netstats[nic1]['tx'])
-                tx2 = int(netstats[nic2]['tx'])
-                rx1 = int(netstats[nic1]['rx'])
-                rx2 = int(netstats[nic2]['rx'])
-                assert tx1 >= 0
-                assert tx2 >= 0
-                assert rx1 >= 0
-                assert rx2 >= 0
+    with adapter.setupNetworks(NETSETUP1, {}, NOCHK):
+        with adapter.setupNetworks(NETSETUP2, {}, NOCHK):
+            stats = adapter.getNetworkStatistics()
+            netstats = stats.get('network')
+            assert netstats
+            for nic in veth_nics:
+                assert nic in netstats
+                assert int(netstats[nic]['tx']) >= 0
+                assert int(netstats[nic]['rx']) >= 0
