@@ -31,13 +31,21 @@ BOND_NAME = 'bond1'
 _100USEC = 100 * 1000
 
 
+@pytest.fixture
+def nic0():
+    with dummy_device() as nic:
+        yield nic
+
+
 # TODO: When QoS will be available on OVS, enable the tests.
 @nftestlib.parametrize_legacy_switch
 @pytest.mark.nmstate
 class TestNetworkHostQos(object):
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
-    def test_add_vlan_network_with_qos(self, adapter, switch, bridged, bonded):
+    def test_add_vlan_network_with_qos(
+        self, adapter, switch, bridged, bonded, nic0
+    ):
         HOST_QOS_CONFIG = {
             'out': {
                 'ls': {
@@ -48,33 +56,32 @@ class TestNetworkHostQos(object):
                 'ul': {'m2': rate(rate_in_mbps=8)},
             }
         }
-        with dummy_device() as nic:
-            NETCREATE = {
-                NETWORK1_NAME: {
-                    'vlan': VLAN1,
-                    'hostQos': HOST_QOS_CONFIG,
-                    'switch': switch,
-                    'bridged': bridged,
-                }
+        NETCREATE = {
+            NETWORK1_NAME: {
+                'vlan': VLAN1,
+                'hostQos': HOST_QOS_CONFIG,
+                'switch': switch,
+                'bridged': bridged,
             }
+        }
 
-            if bonded:
-                NETCREATE[NETWORK1_NAME]['bonding'] = BOND_NAME
-                BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
-            else:
-                NETCREATE[NETWORK1_NAME]['nic'] = nic
-                BONDBASE = {}
-            with adapter.setupNetworks(NETCREATE, BONDBASE, NOCHK):
-                adapter.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
+        if bonded:
+            NETCREATE[NETWORK1_NAME]['bonding'] = BOND_NAME
+            BONDBASE = {BOND_NAME: {'nics': [nic0], 'switch': switch}}
+        else:
+            NETCREATE[NETWORK1_NAME]['nic'] = nic0
+            BONDBASE = {}
+        with adapter.setupNetworks(NETCREATE, BONDBASE, NOCHK):
+            adapter.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
 
-            adapter.refresh_netinfo()
-            if not bonded:
-                adapter.assertNoQosOnNic(nic)
+        adapter.refresh_netinfo()
+        if not bonded:
+            adapter.assertNoQosOnNic(nic0)
 
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_add_non_vlan_network_with_qos(
-        self, adapter, switch, bridged, bonded
+        self, adapter, switch, bridged, bonded, nic0
     ):
         HOST_QOS_CONFIG = {
             'out': {
@@ -86,80 +93,75 @@ class TestNetworkHostQos(object):
                 'ul': {'m2': rate(rate_in_mbps=8)},
             }
         }
-        with dummy_device() as nic:
-            NETCREATE = {
-                NETWORK1_NAME: {
-                    'hostQos': HOST_QOS_CONFIG,
-                    'switch': switch,
-                    'bridged': bridged,
-                }
+        NETCREATE = {
+            NETWORK1_NAME: {
+                'hostQos': HOST_QOS_CONFIG,
+                'switch': switch,
+                'bridged': bridged,
             }
+        }
 
-            if bonded:
-                NETCREATE[NETWORK1_NAME]['bonding'] = BOND_NAME
-                BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
-            else:
-                NETCREATE[NETWORK1_NAME]['nic'] = nic
-                BONDBASE = {}
-            with adapter.setupNetworks(NETCREATE, BONDBASE, NOCHK):
-                adapter.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
+        if bonded:
+            NETCREATE[NETWORK1_NAME]['bonding'] = BOND_NAME
+            BONDBASE = {BOND_NAME: {'nics': [nic0], 'switch': switch}}
+        else:
+            NETCREATE[NETWORK1_NAME]['nic'] = nic0
+            BONDBASE = {}
+        with adapter.setupNetworks(NETCREATE, BONDBASE, NOCHK):
+            adapter.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
 
-            adapter.refresh_netinfo()
-            if not bonded:
-                adapter.assertNoQosOnNic(nic)
+        adapter.refresh_netinfo()
+        if not bonded:
+            adapter.assertNoQosOnNic(nic0)
 
-    def test_add_two_networks_with_qos_on_shared_nic(self, adapter, switch):
-        HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
-        HOST_QOS_CONFIG2 = {'out': {'ls': {'m2': rate(rate_in_mbps=5)}}}
-        with dummy_device() as nic:
-            NETCREATE = {
-                NETWORK1_NAME: {
-                    'nic': nic,
-                    'hostQos': HOST_QOS_CONFIG1,
-                    'switch': switch,
-                },
-                NETWORK2_NAME: {
-                    'nic': nic,
-                    'vlan': VLAN1,
-                    'hostQos': HOST_QOS_CONFIG2,
-                    'switch': switch,
-                },
-            }
-            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
-                adapter.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
-                adapter.assertHostQos(NETWORK2_NAME, NETCREATE[NETWORK2_NAME])
-
-    def test_add_two_networks_with_qos_on_shared_nic_in_two_steps(
-        self, adapter, switch
+    def test_add_two_networks_with_qos_on_shared_nic(
+        self, adapter, switch, nic0
     ):
         HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
         HOST_QOS_CONFIG2 = {'out': {'ls': {'m2': rate(rate_in_mbps=5)}}}
-        with dummy_device() as nic:
-            NETBASE = {
-                NETWORK1_NAME: {
-                    'nic': nic,
-                    'hostQos': HOST_QOS_CONFIG1,
-                    'switch': switch,
-                }
-            }
-            NETVLAN = {
-                NETWORK2_NAME: {
-                    'nic': nic,
-                    'vlan': VLAN1,
-                    'hostQos': HOST_QOS_CONFIG2,
-                    'switch': switch,
-                }
-            }
-            with adapter.setupNetworks(NETBASE, {}, NOCHK):
-                with adapter.setupNetworks(NETVLAN, {}, NOCHK):
-                    adapter.assertHostQos(
-                        NETWORK1_NAME, NETBASE[NETWORK1_NAME]
-                    )
-                    adapter.assertHostQos(
-                        NETWORK2_NAME, NETVLAN[NETWORK2_NAME]
-                    )
+        NETCREATE = {
+            NETWORK1_NAME: {
+                'nic': nic0,
+                'hostQos': HOST_QOS_CONFIG1,
+                'switch': switch,
+            },
+            NETWORK2_NAME: {
+                'nic': nic0,
+                'vlan': VLAN1,
+                'hostQos': HOST_QOS_CONFIG2,
+                'switch': switch,
+            },
+        }
+        with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+            adapter.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
+            adapter.assertHostQos(NETWORK2_NAME, NETCREATE[NETWORK2_NAME])
 
-    def test_add_edit_and_remove_qos_from_nic(self, adapter, switch):
+    def test_add_two_networks_with_qos_on_shared_nic_in_two_steps(
+        self, adapter, switch, nic0
+    ):
+        HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
+        HOST_QOS_CONFIG2 = {'out': {'ls': {'m2': rate(rate_in_mbps=5)}}}
+        NETBASE = {
+            NETWORK1_NAME: {
+                'nic': nic0,
+                'hostQos': HOST_QOS_CONFIG1,
+                'switch': switch,
+            }
+        }
+        NETVLAN = {
+            NETWORK2_NAME: {
+                'nic': nic0,
+                'vlan': VLAN1,
+                'hostQos': HOST_QOS_CONFIG2,
+                'switch': switch,
+            }
+        }
+        with adapter.setupNetworks(NETBASE, {}, NOCHK):
+            with adapter.setupNetworks(NETVLAN, {}, NOCHK):
+                adapter.assertHostQos(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
+                adapter.assertHostQos(NETWORK2_NAME, NETVLAN[NETWORK2_NAME])
+
+    def test_add_edit_and_remove_qos_from_nic(self, adapter, switch, nic0):
         HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
         HOST_QOS_CONFIG2 = {
             'out': {
@@ -171,30 +173,29 @@ class TestNetworkHostQos(object):
                 'ul': {'m2': rate(rate_in_mbps=8)},
             }
         }
-        with dummy_device() as nic:
-            NETCREATE = {
-                NETWORK1_NAME: {
-                    'nic': nic,
-                    'switch': switch,
-                    'hostQos': HOST_QOS_CONFIG1,
-                }
+        NETCREATE = {
+            NETWORK1_NAME: {
+                'nic': nic0,
+                'switch': switch,
+                'hostQos': HOST_QOS_CONFIG1,
             }
-            NETQOSEDIT = {
-                NETWORK1_NAME: {
-                    'nic': nic,
-                    'switch': switch,
-                    'hostQos': HOST_QOS_CONFIG2,
-                }
+        }
+        NETQOSEDIT = {
+            NETWORK1_NAME: {
+                'nic': nic0,
+                'switch': switch,
+                'hostQos': HOST_QOS_CONFIG2,
             }
-            NETQOSREMOVE = {NETWORK1_NAME: {'nic': nic, 'switch': switch}}
-            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
-                adapter.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
+        }
+        NETQOSREMOVE = {NETWORK1_NAME: {'nic': nic0, 'switch': switch}}
+        with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+            adapter.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
 
-                adapter.setupNetworks(NETQOSEDIT, {}, NOCHK)
-                adapter.assertHostQos(NETWORK1_NAME, NETQOSEDIT[NETWORK1_NAME])
+            adapter.setupNetworks(NETQOSEDIT, {}, NOCHK)
+            adapter.assertHostQos(NETWORK1_NAME, NETQOSEDIT[NETWORK1_NAME])
 
-                adapter.setupNetworks(NETQOSREMOVE, {}, NOCHK)
-                adapter.assertNoQosOnNic(nic)
+            adapter.setupNetworks(NETQOSREMOVE, {}, NOCHK)
+            adapter.assertNoQosOnNic(nic0)
 
 
 def rate(rate_in_mbps):
