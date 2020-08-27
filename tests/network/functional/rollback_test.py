@@ -26,7 +26,7 @@ from . import netfunctestlib as nftestlib
 from .netfunctestlib import SetupNetworksError
 from .netfunctestlib import NOCHK
 from .netfunctestlib import TIMEOUT_CHK
-from network.nettestlib import dummy_device, dummy_devices
+from network.nettestlib import dummy_device
 
 NETWORK_NAME = 'test-network'
 BOND_NAME = 'bond10'
@@ -36,199 +36,219 @@ IPv4_ADDRESS = '192.0.2.1'
 IPv4_NETMASK = '255.255.255.0'
 
 
+@pytest.fixture
+def nic0():
+    with dummy_device() as nic:
+        yield nic
+
+
+@pytest.fixture
+def nic1():
+    with dummy_device() as nic:
+        yield nic
+
+
+@pytest.fixture
+def nic2():
+    with dummy_device() as nic:
+        yield nic
+
+
 @nftestlib.parametrize_switch
 @pytest.mark.nmstate
 class TestNetworkRollback(object):
-    def test_remove_broken_network(self, adapter, switch):
-        with dummy_devices(2) as (nic1, nic2):
-            BROKEN_NETCREATE = {
-                NETWORK_NAME: {
-                    'bonding': BOND_NAME,
-                    'bridged': True,
-                    'vlan': VLAN,
-                    'netmask': '300.300.300.300',
-                    'ipaddr': '300.300.300.300',
+    def test_remove_broken_network(self, adapter, switch, nic0, nic1):
+        BROKEN_NETCREATE = {
+            NETWORK_NAME: {
+                'bonding': BOND_NAME,
+                'bridged': True,
+                'vlan': VLAN,
+                'netmask': '300.300.300.300',
+                'ipaddr': '300.300.300.300',
+                'switch': switch,
+            }
+        }
+        BONDCREATE = {BOND_NAME: {'nics': [nic0, nic1], 'switch': switch}}
+
+        with pytest.raises(SetupNetworksError):
+            adapter.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
+
+        adapter.update_netinfo()
+        adapter.assertNoNetwork(NETWORK_NAME)
+        adapter.assertNoBond(BOND_NAME)
+
+    def test_rollback_to_initial_basic_network(
+        self, adapter, switch, nic0, nic1
+    ):
+        self._test_rollback_to_initial_network(adapter, switch, [nic0, nic1])
+
+    def test_rollback_to_initial_network_with_static_ip(
+        self, adapter, switch, nic0, nic1
+    ):
+        nics = [nic0, nic1]
+        self._test_rollback_to_initial_network(
+            adapter, switch, nics, ipaddr=IPv4_ADDRESS, netmask=IPv4_NETMASK
+        )
+
+    def test_setup_network_fails_on_existing_bond(self, adapter, switch, nic0):
+        NETCREATE = {
+            NETWORK_NAME: {
+                'bridged': True,
+                'bonding': BOND_NAME,
+                'switch': switch,
+            }
+        }
+
+        BONDCREATE = {BOND_NAME: {'nics': [nic0], 'switch': switch}}
+
+        with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+            with pytest.raises(SetupNetworksError) as e:
+                adapter.setupNetworks(NETCREATE, {}, TIMEOUT_CHK)
+            assert e.value.status == ne.ERR_LOST_CONNECTION
+
+            adapter.assertNoNetwork(NETWORK_NAME)
+            adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+
+    @nftestlib.parametrize_bonded
+    def test_setup_new_network_fails(self, adapter, switch, bonded, nic0):
+        NETCREATE = {NETWORK_NAME: {'bridged': True, 'switch': switch}}
+        if bonded:
+            NETCREATE[NETWORK_NAME]['bonding'] = BOND_NAME
+            BONDBASE = {BOND_NAME: {'nics': [nic0], 'switch': switch}}
+        else:
+            NETCREATE[NETWORK_NAME]['nic'] = nic0
+            BONDBASE = {}
+
+        with pytest.raises(SetupNetworksError) as e:
+            adapter.setupNetworks(NETCREATE, BONDBASE, TIMEOUT_CHK)
+        assert e.value.status == ne.ERR_LOST_CONNECTION
+
+        adapter.assertNoNetwork(NETWORK_NAME)
+        if bonded:
+            adapter.assertNoBond(BOND_NAME)
+
+    @nftestlib.parametrize_bonded
+    def test_edit_network_fails(self, adapter, switch, bonded, nic0):
+        NETCREATE = {
+            NETWORK_NAME: {'bridged': True, 'mtu': 1500, 'switch': switch}
+        }
+        NETEDIT = {
+            NETWORK_NAME: {'bridged': True, 'mtu': 1600, 'switch': switch}
+        }
+
+        if bonded:
+            NETCREATE[NETWORK_NAME]['bonding'] = BOND_NAME
+            NETEDIT[NETWORK_NAME]['bonding'] = BOND_NAME
+
+            BONDBASE = {
+                BOND_NAME: {
+                    'nics': [nic0],
                     'switch': switch,
+                    'options': 'mode=4',
                 }
             }
-            BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
+            BONDEDIT = {
+                BOND_NAME: {
+                    'nics': [nic0],
+                    'switch': switch,
+                    'options': 'mode=0',
+                }
+            }
+        else:
+            NETCREATE[NETWORK_NAME]['nic'] = nic0
+            NETEDIT[NETWORK_NAME]['nic'] = nic0
+
+            BONDBASE = {}
+            BONDEDIT = {}
+
+        with adapter.setupNetworks(NETCREATE, BONDBASE, NOCHK):
+            with pytest.raises(SetupNetworksError) as e:
+                adapter.setupNetworks(NETEDIT, BONDEDIT, TIMEOUT_CHK)
+            assert e.value.status == ne.ERR_LOST_CONNECTION
+
+            adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+            if bonded:
+                adapter.assertBond(BOND_NAME, BONDBASE[BOND_NAME])
+
+    def test_setup_two_networks_second_fails(
+        self, adapter, switch, nic0, nic1, nic2
+    ):
+        NET1_NAME = NETWORK_NAME + '1'
+        NET2_NAME = NETWORK_NAME + '2'
+
+        NETCREATE = {
+            NET1_NAME: {
+                'bonding': BOND_NAME,
+                'bridged': True,
+                'switch': switch,
+            }
+        }
+        NETFAIL = {
+            NET2_NAME: {
+                'nic': nic2,
+                'bridged': True,
+                'vlan': VLAN,
+                'switch': switch,
+            }
+        }
+        BONDCREATE = {BOND_NAME: {'nics': [nic0, nic1], 'switch': switch}}
+
+        with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
+            with pytest.raises(SetupNetworksError):
+                adapter.setupNetworks(NETFAIL, {}, TIMEOUT_CHK)
+
+            adapter.assertNoNetwork(NET2_NAME)
+            adapter.assertNetwork(NET1_NAME, NETCREATE[NET1_NAME])
+            adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+
+    def _test_rollback_to_initial_network(
+        self, adapter, switch, nics, **kwargs
+    ):
+        NETCREATE = {
+            NETWORK_NAME: {'nic': nics[0], 'bridged': False, 'switch': switch}
+        }
+        NETCREATE[NETWORK_NAME].update(kwargs)
+
+        BROKEN_NETCREATE = {
+            NETWORK_NAME: {
+                'bonding': BOND_NAME,
+                'bridged': True,
+                'vlan': VLAN,
+                'netmask': '300.300.300.300',
+                'ipaddr': '300.300.300.300',
+                'switch': switch,
+            }
+        }
+        BONDCREATE = {BOND_NAME: {'nics': nics, 'switch': switch}}
+
+        with adapter.setupNetworks(NETCREATE, {}, NOCHK):
 
             with pytest.raises(SetupNetworksError):
                 adapter.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
 
             adapter.update_netinfo()
-            adapter.assertNoNetwork(NETWORK_NAME)
+            adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
             adapter.assertNoBond(BOND_NAME)
-
-    def test_rollback_to_initial_basic_network(self, adapter, switch):
-        self._test_rollback_to_initial_network(adapter, switch)
-
-    def test_rollback_to_initial_network_with_static_ip(self, adapter, switch):
-        self._test_rollback_to_initial_network(
-            adapter, switch, ipaddr=IPv4_ADDRESS, netmask=IPv4_NETMASK
-        )
-
-    def test_setup_network_fails_on_existing_bond(self, adapter, switch):
-        with dummy_device() as nic:
-            NETCREATE = {
-                NETWORK_NAME: {
-                    'bridged': True,
-                    'bonding': BOND_NAME,
-                    'switch': switch,
-                }
-            }
-
-            BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
-
-            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
-                with pytest.raises(SetupNetworksError) as e:
-                    adapter.setupNetworks(NETCREATE, {}, TIMEOUT_CHK)
-                assert e.value.status == ne.ERR_LOST_CONNECTION
-
-                adapter.assertNoNetwork(NETWORK_NAME)
-                adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
-
-    @nftestlib.parametrize_bonded
-    def test_setup_new_network_fails(self, adapter, switch, bonded):
-        with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'bridged': True, 'switch': switch}}
-            if bonded:
-                NETCREATE[NETWORK_NAME]['bonding'] = BOND_NAME
-                BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
-            else:
-                NETCREATE[NETWORK_NAME]['nic'] = nic
-                BONDBASE = {}
-
-            with pytest.raises(SetupNetworksError) as e:
-                adapter.setupNetworks(NETCREATE, BONDBASE, TIMEOUT_CHK)
-            assert e.value.status == ne.ERR_LOST_CONNECTION
-
-            adapter.assertNoNetwork(NETWORK_NAME)
-            if bonded:
-                adapter.assertNoBond(BOND_NAME)
-
-    @nftestlib.parametrize_bonded
-    def test_edit_network_fails(self, adapter, switch, bonded):
-        with dummy_device() as nic:
-            NETCREATE = {
-                NETWORK_NAME: {'bridged': True, 'mtu': 1500, 'switch': switch}
-            }
-            NETEDIT = {
-                NETWORK_NAME: {'bridged': True, 'mtu': 1600, 'switch': switch}
-            }
-
-            if bonded:
-                NETCREATE[NETWORK_NAME]['bonding'] = BOND_NAME
-                NETEDIT[NETWORK_NAME]['bonding'] = BOND_NAME
-
-                BONDBASE = {
-                    BOND_NAME: {
-                        'nics': [nic],
-                        'switch': switch,
-                        'options': 'mode=4',
-                    }
-                }
-                BONDEDIT = {
-                    BOND_NAME: {
-                        'nics': [nic],
-                        'switch': switch,
-                        'options': 'mode=0',
-                    }
-                }
-            else:
-                NETCREATE[NETWORK_NAME]['nic'] = nic
-                NETEDIT[NETWORK_NAME]['nic'] = nic
-
-                BONDBASE = {}
-                BONDEDIT = {}
-
-            with adapter.setupNetworks(NETCREATE, BONDBASE, NOCHK):
-                with pytest.raises(SetupNetworksError) as e:
-                    adapter.setupNetworks(NETEDIT, BONDEDIT, TIMEOUT_CHK)
-                assert e.value.status == ne.ERR_LOST_CONNECTION
-
-                adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
-                if bonded:
-                    adapter.assertBond(BOND_NAME, BONDBASE[BOND_NAME])
-
-    def test_setup_two_networks_second_fails(self, adapter, switch):
-        with dummy_devices(3) as (nic1, nic2, nic3):
-            NET1_NAME = NETWORK_NAME + '1'
-            NET2_NAME = NETWORK_NAME + '2'
-
-            NETCREATE = {
-                NET1_NAME: {
-                    'bonding': BOND_NAME,
-                    'bridged': True,
-                    'switch': switch,
-                }
-            }
-            NETFAIL = {
-                NET2_NAME: {
-                    'nic': nic3,
-                    'bridged': True,
-                    'vlan': VLAN,
-                    'switch': switch,
-                }
-            }
-            BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
-
-            with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
-                with pytest.raises(SetupNetworksError):
-                    adapter.setupNetworks(NETFAIL, {}, TIMEOUT_CHK)
-
-                adapter.assertNoNetwork(NET2_NAME)
-                adapter.assertNetwork(NET1_NAME, NETCREATE[NET1_NAME])
-                adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
-
-    def _test_rollback_to_initial_network(self, adapter, switch, **kwargs):
-        with dummy_devices(2) as (nic1, nic2):
-            NETCREATE = {
-                NETWORK_NAME: {'nic': nic1, 'bridged': False, 'switch': switch}
-            }
-            NETCREATE[NETWORK_NAME].update(kwargs)
-
-            BROKEN_NETCREATE = {
-                NETWORK_NAME: {
-                    'bonding': BOND_NAME,
-                    'bridged': True,
-                    'vlan': VLAN,
-                    'netmask': '300.300.300.300',
-                    'ipaddr': '300.300.300.300',
-                    'switch': switch,
-                }
-            }
-            BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
-
-            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
-
-                with pytest.raises(SetupNetworksError):
-                    adapter.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
-
-                adapter.update_netinfo()
-                adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
-                adapter.assertNoBond(BOND_NAME)
 
 
 @pytest.mark.legacy_switch
 @pytest.mark.nmstate
-def test_setup_invalid_bridge_opts_fails(adapter):
-    with dummy_devices(1) as (nic,):
-        net_attrs = {
-            'nic': nic,
-            'switch': 'legacy',
-            'custom': {'bridge_opts': 'foo=0'},
-        }
+def test_setup_invalid_bridge_opts_fails(adapter, nic0):
+    net_attrs = {
+        'nic': nic0,
+        'switch': 'legacy',
+        'custom': {'bridge_opts': 'foo=0'},
+    }
 
-        # Currently, as the network scripts are still used, adding a
-        # non existent option will not raise any error, thus eventually
-        # failing with an assertionError due to no error raised.
-        expect_setup_err_cm = pytest.raises(SetupNetworksError)
-        expected_assert_err_cm = pytest.raises(AssertionError)
-        nm_backend = nftestlib.is_nmstate_backend()
+    # Currently, as the network scripts are still used, adding a
+    # non existent option will not raise any error, thus eventually
+    # failing with an assertionError due to no error raised.
+    expect_setup_err_cm = pytest.raises(SetupNetworksError)
+    expected_assert_err_cm = pytest.raises(AssertionError)
+    nm_backend = nftestlib.is_nmstate_backend()
 
-        with expect_setup_err_cm if nm_backend else expected_assert_err_cm:
-            adapter.setupNetworks({NETWORK_NAME: net_attrs}, {}, NOCHK)
+    with expect_setup_err_cm if nm_backend else expected_assert_err_cm:
+        adapter.setupNetworks({NETWORK_NAME: net_attrs}, {}, NOCHK)
 
-        adapter.update_netinfo()
-        adapter.assertNoNetwork(NETWORK_NAME)
+    adapter.update_netinfo()
+    adapter.assertNoNetwork(NETWORK_NAME)
