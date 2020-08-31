@@ -5230,7 +5230,8 @@ class Vm(object):
                 jobID = storedJob['jobID']
                 self.log.debug("Checking job %s", jobID)
                 cleanThread = self._liveMergeCleanupThreads.get(jobID)
-                if cleanThread and cleanThread.isSuccessful():
+                if (cleanThread and
+                        cleanThread.state == LiveMergeCleanupThread.DONE):
                     # Handle successful jobs early because the job just needs
                     # to be untracked and the stored disk info might be stale
                     # anyway (ie. after active layer commit).
@@ -5298,15 +5299,14 @@ class Vm(object):
                         self.log.info("Starting cleanup thread for job: %s",
                                       jobID)
                         startCleanup(storedJob, drive, doPivot)
-                    elif cleanThread.isAlive():
+                    elif cleanThread.state == LiveMergeCleanupThread.TRYING:
                         # Let previously started cleanup thread continue
                         self.log.debug("Still waiting for block job %s to be "
                                        "synchronized", jobID)
-                    elif not cleanThread.isSuccessful():
-                        # At this point we know the thread is not alive and the
-                        # cleanup failed.  Retry it with a new thread.
-                        self.log.info("Previous job %s cleanup thread failed, "
-                                      "retrying", jobID)
+                    elif cleanThread.state == LiveMergeCleanupThread.RETRY:
+                        self.log.info("Previous job %s cleanup thread failed "
+                                      "with recoverable error, retrying",
+                                      jobID)
                         startCleanup(storedJob, drive, doPivot)
                 jobsRet[jobID] = entry
         return jobsRet
@@ -5763,23 +5763,34 @@ class Vm(object):
 
 
 class LiveMergeCleanupThread(object):
+
+    # Cleanup states:
+    # Starting state for a fresh cleanup thread.
+    TRYING = 'TRYING'
+    # Cleanup thread failed with recoverable error, the caller should
+    # retry the cleanup.
+    RETRY = 'RETRY'
+    # Cleanup completed successfully.
+    DONE = 'DONE'
+
     def __init__(self, vm, job, drive, doPivot):
         self.vm = vm
         self.job = job
         self.drive = drive
         self.doPivot = doPivot
-        self.success = False
+        self._state = self.TRYING
         self._thread = concurrent.thread(
             self.run, name="merge/" + job["jobID"][:8])
+
+    @property
+    def state(self):
+        return self._state
 
     def start(self):
         self._thread.start()
 
     def join(self):
         self._thread.join()
-
-    def isAlive(self):
-        return self._thread.is_alive()
 
     def tryPivot(self):
         # We call imageSyncVolumeChain which will mark the current leaf
@@ -5839,31 +5850,30 @@ class LiveMergeCleanupThread(object):
 
     @logutils.traceback()
     def run(self):
-        self.update_base_size()
-        if self.doPivot:
-            try:
+        try:
+            self.update_base_size()
+            if self.doPivot:
                 self.tryPivot()
-            except BlockCopyActiveError as e:
-                self.vm.log.warning("Pivot failed: %s", e)
-                return
-
-        self.vm.log.info("Synchronizing volume chain after live merge "
-                         "(job %s)", self.job['jobID'])
-        self.vm._syncVolumeChain(self.drive)
-        if self.doPivot:
-            self.vm.drive_monitor.enable()
-        chain_after_merge = [vol['volumeID'] for vol in self.drive.volumeChain]
-        if self.job['topVolume'] not in chain_after_merge:
-            self.teardown_top_volume()
-        self.success = True
-        self.vm.log.info("Synchronization completed (job %s)",
-                         self.job['jobID'])
-
-    def isSuccessful(self):
-        """
-        Returns True if this phase completed successfully.
-        """
-        return self.success
+            self.vm.log.info("Synchronizing volume chain after live merge "
+                             "(job %s)", self.job['jobID'])
+            self.vm._syncVolumeChain(self.drive)
+            if self.doPivot:
+                self.vm.drive_monitor.enable()
+            chain_after_merge = [vol['volumeID']
+                                 for vol in self.drive.volumeChain]
+            if self.job['topVolume'] not in chain_after_merge:
+                self.teardown_top_volume()
+            self.vm.log.info("Synchronization completed (job %s)",
+                             self.job['jobID'])
+            self._setState(self.DONE)
+        except BlockCopyActiveError as e:
+            self.vm.log.warning("Pivot failed (job: %s): %s, retrying later",
+                                self.job['jobID'], e)
+            self._setState(self.RETRY)
+        except Exception as e:
+            self.vm.log.exception("Cleanup failed with recoverable error "
+                                  "(job: %s): %s", self.job['jobID'], e)
+            self._setState(self.RETRY)
 
     def _waitForXMLUpdate(self):
         # Libvirt version 1.2.8-16.el7_1.2 introduced a bug where the
@@ -5908,6 +5918,11 @@ class LiveMergeCleanupThread(object):
                                   "Actual chain: %s", alias, origVols,
                                   expectedVols, curVols)
                 raise RuntimeError("Bad volume chain found")
+
+    def _setState(self, state):
+        self.vm.log.debug("Switching state from %r to %r (job: %s)",
+                          self._state, state, self.job['jobID'])
+        self._state = state
 
 
 def update_active_path(volume_chain, volumeID, activePath):
