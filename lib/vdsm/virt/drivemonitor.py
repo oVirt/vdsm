@@ -52,10 +52,16 @@ class DriveMonitor(object):
         return self._enabled
 
     def enable(self):
+        """
+        Enable drive monitor, does not raise.
+        """
         self._enabled = True
         self._log.info('Enabling drive monitoring')
 
     def disable(self):
+        """
+        Disable drive monitor, does not raise.
+        """
         self._enabled = False
         self._log.info('Disabling drive monitoring')
 

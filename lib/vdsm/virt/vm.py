@@ -145,6 +145,14 @@ class BlockCopyActiveError(errors.Base):
         self.job_id = job_id
 
 
+class BlockJobUnrecoverableError(errors.Base):
+    msg = "Block job {self.job_id} failed with libvirt error: {self.reason}"
+
+    def __init__(self, job_id, reason):
+        self.job_id = job_id
+        self.reason = reason
+
+
 VALID_STATES = (vmstatus.DOWN, vmstatus.MIGRATION_DESTINATION,
                 vmstatus.MIGRATION_SOURCE, vmstatus.PAUSED,
                 vmstatus.POWERING_DOWN, vmstatus.REBOOT_IN_PROGRESS,
@@ -5308,6 +5316,12 @@ class Vm(object):
                                       "with recoverable error, retrying",
                                       jobID)
                         startCleanup(storedJob, drive, doPivot)
+                    elif cleanThread.state == LiveMergeCleanupThread.ABORT:
+                        self.log.error("Aborting job %s due to an "
+                                       "unrecoverable error", jobID)
+                        self.untrackBlockJob(jobID)
+                        # Don't report job as progressing in returned jobs.
+                        continue
                 jobsRet[jobID] = entry
         return jobsRet
 
@@ -5772,6 +5786,8 @@ class LiveMergeCleanupThread(object):
     RETRY = 'RETRY'
     # Cleanup completed successfully.
     DONE = 'DONE'
+    # Unrecoverable cleanup error, run should not be retried by the caller.
+    ABORT = 'ABORT'
 
     def __init__(self, vm, job, drive, doPivot):
         self.vm = vm
@@ -5818,7 +5834,7 @@ class LiveMergeCleanupThread(object):
         except libvirt.libvirtError as e:
             self.vm.drive_monitor.enable()
             if e.get_error_code() != libvirt.VIR_ERR_BLOCK_COPY_ACTIVE:
-                raise
+                raise BlockJobUnrecoverableError(self.job['jobID'], e)
             raise BlockCopyActiveError(self.job['jobID'])
         except:
             self.vm.drive_monitor.enable()
@@ -5870,6 +5886,11 @@ class LiveMergeCleanupThread(object):
             self.vm.log.warning("Pivot failed (job: %s): %s, retrying later",
                                 self.job['jobID'], e)
             self._setState(self.RETRY)
+        except BlockJobUnrecoverableError as e:
+            self.vm.log.exception("Pivot failed (job: %s): %s, aborting due "
+                                  "to an unrecoverable error",
+                                  self.job['jobID'], e)
+            self._setState(self.ABORT)
         except Exception as e:
             self.vm.log.exception("Cleanup failed with recoverable error "
                                   "(job: %s): %s", self.job['jobID'], e)
