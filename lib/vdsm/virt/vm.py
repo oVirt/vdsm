@@ -71,6 +71,7 @@ from vdsm.common import hooks
 from vdsm.common import supervdsm
 from vdsm.common import xmlutils
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
+from vdsm.common.hostutils import host_in_shutdown
 from vdsm.common.logutils import SimpleLogAdapter, volume_chain_to_str
 from vdsm.network import api as net_api
 
@@ -5023,12 +5024,18 @@ class Vm(object):
         if self._shutdownReason is not None:
             # Do not overwrite existing shutdown reason
             return
+        host_shutdown_check_needed = False
         with self._shutdownLock:
             if self._shutdownReason is None:
                 if detail == libvirt.VIR_DOMAIN_EVENT_SHUTDOWN_HOST:
                     self._shutdownReason = vmexitreason.HOST_SHUTDOWN
                 elif detail == libvirt.VIR_DOMAIN_EVENT_SHUTDOWN_GUEST:
                     self._shutdownReason = vmexitreason.USER_SHUTDOWN
+                    # When a VM is gracefully shut down from
+                    # libvirt-guests service, it's
+                    # indistinguishable from a user shutdown in
+                    # libvirt/QEMU.
+                    host_shutdown_check_needed = True
                 else:
                     # If an unexpected 'detail' was received,
                     # warn the user and set the default value.
@@ -5037,6 +5044,11 @@ class Vm(object):
                         " libvirt: %s. Assuming user shutdown.", detail
                     )
                     self._shutdownReason = vmexitreason.USER_SHUTDOWN
+                    host_shutdown_check_needed = True
+        if host_shutdown_check_needed and host_in_shutdown():
+            with self._shutdownLock:
+                if self._shutdownReason == vmexitreason.USER_SHUTDOWN:
+                    self._shutdownReason = vmexitreason.HOST_SHUTDOWN
 
     def _updateDevicesDomxmlCache(self, xml):
         """
