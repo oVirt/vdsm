@@ -14,11 +14,7 @@ nmstate_mount=""
 SWITCH_TYPE_LINUX="linux-bridge"
 SWITCH_TYPE_OVS="ovs"
 
-BACKEND_LEGACY="legacy"
-BACKEND_NMSTATE="nmstate"
-
 SWITCH_TYPE="${SWITCH_TYPE:=$SWITCH_TYPE_LINUX}"
-BACKEND="${BACKEND:=$BACKEND_NMSTATE}"
 
 test -t 1 && USE_TTY="t"
 
@@ -75,13 +71,9 @@ function setup_vdsm_runtime_environment {
         && \
         install -d /run/vdsm/dhclientmon -m 755 -o vdsm && \
         install -d /run/vdsm/trackedInterfaces -m 755 -o vdsm && \
-        cp $CONTAINER_WORKSPACE/static/etc/NetworkManager/conf.d/vdsm.conf /etc/NetworkManager/conf.d/
+        cp $CONTAINER_WORKSPACE/static/etc/NetworkManager/conf.d/vdsm.conf /etc/NetworkManager/conf.d/ && \
+        cp $CONTAINER_WORKSPACE/static/etc/NetworkManager/dispatcher.d/dhcp_monitor.py /etc/NetworkManager/dispatcher.d/
     "
-    if [ $BACKEND == $BACKEND_LEGACY ];then
-        container_exec "cp $CONTAINER_WORKSPACE/static/etc/dhcp/dhclient.d/dhclientmon.sh /etc/dhcp/dhclient.d/"
-    elif [ $BACKEND == $BACKEND_NMSTATE ];then
-        container_exec "cp $CONTAINER_WORKSPACE/static/etc/NetworkManager/dispatcher.d/dhcp_monitor.py etc/NetworkManager/dispatcher.d/"
-    fi
 }
 
 function setup_vdsm_sources_for_testing {
@@ -136,19 +128,12 @@ function clone_nmstate {
     "
 }
 
-function disable_nmstate {
-    container_exec "
-          mkdir /etc/vdsm && \
-          echo -e \"[vars]\nnet_nmstate_enabled = false\n\" >> /etc/vdsm/vdsm.conf
-    "
-}
-
 function enable_ipv6 {
     container_exec "echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6"
 }
 
 options=$(getopt --options "" \
-    --long help,shell,switch-type:,backend:,nmstate-pr:,nmstate-source:,pytest-args:\
+    --long help,shell,switch-type:,nmstate-pr:,nmstate-source:,pytest-args:\
     -- "${@}")
 eval set -- "$options"
 while true; do
@@ -159,10 +144,6 @@ while true; do
     --switch-type)
         shift
         SWITCH_TYPE="$1"
-        ;;
-    --backend)
-        shift
-        BACKEND="$1"
         ;;
     --nmstate-pr)
         shift
@@ -179,14 +160,11 @@ while true; do
         ;;
     --help)
         set +x
-        echo -n "$0 [--shell] [--help] [--switch-type=<SWITCH_TYPE>] [--backend=<BACKEND>] [--nmstate-pr=<PR_ID>] "
+        echo -n "$0 [--shell] [--help] [--switch-type=<SWITCH_TYPE>] [--nmstate-pr=<PR_ID>] "
         echo -n "[--nmstate-source=<PATH_TO_NMSTATE_SRC>] [--pytest-args=<ADDITIONAL_PYTEST_ARGUMENTS>]"
         echo "  Valid SWITCH_TYPEs are:"
         echo "     * $SWITCH_TYPE_LINUX (default)"
         echo "     * $SWITCH_TYPE_OVS"
-        echo "  Valid BACKENDs are:"
-        echo "     * $BACKEND_NMSTATE (default)"
-        echo "     * $BACKEND_LEGACY"
         exit
         ;;
     --)
@@ -224,17 +202,10 @@ fi
 replace_resolvconf
 
 if [ $SWITCH_TYPE == $SWITCH_TYPE_LINUX ];then
-    SWITCH_TYPE="legacy_switch"
+    SWITCH_TYPE="legacy_switch and nmstate"
 elif [ $SWITCH_TYPE == $SWITCH_TYPE_OVS ];then
     start_service "openvswitch"
-    SWITCH_TYPE="ovs_switch"
-    stable_link_skip="--skip-stable-link-monitor"
-fi
-
-if [ $BACKEND == $BACKEND_LEGACY ];then
-    disable_nmstate
-elif [ $BACKEND == $BACKEND_NMSTATE ];then
-   SWITCH_TYPE="${SWITCH_TYPE} and nmstate"
+    SWITCH_TYPE="ovs_switch and nmstate"
 fi
 
 if [ "$TRAVIS" == "true" ]; then
@@ -253,7 +224,6 @@ container_exec "
     pytest \
       -vv \
       --target-lib \
-      $stable_link_skip \
       -m \"$SWITCH_TYPE\" \
       tests/network/functional \
       $additional_pytest_args
