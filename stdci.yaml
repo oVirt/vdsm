@@ -57,16 +57,6 @@ stages:
       archs:
         - x86_64
       substages:
-        - functional-linux-bridge-lib:
-            runtime-requirements:
-              host-distro: newer
-            distributions:
-              - fc30
-        - functional-ovs-switch-lib:
-            runtime-requirements:
-              host-distro: newer
-            distributions:
-              - fc30
         - functional-linux-bridge-nmstate:
             runtime-requirements:
               host-distro: newer

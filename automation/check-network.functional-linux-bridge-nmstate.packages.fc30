@@ -1,1 +1,4 @@
-check-network.functional-linux-bridge-lib.packages.fc30
+docker
+dnf
+iputils
+iproute
