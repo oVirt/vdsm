@@ -5020,22 +5020,23 @@ class Vm(object):
             self.log.info("Migration switched to post-copy mode")
 
     def _handle_libvirt_domain_shutdown(self, detail):
-        # Do not overwrite existing shutdown reason
-        if self._shutdownReason is None:
-            with self._shutdownLock:
-                if self._shutdownReason is None:
-                    if detail == libvirt.VIR_DOMAIN_EVENT_SHUTDOWN_HOST:
-                        self._shutdownReason = vmexitreason.HOST_SHUTDOWN
-                    elif detail == libvirt.VIR_DOMAIN_EVENT_SHUTDOWN_GUEST:
-                        self._shutdownReason = vmexitreason.USER_SHUTDOWN
-                    else:
-                        # If an unexpected 'detail' was received,
-                        # warn the user and set the default value.
-                        self.log.warning(
-                            "Unexpected host/user shutdown detail from"
-                            " libvirt: %s. Assuming user shutdown.", detail
-                        )
-                        self._shutdownReason = vmexitreason.USER_SHUTDOWN
+        if self._shutdownReason is not None:
+            # Do not overwrite existing shutdown reason
+            return
+        with self._shutdownLock:
+            if self._shutdownReason is None:
+                if detail == libvirt.VIR_DOMAIN_EVENT_SHUTDOWN_HOST:
+                    self._shutdownReason = vmexitreason.HOST_SHUTDOWN
+                elif detail == libvirt.VIR_DOMAIN_EVENT_SHUTDOWN_GUEST:
+                    self._shutdownReason = vmexitreason.USER_SHUTDOWN
+                else:
+                    # If an unexpected 'detail' was received,
+                    # warn the user and set the default value.
+                    self.log.warning(
+                        "Unexpected host/user shutdown detail from"
+                        " libvirt: %s. Assuming user shutdown.", detail
+                    )
+                    self._shutdownReason = vmexitreason.USER_SHUTDOWN
 
     def _updateDevicesDomxmlCache(self, xml):
         """
