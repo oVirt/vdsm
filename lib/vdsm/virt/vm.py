@@ -3885,8 +3885,9 @@ class Vm(object):
         if drive['alias'] not in chains:
             self.log.error(
                 "libvirt does not support volume chain "
-                "monitoring.  Unable to update threshold for %s.",
-                drive.name)
+                "monitoring.  Unable to update threshold for drive: %s, "
+                "alias: %s, chains: %r",
+                drive.name, drive['alias'], chains)
             return
 
         actual_chain = chains[drive['alias']]
