@@ -370,17 +370,6 @@ class NetFuncTestAdapter(object):
             for br_opt, br_val in six.iteritems(req_bridge_opts):
                 assert br_val == bridge_opts_caps[br_opt]
 
-    # FIXME: Redundant because we have NetworkExists + kernel_vs_running_config
-    def assertNetworkExistsInRunning(self, netname, netattrs):
-        self.update_running_config()
-        netsconf = self.running_config.networks
-
-        assert netname in netsconf
-        netconf = netsconf[netname]
-
-        bridged = netattrs.get('bridged')
-        assert bridged == netconf.get('bridged')
-
     def assertNoNetwork(self, netname):
         self.assertNoNetworkExists(netname)
         self.assertNoBridgeExists(netname)
