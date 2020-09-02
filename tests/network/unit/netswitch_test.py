@@ -32,42 +32,6 @@ BOND_NAME = 'bond1'
 NETWORK1_NAME = 'test-network1'
 
 
-class TestSplitSetupActions(object):
-    def test_split_nets(self):
-        net_query = {
-            'net2add': {'nic': 'eth0'},
-            'net2edit': {'nic': 'eth1'},
-            'net2remove': {'remove': True},
-        }
-        running_nets = {'net2edit': {'foo': 'bar'}}
-
-        nets = netswitch.configurator._split_setup_actions(
-            net_query, running_nets
-        )
-        nets2add, nets2edit, nets2remove = nets
-
-        assert nets2add == {'net2add': {'nic': 'eth0'}}
-        assert nets2edit == {'net2edit': {'nic': 'eth1'}}
-        assert nets2remove == {'net2remove': {'remove': True}}
-
-    def test_split_bonds(self):
-        bond_query = {
-            'bond2add': {'nics': ['eth0', 'eth1']},
-            'bond2edit': {'nics': ['eth2', 'eth3']},
-            'bond2remove': {'remove': True},
-        }
-        running_bonds = {'bond2edit': {'foo': 'bar'}}
-
-        nets = netswitch.configurator._split_setup_actions(
-            bond_query, running_bonds
-        )
-        bonds2add, bonds2edit, bonds2remove = nets
-
-        assert bonds2add == {'bond2add': {'nics': ['eth0', 'eth1']}}
-        assert bonds2edit == {'bond2edit': {'nics': ['eth2', 'eth3']}}
-        assert bonds2remove == {'bond2remove': {'remove': True}}
-
-
 class TestSouthboundValidation(object):
     def test_two_bridgless_ovs_nets_with_used_nic_fails(self):
         self._assert_net_setup_fails_bad_params(
