@@ -174,7 +174,7 @@ def build_filter(mounts):
 
 def analyze(current_filter, wanted_filter):
     """
-    Analyze LVM filter wanted and current configuruation, and advice how to
+    Analyze LVM filter wanted and current configuration, and advice how to
     proceed.
 
     Returns:
@@ -197,7 +197,7 @@ def analyze(current_filter, wanted_filter):
     current_items = [parse_item(r) for r in current_filter]
 
     if current_items == wanted_items:
-        # Same filter, different delimeter syntax. For example:
+        # Same filter, different delimiter syntax. For example:
         # "a|^/dev/sda2$|" == "a/^dev/sda2$/".
         return Advice(UNNEEDED, None)
 
@@ -209,7 +209,7 @@ def analyze(current_filter, wanted_filter):
         # This filters are the same, using different order.
         return Advice(UNNEEDED, None)
 
-    # The currnet filter intent is different. We take the safe way - the user
+    # The current filter intent is different. We take the safe way - the user
     # knows better. We will recommend to configure our filter, but the user
     # will have to do this, or maybe contact support.
     return Advice(RECOMMEND, wanted_filter)
@@ -271,7 +271,7 @@ def format_option(items):
     Format LVM filter option from the filter built by build_filter().
 
     Arguments:
-        items (list): list of LVM device regular expression mathces.
+        items (list): list of LVM device regular expression matches.
 
     Returns:
         string to use in lvm.conf.
@@ -347,5 +347,5 @@ def _run(args):
     """
     log.debug("Running %s", args)
     out = subprocess.check_output(args)
-    log.debug("Completed successfuly, out=%r", out)
+    log.debug("Completed successfully, out=%r", out)
     return out.decode("utf-8")
