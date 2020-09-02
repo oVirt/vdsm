@@ -21,13 +21,13 @@ from collections import defaultdict
 import itertools
 
 from vdsm.network.netconfpersistence import RunningConfig
+from vdsm.network.netswitch.util import split_switch_type
 
 from .bond import Bond
 from .bridge_util import DEFAULT_MTU
 from .bridge_util import is_autoconf_enabled as util_is_autoconf_enabled
 from .bridge_util import is_dhcp_enabled as util_is_dhcp_enabled
 from .bridge_util import is_iface_absent
-from .bridge_util import SwitchType
 from .bridge_util import translate_config
 from .linux_bridge import LinuxBridgeNetwork as LinuxBrNet
 from .ovs.info import OvsInfo
@@ -57,8 +57,8 @@ def generate_state(networks, bondings):
     rconfig = RunningConfig()
     current_ifaces_state = get_interfaces(state_show())
 
-    ovs_nets, linux_br_nets = _split_switch_type(networks, rconfig.networks)
-    ovs_bonds, linux_br_bonds = _split_switch_type(bondings, rconfig.bonds)
+    ovs_nets, linux_br_nets = split_switch_type(networks, rconfig.networks)
+    ovs_bonds, linux_br_bonds = split_switch_type(bondings, rconfig.bonds)
     ovs_requested = ovs_nets or ovs_bonds
     linux_br_requested = linux_br_nets or linux_br_bonds
 
@@ -263,28 +263,3 @@ def _merge_state(interfaces_state, routes_state, dns_state):
         )
         state[DNS.KEY] = {DNS.CONFIG: {DNS.SERVER: list(nameservers)}}
     return state
-
-
-def _split_switch_type(desired_config, running_config):
-    ovs = []
-    linux_bridge = []
-    for name, attrs in desired_config.items():
-        if _to_remove(attrs):
-            switch = _get_switch_type(running_config[name])
-        else:
-            switch = _get_switch_type(attrs)
-
-        if switch == SwitchType.LINUX_BRIDGE:
-            linux_bridge.append(name)
-        elif switch == SwitchType.OVS:
-            ovs.append(name)
-
-    return ovs, linux_bridge
-
-
-def _to_remove(attrs):
-    return attrs.get('remove', False)
-
-
-def _get_switch_type(attrs):
-    return attrs.get('switch')

@@ -20,11 +20,12 @@
 import ipaddress
 from collections import defaultdict
 
+from vdsm.network.netswitch.util import SwitchType
+
 from ..bridge_util import is_autoconf_enabled
 from ..bridge_util import is_dhcp_enabled
 from ..bridge_util import NetInfoIfaceSchema
 from ..bridge_util import NetInfoSchema
-from ..bridge_util import SwitchType
 from ..route import DefaultRouteDestination
 from ..route import Family
 from ..schema import Interface

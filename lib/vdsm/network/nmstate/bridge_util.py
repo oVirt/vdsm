@@ -62,11 +62,6 @@ class NetworkConfig(object):
             self.vlan_iface = None
 
 
-class SwitchType(object):
-    LINUX_BRIDGE = 'legacy'
-    OVS = 'ovs'
-
-
 class NetInfoSchema(object):
     NETWORKS = 'networks'
     VLANS = 'vlans'
