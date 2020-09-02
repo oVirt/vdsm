@@ -5355,7 +5355,9 @@ class Vm(object):
         chains = self._driveGetActualVolumeChain([drive])
         if drive['alias'] not in chains:
             self.log.error("merge: libvirt does not support volume chain "
-                           "monitoring.  Unable to perform live merge.")
+                           "monitoring.  Unable to perform live merge. "
+                           "drive: %s, alias: %s, chains: %r",
+                           drive.name, drive['alias'], chains)
             return response.error('mergeErr')
 
         actual_chain = chains[drive['alias']]
