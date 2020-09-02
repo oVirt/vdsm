@@ -149,11 +149,8 @@ def validate(networks, bondings, net_info):
         legacy_switch.validate_network_setup(legacy_nets)
 
 
-def setup(networks, bondings, options, net_info, in_rollback):
-    if nmstate.is_nmstate_backend():
-        _setup_nmstate(networks, bondings, options, in_rollback)
-    else:
-        _setup(networks, bondings, options, in_rollback, net_info)
+def setup(networks, bondings, options, in_rollback):
+    _setup_nmstate(networks, bondings, options, in_rollback)
 
     if options.get('commitOnSuccess'):
         persist()
