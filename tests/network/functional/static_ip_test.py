@@ -49,12 +49,6 @@ IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::1'
 IPv6_GATEWAY2 = 'fdb3:84e5:4ff4:55e3::2'
 
 
-@pytest.fixture
-def preserve_conf():
-    with restore_resolv_conf(), preserve_default_route():
-        yield
-
-
 @pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkStaticIpBasic(object):
@@ -241,9 +235,12 @@ class TestNetworkStaticIpBasic(object):
 @pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkIPDefaultGateway(object):
-    def test_add_net_with_ipv4_default_gateway(
-        self, adapter, switch, preserve_conf
-    ):
+    @pytest.fixture(autouse=True)
+    def preserve_conf(self):
+        with restore_resolv_conf(), preserve_default_route():
+            yield
+
+    def test_add_net_with_ipv4_default_gateway(self, adapter, switch):
         with dummy_device() as nic:
             network_attrs = {
                 'nic': nic,
@@ -258,9 +255,7 @@ class TestNetworkIPDefaultGateway(object):
             with adapter.setupNetworks(netcreate, {}, NOCHK):
                 adapter.assertNetworkIp(NETWORK_NAME, network_attrs)
 
-    def test_add_net_with_ipv6_default_gateway(
-        self, adapter, switch, preserve_conf
-    ):
+    def test_add_net_with_ipv6_default_gateway(self, adapter, switch):
         if switch == 'ovs':
             pytest.xfail(
                 'OvS does not support ipv6 gateway'
@@ -288,9 +283,7 @@ class TestNetworkIPDefaultGateway(object):
                 adapter.assertNetworkIp(NETWORK_NAME, network_attrs)
 
     @parametrize_ip_families
-    def test_edit_default_gateway(
-        self, adapter, switch, families, preserve_conf
-    ):
+    def test_edit_default_gateway(self, adapter, switch, families):
         if switch == 'ovs' and IpFamily.IPv6 in families:
             pytest.xfail(
                 'OvS does not support ipv6 gateway'
@@ -320,9 +313,7 @@ class TestNetworkIPDefaultGateway(object):
                 adapter.setupNetworks(netcreate, {}, NOCHK)
                 adapter.assertNetworkIp(NETWORK_NAME, network_attrs)
 
-    def test_add_net_and_move_ipv4_default_gateway(
-        self, adapter, switch, preserve_conf
-    ):
+    def test_add_net_and_move_ipv4_default_gateway(self, adapter, switch):
         with dummy_devices(2) as (nic1, nic2):
             net1_attrs = {
                 'nic': nic1,
@@ -349,9 +340,7 @@ class TestNetworkIPDefaultGateway(object):
                     adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
                     adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
 
-    def test_add_net_without_default_route(
-        self, adapter, switch, preserve_conf
-    ):
+    def test_add_net_without_default_route(self, adapter, switch):
         with dummy_devices(2) as (nic1, nic2):
 
             net1_attrs = {
@@ -380,9 +369,7 @@ class TestNetworkIPDefaultGateway(object):
                     adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
                 adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
 
-    def test_add_net_without_gateway_and_default_route(
-        self, adapter, switch, preserve_conf
-    ):
+    def test_add_net_without_gateway_and_default_route(self, adapter, switch):
         with dummy_devices(2) as (nic1, nic2):
             net1_attrs = {
                 'nic': nic1,
@@ -408,9 +395,7 @@ class TestNetworkIPDefaultGateway(object):
                     adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
                     adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
 
-    def test_create_net_without_default_route(
-        self, adapter, switch, preserve_conf
-    ):
+    def test_create_net_without_default_route(self, adapter, switch):
         with dummy_devices(1) as (nic1,):
             net1_attrs = {
                 'nic': nic1,
@@ -424,9 +409,7 @@ class TestNetworkIPDefaultGateway(object):
             with adapter.setupNetworks(net1create, {}, NOCHK):
                 adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
 
-    def test_remove_net_without_default_route(
-        self, adapter, switch, preserve_conf
-    ):
+    def test_remove_net_without_default_route(self, adapter, switch):
         with dummy_devices(2) as (nic1, nic2):
             net1_attrs = {
                 'nic': nic1,
@@ -453,9 +436,7 @@ class TestNetworkIPDefaultGateway(object):
                     adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
                 adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
 
-    def test_remove_net_with_default_route_and_gateway(
-        self, adapter, switch, preserve_conf
-    ):
+    def test_remove_net_with_default_route_and_gateway(self, adapter, switch):
         with dummy_devices(2) as (nic1, nic2):
             net1_attrs = {
                 'nic': nic1,
