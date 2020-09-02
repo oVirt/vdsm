@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2019 Red Hat, Inc.
+# Copyright 2011-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,9 +71,6 @@ parameters = [
 
         ('net_persistence', 'unified',
             'Whether to use "ifcfg" or "unified" persistence for networks.'),
-
-        ('net_nmstate_enabled', 'true',
-            'Control nmstate network backend provider.'),
 
         ('ethtool_opts', '',
             'Which special ethtool options should be applied to NICs after '

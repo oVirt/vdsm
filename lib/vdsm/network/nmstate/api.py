@@ -20,7 +20,6 @@
 from collections import defaultdict
 import itertools
 
-from vdsm.common.config import config as vdsm_config
 from vdsm.network.netconfpersistence import RunningConfig
 
 from .bond import Bond
@@ -221,8 +220,9 @@ def get_routes(state):
     return state[Route.KEY].get(Route.RUNNING, {})
 
 
+# TODO remove this once every reference is resolved
 def is_nmstate_backend():
-    return vdsm_config.getboolean('vars', 'net_nmstate_enabled')
+    return True
 
 
 def is_dhcp_enabled(ifstate, family):

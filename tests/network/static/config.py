@@ -48,7 +48,6 @@ parameters = [
     (
         'vars',
         [
-            ('net_nmstate_enabled', 'true'),
             ('cpu_affinity', 'auto'),
             ('fake_nics', 'dummy_*,veth_*'),
             ('hidden_nics', 'w*,usb*'),
