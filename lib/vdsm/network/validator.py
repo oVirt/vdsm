@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,9 @@ from vdsm.network.link import validator as link_validator
 from vdsm.network import netswitch
 
 
-def validate(networks, bondings, net_info):
+def validate(networks, bondings, net_info, running_config):
     link_validator.validate(networks, bondings)
     ip_validator.validate(networks)
-    netswitch.configurator.validate(networks, bondings, net_info)
+    netswitch.configurator.validate(
+        networks, bondings, net_info, running_config
+    )

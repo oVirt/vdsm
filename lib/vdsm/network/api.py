@@ -227,10 +227,10 @@ def setupNetworks(networks, bondings, options):
         canonicalize.canonicalize_bondings(bondings)
 
         net_info = netswitch.configurator.netinfo()
-
-        validator.validate(networks, bondings, net_info)
-
         running_config = netconfpersistence.RunningConfig()
+
+        validator.validate(networks, bondings, net_info, running_config)
+
         if netswitch.configurator.switch_type_change_needed(
             networks, bondings, running_config
         ):

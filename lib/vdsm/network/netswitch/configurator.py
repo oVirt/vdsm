@@ -57,6 +57,7 @@ from vdsm.network.netinfo.cache import (
 )
 from vdsm.network.netinfo.cache import get_net_iface_from_config
 
+from . import util
 from . import validator
 
 
@@ -125,19 +126,18 @@ def _split_switch_type(nets, bonds, net_info):
     return legacy_nets, ovs_nets, legacy_bonds, ovs_bonds
 
 
-def validate(networks, bondings, net_info):
-    legacy_nets, ovs_nets, legacy_bonds, ovs_bonds = _split_switch_type(
-        networks, bondings, net_info
+def validate(networks, bondings, net_info, running_config):
+    ovs_nets, legacy_nets = util.split_switch_type(
+        networks, running_config.networks
+    )
+    ovs_bonds, legacy_bonds = util.split_switch_type(
+        bondings, running_config.bonds
     )
 
     use_legacy_switch = legacy_nets or legacy_bonds
     use_ovs_switch = ovs_nets or ovs_bonds
 
-    if (
-        not nmstate.is_nmstate_backend()
-        and use_legacy_switch
-        and use_ovs_switch
-    ):
+    if use_legacy_switch and use_ovs_switch:
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_PARAMS,
             'Mixing of legacy and OVS networks is not supported inside one '
