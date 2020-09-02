@@ -888,7 +888,9 @@ chown root:root %{_vdsm_log_dir}/supervdsm.log
 # dump generation machinery. Fedoras use newer abrt versions
 # which don't have abrt-ccpp anymore.
 %if ! 0%{?fedora}
-ln -s /dev/null /etc/sysctl.d/50-coredump.conf
+if [ "$1" -eq 1 ]; then
+    ln -s /dev/null /etc/sysctl.d/50-coredump.conf
+fi
 %endif
 
 systemd-tmpfiles --create %{vdsm_name}.conf
