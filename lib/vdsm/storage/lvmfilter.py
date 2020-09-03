@@ -209,6 +209,16 @@ def analyze(current_filter, wanted_filter):
         # This filters are the same, using different order.
         return Advice(UNNEEDED, None)
 
+    # Is filter using device names (.e.g /dev/sda2) instead of stable
+    # names (/dev/disk/by-id/...)?
+    # If the list of items is same after resolving paths, we can replace
+    # current filter with one with stable names.
+    current_resolved = resolve_devices(current_items)
+    wanted_resolved = resolve_devices(wanted_items)
+
+    if current_resolved == wanted_resolved:
+        return Advice(CONFIGURE, wanted_filter)
+
     # The current filter intent is different. We take the safe way - the user
     # knows better. We will recommend to configure our filter, but the user
     # will have to do this, or maybe contact support.
@@ -322,6 +332,54 @@ def vg_devices(vg_name):
     ])
     pvs_info = (line.strip().split() for line in out.splitlines())
     return sorted(_stable_name(name, uuid) for name, uuid in pvs_info)
+
+
+def resolve_devices(filter_items):
+    """
+    Resolves absolute paths in the filter items if possible, otherwise keeps
+    paths intact.
+
+    Example input:
+
+        [
+            FilterItem("a", "^/dev/a$"),
+            FilterItem("a", "^/dev/disk/by-id/lvm-pv-uuid-b^"),
+            FilterItem("a", "^/dev/c*"),
+            FilterItem("r", ".*"),
+        ]
+
+    Example output:
+
+        [
+            FilterItem("a", "^/dev/a$"),
+            FilterItem("a", "^/dev/b$"),
+            FilterItem("a", "^/dev/c*"),
+            FilterItem("r", ".*"),
+        ]
+    """
+    resolved_items = []
+    for r in filter_items:
+        path = r.path
+        reg_exp_start = ""
+        reg_exp_end = ""
+
+        if path.startswith("^"):
+            reg_exp_start = "^"
+            path = path[1:]
+        if path.endswith("$"):
+            reg_exp_end = "$"
+            path = path[:-1]
+
+        if path.startswith("/"):
+            # Resolve absolute paths.
+            resolved_path = os.path.realpath(path)
+            reg_exp = reg_exp_start + resolved_path + reg_exp_end
+            resolved_items.append(FilterItem(r.action, reg_exp))
+        else:
+            # Not an absolute path, leave it as is.
+            resolved_items.append(FilterItem(r.action, r.path))
+
+    return resolved_items
 
 
 def _stable_name(pv_name, pv_uuid):
