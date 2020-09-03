@@ -22,8 +22,10 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import collections
 import logging
 import os
+import uuid
 
 import pytest
 
@@ -36,6 +38,45 @@ FAKE_LSBLK = os.path.join(os.path.dirname(__file__), "fake-lsblk")
 FAKE_DEVICES = ("/dev/disk/by-id/lvm-pv-uuid-FAKE-UUID",)
 
 log = logging.getLogger("test")
+
+
+FakeDevice = collections.namedtuple(
+    "FakeDevice", "device, stable_link, unstable_link")
+
+
+@pytest.fixture
+def fake_device(tmpdir):
+    """
+    Creates tmp file as a fake partition and create a stable links to it,
+    simulating /dev/aaa and /dev/disk/by-id/lvm-pv-uuid-bbb.
+    """
+    stable_name = "lvm-pv-uuid-{}".format(str(uuid.uuid4()))
+    stable_link = str(tmpdir.join(stable_name))
+    device = str(tmpdir.join("sda1"))
+
+    open(device, "w").close()
+    os.symlink(device, stable_link)
+
+    return FakeDevice(device, stable_link, None)
+
+
+@pytest.fixture
+def fake_dm_device(tmpdir):
+    """
+    Creates tmp file as a fake device manged by device mapper and create a
+    stable links to it as well as unstable one, simulating /dev/dm-a
+    with links /dev/disk/by-id/lvm-pv-uuid-bbb and /dev/mapper/ccc.
+    """
+    stable_name = "lvm-pv-uuid-{}".format(str(uuid.uuid4()))
+    stable_link = str(tmpdir.join(stable_name))
+    unstable_link = str(tmpdir.join("mapped-device"))
+    device = str(tmpdir.join("dm-1"))
+
+    open(device, "w").close()
+    os.symlink(device, stable_link)
+    os.symlink(device, unstable_link)
+
+    return FakeDevice(device, stable_link, unstable_link)
 
 
 @pytest.mark.parametrize("plat,expected", [
@@ -213,3 +254,130 @@ def test_analyze_invalid_filter_empty_item():
     current_filter = ["a|invalid|", "r||"]
     with pytest.raises(lvmfilter.InvalidFilter):
         lvmfilter.analyze(current_filter, wanted_filter)
+
+
+def test_resolve_devices_stable_names(fake_device):
+    original = [
+        lvmfilter.FilterItem("a", "^{}$".format(fake_device.stable_link)),
+        lvmfilter.FilterItem("r", ".*"),
+    ]
+    resolved = [
+        lvmfilter.FilterItem("a", "^{}$".format(fake_device.device)),
+        lvmfilter.FilterItem("r", ".*"),
+    ]
+    assert lvmfilter.resolve_devices(original) == resolved
+
+
+def test_resolve_devices_wild_cards():
+    original = [
+        lvmfilter.FilterItem("a", "^/dev/sda1$"),
+        lvmfilter.FilterItem("a", "^/dev/sdb.*"),
+        lvmfilter.FilterItem("r", ".*"),
+    ]
+    resolved = [
+        lvmfilter.FilterItem("a", "^/dev/sda1$"),
+        lvmfilter.FilterItem("a", "^/dev/sdb.*"),
+        lvmfilter.FilterItem("r", ".*"),
+    ]
+    assert lvmfilter.resolve_devices(original) == resolved
+
+
+def test_resolve_devices_no_anchors():
+    original = [
+        lvmfilter.FilterItem("a", "/dev/sda1"),
+        lvmfilter.FilterItem("a", "^/dev/sdb"),
+        lvmfilter.FilterItem("r", ".*"),
+    ]
+    resolved = [
+        lvmfilter.FilterItem("a", "/dev/sda1"),
+        lvmfilter.FilterItem("a", "^/dev/sdb"),
+        lvmfilter.FilterItem("r", ".*"),
+    ]
+    assert lvmfilter.resolve_devices(original) == resolved
+
+
+def test_analyze_configure_replace_unstable_device(fake_device):
+    # Current filter is correct, but uses unstable device name.
+    wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
+    current_filter = ["a|^{}$|".format(fake_device.device), "r|.*|"]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.CONFIGURE
+    assert advice.filter == wanted_filter
+
+
+def test_analyze_configure_replace_unstable_link(fake_dm_device):
+    # Current filter is correct, but uses unstable link name to the device.
+    wanted_filter = ["a|^{}$|".format(fake_dm_device.stable_link), "r|.*|"]
+    current_filter = ["a|^{}$|".format(fake_dm_device.unstable_link), "r|.*|"]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.CONFIGURE
+    assert advice.filter == wanted_filter
+
+
+def test_analyze_recommend_replace_unstable_link_duplicate(fake_dm_device):
+    # Current filter uses unstable links name to the device and there's also
+    # another link with stable name to the same device.
+    wanted_filter = ["a|^{}$|".format(fake_dm_device.stable_link), "r|.*|"]
+    current_filter = [
+        "a|^{}$|".format(fake_dm_device.unstable_link),
+        "a|^{}$|".format(fake_dm_device.stable_link),
+        "r|.*|",
+    ]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.RECOMMEND
+    assert advice.filter == wanted_filter
+
+
+def test_analyze_recommend_replace_unstable_device_no_anchors(fake_device):
+    # Current filter is correct, but uses unstable device name and don't use
+    # anchors.
+    wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
+    current_filter = ["a|{}|".format(fake_device.device), "r|.*|"]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.RECOMMEND
+    assert advice.filter == wanted_filter
+
+
+def test_analyze_recommend_links_do_not_match(tmpdir, fake_device):
+    # Stable name is a link to different device than one in the filter.
+    other_device = str(tmpdir.join("dm-2"))
+    open(other_device, "w").close()
+
+    wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
+    current_filter = ["a|^{}$|".format(other_device), "r|.*|"]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.RECOMMEND
+    assert advice.filter == wanted_filter
+
+
+def test_analyze_recommend_reg_exp_in_path(fake_device):
+    # Current filter use unstable names and contains regular expression.
+    wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
+    current_filter = ["a|^/dev/sda*$|", "r|.*|"]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.RECOMMEND
+    assert advice.filter == wanted_filter
+
+
+def test_analyze_recommend_added_custom_unstable_name(fake_device):
+    # Current filter use unstable names and admin added another device with
+    # unstable name.
+    wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
+    current_filter = ["a|^/dev/sda1$|", "a|^/dev/sda2$|", "r|.*|"]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.RECOMMEND
+    assert advice.filter == wanted_filter
+
+
+def test_analyze_recommend_added_custom_stable_name(fake_device):
+    # Current filter use unstable names and admin added another device with
+    # stable name.
+    wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
+    current_filter = [
+        "a|^{}$|".format(fake_device.device),
+        "a|^/dev/disk/by-id/lvm-pv-uuid-2d84b62d$|",
+        "r|.*|",
+    ]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.RECOMMEND
+    assert advice.filter == wanted_filter
