@@ -1,0 +1,9 @@
+{
+   "blockdevices": [
+      {"name": "/dev/sda1", "type": "part",
+         "children": [
+            {"name": "/dev/sda", "type": "disk"}
+         ]
+      }
+   ]
+}

@@ -1,0 +1,20 @@
+{
+  "blockdevices": [
+    {
+      "name": "/dev/mapper/0QEMU_QEMU_HARDDISK_host4-data2",
+      "type": "part",
+      "children": [
+        {
+          "name": "/dev/mapper/0QEMU_QEMU_HARDDISK_host4-data",
+          "type": "mpath",
+          "children": [
+            {
+              "name": "/dev/sda",
+              "type": "disk"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

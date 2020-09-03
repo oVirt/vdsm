@@ -1,8 +1,5 @@
 #!/bin/sh
 set -e
 
-# Run the real lsblk to validate the arguments, dropping the output.
-lsblk "$@" > /dev/null
-
 # Fake the output
 cat $FAKE_STDOUT

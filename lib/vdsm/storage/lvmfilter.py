@@ -40,6 +40,7 @@ from __future__ import absolute_import
 
 import collections
 import itertools
+import json
 import logging
 import operator
 import os
@@ -170,6 +171,66 @@ def build_filter(mounts):
     items.append("r|.*|")
 
     return items
+
+
+def find_disks(devices):
+    """
+    Find the underlying disk devices of the queried lvm devices.
+    If the queried device is a multipath device, its resolution is omitted
+    from the output as we look only for disk devices not already managed by
+    multipath.
+
+    This is done by reaching to the inner children level of the following
+    lsblk output for the device:
+
+    # lsblk -o NAME,TYPE --json --inverse --paths /dev/sda2
+    {
+        "blockdevices": [
+            {"name": "/dev/sda2", "type": "part",
+                "children": [
+                    {"name": "/dev/sda", "type": "disk"}
+                ]
+            }
+        ]
+    }
+
+    Returns:
+        A set of full device names of disk typed devices.
+    """
+    log.debug("Looking up disk devices")
+
+    cmd = [
+        LSBLK,
+        # Provide output in a json dictionary format.
+        "--json",
+        # Show the underlying devices below the queried /dev/mapper device.
+        "--inverse",
+        # Use full path names for devices.
+        "--paths",
+        # output device name and type.
+        "--output", "NAME,TYPE"
+    ]
+    cmd.extend(devices)
+
+    out = _run(cmd)
+    info = json.loads(out)
+    disks = set()
+
+    _search_disks(info["blockdevices"], disks)
+    return disks
+
+
+def _search_disks(devices, disks):
+    for device in devices:
+        if device["type"] == "mpath":
+            log.debug("Skipping multipath device %s", device["name"])
+            continue
+        if device["type"] == "disk":
+            log.debug("Found disk device %s", device["name"])
+            disks.add(device["name"])
+        elif "children" in device:
+            log.debug("Searching disks under device %s", device["name"])
+            _search_disks(device["children"], disks)
 
 
 def analyze(current_filter, wanted_filter):

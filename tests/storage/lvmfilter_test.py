@@ -399,3 +399,15 @@ def test_analyze_recommend_added_custom_stable_name(fake_device):
     advice = lvmfilter.analyze(current_filter, wanted_filter)
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
+
+
+@pytest.mark.parametrize("plat,devices,expected", [
+    ("el8", FAKE_DEVICES, {"/dev/sda"}),
+    ("node", FAKE_DEVICES, set())
+])
+def test_find_disks(plat, devices, expected, monkeypatch):
+    monkeypatch.setattr(lvmfilter, "LSBLK", FAKE_LSBLK)
+    monkeypatch.setenv("FAKE_STDOUT", FAKE_LSBLK + "." + plat + ".out")
+    # See that we were able to extract only the non mpath disks
+    # child devices entries from the heirarchy.
+    assert lvmfilter.find_disks(devices) == expected
