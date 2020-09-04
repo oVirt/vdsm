@@ -3296,8 +3296,7 @@ class Vm(object):
                 continue
             if device_name is not None and device.name == device_name:
                 return device
-            if (device_path is not None and
-                    (device.get("path") == device_path)):
+            if device_path is not None and device.path == device_path:
                 return device
 
         raise LookupError(
