@@ -412,7 +412,15 @@ class LVMCache(object):
     RETRY_DELAY = 0.1
     RETRY_BACKUP_OFF = 2
 
-    def __init__(self, cmd_runner=LVMRunner()):
+    def __init__(self, cmd_runner=LVMRunner(), cache_lvs=False):
+        """
+        Arguemnts:
+            cmd_runner (LVMRunner): used to run LVM command
+            cache_lvs (bool): use LVs cache when looking up LVs. False by
+                defualt since it works only on the SPM.
+        """
+        self._runner = cmd_runner
+        self._cache_lvs = cache_lvs
         self._read_only_lock = rwlock.RWLock()
         self._read_only = False
         self._filter = None
@@ -426,7 +434,6 @@ class LVMCache(object):
         self._pvs = {}
         self._vgs = {}
         self._lvs = {}
-        self._runner = cmd_runner
         self._stats = CacheStats()
 
     @property
@@ -984,6 +991,10 @@ class LVMCache(object):
         return lvs
 
     def _lvs_needs_reload(self, vg_name):
+        # TODO: Return True only if VG has changed.
+        if not self._cache_lvs:
+            return True
+
         if vg_name not in self._freshlv:
             return True
 

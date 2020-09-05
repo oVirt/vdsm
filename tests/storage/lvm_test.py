@@ -981,9 +981,10 @@ def test_vg_invalidate_lvs(tmp_storage):
     lv = lvm.getLV(vg_name)[0]
     check_stats(hits=0, misses=1)
 
-    # Another call for getLV() will add cache hit.
+    # Accessing LVs always access storage.
+    # TODO: Use cache if VG did not change.
     lvm.getLV(vg_name)
-    check_stats(hits=1, misses=1)
+    check_stats(hits=0, misses=2)
 
     assert lvm._lvminfo._pvs == {dev: pv}
     assert lvm._lvminfo._vgs == {vg_name: vg}
@@ -996,7 +997,8 @@ def test_vg_invalidate_lvs(tmp_storage):
     assert lvm._lvminfo._vgs == {vg_name: lvm.Stale(vg_name)}
     assert lvm._lvminfo._lvs == {(vg_name, "lv1"): lvm.Stale("lv1")}
 
-    # Calling getLV() will reload lvs since there are Stubs.
+    # Accessing LVs always access storage.
+    # TODO: Use cache if VG did not change.
     clear_stats()
     lvm.getLV(vg_name)
     check_stats(hits=0, misses=1)
@@ -1491,11 +1493,12 @@ def test_lv_stale_cache_one(stale_lv):
 def test_lv_stale_cache_all(stale_lv):
     vg_name, good_lv_name, stale_lv_name = stale_lv
 
-    # Until cache is invalidated, return lvs from cache.
+    # LVs always skip the cache.
+    # TODO: Use cache if VG did not change.
 
     lv_names = {lv.name for lv in lvm.getLV(vg_name)}
     assert good_lv_name in lv_names
-    assert stale_lv_name in lv_names
+    assert stale_lv_name not in lv_names
 
 
 @requires_root
@@ -1643,7 +1646,7 @@ def test_lv_reload_error_all_stale_other_vgs(fake_devices, no_delay):
 
 def test_lv_reload_fresh_vg(fake_devices, no_delay):
     fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+    lc = lvm.LVMCache(fake_runner, cache_lvs=True)
     lv1 = make_lv("lv1", "vg1")
 
     # vg1's lvs are fresh, vg2's lvs were invalidated.
@@ -1669,7 +1672,7 @@ def test_lv_reload_fresh_vg(fake_devices, no_delay):
 
 def test_lv_reload_for_stale_vg(fake_devices, no_delay):
     fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+    lc = lvm.LVMCache(fake_runner, cache_lvs=True)
 
     assert lc._lvs_needs_reload("vg")
 
