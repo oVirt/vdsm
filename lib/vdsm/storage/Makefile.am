@@ -71,6 +71,7 @@ dist_vdsmstorage_PYTHON = \
 	misc.py \
 	monitor.py \
 	mount.py \
+	mpathconf.py \
 	mpathhealth.py \
 	multipath.py \
 	nbd.py \
