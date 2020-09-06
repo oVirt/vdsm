@@ -862,9 +862,10 @@ class Volume(APIBase):
         return self._irs.setVolumeLegality(self._sdUUID, self._spUUID,
                                            self._imgUUID, self._UUID, legality)
 
-    def measure(self, dstVolFormat):
+    def measure(self, dstVolFormat, backing_chain=True):
         return self._irs.measure(
-            self._sdUUID, self._imgUUID, self._UUID, dstVolFormat)
+            self._sdUUID, self._imgUUID, self._UUID, dstVolFormat,
+            backing=backing_chain)
 
 
 class Image(APIBase):

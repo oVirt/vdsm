@@ -3146,15 +3146,28 @@ class HSM(object):
         return dict(info=info)
 
     @public
-    def measure(self, sdUUID, imgUUID, volUUID, dest_format):
+    def measure(self, sdUUID, imgUUID, volUUID, dest_format, backing=True):
         """
         Measure the size of a volume using qemu-img
+
+        Arguments:
+            sdUUID (str): The UUID of the storage domain that owns the volume.
+            imgUUID (str): The UUID of the image contained on the volume.
+            volUUID (str): The UUID of the volume you want to get the info on.
+            dest_format (str): The output format we want to measure for
+            backing (bool): True if we want to measure the volume with its
+                        backing chain, False otherwise. (Default: True)
+
+        Returns:
+            dict containing the required size of the volume
         """
         vol = self._produce_volume(sdUUID, imgUUID, volUUID)
         result = qemuimg.measure(
             vol.getVolumePath(),
             format=sc.fmt2str(vol.getFormat()),
-            output_format=sc.fmt2str(dest_format)
+            output_format=sc.fmt2str(dest_format),
+            backing=backing,
+            is_block=vol.is_block()
         )
 
         return dict(result=result)

@@ -11579,6 +11579,12 @@ Volume.measure:
     -   description: The volume format to use for the destination volume
         name: dstVolFormat
         type: *VolumeFormat
+
+    -   defaultvalue: true
+        description: A flag indicating whether to measure a single volume
+          or the entire chain.
+        name: backing_chain
+        type: boolean
     return:
         description: Measured result
         type: *VolumeMeasureResult

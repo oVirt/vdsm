@@ -153,16 +153,25 @@ def info(image, format=None, unsafe=False, trusted_image=True):
     return info
 
 
-def measure(image, format=None, output_format=None):
+def measure(image, format=None, output_format=None, backing=True,
+            is_block=False):
     cmd = [_qemuimg.cmd, "measure", "--output", "json"]
 
-    if format:
-        cmd.extend(("-f", format))
+    if not format and not backing:
+        raise ValueError("backing=False requires specifying image format")
 
     if output_format:
         cmd.extend(("-O", output_format))
 
-    cmd.append(image)
+    protocol = "host_device" if is_block else "file"
+    node = {"file": {"driver": protocol, "filename": image}}
+    if format:
+        node["driver"] = format
+        if format == FORMAT.QCOW2 and not backing:
+            node["backing"] = None
+
+    cmd.append("json:" + json.dumps(node))
+
     out = _run_cmd(cmd)
     try:
         qemu_measure = _parse_qemuimg_json(out)
