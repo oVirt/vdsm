@@ -47,12 +47,18 @@ import os
 import re
 
 from vdsm.common import errors
+from vdsm.common import udevadm
 from vdsm.common.compat import subprocess
 
 LSBLK = "/usr/bin/lsblk"
 LVM = "/usr/sbin/lvm"
 ID_LINK_PREFIX = "/dev/disk/by-id/lvm-pv-uuid-"
 PROC_DEVICES = "/proc/devices"
+WWID_ATTRIBUTE = {
+    "scsi": "ID_SERIAL",
+    "nvme": "ID_WWN",
+    "ccw": "ID_UID"
+}
 
 log = logging.getLogger("lvmfilter")
 
@@ -93,6 +99,14 @@ class InvalidFilter(Exception):
 
 class NoDeviceMapperMajorNumber(errors.Base):
     msg = "Cannot determine major number for device-mapper devices"
+
+
+class UnsupportedSubsystemType(errors.Base):
+    msg = "{self.device!r} has unsupported subsystem type {self.type!r}"
+
+    def __init__(self, device, type):
+        self.device = device
+        self.type = type
 
 
 def dm_major_number():
@@ -251,6 +265,60 @@ def _search_disks(devices, disks):
         elif "children" in device:
             log.debug("Searching disks under device %s", device["name"])
             _search_disks(device["children"], disks)
+
+
+def find_wwids(mounts):
+    """
+    Get disks WWIDs for the devices of find_lvm_mounts(). The output
+    can be used to configure multipath blacklist for disk devices used
+    for locally mounted LVs.
+
+    Returns:
+        Set of WWID strings.
+    """
+    devices = set()
+    for mnt in mounts:
+        devices.update(mnt.devices)
+
+    wwids = set()
+    for disk in find_disks(devices):
+        try:
+            wwid = _resolve_wwid(disk)
+        except UnsupportedSubsystemType as e:
+            log.debug(e)
+            continue
+
+        if not wwid:
+            log.debug("No WWID was found for disk %s", disk)
+            continue
+        wwids.add(wwid)
+
+    return wwids
+
+
+def _resolve_wwid(disk):
+    """
+    Resolve WWID for a given disk device. Resolution is done by first looking
+    for the disk subsystem type and then retrieving the corresponding value
+    for the right key in the output of 'udevadm info <device-name>' as
+    different subsystem type devices WWIDs are identified by multipath by
+    different keys in the info output; multipath uses ID_SERIAL for SCSI
+    devices, ID_UID for DASD devices, and ID_WWN for NVMe devices.
+
+    Returns:
+        WWID string.
+    """
+    path = "/sys/block/{}/device/subsystem".format(os.path.basename(disk))
+    device_type = os.path.basename(os.path.realpath(path))
+
+    attr = WWID_ATTRIBUTE.get(device_type)
+    if not attr:
+        raise UnsupportedSubsystemType(disk, device_type)
+
+    out = udevadm.info(disk)
+    match = re.search(r"^{}=(.+)$".format(attr), out, re.MULTILINE)
+    if match:
+        return match.group(1)
 
 
 def analyze(current_filter, wanted_filter):

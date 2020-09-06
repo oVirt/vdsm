@@ -29,6 +29,7 @@ import uuid
 
 import pytest
 
+from vdsm.common import udevadm
 from vdsm.storage import lvmfilter
 from vdsm.storage.lvmfilter import MountInfo
 
@@ -431,3 +432,36 @@ def test_find_disks(plat, devices, expected, monkeypatch):
     # See that we were able to extract only the non mpath disks
     # child devices entries from the heirarchy.
     assert lvmfilter.find_disks(devices) == expected
+
+
+def test_find_wwids(monkeypatch):
+    disks = {
+        '/dev/sda' : {
+            'name': '/dev/sda',
+            'type': 'disk'
+        }
+    }
+    monkeypatch.setattr(lvmfilter, "find_disks", lambda x: disks)
+
+    mounts = [
+        MountInfo("/dev/mapper/vg0-lv_root",
+                  "/",
+                  ["/dev/sda2"]),
+    ]
+
+    udevadm_info = """\
+ID_PART_TABLE_TYPE=dos
+ID_PART_TABLE_UUID=a11738e9
+ID_PATH=pci-0000:00:01.1-ata-2
+ID_PATH_TAG=pci-0000_00_01_1-ata-2
+ID_REVISION=2.5+
+ID_SCSI=1
+ID_SCSI_INQUIRY=1
+ID_SERIAL=QEMU_HARDDISK_QM00003
+ID_SERIAL_SHORT=QM00003
+ID_TYPE=disk
+ID_VENDOR=ATA
+ID_VENDOR_ENC=ATA\x20\x20\x20\x20\x20
+"""
+    monkeypatch.setattr(udevadm, "info", lambda x: udevadm_info)
+    assert lvmfilter.find_wwids(mounts) == {'QEMU_HARDDISK_QM00003'}

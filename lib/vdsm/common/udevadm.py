@@ -100,7 +100,12 @@ def trigger(attr_matches=(), property_matches=(), subsystem_matches=()):
     _run_command(cmd)
 
 
+def info(device):
+    out = _run_command(['info', '--query=property', device])
+    return out.decode('utf-8')
+
+
 def _run_command(args):
     cmd = [_UDEVADM.cmd]
     cmd.extend(args)
-    commands.run(cmd)
+    return commands.run(cmd)
