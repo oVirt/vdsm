@@ -22,9 +22,11 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
+import textwrap
 
 from vdsm.storage import lvmconf
 from vdsm.storage import lvmfilter
+from vdsm.storage import mpathconf
 
 from . import expose
 from . import common
@@ -62,11 +64,18 @@ def main(*args):
 
     mounts = lvmfilter.find_lvm_mounts()
     wanted_filter = lvmfilter.build_filter(mounts)
+    wanted_wwids = lvmfilter.find_wwids(mounts)
 
     with lvmconf.LVMConfig() as config:
         current_filter = config.getlist("devices", "filter")
 
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_wwids = mpathconf.read_blacklist()
+
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_wwids,
+        wanted_wwids)
 
     # This is the expected condition on a correctly configured host.
     if advice.action == lvmfilter.UNNEEDED:
@@ -100,11 +109,20 @@ device to the volume group, you will need to edit the filter manually.
         print("  " + lvmfilter.format_option(current_filter))
         print()
 
+    if advice.wwids:
+        print("To use the recommended filter we need to add multipath")
+        print("blacklist in /etc/multipath/conf.d/vdsm_blacklist.conf:")
+        print()
+        print(textwrap.indent(mpathconf.format_blacklist(advice.wwids), "  "))
+        print()
+
     if advice.action == lvmfilter.CONFIGURE:
 
         if not args.assume_yes:
-            if not common.confirm("Configure LVM filter? [yes,NO] "):
+            if not common.confirm("Configure host? [yes,NO] "):
                 return NEEDS_CONFIG
+
+        mpathconf.configure_blacklist(advice.wwids)
 
         with lvmconf.LVMConfig() as config:
             config.setlist("devices", "filter", advice.filter)
@@ -113,7 +131,7 @@ device to the volume group, you will need to edit the filter manually.
         print("""\
 Configuration completed successfully!
 
-Please reboot to verify the LVM configuration.
+Please reboot to verify the configuration.
 """)
 
     elif advice.action == lvmfilter.RECOMMEND:
@@ -125,7 +143,10 @@ Vdsm cannot configure the filter automatically.
 Please edit /etc/lvm/lvm.conf and set the 'filter' option in the
 'devices' section to the recommended value.
 
-It is recommended to reboot after changing LVM filter.
+Make sure /etc/multipath/conf.d/vdsm_blacklist.conf is set with the
+recommended 'blacklist' section.
+
+It is recommended to reboot to verify the new configuration.
 """)
         return CANNOT_CONFIG
 

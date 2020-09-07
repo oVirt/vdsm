@@ -65,7 +65,7 @@ log = logging.getLogger("lvmfilter")
 
 MountInfo = collections.namedtuple("MountInfo", "lv,mountpoint,devices")
 FilterItem = collections.namedtuple("FilterItem", "action,path")
-Advice = collections.namedtuple("Advice", "action,filter")
+Advice = collections.namedtuple("Advice", "action,filter,wwids")
 
 # We use this tag to detect a mounted ovirt storage domain - typically the
 # master lv of a block storage domain.
@@ -321,7 +321,7 @@ def _resolve_wwid(disk):
         return match.group(1)
 
 
-def analyze(current_filter, wanted_filter):
+def analyze(current_filter, wanted_filter, current_wwids, wanted_wwids):
     """
     Analyze LVM filter wanted and current configuration, and advice how to
     proceed.
@@ -332,11 +332,14 @@ def analyze(current_filter, wanted_filter):
 
     # This is the expected condition when running on a host for the first time.
     if not current_filter:
-        return Advice(CONFIGURE, wanted_filter)
+        return Advice(CONFIGURE, wanted_filter, wanted_wwids)
 
     if current_filter == wanted_filter:
         # Same filter, ignoring whitespace and quoting difference.
-        return Advice(UNNEEDED, None)
+        if current_wwids != wanted_wwids:
+            # But we still need to update the blacklist.
+            return Advice(CONFIGURE, wanted_filter, wanted_wwids)
+        return Advice(UNNEEDED, None, None)
 
     # Is this a syntax difference?
     wanted_items = [parse_item(r) for r in wanted_filter]
@@ -348,7 +351,10 @@ def analyze(current_filter, wanted_filter):
     if current_items == wanted_items:
         # Same filter, different delimiter syntax. For example:
         # "a|^/dev/sda2$|" == "a/^dev/sda2$/".
-        return Advice(UNNEEDED, None)
+        if current_wwids != wanted_wwids:
+            # But we still need to update the blacklist.
+            return Advice(CONFIGURE, wanted_filter, wanted_wwids)
+        return Advice(UNNEEDED, None, None)
 
     # Is this order difference?
     wanted_items = normalize_items(wanted_items)
@@ -356,7 +362,10 @@ def analyze(current_filter, wanted_filter):
 
     if current_items == wanted_items:
         # This filters are the same, using different order.
-        return Advice(UNNEEDED, None)
+        if current_wwids != wanted_wwids:
+            # But we still need to update the blacklist.
+            return Advice(CONFIGURE, wanted_filter, wanted_wwids)
+        return Advice(UNNEEDED, None, None)
 
     # Is filter using device names (.e.g /dev/sda2) instead of stable
     # names (/dev/disk/by-id/...)?
@@ -366,12 +375,12 @@ def analyze(current_filter, wanted_filter):
     wanted_resolved = resolve_devices(wanted_items)
 
     if current_resolved == wanted_resolved:
-        return Advice(CONFIGURE, wanted_filter)
+        return Advice(CONFIGURE, wanted_filter, wanted_wwids)
 
     # The current filter intent is different. We take the safe way - the user
     # knows better. We will recommend to configure our filter, but the user
     # will have to do this, or maybe contact support.
-    return Advice(RECOMMEND, wanted_filter)
+    return Advice(RECOMMEND, wanted_filter, wanted_wwids)
 
 
 def normalize_items(items):

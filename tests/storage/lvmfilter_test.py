@@ -165,29 +165,63 @@ def test_real_build_filter():
 
 
 def test_analyze_no_filter():
-    # Trivial case: host does not have any filter.
+    # Trivial case: host does not have any filter or blacklist.
     wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
     current_filter = None
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = None
+    wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.CONFIGURE
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_configured():
     # Trivial case: host was already configured, no action needed.
     current_filter = wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.UNNEEDED
     assert advice.filter is None
+    assert advice.wwids is None
+
+
+def test_analyze_missing_blacklist():
+    # host has right filter configured, but no blacklist to match.
+    current_filter = wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
+    current_blacklist = None
+    wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
+    assert advice.action == lvmfilter.CONFIGURE
+    assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_different_order():
     # Same filter, order of devices does not matter.
     wanted_filter = ["a|^/dev/sda2$|", "a|^/dev/sdb2$|", "r|.*|"]
     current_filter = ["a|^/dev/sdb2$|", "a|^/dev/sda2$|", "r|.*|"]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1", "wwid2"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.UNNEEDED
     assert advice.filter is None
+    assert advice.wwids is None
 
 
 def test_analyze_no_anchorces():
@@ -195,9 +229,15 @@ def test_analyze_no_anchorces():
     # general, but we like to have a more strict filter.
     wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
     current_filter = ["a|/dev/sda2|", "r|.*|"]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_missing_device():
@@ -205,9 +245,15 @@ def test_analyze_missing_device():
     # will have to resolve this.
     wanted_filter = ["a|^/dev/sda2$|", "a|^/dev/sdb2$|", "r|.*|"]
     current_filter = ["a|^/dev/sda2$|", "r|.*|"]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1", "wwid2"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_unknown_device():
@@ -216,9 +262,15 @@ def test_analyze_unknown_device():
     # better.
     wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
     current_filter = ["a|^/dev/sda2$|", "a|^/dev/sdb2$|", "r|.*|"]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_extra_reject():
@@ -226,9 +278,15 @@ def test_analyze_extra_reject():
     # knows better.
     wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
     current_filter = ["a|^/dev/sda2$|", "r|.*|", "r|/dev/foo|"]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_invalid_filter_no_action():
@@ -236,8 +294,13 @@ def test_analyze_invalid_filter_no_action():
     # can configure a correct filter.
     wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
     current_filter = ["invalid", "filter"]
+    current_blacklist = wanted_blacklist = {"wwid1"}
     with pytest.raises(lvmfilter.InvalidFilter):
-        lvmfilter.analyze(current_filter, wanted_filter)
+        lvmfilter.analyze(
+            current_filter,
+            wanted_filter,
+            current_blacklist,
+            wanted_blacklist)
 
 
 def test_analyze_invalid_filter_no_delimeter():
@@ -245,8 +308,13 @@ def test_analyze_invalid_filter_no_delimeter():
     # can configure a correct filter.
     wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
     current_filter = ["a|invalid", "r|filter/"]
+    current_blacklist = wanted_blacklist = {"wwid1"}
     with pytest.raises(lvmfilter.InvalidFilter):
-        lvmfilter.analyze(current_filter, wanted_filter)
+        lvmfilter.analyze(
+            current_filter,
+            wanted_filter,
+            current_blacklist,
+            wanted_blacklist)
 
 
 def test_analyze_invalid_filter_empty_item():
@@ -254,8 +322,13 @@ def test_analyze_invalid_filter_empty_item():
     # can configure a correct filter.
     wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
     current_filter = ["a|invalid|", "r||"]
+    current_blacklist = wanted_blacklist = {"wwid1"}
     with pytest.raises(lvmfilter.InvalidFilter):
-        lvmfilter.analyze(current_filter, wanted_filter)
+        lvmfilter.analyze(
+            current_filter,
+            wanted_filter,
+            current_blacklist,
+            wanted_blacklist)
 
 
 def test_resolve_devices_stable_names(fake_device):
@@ -302,18 +375,30 @@ def test_analyze_configure_replace_unstable_device(fake_device):
     # Current filter is correct, but uses unstable device name.
     wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
     current_filter = ["a|^{}$|".format(fake_device.device), "r|.*|"]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.CONFIGURE
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_configure_replace_unstable_link(fake_dm_device):
     # Current filter is correct, but uses unstable link name to the device.
     wanted_filter = ["a|^{}$|".format(fake_dm_device.stable_link), "r|.*|"]
     current_filter = ["a|^{}$|".format(fake_dm_device.unstable_link), "r|.*|"]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.CONFIGURE
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_configure_different_item_order(fake_device, fake_dm_device):
@@ -329,9 +414,15 @@ def test_analyze_configure_different_item_order(fake_device, fake_dm_device):
         "a|^{}$|".format(fake_device.device),
         "r|.*|",
     ]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1", "wwid2"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.CONFIGURE
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_recommend_replace_unstable_link_duplicate(fake_dm_device):
@@ -343,9 +434,15 @@ def test_analyze_recommend_replace_unstable_link_duplicate(fake_dm_device):
         "a|^{}$|".format(fake_dm_device.stable_link),
         "r|.*|",
     ]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_recommend_replace_unstable_device_no_anchors(fake_device):
@@ -353,9 +450,15 @@ def test_analyze_recommend_replace_unstable_device_no_anchors(fake_device):
     # anchors.
     wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
     current_filter = ["a|{}|".format(fake_device.device), "r|.*|"]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_recommend_links_do_not_match(tmpdir, fake_device):
@@ -365,18 +468,30 @@ def test_analyze_recommend_links_do_not_match(tmpdir, fake_device):
 
     wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
     current_filter = ["a|^{}$|".format(other_device), "r|.*|"]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_recommend_reg_exp_in_path(fake_device):
     # Current filter use unstable names and contains regular expression.
     wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
     current_filter = ["a|^/dev/sda*$|", "r|.*|"]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_recommend_added_custom_unstable_name(fake_device):
@@ -384,9 +499,15 @@ def test_analyze_recommend_added_custom_unstable_name(fake_device):
     # unstable name.
     wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
     current_filter = ["a|^/dev/sda1$|", "a|^/dev/sda2$|", "r|.*|"]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 def test_analyze_recommend_added_custom_stable_name(fake_device):
@@ -398,9 +519,15 @@ def test_analyze_recommend_added_custom_stable_name(fake_device):
         "a|^/dev/disk/by-id/lvm-pv-uuid-2d84b62d$|",
         "r|.*|",
     ]
-    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    current_blacklist = wanted_blacklist = {"wwid1"}
+    advice = lvmfilter.analyze(
+        current_filter,
+        wanted_filter,
+        current_blacklist,
+        wanted_blacklist)
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
+    assert advice.wwids == wanted_blacklist
 
 
 @pytest.mark.parametrize("device,expected", [
