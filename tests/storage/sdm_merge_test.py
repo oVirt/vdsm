@@ -39,6 +39,8 @@ from storage.storagetestlib import (
 )
 
 from . qemuio import verify_pattern
+from . marks import requires_bitmaps_support
+
 
 from testlib import expandPermutations, make_uuid, permutations
 from testlib import VdsmTestCase
@@ -74,9 +76,11 @@ class TestMergeSubchain(VdsmTestCase):
         jobs._clear()
 
     @contextmanager
-    def make_env(self, sd_type, chain_len=2):
+    def make_env(
+            self, sd_type, chain_len=2,
+            base_format=sc.RAW_FORMAT, qcow2_compat='0.10'):
         size = MiB
-        base_fmt = sc.RAW_FORMAT
+        base_fmt = base_format
         with fake_env(sd_type) as env:
             rm = FakeResourceManager()
             with MonkeyPatchScope([
@@ -86,7 +90,12 @@ class TestMergeSubchain(VdsmTestCase):
                 (blockVolume, 'rm', rm),
                 (image, 'Image', FakeImage),
             ]):
-                env.chain = make_qemu_chain(env, size, base_fmt, chain_len)
+                env.chain = make_qemu_chain(
+                    env,
+                    size,
+                    base_fmt,
+                    chain_len,
+                    qcow2_compat=qcow2_compat)
 
                 def fake_chain(sdUUID, imgUUID, volUUID=None):
                     return env.chain
@@ -219,3 +228,70 @@ class TestMergeSubchain(VdsmTestCase):
             verify_pattern(base_vol.volumePath, qemuimg.FORMAT.RAW,
                            offset=offset, len=KiB, pattern=pattern)
             self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 0)
+
+    @requires_bitmaps_support
+    @permutations([
+        # sd_type, chain_len, base_index, top_index
+        ('file', 4, 0, 1),
+        ('block', 2, 0, 1),
+        ('file', 3, 1, 2),
+        ('block', 3, 1, 2),
+    ])
+    def test_merge_subchain_with_bitmaps(
+            self, sd_type, chain_len, base_index, top_index):
+        job_id = make_uuid()
+        bitmap1_name = 'bitmap1'
+        bitmap2_name = 'bitmap2'
+        with self.make_env(
+                sd_type=sd_type,
+                chain_len=chain_len,
+                base_format=sc.COW_FORMAT,
+                qcow2_compat='1.1') as env:
+            base_vol = env.chain[base_index]
+            top_vol = env.chain[top_index]
+            # Add new bitmap to base_vol and top_vol
+            for vol in [base_vol, top_vol]:
+                op = qemuimg.bitmap_add(
+                    vol.getVolumePath(),
+                    bitmap1_name,
+                )
+                op.run()
+            # Add another bitmap to top_vol only
+            # to test add + merge
+            op = qemuimg.bitmap_add(
+                top_vol.getVolumePath(),
+                bitmap2_name,
+            )
+            op.run()
+
+            # Writing data to the chain to modify the bitmaps
+            write_qemu_chain(env.chain)
+
+            subchain_info = dict(sd_id=base_vol.sdUUID,
+                                 img_id=base_vol.imgUUID,
+                                 base_id=base_vol.volUUID,
+                                 top_id=top_vol.volUUID,
+                                 base_generation=0)
+            subchain = merge.SubchainInfo(subchain_info, 0)
+
+            job = api_merge.Job(job_id, subchain, merge_bitmaps=True)
+            job.run()
+
+            self.assertEqual(job.status, jobs.STATUS.DONE)
+
+            info = qemuimg.info(base_vol.getVolumePath())
+            # TODO: we should improve this test by adding a
+            # a verification to the extents that are reported
+            # by qemu-nbd.
+            assert info['bitmaps'] == [
+                {
+                    "flags": ["auto"],
+                    "name": bitmap1_name,
+                    "granularity": 65536
+                },
+                {
+                    "flags": ["auto"],
+                    "name": bitmap2_name,
+                    "granularity": 65536
+                },
+            ]

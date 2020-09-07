@@ -516,3 +516,8 @@ class NoSuchCheckpointError(ContextException):
 class AddBitmapError(ContextException):
     code = 1620
     message = "Failed to add bitmap"
+
+
+class MergeBitmapError(ContextException):
+    code = 1621
+    message = "Failed to merge bitmaps"

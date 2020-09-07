@@ -118,3 +118,123 @@ def test_add_bitmap_failed(monkeypatch, vol_chain):
     monkeypatch.setattr(qemuimg, "bitmap_add", qemuimg_failure)
     with pytest.raises(exception.AddBitmapError):
         bitmaps.add_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
+
+
+# merge_bitmaps tests
+
+@requires_bitmaps_support
+def test_merge_only_valid_bitmaps(vol_chain):
+    bitmap = 'bitmap'
+
+    # Add new bitmap to base volume
+    op = qemuimg.bitmap_add(vol_chain.base_vol, bitmap)
+    op.run()
+
+    # Add invalid bitmap to top volume
+    op = qemuimg.bitmap_add(
+        vol_chain.top_vol,
+        'disabled',
+        enable=False
+    )
+    op.run()
+
+    # Add new bitmap to top volume
+    op = qemuimg.bitmap_add(vol_chain.top_vol, bitmap)
+    op.run()
+
+    # merge bitmaps from top volume to base volume
+    bitmaps.merge_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
+
+    info = qemuimg.info(vol_chain.base_vol)
+    assert info['bitmaps'] == [
+        {
+            "flags": ["auto"],
+            "name": bitmap,
+            "granularity": 65536
+        },
+    ]
+
+
+@requires_bitmaps_support
+def test_no_bitmaps_to_merge(vol_chain):
+    # Merge bitmaps from base volume to top volume
+    bitmaps.merge_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
+
+    info = qemuimg.info(vol_chain.base_vol)
+    assert 'bitmaps' not in info
+
+
+@requires_bitmaps_support
+def test_merge_bitmaps_failed(monkeypatch, vol_chain):
+    bitmap = 'bitmap'
+
+    # Add new bitmap to top volume
+    op = qemuimg.bitmap_add(vol_chain.top_vol, bitmap)
+    op.run()
+
+    monkeypatch.setattr(qemuimg, "bitmap_merge", qemuimg_failure)
+    with pytest.raises(exception.MergeBitmapError):
+        bitmaps.merge_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
+
+    info = qemuimg.info(vol_chain.base_vol)
+    # TODO: test that this bitmap is empty
+    assert info['bitmaps'] == [
+        {
+            "flags": ['auto'],
+            "name": bitmap,
+            "granularity": 65536
+        },
+    ]
+
+
+@requires_bitmaps_support
+def test_merge_bitmaps_failed_to_add_bitmap(
+        monkeypatch, vol_chain):
+    bitmap = 'bitmap'
+
+    # Add new bitmap to top volume
+    op = qemuimg.bitmap_add(vol_chain.top_vol, bitmap)
+    op.run()
+
+    monkeypatch.setattr(qemuimg, "bitmap_add", qemuimg_failure)
+    with pytest.raises(exception.AddBitmapError):
+        bitmaps.merge_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
+
+    info = qemuimg.info(vol_chain.base_vol)
+    assert 'bitmaps' not in info
+
+
+@requires_bitmaps_support
+def test_skip_holes_during_merge_bitmaps(tmp_mount, vol_chain):
+    virtual_size = MiB
+    bitmap = 'bitmap'
+
+    # Create base parent volume
+    base_parent_vol = os.path.join(tmp_mount.path, 'base_parent.img')
+    op = qemuimg.create(
+        base_parent_vol,
+        size=virtual_size,
+        format=qemuimg.FORMAT.QCOW2,
+        qcow2Compat='1.1'
+    )
+    op.run()
+
+    # Rebase the volume chain on top of base parent volume
+    op = qemuimg.rebase(
+        vol_chain.base_vol, base_parent_vol, unsafe=True)
+    op.run()
+
+    # Add new bitmap to base parent volume
+    op = qemuimg.bitmap_add(base_parent_vol, bitmap)
+    op.run()
+    # Add new bitmap to top volume, base volume is missing that
+    # bitmap so there is a hole
+    op = qemuimg.bitmap_add(vol_chain.top_vol, bitmap)
+    op.run()
+
+    bitmaps.merge_bitmaps(
+        vol_chain.base_vol, vol_chain.top_vol,
+        base_parent_path=base_parent_vol)
+
+    info = qemuimg.info(vol_chain.base_vol)
+    assert 'bitmaps' not in info

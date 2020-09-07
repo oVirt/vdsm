@@ -59,6 +59,53 @@ def add_bitmaps(src_path, dst_path):
         _add_bitmap(dst_path, name, bitmap['granularity'])
 
 
+def merge_bitmaps(base_path, top_path, base_parent_path=None):
+    """
+    Add and merge the bitmaps from top volume that don't exist
+    on the base volume while skipping invalid/disabled bitmaps.
+
+    Should be used only after the block-commit operation ends,
+    and all the bitmaps that exist both on the top volume
+    and on the base volume were already merged by the block-commit
+    operation.
+
+    Arguments:
+        base_path (string): Path to the base volume
+        top_path (string): Path to the top volume
+        base_parent_path (string): Path to the parent of the
+            base volume
+
+    Returns:
+    """
+    valid_top_bitmaps = _query_bitmaps(top_path, filter=_valid)
+    base_bitmaps = _query_bitmaps(base_path)
+    if base_parent_path:
+        parent_bitmaps = _query_bitmaps(base_parent_path)
+    else:
+        parent_bitmaps = {}
+
+    # Add the missing bitmaps in base volume as disabled bitmaps
+    for name, bitmap in valid_top_bitmaps.items():
+        # If the bitmap exists on the base volume parent and not on the
+        # base volume itself, there is a hole in the bitmaps chain and
+        # the bitmap shouldn't be used.
+        if name not in base_bitmaps:
+            if name in parent_bitmaps:
+                log.warning(
+                    "Bitmap %s doesn't exist on base volume %r but "
+                    "exists on base volume parent %r, bitmaps chain "
+                    "isn't valid", name, base_path, base_parent_path)
+                continue
+
+            _add_bitmap(base_path, name, bitmap['granularity'])
+
+        # Merge bitmaps content from top_vol to the base_vol. If the
+        # bitmap content is already merged by the block-commit or by
+        # a previous merge_bitmaps() call,then this will be a no-op
+        # for this bitmap.
+        _merge_bitmap(top_path, base_path, name)
+
+
 def _add_bitmap(vol_path, bitmap, granularity, enable=True):
     log.info("Add bitmap %s to %r", bitmap, vol_path)
 
@@ -75,6 +122,28 @@ def _add_bitmap(vol_path, bitmap, granularity, enable=True):
             reason="Failed to add bitmap: {}".format(e),
             bitmap=bitmap,
             dst_vol_path=vol_path)
+
+
+def _merge_bitmap(src_path, dst_path, bitmap):
+    log.info(
+        "Merge bitmap %s from %r to %r",
+        bitmap, src_path, dst_path)
+
+    try:
+        op = qemuimg.bitmap_merge(
+            src_image=src_path,
+            src_bitmap=bitmap,
+            src_fmt=qemuimg.FORMAT.QCOW2,
+            dst_image=dst_path,
+            dst_bitmap=bitmap
+        )
+        op.run()
+    except cmdutils.Error as e:
+        raise exception.MergeBitmapError(
+            reason="Failed to merge bitmap: {}".format(e),
+            bitmap=bitmap,
+            src_vol_path=src_path,
+            dst_vol_path=dst_path)
 
 
 def _query_bitmaps(vol_path, filter=None):
