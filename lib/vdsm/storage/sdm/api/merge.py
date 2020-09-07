@@ -40,11 +40,12 @@ from . import base
 class Job(base.Job):
     log = logging.getLogger('storage.sdm.merge')
 
-    def __init__(self, job_id, subchain):
+    def __init__(self, job_id, subchain, merge_bitmaps=False):
         super(Job, self).__init__(job_id, 'merge_subchain',
                                   subchain.host_id)
         self.subchain = subchain
         self.operation = None
+        self.merge_bitmaps = merge_bitmaps
 
     @property
     def progress(self):

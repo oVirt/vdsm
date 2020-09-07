@@ -1707,8 +1707,9 @@ class SDM(APIBase):
     def amend_volume(self, job_id, vol_info, qcow2_attr):
         return self._irs.sdm_amend_volume(job_id, vol_info, qcow2_attr)
 
-    def merge(self, job_id, subchain_info):
-        return self._irs.sdm_merge(job_id, subchain_info)
+    def merge(self, job_id, subchain_info, merge_bitmaps=False):
+        return self._irs.sdm_merge(
+            job_id, subchain_info, merge_bitmaps=merge_bitmaps)
 
     def move_domain_device(self, job_id, move_params):
         return self._irs.sdm_move_domain_device(job_id, move_params)

@@ -3698,9 +3698,9 @@ class HSM(object):
         self.sdm_schedule(job)
 
     @public
-    def sdm_merge(self, job_id, subchain_info):
+    def sdm_merge(self, job_id, subchain_info, merge_bitmaps=False):
         subchain = merge.SubchainInfo(subchain_info, self._pool.id)
-        job = api_merge.Job(job_id, subchain)
+        job = api_merge.Job(job_id, subchain, merge_bitmaps=merge_bitmaps)
         self.sdm_schedule(job)
 
     @public

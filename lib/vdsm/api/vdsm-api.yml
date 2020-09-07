@@ -11885,6 +11885,14 @@ SDM.merge:
         name: subchain_info
         type: *SubchainInfo
 
+    -   defaultvalue: false
+        description: if specified, merge the bitmaps from the removed volume
+            to the base volume. Allowed only when merging into a cow-sparse
+            volume.
+        name: merge_bitmaps
+        type: boolean
+        added: '4.4'
+
 SDM.amend_volume:
     added: '4.1'
     description: Amend the volume with specific parameters described
