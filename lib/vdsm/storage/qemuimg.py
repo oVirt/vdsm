@@ -485,6 +485,21 @@ def bitmap_remove(image, bitmap):
     return operation.Command(cmd, cwd=cwdPath)
 
 
+def bitmap_merge(src_image, src_bitmap, src_fmt, dst_image, dst_bitmap):
+    cmd = [
+        _qemuimg.cmd,
+        "bitmap",
+        "--merge", src_bitmap,
+        "-F", src_fmt,
+        "-b", src_image,
+        dst_image,
+        dst_bitmap,
+    ]
+
+    cwdPath = os.path.dirname(src_image)
+    return operation.Command(cmd, cwd=cwdPath)
+
+
 # TODO: remove when qemu-kvm >= 4.2.0-25 required
 @cache.memoized
 def bitmaps_supported():

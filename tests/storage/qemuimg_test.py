@@ -1479,6 +1479,71 @@ class TestBitmaps:
             },
         ]
 
+    @requires_bitmaps_support
+    def test_merge_bitmaps(self, tmp_mount):
+        virtual_size = MiB
+        base_bitmap = 'base_bitmap'
+        top_bitmap = 'top_bitmap'
+
+        # Create base file
+        base_path = os.path.join(tmp_mount.path, 'base.img')
+        op = qemuimg.create(
+            base_path,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+
+        # Add new bitmap to base
+        op = qemuimg.bitmap_add(
+            base_path,
+            base_bitmap,
+        )
+        op.run()
+
+        # Create top file
+        top_path = os.path.join(tmp_mount.path, 'src_top.img')
+        op = qemuimg.create(
+            top_path,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1',
+            backing=base_path,
+            backingFormat='qcow2'
+        )
+        op.run()
+
+        # Add new bitmap to top
+        op = qemuimg.bitmap_add(
+            top_path,
+            top_bitmap,
+        )
+        op.run()
+
+        # Merge bitmaps from top to base
+        op = qemuimg.bitmap_merge(
+            top_path,
+            top_bitmap,
+            'qcow2',
+            base_path,
+            base_bitmap
+        )
+        op.run()
+
+        # TODO: This assert does not test the merge data
+        # itself, only the bitmaps metadata.
+        # We need to find a good way to test the
+        # bitmap internals.
+        info = qemuimg.info(base_path)
+        assert info['bitmaps'] == [
+            {
+                "flags": ["auto"],
+                "name": base_bitmap,
+                "granularity": 65536
+            },
+        ]
+
 
 def converted_size(filename, compat):
     converted = convert_to_qcow2(filename, compat=compat)
