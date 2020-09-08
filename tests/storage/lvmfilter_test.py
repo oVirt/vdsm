@@ -34,7 +34,8 @@ from vdsm.storage.lvmfilter import MountInfo
 
 from . marks import requires_root
 
-FAKE_LSBLK = os.path.join(os.path.dirname(__file__), "fake-lsblk")
+TEST_DIR = os.path.dirname(__file__)
+FAKE_LSBLK = os.path.join(TEST_DIR, "fake-lsblk")
 FAKE_DEVICES = ("/dev/disk/by-id/lvm-pv-uuid-FAKE-UUID",)
 
 log = logging.getLogger("test")
@@ -381,3 +382,22 @@ def test_analyze_recommend_added_custom_stable_name(fake_device):
     advice = lvmfilter.analyze(current_filter, wanted_filter)
     assert advice.action == lvmfilter.RECOMMEND
     assert advice.filter == wanted_filter
+
+
+@pytest.mark.parametrize("device,expected", [
+    ("fake-devices-standard", "253"),
+    ("fake-devices-non-standard", "252"),
+])
+def test_dm_major_number(monkeypatch, device, expected):
+    monkeypatch.setattr(
+        lvmfilter, 'PROC_DEVICES', os.path.join(TEST_DIR, device))
+    assert lvmfilter.dm_major_number() == expected
+
+
+def test_dm_major_number_wrong_file_content(monkeypatch):
+    monkeypatch.setattr(
+        lvmfilter,
+        'PROC_DEVICES',
+        os.path.join(TEST_DIR, "fake-lsblk.fedora.out"))
+    with pytest.raises(lvmfilter.NoDeviceMapperMajorNumber):
+        lvmfilter.dm_major_number()
