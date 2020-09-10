@@ -337,7 +337,7 @@ def vg_devices(vg_name):
 def resolve_devices(filter_items):
     """
     Resolves absolute paths in the filter items if possible, otherwise keeps
-    paths intact.
+    paths intact. Resolved paths are returned in normalized order.
 
     Example input:
 
@@ -379,7 +379,7 @@ def resolve_devices(filter_items):
             # Not an absolute path, leave it as is.
             resolved_items.append(FilterItem(r.action, r.path))
 
-    return resolved_items
+    return normalize_items(resolved_items)
 
 
 def _stable_name(pv_name, pv_uuid):
