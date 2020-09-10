@@ -315,6 +315,24 @@ def test_analyze_configure_replace_unstable_link(fake_dm_device):
     assert advice.filter == wanted_filter
 
 
+def test_analyze_configure_different_item_order(fake_device, fake_dm_device):
+    # Current filter is correct, but has different order of items than
+    # recommended filter.
+    wanted_filter = [
+        "a|^{}$|".format(fake_device.stable_link),
+        "a|^{}$|".format(fake_dm_device.stable_link),
+        "r|.*|",
+    ]
+    current_filter = [
+        "a|^{}$|".format(fake_dm_device.unstable_link),
+        "a|^{}$|".format(fake_device.device),
+        "r|.*|",
+    ]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.CONFIGURE
+    assert advice.filter == wanted_filter
+
+
 def test_analyze_recommend_replace_unstable_link_duplicate(fake_dm_device):
     # Current filter uses unstable links name to the device and there's also
     # another link with stable name to the same device.
