@@ -61,7 +61,6 @@ _FS_DISK_FIELD = 'disk'
 _FS_DISK_DEVICE_FIELD = 'dev'
 _FS_DISK_SERIAL_FIELD = 'serial'
 
-_GUEST_OS_LINUX = 'linux'
 _GUEST_OS_WINDOWS = 'mswindows'
 
 _WORKERS = config.getint('guest_agent', 'periodic_workers')
@@ -411,10 +410,10 @@ class QemuGuestAgentPoller(object):
                 guest_info.update(
                     guestagenthelpers.translate_windows_osinfo(info))
             else:
-                self.fake_apps_list(
-                    vm.id, info['os.id'], info['os.kernel-release'])
                 guest_info.update(
                     guestagenthelpers.translate_linux_osinfo(info))
+            self.fake_apps_list(
+                vm.id, info['os.id'], info['os.kernel-release'])
         # Timezone
         if 'timezone.offset' in info:
             guest_info['guestTimezone'] = {
@@ -467,25 +466,15 @@ class QemuGuestAgentPoller(object):
 
     def fake_apps_list(self, vm_id, os_id=None, kernel_release=None):
         """ Create fake appsList entry in guest info """
-        guest_info = {}
-        if os_id is not None:
-            if os_id == _GUEST_OS_WINDOWS:
-                guest_info['appsList'] = (
-                    'QEMU guest agent',
-                )
-            else:
-                caps = self.get_caps(vm_id)
-                if caps is not None and caps['version'] is not None:
-                    guest_info['appsList'] = (
-                        'kernel-%s' % kernel_release,
-                        'qemu-guest-agent-%s' % caps['version'],
-                    )
-        else:
-            caps = self.get_caps(vm_id)
-            if caps['version'] is not None:
-                guest_info['appsList'] = (
-                    'qemu-guest-agent-%s' % caps['version'],
-                )
+        apps = []
+        caps = self.get_caps(vm_id)
+        if os_id is not None and os_id != _GUEST_OS_WINDOWS:
+            apps.append('kernel-%s' % kernel_release)
+        if caps is not None and caps['version'] is not None:
+            apps.append('qemu-guest-agent-%s' % caps['version'])
+        guest_info = {
+            'appsList': tuple(apps),
+        }
         self.update_guest_info(vm_id, guest_info)
 
     def _cleanup(self):
