@@ -54,6 +54,7 @@ LSBLK = "/usr/bin/lsblk"
 LVM = "/usr/sbin/lvm"
 ID_LINK_PREFIX = "/dev/disk/by-id/lvm-pv-uuid-"
 PROC_DEVICES = "/proc/devices"
+SYS_BLOCK_DEVICE_PATTERN = "/sys/block/{}/device/subsystem"
 WWID_ATTRIBUTE = {
     "scsi": "ID_SERIAL",
     "nvme": "ID_WWN",
@@ -308,7 +309,7 @@ def _resolve_wwid(disk):
     Returns:
         WWID string.
     """
-    path = "/sys/block/{}/device/subsystem".format(os.path.basename(disk))
+    path = SYS_BLOCK_DEVICE_PATTERN.format(os.path.basename(disk))
     device_type = os.path.basename(os.path.realpath(path))
 
     attr = WWID_ATTRIBUTE.get(device_type)

@@ -81,6 +81,21 @@ def fake_dm_device(tmpdir):
     return FakeDevice(device, stable_link, unstable_link)
 
 
+@pytest.fixture
+def fake_sys_block_info(monkeypatch, tmpdir):
+    """
+    Creates fake info about device read from /sys/block/sda/device/subsystem
+    which links fake scsi directory, simulating that sda is a scsi device.
+    """
+    scsi = str(tmpdir.join("scsi"))
+    os.mkdir(scsi)
+    sys_device_link = str(tmpdir.join("sda"))
+    os.symlink(scsi, sys_device_link)
+
+    monkeypatch.setattr(
+        lvmfilter, "SYS_BLOCK_DEVICE_PATTERN", str(tmpdir) + "/{}")
+
+
 @pytest.mark.parametrize("plat,expected", [
     ("rhel74", [
         MountInfo("/dev/mapper/vg0-lv_home", "/home", FAKE_DEVICES),
@@ -561,9 +576,9 @@ def test_find_disks(plat, devices, expected, monkeypatch):
     assert lvmfilter.find_disks(devices) == expected
 
 
-def test_find_wwids(monkeypatch):
+def test_find_wwids(monkeypatch, fake_sys_block_info):
     disks = {
-        '/dev/sda' : {
+        '/dev/sda': {
             'name': '/dev/sda',
             'type': 'disk'
         }
