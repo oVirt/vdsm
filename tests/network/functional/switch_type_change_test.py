@@ -97,6 +97,7 @@ def dynamic_ipv4_iface():
             yield client
 
 
+@pytest.mark.nmstate
 @parametrize_switch_change
 class TestBasicSwitchChange(object):
     def test_switch_change_basic_network(self, adapter, sw_src, sw_dst, nic0):
@@ -135,6 +136,7 @@ class TestBasicSwitchChange(object):
             adapter.assertBond(BOND_NAME, BONDSETUP_TARGET[BOND_NAME])
 
 
+@pytest.mark.nmstate
 @parametrize_switch_change
 class TestIpSwitch(object):
     def test_switch_change_bonded_network_with_static_ip(
@@ -183,6 +185,7 @@ class TestIpSwitch(object):
             adapter.assertBond(BOND_NAME, BONDSETUP_TARGET[BOND_NAME])
 
 
+@pytest.mark.nmstate
 @parametrize_switch_change
 class TestSwitchRollback(object):
     def test_rollback_target_configuration_with_invalid_ip(
@@ -251,6 +254,7 @@ class TestSwitchRollback(object):
             adapter.assertNetwork(NET2_NAME, NETSETUP_SOURCE[NET2_NAME])
 
 
+@pytest.mark.nmstate
 @parametrize_switch_change
 class TestSwitchValidation(object):
     def test_switch_change_with_not_all_existing_networks_specified(
