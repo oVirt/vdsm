@@ -583,15 +583,13 @@ class NetFuncTestAdapter(object):
         assert not self.assertDhclient(iface, family)
 
     def assertRoutesIPv4(self, netattrs, ipinfo, ignore_ip=False):
-        # TODO: Support sourceroute on OVS switches
-        if netattrs.get('switch', 'legacy') == 'legacy':
-            is_dynamic = netattrs.get('bootproto') == 'dhcp'
-            if is_dynamic and not ignore_ip:
-                # When dynamic is used, route is assumed to be included.
-                assert ipinfo['gateway']
-            else:
-                gateway = netattrs.get('gateway', '')
-                assert gateway == ipinfo['gateway']
+        is_dynamic = netattrs.get('bootproto') == 'dhcp'
+        if is_dynamic and not ignore_ip:
+            # When dynamic is used, route is assumed to be included.
+            assert ipinfo['gateway']
+        else:
+            gateway = netattrs.get('gateway', '')
+            assert gateway == ipinfo['gateway']
 
         self.assertDefaultRouteIPv4(netattrs, ipinfo)
 

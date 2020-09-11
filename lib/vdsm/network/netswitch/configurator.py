@@ -131,7 +131,7 @@ def _setup_static_src_routing(networks):
         if gateway:
             ip_address = net_attrs.get('ipaddr')
             netmask = net_attrs.get('netmask')
-            next_hop = get_next_hop_interface(net_name, net_attrs)
+            next_hop = _get_network_iface(net_name, net_attrs)
             sourceroute.remove(next_hop)
             sourceroute.add(next_hop, ip_address, netmask, gateway)
 
@@ -150,19 +150,6 @@ def _setup_qos(networks, net_info, rnetworks):
 
 def _get_qos_out(net_attrs):
     return net_attrs.get('hostQos', {}).get('out')
-
-
-def get_next_hop_interface(net_name, net_attributes):
-    if net_attributes.get('bridged'):
-        return net_name
-    else:
-        vlan = net_attributes.get('vlan')
-        next_hop_base_iface = _get_base_iface(net_attributes)
-        return (
-            next_hop_base_iface
-            if not vlan
-            else '{}.{}'.format(next_hop_base_iface, vlan)
-        )
 
 
 def _setup_dynamic_src_routing(networks):
@@ -199,16 +186,13 @@ def _remove_qos(net_attrs, net_info):
 
 
 def _get_network_iface(net_name, net_attrs):
-    bridged = net_attrs.get('bridged')
+    switch = net_attrs.get('switch')
+    if switch == util.SwitchType.OVS or net_attrs.get('bridged'):
+        return net_name
+
     vlan = net_attrs.get('vlan')
     base_iface = _get_base_iface(net_attrs)
-    return (
-        net_name
-        if bridged
-        else '{}.{}'.format(base_iface, vlan)
-        if vlan
-        else base_iface
-    )
+    return '{}.{}'.format(base_iface, vlan) if vlan else base_iface
 
 
 def _get_base_iface(net_attrs):
