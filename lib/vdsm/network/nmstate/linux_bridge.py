@@ -24,6 +24,7 @@ from .bridge_util import get_default_route_interface
 from .bridge_util import is_iface_up
 from .bridge_util import is_default_mtu
 from .bridge_util import NetworkConfig
+from .dns import Dns
 from .ip import IpAddress
 from .route import Routes
 from .schema import Interface
@@ -50,6 +51,7 @@ class LinuxBridgeNetwork(object):
         self._bridge_iface_state = None
         self._route_state = None
         self._dns_state = None
+        self._auto_dns = None
 
         self._create_dns()
         self._create_interfaces_state()
@@ -120,25 +122,10 @@ class LinuxBridgeNetwork(object):
     def purge_old_base_iface(self):
         return self._remove_vlan_iface()
 
-    @property
-    def _auto_dns(self):
-        return self.default_route and not self.dns_state
-
     def _create_dns(self):
-        """
-        The DNS state may include one of the following outputs:
-            - None: The network does not include any DNS info.
-            - Empty list:
-                - The nameservers have been explicitly cleared.
-                - The network or its d.route is removed and it has nameservers.
-            - The nameservers have been explicitly set for the network.
-        """
-        nameservers = None
-        if self._netconf.default_route:
-            nameservers = self._netconf.nameservers
-        elif self._runconf.default_route and self._runconf.nameservers:
-            nameservers = []
-        self._dns_state = nameservers
+        dns = Dns(self._netconf, self._runconf)
+        self._dns_state = dns.state
+        self._auto_dns = dns.auto_dns
 
     def _create_interfaces_state(self):
         if self._to_remove:
