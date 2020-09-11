@@ -28,20 +28,38 @@ from vdsm.network.nmstate.ovs import network
 from .testlib import (
     IFACE0,
     IFACE1,
+    IPv4_ADDRESS1,
+    IPv4_FAMILY,
+    IPv4_NETMASK1,
+    IPv4_PREFIX1,
+    IPv6_ADDRESS1,
+    IPv6_FAMILY,
+    IPv6_PREFIX1,
     OVS_BRIDGE,
     VLAN0,
     VLAN101,
     VLAN102,
     TESTNET1,
     TESTNET2,
+    create_dynamic_ip_configuration,
     create_ethernet_iface_state,
+    create_ipv4_state,
+    create_ipv6_state,
     create_network_config,
     create_ovs_bridge_state,
     create_ovs_northbound_state,
     create_ovs_port_state,
+    create_static_ip_configuration,
+    disable_iface_ip,
     parametrize_bridged,
     parametrize_vlanned,
     sort_by_name,
+)
+
+parametrize_ip = pytest.mark.parametrize(
+    'families',
+    [(IPv4_FAMILY,), (IPv6_FAMILY,), (IPv4_FAMILY, IPv6_FAMILY)],
+    ids=['IPv4', 'IPv6', 'IPv4&IPv6'],
 )
 
 
@@ -74,6 +92,8 @@ class TestBasicNetWithoutIp(object):
         sort_by_name(bridge_ports)
         bridge_state = create_ovs_bridge_state(OVS_BRIDGE[0], bridge_ports)
         nb_state = create_ovs_northbound_state(TESTNET1)
+
+        disable_iface_ip(eth0_state, nb_state)
 
         expected_state = {
             nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
@@ -114,6 +134,8 @@ class TestBasicNetWithoutIp(object):
         nb1_state = create_ovs_northbound_state(TESTNET1)
         nb2_state = create_ovs_northbound_state(TESTNET2)
 
+        disable_iface_ip(eth0_state, eth1_state, nb1_state, nb2_state)
+
         expected_state = {
             nmstate.Interface.KEY: [
                 eth0_state,
@@ -153,6 +175,8 @@ class TestBasicNetWithoutIp(object):
         bridge_state = create_ovs_bridge_state(OVS_BRIDGE[0], bridge_ports)
         nb1_state = create_ovs_northbound_state(TESTNET1)
         nb2_state = create_ovs_northbound_state(TESTNET2)
+
+        disable_iface_ip(eth0_state, nb1_state, nb2_state)
 
         expected_state = {
             nmstate.Interface.KEY: [
@@ -203,6 +227,8 @@ class TestBasicNetWithoutIp(object):
         sort_by_name(bridge_ports)
         bridge_state = create_ovs_bridge_state(OVS_BRIDGE[5], bridge_ports)
         nb_state = create_ovs_northbound_state(TESTNET2)
+
+        disable_iface_ip(nb_state)
 
         expected_state = {nmstate.Interface.KEY: [bridge_state, nb_state]}
         sort_by_name(expected_state[nmstate.Interface.KEY])
@@ -261,6 +287,8 @@ class TestBasicNetWithoutIp(object):
             OVS_BRIDGE[5], None, 'absent'
         )
         nb_state = create_ovs_northbound_state(TESTNET1)
+
+        disable_iface_ip(eth1_state, nb_state)
 
         expected_state = {
             nmstate.Interface.KEY: [
@@ -333,5 +361,87 @@ class TestBasicNetWithoutIp(object):
         nb_state = {'name': TESTNET2, 'state': 'absent'}
 
         expected_state = {nmstate.Interface.KEY: [nb_state]}
+        sort_by_name(expected_state[nmstate.Interface.KEY])
+        assert expected_state == state
+
+
+class TestBasicNetWithIp(object):
+    @parametrize_ip
+    def test_dynamic_ip(self, families):
+        dhcpv4 = IPv4_FAMILY in families
+        dhcpv6 = IPv6_FAMILY in families
+
+        networks = {
+            TESTNET1: create_network_config(
+                'nic',
+                IFACE0,
+                bridged=True,
+                switch='ovs',
+                dynamic_ip_configuration=create_dynamic_ip_configuration(
+                    dhcpv4, dhcpv6, ipv6autoconf=dhcpv6
+                ),
+            )
+        }
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        eth0_state = create_ethernet_iface_state(IFACE0, mtu=None)
+        disable_iface_ip(eth0_state)
+
+        bridge_ports = [
+            create_ovs_port_state(IFACE0),
+            create_ovs_port_state(TESTNET1),
+        ]
+        sort_by_name(bridge_ports)
+        bridge_state = create_ovs_bridge_state(OVS_BRIDGE[0], bridge_ports)
+        nb_state = create_ovs_northbound_state(TESTNET1)
+        nb_state.update(create_ipv4_state(dynamic=dhcpv4, auto_dns=False))
+        nb_state.update(create_ipv6_state(dynamic=dhcpv6, auto_dns=False))
+
+        expected_state = {
+            nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
+        }
+        sort_by_name(expected_state[nmstate.Interface.KEY])
+        assert expected_state == state
+
+    @parametrize_ip
+    def test_static_ip(self, families):
+        ipv4 = IPv4_FAMILY in families
+        ipv6 = IPv6_FAMILY in families
+
+        ipv4_addr = IPv4_ADDRESS1 if ipv4 else None
+        ipv4_netmask = IPv4_NETMASK1 if ipv4 else None
+        ipv4_prefix = IPv4_PREFIX1 if ipv4 else None
+        ipv6_addr = IPv6_ADDRESS1 if ipv6 else None
+        ipv6_prefix = IPv6_PREFIX1 if ipv6 else None
+
+        networks = {
+            TESTNET1: create_network_config(
+                'nic',
+                IFACE0,
+                bridged=True,
+                switch='ovs',
+                dynamic_ip_configuration=create_static_ip_configuration(
+                    ipv4_addr, ipv4_netmask, ipv6_addr, ipv6_prefix
+                ),
+            )
+        }
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        eth0_state = create_ethernet_iface_state(IFACE0, mtu=None)
+        disable_iface_ip(eth0_state)
+
+        bridge_ports = [
+            create_ovs_port_state(IFACE0),
+            create_ovs_port_state(TESTNET1),
+        ]
+        sort_by_name(bridge_ports)
+        bridge_state = create_ovs_bridge_state(OVS_BRIDGE[0], bridge_ports)
+        nb_state = create_ovs_northbound_state(TESTNET1)
+        nb_state.update(create_ipv4_state(ipv4_addr, ipv4_prefix))
+        nb_state.update(create_ipv6_state(ipv6_addr, ipv6_prefix))
+
+        expected_state = {
+            nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
+        }
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state

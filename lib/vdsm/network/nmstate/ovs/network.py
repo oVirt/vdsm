@@ -22,6 +22,7 @@ from copy import deepcopy
 from .info import OvsInfo
 from ..bridge_util import random_interface_name
 from ..bridge_util import translate_config
+from ..ip import IpAddress
 from ..schema import Interface
 from ..schema import InterfaceState
 from ..schema import InterfaceType
@@ -71,6 +72,7 @@ class OvsNetwork(object):
         else:
             nb_state = self._create_nb_iface()
             port_state = self._create_port_state()
+            self._add_ip(nb_state)
 
         self._nb_iface_state = nb_state
         self._port_state = port_state
@@ -91,6 +93,11 @@ class OvsNetwork(object):
                 OvsBridgeSchema.Port.Vlan.TAG: self._netconf.vlan,
             }
         return port_state
+
+    def _add_ip(self, nb_state):
+        ip_addr = IpAddress(self._netconf, False)
+        nb_state[Interface.IPV4] = ip_addr.create(IpAddress.IPV4)
+        nb_state[Interface.IPV6] = ip_addr.create(IpAddress.IPV6)
 
 
 class OvsBridge(object):
@@ -177,7 +184,9 @@ class OvsBridge(object):
             bridge, sb
         )
         if not self._bridge_exists(sb):
-            self._sb_ifaces_state[sb] = self._create_sb_iface_state(sb)
+            sb_state = self._create_sb_iface_state(sb)
+            self._add_sb_ip(sb_state)
+            self._sb_ifaces_state[sb] = sb_state
             self._bridge_by_sb[sb] = bridge
 
     def _create_bridge_state(self, name, sb):
@@ -209,6 +218,18 @@ class OvsBridge(object):
     def _nb_has_moved(name, attrs, rnets):
         base_iface = attrs.base_iface
         return name in rnets and rnets[name].base_iface != base_iface
+
+    @staticmethod
+    def _add_sb_ip(sb_state):
+        # Because SB IP stack should be disabled we don't need any
+        # netconf info
+        ip_addr = IpAddress(netconf=None, auto_dns=False)
+        sb_state[Interface.IPV4] = ip_addr.create(
+            IpAddress.IPV4, enabled=False
+        )
+        sb_state[Interface.IPV6] = ip_addr.create(
+            IpAddress.IPV6, enabled=False
+        )
 
 
 def generate_state(networks, running_networks, current_iface_state):
