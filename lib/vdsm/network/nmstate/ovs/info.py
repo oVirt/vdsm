@@ -245,15 +245,17 @@ class OvsNetInfo(object):
 
     def _fake_bridgeless(self, net):
         iface = net[NetInfoIfaceSchema.IFACE]
-        type = None
-        next(
-            type
-            for type in (
-                NetInfoSchema.VLANS,
-                NetInfoSchema.BONDS,
-                NetInfoSchema.NICS,
-            )
-            if iface in self._base_netinfo[type]
+        type = next(
+            (
+                type
+                for type in (
+                    NetInfoSchema.VLANS,
+                    NetInfoSchema.BONDS,
+                    NetInfoSchema.NICS,
+                )
+                if iface in self._base_netinfo[type]
+            ),
+            None,
         )
 
         if type:
