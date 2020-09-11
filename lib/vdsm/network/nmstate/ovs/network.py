@@ -20,9 +20,11 @@
 from copy import deepcopy
 
 from .info import OvsInfo
+from ..bridge_util import NetworkConfig
 from ..bridge_util import random_interface_name
 from ..bridge_util import translate_config
 from ..ip import IpAddress
+from ..route import Routes
 from ..schema import Interface
 from ..schema import InterfaceState
 from ..schema import InterfaceType
@@ -32,18 +34,23 @@ BRIDGE_PREFIX = 'vdsmbr_'
 
 
 class OvsNetwork(object):
-    def __init__(self, netconf):
+    def __init__(self, netconf, runconf):
         """
         netconf: NetworkConfig object, representing a requested network setup.
+        runconf: NetworkConfig object, representing an existing network setup
+        if any.
         """
         self._netconf = netconf
+        self._runconf = runconf
         self._name = netconf.name
         self._to_remove = netconf.remove
 
         self._nb_iface_state = None
         self._port_state = None
+        self._route_state = None
 
         self._create_interface_state()
+        self._create_routes()
 
     @property
     def name(self):
@@ -64,6 +71,10 @@ class OvsNetwork(object):
     @property
     def remove(self):
         return self._to_remove
+
+    @property
+    def routes_state(self):
+        return self._route_state
 
     def _create_interface_state(self):
         if self._to_remove:
@@ -93,6 +104,10 @@ class OvsNetwork(object):
                 OvsBridgeSchema.Port.Vlan.TAG: self._netconf.vlan,
             }
         return port_state
+
+    def _create_routes(self):
+        routes = Routes(self._netconf, self._runconf)
+        self._route_state = routes.state
 
     def _add_ip(self, nb_state):
         ip_addr = IpAddress(self._netconf, False)
@@ -235,16 +250,25 @@ class OvsBridge(object):
 def generate_state(networks, running_networks, current_iface_state):
     nets_config = translate_config(networks)
     rnets_config = translate_config(running_networks)
+    empty_config = NetworkConfig(name=None, attrs={})
 
     ovs_info = OvsInfo(rnets_config, current_iface_state)
     bridges = OvsBridge(nets_config, rnets_config, ovs_info)
-    nets = [OvsNetwork(nets_config[netname]) for netname in networks.keys()]
+    nets = [
+        OvsNetwork(
+            nets_config[netname], rnets_config.get(netname, empty_config)
+        )
+        for netname in networks.keys()
+    ]
 
+    routes_state = []
     net_ifstates = bridges.bridge_ifaces_state
     net_ifstates.update(bridges.sb_ifaces_state)
 
     for net in nets:
         net_ifstates[net.name] = net.iface_state
+        routes_state += net.routes_state
+
         if net.remove:
             continue
 
@@ -259,7 +283,7 @@ def generate_state(networks, running_networks, current_iface_state):
         if bridge in net_ifstates:
             _sort_ports_by_name(net_ifstates[bridge])
 
-    return net_ifstates
+    return net_ifstates, routes_state
 
 
 def _create_basic_port_state(name):
