@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from vdsm.network.netswitch.util import SwitchType
+
 from .schema import Route
 
 
@@ -72,8 +74,9 @@ class Routes(object):
             return self._create_remove_default_route(next_hop, gateway, family)
 
     def _get_next_hop_interface(self):
-        if self._netconf.bridged:
+        if self._netconf.switch == SwitchType.OVS or self._netconf.bridged:
             return self._netconf.name
+
         return self._netconf.vlan_iface or self._netconf.base_iface
 
     def _should_remove_def_route(self, family):

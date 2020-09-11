@@ -18,6 +18,7 @@
 #
 
 from vdsm.network.link.iface import random_iface_name
+from vdsm.network.netswitch.util import SwitchType
 
 from .schema import Interface
 from .schema import InterfaceIP
@@ -54,6 +55,8 @@ class NetworkConfig(object):
         self.nameservers = attrs.get('nameservers')
 
         self.remove = attrs.get('remove', False)
+
+        self.switch = attrs.get('switch', SwitchType.LINUX_BRIDGE)
 
         self.base_iface = self.nic or self.bond
         if self.vlan is not None:
