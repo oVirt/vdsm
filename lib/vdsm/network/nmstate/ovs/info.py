@@ -240,7 +240,7 @@ class OvsNetInfo(object):
             NetInfoIfaceSchema.IPv6.ADDRS: ipv6_addrs,
             NetInfoIfaceSchema.IPv6.AUTOCONF: is_autoconf_enabled(ipv6_state),
             NetInfoIfaceSchema.IPv6.GATEWAY: ipv6_gateway or '::',
-            NetInfoIfaceSchema.IPv6.DHCP: is_dhcp_enabled(ipv4_state),
+            NetInfoIfaceSchema.IPv6.DHCP: is_dhcp_enabled(ipv6_state),
         }
 
     def _fake_bridgeless(self, net):
