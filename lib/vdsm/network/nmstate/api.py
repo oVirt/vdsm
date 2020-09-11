@@ -65,8 +65,7 @@ def generate_state(networks, bondings):
     bond_ifstates = Bond.generate_state(bondings, rconfig.bonds)
 
     if ovs_requested:
-        dns_state = None
-        net_ifstates, routes_state = ovs_generate_state(
+        net_ifstates, routes_state, dns_state = ovs_generate_state(
             networks, rconfig.networks, current_ifaces_state
         )
     else:

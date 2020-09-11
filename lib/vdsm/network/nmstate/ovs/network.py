@@ -23,6 +23,7 @@ from .info import OvsInfo
 from ..bridge_util import NetworkConfig
 from ..bridge_util import random_interface_name
 from ..bridge_util import translate_config
+from ..dns import Dns
 from ..ip import IpAddress
 from ..route import Routes
 from ..schema import Interface
@@ -48,7 +49,10 @@ class OvsNetwork(object):
         self._nb_iface_state = None
         self._port_state = None
         self._route_state = None
+        self._dns_state = None
+        self._auto_dns = None
 
+        self._create_dns()
         self._create_interface_state()
         self._create_routes()
 
@@ -75,6 +79,10 @@ class OvsNetwork(object):
     @property
     def routes_state(self):
         return self._route_state
+
+    @property
+    def dns_state(self):
+        return self._dns_state
 
     def _create_interface_state(self):
         if self._to_remove:
@@ -109,8 +117,13 @@ class OvsNetwork(object):
         routes = Routes(self._netconf, self._runconf)
         self._route_state = routes.state
 
+    def _create_dns(self):
+        dns = Dns(self._netconf, self._runconf)
+        self._dns_state = dns.state
+        self._auto_dns = dns.auto_dns
+
     def _add_ip(self, nb_state):
-        ip_addr = IpAddress(self._netconf, False)
+        ip_addr = IpAddress(self._netconf, self._auto_dns)
         nb_state[Interface.IPV4] = ip_addr.create(IpAddress.IPV4)
         nb_state[Interface.IPV6] = ip_addr.create(IpAddress.IPV6)
 
@@ -262,12 +275,16 @@ def generate_state(networks, running_networks, current_iface_state):
     ]
 
     routes_state = []
+    dns_state = {}
     net_ifstates = bridges.bridge_ifaces_state
     net_ifstates.update(bridges.sb_ifaces_state)
 
     for net in nets:
         net_ifstates[net.name] = net.iface_state
         routes_state += net.routes_state
+        net_dns_state = net.dns_state
+        if net_dns_state is not None:
+            dns_state[net.name] = net_dns_state
 
         if net.remove:
             continue
@@ -283,7 +300,7 @@ def generate_state(networks, running_networks, current_iface_state):
         if bridge in net_ifstates:
             _sort_ports_by_name(net_ifstates[bridge])
 
-    return net_ifstates, routes_state
+    return net_ifstates, routes_state, dns_state
 
 
 def _create_basic_port_state(name):
