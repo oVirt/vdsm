@@ -1,6 +1,5 @@
 Makefile.am
 contrib/repoplot
-lib/vdsm/API.py
 lib/vdsm/alignmentScan.py
 lib/vdsm/common/cmdutils.py
 lib/vdsm/common/commands.py
