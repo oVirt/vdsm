@@ -88,7 +88,7 @@ pylint: tox
 		$(PYLINT_TARGETS)
 
 execcmd:
-	! git --no-pager grep execCmd `git ls-files | grep -v -F -f execcmd-blacklist.txt`
+	! git --no-pager grep execCmd `git ls-files | grep -v -F -f execcmd-allowlist.txt`
 
 
 .PHONY: pylint-diff
