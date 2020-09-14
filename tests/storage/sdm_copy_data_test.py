@@ -47,6 +47,7 @@ from storage.storagetestlib import (
 
 from . import qemuio
 from . import userstorage
+from . marks import requires_bitmaps_support
 
 from testValidation import broken_on_ci
 from testlib import make_uuid
@@ -262,6 +263,98 @@ class TestCopyDataDIV(VdsmTestCase):
 
     # TODO: Missing tests:
     # Copy between 2 different domains
+
+
+@requires_bitmaps_support
+@pytest.mark.parametrize(
+    "env_type, sd_version, copy_seq", [
+        ('file', 5, (0, 1)),
+        ('file', 4, (1, 0)),
+        ('block', 5, (0, 1)),
+        ('block', 4, (1, 0)),
+    ])
+def test_volume_chain_copy_with_bitmaps(
+        user_mount, fake_scheduler, env_type, sd_version, copy_seq):
+    bitmaps = ['bitmap1', 'bitmap2']
+    data_center = os.path.join(user_mount.path, "data-center")
+
+    with make_env(
+            env_type, sc.COW_FORMAT, sc.COW_FORMAT,
+            chain_length=len(copy_seq),
+            sd_version=sd_version,
+            src_qcow2_compat='1.1',
+            data_center=data_center) as env:
+
+        for index in copy_seq:
+            # Add bitmaps to src volume
+            vol_path = env.src_chain[index].getVolumePath()
+            for bitmap in bitmaps:
+                op = qemuimg.bitmap_add(vol_path, bitmap)
+                op.run()
+
+            job_id = make_uuid()
+            src_vol = env.src_chain[index]
+            dst_vol = env.dst_chain[index]
+
+            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
+                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
+            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
+                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+
+            job = copy_data.Job(job_id, 0, source, dest, copy_bitmaps=True)
+            job.run()
+
+        for index in copy_seq:
+            dst_vol = env.dst_chain[index]
+            info = qemuimg.info(dst_vol.getVolumePath())
+            assert info["bitmaps"] == [
+                {
+                    "flags": ["auto"],
+                    "name": bitmaps[0],
+                    "granularity": 65536
+                },
+                {
+                    "flags": ["auto"],
+                    "name": bitmaps[1],
+                    "granularity": 65536
+                },
+            ]
+
+
+@requires_bitmaps_support
+@pytest.mark.parametrize(
+    "env_type, dst_fmt", [
+        ('file', sc.RAW_FORMAT),
+        ('block', sc.RAW_FORMAT),
+    ])
+def test_copy_bitmaps_fail_raw_format(
+        user_mount, fake_scheduler, env_type, dst_fmt):
+    job_id = make_uuid()
+    data_center = os.path.join(user_mount.path, "data-center")
+
+    with make_env(
+            env_type, sc.COW_FORMAT, dst_fmt,
+            sd_version=5,
+            src_qcow2_compat='1.1',
+            data_center=data_center) as env:
+
+        src_vol = env.src_chain[0]
+        dst_vol = env.dst_chain[0]
+
+        op = qemuimg.bitmap_add(src_vol.getVolumePath(), 'bitmap')
+        op.run()
+
+        source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
+                      img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
+        dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
+                    img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+
+        job = copy_data.Job(job_id, 0, source, dest, copy_bitmaps=True)
+        job.run()
+
+        # copy bitmaps are not supported for raw volumes
+        assert jobs.STATUS.FAILED == job.status
+        assert 'error' in job.info()
 
 
 @pytest.mark.parametrize("env_type,qcow2_compat,sd_version", [

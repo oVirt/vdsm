@@ -1697,8 +1697,9 @@ class Global(APIBase):
 class SDM(APIBase):
     ctorArgs = []
 
-    def copy_data(self, job_id, source, destination):
-        return self._irs.sdm_copy_data(job_id, source, destination)
+    def copy_data(self, job_id, source, destination, copy_bitmaps=False):
+        return self._irs.sdm_copy_data(
+            job_id, source, destination, copy_bitmaps=copy_bitmaps)
 
     def sparsify_volume(self, job_id, vol_info):
         return self._irs.sdm_sparsify_volume(job_id, vol_info)

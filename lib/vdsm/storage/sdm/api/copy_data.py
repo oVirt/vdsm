@@ -27,6 +27,7 @@ from vdsm import utils
 
 from vdsm.common import properties
 from vdsm.storage import constants as sc
+from vdsm.storage import exception as se
 from vdsm.storage import guarded
 from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
@@ -44,11 +45,13 @@ class Job(base.Job):
     """
     log = logging.getLogger('storage.sdm.copy_data')
 
-    def __init__(self, job_id, host_id, source, destination):
+    def __init__(self, job_id, host_id, source, destination,
+                 copy_bitmaps=False):
         super(Job, self).__init__(job_id, 'copy_data', host_id)
         self._source = _create_endpoint(source, host_id, writable=False)
         self._dest = _create_endpoint(destination, host_id, writable=True)
         self._operation = None
+        self._copy_bitmaps = copy_bitmaps
 
     @property
     def progress(self):
@@ -57,6 +60,16 @@ class Job(base.Job):
     def _abort(self):
         if self._operation:
             self._operation.abort()
+
+    def _validate_copy_bitmaps(self, src_format, dst_format):
+        if self._copy_bitmaps and qemuimg.FORMAT.RAW in (
+                src_format, dst_format):
+            raise se.UnsupportedOperation(
+                "Cannot copy bitmaps from/to volumes with raw "
+                "format",
+                src_vol=self._source.path,
+                dst_vol=self._dest.path
+            )
 
     def _run(self):
         with guarded.context(self._source.locks + self._dest.locks):
@@ -73,6 +86,8 @@ class Job(base.Job):
                     src_format = self._source.qemu_format
                     dst_format = self._dest.qemu_format
 
+                self._validate_copy_bitmaps(src_format, dst_format)
+
                 with self._dest.volume_operation():
                     self._operation = qemuimg.convert(
                         self._source.path,
@@ -84,7 +99,8 @@ class Job(base.Job):
                         backingFormat=self._dest.backing_qemu_format,
                         unordered_writes=self._dest
                             .recommends_unordered_writes,
-                        create=self._dest.requires_create)
+                        create=self._dest.requires_create,
+                        bitmaps=self._copy_bitmaps)
                     with utils.stopwatch(
                             "Copy volume {}".format(self._source.path),
                             level=logging.INFO,

@@ -3672,8 +3672,9 @@ class HSM(object):
                                  job.description, job.run)
 
     @public
-    def sdm_copy_data(self, job_id, source, destination):
-        job = copy_data.Job(job_id, self._pool.id, source, destination)
+    def sdm_copy_data(self, job_id, source, destination, copy_bitmaps=False):
+        job = copy_data.Job(job_id, self._pool.id, source, destination,
+                            copy_bitmaps=copy_bitmaps)
         self.sdm_schedule(job)
 
     @public

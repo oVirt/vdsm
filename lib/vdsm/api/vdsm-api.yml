@@ -11852,6 +11852,14 @@ SDM.copy_data:
         name: destination
         type: *CopyDataEndpoint
 
+    -   defaultvalue: false
+        description: if specified, copy the bitmaps from the copied
+            volume to the new volume. Allowed only when copying a
+            single qcow2 volume to a qcow2 volume.
+        name: copy_bitmaps
+        type: boolean
+        added: '4.4'
+
 SDM.sparsify_volume:
     added: '4.1'
     description: Perform an in-place sparsify (e.g. not creating a new image)
