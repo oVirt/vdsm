@@ -1,4 +1,4 @@
-# Copyright 2019 Red Hat, Inc.
+# Copyright 2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ from vdsm.network.nmstate import bridge_util
 from vdsm.network.nmstate import ip
 from vdsm.network.nmstate import linux_bridge
 from vdsm.network.nmstate import route
+from vdsm.network.nmstate import sriov
 from vdsm.network.nmstate.ovs import network as ovs_network
 from vdsm.network.nmstate.ovs import info as ovs_info
 
@@ -77,6 +78,21 @@ class NMStateBond(object):
     MODE = 'mode'
     SLAVES = 'slaves'
     OPTIONS_SUBTREE = 'options'
+
+
+class NMStateEthernet(object):
+    KEY = NMStateInterfaceType.ETHERNET
+
+    CONFIG_SUBTREE = "ethernet"
+
+    SRIOV_SUBTREE = "sr-iov"
+
+    class SRIOV:
+        TOTAL_VFS = "total-vfs"
+        VFS_SUBTREE = "vfs"
+
+        class VFS:
+            ID = 'id'
 
 
 class NMStateLinuxBridge(object):
@@ -173,6 +189,7 @@ def nmstate_schema():
     )
     p_bridge = mock.patch.object(nmstate, 'LinuxBridge', NMStateLinuxBridge)
     p_bond = mock.patch.object(nmstate, 'BondSchema', NMStateBond)
+    p_ethernet = mock.patch.object(nmstate, 'Ethernet', NMStateEthernet)
     p_route = mock.patch.object(nmstate, 'Route', NMStateRoute)
     p_iface_ip = mock.patch.object(nmstate, 'InterfaceIP', NMStateInterfaceIP)
     p_iface_ipv6 = mock.patch.object(
@@ -181,7 +198,7 @@ def nmstate_schema():
     p_dns = mock.patch.object(nmstate, 'DNS', NMStateDns)
     p_ovs = mock.patch.object(nmstate, 'OvsBridgeSchema', OvsBridgeType)
     with p_iface, p_ifstate, p_iftype, p_bridge, p_ovs:
-        with p_bond, p_route, p_iface_ip, p_iface_ipv6, p_dns:
+        with p_bond, p_route, p_iface_ip, p_iface_ipv6, p_dns, p_ethernet:
             yield
 
 
@@ -286,4 +303,15 @@ def nmstate_ovs_info_schema():
     )
     p_route = mock.patch.object(route, 'Route', NMStateRoute)
     with p_iface, p_iftype, p_ovs, p_iface_ip, p_route:
+        yield
+
+
+@pytest.fixture(scope='session', autouse=True)
+def nmstate_sriov_schema():
+    p_iface = mock.patch.object(sriov, 'Interface', NMStateInterface)
+    p_ifstate = mock.patch.object(
+        sriov, 'InterfaceState', NMStateInterfaceState
+    )
+    p_ethernet = mock.patch.object(sriov, 'Ethernet', NMStateEthernet)
+    with p_iface, p_ifstate, p_ethernet:
         yield

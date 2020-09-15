@@ -20,6 +20,7 @@
 try:
     from libnmstate.schema import Bond as BondSchema
     from libnmstate.schema import DNS
+    from libnmstate.schema import Ethernet
     from libnmstate.schema import Interface
     from libnmstate.schema import InterfaceIP
     from libnmstate.schema import InterfaceIPv6
@@ -31,6 +32,7 @@ try:
 except ImportError:  # nmstate is not available
     BondSchema = None
     DNS = None
+    Ethernet = None
     Interface = None
     InterfaceIP = None
     InterfaceIPv6 = None

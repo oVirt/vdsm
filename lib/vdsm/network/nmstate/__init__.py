@@ -27,10 +27,12 @@ from .api import is_dhcp_enabled
 from .api import ovs_netinfo
 from .api import setup
 from .api import state_show
+from .api import update_num_vfs
 
 # Re-export nmstate schema
 from .schema import BondSchema
 from .schema import DNS
+from .schema import Ethernet
 from .schema import Interface
 from .schema import InterfaceIP
 from .schema import InterfaceIPv6
@@ -51,8 +53,10 @@ __all__ = [
     'ovs_netinfo',
     'setup',
     'state_show',
+    'update_num_vfs',
     'BondSchema',
     'DNS',
+    'Ethernet',
     'Interface',
     'InterfaceIP',
     'InterfaceIPv6',

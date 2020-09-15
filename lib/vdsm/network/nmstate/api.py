@@ -39,6 +39,7 @@ from .schema import Interface
 from .schema import InterfaceState
 from .schema import InterfaceType
 from .schema import Route
+from .sriov import create_sriov_state
 
 try:
     from libnmstate import apply as state_apply
@@ -256,3 +257,9 @@ def _merge_state(interfaces_state, routes_state, dns_state):
         )
         state[DNS.KEY] = {DNS.CONFIG: {DNS.SERVER: list(nameservers)}}
     return state
+
+
+def update_num_vfs(device, num_vfs):
+    desired_state = create_sriov_state(device, num_vfs)
+
+    setup(desired_state, verify_change=True)
