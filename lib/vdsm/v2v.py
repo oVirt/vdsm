@@ -148,7 +148,7 @@ class JobNotDone(ClientError):
 
 
 class NoSuchOvf(V2VError):
-    ''' Ovf path is not exists in /run/vdsm/v2v/ '''
+    ''' Ovf path is not exists in /var/run/vdsm/v2v/ '''
     err_name = 'V2VNoSuchOvf'
 
 
@@ -231,6 +231,11 @@ def get_ova_info(ova_path):
     ns = {'ovf': _OVF_NS, 'rasd': _RASD_NS}
 
     ovf_str = _read_ovf_from_ova(ova_path)
+    ovf_str_list = ovf_str.split(_OVF_NS)
+    ovf_str = ovf_str_list[0] + str(_OVF_NS) + '"' + '\n' + 'xmlns=' + \
+              '"' + str(_OVF_NS) + ovf_str_list[1]
+    extract_ns = _extract_ns_map(ovf_str)
+    ns = extract_ns if extract_ns else ns
     try:
         root = ET.fromstring(ovf_str)
     except ET.ParseError as e:
@@ -1121,7 +1126,7 @@ def _extract_ns_map(xml_str):
     return {
         name: uri
         for event, (name, uri) in ET.iterparse(xml_src, events)
-        if event == "start-ns"
+        if event == "start-ns" if name
     }
 
 
@@ -1364,24 +1369,32 @@ def _read_ovf_from_tar_ova(ova_path):
                     return ovf.read()
         raise ClientError('OVA does not contains file with .ovf suffix')
 
+def reverse_dict_one_to_one(word_index):
+    return dict([(index, word) for (word, index) in word_index.items()])
 
 def _add_general_ovf_info(vm, node, ns, ova_path):
     vm['status'] = 'Down'
-    vmName = node.find('./ovf:VirtualSystem/ovf:Name', ns)
+    ns_ovf = reverse_dict_one_to_one(ns)[_OVF_NS]
+    ns_rasd = reverse_dict_one_to_one(ns)[_RASD_NS]
+    vmName = node.find('./{ovf}:VirtualSystem/{ovf}:Name'.format(ovf=ns_ovf), ns)
     if vmName is not None:
         vm['vmName'] = vmName.text
     else:
         vm['vmName'] = os.path.splitext(os.path.basename(ova_path))[0]
 
-    memSize = node.find('.//ovf:Item[rasd:ResourceType="%d"]/'
-                        'rasd:VirtualQuantity' % _OVF_RESOURCE_MEMORY, ns)
+    memSize = node.find('.//{ovf}:Item[{rasd}:ResourceType="{orm}"]/'
+                        '{rasd}:VirtualQuantity'.format(ovf=ns_ovf,
+                                                        orm=_OVF_RESOURCE_MEMORY,
+                                                        rasd=ns_rasd), ns)
     if memSize is not None:
         vm['memSize'] = int(memSize.text)
     else:
         raise V2VError('Error parsing ovf information: no memory size')
 
-    smp = node.find('.//ovf:Item[rasd:ResourceType="%d"]/'
-                    'rasd:VirtualQuantity' % _OVF_RESOURCE_CPU, ns)
+    smp = node.find('.//{ovf}:Item[{rasd}:ResourceType="{orv}"]/'
+                    '{rasd}:VirtualQuantity'.format(orv=_OVF_RESOURCE_CPU,
+                                                    ovf=ns_ovf,
+                                                    rasd=ns_rasd), ns)
     if smp is not None:
         vm['smp'] = int(smp.text)
     else:
