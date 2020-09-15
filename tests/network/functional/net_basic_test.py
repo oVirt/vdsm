@@ -24,7 +24,6 @@ import pytest
 
 from vdsm.network import errors as ne
 from vdsm.network import ipwrapper
-from vdsm.network.link import iface as link_iface
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NOCHK, SetupNetworksError
@@ -415,55 +414,3 @@ class TestNetworkBasicLegacy(object):
         with adapter.setupNetworks(NETCREATE, {}, NOCHK):
             nftestlib.attach_dev_to_bridge(hidden_nic, NETWORK_NAME)
             adapter.setupNetworks(NETEDIT, {}, NOCHK)
-
-
-@pytest.mark.legacy_switch
-@pytest.mark.skipif(
-    not nmnettestlib.is_networkmanager_running(),
-    reason='NetworkManager is not running',
-)
-class TestNetworkManagerLegacy(object):
-    switch = 'legacy'
-
-    @pytest.fixture(scope='class', autouse=True)
-    def setup(self, adapter, m):
-        self.iface = nmnettestlib.iface_name()
-        yield
-        # The bond was acquired, therefore VDSM needs to clean it.
-        BONDREMOVE = {self.iface: {'remove': True}}
-        adapter.setupNetworks({}, BONDREMOVE, NOCHK)
-
-    def test_add_net_based_on_device_with_multiple_nm_connections(
-        self, adapter, nic0
-    ):
-        IPv4_ADDRESS = '192.0.2.1'
-        NET = {NETWORK_NAME: {'bonding': self.iface, 'switch': self.switch}}
-        with nmnettestlib.nm_connections(
-            self.iface, IPv4_ADDRESS, con_count=3, slaves=[nic0]
-        ):
-            with adapter.setupNetworks(NET, {}, NOCHK):
-                adapter.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
-
-    def test_add_net_based_on_existing_vlan_bond_nm_setup(self, adapter, nic0):
-        vlan_id = '101'
-        NET = {
-            NETWORK_NAME: {
-                'bonding': self.iface,
-                'vlan': int(vlan_id),
-                'switch': self.switch,
-            }
-        }
-        with nmnettestlib.nm_connections(
-            self.iface, ipv4addr=None, vlan=vlan_id, slaves=[nic0]
-        ):
-            bond_hwaddress = link_iface.iface(self.iface).address()
-            vlan_iface = '.'.join([self.iface, vlan_id])
-            vlan_hwaddress = link_iface.iface(vlan_iface).address()
-            assert vlan_hwaddress == bond_hwaddress
-
-            with adapter.setupNetworks(NET, {}, NOCHK):
-                adapter.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
-
-                # Check if the mac has been preserved.
-                bridge_hwaddress = link_iface.iface(NETWORK_NAME).address()
-                assert vlan_hwaddress == bridge_hwaddress
