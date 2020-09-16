@@ -294,8 +294,6 @@ class TestReuseBond(object):
     def test_add_vlaned_network_on_existing_bond(
         self, adapter, switch, bridged, nic0
     ):
-        if switch == 'ovs':
-            pytest.xfail('Link is not stable when using OVS switch.')
         NETBASE = {
             NETWORK1_NAME: {
                 'bonding': BOND_NAME,
@@ -331,8 +329,6 @@ class TestReuseBond(object):
     def test_add_net_on_existing_external_bond_preserving_mac(
         self, adapter, switch, nic0, nic1
     ):
-        if switch == 'ovs':
-            pytest.xfail('Preserving bond mac is not supported on OVS switch.')
         HWADDRESS = 'ce:0c:46:59:c9:d1'
         with Bond(BOND_NAME, slaves=(nic0, nic1)) as bond:
             bond.create()

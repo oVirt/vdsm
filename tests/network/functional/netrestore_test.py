@@ -127,10 +127,7 @@ class TestRestore(object):
     def test_restore_missing_dynamic_ipv4_network(
         self, adapter, switch, bridged
     ):
-        if switch == 'ovs':
-            # With OVS, the restoration creates the network without an IP.
-            pytest.xfail('Inconsistent behaviour with OVS')
-        elif bridged and not nmstate.is_nmstate_backend():
+        if bridged and not nmstate.is_nmstate_backend():
             pytest.xfail('https://bugzilla.redhat.com/1790392')
 
         with veth_pair() as (server, client):

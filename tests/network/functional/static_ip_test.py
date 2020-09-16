@@ -267,11 +267,6 @@ class TestNetworkIPDefaultGateway(object):
             adapter.assertNetworkIp(NETWORK_NAME, network_attrs)
 
     def test_add_net_with_ipv6_default_gateway(self, adapter, switch, nic0):
-        if switch == 'ovs':
-            pytest.xfail(
-                'OvS does not support ipv6 gateway'
-                'see https://bugzilla.redhat.com/1467332'
-            )
         network_attrs = {
             'nic': nic0,
             #  In order to use def. route true we need to assign IPv4

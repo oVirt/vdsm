@@ -230,11 +230,6 @@ class TestNetworkDhcpBasic(object):
         def_route,
         dynamic_ipv4_ipv6_iface_with_dhcp_server,
     ):
-        if switch == 'ovs' and IpFamily.IPv6 in families:
-            pytest.xfail(
-                'IPv6 dynamic fails with OvS'
-                'see https://bugzilla.redhat.com/1773471'
-            )
         if families == (IpFamily.IPv6,) and def_route:
             pytest.skip(
                 'Skipping default route + dynamic with IPv6 '
@@ -268,11 +263,6 @@ class TestNetworkDhcpBasic(object):
         families,
         dynamic_ipv4_ipv6_iface_with_dhcp_server,
     ):
-        if switch == 'ovs' and IpFamily.IPv6 in families:
-            pytest.xfail(
-                'IPv6 dynamic fails with OvS'
-                'see https://bugzilla.redhat.com/1773471'
-            )
         if (
             switch == 'legacy'
             and IpFamily.IPv6 in families
@@ -356,11 +346,6 @@ class TestStopDhclientOnUsedNics(object):
     def test_attach_dhcp_nic_to_dhcpv6_bridged_network(
         self, adapter, switch, dynamic_ipv6_iface
     ):
-        if switch == 'ovs':
-            pytest.xfail(
-                'IPv6 dynamic fails with OvS'
-                'see https://bugzilla.redhat.com/1773471'
-            )
         client = dynamic_ipv6_iface
         with dhcp_client_run(client, family=IpFamily.IPv6):
             adapter.assertDhclient(client, family=IpFamily.IPv6)
@@ -527,11 +512,6 @@ def test_add_static_dns_with_dhcp(
 def _test_dynamic_ip_switch_to_static(
     adapter, switch, families, bridged, is_dhcp_server_enabled, nic, vlan=None
 ):
-    if switch == 'ovs' and IpFamily.IPv6 in families:
-        pytest.xfail(
-            'IPv6 dynamic fails with OvS'
-            'see https://bugzilla.redhat.com/1773471'
-        )
     if not is_dhcp_server_enabled and not nftestlib.is_nmstate_backend():
         pytest.xfail(
             'With ifcfg backend and no server, tests need to be adjusted.'
@@ -601,11 +581,6 @@ def test_dynamic_ip_bonded_vlanned_network(
 def test_dynamic_ip_bonded_network(
     adapter, switch, dynamic_ipv4_ipv6_iface_with_dhcp_server
 ):
-    if switch == 'ovs':
-        pytest.xfail(
-            'IPv6 dynamic fails with OvS'
-            'see https://bugzilla.redhat.com/1773471'
-        )
     bond_name = 'bond0'
     network_attrs = {
         'bridged': False,

@@ -162,10 +162,6 @@ class TestBondBasic(object):
     def test_add_bond_with_enforced_mac_address(
         self, adapter, switch, nic0, nic1
     ):
-        if switch == 'ovs':
-            pytest.xfail(
-                'Bond mac enforcement is currently not implemented for ovs'
-            )
         HWADDRESS = 'ce:0c:46:59:c9:d1'
         BONDCREATE = {
             BOND_NAME: {
