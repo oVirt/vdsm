@@ -8359,6 +8359,12 @@ types:
             name: discard
             type: boolean
 
+        -   defaultvalue: true
+            description: If true, expose the backing chain of volume using
+                qcow2 format. If false, expose only the specified volume.
+            name: backing_chain
+            type: boolean
+
     Checkpoint: &Checkpoint
         added: '4.3'
         description: Configuration of the checkpoint

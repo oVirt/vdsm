@@ -27,6 +27,7 @@ from __future__ import division
 
 import collections
 import errno
+import json
 import logging
 import os
 import time
@@ -73,6 +74,7 @@ class ServerConfig(properties.Owner):
     vol_id = properties.UUID(required=True)
     readonly = properties.Boolean(default=False)
     discard = properties.Boolean(default=False)
+    backing_chain = properties.Boolean(default=True)
 
     def __init__(self, config):
         self.sd_id = config.get("sd_id")
@@ -80,10 +82,11 @@ class ServerConfig(properties.Owner):
         self.vol_id = config.get("vol_id")
         self.readonly = config.get("readonly")
         self.discard = config.get("discard")
+        self.backing_chain = config.get("backing_chain")
 
 
 QemuNBDConfig = collections.namedtuple(
-    "QemuNBDConfig", "format,readonly,discard,path")
+    "QemuNBDConfig", "format,readonly,discard,path,backing_chain,is_block")
 
 
 def start_server(server_id, config):
@@ -106,7 +109,9 @@ def start_server(server_id, config):
         format=sc.fmt2str(vol.getFormat()),
         readonly=cfg.readonly,
         discard=cfg.discard,
-        path=vol.getVolumePath())
+        path=vol.getVolumePath(),
+        backing_chain=cfg.backing_chain,
+        is_block=vol.is_block())
 
     start_transient_service(server_id, qemu_nbd_config)
 
@@ -146,7 +151,6 @@ def start_transient_service(server_id, config):
     cmd = [
         str(QEMU_NBD),
         "--socket", _socket_path(server_id),
-        "--format", config.format,
         "--persistent",
 
         # Allow up to 8 clients to share the device. Safe for readers, but for
@@ -168,13 +172,28 @@ def start_transient_service(server_id, config):
     elif config.discard:
         cmd.append("--discard=unmap")
 
-    cmd.append(config.path)
+    cmd.append(json_uri(config))
 
     systemd.run(
         cmd,
         unit=_service_name(server_id),
         uid=fileUtils.resolveUid(constants.VDSM_USER),
         gid=fileUtils.resolveGid(constants.VDSM_GROUP))
+
+
+def json_uri(config):
+    image = {
+        "driver": config.format,
+        "file": {
+            "driver": "host_device" if config.is_block else "file",
+            "filename": config.path,
+        }
+    }
+
+    if config.format == "qcow2" and not config.backing_chain:
+        image["backing"] = None
+
+    return "json:" + json.dumps(image)
 
 
 def _verify_path(path):
