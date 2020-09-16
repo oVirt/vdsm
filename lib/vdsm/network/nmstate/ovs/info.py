@@ -192,7 +192,7 @@ class OvsNetInfo(object):
         network = {
             NetInfoIfaceSchema.IFACE: nb if bridged else southbound,
             NetInfoIfaceSchema.BRIDGED: bridged,
-            NetInfoIfaceSchema.SOUTHBOUND: sb,
+            NetInfoIfaceSchema.SOUTHBOUND: southbound,
             # TODO Check if we can have a scenario with multiple ports
             NetInfoIfaceSchema.PORTS: [southbound],
             # TODO Add support for STP, now it is disabled by default

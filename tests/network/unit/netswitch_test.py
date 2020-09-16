@@ -105,7 +105,7 @@ def _create_fake_netinfo(switch):
             'fakevlannet1': NetInfoLib.create_network(
                 iface='eth1.1',
                 bridged=False,
-                southbound='eth1',
+                southbound='eth1.1',
                 vlanid=1,
                 switch=switch,
             ),

@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2019 Red Hat, Inc.
+# Copyright 2015-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -199,6 +199,7 @@ def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
     for network_info in six.itervalues(nets_info):
         network_info.update(LEGACY_SWITCH)
         _update_net_southbound_info(network_info, devices_info)
+        _update_net_vlanid_info(network_info, devices_info['vlans'])
 
     report_network_qos(nets_info, devices_info)
 
@@ -216,6 +217,12 @@ def _update_net_southbound_info(network_info, devices_info):
         network_info['southbound'] = None
     else:
         network_info['southbound'] = network_info['iface']
+
+
+def _update_net_vlanid_info(network_info, vlans_info):
+    sb = network_info['southbound']
+    if sb in vlans_info:
+        network_info['vlanid'] = vlans_info[sb]['vlanid']
 
 
 def _devices_report(ipaddrs, routes):
@@ -448,45 +455,21 @@ class NetInfo(object):
 
     def getNicsVlanAndBondingForNetwork(self, network):
         vlan = None
-        vlanid = None
         bonding = None
         lnics = []
 
-        if self.networks[network]['switch'] == 'legacy':
-            # TODO: CachingNetInfo should not use external resources in its
-            # methods. Drop this branch when legacy netinfo report
-            # 'southbound' and 'vlanid' as a part of network entries.
-            if self.networks[network]['bridged']:
-                ports = self.networks[network]['ports']
-            else:
-                ports = []
-                interface = self.networks[network]['iface']
-                ports.append(interface)
-
-            for port in ports:
-                if port in self.vlans:
-                    nic = self.vlans[port]['iface']
-                    vlanid = self.vlans[port]['vlanid']
-                    vlan = port  # vlan devices can have an arbitrary name
-                    port = nic
-                if port in self.bondings:
-                    bonding = port
-                    lnics += self.bondings[bonding]['slaves']
-                elif port in self.nics:
-                    lnics.append(port)
+        net_sb = self.networks[network]['southbound']
+        vlanid = self.networks[network].get('vlanid')
+        if vlanid is not None:
+            vlan = net_sb
+            sb = self.vlans[net_sb]['iface']
         else:
-            sb = self.networks[network]['southbound']
-            if sb in self.bondings:
-                bonding = sb
-                lnics = self.bondings[bonding]['slaves']
-            elif sb in self.nics:
-                lnics = [sb]
-            vlanid = self.networks[network].get('vlanid')
-            vlan = (
-                '%s.%s' % (bonding or lnics[0], vlanid)
-                if vlanid is not None
-                else None
-            )
+            sb = net_sb
+        if sb in self.bondings:
+            bonding = sb
+            lnics = self.bondings[bonding]['slaves']
+        elif sb in self.nics:
+            lnics = [sb]
 
         return lnics, vlan, vlanid, bonding
 

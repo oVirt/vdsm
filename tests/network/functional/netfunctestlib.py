@@ -308,7 +308,7 @@ class NetFuncTestAdapter(object):
         bond = netattrs.get('bonding')
         vlan = netattrs.get('vlan')
 
-        if vlan is not None and netattrs['switch'] == 'legacy':
+        if vlan is not None:
             sb_iface = '{}.{}'.format(nic or bond, vlan)
         else:
             sb_iface = nic or bond
