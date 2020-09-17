@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import ipaddress
 import json
 import os
 import socket
@@ -28,7 +29,8 @@ class NMEnvVariables:
         ROUTERS = 'DHCP4_ROUTERS'
 
     class IPV6:
-        FIRST_ADDRESS = 'IP6_ADDRESS_0'
+        ADDR_LEN = 'IP6_NUM_ADDRESSES'
+        ADDRESS_BASE = 'IP6_ADDRESS'
 
 
 def main():
@@ -43,7 +45,13 @@ def main():
 
 def handle_up(device):
     dhcpv4 = os.getenv(NMEnvVariables.DHCP4.ADDRESS)
-    ipv6_address = os.getenv(NMEnvVariables.IPV6.FIRST_ADDRESS)
+    ipv6_len = os.getenv(NMEnvVariables.IPV6.ADDR_LEN)
+    if ipv6_len:
+        ipv6_adresses = get_all_ipv6_addresses(int(ipv6_len))
+        ipv6_address = get_global_ipv6_address(ipv6_adresses)
+    else:
+        ipv6_address = None
+
     if dhcpv4:
         mask = os.getenv(NMEnvVariables.DHCP4.SUBNET_MASK)
         route = os.getenv(NMEnvVariables.DHCP4.ROUTERS)
@@ -52,6 +60,27 @@ def handle_up(device):
     if ipv6_address:
         content = create_up_content(None, None, device, None, 6)
         send_configuration(content)
+
+
+def get_all_ipv6_addresses(len):
+    addresses = []
+    for index in range(len):
+        addresses.append(
+            os.getenv(f'{NMEnvVariables.IPV6.ADDRESS_BASE}_{index}')
+        )
+    return addresses
+
+
+def get_global_ipv6_address(adresses):
+    return next(
+        (address for address in adresses if not is_ipv6_link_local(address)),
+        None,
+    )
+
+
+def is_ipv6_link_local(ipv6_address):
+    ipv6, _ = ipv6_address.split(' ')
+    return ipaddress.ip_interface(ipv6).is_link_local
 
 
 def create_up_content(ip, mask, iface, route, family):
