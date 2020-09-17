@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Red Hat, Inc.
+# Copyright 2013-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -65,6 +65,8 @@ class Dnsmasq(object):
         # --dhcp-option=6           don't reply with any DNS servers
         # -d                        don't daemonize and log to stderr
         # --bind-dynamic            bind only the testing veth iface
+        # --no-ping                 skip dhcpv4 check if the address is
+        #                           available
         command = [
             _DNSMASQ_BINARY.cmd,
             '--dhcp-authoritative',
@@ -78,6 +80,7 @@ class Dnsmasq(object):
             'lo',
             '-d',
             '--bind-dynamic',
+            '--no-ping',
         ]
 
         if dhcp_range_from and dhcp_range_to:
