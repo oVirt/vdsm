@@ -525,7 +525,7 @@ def _test_dynamic_ip_switch_to_static(
     network_attrs = {
         'bridged': bridged,
         'nic': nic,
-        'blockingdhcp': True,
+        'blockingdhcp': is_dhcp_server_enabled,
         'switch': switch,
     }
     if vlan is not None:

@@ -787,7 +787,7 @@ class SetupNetworks(object):
             raise SetupNetworksError(status, msg)
 
         if nmstate.is_nmstate_backend():
-            if self._is_dynamic():
+            if self._is_sync_dynamic():
                 _wait_for_dhcp_response(10)
                 self.vdsm_proxy.refreshNetworkCapabilities()
         else:
@@ -839,8 +839,10 @@ class SetupNetworks(object):
 
         return status, msg
 
-    def _is_dynamic(self):
-        return self._is_dynamic_ipv4() or self._is_dynamic_ipv6()
+    def _is_sync_dynamic(self):
+        return (
+            self._is_dynamic_ipv4() or self._is_dynamic_ipv6()
+        ) and self._is_blocking_dhcp()
 
     def _is_dynamic_ipv4(self):
         for attr in self.setup_networks.values():
@@ -851,6 +853,12 @@ class SetupNetworks(object):
     def _is_dynamic_ipv6(self):
         for attr in self.setup_networks.values():
             if attr.get('dhcpv6'):
+                return True
+        return False
+
+    def _is_blocking_dhcp(self):
+        for attr in self.setup_networks.values():
+            if attr.get('blockingdhcp'):
                 return True
         return False
 
