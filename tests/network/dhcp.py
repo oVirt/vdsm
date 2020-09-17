@@ -99,18 +99,20 @@ class Dnsmasq(object):
             command += ['--enable-ra']
             command += ['--dhcp-range={0},slaac,2m'.format(ipv6_slaac_prefix)]
 
-        self._popen = Popen(command, close_fds=True, stderr=PIPE)
+        self._popen = Popen(
+            command, close_fds=True, stderr=PIPE, encoding='utf-8'
+        )
         sleep(_START_CHECK_TIMEOUT)
         if self._popen.poll():
             raise DhcpError(
                 'Failed to start dnsmasq DHCP server.\n%s\n%s'
-                % (self._popen.stderr, ' '.join(command))
+                % (self._popen.stderr.read(), ' '.join(command))
             )
 
     def stop(self):
         self._popen.kill()
         self._popen.wait()
-        logging.debug(self._popen.stderr)
+        logging.debug(self._popen.stderr.read())
 
 
 class ProcessCannotBeKilled(Exception):
