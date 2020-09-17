@@ -66,6 +66,9 @@ class MonitoredItemPool(object):
     def is_pool_empty(self):
         return len(self._item_pool) == 0
 
+    def clear_pool(self):
+        self._item_pool.clear()
+
 
 class Monitor(object):
     """

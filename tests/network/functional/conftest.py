@@ -28,6 +28,7 @@ from .netfunctestlib import Target
 from network.compat import mock
 
 from vdsm.network import initializer
+from vdsm.network.dhcp_monitor import MonitoredItemPool
 
 
 def pytest_addoption(parser):
@@ -84,6 +85,17 @@ def patch_stable_link_monitor(skip_stable_link_monitor):
             yield
             return
     yield
+
+
+@pytest.fixture(scope='function', autouse=True)
+def clear_monitor_pool():
+    yield
+    pool = MonitoredItemPool.instance()
+    if not pool.is_pool_empty():
+        # Some tests are not able to clear the pool
+        # (without running dhcp server).
+        # The same applies if the waiting for dhcp monitor times out.
+        pool.clear_pool()
 
 
 @contextmanager
