@@ -556,7 +556,11 @@ class NetFuncTestAdapter(object):
     def assertDHCPv6(self, ipinfo, ignore_ip=False):
         assert ipinfo['dhcpv6']
         if not ignore_ip:
-            assert len(ipinfo['ipv6addrs']) > 0
+            length = len(ipinfo['ipv6addrs'])
+            if length == 0:
+                raise MissingDynamicIPv6Address(
+                    f'IPv6 addresses are empty: {ipinfo}'
+                )
 
     def assertIPv6Autoconf(self, ipinfo):
         assert ipinfo['ipv6autoconf']
@@ -1057,4 +1061,8 @@ class DeviceNotInCapsError(Exception):
 
 
 class UnexpectedLinkStateChangeError(Exception):
+    pass
+
+
+class MissingDynamicIPv6Address(Exception):
     pass

@@ -26,6 +26,7 @@ from vdsm.network.cmd import exec_sync
 
 from . import netfunctestlib as nftestlib
 from network.nettestlib import dummy_device
+from network.nettestlib import running_on_ovirt_ci
 
 
 NETWORK_NAME = 'test-network'
@@ -90,11 +91,10 @@ class TestBridge(object):
                 adapter.assertNetwork(brname, NETCREATE[brname])
 
     @pytest.mark.xfail(
-        reason='Unstable link while NM is running (BZ#1498022) '
-        'and on CI even with NM down',
+        reason='Unstable link on oVirt CI',
         raises=nftestlib.UnexpectedLinkStateChangeError,
         strict=False,
-        condition=not nftestlib.is_nmstate_backend(),
+        condition=running_on_ovirt_ci(),
     )
     @nftestlib.parametrize_legacy_switch
     def test_create_network_and_reuse_existing_owned_bridge(
