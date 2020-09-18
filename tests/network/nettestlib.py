@@ -521,6 +521,10 @@ def running_on_travis_ci():
     return 'TRAVIS_CI' in os.environ
 
 
+def running_on_ovirt_ci():
+    return 'CI' in os.environ
+
+
 class FakeNotifier:
     def __init__(self):
         self.calls = []
