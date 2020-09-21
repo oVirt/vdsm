@@ -45,6 +45,7 @@ from testlib import namedTemporaryDir
 from testlib import temporaryPath
 
 from . marks import requires_bitmaps_support
+from . marks import requires_root
 
 CLUSTER_SIZE = 64 * KiB
 
@@ -1323,6 +1324,67 @@ class TestMeasure:
             for _ in range(1024):
                 f.write(b"x" * MiB)
         self.check_measure(filename, compat, format, compressed)
+
+    @pytest.mark.parametrize("compat", ['0.10', '1.1'])
+    @requires_root
+    def test_measure_leaf(self, tmp_storage, compat):
+        dev_size = 1 * GiB
+
+        # Create base volume
+        base = tmp_storage.create_device(dev_size)
+        op = qemuimg.create(
+            base,
+            size=dev_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat=compat
+        )
+        op.run()
+
+        # Write 1 MiB to base
+        qemuio.write_pattern(
+            base,
+            format=qemuimg.FORMAT.QCOW2,
+            offset=0,
+            len=MiB,
+            pattern=0xf0)
+
+        # Create top volume over base
+        top = tmp_storage.create_device(dev_size)
+        op = qemuimg.create(
+            top,
+            size=dev_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat=compat,
+            backing=base,
+            backingFormat=qemuimg.FORMAT.QCOW2
+        )
+        op.run()
+
+        # Write 1 MiB to top
+        qemuio.write_pattern(
+            top,
+            format=qemuimg.FORMAT.QCOW2,
+            offset=1 * MiB,
+            len=MiB,
+            pattern=0xf0)
+
+        entire_image = qemuimg.measure(
+            top,
+            format=qemuimg.FORMAT.QCOW2,
+            output_format=qemuimg.FORMAT.QCOW2,
+            is_block=True,
+            backing=True
+        )
+
+        top_only = qemuimg.measure(
+            top,
+            format=qemuimg.FORMAT.QCOW2,
+            output_format=qemuimg.FORMAT.QCOW2,
+            is_block=True,
+            backing=False
+        )
+
+        assert entire_image["required"] >= top_only["required"] + MiB
 
     def check_measure(self, filename, compat, format, compressed):
         if format != qemuimg.FORMAT.RAW:
