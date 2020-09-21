@@ -217,8 +217,8 @@ Requires: libvirt-lock-sanlock
 # TODO: Depend on the same version as RHEL once it is available upstream.
 Requires: libvirt-daemon-kvm >= 6.0.0-17
 %else
-# Advanced Virt fix for live snapshots of read-only disks, https://bugzilla.redhat.com/1832204
-Requires: libvirt-daemon-kvm >= 6.0.0-20.module+el8.2.1+6621+ddee07d5
+# Advanced Virt fix for SCSI host devices, https://bugzilla.redhat.com/1876605
+Requires: libvirt-daemon-kvm >= 6.6.0-6
 %endif
 Requires: python3-libvirt
 %else # fedora
