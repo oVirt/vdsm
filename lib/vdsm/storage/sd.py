@@ -651,11 +651,19 @@ class StorageDomainManifest(object):
         if preallocate is not None and preallocate not in sc.VOL_TYPE:
             raise se.IncorrectType(preallocate)
 
-        if add_bitmaps and srcVolUUID == sc.BLANK_UUID:
-            raise se.UnsupportedOperation(
-                "Cannot add bitmaps for volume without parent volume",
-                srcVolUUID=srcVolUUID,
-                add_bitmaps=add_bitmaps)
+        if add_bitmaps:
+            if srcVolUUID == sc.BLANK_UUID:
+                raise se.UnsupportedOperation(
+                    "Cannot add bitmaps for volume without parent volume",
+                    srcVolUUID=srcVolUUID,
+                    add_bitmaps=add_bitmaps)
+
+            if not self.supports_bitmaps_operations():
+                raise se.UnsupportedOperation(
+                    "Cannot perform bitmaps operations on "
+                    "storage domain version < 4",
+                    domain_version=self.getVersion(),
+                    add_bitmaps=add_bitmaps)
 
     def teardownVolume(self, imgUUID, volUUID):
         """
@@ -670,6 +678,13 @@ class StorageDomainManifest(object):
         Return a type specific volume generator object
         """
         raise NotImplementedError
+
+    def supports_bitmaps_operations(self):
+        """
+        Return True if this domain supports bitmaps operations,
+        False otherwise.
+        """
+        return self.getVersion() >= 4
 
     # External leases support
 
@@ -1362,6 +1377,9 @@ class StorageDomain(object):
         Return a type specific volume generator object
         """
         raise NotImplementedError
+
+    def supports_bitmaps_operations(self):
+        return self._manifest.supports_bitmaps_operations()
 
     # External leases support
 

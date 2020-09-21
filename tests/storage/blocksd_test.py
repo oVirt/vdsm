@@ -964,6 +964,65 @@ def test_create_with_bitmaps(
 
 @requires_root
 @pytest.mark.root
+def test_failed_to_add_bitmaps_to_v3_domain(
+        tmp_storage, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
+        fake_sanlock):
+    sd_uuid = str(uuid.uuid4())
+
+    dev = tmp_storage.create_device(20 * GiB)
+    lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_uuid)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_uuid,
+        domainName="domain",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=3,
+        storageType=sd.ISCSI_DOMAIN)
+
+    sdCache.knownSDs[sd_uuid] = blockSD.findDomain
+    sdCache.manuallyAddDomain(dom)
+
+    dom.refresh()
+    dom.attach(tmp_repo.pool_id)
+
+    img_uuid = str(uuid.uuid4())
+    base_vol_uuid = str(uuid.uuid4())
+    base_vol_capacity = GiB
+    top_vol_uuid = str(uuid.uuid4())
+    vol_capacity = 2 * base_vol_capacity
+
+    # Create base volume.
+    dom.createVolume(
+        imgUUID=img_uuid,
+        capacity=base_vol_capacity,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=base_vol_uuid,
+        desc="Test base volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    base_vol = dom.produceVolume(img_uuid, base_vol_uuid)
+    with pytest.raises(se.UnsupportedOperation):
+        # Create top volume with bitmaps.
+        dom.createVolume(
+            imgUUID=img_uuid,
+            capacity=vol_capacity,
+            volFormat=sc.COW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType='DATA',
+            volUUID=top_vol_uuid,
+            desc="Test top volume",
+            srcImgUUID=base_vol.imgUUID,
+            srcVolUUID=base_vol.volUUID,
+            add_bitmaps=True)
+
+
+@requires_root
+@pytest.mark.root
 @pytest.mark.parametrize("domain_version", [4, 5])
 def test_dump_sd_metadata(
         monkeypatch,

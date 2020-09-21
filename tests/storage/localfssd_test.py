@@ -1231,6 +1231,44 @@ def test_create_volume_with_bitmaps(user_domain, local_fallocate):
     ]
 
 
+def test_failed_to_add_bitmaps_to_v3_domain(user_domain, local_fallocate):
+    if user_domain.getVersion() != 3:
+        pytest.skip("Bitmaps operations supported on domains version > 3")
+
+    parent_img_uuid = str(uuid.uuid4())
+    parent_vol_uuid = str(uuid.uuid4())
+    # Create base volume
+    user_domain.createVolume(
+        imgUUID=parent_img_uuid,
+        capacity=SPARSE_VOL_SIZE,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType="DATA",
+        volUUID=parent_vol_uuid,
+        desc="test",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    parent_vol = user_domain.produceVolume(
+        parent_img_uuid, parent_vol_uuid)
+
+    vol_uuid = str(uuid.uuid4())
+    with pytest.raises(se.UnsupportedOperation):
+        # Create top volume
+        user_domain.createVolume(
+            imgUUID=parent_img_uuid,
+            capacity=SPARSE_VOL_SIZE,
+            volFormat=sc.COW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType='DATA',
+            volUUID=vol_uuid,
+            desc="Test volume",
+            srcImgUUID=parent_vol.imgUUID,
+            srcVolUUID=parent_vol.volUUID,
+            add_bitmaps=True
+        )
+
+
 def verify_volume_file(
         path, format, virtual_size, qemu_info, backing_file=None):
     assert qemu_info['format'] == format
