@@ -26,6 +26,7 @@ import io
 from contextlib import contextmanager
 import os
 import shutil
+import stat
 import tempfile
 
 
@@ -107,3 +108,7 @@ def parse_key_val_file(file_name, delim='='):
             k, v = map(lambda x: x.strip(), kv)
             d[k] = v
     return d
+
+
+def is_block_device(path):
+    return stat.S_ISBLK(os.stat(path).st_mode)

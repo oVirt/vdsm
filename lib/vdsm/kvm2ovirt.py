@@ -26,7 +26,6 @@ import six
 import sys
 import os
 import threading
-import stat
 
 # TODO: Stop using internal modules.
 from ovirt_imageio._internal import directio
@@ -36,6 +35,7 @@ from vdsm.common import libvirtconnection
 from vdsm.common import time
 from vdsm.common.password import ProtectedPassword
 from vdsm.common.units import MiB
+from vdsm.common import fileutils
 
 _start = None
 
@@ -189,10 +189,6 @@ def get_password(options):
         return ProtectedPassword(f.read())
 
 
-def is_block_device(path):
-    return stat.S_ISBLK(os.stat(path).st_mode)
-
-
 def handle_volume(con, diskno, src, dst, options):
     write_output('Copying disk %d/%d to %s' % (diskno, len(options.source),
                                                dst))
@@ -210,7 +206,7 @@ def handle_volume(con, diskno, src, dst, options):
     # sparse stream API.
     # Libvirt sparseness is only supported from version 3004000 and up.
     if options.allocation == "sparse" and \
-            not is_block_device(dst) and \
+            not fileutils.is_block_device(dst) and \
             con.getLibVersion() >= 3004000:
         try:
             preallocated = False
