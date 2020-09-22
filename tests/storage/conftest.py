@@ -56,6 +56,7 @@ from .fakesanlock import FakeSanlock
 from . import tmpfs
 from . import tmprepo
 from . import tmpstorage
+from . import userstorage
 
 
 log = logging.getLogger("test")
@@ -140,6 +141,21 @@ def tmp_storage(monkeypatch, tmpdir):
             stats = lvm.cache_stats()
             log.info("LVM cache hit ratio: %.2f%% (hits: %d misses: %d)",
                      stats["hit_ratio"], stats["hits"], stats["misses"])
+
+
+@pytest.fixture(
+    scope="module",
+    params=[
+        userstorage.PATHS["mount-512"],
+        userstorage.PATHS["mount-4k"],
+    ],
+    ids=str,
+)
+def tmp_mount(request):
+    mount = request.param
+    if not mount.exists():
+        pytest.xfail("{} storage not available".format(mount.name))
+    return mount
 
 
 @pytest.fixture

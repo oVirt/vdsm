@@ -32,7 +32,6 @@ import pytest
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
 from . import qemuio
-from . import userstorage
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
@@ -52,21 +51,6 @@ CLUSTER_SIZE = 64 * KiB
 QEMU_IMG = qemuimg._qemuimg.cmd
 
 CONFIG = make_config([('irs', 'qcow2_compat', '0.10')])
-
-
-@pytest.fixture(
-    scope="module",
-    params=[
-        userstorage.PATHS["mount-512"],
-        userstorage.PATHS["mount-4k"],
-    ],
-    ids=str,
-)
-def user_mount(request):
-    mount = request.param
-    if not mount.exists():
-        pytest.xfail("{} storage not available".format(mount.name))
-    return mount
 
 
 def fake_json_call(data, cmd, **kw):
@@ -412,10 +396,10 @@ class TestConvert:
         ("0.10", True),
         ("1.1", False),
     ])
-    def test_qcow2(self, user_mount, dst_compat, create):
+    def test_qcow2(self, tmp_mount, dst_compat, create):
         virtual_size = MiB
         # Create source chain.
-        src_base = os.path.join(user_mount.path, 'src_base.img')
+        src_base = os.path.join(tmp_mount.path, 'src_base.img')
         op = qemuimg.create(
             src_base,
             size=virtual_size,
@@ -424,7 +408,7 @@ class TestConvert:
         )
         op.run()
 
-        src_top = os.path.join(user_mount.path, 'src_top.img')
+        src_top = os.path.join(tmp_mount.path, 'src_top.img')
         op = qemuimg.create(
             src_top,
             size=virtual_size,
@@ -436,7 +420,7 @@ class TestConvert:
         op.run()
 
         # Create dest chain
-        dst_base = os.path.join(user_mount.path, 'dst_base.img')
+        dst_base = os.path.join(tmp_mount.path, 'dst_base.img')
         op = qemuimg.create(
             dst_base,
             size=virtual_size,
@@ -445,7 +429,7 @@ class TestConvert:
         )
         op.run()
 
-        dst_top = os.path.join(user_mount.path, 'dst_top.img')
+        dst_top = os.path.join(tmp_mount.path, 'dst_top.img')
         op = qemuimg.create(
             dst_top,
             size=virtual_size,
@@ -515,10 +499,10 @@ class TestConvert:
         ("0.10", True),
         ("1.1", False),
     ])
-    def test_qcow2_collapsed(self, user_mount, dst_compat, create):
+    def test_qcow2_collapsed(self, tmp_mount, dst_compat, create):
         virtual_size = MiB
         # Create empty source chain.
-        src_base = os.path.join(user_mount.path, 'src_base.img')
+        src_base = os.path.join(tmp_mount.path, 'src_base.img')
         op = qemuimg.create(
             src_base,
             size=virtual_size,
@@ -527,7 +511,7 @@ class TestConvert:
         )
         op.run()
 
-        src_top = os.path.join(user_mount.path, 'src_top.img')
+        src_top = os.path.join(tmp_mount.path, 'src_top.img')
         op = qemuimg.create(
             src_top,
             size=virtual_size,
@@ -539,7 +523,7 @@ class TestConvert:
         op.run()
 
         # Create destination image.
-        dst = os.path.join(user_mount.path, 'dst.img')
+        dst = os.path.join(tmp_mount.path, 'dst.img')
         op = qemuimg.create(
             dst,
             size=virtual_size,
@@ -571,13 +555,13 @@ class TestConvert:
         op.run()
 
     @requires_bitmaps_support
-    def test_copy_bitmaps(self, user_mount):
+    def test_copy_bitmaps(self, tmp_mount):
         virtual_size = MiB
         base_bitmaps = ['base_bitmap1', 'base_bitmap2']
         top_bitmaps = ['top_bitmap1', 'top_bitmap2']
 
         # Create source chain.
-        src_base = os.path.join(user_mount.path, 'src_base.img')
+        src_base = os.path.join(tmp_mount.path, 'src_base.img')
         op = qemuimg.create(
             src_base,
             size=virtual_size,
@@ -591,7 +575,7 @@ class TestConvert:
             op = qemuimg.bitmap_add(src_base, name)
             op.run()
 
-        src_top = os.path.join(user_mount.path, 'src_top.img')
+        src_top = os.path.join(tmp_mount.path, 'src_top.img')
         op = qemuimg.create(
             src_top,
             size=virtual_size,
@@ -608,7 +592,7 @@ class TestConvert:
             op.run()
 
         # Create destination chain.
-        dst_base = os.path.join(user_mount.path, 'dst_base.img')
+        dst_base = os.path.join(tmp_mount.path, 'dst_base.img')
         op = qemuimg.create(
             dst_base,
             size=virtual_size,
@@ -617,7 +601,7 @@ class TestConvert:
         )
         op.run()
 
-        dst_top = os.path.join(user_mount.path, 'dst_top.img')
+        dst_top = os.path.join(tmp_mount.path, 'dst_top.img')
         op = qemuimg.create(
             dst_top,
             size=virtual_size,
@@ -668,11 +652,11 @@ class TestConvert:
             ]
 
     @requires_bitmaps_support
-    def test_convert_without_copy_bitmaps(self, user_mount):
+    def test_convert_without_copy_bitmaps(self, tmp_mount):
         virtual_size = MiB
 
         # Create source chain.
-        src = os.path.join(user_mount.path, 'src.img')
+        src = os.path.join(tmp_mount.path, 'src.img')
         op = qemuimg.create(
             src,
             size=virtual_size,
@@ -685,7 +669,7 @@ class TestConvert:
         op = qemuimg.bitmap_add(src, 'bitmap')
         op.run()
 
-        dst = os.path.join(user_mount.path, 'dst.img')
+        dst = os.path.join(tmp_mount.path, 'dst.img')
         op = qemuimg.create(
             dst,
             size=virtual_size,
@@ -709,12 +693,12 @@ class TestConvert:
         assert 'bitmaps' not in info
 
     @requires_bitmaps_support
-    def test_copy_with_disabled_bitmaps(self, user_mount):
+    def test_copy_with_disabled_bitmaps(self, tmp_mount):
         virtual_size = MiB
         bitmaps = [("a", True), ("b", False)]
 
         # Create source chain.
-        src = os.path.join(user_mount.path, 'src.img')
+        src = os.path.join(tmp_mount.path, 'src.img')
         op = qemuimg.create(
             src,
             size=virtual_size,
@@ -728,7 +712,7 @@ class TestConvert:
             op = qemuimg.bitmap_add(src, name, enable=enable)
             op.run()
 
-        dst = os.path.join(user_mount.path, 'dst.img')
+        dst = os.path.join(tmp_mount.path, 'dst.img')
         op = qemuimg.create(
             dst,
             size=virtual_size,
@@ -1365,11 +1349,11 @@ class TestBitmaps:
         (8 * 64 * 1024, 8 * 64 * 1024)
     ])
     def test_add_remove_bitmap(
-            self, user_mount, granularity, exp_granularity):
+            self, tmp_mount, granularity, exp_granularity):
         virtual_size = MiB
         bitmap_name = 'bitmap1'
         # Create source file
-        src_path = os.path.join(user_mount.path, 'source.img')
+        src_path = os.path.join(tmp_mount.path, 'source.img')
         op = qemuimg.create(
             src_path,
             size=virtual_size,
@@ -1403,11 +1387,11 @@ class TestBitmaps:
         assert 'bitmaps' not in info
 
     @requires_bitmaps_support
-    def test_add_disabled_bitmap(self, user_mount):
+    def test_add_disabled_bitmap(self, tmp_mount):
         virtual_size = MiB
         bitmap_name = 'bitmap1'
         # Create source file
-        src_path = os.path.join(user_mount.path, 'source.img')
+        src_path = os.path.join(tmp_mount.path, 'source.img')
         op = qemuimg.create(
             src_path,
             size=virtual_size,
