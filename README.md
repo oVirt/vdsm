@@ -12,11 +12,11 @@ log collection.
 
 Add ovirt repositories to your repositories list:
 
-    sudo yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm
+    sudo dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm
 
 Install Vdsm:
 
-    sudo yum install vdsm vdsm-client
+    sudo dnf install vdsm vdsm-client
 
 Configure Vdsm:
 
@@ -40,7 +40,7 @@ Vdsm logs can be found at `/var/log/vdsm/*.log` (refer to README.logging for fur
 
 Set local git clone:
 
-    sudo yum install -y git
+    sudo dnf install -y git
     git clone http://gerrit.ovirt.org/p/vdsm.git .
 
 Install additional packages for Fedora:
@@ -49,7 +49,7 @@ Install additional packages for Fedora:
 
 Install additional packages for CentOS:
 
-    sudo yum install -y `cat automation/check-patch.packages.el8`
+    sudo dnf install -y `cat automation/check-patch.packages.el8`
     easy_install pip
 
 Install tox:
@@ -76,7 +76,7 @@ To create an RPM:
 
 To update your system with local build's RPM:
 
-    (cd ~/rpmbuild/RPMS && sudo yum upgrade */vdsm*.rpm)
+    (cd ~/rpmbuild/RPMS && sudo dnf upgrade */vdsm*.rpm)
 
 
 ## Making new releases
