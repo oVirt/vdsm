@@ -50,12 +50,22 @@ Install additional packages for Fedora:
 Install additional packages for CentOS:
 
     sudo dnf install -y `cat automation/check-patch.packages.el8`
-    easy_install pip
 
-Install tox:
+Create virtual environment for vdsm:
 
-    pip install --user tox
+    python3 -m venv ~/.venv/vdsm
+    source ~/.venv/vdsm/bin/activate
+    pip install --upgrade pip
+    pip install -r docker/requirements.txt
+    deactivate
 
+Before running vdsm tests, activate the environment:
+
+    source ~/.venv/vdsm/bin/activate
+
+When done, you can deactivate the environment:
+
+    deactivate
 
 ## Building Vdsm
 
