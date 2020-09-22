@@ -117,6 +117,9 @@ def get_metadata(drive):
     data = core.get_metadata_values(drive)
     core.update_metadata_from_object(
         data, drive, METADATA_KEYS + METADATA_NESTED_KEYS)
+    if 'GUID' in data and 'imageID' not in data:
+        # For forward compatibility of the engine with LUN disks.
+        data['imageID'] = data['GUID']
     return attrs, data
 
 
