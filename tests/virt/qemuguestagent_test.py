@@ -227,15 +227,14 @@ class QemuGuestAgentTests(TestCaseBase):
             raise libvirt.libvirtError("Some error!")
 
         last = self.qga_poller.last_failure(self.vm.id)
-        self.assertIsNone(last)
+        self.assertEqual(last, 0)
         with MonkeyPatchScope([
                 (libvirt_qemu, "qemuAgentCommand", _qga_command_fail)]):
             self.qga_poller.call_qga_command(
                 self.vm,
                 qemuguestagent._QEMU_GUEST_INFO_COMMAND)
         now = self.qga_poller.last_failure(self.vm.id)
-        self.assertIsNotNone(now)
-        self.assertNotEqual(last, now)
+        self.assertTrue(now > 0)
 
     def test_guest_info(self):
         """ Set and read guest info. """

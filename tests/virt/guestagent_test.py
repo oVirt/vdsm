@@ -359,9 +359,9 @@ class QemuGuestAgentTests(TestCaseBase):
             if vm in removed_vms:
                 self.assertIsNone(poller.get_caps(vm)['version'])
                 self.assertIsNone(poller.get_guest_info(vm))
-                self.assertIsNone(poller.last_failure(vm))
+                self.assertEqual(poller.last_failure(vm), 0)
             else:
                 self.assertEqual(poller.get_caps(vm)['version'], 1)
                 self.assertIsNotNone(poller.get_guest_info(vm))
                 if vm in failed_vms:
-                    self.assertIsNotNone(poller.last_failure(vm))
+                    self.assertTrue(poller.last_failure(vm) > 0)

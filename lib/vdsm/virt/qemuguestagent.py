@@ -151,7 +151,7 @@ class QemuGuestAgentPoller(object):
         self._guest_info_lock = threading.Lock()
         self._guest_info = defaultdict(dict)
         self._last_failure_lock = threading.Lock()
-        self._last_failure = {}
+        self._last_failure = defaultdict(lambda: 0)
         self._last_check_lock = threading.Lock()
         # Key is tuple (vm_id, command)
         self._last_check = defaultdict(lambda: 0)
@@ -210,11 +210,11 @@ class QemuGuestAgentPoller(object):
             self._guest_info[vm_id].update(info)
 
     def last_failure(self, vm_id):
-        return self._last_failure.get(vm_id, None)
+        return self._last_failure[vm_id]
 
     def reset_failure(self, vm_id):
         with self._last_failure_lock:
-            self._last_failure[vm_id] = None
+            del self._last_failure[vm_id]
 
     def set_failure(self, vm_id):
         with self._last_failure_lock:
@@ -514,8 +514,7 @@ class QemuGuestAgentPoller(object):
 
     def _runnable_on_vm(self, vm):
         last_failure = self.last_failure(vm.id)
-        if last_failure is not None and \
-                (monotonic_time() - last_failure) < _THROTTLING_INTERVAL:
+        if (monotonic_time() - last_failure) < _THROTTLING_INTERVAL:
             return False
         if not vm.isDomainRunning():
             return False
