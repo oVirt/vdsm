@@ -1167,25 +1167,6 @@ def removeVgMapping(vgName):
             log.error("Removing VG mapping failed: %s", e)
 
 
-# Activation of the whole vg is assumed to be used nowhere.
-# This is a separate function just in case.
-def _setVgAvailability(vgs, available):
-    vgs = normalize_args(vgs)
-    cmd = ["vgchange", "--available", available] + vgs
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs(vgs))
-    for vg in vgs:
-        _lvminfo._invalidatelvs(vg)
-    if rc != 0:
-        # During deactivation, in vg.py (sic):
-        # we ignore error here because we don't care about this vg anymore
-        if available == "n":
-            log.info("deactivate vg %s failed: rc %s - %s %s (ignored)" %
-                     (vgs, rc, out, err))
-        else:
-            raise se.VolumeGroupActionError(
-                "vgchange on vg(s) %s failed. %d %s %s" % (vgs, rc, out, err))
-
-
 def changelv(vg, lvs, attrs):
     """
     Change multiple attributes on multiple LVs.
@@ -1496,7 +1477,14 @@ def chkVG(vgName):
 
 
 def deactivateVG(vgName):
-    _setVgAvailability(vgName, available="n")
+    cmd = ["vgchange", "--available", "n", vgName]
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs([vgName]))
+    _lvminfo._invalidatelvs(vgName)
+    if rc != 0:
+        # During deactivation we ignore error here because we don't care about
+        # this vg anymore.
+        log.info("deactivate vg %s failed: rc %s - %s %s (ignored)" %
+                 (vgName, rc, out, err))
 
 
 def invalidateVG(vgName, invalidateLVs=True, invalidatePVs=False):
