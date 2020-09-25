@@ -778,3 +778,23 @@ def test_align_data(length, offset, expected):
     assert alignment == expected
     for value in alignment:
         assert isinstance(value, int)
+
+
+def test_walk_skip_dirs(tmpdir):
+    top = tmpdir
+    skip_dir = top.mkdir("skip")
+    skip_dir.join("skipped_file").write("")
+    include_dir = top.mkdir("include")
+    include_dir.join("included_file").write("")
+
+    include_seen = included_file_seen = False
+    for root, dirs, files in misc.walk(
+            str(top), blacklist=(str(skip_dir),)):
+        assert "skip" not in dirs
+        assert "skipped_file" not in files
+        if "include" in dirs:
+            include_seen = True
+        if "included_file" in files:
+            included_file_seen = True
+    assert include_seen
+    assert included_file_seen
