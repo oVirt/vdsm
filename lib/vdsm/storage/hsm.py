@@ -506,7 +506,7 @@ class HSM(object):
         self.log.debug("Cleaning leftovers")
         rmDirList = []
 
-        # We can't list files form top to bottom because the process
+        # We can't list files from top to bottom because the process
         # would descend into mountpoints and an unreachable NFS storage
         # could freeze the vdsm startup. Since we will ignore files in
         # mounts anyway using out of process file operations is useless.
