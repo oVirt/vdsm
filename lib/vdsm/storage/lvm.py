@@ -1409,6 +1409,7 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
 
 
 def removeVG(vgName):
+    deactivateVG(vgName)
     cmd = ["vgremove", "-f", vgName]
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     # PVS needs to be reloaded anyhow: if vg is removed they are staled,
