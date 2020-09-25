@@ -789,7 +789,7 @@ def test_walk_skip_dirs(tmpdir):
 
     include_seen = included_file_seen = False
     for root, dirs, files in misc.walk(
-            str(top), blacklist=(str(skip_dir),)):
+            str(top), skip=(str(skip_dir),)):
         assert "skip" not in dirs
         assert "skipped_file" not in files
         if "include" in dirs:

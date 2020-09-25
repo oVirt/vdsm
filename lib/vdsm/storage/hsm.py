@@ -513,7 +513,7 @@ class HSM(object):
         # We just clean all directories before removing them from the
         # innermost to the outermost.
         for base, dirs, files in misc.walk(sc.REPO_DATA_CENTER,
-                                           blacklist=mountList):
+                                           skip=mountList):
             for directory in dirs:
                 fullPath = os.path.join(base, directory)
 

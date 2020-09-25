@@ -480,11 +480,11 @@ def isAscii(s):
         return False
 
 
-def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=()):
+def walk(top, topdown=True, onerror=None, followlinks=False, skip=()):
     """Directory tree generator.
 
     Custom implementation of os.walk that doesn't block if the destination of
-    a symlink is on an unreachable blacklisted path (typically a nfs mount).
+    a symlink is on an unreachable skipped path (typically a nfs mount).
     All the general os.walk documentation applies.
     """
 
@@ -500,15 +500,15 @@ def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=()):
             onerror(err)
         return
 
-    # Use absolute and normalized blacklist paths
-    normblacklist = [os.path.abspath(x) for x in blacklist]
+    # Use absolute and normalized skipped paths
+    normskiplist = [os.path.abspath(x) for x in skip]
 
     dirs, nondirs = [], []
     for name in names:
         path = os.path.join(top, name)
 
         # Begin of the part where we handle the unreachable symlinks
-        if os.path.abspath(path) in normblacklist:
+        if os.path.abspath(path) in normskiplist:
             continue
 
         if not followlinks:
@@ -539,7 +539,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=()):
     for name in dirs:
         path = os.path.join(top, name)
         if followlinks or not os.path.islink(path):
-            for x in walk(path, topdown, onerror, followlinks, blacklist):
+            for x in walk(path, topdown, onerror, followlinks, skip):
                 yield x
     if not topdown:
         yield top, dirs, nondirs
