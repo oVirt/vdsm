@@ -181,10 +181,9 @@ class FakeDomainManifest(object):
     def refresh(self):
         pass
 
-    @classmethod
     @recorded
     def validateCreateVolumeParams(
-            cls, volFormat, srcVolUUID, diskType=None, preallocate=None,
+            self, volFormat, srcVolUUID, diskType=None, preallocate=None,
             add_bitmaps=False):
         pass
 
@@ -676,9 +675,15 @@ class DomainTestMixin(object):
                                   [('getRepoPath', (), {})])
 
     def test_validate_create_volume_params(self):
-        self.checker.check_classmethod_call_args_kwargs(
-            "validateCreateVolumeParams", 1, 2,
-            diskType=3, preallocate=4, add_bitmaps=False)
+        result = [
+            (
+                'validateCreateVolumeParams',
+                ("1", "2"),
+                {"diskType": "3", "preallocate": None, "add_bitmaps": False}
+            )
+        ]
+        self.checker.check_method(
+            "validateCreateVolumeParams", ("1", "2", "3"), result)
 
     def test_nonexisting_function(self):
         self.assertRaises(AttributeError,

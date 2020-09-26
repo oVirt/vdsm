@@ -633,8 +633,7 @@ class StorageDomainManifest(object):
     def refresh(self):
         pass
 
-    @classmethod
-    def validateCreateVolumeParams(cls, volFormat, srcVolUUID, diskType=None,
+    def validateCreateVolumeParams(self, volFormat, srcVolUUID, diskType=None,
                                    preallocate=None, add_bitmaps=False):
         """
         Validate create volume parameters
@@ -981,10 +980,9 @@ class StorageDomain(object):
         return self.getVolumeClass()(self.mountpoint, self.sdUUID, imgUUID,
                                      volUUID)
 
-    @classmethod
-    def validateCreateVolumeParams(cls, volFormat, srcVolUUID, diskType=None,
+    def validateCreateVolumeParams(self, volFormat, srcVolUUID, diskType=None,
                                    preallocate=None, add_bitmaps=False):
-        return cls.manifestClass.validateCreateVolumeParams(
+        return self._manifest.validateCreateVolumeParams(
             volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate,
             add_bitmaps=add_bitmaps)
 

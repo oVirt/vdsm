@@ -839,10 +839,9 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         else:
             return 1
 
-    @classmethod
-    def validateCreateVolumeParams(cls, volFormat, srcVolUUID, diskType,
+    def validateCreateVolumeParams(self, volFormat, srcVolUUID, diskType,
                                    preallocate=None, add_bitmaps=False):
-        super(BlockStorageDomainManifest, cls).validateCreateVolumeParams(
+        super().validateCreateVolumeParams(
             volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate,
             add_bitmaps=add_bitmaps)
         # Sparse-Raw not supported for block volumes

@@ -242,39 +242,49 @@ class TestDomainLock():
         assert manifest.__calls__ == expected_calls
 
 
+class FakeStorageDomainManifest(StorageDomainManifest):
+    def __init__(self):
+        pass
+
+
 class TestCreateVolumeParams:
 
     @pytest.mark.parametrize("vol_format", sc.VOL_FORMAT)
     def test_valid_format(self, vol_format):
-        StorageDomainManifest.validateCreateVolumeParams(
-            vol_format, sc.BLANK_UUID)
+        dom = FakeStorageDomainManifest()
+        dom.validateCreateVolumeParams(vol_format, sc.BLANK_UUID)
 
     def test_invalid_format(self):
+        dom = FakeStorageDomainManifest()
         with pytest.raises(se.IncorrectFormat):
-            StorageDomainManifest.validateCreateVolumeParams(
-                -1, sc.BLANK_UUID)
+            dom.validateCreateVolumeParams(-1, sc.BLANK_UUID)
 
     @pytest.mark.parametrize("disk_type", sc.VOL_DISKTYPE)
     def test_valid_type(self, disk_type):
-        StorageDomainManifest.validateCreateVolumeParams(
+        dom = FakeStorageDomainManifest()
+        dom.validateCreateVolumeParams(
             sc.RAW_FORMAT, sc.BLANK_UUID, diskType=disk_type)
 
     def test_invalid_type(self):
+        dom = FakeStorageDomainManifest()
         with pytest.raises(se.InvalidParameterException):
-            StorageDomainManifest.validateCreateVolumeParams(
+            dom.validateCreateVolumeParams(
                 sc.RAW_FORMAT, sc.BLANK_UUID, diskType="FAIL")
 
     def test_invalid_parent(self):
+        dom = FakeStorageDomainManifest()
         with pytest.raises(se.IncorrectFormat):
-            StorageDomainManifest.validateCreateVolumeParams(
+            dom.validateCreateVolumeParams(
                 sc.RAW_FORMAT, "11111111-1111-1111-1111-11111111111")
 
     @pytest.mark.parametrize("preallocate", sc.VOL_TYPE)
     def test_valid_preallocate(self, preallocate):
-        StorageDomainManifest.validateCreateVolumeParams(
+        dom = FakeStorageDomainManifest()
+        dom.validateCreateVolumeParams(
             sc.RAW_FORMAT, sc.BLANK_UUID, preallocate=preallocate)
 
     def test_invalid_preallocate(self):
+        dom = FakeStorageDomainManifest()
         with pytest.raises(se.IncorrectType):
-            StorageDomainManifest.validateCreateVolumeParams(
+            dom.validateCreateVolumeParams(
                 sc.RAW_FORMAT, sc.BLANK_UUID, preallocate=-1)
