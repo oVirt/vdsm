@@ -30,7 +30,6 @@ import errno
 
 import six
 
-from vdsm.common.config import config
 from vdsm.common.time import monotonic_time
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
@@ -41,11 +40,7 @@ from vdsm.network.link import sriov
 from vdsm.network.netinfo import nics, misc
 from vdsm.network.netinfo.cache import NetInfo
 from vdsm.network.netrestore import NETS_RESTORED_MARK
-from vdsm.network.netconfpersistence import (
-    RunningConfig,
-    PersistentConfig,
-    BaseConfig,
-)
+from vdsm.network.netconfpersistence import PersistentConfig, BaseConfig
 from vdsm.network.nm import networkmanager
 
 # Ifcfg persistence restoration
@@ -91,11 +86,6 @@ def _restore_sriov_config():
                 'Persisted nets built on this device will fail to restore.',
                 devname,
             )
-
-
-def ifcfg_restoration():
-    configWriter = ifcfg.ConfigWriter()
-    configWriter.restorePersistentBackup()
 
 
 def unified_restoration():
@@ -465,29 +455,13 @@ def restore(force):
         return
 
     _restore_sriov_config()
-    unified = config.get('vars', 'net_persistence') == 'unified'
     logging.info('starting network restoration.')
     try:
-        if unified:
-            unified_restoration()
-        else:
-            ifcfg_restoration()
-            _copy_persistent_over_running_config()
+        unified_restoration()
     except Exception:
-        logging.exception(
-            '%s restoration failed.', 'unified' if unified else 'ifcfg'
-        )
+        logging.exception('restoration failed.')
         raise
     else:
         logging.info('restoration completed successfully.')
 
     touch_file(NETS_RESTORED_MARK)
-
-
-def _copy_persistent_over_running_config():
-    pconfig = PersistentConfig()
-    rconfig = RunningConfig()
-    rconfig.delete()
-    rconfig.networks = pconfig.networks
-    rconfig.bonds = pconfig.bonds
-    rconfig.save()

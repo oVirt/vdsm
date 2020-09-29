@@ -69,9 +69,6 @@ parameters = [
             'Comma-separated list of fnmatch-patterns for dummy hosts nics to '
             'be shown to vdsm.'),
 
-        ('net_persistence', 'unified',
-            'Whether to use "ifcfg" or "unified" persistence for networks.'),
-
         ('ethtool_opts', '',
             'Which special ethtool options should be applied to NICs after '
             'they are taken up, e.g. "lro off" on buggy devices. '

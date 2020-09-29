@@ -1,4 +1,4 @@
-# Copyright 2011-2019 Red Hat, Inc.
+# Copyright 2011-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ import os
 
 import six
 
-from vdsm.common.config import config
 from vdsm.common.conv import tobool
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
@@ -48,19 +47,6 @@ from .errors import ConfigNetworkError
 
 
 SWITCH_TYPE = 'legacy'
-
-
-def _get_persistence_module():
-    persistence = config.get('vars', 'net_persistence')
-    if persistence == 'unified':
-        return netconfpersistence
-    else:
-        from .configurators import ifcfg
-
-        return ifcfg
-
-
-_persistence = _get_persistence_module()
 
 
 def _objectivize_network(
@@ -465,9 +451,9 @@ def _del_broken_network(network, netAttr, configurator):
             nets = configurator.runningConfig.networks
         except AttributeError:
             nets = {}  # ifcfg does not need net definitions
-        _netinfo.networks[network]['ports'] = _persistence.configuredPorts(
-            nets, network
-        )
+        _netinfo.networks[network][
+            'ports'
+        ] = netconfpersistence.configuredPorts(nets, network)
     elif not os.path.exists('/sys/class/net/' + iface):
         # Bridgeless broken network without underlying device
         configurator.runningConfig.removeNetwork(network)

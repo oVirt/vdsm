@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@ import os
 import six
 
 from vdsm.common.constants import P_VDSM_RUN
-from vdsm.common.config import config
 from vdsm.common.conv import tobool
 from vdsm.network import netswitch
 from vdsm.network.link import setup
@@ -40,11 +39,6 @@ NETS_RESTORED_MARK = os.path.join(P_VDSM_RUN, 'nets_restored')
 
 
 def init_nets():
-    persistence = config.get('vars', 'net_persistence')
-    if persistence != 'unified':
-        logging.info('Skipping: Unified persistence is not used.')
-        return
-
     if _nets_already_restored(NETS_RESTORED_MARK):
         logging.info('Skipping: Networks were already restored.')
         return

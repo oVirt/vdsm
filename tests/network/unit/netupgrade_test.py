@@ -1,4 +1,4 @@
-# Copyright 2017-2019 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -114,30 +114,12 @@ class TestNetUpgradeUnifiedConfig(object):
 @mock.patch.object(
     netupgrade.ovs_info, 'is_ovs_service_running', lambda: False
 )
-@mock.patch.object(netupgrade.Ifcfg, 'owned_device', return_value=True)
 @mock.patch.object(netupgrade, 'KernelConfig')
 @mock.patch.object(netupgrade, 'PersistentConfig')
 @mock.patch.object(netupgrade, 'RunningConfig')
 class TestNetCreateUnifiedConfig(object):
-    @mock.patch.object(netupgrade.config, 'get', lambda a, b: 'ifcfg')
-    def test_create_unified_config_in_ifcfg_persistence_mode(
-        self, mockRConfig, mockPConfig, mockKConfig, mock_owned_device
-    ):
-        rconfig = mockRConfig.return_value
-        pconfig = mockPConfig.return_value
-        kconfig = mockKConfig.return_value
-
-        self._setup_missing_unified_config(pconfig, rconfig)
-        kconfig.networks = {'netname': {}}
-        kconfig.bonds = {'bondname': {}}
-
-        netupgrade.upgrade()
-
-        self._assert_unified_config_created(kconfig, rconfig, mockRConfig)
-
-    @mock.patch.object(netupgrade.config, 'get', lambda a, b: 'unified')
-    def test_create_unified_config_in_unified_persistence_mode(
-        self, mockRConfig, mockPConfig, mockKConfig, mock_owned_device
+    def test_create_unified_config(
+        self, mockRConfig, mockPConfig, mockKConfig
     ):
         rconfig = mockRConfig.return_value
         pconfig = mockPConfig.return_value

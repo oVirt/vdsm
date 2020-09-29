@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Red Hat, Inc.
+# Copyright 2013-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,14 +34,11 @@ from ..models import Bond, hierarchy_vlan_tag, hierarchy_backing_device
 
 
 class Configurator(object):
-    def __init__(
-        self, configApplier, net_info, is_unipersistence, inRollback=False
-    ):
+    def __init__(self, configApplier, net_info, inRollback=False):
         self.configApplier = configApplier
         self.net_info = net_info
         self._inRollback = inRollback
         self.runningConfig = None
-        self.unifiedPersistence = is_unipersistence
 
     def __enter__(self):
         return self

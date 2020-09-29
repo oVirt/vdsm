@@ -1,4 +1,4 @@
-# Copyright 2011-2019 Red Hat, Inc.
+# Copyright 2011-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,6 @@ from vdsm.common import constants
 from vdsm.common import dsaversion
 from vdsm.common import fileutils
 from vdsm.common import hooks
-from vdsm.common.config import config
 from vdsm.common.conv import tobool
 
 from vdsm.network import cmd
@@ -83,10 +82,7 @@ def is_available():
 class Ifcfg(Configurator):
     # TODO: Do all the configApplier interaction from here.
     def __init__(self, net_info, inRollback=False):
-        is_unipersistence = config.get('vars', 'net_persistence') == 'unified'
-        super(Ifcfg, self).__init__(
-            ConfigWriter(), net_info, is_unipersistence, inRollback
-        )
+        super(Ifcfg, self).__init__(ConfigWriter(), net_info, inRollback)
         self.runningConfig = RunningConfig()
 
     def rollback(self):
