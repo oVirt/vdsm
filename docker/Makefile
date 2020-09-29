@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-targets := centos-8 fedora-30
+targets := centos-8
 prefix := vdsm-test
 
 .PHONY: $(targets) push

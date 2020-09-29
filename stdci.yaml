@@ -17,7 +17,6 @@ stages:
                   distributions:
                     - el8
                     - rhel8
-                    - fc30
   - check-patch:
       archs:
         - x86_64
@@ -32,7 +31,6 @@ stages:
             distributions:
               - el8
               - rhel8
-              - fc30
         - linters:
             distributions:
               - el8
@@ -42,7 +40,6 @@ stages:
             distributions:
               - el8
               - rhel8
-              - fc30
         - nmstate-func-tests:
             run-if:
               file-changed:
