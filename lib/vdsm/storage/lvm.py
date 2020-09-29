@@ -1409,6 +1409,7 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
 
 
 def removeVG(vgName):
+    log.info("Removing VG %s", vgName)
     deactivateVG(vgName)
     cmd = ["vgremove", "-f", vgName]
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
