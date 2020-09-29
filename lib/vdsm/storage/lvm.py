@@ -1411,6 +1411,8 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
 def removeVG(vgName):
     log.info("Removing VG %s", vgName)
     deactivateVG(vgName)
+    # Remove VG with force option to skip confirmation VG should be removed
+    # and checks that it can be removed.
     cmd = ["vgremove", "-f", vgName]
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     # PVS needs to be reloaded anyhow: if vg is removed they are staled,
