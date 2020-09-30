@@ -570,7 +570,6 @@ class GuestAgent(object):
         if self.guestStatus not in (vmstatus.POWERING_DOWN,
                                     vmstatus.REBOOT_IN_PROGRESS):
             self.log.debug("Guest connection timed out")
-            self.guestStatus = None
 
     def _clearReadBuffer(self):
         self._buffer = []

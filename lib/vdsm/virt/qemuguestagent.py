@@ -43,6 +43,7 @@ from vdsm.config import config
 from vdsm.virt import periodic
 from vdsm.virt import guestagenthelpers
 from vdsm.virt import virdomain
+from vdsm.virt import vmstatus
 
 _QEMU_ACTIVE_USERS_COMMAND = 'guest-get-users'
 _QEMU_DEVICES_COMMAND = 'guest-get-devices'
@@ -551,11 +552,20 @@ class QemuGuestAgentPoller(object):
                 [c['name'] for c in ret['supported_commands']
                     if c['enabled']])
         self.log.debug('QEMU-GA caps (vm_id=%s): %r', vm.id, caps)
+        old_caps = self.get_caps(vm.id)
         self.update_caps(vm.id, caps)
         self.set_last_check(vm.id, VDSM_GUEST_INFO, now)
         info = self.get_guest_info(vm.id)
         if info is None or 'appsList' not in info:
             self.fake_apps_list(vm.id)
+        # Change state if it is the first time we see qemu-ga
+        new_caps = old_caps['version'] is None and \
+            caps['version'] is not None
+        guest_starting = vm.guestAgent.guestStatus in (
+            None, vmstatus.POWERING_UP, vmstatus.REBOOT_IN_PROGRESS)
+        if new_caps and guest_starting:
+            # Qemu-ga is running so the guest has to be already up
+            vm.guestAgent.guestStatus = vmstatus.UP
 
     def _qga_call_network_interfaces(self, vm):
         """

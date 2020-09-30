@@ -143,9 +143,15 @@ class FakeDomain(object):
         }
 
 
+class FakeGuestAgent(object):
+    def __init__(self):
+        self.guestStatus = None
+
+
 class FakeVM(object):
     def __init__(self):
         self._dom = FakeDomain()
+        self.guestAgent = FakeGuestAgent()
 
     @property
     def id(self):

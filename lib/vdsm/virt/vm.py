@@ -1836,7 +1836,9 @@ class Vm(object):
             if now - self._guestEventTime < 5 * GUEST_WAIT_TIMEOUT and \
                     self._guestEvent == vmstatus.POWERING_DOWN:
                 return self._guestEvent
-            if self.guestAgent and self.guestAgent.isResponsive() and \
+            if self.guestAgent and (
+                    self.guestAgent.isResponsive() or
+                    self.cif.qga_poller.is_active(self.id)) and \
                     self.guestAgent.getStatus():
                 return self.guestAgent.getStatus()
             if now - self._guestEventTime < GUEST_WAIT_TIMEOUT:
