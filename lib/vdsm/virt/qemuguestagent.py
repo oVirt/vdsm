@@ -306,12 +306,11 @@ class QemuGuestAgentPoller(object):
         caps = self.get_caps(vm.id)
         if caps['version'] is None:
             if vm.isDomainRunning():
-                self._qga_capability_check(vm)
+                self._qga_capability_check(vm, now)
                 caps = self.get_caps(vm.id)
                 if caps['version'] is not None:
                     # Finally, the agent is up!
                     self.reset_failure(vm.id)
-                    self.set_last_check(vm.id, VDSM_GUEST_INFO, now)
             else:
                 self.log.debug(
                     'Not querying QEMU-GA yet, domain not running')
@@ -352,9 +351,8 @@ class QemuGuestAgentPoller(object):
             # will fall through
             if (now - self.last_check(vm_id, VDSM_GUEST_INFO)
                     >= _QEMU_COMMAND_PERIODS[VDSM_GUEST_INFO]):
-                self._qga_capability_check(vm_obj)
+                self._qga_capability_check(vm_obj, now)
                 caps = self.get_caps(vm_id)
-                self.set_last_check(vm_id, VDSM_GUEST_INFO, now)
             if caps['version'] is None:
                 # If we don't know about the agent there is no reason to
                 # proceed any further
@@ -534,7 +532,7 @@ class QemuGuestAgentPoller(object):
             return False
         return True
 
-    def _qga_capability_check(self, vm):
+    def _qga_capability_check(self, vm, now=None):
         """
         This check queries information about installed QEMU Guest Agent.
         What interests us the most is the list of supported commands.
@@ -554,6 +552,7 @@ class QemuGuestAgentPoller(object):
                     if c['enabled']])
         self.log.debug('QEMU-GA caps (vm_id=%s): %r', vm.id, caps)
         self.update_caps(vm.id, caps)
+        self.set_last_check(vm.id, VDSM_GUEST_INFO, now)
         info = self.get_guest_info(vm.id)
         if info is None or 'appsList' not in info:
             self.fake_apps_list(vm.id)
