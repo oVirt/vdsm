@@ -3092,9 +3092,17 @@ class Vm(object):
             device_xml = vmdevices.core.memory_xml(mem_params)
         self.log.info("Hotunplug memory xml: %s", device_xml)
 
+        alias = vmdevices.core.find_device_alias(
+            xmlutils.fromstring(device_xml)
+        )
+        if alias:
+            self._hotunplugged_devices[alias] = vmdevices.core.Base(self.log)
+
         try:
             self._dom.detachDevice(device_xml)
         except libvirt.libvirtError as e:
+            if alias and alias in self._hotunplugged_devices:
+                self._hotunplugged_devices.pop(alias)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 raise exception.NoSuchVM(vmId=self.id)
             raise exception.HotunplugMemFailed(str(e), vmId=self.id)
@@ -5634,6 +5642,7 @@ class Vm(object):
                 # such a case.
                 self.log.warning("Removed device not found in devices: %s",
                                  device_alias)
+                self._updateDomainDescriptor()
                 return
             else:
                 self._devices[device_hwclass].remove(device)
