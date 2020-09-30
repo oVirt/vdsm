@@ -205,9 +205,9 @@ def hookRead(glusterCmd, hookLevel, hookName):
     else:
         raise ge.GlusterHookNotFoundException(glusterCmd, hookLevel, hookName)
     try:
-        with open(hookFile, 'r') as f:
+        with open(hookFile, 'rb') as f:
             encodedString = base64.b64encode(f.read())
-        return {'content': encodedString,
+        return {'content': encodedString.decode('utf-8'),
                 'mimetype': _getMimeType(hookFile),
                 'md5sum': '',
                 'checksum': _computeSha256Sum(hookFile)}

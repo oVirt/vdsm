@@ -49,3 +49,11 @@ def test_hooksList(hookSetup):
     ret = hooks.hooksList()
     by_name = operator.itemgetter("name")
     assert sorted(expected_out, key=by_name) == sorted(ret, key=by_name)
+
+
+def test_hookRead(hookSetup):
+    path = os.path.join(os.path.dirname(__file__), "results/hook_read.json")
+    with open(path) as f:
+        expected_out = json.load(f)
+    ret = hooks.hookRead("add-brick", "PRE", "11test1.sh")
+    assert expected_out == ret
