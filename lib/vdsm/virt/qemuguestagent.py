@@ -180,20 +180,26 @@ class QemuGuestAgentPoller(object):
         self.log.info("Stopping QEMU-GA poller")
         self._operation.stop()
 
+    def _empty_caps(self):
+        """ Dictionary for storing capabilities """
+        return {
+            'version': None,
+            'commands': [],
+        }
+
     def get_caps(self, vm_id):
         with self._capabilities_lock:
             caps = self._capabilities.get(vm_id, None)
             if caps is None:
-                caps = {
-                    'version': None,
-                    'commands': [],
-                }
+                caps = self._empty_caps()
                 self._capabilities[vm_id] = caps
             # Return a copy so the caller has a stable representation
             return utils.picklecopy(caps)
 
     def update_caps(self, vm_id, caps):
-        if self._capabilities.get(vm_id, None) != caps:
+        if caps is None:
+            caps = self._empty_caps()
+        if self.get_caps(vm_id) != caps:
             self.log.info(
                 "New QEMU-GA capabilities for vm_id=%s, qemu-ga=%s,"
                 " commands=%r", vm_id, caps['version'], caps['commands'])
@@ -531,10 +537,7 @@ class QemuGuestAgentPoller(object):
         available Commands and we definitely don't want the user to start &
         stop the VM.
         """
-        caps = {
-            'version': None,
-            'commands': [],
-        }
+        caps = self._empty_caps()
         ret = self.call_qga_command(vm, _QEMU_GUEST_INFO_COMMAND)
         if ret is not None:
             caps['version'] = ret['version']
