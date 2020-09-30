@@ -233,7 +233,15 @@ class QemuGuestAgentPoller(object):
         if time is None:
             time = monotonic_time()
         with self._last_check_lock:
+            self._last_check[(vm_id, None)] = time
             self._last_check[(vm_id, command)] = time
+
+    def is_active(self, vm_id):
+        last = self.last_check(vm_id, None)
+        failed = self.last_failure(vm_id)
+        if last > 0 and last > failed:
+            return True
+        return False
 
     def call_qga_command(self, vm, command, args=None):
         """
