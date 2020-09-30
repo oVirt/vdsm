@@ -1048,6 +1048,8 @@ class Vm(object):
             # this always triggers onStatusChange event, which
             # also sends back status event to Engine.
             self.guestAgent.onReboot()
+            # Invalidate qemu-ga capabilities
+            self.cif.qga_poller.update_caps(self.id, None)
             if self._destroy_on_reboot:
                 self.doDestroy(reason=vmexitreason.DESTROYED_ON_REBOOT)
         except Exception:
