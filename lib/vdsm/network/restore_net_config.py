@@ -1,4 +1,4 @@
-# Copyright 2011-2019 Red Hat, Inc.
+# Copyright 2011-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ import errno
 
 import six
 
-from vdsm.common import hostdev
 from vdsm.common.config import config
 from vdsm.common.time import monotonic_time
 from vdsm.network import ipwrapper
@@ -57,15 +56,6 @@ from vdsm.network.api import setupNetworks, change_numvfs
 
 
 _ALL_DEVICES_UP_TIMEOUT = 5
-
-
-def _get_sriov_devices():
-    devices = hostdev.list_by_caps()
-    return [
-        device_name
-        for device_name, device_info in six.viewitems(devices)
-        if 'totalvfs' in device_info['params']
-    ]
 
 
 def _restore_sriov_config():
@@ -196,19 +186,6 @@ def _upgrade_onboot(ifcfg_file):
         logging.debug("updating %s to ONBOOT=yes", ifcfg_file)
         with open(ifcfg_file, 'w') as f:
             f.write(new_content)
-
-
-def _update_running_config(networks, bonds):
-    """
-    Recreate RunningConfig so that following setSafeNetworkConfig
-    will persist a valid configuration.
-    """
-    running_config = RunningConfig()
-    for net, net_attr in six.viewitems(networks):
-        running_config.setNetwork(net, net_attr)
-    for bonding, bonding_attr in six.viewitems(bonds):
-        running_config.setBonding(bonding, bonding_attr)
-    running_config.save()
 
 
 def _owned_ifcfg_files():
