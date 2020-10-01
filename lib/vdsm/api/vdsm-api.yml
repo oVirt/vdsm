@@ -123,6 +123,15 @@ types:
             active: The path is active
             failed: The path has failed
 
+    DiskBackupMode: &DiskBackupMode
+        added: '4.4.3'
+        description: Enumeration of possible backup modes for a disk.
+        name: DiskBackupMode
+        type: enum
+        values:
+            full: Full backup should be taken for the disk
+            incremental: Incremental backup should be taken for the disk
+
     BlockDevicePathInfo: &BlockDevicePathInfo
         added: '3.1'
         description: Information about a single block device path.
@@ -8329,6 +8338,19 @@ types:
         -   description: Should the disk be included in a checkpoint
             name: checkpoint
             type: boolean
+
+        -   defaultvalue: null
+            description: If specified during an incremental backup,
+                it allows full backup for disks that cannot be used
+                in the incremental backup. If not specified, all disks
+                included in the incremental backup will be prepared
+                for an incremental backup. If one of the disks cannot
+                be prepared for an incremental backup the entire
+                request will fail.
+                Using "incremental" when full backup requested
+                (from_checkpoint_id == None) is not supported.
+            name: backup_mode
+            type: *DiskBackupMode
         type: object
 
     NBDServerConfig: &NBDServerConfig
