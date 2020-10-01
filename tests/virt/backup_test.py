@@ -244,6 +244,106 @@ def test_start_stop_backup(tmp_backupdir, tmp_basedir):
 
 
 @requires_backup_support
+def test_full_backup_with_backup_mode(tmp_backupdir, tmp_basedir):
+    vm = FakeVm()
+
+    socket_path = backup.socket_path(BACKUP_1_ID)
+    scratch_disk_paths = _get_scratch_disks_path(BACKUP_1_ID)
+
+    expected_xml = """
+        <domainbackup mode='pull'>
+            <server transport='unix' socket='{}'/>
+            <disks>
+                <disk backupmode="full" name='sda' type='file'>
+                    <scratch file='{}'>
+                        <seclabel model="dac" relabel="no"/>
+                    </scratch>
+                </disk>
+                <disk backupmode="full" name='vda' type='file'>
+                    <scratch file='{}'>
+                        <seclabel model="dac" relabel="no"/>
+                    </scratch>
+                </disk>
+            </disks>
+        </domainbackup>
+        """.format(socket_path, scratch_disk_paths[0], scratch_disk_paths[1])
+
+    dom = FakeDomainAdapter()
+    fake_disks = create_fake_disks(backup_mode=backup.MODE_FULL)
+    config = {
+        'backup_id': BACKUP_1_ID,
+        'disks': fake_disks
+    }
+
+    backup.start_backup(vm, dom, config)
+    assert indented(expected_xml) == indented(dom.input_backup_xml)
+
+
+@requires_backup_support
+def test_incremental_backup_with_backup_mode(tmp_backupdir, tmp_basedir):
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+    fake_disks = create_fake_disks(backup_mode=backup.MODE_FULL)
+
+    # start full backup
+    config = {
+        'backup_id': BACKUP_1_ID,
+        'disks': fake_disks,
+        'to_checkpoint_id': CHECKPOINT_1_ID
+    }
+
+    backup.start_backup(vm, dom, config)
+    backup.stop_backup(vm, dom, BACKUP_1_ID)
+
+    # start incremental backup
+    socket_path = backup.socket_path(BACKUP_2_ID)
+    scratch_disk_paths = _get_scratch_disks_path(BACKUP_2_ID)
+
+    expected_xml = """
+        <domainbackup mode='pull'>
+            <incremental>{}</incremental>
+            <server transport='unix' socket='{}'/>
+            <disks>
+                <disk backupmode="full" name='sda' type='file'>
+                    <scratch file='{}'>
+                        <seclabel model="dac" relabel="no"/>
+                    </scratch>
+                </disk>
+                <disk backupmode="incremental" incremental='{}'
+                 name='vda' type='file'>
+                    <scratch file='{}'>
+                        <seclabel model="dac" relabel="no"/>
+                    </scratch>
+                </disk>
+            </disks>
+        </domainbackup>
+        """.format(
+        CHECKPOINT_1_ID,
+        socket_path,
+        scratch_disk_paths[0],
+        CHECKPOINT_1_ID,
+        scratch_disk_paths[1])
+
+    dom.output_checkpoints = [CHECKPOINT_1]
+
+    # Set vda disk backup_mode to 'incremental'
+    for disk in fake_disks:
+        if disk["imageID"] == IMAGE_2_UUID:
+            disk["backup_mode"] = backup.MODE_INCREMENTAL
+
+    config = {
+        'backup_id': BACKUP_2_ID,
+        'disks': fake_disks,
+        'from_checkpoint_id': CHECKPOINT_1_ID,
+        'to_checkpoint_id': CHECKPOINT_2_ID,
+        'parent_checkpoint_id': CHECKPOINT_1_ID
+    }
+
+    backup.start_backup(vm, dom, config)
+    assert indented(expected_xml) == indented(dom.input_backup_xml)
+
+
+@requires_backup_support
 @pytest.mark.parametrize(
     "disks_in_checkpoint, expected_checkpoint_xml", [
         ([IMAGE_1_UUID, IMAGE_2_UUID], CHECKPOINT_1_XML),
@@ -480,6 +580,22 @@ def test_backup_begin_failed_no_disks(tmp_backupdir, tmp_basedir):
     config = {
         'backup_id': BACKUP_1_ID,
         'disks': ()
+    }
+
+    with pytest.raises(exception.BackupError):
+        backup.start_backup(vm, dom, config)
+
+
+def test_backup_begin_failed_full_with_inremental_disks(
+        tmp_backupdir, tmp_basedir):
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+
+    # Set disks backup_mode to 'incremental'
+    fake_disks = create_fake_disks(backup_mode=backup.MODE_INCREMENTAL)
+    config = {
+        'backup_id': BACKUP_1_ID,
+        'disks': fake_disks
     }
 
     with pytest.raises(exception.BackupError):
@@ -898,14 +1014,17 @@ def verify_scratch_disks_removed(vm):
     assert res['result'] == []
 
 
-def create_fake_disks(disks_in_checkpoint=(IMAGE_1_UUID, IMAGE_2_UUID)):
+def create_fake_disks(
+        disks_in_checkpoint=(IMAGE_1_UUID, IMAGE_2_UUID),
+        backup_mode=None):
     fake_disks = []
     for img_id in FAKE_DRIVES:
         fake_disks.append({
             'domainID': DOMAIN_ID,
             'imageID': img_id,
             'volumeID': VOLUME_ID,
-            'checkpoint': img_id in disks_in_checkpoint
+            'checkpoint': img_id in disks_in_checkpoint,
+            'backup_mode': backup_mode
         })
     return fake_disks
 

@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import collections
 import functools
 import libvirt
 import logging
@@ -43,6 +44,14 @@ log = logging.getLogger("storage.backup")
 # DomainAdapter should be defined only if libvirt supports
 # incremental backup API
 backup_enabled = hasattr(libvirt.virDomain, "backupBegin")
+
+
+BackupDrive = collections.namedtuple(
+    'BackupDrive', 'name, path, backup_mode')
+
+
+MODE_FULL = "full"
+MODE_INCREMENTAL = "incremental"
 
 
 def requires_libvirt_support():
@@ -132,6 +141,15 @@ class BackupConfig(properties.Owner):
             raise exception.BackupError(
                 reason="Cannot start a backup without disks",
                 backup=self.backup_id)
+
+        for disk in self.disks:
+            if (self.from_checkpoint_id is None and
+                    disk.backup_mode == MODE_INCREMENTAL):
+                raise exception.BackupError(
+                    reason="Cannot start an incremental backup for disk, "
+                           "full backup is requested",
+                    backup=self.backup_id,
+                    disk=disk)
 
 
 def start_backup(vm, dom, config):
@@ -344,7 +362,8 @@ def _get_disks_drives(vm, disks_cfg):
             'domainID': disk.dom_id,
             'imageID': disk.img_id,
             'volumeID': disk.vol_id})
-        drives[disk.img_id] = drive
+        drives[disk.img_id] = BackupDrive(
+            drive.name, drive.path, disk.backup_mode)
     return drives
 
 
@@ -461,6 +480,17 @@ def create_backup_xml(address, drives, scratch_disks, from_checkpoint_id=None):
     # fill the backup XML disks
     for drive in drives.values():
         disk = vmxml.Element('disk', name=drive.name, type='file')
+
+        # If backup mode reported by the engine it should be added
+        # to the backup XML.
+        if drive.backup_mode is not None:
+            vmxml.set_attr(disk, "backupmode", drive.backup_mode)
+
+            if drive.backup_mode == MODE_INCREMENTAL:
+                # if backupmode is 'incremental' we should also provide the
+                # checkpoint ID we start the incremental backup from.
+                vmxml.set_attr(disk, MODE_INCREMENTAL, from_checkpoint_id)
+
         # scratch element can have dev=/path/to/block/disk
         # or file=/path/to/file/disk attribute according to
         # the disk type.
