@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2019 Red Hat, Inc.
+# Copyright 2012-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,6 +39,8 @@ from vdsm.storage import mount
 from vdsm.storage.fileUtils import resolveUid, resolveGid
 
 _P_PAYLOAD_IMAGES = os.path.join(P_VDSM_RUN, 'payload')
+# Old payload path in /var/run, may be present in migrations:
+_P_OLD_PAYLOAD_IMAGES = os.path.join('/var', _P_PAYLOAD_IMAGES[1:])
 
 
 def _openFile(filename, mode, perms):
@@ -99,10 +101,11 @@ def getFileName(vmId):
 
 
 def injectFilesToFs(floppy, files, fstype='auto'):
-    if not os.path.abspath(floppy).startswith(
-            os.path.join(_P_PAYLOAD_IMAGES, '')):
-        raise ValueError('Image %s is not inside %s directory' %
-                         (floppy, _P_PAYLOAD_IMAGES))
+    path = os.path.abspath(floppy)
+    if not path.startswith(os.path.join(_P_PAYLOAD_IMAGES, '')) and \
+       not path.startswith(os.path.join(_P_OLD_PAYLOAD_IMAGES, '')):
+        raise ValueError('Image %s is not inside %s directories' %
+                         (floppy, [_P_PAYLOAD_IMAGES, _P_OLD_PAYLOAD_IMAGES]))
     dirname = None
     try:
         dirname = tempfile.mkdtemp()
