@@ -79,6 +79,11 @@ class TestBridge(object):
         with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
             adapter.assertBridgeOpts(NETWORK_NAME, NET_ATTRS)
 
+    @pytest.mark.xfail(
+        reason='Unstable on oVirt CI',
+        strict=False,
+        condition=running_on_ovirt_ci(),
+    )
     @nftestlib.parametrize_legacy_switch
     def test_create_network_over_an_existing_unowned_bridge(
         self, adapter, switch, nic0
