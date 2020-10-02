@@ -51,6 +51,7 @@ IPv6_GATEWAY2 = 'fdb3:84e5:4ff4:55e3::fffe'
 DNS_SERVERS1 = ['1.2.3.4', '5.6.7.8']
 DNS_SERVERS2 = ['9.10.11.12', '13.14.15.16']
 OVS_BRIDGE = [f'ovs_br{i}' for i in range(10)]
+MAC_ADDRESS = '1a:2b:3c:4d:5e:6f'
 
 
 parametrize_bridged = pytest.mark.parametrize(
@@ -308,9 +309,11 @@ def create_ovs_port_state(name, vlan=None):
     return port_state
 
 
-def create_ovs_northbound_state(name, state='up'):
+def create_ovs_northbound_state(name, state='up', enforced_mac=None):
     nb_state = {nmstate.Interface.NAME: name, nmstate.Interface.STATE: state}
     if state == 'up':
         nb_state[nmstate.Interface.TYPE] = nmstate.InterfaceType.OVS_INTERFACE
+    if enforced_mac:
+        nb_state[nmstate.Interface.MAC] = enforced_mac
 
     return nb_state

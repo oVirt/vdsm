@@ -35,10 +35,12 @@ from .testlib import (
     IPv6_ADDRESS1,
     IPv6_FAMILY,
     IPv6_PREFIX1,
+    MAC_ADDRESS,
     OVS_BRIDGE,
     VLAN0,
     VLAN101,
     VLAN102,
+    TESTBOND0,
     TESTNET1,
     TESTNET2,
     create_dynamic_ip_configuration,
@@ -439,6 +441,60 @@ class TestBasicNetWithIp(object):
         nb_state = create_ovs_northbound_state(TESTNET1)
         nb_state.update(create_ipv4_state(ipv4_addr, ipv4_prefix))
         nb_state.update(create_ipv6_state(ipv6_addr, ipv6_prefix))
+
+        expected_state = {
+            nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
+        }
+        sort_by_name(expected_state[nmstate.Interface.KEY])
+        assert expected_state == state
+
+
+class TestEnforceMacAddress(object):
+    @parametrize_bridged
+    @parametrize_vlanned
+    @pytest.mark.parametrize(
+        'iface_type', ['nic', 'bonding'], ids=['over-nic', 'over-bond']
+    )
+    def test_net_over_existing_interface_enforce_mac(
+        self, bridged, vlanned, iface_type, current_state_mock
+    ):
+        vlan = VLAN101 if vlanned else None
+
+        if iface_type == 'nic':
+            iface_name = IFACE0
+            nmstate_iface_type = nmstate.InterfaceType.ETHERNET
+        else:
+            iface_name = TESTBOND0
+            nmstate_iface_type = nmstate.InterfaceType.BOND
+
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states.append(
+            {
+                nmstate.Interface.NAME: iface_name,
+                nmstate.Interface.TYPE: nmstate_iface_type,
+                nmstate.Interface.MAC: MAC_ADDRESS,
+            }
+        )
+        networks = {
+            TESTNET1: create_network_config(
+                iface_type, iface_name, bridged, switch='ovs', vlan=vlan
+            )
+        }
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        eth0_state = create_ethernet_iface_state(iface_name, mtu=None)
+
+        bridge_ports = [
+            create_ovs_port_state(iface_name),
+            create_ovs_port_state(TESTNET1, vlan=vlan),
+        ]
+        sort_by_name(bridge_ports)
+        bridge_state = create_ovs_bridge_state(OVS_BRIDGE[0], bridge_ports)
+        nb_state = create_ovs_northbound_state(
+            TESTNET1, enforced_mac=MAC_ADDRESS
+        )
+
+        disable_iface_ip(eth0_state, nb_state)
 
         expected_state = {
             nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]

@@ -289,6 +289,9 @@ def generate_state(networks, running_networks, current_iface_state):
         if net.remove:
             continue
 
+        _enforce_network_mac_address(
+            nets_config[net.name], net_ifstates, current_iface_state
+        )
         bridge = bridges.bridge_by_sb[net.sb_iface]
         # Add port state to the bridge
         if net.port_state:
@@ -301,6 +304,18 @@ def generate_state(networks, running_networks, current_iface_state):
             _sort_ports_by_name(net_ifstates[bridge])
 
     return net_ifstates, routes_state, dns_state
+
+
+def _enforce_network_mac_address(net, net_ifstates, current_iface_state):
+    if net.base_iface not in current_iface_state:
+        # This scenario happens when we are trying to create a network and
+        # bond in the same transaction. In this case we cannot reliably
+        # determine the MAC address of future bond.
+        return
+
+    net_ifstates[net.name].update(
+        {Interface.MAC: current_iface_state[net.base_iface][Interface.MAC]}
+    )
 
 
 def _create_basic_port_state(name):
