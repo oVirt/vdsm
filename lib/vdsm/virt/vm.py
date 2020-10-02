@@ -899,8 +899,17 @@ class Vm(object):
                 self._initTimePauseCode = 'POSTCOPY'
                 self._post_copy = migration.PostCopyPhase.RUNNING
             elif reason == libvirt.VIR_DOMAIN_PAUSED_MIGRATION:
-                self.set_last_status(vmstatus.MIGRATION_SOURCE,
-                                     vmstatus.WAIT_FOR_LAUNCH)
+                if self._recovering_migration(self._dom):
+                    new_status = vmstatus.MIGRATION_SOURCE
+                else:
+                    # If we are actually on the source and the
+                    # migration job finishes before we examine it, then:
+                    # - If the job succeeded, the VM will get DOWN soon.
+                    # - If the job failed, the VM may remain in an
+                    #   incorrect state until the next Vdsm restart.
+                    #   But this is a very unlikely corner case.
+                    new_status = vmstatus.MIGRATION_DESTINATION
+                self.set_last_status(new_status, vmstatus.WAIT_FOR_LAUNCH)
             elif reason == libvirt.VIR_DOMAIN_PAUSED_POSTCOPY_FAILED:
                 self.log.warning("VM is after post-copy failure, "
                                  "destroying it: %s" % (self.id,))
