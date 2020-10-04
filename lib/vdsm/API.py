@@ -1174,6 +1174,10 @@ class StoragePool(APIBase):
             self._UUID, storagedomainID, imageID, volumeID,
             allowActive=allowActive)
 
+    def switchMaster(self, oldMasterUUID, newMasterUUID, masterVersion):
+        return self._irs.switchMaster(
+            self._UUID, oldMasterUUID, newMasterUUID, masterVersion)
+
 
 class Global(APIBase):
     ctorArgs = []

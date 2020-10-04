@@ -10633,6 +10633,29 @@ StoragePool.reduceVolume:
         description: A task UUID
         type: *UUID
 
+StoragePool.switchMaster:
+    added: '4.4.3'
+    description: Switch the master role to the requested storage domain.
+    params:
+        -   description: The storage pool associated with the storage domains
+            name: storagepoolID
+            type: *UUID
+
+        -   description: The current master storage domain UUID
+            name: oldMasterUUID
+            type: *UUID
+
+        -   description: The new master storage domain UUID
+            name: newMasterUUID
+            type: *UUID
+
+        -   description: The new master storage domain version
+            name: masterVersion
+            type: int
+    return:
+        description: A task UUID
+        type: *UUID
+
 Task.clear:
     added: '3.1'
     description: Discard information about a finished Task.

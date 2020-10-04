@@ -39,6 +39,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileSD
 from vdsm.storage import fileUtils
+from vdsm.storage import guarded
 from vdsm.storage import image
 from vdsm.storage import mailbox
 from vdsm.storage import merge
@@ -944,6 +945,18 @@ class StoragePool(object):
                 self.log.exception(
                     "Ignoring old master %s unmount and release failures",
                     curmsd.sdUUID)
+
+    def switchMaster(self, oldMasterUUID, newMasterUUID, masterVersion):
+        """
+        Switches the master domain from oldMasterUUID to newMasterUUID.
+        """
+        locks = [
+            rm.Lock(sc.STORAGE, oldMasterUUID, rm.EXCLUSIVE),
+            rm.Lock(sc.STORAGE, newMasterUUID, rm.EXCLUSIVE)
+        ]
+        self.log.info("Taking domains locks for switching master")
+        with guarded.context(locks):
+            self.masterMigrate(oldMasterUUID, newMasterUUID, masterVersion)
 
     def attachSD(self, sdUUID):
         """

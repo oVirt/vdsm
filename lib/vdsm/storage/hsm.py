@@ -1271,6 +1271,27 @@ class HSM(object):
         pool.deactivateSD(sdUUID, msdUUID, masterVersion)
 
     @public
+    def switchMaster(self, storagepoolID, oldMasterUUID, newMasterUUID,
+                     masterVersion):
+        """
+        Switches the master domain from oldMasterUUID to newMasterUUID.
+        The old master domain will have a "Regular" role after this operation,
+        while the new master domain will have the "Master" role.
+        Can be called only on the SPM host.
+
+        Arguments:
+            storagepoolID (str): The storage pool that contains the storage
+            domains being switched.
+            oldMasterUUID (str): The current master storage domain UUID.
+            newMasterUUID (str): The new master storage domain UUID.
+            masterVersion (int): The version of the new master storage domain.
+        """
+        vars.task.getExclusiveLock(STORAGE, storagepoolID)
+        pool = self.getPool(storagepoolID)
+        self._spmSchedule(storagepoolID, "switchMaster", pool.switchMaster,
+                          oldMasterUUID, newMasterUUID, masterVersion)
+
+    @public
     def activateStorageDomain(self, sdUUID, spUUID, options=None):
         """
         Activates a storage domain that is already a member in a storage pool.
