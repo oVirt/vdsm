@@ -1,0 +1,53 @@
+#
+# Copyright 2020 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301  USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+import libvirt
+import pytest
+
+from vdsm.common import exception
+
+import vmfakelib as fake
+
+
+def test_change_cd_eject():
+    with fake.VM() as fakevm:
+        fakevm._dom = fake.Domain()
+        cdromspec = {
+            'path': '',
+            'iface': 'ide',
+            'index': '2',
+        }
+        fakevm.changeCD(cdromspec)
+
+
+def test_change_cd_failure():
+    with fake.VM() as fakevm:
+        # no specific meaning, actually any error != None is good
+        fakevm._dom = fake.Domain(virtError=libvirt.VIR_ERR_GET_FAILED)
+
+        cdromspec = {
+            'path': '/path/to/image',
+            'iface': 'ide',
+            'index': '2',
+        }
+
+        with pytest.raises(exception.ChangeDiskFailed):
+            fakevm.changeCD(cdromspec)

@@ -1249,32 +1249,6 @@ class TestVmBalloon(TestCaseBase):
 
 
 class ChangeBlockDevTests(TestCaseBase):
-    def test_change_cd_eject(self):
-        with fake.VM() as fakevm:
-            fakevm._dom = fake.Domain()
-            cdromspec = {'path': '',
-                         'iface': 'ide',
-                         'index': '2'}
-            self.assertNotRaises(
-                fakevm.changeCD,
-                cdromspec)
-
-    def test_change_cd_failure(self):
-        with fake.VM() as fakevm:
-            # no specific meaning, actually any error != None is good
-            fakevm._dom = fake.Domain(
-                virtError=libvirt.VIR_ERR_GET_FAILED)
-
-            cdromspec = {'path': '/path/to/image',
-                         'iface': 'ide',
-                         'index': '2',
-                         }
-
-            self.assertRaises(
-                exception.ChangeDiskFailed,
-                fakevm.changeCD,
-                cdromspec)
-
     def test_update_drive_parameters_failure(self):
         with fake.VM() as testvm:
             testvm.log = FakeLogger()
