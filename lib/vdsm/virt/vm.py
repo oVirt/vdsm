@@ -5887,10 +5887,14 @@ class LiveMergeCleanupThread(object):
                                topVolInfo['capacity'])
 
     def teardown_top_volume(self):
-        # TODO move this method to storage public API
-        sd_manifest = sdc.sdCache.produce_manifest(self.drive.domainID)
-        sd_manifest.teardownVolume(self.drive.imageID,
-                                   self.job['topVolume'])
+        ret = self.vm.cif.irs.teardownVolume(
+            self.drive.domainID,
+            self.drive.imageID,
+            self.job['topVolume'])
+        if ret['status']['code'] != 0:
+            raise StorageUnavailableError(
+                "Failed to teardown top volume %s" %
+                self.job['topVolume'])
 
     @logutils.traceback()
     def run(self):

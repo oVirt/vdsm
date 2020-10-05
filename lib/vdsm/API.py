@@ -867,6 +867,10 @@ class Volume(APIBase):
             self._sdUUID, self._imgUUID, self._UUID, dstVolFormat,
             backing=backing_chain)
 
+    def teardown(self):
+        return self._irs.teardownVolume(
+            self._sdUUID, self._imgUUID, self._UUID)
+
 
 class Image(APIBase):
     ctorArgs = ['imageID', 'storagepoolID', 'storagedomainID']

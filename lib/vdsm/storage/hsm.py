@@ -3310,6 +3310,21 @@ class HSM(object):
         dom.deactivateImage(imgUUID)
 
     @public
+    def teardownVolume(self, sdUUID, imgUUID, volUUID):
+        """
+        Teardown image volume.
+
+        Arguments:
+            sdUUID (str): The UUID of the storage domain that owns the volume.
+            imgUUID (str): The UUID of the image contained on the volume.
+            volUUID (str): The UUID of the volume to be torn down.
+        """
+        vars.task.getSharedLock(STORAGE, sdUUID)
+
+        dom = sdCache.produce_manifest(sdUUID)
+        dom.teardownVolume(imgUUID, volUUID)
+
+    @public
     def getVolumesList(self, sdUUID, spUUID, imgUUID=sc.BLANK_UUID,
                        options=None):
         """

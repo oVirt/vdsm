@@ -11731,6 +11731,26 @@ Volume.setLegality:
         name: legality
         type: *VolumeLegality
 
+
+Volume.teardown:
+    added: '4.4'
+    description: Teardown a volume. Called when a volume is detached from
+        a prepared image during live merge flow. In this case, the volume
+        will not be torn down when the image is torn down.
+    params:
+    -   description: The Storage Domain associated with the Volume.
+        name: storagedomainID
+        type: *UUID
+
+    -   description: The UUID of the image containing the Volume.
+        name: imageID
+        type: *UUID
+
+    -   description: The UUID of the Volume.
+        name: volumeID
+        type: *UUID
+
+
 VM.hotplugMemory:
     added: '3.6'
     description: Hotplug memory to a running VM NUMA node
