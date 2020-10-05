@@ -816,8 +816,10 @@ class StoragePool(object):
         dstDomain.changeLeaseParams(leaseParams)
 
     def masterMigrate(self, sdUUID, msdUUID, masterVersion):
-        self.log.info("sdUUID=%s spUUID=%s msdUUID=%s", sdUUID, self.spUUID,
-                      msdUUID)
+        self.log.info(
+            "Storage pool %s migrating master from %s to %s with "
+            "version %s",
+            self.spUUID, sdUUID, msdUUID, masterVersion)
 
         # TODO: is this check still relevant?
         # Make sure the masterVersion higher than that of the pool
@@ -866,7 +868,7 @@ class StoragePool(object):
         newmsd.acquireClusterLock(self.id)
 
         try:
-            self.log.debug('migration to the new master %s begins',
+            self.log.debug("Migration to new master %s starting",
                            newmsd.sdUUID)
 
             # Preparing the mailbox since the new master domain may be an
@@ -896,11 +898,12 @@ class StoragePool(object):
             newmsd.changeRole(sd.MASTER_DOMAIN)
             self._backend.switchMasterDomain(curmsd, newmsd, masterVersion)
         except Exception:
-            self.log.exception('migration to new master failed')
+            self.log.exception("Migration to new master %s failed",
+                               newmsd.sdUUID)
             try:
                 self._backend.setDomainRegularRole(newmsd)
             except Exception:
-                self.log.exception('unable to mark domain %s as regular',
+                self.log.exception("Unable to mark domain %s as regular",
                                    newmsd.sdUUID)
 
             # Do not release the cluster lock if unmount fails. The lock
@@ -912,8 +915,9 @@ class StoragePool(object):
 
         # From this point on we have a new master and should not fail
         try:
-            self.log.debug('master has migrated to %s, cleaning up %s',
-                           newmsd.sdUUID, curmsd.sdUUID)
+            self.log.debug(
+                "Migration to new master %s succeeded, refreshing pool",
+                newmsd.sdUUID)
             self.refresh(msdUUID, masterVersion)
 
             # From this point on there is a new master domain in the pool
@@ -926,7 +930,8 @@ class StoragePool(object):
                 self.log.info("Removing directory %r", directory)
                 fileUtils.cleanupdir(directory)
         except Exception:
-            self.log.exception('ignoring old master cleanup failure')
+            self.log.exception(
+                "Ignoring old master %s cleanup failure", curmsd.sdUUID)
         finally:
             try:
                 # Unmounting the old master filesystem and releasing the
@@ -937,7 +942,8 @@ class StoragePool(object):
                 curmsd.releaseClusterLock()
             except Exception:
                 self.log.exception(
-                    'ignoring old master unmount and release failures')
+                    "Ignoring old master %s unmount and release failures",
+                    curmsd.sdUUID)
 
     def attachSD(self, sdUUID):
         """
