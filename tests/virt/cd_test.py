@@ -19,16 +19,19 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
+
 import libvirt
 import pytest
 
+from vdsm import clientIF
 from vdsm.common import exception
 
 import vmfakelib as fake
 
 
 def test_change_cd_eject():
-    with fake.VM() as fakevm:
+    with fake.VM(cif=ClientIF()) as fakevm:
         fakevm._dom = fake.Domain()
         cdromspec = {
             'path': '',
@@ -39,7 +42,7 @@ def test_change_cd_eject():
 
 
 def test_change_cd_failure():
-    with fake.VM() as fakevm:
+    with fake.VM(cif=ClientIF()) as fakevm:
         # no specific meaning, actually any error != None is good
         fakevm._dom = fake.Domain(virtError=libvirt.VIR_ERR_GET_FAILED)
 
@@ -49,5 +52,14 @@ def test_change_cd_failure():
             'index': '2',
         }
 
-        with pytest.raises(exception.ChangeDiskFailed):
+        with pytest.raises(exception.ImageFileNotFound):
             fakevm.changeCD(cdromspec)
+
+
+class ClientIF(clientIF.clientIF):
+    log = logging.getLogger('cd_test.ClientIF')
+
+    def __init__(self):
+        self.irs = fake.IRS()
+        self.channelListener = None
+        self.vmContainer = {}
