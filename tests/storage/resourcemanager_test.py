@@ -625,10 +625,10 @@ class TestResourceManager:
             t.join()
 
 
-class TestResourceManagerLock:
+class TestLock:
 
     def test_properties(self):
-        a = rm.ResourceManagerLock('ns', 'name', 'mode')
+        a = rm.Lock('ns', 'name', 'mode')
         assert a.ns == 'ns'
         assert a.name == 'name'
         assert a.mode == 'mode'
@@ -638,29 +638,29 @@ class TestResourceManagerLock:
         (('nsA', 'nameA', 'mode'), ('nsA', 'nameB', 'mode')),
     ])
     def test_less_than(self, a, b):
-        b = rm.ResourceManagerLock(*b)
-        a = rm.ResourceManagerLock(*a)
+        b = rm.Lock(*b)
+        a = rm.Lock(*a)
         assert a < b
 
     def test_equality(self):
-        a = rm.ResourceManagerLock('ns', 'name', 'mode')
-        b = rm.ResourceManagerLock('ns', 'name', 'mode')
+        a = rm.Lock('ns', 'name', 'mode')
+        b = rm.Lock('ns', 'name', 'mode')
         assert a == b
 
     def test_mode_used_for_equality(self):
-        a = rm.ResourceManagerLock('nsA', 'nameA', 'modeA')
-        b = rm.ResourceManagerLock('nsA', 'nameA', 'modeB')
+        a = rm.Lock('nsA', 'nameA', 'modeA')
+        b = rm.Lock('nsA', 'nameA', 'modeB')
         assert a != b
 
     def test_mode_ignored_for_sorting(self):
-        a = rm.ResourceManagerLock('nsA', 'nameA', 'modeA')
-        b = rm.ResourceManagerLock('nsA', 'nameA', 'modeB')
+        a = rm.Lock('nsA', 'nameA', 'modeA')
+        b = rm.Lock('nsA', 'nameA', 'modeB')
         assert not a < b
         assert not b < a
 
     def test_acquire_release(self, monkeypatch):
         monkeypatch.setattr(rm, "_manager", FakeResourceManager())
-        lock = rm.ResourceManagerLock('ns_A', 'name_A', rm.SHARED)
+        lock = rm.Lock('ns_A', 'name_A', rm.SHARED)
         expected = []
         lock.acquire()
         expected.append(('acquireResource',
@@ -673,9 +673,9 @@ class TestResourceManagerLock:
 
     def test_repr(self):
         mode = rm.SHARED
-        lock = rm.ResourceManagerLock('ns', 'name', mode)
+        lock = rm.Lock('ns', 'name', mode)
         lock_string = str(lock)
-        assert "ResourceManagerLock" in lock_string
+        assert "Lock" in lock_string
         assert "ns=ns" in lock_string
         assert "name=name" in lock_string
         assert "mode=" + mode in lock_string

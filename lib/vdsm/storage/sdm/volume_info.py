@@ -53,8 +53,8 @@ class VolumeInfo(properties.Owner):
     @property
     def locks(self):
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, self.sd_id)
-        ret = [rm.ResourceManagerLock(sc.STORAGE, self.sd_id, rm.SHARED),
-               rm.ResourceManagerLock(img_ns, self.img_id, rm.EXCLUSIVE)]
+        ret = [rm.Lock(sc.STORAGE, self.sd_id, rm.SHARED),
+               rm.Lock(img_ns, self.img_id, rm.EXCLUSIVE)]
         dom = sdCache.produce_manifest(self.sd_id)
         if dom.hasVolumeLeases():
             ret.append(volume.VolumeLease(self._host_id, self.sd_id,

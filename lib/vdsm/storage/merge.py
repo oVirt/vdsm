@@ -111,8 +111,8 @@ class SubchainInfo(properties.Owner):
     @property
     def locks(self):
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, self.sd_id)
-        ret = [rm.ResourceManagerLock(sc.STORAGE, self.sd_id, rm.SHARED),
-               rm.ResourceManagerLock(img_ns, self.img_id, rm.EXCLUSIVE)]
+        ret = [rm.Lock(sc.STORAGE, self.sd_id, rm.SHARED),
+               rm.Lock(img_ns, self.img_id, rm.EXCLUSIVE)]
         dom = sdCache.produce_manifest(self.sd_id)
         if dom.hasVolumeLeases():
             # We take only the base lease since no other volumes are modified

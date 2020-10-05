@@ -268,8 +268,8 @@ class TestPrepareMerge:
     def expected_locks(self, subchain):
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, subchain.sd_id)
         return [
-            rm.ResourceManagerLock(sc.STORAGE, subchain.sd_id, rm.SHARED),
-            rm.ResourceManagerLock(img_ns, subchain.img_id, rm.EXCLUSIVE),
+            rm.Lock(sc.STORAGE, subchain.sd_id, rm.SHARED),
+            rm.Lock(img_ns, subchain.img_id, rm.EXCLUSIVE),
             volume.VolumeLease(subchain.host_id, subchain.sd_id,
                                subchain.img_id, subchain.base_id)
         ]

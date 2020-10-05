@@ -498,11 +498,11 @@ def expected_locks(src_vol, dst_vol):
     dst_img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, dst_vol.sdUUID)
     ret = [
         # Domain lock for each volume
-        rm.ResourceManagerLock(sc.STORAGE, src_vol.sdUUID, rm.SHARED),
-        rm.ResourceManagerLock(sc.STORAGE, dst_vol.sdUUID, rm.SHARED),
+        rm.Lock(sc.STORAGE, src_vol.sdUUID, rm.SHARED),
+        rm.Lock(sc.STORAGE, dst_vol.sdUUID, rm.SHARED),
         # Image lock for each volume, exclusive for the destination
-        rm.ResourceManagerLock(src_img_ns, src_vol.imgUUID, rm.SHARED),
-        rm.ResourceManagerLock(dst_img_ns, dst_vol.imgUUID, rm.EXCLUSIVE),
+        rm.Lock(src_img_ns, src_vol.imgUUID, rm.SHARED),
+        rm.Lock(dst_img_ns, dst_vol.imgUUID, rm.EXCLUSIVE),
         # Volume lease for the destination volume
         volume.VolumeLease(
             0, dst_vol.sdUUID, dst_vol.imgUUID, dst_vol.volUUID)

@@ -176,9 +176,9 @@ class TestMergeSubchain(VdsmTestCase):
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, base_vol.sdUUID)
         ret = [
             # Domain lock
-            rm.ResourceManagerLock(sc.STORAGE, base_vol.sdUUID, rm.SHARED),
+            rm.Lock(sc.STORAGE, base_vol.sdUUID, rm.SHARED),
             # Image lock
-            rm.ResourceManagerLock(img_ns, base_vol.imgUUID, rm.EXCLUSIVE),
+            rm.Lock(img_ns, base_vol.imgUUID, rm.EXCLUSIVE),
             # Volume lease
             volume.VolumeLease(
                 0, base_vol.sdUUID, base_vol.imgUUID, base_vol.volUUID)

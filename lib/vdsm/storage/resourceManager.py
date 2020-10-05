@@ -781,7 +781,7 @@ class Owner(object):
         return str(self.ownerobject)
 
 
-class ResourceManagerLock(guarded.AbstractLock):
+class Lock(guarded.AbstractLock):
     """
     Extend AbstractLock to enable Resources to be used with guarded utilities.
     """
