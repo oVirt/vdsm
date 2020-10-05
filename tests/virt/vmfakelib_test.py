@@ -18,8 +18,12 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import uuid
+
 import libvirt
 import pytest
+
+from vdsm.virt.vmdevices import storage
 
 from . import vmfakelib
 
@@ -152,3 +156,36 @@ def test_secret_lookup_error():
     with pytest.raises(libvirt.libvirtError) as e:
         con.secretLookupByUUIDString('no-such-uuid')
     assert e.value.get_error_code() == libvirt.VIR_ERR_NO_SECRET
+
+
+def test_irs_prepared_volumes():
+    sdUUID = uuid.uuid4()
+    spUUID = uuid.uuid4()
+    imgUUID = uuid.uuid4()
+    leafUUID = uuid.uuid4()
+    irs = vmfakelib.IRS()
+    expected_path = "/run/storage/{}/{}/{}".format(sdUUID, imgUUID, leafUUID)
+
+    res = irs.prepareImage(sdUUID, spUUID, imgUUID, leafUUID)
+    assert (sdUUID, leafUUID) in irs.prepared_volumes
+    assert res == {
+        "status": {
+            "code": 0,
+            "message": "Done"
+        },
+        "path": expected_path,
+        "info": {
+            "type": storage.DISK_TYPE.FILE,
+            "path": expected_path,
+        },
+        "imgVolumesInfo": None,
+    }
+
+    res = irs.teardownImage(sdUUID, spUUID, imgUUID, leafUUID)
+    assert (sdUUID, leafUUID) not in irs.prepared_volumes
+    assert res == {
+        "status": {
+            "code": 0,
+            "message": "Done"
+        },
+    }

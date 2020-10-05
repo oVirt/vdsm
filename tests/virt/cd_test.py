@@ -20,6 +20,7 @@
 #
 
 import logging
+import uuid
 
 import libvirt
 import pytest
@@ -54,6 +55,28 @@ def test_change_cd_failure():
 
         with pytest.raises(exception.ImageFileNotFound):
             fakevm.changeCD(cdromspec)
+
+
+def test_change_cd_pdiv():
+    sd_id = uuid.uuid4()
+    vol_id = uuid.uuid4()
+    drivespec = {
+        "device": "cdrom",
+        "domainID": sd_id,
+        "poolID": uuid.uuid4(),
+        "imageID": uuid.uuid4(),
+        "volumeID": vol_id,
+    }
+
+    with fake.VM(cif=ClientIF()) as fakevm:
+        fakevm._dom = fake.Domain()
+        cdromspec = {
+            'path': drivespec,
+            'iface': 'ide',
+            'index': '2',
+        }
+        fakevm.changeCD(cdromspec)
+        assert (sd_id, vol_id) in fakevm.cif.irs.prepared_volumes
 
 
 class ClientIF(clientIF.clientIF):

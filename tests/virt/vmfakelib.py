@@ -39,7 +39,7 @@ from vdsm.virt import domain_descriptor
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt import sampling
 from vdsm.virt import vm
-from vdsm.virt.vmdevices import core
+from vdsm.virt.vmdevices import core, storage
 
 from testlib import namedTemporaryDir
 from testlib import recorded
@@ -51,6 +51,7 @@ class IRS(object):
 
     def __init__(self):
         self.ready = True
+        self.prepared_volumes = {}
 
     def getDeviceVisibility(self, guid):
         pass
@@ -71,6 +72,23 @@ class IRS(object):
                 'offset': 0
             }
         }
+
+    def prepareImage(
+            self, sdUUID, spUUID, imgUUID, leafUUID, allowIllegal=False):
+        path = "/run/storage/{}/{}/{}".format(sdUUID, imgUUID, leafUUID)
+        self.prepared_volumes[(sdUUID, leafUUID)] = path
+        return response.success(
+            path=path,
+            info={
+                "type": storage.DISK_TYPE.FILE,
+                "path": path,
+            },
+            imgVolumesInfo=None
+        )
+
+    def teardownImage(self, sdUUID, spUUID, imgUUID, volUUID=None):
+        del self.prepared_volumes[(sdUUID, volUUID)]
+        return response.success()
 
 
 class _Server(object):
