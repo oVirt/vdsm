@@ -263,12 +263,6 @@ class TestNetworkDhcpBasic(object):
         families,
         dynamic_ipv4_ipv6_iface_with_dhcp_server,
     ):
-        if (
-            switch == 'legacy'
-            and IpFamily.IPv6 in families
-            and not nftestlib.is_nmstate_backend()
-        ):
-            pytest.xfail('Fails with ifcfg for IPv6')
         client = dynamic_ipv4_ipv6_iface_with_dhcp_server
         network_attrs = {
             'bridged': False,
@@ -512,11 +506,6 @@ def test_add_static_dns_with_dhcp(
 def _test_dynamic_ip_switch_to_static(
     adapter, switch, families, bridged, is_dhcp_server_enabled, nic, vlan=None
 ):
-    if not is_dhcp_server_enabled and not nftestlib.is_nmstate_backend():
-        pytest.xfail(
-            'With ifcfg backend and no server, tests need to be adjusted.'
-        )
-
     network_attrs = {
         'bridged': bridged,
         'nic': nic,

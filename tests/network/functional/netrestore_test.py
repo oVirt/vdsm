@@ -26,7 +26,6 @@ from network.nettestlib import dummy_device
 from network.nettestlib import veth_pair
 
 from vdsm.network import netrestore
-from vdsm.network import nmstate
 from vdsm.network.ipwrapper import linkSet
 from vdsm.network.link.bond import Bond
 
@@ -127,9 +126,6 @@ class TestRestore(object):
     def test_restore_missing_dynamic_ipv4_network(
         self, adapter, switch, bridged
     ):
-        if bridged and not nmstate.is_nmstate_backend():
-            pytest.xfail('https://bugzilla.redhat.com/1790392')
-
         with veth_pair() as (server, client):
             linkSet(server, ['up'])
             linkSet(client, ['up'])
@@ -152,16 +148,7 @@ class TestRestore(object):
 
                     adapter.restore_nets()
 
-                    if nmstate.is_nmstate_backend():
-                        # nmstate successfully restores a network without
-                        # a dhcp server in place.
-                        adapter.assertNetworkExists(NETWORK_NAME)
-                    else:
-                        # Attempt to restore network without dhcp server.
-                        # As expected, restoration occurs with
-                        # blockingdhcp=True and therefore it should fail the
-                        # setup.
-                        adapter.assertNoNetworkExists(NETWORK_NAME)
+                    adapter.assertNetworkExists(NETWORK_NAME)
 
     @parametrize_bridged
     def test_restore_network_static_ip_from_config(

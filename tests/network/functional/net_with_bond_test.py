@@ -20,7 +20,6 @@
 import pytest
 
 from vdsm.network import errors as ne
-from vdsm.network.configurators.ifcfg import ifup, ifdown
 from vdsm.network.ip import address
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.iface import iface
@@ -279,15 +278,6 @@ class TestReuseBond(object):
                 }
             }
             adapter.setupNetworks(NETEDIT, {}, NOCHK)
-
-            if switch == 'legacy' and not nftestlib.is_nmstate_backend():
-                # For ifcfg backend, make sure ifcfg content is good.
-                # https://bugzilla.redhat.com/1372798
-                ifdown(BOND_NAME)
-                ifup(BOND_NAME)
-                # netinfo must be updated explicitly after non-API changes
-                adapter.update_netinfo()
-
             adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
     @nftestlib.parametrize_bridged

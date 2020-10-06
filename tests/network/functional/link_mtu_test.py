@@ -24,8 +24,6 @@ from network.nettestlib import dummy_device
 
 from . import netfunctestlib as nftestlib
 
-from vdsm.network import nmstate
-
 
 NETWORK_NAME = 'test-network'
 NETWORK1_NAME = 'test-network1'
@@ -256,8 +254,6 @@ class TestNetworkMtu(object):
     def test_mtu_default_value_of_base_nic_after_all_nets_are_removed(
         self, adapter, switch, bridged, bonded, nic0
     ):
-        if switch == 'legacy' and bonded and not nmstate.is_nmstate_backend():
-            pytest.xfail('BZ#1633528')
         NETWORK1_ATTRS = {
             'bridged': bridged,
             'vlan': VLAN1,
@@ -287,9 +283,6 @@ class TestNetworkMtu(object):
     def test_base_iface_mtu_is_preserved_when_not_all_nets_on_top_are_deleted(
         self, adapter, switch, bridged, bonded, nic0
     ):
-        if switch == 'legacy' and bonded and not nmstate.is_nmstate_backend():
-            pytest.xfail('BZ#1633528')
-
         common_net_mtu = MTU_1600
         vlaned_network = {
             'bridged': bridged,
@@ -366,8 +359,6 @@ class TestNetworkMtu(object):
     def test_move_net_from_one_iface_to_another_with_non_default_mtu(
         self, adapter, switch, bridged, bonded, vlan, nic0, nic1
     ):
-        if switch == 'legacy' and bonded and not nmstate.is_nmstate_backend():
-            pytest.skip('Not supported with ifcfg BZ#1790761')
         net_attrs = {'bridged': bridged, 'mtu': MTU_2000, 'switch': switch}
         default_mtu = {'mtu': DEFAULT_MTU}
         if bonded:
@@ -406,8 +397,6 @@ class TestNetworkMtu(object):
     def test_move_net_between_bond_and_nic_with_non_default_mtu(
         self, adapter, switch, bridged, bonded, vlan, nic0, nic1
     ):
-        if switch == 'legacy' and not nmstate.is_nmstate_backend():
-            pytest.skip('Not supported with ifcfg BZ#1790761')
         net_attrs = {'bridged': bridged, 'mtu': MTU_2000, 'switch': switch}
         BONDBASE = {BOND_NAME: {'nics': [nic0], 'switch': switch}}
         default_mtu = {'mtu': DEFAULT_MTU}

@@ -33,9 +33,7 @@ import pytest
 
 from vdsm.common import cpuarch
 from vdsm.network import cmd
-from vdsm.network import nmstate
 from vdsm.network.ip import address
-from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
     addrAdd,
     linkSet,
@@ -98,8 +96,7 @@ class Vlan(Interface):
     def delDevice(self):
         self._down()
         linkDel(self.devName)
-        if nmstate.is_nmstate_backend():
-            cmd.exec_sync(['nmcli', 'con', 'del', self.devName])
+        cmd.exec_sync(['nmcli', 'con', 'del', self.devName])
 
 
 @contextmanager
@@ -186,10 +183,9 @@ class Dummy(Interface):
     def create(self):
         try:
             linkAdd(self.devName, linkType='dummy')
-            if nmstate.is_nmstate_backend():
-                cmd.exec_sync(
-                    ['nmcli', 'dev', 'set', self.devName, 'managed', 'yes']
-                )
+            cmd.exec_sync(
+                ['nmcli', 'dev', 'set', self.devName, 'managed', 'yes']
+            )
         except IPRoute2Error as e:
             pytest.skip(
                 'Failed to create a dummy interface %s: %s' % (self.devName, e)
@@ -209,8 +205,7 @@ class Dummy(Interface):
                 % (self.devName, e)
             )
         finally:
-            if nmstate.is_nmstate_backend():
-                cmd.exec_sync(['nmcli', 'con', 'del', self.devName])
+            cmd.exec_sync(['nmcli', 'con', 'del', self.devName])
 
     def set_ip(self, ipaddr, netmask, family=4):
         try:
@@ -276,11 +271,8 @@ def veth_pair(prefix='veth_', max_length=15):
     right_side = random_iface_name(prefix, max_length)
     try:
         linkAdd(left_side, linkType='veth', args=('peer', 'name', right_side))
-        if nmstate.is_nmstate_backend():
-            cmd.exec_sync(['nmcli', 'dev', 'set', left_side, 'managed', 'yes'])
-            cmd.exec_sync(
-                ['nmcli', 'dev', 'set', right_side, 'managed', 'yes']
-            )
+        cmd.exec_sync(['nmcli', 'dev', 'set', left_side, 'managed', 'yes'])
+        cmd.exec_sync(['nmcli', 'dev', 'set', right_side, 'managed', 'yes'])
     except IPRoute2Error as e:
         pytest.skip('Failed to create a veth pair: %s', e)
     try:
@@ -288,9 +280,8 @@ def veth_pair(prefix='veth_', max_length=15):
     finally:
         # the peer device is removed by the kernel
         linkDel(left_side)
-        if nmstate.is_nmstate_backend():
-            cmd.exec_sync(['nmcli', 'con', 'del', left_side])
-            cmd.exec_sync(['nmcli', 'con', 'del', right_side])
+        cmd.exec_sync(['nmcli', 'con', 'del', left_side])
+        cmd.exec_sync(['nmcli', 'con', 'del', right_side])
 
 
 @contextmanager
@@ -377,25 +368,7 @@ def wait_for_ipv6(iface, wait_for_scopes=None):
 
 
 @contextmanager
-def dhclient_run(iface, family=4):
-    dhclient.run(iface, family, blocking_dhcp=True)
-    try:
-        yield
-    finally:
-        dhclient.stop(iface, family)
-
-
-@contextmanager
 def dhcp_client_run(iface, family=4):
-    dhcp_client = (
-        dhcp_nm_client if nmstate.is_nmstate_backend() else dhclient_run
-    )
-    with dhcp_client(iface, family):
-        yield
-
-
-@contextmanager
-def dhcp_nm_client(iface, family=4):
     cmd.exec_sync(
         [
             'nmcli',

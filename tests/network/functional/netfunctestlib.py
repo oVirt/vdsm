@@ -29,7 +29,6 @@ from vdsm.common import fileutils
 from vdsm.network import api
 from vdsm.network import errors
 from vdsm.network import kernelconfig
-from vdsm.network import nmstate
 from vdsm.network.canonicalize import bridge_opts_dict_to_sorted_str
 from vdsm.network.canonicalize import bridge_opts_str_to_dict
 from vdsm.network.cmd import exec_sync
@@ -97,10 +96,6 @@ parametrize_ip_families = pytest.mark.parametrize(
 parametrize_def_route = pytest.mark.parametrize(
     'def_route', [True, False], ids=['withDefRoute', 'withoutDefRoute']
 )
-
-
-def is_nmstate_backend():
-    return nmstate.is_nmstate_backend()
 
 
 def retry_assert(func):
@@ -661,8 +656,7 @@ class NetFuncTestAdapter(object):
         # Do not use KernelConfig.__eq__ to get a better exception if something
         # breaks.
         assert running_config['networks'] == kernel_config['networks']
-        if nmstate.is_nmstate_backend():
-            self._assert_inclusive_bond_options(kernel_config, running_config)
+        self._assert_inclusive_bond_options(kernel_config, running_config)
         assert running_config['bonds'] == kernel_config['bonds']
 
     def _assert_inclusive_bond_options(self, kernel_config, running_config):
@@ -788,14 +782,10 @@ class SetupNetworks(object):
             self._update_configs()
             raise SetupNetworksError(status, msg)
 
-        if nmstate.is_nmstate_backend():
-            if self._is_sync_dynamic():
-                _wait_for_dhcp_response(30)
-                self.vdsm_proxy.refreshNetworkCapabilities()
-        else:
-            if self._is_dynamic_ipv4():
-                self._wait_for_dhcpv4_response(10)
-                self.vdsm_proxy.refreshNetworkCapabilities()
+        if self._is_sync_dynamic():
+            _wait_for_dhcp_response(30)
+            self.vdsm_proxy.refreshNetworkCapabilities()
+
         try:
             self._update_configs()
             self._assert_configs()

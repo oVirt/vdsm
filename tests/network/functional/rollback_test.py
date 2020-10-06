@@ -240,14 +240,7 @@ def test_setup_invalid_bridge_opts_fails(adapter, nic0):
         'custom': {'bridge_opts': 'foo=0'},
     }
 
-    # Currently, as the network scripts are still used, adding a
-    # non existent option will not raise any error, thus eventually
-    # failing with an assertionError due to no error raised.
-    expect_setup_err_cm = pytest.raises(SetupNetworksError)
-    expected_assert_err_cm = pytest.raises(AssertionError)
-    nm_backend = nftestlib.is_nmstate_backend()
-
-    with expect_setup_err_cm if nm_backend else expected_assert_err_cm:
+    with pytest.raises(SetupNetworksError):
         adapter.setupNetworks({NETWORK_NAME: net_attrs}, {}, NOCHK)
 
     adapter.update_netinfo()
