@@ -472,12 +472,12 @@ class HSM(object):
                        "repository at '%s'", sc.REPO_DATA_CENTER)
 
         mountList = []
-        whiteList = [
+        KEEP_PATTERNS = [
             self.tasksDir,
             os.path.join(self.tasksDir, "*"), sc.REPO_MOUNT_DIR,
         ]
 
-        def isInWhiteList(path):
+        def should_keep(path):
             fullpath = os.path.abspath(path)
 
             # The readlink call doesn't follow nested symlinks like
@@ -492,7 +492,7 @@ class HSM(object):
                 fullpath = os.path.abspath(os.path.join(basepath, symlpath))
 
             # Taking advantage of the any lazy evaluation
-            return any(fnmatch(fullpath, x) for x in whiteList)
+            return any(fnmatch(fullpath, x) for x in KEEP_PATTERNS)
 
         # Add mounted folders to mountlist
         for mnt in mount.iterMounts():
@@ -500,7 +500,7 @@ class HSM(object):
             if mountPoint.startswith(sc.REPO_DATA_CENTER):
                 mountList.append(mountPoint)
 
-        self.log.debug("White list: %s", whiteList)
+        self.log.debug("Kept patterns: %s", KEEP_PATTERNS)
         self.log.debug("Mount list: %s", mountList)
 
         self.log.debug("Cleaning leftovers")
@@ -517,7 +517,7 @@ class HSM(object):
             for directory in dirs:
                 fullPath = os.path.join(base, directory)
 
-                if isInWhiteList(fullPath):
+                if should_keep(fullPath):
                     dirs.remove(directory)
                 else:
                     rmDirList.insert(0, os.path.join(base, fullPath))
@@ -525,7 +525,7 @@ class HSM(object):
             for fname in files:
                 fullPath = os.path.join(base, fname)
 
-                if isInWhiteList(fullPath):
+                if should_keep(fullPath):
                     continue
                 self.log.info("Unlinking file %r", fullPath)
                 try:
