@@ -51,7 +51,8 @@ _SYSTEMD_UNITS_PATH = "/usr/lib/systemd/system"
 
 requires = frozenset(('certificates',))
 
-services = ("vdsmd", "supervdsmd", "libvirtd")
+services = ("vdsmd", "supervdsmd", "libvirtd", "libvirtd-admin.socket",
+            "libvirtd-ro.socket", "libvirtd.socket")
 
 
 _LibvirtConnectionConfig = namedtuple(
