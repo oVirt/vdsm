@@ -1,12 +1,13 @@
 [Unit]
 Description=Virtual Desktop Server Manager network restoration
 Wants=network.target
-Requires=libvirtd.service vdsm-network-init.service
-After=libvirtd.service vdsm-network-init.service
+Requires=libvirtd.service
+After=libvirtd.service
 
 [Service]
 Type=oneshot
 EnvironmentFile=-/etc/sysconfig/vdsm
+ExecStartPre=@BINDIR@/vdsm-tool dump-bonding-options
 ExecStartPre=@BINDIR@/vdsm-tool --vvverbose --append --logfile=@VDSMLOGDIR@/upgrade.log upgrade-networks
 ExecStart=@BINDIR@/vdsm-tool restore-nets
 RemainAfterExit=yes
