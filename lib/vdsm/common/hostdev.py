@@ -815,8 +815,7 @@ def reattach_detachable(device_name, pci_reattach=True):
 
 def change_numvfs(device_name, numvfs):
     net_name = physical_function_net_name(device_name)
-    supervdsm.getProxy().change_numvfs(name_to_pci_path(device_name), numvfs,
-                                       net_name)
+    supervdsm.getProxy().change_numvfs(numvfs, net_name)
 
 
 def spawn_mdev(mdev_type, mdev_uuid, mdev_placement, log):

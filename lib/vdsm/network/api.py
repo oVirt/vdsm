@@ -36,9 +36,9 @@ from vdsm.network import sourceroute
 from vdsm.network import validator
 from vdsm.network.dhcp_monitor import MonitoredItemPool
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
-from vdsm.network.link import iface as link_iface
 from vdsm.network.link import sriov
 from vdsm.network.lldp import info as lldp_info
+from vdsm.network.nmstate import update_num_vfs
 
 from . import canonicalize
 from .ip import address as ipaddress
@@ -64,19 +64,15 @@ def network_stats():
     return netstats.report()
 
 
-def change_numvfs(pci_path, numvfs, devname):
+def change_numvfs(numvfs, devname):
     """Change number of virtual functions of a device.
 
     The persistence is stored in the same place as other network persistence is
     stored. A call to setSafeNetworkConfig() will persist it across reboots.
     """
-    logging.info(
-        'Changing number of vfs on device %s -> %s.', pci_path, numvfs
-    )
-    sriov.update_numvfs(pci_path, numvfs)
+    logging.info(f'Changing number of vfs on device {devname} -> {numvfs}.')
+    update_num_vfs(devname, numvfs)
     sriov.persist_numvfs(devname, numvfs)
-
-    link_iface.iface(devname).up()
 
 
 def ip_addrs_info(device):

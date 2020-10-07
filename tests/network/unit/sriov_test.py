@@ -1,4 +1,4 @@
-# Copyright 2018-2019 Red Hat, Inc.
+# Copyright 2018-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,10 +19,6 @@
 
 from __future__ import absolute_import
 from __future__ import division
-
-
-from contextlib import contextmanager
-import io
 
 from network.compat import mock
 
@@ -72,58 +68,3 @@ class TestSriov(object):
             DEV1: {'sriov': {'numvfs': 5}},
         }
         assert new_cfg == expected_new_cfg
-
-
-@contextmanager
-def _wait_for_event(*args, **kwargs):
-    yield
-    check_event = kwargs.get('check_event')
-    for dev in [DEV0, DEV1]:
-        if check_event({'name': dev}):
-            break
-
-
-@mock.patch.object(sriov.waitfor, 'wait_for_link_event', _wait_for_event)
-@mock.patch.object(
-    sriov, 'physical_function_to_pci_address', lambda dev_name: PCI1
-)
-@mock.patch.object(sriov, 'open', create=True)
-class TestSriovNumVfs(object):
-    @mock.patch.object(sriov, 'get_all_vf_names', lambda pci: [DEV0])
-    def test_update_numvfs_1_to_2(self, mock_open):
-        fd = _create_fd(mock_open)
-        sriov.update_numvfs(PCI1, NUMVFS)
-        _assert_open_was_called(mock_open)
-        assert fd.getvalue() == b'0%d' % NUMVFS
-
-    @mock.patch.object(sriov, 'get_all_vf_names', lambda pci: [DEV0, DEV1])
-    def test_update_numvfs_2_to_0(self, mock_open):
-        fd = _create_fd(mock_open)
-        sriov.update_numvfs(PCI1, 0)
-        _assert_open_was_called(mock_open)
-        assert fd.getvalue() == b'0'
-
-    @mock.patch.object(sriov, 'get_all_vf_names', lambda pci: [])
-    def test_update_numvfs_0_to_2(self, mock_open):
-        fd = _create_fd(mock_open)
-        sriov.update_numvfs(PCI1, NUMVFS)
-        _assert_open_was_called(mock_open)
-        assert fd.getvalue() == b'%d' % NUMVFS
-
-    @mock.patch.object(sriov, 'get_all_vf_names', lambda pci: [])
-    def test_update_numvfs_0_to_0(self, mock_open):
-        fd = _create_fd(mock_open)
-        sriov.update_numvfs(PCI1, 0)
-        _assert_open_was_called(mock_open)
-        assert fd.getvalue() == b''
-
-
-def _assert_open_was_called(mock_open):
-    expected_sysfs_path = '/sys/bus/pci/devices/' + PCI1 + '/sriov_numvfs'
-    mock_open.assert_called_with(expected_sysfs_path, 'wb', 0)
-
-
-def _create_fd(mock_open):
-    fd = io.BytesIO()
-    mock_open.return_value.__enter__.return_value = fd
-    return fd

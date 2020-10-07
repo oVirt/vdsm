@@ -65,7 +65,7 @@ def _restore_sriov_config():
         devname = sriov.pciaddr2devname(sriov_devpci)
         numvfs = persistent_config.devices[devname]['sriov']['numvfs']
         try:
-            change_numvfs(sriov_devpci, numvfs, devname)
+            change_numvfs(numvfs, devname)
         except Exception:
             logging.exception(
                 'Restoring VF configuration for device %s failed. '
