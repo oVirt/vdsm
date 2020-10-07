@@ -20,7 +20,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import itertools
 import logging
 
 import six
@@ -36,9 +35,6 @@ from vdsm.network.common import switch_util as util
 from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.configurators import qos
 from vdsm.network.dhcp_monitor import MonitoredItemPool
-from vdsm.network.ip import address
-from vdsm.network.ip import dhclient
-from vdsm.network.link import dpdk
 from vdsm.network.link import nic
 from vdsm.network.link import setup as link_setup
 from vdsm.network.link.iface import iface as iface_obj
@@ -215,99 +211,12 @@ def _order_networks(networks):
         yield net, attr
 
 
-def setup_ovs_ip_config(nets2add, nets2remove):
-    # TODO: This should be moved to network/api.py when we solve rollback
-    # transactions.
-    for net in nets2remove:
-        _drop_dhcp_config(net)
-
-    for net, attrs in six.iteritems(nets2add):
-        sb = attrs.get('bonding') or attrs.get('nic')
-        if not dpdk.is_dpdk(sb):
-            address.disable_ipv6(sb)
-
-        _set_static_ip_config(net, attrs)
-        _set_dhcp_config(net, attrs)
-
-
-def _drop_dhcp_config(iface):
-    dhclient.stop(iface, 4)
-    dhclient.stop(iface, 6)
-
-
-def _set_dhcp_config(iface, attrs):
-    blocking_dhcp = attrs.get('blockingdhcp', False)
-    duid_source = attrs.get('bonding') or attrs.get('nic')
-
-    ipv4 = address.IPv4(*_ipv4_conf_params(attrs))
-    if ipv4.bootproto == 'dhcp':
-        dhclient.run(iface, 4, ipv4.defaultRoute, duid_source, blocking_dhcp)
-
-    ipv6 = address.IPv6(*_ipv6_conf_params(attrs))
-    if ipv6.dhcpv6:
-        dhclient.run(iface, 6, ipv6.defaultRoute, duid_source, blocking_dhcp)
-
-
-def _set_static_ip_config(iface, attrs):
-    address.flush(iface)
-    ipv4 = address.IPv4(*_ipv4_conf_params(attrs))
-    ipv6 = address.IPv6(*_ipv6_conf_params(attrs))
-    address.add(iface, ipv4, ipv6)
-
-
-def _ipv4_conf_params(attrs):
-    return (
-        attrs.get('ipaddr'),
-        attrs.get('netmask'),
-        attrs.get('gateway'),
-        attrs.get('defaultRoute'),
-        attrs.get('bootproto'),
-    )
-
-
-def _ipv6_conf_params(attrs):
-    return (
-        attrs.get('ipv6addr'),
-        attrs.get('ipv6gateway'),
-        attrs.get('defaultRoute'),
-        attrs.get('ipv6autoconf'),
-        attrs.get('dhcpv6'),
-    )
-
-
-def set_ovs_links_up(nets2add, bonds2add, bonds2edit):
-    # TODO: Make this universal for legacy and ovs.
-    for dev in _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
-        iface_obj(dev).up()
-
-
 def ovs_add_vhostuser_port(bridge, port, socket_path):
     ovs_switch.add_vhostuser_port(bridge, port, socket_path)
 
 
 def ovs_remove_port(bridge, port):
     ovs_switch.remove_port(bridge, port)
-
-
-def _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
-    nets_and_bonds = set(
-        itertools.chain.from_iterable([nets2add, bonds2add, bonds2edit])
-    )
-
-    nets_nics = {
-        attrs['nic'] for attrs in six.itervalues(nets2add) if 'nic' in attrs
-    }
-
-    bonds_nics = set()
-    for bonds in (bonds2add, bonds2edit):
-        bond_nics = itertools.chain.from_iterable(
-            attrs['nics'] for attrs in six.itervalues(bonds)
-        )
-        bonds_nics.update(bond_nics)
-
-    return itertools.chain.from_iterable(
-        [nets_and_bonds, nets_nics, bonds_nics]
-    )
 
 
 def netcaps(compatibility):
@@ -378,18 +287,6 @@ def _set_bond_type_by_usage(_netinfo):
 @memoized
 def _is_ovs_service_running():
     return ovs_info.is_ovs_service_running()
-
-
-def setup_ipv6autoconf(networks):
-    # TODO: Move func to IP or LINK level.
-    # TODO: Implicitly disable ipv6 on SB iface/s and fake ifaces (br, bond).
-    for net, attrs in six.iteritems(networks):
-        if 'remove' in attrs:
-            continue
-        if attrs['ipv6autoconf']:
-            address.enable_ipv6_local_auto(net)
-        else:
-            address.disable_ipv6_local_auto(net)
 
 
 def ovs_net2bridge(network_name):

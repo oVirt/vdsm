@@ -30,6 +30,7 @@ import errno
 
 import six
 
+from vdsm.common.constants import P_VDSM_RUN
 from vdsm.common.time import monotonic_time
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
@@ -39,7 +40,6 @@ from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.link import sriov
 from vdsm.network.netinfo import nics, misc
 from vdsm.network.netinfo.cache import NetInfo
-from vdsm.network.netrestore import NETS_RESTORED_MARK
 from vdsm.network.netconfpersistence import PersistentConfig, BaseConfig
 from vdsm.network.nm import networkmanager
 
@@ -49,6 +49,7 @@ from vdsm.network.configurators import ifcfg
 # Unified persistence restoration
 from vdsm.network.api import setupNetworks, change_numvfs
 
+NETS_RESTORED_MARK = os.path.join(P_VDSM_RUN, 'nets_restored')
 
 _ALL_DEVICES_UP_TIMEOUT = 5
 

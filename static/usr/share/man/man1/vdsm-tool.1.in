@@ -97,10 +97,6 @@ Restores the networks to what was previously persisted via VDSM.
 Options for the \fIrestore_nets_init\fP module:
 .RS
 .TP
-.B restore-nets-init
-Restore IP+link configuration of persisted networks.
-.RE
-.TP
 Options for the \fInetwork\fP module:
 .RS
 .TP

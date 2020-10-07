@@ -21,13 +21,10 @@ import pytest
 from .netfunctestlib import NOCHK
 from .netfunctestlib import parametrize_bridged
 from .netfunctestlib import parametrize_switch
-from network.compat import mock
 from network.nettestlib import dummy_device
 from network.nettestlib import veth_pair
 
-from vdsm.network import netrestore
 from vdsm.network.ipwrapper import linkSet
-from vdsm.network.link.bond import Bond
 
 BOND_NAME = 'bond1'
 IPv4_ADDRESS = '192.0.2.1'
@@ -45,24 +42,6 @@ def nic0():
 def nic1():
     with dummy_device() as nic:
         yield nic
-
-
-@pytest.mark.ovs_switch
-class TestRestoreOvsBond(object):
-    @mock.patch.object(netrestore, 'NETS_RESTORED_MARK', 'does/not/exist')
-    def test_restore_bond(self, adapter, nic0, nic1):
-        BONDCREATE = {BOND_NAME: {'nics': [nic0, nic1], 'switch': 'ovs'}}
-
-        with adapter.reset_persistent_config():
-            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
-                adapter.setSafeNetworkConfig()
-
-                Bond(BOND_NAME).destroy()
-
-                netrestore.init_nets()
-
-                adapter.update_netinfo()
-                adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
 
 @pytest.mark.legacy_switch

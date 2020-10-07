@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,22 +29,11 @@ import threading
 import six
 
 from vdsm.network import api as net_api
-from vdsm.network import netrestore
 from vdsm.network import netupgrade
 from vdsm.network.link.bond import sysfs_options_mapper
 from vdsm.network.restore_net_config import restore
 
 from . import expose, ExtraArgsError
-
-
-@expose('restore-nets-init')
-def retore_nets_init(*args):
-    """
-    restore-nets-init
-
-    Restore IP+link configuration on persisted OVS networks.
-    """
-    netrestore.init_nets()
 
 
 @expose('upgrade-networks')
