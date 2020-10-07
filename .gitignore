@@ -45,7 +45,6 @@ static/libexec/vdsm/vdsm-gencerts.sh
 static/usr/lib/systemd/system/mom-vdsm.service
 static/usr/lib/systemd/system/supervdsmd.service
 static/usr/lib/systemd/system/vdsm-network.service
-static/usr/lib/systemd/system/vdsm-network-init.service
 static/usr/lib/systemd/system/vdsmd.service
 static/usr/share/vdsm/autounattend/Autounattend.xml
 static/usr/share/vdsm/autounattend/Win7.xml

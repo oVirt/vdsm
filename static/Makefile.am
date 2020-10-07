@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -163,7 +163,6 @@ systemdunit_DATA = \
 	./usr/lib/systemd/system/mom-vdsm.service \
 	./usr/lib/systemd/system/supervdsmd.service \
 	./usr/lib/systemd/system/vdsm-network.service \
-	./usr/lib/systemd/system/vdsm-network-init.service \
 	./usr/lib/systemd/system/vdsmd.service \
 	$(NULL)
 
@@ -205,7 +204,6 @@ EXTRA_DIST = \
 	./usr/lib/systemd/system/mom-vdsm.service.in \
 	./usr/lib/systemd/system/supervdsmd.service.in \
 	./usr/lib/systemd/system/vdsm-network.service.in \
-	./usr/lib/systemd/system/vdsm-network-init.service.in \
 	./usr/lib/systemd/system/vdsmd.service.in \
 	./usr/share/man/man1/vdsm-tool.1.in \
 	./usr/share/man/man8/vdsmd.8.in \

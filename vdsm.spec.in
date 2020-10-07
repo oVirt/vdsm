@@ -918,7 +918,6 @@ fi
 %systemd_preun dev-hugepages1G.mount
 %systemd_preun vdsmd.service
 %systemd_preun vdsm-network.service
-%systemd_preun vdsm-network-init.service
 %systemd_preun supervdsmd.service
 %systemd_preun mom-vdsm.service
 %systemd_preun ksmtuned.service
@@ -966,7 +965,6 @@ exit 0
 %{_unitdir}/dev-hugepages1G.mount
 %{_unitdir}/vdsmd.service
 %{_unitdir}/vdsm-network.service
-%{_unitdir}/vdsm-network-init.service
 %{_unitdir}/supervdsmd.service
 %{_unitdir}/mom-vdsm.service
 %{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
