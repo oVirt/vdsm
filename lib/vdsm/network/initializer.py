@@ -22,15 +22,11 @@ from __future__ import division
 
 from contextlib import contextmanager
 import logging
-import time
 
 from vdsm.common.config import config
 from vdsm.network import bond_monitor
-from vdsm.network import dhclient_monitor
 from vdsm.network import dhcp_monitor
 from vdsm.network import lldp
-from vdsm.network import nmstate
-from vdsm.network.dhclient_monitor import dhclient_monitor_ctx
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.nm import networkmanager
 
@@ -43,33 +39,18 @@ def init_privileged_network_components():
 
 
 def init_unprivileged_network_components(cif, net_api):
-    if nmstate.is_nmstate_backend():
-        dhcp_monitor.initialize_monitor(cif, net_api)
-    else:
-        _init_sourceroute(net_api)
-        _register_notifications(cif)
-        dhclient_monitor.start()
+    dhcp_monitor.initialize_monitor(cif, net_api)
     bond_monitor.initialize_monitor(cif)
 
 
 def stop_unprivileged_network_components():
-    if nmstate.is_nmstate_backend():
-        dhcp_monitor.Monitor.instance().stop()
-    else:
-        dhclient_monitor.stop()
-
+    dhcp_monitor.Monitor.instance().stop()
     bond_monitor.stop()
 
 
 @contextmanager
-def init_unpriviliged_dhclient_monitor_ctx(event_sink, net_api):
-    if nmstate.is_nmstate_backend():
-        ctx = dhcp_monitor.initialize_monitor_ctx(event_sink, net_api)
-    else:
-        _init_sourceroute(net_api)
-        _register_notifications(event_sink)
-        ctx = dhclient_monitor_ctx()
-    with ctx:
+def init_unpriviliged_dhcp_monitor_ctx(event_sink, net_api):
+    with dhcp_monitor.initialize_monitor_ctx(event_sink, net_api):
         yield
 
 
@@ -95,55 +76,3 @@ def _lldp_init():
                     )
     else:
         logging.warning('LLDP is inactive, skipping LLDP initialization')
-
-
-def _init_sourceroute(net_api):
-    """
-    Setup sourceroute with the dhclient monitor.
-
-    The net_api argument represents the exposed network api verbs.
-
-    The net_api can contain:
-    supervdsm proxy - enabling calls through the supervdsm service.
-    api module object - enabling calls directly through the network api.
-    """
-
-    def _add_sourceroute(iface, ip, mask, route):
-        net_api.add_sourceroute(iface, ip, mask, route)
-
-    def _remove_sourceroute(iface):
-        net_api.remove_sourceroute(iface)
-
-    dhclient_monitor.register_action_handler(
-        action_type=dhclient_monitor.ActionType.CONFIGURE,
-        action_function=_add_sourceroute,
-        required_fields=(
-            dhclient_monitor.ResponseField.IFACE,
-            dhclient_monitor.ResponseField.IPADDR,
-            dhclient_monitor.ResponseField.IPMASK,
-            dhclient_monitor.ResponseField.IPROUTE,
-        ),
-    )
-    dhclient_monitor.register_action_handler(
-        action_type=dhclient_monitor.ActionType.REMOVE,
-        action_function=_remove_sourceroute,
-        required_fields=(dhclient_monitor.ResponseField.IFACE,),
-    )
-
-
-def _register_notifications(cif):
-    def _notify(**kwargs):
-        if not nmstate.is_nmstate_backend():
-            # Delay the notification in order to allow the ifup job to finish
-            time.sleep(5)
-        cif.notify('|net|host_conn|no_id')
-
-    dhclient_monitor.register_action_handler(
-        action_type=dhclient_monitor.ActionType.CONFIGURE,
-        action_function=_notify,
-        required_fields=(
-            dhclient_monitor.ResponseField.IFACE,
-            dhclient_monitor.ResponseField.IPADDR,
-            dhclient_monitor.ResponseField.IPMASK,
-        ),
-    )

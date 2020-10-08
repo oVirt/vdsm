@@ -23,7 +23,7 @@ from contextlib import contextmanager
 import pytest
 
 from vdsm.network import api as net_api
-from vdsm.network.initializer import init_unpriviliged_dhclient_monitor_ctx
+from vdsm.network.initializer import init_unpriviliged_dhcp_monitor_ctx
 from vdsm.network.ipwrapper import linkSet, addrAdd
 
 from . import netfunctestlib as nftestlib
@@ -96,9 +96,9 @@ class DhcpConfig(object):
 
 
 @pytest.fixture(scope='module', autouse=True)
-def dhclient_monitor():
+def dhcp_monitor():
     event_sink = FakeNotifier()
-    with init_unpriviliged_dhclient_monitor_ctx(event_sink, net_api):
+    with init_unpriviliged_dhcp_monitor_ctx(event_sink, net_api):
         yield
 
 

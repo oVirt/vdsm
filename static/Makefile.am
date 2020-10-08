@@ -142,11 +142,6 @@ dracut_DATA = \
 	./usr/lib/dracut/dracut.conf.d/99-vdsm_protect_ifcfg.conf \
 	$(NULL)
 
-dhclientmondir = $(sysconfdir)/dhcp/dhclient.d
-dist_dhclientmon_SCRIPTS = \
-	./etc/dhcp/dhclient.d/dhclientmon.sh \
-	$(NULL)
-
 nmdispatcherdir = $(sysconfdir)/NetworkManager/dispatcher.d
 dist_nmdispatcher_SCRIPTS = \
 	./etc/NetworkManager/dispatcher.d/dhcp_monitor.py \
@@ -224,7 +219,6 @@ install-data-local: install-libvirtpasswordDATA
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)/import
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)
-	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/dhclientmon
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/trackedInterfaces
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/payload
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/netconfback
