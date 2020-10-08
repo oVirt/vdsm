@@ -29,6 +29,7 @@ import pytest
 from network.compat import mock
 from network.nettestlib import dummy_device
 from network.nettestlib import running
+from network.nettestlib import running_on_ovirt_ci
 from network.nettestlib import Tap
 from network.nettestlib import veth_pair
 from network.nettestlib import vlan_device
@@ -266,6 +267,11 @@ class TestConfigureOutbound(object):
 
         assert len(tc_filters.tagged_filters) == 0
 
+    @pytest.mark.xfail(
+        condition=running_on_ovirt_ci(),
+        reason='does not work on CI with nmstate',
+        strict=False,
+    )
     @pytest.mark.parametrize('repeating_calls', [1, 2])
     @mock.patch('vdsm.network.netinfo.bonding.permanent_address', lambda: {})
     def test_single_vlan(self, dummy, vlan16, repeating_calls):
@@ -284,6 +290,11 @@ class TestConfigureOutbound(object):
         assert len(tag_filters) == 1
         assert int(tag_filters[0]['basic']['value']) == vlan16.tag
 
+    @pytest.mark.xfail(
+        condition=running_on_ovirt_ci(),
+        reason='does not work on CI with nmstate',
+        strict=False,
+    )
     @mock.patch('vdsm.network.netinfo.bonding.permanent_address', lambda: {})
     def test_multiple_vlans(self, dummy, vlan16, vlan17):
         for vlan in (vlan16, vlan17):

@@ -28,10 +28,6 @@ from vdsm.network import cmd
 from vdsm.network import sourceroute
 from vdsm.network.ip import rule as ip_rule
 
-from vdsm.network import nmstate
-
-from unittest import mock
-
 IPV4_ADDRESS1 = '192.168.99.1'  # Tracking the address used in ip_rule_test
 
 
@@ -79,10 +75,3 @@ def cleanup_stale_iprules():
             except Exception as e:
                 logging.error('Error removing rule (%s): %s', rule, e)
         raise StaleIPRulesError()
-
-
-@pytest.fixture(scope='session', autouse=True)
-def disable_nmstate_backend():
-    with mock.patch.object(nmstate, 'is_nmstate_backend') as mock_backend:
-        mock_backend.return_value = False
-        yield
