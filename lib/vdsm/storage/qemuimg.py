@@ -500,6 +500,20 @@ def bitmap_merge(src_image, src_bitmap, src_fmt, dst_image, dst_bitmap):
     return operation.Command(cmd, cwd=cwdPath)
 
 
+def bitmap_update(image, bitmap, enable):
+    cmd = [_qemuimg.cmd, "bitmap"]
+
+    if enable:
+        cmd.append("--enable")
+    else:
+        cmd.append("--disable")
+
+    cmd.extend([image, bitmap])
+
+    cwdPath = os.path.dirname(image)
+    return operation.Command(cmd, cwd=cwdPath)
+
+
 # TODO: remove when qemu-kvm >= 4.2.0-25 required
 @cache.memoized
 def bitmaps_supported():

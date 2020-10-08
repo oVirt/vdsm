@@ -1480,6 +1480,61 @@ class TestBitmaps:
         ]
 
     @requires_bitmaps_support
+    def test_enable_disable_bitmap(self, tmp_mount):
+        virtual_size = MiB
+        bitmap_name = 'bitmap1'
+        # Create source file
+        src_path = os.path.join(tmp_mount.path, 'source.img')
+        op = qemuimg.create(
+            src_path,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+
+        # Add new bitmap to src
+        op = qemuimg.bitmap_add(
+            src_path,
+            bitmap_name,
+        )
+        op.run()
+
+        # Disable the bitmap on src
+        op = qemuimg.bitmap_update(
+            src_path,
+            bitmap_name,
+            enable=False
+        )
+        op.run()
+
+        info = qemuimg.info(src_path)
+        assert info['bitmaps'] == [
+            {
+                "flags": [],
+                "name": bitmap_name,
+                "granularity": 65536
+            },
+        ]
+
+        # Enable the bitmap on src
+        op = qemuimg.bitmap_update(
+            src_path,
+            bitmap_name,
+            enable=True
+        )
+        op.run()
+
+        info = qemuimg.info(src_path)
+        assert info['bitmaps'] == [
+            {
+                "flags": ["auto"],
+                "name": bitmap_name,
+                "granularity": 65536
+            },
+        ]
+
+    @requires_bitmaps_support
     def test_merge_bitmaps(self, tmp_mount):
         virtual_size = MiB
         base_bitmap = 'base_bitmap'
