@@ -261,6 +261,19 @@ def validate_bridge_name(bridge_name):
         )
 
 
+def validate_legacy_network_setup(networks):
+    for netattrs in networks.values():
+        _validate_nic_not_dpdk(netattrs.get('nic', None))
+
+
+def _validate_nic_not_dpdk(nic):
+    if nic and dpdk.is_dpdk(nic):
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_NIC,
+            f'{nic} is a dpdk device and supported only with OVS',
+        )
+
+
 def _validate_vlan_id(id):
     MAX_ID = 4094
 

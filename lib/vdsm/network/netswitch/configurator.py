@@ -70,7 +70,7 @@ def validate(networks, bondings, net_info, running_config):
 
     validator.validate_network_setup(networks, bondings, net_info)
     if use_legacy_switch:
-        legacy_switch.validate_network_setup(legacy_nets)
+        validator.validate_legacy_network_setup(legacy_nets)
 
 
 def setup(networks, bondings, options, in_rollback):

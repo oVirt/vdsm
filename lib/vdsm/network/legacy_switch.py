@@ -29,7 +29,6 @@ import six
 from vdsm.common.conv import tobool
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
-from vdsm.network.link import dpdk
 from vdsm.network.link import iface as link_iface
 from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.netinfo import NET_PATH
@@ -690,16 +689,3 @@ def _bonds_add(bonds, configurator, _netinfo):
         )
         logging.debug('Creating %r with options %r', bond, bond.options)
         configurator.configureBond(bond)
-
-
-def validate_network_setup(networks):
-    for netattrs in six.viewvalues(networks):
-        _validate_nic_not_dpdk(netattrs.get('nic', None))
-
-
-def _validate_nic_not_dpdk(nic):
-    if nic and dpdk.is_dpdk(nic):
-        raise ConfigNetworkError(
-            ne.ERR_BAD_NIC,
-            '%s is a dpdk device and supported only with OVS' % nic,
-        )
