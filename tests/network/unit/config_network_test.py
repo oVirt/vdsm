@@ -25,16 +25,10 @@ from __future__ import division
 
 import pytest
 
-from vdsm.network import netinfo
 from vdsm.network.link.iface import DEFAULT_MTU
 
-from network.compat import mock
-
 from vdsm.network import errors
-from vdsm.network.configurators import ifcfg
 from vdsm.network.canonicalize import canonicalize_networks
-from vdsm.network import legacy_switch
-from vdsm.network.models import Bond, Bridge, Nic, Vlan
 from vdsm.network.netswitch import validator
 
 from .testlib import NetInfo as NetInfoLib
@@ -46,53 +40,29 @@ BOND0_SLAVES = ['eth5', 'eth6']
 BONDS = [BOND0]
 
 
-def _raiseInvalidOpException(*args, **kwargs):
-    return RuntimeError(
-        'Attempted to apply network configuration during unit ' 'testing.'
-    )
-
-
 class TestConfigNetwork(object):
-    def _addNetworkWithExc(self, netName, opts, errCode):
-        fakeInfo = netinfo.cache.CachingNetInfo(FAKE_NETINFO)
-        configurator = ifcfg.Ifcfg(fakeInfo)
-
+    def _validate_network_with_err(self, netName, opts, errCode):
         with pytest.raises(errors.ConfigNetworkError) as cneContext:
             canonicalize_networks({netName: opts})
             validator.validate_network_setup({netName: opts}, {}, FAKE_NETINFO)
-            legacy_switch._add_network(
-                netName, configurator, fakeInfo, None, **opts
-            )
         assert cneContext.value.errCode == errCode
 
-    # Monkey patch the real network detection from the netinfo module.
-    @mock.patch.object(ifcfg, 'ifdown', _raiseInvalidOpException)
-    @mock.patch.object(ifcfg, '_exec_ifup', _raiseInvalidOpException)
-    @mock.patch.object(Bond, 'configure', _raiseInvalidOpException)
-    @mock.patch.object(Bridge, 'configure', _raiseInvalidOpException)
-    @mock.patch.object(Nic, 'configure', _raiseInvalidOpException)
-    @mock.patch.object(Vlan, 'configure', _raiseInvalidOpException)
     def testAddNetworkValidation(self):
 
         # Test for already existing bridge.
-        self._addNetworkWithExc(
+        self._validate_network_with_err(
             'fakebrnet',
             dict(nic='eth2', mtu=DEFAULT_MTU),
             errors.ERR_BAD_PARAMS,
         )
 
-        # Test for already existing network.
-        self._addNetworkWithExc(
-            'fakent', dict(nic='eth2', mtu=DEFAULT_MTU), errors.ERR_USED_BRIDGE
-        )
-
         # Test for non existing nic.
-        self._addNetworkWithExc(
+        self._validate_network_with_err(
             'test', dict(nic='eth11', mtu=DEFAULT_MTU), errors.ERR_BAD_PARAMS
         )
 
         # Test for nic already in a bond.
-        self._addNetworkWithExc(
+        self._validate_network_with_err(
             'test', dict(nic='eth6', mtu=DEFAULT_MTU), errors.ERR_BAD_PARAMS
         )
 

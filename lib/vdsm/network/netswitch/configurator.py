@@ -27,7 +27,6 @@ import six
 from vdsm.common.cache import memoized
 from vdsm.common.time import monotonic_time
 from vdsm.network import connectivity
-from vdsm.network import legacy_switch
 from vdsm.network import errors as ne
 from vdsm.network import nmstate
 from vdsm.network import sourceroute
@@ -301,7 +300,7 @@ def net2northbound(network_name):
 
     # Using RunningConfig avoids the need to require root access.
     net_attr = RunningConfig().networks.get(network_name)
-    is_legacy = net_attr['switch'] == legacy_switch.SWITCH_TYPE
+    is_legacy = net_attr['switch'] == util.SwitchType.LINUX_BRIDGE
     if not net_attr['bridged'] and is_legacy:
         nb_device = get_net_iface_from_config(network_name, net_attr)
 
