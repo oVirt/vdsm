@@ -37,8 +37,6 @@ from vdsm.network.netinfo.cache import get
 from vdsm.network import nmstate
 
 from network.compat import mock
-from network.nettestlib import running_on_ovirt_ci
-from network.nettestlib import running_on_travis_ci
 
 
 @pytest.fixture
@@ -124,12 +122,6 @@ class TestNetinfo(object):
     def test_dpdk_operstate_always_up(self):
         assert nics.operstate('dpdk0') == nics.OPERSTATE_UP
 
-    @pytest.mark.xfail(
-        condition=running_on_ovirt_ci() or running_on_travis_ci(),
-        raises=KeyError,
-        reason='does not work on CI with nmstate',
-        strict=False,
-    )
     @mock.patch.object(bonding, 'permanent_address', lambda: {})
     @mock.patch('vdsm.network.netinfo.cache.RunningConfig')
     def test_get_non_existing_bridge_info(

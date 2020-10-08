@@ -26,9 +26,7 @@ import logging
 
 import six
 
-from vdsm.network import dns
 from vdsm.network import nmstate
-from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.link import dpdk
@@ -70,14 +68,11 @@ def _get(vdsmnets=None):
 
     flat_devs_info = _get_flat_devs_info(devices_info)
     devices = _get_dev_names(nets_info, flat_devs_info)
-    extra_info = {}
-    if nmstate.is_nmstate_backend():
-        state = nmstate.state_show()
-        extra_info.update(_get_devices_info_from_nmstate(state, devices))
-        nameservers = nmstate.get_nameservers(state)
-    else:
-        extra_info.update(dhclient.dhcp_info(devices))
-        nameservers = dns.get_host_nameservers()
+    extra_info = _create_default_extra_info(devices)
+
+    state = nmstate.state_show()
+    extra_info.update(_get_devices_info_from_nmstate(state, devices))
+    nameservers = nmstate.get_nameservers(state)
 
     _update_caps_info(nets_info, flat_devs_info, extra_info)
 
@@ -94,6 +89,13 @@ def add_qos_info_to_devices(nets_info, devices_info):
 
     qos_list = _get_qos_info_from_net(nets_info)
     qos_list and _add_qos_info_to_southbound(qos_list, devices_info)
+
+
+def _create_default_extra_info(devices):
+    return {
+        devname: {'dhcpv4': False, 'dhcpv6': False, 'ipv6autoconf': False}
+        for devname in devices
+    }
 
 
 def _get_qos_info_from_net(nets_info):
@@ -153,12 +155,8 @@ def _sort_devices_qos_by_vlan(devices_info, iface_type):
 def _get_devices_info_from_nmstate(state, devices):
     return {
         ifname: {
-            dhclient.DHCP4: nmstate.is_dhcp_enabled(
-                ifstate, nmstate.Interface.IPV4
-            ),
-            dhclient.DHCP6: nmstate.is_dhcp_enabled(
-                ifstate, nmstate.Interface.IPV6
-            ),
+            'dhcpv4': nmstate.is_dhcp_enabled(ifstate, nmstate.Interface.IPV4),
+            'dhcpv6': nmstate.is_dhcp_enabled(ifstate, nmstate.Interface.IPV6),
             'ipv6autoconf': nmstate.is_autoconf_enabled(ifstate),
         }
         for ifname, ifstate in six.viewitems(
