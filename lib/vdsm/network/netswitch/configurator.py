@@ -32,6 +32,7 @@ from vdsm.network import legacy_switch
 from vdsm.network import errors as ne
 from vdsm.network import nmstate
 from vdsm.network import sourceroute
+from vdsm.network.common import switch_util as util
 from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.configurators import qos
 from vdsm.network.dhcp_monitor import MonitoredItemPool
@@ -50,7 +51,6 @@ from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo.cache import get as netinfo_get, NetInfo
 from vdsm.network.netinfo.cache import get_net_iface_from_config
 
-from . import util
 from . import validator
 
 

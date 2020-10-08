@@ -17,8 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from vdsm.network.common.switch_util import SwitchType
 from vdsm.network.link.iface import random_iface_name
-from vdsm.network.netswitch.util import SwitchType
 
 from .schema import Interface
 from .schema import InterfaceIP

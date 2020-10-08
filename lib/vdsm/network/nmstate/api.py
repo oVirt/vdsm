@@ -20,8 +20,8 @@
 from collections import defaultdict
 import itertools
 
+from vdsm.network.common.switch_util import split_switch_type
 from vdsm.network.netconfpersistence import RunningConfig
-from vdsm.network.netswitch.util import split_switch_type
 
 from .bond import Bond
 from .bridge_util import DEFAULT_MTU
