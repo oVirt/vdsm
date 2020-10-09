@@ -20,7 +20,6 @@
 #
 
 import ipaddress
-import os
 
 import pytest
 
@@ -34,6 +33,8 @@ from vdsm.network.netinfo import addresses, bonding, nics, routes
 from vdsm.network.netlink import waitfor
 
 from network.compat import mock
+from network.nettestlib import running_on_ovirt_ci
+from network.nettestlib import running_on_travis_ci
 
 from ..nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
 
@@ -59,10 +60,8 @@ IPV6_ADDR_CIDR = f'{IPV6_ADDR}/{IPV6_PREFIX_LENGTH}'
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
 
 
-running_on_ovirt_ci = 'OVIRT_CI' in os.environ
-running_on_travis_ci = 'TRAVIS_CI' in os.environ
 ipv6_broken_on_travis_ci = pytest.mark.skipif(
-    running_on_travis_ci, reason='IPv6 not supported on travis'
+    running_on_travis_ci(), reason='IPv6 not supported on travis'
 )
 
 
@@ -74,7 +73,7 @@ def nic0():
 
 @pytest.fixture
 def dynamic_ipv6_iface():
-    if running_on_ovirt_ci:
+    if running_on_ovirt_ci():
         pytest.skip('Using dnsmasq for ipv6 RA is unstable on CI')
 
     with veth_pair() as (server, client):
@@ -115,7 +114,7 @@ class TestNetinfo(object):
             )
 
     @pytest.mark.xfail(
-        condition=running_on_ovirt_ci,
+        condition=running_on_ovirt_ci(),
         raises=AssertionError,
         reason='Bond options scanning is fragile on CI',
         strict=False,

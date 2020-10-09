@@ -18,13 +18,13 @@
 #
 
 import itertools
-import os
 
 import pytest
 
 from network.nettestlib import dummy_device
 from network.nettestlib import nm_is_running
 from network.nettestlib import preserve_default_route
+from network.nettestlib import running_on_travis_ci
 
 from vdsm.network.ip import address
 from vdsm.network.netinfo import routes
@@ -47,7 +47,7 @@ IPV6_GATEWAY = '2001:99::99'
 
 
 ipv6_broken_on_travis_ci = pytest.mark.skipif(
-    'TRAVIS_CI' in os.environ, reason='IPv6 not supported on travis'
+    running_on_travis_ci(), reason='IPv6 not supported on travis'
 )
 
 

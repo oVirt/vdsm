@@ -22,7 +22,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 from collections import deque
-import os
 import threading
 import time
 
@@ -37,11 +36,11 @@ from vdsm.network.netlink import NLSocketPool
 from vdsm.network.netlink import monitor
 from vdsm.network.sysctl import is_disabled_ipv6
 
+from network.nettestlib import running_on_ovirt_ci
+
+
 IP_ADDRESS = '192.0.2.1'
 IP_CIDR = '24'
-
-
-running_on_ovirt_ci = 'OVIRT_CI' in os.environ
 
 
 @pytest.fixture(scope='function')
@@ -138,7 +137,7 @@ class TestNetlinkEventMonitor(object):
                 next(iterator)
 
     @pytest.mark.xfail(
-        condition=running_on_ovirt_ci,
+        condition=running_on_ovirt_ci(),
         raises=AssertionError,
         reason='Sometimes we miss some events on CI',
         strict=False,
