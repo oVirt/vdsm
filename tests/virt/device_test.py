@@ -668,7 +668,7 @@ class TestUpdateDevice(TestCaseBase):
       <link state="up" />
       <bandwidth />
       <alias name="net1" />
-      {mtu}
+      {new_node}
     </interface>
   </devices>
   <metadata xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
@@ -707,7 +707,7 @@ class TestUpdateDevice(TestCaseBase):
         (None, None),
         (1492, 1492),
     ])
-    def test_nic_update(self, mtu_old, mtu_new):
+    def test_nic_update_mtu(self, mtu_old, mtu_new):
         vm = self.vm
         self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
         vm._devices[hwclass.NIC][0].mtu = mtu_old
@@ -716,7 +716,7 @@ class TestUpdateDevice(TestCaseBase):
             mtu = '<mtu size="%d" />' % mtu_new
         params = {
             'deviceType': 'interface',
-            'xml': self.NIC_UPDATE.format(mtu=mtu),
+            'xml': self.NIC_UPDATE.format(new_node=mtu),
         }
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
@@ -734,6 +734,39 @@ class TestUpdateDevice(TestCaseBase):
             sorted(['network1', 'network2'])
         )
         self.assertEqual(dev.mtu, mtu_new)
+
+    @permutations([
+        # port_isolated_old, port_isolated_new
+        (None, None),
+        ("no", "yes"),
+        ("yes", "no"),
+        ("yes", "yes"),
+        (None, "yes"),
+        ("yes", None),
+        ("yes", "yes"),
+    ])
+    def test_nic_update_port_isolated(self, port_isolated_old,
+                                      port_isolated_new):
+        vm = self.vm
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        vm._devices[hwclass.NIC][0].port_isolated = port_isolated_old
+        port = ''
+        if port_isolated_new is not None:
+            port = '<port isolated="%s" />' % port_isolated_new
+        params = {
+            'deviceType': 'interface',
+            'xml': self.NIC_UPDATE.format(new_node=port),
+        }
+        with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
+                                self.supervdsm.getProxy)]):
+            vm.updateDevice(params)
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        for dev in vm._devices[hwclass.NIC]:
+            if dev.macAddr == "11:22:33:44:55:66":
+                break
+        else:
+            raise Exception("Hot plugged device not found")
+        self.assertEqual(dev.port_isolated, port_isolated_new)
 
 
 class TestRestorePaths(TestCaseBase):

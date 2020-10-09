@@ -61,7 +61,8 @@ class Interface(core.Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter', 'filterParameters',
                  'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev', 'mtu',
-                 'numa_node', '_device_params', 'vm_custom', '_is_vhostuser')
+                 'numa_node', '_device_params', 'vm_custom', '_is_vhostuser',
+                 'port_isolated')
 
     @classmethod
     def get_identifying_attrs(cls, dev_elem):
@@ -105,6 +106,9 @@ class Interface(core.Base):
         mtu = vmxml.find_first(dev, "mtu", None)
         if mtu is not None:
             params['mtu'] = int(vmxml.attr(mtu, 'size'))
+        port = vmxml.find_first(dev, 'port', None)
+        if port is not None:
+            params['port_isolated'] = vmxml.attr(port, 'isolated')
         filterref = vmxml.find_first(dev, 'filterref', None)
         if filterref is not None:
             params['filter'] = vmxml.attr(filterref, 'filter')
@@ -154,6 +158,7 @@ class Interface(core.Base):
         self.vm_custom = {}
         self.linkActive = True
         self.mtu = None
+        self.port_isolated = None
         super(Interface, self).__init__(log, **kwargs)
         self.sndbufParam = False
         self.is_hostdevice = self.device == hwclass.HOSTDEV
@@ -283,6 +288,9 @@ class Interface(core.Base):
 
         if self.mtu is not None:
             iface.appendChildWithArgs('mtu', size=str(self.mtu))
+
+        if self.port_isolated is not None:
+            iface.appendChildWithArgs('port', isolated=str(self.port_isolated))
 
         if hasattr(self, 'filter'):
             filter = iface.appendChildWithArgs('filterref', filter=self.filter)
@@ -508,7 +516,25 @@ class Interface(core.Base):
             params['linkActive'] = False
         if self.mtu is not None:
             params['mtu'] = self.mtu
+        if self.port_isolated is not None:
+            params['port_isolated'] = self.port_isolated
         return params
+
+
+def update_port_xml(vnicXML, port_isolated):
+    if port_isolated is None:
+        try:
+            port = vmxml.find_first(vnicXML, 'port')
+        except vmxml.NotFound:
+            pass
+        else:
+            vnicXML.remove(port)
+    else:
+        try:
+            port = vmxml.find_first(vnicXML, 'port')
+        except vmxml.NotFound:
+            port = vnicXML.appendChildWithArgs('port')
+        vmxml.set_attr(port, 'isolated', str(port_isolated))
 
 
 def update_bandwidth_xml(iface, vnicXML, specParams=None):

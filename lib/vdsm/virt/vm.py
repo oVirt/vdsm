@@ -2885,13 +2885,17 @@ class Vm(object):
             if network == '':
                 network = net_api.DUMMY_BRIDGE
                 linkValue = 'down'
-            custom = params.get('custom', {})
-            specParams = params.get('specParams')
-            MTU = params.get('mtu', netDev.mtu)
             netsToMirror = params.get('portMirroring', netDev.portMirroring)
 
-            with self.setLinkAndNetwork(netDev, linkValue, network,
-                                        custom, specParams, MTU):
+            with self.setLinkAndNetwork(
+                    netDev,
+                    linkValue,
+                    network,
+                    custom=params.get('custom', {}),
+                    specParams=params.get('specParams'),
+                    MTU=params.get('mtu', netDev.mtu),
+                    port_isolated=params.get('port_isolated')
+            ):
                 with self.updatePortMirroring(netDev, netsToMirror):
                     self._hotplug_device_metadata(hwclass.NIC, netDev)
                     return {'vmList': {}}
@@ -2902,7 +2906,7 @@ class Vm(object):
 
     @contextmanager
     def setLinkAndNetwork(self, dev, linkValue, networkValue, custom,
-                          specParams=None, MTU=None):
+                          specParams=None, MTU=None, port_isolated=None):
         vnicXML = dev.getXML()
         source = vmxml.find_first(vnicXML, 'source')
         vmxml.set_attr(source, 'bridge', networkValue)
@@ -2917,6 +2921,7 @@ class Vm(object):
             except vmxml.NotFound:
                 mtu = vnicXML.appendChildWithArgs('mtu')
             vmxml.set_attr(mtu, 'size', str(MTU))
+        vmdevices.network.update_port_xml(vnicXML, port_isolated)
         vmdevices.network.update_bandwidth_xml(dev, vnicXML, specParams)
         vnicStrXML = xmlutils.tostring(vnicXML, pretty=True)
         try:
@@ -2949,6 +2954,7 @@ class Vm(object):
             dev.linkActive = linkValue == 'up'
             dev.custom = custom
             dev.mtu = MTU
+            dev.port_isolated = port_isolated
 
     @contextmanager
     def updatePortMirroring(self, nic, networks):

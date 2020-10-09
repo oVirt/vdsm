@@ -693,6 +693,23 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         self._check_roundtrip(
             vmdevices.network.Interface, interface_xml, meta=meta)
 
+    @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: FakeProxy())
+    def test_interface_isolated(self):
+        interface_xml = u'''
+            <interface type="bridge">
+                <address bus="0x00" domain="0x0000"
+                    function="0x0" slot="0x03" type="pci"/>
+                <mac address="52:54:00:59:F5:3F"/>
+                <model type="virtio"/>
+                <source bridge="ovirtmgmt"/>
+                <port isolated="yes"/>
+                <link state="up"/>
+            </interface>'''
+        meta = {'vmid': 'VMID'}
+        self._check_roundtrip(
+            vmdevices.network.Interface, interface_xml, meta=meta)
+
     @permutations([
         # link state
         ('up',),
