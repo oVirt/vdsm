@@ -33,7 +33,7 @@ from vdsm.rpc.Bridge import DynamicBridge
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase as TestCaseBase
 
-apiWhitelist = (
+_COPIED_API_OBJECTS = (
     'Global.ctorArgs',
     'ISCSIConnection.ctorArgs',
     'Image.ctorArgs',
@@ -121,13 +121,13 @@ def getFakeAPI():
     setattr(_newAPI, 'StorageDomain', StorageDomain)
     setattr(_newAPI, 'VM', VM)
 
-    # Apply the whitelist to our version of API
-    for name in apiWhitelist:
+    # Copy required API objects to our version of API
+    for name in _COPIED_API_OBJECTS:
         parts = name.split('.')
         dstObj = _newAPI
         srcObj = _API
-        # Walk the object hierarchy copying each component of the whitelisted
-        # attribute from the real API to our fake one
+        # Walk the object hierarchy copying each component of the
+        # _COPIED_API_OBJECTS attribute from the real API to our fake one
         for obj in parts:
             srcObj = getattr(srcObj, obj)
             try:
