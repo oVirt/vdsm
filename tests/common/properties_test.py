@@ -140,6 +140,16 @@ class TestEnumDefault:
         assert obj.value is None
 
 
+class TestEnumDefaultNone:
+
+    class Cls(properties.Owner):
+        value = properties.Enum(values=("1", "2", "3"))
+
+    def test_not_specified(self):
+        obj = self.Cls()
+        assert obj.value is None
+
+
 class TestEnumMixedTypes:
 
     class Cls(properties.Owner):

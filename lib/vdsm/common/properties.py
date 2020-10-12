@@ -73,8 +73,9 @@ After creation, you cannot set invalid values:
     f = Foo("49d8842d-43e8-4c33-b588-b5538df4ed8a", "raw")
     f.size = -1  # Will raise ValueError
 
-Note that "name" was not initialized in __init__, but it is defined as
-property, so the attribute exists, returning None:
+If an optional property is not initialized or set to None, its value will be
+None. In this example "name" was not initialized in __init__, but it is defined
+as property, so the attribute exists, returning None:
 
     f = Foo("49d8842d-43e8-4c33-b588-b5538df4ed8a", "raw")
     f.name  # None
@@ -138,7 +139,7 @@ class Property(object):
 class Enum(Property):
 
     def __init__(self, required=False, default=None, doc=None, values=()):
-        if not required and default not in values:
+        if not required and default is not None and default not in values:
             raise ValueError("Default value %s not in allowed values %s" %
                              (default, values))
         super(Enum, self).__init__(required=required, default=default, doc=doc)
