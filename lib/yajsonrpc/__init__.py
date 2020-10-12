@@ -36,6 +36,8 @@ _STATE_INCOMING = 1
 _STATE_OUTGOING = 2
 _STATE_ONESHOT = 4
 
+_SLOW_CALL_THRESHOLD = 1.0
+
 
 class JsonRpcRequest(object):
     def __init__(self, method, params=(), reqId=None):
@@ -303,13 +305,15 @@ class JsonRpcServer(object):
     def _serveRequest(self, ctx, req):
         start_time = monotonic_time()
         response = self._handle_request(req, ctx)
+        duration = monotonic_time() - start_time
         error = getattr(response, "error", None)
-        if error is None:
-            response_log = "succeeded"
-        else:
-            response_log = "failed (error %s)" % (error.code,)
-        self.log.info("RPC call %s %s in %.2f seconds",
-                      req.method, response_log, monotonic_time() - start_time)
+        if error is not None:
+            self.log.info("RPC call %s failed (error %s) in %.2f seconds",
+                          req.method, error.code, duration)
+        elif duration > _SLOW_CALL_THRESHOLD:
+            self.log.info("RPC call %s took more than %.2f seconds "
+                          "to succeed: %.2f", req.method, _SLOW_CALL_THRESHOLD,
+                          duration)
         if response is not None:
             ctx.requestDone(response)
 
