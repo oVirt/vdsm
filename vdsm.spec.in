@@ -254,6 +254,16 @@ Requires: device-mapper-multipath >= 0.7.4-3
 Requires: %{python_or_python3}-augeas
 %endif
 
+# fence-agents
+
+%if 0%{?centos}
+# TODO: Require 4.2.1-53+ when CentOS 8.3 is released
+Requires: fence-agents-all
+%else
+# fence-agents package without telnet dependency
+Requires: fence-agents-all >= 4.2.1-53
+%endif
+
 %if 0%{?fedora}
 Requires: %{python2_or_python3}-augeas
 %endif
@@ -263,7 +273,6 @@ Requires: policycoreutils-python
 %else
 Requires: python3-policycoreutils
 %endif
-Requires: fence-agents-all
 Requires: systemd >= 219-11
 Requires: initscripts >= 9.49.31
 Requires: cyrus-sasl-scram
