@@ -27,7 +27,7 @@ import pytest
 from vdsm import clientIF
 from vdsm.common import exception
 
-import vmfakelib as fake
+from . import vmfakelib as fake
 
 
 def test_change_cd_eject():

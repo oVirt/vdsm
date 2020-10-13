@@ -34,7 +34,7 @@ from testlib import VdsmTestCase
 from testlib import XMLTestCase
 from testlib import read_data
 
-import vmfakelib as fake
+from . import vmfakelib as fake
 
 from monkeypatch import MonkeyPatchScope
 

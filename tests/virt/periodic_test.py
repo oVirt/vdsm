@@ -43,7 +43,8 @@ from testlib import make_config
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
 import fakelib
-import vmfakelib as fake
+
+from . import vmfakelib as fake
 
 
 @expandPermutations

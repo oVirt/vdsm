@@ -38,11 +38,11 @@ from testValidation import brokentest, slowtest
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase, permutations, expandPermutations
 
-import vmfakelib as fake
-
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
 from vmTestsData import CONF_TO_DOMXML_NO_VDSM
+
+from . import vmfakelib as fake
 
 
 class VmXmlTestCase(TestCaseBase):

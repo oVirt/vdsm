@@ -5,8 +5,7 @@ import os
 from vdsm.virt import domain_descriptor
 
 from testlib import XMLTestCase
-
-import vmfakelib as fake
+from virt import vmfakelib as fake
 
 import verify
 

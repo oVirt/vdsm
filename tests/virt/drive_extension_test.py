@@ -41,7 +41,8 @@ from testlib import expandPermutations, permutations
 from testlib import make_config
 from testlib import maybefail
 from testlib import VdsmTestCase
-import vmfakelib as fake
+
+from . import vmfakelib as fake
 
 from monkeypatch import MonkeyPatchScope
 

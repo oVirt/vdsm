@@ -72,7 +72,8 @@ from testlib import permutations, expandPermutations
 from testlib import recorded
 
 from fakelib import FakeLogger
-import vmfakelib as fake
+
+from . import vmfakelib as fake
 
 
 _VM_PARAMS = {

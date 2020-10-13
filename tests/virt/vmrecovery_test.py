@@ -32,7 +32,8 @@ from monkeypatch import MonkeyPatchScope
 from monkeypatch import Patch
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
-import vmfakelib as fake
+
+from . import vmfakelib as fake
 
 
 _MINIMAL_EXTERNAL_DOMAIN_TEMPLATE = u'''<?xml version="1.0" encoding="UTF-8"?>

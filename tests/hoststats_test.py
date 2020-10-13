@@ -30,7 +30,8 @@ from vdsm import numa
 
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatchScope
-import vmfakelib as fake
+
+from virt import vmfakelib as fake
 
 
 class BootTimeTests(TestCaseBase):

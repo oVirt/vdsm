@@ -33,7 +33,8 @@ from vdsm.virt import vm
 
 from testValidation import brokentest
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
-import vmfakelib as fake
+
+from virt import vmfakelib as fake
 
 
 class TestSchemaCompliancyBase(TestCaseBase):

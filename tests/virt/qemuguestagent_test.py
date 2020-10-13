@@ -34,7 +34,8 @@ from vdsm.virt import qemuguestagent
 from testlib import make_config
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyClass, MonkeyPatchScope
-import vmfakelib as fake
+
+from . import vmfakelib as fake
 
 
 def _fake_qemuAgentCommand(domain, command, timeout, flags):

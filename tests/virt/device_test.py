@@ -40,7 +40,8 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import permutations, expandPermutations, make_config, read_data
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase
-import vmfakelib as fake
+
+from . import vmfakelib as fake
 
 
 @expandPermutations

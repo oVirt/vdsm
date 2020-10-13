@@ -42,9 +42,10 @@ from vdsm.virt.vmdevices import storage
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import XMLTestCase
 from testlib import permutations, expandPermutations
-import vmfakelib as fake
 
 from testValidation import brokentest
+
+from . import vmfakelib as fake
 
 
 _VM_PARAMS = {

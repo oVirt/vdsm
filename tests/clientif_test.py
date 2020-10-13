@@ -39,9 +39,10 @@ from testlib import mock
 from testlib import temporaryPath
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
-import vmfakelib as fake
 import vmfakecon
 import fakelib
+
+from virt import vmfakelib as fake
 
 
 INEXISTENT_PATH = '/no/such/path'

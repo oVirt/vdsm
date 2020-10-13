@@ -31,7 +31,8 @@ from monkeypatch import MonkeyPatchScope
 
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
-import vmfakelib as fake
+
+from . import vmfakelib as fake
 
 
 @expandPermutations

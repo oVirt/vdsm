@@ -43,7 +43,7 @@ from vdsm.virt import backup
 from virt.fakedomainadapter import FakeCheckpoint
 from virt.fakedomainadapter import FakeDomainAdapter
 
-import vmfakelib as fake
+from . import vmfakelib as fake
 
 requires_backup_support = pytest.mark.skipif(
     not backup.backup_enabled,

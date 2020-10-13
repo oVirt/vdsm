@@ -32,7 +32,7 @@ from vdsm.common import threadlocal
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import recorded
-import vmfakelib
+from virt import vmfakelib
 
 
 class TestVMCreate(TestCaseBase):

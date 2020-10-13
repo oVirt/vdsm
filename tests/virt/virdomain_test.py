@@ -28,7 +28,8 @@ from vdsm.virt import virdomain
 from vdsm.virt import xmlconstants
 
 from testlib import VdsmTestCase
-import vmfakelib as fake
+
+from . import vmfakelib as fake
 
 
 class TestDisconnected(VdsmTestCase):

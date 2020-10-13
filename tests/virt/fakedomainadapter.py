@@ -28,7 +28,7 @@ from testlib import maybefail
 
 from vdsm.common.xmlutils import indented
 
-import vmfakelib as fake
+from . import vmfakelib as fake
 
 
 class FakeCheckpoint(object):

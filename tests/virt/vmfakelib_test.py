@@ -21,7 +21,7 @@
 import libvirt
 import pytest
 
-import vmfakelib
+from . import vmfakelib
 
 
 def test_secret_define_new():

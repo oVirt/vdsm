@@ -31,7 +31,7 @@ from vdsm.virt import vmdevices
 from testlib import VdsmTestCase
 from testlib import read_data
 
-import vmfakelib as fake
+from . import vmfakelib as fake
 
 
 class DevicesFromXMLTests(VdsmTestCase):
