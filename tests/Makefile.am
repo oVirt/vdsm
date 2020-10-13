@@ -98,7 +98,6 @@ test_modules = \
 	vdsmdumpchains_test.py \
 	verify.py \
 	vmapi_test.py \
-	vmfakelib_test.py \
 	vmTestsData.py \
 	zombiereaper_test.py \
 	$(NULL)
