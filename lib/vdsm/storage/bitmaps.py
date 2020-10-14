@@ -55,30 +55,33 @@ def add_bitmaps(src_path, dst_path):
         src_path (string): Path to the source image
         dst_path (string): Path to the destination image
     """
-    src_vol_info = qemuimg.info(src_path)
-    if 'bitmaps' not in src_vol_info:
-        return
+    for name, bitmap in _query_bitmaps(src_path, filter=_valid).items():
+        _add_bitmap(dst_path, name, bitmap['granularity'])
 
-    for bitmap in src_vol_info['bitmaps']:
-        if not _valid(bitmap):
-            continue
 
-        log.info(
-            "Add bitmap %s to %r",
-            bitmap['name'], dst_path)
+def _add_bitmap(vol_path, bitmap, granularity, enable=True):
+    log.info("Add bitmap %s to %r", bitmap, vol_path)
 
-        try:
-            op = qemuimg.bitmap_add(
-                dst_path,
-                bitmap['name'],
-                granularity=bitmap['granularity']
-            )
-            op.run()
-        except cmdutils.Error as e:
-            raise exception.AddBitmapError(
-                reason="Failed to add bitmap: {}".format(e),
-                bitmap=bitmap,
-                dst_vol_path=dst_path)
+    try:
+        op = qemuimg.bitmap_add(
+            vol_path,
+            bitmap,
+            enable=enable,
+            granularity=granularity
+        )
+        op.run()
+    except cmdutils.Error as e:
+        raise exception.AddBitmapError(
+            reason="Failed to add bitmap: {}".format(e),
+            bitmap=bitmap,
+            dst_vol_path=vol_path)
+
+
+def _query_bitmaps(vol_path, filter=None):
+    vol_info = qemuimg.info(vol_path)
+    return {b["name"]: b
+            for b in vol_info.get("bitmaps", [])
+            if filter is None or filter(b)}
 
 
 def _valid(bitmap):
