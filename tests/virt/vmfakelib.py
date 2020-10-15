@@ -35,6 +35,7 @@ from vdsm.common import response
 import vdsm.common.time
 from vdsm.common import xmlutils
 from vdsm.common.units import MiB
+from vdsm.storage import exception
 from vdsm.virt import domain_descriptor
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt import sampling
@@ -87,6 +88,32 @@ class IRS(object):
         )
 
     def teardownImage(self, sdUUID, spUUID, imgUUID, volUUID=None):
+        del self.prepared_volumes[(sdUUID, volUUID)]
+        return response.success()
+
+    def imageSyncVolumeChain(self, domainID, imageID, volumeID, newVols):
+        return response.success()
+
+    def getVolumeInfo(self, sdUUID, spUUID, imgUUID, volUUID):
+        if (sdUUID, volUUID) not in self.prepared_volumes:
+            error = exception.VolumeDoesNotExist
+            return response.error_raw(error.code, error.msg)
+
+        return response.success(info=self.prepared_volumes[(sdUUID, volUUID)])
+
+    def setVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, capacity):
+        if (sdUUID, volUUID) not in self.prepared_volumes:
+            error = exception.VolumeDoesNotExist
+            return response.error_raw(error.code, error.msg)
+
+        self.prepared_volumes[(sdUUID, volUUID)]['capacity'] = capacity
+        return response.success()
+
+    def teardownVolume(self, sdUUID, imgUUID, volUUID):
+        if (sdUUID, volUUID) not in self.prepared_volumes:
+            error = exception.VolumeDoesNotExist
+            return response.error_raw(error.code, error.msg)
+
         del self.prepared_volumes[(sdUUID, volUUID)]
         return response.success()
 
