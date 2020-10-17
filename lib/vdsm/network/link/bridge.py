@@ -24,7 +24,7 @@ import vdsm.network.errors as ne
 
 IFACE_PATH = '/sys/class/net/{}'
 BRIDGING_OPTS = IFACE_PATH + '/bridge/{}'
-BR_KEY_BLACKLIST = ('flush',)
+SKIPPED_BRIDGE_OPTIONS = ('flush',)
 
 
 class Bridge(object):
@@ -68,7 +68,7 @@ class Bridge(object):
 
         for path in paths:
             key = os.path.basename(path)
-            if key in BR_KEY_BLACKLIST:
+            if key in SKIPPED_BRIDGE_OPTIONS:
                 continue
             with open(path) as optFile:
                 opts[key] = optFile.read().strip()
