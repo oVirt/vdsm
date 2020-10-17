@@ -417,7 +417,7 @@ class VMBulkstatsMonitor(object):
         # we are deep in the hot path. bool(ExpiringCache)
         # *is* costly so we should avoid it if we can.
         fast_path = acquired and not self._skip_doms
-        doms = []  # whitelist, meaningful only in the slow path
+        responsive_doms = []
         flags = libvirt.VIR_CONNECT_GET_ALL_DOMAINS_STATS_RUNNING
         if _NOWAIT_ENABLED:
             flags |= libvirt.VIR_CONNECT_GET_ALL_DOMAINS_STATS_NOWAIT
@@ -429,11 +429,11 @@ class VMBulkstatsMonitor(object):
                     stats=self._stats_types, flags=flags)
             else:
                 # A previous call got stuck, or not every domain
-                # has properly recovered. Thus we must whitelist domains.
-                doms = self._get_responsive_doms()
-                if doms:
+                # has properly recovered. Thus we query only responsive ones.
+                responsive_doms = self._get_responsive_doms()
+                if responsive_doms:
                     bulk_stats = self._conn.domainListGetStats(
-                        doms, stats=self._stats_types, flags=flags)
+                        responsive_doms, stats=self._stats_types, flags=flags)
                 else:
                     bulk_stats = []
         except Exception:
@@ -448,7 +448,7 @@ class VMBulkstatsMonitor(object):
             self._log.debug(
                 'sampled timestamp %r elapsed %.3f acquired %r domains %s',
                 timestamp, self._stats_cache.clock() - timestamp, acquired,
-                'all' if fast_path else len(doms))
+                'all' if fast_path else len(responsive_doms))
 
     def _get_responsive_doms(self):
         vms = self._get_vms()
