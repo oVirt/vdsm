@@ -218,11 +218,6 @@ def get_routes(state):
     return state[Route.KEY].get(Route.RUNNING, {})
 
 
-# TODO remove this once every reference is resolved
-def is_nmstate_backend():
-    return True
-
-
 def is_dhcp_enabled(ifstate, family):
     family_info = ifstate[family]
     return util_is_dhcp_enabled(family_info)
