@@ -1,11 +1,8 @@
 #!/bin/bash -xe
 
-PROJECT=${PROJECT:-${PWD##*/}}
-PROJECT_PATH="$PWD"
-CONTAINER_WORKSPACE="/workspace/$PROJECT"
+source tests/network/common.sh
+
 CONTAINER_IMAGE="${CONTAINER_IMAGE:=ovirt/$PROJECT-test-func-network-centos-8}"
-CONTAINER_CMD=${CONTAINER_CMD:=podman}
-VDSM_WORKDIR="/vdsm-tmp"
 NMSTATE_WORKSPACE="/workspace/nmstate"
 NMSTATE_TMP="/nmstate-tmp"
 
@@ -16,55 +13,6 @@ SWITCH_TYPE_OVS="ovs"
 
 SWITCH_TYPE="${SWITCH_TYPE:=$SWITCH_TYPE_LINUX}"
 
-test -t 1 && USE_TTY="t"
-
-function run_exit {
-    remove_container
-}
-
-function remove_container {
-    res=$?
-    [ "$res" -ne 0 ] && echo "*** ERROR: $res"
-    ${CONTAINER_CMD} rm -f "$CONTAINER_ID"
-}
-
-function container_exec {
-    ${CONTAINER_CMD} exec "-i$USE_TTY" "$CONTAINER_ID" /bin/bash -c "$1"
-}
-
-function container_shell {
-    ${CONTAINER_CMD} exec "-i$USE_TTY" "$CONTAINER_ID" /bin/bash
-}
-
-function load_kernel_modules {
-    modprobe 8021q
-    modprobe bonding
-    modprobe openvswitch
-}
-
-function enable_bonding_driver {
-    ip link add bond0000 type bond
-    ip link delete bond0000
-}
-
-function wait_for_active_service {
-    container_exec "while ! systemctl is-active "$1"; do sleep 1; done"
-}
-
-function start_service {
-    container_exec "
-        systemctl start '$1' && \
-        while ! systemctl is-active '$1'; do sleep 1; done
-    "
-}
-
-function restart_service {
-    container_exec "
-        systemctl restart '$1' && \
-        while ! systemctl is-active '$1'; do sleep 1; done
-    "
-}
-
 function setup_vdsm_runtime_environment {
     container_exec "
         adduser vdsm \
@@ -72,22 +20,6 @@ function setup_vdsm_runtime_environment {
         install -d /run/vdsm -m 755 -o vdsm && \
         cp $CONTAINER_WORKSPACE/static/etc/NetworkManager/conf.d/vdsm.conf /etc/NetworkManager/conf.d/ && \
         cp $CONTAINER_WORKSPACE/static/etc/NetworkManager/dispatcher.d/dhcp_monitor.py /etc/NetworkManager/dispatcher.d/
-    "
-}
-
-function setup_vdsm_sources_for_testing {
-    container_exec "
-        mkdir $VDSM_WORKDIR \
-        && \
-        cp -rf $CONTAINER_WORKSPACE $VDSM_WORKDIR/ \
-        && \
-        cd /$VDSM_WORKDIR/$PROJECT \
-        && \
-        git clean -dxf \
-        &&
-        ./autogen.sh --system \
-        && \
-        make
     "
 }
 
@@ -181,7 +113,7 @@ else
 fi
 
 CONTAINER_ID="$($CONTAINER_CMD run --privileged -d -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z $nmstate_mount --env PYTHONPATH=lib --env CI $CONTAINER_IMAGE)"
-trap run_exit EXIT
+trap remove_container EXIT
 
 wait_for_active_service "dbus"
 start_service "systemd-udevd"
@@ -217,13 +149,4 @@ if [ -n "$debug_shell" ];then
     exit 0
 fi
 
-container_exec "
-    cd /$VDSM_WORKDIR/$PROJECT \
-    && \
-    pytest \
-      -vv \
-      --target-lib \
-      -m \"$SWITCH_TYPE\" \
-      tests/network/functional \
-      $additional_pytest_args
-"
+run_tests functional --target-lib -m "\"$SWITCH_TYPE\"" "$additional_pytest_args"

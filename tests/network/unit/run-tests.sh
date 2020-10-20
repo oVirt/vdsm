@@ -1,34 +1,8 @@
 #!/bin/bash -xe
 
-PROJECT=${PROJECT:-${PWD##*/}}
-PROJECT_PATH="$PWD"
-CONTAINER_WORKSPACE="/workspace/$PROJECT"
+source tests/network/common.sh
+
 CONTAINER_IMAGE="${CONTAINER_IMAGE:=ovirt/$PROJECT-test-unit-network-centos-8}"
-CONTAINER_CMD=${CONTAINER_CMD:=podman}
-VDSM_WORKDIR="/vdsm-tmp"
-
-test -t 1 && USE_TTY="t"
-
-function container_exec {
-    ${CONTAINER_CMD} exec "-i$USE_TTY" "$CONTAINER_ID" /bin/bash -c "$1"
-}
-
-function container_shell {
-    ${CONTAINER_CMD} exec "-i$USE_TTY" "$CONTAINER_ID" /bin/bash
-}
-
-function remove_container {
-    res=$?
-    [ "$res" -ne 0 ] && echo "*** ERROR: $res"
-    ${CONTAINER_CMD} rm -f "$CONTAINER_ID"
-}
-
-function copy_sources_to_workdir {
-    container_exec "
-        mkdir $VDSM_WORKDIR && \
-        cp -rf $CONTAINER_WORKSPACE $VDSM_WORKDIR/
-    "
-}
 
 function patch_dist_commons {
     container_exec "
@@ -37,14 +11,6 @@ function patch_dist_commons {
         cp $VDSM_WORKDIR/vdsm/tests/network/static/config.py $VDSM_WORKDIR/vdsm/lib/vdsm/common \
         && \
         cp $VDSM_WORKDIR/vdsm/tests/network/static/dsaversion.py $VDSM_WORKDIR/vdsm/lib/vdsm/common
-    "
-}
-
-function run_unit_tests {
-    container_exec "
-        cd $VDSM_WORKDIR/$PROJECT \
-        && \
-        pytest -vv tests/network/unit
     "
 }
 
@@ -59,4 +25,4 @@ if [ "$1" == "--shell" ];then
     exit 0
 fi
 
-run_unit_tests
+run_tests unit
