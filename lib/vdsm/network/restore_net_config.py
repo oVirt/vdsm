@@ -20,38 +20,24 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import glob
-import itertools
 import logging
 import os
-import re
-import time
-import errno
 
 import six
 
 from vdsm.common.constants import P_VDSM_RUN
-from vdsm.common.time import monotonic_time
-from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
 from vdsm.network import netswitch
-from vdsm.network import sysctl
-from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.link import sriov
-from vdsm.network.netinfo import nics, misc
+from vdsm.network.netinfo import nics
 from vdsm.network.netinfo.cache import NetInfo
 from vdsm.network.netconfpersistence import PersistentConfig, BaseConfig
 from vdsm.network.nm import networkmanager
-
-# Ifcfg persistence restoration
-from vdsm.network.configurators import ifcfg
 
 # Unified persistence restoration
 from vdsm.network.api import setupNetworks, change_numvfs
 
 NETS_RESTORED_MARK = os.path.join(P_VDSM_RUN, 'nets_restored')
-
-_ALL_DEVICES_UP_TIMEOUT = 5
 
 
 def _restore_sriov_config():
@@ -99,17 +85,6 @@ def unified_restoration():
     persistent_config = PersistentConfig()
     available_config = _filter_available(persistent_config)
 
-    _verify_all_devices_are_up(list(_owned_ifcfg_files()))
-
-    _wait_for_for_all_devices_up(
-        itertools.chain(
-            available_config.networks.keys(), available_config.bonds.keys()
-        )
-    )
-
-    if ipv6_supported():
-        _restore_disable_ipv6()
-
     classified_conf = _classify_nets_bonds_config(available_config)
     setup_nets, setup_bonds, remove_nets, remove_bonds = classified_conf
 
@@ -118,8 +93,6 @@ def unified_restoration():
     )
     _greedy_setup_bonds(remove_bonds)
     _greedy_setup_nets(remove_nets)
-
-    _restore_non_vdsm_net_devices()
 
     _convert_to_blocking_dhcp(setup_nets)
     logging.info(
@@ -151,49 +124,6 @@ def _greedy_setup_bonds(setup_bonds):
             )
         except Exception:
             logging.exception('Failed to setup {}'.format(bond))
-
-
-def _verify_all_devices_are_up(owned_ifcfg_files):
-    """REQUIRED_FOR upgrade from 4.16<=vdsm<=4.16.20
-    Were ifcfg files were created with ONBOOT=no.
-    """
-    for ifcfg_file in owned_ifcfg_files:
-        _upgrade_onboot(ifcfg_file)
-    down_links = _get_links_with_state_down(
-        [os.path.basename(name) for name in owned_ifcfg_files]
-    )
-    if down_links:
-        logging.debug("Some of the devices are down (%s).", down_links)
-        ifcfg.start_devices(owned_ifcfg_files)
-
-
-def _upgrade_onboot(ifcfg_file):
-    with open(ifcfg_file) as f:
-        old_content = f.read()
-    new_content = re.sub(
-        '^ONBOOT=no$', 'ONBOOT=yes', old_content, flags=re.MULTILINE
-    )
-    if new_content != old_content:
-        logging.debug("updating %s to ONBOOT=yes", ifcfg_file)
-        with open(ifcfg_file, 'w') as f:
-            f.write(new_content)
-
-
-def _owned_ifcfg_files():
-    for fpath in glob.iglob(misc.NET_CONF_DIR + '/*'):
-        if not os.path.isfile(fpath):
-            continue
-
-        with open(fpath) as f:
-            content = f.read()
-        if _owned_ifcfg_content(content):
-            yield fpath
-
-
-def _restore_non_vdsm_net_devices():
-    # addresses (BZ#1188251)
-    configWriter = ifcfg.ConfigWriter()
-    configWriter.restorePersistentBackup()
 
 
 def _convert_to_blocking_dhcp(networks):
@@ -254,11 +184,10 @@ def _classify_nets_bonds_config(persistent_config):
         bond: persistent_config.bonds[bond] for bond in changed_bonds_names
     }
     extra_nets = {net: {'remove': True} for net in extra_nets_names}
-    extra_bonds = {
-        bond: {'remove': True}
-        for bond in extra_bonds_names
-        if _owned_ifcfg(bond)
-    }
+    # We cannot ensure which bond is being owned by us, so we should not
+    # remove them
+    # TODO This should be removed once the cleanup is done
+    extra_bonds = {}
 
     return changed_nets, changed_bonds, extra_nets, extra_bonds
 
@@ -344,101 +273,6 @@ def _find_bonds_with_available_nics(available_nics, persisted_bonds):
             available_bonds[bond] = attrs.copy()
             available_bonds[bond]['nics'] = available_bond_nics
     return available_bonds
-
-
-def _wait_for_for_all_devices_up(links):
-    timeout = monotonic_time() + _ALL_DEVICES_UP_TIMEOUT
-    down_links = _get_links_with_state_down(links)
-
-    # TODO: use netlink monitor here might be more elegant (not available in
-    # TODO: 3.5)
-    while down_links and monotonic_time() < timeout:
-        logging.debug("waiting for %s to be up.", down_links)
-        time.sleep(1)
-        down_links = _get_links_with_state_down(links)
-
-    if down_links:
-        logging.warning(
-            "Not all devices are up. VDSM might restore them "
-            "although they were not changed since they were "
-            "persisted."
-        )
-    else:
-        logging.debug("All devices are up.")
-
-
-def _get_links_with_state_down(links):
-    return set(
-        l.name
-        for l in ipwrapper.getLinks()
-        if l.name in links
-        and _owned_ifcfg(l.name)
-        and _onboot_ifcfg(l.name)
-        and not l.oper_up
-    )
-
-
-def _ifcfg_dev_name(file_name):
-    """Return the device name from the full path to its ifcfg- file."""
-    return os.path.basename(file_name)[6:]
-
-
-def _ipv6_ifcfg(link_name):
-    def ipv6init(content):
-        return all(line != 'IPV6INIT=no' for line in content.splitlines())
-
-    return _ifcfg_predicate(link_name, ipv6init)
-
-
-def _restore_disable_ipv6():
-    """
-    Disable IPv6 on networks with no IPv6 configuration. This must be done even
-    before actual restoration is performed because there is probably going to
-    be a link-local address already (or "worse", initscripts may have acquired
-    a global address through autoconfiguration) and thus the network's state
-    would differ from the persisted config, causing needless restoration.
-    This is implemented for unified persistence only.
-    """
-    for filename in _owned_ifcfg_files():
-        device = _ifcfg_dev_name(filename)
-        if not _ipv6_ifcfg(device):
-            try:
-                sysctl.disable_ipv6(device)
-            except IOError as e:
-                if e.errno == errno.ENOENT:
-                    pass  # the network is broken, but we have to handle it
-                else:
-                    raise
-
-
-def _owned_ifcfg(link_name):
-    return _ifcfg_predicate(link_name, _owned_ifcfg_content)
-
-
-def _onboot_ifcfg(link_name):
-    predicate = lambda content: any(
-        line == 'ONBOOT=yes' for line in content.splitlines()
-    )
-    return _ifcfg_predicate(link_name, predicate)
-
-
-def _owned_ifcfg_content(content):
-    return content.startswith(
-        '# Generated by VDSM version'
-    ) or content.startswith('# automatically generated by vdsm')
-
-
-def _ifcfg_predicate(link_name, predicate):
-    try:
-        with open(misc.NET_CONF_PREF + link_name) as conf:
-            content = conf.read()
-    except IOError as ioe:
-        if ioe.errno == errno.ENOENT:
-            return False
-        else:
-            raise
-    else:
-        return predicate(content)
 
 
 def _nets_already_restored(nets_restored_mark):
