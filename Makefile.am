@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2019 Red Hat, Inc.
+# Copyright 2008-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -160,7 +160,6 @@ rpm: dist
 		--define="with_gluster_mgmt $(GLUSTER_MGMT)" \
 		--define="with_hooks $(HOOKS)" \
 		--define="with_vhostmd $(VHOSTMD)" \
-		--define="with_openvswitch $(OPENVSWITCH)" \
 		--define="target_py py3" \
 		--define="vdsm_version $(PACKAGE_VERSION)" \
 		--define="vdsm_release $(PACKAGE_RELEASE)" \

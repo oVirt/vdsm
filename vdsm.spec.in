@@ -18,12 +18,6 @@
 %{!?with_hooks: %global with_hooks 1}
 %{!?with_vhostmd: %global with_vhostmd 1}
 
-%ifarch ppc64le
-%global with_openvswitch_default 0
-%else
-%global with_openvswitch_default 1
-%endif
-%{!?with_openvswitch: %global with_openvswitch %{with_openvswitch_default}}
 
 %{!?vdsm_repo: %global vdsm_repo /rhev/data-center}
 
@@ -522,9 +516,7 @@ Requires:       libselinux-python
 Requires:       python3-libselinux
 %endif
 Requires:       lldpad
-%if %{with_openvswitch}
-Requires:       openvswitch >= 2.7.0
-%endif
+Requires:       openvswitch >= 2.11
 Requires:       %{python_or_python3}-inotify
 %if %{target_py} == py2
 Requires:       python-ipaddress

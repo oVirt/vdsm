@@ -139,25 +139,6 @@ AC_ARG_ENABLE(
 )
 AC_SUBST([ENABLE_LIBVIRT_SELINUX], ["${enable_libvirt_selinux}"])
 
-AC_ARG_ENABLE(
-    [openvswitch],
-    [AS_HELP_STRING(
-        [--enable-openvswitch],
-        [enable openvswitch usage @<:@default=yes@:>@]
-    )],
-    ,
-    [enable_openvswitch="yes"]
-)
-AS_IF([test "${enable_openvswitch}" = "yes"],
-      AC_SUBST([OPENVSWITCH], ['1']),
-      AC_SUBST([OPENVSWITCH], ['0']))
-
-AS_IF([test "$host_cpu" = powerpc64le],
-      AC_SUBST([OPENVSWITCH], ['0']),)
-
-AS_IF([test "${enable_openvswitch}" = "yes"],
-      AC_SUBST([OPENVSWITCHSERVICE], ['openvswitch.service']),
-      AC_SUBST([OPENVSWITCHSERVICE], []))
 
 AC_ARG_WITH(
     [qemu-user],
@@ -291,9 +272,6 @@ if test "$HOOKS" == "1"; then
 fi
 if test "$GLUSTER_MGMT" == "0"; then
     configure_flags+=" --disable-gluster-mgmt"
-fi
-if test "$OPENVSWITCH" == "0"; then
-    configure_flags+=" --disable-openvswitch"
 fi
 if test "$OVIRT_VMCONSOLE" == "1"; then
     configure_flags+=" --with-ovirt-vmconsole-user=$VMCON_USER\
