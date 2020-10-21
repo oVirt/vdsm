@@ -274,28 +274,6 @@ class TestNetinfo(object):
         ),
     ]
 
-    @mock.patch.object(misc, 'open', create=True)
-    def test_get_ifcfg(self, mock_open):
-        gateway = '1.1.1.1'
-        netmask = '255.255.0.0'
-
-        ifcfg = "GATEWAY0={}\nNETMASK={}\n".format(gateway, netmask)
-        ifcfg_stream = six.StringIO(ifcfg)
-        mock_open.return_value.__enter__.return_value = ifcfg_stream
-
-        resulted_ifcfg = misc.getIfaceCfg('eth0')
-
-        assert resulted_ifcfg['GATEWAY'] == gateway
-        assert resulted_ifcfg['NETMASK'] == netmask
-
-    @mock.patch.object(misc, 'open', create=True)
-    def test_missing_ifcfg_file(self, mock_open):
-        mock_open.return_value.__enter__.side_effect = IOError()
-
-        ifcfg = misc.getIfaceCfg('eth0')
-
-        assert ifcfg == {}
-
     @staticmethod
     def _bond_opts_without_mode(bond_name):
         opts = Bond(bond_name).options

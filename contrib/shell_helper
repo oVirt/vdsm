@@ -111,7 +111,6 @@ del_dummies() {
         dummy=${dummy%@NONE}
         sudo ip link del dev $dummy
     done
-    sudo rm /etc/sysconfig/network-scripts/ifcfg-dummy*
     sudo nmcli conn del $(nmcli -f name conn show | grep dummy)
 }
 
@@ -121,7 +120,6 @@ del_veths() {
         veth=${veth%@veth*}
         sudo ip link del dev $veth
     done
-    sudo rm /etc/sysconfig/network-scripts/ifcfg-veth*
     sudo nmcli conn del $(nmcli -f name conn show | grep veth)
 }
 
@@ -131,13 +129,11 @@ del_bonds() {
         bond=${bond%@NONE}
         echo "-$bond" | sudo tee /sys/class/net/bonding_masters
     done
-    sudo rm /etc/sysconfig/network-scripts/ifcfg-bond*
 }
 
 del_bridges() {
     for bridge in `ip -o link show type bridge | awk -F ': ' '{print $2}' | grep test-network`; do
         sudo ip link delete dev $bridge
-        sudo rm /etc/sysconfig/network-scripts/ifcfg-$bridge
     done
 }
 
@@ -181,14 +177,6 @@ for d in dirs:
         print('removing %s' % full_path)
         os.remove(full_path)
 
-d = '/etc/sysconfig/network-scripts/'
-for f in os.listdir('/etc/sysconfig/network-scripts/'):
-    if (f.startswith('ifcfg-bond') or
-        f.startswith('ifcfg-test-network')):
-        full_path = os.path.join(d, f)
-        print('removing %s' % full_path)
-        os.remove(full_path)
-EOF
 }
 
 emergency_net_cleanup() {

@@ -31,7 +31,6 @@ from vdsm.network import errors as ne
 from vdsm.network import nmstate
 from vdsm.network import sourceroute
 from vdsm.network.common import switch_util as util
-from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.configurators import qos
 from vdsm.network.dhcp_monitor import MonitoredItemPool
 from vdsm.network.link import nic
@@ -80,7 +79,6 @@ def setup(networks, bondings, options, in_rollback):
 
 
 def persist():
-    ConfigWriter.clearBackups()
     RunningConfig.store()
 
 

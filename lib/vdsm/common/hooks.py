@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2019 Red Hat, Inc.
+# Copyright 2010-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -426,16 +426,6 @@ def before_get_stats():
 
 def after_get_stats(caps):
     return _runHooksDir(caps, 'after_get_stats', raiseError=False,
-                        hookType=_JSON_HOOK)
-
-
-def before_ifcfg_write(hook_dict):
-    return _runHooksDir(hook_dict, 'before_ifcfg_write', raiseError=True,
-                        hookType=_JSON_HOOK)
-
-
-def after_ifcfg_write(hook_dict):
-    return _runHooksDir(hook_dict, 'after_ifcfg_write', raiseError=False,
                         hookType=_JSON_HOOK)
 
 

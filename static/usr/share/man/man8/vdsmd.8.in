@@ -1,4 +1,4 @@
-.\"Copyright 2010-2017 Red Hat, Inc. and/or its affiliates.
+.\"Copyright 2010-2020 Red Hat, Inc. and/or its affiliates.
 .\"
 .\"Licensed to you under the GNU General Public License as published by
 .\"the Free Software Foundation; either version 2 of the License, or
@@ -65,8 +65,7 @@ Currently-supported hooks have self-explanatory names:
     before_get_caps, after_get_caps,
     before_get_stats, after_get_stats,
     after_hostdev_list_by_caps,
-    before_memory_hotplug, after_memory_hotplug,
-    before_ifcfg_write, after_ifcfg_write.
+    before_memory_hotplug, after_memory_hotplug.
 
 Each hook executes the scripts under
 .FN /usr/libexec/vdsm/hooks/<hook-name>/
@@ -78,8 +77,7 @@ before_network_setup, after_network_setup and after_network_setup_fail,
 before_get_vm_stats, after_get_vm_stats,
 before_get_all_vm_stats, after_get_all_vm_stats,
 before_get_caps, after_get_caps,
-before_get_stats, after_get_stats, after_hostdev_list_by_caps,
-before_ifcfg_write and after_ifcfg_write) inherit
+before_get_stats, after_get_stats, after_hostdev_list_by_caps) inherit
 the environment of the VDSM process, with an additional variable
 .B _hook_domxml
 which holds the path of libvirt's
@@ -89,9 +87,8 @@ The uuid of the virtual machine may be deduced from that xml, but it is also
 available as the environment variable
 .B vmId.
 
-The before_network_setup, after_network_setup, after_network_setup_fail,
-before_ifcfg_write and after_ifcfg_write hooks do also include an extra
-environment variable
+The before_network_setup, after_network_setup and after_network_setup_fail
+hooks do also include an extra environment variable
 .B _hook_json
 which holds a pointer to a file with the network parameters that vdsm is
 setting up (
@@ -112,16 +109,6 @@ in the setupNetworks VDSM API call.
     "bondings": {"bond0": {"nics":["eth1","eth2"]}},
     "options":  {"conectivityCheck":false}
     }
- }
-.fi
-
-The JSON format of this file for before_ifcfg_write and
-after_ifcfg_write has the following parameters: ifcfg_file and config.
-
-.nf
-{
- "ifcfg_file": "/etc/sysconfig/network-scripts/ifcfg-eth0",
- "config": "IPADDR=192.168.1.2\nNETMASK=255.255.255.0"
  }
 .fi
 

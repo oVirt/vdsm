@@ -18,8 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import os
-
 import pytest
 
 from vdsm.network import errors as ne
@@ -27,7 +25,6 @@ from vdsm.network import ipwrapper
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NOCHK, SetupNetworksError
-from network import nmnettestlib
 from network.nettestlib import dummy_device
 
 NETWORK_NAME = 'test-network'
@@ -334,33 +331,6 @@ class TestNetworkBasic(object):
 @pytest.mark.legacy_switch
 @pytest.mark.nmstate
 class TestNetworkBasicLegacy(object):
-
-    NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
-    NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
-
-    def test_add_net_based_on_device_with_non_standard_ifcfg_file(
-        self, adapter, nic0
-    ):
-        if nmnettestlib.is_networkmanager_running():
-            pytest.skip('NetworkManager is running.')
-
-        NETCREATE = {NETWORK_NAME: {'nic': nic0, 'switch': 'legacy'}}
-        NETREMOVE = {NETWORK_NAME: {'remove': True}}
-        with adapter.setupNetworks(NETCREATE, {}, NOCHK):
-            adapter.setupNetworks(NETREMOVE, {}, NOCHK)
-            adapter.assertNoNetwork(NETWORK_NAME)
-
-            nic_ifcfg_file = TestNetworkBasicLegacy.NET_CONF_PREF + nic0
-            assert os.path.exists(nic_ifcfg_file)
-            nic_ifcfg_badname_file = nic_ifcfg_file + 'tail123'
-            os.rename(nic_ifcfg_file, nic_ifcfg_badname_file)
-
-            # Up until now, we have set the test setup, now start the test.
-            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
-                adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
-                assert os.path.exists(nic_ifcfg_file)
-                assert not os.path.exists(nic_ifcfg_badname_file)
-
     @pytest.mark.parametrize(
         "net_name", ['a' * 16, 'a b', 'a\tb', 'a.b', 'a:b']
     )

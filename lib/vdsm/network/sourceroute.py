@@ -155,13 +155,6 @@ class DynamicSourceRoute(StaticSourceRoute):
 
         return rules
 
-    # TODO: Deprecate this method in favor of current_srconfig
-    def current_config(self):
-        rules = self._getRules(self.device) or ()
-        table = self._getTable(rules) if rules else ()
-        routes = self._getRoutes(table) if table else ()
-        return routes, rules, self.device
-
     def current_srconfig(self):
         """
         Returns the current source route configuration  associated with
@@ -170,9 +163,6 @@ class DynamicSourceRoute(StaticSourceRoute):
         ip.rule interfaces with the IPRouteData/IPRuleData structures.
         The configuration is aimed to be set/del by the ip.route/rule drivers
         through sourceroute.add() and sourceroute.remove() functions.
-
-        The configurator (ifcfg) is using the previous structures,
-        therefore, if there is a need to use them, please use current_config.
         """
         rules = self._sourceroute_rules()
         routes = self._sourceroute_routes(rules) if rules else ()

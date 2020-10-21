@@ -21,10 +21,10 @@ from __future__ import absolute_import
 from __future__ import division
 
 from vdsm.network import errors as ne
-from vdsm.network.configurators import RunningConfig
 from vdsm.network.kernelconfig import KernelConfig
 from vdsm.network.link import dpdk
 from vdsm.network.link.bond import sysfs_options
+from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo.cache import NetInfo
 
 

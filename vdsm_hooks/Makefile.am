@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2018 Red Hat, Inc.
+# Copyright 2008-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -115,8 +115,6 @@ VDSMHOOKS = \
 	after_hostdev_list_by_caps \
 	before_memory_hotplug \
 	after_memory_hotplug \
-	before_ifcfg_write \
-	after_ifcfg_write \
 	$(NULL)
 
 all-local: \

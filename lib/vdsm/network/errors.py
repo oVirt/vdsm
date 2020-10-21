@@ -63,7 +63,6 @@ class RollbackIncomplete(Exception):
     This exception is raised in order to signal vdsm.API.Global that a call to
     setupNetworks has failed and there are leftovers that need to be cleaned
     up.
-    Note that it is never raised by the default ifcfg configurator.
     """
 
     def __init__(self, diff, exc_type, value):
