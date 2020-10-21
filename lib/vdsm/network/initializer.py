@@ -28,13 +28,11 @@ from vdsm.network import bond_monitor
 from vdsm.network import dhcp_monitor
 from vdsm.network import lldp
 from vdsm.network.ipwrapper import getLinks
-from vdsm.network.nm import networkmanager
 
 Lldp = lldp.driver()
 
 
 def init_privileged_network_components():
-    networkmanager.init()
     _lldp_init()
 
 

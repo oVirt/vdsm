@@ -32,7 +32,6 @@ from vdsm.network.link import sriov
 from vdsm.network.netinfo import nics
 from vdsm.network.netinfo.cache import NetInfo
 from vdsm.network.netconfpersistence import PersistentConfig, BaseConfig
-from vdsm.network.nm import networkmanager
 
 # Unified persistence restoration
 from vdsm.network.api import setupNetworks, change_numvfs
@@ -80,8 +79,6 @@ def unified_restoration():
     Builds a setupNetworks command from the persistent configuration to set it
     as running configuration.
     """
-    networkmanager.init()
-
     persistent_config = PersistentConfig()
     available_config = _filter_available(persistent_config)
 

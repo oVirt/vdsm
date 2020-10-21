@@ -17,7 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = common configurators ip link lldp lldpad netinfo netlink nmstate ovs tc nm netswitch
+SUBDIRS = common configurators ip link lldp lldpad netinfo netlink nmstate ovs tc netswitch
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
