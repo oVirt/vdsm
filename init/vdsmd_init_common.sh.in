@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copyright 2013 IBM, Inc.
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,17 +24,6 @@ UPGRADE_LOGGING_PARAMS="--vvverbose --append --logfile=@VDSMLOGDIR@/upgrade.log"
 prog=vdsm
 
 #### pre-start tasks ####
-task_wait_for_network() {
-    # interfaces that we depend upon may not have their IP address ready yet
-    # see https://bugzilla.redhat.com/show_bug.cgi?id=1174611#c34
-
-    @LIBEXECDIR@/wait_for_ipv4s
-
-    # never fail, in order to allow intentionally-downed vdsm-controlled
-    # interfaces
-    return 0
-}
-
 task_configure_vdsm_logs() {
     local vdsm_logs="
         @VDSMLOGDIR@/mom.log
@@ -225,7 +214,6 @@ case "$1" in
         run_tasks " \
             mkdirs \
             configure_vdsm_logs \
-            wait_for_network \
             run_init_hooks \
             check_is_configured \
             validate_configuration \

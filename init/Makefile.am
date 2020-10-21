@@ -1,5 +1,6 @@
 #
 # Copyright 2013 IBM, Inc.
+# Copyright 2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,10 +29,6 @@ nodist_vdsmexec_SCRIPTS = \
 
 dist_vdsm_SCRIPTS = \
 	daemonAdapter \
-	$(NULL)
-
-dist_vdsmexec_SCRIPTS = \
-	wait_for_ipv4s \
 	$(NULL)
 
 CLEANFILES = \

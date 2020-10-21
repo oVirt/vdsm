@@ -1017,7 +1017,6 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/vm_libvirt_hook.py*
 %{_libexecdir}/%{vdsm_name}/kvm2ovirt
 %{_libexecdir}/%{vdsm_name}/fallocate
-%{_libexecdir}/%{vdsm_name}/wait_for_ipv4s
 %{_libexecdir}/%{vdsm_name}/spmprotect.sh
 %{_libexecdir}/%{vdsm_name}/spmstop.sh
 %if %{target_py} == py3
