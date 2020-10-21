@@ -69,7 +69,7 @@ function setup_vdsm_runtime_environment {
     container_exec "
         adduser vdsm \
         && \
-        install -d /run/vdsm/trackedInterfaces -m 755 -o vdsm && \
+        install -d /run/vdsm -m 755 -o vdsm && \
         cp $CONTAINER_WORKSPACE/static/etc/NetworkManager/conf.d/vdsm.conf /etc/NetworkManager/conf.d/ && \
         cp $CONTAINER_WORKSPACE/static/etc/NetworkManager/dispatcher.d/dhcp_monitor.py /etc/NetworkManager/dispatcher.d/
     "

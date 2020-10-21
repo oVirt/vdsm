@@ -219,7 +219,6 @@ install-data-local: install-libvirtpasswordDATA
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)/import
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)
-	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/trackedInterfaces
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/payload
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/netconfback
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/persistence

@@ -35,7 +35,6 @@ from vdsm.network.cmd import exec_sync
 from vdsm.network.dhcp_monitor import MonitoredItemPool
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported, prefix2netmask
-from vdsm.network.ifacetracking import is_tracked as iface_is_tracked
 from vdsm.network.link.iface import iface
 from vdsm.network.link.bond import sysfs_options as bond_options
 from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
@@ -853,26 +852,6 @@ class SetupNetworks(object):
             if attr.get('blockingdhcp'):
                 return True
         return False
-
-    def _wait_for_dhcpv4_response(self, timeout=5):
-        dev_names = self._collect_all_dhcpv4_interfaces()
-        _wait_for_func(
-            _did_every_dhcp_server_responded, timeout, dev_names=dev_names
-        )
-
-    def _collect_all_dhcpv4_interfaces(self):
-        return [
-            _get_network_iface_name(name, attr)
-            for name, attr in self.setup_networks.items()
-            if attr.get('bootproto') == 'dhcp'
-        ]
-
-
-def _did_every_dhcp_server_responded(dev_names):
-    for dev_name in dev_names:
-        if iface_is_tracked(dev_name):
-            return False
-    return True
 
 
 def _wait_for_dhcp_response(timeout=5):

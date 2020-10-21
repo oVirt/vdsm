@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Red Hat, Inc.
+# Copyright 2013-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@ from __future__ import division
 import logging
 import netaddr
 
-from vdsm.common.constants import P_VDSM_RUN
 from vdsm.network.ip import route as ip_route
 from vdsm.network.ip import rule as ip_rule
 from vdsm.network.ip.route import IPRouteData
@@ -39,8 +38,6 @@ from .ipwrapper import ruleList
 
 IPRoute = ip_route.driver(ip_route.Drivers.IPROUTE2)
 IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
-
-TRACKED_INTERFACES_FOLDER = P_VDSM_RUN + 'trackedInterfaces'
 
 RULE_PRIORITY = 32000
 
