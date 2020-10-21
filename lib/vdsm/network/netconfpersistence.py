@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2018 Red Hat, Inc.
+# Copyright 2013-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,6 @@ NETCONF_BONDS = 'bonds'
 NETCONF_NETS = 'nets'
 NETCONF_DEVS = 'devices'
 
-CONF_VOLATILE_RUN_DIR = constants.P_VDSM_RUN + 'netconf'
 CONF_RUN_DIR = constants.P_VDSM_LIB + 'staging/netconf'
 CONF_PERSIST_DIR = constants.P_VDSM_LIB + 'persistence/netconf'
 
@@ -253,9 +252,8 @@ class Config(BaseConfig):
 
 
 class RunningConfig(Config):
-    def __init__(self, volatile=False):
-        conf_dir = CONF_VOLATILE_RUN_DIR if volatile else CONF_RUN_DIR
-        super(RunningConfig, self).__init__(conf_dir)
+    def __init__(self):
+        super(RunningConfig, self).__init__(CONF_RUN_DIR)
 
     @staticmethod
     def store():

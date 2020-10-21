@@ -29,21 +29,10 @@ import threading
 import six
 
 from vdsm.network import api as net_api
-from vdsm.network import netupgrade
 from vdsm.network.link.bond import sysfs_options_mapper
 from vdsm.network.restore_net_config import restore
 
 from . import expose, ExtraArgsError
-
-
-@expose('upgrade-networks')
-def upgrade_networks(*args):
-    """
-    upgrade-networks
-
-    Upgrade networks configuration to up-to-date format.
-    """
-    netupgrade.upgrade()
 
 
 @expose('restore-nets')
