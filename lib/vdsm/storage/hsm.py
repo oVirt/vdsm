@@ -93,10 +93,12 @@ from vdsm.storage.spbackends import StoragePoolMemoryBackend
 
 from vdsm.storage.sdm.api import (
     amend_volume,
+    add_bitmap,
     copy_data,
     merge as api_merge,
     move_device,
     reduce_domain,
+    remove_bitmap,
     sparsify_volume,
     update_volume
 )
@@ -3766,6 +3768,34 @@ class HSM(object):
             'vdsm.storage.sdm.api.reduce_domain.StorageDomainReduceParams'
         """
         job = reduce_domain.Job(job_id, DISCONNECTED_HOST_ID, reduce_params)
+        self.sdm_schedule(job)
+
+    @public
+    def sdm_add_bitmap(self, job_id, vol_info, bitmap):
+        """
+        Add a bitmap to the given volume.
+
+        Arguments:
+            job_id (str): The UUID of the storage domain that owns the volume.
+            vol_info (dict): Dictionary that contains all the needed info
+                on the volume.
+            bitmap (str): The name of the bitmap to add.
+        """
+        job = add_bitmap.Job(job_id, self._pool.id, vol_info, bitmap)
+        self.sdm_schedule(job)
+
+    @public
+    def sdm_remove_bitmap(self, job_id, vol_info, bitmap):
+        """
+        Remove the given bitmap from the given volume.
+
+        Arguments:
+            job_id (str): The UUID of the storage domain that owns the volume.
+            vol_info (dict): Dictionary that contains all the needed info
+                on the volume.
+            bitmap (str): The name of the bitmap to remove.
+        """
+        job = remove_bitmap.Job(job_id, self._pool.id, vol_info, bitmap)
         self.sdm_schedule(job)
 
     # Lease operations

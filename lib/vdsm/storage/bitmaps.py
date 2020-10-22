@@ -56,7 +56,7 @@ def add_bitmaps(src_path, dst_path):
         dst_path (string): Path to the destination image
     """
     for name, bitmap in _query_bitmaps(src_path, filter=_valid).items():
-        _add_bitmap(dst_path, name, bitmap['granularity'])
+        _add_bitmap(dst_path, name, granularity=bitmap['granularity'])
 
 
 def merge_bitmaps(base_path, top_path, base_parent_path=None):
@@ -97,7 +97,7 @@ def merge_bitmaps(base_path, top_path, base_parent_path=None):
                     "isn't valid", name, base_path, base_parent_path)
                 continue
 
-            _add_bitmap(base_path, name, bitmap['granularity'])
+            _add_bitmap(base_path, name, granularity=bitmap['granularity'])
 
         # Merge bitmaps content from top_vol to the base_vol. If the
         # bitmap content is already merged by the block-commit or by
@@ -106,7 +106,38 @@ def merge_bitmaps(base_path, top_path, base_parent_path=None):
         _merge_bitmap(top_path, base_path, name)
 
 
-def _add_bitmap(vol_path, bitmap, granularity, enable=True):
+def add_bitmap(vol_path, bitmap):
+    """
+    Add bitmap to the given volume path
+
+    Arguments:
+        vol_path (str): Path to the volume
+        bitmap (str): Name of the bitmap
+    """
+    _add_bitmap(vol_path, bitmap)
+
+
+def remove_bitmap(vol_path, bitmap):
+    """
+    Remove bitmap from the given volume path
+
+    Arguments:
+        vol_path (str): Path to the volume
+        bitmap (str): Name of the bitmap
+    """
+    log.info("Remove bitmap %s from %r", bitmap, vol_path)
+
+    try:
+        op = qemuimg.bitmap_remove(vol_path, bitmap)
+        op.run()
+    except cmdutils.Error as e:
+        raise exception.RemoveBitmapError(
+            reason="Failed to remove bitmap: {}".format(e),
+            bitmap=bitmap,
+            vol_path=vol_path)
+
+
+def _add_bitmap(vol_path, bitmap, granularity=None, enable=True):
     log.info("Add bitmap %s to %r", bitmap, vol_path)
 
     try:

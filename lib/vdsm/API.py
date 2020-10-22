@@ -1728,6 +1728,12 @@ class SDM(APIBase):
     def update_volume(self, job_id, vol_info, vol_attr):
         return self._irs.sdm_update_volume(job_id, vol_info, vol_attr)
 
+    def add_bitmap(self, job_id, vol_info, bitmap):
+        return self._irs.sdm_add_bitmap(job_id, vol_info, bitmap)
+
+    def remove_bitmap(self, job_id, vol_info, bitmap):
+        return self._irs.sdm_remove_bitmap(job_id, vol_info, bitmap)
+
 
 class Lease(APIBase):
     ctorArgs = []

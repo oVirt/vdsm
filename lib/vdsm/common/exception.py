@@ -521,3 +521,8 @@ class AddBitmapError(ContextException):
 class MergeBitmapError(ContextException):
     code = 1621
     message = "Failed to merge bitmaps"
+
+
+class RemoveBitmapError(ContextException):
+    code = 1622
+    message = "Failed to remove bitmap"
