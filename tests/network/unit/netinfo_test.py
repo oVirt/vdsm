@@ -38,6 +38,7 @@ from vdsm.network import nmstate
 
 from network.compat import mock
 from network.nettestlib import running_on_ovirt_ci
+from network.nettestlib import running_on_travis_ci
 
 
 @pytest.fixture
@@ -124,7 +125,7 @@ class TestNetinfo(object):
         assert nics.operstate('dpdk0') == nics.OPERSTATE_UP
 
     @pytest.mark.xfail(
-        condition=running_on_ovirt_ci(),
+        condition=running_on_ovirt_ci() or running_on_travis_ci(),
         raises=KeyError,
         reason='does not work on CI with nmstate',
         strict=False,

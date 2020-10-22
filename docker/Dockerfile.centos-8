@@ -22,6 +22,8 @@ RUN dnf install -y \
         lvm2 \
         make \
         mom \
+        NetworkManager \
+        nmstate \
         openvswitch \
         ovirt-imageio-common \
         psmisc \
