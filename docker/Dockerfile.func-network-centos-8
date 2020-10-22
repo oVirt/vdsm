@@ -25,21 +25,15 @@ RUN dnf install -y \
     # Make NM upgrade available
     dnf -y install dnf-plugins-core \
     && \
-    dnf copr enable networkmanager/NetworkManager-1.22 -y \
-    && \
     dnf update -y \
     && \
     dnf install -y \
-        NetworkManager \
-        NetworkManager-config-server \
-        NetworkManager-ovs \
         autoconf \
         automake \
         dnsmasq \
         git \
         iproute-tc \
         make \
-        nmstate \
         python3 \
         python3-dbus \
         python3-devel \
