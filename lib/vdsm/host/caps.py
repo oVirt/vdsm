@@ -147,6 +147,7 @@ def get():
     caps['kernelFeatures'] = osinfo.kernel_features()
     caps['vncEncrypted'] = _isVncEncrypted()
     caps['backupEnabled'] = backup.backup_enabled
+    caps['coldBackupEnabled'] = backup.cold_backup_enabled
     caps['fipsEnabled'] = _getFipsEnabled()
     try:
         caps['boot_uuid'] = osinfo.boot_uuid()

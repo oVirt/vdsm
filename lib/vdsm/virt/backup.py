@@ -44,6 +44,7 @@ log = logging.getLogger("storage.backup")
 # DomainAdapter should be defined only if libvirt supports
 # incremental backup API
 backup_enabled = hasattr(libvirt.virDomain, "backupBegin")
+cold_backup_enabled = hasattr(libvirt, "VIR_ERR_CHECKPOINT_INCONSISTENT")
 
 
 BackupDrive = collections.namedtuple(
