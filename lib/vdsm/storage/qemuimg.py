@@ -514,14 +514,29 @@ def bitmap_update(image, bitmap, enable):
     return operation.Command(cmd, cwd=cwdPath)
 
 
-# TODO: remove when qemu-kvm >= 4.2.0-25 required
+# TODO: remove when qemu-kvm >= 5.1 required
+# qemu-img 4.2.0-29 have a buggy bitmap command, failing the tests.
 @cache.memoized
 def bitmaps_supported():
-    cmd = [_qemuimg.cmd, "--help"]
-    out = _run_cmd(cmd)
-    match = re.search(
-        r"^\s+bitmap (.+) filename bitmap", out.decode("utf-8"), re.MULTILINE)
-    return match is not None
+    cmd = [_qemuimg.cmd, "--version"]
+    out = _run_cmd(cmd).decode("utf-8")
+
+    # Example output:
+    # qemu-img version 4.2.0 (qemu-kvm-4.2.0-29.el8.6)
+    # Copyright (c) 2003-2019 Fabrice Bellard and the QEMU Project developers
+    match = re.search(r"^qemu-img version (\d)\.(\d)\.(\d) ", out)
+    if not match:
+        _log.warning("Unexpected output for qemu-img --version: %s", out)
+        return False
+
+    try:
+        version = [int(x) for x in match.groups()]
+    except ValueError:
+        _log.warning("Unexpected output for qemu-img --version: %s", out)
+        return False
+
+    _log.debug("Detected qemu-img version %s", version)
+    return version >= [5, 1, 0]
 
 
 def default_qcow2_compat():

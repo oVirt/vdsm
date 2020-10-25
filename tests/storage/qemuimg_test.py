@@ -44,8 +44,11 @@ from testlib import make_config
 from testlib import namedTemporaryDir
 from testlib import temporaryPath
 
-from . marks import requires_bitmaps_support
-from . marks import requires_root
+from . marks import (
+    requires_bitmaps_merge_support,
+    requires_bitmaps_support,
+    requires_root,
+)
 
 CLUSTER_SIZE = 64 * KiB
 
@@ -1534,7 +1537,7 @@ class TestBitmaps:
             },
         ]
 
-    @requires_bitmaps_support
+    @requires_bitmaps_merge_support
     def test_merge_bitmaps(self, tmp_mount):
         virtual_size = MiB
         base_bitmap = 'base_bitmap'

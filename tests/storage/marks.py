@@ -35,7 +35,11 @@ from vdsm.common import compat
 from vdsm.storage import qemuimg
 from vdsm.storage.compat import sanlock
 
-from testing import on_travis_ci, on_ovirt_ci
+from testing import (
+    on_fedora,
+    on_ovirt_ci,
+    on_travis_ci,
+)
 
 
 requires_root = pytest.mark.skipif(
@@ -72,3 +76,8 @@ requires_loopback_sector_size = pytest.mark.skipif(
 requires_bitmaps_support = pytest.mark.skipif(
     not qemuimg.bitmaps_supported(),
     reason="qemu-img does not support bitmaps operations")
+
+
+requires_bitmaps_merge_support = pytest.mark.skipif(
+    not qemuimg.bitmaps_supported() or on_fedora(),
+    reason="qemu-img does not have a working bitmap --merge")
