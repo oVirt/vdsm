@@ -5,3 +5,4 @@ glusterfs,https://buildlogs.centos.org/centos/8/storage/$basearch/gluster-7/
 nmstate,https://copr-be.cloud.fedoraproject.org/results/nmstate/nmstate-0.2/epel-8-$basearch/
 networkmanager,https://copr-be.cloud.fedoraproject.org/results/networkmanager/NetworkManager-1.22/epel-8-$basearch/
 ovirt-master-centos-ovirt44-el8,https://buildlogs.centos.org/centos/8/virt/$basearch/ovirt-44/
+ovirt-imageio-preview,https://download.copr.fedorainfracloud.org/results/nsoffer/ovirt-imageio-preview/epel-8-$basearch/

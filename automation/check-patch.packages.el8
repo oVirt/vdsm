@@ -14,7 +14,7 @@ libguestfs-tools-c
 lshw
 lsof
 make
-ovirt-imageio-common
+ovirt-imageio-client-2.1.1
 python3-augeas
 python3-blivet
 python3-coverage
