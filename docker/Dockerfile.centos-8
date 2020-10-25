@@ -46,6 +46,7 @@ RUN dnf install -y \
         python3-sanlock \
         python3-six \
         python3-yaml \
+        qemu-img-4.2.0-29.el8.6 \
         redhat-rpm-config \
         sanlock \
         sudo \
