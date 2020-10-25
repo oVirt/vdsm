@@ -38,9 +38,8 @@ from storage.storagetestlib import (
     write_qemu_chain,
 )
 
+from . marks import requires_bitmaps_merge_support
 from . qemuio import verify_pattern
-from . marks import requires_bitmaps_support
-
 
 from testlib import expandPermutations, make_uuid, permutations
 from testlib import VdsmTestCase
@@ -229,7 +228,7 @@ class TestMergeSubchain(VdsmTestCase):
                            offset=offset, len=KiB, pattern=pattern)
             self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 0)
 
-    @requires_bitmaps_support
+    @requires_bitmaps_merge_support
     @permutations([
         # sd_type, chain_len, base_index, top_index
         ('file', 4, 0, 1),

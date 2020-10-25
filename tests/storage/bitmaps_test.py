@@ -30,7 +30,10 @@ from vdsm.common.units import MiB
 from vdsm.storage import bitmaps
 from vdsm.storage import qemuimg
 
-from . marks import requires_bitmaps_support
+from . marks import (
+    requires_bitmaps_merge_support,
+    requires_bitmaps_support,
+)
 
 
 def qemuimg_failure(*args, **kwargs):
@@ -122,7 +125,7 @@ def test_add_bitmap_failed(monkeypatch, vol_chain):
 
 # merge_bitmaps tests
 
-@requires_bitmaps_support
+@requires_bitmaps_merge_support
 def test_merge_only_valid_bitmaps(vol_chain):
     bitmap = 'bitmap'
 
