@@ -538,9 +538,10 @@ def test_volume_create_raw_sparse(user_domain, local_fallocate):
         virtual_size=SPARSE_VOL_SIZE,
         qemu_info=qemu_info)
 
-    # Recent qemu-img always allocates the first filesystem block.
+    # Recent qemu-img always allocates the first filesystem block (4096 bytes).
     # https://github.com/qemu/qemu/commit/3a20013fbb26
-    assert qemu_info['actualsize'] <= sc.BLOCK_SIZE_4K
+    # Newer qemu-img configure XFS to use 1 MiB extents, allocating 1 MiB.
+    assert sc.BLOCK_SIZE_4K <= qemu_info['actualsize'] <= MiB
 
     # Verify actual volume metadata
     actual = vol.getInfo()
