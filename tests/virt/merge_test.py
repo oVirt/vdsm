@@ -71,7 +71,7 @@ class FakeVM:
         self.log = logging.getLogger()
 
     @recorded
-    def _syncVolumeChain(self, drive):
+    def sync_volume_chain(self, drive):
         pass
 
 
@@ -119,7 +119,7 @@ def test_cleanup_done():
 
     assert t.state == LiveMergeCleanupThread.DONE
     assert v.drive_monitor.enabled
-    assert v.__calls__ == [('_syncVolumeChain', (drive,), {})]
+    assert v.__calls__ == [('sync_volume_chain', (drive,), {})]
     assert t.__calls__ == [
         ('update_base_size', (), {}),
         ('tryPivot', (), {}),
