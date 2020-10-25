@@ -401,7 +401,8 @@ class TestConvert:
         ("1.1", False),
     ])
     def test_qcow2(self, tmp_mount, dst_compat, create):
-        virtual_size = MiB
+        virtual_size = 10 * MiB
+
         # Create source chain.
         src_base = os.path.join(tmp_mount.path, 'src_base.img')
         op = qemuimg.create(
@@ -445,13 +446,12 @@ class TestConvert:
         op.run()
 
         # Write data to the source chain.
-        cluster_size = 64 * KiB
         for i, path in enumerate([src_base, src_top]):
             qemuio.write_pattern(
                 path,
                 "qcow2",
-                offset=i * cluster_size,
-                len=cluster_size,
+                offset=i * MiB,
+                len=64 * KiB,
                 pattern=0xf0 + i)
 
         # Copy base to base.
@@ -481,15 +481,25 @@ class TestConvert:
 
         # Run comparisons, if there is a mismatch in content or size
         # op.run() will raise and fail the test.
+
+        # Compare the base images. Looks like qemu-img 5.1.0 zeros now the
+        # entire base image, so we cannot use strict compare.
         op = qemuimg.compare(
             src_base,
             dst_base,
             img1_format='qcow2',
             img2_format='qcow2',
-            strict=True
+            strict=False
         )
         op.run()
 
+        # Remove backing file so we can compare only the top layer.
+        op = qemuimg.rebase(src_top, "", unsafe=True)
+        op.run()
+        op = qemuimg.rebase(dst_top, "", unsafe=True)
+        op.run()
+
+        # Compare the top images.
         op = qemuimg.compare(
             src_top,
             dst_top,
@@ -504,7 +514,8 @@ class TestConvert:
         ("1.1", False),
     ])
     def test_qcow2_collapsed(self, tmp_mount, dst_compat, create):
-        virtual_size = MiB
+        virtual_size = 10 * MiB
+
         # Create empty source chain.
         src_base = os.path.join(tmp_mount.path, 'src_base.img')
         op = qemuimg.create(
@@ -525,6 +536,15 @@ class TestConvert:
             backingFormat='qcow2'
         )
         op.run()
+
+        # Write data to the source chain.
+        for i, path in enumerate([src_base, src_top]):
+            qemuio.write_pattern(
+                path,
+                "qcow2",
+                offset=i * MiB,
+                len=64 * KiB,
+                pattern=0xf0 + i)
 
         # Create destination image.
         dst = os.path.join(tmp_mount.path, 'dst.img')
@@ -547,14 +567,14 @@ class TestConvert:
         )
         op.run()
 
-        # Since source is empty strict compare should work on both source
-        # chain and destination.
+        # Looks like qemu-img 5.1.0 zero the entire destiation image, so we
+        # cannot use strict compare.
         op = qemuimg.compare(
             src_top,
             dst,
             img1_format='qcow2',
             img2_format='qcow2',
-            strict=True
+            strict=False
         )
         op.run()
 
