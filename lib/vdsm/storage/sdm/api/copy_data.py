@@ -122,12 +122,14 @@ class CopyDataDivEndpoint(properties.Owner):
     vol_id = properties.UUID(required=True)
     generation = properties.Integer(required=False, minval=0,
                                     maxval=sc.MAX_GENERATION)
+    prepared = properties.Boolean(default=False)
 
     def __init__(self, params, host_id, writable):
         self.sd_id = params.get('sd_id')
         self.img_id = params.get('img_id')
         self.vol_id = params.get('vol_id')
         self.generation = params.get('generation')
+        self.prepared = params.get('prepared')
         self._host_id = host_id
         self._writable = writable
         self._vol = None
@@ -196,8 +198,11 @@ class CopyDataDivEndpoint(properties.Owner):
 
     @contextmanager
     def prepare(self):
-        self.volume.prepare(rw=self._writable, justme=False)
-        try:
+        if self.prepared:
             yield
-        finally:
-            self.volume.teardown(self.sd_id, self.vol_id, justme=False)
+        else:
+            self.volume.prepare(rw=self._writable, justme=False)
+            try:
+                yield
+            finally:
+                self.volume.teardown(self.sd_id, self.vol_id, justme=False)

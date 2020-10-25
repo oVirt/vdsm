@@ -8199,6 +8199,13 @@ types:
         -   description: The specific type of endpoint.
             name: endpoint_type
             type: *CopyDataEndpointType
+
+        -   defaultvalue: false
+            description: A flag indicating whether the volume is already
+                prepared on the host.
+            name: prepared
+            type: boolean
+            added: '4.4'
         type: union
         values:
         - *CopyDataDIVEndpoint
