@@ -4785,6 +4785,8 @@ class Vm(object):
         with self._shutdownLock:
             self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
         try:
+            # The flag is not 100% reliable but it is a good hint
+            is_active = self.cif.qga_poller.is_active(self.id)
             with self.qga_context():
                 self._dom.shutdownFlags(
                     libvirt.VIR_DOMAIN_SHUTDOWN_GUEST_AGENT)
@@ -4798,13 +4800,23 @@ class Vm(object):
             self.log.warning('failed to invoke qemuGuestAgentShutdown: '
                              'domain not connected')
             raise exception.VMIsDown()
-        except libvirt.libvirtError:
-            # it's likely QEMU GA is not installed or not responding
-            self.log.exception("Shutdown by QEMU Guest Agent failed")
+        except libvirt.libvirtError as e:
+            # It's likely QEMU GA is not installed or not responding. If we
+            # expected this hide the backtrace. Caller will log the error
+            # anyway.
+            if is_active:
+                self.log.exception("Shutdown by QEMU Guest Agent failed")
+            else:
+                self.log.warning(
+                    "Shutdown by QEMU Guest Agent failed"
+                    " (agent probably inactive)")
+                self.log.debug("QEMU Guest Agent exception info: ", exc_info=e)
             raise exception.NonResponsiveGuestAgent()
 
     def qemuGuestAgentReboot(self):
         try:
+            # The flag is not 100% reliable but it is a good hint
+            is_active = self.cif.qga_poller.is_active(self.id)
             with self.qga_context():
                 self._dom.reboot(libvirt.VIR_DOMAIN_REBOOT_GUEST_AGENT)
         except exception.NonResponsiveGuestAgent as e:
@@ -4816,9 +4828,15 @@ class Vm(object):
             self.log.warning('failed to invoke qemuGuestAgentReboot: '
                              'domain not connected')
             raise exception.VMIsDown()
-        except libvirt.libvirtError:
-            # it's likely QEMU GA is not installed or not responding
-            self.log.exception("Reboot by QEMU Guest Agent failed")
+        except libvirt.libvirtError as e:
+            # It's likely QEMU GA is not installed or not responding. If we
+            # expected this hide the backtrace. Caller will log the error
+            # anyway.
+            if is_active:
+                self.log.exception("Reboot by QEMU Guest Agent failed")
+            else:
+                self.log.debug(
+                    "Reboot by QEMU Guest Agent failed", exc_info=e)
             raise exception.NonResponsiveGuestAgent()
 
     def acpi_enabled(self):
