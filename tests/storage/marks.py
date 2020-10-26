@@ -60,8 +60,9 @@ xfail_python37 = pytest.mark.xfail(
 
 # Note: This cannot be strict since in oVirt CI we run with older qemu-img
 # version that does not reproduce this issue.
-xfail_target_sparsified = pytest.mark.xfail(
-    reason="qemu-img convet -n sparsifies the target",
+xfail_requires_target_is_zero = pytest.mark.xfail(
+    not qemuimg.target_is_zero_supported(),
+    reason="requires qemu-img convert --target-is-zero introdued in 5.1.0",
     strict=False)
 
 broken_on_ci = pytest.mark.skipif(

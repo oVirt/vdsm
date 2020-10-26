@@ -457,6 +457,7 @@ class Image:
                         unordered_writes=destDom.recommends_unordered_writes(
                             dstVol.getFormat()),
                         create=dstVol.requires_create(),
+                        target_is_zero=dstVol.zero_initialized(),
                     )
                     with utils.stopwatch(
                             "Copy volume {}".format(srcVol.volUUID),
@@ -743,6 +744,7 @@ class Image:
                         unordered_writes=destDom.recommends_unordered_writes(
                             dstVolFormat),
                         create=dstVol.requires_create(),
+                        target_is_zero=dstVol.zero_initialized(),
                     )
                     with utils.stopwatch(
                             "Copy volume {}".format(srcVol.volUUID),

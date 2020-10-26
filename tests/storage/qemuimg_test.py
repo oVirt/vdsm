@@ -48,6 +48,7 @@ from . marks import (
     requires_bitmaps_merge_support,
     requires_bitmaps_support,
     requires_root,
+    xfail_requires_target_is_zero,
 )
 
 CLUSTER_SIZE = 64 * KiB
@@ -397,8 +398,8 @@ class TestConvert:
                             dstQcow2Compat='1.11')
 
     @pytest.mark.parametrize("dst_compat,create", [
-        ("0.10", True),
-        ("1.1", False),
+        pytest.param("0.10", True),
+        pytest.param("1.1", False, marks=xfail_requires_target_is_zero),
     ])
     def test_qcow2(self, tmp_mount, dst_compat, create):
         virtual_size = 10 * MiB
@@ -461,7 +462,8 @@ class TestConvert:
             srcFormat='qcow2',
             dstFormat='qcow2',
             dstQcow2Compat=dst_compat,
-            create=create
+            create=create,
+            target_is_zero=True,
         )
         op.run()
 
@@ -482,24 +484,15 @@ class TestConvert:
         # Run comparisons, if there is a mismatch in content or size
         # op.run() will raise and fail the test.
 
-        # Compare the base images. Looks like qemu-img 5.1.0 zeros now the
-        # entire base image, so we cannot use strict compare.
         op = qemuimg.compare(
             src_base,
             dst_base,
             img1_format='qcow2',
             img2_format='qcow2',
-            strict=False
+            strict=True,
         )
         op.run()
 
-        # Remove backing file so we can compare only the top layer.
-        op = qemuimg.rebase(src_top, "", unsafe=True)
-        op.run()
-        op = qemuimg.rebase(dst_top, "", unsafe=True)
-        op.run()
-
-        # Compare the top images.
         op = qemuimg.compare(
             src_top,
             dst_top,
@@ -510,8 +503,8 @@ class TestConvert:
         op.run()
 
     @pytest.mark.parametrize("dst_compat,create", [
-        ("0.10", True),
-        ("1.1", False),
+        pytest.param("0.10", True),
+        pytest.param("1.1", False, marks=xfail_requires_target_is_zero),
     ])
     def test_qcow2_collapsed(self, tmp_mount, dst_compat, create):
         virtual_size = 10 * MiB
@@ -563,20 +556,77 @@ class TestConvert:
             srcFormat='qcow2',
             dstFormat='qcow2',
             dstQcow2Compat=dst_compat,
-            create=create
+            create=create,
+            target_is_zero=True,
         )
         op.run()
 
-        # Looks like qemu-img 5.1.0 zero the entire destiation image, so we
-        # cannot use strict compare.
         op = qemuimg.compare(
             src_top,
             dst,
             img1_format='qcow2',
             img2_format='qcow2',
-            strict=False
+            strict=True,
         )
         op.run()
+
+    @xfail_requires_target_is_zero
+    def test_raw_preallocated(self, tmp_mount):
+        virtual_size = 2 * MiB
+
+        # Create source image.
+        src = os.path.join(tmp_mount.path, 'src.img')
+        op = qemuimg.create(
+            src,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+
+        # Write data to the source image.
+        qemuio.write_pattern(
+            src,
+            "qcow2",
+            offset=MiB,
+            len=64 * KiB,
+            pattern=0xf0)
+
+        # Create preallocated destination image.
+        dst = os.path.join(tmp_mount.path, 'dst.img')
+        op = qemuimg.create(
+            dst,
+            size=virtual_size,
+            format=qemuimg.FORMAT.RAW,
+            preallocation=qemuimg.PREALLOCATION.FALLOC,
+        )
+        op.run()
+
+        # Convert src to dst.
+        op = qemuimg.convert(
+            src,
+            dst,
+            srcFormat=qemuimg.FORMAT.QCOW2,
+            dstFormat=qemuimg.FORMAT.RAW,
+            create=False,
+            target_is_zero=True,
+        )
+        op.run()
+
+        # Compare content - since we copied to preallocated image, allocation
+        # cannot be compared.
+        op = qemuimg.compare(
+            src,
+            dst,
+            img1_format=qemuimg.FORMAT.QCOW2,
+            img2_format=qemuimg.FORMAT.RAW,
+            strict=False,
+        )
+        op.run()
+
+        # Check that dst is still preallocated.
+        info = qemuimg.info(dst)
+        assert info["virtualsize"] == info["actualsize"]
 
     @requires_bitmaps_support
     def test_copy_bitmaps(self, tmp_mount):

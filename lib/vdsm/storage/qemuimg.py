@@ -251,7 +251,7 @@ def check(image, format=None):
 def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
             dstQcow2Compat=None, backing=None, backingFormat=None,
             preallocation=None, compressed=False, unordered_writes=False,
-            create=True, bitmaps=False):
+            create=True, bitmaps=False, target_is_zero=False):
     """
     Arguments:
         unordered_writes (bool): Allow out-of-order writes to the destination.
@@ -261,6 +261,11 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
             be set to False when convert to NBD. If create is False,
             backingFormat, preallocated and dstQcow2Compat are ignored as
             qemu-img ignores them and may return an error at some point
+        target_is_zero (bool): If True and using create=False and backing is
+            not None, qemu-img convert will not try to zero the target. This is
+            required to keep preallocated image preallocated, and improves
+            performance. This option is effective only with qemu-img 5.1 and
+            later.
     """
     cmd = [_qemuimg.cmd, "convert", "-p", "-t", "none", "-T", "none"]
     options = []
@@ -296,6 +301,8 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
             cmd.extend(('-o', ','.join(options)))
     else:
         cmd.append("-n")
+        if backing is None and target_is_zero and target_is_zero_supported():
+            cmd.append("--target-is-zero")
 
     if compressed:
         cmd.append('-c')
@@ -537,6 +544,13 @@ def bitmaps_supported():
 
     _log.debug("Detected qemu-img version %s", version)
     return version >= [5, 1, 0]
+
+
+@cache.memoized
+def target_is_zero_supported():
+    cmd = [_qemuimg.cmd, "--help"]
+    out = _run_cmd(cmd).decode("utf-8")
+    return " [--target-is-zero] " in out
 
 
 def default_qcow2_compat():
