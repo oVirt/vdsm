@@ -58,6 +58,12 @@ xfail_python3 = pytest.mark.xfail(
 xfail_python37 = pytest.mark.xfail(
     sys.version_info[:2] == (3, 7), reason="needs porting to python 3.7")
 
+# Note: This cannot be strict since in oVirt CI we run with older qemu-img
+# version that does not reproduce this issue.
+xfail_target_sparsified = pytest.mark.xfail(
+    reason="qemu-img convet -n sparsifies the target",
+    strict=False)
+
 broken_on_ci = pytest.mark.skipif(
     on_ovirt_ci() or on_travis_ci(), reason="fails on CI")
 
