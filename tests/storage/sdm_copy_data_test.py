@@ -47,7 +47,11 @@ from storage.storagetestlib import (
 
 from . import qemuio
 from . import userstorage
-from . marks import requires_bitmaps_support
+
+from . marks import (
+    requires_bitmaps_support,
+    xfail_target_sparsified,
+)
 
 from testValidation import broken_on_ci
 from testlib import make_uuid
@@ -121,25 +125,6 @@ class TestCopyDataDIV(VdsmTestCase):
                 self.assertEqual(sorted(expected_locks(src_vol, dst_vol)),
                                  sorted(guarded.context.locks))
             verify_qemu_chain(env.dst_chain)
-
-    def test_preallocated_file_volume_copy(self):
-        job_id = make_uuid()
-
-        with make_env('file', sc.RAW_FORMAT, sc.RAW_FORMAT,
-                      prealloc=sc.PREALLOCATED_VOL) as env:
-            write_qemu_chain(env.src_chain)
-            src_vol = env.src_chain[0]
-            dst_vol = env.dst_chain[0]
-
-            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
-            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
-            job = copy_data.Job(job_id, 0, source, dest)
-            job.run()
-            self.assertEqual(
-                qemuimg.info(dst_vol.volumePath)['virtualsize'],
-                qemuimg.info(dst_vol.volumePath)['actualsize'])
 
     # TODO: Missing tests:
     # We should a test of copying from old domain (version=3)
@@ -265,6 +250,27 @@ class TestCopyDataDIV(VdsmTestCase):
     # Copy between 2 different domains
 
 
+@xfail_target_sparsified
+def test_copy_to_preallocated_file():
+    job_id = make_uuid()
+
+    with make_env('file', sc.RAW_FORMAT, sc.RAW_FORMAT,
+                  prealloc=sc.PREALLOCATED_VOL) as env:
+        write_qemu_chain(env.src_chain)
+        src_vol = env.src_chain[0]
+        dst_vol = env.dst_chain[0]
+
+        source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
+                      img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
+        dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
+                    img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+        job = copy_data.Job(job_id, 0, source, dest)
+        job.run()
+
+        info = qemuimg.info(dst_vol.volumePath)
+        assert info["virtualsize"] == info["actualsize"]
+
+
 @requires_bitmaps_support
 @pytest.mark.parametrize(
     "env_type, sd_version, copy_seq", [
@@ -358,16 +364,29 @@ def test_copy_bitmaps_fail_raw_format(
 
 
 @pytest.mark.parametrize("env_type,qcow2_compat,sd_version", [
-    # env_type, src_compat, sd_version
     # Old storage domain, we supported only 0.10
-    ('file', '0.10', 3),
-    ('block', '0.10', 3),
+    pytest.param('file', '0.10', 3, id="0.10-to-0.10-file"),
+    pytest.param('block', '0.10', 3, id="0.10-to-0.10-block"),
+
     # New domain old volume
-    ('file', '0.10', 4),
-    ('block', '0.10', 4),
+    pytest.param(
+        'file', '0.10', 4,
+        id="0.10-to-1.1-file",
+        marks=xfail_target_sparsified),
+    pytest.param(
+        'block', '0.10', 4,
+        id="0.10-to-1.1-block",
+        marks=xfail_target_sparsified),
+
     # New domain, new volumes
-    ('file', '1.1', 4),
-    ('block', '1.1', 4),
+    pytest.param(
+        'file', '1.1', 4,
+        id="1.1-to-1.1-file",
+        marks=xfail_target_sparsified),
+    pytest.param(
+        'block', '1.1', 4,
+        id="1.1-to-1.1-block",
+        marks=xfail_target_sparsified),
 ])
 def test_qcow2_compat(
         user_mount, fake_scheduler, env_type, qcow2_compat, sd_version):
@@ -400,7 +419,7 @@ def test_qcow2_compat(
             dst_vol.getVolumePath(),
             img1_format='qcow2',
             img2_format='qcow2',
-            strict=True
+            strict=True,
         )
         op.run()
 
