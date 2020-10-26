@@ -4800,7 +4800,7 @@ class Vm(object):
             raise exception.VMIsDown()
         except libvirt.libvirtError:
             # it's likely QEMU GA is not installed or not responding
-            logging.exception("Shutdown by QEMU Guest Agent failed")
+            self.log.exception("Shutdown by QEMU Guest Agent failed")
             raise exception.NonResponsiveGuestAgent()
 
     def qemuGuestAgentReboot(self):
@@ -4818,7 +4818,7 @@ class Vm(object):
             raise exception.VMIsDown()
         except libvirt.libvirtError:
             # it's likely QEMU GA is not installed or not responding
-            logging.exception("Reboot by QEMU Guest Agent failed")
+            self.log.exception("Reboot by QEMU Guest Agent failed")
             raise exception.NonResponsiveGuestAgent()
 
     def acpi_enabled(self):
