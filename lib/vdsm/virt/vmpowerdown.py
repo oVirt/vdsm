@@ -175,8 +175,8 @@ class VmReboot(VmPowerDown):
         return utils.log_success(
             self.event.wait(self.timeout),
             self.vm.log,
-            "Shutting down with FORCE succeeded",
-            "Shutting down with FORCE timed out"
+            "Rebooting with guest agent succeeded",
+            "Rebooting with guest agent timed out"
         )
 
     def ovirtGuestAgentCallback(self):
