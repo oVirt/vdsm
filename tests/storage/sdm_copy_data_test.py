@@ -50,7 +50,7 @@ from . import userstorage
 
 from . marks import (
     requires_bitmaps_support,
-    xfail_target_sparsified,
+    xfail_requires_target_is_zero,
 )
 
 from testValidation import broken_on_ci
@@ -250,7 +250,7 @@ class TestCopyDataDIV(VdsmTestCase):
     # Copy between 2 different domains
 
 
-@xfail_target_sparsified
+@xfail_requires_target_is_zero
 def test_copy_to_preallocated_file():
     job_id = make_uuid()
 
@@ -363,40 +363,31 @@ def test_copy_bitmaps_fail_raw_format(
         assert 'error' in job.info()
 
 
-@pytest.mark.parametrize("env_type,qcow2_compat,sd_version", [
+@pytest.mark.parametrize("qcow2_compat,sd_version", [
     # Old storage domain, we supported only 0.10
-    pytest.param('file', '0.10', 3, id="0.10-to-0.10-file"),
-    pytest.param('block', '0.10', 3, id="0.10-to-0.10-block"),
+    pytest.param('0.10', 3, id="0.10-to-0.10-file"),
 
     # New domain old volume
     pytest.param(
-        'file', '0.10', 4,
+        '0.10', 4,
         id="0.10-to-1.1-file",
-        marks=xfail_target_sparsified),
-    pytest.param(
-        'block', '0.10', 4,
-        id="0.10-to-1.1-block",
-        marks=xfail_target_sparsified),
+        marks=xfail_requires_target_is_zero),
 
     # New domain, new volumes
     pytest.param(
-        'file', '1.1', 4,
+        '1.1', 4,
         id="1.1-to-1.1-file",
-        marks=xfail_target_sparsified),
-    pytest.param(
-        'block', '1.1', 4,
-        id="1.1-to-1.1-block",
-        marks=xfail_target_sparsified),
+        marks=xfail_requires_target_is_zero),
 ])
 def test_qcow2_compat(
-        user_mount, fake_scheduler, env_type, qcow2_compat, sd_version):
+        user_mount, fake_scheduler, qcow2_compat, sd_version):
     src_fmt = sc.name2type("cow")
     dst_fmt = sc.name2type("cow")
     job_id = make_uuid()
     data_center = os.path.join(user_mount.path, "data-center")
 
     with make_env(
-            env_type, src_fmt, dst_fmt,
+            "file", src_fmt, dst_fmt,
             sd_version=sd_version,
             src_qcow2_compat=qcow2_compat,
             data_center=data_center) as env:

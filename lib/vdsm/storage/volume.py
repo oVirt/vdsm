@@ -831,6 +831,13 @@ class VolumeManifest(object):
             dom = sdCache.produce(self.sdUUID)
             return dom.qcow2_compat() == "0.10"
 
+    @classmethod
+    def zero_initialized(cls):
+        """
+        Return True if a new image is zeroed.
+        """
+        return False
+
 
 class Volume(object):
     log = logging.getLogger('storage.Volume')
@@ -1554,6 +1561,10 @@ class Volume(object):
 
     def requires_create(self):
         return self._manifest.requires_create()
+
+    @classmethod
+    def zero_initialized(cls):
+        return cls.manifestClass.zero_initialized()
 
 
 class VolumeLease(guarded.AbstractLock):

@@ -401,6 +401,10 @@ class FileVolumeManifest(volume.VolumeManifest):
         else:
             return self.getVolumeSize()
 
+    @classmethod
+    def zero_initialized(cls):
+        return True
+
 
 class FileVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).

@@ -100,7 +100,9 @@ class Job(base.Job):
                         unordered_writes=self._dest
                             .recommends_unordered_writes,
                         create=self._dest.requires_create,
-                        bitmaps=self._copy_bitmaps)
+                        bitmaps=self._copy_bitmaps,
+                        target_is_zero=self._dest.zero_initialized,
+                    )
                     with utils.stopwatch(
                             "Copy volume {}".format(self._source.path),
                             level=logging.INFO,
@@ -183,6 +185,10 @@ class CopyDataDivEndpoint(properties.Owner):
     @property
     def requires_create(self):
         return self.volume.requires_create()
+
+    @property
+    def zero_initialized(self):
+        return self.volume.zero_initialized()
 
     @property
     def volume(self):
