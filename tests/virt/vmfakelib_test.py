@@ -167,7 +167,7 @@ def test_irs_prepared_volumes():
     expected_path = "/run/storage/{}/{}/{}".format(sdUUID, imgUUID, leafUUID)
 
     res = irs.prepareImage(sdUUID, spUUID, imgUUID, leafUUID)
-    assert (sdUUID, leafUUID) in irs.prepared_volumes
+    assert (sdUUID, imgUUID, leafUUID) in irs.prepared_volumes
     assert res == {
         "status": {
             "code": 0,
@@ -182,7 +182,7 @@ def test_irs_prepared_volumes():
     }
 
     res = irs.teardownImage(sdUUID, spUUID, imgUUID, leafUUID)
-    assert (sdUUID, leafUUID) not in irs.prepared_volumes
+    assert (sdUUID, imgUUID, leafUUID) not in irs.prepared_volumes
     assert res == {
         "status": {
             "code": 0,

@@ -85,7 +85,7 @@ class IRS(object):
     def prepareImage(
             self, sdUUID, spUUID, imgUUID, leafUUID, allowIllegal=False):
         path = "/run/storage/{}/{}/{}".format(sdUUID, imgUUID, leafUUID)
-        self.prepared_volumes[(sdUUID, leafUUID)] = path
+        self.prepared_volumes[(sdUUID, imgUUID, leafUUID)] = path
         return response.success(
             path=path,
             info={
@@ -96,7 +96,11 @@ class IRS(object):
         )
 
     def teardownImage(self, sdUUID, spUUID, imgUUID, volUUID=None):
-        del self.prepared_volumes[(sdUUID, volUUID)]
+        # In real code we deactivate all image volumes and volUUID is never
+        # used.
+        for k in list(self.prepared_volumes.keys()):
+            if k[:2] == (sdUUID, imgUUID):
+                del self.prepared_volumes[k]
         return response.success()
 
     def imageSyncVolumeChain(self, domainID, imageID, volumeID, newVols):
