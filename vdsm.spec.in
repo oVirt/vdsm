@@ -1041,6 +1041,7 @@ exit 0
 %dir %{_localstatedir}/lib/%{vdsm_name}/upgrade
 %dir %{_localstatedir}/log/%{vdsm_name}
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
+%dir %attr(750, %{vdsm_user}, %{vdsm_group}) %{_localstatedir}/log/%{vdsm_name}/commands
 %dir %{_localstatedir}/log/%{vdsm_name}/import
 %defattr(644, %{vdsm_user}, %{vdsm_group}, -)
 %{_datadir}/%{vdsm_name}/lvmlocal.conf

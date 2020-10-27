@@ -217,6 +217,7 @@ install-data-local: install-libvirtpasswordDATA
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/libvirt-migrate
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/libvirt-spice
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
+	$(MKDIR_P) --mode=0750 $(DESTDIR)$(vdsmlogdir)/commands
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)/import
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/payload

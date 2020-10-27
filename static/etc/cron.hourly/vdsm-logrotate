@@ -17,6 +17,15 @@ if [ $EXITVALUE != 0 ]; then
     errors=$((errors+1))
 fi
 
+if [ -d /var/log/vdsm/commands ] ; then
+    /usr/bin/find /var/log/vdsm/commands -type f -mtime +30 -exec /bin/rm -f '{}' \;
+    EXITVALUE=$?
+    if [ $EXITVALUE != 0 ]; then
+        /usr/bin/logger -t vdsm-logrotate "ALERT clean of old command log files exited abnormally with [$EXITVALUE]"
+        errors=$((errors+1))
+    fi
+fi
+
 if [ -d /var/log/vdsm/import ] ; then
     /usr/bin/find /var/log/vdsm/import -type f -mtime +30 -exec /bin/rm -f '{}' \;
     EXITVALUE=$?

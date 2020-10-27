@@ -23,10 +23,13 @@ from __future__ import division
 
 from six.moves import range
 
+import os
+
 from vdsm.virt import vmexitreason
 from vdsm.virt import utils
 from vdsm.virt import vm
 
+from monkeypatch import MonkeyPatchScope
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 import pytest
@@ -263,3 +266,37 @@ class TestTimedAcquireLock(TestCaseBase):
         assert exc is not None
         assert exc.lockid == self.lockid
         assert exc.flow == 'external'
+
+
+class TestRunLogging(object):
+
+    def test_success(self, tmp_path):
+        with MonkeyPatchScope([(utils, '_COMMANDS_LOG_DIR', str(tmp_path))]):
+            log_path = utils.run_logging(['/bin/true'])
+            assert os.path.isabs(log_path)
+            assert os.path.isfile(log_path)
+
+    def test_log_content(self, tmp_path):
+        with MonkeyPatchScope([(utils, '_COMMANDS_LOG_DIR', str(tmp_path))]):
+            log_path = utils.run_logging(
+                ["sh", "-c", "echo out >&1; echo err >&2"])
+            assert os.path.isabs(log_path)
+            assert os.path.isfile(log_path)
+            with open(log_path, 'rb') as f:
+                log_content = f.read()
+            assert log_content == b'out\nerr\n'
+
+    def test_error(self, tmp_path):
+        with MonkeyPatchScope([(utils, '_COMMANDS_LOG_DIR', str(tmp_path))]):
+            with pytest.raises(utils.LoggingError) as e:
+                utils.run_logging(['/bin/false'])
+            assert e.value.rc == 1
+            assert os.path.isabs(e.value.log_path)
+            assert os.path.isfile(e.value.log_path)
+
+    def test_bad_command(self, tmp_path):
+        with MonkeyPatchScope([(utils, '_COMMANDS_LOG_DIR', str(tmp_path))]):
+            with pytest.raises(utils.LoggingError) as e:
+                utils.run_logging(['/foobarbaz'])
+            assert os.path.isabs(e.value.log_path)
+            assert os.path.isfile(e.value.log_path)
