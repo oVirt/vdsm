@@ -40,7 +40,6 @@ To setup the environment for unprivileged user:
 from __future__ import absolute_import
 from __future__ import division
 
-import io
 import os
 import stat
 import uuid
@@ -57,6 +56,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import nbd
 from vdsm.storage import qemuimg
 
+from . import qemuio
 from . marks import broken_on_ci
 from . storagetestlib import fake_env
 
@@ -94,17 +94,25 @@ def nbd_env(monkeypatch):
     data_center = "/var/tmp/vdsm/data-center"
 
     with fake_env("file", data_center=data_center) as env:
-        env.virtual_size = MiB
+        # When using XFS, the minimal allocation for qcow2 images is 1MiB. Lets
+        # use larger size so we can test properly unallocated areas.
+        env.virtual_size = 10 * MiB
 
         # Source image for copying into the nbd server.
         env.src = os.path.join(env.tmpdir, "src")
-        with io.open(env.src, "wb") as f:
-            f.truncate(env.virtual_size)
-            f.seek(128 * KiB)
-            f.write(b"data from source image")
 
         # Destination for copying from nbd server.
         env.dst = os.path.join(env.tmpdir, "dst")
+
+        # Create source image with some data. Using qcow2 format to make it
+        # easier to test with different file systems.
+        op = qemuimg.create(
+            env.src, size=env.virtual_size, format="qcow2", qcow2Compat="1.1")
+        op.run()
+        qemuio.write_pattern(
+            env.src, "qcow2", offset=1 * MiB, len=64 * KiB, pattern=0xf0)
+        qemuio.write_pattern(
+            env.src, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xf1)
 
         yield env
 
@@ -134,16 +142,23 @@ def test_roundtrip(nbd_env, format, allocation, discard):
     }
 
     with nbd_server(config) as nbd_url:
-        # Copy data from source to NBD server, and from NBD server to dst.
-        # Both files should match byte for byte after the operation.
+        # Copy data from src to NBD server.
         op = qemuimg.convert(
-            nbd_env.src, nbd_url, srcFormat="raw", create=False)
-        op.run()
-        op = qemuimg.convert(nbd_url, nbd_env.dst, dstFormat="raw")
+            nbd_env.src,
+            nbd_url,
+            srcFormat="qcow2",
+            create=False,
+            target_is_zero=True)
         op.run()
 
-    with io.open(nbd_env.src) as s, io.open(nbd_env.dst) as d:
-        assert s.read() == d.read()
+        # Copy data from NBD server to dst.
+        op = qemuimg.convert(
+            nbd_url, nbd_env.dst, dstFormat="qcow2", dstQcow2Compat="1.1")
+        op.run()
+
+    # Both files should be identical now.
+    op = qemuimg.compare(nbd_env.src, nbd_env.dst, strict=True)
+    op.run()
 
     # Now the server should not be accessible.
     with pytest.raises(cmdutils.Error):
@@ -170,7 +185,9 @@ def test_readonly(nbd_env, format, allocation):
     op = qemuimg.convert(
         nbd_env.src,
         vol.getVolumePath(),
+        srcFormat="qcow2",
         dstFormat=sc.fmt2str(format),
+        dstQcow2Compat="1.1",
         preallocation=PREALLOCATION.get(format))
     op.run()
 
@@ -186,16 +203,21 @@ def test_readonly(nbd_env, format, allocation):
         # Writing to NBD server must fail.
         with pytest.raises(cmdutils.Error):
             op = qemuimg.convert(
-                nbd_env.src, nbd_url, srcFormat="raw", create=False)
+                nbd_env.src,
+                nbd_url,
+                srcFormat="qcow2",
+                create=False,
+                target_is_zero=True)
             op.run()
 
         # Copy data from NBD server to dst. Both files should match byte
         # for byte after the operation.
-        op = qemuimg.convert(nbd_url, nbd_env.dst, dstFormat="raw")
+        op = qemuimg.convert(
+            nbd_url, nbd_env.dst, dstFormat="qcow2", dstQcow2Compat="1.1")
         op.run()
 
-    with io.open(nbd_env.src) as s, io.open(nbd_env.dst) as d:
-        assert s.read() == d.read()
+    op = qemuimg.compare(nbd_env.src, nbd_env.dst, strict=True)
+    op.run()
 
     # Now the server should not be accessible.
     with pytest.raises(cmdutils.Error):
