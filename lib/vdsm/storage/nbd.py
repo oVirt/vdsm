@@ -82,7 +82,10 @@ class ServerConfig(properties.Owner):
         self.vol_id = config.get("vol_id")
         self.readonly = config.get("readonly")
         self.discard = config.get("discard")
-        self.backing_chain = config.get("backing_chain")
+
+        # Setting to None overrides the default value.
+        # See https://bugzilla.redhat.com/1892403
+        self.backing_chain = config.get("backing_chain", True)
 
 
 QemuNBDConfig = collections.namedtuple(

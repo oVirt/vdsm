@@ -228,11 +228,7 @@ def test_readonly(nbd_env, format, allocation):
 @requires_privileges
 @pytest.mark.parametrize("backing_chain", [
     pytest.param(True, id="true"),
-    pytest.param(
-        None,
-        id="default",
-        marks=pytest.mark.xfail(
-            reason="unspecified backing_chain treated as False")),
+    pytest.param(None, id="default"),
 ])
 def test_backing_chain(nbd_env, backing_chain):
     base, top = make_qemu_chain(
