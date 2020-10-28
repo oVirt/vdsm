@@ -58,7 +58,7 @@ from vdsm.storage import qemuimg
 
 from . import qemuio
 from . marks import broken_on_ci
-from . storagetestlib import fake_env
+from . storagetestlib import fake_env, make_qemu_chain
 
 # TODO: Move to actual code when we support preallocated qcow2 images.
 PREALLOCATION = {
@@ -222,6 +222,101 @@ def test_readonly(nbd_env, format, allocation):
     # Now the server should not be accessible.
     with pytest.raises(cmdutils.Error):
         qemuimg.info(nbd_url)
+
+
+@broken_on_ci
+@requires_privileges
+@pytest.mark.parametrize("backing_chain", [
+    pytest.param(True, id="true"),
+    pytest.param(
+        None,
+        id="default",
+        marks=pytest.mark.xfail(
+            reason="unspecified backing_chain treated as False")),
+])
+def test_backing_chain(nbd_env, backing_chain):
+    base, top = make_qemu_chain(
+        nbd_env, nbd_env.virtual_size, sc.COW_FORMAT, 2, qcow2_compat='1.1')
+
+    # Fill volumes with data.
+    qemuio.write_pattern(
+        base.volumePath, "qcow2", offset=1 * MiB, len=64 * KiB, pattern=0xf0)
+    qemuio.write_pattern(
+        top.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xf1)
+
+    # Server configuration.
+    config = {
+        "sd_id": top.sdUUID,
+        "img_id": top.imgUUID,
+        "vol_id": top.volUUID,
+        "readonly": True,
+    }
+
+    if backing_chain is not None:
+        config["backing_chain"] = backing_chain
+
+    # Copy data from NBD server to dst.
+    with nbd_server(config) as nbd_url:
+        op = qemuimg.convert(
+            nbd_url, nbd_env.dst, dstFormat="qcow2", dstQcow2Compat="1.1")
+        op.run()
+
+    # Compare copied data to source chain.
+    op = qemuimg.compare(top.volumePath, nbd_env.dst, strict=True)
+    op.run()
+
+
+@broken_on_ci
+@requires_privileges
+def test_no_backing_chain(nbd_env):
+    base, top = make_qemu_chain(
+        nbd_env, nbd_env.virtual_size, sc.COW_FORMAT, 2, qcow2_compat='1.1')
+
+    # Fill volumes with data.
+    qemuio.write_pattern(
+        base.volumePath, "qcow2", offset=1 * MiB, len=64 * KiB, pattern=0xf0)
+    qemuio.write_pattern(
+        top.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xf1)
+
+    # Download base volume.
+
+    config = {
+        "sd_id": base.sdUUID,
+        "img_id": base.imgUUID,
+        "vol_id": base.volUUID,
+        "readonly": True,
+        "backing_chain": False,
+    }
+
+    with nbd_server(config) as nbd_url:
+        op = qemuimg.convert(
+            nbd_url, nbd_env.dst, dstFormat="qcow2", dstQcow2Compat="1.1")
+        op.run()
+
+    op = qemuimg.compare(base.volumePath, nbd_env.dst, strict=True)
+    op.run()
+
+    # Download top volume.
+
+    config = {
+        "sd_id": top.sdUUID,
+        "img_id": top.imgUUID,
+        "vol_id": top.volUUID,
+        "readonly": True,
+        "backing_chain": False,
+    }
+
+    with nbd_server(config) as nbd_url:
+        op = qemuimg.convert(
+            nbd_url, nbd_env.dst, dstFormat="qcow2", dstQcow2Compat="1.1")
+        op.run()
+
+    # Remove backing file from top volume, so we can compare to top.
+    op = qemuimg.rebase(top.volumePath, "", unsafe=True)
+    op.run()
+
+    op = qemuimg.compare(top.volumePath, nbd_env.dst, strict=True)
+    op.run()
 
 
 @broken_on_ci
