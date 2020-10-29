@@ -57,6 +57,7 @@ def _fake_qemuAgentCommand(domain, command, timeout, flags):
     if command == '{"execute": "guest-get-devices"}':
         return json.dumps(
             {"return": [{
+                # original API
                 'driver-date': '2019-08-12',
                 'driver-name': 'Red Hat VirtIO Ethernet Adapter',
                 'driver-version': '100.80.104.17300',
@@ -68,17 +69,17 @@ def _fake_qemuAgentCommand(domain, command, timeout, flags):
                     }
                 }
             }, {
-                'driver-date': '2019-08-12',
+                # API in 5.2
+                'driver-date': 1565568000000000000,
                 'driver-name': 'VirtIO Balloon Driver',
                 'driver-version': '100.80.104.17300',
-                'address': {
+                'id': {
                     'type': 'pci',
-                    'data': {
-                        'device-id': 4098,
-                        'vendor-id': 6900
-                    }
+                    'device-id': 4098,
+                    'vendor-id': 6900
                 }
             }, {
+                # Duplicate of first entry
                 'driver-date': '2019-08-12',
                 'driver-name': 'Red Hat VirtIO Ethernet Adapter',
                 'driver-version': '100.80.104.17300',

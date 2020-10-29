@@ -21,6 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import datetime
+
 from collections import defaultdict
 
 # These constants correspond to values returned by QEMU-GA in osinfo for
@@ -171,10 +173,23 @@ def translate_windows_osinfo(os_info):
 
 def translate_pci_device(device):
     device = defaultdict(str, device)
-    return {
-        'device_id': int(device['address']['data']['device-id']),
-        'driver_date': device['driver-date'],
-        'driver_name': device['driver-name'],
-        'driver_version': device['driver-version'],
-        'vendor_id': int(device['address']['data']['vendor-id']),
-    }
+    date = device['driver-date']
+    if type(date) is int:
+        # If type is int it is number of nanoseconds since epoch otherwise it
+        # is string in form YYYY-MM-DD and we don't have to do anything
+        date = datetime.date.fromtimestamp(date // 1e9).isoformat()
+        return {
+            'device_id': int(device['id']['device-id']),
+            'driver_date': date,
+            'driver_name': device['driver-name'],
+            'driver_version': device['driver-version'],
+            'vendor_id': int(device['id']['vendor-id']),
+        }
+    else:
+        return {
+            'device_id': int(device['address']['data']['device-id']),
+            'driver_date': date,
+            'driver_name': device['driver-name'],
+            'driver_version': device['driver-version'],
+            'vendor_id': int(device['address']['data']['vendor-id']),
+        }

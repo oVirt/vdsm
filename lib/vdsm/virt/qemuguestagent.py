@@ -631,7 +631,9 @@ class QemuGuestAgentPoller(object):
         if ret is not None:
             devices = []
             for device in ret:
-                if device.get('address', {}).get('type') == 'pci':
+                id_type = device.get('id', {}).get('type')
+                address_type = device.get('address', {}).get('type')
+                if id_type == 'pci' or address_type == 'pci':
                     d = guestagenthelpers.translate_pci_device(device)
                     # Qemu-ga returns all devices exactly like they exist in
                     # the VM. That means some devices, e.g. storage
