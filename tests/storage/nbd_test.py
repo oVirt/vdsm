@@ -121,7 +121,10 @@ def nbd_env():
 @requires_privileges
 @pytest.mark.parametrize("format", ["qcow2", "raw"])
 @pytest.mark.parametrize("allocation", ["sparse", "preallocated"])
-@pytest.mark.parametrize("discard", [True, False])
+@pytest.mark.parametrize("discard", [
+    pytest.param(True, id="discard"),
+    pytest.param(False, id="no_discard")
+])
 def test_roundtrip(nbd_env, format, allocation, discard):
     # Volume served by qemu-nd.
     img_id = str(uuid.uuid4())
