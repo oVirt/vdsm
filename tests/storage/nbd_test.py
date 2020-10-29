@@ -120,7 +120,7 @@ def nbd_env():
 @broken_on_ci
 @requires_privileges
 @pytest.mark.parametrize("format", ["qcow2", "raw"])
-@pytest.mark.parametrize("allocation", [sc.SPARSE_VOL, sc.PREALLOCATED_VOL])
+@pytest.mark.parametrize("allocation", ["sparse", "preallocated"])
 @pytest.mark.parametrize("discard", [True, False])
 def test_roundtrip(nbd_env, format, allocation, discard):
     # Volume served by qemu-nd.
@@ -131,7 +131,7 @@ def test_roundtrip(nbd_env, format, allocation, discard):
         img_id,
         vol_id,
         vol_format=sc.str2fmt(format),
-        prealloc=allocation)
+        prealloc=sc.name2type(allocation))
 
     # Server configuration.
     config = {
@@ -168,7 +168,7 @@ def test_roundtrip(nbd_env, format, allocation, discard):
 @broken_on_ci
 @requires_privileges
 @pytest.mark.parametrize("format", ["qcow2", "raw"])
-@pytest.mark.parametrize("allocation", [sc.SPARSE_VOL, sc.PREALLOCATED_VOL])
+@pytest.mark.parametrize("allocation", ["sparse", "preallocated"])
 def test_readonly(nbd_env, format, allocation):
     # Volume served by qemu-nd.
     img_id = str(uuid.uuid4())
@@ -178,7 +178,7 @@ def test_readonly(nbd_env, format, allocation):
         img_id,
         vol_id,
         vol_format=sc.str2fmt(format),
-        prealloc=allocation)
+        prealloc=sc.name2type(allocation))
 
     # Fill volume with data before starting the server.
     vol = nbd_env.sd_manifest.produceVolume(img_id, vol_id)

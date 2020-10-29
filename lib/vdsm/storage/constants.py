@@ -22,8 +22,6 @@ from __future__ import absolute_import
 
 import os
 
-import six
-
 from vdsm import constants
 from vdsm.common.config import config
 from vdsm.common.units import MiB
@@ -138,12 +136,19 @@ VOL_DISKTYPE = frozenset([
     LEGACY_V2V_DATA_DISKTYPE,
 ])
 
-VOLUME_TYPES = {UNKNOWN_VOL: 'UNKNOWN', PREALLOCATED_VOL: 'PREALLOCATED',
-                SPARSE_VOL: 'SPARSE',
-                UNKNOWN_FORMAT: 'UNKNOWN', COW_FORMAT: 'COW',
-                RAW_FORMAT: 'RAW',
-                SHARED_VOL: 'SHARED', INTERNAL_VOL: 'INTERNAL',
-                LEAF_VOL: 'LEAF'}
+_TYPE2NAME = {
+    UNKNOWN_VOL: 'UNKNOWN',
+    PREALLOCATED_VOL: 'PREALLOCATED',
+    SPARSE_VOL: 'SPARSE',
+    UNKNOWN_FORMAT: 'UNKNOWN',
+    COW_FORMAT: 'COW',
+    RAW_FORMAT: 'RAW',
+    SHARED_VOL: 'SHARED',
+    INTERNAL_VOL: 'INTERNAL',
+    LEAF_VOL: 'LEAF'
+}
+
+_NAME2TYPE = {v: k for k, v in _TYPE2NAME.items()}
 
 ILLEGAL_VOL = "ILLEGAL"
 LEGAL_VOL = "LEGAL"
@@ -179,17 +184,11 @@ def str2fmt(s):
 
 
 def type2name(volType):
-    try:
-        return VOLUME_TYPES[volType]
-    except IndexError:
-        return None
+    return _TYPE2NAME[volType]
 
 
 def name2type(name):
-    for (k, v) in six.iteritems(VOLUME_TYPES):
-        if v == name.upper():
-            return k
-    return None
+    return _NAME2TYPE[name.upper()]
 
 
 # Volume meta data fields
