@@ -55,7 +55,7 @@ class TestVerifyUntrustedVolume(object):
     @pytest.mark.parametrize('vol_fmt,', [sc.RAW_FORMAT, sc.COW_FORMAT])
     def test_ok(self, vol_fmt):
         with self.fake_volume(vol_fmt) as vol:
-            qemu_fmt = sc.FMT2STR[vol_fmt]
+            qemu_fmt = sc.fmt2str(vol_fmt)
             op = qemuimg.create(vol.volumePath, size=self.SIZE,
                                 format=qemu_fmt)
             op.run()

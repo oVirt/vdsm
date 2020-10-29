@@ -62,8 +62,8 @@ from . storagetestlib import fake_env, make_qemu_chain
 
 # TODO: Move to actual code when we support preallocated qcow2 images.
 PREALLOCATION = {
-    sc.RAW_FORMAT: qemuimg.PREALLOCATION.FALLOC,
-    sc.COW_FORMAT: qemuimg.PREALLOCATION.METADATA,
+    "raw": qemuimg.PREALLOCATION.FALLOC,
+    "qcow2": qemuimg.PREALLOCATION.METADATA,
 }
 
 
@@ -119,7 +119,7 @@ def nbd_env():
 
 @broken_on_ci
 @requires_privileges
-@pytest.mark.parametrize("format", [sc.COW_FORMAT, sc.RAW_FORMAT])
+@pytest.mark.parametrize("format", ["qcow2", "raw"])
 @pytest.mark.parametrize("allocation", [sc.SPARSE_VOL, sc.PREALLOCATED_VOL])
 @pytest.mark.parametrize("discard", [True, False])
 def test_roundtrip(nbd_env, format, allocation, discard):
@@ -130,7 +130,7 @@ def test_roundtrip(nbd_env, format, allocation, discard):
         nbd_env.virtual_size,
         img_id,
         vol_id,
-        vol_format=format,
+        vol_format=sc.str2fmt(format),
         prealloc=allocation)
 
     # Server configuration.
@@ -167,7 +167,7 @@ def test_roundtrip(nbd_env, format, allocation, discard):
 
 @broken_on_ci
 @requires_privileges
-@pytest.mark.parametrize("format", [sc.COW_FORMAT, sc.RAW_FORMAT])
+@pytest.mark.parametrize("format", ["qcow2", "raw"])
 @pytest.mark.parametrize("allocation", [sc.SPARSE_VOL, sc.PREALLOCATED_VOL])
 def test_readonly(nbd_env, format, allocation):
     # Volume served by qemu-nd.
@@ -177,7 +177,7 @@ def test_readonly(nbd_env, format, allocation):
         nbd_env.virtual_size,
         img_id,
         vol_id,
-        vol_format=format,
+        vol_format=sc.str2fmt(format),
         prealloc=allocation)
 
     # Fill volume with data before starting the server.
@@ -186,7 +186,7 @@ def test_readonly(nbd_env, format, allocation):
         nbd_env.src,
         vol.getVolumePath(),
         srcFormat="qcow2",
-        dstFormat=sc.fmt2str(format),
+        dstFormat=format,
         dstQcow2Compat="1.1",
         preallocation=PREALLOCATION.get(format))
     op.run()

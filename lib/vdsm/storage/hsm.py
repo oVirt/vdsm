@@ -1593,7 +1593,7 @@ class HSM(object):
         vol = dom.produceVolume(imgUUID, volUUID)
         qemu_info = qemuimg.info(vol.getVolumePath(), trusted_image=False)
 
-        meta_format = sc.FMT2STR[vol.getFormat()]
+        meta_format = sc.fmt2str(vol.getFormat())
         qemu_format = qemu_info["format"]
         if meta_format != qemu_format:
             raise se.ImageVerificationError(

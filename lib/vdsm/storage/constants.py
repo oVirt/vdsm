@@ -155,10 +155,12 @@ VOL_STATUS_INIT = "INIT"
 VOL_STATUS_INVALID = "INVALID"
 VOL_STATUS_REMOVED = "REMOVED"
 
-FMT2STR = {
+_FMT2STR = {
     COW_FORMAT: qemuimg.FORMAT.QCOW2,
     RAW_FORMAT: qemuimg.FORMAT.RAW,
 }
+
+_STR2FMT = {v: k for k, v in _FMT2STR.items()}
 
 BLANK_UUID = "00000000-0000-0000-0000-000000000000"
 
@@ -168,8 +170,12 @@ REMOVED_IMAGE_PREFIX = "_remove_me_"
 ZEROED_IMAGE_PREFIX = REMOVED_IMAGE_PREFIX + "ZERO_"
 
 
-def fmt2str(format):
-    return FMT2STR[format]
+def fmt2str(fmt):
+    return _FMT2STR[fmt]
+
+
+def str2fmt(s):
+    return _STR2FMT[s]
 
 
 def type2name(volType):
