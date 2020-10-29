@@ -50,7 +50,7 @@ import pytest
 
 from vdsm.common import cmdutils
 from vdsm.common import supervdsm
-from vdsm.common.units import KiB, MiB, GiB
+from vdsm.common.units import KiB, MiB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import nbd
@@ -126,21 +126,12 @@ def nbd_env():
     pytest.param(False, id="no_discard")
 ])
 def test_roundtrip(nbd_env, format, allocation, discard):
-    # Volume served by qemu-nd.
-    img_id = str(uuid.uuid4())
-    vol_id = str(uuid.uuid4())
-    nbd_env.make_volume(
-        nbd_env.virtual_size,
-        img_id,
-        vol_id,
-        vol_format=sc.str2fmt(format),
-        prealloc=sc.name2type(allocation))
+    vol = create_volume(nbd_env, format, allocation)
 
-    # Server configuration.
     config = {
-        "sd_id": nbd_env.sd_manifest.sdUUID,
-        "img_id": img_id,
-        "vol_id": vol_id,
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
         "discard": discard,
     }
 
@@ -160,18 +151,8 @@ def test_roundtrip(nbd_env, format, allocation, discard):
 @pytest.mark.parametrize("format", ["qcow2", "raw"])
 @pytest.mark.parametrize("allocation", ["sparse", "preallocated"])
 def test_readonly(nbd_env, format, allocation):
-    # Volume served by qemu-nd.
-    img_id = str(uuid.uuid4())
-    vol_id = str(uuid.uuid4())
-    nbd_env.make_volume(
-        nbd_env.virtual_size,
-        img_id,
-        vol_id,
-        vol_format=sc.str2fmt(format),
-        prealloc=sc.name2type(allocation))
+    vol = create_volume(nbd_env, format, allocation)
 
-    # Fill volume with data before starting the server.
-    vol = nbd_env.sd_manifest.produceVolume(img_id, vol_id)
     op = qemuimg.convert(
         nbd_env.src,
         vol.getVolumePath(),
@@ -182,9 +163,9 @@ def test_readonly(nbd_env, format, allocation):
     op.run()
 
     config = {
-        "sd_id": nbd_env.sd_manifest.sdUUID,
-        "img_id": img_id,
-        "vol_id": vol_id,
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
         "readonly": True,
     }
 
@@ -285,21 +266,12 @@ def test_no_backing_chain(nbd_env):
 @broken_on_ci
 @requires_privileges
 def test_server_socket_mode(nbd_env):
-    # Volume served by qemu-nd.
-    img_id = str(uuid.uuid4())
-    vol_id = str(uuid.uuid4())
-    nbd_env.make_volume(
-        nbd_env.virtual_size,
-        img_id,
-        vol_id,
-        vol_format=sc.COW_FORMAT,
-        prealloc=sc.SPARSE_VOL)
+    vol = create_volume(nbd_env, "qcow2", "sparse")
 
-    # Server configuration.
     config = {
-        "sd_id": nbd_env.sd_manifest.sdUUID,
-        "img_id": img_id,
-        "vol_id": vol_id,
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
     }
 
     with nbd_server(config) as nbd_url:
@@ -310,22 +282,18 @@ def test_server_socket_mode(nbd_env):
         assert oct(actual_mode) == oct(0o660)
 
 
-def test_shared_volume():
-    with fake_env("file") as env:
-        img_id = str(uuid.uuid4())
-        vol_id = str(uuid.uuid4())
-        env.make_volume(GiB, img_id, vol_id)
-        vol = env.sd_manifest.produceVolume(img_id, vol_id)
-        vol.setShared()
+def test_shared_volume(nbd_env):
+    vol = create_volume(nbd_env, "qcow2", "sparse")
+    vol.setShared()
 
-        config = {
-            "sd_id": env.sd_manifest.sdUUID,
-            "img_id": img_id,
-            "vol_id": vol_id,
-        }
+    config = {
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
+    }
 
-        with pytest.raises(se.SharedVolumeNonWritable):
-            nbd.start_server("no-server", config)
+    with pytest.raises(se.SharedVolumeNonWritable):
+        nbd.start_server("no-server", config)
 
 
 @broken_on_ci
@@ -363,3 +331,18 @@ def download_from_nbd(nbd_url, filename):
 def compare_images(a, b, strict=False):
     op = qemuimg.compare(a, b, strict=strict)
     op.run()
+
+
+def create_volume(env, format, allocation):
+    img_id = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+
+    env.make_volume(
+        env.virtual_size,
+        img_id,
+        vol_id,
+        vol_format=sc.str2fmt(format),
+        prealloc=sc.name2type(allocation),
+        qcow2_compat="1.1")
+
+    return env.sd_manifest.produceVolume(img_id, vol_id)
