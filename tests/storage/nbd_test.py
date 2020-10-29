@@ -145,23 +145,10 @@ def test_roundtrip(nbd_env, format, allocation, discard):
     }
 
     with nbd_server(config) as nbd_url:
-        # Copy data from src to NBD server.
-        op = qemuimg.convert(
-            nbd_env.src,
-            nbd_url,
-            srcFormat="qcow2",
-            create=False,
-            target_is_zero=True)
-        op.run()
+        upload_to_nbd(nbd_env.src, nbd_url)
+        download_from_nbd(nbd_url, nbd_env.dst)
 
-        # Copy data from NBD server to dst.
-        op = qemuimg.convert(
-            nbd_url, nbd_env.dst, dstFormat="qcow2", dstQcow2Compat="1.1")
-        op.run()
-
-    # Both files should be identical now.
-    op = qemuimg.compare(nbd_env.src, nbd_env.dst, strict=True)
-    op.run()
+    compare_images(nbd_env.src, nbd_env.dst, strict=True)
 
     # Now the server should not be accessible.
     with pytest.raises(cmdutils.Error):
@@ -194,7 +181,6 @@ def test_readonly(nbd_env, format, allocation):
         preallocation=PREALLOCATION.get(format))
     op.run()
 
-    # Server configuration.
     config = {
         "sd_id": nbd_env.sd_manifest.sdUUID,
         "img_id": img_id,
@@ -203,24 +189,14 @@ def test_readonly(nbd_env, format, allocation):
     }
 
     with nbd_server(config) as nbd_url:
-        # Writing to NBD server must fail.
+        # Writing to read-only NBD server must fail.
         with pytest.raises(cmdutils.Error):
-            op = qemuimg.convert(
-                nbd_env.src,
-                nbd_url,
-                srcFormat="qcow2",
-                create=False,
-                target_is_zero=True)
-            op.run()
+            upload_to_nbd(nbd_env.src, nbd_url)
 
-        # Copy data from NBD server to dst. Both files should match byte
-        # for byte after the operation.
-        op = qemuimg.convert(
-            nbd_url, nbd_env.dst, dstFormat="qcow2", dstQcow2Compat="1.1")
-        op.run()
+        # Download must not fail.
+        download_from_nbd(nbd_url, nbd_env.dst)
 
-    op = qemuimg.compare(nbd_env.src, nbd_env.dst, strict=True)
-    op.run()
+    compare_images(nbd_env.src, nbd_env.dst, strict=True)
 
     # Now the server should not be accessible.
     with pytest.raises(cmdutils.Error):
@@ -243,7 +219,6 @@ def test_backing_chain(nbd_env, backing_chain):
     qemuio.write_pattern(
         top.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xf1)
 
-    # Server configuration.
     config = {
         "sd_id": top.sdUUID,
         "img_id": top.imgUUID,
@@ -254,15 +229,10 @@ def test_backing_chain(nbd_env, backing_chain):
     if backing_chain is not None:
         config["backing_chain"] = backing_chain
 
-    # Copy data from NBD server to dst.
     with nbd_server(config) as nbd_url:
-        op = qemuimg.convert(
-            nbd_url, nbd_env.dst, dstFormat="qcow2", dstQcow2Compat="1.1")
-        op.run()
+        download_from_nbd(nbd_url, nbd_env.dst)
 
-    # Compare copied data to source chain.
-    op = qemuimg.compare(top.volumePath, nbd_env.dst, strict=True)
-    op.run()
+    compare_images(top.volumePath, nbd_env.dst, strict=True)
 
 
 @broken_on_ci
@@ -288,12 +258,9 @@ def test_no_backing_chain(nbd_env):
     }
 
     with nbd_server(config) as nbd_url:
-        op = qemuimg.convert(
-            nbd_url, nbd_env.dst, dstFormat="qcow2", dstQcow2Compat="1.1")
-        op.run()
+        download_from_nbd(nbd_url, nbd_env.dst)
 
-    op = qemuimg.compare(base.volumePath, nbd_env.dst, strict=True)
-    op.run()
+    compare_images(base.volumePath, nbd_env.dst, strict=True)
 
     # Download top volume.
 
@@ -306,16 +273,13 @@ def test_no_backing_chain(nbd_env):
     }
 
     with nbd_server(config) as nbd_url:
-        op = qemuimg.convert(
-            nbd_url, nbd_env.dst, dstFormat="qcow2", dstQcow2Compat="1.1")
-        op.run()
+        download_from_nbd(nbd_url, nbd_env.dst)
 
     # Remove backing file from top volume, so we can compare to top.
     op = qemuimg.rebase(top.volumePath, "", unsafe=True)
     op.run()
 
-    op = qemuimg.compare(top.volumePath, nbd_env.dst, strict=True)
-    op.run()
+    compare_images(top.volumePath, nbd_env.dst, strict=True)
 
 
 @broken_on_ci
@@ -378,3 +342,24 @@ def nbd_server(config):
         yield nbd_url
     finally:
         nbd.stop_server(server_id)
+
+
+def upload_to_nbd(filename, nbd_url):
+    op = qemuimg.convert(
+        filename,
+        nbd_url,
+        srcFormat="qcow2",
+        create=False,
+        target_is_zero=True)
+    op.run()
+
+
+def download_from_nbd(nbd_url, filename):
+    op = qemuimg.convert(
+        nbd_url, filename, dstFormat="qcow2", dstQcow2Compat="1.1")
+    op.run()
+
+
+def compare_images(a, b, strict=False):
+    op = qemuimg.compare(a, b, strict=strict)
+    op.run()
