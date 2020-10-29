@@ -85,7 +85,7 @@ broken_on_ci = broken_on_ci.with_args(
 
 
 @pytest.fixture
-def nbd_env(monkeypatch):
+def nbd_env():
     """
     Fixture for serving a volume using nbd server.
     """
