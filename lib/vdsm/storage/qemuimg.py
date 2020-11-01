@@ -140,6 +140,8 @@ def info(image, format=None, unsafe=False, trusted_image=True):
         info['clustersize'] = qemu_info['cluster-size']
     if 'backing-filename' in qemu_info:
         info['backingfile'] = qemu_info['backing-filename']
+    if 'backing-filename-format' in qemu_info:
+        info['backingformat'] = qemu_info['backing-filename-format']
     if qemu_info['format'] == FORMAT.QCOW2:
         specific_data = qemu_info['format-specific']['data']
         try:

@@ -94,6 +94,7 @@ class TestInfo:
                 }
             },
             "backing-filename": "/var/tmp/test.img",
+            "backing-filename-format": "raw",
             "dirty-flag": False
         }
 
@@ -110,7 +111,8 @@ class TestInfo:
                 op.run()
                 op = qemuimg.create(leaf_path,
                                     format=leaf_fmt,
-                                    backing=base_path)
+                                    backing=base_path,
+                                    backingFormat="raw")
                 op.run()
 
             info = qemuimg.info(leaf_path)
@@ -118,6 +120,7 @@ class TestInfo:
             assert size == info['virtualsize']
             assert self.CLUSTER_SIZE == info['clustersize']
             assert base_path == info['backingfile']
+            assert "raw" == info['backingformat']
             assert '0.10' == info['compat']
 
     @pytest.mark.parametrize("unsafe", [True, False])
