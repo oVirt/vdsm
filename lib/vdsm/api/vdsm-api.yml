@@ -8394,6 +8394,13 @@ types:
             name: backing_chain
             type: boolean
 
+        -   defaultvalue: null
+            description: If set, the NBD server exports the specified dirty
+              bitmap. NBD client can use the dirty bitmap to download changed
+              blocks when a VM is powered off.
+            name: bitmap
+            type: *UUID
+
     Checkpoint: &Checkpoint
         added: '4.3'
         description: Configuration of the checkpoint

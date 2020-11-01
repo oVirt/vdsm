@@ -75,6 +75,7 @@ class ServerConfig(properties.Owner):
     readonly = properties.Boolean(default=False)
     discard = properties.Boolean(default=False)
     backing_chain = properties.Boolean(default=True)
+    bitmap = properties.UUID()
 
     def __init__(self, config):
         self.sd_id = config.get("sd_id")
@@ -87,9 +88,12 @@ class ServerConfig(properties.Owner):
         # See https://bugzilla.redhat.com/1892403
         self.backing_chain = config.get("backing_chain", True)
 
+        self.bitmap = config.get("bitmap")
+
 
 QemuNBDConfig = collections.namedtuple(
-    "QemuNBDConfig", "format,readonly,discard,path,backing_chain,is_block")
+    "QemuNBDConfig",
+    "format,readonly,discard,path,backing_chain,is_block,bitmap")
 
 
 def start_server(server_id, config):
@@ -114,7 +118,8 @@ def start_server(server_id, config):
         discard=cfg.discard,
         path=vol.getVolumePath(),
         backing_chain=cfg.backing_chain,
-        is_block=vol.is_block())
+        is_block=vol.is_block(),
+        bitmap=cfg.bitmap)
 
     start_transient_service(server_id, qemu_nbd_config)
 
@@ -174,6 +179,9 @@ def start_transient_service(server_id, config):
         cmd.append("--read-only")
     elif config.discard:
         cmd.append("--discard=unmap")
+
+    if config.bitmap:
+        cmd.append("--bitmap={}".format(config.bitmap))
 
     cmd.append(json_uri(config))
 

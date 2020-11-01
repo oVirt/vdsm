@@ -44,9 +44,13 @@ import os
 import stat
 import uuid
 
+from urllib.parse import urlparse
 from contextlib import contextmanager
 
 import pytest
+
+# TODO: Use public API when available.
+from ovirt_imageio._internal import nbd as nbd_client
 
 from vdsm.common import cmdutils
 from vdsm.common import supervdsm
@@ -261,6 +265,77 @@ def test_no_backing_chain(nbd_env):
     op.run()
 
     compare_images(top.volumePath, nbd_env.dst, strict=True)
+
+
+@broken_on_ci
+@requires_privileges
+def test_bitmap_single_volume(nbd_env):
+    vol = create_volume(nbd_env, "qcow2", "sparse")
+
+    # Write first cluster - this cluster is not recorded in any bitmap.
+    qemuio.write_pattern(
+        vol.volumePath, "qcow2", offset=1 * MiB, len=64 * KiB, pattern=0xf1)
+
+    # Add bitmap 1 and write second cluster.
+    bitmap1 = str(uuid.uuid4())
+    qemuimg.bitmap_add(vol.volumePath, bitmap1).run()
+    qemuio.write_pattern(
+        vol.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xf2)
+
+    # Add bitmap 2 and write third cluster.
+    bitmap2 = str(uuid.uuid4())
+    qemuimg.bitmap_add(vol.volumePath, bitmap2).run()
+    qemuio.write_pattern(
+        vol.volumePath, "qcow2", offset=3 * MiB, len=64 * KiB, pattern=0xf3)
+
+    # Test bitmap 1 - recording changes since bitmap 1 was added.
+
+    config = {
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
+        "readonly": True,
+        "bitmap": bitmap1,
+    }
+
+    with nbd_server(config) as nbd_url:
+        with nbd_client.open(urlparse(nbd_url), dirty=True) as c:
+            extents = c.extents(0, nbd_env.virtual_size)
+
+            assert extents[c.dirty_bitmap] == [
+                nbd_client.Extent(2 * MiB, 0),
+                nbd_client.Extent(64 * KiB, 1),
+                nbd_client.Extent(1 * MiB - 64 * KiB, 0),
+                nbd_client.Extent(64 * KiB, 1),
+                nbd_client.Extent(
+                    nbd_env.virtual_size - 3 * MiB - 64 * KiB, 0),
+            ]
+
+            assert c.read(1 * MiB, 64 * KiB) == b"\xf1" * 64 * KiB
+            assert c.read(2 * MiB, 64 * KiB) == b"\xf2" * 64 * KiB
+
+    # Test bitmap 2 - recording changes since bitmap 2 was added.
+
+    config = {
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
+        "readonly": True,
+        "bitmap": bitmap2,
+    }
+
+    with nbd_server(config) as nbd_url:
+        with nbd_client.open(urlparse(nbd_url), dirty=True) as c:
+            extents = c.extents(0, nbd_env.virtual_size)
+
+            assert extents[c.dirty_bitmap] == [
+                nbd_client.Extent(3 * MiB, 0),
+                nbd_client.Extent(64 * KiB, 1),
+                nbd_client.Extent(
+                    nbd_env.virtual_size - 3 * MiB - 64 * KiB, 0),
+            ]
+
+            assert c.read(2 * MiB, 64 * KiB) == b"\xf2" * 64 * KiB
 
 
 @broken_on_ci
