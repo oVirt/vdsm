@@ -60,6 +60,28 @@ def test_add_transient_disk(tmp_basedir):
     assert oct(permissions) == oct(sc.FILE_VOLUME_PERMISSIONS)
 
 
+def test_add_transient_disk_with_backing(tmp_basedir, tmpdir):
+    src = str(tmpdir.join("src.qcow2"))
+    qemuimg.create(src, size=10 * MiB, format="qcow2", qcow2Compat="1.1").run()
+
+    res = transientdisk.create_disk(
+        "backup-id",
+        "overlay.qcow2",
+        backing=src,
+        backing_format="qcow2")
+
+    disk_path = res['path']
+    disk_info = qemuimg.info(disk_path)
+    assert disk_info['format'] == "qcow2"
+    assert disk_info['compat'] == "1.1"
+    assert disk_info['virtualsize'] == 10 * MiB
+    assert disk_info['backingfile'] == src
+    assert disk_info['backingformat'] == "qcow2"
+
+    permissions = stat.S_IMODE(os.stat(disk_path).st_mode)
+    assert oct(permissions) == oct(sc.FILE_VOLUME_PERMISSIONS)
+
+
 def test_remove_transient_disk(tmpdir, tmp_basedir):
     owner_name = 'vm-id'
     disk1_name = 'sda'

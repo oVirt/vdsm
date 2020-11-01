@@ -35,7 +35,26 @@ log = logging.getLogger("storage.transientdisk")
 OWNER_DIR_PERMISSIONS = 0o750
 
 
-def create_disk(owner_name, disk_name, size):
+def create_disk(
+        owner_name, disk_name, size=None, backing=None, backing_format=None):
+    """
+    Create a transient disk, optionally based on another disk.
+
+    Arguments:
+        owner_name (str): Owner name of this disk. When creating multiple disks
+            this name can be used to locate related disks.
+        disk_name (str): File name of the new disk.
+        size (int): Size of the new disk. If disk has a backing file and the
+            size is not specified, the disk size is taken from the backing
+            file.
+        backing (str): Path of the backing file, if this disk should be based
+            on another disk.
+        backing_format (str): If backing is specified, you must specify the
+            backing file format.
+
+    Returns:
+        dict with "path" to the new disk.
+    """
     dir_path = _owner_dir(owner_name)
     _create_dir(dir_path)
     disk_path = _disk_dir(owner_name, disk_name)
@@ -47,7 +66,9 @@ def create_disk(owner_name, disk_name, size):
             disk_path,
             size=size,
             format=qemuimg.FORMAT.QCOW2,
-            qcow2Compat='1.1')
+            qcow2Compat='1.1',
+            backing=backing,
+            backingFormat=backing_format)
         operation.run()
         os.chmod(disk_path, sc.FILE_VOLUME_PERMISSIONS)
     except:
