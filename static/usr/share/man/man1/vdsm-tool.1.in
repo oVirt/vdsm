@@ -94,9 +94,6 @@ Options for the \fIrestore_nets\fP module:
 Restores the networks to what was previously persisted via VDSM.
 .RE
 .TP
-Options for the \fIrestore_nets_init\fP module:
-.RS
-.TP
 Options for the \fInetwork\fP module:
 .RS
 .TP
@@ -143,23 +140,6 @@ Cleans up the unused transient disks present in the repository. (NOTE: do NOT ex
 Prepares the transient disks repository.
 .RE
 .TP
-Options for the \fIunified_persistence\fP module:
-.RS
-.TP
-.B upgrade-unified-persistence
-Upgrades host networking persistence from \fBifcfg\fP to \fBunified\fP if the persistence model is set as \fBunified\fP in the \fI/usr/lib64/python2.X/site-packages/vdsm/config.py\fP file.
-.RS
-.P
-Usage: \fBvdsm-tool upgrade-unified-persistence [-h] [--run-again]\fP
-.TP
-.B -h, --help
-Displays a list of options.
-.TP
-.B --run-again
-Runs the upgrade operation again, even if this operation has been performed previously.
-.RE
-.RE
-.TP
 Options for the \fIvdsm-id\fP module:
 .RS
 .TP
@@ -169,5 +149,5 @@ Prints the host UUID.
 .SH BUGS
 Report bugs to <http://bugzilla.redhat.com>
 .SH COPYRIGHT
-Copyright 2011-2014 Red Hat, Inc.
+Copyright 2011-2020 Red Hat, Inc.
 License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.
