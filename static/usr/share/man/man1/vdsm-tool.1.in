@@ -70,11 +70,9 @@ Options for the \fIdummybr\fP module:
 .TP
 .B dummybr
 Deprecated in favor of dummybr-create.
-.RE
 .TP
 .B dummybr-create
 Defines a dummy bridge on a libvirt network.
-.RE
 .TP
 .B dummybr-remove
 Undefines a dummy bridge on a libvirt network.
@@ -99,7 +97,6 @@ Options for the \fInetwork\fP module:
 .TP
 .B list-nets
 List networks configured by VDSM.
-.RE
 .TP
 .B clear-nets
 Remove networks configured by VDSM.
