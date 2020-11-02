@@ -184,6 +184,8 @@ def _get_volumes_info(cli, sd_uuid):
     volumes_info = defaultdict(dict)
 
     volumes = cli.StorageDomain.dump(sd_id=sd_uuid)["volumes"]
+
+    # find volumes per image
     for vol_id, vol_info in volumes.items():
         image_id = vol_info.get("image", UNKNOWN_IMAGE)
         # in addition to missing, also handle 'None' and empty string
@@ -196,6 +198,13 @@ def _get_volumes_info(cli, sd_uuid):
             parent = UNKNOWN_PARENT
         vol_info["parent"] = parent
         volumes_info[image_id][vol_id] = vol_info
+
+    # add template volumes
+    for img_volumes in volumes_info.values():
+        for vol in list(img_volumes.values()):
+            parent_id = vol["parent"]
+            if parent_id not in img_volumes and parent_id in volumes:
+                img_volumes[parent_id] = volumes[parent_id]
 
     return volumes_info
 
