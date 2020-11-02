@@ -189,6 +189,12 @@ def _get_volumes_info(cli, sd_uuid):
         # in addition to missing, also handle 'None' and empty string
         if image_id is None or not image_id.strip():
             image_id = UNKNOWN_IMAGE
+        # normalize parent info
+        parent = vol_info.get("parent", UNKNOWN_PARENT)
+        # in addition to missing, also handle 'None' and empty string
+        if parent is None or not parent.strip():
+            parent = UNKNOWN_PARENT
+        vol_info["parent"] = parent
         volumes_info[image_id][vol_id] = vol_info
 
     return volumes_info
@@ -202,11 +208,7 @@ def _get_volumes_chains(volumes_info):
         # to avoid 'double parent' bug here we don't use a dictionary
         volumes_children = []  # [(parent_vol_uuid, child_vol_uuid),]
         for vol_uuid, vol_info in volumes.items():
-            parent = vol_info.get('parent', UNKNOWN_PARENT)
-            # in addition to missing, also handle 'None' and empty string
-            if parent is None or not parent.strip():
-                parent = UNKNOWN_PARENT
-            volumes_children.append((parent, vol_uuid))
+            volumes_children.append((vol_info['parent'], vol_uuid))
 
         if img_uuid == UNKNOWN_IMAGE:
             # do not build chain of volumes with unknown image
