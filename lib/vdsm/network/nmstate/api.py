@@ -244,6 +244,22 @@ def ovs_netinfo(base_netinfo, running_networks, state):
     netinfo.create_netinfo()
 
 
+# FIXME This should move to generate state
+# after proper support in nmstate
+# https://bugzilla.redhat.com/1867504
+def prepare_ovs_bridge_mappings(running_networks):
+    rnets_config = translate_config(running_networks)
+    current_ifaces_state = get_interfaces(state_show())
+    ovs_info = OvsInfo(rnets_config, current_ifaces_state)
+
+    mapping_pairs = []
+    for sb, nbs in ovs_info.nb_by_sb.items():
+        bridge = ovs_info.bridge_by_sb[sb]
+        mapping_pairs.extend([f'{nb}:{bridge}' for nb in nbs])
+
+    return mapping_pairs
+
+
 def _merge_state(interfaces_state, routes_state, dns_state):
     interfaces = [ifstate for ifstate in interfaces_state.values()]
     state = {

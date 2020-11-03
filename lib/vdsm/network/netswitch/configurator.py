@@ -26,6 +26,7 @@ import six
 
 from vdsm.common.cache import memoized
 from vdsm.common.time import monotonic_time
+from vdsm.network import cmd
 from vdsm.network import connectivity
 from vdsm.network import errors as ne
 from vdsm.network import nmstate
@@ -115,6 +116,7 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
         _setup_static_src_routing(networks)
         config.save()
         link_setup.setup_custom_bridge_opts(networks)
+        _setup_ovs_bridge_mappings(config.networks, networks)
         connectivity.check(options)
 
 
@@ -206,6 +208,32 @@ def _order_networks(networks):
         yield net, attr
     for net, attr in non_vlanned_nets:
         yield net, attr
+
+
+# FIXME This is just workaround until we have support in nmstate
+# https://bugzilla.redhat.com/1867504
+def _setup_ovs_bridge_mappings(running_networks, networks):
+    # All networks are already saved in the running_network that's why
+    # we can use the split only over running_networks
+    ovs_nets, _ = util.split_switch_type(running_networks, running_config={})
+    if networks and ovs_nets:
+        mappings = (
+            ','.join(nmstate.prepare_ovs_bridge_mappings(running_networks))
+            or '""'
+        )
+        cmds = [
+            'ovs-vsctl',
+            'set',
+            'open',
+            '.',
+            f'external-ids:ovn-bridge-mappings={mappings}',
+        ]
+        rc, out, err = cmd.exec_sync(cmds)
+        if rc:
+            raise Exception(
+                'Failed to set external mappings for OvS: '
+                f'cmd={" ".join(cmds)}, rc={rc}, out={out}, err={err}'
+            )
 
 
 def ovs_add_vhostuser_port(bridge, port, socket_path):
