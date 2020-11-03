@@ -115,12 +115,6 @@ class TestNetinfo(object):
 
             assert nic.speed('fake_nic') == expected
 
-    def test_dpdk_device_speed(self):
-        assert nic.speed('dpdk0') == 0
-
-    def test_dpdk_operstate_always_up(self):
-        assert nics.operstate('dpdk0') == nics.OPERSTATE_UP
-
     @mock.patch.object(bonding, 'permanent_address', lambda: {})
     @mock.patch('vdsm.network.netinfo.cache.RunningConfig')
     def test_get_non_existing_bridge_info(

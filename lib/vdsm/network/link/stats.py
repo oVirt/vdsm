@@ -1,4 +1,4 @@
-# Copyright 2018-2019 Red Hat, Inc.
+# Copyright 2018-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@ from __future__ import division
 import errno
 
 from vdsm.network.link import bond
-from vdsm.network.link import dpdk
 from vdsm.network.link import iface
 from vdsm.network.link import nic
 from vdsm.network.link import vlan
@@ -50,8 +49,6 @@ def _generate_iface_stats(interface):
         speed = bond.speed(interface.device)
     elif interface.type() == iface.Type.VLAN:
         speed = vlan.speed(interface.device)
-    elif interface.type() == iface.Type.DPDK:
-        speed = dpdk.speed(interface.device)
 
     stats['speed'] = speed
     stats['duplex'] = nic.duplex(interface.device)

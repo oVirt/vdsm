@@ -22,7 +22,6 @@ from __future__ import division
 
 from vdsm.network import errors as ne
 from vdsm.network.kernelconfig import KernelConfig
-from vdsm.network.link import dpdk
 from vdsm.network.link.bond import sysfs_options
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo.cache import NetInfo
@@ -231,12 +230,6 @@ class _BondValidator(object):
     def _validate_bond_addition(self):
         for slave in self._nics:
             _validate_nic_exists(slave, self._net_info.nics)
-            if dpdk.is_dpdk(slave):
-                raise ne.ConfigNetworkError(
-                    ne.ERR_BAD_NIC,
-                    '%s is a dpdk device and not supported as a slave of bond'
-                    % slave,
-                )
 
 
 def validate_network_setup(nets, bonds, net_info):
@@ -258,19 +251,6 @@ def validate_bridge_name(bridge_name):
     ):
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_BRIDGE, f'Bridge name isn\'t valid: {bridge_name}'
-        )
-
-
-def validate_legacy_network_setup(networks):
-    for netattrs in networks.values():
-        _validate_nic_not_dpdk(netattrs.get('nic', None))
-
-
-def _validate_nic_not_dpdk(nic):
-    if nic and dpdk.is_dpdk(nic):
-        raise ne.ConfigNetworkError(
-            ne.ERR_BAD_NIC,
-            f'{nic} is a dpdk device and supported only with OVS',
         )
 
 

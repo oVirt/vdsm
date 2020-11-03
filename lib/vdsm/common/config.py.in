@@ -185,9 +185,6 @@ parameters = [
         ('fake_sriov_enable', 'false',
          'Enable reporting of fake SR-IOV devices.'),
 
-        ('dpdk_enable', 'false',
-         'Enable experimental dpdk support'),
-
         ('http_enable', 'true', 'Enable the http server'),
 
         ('enable_lldp', 'true', 'Enable LLDP'),

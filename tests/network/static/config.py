@@ -53,7 +53,6 @@ parameters = [
             ('hidden_nics', 'w*,usb*'),
             ('hidden_bonds', ''),
             ('hidden_vlans', ''),
-            ('dpdk_enable', 'false'),
         ],
     )
 ]

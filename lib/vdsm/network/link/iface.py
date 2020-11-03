@@ -22,7 +22,6 @@ from __future__ import division
 
 import abc
 import errno
-import itertools
 import logging
 import os
 import random
@@ -32,7 +31,6 @@ import six
 
 from vdsm.network import ethtool
 from vdsm.network import ipwrapper
-from vdsm.network.link import dpdk
 from vdsm.network.netlink import libnl
 from vdsm.network.netlink import link
 from vdsm.network.netlink.waitfor import waitfor_linkup
@@ -53,7 +51,6 @@ class Type(object):
     BRIDGE = 'bridge'
     LOOPBACK = 'loopback'
     MACVLAN = 'macvlan'
-    DPDK = 'dpdk'
     DUMMY = 'dummy'
     TUN = 'tun'
     OVS = 'openvswitch'
@@ -157,25 +154,15 @@ class IfaceHybrid(IfaceAPI):
         self._vfid = vf
 
     def properties(self):
-        if self._is_dpdk_type:
-            info = dpdk.link_info(self._dev)
-        else:
-            info = link.get_link(self._dev)
-        return info
+        return link.get_link(self._dev)
 
     def up(self, admin_blocking=True, oper_blocking=False):
-        if self._is_dpdk_type:
-            dpdk.up(self._dev)
-            return
         if admin_blocking:
             self._up_blocking(oper_blocking)
         else:
             ipwrapper.linkSet(self._dev, [STATE_UP])
 
     def down(self):
-        if self._is_dpdk_type:
-            dpdk.down(self._dev)
-            return
         ipwrapper.linkSet(self._dev, [STATE_DOWN])
 
     def is_up(self):
@@ -186,8 +173,6 @@ class IfaceHybrid(IfaceAPI):
         return link.is_link_up(properties['flags'], check_oper_status=False)
 
     def is_oper_up(self):
-        if self._is_dpdk_type:
-            return dpdk.is_oper_up(self._dev)
         properties = self.properties()
         return link.is_link_up(properties['flags'], check_oper_status=True)
 
@@ -196,8 +181,6 @@ class IfaceHybrid(IfaceAPI):
         return bool(properties['flags'] & libnl.IfaceStatus.IFF_PROMISC)
 
     def exists(self):
-        if dpdk.is_dpdk(self._dev):
-            return self._dev in dpdk.get_dpdk_devices()
         return os.path.exists(os.path.join(NET_PATH, self._dev))
 
     def address(self):
@@ -214,8 +197,6 @@ class IfaceHybrid(IfaceAPI):
         return self.properties()['mtu']
 
     def type(self):
-        if self._is_dpdk_type:
-            return Type.DPDK
         return self.properties().get('type', get_alternative_type(self._dev))
 
     def statistics(self):
@@ -239,17 +220,12 @@ def iface(device, vfid=None):
     """ Iface factory """
     interface = IfaceHybrid()
     interface.device = device
-    interface._is_dpdk_type = dpdk.is_dpdk(device)
     interface.vfid = vfid
     return interface
 
 
 def list():
-    dpdk_links = (
-        dpdk.link_info(dev_name, dev_info['pci_addr'])
-        for dev_name, dev_info in six.viewitems(dpdk.get_dpdk_devices())
-    )
-    for properties in itertools.chain(link.iter_links(), dpdk_links):
+    for properties in link.iter_links():
         if 'type' not in properties:
             properties['type'] = get_alternative_type(properties['name'])
         yield properties

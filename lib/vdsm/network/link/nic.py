@@ -1,4 +1,4 @@
-# Copyright 2017-2018 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@ from __future__ import division
 import io
 import logging
 
-from vdsm.network.link import dpdk
 from vdsm.network.link.iface import iface
 
 
@@ -35,8 +34,6 @@ def speed(nic_name):
     """Return the nic speed if it is a legal value, 0 otherwise."""
     interface = iface(nic_name)
     if interface.is_oper_up():
-        if dpdk.is_dpdk(nic_name):
-            return dpdk.speed(nic_name)
         try:
             return read_speed_using_sysfs(nic_name)
         except Exception:

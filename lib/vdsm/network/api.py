@@ -319,14 +319,6 @@ def remove_sourceroute(iface):
     sourceroute.remove(iface)
 
 
-def add_ovs_vhostuser_port(bridge, port, socket_path):
-    netswitch.configurator.ovs_add_vhostuser_port(bridge, port, socket_path)
-
-
-def remove_ovs_port(bridge, port):
-    netswitch.configurator.ovs_remove_port(bridge, port)
-
-
 def confirm_connectivity():
     connectivity.confirm()
 
@@ -338,7 +330,7 @@ def get_lldp_info(filter):
     An empty list is interpreted as no restriction.
     """
     if not filter.get('devices', []):
-        # TODO handle dpdk and OVS nics
+        # TODO OVS nics
         filter['devices'] = netswitch.configurator.netinfo()['nics'].keys()
     return lldp_info.get_info(filter)
 

@@ -23,10 +23,7 @@ from __future__ import division
 from fnmatch import fnmatch
 from glob import iglob
 import errno
-import itertools
 import os
-
-import six
 
 from netaddr.core import AddrFormatError
 from netaddr import IPAddress
@@ -37,7 +34,6 @@ from vdsm.common.compat import subprocess
 from vdsm.common.config import config
 from vdsm.network import cmd
 from vdsm.network import ethtool
-from vdsm.network.link import dpdk
 from vdsm.network.netlink import libnl
 from vdsm.network.netlink import link
 
@@ -89,7 +85,6 @@ class LinkType(object):
     BRIDGE = 'bridge'
     LOOPBACK = 'loopback'
     MACVLAN = 'macvlan'
-    DPDK = 'dpdk'
     DUMMY = 'dummy'
     TUN = 'tun'
     OVS = 'openvswitch'
@@ -198,9 +193,6 @@ class Link(object):
     def isDUMMY(self):
         return self.type == LinkType.DUMMY
 
-    def isDPDK(self):
-        return self.type == LinkType.DPDK
-
     def isNIC(self):
         return self.type == LinkType.NIC
 
@@ -226,7 +218,7 @@ class Link(object):
         return False
 
     def isNICLike(self):
-        return self.isNIC() or self.isVF() or self.isFakeNIC() or self.isDPDK()
+        return self.isNIC() or self.isVF() or self.isFakeNIC()
 
     def isHidden(self):
         """Returns True iff vdsm config hides the device."""
@@ -270,8 +262,6 @@ class Link(object):
 
     @property
     def oper_up(self):
-        if dpdk.is_dpdk(self.name):
-            return dpdk.is_oper_up(self.name)
         return bool(
             link.get_link(self.name)['flags'] & libnl.IfaceStatus.IFF_RUNNING
         )
@@ -300,11 +290,7 @@ def _bondExists(bondName):
 
 def getLinks():
     """Return an iterator of Link objects, each per a link in the system."""
-    dpdk_links = (
-        dpdk.link_info(dev_name, dev_info['pci_addr'])
-        for dev_name, dev_info in six.viewitems(dpdk.get_dpdk_devices())
-    )
-    for data in itertools.chain(link.iter_links(), dpdk_links):
+    for data in link.iter_links():
         try:
             yield Link.fromDict(data)
         except IOError:  # If a link goes missing we just don't report it
@@ -313,8 +299,6 @@ def getLinks():
 
 def getLink(dev):
     """Returns the Link object for the specified dev."""
-    if dpdk.is_dpdk(dev):
-        return dpdk.link_info(dev)
     return Link.fromDict(link.get_link(dev))
 
 

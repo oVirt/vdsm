@@ -23,7 +23,6 @@ import io
 from functools import partial
 
 from vdsm.network.ipwrapper import Link
-from vdsm.network.link import dpdk
 from .misc import visible_devs
 
 OPERSTATE_UP = 'up'
@@ -33,8 +32,6 @@ nics = partial(visible_devs, Link.isNICLike)
 
 
 def operstate(nic_name):
-    if dpdk.is_dpdk(nic_name):
-        return dpdk.operstate(nic_name)
     with io.open('/sys/class/net/%s/operstate' % nic_name) as operstateFile:
         return operstateFile.read().strip()
 

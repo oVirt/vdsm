@@ -29,7 +29,6 @@ import six
 from vdsm.network import nmstate
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ipwrapper import getLinks
-from vdsm.network.link import dpdk
 from vdsm.network.link import iface as link_iface
 from vdsm.network.netconfpersistence import RunningConfig
 
@@ -230,10 +229,7 @@ def _devices_report(ipaddrs, routes):
         if dev.isBRIDGE():
             devinfo = devs_report['bridges'][dev.name] = bridges.info(dev)
         elif dev.isNICLike():
-            if dev.isDPDK():
-                devinfo = devs_report['nics'][dev.name] = dpdk.info(dev)
-            else:
-                devinfo = devs_report['nics'][dev.name] = nics.info(dev)
+            devinfo = devs_report['nics'][dev.name] = nics.info(dev)
             devinfo.update(bonding.get_bond_slave_agg_info(dev.name))
         elif dev.isBOND():
             devinfo = devs_report['bondings'][dev.name] = bonding.info(dev)

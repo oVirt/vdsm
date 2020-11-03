@@ -39,7 +39,6 @@ from vdsm.network.link.iface import iface as iface_obj
 from vdsm.network.netconfpersistence import RunningConfig, Transaction
 from vdsm.network.netlink import waitfor
 from vdsm.network.ovs import info as ovs_info
-from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.link import bond
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo.cache import get as netinfo_get, NetInfo
@@ -67,8 +66,6 @@ def validate(networks, bondings, net_info, running_config):
         )
 
     validator.validate_network_setup(networks, bondings, net_info)
-    if use_legacy_switch:
-        validator.validate_legacy_network_setup(legacy_nets)
 
 
 def setup(networks, bondings, options, in_rollback):
@@ -233,14 +230,6 @@ def _setup_ovs_bridge_mappings(running_networks, networks):
                 'Failed to set external mappings for OvS: '
                 f'cmd={" ".join(cmds)}, rc={rc}, out={out}, err={err}'
             )
-
-
-def ovs_add_vhostuser_port(bridge, port, socket_path):
-    ovs_switch.add_vhostuser_port(bridge, port, socket_path)
-
-
-def ovs_remove_port(bridge, port):
-    ovs_switch.remove_port(bridge, port)
 
 
 def netcaps(compatibility):

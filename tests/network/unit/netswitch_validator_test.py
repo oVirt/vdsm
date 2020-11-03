@@ -41,7 +41,6 @@ VLAN = '10'
 NICS = [f'eth{i}' for i in range(12)]
 FAKE_NIC = 'fakenic'
 FAKE_BOND = 'fakebond'
-DPDK_NIC0 = 'dpdk0'
 
 
 @pytest.fixture(scope='function')
@@ -131,12 +130,6 @@ class TestValidation(object):
 
         valid = validator.Validator({}, bonds, net_info)
         valid.validate_bond(BOND2)
-
-    def test_add_bond_with_dpdk(self, net_info):
-        bonds = {BOND2: {'nics': [NICS[0], DPDK_NIC0], 'switch': 'ovs'}}
-        with pytest.raises(ne.ConfigNetworkError):
-            valid = validator.Validator({}, bonds, net_info)
-            valid.validate_bond(BOND2)
 
     def test_remove_bond_not_attached_to_a_network(self, net_info):
         bonds = {BOND1: {'remove': True}}
