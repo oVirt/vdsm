@@ -429,3 +429,13 @@ def run_logging(args, log_tag=None):
         raise LoggingError(args, p.returncode, cmd_log_path)
 
     return cmd_log_path
+
+
+class LibguestfsCommand(object):
+    def __init__(self, name, path):
+        command = cmdutils.CommandPath(name, path)
+        self._args = [command.cmd, '-v', '-x']
+
+    def run(self, args_, log_tag=None):
+        args = self._args + args_
+        run_logging(args, log_tag=log_tag)

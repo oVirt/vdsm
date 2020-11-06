@@ -61,8 +61,9 @@ class ImageTearingDownError(Exception):
 
 class Job(vdsm.virt.jobs.Job):
 
-    def __init__(self, job_id, sp_id, images, irs):
+    def __init__(self, vm_id, job_id, sp_id, images, irs):
         super(Job, self).__init__(job_id, 'seal_vm')
+        self._vm_id = vm_id
         self._images = [
             SealImageInfo(image, sp_id, irs)
             for image in images
@@ -71,7 +72,7 @@ class Job(vdsm.virt.jobs.Job):
     def _run(self):
         with prepared(self._images):
             vol_paths = [image_info.path for image_info in self._images]
-            virtsysprep.sysprep(vol_paths)
+            virtsysprep.sysprep(self._vm_id, vol_paths)
 
 
 class SealImageInfo(properties.Owner):

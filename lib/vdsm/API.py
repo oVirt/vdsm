@@ -766,7 +766,7 @@ class VM(APIBase):
         configuration from the filesystem: SSH keys, UDEV rules, MAC addresses,
         system ID, hostname etc.
         """
-        job = seal.Job(job_id, sp_id, images, self._irs)
+        job = seal.Job(self._UUID, job_id, sp_id, images, self._irs)
         jobs.add(job)
         vdsm.virt.jobs.schedule(job)
         return response.success()

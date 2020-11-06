@@ -26,18 +26,19 @@ import os
 from vdsm import jobs
 from vdsm import virtsysprep
 from vdsm.common import response
-from vdsm.common.cmdutils import CommandPath
 from vdsm.virt.jobs import seal
+from vdsm.virt import utils
 
 from testlib import make_uuid
 from testlib import namedTemporaryDir
 from testlib import recorded
 from testlib import VdsmTestCase
-from monkeypatch import MonkeyPatch
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
 
-FAKE_VIRTSYSPREP = CommandPath('fake-virt-sysprep',
-                               os.path.abspath('fake-virt-sysprep'))
+BLANK_UUID = '00000000-0000-0000-0000-000000000000'
+FAKE_VIRTSYSPREP = utils.LibguestfsCommand(
+    'fake-virt-sysprep', os.path.abspath('fake-virt-sysprep'))
 TEARDOWN_ERROR_IMAGE_ID = make_uuid()
 
 
@@ -109,9 +110,12 @@ class SealJobTest(VdsmTestCase):
         with namedTemporaryDir() as base:
             irs = FakeIRS(base)
 
-            job = seal.Job(job_id, sp_id, images, irs)
-            job.autodelete = False
-            job.run()
+            with MonkeyPatchScope([
+                (utils, '_COMMANDS_LOG_DIR', base)
+            ]):
+                job = seal.Job(BLANK_UUID, job_id, sp_id, images, irs)
+                job.autodelete = False
+                job.run()
 
             assert jobs.STATUS.DONE == job.status
             assert expected == irs.__calls__
@@ -149,9 +153,12 @@ class SealJobTest(VdsmTestCase):
         with namedTemporaryDir() as base:
             irs = FakeIRS(base)
 
-            job = seal.Job(job_id, sp_id, images, irs)
-            job.autodelete = False
-            job.run()
+            with MonkeyPatchScope([
+                (utils, '_COMMANDS_LOG_DIR', base)
+            ]):
+                job = seal.Job(BLANK_UUID, job_id, sp_id, images, irs)
+                job.autodelete = False
+                job.run()
 
             assert jobs.STATUS.FAILED == job.status
             assert expected == irs.__calls__

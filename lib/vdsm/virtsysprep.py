@@ -18,22 +18,20 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
+from vdsm.virt.utils import LibguestfsCommand
 
-from vdsm.common import commands
-from vdsm.common.cmdutils import CommandPath
-
-_VIRTSYSPREP = CommandPath("virt-sysprep", "/usr/bin/virt-sysprep")
+_VIRTSYSPREP = LibguestfsCommand("virt-sysprep",
+                                 "/usr/bin/virt-sysprep")
 
 
-def sysprep(vol_paths):
+def sysprep(vm_id, vol_paths):
     """
     Run virt-sysprep on the list of volumes
 
     :param vol_paths: list of volume paths
     """
-    cmd = [_VIRTSYSPREP.cmd]
+    args = []
     for vol_path in vol_paths:
-        cmd.extend(('-a', vol_path))
+        args.extend(('-a', vol_path))
 
-    commands.run(cmd)
+    _VIRTSYSPREP.run(args, log_tag=vm_id)
