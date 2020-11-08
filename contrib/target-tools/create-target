@@ -34,11 +34,19 @@ parser.add_option("-r", "--root-dir", dest='root_dir',
                   help="root directory (default /target)")
 parser.add_option("-i", "--iqn-base", dest='iqn_base',
                   help="iqn base name (default iqn.2003-01.org)")
+parser.add_option(
+    "--cache",
+    action="store_true",
+    help="Enable write cache. Enabling write cache improves performance "
+         "but increases the chance of data loss. May cause trouble when "
+         "running many services on the same server, but works fine if "
+         "server is used only for storage. (default False).")
 
 parser.set_defaults(root_dir="/target",
                     lun_size=100,
                     lun_count=10,
-                    iqn_base="iqn.2003-01.org")
+                    iqn_base="iqn.2003-01.org",
+                    cache=False)
 
 opts, args = parser.parse_args()
 
@@ -61,6 +69,7 @@ print("  target_iqn:    %s" % target_iqn)
 print("  target_dir:    %s" % target_dir)
 print("  lun_count:     %s" % opts.lun_count)
 print("  lun_size:      %s GiB" % opts.lun_size)
+print("  cache:         %s" % opts.cache)
 print()
 
 reply = input("Create target? [N/y]: ")
@@ -82,9 +91,13 @@ subprocess.check_call(["targetcli", portal_path, "set", "attribute",
                        "generate_node_acls=1",
                        "cache_dynamic_acls=1"])
 
+
 print("Creating disks")
+
 fileio_path = "/backstores/fileio"
 luns_path = "/iscsi/%s/tpg1/luns" % target_iqn
+write_back = "write_back={}".format("true" if opts.cache else "false")
+
 for n in range(opts.lun_count):
     file_name = "%02d" % n
     file_path = os.path.join(target_dir, file_name)
@@ -95,11 +108,8 @@ for n in range(opts.lun_count):
     subprocess.check_call(["truncate", "-s", "%dG" % opts.lun_size, file_path])
 
     print("Creating backing store %r" % backstore_path)
-    # Using write_back=false to enable write-thru mode. This disables caching
-    # but lowers the chance for data loss. I also experienced lower stability
-    # with write_back=true.
     subprocess.check_call(["targetcli", fileio_path, "create", backstore_name,
-                           file_path, "write_back=false"])
+                           file_path, write_back])
 
     subprocess.check_call(["targetcli", backstore_path, "set", "attribute",
                            # Enable Thin Provisioning Unmap (blkdiscard).
