@@ -30,7 +30,9 @@ stages:
                 - 'build-aux/*'
             distributions:
               - el8
-              - rhel8
+              - rhel8:
+                  runtime-requirements:
+                    host-distro: newer
         - linters:
             distributions:
               - el8
@@ -39,17 +41,21 @@ stages:
               host-distro: newer
             distributions:
               - el8
-              - rhel8
+              - rhel8:
+                  runtime-requirements:
+                    host-distro: newer
         - nmstate-func-tests:
             run-if:
               file-changed:
                 - 'lib/vdsm/network/*'
                 - 'lib/vdsm/common/network/*'
                 - 'tests/network/functional/*'
+                - 'automation/*.{{ substage }}.*'
             runtime-requirements:
               host-distro: newer
             distributions:
             - fc30
+            - rhel8
   - check-network: &check-network
       archs:
         - x86_64
