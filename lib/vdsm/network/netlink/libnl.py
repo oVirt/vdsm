@@ -50,7 +50,7 @@ from ctypes import py_object
 from ctypes import sizeof
 
 from vdsm.common.cache import memoized
-from vdsm.network import py2to3
+from vdsm.network.common import conversion_util
 
 LIBNL = CDLL('libnl-3.so.200', use_errno=True)
 LIBNL_ROUTE = CDLL('libnl-route-3.so.200', use_errno=True)
@@ -212,7 +212,7 @@ def nl_geterror(error_code):
     """
     _nl_geterror = _libnl('nl_geterror', c_char_p, c_int)
     error_message = _nl_geterror(error_code)
-    return py2to3.to_str(error_message)
+    return conversion_util.to_str(error_message)
 
 
 def nl_addr2str(addr):
@@ -227,7 +227,7 @@ def nl_addr2str(addr):
     )
     buf = (c_char * HWADDRSIZE)()
     address = _nl_addr2str(addr, buf, sizeof(buf))
-    return py2to3.to_str(address)
+    return conversion_util.to_str(address)
 
 
 def nl_af2str(family):
@@ -240,7 +240,7 @@ def nl_af2str(family):
     _nl_af2str = _libnl('nl_af2str', c_char_p, c_int, c_char_p, c_size_t)
     buf = (c_char * CHARBUFFSIZE)()
     address_family = _nl_af2str(family, buf, sizeof(buf))
-    return py2to3.to_str(address_family)
+    return conversion_util.to_str(address_family)
 
 
 def rtnl_scope2str(scope):
@@ -255,7 +255,7 @@ def rtnl_scope2str(scope):
     )
     buf = (c_char * CHARBUFFSIZE)()
     address_scope = _rtnl_scope2str(scope, buf, sizeof(buf))
-    return py2to3.to_str(address_scope)
+    return conversion_util.to_str(address_scope)
 
 
 def nl_socket_alloc():
@@ -466,7 +466,7 @@ def nl_object_get_type(obj):
     """
     _nl_object_get_type = _libnl('nl_object_get_type', c_char_p, c_void_p)
     object_type = _nl_object_get_type(obj)
-    return py2to3.to_str(object_type) if object_type else None
+    return conversion_util.to_str(object_type) if object_type else None
 
 
 def nl_object_get_msgtype(obj):
@@ -668,7 +668,7 @@ def rtnl_addr_flags2str(flags_bitfield):
     )
     buf = (c_char * (CHARBUFFSIZE * 2))()
     flags_str = _rtnl_addr_flags2str(flags_bitfield, buf, sizeof(buf))
-    return py2to3.to_str(flags_str)
+    return conversion_util.to_str(flags_str)
 
 
 def rtnl_link_alloc_cache(socket, family):
@@ -734,7 +734,7 @@ def rtnl_link_get_type(link):
         'rtnl_link_get_type', c_char_p, c_void_p
     )
     link_type = _rtnl_link_get_type(link)
-    return py2to3.to_str(link_type) if link_type else None
+    return conversion_util.to_str(link_type) if link_type else None
 
 
 def rtnl_link_get_kernel(socket, ifindex, ifname):
@@ -754,7 +754,7 @@ def rtnl_link_get_kernel(socket, ifindex, ifname):
         'rtnl_link_get_kernel', c_int, c_void_p, c_int, c_char_p, c_void_p
     )
     link = c_void_p()
-    b_ifname = py2to3.to_binary(ifname) if ifname else None
+    b_ifname = conversion_util.to_binary(ifname) if ifname else None
     err = _rtnl_link_get_kernel(socket, ifindex, b_ifname, byref(link))
     if err:
         raise IOError(-err, nl_geterror(err))
@@ -858,7 +858,7 @@ def rtnl_link_get_name(link):
         'rtnl_link_get_name', c_char_p, c_void_p
     )
     name = _rtnl_link_get_name(link)
-    return py2to3.to_str(name) if name else None
+    return conversion_util.to_str(name) if name else None
 
 
 def rtnl_link_get_operstate(link):
@@ -887,7 +887,7 @@ def rtnl_link_get_qdisc(link):
         'rtnl_link_get_qdisc', c_char_p, c_void_p
     )
     qdisc = _rtnl_link_get_qdisc(link)
-    return py2to3.to_str(qdisc) if qdisc else None
+    return conversion_util.to_str(qdisc) if qdisc else None
 
 
 def rtnl_link_get_by_name(cache, name):
@@ -925,7 +925,7 @@ def rtnl_link_i2name(cache, ifindex):
     )
     buf = (c_char * CHARBUFFSIZE)()
     name = _rtnl_link_i2name(cache, ifindex, buf, sizeof(buf))
-    return py2to3.to_str(name) if name else None
+    return conversion_util.to_str(name) if name else None
 
 
 def rtnl_link_operstate2str(operstate_code):
@@ -940,7 +940,7 @@ def rtnl_link_operstate2str(operstate_code):
     )
     buf = (c_char * CHARBUFFSIZE)()
     operstate = _rtnl_link_operstate2str(operstate_code, buf, sizeof(buf))
-    return py2to3.to_str(operstate)
+    return conversion_util.to_str(operstate)
 
 
 def rtnl_link_put(link):

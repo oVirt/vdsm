@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,27 +16,17 @@
 #
 # Refer to the README and COPYING files for full details of the license
 
-from __future__ import absolute_import
-from __future__ import division
-
-import six
-
 
 def to_str(value):
     """Convert textual value to native string.
 
-    Passed value will be returned as a native str value (bytes in Python 2,
-    unicode in Python 3).
+    Passed value will be returned as a native str value (unicode in Python 3).
     """
-    if not isinstance(value, (six.text_type, six.binary_type)):
+    if not isinstance(value, (str, bytes)):
         raise ValueError(
-            'Expected a textual value, given {} of type {}.'.format(
-                value, type(value)
-            )
+            f'Expected a textual value, given {value} of type {type(value)}.'
         )
-    elif six.PY2 and isinstance(value, six.text_type):
-        return value.encode('utf-8')
-    elif six.PY3 and isinstance(value, six.binary_type):
+    elif isinstance(value, bytes):
         return value.decode('utf-8')
     return value
 

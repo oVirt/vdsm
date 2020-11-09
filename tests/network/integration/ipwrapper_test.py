@@ -27,7 +27,6 @@ from network.nettestlib import vlan_device
 
 from vdsm.network import ethtool
 from vdsm.network import ipwrapper
-from vdsm.network import py2to3
 from vdsm.network.netlink import monitor
 from vdsm.network.netlink.libnl import IfaceStatus
 
@@ -118,7 +117,7 @@ class TestUnicodeDrvinfo(object):
     def unicode_bridge(self):
         # First 3 Hebrew letters, in native string format
         # See http://unicode.org/charts/PDF/U0590.pdf
-        bridge_name = py2to3.to_str(b'\xd7\x90\xd7\x91\xd7\x92')
+        bridge_name = b'\xd7\x90\xd7\x91\xd7\x92'.decode('utf-8')
         br = Bridge(bridge_name)
         br.addDevice()
         try:

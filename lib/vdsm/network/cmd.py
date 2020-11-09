@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,21 +24,17 @@ import uuid
 
 from vdsm.common import systemd
 from vdsm.common.cmdutils import exec_cmd as exec_sync_bytes
-from vdsm.network import py2to3
+from vdsm.network.common import conversion_util
 
 
 def exec_sync(cmds):
     """Execute a command and convert returned values to native string.
 
-    Native string format is bytes for Python 2 and unicode for Python 3. It is
-    important to keep data in a native format for seamless usage of output data
-    in the rest of Python codebase.
-
     Note that this function should not be used if output data could be
     undecodable bytes.
     """
     retcode, out, err = exec_sync_bytes(cmds)
-    return retcode, py2to3.to_str(out), py2to3.to_str(err)
+    return retcode, conversion_util.to_str(out), conversion_util.to_str(err)
 
 
 def exec_systemd_new_unit(cmds, slice_name):

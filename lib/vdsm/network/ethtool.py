@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ import socket
 import struct
 from contextlib import closing
 
-from vdsm.network import py2to3
+from vdsm.network.common import conversion_util
 
 ETHTOOL_GDRVINFO = 0x00000003  # ETHTOOL Get driver info command
 SIOCETHTOOL = 0x8946  # Ethtool interface
@@ -40,7 +40,7 @@ def driver_name(device_name):
     Throws IOError ENODEV for non existing devices.
     Throws IOError EOPNOTSUPP for non supported devices, i.g., loopback.
     """
-    encoded_name = py2to3.to_binary(device_name)
+    encoded_name = conversion_util.to_binary(device_name)
 
     buff = array.array('b', b'\0' * struct.calcsize(DRVINFO_FORMAT))
     cmds = struct.pack('= I', ETHTOOL_GDRVINFO)
@@ -64,5 +64,5 @@ def driver_name(device_name):
         eedump_len,
         regdump_len,
     ) = struct.unpack(DRVINFO_FORMAT, buff)
-    driver_str = py2to3.to_str(driver)
+    driver_str = conversion_util.to_str(driver)
     return driver_str.rstrip('\0')  # C string end with the leftmost null char
