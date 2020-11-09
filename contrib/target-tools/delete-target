@@ -18,47 +18,50 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import optparse
+import argparse
 import os
 import platform
 import shutil
 import subprocess
 import sys
 
-parser = optparse.OptionParser(usage="make-target [options] NAME")
+parser = argparse.ArgumentParser(description="Delete target")
 
-parser.add_option("-n", "--lun-count", dest='lun_count', type='int',
-                  help="Number of LUNs (default 10)")
-parser.add_option("-r", "--root-dir", dest='root_dir',
-                  help="root directory (default /home/target)")
-parser.add_option("-i", "--iqn-base", dest='iqn_base',
-                  help="iqn base name (default iqn.2003-01.org)")
+parser.add_argument(
+    "target_name",
+    help="Target name")
 
-parser.set_defaults(
-    root_dir="/target",
-    lun_count=10,
-    iqn_base="iqn.2003-01.org")
+parser.add_argument(
+    "-n", "--lun-count",
+    type=int,
+    default=10,
+    help="Number of LUNs (default 10)")
 
-opts, args = parser.parse_args()
+parser.add_argument(
+    "-r", "--root-dir",
+    default="/target",
+    help="root directory (default /target)")
 
-if not args:
-    parser.error("target name required")
+parser.add_argument(
+    "-i", "--iqn-base",
+    default="iqn.2003-01.org",
+    help="iqn base name (default iqn.2003-01.org)")
 
-target_name = args[0]
+args = parser.parse_args()
 
 host_name = platform.node()
 if "." in host_name:
     host_name = host_name.split(".", 1)[0]
 
-target_iqn = opts.iqn_base + "." + host_name + "." + target_name
-target_dir = os.path.join(opts.root_dir, target_name)
+target_iqn = args.iqn_base + "." + host_name + "." + args.target_name
+target_dir = os.path.join(args.root_dir, args.target_name)
 
 print()
 print("Deleting target")
-print("  target_name:   %s" % target_name)
+print("  target_name:   %s" % args.target_name)
 print("  target_iqn:    %s" % target_iqn)
 print("  target_dir:    %s" % target_dir)
-print("  lun_count:     %s" % opts.lun_count)
+print("  lun_count:     %s" % args.lun_count)
 print()
 
 reply = input("Delete target? [N/y]: ")
@@ -69,10 +72,10 @@ if reply.strip().lower() != "y":
 print("Deleting disks")
 fileio_path = "/backstores/fileio"
 
-for n in range(opts.lun_count):
+for n in range(args.lun_count):
     file_name = "%02d" % n
     file_path = os.path.join(target_dir, file_name)
-    backstore_name = target_name + "-" + file_name
+    backstore_name = args.target_name + "-" + file_name
     backstore_path = os.path.join(fileio_path, backstore_name)
 
     print("Deleting backing store %r" % backstore_path)
