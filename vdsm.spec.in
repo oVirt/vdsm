@@ -1005,7 +1005,7 @@ exit 0
 %{_sysconfdir}/modprobe.d/vdsm-bonding-modprobe.conf
 %{_sysconfdir}/NetworkManager/conf.d/vdsm.conf
 %{_sysconfdir}/NetworkManager/dispatcher.d/dhcp_monitor.py
-%{_sysconfdir}/sudoers.d/50_vdsm
+%attr(440, root, root) %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
 %{_sysconfdir}/libvirt/hooks/qemu
 %{_exec_prefix}/lib/dracut/dracut.conf.d/99-vdsm_protect_ifcfg.conf
@@ -1160,7 +1160,7 @@ exit 0
 %endif
 
 %files hook-openstacknet
-%{_sysconfdir}/sudoers.d/50_vdsm_hook_openstacknet
+%attr(440, root, root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_create/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_create/openstacknet_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/50_openstacknet
@@ -1188,7 +1188,7 @@ exit 0
 %if %{with_vhostmd}
 %files hook-vhostmd
 %license COPYING
-%{_sysconfdir}/sudoers.d/50_vdsm_hook_vhostmd
+%attr(440, root, root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate/50_vhostmd
@@ -1213,7 +1213,7 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_fcoe
 
 %files hook-localdisk
-%{_sysconfdir}/sudoers.d/50_vdsm_hook_localdisk
+%attr(440, root, root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_localdisk
 %{_libexecdir}/%{vdsm_name}/hooks/after_disk_prepare/localdisk
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/localdisk
 %{_libexecdir}/%{vdsm_name}/localdisk-helper
