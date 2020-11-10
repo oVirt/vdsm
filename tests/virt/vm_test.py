@@ -755,6 +755,43 @@ class TestVm(XMLTestCase):
             assert res == response.success()
             # Up until here we verified the hotplugLease proper.
 
+    def testMemSize(self):
+        with fake.VM() as testvm:
+            assert testvm.mem_size_mb() == 4096
+
+    def testNvdimms(self):
+        # Add NVDIMM to the devices, update memory and make sure
+        # mem_size_mb() returns proper size
+        vm_xml = '''
+        <domain type='kvm' xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+            <name>nTESTING</name>
+            <uuid>TESTING</uuid>
+            <memory unit='KiB'>12582912</memory>
+            <os>
+                <type arch='x86_64' machine='pc-i440fx-2.3'>hvm</type>
+            </os>
+            <devices>
+                <memory model='nvdimm' access='shared'>
+                    <source>
+                        <path>/dev/pmem0</path>
+                        <alignsize unit='KiB'>131072</alignsize>
+                    </source>
+                    <target>
+                        <size unit='KiB'>8388608</size>
+                        <node>0</node>
+                        <label>
+                            <size unit='KiB'>128</size>
+                        </label>
+                    </target>
+                    <address type='dimm' slot='0'/>
+                </memory>
+            </devices>
+        </domain>
+        '''
+        with fake.VM(params={'xml': vm_xml}) as testvm:
+            # Verify the memory is 4 GB and not 12 GB (4 + 8)
+            assert testvm.mem_size_mb() == 4096
+
 
 class ExpectedError(Exception):
     pass

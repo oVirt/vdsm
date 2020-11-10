@@ -778,6 +778,36 @@ class Vm(object):
         if mem_size_mb is None:
             self._updateDomainDescriptor()
             mem_size_mb = self._domain.get_memory_size(current=current)
+        if not current:
+            # When using value from <memory> we need to subtract all NVDIMMs
+            mem_size_mb = self._mem_subtract_nvdimms(mem_size_mb)
+        return mem_size_mb
+
+    def _mem_subtract_nvdimms(self, mem_size_mb):
+        if self._domain.xml_source == XmlSource.INITIAL:
+            # In the initial domain XML from Engine the memory size is without
+            # NVDIMMs
+            return mem_size_mb
+        nvdimms = 0
+        for nvdimm in self._domain.get_device_elements_with_attrs(
+                'memory', model='nvdimm'):
+            size_element = nvdimm.find('target/size')
+            if size_element is None:
+                self.log.error('Cannot find NVDIMM size in memory element')
+                continue
+            try:
+                size = int(size_element.text)
+            except ValueError:
+                self.log.exception(
+                    'Failed to parse NVDIMM size: %r',
+                    size_element.text)
+                continue
+            nvdimms += size
+        nvdimms = nvdimms // 1024
+        if nvdimms >= mem_size_mb:
+            self.log.error('Size of NVDIMMs greater than memory size')
+        else:
+            mem_size_mb -= nvdimms
         return mem_size_mb
 
     def hibernate(self, dst):
