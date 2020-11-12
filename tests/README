@@ -12,31 +12,27 @@ these projects see:
 Tox and pytest based tests
 ==========================
 
-Currently only storage tests are using tox and pytest.
+Note: Not all tests have been converted to tox and/or pytest yet.
 
 Running the tests
 -----------------
 
-Run storage tests with all installed python versions:
+Run storage tests:
 
-    tox -e storage-py27,storage-py36
+    tox -e storage
 
 Increasing test verbosity:
 
-    tox -e storage-py27 -- -vv
+    tox -e storage -- -vv
 
-You can also use environment variables
+You can also use environment variables:
 
    export PYTEST_ADDOPTS=-vv
-   tox -e storage-py36
+   tox -e storage
 
-Profiling tests, showing 10 slowest tests:
+Running specific storage tests modules:
 
-   tox -e storage-py27 -- --durations=10
-
-Running specific storage tests modules with both multiple python versions:
-
-   tox -e storage-py27,storage-py36 -- storage/image_test.py
+   tox -e storage -- storage/image_test.py
 
 
 Using tox virtual environment
@@ -45,42 +41,44 @@ Using tox virtual environment
 Tox creates a virtual environment for each testenv. You don't have to
 know anything about this if you run the tests with tox, but if you like
 to use pytest directly, you want to use the pytest version installed in
-the virtual environment. This allows tests both python 2 and python 3.
+the virtual environment.
 
 To use tox virtual environment, activate it:
 
-    [user@fedora vdsm (storage-tests)]$ source .tox/storage-py27/bin/activate
+    [user@fedora vdsm (storage-tests)]$ source .tox/storage/bin/activate
 
 Note that your shell prompt has changed, showing the virtual environment
 name:
 
-    (storage-py27) [user@fedora vdsm (storage-tests)]$
+    (storage) [user@fedora vdsm (storage-tests)]$
 
-Now ``pytest`` will run .tox/storage-py27/bin/pytest. Lets run one test
+Now ``pytest`` will run .tox/storage/bin/pytest. Lets run one test
 module for example:
 
-    (storage-py27) [user@fedora vdsm (storage-tests)]$ cd tests
+    (storage) [user@fedora vdsm (storage-tests)]$ cd tests
 
-    (storage-py27) [user@fedora vdsm (storage-tests)]$ pytest storage/image_test.py -qq
-    ========================== test session starts ==========================
-    platform linux2 -- Python 2.7.13, pytest-3.1.2, py-1.4.34, pluggy-0.4.0
-    rootdir: /home/user/src/vdsm, inifile: tox.ini
-    plugins: timeout-1.2.0, threadleak-0.2.0, cov-2.4.0
-    collected 15 items
+    (storage) [user@fedora vdsm (storage-tests)]$ export PYTHONPATH=../lib
 
-    storage/blockdev_test.py ssssssssss....s
-    ======================== short test summary info ========================
-    SKIP [6] tests/storage/blockdev_test.py:79: requires root
-    SKIP [1] tests/storage/blockdev_test.py:132: requires root
-    SKIP [2] tests/storage/blockdev_test.py:67: requires root
-    SKIP [2] tests/storage/blockdev_test.py:58: requires root
+    (storage) [user@fedora vdsm (storage-tests)]$ pytest storage/blockdev_test.py
+    ============================= test session starts ==============================
+    platform linux -- Python 3.6.8, pytest-4.6.5, py-1.9.0, pluggy-0.13.1
+    rootdir: /home/pdm/ovirt/vdsm/vdsm-master, inifile: tox.ini
+    plugins: cov-2.8.1
+    collected 9 items
 
-    ================= 4 passed, 11 skipped in 0.10 seconds ==================
+    storage/blockdev_test.py ssss....s                                       [100%]
 
-When you finished with testing with python 2.7, you can deactivate the virtual
-environment:
+    =========================== short test summary info ============================
+    SKIPPED [1] tests/storage/blockdev_test.py:60: requires root
+    SKIPPED [1] tests/storage/blockdev_test.py:79: requires root
+    SKIPPED [2] tests/storage/blockdev_test.py:95: requires root
+    SKIPPED [1] tests/storage/blockdev_test.py:155: requires root
+    ===================== 4 passed, 5 skipped in 0.56 seconds ======================
 
-    (storage-py27) [user@fedora tests (storage-tests)]$ deactivate
+When you finished with testing with the virtual environment, you can
+deactivate it:
+
+    (storage) [user@fedora tests (storage-tests)]$ deactivate
 
 Note that your prompt has changed again:
 
