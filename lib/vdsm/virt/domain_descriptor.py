@@ -22,11 +22,18 @@ from __future__ import absolute_import
 from __future__ import division
 
 from contextlib import contextmanager
+import enum
 import xml.etree.ElementTree as etree
 
 from vdsm.common import xmlutils
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
+
+
+class XmlSource(enum.Enum):
+    INITIAL = enum.auto()
+    MIGRATION_SOURCE = enum.auto()
+    LIBVIRT = enum.auto()
 
 
 class MutableDomainDescriptor(object):
@@ -127,25 +134,31 @@ class MutableDomainDescriptor(object):
 
 class DomainDescriptor(MutableDomainDescriptor):
 
-    def __init__(self, xmlStr, initial=False):
+    def __init__(self, xmlStr, xml_source=XmlSource.LIBVIRT):
         """
         :param xmlStr: Domain XML
         :type xmlStr: string
-        :param initial: Iff true then the provided domain XML is
-          the initial domain XML provided by Engine and not yet filled
-          with information from libvirt, such as device addresses.
+        :param xml_source: If set to INITIAL or MIGRATION_SOURCE then the
+          provided domain XML is the initial domain XML and possitbly not yet
+          filled with information from libvirt, such as device addresses.
           Device hash is None in such a case, to prevent Engine from
           retrieving and processing incomplete device information.
-        :type initial: bool
+        :type xml_source: XmlSource
+        :type migration_src: bool
         """
         super(DomainDescriptor, self).__init__(xmlStr)
         self._xml = xmlStr
-        self._initial = initial
+        self._xml_source = xml_source
         self._devices = super(DomainDescriptor, self).devices
-        if self._initial:
+        if self._xml_source == XmlSource.INITIAL or \
+                self._xml_source == XmlSource.MIGRATION_SOURCE:
             self._devices_hash = None
         else:
             self._devices_hash = super(DomainDescriptor, self).devices_hash
+
+    @property
+    def xml_source(self):
+        return self._xml_source
 
     @property
     def xml(self):

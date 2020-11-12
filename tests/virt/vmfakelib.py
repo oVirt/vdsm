@@ -37,7 +37,7 @@ from vdsm.common import xmlutils
 from vdsm.common.units import MiB
 from vdsm.storage import exception
 from vdsm.virt import domain_descriptor
-from vdsm.virt.domain_descriptor import DomainDescriptor
+from vdsm.virt.domain_descriptor import DomainDescriptor, XmlSource
 from vdsm.virt import sampling
 from vdsm.virt import vm
 from vdsm.virt.vmdevices import core, storage
@@ -398,7 +398,7 @@ def default_domain_xml(vm_id='TESTING', features='', devices='', metadata=''):
 domain_descriptor_init = DomainDescriptor.__init__
 
 
-def fake_domain_descriptor_init(self, xmlStr, initial=False):
+def fake_domain_descriptor_init(self, xmlStr, xml_source=XmlSource.LIBVIRT):
     domain_descriptor_init(self, xmlStr)
 
 
