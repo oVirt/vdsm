@@ -124,11 +124,12 @@ class TestVmXmlHelpers(XMLTestCase):
     def test_pretty_format_timing(self):
         test_path = os.path.realpath(__file__)
         dir_name = os.path.split(test_path)[0]
-        xml_path = os.path.join(dir_name, 'devices', 'data',
+        xml_path = os.path.join(dir_name, '..', 'devices', 'data',
                                 'testComplexVm.xml')
         xml = re.sub(' *\n *', '', open(xml_path).read())
         setup = """
 import re
+from vdsm.common import xmlutils
 from vdsm.virt import vmxml
 xml = re.sub(' *\\n *', '', '''%s''')
 dom = xmlutils.fromstring(xml)
