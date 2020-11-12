@@ -30,6 +30,7 @@ import zipfile
 
 import libvirt
 import os
+import pytest
 
 from testlib import namedTemporaryDir, permutations, expandPermutations
 from v2v_testlib import VM_SPECS, MockVirDomain
@@ -187,9 +188,9 @@ class v2vTests(TestCaseBase):
 
         # Make sure that VM nr. 4 is now in the returned list
         # (the one with snapshot, see setUp())
-        self.assertEqual(len(vms), len(VM_SPECS))
-        self.assertNotIn(self._vms_with_snapshot[4].ID,
-                         [vm['vmId'] for vm in vms])
+        assert len(vms) == len(VM_SPECS)
+        assert self._vms_with_snapshot[4].ID not in \
+            [vm['vmId'] for vm in vms]
 
         specs = list(VM_SPECS)
         for vm, spec in zip(vms, specs):
@@ -211,9 +212,9 @@ class v2vTests(TestCaseBase):
                                        ProtectedPassword('password'),
                                        names)['vmList']
 
-        self.assertEqual(len(vms), len(vmIDs))
-        self.assertNotIn(self._vms_with_snapshot[4].ID,
-                         [vm['vmId'] for vm in vms])
+        assert len(vms) == len(vmIDs)
+        assert self._vms_with_snapshot[4].ID not in \
+            [vm['vmId'] for vm in vms]
 
         for vm, vmID in zip(vms, vmIDs):
             spec = VM_SPECS[vmID]
@@ -230,9 +231,8 @@ class v2vTests(TestCaseBase):
                 'esx://mydomain', 'user',
                 ProtectedPassword('password'))['vmNames']
 
-        self.assertEqual(
-            sorted(vms),
-            sorted(spec.name for spec in VM_SPECS))
+        assert sorted(vms) == \
+            sorted(spec.name for spec in VM_SPECS)
 
     def testGetExternalVMsWithXMLDescFailure(self):
         specs = list(VM_SPECS)
@@ -254,7 +254,7 @@ class v2vTests(TestCaseBase):
                                        ProtectedPassword('password'),
                                        None)['vmList']
 
-        self.assertEqual(len(vms), len(specs))
+        assert len(vms) == len(specs)
 
         for vm, spec in zip(vms, specs):
             self._assertVmMatchesSpec(vm, spec)
@@ -271,7 +271,7 @@ class v2vTests(TestCaseBase):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
                                        ProtectedPassword('password'),
                                        None)['vmList']
-            self.assertEqual(len(vms), len(self._vms))
+            assert len(vms) == len(self._vms)
 
     def testLegacyGetExternalVMsFailure(self):
         def _connect(uri, username, passwd):
@@ -281,11 +281,10 @@ class v2vTests(TestCaseBase):
 
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
-            self.assertRaises(libvirt.libvirtError,
-                              v2v.get_external_vms,
-                              'esx://mydomain', 'user',
-                              ProtectedPassword('password'),
-                              None)
+            with pytest.raises(libvirt.libvirtError):
+                v2v.get_external_vms('esx://mydomain', 'user',
+                                     ProtectedPassword('password'),
+                                     None)
 
     @permutations([
         # (methodname, fakemethod, active)
@@ -304,11 +303,9 @@ class v2vTests(TestCaseBase):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
                                        ProtectedPassword('password'),
                                        None)['vmList']
-            self.assertEqual(
-                sorted(vm['vmName'] for vm in vms),
+            assert sorted(vm['vmName'] for vm in vms) == \
                 sorted(spec.name for spec in VM_SPECS
                        if spec.active == active)
-            )
 
     def testOutputParser(self):
         output = (b'[   0.0] Opening the source -i libvirt ://roo...\n'
@@ -330,7 +327,7 @@ class v2vTests(TestCaseBase):
 
         parser = v2v.OutputParser()
         events = list(parser.parse(io.BytesIO(output)))
-        self.assertEqual(events, [
+        assert events == [
             (v2v.ImportProgress(1, 2, b'Copying disk 1/2')),
             (v2v.DiskProgress(0)),
             (v2v.DiskProgress(25)),
@@ -339,7 +336,7 @@ class v2vTests(TestCaseBase):
             (v2v.ImportProgress(2, 2, b'Copying disk 2/2')),
             (v2v.DiskProgress(0)),
             (v2v.DiskProgress(50)),
-            (v2v.DiskProgress(100))])
+            (v2v.DiskProgress(100))]
 
     def testGetExternalVMsWithoutDisksInfo(self):
         def internal_error(name):
@@ -357,7 +354,7 @@ class v2vTests(TestCaseBase):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
                                        ProtectedPassword('password'),
                                        None)['vmList']
-        self.assertEqual(len(vms), 0)
+        assert len(vms) == 0
 
     @permutations([
         # exc
@@ -372,34 +369,33 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(v2v, '_get_job', _raise_error)]):
             # we use uuid to fill the API contract, but it is unused
             res = v2v.get_converted_vm(str(uuid.uuid4()))
-        self.assertTrue(response.is_error(res))
+        assert response.is_error(res)
 
     def _assertVmDisksMatchSpec(self, vm, spec):
         disk = vm['disks'][0]
         if spec.has_disk_volume:
-            self.assertEqual(disk['dev'], 'sda')
-            self.assertEqual(disk['alias'],
-                             '[datastore1] RHEL/RHEL_%s.vmdk' % spec.name)
+            assert disk['dev'] == 'sda'
+            assert disk['alias'] == \
+                '[datastore1] RHEL/RHEL_%s.vmdk' % spec.name
         else:
-            self.assertEqual(disk['dev'], 'sdb')
-            self.assertEqual(disk['alias'],
-                             BLOCK_DEV_PATH)
-        self.assertIn('capacity', disk)
-        self.assertIn('allocation', disk)
+            assert disk['dev'] == 'sdb'
+            assert disk['alias'] == BLOCK_DEV_PATH
+        assert 'capacity' in disk
+        assert 'allocation' in disk
 
     def _assertVmMatchesSpec(self, vm, spec):
-        self.assertEqual(vm['vmId'], spec.uuid)
-        self.assertEqual(vm['memSize'], 2048)
-        self.assertEqual(vm['smp'], 1)
-        self.assertEqual(len(vm['disks']),
-                         int(spec.has_disk_volume) + int(spec.has_disk_block))
-        self.assertEqual(len(vm['networks']), 1)
-        self.assertEqual(vm['has_snapshots'], spec.has_snapshots)
+        assert vm['vmId'] == spec.uuid
+        assert vm['memSize'] == 2048
+        assert vm['smp'] == 1
+        assert len(vm['disks']) == \
+            int(spec.has_disk_volume) + int(spec.has_disk_block)
+        assert len(vm['networks']) == 1
+        assert vm['has_snapshots'] == spec.has_snapshots
 
         network = vm['networks'][0]
-        self.assertEqual(network['type'], 'bridge')
-        self.assertEqual(network['macAddr'], _mac_from_uuid(spec.uuid))
-        self.assertEqual(network['bridge'], 'VM Network')
+        assert network['type'] == 'bridge'
+        assert network['macAddr'] == _mac_from_uuid(spec.uuid)
+        assert network['bridge'] == 'VM Network'
 
     def testSuccessfulVMWareImport(self):
         self._commonConvertExternalVM(self.vpx_url)
@@ -419,9 +415,9 @@ class v2vTests(TestCaseBase):
                                        ProtectedPassword('password'),
                                        None)['vmList']
 
-        self.assertEqual(len(vms), len(VM_SPECS))
-        self.assertEqual(BLOCK_DEV_PATH, vms[4]['disks'][0]['alias'])
-        self.assertEqual(BLOCK_DEV_PATH, vms[5]['disks'][1]['alias'])
+        assert len(vms) == len(VM_SPECS)
+        assert BLOCK_DEV_PATH == vms[4]['disks'][0]['alias']
+        assert BLOCK_DEV_PATH == vms[5]['disks'][1]['alias']
 
     def testXenBlockDevice(self):
         def _connect(uri, username, passwd):
@@ -437,10 +433,10 @@ class v2vTests(TestCaseBase):
 
         # Import of VMs with block devices is not supported for Xen source
         # so the VMs RHEL_4 and RHEL_5 should not be in the list.
-        self.assertEqual(len(vms), len(VM_SPECS) - 2)
+        assert len(vms) == len(VM_SPECS) - 2
         vm_names = [vm['vmName'] for vm in vms]
-        self.assertTrue('RHEL_4' not in vm_names)
-        self.assertTrue('RHEL_5' not in vm_names)
+        assert 'RHEL_4' not in vm_names
+        assert 'RHEL_5' not in vm_names
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     @MonkeyPatch(v2v, '_LOG_DIR', None)
@@ -451,7 +447,7 @@ class v2vTests(TestCaseBase):
             job = v2v._jobs[self.job_id]
             job.wait()
 
-            self.assertEqual(job.status, v2v.STATUS.DONE)
+            assert job.status == v2v.STATUS.DONE
 
     def testV2VOutput(self):
         cmd = [FAKE_VIRT_V2V.cmd,
@@ -474,13 +470,13 @@ class v2vTests(TestCaseBase):
                self.vm_name]
 
         rc, output, error = exec_cmd(cmd)
-        self.assertEqual(rc, 0)
+        assert rc == 0
 
         with io.open('fake-virt-v2v.out', 'rb') as f:
-            self.assertEqual(output, f.read())
+            assert output == f.read()
 
         with io.open('fake-virt-v2v.err', 'rb') as f:
-            self.assertEqual(error, f.read())
+            assert error == f.read()
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     @MonkeyPatch(v2v, '_V2V_DIR', None)
@@ -497,7 +493,7 @@ class v2vTests(TestCaseBase):
             job = v2v._jobs[self.job_id]
             job.wait()
 
-            self.assertEqual(job.status, v2v.STATUS.DONE)
+            assert job.status == v2v.STATUS.DONE
 
     def testSimpleExecCmd(self):
         p = v2v._simple_exec_cmd(['cat'],
@@ -508,37 +504,37 @@ class v2vTests(TestCaseBase):
         p.stdin.close()
         p.wait()
         out = p.stdout.read()
-        self.assertEqual(out, msg.encode())
+        assert out == msg.encode()
 
         p = v2v._simple_exec_cmd(['/bin/sh', '-c', 'echo -en "%s" >&2' % msg],
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT)
         p.wait()
         out = p.stdout.read()
-        self.assertEqual(out, msg.encode())
+        assert out == msg.encode()
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     def testV2VCapabilities(self):
         cmd = v2v.V2VCommand({}, None, None)
-        self.assertIn('virt-v2v', cmd._v2v_caps)
-        self.assertIn('input:libvirt', cmd._v2v_caps)
-        self.assertIn('output:vdsm', cmd._v2v_caps)
+        assert 'virt-v2v' in cmd._v2v_caps
+        assert 'input:libvirt' in cmd._v2v_caps
+        assert 'output:vdsm' in cmd._v2v_caps
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     def testQcow2Compat(self):
         # Make sure we raise on invalid compat version
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             cmd = v2v.V2VCommand({'qcow2_compat': 'foobar'}, None, None)
 
         # Make sure vdsm-compat capability is supported
         cmd = v2v.V2VCommand({}, None, None)
-        self.assertIn('vdsm-compat-option', cmd._v2v_caps)
+        assert 'vdsm-compat-option' in cmd._v2v_caps
 
         # Look for the command line argument
         cmd = v2v.V2VCommand({'qcow2_compat': '1.1'}, None, None)
-        self.assertIn('--vdsm-compat', cmd._base_command)
+        assert '--vdsm-compat' in cmd._base_command
         i = cmd._base_command.index('--vdsm-compat')
-        self.assertEqual('1.1', cmd._base_command[i + 1])
+        assert '1.1' == cmd._base_command[i + 1]
 
 
 SHORT_SLEEP = 0.3
@@ -559,13 +555,13 @@ class PipelineProcTests(TestCaseBase):
                                       stdout=subprocess.PIPE)
             with terminating(p2):
                 p = v2v.PipelineProc(p1, p2)
-                self.assertEqual(p.pids, [p1.pid, p2.pid])
+                assert p.pids == [p1.pid, p2.pid]
 
                 ret = p.wait(self.PROC_WAIT_TIMEOUT)
-                self.assertEqual(ret, True)
+                assert ret is True
 
                 out = p.stdout.read()
-                self.assertEqual(out, msg.encode())
+                assert out == msg.encode()
 
     @permutations([
         # (cmd1, cmd2, returncode)
@@ -583,7 +579,7 @@ class PipelineProcTests(TestCaseBase):
             with terminating(p2):
                 p = v2v.PipelineProc(p1, p2)
                 p.wait(self.PROC_WAIT_TIMEOUT)
-                self.assertEqual(p.returncode, returncode)
+                assert p.returncode == returncode
 
     @permutations([
         # (cmd1, cmd2)
@@ -602,7 +598,7 @@ class PipelineProcTests(TestCaseBase):
                 p = v2v.PipelineProc(p1, p2)
                 ret = p.wait(2 * SHORT_SLEEP)
                 p.kill()
-                self.assertEqual(ret, False)
+                assert ret is False
 
     def test_wait_on_two_processes_that_finished(self):
         cmd = ['sleep', str(SHORT_SLEEP)]
@@ -616,7 +612,7 @@ class PipelineProcTests(TestCaseBase):
                 p = v2v.PipelineProc(p1, p2)
                 ret = p.wait(2 * SHORT_SLEEP)
                 p.kill()
-                self.assertEqual(ret, True)
+                assert ret is True
 
     def test_wait_on_two_processes_that_finish_before_timeout(self):
         cmd1 = ['sleep', str(SHORT_SLEEP)]
@@ -630,7 +626,7 @@ class PipelineProcTests(TestCaseBase):
                 # Processes finish at different times but before the timeout.
                 ret = p.wait(3 * SHORT_SLEEP)
                 p.kill()
-                self.assertEqual(ret, True)
+                assert ret is True
 
 
 class MockVirConnectTests(TestCaseBase):
@@ -640,32 +636,32 @@ class MockVirConnectTests(TestCaseBase):
 
     def test_list_all_domains(self):
         vms = self._mock.listAllDomains()
-        self.assertEqual(len(vms), len(self._vms))
+        assert len(vms) == len(self._vms)
 
     def test_list_defined_domains(self):
         vms = self._mock.listDefinedDomains()
-        self.assertEqual(
-            sorted(vms),
-            sorted(spec.name for spec in VM_SPECS if not spec.active))
+        assert sorted(vms) == \
+            sorted(spec.name for spec in VM_SPECS if not spec.active)
 
     def test_list_domains_id(self):
         vms = self._mock.listDomainsID()
-        self.assertEqual(len(vms), 2)
+        assert len(vms) == 2
 
     def test_lookup_by_name(self):
         vm = self._mock.lookupByName('RHEL_0')
-        self.assertEqual('RHEL_0', vm.name())
+        assert 'RHEL_0' == vm.name()
 
     def test_lookup_by_name_failed(self):
-        self.assertRaises(libvirt.libvirtError, self._mock.lookupByName,
-                          'fakename')
+        with pytest.raises(libvirt.libvirtError):
+            self._mock.lookupByName('fakename')
 
     def test_lookup_by_id(self):
         vm = self._mock.lookupByID(0)
-        self.assertEqual(0, vm.ID())
+        assert 0 == vm.ID()
 
     def test_lookup_by_id_failed(self):
-        self.assertRaises(libvirt.libvirtError, self._mock.lookupByID, 99)
+        with pytest.raises(libvirt.libvirtError):
+            self._mock.lookupByID(99)
 
 
 class TestGetOVAInfo(TestCaseBase):
@@ -700,33 +696,34 @@ class TestGetOVAInfo(TestCaseBase):
             yield base, ovfpath, ovapath
 
     def check(self, vm):
-        self.assertEqual(vm['vmName'], 'First')
-        self.assertEqual(vm['memSize'], 2048)
-        self.assertEqual(vm['smp'], 1)
+        assert vm['vmName'] == 'First'
+        assert vm['memSize'] == 2048
+        assert vm['smp'] == 1
 
         disk = vm['disks'][0]
-        self.assertEqual(disk['allocation'], '349405696')
-        self.assertEqual(disk['capacity'], '34359738368')
-        self.assertEqual(disk['type'], 'disk')
-        self.assertEqual(disk['alias'], 'First-disk1.vmdk')
+        assert disk['allocation'] == '349405696'
+        assert disk['capacity'] == '34359738368'
+        assert disk['type'] == 'disk'
+        assert disk['alias'] == 'First-disk1.vmdk'
 
         network = vm['networks'][0]
-        self.assertEqual(network['bridge'], 'VM Network')
-        self.assertEqual(network['model'], 'E1000')
-        self.assertEqual(network['type'], 'bridge')
-        self.assertEqual(network['dev'], 'Ethernet 1')
+        assert network['bridge'] == 'VM Network'
+        assert network['model'] == 'E1000'
+        assert network['type'] == 'bridge'
+        assert network['dev'] == 'Ethernet 1'
 
 
 class UtilsTests(TestCaseBase):
     def test_units_parser(self):
-        self.assertEqual(v2v._parse_allocation_units("byte"), 1)
-        self.assertEqual(v2v._parse_allocation_units("byte * 10"), 10)
-        self.assertEqual(v2v._parse_allocation_units("byte * +10"), 10)
-        self.assertEqual(v2v._parse_allocation_units("byte * 2 ^ 1"), 2)
-        self.assertEqual(v2v._parse_allocation_units("byte * 2 ^ 10"), 1024)
-        self.assertEqual(v2v._parse_allocation_units("byte * 2 ^ +10"), 1024)
-        self.assertEqual(v2v._parse_allocation_units("byte * 10 * 2^3"), 80)
-        self.assertEqual(v2v._parse_allocation_units("byte*10*2^3"), 80)
+        assert v2v._parse_allocation_units("byte") == 1
+        assert v2v._parse_allocation_units("byte * 10") == 10
+        assert v2v._parse_allocation_units("byte * +10") == 10
+        assert v2v._parse_allocation_units("byte * 2 ^ 1") == 2
+        assert v2v._parse_allocation_units("byte * 2 ^ 10") == 1024
+        assert v2v._parse_allocation_units("byte * 2 ^ +10") == 1024
+        assert v2v._parse_allocation_units("byte * 10 * 2^3") == 80
+        assert v2v._parse_allocation_units("byte*10*2^3") == 80
 
         # We don't support other units!
-        self.assertRaises(v2v.V2VError, v2v._parse_allocation_units, "volt")
+        with pytest.raises(v2v.V2VError):
+            v2v._parse_allocation_units("volt")

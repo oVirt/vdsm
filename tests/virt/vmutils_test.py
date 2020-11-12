@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ from vdsm.virt import vm
 
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
+import pytest
 
 
 class ExpiringCacheOperationTests(TestCaseBase):
@@ -37,39 +38,37 @@ class ExpiringCacheOperationTests(TestCaseBase):
 
     def test_setitem_getitem_same_key(self):
         self.cache['the answer'] = 42
-        self.assertEqual(42, self.cache['the answer'])
+        assert 42 == self.cache['the answer']
 
     def test_setitem_get_same_key(self):
         self.cache['the answer'] = 42
-        self.assertEqual(42, self.cache.get('the answer'))
+        assert 42 == self.cache.get('the answer')
 
     def test_setitem_get_same_key_with_default(self):
         self.cache['the answer'] = 42
-        self.assertEqual(42, self.cache.get('the answer', 'default'))
+        assert 42 == self.cache.get('the answer', 'default')
 
     def test_setitem_get_different_key_with_default(self):
         value = self.cache.get('a different answer', 'default')
-        self.assertEqual(value, 'default')
+        assert value == 'default'
 
     def test_get_key_without_explicit_default(self):
-        self.assertEqual(None, self.cache.get('a key noone added'))
+        assert self.cache.get('a key noone added') is None
 
     def test_getitem_missing_key(self):
-        self.assertRaises(KeyError,
-                          lambda key: self.cache[key],
-                          'FIZZBUZZ')
+        with pytest.raises(KeyError):
+            self.cache['FIZZBUZZ']
 
     def test_delitem_existing_key(self):
         self.cache['the answer'] = 42
         del self.cache['the answer']
-        self.assertEqual(self.cache.get('the answer'), None)
+        assert self.cache.get('the answer') is None
 
     def test_delitem_missing_key(self):
         def _del(key):
             del self.cache[key]
-        self.assertRaises(KeyError,
-                          _del,
-                          'this key does not exist')
+        with pytest.raises(KeyError):
+            _del('this key does not exist')
 
     def test_clear(self):
         ITEMS = 10
@@ -82,9 +81,9 @@ class ExpiringCacheOperationTests(TestCaseBase):
             self.cache.get(i) is None
 
     def test_nonzero(self):
-        self.assertFalse(self.cache)
+        assert not self.cache
         self.cache['foo'] = 'bar'
-        self.assertTrue(self.cache)
+        assert self.cache
 
 
 class FakeClock(object):
@@ -101,11 +100,11 @@ class ExpirationTests(TestCaseBase):
         cache = utils.ExpiringCache(ttl=1.0, clock=clock)
         cache['the answer'] = 42
         clock.now = 0.999999
-        self.assertEqual(42, cache['the answer'])
+        assert 42 == cache['the answer']
         clock.now = 1.0
-        self.assertEqual(None, cache.get('the answer'))
+        assert cache.get('the answer') is None
         clock.now = 1.000001
-        self.assertEqual(None, cache.get('the answer'))
+        assert cache.get('the answer') is None
 
     def test_nonzero_full_expiration(self):
         clock = FakeClock(0.0)
@@ -114,10 +113,10 @@ class ExpirationTests(TestCaseBase):
         ITEMS = 10
         for i in range(ITEMS):
             cache[i] = 'foobar-%d' % i
-        self.assertTrue(cache)
+        assert cache
 
         clock.now = 1.1
-        self.assertFalse(cache)
+        assert not cache
 
     def test_nonzero_partial_expiration(self):
         clock = FakeClock(0.0)
@@ -125,14 +124,14 @@ class ExpirationTests(TestCaseBase):
 
         cache['a'] = 1
         clock.now = 1.0
-        self.assertTrue(cache)
+        assert cache
 
         cache['b'] = 2
         clock.now = 2.0
-        self.assertTrue(cache)
+        assert cache
 
         clock.now = 3.0
-        self.assertFalse(cache)
+        assert not cache
 
 
 class ExceptionsTests(TestCaseBase):
@@ -141,13 +140,11 @@ class ExceptionsTests(TestCaseBase):
         try:
             raise vm.MissingLibvirtDomainError()
         except vm.MissingLibvirtDomainError as e:
-            self.assertEqual(
-                e.reason,
-                vmexitreason.LIBVIRT_DOMAIN_MISSING)
-            self.assertEqual(
-                str(e),
+            assert e.reason == \
+                vmexitreason.LIBVIRT_DOMAIN_MISSING
+            assert str(e) == \
                 vmexitreason.exitReasons.get(
-                    vmexitreason.LIBVIRT_DOMAIN_MISSING))
+                    vmexitreason.LIBVIRT_DOMAIN_MISSING)
 
 
 @expandPermutations
@@ -155,7 +152,7 @@ class LibvirtEventDispatchTests(TestCaseBase):
 
     @permutations([[-1], [1023]])
     def test_eventToString_unknown_event(self, code):
-        self.assertTrue(vm.eventToString(code))
+        assert vm.eventToString(code)
 
 
 class DynamicSemaphoreTests(TestCaseBase):
@@ -169,13 +166,12 @@ class DynamicSemaphoreTests(TestCaseBase):
     def assertAcquirable(self, times=1):
         for i in range(times):
             success = self.sem.acquire(blocking=False)
-            self.assertTrue(success, 'It should be possible to obtain '
-                                     'Dynamic Semaphore')
+            assert success, 'It should be possible to obtain Dynamic Semaphore'
 
     def assertNotAcquirable(self):
         success = self.sem.acquire(blocking=False)
-        self.assertFalse(success, 'It should not be possible to obtain '
-                                  'Dynamic Semaphore with value 0')
+        assert not success, ('It should not be possible to obtain '
+                             'Dynamic Semaphore with value 0')
 
     def test_basic_operations(self):
         self.assertAcquirable(times=self.INITIAL_BOUND)
@@ -240,19 +236,17 @@ class TestTimedAcquireLock(TestCaseBase):
 
     def test_acquire_free_not_raises(self):
         flow = 'external'
-        self.assertIs(self.lock.holder, None)
+        assert self.lock.holder is None
         self.assertNotRaises(self.lock.acquire, 0.0, flow)
-        self.assertEqual(self.lock.holder, flow)
+        assert self.lock.holder == flow
         self.lock.release()
-        self.assertIs(self.lock.holder, None)
+        assert self.lock.holder is None
 
     def test_acquire_raises_timeout(self):
         self.lock.acquire(0.0, flow='external')
         try:
-            self.assertRaises(
-                utils.LockTimeout,
-                self.lock.acquire,
-                0.0, 'internal')
+            with pytest.raises(utils.LockTimeout):
+                self.lock.acquire(0.0, 'internal')
         finally:
             self.lock.release()
 
@@ -266,6 +260,6 @@ class TestTimedAcquireLock(TestCaseBase):
         finally:
             self.lock.release()
 
-        self.assertIsNot(exc, None)
-        self.assertEqual(exc.lockid, self.lockid)
-        self.assertEqual(exc.flow, 'external')
+        assert exc is not None
+        assert exc.lockid == self.lockid
+        assert exc.flow == 'external'

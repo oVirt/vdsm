@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2019 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -85,7 +85,7 @@ class DevicesFromXMLTests(VdsmTestCase):
   </devices>
 </domain>''')
         for dev_type, dev_objs in dev_map.items():
-            self.assertEqual(dev_objs, [])
+            assert dev_objs == []
 
     def test_skip_uninteresting_devices(self):
         """
@@ -111,7 +111,7 @@ class DevicesFromXMLTests(VdsmTestCase):
   </devices>
 </domain>''')
         for dev_type, dev_objs in dev_map.items():
-            self.assertEqual(dev_objs, [])
+            assert dev_objs == []
 
     def prepare_map(self, dom_xml):
         xml_str = dom_xml.format(self=self)
@@ -123,7 +123,7 @@ class DevicesFromXMLTests(VdsmTestCase):
 
     def _assert_empty_dev_map(self, dev_map):
         for dev_type, dev_objs in dev_map.items():
-            self.assertEqual(dev_objs, [])
+            assert dev_objs == []
 
 
 class RestoreStateTests(VdsmTestCase):
@@ -152,12 +152,12 @@ class RestoreStateTests(VdsmTestCase):
 
         sda = find_drive_conf_by_name(disk_params, 'sda')
 
-        self.assertIsNotNone(sda)
-        self.assertEqual(sda['path'], '/rhev/data-center/path/updated')
-        self.assertEqual(sda['imageID'], 'imageID_updated')
-        self.assertEqual(sda['poolID'], 'poolID_updated')
-        self.assertEqual(sda['domainID'], 'domainID_updated')
-        self.assertEqual(sda['volumeID'], 'volumeID_updated')
+        assert sda is not None
+        assert sda['path'] == '/rhev/data-center/path/updated'
+        assert sda['imageID'] == 'imageID_updated'
+        assert sda['poolID'] == 'poolID_updated'
+        assert sda['domainID'] == 'domainID_updated'
+        assert sda['volumeID'] == 'volumeID_updated'
 
 
 # TODO: almost dupe of Vm._findDriveConfigByName

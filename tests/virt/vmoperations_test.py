@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2019 Red Hat, Inc.
+# Copyright 2013-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ from testlib import permutations, expandPermutations
 from testValidation import brokentest
 
 from . import vmfakelib as fake
+import pytest
 
 
 _VM_PARAMS = {
@@ -92,15 +93,14 @@ class TestVmOperations(XMLTestCase):
     def testTimeOffsetNotPresentByDefault(self, exitCode):
         with fake.VM() as testvm:
             testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
-            self.assertFalse('timeOffset' in testvm.getStats())
+            assert not ('timeOffset' in testvm.getStats())
 
     @MonkeyPatch(libvirtconnection, 'get', lambda x: fake.Connection())
     @permutations([[define.NORMAL], [define.ERROR]])
     def testTimeOffsetRoundtrip(self, exitCode):
         with fake.VM({'timeOffset': self.BASE_OFFSET}) as testvm:
             testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
-            self.assertEqual(testvm.getStats()['timeOffset'],
-                             self.BASE_OFFSET)
+            assert testvm.getStats()['timeOffset'] == self.BASE_OFFSET
 
     @MonkeyPatch(libvirtconnection, 'get', lambda x: fake.Connection())
     @permutations([[define.NORMAL], [define.ERROR]])
@@ -112,7 +112,7 @@ class TestVmOperations(XMLTestCase):
                 testvm.onRTCUpdate(offset)
                 testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
                 vmOffset = testvm.getStats()['timeOffset']
-                self.assertEqual(vmOffset, str(lastOffset + offset))
+                assert vmOffset == str(lastOffset + offset)
                 # the field in getStats is str, not int
                 lastOffset = int(vmOffset)
 
@@ -125,8 +125,8 @@ class TestVmOperations(XMLTestCase):
                 testvm.onRTCUpdate(offset)
             # beware of type change!
             testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
-            self.assertEqual(testvm.getStats()['timeOffset'],
-                             str(self.UPDATE_OFFSETS[-1]))
+            assert testvm.getStats()['timeOffset'] == \
+                str(self.UPDATE_OFFSETS[-1])
 
     @MonkeyPatch(libvirtconnection, 'get', lambda x: fake.Connection())
     @permutations([[define.NORMAL], [define.ERROR]])
@@ -136,8 +136,8 @@ class TestVmOperations(XMLTestCase):
                 testvm.onRTCUpdate(offset)
             # beware of type change!
             testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
-            self.assertEqual(testvm.getStats()['timeOffset'],
-                             str(self.BASE_OFFSET + self.UPDATE_OFFSETS[-1]))
+            assert testvm.getStats()['timeOffset'] == \
+                str(self.BASE_OFFSET + self.UPDATE_OFFSETS[-1])
 
     def testUpdateSingleDeviceGraphics(self):
         devXmls = (
@@ -192,7 +192,7 @@ class TestVmOperations(XMLTestCase):
 
     def _updateGraphicsDevice(self, testvm, device_type, graphics_params):
         def _check_ticket_params(domXML, conf, params):
-            self.assertEqual(params, _TICKET_PARAMS)
+            assert params == _TICKET_PARAMS
 
         def _fake_set_vnc_pwd(username, pwd):
             pass
@@ -221,7 +221,7 @@ class TestVmOperations(XMLTestCase):
         device = self.GRAPHIC_DEVICES[1]  # VNC
         graphics_xml = ('<graphics type="%s" port="5900"/>' %
                         (device['device'],))
-        device_xml = '<devices>%s</devices>''' % (graphics_xml,)
+        device_xml = '<devices>%s</devices>' % (graphics_xml,)
 
         with fake.VM(xmldevices=graphics_xml) as testvm:
             def _fake_set_vnc_pwd(username, pwd):
@@ -239,9 +239,9 @@ class TestVmOperations(XMLTestCase):
                                     _fake_set_vnc_pwd)]):
                 testvm.updateDevice(params)
 
-            self.assertEqual(password.unprotect(params['password']),
-                             testvm.pwd)
-            self.assertEqual(params['params']['vncUsername'], testvm.username)
+            assert password.unprotect(params['password']) == \
+                testvm.pwd
+            assert params['params']['vncUsername'] == testvm.username
 
     def testClearSaslPasswordNoFips(self):
         graphics_params = dict(_GRAPHICS_DEVICE_PARAMS)
@@ -249,7 +249,7 @@ class TestVmOperations(XMLTestCase):
         device = self.GRAPHIC_DEVICES[1]  # VNC
         graphics_xml = ('<graphics type="%s" port="5900"/>' %
                         (device['device'],))
-        device_xml = '<devices>%s</devices>''' % (graphics_xml,)
+        device_xml = '<devices>%s</devices>' % (graphics_xml,)
 
         with fake.VM(xmldevices=graphics_xml) as testvm:
             def _fake_remove_pwd(username):
@@ -264,26 +264,26 @@ class TestVmOperations(XMLTestCase):
                                     _fake_remove_pwd)]):
                 testvm.updateDevice(params)
 
-            self.assertEqual(params['params']['vncUsername'], testvm.username)
+            assert params['params']['vncUsername'] == testvm.username
 
     def testDomainNotRunningWithoutDomain(self):
         with fake.VM() as testvm:
-            self.assertFalse(testvm.isDomainRunning())
+            assert not testvm.isDomainRunning()
 
     def testDomainNotRunningByState(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_SHUTDOWN)
-            self.assertFalse(testvm.isDomainRunning())
+            assert not testvm.isDomainRunning()
 
     def testDomainIsRunning(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_RUNNING)
-            self.assertTrue(testvm.isDomainRunning())
+            assert testvm.isDomainRunning()
 
     def testDomainIsReadyForCommands(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain()
-            self.assertTrue(testvm.isDomainReadyForCommands())
+            assert testvm.isDomainReadyForCommands()
 
     @permutations([
         # code, text
@@ -298,11 +298,11 @@ class TestVmOperations(XMLTestCase):
             dom = fake.Domain()
             dom.controlInfo = _fail
             testvm._dom = dom
-            self.assertFalse(testvm.isDomainReadyForCommands())
+            assert not testvm.isDomainReadyForCommands()
 
     def testDomainNoneNotReadyForCommands(self):
         with fake.VM() as testvm:
-            self.assertFalse(testvm.isDomainReadyForCommands())
+            assert not testvm.isDomainReadyForCommands()
 
     def testReadyForCommandsRaisesLibvirtError(self):
         def _fail(*args):
@@ -314,13 +314,13 @@ class TestVmOperations(XMLTestCase):
             dom = fake.Domain()
             dom.controlInfo = _fail
             testvm._dom = dom
-            self.assertRaises(libvirt.libvirtError,
-                              testvm.isDomainReadyForCommands)
+            with pytest.raises(libvirt.libvirtError):
+                testvm.isDomainReadyForCommands()
 
     def testReadPauseCodeDomainRunning(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_RUNNING)
-            self.assertEqual(testvm._readPauseCode(), 'NOERR')
+            assert testvm._readPauseCode() == 'NOERR'
 
     def testReadPauseCodeDomainPausedCrash(self):
         with fake.VM() as testvm:
@@ -329,7 +329,7 @@ class TestVmOperations(XMLTestCase):
             dom = fake.Domain(domState=libvirt.VIR_DOMAIN_PAUSED,
                               domReason=libvirt.VIR_DOMAIN_PAUSED_CRASHED)
             testvm._dom = dom
-            self.assertNotEqual(testvm._readPauseCode(), 'ENOSPC')
+            assert testvm._readPauseCode() != 'ENOSPC'
 
     def testReadPauseCodeDomainPausedENOSPC(self):
         with fake.VM() as testvm:
@@ -338,7 +338,7 @@ class TestVmOperations(XMLTestCase):
             dom.setDiskErrors({'vda': libvirt.VIR_DOMAIN_DISK_ERROR_NO_SPACE,
                                'hdc': libvirt.VIR_DOMAIN_DISK_ERROR_NONE})
             testvm._dom = dom
-            self.assertEqual(testvm._readPauseCode(), 'ENOSPC')
+            assert testvm._readPauseCode() == 'ENOSPC'
 
     def testReadPauseCodeDomainPausedEIO(self):
         with fake.VM() as testvm:
@@ -347,7 +347,7 @@ class TestVmOperations(XMLTestCase):
             dom.setDiskErrors({'vda': libvirt.VIR_DOMAIN_DISK_ERROR_NONE,
                                'hdc': libvirt.VIR_DOMAIN_DISK_ERROR_UNSPEC})
             testvm._dom = dom
-            self.assertEqual(testvm._readPauseCode(), 'EIO')
+            assert testvm._readPauseCode() == 'EIO'
 
     @permutations([[1000, 24], [900, 0], [1200, -128]])
     def testSetCpuTuneQuote(self, quota, offset):
@@ -357,8 +357,7 @@ class TestVmOperations(XMLTestCase):
             # a new special-purpose trivial fake here.
             testvm._dom = ChangingSchedulerDomain(offset)
             testvm.setCpuTuneQuota(quota)
-            self.assertEqual(quota + offset,
-                             testvm._vcpuTuneInfo['vcpu_quota'])
+            assert quota + offset == testvm._vcpuTuneInfo['vcpu_quota']
 
     @permutations([[100000, 128], [150000, 0], [9999, -99]])
     def testSetCpuTunePeriod(self, period, offset):
@@ -366,8 +365,7 @@ class TestVmOperations(XMLTestCase):
             # same as per testSetCpuTuneQuota
             testvm._dom = ChangingSchedulerDomain(offset)
             testvm.setCpuTunePeriod(period)
-            self.assertEqual(period + offset,
-                             testvm._vcpuTuneInfo['vcpu_period'])
+            assert period + offset == testvm._vcpuTuneInfo['vcpu_period']
 
     @brokentest("sometimes on CI tries to connect to libvirt")
     @permutations([[libvirt.VIR_ERR_OPERATION_DENIED, 'setNumberOfCpusErr',
@@ -387,7 +385,7 @@ class TestVmOperations(XMLTestCase):
 
                 res = testvm.setNumberOfCpus(4)  # random value
 
-                self.assertEqual(res, response.error(vdsm_error))
+                assert res == response.error(vdsm_error)
 
     def testUpdateDeviceGraphicsFailed(self):
         with fake.VM(devices=self.GRAPHIC_DEVICES) as testvm:
@@ -405,33 +403,30 @@ class TestVmOperations(XMLTestCase):
             domain.updateDeviceFlags = _fail
             testvm._dom = domain
 
-            self.assertRaises(
-                exception.SpiceTicketError,
-                self._updateGraphicsDevice,
-                testvm,
-                device,
-                _GRAPHICS_DEVICE_PARAMS
-            )
+            with pytest.raises(exception.SpiceTicketError):
+                self._updateGraphicsDevice(
+                    testvm, device, _GRAPHICS_DEVICE_PARAMS
+                )
 
     def testAcpiShutdownDisconnected(self):
         with fake.VM() as testvm:
             testvm._dom = virdomain.Disconnected(vmid='testvm')
-            self.assertTrue(response.is_error(testvm.acpiShutdown()))
+            assert response.is_error(testvm.acpiShutdown())
 
     def testAcpiShutdownConnected(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(vmId='testvm')
-            self.assertFalse(response.is_error(testvm.acpiShutdown()))
+            assert not response.is_error(testvm.acpiShutdown())
 
     def testAcpiRebootDisconnected(self):
         with fake.VM() as testvm:
             testvm._dom = virdomain.Disconnected(vmid='testvm')
-            self.assertTrue(response.is_error(testvm.acpiReboot()))
+            assert response.is_error(testvm.acpiReboot())
 
     def testAcpiRebootConnected(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(vmId='testvm')
-            self.assertFalse(response.is_error(testvm.acpiReboot()))
+            assert not response.is_error(testvm.acpiReboot())
 
     @permutations([
         # info, expected
@@ -454,7 +449,7 @@ class TestVmOperations(XMLTestCase):
             testvm._devices[hwclass.DISK] = [vda]
 
             drives = [drive.name for drive in testvm.getChunkedDrives()]
-            self.assertEqual(drives, expected)
+            assert drives == expected
 
 
 def _mem_committed(mem_size_mb):

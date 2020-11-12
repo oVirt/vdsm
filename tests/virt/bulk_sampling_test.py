@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,13 +25,14 @@ import collections
 import contextlib
 import threading
 
+import pytest
+
 from vdsm import executor
 from vdsm import schedule
 from vdsm.common.time import monotonic_time
 
 from vdsm.virt import sampling
 
-from testValidation import slowtest
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import recorded
 
@@ -78,7 +79,7 @@ class TestVMBulkSampling(TestCaseBase):
             ['getAllDomainStats']
         )
 
-    @slowtest
+    @pytest.mark.slow
     def test_collect_slow_path_after_blocked(self):
         vms = make_vms(num=3)
         conn = FakeConnection(vms=vms)
@@ -99,7 +100,7 @@ class TestVMBulkSampling(TestCaseBase):
             ['getAllDomainStats', 'domainListGetStats']
         )
 
-    @slowtest
+    @pytest.mark.slow
     def test_collect_vm_unresponsive(self):
         vms = make_vms(num=3)
         conn = FakeConnection(vms=vms)
@@ -121,7 +122,7 @@ class TestVMBulkSampling(TestCaseBase):
             ['getAllDomainStats', 'domainListGetStats', 'domainListGetStats']
         )
 
-    @slowtest
+    @pytest.mark.slow
     def test_slow_collect_while_vm_unresponsive(self):
         vms = make_vms(num=3)
         conn = FakeConnection(vms=vms)
@@ -162,8 +163,8 @@ class TestVMBulkSampling(TestCaseBase):
     def assertCallSequence(self, actual_calls, expected_calls):
         for actual, expected in zip(actual_calls, expected_calls):
             # we don't care about the arguments
-            self.assertEqual(actual[0], expected)
-        self.assertEqual(len(actual_calls), len(expected_calls))
+            assert actual[0] == expected
+        assert len(actual_calls) == len(expected_calls)
 
 
 class FakeStatsCache(object):

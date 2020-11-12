@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ from testlib import VdsmTestCase
 
 from vdsm.virt.utils import prepared
 from vdsm.virt.utils import TeardownError
+import pytest
 
 
 class FakeImage(object):
@@ -70,8 +71,8 @@ class ContextTest(VdsmTestCase):
             ('prepare', 'img'),
             ('teardown', 'img')]
         with prepared(images):
-            self.assertEqual(expected[:1], log)
-        self.assertEqual(expected, log)
+            assert expected[:1] == log
+        assert expected == log
 
     def test_two_images(self):
         log = []
@@ -84,8 +85,8 @@ class ContextTest(VdsmTestCase):
             ('teardown', 'img2'),
             ('teardown', 'img1')]
         with prepared(images):
-            self.assertEqual(expected[:2], log)
-        self.assertEqual(expected, log)
+            assert expected[:2] == log
+        assert expected == log
 
     def test_prepare_failure(self):
         log = []
@@ -96,10 +97,10 @@ class ContextTest(VdsmTestCase):
         expected = [
             ('prepare', 'img1'),
             ('teardown', 'img1')]
-        with self.assertRaises(InjectedFailure):
+        with pytest.raises(InjectedFailure):
             with prepared(images):
                 pass
-        self.assertEqual(expected, log)
+        assert expected == log
 
     def test_prepare_failure_then_teardown_failure(self):
         log = []
@@ -113,10 +114,10 @@ class ContextTest(VdsmTestCase):
             ('prepare', 'img1'),
             ('prepare', 'img2'),
             ('teardown', 'img1')]
-        with self.assertRaises(InjectedFailure):
+        with pytest.raises(InjectedFailure):
             with prepared(images):
                 pass
-        self.assertEqual(expected, log)
+        assert expected == log
 
     def test_teardown_failure(self):
         log = []
@@ -128,10 +129,10 @@ class ContextTest(VdsmTestCase):
             ('prepare', 'img1'),
             ('prepare', 'img2'),
             ('teardown', 'img1')]
-        with self.assertRaises(TeardownError):
+        with pytest.raises(TeardownError):
             with prepared(images):
                 pass
-        self.assertEqual(expected, log)
+        assert expected == log
 
     def test_fail_inside_context(self):
         log = []
@@ -140,10 +141,10 @@ class ContextTest(VdsmTestCase):
         expected = [
             ('prepare', 'img'),
             ('teardown', 'img')]
-        with self.assertRaises(InjectedFailure):
+        with pytest.raises(InjectedFailure):
             with prepared(images):
                 raise InjectedFailure()
-        self.assertEqual(expected, log)
+        assert expected == log
 
     def test_fail_inside_context_with_teardown_failure(self):
         log = []
@@ -152,7 +153,7 @@ class ContextTest(VdsmTestCase):
                       teardown=InjectedFailure)]
         expected = [
             ('prepare', 'img')]
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError):
             with prepared(images):
                 raise RuntimeError()
-        self.assertEqual(expected, log)
+        assert expected == log

@@ -1,5 +1,5 @@
 #
-# Copyright 2018, 2019 Red Hat, Inc.
+# Copyright 2018-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -260,7 +260,7 @@ class TestReplaceDeviceXMLWithHooksXML(VdsmTestCase):
             domxml_preprocess.replace_device_xml_with_hooks_xml(
                 dom, 'test', {})
 
-        self.assertEqual(self._hook_params, [])
+        assert self._hook_params == []
 
     def test_replace_device_xml_with_hook_xml_empty_custom(self):
         """
@@ -291,10 +291,8 @@ class TestReplaceDeviceXMLWithHooksXML(VdsmTestCase):
     <bandwidth />
 </interface>
 '''.format(addr=addr)
-        self.assertEqual(
-            self._hook_params,
+        assert self._hook_params == \
             [(expected_xml, {}, {})]
-        )
 
 
 class TestReplaceLeaseXML(XMLTestCase):
@@ -393,14 +391,12 @@ class TestReplaceLeaseXML(XMLTestCase):
     def _check_leases(self, xml_str, vol_infos):
         xml_dom = xmlutils.fromstring(xml_str)
         lease_elems = xml_dom.findall('./devices/lease')
-        self.assertEqual(len(lease_elems), len(vol_infos))
+        assert len(lease_elems) == len(vol_infos)
 
         for lease_elem, vol_info in zip(lease_elems, vol_infos):
             target = vmxml.find_first(lease_elem, 'target')
-            self.assertEqual(
-                target.attrib['path'], str(vol_info['leasePath']))
-            self.assertEqual(
-                target.attrib['offset'], str(vol_info['leaseOffset']))
+            assert target.attrib['path'] == str(vol_info['leasePath'])
+            assert target.attrib['offset'] == str(vol_info['leaseOffset'])
 
     def _inject_volume_chain(self, disk_devs, volInfo,
                              domainID=None, volumeID=None):

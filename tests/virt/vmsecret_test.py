@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ from vdsm.common import libvirtconnection
 from vdsm.common import response
 from vdsm.common.password import ProtectedPassword
 from vdsm.virt import secret
+import pytest
 
 
 class Unexpected(Exception):
@@ -47,27 +48,30 @@ class SecretTests(VdsmTestCase):
     def test_missing_required_params(self, name):
         params = make_secret()
         del params[name]
-        self.assertRaises(ValueError, secret.Secret, params)
+        with pytest.raises(ValueError):
+            secret.Secret(params)
 
     @permutations((["ceph"], ["volume"], ["iscsi"]))
     def test_supported_usage_types(self, usage_type):
         params = make_secret(usage_type=usage_type)
         s = secret.Secret(params)
-        self.assertEqual(s.usage_type, usage_type)
+        assert s.usage_type == usage_type
 
     def test_unsupported_usage_types(self):
         params = make_secret(usage_type="unsupported")
-        self.assertRaises(ValueError, secret.Secret, params)
+        with pytest.raises(ValueError):
+            secret.Secret(params)
 
     def test_unencoded_password(self):
         params = make_secret()
         params["password"] = ProtectedPassword("not base64 value")
-        self.assertRaises(ValueError, secret.Secret, params)
+        with pytest.raises(ValueError):
+            secret.Secret(params)
 
     def test_encoded_password(self):
         params = make_secret(password="12345678")
         s = secret.Secret(params)
-        self.assertEqual(s.password.value, b"12345678")
+        assert s.password.value == b"12345678"
 
     def test_register(self):
         params = make_secret(password="12345678")
@@ -75,7 +79,7 @@ class SecretTests(VdsmTestCase):
         con = vmfakecon.Connection()
         sec.register(con)
         virsec = con.secrets[sec.uuid]
-        self.assertEqual(virsec.value, b"12345678")
+        assert virsec.value == b"12345678"
 
 
 class SecretXMLTests(XMLTestCase):
@@ -173,8 +177,8 @@ class APITests(VdsmTestCase):
                                       "name2", None),
         }
         secret.clear()
-        self.assertNotIn("uuid1", self.connection.secrets)
-        self.assertIn("uuid2", self.connection.secrets)
+        assert "uuid1" not in self.connection.secrets
+        assert "uuid2" in self.connection.secrets
 
     def test_clear_skip_failed(self):
         def fail():
@@ -187,21 +191,21 @@ class APITests(VdsmTestCase):
         }
         self.connection.secrets["uuid1"].undefine = fail
         secret.clear()
-        self.assertNotIn("uuid2", self.connection.secrets)
+        assert "uuid2" not in self.connection.secrets
 
     def test_register_validation(self):
         res = secret.register([{"invalid": "secret"}])
-        self.assertEqual(res, response.error("secretBadRequestErr"))
+        assert res == response.error("secretBadRequestErr")
 
     def test_register_new(self):
         sec1 = make_secret(password="sec1 password")
         sec2 = make_secret(password="sec2 password")
         res = secret.register([sec1, sec2])
-        self.assertEqual(res, response.success())
+        assert res == response.success()
         virsec1 = self.connection.secrets[sec1["uuid"]]
-        self.assertEqual(b"sec1 password", virsec1.value)
+        assert b"sec1 password" == virsec1.value
         virsec2 = self.connection.secrets[sec2["uuid"]]
-        self.assertEqual(b"sec2 password", virsec2.value)
+        assert b"sec2 password" == virsec2.value
 
     def test_register_replace(self):
         # Register 2 secrets
@@ -211,11 +215,11 @@ class APITests(VdsmTestCase):
         # Replace existing secret value
         sec2["password"] = make_password("sec2 new password")
         res = secret.register([sec2])
-        self.assertEqual(res, response.success())
+        assert res == response.success()
         virsec1 = self.connection.secrets[sec1["uuid"]]
-        self.assertEqual(b"sec1 password", virsec1.value)
+        assert b"sec1 password" == virsec1.value
         virsec2 = self.connection.secrets[sec2["uuid"]]
-        self.assertEqual(b"sec2 new password", virsec2.value)
+        assert b"sec2 new password" == virsec2.value
 
     def test_register_change_usage_id(self):
         sec = make_secret(usage_id="ovirt/provider_uuid/secert_uuid")
@@ -223,9 +227,9 @@ class APITests(VdsmTestCase):
         # Change usage id
         sec["usageID"] = "ovirt/domain_uuid/secret_uuid"
         res = secret.register([sec])
-        self.assertEqual(res, response.success())
+        assert res == response.success()
         virsec = self.connection.secrets[sec["uuid"]]
-        self.assertEqual("ovirt/domain_uuid/secret_uuid", virsec.usage_id)
+        assert "ovirt/domain_uuid/secret_uuid" == virsec.usage_id
 
     def test_register_clear(self):
         self.connection.secrets = {
@@ -237,61 +241,63 @@ class APITests(VdsmTestCase):
         sec = make_secret()
         res = secret.register([sec], clear=True)
         # Should succeed
-        self.assertEqual(res, response.success())
+        assert res == response.success()
         # Should remove existing ovirt secrets
-        self.assertNotIn("uuid1", self.connection.secrets)
+        assert "uuid1" not in self.connection.secrets
         # Should keep non-ovirt secrets
-        self.assertIn("uuid2", self.connection.secrets)
+        assert "uuid2" in self.connection.secrets
         # Should register new secret
         virsec = self.connection.secrets[sec["uuid"]]
-        self.assertEqual(sec["password"].value, virsec.value)
+        assert sec["password"].value == virsec.value
 
     def test_register_libvirt_error(self):
         def fail(xml):
             raise vmfakecon.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
         self.connection.secretDefineXML = fail
         res = secret.register([make_secret()])
-        self.assertEqual(res, response.error("secretRegisterErr"))
+        assert res == response.error("secretRegisterErr")
 
     def test_register_unexpected_error(self):
         def fail(xml):
             raise Unexpected
         self.connection.secretDefineXML = fail
-        self.assertRaises(Unexpected, secret.register, [make_secret()])
+        with pytest.raises(Unexpected):
+            secret.register([make_secret()])
 
     def test_unregister_validation(self):
         res = secret.unregister(["this-is-not-a-uuid"])
-        self.assertEqual(res, response.error("secretBadRequestErr"))
+        assert res == response.error("secretBadRequestErr")
 
     def test_unregister_existing(self):
         sec1 = make_secret(password="sec1 password")
         sec2 = make_secret(password="sec2 password")
         secret.register([sec1, sec2])
         res = secret.unregister([sec1["uuid"]])
-        self.assertEqual(res, response.success())
-        self.assertNotIn(sec1["uuid"], self.connection.secrets)
-        self.assertIn(sec2["uuid"], self.connection.secrets)
+        assert res == response.success()
+        assert sec1["uuid"] not in self.connection.secrets
+        assert sec2["uuid"] in self.connection.secrets
 
     def test_unregister_missing(self):
         existing_sec = make_secret()
         secret.register([existing_sec])
         missing_sec = make_secret()
         res = secret.unregister([missing_sec["uuid"], existing_sec["uuid"]])
-        self.assertEqual(res, response.success())
-        self.assertEqual({}, self.connection.secrets)
+        assert res == response.success()
+        assert {} == self.connection.secrets
 
     def test_unregister_libvirt_error(self):
         def fail(uuid):
             raise vmfakecon.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
         self.connection.secretLookupByUUIDString = fail
         res = secret.unregister([str(uuid.uuid4())])
-        self.assertEqual(res, response.error("secretUnregisterErr"))
+        assert res == response.error("secretUnregisterErr")
 
     def test_unregister_unexpected_error(self):
         def fail(uuid):
             raise Unexpected
         self.connection.secretLookupByUUIDString = fail
-        self.assertRaises(Unexpected, secret.unregister, [str(uuid.uuid4())])
+        with pytest.raises(Unexpected):
+            secret.unregister([str(uuid.uuid4())])
 
 
 def make_secret(sid=None, usage_type="ceph", usage_id=None,

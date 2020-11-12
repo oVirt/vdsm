@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ class PowerDownTests(TestCaseBase):
         )
         obj = make_object('VmPowerDown', vm, self.event)
         res = obj.start()
-        self.assertTrue(response.is_error(res, 'exist'))
+        assert response.is_error(res, 'exist')
 
     def test_with_default_callbacks(self):
         vm = FakeVM(
@@ -62,7 +62,7 @@ class PowerDownTests(TestCaseBase):
         obj = make_object('VmPowerDown', vm, self.event)
         # no actual callback will be called now!
         res = obj.start()
-        self.assertFalse(response.is_error(res))
+        assert not response.is_error(res)
 
     def test_with_forced_callback(self):
         vm = FakeVM(
@@ -71,9 +71,8 @@ class PowerDownTests(TestCaseBase):
             acpiEnable='true'
         )
         obj = make_object('VmPowerDown', vm, self.event, force=True)
-        self.assertIn(
-            obj.forceCallback,
-            [cb.func for cb in obj.chain.callbacks])
+        assert obj.forceCallback in \
+            [cb.func for cb in obj.chain.callbacks]
 
 
 class ShutdownTests(TestCaseBase):
@@ -89,7 +88,7 @@ class ShutdownTests(TestCaseBase):
             acpiEnable='true'
         )
         obj = make_object('VmShutdown', vm, self.event)
-        self.assertFalse(obj.qemuGuestAgentCallback())
+        assert not obj.qemuGuestAgentCallback()
 
 
 class RebootTests(TestCaseBase):
@@ -105,7 +104,7 @@ class RebootTests(TestCaseBase):
             acpiEnable='true'
         )
         obj = make_object('VmReboot', vm, self.event)
-        self.assertFalse(obj.qemuGuestAgentCallback())
+        assert not obj.qemuGuestAgentCallback()
 
 
 def make_object(name, vm, event, force=False):

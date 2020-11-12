@@ -113,15 +113,15 @@ class SealJobTest(VdsmTestCase):
             job.autodelete = False
             job.run()
 
-            self.assertEqual(jobs.STATUS.DONE, job.status)
-            self.assertEqual(expected, irs.__calls__)
+            assert jobs.STATUS.DONE == job.status
+            assert expected == irs.__calls__
 
             for image in images:
                 resultpath = _vol_path(base, image['sd_id'], sp_id,
                                        image['img_id'], ext='.res')
                 with open(resultpath) as f:
                     data = f.read()
-                    self.assertEqual(data, 'fake-virt-sysprep was here')
+                    assert data == 'fake-virt-sysprep was here'
 
     @MonkeyPatch(virtsysprep, '_VIRTSYSPREP', FAKE_VIRTSYSPREP)
     def test_teardown_failure(self):
@@ -153,5 +153,5 @@ class SealJobTest(VdsmTestCase):
             job.autodelete = False
             job.run()
 
-            self.assertEqual(jobs.STATUS.FAILED, job.status)
-            self.assertEqual(expected, irs.__calls__)
+            assert jobs.STATUS.FAILED == job.status
+            assert expected == irs.__calls__

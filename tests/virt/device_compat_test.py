@@ -1,6 +1,6 @@
 # encoding: utf-8
 #
-# Copyright 2018-2019 Red Hat, Inc.
+# Copyright 2018-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -137,12 +137,10 @@ class TestDeviceCompat(XMLTestCase):
                 dev_meta
             )
         )
-        self.assertEqual(dev.config(), dev_conf)
+        assert dev.config() == dev_conf
 
-        self.assertEqual(
-            dev.config(),
+        assert dev.config() == \
             vmdevices.storage.Drive(self.log, **dev_conf).config()
-        )
 
     def _assertDeviceCorrect(self, dev_class, dev_xml, dev_conf, dev_meta):
         dev = dev_class.from_xml_tree(
@@ -150,10 +148,8 @@ class TestDeviceCompat(XMLTestCase):
             xmlutils.fromstring(dev_xml),
             dev_meta
         )
-        self.assertEqual(dev.vmid, 'testvm')
-        self.assertEqual(dev.config(), dev_conf)
+        assert dev.vmid == 'testvm'
+        assert dev.config() == dev_conf
 
-        self.assertEqual(
-            dev.config(),
+        assert dev.config() == \
             dev_class(self.log, **dev_conf).config()
-        )

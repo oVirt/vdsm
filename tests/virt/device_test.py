@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2019 Red Hat, Inc.
+# Copyright 2008-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -107,14 +107,14 @@ class TestVmDevices(XMLTestCase):
     def testGraphicDeviceHeadlessSupported(self):
         conf = {}
         conf.update(self.conf)
-        self.assertTrue(vmdevices.graphics.isSupportedDisplayType(conf))
+        assert vmdevices.graphics.isSupportedDisplayType(conf)
 
     def testHasSpiceEngineXML(self):
         conf = {}
         conf.update(self.conf)
         conf['xml'] = read_data('domain.xml')
         with fake.VM(conf) as testvm:
-            self.assertTrue(testvm.hasSpice)
+            assert testvm.hasSpice
 
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: MockedProxy())
@@ -184,7 +184,7 @@ class TestVmDevices(XMLTestCase):
         with fake.VM(xmldevices=devices, create_device_objects=True) as testvm:
             testvm._dom = fake.Domain()
             res = testvm.updateDevice(params)
-            self.assertIn('vmList', res)
+            assert 'vmList' in res
             self.assertXMLEqual(testvm._dom.devXml, updated_xml)
 
     def testUpdateDriverInSriovInterface(self):
@@ -221,8 +221,8 @@ class TestVmDevices(XMLTestCase):
             vmdevices.network.Interface.update_device_info(
                 testvm, device_conf)
 
-            self.assertEqual(interface_dev.driver,
-                             {'queues': '10', 'name': 'vfio'})
+            assert interface_dev.driver == \
+                {'queues': '10', 'name': 'vfio'}
 
     def test_interface_update_disappear_queues(self):
         interface_xml = """<interface type="bridge">
@@ -269,7 +269,7 @@ class TestVmDevices(XMLTestCase):
                 testvm, testvm._devices[hwclass.NIC]
             )
 
-            self.assertEqual(nic.driver, saved_driver)
+            assert nic.driver == saved_driver
 
     @MonkeyPatch(vmdevices.network.supervdsm, 'getProxy',
                  lambda: MockedProxy(ovs_bridge={'name': 'test',
@@ -338,38 +338,38 @@ class TestVmDevices(XMLTestCase):
     def test_mdev_details_(self):
         details = hostdev._mdev_type_details('graphics-card-1', '/nonexistent')
         for f in hostdev._MDEV_FIELDS:
-            self.assertEqual(getattr(details, f),
-                             'graphics-card-1' if f == 'name' else '')
+            assert getattr(details, f) == \
+                ('graphics-card-1' if f == 'name' else '')
 
     def test_graphics_no_display_network(self):
         dom = xmlutils.fromstring(self.GRAPHICS_NO_DISPLAY_NETWORK)
         device = vmdevices.graphics.Graphics(dom, 'vmid')
-        self.assertIsNone(device._display_network())
+        assert device._display_network() is None
 
     def test_graphics_display_network(self):
         dom = xmlutils.fromstring(self.GRAPHICS_DISPLAY_NETWORK)
         device = vmdevices.graphics.Graphics(dom, '1234')
-        self.assertEqual(device._display_network(), 'ovirtmgmt')
+        assert device._display_network() == 'ovirtmgmt'
 
     def test_display_info_no_display_network(self):
         xml = ('<domain><devices>%s</devices></domain>' %
                (self.GRAPHICS_NO_DISPLAY_NETWORK,))
         domain = DomainDescriptor(xml)
         info = vmdevices.graphics.display_info(domain)
-        self.assertEqual(info, [{'type': 'spice',
+        assert info == [{'type': 'spice',
                                  'port': '-1',
                                  'tlsPort': '-1',
-                                 'ipAddress': '1.2.3.4'}])
+                                 'ipAddress': '1.2.3.4'}]
 
     def test_display_info_display_network(self):
         xml = ('<domain><devices>%s</devices></domain>' %
                (self.GRAPHICS_DISPLAY_NETWORK,))
         domain = DomainDescriptor(xml)
         info = vmdevices.graphics.display_info(domain)
-        self.assertEqual(info, [{'type': 'spice',
+        assert info == [{'type': 'spice',
                                  'port': '5900',
                                  'tlsPort': '5901',
-                                 'ipAddress': '1.2.3.4'}])
+                                 'ipAddress': '1.2.3.4'}]
 
 
 class ConsoleTests(TestCaseBase):
@@ -395,7 +395,7 @@ class ConsoleTests(TestCaseBase):
         </console>
 """)
             vmdevices.core.prepare_console(dom, self.cfg['vmId'])
-            self.assertEqual(supervdsm.prepared_path, None)
+            assert supervdsm.prepared_path is None
 
     def test_console_usock_prepare_path(self):
         supervdsm = fake.SuperVdsm()
@@ -408,10 +408,10 @@ class ConsoleTests(TestCaseBase):
         </console>
 """ % (self._expected_path,))
             vmdevices.core.prepare_console(dom, self.cfg['vmId'])
-            self.assertEqual(supervdsm.prepared_path,
-                             self._expected_path)
-            self.assertEqual(supervdsm.prepared_path_group,
-                             constants.OVIRT_VMCONSOLE_GROUP)
+            assert supervdsm.prepared_path == \
+                self._expected_path
+            assert supervdsm.prepared_path_group == \
+                constants.OVIRT_VMCONSOLE_GROUP
 
     def test_console_pty_not_cleanup_path(self):
         def _fake_cleanup(path):
@@ -427,7 +427,7 @@ class ConsoleTests(TestCaseBase):
         </console>
 """)
             vmdevices.core.cleanup_console(dom, self.cfg['vmId'])
-            self.assertEqual(self._cleaned_path, None)
+            assert self._cleaned_path is None
 
     def test_console_usock_cleanup_path(self):
         def _fake_cleanup(path):
@@ -444,7 +444,7 @@ class ConsoleTests(TestCaseBase):
         </console>
 """ % (self._expected_path,))
             vmdevices.core.cleanup_console(dom, self.cfg['vmId'])
-            self.assertEqual(self._cleaned_path, self._expected_path)
+            assert self._cleaned_path == self._expected_path
 
 
 class BrokenSuperVdsm(fake.SuperVdsm):
@@ -544,89 +544,88 @@ class TestHotplug(TestCaseBase):
         supervdsm = fake.SuperVdsm()
         with MonkeyPatchScope([(vmdevices.network, 'supervdsm', supervdsm)]):
             vm.hotplugDisk(params)
-        self.assertEqual(len(vm.getDiskDevices()), 1)
+        assert len(vm.getDiskDevices()) == 1
         dev = vm._devices[hwclass.DISK][0]
-        self.assertEqual(dev.serial, '1234')
-        self.assertEqual(dev.domainID, '1111')
-        self.assertEqual(dev.name, 'sda')
+        assert dev.serial == '1234'
+        assert dev.domainID == '1111'
+        assert dev.name == 'sda'
 
     def test_disk_hotunplug(self):
         vm = self.vm
         params = {'xml': self.DISK_HOTPLUG}
         vm.hotunplugDisk(params)
-        self.assertEqual(len(vm.getDiskDevices()), 0)
+        assert len(vm.getDiskDevices()) == 0
 
     def test_nic_hotplug(self):
         vm = self.vm
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        assert len(vm._devices[hwclass.NIC]) == 1
         params = {'xml': self.NIC_HOTPLUG}
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
             vm.hotplugNic(params)
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 2)
+        assert len(vm._devices[hwclass.NIC]) == 2
         for dev in vm._devices[hwclass.NIC]:
             if dev.macAddr == "66:55:44:33:22:11":
                 break
         else:
             raise Exception("Hot plugged device not found")
-        self.assertEqual(dev.macAddr, "66:55:44:33:22:11")
-        self.assertEqual(dev.network, "test")
+        assert dev.macAddr == "66:55:44:33:22:11"
+        assert dev.network == "test"
         # TODO: Make sure metadata of the original device is initialized in the
         # fake VM.
         # with vm._md_desc.device(mac_address="11:22:33:44:55:66") as dev:
         #     self.assertEqual(dev['network'], "ovirtmgmt")
         with vm._md_desc.device(mac_address="66:55:44:33:22:11") as dev:
-            self.assertEqual(dev['network'], "test")
-        self.assertEqual(self.supervdsm.mirrored_networks,
-                         [('network1', '',),
-                          ('network2', '',)])
+            assert dev['network'] == "test"
+        assert self.supervdsm.mirrored_networks == \
+            [('network1', '',), ('network2', '',)]
 
     def test_nic_hotplug_mirroring_failure(self):
         vm = self.vm
         supervdsm = BrokenSuperVdsm()
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        assert len(vm._devices[hwclass.NIC]) == 1
         params = {'xml': self.NIC_HOTPLUG}
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 supervdsm.getProxy)]):
             vm.hotplugNic(params)
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        assert len(vm._devices[hwclass.NIC]) == 1
         dev = vm._devices[hwclass.NIC][0]
-        self.assertEqual(dev.macAddr, "11:22:33:44:55:66")
-        self.assertEqual(dev.network, "ovirtmgmt")
+        assert dev.macAddr == "11:22:33:44:55:66"
+        assert dev.network == "ovirtmgmt"
         # TODO: Make sure metadata of the original device is initialized in the
         # fake VM.
         # with vm._md_desc.device(mac_address="11:22:33:44:55:66") as dev:
         #     self.assertEqual(dev['network'], "ovirtmgmt")
         with vm._md_desc.device(dev_type=hwclass.NIC,
                                 mac_address="66:55:44:33:22:11") as dev:
-            self.assertNotIn('network', dev)
-        self.assertEqual(supervdsm.mirrored_networks, [])
+            assert 'network' not in dev
+        assert supervdsm.mirrored_networks == []
 
     def test_nic_hotunplug(self):
         vm = self.vm
         self.test_nic_hotplug()
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 2)
+        assert len(vm._devices[hwclass.NIC]) == 2
         params = {'xml': self.NIC_HOTPLUG}
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
             vm.hotunplugNic(params)
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        assert len(vm._devices[hwclass.NIC]) == 1
         dev = vm._devices[hwclass.NIC][0]
-        self.assertEqual(dev.macAddr, "11:22:33:44:55:66")
-        self.assertEqual(dev.network, "ovirtmgmt")
+        assert dev.macAddr == "11:22:33:44:55:66"
+        assert dev.network == "ovirtmgmt"
         # TODO: Make sure metadata of the original device is initialized in the
         # fake VM.
         # with vm._md_desc.device(mac_address="11:22:33:44:55:66") as dev:
         #     self.assertEqual(dev['network'], "ovirtmgmt")
         with vm._md_desc.device(dev_type=hwclass.NIC,
                                 mac_addres="66:55:44:33:22:11") as dev:
-            self.assertNotIn('network', dev)
-        self.assertEqual(self.supervdsm.mirrored_networks, [])
+            assert 'network' not in dev
+        assert self.supervdsm.mirrored_networks == []
 
     def test_delayed_nic_hotunplug(self):
         vm = self.vm
         self.test_nic_hotplug()
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 2)
+        assert len(vm._devices[hwclass.NIC]) == 2
         params = {'xml': self.NIC_HOTPLUG}
         with MonkeyPatchScope([
                 (vdsm.common.supervdsm, 'getProxy', self.supervdsm.getProxy),
@@ -635,14 +634,14 @@ class TestHotplug(TestCaseBase):
                               ('vars', 'hotunplug_check_interval', '0.01')])),
         ]):
             self.vm._dom.vm = None
-            self.assertTrue(response.is_error(vm.hotunplugNic(params)))
+            assert response.is_error(vm.hotunplugNic(params))
             self.vm.onDeviceRemoved('ua-nic-hotplugged')
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        assert len(vm._devices[hwclass.NIC]) == 1
 
     def test_nic_hotunplug_timeout(self):
         vm = self.vm
         self.test_nic_hotplug()
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 2)
+        assert len(vm._devices[hwclass.NIC]) == 2
         params = {'xml': self.NIC_HOTPLUG}
         with MonkeyPatchScope([
                 (vdsm.common.supervdsm, 'getProxy', self.supervdsm.getProxy),
@@ -651,8 +650,8 @@ class TestHotplug(TestCaseBase):
                               ('vars', 'hotunplug_check_interval', '0.01')])),
         ]):
             self.vm._dom.vm = None
-            self.assertTrue(response.is_error(vm.hotunplugNic(params)))
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 2)
+            assert response.is_error(vm.hotunplugNic(params))
+        assert len(vm._devices[hwclass.NIC]) == 2
 
 
 @expandPermutations
@@ -710,7 +709,7 @@ class TestUpdateDevice(TestCaseBase):
     ])
     def test_nic_update_mtu(self, mtu_old, mtu_new):
         vm = self.vm
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        assert len(vm._devices[hwclass.NIC]) == 1
         vm._devices[hwclass.NIC][0].mtu = mtu_old
         mtu = ''
         if mtu_new is not None:
@@ -722,19 +721,17 @@ class TestUpdateDevice(TestCaseBase):
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
             vm.updateDevice(params)
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        assert len(vm._devices[hwclass.NIC]) == 1
         for dev in vm._devices[hwclass.NIC]:
             if dev.macAddr == "11:22:33:44:55:66":
                 break
         else:
             raise Exception("Hot plugged device not found")
-        self.assertTrue(dev.linkActive)
-        self.assertEqual(dev.network, 'test')
-        self.assertEqual(
-            sorted(dev.portMirroring),
+        assert dev.linkActive
+        assert dev.network == 'test'
+        assert sorted(dev.portMirroring) == \
             sorted(['network1', 'network2'])
-        )
-        self.assertEqual(dev.mtu, mtu_new)
+        assert dev.mtu == mtu_new
 
     @permutations([
         # port_isolated_old, port_isolated_new
@@ -749,7 +746,7 @@ class TestUpdateDevice(TestCaseBase):
     def test_nic_update_port_isolated(self, port_isolated_old,
                                       port_isolated_new):
         vm = self.vm
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        assert len(vm._devices[hwclass.NIC]) == 1
         vm._devices[hwclass.NIC][0].port_isolated = port_isolated_old
         port = ''
         if port_isolated_new is not None:
@@ -761,13 +758,13 @@ class TestUpdateDevice(TestCaseBase):
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
             vm.updateDevice(params)
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        assert len(vm._devices[hwclass.NIC]) == 1
         for dev in vm._devices[hwclass.NIC]:
             if dev.macAddr == "11:22:33:44:55:66":
                 break
         else:
             raise Exception("Hot plugged device not found")
-        self.assertEqual(dev.port_isolated, port_isolated_new)
+        assert dev.port_isolated == port_isolated_new
 
 
 class TestRestorePaths(TestCaseBase):
@@ -858,20 +855,20 @@ class TestRestorePaths(TestCaseBase):
         for serial, path in tested_drives:
             for d in devices[hwclass.DISK]:
                 if d.serial == serial:
-                    self.assertEqual(d.path, path)
+                    assert d.path == path
                     break
             else:
                 raise Exception('Tested drive not found', serial)
         dom = xmlutils.fromstring(vm_xml)
         random = vmxml.find_first(dom, 'backend')
-        self.assertEqual(random.text, snapshot_params['device'])
+        assert random.text == snapshot_params['device']
         for serial, path in tested_drives:
             for d in dom.findall(".//disk[serial='{}']".format(serial)):
-                self.assertEqual(vmxml.find_attr(d, 'source', 'file'), path)
+                assert vmxml.find_attr(d, 'source', 'file') == path
                 break
             else:
                 raise Exception('Tested drive not found', serial)
-        self.assertEqual(vm_xml, vm._domain.xml)
+        assert vm_xml == vm._domain.xml
 
 
 class MockedProxy(object):
@@ -922,44 +919,44 @@ class VncSecureTest(TestCaseBase):
     PASSWD_VALID_PRESENT = 'passwdValidTo = "1970-01-01T00:00:01"'
 
     def test_no_vnc(self):
-        self.assertTrue(graphics.is_vnc_secure({'xml': self.XML_NO_VNC},
-                                               self.log))
+        assert graphics.is_vnc_secure({'xml': self.XML_NO_VNC},
+                                      self.log)
 
     @MonkeyPatch(utils, 'sasl_enabled', lambda: False)
     def test_sasl_disabled_no_password(self):
         xml = self.XML_VNC.format(passwd_tag=self.NO_PASSWD,
                                   passwd_valid_tag=self.NO_PASSWD_VALID)
-        self.assertFalse(graphics.is_vnc_secure({'xml': xml}, self.log))
+        assert not graphics.is_vnc_secure({'xml': xml}, self.log)
         xml = self.XML_VNC.format(passwd_tag=self.PASSWD_EMPTY,
                                   passwd_valid_tag=self.PASSWD_VALID_EMPTY)
-        self.assertFalse(graphics.is_vnc_secure({'xml': xml}, self.log))
+        assert not graphics.is_vnc_secure({'xml': xml}, self.log)
         xml = self.XML_VNC.format(passwd_tag=self.PASSWD_PRESENT,
                                   passwd_valid_tag=self.NO_PASSWD_VALID)
-        self.assertFalse(graphics.is_vnc_secure({'xml': xml}, self.log))
+        assert not graphics.is_vnc_secure({'xml': xml}, self.log)
         xml = self.XML_VNC.format(passwd_tag=self.PASSWD_PRESENT,
                                   passwd_valid_tag=self.PASSWD_VALID_EMPTY)
-        self.assertFalse(graphics.is_vnc_secure({'xml': xml}, self.log))
+        assert not graphics.is_vnc_secure({'xml': xml}, self.log)
         xml = self.XML_VNC.format(passwd_tag=self.NO_PASSWD,
                                   passwd_valid_tag=self.PASSWD_VALID_PRESENT)
-        self.assertTrue(graphics.is_vnc_secure({'xml': xml}, self.log))
+        assert graphics.is_vnc_secure({'xml': xml}, self.log)
         xml = self.XML_VNC.format(passwd_tag=self.PASSWD_EMPTY,
                                   passwd_valid_tag=self.PASSWD_VALID_PRESENT)
-        self.assertTrue(graphics.is_vnc_secure({'xml': xml}, self.log))
+        assert graphics.is_vnc_secure({'xml': xml}, self.log)
 
     @MonkeyPatch(utils, 'sasl_enabled', lambda: False)
     def test_sasl_disabled_password(self):
         xml = self.XML_VNC.format(passwd_tag=self.PASSWD_PRESENT,
                                   passwd_valid_tag=self.PASSWD_VALID_PRESENT)
-        self.assertTrue(graphics.is_vnc_secure({'xml': xml}, self.log))
+        assert graphics.is_vnc_secure({'xml': xml}, self.log)
 
     @MonkeyPatch(utils, 'sasl_enabled', lambda: True)
     def test_sasl_enabled_password(self):
         xml = self.XML_VNC.format(passwd_tag=self.PASSWD_PRESENT,
                                   passwd_valid_tag=self.PASSWD_VALID_PRESENT)
-        self.assertTrue(graphics.is_vnc_secure({'xml': xml}, self.log))
+        assert graphics.is_vnc_secure({'xml': xml}, self.log)
 
     @MonkeyPatch(utils, 'sasl_enabled', lambda: True)
     def test_sasl_enabled_no_password(self):
         xml = self.XML_VNC.format(passwd_tag=self.NO_PASSWD,
                                   passwd_valid_tag=self.NO_PASSWD_VALID)
-        self.assertTrue(graphics.is_vnc_secure({'xml': xml}, self.log))
+        assert graphics.is_vnc_secure({'xml': xml}, self.log)

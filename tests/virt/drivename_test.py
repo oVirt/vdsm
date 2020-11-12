@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ from testlib import expandPermutations
 from testlib import permutations
 
 from vdsm.virt.vmdevices import drivename
+import pytest
 
 
 _ITEMS = list(drivename._DEVIFACES.items())
@@ -39,26 +40,25 @@ class TestDriveNameFunctions(VdsmTestCase):
         for index, value in _CONVERTED_VALUES:
             computed = drivename.make(iface, index)
             expected = prefix + value
-            self.assertEqual(
-                computed, expected,
+            assert computed == expected, \
                 "mismatch for %s: computed=%s expected=%s" % (
-                    (iface, index), computed, expected))
+                    (iface, index), computed, expected)
 
     @permutations(_ITEMS)
     def test_split_name(self, prefix, iface):
         for index, value in _CONVERTED_VALUES:
             computed = drivename.split(prefix + value)
             expected = (iface, index)
-            self.assertEqual(
-                computed, expected,
+            assert computed == expected, \
                 "mismatch for %s: computed=%s expected=%s" % (
-                    prefix + value, computed, expected))
+                    prefix + value, computed, expected)
 
     @permutations([
         (iface, -1) for iface in drivename._DEVIFACES
     ])
     def test_make_name_invalid_parameters(self, iface, index):
-        self.assertRaises(ValueError, drivename.make, iface, index)
+        with pytest.raises(ValueError):
+            drivename.make(iface, index)
 
     @permutations([
         # device_name
@@ -69,7 +69,8 @@ class TestDriveNameFunctions(VdsmTestCase):
         ['fd0'],
     ])
     def test_split_name_invalid_device(self, device_name):
-        self.assertRaises(ValueError, drivename.split, device_name)
+        with pytest.raises(ValueError):
+            drivename.split(device_name)
 
 
 _CONVERTED_VALUES = (

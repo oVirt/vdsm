@@ -29,6 +29,7 @@ from vdsm.virt.vmdevices import lookup
 
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
+import pytest
 
 
 _DRIVES_XML = [
@@ -82,81 +83,74 @@ class TestLookup(VdsmTestCase):
         assert drive is self.drives[0]
 
     def test_lookup_drive_by_name_missing(self):
-        self.assertRaises(
-            LookupError, lookup.drive_by_name, self.drives, 'hdd')
+        with pytest.raises(LookupError):
+            lookup.drive_by_name(self.drives, 'hdd')
 
     def test_lookup_drive_by_serial_found(self):
         drive = lookup.drive_by_serial(self.drives, 'scsi0000')
         assert drive is self.drives[0]
 
     def test_lookup_drive_by_serial_missing(self):
-        self.assertRaises(
-            LookupError, lookup.drive_by_serial, self.drives, 'ide0002')
+        with pytest.raises(LookupError):
+            lookup.drive_by_serial(self.drives, 'ide0002')
 
     def test_lookup_device_by_alias_found(self):
         device = lookup.device_by_alias(self.drives, 'ua-0000')
         assert device is self.drives[0]
 
     def test_lookup_device_by_alias_missing(self):
-        self.assertRaises(
-            LookupError, lookup.device_by_alias, self.drives, 'ua-UNKNOWN')
+        with pytest.raises(LookupError):
+            lookup.device_by_alias(self.drives, 'ua-UNKNOWN')
 
     def test_lookup_xml_device_by_alias_found(self):
         device = lookup.xml_device_by_alias(self.device_xml, 'ua-2')
         assert device.tag == 'hostdev'
 
     def test_lookup_xml_device_by_alias_missing(self):
-        self.assertRaises(
-            LookupError, lookup.xml_device_by_alias,
-            self.device_xml, 'ua-UNKNOWN'
-        )
+        with pytest.raises(LookupError):
+            lookup.xml_device_by_alias(self.device_xml, 'ua-UNKNOWN')
 
     @permutations([[c] for c in hwclass.HOTPLUGGABLE])
     def test_hotpluggable_device_by_alias_found(self, device_class):
         self.devices[device_class] = self.drives
         device = lookup.hotpluggable_device_by_alias(self.devices, 'ua-0000')
-        self.assertIs(device[0], self.drives[0])
-        self.assertEqual(device[1], device_class)
+        assert device[0] is self.drives[0]
+        assert device[1] == device_class
 
     def test_hotpluggable_device_by_alias_missing(self):
-        self.assertRaises(
-            LookupError, lookup.hotpluggable_device_by_alias,
-            self.devices, 'ua-UNKNOWN')
+        with pytest.raises(LookupError):
+            lookup.hotpluggable_device_by_alias(self.devices, 'ua-UNKNOWN')
 
     @permutations(_DRIVES_XML)
     def test_lookup_drive_by_element(self, drive_xml, dev_name, alias_name):
         # intentionally without serial and alias
         if dev_name is None:
-            self.assertRaises(
-                LookupError,
-                lookup.drive_from_element,
-                self.drives,
-                xmlutils.fromstring(drive_xml)
-            )
+            with pytest.raises(LookupError):
+                lookup.drive_from_element(
+                    self.drives, xmlutils.fromstring(drive_xml)
+                )
         else:
             drive = lookup.drive_from_element(
                 self.drives,
                 xmlutils.fromstring(drive_xml)
             )
-            self.assertEqual(drive.name, dev_name)
+            assert drive.name == dev_name
 
     @permutations(_DRIVES_XML)
     def test_lookup_device_from_xml_alias(
             self, drive_xml, dev_name, alias_name):
         # intentionally without serial and alias
         if dev_name is None or alias_name is None:
-            self.assertRaises(
-                LookupError,
-                lookup.device_from_xml_alias,
-                self.drives,
-                drive_xml
-            )
+            with pytest.raises(LookupError):
+                lookup.device_from_xml_alias(
+                    self.drives, drive_xml
+                )
         else:
             drive = lookup.device_from_xml_alias(
                 self.drives,
                 drive_xml
             )
-            self.assertEqual(drive.name, dev_name)
+            assert drive.name == dev_name
 
     @permutations([
         ['memory', 'dimm0', 0],
@@ -165,16 +159,15 @@ class TestLookup(VdsmTestCase):
     def test_lookup_conf(self, dev_type, alias, index):
         conf = lookup.conf_by_alias(
             self.devices_conf, dev_type, alias)
-        self.assertEqual(conf, self.devices_conf[index])
+        assert conf == self.devices_conf[index]
 
     @permutations([
         ['memory', 'dimm1'],
         ['sound', 'dimm0'],
     ])
     def test_lookup_conf_error(self, dev_type, alias):
-        self.assertRaises(LookupError,
-                          lookup.conf_by_alias,
-                          self.devices_conf, dev_type, alias)
+        with pytest.raises(LookupError):
+            lookup.conf_by_alias(self.devices_conf, dev_type, alias)
 
     @permutations([
         # devices_conf
@@ -182,9 +175,8 @@ class TestLookup(VdsmTestCase):
         [[{}]],
     ])
     def test_lookup_conf_missing(self, devices_conf):
-        self.assertRaises(LookupError,
-                          lookup.conf_by_alias,
-                          devices_conf, 'memory', 'dimm0')
+        with pytest.raises(LookupError):
+            lookup.conf_by_alias(devices_conf, 'memory', 'dimm0')
 
     @permutations([
         # devices_conf
@@ -193,9 +185,8 @@ class TestLookup(VdsmTestCase):
         [[{'alias': 'ac97', 'type': 'sound'}]],
     ])
     def test_lookup_conf_by_path_missing(self, devices_conf):
-        self.assertRaises(LookupError,
-                          lookup.conf_by_path,
-                          devices_conf, '/fake/test/path')
+        with pytest.raises(LookupError):
+            lookup.conf_by_path(devices_conf, '/fake/test/path')
 
     @permutations([
         # devices_conf, path, dev_index
@@ -207,7 +198,7 @@ class TestLookup(VdsmTestCase):
     ])
     def test_lookup_conf_by_path(self, devices_conf, path, dev_index):
         drive = lookup.conf_by_path(devices_conf, path)
-        self.assertEqual(drive, devices_conf[dev_index])
+        assert drive == devices_conf[dev_index]
 
 
 class FakeDrive(object):

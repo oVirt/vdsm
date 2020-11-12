@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2014-2019 Red Hat, Inc.
+# Copyright 2014-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ from vdsm.virt import domain_descriptor
 from vdsm.virt import vmchannels
 from vdsm.virt import vmxml
 
-from testValidation import brokentest, slowtest
+from testValidation import brokentest
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase, permutations, expandPermutations
 
@@ -43,6 +43,7 @@ from vmTestsData import CONF_TO_DOMXML_PPC64
 from vmTestsData import CONF_TO_DOMXML_NO_VDSM
 
 from . import vmfakelib as fake
+import pytest
 
 
 class VmXmlTestCase(TestCaseBase):
@@ -64,8 +65,8 @@ class TestVmXmlFunctions(VmXmlTestCase):
     @permutations([[cpuarch.X86_64], [cpuarch.PPC64]])
     def test_has_channel(self, arch):
         for _, dom_xml in self._build_domain_xml(arch):
-            self.assertEqual(True, vmxml.has_channel(
-                dom_xml, vmchannels.LEGACY_DEVICE_NAME))
+            assert vmxml.has_channel(dom_xml, vmchannels.LEGACY_DEVICE_NAME) \
+                is True
 
 
 @expandPermutations
@@ -93,7 +94,7 @@ class TestVmXmlHelpers(XMLTestCase):
         xml = re.sub(' *\n *', '', self._XML)
         dom = xmlutils.fromstring(xml)
         pretty = xmlutils.tostring(dom, pretty=True)
-        self.assertEqual(pretty, u'''<?xml version='1.0' encoding='utf-8'?>
+        assert pretty == u'''<?xml version='1.0' encoding='utf-8'?>
 <topelement>
     <hello lang="english">hello</hello>
     <hello cyrillic="yes" lang="русский">здра́вствуйте</hello>
@@ -107,7 +108,7 @@ class TestVmXmlHelpers(XMLTestCase):
     </container>
     <empty />
 </topelement>
-''')
+'''
 
     def test_pretty_format_safety(self):
         # Check that dom is not modified in tostring; we check that by
@@ -118,9 +119,9 @@ class TestVmXmlHelpers(XMLTestCase):
         exported_1 = etree.tostring(dom)
         xmlutils.tostring(dom, pretty=True)
         exported_2 = etree.tostring(dom)
-        self.assertEqual(exported_1, exported_2)
+        assert exported_1 == exported_2
 
-    @slowtest
+    @pytest.mark.slow
     def test_pretty_format_timing(self):
         test_path = os.path.realpath(__file__)
         dir_name = os.path.split(test_path)[0]
@@ -155,11 +156,12 @@ def run():
             dom = vmxml.find_first(self._dom, 'topelement')
         elements = vmxml.find_all(dom, tag)
         matches = [vmxml.tag(e) == tag for e in elements]
-        self.assertTrue(all(matches))
-        self.assertEqual(len(matches), number)
+        assert all(matches)
+        assert len(matches) == number
 
     def test_find_first_not_found(self):
-        self.assertRaises(vmxml.NotFound, vmxml.find_first, self._dom, 'none')
+        with pytest.raises(vmxml.NotFound):
+            vmxml.find_first(self._dom, 'none')
 
     @permutations([['hello', 'lang', 'english'],
                    ['hello', 'none', ''],
@@ -167,14 +169,14 @@ def run():
                    ])
     def test_find_attr(self, tag, attribute, result):
         value = vmxml.find_attr(self._dom, tag, attribute)
-        self.assertEqual(value, result)
+        assert value == result
 
     @permutations([['hello', 'hello'],
                    ['empty', '']])
     def test_text(self, tag, result):
         element = vmxml.find_first(self._dom, tag)
         text = vmxml.text(element)
-        self.assertEqual(text, result)
+        assert text == result
 
     @permutations([['topelement', 'hello', 2],
                    ['bye', 'hello', 1],
@@ -184,31 +186,32 @@ def run():
                    ])
     def test_children(self, start_tag, tag, number):
         element = vmxml.find_first(self._dom, start_tag)
-        self.assertEqual(len(list(vmxml.children(element, tag))), number)
+        assert len(list(vmxml.children(element, tag))) == number
 
     def test_append_child(self):
         empty = vmxml.find_first(self._dom, 'empty')
         vmxml.append_child(empty, vmxml.Element('new'))
-        self.assertIsNotNone(vmxml.find_first(self._dom, 'new', None))
+        assert vmxml.find_first(self._dom, 'new', None) is not None
         empty = vmxml.find_first(self._dom, 'empty')
-        self.assertIsNotNone(vmxml.find_first(empty, 'new', None))
+        assert vmxml.find_first(empty, 'new', None) is not None
 
     def test_append_child_etree(self):
         empty = vmxml.find_first(self._dom, 'empty')
         vmxml.append_child(empty, etree_child=xmlutils.fromstring('<new/>'))
-        self.assertIsNotNone(vmxml.find_first(self._dom, 'new', None))
+        assert vmxml.find_first(self._dom, 'new', None) is not None
         empty = vmxml.find_first(self._dom, 'empty')
-        self.assertIsNotNone(vmxml.find_first(empty, 'new', None))
+        assert vmxml.find_first(empty, 'new', None) is not None
 
     def test_append_child_noargs(self):
         empty = vmxml.find_first(self._dom, 'empty')
-        self.assertRaises(RuntimeError, vmxml.append_child, empty)
+        with pytest.raises(RuntimeError):
+            vmxml.append_child(empty)
 
     def test_append_child_too_many_args(self):
         empty = vmxml.find_first(self._dom, 'empty')
-        self.assertRaises(RuntimeError, vmxml.append_child, empty,
-                          vmxml.Element('new'),
-                          xmlutils.fromstring('<new/>'))
+        with pytest.raises(RuntimeError):
+            vmxml.append_child(empty, vmxml.Element('new'),
+                               xmlutils.fromstring('<new/>'))
 
     def test_remove_child(self):
         top = vmxml.find_first(self._dom, 'topelement')
@@ -217,7 +220,7 @@ def run():
         vmxml.remove_child(top, old)
         updated_hello = list(vmxml.find_all(top, 'hello'))
         hello = hello[:1] + hello[2:]
-        self.assertEqual(updated_hello, hello)
+        assert updated_hello == hello
 
     def test_replace_child(self):
         expected = u'''<topelement>
@@ -272,7 +275,7 @@ def run():
         sub1 = vmxml.find_first(dom, 'subelement')  # outermost
         sub2 = vmxml.find_first(sub1, 'subelement')  # innermost
         last = vmxml.find_first(sub2, 'subelement')
-        self.assertIsNot(sub2, last)
+        assert sub2 is not last
 
 
 @expandPermutations
@@ -286,19 +289,18 @@ class TestDomainDescriptor(VmXmlTestCase):
         for _, dom_xml in self._build_domain_xml(arch):
             dom = descriptor(dom_xml)
             channels = list(dom.all_channels())
-            self.assertTrue(len(channels) >=
-                            len(vmchannels.AGENT_DEVICE_NAMES))
+            assert len(channels) >= len(vmchannels.AGENT_DEVICE_NAMES)
             for name, path in channels:
-                self.assertIn(name, vmchannels.AGENT_DEVICE_NAMES)
+                assert name in vmchannels.AGENT_DEVICE_NAMES
 
     @permutations([[domain_descriptor.DomainDescriptor],
                    [domain_descriptor.MutableDomainDescriptor]])
     def test_all_channels_extra_domain(self, descriptor):
         for conf, raw_xml in CONF_TO_DOMXML_NO_VDSM:
             dom = descriptor(raw_xml % conf)
-            self.assertNotEqual(sorted(dom.all_channels()),
-                                sorted(vmchannels.AGENT_DEVICE_NAMES))
+            assert sorted(dom.all_channels()) != \
+                sorted(vmchannels.AGENT_DEVICE_NAMES)
 
     def test_no_channels(self):
         dom = domain_descriptor.MutableDomainDescriptor('<domain/>')
-        self.assertEqual(list(dom.all_channels()), [])
+        assert list(dom.all_channels()) == []

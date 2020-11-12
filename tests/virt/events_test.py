@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,10 +30,10 @@ class TestEventName(TestCaseBase):
 
     def test_known(self):
         for event_id in events.LIBVIRT_EVENTS:
-            self.assertTrue(events.event_name(event_id))
+            assert events.event_name(event_id)
 
     def test_unknown(self):
         UNKNOWN_FAKE_EVENT_ID = 424242
         # given unknown events, it must still return a meaningful string)
-        self.assertNotIn(UNKNOWN_FAKE_EVENT_ID, events.LIBVIRT_EVENTS)
-        self.assertTrue(events.event_name(UNKNOWN_FAKE_EVENT_ID))
+        assert UNKNOWN_FAKE_EVENT_ID not in events.LIBVIRT_EVENTS
+        assert events.event_name(UNKNOWN_FAKE_EVENT_ID)

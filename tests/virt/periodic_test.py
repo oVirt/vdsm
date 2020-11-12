@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2019 Red Hat, Inc.
+# Copyright 2015-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,6 @@ from vdsm.virt import vmstatus
 
 
 from monkeypatch import MonkeyPatchScope
-from testValidation import slowtest
 from testValidation import broken_on_ci
 from testlib import make_config
 from testlib import expandPermutations, permutations
@@ -45,6 +44,7 @@ from testlib import VdsmTestCase as TestCaseBase
 import fakelib
 
 from . import vmfakelib as fake
+import pytest
 
 
 @expandPermutations
@@ -52,7 +52,7 @@ class TimeoutTests(TestCaseBase):
 
     @permutations([[0], [0.1], [1], [5], [99]])
     def test_timeout_lesser_or_equal(self, interval):
-        self.assertTrue(periodic._timeout_from(interval) <= interval)
+        assert periodic._timeout_from(interval) <= interval
 
 
 class _PeriodicBase(TestCaseBase):
@@ -122,7 +122,7 @@ class PeriodicFunctionsTests(_PeriodicBase):
             periodic.start(fake.ClientIF(), self.sched)
 
         done.wait(0.5)
-        self.assertTrue(done.is_set())
+        assert done.is_set()
 
 
 @expandPermutations
@@ -139,13 +139,14 @@ class PeriodicOperationTests(_PeriodicBase):
                                 executor=self.exc)
         op.start()
         invoked.wait(0.5)
-        self.assertTrue(invoked.is_set())
+        assert invoked.is_set()
 
     def test_invalid_period(self):
         op = periodic.Operation(lambda: None, period=0,
                                 scheduler=self.sched,
                                 executor=self.exc)
-        self.assertRaises(periodic.InvalidValue, op.start)
+        with pytest.raises(periodic.InvalidValue):
+            op.start()
 
     def test_start_twice(self):
 
@@ -156,7 +157,8 @@ class PeriodicOperationTests(_PeriodicBase):
                                 scheduler=self.sched,
                                 executor=self.exc)
         op.start()
-        self.assertRaises(AssertionError, op.start)
+        with pytest.raises(AssertionError):
+            op.start()
 
     @permutations([
         # exclusive
@@ -186,8 +188,8 @@ class PeriodicOperationTests(_PeriodicBase):
         # nothing prevents this, although is unlikely.
         # we don't care of this case
         op.stop()
-        self.assertTrue(invoked.is_set())
-        self.assertTrue(TIMES <= invocations[0] <= TIMES + 1)
+        assert invoked.is_set()
+        assert TIMES <= invocations[0] <= TIMES + 1
 
     def test_repeating_exclusive_with_pool_exhausted(self):
         PERIOD = 0.1
@@ -213,8 +215,8 @@ class PeriodicOperationTests(_PeriodicBase):
         # the timeout should be >= PERIOD * (TRIES_BEFORE_SUCCESS + 1).
         # We use larger value to reduce the chance of false failures
         # on overloaded CI workers.
-        self.assertTrue(done.wait(timeout))
-        self.assertEqual(attempts[0], TRIES_BEFORE_SUCCESS + 1)
+        assert done.wait(timeout)
+        assert attempts[0] == TRIES_BEFORE_SUCCESS + 1
         op.stop()
 
     @broken_on_ci("Fails occasionally, don't know why",
@@ -236,8 +238,8 @@ class PeriodicOperationTests(_PeriodicBase):
         # nothing prevents this, although is unlikely.
         # we don't care of this case
         op.stop()
-        self.assertTrue(completed)
-        self.assertTrue(TIMES <= exc.attempts <= TIMES + 1)
+        assert completed
+        assert TIMES <= exc.attempts <= TIMES + 1
 
     def test_stop(self):
         PERIOD = 0.1
@@ -253,7 +255,7 @@ class PeriodicOperationTests(_PeriodicBase):
         op.start()
         time.sleep(PERIOD * 2)
         # avoid pathological case on which nothing ever runs
-        self.assertTrue(invocations[0] > 0)
+        assert invocations[0] > 0
 
         op.stop()
 
@@ -261,9 +263,9 @@ class PeriodicOperationTests(_PeriodicBase):
         time.sleep(PERIOD)
         stop = monotonic_time()
 
-        self.assertTrue(stop > invocations[0])
+        assert stop > invocations[0]
 
-    @slowtest
+    @pytest.mark.slow
     def test_repeating_after_block(self):
         PERIOD = 0.1
         TIMES = 5
@@ -293,13 +295,13 @@ class PeriodicOperationTests(_PeriodicBase):
         # nothing prevents this, although is unlikely.
         # we don't care of this case
         op.stop()
-        self.assertTrue(done.is_set())
-        self.assertTrue(executions[1] >= invocations[1])
-        self.assertTrue(TIMES <= invocations[0] <= TIMES + 1)
+        assert done.is_set()
+        assert executions[1] >= invocations[1]
+        assert TIMES <= invocations[0] <= TIMES + 1
         # one execution never completed
-        self.assertEqual(executions[0], invocations[0] - 1)
+        assert executions[0] == invocations[0] - 1
 
-    @slowtest
+    @pytest.mark.slow
     def test_repeating_exclusive_operation(self):
         PERIOD = 0.2
 
@@ -332,16 +334,16 @@ class PeriodicOperationTests(_PeriodicBase):
                                 timeout=None,
                                 exclusive=True)
         op.start()
-        self.assertFalse(done.wait(PERIOD * 4))
+        assert not done.wait(PERIOD * 4)
         # we just wait "long enough" to make sure we cross at least one
         # timeout threshold.
         ready.set()
         completed = done.wait(PERIOD * 2)  # guard against races
         op.stop()
-        self.assertTrue(completed)
+        assert completed
         # op.stop() doesn't guarantee the immediate termination, so _work()
         # can run one extra time
-        self.assertGreaterEqual(executions[0], 2)
+        assert executions[0] >= 2
 
     def test_dump_executor_state_on_resource_exhausted(self):
         PERIOD = 0.1
@@ -374,7 +376,7 @@ class PeriodicOperationTests(_PeriodicBase):
             # this will trigger the exception, and the dump
             op._dispatch()
         level, message, args = log.messages[-1]
-        self.assertTrue(message.startswith('executor state:'))
+        assert message.startswith('executor state:')
 
 
 VM_NUM = 5  # just a number, no special meaning
@@ -430,8 +432,7 @@ class VmDispatcherTests(TestCaseBase):
 
         skipped = op()
 
-        self.assertEqual(set(skipped),
-                         set(self.cif.getVMs().keys()))
+        assert set(skipped) == set(self.cif.getVMs().keys())
 
     def _check_dispatching(self, skip_ids):
         op = periodic.VmDispatcher(
@@ -440,7 +441,7 @@ class VmDispatcherTests(TestCaseBase):
         op()
 
         for vm_id in skip_ids:
-            self.assertNotIn(_fake_vm_id(vm_id), _Visitor.VMS)
+            assert _fake_vm_id(vm_id) not in _Visitor.VMS
 
         vms = self.cif.getVMs()
 
@@ -449,7 +450,7 @@ class VmDispatcherTests(TestCaseBase):
             set(_fake_vm_id(i) for i in skip_ids)
         )
         for vm_id in expected:
-            self.assertEqual(_Visitor.VMS.get(vm_id), 1)
+            assert _Visitor.VMS.get(vm_id) == 1
 
     def _make_fake_vms(self):
         for i in range(VM_NUM):
@@ -587,4 +588,4 @@ class PeriodicActionTests(TestCaseBase):
         vm = _FakeVM('123', 'test')
         vm.disk_devices = [ro_drive, rw_drive]
         periodic.UpdateVolumes(vm)._execute()
-        self.assertEqual([d.name for d in vm.updated_drives], [rw_drive.name])
+        assert [d.name for d in vm.updated_drives] == [rw_drive.name]

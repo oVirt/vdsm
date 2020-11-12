@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -93,18 +93,14 @@ class TestAllDomains(TestCaseBase):
     def test_recover_no_domains(self):
         self.conn.domains = {}
         recovery.all_domains(self.cif)
-        self.assertEqual(self.cif.vmRequests, {})
+        assert self.cif.vmRequests == {}
 
     def test_recover_few_domains(self):
         recovery.all_domains(self.cif)
-        self.assertEqual(
-            set(self.cif.vmRequests.keys()),
+        assert set(self.cif.vmRequests.keys()) == \
             set(self.vm_uuids)
-        )
-        self.assertEqual(
-            self.vm_is_ext,
+        assert self.vm_is_ext == \
             [conf['external'] for conf, _ in self.cif.vmRequests.values()]
-        )
 
     @permutations([
         # create_fn
@@ -120,13 +116,11 @@ class TestAllDomains(TestCaseBase):
             (self.cif, 'createVm', create_fn)
         ]):
             recovery.all_domains(self.cif)
-        self.assertEqual(
-            self.cif.vmRequests,
+        assert self.cif.vmRequests == \
             {}
-        )
-        self.assertTrue(all(
+        assert all(
             vm.destroyed for vm in self.conn.domains.values()
-        ))
+        )
 
     def test_domain_error(self):
         """
@@ -135,10 +129,8 @@ class TestAllDomains(TestCaseBase):
         """
         self.conn.domains['a'].XMLDesc = _raise
         recovery.all_domains(self.cif)
-        self.assertEqual(
-            set(self.cif.vmRequests.keys()),
+        assert set(self.cif.vmRequests.keys()) == \
             set(('b',))
-        )
 
     def test_recover_and_destroy_failure(self):
         """
@@ -152,25 +144,21 @@ class TestAllDomains(TestCaseBase):
             (self.cif, 'createVm', _error)
         ]):
             recovery.all_domains(self.cif)
-        self.assertEqual(
-            self.cif.vmRequests,
+        assert self.cif.vmRequests == \
             {}
-        )
-        self.assertTrue(self.conn.domains['a'].destroyed)
-        self.assertFalse(self.conn.domains['b'].destroyed)
+        assert self.conn.domains['a'].destroyed
+        assert not self.conn.domains['b'].destroyed
 
     def test_external_vm(self):
         vm_infos = (('a', True), ('b', False),)
         self.conn.domains = _make_domains_collection(vm_infos)
         recovery.all_domains(self.cif)
-        self.assertEqual(
-            set(self.cif.vmRequests.keys()),
+        assert set(self.cif.vmRequests.keys()) == \
             set(vm_id for vm_id, _ in vm_infos)
-        )
 
         for vm_id, vm_is_ext in vm_infos:
             conf, _ = self.cif.vmRequests[vm_id]
-            self.assertEqual(vm_is_ext, conf['external'])
+            assert vm_is_ext == conf['external']
 
     def test_recover_external_vm_down(self):
         vm_is_ext = [True] * len(self.vm_uuids)
@@ -181,7 +169,7 @@ class TestAllDomains(TestCaseBase):
             dom.domState = libvirt.VIR_DOMAIN_SHUTOFF
 
         recovery.all_domains(self.cif)
-        self.assertEqual(self.cif.vmRequests, {})
+        assert self.cif.vmRequests == {}
 
     def test_recover_external_vm_error(self):
         """
@@ -195,7 +183,7 @@ class TestAllDomains(TestCaseBase):
             dom.state = _raise
 
         recovery.all_domains(self.cif)
-        self.assertEqual(self.cif.vmRequests, {})
+        assert self.cif.vmRequests == {}
 
     def test_external_vm_failure(self):
         """
@@ -209,14 +197,12 @@ class TestAllDomains(TestCaseBase):
             (self.cif, 'createVm', _error)
         ]):
             recovery.all_domains(self.cif)
-        self.assertEqual(
-            self.cif.vmRequests,
+        assert self.cif.vmRequests == \
             {}
-        )
         for vm_id, vm_is_ext in vm_infos:
             vm_obj = self.conn.domains[vm_id]
             expect_destroy = not vm_is_ext
-            self.assertEqual(vm_obj.destroyed, expect_destroy)
+            assert vm_obj.destroyed == expect_destroy
 
     def test_lookup_external_vms(self):
         vm_ext = [True] * len(self.vm_uuids)
@@ -224,14 +210,10 @@ class TestAllDomains(TestCaseBase):
             list(zip(self.vm_uuids, vm_ext)))
         self.cif.unknown_vm_ids = list(self.vm_uuids)
         recovery.lookup_external_vms(self.cif)
-        self.assertEqual(
-            set(self.cif.vmRequests.keys()),
+        assert set(self.cif.vmRequests.keys()) == \
             set(self.vm_uuids)
-        )
-        self.assertEqual(
-            vm_ext,
+        assert vm_ext == \
             [conf['external'] for conf, _ in self.cif.vmRequests.values()]
-        )
 
     def test_lookup_external_vms_fails(self):
         """
@@ -243,10 +225,8 @@ class TestAllDomains(TestCaseBase):
         self.conn.domains['a'].XMLDesc = _raise
         self.cif.unknown_vm_ids = list(self.vm_uuids)
         recovery.lookup_external_vms(self.cif)
-        self.assertEqual(
-            set(self.cif.vmRequests.keys()),
+        assert set(self.cif.vmRequests.keys()) == \
             set(('b',))
-        )
 
 
 class FakeConnection(object):

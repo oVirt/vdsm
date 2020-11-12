@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -502,7 +502,7 @@ class DescriptorStorageMetadataTests(XMLTestCase):
         desc.load(dom)
         attrs = _get_drive_conf_identifying_attrs(data.conf)
         with desc.device(**attrs) as dev:
-            self.assertEqual(dev, data.conf)
+            assert dev == data.conf
 
     def _check_drive_to_metadata_xml(self, data):
         desc = metadata.Descriptor()

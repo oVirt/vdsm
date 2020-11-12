@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2019 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ import libvirt
 from testlib import permutations, expandPermutations
 from testlib import XMLTestCase
 from fakemetadatalib import FakeDomain
+import pytest
 
 
 # NOTE:
@@ -76,12 +77,8 @@ class MetadataTests(XMLTestCase):
         [{'set': set()}],
     ])
     def test_unsupported_types(self, custom):
-        self.assertRaises(
-            metadata.UnsupportedType,
-            self.md.dump,
-            'test',
-            **custom
-        )
+        with pytest.raises(metadata.UnsupportedType):
+            self.md.dump('test', **custom)
 
     def test_unsupported_type_dump_key_in_exception(self):
         KEY = "versions"
@@ -92,7 +89,7 @@ class MetadataTests(XMLTestCase):
         try:
             metadata_obj.dump('test', **data)
         except metadata.UnsupportedType as exc:
-            self.assertIn(KEY, str(exc))
+            assert KEY in str(exc)
         else:
             raise AssertionError('dump() did not raise!')
 
@@ -110,7 +107,7 @@ class MetadataTests(XMLTestCase):
     def test_roundtrip(self, custom):
         elem = self.md.dump('test', **custom)
         restored = self.md.load(elem)
-        self.assertEqual(custom, restored)
+        assert custom == restored
 
     def test_load_ns(self):
         test_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
@@ -119,10 +116,8 @@ class MetadataTests(XMLTestCase):
         metadata_obj = metadata.Metadata(
             'ovirt-vm', 'http://ovirt.org/vm/1.0'
         )
-        self.assertEqual(
-            metadata_obj.load(xmlutils.fromstring(test_xml)),
+        assert metadata_obj.load(xmlutils.fromstring(test_xml)) == \
             {'version': 4.2}
-        )
 
     def test_dump_ns(self):
         expected_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
@@ -150,7 +145,7 @@ class MetadataTests(XMLTestCase):
             **custom
         )
         metadata_obj = metadata.Metadata(namespace, namespace_uri)
-        self.assertEqual(metadata_obj.load(elem), custom)
+        assert metadata_obj.load(elem) == custom
 
     @permutations([
         # elem_type
@@ -168,10 +163,8 @@ class MetadataTests(XMLTestCase):
         metadata_obj = metadata.Metadata(
             'ovirt-vm', 'http://ovirt.org/vm/1.0'
         )
-        self.assertEqual(
-            metadata_obj.load(xmlutils.fromstring(test_xml)),
+        assert metadata_obj.load(xmlutils.fromstring(test_xml)) == \
             {'param': ''}
-        )
 
     @permutations([
         # elem_type
@@ -186,11 +179,8 @@ class MetadataTests(XMLTestCase):
         metadata_obj = metadata.Metadata(
             'ovirt-vm', 'http://ovirt.org/vm/1.0'
         )
-        self.assertRaises(
-            ValueError,
-            metadata_obj.load,
-            xmlutils.fromstring(test_xml)
-        )
+        with pytest.raises(ValueError):
+            metadata_obj.load(xmlutils.fromstring(test_xml))
 
     @permutations([
         # elem_type
@@ -244,10 +234,8 @@ class MetadataTests(XMLTestCase):
         metadata_obj = metadata.Metadata(
             'ovirt-vm', 'http://ovirt.org/vm/1.0'
         )
-        self.assertEqual(
-            metadata_obj.load(xmlutils.fromstring(test_xml)),
+        assert metadata_obj.load(xmlutils.fromstring(test_xml)) == \
             {}
-        )
 
 
 @expandPermutations
@@ -275,7 +263,7 @@ class DescriptorTests(XMLTestCase):
   </metadata>
 </domain>""".format(snippet=snippet_xml)
         md_desc = metadata.Descriptor.from_xml(test_xml)
-        self.assertEqual(bool(md_desc), expected)
+        assert bool(md_desc) == expected
 
     def test_from_xml(self):
         test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
@@ -292,8 +280,8 @@ class DescriptorTests(XMLTestCase):
 </domain>"""
         md_desc = metadata.Descriptor.from_xml(test_xml)
         with md_desc.values() as vals:
-            self.assertEqual(vals, {'version': 4.2})
-        self.assertEqual(md_desc.custom, {'foo': 'bar'})
+            assert vals == {'version': 4.2}
+        assert md_desc.custom == {'foo': 'bar'}
 
     def test_add_custom(self):
         test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
@@ -309,8 +297,8 @@ class DescriptorTests(XMLTestCase):
 </domain>"""
         md_desc = metadata.Descriptor.from_xml(test_xml)
         md_desc.add_custom({'bee': 'bop'})
-        self.assertEqual(md_desc.custom,
-                         {'foo': 'bar', 'bee': 'bop'})
+        assert md_desc.custom == \
+            {'foo': 'bar', 'bee': 'bop'}
 
     def test_load_overwrites_content(self):
         test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
@@ -329,14 +317,14 @@ class DescriptorTests(XMLTestCase):
         dom = FakeDomain()
         md_desc.load(dom)
         with md_desc.values() as vals:
-            self.assertEqual(vals, {})
-        self.assertEqual(md_desc.custom, {})
+            assert vals == {}
+        assert md_desc.custom == {}
 
     def test_empty_get(self):
         dom = FakeDomain()
         self.md_desc.load(dom)
         with self.md_desc.values() as vals:
-            self.assertEqual(vals, {})
+            assert vals == {}
 
     def test_context_creates_missing_element(self):
         # libvirt takes care of namespace massaging
@@ -396,7 +384,7 @@ class DescriptorTests(XMLTestCase):
         dom = FakeDomain.with_metadata(dom_xml)
         self.md_desc.load(dom)
         with self.md_desc.device(id='alias0') as dev:
-            self.assertEqual(dev, expected_dev)
+            assert dev == expected_dev
 
     @permutations([
         # dom_xml
@@ -430,7 +418,7 @@ class DescriptorTests(XMLTestCase):
         # our assertXMLEqual consider the order of XML attributes
         # significant, while according to XML spec is not.
         with self.md_desc.device(id='alias0') as dev:
-            self.assertEqual(dev, expected_res)
+            assert dev == expected_res
 
     def test_clear(self):
         dom_xml = u'''<vm>
@@ -464,7 +452,7 @@ class DescriptorTests(XMLTestCase):
         dom = FakeDomain.with_metadata(dom_xml)
         self.md_desc.load(dom)
         with self.md_desc.device(type='fancydev') as dev:
-            self.assertEqual(dev, {'mode': 42})
+            assert dev == {'mode': 42}
 
     def test_lookup_fail(self):
         dom_xml = u'''<vm>
@@ -475,7 +463,7 @@ class DescriptorTests(XMLTestCase):
         dom = FakeDomain.with_metadata(dom_xml)
         self.md_desc.load(dom)
         with self.md_desc.device(id='alias999', type='fancydev') as dev:
-            self.assertEqual(dev, {})
+            assert dev == {}
 
     def test_lookup_ambiguous_raises(self):
         dom_xml = u'''<vm>
@@ -488,7 +476,7 @@ class DescriptorTests(XMLTestCase):
         </vm>'''
         dom = FakeDomain.with_metadata(dom_xml)
         self.md_desc.load(dom)
-        with self.assertRaises(metadata.MissingDevice):
+        with pytest.raises(metadata.MissingDevice):
             with self.md_desc.device(type='fancydev'):
                 pass
 
@@ -507,7 +495,7 @@ class DescriptorTests(XMLTestCase):
         dom = FakeDomain.with_metadata(dom_xml)
         self.md_desc.load(dom)
         with self.md_desc.device(addr='pci_0000_00_02_0') as dev:
-            self.assertEqual(dev, {'mode': 900})
+            assert dev == {'mode': 900}
 
     def test_all_devices(self):
         dom_xml = u'''<vm>
@@ -523,10 +511,8 @@ class DescriptorTests(XMLTestCase):
         </vm>'''
         dom = FakeDomain.with_metadata(dom_xml)
         self.md_desc.load(dom)
-        self.assertEqual(
-            list(self.md_desc.all_devices(type='fancydev')),
+        assert list(self.md_desc.all_devices(type='fancydev')) == \
             [{'mode': 1}, {'mode': 2}]
-        )
 
     def test_all_devices_copy_data(self):
         dom_xml = u'''<vm>
@@ -543,10 +529,8 @@ class DescriptorTests(XMLTestCase):
         for dev in self.md_desc.all_devices(type='fancydev'):
             dev['mode'] = 3
 
-        self.assertEqual(
-            list(self.md_desc.all_devices(type='fancydev')),
+        assert list(self.md_desc.all_devices(type='fancydev')) == \
             [{'mode': 1}, {'mode': 2}]
-        )
 
     def test_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -566,10 +550,8 @@ class DescriptorTests(XMLTestCase):
 </domain>'''
         md_desc = metadata.Descriptor.from_xml(test_xml)
         with md_desc.device(id='dev0') as dev:
-            self.assertEqual(
-                dev,
+            assert dev == \
                 {'foo': 'bar', 'custom': {'baz': 42}}
-            )
 
     def test_multiple_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -592,10 +574,8 @@ class DescriptorTests(XMLTestCase):
         for dev_id in ('dev0', 'dev1'):
             with md_desc.device(id=dev_id) as dev:
                 found.append(dev.copy())
-        self.assertEqual(
-            found,
+        assert found == \
             [{'foo': 'bar'}, {'number': 42}]
-        )
 
     def test_unknown_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -609,7 +589,7 @@ class DescriptorTests(XMLTestCase):
 </domain>'''
         md_desc = metadata.Descriptor.from_xml(test_xml)
         with md_desc.device(id='mydev') as dev:
-            self.assertEqual(dev, {})
+            assert dev == {}
 
     def test_nested_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -626,7 +606,7 @@ class DescriptorTests(XMLTestCase):
 </domain>'''
         md_desc = metadata.Descriptor.from_xml(test_xml)
         with md_desc.device(id='dev0') as dev:
-            self.assertEqual(dev, {'foo': 'bar'})
+            assert dev == {'foo': 'bar'}
 
     def test_network_device_custom(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -645,15 +625,13 @@ class DescriptorTests(XMLTestCase):
 </domain>'''
         md_desc = metadata.Descriptor.from_xml(test_xml)
         with md_desc.device(mac_address='00:1a:4a:16:20:30') as dev:
-            self.assertEqual(
-                dev,
+            assert dev == \
                 {
                     'custom': {
                         'vnic_id': 'da688238-8b79-4a5f-9f0e-0b207463ff1f',
                         'provider_type': 'EXTERNAL_NETWORK',
                     },
                 }
-            )
 
     def test_deeply_nested_metadata_preserved(self):
         conf = {
@@ -732,7 +710,7 @@ class DescriptorTests(XMLTestCase):
                 name=drivename.make(conf['iface'], conf['index'])) as dev:
             # test we ignore IO tune settings from metadata, should we
             # (unexpectedly) found it (see below to learn why)
-            self.assertEqual(dev, {'specParams': {}})
+            assert dev == {'specParams': {}}
 
     def test_specParams_ignore_iotune(self):
         conf = {
@@ -763,7 +741,7 @@ class DescriptorTests(XMLTestCase):
                 name=drivename.make(conf['iface'], conf['index'])) as dev:
             # test we ignore IO tune settings from metadata, should we
             # (unexpectedly) found it (see below to learn why)
-            self.assertEqual(dev, {'specParams': {}})
+            assert dev == {'specParams': {}}
 
         expected_xml = u"""<?xml version='1.0' encoding='utf-8'?>
 <ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
@@ -1005,6 +983,4 @@ class MetadataFromXMLTests(XMLTestCase):
             dev_obj = storage.Drive(
                 self.log, **storagexml.parse(dev_xml, meta)
             )
-            self.assertEqual(
-                dev_obj['shared'], storage.DRIVE_SHARED_TYPE.TRANSIENT
-            )
+            assert dev_obj['shared'] == storage.DRIVE_SHARED_TYPE.TRANSIENT

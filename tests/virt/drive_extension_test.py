@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -118,31 +118,31 @@ class DiskExtensionTestBase(VdsmTestCase):
 
         # we do the minimal validation. Specific test(s) should
         # check that the callable actually finishes the extension process.
-        self.assertTrue(callable(func))
+        assert callable(func)
 
-        self.assertEqual(drive_obj.poolID, poolID)
+        assert drive_obj.poolID == poolID
 
         expected_size = drive_obj.getNextVolumeSize(
             drive_info['physical'], drive_info['capacity'])
-        self.assertEqual(expected_size, newSize)
+        assert expected_size == newSize
 
-        self.assertEqual(expected_size, volInfo['newSize'])
-        self.assertEqual(drive_obj.name, volInfo['name'])
+        assert expected_size == volInfo['newSize']
+        assert drive_obj.name == volInfo['name']
 
         if drive_obj.isDiskReplicationInProgress():
-            self.assertEqual(drive_obj.diskReplicate['domainID'],
-                             volInfo['domainID'])
-            self.assertEqual(drive_obj.diskReplicate['imageID'],
-                             volInfo['imageID'])
-            self.assertEqual(drive_obj.diskReplicate['poolID'],
-                             volInfo['poolID'])
-            self.assertEqual(drive_obj.diskReplicate['volumeID'],
-                             volInfo['volumeID'])
+            assert drive_obj.diskReplicate['domainID'] == \
+                volInfo['domainID']
+            assert drive_obj.diskReplicate['imageID'] == \
+                volInfo['imageID']
+            assert drive_obj.diskReplicate['poolID'] == \
+                volInfo['poolID']
+            assert drive_obj.diskReplicate['volumeID'] == \
+                volInfo['volumeID']
         else:
-            self.assertEqual(drive_obj.domainID, volInfo['domainID'])
-            self.assertEqual(drive_obj.imageID, volInfo['imageID']),
-            self.assertEqual(drive_obj.poolID, volInfo['poolID']),
-            self.assertEqual(drive_obj.volumeID, volInfo['volumeID'])
+            assert drive_obj.domainID == volInfo['domainID']
+            assert drive_obj.imageID == volInfo['imageID']
+            assert drive_obj.poolID == volInfo['poolID']
+            assert drive_obj.volumeID == volInfo['volumeID']
 
 
 class TestDiskExtensionWithPolling(DiskExtensionTestBase):
@@ -159,7 +159,7 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
 
             extended = testvm.monitor_drives()
 
-        self.assertEqual(extended, False)
+        assert extended is False
 
     def test_no_extension_maximum_size_reached(self):
         with make_env(
@@ -173,7 +173,7 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
             vdb['physical'] = max_size
             extended = testvm.monitor_drives()
 
-        self.assertEqual(extended, False)
+        assert extended is False
 
     def test_extend_drive_allocation_crosses_watermark_limit(self):
         with make_env(
@@ -187,8 +187,8 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
 
             extended = testvm.monitor_drives()
 
-        self.assertEqual(extended, True)
-        self.assertEqual(len(testvm.cif.irs.extensions), 1)
+        assert extended is True
+        assert len(testvm.cif.irs.extensions) == 1
         self.check_extension(vdb, drives[1], testvm.cif.irs.extensions[0])
 
     def test_extend_drive_allocation_equals_next_size(self):
@@ -202,8 +202,8 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
             vdb['allocation'] = 0 * MiB
             extended = testvm.monitor_drives()
 
-        self.assertEqual(extended, True)
-        self.assertEqual(len(testvm.cif.irs.extensions), 1)
+        assert extended is True
+        assert len(testvm.cif.irs.extensions) == 1
         self.check_extension(vda, drives[0], testvm.cif.irs.extensions[0])
 
     def test_stop_extension_loop_on_improbable_request(self):
@@ -218,8 +218,8 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
             vdb['allocation'] = 0 * MiB
             extended = testvm.monitor_drives()
 
-        self.assertEqual(extended, False)
-        self.assertEqual(dom.info()[0], libvirt.VIR_DOMAIN_PAUSED)
+        assert extended is False
+        assert dom.info()[0] == libvirt.VIR_DOMAIN_PAUSED
 
     # TODO: add the same test for disk replicas.
     def test_vm_resumed_after_drive_extended(self):
@@ -235,15 +235,15 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
                 vdb, drives[1]) + 1 * MiB
 
             extended = testvm.monitor_drives()
-            self.assertEqual(extended, True)
-            self.assertEqual(len(testvm.cif.irs.extensions), 1)
+            assert extended is True
+            assert len(testvm.cif.irs.extensions) == 1
 
             # Simulate completed extend operation, invoking callback
 
             simulate_extend_callback(testvm.cif.irs, extension_id=0)
 
-        self.assertEqual(testvm.lastStatus, vmstatus.UP)
-        self.assertEqual(dom.info()[0], libvirt.VIR_DOMAIN_RUNNING)
+        assert testvm.lastStatus == vmstatus.UP
+        assert dom.info()[0] == libvirt.VIR_DOMAIN_RUNNING
 
     # TODO: add test with storage failures in the extension flow
 
@@ -277,21 +277,21 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
                 'vdb', '/virtio/1', alloc, 1 * MiB)
 
             drv = drives[1]
-            self.assertEqual(drv.threshold_state, BLOCK_THRESHOLD.EXCEEDED)
+            assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
             # Simulating periodic check
             extended = testvm.monitor_drives()
-            self.assertEqual(extended, True)
-            self.assertEqual(len(testvm.cif.irs.extensions), 1)
+            assert extended is True
+            assert len(testvm.cif.irs.extensions) == 1
             self.check_extension(vdb, drives[1], testvm.cif.irs.extensions[0])
-            self.assertEqual(drv.threshold_state, BLOCK_THRESHOLD.EXCEEDED)
+            assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
             # Simulate completed extend operation, invoking callback
 
             simulate_extend_callback(testvm.cif.irs, extension_id=0)
 
             drv = drives[1]
-            self.assertEqual(drv.threshold_state, BLOCK_THRESHOLD.SET)
+            assert drv.threshold_state == BLOCK_THRESHOLD.SET
 
     @permutations([
         # drive_conf, expected_state, threshold
@@ -379,7 +379,7 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             vda = drives[0]  # shortcut
 
-            self.assertEqual(vda.threshold_state, BLOCK_THRESHOLD.UNSET)
+            assert vda.threshold_state == BLOCK_THRESHOLD.UNSET
             # first run: does nothing but set the block thresholds
 
             testvm.drive_monitor.update_threshold_state_exceeded = \
@@ -387,9 +387,9 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             testvm.monitor_drives()
 
-            self.assertEqual(vda.threshold_state, expected_state)
+            assert vda.threshold_state == expected_state
             if threshold is not None:
-                self.assertEqual(dom.thresholds[vda.name], threshold)
+                assert dom.thresholds[vda.name] == threshold
 
     def test_set_new_threshold_when_state_unset_but_fails(self):
         with make_env(
@@ -397,7 +397,7 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
                 drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
 
             for drive in drives:
-                self.assertEqual(drive.threshold_state, BLOCK_THRESHOLD.UNSET)
+                assert drive.threshold_state == BLOCK_THRESHOLD.UNSET
 
             # Simulate setBlockThreshold failure
             testvm._dom.errors["setBlockThreshold"] = fake.Error(
@@ -407,7 +407,7 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             testvm.monitor_drives()
 
             for drive in drives:
-                self.assertEqual(drive.threshold_state, BLOCK_THRESHOLD.UNSET)
+                assert drive.threshold_state == BLOCK_THRESHOLD.UNSET
 
     def test_set_new_threshold_when_state_set(self):
         # Vm.monitor_drives must not pick up drives with
@@ -421,7 +421,7 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             extended = testvm.extend_drive_if_needed(drives[0])
 
-            self.assertFalse(extended)
+            assert not extended
 
     @permutations([
         # events_enabled, expected_state
@@ -448,7 +448,7 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             # forced to exceeded by monitor_drives() even if no
             # event received.
-            self.assertEqual(drives[0].threshold_state, expected_state)
+            assert drives[0].threshold_state == expected_state
 
     def test_event_received_before_write_completes(self):
         # QEMU submits an event when write is attempted, so it
@@ -476,8 +476,8 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             # The threshold state is correctly kept as exceeded, so extension
             # will be tried again next cycle.
-            self.assertEqual(drives[0].threshold_state,
-                             BLOCK_THRESHOLD.EXCEEDED)
+            assert drives[0].threshold_state == \
+                BLOCK_THRESHOLD.EXCEEDED
 
     def test_block_threshold_set_failure_after_drive_extended(self):
         with make_env(
@@ -505,7 +505,7 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             # Simulating periodic check
             testvm.monitor_drives()
-            self.assertEqual(len(testvm.cif.irs.extensions), 1)
+            assert len(testvm.cif.irs.extensions) == 1
 
             # Simulate completed extend operation, invoking callback
 
@@ -516,7 +516,7 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             simulate_extend_callback(testvm.cif.irs, extension_id=0)
 
             drv = drives[1]
-            self.assertEqual(drv.threshold_state, BLOCK_THRESHOLD.UNSET)
+            assert drv.threshold_state == BLOCK_THRESHOLD.UNSET
 
 
 class TestReplication(DiskExtensionTestBase):

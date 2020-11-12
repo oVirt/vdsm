@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ from vdsm.virt import vmdevices
 from testlib import VdsmTestCase
 from testlib import XMLTestCase
 from testlib import expandPermutations, permutations
+import pytest
 
 
 LEASE_DEVICES = (
@@ -73,7 +74,7 @@ class TestDevice(XMLTestCase):
                   "path": "path",
                   "offset": 0}
         del kwargs[missing]
-        with self.assertRaises(vmdevices.lease.MissingArgument):
+        with pytest.raises(vmdevices.lease.MissingArgument):
             vmdevices.lease.Device(self.log, **kwargs)
 
     def test_repr(self):
@@ -83,7 +84,7 @@ class TestDevice(XMLTestCase):
                   "offset": 0}
         lease = vmdevices.lease.Device(self.log, **kwargs)
         for key, value in kwargs.items():
-            self.assertIn("%s=%s" % (key, value), repr(lease))
+            assert "%s=%s" % (key, value) in repr(lease)
 
 
 @expandPermutations
@@ -100,7 +101,7 @@ class TestPrepare(VdsmTestCase):
         expected["path"] = "path"
         expected["offset"] = 0
         vmdevices.lease.prepare(storage, [device])
-        self.assertEqual(device, expected)
+        assert device == expected
 
     def test_skip_prepared(self):
         device = {"type": "lease",
@@ -116,7 +117,7 @@ class TestPrepare(VdsmTestCase):
         device = {"type": "lease",
                   "sd_id": "sd_id",
                   "lease_id": "lease_id"}
-        with self.assertRaises(vmdevices.lease.CannotPrepare):
+        with pytest.raises(vmdevices.lease.CannotPrepare):
             vmdevices.lease.prepare(storage, [device])
 
 
@@ -130,8 +131,8 @@ class TestFindDevice(VdsmTestCase):
     def test_found(self, sd_id, lease_id):
         query = {"sd_id": sd_id, "lease_id": lease_id}
         lease = vmdevices.lease.find_device(self.devices(), query)
-        self.assertEqual(lease.sd_id, sd_id)
-        self.assertEqual(lease.lease_id, lease_id)
+        assert lease.sd_id == sd_id
+        assert lease.lease_id == lease_id
 
     @permutations([
         ("sd-1", "lease-1"),
@@ -139,7 +140,7 @@ class TestFindDevice(VdsmTestCase):
     ])
     def test_lookup_error(self, sd_id, lease_id):
         query = {"sd_id": sd_id, "lease_id": lease_id}
-        with self.assertRaises(LookupError):
+        with pytest.raises(LookupError):
             vmdevices.lease.find_device(self.devices(), query)
 
     def devices(self):
@@ -163,8 +164,8 @@ class TestFindConf(VdsmTestCase):
                   "offset": offset}
         lease = vmdevices.lease.Device(self.log, **kwargs)
         conf = vmdevices.lease.find_conf(self.conf(), lease)
-        self.assertEqual(conf["sd_id"], sd_id)
-        self.assertEqual(conf["lease_id"], lease_id)
+        assert conf["sd_id"] == sd_id
+        assert conf["lease_id"] == lease_id
 
     @permutations([
         ("sd-1", "lease-1", 3145728),
@@ -177,7 +178,7 @@ class TestFindConf(VdsmTestCase):
                   "path": "/dev/%s/xleases" % sd_id,
                   "offset": offset}
         lease = vmdevices.lease.Device(self.log, **kwargs)
-        with self.assertRaises(LookupError):
+        with pytest.raises(LookupError):
             vmdevices.lease.find_conf(self.conf(), lease)
 
     def conf(elf):

@@ -45,6 +45,7 @@ from testlib import permutations, expandPermutations
 from testlib import make_config
 
 from . import vmfakelib as fake
+import pytest
 
 
 # defaults
@@ -67,43 +68,40 @@ class TestVmMigrationDowntimeSequence(TestCaseBase):
 
     @permutations(_PARAMS)
     def test_downtime_is_sequence(self, dtime, steps):
-        self.assertTrue(len(self._default(dtime, steps)) >= 2)
+        assert len(self._default(dtime, steps)) >= 2
 
     @permutations(_PARAMS)
     def test_downtime_increasing(self, dtime, steps):
         for a, b in pairwise(self._default(dtime, steps)):
-            self.assertTrue(a <= b)
+            assert a <= b
 
     @permutations(_PARAMS)
     def test_exponential_dowtime_never_zero(self, dtime, steps):
         for dt in self._default(dtime, steps):
-            self.assertTrue(dt > 0)
+            assert dt > 0
 
     @permutations(_PARAMS)
     def test_exponential_downtime_is_lower(self, dtime, steps):
         # it's OK if exponential starts a little higher than linear...
         exp = self._default(dtime, steps)
         lin = self._linear(dtime, steps)
-        self.assertAlmostEqual(exp[0], lin[0],
-                               delta=self._delta(dtime, steps))
+        assert abs(exp[0] - lin[0]) <= self._delta(dtime, steps)
 
         # ...but what matters is that after that, it stays lower.
         for i, (a, b) in enumerate(zip(exp[1:], lin[1:])):
             msg = 'step=%i/%i exp=%f lin=%f' % (i + 1, steps, a, b)
-            self.assertTrue(a <= b, msg)
+            assert a <= b, msg
 
     @permutations(_PARAMS)
     def test_exponential_same_end_value(self, dtime, steps):
         exp = self._default(dtime, steps)
         lin = self._linear(dtime, steps)
-        self.assertAlmostEqual(exp[-1], lin[-1],
-                               delta=self._delta(dtime, steps))
+        assert abs(exp[-1] - lin[-1]) <= self._delta(dtime, steps)
 
     @permutations(_PARAMS)
     def test_end_value_is_maximum(self, dtime, steps):
         exp = self._default(dtime, steps)
-        self.assertAlmostEqual(exp[-1], dtime,
-                               delta=self._delta(dtime, steps))
+        assert abs(exp[-1] - dtime) <= self._delta(dtime, steps)
 
     # helpers
 
@@ -165,9 +163,8 @@ class TestProgress(TestCaseBase):
     def test_job_stats_required_fields(self, fields):
         for field in fields:
             del self.job_stats[field]
-        self.assertRaises(KeyError,
-                          migration.Progress.from_job_stats,
-                          self.job_stats)
+        with pytest.raises(KeyError):
+            migration.Progress.from_job_stats(self.job_stats)
 
     @permutations([
         # fields
@@ -197,7 +194,7 @@ class TestProgress(TestCaseBase):
         self.job_stats[libvirt.VIR_DOMAIN_JOB_DATA_REMAINING] = data_remaining
         self.job_stats[libvirt.VIR_DOMAIN_JOB_DATA_TOTAL] = data_total
         prog = migration.Progress.from_job_stats(self.job_stats)
-        self.assertEqual(prog.percentage, progress)
+        assert prog.percentage == progress
 
     @permutations([
         # job_type, ongoing
@@ -208,7 +205,7 @@ class TestProgress(TestCaseBase):
     ])
     def test_ongoing(self, job_type, ongoing):
         self.job_stats['type'] = job_type
-        self.assertEqual(migration.ongoing(self.job_stats), ongoing)
+        assert migration.ongoing(self.job_stats) == ongoing
 
 
 @expandPermutations
@@ -226,7 +223,7 @@ class TestVmMigrate(TestCaseBase):
             ]):
                 with fake.VM(status=vm_status, cif=self.cif) as testvm:
                     res = testvm.migrate({})  # no params needed
-                    self.assertFalse(response.is_error(res))
+                    assert not response.is_error(res)
 
     @permutations([
         # vm_status, exception
@@ -238,7 +235,7 @@ class TestVmMigrate(TestCaseBase):
                 (migration, 'SourceThread', fake.MigrationSourceThread)
             ]):
                 with fake.VM(status=vm_status, cif=self.cif) as testvm:
-                    with self.assertRaises(exc):
+                    with pytest.raises(exc):
                         testvm.migrate({})  # no params needed
 
 
@@ -249,7 +246,7 @@ class TestPostCopy(TestCaseBase):
                      post_copy=migration.PostCopyPhase.RUNNING,
                      params={'vmType': 'kvm'}) as testvm:
             stats = testvm.getStats()
-        self.assertEqual(stats['status'], vmstatus.PAUSED)
+        assert stats['status'] == vmstatus.PAUSED
 
 
 class FakeServer(object):
@@ -387,7 +384,7 @@ class SourceThreadTests(TestCaseBase):
     def test_progress_start(self):
         vm = FakeVM()
         src = migration.SourceThread(vm)
-        self.assertEqual(src._progress, 0)
+        assert src._progress == 0
 
     # random increasing numbers, no special meaning
     @permutations([
@@ -403,9 +400,9 @@ class SourceThreadTests(TestCaseBase):
 
         for step in steps:
             prog.percentage = step
-            self.assertEqual(src.getStat()['progress'], prog.percentage)
+            assert src.getStat()['progress'] == prog.percentage
 
-        self.assertEqual(src.getStat()['progress'], steps[-1])
+        assert src.getStat()['progress'] == steps[-1]
 
     def test_progress_not_backwards(self):
         steps = [8, 15, 23, 85, 81]
@@ -418,9 +415,9 @@ class SourceThreadTests(TestCaseBase):
         for step in steps:
             prog.percentage = step
             old_progress = src._progress
-            self.assertGreaterEqual(src.getStat()['progress'], old_progress)
+            assert src.getStat()['progress'] >= old_progress
 
-        self.assertEqual(src._progress, max(steps))
+        assert src._progress == max(steps)
 
     @permutations([
         # failures
@@ -438,8 +435,8 @@ class SourceThreadTests(TestCaseBase):
         with MonkeyPatchScope([(migration, 'config', cfg)]):
             src.run()
 
-        self.assertEqual(serv.attempts, failures + 1)  # +1 for success
-        self.assertEqual(dom.migrations, 1)
+        assert serv.attempts == failures + 1  # +1 for success
+        assert dom.migrations == 1
 
     def test_do_not_retry_when_started(self):
         # we do not retry regardless of the last reported progress
@@ -453,21 +450,21 @@ class SourceThreadTests(TestCaseBase):
 
         src.run()
 
-        self.assertEqual(dom.migrations, 1)
-        self.assertEqual(serv.attempts, 1)
-        self.assertEqual(src.getStat()['progress'], progress)
+        assert dom.migrations == 1
+        assert serv.attempts == 1
+        assert src.getStat()['progress'] == progress
 
     def test_do_not_retry_hibernation(self):
         dom, src = make_env(mode=migration.MODE_FILE)
         src._finishSuccessfully = lambda *args: None
         src.run()
-        self.assertEqual(src._vm.hibernation_attempts, 1)
+        assert src._vm.hibernation_attempts == 1
 
     def test_has_migration_flags(self):
         src = migration.SourceThread(FakeVM())
-        self.assertTrue(src.migration_flags is not None)
-        self.assertTrue(src.migration_flags & libvirt.VIR_MIGRATE_LIVE)
-        self.assertTrue(src.migration_flags & libvirt.VIR_MIGRATE_PEER2PEER)
+        assert src.migration_flags is not None
+        assert src.migration_flags & libvirt.VIR_MIGRATE_LIVE
+        assert src.migration_flags & libvirt.VIR_MIGRATE_PEER2PEER
 
     def test_sets_migration_flags(self):
         src = migration.SourceThread(FakeVM(),
@@ -476,20 +473,20 @@ class SourceThreadTests(TestCaseBase):
                                      compressed=True,
                                      autoConverge=True)
         flags = src.migration_flags
-        self.assertTrue(flags & libvirt.VIR_MIGRATE_TUNNELLED)
-        self.assertTrue(flags & libvirt.VIR_MIGRATE_ABORT_ON_ERROR)
-        self.assertTrue(flags & libvirt.VIR_MIGRATE_COMPRESSED)
-        self.assertTrue(flags & libvirt.VIR_MIGRATE_AUTO_CONVERGE)
+        assert flags & libvirt.VIR_MIGRATE_TUNNELLED
+        assert flags & libvirt.VIR_MIGRATE_ABORT_ON_ERROR
+        assert flags & libvirt.VIR_MIGRATE_COMPRESSED
+        assert flags & libvirt.VIR_MIGRATE_AUTO_CONVERGE
 
     def test_tunneled_property(self):
         fake_vm = FakeVM()
 
         src = migration.SourceThread(fake_vm)
-        self.assertTrue(src.tunneled is not None)
-        self.assertFalse(src.tunneled)
+        assert src.tunneled is not None
+        assert not src.tunneled
 
         src = migration.SourceThread(fake_vm, tunneled=True)
-        self.assertTrue(src.tunneled)
+        assert src.tunneled
 
 
 # stolen^Wborrowed from itertools recipes
@@ -522,7 +519,7 @@ class CannonizeHostPortTest(TestCaseBase):
         res = migration._cannonize_host_port(None, port)
         self._assert_is_ip_address_with_port(res)
         # address must include the given port
-        self.assertTrue(res.endswith(str(port)))
+        assert res.endswith(str(port))
 
     def test_address_no_port(self):
         self._assert_is_ip_address_with_port(
@@ -530,7 +527,7 @@ class CannonizeHostPortTest(TestCaseBase):
 
     def test_address_with_port(self):
         address = "127.0.0.1:65432"
-        self.assertEqual(address, migration._cannonize_host_port(address))
+        assert address == migration._cannonize_host_port(address)
 
     def test_address_with_port_parameter(self):
         addr = '127.0.0.1'
@@ -538,14 +535,13 @@ class CannonizeHostPortTest(TestCaseBase):
         res = migration._cannonize_host_port(addr, port)
         self._assert_is_ip_address_with_port(res)
         # address must include the given port
-        self.assertTrue(res.endswith(str(port)))
+        assert res.endswith(str(port))
 
     def test_address_with_bad_port_parameter(self):
         addr = '127.0.0.1'
         port = '65432'
-        self.assertRaises(TypeError,
-                          migration._cannonize_host_port,
-                          addr, port)
+        with pytest.raises(TypeError):
+            migration._cannonize_host_port(addr, port)
 
     def _assert_is_ip_address_with_port(self, addrWithPort):
         try:

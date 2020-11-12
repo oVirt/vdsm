@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -217,17 +217,16 @@ class QemuGuestAgentTests(TestCaseBase):
         self.qga_poller.update_caps(self.vm.id, c1)
         c3 = self.qga_poller.get_caps(self.vm.id)
         self.qga_poller.update_caps(self.vm.id, c2)
-        self.assertEqual(c1, c3)
-        self.assertNotEqual(c2, c3)
+        assert c1 == c3
+        assert c2 != c3
 
     def test_cmd_arrays(self):
         """
         Make sure the internal arrays are consistent.
         """
-        self.assertTrue(
-            frozenset(qemuguestagent._QEMU_COMMANDS.keys())
+        assert frozenset(qemuguestagent._QEMU_COMMANDS.keys()) \
             .issubset(
-                frozenset(qemuguestagent._QEMU_COMMAND_PERIODS.keys())))
+                frozenset(qemuguestagent._QEMU_COMMAND_PERIODS.keys()))
 
     def test_failure(self):
         """ Make sure failure timestamp is set on errors. """
@@ -235,25 +234,24 @@ class QemuGuestAgentTests(TestCaseBase):
             raise libvirt.libvirtError("Some error!")
 
         last = self.qga_poller.last_failure(self.vm.id)
-        self.assertEqual(last, 0)
+        assert last == 0
         with MonkeyPatchScope([
                 (libvirt_qemu, "qemuAgentCommand", _qga_command_fail)]):
             self.qga_poller.call_qga_command(
                 self.vm,
                 qemuguestagent._QEMU_GUEST_INFO_COMMAND)
         now = self.qga_poller.last_failure(self.vm.id)
-        self.assertTrue(now > 0)
+        assert now > 0
 
     def test_guest_info(self):
         """ Set and read guest info. """
         self.qga_poller.update_guest_info(
             self.vm.id, {"test-key": "test-value"})
-        self.assertEqual(
-            self.qga_poller.get_guest_info(self.vm.id)["test-key"],
-            "test-value")
+        assert self.qga_poller.get_guest_info(self.vm.id)["test-key"] == \
+            "test-value"
         # Test with invalid VM
-        self.assertIsNone(self.qga_poller.get_guest_info(
-            "99999999-9999-9999-9999-999999999999"))
+        assert self.qga_poller.get_guest_info(
+            "99999999-9999-9999-9999-999999999999") is None
 
     def test_capability_check(self):
         self.qga_poller.update_caps(
@@ -261,88 +259,84 @@ class QemuGuestAgentTests(TestCaseBase):
             {"version": "0.0", "commands": []})
         self.qga_poller._qga_capability_check(self.vm)
         c = self.qga_poller.get_caps(self.vm.id)
-        self.assertEqual(c['version'], '1.2.3')
-        self.assertTrue('guest-info' in c['commands'])
-        self.assertFalse('guest-exec' in c['commands'])
+        assert c['version'] == '1.2.3'
+        assert 'guest-info' in c['commands']
+        assert 'guest-exec' not in c['commands']
 
     def test_network_interfaces(self):
         info = self.qga_poller._qga_call_network_interfaces(self.vm)
         ifaces = info['netIfaces']
         iflo = [x for x in ifaces if x['name'] == 'lo'][0]
         ifens2 = [x for x in ifaces if x['name'] == 'ens2'][0]
-        self.assertEqual(
-            iflo,
+        assert iflo == \
             {
                 'hw': '00:00:00:00:00:00',
                 'inet': ['127.0.0.1'],
                 'inet6': ['::1'],
                 'name': 'lo'
-            })
-        self.assertEqual(
-            ifens2,
+            }
+        assert ifens2 == \
             {
                 'hw': '52:54:00:ed:99:76',
                 'inet': ['192.168.124.216'],
                 'inet6': ['fe80::5054:ff:feed:9976'],
                 'name': 'ens2'
-            })
+            }
 
     def test_libvirt_guest_info(self):
         info = self.qga_poller._libvirt_get_guest_info(self.vm, 0xffffffff)
         # Disks/Filesystems
-        self.assertEqual(info['disksUsage'][0], {
+        assert info['disksUsage'][0] == {
             'path': '/',
             'total': '200',
             'used': '100',
             'fs': 'xfs',
-        })
-        self.assertEqual(info['diskMapping'], {
+        }
+        assert info['diskMapping'] == {
             'e7d27603-0a2e-47ab-8': {'name': '/dev/vda'},
-        })
+        }
         # Hostname
-        self.assertEqual(info['guestFQDN'], 'localhost.localdomain')
-        self.assertEqual(info['guestName'], 'localhost.localdomain')
+        assert info['guestFQDN'] == 'localhost.localdomain'
+        assert info['guestName'] == 'localhost.localdomain'
         # OS
-        self.assertEqual(info['guestOs'], '3.10.0-1101.el7.x86_64')
-        self.assertEqual(info['guestOsInfo'], {
+        assert info['guestOs'] == '3.10.0-1101.el7.x86_64'
+        assert info['guestOsInfo'] == {
             'type': 'linux',
             'arch': 'x86_64',
             'kernel': '3.10.0-1101.el7.x86_64',
             'distribution': 'Red Hat Enterprise Linux Server',
             'version': '7.8',
             'codename': 'Server',
-        })
+        }
         # Timezone
-        self.assertEqual(info['guestTimezone']['offset'], -240)
-        self.assertEqual(info['guestTimezone']['zone'], 'EDT')
+        assert info['guestTimezone']['offset'] == -240
+        assert info['guestTimezone']['zone'] == 'EDT'
         # Users
-        self.assertEqual(info['username'], 'root, frodo@hobbits')
+        assert info['username'] == 'root, frodo@hobbits'
         # fake appsList should exists
-        self.assertEqual(
-            self.qga_poller.get_guest_info(self.vm.id)['appsList'],
-            (
-                'kernel-3.10.0-1101.el7.x86_64',
-                'qemu-guest-agent-0.0-test'
-            ))
+        assert self.qga_poller.get_guest_info(self.vm.id)['appsList'] == (
+            'kernel-3.10.0-1101.el7.x86_64',
+            'qemu-guest-agent-0.0-test'
+        )
 
     def test_pci_devices(self):
         devices = self.qga_poller._qga_call_get_devices(self.vm)['pci_devices']
         # Ethernet is returned twice by the agent but should appear only
         # once in the list
-        self.assertEqual(len(devices), 2)
+        assert len(devices) == 2
         eth = [d for d in devices if d['device_id'] == 4096][0]
-        self.assertEqual(eth, {
+        assert eth == {
             'device_id': 4096,
             'driver_date': '2019-08-12',
             'driver_name': 'Red Hat VirtIO Ethernet Adapter',
             'driver_version': '100.80.104.17300',
             'vendor_id': 6900,
-        })
+        }
         balloon = [d for d in devices if d['device_id'] == 4098][0]
-        self.assertEqual(balloon, {
+        assert balloon == {
             'device_id': 4098,
             'driver_date': '2019-08-12',
             'driver_name': 'VirtIO Balloon Driver',
             'driver_version': '100.80.104.17300',
             'vendor_id': 6900,
-        })
+        }

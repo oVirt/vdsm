@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -244,11 +244,11 @@ class VmStatsTestCase(TestCaseBase):
         self.interval = 10  # seconds
 
     def assertNameIsAt(self, stats, group, idx, name):
-        self.assertEqual(stats['%s.%d.name' % (group, idx)], name)
+        assert stats['%s.%d.name' % (group, idx)] == name
 
     def assertStatsHaveKeys(self, stats, keys):
         for key in keys:
-            self.assertIn(key, stats)
+            assert key in stats
 
     def assertRepeatedStatsHaveKeys(self, items, stats, keys):
         for item in items:
@@ -274,7 +274,7 @@ class UtilsFunctionsTests(VmStatsTestCase):
         name = 'inexistent'
         indexes = vmstats._find_bulk_stats_reverse_map(
             self.bulk_stats, group)
-        self.assertNotIn(name, indexes)
+        assert name not in indexes
 
     @permutations([['block', 'hdc'], ['net', 'vnet0']])
     def test_index_can_change(self, group, name):
@@ -288,7 +288,7 @@ class UtilsFunctionsTests(VmStatsTestCase):
             all_indexes.append(indexes)
 
         # and indeed indexes must change
-        self.assertEqual(len(all_indexes), len(self.samples))
+        assert len(all_indexes) == len(self.samples)
 
     def test_network_missing(self):
         # seen using SR-IOV
@@ -296,7 +296,7 @@ class UtilsFunctionsTests(VmStatsTestCase):
         bulk_stats = next(six.itervalues(_FAKE_BULK_STATS_SRIOV))
         indexes = vmstats._find_bulk_stats_reverse_map(
             bulk_stats[0], 'net')
-        self.assertTrue(indexes)
+        assert indexes
 
     def test_log_inexistent_key(self):
         KEY = 'this.key.cannot.exist'
@@ -308,9 +308,9 @@ class UtilsFunctionsTests(VmStatsTestCase):
         ):
             with vmstats._skip_if_missing_stats(vm):
                 sample[KEY]
-        self.assertEqual(len(log.messages), 1)
-        self.assertEqual(log.messages[0][0], logging.WARNING)
-        self.assertIn(KEY, log.messages[0][1])
+        assert len(log.messages) == 1
+        assert log.messages[0][0] == logging.WARNING
+        assert KEY in log.messages[0][1]
 
 
 @expandPermutations
@@ -369,10 +369,8 @@ class NetworkStatsTests(VmStatsTestCase):
         vm = FakeVM(nics=nics)
 
         stats = {}
-        self.assertTrue(
-            vmstats.networks(vm, stats,
-                             self.bulk_stats, self.bulk_stats,
-                             1)
+        assert vmstats.networks(
+            vm, stats, self.bulk_stats, self.bulk_stats, 1
         )
 
     @permutations([[-42], [0]])
@@ -385,11 +383,9 @@ class NetworkStatsTests(VmStatsTestCase):
         vm = FakeVM(nics=nics)
 
         stats = {}
-        self.assertTrue(
-            vmstats.networks(vm, stats,
-                             self.bulk_stats, self.bulk_stats,
-                             0) is None
-        )
+        assert vmstats.networks(
+            vm, stats, self.bulk_stats, self.bulk_stats, 0
+        ) is None
 
     @permutations([
         ['net.0.rx.bytes'], ['net.0.rx.pkts'],
@@ -410,10 +406,8 @@ class NetworkStatsTests(VmStatsTestCase):
         del faulty_bulk_stats[key]
 
         stats = {}
-        self.assertTrue(
-            vmstats.networks(vm, stats,
-                             self.bulk_stats, faulty_bulk_stats,
-                             1)
+        assert vmstats.networks(
+            vm, stats, self.bulk_stats, faulty_bulk_stats, 1
         )
 
 
@@ -516,7 +510,7 @@ class DiskStatsTests(VmStatsTestCase):
         testvm = FakeVM(drives=(drive,))
         stats = {}
         self.assertNotRaises(vmstats.tune_io, testvm, stats)
-        self.assertTrue(stats)
+        assert stats
 
     def _drop_stats(self, keys):
         partial_stats = copy.deepcopy(self.bulk_stats)
@@ -544,22 +538,20 @@ class CpuStatsTests(VmStatsTestCase):
     def test_empty_samples(self, first, last):
         stats = {}
         res = vmstats.cpu(stats, {}, {}, self.INTERVAL)
-        self.assertEqual(
-            stats,
+        assert stats == \
             {'cpuUsage': 0.0, 'cpuUser': 0.0, 'cpuSys': 0.0}
-        )
-        self.assertEqual(res, None)
+        assert res is None
 
     def test_only_cpu_user_system(self):
         stats = {}
         res = vmstats.cpu(stats, FIRST_CPU_SAMPLE, LAST_CPU_SAMPLE,
                           self.INTERVAL)
-        self.assertEqual(stats, {
-                         'cpuUser': 0.0,
-                         'cpuSys': 0.2,
-                         'cpuUsage': '11260000000',
-                         })
-        self.assertEqual(res, None)
+        assert stats == {
+            'cpuUser': 0.0,
+            'cpuSys': 0.2,
+            'cpuUsage': '11260000000',
+        }
+        assert res is None
 
     def test_update_all_keys(self):
         stats = {}
@@ -569,12 +561,12 @@ class CpuStatsTests(VmStatsTestCase):
         last_sample.update(LAST_CPU_SAMPLE)
         res = vmstats.cpu(stats, first_sample, last_sample,
                           self.INTERVAL)
-        self.assertEqual(stats, {
-                         'cpuUser': 0.6840879,
-                         'cpuSys': 0.2,
-                         'cpuUsage': '11260000000',
-                         })
-        self.assertIsNotNone(res)
+        assert stats == {
+            'cpuUser': 0.6840879,
+            'cpuSys': 0.2,
+            'cpuUsage': '11260000000',
+        }
+        assert res is not None
 
     @permutations([
         # interval
@@ -584,7 +576,7 @@ class CpuStatsTests(VmStatsTestCase):
     def test_bad_interval(self, interval):
         stats = {}
         res = vmstats.cpu(stats, FIRST_CPU_SAMPLE, LAST_CPU_SAMPLE, interval)
-        self.assertIs(res, None)
+        assert res is None
 
     @permutations([
         # sample, expected
@@ -596,7 +588,7 @@ class CpuStatsTests(VmStatsTestCase):
     def test_cpu_count(self, sample, expected):
         stats = {}
         self.assertNotRaises(vmstats.cpu_count, stats, sample)
-        self.assertEqual(stats, expected)
+        assert stats == expected
 
 
 class BalloonStatsTests(VmStatsTestCase):
@@ -608,7 +600,7 @@ class BalloonStatsTests(VmStatsTestCase):
             vmstats.balloon,
             vm, stats, {}
         )
-        self.assertIn('balloonInfo', stats)
+        assert 'balloonInfo' in stats
         info = stats['balloonInfo']
         self.assertStatsHaveKeys(
             info,
@@ -620,7 +612,7 @@ class BalloonStatsTests(VmStatsTestCase):
         stats = {}
         vm = FakeVM()
         vmstats.balloon(vm, stats, {})
-        self.assertEqual(stats['balloonInfo']['balloon_cur'], '0')
+        assert stats['balloonInfo']['balloon_cur'] == '0'
 
     def test_log_missing_key(self):
         stats = {}
@@ -630,9 +622,9 @@ class BalloonStatsTests(VmStatsTestCase):
             [(vmstats, '_log', log)]
         ):
             vmstats.balloon(vm, stats, {})
-        self.assertEqual(len(log.messages), 1)
-        self.assertEqual(log.messages[0][0], logging.WARNING)
-        self.assertIn('balloon.current', log.messages[0][1])
+        assert len(log.messages) == 1
+        assert log.messages[0][0] == logging.WARNING
+        assert 'balloon.current' in log.messages[0][1]
 
 
 # helpers

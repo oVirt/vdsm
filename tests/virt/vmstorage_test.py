@@ -34,7 +34,6 @@ from testlib import make_config
 from testlib import make_file
 from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
-from testValidation import xfail
 
 from vdsm.common import exception
 from vdsm.common.units import MiB, GiB
@@ -43,6 +42,7 @@ from vdsm import utils
 from vdsm.virt.vmdevices import storage
 from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE, DRIVE_SHARED_TYPE
 from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
+import pytest
 
 VolumeChainEnv = namedtuple(
     'VolumeChainEnv',
@@ -460,13 +460,14 @@ class DriveValidation(VdsmTestCase):
         )
         drive = Drive(self.log, **conf)
 
-        with self.assertRaises(Exception):
+        with pytest.raises(Exception):
             drive.iotune = iotune
 
     def check(self, **kw):
         conf = drive_config(**kw)
         drive = Drive(self.log, **conf)
-        self.assertRaises(ValueError, drive.getXML)
+        with pytest.raises(ValueError):
+            drive.getXML()
 
 
 @expandPermutations
@@ -480,7 +481,8 @@ class DriveExSharedStatusTests(VdsmTestCase):
         self.check(shared, shared)
 
     def test_unsupported(self):
-        self.assertRaises(ValueError, self.check, "UNKNOWN-VALUE", None)
+        with pytest.raises(ValueError):
+            self.check("UNKNOWN-VALUE", None)
 
     @permutations([[True], ['True'], ['true']])
     def test_bc_shared(self, shared):
@@ -495,7 +497,7 @@ class DriveExSharedStatusTests(VdsmTestCase):
         if shared:
             conf['shared'] = shared
         drive = Drive(self.log, **conf)
-        self.assertEqual(drive.extSharedState, expected)
+        assert drive.extSharedState == expected
 
 
 @expandPermutations
@@ -504,40 +506,40 @@ class DriveDiskTypeTests(VdsmTestCase):
     def test_floppy_file(self):
         conf = drive_config(device="floppy")
         drive = Drive(self.log, diskType=DISK_TYPE.FILE, **conf)
-        self.assertEqual(DISK_TYPE.FILE, drive.diskType)
+        assert DISK_TYPE.FILE == drive.diskType
 
     @permutations([[DISK_TYPE.BLOCK], [DISK_TYPE.NETWORK]])
     def test_floppy_create_invalid_diskType(self, diskType):
         conf = drive_config(device='floppy', diskType=diskType)
-        with self.assertRaises(exception.UnsupportedOperation):
+        with pytest.raises(exception.UnsupportedOperation):
             Drive(self.log, **conf)
 
     @permutations([[DISK_TYPE.BLOCK], [DISK_TYPE.NETWORK]])
     def test_floppy_set_invalid_diskType(self, diskType):
         conf = drive_config(device='floppy')
         drive = Drive(self.log, **conf)
-        with self.assertRaises(exception.UnsupportedOperation):
+        with pytest.raises(exception.UnsupportedOperation):
             drive.diskType = diskType
 
     def test_network_disk(self):
         conf = drive_config(diskType=DISK_TYPE.NETWORK)
         drive = Drive(self.log, **conf)
-        self.assertEqual(DISK_TYPE.NETWORK, drive.diskType)
+        assert DISK_TYPE.NETWORK == drive.diskType
 
     def test_block_disk(self):
         conf = drive_config(device='disk')
         drive = Drive(self.log, diskType=DISK_TYPE.BLOCK, **conf)
-        self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
+        assert DISK_TYPE.BLOCK == drive.diskType
 
     def test_block_cdrom(self):
         conf = drive_config(device='cdrom')
         drive = Drive(self.log, diskType=DISK_TYPE.BLOCK, **conf)
-        self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
+        assert DISK_TYPE.BLOCK == drive.diskType
 
     def test_file_disk(self):
         conf = drive_config(device='disk')
         drive = Drive(self.log, diskType=DISK_TYPE.FILE, **conf)
-        self.assertEqual(DISK_TYPE.FILE, drive.diskType)
+        assert DISK_TYPE.FILE == drive.diskType
 
     def test_migrate_from_file_to_block(self):
         conf = drive_config(path='/filedomain/volume')
@@ -545,7 +547,7 @@ class DriveDiskTypeTests(VdsmTestCase):
         # Migrate drive to block domain...
         drive.diskType = DISK_TYPE.BLOCK
         drive.path = "/blockdomain/volume"
-        self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
+        assert DISK_TYPE.BLOCK == drive.diskType
 
     def test_migrate_from_block_to_file(self):
         conf = drive_config(path='/blockdomain/volume')
@@ -553,7 +555,7 @@ class DriveDiskTypeTests(VdsmTestCase):
         # Migrate drive to file domain...
         drive.diskType = DISK_TYPE.FILE
         drive.path = "/filedomain/volume"
-        self.assertEqual(DISK_TYPE.FILE, drive.diskType)
+        assert DISK_TYPE.FILE == drive.diskType
 
     def test_migrate_from_block_to_network(self):
         conf = drive_config(path='/blockdomain/volume')
@@ -561,7 +563,7 @@ class DriveDiskTypeTests(VdsmTestCase):
         # Migrate drive to network disk...
         drive.path = "pool/volume"
         drive.diskType = DISK_TYPE.NETWORK
-        self.assertEqual(DISK_TYPE.NETWORK, drive.diskType)
+        assert DISK_TYPE.NETWORK == drive.diskType
 
     def test_migrate_network_to_block(self):
         conf = drive_config(diskType=DISK_TYPE.NETWORK, path='pool/volume')
@@ -569,23 +571,23 @@ class DriveDiskTypeTests(VdsmTestCase):
         # Migrate drive to block domain...
         drive.path = '/blockdomain/volume'
         drive.diskType = DISK_TYPE.BLOCK
-        self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
+        assert DISK_TYPE.BLOCK == drive.diskType
 
     def test_set_invalid_type(self):
         conf = drive_config(diskType=DISK_TYPE.NETWORK, path='pool/volume')
         drive = Drive(self.log, **conf)
-        with self.assertRaises(exception.UnsupportedOperation):
+        with pytest.raises(exception.UnsupportedOperation):
             drive.diskType = 'bad'
 
     def test_set_none_type(self):
         conf = drive_config(diskType=DISK_TYPE.NETWORK, path='pool/volume')
         drive = Drive(self.log, **conf)
-        with self.assertRaises(exception.UnsupportedOperation):
+        with pytest.raises(exception.UnsupportedOperation):
             drive.diskType = None
 
     def test_create_invalid_type(self):
         conf = drive_config(diskType='bad', path='pool/volume')
-        with self.assertRaises(exception.UnsupportedOperation):
+        with pytest.raises(exception.UnsupportedOperation):
             Drive(self.log, **conf)
 
     def test_path_change_reset_threshold_state(self):
@@ -595,7 +597,7 @@ class DriveDiskTypeTests(VdsmTestCase):
         drive.threshold_state = BLOCK_THRESHOLD.SET
 
         drive.path = '/new/path'
-        self.assertEqual(drive.threshold_state, BLOCK_THRESHOLD.UNSET)
+        assert drive.threshold_state == BLOCK_THRESHOLD.UNSET
 
     def test_block_threshold_set_state(self):
         path = '/old/path'
@@ -604,7 +606,7 @@ class DriveDiskTypeTests(VdsmTestCase):
         drive.threshold_state = BLOCK_THRESHOLD.SET
 
         drive.on_block_threshold(path)
-        self.assertEqual(drive.threshold_state, BLOCK_THRESHOLD.EXCEEDED)
+        assert drive.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
     def test_block_threshold_stale_path(self):
         conf = drive_config(diskType=DISK_TYPE.BLOCK, path='/new/path')
@@ -612,7 +614,7 @@ class DriveDiskTypeTests(VdsmTestCase):
         drive.threshold_state = BLOCK_THRESHOLD.SET
 
         drive.on_block_threshold('/old/path')
-        self.assertEqual(drive.threshold_state, BLOCK_THRESHOLD.SET)
+        assert drive.threshold_state == BLOCK_THRESHOLD.SET
 
 
 @expandPermutations
@@ -630,7 +632,7 @@ class ChunkedTests(VdsmTestCase):
     def test_drive(self, device, diskType, format, chunked):
         conf = drive_config(device=device, format=format)
         drive = Drive(self.log, diskType=diskType, **conf)
-        self.assertEqual(drive.chunked, chunked)
+        assert drive.chunked == chunked
 
     @permutations([
         # replica diskType, replica format
@@ -643,7 +645,7 @@ class ChunkedTests(VdsmTestCase):
             diskType=diskType
         )
         drive = Drive(self.log, **conf)
-        self.assertEqual(drive.chunked, False)
+        assert drive.chunked is False
 
 
 @expandPermutations
@@ -662,12 +664,12 @@ class ReplicaChunkedTests(VdsmTestCase):
             diskType=diskType
         )
         drive = Drive(self.log, **conf)
-        self.assertEqual(drive.replicaChunked, chunked)
+        assert drive.replicaChunked == chunked
 
     def test_no_replica(self):
         conf = drive_config(diskType=DISK_TYPE.FILE)
         drive = Drive(self.log, **conf)
-        self.assertEqual(drive.replicaChunked, False)
+        assert drive.replicaChunked is False
 
 
 @expandPermutations
@@ -679,21 +681,21 @@ class DriveVolumeSizeTests(VdsmTestCase):
     def test_next_size(self, cursize):
         conf = drive_config(format='cow', diskType=DISK_TYPE.BLOCK)
         drive = Drive(self.log, **conf)
-        self.assertEqual(drive.getNextVolumeSize(cursize, self.CAPACITY),
-                         cursize + drive.volExtensionChunk)
+        assert drive.getNextVolumeSize(cursize, self.CAPACITY) == \
+            cursize + drive.volExtensionChunk
 
     @permutations([[CAPACITY - 1], [CAPACITY], [CAPACITY + 1]])
     def test_next_size_limit(self, cursize):
         conf = drive_config(format='cow', diskType=DISK_TYPE.BLOCK)
         drive = Drive(self.log, **conf)
-        self.assertEqual(drive.getNextVolumeSize(cursize, self.CAPACITY),
-                         drive.getMaxVolumeSize(self.CAPACITY))
+        assert drive.getNextVolumeSize(cursize, self.CAPACITY) == \
+            drive.getMaxVolumeSize(self.CAPACITY)
 
     def test_max_size(self):
         conf = drive_config(format='cow', diskType=DISK_TYPE.BLOCK)
         drive = Drive(self.log, **conf)
         size = utils.round(self.CAPACITY * drive.VOLWM_COW_OVERHEAD, MiB)
-        self.assertEqual(drive.getMaxVolumeSize(self.CAPACITY), size)
+        assert drive.getMaxVolumeSize(self.CAPACITY) == size
 
 
 @expandPermutations
@@ -773,12 +775,12 @@ class TestDriveLeases(XMLTestCase):
     def check_no_leases(self, conf):
         drive = Drive(self.log, diskType=DISK_TYPE.FILE, **conf)
         leases = list(drive.getLeasesXML())
-        self.assertEqual([], leases)
+        assert [] == leases
 
     def check_leases(self, conf):
         drive = Drive(self.log, diskType=DISK_TYPE.FILE, **conf)
         leases = list(drive.getLeasesXML())
-        self.assertEqual(1, len(leases))
+        assert 1 == len(leases)
         xml = """
         <lease>
             <key>vol_id</key>
@@ -837,7 +839,7 @@ class TestDriveNaming(VdsmTestCase):
         )
 
         drive = Drive(self.log, **conf)
-        self.assertEqual(drive.name, expected_name)
+        assert drive.name == expected_name
 
     @permutations([
         ['ide', -1],
@@ -854,7 +856,8 @@ class TestDriveNaming(VdsmTestCase):
             diskType=DISK_TYPE.FILE
         )
 
-        self.assertRaises(ValueError, Drive, self.log, **conf)
+        with pytest.raises(ValueError):
+            Drive(self.log, **conf)
 
 
 class TestVolumeTarget(VdsmTestCase):
@@ -884,7 +887,7 @@ class TestVolumeTarget(VdsmTestCase):
 
     def test_base_not_found(self):
         drive = Drive(self.log, diskType=DISK_TYPE.FILE, **self.conf)
-        with self.assertRaises(storage.VolumeNotFound):
+        with pytest.raises(storage.VolumeNotFound):
             drive.volume_target("FFFFFFFF-FFFF-FFFF-FFFF-111111111111",
                                 self.actual_chain)
 
@@ -893,18 +896,18 @@ class TestVolumeTarget(VdsmTestCase):
         actual = drive.volume_target(
             "11111111-1111-1111-1111-111111111111",
             self.actual_chain)
-        self.assertEqual(actual, "vda[1]")
+        assert actual == "vda[1]"
 
     def test_top_volume(self):
         drive = Drive(self.log, diskType=DISK_TYPE.NETWORK, **self.conf)
         actual = drive.volume_target(
             "00000000-0000-0000-0000-000000000000",
             self.actual_chain)
-        self.assertEqual(actual, None)
+        assert actual is None
 
     def test_volume_missing(self):
         drive = Drive(self.log, diskType=DISK_TYPE.NETWORK, **self.conf)
-        with self.assertRaises(storage.VolumeNotFound):
+        with pytest.raises(storage.VolumeNotFound):
             drive.volume_target(
                 "FFFFFFFF-FFFF-FFFF-FFFF-000000000000",
                 self.actual_chain)
@@ -993,7 +996,7 @@ class TestVolumeChain(VdsmTestCase):
                     uuid='11111111-1111-1111-1111-111111111111',
                     index=None)
             ]
-            self.assertEqual(chain, expected)
+            assert chain == expected
 
     def test_parse_volume_chain_file(self):
         with self.make_env(DISK_TYPE.FILE) as env:
@@ -1024,7 +1027,7 @@ class TestVolumeChain(VdsmTestCase):
                     uuid='11111111-1111-1111-1111-111111111111',
                     index=None)
             ]
-            self.assertEqual(chain, expected)
+            assert chain == expected
 
     def test_parse_volume_chain_network(self):
         volume_chain = [
@@ -1061,7 +1064,7 @@ class TestVolumeChain(VdsmTestCase):
                 uuid='11111111-1111-1111-1111-111111111111',
                 index=None)
         ]
-        self.assertEqual(chain, expected)
+        assert chain == expected
 
     def test_parse_volume_not_in_chain(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
@@ -1077,7 +1080,7 @@ class TestVolumeChain(VdsmTestCase):
                 </backingStore>
             </disk>""")
 
-            with self.assertRaises(LookupError):
+            with pytest.raises(LookupError):
                 env.drive.parse_volume_chain(disk_xml)
 
     def test_parse_volume_no_source(self):
@@ -1085,9 +1088,10 @@ class TestVolumeChain(VdsmTestCase):
             disk_xml = etree.fromstring("""<disk/>""")
 
             chain = env.drive.parse_volume_chain(disk_xml)
-            self.assertIsNone(chain)
+            assert chain is None
 
-    @xfail("it returns None, instead of a one item chain - looks like a bug")
+    @pytest.mark.xfail(reason=("it returns None, instead of a one item chain -"
+                               " looks like a bug"))
     def test_parse_volume_no_backing(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
             disk_xml = etree.fromstring("""
@@ -1104,7 +1108,7 @@ class TestVolumeChain(VdsmTestCase):
                     allocation=None,
                     uuid='11111111-1111-1111-1111-111111111111')
             ]
-            self.assertEqual(chain, expected)
+            assert chain == expected
 
     def test_parse_volume_chain_no_index(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
@@ -1122,7 +1126,7 @@ class TestVolumeChain(VdsmTestCase):
                 "base": env.base
             })
 
-            with self.assertRaises(storage.InvalidBackingStoreIndex):
+            with pytest.raises(storage.InvalidBackingStoreIndex):
                 env.drive.parse_volume_chain(disk_xml)
 
     def test_parse_volume_chain_index_invalid(self):
@@ -1140,7 +1144,7 @@ class TestVolumeChain(VdsmTestCase):
                 "top": env.top,
                 "base": env.base
             })
-            with self.assertRaises(storage.InvalidBackingStoreIndex):
+            with pytest.raises(storage.InvalidBackingStoreIndex):
                 env.drive.parse_volume_chain(disk_xml)
 
 
@@ -1217,14 +1221,14 @@ class TestDiskSnapshotXml(XMLTestCase):
     def test_incorrect_disk_type(self):
         drive = Drive(self.log, diskType=DISK_TYPE.FILE, **self.conf)
 
-        with self.assertRaises(exception.UnsupportedOperation):
+        with pytest.raises(exception.UnsupportedOperation):
             drive.get_snapshot_xml({"path": "/foo", "diskType": "bad"})
 
     def test_incorrect_protocol(self):
         drive = Drive(self.log, diskType=DISK_TYPE.NETWORK,
                       protocol='gluster', **self.conf)
 
-        with self.assertRaises(exception.UnsupportedOperation):
+        with pytest.raises(exception.UnsupportedOperation):
             drive.get_snapshot_xml({'protocol': 'bad', 'diskType': 'network'})
 
 
@@ -1248,8 +1252,8 @@ class DriveConfigurationTests(VdsmTestCase):
             diskType=DISK_TYPE.FILE,
         )
         drive = Drive(self.log, **conf)
-        self.assertEqual(drive.device, 'cdrom')
-        self.assertIs(drive.readonly, expected)
+        assert drive.device == 'cdrom'
+        assert drive.readonly is expected
 
     @permutations([
         # flag, expected
@@ -1266,8 +1270,8 @@ class DriveConfigurationTests(VdsmTestCase):
             diskType=DISK_TYPE.FILE,
         )
         drive = Drive(self.log, **conf)
-        self.assertEqual(drive.device, 'disk')
-        self.assertIs(drive.readonly, expected)
+        assert drive.device == 'disk'
+        assert drive.readonly is expected
 
     @permutations([
         # flag, expected
@@ -1283,8 +1287,8 @@ class DriveConfigurationTests(VdsmTestCase):
             device='floppy'
         )
         drive = Drive(self.log, **conf)
-        self.assertEqual(drive.device, 'floppy')
-        self.assertIs(drive.readonly, expected)
+        assert drive.device == 'floppy'
+        assert drive.readonly is expected
 
 
 class TestNeedsMonitoring(VdsmTestCase):
@@ -1295,37 +1299,37 @@ class TestNeedsMonitoring(VdsmTestCase):
         conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow",
                             readonly=True)
         drive = Drive(self.log, **conf)
-        self.assertFalse(drive.needs_monitoring(events_enabled=False))
+        assert not drive.needs_monitoring(events_enabled=False)
 
     def test_no_need_monitoring_disabled(self):
         conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow")
         drive = Drive(self.log, **conf)
         drive.monitorable = False
-        self.assertFalse(drive.needs_monitoring(events_enabled=False))
+        assert not drive.needs_monitoring(events_enabled=False)
 
     def test_no_need_not_chunked(self):
         conf = drive_config(diskType=DISK_TYPE.FILE, format="cow")
         drive = Drive(self.log, **conf)
-        self.assertFalse(drive.needs_monitoring(events_enabled=False))
+        assert not drive.needs_monitoring(events_enabled=False)
 
     def test_no_need_replica_not_chunked(self):
         conf = drive_config(diskType=DISK_TYPE.FILE, format="cow")
         drive = Drive(self.log, **conf)
         drive.diskReplicate = replica(DISK_TYPE.FILE, format="cow")
-        self.assertFalse(drive.needs_monitoring(events_enabled=False))
+        assert not drive.needs_monitoring(events_enabled=False)
 
     # Monitoring needed
 
     def test_need_chunked(self):
         conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow")
         drive = Drive(self.log, **conf)
-        self.assertTrue(drive.needs_monitoring(events_enabled=False))
+        assert drive.needs_monitoring(events_enabled=False)
 
     def test_need_replica_chunked(self):
         conf = drive_config(diskType=DISK_TYPE.FILE, format="cow")
         drive = Drive(self.log, **conf)
         drive.diskReplicate = replica(DISK_TYPE.BLOCK, format="cow")
-        self.assertTrue(drive.needs_monitoring(events_enabled=False))
+        assert drive.needs_monitoring(events_enabled=False)
 
 
 class TestNeedsMonitoringEvents(VdsmTestCase):
@@ -1336,40 +1340,40 @@ class TestNeedsMonitoringEvents(VdsmTestCase):
         conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow")
         drive = Drive(self.log, **conf)
         drive.threshold_state = BLOCK_THRESHOLD.SET
-        self.assertFalse(drive.needs_monitoring(events_enabled=True))
+        assert not drive.needs_monitoring(events_enabled=True)
 
     def test_no_need_replica_chunked_threshold_set(self):
         conf = drive_config(diskType=DISK_TYPE.FILE, format="cow")
         drive = Drive(self.log, **conf)
         drive.diskReplicate = replica(DISK_TYPE.BLOCK, format="cow")
         drive.threshold_state = BLOCK_THRESHOLD.SET
-        self.assertFalse(drive.needs_monitoring(events_enabled=True))
+        assert not drive.needs_monitoring(events_enabled=True)
 
     # Monitoring needed.
 
     def test_need_chunked_threshold_unset(self):
         conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow")
         drive = Drive(self.log, **conf)
-        self.assertTrue(drive.needs_monitoring(events_enabled=True))
+        assert drive.needs_monitoring(events_enabled=True)
 
     def test_need_chunked_threshold_exceeded(self):
         conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow")
         drive = Drive(self.log, **conf)
         drive.threshold_state = BLOCK_THRESHOLD.EXCEEDED
-        self.assertTrue(drive.needs_monitoring(events_enabled=True))
+        assert drive.needs_monitoring(events_enabled=True)
 
     def test_need_replica_chunked_threshold_unset(self):
         conf = drive_config(diskType=DISK_TYPE.FILE, format="cow")
         drive = Drive(self.log, **conf)
         drive.diskReplicate = replica(DISK_TYPE.BLOCK, format="cow")
-        self.assertTrue(drive.needs_monitoring(events_enabled=True))
+        assert drive.needs_monitoring(events_enabled=True)
 
     def test_need_replica_chunked_threshold_exceeded(self):
         conf = drive_config(diskType=DISK_TYPE.FILE, format="cow")
         drive = Drive(self.log, **conf)
         drive.diskReplicate = replica(DISK_TYPE.BLOCK, format="cow")
         drive.threshold_state = BLOCK_THRESHOLD.EXCEEDED
-        self.assertTrue(drive.needs_monitoring(events_enabled=True))
+        assert drive.needs_monitoring(events_enabled=True)
 
 
 def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):

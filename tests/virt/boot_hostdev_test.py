@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -250,13 +250,13 @@ class BootHostdevHookTests(XMLTestCase):
     def test_ignore_unrelated_hostdev(self, dev_name):
         xml, rc, out, err = self._run_hook(_HOSTDEV_XML, boot_hostdev=dev_name)
         self.assertXMLEqual(xml, _HOSTDEV_XML)
-        self.assertEqual(rc, 1)
+        assert rc == 1
 
     @permutations(_DEV_NAMES)
     def test_boot_order_hostdev(self, dev_name):
         xml, rc, out, err = self._run_hook(_HOSTDEV_XML, boot_hostdev=dev_name)
         self.assertXMLEqual(xml, _EXPECTED_HOSTDEV_XML[dev_name])
-        self.assertEqual(rc, 0)
+        assert rc == 0
 
     def _setup_env(self, temp_path, boot_hostdev):
         env = dict(os.environ)

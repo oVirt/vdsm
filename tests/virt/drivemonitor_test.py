@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -346,19 +346,19 @@ class TestDrivemonitor(VdsmTestCase):
     def test_enable_on_create(self, enabled):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=enabled)
-        self.assertEqual(mon.enabled(), enabled)
+        assert mon.enabled() == enabled
 
     def test_enable_runtime(self):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=False)
         mon.enable()
-        self.assertEqual(mon.enabled(), True)
+        assert mon.enabled() is True
 
     def test_disable_runtime(self):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=True)
         mon.disable()
-        self.assertEqual(mon.enabled(), False)
+        assert mon.enabled() is False
 
     def test_set_threshold(self):
         with make_env(events_enabled=True) as (mon, vm):
@@ -370,7 +370,7 @@ class TestDrivemonitor(VdsmTestCase):
 
             mon.set_threshold(vda, apparentsize)
             expected = apparentsize - threshold
-            self.assertEqual(vm._dom.thresholds, [('vda', expected)])
+            assert vm._dom.thresholds == [('vda', expected)]
 
     def test_set_threshold_drive_too_small(self):
         # We seen the storage subsystem creating drive too small,
@@ -385,15 +385,15 @@ class TestDrivemonitor(VdsmTestCase):
 
             mon.set_threshold(vda, apparentsize)
             drive_name, value = vm._dom.thresholds[0]
-            self.assertEqual(drive_name, 'vda')
-            self.assertGreaterEqual(value, 1)
+            assert drive_name == 'vda'
+            assert value >= 1
 
     def test_clear_with_index_equal_none(self):
         with make_env(events_enabled=True) as (mon, vm):
             vda = make_drive(self.log, index=0, iface='virtio')
 
             mon.clear_threshold(vda)
-            self.assertEqual(vm._dom.thresholds, [('vda', 0)])
+            assert vm._dom.thresholds == [('vda', 0)]
 
     def test_clear_with_index(self):
         with make_env(events_enabled=True) as (mon, vm):
@@ -402,14 +402,14 @@ class TestDrivemonitor(VdsmTestCase):
 
             # clear the 1st element in the backing chain of the drive
             mon.clear_threshold(vda, index=1)
-            self.assertEqual(vm._dom.thresholds, [('vda[1]', 0)])
+            assert vm._dom.thresholds == [('vda[1]', 0)]
 
     def test_clear_with_events_disabled(self):
         with make_env(events_enabled=False) as (mon, vm):
             vda = make_drive(self.log, index=0, iface='virtio')
 
             mon.clear_threshold(vda)
-            self.assertEqual(vm._dom.thresholds, [])
+            assert vm._dom.thresholds == []
 
     @permutations(_DISK_DATA)
     def test_monitored_drives_with_events(self, disk_confs, expected, _):
@@ -441,7 +441,7 @@ class TestDrivemonitor(VdsmTestCase):
             drive.monitorable = conf.get('monitorable', True)
             vm.drives.append(drive)
         found = [drv.name for drv in mon.monitored_drives()]
-        self.assertEqual(found, expected)
+        assert found == expected
 
 
 class FakeVM(object):

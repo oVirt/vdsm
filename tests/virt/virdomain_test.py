@@ -1,6 +1,6 @@
 # encoding: utf-8
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,10 +39,10 @@ class TestDisconnected(VdsmTestCase):
         self.dom = virdomain.Disconnected(self.vmid)
 
     def test_connected(self):
-        self.assertFalse(self.dom.connected)
+        assert not self.dom.connected
 
     def test_getattr(self):
-        with self.assertRaises(virdomain.NotConnectedError):
+        with pytest.raises(virdomain.NotConnectedError):
             # any method invocation is fine
             self.dom.state(0)
 
@@ -56,25 +56,21 @@ class TestDefined(VdsmTestCase):
         self.dom = virdomain.Defined(self.vmid, self.libvirtdom)
 
     def test_connected(self):
-        self.assertFalse(self.dom.connected)
+        assert not self.dom.connected
 
     def test_getattr(self):
-        with self.assertRaises(virdomain.NotConnectedError):
+        with pytest.raises(virdomain.NotConnectedError):
             # we need to call a method not explicitely declared,
             # to exercise getattr
             self.dom.XMLDesc(0)
 
     def test_state(self):
-        self.assertEqual(
-            self.dom.state(0),
+        assert self.dom.state(0) == \
             (libvirt.VIR_DOMAIN_RUNNING, 0)
-        )
 
     def test_UUIDString(self):
-        self.assertEqual(
-            self.dom.UUIDString(),
+        assert self.dom.UUIDString() == \
             self.libvirtid
-        )
 
     def test_metadata(self):
         md_xml = '<metadata>random test garbage</metadata>'
@@ -85,14 +81,11 @@ class TestDefined(VdsmTestCase):
             xmlconstants.METADATA_VM_VDSM_URI,
             0
         )
-        self.assertEqual(
-            self.dom.metadata(
-                libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                xmlconstants.METADATA_VM_VDSM_URI,
-                0
-            ),
-            md_xml
-        )
+        assert self.dom.metadata(
+            libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+            xmlconstants.METADATA_VM_VDSM_URI,
+            0
+        ) == md_xml
 
     def undefineFlags(self, flags=0):
         self.assertNotRaises(
@@ -114,15 +107,13 @@ class TestNotifying(VdsmTestCase):
         self.elapsed = elapsed
 
     def test_connected(self):
-        self.assertTrue(self.dom.connected)
+        assert self.dom.connected
 
     def test_call(self):
-        self.assertEqual(
-            self.dom.state(0),
+        assert self.dom.state(0) == \
             (libvirt.VIR_DOMAIN_RUNNING, 0)
-        )
-        self.assertIsNot(self.elapsed, None)
-        self.assertFalse(self.elapsed)
+        assert self.elapsed is not None
+        assert not self.elapsed
 
     def test_call_timeout(self):
         def _fail(*args, **kwargs):
@@ -131,10 +122,10 @@ class TestNotifying(VdsmTestCase):
             raise e
 
         self.libvirtdom.state = _fail
-        with self.assertRaises(virdomain.TimeoutError):
+        with pytest.raises(virdomain.TimeoutError):
             self.dom.state(0)
-        self.assertIsNot(self.elapsed, None)
-        self.assertTrue(self.elapsed)
+        assert self.elapsed is not None
+        assert self.elapsed
 
     def test_call_error(self):
         def _fail(*args, **kwargs):
@@ -143,10 +134,10 @@ class TestNotifying(VdsmTestCase):
             raise e
 
         self.libvirtdom.state = _fail
-        with self.assertRaises(libvirt.libvirtError):
+        with pytest.raises(libvirt.libvirtError):
             # any method is fine
             self.dom.state(0)
-        self.assertIs(self.elapsed, None)
+        assert self.elapsed is None
 
 
 class TestExpose:

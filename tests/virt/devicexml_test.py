@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2019 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ from testlib import XMLTestCase
 
 import vmfakecon as fake
 import hostdevlib
+import pytest
 
 
 @expandPermutations
@@ -256,8 +257,8 @@ class ParsingHelperTests(XMLTestCase):
         dev = xmlutils.fromstring(XML)
         found_addr = vmdevices.core.find_device_guest_address(dev)
         found_alias = vmdevices.core.find_device_alias(dev)
-        self.assertEqual(found_addr, self.ADDR)
-        self.assertEqual(found_alias, self.ALIAS)
+        assert found_addr == self.ADDR
+        assert found_alias == self.ALIAS
 
     def test_missing_address(self):
         XML = u"""<device type='fake'>
@@ -266,8 +267,8 @@ class ParsingHelperTests(XMLTestCase):
         dev = xmlutils.fromstring(XML)
         found_addr = vmdevices.core.find_device_guest_address(dev)
         found_alias = vmdevices.core.find_device_alias(dev)
-        self.assertIs(found_addr, None)
-        self.assertEqual(found_alias, self.ALIAS)
+        assert found_addr is None
+        assert found_alias == self.ALIAS
 
     def test_missing_alias(self):
         params = self.ADDR.copy()
@@ -278,37 +279,37 @@ class ParsingHelperTests(XMLTestCase):
         dev = xmlutils.fromstring(XML)
         found_addr = vmdevices.core.find_device_guest_address(dev)
         found_alias = vmdevices.core.find_device_alias(dev)
-        self.assertEqual(found_addr, self.ADDR)
-        self.assertEqual(found_alias, '')
+        assert found_addr == self.ADDR
+        assert found_alias == ''
 
     def test_missing_address_alias(self):
         XML = u"<device type='fake' />"
         dev = xmlutils.fromstring(XML)
         found_addr = vmdevices.core.find_device_guest_address(dev)
         found_alias = vmdevices.core.find_device_alias(dev)
-        self.assertIs(found_addr, None)
-        self.assertEqual(found_alias, '')
+        assert found_addr is None
+        assert found_alias == ''
 
     def test_attrs(self):
         XML = u"<device type='fake' />"
         attrs = vmdevices.core.parse_device_attrs(
             xmlutils.fromstring(XML), ('type',)
         )
-        self.assertEqual(attrs, {'type': 'fake'})
+        assert attrs == {'type': 'fake'}
 
     def test_attrs_missing(self):
         XML = u"<device type='fake' />"
         attrs = vmdevices.core.parse_device_attrs(
             xmlutils.fromstring(XML), ('type', 'foo')
         )
-        self.assertEqual(attrs, {'type': 'fake'})
+        assert attrs == {'type': 'fake'}
 
     def test_attrs_partial(self):
         XML = u"<device foo='bar' ans='42' fizz='buzz' />"
         attrs = vmdevices.core.parse_device_attrs(
             xmlutils.fromstring(XML), ('foo', 'fizz')
         )
-        self.assertEqual(attrs, {'foo': 'bar', 'fizz': 'buzz'})
+        assert attrs == {'foo': 'bar', 'fizz': 'buzz'}
 
     @permutations([
         # xml_data, dev_type
@@ -319,10 +320,8 @@ class ParsingHelperTests(XMLTestCase):
         [u'''<tpm model='tpm-tis'/>''', 'tpm'],
     ])
     def test_find_device_type(self, xml_data, dev_type):
-        self.assertEqual(
-            dev_type,
+        assert dev_type == \
             vmdevices.core.find_device_type(xmlutils.fromstring(xml_data))
-        )
 
     @permutations([
         # xml_data, alias
@@ -333,10 +332,8 @@ class ParsingHelperTests(XMLTestCase):
         [u'''<controller><alias>foobar</alias></controller>''', ''],
     ])
     def test_find_device_alias(self, xml_data, alias):
-        self.assertEqual(
-            alias,
+        assert alias == \
             vmdevices.core.find_device_alias(xmlutils.fromstring(xml_data))
-        )
 
     @permutations([
         # xml_data, address
@@ -365,12 +362,10 @@ class ParsingHelperTests(XMLTestCase):
           'function': '0x0', 'slot': '0x04', 'type': 'pci'}],
     ])
     def test_find_device_guest_address(self, xml_data, address):
-        self.assertEqual(
-            address,
+        assert address == \
             vmdevices.core.find_device_guest_address(
                 xmlutils.fromstring(xml_data)
             )
-        )
 
 
 class FakeProxy(object):
@@ -628,10 +623,8 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 meta={'vmid': 'VMID'}
             )
         except NotImplementedError as exc:
-            self.assertEqual(
-                vmdevices.core.Base.__name__,
+            assert vmdevices.core.Base.__name__ == \
                 str(exc)
-            )
         except Exception as ex:
             raise AssertionError('from_xml_tree raise unexpected %s', ex)
         else:
@@ -932,13 +925,10 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             )
 
     def test_storage(self):
-        self.assertRaises(
-            NotImplementedError,
-            vmdevices.storage.Drive.from_xml_tree,
-            self.log,
-            None,
-            {}
-        )
+        with pytest.raises(NotImplementedError):
+            vmdevices.storage.Drive.from_xml_tree(
+                self.log, None, {}
+            )
 
     @permutations(_STORAGE_TEST_DATA)
     def test_storage_from_xml(self, storage_xml, meta):
@@ -958,9 +948,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 {} if meta is None else meta
             )
         )
-        self.assertEqual(
-            dev.shared, vmdevices.storage.DRIVE_SHARED_TYPE.TRANSIENT
-        )
+        assert dev.shared == vmdevices.storage.DRIVE_SHARED_TYPE.TRANSIENT
 
     def test_storage_from_incomplete_xml(self):
         storage_xml = '''<disk device="disk" snapshot="no" type="file">
@@ -1061,10 +1049,10 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         self._check_device_xml(dev, dev_xml, expected_xml)
 
     def _check_device_attrs(self, dev):
-        self.assertTrue(hasattr(dev, 'specParams'))
+        assert hasattr(dev, 'specParams')
         if (isinstance(dev, vmdevices.network.Interface) or
                 isinstance(dev, vmdevices.storage.Drive)):
-            self.assertTrue(hasattr(dev, 'vm_custom'))
+            assert hasattr(dev, 'vm_custom')
 
     def _check_device_xml(self, dev, dev_xml, expected_xml=None):
         dev.setup()
@@ -1139,7 +1127,7 @@ class DeviceFromXMLTests(XMLTestCase):
             dev_obj = vmdevices.storage.Drive(
                 self.log, **vmdevices.storagexml.parse(dev_xml, meta)
             )
-            self.assertEqual(dev_obj.specParams['vmPayload'], vmPayload)
+            assert dev_obj.specParams['vmPayload'] == vmPayload
 
     def test_payload_from_metadata_dump(self):
         expected_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm='http://ovirt.org/vm/1.0'>
@@ -1167,14 +1155,14 @@ class DeviceFromXMLTests(XMLTestCase):
         for devices in dev_objs.values():
             for dev in devices:
                 print(dev)  # debug aid
-                self.assertIsNot(dev.type, None)
-                self.assertIsNot(dev.device, None)
+                assert dev.type is not None
+                assert dev.device is not None
 
     def test_erroneous_device_init(self):
         dom_desc = DomainDescriptor(_INVALID_DEVICE_XML)
         for dom in dom_desc.get_device_elements('graphics'):
             dev = vmdevices.graphics.Graphics(dom, '1234')
-            with self.assertRaises(vmxml.NotFound):
+            with pytest.raises(vmxml.NotFound):
                 dev._display_network()
 
 
@@ -1301,14 +1289,14 @@ class DeviceMetadataMatchTests(XMLTestCase):
             'TESTING', self.dom_desc, self.md_desc, self.log
         )
         nic = self._find_nic_by_mac(dev_objs, '00:1a:4a:16:01:51')
-        self.assertEqual(nic.network, 'INVALID0')
+        assert nic.network == 'INVALID0'
 
     def test_match_interface_by_mac_only_succeeds(self):
         dev_objs = vmdevices.common.dev_map_from_domain_xml(
             'TESTING', self.dom_desc, self.md_desc, self.log
         )
         nic = self._find_nic_by_mac(dev_objs, '00:1a:3b:16:10:16')
-        self.assertEqual(nic.network, 'ovirtmgmt1')
+        assert nic.network == 'ovirtmgmt1'
 
     def test_match_interface_by_mac_and_alias_succeeds(self):
         # mac is enough, but we match extra arguments if given
@@ -1316,7 +1304,7 @@ class DeviceMetadataMatchTests(XMLTestCase):
             'TESTING', self.dom_desc, self.md_desc, self.log
         )
         nic = self._find_nic_by_mac(dev_objs, '00:1a:55:ff:20:26')
-        self.assertEqual(nic.network, 'ovirtmgmt2')
+        assert nic.network == 'ovirtmgmt2'
 
     def test_port_mirroring(self):
         dev_objs = vmdevices.common.dev_map_from_domain_xml(
@@ -1324,19 +1312,19 @@ class DeviceMetadataMatchTests(XMLTestCase):
         )
         # random MAC, any nic with portMirroring configured is fine
         nic1 = self._find_nic_by_mac(dev_objs, '00:1a:55:ff:20:26')
-        self.assertEqual(nic1.portMirroring, [])
+        assert nic1.portMirroring == []
 
         nic2 = self._find_nic_by_mac(dev_objs, '00:1a:4a:16:01:00')
-        self.assertEqual(nic2.portMirroring, ['network1', 'network2'])
+        assert nic2.portMirroring == ['network1', 'network2']
 
     def test_attributes_present(self):
         dev_objs = vmdevices.common.dev_map_from_domain_xml(
             'TESTING', self.dom_desc, self.md_desc, self.log
         )
         nic = self._find_nic_by_mac(dev_objs, '00:1a:55:ff:30:36')
-        self.assertEqual(nic.filterParameters, [])
-        self.assertEqual(nic.portMirroring, [])
-        self.assertEqual(nic.vm_custom, {})
+        assert nic.filterParameters == []
+        assert nic.portMirroring == []
+        assert nic.vm_custom == {}
 
     def _find_nic_by_mac(self, dev_objs, mac_addr):
         for nic in dev_objs[vmdevices.hwclass.NIC]:

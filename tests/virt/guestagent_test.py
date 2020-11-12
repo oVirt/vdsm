@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ import json
 import logging
 import timeit
 
+import pytest
 import six
 
 from vdsm.virt import guestagent
@@ -35,7 +36,7 @@ from vdsm.virt import qemuguestagent
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import expandPermutations, permutations
-from testValidation import slowtest
+
 
 _MSG_TYPES = ['heartbeat', 'host-name', 'os-version',
               'network-interfaces', 'applications', 'disks-usage']
@@ -109,7 +110,7 @@ class TestFiltering(TestCaseBase):
             u"\ue000 \ufffd",
             u"\U00010000 \U0010ffff",
         ]:
-            self.assertEqual(value, guestagent._filterXmlChars(value))
+            assert value == guestagent._filterXmlChars(value)
 
     def test_filter_xml_chars_invalid(self):
         for value in [
@@ -121,10 +122,9 @@ class TestFiltering(TestCaseBase):
             u"\ud800 \udfff",
             u"\ufffe \uffff",
         ]:
-            self.assertEqual(
-                u'\ufffd \ufffd', guestagent._filterXmlChars(value))
+            assert u'\ufffd \ufffd' == guestagent._filterXmlChars(value)
 
-    @slowtest
+    @pytest.mark.slow
     def test_filter_xml_chars_timing(self):
         setup = ('from vdsm.virt.guestagent import _filterXmlChars;'
                  'x = u"x" * 1024 * 1024')
@@ -134,27 +134,27 @@ class TestFiltering(TestCaseBase):
     def test_filter_object_dict(self):
         raw = {u"a\x00": u"b\x01", u"c\x02": u"d\x03"}
         filtered = {u"a\ufffd": u"b\ufffd", u"c\ufffd": u"d\ufffd"}
-        self.assertEqual(filtered, guestagent._filterObject(raw))
+        assert filtered == guestagent._filterObject(raw)
 
     def test_filter_object_nested_dict(self):
         raw = {u"a\x00": {u"b\x01": {u"c\x02": u"d\x03"}}}
         filtered = {u"a\ufffd": {u"b\ufffd": {u"c\ufffd": u"d\ufffd"}}}
-        self.assertEqual(filtered, guestagent._filterObject(raw))
+        assert filtered == guestagent._filterObject(raw)
 
     def test_filter_object_list(self):
         raw = [u"a\x00", u"b\x01", u"c\x02", u"d\x03"]
         filtered = [u"a\ufffd", u"b\ufffd", u"c\ufffd", u"d\ufffd"]
-        self.assertEqual(filtered, guestagent._filterObject(raw))
+        assert filtered == guestagent._filterObject(raw)
 
     def test_filter_object_nested_lists(self):
         raw = [u"a\x00", [u"b\x01", [u"c\x02", u"d\x03"]]]
         filtered = [u"a\ufffd", [u"b\ufffd", [u"c\ufffd", u"d\ufffd"]]]
-        self.assertEqual(filtered, guestagent._filterObject(raw))
+        assert filtered == guestagent._filterObject(raw)
 
     def test_filter_object_nested_mix(self):
         raw = {u"a\x00": [u"b\x01", {u"c\x02": u"d\x03"}]}
         filtered = {u"a\ufffd": [u"b\ufffd", {u"c\ufffd": u"d\ufffd"}]}
-        self.assertEqual(filtered, guestagent._filterObject(raw))
+        assert filtered == guestagent._filterObject(raw)
 
     def test_filter_object_other_types(self):
         raw = {u"int": 1,
@@ -162,9 +162,9 @@ class TestFiltering(TestCaseBase):
                u"true": True,
                u"false": False,
                u"none": None}
-        self.assertEqual(raw, guestagent._filterObject(raw))
+        assert raw == guestagent._filterObject(raw)
 
-    @slowtest
+    @pytest.mark.slow
     def test_filter_object_timing(self):
         setup = """
 from vdsm.virt.guestagent import _filterObject
@@ -207,7 +207,7 @@ class TestGuestIF(TestCaseBase):
             t = testCase(*t)
             fakeGuestAgent._handleMessage(t.msgType, t.message)
             for (k, v) in six.iteritems(t.assertDict):
-                self.assertEqual(fakeGuestAgent.guestInfo[k], v)
+                assert fakeGuestAgent.guestInfo[k] == v
 
     def test_guestinfo_encapsulation(self):
         fake_guest_agent = guestagent.GuestAgent(None, None, self.log,
@@ -229,7 +229,7 @@ class TestGuestIF(TestCaseBase):
                 guest_info[k] = value
             guest_info = fake_guest_agent.getGuestInfo()
             for (k, v) in six.iteritems(_OUTPUTS[0]):
-                self.assertEqual(guest_info[k], v)
+                assert guest_info[k] == v
 
 
 class TestGuestIFHandleData(TestCaseBase):
@@ -279,7 +279,7 @@ class TestGuestIFHandleData(TestCaseBase):
             self.fakeGuestAgent._handleData(chunk.encode('utf-8'))
 
         for (k, v) in six.iteritems(expected):
-            self.assertEqual(self.fakeGuestAgent.guestInfo[k], expected[k])
+            assert self.fakeGuestAgent.guestInfo[k] == expected[k]
 
     def testMixed(self):
         testCase = namedtuple('testCase', 'msgType, message, assertDict')
@@ -291,23 +291,23 @@ class TestGuestIFHandleData(TestCaseBase):
             for chunk in self.messageChunks(msgStr, self.maxMessageSize):
                 self.fakeGuestAgent._handleData(chunk.encode('utf-8'))
                 if chunk[-1] != '\n':
-                    self.assertEqual(self.fakeGuestAgent._messageState,
-                                     guestagent.MessageState.TOO_BIG)
+                    assert self.fakeGuestAgent._messageState == \
+                        guestagent.MessageState.TOO_BIG
 
             # At the end the message state has to be NORMAL again
-            self.assertEqual(self.fakeGuestAgent._messageState,
-                             guestagent.MessageState.NORMAL)
+            assert self.fakeGuestAgent._messageState == \
+                guestagent.MessageState.NORMAL
 
             for (k, v) in six.iteritems(t.assertDict):
                 if isOverLimit:
                     # If the message size was over the allowed limit
                     # the message should contain the default value
-                    self.assertEqual(self.fakeGuestAgent.guestInfo[k],
-                                     self.infoDefaults[k])
+                    assert self.fakeGuestAgent.guestInfo[k] == \
+                        self.infoDefaults[k]
                 else:
                     # If the message size was within the allowed range
                     # the message should have been put into the guestInfo dict
-                    self.assertEqual(self.fakeGuestAgent.guestInfo[k], v)
+                    assert self.fakeGuestAgent.guestInfo[k] == v
 
 
 class DiskMappingTests(TestCaseBase):
@@ -317,14 +317,14 @@ class DiskMappingTests(TestCaseBase):
                                            lambda: None, lambda: None)
 
     def test_init(self):
-        self.assertEqual(self.agent.guestDiskMapping, {})
-        self.assertIsNone(self.agent.diskMappingHash)
+        assert self.agent.guestDiskMapping == {}
+        assert self.agent.diskMappingHash is None
 
     def test_change_disk_mapping(self):
         old_hash = self.agent.diskMappingHash
         self.agent.guestDiskMapping = {'/dev/vda': 'xxx'}
-        self.assertNotEqual(self.agent.diskMappingHash, old_hash)
-        self.assertTrue(isinstance(self.agent.diskMappingHash, int))
+        assert self.agent.diskMappingHash != old_hash
+        assert isinstance(self.agent.diskMappingHash, int)
 
 
 class FakeClientIF(object):
@@ -357,11 +357,11 @@ class QemuGuestAgentTests(TestCaseBase):
         poller._cleanup()
         for vm in init_vms:
             if vm in removed_vms:
-                self.assertIsNone(poller.get_caps(vm)['version'])
-                self.assertIsNone(poller.get_guest_info(vm))
-                self.assertEqual(poller.last_failure(vm), 0)
+                assert poller.get_caps(vm)['version'] is None
+                assert poller.get_guest_info(vm) is None
+                assert poller.last_failure(vm) == 0
             else:
-                self.assertEqual(poller.get_caps(vm)['version'], 1)
-                self.assertIsNotNone(poller.get_guest_info(vm))
+                assert poller.get_caps(vm)['version'] == 1
+                assert poller.get_guest_info(vm) is not None
                 if vm in failed_vms:
-                    self.assertTrue(poller.last_failure(vm) > 0)
+                    assert poller.last_failure(vm) > 0
