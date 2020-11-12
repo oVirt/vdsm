@@ -122,12 +122,14 @@ class BackupConfig(properties.Owner):
     from_checkpoint_id = properties.UUID(required='')
     to_checkpoint_id = properties.UUID(default='')
     parent_checkpoint_id = properties.UUID(default='')
+    require_consistency = properties.Boolean()
 
     def __init__(self, backup_config):
         self.backup_id = backup_config.get("backup_id")
         self.from_checkpoint_id = backup_config.get("from_checkpoint_id")
         self.to_checkpoint_id = backup_config.get("to_checkpoint_id")
         self.parent_checkpoint_id = backup_config.get("parent_checkpoint_id")
+        self.require_consistency = backup_config.get("require_consistency")
 
         if self.from_checkpoint_id is not None and (
                 self.parent_checkpoint_id is None):
@@ -172,7 +174,13 @@ def start_backup(vm, dom, config):
         vm, dom, backup_cfg.backup_id, drives)
 
     try:
-        vm.freeze()
+        res = vm.freeze()
+        if response.is_error(res) and backup_cfg.require_consistency:
+            raise exception.BackupError(
+                reason="Failed freeze VM: {}".format(res["status"]["message"]),
+                vm_id=vm.id,
+                backup=backup_cfg)
+
         backup_xml = create_backup_xml(
             nbd_addr, drives, scratch_disks, backup_cfg.from_checkpoint_id)
         checkpoint_xml = create_checkpoint_xml(backup_cfg, drives)

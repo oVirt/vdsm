@@ -8475,6 +8475,13 @@ types:
             name: parent_checkpoint_id
             type: *UUID
 
+        -   defaultvalue: false
+            description: Boolean value set to true if the backup
+              should fail if the VM failed to freeze in order to prevent
+              an option of inconsistent data in the backup.
+            name: require_consistency
+            type: boolean
+
     CheckpointInfo: &CheckpointInfo
         added: '4.4'
         description: A checkpoint info entity.

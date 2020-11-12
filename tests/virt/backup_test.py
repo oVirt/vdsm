@@ -33,6 +33,7 @@ from testlib import normalized
 
 from vdsm.common import exception
 from vdsm.common import nbdutils
+from vdsm.common import response
 
 from vdsm.storage import hsm
 from vdsm.storage import transientdisk
@@ -146,6 +147,7 @@ class FakeVm(object):
     @maybefail
     def freeze(self):
         self.froze = True
+        return response.success()
 
     def thaw(self):
         self.thawed = True
