@@ -1,4 +1,4 @@
-# Copyright 2014-2019 Red Hat, Inc.
+# Copyright 2014-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,9 +31,6 @@ import zipfile
 import libvirt
 import os
 
-import pytest
-import six
-
 from testlib import namedTemporaryDir, permutations, expandPermutations
 from v2v_testlib import VM_SPECS, MockVirDomain
 from v2v_testlib import MockVirConnect, _mac_from_uuid, BLOCK_DEV_PATH
@@ -56,10 +53,6 @@ FAKE_SSH_ADD = CommandPath('fake-ssh-add',
                            os.path.abspath('fake-ssh-add'))
 FAKE_SSH_AGENT = CommandPath('fake-ssh-agent',
                              os.path.abspath('fake-ssh-agent'))
-
-
-skip_py2 = pytest.mark.skipif(
-    six.PY2, reason="test no longer supported on Python 2")
 
 
 def legacylistAllDomains():
@@ -408,11 +401,9 @@ class v2vTests(TestCaseBase):
         self.assertEqual(network['macAddr'], _mac_from_uuid(spec.uuid))
         self.assertEqual(network['bridge'], 'VM Network')
 
-    @skip_py2
     def testSuccessfulVMWareImport(self):
         self._commonConvertExternalVM(self.vpx_url)
 
-    @skip_py2
     @MonkeyPatch(v2v, '_SSH_ADD', FAKE_SSH_ADD)
     @MonkeyPatch(v2v, '_SSH_AGENT', FAKE_SSH_AGENT)
     def testSuccessfulXenImport(self):
@@ -451,7 +442,6 @@ class v2vTests(TestCaseBase):
         self.assertTrue('RHEL_4' not in vm_names)
         self.assertTrue('RHEL_5' not in vm_names)
 
-    @skip_py2
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     @MonkeyPatch(v2v, '_LOG_DIR', None)
     def testSuccessfulImportOVA(self):
@@ -463,7 +453,6 @@ class v2vTests(TestCaseBase):
 
             self.assertEqual(job.status, v2v.STATUS.DONE)
 
-    @skip_py2
     def testV2VOutput(self):
         cmd = [FAKE_VIRT_V2V.cmd,
                '-v',
@@ -528,7 +517,6 @@ class v2vTests(TestCaseBase):
         out = p.stdout.read()
         self.assertEqual(out, msg.encode())
 
-    @skip_py2
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     def testV2VCapabilities(self):
         cmd = v2v.V2VCommand({}, None, None)
@@ -536,7 +524,6 @@ class v2vTests(TestCaseBase):
         self.assertIn('input:libvirt', cmd._v2v_caps)
         self.assertIn('output:vdsm', cmd._v2v_caps)
 
-    @skip_py2
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     def testQcow2Compat(self):
         # Make sure we raise on invalid compat version
