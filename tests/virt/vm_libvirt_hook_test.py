@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2019 Red Hat, Inc.
+# Copyright 2019-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,12 +21,11 @@
 
 from __future__ import absolute_import
 
-import six
+import io
 
 from vdsm.virt.libvirthook import vm_libvirt_hook
 
 from testlib import XMLTestCase
-from testValidation import skipif
 
 
 _DISK_XML = '''<domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
@@ -163,16 +162,14 @@ class MigrateHookTestCase(XMLTestCase):
 
     def _test_hook(self, xml, modified_xml,
                    domain='foo', event='migrate', phase='begin'):
-        stdin = six.StringIO(xml)
-        stdout = six.StringIO()
+        stdin = io.StringIO(xml)
+        stdout = io.StringIO()
         vm_libvirt_hook.main(domain, event, phase, stdin=stdin, stdout=stdout)
         self.assertXMLEqual(stdout.getvalue(), modified_xml)
 
-    @skipif(six.PY3, "needs porting to python 3")
     def test_empty(self):
         xml = '<domain/>'
         self._test_hook(xml, xml)
 
-    @skipif(six.PY3, "needs porting to python 3")
     def test_disks(self):
         self._test_hook(_DISK_XML, _MODIFIED_DISK_XML)
