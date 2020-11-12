@@ -322,7 +322,8 @@ def update_guest_disk_mapping(md_desc, disk_devices, guest_disk_mapping, log):
         for d in disk_devices:
             guid = getattr(d, "GUID", None)
             image_id = storage.image_id(d.path)
-            if image_id and image_id[:20] in serial or guid and guid == serial:
+            if image_id and image_id[:20] in serial or \
+                    guid and guid[:20] in serial:
                 d.guestName = value['name']
                 log.debug("Guest name of drive %s: %s",
                           image_id, d.guestName)
