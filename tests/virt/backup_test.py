@@ -31,6 +31,7 @@ from testlib import make_uuid
 from testlib import maybefail
 from testlib import normalized
 
+from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import nbdutils
 from vdsm.common import response
@@ -144,6 +145,7 @@ class FakeVm(object):
 
         raise LookupError("Disk %s not found" % disk_name)
 
+    @api.method
     @maybefail
     def freeze(self):
         self.froze = True
@@ -562,10 +564,11 @@ def test_backup_begin_freeze_failed(tmp_backupdir, tmp_basedir):
 
     config = {
         'backup_id': BACKUP_1_ID,
-        'disks': fake_disks
+        'disks': fake_disks,
+        'require_consistency': True
     }
 
-    with pytest.raises(libvirt.libvirtError):
+    with pytest.raises(exception.BackupError):
         backup.start_backup(vm, dom, config)
 
     verify_scratch_disks_removed(vm)
@@ -573,6 +576,30 @@ def test_backup_begin_freeze_failed(tmp_backupdir, tmp_basedir):
     # verify that the vm didn't froze but thawed during the backup
     assert not vm.froze
     assert vm.thawed
+
+
+@requires_backup_support
+@pytest.mark.parametrize("require_consistency", [False, None])
+def test_backup_begin_consistency_not_required(
+        tmp_backupdir, tmp_basedir, require_consistency):
+    vm = FakeVm()
+    vm.errors["freeze"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
+    dom = FakeDomainAdapter()
+
+    fake_disks = create_fake_disks()
+    config = {
+        'backup_id': BACKUP_1_ID,
+        'disks': fake_disks,
+        'require_consistency': require_consistency
+    }
+
+    res = backup.start_backup(vm, dom, config)
+
+    verify_scratch_disks_exists(vm)
+
+    result_disks = res['result']['disks']
+    verify_backup_urls(BACKUP_1_ID, result_disks)
 
 
 def test_backup_begin_failed_no_disks(tmp_backupdir, tmp_basedir):
