@@ -25,8 +25,6 @@ from network.compat import mock
 from vdsm.network.link import sriov
 
 
-DEV0 = 'eth0'
-DEV1 = 'eth1'
 PCI1 = '0000.1234.1.1'
 PCI2 = '0000.1234.1.2'
 NUMVFS = 2
@@ -52,19 +50,3 @@ class TestSriov(object):
         pci_list = sriov.list_sriov_pci_devices()
 
         assert pci_list == set([PCI1, PCI2])
-
-    @mock.patch.object(
-        sriov,
-        'pciaddr2devname',
-        lambda pciaddr: DEV0 if PCI1 in pciaddr else DEV1,
-    )
-    def test_upgrade_devices_sriov_config(self):
-        old_cfg = {PCI1: 2, PCI2: 5}
-
-        new_cfg = sriov.upgrade_devices_sriov_config(old_cfg)
-
-        expected_new_cfg = {
-            DEV0: {'sriov': {'numvfs': 2}},
-            DEV1: {'sriov': {'numvfs': 5}},
-        }
-        assert new_cfg == expected_new_cfg

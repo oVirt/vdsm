@@ -125,7 +125,6 @@ class Monitor(object):
 
 
 class ResponseField(object):
-    ACTION = 'action'
     IPADDR = 'ip'
     IPMASK = 'mask'
     IPROUTE = 'route'

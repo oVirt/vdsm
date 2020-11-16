@@ -310,21 +310,6 @@ def get_net_iface_from_config(net, netattrs):
     return iface
 
 
-def libvirt_vdsm_nets(nets):
-    routes = get_routes()
-    ipaddrs = getIpAddrs()
-
-    d = {}
-    for net, netAttr in six.iteritems(nets):
-        try:
-            # Pass the iface if the net is _not_ bridged, the bridge otherwise
-            devname = netAttr.get('iface', net)
-            d[net] = _getNetInfo(devname, netAttr['bridged'], routes, ipaddrs)
-        except KeyError:
-            continue  # Do not report missing libvirt networks.
-    return d
-
-
 def _devinfo(link, routes, ipaddrs):
     gateway = get_gateway(routes, link.name)
     ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
@@ -400,57 +385,6 @@ class NetInfo(object):
         self.bridges = _netinfo['bridges']
         self.nameservers = _netinfo['nameservers']
 
-    def del_network(self, network):
-        del self.networks[network]
-
-    def del_bonding(self, bonding):
-        del self.bondings[bonding]
-
-    def del_vlan(self, vlan):
-        del self.vlans[vlan]
-
-    def del_bridge(self, bridge):
-        self.bridges.pop(bridge, None)
-
-    def getVlansForIface(self, iface):
-        for vlandict in six.itervalues(self.vlans):
-            if iface == vlandict['iface']:
-                yield vlandict['vlanid']
-
-    def getNetworkForIface(self, iface):
-        """ Return the network attached to nic/bond """
-        for network, netdict in six.iteritems(self.networks):
-            if (
-                'ports' in netdict
-                and iface in netdict['ports']
-                or 'iface' in netdict
-                and iface == netdict['iface']
-            ):
-                return network
-
-    def getBridgedNetworkForIface(self, iface):
-        """ Return all bridged networks attached to nic/bond """
-        for bridge, netdict in six.iteritems(self.networks):
-            if netdict['bridged'] and iface in netdict['ports']:
-                return bridge
-
-    def getNicsForBonding(self, bond):
-        bondAttrs = self.bondings[bond]
-        return bondAttrs['slaves']
-
-    def getBondingForNic(self, nic):
-        bondings = [
-            b
-            for (b, attrs) in six.iteritems(self.bondings)
-            if nic in attrs['slaves']
-        ]
-        if bondings:
-            assert (
-                len(bondings) == 1
-            ), "Unexpected configuration: More than one bonding per nic"
-            return bondings[0]
-        return None
-
     def getNicsVlanAndBondingForNetwork(self, network):
         vlan = None
         bonding = None
@@ -493,16 +427,3 @@ class CachingNetInfo(NetInfo):
         if _netinfo is None:
             _netinfo = get()
         super(CachingNetInfo, self).__init__(_netinfo)
-
-    def updateDevices(self):
-        """
-        Updates the object device information while keeping the cached network
-        information.
-        """
-        _netinfo = get(vdsmnets=self.networks)
-        self.networks = _netinfo['networks']
-        self.vlans = _netinfo['vlans']
-        self.nics = _netinfo['nics']
-        self.bondings = _netinfo['bondings']
-        self.bridges = _netinfo['bridges']
-        self.nameservers = _netinfo['nameservers']

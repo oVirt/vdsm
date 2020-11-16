@@ -192,11 +192,6 @@ class Config(BaseConfig):
         for configname, attrs in six.iteritems(configs):
             self._setConfig(attrs, os.path.join(configpath, configname))
 
-    def config_exists(self):
-        return os.path.exists(self.networksPath) or os.path.exists(
-            self.bondingsPath
-        )
-
     @staticmethod
     def _getConfigDict(path):
         try:
@@ -300,23 +295,6 @@ class Transaction(object):
                     exc_info=(ex_type, ex_value, ex_traceback),
                 )
                 raise ne.RollbackIncomplete(config_diff, ex_type, ex_value)
-
-
-def configuredPorts(nets, bridge):
-    """Return the configured ports for the bridge"""
-    if bridge not in nets:
-        return []
-
-    network = nets[bridge]
-    nic = network.get('nic')
-    bond = network.get('bonding')
-    vlan = str(network.get('vlan', ''))
-    if bond:
-        return [bond + vlan]
-    elif nic:
-        return [nic + vlan]
-    else:  # isolated bridged network
-        return []
 
 
 def _filter_out_volatile_net_attrs(net_attrs):

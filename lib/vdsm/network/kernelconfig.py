@@ -78,22 +78,6 @@ def normalize(running_config):
     return config_copy
 
 
-def networks_northbound_ifaces():
-    rconfig = RunningConfig()
-    ifaces = []
-    for netname, net_attrs in six.viewitems(rconfig.networks):
-        if net_attrs['bridged']:
-            ifaces.append(netname)
-        else:
-            iface = net_attrs.get('bonding') or net_attrs.get('nic')
-            vlan = net_attrs.get('vlan')
-            if vlan:
-                iface = '.'.join([iface, str(vlan)])
-            ifaces.append(iface)
-
-    return ifaces
-
-
 def _translate_netinfo_net(net, net_attr, netinfo_, _routes):
     nics, _, vlan_id, bond = netinfo_.getNicsVlanAndBondingForNetwork(net)
     attributes = {}

@@ -1,4 +1,4 @@
-# Copyright 2013-2018 Red Hat, Inc.
+# Copyright 2013-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,6 @@ from vdsm.network.netlink import link
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
 
-NET_SYSFS = '/sys/class/net'
 DUMMY_BRIDGE = ';vdsmdummy;'
 _ROUTE_FLAGS = frozenset(
     (
@@ -613,20 +612,6 @@ def routeGet(ipAddress):
     return _exec_cmd(command)
 
 
-def _getValidEntries(constructor, iterable):
-    for entry in iterable:
-        try:
-            yield constructor(entry)
-        except ValueError:
-            pass
-
-
-def routeExists(route):
-    return route in _getValidEntries(
-        constructor=Route.fromText, iterable=routeShowTable('all')
-    )
-
-
 def ruleList():
     command = [_IP_BINARY.cmd, 'rule']
     return _exec_cmd(command)
@@ -642,12 +627,6 @@ def ruleDel(rule):
     command = [_IP_BINARY.cmd, 'rule', 'del']
     command += rule
     _exec_cmd(command)
-
-
-def ruleExists(rule):
-    return rule in _getValidEntries(
-        constructor=Rule.fromText, iterable=ruleList()
-    )
 
 
 def addrAdd(dev, ipaddr, netmask, family=4):

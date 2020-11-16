@@ -22,10 +22,7 @@ from __future__ import division
 
 from contextlib import contextmanager
 from glob import glob
-import logging
 import os
-
-import six
 
 from vdsm.network import netconfpersistence
 from vdsm.network.netlink import waitfor
@@ -58,40 +55,6 @@ def list_sriov_pci_devices():
     return {
         sysfs_dev_path.rsplit('/', 2)[-2] for sysfs_dev_path in sysfs_devs_path
     }
-
-
-def upgrade_devices_sriov_config(cfg):
-    """
-    Given an old SRIOV PF configuration (containing numvfs per device), convert
-    it to the new device configuration and return it.
-    """
-    devices = {}
-    for dev_pci_path, numvfs in six.viewitems(cfg):
-        try:
-            pf_devname = pciaddr2devname(dev_pci_path)
-        except OSError:
-            logging.error(
-                'Device %s does not exist, skipping its config upgrade.'
-                % dev_pci_path
-            )
-            continue
-        devices[pf_devname] = {'sriov': {'numvfs': numvfs}}
-
-    return devices
-
-
-def get_old_persisted_devices_numvfs(devs_vfs_path):
-    """
-    Reads the persisted SRIOV VFs old configuration and returns a dict where
-    the device PCI is the key and the number of VF/s is the value.
-    """
-    numvfs_by_device = {}
-
-    for file_name in os.listdir(devs_vfs_path):
-        with open(os.path.join(devs_vfs_path, file_name)) as f:
-            numvfs_by_device[file_name] = int(f.read().strip())
-
-    return numvfs_by_device
 
 
 def pciaddr2devname(pci_path):

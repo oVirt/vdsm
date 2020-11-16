@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -110,10 +110,6 @@ def getIpAddresses():
         for addr in nl_addr.iter_addrs()
         if addr['family'] == 'inet'
     ]
-
-
-def is_ipv4(nladdr):
-    return nladdr['family'] == 'inet'
 
 
 def is_ipv6(nladdr):

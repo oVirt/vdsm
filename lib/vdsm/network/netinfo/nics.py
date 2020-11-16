@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Hat, Inc.
+# Copyright 2015-2020 Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +27,6 @@ from vdsm.network.link import dpdk
 from .misc import visible_devs
 
 OPERSTATE_UP = 'up'
-OPERSTATE_UNKNOWN = 'unknown'
-OPERSTATE_DOWN = 'down'
 
 
 nics = partial(visible_devs, Link.isNICLike)

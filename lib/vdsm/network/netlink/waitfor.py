@@ -28,7 +28,6 @@ from . import monitor
 from .link import get_link, is_link_up
 
 NEWLINK_STATE_UP = {'event': 'new_link', 'state': 'up'}
-DELLINK_STATE_DOWN = {'event': 'del_link', 'state': 'down'}
 
 
 @contextmanager
@@ -79,18 +78,6 @@ def waitfor_ipv6_addr(iface, address=None, timeout=10):
         expected_event.update(address=address)
     groups = ('ipv6-ifaddr',)
     with wait_for_event(iface, expected_event, groups, timeout):
-        yield
-
-
-@contextmanager
-def waitfor_link_exists(iface, timeout=0.5):
-    """
-    Silently block until a link is created/detected.
-    :param iface: The device name.
-    :param timeout: The maximum time in seconds to wait for the message.
-    """
-    expected_event = {'name': iface, 'event': 'new_link'}
-    with wait_for_link_event(iface, expected_event, timeout):
         yield
 
 

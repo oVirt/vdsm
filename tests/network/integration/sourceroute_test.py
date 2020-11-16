@@ -24,7 +24,6 @@ import os
 import pytest
 
 import network as network_tests
-from network.compat import mock
 from network.nettestlib import dummy_device
 
 from vdsm.network import sourceroute
@@ -56,17 +55,6 @@ def _route_show_table_all(table):
     f_iproute = os.path.join(TESTS_STATIC_PATH, 'ip_route_show_table_all.out')
     with open(f_iproute) as tabFile:
         return tabFile.readlines()
-
-
-class TestFilters(object):
-    @mock.patch.object(sourceroute, 'routeShowTable', _route_show_table_all)
-    def test_source_route_retrieval(self):
-        routes = sourceroute.DynamicSourceRoute._getRoutes(TABLE)
-        assert len(routes) == 2
-        for route in routes:
-            assert route.table == TABLE
-            if route.device is not None:
-                assert route.device == DEVICE
 
 
 class TestSourceRoute(object):

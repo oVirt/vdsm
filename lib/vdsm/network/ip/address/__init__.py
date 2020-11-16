@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -177,19 +177,6 @@ class IPv4(object):
         except socket.error:
             raise ConfigNetworkError(
                 ne.ERR_BAD_ADDR, '%r is not a valid IPv4 ' 'address.' % address
-            )
-
-    @staticmethod
-    def validateNetmask(netmask):
-        try:
-            IPv4.validateAddress(netmask)
-        except ConfigNetworkError as cne:
-            cne.msg = '%r is not a valid IPv4 netmask.' % netmask
-            raise
-        num = struct.unpack('>I', socket.inet_aton(netmask))[0]
-        if num & (num - 1) != (num << 1) & 0xFFFFFFFF:
-            raise ConfigNetworkError(
-                ne.ERR_BAD_ADDR, '%r is not a valid IPv4 ' 'netmask.' % netmask
             )
 
     @staticmethod

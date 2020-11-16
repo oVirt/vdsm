@@ -890,26 +890,6 @@ def rtnl_link_get_qdisc(link):
     return conversion_util.to_str(qdisc) if qdisc else None
 
 
-def rtnl_link_get_by_name(cache, name):
-    """Lookup link in cache by link name
-
-    @arg cache           Link cache
-    @arg name            Name of link
-
-    Searches through the provided cache looking for a link with matching
-    link name
-
-    @attention The reference counter of the returned link object will be
-            incremented. Use rtnl_link_put() to release the reference.
-
-    @return Link object or None if no match was found.
-    """
-    _rtnl_link_get_by_name = _libnl_route(
-        'rtnl_link_get_by_name', c_void_p, c_void_p, c_char_p
-    )
-    return _rtnl_link_get_by_name(cache, name)
-
-
 def rtnl_link_i2name(cache, ifindex):
     """Translate interface index to corresponding link name.
 
@@ -1031,18 +1011,6 @@ def rtnl_route_get_src(route):
         'rtnl_route_get_src', c_void_p, c_void_p
     )
     return _rtnl_route_get_src(route)
-
-
-def rtnl_route_get_iif(route):
-    """Return input interface index.
-
-    @arg route           Route object
-
-    @return Input interface index (can be converted to a readable string via
-            rtnl_link_get_name or rtnl_link_i2name).
-    """
-    _rtnl_route_get_iif = _libnl_route('rtnl_route_get_iif', c_int, c_void_p)
-    return _rtnl_route_get_iif(route)
 
 
 def rtnl_route_get_table(route):

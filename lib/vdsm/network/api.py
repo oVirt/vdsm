@@ -41,7 +41,6 @@ from vdsm.network.lldp import info as lldp_info
 from vdsm.network.nmstate import update_num_vfs
 
 from . import canonicalize
-from .ip import address as ipaddress
 from .errors import RollbackIncomplete
 from . import netconfpersistence
 
@@ -73,18 +72,6 @@ def change_numvfs(numvfs, devname):
     logging.info(f'Changing number of vfs on device {devname} -> {numvfs}.')
     update_num_vfs(devname, numvfs)
     sriov.persist_numvfs(devname, numvfs)
-
-
-def ip_addrs_info(device):
-    """"
-    Report IP addresses of a device.
-
-    Returning a 4 values: ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs
-    ipv4addrs and ipv6addrs contain (each) a list of addresses.
-    ipv4netmask and ipv4addrs represents the 'primary' ipv4 address of the
-    device, if it exists.
-    """
-    return ipaddress.addrs_info(device)
 
 
 def net2vlan(network_name):

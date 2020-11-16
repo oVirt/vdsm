@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,16 +38,3 @@ def speed(dev_name):
         dev_speed = bond.speed(dev_base_name)
 
     return dev_speed
-
-
-def get_vlans_on_base_device(base_dev_name):
-    return (
-        iface_properties['name']
-        for iface_properties in iface.list()
-        if iface_properties.get('device') == base_dev_name
-        and iface_properties.get('type') == iface.Type.VLAN
-    )
-
-
-def is_base_device(dev_name):
-    return any(get_vlans_on_base_device(dev_name))

@@ -127,7 +127,6 @@ class Monitor:
         silent_timeout=False,
     ):
         self._c_callback_function = c_callback_function
-        self._time_start = None
         self._timeout = timeout
         self._silent_timeout = silent_timeout
         if groups:
