@@ -770,17 +770,17 @@ class HSM(object):
         volToExtend.prepare()
         try:
             imgInfo = qemuimg.info(volPath, qemuImgFormat)
-            if imgInfo['virtualsize'] > newSizeBytes:
+            if imgInfo['virtual-size'] > newSizeBytes:
                 self.log.error(
                     "volume %s size %s is larger than the size requested "
-                    "for the extension %s", volUUID, imgInfo['virtualsize'],
+                    "for the extension %s", volUUID, imgInfo['virtual-size'],
                     newSizeBytes)
                 raise se.VolumeResizeValueError(str(newSizeBytes))
             # Uncommit the current size
             volToExtend.setCapacity(0)
             qemuimg.resize(volPath, newSizeBytes, qemuImgFormat)
             virtual_size = qemuimg.info(volPath,
-                                        qemuImgFormat)['virtualsize']
+                                        qemuImgFormat)['virtual-size']
         finally:
             volToExtend.teardown(sdUUID, volUUID)
 
@@ -1603,7 +1603,7 @@ class HSM(object):
 
         # NOTE: Volume size is in blocks.
         meta_size = vol.getCapacity()
-        qemu_size = qemu_info["virtualsize"]
+        qemu_size = qemu_info["virtual-size"]
         if meta_size < qemu_size:
             raise se.ImageVerificationError(
                 "Image virtual size %r is bigger than volume size %r"
@@ -1619,7 +1619,7 @@ class HSM(object):
                 qemu_size, meta_size)
 
         meta_parent = vol.getParent()
-        qemu_parent = qemu_info.get("backingfile", sc.BLANK_UUID)
+        qemu_parent = qemu_info.get("backing-filename", sc.BLANK_UUID)
         if meta_parent != qemu_parent:
             raise se.ImageVerificationError(
                 "Image backing file %r does not match volume parent uuid %r"
@@ -1628,7 +1628,7 @@ class HSM(object):
         if qemu_format == qemuimg.FORMAT.QCOW2:
             # Vdsm depends on qemu-img 2.3.0 or later which always reports
             # 'compat' for qcow2 volumes.
-            qemu_compat = qemu_info["compat"]
+            qemu_compat = qemu_info["format-specific"]["data"]["compat"]
             if not dom.supports_qcow2_compat(qemu_compat):
                 raise se.ImageVerificationError(
                     "qcow2 compat %r not supported on this domain" %
@@ -3157,7 +3157,7 @@ class HSM(object):
         :param volUUID: The UUID of the volume you want to get the info on.
         :type volUUID: UUID
 
-        :returns: The volume information as returned by qemu-img info command.
+        :returns: The volume information returned by qemu-img info command.
         :rtype: dict
         """
         vars.task.getSharedLock(STORAGE, sdUUID)

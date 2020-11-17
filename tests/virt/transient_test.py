@@ -105,9 +105,10 @@ class TestTransient(VdsmTestCase):
 
         transient_info = qemuimg.info(drive['path'])
         self.assertEqual(transient_info['format'], qemuimg.FORMAT.QCOW2)
-        self.assertEqual(transient_info['virtualsize'], VIRTUAL_SIZE)
-        self.assertEqual(transient_info['compat'], QCOW2_COMPAT)
-        self.assertEqual(transient_info['backingfile'], original_path)
+        self.assertEqual(transient_info['virtual-size'], VIRTUAL_SIZE)
+        self.assertEqual(
+            transient_info['format-specific']['data']['compat'], QCOW2_COMPAT)
+        self.assertEqual(transient_info['backing-filename'], original_path)
 
     def create_image(self, img_path, img_format):
         if img_format == 'raw':

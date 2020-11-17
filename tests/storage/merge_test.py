@@ -349,7 +349,7 @@ class TestFinalizeMerge:
                 info = qemuimg.info(child_vol.volumePath)
                 backing_file = volume.getBackingVolumePath(
                     subchain.img_id, subchain.base_id)
-                assert info['backingfile'] == backing_file
+                assert info['backing-filename'] == backing_file
 
             # verify syncVolumeChain arguments
             self.check_sync_volume_chain(subchain, env.chain[-1].volUUID)

@@ -51,10 +51,10 @@ def test_add_transient_disk(tmp_basedir):
     disk_path = res['path']
     disk_info = qemuimg.info(disk_path)
     assert disk_info['format'] == 'qcow2'
-    assert disk_info['compat'] == '1.1'
-    assert disk_info['virtualsize'] == 10 * MiB
+    assert disk_info['format-specific']['data']['compat'] == '1.1'
+    assert disk_info['virtual-size'] == 10 * MiB
 
-    assert "backingfile" not in disk_info
+    assert "backing-filename" not in disk_info
 
     permissions = stat.S_IMODE(os.stat(disk_path).st_mode)
     assert oct(permissions) == oct(sc.FILE_VOLUME_PERMISSIONS)
@@ -73,10 +73,10 @@ def test_add_transient_disk_with_backing(tmp_basedir, tmpdir):
     disk_path = res['path']
     disk_info = qemuimg.info(disk_path)
     assert disk_info['format'] == "qcow2"
-    assert disk_info['compat'] == "1.1"
-    assert disk_info['virtualsize'] == 10 * MiB
-    assert disk_info['backingfile'] == src
-    assert disk_info['backingformat'] == "qcow2"
+    assert disk_info['format-specific']['data']['compat'] == "1.1"
+    assert disk_info['virtual-size'] == 10 * MiB
+    assert disk_info['backing-filename'] == src
+    assert disk_info['backing-filename-format'] == "qcow2"
 
     permissions = stat.S_IMODE(os.stat(disk_path).st_mode)
     assert oct(permissions) == oct(sc.FILE_VOLUME_PERMISSIONS)

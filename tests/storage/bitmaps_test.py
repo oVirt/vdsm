@@ -94,7 +94,7 @@ def test_add_only_valid_bitmaps(vol_chain):
     bitmaps.add_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
 
     info = qemuimg.info(vol_chain.top_vol)
-    assert info['bitmaps'] == [
+    assert info['format-specific']['data']['bitmaps'] == [
         {
             "flags": ["auto"],
             "name": bitmap,
@@ -109,7 +109,7 @@ def test_no_bitmaps_to_add(vol_chain):
     bitmaps.add_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
 
     info = qemuimg.info(vol_chain.top_vol)
-    assert 'bitmaps' not in info
+    assert 'bitmaps' not in info['format-specific']['data']
 
 
 @requires_bitmaps_support
@@ -149,7 +149,7 @@ def test_merge_only_valid_bitmaps(vol_chain):
     bitmaps.merge_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
 
     info = qemuimg.info(vol_chain.base_vol)
-    assert info['bitmaps'] == [
+    assert info['format-specific']['data']['bitmaps'] == [
         {
             "flags": ["auto"],
             "name": bitmap,
@@ -164,7 +164,7 @@ def test_no_bitmaps_to_merge(vol_chain):
     bitmaps.merge_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
 
     info = qemuimg.info(vol_chain.base_vol)
-    assert 'bitmaps' not in info
+    assert 'bitmaps' not in info['format-specific']['data']
 
 
 @requires_bitmaps_support
@@ -181,7 +181,7 @@ def test_merge_bitmaps_failed(monkeypatch, vol_chain):
 
     info = qemuimg.info(vol_chain.base_vol)
     # TODO: test that this bitmap is empty
-    assert info['bitmaps'] == [
+    assert info['format-specific']['data']['bitmaps'] == [
         {
             "flags": ['auto'],
             "name": bitmap,
@@ -204,7 +204,7 @@ def test_merge_bitmaps_failed_to_add_bitmap(
         bitmaps.merge_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
 
     info = qemuimg.info(vol_chain.base_vol)
-    assert 'bitmaps' not in info
+    assert 'bitmaps' not in info['format-specific']['data']
 
 
 @requires_bitmaps_support
@@ -240,4 +240,4 @@ def test_skip_holes_during_merge_bitmaps(tmp_mount, vol_chain):
         base_parent_path=base_parent_vol)
 
     info = qemuimg.info(vol_chain.base_vol)
-    assert 'bitmaps' not in info
+    assert 'bitmaps' not in info['format-specific']['data']

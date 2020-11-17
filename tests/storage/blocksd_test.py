@@ -948,7 +948,7 @@ def test_create_with_bitmaps(
     # Teardown top volume
     base_vol.teardown(sd_uuid, top_vol_uuid)
 
-    assert info['bitmaps'] == [
+    assert info['format-specific']['data']['bitmaps'] == [
         {
             "flags": ["auto"],
             "name": bitmap_names[0],

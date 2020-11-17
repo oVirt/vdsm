@@ -117,11 +117,11 @@ class TestInfo:
 
             info = qemuimg.info(leaf_path)
             assert leaf_fmt == info['format']
-            assert size == info['virtualsize']
-            assert self.CLUSTER_SIZE == info['clustersize']
-            assert base_path == info['backingfile']
-            assert "raw" == info['backingformat']
-            assert '0.10' == info['compat']
+            assert size == info['virtual-size']
+            assert self.CLUSTER_SIZE == info['cluster-size']
+            assert base_path == info['backing-filename']
+            assert "raw" == info['backing-filename-format']
+            assert '0.10' == info['format-specific']['data']['compat']
 
     @pytest.mark.parametrize("unsafe", [True, False])
     def test_unsafe_info(self, unsafe):
@@ -131,7 +131,7 @@ class TestInfo:
             op = qemuimg.create(img, size=size, format=qemuimg.FORMAT.QCOW2)
             op.run()
             info = qemuimg.info(img, unsafe=unsafe)
-            assert size == info['virtualsize']
+            assert size == info['virtual-size']
 
     def test_parse_error(self):
         def call(cmd, **kw):
@@ -151,39 +151,6 @@ class TestInfo:
             with pytest.raises(cmdutils.Error):
                 qemuimg.info('leaf.img')
 
-    def test_missing_compat_for_qcow2_raises(self):
-        data = self._fake_info()
-        del data['format-specific']['data']['compat']
-        with MonkeyPatchScope([(commands, "execCmd",
-                                partial(fake_json_call, data))]):
-            with pytest.raises(cmdutils.Error):
-                qemuimg.info('leaf.img')
-
-    @pytest.mark.parametrize("qemu_field,info_field", [
-        ('backing-filename', 'backingfile'),
-        ('cluster-size', 'clustersize'),
-    ])
-    def test_optional_fields(self, qemu_field, info_field):
-        data = self._fake_info()
-        del data[qemu_field]
-        with MonkeyPatchScope([(commands, "execCmd",
-                                partial(fake_json_call, data))]):
-            info = qemuimg.info('unused')
-            assert info_field not in info
-
-    def test_compat_reported_for_qcow2_only(self):
-        data = {
-            "virtual-size": MiB,
-            "filename": "raw.img",
-            "format": "raw",
-            "actual-size": 0,
-            "dirty-flag": False
-        }
-        with MonkeyPatchScope([(commands, "execCmd",
-                                partial(fake_json_call, data))]):
-            info = qemuimg.info('unused')
-            assert 'compat' not in info
-
     def test_untrusted_image(self):
         with namedTemporaryDir() as tmpdir:
             img = os.path.join(tmpdir, 'untrusted.img')
@@ -191,7 +158,7 @@ class TestInfo:
             op = qemuimg.create(img, size=size, format=qemuimg.FORMAT.QCOW2)
             op.run()
             info = qemuimg.info(img, trusted_image=False)
-            assert size == info['virtualsize']
+            assert size == info['virtual-size']
 
     def test_untrusted_image_call(self):
         command = []
@@ -250,7 +217,7 @@ class TestCreate:
 
             info = qemuimg.info(image)
             assert info['format'] == qemuimg.FORMAT.RAW
-            assert info['virtualsize'] == size
+            assert info['virtual-size'] == size
 
     def test_zero_size(self):
         with namedTemporaryDir() as tmpdir:
@@ -260,7 +227,7 @@ class TestCreate:
 
             info = qemuimg.info(image)
             assert info['format'] == qemuimg.FORMAT.RAW
-            assert info['virtualsize'] == 0
+            assert info['virtual-size'] == 0
 
     def test_qcow2_compat(self):
         with namedTemporaryDir() as tmpdir:
@@ -271,8 +238,8 @@ class TestCreate:
 
             info = qemuimg.info(image)
             assert info['format'] == qemuimg.FORMAT.QCOW2
-            assert info['compat'] == "0.10"
-            assert info['virtualsize'] == size
+            assert info['format-specific']['data']['compat'] == "0.10"
+            assert info['virtual-size'] == size
 
     def test_qcow2_compat_version3(self):
         with namedTemporaryDir() as tmpdir:
@@ -284,8 +251,8 @@ class TestCreate:
 
             info = qemuimg.info(image)
             assert info['format'] == qemuimg.FORMAT.QCOW2
-            assert info['compat'] == "1.1"
-            assert info['virtualsize'] == size
+            assert info['format-specific']['data']['compat'] == "1.1"
+            assert info['virtual-size'] == size
 
     def test_qcow2_compat_invalid(self):
         with pytest.raises(ValueError):
@@ -629,7 +596,7 @@ class TestConvert:
 
         # Check that dst is still preallocated.
         info = qemuimg.info(dst)
-        assert info["virtualsize"] == info["actualsize"]
+        assert info["virtual-size"] == info["actual-size"]
 
     @requires_bitmaps_support
     def test_copy_bitmaps(self, tmp_mount):
@@ -715,7 +682,7 @@ class TestConvert:
         for vol, bitmaps in (
                 [dst_base, base_bitmaps], [dst_top, top_bitmaps]):
             info = qemuimg.info(vol)
-            assert info['bitmaps'] == [
+            assert info['format-specific']['data']['bitmaps'] == [
                 {
                     "flags": ["auto"],
                     "name": bitmaps[0],
@@ -767,7 +734,7 @@ class TestConvert:
         # validate that bitmaps doesn't copied to
         # the leaf volume
         info = qemuimg.info(dst)
-        assert 'bitmaps' not in info
+        assert 'bitmaps' not in info['format-specific']['data']
 
     @requires_bitmaps_support
     def test_copy_with_disabled_bitmaps(self, tmp_mount):
@@ -811,7 +778,7 @@ class TestConvert:
         # validate that bitmaps were copied to the
         # leaf volume including the invalid bitmap
         info = qemuimg.info(dst)
-        assert info['bitmaps'] == [
+        assert info['format-specific']['data']['bitmaps'] == [
             {
                 "flags": ["auto"],
                 "name": "a",
@@ -834,7 +801,7 @@ class TestConvertCompressed:
             f.truncate(1 * GiB)
             f.write(b"x" * MiB)
 
-        src_file_size = qemuimg.info(src_file)["actualsize"]
+        src_file_size = qemuimg.info(src_file)["actual-size"]
         op = qemuimg.convert(
             src_file,
             dst_file,
@@ -842,7 +809,7 @@ class TestConvertCompressed:
             dstFormat=qemuimg.FORMAT.QCOW2,
             compressed=True)
         op.run()
-        dst_file_size = qemuimg.info(dst_file)["actualsize"]
+        dst_file_size = qemuimg.info(dst_file)["actual-size"]
 
         assert src_file_size > dst_file_size
 
@@ -861,7 +828,7 @@ class TestConvertCompressed:
             len=1 * MiB,
             pattern=0xf0)
 
-        src_file_size = qemuimg.info(src_file)["actualsize"]
+        src_file_size = qemuimg.info(src_file)["actual-size"]
         op = qemuimg.convert(
             src_file,
             dst_file,
@@ -869,7 +836,7 @@ class TestConvertCompressed:
             dstFormat=qemuimg.FORMAT.QCOW2,
             compressed=True)
         op.run()
-        dst_file_size = qemuimg.info(dst_file)["actualsize"]
+        dst_file_size = qemuimg.info(dst_file)["actual-size"]
 
         assert src_file_size > dst_file_size
 
@@ -1032,7 +999,7 @@ class TestConvertPreallocation:
             op.run()
 
             actual_size = os.stat(dst).st_size
-            disk_size = qemuimg.info(dst, format="qcow2")["actualsize"]
+            disk_size = qemuimg.info(dst, format="qcow2")["actual-size"]
 
             assert actual_size > virtual_size
             assert disk_size < virtual_size
@@ -1323,7 +1290,8 @@ class TestAmend:
                                      backing=base_path)
             op_leaf.run()
             qemuimg.amend(leaf_path, desired_compat)
-            assert qemuimg.info(leaf_path)['compat'] == desired_compat
+            info = qemuimg.info(leaf_path)
+            assert info['format-specific']['data']['compat'] == desired_compat
 
 
 class TestMeasure:
@@ -1467,7 +1435,7 @@ class TestMeasure:
             filename = convert_to_qcow2(filename, compressed=compressed,
                                         compat=compat)
         qemu_info = qemuimg.info(filename)
-        virtual_size = qemu_info["virtualsize"]
+        virtual_size = qemu_info["virtual-size"]
         qemu_measure = qemuimg.measure(
             filename,
             format=format,
@@ -1509,7 +1477,7 @@ class TestBitmaps:
         op.run()
 
         info = qemuimg.info(src_path)
-        assert info['bitmaps'] == [
+        assert info['format-specific']['data']['bitmaps'] == [
             {
                 "flags": ["auto"],
                 "name": bitmap_name,
@@ -1522,7 +1490,7 @@ class TestBitmaps:
         op.run()
 
         info = qemuimg.info(src_path)
-        assert 'bitmaps' not in info
+        assert 'bitmaps' not in info['format-specific']['data']
 
     @requires_bitmaps_support
     def test_add_disabled_bitmap(self, tmp_mount):
@@ -1547,7 +1515,7 @@ class TestBitmaps:
         op.run()
 
         info = qemuimg.info(src_path)
-        assert info['bitmaps'] == [
+        assert info['format-specific']['data']['bitmaps'] == [
             {
                 "flags": [],
                 "name": bitmap_name,
@@ -1585,7 +1553,7 @@ class TestBitmaps:
         op.run()
 
         info = qemuimg.info(src_path)
-        assert info['bitmaps'] == [
+        assert info['format-specific']['data']['bitmaps'] == [
             {
                 "flags": [],
                 "name": bitmap_name,
@@ -1602,7 +1570,7 @@ class TestBitmaps:
         op.run()
 
         info = qemuimg.info(src_path)
-        assert info['bitmaps'] == [
+        assert info['format-specific']['data']['bitmaps'] == [
             {
                 "flags": ["auto"],
                 "name": bitmap_name,
@@ -1667,7 +1635,7 @@ class TestBitmaps:
         # We need to find a good way to test the
         # bitmap internals.
         info = qemuimg.info(base_path)
-        assert info['bitmaps'] == [
+        assert info['format-specific']['data']['bitmaps'] == [
             {
                 "flags": ["auto"],
                 "name": base_bitmap,

@@ -68,7 +68,7 @@ def _v3_reset_meta_volsize(vol):
     if vol.getFormat() == sc.COW_FORMAT:
         qemuVolInfo = qemuimg.info(vol.getVolumePath(),
                                    qemuimg.FORMAT.QCOW2)
-        virtual_vol_size = qemuVolInfo["virtualsize"]
+        virtual_vol_size = qemuVolInfo["virtual-size"]
     else:
         virtual_vol_size = vol.getVolumeSize()
 

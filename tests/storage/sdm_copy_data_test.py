@@ -268,7 +268,7 @@ def test_copy_to_preallocated_file():
         job.run()
 
         info = qemuimg.info(dst_vol.volumePath)
-        assert info["virtualsize"] == info["actualsize"]
+        assert info["virtual-size"] == info["actual-size"]
 
 
 @requires_bitmaps_support
@@ -313,7 +313,7 @@ def test_volume_chain_copy_with_bitmaps(
         for index in copy_seq:
             dst_vol = env.dst_chain[index]
             info = qemuimg.info(dst_vol.getVolumePath())
-            assert info["bitmaps"] == [
+            assert info["format-specific"]["data"]["bitmaps"] == [
                 {
                     "flags": ["auto"],
                     "name": bitmaps[0],
@@ -401,7 +401,8 @@ def test_qcow2_compat(
 
         job.run()
 
-        actual_compat = qemuimg.info(dst_vol.volumePath)['compat']
+        dst_info = qemuimg.info(dst_vol.volumePath)
+        actual_compat = dst_info['format-specific']['data']['compat']
         assert actual_compat == env.sd_manifest.qcow2_compat()
 
         # After the copy, images must be exactly the same.
@@ -520,9 +521,9 @@ def test_copy_data_collapse(
 
     # Destination actual size should be smaller than source chain actual size,
     # since we have only one qcow2 header (qcow2), or no header (raw).
-    src_actual_size = sum(qemuimg.info(vol.getVolumePath())["actualsize"]
+    src_actual_size = sum(qemuimg.info(vol.getVolumePath())["actual-size"]
                           for vol in volumes)
-    dst_actual_size = qemuimg.info(dest_vol.getVolumePath())["actualsize"]
+    dst_actual_size = qemuimg.info(dest_vol.getVolumePath())["actual-size"]
     assert dst_actual_size < src_actual_size
 
 

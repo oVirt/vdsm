@@ -148,9 +148,16 @@ def _merge_bitmap(src_path, dst_path, bitmap):
 
 def _query_bitmaps(vol_path, filter=None):
     vol_info = qemuimg.info(vol_path)
-    return {b["name"]: b
-            for b in vol_info.get("bitmaps", [])
-            if filter is None or filter(b)}
+
+    # For raw format there is no format specific data.
+    if "format-specific" not in vol_info:
+        return {}
+
+    # Bitmaps are reported only if qemu-img support bitmaps, and the image has
+    # bitmaps.
+    bitmaps = vol_info["format-specific"]["data"].get("bitmaps", [])
+
+    return {b["name"]: b for b in bitmaps if filter is None or filter(b)}
 
 
 def _valid(bitmap):

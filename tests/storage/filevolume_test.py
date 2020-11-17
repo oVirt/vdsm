@@ -170,7 +170,7 @@ def test_volume_size_unaligned(monkeypatch, tmpdir, tmp_repo, fake_access,
     vol_path = vol.getVolumePath()
     qcow2_info = qemuimg.info(vol_path)
 
-    assert qcow2_info["virtualsize"] == expected_vol_capacity
+    assert qcow2_info["virtual-size"] == expected_vol_capacity
     assert vol.getCapacity() == expected_vol_capacity
 
 

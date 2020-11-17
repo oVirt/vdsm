@@ -282,7 +282,7 @@ class TestMergeSubchain(VdsmTestCase):
             # TODO: we should improve this test by adding a
             # a verification to the extents that are reported
             # by qemu-nbd.
-            assert info['bitmaps'] == [
+            assert info['format-specific']['data']['bitmaps'] == [
                 {
                     "flags": ["auto"],
                     "name": bitmap1_name,

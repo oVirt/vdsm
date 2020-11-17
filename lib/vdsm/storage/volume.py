@@ -280,13 +280,30 @@ class VolumeManifest(object):
 
     def getQemuImageInfo(self):
         """
-        Returns volume information as returned by qemu-img info command
+        Returns volume information using qemu-img info command.
         """
         # As this helper may be called while the VM is running,
         # use unsafe=True when calling qemuimg.info()
-        return qemuimg.info(self.getVolumePath(),
-                            sc.fmt2str(self.getFormat()),
-                            unsafe=True)
+        info = qemuimg.info(
+            self.getVolumePath(),
+            sc.fmt2str(self.getFormat()),
+            unsafe=True)
+
+        # Build result according to the schema.
+
+        result = {
+            "virtualsize": info["virtual-size"],
+            "format": info["format"],
+        }
+
+        if "cluster-size" in info:
+            result["clustersize"] = info["cluster-size"]
+        if "backing-filename" in info:
+            result["backingfile"] = info["backing-filename"]
+        if "format-specific" in info:
+            result["compat"] = info["format-specific"]["data"]["compat"]
+
+        return result
 
     def getVolumeParams(self):
         volParams = {}
@@ -507,7 +524,7 @@ class VolumeManifest(object):
         # We also don't specify an image format, as some images can have
         # corrupted qcow2 header (see https://bugzilla.redhat.com/1282239).
         qemu_info = qemuimg.info(self.getVolumePath(), unsafe=True)
-        virtual_size = qemu_info["virtualsize"]
+        virtual_size = qemu_info["virtual-size"]
 
         # If capacity is smaller than virtual size, creating a snapshot on top
         # of this volume will create qcow2 volume with wrong virtual size. This

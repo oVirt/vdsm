@@ -906,7 +906,7 @@ class Image:
             vol = dom.produceVolume(imgUUID, volUUID)
             qemuImgFormat = sc.fmt2str(vol.getFormat())
             imgInfo = qemuimg.info(vol.volumePath, qemuImgFormat)
-            backingFile = imgInfo.get('backingfile')
+            backingFile = imgInfo.get('backing-filename')
             if backingFile is not None:
                 volUUID = os.path.basename(backingFile)
             else:

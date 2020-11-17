@@ -119,7 +119,7 @@ def replace_disk(disk, thin):
 
 def create_local_disk(orig_path, lv_name, vm_id, img_id, src_format, thin):
     res = qemuimg.info(orig_path)
-    size = res["virtualsize"]
+    size = res["virtual-size"]
     hooking.log("localdisk-hook: creating logical volume (name=%s, size=%d, "
                 "thin=%s)"
                 % (lv_name, size, thin))

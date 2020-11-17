@@ -116,41 +116,13 @@ def info(image, format=None, unsafe=False, trusted_image=True):
     out = _run_cmd(cmd)
 
     try:
-        qemu_info = _parse_qemuimg_json(out)
+        info = _parse_qemuimg_json(out)
     except ValueError:
         raise InvalidOutput(cmd, out, "Failed to process qemu-img output")
 
-    try:
-        info = {
-            'format': qemu_info['format'],
-            'virtualsize': qemu_info['virtual-size'],
-        }
-    except KeyError as key:
-        raise InvalidOutput(cmd, out, "Missing field: %r" % key)
-
-    # In qemu-img info, actual-size means:
-    # File storage: the number of allocated blocks multiplied by
-    #               the block size 512.
-    # Block storage: always 0
-    # This behavior isn't documented -
-    # https://bugzilla.redhat.com/1578259
-    if 'actual-size' in qemu_info:
-        info['actualsize'] = qemu_info['actual-size']
-    if 'cluster-size' in qemu_info:
-        info['clustersize'] = qemu_info['cluster-size']
-    if 'backing-filename' in qemu_info:
-        info['backingfile'] = qemu_info['backing-filename']
-    if 'backing-filename-format' in qemu_info:
-        info['backingformat'] = qemu_info['backing-filename-format']
-    if qemu_info['format'] == FORMAT.QCOW2:
-        specific_data = qemu_info['format-specific']['data']
-        try:
-            info['compat'] = specific_data['compat']
-        except KeyError:
-            raise InvalidOutput(cmd, out, "'compat' expected but not found")
-
-        if 'bitmaps' in specific_data:
-            info['bitmaps'] = specific_data['bitmaps']
+    for key in ("virtual-size", "format"):
+        if key not in info:
+            raise InvalidOutput(cmd, out, "Missing field: %r" % key)
 
     return info
 

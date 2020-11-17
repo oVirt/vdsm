@@ -329,12 +329,12 @@ def test_volume_life_cycle(monkeypatch, user_domain):
 
     qcow2_info = qemuimg.info(vol_path)
 
-    assert qcow2_info["actualsize"] < vol_capacity
-    assert qcow2_info["virtualsize"] == vol_capacity
+    assert qcow2_info["actual-size"] < vol_capacity
+    assert qcow2_info["virtual-size"] == vol_capacity
 
     size = user_domain.getVolumeSize(img_uuid, vol_uuid)
     assert size.apparentsize == os.path.getsize(vol_path)
-    assert size.truesize == qcow2_info["actualsize"]
+    assert size.truesize == qcow2_info["actual-size"]
 
     # test volume prepare, teardown does nothing in case of file volume
     vol.prepare()
@@ -428,7 +428,7 @@ def test_volume_create_raw_prealloc(user_domain, local_fallocate):
         virtual_size=PREALLOCATED_VOL_SIZE,
         qemu_info=qemu_info)
 
-    assert qemu_info['actualsize'] == PREALLOCATED_VOL_SIZE
+    assert qemu_info['actual-size'] == PREALLOCATED_VOL_SIZE
 
     # Verify actual volume metadata
     actual = vol.getInfo()
@@ -437,8 +437,8 @@ def test_volume_create_raw_prealloc(user_domain, local_fallocate):
     assert actual["type"] == "PREALLOCATED"
     assert actual["voltype"] == "LEAF"
     assert actual["uuid"] == vol_uuid
-    assert int(actual["apparentsize"]) == qemu_info['virtualsize']
-    assert int(actual["truesize"]) == qemu_info['actualsize']
+    assert int(actual["apparentsize"]) == qemu_info['virtual-size']
+    assert int(actual["truesize"]) == qemu_info['actual-size']
 
 
 @pytest.mark.parametrize("initial_size", [0, INITIAL_VOL_SIZE])
@@ -471,7 +471,7 @@ def test_volume_create_raw_prealloc_initial_size_ignored(
         qemu_info=qemu_info)
 
     # Initial_size is ignored since we stopped using qemu-img preallocation.
-    assert qemu_info['actualsize'] == PREALLOCATED_VOL_SIZE
+    assert qemu_info['actual-size'] == PREALLOCATED_VOL_SIZE
 
     # Verify actual volume metadata
     actual = vol.getInfo()
@@ -480,8 +480,8 @@ def test_volume_create_raw_prealloc_initial_size_ignored(
     assert actual["type"] == "PREALLOCATED"
     assert actual["voltype"] == "LEAF"
     assert actual["uuid"] == vol_uuid
-    assert int(actual["apparentsize"]) == qemu_info['virtualsize']
-    assert int(actual["truesize"]) == qemu_info['actualsize']
+    assert int(actual["apparentsize"]) == qemu_info['virtual-size']
+    assert int(actual["truesize"]) == qemu_info['actual-size']
 
 
 @pytest.mark.parametrize("domain_version", [4, 5])
@@ -541,7 +541,7 @@ def test_volume_create_raw_sparse(user_domain, local_fallocate):
     # Recent qemu-img always allocates the first filesystem block (4096 bytes).
     # https://github.com/qemu/qemu/commit/3a20013fbb26
     # Newer qemu-img configure XFS to use 1 MiB extents, allocating 1 MiB.
-    assert sc.BLOCK_SIZE_4K <= qemu_info['actualsize'] <= MiB
+    assert sc.BLOCK_SIZE_4K <= qemu_info['actual-size'] <= MiB
 
     # Verify actual volume metadata
     actual = vol.getInfo()
@@ -550,8 +550,8 @@ def test_volume_create_raw_sparse(user_domain, local_fallocate):
     assert actual["type"] == "SPARSE"
     assert actual["voltype"] == "LEAF"
     assert actual["uuid"] == vol_uuid
-    assert int(actual["apparentsize"]) == qemu_info['virtualsize']
-    assert int(actual["truesize"]) == qemu_info['actualsize']
+    assert int(actual["apparentsize"]) == qemu_info['virtual-size']
+    assert int(actual["truesize"]) == qemu_info['actual-size']
 
 
 @pytest.mark.parametrize("disktype", [
@@ -609,7 +609,7 @@ def test_volume_create_cow_sparse(user_domain, local_fallocate):
 
     # Check the volume specific actual size is fragile,
     # will easily break on CI or when qemu change the implementation.
-    assert qemu_info['actualsize'] < MiB
+    assert qemu_info['actual-size'] < MiB
 
     # Verify actual volume metadata
     actual = vol.getInfo()
@@ -621,7 +621,7 @@ def test_volume_create_cow_sparse(user_domain, local_fallocate):
     # Check the volume specific apparent size is fragile,
     # will easily break on CI or when qemu change the implementation.
     assert int(actual["apparentsize"]) < MiB
-    assert int(actual["truesize"]) == qemu_info['actualsize']
+    assert int(actual["truesize"]) == qemu_info['actual-size']
 
 
 def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
@@ -668,7 +668,7 @@ def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
 
     # Check the volume specific actual size is fragile,
     # will easily break on CI or when qemu change the implementation.
-    assert qemu_info['actualsize'] < MiB
+    assert qemu_info['actual-size'] < MiB
 
     # Verify actual volume metadata
     actual = vol.getInfo()
@@ -680,7 +680,7 @@ def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
     # Check the volume specific apparent size is fragile,
     # will easily break on CI or when qemu change the implementation.
     assert int(actual["apparentsize"]) < MiB
-    assert int(actual["truesize"]) == qemu_info['actualsize']
+    assert int(actual["truesize"]) == qemu_info['actual-size']
 
 
 @pytest.mark.parametrize("initial_size, expected_exception", [
@@ -1218,7 +1218,7 @@ def test_create_volume_with_bitmaps(user_domain, local_fallocate):
     vol_path = vol.getVolumePath()
     info = qemuimg.info(vol_path)
 
-    assert info['bitmaps'] == [
+    assert info['format-specific']['data']['bitmaps'] == [
         {
             "flags": ["auto"],
             "name": bitmap_names[0],
@@ -1273,15 +1273,15 @@ def test_failed_to_add_bitmaps_to_v3_domain(user_domain, local_fallocate):
 def verify_volume_file(
         path, format, virtual_size, qemu_info, backing_file=None):
     assert qemu_info['format'] == format
-    assert qemu_info['virtualsize'] == virtual_size
+    assert qemu_info['virtual-size'] == virtual_size
 
     vol_mode = os.stat(path).st_mode
     assert stat.S_IMODE(vol_mode) == sc.FILE_VOLUME_PERMISSIONS
 
     if backing_file:
-        assert qemu_info['backingfile'] == backing_file
+        assert qemu_info['backing-filename'] == backing_file
     else:
-        assert 'backingfile' not in qemu_info
+        assert 'backing-filename' not in qemu_info
 
 
 class Config(object):
