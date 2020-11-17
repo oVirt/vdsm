@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 import errno
 import functools
+import glob
 import inspect
 import io
 import logging
@@ -628,6 +629,25 @@ def read_data(filename):
     path = os.path.join(dir_name, 'data', filename)
     with open(path) as src:
         return src.read()
+
+
+def read_files(pattern):
+    """
+    Reads files under the tests data directory, given by input pattern.
+    Returns a dict keyed by file base names with no extensions, storing
+    the read files content.
+    """
+    caller = inspect.stack()[1]
+    caller_mod = inspect.getmodule(caller[0])
+    test_path = os.path.realpath(caller_mod.__file__)
+    dir_name = os.path.dirname(test_path)
+    path = os.path.join(dir_name, 'data', pattern)
+    files = {}
+    for filepath in glob.glob(path):
+        with open(filepath) as src:
+            name = os.path.splitext(os.path.basename(filepath))[0]
+            files[name] = src.read()
+    return files
 
 
 def make_uuid():

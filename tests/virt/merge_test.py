@@ -17,16 +17,32 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
+import libvirt
 import logging
+import os
+import threading
+import time
+import yaml
 
+from vdsm.common import response
+from vdsm.common import xmlutils
+from vdsm.virt import metadata
+from vdsm.virt.domain_descriptor import DomainDescriptor, XmlSource
 from vdsm.virt.vm import (
     BlockCopyActiveError,
     BlockJobUnrecoverableError,
-    LiveMergeCleanupThread
+    LiveMergeCleanupThread,
+    Vm
 )
+from vdsm.virt.vmdevices import storage
 
-from testlib import recorded
+from testlib import recorded, read_data, read_files
+
+from . import vmfakelib as fake
+
+TIMEOUT = 10
+
+log = logging.getLogger("test")
 
 
 class FakeDrive:
@@ -153,3 +169,270 @@ def test_cleanup_abort(monkeypatch):
     assert t.state == LiveMergeCleanupThread.ABORT
     assert v.drive_monitor.enabled
     assert t.__calls__ == [('update_base_size', (), {})]
+
+
+class Config:
+
+    def __init__(self, confdir):
+        self._confdir = confdir
+        self.config = yaml.safe_load(self._load('config.yml'))
+        self.xmls = self._load_xmls()
+
+    def _load(self, filename):
+        return read_data(os.path.join(self._confdir, filename))
+
+    def _load_xmls(self):
+        return read_files(os.path.join(self._confdir, '*.xml'))
+
+
+class RunningVM(Vm):
+
+    def __init__(self, config):
+        self.log = logging.getLogger()
+        self.cif = fake.ClientIF()
+        self._domain = DomainDescriptor(
+            config.xmls["00-before"], xml_source=XmlSource.INITIAL)
+        self.id = self._domain.id
+        self._md_desc = metadata.Descriptor.from_xml(config.xmls["00-before"])
+        self._devices = {
+            "disk": [
+                storage.Drive(
+                    **config.config["drive"],
+                    volumeChain=xml_chain(config.xmls["00-before"]),
+                    log=self.log)
+            ]
+        }
+        self.conf = self._conf_devices(config)
+        self.conf.update({
+            "vmId": config.config["vm-id"],
+            "xml": config.xmls["00-before"]
+        })
+        self._external = False  # Used when syncing metadata.
+        self._dom = FakeDomain(config)
+        self.drive_monitor = FakeDriveMonitor()
+        self._confLock = threading.Lock()
+        self._jobsLock = threading.Lock()
+        self._blockJobs = {}
+        self._liveMergeCleanupThreads = {}
+
+    def _conf_devices(self, config):
+        drive = dict(config.config["drive"])
+        drive["volumeChain"] = xml_chain(config.xmls["00-before"])
+        return {"devices": [drive]}
+
+    def cont(self):
+        return response.success()
+
+
+class FakeDomain:
+
+    def __init__(self, config):
+        self.log = logging.getLogger()
+        self._id = config.config["vm-id"]
+        self.xml = config.xmls["00-before"]
+        self.block_jobs = {}
+        self._config = config
+        self._metadata = ""
+        self.aborted = threading.Event()
+
+    def UUIDString(self):
+        return self._id
+
+    def setMetadata(self, type, xml, prefix, uri, flags):
+        # libvirt's setMetadata will add namespace uri to metadata tags in
+        # the domain xml, here we care for volume chain sync after a
+        # successful pivot.
+        self.metadata = xml
+
+    def XMLDesc(self, flags):
+        return self.xml
+
+    def blockCommit(self, drive, base_target, top_target, bandwidth, flags):
+        self.block_jobs[drive] = {
+            'bandwidth': 0,
+            'cur': 0,
+            'end': 1024**3,
+            'type': libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
+        }
+        # The test should simulate commit-ready once the active commit
+        # has done mirroring the volume.
+        self.xml = self._config.xmls["01-commit"]
+
+    def blockJobInfo(self, drive, flags):
+        return self.block_jobs.get(drive)
+
+    def blockJobAbort(self, drive, flags):
+        if flags == libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT:
+            # The test should simulate abort-ready such that the cleanup
+            # thread would stop waiting for libvirt's domain xml updated
+            # volumes chain after pivot is done.
+            self.xml = self._config.xmls["03-abort"]
+        else:
+            # Aborting without pivot attempt will revert to original dom xml.
+            self.xml = self._config.xmls["00-before"]
+
+        self.aborted.set()
+        del self.block_jobs[drive]
+
+    def blockInfo(self, drive_name, flags):
+        return (1024, 0, 0)
+
+
+def test_active_merge(monkeypatch):
+    monkeypatch.setattr(LiveMergeCleanupThread, "WAIT_INTERVAL", 0.01)
+
+    config = Config('active-merge')
+    vm = RunningVM(config)
+    sd_id = config.config["drive"]["domainID"]
+    vm.cif.irs.prepared_volumes = {
+        (sd_id, k): v for k, v in config.config["volumes"].items()
+    }
+
+    # No active block jobs before calling merge.
+    assert vm.queryBlockJobs() == {}
+
+    merge_params = config.config["merge_params"]
+    res = vm.merge(**merge_params)
+    # Call for merge API should not fail.
+    assert not response.is_error(res)
+
+    # Merge invokes the volume extend API
+    assert len(vm.cif.irs.extend_requests) == 1
+    _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
+
+    # Simulate base volume extension and invoke the verifying callback.
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, vol_info['volumeID'])]
+    base_volume['apparentsize'] = new_size
+    extend_callback(vol_info)
+
+    # Active jobs after calling merge.
+    job_id = merge_params["jobUUID"]
+    image_id = merge_params["driveSpec"]["imageID"]
+    job = vm._dom.blockJobInfo("sda", 0)
+    assert vm.queryBlockJobs() == {
+        job_id : {
+            "bandwidth" : 0,
+            "blockJobType": "commit",
+            "cur": str(job["cur"]),
+            "drive": "sda",
+            "end": str(job["end"]),
+            "id": job_id,
+            "imgUUID": image_id,
+            "jobType": "block"
+        }
+    }
+
+    # Check block job status while in progress.
+    job["cur"] = job["end"] // 2
+    assert vm.queryBlockJobs() == {
+        job_id : {
+            "bandwidth" : 0,
+            "blockJobType": "commit",
+            "cur": str(job["cur"]),
+            "drive": "sda",
+            "end": str(job["end"]),
+            "id": job_id,
+            "imgUUID": image_id,
+            "jobType": "block"
+        }
+    }
+
+    # Check job status when job finished, but before libvirt
+    # updated the xml.
+    job["cur"] = job["end"]
+    assert vm.queryBlockJobs() == {
+        job_id : {
+            "bandwidth" : 0,
+            "blockJobType": "commit",
+            "cur": str(job["cur"]),
+            "drive": "sda",
+            "end": str(job["end"]),
+            "id": job_id,
+            "imgUUID": image_id,
+            "jobType": "block"
+        }
+    }
+
+    # Simulate completion of backup job - libvirt updates the xml.
+    vm._dom.xml = config.xmls["02-commit-ready"]
+
+    # Trigger cleanup and pivot attempt.
+    vm.queryBlockJobs()
+
+    # Wait for cleanup to abort the block job as part of the pivot attempt.
+    aborted = vm._dom.aborted.wait(TIMEOUT)
+    assert aborted, "Timeout waiting for blockJobAbort() call"
+
+    # Block job was aborted and cleared from libvirt domain so query returns
+    # the default status entry.
+    assert vm.queryBlockJobs() == {
+        job_id : {
+            "bandwidth" : 0,
+            "blockJobType": "commit",
+            "cur": "0",
+            "drive": "sda",
+            "end": "0",
+            "id": job_id,
+            "imgUUID": image_id,
+            "jobType": "block"
+        }
+    }
+    # Set the abort-ready state after cleanup has called active commit abort.
+    vm._dom.xml = config.xmls["04-abort-ready"]
+
+    # Check for cleanup completion.
+    wait_for_cleanup(vm)
+
+    # The fake domain mocks the setMetadata method and store the input as is,
+    # domain xml is not manipulated by the test as xml due to namespacing
+    # issues, so we only compare the resulting volume chain both between
+    # updated metadata and the expected xml.
+    expected_volumes_chain = xml_chain(config.xmls["05-after"])
+    assert metadata_chain(vm._dom.metadata) == expected_volumes_chain
+
+    # Top volume gets torn down.
+    top_id = merge_params["topVolUUID"]
+    assert (sd_id, top_id) not in vm.cif.irs.prepared_volumes
+
+    # Drive volume chain is updated and monitoring is back to enabled.
+    drive = vm.getDiskDevices()[0]
+    assert drive.volumeChain == expected_volumes_chain
+    assert vm.drive_monitor.enabled
+
+
+def wait_for_cleanup(vm):
+    log.info("Waiting for cleanup")
+
+    deadline = time.monotonic() + TIMEOUT
+    # Block job monitor excutes updateVmJobs method periodically to update
+    # on the status of managed block jobs.
+    vm.updateVmJobs()
+    while vm.hasVmJobs:
+        time.sleep(0.01)
+        if time.monotonic() > deadline:
+            raise RuntimeError("Timeout waiting for cleanup completion")
+        log.info("Updating VM jobs...")
+        vm.updateVmJobs()
+
+    log.info("No more jobs")
+
+
+def xml_chain(xml):
+    md = metadata.Descriptor.from_xml(xml)
+    with md.device(devtype="disk", name="sda") as dev:
+        return dev["volumeChain"]
+
+
+def metadata_chain(xml):
+    vm = xmlutils.fromstring(xml)
+    nodes = vm.findall("./device/volumeChain/volumeChainNode")
+    return [
+        {
+            "domainID": node.find("./domainID").text,
+            "imageID": node.find("./imageID").text,
+            "leaseOffset": int(node.find("./leaseOffset").text),
+            "leasePath": node.find("./leasePath").text,
+            "path": node.find("./path").text,
+            "volumeID": node.find("./volumeID").text
+        } for node in nodes
+    ]

@@ -1,0 +1,47 @@
+---
+#
+# Information here should match the tests xmls in this directory.
+#
+volumes:
+  6c0f1c64-90ac-4a68-839d-5a47af1d3890:
+    format: COW
+    voltype: LEAF
+    capacity: 1073741824
+    truesize: 1073741824
+    apparentsize: 1073741824
+  2939852e-187c-48b4-b57a-1f8ea5bc94f8:
+    format: COW
+    voltype: INTERNAL
+    capacity: 1073741824
+    truesize: 1073741824
+    apparentsize: 1073741824
+  75658c40-205d-48f0-87b3-b21530097d76:
+    format: COW
+    voltype: INTERNAL
+    capacity: 1073741824
+    truesize: 1073741824
+    apparentsize: 1073741824
+vm-id: 16ea7e42-09b7-4132-9b7e-d72ec0b780b5
+drive:
+  poolID: 84fab540-fbf2-11ea-a568-5254002fb5cc
+  volumeID: 6c0f1c64-90ac-4a68-839d-5a47af1d3890
+  imageID: 222d9718-f2d9-4b95-bd7f-e8dfe565cf56
+  domainID: c0b55558-5038-4a2b-bc96-47aff28d0218
+  alias: ua-222d9718-f2d9-4b95-bd7f-e8dfe565cf56
+  type: disk
+  diskType: block
+  format: cow
+  path: "/rhev/data-center/mnt/blockSD/c0b55558-5038-4a2b-bc96-47aff28d0218/images/222d9718-f2d9-4b95-bd7f-e8dfe565cf56/6c0f1c64-90ac-4a68-839d-5a47af1d3890"
+  index: 0
+  iface: sata
+merge_params:
+  driveSpec:
+    poolID: 84fab540-fbf2-11ea-a568-5254002fb5cc
+    volumeID: 6c0f1c64-90ac-4a68-839d-5a47af1d3890
+    imageID: 222d9718-f2d9-4b95-bd7f-e8dfe565cf56
+    domainID: c0b55558-5038-4a2b-bc96-47aff28d0218
+  baseVolUUID: 75658c40-205d-48f0-87b3-b21530097d76
+  topVolUUID: 6c0f1c64-90ac-4a68-839d-5a47af1d3890
+  bandwidth: 0
+  jobUUID: 5c0a3978-d3c0-4acb-84ee-a52bf0088878
+

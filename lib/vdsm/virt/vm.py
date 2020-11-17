@@ -6035,6 +6035,9 @@ class LiveMergeCleanupThread(object):
     # Unrecoverable cleanup error, run should not be retried by the caller.
     ABORT = 'ABORT'
 
+    # Sample interval for libvirt xml volume chain update after pivot.
+    WAIT_INTERVAL = 1
+
     def __init__(self, vm, job, drive, doPivot):
         self.vm = vm
         self.job = job
@@ -6179,7 +6182,7 @@ class LiveMergeCleanupThread(object):
             curVols = sorted([entry.uuid for entry in chains[alias]])
 
             if curVols == origVols:
-                time.sleep(1)
+                time.sleep(self.WAIT_INTERVAL)
             elif curVols == expectedVols:
                 self.vm.log.info("The XML update has been completed")
                 break
