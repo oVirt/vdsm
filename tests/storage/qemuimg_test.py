@@ -175,6 +175,108 @@ class TestInfo:
                                '--cpu=30',
                                '--as=1073741824']
 
+    @requires_bitmaps_support
+    def test_backing_chain(self, tmpdir):
+        virtual_size = 10 * MiB
+        base = str(tmpdir.join('base.raw'))
+        op = qemuimg.create(
+            base,
+            size=virtual_size,
+            format=qemuimg.FORMAT.RAW)
+        op.run()
+
+        mid = str(tmpdir.join('mid.qcow2'))
+        op = qemuimg.create(
+            mid,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat="1.1",
+            backing=base,
+            backingFormat="raw")
+        op.run()
+
+        op = qemuimg.bitmap_add(mid, "bitmap")
+        op.run()
+
+        top = str(tmpdir.join('top.qcow2'))
+        op = qemuimg.create(
+            top,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat="1.1",
+            backing=mid,
+            backingFormat="qcow2")
+        op.run()
+
+        op = qemuimg.bitmap_add(top, "bitmap")
+        op.run()
+
+        chain_info = qemuimg.info(top, backing_chain=True)
+
+        assert len(chain_info) == 3
+
+        # Check top image info.
+
+        top_info = chain_info[0]
+
+        assert top_info["virtual-size"] == virtual_size
+        assert top_info["format"] == "qcow2"
+        assert top_info["backing-filename"] == mid
+        assert top_info["backing-filename-format"] == "qcow2"
+
+        assert "actual-size" in top_info
+        assert "cluster-size" in top_info
+
+        qcow2_data = top_info["format-specific"]["data"]
+        assert qcow2_data["compat"] == "1.1"
+        assert len(qcow2_data["bitmaps"]) == 1
+
+        # Check middle image info.
+
+        mid_info = chain_info[1]
+
+        assert mid_info["virtual-size"] == virtual_size
+        assert mid_info["format"] == "qcow2"
+        assert mid_info["backing-filename"] == base
+        assert mid_info["backing-filename-format"] == "raw"
+
+        assert "actual-size" in mid_info
+        assert "cluster-size" in mid_info
+
+        qcow2_data = mid_info["format-specific"]["data"]
+        assert qcow2_data["compat"] == "1.1"
+        assert len(qcow2_data["bitmaps"]) == 1
+
+        # Check base image info.
+
+        base_info = chain_info[2]
+
+        assert base_info["virtual-size"] == virtual_size
+        assert base_info["format"] == "raw"
+        assert "actual-size" in base_info
+
+    def test_backing_chain_single(self, tmpdir):
+        virtual_size = 10 * MiB
+        img = str(tmpdir.join("single.qcow2"))
+        op = qemuimg.create(
+            img,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat="1.1")
+        op.run()
+
+        chain_info = qemuimg.info(img, backing_chain=True)
+
+        assert len(chain_info) == 1
+
+        img_info = chain_info[0]
+
+        assert img_info["virtual-size"] == virtual_size
+        assert img_info["format"] == "qcow2"
+        assert "actual-size" in img_info
+        assert "cluster-size" in img_info
+
+        qcow2_data = img_info["format-specific"]["data"]
+        assert qcow2_data["compat"] == "1.1"
+
 
 class TestCreate:
 

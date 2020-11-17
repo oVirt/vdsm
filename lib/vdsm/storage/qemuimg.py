@@ -80,7 +80,8 @@ class InvalidOutput(cmdutils.Error):
         self.reason = reason
 
 
-def info(image, format=None, unsafe=False, trusted_image=True):
+def info(image, format=None, unsafe=False, trusted_image=True,
+         backing_chain=False):
     cmd = [_qemuimg.cmd, "info", "--output", "json"]
 
     if format:
@@ -88,6 +89,9 @@ def info(image, format=None, unsafe=False, trusted_image=True):
 
     if unsafe:
         cmd.append('-U')
+
+    if backing_chain:
+        cmd.append('--backing-chain')
 
     cmd.append(image)
 
@@ -116,13 +120,16 @@ def info(image, format=None, unsafe=False, trusted_image=True):
     out = _run_cmd(cmd)
 
     try:
-        info = _parse_qemuimg_json(out)
-    except ValueError:
-        raise InvalidOutput(cmd, out, "Failed to process qemu-img output")
+        info = _parse_qemuimg_json(out, list if backing_chain else dict)
+    except ValueError as e:
+        raise InvalidOutput(
+            cmd, out, "Failed to process qemu-img output: %s" % e)
 
-    for key in ("virtual-size", "format"):
-        if key not in info:
-            raise InvalidOutput(cmd, out, "Missing field: %r" % key)
+    chain = info if backing_chain else [info]
+    for node in chain:
+        for key in ("virtual-size", "format"):
+            if key not in node:
+                raise InvalidOutput(cmd, out, "Missing field: %r" % key)
 
     return info
 
@@ -537,10 +544,10 @@ def default_qcow2_compat():
     return value
 
 
-def _parse_qemuimg_json(output):
+def _parse_qemuimg_json(output, expected_type=dict):
     obj = json.loads(output.decode("utf8"))
-    if not isinstance(obj, dict):
-        raise ValueError("not a JSON object")
+    if not isinstance(obj, expected_type):
+        raise ValueError("Not a %s", expected_type)
     return obj
 
 
