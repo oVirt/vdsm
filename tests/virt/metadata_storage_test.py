@@ -130,6 +130,35 @@ _CDROM_PAYLOAD_DATA = _TestData(
     </vm>""",
 )
 
+_CDROM_CHANGE_DATA = _TestData(
+    conf={
+        'index': '3',
+        'iface': 'ide',
+        'type': 'disk',
+        'change': {
+            'state': 'loading',
+            'domainID': '88252cf6-381e-48f0',
+            'imageID': '89f05c7d-b961-4935',
+            'poolID': '13345997-b94f-42dd',
+            'volumeID': '626a493f-5214-4337',
+        }
+    },
+    metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
+    <vm>
+    <device devtype="disk" name="hdd">
+        <iface>ide</iface>
+        <index>3</index>
+        <type>disk</type>
+        <change>
+            <domainID>88252cf6-381e-48f0</domainID>
+            <imageID>89f05c7d-b961-4935</imageID>
+            <poolID>13345997-b94f-42dd</poolID>
+            <state>loading</state>
+            <volumeID>626a493f-5214-4337</volumeID>
+        </change>
+    </device>
+    </vm>""",
+)
 
 _DISK_DATA = _TestData(
     conf={
@@ -495,6 +524,12 @@ class DescriptorStorageMetadataTests(XMLTestCase):
 
     def test_cdrom_payload_to_metadata_xml(self):
         self._check_drive_to_metadata_xml(_CDROM_PAYLOAD_DATA)
+
+    def test_cdrom_change_from_metadata_xml(self):
+        self._check_drive_from_metadata_xml(_CDROM_CHANGE_DATA)
+
+    def test_cdrom_change_to_metadata_xml(self):
+        self._check_drive_to_metadata_xml(_CDROM_CHANGE_DATA)
 
     def _check_drive_from_metadata_xml(self, data):
         desc = metadata.Descriptor()

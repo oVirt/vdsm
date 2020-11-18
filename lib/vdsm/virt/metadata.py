@@ -73,6 +73,7 @@ _DEVICE = 'device'
 
 _ADDRESS = 'address'
 _AUTH = 'auth'
+_CHANGE = 'change'
 _HOSTS = 'hosts'
 _HOST_INFO = 'hostInfo'
 _IO_TUNE = 'ioTune'
@@ -89,7 +90,7 @@ _IGNORED_KEYS = (
     _VOLUME_INFO,
 )
 _DEVICE_SUBKEYS = (
-    _ADDRESS, _AUTH, _CUSTOM, _HOSTS, _PAYLOAD, _PORT_MIRRORING,
+    _ADDRESS, _AUTH, _CHANGE, _CUSTOM, _HOSTS, _PAYLOAD, _PORT_MIRRORING,
     _REPLICA, _SPEC_PARAMS, _VM_CUSTOM, _VOLUME_CHAIN,
 )
 _NONEMPTY_KEYS = (_IO_TUNE,) + _DEVICE_SUBKEYS
@@ -758,6 +759,8 @@ def _load_device(md_obj, dev):
                 value = _load_device_spec_params(md_obj, elem)
             elif key == _PAYLOAD:
                 value = _load_payload(md_obj, elem)
+            elif key == _CHANGE:
+                value = _load_device(md_obj, elem)
             else:
                 value = md_obj.load(elem)
             info[key] = value
@@ -803,6 +806,8 @@ def _dump_device(md_obj, data, node_name=_DEVICE):
             elems.append(_dump_device_spec_params(md_obj, value))
         elif key == _PAYLOAD:
             elems.append(_dump_payload(md_obj, _PAYLOAD, value))
+        elif key == _CHANGE:
+            elems.append(_dump_device(md_obj, value, _CHANGE))
         else:
             elems.append(md_obj.dump(key, **value))
 
