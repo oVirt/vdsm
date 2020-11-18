@@ -400,6 +400,117 @@ def test_active_merge(monkeypatch):
     assert vm.drive_monitor.enabled
 
 
+def test_internal_merge():
+    config = Config('internal-merge')
+    vm = RunningVM(config)
+    sd_id = config.config["drive"]["domainID"]
+    vm.cif.irs.prepared_volumes = {
+        (sd_id, k): v for k, v in config.config["volumes"].items()
+    }
+
+    assert vm.queryBlockJobs() == {}
+
+    merge_params = config.config["merge_params"]
+    res = vm.merge(**merge_params)
+    assert not response.is_error(res)
+
+    # Merge invokes the volume extend API
+    assert len(vm.cif.irs.extend_requests) == 1
+    _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
+
+    # Simulate base volume extension and invoke the verifying callback.
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, vol_info['volumeID'])]
+    base_volume['apparentsize'] = new_size
+    extend_callback(vol_info)
+
+    # Active jobs after calling merge.
+    job_id = merge_params["jobUUID"]
+    image_id = merge_params["driveSpec"]["imageID"]
+    assert vm.queryBlockJobs() == {
+        job_id : {
+            "bandwidth" : 0,
+            "blockJobType": "commit",
+            "cur": "0",
+            "drive": "sda",
+            "end": "1073741824",
+            "id": job_id,
+            "imgUUID": image_id,
+            "jobType": "block"
+        }
+    }
+
+    job = vm._dom.blockJobInfo("sda", 0)
+
+    # Check block job status while in progress.
+    job["cur"] = job["end"] // 2
+    assert vm.queryBlockJobs() == {
+        job_id : {
+            "bandwidth" : 0,
+            "blockJobType": "commit",
+            "cur": str(job["cur"]),
+            "drive": "sda",
+            "end": "1073741824",
+            "id": job_id,
+            "imgUUID": image_id,
+            "jobType": "block"
+        }
+    }
+
+    # Check job status when job finished, but before libvirt
+    # updated the xml.
+    job["cur"] = job["end"]
+    assert vm.queryBlockJobs() == {
+        job_id : {
+            "bandwidth" : 0,
+            "blockJobType": "commit",
+            "cur": str(job["cur"]),
+            "drive": "sda",
+            "end": "1073741824",
+            "id": job_id,
+            "imgUUID": image_id,
+            "jobType": "block"
+        }
+    }
+
+    # Simulate job completion:
+    # 1. libvirt removes the job.
+    # 2. libvirt changes the xml.
+    del vm._dom.block_jobs["sda"]
+    vm._dom.xml = config.xmls["02-after"]
+
+    # Querying the job when the job has gone should trigger a cleanup.
+    info = vm.queryBlockJobs()
+
+    # Query reports the default status entry before cleanup is done.
+    assert info == {
+        job_id : {
+            "bandwidth" : 0,
+            "blockJobType": "commit",
+            "cur": "0",
+            "drive": "sda",
+            "end": "0",
+            "id": job_id,
+            "imgUUID": image_id,
+            "jobType": "block"
+        }
+    }
+
+    # Check for cleanup completion.
+    wait_for_cleanup(vm)
+
+    # Volumes chain is updated in domain metadata without top volume.
+    expected_volumes_chain = xml_chain(config.xmls["02-after"])
+    assert metadata_chain(vm._dom.metadata) == expected_volumes_chain
+
+    # Top snapshot is merged into removed snapshot and its volume is torn down.
+    top_id = merge_params["topVolUUID"]
+    assert (sd_id, top_id) not in vm.cif.irs.prepared_volumes
+
+    drive = vm.getDiskDevices()[0]
+    assert drive.volumeChain == expected_volumes_chain
+    assert vm.drive_monitor.enabled
+
+
 def wait_for_cleanup(vm):
     log.info("Waiting for cleanup")
 
