@@ -63,7 +63,7 @@ _CDROM_DATA = _TestData(
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
-    <device name="hdc" devtype="disk">
+    <device devtype="disk" name="hdc">
         <device>cdrom</device>
         <deviceId>e59c985c-46c2-4489-b355-a6f374125eb9</deviceId>
         <iface>ide</iface>
@@ -109,7 +109,7 @@ _CDROM_PAYLOAD_DATA = _TestData(
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
-    <device name="hdd" devtype="disk">
+    <device devtype="disk" name="hdd">
         <device>cdrom</device>
         <deviceId>423af2b3-5d02-44c5-9d2e-9e69de6eef44</deviceId>
         <iface>ide</iface>
@@ -166,7 +166,7 @@ _DISK_DATA = _TestData(
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
-    <device name="vda" devtype="disk">
+    <device devtype="disk" name="vda">
         <bootOrder>1</bootOrder>
         <device>disk</device>
         <deviceId>66441539-f7ac-4946-8a25-75e422f939d4</deviceId>
@@ -232,7 +232,7 @@ _DISK_DATA_CUSTOM = _TestData(
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
-    <device name="vdb" devtype="disk">
+    <device  devtype="disk" name="vdb">
         <bootOrder>2</bootOrder>
         <device>disk</device>
         <deviceId>b4f8d9d7-2701-47ae-ab9a-d1e0194eb796</deviceId>
@@ -287,7 +287,7 @@ _DISK_DATA_SGIO = _TestData(
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
-    <device name="sdb" devtype="disk">
+    <device devtype="disk" name="sdb">
         <GUID>36001405e9bebaa680864c98a280e6544</GUID>
         <device>lun</device>
         <deviceId>07749931-667c-4388-8ba5-4f63ad84a0d7</deviceId>
@@ -346,7 +346,7 @@ _DISK_DATA_NETWORK = _TestData(
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
-    <device name="vda" devtype="disk">
+    <device devtype="disk" name="vda">
         <device>disk</device>
         <diskType>network</diskType>
         <format>raw</format>
@@ -403,7 +403,7 @@ _DISK_DATA_REPLICA = _TestData(
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
-    <device name="vda" devtype="disk">
+    <device devtype="disk" name="vda">
         <device>disk</device>
         <format>cow</format>
         <iface>virtio</iface>
