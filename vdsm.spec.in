@@ -230,17 +230,7 @@ Requires: sanlock-python >= 3.7.3
 Requires: python3-sanlock
 %endif
 
-# device-mapper-multipath
-
-%if 0%{?rhel}
-# Required for blacklisting multipath devices by protocol.
-# See https://bugzilla.redhat.com/1016535 for more details.
-Requires: device-mapper-multipath >= 0.4.9-119.el7_5.1
-%endif #rhel
-
-%if 0%{?fedora}
-Requires: device-mapper-multipath >= 0.7.4-3
-%endif
+Requires: device-mapper-multipath
 
 # augeas
 
