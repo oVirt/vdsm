@@ -511,6 +511,52 @@ def test_internal_merge():
     assert vm.drive_monitor.enabled
 
 
+def test_merge_cancel():
+    config = Config('active-merge')
+    vm = RunningVM(config)
+    sd_id = config.config["drive"]["domainID"]
+    vm.cif.irs.prepared_volumes = {
+        (sd_id, k): v for k, v in config.config["volumes"].items()
+    }
+
+    assert vm.queryBlockJobs() == {}
+
+    merge_params = config.config["merge_params"]
+    res = vm.merge(**merge_params)
+    assert not response.is_error(res)
+
+    assert vm.queryBlockJobs() == {
+        merge_params["jobUUID"] : {
+            "bandwidth" : 0,
+            "blockJobType": "commit",
+            "cur": "0",
+            "drive": "sda",
+            "end": "1073741824",
+            "id": merge_params["jobUUID"],
+            "imgUUID": merge_params["driveSpec"]["imageID"],
+            "jobType": "block"
+        }
+    }
+
+    # Cancel the block job. This simulates a scenario where a user
+    # aborts running block job from virsh.
+    vm._dom.blockJobAbort("sda", 0)
+
+    # Cleanup is done running.
+    wait_for_cleanup(vm)
+
+    # Volume chains state should be as it was before merge.
+    assert vm._dom.xml == config.xmls["00-before"]
+    expected_volumes_chain = xml_chain(config.xmls["00-before"])
+    assert metadata_chain(vm._dom.metadata) == expected_volumes_chain
+
+    # Drive chain is unchanged and monitoring is enabled.
+    drive = vm.getDiskDevices()[0]
+    assert drive.volumeID == config.config["drive"]["volumeID"]
+    assert drive.volumeChain == expected_volumes_chain
+    assert vm.drive_monitor.enabled
+
+
 def wait_for_cleanup(vm):
     log.info("Waiting for cleanup")
 
