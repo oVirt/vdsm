@@ -484,9 +484,6 @@ class SuperVdsm(object):
     def ovs_bridge(self, network_name):
         return None
 
-    def remove_ovs_port(bridge, port):
-        pass
-
     def setPortMirroring(self, network, nic_name):
         self.mirrored_networks.append((network, nic_name,))
 

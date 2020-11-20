@@ -22,10 +22,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import os
-import uuid
 
-from vdsm import constants
 from vdsm.common import conv
 from vdsm.common import hostdev
 from vdsm.common import supervdsm
@@ -39,8 +36,6 @@ from vdsm.virt import vmxml
 from . import compat
 from . import core
 from . import hwclass
-
-VHOST_SOCK_DIR = os.path.join(constants.P_VDSM_RUN, 'vhostuser')
 
 METADATA_KEYS = ('network',)
 
@@ -61,8 +56,7 @@ class Interface(core.Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter', 'filterParameters',
                  'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev', 'mtu',
-                 'numa_node', '_device_params', 'vm_custom', '_is_vhostuser',
-                 'port_isolated')
+                 'numa_node', '_device_params', 'vm_custom', 'port_isolated')
 
     @classmethod
     def get_identifying_attrs(cls, dev_elem):
@@ -167,7 +161,6 @@ class Interface(core.Base):
         if self.is_hostdevice:
             self._device_params = get_device_params(self.hostdev)
             self.numa_node = self._device_params.get('numa_node', None)
-        self._is_vhostuser = False
 
     def _customize(self):
         # Customize network device
@@ -245,19 +238,8 @@ class Interface(core.Base):
           [<alias name="ua-2b418ef2-91d8-4479-88b1-98461192a54e/>]
          </interface>
 
-         -- In case of an ovs dpdk bridge --
-
-        <interface type="vhostuser">
-          <address bus="0x00" domain="0x0000" slot="0x04" type="pci"/>
-          <mac address="00:1a:4a:16:01:54"/>
-          <model type="virtio"/>
-          <source mode="server" path='socket path' type="unix"/>
-        </interface>
-
-
         """
-        devtype = 'vhostuser' if self._is_vhostuser else self.device
-        iface = self.createXmlElem('interface', devtype, ['address'])
+        iface = self.createXmlElem('interface', self.device, ['address'])
         iface.appendChildWithArgs('mac', address=self.macAddr)
 
         if hasattr(self, 'nicModel'):
@@ -279,10 +261,7 @@ class Interface(core.Base):
         else:
             ovs_bridge = supervdsm.getProxy().ovs_bridge(self.network)
             if ovs_bridge:
-                if ovs_bridge['dpdk_enabled']:
-                    self._source_ovsdpdk_bridge(iface, ovs_bridge['name'])
-                else:
-                    self._source_ovs_bridge(iface, ovs_bridge['name'])
+                self._source_ovs_bridge(iface, ovs_bridge['name'])
             else:
                 iface.appendChildWithArgs('source', bridge=self.network)
 
@@ -329,21 +308,6 @@ class Interface(core.Base):
             vlan = iface.appendChildWithArgs('vlan')
             vlan.appendChildWithArgs('tag', id=str(vlan_tag))
 
-    def _source_ovsdpdk_bridge(self, iface, ovs_bridge):
-        socket_path = os.path.join(
-            VHOST_SOCK_DIR, self._get_vhostuser_port_name())
-        iface.appendChildWithArgs(
-            'source', type='unix', path=socket_path, mode='server')
-
-    def _create_vhost_port(self, ovs_bridge):
-        port = self._get_vhostuser_port_name()
-        socket_path = os.path.join(VHOST_SOCK_DIR, port)
-        supervdsm.getProxy().add_ovs_vhostuser_port(
-            ovs_bridge, port, socket_path)
-
-    def _get_vhostuser_port_name(self):
-        return str(uuid.uuid3(uuid.UUID(self.vmid), self.macAddr))
-
     def _set_parameters_filter(self, filter):
         for name, value in self._filter_parameter_map():
             filter.appendChildWithArgs('parameter', name=name, value=value)
@@ -375,11 +339,6 @@ class Interface(core.Base):
         if self.is_hostdevice:
             self.log.info('Detaching device %s from the host.' % self.hostdev)
             detach_detachable(self.hostdev)
-        else:
-            bridge_info = supervdsm.getProxy().ovs_bridge(self.network)
-            if bridge_info and bridge_info['dpdk_enabled']:
-                self._is_vhostuser = True
-                self._create_vhost_port(bridge_info['name'])
 
     def teardown(self):
         if self.is_hostdevice:
@@ -396,18 +355,6 @@ class Interface(core.Base):
                 self.log.exception('Could not reattach device %s back to host '
                                    'due to missing IOMMU support.',
                                    self.hostdev)
-
-        if self._is_vhostuser:
-            bridge_info = supervdsm.getProxy().ovs_bridge(self.network)
-            if bridge_info:
-                port = self._get_vhostuser_port_name()
-                supervdsm.getProxy().remove_ovs_port(bridge_info['name'], port)
-
-    def recover(self):
-        if self.network:
-            bridge_info = supervdsm.getProxy().ovs_bridge(self.network)
-            if bridge_info and bridge_info['dpdk_enabled']:
-                self._is_vhostuser = True
 
     @property
     def _xpath(self):
