@@ -5359,48 +5359,51 @@ class Vm(object):
         self._incoming_migration_vm_running.set()
         self._incoming_migration_finished.set()
 
-    def getBlockJob(self, drive):
+    def _get_block_job(self, drive):
+        """
+        Must run under jobsLock.
+        """
         for job in self._blockJobs.values():
             if all([bool(drive[x] == job['disk'][x])
                     for x in ('imageID', 'domainID', 'volumeID')]):
                 return job
         raise LookupError("No block job found for drive %r" % drive.name)
 
-    def trackBlockJob(self, jobID, drive, base, top, strategy):
+    def _track_block_job(self, jobID, drive, base, top, strategy):
+        """
+        Must run under jobsLock.
+        """
         driveSpec = dict((k, drive[k]) for k in
                          ('poolID', 'domainID', 'imageID', 'volumeID'))
-        with self._confLock:
-            try:
-                job = self.getBlockJob(drive)
-            except LookupError:
-                newJob = {'jobID': jobID, 'disk': driveSpec,
-                          'baseVolume': base, 'topVolume': top,
-                          'strategy': strategy, 'blockJobType': 'commit',
-                          'drive': drive.name}
-                self._blockJobs[jobID] = newJob
-            else:
-                self.log.error("Cannot add block job %s.  A block job with id "
-                               "%s already exists for image %s", jobID,
-                               job['jobID'], drive['imageID'])
-                raise BlockJobExistsError()
+        try:
+            job = self._get_block_job(drive)
+        except LookupError:
+            newJob = {'jobID': jobID, 'disk': driveSpec,
+                      'baseVolume': base, 'topVolume': top,
+                      'strategy': strategy, 'blockJobType': 'commit',
+                      'drive': drive.name}
+            self._blockJobs[jobID] = newJob
+        else:
+            self.log.error("Cannot add block job %s.  A block job with id "
+                           "%s already exists for image %s", jobID,
+                           job['jobID'], drive['imageID'])
+            raise BlockJobExistsError()
         self._sync_block_job_info()
         self._sync_metadata()
         self._updateDomainDescriptor()
 
-    def untrackBlockJob(self, jobID):
-        with self._confLock:
-            try:
-                del self._blockJobs[jobID]
-            except KeyError:
-                # If there was contention on the confLock, this may have
-                # already been removed
-                return False
+    def _untrack_block_job(self, jobID):
+        """
+        Must run under jobsLock.
+        """
+        # If there was contention on the jobsLock, this may have
+        # already been removed
+        self._blockJobs.pop(jobID, None)
 
         self._sync_disk_metadata()
         self._sync_block_job_info()
         self._sync_metadata()
         self._updateDomainDescriptor()
-        return True
 
     def _sync_block_job_info(self):
         with self._md_desc.values() as vm:
@@ -5493,7 +5496,7 @@ class Vm(object):
                                   cleanThread, jobID,
                                   storedJob["baseVolume"],
                                   storedJob["topVolume"])
-                    self.untrackBlockJob(jobID)
+                    self._untrack_block_job(jobID)
                     continue
 
                 try:
@@ -5564,7 +5567,7 @@ class Vm(object):
                     elif cleanThread.state == LiveMergeCleanupThread.ABORT:
                         self.log.error("Aborting job %s due to an "
                                        "unrecoverable error", jobID)
-                        self.untrackBlockJob(jobID)
+                        self._untrack_block_job(jobID)
                         # Don't report job as progressing in returned jobs.
                         continue
                 jobsRet[jobID] = entry
@@ -5694,8 +5697,8 @@ class Vm(object):
         # being cleaned up by queryBlockJobs() since it won't exist right away
         with self._jobsLock:
             try:
-                self.trackBlockJob(jobUUID, drive, baseVolUUID, topVolUUID,
-                                   'commit')
+                self._track_block_job(jobUUID, drive, baseVolUUID, topVolUUID,
+                                      'commit')
             except BlockJobExistsError:
                 self.log.error("A block job is already active on this disk")
                 return response.error('mergeErr')
@@ -5712,7 +5715,7 @@ class Vm(object):
                                       bandwidth, flags)
             except libvirt.libvirtError:
                 self.log.exception("Live merge failed (job: %s)", jobUUID)
-                self.untrackBlockJob(jobUUID)
+                self._untrack_block_job(jobUUID)
                 return response.error('mergeErr')
 
         # blockCommit will cause data to be written into the base volume.
