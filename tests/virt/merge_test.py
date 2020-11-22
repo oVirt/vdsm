@@ -557,6 +557,67 @@ def test_merge_cancel():
     assert vm.drive_monitor.enabled
 
 
+def test_merge_unrecoverable_error(monkeypatch):
+    def unrecoverable_error(*args):
+        raise fake.libvirt_error(
+            [libvirt.VIR_ERR_INTERNAL_ERROR], "Block commit failed")
+    monkeypatch.setattr(FakeDomain, "blockCommit", unrecoverable_error)
+
+    config = Config("internal-merge")
+    vm = RunningVM(config)
+    sd_id = config.config["drive"]["domainID"]
+    vm.cif.irs.prepared_volumes = {
+        (sd_id, k): v for k, v in config.config["volumes"].items()
+    }
+
+    res = vm.merge(**config.config["merge_params"])
+    assert res == response.error("mergeErr")
+    assert vm.queryBlockJobs() == {}
+
+
+def test_merge_job_already_exists(monkeypatch):
+    config = Config("internal-merge")
+    vm = RunningVM(config)
+    drive = config.config["drive"]
+    sd_id = drive["domainID"]
+    vm.cif.irs.prepared_volumes = {
+        (sd_id, k): v for k, v in config.config["volumes"].items()
+    }
+
+    # Calling merge twice will fail the second call with same block
+    # job already tracked from first call.
+    merge_params = config.config["merge_params"]
+    res = vm.merge(**merge_params)
+    assert not response.is_error(res)
+    assert len(vm.queryBlockJobs()) == 1
+
+    res = vm.merge(**merge_params)
+    assert res == response.error("mergeErr")
+    assert len(vm.queryBlockJobs()) == 1
+
+
+def test_merge_base_too_small(monkeypatch):
+    config = Config("internal-merge")
+    vm = RunningVM(config)
+    merge_params = config.config["merge_params"]
+
+    # Ensure that base volume is raw and smaller than top,
+    # engine is responsible for extending the raw base volume
+    # before merge is called.
+    base_vol = config.config["volumes"][merge_params["baseVolUUID"]]
+    top_vol = config.config["volumes"][merge_params["topVolUUID"]]
+    base_vol["capacity"] = top_vol["capacity"] // 2
+    base_vol["format"] = "RAW"
+    sd_id = config.config["drive"]["domainID"]
+    vm.cif.irs.prepared_volumes = {
+        (sd_id, k): v for k, v in config.config["volumes"].items()
+    }
+
+    res = vm.merge(**merge_params)
+    assert res == response.error("destVolumeTooSmall")
+    assert vm.queryBlockJobs() == {}
+
+
 def wait_for_cleanup(vm):
     log.info("Waiting for cleanup")
 
