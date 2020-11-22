@@ -1883,7 +1883,14 @@ class Vm(object):
                     self.guestAgent.isResponsive() or
                     self.cif.qga_poller.is_active(self.id)) and \
                     self.guestAgent.getStatus():
-                return self.guestAgent.getStatus()
+                agent_status = self.guestAgent.getStatus()
+                if self._guestEvent == vmstatus.POWERING_UP and \
+                        agent_status == vmstatus.UP:
+                    # Remember that the VM is already UP just for the case we
+                    # lose the agent before the GUEST_WAIT_TIMEOUT runs out
+                    self._guestEvent = vmstatus.UP
+                    self._guestEventTime = now
+                return agent_status
             if now - self._guestEventTime < GUEST_WAIT_TIMEOUT:
                 return self._guestEvent
             return vmstatus.UP
