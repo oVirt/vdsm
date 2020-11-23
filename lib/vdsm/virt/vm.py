@@ -4599,6 +4599,65 @@ class Vm(object):
     def changeFloppy(self, drivespec):
         return self._changeBlockDev('floppy', 'fda', drivespec)
 
+    def _add_cd_change(self, block_dev, drive_spec):
+        """
+        Start change of CD: add `change` element into CDROM metadata.
+        This element contains state of the change (either loading or ejecting)
+        and in case of loading CD also PDIV with information about CD being
+        loaded into CDROM .
+        """
+        if drive_spec:
+            change_dict = {"state": "loading"}
+            for key in ("poolID", "domainID", "imageID", "volumeID"):
+                change_dict[key] = drive_spec[key]
+        else:
+            change_dict = {"state": "ejecting"}
+
+        with self._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+            dev["change"] = change_dict
+        self.sync_metadata()
+
+    def _apply_cd_change(self, block_dev):
+        """
+        Finish CD change process: replace CDROM PDIV information in metadata
+        with one from `change` element in case of loading or changing CD.
+        After this switch the `change` element is removed from metadata.
+        Eventually also other elements, which are not needed, like
+        `volumeChain` are removed from CDROM metadata.
+        In case of ejecting CD, all the CDROM metadata is removed.
+        """
+        with self._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+            if "change" not in dev:
+                self.log.warning("No 'change' element in metadata.")
+                return
+
+            change = dev.pop("change")
+            # Remove change element (and also all other unneeded elements like
+            # volumeChain element, if present) related to previous CD.
+            dev.clear()
+
+            # Store new metadata only when we load or change CD. For ejecting
+            # the CD, don't store any metadata.
+            state = change.pop("state", None)
+            if state == "loading":
+                self.log.debug("Loading CD, change=%s", change)
+                dev.update(change)
+            elif state == "ejecting":
+                self.log.debug("Ejecting CD, clearing all CD metadata.")
+            else:
+                self.log.warning(
+                    "Invalid CD change=%s state=%s.", change, state)
+
+        self.sync_metadata()
+
+    def _discard_cd_change(self, block_dev):
+        """
+        Discards CD change: removes `change` element from CDROM metadata.
+        """
+        with self._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+            dev.pop("change", None)
+        self.sync_metadata()
+
     def _create_disk_xml(self, vm_dev, path, device, iface, type):
         disk_elem = vmxml.Element('disk', type=type, device=vm_dev)
         disk_elem.appendChildWithArgs('source', file=path)

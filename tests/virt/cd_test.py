@@ -64,6 +64,19 @@ CD_PDIV = {
     "volumeID": "626a493f-5214-4337-b580-96a1ce702c2a",
 }
 
+LOADING_PDIV = {
+    "poolID": "pool-id",
+    "domainID": "domain-id",
+    "imageID": "image-id",
+    "volumeID": "volume-id",
+}
+
+LOADING_DRIVE_SPEC = dict(device="cdrom", **LOADING_PDIV)
+
+LOADING_CHANGE = dict(state="loading", **LOADING_PDIV)
+
+LOADING_METADATA = dict(change=LOADING_CHANGE, **CD_PDIV)
+
 
 @pytest.fixture
 def vm_with_cd():
@@ -160,6 +173,48 @@ def test_update_disk_device_failed():
 
         with pytest.raises(exception.ChangeDiskFailed):
             fakevm._update_disk_device("<invalid-xml/>", force=False)
+
+
+def test_change_cd_metadata_success(vm_with_cd):
+    # Simulate metadata flow in change CD scenario. Expected flow is as
+    # follows:
+    # 1. Add PDIV for change CD into CDROM metadata.
+    # 2. Prepare volume to be loaded.
+    # 3. Change the CD using libvirt call.
+    # 4. Tear down ejected volume.
+    # 5. Update CDROM metadata and remove `change` element from the metadata.
+    # This test tests only steps 1. and 5., storing and removing multiple
+    # metadata items at the same time.
+    block_dev = "sdc"
+
+    # Start CD change - insert change CD metadata.
+    vm_with_cd._add_cd_change(block_dev, LOADING_DRIVE_SPEC)
+
+    with vm_with_cd._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+        assert dev == LOADING_METADATA
+
+    # Finish CD change - remove change metadata and update CD PDIV.
+    vm_with_cd._apply_cd_change(block_dev)
+    with vm_with_cd._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+        assert dev == LOADING_PDIV
+
+
+def test_change_cd_metadata_fail(vm_with_cd):
+    # Simulate same scenarios as test_change_cd_metadata_success, but assumes
+    # failure before we changed CD via libvirt (e.g. preparation of the volume
+    # to be loaded failed).
+    block_dev = "sdc"
+
+    # Start CD change - insert change CD metadata.
+    vm_with_cd._add_cd_change(block_dev, LOADING_DRIVE_SPEC)
+
+    with vm_with_cd._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+        assert dev == LOADING_METADATA
+
+    # Failure, discard cd change.
+    vm_with_cd._discard_cd_change(block_dev)
+    with vm_with_cd._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+        assert dev == CD_PDIV
 
 
 class ClientIF(clientIF.clientIF):
