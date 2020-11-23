@@ -258,7 +258,7 @@ def netinfo(vdsmnets=None, compatibility=None):
     if _is_ovs_service_running():
         state = nmstate.state_show()
         nmstate.ovs_netinfo(_netinfo, running_config.networks, state)
-        _set_bond_type_by_usage(_netinfo)
+        _set_bond_type_by_usage(_netinfo, running_config.bonds)
     return _netinfo
 
 
@@ -292,7 +292,7 @@ def _add_bridge_opts(net_caps):
         bridgeattr['opts'] = bridges.bridge_options(bridgename)
 
 
-def _set_bond_type_by_usage(_netinfo):
+def _set_bond_type_by_usage(_netinfo, running_bonds):
     """
     Engine uses bond switch type to indicate what switch type implementation
     the bond belongs to (as each is implemented and managed differently).
@@ -301,12 +301,12 @@ def _set_bond_type_by_usage(_netinfo):
     examined against the running config for the switch that uses it and updates
     its switch type accordingly.
     """
-    for bond_name, bond_attrs in six.iteritems(RunningConfig().bonds):
+    for bond_name, bond_attrs in running_bonds.items():
         if (
-            bond_attrs['switch'] == ovs_switch.SWITCH_TYPE
+            bond_attrs['switch'] == util.SwitchType.OVS
             and bond_name in _netinfo['bondings']
         ):
-            _netinfo['bondings'][bond_name]['switch'] = ovs_switch.SWITCH_TYPE
+            _netinfo['bondings'][bond_name]['switch'] = util.SwitchType.OVS
 
 
 @memoized
