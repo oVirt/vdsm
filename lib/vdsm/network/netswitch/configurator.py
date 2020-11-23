@@ -24,7 +24,6 @@ import logging
 
 import six
 
-from vdsm.common.cache import memoized
 from vdsm.common.time import monotonic_time
 from vdsm.network import cmd
 from vdsm.network import connectivity
@@ -255,10 +254,16 @@ def netinfo(vdsmnets=None, compatibility=None):
     # TODO: Version requests by engine to ease handling of compatibility.
     running_config = RunningConfig()
     _netinfo = netinfo_get(vdsmnets, compatibility)
-    if _is_ovs_service_running():
+
+    ovs_nets, _ = util.split_switch_type(
+        running_config.networks, running_config={}
+    )
+    ovs_bonds = util.split_switch_type(running_config.bonds, running_config={})
+    if ovs_nets or ovs_bonds:
         state = nmstate.state_show()
         nmstate.ovs_netinfo(_netinfo, running_config.networks, state)
         _set_bond_type_by_usage(_netinfo, running_config.bonds)
+
     return _netinfo
 
 
@@ -309,15 +314,7 @@ def _set_bond_type_by_usage(_netinfo, running_bonds):
             _netinfo['bondings'][bond_name]['switch'] = util.SwitchType.OVS
 
 
-@memoized
-def _is_ovs_service_running():
-    return ovs_info.is_ovs_service_running()
-
-
 def ovs_net2bridge(network_name):
-    if not _is_ovs_service_running():
-        return None
-
     return ovs_info.bridge_info(network_name)
 
 
