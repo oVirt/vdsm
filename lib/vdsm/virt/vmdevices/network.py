@@ -25,7 +25,6 @@ from __future__ import division
 
 from vdsm.common import conv
 from vdsm.common import hostdev
-from vdsm.common import supervdsm
 from vdsm.common import validate
 from vdsm.common.hostdev import get_device_params, detach_detachable, \
     pci_address_to_name, reattach_detachable, NoIOMMUSupportException
@@ -259,11 +258,7 @@ class Interface(core.Base):
                 vlan = iface.appendChildWithArgs('vlan')
                 vlan.appendChildWithArgs('tag', id=str(self.vlanId))
         else:
-            ovs_bridge = supervdsm.getProxy().ovs_bridge(self.network)
-            if ovs_bridge:
-                self._source_ovs_bridge(iface, ovs_bridge['name'])
-            else:
-                iface.appendChildWithArgs('source', bridge=self.network)
+            iface.appendChildWithArgs('source', bridge=self.network)
 
         if self.mtu is not None:
             iface.appendChildWithArgs('mtu', size=str(self.mtu))
@@ -299,14 +294,6 @@ class Interface(core.Base):
             iface.appendChildWithArgs('alias', name=self.alias)
 
         return iface
-
-    def _source_ovs_bridge(self, iface, ovs_bridge):
-        iface.appendChildWithArgs('source', bridge=ovs_bridge)
-        iface.appendChildWithArgs('virtualport', type='openvswitch')
-        vlan_tag = net_api.net2vlan(self.network)
-        if vlan_tag:
-            vlan = iface.appendChildWithArgs('vlan')
-            vlan.appendChildWithArgs('tag', id=str(vlan_tag))
 
     def _set_parameters_filter(self, filter):
         for name, value in self._filter_parameter_map():

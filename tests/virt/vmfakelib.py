@@ -481,9 +481,6 @@ class SuperVdsm(object):
         self.prepared_path = path
         self.prepared_path_group = group
 
-    def ovs_bridge(self, network_name):
-        return None
-
     def setPortMirroring(self, network, nic_name):
         self.mirrored_networks.append((network, nic_name,))
 

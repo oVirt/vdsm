@@ -116,8 +116,6 @@ class TestVmDevices(XMLTestCase):
         with fake.VM(conf) as testvm:
             assert testvm.hasSpice
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: MockedProxy())
     def testInterfaceXMLBandwidthUpdate(self):
         originalBwidthXML = """
                 <bandwidth>
@@ -148,16 +146,12 @@ class TestVmDevices(XMLTestCase):
         bandwith = iface.get_bandwidth_xml(NEW_OUT, orig_bandwidth)
         self.assert_dom_xml_equal(bandwith, updatedBwidthXML)
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: MockedProxy(
-                     ovs_bridge={'name': 'ovirtmgmt', 'dpdk_enabled': False}))
     def test_interface_update(self):
         devices = '''
             <interface type="bridge">
               <mac address="52:54:00:59:F5:3F"/>
               <model type="virtio"/>
               <source bridge="ovirtmgmt"/>
-              <virtualport type="openvswitch"/>
               <link state="up"/>
               <alias name="ua-net1"/>
               <target dev="net1"/>
@@ -175,7 +169,6 @@ class TestVmDevices(XMLTestCase):
               <mac address="52:54:00:59:F5:3F"/>
               <model type="virtio"/>
               <source bridge="ovirtmgmt2"/>
-              <virtualport type="openvswitch"/>
               <link state="up"/>
               <alias name="ua-net1"/>
               <bandwidth/>
@@ -463,7 +456,6 @@ class TestHotplug(TestCaseBase):
               <mac address="11:22:33:44:55:66"/>
               <model type="virtio"/>
               <source bridge="ovirtmgmt"/>
-              <virtualport type="openvswitch"/>
               <link state="up"/>
               <alias name="net2"/>
               <target dev="net2"/>
@@ -477,9 +469,7 @@ class TestHotplug(TestCaseBase):
     def test_disk_hotplug(self):
         vm = self.vm
         params = {'xml': self.DISK_HOTPLUG}
-        supervdsm = fake.SuperVdsm()
-        with MonkeyPatchScope([(vmdevices.network, 'supervdsm', supervdsm)]):
-            vm.hotplugDisk(params)
+        vm.hotplugDisk(params)
         assert len(vm.getDiskDevices()) == 1
         dev = vm._devices[hwclass.DISK][0]
         assert dev.serial == '1234'
@@ -627,7 +617,6 @@ class TestUpdateDevice(TestCaseBase):
               <mac address="11:22:33:44:55:66"/>
               <model type="virtio"/>
               <source bridge="ovirtmgmt"/>
-              <virtualport type="openvswitch"/>
               <link state="down"/>
               <alias name="net1"/>
               <target dev="net1"/>
@@ -805,15 +794,6 @@ class TestRestorePaths(TestCaseBase):
             else:
                 raise Exception('Tested drive not found', serial)
         assert vm_xml == vm._domain.xml
-
-
-class MockedProxy(object):
-
-    def __init__(self, ovs_bridge=None):
-        self._ovs_bridge = ovs_bridge
-
-    def ovs_bridge(self, name):
-        return self._ovs_bridge
 
 
 class VncSecureTest(TestCaseBase):

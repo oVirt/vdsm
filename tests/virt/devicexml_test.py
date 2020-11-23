@@ -33,7 +33,7 @@ from vdsm.virt import vmxml
 from vdsm.common import hostdev
 from vdsm.common import xmlutils
 
-from monkeypatch import MonkeyPatchScope, MonkeyPatch
+from monkeypatch import MonkeyPatchScope
 from testlib import permutations, expandPermutations
 from testlib import read_data
 from testlib import XMLTestCase
@@ -74,8 +74,6 @@ class DeviceToXMLTests(XMLTestCase):
                   'size': 1024, 'node': 0}
         self.assertXMLEqual(vmdevices.core.memory_xml(params), memoryXML)
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy())
     def test_interface(self):
         interfaceXML = """
             <interface type="bridge"> <address %s/>
@@ -108,8 +106,6 @@ class DeviceToXMLTests(XMLTestCase):
         iface = vmdevices.network.Interface(self.log, **dev)
         self.assertXMLEqual(xmlutils.tostring(iface.getXML()), interfaceXML)
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy())
     def test_interface_filter_parameters(self):
         interfaceXML = """
             <interface type="bridge"> <address %s/>
@@ -142,52 +138,6 @@ class DeviceToXMLTests(XMLTestCase):
 
         iface = vmdevices.network.Interface(self.log, **dev)
         self.assertXMLEqual(xmlutils.tostring(iface.getXML()), interfaceXML)
-
-    @MonkeyPatch(vmdevices.network.net_api, 'net2vlan', lambda x: 101)
-    def test_interface_on_ovs_with_vlan(self):
-        proxy = FakeProxy(ovs_bridge={
-            'ovn_net_1': {
-                'name': 'vdsmbr_fffffff',
-                'dpdk_enabled': False
-            }
-        })
-        interfaceXML = """
-            <interface type="bridge">
-                <address %s/>
-                <mac address="52:54:00:59:F5:3F"/>
-                <model type="virtio"/>
-                <source bridge="vdsmbr_fffffff"/>
-                <virtualport type="openvswitch" />
-                <vlan>
-                    <tag id="101" />
-                </vlan>
-                <filterref filter="no-mac-spoofing"/>
-                <link state="up"/>
-                <boot order="1"/>
-                <driver name="vhost" queues="7"/>
-                <tune>
-                    <sndbuf>0</sndbuf>
-                </tune>
-            </interface>""" % self.PCI_ADDR
-
-        dev = {
-            'nicModel': 'virtio',
-            'macAddr': '52:54:00:59:F5:3F',
-            'network': 'ovn_net_1',
-            'address': self.PCI_ADDR_DICT,
-            'device': 'bridge',
-            'type': 'interface',
-            'bootOrder': '1',
-            'filter': 'no-mac-spoofing',
-            'custom': {'queues': '7'},
-            'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'},
-        }
-        with MonkeyPatchScope([
-            (vmdevices.network.supervdsm, 'getProxy', lambda: proxy)
-        ]):
-            iface = vmdevices.network.Interface(self.log, **dev)
-            self.assertXMLEqual(xmlutils.tostring(iface.getXML()),
-                                interfaceXML)
 
     @permutations([
         # base_spec_params:
@@ -225,13 +175,10 @@ class DeviceToXMLTests(XMLTestCase):
           </bandwidth>
         </interface>
         """
-        with MonkeyPatchScope([
-            (vmdevices.network.supervdsm, 'getProxy', lambda: FakeProxy())
-        ]):
-            dev = vmdevices.network.Interface(self.log, **conf)
-            vnic_xml = dev.getXML()
-            vmdevices.network.update_bandwidth_xml(dev, vnic_xml, specParams)
-            self.assertXMLEqual(xmlutils.tostring(vnic_xml), XML)
+        dev = vmdevices.network.Interface(self.log, **conf)
+        vnic_xml = dev.getXML()
+        vmdevices.network.update_bandwidth_xml(dev, vnic_xml, specParams)
+        self.assertXMLEqual(xmlutils.tostring(vnic_xml), XML)
 
 
 @expandPermutations
@@ -366,22 +313,6 @@ class ParsingHelperTests(XMLTestCase):
             vmdevices.core.find_device_guest_address(
                 xmlutils.fromstring(xml_data)
             )
-
-
-class FakeProxy(object):
-
-    def __init__(self, ovs_bridge=None):
-        self._ovs_bridge = {} if ovs_bridge is None else ovs_bridge
-
-    def ovs_bridge(self, name):
-        return self._ovs_bridge.get(name, None)
-
-    def appropriateHwrngDevice(self, vmid):
-        pass
-
-    def rmAppropriateHwrngDevice(self, vmid):
-        pass
-
 
 # the alias is not rendered by getXML, so having it would make
 # the test fail
@@ -639,8 +570,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         </lease>'''
         self._check_roundtrip(vmdevices.lease.Device, lease_xml)
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy())
     def test_interface(self):
         interface_xml = u'''
             <interface type="bridge">
@@ -668,8 +597,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         self._check_roundtrip(
             vmdevices.network.Interface, interface_xml, meta=meta)
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy())
     def test_interface_mtu(self):
         interface_xml = u'''
             <interface type="bridge">
@@ -686,8 +613,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         self._check_roundtrip(
             vmdevices.network.Interface, interface_xml, meta=meta)
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy())
     def test_interface_isolated(self):
         interface_xml = u'''
             <interface type="bridge">
@@ -708,8 +633,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         ('up',),
         ('down',),
     ])
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy())
     def test_interface_link_state(self, link_state):
         interface_xml = u'''
             <interface type="bridge">
@@ -725,8 +648,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         self._check_roundtrip(
             vmdevices.network.Interface, interface_xml, meta=meta)
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy())
     def test_interface_empty_bridge(self):
         interface_xml = u'''
             <interface type="bridge">
@@ -756,8 +677,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             expected_xml=expected_xml
         )
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy())
     def test_interface_vmfex(self):
         interface_xml = u'''
             <interface type='network'>
@@ -785,8 +704,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             expected_xml=expected_xml
         )
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy())
     def test_interface_sriov_only_host_address(self):
         """
         This is what we expect on the very first run. The device has not
@@ -814,8 +731,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             self._check_roundtrip(
                 vmdevices.network.Interface, interface_xml, meta=meta)
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy())
     def test_interface_sriov_with_host_and_guest_address(self):
         """
         This is what we could get from the second run, and following.
@@ -845,8 +760,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             self._check_roundtrip(
                 vmdevices.network.Interface, interface_xml, meta=meta)
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy())
     def test_interface_hostdev(self):
         interface_xml = u'''
             <interface type='hostdev' managed='no'>
@@ -870,59 +783,6 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         ]):
             self._check_roundtrip(
                 vmdevices.network.Interface, interface_xml, meta=meta)
-
-    @MonkeyPatch(vmdevices.network.net_api, 'net2vlan', lambda x: 101)
-    def test_interface_ovs(self):
-        proxy = FakeProxy(ovs_bridge={
-            'ovn_net_1': {
-                'name': 'vdsmbr_fffffff',
-                'dpdk_enabled': False
-            }
-        })
-
-        interface_xml = u'''
-            <interface type="bridge">
-                <address bus="0x00" domain="0x0000"
-                    function="0x0" slot="0x03" type="pci"/>
-                <mac address="52:54:00:59:F5:3F"/>
-                <model type="virtio"/>
-                <source bridge="ovn_net_1"/>
-                <boot order="1"/>
-                <driver name="vhost" queues="4"/>
-                <tune>
-                    <sndbuf>128</sndbuf>
-                </tune>
-            </interface>'''
-
-        expected_xml = u'''
-            <interface type="bridge">
-                <address bus="0x00" domain="0x0000"
-                    function="0x0" slot="0x03" type="pci"/>
-                <mac address="52:54:00:59:F5:3F"/>
-                <model type="virtio"/>
-                <source bridge="vdsmbr_fffffff"/>
-                <virtualport type="openvswitch" />
-                <vlan>
-                    <tag id="101" />
-                </vlan>
-                <link state="up"/>
-                <boot order="1"/>
-                <driver name="vhost" queues="4"/>
-                <tune>
-                    <sndbuf>128</sndbuf>
-                </tune>
-            </interface>'''
-        meta = {'vmid': 'VMID'}
-
-        with MonkeyPatchScope([
-            (vmdevices.network.supervdsm, 'getProxy', lambda: proxy)
-        ]):
-            self._check_roundtrip(
-                vmdevices.network.Interface,
-                interface_xml,
-                expected_xml=expected_xml,
-                meta=meta
-            )
 
     def test_storage(self):
         with pytest.raises(NotImplementedError):
