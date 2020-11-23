@@ -53,9 +53,6 @@ from . import dhcp
 from . import firewall
 
 
-EXT_IP = "/sbin/ip"
-
-
 class Interface(object):
     def __init__(self, prefix='vdsm-', max_length=11):
         self.devName = random_iface_name(prefix, max_length)

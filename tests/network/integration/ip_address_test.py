@@ -243,38 +243,6 @@ class TestIPAddress(object):
             self._assert_address_in(addr, all_addrs)
             self._assert_address_in(addr, ipv6_addrs)
 
-    def _test_list_by_device_ipv4_ipv4(self, nic0, nic1):
-        self._test_list_by_device(
-            IPV4_A_WITH_PREFIXLEN, IPV4_B_WITH_PREFIXLEN, (nic0, nic1)
-        )
-
-    def _test_list_by_device_ipv4_ipv6(self, nic0, nic1):
-        self._test_list_by_device(
-            IPV4_A_WITH_PREFIXLEN, IPV6_B_WITH_PREFIXLEN, (nic0, nic1)
-        )
-
-    def _test_list_by_device_ipv6_ipv4(self, nic0, nic1):
-        self._test_list_by_device(
-            IPV6_A_WITH_PREFIXLEN, IPV4_B_WITH_PREFIXLEN, (nic0, nic1)
-        )
-
-    def _test_list_by_device_ipv6_ipv6(self, nic0, nic1):
-        self._test_list_by_device(
-            IPV6_A_WITH_PREFIXLEN, IPV6_B_WITH_PREFIXLEN, (nic0, nic1)
-        )
-
-    def _test_list_by_device(self, ip_a_with_device, ip_b, nics):
-        TestIPAddress.IPAddress.add(
-            address.IPAddressData(ip_a_with_device, device=nics[0])
-        )
-        TestIPAddress.IPAddress.add(
-            address.IPAddressData(ip_b, device=nics[1])
-        )
-
-        addresses = list(TestIPAddress.IPAddress.addresses(device=nics[0]))
-        self._assert_address_in(ip_a_with_device, addresses)
-        self._assert_address_not_in(ip_b, addresses)
-
     def _assert_has_address(self, device, address_with_prefixlen):
         addresses = TestIPAddress.IPAddress.addresses(device)
         self._assert_address_in(address_with_prefixlen, addresses)

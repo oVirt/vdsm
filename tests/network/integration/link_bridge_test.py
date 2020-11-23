@@ -25,7 +25,6 @@ from vdsm.network import errors as ne
 from vdsm.network.ipwrapper import linkAdd, linkDel
 from vdsm.network.link.bridge import Bridge
 
-IFACE_PATH = "/sys/class/net/%s"
 BR1_NAME = 'br1'
 
 

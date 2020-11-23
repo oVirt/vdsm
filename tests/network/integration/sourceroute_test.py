@@ -31,7 +31,6 @@ from vdsm.network.ipwrapper import addrAdd
 from vdsm.network.sourceroute import DynamicSourceRoute
 
 
-TABLE = '4026531841'
 DEVICE = 'test-network'
 
 IPV4_ADDRESS = '192.168.99.1'
@@ -49,12 +48,6 @@ TESTS_STATIC_PATH = os.path.join(
 def nic0():
     with dummy_device() as nic:
         yield nic
-
-
-def _route_show_table_all(table):
-    f_iproute = os.path.join(TESTS_STATIC_PATH, 'ip_route_show_table_all.out')
-    with open(f_iproute) as tabFile:
-        return tabFile.readlines()
 
 
 class TestSourceRoute(object):

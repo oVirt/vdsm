@@ -29,7 +29,6 @@ from network.nettestlib import dummy_device, veth_pair
 BOND_NAME = 'bond1_name'
 NETWORK_NAME = 'test-network'
 NETWORK2_NAME = 'test-network2'
-NETWORK3_NAME = 'test-network3'
 
 
 @pytest.fixture

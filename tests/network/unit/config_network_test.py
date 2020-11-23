@@ -37,7 +37,6 @@ NICS = [f'eth{i}' for i in range(11)]
 
 BOND0 = 'bond00'
 BOND0_SLAVES = ['eth5', 'eth6']
-BONDS = [BOND0]
 
 
 class TestConfigNetwork(object):
