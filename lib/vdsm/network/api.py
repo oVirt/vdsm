@@ -74,11 +74,6 @@ def change_numvfs(numvfs, devname):
     sriov.persist_numvfs(devname, numvfs)
 
 
-def net2vlan(network_name):
-    """Return the vlan id of the network if exists, None otherwise."""
-    return netswitch.configurator.net2vlan(network_name)
-
-
 def network_northbound(network_name):
     """
     Return the northbound iface of a given network if exists, None otherwise.
@@ -87,17 +82,6 @@ def network_northbound(network_name):
     OVS switch, named as the network.
     """
     return netswitch.configurator.net2northbound(network_name)
-
-
-def ovs_bridge(network_name):
-    """
-    If network_name is an OVS based network, return a dict with OVS (real)
-    bridge name and a boolean indicating if it has dpdk port attached to it.
-    Otherwise, return None.
-
-    This API requires root access.
-    """
-    return netswitch.configurator.ovs_net2bridge(network_name)
 
 
 def _build_setup_hook_dict(req_networks, req_bondings, req_options):

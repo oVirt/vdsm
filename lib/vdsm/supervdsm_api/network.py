@@ -24,7 +24,7 @@ from . import expose
 
 from vdsm.network.api import (setSafeNetworkConfig, setupNetworks,
                               change_numvfs, network_caps, network_stats,
-                              ovs_bridge, add_sourceroute, remove_sourceroute,
+                              add_sourceroute, remove_sourceroute,
                               get_lldp_info)
 from vdsm.network.sysctl import set_rp_filter_loose, set_rp_filter_strict
 from vdsm.network.tc import setPortMirroring, unsetPortMirroring
@@ -35,7 +35,6 @@ expose(setupNetworks)
 expose(network_caps)
 expose(network_stats)
 expose(change_numvfs)
-expose(ovs_bridge)
 expose(setPortMirroring)
 expose(unsetPortMirroring)
 expose(set_rp_filter_loose)

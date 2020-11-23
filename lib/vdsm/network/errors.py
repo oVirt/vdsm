@@ -43,18 +43,6 @@ class ConfigNetworkError(Exception):
         super(ConfigNetworkError, self).__init__(errCode, message)
 
 
-class OvsDBConnectionError(ConfigNetworkError):
-    def __init__(self, *args):
-        message = _get_message(args)
-        super(OvsDBConnectionError, self).__init__(
-            errCode=ERR_OVS_CONNECTION, message=message
-        )
-
-    @staticmethod
-    def is_ovs_db_conn_error(err_msg):
-        return 'database connection failed' in err_msg[0]
-
-
 class RollbackIncomplete(Exception):
     """
     This exception is raised in order to signal vdsm.API.Global that a call to

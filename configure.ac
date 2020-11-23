@@ -369,8 +369,6 @@ AC_OUTPUT([
 	lib/vdsm/network/netswitch/Makefile
 	lib/vdsm/network/nmstate/Makefile
 	lib/vdsm/network/nmstate/ovs/Makefile
-	lib/vdsm/network/ovs/Makefile
-	lib/vdsm/network/ovs/driver/Makefile
 	lib/vdsm/network/tc/Makefile
 	lib/vdsm/profiling/Makefile
 	lib/vdsm/rpc/Makefile

@@ -38,7 +38,6 @@ from vdsm.network.link import setup as link_setup
 from vdsm.network.link.iface import iface as iface_obj
 from vdsm.network.netconfpersistence import RunningConfig, Transaction
 from vdsm.network.netlink import waitfor
-from vdsm.network.ovs import info as ovs_info
 from vdsm.network.link import bond
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo.cache import get as netinfo_get, NetInfo
@@ -303,10 +302,6 @@ def _set_bond_type_by_usage(_netinfo, running_bonds):
             _netinfo['bondings'][bond_name]['switch'] = util.SwitchType.OVS
 
 
-def ovs_net2bridge(network_name):
-    return ovs_info.bridge_info(network_name)
-
-
 def net2northbound(network_name):
     nb_device = network_name
 
@@ -317,12 +312,6 @@ def net2northbound(network_name):
         nb_device = get_net_iface_from_config(network_name, net_attr)
 
     return nb_device
-
-
-def net2vlan(network_name):
-    # Using RunningConfig avoids the need to require root access.
-    net_attr = RunningConfig().networks.get(network_name)
-    return net_attr.get('vlan') if net_attr else None
 
 
 def switch_type_change_needed(nets, bonds, running_config):
