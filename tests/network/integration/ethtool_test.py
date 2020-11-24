@@ -33,4 +33,4 @@ def bridge():
 
 class TestEthtoolDeviceInfo(object):
     def test_detect_device_driver(self, bridge):
-        assert ethtool.driver_name(bridge.devName) == 'bridge'
+        assert ethtool.driver_name(bridge) == 'bridge'

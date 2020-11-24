@@ -41,7 +41,7 @@ from vdsm.network.ipwrapper import (
     linkDel,
     IPRoute2Error,
 )
-from vdsm.network.link import iface as linkiface, bond as linkbond
+from vdsm.network.link import bond as linkbond
 from vdsm.network.link.iface import random_iface_name
 from vdsm.network.lldpad import lldptool
 from vdsm.network.netinfo import routes
@@ -55,23 +55,23 @@ from . import firewall
 
 class Interface(object):
     def __init__(self, prefix='vdsm-', max_length=11):
-        self.devName = random_iface_name(prefix, max_length)
+        self.dev_name = random_iface_name(prefix, max_length)
 
     def up(self):
-        linkSet(self.devName, ['up'])
+        linkSet(self.dev_name, ['up'])
 
     def _down(self):
         with monitor.object_monitor(groups=('link',), timeout=2) as mon:
-            linkSet(self.devName, ['down'])
+            linkSet(self.dev_name, ['down'])
             for event in mon:
                 if (
-                    event.get('name') == self.devName
+                    event.get('name') == self.dev_name
                     and event.get('state') == 'down'
                 ):
                     return
 
     def __repr__(self):
-        return "<{0} {1!r}>".format(self.__class__.__name__, self.devName)
+        return "<{0} {1!r}>".format(self.__class__.__name__, self.dev_name)
 
 
 class Vlan(Interface):
@@ -83,7 +83,7 @@ class Vlan(Interface):
 
     def addDevice(self):
         linkAdd(
-            self.devName,
+            self.dev_name,
             'vlan',
             link=self.backing_device_name,
             args=['id', str(self.tag)],
@@ -92,8 +92,8 @@ class Vlan(Interface):
 
     def delDevice(self):
         self._down()
-        linkDel(self.devName)
-        cmd.exec_sync(['nmcli', 'con', 'del', self.devName])
+        linkDel(self.dev_name)
+        cmd.exec_sync(['nmcli', 'con', 'del', self.dev_name])
 
 
 @contextmanager
@@ -101,7 +101,7 @@ def vlan_device(link, tag=16):
     vlan = Vlan(link, tag)
     vlan.addDevice()
     try:
-        yield vlan
+        yield vlan.dev_name
     finally:
         try:
             vlan.delDevice()
@@ -137,7 +137,7 @@ class Tap(Interface):
     def addDevice(self):
         self._cloneDevice = open('/dev/net/tun', 'r+b', buffering=0)
         ifr = struct.pack(
-            b'16sH', self.devName.encode(), self._IFF_TAP | self._IFF_NO_PI
+            b'16sH', self.dev_name.encode(), self._IFF_TAP | self._IFF_NO_PI
         )
         fcntl.ioctl(self._cloneDevice, self._TUNSETIFF, ifr)
         self.up()
@@ -179,38 +179,37 @@ class Dummy(Interface):
 
     def create(self):
         try:
-            linkAdd(self.devName, linkType='dummy')
+            linkAdd(self.dev_name, linkType='dummy')
             cmd.exec_sync(
-                ['nmcli', 'dev', 'set', self.devName, 'managed', 'yes']
+                ['nmcli', 'dev', 'set', self.dev_name, 'managed', 'yes']
             )
         except IPRoute2Error as e:
             pytest.skip(
-                'Failed to create a dummy interface %s: %s' % (self.devName, e)
+                f'Failed to create a dummy interface {self.dev_name}: {e}'
             )
         else:
-            return self.devName
+            return self.dev_name
 
     def remove(self):
         """
         Remove the dummy interface. This assumes root privileges.
         """
         try:
-            linkDel(self.devName)
+            linkDel(self.dev_name)
         except IPRoute2Error as e:
             pytest.skip(
-                "Unable to delete the dummy interface %s: %s"
-                % (self.devName, e)
+                f'Unable to delete the dummy interface {self.dev_name}: {e}'
             )
         finally:
-            cmd.exec_sync(['nmcli', 'con', 'del', self.devName])
+            cmd.exec_sync(['nmcli', 'con', 'del', self.dev_name])
 
     def set_ip(self, ipaddr, netmask, family=4):
         try:
-            addrAdd(self.devName, ipaddr, netmask, family)
+            addrAdd(self.dev_name, ipaddr, netmask, family)
         except IPRoute2Error as e:
             message = (
-                'Failed to add the IPv%s address %s/%s to device %s: %s'
-                % (family, ipaddr, netmask, self.devName, e)
+                f'Failed to add the IPv{family} address {ipaddr}/{netmask}'
+                f'to device {self.dev_name}: {e}'
             )
             if family == 6:
                 message += (
@@ -223,24 +222,24 @@ class Dummy(Interface):
 
 class Bridge(Interface):
     def addDevice(self):
-        linkAdd(self.devName, 'bridge')
+        linkAdd(self.dev_name, 'bridge')
         self.up()
 
     def delDevice(self):
         self._down()
-        linkDel(self.devName)
+        linkDel(self.dev_name)
 
     def addIf(self, dev):
-        linkSet(dev, ['master', self.devName])
+        linkSet(dev, ['master', self.dev_name])
 
 
 @contextmanager
 def dummy_device(prefix='dummy_', max_length=11):
     dummy_interface = Dummy(prefix, max_length)
-    dummy_name = dummy_interface.create()
+    dummy_interface.create()
     try:
-        linkiface.iface(dummy_name).up()
-        yield dummy_name
+        dummy_interface.up()
+        yield dummy_interface.dev_name
     finally:
         dummy_interface.remove()
 
@@ -253,7 +252,7 @@ def dummy_devices(amount, prefix='dummy_', max_length=11):
         for iface in dummy_interfaces:
             iface.create()
             created.append(iface)
-        yield [iface.devName for iface in created]
+        yield [iface.dev_name for iface in created]
     finally:
         for iface in created:
             iface.remove()
@@ -312,7 +311,7 @@ def bridge_device():
     bridge = Bridge()
     bridge.addDevice()
     try:
-        yield bridge
+        yield bridge.dev_name
     finally:
         bridge.delDevice()
 

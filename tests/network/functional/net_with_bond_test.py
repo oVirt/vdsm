@@ -362,7 +362,7 @@ class TestReuseBondOnLegacySwitch(object):
                 self._set_ip_address('1.1.1.2/29', nic1)
 
                 self._set_ip_address(ADDRESS1 + '/' + PREFIX, bond.master)
-                self._set_ip_address(ADDRESS2 + '/' + PREFIX, vlan.devName)
+                self._set_ip_address(ADDRESS2 + '/' + PREFIX, vlan)
 
                 NETBASE = {
                     NETWORK1_NAME: {
@@ -383,7 +383,7 @@ class TestReuseBondOnLegacySwitch(object):
 
                     nic1_info = adapter.netinfo.nics[nic0]
                     nic2_info = adapter.netinfo.nics[nic1]
-                    vlan_info = adapter.netinfo.vlans[vlan.devName]
+                    vlan_info = adapter.netinfo.vlans[vlan]
                     assert nic1_info['ipv4addrs'] == []
                     assert nic2_info['ipv4addrs'] == []
                     assert vlan_info['ipv4addrs'] == [ADDRESS2 + '/' + PREFIX]

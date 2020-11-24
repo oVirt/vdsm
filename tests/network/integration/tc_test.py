@@ -51,6 +51,9 @@ from .netintegtestlib import network_namespace
 
 EXT_TC = '/sbin/tc'
 
+VLAN16_TAG = 16
+VLAN17_TAG = 17
+
 
 @pytest.fixture
 def bridge_dev():
@@ -60,7 +63,7 @@ def bridge_dev():
 
 @pytest.fixture
 def requires_tc(bridge_dev):
-    cmds = [EXT_TC, 'qdisc', 'add', 'dev', bridge_dev.devName, 'ingress']
+    cmds = [EXT_TC, 'qdisc', 'add', 'dev', bridge_dev, 'ingress']
     rc, _, err = cmd.exec_sync(cmds)
     if rc != 0:
         pytest.skip(
@@ -71,27 +74,25 @@ def requires_tc(bridge_dev):
 
 class TestQdisc(object):
     def _show_qdisc(self, bridge):
-        _, out, _ = cmd.exec_sync(
-            [EXT_TC, 'qdisc', 'show', 'dev', bridge.devName]
-        )
+        _, out, _ = cmd.exec_sync([EXT_TC, 'qdisc', 'show', 'dev', bridge])
         return out
 
     def _add_ingress(self, bridge):
-        tc._qdisc_replace_ingress(bridge.devName)
+        tc._qdisc_replace_ingress(bridge)
         assert 'qdisc ingress' in self._show_qdisc(bridge)
 
     def test_toggle_ingress(self, bridge_dev):
         self._add_ingress(bridge_dev)
-        tc._qdisc_del(bridge_dev.devName, 'ingress')
+        tc._qdisc_del(bridge_dev, 'ingress')
         assert 'qdisc ingress' not in self._show_qdisc(bridge_dev)
 
     def test_qdiscs_of_device(self, bridge_dev):
         self._add_ingress(bridge_dev)
-        assert ('ffff:',) == tuple(tc._qdiscs_of_device(bridge_dev.devName))
+        assert ('ffff:',) == tuple(tc._qdiscs_of_device(bridge_dev))
 
     def test_replace_prio(self, bridge_dev):
         self._add_ingress(bridge_dev)
-        tc.qdisc.replace(bridge_dev.devName, 'prio', parent=None)
+        tc.qdisc.replace(bridge_dev, 'prio', parent=None)
         assert 'root' in self._show_qdisc(bridge_dev)
 
     def test_exception(self):
@@ -178,9 +179,9 @@ class TestPortMirror(object):
             for iface in self._devices:
                 iface.addDevice()
                 cleanup.append(iface)
-            self._bridge0.addIf(self._tap0.devName)
-            self._bridge1.addIf(self._tap1.devName)
-            self._bridge2.addIf(self._tap2.devName)
+            self._bridge0.addIf(self._tap0.dev_name)
+            self._bridge1.addIf(self._tap1.dev_name)
+            self._bridge2.addIf(self._tap2.dev_name)
 
             yield
         finally:
@@ -211,18 +212,18 @@ class TestPortMirror(object):
         strict=False,
     )
     def test_mirroring(self):
-        tc.setPortMirroring(self._bridge0.devName, self._bridge1.devName)
+        tc.setPortMirroring(self._bridge0.dev_name, self._bridge1.dev_name)
         assert self._send_ping(), 'Bridge received no mirrored ping requests.'
 
-        tc.unsetPortMirroring(self._bridge0.devName, self._bridge1.devName)
+        tc.unsetPortMirroring(self._bridge0.dev_name, self._bridge1.dev_name)
         msg = 'Bridge received mirrored ping requests, but mirroring is unset.'
         assert not self._send_ping(), msg
 
     def test_mirroring_with_distraction(self):
         # setting another mirror action should not obstract the first one
-        tc.setPortMirroring(self._bridge0.devName, self._bridge2.devName)
+        tc.setPortMirroring(self._bridge0.dev_name, self._bridge2.dev_name)
         self.test_mirroring()
-        tc.unsetPortMirroring(self._bridge0.devName, self._bridge2.devName)
+        tc.unsetPortMirroring(self._bridge0.dev_name, self._bridge2.dev_name)
 
 
 HOST_QOS_OUTBOUND = {
@@ -247,13 +248,13 @@ def dummy():
 
 @pytest.fixture
 def vlan16(dummy):
-    with vlan_device(dummy, tag=16) as vlan:
+    with vlan_device(dummy, VLAN16_TAG) as vlan:
         yield vlan
 
 
 @pytest.fixture
 def vlan17(dummy):
-    with vlan_device(dummy, tag=17) as vlan:
+    with vlan_device(dummy, VLAN17_TAG) as vlan:
         yield vlan
 
 
@@ -282,19 +283,19 @@ class TestConfigureOutbound(object):
     @mock.patch('vdsm.network.netinfo.bonding.permanent_address', lambda: {})
     def test_single_vlan(self, dummy, vlan16, repeating_calls):
         for _ in range(repeating_calls):
-            qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, vlan16.tag)
+            qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, VLAN16_TAG)
         tc_entities = self._analyse_qos_and_general_assertions(dummy)
         tc_classes, tc_filters, tc_qdiscs = tc_entities
         assert len(tc_classes.classes) == 1
 
         assert len(tc_qdiscs.leaf_qdiscs) == 2
-        vlan_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan16.tag)
-        vlan_class = self._vlan_class(tc_classes.classes, vlan16.tag)
+        vlan_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, VLAN16_TAG)
+        vlan_class = self._vlan_class(tc_classes.classes, VLAN16_TAG)
         self._assert_parent([vlan_qdisc], vlan_class)
 
         tag_filters = tc_filters.tagged_filters
         assert len(tag_filters) == 1
-        assert int(tag_filters[0]['basic']['value']) == vlan16.tag
+        assert int(tag_filters[0]['basic']['value']) == VLAN16_TAG
 
     @pytest.mark.xfail(
         condition=running_on_ovirt_ci() or running_on_travis_ci(),
@@ -303,18 +304,18 @@ class TestConfigureOutbound(object):
     )
     @mock.patch('vdsm.network.netinfo.bonding.permanent_address', lambda: {})
     def test_multiple_vlans(self, dummy, vlan16, vlan17):
-        for vlan in (vlan16, vlan17):
-            qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, vlan.tag)
+        for vlan_tag in (VLAN16_TAG, VLAN17_TAG):
+            qos.configure_outbound(HOST_QOS_OUTBOUND, dummy, vlan_tag)
 
         tc_entities = self._analyse_qos_and_general_assertions(dummy)
         tc_classes, tc_filters, tc_qdiscs = tc_entities
         assert len(tc_classes.classes) == 2
 
         assert len(tc_qdiscs.leaf_qdiscs) == 3
-        v1_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan16.tag)
-        v2_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan17.tag)
-        v1_class = self._vlan_class(tc_classes.classes, vlan16.tag)
-        v2_class = self._vlan_class(tc_classes.classes, vlan17.tag)
+        v1_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, VLAN16_TAG)
+        v2_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, VLAN17_TAG)
+        v1_class = self._vlan_class(tc_classes.classes, VLAN16_TAG)
+        v2_class = self._vlan_class(tc_classes.classes, VLAN17_TAG)
         self._assert_parent([v1_qdisc], v1_class)
         self._assert_parent([v2_qdisc], v2_class)
 
@@ -323,8 +324,8 @@ class TestConfigureOutbound(object):
             f['basic']['flowid'] for f in tc_filters.tagged_filters
         )
         expected_flow_ids = set(
-            '%s%x' % (qos._ROOT_QDISC_HANDLE, vlan.tag)
-            for vlan in (vlan16, vlan17)
+            '%s%x' % (qos._ROOT_QDISC_HANDLE, vlan_tag)
+            for vlan_tag in (VLAN16_TAG, VLAN17_TAG)
         )
         assert current_tagged_filters_flow_id == expected_flow_ids
 

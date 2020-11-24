@@ -41,13 +41,13 @@ def _bond_device_master(slaves):
 def _vlan_device():
     with dummy_device() as nic:
         with vlan_device(nic, 101) as vlan:
-            yield vlan.devName
+            yield vlan
 
 
 @contextmanager
 def _bridge_device():
     with bridge_device() as bridge:
-        yield bridge.devName
+        yield bridge
 
 
 @pytest.mark.parametrize(

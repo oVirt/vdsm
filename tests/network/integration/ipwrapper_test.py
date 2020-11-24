@@ -60,11 +60,11 @@ def nics():
 
 class TestLinks(object):
     def test_get_link(self, bridge0):
-        link = ipwrapper.getLink(bridge0.devName)
+        link = ipwrapper.getLink(bridge0)
         assert link.isBRIDGE()
         assert link.oper_up
         assert link.master is None
-        assert link.name == bridge0.devName
+        assert link.name == bridge0
 
     def test_missing_bridge_removal_fails(self):
         with pytest.raises(ipwrapper.IPRoute2NoDeviceError):
@@ -75,24 +75,21 @@ class TestLinks(object):
         devices = {device.name: device for device in device_links}
 
         # Test all devices to be there.
-        assert set(
-            [bridge0.devName, bond0.master, vlan0.devName] + nics
-        ) <= set(devices)
+        assert set([bridge0, bond0.master, vlan0] + nics) <= set(devices)
 
-        assert devices[bridge0.devName].isBRIDGE()
+        assert devices[bridge0].isBRIDGE()
         assert devices[nics[0]].isDUMMY()
         assert devices[nics[1]].isDUMMY()
         assert devices[bond0.master].isBOND()
-        assert devices[vlan0.devName].isVLAN()
+        assert devices[vlan0].isVLAN()
 
 
 class TestDrvinfo(object):
     def test_bridge_ethtool_drvinfo(self, bridge0):
-        bridge_name = bridge0.devName
-        assert ethtool.driver_name(bridge_name) == ipwrapper.LinkType.BRIDGE
+        assert ethtool.driver_name(bridge0) == ipwrapper.LinkType.BRIDGE
 
     def test_enable_promisc(self, bridge0):
-        link = ipwrapper.getLink(bridge0.devName)
+        link = ipwrapper.getLink(bridge0)
         with monitor.object_monitor(timeout=2, silent_timeout=True) as mon:
             link.promisc = True
             for event in mon:
@@ -104,10 +101,10 @@ class TestDrvinfo(object):
         assert False, 'Could not enable promiscuous mode.'
 
     def test_disable_promisc(self, bridge0):
-        ipwrapper.getLink(bridge0.devName).promisc = True
-        ipwrapper.getLink(bridge0.devName).promisc = False
+        ipwrapper.getLink(bridge0).promisc = True
+        ipwrapper.getLink(bridge0).promisc = False
         assert not ipwrapper.getLink(
-            bridge0.devName
+            bridge0
         ).promisc, 'Could not disable promiscuous mode.'
 
 
@@ -120,10 +117,10 @@ class TestUnicodeDrvinfo(object):
         br = Bridge(bridge_name)
         br.addDevice()
         try:
-            yield br
+            yield br.dev_name
         finally:
             br.delDevice()
 
     def test_utf8_bridge_ethtool_drvinfo(self, unicode_bridge):
-        driver_name = ethtool.driver_name(unicode_bridge.devName)
+        driver_name = ethtool.driver_name(unicode_bridge)
         assert driver_name == ipwrapper.LinkType.BRIDGE

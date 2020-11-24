@@ -621,9 +621,8 @@ def _create_dhcp_client_server_peers(network_config, vlan_id):
 
         if vlan_id:
             with vlan_device(server, vlan_id) as vlan_iface:
-                vlan_iface_name = vlan_iface.devName
-                _configure_iface_ip(vlan_iface_name, network_config)
-                yield vlan_iface_name, client
+                _configure_iface_ip(vlan_iface, network_config)
+                yield vlan_iface, client
         else:
             _configure_iface_ip(server, network_config)
             yield server, client
