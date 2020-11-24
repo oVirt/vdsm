@@ -204,6 +204,7 @@ class Dummy(Interface):
         try:
             linkAdd(self.dev_name, linkType='dummy')
             self.set_managed()
+            self.up()
         except IPRoute2Error as e:
             pytest.skip(
                 f'Failed to create a dummy interface {self.dev_name}: {e}'
@@ -227,7 +228,6 @@ def dummy_device(prefix='dummy_', max_length=11):
     dummy_interface = Dummy(prefix, max_length)
     dummy_interface.create()
     try:
-        dummy_interface.up()
         yield dummy_interface.dev_name
     finally:
         dummy_interface.remove()

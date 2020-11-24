@@ -153,31 +153,40 @@ class TestNetlinkEventMonitor(object):
         def _expected_events(nic, address, cidr):
             events_add = [
                 {'event': 'new_link', 'name': nic},
-                {'event': 'new_addr', 'address': address + '/' + cidr},
                 {'event': 'new_link', 'name': nic},
             ]
-            events_del = [
+            events_del = [{'event': 'del_link', 'name': nic}]
+            events_add_ipv4 = [
+                {'event': 'new_addr', 'address': address + '/' + cidr}
+            ]
+            events_add_ipv6 = [{'event': 'new_addr', 'family': 'inet6'}]
+            events_del_ipv4 = [
                 {'address': address + '/' + cidr, 'event': 'del_addr'},
                 {'destination': address, 'event': 'del_route'},
-                {'event': 'del_link', 'name': nic},
             ]
-            events_ipv6 = [
-                {'event': 'new_addr', 'family': 'inet6'},
-                {'event': 'del_addr', 'family': 'inet6'},
-            ]
+            events_del_ipv6 = [{'event': 'del_addr', 'family': 'inet6'}]
             if is_disabled_ipv6():
-                return deque(events_add + events_del)
+                return deque(
+                    events_add + events_add_ipv4 + events_del_ipv4 + events_del
+                )
             else:
-                return deque(events_add + events_ipv6 + events_del)
+                return deque(
+                    events_add
+                    + events_add_ipv6
+                    + events_add_ipv4
+                    + events_del_ipv6
+                    + events_del_ipv4
+                    + events_del
+                )
 
         with monitor.object_monitor(
             timeout=self.TIMEOUT, silent_timeout=True
         ) as mon:
-            dummy = Dummy()
-            dummy_name = dummy.create()
-            dummy.add_ip(IP_ADDRESS, IP_CIDR, IpFamily.IPv4)
-            dummy.up()
-            dummy.remove()
+            with dummy_device() as dummy:
+                dummy_name = dummy
+                Interface.from_existing_dev_name(dummy).add_ip(
+                    IP_ADDRESS, IP_CIDR, IpFamily.IPv4
+                )
 
             expected_events = _expected_events(dummy_name, IP_ADDRESS, IP_CIDR)
             _expected = list(expected_events)
