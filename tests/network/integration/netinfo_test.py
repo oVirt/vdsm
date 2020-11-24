@@ -33,6 +33,7 @@ from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo import addresses, bonding, nics, routes
 from vdsm.network.netlink import waitfor
 
+from network.nettestlib import Interface
 from network.nettestlib import running_on_ovirt_ci
 from network.nettestlib import running_on_travis_ci
 
@@ -78,10 +79,11 @@ def dynamic_ipv6_iface():
 
     with veth_pair() as (server, client):
         ipwrapper.addrAdd(server, IPV6_ADDR1, IPV6_PREFIX_LENGTH, family=6)
-        ipwrapper.linkSet(server, ['up'])
+        client_interface = Interface.from_existing_dev_name(client)
+        client_interface.down()
         with dnsmasq_run(server, ipv6_slaac_prefix=IPV6_NET_ADDR):
             with wait_for_ipv6(client):
-                ipwrapper.linkSet(client, ['up'])
+                client_interface.up()
             yield client
 
 

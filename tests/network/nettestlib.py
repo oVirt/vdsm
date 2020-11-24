@@ -223,6 +223,27 @@ class Bridge(Interface):
         linkSet(dev, ['master', self.dev_name])
 
 
+class VethPair(object):
+    def __init__(self, prefix='veth_', max_length=15):
+        self.left_side = Interface(prefix, max_length)
+        self.right_side = Interface(prefix, max_length)
+
+    def create(self):
+        linkAdd(
+            self.left_side.dev_name,
+            linkType='veth',
+            args=('peer', 'name', self.right_side.dev_name),
+        )
+        self.left_side.set_managed()
+        self.right_side.set_managed()
+        self.left_side.up()
+        self.right_side.up()
+
+    def remove(self):
+        self.left_side.remove()
+        cmd.exec_sync(['nmcli', 'con', 'del', self.right_side.dev_name])
+
+
 @contextmanager
 def dummy_device(prefix='dummy_', max_length=11):
     dummy_interface = Dummy(prefix, max_length)
@@ -265,21 +286,15 @@ def veth_pair(prefix='veth_', max_length=15):
 
     Both sides of the pair have a pseudo-random suffix (e.g. veth_m6Lz7uMK9c).
     """
-    left_side = random_iface_name(prefix, max_length)
-    right_side = random_iface_name(prefix, max_length)
+    pair = VethPair(prefix, max_length)
     try:
-        linkAdd(left_side, linkType='veth', args=('peer', 'name', right_side))
-        cmd.exec_sync(['nmcli', 'dev', 'set', left_side, 'managed', 'yes'])
-        cmd.exec_sync(['nmcli', 'dev', 'set', right_side, 'managed', 'yes'])
+        pair.create()
     except IPRoute2Error as e:
         pytest.skip('Failed to create a veth pair: %s', e)
     try:
-        yield left_side, right_side
+        yield pair.left_side.dev_name, pair.right_side.dev_name
     finally:
-        # the peer device is removed by the kernel
-        linkDel(left_side)
-        cmd.exec_sync(['nmcli', 'con', 'del', left_side])
-        cmd.exec_sync(['nmcli', 'con', 'del', right_side])
+        pair.remove()
 
 
 @contextmanager
