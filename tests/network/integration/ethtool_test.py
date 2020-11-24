@@ -22,7 +22,7 @@ import pytest
 
 from vdsm.network import ethtool
 
-from .netintegtestlib import bridge_device
+from network.nettestlib import bridge_device
 
 
 @pytest.fixture

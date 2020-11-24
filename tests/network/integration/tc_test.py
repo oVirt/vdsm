@@ -27,6 +27,8 @@ from unittest import mock
 
 import pytest
 
+from network.nettestlib import Bridge
+from network.nettestlib import bridge_device
 from network.nettestlib import dummy_device
 from network.nettestlib import running
 from network.nettestlib import running_on_ovirt_ci
@@ -44,8 +46,6 @@ from vdsm.network.netinfo.qos import DEFAULT_CLASSID
 from .iperf import IperfServer
 from .iperf import IperfClient
 from .iperf import requires_iperf3
-from .netintegtestlib import Bridge
-from .netintegtestlib import bridge_device
 from .netintegtestlib import network_namespace
 
 

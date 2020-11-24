@@ -24,12 +24,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from network.nettestlib import Interface
-
 from vdsm.network import cmd
-from vdsm.network.ipwrapper import linkAdd
-from vdsm.network.ipwrapper import linkDel
-from vdsm.network.ipwrapper import linkSet
 from vdsm.network.ipwrapper import netns_add
 from vdsm.network.ipwrapper import netns_delete
 
@@ -66,26 +61,3 @@ def network_namespace(name):
         yield name
     finally:
         netns_delete(name)
-
-
-@contextmanager
-def bridge_device():
-    bridge = Bridge()
-    bridge.addDevice()
-    try:
-        yield bridge
-    finally:
-        bridge.delDevice()
-
-
-class Bridge(Interface):
-    def addDevice(self):
-        linkAdd(self.devName, 'bridge')
-        self.up()
-
-    def delDevice(self):
-        self._down()
-        linkDel(self.devName)
-
-    def addIf(self, dev):
-        linkSet(dev, ['master', self.devName])

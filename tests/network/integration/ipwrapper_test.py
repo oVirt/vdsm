@@ -22,6 +22,8 @@
 import pytest
 
 from network.nettestlib import bond_device
+from network.nettestlib import Bridge
+from network.nettestlib import bridge_device
 from network.nettestlib import dummy_devices
 from network.nettestlib import vlan_device
 
@@ -29,9 +31,6 @@ from vdsm.network import ethtool
 from vdsm.network import ipwrapper
 from vdsm.network.netlink import monitor
 from vdsm.network.netlink.libnl import IfaceStatus
-
-from .netintegtestlib import Bridge
-from .netintegtestlib import bridge_device
 
 
 @pytest.fixture

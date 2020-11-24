@@ -23,22 +23,24 @@ from contextlib import contextmanager
 
 import pytest
 
-from .netintegtestlib import bridge_device
-from network import nettestlib
+from network.nettestlib import bond_device
+from network.nettestlib import bridge_device
+from network.nettestlib import dummy_device
+from network.nettestlib import vlan_device
 
 from vdsm.network.link import stats as link_stats
 
 
 @contextmanager
 def _bond_device_master(slaves):
-    with nettestlib.bond_device(slaves) as bond:
+    with bond_device(slaves) as bond:
         yield bond.master
 
 
 @contextmanager
 def _vlan_device():
-    with nettestlib.dummy_device() as nic:
-        with nettestlib.vlan_device(nic, 101) as vlan:
+    with dummy_device() as nic:
+        with vlan_device(nic, 101) as vlan:
             yield vlan.devName
 
 
@@ -51,7 +53,7 @@ def _bridge_device():
 @pytest.mark.parametrize(
     'device_ctx, device_ctx_args',
     [
-        (nettestlib.dummy_device, {}),
+        (dummy_device, {}),
         (_bond_device_master, {'slaves': ()}),
         (_vlan_device, {}),
         (_bridge_device, {}),

@@ -221,6 +221,19 @@ class Dummy(Interface):
             pytest.skip(message)
 
 
+class Bridge(Interface):
+    def addDevice(self):
+        linkAdd(self.devName, 'bridge')
+        self.up()
+
+    def delDevice(self):
+        self._down()
+        linkDel(self.devName)
+
+    def addIf(self, dev):
+        linkSet(dev, ['master', self.devName])
+
+
 @contextmanager
 def dummy_device(prefix='dummy_', max_length=11):
     dummy_interface = Dummy(prefix, max_length)
@@ -292,6 +305,16 @@ def enable_lldp_on_ifaces(ifaces, rx_only):
     finally:
         for interface in ifaces:
             lldptool.disable_lldp_on_iface(interface)
+
+
+@contextmanager
+def bridge_device():
+    bridge = Bridge()
+    bridge.addDevice()
+    try:
+        yield bridge
+    finally:
+        bridge.delDevice()
 
 
 def nm_is_running():
