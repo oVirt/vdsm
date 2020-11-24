@@ -1,0 +1,106 @@
+#!/usr/bin/python3
+#
+# Copyright 2020 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+# This script blocks access to a certain port on a server temporarily. This is
+# useful for testing recovery flows when storage server is not accessible.
+#
+# Examples
+#
+# - Blocking all outgoing traffic to server my.storage until the script is
+#   interrupted:
+#
+#   $ sudo contrib/block my.server
+#
+# - Blocking outgoing traffic to NFS server my.storage for 60 seconds:
+#
+#   $ sudo contrib/block --port 2049 --duration 60 my.storage
+#
+
+import argparse
+import atexit
+import logging
+import subprocess
+import time
+
+
+def run(cmd):
+    logging.info("Running %s", cmd)
+    subprocess.check_call(cmd)
+
+
+def add(rule):
+    cmd = ["iptables", "--append", "OUTPUT"]
+    cmd.extend(rule)
+    run(cmd)
+
+
+def remove(rule):
+    cmd = ["iptables", "--delete", "OUTPUT"]
+    cmd.extend(rule)
+    run(cmd)
+
+
+p = argparse.ArgumentParser("block outgoing trafic")
+
+p.add_argument(
+    "--port",
+    type=int,
+    help="Block only this port. If not specifed block all ports.")
+
+p.add_argument(
+    "--duration",
+    type=int,
+    default=2**32,
+    help="Number of seconds to block. If not specifed, block until the "
+         "script is terminated.")
+
+p.add_argument(
+    "-v", "--verbose",
+    action="store_true",
+    help="Be more verbose")
+
+p.add_argument(
+    "server_address",
+    help="Server DNS name or IP addres")
+
+args = p.parse_args()
+
+rule = [
+    "--destination", args.server_address,
+    "--protocol", "tcp",
+]
+
+if args.port is not None:
+    rule.extend(["--match", "tcp", "--destination-port", str(args.port)])
+
+rule.extend(["--jump", "DROP"])
+
+logging.basicConfig(
+    level=logging.INFO if args.verbose else logging.WARNING,
+    format="block: %(message)s")
+
+add(rule)
+atexit.register(remove, rule)
+
+logging.info("Waiting %s seconds...", args.duration)
+try:
+    time.sleep(args.duration)
+except KeyboardInterrupt:
+    print()
