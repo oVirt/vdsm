@@ -557,3 +557,14 @@ class MergeBitmapError(ContextException):
 class RemoveBitmapError(ContextException):
     code = 1622
     message = "Failed to remove bitmap"
+
+
+#################################################
+#  Image Errors
+#  Range: 1630-1639
+#################################################
+
+
+class CannotPrepareImage(ContextException):
+    code = 1630
+    msg = "Failed to prepare image"

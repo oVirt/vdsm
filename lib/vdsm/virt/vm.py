@@ -4703,6 +4703,72 @@ class Vm(object):
 
         return {'vmList': {}}
 
+    def _change_cd(self, device, drive_spec, iface=None, force=True):
+        # Store temporary CD metadata.
+        self._add_cd_change(device, drive_spec)
+
+        # Prepare volume to be loaded as new CD if it's valid PDIV.
+        # When ejecting CD, if PDIV is empty and there's no point to call
+        # prepare volume.
+        if drive_spec:
+            try:
+                path = self.cif.prepareVolumePath(drive_spec)
+            except Exception as e:
+                self._discard_cd_change(device)
+                raise exception.CannotPrepareImage(
+                    reason=str(e),
+                    drive_spec=drive_spec)
+        else:
+            # Empty path means eject CD.
+            path = ""
+
+        # Prepare XML for new CD, change CD via libvirt and update CD metadata
+        # with new CD drive spec.
+        disk_xml = self._create_disk_xml(
+            "cdrom", path, device, iface, DISK_TYPE.FILE)
+
+        try:
+            self._update_disk_device(disk_xml, force=force)
+        except exception.ChangeDiskFailed:
+            try:
+                # Tear down the image only when there is one. In case we eject
+                # CD and fail, pdiv is empty and there's no need for tear
+                # down.
+                if drive_spec:
+                    self.cif.teardownVolumePath(drive_spec)
+                self._discard_cd_change(device)
+            except Exception:
+                self.log.exception(
+                    "Tearing down the device %s failed.", device)
+            # If there is any issue, always raise original exception.
+            raise
+
+        # Tear down old CD volume and update CDROM metadata. At this point the
+        # disk was already update and therefore we will return success
+        # regardless there are any failures during tearing down existing volume
+        # or updating metadata.
+
+        # Store original PDIV to tear it down after metadata update.
+        with self._md_desc.device(devtype="cdrom", name=device) as dev:
+            teardown_device = dev.copy()
+
+        # Update metadata first to have correct metadata.
+        try:
+            self._apply_cd_change(device)
+        except Exception:
+            self.log.exception(
+                "Updating metadata for device %s failed.", device)
+
+        # Tear down old CD if it wasn't empty disk. This is the case when
+        # loading CD into empty CD-ROM. In such case there are no existing
+        # metadata and teardown_device is empty.
+        if teardown_device and isVdsmImage(teardown_device):
+            try:
+                self.cif.teardownVolumePath(teardown_device)
+            except Exception:
+                self.log.exception(
+                    "Tearing down the device %s failed.", device)
+
     def setTicket(self, otp, seconds, connAct, params):
         """
         setTicket defaults to the first graphic device.
