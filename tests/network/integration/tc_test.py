@@ -177,31 +177,31 @@ class TestPortMirror(object):
         cleanup = []
         try:
             for iface in self._devices:
-                iface.addDevice()
+                iface.create()
                 cleanup.append(iface)
-            self._bridge0.addIf(self._tap0.dev_name)
-            self._bridge1.addIf(self._tap1.dev_name)
-            self._bridge2.addIf(self._tap2.dev_name)
+            self._bridge0.add_port(self._tap0.dev_name)
+            self._bridge1.add_port(self._tap1.dev_name)
+            self._bridge2.add_port(self._tap2.dev_name)
 
             yield
         finally:
             failed = []
             for iface in cleanup:
                 try:
-                    iface.delDevice()
+                    iface.remove()
                 except Exception:
                     failed.append(str(iface))
             if failed:
                 raise RuntimeError(f'Error removing devices: {failed}')
 
     def _send_ping(self):
-        self._tap1.startListener(self._ICMP)
-        self._tap0.writeToDevice(self._ICMP)
+        self._tap1.start_listener(self._ICMP)
+        self._tap0.write_to_device(self._ICMP)
         # Attention: sleep is bad programming practice! Never use it for
         # synchronization in productive code!
         time.sleep(0.1)
-        if self._tap1.isListenerAlive():
-            self._tap1.stopListener()
+        if self._tap1.is_listener_alive():
+            self._tap1.stop_listener()
             return False
         else:
             return True
@@ -360,8 +360,8 @@ class TestConfigureOutbound(object):
             # iperf server and its veth peer lie in a separate network
             # namespace
             link_set_netns(server_dev, ns)
-            bridge.addIf(server_peer)
-            bridge.addIf(client_peer)
+            bridge.add_port(server_peer)
+            bridge.add_port(client_peer)
             linkSet(client_dev, ['up'])
             netns_exec(ns, ['ip', 'link', 'set', 'dev', server_dev, 'up'])
             addrAdd(client_dev, client_ip, 24)

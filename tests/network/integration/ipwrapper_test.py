@@ -115,11 +115,11 @@ class TestUnicodeDrvinfo(object):
         # See http://unicode.org/charts/PDF/U0590.pdf
         bridge_name = b'\xd7\x90\xd7\x91\xd7\x92'.decode('utf-8')
         br = Bridge(bridge_name)
-        br.addDevice()
+        br.create()
         try:
             yield br.dev_name
         finally:
-            br.delDevice()
+            br.remove()
 
     def test_utf8_bridge_ethtool_drvinfo(self, unicode_bridge):
         driver_name = ethtool.driver_name(unicode_bridge)

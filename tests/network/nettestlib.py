@@ -53,14 +53,33 @@ from . import dhcp
 from . import firewall
 
 
+class IpFamily(object):
+    IPv4 = 4
+    IPv6 = 6
+
+
 class Interface(object):
     def __init__(self, prefix='vdsm-', max_length=11):
         self.dev_name = random_iface_name(prefix, max_length)
 
+    @staticmethod
+    def from_existing_dev_name(dev_name):
+        return Interface(dev_name, len(dev_name))
+
+    def add_ip(self, ip_addr, prefix_len, family):
+        try:
+            addrAdd(self.dev_name, ip_addr, prefix_len, family)
+        except IPRoute2Error as e:
+            message = (
+                f'Failed to add the IPv{family} address {family}/{prefix_len}'
+                f'to device {self.dev_name}: {e}'
+            )
+            pytest.skip(message)
+
     def up(self):
         linkSet(self.dev_name, ['up'])
 
-    def _down(self):
+    def down(self):
         with monitor.object_monitor(groups=('link',), timeout=2) as mon:
             linkSet(self.dev_name, ['down'])
             for event in mon:
@@ -70,6 +89,13 @@ class Interface(object):
                 ):
                     return
 
+    def set_managed(self):
+        cmd.exec_sync(['nmcli', 'dev', 'set', self.dev_name, 'managed', 'yes'])
+
+    def remove(self):
+        linkDel(self.dev_name)
+        cmd.exec_sync(['nmcli', 'con', 'del', self.dev_name])
+
     def __repr__(self):
         return "<{0} {1!r}>".format(self.__class__.__name__, self.dev_name)
 
@@ -78,10 +104,10 @@ class Vlan(Interface):
     def __init__(self, backing_device_name, tag):
         self.tag = tag
         self.backing_device_name = backing_device_name
-        vlan_name = '{}.{}'.format(backing_device_name, tag)
+        vlan_name = f'{backing_device_name}.{tag}'
         super(Vlan, self).__init__(vlan_name, len(vlan_name))
 
-    def addDevice(self):
+    def create(self):
         linkAdd(
             self.dev_name,
             'vlan',
@@ -89,29 +115,25 @@ class Vlan(Interface):
             args=['id', str(self.tag)],
         )
         self.up()
-
-    def delDevice(self):
-        self._down()
-        linkDel(self.dev_name)
-        cmd.exec_sync(['nmcli', 'con', 'del', self.dev_name])
+        self.set_managed()
 
 
 @contextmanager
 def vlan_device(link, tag=16):
     vlan = Vlan(link, tag)
-    vlan.addDevice()
+    vlan.create()
     try:
         yield vlan.dev_name
     finally:
         try:
-            vlan.delDevice()
+            vlan.remove()
         except IPRoute2Error:
             # if the underlying device was removed beforehand, the vlan device
             # would be gone by now.
             pass
 
 
-def _listenOnDevice(fd, icmp):
+def _listen_on_device(fd, icmp):
     while True:
         packet = os.read(fd, 2048)
         # check if it is an IP packet
@@ -132,39 +154,40 @@ class Tap(Interface):
     else:
         pytest.skip("Unsupported Architecture %s" % arch)
 
-    _deviceListener = None
+    _device_listener = None
 
-    def addDevice(self):
-        self._cloneDevice = open('/dev/net/tun', 'r+b', buffering=0)
+    def create(self):
+        self._clone_device = open('/dev/net/tun', 'r+b', buffering=0)
         ifr = struct.pack(
             b'16sH', self.dev_name.encode(), self._IFF_TAP | self._IFF_NO_PI
         )
-        fcntl.ioctl(self._cloneDevice, self._TUNSETIFF, ifr)
+        fcntl.ioctl(self._clone_device, self._TUNSETIFF, ifr)
+        self.set_managed()
         self.up()
 
-    def delDevice(self):
-        self._down()
-        self._cloneDevice.close()
+    def remove(self):
+        self.down()
+        self._clone_device.close()
 
-    def startListener(self, icmp):
-        self._deviceListener = Process(
-            target=_listenOnDevice, args=(self._cloneDevice.fileno(), icmp)
+    def start_listener(self, icmp):
+        self._device_listener = Process(
+            target=_listen_on_device, args=(self._clone_device.fileno(), icmp)
         )
-        self._deviceListener.start()
+        self._device_listener.start()
 
-    def isListenerAlive(self):
-        if self._deviceListener:
-            return self._deviceListener.is_alive()
+    def is_listener_alive(self):
+        if self._device_listener:
+            return self._device_listener.is_alive()
         else:
             return False
 
-    def stopListener(self):
-        if self._deviceListener:
-            os.kill(self._deviceListener.pid, signal.SIGKILL)
-            self._deviceListener.join()
+    def stop_listener(self):
+        if self._device_listener:
+            os.kill(self._device_listener.pid, signal.SIGKILL)
+            self._device_listener.join()
 
-    def writeToDevice(self, icmp):
-        os.write(self._cloneDevice.fileno(), icmp)
+    def write_to_device(self, icmp):
+        os.write(self._clone_device.fileno(), icmp)
 
 
 class Dummy(Interface):
@@ -180,9 +203,7 @@ class Dummy(Interface):
     def create(self):
         try:
             linkAdd(self.dev_name, linkType='dummy')
-            cmd.exec_sync(
-                ['nmcli', 'dev', 'set', self.dev_name, 'managed', 'yes']
-            )
+            self.set_managed()
         except IPRoute2Error as e:
             pytest.skip(
                 f'Failed to create a dummy interface {self.dev_name}: {e}'
@@ -190,46 +211,14 @@ class Dummy(Interface):
         else:
             return self.dev_name
 
-    def remove(self):
-        """
-        Remove the dummy interface. This assumes root privileges.
-        """
-        try:
-            linkDel(self.dev_name)
-        except IPRoute2Error as e:
-            pytest.skip(
-                f'Unable to delete the dummy interface {self.dev_name}: {e}'
-            )
-        finally:
-            cmd.exec_sync(['nmcli', 'con', 'del', self.dev_name])
-
-    def set_ip(self, ipaddr, netmask, family=4):
-        try:
-            addrAdd(self.dev_name, ipaddr, netmask, family)
-        except IPRoute2Error as e:
-            message = (
-                f'Failed to add the IPv{family} address {ipaddr}/{netmask}'
-                f'to device {self.dev_name}: {e}'
-            )
-            if family == 6:
-                message += (
-                    "; NetworkManager may have set the sysctl "
-                    "disable_ipv6 flag on the device, please see e.g. "
-                    "RH BZ #1102064"
-                )
-            pytest.skip(message)
-
 
 class Bridge(Interface):
-    def addDevice(self):
+    def create(self):
         linkAdd(self.dev_name, 'bridge')
+        self.set_managed()
         self.up()
 
-    def delDevice(self):
-        self._down()
-        linkDel(self.dev_name)
-
-    def addIf(self, dev):
+    def add_port(self, dev):
         linkSet(dev, ['master', self.dev_name])
 
 
@@ -309,11 +298,11 @@ def enable_lldp_on_ifaces(ifaces, rx_only):
 @contextmanager
 def bridge_device():
     bridge = Bridge()
-    bridge.addDevice()
+    bridge.create()
     try:
         yield bridge.dev_name
     finally:
-        bridge.delDevice()
+        bridge.remove()
 
 
 def nm_is_running():

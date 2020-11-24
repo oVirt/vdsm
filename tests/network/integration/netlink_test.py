@@ -30,12 +30,15 @@ import pytest
 from vdsm.common.time import monotonic_time
 
 from ..nettestlib import bond_device
+from ..nettestlib import dummy_device
 from ..nettestlib import dummy_devices
 from ..nettestlib import Dummy
+from ..nettestlib import Interface
 from vdsm.network.netlink import NLSocketPool
 from vdsm.network.netlink import monitor
 from vdsm.network.sysctl import is_disabled_ipv6
 
+from network.nettestlib import IpFamily
 from network.nettestlib import running_on_ovirt_ci
 
 
@@ -56,9 +59,8 @@ class TestNetlinkEventMonitor(object):
 
     def test_iterate_after_events(self):
         with monitor.object_monitor(timeout=self.TIMEOUT) as mon:
-            dummy = Dummy()
-            dummy_name = dummy.create()
-            dummy.remove()
+            with dummy_device() as dummy:
+                dummy_name = dummy
             for event in mon:
                 if event.get('name') == dummy_name:
                     break
@@ -85,9 +87,8 @@ class TestNetlinkEventMonitor(object):
 
     def test_stopped(self):
         with monitor.object_monitor(timeout=self.TIMEOUT) as mon:
-            dummy = Dummy()
-            dummy_name = dummy.create()
-            dummy.remove()
+            with dummy_device() as dummy:
+                dummy_name = dummy
 
         found = any(event.get('name') == dummy_name for event in mon)
         assert found, 'Expected event was not caught.'
@@ -99,11 +100,10 @@ class TestNetlinkEventMonitor(object):
             with monitor.object_monitor(
                 timeout=self.TIMEOUT, groups=('link', 'ipv4-route')
             ) as mon_l_r:
-                dummy = Dummy()
-                dummy.create()
-                dummy.set_ip(IP_ADDRESS, IP_CIDR)
-                dummy.up()
-                dummy.remove()
+                with dummy_device() as dummy:
+                    Interface.from_existing_dev_name(dummy).add_ip(
+                        IP_ADDRESS, IP_CIDR, IpFamily.IPv4
+                    )
 
         for event in mon_a:
             assert '_addr' in event['event'], (
@@ -175,7 +175,7 @@ class TestNetlinkEventMonitor(object):
         ) as mon:
             dummy = Dummy()
             dummy_name = dummy.create()
-            dummy.set_ip(IP_ADDRESS, IP_CIDR)
+            dummy.add_ip(IP_ADDRESS, IP_CIDR, IpFamily.IPv4)
             dummy.up()
             dummy.remove()
 
@@ -223,9 +223,8 @@ class TestNetlinkEventMonitor(object):
     def test_timeout_not_triggered(self):
         time_start = monotonic_time()
         with monitor.object_monitor(timeout=self.TIMEOUT) as mon:
-            dummy = Dummy()
-            dummy.create()
-            dummy.remove()
+            with dummy_device():
+                pass
 
             for event in mon:
                 break

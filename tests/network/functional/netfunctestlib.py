@@ -46,6 +46,8 @@ from vdsm.network.netlink import monitor
 from vdsm.network.netlink import waitfor
 from vdsm.network.restore_net_config import restore
 
+from network.nettestlib import IpFamily
+
 try:
     from functional.utils import getProxy, SUCCESS
 except ImportError:
@@ -59,11 +61,6 @@ TIMEOUT_CHK = {'connectivityCheck': True, 'connectivityTimeout': 0.1}
 
 IFCFG_DIR = '/etc/sysconfig/network-scripts/'
 IFCFG_PREFIX = IFCFG_DIR + 'ifcfg-'
-
-
-class IpFamily(object):
-    IPv4 = 4
-    IPv6 = 6
 
 
 parametrize_switch = pytest.mark.parametrize(
