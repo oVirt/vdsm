@@ -29,10 +29,10 @@ import pytest
 from fakelib import FakeLogger
 from testlib import make_uuid
 from testlib import maybefail
+from testlib import normalized
 
 from vdsm.common import exception
 from vdsm.common import nbdutils
-from vdsm.common.xmlutils import indented
 
 from vdsm.storage import hsm
 from vdsm.storage import transientdisk
@@ -224,7 +224,7 @@ def test_start_stop_backup(tmp_backupdir, tmp_basedir):
     }
 
     res = backup.start_backup(vm, dom, config)
-    assert indented(expected_xml) == indented(dom.input_backup_xml)
+    assert normalized(expected_xml) == normalized(dom.input_backup_xml)
     assert dom.backing_up
 
     verify_scratch_disks_exists(vm)
@@ -276,7 +276,7 @@ def test_full_backup_with_backup_mode(tmp_backupdir, tmp_basedir):
     }
 
     backup.start_backup(vm, dom, config)
-    assert indented(expected_xml) == indented(dom.input_backup_xml)
+    assert normalized(expected_xml) == normalized(dom.input_backup_xml)
 
 
 @requires_backup_support
@@ -340,7 +340,7 @@ def test_incremental_backup_with_backup_mode(tmp_backupdir, tmp_basedir):
     }
 
     backup.start_backup(vm, dom, config)
-    assert indented(expected_xml) == indented(dom.input_backup_xml)
+    assert normalized(expected_xml) == normalized(dom.input_backup_xml)
 
 
 @requires_backup_support
@@ -365,8 +365,8 @@ def test_start_stop_backup_with_checkpoint(
 
     res = backup.start_backup(vm, dom, config)
     assert dom.backing_up
-    assert indented(expected_checkpoint_xml) == (
-        indented(dom.input_checkpoint_xml))
+    assert normalized(expected_checkpoint_xml) == (
+        normalized(dom.input_checkpoint_xml))
 
     verify_scratch_disks_exists(vm)
 
@@ -446,9 +446,9 @@ def test_incremental_backup(tmp_backupdir, tmp_basedir):
 
     res = backup.start_backup(vm, dom, config)
     assert dom.backing_up
-    assert indented(expected_xml) == indented(dom.input_backup_xml)
-    assert indented(CHECKPOINT_2_XML) == (
-        indented(dom.input_checkpoint_xml))
+    assert normalized(expected_xml) == normalized(dom.input_backup_xml)
+    assert normalized(CHECKPOINT_2_XML) == (
+        normalized(dom.input_checkpoint_xml))
 
     verify_scratch_disks_exists(vm, BACKUP_2_ID)
 

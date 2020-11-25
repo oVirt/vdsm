@@ -304,8 +304,8 @@ class XMLTestCase(VdsmTestCase):
         In case of a mismatch, display normalized xmls to make it easier to
         find the differences.
         """
-        actual = xmlutils.indented(xml)
-        expected = xmlutils.indented(expectedXML)
+        actual = normalized(xml)
+        expected = normalized(expectedXML)
 
         self.assertEqual(actual, expected,
                          "XMLs are different:\nActual:\n%s\nExpected:\n%s\n" %
@@ -651,3 +651,14 @@ def ipv6_enabled():
         return False
     # Kernel supports ipv6, but it may be disabled.
     return int(value) == 0
+
+
+def normalized(xml, sort_attrs=True):
+    """
+    Returns indented XML string with optionally sorted attributes.
+    """
+    element = xmlutils.fromstring(xml)
+    if sort_attrs:
+        xmlutils.sort_attributes(element)
+    xmlutils.indent(element)
+    return xmlutils.tostring(element)

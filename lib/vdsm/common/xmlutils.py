@@ -71,15 +71,6 @@ def indent(element, level=0, s="    "):
             element.tail = i
 
 
-def indented(xml):
-    """
-    Returns indented XML string.
-    """
-    element = fromstring(xml)
-    indent(element)
-    return tostring(element)
-
-
 def sort_attributes(root):
     """
     Sorts XML attributes in the lexical order. While from semantic point of
