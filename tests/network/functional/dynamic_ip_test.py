@@ -24,13 +24,13 @@ import pytest
 
 from vdsm.network import api as net_api
 from vdsm.network.initializer import init_unpriviliged_dhcp_monitor_ctx
-from vdsm.network.ipwrapper import linkSet, addrAdd
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NOCHK
 from .netfunctestlib import parametrize_def_route
 from .netfunctestlib import parametrize_ip_families
 from .netfunctestlib import IpFamily
+from network.nettestlib import Interface
 from network.nettestlib import veth_pair
 from network.nettestlib import dnsmasq_run
 from network.nettestlib import dhcp_client_run
@@ -616,9 +616,6 @@ def _create_configured_dhcp_client_iface(
 @contextmanager
 def _create_dhcp_client_server_peers(network_config, vlan_id):
     with veth_pair(max_length=10) as (server, client):
-        linkSet(server, ['up'])
-        linkSet(client, ['up'])
-
         if vlan_id:
             with vlan_device(server, vlan_id) as vlan_iface:
                 _configure_iface_ip(vlan_iface, network_config)
@@ -629,15 +626,15 @@ def _create_dhcp_client_server_peers(network_config, vlan_id):
 
 
 def _configure_iface_ip(iface_name, network_config):
+    iface = Interface.from_existing_dev_name(iface_name)
     if network_config.ipv4_address:
-        addrAdd(
-            iface_name,
+        iface.add_ip(
             network_config.ipv4_address,
             network_config.ipv4_prefix_length,
+            IpFamily.IPv4,
         )
     if network_config.ipv6_address:
-        addrAdd(
-            iface_name,
+        iface.add_ip(
             network_config.ipv6_address,
             network_config.ipv6_prefix_length,
             IpFamily.IPv6,

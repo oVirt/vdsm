@@ -25,12 +25,13 @@ import pytest
 from vdsm.network import api as net_api
 from vdsm.network import errors as ne
 from vdsm.network.initializer import init_unpriviliged_dhcp_monitor_ctx
-from vdsm.network.ipwrapper import linkSet, addrAdd
 
 from network.nettestlib import dummy_device
+from network.nettestlib import Interface
 from network.nettestlib import veth_pair
 from network.nettestlib import dnsmasq_run
 
+from .netfunctestlib import IpFamily
 from .netfunctestlib import SetupNetworksError, NOCHK
 
 
@@ -89,8 +90,9 @@ def nic2():
 @pytest.fixture
 def dynamic_ipv4_iface():
     with veth_pair() as (server, client):
-        addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
-        linkSet(server, ['up'])
+        Interface.from_existing_dev_name(server).add_ip(
+            IPv4_ADDRESS, IPv4_PREFIX_LEN, IpFamily.IPv4
+        )
         with dnsmasq_run(
             server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO, router=IPv4_ADDRESS
         ):

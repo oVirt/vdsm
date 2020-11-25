@@ -25,9 +25,10 @@ import pytest
 
 import network as network_tests
 from network.nettestlib import dummy_device
+from network.nettestlib import Interface
+from network.nettestlib import IpFamily
 
 from vdsm.network import sourceroute
-from vdsm.network.ipwrapper import addrAdd
 from vdsm.network.sourceroute import DynamicSourceRoute
 
 
@@ -52,7 +53,9 @@ def nic0():
 
 class TestSourceRoute(object):
     def test_sourceroute_add_remove_and_read(self, nic0):
-        addrAdd(nic0, IPV4_ADDRESS, IPV4_MASK)
+        Interface.from_existing_dev_name(nic0).add_ip(
+            IPV4_ADDRESS, IPV4_MASK, IpFamily.IPv4
+        )
 
         with create_sourceroute(
             device=nic0, ip=IPV4_ADDRESS, mask=IPV4_MASK, gateway=IPV4_GW
@@ -77,7 +80,9 @@ class TestSourceRoute(object):
             assert rules[1].prio == sourceroute.RULE_PRIORITY
 
     def test_sourceroute_add_over_existing_route(self, nic0):
-        addrAdd(nic0, IPV4_ADDRESS, IPV4_MASK)
+        Interface.from_existing_dev_name(nic0).add_ip(
+            IPV4_ADDRESS, IPV4_MASK, IpFamily.IPv4
+        )
 
         with create_sourceroute(
             device=nic0, ip=IPV4_ADDRESS, mask=IPV4_MASK, gateway=IPV4_GW

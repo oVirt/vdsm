@@ -24,8 +24,6 @@ from .netfunctestlib import parametrize_switch
 from network.nettestlib import dummy_device
 from network.nettestlib import veth_pair
 
-from vdsm.network.ipwrapper import linkSet
-
 BOND_NAME = 'bond1'
 IPv4_ADDRESS = '192.0.2.1'
 IPv4_PREFIX_LEN = '24'
@@ -106,8 +104,6 @@ class TestRestore(object):
         self, adapter, switch, bridged
     ):
         with veth_pair() as (server, client):
-            linkSet(server, ['up'])
-            linkSet(client, ['up'])
             SETUP_NET = {
                 NETWORK_NAME: {
                     'nic': client,

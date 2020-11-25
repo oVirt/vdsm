@@ -21,13 +21,13 @@
 import pytest
 
 from vdsm.network import errors as ne
-from vdsm.network.ipwrapper import addrAdd
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import parametrize_ip_families
 from .netfunctestlib import IpFamily
 from .netfunctestlib import NOCHK, SetupNetworksError
 from network.nettestlib import dummy_device
+from network.nettestlib import Interface
 from network.nettestlib import preserve_default_route
 from network.nettestlib import restore_resolv_conf
 
@@ -471,8 +471,9 @@ class TestNetworkIPDefaultGateway(object):
 @pytest.mark.nmstate
 class TestAcquireNicsWithStaticIP(object):
     def test_attach_nic_with_ip_to_ipless_network(self, adapter, switch, nic0):
-        addrAdd(nic0, IPv4_ADDRESS, IPv4_PREFIX_LEN)
-        addrAdd(nic0, IPv6_ADDRESS, IPv6_PREFIX_LEN, family=6)
+        nic0_interface = Interface.from_existing_dev_name(nic0)
+        nic0_interface.add_ip(IPv4_ADDRESS, IPv4_PREFIX_LEN, IpFamily.IPv4)
+        nic0_interface.add_ip(IPv6_ADDRESS, IPv6_PREFIX_LEN, IpFamily.IPv6)
 
         NETCREATE = {NETWORK_NAME: {'nic': nic0, 'switch': switch}}
         with adapter.setupNetworks(NETCREATE, {}, NOCHK):
@@ -481,7 +482,9 @@ class TestAcquireNicsWithStaticIP(object):
             adapter.assertDisabledIPv6(nic_netinfo)
 
     def test_attach_nic_with_ip_to_ip_network(self, adapter, switch, nic0):
-        addrAdd(nic0, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+        Interface.from_existing_dev_name(nic0).add_ip(
+            IPv4_ADDRESS, IPv4_PREFIX_LEN, IpFamily.IPv4
+        )
 
         NETCREATE = {
             NETWORK_NAME: {
@@ -499,8 +502,9 @@ class TestAcquireNicsWithStaticIP(object):
     def test_attach_nic_with_ip_as_a_slave_to_ipless_network(
         self, adapter, switch, nic0, nic1
     ):
-        addrAdd(nic0, IPv4_ADDRESS, IPv4_PREFIX_LEN)
-        addrAdd(nic0, IPv6_ADDRESS, IPv6_PREFIX_LEN, family=6)
+        nic0_interface = Interface.from_existing_dev_name(nic0)
+        nic0_interface.add_ip(IPv4_ADDRESS, IPv4_PREFIX_LEN, IpFamily.IPv4)
+        nic0_interface.add_ip(IPv6_ADDRESS, IPv6_PREFIX_LEN, IpFamily.IPv6)
 
         NETCREATE = {NETWORK_NAME: {'bonding': BOND_NAME, 'switch': switch}}
         BONDCREATE = {BOND_NAME: {'nics': [nic0, nic1], 'switch': switch}}
@@ -512,7 +516,9 @@ class TestAcquireNicsWithStaticIP(object):
     def test_attach_nic_with_ip_as_a_slave_to_ip_network(
         self, adapter, switch, nic0, nic1
     ):
-        addrAdd(nic0, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+        Interface.from_existing_dev_name(nic0).add_ip(
+            IPv4_ADDRESS, IPv4_PREFIX_LEN, IpFamily.IPv4
+        )
 
         NETCREATE = {
             NETWORK_NAME: {

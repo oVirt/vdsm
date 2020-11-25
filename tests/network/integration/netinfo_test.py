@@ -34,6 +34,7 @@ from vdsm.network.netinfo import addresses, bonding, nics, routes
 from vdsm.network.netlink import waitfor
 
 from network.nettestlib import Interface
+from network.nettestlib import IpFamily
 from network.nettestlib import running_on_ovirt_ci
 from network.nettestlib import running_on_travis_ci
 
@@ -78,7 +79,9 @@ def dynamic_ipv6_iface():
         pytest.skip('Using dnsmasq for ipv6 RA is unstable on CI')
 
     with veth_pair() as (server, client):
-        ipwrapper.addrAdd(server, IPV6_ADDR1, IPV6_PREFIX_LENGTH, family=6)
+        Interface.from_existing_dev_name(server).add_ip(
+            IPV6_ADDR1, IPV6_PREFIX_LENGTH, IpFamily.IPv6
+        )
         client_interface = Interface.from_existing_dev_name(client)
         client_interface.down()
         with dnsmasq_run(server, ipv6_slaac_prefix=IPV6_NET_ADDR):
@@ -159,16 +162,21 @@ class TestNetinfo(object):
 
     @ipv6_broken_on_travis_ci
     def test_ip_info(self, nic0):
+        nic0_interface = Interface.from_existing_dev_name(nic0)
         with waitfor.waitfor_ipv4_addr(nic0, address=IPV4_ADDR1_CIDR):
-            ipwrapper.addrAdd(nic0, IPV4_ADDR1, IPV4_PREFIX_LENGTH)
+            nic0_interface.add_ip(
+                IPV4_ADDR1, IPV4_PREFIX_LENGTH, IpFamily.IPv4
+            )
         with waitfor.waitfor_ipv4_addr(nic0, address=IPV4_ADDR2_CIDR):
-            ipwrapper.addrAdd(nic0, IPV4_ADDR2, IPV4_PREFIX_LENGTH)
+            nic0_interface.add_ip(
+                IPV4_ADDR2, IPV4_PREFIX_LENGTH, IpFamily.IPv4
+            )
         with waitfor.waitfor_ipv6_addr(nic0, address=IPV6_ADDR_CIDR):
-            ipwrapper.addrAdd(nic0, IPV6_ADDR, IPV6_PREFIX_LENGTH, family=6)
+            nic0_interface.add_ip(IPV6_ADDR, IPV6_PREFIX_LENGTH, IpFamily.IPv6)
 
         # 32 bit addresses are reported slashless by netlink
         with waitfor.waitfor_ipv4_addr(nic0, address=IPV4_ADDR3):
-            ipwrapper.addrAdd(nic0, IPV4_ADDR3, 32)
+            nic0_interface.add_ip(IPV4_ADDR3, 32, IpFamily.IPv4)
 
         assert addresses.getIpInfo(nic0) == (
             IPV4_ADDR1,
@@ -205,12 +213,10 @@ class TestNetinfo(object):
         addr_in_net = ipaddress.ip_address(ip_addr) + 1
         ip_version = addr_in_net.version
 
-        ipwrapper.addrAdd(nic0, ip_addr, ip_netmask, family=ip_version)
-        try:
-            ipwrapper.linkSet(nic0, ['up'])
-            assert routes.getRouteDeviceTo(str(addr_in_net)) == nic0
-        finally:
-            ipwrapper.addrFlush(nic0, ip_version)
+        Interface.from_existing_dev_name(nic0).add_ip(
+            ip_addr, ip_netmask, family=ip_version
+        )
+        assert routes.getRouteDeviceTo(str(addr_in_net)) == nic0
 
 
 class TestIPv6Addresses(object):
@@ -224,7 +230,9 @@ class TestIPv6Addresses(object):
 
     @ipv6_broken_on_travis_ci
     def test_local_auto_with_static_address_without_ra_server(self, nic0):
-        ipwrapper.addrAdd(nic0, '2001::88', IPV6_PREFIX_LENGTH, family=6)
+        Interface.from_existing_dev_name(nic0).add_ip(
+            '2001::88', IPV6_PREFIX_LENGTH, IpFamily.IPv6
+        )
         ip_addrs = addresses.getIpAddrs()[nic0]
         assert addresses.is_ipv6_local_auto(nic0)
         assert 2 == len(ip_addrs), ip_addrs

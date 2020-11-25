@@ -30,6 +30,8 @@ import pytest
 from network.nettestlib import Bridge
 from network.nettestlib import bridge_device
 from network.nettestlib import dummy_device
+from network.nettestlib import Interface
+from network.nettestlib import IpFamily
 from network.nettestlib import running
 from network.nettestlib import running_on_ovirt_ci
 from network.nettestlib import running_on_travis_ci
@@ -40,7 +42,7 @@ from network.nettestlib import vlan_device
 from vdsm.network import cmd
 from vdsm.network import tc
 from vdsm.network.configurators import qos
-from vdsm.network.ipwrapper import addrAdd, linkSet, netns_exec, link_set_netns
+from vdsm.network.ipwrapper import netns_exec, link_set_netns
 from vdsm.network.netinfo.qos import DEFAULT_CLASSID
 
 from .iperf import IperfServer
@@ -355,16 +357,15 @@ class TestConfigureOutbound(object):
             client_dev,
             client_peer,
         ):
-            linkSet(server_peer, ['up'])
-            linkSet(client_peer, ['up'])
             # iperf server and its veth peer lie in a separate network
             # namespace
             link_set_netns(server_dev, ns)
             bridge.add_port(server_peer)
             bridge.add_port(client_peer)
-            linkSet(client_dev, ['up'])
             netns_exec(ns, ['ip', 'link', 'set', 'dev', server_dev, 'up'])
-            addrAdd(client_dev, client_ip, 24)
+            Interface.from_existing_dev_name(client_dev).add_ip(
+                client_ip, 24, IpFamily.IPv4
+            )
             netns_exec(
                 ns,
                 [

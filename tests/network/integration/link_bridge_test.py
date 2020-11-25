@@ -22,19 +22,22 @@ from contextlib import contextmanager
 import pytest
 
 from vdsm.network import errors as ne
-from vdsm.network.ipwrapper import linkAdd, linkDel
 from vdsm.network.link.bridge import Bridge
+
+from network.nettestlib import Bridge as TestBridge
 
 BR1_NAME = 'br1'
 
 
 @contextmanager
 def _create_bridge(name):
-    linkAdd(name, 'bridge')
+    bridge = TestBridge(name, len(name))
+    bridge.create()
+    bridge.down()
     try:
         yield
     finally:
-        linkDel(name)
+        bridge.remove()
 
 
 def test_write_custom_bridge_options():

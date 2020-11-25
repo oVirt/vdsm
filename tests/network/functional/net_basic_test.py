@@ -21,11 +21,11 @@
 import pytest
 
 from vdsm.network import errors as ne
-from vdsm.network import ipwrapper
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NOCHK, SetupNetworksError
 from network.nettestlib import dummy_device
+from network.nettestlib import Interface
 
 NETWORK_NAME = 'test-network'
 NET_1 = NETWORK_NAME + '1'
@@ -350,11 +350,10 @@ class TestNetworkBasicLegacy(object):
         }
         with adapter.setupNetworks(NETCREATE, {}, NOCHK):
             if bridged:
-                ipwrapper.linkDel(NETWORK_NAME)
+                dev_name = NETWORK_NAME
             else:
-                ipwrapper.linkDel(
-                    nic0 + '.' + str(NETCREATE[NETWORK_NAME]['vlan'])
-                )
+                dev_name = f'{nic0}.{NETCREATE[NETWORK_NAME]["vlan"]}'
+            Interface.from_existing_dev_name(dev_name).remove()
 
             adapter.refresh_netinfo()
 
