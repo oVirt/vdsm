@@ -444,7 +444,7 @@ class MonitorThread(object):
             domain_status.masterValid = masterStats['valid']
             domain_status.masterMounted = masterStats['mount']
 
-            domain_status.hasHostId = self._domainHasHostId()
+            domain_status.hasHostId = self.domain.hasHostId(self.hostId)
             domain_status.version = self.domain.getVersion()
             domain_status.isoPrefix = self.isoPrefix
         except Exception as e:
@@ -457,22 +457,6 @@ class MonitorThread(object):
 
         if self._shouldAcquireHostId():
             self._acquireHostId()
-
-    def _domainHasHostId(self):
-        """
-        Get domain host id status, log changes and return the value.
-
-        We acquire the host id asynchronically. Here we find that the operation
-        was successful, or (unlikely) that the host id was released.
-        """
-        hasHostId = self.domain.hasHostId(self.hostId)
-        if not hasHostId and self.status.hasHostId:
-            log.warning("Host id for domain %s was released (id: %s)",
-                        self.sdUUID, self.hostId)
-        if hasHostId and not self.status.hasHostId:
-            log.info("Host id for domain %s successfully acquired (id: %s)",
-                     self.sdUUID, self.hostId)
-        return hasHostId
 
     # Handling status changes
 

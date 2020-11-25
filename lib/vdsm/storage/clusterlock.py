@@ -420,9 +420,11 @@ class SANLock(object):
                 self._ready.set()
                 self._end_add_lockspace(hostId)
             else:
-                # Host id was not acquired yet, or was lost, and will be
-                # acquired again by the domain monitor.  Future threads calling
-                # acquire() will wait until host id is acquired again.
+                if self._ready.valid and self._ready.is_set():
+                    # Host id was released by sanlock. This happens after
+                    # renewal failure when storage is inaccessible.
+                    self.log.warning("Host id %s for domain %s was released",
+                                     hostId, self._sdUUID)
                 self._ready.clear()
 
         return has_host_id
