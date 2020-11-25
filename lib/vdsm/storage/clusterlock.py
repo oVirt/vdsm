@@ -27,6 +27,7 @@ import logging
 import os
 import subprocess
 import threading
+import time
 
 from vdsm import constants
 from vdsm import utils
@@ -290,6 +291,7 @@ class SANLock(object):
         self._alignment = kwargs.get("alignment", sc.ALIGNMENT_1M)
         self._block_size = kwargs.get("block_size", sc.BLOCK_SIZE_512)
         self._ready = concurrent.ValidatingEvent()
+        self._add_lockspace_start = None
 
     @property
     def supports_multiple_leases(self):
@@ -322,13 +324,13 @@ class SANLock(object):
         self._ready.valid = True
 
         with self._lock:
+            self._start_add_lockspace()
             try:
-                with utils.stopwatch("sanlock.add_lockspace"):
-                    sanlock.add_lockspace(
-                        self._lockspace_name,
-                        hostId,
-                        self._idsPath,
-                        wait=wait)
+                sanlock.add_lockspace(
+                    self._lockspace_name,
+                    hostId,
+                    self._idsPath,
+                    wait=wait)
             except sanlock.SanlockException as e:
                 if e.errno == errno.EINPROGRESS:
                     # if the request is not asynchronous wait for the ongoing
@@ -342,23 +344,47 @@ class SANLock(object):
                                 self._idsPath,
                                 wait=True):
                             raise se.AcquireHostIdFailure(self._sdUUID, e)
-                        self.log.info("Host id for domain %s successfully "
-                                      "acquired (id=%s, wait=%s)",
-                                      self._sdUUID, hostId, wait)
+
+                        self._end_add_lockspace(hostId)
                         self._ready.set()
                 elif e.errno == errno.EEXIST:
-                    self.log.info("Host id for domain %s already acquired "
-                                  "(id=%s, wait=%s)",
-                                  self._sdUUID, hostId, wait)
+                    self.log.info("Host id %s for domain %s already acquired",
+                                  hostId, self._sdUUID)
+                    self._cancel_add_lockspace()
                     self._ready.set()
                 else:
+                    self._cancel_add_lockspace()
                     raise se.AcquireHostIdFailure(self._sdUUID, e)
             else:
                 if wait:
-                    self.log.info("Host id for domain %s successfully "
-                                  "acquired (id=%s, wait=%s)",
-                                  self._sdUUID, hostId, wait)
+                    self._end_add_lockspace(hostId)
                     self._ready.set()
+
+    def _start_add_lockspace(self):
+        """
+        Start add_lockspace timer unless if is already running. Must be called
+        when self._lock is locked.
+        """
+        if self._add_lockspace_start is None:
+            self._add_lockspace_start = time.monotonic()
+
+    def _cancel_add_lockspace(self):
+        self._add_lockspace_start = None
+
+    def _end_add_lockspace(self, hostId):
+        """
+        If add_lockspace was in progress, end the timer and log acquire
+        message. Must be called when self._lock is locked.
+        """
+        if self._add_lockspace_start is None:
+            return
+
+        elapsed = time.monotonic() - self._add_lockspace_start
+        self._add_lockspace_start = None
+
+        self.log.info(
+            "Host id %s for domain %s acquired in %d seconds",
+            hostId, self._sdUUID, elapsed)
 
     def releaseHostId(self, hostId, wait, unused):
         self.log.info("Releasing host id for domain %s (id: %s)",
@@ -392,6 +418,7 @@ class SANLock(object):
             if has_host_id:
                 # Host id was acquired. Wake up threads waiting in acquire().
                 self._ready.set()
+                self._end_add_lockspace(hostId)
             else:
                 # Host id was not acquired yet, or was lost, and will be
                 # acquired again by the domain monitor.  Future threads calling
