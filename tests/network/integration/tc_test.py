@@ -23,10 +23,10 @@ from binascii import unhexlify
 from collections import namedtuple
 import os
 import time
+from unittest import mock
 
 import pytest
 
-from network.compat import mock
 from network.nettestlib import dummy_device
 from network.nettestlib import running
 from network.nettestlib import running_on_ovirt_ci

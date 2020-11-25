@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2019 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from vdsm.network.lldpad import lldptool
+from unittest import mock
 
-from network.compat import mock
+from vdsm.network.lldpad import lldptool
 
 
 LLDP_CHASSIS_ID_TLV = 'Chassis ID TLV\n\tMAC: 01:23:45:67:89:ab'

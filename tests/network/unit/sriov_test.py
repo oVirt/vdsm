@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from network.compat import mock
+from unittest import mock
 
 from vdsm.network.link import sriov
 

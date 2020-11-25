@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,10 +24,9 @@ from __future__ import division
 from collections import namedtuple
 import os
 from time import time
+from unittest import mock
 
 import pytest
-
-from network.compat import mock
 
 from vdsm.network import connectivity
 from vdsm.network.errors import ConfigNetworkError

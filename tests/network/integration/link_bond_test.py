@@ -20,10 +20,10 @@
 import errno
 import os
 import time
+from unittest import mock
 
 import pytest
 
-from network.compat import mock
 from network.nettestlib import bond_device
 from network.nettestlib import check_sysfs_bond_permission
 from network.nettestlib import dummy_devices

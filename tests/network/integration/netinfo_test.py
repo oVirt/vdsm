@@ -20,6 +20,7 @@
 #
 
 import ipaddress
+from unittest import mock
 
 import pytest
 
@@ -32,7 +33,6 @@ from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo import addresses, bonding, nics, routes
 from vdsm.network.netlink import waitfor
 
-from network.compat import mock
 from network.nettestlib import running_on_ovirt_ci
 from network.nettestlib import running_on_travis_ci
 

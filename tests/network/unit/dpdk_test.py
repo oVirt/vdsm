@@ -1,4 +1,4 @@
-# Copyright 2017-2019 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import json
-
-from network.compat import mock
+from unittest import mock
 
 from vdsm.network.link import dpdk
 

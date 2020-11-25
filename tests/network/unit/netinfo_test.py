@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 import os
 import io
+from unittest import mock
 
 import pytest
 import six
@@ -35,8 +36,6 @@ from vdsm.network.netinfo import addresses, bonding, misc, nics, routes
 from vdsm.network.netinfo.cache import get
 
 from vdsm.network import nmstate
-
-from network.compat import mock
 
 
 @pytest.fixture

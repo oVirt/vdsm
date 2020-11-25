@@ -18,9 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import pytest
+from unittest import mock
 
-from network.compat import mock
+import pytest
 
 from vdsm.network import nmstate
 from vdsm.network.nmstate.ovs import network

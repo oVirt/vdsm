@@ -19,13 +19,13 @@
 #
 
 from contextlib import contextmanager
+from unittest import mock
 
 import pytest
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestAdapter
 from .netfunctestlib import Target
-from network.compat import mock
 
 from vdsm.network import initializer
 from vdsm.network.dhcp_monitor import MonitoredItemPool

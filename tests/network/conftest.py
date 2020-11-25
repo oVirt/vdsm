@@ -1,4 +1,4 @@
-# Copyright 2019 Red Hat, Inc.
+# Copyright 2019-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,13 +22,13 @@ from __future__ import division
 import logging
 import os
 import tempfile
+from unittest import mock
 
 import pytest
 
 import network as network_tests
 from vdsm.network.link.bond import sysfs_options_mapper
 
-from .compat import mock
 from .nettestlib import KernelModule
 from .nettestlib import has_sysfs_bond_permission
 

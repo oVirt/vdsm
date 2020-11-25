@@ -1,4 +1,4 @@
-# Copyright 2018-2019 Red Hat, Inc.
+# Copyright 2018-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,9 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import six
+from unittest import mock
 
-from network.compat import mock
+import six
 
 from vdsm.network import dns
 
