@@ -439,6 +439,23 @@ parameters = [
             'manage them. Example: 36001405472912345,360014054954321'),
     ]),
 
+    # Section: [sanlock]
+    ('sanlock', [
+
+        ('io_timeout', '10',
+            'I/O timeout in seconds. All sanlock timeouts are computed '
+            'based on this value. Using larger timeout will make VMs '
+            'more resilient to short storage outage, but increase VM '
+            'failover time and the time to acquire a host id. For more '
+            'info on sanlock timeouts please check sanlock source: '
+            'https://pagure.io/sanlock/raw/master/f/src/timeouts.h. '
+            'If your storage requires larger timeouts, you can increase '
+            'the value to 15 or 20 seconds. If you change this you need '
+            'to update also multipath no_path_retry. For more info on'
+            'configuring multipath please check /etc/multipath.conf.'
+            'oVirt is tested only with the default value (10 seconds)')
+    ]),
+
     # Section: [jobs]
     ('jobs', [
         ('autodelete_delay', '3600',

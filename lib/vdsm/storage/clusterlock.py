@@ -242,13 +242,20 @@ initSANLockLog = logging.getLogger("storage.initSANLock")
 
 def initSANLock(
         sdUUID, idsPath, lease, alignment=sc.ALIGNMENT_1M,
-        block_size=sc.BLOCK_SIZE_512):
-    initSANLockLog.debug("Initializing SANLock for domain %s", sdUUID)
+        block_size=sc.BLOCK_SIZE_512, io_timeout=0):
+    initSANLockLog.info(
+        "Initializing sanlock for domain %s path=%s alignment=%s "
+        "block_size=%s io_timeout=%s",
+        sdUUID, idsPath, alignment, block_size, io_timeout)
     lockspace_name = sdUUID.encode("utf-8")
     resource_name = lease.name.encode("utf-8")
     try:
         sanlock.write_lockspace(
-            lockspace_name, idsPath, align=alignment, sector=block_size)
+            lockspace_name,
+            idsPath,
+            iotimeout=io_timeout,
+            align=alignment,
+            sector=block_size)
         sanlock.write_resource(
             lockspace_name,
             resource_name,
@@ -278,6 +285,7 @@ class SANLock(object):
 
     log = logging.getLogger("storage.SANLock")
 
+    _io_timeout = config.getint('sanlock', 'io_timeout')
     _sanlock_fd = None
     _sanlock_lock = threading.Lock()
 
@@ -307,7 +315,8 @@ class SANLock(object):
             self._idsPath,
             lease,
             alignment=self._alignment,
-            block_size=self._block_size)
+            block_size=self._block_size,
+            io_timeout=self._io_timeout)
 
     def setParams(self, *args):
         pass
@@ -330,6 +339,7 @@ class SANLock(object):
                     self._lockspace_name,
                     hostId,
                     self._idsPath,
+                    iotimeout=self._io_timeout,
                     wait=wait)
             except sanlock.SanlockException as e:
                 if e.errno == errno.EINPROGRESS:

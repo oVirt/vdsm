@@ -50,7 +50,7 @@ class ManifestMixin(object):
 
     def test_init_failure_raises(self, monkeypatch):
         def fail(sdUUID, idsPath, lease, alignment=sc.ALIGNMENT_1M,
-                 block_size=sc.BLOCK_SIZE_512):
+                 block_size=sc.BLOCK_SIZE_512, io_timeout=0):
             raise RuntimeError("injected failure")
 
         with self.env() as env:
