@@ -40,9 +40,10 @@ _CONF_FILE = "/etc/multipath.conf"
 # "VDSM REVISION X.Y" tag.  Note that older version used "RHEV REVISION X.Y"
 # format.
 
-_CURRENT_TAG = "# VDSM REVISION 1.9"
+_CURRENT_TAG = "# VDSM REVISION 2.0"
 
 _OLD_TAGS = (
+    "# VDSM REVISION 1.9",
     "# VDSM REVISION 1.8",
     "# VDSM REVISION 1.7",
     "# VDSM REVISION 1.6",
@@ -73,7 +74,7 @@ _OLD_PRIVATE_TAG = "# RHEV PRIVATE"
 # the kernel to stop queuing.  After that, all outstanding and future
 # I/O will immediately be failed, until a path is restored. Once a path
 # is restored the delay is reset for the next time all paths fail.
-_NO_PATH_RETRY = 4
+_NO_PATH_RETRY = 16
 
 _CONF_DATA = """\
 %(current_tag)s
@@ -99,20 +100,36 @@ defaults {
 
     polling_interval            5
 
-    # Ensures fast fail when no path is available.
+    # Ensure the minimal time I/O is queued when no path is available.
     #
-    # The number of retries until disable queueing, or fail for
-    # immediate failure (no queueing).
+    # The number of retries until disable queueing, or "fail" for
+    # immediate failure (no queueing), or "queue" for unlimited timeout.
     #
-    # oVirt is not designed to handle unlimited queuing used by many
-    # devices (no_path_retry queue) or big number of retries
-    # (no_path_retry 60).  These settings cause commands run by vdsm
-    # (e.g. lvm) to get stuck for a long time, causing timeouts in
-    # various flows, and may cause a host to become non-responsive.
+    # Using "queue" will cause commands run by vdsm (e.g. lvm) to get
+    # stuck for unlimited time, causing timeouts in various flows, and
+    # may cause a host to become non-responsive.
     #
-    # We use a small number of retries to protect from short outage.
-    # Assuming the default polling_interval (5 seconds), this gives
-    # extra 20 seconds grace time before failing the I/O.
+    # Using "fail" will cause VMs to pause shortly after all paths have
+    # failed. When using a HA VM with a storage lease, the lease will be
+    # released. This may delay the time to restart the VM on another
+    # host.
+    #
+    # The recommended setting is number of retries, keeping the VM
+    # running during storage outage, for example during storage server
+    # upgrades or failover scenarios.
+    #
+    # This value should be synchronized with sanlock lease renewal
+    # timeout (8 * sanlock:io_timeout). This ensures that HA VMs with a
+    # storage lease will be terminated by sanlock if their storage lease
+    # expire, and will be started quickly on another host. If you change
+    # sanlock:io_timeout you need to update this value.
+    #
+    # This value also depends on polling_interval (5 seconds). If you
+    # change polling interval you need to update this value.
+    #
+    # The recommended setting:
+    #
+    #   8 * sanlock:io_timeout / polling_interval
 
     no_path_retry               %(no_path_retry)d
 
@@ -241,14 +258,15 @@ defaults {
 #   }
 
 blacklist {
-        protocol "(scsi:adt|scsi:sbp)"
+    protocol "(scsi:adt|scsi:sbp)"
 }
 
 # Options defined here override device specific options embedded into
 # multipathd.
 
 overrides {
-      no_path_retry            %(no_path_retry)d
+    # NOTE: see comments in default section how to compute this value.
+    no_path_retry   %(no_path_retry)d
 }
 
 """ % {"current_tag": _CURRENT_TAG,
