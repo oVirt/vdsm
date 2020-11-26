@@ -3081,7 +3081,9 @@ class Vm(object):
                     custom=params.get('custom', {}),
                     specParams=params.get('specParams'),
                     MTU=params.get('mtu', netDev.mtu),
-                    port_isolated=params.get('port_isolated')
+                    port_isolated=params.get('port_isolated'),
+                    filter=params.get('filter'),
+                    filterParameters=params.get('filterParameters')
             ):
                 with self.updatePortMirroring(netDev, netsToMirror):
                     self._hotplug_device_metadata(hwclass.NIC, netDev)
@@ -3093,7 +3095,8 @@ class Vm(object):
 
     @contextmanager
     def setLinkAndNetwork(self, dev, linkValue, networkValue, custom,
-                          specParams=None, MTU=None, port_isolated=None):
+                          specParams=None, MTU=None, port_isolated=None,
+                          filter=None, filterParameters=None):
         vnicXML = dev.getXML()
         source = vmxml.find_first(vnicXML, 'source')
         vmxml.set_attr(source, 'bridge', networkValue)
@@ -3110,6 +3113,8 @@ class Vm(object):
             vmxml.set_attr(mtu, 'size', str(MTU))
         vmdevices.network.update_port_xml(vnicXML, port_isolated)
         vmdevices.network.update_bandwidth_xml(dev, vnicXML, specParams)
+        vmdevices.network.update_filterref_xml(vnicXML, filter,
+                                               filterParameters)
         vnicStrXML = xmlutils.tostring(vnicXML, pretty=True)
         try:
             try:

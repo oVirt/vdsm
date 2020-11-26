@@ -146,6 +146,37 @@ class TestVmDevices(XMLTestCase):
         bandwith = iface.get_bandwidth_xml(NEW_OUT, orig_bandwidth)
         self.assert_dom_xml_equal(bandwith, updatedBwidthXML)
 
+    def testInterfaceFilterUpdate(self):
+        originalFilterXML = """
+                <filterref filter='vdsm-no-mac-spoofing'/>"""
+        NEW_OUT = {'filter': {'name': 'IP', 'value': '127.0.0.1'}}
+        updatedFilterXML = """
+                <filterref filter='clean-traffic'>
+                    <parameter name='%(name)s' value='%(value)s'/>
+                </filterref>""" % NEW_OUT['filter']
+
+        dev = {'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
+               'network': 'ovirtmgmt', 'address': self.PCI_ADDR_DICT,
+               'device': 'bridge', 'type': 'interface',
+               'bootOrder': '1', 'filter': 'vdsm-no-mac-spoofing',
+               'specParams': {'inbound': {'average': 1000, 'peak': 5000,
+                                          'burst': 1024},
+                              'outbound': {'average': 128, 'burst': 256}},
+               'custom': {'queues': '7'},
+               'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'},
+               }
+        iface = vmdevices.network.Interface(self.log, **dev)
+        ifaceXML = iface.getXML()
+        orig_filterref = ifaceXML.findall('filterref')[0]
+        self.assert_dom_xml_equal(orig_filterref, originalFilterXML)
+        vmdevices.network.update_filterref_xml(
+            ifaceXML,
+            "clean-traffic",
+            [{"name": "IP",
+              "value": "127.0.0.1"}])
+        filter = ifaceXML.findall('filterref')[0]
+        self.assert_dom_xml_equal(filter, updatedFilterXML)
+
     def test_interface_update(self):
         devices = '''
             <interface type="bridge">

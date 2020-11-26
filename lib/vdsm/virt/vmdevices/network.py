@@ -268,7 +268,7 @@ class Interface(core.Base):
 
         if hasattr(self, 'filter'):
             filter = iface.appendChildWithArgs('filterref', filter=self.filter)
-            self._set_parameters_filter(filter)
+            _set_parameters_filter(filter, self.filterParameters)
 
         if hasattr(self, 'linkActive'):
             iface.appendChildWithArgs('link', state='up'
@@ -452,6 +452,9 @@ class Interface(core.Base):
             params['mtu'] = self.mtu
         if self.port_isolated is not None:
             params['port_isolated'] = self.port_isolated
+        if self.filter is not None:
+            params['filter'] = self.filter
+            params['filterParameters'] = self.filterParameters
         return params
 
 
@@ -479,6 +482,30 @@ def update_bandwidth_xml(iface, vnicXML, specParams=None):
         if oldBandwidth is not None:
             vmxml.remove_child(vnicXML, oldBandwidth)
         vmxml.append_child(vnicXML, newBandwidth)
+
+
+def update_filterref_xml(vnicXML, filterType, filterParameters):
+    try:
+        filterXML = vmxml.find_first(vnicXML, 'filterref')
+    except vmxml.NotFound:
+        pass
+    else:
+        vnicXML.remove(filterXML)
+
+    if filterType:
+        filterXML = vnicXML.appendChildWithArgs('filterref', filter=filterType)
+        _set_parameters_filter(filterXML, filterParameters)
+
+
+def _set_parameters_filter(filter, filterParameters):
+    for name, value in _filter_parameter_map(filterParameters):
+        filter.appendChildWithArgs('parameter', name=name, value=value)
+
+
+def _filter_parameter_map(filterParameters):
+    for parameter in filterParameters:
+        if 'name' in parameter and 'value' in parameter:
+            yield parameter['name'], parameter['value']
 
 
 def _update_port_mirroring(params, meta):
