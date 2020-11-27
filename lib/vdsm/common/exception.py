@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -437,6 +437,20 @@ class HotunplugLeaseFailed(ContextException):
 class ReplicationNotInProgress(ContextException):
     code = 88
     message = "Replication not in progress."
+
+
+class ExternalDataFailed(ContextException):
+    code = 89
+    message = "Failed to handle external VM data"
+
+    def __init__(self, reason=None, exception=None, **kwargs):
+        if exception is not None:
+            # The original exception may contain parts of sensitive data,
+            # let's pass only some basic information from it.
+            kwargs['exception_class'] = exception.__class__
+            if exception.args:
+                kwargs['exception_arg_1'] = exception.args[0]
+        super(ExternalDataFailed, self).__init__(reason=reason, **kwargs)
 
 
 class RecoveryInProgress(VdsmException):
