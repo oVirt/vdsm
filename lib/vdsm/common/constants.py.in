@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2017 Red Hat, Inc.
+# Copyright 2009-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ LIBVIRT_SELINUX = '@ENABLE_LIBVIRT_SELINUX@' == 'yes'
 #
 # Path definitions
 #
+P_LIBVIRT_SWTPM = '/var/lib/libvirt/swtpm'
 P_LIBVIRT_VMCHANNELS = '/var/lib/libvirt/qemu/channels/'
 P_OVIRT_VMCONSOLES = '/var/run/ovirt-vmconsole-console/'
 P_VDSM = '@VDSMDIR@/'  # NOQA: E501 (potentially long line)

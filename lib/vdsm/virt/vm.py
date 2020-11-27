@@ -605,6 +605,12 @@ class Vm(object):
         return (cluster_major > major or
                 cluster_major == major and cluster_minor >= minor)
 
+    def _read_tpm_data(self, last_modified):
+        return supervdsm.getProxy().read_tpm_data(self.id, last_modified)
+
+    def _write_tpm_data(self, tpm_data):
+        supervdsm.getProxy().write_tpm_data(self.id, tpm_data)
+
     def _get_lastStatus(self):
         # Note that we don't use _statusLock here due to potential risk of
         # recursive locking.

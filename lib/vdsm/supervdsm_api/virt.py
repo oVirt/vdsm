@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,10 +23,13 @@ from __future__ import division
 import logging
 import os
 import stat
+import tempfile
 import uuid
 
 from vdsm.constants import P_LIBVIRT_VMCHANNELS, P_OVIRT_VMCONSOLES
 from vdsm.storage.fileUtils import resolveGid
+from vdsm.virt import filedata
+from vdsm.common import exception
 from vdsm.common.fileutils import parse_key_val_file
 
 from . import expose
@@ -150,3 +153,59 @@ def check_qemu_conf_contains(key, value):
         logging.error('Could not check %s for %s', QEMU_CONFIG_FILE, key)
         # re-raised exception will be logged, no need to log it here
         raise
+
+
+@expose
+def read_tpm_data(vm_id, last_modified):
+    """
+    Return TPM data of the given VM.
+
+    If data is not newer than `last_modified`, return None.
+    In addition to data, the last detected data modification time is
+    returned; the returned data may be newer, but never older than the
+    returned time.
+
+    :param vm_id: VM id
+    :type vm_id: string
+    :param last_modified: if data file system time stamp is not
+      newer than this time in seconds, None is returned
+    :type last_modified: float
+    :returns: tuple (DATA, MODIFIED) where DATA is encoded TPM data suitable to
+      use in `write_tpm_data()` or None, and MODIFIED is DATA modification time
+      (which may be older than actual modification time)
+    :rtype: tuple
+    """
+    accessor = filedata.DirectoryData(filedata.tpm_path(vm_id))
+    currently_modified = accessor.last_modified()
+    data = accessor.retrieve(last_modified=last_modified)
+    return data, currently_modified
+
+
+@expose
+def write_tpm_data(vm_id, tpm_data):
+    """
+    Write TPM data for the given VM.
+
+    :param vm_id: VM id
+    :type vm_id: string
+    :param tpm_data: encoded TPM data as previously obtained from
+      `read_tpm_data()`
+    :type tpm_data: string
+    """
+    # Permit only archives with plain files and directories to prevent various
+    # kinds of attacks.
+    with tempfile.TemporaryDirectory() as d:
+        accessor = filedata.DirectoryData(os.path.join(d, 'check'))
+        accessor.store(tpm_data)
+        for root, dirs, files in os.walk(d):
+            for f in files:
+                path = os.path.join(root, f)
+                if not os.path.isfile(path):
+                    logging.error("Special file in TPM data: %s", path)
+                    raise exception.ExternalDataFailed(
+                        reason="Cannot write TPM data with non-regular files",
+                        path=path
+                    )
+    # OK, write the data to the target location
+    accessor = filedata.DirectoryData(filedata.tpm_path(vm_id))
+    accessor.store(tpm_data)

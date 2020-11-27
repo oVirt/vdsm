@@ -25,6 +25,7 @@ import time
 import pytest
 
 from vdsm.common import exception
+from vdsm.supervdsm_api import virt
 from vdsm.virt import filedata
 
 
@@ -35,6 +36,7 @@ FILE_DATA = 'hello'
 FILE_DATA_2 = 'world'
 ENCODED_DATA = 'aGVsbG8=\n'
 DIRECTORY_MODE = stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IXOTH
+UUID = '12345678-1234-1234-1234-1234567890ab'
 
 
 def test_file_data_read():
@@ -104,19 +106,22 @@ Paths = namedtuple("Paths", ['directory', 'path', 'subdirectory', 'subpath'])
 
 
 @contextmanager
-def temporary_directory():
+def temporary_directory(monkeypatch=None):
     with tempfile.TemporaryDirectory() as d:
-        directory = os.path.join(d, 'test')
+        directory = os.path.join(d, UUID)
         path = os.path.join(directory, 'file1')
         subdirectory = os.path.join(directory, 'data')
         subpath = os.path.join(subdirectory, 'file2')
+        if monkeypatch is not None:
+            monkeypatch.setattr(filedata.constants, 'P_LIBVIRT_SWTPM',
+                                os.path.dirname(directory))
         yield Paths(directory=directory,
                     path=path, subdirectory=subdirectory, subpath=subpath)
 
 
 @contextmanager
-def directory_data():
-    with temporary_directory() as d:
+def directory_data(monkeypatch=None):
+    with temporary_directory(monkeypatch) as d:
         os.mkdir(d.directory)
         os.chmod(d.directory, DIRECTORY_MODE)
         os.mkdir(d.subdirectory)
@@ -239,3 +244,31 @@ def test_monitor_no_data():
     monitor = filedata.Monitor(retriever)
     with pytest.raises(exception.ExternalDataFailed):
         monitor.data()
+
+
+# Supervdsm API
+
+
+def test_supervdsm_read_write(monkeypatch):
+    with directory_data(monkeypatch):
+        encoded, _modified = virt.read_tpm_data(UUID, -1)
+        assert encoded
+    with temporary_directory(monkeypatch):
+        virt.write_tpm_data(UUID, encoded)
+        assert encoded == virt.read_tpm_data(UUID, -1)[0]
+
+
+def test_supervdsm_invalid_vmid(monkeypatch):
+    with directory_data(monkeypatch):
+        encoded, _modified = virt.read_tpm_data(UUID, -1)
+    with pytest.raises(exception.ExternalDataFailed):
+        virt.write_tpm_data('../foo', encoded)
+
+
+def test_supervdsm_symlink(monkeypatch):
+    with directory_data(monkeypatch) as d:
+        os.symlink('/foo', os.path.join(d.directory, 'bar'))
+        encoded = filedata.DirectoryData(d.directory).retrieve()
+    with temporary_directory(monkeypatch):
+        with pytest.raises(exception.ExternalDataFailed):
+            virt.write_tpm_data(UUID, encoded)

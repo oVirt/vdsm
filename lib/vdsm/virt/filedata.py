@@ -19,9 +19,11 @@
 import base64
 import logging
 import os
+import re
 import shutil
 import time
 
+from vdsm import constants
 from vdsm.common import commands
 from vdsm.common import exception
 
@@ -253,3 +255,25 @@ class Monitor(object):
         if self._data_stable and not force:
             return None
         return data
+
+
+_VM_ID_REGEXP = re.compile(
+    '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+)
+
+
+def tpm_path(vm_id):
+    """
+    Return path to TPM data for a VM with the given id.
+
+    :param vm_id: VM id
+    :type vm_id: string
+    :returns: path to the TPM data directory
+    :rtype: string
+    :raises: exception.ExternalDataFailed -- if the VM id has invalid format
+    """
+    # vm_id is used as a subdirectory path by supervdsm, so we must be safe
+    # here
+    if _VM_ID_REGEXP.match(vm_id) is None:
+        raise exception.ExternalDataFailed("Invalid VM id", vm_id=vm_id)
+    return os.path.join(constants.P_LIBVIRT_SWTPM, vm_id)
