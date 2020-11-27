@@ -237,37 +237,6 @@ class SafeLease(object):
                            self._sdUUID)
 
 
-initSANLockLog = logging.getLogger("storage.initSANLock")
-
-
-def initSANLock(
-        sdUUID, idsPath, lease, alignment=sc.ALIGNMENT_1M,
-        block_size=sc.BLOCK_SIZE_512, io_timeout=0):
-    initSANLockLog.info(
-        "Initializing sanlock for domain %s path=%s alignment=%s "
-        "block_size=%s io_timeout=%s",
-        sdUUID, idsPath, alignment, block_size, io_timeout)
-    lockspace_name = sdUUID.encode("utf-8")
-    resource_name = lease.name.encode("utf-8")
-    try:
-        sanlock.write_lockspace(
-            lockspace_name,
-            idsPath,
-            iotimeout=io_timeout,
-            align=alignment,
-            sector=block_size)
-        sanlock.write_resource(
-            lockspace_name,
-            resource_name,
-            [(lease.path, lease.offset)],
-            align=alignment,
-            sector=block_size)
-    except sanlock.SanlockException:
-        initSANLockLog.error("Cannot initialize SANLock for domain %s",
-                             sdUUID, exc_info=True)
-        raise se.ClusterLockInitError()
-
-
 class SANLock(object):
 
     STATUS_NAME = {
@@ -310,13 +279,31 @@ class SANLock(object):
         return self._sdUUID.encode("utf-8")
 
     def initLock(self, lease):
-        initSANLock(
-            self._sdUUID,
-            self._idsPath,
-            lease,
-            alignment=self._alignment,
-            block_size=self._block_size,
-            io_timeout=self._io_timeout)
+        self.log.info(
+            "Initializing sanlock for domain %s path=%s alignment=%s "
+            "block_size=%s io_timeout=%s",
+            self._sdUUID, self._idsPath, self._alignment, self._block_size,
+            self._io_timeout)
+
+        resource_name = lease.name.encode("utf-8")
+        try:
+            sanlock.write_lockspace(
+                self._lockspace_name,
+                self._idsPath,
+                iotimeout=self._io_timeout,
+                align=self._alignment,
+                sector=self._block_size)
+
+            sanlock.write_resource(
+                self._lockspace_name,
+                resource_name,
+                [(lease.path, lease.offset)],
+                align=self._alignment,
+                sector=self._block_size)
+        except sanlock.SanlockException:
+            self.log.exception(
+                "Cannot initialize lock for domain %s", self._sdUUID)
+            raise se.ClusterLockInitError()
 
     def setParams(self, *args):
         pass

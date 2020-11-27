@@ -49,12 +49,11 @@ VOLSIZE = 256 * MiB
 class ManifestMixin(object):
 
     def test_init_failure_raises(self, monkeypatch):
-        def fail(sdUUID, idsPath, lease, alignment=sc.ALIGNMENT_1M,
-                 block_size=sc.BLOCK_SIZE_512, io_timeout=0):
+        def fail(*a, **kw):
             raise RuntimeError("injected failure")
 
         with self.env() as env:
-            monkeypatch.setattr(clusterlock, 'initSANLock', fail)
+            monkeypatch.setattr(clusterlock.SANLock, 'initLock', fail)
             with pytest.raises(RuntimeError):
                 env.sd_manifest.initDomainLock()
 
