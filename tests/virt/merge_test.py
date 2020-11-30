@@ -20,7 +20,11 @@
 
 import logging
 
-from vdsm.virt import vm
+from vdsm.virt.vm import (
+    BlockCopyActiveError,
+    BlockJobUnrecoverableError,
+    LiveMergeCleanupThread
+)
 
 from testlib import recorded
 
@@ -55,7 +59,7 @@ class FakeVM:
         pass
 
 
-class FakeLiveMergeCleanupThread(vm.LiveMergeCleanupThread):
+class FakeLiveMergeCleanupThread(LiveMergeCleanupThread):
     """
     TODO: use VM/Storage methods instead of these so we can
     test for changes in the real code.
@@ -82,7 +86,7 @@ def test_cleanup_initial():
     t = FakeLiveMergeCleanupThread(
         vm=v, job=job, drive=FakeDrive(), doPivot=True)
 
-    assert t.state == vm.LiveMergeCleanupThread.TRYING
+    assert t.state == LiveMergeCleanupThread.TRYING
     assert v.drive_monitor.enabled
 
 
@@ -97,7 +101,7 @@ def test_cleanup_done():
     t.start()
     t.join()
 
-    assert t.state == vm.LiveMergeCleanupThread.DONE
+    assert t.state == LiveMergeCleanupThread.DONE
     assert v.drive_monitor.enabled
     assert v.__calls__ == [('_syncVolumeChain', (drive,), {})]
     assert t.__calls__ == [
@@ -109,7 +113,7 @@ def test_cleanup_done():
 
 def test_cleanup_retry(monkeypatch):
     def recoverable_error(arg):
-        raise vm.BlockCopyActiveError("fake-job-id")
+        raise BlockCopyActiveError("fake-job-id")
 
     monkeypatch.setattr(
         FakeLiveMergeCleanupThread, "tryPivot", recoverable_error)
@@ -124,14 +128,14 @@ def test_cleanup_retry(monkeypatch):
     t.start()
     t.join()
 
-    assert t.state == vm.LiveMergeCleanupThread.RETRY
+    assert t.state == LiveMergeCleanupThread.RETRY
     assert v.drive_monitor.enabled
     assert t.__calls__ == [('update_base_size', (), {})]
 
 
 def test_cleanup_abort(monkeypatch):
     def unrecoverable_error(arg):
-        raise vm.BlockJobUnrecoverableError("fake-job-id", "error")
+        raise BlockJobUnrecoverableError("fake-job-id", "error")
 
     monkeypatch.setattr(
         FakeLiveMergeCleanupThread, "tryPivot", unrecoverable_error)
@@ -146,6 +150,6 @@ def test_cleanup_abort(monkeypatch):
     t.start()
     t.join()
 
-    assert t.state == vm.LiveMergeCleanupThread.ABORT
+    assert t.state == LiveMergeCleanupThread.ABORT
     assert v.drive_monitor.enabled
     assert t.__calls__ == [('update_base_size', (), {})]
