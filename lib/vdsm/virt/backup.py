@@ -215,23 +215,15 @@ def start_backup(vm, dom, config):
 
 
 def stop_backup(vm, dom, backup_id):
-    try:
-        _get_backup_xml(vm.id, dom, backup_id)
-    except exception.NoSuchBackupError:
-        vm.log.info(
-            "No backup with id '%s' found for vm '%s'",
-            backup_id, vm.id)
-        _remove_scratch_disks(vm, backup_id)
-        return
-
-    try:
-        dom.abortJob()
-    except libvirt.libvirtError as e:
-        if e.get_error_code() != libvirt.VIR_ERR_OPERATION_INVALID:
-            raise exception.BackupError(
-                reason="Failed to end VM backup: {}".format(e),
-                vm_id=vm.id,
-                backup_id=backup_id)
+    if _backup_exists(vm, dom, backup_id):
+        try:
+            dom.abortJob()
+        except libvirt.libvirtError as e:
+            if e.get_error_code() != libvirt.VIR_ERR_OPERATION_INVALID:
+                raise exception.BackupError(
+                    reason="Failed to end VM backup: {}".format(e),
+                    vm_id=vm.id,
+                    backup_id=backup_id)
 
     _remove_scratch_disks(vm, backup_id)
 
@@ -391,6 +383,17 @@ def _get_backup_xml(vm_id, dom, backup_id):
             backup_id=backup_id)
 
     return backup_xml
+
+
+def _backup_exists(vm, dom, backup_id):
+    try:
+        _get_backup_xml(vm.id, dom, backup_id)
+        return True
+    except (exception.NoSuchBackupError, virdomain.NotConnectedError) as e:
+        vm.log.info(
+            "VM with id '%s' or backup with id '%s' not found, error: %s",
+            backup_id, vm.id, e)
+        return False
 
 
 def _add_checkpoint_xml(vm, dom, backup_id, checkpoint_id, result):
