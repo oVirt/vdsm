@@ -41,7 +41,7 @@ Vdsm logs can be found at `/var/log/vdsm/*.log` (refer to README.logging for fur
 Set local git clone:
 
     sudo dnf install -y git
-    git clone http://gerrit.ovirt.org/p/vdsm.git .
+    git clone "https://gerrit.ovirt.org/vdsm"
 
 Install additional packages for Fedora:
 
