@@ -53,6 +53,7 @@ class IRS(object):
     def __init__(self):
         self.ready = True
         self.prepared_volumes = {}
+        self.extend_requests = []
 
     def getDeviceVisibility(self, guid):
         pass
@@ -64,7 +65,14 @@ class IRS(object):
         pass
 
     def getVolumeSize(self, domainID, poolID, imageID, volumeID):
-        return response.success(apparentsize=1024, truesize=1024)
+        if (domainID, volumeID) not in self.prepared_volumes:
+            error = exception.VolumeDoesNotExist
+            return response.error_raw(error.code, error.msg)
+
+        vol_info = self.prepared_volumes[(domainID, volumeID)]
+        return response.success(
+            apparentsize=vol_info['apparentsize'],
+            truesize=vol_info['truesize'])
 
     def lease_info(storage_id, lease_id):
         return {
@@ -115,6 +123,25 @@ class IRS(object):
             return response.error_raw(error.code, error.msg)
 
         del self.prepared_volumes[(sdUUID, volUUID)]
+        return response.success()
+
+    def sendExtendMsg(self, spUUID, volDict, newSize, callbackFunc):
+        # Volume extend is done async using mailbox in real code, and the
+        # caller verifies that volume size has been extended by given callback
+        # function. For testing purpose this method only implements the API
+        # call and checks that the volume exists in the prepared volumes dict.
+        # The test should check for this method call in the extend_requests,
+        # and decide whether to extend the volume before invoking the callback
+        # function.
+        key = (volDict['domainID'], volDict['volumeID'])
+        if key not in self.prepared_volumes:
+            error = exception.VolumeDoesNotExist
+            return response.error_raw(error.code, error.msg)
+
+        self.extend_requests.append((spUUID, volDict, newSize, callbackFunc))
+        return response.success()
+
+    def refreshVolume(self, sdUUID, spUUID, imgUUID, volUUID):
         return response.success()
 
 
