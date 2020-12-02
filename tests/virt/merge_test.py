@@ -28,12 +28,13 @@ from vdsm.common import response
 from vdsm.common import xmlutils
 from vdsm.virt import metadata
 from vdsm.virt.domain_descriptor import DomainDescriptor, XmlSource
-from vdsm.virt.vm import (
+from vdsm.virt.livemerge import (
     BlockCopyActiveError,
     BlockJobUnrecoverableError,
-    LiveMergeCleanupThread,
-    Vm
+    DriveMerger,
+    LiveMergeCleanupThread
 )
+from vdsm.virt.vm import Vm
 from vdsm.virt.vmdevices import storage
 
 from testlib import recorded, read_data, read_files
@@ -211,9 +212,7 @@ class RunningVM(Vm):
         self._dom = FakeDomain(config)
         self.drive_monitor = FakeDriveMonitor()
         self._confLock = threading.Lock()
-        self._jobsLock = threading.Lock()
-        self._blockJobs = {}
-        self._liveMergeCleanupThreads = {}
+        self._drive_merger = DriveMerger(self)
 
     def _conf_devices(self, config):
         drive = dict(config.config["drive"])
