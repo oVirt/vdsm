@@ -59,6 +59,7 @@ from vdsm.common import exception
 from vdsm.common import errors
 from vdsm.common import libvirtconnection
 from vdsm.common import logutils
+from vdsm.common import password
 from vdsm.common import response
 import vdsm.common.time
 import vdsm.virt.jobs
@@ -490,6 +491,7 @@ class Vm(object):
         self._migration_downtime = None
         self._pause_code = None
         self._last_disk_mapping_hash = None
+        self._init_tpm_data(params.get('_X_tpmdata'))
 
     @property
     def _hugepages_shared(self):
@@ -604,6 +606,35 @@ class Vm(object):
         cluster_major, cluster_minor = self._cluster_version
         return (cluster_major > major or
                 cluster_major == major and cluster_minor >= minor)
+
+    def _init_tpm_data(self, tpm_data):
+        for tpm in self._domain.get_device_elements('tpm'):
+            if tpm.find("backend[@type='emulator']") is not None:
+                break
+        else:
+            # No emulated TPM device found
+            return
+        if tpm_data is None:
+            # This is normal in newly created VMs or incoming live migrations
+            if self.lastStatus != vmstatus.MIGRATION_DESTINATION:
+                self.log.info("TPM device present but no TPM data provided")
+        else:
+            tpm_data = password.unprotect(tpm_data)
+            error = None
+            try:
+                self._write_tpm_data(tpm_data)
+            except Exception as e:
+                self.log.error("Failed to initialize TPM data: %s", e)
+                if isinstance(e, exception.ExternalDataFailed):
+                    raise
+                else:
+                    # Let's not leak TPM data from the exception
+                    error = e
+            if error is not None:
+                raise exception.ExternalDataFailed(
+                    reason="Failed to write initial TPM data",
+                    exception=error
+                )
 
     def _read_tpm_data(self, last_modified):
         return supervdsm.getProxy().read_tpm_data(self.id, last_modified)

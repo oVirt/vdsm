@@ -1788,6 +1788,7 @@ class MetadataTests(TestCaseBase):
       </ovirt-vm:custom>
     </ovirt-vm:vm>
   </metadata>
+  <devices/>
 </domain>'''
 
     _TEST_XML_CLUSTER_VERSION = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -1803,6 +1804,7 @@ class MetadataTests(TestCaseBase):
       </ovirt-vm:custom>
     </ovirt-vm:vm>
   </metadata>
+  <devices/>
 </domain>'''
 
     _TEST_XML_LAUNCH_PAUSED = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -1813,6 +1815,7 @@ class MetadataTests(TestCaseBase):
       <ovirt-vm:launchPaused>true</ovirt-vm:launchPaused>
     </ovirt-vm:vm>
   </metadata>
+  <devices/>
 </domain>'''
 
     @contextmanager

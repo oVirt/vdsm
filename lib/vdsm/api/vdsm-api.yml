@@ -7661,6 +7661,12 @@ types:
             name: xml
             type: string
 
+        -   added: '4.4'
+            defaultvalue: null
+            description: TPM data of the VM
+            name: _X_tpmdata
+            type: string
+
         type: object
 
     VmStats: &VmStats
