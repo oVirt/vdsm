@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -383,6 +383,31 @@ class DriveWatermarkMonitor(_RunnableOnVm):
         self._vm.monitor_drives()
 
 
+class TpmDataMonitor(_RunnableOnVm):
+
+    @property
+    def required(self):
+        # TPM data is normally initialized in Vm constructor, with the
+        # exception of live migrations where it is transferred by
+        # libvirt, after the migration is started.
+        return self._vm.lastStatus != vmstatus.MIGRATION_DESTINATION
+
+    @property
+    def runnable(self):
+        # This is not dependent on libvirt/QEMU health.
+        return True
+
+    def _execute(self):
+        try:
+            self._vm.update_tpm()
+        except Exception as e:
+            if self._vm.lastStatus == vmstatus.UP:
+                log = self._vm.log.error
+            else:
+                log = self._vm.log.info
+            log("Periodic TPM data retrieval failed: %s", e)
+
+
 def _kill_long_paused_vms(cif):
     log = logging.getLogger("virt.periodic")
     log.debug("Looking for stale paused VMs")
@@ -416,6 +441,10 @@ def _create(cif, scheduler):
         per_vm_operation(
             DriveWatermarkMonitor,
             config.getint('vars', 'vm_watermark_interval')),
+
+        per_vm_operation(
+            TpmDataMonitor,
+            config.getint('sampling', 'tpm_data_update_interval')),
 
         Operation(
             lambda: recovery.lookup_external_vms(cif),

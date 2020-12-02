@@ -507,6 +507,9 @@ parameters = [
 
         ('external_vm_lookup_interval', '60',
             'Number of seconds between lookups for external VMs.'),
+
+        ('tpm_data_update_interval', '60',
+            'Number of seconds between checking TPM data for changes.'),
     ]),
 
     # Section: [metrics]
