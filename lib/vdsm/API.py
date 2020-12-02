@@ -306,6 +306,14 @@ class VM(APIBase):
 
     @api.logged(on="api.virt")
     @api.method
+    def getExternalData(self, kind, lastHash=None, forceUpdate=True):
+        """
+        Retrieve and return given kind of VM external data.
+        """
+        return self.vm.getExternalData(kind, lastHash, forceUpdate)
+
+    @api.logged(on="api.virt")
+    @api.method
     def getMigrationStatus(self):
         """
         Report status of a currently outgoing migration.

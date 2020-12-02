@@ -1,5 +1,5 @@
 # Copyright (C) 2012 - 2017 Adam Litke, IBM Corporation
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
@@ -397,6 +397,7 @@ command_info = {
     'VM_cont': {'ret': VM_running_state_change_Ret},
     'VM_diskSizeExtend': {'ret': 'size'},
     'VM_getDiskAlignment': {'ret': 'alignment'},
+    'VM_getExternalData': {'ret': 'data'},
     'VM_getInfo': {'call': VM_getInfo_Call, 'ret': VM_getInfo_Ret},
     'VM_getIoTune': {'ret': 'ioTuneList'},
     'VM_getIoTunePolicy': {'ret': 'ioTunePolicyList'},

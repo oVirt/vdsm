@@ -75,7 +75,8 @@ from vdsm.common import supervdsm
 from vdsm.common import xmlutils
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.common.hostutils import host_in_shutdown
-from vdsm.common.logutils import SimpleLogAdapter, volume_chain_to_str
+from vdsm.common.logutils import SimpleLogAdapter, Suppressed, \
+    volume_chain_to_str
 from vdsm.network import api as net_api
 
 # TODO: remove these imports, code using this should use storage apis.
@@ -1972,6 +1973,30 @@ class Vm(object):
             return _getVmStatusFromGuest()
         else:
             return self.lastStatus
+
+    def getExternalData(self, kind, last_hash, force_update):
+        """
+        Return requested data, stored in the local file system.
+        """
+        if kind != "tpm":
+            raise exception.ExternalDataFailed(
+                reason="Unsupported data kind", kind=kind
+            )
+        if self._tpm_monitor is None:
+            raise exception.ExternalDataFailed(
+                reason="No TPM device available"
+            )
+        if force_update:
+            data, hash_ = self.update_tpm(force=True)
+        else:
+            tpm_data = self._tpm_data
+            data = tpm_data.stable_data
+            hash_ = tpm_data.engine_hash
+        result = {'hash': hash_}
+        if data and last_hash != hash_:
+            result['_X_data'] = data
+            result = Suppressed(result)
+        return response.success(data=result)
 
     def update_tpm(self, force=False):
         """

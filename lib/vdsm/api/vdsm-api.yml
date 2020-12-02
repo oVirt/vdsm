@@ -8723,6 +8723,23 @@ types:
 
         type: object
 
+    VmDataMap: &VmDataMap
+        name: VmDataMap
+        description: VM data and related information
+        added: '4.4'
+        properties:
+        -   name: _X_data
+            description: The encoded data, suitable for use in VM.create. If
+              only changed data was requested and the data is unchanged, or if
+              there is no data, then this item is omitted.
+            type: string
+            defaultvalue: null
+        -   name: hash
+            description: Hash of the data, whether the data itself is present
+              here or not (it may be empty in the latter case).
+            type: string
+        type: object
+
 Host.setupNetworks:
     added: '3.1'
     description: Reconfigure host networking by adding, removing, and editing
@@ -10850,6 +10867,33 @@ VM.destroy:
         name: gracefulAttempts
         type: uint
         added: '4.0'
+
+VM.getExternalData:
+    description: Retrieve VM data stored outside the VM, typically in
+      a local file system.
+    added: '4.4'
+    params:
+    -   name: vmID
+        description: The UUID of the VM
+        type: *UUID
+    -   name: kind
+        description: Which data is requested. The only currently supported data
+          kind is "tpm".
+        type: string
+    -   name: lastHash
+        description: The hash, if provided, is compared to the hash of the
+          current data. If both hashes are the same, data is not returned.
+        type: string
+        defaultvalue: null
+    -   name: forceUpdate
+        description: Whether to force data update before returning the
+          data (true) or whether it's possible to use data recently
+          retrieved by Vdsm without checking for an update.
+        type: boolean
+        defaultvalue: true
+    return:
+        description: Return requested VM data and related information.
+        type: *VmDataMap
 
 VM.getInfo:
     added: '3.1'
