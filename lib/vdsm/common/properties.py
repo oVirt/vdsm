@@ -243,9 +243,9 @@ class OwnerType(type):
 
     def __new__(cls, name, bases, dct):
         # Name properties used by this class
-        for name, obj in dct.items():
-            if isinstance(obj, Property):
-                obj.name = name
+        for k, v in dct.items():
+            if isinstance(v, Property):
+                v.name = k
         return type.__new__(cls, name, bases, dct)
 
     def __call__(self, *args, **kw):
