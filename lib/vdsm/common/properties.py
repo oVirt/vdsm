@@ -88,8 +88,6 @@ from __future__ import division
 import base64
 import uuid
 
-import six
-
 from vdsm.common.password import ProtectedPassword
 
 
@@ -142,7 +140,7 @@ class Enum(Property):
         if not required and default is not None and default not in values:
             raise ValueError("Default value %s not in allowed values %s" %
                              (default, values))
-        super(Enum, self).__init__(required=required, default=default, doc=doc)
+        super().__init__(required=required, default=default, doc=doc)
         self.values = values
 
     def validate(self, value):
@@ -155,7 +153,7 @@ class Enum(Property):
 class String(Property):
 
     def validate(self, value):
-        if not isinstance(value, six.string_types):
+        if not isinstance(value, str):
             raise ValueError("Invalid value %r for string property %s" %
                              (value, self.name))
         return value
@@ -169,8 +167,7 @@ class _Number(Property):
             raise ValueError("Invalid default %s < %s" % (default, minval))
         if maxval is not None and default is not None and default > maxval:
             raise ValueError("Invalid default %s > %s" % (default, maxval))
-        super(_Number, self).__init__(required=required, default=default,
-                                      doc=doc)
+        super().__init__(required=required, default=default, doc=doc)
         self.minval = minval
         self.maxval = maxval
 
@@ -190,7 +187,7 @@ class Integer(_Number):
         if not isinstance(value, int):
             raise ValueError("Invalid value %r for integer property %s" %
                              (value, self.name))
-        return super(Integer, self).validate(value)
+        return super().validate(value)
 
 
 class Float(_Number):
@@ -199,7 +196,7 @@ class Float(_Number):
         if not isinstance(value, float):
             raise ValueError("Invalid value %r for float property %s" %
                              (value, self.name))
-        return super(Float, self).validate(value)
+        return super().validate(value)
 
 
 class Boolean(Property):
@@ -220,8 +217,7 @@ class UUID(Property):
 class Password(Property):
 
     def __init__(self, required=False, default=None, doc=None, decode=None):
-        super(Password, self).__init__(required=required, default=default,
-                                       doc=doc)
+        super().__init__(required=required, default=default, doc=doc)
         self.decode = decode
 
     def validate(self, password):
@@ -250,15 +246,14 @@ class OwnerType(type):
 
     def __call__(self, *args, **kw):
         # Check properties after  object is initialized
-        instance = super(OwnerType, self).__call__(*args, **kw)
+        instance = super().__call__(*args, **kw)
         for name, obj in instance.__class__.__dict__.items():
             if isinstance(obj, Property):
                 obj.check(instance)
         return instance
 
 
-@six.add_metaclass(OwnerType)
-class Owner(object):
+class Owner(metaclass=OwnerType):
     """
     Base class for classes using properties
 
