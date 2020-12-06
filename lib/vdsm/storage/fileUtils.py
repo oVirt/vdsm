@@ -34,6 +34,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 
 import selinux
 import six
@@ -251,6 +252,16 @@ def chown(path, user=-1, group=-1):
     log.info("Changing owner for %s, to (%s:%s)", path, uid, gid)
     os.chown(path, uid, gid)
     return True
+
+
+def backup_file(filename):
+    """
+    Backup filename with a timestamp and returns the backup filename.
+    """
+    if os.path.exists(filename):
+        backup = filename + '.' + time.strftime("%Y%m%d%H%M%S")
+        shutil.copyfile(filename, backup)
+        return backup
 
 
 def atomic_write(filename, data, mode=0o644, relabel=False):

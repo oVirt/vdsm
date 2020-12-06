@@ -179,6 +179,30 @@ def test_chown_names():
         assert stat.st_uid == stat.st_gid == 0
 
 
+# backup file tests
+
+
+def test_backup_file_missing(tmpdir):
+    path = str(tmpdir.join("orig"))
+
+    backup = fileUtils.backup_file(path)
+
+    assert backup is None
+    assert tmpdir.listdir() == []
+
+
+def test_backup_file_create(tmpdir):
+    path = str(tmpdir.join("orig"))
+    with open(path, "w") as f:
+        f.write("old")
+
+    backup = fileUtils.backup_file(path)
+
+    assert backup.startswith(path + ".")
+    with open(backup) as f:
+        assert f.read() == "old"
+
+
 # atomic write tests
 
 
