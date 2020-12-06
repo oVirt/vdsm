@@ -440,7 +440,7 @@ class SANLock(object):
     # The hostId parameter is maintained here only for compatibility with
     # ClusterLock. We could consider to remove it in the future but keeping it
     # for logging purpose is desirable.
-    def acquire(self, hostId, lease):
+    def acquire(self, hostId, lease, lvb=False):
         self.log.info("Acquiring %s for host id %s", lease, hostId)
 
         # If host id was acquired by this thread, this will return immediately.
@@ -469,7 +469,8 @@ class SANLock(object):
                 try:
                     sanlock.acquire(self._lockspace_name, resource_name,
                                     [(lease.path, lease.offset)],
-                                    slkfd=SANLock._sanlock_fd)
+                                    slkfd=SANLock._sanlock_fd,
+                                    lvb=lvb)
                 except sanlock.SanlockException as e:
                     if e.errno != errno.EPIPE:
                         raise se.AcquireLockFailure(
