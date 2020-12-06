@@ -218,6 +218,7 @@ def test_write_read_resource():
         "acquired": False,
         "align": sc.ALIGNMENT_1M,
         "sector": sc.BLOCK_SIZE_512,
+        "lvb": False,
     }
     assert info == expected
 
@@ -546,6 +547,7 @@ def test_write_resource():
         "acquired": False,
         "align": sc.ALIGNMENT_1M,
         "sector": sc.BLOCK_SIZE_512,
+        "lvb": False,
     }
     assert info == expected
 
@@ -720,3 +722,41 @@ def test_read_resource_owners_validate_bytes():
     with pytest.raises(TypeError):
         fs.read_resource_owners(
             LOCKSPACE_NAME, u"resource_name", [("path", 0)], sector=0)
+
+
+def test_set_lvb_after_acquire():
+    fs = FakeSanlock()
+    fs.write_lockspace(LOCKSPACE_NAME, "path")
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
+    fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
+    fd = fs.register()
+    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd,
+               lvb=True)
+    data = b"{generation:0}"
+    fs.set_lvb(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], data)
+    res = fs.read_resource("path", MiB)
+
+    assert res["lvb"]
+
+    lvb_data = fs.get_lvb(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
+    assert lvb_data.rstrip(b"\0") == data
+
+
+def test_set_lvb_without_acquire():
+    fs = FakeSanlock()
+    fs.write_lockspace(LOCKSPACE_NAME, "path")
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
+    fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
+
+    data = b"{generation:0}"
+    with pytest.raises(fs.SanlockException) as e:
+        fs.set_lvb(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], data)
+    assert e.value.errno == errno.ENOENT
+
+
+def test_set_lvb_without_lockspace():
+    fs = FakeSanlock()
+    data = b"{generation:0}"
+    with pytest.raises(fs.SanlockException) as e:
+        fs.set_lvb(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], data)
+    assert e.value.errno == errno.ENOSPC
