@@ -1,4 +1,4 @@
-# Copyright 2014-2019 Red Hat, Inc.
+# Copyright 2014-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,82 +17,101 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
-import errno
 import grp
 import os
-import pwd
+import re
+import sys
 
-from . import YES, NO, MAYBE, InvalidConfig
+from vdsm import constants
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm import constants
 
-SANLOCK_GROUPS = (constants.QEMU_PROCESS_GROUP, constants.VDSM_GROUP)
+from . import YES, NO
 
+PID_FILE = "/run/sanlock/sanlock.pid"
+REQUIRED_GROUPS = {constants.QEMU_PROCESS_GROUP, constants.VDSM_GROUP}
+
+# Configuring requires stopping sanlock.
 services = ('sanlock',)
+
+
+def isconfigured():
+    """
+    Return YES if sanlock is configured, NO if sanlock need to be configured or
+    restarted to pick up the configuration.
+    """
+    if not _groups_configured():
+        _log("sanlock requires configuration")
+        return NO
+
+    if _restart_needed():
+        _log("sanlock requires a restart")
+        return NO
+
+    _log("sanlock is configured for vdsm")
+    return YES
 
 
 def configure():
     """
-    Configure sanlock process groups
+    Configure sanlock for vdsm. This will be applied when sanlock is started
+    after configuration.
     """
+    _log("configuring sanlock groups")
+    _configure_groups()
+
+
+def _configure_groups():
     try:
         commands.run([
             '/usr/sbin/usermod',
             '-a',
             '-G',
-            ','.join(SANLOCK_GROUPS),
+            ','.join(REQUIRED_GROUPS),
             constants.SANLOCK_USER
         ])
     except cmdutils.Error as e:
         raise RuntimeError("Failed to perform sanlock config: {}".format(e))
 
 
-def isconfigured():
+def _groups_configured():
     """
-    True if sanlock service is configured, False if sanlock service
-    requires a restart to reload the relevant supplementary groups.
+    Return True if sanlock user is a member of all required groups.
     """
-    configured = NO
-    groups = [g.gr_name for g in grp.getgrall()
-              if constants.SANLOCK_USER in g.gr_mem]
-    gid = pwd.getpwnam(constants.SANLOCK_USER).pw_gid
-    groups.append(grp.getgrgid(gid).gr_name)
-    if all(group in groups for group in SANLOCK_GROUPS):
-        configured = MAYBE
+    actual_groups = {g.gr_name for g in grp.getgrall()
+                     if constants.SANLOCK_USER in g.gr_mem}
 
-    if configured == MAYBE:
-        try:
-            with open("/var/run/sanlock/sanlock.pid", "r") as f:
-                sanlock_pid = f.readline().strip()
-            with open(os.path.join('/proc', sanlock_pid, 'status'),
-                      "r") as sanlock_status:
-                proc_status_group_prefix = "Groups:\t"
-                for status_line in sanlock_status:
-                    if status_line.startswith(proc_status_group_prefix):
-                        groups = [int(x) for x in status_line[
-                            len(proc_status_group_prefix):]
-                            .strip().split()]
-                        break
-                else:
-                    raise InvalidConfig(
-                        "Unable to find sanlock service groups"
-                    )
+    return REQUIRED_GROUPS.issubset(actual_groups)
 
-            is_sanlock_groups_set = True
-            for g in SANLOCK_GROUPS:
-                if grp.getgrnam(g)[2] not in groups:
-                    is_sanlock_groups_set = False
-            if is_sanlock_groups_set:
-                configured = YES
 
-        except IOError as e:
-            if e.errno == errno.ENOENT:
-                configured = YES
-            else:
-                raise
+def _restart_needed():
+    """
+    Return True if sanlock daemon is running without the required supplementary
+    groups. Sanlock will apply the groups after restart.
+    """
+    try:
+        with open(PID_FILE) as f:
+            sanlock_pid = f.readline().strip()
+    except FileNotFoundError:
+        return False
 
-    return configured
+    proc_status = os.path.join('/proc', sanlock_pid, 'status')
+    try:
+        with open(proc_status) as f:
+            status = f.read()
+    except FileNotFoundError:
+        return False
+
+    match = re.search(r"^Groups:\t?(.*)$", status, re.MULTILINE)
+    if not match:
+        return True
+
+    actual_gids = {int(s) for s in match.group(1).split()}
+    required_gids = {grp.getgrnam(name).gr_gid for name in REQUIRED_GROUPS}
+
+    return not required_gids.issubset(actual_gids)
+
+
+# TODO: use standard logging
+def _log(fmt, *args):
+    sys.stdout.write(fmt % args + "\n")
