@@ -284,7 +284,7 @@ class FakeSanlock(object):
         return 42
 
     def acquire(self, lockspace, resource, disks, slkfd=None, pid=None,
-                shared=False, version=None):
+                shared=False, version=None, lvb=False):
         """
         Acquire a resource lease for the current process (using the
         slkfd argument to specify the sanlock file descriptor) or for an
@@ -318,6 +318,7 @@ class FakeSanlock(object):
         host_id = ls["host_id"]
         res["host_id"] = host_id
         res["generation"] = self.hosts[host_id]["generation"]
+        res["lvb"] = lvb
         # The actual sanlock uses a timestamp field as well, but for current
         # testing purposes it is not needed since it is not used by the tested
         # code
@@ -347,6 +348,7 @@ class FakeSanlock(object):
         res["acquired"] = False
         res["host_id"] = 0
         res["generation"] = 0
+        del res["lvb"]
 
     def read_resource_owners(
             self, lockspace, resource, disks, align=ALIGN_SIZE[0],
@@ -455,6 +457,46 @@ class FakeSanlock(object):
 
         dump.sort(key=itemgetter('offset'))
         return iter(dump)
+
+    def set_lvb(self, lockspace, resource, disks, data):
+        self._validate_bytes(lockspace)
+        self._validate_bytes(resource)
+        # Do we have a lockspace?
+        try:
+            self.spaces[lockspace]
+        except KeyError:
+            raise self.SanlockException(
+                errno.ENOSPC, "No such lockspace %r" % lockspace)
+
+        path, offset = disks[0]
+        res = self.resources[(path, offset)]
+        if "lvb" in res:
+            res["lvb_data"] = data
+        else:
+            # Sanlock returns "error 2 if we try to write LVB without
+            # acquiring first with the lvb flag
+            raise self.SanlockException(errno.ENOENT,
+                                        "LVB flag was not set for resource")
+
+    def get_lvb(self, lockspace, resource, disks):
+        self._validate_bytes(lockspace)
+        self._validate_bytes(resource)
+        # Do we have a lockspace?
+        try:
+            self.spaces[lockspace]
+        except KeyError:
+            raise self.SanlockException(
+                errno.ENOSPC, "No such lockspace %r" % lockspace)
+
+        path, offset = disks[0]
+        res = self.resources[(path, offset)]
+        if res["lvb"]:
+            return res["lvb_data"]
+        else:
+            # Sanlock returns "error 2 if we try to write LVB without
+            # acquiring first with the lvb flag
+            raise self.SanlockException(errno.ENONET,
+                                        "LVB flag was not set for resource")
 
     def _in_range(self, offset, start=0, size=None):
         if offset < start:
