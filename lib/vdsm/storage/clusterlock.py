@@ -566,6 +566,29 @@ class SANLock(object):
 
         self.log.info("Successfully released %s", lease)
 
+    def set_lvb(self, lease, data):
+        self.log.info("Setting LVB data to lease %s", lease)
+        with self._lock:
+            resource_name = lease.name.encode("utf-8")
+            try:
+                sanlock.set_lvb(self._lockspace_name, resource_name,
+                                [(lease.path, lease.offset)],
+                                data=data)
+            except sanlock.SanlockException as e:
+                raise se.ReleaseLockFailure(self._sdUUID, e)
+
+    def get_lvb(self, lease):
+        self.log.info("Getting LVB data from lease %s", lease)
+        with self._lock:
+            resource_name = lease.name.encode("utf-8")
+            try:
+                data = sanlock.get_lvb(self._lockspace_name, resource_name,
+                                       [(lease.path, lease.offset)])
+            except sanlock.SanlockException as e:
+                raise se.ReleaseLockFailure(self._sdUUID, e)
+
+        return data
+
 
 class LocalLock(object):
     log = logging.getLogger("storage.LocalLock")
