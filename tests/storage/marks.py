@@ -25,6 +25,7 @@ from __future__ import division
 import os
 import sys
 
+import selinux
 import six
 import pytest
 
@@ -51,6 +52,9 @@ requires_unprivileged_user = pytest.mark.skipif(
 requires_sanlock = pytest.mark.skipif(
     isinstance(sanlock, compat.MissingModule),
     reason="sanlock is not available")
+
+requires_selinux = pytest.mark.skipif(
+    not selinux.is_selinux_enabled(), reason="Selinux is not enabled")
 
 xfail_python3 = pytest.mark.xfail(
     six.PY3, reason="needs porting to python 3")

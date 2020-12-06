@@ -26,6 +26,7 @@ import os
 import stat
 import sys
 
+import selinux
 import pytest
 
 from vdsm.common.osutils import get_umask
@@ -33,7 +34,12 @@ from vdsm.storage import fileUtils
 
 from testlib import namedTemporaryDir
 from testlib import temporaryPath
-from . marks import requires_unprivileged_user, requires_root
+
+from . marks import (
+    requires_root,
+    requires_selinux,
+    requires_unprivileged_user,
+)
 
 # createdir tests
 
@@ -171,6 +177,72 @@ def test_chown_names():
         fileUtils.chown(srcPath, "root", "root")
         stat = os.stat(srcPath)
         assert stat.st_uid == stat.st_gid == 0
+
+
+# atomic write tests
+
+
+def test_atomic_write_create(tmpdir):
+    path = str(tmpdir.join("file"))
+    fileUtils.atomic_write(path, b"new")
+
+    with open(path, "rb") as f:
+        assert f.read() == b"new"
+    assert stat.S_IMODE(os.stat(path).st_mode) == 0o644
+
+
+@pytest.mark.parametrize("mode", [0o700, 0o777])
+def test_atomic_write_replace(tmpdir, mode):
+    path = str(tmpdir.join("file"))
+
+    # Create old file with differnt mode.
+    fileUtils.atomic_write(path, b"old")
+    os.chmod(path, mode)
+
+    fileUtils.atomic_write(path, b"new")
+
+    with open(path, "rb") as f:
+        assert f.read() == b"new"
+    assert stat.S_IMODE(os.stat(path).st_mode) == 0o644
+
+
+@pytest.mark.parametrize("mode", [0o600, 0o640])
+def test_atomic_write_mode(tmpdir, mode):
+    path = str(tmpdir.join("file"))
+
+    # Create old file with default mode.
+    fileUtils.atomic_write(path, b"old")
+
+    fileUtils.atomic_write(path, b"new", mode=mode)
+
+    with open(path, "rb") as f:
+        assert f.read() == b"new"
+    assert stat.S_IMODE(os.stat(path).st_mode) == mode
+
+
+@requires_selinux
+def test_atomic_write_relabel(tmpdir):
+    path = str(tmpdir.join("file"))
+
+    # Create old file with non-default label.
+    fileUtils.atomic_write(path, b"old")
+    selinux.setfilecon(path, "unconfined_u:object_r:etc_t:s0")
+
+    fileUtils.atomic_write(path, b"new", relabel=True)
+
+    with open(path, "rb") as f:
+        assert f.read() == b"new"
+    assert stat.S_IMODE(os.stat(path).st_mode) == 0o644
+
+    # The label depends on the enviroment and selinux policy:
+    # - Locally we get: "unconfined_u:object_r:user_tmp_t:s0"
+    # - In mock we get: "unconfined_u:object_r:mock_var_lib_t:s0"
+    # So lets check what selinux.restorecon(path, force=True) is creating.
+    control = str(tmpdir.ensure("control"))
+    selinux.restorecon(control, force=True)
+
+    assert selinux.getfilecon(path)[1] == selinux.getfilecon(control)[1]
+
 
 # atomic symlink tests
 

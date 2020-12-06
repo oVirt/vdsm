@@ -33,7 +33,9 @@ import shutil
 import stat
 import subprocess
 import sys
+import tempfile
 
+import selinux
 import six
 
 from vdsm import constants
@@ -249,6 +251,37 @@ def chown(path, user=-1, group=-1):
     log.info("Changing owner for %s, to (%s:%s)", path, uid, gid)
     os.chown(path, uid, gid)
     return True
+
+
+def atomic_write(filename, data, mode=0o644, relabel=False):
+    """
+    Write data to filename atomically using a temporary file.
+
+    Arguments:
+        filename (str): Path to file.
+        data (bytes): Data to write to filename.
+        mode (int): Set mode bits on filename.
+        relabel (bool): If True, set selinux label.
+    """
+    with tempfile.NamedTemporaryFile(
+            mode="wb",
+            dir=os.path.dirname(filename),
+            prefix=os.path.basename(filename) + ".tmp",
+            delete=False) as tmp:
+        try:
+            tmp.write(data)
+            tmp.flush()
+
+            if relabel:
+                # Force required to preserve "system_u". Without it the
+                # temporary file will be labeled as "unconfined_u".
+                selinux.restorecon(tmp.name, force=True)
+
+            os.chmod(tmp.name, mode)
+            os.rename(tmp.name, filename)
+        except:
+            os.unlink(tmp.name)
+            raise
 
 
 def atomic_symlink(target, name):
