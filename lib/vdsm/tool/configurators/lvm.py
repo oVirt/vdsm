@@ -22,15 +22,15 @@ from __future__ import division
 
 import errno
 import os
-import selinux
 import shutil
 import sys
 import time
 
-from vdsm.tool import confmeta
 from vdsm.common import commands
 from vdsm.common import systemctl
 from vdsm.common.cmdutils import CommandPath
+from vdsm.storage import fileUtils
+from vdsm.tool import confmeta
 
 from . import YES, NO
 
@@ -53,11 +53,15 @@ def configure():
     Disable and mask lvmetad daemon, and install vdsm managed lvmlocal.conf.
     """
     if not _lvm_conf_configured():
+        _backup_file(_LVMLOCAL_CUR)
+
         # TODO: we should merge the contents of the exisiting file and vdsm
         # settings, in case the user has some useful setting in the
         # lvmlocal.conf.
-        _backup_file(_LVMLOCAL_CUR)
-        _install_file(_LVMLOCAL_VDSM, _LVMLOCAL_CUR)
+        _log("Installing %s at %s", _LVMLOCAL_VDSM, _LVMLOCAL_CUR)
+        with open(_LVMLOCAL_VDSM, "rb") as f:
+            fileUtils.atomic_write(_LVMLOCAL_CUR, f.read(), relabel=True)
+
     # TODO: remove disabling lvmetad once we don't support Fedora 30. On
     # Fedora 31 and RHEL8 lvmetad is not supported anymore.
     if not _lvmetad_configured():
@@ -143,22 +147,6 @@ def _lvmetad_configured():
         return False
 
     return True
-
-
-def _install_file(src, dst):
-    _log("Installing %s at %s", src, dst)
-    tmpfile = _LVMLOCAL_CUR + ".tmp"
-    shutil.copyfile(_LVMLOCAL_VDSM, tmpfile)
-    try:
-        selinux.restorecon(tmpfile)
-        os.chmod(tmpfile, 0o644)
-        os.rename(tmpfile, _LVMLOCAL_CUR)
-    except:
-        try:
-            os.unlink(tmpfile)
-        except Exception:
-            _log("ERROR: cannot remove temporary file: %s", tmpfile)
-        raise
 
 
 def _backup_file(path):

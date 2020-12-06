@@ -23,12 +23,12 @@ This module provides multipath configuration functionality over the host.
 Currently it only provides blacklist configuration for setting WWIDs of
 disk devices which should be excluded from multipath management.
 """
+import io
 import logging
 import os
 import re
-import selinux
-import tempfile
 
+from . import fileUtils
 
 _VDSM_MULTIPATH_BLACKLIST = '/etc/multipath/conf.d/vdsm_blacklist.conf'
 
@@ -62,22 +62,12 @@ def configure_blacklist(wwids):
         # directory already exists
         pass
 
-    conf = format_blacklist(wwids)
-    with tempfile.NamedTemporaryFile(
-            mode="wb",
-            prefix=os.path.basename(_VDSM_MULTIPATH_BLACKLIST) + ".tmp",
-            dir=os.path.dirname(_VDSM_MULTIPATH_BLACKLIST),
-            delete=False) as f:
-        try:
-            f.write(_HEADER.encode('utf-8'))
-            f.write(conf.encode('utf-8'))
-            f.flush()
-            selinux.restorecon(f.name)
-            os.chmod(f.name, 0o644)
-            os.rename(f.name, _VDSM_MULTIPATH_BLACKLIST)
-        except:
-            os.unlink(f.name)
-            raise
+    buf = io.StringIO()
+    buf.write(_HEADER)
+    buf.write(format_blacklist(wwids))
+    data = buf.getvalue().encode("utf-8")
+
+    fileUtils.atomic_write(_VDSM_MULTIPATH_BLACKLIST, data, relabel=True)
 
 
 def format_blacklist(wwids):

@@ -20,17 +20,16 @@
 from __future__ import absolute_import
 from __future__ import division
 import os
-import selinux
 import shutil
 import sys
-import tempfile
 import time
 
-from . import YES, NO
-from vdsm.tool import service
 from vdsm.common import cmdutils
 from vdsm.common import commands
+from vdsm.storage import fileUtils
+from vdsm.tool import service
 
+from . import YES, NO
 
 _MULTIPATHD = cmdutils.CommandPath("multipathd", "/usr/sbin/multipathd")
 
@@ -289,20 +288,8 @@ def configure():
         shutil.copyfile(_CONF_FILE, backup)
         sys.stdout.write("Backup previous multipath.conf to %r\n" % backup)
 
-    with tempfile.NamedTemporaryFile(
-            mode="wb",
-            prefix=os.path.basename(_CONF_FILE) + ".tmp",
-            dir=os.path.dirname(_CONF_FILE),
-            delete=False) as f:
-        try:
-            f.write(_CONF_DATA.encode('utf-8'))
-            f.flush()
-            selinux.restorecon(f.name)
-            os.chmod(f.name, 0o644)
-            os.rename(f.name, _CONF_FILE)
-        except:
-            os.unlink(f.name)
-            raise
+    data = _CONF_DATA.encode('utf-8')
+    fileUtils.atomic_write(_CONF_FILE, data, relabel=True)
 
     # We want to handle these cases:
     #
