@@ -85,6 +85,7 @@ dist_vdsmstorage_PYTHON = \
 	resourceFactories.py \
 	resourceManager.py \
 	rwlock.py \
+	sanlockconf.py \
 	sanlock_direct.py \
 	sd.py \
 	sdc.py \
