@@ -211,6 +211,7 @@ def fake_sanlock(monkeypatch):
     """
     fs = FakeSanlock()
     monkeypatch.setattr(clusterlock, "sanlock", fs)
+    monkeypatch.setattr(clusterlock, "supports_lvb", True)
     monkeypatch.setattr(blockSD, "sanlock", fs)
     monkeypatch.setattr(fileVolume, "sanlock", fs)
     monkeypatch.setattr(xlease, "sanlock", fs)

@@ -71,6 +71,8 @@ HOST_STATUS_FAIL = "fail"
 # Host has not renewed its lease for 140 seconds.
 HOST_STATUS_DEAD = "dead"
 
+supports_lvb = hasattr(sanlock, "get_lvb")
+
 
 class Error(errors.Base):
     """ Base class for clusterlock errors. """
@@ -440,8 +442,13 @@ class SANLock(object):
     # The hostId parameter is maintained here only for compatibility with
     # ClusterLock. We could consider to remove it in the future but keeping it
     # for logging purpose is desirable.
-    def acquire(self, hostId, lease):
-        self.log.info("Acquiring %s for host id %s", lease, hostId)
+    def acquire(self, hostId, lease, lvb=False):
+        if lvb and not supports_lvb:
+            raise se.UnsupportedOperation(
+                "This sanlock version does not support LVB")
+
+        self.log.info("Acquiring %s for host id %s, lvb=%s",
+                      lease, hostId, lvb)
 
         # If host id was acquired by this thread, this will return immediately.
         # If host is id being acquired asynchronically by the domain monitor,
@@ -467,9 +474,14 @@ class SANLock(object):
 
                 resource_name = lease.name.encode("utf-8")
                 try:
+                    # TODO: remove once sanlock 3.8.2-4 is available on centos
+                    # and rhel.
+                    extra_args = {"lvb": lvb} if supports_lvb else {}
+
                     sanlock.acquire(self._lockspace_name, resource_name,
                                     [(lease.path, lease.offset)],
-                                    slkfd=SANLock._sanlock_fd)
+                                    slkfd=SANLock._sanlock_fd,
+                                    **extra_args)
                 except sanlock.SanlockException as e:
                     if e.errno != errno.EPIPE:
                         raise se.AcquireLockFailure(
