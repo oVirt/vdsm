@@ -22,6 +22,8 @@ from vdsm.common import errors
 from vdsm.storage import bitmaps
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
+from vdsm.storage import qemuimg
+
 from vdsm.storage.sdm.volume_info import VolumeInfo
 
 from . import base
@@ -45,15 +47,22 @@ class Job(base.Job):
         self.bitmap = bitmap
 
     def _validate(self):
-        # TODO: add validation for top volume only,
-        # bitmap already exists in the chain.
-        # Should be added when 'qemu-img info --backing-chain'
-        # will be implemented.
         if self._vol_info.volume.getFormat() != sc.COW_FORMAT:
             raise Error(
                 self._vol_info.vol_id,
                 self.bitmap,
                 "volume is not in COW format")
+
+        # validate that the bitmap doesn't exists on any volume on the chain
+        for info in qemuimg.info(self._vol_info.path, backing_chain=True):
+            if "format-specific" in info:
+                bitmaps = info["format-specific"]["data"].get("bitmaps", [])
+                bitmaps_names = {bitmap["name"] for bitmap in bitmaps}
+                if self.bitmap in bitmaps_names:
+                    raise Error(
+                        self._vol_info.vol_id,
+                        self.bitmap,
+                        "Volume already contains the requested bitmap")
 
     def _run(self):
         with guarded.context(self._vol_info.locks):
