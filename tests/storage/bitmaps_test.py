@@ -37,7 +37,7 @@ from . marks import (
 
 
 def qemuimg_failure(*args, **kwargs):
-    raise cmdutils.Error("code", "out", "err", "qemuimg failure")
+    raise cmdutils.Error("code", "out", "err", b"qemuimg failure")
 
 
 Volumes = namedtuple("Volumes", "base_vol, top_vol")
@@ -241,3 +241,21 @@ def test_skip_holes_during_merge_bitmaps(tmp_mount, vol_chain):
 
     info = qemuimg.info(vol_chain.base_vol)
     assert 'bitmaps' not in info['format-specific']['data']
+
+
+@requires_bitmaps_support
+def test_remove_bitmap_failed(monkeypatch, tmp_mount, vol_chain):
+    bitmap = 'bitmap'
+    # Add new bitmap to base parent volume
+    op = qemuimg.bitmap_add(vol_chain.top_vol, bitmap)
+    op.run()
+
+    monkeypatch.setattr(qemuimg, "bitmap_remove", qemuimg_failure)
+    with pytest.raises(exception.RemoveBitmapError):
+        bitmaps.remove_bitmap(vol_chain.top_vol, bitmap)
+
+
+@requires_bitmaps_support
+def test_remove_non_existing_bitmap_succeed(tmp_mount, vol_chain):
+    # try to remove a non-existing bitmap from top_vol
+    bitmaps.remove_bitmap(vol_chain.top_vol, 'bitmap')

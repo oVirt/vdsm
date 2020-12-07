@@ -125,8 +125,13 @@ def remove_bitmap(vol_path, bitmap):
         vol_path (str): Path to the volume
         bitmap (str): Name of the bitmap
     """
-    log.info("Remove bitmap %s from %r", bitmap, vol_path)
+    if bitmap not in _query_bitmaps(vol_path):
+        log.warning(
+            "Bitmap %s doesn't exist on %s, considering bitmap "
+            "removal as successful", bitmap, vol_path)
+        return
 
+    log.info("Remove bitmap %s from %r", bitmap, vol_path)
     try:
         op = qemuimg.bitmap_remove(vol_path, bitmap)
         op.run()
