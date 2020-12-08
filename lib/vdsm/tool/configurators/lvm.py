@@ -21,10 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import errno
-import os
-import shutil
 import sys
-import time
 
 from vdsm.common import commands
 from vdsm.common import systemctl
@@ -53,7 +50,9 @@ def configure():
     Disable and mask lvmetad daemon, and install vdsm managed lvmlocal.conf.
     """
     if not _lvm_conf_configured():
-        _backup_file(_LVMLOCAL_CUR)
+        backup = fileUtils.backup_file(_LVMLOCAL_CUR)
+        if backup:
+            _log("Previous lvmlocal.conf copied to %s", backup)
 
         # TODO: we should merge the contents of the exisiting file and vdsm
         # settings, in case the user has some useful setting in the
@@ -147,19 +146,6 @@ def _lvmetad_configured():
         return False
 
     return True
-
-
-def _backup_file(path):
-    """
-    Backup current file with a timestamp.
-
-    TODO: Same code is used in multipath configurator, so this should move to
-    tool utils module. Keeping here for now to make it easier to backport.
-    """
-    if os.path.exists(path):
-        backup = path + '.' + time.strftime("%Y%m%d%H%M")
-        _log("Backing up %s to %s", path, backup)
-        shutil.copyfile(path, backup)
 
 
 def _systemctl(*args):

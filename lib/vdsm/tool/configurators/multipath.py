@@ -20,9 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 import os
-import shutil
 import sys
-import time
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
@@ -282,11 +280,9 @@ def configure():
     Set up the multipath daemon configuration to the known and
     supported state. The original configuration, if any, is saved
     """
-
-    if os.path.exists(_CONF_FILE):
-        backup = _CONF_FILE + '.' + time.strftime("%Y%m%d%H%M")
-        shutil.copyfile(_CONF_FILE, backup)
-        sys.stdout.write("Backup previous multipath.conf to %r\n" % backup)
+    backup = fileUtils.backup_file(_CONF_FILE)
+    if backup:
+        sys.stdout.write("Previous multipath.conf copied to %s\n" % backup)
 
     data = _CONF_DATA.encode('utf-8')
     fileUtils.atomic_write(_CONF_FILE, data, relabel=True)
