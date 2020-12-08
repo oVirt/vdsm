@@ -98,18 +98,6 @@ class NetInfoIfaceSchema(object):
         DHCP = 'dhcpv6'
 
 
-def get_default_route_interface(running_networks):
-    for netname, attrs in running_networks.items():
-        netrun = NetworkConfig(netname, attrs)
-        if netrun.default_route:
-            if netrun.bridged:
-                ifnet = netrun.name
-            else:
-                ifnet = netrun.vlan_iface or netrun.base_iface
-            return ifnet
-    return None
-
-
 def is_iface_absent(ifstate):
     return ifstate and ifstate.get(Interface.STATE) == InterfaceState.ABSENT
 

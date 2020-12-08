@@ -20,7 +20,6 @@
 from collections import defaultdict
 
 from .bridge_util import DEFAULT_MTU
-from .bridge_util import get_default_route_interface
 from .bridge_util import is_iface_up
 from .bridge_util import is_default_mtu
 from .bridge_util import NetworkConfig
@@ -74,10 +73,6 @@ class LinuxBridgeNetwork(object):
             return self._runconf.base_iface
         else:
             return self._netconf.base_iface
-
-    @property
-    def default_route(self):
-        return self._netconf.default_route
 
     @property
     def to_remove(self):
@@ -251,7 +246,6 @@ class LinuxBridgeNetwork(object):
         interfaces_state = LinuxBridgeNetwork._merge_sb_ifaces(nets)
         routes_state = []
         dns_state = {}
-        droute_net = None
         for net in nets:
             if net.vlan_iface_state:
                 vlan_iface_name = net.vlan_iface_state[Interface.NAME]
@@ -264,8 +258,6 @@ class LinuxBridgeNetwork(object):
             net_dns_state = net.dns_state
             if net_dns_state is not None:
                 dns_state[net.name] = net_dns_state
-            if net.default_route:
-                droute_net = net
         for net in nets:
             if _disable_base_iface_ip_stack(
                 net,
@@ -292,18 +284,6 @@ class LinuxBridgeNetwork(object):
         _reset_iface_mtus_on_network_dettach(
             nets, running_networks, interfaces_state, current_ifaces_state
         )
-
-        # FIXME: Workaround to nmstate limitation when DNS entries are defined.
-        if not droute_net:
-            ifnet = get_default_route_interface(running_networks)
-            if ifnet and ifnet not in interfaces_state:
-                # Copy current mtu to solve the MTU dependency computation
-                # issue
-                curr_mtu = current_ifaces_state[ifnet][Interface.MTU]
-                interfaces_state[ifnet] = {
-                    Interface.NAME: ifnet,
-                    Interface.MTU: curr_mtu,
-                }
 
         return interfaces_state, routes_state, dns_state
 
