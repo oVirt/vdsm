@@ -5775,6 +5775,12 @@ types:
             defaultvalue: no-default
             modified: '4.4'
 
+        -   description:
+            name: tpmHash
+            type: string
+            defaultvalue: null
+            added: '4.4'
+
         -   description: The current VM status
             name: status
             type: *VmStatus

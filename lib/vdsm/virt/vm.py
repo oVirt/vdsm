@@ -1881,6 +1881,9 @@ class Vm(object):
         if devices_hash is not None:
             stats['hash'] = str(hash((devices_hash,
                                       self.guestAgent.diskMappingHash)))
+        tpm_data = self._tpm_data
+        if tpm_data is not None and tpm_data.engine_hash:
+            stats['tpmHash'] = tpm_data.engine_hash
         if self._watchdogEvent:
             stats['watchdogEvent'] = self._watchdogEvent
         if self._vcpuLimit:
