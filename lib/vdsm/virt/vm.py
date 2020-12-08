@@ -4572,6 +4572,17 @@ class Vm(object):
     def changeFloppy(self, drivespec):
         return self._changeBlockDev('floppy', 'fda', drivespec)
 
+    def _create_disk_xml(self, vm_dev, path, device, iface, type):
+        disk_elem = vmxml.Element('disk', type=type, device=vm_dev)
+        disk_elem.appendChildWithArgs('source', file=path)
+
+        target = {'dev': device}
+        if iface:
+            target['bus'] = iface
+
+        disk_elem.appendChildWithArgs('target', **target)
+        return xmlutils.tostring(disk_elem)
+
     def _update_disk_device(self, disk_xml, force=True):
         self.log.info("Updating disk device using XML: %s", disk_xml)
 
@@ -4597,17 +4608,9 @@ class Vm(object):
         except VolumeError:
             raise exception.ImageFileNotFound()
 
-        diskelem = vmxml.Element('disk', type='file', device=vmDev)
-        diskelem.appendChildWithArgs('source', file=path)
-
-        target = {'dev': blockdev}
-        if iface:
-            target['bus'] = iface
-
-        diskelem.appendChildWithArgs('target', **target)
-        diskelem_xml = xmlutils.tostring(diskelem)
-
-        self._update_disk_device(diskelem_xml, force=force)
+        disk_xml = self._create_disk_xml(
+            vmDev, path, blockdev, iface, DISK_TYPE.FILE)
+        self._update_disk_device(disk_xml, force=force)
 
         if vmDev in self.conf:
             self.cif.teardownVolumePath(self.conf[vmDev])
