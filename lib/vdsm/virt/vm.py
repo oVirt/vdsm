@@ -4572,6 +4572,24 @@ class Vm(object):
     def changeFloppy(self, drivespec):
         return self._changeBlockDev('floppy', 'fda', drivespec)
 
+    def _update_disk_device(self, disk_xml, force=True):
+        self.log.info("Updating disk device using XML: %s", disk_xml)
+
+        if not force:
+            try:
+                self._dom.updateDeviceFlags(disk_xml)
+            except libvirt.libvirtError:
+                self.log.info("Regular device flags update failed.")
+            else:
+                return
+
+        try:
+            self._dom.updateDeviceFlags(
+                disk_xml, libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE)
+        except libvirt.libvirtError:
+            self.log.exception("Forceful device flags update failed.")
+            raise exception.ChangeDiskFailed()
+
     def _changeBlockDev(self, vmDev, blockdev, drivespec, iface=None,
                         force=True):
         try:
@@ -4589,26 +4607,7 @@ class Vm(object):
         diskelem.appendChildWithArgs('target', **target)
         diskelem_xml = xmlutils.tostring(diskelem)
 
-        self.log.info("changeBlockDev: using disk XML: %s", diskelem_xml)
-
-        changed = False
-        if not force:
-            try:
-                self._dom.updateDeviceFlags(diskelem_xml)
-            except libvirt.libvirtError:
-                self.log.info("regular updateDeviceFlags failed")
-            else:
-                changed = True
-
-        if not changed:
-            try:
-                self._dom.updateDeviceFlags(
-                    diskelem_xml, libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE
-                )
-            except libvirt.libvirtError:
-                self.log.exception("forceful updateDeviceFlags failed")
-                self.cif.teardownVolumePath(drivespec)
-                raise exception.ChangeDiskFailed()
+        self._update_disk_device(diskelem_xml, force=force)
 
         if vmDev in self.conf:
             self.cif.teardownVolumePath(self.conf[vmDev])

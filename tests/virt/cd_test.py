@@ -154,6 +154,14 @@ def test_change_cd_pdiv():
         assert (sd_id, img_id, vol_id) in fakevm.cif.irs.prepared_volumes
 
 
+def test_update_disk_device_failed():
+    with fake.VM(cif=ClientIF()) as fakevm:
+        fakevm._dom = fake.Domain(virtError=libvirt.VIR_ERR_XML_ERROR)
+
+        with pytest.raises(exception.ChangeDiskFailed):
+            fakevm._update_disk_device("<invalid-xml/>", force=False)
+
+
 class ClientIF(clientIF.clientIF):
     log = logging.getLogger('cd_test.ClientIF')
 
