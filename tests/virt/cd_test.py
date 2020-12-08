@@ -28,6 +28,8 @@ import pytest
 from vdsm import clientIF
 from vdsm.common import exception
 
+from testlib import normalized
+
 from . import vmfakelib as fake
 
 LOADED_CD_METADATA_XML = """\
@@ -106,6 +108,27 @@ def test_change_cd_failure():
 
         with pytest.raises(exception.ImageFileNotFound):
             fakevm.changeCD(cdromspec)
+
+
+def test_change_loaded_cd(tmpdir, vm_with_cd):
+    cd_path = str(tmpdir.join("fake_cd"))
+    with open(cd_path, "w") as f:
+        f.write("test")
+
+    cdromspec = {
+        "path": cd_path,
+        "iface": "sata",
+        "index": "2",
+    }
+    vm_with_cd.changeCD(cdromspec)
+
+    expected_dev_xml = """\
+<?xml version='1.0' encoding='utf-8'?>
+<disk type="file" device="cdrom">
+    <source file="{}" />
+    <target dev="sdc" bus="sata" />
+</disk>""".format(cd_path)
+    assert normalized(expected_dev_xml) == normalized(vm_with_cd._dom.devXml)
 
 
 def test_change_cd_pdiv():
