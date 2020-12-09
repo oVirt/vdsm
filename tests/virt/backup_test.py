@@ -67,6 +67,18 @@ CHECKPOINT_1_XML = """
     </domaincheckpoint>
     """.format(CHECKPOINT_1_ID, BACKUP_1_ID)
 
+CHECKPOINT_1_WITH_CREATION_TIME_XML = """
+    <domaincheckpoint>
+      <name>{}</name>
+      <description>checkpoint for backup '{}'</description>
+      <creationTime>1</creationTime>
+      <disks>
+        <disk name='sda' checkpoint='bitmap'/>
+        <disk name='vda' checkpoint='bitmap'/>
+      </disks>
+    </domaincheckpoint>
+    """.format(CHECKPOINT_1_ID, BACKUP_1_ID)
+
 # Incremental backup parameters
 BACKUP_2_ID = make_uuid()
 CHECKPOINT_2_ID = make_uuid()
@@ -77,6 +89,21 @@ CHECKPOINT_2_XML = """
       <parent>
         <name>{}</name>
       </parent>
+      <disks>
+        <disk name='sda' checkpoint='bitmap'/>
+        <disk name='vda' checkpoint='bitmap'/>
+      </disks>
+    </domaincheckpoint>
+    """.format(CHECKPOINT_2_ID, BACKUP_2_ID, CHECKPOINT_1_ID)
+
+CHECKPOINT_2_WITH_CREATION_TIME_XML = """
+    <domaincheckpoint>
+      <name>{}</name>
+      <description>checkpoint for backup '{}'</description>
+      <parent>
+        <name>{}</name>
+      </parent>
+      <creationTime>2</creationTime>
       <disks>
         <disk name='sda' checkpoint='bitmap'/>
         <disk name='vda' checkpoint='bitmap'/>
@@ -841,6 +868,60 @@ def test_redefine_checkpoints_failed_after_one_succeeded():
         }
     }
     assert res["result"] == expected_result
+
+
+@requires_backup_support
+def test_redefine_checkpoints_using_config():
+    checkpoint_1 = FakeCheckpoint(
+        CHECKPOINT_1_WITH_CREATION_TIME_XML, CHECKPOINT_1_ID)
+    checkpoint_2 = FakeCheckpoint(
+        CHECKPOINT_2_WITH_CREATION_TIME_XML, CHECKPOINT_2_ID)
+    dom = FakeDomainAdapter(output_checkpoints=[checkpoint_1, checkpoint_2])
+    vm = FakeVm()
+
+    fake_disks = create_fake_disks()
+    fake_checkpoint_config_cfg = [
+        {
+            'id': CHECKPOINT_1_ID,
+            'config': {
+                'backup_id': BACKUP_1_ID,
+                'disks': fake_disks,
+                'to_checkpoint_id': CHECKPOINT_1_ID,
+                'creation_time': 1
+            }
+        },
+        {
+            'id': CHECKPOINT_2_ID,
+            'config': {
+                'backup_id': BACKUP_2_ID,
+                'disks': fake_disks,
+                'from_checkpoint_id': CHECKPOINT_1_ID,
+                'to_checkpoint_id': CHECKPOINT_2_ID,
+                'parent_checkpoint_id': CHECKPOINT_1_ID,
+                'creation_time': 2
+            }
+        },
+    ]
+    res = backup.redefine_checkpoints(vm, dom, fake_checkpoint_config_cfg)
+
+    expected_result = {
+        'checkpoint_ids': [checkpoint_1.getName(), checkpoint_2.getName()],
+    }
+    assert res["result"] == expected_result
+
+
+@requires_backup_support
+def test_redefine_checkpoints_failed_no_xml_or_config():
+    dom = FakeDomainAdapter(output_checkpoints=[CHECKPOINT_1, CHECKPOINT_2])
+    vm = FakeVm()
+    checkpoint_cfg = [
+        {
+            'id': CHECKPOINT_1_ID,
+        },
+    ]
+
+    with pytest.raises(exception.CheckpointError):
+        backup.redefine_checkpoints(vm, dom, checkpoint_cfg)
 
 
 @requires_backup_support

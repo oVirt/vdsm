@@ -109,11 +109,21 @@ class DiskConfig(properties.Owner):
 
 class CheckpointConfig(properties.Owner):
     id = properties.UUID(required=True)
-    xml = properties.String(required=True)
+    xml = properties.String()
 
     def __init__(self, checkpoint_config):
         self.id = checkpoint_config.get("id")
         self.xml = checkpoint_config.get("xml")
+        if "config" in checkpoint_config:
+            self.config = BackupConfig(checkpoint_config["config"])
+        else:
+            self.config = None
+
+        if self.config is None and self.xml is None:
+            raise exception.CheckpointError(
+                reason="Cannot redefine checkpoint without "
+                       "checkpoint XML or backup config",
+                checkpoint_id=self.id)
 
 
 class BackupConfig(properties.Owner):
@@ -123,6 +133,7 @@ class BackupConfig(properties.Owner):
     to_checkpoint_id = properties.UUID(default='')
     parent_checkpoint_id = properties.UUID(default='')
     require_consistency = properties.Boolean()
+    creation_time = properties.Integer(minval=0)
 
     def __init__(self, backup_config):
         self.backup_id = backup_config.get("backup_id")
@@ -130,6 +141,7 @@ class BackupConfig(properties.Owner):
         self.to_checkpoint_id = backup_config.get("to_checkpoint_id")
         self.parent_checkpoint_id = backup_config.get("parent_checkpoint_id")
         self.require_consistency = backup_config.get("require_consistency")
+        self.creation_time = backup_config.get("creation_time")
 
         if self.from_checkpoint_id is not None and (
                 self.parent_checkpoint_id is None):
@@ -158,14 +170,7 @@ def start_backup(vm, dom, config):
     backup_cfg = BackupConfig(config)
     _validate_parent_id(vm, dom, backup_cfg.parent_checkpoint_id)
 
-    try:
-        drives = _get_disks_drives(vm, backup_cfg.disks)
-    except LookupError as e:
-        raise exception.BackupError(
-            reason="Failed to find one of the backup disks: {}".format(e),
-            vm_id=vm.id,
-            backup=backup_cfg)
-
+    drives = _get_disks_drives(vm, backup_cfg)
     path = socket_path(backup_cfg.backup_id)
     nbd_addr = nbdutils.UnixAddress(path)
 
@@ -286,9 +291,16 @@ def redefine_checkpoints(vm, dom, checkpoints):
         vm.log.info("Redefine VM %r checkpoint %r",
                     vm.id, checkpoint_cfg.id)
 
+        if checkpoint_cfg.config:
+            drives = _get_disks_drives(vm, checkpoint_cfg.config)
+            checkpoint_xml = create_checkpoint_xml(
+                checkpoint_cfg.config, drives)
+        else:
+            checkpoint_xml = checkpoint_cfg.xml
+
         flags = libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE
         try:
-            dom.checkpointCreateXML(checkpoint_cfg.xml, flags)
+            dom.checkpointCreateXML(checkpoint_xml, flags)
         except libvirt.libvirtError as e:
             vm.log.error(
                 "Failed to redefine VM %r checkpoint %r: %s",
@@ -355,15 +367,22 @@ def _get_leaf_checkpoint_name(vm, dom):
             vm_id=vm.id)
 
 
-def _get_disks_drives(vm, disks_cfg):
+def _get_disks_drives(vm, backup_cfg):
     drives = {}
-    for disk in disks_cfg:
-        drive = vm.findDriveByUUIDs({
-            'domainID': disk.dom_id,
-            'imageID': disk.img_id,
-            'volumeID': disk.vol_id})
-        drives[disk.img_id] = BackupDrive(
-            drive.name, drive.path, disk.backup_mode)
+    try:
+        for disk in backup_cfg.disks:
+            drive = vm.findDriveByUUIDs({
+                'domainID': disk.dom_id,
+                'imageID': disk.img_id,
+                'volumeID': disk.vol_id})
+            drives[disk.img_id] = BackupDrive(
+                drive.name, drive.path, disk.backup_mode)
+    except LookupError as e:
+        raise exception.BackupError(
+            reason="Failed to find one of the backup disks: {}".format(e),
+            vm_id=vm.id,
+            backup=backup_cfg)
+
     return drives
 
 
@@ -542,6 +561,11 @@ def create_checkpoint_xml(backup_cfg, drives):
         parent_name.appendTextNode(backup_cfg.parent_checkpoint_id)
         cp_parent.appendChild(parent_name)
         checkpoint.appendChild(cp_parent)
+
+    if backup_cfg.creation_time:
+        creation_time = vmxml.Element('creationTime')
+        creation_time.appendTextNode(str(backup_cfg.creation_time))
+        checkpoint.appendChild(creation_time)
 
     disks = vmxml.Element('disks')
     for disk in backup_cfg.disks:

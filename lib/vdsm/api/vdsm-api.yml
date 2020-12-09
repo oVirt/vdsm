@@ -8413,20 +8413,6 @@ types:
             name: bitmap
             type: *UUID
 
-    Checkpoint: &Checkpoint
-        added: '4.3'
-        description: Configuration of the checkpoint
-        name: Checkpoint
-        properties:
-            -   description: UUID of the checkpoint
-                name: id
-                type: *UUID
-
-            -   description: Checkpoint XML description returned from libvirt.
-                name: xml
-                type: string
-        type: object
-
     BackupInfo: &BackupInfo
         added: '4.3'
         description: A backup info entity
@@ -8494,6 +8480,12 @@ types:
             name: require_consistency
             type: boolean
 
+        -   defaultvalue: null
+            description: Long value to indicate the time since
+                epoch for the backup creation date.
+            name: creation_time
+            type: ulong
+
     CheckpointInfo: &CheckpointInfo
         added: '4.4'
         description: A checkpoint info entity.
@@ -8502,6 +8494,28 @@ types:
             -   description: The XML description of the given checkpoint
                 name: checkpoint
                 type: string
+
+    Checkpoint: &Checkpoint
+        added: '4.3'
+        description: Configuration of the checkpoint, can be the checkpoint XML
+            or the backup configuration to compose the checkpoint XML from it.
+        name: Checkpoint
+        properties:
+            -   description: UUID of the checkpoint
+                name: id
+                type: *UUID
+
+            -   defaultvalue: null
+                description: Checkpoint XML description returned from libvirt.
+                name: xml
+                type: string
+
+            -   defaultvalue: null
+                description: The backup configuration
+                name: config
+                type: *BackupConfig
+
+        type: object
 
     CheckpointsResponse: &CheckpointsResponse
         added: '4.4'
