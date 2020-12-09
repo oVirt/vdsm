@@ -20,8 +20,7 @@
 
 from vdsm.virt.utils import LibguestfsCommand
 
-_VIRTSPARSIFY = LibguestfsCommand("virt-sparsify",
-                                  "/usr/bin/virt-sparsify")
+_VIRTSPARSIFY = LibguestfsCommand("/usr/bin/virt-sparsify")
 
 
 def sparsify_inplace(vol_path):

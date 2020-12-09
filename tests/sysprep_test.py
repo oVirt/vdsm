@@ -33,7 +33,7 @@ BLANK_UUID = '00000000-0000-0000-0000-000000000000'
 FAKE_VOLUME = '/we/dont/care/about/this/path'
 
 
-FakeCommand = LibguestfsCommand('false', '/bin/false')
+FakeCommand = LibguestfsCommand('/bin/false')
 
 
 class VirtSysprepTests(TestCaseBase):

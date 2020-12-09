@@ -20,8 +20,7 @@
 
 from vdsm.virt.utils import LibguestfsCommand
 
-_VIRTSYSPREP = LibguestfsCommand("virt-sysprep",
-                                 "/usr/bin/virt-sysprep")
+_VIRTSYSPREP = LibguestfsCommand("/usr/bin/virt-sysprep")
 
 
 def sysprep(vm_id, vol_paths):

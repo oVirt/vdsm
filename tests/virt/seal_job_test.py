@@ -38,7 +38,7 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'
 FAKE_VIRTSYSPREP = utils.LibguestfsCommand(
-    'fake-virt-sysprep', os.path.abspath('fake-virt-sysprep'))
+    os.path.abspath('fake-virt-sysprep'))
 TEARDOWN_ERROR_IMAGE_ID = make_uuid()
 
 

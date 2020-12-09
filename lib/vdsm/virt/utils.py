@@ -432,9 +432,8 @@ def run_logging(args, log_tag=None):
 
 
 class LibguestfsCommand(object):
-    def __init__(self, name, path):
-        command = cmdutils.CommandPath(name, path)
-        self._args = [command.cmd, '-v', '-x']
+    def __init__(self, path):
+        self._args = [path, '-v', '-x']
 
     def run(self, args_, log_tag=None):
         args = self._args + args_
