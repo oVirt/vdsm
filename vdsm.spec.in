@@ -482,7 +482,6 @@ Summary:        VDSM network python libraries
 Requires:       NetworkManager-config-server
 Requires:       NetworkManager-ovs
 Requires:       dhcp-client
-Requires:       dhclient
 Requires:       ethtool
 Requires:       initscripts
 Requires:       iproute
@@ -509,7 +508,6 @@ Requires:       python-ipaddress
 %endif
 Requires:       %{python_or_python3}-netaddr
 Requires:       %{python_or_python3}-six
-Requires:       systemd
 Requires:       %{name}-common = %{version}-%{release}
 
 %description network

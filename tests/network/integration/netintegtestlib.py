@@ -18,8 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import functools
-import os
 from contextlib import contextmanager
 
 import pytest
@@ -32,26 +30,11 @@ from vdsm.network.ipwrapper import netns_delete
 _SYSTEMCTL = 'systemctl'
 
 
-def requires_systemdrun(function):
-    @functools.wraps(function)
-    def wrapper(*args, **kwargs):
-        _requires_root('systemd-run requires root')
-        requires_systemctl()
-        return function(*args, **kwargs)
-
-    return wrapper
-
-
 def requires_systemctl():
     rc, _, err = cmd.exec_sync([_SYSTEMCTL, 'status', 'foo'])
     run_chroot_err = 'Running in chroot, ignoring request'
     if rc == 1 or run_chroot_err in err:
         pytest.skip('systemctl is not available')
-
-
-def _requires_root(msg='This test must be run as root'):
-    if os.geteuid() != 0:
-        pytest.skip(msg)
 
 
 @contextmanager

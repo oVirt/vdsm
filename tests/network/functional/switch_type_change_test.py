@@ -164,7 +164,7 @@ class TestIpSwitch(object):
             adapter.assertNetwork(NET1_NAME, NETSETUP_TARGET[NET1_NAME])
             adapter.assertBond(BOND_NAME, BONDSETUP_TARGET[BOND_NAME])
 
-    def test_switch_change_bonded_network_with_dhclient(
+    def test_switch_change_bonded_network_with_dhcp_client(
         self, adapter, sw_src, sw_dst, dynamic_ipv4_iface, nic0
     ):
         NETSETUP_SOURCE = {

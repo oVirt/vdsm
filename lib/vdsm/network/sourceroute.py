@@ -153,8 +153,7 @@ def remove(device):
     try:
         for route in routes:
             try:
-                # The kernel or dhclient has won the race and removed
-                # the route already.
+                # The kernel has won the race and removed the route already.
                 IPRoute.delete(route)
             except IPRouteDeleteError:
                 pass

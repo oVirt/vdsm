@@ -20,8 +20,6 @@
 
 from vdsm.network import cmd
 
-from .netintegtestlib import requires_systemdrun
-
 
 class TestCmd(object):
     def test_exec_sync_with_no_output(self):
@@ -40,11 +38,3 @@ class TestCmd(object):
         assert rc != 0
         assert 'No such file or directory' in err
         assert out == ''
-
-    @requires_systemdrun
-    def test_exec_systemd_new_unit(self):
-        rc, out, err = cmd.exec_systemd_new_unit(
-            ('echo', 'hello world'), slice_name='test-group'
-        )
-        assert rc == 0, err
-        assert out == 'hello world\n'
