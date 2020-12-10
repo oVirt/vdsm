@@ -8,10 +8,9 @@ RUN  dnf install -y \
     && \
     dnf install -y \
         iproute-tc \
+        libnl3 \
         nmstate \
-        python3-libnl3 \
         python3-netaddr \
-        python3-libselinux \
         python3-devel \
         python3-pip \
     && \

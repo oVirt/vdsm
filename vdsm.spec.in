@@ -481,31 +481,13 @@ VDSM libraries that are imported by all subsystems
 Summary:        VDSM network python libraries
 Requires:       NetworkManager-config-server
 Requires:       NetworkManager-ovs
-Requires:       dhcp-client
 Requires:       ethtool
-Requires:       initscripts
 Requires:       iproute
 Requires:       iproute-tc
-# remove when nmstate is finished
-Requires: network-scripts
-%if 0%{?rhel} || 0%{?fedora} >= 32
-Requires: nmstate >= 0.2.6
-%else
-# Temporary HACK to not block development on Fedora 30
-Requires: nmstate >= 0.0.8
-%endif
+Requires:       nmstate >= 0.3
 Requires:       libnl3
-%if %{target_py} == py2
-Requires:       libselinux-python
-%else
-Requires:       python3-libselinux
-%endif
 Requires:       lldpad
 Requires:       openvswitch >= 2.11
-Requires:       %{python_or_python3}-inotify
-%if %{target_py} == py2
-Requires:       python-ipaddress
-%endif
 Requires:       %{python_or_python3}-netaddr
 Requires:       %{python_or_python3}-six
 Requires:       %{name}-common = %{version}-%{release}
