@@ -299,6 +299,7 @@ class TestEventLoop:
         self.loop.run_forever()
         assert not self.was_called
 
+    @pytest.mark.xfail(reason="Handle.__repr__ formatting bug")
     def test_handle_error_failures(self):
 
         class EvilDispatcher(Echo):
