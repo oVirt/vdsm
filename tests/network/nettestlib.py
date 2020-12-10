@@ -244,6 +244,26 @@ class VethPair(object):
         cmd.exec_sync(['nmcli', 'con', 'del', self.right_side.dev_name])
 
 
+class Bond(Interface):
+    def __init__(self, prefix='bond_', max_length=15):
+        super(Bond, self).__init__(prefix, max_length)
+
+    def create(self):
+        linkAdd(self.dev_name, 'bond')
+        self.set_managed()
+        self.up()
+
+    def add_slave(self, dev):
+        iface = Interface.from_existing_dev_name(dev)
+        iface.down()
+        linkSet(dev, ['master', self.dev_name])
+        iface.up()
+
+    def set_options(self, options):
+        for key, val in options.items():
+            linkSet(self.dev_name, ['type', 'bond', key, val])
+
+
 @contextmanager
 def dummy_device(prefix='dummy_', max_length=11):
     dummy_interface = Dummy(prefix, max_length)
@@ -269,13 +289,23 @@ def dummy_devices(amount, prefix='dummy_', max_length=11):
 
 
 @contextmanager
-def bond_device(slaves=(), prefix='bond_', max_length=11):
+def bond_device_link(slaves=(), prefix='bond_', max_length=11):
     check_sysfs_bond_permission()
     name = random_iface_name(prefix, max_length)
     with linkbond.Bond(name, slaves) as bond:
         bond.create()
         yield bond
     bond.destroy()
+
+
+@contextmanager
+def bond_device(slaves=(), prefix='bond_', max_length=11):
+    bond = Bond(prefix, max_length)
+    bond.create()
+    for dev in slaves:
+        bond.add_slave(dev)
+    yield bond.dev_name
+    bond.remove()
 
 
 @contextmanager

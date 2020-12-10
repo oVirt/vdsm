@@ -29,7 +29,6 @@ import pytest
 
 from vdsm.common.time import monotonic_time
 
-from ..nettestlib import bond_device
 from ..nettestlib import dummy_device
 from ..nettestlib import dummy_devices
 from ..nettestlib import Dummy
@@ -38,6 +37,7 @@ from vdsm.network.netlink import NLSocketPool
 from vdsm.network.netlink import monitor
 from vdsm.network.sysctl import is_disabled_ipv6
 
+from network.nettestlib import Bond
 from network.nettestlib import IpFamily
 from network.nettestlib import running_on_ovirt_ci
 
@@ -47,10 +47,24 @@ IP_CIDR = '24'
 
 
 @pytest.fixture(scope='function')
-def bond():
-    with dummy_devices(2) as (nic1, nic2):
-        with bond_device(slaves=(nic1, nic2)) as bond:
-            yield bond
+def slaves():
+    with dummy_devices(2) as slaves:
+        yield slaves
+
+
+@pytest.fixture(scope='function')
+def bond_in_mode_1(slaves):
+    bond = Bond()
+    bond.create()
+
+    bond.down()
+    bond.set_options({'mode': '1'})
+    for dev in slaves:
+        bond.add_slave(dev)
+    bond.up()
+
+    yield bond
+    bond.remove()
 
 
 class TestNetlinkEventMonitor(object):
@@ -246,10 +260,9 @@ class TestNetlinkEventMonitor(object):
             monitor.object_monitor(groups=('blablabla',))
         monitor.object_monitor(groups=('link',))
 
-    def test_ifla_event(self, bond):
-        slaves = iter(bond.slaves)
-        bond.set_options({'mode': '1'})
-        bond.up()
+    def test_ifla_event(self, bond_in_mode_1, slaves):
+        bond = bond_in_mode_1
+        slaves = iter(slaves)
         bond.set_options({'active_slave': next(slaves)})
         with monitor.ifla_monitor(
             timeout=self.TIMEOUT, groups=('link',)

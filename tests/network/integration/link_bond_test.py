@@ -24,7 +24,7 @@ from unittest import mock
 
 import pytest
 
-from network.nettestlib import bond_device
+from network.nettestlib import bond_device_link as bond_device
 from network.nettestlib import check_sysfs_bond_permission
 from network.nettestlib import dummy_devices
 from network.nettestlib import FakeNotifier

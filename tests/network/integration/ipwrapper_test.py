@@ -41,14 +41,13 @@ def bridge0():
 
 @pytest.fixture
 def vlan0(bond0):
-    with vlan_device(bond0.master, 27) as vlan:
+    with vlan_device(bond0, 27) as vlan:
         yield vlan
 
 
 @pytest.fixture
 def bond0(nics):
     with bond_device(nics) as bond:
-        bond.up()
         yield bond
 
 
@@ -75,12 +74,12 @@ class TestLinks(object):
         devices = {device.name: device for device in device_links}
 
         # Test all devices to be there.
-        assert set([bridge0, bond0.master, vlan0] + nics) <= set(devices)
+        assert set([bridge0, bond0, vlan0] + nics) <= set(devices)
 
         assert devices[bridge0].isBRIDGE()
         assert devices[nics[0]].isDUMMY()
         assert devices[nics[1]].isDUMMY()
-        assert devices[bond0.master].isBOND()
+        assert devices[bond0].isBOND()
         assert devices[vlan0].isVLAN()
 
 

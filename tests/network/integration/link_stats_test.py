@@ -34,7 +34,7 @@ from vdsm.network.link import stats as link_stats
 @contextmanager
 def _bond_device_master(slaves):
     with bond_device(slaves) as bond:
-        yield bond.master
+        yield bond
 
 
 @contextmanager
