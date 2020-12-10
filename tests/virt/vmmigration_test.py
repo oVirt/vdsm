@@ -355,6 +355,15 @@ class FakeVM(object):
     def update_guest_agent_api_version(self):
         pass
 
+    def send_status_event(self, **kwargs):
+        pass
+
+    def client_ip(self):
+        return ''
+
+    def reviveTicket(self, newlife):
+        pass
+
 
 class FakeProgress(object):
 

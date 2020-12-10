@@ -4768,6 +4768,10 @@ class Vm(object):
             hwclass.GRAPHICS, type='spice')))
 
     @property
+    def client_ip(self):
+        return self._clientIp
+
+    @property
     def name(self):
         return self._domain.name
 

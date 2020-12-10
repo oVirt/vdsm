@@ -532,7 +532,7 @@ class SourceThread(object):
                           (time.time() - startTime) + destCreationTime)
 
     def _perform_migration(self, duri, muri):
-        if self._vm.hasSpice and self._vm.conf.get('clientIp'):
+        if self._vm.hasSpice and self._vm.client_ip:
             SPICE_MIGRATION_HANDOVER_TIME = 120
             self._vm.reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
 
