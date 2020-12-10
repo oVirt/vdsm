@@ -33,7 +33,6 @@ from .netfunctestlib import IpFamily
 from network.nettestlib import Interface
 from network.nettestlib import veth_pair
 from network.nettestlib import dnsmasq_run
-from network.nettestlib import dhcp_client_run
 from network.nettestlib import running_on_ovirt_ci
 from network.nettestlib import vlan_device
 
@@ -290,75 +289,6 @@ class TestNetworkDhcpBasic(object):
             network_info = adapter.netinfo.networks[NETWORK_NAME]
             assert ipv4_addr == network_info['ipv4addrs']
             assert ipv6_addr == network_info['ipv6addrs']
-
-
-@pytest.mark.nmstate
-@nftestlib.parametrize_switch
-class TestStopDhclientOnUsedNics(object):
-    @unstable_dhcpv6_on_ovirt_ci
-    def test_attach_dhcp_nic_to_ipless_network(
-        self, adapter, switch, dynamic_ipv4_ipv6_iface_with_dhcp_server
-    ):
-        client = dynamic_ipv4_ipv6_iface_with_dhcp_server
-        with dhcp_client_run(client):
-            adapter.assertDhclient(client, family=IpFamily.IPv4)
-            adapter.assertDhclient(client, family=IpFamily.IPv6)
-
-            NETCREATE = {NETWORK_NAME: {'nic': client, 'switch': switch}}
-            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
-                nic_netinfo = adapter.netinfo.nics[client]
-                adapter.assertDisabledIPv4(nic_netinfo)
-                adapter.assertDisabledIPv6(nic_netinfo)
-                net_netinfo = adapter.netinfo.networks[NETWORK_NAME]
-                adapter.assertDisabledIPv4(net_netinfo)
-                adapter.assertDisabledIPv6(nic_netinfo)
-
-    def test_attach_dhcp_nic_to_dhcpv4_bridged_network(
-        self, adapter, switch, dynamic_ipv4_iface1
-    ):
-        client = dynamic_ipv4_iface1
-        with dhcp_client_run(client):
-            adapter.assertDhclient(client, family=IpFamily.IPv4)
-
-            NETCREATE = {
-                NETWORK_NAME: {
-                    'nic': client,
-                    'bootproto': 'dhcp',
-                    'blockingdhcp': True,
-                    'switch': switch,
-                }
-            }
-            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
-                nic_netinfo = adapter.netinfo.nics[client]
-                adapter.assertDisabledIPv4(nic_netinfo)
-                adapter.assertNoDhclient(client, family=IpFamily.IPv4)
-                net_netinfo = adapter.netinfo.networks[NETWORK_NAME]
-                adapter.assertDHCPv4(net_netinfo)
-                adapter.assertDhclient(NETWORK_NAME, family=IpFamily.IPv4)
-
-    @unstable_dhcpv6_on_ovirt_ci
-    def test_attach_dhcp_nic_to_dhcpv6_bridged_network(
-        self, adapter, switch, dynamic_ipv6_iface
-    ):
-        client = dynamic_ipv6_iface
-        with dhcp_client_run(client, family=IpFamily.IPv6):
-            adapter.assertDhclient(client, family=IpFamily.IPv6)
-
-            NETCREATE = {
-                NETWORK_NAME: {
-                    'nic': client,
-                    'dhcpv6': True,
-                    'blockingdhcp': True,
-                    'switch': switch,
-                }
-            }
-            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
-                nic_netinfo = adapter.netinfo.nics[client]
-                adapter.assertDisabledIPv6(nic_netinfo)
-                adapter.assertNoDhclient(client, family=IpFamily.IPv6)
-                net_netinfo = adapter.netinfo.networks[NETWORK_NAME]
-                adapter.assertDHCPv6(net_netinfo)
-                adapter.assertDhclient(NETWORK_NAME, family=IpFamily.IPv6)
 
 
 @nftestlib.parametrize_switch

@@ -421,35 +421,6 @@ def wait_for_ipv6(iface, wait_for_scopes=None):
 
 
 @contextmanager
-def dhcp_client_run(iface, family=4):
-    cmd.exec_sync(
-        [
-            'nmcli',
-            'con',
-            'modify',
-            iface,
-            'ipv{}.method'.format(family),
-            'auto',
-        ]
-    )
-    cmd.exec_sync(['nmcli', 'con', 'up', iface])
-    try:
-        yield
-    finally:
-        cmd.exec_sync(
-            [
-                'nmcli',
-                'con',
-                'modify',
-                iface,
-                'ipv{}.method'.format(family),
-                'disabled',
-            ]
-        )
-        cmd.exec_sync(['nmcli', 'con', 'up', iface])
-
-
-@contextmanager
 def restore_resolv_conf():
     RESOLV_CONF = '/etc/resolv.conf'
     RESOLV_CONF_BACKUP = '/etc/resolv.conf.test-backup'

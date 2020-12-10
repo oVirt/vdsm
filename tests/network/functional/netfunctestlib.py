@@ -33,7 +33,6 @@ from vdsm.network.canonicalize import bridge_opts_dict_to_sorted_str
 from vdsm.network.canonicalize import bridge_opts_str_to_dict
 from vdsm.network.cmd import exec_sync
 from vdsm.network.dhcp_monitor import MonitoredItemPool
-from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported, prefix2netmask
 from vdsm.network.link.iface import iface
 from vdsm.network.link.bond import sysfs_options as bond_options
@@ -566,12 +565,6 @@ class NetFuncTestAdapter(object):
         # TODO: We need to report if IPv6 is enabled on iface/host and
         # differentiate that from not acquiring an address.
         assert [] == ipinfo['ipv6addrs']
-
-    def assertDhclient(self, iface, family):
-        return dhclient.is_active(iface, family)
-
-    def assertNoDhclient(self, iface, family):
-        assert not self.assertDhclient(iface, family)
 
     def assertRoutesIPv4(self, netattrs, ipinfo, ignore_ip=False):
         is_dynamic = netattrs.get('bootproto') == 'dhcp'
