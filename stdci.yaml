@@ -54,7 +54,6 @@ stages:
             runtime-requirements:
               host-distro: newer
             distributions:
-            - fc30
             - rhel8
   - check-network: &check-network
       archs:
@@ -64,6 +63,7 @@ stages:
             runtime-requirements:
               host-distro: newer
             distributions:
+              # FIXME replace by el8 when containers are working there
               - fc30
   - poll-upstream-sources:
       <<: *check-network
