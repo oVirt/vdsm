@@ -1,6 +1,8 @@
 release_branches:
   master:
     - ovirt-master
+  ovirt-4.4.4:
+    - ovirt-master
   ovirt-4.3:
     - ovirt-4.3
 
