@@ -521,6 +521,11 @@ class NoSuchCheckpointError(ContextException):
     message = "No such checkpoint Error"
 
 
+class InconsistentCheckpointError(ContextException):
+    code = 1612
+    message = "Inconsistent checkpoint Error"
+
+
 #################################################
 #  Bitmaps Errors
 #  Range: 1620-1629

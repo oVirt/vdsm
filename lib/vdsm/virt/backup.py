@@ -436,6 +436,15 @@ def _begin_backup(vm, dom, backup_cfg, backup_xml, checkpoint_xml):
     try:
         dom.backupBegin(backup_xml, checkpoint_xml, flags=flags)
     except libvirt.libvirtError as e:
+        # TODO: Simplify when libvirt 6.6.0-9 is required on centos.
+        if e.get_error_code() == getattr(
+                libvirt, "VIR_ERR_CHECKPOINT_INCONSISTENT", None):
+            raise exception.InconsistentCheckpointError(
+                reason="Checkpoint can't be used: {}".format(e),
+                vm_id=vm.id,
+                backup=backup_cfg,
+                checkpoint_xml=checkpoint_xml)
+
         raise exception.BackupError(
             reason="Error starting backup: {}".format(e),
             vm_id=vm.id,

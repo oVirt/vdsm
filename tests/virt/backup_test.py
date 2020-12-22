@@ -581,6 +581,28 @@ def test_backup_begin_failed(tmp_backupdir, tmp_basedir):
 
 
 @requires_backup_support
+@pytest.mark.skipif(
+    not hasattr(libvirt, "VIR_ERR_CHECKPOINT_INCONSISTENT"),
+    reason="Libvirt missing VIR_ERR_CHECKPOINT_INCONSISTENT flag")
+def test_backup_begin_checkpoint_inconsistent(tmp_backupdir, tmp_basedir):
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+    dom.errors["backupBegin"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_CHECKPOINT_INCONSISTENT],
+        "Fake libvirt error")
+
+    fake_disks = create_fake_disks()
+
+    config = {
+        'backup_id': BACKUP_1_ID,
+        'disks': fake_disks
+    }
+
+    with pytest.raises(exception.InconsistentCheckpointError):
+        backup.start_backup(vm, dom, config)
+
+
+@requires_backup_support
 def test_backup_begin_freeze_failed(tmp_backupdir, tmp_basedir):
     vm = FakeVm()
     vm.errors["freeze"] = fake.libvirt_error(
