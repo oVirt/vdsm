@@ -207,12 +207,13 @@ Requires: libvirt-lock-sanlock
 
 %if 0%{?rhel}
 %if 0%{?centos}
-# Advanced Virt fix for live merge, https://bugzilla.redhat.com/1840414
 # TODO: Depend on the same version as RHEL once it is available upstream.
 Requires: libvirt-daemon-kvm >= 6.0.0-17
 %else
-# Advanced Virt fix for SCSI host devices, https://bugzilla.redhat.com/1876605
-Requires: libvirt-daemon-kvm >= 6.6.0-6
+# Use the new incremental backup features -
+# https://bugzilla.redhat.com/1874846
+# https://bugzilla.redhat.com/1901830
+Requires: libvirt-daemon-kvm >= 6.6.0-13
 %endif
 Requires: python3-libvirt
 %else # fedora
