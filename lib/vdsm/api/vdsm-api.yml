@@ -8188,6 +8188,46 @@ types:
             defaultvalue: null
         type: object
 
+    CopyDataExternalEndpoint: &CopyDataExternalEndpoint
+        added: '4.4.6'
+        description: An endpoint describing an external path to copy.
+        name: CopyDataExternalEndpoint
+        properties:
+        -   description: The expected url of the image, like rbd:pool/vol
+                See https://qemu.readthedocs.io/en/latest/system/images.html
+            name: url
+            type: string
+
+        -   description: The lease to be used for job tracking.
+            name: lease
+            type: *Lease
+
+        -   description: The expected generation of the lease.
+            name: generation
+            type: uint
+
+        -   description: Format of the target image (qcow2, raw).
+            name: format
+            type: string
+
+        -   defaultvalue: False
+            description: True if the image is sparse, False if preallocated.
+            name: sprase
+            type: boolean
+
+        -   defaultvalue: True
+            description: True if the image needs to be created.
+                In cases where the image is not created and the format is
+                qcow2, the caller has to create qcow2 image.
+            name: create
+            type: boolean
+
+        -   description: False if the target should be zeroed, True if it is
+                already zeroed. Can only be used with create=False.
+            name: is_zero
+            type: boolean
+        type: object
+
     CopyDataEndpoint: &CopyDataEndpoint
         added: '4.1'
         description: A discriminated record containing an endpoint for a
