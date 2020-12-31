@@ -743,6 +743,28 @@ class StorageDomainManifest(object):
             with utils.closing(vol):
                 yield vol
 
+    def acquire_external_lease(self, lease_id, host_id):
+        """
+        Acquire an external lease
+        """
+        lease_info = self.lease_info(lease_id)
+        lease = clusterlock.Lease(
+            lease_info.resource,
+            lease_info.path,
+            lease_info.offset)
+        self._domainLock.acquire(host_id, lease, lvb=True)
+
+    def release_external_lease(self, lease_id):
+        """
+        Release an external lease
+        """
+        lease_info = self.lease_info(lease_id)
+        lease = clusterlock.Lease(
+            lease_info.resource,
+            lease_info.path,
+            lease_info.offset)
+        self._domainLock.release(lease)
+
     def lease_info(self, lease_id):
         """
         Return information about external lease that can be used to acquire or
@@ -753,6 +775,41 @@ class StorageDomainManifest(object):
         with self.external_leases_lock.shared:
             with self.external_leases_volume() as vol:
                 return vol.lookup(lease_id)
+
+    def set_lvb(self, lease_id, info):
+        """
+        Write LVB data for lease.
+        Note: Lease must be first acquired with lvb=True
+
+        Arguments:
+            lease_id (str): uuid of the lease
+            info (dict): info to write to the LVB of the lease
+        """
+        lease_info = self.lease_info(lease_id)
+        lease = clusterlock.Lease(
+            lease_info.resource,
+            lease_info.path,
+            lease_info.offset)
+
+        self._domainLock.set_lvb(lease, info)
+
+    def get_lvb(self, lease_id):
+        """
+        Read LVB data for lease.
+        Note: Lease must be first acquired with lvb=True
+
+        Arguments:
+            lease_id (str): uuid of the lease
+        Returns:
+            A dict containing the data read from LVB.
+        """
+        lease_info = self.lease_info(lease_id)
+        lease = clusterlock.Lease(
+            lease_info.resource,
+            lease_info.path,
+            lease_info.offset)
+
+        return self._domainLock.get_lvb(lease)
 
 
 class StorageDomain(object):
