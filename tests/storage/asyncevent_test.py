@@ -635,3 +635,102 @@ class TestReaper:
         proc = subprocess.Popen(cmd, stdin=None, stdout=None, stderr=None)
         asyncevent.Reaper(self.loop, proc, self.complete)
         self.loop.run_forever()
+
+
+class Callback:
+
+    def __init__(self):
+        self.called = False
+        self.args = None
+
+    def __call__(self, *args):
+        self.called = True
+        self.args = args
+
+    def __repr__(self):
+        return "Callback()"
+
+
+class TestHandle:
+
+    def test_pending(self):
+        cb = Callback()
+        h = asyncevent.Handle(cb, ())
+        assert not cb.called
+        assert repr(h) == (
+            "<Handle callback=Callback() at 0x{:x}>".format(id(h))
+        )
+
+    @pytest.mark.xfail(reason="Handle.__repr__ formatting bug")
+    def test_pending_args(self):
+        cb = Callback()
+        h = asyncevent.Handle(cb, (1, 2))
+        assert not cb.called
+        assert repr(h) == (
+            "<Handle callback=Callback() args=(1, 2) at 0x{:x}>".format(id(h))
+        )
+
+    def test_cancelled(self):
+        cb = Callback()
+        h = asyncevent.Handle(cb, ())
+        h.cancel()
+        assert not cb.called
+        assert repr(h) == (
+            "<Handle cancelled at 0x{:x}>".format(id(h))
+        )
+
+    def test_run(self):
+        cb = Callback()
+        h = asyncevent.Handle(cb, (1, 2))
+        h._run()
+        assert cb.called
+        assert cb.args == (1, 2)
+        assert repr(h) == (
+            "<Handle callback=None at 0x{:x}>".format(id(h))
+        )
+
+
+class TestTimer:
+
+    def test_pending(self):
+        cb = Callback()
+        h = asyncevent.Timer(1.0, cb, ())
+        assert not cb.called
+        assert repr(h) == (
+            "<Timer when=1.000000 callback=Callback() at 0x{:x}>".format(id(h))
+        )
+
+    def test_cancelled(self):
+        cb = Callback()
+        h = asyncevent.Timer(1.0, cb, ())
+        h.cancel()
+        assert not cb.called
+        assert repr(h) == (
+            "<Timer when=1.000000 cancelled at 0x{:x}>".format(id(h))
+        )
+
+    def test_run(self):
+        cb = Callback()
+        h = asyncevent.Timer(1.0, cb, ())
+        h._run()
+        assert cb.called
+        assert cb.args == ()
+        assert repr(h) == (
+            "<Timer when=1.000000 callback=None at 0x{:x}>".format(id(h))
+        )
+
+    def test_lt(self):
+        cb = Callback()
+        h1 = asyncevent.Timer(1.0, cb, ())
+        h2 = asyncevent.Timer(1.1, cb, ())
+        assert h1 < h2
+        assert h1 <= h2
+        assert h2 > h1
+        assert h2 >= h1
+
+    def test_le(self):
+        cb = Callback()
+        h1 = asyncevent.Timer(1.0, cb, ())
+        h2 = asyncevent.Timer(1.0, cb, ())
+        assert h1 <= h2
+        assert h2 >= h1
