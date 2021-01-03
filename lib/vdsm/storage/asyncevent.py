@@ -486,13 +486,13 @@ class Handle(object):
         if self._cancelled:
             info.append("cancelled")
         else:
-            info.append("callback=%s" % self._callback)
+            info.append("callback={}".format(self._callback))
             if self._args:
-                info.append("args=%s" % self._args)
+                info.append("args={}".format(self._args))
         return info
 
     def __repr__(self):
-        return "<%s at 0x%x>" % (" ".join(self._repr_info()), id(self))
+        return "<{} at 0x{:x}>".format(" ".join(self._repr_info()), id(self))
 
 
 class Timer(Handle):
@@ -529,7 +529,7 @@ class Timer(Handle):
 
     def _repr_info(self):
         info = super(Timer, self)._repr_info()
-        info.insert(1, "when=%.6f" % self._when)
+        info.insert(1, "when={:.6f}".format(self._when))
         return info
 
 
