@@ -684,7 +684,7 @@ class TestHandle:
         assert cb.called
         assert cb.args == (1, 2)
         assert repr(h) == (
-            "<Handle callback=None at 0x{:x}>".format(id(h))
+            "<Handle at 0x{:x}>".format(id(h))
         )
 
 
@@ -714,7 +714,7 @@ class TestTimer:
         assert cb.called
         assert cb.args == ()
         assert repr(h) == (
-            "<Timer when=1.000000 callback=None at 0x{:x}>".format(id(h))
+            "<Timer when=1.000000 at 0x{:x}>".format(id(h))
         )
 
     def test_lt(self):

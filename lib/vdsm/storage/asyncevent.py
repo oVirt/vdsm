@@ -485,7 +485,7 @@ class Handle(object):
         info = [self.__class__.__name__]
         if self._cancelled:
             info.append("cancelled")
-        else:
+        elif self._callback is not None:
             info.append("callback={}".format(self._callback))
             if self._args:
                 info.append("args={}".format(self._args))
