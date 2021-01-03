@@ -101,9 +101,9 @@ def test_decode_should_raise_for_invalid_escape_sequences():
     with pytest.raises(ValueError) as err:
         decode_value(b'Evil sequence \\m')
 
-    assert 'Evil sequence' in str(err)
-    assert 'contains invalid escape sequence' in str(err)
-    assert '\\m' in str(err)
+    assert 'Evil sequence' in str(err.value)
+    assert 'contains invalid escape sequence' in str(err.value)
+    assert '\\m' in str(err.value)
 
 
 @pytest.mark.parametrize('value, expected', [
@@ -119,8 +119,8 @@ def test_decode_should_raise_for_unsupported_types():
     with pytest.raises(ValueError) as err:
         decode_value(u'abc')
 
-    assert 'Unable to decode non-binary value' in str(err)
-    assert repr(u'abc') in str(err)
+    assert 'Unable to decode non-binary value' in str(err.value)
+    assert repr(u'abc') in str(err.value)
 
 
 @pytest.mark.parametrize('value', [
