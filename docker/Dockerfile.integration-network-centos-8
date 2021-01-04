@@ -37,6 +37,6 @@ RUN dnf install -y \
     dnf clean all
 
 # Add pytest
-RUN python3 -m pip install pytest==4.6.5
+RUN python3 -m pip install pytest
 
 CMD ["/usr/sbin/init"]

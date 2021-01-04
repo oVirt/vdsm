@@ -12,11 +12,12 @@ RUN  dnf install -y \
         nmstate \
         python3-netaddr \
         python3-devel \
+        python3-six \
         python3-pip \
     && \
     dnf clean all
 
 # Add pytest
-RUN python3 -m pip install pytest==4.6.5
+RUN python3 -m pip install pytest
 
 CMD ["/usr/sbin/init"]
