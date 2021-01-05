@@ -24,7 +24,6 @@ from __future__ import division
 # stdlib imports
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
-import hashlib
 import json
 import logging
 import os
@@ -86,7 +85,6 @@ from vdsm.virt import backup
 from vdsm.virt import blockjob
 from vdsm.virt import domxml_preprocess
 from vdsm.virt import drivemonitor
-from vdsm.virt import filedata
 from vdsm.virt import guestagent
 from vdsm.virt import libvirtxml
 from vdsm.virt import metadata
@@ -105,6 +103,7 @@ from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.domain_descriptor import MutableDomainDescriptor
 from vdsm.virt.domain_descriptor import XmlSource
 from vdsm.virt.jobs import snapshot
+from vdsm.virt.externaldata import ExternalData, ExternalDataKind
 from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import drivename
 from vdsm.virt.vmdevices import lookup
@@ -193,9 +192,6 @@ class SetLinkAndNetworkError(Exception):
 class UpdatePortMirroringError(Exception):
     pass
 
-
-TpmData = namedtuple("TpmData", ["stable_data", "current_data",
-                                 "monitor_hash", "engine_hash"])
 
 VolumeSize = namedtuple("VolumeSize",
                         ["apparentsize", "truesize"])
@@ -475,6 +471,7 @@ class Vm(object):
         self._migration_downtime = None
         self._pause_code = None
         self._last_disk_mapping_hash = None
+        self._external_data = {}
         self._init_tpm_data(params.get('_X_tpmdata'))
 
     @property
@@ -598,8 +595,6 @@ class Vm(object):
                 break
         else:
             # No emulated TPM device found
-            self._tpm_data = None
-            self._tpm_monitor = None
             return
         if tpm_data is None:
             # This is normal in newly created VMs or incoming live migrations
@@ -623,24 +618,16 @@ class Vm(object):
                     reason="Failed to write initial TPM data",
                     exception=error
                 )
-            engine_hash = self._secure_hash(tpm_data)
-        self._tpm_data = TpmData(stable_data=tpm_data,
-                                 current_data=tpm_data,
-                                 monitor_hash=hash(tpm_data),
-                                 engine_hash=engine_hash)
-        self._tpm_monitor_lock = threading.Lock()
-        self._tpm_monitor = filedata.Monitor(self._read_tpm_data)
+            engine_hash = ExternalData.secure_hash(tpm_data)
+        self._external_data[ExternalDataKind.TPM] = ExternalData(
+            ExternalDataKind.TPM, self.log,
+            self._read_tpm_data, tpm_data, engine_hash)
 
     def _read_tpm_data(self, last_modified):
         return supervdsm.getProxy().read_tpm_data(self.id, last_modified)
 
     def _write_tpm_data(self, tpm_data):
         supervdsm.getProxy().write_tpm_data(self.id, tpm_data)
-
-    def _secure_hash(self, data):
-        sha256 = hashlib.sha256()
-        sha256.update(data.encode('ascii'))
-        return sha256.hexdigest()
 
     def _get_lastStatus(self):
         # Note that we don't use _statusLock here due to potential risk of
@@ -1860,9 +1847,9 @@ class Vm(object):
         if devices_hash is not None:
             stats['hash'] = str(hash((devices_hash,
                                       self.guestAgent.diskMappingHash)))
-        tpm_data = self._tpm_data
-        if tpm_data is not None and tpm_data.engine_hash:
-            stats['tpmHash'] = tpm_data.engine_hash
+        if ExternalDataKind.TPM in self._external_data:
+            stats['tpmHash'] = \
+                self._external_data[ExternalDataKind.TPM].data.engine_hash
         if self._watchdogEvent:
             stats['watchdogEvent'] = self._watchdogEvent
         if self._vcpuLimit:
@@ -1960,20 +1947,22 @@ class Vm(object):
         """
         Return requested data, stored in the local file system.
         """
-        if kind != "tpm":
+        try:
+            kind_key = ExternalDataKind(kind)
+        except ValueError:
             raise exception.ExternalDataFailed(
                 reason="Unsupported data kind", kind=kind
             )
-        if self._tpm_monitor is None:
+        if kind_key not in self._external_data:
             raise exception.ExternalDataFailed(
-                reason="No TPM device available"
+                reason="No such device available", kind=kind
             )
         if force_update:
-            data, hash_ = self.update_tpm(force=True)
+            data, hash_ = self._external_data[kind_key].update(force=True)
         else:
-            tpm_data = self._tpm_data
-            data = tpm_data.stable_data
-            hash_ = tpm_data.engine_hash
+            stored_data = self._external_data[kind_key].data
+            data = stored_data.stable_data
+            hash_ = stored_data.engine_hash
         result = {'hash': hash_}
         if data and last_hash != hash_:
             result['_X_data'] = data
@@ -1998,49 +1987,9 @@ class Vm(object):
           returned
         :rtype: pair (string or None, string or None) or None
         """
-        monitor = self._tpm_monitor
-        if monitor is None:
+        if ExternalDataKind.TPM not in self._external_data:
             return None
-        with self._tpm_monitor_lock:
-            error = None
-            try:
-                new_data = monitor.data(force=force)
-            except Exception as e:
-                self.log.error("Failed to read TPM data: %s", e)
-                if isinstance(e, exception.ExternalDataFailed):
-                    raise
-                else:
-                    # Let's not leak TPM data from the exception
-                    error = e
-            if error is not None:
-                raise exception.ExternalDataFailed(
-                    reason="Failed to read TPM data",
-                    exception=error
-                )
-            monitor_hash = monitor.data_hash()
-            if new_data is None:
-                # Data is unchanged, we can report it
-                stable_data = self._tpm_data.current_data
-                if stable_data is not self._tpm_data.stable_data:
-                    self._tpm_data = self._tpm_data._replace(
-                        stable_data=stable_data,
-                        engine_hash=self._secure_hash(stable_data)
-                    )
-            elif force or monitor_hash == self._tpm_data.monitor_hash:
-                # New stable data, replace old data completely
-                self._tpm_data = TpmData(
-                    stable_data=new_data,
-                    current_data=new_data,
-                    monitor_hash=monitor_hash,
-                    engine_hash=self._secure_hash(new_data)
-                )
-            else:
-                # New unstable data, store it but don't report it
-                self._tpm_data = self._tpm_data._replace(
-                    current_data=new_data,
-                    monitor_hash=monitor_hash
-                )
-            return self._tpm_data.stable_data, self._tpm_data.engine_hash
+        return self._external_data[ExternalDataKind.TPM].update(force=force)
 
     def migration_parameters(self):
         return {
