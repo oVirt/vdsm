@@ -720,3 +720,76 @@ def test_read_resource_owners_validate_bytes():
     with pytest.raises(TypeError):
         fs.read_resource_owners(
             LOCKSPACE_NAME, u"resource_name", [("path", 0)], sector=0)
+
+
+@pytest.mark.parametrize(
+    "sector_size", [sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K])
+def test_get_set_lvb_after_acquire(sector_size):
+    fs = FakeSanlock(sector_size=sector_size)
+    fs.write_lockspace(LOCKSPACE_NAME, "path", sector=sector_size)
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
+    fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
+    fd = fs.register()
+    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd,
+               lvb=True)
+    data = b"{generation:0}"
+    fs.set_lvb(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)],
+               data.ljust(512, b"\0"))
+    lvb_data = fs.get_lvb(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)],
+                          sector_size)
+
+    # make sure the uninitialized area is poisoned
+    assert lvb_data == data.ljust(512, b"\0").ljust(sector_size, b"x")
+
+    lvb_data = fs.get_lvb(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)],
+                          len(data))
+
+    assert lvb_data == data
+
+
+def test_set_lvb_without_acquire():
+    fs = FakeSanlock()
+    fs.write_lockspace(LOCKSPACE_NAME, "path")
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
+    fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
+
+    with pytest.raises(fs.SanlockException) as e:
+        fs.set_lvb(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], b"data")
+    assert e.value.errno == errno.ENOENT
+
+
+def test_set_lvb_without_lockspace():
+    fs = FakeSanlock()
+    with pytest.raises(fs.SanlockException) as e:
+        fs.set_lvb(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], b"data")
+    assert e.value.errno == errno.ENOSPC
+
+
+@pytest.mark.parametrize(
+    "sector_size", [sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K])
+def test_get_lvb_invalid_size(sector_size):
+    fs = FakeSanlock(sector_size=sector_size)
+    fs.write_lockspace(LOCKSPACE_NAME, "path", sector=sector_size)
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
+    fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
+    fd = fs.register()
+    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd,
+               lvb=True)
+    with pytest.raises(ValueError):
+        fs.get_lvb(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], size=4097)
+
+
+@pytest.mark.parametrize(
+    "sector_size", [sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K])
+def test_set_lvb_too_big(sector_size):
+    fs = FakeSanlock(sector_size=sector_size)
+    fs.write_lockspace(LOCKSPACE_NAME, "path", sector=sector_size)
+    fs.write_resource(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
+    fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
+    fd = fs.register()
+    fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd,
+               lvb=True)
+    with pytest.raises(fs.SanlockException) as e:
+        fs.set_lvb(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)],
+                   data=b"a" * 4097)
+    assert e.value.errno == errno.E2BIG
