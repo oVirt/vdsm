@@ -1,5 +1,5 @@
 #
-# Copyright 2019-2020 Red Hat, Inc.
+# Copyright 2019-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,6 +52,9 @@ DNS_SERVERS1 = ['1.2.3.4', '5.6.7.8']
 DNS_SERVERS2 = ['9.10.11.12', '13.14.15.16']
 OVS_BRIDGE = [f'ovs_br{i}' for i in range(10)]
 MAC_ADDRESS = '1a:2b:3c:4d:5e:6f'
+MTU_800 = 800
+MTU_1000 = 1000
+MTU_2000 = 2000
 
 
 parametrize_bridged = pytest.mark.parametrize(
@@ -309,11 +312,15 @@ def create_ovs_port_state(name, vlan=None):
     return port_state
 
 
-def create_ovs_northbound_state(name, state='up', enforced_mac=None):
+def create_ovs_northbound_state(
+    name, state='up', enforced_mac=None, mtu=DEFAULT_MTU
+):
     nb_state = {nmstate.Interface.NAME: name, nmstate.Interface.STATE: state}
     if state == 'up':
         nb_state[nmstate.Interface.TYPE] = nmstate.InterfaceType.OVS_INTERFACE
     if enforced_mac:
         nb_state[nmstate.Interface.MAC] = enforced_mac
+    if mtu:
+        nb_state[nmstate.Interface.MTU] = mtu
 
     return nb_state

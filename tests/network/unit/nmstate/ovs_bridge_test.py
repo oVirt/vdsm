@@ -1,5 +1,5 @@
 #
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ from vdsm.network import nmstate
 from vdsm.network.nmstate.ovs import network
 
 from .testlib import (
+    DEFAULT_MTU,
     IFACE0,
     IFACE1,
     IPv4_ADDRESS1,
@@ -36,6 +37,9 @@ from .testlib import (
     IPv6_FAMILY,
     IPv6_PREFIX1,
     MAC_ADDRESS,
+    MTU_800,
+    MTU_1000,
+    MTU_2000,
     OVS_BRIDGE,
     VLAN0,
     VLAN101,
@@ -64,6 +68,10 @@ parametrize_ip = pytest.mark.parametrize(
     ids=['IPv4', 'IPv6', 'IPv4&IPv6'],
 )
 
+parametrize_mtu = pytest.mark.parametrize(
+    'mtu', [MTU_800, MTU_2000], ids=['mtu-800', 'mtu-2000']
+)
+
 
 @pytest.fixture(autouse=True)
 def bridge_name_mock():
@@ -85,7 +93,7 @@ class TestBasicNetWithoutIp(object):
         }
         state = nmstate.generate_state(networks=networks, bondings={})
 
-        eth0_state = create_ethernet_iface_state(IFACE0, mtu=None)
+        eth0_state = create_ethernet_iface_state(IFACE0)
 
         bridge_ports = [
             create_ovs_port_state(IFACE0),
@@ -118,8 +126,8 @@ class TestBasicNetWithoutIp(object):
         }
         state = nmstate.generate_state(networks=networks, bondings={})
 
-        eth0_state = create_ethernet_iface_state(IFACE0, mtu=None)
-        eth1_state = create_ethernet_iface_state(IFACE1, mtu=None)
+        eth0_state = create_ethernet_iface_state(IFACE0)
+        eth1_state = create_ethernet_iface_state(IFACE1)
 
         bridge1_ports = [
             create_ovs_port_state(IFACE0),
@@ -166,7 +174,7 @@ class TestBasicNetWithoutIp(object):
         }
         state = nmstate.generate_state(networks=networks, bondings={})
 
-        eth0_state = create_ethernet_iface_state(IFACE0, mtu=None)
+        eth0_state = create_ethernet_iface_state(IFACE0)
 
         bridge_ports = [
             create_ovs_port_state(IFACE0),
@@ -277,8 +285,8 @@ class TestBasicNetWithoutIp(object):
         }
         state = nmstate.generate_state(networks=networks, bondings={})
 
-        eth0_state = create_ethernet_iface_state(IFACE0, mtu=None)
-        eth1_state = create_ethernet_iface_state(IFACE1, mtu=None)
+        eth0_state = create_ethernet_iface_state(IFACE0)
+        eth1_state = create_ethernet_iface_state(IFACE1)
         bridge_ports = [
             create_ovs_port_state(IFACE1),
             create_ovs_port_state(TESTNET1, vlan=vlan),
@@ -326,7 +334,7 @@ class TestBasicNetWithoutIp(object):
         networks = {TESTNET1: {'remove': True}}
         state = nmstate.generate_state(networks=networks, bondings={})
 
-        eth0_state = create_ethernet_iface_state(IFACE0, mtu=None)
+        eth0_state = create_ethernet_iface_state(IFACE0)
         bridge_state = create_ovs_bridge_state(OVS_BRIDGE[5], None, 'absent')
         nb_state = {'name': TESTNET1, 'state': 'absent'}
 
@@ -386,7 +394,7 @@ class TestBasicNetWithIp(object):
         }
         state = nmstate.generate_state(networks=networks, bondings={})
 
-        eth0_state = create_ethernet_iface_state(IFACE0, mtu=None)
+        eth0_state = create_ethernet_iface_state(IFACE0)
         disable_iface_ip(eth0_state)
 
         bridge_ports = [
@@ -429,7 +437,7 @@ class TestBasicNetWithIp(object):
         }
         state = nmstate.generate_state(networks=networks, bondings={})
 
-        eth0_state = create_ethernet_iface_state(IFACE0, mtu=None)
+        eth0_state = create_ethernet_iface_state(IFACE0)
         disable_iface_ip(eth0_state)
 
         bridge_ports = [
@@ -482,7 +490,7 @@ class TestEnforceMacAddress(object):
         }
         state = nmstate.generate_state(networks=networks, bondings={})
 
-        eth0_state = create_ethernet_iface_state(iface_name, mtu=None)
+        eth0_state = create_ethernet_iface_state(iface_name)
 
         bridge_ports = [
             create_ovs_port_state(iface_name),
@@ -499,5 +507,201 @@ class TestEnforceMacAddress(object):
         expected_state = {
             nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
         }
+        sort_by_name(expected_state[nmstate.Interface.KEY])
+        assert expected_state == state
+
+
+class TestMtu(object):
+    @parametrize_bridged
+    @parametrize_mtu
+    @pytest.mark.parametrize(
+        'vlan', [VLAN0, VLAN101, None], ids=['vlan0', 'vlan101', 'non-vlan']
+    )
+    def test_add_single_net_with_custom_mtu(self, bridged, mtu, vlan):
+        networks = {
+            TESTNET1: create_network_config(
+                'nic', IFACE0, bridged, switch='ovs', vlan=vlan, mtu=mtu
+            )
+        }
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        eth0_state = create_ethernet_iface_state(IFACE0, mtu=mtu)
+
+        bridge_ports = [
+            create_ovs_port_state(IFACE0),
+            create_ovs_port_state(TESTNET1, vlan=vlan),
+        ]
+        sort_by_name(bridge_ports)
+        bridge_state = create_ovs_bridge_state(OVS_BRIDGE[0], bridge_ports)
+        nb_state = create_ovs_northbound_state(TESTNET1, mtu=mtu)
+
+        disable_iface_ip(eth0_state, nb_state)
+
+        expected_state = {
+            nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
+        }
+        sort_by_name(expected_state[nmstate.Interface.KEY])
+        assert expected_state == state
+
+    @parametrize_bridged
+    @parametrize_mtu
+    def test_remove_last_net_with_custom_mtu(
+        self, bridged, mtu, rconfig_mock, current_state_mock
+    ):
+        rconfig_mock.networks = {
+            TESTNET1: {
+                'nic': IFACE0,
+                'bridged': bridged,
+                'switch': 'ovs',
+                'mtu': mtu,
+            }
+        }
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states.append(
+            {
+                nmstate.Interface.NAME: OVS_BRIDGE[5],
+                nmstate.Interface.TYPE: nmstate.InterfaceType.OVS_BRIDGE,
+                nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+                nmstate.OvsBridgeSchema.CONFIG_SUBTREE: {
+                    nmstate.OvsBridgeSchema.PORT_SUBTREE: [
+                        {nmstate.OvsBridgeSchema.Port.NAME: TESTNET1},
+                        {nmstate.OvsBridgeSchema.Port.NAME: IFACE0},
+                    ]
+                },
+            }
+        )
+        networks = {TESTNET1: {'remove': True}}
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        eth0_state = create_ethernet_iface_state(IFACE0)
+        bridge_state = create_ovs_bridge_state(
+            OVS_BRIDGE[5], None, nmstate.InterfaceState.ABSENT
+        )
+        nb_state = {
+            nmstate.Interface.NAME: TESTNET1,
+            nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+        }
+
+        expected_state = {
+            nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
+        }
+        sort_by_name(expected_state[nmstate.Interface.KEY])
+        assert expected_state == state
+
+    @parametrize_bridged
+    @parametrize_vlanned
+    @parametrize_mtu
+    def test_add_net_with_custom_mtu_over_existing_bridge(
+        self, bridged, vlanned, mtu, rconfig_mock, current_state_mock
+    ):
+        vlan = VLAN101 if vlanned else None
+        net1_mtu = DEFAULT_MTU
+        rconfig_mock.networks = {
+            TESTNET1: {
+                'nic': IFACE0,
+                'bridged': bridged,
+                'switch': 'ovs',
+                'mtu': net1_mtu,
+            }
+        }
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states.append(
+            {
+                nmstate.Interface.NAME: OVS_BRIDGE[5],
+                nmstate.Interface.TYPE: nmstate.InterfaceType.OVS_BRIDGE,
+                nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+                nmstate.OvsBridgeSchema.CONFIG_SUBTREE: {
+                    nmstate.OvsBridgeSchema.PORT_SUBTREE: [
+                        {nmstate.OvsBridgeSchema.Port.NAME: TESTNET1},
+                        {nmstate.OvsBridgeSchema.Port.NAME: IFACE0},
+                    ]
+                },
+            }
+        )
+        networks = {
+            TESTNET2: create_network_config(
+                'nic', IFACE0, bridged, switch='ovs', vlan=vlan, mtu=mtu
+            )
+        }
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        bridge_ports = [
+            create_ovs_port_state(IFACE0),
+            create_ovs_port_state(TESTNET1),
+            create_ovs_port_state(TESTNET2, vlan=vlan),
+        ]
+        sort_by_name(bridge_ports)
+        bridge_state = create_ovs_bridge_state(OVS_BRIDGE[5], bridge_ports)
+        nb_state = create_ovs_northbound_state(TESTNET2, mtu=mtu)
+
+        disable_iface_ip(nb_state)
+
+        expected_state = {nmstate.Interface.KEY: [bridge_state, nb_state]}
+
+        # Only higher MTU should be reflected on the SB state
+        if mtu > net1_mtu:
+            eth0_state = create_ethernet_iface_state(IFACE0, mtu=mtu)
+            expected_state[nmstate.Interface.KEY].append(eth0_state)
+
+        sort_by_name(expected_state[nmstate.Interface.KEY])
+        assert expected_state == state
+
+    @parametrize_bridged
+    @parametrize_mtu
+    def test_remove_net_with_custom_mtu(
+        self, bridged, mtu, rconfig_mock, current_state_mock
+    ):
+        net1_mtu = MTU_1000
+        rconfig_mock.networks = {
+            TESTNET1: {
+                'nic': IFACE0,
+                'bridged': bridged,
+                'switch': 'ovs',
+                'mtu': net1_mtu,
+            },
+            TESTNET2: {
+                'nic': IFACE0,
+                'bridged': bridged,
+                'switch': 'ovs',
+                'mtu': mtu,
+            },
+        }
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states.append(
+            {
+                nmstate.Interface.NAME: OVS_BRIDGE[5],
+                nmstate.Interface.TYPE: nmstate.InterfaceType.OVS_BRIDGE,
+                nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+                nmstate.OvsBridgeSchema.CONFIG_SUBTREE: {
+                    nmstate.OvsBridgeSchema.PORT_SUBTREE: [
+                        {nmstate.OvsBridgeSchema.Port.NAME: TESTNET1},
+                        {nmstate.OvsBridgeSchema.Port.NAME: TESTNET2},
+                        {nmstate.OvsBridgeSchema.Port.NAME: IFACE0},
+                    ]
+                },
+            }
+        )
+        current_ifaces_states.append(
+            {
+                nmstate.Interface.NAME: IFACE0,
+                nmstate.Interface.TYPE: nmstate.InterfaceType.ETHERNET,
+                nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+                nmstate.Interface.MTU: max(mtu, MTU_1000),
+            }
+        )
+        networks = {TESTNET2: {'remove': True}}
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        nb_state = create_ovs_northbound_state(
+            TESTNET2, nmstate.InterfaceState.ABSENT, mtu=None
+        )
+
+        expected_state = {nmstate.Interface.KEY: [nb_state]}
+
+        # Only higher MTU should be reflected on the SB state
+        if mtu > net1_mtu:
+            eth0_state = create_ethernet_iface_state(IFACE0, mtu=MTU_1000)
+            expected_state[nmstate.Interface.KEY].append(eth0_state)
+
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state

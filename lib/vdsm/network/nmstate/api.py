@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Red Hat, Inc.
+# Copyright 2019-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -74,7 +74,7 @@ def generate_state(networks, bondings):
 
     if linux_br_requested:
         _set_vlans_base_mtu(ifstates, current_ifaces_state)
-        _set_bond_slaves_mtu(ifstates, current_ifaces_state)
+    _set_bond_slaves_mtu(ifstates, current_ifaces_state)
 
     return _merge_state(ifstates, routes_state, dns_state)
 

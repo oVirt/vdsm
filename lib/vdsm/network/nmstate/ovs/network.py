@@ -1,4 +1,4 @@
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 from copy import deepcopy
 
 from .info import OvsInfo
+from ..bridge_util import DEFAULT_MTU
 from ..bridge_util import NetworkConfig
 from ..bridge_util import random_interface_name
 from ..bridge_util import translate_config
@@ -101,6 +102,7 @@ class OvsNetwork(object):
             Interface.NAME: self._name,
             Interface.TYPE: InterfaceType.OVS_INTERFACE,
             Interface.STATE: InterfaceState.UP,
+            Interface.MTU: self._netconf.mtu,
         }
 
     def _create_port_state(self):
@@ -144,6 +146,7 @@ class OvsBridge(object):
         self._desired_nb_by_sb = self._create_desired_nb_by_sb()
         self._persisted_ports_by_bridge = self._get_persisted_ports_by_bridge()
         self._bridge_by_sb = deepcopy(ovs_info.bridge_by_sb)
+        self._mtu_by_sb = self._create_mtu_by_sb()
 
         self._sb_ifaces_state = {}
         self._bridge_ifaces_state = {}
@@ -161,6 +164,10 @@ class OvsBridge(object):
     @property
     def sb_ifaces_state(self):
         return self._sb_ifaces_state
+
+    @property
+    def mtu_by_sb(self):
+        return self._mtu_by_sb
 
     def _create_desired_nb_by_sb(self):
         nb_by_sb = deepcopy(self._ovs_info.nb_by_sb)
@@ -200,7 +207,7 @@ class OvsBridge(object):
     def _remove_bridge(self, sb):
         bridge = self._bridge_by_sb.pop(sb)
         self._bridge_ifaces_state[bridge] = _remove_iface_state(bridge)
-        self._sb_ifaces_state[sb] = self._create_sb_iface_state(sb)
+        self._sb_ifaces_state[sb] = _create_sb_iface_state(sb, DEFAULT_MTU)
 
     def _manage_bridge(self, sb):
         bridge = (
@@ -212,7 +219,7 @@ class OvsBridge(object):
             bridge, sb
         )
         if not self._bridge_exists(sb):
-            sb_state = self._create_sb_iface_state(sb)
+            sb_state = _create_sb_iface_state(sb, self._mtu_by_sb[sb])
             self._add_sb_ip(sb_state)
             self._sb_ifaces_state[sb] = sb_state
             self._bridge_by_sb[sb] = bridge
@@ -238,9 +245,16 @@ class OvsBridge(object):
     def _bridge_exists(self, sb):
         return sb in self._ovs_info.bridge_by_sb
 
-    @staticmethod
-    def _create_sb_iface_state(name):
-        return {Interface.NAME: name, Interface.STATE: InterfaceState.UP}
+    def _create_mtu_by_sb(self):
+        mtu_by_sb = {}
+        for sb, nbs in self._desired_nb_by_sb.items():
+            if nbs:
+                mtu_by_sb[sb] = max(self._get_nb_config(nb).mtu for nb in nbs)
+
+        return mtu_by_sb
+
+    def _get_nb_config(self, nb):
+        return self._networks.get(nb) or self._running_networks.get(nb)
 
     @staticmethod
     def _nb_has_moved(name, attrs, rnets):
@@ -278,6 +292,8 @@ def generate_state(networks, running_networks, current_iface_state):
     dns_state = {}
     net_ifstates = bridges.bridge_ifaces_state
     net_ifstates.update(bridges.sb_ifaces_state)
+
+    _add_missing_sb_mtu(net_ifstates, bridges, current_iface_state)
 
     for net in nets:
         net_ifstates[net.name] = net.iface_state
@@ -330,3 +346,20 @@ def _sort_ports_by_name(bridge_state):
     bridge_state[OvsBridgeSchema.CONFIG_SUBTREE][
         OvsBridgeSchema.PORT_SUBTREE
     ].sort(key=lambda d: d[OvsBridgeSchema.Port.NAME])
+
+
+def _add_missing_sb_mtu(net_ifstates, bridges, current_ifaces_state):
+    for sb, mtu in bridges.mtu_by_sb.items():
+        current_sb_mtu = current_ifaces_state.get(sb, {}).get(
+            Interface.MTU, DEFAULT_MTU
+        )
+        if sb not in net_ifstates and current_sb_mtu != mtu:
+            net_ifstates[sb] = _create_sb_iface_state(sb, mtu)
+
+
+def _create_sb_iface_state(name, mtu):
+    return {
+        Interface.NAME: name,
+        Interface.STATE: InterfaceState.UP,
+        Interface.MTU: mtu,
+    }
