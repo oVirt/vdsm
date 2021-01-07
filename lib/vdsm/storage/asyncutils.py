@@ -148,7 +148,7 @@ class LoopingCall(object):
 
     def _schedule_next_call(self):
         """
-        Schecule the next call, skipping missed deadlines in the past.
+        Schedule the next call, skipping missed deadlines in the past.
         """
         self._deadline += self._interval
         now = self._loop.time()
