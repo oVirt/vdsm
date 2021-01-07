@@ -131,6 +131,14 @@ class MutableDomainDescriptor(object):
         elem = next((el for el in self._dom.findall('.//on_reboot')), None)
         return elem is not None and elem.text or None
 
+    @property
+    def nvram(self):
+        """
+        :return: NVRAM element defining NVRAM store (used to store UEFI or
+          SecureBoot variables) or None if the VM has no NVRAM store.
+        """
+        return vmxml.find_first(self._dom, 'os/nvram', None)
+
 
 class DomainDescriptor(MutableDomainDescriptor):
 

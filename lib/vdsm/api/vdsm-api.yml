@@ -5721,6 +5721,12 @@ types:
             defaultvalue: null
             added: '4.4'
 
+        -   description:
+            name: nvramHash
+            type: string
+            defaultvalue: null
+            added: '4.4'
+
         -   description: The current VM status
             name: status
             type: *VmStatus
@@ -7611,6 +7617,12 @@ types:
             defaultvalue: null
             description: TPM data of the VM
             name: _X_tpmdata
+            type: string
+
+        -   added: '4.4'
+            defaultvalue: null
+            description: NVRAM data of the VM
+            name: _X_nvramdata
             type: string
 
         type: object
@@ -10838,7 +10850,7 @@ VM.getExternalData:
         type: *UUID
     -   name: kind
         description: Which data is requested. The only currently supported data
-          kind is "tpm".
+          kinds are "tpm" and "nvram".
         type: string
     -   name: lastHash
         description: The hash, if provided, is compared to the hash of the

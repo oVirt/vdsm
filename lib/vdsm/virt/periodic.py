@@ -415,6 +415,10 @@ class TpmDataMonitor(_ExternalDataMonitor):
     KIND = ExternalDataKind.TPM
 
 
+class NvramDataMonitor(_ExternalDataMonitor):
+    KIND = ExternalDataKind.NVRAM
+
+
 def _kill_long_paused_vms(cif):
     log = logging.getLogger("virt.periodic")
     log.debug("Looking for stale paused VMs")
@@ -448,6 +452,10 @@ def _create(cif, scheduler):
         per_vm_operation(
             DriveWatermarkMonitor,
             config.getint('vars', 'vm_watermark_interval')),
+
+        per_vm_operation(
+            NvramDataMonitor,
+            config.getint('sampling', 'nvram_data_update_interval')),
 
         per_vm_operation(
             TpmDataMonitor,

@@ -478,6 +478,12 @@ class Vm(object):
             self._check_tpm_devices,
             self._read_tpm_data,
             self._write_tpm_data)
+        self._init_external_data(
+            ExternalDataKind.NVRAM,
+            None,
+            lambda : self._domain.nvram is not None,
+            self._read_nvram_data,
+            lambda nvram_data : None)
 
     @property
     def _hugepages_shared(self):
@@ -661,6 +667,9 @@ class Vm(object):
 
     def _write_tpm_data(self, tpm_data):
         supervdsm.getProxy().write_tpm_data(self.id, tpm_data)
+
+    def _read_nvram_data(self, last_modified):
+        return supervdsm.getProxy().read_nvram_data(self.id, last_modified)
 
     def _get_lastStatus(self):
         # Note that we don't use _statusLock here due to potential risk of
@@ -1880,9 +1889,14 @@ class Vm(object):
         if devices_hash is not None:
             stats['hash'] = str(hash((devices_hash,
                                       self.guestAgent.diskMappingHash)))
-        if ExternalDataKind.TPM in self._external_data:
-            stats['tpmHash'] = \
-                self._external_data[ExternalDataKind.TPM].data.engine_hash
+        for kind, attribute in [
+            (ExternalDataKind.NVRAM, 'nvramHash'),
+            (ExternalDataKind.TPM, 'tpmHash'),
+        ]:
+            if kind in self._external_data:
+                stats[attribute] = \
+                    self._external_data[kind].data.engine_hash
+
         if self._watchdogEvent:
             stats['watchdogEvent'] = self._watchdogEvent
         if self._vcpuLimit:

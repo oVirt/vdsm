@@ -28,6 +28,7 @@ from vdsm.virt import filedata
 class ExternalDataKind(Enum):
     # Value is the string used in API
     TPM = "tpm"
+    NVRAM = "nvram"
 
 
 class ExternalData(object):

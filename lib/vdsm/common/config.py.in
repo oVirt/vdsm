@@ -510,6 +510,9 @@ parameters = [
 
         ('tpm_data_update_interval', '60',
             'Number of seconds between checking TPM data for changes.'),
+
+        ('nvram_data_update_interval', '60',
+            'Number of seconds between checking NVRAM data for changes.'),
     ]),
 
     # Section: [metrics]
