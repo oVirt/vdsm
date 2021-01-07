@@ -28,7 +28,7 @@ from vdsm.network import cmd
 
 _FIREWALLD_BINARY = CommandPath('firewall-cmd', '/bin/firewall-cmd')
 _IPTABLES_BINARY = CommandPath('iptables', '/sbin/iptables')
-_SERVICE_BINARY = CommandPath('service', '/sbin/service')
+_SYSTEMCTL_BINARY = CommandPath('systemctl', '/bin/systemctl')
 
 
 class FirewallError(Exception):
@@ -161,7 +161,7 @@ def _forbid_dhcp(iface):
 
 
 def _serviceRunning(name):
-    ret, _, _ = cmd.exec_sync([_SERVICE_BINARY.cmd, name, 'status'])
+    ret, _, _ = cmd.exec_sync([_SYSTEMCTL_BINARY.cmd, name, 'status'])
     # return code 0 means service is running
     return not ret
 
