@@ -50,6 +50,7 @@ LIBVIRT_SELINUX = '@ENABLE_LIBVIRT_SELINUX@' == 'yes'
 #
 # Path definitions
 #
+P_LIBVIRT_NVRAM = '/var/lib/libvirt/qemu/nvram'
 P_LIBVIRT_SWTPM = '/var/lib/libvirt/swtpm'
 P_LIBVIRT_VMCHANNELS = '/var/lib/libvirt/qemu/channels/'
 P_OVIRT_VMCONSOLES = '/var/run/ovirt-vmconsole-console/'

@@ -209,3 +209,25 @@ def write_tpm_data(vm_id, tpm_data):
     # OK, write the data to the target location
     accessor = filedata.DirectoryData(filedata.tpm_path(vm_id))
     accessor.store(tpm_data)
+
+
+@expose
+def read_nvram_data(vm_id, last_modified):
+    accessor = filedata.FileData(filedata.nvram_path(vm_id))
+    currently_modified = accessor.last_modified()
+    data = accessor.retrieve(last_modified=last_modified)
+    return data, currently_modified
+
+
+@expose
+def write_nvram_data(vm_id, nvram_data):
+    nvram_path = filedata.nvram_path(vm_id)
+    # Create the file with restricted permissions owned by root
+    if os.path.exists(nvram_path):
+        os.remove(nvram_path)
+    fd = os.open(
+        nvram_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode=0o600)
+    os.close(fd)
+    # Write content
+    accessor = filedata.FileData(nvram_path)
+    accessor.store(nvram_data)

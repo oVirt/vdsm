@@ -17,8 +17,10 @@
 
 
 import base64
+import grp
 import logging
 import os
+import pwd
 import re
 import shutil
 import time
@@ -277,3 +279,30 @@ def tpm_path(vm_id):
     if _VM_ID_REGEXP.match(vm_id) is None:
         raise exception.ExternalDataFailed("Invalid VM id", vm_id=vm_id)
     return os.path.join(constants.P_LIBVIRT_SWTPM, vm_id)
+
+
+def nvram_path(vm_id):
+    """
+    Return path to NVRAM file for a VM or a path where to store a template for
+    NVRAM of the VM.
+
+    :param vm_id: VM id
+    :type vm_id: string
+    :returns: path to the NVRAM file
+    :rtype: string
+    :raises: exception.ExternalDataFailed -- if the VM id has invalid format,
+      OSError -- when NVRAM directory cannot be created
+    """
+    if _VM_ID_REGEXP.match(vm_id) is None:
+        raise exception.ExternalDataFailed("Invalid VM id", vm_id=vm_id)
+    if not os.path.exists(constants.P_LIBVIRT_NVRAM):
+        # The directory is normally created by libvirt, but this may not
+        # have happened yet. We can try to create it on our own. The
+        # parents however should be part of libvirt RPM and if they
+        # are missing it is not our problem.
+        uid = pwd.getpwnam(constants.QEMU_PROCESS_USER).pw_uid
+        gid = grp.getgrnam(constants.QEMU_PROCESS_GROUP).gr_gid
+        os.mkdir(constants.P_LIBVIRT_NVRAM, mode=0o755)
+        os.chown(constants.P_LIBVIRT_NVRAM, uid, gid)
+    path = os.path.join(constants.P_LIBVIRT_NVRAM, vm_id + ".fd")
+    return path
