@@ -480,10 +480,10 @@ class Vm(object):
             self._write_tpm_data)
         self._init_external_data(
             ExternalDataKind.NVRAM,
-            None,
+            params.get('_X_nvramdata'),
             lambda : self._domain.nvram is not None,
             self._read_nvram_data,
-            lambda nvram_data : None)
+            self._write_nvram_data)
 
     @property
     def _hugepages_shared(self):
@@ -670,6 +670,9 @@ class Vm(object):
 
     def _read_nvram_data(self, last_modified):
         return supervdsm.getProxy().read_nvram_data(self.id, last_modified)
+
+    def _write_nvram_data(self, nvram_data):
+        supervdsm.getProxy().write_nvram_data(self.id, nvram_data)
 
     def _get_lastStatus(self):
         # Note that we don't use _statusLock here due to potential risk of
