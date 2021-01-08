@@ -1,5 +1,5 @@
 #
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -265,7 +265,7 @@ class TestBondedNetwork(object):
             disable_iface_ip(vlan101_state)
             bridge1_state = create_bridge_iface_state(
                 TESTNET1,
-                vlan101_state['name'],
+                vlan101_state[nmstate.Interface.NAME],
                 options=generate_bridge_options(stp_enabled=False),
             )
             bridge1_state.update(ip1_state)
@@ -281,12 +281,12 @@ class TestBondedNetwork(object):
         current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
         current_ifaces_states.append(
             {
-                'name': TESTBOND0,
+                nmstate.Interface.NAME: TESTBOND0,
                 nmstate.Interface.TYPE: nmstate.InterfaceType.BOND,
-                'state': 'up',
+                nmstate.Interface.STATE: nmstate.InterfaceState.UP,
                 nmstate.Interface.MTU: DEFAULT_MTU,
-                'ipv4': {'enabled': False},
-                'ipv6': {'enabled': False},
+                nmstate.Interface.IPV4: {nmstate.InterfaceIP.ENABLED: False},
+                nmstate.Interface.IPV6: {nmstate.InterfaceIP.ENABLED: False},
             }
         )
         rconfig_mock.networks = {
@@ -303,17 +303,24 @@ class TestBondedNetwork(object):
         expected_state = {
             nmstate.Interface.KEY: [
                 {
-                    'name': TESTBOND0,
-                    'state': 'up',
+                    nmstate.Interface.NAME: TESTBOND0,
+                    nmstate.Interface.STATE: nmstate.InterfaceState.UP,
                     nmstate.Interface.MTU: DEFAULT_MTU,
-                    'ipv4': {'enabled': False},
-                    'ipv6': {'enabled': False},
+                    nmstate.Interface.IPV4: {
+                        nmstate.InterfaceIP.ENABLED: False
+                    },
+                    nmstate.Interface.IPV6: {
+                        nmstate.InterfaceIP.ENABLED: False
+                    },
                 }
             ]
         }
         if bridged:
             expected_state[nmstate.Interface.KEY].append(
-                {'name': TESTNET1, 'state': 'absent'}
+                {
+                    nmstate.Interface.NAME: TESTNET1,
+                    nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+                }
             )
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
@@ -334,12 +341,20 @@ class TestBondedNetwork(object):
 
         expected_state = {
             nmstate.Interface.KEY: [
-                {'name': TESTBOND0 + '.' + str(VLAN101), 'state': 'absent'}
+                {
+                    nmstate.Interface.NAME: TESTBOND0 + '.' + str(VLAN101),
+                    nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+                }
             ]
         }
         if bridged:
             expected_state[nmstate.Interface.KEY].extend(
-                [{'name': TESTNET1, 'state': 'absent'}]
+                [
+                    {
+                        nmstate.Interface.NAME: TESTNET1,
+                        nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+                    }
+                ]
             )
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
@@ -351,12 +366,12 @@ class TestBondedNetwork(object):
         current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
         current_ifaces_states.append(
             {
-                'name': TESTBOND0,
+                nmstate.Interface.NAME: TESTBOND0,
                 nmstate.Interface.TYPE: nmstate.InterfaceType.BOND,
-                'state': 'up',
+                nmstate.Interface.STATE: nmstate.InterfaceState.UP,
                 nmstate.Interface.MTU: DEFAULT_MTU,
-                'ipv4': {'enabled': False},
-                'ipv6': {'enabled': False},
+                nmstate.Interface.IPV4: {nmstate.InterfaceIP.ENABLED: False},
+                nmstate.Interface.IPV6: {nmstate.InterfaceIP.ENABLED: False},
             }
         )
         rconfig_mock.networks = {
@@ -376,12 +391,19 @@ class TestBondedNetwork(object):
 
         expected_state = {
             nmstate.Interface.KEY: [
-                {'name': TESTBOND0, 'type': 'bond', 'state': 'absent'}
+                {
+                    nmstate.Interface.NAME: TESTBOND0,
+                    nmstate.Interface.TYPE: nmstate.InterfaceType.BOND,
+                    nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+                }
             ]
         }
         if bridged:
             expected_state[nmstate.Interface.KEY].append(
-                {'name': TESTNET1, 'state': 'absent'}
+                {
+                    nmstate.Interface.NAME: TESTNET1,
+                    nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+                }
             )
         assert expected_state == state
 
@@ -433,8 +455,14 @@ def test_translate_remove_nets(rconfig_mock, bridged, current_state_mock):
     if bridged:
         expected_state[nmstate.Interface.KEY].extend(
             [
-                {'name': TESTNET1, 'state': 'absent'},
-                {'name': TESTNET2, 'state': 'absent'},
+                {
+                    nmstate.Interface.NAME: TESTNET1,
+                    nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+                },
+                {
+                    nmstate.Interface.NAME: TESTNET2,
+                    nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+                },
             ]
         )
     sort_by_name(expected_state[nmstate.Interface.KEY])
@@ -520,7 +548,10 @@ def test_translate_remove_network_with_default_route(
 
     if bridged:
         expected_state[nmstate.Interface.KEY].append(
-            {'name': TESTNET1, 'state': 'absent'}
+            {
+                nmstate.Interface.NAME: TESTNET1,
+                nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+            }
         )
 
     assert expected_state == state
@@ -738,7 +769,7 @@ def test_translate_add_network_with_default_route_on_vlan_interface():
 
     expected_state[nmstate.Route.KEY] = {
         nmstate.Route.CONFIG: get_routes_config(
-            IPv4_GATEWAY1, vlan101_state['name']
+            IPv4_GATEWAY1, vlan101_state[nmstate.Interface.NAME]
         )
     }
     assert expected_state == state
@@ -757,7 +788,7 @@ def test_update_network_from_bridged_to_bridgeless(rconfig_mock):
     disable_iface_ip(eth0_state)
 
     remove_bridge_state = create_bridge_iface_state(
-        TESTNET1, port=None, state='absent'
+        TESTNET1, port=None, state=nmstate.InterfaceState.ABSENT
     )
 
     expected_state = {nmstate.Interface.KEY: [eth0_state, remove_bridge_state]}

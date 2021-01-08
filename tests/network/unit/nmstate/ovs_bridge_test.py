@@ -211,9 +211,9 @@ class TestBasicNetWithoutIp(object):
         current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
         current_ifaces_states.append(
             {
-                'name': OVS_BRIDGE[5],
+                nmstate.Interface.NAME: OVS_BRIDGE[5],
                 nmstate.Interface.TYPE: nmstate.InterfaceType.OVS_BRIDGE,
-                'state': 'up',
+                nmstate.Interface.STATE: nmstate.InterfaceState.UP,
                 nmstate.OvsBridgeSchema.CONFIG_SUBTREE: {
                     nmstate.OvsBridgeSchema.PORT_SUBTREE: [
                         {nmstate.OvsBridgeSchema.Port.NAME: TESTNET1},
@@ -267,9 +267,9 @@ class TestBasicNetWithoutIp(object):
         current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
         current_ifaces_states.append(
             {
-                'name': OVS_BRIDGE[5],
+                nmstate.Interface.NAME: OVS_BRIDGE[5],
                 nmstate.Interface.TYPE: nmstate.InterfaceType.OVS_BRIDGE,
-                'state': 'up',
+                nmstate.Interface.STATE: nmstate.InterfaceState.UP,
                 nmstate.OvsBridgeSchema.CONFIG_SUBTREE: {
                     nmstate.OvsBridgeSchema.PORT_SUBTREE: [
                         nb_port,
@@ -294,7 +294,7 @@ class TestBasicNetWithoutIp(object):
         sort_by_name(bridge_ports)
         new_bridge_state = create_ovs_bridge_state(OVS_BRIDGE[0], bridge_ports)
         old_bridge_state = create_ovs_bridge_state(
-            OVS_BRIDGE[5], None, 'absent'
+            OVS_BRIDGE[5], None, nmstate.InterfaceState.ABSENT
         )
         nb_state = create_ovs_northbound_state(TESTNET1)
 
@@ -320,9 +320,9 @@ class TestBasicNetWithoutIp(object):
         current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
         current_ifaces_states.append(
             {
-                'name': OVS_BRIDGE[5],
+                nmstate.Interface.NAME: OVS_BRIDGE[5],
                 nmstate.Interface.TYPE: nmstate.InterfaceType.OVS_BRIDGE,
-                'state': 'up',
+                nmstate.Interface.STATE: nmstate.InterfaceState.UP,
                 nmstate.OvsBridgeSchema.CONFIG_SUBTREE: {
                     nmstate.OvsBridgeSchema.PORT_SUBTREE: [
                         {nmstate.OvsBridgeSchema.Port.NAME: TESTNET1},
@@ -335,8 +335,13 @@ class TestBasicNetWithoutIp(object):
         state = nmstate.generate_state(networks=networks, bondings={})
 
         eth0_state = create_ethernet_iface_state(IFACE0)
-        bridge_state = create_ovs_bridge_state(OVS_BRIDGE[5], None, 'absent')
-        nb_state = {'name': TESTNET1, 'state': 'absent'}
+        bridge_state = create_ovs_bridge_state(
+            OVS_BRIDGE[5], None, nmstate.InterfaceState.ABSENT
+        )
+        nb_state = {
+            nmstate.Interface.NAME: TESTNET1,
+            nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+        }
 
         expected_state = {
             nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
@@ -353,9 +358,9 @@ class TestBasicNetWithoutIp(object):
         current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
         current_ifaces_states.append(
             {
-                'name': OVS_BRIDGE[5],
+                nmstate.Interface.NAME: OVS_BRIDGE[5],
                 nmstate.Interface.TYPE: nmstate.InterfaceType.OVS_BRIDGE,
-                'state': 'up',
+                nmstate.Interface.STATE: nmstate.InterfaceState.UP,
                 nmstate.OvsBridgeSchema.CONFIG_SUBTREE: {
                     nmstate.OvsBridgeSchema.PORT_SUBTREE: [
                         {nmstate.OvsBridgeSchema.Port.NAME: TESTNET1},
@@ -368,7 +373,10 @@ class TestBasicNetWithoutIp(object):
         networks = {TESTNET2: {'remove': True}}
         state = nmstate.generate_state(networks=networks, bondings={})
 
-        nb_state = {'name': TESTNET2, 'state': 'absent'}
+        nb_state = {
+            nmstate.Interface.NAME: TESTNET2,
+            nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+        }
 
         expected_state = {nmstate.Interface.KEY: [nb_state]}
         sort_by_name(expected_state[nmstate.Interface.KEY])

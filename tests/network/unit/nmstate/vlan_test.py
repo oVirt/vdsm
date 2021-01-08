@@ -60,12 +60,18 @@ def test_translate_remove_vlan_net(rconfig_mock, bridged):
 
     expected_state = {
         nmstate.Interface.KEY: [
-            {'name': IFACE0 + '.' + str(VLAN101), 'state': 'absent'}
+            {
+                nmstate.Interface.NAME: IFACE0 + '.' + str(VLAN101),
+                nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+            }
         ]
     }
     if bridged:
         expected_state[nmstate.Interface.KEY].append(
-            {'name': TESTNET1, 'state': 'absent'}
+            {
+                nmstate.Interface.NAME: TESTNET1,
+                nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+            }
         )
     sort_by_name(expected_state[nmstate.Interface.KEY])
     assert expected_state == state

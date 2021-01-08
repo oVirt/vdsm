@@ -1,5 +1,5 @@
 #
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -85,7 +85,11 @@ class TestBond(object):
 
         expected_state = {
             nmstate.Interface.KEY: [
-                {'name': TESTBOND0, 'type': 'bond', 'state': 'absent'}
+                {
+                    nmstate.Interface.NAME: TESTBOND0,
+                    nmstate.Interface.TYPE: nmstate.InterfaceType.BOND,
+                    nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
+                }
             ]
         }
         assert expected_state == state

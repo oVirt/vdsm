@@ -66,11 +66,14 @@ parametrize_vlanned = pytest.mark.parametrize(
 
 
 def sort_by_name(ifaces_states):
-    ifaces_states.sort(key=lambda d: d['name'])
+    ifaces_states.sort(key=lambda d: d[nmstate.Interface.NAME])
 
 
 def create_ethernet_iface_state(name, include_type=False, mtu=DEFAULT_MTU):
-    state = {nmstate.Interface.NAME: name, nmstate.Interface.STATE: 'up'}
+    state = {
+        nmstate.Interface.NAME: name,
+        nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+    }
     if include_type:
         state[nmstate.Interface.TYPE] = nmstate.InterfaceType.ETHERNET
     if mtu is not None:
@@ -81,48 +84,66 @@ def create_ethernet_iface_state(name, include_type=False, mtu=DEFAULT_MTU):
 def create_bond_iface_state(name, mode, slaves, mtu=DEFAULT_MTU, **options):
     state = {
         nmstate.Interface.NAME: name,
-        nmstate.Interface.TYPE: 'bond',
-        nmstate.Interface.STATE: 'up',
-        'link-aggregation': {'mode': mode, 'slaves': slaves},
+        nmstate.Interface.TYPE: nmstate.InterfaceType.BOND,
+        nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+        nmstate.BondSchema.CONFIG_SUBTREE: {
+            nmstate.BondSchema.MODE: mode,
+            nmstate.BondSchema.SLAVES: slaves,
+        },
     }
     if mtu is not None:
         state[nmstate.Interface.MTU] = mtu
     if options:
-        state['link-aggregation']['options'] = options
+        state[nmstate.BondSchema.CONFIG_SUBTREE][
+            nmstate.BondSchema.OPTIONS_SUBTREE
+        ] = options
     return state
 
 
 def create_bridge_iface_state(
-    name, port, state='up', mtu=DEFAULT_MTU, options=None
+    name, port, state=nmstate.InterfaceState.UP, mtu=DEFAULT_MTU, options=None
 ):
     bridge_state = {
         nmstate.Interface.NAME: name,
         nmstate.Interface.STATE: state,
     }
 
-    if state == 'up':
-        bridge_state[nmstate.Interface.TYPE] = 'linux-bridge'
+    if state == nmstate.InterfaceState.UP:
+        bridge_state[
+            nmstate.Interface.TYPE
+        ] = nmstate.InterfaceType.LINUX_BRIDGE
         bridge_state[nmstate.Interface.MTU] = mtu
     if port:
         bridge_state[nmstate.LinuxBridge.CONFIG_SUBTREE] = {
-            'port': [{'name': port}]
+            nmstate.LinuxBridge.PORT_SUBTREE: [
+                {nmstate.LinuxBridge.Port.NAME: port}
+            ]
         }
     if options:
-        bridge_state['bridge']['options'] = options
+        bridge_state[nmstate.LinuxBridge.CONFIG_SUBTREE][
+            nmstate.LinuxBridge.OPTIONS_SUBTREE
+        ] = options
     return bridge_state
 
 
 def generate_bridge_options(stp_enabled):
-    return {'stp': {'enabled': stp_enabled}}
+    return {
+        nmstate.LinuxBridge.STP_SUBTREE: {
+            nmstate.LinuxBridge.STP.ENABLED: stp_enabled
+        }
+    }
 
 
 def create_vlan_iface_state(base, vlan, mtu=DEFAULT_MTU):
     return {
         nmstate.Interface.NAME: base + '.' + str(vlan),
-        nmstate.Interface.TYPE: 'vlan',
-        nmstate.Interface.STATE: 'up',
+        nmstate.Interface.TYPE: nmstate.InterfaceType.VLAN,
+        nmstate.Interface.STATE: nmstate.InterfaceState.UP,
         nmstate.Interface.MTU: mtu,
-        'vlan': {'id': vlan, 'base-iface': base},
+        nmstate.Vlan.CONFIG_SUBTREE: {
+            nmstate.Vlan.ID: vlan,
+            nmstate.Vlan.BASE_IFACE: base,
+        },
     }
 
 
@@ -175,7 +196,7 @@ def create_ipv6_state(
         state[nmstate.Interface.IPV6] = {
             nmstate.InterfaceIP.ENABLED: True,
             nmstate.InterfaceIP.DHCP: True,
-            'autoconf': True,
+            nmstate.InterfaceIPv6.AUTOCONF: True,
             nmstate.InterfaceIP.AUTO_DNS: default_route and auto_dns,
             nmstate.InterfaceIP.AUTO_GATEWAY: default_route,
             nmstate.InterfaceIP.AUTO_ROUTES: default_route,
@@ -287,12 +308,12 @@ def create_dynamic_ip_configuration(dhcpv4, dhcpv6, ipv6autoconf):
     return dynamic_ip_config
 
 
-def create_ovs_bridge_state(name, ports, state='up'):
+def create_ovs_bridge_state(name, ports, state=nmstate.InterfaceState.UP):
     bridge_state = {
         nmstate.Interface.NAME: name,
         nmstate.Interface.STATE: state,
     }
-    if state == 'up':
+    if state == nmstate.InterfaceState.UP:
         bridge_state[nmstate.Interface.TYPE] = nmstate.InterfaceType.OVS_BRIDGE
     if ports:
         bridge_state[nmstate.OvsBridgeSchema.CONFIG_SUBTREE] = {
@@ -305,18 +326,19 @@ def create_ovs_bridge_state(name, ports, state='up'):
 def create_ovs_port_state(name, vlan=None):
     port_state = {nmstate.OvsBridgeSchema.Port.NAME: name}
     if vlan is not None:
+        acces_mode = nmstate.OvsBridgeSchema.Port.Vlan.Mode.ACCESS
         port_state[nmstate.OvsBridgeSchema.Port.VLAN_SUBTREE] = {
-            nmstate.OvsBridgeSchema.Port.Vlan.MODE: 'access',
+            nmstate.OvsBridgeSchema.Port.Vlan.MODE: acces_mode,
             nmstate.OvsBridgeSchema.Port.Vlan.TAG: vlan,
         }
     return port_state
 
 
 def create_ovs_northbound_state(
-    name, state='up', enforced_mac=None, mtu=DEFAULT_MTU
+    name, state=nmstate.InterfaceState.UP, enforced_mac=None, mtu=DEFAULT_MTU
 ):
     nb_state = {nmstate.Interface.NAME: name, nmstate.Interface.STATE: state}
-    if state == 'up':
+    if state == nmstate.InterfaceState.UP:
         nb_state[nmstate.Interface.TYPE] = nmstate.InterfaceType.OVS_INTERFACE
     if enforced_mac:
         nb_state[nmstate.Interface.MAC] = enforced_mac
