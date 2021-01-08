@@ -27,11 +27,6 @@ function load_kernel_modules {
     modprobe openvswitch
 }
 
-function enable_bonding_driver {
-    ip link add bond0000 type bond
-    ip link delete bond0000
-}
-
 function wait_for_active_service {
     container_exec "while ! systemctl is-active "$1"; do sleep 1; done"
 }

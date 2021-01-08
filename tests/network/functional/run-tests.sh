@@ -106,11 +106,7 @@ while true; do
     shift
 done
 
-if [ -n "$CI" ]; then
-    enable_bonding_driver
-else
-    load_kernel_modules
-fi
+load_kernel_modules
 
 CONTAINER_ID="$($CONTAINER_CMD run --privileged -d -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z $nmstate_mount --env PYTHONPATH=lib --env CI $CONTAINER_IMAGE)"
 trap remove_container EXIT
