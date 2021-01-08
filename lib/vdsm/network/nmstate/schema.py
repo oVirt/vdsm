@@ -1,4 +1,4 @@
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ from libnmstate.schema import InterfaceType
 from libnmstate.schema import LinuxBridge
 from libnmstate.schema import OVSBridge as OvsBridgeSchema
 from libnmstate.schema import Route
+from libnmstate.schema import VLAN as Vlan
 
 
 __all__ = [
@@ -42,4 +43,5 @@ __all__ = [
     'LinuxBridge',
     'OvsBridgeSchema',
     'Route',
+    'Vlan',
 ]

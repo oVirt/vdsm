@@ -1,4 +1,4 @@
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ from .schema import InterfaceType
 from .schema import LinuxBridge
 from .schema import OvsBridgeSchema
 from .schema import Route
+from .schema import Vlan
 
 
 __all__ = [
@@ -67,4 +68,5 @@ __all__ = [
     'LinuxBridge',
     'OvsBridgeSchema',
     'Route',
+    'Vlan',
 ]

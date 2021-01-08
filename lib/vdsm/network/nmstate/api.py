@@ -42,6 +42,7 @@ from .schema import Interface
 from .schema import InterfaceState
 from .schema import InterfaceType
 from .schema import Route
+from .schema import Vlan
 from .sriov import create_sriov_state
 
 
@@ -95,7 +96,7 @@ def _set_vlans_base_mtu(desired_ifstates, current_ifstates):
         and ifstate[Interface.TYPE] == InterfaceType.VLAN
     )
     for vlan_iface, ifstate in current_remaining_vlan_ifaces:
-        base_vlan = ifstate['vlan']['base-iface']
+        base_vlan = ifstate[Vlan.CONFIG_SUBTREE][Vlan.BASE_IFACE]
         if vlan_iface in desired_ifstates:
             vlan_mtu = desired_ifstates[vlan_iface][Interface.MTU]
         else:

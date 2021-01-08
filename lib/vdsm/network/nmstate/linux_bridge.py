@@ -1,4 +1,4 @@
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ from .schema import InterfaceIP
 from .schema import InterfaceState
 from .schema import InterfaceType
 from .schema import LinuxBridge
+from .schema import Vlan
 
 
 class LinuxBridgeNetwork(object):
@@ -154,7 +155,10 @@ class LinuxBridgeNetwork(object):
         if vlan is not None:
             base_iface = self._netconf.base_iface
             return {
-                'vlan': {'id': vlan, 'base-iface': base_iface},
+                Vlan.CONFIG_SUBTREE: {
+                    Vlan.ID: vlan,
+                    Vlan.BASE_IFACE: base_iface,
+                },
                 Interface.NAME: self._netconf.vlan_iface,
                 Interface.TYPE: InterfaceType.VLAN,
                 Interface.STATE: InterfaceState.UP,
