@@ -168,7 +168,7 @@ class BackupConfig(properties.Owner):
 
 def start_backup(vm, dom, config):
     backup_cfg = BackupConfig(config)
-    _validate_parent_id(vm, dom, backup_cfg.parent_checkpoint_id)
+    _validate_parent_id(vm, dom, backup_cfg)
 
     drives = _get_disks_drives(vm, backup_cfg)
     path = socket_path(backup_cfg.backup_id)
@@ -348,13 +348,19 @@ def dump_checkpoint(dom, checkpoint_id):
         raise
 
 
-def _validate_parent_id(vm, dom, parent_checkpoint_id):
+def _validate_parent_id(vm, dom, backup_cfg):
+    # In case of a backup for RAW disks only, checkpoint
+    # isn't created and parent_checkpoint_id will be None
+    # so the validation isn't required.
+    if backup_cfg.to_checkpoint_id is None:
+        return
+
     leaf_checkpoint_id = _get_leaf_checkpoint_name(vm, dom)
-    if parent_checkpoint_id != leaf_checkpoint_id:
+    if backup_cfg.parent_checkpoint_id != leaf_checkpoint_id:
         raise exception.CheckpointError(
             reason="Parent checkpoint ID does not "
                    "match the actual leaf checkpoint",
-            parent_checkpoint_id=parent_checkpoint_id,
+            parent_checkpoint_id=backup_cfg.parent_checkpoint_id,
             leaf_checkpoint_id=leaf_checkpoint_id,
             vm_id=vm.id)
 

@@ -495,6 +495,39 @@ def test_incremental_backup(tmp_backupdir, tmp_basedir):
 
 
 @requires_backup_support
+def test_full_backup_without_checkpoint_with_previous_chain(
+        tmp_backupdir, tmp_basedir):
+    vm = FakeVm()
+    # This test checks an edge case when a chain of incremental
+    # backup was taken for a VM with RAW disks that a snapshot created for
+    # them so their format is now QCOW2 and they are valid for incremental backup.
+    # In this case, when the snapshot is removed, the disk format is RAW again
+    # and only a full backup without a checkpoint can be taken while there
+    # are defined checkpoints for the VM.
+    dom = FakeDomainAdapter(output_checkpoints=[CHECKPOINT_1, CHECKPOINT_2])
+    fake_disks = create_fake_disks()
+
+    # Start full backup without a checkpoint
+    config = {
+        'backup_id': BACKUP_1_ID,
+        'disks': fake_disks,
+    }
+
+    # Start a full backup while skipping the validation for the
+    # last defined checkpoint with the given parent checkpoint
+    # since there is none when a checkpoint isn't created.
+    res = backup.start_backup(vm, dom, config)
+    assert dom.backing_up
+
+    result_disks = res['result']['disks']
+    verify_backup_urls(BACKUP_1_ID, result_disks)
+
+    backup.stop_backup(vm, dom, BACKUP_1_ID)
+    assert not dom.backing_up
+    verify_scratch_disks_removed(vm)
+
+
+@requires_backup_support
 def test_start_backup_failed_get_checkpoint(tmp_backupdir, tmp_basedir):
     vm = FakeVm()
     dom = FakeDomainAdapter()
