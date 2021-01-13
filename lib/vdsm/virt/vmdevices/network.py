@@ -147,6 +147,7 @@ class Interface(core.Base):
             elif attr == 'network' and value == '':
                 kwargs[attr] = net_api.DUMMY_BRIDGE
         self.portMirroring = []
+        self.filter = None
         self.filterParameters = []
         self.vm_custom = {}
         self.linkActive = True
@@ -266,7 +267,7 @@ class Interface(core.Base):
         if self.port_isolated is not None:
             iface.appendChildWithArgs('port', isolated=str(self.port_isolated))
 
-        if hasattr(self, 'filter'):
+        if self.filter is not None:
             filter = iface.appendChildWithArgs('filterref', filter=self.filter)
             _set_parameters_filter(filter, self.filterParameters)
 
