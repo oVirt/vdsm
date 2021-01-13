@@ -18,16 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
+import http.client
 import json
 import socket
 import io
-
-import six
-
-from six.moves import http_client
 
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase
@@ -189,8 +183,8 @@ class TestImageTickets(VdsmTestCase):
         try:
             imagetickets.remove_ticket("uuid")
         except se.ImageDaemonError as e:
-            self.assertTrue(six.text_type("image_daemon_message") in e.value)
-            self.assertTrue(six.text_type("content") in e.value)
+            self.assertTrue("image_daemon_message" in e.value)
+            self.assertTrue("content" in e.value)
 
     @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
     @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
@@ -211,7 +205,7 @@ class TestImageTickets(VdsmTestCase):
 
     @MonkeyPatch(imagetickets, 'DAEMON_SOCK', __file__)
     @MonkeyPatch(imagetickets, 'UnixHTTPConnection', FakeUnixHTTPConnection())
-    @permutations([[http_client.HTTPException], [socket.error], [OSError]])
+    @permutations([[http.client.HTTPException], [socket.error], [OSError]])
     def test_image_tickets_error(self, exc_type):
         ticket = create_ticket(uuid="uuid")
 
