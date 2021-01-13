@@ -28,6 +28,7 @@ from network.nettestlib import bond_device_link as bond_device
 from network.nettestlib import check_sysfs_bond_permission
 from network.nettestlib import dummy_devices
 from network.nettestlib import FakeNotifier
+from network.nettestlib import running_on_travis_ci
 
 from vdsm.network import bond_monitor
 from vdsm.network.link.bond import Bond
@@ -40,6 +41,11 @@ from vdsm.network.link.iface import random_iface_name
 @pytest.fixture(scope='module', autouse=True)
 def setup():
     check_sysfs_bond_permission()
+    if running_on_travis_ci():
+        pytest.skip(
+            'The sysfs access is not working inside container without '
+            'proper bonding module loading'
+        )
 
 
 def _sorted_arp_ip_target(options):
