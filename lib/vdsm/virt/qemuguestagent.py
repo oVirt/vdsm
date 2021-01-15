@@ -61,6 +61,7 @@ _QEMU_NETWORK_INTERFACES_COMMAND = 'guest-network-get-interfaces'
 _QEMU_OSINFO_COMMAND = 'guest-get-osinfo'
 _QEMU_TIMEZONE_COMMAND = 'guest-get-timezone'
 _QEMU_FSINFO_COMMAND = 'guest-get-fsinfo'
+_QEMU_DISKS_COMMAND = 'guest-get-disks'
 
 _HOST_NAME_FIELD = 'host-name'
 _OS_ID_FIELD = 'id'
@@ -69,6 +70,7 @@ _TIMEZONE_ZONE_FIELD = 'zone'
 _FS_DISK_FIELD = 'disk'
 _FS_DISK_DEVICE_FIELD = 'dev'
 _FS_DISK_SERIAL_FIELD = 'serial'
+_DISK_ADDRESS = 'address'
 
 _GUEST_OS_LINUX = 'linux'
 _GUEST_OS_WINDOWS = 'mswindows'
@@ -367,6 +369,19 @@ class DiskInfoCheck(_RunnableOnVmGuestAgent):
     def _execute(self):
         disks = []
         mapping = {}
+        has_mapping = False
+        ret = self._qga_poller.call_qga_command(
+            self._vm, _QEMU_DISKS_COMMAND)
+        if ret is not None:
+            has_mapping = True
+            for disk in ret:
+                if _DISK_ADDRESS not in disk:
+                    # possibly virtual disk or partition
+                    continue
+                name = disk.get('name')
+                serial = disk[_DISK_ADDRESS].get('serial')
+                if name is not None and serial is not None:
+                    mapping[serial] = {'name': name}
         ret = self._qga_poller.call_qga_command(
             self._vm, _QEMU_FSINFO_COMMAND)
         if ret is None:
@@ -383,7 +398,9 @@ class DiskInfoCheck(_RunnableOnVmGuestAgent):
             # Reserved volumes on Windows.
             if fsinfo['total'] != '' and fsinfo['used'] != '':
                 disks.append(fsinfo)
-            if _FS_DISK_FIELD not in fs:
+            # Skip the rest if we already have disks mapping or there is no
+            # info in the guest reply
+            if has_mapping or _FS_DISK_FIELD not in fs:
                 continue
             for d in fs[_FS_DISK_FIELD]:
                 if _FS_DISK_SERIAL_FIELD in d and \
