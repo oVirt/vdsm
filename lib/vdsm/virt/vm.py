@@ -472,7 +472,12 @@ class Vm(object):
         self._pause_code = None
         self._last_disk_mapping_hash = None
         self._external_data = {}
-        self._init_tpm_data(params.get('_X_tpmdata'))
+        self._init_external_data(
+            ExternalDataKind.TPM,
+            params.get('_X_tpmdata'),
+            self._check_tpm_devices,
+            self._read_tpm_data,
+            self._write_tpm_data)
 
     @property
     def _hugepages_shared(self):
@@ -589,39 +594,67 @@ class Vm(object):
         return (cluster_major > major or
                 cluster_major == major and cluster_minor >= minor)
 
-    def _init_tpm_data(self, tpm_data):
-        for tpm in self._domain.get_device_elements('tpm'):
-            if tpm.find("backend[@type='emulator']") is not None:
-                break
-        else:
-            # No emulated TPM device found
+    def _init_external_data(self, kind, initial_data, check_function,
+                            read_function, write_function):
+        """
+        Initialize internal structures for retrieving external data of some
+        kind and populate it with initial data.
+
+        :param kind: Kind of external data to initialize
+        :type kind: ExternalDataKind value
+        :param initial_data: Initial data to write or None
+        :type initial_data: ProtectedPassword
+        :param check_function: function taking zero arguments and returning
+          True or False based on the presence of device in domain XML
+        :type check_function: function
+        :param read_function: function to use for reading data during VM
+          lifetime; to be passed as data retriever to filedata.Monitor(); it
+          takes one argument (last_timestamp) and returns a tuple
+          (data, timestamp)
+        :type read_function: function
+        :param write_function: function to use for initializing the data; it
+          takes a single argumet with initial data
+        :type write_function: function
+        """
+        if not check_function():
             return
-        if tpm_data is None:
+        if initial_data is None:
             # This is normal in newly created VMs or incoming live migrations
             if self.lastStatus != vmstatus.MIGRATION_DESTINATION:
-                self.log.info("TPM device present but no TPM data provided")
+                self.log.info("Device present but no data provided for %s",
+                              kind)
             engine_hash = ''
         else:
-            tpm_data = password.unprotect(tpm_data)
+            initial_data = password.unprotect(initial_data)
             error = None
+            self.log.debug("Writing initial data for %s", kind)
             try:
-                self._write_tpm_data(tpm_data)
+                write_function(initial_data)
             except Exception as e:
-                self.log.error("Failed to initialize TPM data: %s", e)
+                self.log.error("Failed to initialize external data %s: %s",
+                               kind, e)
                 if isinstance(e, exception.ExternalDataFailed):
                     raise
                 else:
-                    # Let's not leak TPM data from the exception
+                    # Let's not leak data from the exception
                     error = e
             if error is not None:
                 raise exception.ExternalDataFailed(
-                    reason="Failed to write initial TPM data",
+                    reason="Failed to write initial data",
+                    kind=kind,
                     exception=error
                 )
-            engine_hash = ExternalData.secure_hash(tpm_data)
-        self._external_data[ExternalDataKind.TPM] = ExternalData(
-            ExternalDataKind.TPM, self.log,
-            self._read_tpm_data, tpm_data, engine_hash)
+            engine_hash = ExternalData.secure_hash(initial_data)
+        self._external_data[kind] = ExternalData(
+            kind, self.log, read_function, initial_data, engine_hash)
+        self.log.debug("Initialized external data monitor for %s", kind)
+
+    def _check_tpm_devices(self):
+        for tpm in self._domain.get_device_elements('tpm'):
+            if tpm.find("backend[@type='emulator']") is not None:
+                return True
+        else:
+            return False
 
     def _read_tpm_data(self, last_modified):
         return supervdsm.getProxy().read_tpm_data(self.id, last_modified)
