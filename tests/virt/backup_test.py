@@ -35,12 +35,15 @@ from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import nbdutils
 from vdsm.common import response
+from vdsm.common.units import MiB
 
 from vdsm.storage import hsm
+from vdsm.storage import qemuimg
 from vdsm.storage import transientdisk
 from vdsm.storage.dispatcher import Dispatcher
 
 from vdsm.virt import backup
+from vdsm.virt.vmdevices.storage import DISK_TYPE
 
 from virt.fakedomainadapter import FakeCheckpoint
 from virt.fakedomainadapter import FakeDomainAdapter
@@ -197,7 +200,6 @@ FAKE_SCRATCH_DISKS = {
     "vda": "/path/to/scratch_vda",
 }
 
-
 FAKE_CHECKPOINT_CFG = [
     {
         'id': CHECKPOINT_1_ID,
@@ -220,6 +222,23 @@ def tmp_backupdir(tmpdir, monkeypatch):
 def tmp_basedir(tmpdir, monkeypatch):
     path = str(tmpdir.join("transient_disks"))
     monkeypatch.setattr(transientdisk, 'P_TRANSIENT_DISKS', path)
+
+
+@pytest.fixture
+def tmp_scratch_disks(tmpdir):
+    virtual_size = MiB
+    disks_path = []
+    for disk in ["scratch1", "scratch2"]:
+        path = str(tmpdir.join(disk))
+        op = qemuimg.create(
+            path,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+        disks_path.append(path)
+    return disks_path
 
 
 @requires_backup_support
@@ -272,6 +291,59 @@ def test_start_stop_backup(tmp_backupdir, tmp_basedir):
     assert not dom.backing_up
 
     verify_scratch_disks_removed(vm)
+
+
+@requires_backup_support
+def test_start_stop_backup_engine_scratch_disks(tmp_scratch_disks):
+    vm = FakeVm()
+    socket_path = backup.socket_path(BACKUP_1_ID)
+
+    expected_xml = """
+        <domainbackup mode='pull'>
+            <server transport='unix' socket='{}'/>
+            <disks>
+                <disk name='sda' type='file'>
+                    <scratch file='{}'>
+                        <seclabel model="dac" relabel="no"/>
+                    </scratch>
+                </disk>
+                <disk name='vda' type='file'>
+                    <scratch file='{}'>
+                        <seclabel model="dac" relabel="no"/>
+                    </scratch>
+                </disk>
+            </disks>
+        </domainbackup>
+        """.format(socket_path, tmp_scratch_disks[0], tmp_scratch_disks[1])
+
+    dom = FakeDomainAdapter()
+    fake_disks = create_fake_disks()
+    # Set the scratch disks path to the disks
+    # TODO: add tests for scratch disks on block storage domain.
+    fake_disks[0]['scratch_disk'] = {
+        'path': tmp_scratch_disks[0],
+        'type': DISK_TYPE.FILE
+    }
+
+    fake_disks[1]['scratch_disk'] = {
+        'path': tmp_scratch_disks[1],
+        'type': DISK_TYPE.FILE
+    }
+
+    config = {
+        'backup_id': BACKUP_1_ID,
+        'disks': fake_disks
+    }
+
+    res = backup.start_backup(vm, dom, config)
+    assert normalized(expected_xml) == normalized(dom.input_backup_xml)
+    assert dom.backing_up
+
+    result_disks = res['result']['disks']
+    verify_backup_urls(BACKUP_1_ID, result_disks)
+
+    backup.stop_backup(vm, dom, BACKUP_1_ID)
+    assert not dom.backing_up
 
 
 @requires_backup_support

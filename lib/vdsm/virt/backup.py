@@ -21,7 +21,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import collections
 import functools
 import libvirt
 import logging
@@ -38,6 +37,7 @@ from vdsm.common.constants import P_BACKUP
 from vdsm.virt import virdomain
 from vdsm.virt import vmxml
 from vdsm.virt.vmdevices import storage
+from vdsm.virt.vmdevices.storage import DISK_TYPE
 
 log = logging.getLogger("storage.backup")
 
@@ -46,13 +46,17 @@ log = logging.getLogger("storage.backup")
 backup_enabled = hasattr(libvirt.virDomain, "backupBegin")
 cold_backup_enabled = hasattr(libvirt, "VIR_ERR_CHECKPOINT_INCONSISTENT")
 
-
-BackupDrive = collections.namedtuple(
-    'BackupDrive', 'name, path, backup_mode')
-
-
 MODE_FULL = "full"
 MODE_INCREMENTAL = "incremental"
+
+
+class BackupDrive:
+
+    def __init__(self, name, path, backup_mode, scratch_disk):
+        self.name = name
+        self.path = path
+        self.backup_mode = backup_mode
+        self.scratch_disk = scratch_disk
 
 
 def requires_libvirt_support():
@@ -92,6 +96,17 @@ if backup_enabled:
             self._vm = vm
 
 
+class ScratchDiskConfig(properties.Owner):
+    path = properties.String(required=True)
+    type = properties.Enum(
+        required=True,
+        values=[DISK_TYPE.FILE, DISK_TYPE.BLOCK])
+
+    def __init__(self, **kw):
+        self.path = kw.get("path")
+        self.type = kw.get("type")
+
+
 class DiskConfig(properties.Owner):
     vol_id = properties.UUID(required=True)
     img_id = properties.UUID(required=True)
@@ -106,6 +121,15 @@ class DiskConfig(properties.Owner):
         # Mark if the disk is included in the checkpoint.
         self.checkpoint = disk_config.get("checkpoint")
         self.backup_mode = disk_config.get("backup_mode")
+        # Initialized when the engine creates the scratch
+        # disk on a shared storage
+        if "scratch_disk" in disk_config:
+            scratch_disk = disk_config.get("scratch_disk")
+            self.scratch_disk = ScratchDiskConfig(
+                path=scratch_disk.get("path"),
+                type=scratch_disk.get("type"))
+        else:
+            self.scratch_disk = None
 
 
 class CheckpointConfig(properties.Owner):
@@ -176,8 +200,7 @@ def start_backup(vm, dom, config):
     nbd_addr = nbdutils.UnixAddress(path)
 
     # Create scratch disk for each drive
-    scratch_disks = _create_scratch_disks(
-        vm, dom, backup_cfg.backup_id, drives)
+    _create_scratch_disks(vm, dom, backup_cfg.backup_id, drives)
 
     try:
         res = vm.freeze()
@@ -188,7 +211,7 @@ def start_backup(vm, dom, config):
                 backup=backup_cfg)
 
         backup_xml = create_backup_xml(
-            nbd_addr, drives, scratch_disks, backup_cfg.from_checkpoint_id)
+            nbd_addr, drives, backup_cfg.from_checkpoint_id)
         checkpoint_xml = create_checkpoint_xml(backup_cfg, drives)
 
         vm.log.info(
@@ -386,7 +409,10 @@ def _get_disks_drives(vm, backup_cfg):
                 'imageID': disk.img_id,
                 'volumeID': disk.vol_id})
             drives[disk.img_id] = BackupDrive(
-                drive.name, drive.path, disk.backup_mode)
+                drive.name,
+                drive.path,
+                disk.backup_mode,
+                disk.scratch_disk)
     except LookupError as e:
         raise exception.BackupError(
             reason="Failed to find one of the backup disks: {}".format(e),
@@ -511,7 +537,7 @@ def _raise_parse_error(vm_id, backup_id, backup_xml):
         backup_id=backup_id)
 
 
-def create_backup_xml(address, drives, scratch_disks, from_checkpoint_id=None):
+def create_backup_xml(address, drives, from_checkpoint_id=None):
     domainbackup = vmxml.Element('domainbackup', mode='pull')
 
     if from_checkpoint_id is not None:
@@ -528,7 +554,8 @@ def create_backup_xml(address, drives, scratch_disks, from_checkpoint_id=None):
 
     # fill the backup XML disks
     for drive in drives.values():
-        disk = vmxml.Element('disk', name=drive.name, type='file')
+        disk = vmxml.Element(
+            'disk', name=drive.name, type=drive.scratch_disk.type)
 
         # If backup mode reported by the engine it should be added
         # to the backup XML.
@@ -543,9 +570,10 @@ def create_backup_xml(address, drives, scratch_disks, from_checkpoint_id=None):
         # scratch element can have dev=/path/to/block/disk
         # or file=/path/to/file/disk attribute according to
         # the disk type.
-        # Currently, all the scratch disks resides on the
-        # host local file storage.
-        scratch = vmxml.Element('scratch', file=scratch_disks[drive.name])
+        if drive.scratch_disk.type == DISK_TYPE.BLOCK:
+            scratch = vmxml.Element('scratch', dev=drive.scratch_disk.path)
+        else:
+            scratch = vmxml.Element('scratch', file=drive.scratch_disk.path)
 
         storage.disable_dynamic_ownership(scratch, write_type=False)
         disk.appendChild(scratch)
@@ -608,18 +636,18 @@ def socket_path(backup_id):
 
 
 def _create_scratch_disks(vm, dom, backup_id, drives):
-    scratch_disks = {}
-
     for drive in drives.values():
+        # Skip the scratch disk creation if the scratch
+        # disk already created by the engine.
+        if drive.scratch_disk is not None:
+            continue
+
         try:
             path = _create_transient_disk(vm, dom, backup_id, drive)
         except Exception:
             _remove_scratch_disks(vm, backup_id)
             raise
-
-        scratch_disks[drive.name] = path
-
-    return scratch_disks
+        drive.scratch_disk = ScratchDiskConfig(path=path, type="file")
 
 
 def _remove_scratch_disks(vm, backup_id):

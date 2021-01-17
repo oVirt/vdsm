@@ -8313,6 +8313,57 @@ types:
             type: *UUID
         type: object
 
+    DiskType: &DiskType
+        added: '4.4.5'
+        description: Disk type.
+        name: DiskType
+        type: enum
+        values:
+            FILE: This volume is based on file storage domain
+            BLOCK: This volume is based on block storage domain
+
+    FileScratchDisk: &FileScratchDisk
+        added: '4.4.5'
+        description: VM backup file-based scratch disk parameters
+            for usage when starting a backup.
+        name: FileScratchDisk
+        properties:
+        -   description: The path to the prepared scratch disk
+            name: path
+            type: string
+
+        -   description: Indicates the type of the storage domain that the
+                volume resides on ('file').
+            name: type
+            type: *DiskType
+        type: object
+
+    BlockScratchDisk: &BlockScratchDisk
+        added: '4.4.5'
+        description: VM backup file-based scratch disk parameters
+            for usage when starting a backup.
+        name: BlockScratchDisk
+        properties:
+        -   description: The path to the prepared scratch disk
+            name: path
+            type: string
+
+        -   description: Indicates the type of the storage domain that the
+                volume resides on ('block').
+            name: type
+            type: *DiskType
+        type: object
+
+    ScratchDisk: &ScratchDisk
+        added: '4.4.5'
+        description: A discriminated record containing
+            a scratch disk specification.
+        name: ScratchDisk
+        type: union
+        values:
+        - *FileScratchDisk
+        - *BlockScratchDisk
+
     BackupDisk: &BackupDisk
         added: '4.4'
         description: Backup disk descriptor.
@@ -8346,6 +8397,14 @@ types:
                 (from_checkpoint_id == None) is not supported.
             name: backup_mode
             type: *DiskBackupMode
+
+        -   defaultvalue: null
+            description: Information on the scratch disk created
+                by the engine for the backup disk, if this is not
+                specified a temporary scratch disk will be created
+                on the host storage.
+            name: scratch_disk
+            type: *ScratchDisk
         type: object
 
     NBDServerConfig: &NBDServerConfig
