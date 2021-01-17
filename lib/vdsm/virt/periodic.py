@@ -43,6 +43,7 @@ from vdsm.virt import recovery
 from vdsm.virt import sampling
 from vdsm.virt import virdomain
 from vdsm.virt import vmstatus
+from vdsm.virt.externaldata import ExternalDataKind
 
 
 # Just a made up number. Maybe should be equal to number of cores?
@@ -399,7 +400,7 @@ class TpmDataMonitor(_RunnableOnVm):
 
     def _execute(self):
         try:
-            self._vm.update_tpm()
+            self._vm.update_external_data(ExternalDataKind.TPM)
         except Exception as e:
             if self._vm.lastStatus == vmstatus.UP:
                 log = self._vm.log.error

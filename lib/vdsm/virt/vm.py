@@ -1969,27 +1969,29 @@ class Vm(object):
             result = Suppressed(result)
         return response.success(data=result)
 
-    def update_tpm(self, force=False):
+    def update_external_data(self, kind, force=False):
         """
-        Update and return TPM data and its hash.
+        Update and return external data and its hash.
 
         The returned data is the last known stable data (None if there is no
         such data yet), unless `force` is true, in which case the most recent
         data is considered being stable and returned.
 
+        :param kind: for which device to update the data
+        :type kind: one of ExternalDataKind constants
         :param force: iff true then force data update even if the data seems
           to be unchanged and always return fresh data, even if it is not
           known to be stable
         :type force: boolean
         :returns: pair (DATA, HASH) where DATA is the DATA itself or None if
           there is no data yet and HASH is its cryptographic hash or None if
-          there is no data yet; if there is no TPM in the VM then None is
-          returned
+          there is no data yet; if there is no such device in the VM then None
+          is returned
         :rtype: pair (string or None, string or None) or None
         """
-        if ExternalDataKind.TPM not in self._external_data:
+        if kind not in self._external_data:
             return None
-        return self._external_data[ExternalDataKind.TPM].update(force=force)
+        return self._external_data[kind].update(force=force)
 
     def migration_parameters(self):
         return {
