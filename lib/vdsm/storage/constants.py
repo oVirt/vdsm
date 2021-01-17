@@ -114,6 +114,7 @@ HEVD_DISKTYPE = "HEVD"  # Hosted Engine VM disk
 HESD_DISKTYPE = "HESD"  # Hosted Engine Sanlock disk
 HEMD_DISKTYPE = "HEMD"  # Hosted Engine metadata disk
 HECI_DISKTYPE = "HECI"  # Hosted Engine configuration image
+SCRD_DISKTYPE = "SCRD"  # VM backup scratch disk
 
 # Engine < 4.2, or engine with compatibility level < 4.2 created data disks
 # with this disk type.
@@ -132,6 +133,7 @@ VOL_DISKTYPE = frozenset([
     HESD_DISKTYPE,
     HEMD_DISKTYPE,
     HECI_DISKTYPE,
+    SCRD_DISKTYPE,
     LEGACY_DATA_DISKTYPE,
     LEGACY_V2V_DATA_DISKTYPE,
 ])
