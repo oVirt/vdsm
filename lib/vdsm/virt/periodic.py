@@ -384,7 +384,8 @@ class DriveWatermarkMonitor(_RunnableOnVm):
         self._vm.monitor_drives()
 
 
-class TpmDataMonitor(_RunnableOnVm):
+class _ExternalDataMonitor(_RunnableOnVm):
+    KIND = None
 
     @property
     def required(self):
@@ -400,13 +401,18 @@ class TpmDataMonitor(_RunnableOnVm):
 
     def _execute(self):
         try:
-            self._vm.update_external_data(ExternalDataKind.TPM)
+            self._vm.update_external_data(self.KIND)
         except Exception as e:
             if self._vm.lastStatus == vmstatus.UP:
                 log = self._vm.log.error
             else:
                 log = self._vm.log.info
-            log("Periodic TPM data retrieval failed: %s", e)
+            log("Periodic external data retrieval failed (%s): %s",
+                self.KIND, e)
+
+
+class TpmDataMonitor(_ExternalDataMonitor):
+    KIND = ExternalDataKind.TPM
 
 
 def _kill_long_paused_vms(cif):
