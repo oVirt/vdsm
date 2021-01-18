@@ -90,6 +90,11 @@ class ServerConfig(properties.Owner):
 
         self.bitmap = config.get("bitmap")
 
+        if not self.backing_chain and self.bitmap:
+            # When exporting a bitmap we always export the entire chain.
+            raise se.UnsupportedOperation(
+                "Cannot export bitmap with backing_chain=False")
+
 
 QemuNBDConfig = collections.namedtuple(
     "QemuNBDConfig",
