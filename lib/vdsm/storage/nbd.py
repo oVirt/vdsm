@@ -109,6 +109,9 @@ def start_server(server_id, config):
     if vol.isShared() and not cfg.readonly:
         raise se.SharedVolumeNonWritable(vol)
 
+    if cfg.bitmap and vol.getFormat() != sc.COW_FORMAT:
+        raise se.UnsupportedOperation("Cannot export bitmap from RAW volume")
+
     _create_rundir()
 
     sock = _socket_path(server_id)

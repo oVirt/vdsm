@@ -286,6 +286,22 @@ def test_bitmap_requires_entire_chain(nbd_env):
 
 @broken_on_ci
 @requires_privileges
+def test_bitmap_requires_qcow2(nbd_env):
+    vol = create_volume(nbd_env, "raw", "sparse")
+    invalid_config = {
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
+        "readonly": True,
+        "bitmap": str(uuid.uuid4()),
+    }
+    with pytest.raises(se.UnsupportedOperation):
+        with nbd_server(invalid_config):
+            pass
+
+
+@broken_on_ci
+@requires_privileges
 def test_bitmap_single_volume(nbd_env):
     vol = create_volume(nbd_env, "qcow2", "sparse")
 
