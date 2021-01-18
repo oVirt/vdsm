@@ -95,6 +95,11 @@ class ServerConfig(properties.Owner):
             raise se.UnsupportedOperation(
                 "Cannot export bitmap with backing_chain=False")
 
+        if self.bitmap and not self.readonly:
+            # Exporting bitmaps makes sense only for incremental backup.
+            raise se.UnsupportedOperation(
+                "Cannot export bitmap for writing")
+
 
 QemuNBDConfig = collections.namedtuple(
     "QemuNBDConfig",
