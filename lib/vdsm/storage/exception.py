@@ -1992,3 +1992,26 @@ class TransientDiskAlreadyExists(StorageException):
 
     def __init__(self, disk_path):
         self.value = "disk_path={}".format(disk_path)
+
+
+#################################################
+#  Bitmaps errors
+#  Range: 946-955
+#################################################
+
+
+class InvalidBitmapChain(StorageException):
+    code = 946
+    msg = "Invalid bitmap chain"
+
+    def __init__(self, reason, **context):
+        context["reason"] = reason
+        self.value = "{}".format(context)
+
+
+class BitmapDoesNotExist(StorageException):
+    code = 947
+    msg = "Bitmap does not exist"
+
+    def __init__(self, **context):
+        self.value = "{}".format(context)

@@ -44,10 +44,13 @@ from vdsm.common.time import monotonic_time
 from . import constants as sc
 from . import exception as se
 from . import fileUtils
+from . import qemuimg
+from . import transientdisk
 from . sdc import sdCache
 
 DEFAULT_SOCKET_MODE = 0o660
 RUN_DIR = os.path.join(constants.P_VDSM_RUN, "nbd")
+OVERLAY = "overlay"
 
 QEMU_NBD = cmdutils.CommandPath(
     "qemu-nbd", "/usr/local/bin/qemu-nbd", "/usr/bin/qemu-nbd")
@@ -119,26 +122,43 @@ def start_server(server_id, config):
 
     _create_rundir()
 
-    sock = _socket_path(server_id)
+    using_overlay = cfg.bitmap and vol.getParent() != sc.BLANK_UUID
 
-    log.info("Starting transient service %s, serving volume %s/%s via unix "
-             "socket %s",
-             _service_name(server_id), cfg.sd_id, cfg.vol_id, sock)
+    if using_overlay:
+        path = _create_overlay(server_id, vol.volumePath, cfg.bitmap)
+        format = "qcow2"
+        is_block = False
+    else:
+        path = vol.volumePath
+        format = sc.fmt2str(vol.getFormat())
+        is_block = vol.is_block()
+    try:
+        sock = _socket_path(server_id)
 
-    qemu_nbd_config = QemuNBDConfig(
-        format=sc.fmt2str(vol.getFormat()),
-        readonly=cfg.readonly,
-        discard=cfg.discard,
-        path=vol.getVolumePath(),
-        backing_chain=cfg.backing_chain,
-        is_block=vol.is_block(),
-        bitmap=cfg.bitmap)
+        log.info(
+            "Starting transient service %s, serving %s via unix socket %s",
+            _service_name(server_id), path, sock)
 
-    start_transient_service(server_id, qemu_nbd_config)
+        qemu_nbd_config = QemuNBDConfig(
+            format=format,
+            readonly=cfg.readonly,
+            discard=cfg.discard,
+            path=path,
+            backing_chain=cfg.backing_chain,
+            is_block=is_block,
+            bitmap=cfg.bitmap)
 
-    if not _wait_for_socket(sock, 1.0):
-        raise Timeout("Timeout starting NBD server {}: {}"
-                      .format(server_id, config))
+        start_transient_service(server_id, qemu_nbd_config)
+
+        if not _wait_for_socket(sock, 1.0):
+            raise Timeout("Timeout starting NBD server {}: {}"
+                          .format(server_id, config))
+    finally:
+        if using_overlay:
+            # When qemu-nbd is ready it has an open file descriptor, and it
+            # does not need the overlay. Removing the overlay now simplifies
+            # cleanup when stopping the service.
+            _remove_overlay(server_id)
 
     os.chmod(sock, DEFAULT_SOCKET_MODE)
     unix_address = nbdutils.UnixAddress(sock)
@@ -160,6 +180,245 @@ def stop_server(server_id):
 
     log.info("Stopping transient service %s", service)
     systemctl.stop(service)
+
+
+def _create_overlay(server_id, backing, bitmap):
+    """
+    To export bitmaps from entire chain, we need to create an overlay, and
+    merge all bitmaps from the chain into the overlay.
+    """
+    filenames = _find_bitmap(backing, bitmap)
+    if not filenames:
+        raise se.BitmapDoesNotExist(bitmap=bitmap)
+
+    overlay = transientdisk.create_disk(
+        server_id,
+        OVERLAY,
+        backing=backing,
+        backing_format="qcow2")["path"]
+    try:
+        # Merge bitmap from filenames into overlay.
+        qemuimg.bitmap_add(overlay, bitmap).run()
+        for src_img in filenames:
+            qemuimg.bitmap_merge(
+                src_img, bitmap, "qcow2", overlay, bitmap).run()
+    except:
+        try:
+            transientdisk.remove_disk(server_id, OVERLAY)
+        except Exception:
+            log.exception("Error removing overlay: %s", overlay)
+        raise
+
+    return overlay
+
+
+def _remove_overlay(server_id):
+    """
+    Remove the overlay created by _create_overlay().
+    """
+    transientdisk.remove_disk(server_id, OVERLAY)
+
+
+def _find_bitmap(path, bitmap):
+    """
+    Return filenames in backing chain containing bitmap.
+
+    An example of normal case. "bitmap1" was create after we took a snapshot
+    and added "/file2". Then we took another snapshot and added /file3".
+
+    [
+      {
+        "filename": "/file3"
+        "bitmaps":
+          [
+             {
+               "name": "bitmap1",
+               "flags": ["auto"]
+             }
+          ]
+      },
+      {
+        "filename": "/file2"
+        "bitmaps":
+          [
+             {
+               "name": "bitmap1",
+               "flags": ["auto"]
+             }
+          ]
+      },
+      {
+        "filename": "/file1"
+      }
+    ]
+
+    In this case we return the filenames:
+
+      ["/file3", "/file2"]
+
+    The caller can merge the contents of "bitmap1" from these files to create a
+    new bitmap referencing all the data written to the disk since "bitmap1" was
+    created.
+
+    We have several cases when the bitmap chain is invalid, and cannot be used
+    to create incremental backup.
+
+    Case 1: The bitmap is inconsistent ("in-use" flag) in one of the nodes.
+    We cannot trust the data in this bitmap.
+
+    [
+      {
+        "filename": "/file2"
+        "bitmaps":
+          [
+            {
+              "name": "bitmap1",
+              "flags": ["in-use", "auto"]
+            }
+          ]
+      },
+      {
+        "filename": "/file1"
+        "bitmaps":
+          [
+            {
+              "name": "bitmap1",
+              "flags": ["auto"]
+            }
+          ]
+      }
+    ]
+
+    Case 2: The bitmap is disabled (no "auto" flag) on one of the nodes. This
+    bitmap may be missing data added while the bitmap was disabled.
+
+    [
+      {
+        "filename": "/file2"
+        "bitmaps":
+          [
+            {
+              "name": "bitmap1",
+              "flags": ["auto"]
+            }
+          ]
+      },
+      {
+        "filename": "/file1"
+        "bitmaps":
+          [
+            {
+              "name": "bitmap1",
+              "flags": []
+            }
+          ]
+      }
+    ]
+
+    Case 3: The bitmap is missing in in one node, but exists on the next node.
+    Data from the node may be missing from the backup.
+
+    Here the bitmap is missing in the top node:
+
+    [
+      {
+        "filename": "/file2"
+      },
+      {
+        "filename": "/file1"
+        "bitmaps":
+          [
+            {
+              "name": "bitmap1",
+              "flags": ["auto"]
+            }
+          ]
+      }
+    ]
+
+    Here the bitmap is missing in the middle node:
+
+    [
+      {
+        "filename": "/file3"
+        "bitmaps":
+          [
+            {
+              "name": "bitmap1",
+              "flags": ["auto"]
+            }
+          ]
+      },
+      {
+        "filename": "/file2"
+      },
+      {
+        "filename": "/file1"
+        "bitmaps":
+          [
+            {
+              "name": "bitmap1",
+              "flags": ["auto"]
+            }
+          ]
+      }
+    ]
+
+    Case 4: Bitmap does not exist on any node. This is a caller error, or maybe
+    someone deleted the bitmaps manually from the chain.
+
+    [
+      {
+        "filename": "/file2"
+      },
+      {
+        "filename": "/file1"
+      }
+    ]
+
+    Raises se.InvalidBitmapChain if bitmap is invalid or missing in one of the
+    backing chain nodes.
+    """
+    filenames = []
+    missing = []
+
+    for node in qemuimg.info(path, format="qcow2", backing_chain=True):
+        if node["format"] != "qcow2":
+            break
+
+        node_bitmaps = node["format-specific"]["data"].get("bitmaps", [])
+
+        for bitmap_info in node_bitmaps:
+            if bitmap_info["name"] != bitmap:
+                continue
+
+            if "in-use" in bitmap_info["flags"]:
+                raise se.InvalidBitmapChain(
+                    reason="Bitmap in use",
+                    bitmap=bitmap_info,
+                    filename=node["filename"])
+
+            if "auto" not in bitmap_info["flags"]:
+                raise se.InvalidBitmapChain(
+                    reason="Bitmap is disabled",
+                    bitmap=bitmap_info,
+                    filename=node["filename"])
+
+            if missing:
+                # This bitmap was not found in previous nodes - a hole.
+                raise se.InvalidBitmapChain(
+                    reason="Bitmap is missing in {}".format(missing),
+                    bitmap=bitmap)
+
+            # Found a valid bitmap in this node.
+            filenames.append(node["filename"])
+            break
+        else:
+            # Bitmap is not in this node. Continue to search next nodes to
+            # detect holes.
+            missing.append(node["filename"])
+
+    return filenames
 
 
 def start_transient_service(server_id, config):
@@ -223,11 +482,15 @@ def json_uri(config):
 def _verify_path(path):
     """
     Anyone running as vdsm can invoke nbd_start_transient_service() with
-    arbitrary path. Verify the path is in the storage repository.
+    arbitrary path. Verify the path is in the storage repository, or path is a
+    transient disk with a backing file in the storage repository.
     """
-    norm_path = os.path.normpath(path)
+    path = os.path.normpath(path)
 
-    if not norm_path.startswith(sc.REPO_MOUNT_DIR):
+    if path.startswith(transientdisk.P_TRANSIENT_DISKS):
+        path = qemuimg.info(path, format="qcow2")["backing-filename"]
+
+    if not path.startswith(sc.REPO_MOUNT_DIR):
         raise InvalidPath(
             "Path {!r} is outside storage repository {!r}"
             .format(path, sc.REPO_MOUNT_DIR))

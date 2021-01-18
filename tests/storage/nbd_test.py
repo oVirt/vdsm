@@ -29,6 +29,7 @@ To setup the environment for unprivileged user:
 
     $ sudo env PYTHONPATH=lib static/usr/sbin/supervdsmd \
           --data-center /var/tmp/vdsm/data-center \
+          --transient-disks /var/tmp/vdsm/transient-disks \
           --sockfile /run/vdsm/svdsm.sock \
           --user=$USER \
           --group=$USER \
@@ -42,6 +43,7 @@ from __future__ import division
 
 import os
 import stat
+import subprocess
 import uuid
 
 from urllib.parse import urlparse
@@ -59,6 +61,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import nbd
 from vdsm.storage import qemuimg
+from vdsm.storage import transientdisk
 
 from . import qemuio
 from . marks import broken_on_ci
@@ -89,13 +92,17 @@ broken_on_ci = broken_on_ci.with_args(
 
 
 @pytest.fixture
-def nbd_env():
+def nbd_env(monkeypatch):
     """
     Fixture for serving a volume using nbd server.
     """
     # These tests require supervdsm running, so we cannot use a random
-    # directory. We need to use the same path used to start supervdsm.
+    # directory. We need to use the same locations used to start supervdsm.
+
     data_center = "/var/tmp/vdsm/data-center"
+
+    monkeypatch.setattr(
+        transientdisk, "P_TRANSIENT_DISKS", "/var/tmp/vdsm/transient-disks")
 
     with fake_env("file", data_center=data_center) as env:
         # When using XFS, the minimal allocation for qcow2 images is 1MiB. Lets
@@ -385,6 +392,225 @@ def test_bitmap_single_volume(nbd_env):
             ]
 
             assert c.read(2 * MiB, 64 * KiB) == b"\xf2" * 64 * KiB
+
+
+@broken_on_ci
+@requires_privileges
+def test_bitmap_backing_chain(nbd_env):
+    vol1 = create_volume(nbd_env, "raw", "sparse")
+
+    # Write first cluster to vol1 - this cluster is not recorded in any bitmap.
+    qemuio.write_pattern(
+        vol1.volumePath, "raw", offset=1 * MiB, len=64 * KiB, pattern=0xf1)
+
+    # Simulate a snapshot - bitmap1 is created empty in vol2.
+    vol2 = create_volume(nbd_env, "qcow2", "sparse", parent=vol1)
+    bitmap1 = str(uuid.uuid4())
+    qemuimg.bitmap_add(vol2.volumePath, bitmap1).run()
+
+    # Write second cluster in vol2 - this cluster is recorded only in bitmap 1.
+    qemuio.write_pattern(
+        vol2.volumePath, "qcow2", offset=2 * MiB, len=64 * KiB, pattern=0xf2)
+
+    # Simulate another snapshot - bitmap1 is created empty in vol3.
+    vol3 = create_volume(nbd_env, "qcow2", "sparse", parent=vol2)
+    qemuimg.bitmap_add(vol3.volumePath, bitmap1).run()
+
+    # Simulate backup - bitmap 2 is created in vol3.
+    bitmap2 = str(uuid.uuid4())
+    qemuimg.bitmap_add(vol3.volumePath, bitmap2).run()
+
+    # Write third cluster in vol3. This cluster is recorded in both bitmaps.
+    qemuio.write_pattern(
+        vol3.volumePath, "qcow2", offset=3 * MiB, len=64 * KiB, pattern=0xf3)
+
+    # Test bitmap 1 - recording changes since bitmap 1 was added.
+
+    config = {
+        "sd_id": vol3.sdUUID,
+        "img_id": vol3.imgUUID,
+        "vol_id": vol3.volUUID,
+        "readonly": True,
+        "bitmap": bitmap1,
+    }
+
+    with nbd_server(config) as nbd_url:
+        with nbd_client.open(urlparse(nbd_url), dirty=True) as c:
+            extents = c.extents(0, nbd_env.virtual_size)
+
+            assert extents[c.dirty_bitmap] == [
+                nbd_client.Extent(2 * MiB, 0),
+                nbd_client.Extent(64 * KiB, 1),
+                nbd_client.Extent(1 * MiB - 64 * KiB, 0),
+                nbd_client.Extent(64 * KiB, 1),
+                nbd_client.Extent(
+                    nbd_env.virtual_size - 3 * MiB - 64 * KiB, 0),
+            ]
+
+            assert c.read(1 * MiB, 64 * KiB) == b"\xf1" * 64 * KiB
+            assert c.read(2 * MiB, 64 * KiB) == b"\xf2" * 64 * KiB
+
+    # Test bitmap 2 - recording changes since bitmap 2 was added.
+
+    config = {
+        "sd_id": vol3.sdUUID,
+        "img_id": vol3.imgUUID,
+        "vol_id": vol3.volUUID,
+        "readonly": True,
+        "bitmap": bitmap2,
+    }
+
+    with nbd_server(config) as nbd_url:
+        with nbd_client.open(urlparse(nbd_url), dirty=True) as c:
+            extents = c.extents(0, nbd_env.virtual_size)
+
+            assert extents[c.dirty_bitmap] == [
+                nbd_client.Extent(3 * MiB, 0),
+                nbd_client.Extent(64 * KiB, 1),
+                nbd_client.Extent(
+                    nbd_env.virtual_size - 3 * MiB - 64 * KiB, 0),
+            ]
+
+            assert c.read(2 * MiB, 64 * KiB) == b"\xf2" * 64 * KiB
+
+
+@broken_on_ci
+@requires_privileges
+def test_bitmap_in_use(nbd_env):
+    vol1 = create_volume(nbd_env, "qcow2", "sparse")
+    vol2 = create_volume(nbd_env, "qcow2", "sparse", parent=vol1)
+
+    bitmap = str(uuid.uuid4())
+    qemuimg.bitmap_add(vol1.volumePath, bitmap).run()
+    qemuimg.bitmap_add(vol2.volumePath, bitmap).run()
+
+    # Simulate qemu crash, leaving bitmaps with the "in-use" flag by opening
+    # the image for writing and killing the process.
+    subprocess.run(["qemu-io", "-c", "sigraise 9", vol2.volumePath])
+
+    config = {
+        "sd_id": vol2.sdUUID,
+        "img_id": vol2.imgUUID,
+        "vol_id": vol2.volUUID,
+        "readonly": True,
+        "bitmap": bitmap,
+    }
+
+    # Starting server will fail since the bitmap in vol2 is in in use.
+    with pytest.raises(se.InvalidBitmapChain):
+        with nbd_server(config):
+            pass
+
+
+@broken_on_ci
+@requires_privileges
+def test_bitmap_disabled(nbd_env):
+    vol1 = create_volume(nbd_env, "qcow2", "sparse")
+    vol2 = create_volume(nbd_env, "qcow2", "sparse", parent=vol1)
+
+    bitmap = str(uuid.uuid4())
+
+    # Add bitmap to both volumes, but disable it on vol1.
+    qemuimg.bitmap_add(vol1.volumePath, bitmap, enable=False).run()
+    qemuimg.bitmap_add(vol2.volumePath, bitmap).run()
+
+    config = {
+        "sd_id": vol2.sdUUID,
+        "img_id": vol2.imgUUID,
+        "vol_id": vol2.volUUID,
+        "readonly": True,
+        "bitmap": bitmap,
+    }
+
+    # Starting server will fail since the bitmap in vol1 is disabled.
+    with pytest.raises(se.InvalidBitmapChain):
+        with nbd_server(config):
+            pass
+
+
+@broken_on_ci
+@requires_privileges
+def test_bitmap_missing_top(nbd_env):
+    vol1 = create_volume(nbd_env, "qcow2", "sparse")
+    vol2 = create_volume(nbd_env, "qcow2", "sparse", parent=vol1)
+    vol3 = create_volume(nbd_env, "qcow2", "sparse", parent=vol2)
+
+    bitmap = str(uuid.uuid4())
+
+    # Add the bitmap to vol1, but not to vol2 and vol3.
+    qemuimg.bitmap_add(vol1.volumePath, bitmap).run()
+
+    config = {
+        "sd_id": vol3.sdUUID,
+        "img_id": vol3.imgUUID,
+        "vol_id": vol3.volUUID,
+        "readonly": True,
+        "bitmap": bitmap,
+    }
+
+    # Starting server will fail since the bitmap is missing in vol2.
+    with pytest.raises(se.InvalidBitmapChain) as e:
+        with nbd_server(config):
+            pass
+
+    # Check that we report the volumes where the bitmap is missing.
+    assert vol2.volumePath in str(e.value)
+    assert vol3.volumePath in str(e.value)
+
+
+@broken_on_ci
+@requires_privileges
+def test_bitmap_missing_middle(nbd_env):
+    vol1 = create_volume(nbd_env, "qcow2", "sparse")
+    vol2 = create_volume(nbd_env, "qcow2", "sparse", parent=vol1)
+    vol3 = create_volume(nbd_env, "qcow2", "sparse", parent=vol2)
+
+    bitmap = str(uuid.uuid4())
+
+    # Add the bitmap to vol1 and vol3, but not to vol2.
+    qemuimg.bitmap_add(vol1.volumePath, bitmap).run()
+    qemuimg.bitmap_add(vol3.volumePath, bitmap).run()
+
+    config = {
+        "sd_id": vol3.sdUUID,
+        "img_id": vol3.imgUUID,
+        "vol_id": vol3.volUUID,
+        "readonly": True,
+        "bitmap": bitmap,
+    }
+
+    # Starting server will fail since the bitmap is missing in vol2.
+    with pytest.raises(se.InvalidBitmapChain) as e:
+        with nbd_server(config):
+            pass
+
+    # Check that we report the volumes where the bitmap is missing.
+    assert vol2.volumePath in str(e.value)
+
+
+@broken_on_ci
+@requires_privileges
+def test_bitmap_does_not_exist(nbd_env):
+    vol1 = create_volume(nbd_env, "raw", "sparse")
+    vol2 = create_volume(nbd_env, "qcow2", "sparse", parent=vol1)
+
+    bitmap = str(uuid.uuid4())
+
+    # Add another bitmap to the volume.
+    qemuimg.bitmap_add(vol2.volumePath, str(uuid.uuid4())).run()
+
+    config = {
+        "sd_id": vol2.sdUUID,
+        "img_id": vol2.imgUUID,
+        "vol_id": vol2.volUUID,
+        "readonly": True,
+        "bitmap": bitmap,
+    }
+
+    # Starting server will fail since bitmap does not exist.
+    with pytest.raises(se.BitmapDoesNotExist):
+        with nbd_server(config):
+            pass
 
 
 @broken_on_ci
