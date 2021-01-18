@@ -57,6 +57,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import fuser
 from vdsm.storage import hba
 from vdsm.storage import mount
+from vdsm.storage import transientdisk
 from vdsm.storage.fileUtils import chown, resolveGid, resolveUid
 from vdsm.storage.fileUtils import validateAccess as _validateAccess
 from vdsm.storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
@@ -233,9 +234,10 @@ def main(args):
         constants.VDSM_USER = args.user
         constants.VDSM_GROUP = args.group
 
-        # Override storage-repository, used to verify file access.
+        # Override storage locations, used to verify file access.
         sc.REPO_DATA_CENTER = args.data_center
         sc.REPO_MOUNT_DIR = os.path.join(args.data_center, sc.DOMAIN_MNT_POINT)
+        transientdisk.P_TRANSIENT_DISKS = args.transient_disks
 
         try:
             logging.config.fileConfig(args.logger_conf,
@@ -370,4 +372,9 @@ def option_parser():
         default=sc.REPO_DATA_CENTER,
         help=("override storage repository directory (default %s)"
               % sc.REPO_DATA_CENTER))
+    parser.add_argument(
+        '--transient-disks',
+        default=transientdisk.P_TRANSIENT_DISKS,
+        help=("override storage transient disks directory (default %s)"
+              % transientdisk.P_TRANSIENT_DISKS))
     return parser
