@@ -4438,7 +4438,11 @@ class Vm(object):
 
         self.sync_metadata()
 
-    def _diskSizeExtendCow(self, drive, newSizeBytes):
+    def _diskSizeExtendCow(self, drive, newSizeBytes=None):
+        if newSizeBytes is None:
+            raise exception.MissingParameter(
+                'newSizeBytes parameter is missing')
+
         try:
             # Due to an old bug in libvirt (BZ#963881) this call used to be
             # broken for NFS domains when root_squash was enabled.  This has
@@ -4482,23 +4486,47 @@ class Vm(object):
 
         return {'status': doneCode, 'size': str(newVirtualSize)}
 
-    def _diskSizeExtendRaw(self, drive, newSizeBytes):
-        # Picking up the volume size extension
-        self.refresh_drive_volume({
-            'domainID': drive.domainID, 'poolID': drive.poolID,
-            'imageID': drive.imageID, 'volumeID': drive.volumeID,
-            'name': drive.name,
-        })
+    def _diskSizeExtendRaw(self, drive, newSizeBytes=None):
+        # Picking up the drive size extension
+        if isVdsmImage(drive):
+            if newSizeBytes is None:
+                raise exception.MissingParameter(
+                    'newSizeBytes parameter is missing')
 
-        volSize = self._getVolumeSize(
-            drive.domainID, drive.poolID, drive.imageID, drive.volumeID)
+            self.refresh_drive_volume({
+                'domainID': drive.domainID, 'poolID': drive.poolID,
+                'imageID': drive.imageID, 'volumeID': drive.volumeID,
+                'name': drive.name,
+            })
 
-        # For the RAW device we use the volumeInfo apparentsize rather
-        # than the (possibly) wrong size provided in the request.
-        if volSize.apparentsize != newSizeBytes:
-            self.log.info(
-                "The requested extension size %s is different from "
-                "the RAW device size %s", newSizeBytes, volSize.apparentsize)
+            volSize = self._getVolumeSize(
+                drive.domainID, drive.poolID, drive.imageID, drive.volumeID)
+
+            # For the RAW device we use the volumeInfo apparentsize rather
+            # than the (possibly) wrong size provided in the request.
+            if volSize.apparentsize != newSizeBytes:
+                self.log.info(
+                    "The requested extension size %s is different from the "
+                    "RAW device size %s", newSizeBytes, volSize.apparentsize)
+
+        elif "GUID" in drive:
+            res = self.cif.irs.getDeviceList(
+                guids=(drive.GUID,), checkStatus=False)
+
+            if res['status']['code'] != 0:
+                raise RuntimeError(
+                    "Cannot find device {} for drive {}: {}"
+                    .format(drive.GUID, drive, res["status"]["message"]))
+
+            if not res['devList']:
+                raise exception.LUNDoesNotExist(
+                    reason="LUN device {} does not exist".format(drive.GUID))
+
+            device_info = res['devList'][0]
+            volSize = VolumeSize(int(device_info['capacity']), None)
+        else:
+            raise exception.UnsupportedDriveType(
+                reason="Cannot extend size for {}".format(drive))
 
         # At the moment here there's no way to fetch the previous size
         # to compare it with the new one. In the future blockInfo will
@@ -4516,11 +4544,12 @@ class Vm(object):
 
         return {'status': doneCode, 'size': str(volSize.apparentsize)}
 
-    def diskSizeExtend(self, driveSpecs, newSizeBytes):
-        try:
-            newSizeBytes = int(newSizeBytes)
-        except ValueError:
-            return response.error('resizeErr')
+    def diskSizeExtend(self, driveSpecs, newSizeBytes=None):
+        if newSizeBytes is not None:
+            try:
+                newSizeBytes = int(newSizeBytes)
+            except ValueError:
+                return response.error('resizeErr')
 
         try:
             drive = self.findDriveByUUIDs(driveSpecs)
@@ -4532,9 +4561,9 @@ class Vm(object):
                 return self._diskSizeExtendCow(drive, newSizeBytes)
             else:
                 return self._diskSizeExtendRaw(drive, newSizeBytes)
-        except Exception:
-            self.log.exception("Unable to extend disk %s to size %s",
-                               drive.name, newSizeBytes)
+        except Exception as e:
+            self.log.exception("Unable to extend disk %s to size %s: %s",
+                               drive.name, newSizeBytes, e)
             return response.error('updateDevice')
 
     def onWatchdogEvent(self, action):

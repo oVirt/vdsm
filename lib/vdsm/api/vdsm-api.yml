@@ -11313,11 +11313,14 @@ VM.diskSizeExtend:
         name: vmID
         type: *UUID
 
-    -   description: A DriveSpecVolume structure representing the disk
+    -   description: A DriveSpec structure representing the disk.
+            Supported types are DriveSpecVolume and DriveSpecGuid.
         name: driveSpecs
-        type: *DriveSpecVolume
+        type: *DriveSpec
 
-    -   description: The new desired size (in bytes)
+    -   defaultvalue: null
+        description: The new desired size (in bytes).
+            Required for DriveSpecVolume, not used for DriveSpecGuid.
         name: newSize
         type: string
     return:

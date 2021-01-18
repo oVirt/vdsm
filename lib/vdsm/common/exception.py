@@ -190,6 +190,18 @@ class NonResponsiveGuestAgent(VdsmException):
 
 
 # codes 20-35 are reserved for add/delNetwork
+
+
+class UnsupportedDriveType(ContextException):
+    code = 36
+    message = 'Unsupported drive type'
+
+
+class LUNDoesNotExist(ContextException):
+    code = 37
+    message = 'LUN does not exist'
+
+
 # code 39 was used for:
 # wrongHost - migration destination has an invalid hostname
 

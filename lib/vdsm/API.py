@@ -558,7 +558,7 @@ class VM(APIBase):
 
     @api.logged(on="api.virt")
     @api.method
-    def diskSizeExtend(self, driveSpecs, newSize):
+    def diskSizeExtend(self, driveSpecs, newSize=None):
         if self._UUID == VM.BLANK_UUID:
             try:
                 volume = Volume(
