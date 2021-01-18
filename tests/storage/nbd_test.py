@@ -408,14 +408,21 @@ def compare_images(a, b, strict=False):
     op.run()
 
 
-def create_volume(env, format, allocation):
-    img_id = str(uuid.uuid4())
+def create_volume(env, format, allocation, parent=None):
     vol_id = str(uuid.uuid4())
+
+    if parent:
+        img_id = parent.imgUUID
+        parent_vol_id = parent.volUUID
+    else:
+        img_id = str(uuid.uuid4())
+        parent_vol_id = sc.BLANK_UUID
 
     env.make_volume(
         env.virtual_size,
         img_id,
         vol_id,
+        parent_vol_id=parent_vol_id,
         vol_format=sc.str2fmt(format),
         prealloc=sc.name2type(allocation),
         qcow2_compat="1.1")
