@@ -4589,12 +4589,20 @@ class Vm(object):
                       actionToString(action))
 
     def changeCD(self, cdromspec):
-        drivespec = cdromspec['path']
         blockdev = drivename.make(
             cdromspec['iface'], cdromspec['index'])
         iface = cdromspec['iface']
-        self._changeBlockDev('cdrom', blockdev, drivespec, iface,
-                             force=bool(drivespec))
+
+        if "drive_spec" in cdromspec:
+            drive_spec = cdromspec["drive_spec"]
+            force = True if drive_spec else False
+            self._change_cd(blockdev, drive_spec, iface, force=force)
+        else:
+            # Old way how to change CD. Kept for backward compatibility.
+            drivespec = cdromspec['path']
+            self._changeBlockDev(
+                'cdrom', blockdev, drivespec, iface, force=bool(drivespec))
+
         return {'vmList': {}}
 
     def changeFloppy(self, drivespec):

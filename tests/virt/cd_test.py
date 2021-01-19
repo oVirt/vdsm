@@ -232,7 +232,7 @@ def test_change_cd_metadata_fail(vm_with_cd):
         assert dev == CD_PDIV
 
 
-def test_change_cd_private_loading():
+def test_change_cd_loading():
     sd_id = str(uuid.uuid4())
     img_id = str(uuid.uuid4())
     vol_id = str(uuid.uuid4())
@@ -243,7 +243,12 @@ def test_change_cd_private_loading():
         "imageID": img_id,
         "volumeID": vol_id,
     }
-    device = drivename.make("sata", "2")
+    cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": drive_spec,
+    }
+    device = drivename.make(cdrom_spec["iface"], cdrom_spec["index"])
 
     with fake.VM(
             cif=ClientIF(),
@@ -252,7 +257,7 @@ def test_change_cd_private_loading():
             metadata=EMPTY_CD_METADATA_XML
     ) as fakevm:
         fakevm._dom = fake.Domain()
-        fakevm._change_cd(device, drive_spec)
+        fakevm.changeCD(cdrom_spec)
 
         assert (sd_id, img_id, vol_id) in fakevm.cif.irs.prepared_volumes
         with fakevm._md_desc.device(devtype="cdrom", name=device) as dev:
@@ -260,22 +265,26 @@ def test_change_cd_private_loading():
             assert "change" not in dev
 
 
-def test_change_cd_private_ejecting(vm_with_cd):
+def test_change_cd_ejecting(vm_with_cd):
     sd_id = "88252cf6-381e-48f0-8795-a294a32c7149"
     vol_id = "626a493f-5214-4337-b580-96a1ce702c2a"
-    device = drivename.make("sata", "2")
 
     # Eject CD.
-    empty_pdiv = {}
+    cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": None,
+    }
+    device = drivename.make(cdrom_spec["iface"], cdrom_spec["index"])
 
-    vm_with_cd._change_cd(device, empty_pdiv)
+    vm_with_cd.changeCD(cdrom_spec)
 
     assert (sd_id, vol_id) not in vm_with_cd.cif.irs.prepared_volumes
     with vm_with_cd._md_desc.device(devtype="cdrom", name=device) as dev:
         assert dev == {}
 
 
-def test_change_cd_private(vm_with_cd):
+def test_change_cd(vm_with_cd):
     new_sd_id = str(uuid.uuid4())
     new_img_id = str(uuid.uuid4())
     new_vol_id = str(uuid.uuid4())
@@ -286,10 +295,15 @@ def test_change_cd_private(vm_with_cd):
         "imageID": new_img_id,
         "volumeID": new_vol_id,
     }
-    device = drivename.make("sata", "2")
+    cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": new_drive_spec,
+    }
+    device = drivename.make(cdrom_spec["iface"], cdrom_spec["index"])
 
     # Change CD.
-    vm_with_cd._change_cd(device, new_drive_spec)
+    vm_with_cd.changeCD(cdrom_spec)
 
     volume = (new_sd_id, new_img_id, new_vol_id)
     assert volume in vm_with_cd.cif.irs.prepared_volumes
@@ -308,7 +322,12 @@ def test_change_cd_failed_libvirt():
         "imageID": str(uuid.uuid4()),
         "volumeID": vol_id,
     }
-    device = drivename.make("sata", "2")
+    cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": drive_spec,
+    }
+    device = drivename.make(cdrom_spec["iface"], cdrom_spec["index"])
 
     with fake.VM(
             cif=ClientIF(),
@@ -322,7 +341,7 @@ def test_change_cd_failed_libvirt():
         # disk device. No CD is loaded, so if libvirt succeeded, no other
         # exception is thrown.
         with pytest.raises(exception.ChangeDiskFailed):
-            fakevm._change_cd(device, drive_spec)
+            fakevm.changeCD(cdrom_spec)
 
         # We started with empty CD. Verify that the image was torn down and
         # metadata was reset back to empty.
@@ -333,6 +352,7 @@ def test_change_cd_failed_libvirt():
 
 def test_change_cd_failed_libvirt_and_vol_teardown(monkeypatch, vm_with_cd):
     device = drivename.make("sata", "2")
+
     vm_with_cd._dom = fake.Domain(virtError=libvirt.VIR_ERR_XML_ERROR)
 
     def failing_teardown(self, sdUUID, spUUID, imgUUID, volUUID=None):
@@ -371,7 +391,7 @@ def test_change_cd_failed_libvirt_and_discard_cd_change(monkeypatch):
             fakevm._change_cd(device, LOADING_DRIVE_SPEC)
 
 
-def test_change_cd_private_teardown_old_cd_failed(monkeypatch, vm_with_cd):
+def test_change_cd_teardown_old_cd_failed(monkeypatch, vm_with_cd):
     new_sd_id = str(uuid.uuid4())
     new_img_id = str(uuid.uuid4())
     new_vol_id = str(uuid.uuid4())
@@ -382,7 +402,12 @@ def test_change_cd_private_teardown_old_cd_failed(monkeypatch, vm_with_cd):
         "imageID": new_img_id,
         "volumeID": new_vol_id,
     }
-    device = drivename.make("sata", "2")
+    new_cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": new_drive_spec,
+    }
+    device = drivename.make(new_cdrom_spec["iface"], new_cdrom_spec["index"])
 
     def failing_teardown(self, sdUUID, spUUID, imgUUID, volUUID=None):
         raise Exception("Image teardown failed.")
@@ -392,7 +417,7 @@ def test_change_cd_private_teardown_old_cd_failed(monkeypatch, vm_with_cd):
     # Change CD. Tearing down old CD will fail. However, we ignore the failure,
     # as we already successfully updated VM disk, so no exception should be
     # thrown from this call.
-    vm_with_cd._change_cd(device, new_drive_spec)
+    vm_with_cd.changeCD(new_cdrom_spec)
 
     # Check new CD is prepared.
     volume = (new_sd_id, new_img_id, new_vol_id)
@@ -404,7 +429,7 @@ def test_change_cd_private_teardown_old_cd_failed(monkeypatch, vm_with_cd):
         assert "change" not in dev
 
 
-def test_change_cd_private_apply_cd_change_failed(monkeypatch):
+def test_change_cd_apply_cd_change_failed(monkeypatch):
     old_sd_id = str(uuid.uuid4())
     old_vol_id = str(uuid.uuid4())
     old_drive_spec = {
@@ -414,6 +439,11 @@ def test_change_cd_private_apply_cd_change_failed(monkeypatch):
         "imageID": str(uuid.uuid4()),
         "volumeID": old_vol_id,
     }
+    old_cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": old_drive_spec,
+    }
 
     new_drive_spec = {
         "device": "cdrom",
@@ -422,8 +452,12 @@ def test_change_cd_private_apply_cd_change_failed(monkeypatch):
         "imageID": str(uuid.uuid4()),
         "volumeID": str(uuid.uuid4()),
     }
-
-    device = drivename.make("sata", "2")
+    new_cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": new_drive_spec,
+    }
+    device = drivename.make(new_cdrom_spec["iface"], new_cdrom_spec["index"])
 
     with fake.VM(
             cif=ClientIF(),
@@ -434,7 +468,7 @@ def test_change_cd_private_apply_cd_change_failed(monkeypatch):
         fakevm._dom = fake.Domain()
 
         # Insert CD.
-        fakevm._change_cd(device, old_drive_spec)
+        fakevm.changeCD(old_cdrom_spec)
 
         def failing_apply_cd_change(self, device):
             raise Exception("Apply CD change failed")
@@ -445,7 +479,7 @@ def test_change_cd_private_apply_cd_change_failed(monkeypatch):
         # Change CD. Apply cd change to metadata will fail, but as we already
         # succeeded to change CD, we ignore this error. The old disk should be
         # torn down and the call should succeed.
-        fakevm._change_cd(device, new_drive_spec)
+        fakevm.changeCD(new_cdrom_spec)
 
         # Tear down of the old image should succeed.
         assert (old_sd_id, old_vol_id) not in fakevm.cif.irs.prepared_volumes
