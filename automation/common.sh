@@ -7,7 +7,7 @@ set -xe
 prepare_env() {
     # For skipping known failures on jenkins using @broken_on_ci
     export OVIRT_CI=1
-    export BUILDS=$PWD/rpmbuild
+    export BUILDS="$(rpm --eval '%_topdir')"
     export EXPORT_DIR="$PWD/exported-artifacts"
     export PATH="/usr/local/bin:$PATH"
     mkdir -p $EXPORT_DIR
