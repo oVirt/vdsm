@@ -159,29 +159,6 @@ def test_change_loaded_cd(tmpdir, vm_with_cd):
     assert normalized(expected_dev_xml) == normalized(vm_with_cd._dom.devXml)
 
 
-def test_change_cd_pdiv():
-    sd_id = uuid.uuid4()
-    img_id = uuid.uuid4()
-    vol_id = uuid.uuid4()
-    drivespec = {
-        "device": "cdrom",
-        "domainID": sd_id,
-        "poolID": uuid.uuid4(),
-        "imageID": img_id,
-        "volumeID": vol_id,
-    }
-
-    with fake.VM(cif=ClientIF()) as fakevm:
-        fakevm._dom = fake.Domain()
-        cdromspec = {
-            'path': drivespec,
-            'iface': 'ide',
-            'index': '2',
-        }
-        fakevm.changeCD(cdromspec)
-        assert (sd_id, img_id, vol_id) in fakevm.cif.irs.prepared_volumes
-
-
 def test_update_disk_device_failed():
     with fake.VM(cif=ClientIF()) as fakevm:
         fakevm._dom = fake.Domain(virtError=libvirt.VIR_ERR_XML_ERROR)
