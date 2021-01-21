@@ -30,6 +30,57 @@ from vdsm.common import exception
 
 from . import vmfakelib as fake
 
+LOADED_CD_METADATA_XML = """\
+<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:device devtype="cdrom" name="sdc">
+        <ovirt-vm:domainID>88252cf6-381e-48f0-8795-a294a32c7149</ovirt-vm:domainID>
+        <ovirt-vm:imageID>89f05c7d-b961-4935-993f-514499024515</ovirt-vm:imageID>
+        <ovirt-vm:poolID>13345997-b94f-42dd-b8ef-a1392f65cebf</ovirt-vm:poolID>
+        <ovirt-vm:volumeID>626a493f-5214-4337-b580-96a1ce702c2a</ovirt-vm:volumeID>
+    </ovirt-vm:device>
+</ovirt-vm:vm>
+"""  # NOQA: E501 (long line)
+
+LOADED_CD_DEVICE_XML = """\
+<disk type='file' device='cdrom'>
+  <driver name='qemu' type='raw' error_policy='report'/>
+  <source dev='/path/to/image' index='2'>
+    <seclabel model='dac' relabel='no'/>
+  </source>
+  <backingStore/>
+  <target dev='sdc' bus='sata'/>
+  <readonly/>
+  <alias name='ua-79287c04-4eea-4db7-a376-99a9f85ad0ed'/>
+  <address type='drive' controller='0' bus='0' target='0' unit='2'/>
+</disk>
+"""
+
+CD_PDIV = {
+    "poolID": "13345997-b94f-42dd-b8ef-a1392f65cebf",
+    "domainID": "88252cf6-381e-48f0-8795-a294a32c7149",
+    "imageID": "89f05c7d-b961-4935-993f-514499024515",
+    "volumeID": "626a493f-5214-4337-b580-96a1ce702c2a",
+}
+
+
+@pytest.fixture
+def vm_with_cd():
+    with fake.VM(
+            cif=ClientIF(),
+            devices=[{"type": "file", "device": "cdrom"}],
+            create_device_objects=True,
+            xmldevices=LOADED_CD_DEVICE_XML,
+            metadata=LOADED_CD_METADATA_XML
+    ) as fakevm:
+        fakevm._dom = fake.Domain()
+
+        # Prepare image for loaded CD.
+        drive = dict(CD_PDIV)
+        drive["device"] = "cdrom"
+        fakevm.cif.prepareVolumePath(drive)
+
+        yield fakevm
+
 
 def test_change_cd_eject():
     with fake.VM(cif=ClientIF()) as fakevm:
