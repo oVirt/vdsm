@@ -4448,9 +4448,9 @@ class Vm(object):
             # broken for NFS domains when root_squash was enabled.  This has
             # been fixed since libvirt-0.10.2-29
             curVirtualSize = self._dom.blockInfo(drive.name)[0]
-        except libvirt.libvirtError:
+        except libvirt.libvirtError as e:
             self.log.exception("An error occurred while getting the current "
-                               "disk size")
+                               "disk size: {}".format(e))
             return response.error('resizeErr')
 
         if curVirtualSize > newSizeBytes:
@@ -4467,19 +4467,19 @@ class Vm(object):
         try:
             self._dom.blockResize(drive.name, newSizeBytes,
                                   libvirt.VIR_DOMAIN_BLOCK_RESIZE_BYTES)
-        except libvirt.libvirtError:
+        except libvirt.libvirtError as e:
             self.log.exception(
                 "An error occurred while trying to extend the disk %s "
-                "to size %s", drive.name, newSizeBytes)
+                "to size %s: %s", drive.name, newSizeBytes, e)
             return response.error('updateDevice')
         finally:
             # Note that newVirtualSize may be larger than the requested size
             # because of rounding in qemu.
             try:
                 newVirtualSize = self._dom.blockInfo(drive.name)[0]
-            except libvirt.libvirtError:
+            except libvirt.libvirtError as e:
                 self.log.exception("An error occurred while getting the "
-                                   "updated disk size")
+                                   "updated disk size: {}".format(e))
                 return response.error('resizeErr')
             self._setVolumeSize(drive.domainID, drive.poolID, drive.imageID,
                                 drive.volumeID, newVirtualSize)
