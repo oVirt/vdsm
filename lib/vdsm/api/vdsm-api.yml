@@ -565,66 +565,6 @@ types:
             COW: The Volume uses the Qemu Qcow image format
             RAW: The Volume writes raw data directly to the backing image
 
-    ParentVolumeInfo: &ParentVolumeInfo
-        added: '4.0'
-        description: A reference to a parent volume.
-        name: ParentVolumeInfo
-        properties:
-        -   description: ''
-            name: img_id
-            type: *UUID
-
-        -   description: ''
-            name: vol_id
-            type: *UUID
-        type: object
-
-    CreateVolumeInfo: &CreateVolumeInfo
-        added: '4.0'
-        description: Parameters used for creating a new volume.
-        name: CreateVolumeInfo
-        properties:
-        -   description: The Storage Domain associated with the Volume
-            name: sd_id
-            type: *UUID
-
-        -   defaultvalue: needs updating
-            description: If specified, the initial allocated size of volume in
-                bytes.  Allowed only when creating a thinly provisioned volume
-                on block storage.
-            name: initial_size
-            type: uint
-
-        -   description: The Volume size in bytes
-            name: virtual_size
-            type: uint
-
-        -   description: The Image associated with the Volume
-            name: img_id
-            type: *UUID
-
-        -   description: The data format to use for the destination Volume
-            name: vol_format
-            type: *VolumeFormat
-
-        -   description: The UUID of the Volume
-            name: vol_id
-            type: *UUID
-
-        -   description: The Volume description (up to 210 bytes)
-            name: description
-            type: string
-
-        -   description: An advisory disk usage type
-            name: disk_type
-            type: *DiskType
-
-        -   defaultvalue: needs updating
-            description: Derive from the indicated parent Volume
-            name: parent
-            type: *ParentVolumeInfo
-        type: object
-
     DeviceVisibilityMap: &DeviceVisibilityMap
         added: '3.1'
         description: A mapping of boolean values indexed by block device GUID.
