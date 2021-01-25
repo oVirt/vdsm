@@ -120,13 +120,13 @@ check_install() {
 }
 
 generate_combined_coverage_report() {
-    pushd tests
-    pwd
-    ls .cov*
+    (
+        cd tests
+        ls .cov*
 
-    ${CI_PYTHON} -m coverage combine .coverage-*
-    ${CI_PYTHON} ./profile coverage ${CI_PYTHON} -m coverage html -d "$EXPORT_DIR/htmlcov"
-    popd
+        ${CI_PYTHON} -m coverage combine .coverage-*
+        ${CI_PYTHON} ./profile coverage ${CI_PYTHON} -m coverage html -d "$EXPORT_DIR/htmlcov"
+    )
 
     # Export subsystem coverage reports for viewing in jenkins.
     mv tests/htmlcov-* "$EXPORT_DIR"
