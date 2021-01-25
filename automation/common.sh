@@ -124,8 +124,10 @@ generate_combined_coverage_report() {
         cd tests
         ls .cov*
 
-        ${CI_PYTHON} -m coverage combine .coverage-*
-        ${CI_PYTHON} ./profile coverage ${CI_PYTHON} -m coverage html -d "$EXPORT_DIR/htmlcov"
+        ${CI_PYTHON} -m coverage combine .coverage-* \
+            || echo "WARNING: coverage combine failed, ignoring."
+        ${CI_PYTHON} ./profile coverage ${CI_PYTHON} -m coverage html -d "$EXPORT_DIR/htmlcov" \
+            || echo "WARNING: coverage conversion to html failed, ignoring."
     )
 
     # Export subsystem coverage reports for viewing in jenkins.
