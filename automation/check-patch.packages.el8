@@ -17,7 +17,6 @@ make
 ovirt-imageio-client
 python3-augeas
 python3-blivet
-python3-coverage
 python3-dateutil
 python3-dbus
 python3-decorator
