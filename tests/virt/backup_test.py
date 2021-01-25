@@ -498,12 +498,12 @@ def test_incremental_backup(tmp_backupdir, tmp_basedir):
 def test_full_backup_without_checkpoint_with_previous_chain(
         tmp_backupdir, tmp_basedir):
     vm = FakeVm()
-    # This test checks an edge case when a chain of incremental
-    # backup was taken for a VM with RAW disks that a snapshot created for
-    # them so their format is now QCOW2 and they are valid for incremental backup.
-    # In this case, when the snapshot is removed, the disk format is RAW again
-    # and only a full backup without a checkpoint can be taken while there
-    # are defined checkpoints for the VM.
+    # This test checks an edge case when a chain of incremental backup was
+    # taken for a VM with RAW disks that a snapshot created for them so their
+    # format is now QCOW2 and they are valid for incremental backup. In this
+    # case, when the snapshot is removed, the disk format is RAW again and only
+    # a full backup without a checkpoint can be taken while there are defined
+    # checkpoints for the VM.
     dom = FakeDomainAdapter(output_checkpoints=[CHECKPOINT_1, CHECKPOINT_2])
     fake_disks = create_fake_disks()
 
