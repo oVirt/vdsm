@@ -512,11 +512,11 @@ types:
         type: map
         value-type: *CpuCoreStats
 
-    DiskType: &DiskType
+    DiskContentType: &DiskContentType
         added: '3.1'
-        modified: '4.3'
+        modified: '4.4.5'
         description: Disk content type.
-        name: DiskType
+        name: DiskContentType
         type: enum
         values:
             DATA: This volume is for data (>=4.2)
@@ -7876,7 +7876,7 @@ types:
         properties:
         -   description: An advisory code indicating the Volume's planned usage
             name: disktype
-            type: *DiskType
+            type: *DiskContentType
 
         -   description: Indicates whether the Volume and metadata are valid
             name: status
@@ -8492,7 +8492,7 @@ types:
             description: Advisory code indicating the Volume's planned usage.
                          Available if volume metadata is valid.
             name: disktype
-            type: *DiskType
+            type: *DiskContentType
 
         -   description: Indicates whether the Volume and metadata are valid.
             name: status
@@ -11482,7 +11482,7 @@ Volume.create:
 
     -   description: An advisory disk usage type
         name: diskType
-        type: *DiskType
+        type: *DiskContentType
 
     -   description: The Volume description Up to 210 bytes; longer values will
             be truncated
