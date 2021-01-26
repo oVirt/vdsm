@@ -2248,7 +2248,7 @@ types:
             name: ksmPages
             type: int
 
-        -   description: The percentage of memory used (not including caches)
+        -   description: The percentage of memory used
             name: memUsed
             type: string
             datatype: uint

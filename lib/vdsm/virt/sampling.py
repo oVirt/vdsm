@@ -170,7 +170,9 @@ class HostSample(object):
         self.totcpu = TotalCpuSample()
         meminfo = utils.readMemInfo()
         freeOrCached = (meminfo['MemFree'] +
-                        meminfo['Cached'] + meminfo['Buffers'])
+                        meminfo['Cached'] +
+                        meminfo['Buffers'] +
+                        meminfo['SReclaimable'])
         self.memUsed = 100 - int(100.0 * (freeOrCached) / meminfo['MemTotal'])
         self.anonHugePages = meminfo.get('AnonHugePages', 0) // KiB
         try:
