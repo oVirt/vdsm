@@ -1987,7 +1987,7 @@ class NoSuchLease(StorageException):
 
 class TransientDiskAlreadyExists(StorageException):
     code = 941
-    message = "Transient disk already exists"
+    msg = "Transient disk already exists"
     expected = True
 
     def __init__(self, disk_path):
