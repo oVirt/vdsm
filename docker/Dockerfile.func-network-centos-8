@@ -1,4 +1,4 @@
-FROM centos:8
+FROM centos/centos:stream8
 ENV container docker
 
 # Enable systemd.
