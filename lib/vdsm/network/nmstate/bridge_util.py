@@ -122,11 +122,12 @@ def translate_config(networks):
 
 
 def is_dhcp_enabled(family_info):
-    return family_info[InterfaceIP.ENABLED] and family_info[InterfaceIP.DHCP]
+    return family_info[InterfaceIP.ENABLED] and family_info.get(
+        InterfaceIP.DHCP, False
+    )
 
 
 def is_autoconf_enabled(family_info):
-    return (
-        family_info[InterfaceIP.ENABLED]
-        and family_info[InterfaceIPv6.AUTOCONF]
+    return family_info[InterfaceIP.ENABLED] and family_info.get(
+        InterfaceIPv6.AUTOCONF, False
     )
