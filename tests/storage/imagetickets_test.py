@@ -85,6 +85,42 @@ def fake_connection(monkeypatch):
         imagetickets, "UnixHTTPConnection", FakeUnixHTTPConnection())
 
 
+@pytest.mark.xfail(reason="bz1858956")
+def test_remove_ticket_error(fake_connection):
+    imagetickets.UnixHTTPConnection.response = FakeResponse(
+        data=b'Conflict error',
+        headers={"content-type": "text/plain; charset=UTF-8"},
+        status=409,
+    )
+    with pytest.raises(se.ImageDaemonError) as e:
+        imagetickets.remove_ticket("uuid")
+    assert "Conflict error" in str(e.value)
+
+
+@pytest.mark.xfail(reason="bz1858956")
+def test_extend_ticket_error(fake_connection):
+    imagetickets.UnixHTTPConnection.response = FakeResponse(
+        data=b'Not found error',
+        headers={"content-type": "text/plain; charset=UTF-8"},
+        status=404,
+    )
+    with pytest.raises(se.ImageDaemonError) as e:
+        imagetickets.extend_ticket("uuid", 1)
+    assert "Not found error" in str(e.value)
+
+
+@pytest.mark.xfail(reason="bz1858956")
+def test_get_ticket_error(fake_connection):
+    imagetickets.UnixHTTPConnection.response = FakeResponse(
+        data=b'Not found error',
+        headers={"content-type": "text/plain; charset=UTF-8"},
+        status=404,
+    )
+    with pytest.raises(se.ImageDaemonError) as e:
+        imagetickets.get_ticket("uuid")
+    assert "Not found error" in str(e.value)
+
+
 @pytest.mark.parametrize("method, args", [
     ["add_ticket", [{}]],
     ["extend_ticket", ["uuid", 300]],
