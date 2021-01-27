@@ -30,9 +30,7 @@ stages:
                 - 'build-aux/*'
             distributions:
               - el8
-              - rhel8:
-                  runtime-requirements:
-                    host-distro: newer
+              - rhel8
         - linters:
             distributions:
               - el8
@@ -41,9 +39,7 @@ stages:
               host-distro: newer
             distributions:
               - el8
-              - rhel8:
-                  runtime-requirements:
-                    host-distro: newer
+              - rhel8
         - nmstate-func-tests: &nmstate-func-tests
             run-if:
               file-changed:
@@ -52,9 +48,7 @@ stages:
                 - 'tests/network/functional/*'
                 - 'automation/*.{{ substage }}.*'
             distributions:
-              - rhel8:
-                  runtime-requirements:
-                    host-distro: newer
+              - rhel8
         - nmstate-func-tests-ovs:
             <<: *nmstate-func-tests
 
