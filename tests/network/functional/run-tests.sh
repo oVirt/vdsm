@@ -107,7 +107,7 @@ done
 
 load_kernel_modules
 
-CONTAINER_ID="$($CONTAINER_CMD run --privileged -d -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z $nmstate_mount --env PYTHONPATH=lib --env CI $CONTAINER_IMAGE)"
+CONTAINER_ID="$($CONTAINER_CMD run --privileged -d -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z $nmstate_mount --env PYTHONPATH=lib --env CI $CONTAINER_IMAGE)"
 trap remove_container EXIT
 
 wait_for_active_service "dbus"
