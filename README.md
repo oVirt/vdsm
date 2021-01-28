@@ -43,11 +43,7 @@ Set local git clone:
     sudo dnf install -y git
     git clone "https://gerrit.ovirt.org/vdsm"
 
-Install additional packages for Fedora:
-
-    sudo dnf install -y `cat automation/check-patch.packages.fc30`
-
-Install additional packages for CentOS:
+Install additional packages for Fedora, CentOS, and RHEL:
 
     sudo dnf install -y `cat automation/check-patch.packages.el8`
 
