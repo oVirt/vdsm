@@ -289,11 +289,6 @@ class DriveMerger:
             return len(self._blockJobs) > 0
 
     def queryBlockJobs(self):
-        def startCleanup(job, drive, needPivot):
-            t = LiveMergeCleanupThread(self._vm, job, drive, needPivot)
-            t.start()
-            self._liveMergeCleanupThreads[job['jobID']] = t
-
         jobsRet = {}
         # We need to take the jobs lock here to ensure that we don't race with
         # another call to merge() where the job has been recorded but not yet
@@ -371,7 +366,7 @@ class DriveMerger:
                         # ended.  Spawn an async cleanup.
                         log.info("Starting cleanup thread for job: %s",
                                  jobID)
-                        startCleanup(storedJob, drive, doPivot)
+                        self._start_cleanup_thread(storedJob, drive, doPivot)
                     elif cleanThread.state == LiveMergeCleanupThread.TRYING:
                         # Let previously started cleanup thread continue
                         log.debug("Still waiting for block job %s to be "
@@ -380,7 +375,7 @@ class DriveMerger:
                         log.info("Previous job %s cleanup thread failed with "
                                  "recoverable error, retrying",
                                  jobID)
-                        startCleanup(storedJob, drive, doPivot)
+                        self._start_cleanup_thread(storedJob, drive, doPivot)
                     elif cleanThread.state == LiveMergeCleanupThread.ABORT:
                         log.error("Aborting job %s due to an unrecoverable "
                                   "error", jobID)
@@ -389,6 +384,14 @@ class DriveMerger:
                         continue
                 jobsRet[jobID] = entry
         return jobsRet
+
+    def _start_cleanup_thread(self, job, drive, needPivot):
+        """
+        Must be caller when holding self._jobsLock.
+        """
+        t = LiveMergeCleanupThread(self._vm, job, drive, needPivot)
+        t.start()
+        self._liveMergeCleanupThreads[job['jobID']] = t
 
     def _activeLayerCommitReady(self, jobInfo, drive):
         try:
