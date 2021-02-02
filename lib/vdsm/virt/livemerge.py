@@ -297,12 +297,13 @@ class DriveMerger:
             for storedJob in list(self._blockJobs.values()):
                 jobID = storedJob['jobID']
                 log.debug("Checking job %s", jobID)
+
+                # Handle successful jobs early because the job just needs
+                # to be untracked and the stored disk info might be stale
+                # anyway (ie. after active layer commit).
                 cleanThread = self._liveMergeCleanupThreads.get(jobID)
                 if (cleanThread
                         and cleanThread.state == LiveMergeCleanupThread.DONE):
-                    # Handle successful jobs early because the job just needs
-                    # to be untracked and the stored disk info might be stale
-                    # anyway (ie. after active layer commit).
                     log.info("Cleanup thread %s successfully completed, "
                              "untracking job %s (base=%s, top=%s)",
                              cleanThread, jobID,
@@ -321,6 +322,7 @@ class DriveMerger:
                         log.error("Cannot find drive for job %s (disk=%s)",
                                   jobID, storedJob['disk'])
                         continue
+
                     # Active layer merge, check if pivot completed.
                     pivoted_drive = dict(disk)
                     pivoted_drive["volumeID"] = storedJob["baseVolume"]
@@ -331,6 +333,7 @@ class DriveMerger:
                                   "for job %s (disk=%s)",
                                   jobID, pivoted_drive)
                         continue
+
                 entry = {'id': jobID, 'jobType': 'block',
                          'blockJobType': storedJob['blockJobType'],
                          'bandwidth': 0, 'cur': '0', 'end': '0',
@@ -360,6 +363,7 @@ class DriveMerger:
                         log.info("Libvirt job %s was terminated", jobID)
                     storedJob['gone'] = True
                     doPivot = False
+
                 if not liveInfo or doPivot:
                     if not cleanThread:
                         # There is no cleanup thread so the job must have just
@@ -382,7 +386,9 @@ class DriveMerger:
                         self._untrack_block_job(jobID)
                         # Don't report job as progressing in returned jobs.
                         continue
+
                 jobsRet[jobID] = entry
+
         return jobsRet
 
     def _start_cleanup_thread(self, job, drive, needPivot):
