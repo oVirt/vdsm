@@ -242,10 +242,15 @@ class DriveMerger:
         try:
             job = self._get_block_job(drive)
         except LookupError:
-            newJob = {'jobID': jobID, 'disk': driveSpec,
-                      'baseVolume': base, 'topVolume': top,
-                      'strategy': strategy, 'blockJobType': 'commit',
-                      'drive': drive.name}
+            newJob = {
+                'baseVolume': base,
+                'blockJobType': 'commit',
+                'disk': driveSpec,
+                'drive': drive.name,
+                'jobID': jobID,
+                'strategy': strategy,
+                'topVolume': top,
+            }
             self._blockJobs[jobID] = newJob
         else:
             log.error("Cannot add block job %s.  A block job with id "
@@ -334,11 +339,17 @@ class DriveMerger:
                                   jobID, pivoted_drive)
                         continue
 
-                entry = {'id': jobID, 'jobType': 'block',
-                         'blockJobType': storedJob['blockJobType'],
-                         'bandwidth': 0, 'cur': '0', 'end': '0',
-                         'imgUUID': storedJob['disk']['imageID'],
-                         'drive': storedJob['drive']}
+                # Tracked job info for reporting to engine.
+                job_info = {
+                    'bandwidth': 0,
+                    'blockJobType': storedJob['blockJobType'],
+                    'cur': '0',
+                    'drive': storedJob['drive'],
+                    'end': '0',
+                    'id': jobID,
+                    'imgUUID': storedJob['disk']['imageID'],
+                    'jobType': 'block',
+                }
 
                 liveInfo = None
                 if 'gone' not in storedJob:
@@ -347,14 +358,14 @@ class DriveMerger:
                         liveInfo = self._dom.blockJobInfo(drive.name, 0)
                     except libvirt.libvirtError:
                         log.exception("Error getting block job info")
-                        jobsRet[jobID] = entry
+                        jobsRet[jobID] = job_info
                         continue
 
                 if liveInfo:
                     log.debug("Job %s live info: %s", jobID, liveInfo)
-                    entry['bandwidth'] = liveInfo['bandwidth']
-                    entry['cur'] = str(liveInfo['cur'])
-                    entry['end'] = str(liveInfo['end'])
+                    job_info['bandwidth'] = liveInfo['bandwidth']
+                    job_info['cur'] = str(liveInfo['cur'])
+                    job_info['end'] = str(liveInfo['end'])
                     doPivot = self._activeLayerCommitReady(liveInfo, drive)
                 else:
                     # Libvirt has stopped reporting this job so we know it will
@@ -387,7 +398,7 @@ class DriveMerger:
                         # Don't report job as progressing in returned jobs.
                         continue
 
-                jobsRet[jobID] = entry
+                jobsRet[jobID] = job_info
 
         return jobsRet
 
