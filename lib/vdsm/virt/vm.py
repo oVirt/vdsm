@@ -478,7 +478,7 @@ class Vm(object):
         self._init_external_data(
             ExternalDataKind.NVRAM,
             params.get('_X_nvramdata'),
-            lambda : self._domain.nvram is not None,
+            lambda: self._domain.nvram is not None,
             self._read_nvram_data,
             self._write_nvram_data)
 
