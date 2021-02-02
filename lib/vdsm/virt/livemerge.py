@@ -25,12 +25,12 @@ import uuid
 import xml.etree.ElementTree as ET
 
 from vdsm.common import concurrent
-from vdsm.common import errors
 from vdsm.common import logutils
 from vdsm.common import response
 from vdsm.common.define import doneCode, errCode
+
+from vdsm.virt import errors
 from vdsm.virt import virdomain
-from vdsm.virt import vm
 from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound
 
 import libvirt
@@ -113,7 +113,7 @@ class DriveMerger:
                                               drive.imageID, baseVolUUID)
             topInfo = self._vm.getVolumeInfo(drive.domainID, drive.poolID,
                                              drive.imageID, topVolUUID)
-        except vm.StorageUnavailableError:
+        except errors.StorageUnavailableError:
             log.error("Unable to get volume information")
             return errCode['mergeErr']
 
@@ -515,7 +515,7 @@ class LiveMergeCleanupThread(object):
             self.drive.imageID,
             self.job['topVolume'])
         if ret['status']['code'] != 0:
-            raise vm.StorageUnavailableError(
+            raise errors.StorageUnavailableError(
                 "Failed to teardown top volume %s" %
                 self.job['topVolume'])
 

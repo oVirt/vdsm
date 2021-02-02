@@ -85,6 +85,7 @@ from vdsm.virt import backup
 from vdsm.virt import blockjob
 from vdsm.virt import domxml_preprocess
 from vdsm.virt import drivemonitor
+from vdsm.virt import errors
 from vdsm.virt import guestagent
 from vdsm.virt import libvirtxml
 from vdsm.virt import metadata
@@ -198,10 +199,6 @@ VolumeSize = namedtuple("VolumeSize",
 
 
 class MigrationError(Exception):
-    pass
-
-
-class StorageUnavailableError(Exception):
     pass
 
 
@@ -776,7 +773,7 @@ class Vm(object):
             if isVdsmImage(drv):
                 try:
                     self._normalizeVdsmImg(drv)
-                except StorageUnavailableError:
+                except errors.StorageUnavailableError:
                     # storage unavailable is not fatal on recovery;
                     # the storage subsystem monitors the devices
                     # and will notify when they come up later.
@@ -4369,7 +4366,7 @@ class Vm(object):
                 self.updateDriveParameters(dstDiskCopy)
                 try:
                     self.updateDriveVolume(drive)
-                except StorageUnavailableError as e:
+                except errors.StorageUnavailableError as e:
                     # Will be recovered on the next monitoring cycle
                     self.log.error("Unable to update drive %r volume size: "
                                    "%s", drive.name, e)
@@ -5518,7 +5515,7 @@ class Vm(object):
                                                 drive['volumeID'], volumes)
         if res['status']['code'] != 0:
             self.log.error("Unable to synchronize volume chain to storage")
-            raise StorageUnavailableError()
+            raise errors.StorageUnavailableError()
 
         if (set(curVols) == set(volumes)):
             return
@@ -5624,7 +5621,7 @@ class Vm(object):
         """ Return volume size info by accessing storage """
         res = self.cif.irs.getVolumeSize(domainID, poolID, imageID, volumeID)
         if res['status']['code'] != 0:
-            raise StorageUnavailableError(
+            raise errors.StorageUnavailableError(
                 "Unable to get volume size for domain %s volume %s" %
                 (domainID, volumeID))
         return VolumeSize(int(res['apparentsize']), int(res['truesize']))
@@ -5632,7 +5629,7 @@ class Vm(object):
     def getVolumeInfo(self, domainID, poolID, imageID, volumeID):
         res = self.cif.irs.getVolumeInfo(domainID, poolID, imageID, volumeID)
         if res['status']['code'] != 0:
-            raise StorageUnavailableError(
+            raise errors.StorageUnavailableError(
                 "Unable to get volume info for domain %s volume %s" %
                 (domainID, volumeID))
         return res['info']
@@ -5641,7 +5638,7 @@ class Vm(object):
         res = self.cif.irs.setVolumeSize(domainID, poolID, imageID, volumeID,
                                          size)
         if res['status']['code'] != 0:
-            raise StorageUnavailableError(
+            raise errors.StorageUnavailableError(
                 "Unable to set volume size to %s for domain %s volume %s" %
                 (size, domainID, volumeID))
 

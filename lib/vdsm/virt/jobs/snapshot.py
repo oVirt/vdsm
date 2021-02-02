@@ -43,13 +43,13 @@ from vdsm.common.time import monotonic_time
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import sd
 
+from vdsm.virt import errors
 from vdsm.virt import vmstatus
 from vdsm.virt import vmxml
 from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import lookup
 from vdsm.virt.vmdevices import storagexml
 import vdsm.virt.jobs
-import vdsm.virt.vm
 
 
 def write_snapshot_md(vm, snapshot_data, lock):
@@ -252,7 +252,7 @@ class Snapshot(properties.Owner):
 
                 try:
                     self._vm.updateDriveVolume(drive_obj)
-                except vdsm.virt.vm.StorageUnavailableError as e:
+                except errors.StorageUnavailableError as e:
                     # Will be recovered on the next monitoring cycle
                     self._vm.log.error("Unable to update drive %r "
                                        "volume size: %s", drive["name"], e)
