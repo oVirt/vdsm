@@ -51,6 +51,19 @@ def test_invalid_data():
     with pytest.raises(exception.ExternalDataFailed):
         # Mixed
         data.store('aaa!ccc')
+    with pytest.raises(exception.ExternalDataFailed):
+        # Padding character at the beginning
+        data.store('=aaaa')
+
+
+def test_invalid_compression():
+    data = VariableData()
+    with pytest.raises(exception.ExternalDataFailed):
+        # Unknown format
+        data.store('=X=aaaa')
+    with pytest.raises(exception.ExternalDataFailed):
+        # Content is not bzip2
+        data.store('=0=aaaa')
 
 
 def test_legacy_data():
@@ -64,12 +77,20 @@ MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=
         b'111111111111111111111111111111111111111111111111111'
 
 
+def test_compressed():
+    data = VariableData()
+    data.store('=0=QlpoOTFBWSZTWU7wmXMAAAEBADgAIAAhsQZiEji7kinChIJ3hMuY')
+    assert data.data == b'abcabcabc'
+
+
 # File data
 
 
 FILE_DATA = 'hello'
 FILE_DATA_2 = 'world'
 ENCODED_DATA = 'aGVsbG8='
+ENCODED_DATA_BZ2 = \
+    '=0=QlpoOTFBWSZTWRkxZT0AAACBAAJEoAAhmmgzTQczi7kinChIDJiynoA='
 DIRECTORY_MODE = stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IXOTH
 UUID = '12345678-1234-1234-1234-1234567890ab'
 
@@ -124,14 +145,14 @@ def test_file_data_conditional_read(last_modified, is_none):
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, 'test')
         open(path, 'w').write(FILE_DATA)
-        data = filedata.FileData(path)
+        data = filedata.FileData(path, compress=True)
         if last_modified is None:
             last_modified = data.last_modified()
         encoded = data.retrieve(last_modified=last_modified)
         if is_none:
             assert encoded is None
         else:
-            assert encoded == ENCODED_DATA
+            assert encoded == ENCODED_DATA_BZ2
 
 
 # Directory data

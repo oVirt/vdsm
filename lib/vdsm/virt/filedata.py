@@ -18,6 +18,7 @@
 
 import base64
 import binascii
+import bz2
 import grp
 import logging
 import os
@@ -61,7 +62,7 @@ class _FileSystemData(object):
     encoding and decoding it to or from ASCII, and detecting its
     changes.
     """
-    def __init__(self, path):
+    def __init__(self, path, compress=False):
         """
         Define the data to be accessed.
 
@@ -70,7 +71,11 @@ class _FileSystemData(object):
           a path to the data file or a path to the directory containing the
           data
         :type path: string
+        :param compress: whether to compress the content before encoding it
+          with base64
+        :type compress: boolean
         """
+        self._compress = compress
         self._path = path
 
     def _file_timestamp(self, path):
@@ -123,7 +128,13 @@ class _FileSystemData(object):
            last_modified <= time.time():  # last_modified in future? no!
             return None
         data = self._retrieve()
-        return base64.b64encode(data).decode('ascii')
+        data_format = ''
+        if self._compress:
+            # Compress data with bzip2. See the store() method for description
+            # of the prepended string.
+            data_format = '=0='
+            data = bz2.compress(data, compresslevel=9)
+        return data_format + base64.b64encode(data).decode('ascii')
 
     def _store(self, data):
         raise NotImplementedError
@@ -146,6 +157,23 @@ class _FileSystemData(object):
         # base64 methods used in oVirt 4.4.4 and could possibly be dropped the
         # in future
         byte_data = byte_data.translate(None, delete=b'\n')
+        # Detect if the content is compressed and decompress it if yes. For
+        # backward compatibility we don't treat it as error if content is not
+        # compressed.
+        #
+        # Base64 (RFC 3548) uses the alphabet [A-Za-z0-9+/] for encoding
+        # data and a special character '=' for padding at the end of
+        # output. Since the '=' character cannot appear at the beginning of
+        # base64 encoded data we use the string '=X=' to store the format of
+        # encoded data. Currently used values of X are:
+        #   0   bzip2 compressed data
+        #
+        data_format = None
+        if len(byte_data) > 3 and byte_data[0] == ord('=') and \
+                byte_data[2] == ord('='):
+            data_format = byte_data[1]
+            byte_data = byte_data[3:]
+        # Decode base64
         error = None
         try:
             decoded_data = base64.b64decode(byte_data, validate=True)
@@ -154,7 +182,22 @@ class _FileSystemData(object):
         if error is not None:
             raise exception.ExternalDataFailed(
                 'Failed to decode base64 data', exception=error)
-        self._store(decoded_data)
+        # Uncompress
+        if data_format == ord('0'):
+            error = None
+            try:
+                final_data = bz2.decompress(decoded_data)
+            except Exception as e:
+                error = e
+            if error is not None:
+                raise exception.ExternalDataFailed(
+                    'Failed to decompress bzip2 content', exception=error)
+        elif data_format is None:
+            final_data = decoded_data
+        else:
+            raise exception.ExternalDataFailed(
+                'Invalid data format', data_format=data_format)
+        self._store(final_data)
 
 
 class FileData(_FileSystemData):
