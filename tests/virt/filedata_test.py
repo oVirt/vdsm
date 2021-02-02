@@ -28,13 +28,48 @@ from vdsm.common import exception
 from vdsm.supervdsm_api import virt
 from vdsm.virt import filedata
 
+# Core
+
+
+class VariableData(filedata._FileSystemData):
+    def __init__(self):
+        super().__init__('/does-not-exist')
+        self.data = None
+
+    def _retrieve(self, last_modified=-1):
+        return self.data
+
+    def _store(self, data):
+        self.data = data
+
+
+def test_invalid_data():
+    data = VariableData()
+    with pytest.raises(exception.ExternalDataFailed):
+        # Not base64
+        data.store('!@#$%^&*()')
+    with pytest.raises(exception.ExternalDataFailed):
+        # Mixed
+        data.store('aaa!ccc')
+
+
+def test_legacy_data():
+    data = VariableData()
+    # Data with line ends
+    data.store('''
+MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTEx
+MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=
+''')
+    assert data.data == b'11111111111111111111111111111111111111111111' + \
+        b'111111111111111111111111111111111111111111111111111'
+
 
 # File data
 
 
 FILE_DATA = 'hello'
 FILE_DATA_2 = 'world'
-ENCODED_DATA = 'aGVsbG8=\n'
+ENCODED_DATA = 'aGVsbG8='
 DIRECTORY_MODE = stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IXOTH
 UUID = '12345678-1234-1234-1234-1234567890ab'
 

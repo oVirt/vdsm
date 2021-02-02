@@ -17,6 +17,7 @@
 
 
 import base64
+import binascii
 import grp
 import logging
 import os
@@ -122,7 +123,7 @@ class _FileSystemData(object):
            last_modified <= time.time():  # last_modified in future? no!
             return None
         data = self._retrieve()
-        return base64.encodebytes(data).decode('ascii')
+        return base64.b64encode(data).decode('ascii')
 
     def _store(self, data):
         raise NotImplementedError
@@ -138,8 +139,21 @@ class _FileSystemData(object):
 
         :param data: encoded data as previously returned from `retrieve()`
         :type data: string
+        :raises: exception.ExternalDataFailed if data could not be decoded
         """
-        decoded_data = base64.decodebytes(data.encode('ascii'))
+        byte_data = data.encode('ascii')
+        # Remove line-ends; this is for backward compatibility with legacy
+        # base64 methods used in oVirt 4.4.4 and could possibly be dropped the
+        # in future
+        byte_data = byte_data.translate(None, delete=b'\n')
+        error = None
+        try:
+            decoded_data = base64.b64decode(byte_data, validate=True)
+        except binascii.Error as e:
+            error = e
+        if error is not None:
+            raise exception.ExternalDataFailed(
+                'Failed to decode base64 data', exception=error)
         self._store(decoded_data)
 
 
