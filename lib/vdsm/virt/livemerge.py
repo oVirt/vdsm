@@ -294,7 +294,12 @@ class DriveMerger:
             return len(self._blockJobs) > 0
 
     def queryBlockJobs(self):
-        jobsRet = {}
+        """
+        Query tracked jobs and update their status. Returns dict of tracked
+        jobs dict, for reporting job status to engine.
+        """
+        tracked_jobs = {}
+
         # We need to take the jobs lock here to ensure that we don't race with
         # another call to merge() where the job has been recorded but not yet
         # started.
@@ -326,6 +331,7 @@ class DriveMerger:
                     if disk["volumeID"] != storedJob["topVolume"]:
                         log.error("Cannot find drive for job %s (disk=%s)",
                                   jobID, storedJob['disk'])
+                        # TODO: Should we report this job?
                         continue
 
                     # Active layer merge, check if pivot completed.
@@ -337,6 +343,7 @@ class DriveMerger:
                         log.error("Pivot completed but cannot find drive "
                                   "for job %s (disk=%s)",
                                   jobID, pivoted_drive)
+                        # TODO: Should we report this job?
                         continue
 
                 # Tracked job info for reporting to engine.
@@ -358,7 +365,7 @@ class DriveMerger:
                         liveInfo = self._dom.blockJobInfo(drive.name, 0)
                     except libvirt.libvirtError:
                         log.exception("Error getting block job info")
-                        jobsRet[jobID] = job_info
+                        tracked_jobs[jobID] = job_info
                         continue
 
                 if liveInfo:
@@ -395,12 +402,11 @@ class DriveMerger:
                         log.error("Aborting job %s due to an unrecoverable "
                                   "error", jobID)
                         self._untrack_block_job(jobID)
-                        # Don't report job as progressing in returned jobs.
                         continue
 
-                jobsRet[jobID] = job_info
+                tracked_jobs[jobID] = job_info
 
-        return jobsRet
+        return tracked_jobs
 
     def _start_cleanup_thread(self, job, drive, needPivot):
         """
