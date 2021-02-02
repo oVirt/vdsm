@@ -33,7 +33,7 @@ from vdsm.virt import filedata
 
 class VariableData(filedata._FileSystemData):
     def __init__(self):
-        super().__init__('/does-not-exist')
+        super().__init__('/does-not-exist', compress=False)
         self.data = None
 
     def _retrieve(self, last_modified=-1):
@@ -99,7 +99,7 @@ def test_file_data_read():
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, 'test')
         open(path, 'w').write(FILE_DATA)
-        data = filedata.FileData(path)
+        data = filedata.FileData(path, compress=False)
         assert data.retrieve() == ENCODED_DATA
 
 
@@ -115,7 +115,7 @@ def test_file_data_modified():
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, 'test')
         open(path, 'w').write(FILE_DATA)
-        data = filedata.FileData(path)
+        data = filedata.FileData(path, compress=False)
         assert data.last_modified() == os.stat(path).st_mtime
 
 

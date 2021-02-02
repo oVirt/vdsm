@@ -62,7 +62,7 @@ class _FileSystemData(object):
     encoding and decoding it to or from ASCII, and detecting its
     changes.
     """
-    def __init__(self, path, compress=False):
+    def __init__(self, path, compress=True):
         """
         Define the data to be accessed.
 

@@ -175,7 +175,8 @@ def read_tpm_data(vm_id, last_modified):
       (which may be older than actual modification time)
     :rtype: tuple
     """
-    accessor = filedata.DirectoryData(filedata.tpm_path(vm_id))
+    accessor = filedata.DirectoryData(filedata.tpm_path(vm_id),
+                                      compress=False)
     currently_modified = accessor.last_modified()
     data = accessor.retrieve(last_modified=last_modified)
     return data, currently_modified
