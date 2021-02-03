@@ -50,6 +50,15 @@ install_dependencies() {
     dnf update -y python3-libvirt
 }
 
+report_packages_versions() {
+    echo
+    echo "########################################################################"
+    echo "Installed packages:"
+    rpm -q qemu-kvm qemu-img
+    echo "########################################################################"
+    echo
+}
+
 build_vdsm() {
     if [ ! -f Makefile ]; then
         ${CI_PYTHON} tests/profile autogen ./autogen.sh \
