@@ -66,7 +66,7 @@ class Job(base.Job):
 
     def _run(self):
         with guarded.context(self._vol_info.locks):
-            self._validate()
             with self._vol_info.prepare():
+                self._validate()
                 with self._vol_info.volume_operation():
                     bitmaps.add_bitmap(self._vol_info.path, self.bitmap)
