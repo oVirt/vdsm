@@ -716,10 +716,12 @@ types:
         sourcetype: string
         type: alias
 
-    DriveSpecCdrom: &DriveSpecCdrom
+    DriveSpecPathCdrom: &DriveSpecPathCdrom
         added: '4.0'
+        deprecated: '4.4.5'
         description: A cdrom specification that allows directly indexing the
-            cdrom.
+            cdrom. Kept for backward compatibility with older engines.
+            Shouldn't be used. DriveSpecVolumeCdrom should be used instead.
         name: DriveSpecCdrom
         type: object
         properties:
@@ -734,6 +736,38 @@ types:
         -   description: Index on the iface used
             name: index
             type: int
+
+    DriveSpecVolumeCdrom: &DriveSpecVolumeCdrom
+        added: '4.4.5'
+        description: A cdrom specification that allows directly indexing
+            the cdrom. CD is specified by PDIV. In the new code all
+            images should be specified this way.
+        name: DriveSpecCdrom
+        type: object
+        properties:
+        - description: Image PDIV specification.
+          name: drive_spec
+          type: *DriveSpecVolume
+
+        - description: Bus that the cdrom resides on.
+          name: iface
+          type: string
+
+        - description: Index on the iface used.
+          name: index
+          type: int
+
+    DriveSpecCdrom: &DriveSpecCdrom
+        added: '4.4.5'
+        description: A cdrom specification that allows directly indexing
+            the cdrom. DriveSpecPathCdrom is kept for backward
+            compatibility, current code should use only
+            DriveSpecVolumeCdrom.
+        name: DriveSpecCdrom
+        type: union
+        values:
+        - *DriveSpecPathCdrom
+        - *DriveSpecVolumeCdrom
 
     DriveSpec: &DriveSpec
         added: '3.1'
