@@ -167,6 +167,7 @@ def get():
     caps["domain_versions"] = sc.DOMAIN_VERSIONS
 
     caps["supported_block_size"] = backends.supported_block_size()
+    caps["cd_change_pdiv"] = True
 
     return caps
 
