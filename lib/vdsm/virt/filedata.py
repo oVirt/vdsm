@@ -40,7 +40,7 @@ _TAR = '/usr/bin/tar'
 
 
 def _make_tar_archive(path):
-    return commands.run([_TAR, '-cJC', path, '.'])
+    return commands.run([_TAR, '--sort=name', '-cJC', path, '.'])
 
 
 def _unpack_tar_archive(path, data):
