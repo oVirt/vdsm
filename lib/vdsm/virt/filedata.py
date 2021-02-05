@@ -40,12 +40,14 @@ _TAR = '/usr/bin/tar'
 
 
 def _make_tar_archive(path):
-    return commands.run([_TAR, '--sort=name', '-cJC', path, '.'])
+    return commands.run([_TAR, '--create', '--verbose', '--xz',
+                         '--sort=name', '--directory=%s' % path, '.'])
 
 
 def _unpack_tar_archive(path, data):
     os.mkdir(path, 0o700)
-    commands.run([_TAR, '-xJC', path], input=data)
+    commands.run([_TAR, '--extract', '--verbose', '--xz',
+                  '--directory=%s' % path], input=data)
 
 
 class _FileSystemData(object):
