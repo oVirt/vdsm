@@ -255,13 +255,15 @@ def test_request_with_response(fake_connection):
     ticket = create_ticket(uuid="uuid")
     data = json.dumps(ticket).encode("utf8")
     imagetickets.UnixHTTPConnection.response = FakeResponse(data=data)
-    response = imagetickets.request("GET", "uuid")
+    response = imagetickets.get_ticket("uuid")
     assert response == ticket
 
 
-def test_request_with_empty_dict_response(fake_connection):
-    response = imagetickets.request("DELETE", "uuid")
-    assert response == {}
+@pytest.mark.xfail(reason="bz1858956")
+def test_request_with_zero_content_length(fake_connection):
+    imagetickets.UnixHTTPConnection.response = FakeResponse()
+    with pytest.raises(se.ImageTicketsError):
+        imagetickets.get_ticket("uuid")
 
 
 def create_ticket(uuid, ops=("read", "write"), timeout=300,

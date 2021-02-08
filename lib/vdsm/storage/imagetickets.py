@@ -71,26 +71,26 @@ def requires_image_daemon(func):
 @requires_image_daemon
 def add_ticket(ticket):
     body = json.dumps(ticket)
-    request("PUT", ticket["uuid"], body)
+    _request("PUT", ticket["uuid"], body)
 
 
 @requires_image_daemon
 def get_ticket(ticket_id):
-    return request("GET", ticket_id)
+    return _request("GET", ticket_id)
 
 
 @requires_image_daemon
 def extend_ticket(uuid, timeout):
     body = json.dumps({"timeout": timeout})
-    request("PATCH", uuid, body)
+    _request("PATCH", uuid, body)
 
 
 @requires_image_daemon
 def remove_ticket(uuid):
-    request("DELETE", uuid)
+    _request("DELETE", uuid)
 
 
-def request(method, uuid, body=None):
+def _request(method, uuid, body=None):
     log.debug("Sending request method=%r, ticket=%r, body=%r",
               method, uuid, body)
     if body is not None:
