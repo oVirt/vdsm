@@ -707,15 +707,6 @@ types:
             type: *UUID
         type: object
 
-    LegacyCdromPath: &LegacyCdromPath
-        added: '3.1'
-        deprecated: '4.0'
-        description: Cdrom specification that only supplies path to an image.
-            Should not be used at all.
-        name: LegacyCdromPath
-        sourcetype: string
-        type: alias
-
     DriveSpecPathCdrom: &DriveSpecPathCdrom
         added: '4.0'
         deprecated: '4.4.5'
@@ -779,7 +770,6 @@ types:
         - *DriveSpecGUID
         - *DriveSpecPayload
         - *DriveSpecPath
-        - *LegacyCdromPath
         - *DriveSpecCdrom
 
     ErrorInfo: &ErrorInfo
