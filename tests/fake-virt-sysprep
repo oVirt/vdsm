@@ -28,6 +28,8 @@ parser.add_argument('-a', '--add', action='append', dest='paths',
                     help='Add disk image file')
 parser.add_argument('--hostname',
                     help='Set new hostname')
+parser.add_argument('--selinux-relabel',
+                    help='Fix SELinux labels in guest', action='store_true')
 parser.add_argument('-v', '--verbose', action='store_true',
                     help='Enable verbose messages for debugging')
 parser.add_argument('-x', action='store_true',

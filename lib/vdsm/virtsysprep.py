@@ -29,7 +29,7 @@ def sysprep(vm_id, vol_paths):
 
     :param vol_paths: list of volume paths
     """
-    args = ['--hostname', 'localhost']
+    args = ['--hostname', 'localhost', '--selinux-relabel']
     for vol_path in vol_paths:
         args.extend(('-a', vol_path))
 
