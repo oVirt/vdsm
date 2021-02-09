@@ -218,26 +218,9 @@ def test_res_header_error(fake_connection):
         imagetickets.remove_ticket("uuid")
 
 
-def test_res_invalid_json_ret(fake_connection):
-    imagetickets.UnixHTTPConnection.response = FakeResponse(
-        status=300, data=b"not a json string")
-    with pytest.raises(se.ImageDaemonError):
-        imagetickets.remove_ticket("uuid")
-
-
-def test_image_daemon_error_ret(fake_connection):
-    imagetickets.UnixHTTPConnection.response = FakeResponse(
-        status=300, data=b'{"image_daemon_message":"content"}')
-    try:
-        imagetickets.remove_ticket("uuid")
-    except se.ImageDaemonError as e:
-        assert "image_daemon_message" in e.value
-        assert "content" in e.value
-
-
 def test_res_read_error(fake_connection):
     imagetickets.UnixHTTPConnection.response = FakeResponse(
-        status=300, data=b'{"image_daemon_message":"ignored"}')
+        status=300)
     err_msg = "Environment error message"
 
     def read(amt=None):
