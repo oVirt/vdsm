@@ -231,6 +231,17 @@ Requires: sanlock-python >= 3.7.3
 Requires: python3-sanlock
 %endif
 
+%if 0%{?rhel}
+%if 0%{?centos}
+# TODO: use same version as RHEL once it's available
+Requires: sanlock
+%else
+# Consume LVB bindings to support MBS copy
+# https://bugzilla.redhat.com/1906074
+Requires: sanlock >= 3.8.2-4
+%endif
+%endif
+
 Requires: device-mapper-multipath
 
 # augeas
