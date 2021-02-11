@@ -1648,6 +1648,20 @@ class Vm(object):
     def pause_code(self):
         return self._pause_code
 
+    def reset(self):
+        if self.lastStatus == vmstatus.DOWN:
+            raise exception.NoSuchVM()
+
+        self._guestEventTime = time.time()
+        self._guestEvent = vmstatus.REBOOT_IN_PROGRESS
+
+        try:
+            self._dom.reset(0)
+        except libvirt.libvirtError:
+            raise exception.ResetFailed
+
+        return response.success()
+
     def _setGuestCpuRunning(self, isRunning, guestCpuLocked=False, flow=None):
         """
         here we want to synchronize the access to guestCpuRunning

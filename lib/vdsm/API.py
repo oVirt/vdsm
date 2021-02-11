@@ -576,11 +576,12 @@ class VM(APIBase):
         return self.vm.pause()
 
     @api.logged(on="api.virt")
+    @api.method
     def reset(self):
         """
         Press the virtual reset button for the specified VM.
         """
-        return errCode['noimpl']
+        return self.vm.reset()
 
     @api.logged(on="api.virt")
     @api.method

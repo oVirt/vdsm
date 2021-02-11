@@ -465,6 +465,11 @@ class ExternalDataFailed(ContextException):
         super(ExternalDataFailed, self).__init__(reason=reason, **kwargs)
 
 
+class ResetFailed(ContextException):
+    code = 90
+    message = "Failed to reset VM."
+
+
 class RecoveryInProgress(VdsmException):
     code = 99
     message = 'Recovering from crash or Initializing'
