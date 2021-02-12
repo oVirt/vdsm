@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ from network.nettestlib import dummy_device
 from network.nettestlib import Interface
 from network.nettestlib import veth_pair
 from network.nettestlib import dnsmasq_run
+from network.nettestlib import wait_for_ipv4
 
 from .netfunctestlib import IpFamily
 from .netfunctestlib import SetupNetworksError, NOCHK
@@ -90,9 +91,10 @@ def nic2():
 @pytest.fixture
 def dynamic_ipv4_iface():
     with veth_pair() as (server, client):
-        Interface.from_existing_dev_name(server).add_ip(
-            IPv4_ADDRESS, IPv4_PREFIX_LEN, IpFamily.IPv4
-        )
+        with wait_for_ipv4(server, IPv4_ADDRESS, IPv4_PREFIX_LEN):
+            Interface.from_existing_dev_name(server).add_ip(
+                IPv4_ADDRESS, IPv4_PREFIX_LEN, IpFamily.IPv4
+            )
         with dnsmasq_run(
             server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO, router=IPv4_ADDRESS
         ):

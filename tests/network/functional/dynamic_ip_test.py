@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,8 @@ from network.nettestlib import veth_pair
 from network.nettestlib import dnsmasq_run
 from network.nettestlib import running_on_ovirt_ci
 from network.nettestlib import vlan_device
+from network.nettestlib import wait_for_ipv4
+from network.nettestlib import wait_for_ipv6
 
 NETWORK_NAME = 'test-network'
 VLAN = 10
@@ -558,14 +560,24 @@ def _create_dhcp_client_server_peers(network_config, vlan_id):
 def _configure_iface_ip(iface_name, network_config):
     iface = Interface.from_existing_dev_name(iface_name)
     if network_config.ipv4_address:
-        iface.add_ip(
+        with wait_for_ipv4(
+            iface_name,
             network_config.ipv4_address,
             network_config.ipv4_prefix_length,
-            IpFamily.IPv4,
-        )
+        ):
+            iface.add_ip(
+                network_config.ipv4_address,
+                network_config.ipv4_prefix_length,
+                IpFamily.IPv4,
+            )
     if network_config.ipv6_address:
-        iface.add_ip(
+        with wait_for_ipv6(
+            iface_name,
             network_config.ipv6_address,
             network_config.ipv6_prefix_length,
-            IpFamily.IPv6,
-        )
+        ):
+            iface.add_ip(
+                network_config.ipv6_address,
+                network_config.ipv6_prefix_length,
+                IpFamily.IPv6,
+            )

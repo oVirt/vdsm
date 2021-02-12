@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2020 Red Hat, Inc.
+# Copyright 2012-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,9 +79,10 @@ def dynamic_ipv6_iface():
         pytest.skip('Using dnsmasq for ipv6 RA is unstable on CI')
 
     with veth_pair() as (server, client):
-        Interface.from_existing_dev_name(server).add_ip(
-            IPV6_ADDR1, IPV6_PREFIX_LENGTH, IpFamily.IPv6
-        )
+        with wait_for_ipv6(server, IPV6_ADDR1, IPV6_PREFIX_LENGTH):
+            Interface.from_existing_dev_name(server).add_ip(
+                IPV6_ADDR1, IPV6_PREFIX_LENGTH, IpFamily.IPv6
+            )
         client_interface = Interface.from_existing_dev_name(client)
         client_interface.down()
         with dnsmasq_run(server, ipv6_slaac_prefix=IPV6_NET_ADDR):

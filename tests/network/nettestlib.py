@@ -395,6 +395,13 @@ def wait_for_ipv6(iface, address=None, prefix_len=64):
 
 
 @contextmanager
+def wait_for_ipv4(iface, address=None, prefix_len=32):
+    ipv4 = f'{address}/{prefix_len}' if address and prefix_len else None
+    with waitfor.waitfor_ipv4_addr(iface, address=ipv4):
+        yield
+
+
+@contextmanager
 def restore_resolv_conf():
     RESOLV_CONF = '/etc/resolv.conf'
     RESOLV_CONF_BACKUP = '/etc/resolv.conf.test-backup'
