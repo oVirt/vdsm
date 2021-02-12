@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Red Hat, Inc.
+# Copyright 2015-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ from vdsm.network.link.iface import random_iface_name
 from vdsm.network.lldpad import lldptool
 from vdsm.network.netinfo import routes
 from vdsm.network.netlink import monitor
+from vdsm.network.netlink import waitfor
 from vdsm.common.cache import memoized
 from vdsm.common.proc import pgrep
 
@@ -387,37 +388,10 @@ def dnsmasq_run(
 
 
 @contextmanager
-def wait_for_ipv6(iface, wait_for_scopes=None):
-    """Wait for iface to get their IPv6 addresses with netlink Monitor"""
-    logevents = []
-    if not wait_for_scopes:
-        wait_for_scopes = ['global', 'link']
-    try:
-        with monitor.object_monitor(
-            groups=('ipv6-ifaddr',), timeout=20
-        ) as mon:
-            yield
-            for event in mon:
-                logevents.append(event)
-                dev_name = event.get('label')
-                if (
-                    dev_name == iface
-                    and event.get('event') == 'new_addr'
-                    and event.get('scope') in wait_for_scopes
-                ):
-
-                    wait_for_scopes.remove(event.get('scope'))
-                    if not wait_for_scopes:
-                        return
-
-    except monitor.MonitorError as e:
-        if e.args[0] == monitor.E_TIMEOUT:
-            raise Exception(
-                'IPv6 addresses has not been caught within 20sec.\n'
-                'Event log: {}\n'.format(logevents)
-            )
-        else:
-            raise
+def wait_for_ipv6(iface, address=None, prefix_len=64):
+    ipv6 = f'{address}/{prefix_len}' if address and prefix_len else None
+    with waitfor.waitfor_ipv6_addr(iface, address=ipv6):
+        yield
 
 
 @contextmanager
