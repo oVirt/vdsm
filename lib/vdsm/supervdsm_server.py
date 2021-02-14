@@ -40,6 +40,7 @@ from multiprocessing import Process
 
 import six
 
+from vdsm.common import commands
 from vdsm.common import concurrent
 from vdsm.common import constants
 from vdsm.common import lockfile
@@ -103,6 +104,27 @@ def logDecorator(func):
     return wrapper
 
 
+class PopenAdapter:
+    """
+    Adapt multiprocessing.Process() to subprocess.Popen() interface so it can
+    be used with commands.wait_async().
+    """
+    def __init__(self, proc):
+        self._proc = proc
+
+    def communicate(self):
+        self._proc.join()
+        return None, None
+
+    @property
+    def pid(self):
+        return self._proc.pid
+
+    @property
+    def returncode(self):
+        return self._proc.exitcode
+
+
 class _SuperVdsm(object):
 
     log = logging.getLogger("SuperVdsm.ServerCallback")
@@ -164,7 +186,7 @@ class _SuperVdsm(object):
 
                 if proc.is_alive():
                     os.kill(proc.pid, signal.SIGKILL)
-                    zombiereaper.autoReapPID(proc.pid)
+                    commands.wait_async(PopenAdapter(proc))
 
     @logDecorator
     def validateAccess(self, user, groups, *args, **kwargs):
