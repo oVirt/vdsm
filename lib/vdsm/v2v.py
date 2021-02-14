@@ -47,7 +47,6 @@ from vdsm.common import concurrent
 from vdsm.common import libvirtconnection
 from vdsm.common import password
 from vdsm.common import response
-from vdsm.common import zombiereaper
 from vdsm.common.cmdutils import wrap_command
 from vdsm.common.commands import execCmd, BUFFSIZE, terminating
 from vdsm.common.compat import subprocess
@@ -811,8 +810,6 @@ class PipelineProc(object):
 
 
 class ImportVm(object):
-    TERM_DELAY = 30
-    PROC_WAIT_TIMEOUT = 30
 
     def __init__(self, job_id, command):
         self._id = job_id
@@ -897,9 +894,7 @@ class ImportVm(object):
         if self._proc.returncode is not None:
             return
         logging.debug("Job %r waiting for virt-v2v process", self._id)
-        if not self._proc.wait(timeout=self.PROC_WAIT_TIMEOUT):
-            raise V2VProcessError("Job %r timeout waiting for process pid=%s",
-                                  self._id, self._proc.pids)
+        self._proc.wait()
 
     def _watch_process_output(self):
         out = io.BufferedReader(io.FileIO(self._proc.stdout.fileno(),
@@ -948,8 +943,7 @@ class ImportVm(object):
                 logging.debug('Job %r virt-v2v process was killed',
                               self._id)
             finally:
-                for pid in self._proc.pids:
-                    zombiereaper.autoReapPID(pid)
+                self._proc.wait()
 
 
 class OutputParser(object):
