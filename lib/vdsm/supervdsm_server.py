@@ -149,33 +149,21 @@ class _SuperVdsm(object):
         with closing(reader), closing(writer):
             proc = Process(target=child, args=(writer,))
             proc.start()
-
-            needReaping = True
             try:
                 if not reader.poll(RUN_AS_TIMEOUT):
-                    try:
-
-                        os.kill(proc.pid, signal.SIGKILL)
-                    except OSError as e:
-                        # Don't add to zombiereaper of PID no longer exists
-                        if e.errno == errno.ESRCH:
-                            needReaping = False
-                        else:
-                            raise
-
                     raise Timeout()
 
                 res, err = reader.recv()
-                proc.terminate()
-
                 if err is not None:
                     raise err
 
                 return res
-
             finally:
-                # Add to zombiereaper if process has not been waited upon
-                if proc.exitcode is None and needReaping:
+                proc.terminate()
+                proc.join(1)
+
+                if proc.is_alive():
+                    os.kill(proc.pid, signal.SIGKILL)
                     zombiereaper.autoReapPID(proc.pid)
 
     @logDecorator
