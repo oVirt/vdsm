@@ -32,7 +32,6 @@ from vdsm import constants
 from vdsm import utils
 from vdsm.common import commands
 from vdsm.common import supervdsm
-from vdsm.common import zombiereaper
 from vdsm.common.compat import subprocess
 from vdsm.config import config
 from vdsm.storage import misc
@@ -79,7 +78,10 @@ def _rescan():
     try:
         out, err = p.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
-        zombiereaper.autoReapPID(p.pid)
+        # TODO: Raising a timeout allows a new scan to start before this scan
+        # terminates. The new scan is likely to be blocked until this scan
+        # terminates.
+        commands.wait_async(p)
         raise Error("Timeout scanning (pid=%s)" % p.pid)
 
     if p.returncode != 0:
