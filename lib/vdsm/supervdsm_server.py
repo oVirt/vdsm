@@ -44,7 +44,6 @@ from vdsm.common import concurrent
 from vdsm.common import constants
 from vdsm.common import lockfile
 from vdsm.common import sigutils
-from vdsm.common import time
 from vdsm.common import zombiereaper
 
 try:
@@ -104,26 +103,6 @@ def logDecorator(func):
     return wrapper
 
 
-def safe_poll(mp_connection, timeout):
-    """
-    This is a workaround until we get the PEP-475 fix for EINTR.  It
-    ensures that a multiprocessing.connection.poll() will not return
-    before the timeout due to an interruption.
-
-    Returns True if there is any data to read from the pipe or if the
-    pipe was closed.  Returns False if the timeout expired.
-    """
-    deadline = time.monotonic_time() + timeout
-    remaining = timeout
-
-    while not mp_connection.poll(remaining):
-        remaining = deadline - time.monotonic_time()
-        if remaining <= 0:
-            return False
-
-    return True
-
-
 class _SuperVdsm(object):
 
     log = logging.getLogger("SuperVdsm.ServerCallback")
@@ -173,7 +152,7 @@ class _SuperVdsm(object):
 
             needReaping = True
             try:
-                if not safe_poll(reader, RUN_AS_TIMEOUT):
+                if not reader.poll(RUN_AS_TIMEOUT):
                     try:
 
                         os.kill(proc.pid, signal.SIGKILL)
