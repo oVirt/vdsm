@@ -38,7 +38,6 @@ from vdsm.common import lockfile
 from vdsm.common import libvirtconnection
 from vdsm.common import sigutils
 from vdsm.common import time
-from vdsm.common import zombiereaper
 from vdsm.common.panic import panic
 from vdsm.config import config
 from vdsm.network.initializer import init_unprivileged_network_components
@@ -82,8 +81,6 @@ def serve_clients(log):
     sigutils.register()
     signal.signal(signal.SIGTERM, sigtermHandler)
     signal.signal(signal.SIGUSR1, sigusr1Handler)
-    signal.signal(signal.SIGALRM, sigalrmHandler)
-    zombiereaper.registerSignalHandler()
 
     profile.start()
     metrics.start()

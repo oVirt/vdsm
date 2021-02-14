@@ -45,7 +45,6 @@ from vdsm.common import concurrent
 from vdsm.common import constants
 from vdsm.common import lockfile
 from vdsm.common import sigutils
-from vdsm.common import zombiereaper
 
 try:
     from vdsm.gluster import listPublicFunctions
@@ -245,7 +244,6 @@ def main(args):
         if not config.getboolean('vars', 'core_dump_enable'):
             resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
         sigutils.register()
-        zombiereaper.registerSignalHandler()
 
         def bind(func):
             def wrapper(_SuperVdsm, *args, **kwargs):

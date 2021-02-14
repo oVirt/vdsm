@@ -99,7 +99,6 @@ test_modules = \
 	verify.py \
 	vmapi_test.py \
 	vmTestsData.py \
-	zombiereaper_test.py \
 	$(NULL)
 
 CLEANFILES = \

@@ -27,9 +27,6 @@ import logging
 import os
 import sys
 
-from vdsm.common import zombiereaper
-zombiereaper.registerSignalHandler()
-
 TEST_LOG = '/var/log/vdsm_tests.log'
 
 
