@@ -416,3 +416,45 @@ class Worker(object):
                 time.sleep(self._func_delay)
         except Exception:
             self.exc_info = sys.exc_info()
+
+
+class TestWaitAsync:
+
+    def test_normal_termination(self):
+        event = threading.Event()
+        p = commands.start(["sleep", "0.1"])
+
+        # Start async waiter waiting for normal terminatin.
+        commands.wait_async(p, event=event)
+
+        if not event.wait(1):
+            raise RuntimeError("Error waiting for termination")
+
+        assert p.returncode == 0
+
+    def test_terminate_async(self):
+        event = threading.Event()
+        p = commands.start(["sleep", "10"])
+
+        # Terminate the command without waiting for it, and start async waiter.
+        p.terminate()
+        commands.wait_async(p, event=event)
+
+        if not event.wait(1):
+            raise RuntimeError("Error waiting for termination")
+
+        assert p.returncode == -15
+
+    def test_out_err(self):
+        event = threading.Event()
+        p = commands.start(
+            ["sh", "-c", "echo out>&1; echo err>&2; sleep 0.1"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+
+        commands.wait_async(p, event=event)
+
+        if not event.wait(1):
+            raise RuntimeError("Error waiting for termination")
+
+        assert p.returncode == 0

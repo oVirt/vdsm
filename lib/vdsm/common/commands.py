@@ -25,6 +25,7 @@ from contextlib import contextmanager
 import logging
 
 from vdsm.common import cmdutils
+from vdsm.common import concurrent
 from vdsm.common import constants
 from vdsm.common import password
 from vdsm.common.cmdutils import command_log_line, retcode_log_line
@@ -185,6 +186,28 @@ def communicate(proc, input=None):
     log.debug(cmdutils.retcode_log_line(proc.returncode, err=err))
 
     return out, err
+
+
+def wait_async(proc, event=None):
+    """
+    Start a waiter thread, waiting until the process terminaes.
+
+    Should be used only if you really cannot wait for the process normally in
+    the thread starting it.
+
+    The optional event can be used to synchronize with the waiter thread. This
+    is useful mainly for testing this code.
+    """
+    def run():
+        log.info("Waiting for process %s", proc.pid)
+        out, err = proc.communicate()
+        log.info("Process terminated with rc=%r out=%r err=%r",
+                 proc.returncode, out, err)
+        if event:
+            event.set()
+
+    t = concurrent.thread(run, name="wait/{}".format(proc.pid))
+    t.start()
 
 
 @deprecated
