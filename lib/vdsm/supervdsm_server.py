@@ -148,21 +148,22 @@ class _SuperVdsm(object):
 
     def _runAs(self, user, groups, func, args=(), kwargs={}):
         def child(writer):
-            res = ex = None
             try:
                 uid = resolveUid(user)
+
                 if groups:
                     gids = [resolveGid(g) for g in groups]
-
                     os.setgid(gids[0])
                     os.setgroups(gids)
+
                 os.setuid(uid)
 
                 res = func(*args, **kwargs)
-            except BaseException as e:
-                ex = e
 
-            writer.send((res, ex))
+                writer.send((res, None))
+            except BaseException as e:
+                writer.send((None, e))
+
             writer.close()
 
         reader, writer = Pipe(duplex=False)
