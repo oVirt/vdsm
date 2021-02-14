@@ -147,7 +147,7 @@ class _SuperVdsm(object):
         return _readSessionInfo(sessionID)
 
     def _runAs(self, user, groups, func, args=(), kwargs={}):
-        def child(pipe):
+        def child(writer):
             res = ex = None
             try:
                 uid = resolveUid(user)
@@ -162,17 +162,17 @@ class _SuperVdsm(object):
             except BaseException as e:
                 ex = e
 
-            pipe.send((res, ex))
-            pipe.recv()
+            writer.send((res, ex))
+            writer.close()
 
-        pipe, hisPipe = Pipe()
-        with closing(pipe), closing(hisPipe):
-            proc = Process(target=child, args=(hisPipe,))
+        reader, writer = Pipe(duplex=False)
+        with closing(reader), closing(writer):
+            proc = Process(target=child, args=(writer,))
             proc.start()
 
             needReaping = True
             try:
-                if not safe_poll(pipe, RUN_AS_TIMEOUT):
+                if not safe_poll(reader, RUN_AS_TIMEOUT):
                     try:
 
                         os.kill(proc.pid, signal.SIGKILL)
@@ -185,8 +185,7 @@ class _SuperVdsm(object):
 
                     raise Timeout()
 
-                res, err = pipe.recv()
-                pipe.send("Bye")
+                res, err = reader.recv()
                 proc.terminate()
 
                 if err is not None:
