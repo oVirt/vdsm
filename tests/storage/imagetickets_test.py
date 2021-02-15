@@ -34,12 +34,17 @@ from testlib import recorded
 
 class FakeResponse(object):
 
-    def __init__(self, status=200, reason="OK", headers=None, data=b""):
+    def __init__(self, status=200, reason="OK", data=b""):
         self.status = status
         self.reason = reason
-        if headers is None:
-            headers = {"content-length": str(len(data))}
-        self.headers = headers
+        self.headers = {}
+
+        # For 204 "No content", imageio daemon does not return Content-Length
+        # header, as specified in RFC 7230.
+        if status != 204:
+            self.headers["content-length"] = str(len(data))
+            self.headers["content-type"] = "text/plain; charset=UTF-8"
+
         self.file = io.BytesIO(data)
 
     def getheader(self, name, default=None):
@@ -87,10 +92,7 @@ def fake_connection(monkeypatch):
 
 def test_remove_ticket_error(fake_connection):
     imagetickets.UnixHTTPConnection.response = FakeResponse(
-        data=b'Conflict error',
-        headers={"content-type": "text/plain; charset=UTF-8"},
-        status=409,
-    )
+        status=409, data=b'Conflict error')
     with pytest.raises(se.ImageDaemonError) as e:
         imagetickets.remove_ticket("uuid")
     assert "Conflict error" in str(e.value)
@@ -98,10 +100,7 @@ def test_remove_ticket_error(fake_connection):
 
 def test_extend_ticket_error(fake_connection):
     imagetickets.UnixHTTPConnection.response = FakeResponse(
-        data=b'Not found error',
-        headers={"content-type": "text/plain; charset=UTF-8"},
-        status=404,
-    )
+        status=404, data=b'Not found error')
     with pytest.raises(se.ImageDaemonError) as e:
         imagetickets.extend_ticket("uuid", 1)
     assert "Not found error" in str(e.value)
@@ -109,26 +108,22 @@ def test_extend_ticket_error(fake_connection):
 
 def test_get_ticket_error(fake_connection):
     imagetickets.UnixHTTPConnection.response = FakeResponse(
-        data=b'Not found error',
-        headers={"content-type": "text/plain; charset=UTF-8"},
-        status=404,
-    )
+        status=404, data=b'Not found error')
     with pytest.raises(se.ImageDaemonError) as e:
         imagetickets.get_ticket("uuid")
     assert "Not found error" in str(e.value)
 
 
-@pytest.mark.parametrize("header", [
-    {"content-type": "text/plain"},
-    {"content-type": "text/plain; unknown=unknown"},
-    {"content-type": "text/plain; charset=unknown"},
+@pytest.mark.parametrize("content_type", [
+    "text/plain",
+    "text/plain; unknown=unknown",
+    "text/plain; charset=unknown",
 ])
-def test_parse_text_plain_charset(fake_connection, header):
-    imagetickets.UnixHTTPConnection.response = FakeResponse(
-        data=b'Not found error',
-        headers=header,
-        status=404,
-    )
+def test_parse_text_plain_charset(fake_connection, content_type):
+    fake_response = FakeResponse(status=404, data=b'Not found error')
+    fake_response.headers["content-type"] = content_type
+    imagetickets.UnixHTTPConnection.response = fake_response
+
     with pytest.raises(se.ImageDaemonError) as e:
         imagetickets.get_ticket("uuid")
     assert "Not found error" in str(e.value)
@@ -160,7 +155,9 @@ def test_get_ticket(fake_connection):
     filename = u"\u05d0.raw"  # hebrew aleph
     ticket = create_ticket(uuid="uuid", filename=filename)
     data = json.dumps(ticket).encode("utf8")
-    imagetickets.UnixHTTPConnection.response = FakeResponse(data=data)
+    fake_response = FakeResponse(data=data)
+    fake_response.headers["content-type"] = "application/json"
+    imagetickets.UnixHTTPConnection.response = fake_response
     expected = [
         ("request", ("GET", "/tickets/uuid"), {"body": None}),
     ]
@@ -184,22 +181,6 @@ def test_extend_ticket(fake_connection):
 
 
 def test_remove_ticket(fake_connection):
-    # New imageio daemon will not return Content-Length header, as
-    # specified in RFC 7230.
-    imagetickets.UnixHTTPConnection.response = FakeResponse(
-        status=204, reason="No Content", headers={})
-    imagetickets.remove_ticket("uuid")
-    expected = [
-        ("request", ("DELETE", "/tickets/uuid"), {"body": None}),
-    ]
-
-    assert imagetickets.UnixHTTPConnection.__calls__ == expected
-    assert imagetickets.UnixHTTPConnection.closed
-
-
-def test_remove_ticket_with_content_length(fake_connection):
-    # Legacy imageio daemon used to return "Content-Length: 0". This is not
-    # correct according to RFC 7230, but we must support it.
     imagetickets.UnixHTTPConnection.response = FakeResponse(
         status=204, reason="No Content")
     imagetickets.remove_ticket("uuid")
@@ -212,8 +193,10 @@ def test_remove_ticket_with_content_length(fake_connection):
 
 
 def test_res_header_error(fake_connection):
-    imagetickets.UnixHTTPConnection.response = FakeResponse(
-        status=300, headers={"content-length": "invalid"})
+    fake_response = FakeResponse(status=300)
+    fake_response.headers["content-length"] = "invalid"
+    imagetickets.UnixHTTPConnection.response = fake_response
+
     with pytest.raises(se.ImageDaemonError):
         imagetickets.remove_ticket("uuid")
 
