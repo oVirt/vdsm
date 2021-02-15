@@ -516,7 +516,10 @@ class V2VCommand(object):
         env = os.environ.copy()
 
         # virt-v2v specific variables
-        env['LIBGUESTFS_BACKEND'] = 'direct'
+        if isinstance(self, XenCommand):
+            # It is not possible to use libvirt backend due to outstanding
+            # issues with xen+ssh input. See RHBZ#1370055 for discussion.
+            env['LIBGUESTFS_BACKEND'] = 'direct'
         if 'virtio_iso_path' in self._vminfo:
             env['VIRTIO_WIN'] = self._vminfo['virtio_iso_path']
         return env
