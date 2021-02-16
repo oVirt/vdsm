@@ -9034,6 +9034,13 @@ Host.getDeviceList:
         name: checkStatus
         type: boolean
         added: '3.6'
+
+    - defaultvalue: true
+      description: Indicates if storage refresh is required
+      name: refresh
+      type: boolean
+      added: '4.4.5'
+
     return:
         description: An array of BlockDeviceInfo
         type:

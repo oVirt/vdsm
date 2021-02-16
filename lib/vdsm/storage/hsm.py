@@ -1964,7 +1964,7 @@ class HSM(object):
 
     @public
     def getDeviceList(self, storageType=None, guids=(), checkStatus=True,
-                      options={}):
+                      refresh=True, options={}):
         """
         List all Block Devices.
 
@@ -1977,6 +1977,9 @@ class HSM(object):
                             and should be used only with specific devices
                             using the guids argument.The default is True for
                             backward compatibility.
+        :type checkStatus: bool
+        :param refresh: if true the storage will be refreshed as part of
+                        the operation.
         :type checkStatus: bool
         :param options: ?
 
@@ -1996,11 +1999,13 @@ class HSM(object):
                 "checkStatus=False when getting all devices.")
 
         devices = self._getDeviceList(storageType=storageType, guids=guids,
-                                      checkStatus=checkStatus)
+                                      checkStatus=checkStatus, refresh=refresh)
         return dict(devList=devices)
 
-    def _getDeviceList(self, storageType=None, guids=(), checkStatus=True):
-        sdCache.refreshStorage()
+    def _getDeviceList(self, storageType=None, guids=(), checkStatus=True,
+                       refresh=True):
+        if refresh:
+            sdCache.refreshStorage()
         typeFilter = lambda dev: True
         if storageType:
             if sd.storageType(storageType) == sd.type2name(sd.ISCSI_DOMAIN):

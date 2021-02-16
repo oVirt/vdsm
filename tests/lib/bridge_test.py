@@ -69,7 +69,8 @@ class Host():
     def ping(self):
         raise GeneralException("Kaboom!!!")
 
-    def getDeviceList(self, storageType=None, guids=(), checkStatus=True):
+    def getDeviceList(self, storageType=None, guids=(), checkStatus=True,
+                      refresh=True):
         if storageType != 3:
             return {'status': {'code': -1, 'message': 'Failed'}}
         if not isinstance(guids, tuple):
