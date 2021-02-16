@@ -5585,7 +5585,7 @@ class Vm(object):
         # Only COMMIT and ACTIVE_COMMIT jobs are tracked.
         if job_type in (libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_COMMIT,
                         libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT):
-            job_id = self._drive_merger.job_id(drive) or job_id
+            job_id = self._drive_merger.find_job_id(drive) or job_id
 
         type_name = blockjob.type_name(job_type)
 

@@ -321,7 +321,7 @@ class DriveMerger:
         self._vm.sync_metadata()
         self._vm.update_domain_descriptor()
 
-    def job_id(self, drive):
+    def find_job_id(self, drive):
         with self._jobsLock:
             for job in self._blockJobs.values():
                 if job.drive == drive:
