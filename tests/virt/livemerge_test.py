@@ -30,7 +30,7 @@ from vdsm.virt import metadata
 from vdsm.virt.domain_descriptor import DomainDescriptor, XmlSource
 from vdsm.virt.livemerge import (
     BlockCopyActiveError,
-    BlockJobUnrecoverableError,
+    JobUnrecoverableError,
     DriveMerger,
     LiveMergeCleanupThread,
     Job,
@@ -144,7 +144,7 @@ def test_cleanup_retry(monkeypatch):
 
 def test_cleanup_abort(monkeypatch):
     def unrecoverable_error(arg):
-        raise BlockJobUnrecoverableError("fake-job-id", "error")
+        raise JobUnrecoverableError("fake-job-id", "error")
 
     monkeypatch.setattr(
         FakeLiveMergeCleanupThread, "tryPivot", unrecoverable_error)
@@ -337,7 +337,7 @@ def test_active_merge(monkeypatch):
     }
 
     # No active block jobs before calling merge.
-    assert vm.queryBlockJobs() == {}
+    assert vm.query_jobs() == {}
 
     merge_params = config.config["merge_params"]
     res = vm.merge(**merge_params)
@@ -357,7 +357,7 @@ def test_active_merge(monkeypatch):
     job_id = merge_params["jobUUID"]
     image_id = merge_params["driveSpec"]["imageID"]
     job = vm._dom.blockJobInfo("sda", 0)
-    assert vm.queryBlockJobs() == {
+    assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
@@ -372,7 +372,7 @@ def test_active_merge(monkeypatch):
 
     # Check block job status while in progress.
     job["cur"] = job["end"] // 2
-    assert vm.queryBlockJobs() == {
+    assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
@@ -388,7 +388,7 @@ def test_active_merge(monkeypatch):
     # Check job status when job finished, but before libvirt
     # updated the xml.
     job["cur"] = job["end"]
-    assert vm.queryBlockJobs() == {
+    assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
@@ -405,7 +405,7 @@ def test_active_merge(monkeypatch):
     vm._dom.xml = config.xmls["02-commit-ready"]
 
     # Trigger cleanup and pivot attempt.
-    vm.queryBlockJobs()
+    vm.query_jobs()
 
     # Wait for cleanup to abort the block job as part of the pivot attempt.
     aborted = vm._dom.aborted.wait(TIMEOUT)
@@ -413,7 +413,7 @@ def test_active_merge(monkeypatch):
 
     # Block job was aborted and cleared from libvirt domain so query returns
     # the default status entry.
-    assert vm.queryBlockJobs() == {
+    assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
@@ -456,7 +456,7 @@ def test_internal_merge():
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
 
-    assert vm.queryBlockJobs() == {}
+    assert vm.query_jobs() == {}
 
     merge_params = config.config["merge_params"]
     res = vm.merge(**merge_params)
@@ -474,7 +474,7 @@ def test_internal_merge():
     # Active jobs after calling merge.
     job_id = merge_params["jobUUID"]
     image_id = merge_params["driveSpec"]["imageID"]
-    assert vm.queryBlockJobs() == {
+    assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
@@ -491,7 +491,7 @@ def test_internal_merge():
 
     # Check block job status while in progress.
     job["cur"] = job["end"] // 2
-    assert vm.queryBlockJobs() == {
+    assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
@@ -507,7 +507,7 @@ def test_internal_merge():
     # Check job status when job finished, but before libvirt
     # updated the xml.
     job["cur"] = job["end"]
-    assert vm.queryBlockJobs() == {
+    assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
@@ -527,7 +527,7 @@ def test_internal_merge():
     vm._dom.xml = config.xmls["02-after"]
 
     # Querying the job when the job has gone should trigger a cleanup.
-    info = vm.queryBlockJobs()
+    info = vm.query_jobs()
 
     # Query reports the default status entry before cleanup is done.
     assert info == {
@@ -579,13 +579,13 @@ def test_merge_cancel():
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
 
-    assert vm.queryBlockJobs() == {}
+    assert vm.query_jobs() == {}
 
     merge_params = config.config["merge_params"]
     res = vm.merge(**merge_params)
     assert not response.is_error(res)
 
-    assert vm.queryBlockJobs() == {
+    assert vm.query_jobs() == {
         merge_params["jobUUID"] : {
             "bandwidth" : 0,
             "blockJobType": "commit",
@@ -632,7 +632,7 @@ def test_merge_unrecoverable_error(monkeypatch):
 
     res = vm.merge(**config.config["merge_params"])
     assert res == response.error("mergeErr")
-    assert vm.queryBlockJobs() == {}
+    assert vm.query_jobs() == {}
 
 
 def test_merge_job_already_exists(monkeypatch):
@@ -649,11 +649,11 @@ def test_merge_job_already_exists(monkeypatch):
     merge_params = config.config["merge_params"]
     res = vm.merge(**merge_params)
     assert not response.is_error(res)
-    assert len(vm.queryBlockJobs()) == 1
+    assert len(vm.query_jobs()) == 1
 
     res = vm.merge(**merge_params)
     assert res == response.error("mergeErr")
-    assert len(vm.queryBlockJobs()) == 1
+    assert len(vm.query_jobs()) == 1
 
 
 def test_merge_base_too_small(monkeypatch):
@@ -675,7 +675,7 @@ def test_merge_base_too_small(monkeypatch):
 
     res = vm.merge(**merge_params)
     assert res == response.error("destVolumeTooSmall")
-    assert vm.queryBlockJobs() == {}
+    assert vm.query_jobs() == {}
 
 
 def wait_for_cleanup(vm):

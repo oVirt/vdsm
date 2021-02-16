@@ -36,8 +36,8 @@ from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound
 import libvirt
 
 
-class BlockJobExistsError(errors.Base):
-    msg = "Block job already exists"
+class JobExistsError(errors.Base):
+    msg = "Job already exists"
 
 
 class BlockCopyActiveError(errors.Base):
@@ -47,8 +47,8 @@ class BlockCopyActiveError(errors.Base):
         self.job_id = job_id
 
 
-class BlockJobUnrecoverableError(errors.Base):
-    msg = "Block job {self.job_id} failed with libvirt error: {self.reason}"
+class JobUnrecoverableError(errors.Base):
+    msg = "Job {self.job_id} failed with libvirt error: {self.reason}"
 
     def __init__(self, job_id, reason):
         self.job_id = job_id
@@ -211,11 +211,11 @@ class DriveMerger:
             })
 
         # Take the jobs lock here to protect the new job we are tracking from
-        # being cleaned up by queryBlockJobs() since it won't exist right away
+        # being cleaned up by query_jobs() since it won't exist right away
         with self._jobsLock:
             try:
-                self._track_block_job(job_id, drive, base, top)
-            except BlockJobExistsError:
+                self._track_job(job_id, drive, base, top)
+            except JobExistsError:
                 log.error("A block job is already active on this disk")
                 return response.error('mergeErr')
 
@@ -232,7 +232,7 @@ class DriveMerger:
                     drive.name, base_target, top_target, bandwidth, flags)
             except libvirt.libvirtError:
                 log.exception("Live merge failed (job: %s)", job_id)
-                self._untrack_block_job(job_id)
+                self._untrack_job(job_id)
                 return response.error('mergeErr')
 
         # blockCommit will cause data to be written into the base volume.
@@ -282,7 +282,7 @@ class DriveMerger:
                 return job
         raise LookupError("No block job found for drive %r" % drive.name)
 
-    def _track_block_job(self, job_id, drive, base, top):
+    def _track_job(self, job_id, drive, base, top):
         """
         Must run under jobsLock.
         """
@@ -302,13 +302,13 @@ class DriveMerger:
             log.error("Cannot add block job %s.  A block job with id "
                       "%s already exists for image %s", job_id,
                       existing_job.id, drive['imageID'])
-            raise BlockJobExistsError()
+            raise JobExistsError()
 
         self._vm.sync_block_job_info()
         self._vm.sync_metadata()
         self._vm.update_domain_descriptor()
 
-    def _untrack_block_job(self, job_id):
+    def _untrack_job(self, job_id):
         """
         Must run under jobsLock.
         """
@@ -342,7 +342,7 @@ class DriveMerger:
         with self._jobsLock:
             return len(self._blockJobs) > 0
 
-    def queryBlockJobs(self):
+    def query_jobs(self):
         """
         Query tracked jobs and update their status. Returns dict of tracked
         jobs dict, for reporting job status to engine.
@@ -367,7 +367,7 @@ class DriveMerger:
                              cleanThread, job.id,
                              job.base,
                              job.top)
-                    self._untrack_block_job(job.id)
+                    self._untrack_job(job.id)
                     continue
 
                 try:
@@ -449,7 +449,7 @@ class DriveMerger:
                     elif cleanThread.state == LiveMergeCleanupThread.ABORT:
                         log.error("Aborting job %s due to an unrecoverable "
                                   "error", job.id)
-                        self._untrack_block_job(job.id)
+                        self._untrack_job(job.id)
                         continue
 
                 tracked_jobs[job.id] = job_info
@@ -559,7 +559,7 @@ class LiveMergeCleanupThread(object):
         except libvirt.libvirtError as e:
             self.vm.drive_monitor.enable()
             if e.get_error_code() != libvirt.VIR_ERR_BLOCK_COPY_ACTIVE:
-                raise BlockJobUnrecoverableError(self.job.id, e)
+                raise JobUnrecoverableError(self.job.id, e)
             raise BlockCopyActiveError(self.job.id)
         except:
             self.vm.drive_monitor.enable()
@@ -618,7 +618,7 @@ class LiveMergeCleanupThread(object):
             self.vm.log.warning("Pivot failed (job: %s): %s, retrying later",
                                 self.job.id, e)
             self._setState(self.RETRY)
-        except BlockJobUnrecoverableError as e:
+        except JobUnrecoverableError as e:
             self.vm.log.exception("Pivot failed (job: %s): %s, aborting due "
                                   "to an unrecoverable error",
                                   self.job.id, e)

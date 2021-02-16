@@ -5562,12 +5562,12 @@ class Vm(object):
 
     def updateVmJobs(self):
         try:
-            self._vmJobs = self.queryBlockJobs()
+            self._vmJobs = self.query_jobs()
         except Exception:
             self.log.exception("Error updating VM jobs")
 
-    def queryBlockJobs(self):
-        return self._drive_merger.queryBlockJobs()
+    def query_jobs(self):
+        return self._drive_merger.query_jobs()
 
     def on_block_job_event(self, drive, job_type, job_status):
         """
