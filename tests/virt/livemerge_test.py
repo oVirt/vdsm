@@ -286,12 +286,12 @@ def test_merger_dump_jobs():
 
     assert vm._drive_merger.dump_jobs() == {
         job_id : {
-            "baseVolume": merge_params["baseVolUUID"],
+            "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
             "drive": "sda",
             "gone": False,
             "id": job_id,
-            "topVolume": merge_params["topVolUUID"],
+            "top": merge_params["topVolUUID"],
         }
     }
 
@@ -313,12 +313,12 @@ def test_merger_load_jobs():
 
     dumped_jobs = {
         job_id : {
-            "baseVolume": merge_params["baseVolUUID"],
+            "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
             "drive": "sda",
             "gone": False,
             "id": job_id,
-            "topVolume": merge_params["topVolUUID"],
+            "top": merge_params["topVolUUID"],
         }
     }
 
@@ -546,12 +546,12 @@ def test_internal_merge():
     # Jobs persisted now as "gone".
     assert vm._drive_merger.dump_jobs() == {
         job_id : {
-            "baseVolume": merge_params["baseVolUUID"],
+            "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
             "drive": "sda",
             "gone": True,
             "id": job_id,
-            "topVolume": merge_params["topVolUUID"],
+            "top": merge_params["topVolUUID"],
         }
     }
 
@@ -721,6 +721,6 @@ def fake_job():
         id="fake-job-id",
         drive=None,
         disk=None,
-        topVolume="fake-vol",
-        baseVolume=None,
+        top="fake-vol",
+        base=None,
     )

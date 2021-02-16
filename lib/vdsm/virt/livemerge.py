@@ -76,14 +76,12 @@ class Job:
     Information about live merge job.
     """
 
-    def __init__(self, id, drive, disk, topVolume, baseVolume, gone=False):
-        # Keeping old names for easier and safer refactoring.
-        # TODO: Rename to modern style.
+    def __init__(self, id, drive, disk, top, base, gone=False):
         self.id = id
         self.drive = drive
         self.disk = disk
-        self.topVolume = topVolume
-        self.baseVolume = baseVolume
+        self.top = top
+        self.base = base
 
         # Set when libvirt stopped reporting this job.
         self.gone = gone
@@ -106,8 +104,8 @@ class Job:
             "id": self.id,
             "drive": self.drive,
             "disk": self.disk,
-            "baseVolume": self.baseVolume,
-            "topVolume": self.topVolume,
+            "base": self.base,
+            "top": self.top,
             "gone": self.gone,
         }
 
@@ -117,8 +115,8 @@ class Job:
             id=d["id"],
             drive=d["drive"],
             disk=d["disk"],
-            topVolume=d["topVolume"],
-            baseVolume=d["baseVolume"],
+            top=d["top"],
+            base=d["base"],
             gone=d["gone"],
         )
 
@@ -132,7 +130,7 @@ class DriveMerger:
         self._liveMergeCleanupThreads = {}
         self._dom = DomainAdapter(vm)
 
-    def merge(self, driveSpec, baseVolUUID, topVolUUID, bandwidth, job_id):
+    def merge(self, driveSpec, base, top, bandwidth, job_id):
         bandwidth = int(bandwidth)
         if job_id is None:
             job_id = str(uuid.uuid4())
@@ -154,17 +152,17 @@ class DriveMerger:
         actual_chain = chains[drive['alias']]
 
         try:
-            base_target = drive.volume_target(baseVolUUID, actual_chain)
-            top_target = drive.volume_target(topVolUUID, actual_chain)
+            base_target = drive.volume_target(base, actual_chain)
+            top_target = drive.volume_target(top, actual_chain)
         except VolumeNotFound as e:
             log.error("merge: %s", e)
             return response.error('mergeErr')
 
         try:
             baseInfo = self._vm.getVolumeInfo(drive.domainID, drive.poolID,
-                                              drive.imageID, baseVolUUID)
+                                              drive.imageID, base)
             topInfo = self._vm.getVolumeInfo(drive.domainID, drive.poolID,
-                                             drive.imageID, topVolUUID)
+                                             drive.imageID, top)
         except errors.StorageUnavailableError:
             log.error("Unable to get volume information")
             return errCode['mergeErr']
@@ -180,12 +178,12 @@ class DriveMerger:
         # visible from any host even if the mountpoint is different.
         flags = libvirt.VIR_DOMAIN_BLOCK_COMMIT_RELATIVE
 
-        if topVolUUID == drive.volumeID:
+        if top == drive.volumeID:
             # Pass a flag to libvirt to indicate that we expect a two phase
             # block job.  In the first phase, data is copied to base.  Once
             # completed, an event is raised to indicate that the job has
             # transitioned to the second phase.  We must then tell libvirt to
-            # pivot to the new active layer (baseVolUUID).
+            # pivot to the new active layer (base).
             flags |= libvirt.VIR_DOMAIN_BLOCK_COMMIT_ACTIVE
 
         # Make sure we can merge into the base in case the drive was enlarged.
@@ -204,11 +202,11 @@ class DriveMerger:
                 and int(baseInfo['apparentsize']) < int(baseInfo['capacity'])):
             log.info("Refreshing raw volume %r (apparentsize=%s, "
                      "capacity=%s)",
-                     baseVolUUID, baseInfo['apparentsize'],
+                     base, baseInfo['apparentsize'],
                      baseInfo['capacity'])
             self._vm.refreshDriveVolume({
                 'domainID': drive.domainID, 'poolID': drive.poolID,
-                'imageID': drive.imageID, 'volumeID': baseVolUUID,
+                'imageID': drive.imageID, 'volumeID': base,
                 'name': drive.name,
             })
 
@@ -216,7 +214,7 @@ class DriveMerger:
         # being cleaned up by queryBlockJobs() since it won't exist right away
         with self._jobsLock:
             try:
-                self._track_block_job(job_id, drive, baseVolUUID, topVolUUID)
+                self._track_block_job(job_id, drive, base, top)
             except BlockJobExistsError:
                 log.error("A block job is already active on this disk")
                 return response.error('mergeErr')
@@ -250,7 +248,7 @@ class DriveMerger:
             baseSize = int(baseInfo['apparentsize'])
             topSize = int(topInfo['apparentsize'])
             maxAlloc = baseSize + topSize
-            self._vm.extendDriveVolume(drive, baseVolUUID, maxAlloc, capacity)
+            self._vm.extendDriveVolume(drive, base, maxAlloc, capacity)
 
         # Trigger the collection of stats before returning so that callers
         # of getVmStats after this returns will see the new job
@@ -297,8 +295,8 @@ class DriveMerger:
                 id=job_id,
                 drive=drive.name,
                 disk=driveSpec,
-                baseVolume=base,
-                topVolume=top,
+                base=base,
+                top=top,
             )
         else:
             log.error("Cannot add block job %s.  A block job with id "
@@ -367,8 +365,8 @@ class DriveMerger:
                     log.info("Cleanup thread %s successfully completed, "
                              "untracking job %s (base=%s, top=%s)",
                              cleanThread, job.id,
-                             job.baseVolume,
-                             job.topVolume)
+                             job.base,
+                             job.top)
                     self._untrack_block_job(job.id)
                     continue
 
@@ -378,7 +376,7 @@ class DriveMerger:
                     # Drive loopkup may fail only in case of active layer
                     # merge, and pivot completed.
                     disk = job.disk
-                    if disk["volumeID"] != job.topVolume:
+                    if disk["volumeID"] != job.top:
                         log.error("Cannot find drive for job %s (disk=%s)",
                                   job.id, job.disk)
                         # TODO: Should we report this job?
@@ -386,7 +384,7 @@ class DriveMerger:
 
                     # Active layer merge, check if pivot completed.
                     pivoted_drive = dict(disk)
-                    pivoted_drive["volumeID"] = job.baseVolume
+                    pivoted_drive["volumeID"] = job.base
                     try:
                         drive = self._vm.findDriveByUUIDs(pivoted_drive)
                     except LookupError:
@@ -576,24 +574,24 @@ class LiveMergeCleanupThread(object):
         # size of the base volume.  In that case libvirt has enlarged the base
         # volume automatically as part of the blockCommit operation.  Update
         # our metadata to reflect this change.
-        topVolUUID = self.job.topVolume
-        baseVolUUID = self.job.baseVolume
+        top = self.job.top
+        base = self.job.base
         topVolInfo = self.vm.getVolumeInfo(self.drive.domainID,
                                            self.drive.poolID,
-                                           self.drive.imageID, topVolUUID)
+                                           self.drive.imageID, top)
         self.vm._setVolumeSize(self.drive.domainID, self.drive.poolID,
-                               self.drive.imageID, baseVolUUID,
+                               self.drive.imageID, base,
                                topVolInfo['capacity'])
 
     def teardown_top_volume(self):
         ret = self.vm.cif.irs.teardownVolume(
             self.drive.domainID,
             self.drive.imageID,
-            self.job.topVolume)
+            self.job.top)
         if ret['status']['code'] != 0:
             raise errors.StorageUnavailableError(
                 "Failed to teardown top volume %s" %
-                self.job.topVolume)
+                self.job.top)
 
     @logutils.traceback()
     def run(self):
@@ -608,7 +606,7 @@ class LiveMergeCleanupThread(object):
                 self.vm.drive_monitor.enable()
             chain_after_merge = [vol['volumeID']
                                  for vol in self.drive.volumeChain]
-            if self.job.topVolume not in chain_after_merge:
+            if self.job.top not in chain_after_merge:
                 self.teardown_top_volume()
             self.vm.log.info("Synchronization completed (job %s)",
                              self.job.id)
