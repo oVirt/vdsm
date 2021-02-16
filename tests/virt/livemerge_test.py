@@ -29,7 +29,7 @@ from vdsm.common import xmlutils
 from vdsm.virt import metadata
 from vdsm.virt.domain_descriptor import DomainDescriptor, XmlSource
 from vdsm.virt.livemerge import (
-    BlockCopyActiveError,
+    JobNotReadyError,
     JobUnrecoverableError,
     DriveMerger,
     CleanupThread,
@@ -125,7 +125,7 @@ def test_cleanup_done():
 
 def test_cleanup_retry(monkeypatch):
     def recoverable_error(arg):
-        raise BlockCopyActiveError("fake-job-id")
+        raise JobNotReadyError("fake-job-id")
 
     monkeypatch.setattr(
         FakeCleanupThread, "tryPivot", recoverable_error)

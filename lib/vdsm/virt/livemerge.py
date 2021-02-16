@@ -40,8 +40,8 @@ class JobExistsError(errors.Base):
     msg = "Job already exists"
 
 
-class BlockCopyActiveError(errors.Base):
-    msg = "Block copy job {self.job_id} is not ready for commit"
+class JobNotReadyError(errors.Base):
+    msg = "Job {self.job_id} is not ready for commit"
 
     def __init__(self, job_id):
         self.job_id = job_id
@@ -560,7 +560,7 @@ class CleanupThread(object):
             self.vm.drive_monitor.enable()
             if e.get_error_code() != libvirt.VIR_ERR_BLOCK_COPY_ACTIVE:
                 raise JobUnrecoverableError(self.job.id, e)
-            raise BlockCopyActiveError(self.job.id)
+            raise JobNotReadyError(self.job.id)
         except:
             self.vm.drive_monitor.enable()
             raise
@@ -614,7 +614,7 @@ class CleanupThread(object):
             self.vm.log.info("Synchronization completed (job %s)",
                              self.job.id)
             self._setState(self.DONE)
-        except BlockCopyActiveError as e:
+        except JobNotReadyError as e:
             self.vm.log.warning("Pivot failed (job: %s): %s, retrying later",
                                 self.job.id, e)
             self._setState(self.RETRY)
