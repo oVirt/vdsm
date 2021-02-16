@@ -720,7 +720,7 @@ def fake_job():
     return Job(
         id="fake-job-id",
         drive=None,
-        disk=None,
+        disk={"volumeID": "fake-vol"},
         top="fake-vol",
         base=None,
     )

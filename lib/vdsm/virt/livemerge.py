@@ -84,6 +84,10 @@ class Job:
         self._top = top
         self._base = base
 
+        # This job was started with VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
+        # flag.
+        self._active_commit = (top == disk["volumeID"])
+
         # Set when libvirt stopped reporting this job.
         self.gone = gone
 
@@ -110,6 +114,20 @@ class Job:
     @property
     def base(self):
         return self._base
+
+    @property
+    def active_commit(self):
+        return self._active_commit
+
+    def is_ready(self):
+        """
+        Return True if this is an active commit, and the job finished the first
+        phase and ready to pivot. Note that even if the job is ready, we need
+        to check the job status in the vm xml.
+        """
+        return (self.active_commit and
+                self.live_info and
+                self.live_info["cur"] == self.live_info["end"])
 
     @property
     def live_info(self):
@@ -468,8 +486,7 @@ class DriveMerger:
                         continue
 
                 if job.live_info:
-                    doPivot = self._activeLayerCommitReady(
-                        job.live_info, drive)
+                    doPivot = self._active_commit_ready(job, drive)
                 else:
                     # Libvirt has stopped reporting this job so we know it will
                     # never report it again.
@@ -512,15 +529,7 @@ class DriveMerger:
         t.start()
         self._liveMergeCleanupThreads[job.id] = t
 
-    def _activeLayerCommitReady(self, jobInfo, drive):
-        try:
-            pivot = libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
-        except AttributeError:
-            return False
-
-        if (jobInfo['cur'] != jobInfo['end'] or jobInfo['type'] != pivot):
-            return
-
+    def _active_commit_ready(self, job, drive):
         # Check the job state in the xml to make sure the job is
         # ready. We know about two interesting corner cases:
         #
@@ -531,6 +540,8 @@ class DriveMerger:
         # - cur == end and cur != 0, but the job is not ready yet, and
         #   blockJobAbort raises an error.
         #   See https://bugzilla.redhat.com/1376580
+        if not job.is_ready():
+            return False
 
         log.debug("Checking xml for drive %r", drive.name)
         # pylint: disable=no-member
