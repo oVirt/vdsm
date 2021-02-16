@@ -77,14 +77,35 @@ class Job:
     """
 
     def __init__(self, id, drive, disk, top, base, gone=False):
-        self.id = id
-        self.drive = drive
-        self.disk = disk
-        self.top = top
-        self.base = base
+        # Read only attributes.
+        self._id = id
+        self._drive = drive
+        self._disk = disk
+        self._top = top
+        self._base = base
 
         # Set when libvirt stopped reporting this job.
         self.gone = gone
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def drive(self):
+        return self._drive
+
+    @property
+    def disk(self):
+        return self._disk
+
+    @property
+    def top(self):
+        return self._top
+
+    @property
+    def base(self):
+        return self._base
 
     # Old values that were always constant.
     # TODO: Consider removing these.
