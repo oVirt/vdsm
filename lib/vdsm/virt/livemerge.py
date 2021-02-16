@@ -76,10 +76,10 @@ class Job:
     Information about live merge job.
     """
 
-    def __init__(self, jobID, drive, disk, topVolume, baseVolume, gone=False):
+    def __init__(self, id, drive, disk, topVolume, baseVolume, gone=False):
         # Keeping old names for easier and safer refactoring.
         # TODO: Rename to modern style.
-        self.jobID = jobID
+        self.id = id
         self.drive = drive
         self.disk = disk
         self.topVolume = topVolume
@@ -103,7 +103,7 @@ class Job:
 
     def to_dict(self):
         return {
-            "jobID": self.jobID,
+            "id": self.id,
             "drive": self.drive,
             "disk": self.disk,
             "baseVolume": self.baseVolume,
@@ -114,7 +114,7 @@ class Job:
     @classmethod
     def from_dict(cls, d):
         return cls(
-            jobID=d["jobID"],
+            id=d["id"],
             drive=d["drive"],
             disk=d["disk"],
             topVolume=d["topVolume"],
@@ -132,10 +132,10 @@ class DriveMerger:
         self._liveMergeCleanupThreads = {}
         self._dom = DomainAdapter(vm)
 
-    def merge(self, driveSpec, baseVolUUID, topVolUUID, bandwidth, jobUUID):
+    def merge(self, driveSpec, baseVolUUID, topVolUUID, bandwidth, job_id):
         bandwidth = int(bandwidth)
-        if jobUUID is None:
-            jobUUID = str(uuid.uuid4())
+        if job_id is None:
+            job_id = str(uuid.uuid4())
 
         try:
             drive = self._vm.findDriveByUUIDs(driveSpec)
@@ -216,16 +216,16 @@ class DriveMerger:
         # being cleaned up by queryBlockJobs() since it won't exist right away
         with self._jobsLock:
             try:
-                self._track_block_job(jobUUID, drive, baseVolUUID, topVolUUID)
+                self._track_block_job(job_id, drive, baseVolUUID, topVolUUID)
             except BlockJobExistsError:
                 log.error("A block job is already active on this disk")
                 return response.error('mergeErr')
 
             orig_chain = [entry.uuid for entry in chains[drive['alias']]]
             chain_str = logutils.volume_chain_to_str(orig_chain)
-            log.info("Starting merge with jobUUID=%r, original chain=%s, "
+            log.info("Starting merge with job_id=%r, original chain=%s, "
                      "disk=%r, base=%r, top=%r, bandwidth=%d, flags=%d",
-                     jobUUID, chain_str, drive.name, base_target,
+                     job_id, chain_str, drive.name, base_target,
                      top_target, bandwidth, flags)
 
             try:
@@ -233,8 +233,8 @@ class DriveMerger:
                 self._dom.blockCommit(
                     drive.name, base_target, top_target, bandwidth, flags)
             except libvirt.libvirtError:
-                log.exception("Live merge failed (job: %s)", jobUUID)
-                self._untrack_block_job(jobUUID)
+                log.exception("Live merge failed (job: %s)", job_id)
+                self._untrack_block_job(job_id)
                 return response.error('mergeErr')
 
         # blockCommit will cause data to be written into the base volume.
@@ -284,17 +284,17 @@ class DriveMerger:
                 return job
         raise LookupError("No block job found for drive %r" % drive.name)
 
-    def _track_block_job(self, jobID, drive, base, top):
+    def _track_block_job(self, job_id, drive, base, top):
         """
         Must run under jobsLock.
         """
         driveSpec = dict((k, drive[k]) for k in
                          ('poolID', 'domainID', 'imageID', 'volumeID'))
         try:
-            job = self._get_block_job(drive)
+            existing_job = self._get_block_job(drive)
         except LookupError:
-            self._blockJobs[jobID] = Job(
-                jobID=jobID,
+            self._blockJobs[job_id] = Job(
+                id=job_id,
                 drive=drive.name,
                 disk=driveSpec,
                 baseVolume=base,
@@ -302,21 +302,21 @@ class DriveMerger:
             )
         else:
             log.error("Cannot add block job %s.  A block job with id "
-                      "%s already exists for image %s", jobID,
-                      job.jobID, drive['imageID'])
+                      "%s already exists for image %s", job_id,
+                      existing_job.id, drive['imageID'])
             raise BlockJobExistsError()
 
         self._vm.sync_block_job_info()
         self._vm.sync_metadata()
         self._vm.update_domain_descriptor()
 
-    def _untrack_block_job(self, jobID):
+    def _untrack_block_job(self, job_id):
         """
         Must run under jobsLock.
         """
         # If there was contention on the jobsLock, this may have
         # already been removed
-        self._blockJobs.pop(jobID, None)
+        self._blockJobs.pop(job_id, None)
 
         self._vm.sync_disk_metadata()
         self._vm.sync_block_job_info()
@@ -327,17 +327,17 @@ class DriveMerger:
         with self._jobsLock:
             for job in self._blockJobs.values():
                 if job.drive == drive:
-                    return job.jobID
+                    return job.id
         return None
 
     def load_jobs(self, jobs):
         with self._jobsLock:
-            self._blockJobs = {jobID: Job.from_dict(job_info)
-                               for jobID, job_info in jobs.items()}
+            self._blockJobs = {job_id: Job.from_dict(job_info)
+                               for job_id, job_info in jobs.items()}
 
     def dump_jobs(self):
         with self._jobsLock:
-            return {job.jobID: job.to_dict()
+            return {job.id: job.to_dict()
                     for job in self._blockJobs.values()}
 
     def has_jobs(self):
@@ -356,21 +356,20 @@ class DriveMerger:
         # started.
         with self._jobsLock:
             for job in list(self._blockJobs.values()):
-                jobID = job.jobID
-                log.debug("Checking job %s", jobID)
+                log.debug("Checking job %s", job.id)
 
                 # Handle successful jobs early because the job just needs
                 # to be untracked and the stored disk info might be stale
                 # anyway (ie. after active layer commit).
-                cleanThread = self._liveMergeCleanupThreads.get(jobID)
+                cleanThread = self._liveMergeCleanupThreads.get(job.id)
                 if (cleanThread
                         and cleanThread.state == LiveMergeCleanupThread.DONE):
                     log.info("Cleanup thread %s successfully completed, "
                              "untracking job %s (base=%s, top=%s)",
-                             cleanThread, jobID,
+                             cleanThread, job.id,
                              job.baseVolume,
                              job.topVolume)
-                    self._untrack_block_job(jobID)
+                    self._untrack_block_job(job.id)
                     continue
 
                 try:
@@ -381,7 +380,7 @@ class DriveMerger:
                     disk = job.disk
                     if disk["volumeID"] != job.topVolume:
                         log.error("Cannot find drive for job %s (disk=%s)",
-                                  jobID, job.disk)
+                                  job.id, job.disk)
                         # TODO: Should we report this job?
                         continue
 
@@ -393,7 +392,7 @@ class DriveMerger:
                     except LookupError:
                         log.error("Pivot completed but cannot find drive "
                                   "for job %s (disk=%s)",
-                                  jobID, pivoted_drive)
+                                  job.id, pivoted_drive)
                         # TODO: Should we report this job?
                         continue
 
@@ -404,7 +403,7 @@ class DriveMerger:
                     'cur': '0',
                     'drive': job.drive,
                     'end': '0',
-                    'id': jobID,
+                    'id': job.id,
                     'imgUUID': job.disk['imageID'],
                     'jobType': 'block',
                 }
@@ -416,11 +415,11 @@ class DriveMerger:
                         liveInfo = self._dom.blockJobInfo(drive.name, 0)
                     except libvirt.libvirtError:
                         log.exception("Error getting block job info")
-                        tracked_jobs[jobID] = job_info
+                        tracked_jobs[job.id] = job_info
                         continue
 
                 if liveInfo:
-                    log.debug("Job %s live info: %s", jobID, liveInfo)
+                    log.debug("Job %s live info: %s", job.id, liveInfo)
                     job_info['bandwidth'] = liveInfo['bandwidth']
                     job_info['cur'] = str(liveInfo['cur'])
                     job_info['end'] = str(liveInfo['end'])
@@ -429,7 +428,7 @@ class DriveMerger:
                     # Libvirt has stopped reporting this job so we know it will
                     # never report it again.
                     if not job.gone:
-                        log.info("Libvirt job %s was terminated", jobID)
+                        log.info("Libvirt job %s was terminated", job.id)
                     job.gone = True
                     doPivot = False
 
@@ -438,24 +437,24 @@ class DriveMerger:
                         # There is no cleanup thread so the job must have just
                         # ended.  Spawn an async cleanup.
                         log.info("Starting cleanup thread for job: %s",
-                                 jobID)
+                                 job.id)
                         self._start_cleanup_thread(job, drive, doPivot)
                     elif cleanThread.state == LiveMergeCleanupThread.TRYING:
                         # Let previously started cleanup thread continue
                         log.debug("Still waiting for block job %s to be "
-                                  "synchronized", jobID)
+                                  "synchronized", job.id)
                     elif cleanThread.state == LiveMergeCleanupThread.RETRY:
                         log.info("Previous job %s cleanup thread failed with "
                                  "recoverable error, retrying",
-                                 jobID)
+                                 job.id)
                         self._start_cleanup_thread(job, drive, doPivot)
                     elif cleanThread.state == LiveMergeCleanupThread.ABORT:
                         log.error("Aborting job %s due to an unrecoverable "
-                                  "error", jobID)
-                        self._untrack_block_job(jobID)
+                                  "error", job.id)
+                        self._untrack_block_job(job.id)
                         continue
 
-                tracked_jobs[jobID] = job_info
+                tracked_jobs[job.id] = job_info
 
         return tracked_jobs
 
@@ -465,7 +464,7 @@ class DriveMerger:
         """
         t = LiveMergeCleanupThread(self._vm, job, drive, needPivot)
         t.start()
-        self._liveMergeCleanupThreads[job.jobID] = t
+        self._liveMergeCleanupThreads[job.id] = t
 
     def _activeLayerCommitReady(self, jobInfo, drive):
         try:
@@ -524,7 +523,7 @@ class LiveMergeCleanupThread(object):
         self.doPivot = doPivot
         self._state = self.TRYING
         self._thread = concurrent.thread(
-            self.run, name="merge/" + job.jobID[:8])
+            self.run, name="merge/" + job.id[:8])
 
     @property
     def state(self):
@@ -555,21 +554,21 @@ class LiveMergeCleanupThread(object):
         self.vm.drive_monitor.disable()
 
         self.vm.log.info("Requesting pivot to complete active layer commit "
-                         "(job %s)", self.job.jobID)
+                         "(job %s)", self.job.id)
         try:
             flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
             self.vm._dom.blockJobAbort(self.drive.name, flags)
         except libvirt.libvirtError as e:
             self.vm.drive_monitor.enable()
             if e.get_error_code() != libvirt.VIR_ERR_BLOCK_COPY_ACTIVE:
-                raise BlockJobUnrecoverableError(self.job.jobID, e)
-            raise BlockCopyActiveError(self.job.jobID)
+                raise BlockJobUnrecoverableError(self.job.id, e)
+            raise BlockCopyActiveError(self.job.id)
         except:
             self.vm.drive_monitor.enable()
             raise
 
         self._waitForXMLUpdate()
-        self.vm.log.info("Pivot completed (job %s)", self.job.jobID)
+        self.vm.log.info("Pivot completed (job %s)", self.job.id)
 
     def update_base_size(self):
         # If the drive size was extended just after creating the snapshot which
@@ -603,7 +602,7 @@ class LiveMergeCleanupThread(object):
             if self.doPivot:
                 self.tryPivot()
             self.vm.log.info("Synchronizing volume chain after live merge "
-                             "(job %s)", self.job.jobID)
+                             "(job %s)", self.job.id)
             self.vm.sync_volume_chain(self.drive)
             if self.doPivot:
                 self.vm.drive_monitor.enable()
@@ -612,20 +611,20 @@ class LiveMergeCleanupThread(object):
             if self.job.topVolume not in chain_after_merge:
                 self.teardown_top_volume()
             self.vm.log.info("Synchronization completed (job %s)",
-                             self.job.jobID)
+                             self.job.id)
             self._setState(self.DONE)
         except BlockCopyActiveError as e:
             self.vm.log.warning("Pivot failed (job: %s): %s, retrying later",
-                                self.job.jobID, e)
+                                self.job.id, e)
             self._setState(self.RETRY)
         except BlockJobUnrecoverableError as e:
             self.vm.log.exception("Pivot failed (job: %s): %s, aborting due "
                                   "to an unrecoverable error",
-                                  self.job.jobID, e)
+                                  self.job.id, e)
             self._setState(self.ABORT)
         except Exception as e:
             self.vm.log.exception("Cleanup failed with recoverable error "
-                                  "(job: %s): %s", self.job.jobID, e)
+                                  "(job: %s): %s", self.job.id, e)
             self._setState(self.RETRY)
 
     def _waitForXMLUpdate(self):
@@ -674,5 +673,5 @@ class LiveMergeCleanupThread(object):
 
     def _setState(self, state):
         self.vm.log.debug("Switching state from %r to %r (job: %s)",
-                          self._state, state, self.job.jobID)
+                          self._state, state, self.job.id)
         self._state = state

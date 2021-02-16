@@ -290,7 +290,7 @@ def test_merger_dump_jobs():
             "disk": merge_params["driveSpec"],
             "drive": "sda",
             "gone": False,
-            "jobID": job_id,
+            "id": job_id,
             "topVolume": merge_params["topVolUUID"],
         }
     }
@@ -317,7 +317,7 @@ def test_merger_load_jobs():
             "disk": merge_params["driveSpec"],
             "drive": "sda",
             "gone": False,
-            "jobID": job_id,
+            "id": job_id,
             "topVolume": merge_params["topVolUUID"],
         }
     }
@@ -550,7 +550,7 @@ def test_internal_merge():
             "disk": merge_params["driveSpec"],
             "drive": "sda",
             "gone": True,
-            "jobID": job_id,
+            "id": job_id,
             "topVolume": merge_params["topVolUUID"],
         }
     }
@@ -718,7 +718,7 @@ def metadata_chain(xml):
 
 def fake_job():
     return Job(
-        jobID="fake-job-id",
+        id="fake-job-id",
         drive=None,
         disk=None,
         topVolume="fake-vol",
