@@ -11420,9 +11420,7 @@ VM.diskSizeExtend:
         name: driveSpecs
         type: *DriveSpec
 
-    -   defaultvalue: null
-        description: The new desired size (in bytes).
-            Required for DriveSpecVolume, not used for DriveSpecGuid.
+    -   description: The new desired size (in bytes).
         name: newSize
         type: string
     return:

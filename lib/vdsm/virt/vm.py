@@ -4436,11 +4436,7 @@ class Vm(object):
 
         self.sync_metadata()
 
-    def _diskSizeExtendCow(self, drive, newSizeBytes=None):
-        if newSizeBytes is None:
-            raise exception.MissingParameter(
-                'newSizeBytes parameter is missing')
-
+    def _diskSizeExtendCow(self, drive, newSizeBytes):
         try:
             # Due to an old bug in libvirt (BZ#963881) this call used to be
             # broken for NFS domains when root_squash was enabled.  This has
@@ -4484,13 +4480,9 @@ class Vm(object):
 
         return {'status': doneCode, 'size': str(newVirtualSize)}
 
-    def _diskSizeExtendRaw(self, drive, newSizeBytes=None):
-        # Picking up the drive size extension
+    def _diskSizeExtendRaw(self, drive, newSizeBytes):
+        # Picking up the drive size extension.
         if isVdsmImage(drive):
-            if newSizeBytes is None:
-                raise exception.MissingParameter(
-                    'newSizeBytes parameter is missing')
-
             self.refresh_drive_volume({
                 'domainID': drive.domainID, 'poolID': drive.poolID,
                 'imageID': drive.imageID, 'volumeID': drive.volumeID,
@@ -4508,20 +4500,25 @@ class Vm(object):
                     "RAW device size %s", newSizeBytes, volSize.apparentsize)
 
         elif "GUID" in drive:
-            res = self.cif.irs.getDeviceList(
-                guids=(drive.GUID,), checkStatus=False)
+            # getDeviceList with refresh=false for avoiding a storage refresh.
+            device = self._getLUNDevice(drive, refresh=False)
+            device_capacity = int(device['capacity'])
+            #  In case the engine failed to refresh the LUN on 'RefreshLUN',
+            #  another refresh is needed.
+            if device_capacity != newSizeBytes:
+                self.log.warning(
+                    "LUN %s size %s does not match requested size %s, "
+                    "refreshing LUN",
+                    drive.GUID, device_capacity, newSizeBytes)
+                device = self._getLUNDevice(drive, refresh=True)
+                device_capacity = int(device['capacity'])
 
-            if res['status']['code'] != 0:
-                raise RuntimeError(
-                    "Cannot find device {} for drive {}: {}"
-                    .format(drive.GUID, drive, res["status"]["message"]))
+            volSize = VolumeSize(device_capacity, None)
+            if volSize.apparentsize != newSizeBytes:
+                self.log.warning(
+                    "LUN %s size %s does not match requested size %s",
+                    drive.GUID, volSize.apparentsize, newSizeBytes)
 
-            if not res['devList']:
-                raise exception.LUNDoesNotExist(
-                    reason="LUN device {} does not exist".format(drive.GUID))
-
-            device_info = res['devList'][0]
-            volSize = VolumeSize(int(device_info['capacity']), None)
         else:
             raise exception.UnsupportedDriveType(
                 reason="Cannot extend size for {}".format(drive))
@@ -4542,12 +4539,26 @@ class Vm(object):
 
         return {'status': doneCode, 'size': str(volSize.apparentsize)}
 
-    def diskSizeExtend(self, driveSpecs, newSizeBytes=None):
-        if newSizeBytes is not None:
-            try:
-                newSizeBytes = int(newSizeBytes)
-            except ValueError:
-                return response.error('resizeErr')
+    def _getLUNDevice(self, drive, refresh=True):
+        res = self.cif.irs.getDeviceList(
+            guids=(drive.GUID,), checkStatus=False, refresh=refresh)
+
+        if res['status']['code'] != 0:
+            raise RuntimeError(
+                "Cannot find device {} for drive {}: {}"
+                .format(drive.GUID, drive, res["status"]["message"]))
+
+        if not res['devList']:
+            raise exception.LUNDoesNotExist(
+                reason="LUN device {} does not exist".format(drive.GUID))
+
+        return res["devList"][0]
+
+    def diskSizeExtend(self, driveSpecs, newSizeBytes):
+        try:
+            newSizeBytes = int(newSizeBytes)
+        except ValueError:
+            return response.error('resizeErr')
 
         try:
             drive = self.findDriveByUUIDs(driveSpecs)
