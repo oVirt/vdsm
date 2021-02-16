@@ -87,6 +87,10 @@ class Job:
         # Set when libvirt stopped reporting this job.
         self.gone = gone
 
+        # Live job info from libvirt. This info is kept between libvirt updates
+        # but not persisted to vm metadata.
+        self._live_info = None
+
     @property
     def id(self):
         return self._id
@@ -106,6 +110,15 @@ class Job:
     @property
     def base(self):
         return self._base
+
+    @property
+    def live_info(self):
+        return self._live_info
+
+    @live_info.setter
+    def live_info(self, info):
+        log.debug("Job %s live info: %s", self.id, info)
+        self._live_info = info
 
     # Old values that were always constant.
     # TODO: Consider removing these.
@@ -140,6 +153,33 @@ class Job:
             base=d["base"],
             gone=d["gone"],
         )
+
+    def info(self):
+        """
+        Return job info for reporting to engine.
+        """
+        info = {
+            'blockJobType': self.blockJobType,
+            'drive': self.drive,
+            'id': self.id,
+            'imgUUID': self.disk['imageID'],
+            'jobType': 'block',
+        }
+
+        if self.live_info:
+            info["bandwidth"] = self.live_info["bandwidth"]
+            # TODO: Check if we can use proper integers. This hack is a lefover
+            # from xmlrpc that could not pass values bigger than int32_t.
+            info["cur"] = str(self.live_info["cur"])
+            info["end"] = str(self.live_info["end"])
+        else:
+            # TODO: Check if engine really need these values when we don't have
+            # any info from libvirt.
+            info["bandwidth"] = 0
+            info["cur"] = "0"
+            info["end"] = "0"
+
+        return info
 
 
 class DriveMerger:
@@ -415,34 +455,21 @@ class DriveMerger:
                         # TODO: Should we report this job?
                         continue
 
-                # Tracked job info for reporting to engine.
-                job_info = {
-                    'bandwidth': 0,
-                    'blockJobType': job.blockJobType,
-                    'cur': '0',
-                    'drive': job.drive,
-                    'end': '0',
-                    'id': job.id,
-                    'imgUUID': job.disk['imageID'],
-                    'jobType': 'block',
-                }
-
-                liveInfo = None
                 if not job.gone:
                     try:
+                        # If the job is found we get a dict with job info. If
+                        # the job does not exists we get an empty dict.
                         # pylint: disable=no-member
-                        liveInfo = self._dom.blockJobInfo(drive.name, 0)
+                        job.live_info = self._dom.blockJobInfo(drive.name, 0)
                     except libvirt.libvirtError:
                         log.exception("Error getting block job info")
-                        tracked_jobs[job.id] = job_info
+                        tracked_jobs[job.id] = job.info()
+                        job.live_info = None
                         continue
 
-                if liveInfo:
-                    log.debug("Job %s live info: %s", job.id, liveInfo)
-                    job_info['bandwidth'] = liveInfo['bandwidth']
-                    job_info['cur'] = str(liveInfo['cur'])
-                    job_info['end'] = str(liveInfo['end'])
-                    doPivot = self._activeLayerCommitReady(liveInfo, drive)
+                if job.live_info:
+                    doPivot = self._activeLayerCommitReady(
+                        job.live_info, drive)
                 else:
                     # Libvirt has stopped reporting this job so we know it will
                     # never report it again.
@@ -451,7 +478,7 @@ class DriveMerger:
                     job.gone = True
                     doPivot = False
 
-                if not liveInfo or doPivot:
+                if not job.live_info or doPivot:
                     if not cleanThread:
                         # There is no cleanup thread so the job must have just
                         # ended.  Spawn an async cleanup.
@@ -473,7 +500,7 @@ class DriveMerger:
                         self._untrack_job(job.id)
                         continue
 
-                tracked_jobs[job.id] = job_info
+                tracked_jobs[job.id] = job.info()
 
         return tracked_jobs
 
