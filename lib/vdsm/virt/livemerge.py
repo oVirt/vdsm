@@ -574,14 +574,17 @@ class LiveMergeCleanupThread(object):
         # size of the base volume.  In that case libvirt has enlarged the base
         # volume automatically as part of the blockCommit operation.  Update
         # our metadata to reflect this change.
-        top = self.job.top
-        base = self.job.base
-        topVolInfo = self.vm.getVolumeInfo(self.drive.domainID,
-                                           self.drive.poolID,
-                                           self.drive.imageID, top)
-        self.vm._setVolumeSize(self.drive.domainID, self.drive.poolID,
-                               self.drive.imageID, base,
-                               topVolInfo['capacity'])
+        topVolInfo = self.vm.getVolumeInfo(
+            self.drive.domainID,
+            self.drive.poolID,
+            self.drive.imageID,
+            self.job.top)
+        self.vm._setVolumeSize(
+            self.drive.domainID,
+            self.drive.poolID,
+            self.drive.imageID,
+            self.job.base,
+            topVolInfo['capacity'])
 
     def teardown_top_volume(self):
         ret = self.vm.cif.irs.teardownVolume(
