@@ -32,7 +32,8 @@ from vdsm.virt.livemerge import (
     BlockCopyActiveError,
     BlockJobUnrecoverableError,
     DriveMerger,
-    LiveMergeCleanupThread
+    LiveMergeCleanupThread,
+    Job,
 )
 from vdsm.virt.vm import Vm
 from vdsm.virt.vmdevices import storage
@@ -95,10 +96,7 @@ class FakeLiveMergeCleanupThread(LiveMergeCleanupThread):
 
 
 def test_cleanup_initial():
-    job = {
-        "jobID": "fake-job-id",
-        "topVolume": "fake-vol"
-    }
+    job = fake_job()
     v = FakeVM()
     t = FakeLiveMergeCleanupThread(
         vm=v, job=job, drive=FakeDrive(), doPivot=True)
@@ -108,10 +106,7 @@ def test_cleanup_initial():
 
 
 def test_cleanup_done():
-    job = {
-        "jobID": "fake-job-id",
-        "topVolume": "fake-vol"
-    }
+    job = fake_job()
     v = FakeVM()
     drive = FakeDrive()
     t = FakeLiveMergeCleanupThread(vm=v, job=job, drive=drive, doPivot=True)
@@ -135,10 +130,7 @@ def test_cleanup_retry(monkeypatch):
     monkeypatch.setattr(
         FakeLiveMergeCleanupThread, "tryPivot", recoverable_error)
 
-    job = {
-        "jobID": "fake-job-id",
-        "topVolume": "fake-vol"
-    }
+    job = fake_job()
     v = FakeVM()
     t = FakeLiveMergeCleanupThread(
         vm=v, job=job, drive=FakeDrive(), doPivot=True)
@@ -157,10 +149,7 @@ def test_cleanup_abort(monkeypatch):
     monkeypatch.setattr(
         FakeLiveMergeCleanupThread, "tryPivot", unrecoverable_error)
 
-    job = {
-        "jobID": "fake-job-id",
-        "topVolume": "fake-vol"
-    }
+    job = fake_job()
     v = FakeVM()
     t = FakeLiveMergeCleanupThread(
         vm=v, job=job, drive=FakeDrive(), doPivot=True)
@@ -275,6 +264,66 @@ class FakeDomain:
 
     def blockInfo(self, drive_name, flags):
         return (1024, 0, 0)
+
+
+def test_merger_dump_jobs():
+    config = Config('active-merge')
+    vm = RunningVM(config)
+    sd_id = config.config["drive"]["domainID"]
+    vm.cif.irs.prepared_volumes = {
+        (sd_id, k): v for k, v in config.config["volumes"].items()
+    }
+
+    # No jobs yet.
+
+    assert vm._drive_merger.dump_jobs() == {}
+
+    merge_params = config.config["merge_params"]
+    job_id = merge_params["jobUUID"]
+    vm.merge(**merge_params)
+
+    # Merge was started, new jobs should be in the dump.
+
+    assert vm._drive_merger.dump_jobs() == {
+        job_id : {
+            "baseVolume": merge_params["baseVolUUID"],
+            "disk": merge_params["driveSpec"],
+            "drive": "sda",
+            "gone": False,
+            "jobID": job_id,
+            "topVolume": merge_params["topVolUUID"],
+        }
+    }
+
+
+def test_merger_load_jobs():
+    config = Config('active-merge')
+    vm = RunningVM(config)
+    sd_id = config.config["drive"]["domainID"]
+    vm.cif.irs.prepared_volumes = {
+        (sd_id, k): v for k, v in config.config["volumes"].items()
+    }
+
+    assert vm._drive_merger.dump_jobs() == {}
+
+    # Load jobs, simulating recovery flow.
+
+    merge_params = config.config["merge_params"]
+    job_id = merge_params["jobUUID"]
+
+    dumped_jobs = {
+        job_id : {
+            "baseVolume": merge_params["baseVolUUID"],
+            "disk": merge_params["driveSpec"],
+            "drive": "sda",
+            "gone": False,
+            "jobID": job_id,
+            "topVolume": merge_params["topVolUUID"],
+        }
+    }
+
+    vm._drive_merger.load_jobs(dumped_jobs)
+    assert vm._drive_merger.dump_jobs() == dumped_jobs
 
 
 def test_active_merge(monkeypatch):
@@ -494,6 +543,18 @@ def test_internal_merge():
         }
     }
 
+    # Jobs persisted now as "gone".
+    assert vm._drive_merger.dump_jobs() == {
+        job_id : {
+            "baseVolume": merge_params["baseVolUUID"],
+            "disk": merge_params["driveSpec"],
+            "drive": "sda",
+            "gone": True,
+            "jobID": job_id,
+            "topVolume": merge_params["topVolUUID"],
+        }
+    }
+
     # Check for cleanup completion.
     wait_for_cleanup(vm)
 
@@ -653,3 +714,13 @@ def metadata_chain(xml):
             "volumeID": node.find("./volumeID").text
         } for node in nodes
     ]
+
+
+def fake_job():
+    return Job(
+        jobID="fake-job-id",
+        drive=None,
+        disk=None,
+        topVolume="fake-vol",
+        baseVolume=None,
+    )
