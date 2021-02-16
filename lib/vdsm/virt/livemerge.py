@@ -517,29 +517,32 @@ class DriveMerger:
             pivot = libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
         except AttributeError:
             return False
-        if (jobInfo['cur'] == jobInfo['end'] and jobInfo['type'] == pivot):
 
-            # Check the job state in the xml to make sure the job is
-            # ready. We know about two interesting corner cases:
-            #
-            # - cur == 0 and end == 0 when a job starts. Trying to pivot
-            #   succeeds, but the xml never updates after that.
-            #   See https://bugzilla.redhat.com/1442266.
-            #
-            # - cur == end and cur != 0, but the job is not ready yet, and
-            #   blockJobAbort raises an error.
-            #   See https://bugzilla.redhat.com/1376580
+        if (jobInfo['cur'] != jobInfo['end'] or jobInfo['type'] != pivot):
+            return
 
-            log.debug("Checking xml for drive %r", drive.name)
-            # pylint: disable=no-member
-            root = ET.fromstring(self._dom.XMLDesc(0))
-            disk_xpath = "./devices/disk/target[@dev='%s'].." % drive.name
-            disk = root.find(disk_xpath)
-            if disk is None:
-                log.warning("Unable to find %r in vm xml", drive)
-                return False
-            return disk.find("./mirror[@ready='yes']") is not None
-        return False
+        # Check the job state in the xml to make sure the job is
+        # ready. We know about two interesting corner cases:
+        #
+        # - cur == 0 and end == 0 when a job starts. Trying to pivot
+        #   succeeds, but the xml never updates after that.
+        #   See https://bugzilla.redhat.com/1442266.
+        #
+        # - cur == end and cur != 0, but the job is not ready yet, and
+        #   blockJobAbort raises an error.
+        #   See https://bugzilla.redhat.com/1376580
+
+        log.debug("Checking xml for drive %r", drive.name)
+        # pylint: disable=no-member
+        root = ET.fromstring(self._dom.XMLDesc(0))
+        disk_xpath = "./devices/disk/target[@dev='%s'].." % drive.name
+
+        disk = root.find(disk_xpath)
+        if disk is None:
+            log.warning("Unable to find %r in vm xml", drive)
+            return False
+
+        return disk.find("./mirror[@ready='yes']") is not None
 
     def wait_for_cleanup(self):
         for t in self._liveMergeCleanupThreads.values():
