@@ -355,8 +355,8 @@ class DriveMerger:
         # another call to merge() where the job has been recorded but not yet
         # started.
         with self._jobsLock:
-            for storedJob in list(self._blockJobs.values()):
-                jobID = storedJob.jobID
+            for job in list(self._blockJobs.values()):
+                jobID = job.jobID
                 log.debug("Checking job %s", jobID)
 
                 # Handle successful jobs early because the job just needs
@@ -368,26 +368,26 @@ class DriveMerger:
                     log.info("Cleanup thread %s successfully completed, "
                              "untracking job %s (base=%s, top=%s)",
                              cleanThread, jobID,
-                             storedJob.baseVolume,
-                             storedJob.topVolume)
+                             job.baseVolume,
+                             job.topVolume)
                     self._untrack_block_job(jobID)
                     continue
 
                 try:
-                    drive = self._vm.findDriveByUUIDs(storedJob.disk)
+                    drive = self._vm.findDriveByUUIDs(job.disk)
                 except LookupError:
                     # Drive loopkup may fail only in case of active layer
                     # merge, and pivot completed.
-                    disk = storedJob.disk
-                    if disk["volumeID"] != storedJob.topVolume:
+                    disk = job.disk
+                    if disk["volumeID"] != job.topVolume:
                         log.error("Cannot find drive for job %s (disk=%s)",
-                                  jobID, storedJob.disk)
+                                  jobID, job.disk)
                         # TODO: Should we report this job?
                         continue
 
                     # Active layer merge, check if pivot completed.
                     pivoted_drive = dict(disk)
-                    pivoted_drive["volumeID"] = storedJob.baseVolume
+                    pivoted_drive["volumeID"] = job.baseVolume
                     try:
                         drive = self._vm.findDriveByUUIDs(pivoted_drive)
                     except LookupError:
@@ -400,17 +400,17 @@ class DriveMerger:
                 # Tracked job info for reporting to engine.
                 job_info = {
                     'bandwidth': 0,
-                    'blockJobType': storedJob.blockJobType,
+                    'blockJobType': job.blockJobType,
                     'cur': '0',
-                    'drive': storedJob.drive,
+                    'drive': job.drive,
                     'end': '0',
                     'id': jobID,
-                    'imgUUID': storedJob.disk['imageID'],
+                    'imgUUID': job.disk['imageID'],
                     'jobType': 'block',
                 }
 
                 liveInfo = None
-                if not storedJob.gone:
+                if not job.gone:
                     try:
                         # pylint: disable=no-member
                         liveInfo = self._dom.blockJobInfo(drive.name, 0)
@@ -428,9 +428,9 @@ class DriveMerger:
                 else:
                     # Libvirt has stopped reporting this job so we know it will
                     # never report it again.
-                    if not storedJob.gone:
+                    if not job.gone:
                         log.info("Libvirt job %s was terminated", jobID)
-                    storedJob.gone = True
+                    job.gone = True
                     doPivot = False
 
                 if not liveInfo or doPivot:
@@ -439,7 +439,7 @@ class DriveMerger:
                         # ended.  Spawn an async cleanup.
                         log.info("Starting cleanup thread for job: %s",
                                  jobID)
-                        self._start_cleanup_thread(storedJob, drive, doPivot)
+                        self._start_cleanup_thread(job, drive, doPivot)
                     elif cleanThread.state == LiveMergeCleanupThread.TRYING:
                         # Let previously started cleanup thread continue
                         log.debug("Still waiting for block job %s to be "
@@ -448,7 +448,7 @@ class DriveMerger:
                         log.info("Previous job %s cleanup thread failed with "
                                  "recoverable error, retrying",
                                  jobID)
-                        self._start_cleanup_thread(storedJob, drive, doPivot)
+                        self._start_cleanup_thread(job, drive, doPivot)
                     elif cleanThread.state == LiveMergeCleanupThread.ABORT:
                         log.error("Aborting job %s due to an unrecoverable "
                                   "error", jobID)
