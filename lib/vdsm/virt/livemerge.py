@@ -361,7 +361,7 @@ class DriveMerger:
                 # anyway (ie. after active layer commit).
                 cleanThread = self._liveMergeCleanupThreads.get(job.id)
                 if (cleanThread
-                        and cleanThread.state == LiveMergeCleanupThread.DONE):
+                        and cleanThread.state == CleanupThread.DONE):
                     log.info("Cleanup thread %s successfully completed, "
                              "untracking job %s (base=%s, top=%s)",
                              cleanThread, job.id,
@@ -437,16 +437,16 @@ class DriveMerger:
                         log.info("Starting cleanup thread for job: %s",
                                  job.id)
                         self._start_cleanup_thread(job, drive, doPivot)
-                    elif cleanThread.state == LiveMergeCleanupThread.TRYING:
+                    elif cleanThread.state == CleanupThread.TRYING:
                         # Let previously started cleanup thread continue
                         log.debug("Still waiting for block job %s to be "
                                   "synchronized", job.id)
-                    elif cleanThread.state == LiveMergeCleanupThread.RETRY:
+                    elif cleanThread.state == CleanupThread.RETRY:
                         log.info("Previous job %s cleanup thread failed with "
                                  "recoverable error, retrying",
                                  job.id)
                         self._start_cleanup_thread(job, drive, doPivot)
-                    elif cleanThread.state == LiveMergeCleanupThread.ABORT:
+                    elif cleanThread.state == CleanupThread.ABORT:
                         log.error("Aborting job %s due to an unrecoverable "
                                   "error", job.id)
                         self._untrack_job(job.id)
@@ -460,7 +460,7 @@ class DriveMerger:
         """
         Must be caller when holding self._jobsLock.
         """
-        t = LiveMergeCleanupThread(self._vm, job, drive, needPivot)
+        t = CleanupThread(self._vm, job, drive, needPivot)
         t.start()
         self._liveMergeCleanupThreads[job.id] = t
 
@@ -498,7 +498,7 @@ class DriveMerger:
             t.join()
 
 
-class LiveMergeCleanupThread(object):
+class CleanupThread(object):
 
     # Cleanup states:
     # Starting state for a fresh cleanup thread.

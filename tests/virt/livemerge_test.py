@@ -32,7 +32,7 @@ from vdsm.virt.livemerge import (
     BlockCopyActiveError,
     JobUnrecoverableError,
     DriveMerger,
-    LiveMergeCleanupThread,
+    CleanupThread,
     Job,
 )
 from vdsm.virt.vm import Vm
@@ -77,7 +77,7 @@ class FakeVM:
         pass
 
 
-class FakeLiveMergeCleanupThread(LiveMergeCleanupThread):
+class FakeCleanupThread(CleanupThread):
     """
     TODO: use VM/Storage methods instead of these so we can
     test for changes in the real code.
@@ -98,10 +98,10 @@ class FakeLiveMergeCleanupThread(LiveMergeCleanupThread):
 def test_cleanup_initial():
     job = fake_job()
     v = FakeVM()
-    t = FakeLiveMergeCleanupThread(
+    t = FakeCleanupThread(
         vm=v, job=job, drive=FakeDrive(), doPivot=True)
 
-    assert t.state == LiveMergeCleanupThread.TRYING
+    assert t.state == CleanupThread.TRYING
     assert v.drive_monitor.enabled
 
 
@@ -109,11 +109,11 @@ def test_cleanup_done():
     job = fake_job()
     v = FakeVM()
     drive = FakeDrive()
-    t = FakeLiveMergeCleanupThread(vm=v, job=job, drive=drive, doPivot=True)
+    t = FakeCleanupThread(vm=v, job=job, drive=drive, doPivot=True)
     t.start()
     t.join()
 
-    assert t.state == LiveMergeCleanupThread.DONE
+    assert t.state == CleanupThread.DONE
     assert v.drive_monitor.enabled
     assert v.__calls__ == [('sync_volume_chain', (drive,), {})]
     assert t.__calls__ == [
@@ -128,16 +128,16 @@ def test_cleanup_retry(monkeypatch):
         raise BlockCopyActiveError("fake-job-id")
 
     monkeypatch.setattr(
-        FakeLiveMergeCleanupThread, "tryPivot", recoverable_error)
+        FakeCleanupThread, "tryPivot", recoverable_error)
 
     job = fake_job()
     v = FakeVM()
-    t = FakeLiveMergeCleanupThread(
+    t = FakeCleanupThread(
         vm=v, job=job, drive=FakeDrive(), doPivot=True)
     t.start()
     t.join()
 
-    assert t.state == LiveMergeCleanupThread.RETRY
+    assert t.state == CleanupThread.RETRY
     assert v.drive_monitor.enabled
     assert t.__calls__ == [('update_base_size', (), {})]
 
@@ -147,16 +147,16 @@ def test_cleanup_abort(monkeypatch):
         raise JobUnrecoverableError("fake-job-id", "error")
 
     monkeypatch.setattr(
-        FakeLiveMergeCleanupThread, "tryPivot", unrecoverable_error)
+        FakeCleanupThread, "tryPivot", unrecoverable_error)
 
     job = fake_job()
     v = FakeVM()
-    t = FakeLiveMergeCleanupThread(
+    t = FakeCleanupThread(
         vm=v, job=job, drive=FakeDrive(), doPivot=True)
     t.start()
     t.join()
 
-    assert t.state == LiveMergeCleanupThread.ABORT
+    assert t.state == CleanupThread.ABORT
     assert v.drive_monitor.enabled
     assert t.__calls__ == [('update_base_size', (), {})]
 
@@ -327,7 +327,7 @@ def test_merger_load_jobs():
 
 
 def test_active_merge(monkeypatch):
-    monkeypatch.setattr(LiveMergeCleanupThread, "WAIT_INTERVAL", 0.01)
+    monkeypatch.setattr(CleanupThread, "WAIT_INTERVAL", 0.01)
 
     config = Config('active-merge')
     vm = RunningVM(config)
