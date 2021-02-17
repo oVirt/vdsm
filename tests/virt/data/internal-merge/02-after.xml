@@ -6,7 +6,7 @@
     <ns1:qos/>
     <ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
     <ovirt-vm:balloonTarget type="int">1048576</ovirt-vm:balloonTarget>
-    <ovirt-vm:block_jobs>{}</ovirt-vm:block_jobs>
+    <ovirt-vm:jobs>{}</ovirt-vm:jobs>
     <ovirt-vm:clusterVersion>4.4</ovirt-vm:clusterVersion>
     <ovirt-vm:destroy_on_reboot type="bool">False</ovirt-vm:destroy_on_reboot>
     <ovirt-vm:launchPaused>false</ovirt-vm:launchPaused>

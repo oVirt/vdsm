@@ -384,7 +384,7 @@ class DriveMerger:
                 job_id, existing_job.id, drive['imageID'])
             raise JobExistsError()
 
-        self._vm.sync_block_job_info()
+        self._vm.sync_jobs_metadata()
         self._vm.sync_metadata()
         self._vm.update_domain_descriptor()
 
@@ -397,7 +397,7 @@ class DriveMerger:
         self._jobs.pop(job_id, None)
 
         self._vm.sync_disk_metadata()
-        self._vm.sync_block_job_info()
+        self._vm.sync_jobs_metadata()
         self._vm.sync_metadata()
         self._vm.update_domain_descriptor()
 

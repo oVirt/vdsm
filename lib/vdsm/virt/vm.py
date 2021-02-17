@@ -570,8 +570,7 @@ class Vm(object):
             else:
                 # if this is missing, let's try using what we may have saved
                 self._mem_guaranteed_size_mb = md.get('memGuaranteedSize', 0)
-            self._drive_merger.load_jobs(
-                json.loads(md.get('block_jobs', '{}')))
+            self._drive_merger.load_jobs(json.loads(md.get('jobs', '{}')))
             self._cluster_version = extract_cluster_version(md)
             self._launch_paused = conv.tobool(md.get('launchPaused', False))
             self._resume_behavior = md.get('resumeBehavior',
@@ -5512,9 +5511,9 @@ class Vm(object):
         self._incoming_migration_vm_running.set()
         self._incoming_migration_finished.set()
 
-    def sync_block_job_info(self):
+    def sync_jobs_metadata(self):
         with self._md_desc.values() as vm:
-            vm['block_jobs'] = json.dumps(self._drive_merger.dump_jobs())
+            vm['jobs'] = json.dumps(self._drive_merger.dump_jobs())
 
     def sync_disk_metadata(self):
         for drive in self._devices[hwclass.DISK]:

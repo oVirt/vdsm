@@ -6,7 +6,7 @@
     <ns1:qos/>
     <ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
     <ovirt-vm:balloonTarget type="int">1048576</ovirt-vm:balloonTarget>
-    <ovirt-vm:block_jobs>{"5c0a3978-d3c0-4acb-84ee-a52bf0088878": {"jobID": "5c0a3978-d3c0-4acb-84ee-a52bf0088878", "disk": {"poolID": "84fab540-fbf2-11ea-a568-5254002fb5cc", "domainID": "c0b55558-5038-4a2b-bc96-47aff28d0218", "imageID": "222d9718-f2d9-4b95-bd7f-e8dfe565cf56", "volumeID": "6c0f1c64-90ac-4a68-839d-5a47af1d3890"}, "baseVolume": "2939852e-187c-48b4-b57a-1f8ea5bc94f8", "topVolume": "6c0f1c64-90ac-4a68-839d-5a47af1d3890", "gone": false, "drive": "sda"}}</ovirt-vm:block_jobs>
+    <ovirt-vm:jobs>{"5c0a3978-d3c0-4acb-84ee-a52bf0088878": {"jobID": "5c0a3978-d3c0-4acb-84ee-a52bf0088878", "disk": {"poolID": "84fab540-fbf2-11ea-a568-5254002fb5cc", "domainID": "c0b55558-5038-4a2b-bc96-47aff28d0218", "imageID": "222d9718-f2d9-4b95-bd7f-e8dfe565cf56", "volumeID": "6c0f1c64-90ac-4a68-839d-5a47af1d3890"}, "baseVolume": "2939852e-187c-48b4-b57a-1f8ea5bc94f8", "topVolume": "6c0f1c64-90ac-4a68-839d-5a47af1d3890", "gone": false, "drive": "sda"}}</ovirt-vm:jobs>
     <ovirt-vm:clusterVersion>4.4</ovirt-vm:clusterVersion>
     <ovirt-vm:destroy_on_reboot type="bool">False</ovirt-vm:destroy_on_reboot>
     <ovirt-vm:launchPaused>false</ovirt-vm:launchPaused>
