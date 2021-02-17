@@ -1751,6 +1751,11 @@ class InquireNotSupportedError(StorageException):
     msg = "Cluster lock inquire isnt supported"
 
 
+class SanlockLVBError(StorageException):
+    code = 703
+    msg = "LVB operation failed"
+
+
 #################################################
 #  Meta data related Exceptions
 #################################################

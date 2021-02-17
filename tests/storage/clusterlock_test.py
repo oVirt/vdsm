@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import json
 import time
 import pytest
 from vdsm.common import concurrent
@@ -272,3 +273,38 @@ def test_sanlock_invalid_max_hosts(block_size, max_hosts):
     error_str = str(e)
     assert "max_hosts" in error_str
     assert str(max_hosts) in error_str
+
+
+def test_set_lvb(fake_sanlock, lock):
+    lock.acquireHostId(HOST_ID, wait=True)
+    lock.acquire(HOST_ID, LEASE, lvb=True)
+
+    # Test smaller size
+    info = {
+        "generation": 1,
+        "job_status": "STARTED",
+        "padding": ""
+    }
+
+    lock.set_lvb(LEASE, info)
+    result = lock.get_lvb(LEASE)
+    assert info == result
+
+    # Test max size
+    json_size = len(json.dumps(info).encode("utf-8"))
+    info["padding"] = "a" * (clusterlock.LVB_SIZE - json_size)
+    lock.set_lvb(LEASE, info)
+    result = lock.get_lvb(LEASE)
+    assert info == result
+
+    # Test larger size
+    info["padding"] = "a" * (clusterlock.LVB_SIZE - json_size + 1)
+    with pytest.raises(se.SanlockLVBError):
+        lock.set_lvb(LEASE, info)
+
+
+def test_get_lvb_empty(fake_sanlock, lock):
+    lock.acquireHostId(HOST_ID, wait=True)
+    lock.acquire(HOST_ID, LEASE, lvb=True)
+
+    lock.get_lvb(LEASE) == {}

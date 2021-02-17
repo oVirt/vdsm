@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 import errno
 import fcntl
+import json
 import collections
 import logging
 import os
@@ -72,6 +73,10 @@ HOST_STATUS_FAIL = "fail"
 HOST_STATUS_DEAD = "dead"
 
 supports_lvb = hasattr(sanlock, "get_lvb")
+
+# The size of the entire LVB payload that will be passed to sanlock,
+# the payload will be aligned to LVB_SIZE.
+LVB_SIZE = 512
 
 
 class Error(errors.Base):
@@ -576,6 +581,46 @@ class SANLock(object):
                 raise se.ReleaseLockFailure(self._sdUUID, e)
 
         self.log.info("Successfully released %s", lease)
+
+    def set_lvb(self, lease, info):
+        self.log.info("Setting LVB data to lease %s, info: %r", lease, info)
+        data = json.dumps(info).encode("utf-8")
+
+        if len(data) > LVB_SIZE:
+            raise se.SanlockLVBError("lvb dict is too big ")
+
+        # Pad the data with zeroes to ensure it is properly initialized and
+        # does not contain garbage from previous writes.
+        data = data.ljust(LVB_SIZE, b"\0")
+
+        try:
+            # pylint: disable=E1101
+            sanlock.set_lvb(
+                self._lockspace_name,
+                lease.name.encode("utf-8"),
+                [(lease.path, lease.offset)],
+                data)
+        except sanlock.SanlockException as e:
+            raise se.SanlockLVBError(e)
+
+    def get_lvb(self, lease):
+        self.log.debug("Getting LVB data from lease %s", lease)
+        try:
+            # pylint: disable=E1101
+            data = sanlock.get_lvb(
+                self._lockspace_name,
+                lease.name.encode("utf-8"),
+                [(lease.path, lease.offset)],
+                size=LVB_SIZE)
+        except sanlock.SanlockException as e:
+            raise se.SanlockLVBError(e)
+
+        data = data.rstrip(b"\0").decode("utf-8")
+        # In case the LVB was not written to before
+        if data == '':
+            return {}
+
+        return json.loads(data)
 
 
 class LocalLock(object):
