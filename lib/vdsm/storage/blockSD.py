@@ -972,7 +972,6 @@ class BlockStorageDomain(sd.StorageDomain):
         lvm.checkVGBlockSizes(
             sdUUID, (logical_block_size, physical_block_size))
 
-        self.imageGarbageCollector()
         self._registerResourceNamespaces()
         self._lastUncachedSelftest = 0
 
