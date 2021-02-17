@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 import argparse
+import atexit
 import errno
 import importlib
 import logging
@@ -312,6 +313,9 @@ def main(args):
 
             while _running:
                 sigutils.wait_for_signal()
+
+            if config.getboolean('devel', 'coverage_enable'):
+                atexit._run_exitfuncs()
 
             log.debug("Terminated normally")
         finally:

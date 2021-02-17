@@ -17,6 +17,7 @@ if sys.version_info[0] == 2:
     import pthreading  # pylint: disable=import-error
     pthreading.monkey_patch()
 
+import atexit
 import os
 import os.path
 import signal
@@ -121,6 +122,8 @@ def serve_clients(log):
                 sigutils.wait_for_signal()
 
             profile.stop()
+            if config.getboolean('devel', 'coverage_enable'):
+                atexit._run_exitfuncs()
         finally:
             stop_unprivileged_network_components()
             metrics.stop()
