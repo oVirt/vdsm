@@ -230,13 +230,10 @@ class DriveMerger:
             raise exception.MergeFailed(
                 str(e), top=top, base=job.base, job=job_id)
 
-        # If base is a shared volume then we cannot allow a merge.  Otherwise
-        # We'd corrupt the shared volume for other users.
         if base_info['voltype'] == 'SHARED':
             raise exception.MergeFailed(
                 "Base volume is shared", base_info=base_info, job=job_id)
 
-        # Make sure we can merge into the base in case the drive was enlarged.
         self._validate_base_size(drive, base_info, top_info)
 
         if self._base_needs_refresh(drive, base_info):
