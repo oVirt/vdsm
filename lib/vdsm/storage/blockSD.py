@@ -944,6 +944,22 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         data = b"\0" * sc.METADATA_SIZE
         self.write_metadata_block(slot, data)
 
+    # LVs management
+
+    def activate_special_lvs(self):
+        """
+        Activate LVs used by SD itself, e.g. metadata.
+        """
+        special_lvs = self.special_volumes(self.getVersion())
+        lvm.activateLVs(self.sdUUID, special_lvs, refresh=False)
+
+    def deactivate_special_lvs(self):
+        """
+        Deactivate LVs used by SD itself, e.g. metadata.
+        """
+        special_lvs = self.special_volumes(self.getVersion())
+        lvm.deactivateLVs(self.sdUUID, special_lvs)
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
@@ -961,9 +977,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
         sd.StorageDomain.__init__(self, manifest)
 
-        # TODO: Move this to manifest.activate_special_lvs
-        special_lvs = manifest.special_volumes(manifest.getVersion())
-        lvm.activateLVs(self.sdUUID, special_lvs, refresh=False)
+        self.activate_special_lvs()
 
         # Check that all devices in the VG have the same logical and physical
         # block sizes.
@@ -1814,6 +1828,14 @@ class BlockStorageDomain(sd.StorageDomain):
             size=size,
             block_size=self.block_size,
             alignment=self.alignment))
+
+    # LVs management
+
+    def activate_special_lvs(self):
+        self._manifest.activate_special_lvs()
+
+    def deactivate_special_lvs(self):
+        self._manifest.deactivate_special_lvs()
 
 
 def _external_leases_path(sdUUID):
