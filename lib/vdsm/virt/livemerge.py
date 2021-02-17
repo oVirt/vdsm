@@ -295,7 +295,7 @@ class DriveMerger:
             try:
                 self._track_job(job_id, drive, base, top)
             except JobExistsError:
-                log.error("A block job is already active on this disk")
+                log.error("A job is already active on this disk")
                 return response.error('mergeErr')
 
             orig_chain = [entry.uuid for entry in chains[drive['alias']]]
@@ -351,7 +351,7 @@ class DriveMerger:
             return False
         return True
 
-    def _get_block_job(self, drive):
+    def _get_job(self, drive):
         """
         Must run under self._lock.
         """
@@ -359,7 +359,7 @@ class DriveMerger:
             if all([bool(drive[x] == job.disk[x])
                     for x in ('imageID', 'domainID', 'volumeID')]):
                 return job
-        raise LookupError("No block job found for drive %r" % drive.name)
+        raise LookupError("No job found for drive %r" % drive.name)
 
     def _track_job(self, job_id, drive, base, top):
         """
@@ -368,7 +368,7 @@ class DriveMerger:
         driveSpec = dict((k, drive[k]) for k in
                          ('poolID', 'domainID', 'imageID', 'volumeID'))
         try:
-            existing_job = self._get_block_job(drive)
+            existing_job = self._get_job(drive)
         except LookupError:
             self._jobs[job_id] = Job(
                 id=job_id,
@@ -378,9 +378,10 @@ class DriveMerger:
                 top=top,
             )
         else:
-            log.error("Cannot add block job %s.  A block job with id "
-                      "%s already exists for image %s", job_id,
-                      existing_job.id, drive['imageID'])
+            log.error(
+                "Cannot add job %s. A job with id %s already exists for "
+                "image %s",
+                job_id, existing_job.id, drive['imageID'])
             raise JobExistsError()
 
         self._vm.sync_block_job_info()
@@ -503,7 +504,7 @@ class DriveMerger:
                         self._start_cleanup_thread(job, drive, doPivot)
                     elif cleanThread.state == CleanupThread.TRYING:
                         # Let previously started cleanup thread continue
-                        log.debug("Still waiting for block job %s to be "
+                        log.debug("Still waiting for job %s to be "
                                   "synchronized", job.id)
                     elif cleanThread.state == CleanupThread.RETRY:
                         log.info("Previous job %s cleanup thread failed with "
