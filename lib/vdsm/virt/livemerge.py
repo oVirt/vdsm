@@ -219,19 +219,7 @@ class DriveMerger:
             raise exception.ImageFileNotFound(
                 "Cannot find drive", driveSpec=driveSpec, job=job_id)
 
-        job = Job(
-            id=job_id,
-            drive=drive.name,
-            disk={
-                "poolID": drive.poolID,
-                "domainID": drive.domainID,
-                "imageID": drive.imageID,
-                "volumeID": drive.volumeID,
-            },
-            base=base,
-            top=top,
-            bandwidth=bandwidth,
-        )
+        job = self._create_job(job_id, drive, base, top, bandwidth)
 
         try:
             base_info = self._vm.getVolumeInfo(
@@ -380,10 +368,28 @@ class DriveMerger:
         top_size = int(top_info['apparentsize'])
         max_alloc = base_size + top_size
 
-        log.info("Starting extend for job=%s drive=%s volume=%s size=%s",
-                 job.id, drive.name, job.base, max_alloc)
+        log.info("Starting extend for job=%s drive=%s volume=%s",
+                 job.id, drive.name, job.base)
         self._vm.extendDriveVolume(
             drive, job.base, max_alloc, capacity)
+
+    def _create_job(self, job_id, drive, base, top, bandwidth):
+        """
+        Create new untracked job.
+        """
+        return Job(
+            id=job_id,
+            drive=drive.name,
+            disk={
+                "poolID": drive.poolID,
+                "domainID": drive.domainID,
+                "imageID": drive.imageID,
+                "volumeID": drive.volumeID,
+            },
+            base=base,
+            top=top,
+            bandwidth=bandwidth,
+        )
 
     def _get_job(self, drive):
         """
