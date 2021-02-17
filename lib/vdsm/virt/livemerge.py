@@ -142,17 +142,6 @@ class Job:
         log.debug("Job %s live info: %s", self.id, info)
         self._live_info = info
 
-    # Old values that were always constant.
-    # TODO: Consider removing these.
-
-    @property
-    def strategy(self):
-        return "commit"
-
-    @property
-    def blockJobType(self):
-        return "commit"
-
     # Serializing jobs.
 
     def to_dict(self):
@@ -181,7 +170,7 @@ class Job:
         Return job info for reporting to engine.
         """
         info = {
-            'blockJobType': self.blockJobType,
+            'blockJobType': "commit",
             'drive': self.drive,
             'id': self.id,
             'imgUUID': self.disk['imageID'],
