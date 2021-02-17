@@ -481,8 +481,8 @@ class DriveMerger:
                         job.live_info = self._dom.blockJobInfo(drive.name, 0)
                     except libvirt.libvirtError:
                         log.exception("Error getting block job info")
-                        tracked_jobs[job.id] = job.info()
                         job.live_info = None
+                        tracked_jobs[job.id] = job.info()
                         continue
 
                 if job.live_info:

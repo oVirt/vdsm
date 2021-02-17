@@ -617,6 +617,56 @@ def test_merge_cancel():
     assert vm.drive_monitor.enabled
 
 
+def test_block_job_info_error(monkeypatch):
+    config = Config("internal-merge")
+    vm = RunningVM(config)
+    sd_id = config.config["drive"]["domainID"]
+    vm.cif.irs.prepared_volumes = {
+        (sd_id, k): v for k, v in config.config["volumes"].items()
+    }
+    merge_params = config.config["merge_params"]
+    job_id = merge_params["jobUUID"]
+
+    vm.merge(**merge_params)
+
+    with monkeypatch.context() as mc:
+
+        # Simulate failing blockJobInfo call.
+        def blockJobInfo(*args):
+            raise fake.libvirt_error(
+                [libvirt.VIR_ERR_INTERNAL_ERROR], "Block job info failed")
+
+        mc.setattr(FakeDomain, "blockJobInfo", blockJobInfo)
+
+        # We cannot get live job info, so we return default values.
+        assert vm.query_jobs() == {
+            job_id: {
+                "bandwidth" : 0,
+                "blockJobType": "commit",
+                "cur": "0",
+                "drive": "sda",
+                "end": "0",
+                "id": job_id,
+                "imgUUID": merge_params["driveSpec"]["imageID"],
+                "jobType": "block"
+            }
+        }
+
+    # Libvirt call succeeds so we return live info from libvit.
+    assert vm.query_jobs() == {
+        job_id: {
+            "bandwidth" : 0,
+            "blockJobType": "commit",
+            "cur": "0",
+            "drive": "sda",
+            "end": "1073741824",
+            "id": job_id,
+            "imgUUID": merge_params["driveSpec"]["imageID"],
+            "jobType": "block"
+        }
+    }
+
+
 def test_merge_unrecoverable_error(monkeypatch):
     def unrecoverable_error(*args):
         raise fake.libvirt_error(
