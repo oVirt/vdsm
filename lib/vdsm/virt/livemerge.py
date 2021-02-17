@@ -256,20 +256,8 @@ class DriveMerger:
 
         self._start_commit(drive, job)
 
-        # blockCommit will cause data to be written into the base volume.
-        # Perform an initial extension to ensure there is enough space to
-        # copy all the required data.  Normally we'd use monitoring to extend
-        # the volume on-demand but internal watermark information is not being
-        # reported by libvirt so we must do the full extension up front.  In
-        # the worst case, the allocated size of 'base' should be increased by
-        # the allocated size of 'top' plus one additional chunk to accomodate
-        # additional writes to 'top' during the live merge operation.
-        if drive.chunked and base_info['format'] == 'COW':
-            capacity, alloc, physical = self._vm.getExtendInfo(drive)
-            baseSize = int(base_info['apparentsize'])
-            topSize = int(top_info['apparentsize'])
-            maxAlloc = baseSize + topSize
-            self._vm.extendDriveVolume(drive, job.base, maxAlloc, capacity)
+        if self._base_needs_extend(drive, base_info):
+            self._start_extend(drive, job, base_info, top_info)
 
         # Trigger the collection of stats before returning so that callers
         # of getVmStats after this returns will see the new job
@@ -371,6 +359,31 @@ class DriveMerger:
             except libvirt.libvirtError as e:
                 self._untrack_job(job.id)
                 raise exception.MergeFailed(str(e), job=job.id)
+
+    def _base_needs_extend(self, drive, base_info):
+        # blockCommit will cause data to be written into the base volume.
+        # Perform an initial extension to ensure there is enough space to
+        # copy all the required data.  Normally we'd use monitoring to extend
+        # the volume on-demand but internal watermark information is not being
+        # reported by libvirt so we must do the full extension up front.  In
+        # the worst case, the allocated size of 'base' should be increased by
+        # the allocated size of 'top' plus one additional chunk to accomodate
+        # additional writes to 'top' during the live merge operation.
+        return drive.chunked and base_info['format'] == 'COW'
+
+    def _start_extend(self, drive, job, base_info, top_info):
+        """
+        Start extend operation for the base volume.
+        """
+        capacity, alloc, physical = self._vm.getExtendInfo(drive)
+        base_size = int(base_info['apparentsize'])
+        top_size = int(top_info['apparentsize'])
+        max_alloc = base_size + top_size
+
+        log.info("Starting extend for job=%s drive=%s volume=%s size=%s",
+                 job.id, drive.name, job.base, max_alloc)
+        self._vm.extendDriveVolume(
+            drive, job.base, max_alloc, capacity)
 
     def _get_job(self, drive):
         """
