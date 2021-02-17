@@ -79,13 +79,14 @@ class Job:
     Information about live merge job.
     """
 
-    def __init__(self, id, drive, disk, top, base, gone=False):
+    def __init__(self, id, drive, disk, top, base, bandwidth, gone=False):
         # Read only attributes.
         self._id = id
         self._drive = drive
         self._disk = disk
         self._top = top
         self._base = base
+        self._bandwidth = bandwidth
 
         # This job was started with VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
         # flag.
@@ -119,6 +120,10 @@ class Job:
         return self._base
 
     @property
+    def bandwidth(self):
+        return self._bandwidth
+
+    @property
     def active_commit(self):
         return self._active_commit
 
@@ -150,6 +155,7 @@ class Job:
             "disk": self.disk,
             "base": self.base,
             "top": self.top,
+            "bandwidth": self.bandwidth,
             "gone": self.gone,
         }
 
@@ -161,6 +167,7 @@ class Job:
             disk=d["disk"],
             top=d["top"],
             base=d["base"],
+            bandwidth=d["bandwidth"],
             gone=d["gone"],
         )
 
@@ -212,14 +219,28 @@ class DriveMerger:
             raise exception.ImageFileNotFound(
                 "Cannot find drive", driveSpec=driveSpec, job=job_id)
 
+        job = Job(
+            id=job_id,
+            drive=drive.name,
+            disk={
+                "poolID": drive.poolID,
+                "domainID": drive.domainID,
+                "imageID": drive.imageID,
+                "volumeID": drive.volumeID,
+            },
+            base=base,
+            top=top,
+            bandwidth=bandwidth,
+        )
+
         try:
             baseInfo = self._vm.getVolumeInfo(drive.domainID, drive.poolID,
-                                              drive.imageID, base)
+                                              drive.imageID, job.base)
             topInfo = self._vm.getVolumeInfo(drive.domainID, drive.poolID,
-                                             drive.imageID, top)
+                                             drive.imageID, job.top)
         except errors.StorageUnavailableError as e:
             raise exception.MergeFailed(
-                str(e), top=top, base=base, job=job_id)
+                str(e), top=top, base=job.base, job=job_id)
 
         # If base is a shared volume then we cannot allow a merge.  Otherwise
         # We'd corrupt the shared volume for other users.
@@ -238,22 +259,23 @@ class DriveMerger:
         if drive['alias'] not in chains:
             raise exception.MergeFailed(
                 "Libvirt does not support volume chain monitoring",
-                drive=drive, alias=drive["alias"], chains=chains, job=job_id)
+                drive=drive, alias=drive["alias"], chains=chains, job=job.id)
 
         actual_chain = chains[drive['alias']]
         try:
-            base_target = drive.volume_target(base, actual_chain)
-            top_target = drive.volume_target(top, actual_chain)
+            base_target = drive.volume_target(job.base, actual_chain)
+            top_target = drive.volume_target(job.top, actual_chain)
         except VolumeNotFound as e:
             raise exception.MergeFailed(
-                str(e), top=top, base=base, chain=actual_chain, job=job_id)
+                str(e), top=job.top, base=job.base, chain=actual_chain,
+                job=job.id)
 
         # Indicate that we expect libvirt to maintain the relative paths of
         # backing files. This is necessary to ensure that a volume chain is
         # visible from any host even if the mountpoint is different.
         flags = libvirt.VIR_DOMAIN_BLOCK_COMMIT_RELATIVE
 
-        if top == drive.volumeID:
+        if job.top == drive.volumeID:
             # Pass a flag to libvirt to indicate that we expect a two phase
             # block job. In the first phase, data is copied to base. Once
             # completed, an event is raised to indicate that the job has
@@ -265,24 +287,24 @@ class DriveMerger:
         # being cleaned up by query_jobs() since it won't exist right away
         with self._lock:
             try:
-                self._track_job(job_id, drive, base, top)
+                self._track_job(job, drive)
             except JobExistsError as e:
-                raise exception.MergeFailed(str(e), job=job_id)
+                raise exception.MergeFailed(str(e), job=job.id)
 
             orig_chain = [entry.uuid for entry in actual_chain]
             chain_str = logutils.volume_chain_to_str(orig_chain)
             log.info("Starting merge with job_id=%r, original chain=%s, "
                      "disk=%r, base=%r, top=%r, bandwidth=%d, flags=%d",
-                     job_id, chain_str, drive.name, base_target,
-                     top_target, bandwidth, flags)
+                     job.id, chain_str, drive.name, base_target,
+                     top_target, job.bandwidth, flags)
 
             try:
                 # pylint: disable=no-member
                 self._dom.blockCommit(
-                    drive.name, base_target, top_target, bandwidth, flags)
+                    drive.name, base_target, top_target, job.bandwidth, flags)
             except libvirt.libvirtError as e:
-                self._untrack_job(job_id)
-                raise exception.MergeFailed(str(e), job=job_id)
+                self._untrack_job(job.id)
+                raise exception.MergeFailed(str(e), job=job.id)
 
         # blockCommit will cause data to be written into the base volume.
         # Perform an initial extension to ensure there is enough space to
@@ -297,7 +319,7 @@ class DriveMerger:
             baseSize = int(baseInfo['apparentsize'])
             topSize = int(topInfo['apparentsize'])
             maxAlloc = baseSize + topSize
-            self._vm.extendDriveVolume(drive, base, maxAlloc, capacity)
+            self._vm.extendDriveVolume(drive, job.base, maxAlloc, capacity)
 
         # Trigger the collection of stats before returning so that callers
         # of getVmStats after this returns will see the new job
@@ -354,24 +376,16 @@ class DriveMerger:
                 return job
         raise LookupError("No job found for drive %r" % drive.name)
 
-    def _track_job(self, job_id, drive, base, top):
+    def _track_job(self, job, drive):
         """
         Must run under self._lock.
         """
-        driveSpec = dict((k, drive[k]) for k in
-                         ('poolID', 'domainID', 'imageID', 'volumeID'))
         try:
             existing_job = self._get_job(drive)
         except LookupError:
-            self._jobs[job_id] = Job(
-                id=job_id,
-                drive=drive.name,
-                disk=driveSpec,
-                base=base,
-                top=top,
-            )
+            self._jobs[job.id] = job
         else:
-            raise JobExistsError(job_id, existing_job.disk["imageID"])
+            raise JobExistsError(job.id, existing_job.disk["imageID"])
 
         self._vm.sync_jobs_metadata()
         self._vm.sync_metadata()

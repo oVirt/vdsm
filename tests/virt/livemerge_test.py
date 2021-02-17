@@ -290,6 +290,7 @@ def test_merger_dump_jobs():
 
     assert vm._drive_merger.dump_jobs() == {
         job_id : {
+            "bandwidth": merge_params["bandwidth"],
             "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
             "drive": "sda",
@@ -317,6 +318,7 @@ def test_merger_load_jobs():
 
     dumped_jobs = {
         job_id : {
+            "bandwidth": merge_params["bandwidth"],
             "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
             "drive": "sda",
@@ -547,6 +549,7 @@ def test_internal_merge():
     # Jobs persisted now as "gone".
     assert vm._drive_merger.dump_jobs() == {
         job_id : {
+            "bandwidth": merge_params["bandwidth"],
             "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
             "drive": "sda",
@@ -775,4 +778,5 @@ def fake_job():
         disk={"volumeID": "fake-vol"},
         top="fake-vol",
         base=None,
+        bandwidth=0,
     )
