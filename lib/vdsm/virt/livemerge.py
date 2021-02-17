@@ -37,7 +37,11 @@ import libvirt
 
 
 class JobExistsError(errors.Base):
-    msg = "Job already exists"
+    msg = "Job {self.job_id} already exists for image {self.img_id}"
+
+    def __init__(self, job_id, img_id):
+        self.job_id = job_id
+        self.img_id = img_id
 
 
 class JobNotReadyError(errors.Base):
@@ -294,8 +298,8 @@ class DriveMerger:
         with self._lock:
             try:
                 self._track_job(job_id, drive, base, top)
-            except JobExistsError:
-                log.error("A job is already active on this disk")
+            except JobExistsError as e:
+                log.error("Cannot add job: %s", e)
                 return response.error('mergeErr')
 
             orig_chain = [entry.uuid for entry in chains[drive['alias']]]
@@ -378,11 +382,7 @@ class DriveMerger:
                 top=top,
             )
         else:
-            log.error(
-                "Cannot add job %s. A job with id %s already exists for "
-                "image %s",
-                job_id, existing_job.id, drive['imageID'])
-            raise JobExistsError()
+            raise JobExistsError(job_id, existing_job.disk["imageID"])
 
         self._vm.sync_jobs_metadata()
         self._vm.sync_metadata()
