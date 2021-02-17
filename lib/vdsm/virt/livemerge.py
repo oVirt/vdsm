@@ -230,25 +230,8 @@ class DriveMerger:
         # Make sure we can merge into the base in case the drive was enlarged.
         self._validate_base_size(drive, baseInfo, topInfo)
 
-        # If the base volume format is RAW and its size is smaller than its
-        # capacity (this could happen because the engine extended the base
-        # volume), we have to refresh the volume to cause lvm to get current lv
-        # size from storage, and update the kernel so the lv reflects the real
-        # size on storage. Not refreshing the volume may fail live merge.
-        # This could happen if disk extended after taking a snapshot but before
-        # performing the live merge.  See https://bugzilla.redhat.com/1367281
-        if (drive.chunked
-                and baseInfo['format'] == 'RAW'
-                and int(baseInfo['apparentsize']) < int(baseInfo['capacity'])):
-            log.info("Refreshing raw volume %r (apparentsize=%s, "
-                     "capacity=%s)",
-                     base, baseInfo['apparentsize'],
-                     baseInfo['capacity'])
-            self._vm.refreshDriveVolume({
-                'domainID': drive.domainID, 'poolID': drive.poolID,
-                'imageID': drive.imageID, 'volumeID': base,
-                'name': drive.name,
-            })
+        if self._base_needs_refresh(drive, baseInfo):
+            self._refresh_base(drive, baseInfo)
 
         # Check that libvirt exposes full volume chain information
         chains = self._vm.drive_get_actual_volume_chain([drive])
@@ -334,6 +317,32 @@ class DriveMerger:
                 "The base volume is undersized and cannot be extended",
                 base_capacity=base_info["capacity"],
                 top_capacity=top_info["capacity"])
+
+    def _base_needs_refresh(self, drive, base_info):
+        # If the base volume format is RAW and its size is smaller than its
+        # capacity (this could happen because the engine extended the base
+        # volume), we have to refresh the volume to cause lvm to get current lv
+        # size from storage, and update the kernel so the lv reflects the real
+        # size on storage. Not refreshing the volume may fail live merge.
+        # This could happen if disk extended after taking a snapshot but before
+        # performing the live merge.  See https://bugzilla.redhat.com/1367281
+        return (drive.chunked and
+                base_info['format'] == 'RAW' and
+                int(base_info['apparentsize']) < int(base_info['capacity']))
+
+    def _refresh_base(self, drive, base_info):
+        log.info(
+            "Refreshing base volume %r (apparentsize=%s, capacity=%s)",
+            base_info['uuid'], base_info['apparentsize'],
+            base_info['capacity'])
+
+        self._vm.refreshDriveVolume({
+            'domainID': drive.domainID,
+            'imageID': drive.imageID,
+            'name': drive.name,
+            'poolID': drive.poolID,
+            'volumeID': base_info['uuid'],
+        })
 
     def _get_job(self, drive):
         """
