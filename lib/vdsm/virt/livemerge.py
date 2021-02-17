@@ -212,22 +212,6 @@ class DriveMerger:
             raise exception.ImageFileNotFound(
                 "Cannot find drive", driveSpec=driveSpec, job=job_id)
 
-        # Check that libvirt exposes full volume chain information
-        chains = self._vm.drive_get_actual_volume_chain([drive])
-        if drive['alias'] not in chains:
-            raise exception.MergeFailed(
-                "Libvirt does not support volume chain monitoring",
-                drive=drive, alias=drive["alias"], chains=chains, job=job_id)
-
-        actual_chain = chains[drive['alias']]
-
-        try:
-            base_target = drive.volume_target(base, actual_chain)
-            top_target = drive.volume_target(top, actual_chain)
-        except VolumeNotFound as e:
-            raise exception.MergeFailed(
-                str(e), top=top, base=base, chain=actual_chain, job=job_id)
-
         try:
             baseInfo = self._vm.getVolumeInfo(drive.domainID, drive.poolID,
                                               drive.imageID, base)
@@ -242,19 +226,6 @@ class DriveMerger:
         if baseInfo['voltype'] == 'SHARED':
             raise exception.MergeFailed(
                 "Base volume is shared", base_info=baseInfo, job=job_id)
-
-        # Indicate that we expect libvirt to maintain the relative paths of
-        # backing files.  This is necessary to ensure that a volume chain is
-        # visible from any host even if the mountpoint is different.
-        flags = libvirt.VIR_DOMAIN_BLOCK_COMMIT_RELATIVE
-
-        if top == drive.volumeID:
-            # Pass a flag to libvirt to indicate that we expect a two phase
-            # block job.  In the first phase, data is copied to base.  Once
-            # completed, an event is raised to indicate that the job has
-            # transitioned to the second phase.  We must then tell libvirt to
-            # pivot to the new active layer (base).
-            flags |= libvirt.VIR_DOMAIN_BLOCK_COMMIT_ACTIVE
 
         # Make sure we can merge into the base in case the drive was enlarged.
         self._validate_base_size(drive, baseInfo, topInfo)
@@ -279,6 +250,34 @@ class DriveMerger:
                 'name': drive.name,
             })
 
+        # Check that libvirt exposes full volume chain information
+        chains = self._vm.drive_get_actual_volume_chain([drive])
+        if drive['alias'] not in chains:
+            raise exception.MergeFailed(
+                "Libvirt does not support volume chain monitoring",
+                drive=drive, alias=drive["alias"], chains=chains, job=job_id)
+
+        actual_chain = chains[drive['alias']]
+        try:
+            base_target = drive.volume_target(base, actual_chain)
+            top_target = drive.volume_target(top, actual_chain)
+        except VolumeNotFound as e:
+            raise exception.MergeFailed(
+                str(e), top=top, base=base, chain=actual_chain, job=job_id)
+
+        # Indicate that we expect libvirt to maintain the relative paths of
+        # backing files. This is necessary to ensure that a volume chain is
+        # visible from any host even if the mountpoint is different.
+        flags = libvirt.VIR_DOMAIN_BLOCK_COMMIT_RELATIVE
+
+        if top == drive.volumeID:
+            # Pass a flag to libvirt to indicate that we expect a two phase
+            # block job. In the first phase, data is copied to base. Once
+            # completed, an event is raised to indicate that the job has
+            # transitioned to the second phase. We must then tell libvirt to
+            # pivot to the new active layer (base).
+            flags |= libvirt.VIR_DOMAIN_BLOCK_COMMIT_ACTIVE
+
         # Take the jobs lock here to protect the new job we are tracking from
         # being cleaned up by query_jobs() since it won't exist right away
         with self._lock:
@@ -287,7 +286,7 @@ class DriveMerger:
             except JobExistsError as e:
                 raise exception.MergeFailed(str(e), job=job_id)
 
-            orig_chain = [entry.uuid for entry in chains[drive['alias']]]
+            orig_chain = [entry.uuid for entry in actual_chain]
             chain_str = logutils.volume_chain_to_str(orig_chain)
             log.info("Starting merge with job_id=%r, original chain=%s, "
                      "disk=%r, base=%r, top=%r, bandwidth=%d, flags=%d",
