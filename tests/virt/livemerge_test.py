@@ -24,8 +24,12 @@ import threading
 import time
 import yaml
 
+import pytest
+
 from vdsm.common import response
+from vdsm.common import exception
 from vdsm.common import xmlutils
+
 from vdsm.virt import metadata
 from vdsm.virt.domain_descriptor import DomainDescriptor, XmlSource
 from vdsm.virt.livemerge import (
@@ -340,9 +344,7 @@ def test_active_merge(monkeypatch):
     assert vm.query_jobs() == {}
 
     merge_params = config.config["merge_params"]
-    res = vm.merge(**merge_params)
-    # Call for merge API should not fail.
-    assert not response.is_error(res)
+    vm.merge(**merge_params)
 
     # Merge invokes the volume extend API
     assert len(vm.cif.irs.extend_requests) == 1
@@ -459,8 +461,7 @@ def test_internal_merge():
     assert vm.query_jobs() == {}
 
     merge_params = config.config["merge_params"]
-    res = vm.merge(**merge_params)
-    assert not response.is_error(res)
+    vm.merge(**merge_params)
 
     # Merge invokes the volume extend API
     assert len(vm.cif.irs.extend_requests) == 1
@@ -582,8 +583,7 @@ def test_merge_cancel():
     assert vm.query_jobs() == {}
 
     merge_params = config.config["merge_params"]
-    res = vm.merge(**merge_params)
-    assert not response.is_error(res)
+    vm.merge(**merge_params)
 
     assert vm.query_jobs() == {
         merge_params["jobUUID"] : {
@@ -680,8 +680,9 @@ def test_merge_unrecoverable_error(monkeypatch):
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
 
-    res = vm.merge(**config.config["merge_params"])
-    assert res == response.error("mergeErr")
+    with pytest.raises(exception.MergeFailed):
+        vm.merge(**config.config["merge_params"])
+
     assert vm.query_jobs() == {}
 
 
@@ -697,12 +698,12 @@ def test_merge_job_already_exists(monkeypatch):
     # Calling merge twice will fail the second call with same block
     # job already tracked from first call.
     merge_params = config.config["merge_params"]
-    res = vm.merge(**merge_params)
-    assert not response.is_error(res)
+    vm.merge(**merge_params)
     assert len(vm.query_jobs()) == 1
 
-    res = vm.merge(**merge_params)
-    assert res == response.error("mergeErr")
+    with pytest.raises(exception.MergeFailed):
+        vm.merge(**merge_params)
+
     assert len(vm.query_jobs()) == 1
 
 
@@ -723,8 +724,9 @@ def test_merge_base_too_small(monkeypatch):
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
 
-    res = vm.merge(**merge_params)
-    assert res == response.error("destVolumeTooSmall")
+    with pytest.raises(exception.DestinationVolumeTooSmall):
+        vm.merge(**merge_params)
+
     assert vm.query_jobs() == {}
 
 

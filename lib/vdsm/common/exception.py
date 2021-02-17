@@ -159,7 +159,7 @@ class MigrationError(VdsmException):
     message = 'Fatal error during migration'
 
 
-class ImageFileNotFound(VdsmException):
+class ImageFileNotFound(ContextException):
     code = 13
     message = 'Drive image file could not be found'
 
@@ -266,7 +266,7 @@ class MigrationInProgress(ContextException):
     message = 'Command not supported during migration'
 
 
-class MergeFailed(VdsmException):
+class MergeFailed(ContextException):
     code = 52
     message = 'Merge failed'
 
@@ -401,7 +401,7 @@ class HookFailed(VdsmException):
     message = 'Hook error'
 
 
-class DestinationVolumeTooSmall(VdsmException):
+class DestinationVolumeTooSmall(ContextException):
     code = 79
     message = 'Destination volume is too small'
 

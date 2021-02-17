@@ -25,9 +25,8 @@ import uuid
 import xml.etree.ElementTree as ET
 
 from vdsm.common import concurrent
+from vdsm.common import exception
 from vdsm.common import logutils
-from vdsm.common import response
-from vdsm.common.define import doneCode, errCode
 
 from vdsm.virt import errors
 from vdsm.virt import virdomain
@@ -210,16 +209,15 @@ class DriveMerger:
         try:
             drive = self._vm.findDriveByUUIDs(driveSpec)
         except LookupError:
-            return response.error('imageErr')
+            raise exception.ImageFileNotFound(
+                "Cannot find drive", driveSpec=driveSpec, job=job_id)
 
         # Check that libvirt exposes full volume chain information
         chains = self._vm.drive_get_actual_volume_chain([drive])
         if drive['alias'] not in chains:
-            log.error("merge: libvirt does not support volume chain "
-                      "monitoring.  Unable to perform live merge. "
-                      "drive: %s, alias: %s, chains: %r",
-                      drive.name, drive['alias'], chains)
-            return response.error('mergeErr')
+            raise exception.MergeFailed(
+                "Libvirt does not support volume chain monitoring",
+                drive=drive, alias=drive["alias"], chains=chains, job=job_id)
 
         actual_chain = chains[drive['alias']]
 
@@ -227,23 +225,23 @@ class DriveMerger:
             base_target = drive.volume_target(base, actual_chain)
             top_target = drive.volume_target(top, actual_chain)
         except VolumeNotFound as e:
-            log.error("merge: %s", e)
-            return response.error('mergeErr')
+            raise exception.MergeFailed(
+                str(e), top=top, base=base, chain=actual_chain, job=job_id)
 
         try:
             baseInfo = self._vm.getVolumeInfo(drive.domainID, drive.poolID,
                                               drive.imageID, base)
             topInfo = self._vm.getVolumeInfo(drive.domainID, drive.poolID,
                                              drive.imageID, top)
-        except errors.StorageUnavailableError:
-            log.error("Unable to get volume information")
-            return errCode['mergeErr']
+        except errors.StorageUnavailableError as e:
+            raise exception.MergeFailed(
+                str(e), top=top, base=base, job=job_id)
 
         # If base is a shared volume then we cannot allow a merge.  Otherwise
         # We'd corrupt the shared volume for other users.
         if baseInfo['voltype'] == 'SHARED':
-            log.error("Refusing to merge into a shared volume")
-            return errCode['mergeErr']
+            raise exception.MergeFailed(
+                "Base volume is shared", base_info=baseInfo, job=job_id)
 
         # Indicate that we expect libvirt to maintain the relative paths of
         # backing files.  This is necessary to ensure that a volume chain is
@@ -259,8 +257,7 @@ class DriveMerger:
             flags |= libvirt.VIR_DOMAIN_BLOCK_COMMIT_ACTIVE
 
         # Make sure we can merge into the base in case the drive was enlarged.
-        if not self._can_merge_into(drive, baseInfo, topInfo):
-            return errCode['destVolumeTooSmall']
+        self._validate_base_size(drive, baseInfo, topInfo)
 
         # If the base volume format is RAW and its size is smaller than its
         # capacity (this could happen because the engine extended the base
@@ -288,8 +285,7 @@ class DriveMerger:
             try:
                 self._track_job(job_id, drive, base, top)
             except JobExistsError as e:
-                log.error("Cannot add job: %s", e)
-                return response.error('mergeErr')
+                raise exception.MergeFailed(str(e), job=job_id)
 
             orig_chain = [entry.uuid for entry in chains[drive['alias']]]
             chain_str = logutils.volume_chain_to_str(orig_chain)
@@ -302,10 +298,9 @@ class DriveMerger:
                 # pylint: disable=no-member
                 self._dom.blockCommit(
                     drive.name, base_target, top_target, bandwidth, flags)
-            except libvirt.libvirtError:
-                log.exception("Live merge failed (job: %s)", job_id)
+            except libvirt.libvirtError as e:
                 self._untrack_job(job_id)
-                return response.error('mergeErr')
+                raise exception.MergeFailed(str(e), job=job_id)
 
         # blockCommit will cause data to be written into the base volume.
         # Perform an initial extension to ensure there is enough space to
@@ -326,23 +321,20 @@ class DriveMerger:
         # of getVmStats after this returns will see the new job
         self._vm.updateVmJobs()
 
-        return {'status': doneCode}
-
-    def _can_merge_into(self, drive, base_info, top_info):
+    def _validate_base_size(self, drive, base_info, top_info):
         # If the drive was resized the top volume could be larger than the
         # base volume.  Libvirt can handle this situation for file-based
         # volumes and block qcow volumes (where extension happens dynamically).
         # Raw block volumes cannot be extended by libvirt so we require ovirt
         # engine to extend them before calling merge.  Check here.
         if drive.diskType != DISK_TYPE.BLOCK or base_info['format'] != 'RAW':
-            return True
+            return
 
         if int(base_info['capacity']) < int(top_info['capacity']):
-            log.warning("The base volume is undersized and cannot be "
-                        "extended (base capacity: %s, top capacity: %s)",
-                        base_info['capacity'], top_info['capacity'])
-            return False
-        return True
+            raise exception.DestinationVolumeTooSmall(
+                "The base volume is undersized and cannot be extended",
+                base_capacity=base_info["capacity"],
+                top_capacity=top_info["capacity"])
 
     def _get_job(self, drive):
         """
