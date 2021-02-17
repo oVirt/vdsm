@@ -234,25 +234,25 @@ class DriveMerger:
         )
 
         try:
-            baseInfo = self._vm.getVolumeInfo(drive.domainID, drive.poolID,
-                                              drive.imageID, job.base)
-            topInfo = self._vm.getVolumeInfo(drive.domainID, drive.poolID,
-                                             drive.imageID, job.top)
+            base_info = self._vm.getVolumeInfo(
+                drive.domainID, drive.poolID, drive.imageID, job.base)
+            top_info = self._vm.getVolumeInfo(
+                drive.domainID, drive.poolID, drive.imageID, job.top)
         except errors.StorageUnavailableError as e:
             raise exception.MergeFailed(
                 str(e), top=top, base=job.base, job=job_id)
 
         # If base is a shared volume then we cannot allow a merge.  Otherwise
         # We'd corrupt the shared volume for other users.
-        if baseInfo['voltype'] == 'SHARED':
+        if base_info['voltype'] == 'SHARED':
             raise exception.MergeFailed(
-                "Base volume is shared", base_info=baseInfo, job=job_id)
+                "Base volume is shared", base_info=base_info, job=job_id)
 
         # Make sure we can merge into the base in case the drive was enlarged.
-        self._validate_base_size(drive, baseInfo, topInfo)
+        self._validate_base_size(drive, base_info, top_info)
 
-        if self._base_needs_refresh(drive, baseInfo):
-            self._refresh_base(drive, baseInfo)
+        if self._base_needs_refresh(drive, base_info):
+            self._refresh_base(drive, base_info)
 
         # Check that libvirt exposes full volume chain information
         chains = self._vm.drive_get_actual_volume_chain([drive])
@@ -314,10 +314,10 @@ class DriveMerger:
         # the worst case, the allocated size of 'base' should be increased by
         # the allocated size of 'top' plus one additional chunk to accomodate
         # additional writes to 'top' during the live merge operation.
-        if drive.chunked and baseInfo['format'] == 'COW':
+        if drive.chunked and base_info['format'] == 'COW':
             capacity, alloc, physical = self._vm.getExtendInfo(drive)
-            baseSize = int(baseInfo['apparentsize'])
-            topSize = int(topInfo['apparentsize'])
+            baseSize = int(base_info['apparentsize'])
+            topSize = int(top_info['apparentsize'])
             maxAlloc = baseSize + topSize
             self._vm.extendDriveVolume(drive, job.base, maxAlloc, capacity)
 
