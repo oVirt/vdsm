@@ -204,10 +204,10 @@ class DriveMerger:
 
     def __init__(self, vm):
         self._vm = vm
-        self._jobsLock = threading.RLock()
-        self._blockJobs = {}
-        self._liveMergeCleanupThreads = {}
         self._dom = DomainAdapter(vm)
+        self._lock = threading.RLock()
+        self._jobs = {}
+        self._cleanup_threads = {}
 
     def merge(self, driveSpec, base, top, bandwidth, job_id):
         bandwidth = int(bandwidth)
@@ -291,7 +291,7 @@ class DriveMerger:
 
         # Take the jobs lock here to protect the new job we are tracking from
         # being cleaned up by query_jobs() since it won't exist right away
-        with self._jobsLock:
+        with self._lock:
             try:
                 self._track_job(job_id, drive, base, top)
             except JobExistsError:
@@ -353,9 +353,9 @@ class DriveMerger:
 
     def _get_block_job(self, drive):
         """
-        Must run under jobsLock.
+        Must run under self._lock.
         """
-        for job in self._blockJobs.values():
+        for job in self._jobs.values():
             if all([bool(drive[x] == job.disk[x])
                     for x in ('imageID', 'domainID', 'volumeID')]):
                 return job
@@ -363,14 +363,14 @@ class DriveMerger:
 
     def _track_job(self, job_id, drive, base, top):
         """
-        Must run under jobsLock.
+        Must run under self._lock.
         """
         driveSpec = dict((k, drive[k]) for k in
                          ('poolID', 'domainID', 'imageID', 'volumeID'))
         try:
             existing_job = self._get_block_job(drive)
         except LookupError:
-            self._blockJobs[job_id] = Job(
+            self._jobs[job_id] = Job(
                 id=job_id,
                 drive=drive.name,
                 disk=driveSpec,
@@ -389,11 +389,11 @@ class DriveMerger:
 
     def _untrack_job(self, job_id):
         """
-        Must run under jobsLock.
+        Must run under self._lock.
         """
-        # If there was contention on the jobsLock, this may have
-        # already been removed
-        self._blockJobs.pop(job_id, None)
+        # If there was contention on self._lock, this may have already been
+        # removed
+        self._jobs.pop(job_id, None)
 
         self._vm.sync_disk_metadata()
         self._vm.sync_block_job_info()
@@ -401,25 +401,24 @@ class DriveMerger:
         self._vm.update_domain_descriptor()
 
     def find_job_id(self, drive):
-        with self._jobsLock:
-            for job in self._blockJobs.values():
+        with self._lock:
+            for job in self._jobs.values():
                 if job.drive == drive:
                     return job.id
         return None
 
     def load_jobs(self, jobs):
-        with self._jobsLock:
-            self._blockJobs = {job_id: Job.from_dict(job_info)
-                               for job_id, job_info in jobs.items()}
+        with self._lock:
+            self._jobs = {job_id: Job.from_dict(job_info)
+                          for job_id, job_info in jobs.items()}
 
     def dump_jobs(self):
-        with self._jobsLock:
-            return {job.id: job.to_dict()
-                    for job in self._blockJobs.values()}
+        with self._lock:
+            return {job.id: job.to_dict() for job in self._jobs.values()}
 
     def has_jobs(self):
-        with self._jobsLock:
-            return len(self._blockJobs) > 0
+        with self._lock:
+            return len(self._jobs) > 0
 
     def query_jobs(self):
         """
@@ -431,14 +430,14 @@ class DriveMerger:
         # We need to take the jobs lock here to ensure that we don't race with
         # another call to merge() where the job has been recorded but not yet
         # started.
-        with self._jobsLock:
-            for job in list(self._blockJobs.values()):
+        with self._lock:
+            for job in list(self._jobs.values()):
                 log.debug("Checking job %s", job.id)
 
                 # Handle successful jobs early because the job just needs
                 # to be untracked and the stored disk info might be stale
                 # anyway (ie. after active layer commit).
-                cleanThread = self._liveMergeCleanupThreads.get(job.id)
+                cleanThread = self._cleanup_threads.get(job.id)
                 if (cleanThread
                         and cleanThread.state == CleanupThread.DONE):
                     log.info("Cleanup thread %s successfully completed, "
@@ -523,11 +522,11 @@ class DriveMerger:
 
     def _start_cleanup_thread(self, job, drive, needPivot):
         """
-        Must be caller when holding self._jobsLock.
+        Must be caller when holding self._lock.
         """
         t = CleanupThread(self._vm, job, drive, needPivot)
         t.start()
-        self._liveMergeCleanupThreads[job.id] = t
+        self._cleanup_threads[job.id] = t
 
     def _active_commit_ready(self, job, drive):
         # Check the job state in the xml to make sure the job is
@@ -556,7 +555,7 @@ class DriveMerger:
         return disk.find("./mirror[@ready='yes']") is not None
 
     def wait_for_cleanup(self):
-        for t in self._liveMergeCleanupThreads.values():
+        for t in self._cleanup_threads.values():
             t.join()
 
 
