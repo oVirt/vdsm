@@ -4495,7 +4495,7 @@ class Vm(object):
             # For the RAW device we use the volumeInfo apparentsize rather
             # than the (possibly) wrong size provided in the request.
             if volSize.apparentsize != newSizeBytes:
-                self.log.info(
+                self.log.warning(
                     "The requested extension size %s is different from the "
                     "RAW device size %s", newSizeBytes, volSize.apparentsize)
 
