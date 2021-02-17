@@ -970,20 +970,11 @@ class BlockStorageDomain(sd.StorageDomain):
 
     def __init__(self, sdUUID):
         manifest = self.manifestClass(sdUUID)
-
-        logical_block_size, physical_block_size = lvm.getVGBlockSizes(sdUUID)
-        self._validate_storage_block_size(
-            manifest.block_size, logical_block_size)
-
         sd.StorageDomain.__init__(self, manifest)
 
         self.activate_special_lvs()
 
-        # Check that all devices in the VG have the same logical and physical
-        # block sizes.
-        lvm.checkVGBlockSizes(
-            sdUUID, (logical_block_size, physical_block_size))
-
+        self._validate_block_sizes()
         self._registerResourceNamespaces()
         self._lastUncachedSelftest = 0
 
@@ -1004,6 +995,21 @@ class BlockStorageDomain(sd.StorageDomain):
         lvm.deactivateVG(self.sdUUID)
 
     # Other
+
+    def _validate_block_sizes(self):
+        """
+        Validate that SD block size matches underlying storage block size and
+        all devices have same logical and physical block sizes.
+        """
+        logical_block_size, physical_block_size = lvm.getVGBlockSizes(
+            self.sdUUID)
+        self._validate_storage_block_size(
+            self._manifest.block_size, logical_block_size)
+
+        # Check that all devices in the VG have the same logical and physical
+        # block sizes.
+        lvm.checkVGBlockSizes(
+            self.sdUUID, (logical_block_size, physical_block_size))
 
     def _registerResourceNamespaces(self):
         """
