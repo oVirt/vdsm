@@ -509,6 +509,9 @@ class FakeSanlock(object):
         res = self.resources[(path, offset)]
         self._validate_lvb_set(res)
 
+        if "lvb_data" not in res:
+            return b"\0" * size
+
         return res["lvb_data"][:size]
 
     def _in_range(self, offset, start=0, size=None):

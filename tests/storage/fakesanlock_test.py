@@ -732,6 +732,12 @@ def test_get_set_lvb_after_acquire(sector_size):
     fd = fs.register()
     fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd,
                lvb=True)
+
+    # get empty lvb
+    data = fs.get_lvb(
+        LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], size=512)
+    assert data == b"\0" * 512
+
     data = b"{generation:0}"
     fs.set_lvb(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)],
                data.ljust(512, b"\0"))
