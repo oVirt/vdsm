@@ -965,8 +965,6 @@ class BlockStorageDomain(sd.StorageDomain):
         special_lvs = manifest.special_volumes(manifest.getVersion())
         lvm.activateLVs(self.sdUUID, special_lvs, refresh=False)
 
-        self.metavol = lvm.lvPath(self.sdUUID, sd.METADATA)
-
         # Check that all devices in the VG have the same logical and physical
         # block sizes.
         lvm.checkVGBlockSizes(
