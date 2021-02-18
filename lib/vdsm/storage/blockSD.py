@@ -1175,7 +1175,8 @@ class BlockStorageDomain(sd.StorageDomain):
 
         bsd = BlockStorageDomain(sdUUID)
 
-        bsd.initSPMlease()
+        with bsd.special_lvs():
+            bsd.initSPMlease()
 
         return bsd
 
@@ -1842,6 +1843,14 @@ class BlockStorageDomain(sd.StorageDomain):
 
     def deactivate_special_lvs(self):
         self._manifest.deactivate_special_lvs()
+
+    @contextmanager
+    def special_lvs(self):
+        self.activate_special_lvs()
+        try:
+            yield
+        finally:
+            self.deactivate_special_lvs()
 
 
 def _external_leases_path(sdUUID):

@@ -356,9 +356,6 @@ def test_attach_domain_unsupported_version(
 
     sdCache.knownSDs[sd_uuid] = blockSD.findDomain
 
-    # Remove domain metadata
-    dom.setMetadata({})
-
     # Set domain metadata to version 0
     metadata = """\
 ALIGNMENT=1048576
@@ -377,8 +374,12 @@ SDUUID={}
 TYPE=LOCALFS
 VERSION=0
 """.format(sd_uuid)
-    with open("/dev/{}/metadata".format(vg.name), "wb") as f:
-        f.write(metadata.encode("utf-8"))
+    with dom.special_lvs():
+        with open("/dev/{}/metadata".format(vg.name), "wb") as f:
+            f.write(metadata.encode("utf-8"))
+
+    # Remove domain metadata
+    dom.setMetadata({})
 
     spm = fake_spm(
         tmp_repo.pool_id,
