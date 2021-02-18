@@ -489,17 +489,13 @@ class DriveMerger:
         for job in list(self._jobs.values()):
             log.debug("Checking job %s", job.id)
 
-            # Handle successful jobs early because the job just needs
-            # to be untracked and the stored disk info might be stale
-            # anyway (ie. after active layer commit).
+            # Handle successful jobs early because the drive lookup may fail
+            # after a pivot.
+            # TODO: looks like a bug.
             cleanThread = self._cleanup_threads.get(job.id)
             if (cleanThread
                     and cleanThread.state == CleanupThread.DONE):
-                log.info("Cleanup thread %s successfully completed, "
-                         "untracking job %s (base=%s, top=%s)",
-                         cleanThread, job.id,
-                         job.base,
-                         job.top)
+                log.info("Cleanup completed, untracking job %s", job.id)
                 self._untrack_job(job.id)
                 continue
 
@@ -510,8 +506,7 @@ class DriveMerger:
             if job.state == Job.COMMIT:
 
                 try:
-                    # If the job is found we get a dict with job info. If
-                    # the job does not exists we get an empty dict.
+                    # Returns empty dict if job has gone.
                     # pylint: disable=no-member
                     job.live_info = self._dom.blockJobInfo(drive.name, 0)
                 except libvirt.libvirtError:
@@ -540,27 +535,23 @@ class DriveMerger:
                 if not cleanThread:
 
                     # Recovery after vdsm restart.
-                    log.info("Starting cleanup thread for job: %s", job.id)
+                    log.info("Starting cleanup for job: %s", job.id)
                     pivot = self._active_commit_ready(job, drive)
                     self._start_cleanup_thread(job, drive, pivot)
 
                 elif cleanThread.state == CleanupThread.TRYING:
 
-                    log.debug("Still waiting for job %s to be "
-                              "synchronized", job.id)
+                    log.debug("Job %s is ongoing", job.id)
 
                 elif cleanThread.state == CleanupThread.RETRY:
 
-                    log.info("Previous job %s cleanup thread failed with "
-                             "recoverable error, retrying",
-                             job.id)
+                    log.info("Cleanup for job %s failed, retrying", job.id)
                     pivot = self._active_commit_ready(job, drive)
                     self._start_cleanup_thread(job, drive, pivot)
 
                 elif cleanThread.state == CleanupThread.ABORT:
 
-                    log.error("Aborting job %s due to an unrecoverable "
-                              "error", job.id)
+                    log.error("Cleanup aborted, untracking job %s", job.id)
                     self._untrack_job(job.id)
 
     def _lookup_drive(self, job):
