@@ -79,7 +79,16 @@ class Job:
     Information about live merge job.
     """
 
-    def __init__(self, id, drive, disk, top, base, bandwidth, gone=False):
+    # Job states:
+
+    # Commit was started - waiting until libvirt stops reporting the job, or
+    # reports that the job is ready for pivot.
+    COMMIT = "COMMIT"
+
+    # Cleanup was started - waiting until the cleanup thread completes.
+    CLEANUP = "CLEANUP"
+
+    def __init__(self, id, drive, disk, top, base, bandwidth, state=COMMIT):
         # Read only attributes.
         self._id = id
         self._drive = drive
@@ -92,8 +101,9 @@ class Job:
         # flag.
         self._active_commit = (top == disk["volumeID"])
 
-        # Set when libvirt stopped reporting this job.
-        self.gone = gone
+        # Changes when libvirt block job has gone, or libvirt reports the block
+        # job is ready for pivot.
+        self._state = state
 
         # Live job info from libvirt. This info is kept between libvirt updates
         # but not persisted to vm metadata.
@@ -127,14 +137,29 @@ class Job:
     def active_commit(self):
         return self._active_commit
 
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, new_state):
+        log.info("Job %s switching state from %s to %s",
+                 self.id, self._state, new_state)
+        self._state = new_state
+
     def is_ready(self):
         """
         Return True if this is an active commit, and the job finished the first
         phase and ready to pivot. Note that even if the job is ready, we need
         to check the job status in the vm xml.
         """
-        return (self.active_commit and
-                self.live_info and
+        if not self.active_commit:
+            return False
+
+        if self.state == self.CLEANUP:
+            return True
+
+        return (self.live_info and
                 self.live_info["cur"] == self.live_info["end"])
 
     @property
@@ -156,7 +181,7 @@ class Job:
             "base": self.base,
             "top": self.top,
             "bandwidth": self.bandwidth,
-            "gone": self.gone,
+            "state": self.state,
         }
 
     @classmethod
@@ -168,7 +193,7 @@ class Job:
             top=d["top"],
             base=d["base"],
             bandwidth=d["bandwidth"],
-            gone=d["gone"],
+            state=d["state"],
         )
 
     def info(self):
@@ -482,7 +507,8 @@ class DriveMerger:
             if drive is None:
                 continue
 
-            if not job.gone:
+            if job.state == Job.COMMIT:
+
                 try:
                     # If the job is found we get a dict with job info. If
                     # the job does not exists we get an empty dict.
@@ -493,33 +519,46 @@ class DriveMerger:
                     job.live_info = None
                     continue
 
-            if job.live_info:
-                doPivot = self._active_commit_ready(job, drive)
-            else:
-                # Libvirt has stopped reporting this job so we know it will
-                # never report it again.
-                if not job.gone:
-                    log.info("Libvirt job %s was terminated", job.id)
-                job.gone = True
-                doPivot = False
+                if job.live_info:
+                    if self._active_commit_ready(job, drive):
+                        log.info("Job %s is ready for pivot", job.id)
+                        job.state = Job.CLEANUP
+                        log.info("Starting cleanup for job %s", job.id)
+                        self._start_cleanup_thread(job, drive, True)
+                    else:
+                        log.debug("Job %s is ongoing", job.id)
+                else:
+                    # Libvirt has stopped reporting this job so we know it will
+                    # never report it again.
+                    log.info("Job %s has completed", job.id)
+                    job.state = Job.CLEANUP
+                    log.info("Starting cleanup for job %s", job.id)
+                    self._start_cleanup_thread(job, drive, False)
 
-            if not job.live_info or doPivot:
+            elif job.state == Job.CLEANUP:
+
                 if not cleanThread:
-                    # There is no cleanup thread so the job must have just
-                    # ended.  Spawn an async cleanup.
-                    log.info("Starting cleanup thread for job: %s",
-                             job.id)
-                    self._start_cleanup_thread(job, drive, doPivot)
+
+                    # Recovery after vdsm restart.
+                    log.info("Starting cleanup thread for job: %s", job.id)
+                    pivot = self._active_commit_ready(job, drive)
+                    self._start_cleanup_thread(job, drive, pivot)
+
                 elif cleanThread.state == CleanupThread.TRYING:
-                    # Let previously started cleanup thread continue
+
                     log.debug("Still waiting for job %s to be "
                               "synchronized", job.id)
+
                 elif cleanThread.state == CleanupThread.RETRY:
+
                     log.info("Previous job %s cleanup thread failed with "
                              "recoverable error, retrying",
                              job.id)
-                    self._start_cleanup_thread(job, drive, doPivot)
+                    pivot = self._active_commit_ready(job, drive)
+                    self._start_cleanup_thread(job, drive, pivot)
+
                 elif cleanThread.state == CleanupThread.ABORT:
+
                     log.error("Aborting job %s due to an unrecoverable "
                               "error", job.id)
                     self._untrack_job(job.id)

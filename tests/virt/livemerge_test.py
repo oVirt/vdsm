@@ -294,7 +294,7 @@ def test_merger_dump_jobs():
             "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
             "drive": "sda",
-            "gone": False,
+            "state": Job.COMMIT,
             "id": job_id,
             "top": merge_params["topVolUUID"],
         }
@@ -322,7 +322,7 @@ def test_merger_load_jobs():
             "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
             "drive": "sda",
-            "gone": False,
+            "state": Job.COMMIT,
             "id": job_id,
             "top": merge_params["topVolUUID"],
         }
@@ -415,20 +415,21 @@ def test_active_merge(monkeypatch):
     aborted = vm._dom.aborted.wait(TIMEOUT)
     assert aborted, "Timeout waiting for blockJobAbort() call"
 
-    # Block job was aborted and cleared from libvirt domain so query returns
-    # the default status entry.
+    # Since the job switched to CLEANUP state, we don't query libvirt live info
+    # again, and the job reports the last live info.
     assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
-            "cur": "0",
+            "cur": str(job["cur"]),
             "drive": "sda",
-            "end": "0",
+            "end": str(job["end"]),
             "id": job_id,
             "imgUUID": image_id,
             "jobType": "block"
         }
     }
+
     # Set the abort-ready state after cleanup has called active commit abort.
     vm._dom.xml = config.xmls["04-abort-ready"]
 
@@ -529,7 +530,8 @@ def test_internal_merge():
     del vm._dom.block_jobs["sda"]
     vm._dom.xml = config.xmls["02-after"]
 
-    # Querying the job when the job has gone should trigger a cleanup.
+    # Querying the job when the job has gone should switch the job state to
+    # CLEANUP and start a cleanup thread.
     info = vm.query_jobs()
 
     # Query reports the default status entry before cleanup is done.
@@ -546,14 +548,14 @@ def test_internal_merge():
         }
     }
 
-    # Jobs persisted now as "gone".
+    # Jobs persisted now in COMMIT state.
     assert vm._drive_merger.dump_jobs() == {
         job_id : {
             "bandwidth": merge_params["bandwidth"],
             "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
             "drive": "sda",
-            "gone": True,
+            "state": Job.CLEANUP,
             "id": job_id,
             "top": merge_params["topVolUUID"],
         }
