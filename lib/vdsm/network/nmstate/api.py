@@ -19,6 +19,7 @@
 
 from collections import defaultdict
 import itertools
+import logging
 
 from libnmstate import apply as state_apply
 from libnmstate import show as state_show
@@ -274,5 +275,6 @@ def _merge_state(interfaces_state, routes_state, dns_state):
 
 def update_num_vfs(device, num_vfs):
     desired_state = create_sriov_state(device, num_vfs)
+    logging.info(f'Desired state: {desired_state}')
 
     setup(desired_state, verify_change=True)
