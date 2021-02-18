@@ -188,14 +188,8 @@ def _get_volumes_info(cli, sd_uuid):
     # find volumes per image
     for vol_id, vol_info in volumes.items():
         image_id = vol_info.get("image", UNKNOWN_IMAGE)
-        # in addition to missing, also handle 'None' and empty string
-        if image_id is None or not image_id.strip():
-            image_id = UNKNOWN_IMAGE
         # normalize parent info
         parent = vol_info.get("parent", UNKNOWN_PARENT)
-        # in addition to missing, also handle 'None' and empty string
-        if parent is None or not parent.strip():
-            parent = UNKNOWN_PARENT
         vol_info["parent"] = parent
         volumes_info[image_id][vol_id] = vol_info
 
