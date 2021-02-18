@@ -479,27 +479,9 @@ class DriveMerger:
                 self._untrack_job(job.id)
                 continue
 
-            try:
-                drive = self._vm.findDriveByUUIDs(job.disk)
-            except LookupError:
-                # Drive loopkup may fail only in case of active layer
-                # merge, and pivot completed.
-                disk = job.disk
-                if disk["volumeID"] != job.top:
-                    log.error("Cannot find drive for job %s (disk=%s)",
-                              job.id, job.disk)
-                    continue
-
-                # Active layer merge, check if pivot completed.
-                pivoted_drive = dict(disk)
-                pivoted_drive["volumeID"] = job.base
-                try:
-                    drive = self._vm.findDriveByUUIDs(pivoted_drive)
-                except LookupError:
-                    log.error("Pivot completed but cannot find drive "
-                              "for job %s (disk=%s)",
-                              job.id, pivoted_drive)
-                    continue
+            drive = self._lookup_drive(job)
+            if drive is None:
+                continue
 
             if not job.gone:
                 try:
@@ -542,6 +524,32 @@ class DriveMerger:
                     log.error("Aborting job %s due to an unrecoverable "
                               "error", job.id)
                     self._untrack_job(job.id)
+
+    def _lookup_drive(self, job):
+        """
+        Return the drive object for this job. May return None if the drive was
+        not found.
+        """
+        try:
+            return self._vm.findDriveByUUIDs(job.disk)
+        except LookupError:
+            # Drive loopkup may fail only in case of active layer
+            # merge, and pivot completed.
+            if job.disk["volumeID"] != job.top:
+                log.error("Cannot find drive for job %s (disk=%s)",
+                          job.id, job.disk)
+                return None
+
+            # Active layer merge, check if pivot completed.
+            pivoted_drive = dict(job.disk)
+            pivoted_drive["volumeID"] = job.base
+            try:
+                return self._vm.findDriveByUUIDs(pivoted_drive)
+            except LookupError:
+                log.error("Pivot completed but cannot find drive "
+                          "for job %s (disk=%s)",
+                          job.id, pivoted_drive)
+                return None
 
     def _start_cleanup_thread(self, job, drive, needPivot):
         """
