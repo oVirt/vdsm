@@ -417,9 +417,8 @@ class DriveMerger:
         """
         Must run under self._lock.
         """
-        # If there was contention on self._lock, this may have already been
-        # removed
         self._jobs.pop(job_id, None)
+        self._cleanup_threads.pop(job_id, None)
 
         self._vm.sync_disk_metadata()
         self._vm.sync_jobs_metadata()
