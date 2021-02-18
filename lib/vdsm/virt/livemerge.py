@@ -449,102 +449,99 @@ class DriveMerger:
     def query_jobs(self):
         """
         Query tracked jobs and update their status. Returns dict of tracked
-        jobs dict, for reporting job status to engine.
+        jobs for reporting job status to engine.
         """
-        tracked_jobs = {}
-
         # We need to take the jobs lock here to ensure that we don't race with
         # another call to merge() where the job has been recorded but not yet
         # started.
         with self._lock:
-            for job in list(self._jobs.values()):
-                log.debug("Checking job %s", job.id)
+            self._update_jobs()
+            return {job.id: job.info() for job in self._jobs.values()}
 
-                # Handle successful jobs early because the job just needs
-                # to be untracked and the stored disk info might be stale
-                # anyway (ie. after active layer commit).
-                cleanThread = self._cleanup_threads.get(job.id)
-                if (cleanThread
-                        and cleanThread.state == CleanupThread.DONE):
-                    log.info("Cleanup thread %s successfully completed, "
-                             "untracking job %s (base=%s, top=%s)",
-                             cleanThread, job.id,
-                             job.base,
-                             job.top)
-                    self._untrack_job(job.id)
+    def _update_jobs(self):
+        """
+        Must be called under self._lock.
+        """
+        for job in list(self._jobs.values()):
+            log.debug("Checking job %s", job.id)
+
+            # Handle successful jobs early because the job just needs
+            # to be untracked and the stored disk info might be stale
+            # anyway (ie. after active layer commit).
+            cleanThread = self._cleanup_threads.get(job.id)
+            if (cleanThread
+                    and cleanThread.state == CleanupThread.DONE):
+                log.info("Cleanup thread %s successfully completed, "
+                         "untracking job %s (base=%s, top=%s)",
+                         cleanThread, job.id,
+                         job.base,
+                         job.top)
+                self._untrack_job(job.id)
+                continue
+
+            try:
+                drive = self._vm.findDriveByUUIDs(job.disk)
+            except LookupError:
+                # Drive loopkup may fail only in case of active layer
+                # merge, and pivot completed.
+                disk = job.disk
+                if disk["volumeID"] != job.top:
+                    log.error("Cannot find drive for job %s (disk=%s)",
+                              job.id, job.disk)
                     continue
 
+                # Active layer merge, check if pivot completed.
+                pivoted_drive = dict(disk)
+                pivoted_drive["volumeID"] = job.base
                 try:
-                    drive = self._vm.findDriveByUUIDs(job.disk)
+                    drive = self._vm.findDriveByUUIDs(pivoted_drive)
                 except LookupError:
-                    # Drive loopkup may fail only in case of active layer
-                    # merge, and pivot completed.
-                    disk = job.disk
-                    if disk["volumeID"] != job.top:
-                        log.error("Cannot find drive for job %s (disk=%s)",
-                                  job.id, job.disk)
-                        # TODO: Should we report this job?
-                        continue
+                    log.error("Pivot completed but cannot find drive "
+                              "for job %s (disk=%s)",
+                              job.id, pivoted_drive)
+                    continue
 
-                    # Active layer merge, check if pivot completed.
-                    pivoted_drive = dict(disk)
-                    pivoted_drive["volumeID"] = job.base
-                    try:
-                        drive = self._vm.findDriveByUUIDs(pivoted_drive)
-                    except LookupError:
-                        log.error("Pivot completed but cannot find drive "
-                                  "for job %s (disk=%s)",
-                                  job.id, pivoted_drive)
-                        # TODO: Should we report this job?
-                        continue
+            if not job.gone:
+                try:
+                    # If the job is found we get a dict with job info. If
+                    # the job does not exists we get an empty dict.
+                    # pylint: disable=no-member
+                    job.live_info = self._dom.blockJobInfo(drive.name, 0)
+                except libvirt.libvirtError:
+                    log.exception("Error getting block job info")
+                    job.live_info = None
+                    continue
 
+            if job.live_info:
+                doPivot = self._active_commit_ready(job, drive)
+            else:
+                # Libvirt has stopped reporting this job so we know it will
+                # never report it again.
                 if not job.gone:
-                    try:
-                        # If the job is found we get a dict with job info. If
-                        # the job does not exists we get an empty dict.
-                        # pylint: disable=no-member
-                        job.live_info = self._dom.blockJobInfo(drive.name, 0)
-                    except libvirt.libvirtError:
-                        log.exception("Error getting block job info")
-                        job.live_info = None
-                        tracked_jobs[job.id] = job.info()
-                        continue
+                    log.info("Libvirt job %s was terminated", job.id)
+                job.gone = True
+                doPivot = False
 
-                if job.live_info:
-                    doPivot = self._active_commit_ready(job, drive)
-                else:
-                    # Libvirt has stopped reporting this job so we know it will
-                    # never report it again.
-                    if not job.gone:
-                        log.info("Libvirt job %s was terminated", job.id)
-                    job.gone = True
-                    doPivot = False
-
-                if not job.live_info or doPivot:
-                    if not cleanThread:
-                        # There is no cleanup thread so the job must have just
-                        # ended.  Spawn an async cleanup.
-                        log.info("Starting cleanup thread for job: %s",
-                                 job.id)
-                        self._start_cleanup_thread(job, drive, doPivot)
-                    elif cleanThread.state == CleanupThread.TRYING:
-                        # Let previously started cleanup thread continue
-                        log.debug("Still waiting for job %s to be "
-                                  "synchronized", job.id)
-                    elif cleanThread.state == CleanupThread.RETRY:
-                        log.info("Previous job %s cleanup thread failed with "
-                                 "recoverable error, retrying",
-                                 job.id)
-                        self._start_cleanup_thread(job, drive, doPivot)
-                    elif cleanThread.state == CleanupThread.ABORT:
-                        log.error("Aborting job %s due to an unrecoverable "
-                                  "error", job.id)
-                        self._untrack_job(job.id)
-                        continue
-
-                tracked_jobs[job.id] = job.info()
-
-        return tracked_jobs
+            if not job.live_info or doPivot:
+                if not cleanThread:
+                    # There is no cleanup thread so the job must have just
+                    # ended.  Spawn an async cleanup.
+                    log.info("Starting cleanup thread for job: %s",
+                             job.id)
+                    self._start_cleanup_thread(job, drive, doPivot)
+                elif cleanThread.state == CleanupThread.TRYING:
+                    # Let previously started cleanup thread continue
+                    log.debug("Still waiting for job %s to be "
+                              "synchronized", job.id)
+                elif cleanThread.state == CleanupThread.RETRY:
+                    log.info("Previous job %s cleanup thread failed with "
+                             "recoverable error, retrying",
+                             job.id)
+                    self._start_cleanup_thread(job, drive, doPivot)
+                elif cleanThread.state == CleanupThread.ABORT:
+                    log.error("Aborting job %s due to an unrecoverable "
+                              "error", job.id)
+                    self._untrack_job(job.id)
 
     def _start_cleanup_thread(self, job, drive, needPivot):
         """
