@@ -1724,31 +1724,35 @@ class BlockStorageDomain(sd.StorageDomain):
         slots_md = self._parse_volumes_metadata()
 
         for lv in _iter_volumes(self.sdUUID):
+            lvtags = parse_lv_tags(lv)
             # Complement volume metadata from parsed slots by slot number.
             try:
-                lvtags = parse_lv_tags(lv)
                 vol_md = slots_md[lvtags.mdslot]
-            except Exception as e:
+            except KeyError as e:
                 self.log.warning(
                     "Failed to get metadata from lv tags for lv %s/%s: %s",
                     self.sdUUID, lv.name, e)
                 vol_md = {"status": sc.VOL_STATUS_INVALID}
 
-            # Complement metadata from tags in case it was missing from slots.
+            # Try to complement metadata from tags
+            # in case it was missing from slots.
             if vol_md["status"] != sc.VOL_STATUS_OK:
-                vol_md["image"] = lvtags.image
-                vol_md["parent"] = lvtags.parent
+                if lvtags.image and "image" not in vol_md:
+                    vol_md["image"] = lvtags.image
+                if lvtags.parent and "parent" not in vol_md:
+                    vol_md["parent"] = lvtags.parent
 
-            # Add the volume sizes information.
-            try:
-                vol_size = self.getVolumeSize(vol_md["image"], lv.name)
-                vol_md["truesize"] = vol_size.truesize
-                vol_md["apparentsize"] = vol_size.apparentsize
-            except Exception as e:
-                self.log.warning(
-                    "Failed to get size for lv %s/%s: %s",
-                    self.sdUUID, lv.name, e)
-                vol_md["status"] = sc.VOL_STATUS_INVALID
+            if "image" in vol_md:
+                # Add the volume sizes information.
+                try:
+                    vol_size = self.getVolumeSize(vol_md["image"], lv.name)
+                    vol_md["truesize"] = vol_size.truesize
+                    vol_md["apparentsize"] = vol_size.apparentsize
+                except Exception as e:
+                    self.log.warning(
+                        "Failed to get size for lv %s/%s: %s",
+                        self.sdUUID, lv.name, e)
+                    vol_md["status"] = sc.VOL_STATUS_INVALID
 
             # Check if volume was marked as removed and override status.
             img = lvtags.image

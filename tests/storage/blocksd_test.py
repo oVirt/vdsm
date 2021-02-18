@@ -131,6 +131,21 @@ def change_vol_tag(vol, tag_prefix, tag_value):
             vol.sdUUID, vol.volUUID, delTags=new_tags, addTags=old_tags)
 
 
+@contextmanager
+def delete_vol_tag(vol, tag_prefix):
+    lv = lvm.getLV(vol.sdUUID, vol.volUUID)
+    old_tags = {tag for tag in lv.tags
+                if tag.startswith(tag_prefix)}
+
+    lvm.changeLVsTags(
+        vol.sdUUID, vol.volUUID, delTags=old_tags)
+    try:
+        yield
+    finally:
+        lvm.changeLVsTags(
+            vol.sdUUID, vol.volUUID, addTags=old_tags)
+
+
 class TestGetAllVolumes:
     # TODO: add more tests, see fileSDTests.py
 
@@ -1275,8 +1290,11 @@ def test_dump_sd_metadata(
             }
         }
 
-    # Volume with invalid metadata block will be stated as invalid.
+    # Remove volume metadata.
     vol.removeMetadata((sd_uuid, mdslot))
+
+    # Metadata volume must be INVALID, but image uuid, parent uuid and mdslot
+    # can reported from the lv tags.
     assert dom.dump() == {
         "metadata": expected_metadata,
         "volumes": {
@@ -1290,6 +1308,19 @@ def test_dump_sd_metadata(
             }
         }
     }
+
+    # If image tag is missing the image key is omitted.
+    with delete_vol_tag(vol, sc.TAG_PREFIX_IMAGE):
+        assert dom.dump() == {
+            "metadata": expected_metadata,
+            "volumes": {
+                vol_uuid: {
+                    "status": sc.VOL_STATUS_INVALID,
+                    "parent": sc.BLANK_UUID,
+                    "mdslot": mdslot,
+                }
+            }
+        }
 
 
 LVM_TAG_CHARS = string.ascii_letters + "0123456789_+.-/=!:#"
