@@ -143,8 +143,9 @@ class Job:
 
     @state.setter
     def state(self, new_state):
-        log.info("Job %s switching state from %s to %s",
-                 self.id, self._state, new_state)
+        if new_state != self._state:
+            log.info("Job %s switching state from %s to %s",
+                     self.id, self._state, new_state)
         self._state = new_state
 
     def is_ready(self):
@@ -503,8 +504,6 @@ class DriveMerger:
                 if job.live_info:
                     if self._active_commit_ready(job):
                         log.info("Job %s is ready for pivot", job.id)
-                        job.state = Job.CLEANUP
-                        log.info("Starting cleanup for job %s", job.id)
                         self._start_cleanup(job, True)
                     else:
                         log.debug("Job %s is ongoing", job.id)
@@ -512,8 +511,6 @@ class DriveMerger:
                     # Libvirt has stopped reporting this job so we know it will
                     # never report it again.
                     log.info("Job %s has completed", job.id)
-                    job.state = Job.CLEANUP
-                    log.info("Starting cleanup for job %s", job.id)
                     self._start_cleanup(job, False)
 
             elif job.state == Job.CLEANUP:
@@ -523,7 +520,6 @@ class DriveMerger:
                 if not cleanup:
 
                     # Recovery after vdsm restart.
-                    log.info("Starting cleanup for job: %s", job.id)
                     pivot = self._active_commit_ready(job)
                     self._start_cleanup(job, pivot)
 
@@ -533,7 +529,6 @@ class DriveMerger:
 
                 elif cleanup.state == CleanupThread.RETRY:
 
-                    log.info("Cleanup for job %s failed, retrying", job.id)
                     pivot = self._active_commit_ready(job)
                     self._start_cleanup(job, pivot)
 
@@ -551,6 +546,8 @@ class DriveMerger:
         """
         Must run under self._lock.
         """
+        job.state = Job.CLEANUP
+
         try:
             drive = self._vm.findDriveByUUIDs(job.disk)
         except LookupError:
@@ -559,6 +556,7 @@ class DriveMerger:
             log.error("Cannot find drive %s for job %s", job.drive, job.id)
             return
 
+        log.info("Starting cleanup for job %s", job.id)
         t = CleanupThread(self._vm, job, drive, pivot)
         t.start()
         self._cleanup_threads[job.id] = t
