@@ -507,14 +507,14 @@ class DriveMerger:
                 try:
                     # Returns empty dict if job has gone.
                     # pylint: disable=no-member
-                    job.live_info = self._dom.blockJobInfo(drive.name, 0)
+                    job.live_info = self._dom.blockJobInfo(job.drive, 0)
                 except libvirt.libvirtError:
                     log.exception("Error getting block job info")
                     job.live_info = None
                     continue
 
                 if job.live_info:
-                    if self._active_commit_ready(job, drive):
+                    if self._active_commit_ready(job):
                         log.info("Job %s is ready for pivot", job.id)
                         job.state = Job.CLEANUP
                         log.info("Starting cleanup for job %s", job.id)
@@ -535,7 +535,7 @@ class DriveMerger:
 
                     # Recovery after vdsm restart.
                     log.info("Starting cleanup for job: %s", job.id)
-                    pivot = self._active_commit_ready(job, drive)
+                    pivot = self._active_commit_ready(job)
                     self._start_cleanup_thread(job, drive, pivot)
 
                 elif cleanup.state == CleanupThread.TRYING:
@@ -545,7 +545,7 @@ class DriveMerger:
                 elif cleanup.state == CleanupThread.RETRY:
 
                     log.info("Cleanup for job %s failed, retrying", job.id)
-                    pivot = self._active_commit_ready(job, drive)
+                    pivot = self._active_commit_ready(job)
                     self._start_cleanup_thread(job, drive, pivot)
 
                 elif cleanup.state == CleanupThread.ABORT:
@@ -587,7 +587,7 @@ class DriveMerger:
         t.start()
         self._cleanup_threads[job.id] = t
 
-    def _active_commit_ready(self, job, drive):
+    def _active_commit_ready(self, job):
         # Check the job state in the xml to make sure the job is
         # ready. We know about two interesting corner cases:
         #
@@ -601,14 +601,14 @@ class DriveMerger:
         if not job.is_ready():
             return False
 
-        log.debug("Checking xml for drive %r", drive.name)
+        log.debug("Checking xml for drive %r", job.drive)
         # pylint: disable=no-member
         root = ET.fromstring(self._dom.XMLDesc(0))
-        disk_xpath = "./devices/disk/target[@dev='%s'].." % drive.name
+        disk_xpath = "./devices/disk/target[@dev='%s'].." % job.drive
 
         disk = root.find(disk_xpath)
         if disk is None:
-            log.warning("Unable to find %r in vm xml", drive)
+            log.warning("Unable to find drive %r in vm xml", job.drive)
             return False
 
         return disk.find("./mirror[@ready='yes']") is not None
