@@ -102,7 +102,8 @@ class Job:
     # cleanup is finished, the job is untracked.
     CLEANUP = "CLEANUP"
 
-    def __init__(self, id, drive, disk, top, base, bandwidth, state=INIT):
+    def __init__(self, id, drive, disk, top, base, bandwidth, state=INIT,
+                 extend_started=None):
         # Read only attributes.
         self._id = id
         self._drive = drive
@@ -118,6 +119,9 @@ class Job:
         # Changes when libvirt block job has gone, or libvirt reports the block
         # job is ready for pivot.
         self._state = state
+
+        # Set when starting extend.
+        self.extend_started = extend_started
 
         # Live job info from libvirt. This info is kept between libvirt updates
         # but not persisted to vm metadata.
@@ -197,6 +201,7 @@ class Job:
             "top": self.top,
             "bandwidth": self.bandwidth,
             "state": self.state,
+            "extend_started": self.extend_started,
         }
 
     @classmethod
@@ -209,6 +214,7 @@ class Job:
             base=d["base"],
             bandwidth=d["bandwidth"],
             state=d["state"],
+            extend_started=d["extend_started"],
         )
 
     def info(self):
@@ -240,6 +246,8 @@ class Job:
 
 
 class DriveMerger:
+
+    EXTEND_TIMEOUT = 30.0
 
     def __init__(self, vm):
         self._vm = vm
@@ -407,6 +415,7 @@ class DriveMerger:
         Must be called under self._lock.
         """
         job.state = Job.EXTEND
+        job.extend_started = time.monotonic()
 
         capacity, alloc, physical = self._vm.getExtendInfo(drive)
         base_size = int(base_info['apparentsize'])
@@ -451,6 +460,7 @@ class DriveMerger:
                 return
 
             log.info("Extend completed for job %s, starting commit", job.id)
+            job.extend_started = None
             self._start_commit(drive, job)
 
     def _create_job(self, job_id, drive, base, top, bandwidth):
@@ -552,8 +562,15 @@ class DriveMerger:
         """
         Must run under self._lock.
         """
-        log.debug("Job %s waiting for extend completion", job.id)
-        # TODO: Retries and timeouts.
+        duration = time.monotonic() - job.extend_started
+
+        if duration > self.EXTEND_TIMEOUT:
+            # TODO: Start a new extend.
+            log.error("Extend timeout for job %s, untracking job", job.id)
+            self._untrack_job(job.id)
+        else:
+            log.debug("Extend for job %s running for %d seconds",
+                      job.id, duration)
 
     def _update_commit(self, job):
         """

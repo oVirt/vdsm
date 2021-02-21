@@ -51,6 +51,22 @@ TIMEOUT = 10
 log = logging.getLogger("test")
 
 
+class FakeTime(object):
+
+    def __init__(self, value=0):
+        self.time = value
+
+    def __call__(self):
+        return self.time
+
+
+@pytest.fixture
+def fake_time(monkeypatch):
+    fake_time = FakeTime()
+    monkeypatch.setattr(time, "monotonic", fake_time)
+    return fake_time
+
+
 class FakeDrive:
 
     def __init__(self):
@@ -270,7 +286,7 @@ class FakeDomain:
         return (1024, 0, 0)
 
 
-def test_merger_dump_jobs():
+def test_merger_dump_jobs(fake_time):
     config = Config('active-merge')
     vm = RunningVM(config)
     sd_id = config.config["drive"]["domainID"]
@@ -295,13 +311,14 @@ def test_merger_dump_jobs():
             "disk": merge_params["driveSpec"],
             "drive": "sda",
             "state": Job.EXTEND,
+            'extend_started': fake_time(),
             "id": job_id,
             "top": merge_params["topVolUUID"],
         }
     }
 
 
-def test_merger_load_jobs():
+def test_merger_load_jobs(fake_time):
     config = Config('active-merge')
     vm = RunningVM(config)
     sd_id = config.config["drive"]["domainID"]
@@ -323,6 +340,7 @@ def test_merger_load_jobs():
             "disk": merge_params["driveSpec"],
             "drive": "sda",
             "state": Job.EXTEND,
+            "extend_started": fake_time(),
             "id": job_id,
             "top": merge_params["topVolUUID"],
         }
@@ -351,7 +369,8 @@ def test_active_merge(monkeypatch):
     vm.merge(**merge_params)
 
     # Job starts with EXTEND state.
-    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.EXTEND
+    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    assert persisted_job["state"] == Job.EXTEND
 
     # Libvit block job was not started yet.
     assert "sda" not in vm._dom.block_jobs
@@ -371,7 +390,8 @@ def test_active_merge(monkeypatch):
     }
 
     # query_jobs() keeps job in EXTEND state.
-    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.EXTEND
+    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    assert persisted_job["state"] == Job.EXTEND
 
     # Merge invokes the volume extend API
     assert len(vm.cif.irs.extend_requests) == 1
@@ -383,7 +403,9 @@ def test_active_merge(monkeypatch):
     extend_callback(vol_info)
 
     # Extend callback switch job to COMMIT state.
-    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.COMMIT
+    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    assert persisted_job["state"] == Job.COMMIT
+    assert persisted_job["extend_started"] is None
 
     # And start a libvit block commit job.
     job = vm._dom.block_jobs["sda"]
@@ -402,7 +424,8 @@ def test_active_merge(monkeypatch):
     }
 
     # query_jobs() keeps job in COMMIT state.
-    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.COMMIT
+    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    assert persisted_job["state"] == Job.COMMIT
 
     # Check block job status while in progress.
     job["cur"] = job["end"] // 2
@@ -442,7 +465,8 @@ def test_active_merge(monkeypatch):
     vm.query_jobs()
 
     # query_jobs() switched job to CLEANUP state.
-    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.CLEANUP
+    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    assert persisted_job["state"] == Job.CLEANUP
 
     # Wait for cleanup to abort the block job as part of the pivot attempt.
     aborted = vm._dom.aborted.wait(TIMEOUT)
@@ -589,6 +613,7 @@ def test_internal_merge():
             "disk": merge_params["driveSpec"],
             "drive": "sda",
             "state": Job.CLEANUP,
+            "extend_started": None,
             "id": job_id,
             "top": merge_params["topVolUUID"],
         }
@@ -608,6 +633,33 @@ def test_internal_merge():
     drive = vm.getDiskDevices()[0]
     assert drive.volumeChain == expected_volumes_chain
     assert vm.drive_monitor.enabled
+
+
+def test_extend_timeout():
+    config = Config('active-merge')
+    vm = RunningVM(config)
+    sd_id = config.config["drive"]["domainID"]
+    vm.cif.irs.prepared_volumes = {
+        (sd_id, k): v for k, v in config.config["volumes"].items()
+    }
+    merge_params = config.config["merge_params"]
+    job_id = merge_params["jobUUID"]
+
+    vm.merge(**merge_params)
+
+    # Job starts with EXTEND state.
+    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+
+    # Simulate an extend timeout.
+    vm._drive_merger.EXTEND_TIMEOUT = 0.0
+
+    # The next query will abort the job.
+    assert vm.query_jobs() == {}
+
+    # Simulate slow extend completing after jobs was untracked.
+    _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
+    extend_callback(vol_info)
 
 
 def test_merge_cancel_commit():
@@ -631,7 +683,8 @@ def test_merge_cancel_commit():
     extend_callback(vol_info)
 
     # Job switched to COMMIT state.
-    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.COMMIT
+    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    assert persisted_job["state"] == Job.COMMIT
 
     assert vm.query_jobs() == {
         job_id : {
@@ -653,7 +706,8 @@ def test_merge_cancel_commit():
     vm.query_jobs()
 
     # Job switched to CLEANUP state.
-    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.CLEANUP
+    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    assert persisted_job["state"] == Job.CLEANUP
 
     # Cleanup is done running.
     wait_for_cleanup(vm)
@@ -689,7 +743,8 @@ def test_block_job_info_error(monkeypatch):
     extend_callback(vol_info)
 
     # Job switched to COMMIT state.
-    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.COMMIT
+    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    assert persisted_job["state"] == Job.COMMIT
 
     with monkeypatch.context() as mc:
 
