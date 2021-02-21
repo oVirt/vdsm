@@ -24,6 +24,8 @@ import time
 import uuid
 import xml.etree.ElementTree as ET
 
+from functools import partial
+
 from vdsm.common import concurrent
 from vdsm.common import exception
 from vdsm.common import logutils
@@ -81,14 +83,26 @@ class Job:
 
     # Job states:
 
+    # Job was created but is not tracked yet. The next state is either EXTEND
+    # or COMMIT. If initialization fails, the merge request fails.
+    INIT = "INIT"
+
+    # Extending base volume - waiting for extend completion callback. This
+    # state is skipped if the base volume does not need extension. Libvirt does
+    # not know about the job in this state. If extend fails the job is
+    # untracked, otherwise the job switches to COMMIT state.
+    EXTEND = "EXTEND"
+
     # Commit was started - waiting until libvirt stops reporting the job, or
-    # reports that the job is ready for pivot.
+    # reports that the job is ready for pivot. When commit succeeds or fails,
+    # the job switches to CLEANUP.
     COMMIT = "COMMIT"
 
-    # Cleanup was started - waiting until the cleanup thread completes.
+    # Cleanup was started - waiting until the cleanup thread completes. When
+    # cleanup is finished, the job is untracked.
     CLEANUP = "CLEANUP"
 
-    def __init__(self, id, drive, disk, top, base, bandwidth, state=COMMIT):
+    def __init__(self, id, drive, disk, top, base, bandwidth, state=INIT):
         # Read only attributes.
         self._id = id
         self._drive = drive
@@ -265,10 +279,16 @@ class DriveMerger:
         if self._base_needs_refresh(drive, base_info):
             self._refresh_base(drive, base_info)
 
-        self._start_commit(drive, job)
+        with self._lock:
+            try:
+                self._track_job(job, drive)
+            except JobExistsError as e:
+                raise exception.MergeFailed(str(e), job=job.id)
 
-        if self._base_needs_extend(drive, base_info):
-            self._start_extend(drive, job, base_info, top_info)
+            if self._base_needs_extend(drive, base_info):
+                self._start_extend(drive, job, base_info, top_info)
+            else:
+                self._start_commit(drive, job)
 
         # Trigger the collection of stats before returning so that callers
         # of getVmStats after this returns will see the new job
@@ -318,10 +338,15 @@ class DriveMerger:
     def _start_commit(self, drive, job):
         """
         Start libvirt blockCommit block job.
+
+        Must be called under self._lock.
         """
+        job.state = Job.COMMIT
+
         # Check that libvirt exposes full volume chain information
         chains = self._vm.drive_get_actual_volume_chain([drive])
         if drive['alias'] not in chains:
+            self._untrack_job(job.id)
             raise exception.MergeFailed(
                 "Libvirt does not support volume chain monitoring",
                 drive=drive, alias=drive["alias"], chains=chains, job=job.id)
@@ -331,6 +356,7 @@ class DriveMerger:
             base_target = drive.volume_target(job.base, actual_chain)
             top_target = drive.volume_target(job.top, actual_chain)
         except VolumeNotFound as e:
+            self._untrack_job(job.id)
             raise exception.MergeFailed(
                 str(e), top=job.top, base=job.base, chain=actual_chain,
                 job=job.id)
@@ -348,28 +374,20 @@ class DriveMerger:
             # pivot to the new active layer (base).
             flags |= libvirt.VIR_DOMAIN_BLOCK_COMMIT_ACTIVE
 
-        # Take the jobs lock here to protect the new job we are tracking from
-        # being cleaned up by query_jobs() since it won't exist right away
-        with self._lock:
-            try:
-                self._track_job(job, drive)
-            except JobExistsError as e:
-                raise exception.MergeFailed(str(e), job=job.id)
+        orig_chain = [entry.uuid for entry in actual_chain]
+        chain_str = logutils.volume_chain_to_str(orig_chain)
+        log.info("Starting merge with job_id=%r, original chain=%s, "
+                 "disk=%r, base=%r, top=%r, bandwidth=%d, flags=%d",
+                 job.id, chain_str, drive.name, base_target,
+                 top_target, job.bandwidth, flags)
 
-            orig_chain = [entry.uuid for entry in actual_chain]
-            chain_str = logutils.volume_chain_to_str(orig_chain)
-            log.info("Starting merge with job_id=%r, original chain=%s, "
-                     "disk=%r, base=%r, top=%r, bandwidth=%d, flags=%d",
-                     job.id, chain_str, drive.name, base_target,
-                     top_target, job.bandwidth, flags)
-
-            try:
-                # pylint: disable=no-member
-                self._dom.blockCommit(
-                    drive.name, base_target, top_target, job.bandwidth, flags)
-            except libvirt.libvirtError as e:
-                self._untrack_job(job.id)
-                raise exception.MergeFailed(str(e), job=job.id)
+        try:
+            # pylint: disable=no-member
+            self._dom.blockCommit(
+                drive.name, base_target, top_target, job.bandwidth, flags)
+        except libvirt.libvirtError as e:
+            self._untrack_job(job.id)
+            raise exception.MergeFailed(str(e), job=job.id)
 
     def _base_needs_extend(self, drive, base_info):
         # blockCommit will cause data to be written into the base volume.
@@ -385,7 +403,11 @@ class DriveMerger:
     def _start_extend(self, drive, job, base_info, top_info):
         """
         Start extend operation for the base volume.
+
+        Must be called under self._lock.
         """
+        job.state = Job.EXTEND
+
         capacity, alloc, physical = self._vm.getExtendInfo(drive)
         base_size = int(base_info['apparentsize'])
         top_size = int(top_info['apparentsize'])
@@ -393,8 +415,43 @@ class DriveMerger:
 
         log.info("Starting extend for job=%s drive=%s volume=%s",
                  job.id, drive.name, job.base)
+
+        callback = partial(self._extend_completed, job_id=job.id)
         self._vm.extendDriveVolume(
-            drive, job.base, max_alloc, capacity)
+            drive, job.base, max_alloc, capacity, callback=callback)
+
+    def _extend_completed(self, job_id, error=None):
+        """
+        Called when extend completed from mailbox worker thread.
+        """
+        with self._lock:
+            try:
+                job = self._jobs[job_id]
+            except KeyError:
+                log.debug("Extend completed after job %s was untracked",
+                          job_id)
+                return
+
+            if error:
+                log.error("Extend for job %s failed: %s", job.id, error)
+                self._untrack_job(job.id)
+                return
+
+            if job.state != Job.EXTEND:
+                log.debug("Extend completed after job %s switched to state %s",
+                          job.id, job.state)
+                return
+
+            try:
+                drive = self._vm.findDriveByUUIDs(job.disk)
+            except LookupError:
+                log.error("Cannot find drive for job %s, untracking job",
+                          job.id)
+                self._untrack_job(job.id)
+                return
+
+            log.info("Extend completed for job %s, starting commit", job.id)
+            self._start_commit(drive, job)
 
     def _create_job(self, job_id, drive, base, top, bandwidth):
         """
@@ -480,6 +537,8 @@ class DriveMerger:
             for job in list(self._jobs.values()):
                 log.debug("Checking job %s", job.id)
                 try:
+                    if job.state == Job.EXTEND:
+                        self._update_extend(job)
                     if job.state == Job.COMMIT:
                         self._update_commit(job)
                     elif job.state == Job.CLEANUP:
@@ -488,6 +547,13 @@ class DriveMerger:
                     log.exception("Error updating job %s", job.id)
 
             return {job.id: job.info() for job in self._jobs.values()}
+
+    def _update_extend(self, job):
+        """
+        Must run under self._lock.
+        """
+        log.debug("Job %s waiting for extend completion", job.id)
+        # TODO: Retries and timeouts.
 
     def _update_commit(self, job):
         """

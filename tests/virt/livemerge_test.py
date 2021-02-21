@@ -250,8 +250,8 @@ class FakeDomain:
         # has done mirroring the volume.
         self.xml = self._config.xmls["01-commit"]
 
-    def blockJobInfo(self, drive, flags):
-        return self.block_jobs.get(drive)
+    def blockJobInfo(self, drive, flags=0):
+        return self.block_jobs.get(drive, {})
 
     def blockJobAbort(self, drive, flags):
         if flags == libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT:
@@ -294,7 +294,7 @@ def test_merger_dump_jobs():
             "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
             "drive": "sda",
-            "state": Job.COMMIT,
+            "state": Job.EXTEND,
             "id": job_id,
             "top": merge_params["topVolUUID"],
         }
@@ -322,7 +322,7 @@ def test_merger_load_jobs():
             "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
             "drive": "sda",
-            "state": Job.COMMIT,
+            "state": Job.EXTEND,
             "id": job_id,
             "top": merge_params["topVolUUID"],
         }
@@ -341,12 +341,37 @@ def test_active_merge(monkeypatch):
     vm.cif.irs.prepared_volumes = {
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
+    merge_params = config.config["merge_params"]
+    image_id = merge_params["driveSpec"]["imageID"]
+    job_id = merge_params["jobUUID"]
 
     # No active block jobs before calling merge.
     assert vm.query_jobs() == {}
 
-    merge_params = config.config["merge_params"]
     vm.merge(**merge_params)
+
+    # Job starts with EXTEND state.
+    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.EXTEND
+
+    # Libvit block job was not started yet.
+    assert "sda" not in vm._dom.block_jobs
+
+    # Because the libvirt job was not started, report default live info.
+    assert vm.query_jobs() == {
+        job_id : {
+            "bandwidth" : 0,
+            "blockJobType": "commit",
+            "cur": "0",
+            "drive": "sda",
+            "end": "0",
+            "id": job_id,
+            "imgUUID": image_id,
+            "jobType": "block"
+        }
+    }
+
+    # query_jobs() keeps job in EXTEND state.
+    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.EXTEND
 
     # Merge invokes the volume extend API
     assert len(vm.cif.irs.extend_requests) == 1
@@ -357,10 +382,12 @@ def test_active_merge(monkeypatch):
     base_volume['apparentsize'] = new_size
     extend_callback(vol_info)
 
-    # Active jobs after calling merge.
-    job_id = merge_params["jobUUID"]
-    image_id = merge_params["driveSpec"]["imageID"]
-    job = vm._dom.blockJobInfo("sda", 0)
+    # Extend callback switch job to COMMIT state.
+    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.COMMIT
+
+    # And start a libvit block commit job.
+    job = vm._dom.block_jobs["sda"]
+
     assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
@@ -373,6 +400,9 @@ def test_active_merge(monkeypatch):
             "jobType": "block"
         }
     }
+
+    # query_jobs() keeps job in COMMIT state.
+    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.COMMIT
 
     # Check block job status while in progress.
     job["cur"] = job["end"] // 2
@@ -410,6 +440,9 @@ def test_active_merge(monkeypatch):
 
     # Trigger cleanup and pivot attempt.
     vm.query_jobs()
+
+    # query_jobs() switched job to CLEANUP state.
+    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.CLEANUP
 
     # Wait for cleanup to abort the block job as part of the pivot attempt.
     aborted = vm._dom.aborted.wait(TIMEOUT)
@@ -577,27 +610,37 @@ def test_internal_merge():
     assert vm.drive_monitor.enabled
 
 
-def test_merge_cancel():
+def test_merge_cancel_commit():
     config = Config('active-merge')
     vm = RunningVM(config)
     sd_id = config.config["drive"]["domainID"]
     vm.cif.irs.prepared_volumes = {
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
+    merge_params = config.config["merge_params"]
+    job_id = merge_params["jobUUID"]
 
     assert vm.query_jobs() == {}
 
-    merge_params = config.config["merge_params"]
     vm.merge(**merge_params)
 
+    # Simulate base volume extension completion.
+    _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, vol_info['volumeID'])]
+    base_volume['apparentsize'] = new_size
+    extend_callback(vol_info)
+
+    # Job switched to COMMIT state.
+    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.COMMIT
+
     assert vm.query_jobs() == {
-        merge_params["jobUUID"] : {
+        job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
             "cur": "0",
             "drive": "sda",
             "end": "1073741824",
-            "id": merge_params["jobUUID"],
+            "id": job_id,
             "imgUUID": merge_params["driveSpec"]["imageID"],
             "jobType": "block"
         }
@@ -606,6 +649,11 @@ def test_merge_cancel():
     # Cancel the block job. This simulates a scenario where a user
     # aborts running block job from virsh.
     vm._dom.blockJobAbort("sda", 0)
+
+    vm.query_jobs()
+
+    # Job switched to CLEANUP state.
+    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.CLEANUP
 
     # Cleanup is done running.
     wait_for_cleanup(vm)
@@ -633,6 +681,15 @@ def test_block_job_info_error(monkeypatch):
     job_id = merge_params["jobUUID"]
 
     vm.merge(**merge_params)
+
+    # Simulate base volume extension completion.
+    _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, vol_info['volumeID'])]
+    base_volume['apparentsize'] = new_size
+    extend_callback(vol_info)
+
+    # Job switched to COMMIT state.
+    assert vm._drive_merger.dump_jobs()[job_id]["state"] == Job.COMMIT
 
     with monkeypatch.context() as mc:
 
@@ -672,11 +729,12 @@ def test_block_job_info_error(monkeypatch):
     }
 
 
-def test_merge_unrecoverable_error(monkeypatch):
-    def unrecoverable_error(*args):
+def test_merge_commit_error(monkeypatch):
+    def commit_error(*args):
         raise fake.libvirt_error(
             [libvirt.VIR_ERR_INTERNAL_ERROR], "Block commit failed")
-    monkeypatch.setattr(FakeDomain, "blockCommit", unrecoverable_error)
+
+    monkeypatch.setattr(FakeDomain, "blockCommit", commit_error)
 
     config = Config("internal-merge")
     vm = RunningVM(config)
@@ -684,10 +742,20 @@ def test_merge_unrecoverable_error(monkeypatch):
     vm.cif.irs.prepared_volumes = {
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
+    merge_params = config.config["merge_params"]
 
+    vm.merge(**merge_params)
+
+    # Simulate base volume extension completion.
+    _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, vol_info['volumeID'])]
+    base_volume['apparentsize'] = new_size
+
+    # Extend completion trigger failed commit.
     with pytest.raises(exception.MergeFailed):
-        vm.merge(**config.config["merge_params"])
+        extend_callback(vol_info)
 
+    # Job was untracked.
     assert vm.query_jobs() == {}
 
 
@@ -709,6 +777,7 @@ def test_merge_job_already_exists(monkeypatch):
     with pytest.raises(exception.MergeFailed):
         vm.merge(**merge_params)
 
+    # Existing job is kept.
     assert len(vm.query_jobs()) == 1
 
 
