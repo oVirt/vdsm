@@ -479,11 +479,13 @@ class DriveMerger:
         with self._lock:
             for job in list(self._jobs.values()):
                 log.debug("Checking job %s", job.id)
-
-                if job.state == Job.COMMIT:
-                    self._update_commit(job)
-                elif job.state == Job.CLEANUP:
-                    self._update_cleanup(job)
+                try:
+                    if job.state == Job.COMMIT:
+                        self._update_commit(job)
+                    elif job.state == Job.CLEANUP:
+                        self._update_cleanup(job)
+                except Exception:
+                    log.exception("Error updating job %s", job.id)
 
             return {job.id: job.info() for job in self._jobs.values()}
 
