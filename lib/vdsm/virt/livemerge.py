@@ -476,71 +476,67 @@ class DriveMerger:
         Query tracked jobs and update their status. Returns dict of tracked
         jobs for reporting job status to engine.
         """
-        # We need to take the jobs lock here to ensure that we don't race with
-        # another call to merge() where the job has been recorded but not yet
-        # started.
         with self._lock:
-            self._update_jobs()
+            for job in list(self._jobs.values()):
+                log.debug("Checking job %s", job.id)
+
+                if job.state == Job.COMMIT:
+                    self._update_commit(job)
+                elif job.state == Job.CLEANUP:
+                    self._update_cleanup(job)
+
             return {job.id: job.info() for job in self._jobs.values()}
 
-    def _update_jobs(self):
+    def _update_commit(self, job):
         """
-        Must be called under self._lock.
+        Must run under self._lock.
         """
-        for job in list(self._jobs.values()):
-            log.debug("Checking job %s", job.id)
+        try:
+            # Returns empty dict if job has gone.
+            # pylint: disable=no-member
+            job.live_info = self._dom.blockJobInfo(job.drive, 0)
+        except libvirt.libvirtError:
+            log.exception("Error getting block job info")
+            job.live_info = None
+            return
 
-            if job.state == Job.COMMIT:
+        if job.live_info:
+            if self._active_commit_ready(job):
+                log.info("Job %s is ready for pivot", job.id)
+                self._start_cleanup(job, True)
+            else:
+                log.debug("Job %s is ongoing", job.id)
+        else:
+            # Libvirt has stopped reporting this job so we know it will
+            # never report it again.
+            log.info("Job %s has completed", job.id)
+            self._start_cleanup(job, False)
 
-                try:
-                    # Returns empty dict if job has gone.
-                    # pylint: disable=no-member
-                    job.live_info = self._dom.blockJobInfo(job.drive, 0)
-                except libvirt.libvirtError:
-                    log.exception("Error getting block job info")
-                    job.live_info = None
-                    continue
+    def _update_cleanup(self, job):
+        """
+        Must run under self._lock.
+        """
+        cleanup = self._cleanup_threads.get(job.id)
 
-                if job.live_info:
-                    if self._active_commit_ready(job):
-                        log.info("Job %s is ready for pivot", job.id)
-                        self._start_cleanup(job, True)
-                    else:
-                        log.debug("Job %s is ongoing", job.id)
-                else:
-                    # Libvirt has stopped reporting this job so we know it will
-                    # never report it again.
-                    log.info("Job %s has completed", job.id)
-                    self._start_cleanup(job, False)
+        if not cleanup:
+            # Recovery after vdsm restart.
+            pivot = self._active_commit_ready(job)
+            self._start_cleanup(job, pivot)
 
-            elif job.state == Job.CLEANUP:
+        elif cleanup.state == CleanupThread.TRYING:
+            log.debug("Job %s is ongoing", job.id)
 
-                cleanup = self._cleanup_threads.get(job.id)
+        elif cleanup.state == CleanupThread.RETRY:
+            pivot = self._active_commit_ready(job)
+            self._start_cleanup(job, pivot)
 
-                if not cleanup:
+        elif cleanup.state == CleanupThread.DONE:
+            log.info("Cleanup completed, untracking job %s", job.id)
+            self._untrack_job(job.id)
 
-                    # Recovery after vdsm restart.
-                    pivot = self._active_commit_ready(job)
-                    self._start_cleanup(job, pivot)
-
-                elif cleanup.state == CleanupThread.TRYING:
-
-                    log.debug("Job %s is ongoing", job.id)
-
-                elif cleanup.state == CleanupThread.RETRY:
-
-                    pivot = self._active_commit_ready(job)
-                    self._start_cleanup(job, pivot)
-
-                elif cleanup.state == CleanupThread.DONE:
-
-                    log.info("Cleanup completed, untracking job %s", job.id)
-                    self._untrack_job(job.id)
-
-                elif cleanup.state == CleanupThread.ABORT:
-
-                    log.error("Cleanup aborted, untracking job %s", job.id)
-                    self._untrack_job(job.id)
+        elif cleanup.state == CleanupThread.ABORT:
+            log.error("Cleanup aborted, untracking job %s", job.id)
+            self._untrack_job(job.id)
 
     def _start_cleanup(self, job, pivot):
         """
