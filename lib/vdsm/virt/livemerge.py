@@ -489,15 +489,6 @@ class DriveMerger:
         for job in list(self._jobs.values()):
             log.debug("Checking job %s", job.id)
 
-            # Handle successful jobs early because the drive lookup may fail
-            # after a pivot.
-            # TODO: looks like a bug.
-            cleanup = self._cleanup_threads.get(job.id)
-            if cleanup and cleanup.state == CleanupThread.DONE:
-                log.info("Cleanup completed, untracking job %s", job.id)
-                self._untrack_job(job.id)
-                continue
-
             if job.state == Job.COMMIT:
 
                 try:
@@ -527,6 +518,8 @@ class DriveMerger:
 
             elif job.state == Job.CLEANUP:
 
+                cleanup = self._cleanup_threads.get(job.id)
+
                 if not cleanup:
 
                     # Recovery after vdsm restart.
@@ -543,6 +536,11 @@ class DriveMerger:
                     log.info("Cleanup for job %s failed, retrying", job.id)
                     pivot = self._active_commit_ready(job)
                     self._start_cleanup_thread(job, pivot)
+
+                elif cleanup.state == CleanupThread.DONE:
+
+                    log.info("Cleanup completed, untracking job %s", job.id)
+                    self._untrack_job(job.id)
 
                 elif cleanup.state == CleanupThread.ABORT:
 
