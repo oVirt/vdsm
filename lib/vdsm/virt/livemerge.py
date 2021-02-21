@@ -498,10 +498,6 @@ class DriveMerger:
                 self._untrack_job(job.id)
                 continue
 
-            drive = self._lookup_drive(job)
-            if drive is None:
-                continue
-
             if job.state == Job.COMMIT:
 
                 try:
@@ -518,7 +514,7 @@ class DriveMerger:
                         log.info("Job %s is ready for pivot", job.id)
                         job.state = Job.CLEANUP
                         log.info("Starting cleanup for job %s", job.id)
-                        self._start_cleanup_thread(job, drive, True)
+                        self._start_cleanup_thread(job, True)
                     else:
                         log.debug("Job %s is ongoing", job.id)
                 else:
@@ -527,7 +523,7 @@ class DriveMerger:
                     log.info("Job %s has completed", job.id)
                     job.state = Job.CLEANUP
                     log.info("Starting cleanup for job %s", job.id)
-                    self._start_cleanup_thread(job, drive, False)
+                    self._start_cleanup_thread(job, False)
 
             elif job.state == Job.CLEANUP:
 
@@ -536,7 +532,7 @@ class DriveMerger:
                     # Recovery after vdsm restart.
                     log.info("Starting cleanup for job: %s", job.id)
                     pivot = self._active_commit_ready(job)
-                    self._start_cleanup_thread(job, drive, pivot)
+                    self._start_cleanup_thread(job, pivot)
 
                 elif cleanup.state == CleanupThread.TRYING:
 
@@ -546,43 +542,25 @@ class DriveMerger:
 
                     log.info("Cleanup for job %s failed, retrying", job.id)
                     pivot = self._active_commit_ready(job)
-                    self._start_cleanup_thread(job, drive, pivot)
+                    self._start_cleanup_thread(job, pivot)
 
                 elif cleanup.state == CleanupThread.ABORT:
 
                     log.error("Cleanup aborted, untracking job %s", job.id)
                     self._untrack_job(job.id)
 
-    def _lookup_drive(self, job):
+    def _start_cleanup_thread(self, job, needPivot):
         """
-        Return the drive object for this job. May return None if the drive was
-        not found.
+        Must run under self._lock.
         """
         try:
-            return self._vm.findDriveByUUIDs(job.disk)
+            drive = self._vm.findDriveByUUIDs(job.disk)
         except LookupError:
-            # Drive loopkup may fail only in case of active layer
-            # merge, and pivot completed.
-            if job.disk["volumeID"] != job.top:
-                log.error("Cannot find drive for job %s (disk=%s)",
-                          job.id, job.disk)
-                return None
+            # Should never happen, and we don't have any good way to handle
+            # this.  TODO: Think how to handle this case better.
+            log.error("Cannot find drive %s for job %s", job.drive, job.id)
+            return
 
-            # Active layer merge, check if pivot completed.
-            pivoted_drive = dict(job.disk)
-            pivoted_drive["volumeID"] = job.base
-            try:
-                return self._vm.findDriveByUUIDs(pivoted_drive)
-            except LookupError:
-                log.error("Pivot completed but cannot find drive "
-                          "for job %s (disk=%s)",
-                          job.id, pivoted_drive)
-                return None
-
-    def _start_cleanup_thread(self, job, drive, needPivot):
-        """
-        Must be caller when holding self._lock.
-        """
         t = CleanupThread(self._vm, job, drive, needPivot)
         t.start()
         self._cleanup_threads[job.id] = t
