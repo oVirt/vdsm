@@ -1337,11 +1337,19 @@ class Vm(object):
         self.extendDriveVolume(drive, drive.volumeID, physical, capacity)
         return True
 
-    def extendDriveVolume(self, vmDrive, volumeID, curSize, capacity):
+    def extendDriveVolume(self, vmDrive, volumeID, curSize, capacity,
+                          callback=None):
         """
         Extend drive volume and its replica volume during replication.
 
         Must be called only when the drive or its replica are chunked.
+
+        If callback is specified, it will be invoked when the extend operation
+        completes. If extension fails, the callback is called with an exception
+        object. The callback signature is:
+
+            def callback(error=None):
+
         """
         newSize = vmDrive.getNextVolumeSize(curSize, capacity)
 
@@ -1355,9 +1363,11 @@ class Vm(object):
         clock.start("total")
 
         if vmDrive.replicaChunked:
-            self.__extendDriveReplica(vmDrive, newSize, clock)
+            self.__extendDriveReplica(
+                vmDrive, newSize, clock, callback=callback)
         else:
-            self.__extendDriveVolume(vmDrive, volumeID, newSize, clock)
+            self.__extendDriveVolume(
+                vmDrive, volumeID, newSize, clock, callback=callback)
 
     def refresh_drive_volume(self, volInfo):
         self.log.debug("Refreshing drive volume for %s (domainID: %s, "
@@ -1401,10 +1411,12 @@ class Vm(object):
         self.log.debug("Requesting extension for the original drive: %s "
                        "(domainID: %s, volumeID: %s)",
                        vmDrive.name, vmDrive.domainID, vmDrive.volumeID)
-        self.__extendDriveVolume(vmDrive, vmDrive.volumeID,
-                                 volInfo['newSize'], clock)
+        self.__extendDriveVolume(
+            vmDrive, vmDrive.volumeID, volInfo['newSize'], clock,
+            callback=volInfo["callback"])
 
-    def __extendDriveVolume(self, vmDrive, volumeID, newSize, clock):
+    def __extendDriveVolume(self, vmDrive, volumeID, newSize, clock,
+                            callback=None):
         clock.start("extend-volume")
         volInfo = {
             'domainID': vmDrive.domainID,
@@ -1415,6 +1427,7 @@ class Vm(object):
             'poolID': vmDrive.poolID,
             'volumeID': volumeID,
             'clock': clock,
+            'callback': callback,
         }
         self.log.debug("Requesting an extension for the volume: %s", volInfo)
         self.cif.irs.sendExtendMsg(
@@ -1423,7 +1436,7 @@ class Vm(object):
             newSize,
             self.after_volume_extension)
 
-    def __extendDriveReplica(self, drive, newSize, clock):
+    def __extendDriveReplica(self, drive, newSize, clock, callback=None):
         clock.start("extend-replica")
         volInfo = {
             'domainID': drive.diskReplicate['domainID'],
@@ -1433,6 +1446,7 @@ class Vm(object):
             'poolID': drive.diskReplicate['poolID'],
             'volumeID': drive.diskReplicate['volumeID'],
             'clock': clock,
+            'callback': callback,
         }
         self.log.debug("Requesting an extension for the volume "
                        "replication: %s", volInfo)
@@ -1442,28 +1456,38 @@ class Vm(object):
                                    self.__afterReplicaExtension)
 
     def after_volume_extension(self, volInfo):
-        clock = volInfo["clock"]
-        clock.stop("extend-volume")
+        try:
+            callback = volInfo["callback"]
+            clock = volInfo["clock"]
+            clock.stop("extend-volume")
 
-        with clock.run("refresh-volume"):
-            self.refresh_drive_volume(volInfo)
+            with clock.run("refresh-volume"):
+                self.refresh_drive_volume(volInfo)
 
-        # Check if the extension succeeded.  On failure an exception is raised
-        # TODO: Report failure to the engine.
-        volSize = self.__verifyVolumeExtension(volInfo)
+            # Check if the extension succeeded.  On failure an exception is
+            # raised.
+            # TODO: Report failure to the engine.
+            volSize = self.__verifyVolumeExtension(volInfo)
 
-        # This was a volume extension or replica and volume extension.
-        clock.stop("total")
-        self.log.info("Extend volume %s completed %s",
-                      volInfo["volumeID"], clock)
+            # This was a volume extension or replica and volume extension.
+            clock.stop("total")
+            self.log.info("Extend volume %s completed %s",
+                          volInfo["volumeID"], clock)
 
-        # Only update apparentsize and truesize if we've resized the leaf
-        if not volInfo['internal']:
-            drive = lookup.drive_by_name(
-                self.getDiskDevices()[:], volInfo['name'])
-            self._update_drive_volume_size(drive, volSize)
+            # Only update apparentsize and truesize if we've resized the leaf
+            if not volInfo['internal']:
+                drive = lookup.drive_by_name(
+                    self.getDiskDevices()[:], volInfo['name'])
+                self._update_drive_volume_size(drive, volSize)
 
-        self._resume_if_needed()
+            self._resume_if_needed()
+
+            if callback:
+                callback()
+        except Exception as e:
+            if callback:
+                callback(error=e)
+            raise
 
     def _update_drive_volume_size(self, drive, volsize):
         """
