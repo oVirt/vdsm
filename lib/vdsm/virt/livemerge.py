@@ -349,7 +349,11 @@ class DriveMerger:
 
         Must be called under self._lock.
         """
+        # Persist the job before starting the commit, to ensure that vdsm will
+        # know about the commit if it was killed after the block job was
+        # started.
         job.state = Job.COMMIT
+        self._persist_jobs()
 
         # Check that libvirt exposes full volume chain information
         chains = self._vm.drive_get_actual_volume_chain([drive])
@@ -414,8 +418,11 @@ class DriveMerger:
 
         Must be called under self._lock.
         """
+        # Persist the job before starting the extend, to ensure that vdsm will
+        # know about the extend if it was killed after extend started.
         job.state = Job.EXTEND
         job.extend_started = time.monotonic()
+        self._persist_jobs()
 
         capacity, alloc, physical = self._vm.getExtendInfo(drive)
         base_size = int(base_info['apparentsize'])
@@ -499,12 +506,10 @@ class DriveMerger:
             existing_job = self._get_job(drive)
         except LookupError:
             self._jobs[job.id] = job
+            # Do not persist the job yet. It will be persisted when starting
+            # the EXTEND or COMMIT phase.
         else:
             raise JobExistsError(job.id, existing_job.disk["imageID"])
-
-        self._vm.sync_jobs_metadata()
-        self._vm.sync_metadata()
-        self._vm.update_domain_descriptor()
 
     def _untrack_job(self, job_id):
         """
@@ -513,7 +518,16 @@ class DriveMerger:
         self._jobs.pop(job_id, None)
         self._cleanup_threads.pop(job_id, None)
 
+        # Successful job modified the volume chain, so we need to sync also
+        # disk metadata.
         self._vm.sync_disk_metadata()
+
+        self._persist_jobs()
+
+    def _persist_jobs(self):
+        """
+        Persist jobs in vm metadata.
+        """
         self._vm.sync_jobs_metadata()
         self._vm.sync_metadata()
         self._vm.update_domain_descriptor()
@@ -627,7 +641,12 @@ class DriveMerger:
         """
         Must run under self._lock.
         """
-        job.state = Job.CLEANUP
+        if job.state != Job.CLEANUP:
+            # Persist the job before starting the cleanup, to ensure that vdsm
+            # will know about the cleanup if it was killed after cleanup
+            # started.
+            job.state = Job.CLEANUP
+            self._persist_jobs()
 
         try:
             drive = self._vm.findDriveByUUIDs(job.disk)

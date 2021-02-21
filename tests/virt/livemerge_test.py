@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import json
 import libvirt
 import logging
 import os
@@ -368,8 +369,8 @@ def test_active_merge(monkeypatch):
 
     vm.merge(**merge_params)
 
-    # Job starts with EXTEND state.
-    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    # Merge persists the job with EXTEND state.
+    persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.EXTEND
 
     # Libvit block job was not started yet.
@@ -390,7 +391,7 @@ def test_active_merge(monkeypatch):
     }
 
     # query_jobs() keeps job in EXTEND state.
-    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.EXTEND
 
     # Merge invokes the volume extend API
@@ -402,8 +403,8 @@ def test_active_merge(monkeypatch):
     base_volume['apparentsize'] = new_size
     extend_callback(vol_info)
 
-    # Extend callback switch job to COMMIT state.
-    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    # Extend callback started a commit and persisted the job.
+    persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.COMMIT
     assert persisted_job["extend_started"] is None
 
@@ -424,7 +425,7 @@ def test_active_merge(monkeypatch):
     }
 
     # query_jobs() keeps job in COMMIT state.
-    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.COMMIT
 
     # Check block job status while in progress.
@@ -465,7 +466,7 @@ def test_active_merge(monkeypatch):
     vm.query_jobs()
 
     # query_jobs() switched job to CLEANUP state.
-    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.CLEANUP
 
     # Wait for cleanup to abort the block job as part of the pivot attempt.
@@ -492,6 +493,10 @@ def test_active_merge(monkeypatch):
 
     # Check for cleanup completion.
     wait_for_cleanup(vm)
+
+    # When cleanup finished, job was untracked and jobs were persisted.
+    persisted_jobs = parse_jobs(vm)
+    assert persisted_jobs == {}
 
     # The fake domain mocks the setMetadata method and store the input as is,
     # domain xml is not manipulated by the test as xml due to namespacing
@@ -648,7 +653,7 @@ def test_extend_timeout():
     vm.merge(**merge_params)
 
     # Job starts with EXTEND state.
-    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.EXTEND
 
     # Simulate an extend timeout.
@@ -683,7 +688,7 @@ def test_merge_cancel_commit():
     extend_callback(vol_info)
 
     # Job switched to COMMIT state.
-    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.COMMIT
 
     assert vm.query_jobs() == {
@@ -706,7 +711,7 @@ def test_merge_cancel_commit():
     vm.query_jobs()
 
     # Job switched to CLEANUP state.
-    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.CLEANUP
 
     # Cleanup is done running.
@@ -743,7 +748,7 @@ def test_block_job_info_error(monkeypatch):
     extend_callback(vol_info)
 
     # Job switched to COMMIT state.
-    persisted_job = vm._drive_merger.dump_jobs()[job_id]
+    persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.COMMIT
 
     with monkeypatch.context() as mc:
@@ -880,6 +885,15 @@ def xml_chain(xml):
     md = metadata.Descriptor.from_xml(xml)
     with md.device(devtype="disk", name="sda") as dev:
         return dev["volumeChain"]
+
+
+def parse_jobs(vm):
+    """
+    Parse jobs persisted in vm metadata.
+    """
+    root = xmlutils.fromstring(vm._dom.metadata)
+    jobs = root.find("./jobs").text
+    return json.loads(jobs)
 
 
 def metadata_chain(xml):
