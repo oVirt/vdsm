@@ -201,21 +201,22 @@ class RunningVM(Vm):
     def __init__(self, config):
         self.log = logging.getLogger()
         self.cif = fake.ClientIF()
-        self._domain = DomainDescriptor(config.xmls["00-before"])
+        self._domain = DomainDescriptor(config.xmls["00-before.xml"])
         self.id = self._domain.id
-        self._md_desc = metadata.Descriptor.from_xml(config.xmls["00-before"])
+        self._md_desc = metadata.Descriptor.from_xml(
+            config.xmls["00-before.xml"])
         self._devices = {
             "disk": [
                 storage.Drive(
                     **config.config["drive"],
-                    volumeChain=xml_chain(config.xmls["00-before"]),
+                    volumeChain=xml_chain(config.xmls["00-before.xml"]),
                     log=self.log)
             ]
         }
         self.conf = self._conf_devices(config)
         self.conf.update({
             "vmId": config.config["vm-id"],
-            "xml": config.xmls["00-before"]
+            "xml": config.xmls["00-before.xml"]
         })
         self._external = False  # Used when syncing metadata.
         self._dom = FakeDomain(config)
@@ -225,7 +226,7 @@ class RunningVM(Vm):
 
     def _conf_devices(self, config):
         drive = dict(config.config["drive"])
-        drive["volumeChain"] = xml_chain(config.xmls["00-before"])
+        drive["volumeChain"] = xml_chain(config.xmls["00-before.xml"])
         return {"devices": [drive]}
 
     def cont(self):
@@ -237,7 +238,7 @@ class FakeDomain:
     def __init__(self, config):
         self.log = logging.getLogger()
         self._id = config.config["vm-id"]
-        self.xml = config.xmls["00-before"]
+        self.xml = config.xmls["00-before.xml"]
         self.block_jobs = {}
         self._config = config
         self._metadata = ""
@@ -264,7 +265,7 @@ class FakeDomain:
         }
         # The test should simulate commit-ready once the active commit
         # has done mirroring the volume.
-        self.xml = self._config.xmls["01-commit"]
+        self.xml = self._config.xmls["01-commit.xml"]
 
     def blockJobInfo(self, drive, flags=0):
         return self.block_jobs.get(drive, {})
@@ -274,10 +275,10 @@ class FakeDomain:
             # The test should simulate abort-ready such that the cleanup
             # thread would stop waiting for libvirt's domain xml updated
             # volumes chain after pivot is done.
-            self.xml = self._config.xmls["03-abort"]
+            self.xml = self._config.xmls["03-abort.xml"]
         else:
             # Aborting without pivot attempt will revert to original dom xml.
-            self.xml = self._config.xmls["00-before"]
+            self.xml = self._config.xmls["00-before.xml"]
 
         self.aborted.set()
         del self.block_jobs[drive]
@@ -459,7 +460,7 @@ def test_active_merge(monkeypatch):
     }
 
     # Simulate completion of backup job - libvirt updates the xml.
-    vm._dom.xml = config.xmls["02-commit-ready"]
+    vm._dom.xml = config.xmls["02-commit-ready.xml"]
 
     # Trigger cleanup and pivot attempt.
     vm.query_jobs()
@@ -488,7 +489,7 @@ def test_active_merge(monkeypatch):
     }
 
     # Set the abort-ready state after cleanup has called active commit abort.
-    vm._dom.xml = config.xmls["04-abort-ready"]
+    vm._dom.xml = config.xmls["04-abort-ready.xml"]
 
     # Check for cleanup completion.
     wait_for_cleanup(vm)
@@ -501,7 +502,7 @@ def test_active_merge(monkeypatch):
     # domain xml is not manipulated by the test as xml due to namespacing
     # issues, so we only compare the resulting volume chain both between
     # updated metadata and the expected xml.
-    expected_volumes_chain = xml_chain(config.xmls["05-after"])
+    expected_volumes_chain = xml_chain(config.xmls["05-after.xml"])
     assert metadata_chain(vm._dom.metadata) == expected_volumes_chain
 
     # Top volume gets torn down.
@@ -589,7 +590,7 @@ def test_internal_merge():
     # 1. libvirt removes the job.
     # 2. libvirt changes the xml.
     del vm._dom.block_jobs["sda"]
-    vm._dom.xml = config.xmls["02-after"]
+    vm._dom.xml = config.xmls["02-after.xml"]
 
     # Querying the job when the job has gone should switch the job state to
     # CLEANUP and start a cleanup thread.
@@ -627,7 +628,7 @@ def test_internal_merge():
     wait_for_cleanup(vm)
 
     # Volumes chain is updated in domain metadata without top volume.
-    expected_volumes_chain = xml_chain(config.xmls["02-after"])
+    expected_volumes_chain = xml_chain(config.xmls["02-after.xml"])
     assert metadata_chain(vm._dom.metadata) == expected_volumes_chain
 
     # Top snapshot is merged into removed snapshot and its volume is torn down.
@@ -717,8 +718,8 @@ def test_merge_cancel_commit():
     wait_for_cleanup(vm)
 
     # Volume chains state should be as it was before merge.
-    assert vm._dom.xml == config.xmls["00-before"]
-    expected_volumes_chain = xml_chain(config.xmls["00-before"])
+    assert vm._dom.xml == config.xmls["00-before.xml"]
+    expected_volumes_chain = xml_chain(config.xmls["00-before.xml"])
     assert metadata_chain(vm._dom.metadata) == expected_volumes_chain
 
     # Drive chain is unchanged and monitoring is enabled.

@@ -645,7 +645,7 @@ def read_files(pattern):
     files = {}
     for filepath in glob.glob(path):
         with open(filepath) as src:
-            name = os.path.splitext(os.path.basename(filepath))[0]
+            name = os.path.basename(filepath)
             files[name] = src.read()
     return files
 
