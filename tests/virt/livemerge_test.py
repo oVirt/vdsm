@@ -361,7 +361,7 @@ def test_active_merge(monkeypatch):
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
     merge_params = config.config["merge_params"]
-    image_id = merge_params["driveSpec"]["imageID"]
+    img_id = merge_params["driveSpec"]["imageID"]
     job_id = merge_params["jobUUID"]
 
     # No active block jobs before calling merge.
@@ -385,7 +385,7 @@ def test_active_merge(monkeypatch):
             "drive": "sda",
             "end": "0",
             "id": job_id,
-            "imgUUID": image_id,
+            "imgUUID": img_id,
             "jobType": "block"
         }
     }
@@ -419,7 +419,7 @@ def test_active_merge(monkeypatch):
             "drive": "sda",
             "end": str(job["end"]),
             "id": job_id,
-            "imgUUID": image_id,
+            "imgUUID": img_id,
             "jobType": "block"
         }
     }
@@ -438,7 +438,7 @@ def test_active_merge(monkeypatch):
             "drive": "sda",
             "end": str(job["end"]),
             "id": job_id,
-            "imgUUID": image_id,
+            "imgUUID": img_id,
             "jobType": "block"
         }
     }
@@ -454,7 +454,7 @@ def test_active_merge(monkeypatch):
             "drive": "sda",
             "end": str(job["end"]),
             "id": job_id,
-            "imgUUID": image_id,
+            "imgUUID": img_id,
             "jobType": "block"
         }
     }
@@ -483,7 +483,7 @@ def test_active_merge(monkeypatch):
             "drive": "sda",
             "end": str(job["end"]),
             "id": job_id,
-            "imgUUID": image_id,
+            "imgUUID": img_id,
             "jobType": "block"
         }
     }
@@ -539,7 +539,7 @@ def test_internal_merge():
 
     # Active jobs after calling merge.
     job_id = merge_params["jobUUID"]
-    image_id = merge_params["driveSpec"]["imageID"]
+    img_id = merge_params["driveSpec"]["imageID"]
     assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
@@ -548,7 +548,7 @@ def test_internal_merge():
             "drive": "sda",
             "end": "1073741824",
             "id": job_id,
-            "imgUUID": image_id,
+            "imgUUID": img_id,
             "jobType": "block"
         }
     }
@@ -565,7 +565,7 @@ def test_internal_merge():
             "drive": "sda",
             "end": "1073741824",
             "id": job_id,
-            "imgUUID": image_id,
+            "imgUUID": img_id,
             "jobType": "block"
         }
     }
@@ -581,7 +581,7 @@ def test_internal_merge():
             "drive": "sda",
             "end": "1073741824",
             "id": job_id,
-            "imgUUID": image_id,
+            "imgUUID": img_id,
             "jobType": "block"
         }
     }
@@ -605,7 +605,7 @@ def test_internal_merge():
             "drive": "sda",
             "end": "0",
             "id": job_id,
-            "imgUUID": image_id,
+            "imgUUID": img_id,
             "jobType": "block"
         }
     }
