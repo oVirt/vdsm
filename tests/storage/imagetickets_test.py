@@ -86,32 +86,30 @@ def invalid_socket(monkeypatch):
 @pytest.fixture
 def fake_connection(monkeypatch):
     monkeypatch.setattr(imagetickets, "DAEMON_SOCK", __file__)
-    monkeypatch.setattr(
-        imagetickets, "UnixHTTPConnection", FakeUnixHTTPConnection())
+    con = FakeUnixHTTPConnection()
+    monkeypatch.setattr(imagetickets, "UnixHTTPConnection", con)
+    return con
 
 
 def test_remove_ticket_error(fake_connection):
-    imagetickets.UnixHTTPConnection.response = FakeResponse(
-        status=409, data=b'Conflict error')
+    fake_connection.response = FakeResponse(status=409, data=b'Conflict')
     with pytest.raises(se.ImageDaemonError) as e:
         imagetickets.remove_ticket("uuid")
-    assert "Conflict error" in str(e.value)
+    assert "Conflict" in str(e.value)
 
 
 def test_extend_ticket_error(fake_connection):
-    imagetickets.UnixHTTPConnection.response = FakeResponse(
-        status=404, data=b'Not found error')
+    fake_connection.response = FakeResponse(status=404, data=b'Not found')
     with pytest.raises(se.ImageDaemonError) as e:
         imagetickets.extend_ticket("uuid", 1)
-    assert "Not found error" in str(e.value)
+    assert "Not found" in str(e.value)
 
 
 def test_get_ticket_error(fake_connection):
-    imagetickets.UnixHTTPConnection.response = FakeResponse(
-        status=404, data=b'Not found error')
+    fake_connection.response = FakeResponse(status=404, data=b'Not found')
     with pytest.raises(se.ImageDaemonError) as e:
         imagetickets.get_ticket("uuid")
-    assert "Not found error" in str(e.value)
+    assert "Not found" in str(e.value)
 
 
 @pytest.mark.parametrize("content_type", [
@@ -122,7 +120,7 @@ def test_get_ticket_error(fake_connection):
 def test_parse_text_plain_charset(fake_connection, content_type):
     fake_response = FakeResponse(status=404, data=b'Not found error')
     fake_response.headers["content-type"] = content_type
-    imagetickets.UnixHTTPConnection.response = fake_response
+    fake_connection.response = fake_response
 
     with pytest.raises(se.ImageDaemonError) as e:
         imagetickets.get_ticket("uuid")
@@ -147,8 +145,8 @@ def test_add_ticket(fake_connection):
         ("request", ("PUT", "/tickets/uuid"), {"body": body}),
     ]
     imagetickets.add_ticket(ticket)
-    assert imagetickets.UnixHTTPConnection.__calls__ == expected
-    assert imagetickets.UnixHTTPConnection.closed
+    assert fake_connection.__calls__ == expected
+    assert fake_connection.closed
 
 
 def test_get_ticket(fake_connection):
@@ -157,14 +155,14 @@ def test_get_ticket(fake_connection):
     data = json.dumps(ticket).encode("utf8")
     fake_response = FakeResponse(data=data)
     fake_response.headers["content-type"] = "application/json"
-    imagetickets.UnixHTTPConnection.response = fake_response
+    fake_connection.response = fake_response
     expected = [
         ("request", ("GET", "/tickets/uuid"), {"body": None}),
     ]
     result = imagetickets.get_ticket(ticket_id="uuid")
     assert result == ticket
-    assert imagetickets.UnixHTTPConnection.__calls__ == expected
-    assert imagetickets.UnixHTTPConnection.closed
+    assert fake_connection.__calls__ == expected
+    assert fake_connection.closed
 
 
 def test_extend_ticket(fake_connection):
@@ -176,40 +174,38 @@ def test_extend_ticket(fake_connection):
          {"body": body.encode("utf8")}),
     ]
 
-    assert imagetickets.UnixHTTPConnection.__calls__ == expected
-    assert imagetickets.UnixHTTPConnection.closed
+    assert fake_connection.__calls__ == expected
+    assert fake_connection.closed
 
 
 def test_remove_ticket(fake_connection):
-    imagetickets.UnixHTTPConnection.response = FakeResponse(
-        status=204, reason="No Content")
+    fake_connection.response = FakeResponse(status=204, reason="No Content")
     imagetickets.remove_ticket("uuid")
     expected = [
         ("request", ("DELETE", "/tickets/uuid"), {"body": None}),
     ]
 
-    assert imagetickets.UnixHTTPConnection.__calls__ == expected
-    assert imagetickets.UnixHTTPConnection.closed
+    assert fake_connection.__calls__ == expected
+    assert fake_connection.closed
 
 
 def test_res_header_error(fake_connection):
     fake_response = FakeResponse(status=300)
     fake_response.headers["content-length"] = "invalid"
-    imagetickets.UnixHTTPConnection.response = fake_response
+    fake_connection.response = fake_response
 
     with pytest.raises(se.ImageDaemonError):
         imagetickets.remove_ticket("uuid")
 
 
 def test_res_read_error(fake_connection):
-    imagetickets.UnixHTTPConnection.response = FakeResponse(
-        status=300)
+    fake_connection.response = FakeResponse(status=300)
     err_msg = "Environment error message"
 
     def read(amt=None):
         raise EnvironmentError(err_msg)
 
-    imagetickets.UnixHTTPConnection.response.read = read
+    fake_connection.response.read = read
 
     with pytest.raises(se.ImageDaemonError) as e:
         imagetickets.remove_ticket("uuid")
@@ -225,7 +221,7 @@ def test_image_tickets_error(fake_connection, exc_type):
     def request(method, path, body=None):
         raise exc_type
 
-    imagetickets.UnixHTTPConnection.request = request
+    fake_connection.request = request
     with pytest.raises(se.ImageTicketsError):
         imagetickets.add_ticket(ticket)
 
@@ -233,13 +229,13 @@ def test_image_tickets_error(fake_connection, exc_type):
 def test_request_with_response(fake_connection):
     ticket = create_ticket(uuid="uuid")
     data = json.dumps(ticket).encode("utf8")
-    imagetickets.UnixHTTPConnection.response = FakeResponse(data=data)
+    fake_connection.response = FakeResponse(data=data)
     response = imagetickets.get_ticket("uuid")
     assert response == ticket
 
 
 def test_request_with_zero_content_length(fake_connection):
-    imagetickets.UnixHTTPConnection.response = FakeResponse()
+    fake_connection.response = FakeResponse()
     with pytest.raises(se.ImageDaemonError):
         imagetickets.get_ticket("uuid")
 
