@@ -289,8 +289,11 @@ class FakeDomain:
 
 def test_merger_dump_jobs(fake_time):
     config = Config('active-merge')
-    vm = RunningVM(config)
     sd_id = config.config["drive"]["domainID"]
+    merge_params = config.config["merge_params"]
+    job_id = merge_params["jobUUID"]
+
+    vm = RunningVM(config)
     vm.cif.irs.prepared_volumes = {
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
@@ -299,8 +302,6 @@ def test_merger_dump_jobs(fake_time):
 
     assert vm._drive_merger.dump_jobs() == {}
 
-    merge_params = config.config["merge_params"]
-    job_id = merge_params["jobUUID"]
     vm.merge(**merge_params)
 
     # Merge was started, new jobs should be in the dump.
@@ -321,8 +322,11 @@ def test_merger_dump_jobs(fake_time):
 
 def test_merger_load_jobs(fake_time):
     config = Config('active-merge')
-    vm = RunningVM(config)
     sd_id = config.config["drive"]["domainID"]
+    merge_params = config.config["merge_params"]
+    job_id = merge_params["jobUUID"]
+
+    vm = RunningVM(config)
     vm.cif.irs.prepared_volumes = {
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
@@ -330,9 +334,6 @@ def test_merger_load_jobs(fake_time):
     assert vm._drive_merger.dump_jobs() == {}
 
     # Load jobs, simulating recovery flow.
-
-    merge_params = config.config["merge_params"]
-    job_id = merge_params["jobUUID"]
 
     dumped_jobs = {
         job_id : {
@@ -355,14 +356,17 @@ def test_active_merge(monkeypatch):
     monkeypatch.setattr(CleanupThread, "WAIT_INTERVAL", 0.01)
 
     config = Config('active-merge')
-    vm = RunningVM(config)
     sd_id = config.config["drive"]["domainID"]
+    img_id = config.config["drive"]["imageID"]
+    merge_params = config.config["merge_params"]
+    job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
+    base_id = merge_params["baseVolUUID"]
+
+    vm = RunningVM(config)
     vm.cif.irs.prepared_volumes = {
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
-    merge_params = config.config["merge_params"]
-    img_id = merge_params["driveSpec"]["imageID"]
-    job_id = merge_params["jobUUID"]
 
     # No active block jobs before calling merge.
     assert vm.query_jobs() == {}
@@ -399,7 +403,7 @@ def test_active_merge(monkeypatch):
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
 
     # Simulate base volume extension and invoke the verifying callback.
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, vol_info['volumeID'])]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, base_id)]
     base_volume['apparentsize'] = new_size
     extend_callback(vol_info)
 
@@ -506,7 +510,6 @@ def test_active_merge(monkeypatch):
     assert metadata_chain(vm._dom.metadata) == expected_volumes_chain
 
     # Top volume gets torn down.
-    top_id = merge_params["topVolUUID"]
     assert (sd_id, top_id) not in vm.cif.irs.prepared_volumes
 
     # Drive volume chain is updated and monitoring is back to enabled.
@@ -517,15 +520,20 @@ def test_active_merge(monkeypatch):
 
 def test_internal_merge():
     config = Config('internal-merge')
-    vm = RunningVM(config)
     sd_id = config.config["drive"]["domainID"]
+    img_id = config.config["drive"]["imageID"]
+    merge_params = config.config["merge_params"]
+    job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
+    base_id = merge_params["baseVolUUID"]
+
+    vm = RunningVM(config)
     vm.cif.irs.prepared_volumes = {
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
 
     assert vm.query_jobs() == {}
 
-    merge_params = config.config["merge_params"]
     vm.merge(**merge_params)
 
     # Merge invokes the volume extend API
@@ -533,13 +541,11 @@ def test_internal_merge():
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
 
     # Simulate base volume extension and invoke the verifying callback.
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, vol_info['volumeID'])]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, base_id)]
     base_volume['apparentsize'] = new_size
     extend_callback(vol_info)
 
     # Active jobs after calling merge.
-    job_id = merge_params["jobUUID"]
-    img_id = merge_params["driveSpec"]["imageID"]
     assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
@@ -632,7 +638,6 @@ def test_internal_merge():
     assert metadata_chain(vm._dom.metadata) == expected_volumes_chain
 
     # Top snapshot is merged into removed snapshot and its volume is torn down.
-    top_id = merge_params["topVolUUID"]
     assert (sd_id, top_id) not in vm.cif.irs.prepared_volumes
 
     drive = vm.getDiskDevices()[0]
@@ -642,13 +647,14 @@ def test_internal_merge():
 
 def test_extend_timeout():
     config = Config('active-merge')
-    vm = RunningVM(config)
     sd_id = config.config["drive"]["domainID"]
+    merge_params = config.config["merge_params"]
+    job_id = merge_params["jobUUID"]
+
+    vm = RunningVM(config)
     vm.cif.irs.prepared_volumes = {
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
-    merge_params = config.config["merge_params"]
-    job_id = merge_params["jobUUID"]
 
     vm.merge(**merge_params)
 
@@ -669,13 +675,15 @@ def test_extend_timeout():
 
 def test_merge_cancel_commit():
     config = Config('active-merge')
-    vm = RunningVM(config)
     sd_id = config.config["drive"]["domainID"]
+    merge_params = config.config["merge_params"]
+    job_id = merge_params["jobUUID"]
+    base_id = merge_params["baseVolUUID"]
+
+    vm = RunningVM(config)
     vm.cif.irs.prepared_volumes = {
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
-    merge_params = config.config["merge_params"]
-    job_id = merge_params["jobUUID"]
 
     assert vm.query_jobs() == {}
 
@@ -683,7 +691,7 @@ def test_merge_cancel_commit():
 
     # Simulate base volume extension completion.
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, vol_info['volumeID'])]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, base_id)]
     base_volume['apparentsize'] = new_size
     extend_callback(vol_info)
 
@@ -731,19 +739,21 @@ def test_merge_cancel_commit():
 
 def test_block_job_info_error(monkeypatch):
     config = Config("internal-merge")
-    vm = RunningVM(config)
     sd_id = config.config["drive"]["domainID"]
+    merge_params = config.config["merge_params"]
+    job_id = merge_params["jobUUID"]
+    base_id = merge_params["baseVolUUID"]
+
+    vm = RunningVM(config)
     vm.cif.irs.prepared_volumes = {
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
-    merge_params = config.config["merge_params"]
-    job_id = merge_params["jobUUID"]
 
     vm.merge(**merge_params)
 
     # Simulate base volume extension completion.
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, vol_info['volumeID'])]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, base_id)]
     base_volume['apparentsize'] = new_size
     extend_callback(vol_info)
 
@@ -790,25 +800,27 @@ def test_block_job_info_error(monkeypatch):
 
 
 def test_merge_commit_error(monkeypatch):
+    config = Config("internal-merge")
+    sd_id = config.config["drive"]["domainID"]
+    merge_params = config.config["merge_params"]
+    base_id = merge_params["baseVolUUID"]
+
+    vm = RunningVM(config)
+    vm.cif.irs.prepared_volumes = {
+        (sd_id, k): v for k, v in config.config["volumes"].items()
+    }
+
     def commit_error(*args, **kwargs):
         raise fake.libvirt_error(
             [libvirt.VIR_ERR_INTERNAL_ERROR], "Block commit failed")
 
     monkeypatch.setattr(FakeDomain, "blockCommit", commit_error)
 
-    config = Config("internal-merge")
-    vm = RunningVM(config)
-    sd_id = config.config["drive"]["domainID"]
-    vm.cif.irs.prepared_volumes = {
-        (sd_id, k): v for k, v in config.config["volumes"].items()
-    }
-    merge_params = config.config["merge_params"]
-
     vm.merge(**merge_params)
 
     # Simulate base volume extension completion.
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, vol_info['volumeID'])]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, base_id)]
     base_volume['apparentsize'] = new_size
 
     # Extend completion trigger failed commit.
@@ -821,16 +833,16 @@ def test_merge_commit_error(monkeypatch):
 
 def test_merge_job_already_exists(monkeypatch):
     config = Config("internal-merge")
+    sd_id = config.config["drive"]["domainID"]
+    merge_params = config.config["merge_params"]
+
     vm = RunningVM(config)
-    drive = config.config["drive"]
-    sd_id = drive["domainID"]
     vm.cif.irs.prepared_volumes = {
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
 
     # Calling merge twice will fail the second call with same block
     # job already tracked from first call.
-    merge_params = config.config["merge_params"]
     vm.merge(**merge_params)
     assert len(vm.query_jobs()) == 1
 
@@ -843,8 +855,10 @@ def test_merge_job_already_exists(monkeypatch):
 
 def test_merge_base_too_small(monkeypatch):
     config = Config("internal-merge")
-    vm = RunningVM(config)
+    sd_id = config.config["drive"]["domainID"]
     merge_params = config.config["merge_params"]
+
+    vm = RunningVM(config)
 
     # Ensure that base volume is raw and smaller than top,
     # engine is responsible for extending the raw base volume
@@ -853,7 +867,6 @@ def test_merge_base_too_small(monkeypatch):
     top_vol = config.config["volumes"][merge_params["topVolUUID"]]
     base_vol["capacity"] = top_vol["capacity"] // 2
     base_vol["format"] = "RAW"
-    sd_id = config.config["drive"]["domainID"]
     vm.cif.irs.prepared_volumes = {
         (sd_id, k): v for k, v in config.config["volumes"].items()
     }
