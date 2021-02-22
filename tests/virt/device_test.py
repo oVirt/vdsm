@@ -419,7 +419,8 @@ class BrokenSuperVdsm(fake.SuperVdsm):
 class TestHotplug(TestCaseBase):
 
     SD_ID = "1111"
-    VOLUME_ID = "3333"
+    IMG_ID = "2222"
+    VOL_ID = "3333"
 
     NIC_HOTPLUG = '''<?xml version='1.0' encoding='UTF-8'?>
 <hotplug>
@@ -465,9 +466,9 @@ class TestHotplug(TestCaseBase):
     <ovirt-vm:vm>
       <ovirt-vm:device devtype="disk" name="sda">
         <ovirt-vm:domainID>%(sd_id)s</ovirt-vm:domainID>
-        <ovirt-vm:imageID>1234</ovirt-vm:imageID>
+        <ovirt-vm:imageID>%(img_id)s</ovirt-vm:imageID>
         <ovirt-vm:poolID>2222</ovirt-vm:poolID>
-        <ovirt-vm:volumeID>%(volume_id)s</ovirt-vm:volumeID>
+        <ovirt-vm:volumeID>%(vol_id)s</ovirt-vm:volumeID>
         <ovirt-vm:volumeChain>
             <ovirt-vm:volumeChainNode>
               <ovirt-vm:domainID>%(sd_id)s</ovirt-vm:domainID>
@@ -475,7 +476,7 @@ class TestHotplug(TestCaseBase):
               <ovirt-vm:leaseOffset type="int">0</ovirt-vm:leaseOffset>
               <ovirt-vm:leasePath>/path/to.lease</ovirt-vm:leasePath>
               <ovirt-vm:path>/path/to/disk</ovirt-vm:path>
-              <ovirt-vm:volumeID>%(volume_id)s</ovirt-vm:volumeID>
+              <ovirt-vm:volumeID>%(vol_id)s</ovirt-vm:volumeID>
             </ovirt-vm:volumeChainNode>
         </ovirt-vm:volumeChain>
       </ovirt-vm:device>
@@ -483,7 +484,8 @@ class TestHotplug(TestCaseBase):
   </metadata>
 </hotplug>
 ''' % {'sd_id': SD_ID,
-       'volume_id': VOLUME_ID}
+       'vol_id': VOL_ID,
+       'img_id': IMG_ID}
 
     def setUp(self):
         devices = '''
@@ -499,7 +501,7 @@ class TestHotplug(TestCaseBase):
         with fake.VM(xmldevices=devices, create_device_objects=True) as vm:
             vm._dom = fake.Domain(vm=vm)
             vm.cif.irs.prepared_volumes = {
-                (self.SD_ID, self.VOLUME_ID) : {
+                (self.SD_ID, self.IMG_ID, self.VOL_ID) : {
                     'truesize': 1024,
                     'apparentsize': 1024,
                 }

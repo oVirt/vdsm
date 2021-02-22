@@ -217,7 +217,7 @@ class RunningVM(Vm):
         }
 
         self.cif.irs.prepared_volumes = {
-            (drive["domainID"], vol_id): vol_info
+            (drive["domainID"], drive["imageID"], vol_id): vol_info
             for vol_id, vol_info in config.config["volumes"].items()
         }
 
@@ -400,7 +400,7 @@ def test_active_merge(monkeypatch):
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
 
     # Simulate base volume extension and invoke the verifying callback.
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, base_id)]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
     base_volume['apparentsize'] = new_size
     extend_callback(vol_info)
 
@@ -507,7 +507,7 @@ def test_active_merge(monkeypatch):
     assert metadata_chain(vm._dom.metadata) == expected_volumes_chain
 
     # Top volume gets torn down.
-    assert (sd_id, top_id) not in vm.cif.irs.prepared_volumes
+    assert (sd_id, img_id, top_id) not in vm.cif.irs.prepared_volumes
 
     # Drive volume chain is updated and monitoring is back to enabled.
     drive = vm.getDiskDevices()[0]
@@ -535,7 +535,7 @@ def test_internal_merge():
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
 
     # Simulate base volume extension and invoke the verifying callback.
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, base_id)]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
     base_volume['apparentsize'] = new_size
     extend_callback(vol_info)
 
@@ -632,7 +632,7 @@ def test_internal_merge():
     assert metadata_chain(vm._dom.metadata) == expected_volumes_chain
 
     # Top snapshot is merged into removed snapshot and its volume is torn down.
-    assert (sd_id, top_id) not in vm.cif.irs.prepared_volumes
+    assert (sd_id, img_id, top_id) not in vm.cif.irs.prepared_volumes
 
     drive = vm.getDiskDevices()[0]
     assert drive.volumeChain == expected_volumes_chain
@@ -666,6 +666,7 @@ def test_extend_timeout():
 def test_merge_cancel_commit():
     config = Config('active-merge')
     sd_id = config.config["drive"]["domainID"]
+    img_id = config.config["drive"]["imageID"]
     merge_params = config.config["merge_params"]
     job_id = merge_params["jobUUID"]
     base_id = merge_params["baseVolUUID"]
@@ -678,7 +679,7 @@ def test_merge_cancel_commit():
 
     # Simulate base volume extension completion.
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, base_id)]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
     base_volume['apparentsize'] = new_size
     extend_callback(vol_info)
 
@@ -727,6 +728,7 @@ def test_merge_cancel_commit():
 def test_block_job_info_error(monkeypatch):
     config = Config("internal-merge")
     sd_id = config.config["drive"]["domainID"]
+    img_id = config.config["drive"]["imageID"]
     merge_params = config.config["merge_params"]
     job_id = merge_params["jobUUID"]
     base_id = merge_params["baseVolUUID"]
@@ -737,7 +739,7 @@ def test_block_job_info_error(monkeypatch):
 
     # Simulate base volume extension completion.
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, base_id)]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
     base_volume['apparentsize'] = new_size
     extend_callback(vol_info)
 
@@ -786,6 +788,7 @@ def test_block_job_info_error(monkeypatch):
 def test_merge_commit_error(monkeypatch):
     config = Config("internal-merge")
     sd_id = config.config["drive"]["domainID"]
+    img_id = config.config["drive"]["imageID"]
     merge_params = config.config["merge_params"]
     base_id = merge_params["baseVolUUID"]
 
@@ -801,7 +804,7 @@ def test_merge_commit_error(monkeypatch):
 
     # Simulate base volume extension completion.
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, base_id)]
+    base_volume = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
     base_volume['apparentsize'] = new_size
 
     # Extend completion trigger failed commit.

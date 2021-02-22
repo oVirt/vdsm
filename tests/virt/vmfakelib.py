@@ -65,11 +65,12 @@ class IRS(object):
         pass
 
     def getVolumeSize(self, domainID, poolID, imageID, volumeID):
-        if (domainID, volumeID) not in self.prepared_volumes:
+        key = (domainID, imageID, volumeID)
+        if key not in self.prepared_volumes:
             error = exception.VolumeDoesNotExist
             return response.error_raw(error.code, error.msg)
 
-        vol_info = self.prepared_volumes[(domainID, volumeID)]
+        vol_info = self.prepared_volumes[key]
         return response.success(
             apparentsize=vol_info['apparentsize'],
             truesize=vol_info['truesize'])
@@ -84,8 +85,9 @@ class IRS(object):
 
     def prepareImage(
             self, sdUUID, spUUID, imgUUID, leafUUID, allowIllegal=False):
+        key = (sdUUID, imgUUID, leafUUID)
         path = "/run/storage/{}/{}/{}".format(sdUUID, imgUUID, leafUUID)
-        self.prepared_volumes[(sdUUID, imgUUID, leafUUID)] = path
+        self.prepared_volumes[key] = {"path": path}
         return response.success(
             path=path,
             info={
@@ -107,26 +109,29 @@ class IRS(object):
         return response.success()
 
     def getVolumeInfo(self, sdUUID, spUUID, imgUUID, volUUID):
-        if (sdUUID, volUUID) not in self.prepared_volumes:
+        key = (sdUUID, imgUUID, volUUID)
+        if key not in self.prepared_volumes:
             error = exception.VolumeDoesNotExist
             return response.error_raw(error.code, error.msg)
 
-        return response.success(info=self.prepared_volumes[(sdUUID, volUUID)])
+        return response.success(info=self.prepared_volumes[key])
 
     def setVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, capacity):
-        if (sdUUID, volUUID) not in self.prepared_volumes:
+        key = (sdUUID, imgUUID, volUUID)
+        if key not in self.prepared_volumes:
             error = exception.VolumeDoesNotExist
             return response.error_raw(error.code, error.msg)
 
-        self.prepared_volumes[(sdUUID, volUUID)]['capacity'] = capacity
+        self.prepared_volumes[key]['capacity'] = capacity
         return response.success()
 
     def teardownVolume(self, sdUUID, imgUUID, volUUID):
-        if (sdUUID, volUUID) not in self.prepared_volumes:
+        key = (sdUUID, imgUUID, volUUID)
+        if key not in self.prepared_volumes:
             error = exception.VolumeDoesNotExist
             return response.error_raw(error.code, error.msg)
 
-        del self.prepared_volumes[(sdUUID, volUUID)]
+        del self.prepared_volumes[key]
         return response.success()
 
     def sendExtendMsg(self, spUUID, volDict, newSize, callbackFunc):
@@ -137,7 +142,7 @@ class IRS(object):
         # The test should check for this method call in the extend_requests,
         # and decide whether to extend the volume before invoking the callback
         # function.
-        key = (volDict['domainID'], volDict['volumeID'])
+        key = (volDict['domainID'], volDict["imageID"], volDict['volumeID'])
         if key not in self.prepared_volumes:
             error = exception.VolumeDoesNotExist
             return response.error_raw(error.code, error.msg)
