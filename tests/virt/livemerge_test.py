@@ -32,7 +32,7 @@ from vdsm.common import exception
 from vdsm.common import xmlutils
 
 from vdsm.virt import metadata
-from vdsm.virt.domain_descriptor import DomainDescriptor, XmlSource
+from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.livemerge import (
     JobNotReadyError,
     JobUnrecoverableError,
@@ -201,8 +201,7 @@ class RunningVM(Vm):
     def __init__(self, config):
         self.log = logging.getLogger()
         self.cif = fake.ClientIF()
-        self._domain = DomainDescriptor(
-            config.xmls["00-before"], xml_source=XmlSource.INITIAL)
+        self._domain = DomainDescriptor(config.xmls["00-before"])
         self.id = self._domain.id
         self._md_desc = metadata.Descriptor.from_xml(config.xmls["00-before"])
         self._devices = {
