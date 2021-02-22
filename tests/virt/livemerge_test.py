@@ -205,14 +205,22 @@ class RunningVM(Vm):
         self.id = self._domain.id
         self._md_desc = metadata.Descriptor.from_xml(
             config.xmls["00-before.xml"])
+
+        drive = config.config["drive"]
         self._devices = {
             "disk": [
                 storage.Drive(
-                    **config.config["drive"],
+                    **drive,
                     volumeChain=xml_chain(config.xmls["00-before.xml"]),
                     log=self.log)
             ]
         }
+
+        self.cif.irs.prepared_volumes = {
+            (drive["domainID"], vol_id): vol_info
+            for vol_id, vol_info in config.config["volumes"].items()
+        }
+
         self.conf = self._conf_devices(config)
         self.conf.update({
             "vmId": config.config["vm-id"],
@@ -289,14 +297,10 @@ class FakeDomain:
 
 def test_merger_dump_jobs(fake_time):
     config = Config('active-merge')
-    sd_id = config.config["drive"]["domainID"]
     merge_params = config.config["merge_params"]
     job_id = merge_params["jobUUID"]
 
     vm = RunningVM(config)
-    vm.cif.irs.prepared_volumes = {
-        (sd_id, k): v for k, v in config.config["volumes"].items()
-    }
 
     # No jobs yet.
 
@@ -322,14 +326,10 @@ def test_merger_dump_jobs(fake_time):
 
 def test_merger_load_jobs(fake_time):
     config = Config('active-merge')
-    sd_id = config.config["drive"]["domainID"]
     merge_params = config.config["merge_params"]
     job_id = merge_params["jobUUID"]
 
     vm = RunningVM(config)
-    vm.cif.irs.prepared_volumes = {
-        (sd_id, k): v for k, v in config.config["volumes"].items()
-    }
 
     assert vm._drive_merger.dump_jobs() == {}
 
@@ -364,9 +364,6 @@ def test_active_merge(monkeypatch):
     base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
-    vm.cif.irs.prepared_volumes = {
-        (sd_id, k): v for k, v in config.config["volumes"].items()
-    }
 
     # No active block jobs before calling merge.
     assert vm.query_jobs() == {}
@@ -528,9 +525,6 @@ def test_internal_merge():
     base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
-    vm.cif.irs.prepared_volumes = {
-        (sd_id, k): v for k, v in config.config["volumes"].items()
-    }
 
     assert vm.query_jobs() == {}
 
@@ -647,14 +641,10 @@ def test_internal_merge():
 
 def test_extend_timeout():
     config = Config('active-merge')
-    sd_id = config.config["drive"]["domainID"]
     merge_params = config.config["merge_params"]
     job_id = merge_params["jobUUID"]
 
     vm = RunningVM(config)
-    vm.cif.irs.prepared_volumes = {
-        (sd_id, k): v for k, v in config.config["volumes"].items()
-    }
 
     vm.merge(**merge_params)
 
@@ -681,9 +671,6 @@ def test_merge_cancel_commit():
     base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
-    vm.cif.irs.prepared_volumes = {
-        (sd_id, k): v for k, v in config.config["volumes"].items()
-    }
 
     assert vm.query_jobs() == {}
 
@@ -745,9 +732,6 @@ def test_block_job_info_error(monkeypatch):
     base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
-    vm.cif.irs.prepared_volumes = {
-        (sd_id, k): v for k, v in config.config["volumes"].items()
-    }
 
     vm.merge(**merge_params)
 
@@ -806,9 +790,6 @@ def test_merge_commit_error(monkeypatch):
     base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
-    vm.cif.irs.prepared_volumes = {
-        (sd_id, k): v for k, v in config.config["volumes"].items()
-    }
 
     def commit_error(*args, **kwargs):
         raise fake.libvirt_error(
@@ -833,13 +814,9 @@ def test_merge_commit_error(monkeypatch):
 
 def test_merge_job_already_exists(monkeypatch):
     config = Config("internal-merge")
-    sd_id = config.config["drive"]["domainID"]
     merge_params = config.config["merge_params"]
 
     vm = RunningVM(config)
-    vm.cif.irs.prepared_volumes = {
-        (sd_id, k): v for k, v in config.config["volumes"].items()
-    }
 
     # Calling merge twice will fail the second call with same block
     # job already tracked from first call.
@@ -855,7 +832,6 @@ def test_merge_job_already_exists(monkeypatch):
 
 def test_merge_base_too_small(monkeypatch):
     config = Config("internal-merge")
-    sd_id = config.config["drive"]["domainID"]
     merge_params = config.config["merge_params"]
 
     vm = RunningVM(config)
@@ -867,9 +843,6 @@ def test_merge_base_too_small(monkeypatch):
     top_vol = config.config["volumes"][merge_params["topVolUUID"]]
     base_vol["capacity"] = top_vol["capacity"] // 2
     base_vol["format"] = "RAW"
-    vm.cif.irs.prepared_volumes = {
-        (sd_id, k): v for k, v in config.config["volumes"].items()
-    }
 
     with pytest.raises(exception.DestinationVolumeTooSmall):
         vm.merge(**merge_params)
