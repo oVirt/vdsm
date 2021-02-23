@@ -2028,7 +2028,7 @@ class StoragePool(object):
 
     # Lease operations
 
-    def create_lease(self, lease):
+    def create_lease(self, lease, metadata=None):
         """
         SPM task function for creating external lease.
 
@@ -2036,7 +2036,8 @@ class StoragePool(object):
         """
         dom = sdCache.produce(lease.sd_id)
         try:
-            dom.create_lease(lease.lease_id)
+            dom.create_lease(
+                lease.lease_id, metadata=metadata, host_id=self.id)
         except xlease.LeaseExists:
             # We cannot fail the task as engine is not checking tasks errors.
             self.log.info("Reusing existing lease: %s:%s",

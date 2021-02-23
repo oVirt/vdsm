@@ -8616,6 +8616,77 @@ types:
             type:
             - *ErrorInfo
 
+    JobStatus: &JobStatus
+        added: '4.4.6'
+        description: The status of the job stored on a lease's metadata
+        name: JobStatus
+        type: enum
+        values:
+            PENDING: Job was created on engine, but was not started yet.
+            FAILED: Job has failed to run and the host reported the failure.
+            SUCCEEDED: Job completed successfully.
+            FENCED: Job was fenced by another host.
+
+    LeaseMetadataType: &LeaseMetadataType
+        added: '4.4.6'
+        description: The type of metadata stored on the lease
+        name: LeaseMetadataType
+        type: enum
+        values:
+          JOB: The metadata will be used to store job related information.
+
+    JobMetadata: &JobMetadata
+        added: '4.4.6'
+        description: Job attributes to be set on a Lease's metadata (LVB)
+        name: JobMetadata
+        properties:
+        -   description: The type of metadata (always JOB).
+            name: type
+            type: *LeaseMetadataType
+
+        -   description: The status of the job.
+            name: job_status
+            type: *JobStatus
+
+        -   description: The generation of the job. Will be used to
+                         determine whether the job succeeded or needs to
+                         be fenced. The generation will be increased by the
+                         host running the job when it successfully completes
+                         the job. It will be increased by another host when it
+                         is determine that the host originally running the job
+                         is no longer running it (no longer holds the lease).
+            name: generation
+            type: uint
+
+        -   description: The ID of the submitted job.
+            name: job_id
+            type: *UUID
+
+        -   defaultvalue: null
+            description: Time of metadata creation.
+            name: created
+            type: uint
+
+        -   defaultvalue: null
+            description: Time of metadata modification.
+            name: modified
+            type: uint
+
+        -   defaultvalue: null
+            description: Hardware ID of the host that changed the metadata
+            name: host_hardware_id
+            type: *UUID
+        type: object
+
+    LeaseMetadata: &LeaseMetadata
+        added: '4.4.6'
+        description: Type of lease metadata, this will be used to provide
+            context about what values are stored on lease's metadata.
+        name: LeaseMetadata
+        type: union
+        values:
+        - *JobMetadata
+
     VolumeMeasureResult: &VolumeMeasureResult
         added: '4.4'
         description: 'Volume size measured by qemu-img measure'
@@ -9915,6 +9986,12 @@ Lease.create:
         type: *Lease
         description: The lease to create
 
+    -   defaultvalue: null
+        name: metadata
+        type: *LeaseMetadata
+        description: If specified, the lease metadata will be written to
+            lease's LVB.
+        added: '4.4.6'
     return:
         description: A task UUID
         type: *UUID

@@ -44,6 +44,25 @@ class Lease(properties.Owner):
         self.lease_id = params.get("lease_id")
 
 
+class JobMetadata(properties.Owner):
+    """
+    JobMetadata - stored on external leases
+    """
+    type = properties.Enum(required=True, values=("JOB"))
+    generation = properties.Integer(
+        required=True, minval=0, maxval=sc.MAX_GENERATION)
+    job_id = properties.UUID(required=True)
+    job_status = properties.Enum(
+        required=True,
+        values=("PENDING", "FAILED", "SUCCEEDED", "FENCED"))
+
+    def __init__(self, params):
+        self.type = params.get("type")
+        self.generation = params.get("generation")
+        self.job_id = params.get("job_id")
+        self.job_status = params.get("job_status")
+
+
 class VolumeAttributes(properties.Owner):
 
     generation = properties.Integer(required=False, minval=0,

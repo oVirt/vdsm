@@ -23,12 +23,14 @@ from __future__ import absolute_import
 import os
 import logging
 import threading
+import time
 from collections import namedtuple
 import codecs
 from contextlib import contextmanager
 
 import six
 
+from vdsm import host
 from vdsm import utils
 from vdsm.common import exception
 from vdsm.common.marks import deprecated
@@ -47,6 +49,7 @@ from vdsm.storage import resourceManager as rm
 from vdsm.storage import rwlock
 from vdsm.storage import sanlock_direct
 from vdsm.storage import task
+from vdsm.storage import validators
 from vdsm.storage import xlease
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
 
@@ -1501,7 +1504,7 @@ class StorageDomain(object):
         """
         raise NotImplementedError
 
-    def create_lease(self, lease_id):
+    def create_lease(self, lease_id, metadata=None, host_id=None):
         """
         Create an external lease on the external leases volume.
 
@@ -1510,6 +1513,27 @@ class StorageDomain(object):
         with self._manifest.external_leases_lock.exclusive:
             with self._manifest.external_leases_volume() as vol:
                 vol.add(lease_id)
+
+        if metadata:
+            metadata = validators.JobMetadata(metadata)
+
+            self._manifest.acquire_external_lease(lease_id, host_id)
+
+            try:
+                now = int(time.time())
+                job_metadata = {
+                    "type": metadata.type,
+                    "generation": metadata.generation,
+                    "job_id": metadata.job_id,
+                    "job_status": metadata.job_status,
+                    "created": now,
+                    "modified": now,
+                    "host_hardware_id": host.uuid(),
+                }
+
+                self._manifest.set_lvb(lease_id, job_metadata)
+            finally:
+                self._manifest.release_external_lease(lease_id)
 
     def delete_lease(self, lease_id):
         """

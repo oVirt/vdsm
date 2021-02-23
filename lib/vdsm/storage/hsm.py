@@ -3806,13 +3806,13 @@ class HSM(object):
     # Lease operations
 
     @public
-    def create_lease(self, lease):
+    def create_lease(self, lease, metadata=None):
         lease = validators.Lease(lease)
         self._check_pool_connected()
         # TODO: can we move lock into the pool?
         vars.task.getSharedLock(STORAGE, lease.sd_id)
         self._spmSchedule(self._pool.spUUID, "create_lease",
-                          self._pool.create_lease, lease)
+                          self._pool.create_lease, lease, metadata)
 
     @public
     def delete_lease(self, lease):

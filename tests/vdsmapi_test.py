@@ -666,7 +666,21 @@ class DataVerificationTests(TestCaseBase):
             vdsmapi.MethodRep('Host', 'getCapabilities'), ret)
 
     def test_create_complex_params(self):
-        complex_type = {'lease': {'sd_id': 'UUID', 'lease_id': 'UUID'}}
+        complex_type = {
+            'lease': {
+                'sd_id': 'UUID',
+                'lease_id': 'UUID'
+            },
+            'metadata': {
+                'LeaseMetadata': [
+                    [
+                        'JobMetadata',
+                        'object'
+                    ]
+                ]
+            }
+        }
+
         self.assertEqual(
             _schema.get_args_dict('Lease', 'create'),
             json.dumps(complex_type, indent=4))

@@ -1749,8 +1749,8 @@ class SDM(APIBase):
 class Lease(APIBase):
     ctorArgs = []
 
-    def create(self, lease):
-        return self._irs.create_lease(lease)
+    def create(self, lease, metadata=None):
+        return self._irs.create_lease(lease, metadata=metadata)
 
     def delete(self, lease):
         return self._irs.delete_lease(lease)
