@@ -186,7 +186,7 @@ class Config:
 
     def __init__(self, confdir):
         self._confdir = confdir
-        self.config = yaml.safe_load(self._load('config.yml'))
+        self.values = yaml.safe_load(self._load('values.yml'))
         self.xmls = self._load_xmls()
 
     def _load(self, filename):
@@ -206,7 +206,7 @@ class RunningVM(Vm):
         self._md_desc = metadata.Descriptor.from_xml(
             config.xmls["00-before.xml"])
 
-        drive = config.config["drive"]
+        drive = config.values["drive"]
         self._devices = {
             "disk": [
                 storage.Drive(
@@ -218,12 +218,12 @@ class RunningVM(Vm):
 
         self.cif.irs.prepared_volumes = {
             (drive["domainID"], drive["imageID"], vol_id): vol_info
-            for vol_id, vol_info in config.config["volumes"].items()
+            for vol_id, vol_info in config.values["volumes"].items()
         }
 
         self.conf = self._conf_devices(config)
         self.conf.update({
-            "vmId": config.config["vm-id"],
+            "vmId": config.values["vm-id"],
             "xml": config.xmls["00-before.xml"]
         })
         self._external = False  # Used when syncing metadata.
@@ -233,7 +233,7 @@ class RunningVM(Vm):
         self._drive_merger = DriveMerger(self)
 
     def _conf_devices(self, config):
-        drive = dict(config.config["drive"])
+        drive = dict(config.values["drive"])
         drive["volumeChain"] = xml_chain(config.xmls["00-before.xml"])
         return {"devices": [drive]}
 
@@ -245,7 +245,7 @@ class FakeDomain:
 
     def __init__(self, config):
         self.log = logging.getLogger()
-        self._id = config.config["vm-id"]
+        self._id = config.values["vm-id"]
         self.xml = config.xmls["00-before.xml"]
         self.block_jobs = {}
         self._config = config
@@ -297,7 +297,7 @@ class FakeDomain:
 
 def test_merger_dump_jobs(fake_time):
     config = Config('active-merge')
-    merge_params = config.config["merge_params"]
+    merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
 
     vm = RunningVM(config)
@@ -326,7 +326,7 @@ def test_merger_dump_jobs(fake_time):
 
 def test_merger_load_jobs(fake_time):
     config = Config('active-merge')
-    merge_params = config.config["merge_params"]
+    merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
 
     vm = RunningVM(config)
@@ -356,9 +356,9 @@ def test_active_merge(monkeypatch):
     monkeypatch.setattr(CleanupThread, "WAIT_INTERVAL", 0.01)
 
     config = Config('active-merge')
-    sd_id = config.config["drive"]["domainID"]
-    img_id = config.config["drive"]["imageID"]
-    merge_params = config.config["merge_params"]
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
+    merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
     top_id = merge_params["topVolUUID"]
     base_id = merge_params["baseVolUUID"]
@@ -520,9 +520,9 @@ def test_active_merge(monkeypatch):
 
 def test_internal_merge():
     config = Config('internal-merge')
-    sd_id = config.config["drive"]["domainID"]
-    img_id = config.config["drive"]["imageID"]
-    merge_params = config.config["merge_params"]
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
+    merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
     top_id = merge_params["topVolUUID"]
     base_id = merge_params["baseVolUUID"]
@@ -648,7 +648,7 @@ def test_internal_merge():
 
 def test_extend_timeout():
     config = Config('active-merge')
-    merge_params = config.config["merge_params"]
+    merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
 
     vm = RunningVM(config)
@@ -672,9 +672,9 @@ def test_extend_timeout():
 
 def test_merge_cancel_commit():
     config = Config('active-merge')
-    sd_id = config.config["drive"]["domainID"]
-    img_id = config.config["drive"]["imageID"]
-    merge_params = config.config["merge_params"]
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
+    merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
     base_id = merge_params["baseVolUUID"]
 
@@ -727,16 +727,16 @@ def test_merge_cancel_commit():
 
     # Drive chain is unchanged and monitoring is enabled.
     drive = vm.getDiskDevices()[0]
-    assert drive.volumeID == config.config["drive"]["volumeID"]
+    assert drive.volumeID == config.values["drive"]["volumeID"]
     assert drive.volumeChain == expected_volumes_chain
     assert vm.drive_monitor.enabled
 
 
 def test_block_job_info_error(monkeypatch):
     config = Config("internal-merge")
-    sd_id = config.config["drive"]["domainID"]
-    img_id = config.config["drive"]["imageID"]
-    merge_params = config.config["merge_params"]
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
+    merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
     base_id = merge_params["baseVolUUID"]
 
@@ -794,9 +794,9 @@ def test_block_job_info_error(monkeypatch):
 
 def test_merge_commit_error(monkeypatch):
     config = Config("internal-merge")
-    sd_id = config.config["drive"]["domainID"]
-    img_id = config.config["drive"]["imageID"]
-    merge_params = config.config["merge_params"]
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
+    merge_params = config.values["merge_params"]
     base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
@@ -824,7 +824,7 @@ def test_merge_commit_error(monkeypatch):
 
 def test_merge_job_already_exists(monkeypatch):
     config = Config("internal-merge")
-    merge_params = config.config["merge_params"]
+    merge_params = config.values["merge_params"]
 
     vm = RunningVM(config)
 
@@ -842,15 +842,15 @@ def test_merge_job_already_exists(monkeypatch):
 
 def test_merge_base_too_small(monkeypatch):
     config = Config("internal-merge")
-    merge_params = config.config["merge_params"]
+    merge_params = config.values["merge_params"]
 
     vm = RunningVM(config)
 
     # Ensure that base volume is raw and smaller than top,
     # engine is responsible for extending the raw base volume
     # before merge is called.
-    base_vol = config.config["volumes"][merge_params["baseVolUUID"]]
-    top_vol = config.config["volumes"][merge_params["topVolUUID"]]
+    base_vol = config.values["volumes"][merge_params["baseVolUUID"]]
+    top_vol = config.values["volumes"][merge_params["topVolUUID"]]
     base_vol["capacity"] = top_vol["capacity"] // 2
     base_vol["format"] = "RAW"
 
