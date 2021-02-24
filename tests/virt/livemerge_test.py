@@ -253,7 +253,7 @@ class FakeDomain:
         # successful pivot.
         self.metadata = xml
 
-    def XMLDesc(self, flags):
+    def XMLDesc(self, flags=0):
         return self.xml
 
     def blockCommit(self, drive, base_target, top_target, bandwidth, flags=0):

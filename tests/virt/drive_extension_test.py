@@ -608,7 +608,7 @@ class FakeDomain(object):
     # The following is needed in the 'pause' flow triggered
     # by the ImprobableResizeRequestError
 
-    def XMLDesc(self, flags):
+    def XMLDesc(self, flags=0):
         return u'<domain/>'
 
     def suspend(self):

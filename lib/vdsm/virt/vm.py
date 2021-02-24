@@ -876,7 +876,7 @@ class Vm(object):
         return mem_size_mb
 
     def hibernate(self, dst):
-        hooks.before_vm_hibernate(self._dom.XMLDesc(0), self._custom)
+        hooks.before_vm_hibernate(self._dom.XMLDesc(), self._custom)
         fname = self.cif.prepareVolumePath(dst)
         try:
             self._dom.save(fname)
@@ -887,7 +887,7 @@ class Vm(object):
         for dev in self._customDevices():
             hooks.before_device_migrate_source(
                 dev._deviceXML, self._custom, dev.custom)
-        hooks.before_vm_migrate_source(self._dom.XMLDesc(0), self._custom)
+        hooks.before_vm_migrate_source(self._dom.XMLDesc(), self._custom)
 
     def _startUnderlyingVm(self):
         self.log.debug("Start")
@@ -2065,7 +2065,7 @@ class Vm(object):
 
     def migration_parameters(self):
         return {
-            '_srcDomXML': self._dom.XMLDesc(0),
+            '_srcDomXML': self._dom.XMLDesc(),
             'vmId': self.id,
             'xml': self._domain.xml,
             'elapsedTimeOffset': (
@@ -2081,7 +2081,7 @@ class Vm(object):
         modified by libvirt and will not be rejected by the migration
         end.
         """
-        return self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_MIGRATABLE)
+        return self._dom.XMLDesc(flags=libvirt.VIR_DOMAIN_XML_MIGRATABLE)
 
     def _get_vm_migration_progress(self):
         return self.migrateStatus()['progress']
@@ -2823,7 +2823,7 @@ class Vm(object):
                 self._update_metadata()
                 dom.createWithFlags(flags)
                 self._dom = virdomain.Notifying(dom, self._timeoutExperienced)
-                hooks.after_vm_start(self._dom.XMLDesc(0), self._custom)
+                hooks.after_vm_start(self._dom.XMLDesc(), self._custom)
                 for dev in self._customDevices():
                     hooks.after_device_create(dev._deviceXML, self._custom,
                                               dev.custom)
@@ -3847,7 +3847,7 @@ class Vm(object):
             # unplug.  See https://bugzilla.redhat.com/1639228.
             time.sleep(sleep_time)
             return not vmdevices.lease.is_attached_to(device,
-                                                      self._dom.XMLDesc(0))
+                                                      self._dom.XMLDesc())
         else:
             return device.hotunplug_event.wait(sleep_time)
 
@@ -3917,7 +3917,7 @@ class Vm(object):
             self.cont(guestTimeSync=True)
             fromSnapshot = self._altered_state.from_snapshot
             self._altered_state = _AlteredState()
-            hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self._custom,
+            hooks.after_vm_dehibernate(self._dom.XMLDesc(), self._custom,
                                        {'FROM_SNAPSHOT': fromSnapshot})
         elif self._altered_state.origin == _MIGRATION_ORIGIN:
             finished, timeout = self._waitForUnderlyingMigration()
@@ -3933,7 +3933,7 @@ class Vm(object):
             self._domDependentInit()
             self._altered_state = _AlteredState()
             hooks.after_vm_migrate_destination(
-                self._dom.XMLDesc(0), self._custom)
+                self._dom.XMLDesc(), self._custom)
 
             for dev in self._customDevices():
                 hooks.after_device_migrate_destination(
@@ -4004,16 +4004,16 @@ class Vm(object):
             # the transient domain.
             self.log.debug("Switching transient VM to persistent")
             try:
-                self._connection.defineXML(self._dom.XMLDesc(0))
+                self._connection.defineXML(self._dom.XMLDesc())
             except libvirt.libvirtError as e:
                 self.log.info("Failed to make VM persistent: %s'", e)
 
     def _underlyingCont(self):
-        hooks.before_vm_cont(self._dom.XMLDesc(0), self._custom)
+        hooks.before_vm_cont(self._dom.XMLDesc(), self._custom)
         self._dom.resume()
 
     def _underlyingPause(self):
-        hooks.before_vm_pause(self._dom.XMLDesc(0), self._custom)
+        hooks.before_vm_pause(self._dom.XMLDesc(), self._custom)
         self._dom.suspend()
 
     def findDriveByUUIDs(self, drive):
@@ -4885,7 +4885,7 @@ class Vm(object):
         libvirt (as in 1.2.3) supports only one graphic device per type
         """
         dom_desc = DomainDescriptor(
-            self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE))
+            self._dom.XMLDesc(flags=libvirt.VIR_DOMAIN_XML_SECURE))
         try:
             return next(dom_desc.get_device_elements_with_attrs(
                 hwclass.GRAPHICS, type=deviceType))
@@ -4957,7 +4957,7 @@ class Vm(object):
         self._updateDomainDescriptor()
 
     def _updateDomainDescriptor(self, xml=None):
-        domxml = self._dom.XMLDesc(0) if xml is None else xml
+        domxml = self._dom.XMLDesc() if xml is None else xml
         self._domain = DomainDescriptor(
             domxml,
             xml_source=(
@@ -5388,7 +5388,7 @@ class Vm(object):
             # In this case self._dom is disconnected because the function
             # _completeIncomingMigration didn't update it yet.
             try:
-                domxml = self._dom.XMLDesc(0)
+                domxml = self._dom.XMLDesc()
             except virdomain.NotConnectedError:
                 pass
             else:
@@ -5412,7 +5412,7 @@ class Vm(object):
             # The event handler delivers the domain instance in the
             # callback however we do not use it.
             try:
-                domxml = self._dom.XMLDesc(0)
+                domxml = self._dom.XMLDesc()
             except virdomain.NotConnectedError:
                 pass
             else:
@@ -5574,7 +5574,7 @@ class Vm(object):
             #   See https://bugzilla.redhat.com/1376580
 
             self.log.debug("Checking xml for drive %r", drive.name)
-            root = ET.fromstring(self._dom.XMLDesc(0))
+            root = ET.fromstring(self._dom.XMLDesc())
             disk_xpath = "./devices/disk/target[@dev='%s'].." % drive.name
             disk = root.find(disk_xpath)
             if disk is None:

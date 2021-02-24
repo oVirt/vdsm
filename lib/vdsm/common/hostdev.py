@@ -231,7 +231,7 @@ def name_to_pci_path(device_name):
 def _each_device_xml(libvirt_devices):
     for device in libvirt_devices:
         try:
-            yield device.name(), device.XMLDesc(0)
+            yield device.name(), device.XMLDesc()
         except libvirt.libvirtError:
             # The object still exists, but the underlying device is gone. For
             # us, the device is also gone - ignore it.
@@ -543,7 +543,7 @@ def _process_device_params(device_xml):
 def _get_device_ref_and_params(device_name):
     libvirt_device = libvirtconnection.get().\
         nodeDeviceLookupByName(device_name)
-    params = _process_device_params(libvirt_device.XMLDesc(0))
+    params = _process_device_params(libvirt_device.XMLDesc())
 
     if params['capability'] != 'scsi':
         return libvirt_device, params

@@ -263,7 +263,7 @@ class Domain(object):
         self._failIfRequested()
         return (self.domState, )
 
-    def XMLDesc(self, unused):
+    def XMLDesc(self, flags=0):
         return self._xml
 
     def updateDeviceFlags(self, devXml, unused=0):

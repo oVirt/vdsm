@@ -681,7 +681,7 @@ class DriveMerger:
 
         log.debug("Checking xml for drive %r", job.drive)
         # pylint: disable=no-member
-        root = ET.fromstring(self._dom.XMLDesc(0))
+        root = ET.fromstring(self._dom.XMLDesc())
         disk_xpath = "./devices/disk/target[@dev='%s'].." % job.drive
 
         disk = root.find(disk_xpath)

@@ -62,7 +62,7 @@ class TestDefined(VdsmTestCase):
         with pytest.raises(virdomain.NotConnectedError):
             # we need to call a method not explicitely declared,
             # to exercise getattr
-            self.dom.XMLDesc(0)
+            self.dom.XMLDesc()
 
     def test_state(self):
         assert self.dom.state(0) == \

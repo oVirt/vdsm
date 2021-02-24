@@ -140,7 +140,7 @@ def networks():
         if netname.startswith(LIBVIRT_NET_PREFIX):
             netname = netname[len(LIBVIRT_NET_PREFIX):]
             nets[netname] = {}
-            xml = etree.fromstring(net.XMLDesc(0))
+            xml = etree.fromstring(net.XMLDesc())
             interface = xml.find('.//interface')
             if interface is not None:
                 nets[netname]['iface'] = interface.get('dev')

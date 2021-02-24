@@ -68,7 +68,7 @@ def _list_domains():
         try:
             dom_uuid = dom_obj.UUIDString()
             logging.debug("Found domain %s", dom_uuid)
-            dom_xml = dom_obj.XMLDesc(0)
+            dom_xml = dom_obj.XMLDesc()
         except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 logging.exception("domain %s is dead", dom_uuid)
@@ -140,7 +140,7 @@ def lookup_external_vms(cif):
     for vm_id in cif.pop_unknown_vm_ids():
         try:
             dom_obj = conn.lookupByUUIDString(vm_id)
-            dom_xml = dom_obj.XMLDesc(0)
+            dom_xml = dom_obj.XMLDesc()
         except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 logging.debug("External domain %s not found", vm_id)

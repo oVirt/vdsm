@@ -713,7 +713,7 @@ class KVMCommand(V2VCommand):
             vm = con.lookupByName(self._vminfo['vmName'])
             if vm:
                 params = {}
-                root = ET.fromstring(vm.XMLDesc(0))
+                root = ET.fromstring(vm.XMLDesc())
                 _add_disks(root, params)
                 src = []
                 fmt = []
@@ -1052,7 +1052,7 @@ def _add_vm(conn, vms, vm):
         logging.error("error getting domain information: %s", e)
         return
     try:
-        xml = vm.XMLDesc(0)
+        xml = vm.XMLDesc()
     except libvirt.libvirtError as e:
         logging.error("error getting domain xml for vm %r: %s",
                       vm.name(), e)

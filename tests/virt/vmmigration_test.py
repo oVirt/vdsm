@@ -268,7 +268,7 @@ class FakeMigratingDomain(object):
     def __init__(self):
         self.migrations = 0
 
-    def XMLDesc(self, flags):
+    def XMLDesc(self, flags=0):
         return ''
 
     def migrateSetMaxDowntime(self, value, flags):
