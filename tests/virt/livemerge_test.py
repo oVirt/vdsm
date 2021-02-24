@@ -183,17 +183,19 @@ def test_cleanup_abort(monkeypatch):
 
 
 class Config:
+    """
+    Load test configuration in tests/virt/{name}:
 
-    def __init__(self, confdir):
-        self._confdir = confdir
-        self.values = yaml.safe_load(self._load('values.yml'))
-        self.xmls = self._load_xmls()
+    00-before.xml
+    01-commit.xml
+    ...
+    values.yml
+    """
 
-    def _load(self, filename):
-        return read_data(os.path.join(self._confdir, filename))
-
-    def _load_xmls(self):
-        return read_files(os.path.join(self._confdir, '*.xml'))
+    def __init__(self, name):
+        self.values = yaml.safe_load(
+            read_data(os.path.join(name, "values.yml")))
+        self.xmls = read_files(os.path.join(name, '*.xml'))
 
 
 class RunningVM(Vm):
