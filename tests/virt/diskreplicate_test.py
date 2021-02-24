@@ -203,7 +203,7 @@ class FakeDomain(object):
     def __init__(self, block_job_info={}):
         self.block_job_info = block_job_info
 
-    def blockJobInfo(self, drive_name, flags):
+    def blockJobInfo(self, drive_name, flags=0):
         return self.block_job_info
 
     def blockJobAbort(self, drive_name, flags):

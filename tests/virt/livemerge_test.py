@@ -553,7 +553,7 @@ def test_internal_merge():
         }
     }
 
-    job = vm._dom.blockJobInfo("sda", 0)
+    job = vm._dom.blockJobInfo("sda")
 
     # Check block job status while in progress.
     job["cur"] = job["end"] // 2
@@ -754,7 +754,7 @@ def test_block_job_info_error(monkeypatch):
     with monkeypatch.context() as mc:
 
         # Simulate failing blockJobInfo call.
-        def blockJobInfo(*args):
+        def blockJobInfo(*args, **kwargs):
             raise fake.libvirt_error(
                 [libvirt.VIR_ERR_INTERNAL_ERROR], "Block job info failed")
 

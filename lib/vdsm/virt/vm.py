@@ -4321,7 +4321,7 @@ class Vm(object):
                                                      srcDisk=srcDisk)
 
         # Looking for the replication blockJob info (checking its presence)
-        blkJobInfo = self._dom.blockJobInfo(drive.name, 0)
+        blkJobInfo = self._dom.blockJobInfo(drive.name)
 
         if (not isinstance(blkJobInfo, dict) or
                 'cur' not in blkJobInfo or 'end' not in blkJobInfo):

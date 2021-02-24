@@ -593,7 +593,7 @@ class DriveMerger:
         try:
             # Returns empty dict if job has gone.
             # pylint: disable=no-member
-            job.live_info = self._dom.blockJobInfo(job.drive, 0)
+            job.live_info = self._dom.blockJobInfo(job.drive)
         except libvirt.libvirtError:
             log.exception("Error getting block job info")
             job.live_info = None
