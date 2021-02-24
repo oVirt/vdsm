@@ -206,7 +206,7 @@ class FakeDomain(object):
     def blockJobInfo(self, drive_name, flags=0):
         return self.block_job_info
 
-    def blockJobAbort(self, drive_name, flags):
+    def blockJobAbort(self, drive_name, flags=0):
         pass
 
 

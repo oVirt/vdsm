@@ -396,7 +396,11 @@ class DriveMerger:
         try:
             # pylint: disable=no-member
             self._dom.blockCommit(
-                drive.name, base_target, top_target, job.bandwidth, flags)
+                drive.name,
+                base_target,
+                top_target,
+                job.bandwidth,
+                flags=flags)
         except libvirt.libvirtError as e:
             self._untrack_job(job.id)
             raise exception.MergeFailed(str(e), job=job.id)
@@ -749,7 +753,7 @@ class CleanupThread(object):
                          "(job %s)", self.job.id)
         try:
             flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
-            self.vm._dom.blockJobAbort(self.drive.name, flags)
+            self.vm._dom.blockJobAbort(self.drive.name, flags=flags)
         except libvirt.libvirtError as e:
             self.vm.drive_monitor.enable()
             if e.get_error_code() != libvirt.VIR_ERR_BLOCK_COPY_ACTIVE:

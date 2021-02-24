@@ -256,7 +256,7 @@ class FakeDomain:
     def XMLDesc(self, flags):
         return self.xml
 
-    def blockCommit(self, drive, base_target, top_target, bandwidth, flags):
+    def blockCommit(self, drive, base_target, top_target, bandwidth, flags=0):
         self.block_jobs[drive] = {
             'bandwidth': 0,
             'cur': 0,
@@ -270,7 +270,7 @@ class FakeDomain:
     def blockJobInfo(self, drive, flags=0):
         return self.block_jobs.get(drive, {})
 
-    def blockJobAbort(self, drive, flags):
+    def blockJobAbort(self, drive, flags=0):
         if flags == libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT:
             # The test should simulate abort-ready such that the cleanup
             # thread would stop waiting for libvirt's domain xml updated
@@ -706,7 +706,7 @@ def test_merge_cancel_commit():
 
     # Cancel the block job. This simulates a scenario where a user
     # aborts running block job from virsh.
-    vm._dom.blockJobAbort("sda", 0)
+    vm._dom.blockJobAbort("sda")
 
     vm.query_jobs()
 
@@ -790,7 +790,7 @@ def test_block_job_info_error(monkeypatch):
 
 
 def test_merge_commit_error(monkeypatch):
-    def commit_error(*args):
+    def commit_error(*args, **kwargs):
         raise fake.libvirt_error(
             [libvirt.VIR_ERR_INTERNAL_ERROR], "Block commit failed")
 

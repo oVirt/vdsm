@@ -4371,7 +4371,7 @@ class Vm(object):
 
         try:
             # Stopping the replication
-            self._dom.blockJobAbort(drive.name, blockJobFlags)
+            self._dom.blockJobAbort(drive.name, flags=blockJobFlags)
         except Exception:
             self.log.exception("Unable to stop the replication for"
                                " the drive: %s", drive.name)
