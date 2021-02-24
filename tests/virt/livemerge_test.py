@@ -269,12 +269,18 @@ class FakeDomain:
         return self.xml
 
     def blockCommit(self, drive, base_target, top_target, bandwidth, flags=0):
+        if flags & libvirt.VIR_DOMAIN_BLOCK_COMMIT_ACTIVE:
+            job_type = libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
+        else:
+            job_type = libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_COMMIT
+
         self.block_jobs[drive] = {
             'bandwidth': 0,
             'cur': 0,
             'end': 1024**3,
-            'type': libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
+            'type': job_type
         }
+
         # The test should simulate commit-ready once the active commit
         # has done mirroring the volume.
         self.xml = self._config.xmls["01-commit.xml"]
@@ -283,7 +289,7 @@ class FakeDomain:
         return self.block_jobs.get(drive, {})
 
     def blockJobAbort(self, drive, flags=0):
-        if flags == libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT:
+        if flags & libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT:
             # The test should simulate abort-ready such that the cleanup
             # thread would stop waiting for libvirt's domain xml updated
             # volumes chain after pivot is done.
@@ -413,9 +419,9 @@ def test_active_merge(monkeypatch):
     assert persisted_job["state"] == Job.COMMIT
     assert persisted_job["extend_started"] is None
 
-    # And start a libvirt block commit job.
+    # And start a libvirt active block commit block job.
     block_job = vm._dom.block_jobs["sda"]
-    assert block_job
+    assert block_job["type"] == libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
 
     assert vm.query_jobs() == {
         job_id : {
@@ -550,9 +556,9 @@ def test_internal_merge():
     base_volume['apparentsize'] = new_size
     extend_callback(vol_info)
 
-    # Extend triggers a commit, starting libvirt block job.
+    # Extend triggers a commit, starting a libvirt block commit block job.
     block_job = vm._dom.block_jobs["sda"]
-    assert block_job
+    assert block_job["type"] == libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_COMMIT
 
     # And persisting job in COMMIT state.
     persisted_job = parse_jobs(vm)[job_id]
