@@ -599,7 +599,7 @@ class FakeDomain(object):
         self.errors = {}
         self.thresholds = {}
 
-    def blockInfo(self, path, flags):
+    def blockInfo(self, path, flags=0):
         # TODO: support access by name
         # flags is ignored
         d = self.block_info[path]

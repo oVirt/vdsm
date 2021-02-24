@@ -214,7 +214,7 @@ class MockVirDomain(object):
     def setCurrentSnapshot(self, has_snapshot=False):
         self._has_snapshots = has_snapshot
 
-    def blockInfo(self, source):
+    def blockInfo(self, source, flags=0):
         if not self._has_disk_block:
             raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR,
                              "no such disk in this VM")

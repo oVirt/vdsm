@@ -1240,7 +1240,7 @@ class Vm(object):
         Return extension info for a chunked drive or drive replicating to
         chunked replica volume.
         """
-        capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+        capacity, alloc, physical = self._dom.blockInfo(drive.path)
 
         # Libvirt reports watermarks only for the source drive, but for
         # file-based drives it reports the same alloc and physical, which

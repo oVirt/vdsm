@@ -283,7 +283,7 @@ class FakeDomain:
         self.aborted.set()
         del self.block_jobs[drive]
 
-    def blockInfo(self, drive_name, flags):
+    def blockInfo(self, drive_name, flags=0):
         return (1024, 0, 0)
 
 

@@ -125,7 +125,7 @@ class FakeDomainAdapter(object):
         return self.output_backup_xml
 
     @maybefail
-    def blockInfo(self, drive_name, flags=None):
+    def blockInfo(self, drive_name, flags=0):
         return (1024, 0, 0)
 
     @maybefail
