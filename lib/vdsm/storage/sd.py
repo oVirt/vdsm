@@ -41,6 +41,7 @@ from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage import guarded
 from vdsm.storage import misc
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import qemuimg
@@ -51,6 +52,8 @@ from vdsm.storage import sanlock_direct
 from vdsm.storage import task
 from vdsm.storage import validators
 from vdsm.storage import xlease
+from vdsm.storage.sdc import sdCache
+
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
 
 DOMAIN_META_DATA = 'dom_md'
@@ -1669,3 +1672,31 @@ class StorageDomain(object):
             size=self.alignment,
             block_size=self.block_size,
             alignment=self.alignment))
+
+
+class ExternalLease(guarded.AbstractLock):
+
+    def __init__(self, host_id, sd_id, lease_id):
+        self._host_id = host_id
+        self._sd_id = sd_id
+        self._lease_id = lease_id
+
+    @property
+    def ns(self):
+        return rm.getNamespace(sc.EXTERNAL_LEASE_NAMESPACE, self._lease_id)
+
+    @property
+    def name(self):
+        return self._lease_id
+
+    @property
+    def mode(self):
+        return rm.EXCLUSIVE
+
+    def acquire(self):
+        dom = sdCache.produce_manifest(self._sd_id)
+        dom.acquire_external_lease(self._lease_id, self._host_id)
+
+    def release(self):
+        dom = sdCache.produce_manifest(self._sd_id)
+        dom.release_external_lease(self._lease_id)

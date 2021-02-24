@@ -33,7 +33,12 @@ STORAGE = "00_storage"
 IMAGE_NAMESPACE = '01_img'
 VOLUME_NAMESPACE = '02_vol'
 LVM_ACTIVATION_NAMESPACE = '03_lvm'
+
+# These namespace do not need to be registered as they are not used by the
+# resource manager, but by sanlock. We only need the namespace to perform
+# the lock sorting.
 VOLUME_LEASE_NAMESPACE = "04_lease"
+EXTERNAL_LEASE_NAMESPACE = "05_external_lease"
 
 VG_EXTENT_SIZE = 128 * MiB
 COW_OVERHEAD = 1.1
@@ -293,3 +298,9 @@ REPO_MOUNT_DIR = os.path.join(REPO_DATA_CENTER, DOMAIN_MNT_POINT)
 # TODO: Consider totally removing it in the future.
 # Global process pool name.
 GLOBAL_OOP = 'Global'
+
+# Job statuses for external lease metadata
+JOB_STATUS_PENDING = "PENDING"
+JOB_STATUS_FAILED = "FAILED"
+JOB_STATUS_SUCCEEDED = "SUCCEEDED"
+JOB_STATUS_FENCED = "FENCED"

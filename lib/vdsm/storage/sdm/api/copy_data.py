@@ -21,7 +21,9 @@
 from __future__ import absolute_import
 from contextlib import contextmanager
 import logging
+import time
 
+from vdsm import host
 from vdsm import jobs
 from vdsm import utils
 
@@ -31,8 +33,11 @@ from vdsm.storage import exception as se
 from vdsm.storage import guarded
 from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
+from vdsm.storage import utils as su
+from vdsm.storage import validators
 from vdsm.storage import volume
 from vdsm.storage import workarounds
+from vdsm.storage import sd
 from vdsm.storage.sdc import sdCache
 
 from . import base
@@ -42,15 +47,16 @@ log = logging.getLogger('storage.sdm.copy_data')
 
 class Job(base.Job):
     """
-    Copy data from one endpoint to another using qemu-img convert. Currently we
-    only support endpoints that are vdsm volumes.
+    Copy data from one endpoint to another using qemu-img convert.
     """
 
     def __init__(self, job_id, host_id, source, destination,
                  copy_bitmaps=False):
         super(Job, self).__init__(job_id, 'copy_data', host_id)
-        self._source = _create_endpoint(source, host_id, writable=False)
-        self._dest = _create_endpoint(destination, host_id, writable=True)
+        self._source = _create_endpoint(
+            source, host_id, writable=False, job_id=job_id)
+        self._dest = _create_endpoint(
+            destination, host_id, writable=True, job_id=job_id)
         self._operation = None
         self._copy_bitmaps = copy_bitmaps
 
@@ -111,10 +117,12 @@ class Job(base.Job):
                         self._operation.run()
 
 
-def _create_endpoint(params, host_id, writable):
+def _create_endpoint(params, host_id, writable, job_id=None):
     endpoint_type = params.pop('endpoint_type')
     if endpoint_type == 'div':
         return CopyDataDivEndpoint(params, host_id, writable)
+    elif endpoint_type == 'external':
+        return CopyDataExternalEndpoint(params, host_id, job_id)
     else:
         raise ValueError("Invalid or unsupported endpoint %r" % params)
 
@@ -213,3 +221,132 @@ class CopyDataDivEndpoint(properties.Owner):
                 yield
             finally:
                 self.volume.teardown(self.sd_id, self.vol_id, justme=False)
+
+
+class CopyDataExternalEndpoint(properties.Owner):
+    """
+    CopyDataExternalEndpoint represents endpoints for volumes not managed by
+    vdsm, such as Managed Block Storage volumes.
+    """
+
+    url = properties.String(required=True)
+    generation = properties.Integer(required=False, minval=0,
+                                    maxval=sc.MAX_GENERATION)
+    format = properties.String(required=True)
+    sparse = properties.Boolean(required=False)
+    create = properties.Boolean(required=False)
+    is_zero = properties.Boolean(required=True)
+
+    def __init__(self, params, host_id, job_id):
+        self.lease = validators.Lease(params.get('lease'))
+        self.url = params.get('url')
+        self.generation = params.get('generation')
+        self.format = params.get('format')
+        self.sparse = params.get('sparse', False)
+        self.create = params.get('create', True)
+        self.is_zero = params.get('is_zero', False)
+
+        self.host_id = host_id
+        self.job_id = job_id
+
+    @property
+    def locks(self):
+        return [
+            sd.ExternalLease(
+                self.host_id, self.lease.sd_id, self.lease.lease_id),
+        ]
+
+    @property
+    def path(self):
+        return self.url
+
+    def is_invalid_vm_conf_disk(self):
+        return False
+
+    @property
+    def qemu_format(self):
+        return self.format
+
+    @property
+    def backing_path(self):
+        return None
+
+    @property
+    def qcow2_compat(self):
+        return "1.1"
+
+    @property
+    def backing_qemu_format(self):
+        return None
+
+    @property
+    def recommends_unordered_writes(self):
+        return self.format == "raw" and not self.sparse
+
+    @property
+    def requires_create(self):
+        return self.create
+
+    @property
+    def zero_initialized(self):
+        return self.is_zero
+
+    @contextmanager
+    def volume_operation(self):
+        dom = sdCache.produce_manifest(self.lease.sd_id)
+        metadata = dom.get_lvb(self.lease.lease_id)
+        log.info(
+            "Current lease %s metadata: %r",
+            self.lease.sd_id,
+            metadata)
+
+        self._validate_metadata(metadata)
+        try:
+            yield
+        except Exception:
+            self._update_metadata(dom, metadata, sc.JOB_STATUS_FAILED)
+            raise
+
+        self._update_metadata(dom, metadata, sc.JOB_STATUS_SUCCEEDED)
+
+    @contextmanager
+    def prepare(self):
+        yield
+
+    def _validate_metadata(self, metadata):
+        if metadata.get("type") != "JOB":
+            raise se.UnsupportedOperation(
+                "Metadata type is not support",
+                expected="JOB",
+                actual=metadata.get("type"))
+
+        if metadata.get("job_id") != self.job_id:
+            raise se.UnsupportedOperation(
+                "job_id on lease doesn't match passed job_id",
+                expected=self.job_id,
+                actual=metadata.get("job_id"))
+
+        if metadata.get("job_status") != sc.JOB_STATUS_PENDING:
+            raise se.JobStatusMismatch(
+                sc.JOB_STATUS_PENDING, metadata.get("job_status"))
+
+        if metadata.get("generation") != self.generation:
+            raise se.GenerationMismatch(
+                self.generation, metadata.get("generation"))
+
+    def _update_metadata(self, dom, metadata, job_status):
+        updated_metadata = metadata.copy()
+        updated_metadata["modified"] = int(time.time())
+        updated_metadata["host_hardware_id"] = host.uuid()
+        updated_metadata["job_status"] = job_status
+
+        if job_status == sc.JOB_STATUS_SUCCEEDED:
+            updated_metadata["generation"] = su.next_generation(
+                metadata["generation"])
+
+        log.info(
+            "Updated lease %s metadata: %r",
+            self.lease.sd_id,
+            updated_metadata)
+
+        dom.set_lvb(self.lease.lease_id, updated_metadata)

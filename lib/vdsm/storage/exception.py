@@ -1909,6 +1909,14 @@ class GenerationMismatch(StorageException):
         self.value = "requested=%s, actual=%s" % (requested, actual)
 
 
+class JobStatusMismatch(StorageException):
+    code = 912
+    msg = "The provided job status does not match the expected job status"
+
+    def __init__(self, expected, actual):
+        self.value = "expected=%s, actual=%s" % (expected, actual)
+
+
 class VolumeIsNotInChain(StorageException):
     code = 920
     msg = "Volume is not part of the chain."

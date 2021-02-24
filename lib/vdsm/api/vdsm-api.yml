@@ -8164,6 +8164,8 @@ types:
         type: enum
         values:
             div: A vdsm volume identified by domain, image, and volume UUIDs
+            external: An endpoint that is not managed by vdsm, represented as
+                      a url.
 
     CopyDataDIVEndpoint: &CopyDataDIVEndpoint
         added: '4.1'
@@ -8206,7 +8208,8 @@ types:
             name: generation
             type: uint
 
-        -   description: Format of the target image (qcow2, raw).
+        -   description: Format of the target image. Only officially supported
+                formats are raw and qcow2.
             name: format
             type: string
 
