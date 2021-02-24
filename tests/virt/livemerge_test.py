@@ -247,11 +247,14 @@ class FakeDomain:
     def __init__(self, config):
         self.log = logging.getLogger()
         self._id = config.values["vm-id"]
-        self.xml = config.xmls["00-before.xml"]
-        self.block_jobs = {}
         self._config = config
-        self._metadata = ""
+
+        # Variables which are not part of virtDomain interface, mananged by the
+        # tests.
+        self.xml = config.xmls["00-before.xml"]
+        self.metadata = ""
         self.aborted = threading.Event()
+        self.block_jobs = {}
 
     def UUIDString(self):
         return self._id
