@@ -252,7 +252,7 @@ class FakeDomain:
         # Variables which are not part of virtDomain interface, mananged by the
         # tests.
         self.xml = config.xmls["00-before.xml"]
-        self.metadata = ""
+        self.metadata = "<vm><jobs>{}</jobs></vm>"
         self.aborted = threading.Event()
         self.block_jobs = {}
 
@@ -537,6 +537,10 @@ def test_internal_merge():
 
     vm.merge(**merge_params)
 
+    # Merge persists job in EXTEND state.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+
     # Merge invokes the volume extend API
     assert len(vm.cif.irs.extend_requests) == 1
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
@@ -549,6 +553,10 @@ def test_internal_merge():
     # Extend triggers a commit, starting libvirt block job.
     block_job = vm._dom.block_jobs["sda"]
     assert block_job
+
+    # And persisting job in COMMIT state.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.COMMIT
 
     # Active jobs after calling merge.
     assert vm.query_jobs() == {
@@ -621,22 +629,15 @@ def test_internal_merge():
         }
     }
 
-    # Jobs persisted now in COMMIT state.
-    assert vm._drive_merger.dump_jobs() == {
-        job_id : {
-            "bandwidth": merge_params["bandwidth"],
-            "base": merge_params["baseVolUUID"],
-            "disk": merge_params["driveSpec"],
-            "drive": "sda",
-            "state": Job.CLEANUP,
-            "extend_started": None,
-            "id": job_id,
-            "top": merge_params["topVolUUID"],
-        }
-    }
+    # Job persisted now in CLEANUP state.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.CLEANUP
 
     # Check for cleanup completion.
     wait_for_cleanup(vm)
+
+    # Job removed from persisted jobs.
+    assert parse_jobs(vm) == {}
 
     # Volumes chain is updated in domain metadata without top volume.
     expected_volumes_chain = xml_chain(config.xmls["02-after.xml"])
@@ -668,6 +669,9 @@ def test_extend_timeout():
 
     # The next query will abort the job.
     assert vm.query_jobs() == {}
+
+    # Job removed from persisted jobs.
+    assert parse_jobs(vm) == {}
 
     # Simulate slow extend completing after jobs was untracked.
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
@@ -723,6 +727,9 @@ def test_merge_cancel_commit():
 
     # Cleanup is done running.
     wait_for_cleanup(vm)
+
+    # Job removed from persisted jobs.
+    assert parse_jobs(vm) == {}
 
     # Volume chains state should be as it was before merge.
     assert vm._dom.xml == config.xmls["00-before.xml"]
@@ -825,10 +832,14 @@ def test_merge_commit_error(monkeypatch):
     # Job was untracked.
     assert vm.query_jobs() == {}
 
+    # Job removed from persisted jobs.
+    assert parse_jobs(vm) == {}
+
 
 def test_merge_job_already_exists(monkeypatch):
     config = Config("internal-merge")
     merge_params = config.values["merge_params"]
+    job_id = merge_params["jobUUID"]
 
     vm = RunningVM(config)
 
@@ -842,6 +853,7 @@ def test_merge_job_already_exists(monkeypatch):
 
     # Existing job is kept.
     assert len(vm.query_jobs()) == 1
+    assert parse_jobs(vm)[job_id]
 
 
 def test_merge_base_too_small(monkeypatch):
@@ -862,6 +874,7 @@ def test_merge_base_too_small(monkeypatch):
         vm.merge(**merge_params)
 
     assert vm.query_jobs() == {}
+    assert parse_jobs(vm) == {}
 
 
 def wait_for_cleanup(vm):
