@@ -79,12 +79,10 @@ class TestDefined(VdsmTestCase):
             md_xml,
             xmlconstants.METADATA_VM_VDSM_PREFIX,
             xmlconstants.METADATA_VM_VDSM_URI,
-            0
         )
         assert self.dom.metadata(
             libvirt.VIR_DOMAIN_METADATA_ELEMENT,
             xmlconstants.METADATA_VM_VDSM_URI,
-            0
         ) == md_xml
 
     def undefineFlags(self, flags=0):

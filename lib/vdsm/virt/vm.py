@@ -3475,8 +3475,7 @@ class Vm(object):
                 self._dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
                                       metadata_xml,
                                       xmlconstants.METADATA_VM_TUNE_PREFIX,
-                                      xmlconstants.METADATA_VM_TUNE_URI,
-                                      0)
+                                      xmlconstants.METADATA_VM_TUNE_URI)
             except libvirt.libvirtError as e:
                 self.log.exception("updateVmPolicy failed")
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:

@@ -273,7 +273,7 @@ class Domain(object):
     def vcpusFlags(self, flags):
         return -1
 
-    def metadata(self, type, uri, flags):
+    def metadata(self, type, uri, flags=0):
         self._failIfRequested()
 
         if not self._metadata:
@@ -282,7 +282,7 @@ class Domain(object):
             raise e
         return self._metadata
 
-    def setMetadata(self, type, xml, prefix, uri, flags):
+    def setMetadata(self, type, xml, prefix, uri, flags=0):
         self._metadata = xml
 
     def schedulerParameters(self):

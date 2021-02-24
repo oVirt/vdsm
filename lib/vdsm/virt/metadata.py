@@ -512,8 +512,7 @@ class Descriptor(object):
         dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
                         md_xml,
                         self._namespace,
-                        self._namespace_uri,
-                        0)
+                        self._namespace_uri)
         self._log.debug(
             'dumped metadata for %s: %s', dom.UUIDString(), md_xml)
 

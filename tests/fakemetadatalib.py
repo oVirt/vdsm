@@ -64,7 +64,7 @@ class FakeDomain(object):
         if xml_string:
             dom.setMetadata(
                 libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                xml_string, prefix, uri, 0
+                xml_string, prefix, uri,
             )
         return dom
 
@@ -75,7 +75,7 @@ class FakeDomain(object):
     def UUIDString(self):
         return self._uuid
 
-    def metadata(self, xml_type, uri, flags):
+    def metadata(self, xml_type, uri, flags=0):
         # we only support METADATA_ELEMENT
         assert xml_type == libvirt.VIR_DOMAIN_METADATA_ELEMENT
         xml_string = self.xml.get(uri, None)
@@ -83,5 +83,5 @@ class FakeDomain(object):
             raise Error(libvirt.VIR_ERR_NO_DOMAIN_METADATA)
         return xml_string
 
-    def setMetadata(self, xml_type, xml_string, prefix, uri, flags):
+    def setMetadata(self, xml_type, xml_string, prefix, uri, flags=0):
         self.xml[uri] = xml_string

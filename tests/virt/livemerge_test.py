@@ -247,7 +247,7 @@ class FakeDomain:
     def UUIDString(self):
         return self._id
 
-    def setMetadata(self, type, xml, prefix, uri, flags):
+    def setMetadata(self, type, xml, prefix, uri, flags=0):
         # libvirt's setMetadata will add namespace uri to metadata tags in
         # the domain xml, here we care for volume chain sync after a
         # successful pivot.
