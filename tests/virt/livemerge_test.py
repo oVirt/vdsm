@@ -224,10 +224,9 @@ class RunningVM(Vm):
         }
 
         self.conf = self._conf_devices(config)
-        self.conf.update({
-            "vmId": config.values["vm-id"],
-            "xml": config.xmls["00-before.xml"]
-        })
+        self.conf["vmId"] = config.values["vm-id"]
+        self.conf["xml"] = config.xmls["00-before.xml"]
+
         self._external = False  # Used when syncing metadata.
         self._dom = FakeDomain(config)
         self.drive_monitor = FakeDriveMonitor()
