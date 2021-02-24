@@ -82,6 +82,15 @@ CHECKPOINT_1_WITH_CREATION_TIME_XML = """
     </domaincheckpoint>
     """.format(CHECKPOINT_1_ID, BACKUP_1_ID)
 
+DISKLESS_CHECKPOINT_ID = make_uuid()
+DISKLESS_CHECKPOINT_XML = """
+    <domaincheckpoint>
+      <name>{}</name>
+      <description>checkpoint for backup '{}'</description>
+      <creationTime>1</creationTime>
+    </domaincheckpoint>
+    """.format(DISKLESS_CHECKPOINT_ID, BACKUP_1_ID)
+
 # Incremental backup parameters
 BACKUP_2_ID = make_uuid()
 CHECKPOINT_2_ID = make_uuid()
@@ -1033,6 +1042,32 @@ def test_redefine_checkpoints_using_config():
 
     expected_result = {
         'checkpoint_ids': [checkpoint_1.getName(), checkpoint_2.getName()],
+    }
+    assert res["result"] == expected_result
+
+
+@requires_backup_support
+def test_redefine_diskless_checkpoints_using_config():
+    diskless_checkpoint = FakeCheckpoint(
+        DISKLESS_CHECKPOINT_XML, DISKLESS_CHECKPOINT_ID)
+    dom = FakeDomainAdapter(output_checkpoints=[diskless_checkpoint])
+    vm = FakeVm()
+
+    fake_checkpoint_config_cfg = [
+        {
+            'id': DISKLESS_CHECKPOINT_ID,
+            'config': {
+                'backup_id': BACKUP_1_ID,
+                'disks': [],
+                'to_checkpoint_id': DISKLESS_CHECKPOINT_ID,
+                'creation_time': 1
+            }
+        },
+    ]
+    res = backup.redefine_checkpoints(vm, dom, fake_checkpoint_config_cfg)
+
+    expected_result = {
+        'checkpoint_ids': [diskless_checkpoint.getName()],
     }
     assert res["result"] == expected_result
 

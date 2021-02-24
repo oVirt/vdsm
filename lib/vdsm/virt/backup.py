@@ -176,11 +176,6 @@ class BackupConfig(properties.Owner):
                 backup=self.backup_id)
 
         self.disks = [DiskConfig(d) for d in backup_config.get("disks", ())]
-        if len(self.disks) == 0:
-            raise exception.BackupError(
-                reason="Cannot start a backup without disks",
-                backup=self.backup_id)
-
         for disk in self.disks:
             if (self.from_checkpoint_id is None and
                     disk.backup_mode == MODE_INCREMENTAL):
@@ -193,6 +188,11 @@ class BackupConfig(properties.Owner):
 
 def start_backup(vm, dom, config):
     backup_cfg = BackupConfig(config)
+    if not backup_cfg.disks:
+        raise exception.BackupError(
+            reason="Cannot start a backup without disks",
+            backup=backup_cfg.backup_id)
+
     _validate_parent_id(vm, dom, backup_cfg)
 
     drives = _get_disks_drives(vm, backup_cfg)
@@ -614,15 +614,20 @@ def create_checkpoint_xml(backup_cfg, drives):
         creation_time.appendTextNode(str(backup_cfg.creation_time))
         checkpoint.appendChild(creation_time)
 
-    disks = vmxml.Element('disks')
-    for disk in backup_cfg.disks:
-        if disk.checkpoint:
-            drive = drives[disk.img_id]
-            disk_elm = vmxml.Element(
-                'disk', name=drive.name, checkpoint='bitmap')
-            disks.appendChild(disk_elm)
+    # When the XML is created for redefining a checkpoint,
+    # the checkpoint may not contain disks at all, for e.g -
+    # old disks that were removed/detached from the VM.
+    # In that case, we should not add the <disks> element.
+    if backup_cfg.disks:
+        disks = vmxml.Element('disks')
+        for disk in backup_cfg.disks:
+            if disk.checkpoint:
+                drive = drives[disk.img_id]
+                disk_elm = vmxml.Element(
+                    'disk', name=drive.name, checkpoint='bitmap')
+                disks.appendChild(disk_elm)
 
-    checkpoint.appendChild(disks)
+        checkpoint.appendChild(disks)
 
     return xmlutils.tostring(checkpoint)
 
