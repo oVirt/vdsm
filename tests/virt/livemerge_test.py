@@ -409,16 +409,17 @@ def test_active_merge(monkeypatch):
     assert persisted_job["state"] == Job.COMMIT
     assert persisted_job["extend_started"] is None
 
-    # And start a libvit block commit job.
-    job = vm._dom.block_jobs["sda"]
+    # And start a libvirt block commit job.
+    block_job = vm._dom.block_jobs["sda"]
+    assert block_job
 
     assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
-            "cur": str(job["cur"]),
+            "cur": str(block_job["cur"]),
             "drive": "sda",
-            "end": str(job["end"]),
+            "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
             "jobType": "block"
@@ -430,14 +431,15 @@ def test_active_merge(monkeypatch):
     assert persisted_job["state"] == Job.COMMIT
 
     # Check block job status while in progress.
-    job["cur"] = job["end"] // 2
+    block_job["cur"] = block_job["end"] // 2
+
     assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
-            "cur": str(job["cur"]),
+            "cur": str(block_job["cur"]),
             "drive": "sda",
-            "end": str(job["end"]),
+            "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
             "jobType": "block"
@@ -446,14 +448,15 @@ def test_active_merge(monkeypatch):
 
     # Check job status when job finished, but before libvirt
     # updated the xml.
-    job["cur"] = job["end"]
+    block_job["cur"] = block_job["end"]
+
     assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
-            "cur": str(job["cur"]),
+            "cur": str(block_job["cur"]),
             "drive": "sda",
-            "end": str(job["end"]),
+            "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
             "jobType": "block"
@@ -480,9 +483,9 @@ def test_active_merge(monkeypatch):
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
-            "cur": str(job["cur"]),
+            "cur": str(block_job["cur"]),
             "drive": "sda",
-            "end": str(job["end"]),
+            "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
             "jobType": "block"
@@ -539,31 +542,34 @@ def test_internal_merge():
     base_volume['apparentsize'] = new_size
     extend_callback(vol_info)
 
+    # Extend triggers a commit, starting libvirt block job.
+    block_job = vm._dom.block_jobs["sda"]
+    assert block_job
+
     # Active jobs after calling merge.
     assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
-            "cur": "0",
+            "cur": str(block_job["cur"]),
             "drive": "sda",
-            "end": "1073741824",
+            "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
             "jobType": "block"
         }
     }
 
-    job = vm._dom.blockJobInfo("sda")
-
     # Check block job status while in progress.
-    job["cur"] = job["end"] // 2
+    block_job["cur"] = block_job["end"] // 2
+
     assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
-            "cur": str(job["cur"]),
+            "cur": str(block_job["cur"]),
             "drive": "sda",
-            "end": "1073741824",
+            "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
             "jobType": "block"
@@ -572,14 +578,15 @@ def test_internal_merge():
 
     # Check job status when job finished, but before libvirt
     # updated the xml.
-    job["cur"] = job["end"]
+    block_job["cur"] = block_job["end"]
+
     assert vm.query_jobs() == {
         job_id : {
             "bandwidth" : 0,
             "blockJobType": "commit",
-            "cur": str(job["cur"]),
+            "cur": str(block_job["cur"]),
             "drive": "sda",
-            "end": "1073741824",
+            "end": str(block_job["end"]),
             "id": job_id,
             "imgUUID": img_id,
             "jobType": "block"
