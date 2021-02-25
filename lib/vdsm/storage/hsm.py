@@ -3844,11 +3844,13 @@ class HSM(object):
         self._spmSchedule(self._pool.spUUID, "rebuild_leases",
                           self._pool.rebuild_leases, sd_id)
 
-    # Optional lease operations - not used yet from engine.
-
     @public
     def lease_status(self, lease):
-        raise NotImplementedError
+        lease = validators.Lease(lease)
+        self._check_pool_connected()
+        with rm.acquireResource(STORAGE, lease.sd_id, rm.SHARED):
+            dom = sdCache.produce_manifest(lease.sd_id)
+            return dict(result=dom.lease_status(lease.lease_id, self._pool.id))
 
     # NBD
 

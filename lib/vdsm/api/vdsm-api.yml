@@ -8690,6 +8690,31 @@ types:
         values:
         - *JobMetadata
 
+    ExternalLeaseStatus: &ExternalLeaseStatus
+        added: '4.4.6'
+        description: The status of an external lease
+        name: ExternalLeaseStatus
+        properties:
+        -   description: The host ids of the hosts owning this lease. If
+                empty, the lease is free; otherwise the lease is acquired.
+                If a lease is exclusive, contains the host id of the
+                single host owning this lease.
+            name: owners
+            type: uint
+
+        -   description: A monotonically increasing unsigned 64 bit
+                integer, incremented each time a lease is acquired
+                successfully.
+            name: version
+            type: uint
+
+        -   defaultvalue: null
+            description: The lease metadata read from lease's LVB.
+            name: metadata
+            type: *LeaseMetadata
+
+        type: object
+
     VolumeMeasureResult: &VolumeMeasureResult
         added: '4.4'
         description: 'Volume size measured by qemu-img measure'
@@ -10045,7 +10070,7 @@ Lease.status:
 
     return:
         description: Information about the sanlock lease status
-        type: *VolumeLeaseStatus
+        type: *ExternalLeaseStatus
 
 LVMVolumeGroup.create:
     added: '3.1'

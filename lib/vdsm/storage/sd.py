@@ -782,6 +782,58 @@ class StorageDomainManifest(object):
             with self.external_leases_volume() as vol:
                 return vol.lookup(lease_id)
 
+    def lease_status(self, lease_id, host_id):
+        """
+        Return the status of an external lease, indicating whether it is
+        currently held.
+
+        Returns:
+            A dict containing information about the lease, such as:
+            owners - A list of host ids holding the lease
+            version - The version of the host, a lease's owner isa combination
+                      of a host id and a version (controlled by sanlock)
+            metadata - The lvb data stored on the lease.
+
+        """
+        lease_info = self.lease_info(lease_id)
+        lease = clusterlock.Lease(
+            lease_info.resource,
+            lease_info.path,
+            lease_info.offset)
+
+        # Failing here will raise an exception, this expected as we cannot
+        # tell anything about the status of the lease if we couldn't inquire
+        # it.
+        res_version, owner_host_id = self._domainLock.inquire(lease)
+        lvb = None
+
+        # We only care about reading lvb on released leases, as lvb is written
+        # when the lease is released and we'll fail to acquire the lease if
+        # it's held anyway.
+        if owner_host_id is None:
+            try:
+                self.acquire_external_lease(lease_id, host_id)
+            except se.AcquireLockFailure:
+                self.log.warn("Could not acquire lease %s", lease_id)
+                # lease is currently held, return lease info without lvb
+            else:
+                try:
+                    lvb = self.get_lvb(lease_id)
+                finally:
+                    self.release_external_lease(lease_id)
+
+        owners = [owner_host_id] if owner_host_id is not None else []
+
+        response = {
+            "owners": owners,
+            "version": res_version,
+        }
+
+        if lvb is not None:
+            response["metadata"] = lvb
+
+        return response
+
     def set_lvb(self, lease_id, info):
         """
         Write LVB data for lease.
