@@ -784,6 +784,17 @@ class StorageDomain(object):
         storage domain object.
         """
 
+    @contextmanager
+    def tearing_down(self):
+        """
+        Context manager which ensures that upon exiting context, storage domain
+        is torn down.
+        """
+        try:
+            yield
+        finally:
+            self.teardown()
+
     # Other
 
     @property

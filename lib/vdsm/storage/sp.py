@@ -1074,31 +1074,40 @@ class StoragePool(object):
 
         dom = sdCache.produce(sdUUID)
 
-        # Avoid detach domains if not owned by pool
-        self._assert_sd_owned_by_pool(dom)
+        # To detach SD, it has to be put into maintenance, which stops
+        # monitoring thread. Producing SD will call its constructor, which
+        # in case of block SD, will activate special LVs, but these won't be
+        # deactivate by monitoring thread as it was already stopped. Tear the
+        # domain down once detach is finished.
+        # TODO: remove once SD constructor is refactored so it doesn't do any
+        # actions on the storage, like activating LVs.
 
-        if sdUUID == self.masterDomain.sdUUID:
-            raise se.CannotDetachMasterStorageDomain(sdUUID)
+        with dom.tearing_down():
+            # Avoid detach domains if not owned by pool
+            self._assert_sd_owned_by_pool(dom)
 
-        # TODO: clusterLock protection should be moved to
-        #       StorageDomain.[at,de]tach()
-        detachingISO = dom.isISO()
+            if sdUUID == self.masterDomain.sdUUID:
+                raise se.CannotDetachMasterStorageDomain(sdUUID)
 
-        if detachingISO:
-            # An ISO domain can be shared by multiple pools
-            dom.acquireHostId(self.id)
-            dom.acquireClusterLock(self.id)
+            # TODO: clusterLock protection should be moved to
+            #       StorageDomain.[at,de]tach()
+            detachingISO = dom.isISO()
 
-        try:
-            # Remove pool info from domain metadata
-            dom.detach(self.spUUID)
-        finally:
             if detachingISO:
-                dom.releaseClusterLock()
-                dom.releaseHostId(self.id)
+                # An ISO domain can be shared by multiple pools
+                dom.acquireHostId(self.id)
+                dom.acquireClusterLock(self.id)
 
-        # Remove domain from pool metadata
-        self.forcedDetachSD(sdUUID)
+            try:
+                # Remove pool info from domain metadata
+                dom.detach(self.spUUID)
+            finally:
+                if detachingISO:
+                    dom.releaseClusterLock()
+                    dom.releaseHostId(self.id)
+
+            # Remove domain from pool metadata
+            self.forcedDetachSD(sdUUID)
 
     def detachAllDomains(self):
         """
