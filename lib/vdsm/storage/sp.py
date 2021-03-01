@@ -536,8 +536,7 @@ class StoragePool(object):
         # Cleanup links to domains under /rhev/datacenter/poolName
         self.refresh(msdUUID, masterVersion)
 
-    # TODO: Remove or rename this function.
-    def validatePoolSD(self, sdUUID):
+    def _assert_sd_in_pool(self, sdUUID):
         if sdUUID not in self.getDomains():
             raise se.StorageDomainNotMemberOfPool(self.spUUID, sdUUID)
         return True
@@ -546,7 +545,7 @@ class StoragePool(object):
         """
         Avoid handling domains if not owned by pool.
         """
-        self.validatePoolSD(dom.sdUUID)
+        self._assert_sd_in_pool(dom.sdUUID)
         if self.spUUID not in dom.getPools():
             dom.invalidateMetadata()
             if self.spUUID not in dom.getPools():
@@ -1179,7 +1178,7 @@ class StoragePool(object):
         :param masterVersion: new master storage domain version
         """
 
-        self.validatePoolSD(sdUUID)
+        self._assert_sd_in_pool(sdUUID)
         self.log.info("sdUUID=%s spUUID=%s newMsdUUID=%s", sdUUID, self.spUUID,
                       newMsdUUID)
         domList = self.getDomains()
@@ -1380,7 +1379,7 @@ class StoragePool(object):
                     If sdUUID is None, the update is on the pool, and therefore
                     the master domain will be updated.
         """
-        self.validatePoolSD(sdUUID)
+        self._assert_sd_in_pool(sdUUID)
         self.log.info("spUUID=%s sdUUID=%s", self.spUUID, sdUUID)
         vms = self._getVMsPath(sdUUID)
         # We should exclude 'masterd' link from IMG_METAPATTERN globing
@@ -1420,7 +1419,7 @@ class StoragePool(object):
         Remove VM.
          'vmUUID' - Virtual machine UUID
         """
-        self.validatePoolSD(sdUUID)
+        self._assert_sd_in_pool(sdUUID)
         self.log.info("spUUID=%s vmUUID=%s sdUUID=%s", self.spUUID, vmUUID,
                       sdUUID)
         vms = self._getVMsPath(sdUUID)
@@ -1435,11 +1434,11 @@ class StoragePool(object):
         # block devices. The scope of this method is to extend only the
         # volume apparent size; the virtual disk size seen by the guest is
         # unchanged.
-        self.validatePoolSD(sdUUID)
+        self._assert_sd_in_pool(sdUUID)
         sdCache.produce(sdUUID).extendVolume(volumeUUID, size, isShuttingDown)
 
     def reduceVolume(self, sdUUID, imgUUID, volUUID, allowActive=False):
-        self.validatePoolSD(sdUUID)
+        self._assert_sd_in_pool(sdUUID)
         dom = sdCache.produce(sdUUID)
         dom.reduceVolume(imgUUID, volUUID, allowActive=allowActive)
 
@@ -1967,40 +1966,40 @@ class StoragePool(object):
         domain.deleteImage(domain.sdUUID, imgUUID, volsByImg)
 
     def setVolumeDescription(self, sdUUID, imgUUID, volUUID, description):
-        self.validatePoolSD(sdUUID)
+        self._assert_sd_in_pool(sdUUID)
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
             vol.setDescription(description)
 
     def setVolumeLegality(self, sdUUID, imgUUID, volUUID, legality):
-        self.validatePoolSD(sdUUID)
+        self._assert_sd_in_pool(sdUUID)
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
             vol.setLegality(legality)
 
     def getVmsList(self, sdUUID):
-        self.validatePoolSD(sdUUID)
+        self._assert_sd_in_pool(sdUUID)
         return sdCache.produce(sdUUID).getVMsList()
 
     def getVmsInfo(self, sdUUID, vmList=None):
-        self.validatePoolSD(sdUUID)
+        self._assert_sd_in_pool(sdUUID)
         return sdCache.produce(sdUUID).getVMsInfo(vmList=vmList)
 
     def validateVolumeChain(self, sdUUID, imgUUID):
         image.Image(self.poolPath).validateVolumeChain(sdUUID, imgUUID)
 
     def extendSD(self, sdUUID, devlist, force):
-        self.validatePoolSD(sdUUID)
+        self._assert_sd_in_pool(sdUUID)
         sdCache.produce(sdUUID).extend(devlist, force)
 
     def resizePV(self, sdUUID, guid):
-        self.validatePoolSD(sdUUID)
+        self._assert_sd_in_pool(sdUUID)
         sdCache.produce(sdUUID).resizePV(guid)
 
     def setSDDescription(self, sd, description):
-        self.validatePoolSD(sd.sdUUID)
+        self._assert_sd_in_pool(sd.sdUUID)
         sd.setDescription(description)
 
     def getAllTasksStatuses(self):
