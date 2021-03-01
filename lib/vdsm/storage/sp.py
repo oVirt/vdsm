@@ -1083,6 +1083,9 @@ class StoragePool(object):
         # actions on the storage, like activating LVs.
 
         with dom.tearing_down():
+            # Avoid detach domains which were not put into maintenance first.
+            self._assert_sd_in_attached_state(sdUUID)
+
             # Avoid detach domains if not owned by pool
             self._assert_sd_owned_by_pool(dom)
 
