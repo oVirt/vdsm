@@ -648,6 +648,15 @@ class GetFileStatsError(StorageException):
 #  Domains Exceptions
 #################################################
 
+class StorageDomainIllegalStateError(StorageException):
+    code = 347
+    msg = "Storage domain is in illegal state"
+
+    def __init__(self, sdUUID, expected_state, actual_state):
+        self.value = "sdUUID=%s, expected state=%s, actual state=%s" % (
+            sdUUID, expected_state, actual_state)
+
+
 class StorageDomainBlockSizeMismatch(StorageException):
     code = 348
     msg = "Block size does not match storage block size"

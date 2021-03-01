@@ -552,6 +552,12 @@ class StoragePool(object):
                 raise se.StorageDomainNotInPool(self.spUUID, dom.sdUUID)
         return True
 
+    def _assert_sd_in_attached_state(self, sdUUID):
+        domains = self.getDomains()
+        if domains[sdUUID] != sd.DOM_ATTACHED_STATUS:
+            raise se.StorageDomainIllegalStateError(
+                sdUUID, sd.DOM_ATTACHED_STATUS, domains[sdUUID])
+
     @unsecured
     def _acquireTemporaryClusterLock(self, msdUUID, leaseParams):
         try:
