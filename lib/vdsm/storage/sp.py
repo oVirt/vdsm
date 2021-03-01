@@ -541,7 +541,7 @@ class StoragePool(object):
             raise se.StorageDomainNotMemberOfPool(self.spUUID, sdUUID)
         return True
 
-    def validateAttachedDomain(self, dom):
+    def _assert_sd_owned_by_pool(self, dom):
         """
         Avoid handling domains if not owned by pool.
         """
@@ -981,7 +981,7 @@ class StoragePool(object):
             dom = sdCache.produce(sdUUID)
 
         try:
-            self.validateAttachedDomain(dom)
+            self._assert_sd_owned_by_pool(dom)
         except (se.StorageDomainNotMemberOfPool, se.StorageDomainNotInPool):
             pass  # domain is not attached to this pool yet
         else:
@@ -1069,7 +1069,7 @@ class StoragePool(object):
         dom = sdCache.produce(sdUUID)
 
         # Avoid detach domains if not owned by pool
-        self.validateAttachedDomain(dom)
+        self._assert_sd_owned_by_pool(dom)
 
         if sdUUID == self.masterDomain.sdUUID:
             raise se.CannotDetachMasterStorageDomain(sdUUID)
@@ -1145,7 +1145,7 @@ class StoragePool(object):
 
         dom = sdCache.produce(sdUUID)
         # Avoid domain activation if not owned by pool
-        self.validateAttachedDomain(dom)
+        self._assert_sd_owned_by_pool(dom)
 
         # Do nothing if already active
         domainStatuses = self.getDomains()
