@@ -71,9 +71,11 @@ class IRS(object):
             return response.error_raw(error.code, error.msg)
 
         vol_info = self.prepared_volumes[key]
+
+        # NOTE: The real API return strings.
         return response.success(
-            apparentsize=vol_info['apparentsize'],
-            truesize=vol_info['truesize'])
+            apparentsize=str(vol_info['apparentsize']),
+            truesize=str(vol_info['truesize']))
 
     def lease_info(storage_id, lease_id):
         return {
@@ -114,7 +116,13 @@ class IRS(object):
             error = exception.VolumeDoesNotExist
             return response.error_raw(error.code, error.msg)
 
-        return response.success(info=self.prepared_volumes[key])
+        # NOTE: The real API returns strings.
+        vol_info = self.prepared_volumes[key].copy()
+        vol_info["apparentsize"] = str(vol_info["apparentsize"])
+        vol_info["truesize"] = str(vol_info["truesize"])
+        vol_info["capacity"] = str(vol_info["capacity"])
+
+        return response.success(info=vol_info)
 
     def setVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, capacity):
         key = (sdUUID, imgUUID, volUUID)
