@@ -201,6 +201,7 @@ class Config:
 class RunningVM(Vm):
 
     def __init__(self, config):
+        self._dom = FakeDomain(config)
         self.log = logging.getLogger()
         self.cif = fake.ClientIF()
         self._domain = DomainDescriptor(config.xmls["00-before.xml"])
@@ -218,9 +219,19 @@ class RunningVM(Vm):
             ]
         }
 
+        # Add the drives to to IRS:
         self.cif.irs.prepared_volumes = {
             (drive["domainID"], drive["imageID"], vol_id): vol_info
             for vol_id, vol_info in config.values["volumes"].items()
+        }
+
+        # Add the drive block info to fake domain.  This value is returned by
+        # FakeDomain.blockInfo().
+        top_volume = config.values["volumes"][drive["volumeID"]]
+        self._dom.drives[drive["path"]] = {
+            "capacity": top_volume["capacity"],
+            "alloc": 0,
+            "physical": top_volume["apparentsize"],
         }
 
         self.conf = self._conf_devices(config)
@@ -228,7 +239,6 @@ class RunningVM(Vm):
         self.conf["xml"] = config.xmls["00-before.xml"]
 
         self._external = False  # Used when syncing metadata.
-        self._dom = FakeDomain(config)
         self.drive_monitor = FakeDriveMonitor()
         self._confLock = threading.Lock()
         self._drive_merger = DriveMerger(self)
@@ -255,6 +265,8 @@ class FakeDomain:
         self.metadata = "<vm><jobs>{}</jobs></vm>"
         self.aborted = threading.Event()
         self.block_jobs = {}
+        # Keeps block info dict for every drive, returned by blockInfo().
+        self.drives = {}
 
     def UUIDString(self):
         return self._id
@@ -301,8 +313,22 @@ class FakeDomain:
         self.aborted.set()
         del self.block_jobs[drive]
 
-    def blockInfo(self, drive_name, flags=0):
-        return (1024, 0, 0)
+    def blockInfo(self, path, flags=0):
+        """
+        Return drive block info tuple (capacity, alloc, physical).
+
+        Libvirt supports drive path ("/path/to/top/volume"), drive name (e.g.
+        "sda"), or name[index] notation ("sda[4]").  We support only drive
+        path.
+
+        For more info see:
+        https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainGetBlockInfo
+        """
+        if path not in self.drives:
+            raise fake.libvirt_error(
+                [libvirt.VIR_ERR_INTERNAL_ERROR], "Drive not found")
+        drive = self.drives[path]
+        return drive["capacity"], drive["alloc"], drive["physical"]
 
 
 def test_merger_dump_jobs(fake_time):
@@ -409,9 +435,20 @@ def test_active_merge(monkeypatch):
     assert len(vm.cif.irs.extend_requests) == 1
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
 
-    # Simulate base volume extension and invoke the verifying callback.
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
-    base_volume['apparentsize'] = new_size
+    # We should extend to next volume size based on base and top currrent size,
+    # base volume capacity, and chunk size configuration.
+    top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
+    max_alloc = base["apparentsize"] + top["apparentsize"]
+    drive = vm.getDiskDevices()[0]
+
+    assert new_size == drive.getNextVolumeSize(max_alloc, top["capacity"])
+
+    # Simulate base volume extension and invoke the verifying callback. We have
+    # to modify both storage info and libvirt info.
+    base['apparentsize'] = new_size
+    vm._dom.drives[drive.path]["physical"] = new_size
+
     extend_callback(vol_info)
 
     # Extend callback started a commit and persisted the job.
@@ -551,9 +588,12 @@ def test_internal_merge():
     assert len(vm.cif.irs.extend_requests) == 1
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
 
-    # Simulate base volume extension and invoke the verifying callback.
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
-    base_volume['apparentsize'] = new_size
+    # Simulate base volume extension.
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
+    drive = vm.getDiskDevices()[0]
+    base['apparentsize'] = new_size
+    vm._dom.drives[drive.path]["physical"] = new_size
+
     extend_callback(vol_info)
 
     # Extend triggers a commit, starting a libvirt block commit block job.
@@ -659,8 +699,11 @@ def test_internal_merge():
 
 def test_extend_timeout():
     config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
+    base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
 
@@ -681,6 +724,11 @@ def test_extend_timeout():
 
     # Simulate slow extend completing after jobs was untracked.
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
+    base['apparentsize'] = new_size
+    drive = vm.getDiskDevices()[0]
+    vm._dom.drives[drive.path]["physical"] = new_size
+
     extend_callback(vol_info)
 
 
@@ -698,10 +746,13 @@ def test_merge_cancel_commit():
 
     vm.merge(**merge_params)
 
-    # Simulate base volume extension completion.
+    # Simulate base volume extension.
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
-    base_volume['apparentsize'] = new_size
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
+    drive = vm.getDiskDevices()[0]
+    base['apparentsize'] = new_size
+    vm._dom.drives[drive.path]["physical"] = new_size
+
     extend_callback(vol_info)
 
     # Job switched to COMMIT state.
@@ -763,8 +814,11 @@ def test_block_job_info_error(monkeypatch):
 
     # Simulate base volume extension completion.
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
-    base_volume['apparentsize'] = new_size
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
+    drive = vm.getDiskDevices()[0]
+    base['apparentsize'] = new_size
+    vm._dom.drives[drive.path]["physical"] = new_size
+
     extend_callback(vol_info)
 
     # Job switched to COMMIT state.
@@ -828,8 +882,10 @@ def test_merge_commit_error(monkeypatch):
 
     # Simulate base volume extension completion.
     _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
-    base_volume = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
-    base_volume['apparentsize'] = new_size
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
+    drive = vm.getDiskDevices()[0]
+    base['apparentsize'] = new_size
+    vm._dom.drives[drive.path]["physical"] = new_size
 
     # Extend completion trigger failed commit.
     with pytest.raises(exception.MergeFailed):

@@ -6,19 +6,19 @@ volumes:
   222d8121-628a-4e41-a4bd-75eea136ff60:
     format: COW
     voltype: LEAF
-    capacity: 1073741824
+    capacity: 10737418240
     truesize: 1073741824
     apparentsize: 1073741824
   155955bb-d545-4d68-9a03-2ffb8e950042:
     format: COW
     voltype: INTERNAL
-    capacity: 1073741824
+    capacity: 10737418240
     truesize: 1073741824
     apparentsize: 1073741824
   6756892a-3608-4c6e-9023-6a36f0f98bab:
     format: COW
     voltype: INTERNAL
-    capacity: 1073741824
+    capacity: 10737418240
     truesize: 1073741824
     apparentsize: 1073741824
 vm-id: a2c26624-70ff-4782-bdaf-54c095333ac0
