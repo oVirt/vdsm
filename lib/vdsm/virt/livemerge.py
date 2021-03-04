@@ -293,7 +293,7 @@ class DriveMerger:
             except JobExistsError as e:
                 raise exception.MergeFailed(str(e), job=job.id)
 
-            if self._base_needs_extend(drive, base_info):
+            if self._base_needs_extend(drive, job, base_info):
                 self._start_extend(drive, job, base_info, top_info)
             else:
                 self._start_commit(drive, job)
@@ -405,7 +405,7 @@ class DriveMerger:
             self._untrack_job(job.id)
             raise exception.MergeFailed(str(e), job=job.id)
 
-    def _base_needs_extend(self, drive, base_info):
+    def _base_needs_extend(self, drive, job, base_info):
         # blockCommit will cause data to be written into the base volume.
         # Perform an initial extension to ensure there is enough space to
         # copy all the required data.  Normally we'd use monitoring to extend
@@ -414,7 +414,23 @@ class DriveMerger:
         # the worst case, the allocated size of 'base' should be increased by
         # the allocated size of 'top' plus one additional chunk to accomodate
         # additional writes to 'top' during the live merge operation.
-        return drive.chunked and base_info['format'] == 'COW'
+        if not drive.chunked or base_info['format'] != 'COW':
+            log.debug("Base volume does not support extending "
+                      "job=%s drive=%s volume=%s",
+                      job.id, job.drive, job.base)
+            return False
+
+        max_size = drive.getMaxVolumeSize(int(base_info["capacity"]))
+
+        # Size can be bigger than maximum value due to rounding to LVM extent
+        # size (128 MiB).
+        if int(base_info["apparentsize"]) >= max_size:
+            log.debug("Base volume is already extended to maximum size "
+                      "job=%s drive=%s volume=%s size=%s",
+                      job.id, job.drive, job.base, base_info["apparentsize"])
+            return False
+
+        return True
 
     def _start_extend(self, drive, job, base_info, top_info):
         """

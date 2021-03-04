@@ -706,6 +706,30 @@ def test_extend_timeout():
     simulate_volume_extension(vm, base_id)
 
 
+def test_extend_skipped():
+    config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
+    merge_params = config.values["merge_params"]
+    job_id = merge_params["jobUUID"]
+    base_id = merge_params["baseVolUUID"]
+
+    vm = RunningVM(config)
+
+    # Simulate base volume extended to the maximum size.
+    drive = vm.getDiskDevices()[0]
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
+    max_size = drive.getMaxVolumeSize(base["capacity"])
+    base['apparentsize'] = max_size
+    vm._dom.drives[drive.path]["physical"] = max_size
+
+    vm.merge(**merge_params)
+
+    # Since base cannot be extended, jobs skips EXTEND phase.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.COMMIT
+
+
 def test_merge_cancel_commit():
     config = Config('active-merge')
     merge_params = config.values["merge_params"]
