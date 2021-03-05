@@ -34,21 +34,24 @@ software_revision = "@PACKAGE_BASE_RELEASE@"
 raw_version_revision = "@PACKAGE_VERSION@.@PACKAGE_RELEASE@"
 
 
-def _has_libvirt_6_6():
+def _get_libvirt_version():
     packages = osinfo.package_versions()
     libvirt_version = tuple(
         int(v)
         for v in packages['libvirt']['version'].split('.')
     )
-    return libvirt_version[:2] >= (6, 6)
+    return libvirt_version[:2]
 
 
 @cache.memoized
 def version_info():
     cluster_levels = ['4.2', '4.3', '4.4']
+    libvirt_version = _get_libvirt_version()
 
-    if _has_libvirt_6_6():
+    if libvirt_version >= (6, 6):
         cluster_levels.append('4.5')
+    if libvirt_version >= (7, 0):
+        cluster_levels.append('4.6')
 
     return {
         'version_name': version_name,
