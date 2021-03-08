@@ -38,7 +38,6 @@ GUESTFS_DEVICE_NAME = 'org.libguestfs.channel.0'
 # This device name is used as default both in the qemu-guest-agent
 # service/daemon and in libvirtd (to be used with the quiesce flag).
 QEMU_GA_DEVICE_NAME = 'org.qemu.guest_agent.0'
-AGENT_DEVICE_NAMES = (LEGACY_DEVICE_NAME, QEMU_GA_DEVICE_NAME)
 
 
 class Listener(object):

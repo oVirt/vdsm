@@ -45,6 +45,9 @@ from vmTestsData import CONF_TO_DOMXML_NO_VDSM
 from . import vmfakelib as fake
 import pytest
 
+AGENT_DEVICE_NAMES = (vmchannels.LEGACY_DEVICE_NAME,
+                      vmchannels.QEMU_GA_DEVICE_NAME)
+
 
 class VmXmlTestCase(TestCaseBase):
 
@@ -289,9 +292,9 @@ class TestDomainDescriptor(VmXmlTestCase):
         for _, dom_xml in self._build_domain_xml(arch):
             dom = descriptor(dom_xml)
             channels = list(dom.all_channels())
-            assert len(channels) >= len(vmchannels.AGENT_DEVICE_NAMES)
+            assert len(channels) >= len(AGENT_DEVICE_NAMES)
             for name, path in channels:
-                assert name in vmchannels.AGENT_DEVICE_NAMES
+                assert name in AGENT_DEVICE_NAMES
 
     @permutations([[domain_descriptor.DomainDescriptor],
                    [domain_descriptor.MutableDomainDescriptor]])
@@ -299,7 +302,7 @@ class TestDomainDescriptor(VmXmlTestCase):
         for conf, raw_xml in CONF_TO_DOMXML_NO_VDSM:
             dom = descriptor(raw_xml % conf)
             assert sorted(dom.all_channels()) != \
-                sorted(vmchannels.AGENT_DEVICE_NAMES)
+                sorted(AGENT_DEVICE_NAMES)
 
     def test_no_channels(self):
         dom = domain_descriptor.MutableDomainDescriptor('<domain/>')
