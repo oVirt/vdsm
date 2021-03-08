@@ -1963,6 +1963,9 @@ class FakeLeaseDomain(object):
     def XMLDesc(self, flags=0):
         return '<domain/>'
 
+    def all_channels(self):
+        return []
+
 
 class FakeLeaseIRS(object):
     def __init__(self, conf):

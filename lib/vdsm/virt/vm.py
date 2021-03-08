@@ -4980,6 +4980,11 @@ class Vm(object):
             xml_source=(
                 XmlSource.INITIAL if xml is not None else
                 XmlSource.LIBVIRT))
+        if xml is None:
+            for name, _, state in self._domain.all_channels():
+                if name == vmchannels.QEMU_GA_DEVICE_NAME and \
+                        state is not None:
+                    self.cif.qga_poller.channel_state_hint(self.id, state)
 
     def _updateMetadataDescriptor(self):
         # load will overwrite any existing content, as per doc.

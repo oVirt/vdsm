@@ -27,8 +27,9 @@ import libvirt
 import libvirt_qemu
 import logging
 
-from vdsm import schedule, utils
-from vdsm.common.time import monotonic_time
+import pytest
+
+from vdsm import utils
 from vdsm.virt import qemuguestagent
 
 from testlib import make_config
@@ -180,12 +181,7 @@ def _dom_guestInfo(self, types, flags):
 class QemuGuestAgentTests(TestCaseBase):
     def setUp(self):
         self.cif = fake.ClientIF()
-        self.scheduler = schedule.Scheduler(name="test.Scheduler",
-                                            clock=monotonic_time)
-        self.scheduler.start()
-        self.log = logging.getLogger("test")
-        self.qga_poller = qemuguestagent.QemuGuestAgentPoller(
-            self.cif, self.log, self.scheduler)
+        self.qga_poller = self.cif.qga_poller
         self.vm = FakeVM()
         self.qga_poller.update_caps(
             self.vm.id,
@@ -202,6 +198,8 @@ class QemuGuestAgentTests(TestCaseBase):
                     qemuguestagent._QEMU_TIMEZONE_COMMAND,
                 ]
             })
+        self.qga_poller.channel_state_changed(
+            self.vm.id, qemuguestagent.CHANNEL_CONNECTED, 0)
 
     def test_caps(self):
         """
@@ -346,3 +344,30 @@ class QemuGuestAgentTests(TestCaseBase):
             'driver_version': '100.80.104.17300',
             'vendor_id': 6900,
         }
+
+    def test_state_changes(self):
+        self.qga_poller._channel_state[self.vm.id] = \
+            qemuguestagent.CHANNEL_UNKNOWN
+        self.qga_poller.channel_state_changed(
+            self.vm.id, qemuguestagent.CHANNEL_CONNECTED, 0)
+        assert self.qga_poller._channel_state[self.vm.id] == \
+            qemuguestagent.CHANNEL_CONNECTED
+        self.qga_poller.channel_state_changed(
+            self.vm.id, qemuguestagent.CHANNEL_DISCONNECTED, 0)
+        assert self.qga_poller._channel_state[self.vm.id] == \
+            qemuguestagent.CHANNEL_DISCONNECTED
+        self.qga_poller.channel_state_changed(
+            self.vm.id, qemuguestagent.CHANNEL_CONNECTED, 0)
+        assert self.qga_poller._channel_state[self.vm.id] == \
+            qemuguestagent.CHANNEL_CONNECTED
+        self.qga_poller.channel_state_changed(
+            self.vm.id, qemuguestagent.CHANNEL_CONNECTED, 0)
+        assert self.qga_poller._channel_state[self.vm.id] == \
+            qemuguestagent.CHANNEL_CONNECTED
+        # Test invalid values
+        with pytest.raises(ValueError):
+            self.qga_poller.channel_state_changed(
+                self.vm.id, -100, 0)
+        with pytest.raises(TypeError):
+            self.qga_poller.channel_state_changed(
+                self.vm.id, 'abc', 0)

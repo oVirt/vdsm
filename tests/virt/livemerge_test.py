@@ -280,6 +280,9 @@ class FakeDomain:
     def XMLDesc(self, flags=0):
         return self.xml
 
+    def all_channels(self):
+        return []
+
     def blockCommit(self, drive, base_target, top_target, bandwidth, flags=0):
         if flags & libvirt.VIR_DOMAIN_BLOCK_COMMIT_ACTIVE:
             job_type = libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT

@@ -66,6 +66,33 @@ with version and list of supported commands. But we also need to be able to
 make calls not (yet) supported by libvirt interface.
 
 
+Channel state tracking
+========================
+
+Because unlike the oVirt agent the QEMU guest agent is passive and does not
+periodically report information from guest we have a hard time knowing if the
+agent is in a good shape (i.e. is not stuck). That means if we want some
+information or action from the agent we have to try and hope for the best.
+Luckily we have at least some clue if the agent is there at all, listening for
+commands or not (not running or not installed). Libvirt watches messages from
+QEMU monitor about the state of the socket in the guest and tracks this
+information internally. This information is then provided to the management
+applications (in our case VDSM) in two ways -- in domain XML and via events.
+
+Similarly we too keep the state of the agent stored internally in the poller.
+We listen to libvirt `VIR_DOMAIN_EVENT_ID_AGENT_LIFECYCLE` event and remember
+the state of the channel. In most of the cases this should be good enough for
+tracking the actual state. Even during VM migration libvirt first notifies
+VDSM on destination host that the agent is disconnected. Later, when the VM is
+migrated, libvirt updates the state to connected if the agent is running
+inside the guest. For the edge cases, when the events are not enough (e.g.
+during VM recovery after VDSM restart) we can "bootstrap" the channel state by
+reading it from domain XML.
+
+Historically VDSM was blindly trying to reach the agent. This is still obvious
+on some code paths, but should be eliminated over time.
+
+
 Class Relationships
 =====================
 

@@ -191,7 +191,8 @@ def get(target=None, killOnFailure=True):
                            libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG,
                            libvirt.VIR_DOMAIN_EVENT_ID_JOB_COMPLETED,
                            libvirt.VIR_DOMAIN_EVENT_ID_DEVICE_REMOVED,
-                           libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_THRESHOLD):
+                           libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_THRESHOLD,
+                           libvirt.VIR_DOMAIN_EVENT_ID_AGENT_LIFECYCLE):
                     conn.domainEventRegisterAny(None,
                                                 ev,
                                                 target.dispatchLibvirtEvents,

@@ -701,6 +701,10 @@ class clientIF(object):
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB_2:
                 drive, job_type, job_status, _ = args
                 v.on_block_job_event(drive, job_type, job_status)
+            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_AGENT_LIFECYCLE:
+                vmid = dom.UUIDString()
+                state, reason, _ = args
+                self.qga_poller.channel_state_changed(vmid, state, reason)
             else:
                 v.log.debug('unhandled libvirt event (event_name=%s, args=%s)',
                             events.event_name(eventid), args)

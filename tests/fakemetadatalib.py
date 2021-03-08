@@ -75,6 +75,9 @@ class FakeDomain(object):
     def UUIDString(self):
         return self._uuid
 
+    def all_channels(self):
+        return []
+
     def metadata(self, xml_type, uri, flags=0):
         # we only support METADATA_ELEMENT
         assert xml_type == libvirt.VIR_DOMAIN_METADATA_ELEMENT

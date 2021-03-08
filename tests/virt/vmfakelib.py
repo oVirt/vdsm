@@ -28,17 +28,19 @@ import threading
 
 import libvirt
 
-from vdsm import constants
+from vdsm import constants, schedule
 from vdsm.common import cpuarch
 from vdsm.common import libvirtconnection
 from vdsm.common import response
 import vdsm.common.time
 from vdsm.common import xmlutils
+from vdsm.common.time import monotonic_time
 from vdsm.common.units import MiB
 from vdsm.storage import exception
 from vdsm.virt import domain_descriptor
 from vdsm.virt.domain_descriptor import DomainDescriptor, XmlSource
 from vdsm.virt import sampling
+from vdsm.virt import qemuguestagent
 from vdsm.virt import vm
 from vdsm.virt.vmdevices import core, storage
 
@@ -204,6 +206,11 @@ class ClientIF(object):
         self.bindings = {}
         self._recovery = False
         self.unknown_vm_ids = []
+        self._scheduler = schedule.Scheduler(name="test.Scheduler",
+                                             clock=monotonic_time)
+        self._scheduler.start()
+        self.qga_poller = qemuguestagent.QemuGuestAgentPoller(
+            self, self.log, self._scheduler)
 
     def createVm(self, vmParams, vmRecover=False):
         self.vmRequests[vmParams['vmId']] = (vmParams, vmRecover)
@@ -373,6 +380,9 @@ class Domain(object):
 
     def agentSetResponseTimeout(self, timeout, flags):
         self._agent_timeout = timeout
+
+    def all_channels(self):
+        return []
 
 
 class GuestAgent(object):

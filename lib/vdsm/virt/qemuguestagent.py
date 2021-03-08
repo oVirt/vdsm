@@ -120,6 +120,29 @@ _QEMU_COMMAND_PERIODS = {
 
 _DISK_DEVICE_RE = re.compile('^(/dev/[hsv]d[a-z]+)[0-9]+$')
 
+CHANNEL_CONNECTED = \
+    libvirt.VIR_CONNECT_DOMAIN_EVENT_AGENT_LIFECYCLE_STATE_CONNECTED
+CHANNEL_DISCONNECTED = \
+    libvirt.VIR_CONNECT_DOMAIN_EVENT_AGENT_LIFECYCLE_STATE_DISCONNECTED
+CHANNEL_UNKNOWN = -1
+
+
+def channel_state_to_str(state):
+    """
+    Turn state constant defined above (and in libvirt) to string
+    representation. The strings match textual representation returned by
+    libvirt in domain XML, but this is not a requirement and is only for
+    convenience.
+    """
+    # NOTE: This function must handle invalid values properly because it can
+    # receive unsanitized input!
+    if state == CHANNEL_CONNECTED:
+        return 'connected'
+    elif state == CHANNEL_DISCONNECTED:
+        return 'disconnected'
+    else:
+        return 'UNKNOWN'
+
 
 @virdomain.expose("guestInfo", "interfaceAddresses")
 class QemuGuestAgentDomain(object):
@@ -157,6 +180,9 @@ class QemuGuestAgentPoller(object):
         self._last_check_lock = threading.Lock()
         # Key is tuple (vm_id, command)
         self._last_check = defaultdict(lambda: 0)
+        self._channel_state = defaultdict(lambda: CHANNEL_UNKNOWN)
+        self._channel_state_hint = defaultdict(lambda: CHANNEL_UNKNOWN)
+        self._channel_state_lock = threading.Lock()
         self._initial_interval = config.getint(
             'guest_agent', 'qga_initial_info_interval')
         self.log.info('Using libvirt for querying QEMU-GA')
@@ -246,6 +272,48 @@ class QemuGuestAgentPoller(object):
             return True
         return False
 
+    def channel_state_changed(self, vm_id, state, reason):
+        """
+        Function used to notify the poller about change in state of guest
+        agent channel. Outside the object, this method should be used only in
+        response to libvirt events. In other situations use
+        channel_state_hint().
+        """
+        prev_state = self._channel_state[vm_id]
+        self.log.info(
+            'Channel state for vm_id=%s changed from=%s(%r) to=%s(%r)',
+            vm_id,
+            channel_state_to_str(self._channel_state[vm_id]),
+            prev_state,
+            channel_state_to_str(state),
+            state)
+        if not isinstance(state, int):
+            raise TypeError('Expected int for "state" argument')
+        if state not in (CHANNEL_CONNECTED, CHANNEL_DISCONNECTED):
+            raise ValueError('Invalid state value "%r"' % state)
+        with self._channel_state_lock:
+            self._channel_state[vm_id] = state
+        if prev_state != state and state == CHANNEL_CONNECTED:
+            # Clean failures on disconnected -> connected transition
+            self.reset_failure(vm_id)
+
+    def channel_state_hint(self, vm_id, state):
+        """
+        Give a hint about channel state. This method should be used when the
+        source of the hint is not a libvirt event.
+        """
+        if not isinstance(state, str):
+            raise TypeError('Expected str for "state" argument')
+        if state == 'connected':
+            int_state = CHANNEL_CONNECTED
+        elif state == 'disconnected':
+            int_state = CHANNEL_DISCONNECTED
+        else:
+            raise ValueError('Invalid state value "%r"' % state)
+        self.log.debug('Stored channel state hint for vm_id=%s, hint=%s',
+                       vm_id, state)
+        self._channel_state_hint[vm_id] = int_state
+
     def call_qga_command(self, vm, command, args=None):
         """
         Execute QEMU-GA command and return result as dict or None on error
@@ -261,6 +329,12 @@ class QemuGuestAgentPoller(object):
                     'Not sending QEMU-GA command \'%s\' to vm_id=\'%s\','
                     ' command is not supported', command, vm.id)
                 return None
+        # See if the agent is connected before sending anything
+        if self._channel_state[vm.id] != CHANNEL_CONNECTED:
+            self.log.debug(
+                'Not sending QEMU-GA command \'%s\' to vm_id=\'%s\','
+                ' agent is not connected', command, vm.id)
+            return None
 
         cmd = {'execute': command}
         if args is not None:
@@ -342,6 +416,27 @@ class QemuGuestAgentPoller(object):
     def _poller(self):
         for vm_id, vm_obj in six.viewitems(self._cif.getVMs()):
             now = monotonic_time()
+            # Check if there is any state hint to accept/reject
+            if self._channel_state_hint[vm_id] != CHANNEL_UNKNOWN:
+                # This does not need a lock because we don't care for the
+                # small race here. If we accept this hint we don't care for
+                # another and if we don't accept this hint we would reject
+                # another hint in the next run anyway.
+                hint = self._channel_state_hint[vm_id]
+                self._channel_state_hint[vm_id] = CHANNEL_UNKNOWN
+                hint_accepted = False
+                with self._channel_state_lock:
+                    # Note that we always prefer information we already have
+                    # to make sure we don't lose state changes that come from
+                    # events.
+                    if self._channel_state[vm_id] == CHANNEL_UNKNOWN:
+                        self._channel_state[vm_id] = hint
+                        hint_accepted = True
+                self.log.debug(
+                    '%s channel state hint for vm_id=%s, hint=%r',
+                    'Accepted' if hint_accepted else 'Rejected',
+                    vm_id, channel_state_to_str(hint))
+
             # Ensure we know guest agent's capabilities
             self._on_boot(vm_obj, now)
             if not self._runnable_on_vm(vm_obj):
@@ -538,6 +633,15 @@ class QemuGuestAgentPoller(object):
                 if vm_id not in vm_container:
                     del self._last_check[(vm_id, command)]
                     removed.add(vm_id)
+        with self._channel_state_lock:
+            for vm_id in copy.copy(self._channel_state):
+                if vm_id not in vm_container:
+                    del self._channel_state[vm_id]
+                    removed.add(vm_id)
+        for vm_id in copy.copy(self._channel_state_hint):
+            if vm_id not in vm_container:
+                del self._channel_state_hint[vm_id]
+                removed.add(vm_id)
         if removed:
             self.log.debug('Cleaned up old data for VMs: %s', removed)
 
@@ -546,6 +650,8 @@ class QemuGuestAgentPoller(object):
         if (monotonic_time() - last_failure) < _THROTTLING_INTERVAL:
             return False
         if not vm.isDomainRunning():
+            return False
+        if self._channel_state[vm.id] != CHANNEL_CONNECTED:
             return False
         return True
 
