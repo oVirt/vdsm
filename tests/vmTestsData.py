@@ -163,6 +163,10 @@ CONF_TO_DOMXML_NO_VDSM = [({
                 <source mode="bind"
         path="/var/lib/libvirt/qemu/channels/%(vmId)s.org.qemu.guest_agent.0"/>
             </channel>
+            <channel type="unix">
+                <target name="org.libguestfs.channel.0" type="virtio"/>
+                <source mode="connect" path="/tmp/guestfsd.sock"/>
+            </channel>
             <input bus="ps2" type="mouse"/>
             <memballoon model="none"/>
             <controller index="0" model="virtio-scsi" type="scsi">

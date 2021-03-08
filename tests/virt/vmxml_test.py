@@ -45,8 +45,9 @@ from vmTestsData import CONF_TO_DOMXML_NO_VDSM
 from . import vmfakelib as fake
 import pytest
 
-AGENT_DEVICE_NAMES = (vmchannels.LEGACY_DEVICE_NAME,
-                      vmchannels.QEMU_GA_DEVICE_NAME)
+AGENT_DEVICE_NAMES = frozenset([
+    vmchannels.LEGACY_DEVICE_NAME,
+    vmchannels.QEMU_GA_DEVICE_NAME])
 
 
 class VmXmlTestCase(TestCaseBase):
@@ -301,8 +302,8 @@ class TestDomainDescriptor(VmXmlTestCase):
     def test_all_channels_extra_domain(self, descriptor):
         for conf, raw_xml in CONF_TO_DOMXML_NO_VDSM:
             dom = descriptor(raw_xml % conf)
-            assert sorted(dom.all_channels()) != \
-                sorted(AGENT_DEVICE_NAMES)
+            dom_channels = frozenset([c[0] for c in dom.all_channels()])
+            assert len(dom_channels - AGENT_DEVICE_NAMES) == 1
 
     def test_no_channels(self):
         dom = domain_descriptor.MutableDomainDescriptor('<domain/>')
