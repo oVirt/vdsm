@@ -491,6 +491,11 @@ class InvalidConfiguration(ContextException):
     message = "Invalid configuration value"
 
 
+class MigrationOperationError(VdsmException):
+    code = 102
+    message = 'Error occurred during migration'
+
+
 class ActionStopped(GeneralException):
     code = 443
     message = "Action was stopped"

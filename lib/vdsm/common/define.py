@@ -90,6 +90,7 @@ errCode = {
     'migrateLimit': exception.MigrationLimitExceeded().response(),
     'recovery': exception.RecoveryInProgress().response(),
     'hostdevDetachErr': exception.HostdevDetachFailed().response(),
+    'migOperationErr': exception.MigrationOperationError().response(),
 }
 
 

@@ -445,6 +445,13 @@ class SourceThread(object):
                     if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
                         self.status = response.error(
                             'migCancelErr', message='Migration canceled')
+                    # This error occurs when hypervisor cannot start
+                    # the migration. For example, when a domain with the same
+                    # name already exists on the destination.
+                    elif e.get_error_code() == \
+                            libvirt.VIR_ERR_OPERATION_FAILED:
+                        self.status = response.error(
+                            'migOperationErr', message=e.get_str2())
                     raise
                 except MigrationLimitExceeded:
                     retry_timeout = config.getint('vars',
