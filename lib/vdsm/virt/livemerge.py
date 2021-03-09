@@ -247,7 +247,9 @@ class Job:
 
 class DriveMerger:
 
-    EXTEND_TIMEOUT = 30.0
+    # Extend takes normally 2-6 seconds, but if a host is overloaded it
+    # can be much slower.
+    EXTEND_TIMEOUT = 60.0
 
     def __init__(self, vm):
         self._vm = vm
