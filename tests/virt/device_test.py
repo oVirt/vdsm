@@ -248,6 +248,56 @@ class TestVmDevices(XMLTestCase):
             assert interface_dev.driver == \
                 {'queues': '10', 'name': 'vfio'}
 
+    def test_update_teaming_interfaces_with_same_mac(self):
+        failover_xml = """<interface type='bridge'>
+          <mac address='01:23:45:67:89:ab'/>
+          <source bridge='ovirtmgmt'/>
+          <model type='virtio'/>
+          <filterref filter='vdsm-no-mac-spoofing'/>
+          <teaming type='persistent'/>
+          <link state='up'/>
+          <mtu size='1500'/>
+          <alias name='ua-failover'/>
+          <address type='pci' domain='0x0000' bus='0x02' slot='0x00'
+           function='0x0'/>
+        </interface>"""
+
+        vf_xml = """<?xml version="1.0" encoding="utf-8"?>
+        <domain type="kvm"
+        xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
+            <devices>
+              <interface type='hostdev'>
+                <mac address='01:23:45:67:89:ab'/>
+                <driver name='vfio'/>
+                <source>
+                    <address type='pci' domain='0x0000' bus='0x00' slot='0x07'
+                    function='0x0'/>
+                </source>
+                <teaming type='transient' persistent='ua-failover'/>
+                <alias name='ua-vf'/>
+                <address type='pci' domain='0x0000' bus='0x06' slot='0x00'
+                function='0x0'/>
+                </interface>
+            </devices>
+        </domain>"""
+
+        meta = {'vmid': 'VMID'}
+        with fake.VM() as testvm:
+            failover_nic = vmdevices.network.Interface.from_xml_tree(
+                self.log, xmlutils.fromstring(failover_xml), meta=meta
+            )
+
+            testvm._devices[hwclass.NIC].append(failover_nic)
+            testvm._domain = DomainDescriptor(vf_xml)
+
+            vmdevices.network.Interface.update_device_info(
+                testvm, testvm._devices[hwclass.NIC]
+            )
+
+            assert failover_nic.macAddr == '01:23:45:67:89:ab'
+            assert failover_nic.teaming
+            assert failover_nic.alias == 'ua-failover'
+
     def test_interface_update_disappear_queues(self):
         interface_xml = """<interface type="bridge">
           <model type="virtio" />

@@ -55,15 +55,23 @@ class Interface(core.Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter', 'filterParameters',
                  'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev', 'mtu',
-                 'numa_node', '_device_params', 'vm_custom', 'port_isolated')
+                 'numa_node', '_device_params', 'vm_custom', 'port_isolated',
+                 'teaming')
 
     @classmethod
     def get_identifying_attrs(cls, dev_elem):
-        return core.get_xml_elem(dev_elem, 'mac_address', 'mac', 'address')
+        attrs = {'mac_address': vmxml.find_attr(dev_elem, 'mac', 'address')}
+        teaming = vmxml.find_first(dev_elem, 'teaming', None)
+        if teaming is not None:
+            attrs['alias'] = core.find_device_alias(dev_elem)
+
+        return attrs
 
     def get_metadata(self, dev_class):
         # dev_class unused
         attrs = {'mac_address': self.macAddr}
+        if self.teaming:
+            attrs['alias'] = self.alias
         data = core.get_metadata_values(self)
         core.update_metadata_from_object(
             data, self, METADATA_KEYS + METADATA_NESTED_KEYS)
@@ -117,6 +125,9 @@ class Interface(core.Base):
             params['custom'].update(
                 core.parse_device_attrs(driver, ('queues',))
             )
+        teaming = vmxml.find_first(dev, 'teaming', None)
+        if teaming is not None:
+            params['teaming'] = True
         sndbuf = dev.find('./tune/sndbuf')
         if sndbuf is not None:
             params['vm_custom']['sndbuf'] = vmxml.text(sndbuf)
@@ -153,6 +164,7 @@ class Interface(core.Base):
         self.linkActive = True
         self.mtu = None
         self.port_isolated = None
+        self.teaming = False
         super(Interface, self).__init__(log, **kwargs)
         self.sndbufParam = False
         self.is_hostdevice = self.device == hwclass.HOSTDEV
@@ -391,13 +403,18 @@ class Interface(core.Base):
                         vmxml.attr(source, 'network'))
 
             address = core.find_device_guest_address(x)
+            teaming = vmxml.find_first(x, 'teaming', None) is not None
 
             for nic in device_conf:
-                if nic.macAddr.lower() == mac.lower():
+                if (
+                    nic.macAddr.lower() == mac.lower()
+                    and (not teaming or nic.alias == alias)
+                ):
                     nic.name = name
                     nic.alias = alias
                     nic.address = address
                     nic.linkActive = linkActive
+                    nic.teaming = teaming
                     if driver:
                         # If a driver was reported, pass it back to libvirt.
                         # Engine (vm's conf) is not interested in this value.
@@ -405,12 +422,16 @@ class Interface(core.Base):
             # Update vm's conf with address for known nic devices
             knownDev = False
             for dev in vm.conf['devices']:
-                if (dev['type'] == hwclass.NIC and
-                        dev['macAddr'].lower() == mac.lower()):
+                if (
+                    dev['type'] == hwclass.NIC
+                    and dev['macAddr'].lower() == mac.lower()
+                    and (not teaming or dev['alias'] == alias)
+                ):
                     dev['address'] = address
                     dev['alias'] = alias
                     dev['name'] = name
                     dev['linkActive'] = linkActive
+                    dev['teaming'] = teaming
                     knownDev = True
             # Add unknown nic device to vm's conf
             if not knownDev:
@@ -421,7 +442,8 @@ class Interface(core.Base):
                           'address': address,
                           'alias': alias,
                           'name': name,
-                          'linkActive': linkActive}
+                          'linkActive': linkActive,
+                          'teaming': teaming}
                 if network:
                     nicDev['network'] = network
                 vm.conf['devices'].append(nicDev)
