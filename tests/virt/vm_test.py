@@ -1274,6 +1274,21 @@ class TestVmBalloon(TestCaseBase):
             testvm.setBalloonTarget(target)
             assert not hasattr(testvm._dom, '__calls__')
 
+    def testBalloningDisabled(self):
+        devices = '<memballoon model="virtio" alias="balloon"/>'
+        with fake.VM(
+            params={'memSize': 128 * 1024},
+            xmldevices=devices,
+            create_device_objects=True
+        ) as testvm:
+            testvm._dom = fake.Domain()
+            target = 256 * 1024
+            assert testvm._ballooning_enabled  # Verify the default
+            testvm._ballooning_enabled = False
+            testvm.setBalloonTarget(target)
+            assert not hasattr(testvm._dom, '__calls__')
+            assert testvm._balloon_target is None
+
 
 class ChangeBlockDevTests(TestCaseBase):
     def test_update_drive_parameters_failure(self):

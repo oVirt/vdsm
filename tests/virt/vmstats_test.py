@@ -692,4 +692,5 @@ class FakeVM(object):
         return {
             'target': 256 * KiB,
             'minimum': 256 * KiB,
+            'enabled': True,
         }

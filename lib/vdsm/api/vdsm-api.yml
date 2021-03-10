@@ -39,6 +39,16 @@ types:
             description: The amount of memory requested (in KiB)
             name: balloon_target
             type: string
+
+        -   defaultvalue: true
+            description: Flag indicating whether ballooning is enabled or
+                disabled for the VM. Even though we want to prevent certain VMs
+                from ballooning the memory, we still want to keep the balloon
+                device in such VMs because that's how we get memory statistics
+                from the guest.
+            name: ballooning_enabled
+            type: boolean
+            added: '4.4.6'
         type: object
 
     BandwidthCurve: &BandwidthCurve

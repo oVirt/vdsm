@@ -384,6 +384,7 @@ class Vm(object):
         self._guest_agent_api_version = None
         self._balloon_minimum = None
         self._balloon_target = None
+        self._ballooning_enabled = True
         self._drive_merger = DriveMerger(self)
         self._md_desc = metadata.Descriptor.from_xml(self.conf['xml'])
         self._init_from_metadata()
@@ -578,6 +579,8 @@ class Vm(object):
             self._snapshot_job = json.loads(md.get('snapshot_job', '{}'))
             self._pause_time = md.get('pauseTime')
             self._balloon_target = md.get('balloonTarget')
+            self._ballooning_enabled = conv.tobool(
+                md.get('ballooningEnabled', True))
 
     def min_cluster_version(self, major, minor):
         """
@@ -5261,6 +5264,10 @@ class Vm(object):
         dev = next(self._domain.get_device_elements('memballoon'))
         if dev.attrib.get('model') == 'none':
             return
+        if not self._ballooning_enabled:
+            self.log.debug('Ignoring balloon target change for VM with'
+                           ' disabled ballooning')
+            return
 
         if not self._dom.connected:
             raise exception.BalloonError()
@@ -5283,6 +5290,7 @@ class Vm(object):
             # created, in this case no balloon device is available
             return {}
         return {
+            'enabled': self._ballooning_enabled,
             'target': self._balloon_target,
             'minimum': self._balloon_minimum,
         }

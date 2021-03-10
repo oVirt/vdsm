@@ -171,7 +171,8 @@ def balloon(vm, stats, sample):
             'balloon_max': str(max_mem),
             'balloon_min': str(balloon_info['minimum']),
             'balloon_cur': str(balloon_cur),
-            'balloon_target': str(balloon_info['target'])
+            'balloon_target': str(balloon_info['target']),
+            'ballooning_enabled': balloon_info['enabled'],
         })
 
 
