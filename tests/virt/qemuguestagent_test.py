@@ -243,6 +243,12 @@ class QemuGuestAgentTests(TestCaseBase):
         now = self.qga_poller.last_failure(self.vm.id)
         assert now > 0
 
+    def test_no_failure(self):
+        """ Make sure reset_failure() does not break on unknown VM ID """
+        if self.vm.id in self.qga_poller._last_failure:
+            del self.qga_poller._last_failure[self.vm.id]
+        self.qga_poller.reset_failure(self.vm.id)
+
     def test_guest_info(self):
         """ Set and read guest info. """
         self.qga_poller.update_guest_info(

@@ -222,7 +222,8 @@ class QemuGuestAgentPoller(object):
 
     def reset_failure(self, vm_id):
         with self._last_failure_lock:
-            del self._last_failure[vm_id]
+            if vm_id in self._last_failure:
+                del self._last_failure[vm_id]
 
     def set_failure(self, vm_id):
         with self._last_failure_lock:
