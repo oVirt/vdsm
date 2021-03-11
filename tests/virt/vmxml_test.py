@@ -294,7 +294,7 @@ class TestDomainDescriptor(VmXmlTestCase):
             dom = descriptor(dom_xml)
             channels = list(dom.all_channels())
             assert len(channels) >= len(AGENT_DEVICE_NAMES)
-            for name, path in channels:
+            for name, path, _ in channels:
                 assert name in AGENT_DEVICE_NAMES
 
     @permutations([[domain_descriptor.DomainDescriptor],
@@ -308,3 +308,14 @@ class TestDomainDescriptor(VmXmlTestCase):
     def test_no_channels(self):
         dom = domain_descriptor.MutableDomainDescriptor('<domain/>')
         assert list(dom.all_channels()) == []
+
+    @permutations([[domain_descriptor.DomainDescriptor],
+                   [domain_descriptor.MutableDomainDescriptor]])
+    def test_channel_state(self, descriptor):
+        for conf, raw_xml in CONF_TO_DOMXML_NO_VDSM:
+            dom = descriptor(raw_xml % conf)
+            for name, _, state in dom.all_channels():
+                if name == 'org.qemu.guest_agent.0':
+                    assert state is None
+                elif name == 'org.libguestfs.channel.0':
+                    assert state == 'connected'

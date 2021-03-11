@@ -321,7 +321,7 @@ class Vm(object):
     _ongoingCreations = threading.BoundedSemaphore(4)
 
     def _makeChannelPath(self, device_name):
-        for name, path in self._domain.all_channels():
+        for name, path, _ in self._domain.all_channels():
             if name == device_name:
                 return path
         return None
@@ -542,7 +542,7 @@ class Vm(object):
     @property
     def _agent_channel_name(self):
         name = vmchannels.LEGACY_DEVICE_NAME
-        for channel_name, _path in self._domain.all_channels():
+        for channel_name, _path, _ in self._domain.all_channels():
             if channel_name == 'ovirt-guest-agent.0':
                 name = channel_name
         return name

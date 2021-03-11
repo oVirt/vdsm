@@ -99,12 +99,19 @@ class MutableDomainDescriptor(object):
         return hash(xmlutils.tostring(devices) if devices is not None else '')
 
     def all_channels(self):
+        """
+        Returns a tuple (name, path, state) for each channel device in domain
+        XML. Name and path are always non-empty strings, state is non-empty
+        string (connected/disconnected) or None if the channel state is
+        unknown.
+        """
         if self.devices is not None:
             for channel in vmxml.find_all(self.devices, 'channel'):
                 name = vmxml.find_attr(channel, 'target', 'name')
                 path = vmxml.find_attr(channel, 'source', 'path')
+                state = vmxml.find_attr(channel, 'target', 'state')
                 if name and path:
-                    yield name, path
+                    yield name, path, (None if not state else state)
 
     def get_number_of_cpus(self):
         """
