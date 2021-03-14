@@ -1764,6 +1764,9 @@ class Lease(APIBase):
     def rebuild_leases(self, sd_id):
         return self._irs.rebuild_leases(sd_id)
 
+    def fence(self, lease, metadata):
+        return self._irs.fence_lease(lease, metadata)
+
 
 class NBD(APIBase):
 

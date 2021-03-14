@@ -50,6 +50,7 @@ from vdsm.storage import resourceManager as rm
 from vdsm.storage import rwlock
 from vdsm.storage import sanlock_direct
 from vdsm.storage import task
+from vdsm.storage import utils as su
 from vdsm.storage import validators
 from vdsm.storage import xlease
 from vdsm.storage.sdc import sdCache
@@ -868,6 +869,67 @@ class StorageDomainManifest(object):
             lease_info.offset)
 
         return self._domainLock.get_lvb(lease)
+
+    def fence_lease(self, lease_id, host_id, metadata):
+        """
+        Fence a lease by updating the metadata based on the job status:
+        * If the job is no longer running - If the lease is free, the job
+          status is PENDING and the generation is correct, we can safely
+          change the job status to FENCED and bump the generation.
+        * If the job is still running, we will fail to acquire the lease,
+          a sanlock error will be raised.
+        * If the lease is free but the job is in a status other than PENDING
+          (SUCCEEDED, FAILED), JobStatusMismatch will be raised.
+
+        Arguments:
+            lease_id (str): uuid of the lease.
+            host_id (int): the id of the host attempting to fence.
+            metadata (dict): expected lease metadata.
+        """
+
+        lease_info = self.lease_info(lease_id)
+        lease = clusterlock.Lease(
+            lease_info.resource,
+            lease_info.path,
+            lease_info.offset)
+        self.acquire_external_lease(lease_id, host_id)
+        try:
+            current_metadata = self.get_lvb(lease_id)
+            self.log.info(
+                "Current lease %s metadata: %r", lease_id, metadata)
+
+            if current_metadata.get("type") != metadata.type:
+                raise se.UnsupportedOperation(
+                    "job type doesn't match supported type",
+                    expected=metadata.type,
+                    actual=current_metadata.get("type"))
+
+            if current_metadata.get("job_id") != metadata.job_id:
+                raise se.UnsupportedOperation(
+                    "job_id on lease doesn't match passed job_id",
+                    exptected=metadata.job_id,
+                    actual=current_metadata.get("job_id"))
+
+            if current_metadata.get("job_status") != metadata.job_status:
+                raise se.JobStatusMismatch(
+                    metadata.job_status, current_metadata.get("job_status"))
+
+            if current_metadata.get("generation") != metadata.generation:
+                raise se.GenerationMismatch(
+                    metadata.generation, current_metadata.get("generation"))
+
+            updated_metadata = current_metadata.copy()
+            updated_metadata["modified"] = int(time.time())
+            updated_metadata["host_hardware_id"] = host.uuid()
+            updated_metadata["generation"] = \
+                su.next_generation(metadata.generation)
+            updated_metadata["job_status"] = sc.JOB_STATUS_FENCED
+
+            self.log.info(
+                "Writing data to lease %s: %r", lease_id, updated_metadata)
+            self._domainLock.set_lvb(lease, updated_metadata)
+        finally:
+            self.release_external_lease(lease_id)
 
 
 class StorageDomain(object):

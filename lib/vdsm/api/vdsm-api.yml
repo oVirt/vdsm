@@ -10072,6 +10072,20 @@ Lease.status:
         description: Information about the sanlock lease status
         type: *ExternalLeaseStatus
 
+Lease.fence:
+    added: '4.4.6'
+    description: Fence a lease. For example, if used for job fencing,
+        the operation will increase the generation and change the job
+        status.
+    params:
+    -   name: lease
+        type: *Lease
+        description: Lease to fence
+
+    -   name: metadata
+        type: *LeaseMetadata
+        description: Expected lease metadata read from lease's LVB.
+
 LVMVolumeGroup.create:
     added: '3.1'
     description: Create a new Volume Group.

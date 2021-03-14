@@ -3852,6 +3852,18 @@ class HSM(object):
             dom = sdCache.produce_manifest(lease.sd_id)
             return dict(result=dom.lease_status(lease.lease_id, self._pool.id))
 
+    @public
+    def fence_lease(self, lease, metadata):
+        lease = validators.Lease(lease)
+        metadata = validators.JobMetadata(metadata)
+        self._check_pool_connected()
+        with rm.acquireResource(STORAGE, lease.sd_id, rm.SHARED):
+            dom = sdCache.produce_manifest(lease.sd_id)
+            dom.fence_lease(
+                lease.lease_id,
+                self._pool.id,
+                metadata)
+
     # NBD
 
     @public
