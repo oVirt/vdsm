@@ -187,6 +187,14 @@ def fake_sanlock(monkeypatch, tmp_vol):
     yield sanlock
 
 
+def check_lease(lease, lease_id, resource, volume):
+    assert lease.lockspace == volume.lockspace
+    assert lease.resource == lease_id
+    assert lease.path == volume.path
+    assert resource["lockspace"] == lease.lockspace.encode("utf-8")
+    assert resource["resource"] == lease.resource.encode("utf-8")
+
+
 class TestIndex:
 
     def test_metadata(self, tmp_vol, monkeypatch):
@@ -360,7 +368,10 @@ class TestIndex:
             with pytest.raises(se.NoSuchLease):
                 vol.lookup(make_uuid())
 
+    @pytest.mark.xfail(reason="bz1902127")
     def test_lookup_updating(self, tmp_vol):
+        # This simulates updating record which should only happen when lease
+        # is partially created with older vdsm versions.
         record = xlease.Record(make_uuid(), 0, updating=True)
         tmp_vol.write_records((42, record))
         vol = xlease.LeasesVolume(
@@ -369,8 +380,10 @@ class TestIndex:
             block_size=tmp_vol.block_size)
         with utils.closing(vol):
             leases = vol.leases()
+            # Verify record is in updating state.
             assert leases[record.resource]["updating"]
-            with pytest.raises(xlease.LeaseUpdating):
+            # Test that lookup raises when updating flag is present.
+            with pytest.raises(se.NoSuchLease):
                 vol.lookup(record.resource)
 
     def test_add(self, tmp_vol, fake_sanlock):
@@ -381,18 +394,14 @@ class TestIndex:
         with utils.closing(vol):
             lease_id = make_uuid()
             lease = vol.add(lease_id)
-            assert lease.lockspace == vol.lockspace
-            assert lease.resource == lease_id
-            assert lease.path == vol.path
             res = fake_sanlock.read_resource(
                 lease.path,
                 lease.offset,
                 align=tmp_vol.alignment,
                 sector=tmp_vol.block_size)
-            assert res["lockspace"] == lease.lockspace.encode("utf-8")
-            assert res["resource"] == lease.resource.encode("utf-8")
+            check_lease(lease, lease_id, res, vol)
 
-    def test_add_write_failure(self, tmp_vol):
+    def test_add_write_failure(self, tmp_vol, fake_sanlock):
         backend = FailingWriter(tmp_vol.path)
         with utils.closing(backend):
             vol = xlease.LeasesVolume(
@@ -421,29 +430,62 @@ class TestIndex:
         with pytest.raises(xlease.NoSpace):
             vol.add(make_uuid())
 
+    @pytest.mark.xfail(reason="bz1902127")
+    def test_remove_sanlock_failure(self, tmp_vol, fake_sanlock):
+        lease_id = make_uuid()
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+        # Add a lease as usual.
+        vol.add(lease_id)
+        with utils.closing(vol):
+            # Make sanlock fail to write a resource.
+            fake_sanlock.errors["write_resource"] = \
+                fake_sanlock.SanlockException
+            # Removal must not raise.
+            vol.remove(lease_id)
+            # Lookup lease id, it should not exist despite sanlock failure.
+            with pytest.raises(se.NoSuchLease):
+                vol.lookup(lease_id)
+
+    @pytest.mark.xfail(reason="bz1902127")
     def test_add_sanlock_failure(self, tmp_vol, fake_sanlock):
+        lease_id = make_uuid()
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
             block_size=tmp_vol.block_size)
         with utils.closing(vol):
-            lease_id = make_uuid()
-            # Make sanlock fail to write a resource
+            # Make sanlock fail to write a resource.
             fake_sanlock.errors["write_resource"] = \
                 fake_sanlock.SanlockException
             with pytest.raises(fake_sanlock.SanlockException):
                 vol.add(lease_id)
-            # We should have an updating lease record
-            lease = vol.leases()[lease_id]
-            assert lease["updating"]
-            # There should be no lease on storage
-            with pytest.raises(fake_sanlock.SanlockException) as e:
-                fake_sanlock.read_resource(
-                    vol.path,
-                    lease["offset"],
-                    align=tmp_vol.alignment,
-                    sector=tmp_vol.block_size)
-                assert e.exception.errno == fake_sanlock.SANLK_LEADER_MAGIC
+            # Lookup lease id, it should not exist.
+            with pytest.raises(se.NoSuchLease):
+                vol.lookup(lease_id)
+
+    @pytest.mark.xfail(reason="bz1902127")
+    def test_add_updating(self, tmp_vol, fake_sanlock):
+        lease_id = make_uuid()
+        # This simulates updating record which should only happen when lease
+        # is partially created with older vdsm versions.
+        record = xlease.Record(lease_id, 0, updating=True)
+        tmp_vol.write_records((42, record))
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+        # Adding a lease should pass despite record updating state.
+        with utils.closing(vol):
+            lease = vol.add(lease_id)
+            res = fake_sanlock.read_resource(
+                lease.path,
+                lease.offset,
+                align=tmp_vol.alignment,
+                sector=tmp_vol.block_size)
+            check_lease(lease, lease_id, res, vol)
 
     def test_leases(self, tmp_vol, fake_sanlock):
         vol = xlease.LeasesVolume(
@@ -566,32 +608,6 @@ class TestIndex:
                     vol.remove(record.resource)
                 # Must succeed becuase writng to storage failed
                 assert record.resource in vol.leases()
-
-    def test_remove_sanlock_failure(self, tmp_vol, fake_sanlock):
-        vol = xlease.LeasesVolume(
-            tmp_vol.backend,
-            alignment=tmp_vol.alignment,
-            block_size=tmp_vol.block_size)
-        with utils.closing(vol):
-            lease_id = make_uuid()
-            vol.add(lease_id)
-            # Make sanlock fail to remove a resource (currnently removing a
-            # resouce by writing invalid lockspace and resoruce name).
-            fake_sanlock.errors["write_resource"] = \
-                fake_sanlock.SanlockException
-            with pytest.raises(fake_sanlock.SanlockException):
-                vol.remove(lease_id)
-            # We should have an updating lease record
-            lease = vol.leases()[lease_id]
-            assert lease["updating"]
-            # There lease should still be on storage
-            res = fake_sanlock.read_resource(
-                vol.path,
-                lease["offset"],
-                align=tmp_vol.alignment,
-                sector=tmp_vol.block_size)
-            assert res["lockspace"] == vol.lockspace.encode("utf-8")
-            assert res["resource"] == lease_id.encode("utf-8")
 
     def test_add_first_free_slot(self, tmp_vol, fake_sanlock):
         vol = xlease.LeasesVolume(
