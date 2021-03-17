@@ -25,6 +25,7 @@ from __future__ import print_function
 import functools
 import io
 import mmap
+import os
 import timeit
 
 import pytest
@@ -80,16 +81,23 @@ class TemporaryVolume(object):
     Temporary xleases volume.
     """
 
-    def __init__(self, storage, alignment):
+    def __init__(
+            self,
+            backend,
+            alignment,
+            block_size=4096,
+            max_records=xlease.MAX_RECORDS):
         """
         Zero storage and format index area.
         """
-        self.path = storage.path
-        self.lockspace = make_uuid()
+        self.backend = backend
+        self.path = backend.name
+        self.block_size = block_size
         self.alignment = alignment
-        self.block_size = storage.sector_size
-        self.backend = xlease.DirectFile(storage.path)
-        self.zero_storage()
+        self.max_records = max_records
+        self.lockspace = make_uuid()
+        if os.path.exists(self.path):
+            self.zero_storage()
         self.format_index()
 
     def write_records(self, *records):
@@ -115,7 +123,8 @@ class TemporaryVolume(object):
             self.lockspace,
             self.backend,
             alignment=self.alignment,
-            block_size=self.block_size)
+            block_size=self.block_size,
+            max_records=self.max_records)
 
     def close(self):
         self.backend.close()
@@ -142,10 +151,33 @@ def tmp_vol(request):
     storage, alignment = request.param
     if not storage.exists():
         pytest.xfail("{} storage not available".format(storage.name))
+    backend = xlease.DirectFile(storage.path)
+    tv = TemporaryVolume(backend, alignment, block_size=storage.sector_size)
 
-    tv = TemporaryVolume(storage, alignment)
     yield tv
     tv.close()
+
+
+@pytest.fixture
+def memory_vol():
+    """
+    Provides a memory backend with limited index that fits 56 records only.
+    Useful for tests that need to fill up the index and run out of space.
+    """
+    # For fast testing, use tiny index fitting in 4096 bytes without space
+    # for actual sanlock resources.
+    max_records = (4096 - xlease.METADATA_SIZE) // xlease.RECORD_SIZE
+
+    # The first slot in the volume is the lockspace slot.
+    backend = xlease.MemoryBackend(size=sc.ALIGNMENT_1M + 4096)
+
+    memory_volume = TemporaryVolume(
+        backend,
+        alignment=sc.ALIGNMENT_1M,
+        max_records=max_records)
+
+    yield memory_volume
+    memory_volume.close()
 
 
 @pytest.fixture
@@ -373,6 +405,21 @@ class TestIndex:
                     vol.add(lease_id)
                 # Must succeed becuase writng to storage failed
                 assert lease_id not in vol.leases()
+
+    def test_add_out_of_space(self, monkeypatch, memory_vol):
+        sanlock = FakeSanlock(sector_size=memory_vol.block_size)
+        monkeypatch.setattr(xlease, "sanlock", sanlock)
+        # Create LeasesVolume with reduced size backend to fit one lease only.
+        vol = xlease.LeasesVolume(
+            memory_vol.backend,
+            alignment=memory_vol.alignment,
+            block_size=memory_vol.block_size)
+        # Fill up the index with records.
+        for _ in range(memory_vol.max_records):
+            vol.add(make_uuid())
+        # Index is now full so next add should raise.
+        with pytest.raises(xlease.NoSpace):
+            vol.add(make_uuid())
 
     def test_add_sanlock_failure(self, tmp_vol, fake_sanlock):
         vol = xlease.LeasesVolume(

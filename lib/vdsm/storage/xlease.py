@@ -686,13 +686,16 @@ class LeasesVolume(object):
 
 
 def format_index(lockspace, file, alignment=sc.ALIGNMENT_1M,
-                 block_size=sc.BLOCK_SIZE_512):
+                 block_size=sc.BLOCK_SIZE_512, max_records=MAX_RECORDS):
     """
     Format xleases volume index, deleting all existing records.
 
     Should be used only when creating a new leases volume, or if the volume
     should be repaired. Afterr formatting the index, the index can be rebuilt
     from storage contents.
+
+    Use max_records for testing purposes only. Can be used to limit the record
+    count when formatting a memory backend.
 
     Raises:
     - OSError if I/O operation failed
@@ -703,7 +706,7 @@ def format_index(lockspace, file, alignment=sc.ALIGNMENT_1M,
     with utils.closing(index):
         with index.updating(lockspace, file):
             # Write empty records
-            for recnum in range(MAX_RECORDS):
+            for recnum in range(max_records):
                 index.write_record(recnum, EMPTY_RECORD)
             # Attempt to write index to file
             index.dump(file)
@@ -1156,3 +1159,37 @@ class InterruptibleDirectFile(object):
             # Do not spam the log with received binary data
             raise cmdutils.Error(args, rc, "[suppressed]", err)
         return out
+
+
+class MemoryBackend(object):
+    """
+    For testing purposes only.
+    """
+
+    def __init__(self, size=INDEX_SIZE):
+        """
+        Arguments:
+            size (int): size of memory file in bytes
+        """
+        self._file = io.BytesIO(b"\0" * size)
+
+    @property
+    def name(self):
+        return "MemoryBackend"
+
+    def pread(self, offset, buf):
+        self._file.seek(offset)
+        return self._file.readinto(buf)
+
+    def pwrite(self, offset, buf):
+        self._file.seek(offset)
+        self._file.write(buf)
+
+    def size(self):
+        pos = self._file.tell()
+        size = self._file.seek(0, os.SEEK_END)
+        self._file.seek(pos, os.SEEK_SET)
+        return size
+
+    def close(self):
+        self._file.close()
