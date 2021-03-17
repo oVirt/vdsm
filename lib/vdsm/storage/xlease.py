@@ -32,21 +32,25 @@ mapping between the lease name and the offset of the lease; this module
 removes this gap.
 
 This module manages the mapping between Sanlock resource name and lease
-offset.  When creating a lease, we find the first free slot, allocate it
-for the lease, and create a sanlock resource at the associated offset.
+offset.  When creating a lease, we find the first free slot, create a
+sanlock resource at the associated offset and allocate the slot for the
+lease if sanlock write succeeds.
 If the xleases volume is full, we extend it to make room for more
 leases. This operation must be performed only on the SPM.
 
 Once a lease is created, any host can get the lease offset using the
 lease id and use the lease offset to acquire the sanlock resource.
 
-When removing a lease, we clear the sanlock resource and mark the slot
-as free in the index. This operation must also be done on the SPM.
+When removing a lease, we mark the slot as free by writing an empty record
+in the index and then attempt to clear the sanlock resource. If sanlock
+operation fails we only log a warning since updating the index is sufficient
+for removing a lease. This operation must also be done on the SPM.
 
 Sanlock keeps the lockspace name and the resource name in the lease
-area.  We can rebuild the mapping from lease id to lease offset by
-reading all the resources in a volume . The index is actually a cache of
-the actual data on storage.
+area. We can rebuild the mapping from lease id to lease offset by
+reading all the resources in a volume, however the index is the source
+of truth and rebuilding index at a wrong time can cause issues.
+See rebuild_index() function for details.
 
 
 Leases volume format
@@ -103,6 +107,11 @@ Each record contain these fields:
 - updating flag (1 byte)
 - reserved (1 byte)
 - newline
+
+The updating flag is no longer used in future versions and if the flag is
+detected while adding or removing a lease it is unset. If the flag is detected
+during lookup it is treated as a missing lease. Older versions were using this
+flag to detect issues with storage writes and treated its presence as error.
 
 The lease offset associated with a record is computed from the record
 offset.  This ensures the integrity of the index; there is no way to
@@ -232,10 +241,6 @@ class Error(errors.Base):
 
 class LeaseExists(Error):
     msg = "Lease {self.lease_id} exists"
-
-
-class LeaseUpdating(Error):
-    msg = "Lease {self.lease_id} is updating"
 
 
 class NoSpace(Error):
@@ -547,7 +552,7 @@ class LeasesVolume(object):
         Lookup lease by lease_id and return LeaseInfo if found.
 
         Raises:
-        - NoSuchLease if lease is not found.
+        - NoSuchLease if lease is not found or updating flag is set (legacy)
         - InvalidRecord if corrupted lease record is found
         - OSError if io operation failed
         """
@@ -559,7 +564,9 @@ class LeasesVolume(object):
 
         record = self._index.read_record(recnum)
         if record.updating:
-            raise LeaseUpdating(lease_id)
+            # Record can have updating flag due to partial creation caused
+            # by older vdsm versions.
+            raise se.NoSuchLease(lease_id)
 
         offset = lease_offset(recnum, self._alignment)
         return LeaseInfo(self.lockspace, lease_id, self._file.name, offset)
@@ -581,18 +588,26 @@ class LeasesVolume(object):
         if recnum != -1:
             record = self._index.read_record(recnum)
             if record.updating:
-                # TODO: rebuild this record instead of failing
-                raise LeaseUpdating(lease_id)
+                # Record can have updating flag due to partial creation caused
+                # by older vdsm versions
+                log.warning("Ignoring partially created lease in updating "
+                            "state recnum=%s resource=%s offset=%s",
+                            recnum, record.resource, record.offset)
             else:
                 raise LeaseExists(lease_id)
-
-        recnum = self._index.find_free_record()
-        if recnum == -1:
-            raise NoSpace(lease_id)
+        else:
+            recnum = self._index.find_free_record()
+            if recnum == -1:
+                raise NoSpace(lease_id)
 
         offset = lease_offset(recnum, self._alignment)
-        record = Record(lease_id, offset, updating=True)
-        self._write_record(recnum, record)
+
+        # We create a lease in 2 steps:
+        # 1. create a sanlock resource in the slot associated with this
+        #    record. If this fails, the index will not change.
+        # 2. write a new record, making the new resource available. If writing
+        #    a record fails, the index does not change and the new resource
+        #    will not be available.
 
         sanlock.write_resource(
             self.lockspace.encode("utf-8"),
@@ -622,20 +637,30 @@ class LeasesVolume(object):
             raise se.NoSuchLease(lease_id)
 
         offset = lease_offset(recnum, self._alignment)
-        record = Record(lease_id, offset, updating=True)
-        self._write_record(recnum, record)
+
+        # We remove a lease in 2 steps:
+        # 1. write an empty record, making the resource unavailable. If writing
+        #    a record fails, the index does not change and the new resource
+        #    remains available
+        # 2. write an empty sanlock resource in the slot associated with this
+        #    record. If this fails we log an error and don't fail the removal
+        #    as index is already updated and resource will not be available.
+
+        self._write_record(recnum, EMPTY_RECORD)
 
         # There is no way to remove a resource, so we write an invalid resource
         # with empty resource and lockspace values.
         # TODO: Use SANLK_WRITE_CLEAR, expected in rhel 7.4.
-        sanlock.write_resource(
-            b"",
-            b"",
-            [(self._file.name, offset)],
-            align=self._alignment,
-            sector=self._block_size)
-
-        self._write_record(recnum, EMPTY_RECORD)
+        try:
+            sanlock.write_resource(
+                b"",
+                b"",
+                [(self._file.name, offset)],
+                align=self._alignment,
+                sector=self._block_size)
+        except sanlock.SanlockException:
+            log.warning("Ignoring failure to clear sanlock resource file=%s "
+                        "offset=%s", self._file.name, offset)
 
     def leases(self):
         """
@@ -715,12 +740,19 @@ def format_index(lockspace, file, alignment=sc.ALIGNMENT_1M,
 def rebuild_index(
         lockspace, file, alignment=sc.ALIGNMENT_1M,
         block_size=sc.BLOCK_SIZE_512):
+    # TODO: This function needs to change as the semantics of the index have
+    # changed and index is now source of truth, rebuilding the index from
+    # sanlock lockspace can lead to breaking the index. Rebuilding index could
+    # change so it iterates the index and checks that all leases found exist,
+    # creating them if needed.
     """
     Rebuild xleases volume index from underlying storage.
 
-    This operation synchronizes the index with the actual sanlock resource on
-    storage, assuming that existing sanlock resources are the one and only
-    truth.
+    This operation synchronizes the index with sanlock resources on storage,
+    however this operation can break the index as it is the source of truth.
+    For example removing a lease updates the index first but a storage
+    write that follows can fail, rebuilding the index at this point will
+    produce orphaned resource in the index.
 
     Like format_index, if the operation fails the index is left in "updating"
     state.

@@ -81,6 +81,8 @@ def rebuild_xleases(*args):
 
         This is a destructive operation - you must put the storage
         domain into maintenance before running this tool.
+        The xleases volume index is the source of truth so rebuilding
+        from storage can break it badly.
 
     Rebuild the xleases volume index, restoring all sanlock resource on
     the xleases volume. If you want to drop all leases in the index, use

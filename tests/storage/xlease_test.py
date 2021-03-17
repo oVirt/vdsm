@@ -368,7 +368,6 @@ class TestIndex:
             with pytest.raises(se.NoSuchLease):
                 vol.lookup(make_uuid())
 
-    @pytest.mark.xfail(reason="bz1902127")
     def test_lookup_updating(self, tmp_vol):
         # This simulates updating record which should only happen when lease
         # is partially created with older vdsm versions.
@@ -430,7 +429,6 @@ class TestIndex:
         with pytest.raises(xlease.NoSpace):
             vol.add(make_uuid())
 
-    @pytest.mark.xfail(reason="bz1902127")
     def test_remove_sanlock_failure(self, tmp_vol, fake_sanlock):
         lease_id = make_uuid()
         vol = xlease.LeasesVolume(
@@ -449,7 +447,6 @@ class TestIndex:
             with pytest.raises(se.NoSuchLease):
                 vol.lookup(lease_id)
 
-    @pytest.mark.xfail(reason="bz1902127")
     def test_add_sanlock_failure(self, tmp_vol, fake_sanlock):
         lease_id = make_uuid()
         vol = xlease.LeasesVolume(
@@ -466,7 +463,6 @@ class TestIndex:
             with pytest.raises(se.NoSuchLease):
                 vol.lookup(lease_id)
 
-    @pytest.mark.xfail(reason="bz1902127")
     def test_add_updating(self, tmp_vol, fake_sanlock):
         lease_id = make_uuid()
         # This simulates updating record which should only happen when lease
