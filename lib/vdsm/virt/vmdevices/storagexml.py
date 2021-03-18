@@ -42,6 +42,7 @@ METADATA_KEYS = (
     'shared',
     'volumeID',
     'RBD',
+    'managed',
 )
 
 

@@ -1038,6 +1038,20 @@ _DOMAIN_MD_MATCH_XML = u"""<domain type='kvm' id='2'>
       <ovirt-vm:device devtype="disk" name="sda">
         <ovirt-vm:RBD>/dev/rbd/pool/volume-uuid</ovirt-vm:RBD>
       </ovirt-vm:device>
+      <ovirt-vm:device devtype="disk" name="sdb">
+        <ovirt-vm:GUID>3600a098038304479363f4c4870455167</ovirt-vm:GUID>
+        <ovirt-vm:imageID>3600a098038304479363f4c4870455167</ovirt-vm:imageID>
+        <ovirt-vm:managed type="bool">True</ovirt-vm:managed>
+      </ovirt-vm:device>
+      <ovirt-vm:device devtype="disk" name="sdc">
+        <ovirt-vm:GUID>3600a098038304479363f4c4870455162</ovirt-vm:GUID>
+        <ovirt-vm:imageID>3600a098038304479363f4c4870455162</ovirt-vm:imageID>
+      </ovirt-vm:device>
+      <ovirt-vm:device devtype="disk" name="sdd">
+        <ovirt-vm:GUID>3600a098038304479363f4c4870455163</ovirt-vm:GUID>
+        <ovirt-vm:imageID>3600a098038304479363f4c4870455163</ovirt-vm:imageID>
+        <ovirt-vm:managed type="bool">False</ovirt-vm:managed>
+      </ovirt-vm:device>
       <ovirt-vm:device mac_address="00:1a:4a:16:01:00">
         <ovirt-vm:portMirroring>
           <ovirt-vm:network>network1</ovirt-vm:network>
@@ -1072,6 +1086,40 @@ _DOMAIN_MD_MATCH_XML = u"""<domain type='kvm' id='2'>
         <alias name='ua-44ab108a-62e6-480e-b44c-aac301227f94'/>
         <address type='drive' controller='0' bus='0' target='0' unit='0'/>
     </disk>
+    <disk type='block' device='disk' snapshot='no'>
+      <driver name='qemu' type='raw' cache='none'/>
+      <source dev='/dev/mapper/3600a098038304479363f4c4870455167' index='2'>
+        <seclabel model='dac' relabel='no'/>
+      </source>
+      <backingStore/>
+      <target dev='sdb' bus='scsi'/>
+      <serial>ead4a539-6b93-4f6e-8a92-3eea28e91d4e</serial>
+      <alias name='ua-ead4a539-6b93-4f6e-8a92-3eea28e91d4e'/>
+      <address type='drive' controller='0' bus='0' target='0' unit='1'/>
+    </disk>
+    <disk type='block' device='disk' snapshot='no'>
+      <driver name='qemu' type='raw' cache='none'/>
+      <source dev='/dev/mapper/3600a098038304479363f4c4870455162' index='2'>
+        <seclabel model='dac' relabel='no'/>
+      </source>
+      <backingStore/>
+      <target dev='sdc' bus='scsi'/>
+      <serial>ead4a529-6b93-4f6e-8a92-3eea28e91d4e</serial>
+      <alias name='ua-ead4a529-6b93-4f6e-8a92-3eea28e91d4e'/>
+      <address type='drive' controller='0' bus='0' target='0' unit='1'/>
+    </disk>
+    <disk type='block' device='disk' snapshot='no'>
+      <driver name='qemu' type='raw' cache='none'/>
+      <source dev='/dev/mapper/3600a098038304479363f4c4870455163' index='2'>
+        <seclabel model='dac' relabel='no'/>
+      </source>
+      <backingStore/>
+      <target dev='sdd' bus='scsi'/>
+      <serial>ead4a529-6b93-4f6e-8a92-3eea28e91d5e</serial>
+      <alias name='ua-ead4a529-6b93-4f6e-8a92-3eea28e91d5e'/>
+      <address type='drive' controller='0' bus='0' target='0' unit='1'/>
+    </disk>
+
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
       <source startupPolicy='optional'/>
@@ -1205,6 +1253,46 @@ class DeviceMetadataMatchTests(XMLTestCase):
         rbd_drive = lookup.drive_by_name(disk_objs, 'sda')
 
         assert getattr(rbd_drive, 'RBD') == '/dev/rbd/pool/volume-uuid'
+
+    def test_managed_device_parameter_present(self):
+        drives = vmdevices.common.storage_device_params_from_domain_xml(
+            'TESTING', self.dom_desc, self.md_desc, self.log
+        )
+
+        disk_objs = [
+            vmdevices.storage.Drive(self.log, **params)
+            for params in drives
+        ]
+
+        drive = lookup.drive_by_name(disk_objs, 'sdb')
+
+        assert drive.managed
+
+    def test_no_managed_device_parameter(self):
+        drives = vmdevices.common.storage_device_params_from_domain_xml(
+            'TESTING', self.dom_desc, self.md_desc, self.log
+        )
+
+        disk_objs = [
+            vmdevices.storage.Drive(self.log, **params)
+            for params in drives
+        ]
+
+        drive = lookup.drive_by_name(disk_objs, 'sdc')
+        assert not drive.managed
+
+    def test_not_managed_device_parameter(self):
+        drives = vmdevices.common.storage_device_params_from_domain_xml(
+            'TESTING', self.dom_desc, self.md_desc, self.log
+        )
+
+        disk_objs = [
+            vmdevices.storage.Drive(self.log, **params)
+            for params in drives
+        ]
+
+        drive = lookup.drive_by_name(disk_objs, 'sdd')
+        assert not drive.managed
 
 
 _VM_MDEV_XML = """<?xml version='1.0' encoding='utf-8'?>

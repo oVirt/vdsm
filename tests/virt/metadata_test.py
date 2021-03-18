@@ -812,6 +812,7 @@ class SaveDeviceMetadataTests(XMLTestCase):
     <ovirt-vm:device devtype="disk" name="sda">
         <ovirt-vm:domainID>domainID</ovirt-vm:domainID>
         <ovirt-vm:imageID>imageID</ovirt-vm:imageID>
+        <ovirt-vm:managed type="bool">False</ovirt-vm:managed>
         <ovirt-vm:poolID>poolID</ovirt-vm:poolID>
         <ovirt-vm:shared>transient</ovirt-vm:shared>
         <ovirt-vm:volumeID>volumeID</ovirt-vm:volumeID>
@@ -858,6 +859,7 @@ class SaveDeviceMetadataTests(XMLTestCase):
     <ovirt-vm:device devtype="disk" name="vda">
         <ovirt-vm:domainID>domainID</ovirt-vm:domainID>
         <ovirt-vm:imageID>imageID</ovirt-vm:imageID>
+        <ovirt-vm:managed type="bool">False</ovirt-vm:managed>
         <ovirt-vm:poolID>poolID</ovirt-vm:poolID>
         <ovirt-vm:shared>transient</ovirt-vm:shared>
         <ovirt-vm:volumeID>volumeID</ovirt-vm:volumeID>
@@ -924,6 +926,7 @@ class SaveDeviceMetadataTests(XMLTestCase):
         expected_xml = """<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
 <ovirt-vm:device name="hdd" devtype="disk">
   <ovirt-vm:deviceId>e5cd57aa-6eb6-424b-b16b-83ef07bf9cca</ovirt-vm:deviceId>
+  <ovirt-vm:managed type="bool">False</ovirt-vm:managed>
     <ovirt-vm:shared>false</ovirt-vm:shared>
     <ovirt-vm:specParams>
      <ovirt-vm:vmPayload>

@@ -125,7 +125,7 @@ class Drive(core.Base):
                  'extSharedState', 'drv', 'sgio', 'GUID', 'diskReplicate',
                  '_diskType', 'hosts', 'protocol', 'auth', 'discard',
                  'vm_custom', 'blockinfo', '_threshold_state', '_lock',
-                 '_monitorable', 'guestName', '_iotune', 'RBD')
+                 '_monitorable', 'guestName', '_iotune', 'RBD', 'managed')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         MiB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -233,6 +233,7 @@ class Drive(core.Base):
         # Must be initialized for getXML.
         self.propagateErrors = 'off'
         self._iotune = {}
+        self.managed = False
         super(Drive, self).__init__(log, **kwargs)
         if not hasattr(self, 'vm_custom'):
             self.vm_custom = {}
