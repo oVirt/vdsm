@@ -38,19 +38,32 @@ are:
 
  -  We cannot (or don't have to) talk to the socket directly. Libvirt holds
     the connection to the socket because it needs to talk to QGA. All the
-    communication has to go through libvirt. Right now, there is only the
-    low-level function `virDomainQemuAgentCommand()`. It is unsupported and
-    not meant to be used in production. This contradicts the libvirt
-    philosophy that the management application should not care about details
-    of anything from hypervisor down and libvirt should be the only point of
-    contact. But at the moment it is the only way to access QGA. In the future
-    we may be able to fetch the information by some more supported way, e.g.
-    by `virConnectGetAllDomainStats()`
+    communication has to go through libvirt.
 
  -  QGA does not support events and there is no intention to implement that.
     This means there is no way how to request periodic information from QGA.
     Somebody has to regularly poll QGA for the information. Right now, this
     has to be VDSM for the above reason.
+
+
+Libvirt interface to QEMU Guest Agent
+=======================================
+
+Libvirt holds the connection to the guest agent socket. That means all the
+calls we need to do have to go through libvirt. Since libvirt 5.7.0 there is
+generic interface to the agent information provided by
+`virDomainGetGuestInfo()`. This function is not universal though. When new
+commands are added to the agent libvirt has to be extended to call the new
+command and provide the results. Some calls are handled by separate functions
+and such information is not duplicated in `virDomainGetGuestInfo()`. Notably
+`virDomainInterfaceAddresses()` that we use to retrieve information about NICs.
+
+There is also the low-level function `virDomainQemuAgentCommand()`. It is
+unsupported and not meant to be used in production. Using the function also
+taints the domain. We need this function too though for several reasons.
+Namely to receive general information about the agent (guest-info command)
+with version and list of supported commands. But we also need to be able to
+make calls not (yet) supported by libvirt interface.
 
 
 Class Relationships
