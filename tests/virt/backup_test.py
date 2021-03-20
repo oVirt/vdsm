@@ -100,31 +100,25 @@ CHECKPOINT_2_XML = """
     <domaincheckpoint>
       <name>{}</name>
       <description>checkpoint for backup '{}'</description>
-      <parent>
-        <name>{}</name>
-      </parent>
       <disks>
         <disk name='sda' checkpoint='bitmap' bitmap='{}'/>
         <disk name='vda' checkpoint='bitmap' bitmap='{}'/>
       </disks>
     </domaincheckpoint>
-    """.format(CHECKPOINT_2_ID, BACKUP_2_ID, CHECKPOINT_1_ID,
+    """.format(CHECKPOINT_2_ID, BACKUP_2_ID,
                CHECKPOINT_2_ID, CHECKPOINT_2_ID)
 
 CHECKPOINT_2_WITH_CREATION_TIME_XML = """
     <domaincheckpoint>
       <name>{}</name>
       <description>checkpoint for backup '{}'</description>
-      <parent>
-        <name>{}</name>
-      </parent>
       <creationTime>2</creationTime>
       <disks>
         <disk name='sda' checkpoint='bitmap' bitmap='{}'/>
         <disk name='vda' checkpoint='bitmap' bitmap='{}'/>
       </disks>
     </domaincheckpoint>
-    """.format(CHECKPOINT_2_ID, BACKUP_2_ID, CHECKPOINT_1_ID,
+    """.format(CHECKPOINT_2_ID, BACKUP_2_ID,
                CHECKPOINT_2_ID, CHECKPOINT_2_ID)
 
 MIXED_CHECKPOINT_XML = """
@@ -452,7 +446,6 @@ def test_incremental_backup_with_backup_mode(tmp_backupdir, tmp_basedir):
         'disks': fake_disks,
         'from_checkpoint_id': CHECKPOINT_1_ID,
         'to_checkpoint_id': CHECKPOINT_2_ID,
-        'parent_checkpoint_id': CHECKPOINT_1_ID
     }
 
     backup.start_backup(vm, dom, config)
@@ -557,7 +550,6 @@ def test_incremental_backup(tmp_backupdir, tmp_basedir):
         'disks': fake_disks,
         'from_checkpoint_id': CHECKPOINT_1_ID,
         'to_checkpoint_id': CHECKPOINT_2_ID,
-        'parent_checkpoint_id': CHECKPOINT_1_ID
     }
 
     res = backup.start_backup(vm, dom, config)
@@ -798,21 +790,6 @@ def test_backup_begin_failed_full_with_inremental_disks(
         backup.start_backup(vm, dom, config)
 
 
-def test_backup_begin_failed_no_parent(tmp_backupdir, tmp_basedir):
-    vm = FakeVm()
-    dom = FakeDomainAdapter()
-    fake_disks = create_fake_disks()
-
-    config = {
-        'backup_id': BACKUP_1_ID,
-        'disks': fake_disks,
-        'from_checkpoint_id': CHECKPOINT_1_ID
-    }
-
-    with pytest.raises(exception.BackupError):
-        backup.start_backup(vm, dom, config)
-
-
 @requires_backup_support
 def test_stop_backup_failed(tmp_backupdir, tmp_basedir):
     vm = FakeVm()
@@ -1037,7 +1014,6 @@ def test_redefine_checkpoints_using_config():
                 'disks': fake_disks,
                 'from_checkpoint_id': CHECKPOINT_1_ID,
                 'to_checkpoint_id': CHECKPOINT_2_ID,
-                'parent_checkpoint_id': CHECKPOINT_1_ID,
                 'creation_time': 2
             }
         },

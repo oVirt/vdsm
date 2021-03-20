@@ -156,7 +156,6 @@ class BackupConfig(properties.Owner):
     backup_id = properties.UUID(required=True)
     from_checkpoint_id = properties.UUID(required='')
     to_checkpoint_id = properties.UUID(default='')
-    parent_checkpoint_id = properties.UUID(default='')
     require_consistency = properties.Boolean()
     creation_time = properties.Integer(minval=0)
 
@@ -164,16 +163,8 @@ class BackupConfig(properties.Owner):
         self.backup_id = backup_config.get("backup_id")
         self.from_checkpoint_id = backup_config.get("from_checkpoint_id")
         self.to_checkpoint_id = backup_config.get("to_checkpoint_id")
-        self.parent_checkpoint_id = backup_config.get("parent_checkpoint_id")
         self.require_consistency = backup_config.get("require_consistency")
         self.creation_time = backup_config.get("creation_time")
-
-        if self.from_checkpoint_id is not None and (
-                self.parent_checkpoint_id is None):
-            raise exception.BackupError(
-                reason="Cannot start an incremental backup without "
-                       "parent_checkpoint_id",
-                backup=self.backup_id)
 
         self.disks = [DiskConfig(d) for d in backup_config.get("disks", ())]
         for disk in self.disks:
@@ -571,13 +562,6 @@ def create_checkpoint_xml(backup_cfg, drives):
     description = vmxml.Element('description')
     description.appendTextNode(cp_description)
     checkpoint.appendChild(description)
-
-    if backup_cfg.parent_checkpoint_id is not None:
-        cp_parent = vmxml.Element('parent')
-        parent_name = vmxml.Element('name')
-        parent_name.appendTextNode(backup_cfg.parent_checkpoint_id)
-        cp_parent.appendChild(parent_name)
-        checkpoint.appendChild(cp_parent)
 
     if backup_cfg.creation_time:
         creation_time = vmxml.Element('creationTime')
