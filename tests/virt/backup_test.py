@@ -64,11 +64,12 @@ CHECKPOINT_1_XML = """
       <name>{}</name>
       <description>checkpoint for backup '{}'</description>
       <disks>
-        <disk name='sda' checkpoint='bitmap'/>
-        <disk name='vda' checkpoint='bitmap'/>
+        <disk name='sda' checkpoint='bitmap' bitmap='{}'/>
+        <disk name='vda' checkpoint='bitmap' bitmap='{}'/>
       </disks>
     </domaincheckpoint>
-    """.format(CHECKPOINT_1_ID, BACKUP_1_ID)
+    """.format(CHECKPOINT_1_ID, BACKUP_1_ID,
+               CHECKPOINT_1_ID, CHECKPOINT_1_ID)
 
 CHECKPOINT_1_WITH_CREATION_TIME_XML = """
     <domaincheckpoint>
@@ -76,11 +77,12 @@ CHECKPOINT_1_WITH_CREATION_TIME_XML = """
       <description>checkpoint for backup '{}'</description>
       <creationTime>1</creationTime>
       <disks>
-        <disk name='sda' checkpoint='bitmap'/>
-        <disk name='vda' checkpoint='bitmap'/>
+        <disk name='sda' checkpoint='bitmap' bitmap='{}'/>
+        <disk name='vda' checkpoint='bitmap' bitmap='{}'/>
       </disks>
     </domaincheckpoint>
-    """.format(CHECKPOINT_1_ID, BACKUP_1_ID)
+    """.format(CHECKPOINT_1_ID, BACKUP_1_ID,
+               CHECKPOINT_1_ID, CHECKPOINT_1_ID)
 
 DISKLESS_CHECKPOINT_ID = make_uuid()
 DISKLESS_CHECKPOINT_XML = """
@@ -102,11 +104,12 @@ CHECKPOINT_2_XML = """
         <name>{}</name>
       </parent>
       <disks>
-        <disk name='sda' checkpoint='bitmap'/>
-        <disk name='vda' checkpoint='bitmap'/>
+        <disk name='sda' checkpoint='bitmap' bitmap='{}'/>
+        <disk name='vda' checkpoint='bitmap' bitmap='{}'/>
       </disks>
     </domaincheckpoint>
-    """.format(CHECKPOINT_2_ID, BACKUP_2_ID, CHECKPOINT_1_ID)
+    """.format(CHECKPOINT_2_ID, BACKUP_2_ID, CHECKPOINT_1_ID,
+               CHECKPOINT_2_ID, CHECKPOINT_2_ID)
 
 CHECKPOINT_2_WITH_CREATION_TIME_XML = """
     <domaincheckpoint>
@@ -117,21 +120,22 @@ CHECKPOINT_2_WITH_CREATION_TIME_XML = """
       </parent>
       <creationTime>2</creationTime>
       <disks>
-        <disk name='sda' checkpoint='bitmap'/>
-        <disk name='vda' checkpoint='bitmap'/>
+        <disk name='sda' checkpoint='bitmap' bitmap='{}'/>
+        <disk name='vda' checkpoint='bitmap' bitmap='{}'/>
       </disks>
     </domaincheckpoint>
-    """.format(CHECKPOINT_2_ID, BACKUP_2_ID, CHECKPOINT_1_ID)
+    """.format(CHECKPOINT_2_ID, BACKUP_2_ID, CHECKPOINT_1_ID,
+               CHECKPOINT_2_ID, CHECKPOINT_2_ID)
 
 MIXED_CHECKPOINT_XML = """
     <domaincheckpoint>
       <name>{}</name>
       <description>checkpoint for backup '{}'</description>
       <disks>
-        <disk name='sda' checkpoint='bitmap'/>
+        <disk name='sda' checkpoint='bitmap' bitmap='{}'/>
       </disks>
     </domaincheckpoint>
-    """.format(CHECKPOINT_1_ID, BACKUP_1_ID)
+    """.format(CHECKPOINT_1_ID, BACKUP_1_ID, CHECKPOINT_1_ID)
 
 CHECKPOINT_1 = FakeCheckpoint(CHECKPOINT_1_XML, CHECKPOINT_1_ID)
 CHECKPOINT_2 = FakeCheckpoint(CHECKPOINT_2_XML, CHECKPOINT_2_ID)
