@@ -335,7 +335,7 @@ class DriveMerger:
             base_info['uuid'], base_info['apparentsize'],
             base_info['capacity'])
 
-        self._vm.refreshDriveVolume({
+        self._vm.refresh_drive_volume({
             'domainID': drive.domainID,
             'imageID': drive.imageID,
             'name': drive.name,
