@@ -624,7 +624,8 @@ def create_checkpoint_xml(backup_cfg, drives):
             if disk.checkpoint:
                 drive = drives[disk.img_id]
                 disk_elm = vmxml.Element(
-                    'disk', name=drive.name, checkpoint='bitmap')
+                    'disk', name=drive.name, checkpoint='bitmap',
+                    bitmap=backup_cfg.to_checkpoint_id)
                 disks.appendChild(disk_elm)
 
         checkpoint.appendChild(disks)
