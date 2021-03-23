@@ -286,8 +286,8 @@ Requires: lvm2 >= 8:2.03
 # CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
 Requires: kernel >= 3.10.0-957.12.2.el7
 %else # rhel
-# CVE-2019-14835
-Requires: kernel >= 4.18.0-145.el8
+# Live migration between 8.2 and 8.3 - bug 1907973
+Requires: kernel >= 4.18.0-240.21.1.el8_3
 %endif
 Requires: e2fsprogs
 Requires: selinux-policy-targeted >= 3.13.1-166.el7_4.3
