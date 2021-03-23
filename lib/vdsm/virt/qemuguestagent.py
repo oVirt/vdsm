@@ -50,7 +50,8 @@ from libvirt import \
     VIR_DOMAIN_GUEST_INFO_OS, \
     VIR_DOMAIN_GUEST_INFO_TIMEZONE, \
     VIR_DOMAIN_GUEST_INFO_HOSTNAME, \
-    VIR_DOMAIN_GUEST_INFO_FILESYSTEM
+    VIR_DOMAIN_GUEST_INFO_FILESYSTEM, \
+    VIR_DOMAIN_GUEST_INFO_DISKS
 
 _QEMU_ACTIVE_USERS_COMMAND = 'guest-get-users'
 _QEMU_DEVICES_COMMAND = 'guest-get-devices'
@@ -94,6 +95,7 @@ VDSM_GUEST_INFO_DRIVERS = (1 << 32)
 _QEMU_COMMANDS = {
     VDSM_GUEST_INFO_DRIVERS: _QEMU_DEVICES_COMMAND,
     VDSM_GUEST_INFO_NETWORK: _QEMU_NETWORK_INTERFACES_COMMAND,
+    VIR_DOMAIN_GUEST_INFO_DISKS: _QEMU_DISKS_COMMAND,
     VIR_DOMAIN_GUEST_INFO_FILESYSTEM: _QEMU_FSINFO_COMMAND,
     VIR_DOMAIN_GUEST_INFO_HOSTNAME: _QEMU_HOST_NAME_COMMAND,
     VIR_DOMAIN_GUEST_INFO_OS: _QEMU_OSINFO_COMMAND,
@@ -108,6 +110,8 @@ _QEMU_COMMAND_PERIODS = {
         config.getint('guest_agent', 'qga_sysinfo_period'),
     VDSM_GUEST_INFO_NETWORK:
         config.getint('guest_agent', 'qga_sysinfo_period'),
+    VIR_DOMAIN_GUEST_INFO_DISKS:
+        config.getint('guest_agent', 'qga_disk_info_period'),
     VIR_DOMAIN_GUEST_INFO_FILESYSTEM:
         config.getint('guest_agent', 'qga_disk_info_period'),
     VIR_DOMAIN_GUEST_INFO_HOSTNAME:
@@ -459,7 +463,6 @@ class QemuGuestAgentPoller(object):
                 continue
             # Update guest info
             types = 0
-            have_disk_mapping = False
             for command in _QEMU_COMMANDS.keys():
                 if _QEMU_COMMANDS[command] not in caps['commands']:
                     continue
@@ -475,12 +478,6 @@ class QemuGuestAgentPoller(object):
                         not after_hotplug:
                     continue
                 # Commands that have special handling go here
-                if command == VIR_DOMAIN_GUEST_INFO_FILESYSTEM and \
-                        _QEMU_DISKS_COMMAND in caps['commands']:
-                    disk_info = self._qga_call_get_disks(vm_obj)
-                    if len(disk_info.get('diskMapping', {})) > 0:
-                        self.update_guest_info(vm_id, disk_info)
-                        have_disk_mapping = True
                 if command == VDSM_GUEST_INFO_DRIVERS:
                     self.update_guest_info(
                         vm_id, self._qga_call_get_devices(vm_obj))
@@ -495,8 +492,7 @@ class QemuGuestAgentPoller(object):
             if types == 0:
                 # Nothing to do
                 continue
-            info = self._libvirt_get_guest_info(
-                vm_obj, types, not have_disk_mapping)
+            info = self._libvirt_get_guest_info(vm_obj, types)
             if info is None:
                 self.log.debug('Failed to query QEMU-GA for vm=%s', vm_id)
                 self.set_failure(vm_id)
@@ -508,7 +504,7 @@ class QemuGuestAgentPoller(object):
         # Remove stale info
         self._cleanup()
 
-    def _libvirt_get_guest_info(self, vm, types, store_disk_mapping=True):
+    def _libvirt_get_guest_info(self, vm, types):
         guest_info = {}
         self.log.debug(
             'libvirt: fetching guest info vm_id=%r types=%s',
@@ -528,6 +524,12 @@ class QemuGuestAgentPoller(object):
                 'Not querying QEMU-GA because domain is not running ' +
                 'for vm-id=%s', vm.id)
             return {}
+        # Disks Info, we prefer this information over the one from filesystem
+        # info so let's process it first
+        store_disk_mapping = True
+        if 'disk.count' in info:
+            guest_info.update(self._libvirt_disks(info))
+            store_disk_mapping = False
         # Filesystem Info
         if 'fs.count' in info:
             guest_info.update(self._libvirt_fsinfo(info, store_disk_mapping))
@@ -564,6 +566,16 @@ class QemuGuestAgentPoller(object):
                     users.append(info[prefix + '.name'])
             guest_info['username'] = ', '.join(users)
         return guest_info
+
+    def _libvirt_disks(self, info):
+        mapping = {}
+        for di in range(info.get('disk.count')):
+            disk_prefix = 'disk.{:d}.'.format(di)
+            if ((disk_prefix + 'name') in info and
+                    (disk_prefix + 'serial') in info):
+                serial = info[disk_prefix + 'serial']
+                mapping[serial] = {'name': info[disk_prefix + 'name']}
+        return {'diskMapping': mapping}
 
     def _libvirt_fsinfo(self, info, store_disk_mapping=True):
         disks = []
@@ -766,23 +778,6 @@ class QemuGuestAgentPoller(object):
                 else:
                     self.log.debug('Skipping unknown device: %r', device)
             return {'pci_devices': devices}
-        else:
-            self.set_failure(vm.id)
-            return {}
-
-    def _qga_call_get_disks(self, vm):
-        ret = self.call_qga_command(vm, _QEMU_DISKS_COMMAND)
-        mapping = {}
-        if ret is not None:
-            for disk in ret:
-                if 'address' not in disk:
-                    # possibly virtual disk or partition
-                    continue
-                name = disk.get('name')
-                serial = disk['address'].get('serial')
-                if name is not None and serial is not None:
-                    mapping[serial] = {'name': name}
-            return {'diskMapping': mapping}
         else:
             self.set_failure(vm.id)
             return {}

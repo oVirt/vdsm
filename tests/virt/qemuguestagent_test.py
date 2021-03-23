@@ -143,6 +143,18 @@ class FakeDomain(object):
             'fs.0.disk.0.device': '/dev/vda1',
             'fs.0.total-bytes': 200,
             'fs.0.used-bytes': 100,
+            'disk.count': 3,
+            'disk.0.alias': 'vda',
+            'disk.0.partition': False,
+            'disk.0.serial': 'e7d27603-0a2e-47ab-8',
+            'disk.0.name': '/dev/vda',
+            'disk.1.alias': 'vdb',
+            'disk.1.partition': False,
+            'disk.1.name': '/dev/vdb',
+            'disk.2.alias': 'vdc',
+            'disk.2.partition': False,
+            'disk.2.serial': '12345-67890',
+            'disk.2.name': '/dev/vdc',
         }
 
 
@@ -298,6 +310,7 @@ class QemuGuestAgentTests(TestCaseBase):
         }
         assert info['diskMapping'] == {
             'e7d27603-0a2e-47ab-8': {'name': '/dev/vda'},
+            '12345-67890': {'name': '/dev/vdc'},
         }
         # Hostname
         assert info['guestFQDN'] == 'localhost.localdomain'
