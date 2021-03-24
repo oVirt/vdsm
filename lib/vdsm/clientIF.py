@@ -457,23 +457,27 @@ class clientIF(object):
                     raise vm.VolumeError(
                         "Drive %r not visible" % drive["GUID"])
 
-                res = self.irs.appropriateDevice(drive["GUID"], vmId, 'mpath')
-                if res['status']['code']:
-                    raise vm.VolumeError(
-                        "Cannot appropriate drive %r" % drive["GUID"])
+                # Managed drives are prepared in ManagedVolume.attach_volume
+                if drive.get("managed", False):
+                    volPath = '/dev/mapper/' + drive["GUID"]
+                else:
+                    res = self.irs.appropriateDevice(
+                        drive["GUID"], vmId, 'mpath')
+                    if res['status']['code']:
+                        raise vm.VolumeError(
+                            "Cannot appropriate drive %r" % drive["GUID"])
 
-                # Update size for LUN volume
-                drive["truesize"] = res['truesize']
-                drive["apparentsize"] = res['apparentsize']
+                    # Update size for LUN volume
+                    drive["truesize"] = res['truesize']
+                    drive["apparentsize"] = res['apparentsize']
 
-                if 'diskType' not in drive:
-                    drive['diskType'] = DISK_TYPE.BLOCK
+                    if 'diskType' not in drive:
+                        drive['diskType'] = DISK_TYPE.BLOCK
 
-                volPath = res['path']
+                    volPath = res['path']
 
             elif "RBD" in drive:
-                res = self.irs.appropriateDevice(drive["RBD"], vmId, 'rbd')
-                volPath = res['path']
+                volPath = drive["RBD"]
 
             # cdrom and floppy drives
             elif (device in ('cdrom', 'floppy') and 'specParams' in drive):

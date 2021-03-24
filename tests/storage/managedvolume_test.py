@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import errno
 import os
 import json
 from contextlib import closing
@@ -85,6 +86,40 @@ def fake_lvm(monkeypatch):
     return flvm
 
 
+@pytest.fixture
+def fake_supervdsm(monkeypatch):
+
+    class fake_supervdsm:
+        def __init__(self):
+            self.udev_rules = {}
+
+        def getProxy(self):
+            return self
+
+        def add_managed_udev_rule(self, vol_id, path):
+            self.udev_rules[vol_id] = {
+                "path": path,
+                "triggered": False,
+            }
+
+        def trigger_managed_udev_rule(self, path):
+            for rule in self.udev_rules.values():
+                if rule["path"] == path:
+                    rule["triggered"] = True
+                    return
+
+            raise OSError(
+                errno.EINVAL, 'Could not trigger change for rule %r', rule)
+
+        def remove_managed_udev_rule(self, vol_id):
+            self.udev_rules.pop(vol_id, None)
+
+    fsupervdsm = fake_supervdsm()
+    monkeypatch.setattr(managedvolume, "supervdsm", fsupervdsm)
+
+    return fsupervdsm
+
+
 @requires_root
 def test_connector_info_not_installed(monkeypatch):
     # Simulate missing os_brick.
@@ -130,7 +165,8 @@ def test_attach_volume_not_installed_attach(monkeypatch):
 
 
 @requires_root
-def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
+def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db, fake_lvm,
+                                fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     connection_info = {
         "driver_volume_type": "iscsi",
@@ -162,11 +198,13 @@ def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
 
     # Adding new multipath id requires filter invalidation.
     assert fake_lvm.filter_invalidated
+    assert fake_supervdsm.udev_rules["fake_vol_id"]["triggered"]
 
 
 @requires_root
 @pytest.mark.xfail(reason='RBD monkeypatching not implemented yet')
-def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
+def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick, tmp_db, fake_lvm,
+                              fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK_RBD")
     connection_info = {
         "driver_volume_type": "rbd",
@@ -195,45 +233,13 @@ def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
 
     # RBD does not use multipath.
     assert not fake_lvm.filter_invalidated
-
-
-@requires_root
-def test_attach_volume_ok_other(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
-    monkeypatch.setenv("FAKE_ATTACH_RESULT", "NO_WWN")
-    connection_info = {
-        "driver_volume_type": "other",
-        "data": {
-            "param1": "value1"
-        }
-    }
-    ret = managedvolume.attach_volume("other_vol_id", connection_info)
-    path = "/dev/fakesda"
-
-    assert ret["result"]["path"] == path
-
-    volume_info = {
-        "connection_info": connection_info,
-        "path": path,
-        "attachment": {
-            "path": "/dev/fakesda"
-        },
-        "vol_id": "other_vol_id"
-    }
-
-    assert tmp_db.get_volume("other_vol_id") == volume_info
-
-    entries = fake_os_brick.log()
-    assert len(entries) == 1
-    assert entries[0]["action"] == "connect_volume"
-
-    # Other devices do not use multipath.
-    assert not fake_lvm.filter_invalidated
+    assert fake_supervdsm.udev_rules["fake_vol_id"]["triggered"]
 
 
 @requires_root
 @pytest.mark.parametrize("vol_type", ["iscsi", "fibre_channel"])
 def test_attach_volume_no_multipath_id(monkeypatch, fake_os_brick, tmp_db,
-                                       vol_type, fake_lvm):
+                                       vol_type, fake_lvm, fake_supervdsm):
     # Simulate attaching iSCSI or FC device without multipath_id.
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "NO_WWN")
     with pytest.raises(se.ManagedVolumeUnsupportedDevice):
@@ -257,7 +263,7 @@ def test_attach_volume_no_multipath_id(monkeypatch, fake_os_brick, tmp_db,
 
 @requires_root
 def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir, tmp_db,
-                                  fake_lvm):
+                                  fake_lvm, fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     monkeypatch.setattr(managedvolume, "DEV_MAPPER", str(tmpdir))
     tmpdir.join("fakemultipathid").write("")
@@ -286,7 +292,7 @@ def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir, tmp_db,
 
 @requires_root
 def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir, tmp_db,
-                                   fake_lvm):
+                                   fake_lvm, fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     monkeypatch.setattr(managedvolume, "DEV_MAPPER", str(tmpdir))
     tmpdir.join("fakemultipathid").write("")
@@ -314,7 +320,7 @@ def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir, tmp_db,
 
 @requires_root
 def test_reattach_volume_other_connection(monkeypatch, fake_os_brick, tmp_db,
-                                          fake_lvm):
+                                          fake_lvm, fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     connection_info = {
         "driver_volume_type": "iscsi",
@@ -343,7 +349,7 @@ def test_reattach_volume_other_connection(monkeypatch, fake_os_brick, tmp_db,
 
 @requires_root
 def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick, tmp_db,
-                                          fake_lvm):
+                                          fake_lvm, fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     connection_info = {
         "driver_volume_type": "iscsi",
@@ -384,7 +390,8 @@ def test_detach_volume_not_installed(monkeypatch, fake_os_brick, tmp_db,
 
 
 @requires_root
-def test_detach_not_in_db(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
+def test_detach_not_in_db(monkeypatch, fake_os_brick, tmp_db, fake_lvm,
+                          fake_supervdsm):
     managedvolume.detach_volume("fake_vol_id")
 
     # Attaching invalidates the filter, reset.
@@ -400,7 +407,7 @@ def test_detach_not_in_db(monkeypatch, fake_os_brick, tmp_db, fake_lvm):
 
 @requires_root
 def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir,
-                                      tmp_db, fake_lvm):
+                                      tmp_db, fake_lvm, fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     monkeypatch.setattr(managedvolume, "DEV_MAPPER", str(tmpdir))
     connection_info = {
