@@ -64,7 +64,7 @@ class _FileSystemData(object):
     encoding and decoding it to or from ASCII, and detecting its
     changes.
     """
-    def __init__(self, path, compress=True):
+    def __init__(self, path, compress=True, allow_empty=False):
         """
         Define the data to be accessed.
 
@@ -76,7 +76,12 @@ class _FileSystemData(object):
         :param compress: whether to compress the content before encoding it
           with base64
         :type compress: boolean
+        :param allow_empty: if allow_empty is False and there is no data to
+          return (file has zero size, directory is empty, etc.) retrieve()
+          will raise an exception
+        :type allow_empty: boolean
         """
+        self._allow_empty = allow_empty
         self._compress = compress
         self._path = path
 
@@ -214,7 +219,11 @@ class FileData(_FileSystemData):
 
     def _retrieve(self):
         with open(self._path, 'rb') as f:
-            return f.read()
+            data = f.read()
+        if len(data) == 0 and not self._allow_empty:
+            raise exception.ExternalDataFailed(
+                'File with zero size is not allowed', path=self._path)
+        return data
 
     def _store(self, data):
         with open(self._path, 'wb') as f:
@@ -237,6 +246,9 @@ class DirectoryData(_FileSystemData):
         return timestamp
 
     def _retrieve(self):
+        if len(os.listdir(self._path)) == 0 and not self._allow_empty:
+            raise exception.ExternalDataFailed(
+                'Empty directory is not allowed', path=self._path)
         return _make_tar_archive(self._path)
 
     def _store(self, data):

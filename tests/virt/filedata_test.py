@@ -155,6 +155,22 @@ def test_file_data_conditional_read(last_modified, is_none):
             assert encoded == ENCODED_DATA_BZ2
 
 
+def test_file_data_no_data():
+    with tempfile.TemporaryDirectory() as d:
+        path = os.path.join(d, 'test')
+        # file does not exist
+        data = filedata.FileData(path, compress=False)
+        with pytest.raises(exception.ExternalDataFailed):
+            data.retrieve()
+        # file is empty
+        open(path, 'w').write('')
+        data = filedata.FileData(path, compress=False, allow_empty=False)
+        with pytest.raises(exception.ExternalDataFailed):
+            data.retrieve()
+        data = filedata.FileData(path, compress=False, allow_empty=True)
+        assert data.retrieve() == ''
+
+
 # Directory data
 
 
@@ -232,10 +248,18 @@ def test_directory_data_modified():
             max(os.stat(d.path).st_mtime, os.stat(d.subpath).st_mtime)
 
 
-def test_no_data():
+def test_directory_data_no_data():
+    # no directory
     data = filedata.DirectoryData('/this-directory-must-not-exist')
     with pytest.raises(exception.ExternalDataFailed):
         data.retrieve()
+    # directory empty
+    with tempfile.TemporaryDirectory() as d:
+        data = filedata.DirectoryData(d, allow_empty=False)
+        with pytest.raises(exception.ExternalDataFailed):
+            data.retrieve()
+        data = filedata.DirectoryData(d, allow_empty=True)
+        assert data.retrieve() is not None
 
 
 # Monitor
