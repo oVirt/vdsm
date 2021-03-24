@@ -20,7 +20,10 @@
 #
 
 import logging
+import time
 import uuid
+
+from contextlib import contextmanager
 
 import libvirt
 import pytest
@@ -48,6 +51,53 @@ LOADED_CD_METADATA_XML = """\
 </ovirt-vm:vm>
 """  # NOQA: E501 (long line)
 
+# Temporary metadata state during change of CD, which contains the PDIV of
+# current CD as well as PDIV of new CD (in <change> element).
+LOADING_CD_METADATA_XML = """\
+<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:device devtype="disk" name="sdc">
+        <ovirt-vm:domainID>88252cf6-381e-48f0-8795-a294a32c7149</ovirt-vm:domainID>
+        <ovirt-vm:imageID>89f05c7d-b961-4935-993f-514499024515</ovirt-vm:imageID>
+        <ovirt-vm:poolID>13345997-b94f-42dd-b8ef-a1392f65cebf</ovirt-vm:poolID>
+        <ovirt-vm:volumeID>626a493f-5214-4337-b580-96a1ce702c2a</ovirt-vm:volumeID>
+        <ovirt-vm:change>
+            <ovirt-vm:state>loading</ovirt-vm:state>
+            <ovirt-vm:domainID>domain-id</ovirt-vm:domainID>
+            <ovirt-vm:imageID>image-id</ovirt-vm:imageID>
+            <ovirt-vm:poolID>pool-id</ovirt-vm:poolID>
+            <ovirt-vm:volumeID>volume-id</ovirt-vm:volumeID>
+        </ovirt-vm:change>
+    </ovirt-vm:device>
+</ovirt-vm:vm>
+"""  # NOQA: E501 (long line)
+
+# Temporary metadata state during ejecting CD.
+EJECTING_CD_METADATA_XML = """\
+<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:device devtype="disk" name="sdc">
+        <ovirt-vm:domainID>88252cf6-381e-48f0-8795-a294a32c7149</ovirt-vm:domainID>
+        <ovirt-vm:imageID>89f05c7d-b961-4935-993f-514499024515</ovirt-vm:imageID>
+        <ovirt-vm:poolID>13345997-b94f-42dd-b8ef-a1392f65cebf</ovirt-vm:poolID>
+        <ovirt-vm:volumeID>626a493f-5214-4337-b580-96a1ce702c2a</ovirt-vm:volumeID>
+        <ovirt-vm:change>
+            <ovirt-vm:state>ejecting</ovirt-vm:state>
+        </ovirt-vm:change>
+    </ovirt-vm:device>
+</ovirt-vm:vm>
+"""  # NOQA: E501 (long line)
+
+# Temporary metadata state during ejecting CD when no PDIV is present. Can
+# happen during migration from older engines.
+EJECTING_CD_NO_PDIV_METADATA_XML = """\
+<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:device devtype="disk" name="sdc">
+        <ovirt-vm:change>
+            <ovirt-vm:state>ejecting</ovirt-vm:state>
+        </ovirt-vm:change>
+    </ovirt-vm:device>
+</ovirt-vm:vm>
+"""  # NOQA: E501 (long line)
+
 EMPTY_CD_DEVICE_XML = """\
 <disk type='file' device='cdrom'>
   <driver name='qemu' error_policy='report'/>
@@ -59,10 +109,26 @@ EMPTY_CD_DEVICE_XML = """\
 </disk>
 """
 
+# CD tray when CD is loaded.
 LOADED_CD_DEVICE_XML = """\
 <disk type='file' device='cdrom'>
   <driver name='qemu' type='raw' error_policy='report'/>
-  <source dev='/path/to/image' index='2'>
+  <source dev='/path/to/626a493f-5214-4337-b580-96a1ce702c2a' index='2'>
+    <seclabel model='dac' relabel='no'/>
+  </source>
+  <backingStore/>
+  <target dev='sdc' bus='sata'/>
+  <readonly/>
+  <alias name='ua-79287c04-4eea-4db7-a376-99a9f85ad0ed'/>
+  <address type='drive' controller='0' bus='0' target='0' unit='2'/>
+</disk>
+"""
+
+# CD tray after loading new CD. Used in CD recovery tests.
+LOADED_NEW_CD_DEVICE_XML = """\
+<disk type='file' device='cdrom'>
+  <driver name='qemu' type='raw' error_policy='report'/>
+  <source dev='/path/to/volume-id' index='2'>
     <seclabel model='dac' relabel='no'/>
   </source>
   <backingStore/>
@@ -92,6 +158,82 @@ LOADING_DRIVE_SPEC = dict(device=hwclass.DISK, **LOADING_PDIV)
 LOADING_CHANGE = dict(state="loading", **LOADING_PDIV)
 
 LOADING_METADATA = dict(change=LOADING_CHANGE, **CD_PDIV)
+
+TIMEOUT = 2
+
+
+@contextmanager
+def recovering_vm(device_xml, device_metadata):
+    """
+    Fake VM in recovery state.
+    """
+    with fake.VM(
+            cif=ClientIF(),
+            devices=[{"type": "file", "device": "cdrom"}],
+            create_device_objects=True,
+            recover=True,
+            xmldevices=device_xml,
+            metadata=device_metadata
+    ) as fakevm:
+        fakevm._dom = fake.Domain()
+        # Real start of fake VM would fail.
+        fakevm._run = lambda: None
+        # Also skip migration recovery.
+        fakevm._recovering_migration = lambda x, y=None: None
+
+        yield fakevm
+
+
+@pytest.fixture
+def rec_vm_before_change():
+    """
+    Fake VM recovering from CD change. CD metadata was update, but CD in the
+    VM hasn't been changed yet.
+    """
+    with recovering_vm(LOADED_CD_DEVICE_XML, LOADING_CD_METADATA_XML) as vm:
+        yield vm
+
+
+@pytest.fixture
+def rec_vm_after_change():
+    """
+    Fake VM recovering from CD change. CD metadata was update and CD in the
+    VM has been also changed.
+    """
+    with recovering_vm(
+            LOADED_NEW_CD_DEVICE_XML, LOADING_CD_METADATA_XML) as vm:
+        yield vm
+
+
+@pytest.fixture
+def rec_vm_before_eject():
+    """
+    Fake VM recovering from eject CD. CD metadata was update, but CD in the
+    VM hasn't been ejected yet.
+    """
+    with recovering_vm(LOADED_CD_DEVICE_XML, EJECTING_CD_METADATA_XML) as vm:
+        yield vm
+
+
+@pytest.fixture
+def rec_vm_after_eject():
+    """
+    Fake VM recovering from eject CD. CD metadata was update and CD in the
+    VM has also been ejected.
+    """
+    with recovering_vm(EMPTY_CD_DEVICE_XML, EJECTING_CD_METADATA_XML) as vm:
+        yield vm
+
+
+@pytest.fixture
+def rec_vm_after_eject_no_pdiv():
+    """
+    Fake VM recovering from eject CD. CD metadata was update and CD in the
+    VM has also been ejected, but metadata has no PDIV about CD being ejected.
+    """
+    with recovering_vm(
+            EMPTY_CD_DEVICE_XML, EJECTING_CD_NO_PDIV_METADATA_XML) as vm:
+        yield vm
 
 
 @pytest.fixture
@@ -475,11 +617,231 @@ def test_change_cd_apply_cd_change_failed(monkeypatch):
             _assert_pdiv(new_drive_spec, dev["change"])
 
 
+@pytest.mark.xfail(reason="CD recovery not called during VM recovery yet.")
+def test_cd_recovery_before_cd_change(rec_vm_before_change):
+    # Simulate recovery when failure happened once the metadata was updated
+    # with change element and new CD image was prepared, but failed before
+    # the CD was switched.
+    # Failing even before preparing new CD image the situation is same, tearing
+    # down image which is not prepared doesn't do anything.
+
+    cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": CD_PDIV,
+    }
+    device = drivename.make(cdrom_spec["iface"], cdrom_spec["index"])
+
+    # Prepare image for loaded CD.
+    drive = dict(CD_PDIV)
+    drive["device"] = "cdrom"
+    rec_vm_before_change.cif.prepareVolumePath(drive)
+
+    # Run VM with recovery turned on.
+    rec_vm_before_change.run()
+
+    # Vm.run() waits for Vm._vmStartEvent which is set before recovery
+    # starts. Wait little bit for recovery.
+    wait_for_recovery(rec_vm_before_change)
+
+    # Check that the new CD image was torn down.
+    volume = (
+        LOADING_PDIV["domainID"],
+        LOADING_PDIV["imageID"],
+        LOADING_PDIV["volumeID"]
+    )
+    assert volume not in rec_vm_before_change.cif.irs.prepared_volumes
+
+    # Check that metadata looks like before changing CD.
+    with rec_vm_before_change._md_desc.device(
+            devtype=hwclass.DISK, name=device) as dev:
+        _assert_pdiv(CD_PDIV, dev)
+        assert "change" not in dev
+
+
+@pytest.mark.xfail(reason="CD recovery not called during VM recovery yet.")
+def test_cd_recovery_after_cd_change(rec_vm_after_change):
+    # Simulate recovery when failure happened once the metadata was updated
+    # with change element, new CD image was prepared and switched in VM, but
+    # metadata after the change wasn't updated and old CD torn down. In this
+    # case both images are prepared and old one needs to be torn down.
+
+    cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": CD_PDIV,
+    }
+    device = drivename.make(cdrom_spec["iface"], cdrom_spec["index"])
+
+    # Prepare image for old CD to check that it is torn down.
+    drive = dict(CD_PDIV)
+    drive["device"] = "cdrom"
+    rec_vm_after_change.cif.prepareVolumePath(drive)
+
+    # Prepare image for loaded CD.
+    drive = dict(LOADING_PDIV)
+    drive["device"] = "cdrom"
+    rec_vm_after_change.cif.prepareVolumePath(drive)
+
+    # Run VM with recovery turned on.
+    rec_vm_after_change.run()
+
+    # Vm.run() waits for Vm._vmStartEvent which is set before recovery
+    # starts. Wait little bit for recovery.
+    wait_for_recovery(rec_vm_after_change)
+
+    old_volume = (
+        CD_PDIV["domainID"],
+        CD_PDIV["imageID"],
+        CD_PDIV["volumeID"]
+    )
+    new_volume = (
+        LOADING_PDIV["domainID"],
+        LOADING_PDIV["imageID"],
+        LOADING_PDIV["volumeID"]
+    )
+    assert old_volume not in rec_vm_after_change.cif.irs.prepared_volumes
+    assert new_volume in rec_vm_after_change.cif.irs.prepared_volumes
+    with rec_vm_after_change._md_desc.device(
+            devtype=hwclass.DISK, name=device) as dev:
+        _assert_pdiv(LOADING_PDIV, dev)
+        assert "change" not in dev
+
+
+@pytest.mark.xfail(reason="CD recovery not called during VM recovery yet.")
+def test_cd_recovery_before_cd_eject(rec_vm_before_eject):
+    # Simulate recovery when user wants to eject CD and failure happened once
+    # the metadata was updated with change element, but the CD hasn't been
+    # ejected from VM.
+
+    cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": CD_PDIV,
+    }
+    device = drivename.make(cdrom_spec["iface"], cdrom_spec["index"])
+
+    # Prepare image for the loaded CD.
+    drive = dict(CD_PDIV)
+    drive["device"] = "cdrom"
+    rec_vm_before_eject.cif.prepareVolumePath(drive)
+
+    # Run VM with recovery turned on.
+    rec_vm_before_eject.run()
+
+    # Vm.run() waits for Vm._vmStartEvent which is set before recovery
+    # starts. Wait little bit for recovery.
+    wait_for_recovery(rec_vm_before_eject)
+
+    # Check that the CD image was not torn down.
+    volume = (
+        CD_PDIV["domainID"],
+        CD_PDIV["imageID"],
+        CD_PDIV["volumeID"]
+    )
+    assert volume in rec_vm_before_eject.cif.irs.prepared_volumes
+
+    # Check that metadata looks like before ejecting CD.
+    with rec_vm_before_eject._md_desc.device(
+            devtype=hwclass.DISK, name=device) as dev:
+        _assert_pdiv(CD_PDIV, dev)
+        assert "change" not in dev
+
+
+@pytest.mark.xfail(reason="CD recovery not called during VM recovery yet.")
+def test_cd_recovery_after_cd_eject(rec_vm_after_eject):
+    # Simulate recovery when user wants to eject CD and failure happened once
+    # the metadata was updated with change element and the CD has been already
+    # ejected from VM.
+
+    cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": CD_PDIV,
+    }
+    device = drivename.make(cdrom_spec["iface"], cdrom_spec["index"])
+
+    # Prepare image for the CD to check that it is not torn down.
+    drive = dict(CD_PDIV)
+    drive["device"] = "cdrom"
+    rec_vm_after_eject.cif.prepareVolumePath(drive)
+
+    # Run VM with recovery turned on.
+    rec_vm_after_eject.run()
+
+    # Vm.run() waits for Vm._vmStartEvent which is set before recovery
+    # starts. Wait little bit for recovery.
+    wait_for_recovery(rec_vm_after_eject)
+
+    volume = (
+        CD_PDIV["domainID"],
+        CD_PDIV["imageID"],
+        CD_PDIV["volumeID"]
+    )
+    assert volume not in rec_vm_after_eject.cif.irs.prepared_volumes
+    with rec_vm_after_eject._md_desc.device(
+            devtype=hwclass.DISK, name=device) as dev:
+        assert dev == {}
+
+
+def test_cd_recovery_after_cd_eject_no_pdiv(rec_vm_after_eject_no_pdiv):
+    # Simulate recovery when user wants to eject CD and failure happened once
+    # the metadata was updated with change element and the CD has been already
+    # ejected from VM. However, in this case there are no PDIV metadata about
+    # ejected CD and therefore we cannot tear the image down during recovery.
+    # This can happen when migrating from older engine to new one.
+
+    cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": CD_PDIV,
+    }
+    device = drivename.make(cdrom_spec["iface"], cdrom_spec["index"])
+
+    # Prepare image for the CD to check that it is not torn down.
+    drive = dict(CD_PDIV)
+    drive["device"] = "cdrom"
+    rec_vm_after_eject_no_pdiv.cif.prepareVolumePath(drive)
+
+    # Run VM with recovery turned on.
+    rec_vm_after_eject_no_pdiv.run()
+
+    # Vm.run() waits for Vm._vmStartEvent which is set before recovery
+    # starts. Wait little bit for recovery.
+    wait_for_recovery(rec_vm_after_eject_no_pdiv)
+
+    volume = (
+        CD_PDIV["domainID"],
+        CD_PDIV["imageID"],
+        CD_PDIV["volumeID"]
+    )
+    # As there are no metadata about ejected CD, we cannot tear it down during
+    # recovery.
+    assert volume in rec_vm_after_eject_no_pdiv.cif.irs.prepared_volumes
+    with rec_vm_after_eject_no_pdiv._md_desc.device(
+            devtype=hwclass.DISK, name=device) as dev:
+        # No real device was found, recovery was skipped.
+        expected = {
+            "change": {
+                "state": "ejecting",
+            }
+        }
+        assert dev == expected
+
+
 def _assert_pdiv(expected, actual):
     assert expected["poolID"] == actual["poolID"]
     assert expected["domainID"] == actual["domainID"]
     assert expected["imageID"] == actual["imageID"]
     assert expected["volumeID"] == actual["volumeID"]
+
+
+def wait_for_recovery(vm):
+    deadline = time.monotonic() + TIMEOUT
+    while vm.recovering:
+        time.sleep(0.1)
+        if time.monotonic() > deadline:
+            raise Exception("Waiting for VM recovery times out.")
 
 
 class ClientIF(clientIF.clientIF):

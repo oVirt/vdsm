@@ -4735,6 +4735,135 @@ class Vm(object):
             dev.pop("change", None)
         self.sync_metadata()
 
+    def _recover_cd(self, block_dev):
+        """
+        Recover CD metadata and tear down the CD image if it is no longer used.
+        Possible states are:
+            - <change> element is not present in metadata: no recovery is
+                needed.
+            - <change> element is present, <state> is 'loading', but CD to be
+                loaded is not present in the VM: metadata was modified and
+                new CD may or may not be prepared. Discard CD change and tear
+                down image for new CD.
+            - <change> element is present, <state> is 'loading' and CD to be
+                loaded is present in the VM, i.e. VM already switched CDs:
+                apply CD change and tear down image for old CD.
+            - <change> element is present,  <state> is 'ejecting' and old CD is
+                still present in VM: discard the change.
+            - <change> element is present, <state> is 'ejecting' and old CD is
+                not present in VM any more: apply change and tear down old CD.
+        """
+        with self._md_desc.device(devtype=hwclass.DISK, name=block_dev) as dev:
+            current = dev.copy()
+
+        if "change" not in current:
+            # Nothing to recover.
+            self.log.debug("CD %s does not need recovery" % block_dev)
+            return
+
+        change = current.pop("change")
+        state = change.get("state")
+        if state == "loading":
+            self._recover_loading_cd(block_dev, current, change)
+        elif state == "ejecting":
+            self._recover_ejecting_cd(block_dev, current, change)
+        else:
+            self.log.warning(
+                "Invalid CD change state, change=%s state=%s.", change, state)
+
+    def _recover_loading_cd(self, block_dev, current, change):
+        """
+        Recover CD when new CD is being loaded, but failure happens before
+        the process finish.
+        """
+        # Check if the CD was already switched.
+        try:
+            # Metadata hasn't been updated yet and we cannot rely on it,
+            # therefore findDriveByUUIDs() cannot be used. We have to find
+            # device by name and use path provided by libvirt as additional
+            # device parameters like domainID are linked to the device from
+            # oVirt metadata which hasn't been updated.
+            cd = self.find_device_by_name_or_path(device_name=block_dev)
+            changed = cd.path.endswith(change["volumeID"])
+        except LookupError:
+            # If there's no device, there's no metadata or metadata is wrong.
+            # Print a warning and don't do anything.
+            self.log.warning(
+                "Device %s not found, skipping CD recovery", block_dev)
+            return
+
+        if changed:
+            # If VM already has this CD, failure happened after switching CD,
+            # but before the metadata was updated. Finish the change by
+            # applying change also to metadata and tear down old image. If old
+            # image was already torn down, another tear down does nothing.
+
+            if isVdsmImage(current):
+                # There was a CD in CD tray, tear it down.
+                try:
+                    self.cif.teardownVolumePath(current)
+                except Exception:
+                    self.log.exception(
+                        "Tearing down the device %s failed.", current)
+                    # If tear down failed, we will retry again in the next
+                    # call.
+                    return
+
+            # Apply CD change after tearing down the volume.
+            self.log.info(
+                "Applying CD change to metadata, change=%s", change)
+            self._apply_cd_change(block_dev)
+
+        else:
+            # New CD is not present. Discard CD change and tear down new CD.
+            self.log.info("Removing stale change element, change=%s", change)
+            self._discard_cd_change(block_dev)
+            try:
+                self.cif.teardownVolumePath(change)
+            except Exception:
+                self.log.exception(
+                    "Tearing down the device %s failed.", change)
+
+    def _recover_ejecting_cd(self, block_dev, current, change):
+        """
+        Recover the CD when the old CD is being ejected. If the old CD is
+        still present, discard CD change. Otherwise finish the change and tear
+        down the old CD.
+        """
+        # Check if the CD was already ejected.
+        try:
+            cd = self.find_device_by_name_or_path(device_name=block_dev)
+            ejected = cd.path == ""
+        except LookupError:
+            # If there's no device, there's no metadata or metadata is wrong.
+            # Print a warning and don't do anything.
+            self.log.warning(
+                "Device %s not found, skipping CD recovery", block_dev)
+            return
+
+        if ejected:
+            if isVdsmImage(current):
+                # CD was already ejected. Apply CD change and tear down CD
+                # volume.
+                try:
+                    self.cif.teardownVolumePath(current)
+                except Exception:
+                    self.log.exception(
+                        "Tearing down the device %s failed.", change)
+                    # If tear down failed, we will retry again in the next
+                    # call.
+                    return
+
+            # Apply CD change after tearing down the volume.
+            self.log.info(
+                "Applying CD change to metadata, change=%s", change)
+            self._apply_cd_change(block_dev)
+        else:
+            # CD wasn't ejected. Discard CD change.
+            self.log.info(
+                "Removing stale change element, change=%s", change)
+            self._discard_cd_change(block_dev)
+
     def _create_disk_xml(self, vm_dev, path, device, iface, type):
         disk_elem = vmxml.Element('disk', type=type, device=vm_dev)
         disk_elem.appendChildWithArgs('source', file=path)
