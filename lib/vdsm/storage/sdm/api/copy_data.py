@@ -37,13 +37,14 @@ from vdsm.storage.sdc import sdCache
 
 from . import base
 
+log = logging.getLogger('storage.sdm.copy_data')
+
 
 class Job(base.Job):
     """
     Copy data from one endpoint to another using qemu-img convert. Currently we
     only support endpoints that are vdsm volumes.
     """
-    log = logging.getLogger('storage.sdm.copy_data')
 
     def __init__(self, job_id, host_id, source, destination,
                  copy_bitmaps=False):
@@ -106,7 +107,7 @@ class Job(base.Job):
                     with utils.stopwatch(
                             "Copy volume {}".format(self._source.path),
                             level=logging.INFO,
-                            log=self.log):
+                            log=log):
                         self._operation.run()
 
 
