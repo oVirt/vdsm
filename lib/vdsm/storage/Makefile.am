@@ -98,6 +98,7 @@ dist_vdsmstorage_PYTHON = \
 	taskManager.py \
 	threadPool.py \
 	transientdisk.py \
+	utils.py \
 	validators.py \
 	volume.py \
 	volumemetadata.py \

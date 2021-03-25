@@ -38,6 +38,7 @@ from vdsm.storage import guarded
 from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import task
+from vdsm.storage import utils as su
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.volumemetadata import VolumeMetadata
 
@@ -52,11 +53,6 @@ def getBackingVolumePath(imgUUID, volUUID):
     # templates which have a hard link on file domains and a symlink on block
     # domains) we do not need to use the image dir reference anymore.
     return volUUID
-
-
-def _next_generation(current_generation):
-    # Increment a generation value and wrap to 0 after MAX_GENERATION
-    return (current_generation + 1) % (sc.MAX_GENERATION + 1)
 
 
 class VolumeManifest(object):
@@ -466,7 +462,7 @@ class VolumeManifest(object):
         if vol_attr.generation is not None:
             next_gen = vol_attr.generation
         else:
-            next_gen = _next_generation(meta[sc.GENERATION])
+            next_gen = su.next_generation(meta[sc.GENERATION])
 
         meta[sc.GENERATION] = next_gen
 
@@ -697,7 +693,7 @@ class VolumeManifest(object):
         #
         # IMPORTANT: In order to provide an atomic state change, both legality
         # and the generation must be updated together in one write.
-        next_gen = _next_generation(actual_gen)
+        next_gen = su.next_generation(actual_gen)
         metadata = self.getMetadata()
         if set_illegal:
             metadata[sc.LEGALITY] = sc.LEGAL_VOL
