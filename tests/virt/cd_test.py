@@ -617,7 +617,6 @@ def test_change_cd_apply_cd_change_failed(monkeypatch):
             _assert_pdiv(new_drive_spec, dev["change"])
 
 
-@pytest.mark.xfail(reason="CD recovery not called during VM recovery yet.")
 def test_cd_recovery_before_cd_change(rec_vm_before_change):
     # Simulate recovery when failure happened once the metadata was updated
     # with change element and new CD image was prepared, but failed before
@@ -659,7 +658,6 @@ def test_cd_recovery_before_cd_change(rec_vm_before_change):
         assert "change" not in dev
 
 
-@pytest.mark.xfail(reason="CD recovery not called during VM recovery yet.")
 def test_cd_recovery_after_cd_change(rec_vm_after_change):
     # Simulate recovery when failure happened once the metadata was updated
     # with change element, new CD image was prepared and switched in VM, but
@@ -708,7 +706,6 @@ def test_cd_recovery_after_cd_change(rec_vm_after_change):
         assert "change" not in dev
 
 
-@pytest.mark.xfail(reason="CD recovery not called during VM recovery yet.")
 def test_cd_recovery_before_cd_eject(rec_vm_before_eject):
     # Simulate recovery when user wants to eject CD and failure happened once
     # the metadata was updated with change element, but the CD hasn't been
@@ -748,7 +745,6 @@ def test_cd_recovery_before_cd_eject(rec_vm_before_eject):
         assert "change" not in dev
 
 
-@pytest.mark.xfail(reason="CD recovery not called during VM recovery yet.")
 def test_cd_recovery_after_cd_eject(rec_vm_after_eject):
     # Simulate recovery when user wants to eject CD and failure happened once
     # the metadata was updated with change element and the CD has been already

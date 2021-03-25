@@ -963,6 +963,9 @@ class Vm(object):
                 self._pause_code = None
                 self._pause_time = None
 
+            if self.recovering:
+                self._recover_cdroms()
+
             self.recovering = False
             if self._dom.connected:
                 self._updateDomainDescriptor()
@@ -4734,6 +4737,18 @@ class Vm(object):
         with self._md_desc.device(devtype=hwclass.DISK, name=block_dev) as dev:
             dev.pop("change", None)
         self.sync_metadata()
+
+    def _recover_cdroms(self):
+        """
+        Recover VM CDROMs if needed during the VM startup.
+        """
+        for dev in self._devices[hwclass.DISK]:
+            if dev.device == "cdrom":
+                try:
+                    self._recover_cd(dev.name)
+                except Exception as e:
+                    self.log.error(
+                        "Failed to recover CD %s: %s", dev.name, e)
 
     def _recover_cd(self, block_dev):
         """
