@@ -752,8 +752,11 @@ class Vm(object):
             drv['device'] = 'disk'
 
         if drv['device'] == 'disk':
-            volsize = self._getVolumeSize(drv['domainID'], drv['poolID'],
-                                          drv['imageID'], drv['volumeID'])
+            volsize = self.getVolumeSize(
+                drv['domainID'],
+                drv['poolID'],
+                drv['imageID'],
+                drv['volumeID'])
             drv['truesize'] = str(volsize.truesize)
             drv['apparentsize'] = str(volsize.apparentsize)
         else:
@@ -1252,10 +1255,11 @@ class Vm(object):
 
         if not drive.chunked:
             replica = drive.diskReplicate
-            volsize = self._getVolumeSize(replica["domainID"],
-                                          replica["poolID"],
-                                          replica["imageID"],
-                                          replica["volumeID"])
+            volsize = self.getVolumeSize(
+                replica["domainID"],
+                replica["poolID"],
+                replica["imageID"],
+                replica["volumeID"])
             physical = volsize.apparentsize
 
         blockinfo = vmdevices.storage.BlockInfo(capacity, alloc, physical)
@@ -1380,8 +1384,11 @@ class Vm(object):
                                    volInfo['imageID'], volInfo['volumeID'])
 
     def __verifyVolumeExtension(self, volInfo):
-        volSize = self._getVolumeSize(volInfo['domainID'], volInfo['poolID'],
-                                      volInfo['imageID'], volInfo['volumeID'])
+        volSize = self.getVolumeSize(
+            volInfo['domainID'],
+            volInfo['poolID'],
+            volInfo['imageID'],
+            volInfo['volumeID'])
 
         self.log.debug("Verifying extension for volume %s, requested size %s, "
                        "current size %s", volInfo['volumeID'],
@@ -4081,8 +4088,10 @@ class Vm(object):
         if not vmDrive.device == 'disk' or not isVdsmImage(vmDrive):
             return
 
-        volSize = self._getVolumeSize(
-            vmDrive.domainID, vmDrive.poolID, vmDrive.imageID,
+        volSize = self.getVolumeSize(
+            vmDrive.domainID,
+            vmDrive.poolID,
+            vmDrive.imageID,
             vmDrive.volumeID)
 
         vmDrive.truesize = volSize.truesize
@@ -4528,7 +4537,7 @@ class Vm(object):
                 'name': drive.name,
             })
 
-            volSize = self._getVolumeSize(
+            volSize = self.getVolumeSize(
                 drive.domainID, drive.poolID, drive.imageID, drive.volumeID)
 
             # For the RAW device we use the volumeInfo apparentsize rather
@@ -5809,7 +5818,7 @@ class Vm(object):
 
     # Accessing storage
 
-    def _getVolumeSize(self, domainID, poolID, imageID, volumeID):
+    def getVolumeSize(self, domainID, poolID, imageID, volumeID):
         """ Return volume size info by accessing storage """
         res = self.cif.irs.getVolumeSize(domainID, poolID, imageID, volumeID)
         if res['status']['code'] != 0:
