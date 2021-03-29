@@ -123,10 +123,13 @@ def _unconfigure_removed(configured, removed_networks):
     """
     Unconfigure fcoe if network was removed from the DC
     """
+    service_restart_required = False
     for net, _ in six.iteritems(removed_networks):
         if net in configured:
             if configured[net] is not None:
                 _unconfigure(configured[net])
+                service_restart_required = True
+    return service_restart_required
 
 
 def _unconfigure_non_fcoe(configured, changed_non_fcoe):
@@ -134,9 +137,12 @@ def _unconfigure_non_fcoe(configured, changed_non_fcoe):
     Unconfigure networks which are not longer has fcoe enabled
     Example:  Fcoe attribute was removed
     """
+    service_restart_required = False
     for net, net_nic in six.iteritems(changed_non_fcoe):
         if net in configured and net_nic is not None:
             _unconfigure(net_nic)
+            service_restart_required = True
+    return service_restart_required
 
 
 def _reconfigure_fcoe(configured, changed_fcoe, custom_params):
@@ -145,14 +151,18 @@ def _reconfigure_fcoe(configured, changed_fcoe, custom_params):
     fcoe enabled
     Example: Moved from one NIC to another
     """
+    service_restart_required = False
     for net, net_nic in six.iteritems(changed_fcoe):
         if net in configured and configured[net] != net_nic:
             _unconfigure(configured[net])
+            service_restart_required = True
         if net_nic:
             _configure(net_nic, custom_params.get(net, {}))
+            service_restart_required = True
         else:
             hooking.exit_hook("Failed to configure fcoe "
                               "on %s with no physical nic" % (net))
+    return service_restart_required
 
 
 def _parse_custom(custom_params):
@@ -196,19 +206,30 @@ def main():
         else:
             changed_non_fcoe[net] = net_attr.get('nic')
 
-    _unconfigure_removed(existing_fcoe_networks, removed_networks)
-    _unconfigure_non_fcoe(existing_fcoe_networks, changed_non_fcoe)
-    _reconfigure_fcoe(existing_fcoe_networks, changed_fcoe, custom_parameters)
+    removed_service_restart_required = _unconfigure_removed(
+        existing_fcoe_networks, removed_networks
+    )
+    non_fcoe_service_restart_required = _unconfigure_non_fcoe(
+        existing_fcoe_networks, changed_non_fcoe
+    )
+    reconfigure_service_restart_required = _reconfigure_fcoe(
+        existing_fcoe_networks, changed_fcoe, custom_parameters
+    )
 
-    # TODO If services are failed to start restore previous configuration
-    # and notify user
-    ret, _, err = hooking.execCmd(['/bin/systemctl', 'restart', 'lldpad'])
-    if ret:
-        hooking.log('Failed to restart lldpad service. err = %s' % (err))
+    if (
+        removed_service_restart_required
+        or non_fcoe_service_restart_required
+        or reconfigure_service_restart_required
+    ):
+        # TODO If services are failed to start restore previous configuration
+        # and notify user
+        ret, _, err = hooking.execCmd(['/bin/systemctl', 'restart', 'lldpad'])
+        if ret:
+            hooking.log('Failed to restart lldpad service. err = %s' % (err))
 
-    ret, _, err = hooking.execCmd(['/bin/systemctl', 'restart', 'fcoe'])
-    if ret:
-        hooking.log('Failed to restart fcoe service. err = %s' % (err))
+        ret, _, err = hooking.execCmd(['/bin/systemctl', 'restart', 'fcoe'])
+        if ret:
+            hooking.log('Failed to restart fcoe service. err = %s' % (err))
 
 if __name__ == '__main__':
     try:
