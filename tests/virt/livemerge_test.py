@@ -356,7 +356,9 @@ def test_merger_dump_jobs(fake_time):
             "disk": merge_params["driveSpec"],
             "drive": "sda",
             "state": Job.EXTEND,
-            'extend_started': fake_time(),
+            "extend": {
+                "started": fake_time(),
+            },
             "id": job_id,
             "top": merge_params["topVolUUID"],
         }
@@ -381,7 +383,9 @@ def test_merger_load_jobs(fake_time):
             "disk": merge_params["driveSpec"],
             "drive": "sda",
             "state": Job.EXTEND,
-            "extend_started": fake_time(),
+            "extend": {
+                "started": fake_time(),
+            },
             "id": job_id,
             "top": merge_params["topVolUUID"],
         }
@@ -449,7 +453,7 @@ def test_active_merge(monkeypatch):
     # Extend callback started a commit and persisted the job.
     persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.COMMIT
-    assert persisted_job["extend_started"] is None
+    assert persisted_job["extend"] is None
 
     # And start a libvirt active block commit block job.
     block_job = vm._dom.block_jobs["sda"]

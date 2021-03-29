@@ -103,7 +103,7 @@ class Job:
     CLEANUP = "CLEANUP"
 
     def __init__(self, id, drive, disk, top, base, bandwidth, state=INIT,
-                 extend_started=None):
+                 extend=None):
         # Read only attributes.
         self._id = id
         self._drive = drive
@@ -121,7 +121,7 @@ class Job:
         self._state = state
 
         # Set when starting extend.
-        self.extend_started = extend_started
+        self.extend = extend
 
         # Live job info from libvirt. This info is kept between libvirt updates
         # but not persisted to vm metadata.
@@ -201,7 +201,7 @@ class Job:
             "top": self.top,
             "bandwidth": self.bandwidth,
             "state": self.state,
-            "extend_started": self.extend_started,
+            "extend": self.extend,
         }
 
     @classmethod
@@ -214,7 +214,7 @@ class Job:
             base=d["base"],
             bandwidth=d["bandwidth"],
             state=d["state"],
-            extend_started=d["extend_started"],
+            extend=d["extend"],
         )
 
     def info(self):
@@ -443,7 +443,9 @@ class DriveMerger:
         # Persist the job before starting the extend, to ensure that vdsm will
         # know about the extend if it was killed after extend started.
         job.state = Job.EXTEND
-        job.extend_started = time.monotonic()
+        job.extend = {
+            "started": time.monotonic(),
+        }
         self._persist_jobs()
 
         capacity, alloc, physical = self._vm.getExtendInfo(drive)
@@ -489,7 +491,7 @@ class DriveMerger:
                 return
 
             log.info("Extend completed for job %s, starting commit", job.id)
-            job.extend_started = None
+            job.extend = None
             self._start_commit(drive, job)
 
     def _create_job(self, job_id, drive, base, top, bandwidth):
@@ -598,7 +600,7 @@ class DriveMerger:
         """
         Must run under self._lock.
         """
-        duration = time.monotonic() - job.extend_started
+        duration = time.monotonic() - job.extend["started"]
 
         if duration > self.EXTEND_TIMEOUT:
             # TODO: Start a new extend.
