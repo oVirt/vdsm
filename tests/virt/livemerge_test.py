@@ -357,7 +357,7 @@ def test_merger_dump_jobs(fake_time):
             "drive": "sda",
             "state": Job.EXTEND,
             "extend": {
-                "started": fake_time(),
+                "started": fake_time.time,
             },
             "id": job_id,
             "top": merge_params["topVolUUID"],
@@ -384,7 +384,7 @@ def test_merger_load_jobs(fake_time):
             "drive": "sda",
             "state": Job.EXTEND,
             "extend": {
-                "started": fake_time(),
+                "started": fake_time.time,
             },
             "id": job_id,
             "top": merge_params["topVolUUID"],
