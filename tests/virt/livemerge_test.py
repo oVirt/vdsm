@@ -918,8 +918,7 @@ def test_merge_base_too_small(monkeypatch):
 
 
 def simulate_volume_extension(vm, vol_id):
-    assert len(vm.cif.irs.extend_requests) == 1
-    _, vol_info, new_size, extend_callback = vm.cif.irs.extend_requests[0]
+    _, vol_info, new_size, callback = vm.cif.irs.extend_requests.pop(0)
 
     drive = vm.getDiskDevices()[0]
     base = vm.cif.irs.prepared_volumes[(drive.domainID, drive.imageID, vol_id)]
@@ -928,7 +927,7 @@ def simulate_volume_extension(vm, vol_id):
     base['apparentsize'] = new_size
     vm._dom.drives[drive.path]["physical"] = new_size
 
-    extend_callback(vol_info)
+    callback(vol_info)
 
 
 def wait_for_cleanup(vm):
