@@ -249,7 +249,8 @@ class DriveMerger:
 
     # Extend takes normally 2-6 seconds, but if a host is overloaded it
     # can be much slower.
-    EXTEND_TIMEOUT = 60.0
+    EXTEND_TIMEOUT = 10.0
+    EXTEND_ATTEMPTS = 10
 
     def __init__(self, vm):
         self._vm = vm
@@ -296,7 +297,12 @@ class DriveMerger:
                 raise exception.MergeFailed(str(e), job=job.id)
 
             if self._base_needs_extend(drive, job, base_info):
-                self._start_extend(drive, job, base_info, top_info)
+                job.extend = {
+                    "attempt": 1,
+                    "base_size": int(base_info["apparentsize"]),
+                    "top_size": int(top_info["apparentsize"]),
+                }
+                self._start_extend(drive, job)
             else:
                 self._start_commit(drive, job)
 
@@ -434,7 +440,7 @@ class DriveMerger:
 
         return True
 
-    def _start_extend(self, drive, job, base_info, top_info):
+    def _start_extend(self, drive, job):
         """
         Start extend operation for the base volume.
 
@@ -443,22 +449,50 @@ class DriveMerger:
         # Persist the job before starting the extend, to ensure that vdsm will
         # know about the extend if it was killed after extend started.
         job.state = Job.EXTEND
-        job.extend = {
-            "started": time.monotonic(),
-        }
+        job.extend["started"] = time.monotonic()
         self._persist_jobs()
 
         capacity, alloc, physical = self._vm.getExtendInfo(drive)
-        base_size = int(base_info['apparentsize'])
-        top_size = int(top_info['apparentsize'])
-        max_alloc = base_size + top_size
+        max_alloc = job.extend["base_size"] + job.extend["top_size"]
 
-        log.info("Starting extend for job=%s drive=%s volume=%s",
-                 job.id, drive.name, job.base)
+        log.info("Starting extend %s/%s for job=%s drive=%s volume=%s",
+                 job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id,
+                 drive.name, job.base)
 
         callback = partial(self._extend_completed, job_id=job.id)
         self._vm.extendDriveVolume(
             drive, job.base, max_alloc, capacity, callback=callback)
+
+    def _retry_extend(self, job):
+        """
+        Retry extend after a timeout of extend error.
+        """
+        assert job.extend["attempt"] < self.EXTEND_ATTEMPTS
+
+        try:
+            drive = self._vm.findDriveByUUIDs(job.disk)
+        except LookupError:
+            log.error("Cannot find drive for job %s, untracking job",
+                      job.id)
+            self._untrack_job(job.id)
+            return
+
+        # Use current top volume size for this extend retry, in case the top
+        # volume was extended during the merge.
+
+        try:
+            top_size = self._vm.getVolumeSize(
+                drive.domainID, drive.poolID, drive.imageID, job.top)
+        except errors.StorageUnavailableError as e:
+            log.exception("Cannot get top %s size for job %s, aborting",
+                          job.top, job.id)
+            self._untrack_job(job.id)
+            return
+
+        job.extend["top_size"] = top_size.apparentsize
+        job.extend["attempt"] += 1
+
+        self._start_extend(drive, job)
 
     def _extend_completed(self, job_id, error=None):
         """
@@ -472,14 +506,24 @@ class DriveMerger:
                           job_id)
                 return
 
-            if error:
-                log.error("Extend for job %s failed: %s", job.id, error)
-                self._untrack_job(job.id)
-                return
-
             if job.state != Job.EXTEND:
                 log.debug("Extend completed after job %s switched to state %s",
                           job.id, job.state)
+                return
+
+            if error:
+                if job.extend["attempt"] < self.EXTEND_ATTEMPTS:
+                    log.warning(
+                        "Extend %s/%s for job %s failed, retrying: %s",
+                        job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id,
+                        error)
+                    self._retry_extend(job)
+                else:
+                    log.error(
+                        "Extend %s/%s for job %s failed, aborting: %s",
+                        job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id,
+                        error)
+                    self._untrack_job(job.id)
                 return
 
             try:
@@ -603,9 +647,16 @@ class DriveMerger:
         duration = time.monotonic() - job.extend["started"]
 
         if duration > self.EXTEND_TIMEOUT:
-            # TODO: Start a new extend.
-            log.error("Extend timeout for job %s, untracking job", job.id)
-            self._untrack_job(job.id)
+            if job.extend["attempt"] < self.EXTEND_ATTEMPTS:
+                log.warning(
+                    "Extend %s/%s timeout for job %s, retrying",
+                    job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id)
+                self._retry_extend(job)
+            else:
+                log.error(
+                    "Extend %s/%s timeout for job %s, untracking job",
+                    job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id)
+                self._untrack_job(job.id)
         else:
             log.debug("Extend for job %s running for %d seconds",
                       job.id, duration)

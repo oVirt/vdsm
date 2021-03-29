@@ -27,9 +27,10 @@ import yaml
 
 import pytest
 
-from vdsm.common import response
 from vdsm.common import exception
+from vdsm.common import response
 from vdsm.common import xmlutils
+from vdsm.common.units import GiB
 
 from vdsm.virt import metadata
 from vdsm.virt.domain_descriptor import DomainDescriptor
@@ -336,10 +337,17 @@ class FakeDomain:
 
 def test_merger_dump_jobs(fake_time):
     config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
+    base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
+
+    top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
 
     # No jobs yet.
 
@@ -357,6 +365,9 @@ def test_merger_dump_jobs(fake_time):
             "drive": "sda",
             "state": Job.EXTEND,
             "extend": {
+                "attempt": 1,
+                "base_size": base["apparentsize"],
+                "top_size": top["apparentsize"],
                 "started": fake_time.time,
             },
             "id": job_id,
@@ -367,10 +378,17 @@ def test_merger_dump_jobs(fake_time):
 
 def test_merger_load_jobs(fake_time):
     config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
+    base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
+
+    top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
 
     assert vm._drive_merger.dump_jobs() == {}
 
@@ -384,6 +402,9 @@ def test_merger_load_jobs(fake_time):
             "drive": "sda",
             "state": Job.EXTEND,
             "extend": {
+                "attempt": 1,
+                "base_size": base["apparentsize"],
+                "top_size": top["apparentsize"],
                 "started": fake_time.time,
             },
             "id": job_id,
@@ -686,8 +707,66 @@ def test_internal_merge():
     assert vm.drive_monitor.enabled
 
 
-def test_extend_timeout():
+def test_extend_timeout_recover(fake_time):
     config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
+    merge_params = config.values["merge_params"]
+    job_id = merge_params["jobUUID"]
+    base_id = merge_params["baseVolUUID"]
+    top_id = merge_params["topVolUUID"]
+
+    vm = RunningVM(config)
+
+    vm.merge(**merge_params)
+
+    # Find base and top sizes. They do not change during this test.
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
+    top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
+    base_size = base["apparentsize"]
+    top_size = top["apparentsize"]
+
+    # Job starts at EXTEND state, tracking the first extend attempt.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+    assert persisted_job["extend"] == {
+        "attempt": 1,
+        "started": fake_time.time,
+        "base_size": base_size,
+        "top_size": top_size,
+    }
+
+    # First extend request was sent.
+    assert len(vm.cif.irs.extend_requests) == 1
+
+    # Simulate extend timeout, triggering the next successful extend attempt.
+    fake_time.time += DriveMerger.EXTEND_TIMEOUT + 1
+    vm.query_jobs()
+
+    # Job tracks the second extend attempt.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+    assert persisted_job["extend"] == {
+        "attempt": 2,
+        "started": fake_time.time,
+        "base_size": base_size,
+        "top_size": top_size,
+    }
+
+    # Second extend request was sent.
+    assert len(vm.cif.irs.extend_requests) == 2
+
+    simulate_volume_extension(vm, merge_params["baseVolUUID"])
+
+    # Extend completed, moving job to COMMIT state.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.COMMIT
+
+
+def test_extend_use_original_base_size(fake_time):
+    config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
     base_id = merge_params["baseVolUUID"]
@@ -696,12 +775,115 @@ def test_extend_timeout():
 
     vm.merge(**merge_params)
 
-    # Job starts with EXTEND state.
+    # Find base volume size.
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
+    base_size = base["apparentsize"]
+
+    # Job starts at EXTEND state, tracking the first extend attempt.
     persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.EXTEND
+    assert persisted_job["extend"]["attempt"] == 1
+    assert persisted_job["extend"]["base_size"] == base_size
 
-    # Simulate an extend timeout.
-    vm._drive_merger.EXTEND_TIMEOUT = 0.0
+    # Just when the extend timed out, the base volume was extended, but the
+    # extend callback was not called yet.
+    new_size1 = vm.cif.irs.extend_requests[0][2]
+    base["apparentsize"] = new_size1
+
+    # Simulate extend timeout, triggering the next extend attempt.
+    fake_time.time += DriveMerger.EXTEND_TIMEOUT + 1
+    vm.query_jobs()
+
+    # Job tracks the second extend attempt, using the original base size.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+    assert persisted_job["extend"]["attempt"] == 2
+    assert persisted_job["extend"]["base_size"] == base_size
+
+    # Second extend request was sent same size. This extend does not have any
+    # effect since the volume was already extended.
+    new_size2 = vm.cif.irs.extend_requests[1][2]
+    assert new_size2 == new_size1
+
+    # The first extend callback is called now, moving the job to COMMIT state.
+    simulate_volume_extension(vm, base_id)
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.COMMIT
+
+
+def test_extend_use_current_top_size(fake_time):
+    config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
+    merge_params = config.values["merge_params"]
+    job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
+
+    vm = RunningVM(config)
+
+    vm.merge(**merge_params)
+
+    top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
+
+    # Job starts at EXTEND state, tracking the first extend attempt.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+    assert persisted_job["extend"]["attempt"] == 1
+
+    # First extend request was sent based on base and top size.
+    new_size1 = vm.cif.irs.extend_requests[0][2]
+
+    # While waiting for extend completion, top volume was extended.
+    drive = vm.getDiskDevices()[0]
+    top["apparentsize"] += GiB
+    vm._dom.drives[drive.path]["physical"] = top["apparentsize"]
+
+    # Simulate extend timeout, triggering the next extend attempt.
+    fake_time.time += DriveMerger.EXTEND_TIMEOUT + 1
+    vm.query_jobs()
+
+    # Job tracks the second extend attempt.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+    assert persisted_job["extend"]["attempt"] == 2
+
+    # Second extend request was sent with bigger volume size.
+    new_size2 = vm.cif.irs.extend_requests[1][2]
+    assert new_size2 == new_size1 + GiB
+
+
+def test_extend_timeout_all(fake_time):
+    config = Config('active-merge')
+    merge_params = config.values["merge_params"]
+    job_id = merge_params["jobUUID"]
+
+    vm = RunningVM(config)
+
+    vm.merge(**merge_params)
+
+    # Job starts with EXTEND state, performing the first extend attempt.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+    assert persisted_job["extend"]["attempt"] == 1
+    assert persisted_job["extend"]["started"] == fake_time.time
+    assert len(vm.cif.irs.extend_requests) == 1
+
+    for attempt in range(2, DriveMerger.EXTEND_ATTEMPTS + 1):
+        # Simulate an extend timeout.
+        fake_time.time += DriveMerger.EXTEND_TIMEOUT + 1
+
+        # Querying jobs detects an extend timeout...
+        vm.query_jobs()
+
+        # Update extend info in the metadata and send new extend request.
+        persisted_job = parse_jobs(vm)[job_id]
+        assert persisted_job["state"] == Job.EXTEND
+        assert persisted_job["extend"]["attempt"] == attempt
+        assert persisted_job["extend"]["started"] == fake_time.time
+        assert len(vm.cif.irs.extend_requests) == attempt
+
+    # Simulate the last extend timeout.
+    fake_time.time += DriveMerger.EXTEND_TIMEOUT + 1
 
     # The next query will abort the job.
     assert vm.query_jobs() == {}
@@ -710,7 +892,107 @@ def test_extend_timeout():
     assert parse_jobs(vm) == {}
 
     # Simulate slow extend completing after jobs was untracked.
-    simulate_volume_extension(vm, base_id)
+    simulate_volume_extension(vm, merge_params["baseVolUUID"])
+
+
+def test_extend_error_recover(fake_time):
+    config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
+    merge_params = config.values["merge_params"]
+    job_id = merge_params["jobUUID"]
+    base_id = merge_params["baseVolUUID"]
+    top_id = merge_params["topVolUUID"]
+
+    vm = RunningVM(config)
+
+    vm.merge(**merge_params)
+
+    # Find base and top size. They do not change during this test.
+    top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
+    base_size = base["apparentsize"]
+    top_size = top["apparentsize"]
+
+    # Job starts at EXTEND state, tracking the first extend attempt.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+    assert persisted_job["extend"] == {
+        "attempt": 1,
+        "started": fake_time.time,
+        "base_size": base_size,
+        "top_size": top_size,
+    }
+
+    # First extend request was sent.
+    assert len(vm.cif.irs.extend_requests) == 1
+
+    # Advance the time so we can check that extend track the start time of the
+    # second attempt.
+    fake_time.time += 1
+
+    # Simulate extend error triggering the next successful extend attempt.
+    with pytest.raises(RuntimeError):
+        simulate_extend_error(vm)
+
+    # Job tracks the second extend attempt.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+    assert persisted_job["extend"] == {
+        "attempt": 2,
+        "started": fake_time.time,
+        "base_size": base_size,
+        "top_size": top_size,
+    }
+
+    # Second extend request was sent.
+    assert len(vm.cif.irs.extend_requests) == 1
+
+    simulate_volume_extension(vm, merge_params["baseVolUUID"])
+
+    # Extend completed, moving job to COMMIT state.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.COMMIT
+
+
+def test_extend_error_all(fake_time):
+    config = Config('active-merge')
+    merge_params = config.values["merge_params"]
+    job_id = merge_params["jobUUID"]
+
+    vm = RunningVM(config)
+
+    vm.merge(**merge_params)
+
+    # Job starts with EXTEND state, performing the first extend attempt.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+    assert persisted_job["extend"]["attempt"] == 1
+    assert persisted_job["extend"]["started"] == fake_time.time
+    assert len(vm.cif.irs.extend_requests) == 1
+
+    for attempt in range(2, DriveMerger.EXTEND_ATTEMPTS + 1):
+        # Advance the clock to test that we reset extend start time.
+        fake_time.time += 1
+
+        # Simulate extend error, triggring a retry...
+        with pytest.raises(RuntimeError):
+            simulate_extend_error(vm)
+
+        # The callabck updates extend metadata and sends new extend request.
+        persisted_job = parse_jobs(vm)[job_id]
+        assert persisted_job["state"] == Job.EXTEND
+        assert persisted_job["extend"]["attempt"] == attempt
+        assert persisted_job["extend"]["started"] == fake_time.time
+        assert len(vm.cif.irs.extend_requests) == 1
+
+    # The last error wil untrack the job.
+    with pytest.raises(RuntimeError):
+        simulate_extend_error(vm)
+
+    # Job was untracked.
+    assert vm.query_jobs() == {}
+    assert parse_jobs(vm) == {}
 
 
 def test_extend_skipped():
@@ -927,6 +1209,12 @@ def simulate_volume_extension(vm, vol_id):
     base['apparentsize'] = new_size
     vm._dom.drives[drive.path]["physical"] = new_size
 
+    callback(vol_info)
+
+
+def simulate_extend_error(vm):
+    _, vol_info, _, callback = vm.cif.irs.extend_requests.pop(0)
+    # Don't update the volume size to fail the size verification.
     callback(vol_info)
 
 
