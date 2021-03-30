@@ -48,8 +48,7 @@ for removing a lease. This operation must also be done on the SPM.
 
 Sanlock keeps the lockspace name and the resource name in the lease
 area. We can rebuild the mapping from lease id to lease offset by
-reading all the resources in a volume, however the index is the source
-of truth and rebuilding index at a wrong time can cause issues.
+reading all records from index and syncing with sanlock resources.
 See rebuild_index() function for details.
 
 
@@ -468,6 +467,9 @@ class Record(object):
         self._offset = offset
         self._updating = updating
 
+    def is_empty(self):
+        return self._resource == ''
+
     def bytes(self):
         """
         Returns record data in storage format.
@@ -740,58 +742,208 @@ def format_index(lockspace, file, alignment=sc.ALIGNMENT_1M,
 def rebuild_index(
         lockspace, file, alignment=sc.ALIGNMENT_1M,
         block_size=sc.BLOCK_SIZE_512):
-    # TODO: This function needs to change as the semantics of the index have
-    # changed and index is now source of truth, rebuilding the index from
-    # sanlock lockspace can lead to breaking the index. Rebuilding index could
-    # change so it iterates the index and checks that all leases found exist,
-    # creating them if needed.
     """
-    Rebuild xleases volume index from underlying storage.
-
-    This operation synchronizes the index with sanlock resources on storage,
-    however this operation can break the index as it is the source of truth.
-    For example removing a lease updates the index first but a storage
-    write that follows can fail, rebuilding the index at this point will
-    produce orphaned resource in the index.
+    This operation synchronizes the index with sanlock resources on storage.
 
     Like format_index, if the operation fails the index is left in "updating"
     state.
+
+    The following cases can occur while rebuilding the index:
+
+        - record has sanlock resource
+            All good, we do not change anything.
+
+        - record found and sanlock resource missing
+            Record was found in index but not in sanlock, we recreate
+            the resource.
+
+        - record empty and sanlock resource found
+            There is no record in the index but some sanlock resource was found
+            Since index is the source of truth we clear the sanlock resource.
+            This cleans up "leftovers" from sanlock which can occur when
+            sanlock write fails when removing a lease.
+
+        - record is corrupted and sanlock resource found
+            Corrupted record means we can not parse the record. But if we can
+            find a sanlock resource it can be reconstructed from it assuming
+            the resource can not be found in index.
+
+        - record is corrupted and sanlock resource not found
+            There is no way to recover, record will be cleared so index can be
+            used again.
+
+        - record mismatch
+            There is both a record and sanlock resource at same offset but
+            their IDs don't match. We rewrite the sanlock resource because
+            index ID is the correct one.
+
+        - index is updating
+            We recover from updating state by creating a new index without
+            the updating flag and dump to storage when rebuild is finished.
+
+        - index metadata is corrupted
+            We can not recover from this and fail. We check corruption by
+            read_metadata() that can raise InvalidMetadata which hints users
+            to format index.
 
     Raises:
     - OSError if I/O operation failed
     - sanlock.SanlockException if sanlock operation failed
     """
-    log.info("Rebuilding index for lockspace %r (version=%d)",
-             lockspace, INDEX_VERSION)
+    log.info(
+        "Rebuilding index for lockspace %r (version=%d)",
+        lockspace, INDEX_VERSION)
     index = VolumeIndex(alignment, block_size)
+    index.load(file)
+
+    # Verify metadata is not corrupted, can raise InvalidMetadata
+    meta = index.read_metadata()
+    log.debug(
+        "Index metadata check passed lockspace=%s version=%s updating=%s",
+        meta.lockspace, meta.version, meta.updating)
+
     with utils.closing(index):
         with index.updating(lockspace, file):
-            # Read resources and write records
             max_offset = file.size() - alignment
             for recnum in range(MAX_RECORDS):
                 offset = lease_offset(recnum, alignment)
                 if offset > max_offset:
                     index.write_record(recnum, EMPTY_RECORD)
                     continue
+
                 try:
-                    res = read_resource(
+                    res = _read_resource(
                         file.name,
                         offset,
                         alignment=alignment,
                         block_size=block_size)
+                    log.debug(
+                        "Sanlock resource found recnum=%s resource=%s "
+                        "offset=%s",
+                        recnum, res.resource, offset)
                 except NoSuchResource:
-                    record = EMPTY_RECORD
-                else:
-                    log.debug("Restoring lease %s", res)
-                    record = Record(res.resource, offset)
-                index.write_record(recnum, record)
+                    res = None
+                    log.debug(
+                        "No sanlock resource found recnum=%s lockspace=%s "
+                        "offset=%s",
+                        recnum, file.name, offset)
 
-            # Attempt to write index to file
-            log.debug("Writing new index")
+                try:
+                    record = index.read_record(recnum)
+                    log.debug(
+                        "Record loaded recnum=%s resource=%s offset=%s",
+                        recnum, record.resource, offset)
+                except InvalidRecord as e:
+                    # Record corrupted, try to recreate or clear it.
+                    log.warning(
+                        "Found corrupted record recnum=%s offset=%s: %s",
+                        recnum, offset, e)
+
+                    if res:
+                        # Found a non-empty resource in sanlock.
+                        if index.find_record(res.resource) == -1:
+                            # Resource is not in index, recreate record.
+                            log.debug("Record not found in index recnum=%s "
+                                      "offset=%s resource=%s",
+                                      recnum, offset, res.resource)
+                            _write_record(index, recnum, offset, res)
+                        else:
+                            # Resource already exists in index, this indicates
+                            # leftover resource and should be cleared. Also
+                            # clear the corrupted record so it can be reused.
+                            log.debug("Leftover resource found for corrupted "
+                                      "index record recnum=%s offset=%s",
+                                      recnum, offset)
+                            _clear_record(index, recnum, offset)
+                            _clear_resource(
+                                file.name, offset, alignment, block_size)
+                    else:
+                        # Record corrupted and no resource found, clear record.
+                        log.debug(
+                            "Corrupted record does not have matching sanlock "
+                            "resource recnum=%s offset=%s",
+                            recnum, offset)
+                        _clear_record(index, recnum, offset)
+                else:
+                    if record.is_empty():
+                        if res:
+                            # Resource found but there is no record - clear the
+                            # sanlock resource.
+                            log.debug(
+                                "Found leftover sanlock resource recnum=%s "
+                                "resource=%s offset=%s",
+                                recnum, res.resource, offset)
+                            _clear_resource(file.name, offset, alignment,
+                                            block_size)
+                    else:
+                        if res is None:
+                            # Record ok, but no resource found - recreate
+                            # sanlock resource from record.
+                            log.debug(
+                                "Found missing sanlock resource recnum=%s "
+                                "resource=%s offset=%s",
+                                recnum, record.resource, offset)
+                            _write_resource(
+                                file.name, offset, alignment, block_size,
+                                record.resource, lockspace)
+                        if res and record.resource != res.resource:
+                            # Resource and index record exist but IDs mismatch.
+                            log.debug(
+                                "Found lease mismatch between sanlock "
+                                "resource=%s and index record resource=%s "
+                                "recnum=%s offset=%s",
+                                res.resource, record.resource, recnum, offset)
+                            _write_resource(
+                                file.name, offset, alignment, block_size,
+                                record.resource, lockspace)
+
+            # Attempt to write index to file.
+            log.info(
+                "Writing new index. Index rebuild finished lockspace=%s "
+                "file=%s",
+                lockspace, file.name)
             index.dump(file)
 
 
-def read_resource(
+def _write_record(index, recnum, offset, res):
+    log.info(
+        "Writing index record from sanlock recnum=%s resource=%s offset=%s",
+        recnum, res.resource, offset)
+    record = Record(res.resource, offset)
+    index.write_record(recnum, record)
+
+
+def _clear_record(index, recnum, offset):
+    log.info("Clearing index record recnum=%s offset=%s", recnum, offset)
+    index.write_record(recnum, EMPTY_RECORD)
+
+
+def _clear_resource(path, offset, alignment, block_size):
+    log.info("Clearing sanlock resource file=%s offset=%s", path, offset)
+    sanlock.write_resource(
+        b"",
+        b"",
+        [(path, offset)],
+        align=alignment,
+        sector=block_size)
+
+
+def _write_resource(path, offset, alignment, block_size, resource, lockspace):
+    """
+    Helper for writing sanlock resources.
+    """
+    log.info(
+        "Writing sanlock resource=%s lockspace=%s path=%s offset=%s",
+        resource, lockspace, path, offset)
+    sanlock.write_resource(
+        lockspace.encode("utf-8"),
+        resource.encode("utf-8"),
+        [(path, offset)],
+        align=alignment,
+        sector=block_size)
+
+
+def _read_resource(
         path, offset, alignment=sc.ALIGNMENT_1M, block_size=sc.BLOCK_SIZE_512):
     """
     Helper for reading sanlock resoruces, supporting both non-existing and

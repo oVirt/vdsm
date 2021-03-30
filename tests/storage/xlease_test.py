@@ -300,55 +300,340 @@ class TestIndex:
         with utils.closing(vol):
             assert vol.leases() == {}
 
-    def test_rebuild_empty(self, tmp_vol, fake_sanlock):
-        # Add underlying sanlock resources.
-        for i in [3, 4, 6]:
-            resource = "%04d" % i
-            offset = xlease.lease_offset(i, tmp_vol.alignment)
-            fake_sanlock.write_resource(
-                tmp_vol.lockspace.encode("utf-8"),
-                resource.encode("utf-8"),
-                [(tmp_vol.path, offset)],
+    def test_rebuild_missing_resources(self, tmp_vol, fake_sanlock):
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+
+        # Create a few leases.
+        lease_ids = []
+        for _ in range(6):
+            lease_id = make_uuid()
+            vol.add(lease_id)
+            lease_ids.append(lease_id)
+
+        # Remove some of the leases to create "holes".
+        vol.remove(lease_ids[0])
+        vol.remove(lease_ids[1])
+        vol.remove(lease_ids[4])
+
+        # Get info on all the leases that are left.
+        leases = [vol.lookup(lease) for lease in vol.leases()]
+
+        # Wipe fake sanlock resources.
+        fake_sanlock.resources = {}
+
+        # Rebuild sanlock resources from index.
+        xlease.rebuild_index(
+            vol.lockspace,
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+
+        # Verify resources can be found after rebuild.
+        for lease in leases:
+            res = fake_sanlock.read_resource(
+                lease.path,
+                lease.offset,
                 align=tmp_vol.alignment,
                 sector=tmp_vol.block_size)
+            check_lease(lease, lease.resource, res, vol)
 
-        # Check that the index is empty before rebuilding.
+    def test_rebuild_leftover_resource(self, tmp_vol, fake_sanlock):
+        lease_id = make_uuid()
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
             block_size=tmp_vol.block_size)
-        with utils.closing(vol):
-            assert vol.leases() == {}
 
-        # Rebuild the index from storage.
+        # Add a lease as usual, writing resource to sanlock.
+        vol.add(lease_id)
+        offset = vol.leases()[lease_id]['offset']
+        with utils.closing(vol):
+
+            # Make sanlock fail to write/remove a resource.
+            fake_sanlock.errors["write_resource"] = \
+                fake_sanlock.SanlockException
+
+            # Removal will not raise - this will remove the record from index
+            # but due to sanlock write failure the resource will be left over.
+            vol.remove(lease_id)
+
+        # Check we can still find sanlock resource.
+        fake_sanlock.errors = {}
+        fake_sanlock.read_resource(
+            tmp_vol.backend.name,
+            offset,
+            align=tmp_vol.alignment,
+            sector=tmp_vol.block_size)
+
+        # Rebuild index.
         xlease.rebuild_index(
-            tmp_vol.lockspace,
+            vol.lockspace,
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
             block_size=tmp_vol.block_size)
 
-        # After rebuilding the index it should contain all the underlying
-        # resources.
-        expected = {
-            "0003": {
-                "offset": xlease.lease_offset(3, tmp_vol.alignment),
-                "updating": False,
-            },
-            "0004": {
-                "offset": xlease.lease_offset(4, tmp_vol.alignment),
-                "updating": False,
-            },
-            "0006": {
-                "offset": xlease.lease_offset(6, tmp_vol.alignment),
-                "updating": False,
-            },
-        }
+        # Reload volume and check the lease is gone.
         vol = xlease.LeasesVolume(
             tmp_vol.backend,
             alignment=tmp_vol.alignment,
             block_size=tmp_vol.block_size)
-        with utils.closing(vol):
-            assert vol.leases() == expected
+        with pytest.raises(se.NoSuchLease):
+            vol.lookup(lease_id)
+
+        # Check bogus lease is gone from sanlock and resource cleared.
+        res = fake_sanlock.read_resource(
+            tmp_vol.backend.name,
+            offset,
+            align=tmp_vol.alignment,
+            sector=tmp_vol.block_size)
+        assert not res['resource']
+        assert not res['lockspace']
+
+    def test_rebuild_restore_existing_resource(self, tmp_vol, fake_sanlock):
+        lease_id1 = make_uuid()
+        lease_id2 = make_uuid()
+        lease_id3 = make_uuid()
+
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+        vol.add(lease_id1)
+        vol.add(lease_id2)
+        vol.add(lease_id3)
+
+        lease1 = vol.lookup(lease_id1)
+        lease3 = vol.lookup(lease_id3)
+        resource1 = fake_sanlock.resources[(lease1.path, lease1.offset)]
+
+        # Prepare temporary buffer with corrupted record.
+        buf = mmap.mmap(-1, 4096)
+        tmp_vol.backend.pread(tmp_vol.alignment, buf)
+        buf.seek(xlease.METADATA_SIZE + xlease.RECORD_SIZE * 2)
+        buf.write(b"\0" * xlease.RECORD_SIZE)
+
+        # Write corrupt data to storage.
+        tmp_vol.backend.pwrite(tmp_vol.alignment, buf)
+
+        # Verify lease is gone if we load new volume from storage.
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+        with pytest.raises(se.NoSuchLease):
+            vol.lookup(lease_id3)
+
+        # Simulate leftover resource in sanlock - same id, different offset.
+        fake_sanlock.resources[(lease3.path, lease3.offset)] = resource1
+
+        # Rebuild index - clear corrupted record.
+        xlease.rebuild_index(
+            vol.lockspace,
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+
+        # Check that lease was not incorrectly restored from sanlock.
+        with pytest.raises(se.NoSuchLease):
+            vol.lookup(lease_id3)
+
+        # Check that resource of removed lease was cleared at it's offset.
+        assert fake_sanlock.resources[(
+            lease3.path, lease3.offset)]['resource'] == b''
+
+        # Check lease was not changed by rebuild.
+        assert vol.lookup(lease_id1).resource == \
+            resource1['resource'].decode("utf-8")
+
+    def test_rebuild_corrupted_record_repair_from_resource(
+            self, tmp_vol, fake_sanlock):
+        lease_id = make_uuid()
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+        vol.add(lease_id)
+
+        # Prepare zeroed temporary buffer for record corruption.
+        buf = mmap.mmap(-1, tmp_vol.alignment)
+        tmp_vol.backend.pread(tmp_vol.alignment, buf)
+        buf.seek(xlease.METADATA_SIZE)
+        buf.write(b'\0' * xlease.RECORD_SIZE)
+
+        # Write corrupt data to storage.
+        tmp_vol.backend.pwrite(tmp_vol.alignment, buf)
+
+        # Verify lease is gone if we load new volume from storage.
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+        with pytest.raises(se.NoSuchLease):
+            vol.lookup(lease_id)
+
+        # Rebuild index.
+        xlease.rebuild_index(
+            vol.lockspace,
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+
+        # Check rebuild fixed the index.
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+        assert vol.lookup(lease_id).resource == lease_id
+
+    def test_rebuild_corrupted_record_fails(self, tmp_vol, fake_sanlock):
+        lease_id = make_uuid()
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+        vol.add(lease_id)
+        first_offset = vol.lookup(lease_id).offset
+
+        # Prepare zeroed temporary buffer for record corruption.
+        buf = mmap.mmap(-1, tmp_vol.alignment)
+        tmp_vol.backend.pread(tmp_vol.alignment, buf)
+        buf.seek(xlease.METADATA_SIZE)
+        buf.write(b'\0' * xlease.RECORD_SIZE)
+
+        # Write corrupt data to storage.
+        tmp_vol.backend.pwrite(tmp_vol.alignment, buf)
+
+        # Wipe out sanlock resources.
+        fake_sanlock.resources = {}
+
+        # Rebuild index can't repair record without sanlock resource,
+        # but it should clear the corrupted record for later use.
+        xlease.rebuild_index(
+            vol.lockspace,
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+
+        # Check lease can not be found.
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+        with pytest.raises(se.NoSuchLease):
+            vol.lookup(lease_id)
+
+        # Add a lease again.
+        vol.add(lease_id)
+
+        # Check the lease ended up on first offset again.
+        current_offset = vol.lookup(lease_id).offset
+        assert current_offset == first_offset
+
+    def test_rebuild_mismatch_record(self, tmp_vol, fake_sanlock):
+        lease_id = make_uuid()
+        wrong_id = make_uuid()
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+        vol.add(lease_id)
+        offset = vol.leases()[lease_id]['offset']
+
+        # Mangle sanlock resource id.
+        res = fake_sanlock.resources[(tmp_vol.backend.name, offset)]
+        res["resource"] = wrong_id.encode("utf-8")
+
+        # Rebuild index.
+        xlease.rebuild_index(
+            vol.lockspace,
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+
+        repaired_res = fake_sanlock.read_resource(
+            tmp_vol.backend.name,
+            offset,
+            align=tmp_vol.alignment,
+            sector=tmp_vol.block_size)
+
+        # Check lease still exists in index.
+        resource = vol.lookup(lease_id).resource
+
+        # Check that resource was repaired.
+        assert repaired_res['resource'].decode("utf-8") == resource
+
+    def test_rebuild_updating_index(self, tmp_vol, fake_sanlock):
+        lease_id = make_uuid()
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+        vol.add(lease_id)
+
+        # Write index in updating state to storage, simulating failed rebuild.
+        md = xlease.IndexMetadata(
+            xlease.INDEX_VERSION, "lockspace", updating=True)
+        with io.open(tmp_vol.path, "r+b") as f:
+            f.seek(tmp_vol.alignment)
+            f.write(md.bytes())
+
+        # This fails because index is now updating.
+        with pytest.raises(xlease.InvalidIndex):
+            vol = xlease.LeasesVolume(
+                tmp_vol.backend,
+                alignment=tmp_vol.alignment,
+                block_size=tmp_vol.block_size)
+
+        # Rebuild index which clears updating flag.
+        xlease.rebuild_index(
+            vol.lockspace,
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+
+        # This works ok after rebuild.
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+
+        lease = vol.lookup(lease_id)
+        res = fake_sanlock.resources[(lease.path, lease.offset)]
+        assert lease.resource == lease_id
+        assert res['resource'].decode("utf-8") == lease_id
+        assert res['lockspace'].decode("utf-8") == lease.lockspace
+        assert not vol.leases()[lease_id]['updating']
+
+    def test_rebuild_corrupted_metadata(self, tmp_vol, fake_sanlock):
+        vol = xlease.LeasesVolume(
+            tmp_vol.backend,
+            alignment=tmp_vol.alignment,
+            block_size=tmp_vol.block_size)
+
+        # Prepare zeroed temporary buffer for metadata corruption.
+        buf = mmap.mmap(-1, tmp_vol.alignment)
+        tmp_vol.backend.pread(tmp_vol.alignment, buf)
+        buf.seek(0)
+        buf.write(b'\0' * xlease.METADATA_SIZE)
+
+        # Write corrupt data to storage.
+        tmp_vol.backend.pwrite(tmp_vol.alignment, buf)
+
+        # Rebuild index should fail due to invalid metadata.
+        with pytest.raises(xlease.InvalidIndex):
+            xlease.rebuild_index(
+                vol.lockspace,
+                tmp_vol.backend,
+                alignment=tmp_vol.alignment,
+                block_size=tmp_vol.block_size)
 
     def test_create_read_failure(self, tmp_vol):
         file = FailingReader(tmp_vol.path)
