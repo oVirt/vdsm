@@ -29,22 +29,33 @@ stages:
                 - 'automation/*'
                 - 'build-aux/*'
             distributions:
-              - el8
-              - rhel8
+              - el8:
+                  runtime-requirements:
+                    jenkins_master: ovirt.org
+              - rhel8:
+                  runtime-requirements:
+                    jenkins_master: psi.redhat.com
         - linters:
             distributions:
-              - el8
+              - el8:
+                  runtime-requirements:
+                    jenkins_master: all
         - tests-py3:
-            runtime-requirements:
-              host-distro: newer
             distributions:
-              - el8
-              - rhel8
+              - el8:
+                  runtime-requirements:
+                    jenkins_master: ovirt.org
+                    host-distro: newer
+              - rhel8:
+                  runtime-requirements:
+                    jenkins_master: psi.redhat.com
         # For now everything runs on both jenkins u/s and PSI.
         # Only PSI provides VM for containers, so in order to trigger PSI only we need to use rhel8
         - tests-container:
             distributions:
-              - rhel8
+              - rhel8:
+                  runtime-requirements:
+                    jenkins_master: psi.redhat.com
         - nmstate-func-tests: &nmstate-func-tests
             run-if:
               file-changed:
@@ -53,7 +64,9 @@ stages:
                 - 'tests/network/functional/*'
                 - 'automation/*.{{ substage }}.*'
             distributions:
-              - rhel8
+              - rhel8:
+                  runtime-requirements:
+                    jenkins_master: psi.redhat.com
         - nmstate-func-tests-ovs:
             <<: *nmstate-func-tests
 
