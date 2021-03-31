@@ -447,7 +447,6 @@ class Vm(object):
         self.guestAgent = guestagent.GuestAgent(
             self._guestSocketFile, self.cif.channelListener, self.log,
             self._onGuestStatusChange,
-            lambda: self.cif.qga_poller.get_caps(self.id),
             lambda: self.cif.qga_poller.get_guest_info(self.id),
             self._guest_agent_api_version)
         self._qga_lock = threading.Lock()
