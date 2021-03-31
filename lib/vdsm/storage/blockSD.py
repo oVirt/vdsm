@@ -186,7 +186,7 @@ BLOCK_SD_MD_FIELDS.update({
 })
 
 INVALID_CHARS = re.compile(r"[^a-zA-Z0-9_+.\-/=!:#]")
-LVM_ENC_ESCAPE = re.compile("&(\d+)&")
+LVM_ENC_ESCAPE = re.compile(r"&(\d+)&")
 
 
 # Move to lvm

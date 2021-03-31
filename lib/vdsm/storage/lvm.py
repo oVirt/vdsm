@@ -205,7 +205,7 @@ LVM_FLAGS = ("--noheadings", "--units", "b", "--nosuffix", "--separator",
 
 PV_PREFIX = "/dev/mapper"
 # Assuming there are no spaces in the PV name
-re_pvName = re.compile(PV_PREFIX + '[^\s\"]+', re.MULTILINE)
+re_pvName = re.compile(PV_PREFIX + r'[^\s\"]+', re.MULTILINE)
 
 PVS_CMD = ("pvs",) + LVM_FLAGS + ("-o", PV_FIELDS)
 VGS_CMD = ("vgs",) + LVM_FLAGS + ("-o", VG_FIELDS)
@@ -320,9 +320,9 @@ class LVMRunner(object):
     SUPPRESS_WARNINGS = re.compile(
         "|".join([
             "WARNING: This metadata update is NOT backed up",
-            ("WARNING: ignoring metadata seqno \d+ on /dev/mapper/\w+ for "
-             "seqno \d+ on /dev/mapper/\w+ for VG \w+"),
-            "WARNING: Inconsistent metadata found for VG \w+"
+            (r"WARNING: ignoring metadata seqno \d+ on /dev/mapper/\w+ for "
+             r"seqno \d+ on /dev/mapper/\w+ for VG \w+"),
+            r"WARNING: Inconsistent metadata found for VG \w+"
         ]),
         re.IGNORECASE)
 

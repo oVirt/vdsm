@@ -117,7 +117,7 @@ def dm_major_number():
     on each system.
     """
     with open(PROC_DEVICES) as f:
-        dm = re.search("^\s*(\d+)\s+device-mapper$", f.read(), re.MULTILINE)
+        dm = re.search(r"^\s*(\d+)\s+device-mapper$", f.read(), re.MULTILINE)
     if not dm:
         raise NoDeviceMapperMajorNumber()
     return dm.group(1)

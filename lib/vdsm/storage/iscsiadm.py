@@ -187,7 +187,7 @@ def iface_list(out=None):
 
     for line in out.splitlines():
         yield Iface._make(None if value == '<empty>' else value
-                          for value in re.split('[\s,]', line))
+                          for value in re.split(r'[\s,]', line))
 
 
 def iface_info(name):
