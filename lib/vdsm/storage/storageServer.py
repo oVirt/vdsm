@@ -174,8 +174,9 @@ class MountConnection(object):
             try:
                 os.rmdir(self._getLocalPath())
             except OSError as e:
-                self.log.warn("Error removing mountpoint directory %r: %s",
-                              self._getLocalPath(), e)
+                self.log.warning(
+                    "Error removing mountpoint directory %r: %s",
+                    self._getLocalPath(), e)
             six.reraise(t, v, tb)
         else:
             try:
@@ -271,7 +272,8 @@ class GlusterFSConnection(MountConnection):
     def options(self):
         backup_servers_option = ""
         if "backup-volfile-servers" in self._options:
-            self.log.warn("Using user specified backup-volfile-servers option")
+            self.log.warning(
+                "Using user specified backup-volfile-servers option")
         elif self._have_gluster_cli:
             backup_servers_option = self._get_backup_servers_option()
         return ",".join(

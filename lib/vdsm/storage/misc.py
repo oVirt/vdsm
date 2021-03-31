@@ -422,8 +422,9 @@ class Event(object):
                     else:
                         self._start_thread(func, args, kwargs)
                 except:
-                    self._log.warn("Could not run registered method because "
-                                   "of an exception", exc_info=True)
+                    self._log.exception(
+                        "Could not run registered method because of an "
+                        "exception")
 
         self._log.debug("Event emitted")
 

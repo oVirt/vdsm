@@ -115,9 +115,10 @@ class Monitor(object):
                 mpath_status = MultipathStatus(failed_paths, valid_paths)
                 status[guid] = mpath_status
                 if valid_paths == 0:
-                    log.warn("Multipath device %r has failed paths %r,"
-                             " no valid paths",
-                             guid, failed_paths)
+                    log.warning(
+                        "Multipath device %r has failed paths %r, no valid "
+                        "paths",
+                        guid, failed_paths)
                 else:
                     log.info("Multipath device %r has failed paths %r,"
                              " %r valid paths",
