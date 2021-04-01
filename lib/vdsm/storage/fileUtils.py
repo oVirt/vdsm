@@ -236,7 +236,7 @@ def resolveGid(group):
 
 def chown(path, user=-1, group=-1):
     """
-    Change the owner and\or group of a file.
+    Change the owner and group of a file.
     The user and group parameters can either be a name or an id.
     """
     uid = resolveUid(user)

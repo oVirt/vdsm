@@ -976,7 +976,7 @@ class HSM(object):
         :param poolName: The human readable name of the new pool.
         :type poolName: str
         :param masterDom: The UUID of the master storage domain that
-                          contains\will contain the pool's metadata.
+                          contains the pool's metadata.
         :type masterDom: UUID
         :param domList: A list of all the UUIDs of the storage domains managed
                         by this storage pool.
