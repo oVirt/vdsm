@@ -45,8 +45,8 @@ class LibvirtTestCase(TestCaseBase):
         a_xml = ET.tostring(ET.fromstring(a))
         b_xml = ET.tostring(ET.fromstring(b))
 
-        a_xml_normalized = re.sub(b'>\s*\n\s*<', b'><', a_xml).strip()
-        b_xml_normalized = re.sub(b'>\s*\n\s*<', b'><', b_xml).strip()
+        a_xml_normalized = re.sub(br'>\s*\n\s*<', b'><', a_xml).strip()
+        b_xml_normalized = re.sub(br'>\s*\n\s*<', b'><', b_xml).strip()
 
         assert a_xml_normalized == b_xml_normalized
 
