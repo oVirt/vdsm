@@ -1307,5 +1307,7 @@ class Config(object):
         shutil.rmtree(self.path)
 
     def __repr__(self):
-        "path: {}, block size: {}, max hosts: {}, domain version: {}".format(
-            self.path, self.block_size, self.max_hosts, self.domain_version)
+        return ("path: {}, block size: {}, "
+                "max hosts: {}, domain version: {}".format(
+                    self.path, self.block_size, self.max_hosts,
+                    self.domain_version))
