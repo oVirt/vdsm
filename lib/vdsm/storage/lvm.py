@@ -1568,6 +1568,9 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
     cmd = ["lvcreate"]
     cmd.extend(LVM_NOBACKUP)
     cmd.extend(("--contiguous", cont, "--size", "%sm" % size))
+    # Do not prompt for confirmation when wiping signatures.
+    # See https://bugzilla.redhat.com/1946199.
+    cmd.append("--yes")
     for tag in initialTags:
         cmd.extend(("--addtag", tag))
     cmd.extend(("--name", lvName, vgName))
