@@ -213,9 +213,6 @@ class Snapshot(properties.Owner):
             self.finalize_vm(memory_vol)
             return False
 
-        self._vm.log.info('Starting snapshot teardown')
-        result = True
-
         def pad_memory_volume(memory_vol_path, sd_uuid):
             sd_type = sd.name2type(
                 self._vm.cif.irs.getStorageDomainInfo(sd_uuid)['info']['type'])
@@ -223,6 +220,7 @@ class Snapshot(properties.Owner):
                 iop = oop.getProcessPool(sd_uuid)
                 iop.fileUtils.padToBlockSize(memory_vol_path)
 
+        self._vm.log.info('Starting snapshot teardown')
         try:
             self._thaw_vm()
 
@@ -246,9 +244,16 @@ class Snapshot(properties.Owner):
                     self._vm.log.exception("Failed to update drive information"
                                            " for '%s'", drive)
 
-                drive_obj = lookup.drive_by_name(
-                    self._vm.getDiskDevices()[:], drive["name"])
-                self._vm.clear_drive_threshold(drive_obj, old_volume_id)
+                try:
+                    drive_obj = lookup.drive_by_name(
+                        self._vm.getDiskDevices()[:], drive["name"])
+                except LookupError as e:
+                    self._vm.log.error("Unable to find the drive name: %s", e)
+                    continue
+                try:
+                    self._vm.clear_drive_threshold(drive_obj, old_volume_id)
+                except LookupError as e:
+                    self._vm.log.error("Couldn't find the volume path: %s", e)
 
                 try:
                     self._vm.updateDriveVolume(drive_obj)
@@ -259,10 +264,9 @@ class Snapshot(properties.Owner):
         except Exception as e:
             self._vm.log.error("Snapshot teardown error: %s, "
                                "trying to continue teardown", e)
-            result = False
         finally:
             self.finalize_vm(memory_vol)
-        return result
+        return True
 
     def __repr__(self):
         return ("<%s vm=%s job=%s 0x%s>" %
