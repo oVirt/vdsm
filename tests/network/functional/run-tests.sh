@@ -132,6 +132,7 @@ if [ $SWITCH_TYPE == $SWITCH_TYPE_LINUX ];then
     SWITCH_TYPE="legacy_switch and nmstate"
 elif [ $SWITCH_TYPE == $SWITCH_TYPE_OVS ];then
     start_service "openvswitch"
+    restart_service "NetworkManager"
     SWITCH_TYPE="ovs_switch and nmstate"
 fi
 

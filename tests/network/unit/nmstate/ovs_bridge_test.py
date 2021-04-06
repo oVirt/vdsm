@@ -52,6 +52,7 @@ from .testlib import (
     create_ipv4_state,
     create_ipv6_state,
     create_network_config,
+    create_ovs_bridge_mappings_state,
     create_ovs_bridge_state,
     create_ovs_northbound_state,
     create_ovs_port_state,
@@ -102,12 +103,16 @@ class TestBasicNetWithoutIp(object):
         sort_by_name(bridge_ports)
         bridge_state = create_ovs_bridge_state(OVS_BRIDGE[0], bridge_ports)
         nb_state = create_ovs_northbound_state(TESTNET1)
+        bridge_mappings_state = create_ovs_bridge_mappings_state(
+            {OVS_BRIDGE[0]: [TESTNET1]}
+        )
 
         disable_iface_ip(eth0_state, nb_state)
 
         expected_state = {
             nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
         }
+        expected_state.update(bridge_mappings_state)
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
@@ -143,6 +148,9 @@ class TestBasicNetWithoutIp(object):
         bridge2_state = create_ovs_bridge_state(OVS_BRIDGE[1], bridge2_ports)
         nb1_state = create_ovs_northbound_state(TESTNET1)
         nb2_state = create_ovs_northbound_state(TESTNET2)
+        bridge_mappings_state = create_ovs_bridge_mappings_state(
+            {OVS_BRIDGE[0]: [TESTNET1], OVS_BRIDGE[1]: [TESTNET2]}
+        )
 
         disable_iface_ip(eth0_state, eth1_state, nb1_state, nb2_state)
 
@@ -156,6 +164,7 @@ class TestBasicNetWithoutIp(object):
                 nb2_state,
             ]
         }
+        expected_state.update(bridge_mappings_state)
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
@@ -185,6 +194,9 @@ class TestBasicNetWithoutIp(object):
         bridge_state = create_ovs_bridge_state(OVS_BRIDGE[0], bridge_ports)
         nb1_state = create_ovs_northbound_state(TESTNET1)
         nb2_state = create_ovs_northbound_state(TESTNET2)
+        bridge_mappings_state = create_ovs_bridge_mappings_state(
+            {OVS_BRIDGE[0]: [TESTNET1, TESTNET2]}
+        )
 
         disable_iface_ip(eth0_state, nb1_state, nb2_state)
 
@@ -196,6 +208,7 @@ class TestBasicNetWithoutIp(object):
                 nb2_state,
             ]
         }
+        expected_state.update(bridge_mappings_state)
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
@@ -237,10 +250,14 @@ class TestBasicNetWithoutIp(object):
         sort_by_name(bridge_ports)
         bridge_state = create_ovs_bridge_state(OVS_BRIDGE[5], bridge_ports)
         nb_state = create_ovs_northbound_state(TESTNET2)
+        bridge_mappings_state = create_ovs_bridge_mappings_state(
+            {OVS_BRIDGE[5]: [TESTNET1, TESTNET2]}
+        )
 
         disable_iface_ip(nb_state)
 
         expected_state = {nmstate.Interface.KEY: [bridge_state, nb_state]}
+        expected_state.update(bridge_mappings_state)
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
@@ -297,6 +314,9 @@ class TestBasicNetWithoutIp(object):
             OVS_BRIDGE[5], None, nmstate.InterfaceState.ABSENT
         )
         nb_state = create_ovs_northbound_state(TESTNET1)
+        bridge_mappings_state = create_ovs_bridge_mappings_state(
+            {OVS_BRIDGE[0]: [TESTNET1]}
+        )
 
         disable_iface_ip(eth1_state, nb_state)
 
@@ -309,6 +329,7 @@ class TestBasicNetWithoutIp(object):
                 nb_state,
             ]
         }
+        expected_state.update(bridge_mappings_state)
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
@@ -342,10 +363,12 @@ class TestBasicNetWithoutIp(object):
             nmstate.Interface.NAME: TESTNET1,
             nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
         }
+        bridge_mappings_state = create_ovs_bridge_mappings_state()
 
         expected_state = {
             nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
         }
+        expected_state.update(bridge_mappings_state)
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
@@ -377,8 +400,12 @@ class TestBasicNetWithoutIp(object):
             nmstate.Interface.NAME: TESTNET2,
             nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
         }
+        bridge_mappings_state = create_ovs_bridge_mappings_state(
+            {OVS_BRIDGE[5]: [TESTNET1]}
+        )
 
         expected_state = {nmstate.Interface.KEY: [nb_state]}
+        expected_state.update(bridge_mappings_state)
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
@@ -414,10 +441,14 @@ class TestBasicNetWithIp(object):
         nb_state = create_ovs_northbound_state(TESTNET1)
         nb_state.update(create_ipv4_state(dynamic=dhcpv4, auto_dns=False))
         nb_state.update(create_ipv6_state(dynamic=dhcpv6, auto_dns=False))
+        bridge_mappings_state = create_ovs_bridge_mappings_state(
+            {OVS_BRIDGE[0]: [TESTNET1]}
+        )
 
         expected_state = {
             nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
         }
+        expected_state.update(bridge_mappings_state)
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
@@ -457,10 +488,14 @@ class TestBasicNetWithIp(object):
         nb_state = create_ovs_northbound_state(TESTNET1)
         nb_state.update(create_ipv4_state(ipv4_addr, ipv4_prefix))
         nb_state.update(create_ipv6_state(ipv6_addr, ipv6_prefix))
+        bridge_mappings_state = create_ovs_bridge_mappings_state(
+            {OVS_BRIDGE[0]: [TESTNET1]}
+        )
 
         expected_state = {
             nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
         }
+        expected_state.update(bridge_mappings_state)
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
@@ -509,12 +544,16 @@ class TestEnforceMacAddress(object):
         nb_state = create_ovs_northbound_state(
             TESTNET1, enforced_mac=MAC_ADDRESS
         )
+        bridge_mappings_state = create_ovs_bridge_mappings_state(
+            {OVS_BRIDGE[0]: [TESTNET1]}
+        )
 
         disable_iface_ip(eth0_state, nb_state)
 
         expected_state = {
             nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
         }
+        expected_state.update(bridge_mappings_state)
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
@@ -542,12 +581,16 @@ class TestMtu(object):
         sort_by_name(bridge_ports)
         bridge_state = create_ovs_bridge_state(OVS_BRIDGE[0], bridge_ports)
         nb_state = create_ovs_northbound_state(TESTNET1, mtu=mtu)
+        bridge_mappings_state = create_ovs_bridge_mappings_state(
+            {OVS_BRIDGE[0]: [TESTNET1]}
+        )
 
         disable_iface_ip(eth0_state, nb_state)
 
         expected_state = {
             nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
         }
+        expected_state.update(bridge_mappings_state)
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
@@ -589,10 +632,12 @@ class TestMtu(object):
             nmstate.Interface.NAME: TESTNET1,
             nmstate.Interface.STATE: nmstate.InterfaceState.ABSENT,
         }
+        bridge_mappings_state = create_ovs_bridge_mappings_state()
 
         expected_state = {
             nmstate.Interface.KEY: [eth0_state, bridge_state, nb_state]
         }
+        expected_state.update(bridge_mappings_state)
         sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
@@ -641,10 +686,14 @@ class TestMtu(object):
         sort_by_name(bridge_ports)
         bridge_state = create_ovs_bridge_state(OVS_BRIDGE[5], bridge_ports)
         nb_state = create_ovs_northbound_state(TESTNET2, mtu=mtu)
+        bridge_mappings_state = create_ovs_bridge_mappings_state(
+            {OVS_BRIDGE[5]: [TESTNET1, TESTNET2]}
+        )
 
         disable_iface_ip(nb_state)
 
         expected_state = {nmstate.Interface.KEY: [bridge_state, nb_state]}
+        expected_state.update(bridge_mappings_state)
 
         # Only higher MTU should be reflected on the SB state
         if mtu > net1_mtu:
@@ -703,8 +752,12 @@ class TestMtu(object):
         nb_state = create_ovs_northbound_state(
             TESTNET2, nmstate.InterfaceState.ABSENT, mtu=None
         )
+        bridge_mappings_state = create_ovs_bridge_mappings_state(
+            {OVS_BRIDGE[5]: [TESTNET1]}
+        )
 
         expected_state = {nmstate.Interface.KEY: [nb_state]}
+        expected_state.update(bridge_mappings_state)
 
         # Only higher MTU should be reflected on the SB state
         if mtu > net1_mtu:

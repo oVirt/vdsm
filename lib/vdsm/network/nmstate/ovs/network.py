@@ -169,6 +169,10 @@ class OvsBridge(object):
     def mtu_by_sb(self):
         return self._mtu_by_sb
 
+    @property
+    def desired_nb_by_sb(self):
+        return self._desired_nb_by_sb
+
     def _create_desired_nb_by_sb(self):
         nb_by_sb = deepcopy(self._ovs_info.nb_by_sb)
 
@@ -292,6 +296,7 @@ def generate_state(networks, running_networks, current_iface_state):
     dns_state = {}
     net_ifstates = bridges.bridge_ifaces_state
     net_ifstates.update(bridges.sb_ifaces_state)
+    bridge_mappings = _create_bridge_mappings(bridges)
 
     _add_missing_sb_mtu(net_ifstates, bridges, current_iface_state)
 
@@ -319,7 +324,7 @@ def generate_state(networks, running_networks, current_iface_state):
         if bridge in net_ifstates:
             _sort_ports_by_name(net_ifstates[bridge])
 
-    return net_ifstates, routes_state, dns_state
+    return net_ifstates, routes_state, dns_state, bridge_mappings
 
 
 def _enforce_network_mac_address(net, net_ifstates, current_iface_state):
@@ -355,6 +360,17 @@ def _add_missing_sb_mtu(net_ifstates, bridges, current_ifaces_state):
         )
         if sb not in net_ifstates and current_sb_mtu != mtu:
             net_ifstates[sb] = _create_sb_iface_state(sb, mtu)
+
+
+def _create_bridge_mappings(bridges):
+    mapping_pairs = []
+    for sb, nbs in bridges.desired_nb_by_sb.items():
+        if not nbs:
+            continue
+        bridge = bridges.bridge_by_sb[sb]
+        mapping_pairs.extend([f'{nb}:{bridge}' for nb in sorted(nbs)])
+
+    return ','.join(mapping_pairs) or '""'
 
 
 def _create_sb_iface_state(name, mtu):

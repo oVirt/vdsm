@@ -21,6 +21,7 @@
 import pytest
 
 from vdsm.network import nmstate
+from vdsm.network.nmstate.bridge_util import OVN_BRIDGE_MAPPINGS_KEY
 
 IPv4_FAMILY = 4
 IPv6_FAMILY = 6
@@ -346,3 +347,18 @@ def create_ovs_northbound_state(
         nb_state[nmstate.Interface.MTU] = mtu
 
     return nb_state
+
+
+def create_ovs_bridge_mappings_state(nbs_by_bridge=None):
+    mapping_pairs = []
+    if nbs_by_bridge:
+        for bridge, nbs in nbs_by_bridge.items():
+            mapping_pairs.extend([f'{nb}:{bridge}' for nb in sorted(nbs)])
+
+    return {
+        nmstate.OvsDB.KEY: {
+            nmstate.OvsDB.EXTERNAL_IDS: {
+                OVN_BRIDGE_MAPPINGS_KEY: ','.join(mapping_pairs) or '""'
+            }
+        }
+    }

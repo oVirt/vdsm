@@ -26,6 +26,7 @@ from .schema import InterfaceIPv6
 from .schema import InterfaceState
 
 DEFAULT_MTU = 1500
+OVN_BRIDGE_MAPPINGS_KEY = 'ovn-bridge-mappings'
 
 
 class NetworkConfig(object):

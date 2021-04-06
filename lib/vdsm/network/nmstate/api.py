@@ -32,6 +32,7 @@ from .bridge_util import DEFAULT_MTU
 from .bridge_util import is_autoconf_enabled as util_is_autoconf_enabled
 from .bridge_util import is_dhcp_enabled as util_is_dhcp_enabled
 from .bridge_util import is_iface_absent
+from .bridge_util import OVN_BRIDGE_MAPPINGS_KEY
 from .bridge_util import translate_config
 from .linux_bridge import LinuxBridgeNetwork as LinuxBrNet
 from .ovs.info import OvsInfo
@@ -42,6 +43,7 @@ from .schema import DNS
 from .schema import Interface
 from .schema import InterfaceState
 from .schema import InterfaceType
+from .schema import OvsDB
 from .schema import Route
 from .schema import Vlan
 from .sriov import create_sriov_state
@@ -64,13 +66,19 @@ def generate_state(networks, bondings):
     bond_ifstates = Bond.generate_state(bondings, rconfig.bonds)
 
     if ovs_requested:
-        net_ifstates, routes_state, dns_state = ovs_generate_state(
+        (
+            net_ifstates,
+            routes_state,
+            dns_state,
+            bridge_mappings,
+        ) = ovs_generate_state(
             networks, rconfig.networks, current_ifaces_state
         )
     else:
         net_ifstates, routes_state, dns_state = LinuxBrNet.generate_state(
             networks, rconfig.networks, current_ifaces_state
         )
+        bridge_mappings = None
 
     ifstates = _merge_bond_and_net_ifaces_states(bond_ifstates, net_ifstates)
 
@@ -78,7 +86,7 @@ def generate_state(networks, bondings):
         _set_vlans_base_mtu(ifstates, current_ifaces_state)
     _set_bond_slaves_mtu(ifstates, current_ifaces_state)
 
-    return _merge_state(ifstates, routes_state, dns_state)
+    return _merge_state(ifstates, routes_state, dns_state, bridge_mappings)
 
 
 def _set_vlans_base_mtu(desired_ifstates, current_ifstates):
@@ -242,23 +250,7 @@ def ovs_netinfo(base_netinfo, running_networks, state):
     netinfo.create_netinfo()
 
 
-# FIXME This should move to generate state
-# after proper support in nmstate
-# https://bugzilla.redhat.com/1867504
-def prepare_ovs_bridge_mappings(running_networks):
-    rnets_config = translate_config(running_networks)
-    current_ifaces_state = get_interfaces(state_show())
-    ovs_info = OvsInfo(rnets_config, current_ifaces_state)
-
-    mapping_pairs = []
-    for sb, nbs in ovs_info.nb_by_sb.items():
-        bridge = ovs_info.bridge_by_sb[sb]
-        mapping_pairs.extend([f'{nb}:{bridge}' for nb in nbs])
-
-    return mapping_pairs
-
-
-def _merge_state(interfaces_state, routes_state, dns_state):
+def _merge_state(interfaces_state, routes_state, dns_state, bridge_mappings):
     interfaces = [ifstate for ifstate in interfaces_state.values()]
     state = {
         Interface.KEY: sorted(interfaces, key=lambda d: d[Interface.NAME])
@@ -270,6 +262,10 @@ def _merge_state(interfaces_state, routes_state, dns_state):
             ns for ns in dns_state.values()
         )
         state[DNS.KEY] = {DNS.CONFIG: {DNS.SERVER: list(nameservers)}}
+    if bridge_mappings:
+        state[OvsDB.KEY] = {
+            OvsDB.EXTERNAL_IDS: {OVN_BRIDGE_MAPPINGS_KEY: bridge_mappings}
+        }
     return state
 
 

@@ -25,7 +25,6 @@ from .api import get_routes
 from .api import is_autoconf_enabled
 from .api import is_dhcp_enabled
 from .api import ovs_netinfo
-from .api import prepare_ovs_bridge_mappings
 from .api import setup
 from .api import state_show
 from .api import update_num_vfs
@@ -41,6 +40,7 @@ from .schema import InterfaceState
 from .schema import InterfaceType
 from .schema import LinuxBridge
 from .schema import OvsBridgeSchema
+from .schema import OvsDB
 from .schema import Route
 from .schema import Vlan
 
@@ -53,7 +53,6 @@ __all__ = [
     'is_autoconf_enabled',
     'is_dhcp_enabled',
     'ovs_netinfo',
-    'prepare_ovs_bridge_mappings',
     'setup',
     'state_show',
     'update_num_vfs',
@@ -67,6 +66,7 @@ __all__ = [
     'InterfaceType',
     'LinuxBridge',
     'OvsBridgeSchema',
+    'OvsDB',
     'Route',
     'Vlan',
 ]
