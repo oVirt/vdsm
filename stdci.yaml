@@ -69,18 +69,3 @@ stages:
                     jenkins_master: psi.redhat.com
         - nmstate-func-tests-ovs:
             <<: *nmstate-func-tests
-
-  - check-network: &check-network
-      archs:
-        - x86_64
-      substages:
-        - functional-linux-bridge-nmstate:
-            runtime-requirements:
-              host-distro: newer
-            distributions:
-              # FIXME replace by el8 when containers are working there
-              - fc30
-  - poll-upstream-sources:
-      <<: *check-network
-      script:
-        from-file: automation/check-network.{{ substage }}.sh
