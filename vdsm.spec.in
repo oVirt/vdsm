@@ -487,7 +487,7 @@ Requires:       NetworkManager-ovs
 Requires:       ethtool
 Requires:       iproute
 Requires:       iproute-tc
-Requires:       nmstate >= 0.3
+Requires:       nmstate >= 1.0
 Requires:       libnl3
 Requires:       lldpad
 Requires:       openvswitch >= 2.11
