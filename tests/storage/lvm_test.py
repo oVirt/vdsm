@@ -1801,6 +1801,26 @@ def test_normalize_args():
         u"arg1", u"arg2"]
 
 
+@pytest.mark.parametrize("input,expected", [
+    (
+        'Physical volume "/dev/mapper/36001404" successfully created',
+        ["/dev/mapper/36001404"]
+    ),
+    (
+        """
+        Physical volume "/dev/mapper/36001404" successfully created
+        Physical volume "/dev/mapper/36001405" successfully created""",
+        ["/dev/mapper/36001404", "/dev/mapper/36001405"]
+    ),
+    (
+        "Run 'pvcreate --help' for more information",
+        []
+    )
+])
+def test_pv_name_reg_exp(input, expected):
+    assert lvm.re_pvName.findall(input) == expected
+
+
 def make_lv(lv_name, vg_name):
     return lvm.LV.fromlvm(
         "uuid",
