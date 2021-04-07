@@ -1114,6 +1114,35 @@ def test_lv_create_remove(tmp_storage, read_only):
 
 @requires_root
 @pytest.mark.root
+def test_lv_create_zero(tmp_storage):
+    dev_size = 10 * GiB
+    dev = tmp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lvm.set_read_only(False)
+
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+
+    # Create first LV with a filesystem and remove it.
+    lvm.createLV(vg_name, "lv1", 1024)
+    lv1 = lvm.getLV(vg_name, "lv1")
+    commands.run(["mkfs.xfs", lvm.lvPath(vg_name, "lv1")])
+    lvm.removeLVs(vg_name, ["lv1"])
+
+    # Create second lv, using same extents. This fails if lvm is using
+    # --wipesignature y.
+    lvm.createLV(vg_name, "lv2", 1024)
+    lv2 = lvm.getLV(vg_name, "lv2")
+
+    # Check that lv1 and lv2 uses the same extent.
+    assert lv1.devices == lv2.devices
+
+    # Check that first 4k of lv2 are zeroed.
+    with open(lvm.lvPath(vg_name, "lv2"), "rb") as f:
+        assert f.read(4096) == b"\0" * 4096
+
+
+@requires_root
+@pytest.mark.root
 def test_lv_add_delete_tags(tmp_storage):
     dev_size = 20 * GiB
     dev = tmp_storage.create_device(dev_size)
