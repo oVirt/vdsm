@@ -1568,9 +1568,11 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
     cmd = ["lvcreate"]
     cmd.extend(LVM_NOBACKUP)
     cmd.extend(("--contiguous", cont, "--size", "%sm" % size))
-    # Do not prompt for confirmation when wiping signatures.
+    # Disable wiping signatures, enabled by default in RHEL 8.4. We own the VG
+    # and the LVs and we know it is alwasy safe to zero a new LV. With this
+    # option, LVM will zero the first 4k of the device without confirmation.
     # See https://bugzilla.redhat.com/1946199.
-    cmd.append("--yes")
+    cmd.extend(("--wipesignatures", "n"))
     for tag in initialTags:
         cmd.extend(("--addtag", tag))
     cmd.extend(("--name", lvName, vgName))
