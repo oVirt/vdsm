@@ -210,10 +210,8 @@ Requires: libvirt-lock-sanlock
 # TODO: Depend on the same version as RHEL once it is available upstream.
 Requires: libvirt-daemon-kvm >= 6.0.0-17
 %else
-# Use the new incremental backup features -
-# https://bugzilla.redhat.com/1874846
-# https://bugzilla.redhat.com/1901830
-Requires: libvirt-daemon-kvm >= 6.6.0-13
+# Bug 1946697 - systemctl restart libvirtd shuts down all VMs on the host
+Requires: libvirt-daemon-kvm >= 7.0.0-13.module+el8.4.0+10604+5608c2b4
 %endif
 Requires: python3-libvirt
 %else # fedora
