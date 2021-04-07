@@ -38,8 +38,17 @@ from . import expose
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
 _UDEV_RULE_FILE_EXT = ".rules"
+_UDEV_RULE_FILE_NAME_VM = os.path.join(
+    _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + '%s-%s' +
+    _UDEV_RULE_FILE_EXT)
+
+# TODO: remove this when managed devices no longer use appropriateDevice
 _UDEV_RULE_FILE_NAME = os.path.join(
     _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + '%s-%s' +
+    _UDEV_RULE_FILE_EXT)
+
+_UDEV_RULE_FILE_NAME_MANAGED = os.path.join(
+    _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + 'managed_' + '%s' +
     _UDEV_RULE_FILE_EXT)
 _UDEV_RULE_FILE_NAME_VFIO = os.path.join(
     _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + "iommu_group_%s" +
@@ -103,6 +112,31 @@ def rmAppropriateMultipathRules(thiefId):
         except OSError:
             fails.append(r)
     return fails
+
+
+@expose
+def add_managed_udev_rule(vol_id, path):
+    rule_file = _UDEV_RULE_FILE_NAME_MANAGED % vol_id
+    symlink = os.path.relpath(path, '/dev/')
+    rule = 'SYMLINK=="%s", RUN+="%s %s:%s $env{DEVNAME}"\n' % (
+        symlink, EXT_CHOWN, DISKIMAGE_USER, DISKIMAGE_GROUP)
+    with open(rule_file, "w") as rf:
+        _log.debug("Creating rule %s: %r", rule_file, rule)
+        rf.write(rule)
+
+
+@expose
+def trigger_managed_udev_rule(path):
+    _udevTrigger(property_matches=(('DEVLINKS', path),))
+
+
+@expose
+def remove_managed_udev_rule(vol_id):
+    rule_file = _UDEV_RULE_FILE_NAME_MANAGED % vol_id
+    try:
+        os.remove(rule_file)
+    except FileNotFoundError:
+        _log.debug("Udev rule %s does not exits", rule_file)
 
 
 def _udevTrigger(*args, **kwargs):
