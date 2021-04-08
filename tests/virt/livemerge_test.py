@@ -118,20 +118,19 @@ class FakeCleanupThread(CleanupThread):
 
 
 def test_cleanup_initial():
-    job = fake_job()
+    job = fake_job(pivot=True)
     v = FakeVM()
-    t = FakeCleanupThread(
-        vm=v, job=job, drive=FakeDrive(), doPivot=True)
+    t = FakeCleanupThread(vm=v, job=job, drive=FakeDrive())
 
     assert t.state == CleanupThread.TRYING
     assert v.drive_monitor.enabled
 
 
 def test_cleanup_done():
-    job = fake_job()
+    job = fake_job(pivot=True)
     v = FakeVM()
     drive = FakeDrive()
-    t = FakeCleanupThread(vm=v, job=job, drive=drive, doPivot=True)
+    t = FakeCleanupThread(vm=v, job=job, drive=drive)
     t.start()
     t.join()
 
@@ -156,10 +155,9 @@ def test_cleanup_retry(monkeypatch, error):
 
     monkeypatch.setattr(FakeCleanupThread, "tryPivot", tryPivot)
 
-    job = fake_job()
+    job = fake_job(pivot=True)
     v = FakeVM()
-    t = FakeCleanupThread(
-        vm=v, job=job, drive=FakeDrive(), doPivot=True)
+    t = FakeCleanupThread(vm=v, job=job, drive=FakeDrive())
     t.start()
     t.join()
 
@@ -355,6 +353,7 @@ def test_merger_dump_jobs(fake_time):
                 "top_size": top["apparentsize"],
                 "started": fake_time.time,
             },
+            "pivot": None,
             "id": job_id,
             "top": merge_params["topVolUUID"],
         }
@@ -392,6 +391,7 @@ def test_merger_load_jobs(fake_time):
                 "top_size": top["apparentsize"],
                 "started": fake_time.time,
             },
+            "pivot": None,
             "id": job_id,
             "top": merge_params["topVolUUID"],
         }
@@ -524,6 +524,7 @@ def test_active_merge(monkeypatch):
     # query_jobs() switched job to CLEANUP state.
     persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.CLEANUP
+    assert persisted_job["pivot"]
 
     # Wait for cleanup to abort the block job as part of the pivot attempt.
     aborted = vm._dom.aborted.wait(TIMEOUT)
@@ -598,6 +599,7 @@ def test_internal_merge():
     # And persisting job in COMMIT state.
     persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.COMMIT
+    assert not persisted_job["pivot"]
 
     # Active jobs after calling merge.
     assert vm.query_jobs() == {
@@ -673,6 +675,7 @@ def test_internal_merge():
     # Job persisted now in CLEANUP state.
     persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.CLEANUP
+    assert not persisted_job["pivot"]
 
     # Check for cleanup completion.
     wait_for_cleanup(vm)
@@ -1044,6 +1047,7 @@ def test_merge_cancel_commit():
     # Job switched to CLEANUP state.
     persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.CLEANUP
+    assert not persisted_job["pivot"]
 
     # Cleanup is done running.
     wait_for_cleanup(vm)
@@ -1250,7 +1254,7 @@ def metadata_chain(xml):
     ]
 
 
-def fake_job():
+def fake_job(pivot=False):
     return Job(
         id="fake-job-id",
         drive=None,
@@ -1258,4 +1262,5 @@ def fake_job():
         top="fake-vol",
         base=None,
         bandwidth=0,
+        pivot=pivot,
     )

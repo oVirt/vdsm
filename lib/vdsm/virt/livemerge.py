@@ -104,7 +104,7 @@ class Job:
     CLEANUP = "CLEANUP"
 
     def __init__(self, id, drive, disk, top, base, bandwidth, state=INIT,
-                 extend=None):
+                 extend=None, pivot=None):
         # Read only attributes.
         self._id = id
         self._drive = drive
@@ -123,6 +123,9 @@ class Job:
 
         # Set when starting extend.
         self.extend = extend
+
+        # Set when active commit job is ready for pivot.
+        self.pivot = pivot
 
         # Live job info from libvirt. This info is kept between libvirt updates
         # but not persisted to vm metadata.
@@ -203,6 +206,7 @@ class Job:
             "bandwidth": self.bandwidth,
             "state": self.state,
             "extend": self.extend,
+            "pivot": self.pivot,
         }
 
     @classmethod
@@ -216,6 +220,7 @@ class Job:
             bandwidth=d["bandwidth"],
             state=d["state"],
             extend=d["extend"],
+            pivot=d["pivot"],
         )
 
     def info(self):
@@ -680,14 +685,15 @@ class DriveMerger:
         if job.live_info:
             if self._active_commit_ready(job):
                 log.info("Job %s is ready for pivot", job.id)
-                self._start_cleanup(job, True)
+                job.pivot = True
+                self._start_cleanup(job)
             else:
                 log.debug("Job %s is ongoing", job.id)
         else:
             # Libvirt has stopped reporting this job so we know it will
             # never report it again.
             log.info("Job %s has completed", job.id)
-            self._start_cleanup(job, False)
+            self._start_cleanup(job)
 
     def _update_cleanup(self, job):
         """
@@ -699,21 +705,19 @@ class DriveMerger:
 
         if not cleanup:
             # Recovery after vdsm restart.
-            pivot = self._active_commit_ready(job)
-            self._start_cleanup(job, pivot)
+            self._start_cleanup(job)
 
         elif cleanup.state == CleanupThread.TRYING:
             log.debug("Job %s is ongoing", job.id)
 
         elif cleanup.state == CleanupThread.FAILED:
-            pivot = self._active_commit_ready(job)
-            self._start_cleanup(job, pivot)
+            self._start_cleanup(job)
 
         elif cleanup.state == CleanupThread.DONE:
             log.info("Cleanup completed, untracking job %s", job.id)
             self._untrack_job(job.id)
 
-    def _start_cleanup(self, job, pivot):
+    def _start_cleanup(self, job):
         """
         Must run under self._lock.
         """
@@ -734,7 +738,7 @@ class DriveMerger:
             return
 
         log.info("Starting cleanup for job %s", job.id)
-        t = CleanupThread(self._vm, job, drive, pivot)
+        t = CleanupThread(self._vm, job, drive)
         t.start()
         self._cleanup_threads[job.id] = t
 
@@ -782,11 +786,11 @@ class CleanupThread(object):
     # Sample interval for libvirt xml volume chain update after pivot.
     WAIT_INTERVAL = 1
 
-    def __init__(self, vm, job, drive, doPivot):
+    def __init__(self, vm, job, drive):
         self.vm = vm
         self.job = job
         self.drive = drive
-        self.doPivot = doPivot
+        self.doPivot = job.pivot
         self._state = self.TRYING
         self._thread = concurrent.thread(
             self.run, name="merge/" + job.id[:8])
