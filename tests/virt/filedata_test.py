@@ -1,4 +1,4 @@
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import time
 import pytest
 
 from vdsm.common import exception
+from vdsm.common import password
 from vdsm.supervdsm_api import virt
 from vdsm.virt import filedata
 
@@ -332,7 +333,7 @@ def test_monitor_no_data():
 def test_supervdsm_read_write(monkeypatch):
     with directory_data(monkeypatch):
         encoded, _modified = virt.read_tpm_data(UUID, -1)
-        assert encoded
+        assert password.unprotect(encoded)
     with temporary_directory(monkeypatch):
         virt.write_tpm_data(UUID, encoded)
         assert encoded == virt.read_tpm_data(UUID, -1)[0]

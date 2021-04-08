@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ from vdsm.constants import P_LIBVIRT_VMCHANNELS, P_OVIRT_VMCONSOLES
 from vdsm.storage.fileUtils import resolveGid
 from vdsm.virt import filedata
 from vdsm.common import exception
+from vdsm.common import password
 from vdsm.common.fileutils import parse_key_val_file
 
 from . import expose
@@ -171,15 +172,16 @@ def read_tpm_data(vm_id, last_modified):
       newer than this time in seconds, None is returned
     :type last_modified: float
     :returns: tuple (DATA, MODIFIED) where DATA is encoded TPM data suitable to
-      use in `write_tpm_data()` or None, and MODIFIED is DATA modification time
-      (which may be older than actual modification time)
+      use in `write_tpm_data()`, wrapped by `password.ProtectedPassword`,
+      or None, and MODIFIED is DATA modification time (which may be older than
+      actual modification time)
     :rtype: tuple
     """
     accessor = filedata.DirectoryData(filedata.tpm_path(vm_id),
                                       compress=False)
     currently_modified = accessor.last_modified()
     data = accessor.retrieve(last_modified=last_modified)
-    return data, currently_modified
+    return password.ProtectedPassword(data), currently_modified
 
 
 @expose
@@ -191,8 +193,9 @@ def write_tpm_data(vm_id, tpm_data):
     :type vm_id: string
     :param tpm_data: encoded TPM data as previously obtained from
       `read_tpm_data()`
-    :type tpm_data: string
+    :type tpm_data: ProtectedPassword
     """
+    tpm_data = password.unprotect(tpm_data)
     # Permit only archives with plain files and directories to prevent various
     # kinds of attacks.
     with tempfile.TemporaryDirectory() as d:
@@ -217,11 +220,12 @@ def read_nvram_data(vm_id, last_modified):
     accessor = filedata.FileData(filedata.nvram_path(vm_id))
     currently_modified = accessor.last_modified()
     data = accessor.retrieve(last_modified=last_modified)
-    return data, currently_modified
+    return password.ProtectedPassword(data), currently_modified
 
 
 @expose
 def write_nvram_data(vm_id, nvram_data):
+    nvram_data = password.unprotect(nvram_data)
     nvram_path = filedata.nvram_path(vm_id)
     # Create the file with restricted permissions owned by root
     if os.path.exists(nvram_path):

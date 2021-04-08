@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2020 Red Hat, Inc.
+# Copyright 2008-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -661,16 +661,22 @@ class Vm(object):
             return False
 
     def _read_tpm_data(self, last_modified):
-        return supervdsm.getProxy().read_tpm_data(self.id, last_modified)
+        proxy = supervdsm.getProxy()
+        data, timestamp = proxy.read_tpm_data(self.id, last_modified)
+        return password.unprotect(data), timestamp
 
     def _write_tpm_data(self, tpm_data):
-        supervdsm.getProxy().write_tpm_data(self.id, tpm_data)
+        protected_data = password.ProtectedPassword(tpm_data)
+        supervdsm.getProxy().write_tpm_data(self.id, protected_data)
 
     def _read_nvram_data(self, last_modified):
-        return supervdsm.getProxy().read_nvram_data(self.id, last_modified)
+        proxy = supervdsm.getProxy()
+        data, timestamp = proxy.read_nvram_data(self.id, last_modified)
+        return password.unprotect(data), timestamp
 
     def _write_nvram_data(self, nvram_data):
-        supervdsm.getProxy().write_nvram_data(self.id, nvram_data)
+        protected_data = password.ProtectedPassword(nvram_data)
+        supervdsm.getProxy().write_nvram_data(self.id, protected_data)
 
     def _get_lastStatus(self):
         # Note that we don't use _statusLock here due to potential risk of
