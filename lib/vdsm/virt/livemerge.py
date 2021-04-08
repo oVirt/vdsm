@@ -45,19 +45,20 @@ class JobExistsError(errors.Base):
         self.img_id = img_id
 
 
-class JobNotReadyError(errors.Base):
-    msg = "Job {self.job_id} is not ready for commit"
-
-    def __init__(self, job_id):
-        self.job_id = job_id
-
-
-class JobUnrecoverableError(errors.Base):
-    msg = "Job {self.job_id} failed with libvirt error: {self.reason}"
+class JobPivotError(errors.Base):
+    msg = "Pivot failed for Job {self.job_id}: {self.reason}"
 
     def __init__(self, job_id, reason):
         self.job_id = job_id
         self.reason = reason
+
+
+class JobNotReadyError(JobPivotError):
+    msg = "Job {self.job_id} is not ready for pivot"
+
+    def __init__(self, job_id):
+        self.job_id = job_id
+
 
 log = logging.getLogger("virt.livemerge")
 
@@ -694,6 +695,8 @@ class DriveMerger:
         """
         cleanup = self._cleanup_threads.get(job.id)
 
+        # TODO: limit number of pivot retries.
+
         if not cleanup:
             # Recovery after vdsm restart.
             pivot = self._active_commit_ready(job)
@@ -702,16 +705,12 @@ class DriveMerger:
         elif cleanup.state == CleanupThread.TRYING:
             log.debug("Job %s is ongoing", job.id)
 
-        elif cleanup.state == CleanupThread.RETRY:
+        elif cleanup.state == CleanupThread.FAILED:
             pivot = self._active_commit_ready(job)
             self._start_cleanup(job, pivot)
 
         elif cleanup.state == CleanupThread.DONE:
             log.info("Cleanup completed, untracking job %s", job.id)
-            self._untrack_job(job.id)
-
-        elif cleanup.state == CleanupThread.ABORT:
-            log.error("Cleanup aborted, untracking job %s", job.id)
             self._untrack_job(job.id)
 
     def _start_cleanup(self, job, pivot):
@@ -775,13 +774,10 @@ class CleanupThread(object):
     # Cleanup states:
     # Starting state for a fresh cleanup thread.
     TRYING = 'TRYING'
-    # Cleanup thread failed with recoverable error, the caller should
-    # retry the cleanup.
-    RETRY = 'RETRY'
+    # Cleanup thread failed.
+    FAILED = 'FAILED'
     # Cleanup completed successfully.
     DONE = 'DONE'
-    # Unrecoverable cleanup error, run should not be retried by the caller.
-    ABORT = 'ABORT'
 
     # Sample interval for libvirt xml volume chain update after pivot.
     WAIT_INTERVAL = 1
@@ -831,7 +827,7 @@ class CleanupThread(object):
         except libvirt.libvirtError as e:
             self.vm.drive_monitor.enable()
             if e.get_error_code() != libvirt.VIR_ERR_BLOCK_COPY_ACTIVE:
-                raise JobUnrecoverableError(self.job.id, e)
+                raise JobPivotError(self.job.id, e)
             raise JobNotReadyError(self.job.id)
         except:
             self.vm.drive_monitor.enable()
@@ -886,19 +882,13 @@ class CleanupThread(object):
             self.vm.log.info("Synchronization completed (job %s)",
                              self.job.id)
             self._setState(self.DONE)
-        except JobNotReadyError as e:
-            self.vm.log.warning("Pivot failed (job: %s): %s, retrying later",
-                                self.job.id, e)
-            self._setState(self.RETRY)
-        except JobUnrecoverableError as e:
-            self.vm.log.exception("Pivot failed (job: %s): %s, aborting due "
-                                  "to an unrecoverable error",
-                                  self.job.id, e)
-            self._setState(self.ABORT)
+        except JobPivotError as e:
+            self.vm.log.warning("%s", e)
+            self._setState(self.FAILED)
         except Exception as e:
-            self.vm.log.exception("Cleanup failed with recoverable error "
-                                  "(job: %s): %s", self.job.id, e)
-            self._setState(self.RETRY)
+            self.vm.log.exception(
+                "Cleanup error for job %s: %s", self.job.id, e)
+            self._setState(self.FAILED)
 
     def _waitForXMLUpdate(self):
         # Libvirt version 1.2.8-16.el7_1.2 introduced a bug where the

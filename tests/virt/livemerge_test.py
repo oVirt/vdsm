@@ -35,11 +35,11 @@ from vdsm.common.units import GiB
 from vdsm.virt import metadata
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.livemerge import (
-    JobNotReadyError,
-    JobUnrecoverableError,
-    DriveMerger,
     CleanupThread,
+    DriveMerger,
     Job,
+    JobNotReadyError,
+    JobPivotError,
 )
 from vdsm.virt.vm import Vm
 from vdsm.virt.vmdevices import storage
@@ -145,31 +145,16 @@ def test_cleanup_done():
     ]
 
 
-def test_cleanup_retry(monkeypatch):
-    def recoverable_error(arg):
-        raise JobNotReadyError("fake-job-id")
+@pytest.mark.parametrize("error", [
+    JobNotReadyError("fake-job-id"),
+    JobPivotError("fake-job-id", "fake libvirt error"),
+    RuntimeError("unexpected error, bug?")
+])
+def test_cleanup_retry(monkeypatch, error):
+    def tryPivot(arg):
+        raise error
 
-    monkeypatch.setattr(
-        FakeCleanupThread, "tryPivot", recoverable_error)
-
-    job = fake_job()
-    v = FakeVM()
-    t = FakeCleanupThread(
-        vm=v, job=job, drive=FakeDrive(), doPivot=True)
-    t.start()
-    t.join()
-
-    assert t.state == CleanupThread.RETRY
-    assert v.drive_monitor.enabled
-    assert t.__calls__ == [('update_base_size', (), {})]
-
-
-def test_cleanup_abort(monkeypatch):
-    def unrecoverable_error(arg):
-        raise JobUnrecoverableError("fake-job-id", "error")
-
-    monkeypatch.setattr(
-        FakeCleanupThread, "tryPivot", unrecoverable_error)
+    monkeypatch.setattr(FakeCleanupThread, "tryPivot", tryPivot)
 
     job = fake_job()
     v = FakeVM()
@@ -178,7 +163,7 @@ def test_cleanup_abort(monkeypatch):
     t.start()
     t.join()
 
-    assert t.state == CleanupThread.ABORT
+    assert t.state == CleanupThread.FAILED
     assert v.drive_monitor.enabled
     assert t.__calls__ == [('update_base_size', (), {})]
 
