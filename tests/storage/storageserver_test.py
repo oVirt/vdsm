@@ -257,7 +257,8 @@ class TestGlusterFSConnection(VdsmTestCase):
     def test_allowed_gluster_replica_count(self, replica_count):
 
         def glusterVolumeInfo(volumeName=None, remoteServer=None):
-            return {'music': {'replicaCount': replica_count}}
+            return {'music': {'replicaCount': replica_count,
+                              'volumeType': 'REPLICATE'}}
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
