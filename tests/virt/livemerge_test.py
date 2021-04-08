@@ -1007,7 +1007,7 @@ def test_extend_skipped():
     assert persisted_job["state"] == Job.COMMIT
 
 
-def test_merge_cancel_commit():
+def test_active_merge_canceled_during_commit():
     config = Config('active-merge')
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
@@ -1065,6 +1065,69 @@ def test_merge_cancel_commit():
     assert drive.volumeID == config.values["drive"]["volumeID"]
     assert drive.volumeChain == expected_volumes_chain
     assert vm.drive_monitor.enabled
+
+
+def test_active_merge_canceled_during_cleanup(monkeypatch):
+    config = Config('active-merge')
+    merge_params = config.values["merge_params"]
+    job_id = merge_params["jobUUID"]
+    base_id = merge_params["baseVolUUID"]
+
+    vm = RunningVM(config)
+
+    assert vm.query_jobs() == {}
+
+    vm.merge(**merge_params)
+
+    simulate_volume_extension(vm, base_id)
+
+    # Job switched to COMMIT state.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.COMMIT
+
+    # Make pivot fail during cleanup.
+    with monkeypatch.context() as c:
+        job_aborted = threading.Event()
+
+        def fail(drive, flags=0):
+            job_aborted.set()
+            raise fake.libvirt_error(
+                [libvirt.VIR_ERR_INTERNAL_ERROR], "fake libvirt error")
+
+        c.setattr(vm._dom, "blockJobAbort", fail)
+
+        # Simulate job becoming ready.
+        block_job = vm._dom.block_jobs["sda"]
+        block_job["cur"] = block_job["end"]
+        vm._dom.xml = config.xmls["02-commit-ready.xml"]
+
+        # Trigger the first cleanup.
+        vm.query_jobs()
+
+        persisted_job = parse_jobs(vm)[job_id]
+        assert persisted_job["state"] == Job.CLEANUP
+        assert persisted_job["pivot"]
+
+        # Wait until the first cleanup completes.
+        if not job_aborted.wait(TIMEOUT):
+            raise RuntimeError("Timeout waiting for blockJobAbort() call")
+
+    # Cancel the block job. This simulates a scenario where a user aborts
+    # running block job from virsh.
+    vm._dom.blockJobAbort("sda")
+
+    # Trigger the next cleanup.
+    vm.query_jobs()
+
+    # Since job has gone, the job should complete without trying to pivot.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.CLEANUP
+    assert not persisted_job["pivot"]
+
+    wait_for_cleanup(vm)
+
+    # Job removed from persisted jobs.
+    assert parse_jobs(vm) == {}
 
 
 def test_block_job_info_error(monkeypatch):

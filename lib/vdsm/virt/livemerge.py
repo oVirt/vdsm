@@ -699,6 +699,16 @@ class DriveMerger:
         """
         Must run under self._lock.
         """
+        # If libvirt block jobs has gone, we cannot pivot.
+        if job.pivot:
+            try:
+                # pylint: disable=no-member
+                job.pivot = self._dom.blockJobInfo(job.drive) != {}
+            except libvirt.libvirtError:
+                # We don't know if the job exists, retry later.
+                log.exception("Error getting block job info")
+                return
+
         cleanup = self._cleanup_threads.get(job.id)
 
         # TODO: limit number of pivot retries.
@@ -721,12 +731,10 @@ class DriveMerger:
         """
         Must run under self._lock.
         """
-        if job.state != Job.CLEANUP:
-            # Persist the job before starting the cleanup, to ensure that vdsm
-            # will know about the cleanup if it was killed after cleanup
-            # started.
-            job.state = Job.CLEANUP
-            self._persist_jobs()
+        # Persist the job before starting the cleanup, so vdsm can restart the
+        # cleanup after recovery from crash.
+        job.state = Job.CLEANUP
+        self._persist_jobs()
 
         try:
             drive = self._vm.findDriveByUUIDs(job.disk)
