@@ -298,6 +298,11 @@ class GlusterFSConnection(MountConnection):
         if not self.volinfo:
             return
 
+        if "Disperse" in self.volinfo['volumeType']:
+            self.log.warning("Unsupported volume type for volume %r "
+                             , self._volname)
+            return
+
         replicaCount = self.volinfo['replicaCount']
         if replicaCount not in self.ALLOWED_REPLICA_COUNTS:
             self.log.warning("Unsupported replica count (%s) for volume %r, "
