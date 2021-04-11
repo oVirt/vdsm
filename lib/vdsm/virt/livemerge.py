@@ -472,8 +472,9 @@ class DriveMerger:
         try:
             drive = self._vm.findDriveByUUIDs(job.disk)
         except LookupError:
-            log.error("Cannot find drive for job %s, untracking job",
-                      job.id)
+            log.error(
+                "Cannot find drive %s, untracking job %s",
+                job.disk, job.id)
             self._untrack_job(job.id)
             return
 
@@ -530,8 +531,8 @@ class DriveMerger:
             try:
                 drive = self._vm.findDriveByUUIDs(job.disk)
             except LookupError:
-                log.error("Cannot find drive for job %s, untracking job",
-                          job.id)
+                log.error("Cannot find drive %s, untracking job %s",
+                          job.disk, job.id)
                 self._untrack_job(job.id)
                 return
 
@@ -729,7 +730,8 @@ class DriveMerger:
         except LookupError:
             # Should never happen, and we don't have any good way to handle
             # this.  TODO: Think how to handle this case better.
-            log.error("Cannot find drive %s for job %s", job.drive, job.id)
+            log.error("Cannot find drive %s for job %s, retrying later",
+                      job.disk, job.id)
             return
 
         log.info("Starting cleanup for job %s", job.id)
