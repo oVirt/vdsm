@@ -4506,6 +4506,8 @@ class Vm(object):
                             drive.volumeID, 0)
 
         flags = libvirt.VIR_DOMAIN_BLOCK_RESIZE_BYTES
+        self.log.debug("Calling blockResise drive=%s size=%s flags=%s",
+                       drive.name, newSizeBytes, flags)
         try:
             self._dom.blockResize(drive.name, newSizeBytes, flags=flags)
         except libvirt.libvirtError as e:
@@ -4575,6 +4577,8 @@ class Vm(object):
         # be able to return the value (fetched from qemu).
 
         flags = libvirt.VIR_DOMAIN_BLOCK_RESIZE_BYTES
+        self.log.debug("Calling blockResise drive=%s size=%s flags=%s",
+                       drive.name, volSize.apparentsize, flags)
         try:
             self._dom.blockResize(
                 drive.name, volSize.apparentsize, flags=flags)
