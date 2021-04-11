@@ -4490,15 +4490,14 @@ class Vm(object):
             # been fixed since libvirt-0.10.2-29
             curVirtualSize = self._dom.blockInfo(drive.name)[0]
         except libvirt.libvirtError as e:
-            self.log.exception("An error occurred while getting the current "
-                               "disk size: {}".format(e))
+            self.log.exception("Cannot get disk %s current size: %s",
+                               drive.name, e)
             return response.error('resizeErr')
 
         if curVirtualSize > newSizeBytes:
             self.log.error(
-                "Requested extension size %s for disk %s is smaller "
-                "than the current size %s", newSizeBytes, drive.name,
-                curVirtualSize)
+                "Requested size %s is smaller than disk %s volume %s size %s",
+                newSizeBytes, drive.name, drive.volumeID, curVirtualSize)
             return response.error('resizeErr')
 
         # Uncommit the current volume size (mark as in transaction)
@@ -4511,9 +4510,8 @@ class Vm(object):
         try:
             self._dom.blockResize(drive.name, newSizeBytes, flags=flags)
         except libvirt.libvirtError as e:
-            self.log.exception(
-                "An error occurred while trying to extend the disk %s "
-                "to size %s: %s", drive.name, newSizeBytes, e)
+            self.log.exception("Cannot resize disk %s to %s: %s",
+                               drive.name, newSizeBytes, e)
             return response.error('updateDevice')
         finally:
             # Note that newVirtualSize may be larger than the requested size
@@ -4521,8 +4519,8 @@ class Vm(object):
             try:
                 newVirtualSize = self._dom.blockInfo(drive.name)[0]
             except libvirt.libvirtError as e:
-                self.log.exception("An error occurred while getting the "
-                                   "updated disk size: {}".format(e))
+                self.log.exception("Cannot get disk %s new size: %s",
+                                   drive.name, e)
                 return response.error('resizeErr')
             self._setVolumeSize(drive.domainID, drive.poolID, drive.imageID,
                                 drive.volumeID, newVirtualSize)
@@ -4545,8 +4543,10 @@ class Vm(object):
             # than the (possibly) wrong size provided in the request.
             if volSize.apparentsize != newSizeBytes:
                 self.log.warning(
-                    "The requested extension size %s is different from the "
-                    "RAW device size %s", newSizeBytes, volSize.apparentsize)
+                    "Requested size %s does not match disk %s volume %s size "
+                    "%s, using current size",
+                    newSizeBytes, drive.name, drive.volumeID,
+                    volSize.apparentsize)
 
         elif "GUID" in drive:
             # getDeviceList with refresh=false for avoiding a storage refresh.
@@ -4565,12 +4565,13 @@ class Vm(object):
             volSize = VolumeSize(device_capacity, None)
             if volSize.apparentsize != newSizeBytes:
                 self.log.warning(
-                    "LUN %s size %s does not match requested size %s",
-                    drive.GUID, volSize.apparentsize, newSizeBytes)
+                    "Requested size %s does not match disk %s LUN %s size "
+                    "%s, using current size",
+                    newSizeBytes, drive.name, drive.GUID, volSize.apparentsize)
 
         else:
             raise exception.UnsupportedDriveType(
-                reason="Cannot extend size for {}".format(drive))
+                reason="Cannot resize {}".format(drive))
 
         # At the moment here there's no way to fetch the previous size
         # to compare it with the new one. In the future blockInfo will
@@ -4582,11 +4583,9 @@ class Vm(object):
         try:
             self._dom.blockResize(
                 drive.name, volSize.apparentsize, flags=flags)
-        except libvirt.libvirtError:
-            self.log.warning(
-                "Libvirt failed to notify the new size %s to the "
-                "running VM, the change will be available at the ",
-                "reboot", volSize.apparentsize, exc_info=True)
+        except libvirt.libvirtError as e:
+            self.log.exception("Cannot resize disk %s to %s: e",
+                               drive.name, volSize.apparentsize, e)
             return response.error('updateDevice')
 
         return {'status': doneCode, 'size': str(volSize.apparentsize)}
