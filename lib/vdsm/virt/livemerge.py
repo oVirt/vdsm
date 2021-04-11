@@ -484,8 +484,9 @@ class DriveMerger:
             top_size = self._vm.getVolumeSize(
                 drive.domainID, drive.poolID, drive.imageID, job.top)
         except errors.StorageUnavailableError as e:
-            log.exception("Cannot get top %s size for job %s, aborting",
-                          job.top, job.id)
+            log.exception(
+                "Cannot get top %s size, untracking job %s: %s",
+                job.top, job.id, e)
             self._untrack_job(job.id)
             return
 
