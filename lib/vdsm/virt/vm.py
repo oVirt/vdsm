@@ -4505,9 +4505,9 @@ class Vm(object):
         self._setVolumeSize(drive.domainID, drive.poolID, drive.imageID,
                             drive.volumeID, 0)
 
+        flags = libvirt.VIR_DOMAIN_BLOCK_RESIZE_BYTES
         try:
-            self._dom.blockResize(drive.name, newSizeBytes,
-                                  libvirt.VIR_DOMAIN_BLOCK_RESIZE_BYTES)
+            self._dom.blockResize(drive.name, newSizeBytes, flags=flags)
         except libvirt.libvirtError as e:
             self.log.exception(
                 "An error occurred while trying to extend the disk %s "
@@ -4574,9 +4574,10 @@ class Vm(object):
         # to compare it with the new one. In the future blockInfo will
         # be able to return the value (fetched from qemu).
 
+        flags = libvirt.VIR_DOMAIN_BLOCK_RESIZE_BYTES
         try:
-            self._dom.blockResize(drive.name, volSize.apparentsize,
-                                  libvirt.VIR_DOMAIN_BLOCK_RESIZE_BYTES)
+            self._dom.blockResize(
+                drive.name, volSize.apparentsize, flags=flags)
         except libvirt.libvirtError:
             self.log.warning(
                 "Libvirt failed to notify the new size %s to the "
