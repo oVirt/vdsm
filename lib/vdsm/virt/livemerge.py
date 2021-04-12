@@ -465,7 +465,11 @@ class DriveMerger:
                  job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id,
                  drive.name, job.base)
 
-        callback = partial(self._extend_completed, job_id=job.id)
+        callback = partial(
+            self._extend_completed,
+            job_id=job.id,
+            attempt=job.extend["attempt"])
+
         self._vm.extendDriveVolume(
             drive, job.base, max_alloc, capacity, callback=callback)
 
@@ -502,7 +506,7 @@ class DriveMerger:
 
         self._start_extend(drive, job)
 
-    def _extend_completed(self, job_id, error=None):
+    def _extend_completed(self, job_id, attempt, error=None):
         """
         Called when extend completed from mailbox worker thread.
         """
@@ -520,16 +524,14 @@ class DriveMerger:
                 return
 
             if error:
-                if job.extend["attempt"] < self.EXTEND_ATTEMPTS:
+                if attempt < self.EXTEND_ATTEMPTS:
                     log.warning(
                         "Extend %s/%s for job %s failed: %s",
-                        job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id,
-                        error)
+                        attempt, self.EXTEND_ATTEMPTS, job.id, error)
                 else:
                     log.error(
                         "Extend %s/%s for job %s failed, aborting: %s",
-                        job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id,
-                        error)
+                        attempt, self.EXTEND_ATTEMPTS, job.id, error)
                     self._untrack_job(job.id)
                 return
 
