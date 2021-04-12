@@ -514,13 +514,14 @@ class DriveMerger:
             try:
                 job = self._jobs[job_id]
             except KeyError:
-                log.debug("Extend completed after job %s was untracked",
-                          job_id)
+                log.debug("Extend %s/%s completed after job %s was untracked",
+                          attempt, self.EXTEND_ATTEMPTS, job_id)
                 return
 
             if job.state != Job.EXTEND:
-                log.debug("Extend completed after job %s switched to state %s",
-                          job.id, job.state)
+                log.debug(
+                    "Extend %s/%s completed after job %s switched to state %s",
+                    attempt, self.EXTEND_ATTEMPTS, job.id, job.state)
                 return
 
             if error:
@@ -543,7 +544,8 @@ class DriveMerger:
                 self._untrack_job(job.id)
                 return
 
-            log.info("Extend completed for job %s, starting commit", job.id)
+            log.info("Extend %s/%s completed for job %s, starting commit",
+                     attempt, self.EXTEND_ATTEMPTS, job.id)
             job.extend = None
             self._start_commit(drive, job)
 
@@ -667,8 +669,9 @@ class DriveMerger:
                     job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id)
                 self._untrack_job(job.id)
         else:
-            log.debug("Extend for job %s running for %d seconds",
-                      job.id, duration)
+            log.debug(
+                "Extend %s/%s for job %s running for %d seconds",
+                job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id, duration)
 
     def _update_commit(self, job):
         """
