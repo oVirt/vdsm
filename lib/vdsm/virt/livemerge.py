@@ -522,10 +522,9 @@ class DriveMerger:
             if error:
                 if job.extend["attempt"] < self.EXTEND_ATTEMPTS:
                     log.warning(
-                        "Extend %s/%s for job %s failed, retrying: %s",
+                        "Extend %s/%s for job %s failed: %s",
                         job.extend["attempt"], self.EXTEND_ATTEMPTS, job.id,
                         error)
-                    self._retry_extend(job)
                 else:
                     log.error(
                         "Extend %s/%s for job %s failed, aborting: %s",
