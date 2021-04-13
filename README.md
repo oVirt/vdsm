@@ -1,12 +1,41 @@
-# Vdsm: Virtual Desktop Server Manager
+# Virtual Desktop Server Manager
 
 [![Build Status](https://travis-ci.org/oVirt/vdsm.svg?branch=master)](https://travis-ci.org/oVirt/vdsm)
+
+Welcome to the Vdsm source repository.
 
 The Vdsm service exposes an API for managing virtualization
 hosts running the KVM hypervisor technology. Vdsm manages and monitors
 the host's storage, memory and networks as well as virtual machine
 creation, other host administration tasks, statistics gathering, and
 log collection.
+
+
+This repository is hosted on [gerrit.ovirt.org:vdsm](https://gerrit.ovirt.org/#/admin/projects/vdsm)
+and a **backup** of it is hosted on [GitHub:vdsm](https://github.com/oVirt/vdsm)
+
+## How to contribute
+
+### Submitting patches
+
+Patches are welcome!
+
+Please submit patches to [gerrit.ovirt.org:vdsm](https://gerrit.ovirt.org/#/admin/projects/vdsm).
+If you are not familiar with the review process for Gerrit patches you can read about
+[Working with oVirt Gerrit](https://ovirt.org/develop/dev-process/working-with-gerrit.html)
+on the [oVirt](https://ovirt.org/) website.
+
+**NOTE**: We might not notice pull requests that you create on Github, because we only use Github for backups.
+
+
+### Found a bug or documentation issue?
+
+To submit a bug or suggest an enhancement for Vdsm please use
+[oVirt Bugzilla for vdsm product](https://bugzilla.redhat.com/enter_bug.cgi?product=vdsm).
+
+If you find a documentation issue on the oVirt website please navigate
+and click "Report an issue on GitHub" in the page footer.
+
 
 ## Manual installation
 
@@ -144,22 +173,18 @@ There are two mailing lists for discussions:
 
 - For technical discussions about the project and its code base.
 
-  http://lists.ovirt.org/mailman/listinfo/devel
+  https://lists.ovirt.org/admin/lists/devel.ovirt.org/
 
 - For questions by users, who do not want to be swamped by
   technicalities.
 
-  http://lists.ovirt.org/mailman/listinfo/users
+  https://lists.ovirt.org/admin/lists/users.ovirt.org/
 
 The developers also hang out on IRC at #vdsm hosted on freenode.net
 
 The latest upstream code can be obtained from GIT:
 
     git clone https://gerrit.ovirt.org/vdsm
-
-To setup development with ovirt gerrit visit:
-
-  https://ovirt.org/develop/dev-process/working-with-gerrit.html
 
 
 ## Licensing
