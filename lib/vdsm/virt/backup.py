@@ -193,8 +193,6 @@ def start_backup(vm, dom, config):
             reason="Cannot start a backup without disks",
             backup=backup_cfg.backup_id)
 
-    _validate_parent_id(vm, dom, backup_cfg)
-
     drives = _get_disks_drives(vm, backup_cfg)
     path = socket_path(backup_cfg.backup_id)
     nbd_addr = nbdutils.UnixAddress(path)
@@ -370,34 +368,6 @@ def dump_checkpoint(dom, checkpoint_id):
                 reason="Failed to fetch checkpoint: {}".format(e),
                 checkpoint_id=checkpoint_id)
         raise
-
-
-def _validate_parent_id(vm, dom, backup_cfg):
-    # In case of a backup for RAW disks only, checkpoint
-    # isn't created and parent_checkpoint_id will be None
-    # so the validation isn't required.
-    if backup_cfg.to_checkpoint_id is None:
-        return
-
-    leaf_checkpoint_id = _get_leaf_checkpoint_name(vm, dom)
-    if backup_cfg.parent_checkpoint_id != leaf_checkpoint_id:
-        raise exception.CheckpointError(
-            reason="Parent checkpoint ID does not "
-                   "match the actual leaf checkpoint",
-            parent_checkpoint_id=backup_cfg.parent_checkpoint_id,
-            leaf_checkpoint_id=leaf_checkpoint_id,
-            vm_id=vm.id)
-
-
-def _get_leaf_checkpoint_name(vm, dom):
-    flags = libvirt.VIR_DOMAIN_CHECKPOINT_LIST_TOPOLOGICAL
-    try:
-        checkpoints = dom.listAllCheckpoints(flags=flags)
-        return checkpoints[-1].getName() if checkpoints else None
-    except libvirt.libvirtError as e:
-        raise exception.CheckpointError(
-            reason="Failed to fetch defined leaf checkpoint: {}".format(e),
-            vm_id=vm.id)
 
 
 def _get_disks_drives(vm, backup_cfg):
