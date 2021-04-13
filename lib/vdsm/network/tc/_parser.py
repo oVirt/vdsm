@@ -113,6 +113,8 @@ def linearize(inp):
     Each entry is a """
     current = []
     for line in inp:
+        if not line.strip():
+            continue
         if line.startswith(' ') or line.startswith('\t'):
             current.append(LINE_DELIMITER)
             current.extend(line.strip().split())
