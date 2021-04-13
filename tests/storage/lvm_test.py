@@ -1309,6 +1309,41 @@ def test_lv_activate_deactivate(tmp_storage, read_only):
 
 @requires_root
 @pytest.mark.root
+def test_lv_deactivate_in_use(tmp_storage):
+    dev_size = 1 * GiB
+    dev = tmp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lv_name = "in_use_lv"
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    lvm.createLV(vg_name, lv_name, 128)
+
+    lv = lvm.getLV(vg_name, lv_name)
+    assert lv.active
+
+    with open(lvm.lvPath(vg_name, lv_name)):
+        lvm.deactivateLVs(vg_name, [lv_name])
+        lv = lvm.getLV(vg_name, lv_name)
+        # Opened LV is in use and should not get deactivated.
+        assert lv.active
+
+    lvm.deactivateLVs(vg_name, [lv_name])
+    lv = lvm.getLV(vg_name, lv_name)
+    assert not lv.active
+
+
+@pytest.mark.parametrize("in_use, error", [
+    (True, ["Logical volume XYZ in use."]),
+    (True, ["other warning", "Logical volume XYZ in use.", "other warning"]),
+    (False, ["other warning"]),
+    (False, [])
+])
+def test_in_use_exception(fake_devices, in_use, error):
+    exc = se.LVMCommandError("cmd" , 1, "out", error)
+    assert exc.lv_in_use() == in_use
+
+
+@requires_root
+@pytest.mark.root
 def test_lv_extend_reduce(tmp_storage):
     dev_size = 20 * GiB
     dev = tmp_storage.create_device(dev_size)

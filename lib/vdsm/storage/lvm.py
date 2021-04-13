@@ -1198,7 +1198,7 @@ def changelv(vg, lvs, attrs):
     rc, out, err = _lvminfo.cmd(tuple(cmd), _lvminfo._getVGDevs((vg, )))
     _lvminfo._invalidatelvs(vg, lvs)
     if rc != 0:
-        raise se.StorageException("%d %s %s\n%s/%s" % (rc, out, err, vg, lvs))
+        raise se.LVMCommandError(cmd, rc, out, err)
 
 
 def _setLVAvailability(vg, lvs, available):
@@ -1206,12 +1206,17 @@ def _setLVAvailability(vg, lvs, available):
         raise se.VolumeGroupActionError("available=%r" % available)
     try:
         changelv(vg, lvs, ("--available", available))
-    except se.StorageException as e:
+    except se.LVMCommandError as e:
         if available == "y":
             raise se.CannotActivateLogicalVolumes(str(e))
         else:
-            users = _lvs_proc_info(vg, lvs)
-            raise se.CannotDeactivateLogicalVolume(str(e), users)
+            if e.lv_in_use():
+                users = _lvs_proc_info(vg, lvs)
+                log.warning(
+                    "Cannot deactivate LV vg=%s lv=%s users=%s: %s",
+                    vg, lvs, users, e)
+            else:
+                raise se.CannotDeactivateLogicalVolume(str(e))
 
 
 def _lvs_proc_info(vg, lvs):
@@ -1745,6 +1750,9 @@ def activateLVs(vgName, lvNames, refresh=True):
 
 
 def deactivateLVs(vgName, lvNames):
+    """
+    Try to deactivate given lvs, deactivation is skipped if lvs are in use.
+    """
     toDeactivate = [lvName for lvName in lvNames
                     if _isLVActive(vgName, lvName)]
     if toDeactivate:

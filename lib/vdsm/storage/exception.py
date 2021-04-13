@@ -34,6 +34,7 @@
 from __future__ import absolute_import
 
 import errno
+import re
 
 from vdsm.common.exception import GeneralException
 from vdsm.storage.securable import SecureError
@@ -1403,8 +1404,8 @@ class CannotDeactivateLogicalVolume(StorageException):
     code = 552
     msg = "Cannot deactivate Logical Volume"
 
-    def __init__(self, error, users):
-        self.value = "error=%s, users=%s" % (error, users)
+    def __init__(self, error):
+        self.value = "error={}".format(error)
 
 
 class CannotAccessLogicalVolume(StorageException):
@@ -1656,6 +1657,26 @@ class NoSuchDestinationPhysicalVolumes(StorageException):
 
     def __init__(self, pvs, vgname):
         self.value = "pvs=%s vgname=%s" % (pvs, vgname)
+
+
+class LVMCommandError(StorageException):
+    code = 621
+    msg = "LVM command failed"
+
+    def __init__(self, command, rc, out, err):
+        self.command = command
+        self.rc = rc
+        self.out = out
+        self.err = err
+
+    @property
+    def value(self):
+        return "command={} rc={} out={} err={}".format(
+            self.command, self.rc, self.out, self.err)
+
+    def lv_in_use(self):
+        in_use = r"^Logical volume \S* in use.$"
+        return any([re.search(in_use, x.strip()) for x in self.err])
 
 
 #################################################
