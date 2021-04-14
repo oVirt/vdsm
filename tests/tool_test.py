@@ -109,9 +109,9 @@ class PasswdConfiguratorTest(VdsmTestCase):
     def testCheckIsConfiguredNo(self):
         tmpfile = tempfile.mktemp()
         with open(tmpfile, 'w') as f:
-            f.write("\n")
-            f.write("\n")
-            f.write("mech_list: gssapi\n")
+            f.write("\n"
+                    "\n"
+                    "mech_list: gssapi\n")
 
         passwd._SASL2_CONF = tmpfile
         self.assertEqual(passwd.libvirt_sasl_isconfigured(), NO)
