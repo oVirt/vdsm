@@ -4690,7 +4690,7 @@ class Vm(object):
         else:
             change_dict = {"state": "ejecting"}
 
-        with self._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+        with self._md_desc.device(devtype=hwclass.DISK, name=block_dev) as dev:
             dev["change"] = change_dict
         self.sync_metadata()
 
@@ -4703,7 +4703,7 @@ class Vm(object):
         `volumeChain` are removed from CDROM metadata.
         In case of ejecting CD, all the CDROM metadata is removed.
         """
-        with self._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+        with self._md_desc.device(devtype=hwclass.DISK, name=block_dev) as dev:
             if "change" not in dev:
                 self.log.warning("No 'change' element in metadata.")
                 return
@@ -4731,7 +4731,7 @@ class Vm(object):
         """
         Discards CD change: removes `change` element from CDROM metadata.
         """
-        with self._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+        with self._md_desc.device(devtype=hwclass.DISK, name=block_dev) as dev:
             dev.pop("change", None)
         self.sync_metadata()
 
@@ -4824,7 +4824,7 @@ class Vm(object):
         # or updating metadata.
 
         # Store original PDIV to tear it down after metadata update.
-        with self._md_desc.device(devtype="cdrom", name=device) as dev:
+        with self._md_desc.device(devtype=hwclass.DISK, name=device) as dev:
             teardown_device = dev.copy()
 
         # Update metadata first to have correct metadata.

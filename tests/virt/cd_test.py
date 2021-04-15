@@ -29,16 +29,17 @@ from vdsm import clientIF
 from vdsm.common import exception
 from vdsm.virt import vm
 from vdsm.virt.vmdevices import drivename
+from vdsm.virt.vmdevices import hwclass
 
 from testlib import normalized
 
 from . import vmfakelib as fake
 
-EMPTY_CD_METADATA_XML = "<ovirt-vm:device devtype='cdrom' name='sdc'/>"
+EMPTY_CD_METADATA_XML = "<ovirt-vm:device devtype='disk' name='sdc'/>"
 
 LOADED_CD_METADATA_XML = """\
 <ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
-    <ovirt-vm:device devtype="cdrom" name="sdc">
+    <ovirt-vm:device devtype="disk" name="sdc">
         <ovirt-vm:domainID>88252cf6-381e-48f0-8795-a294a32c7149</ovirt-vm:domainID>
         <ovirt-vm:imageID>89f05c7d-b961-4935-993f-514499024515</ovirt-vm:imageID>
         <ovirt-vm:poolID>13345997-b94f-42dd-b8ef-a1392f65cebf</ovirt-vm:poolID>
@@ -86,7 +87,7 @@ LOADING_PDIV = {
     "volumeID": "volume-id",
 }
 
-LOADING_DRIVE_SPEC = dict(device="cdrom", **LOADING_PDIV)
+LOADING_DRIVE_SPEC = dict(device=hwclass.DISK, **LOADING_PDIV)
 
 LOADING_CHANGE = dict(state="loading", **LOADING_PDIV)
 
@@ -97,7 +98,7 @@ LOADING_METADATA = dict(change=LOADING_CHANGE, **CD_PDIV)
 def vm_with_cd():
     with fake.VM(
             cif=ClientIF(),
-            devices=[{"type": "file", "device": "cdrom"}],
+            devices=[{"type": "file", "device": hwclass.DISK}],
             create_device_objects=True,
             xmldevices=LOADED_CD_DEVICE_XML,
             metadata=LOADED_CD_METADATA_XML
@@ -182,12 +183,14 @@ def test_change_cd_metadata_success(vm_with_cd):
     # Start CD change - insert change CD metadata.
     vm_with_cd._add_cd_change(block_dev, LOADING_DRIVE_SPEC)
 
-    with vm_with_cd._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+    with vm_with_cd._md_desc.device(
+            devtype=hwclass.DISK, name=block_dev) as dev:
         assert dev == LOADING_METADATA
 
     # Finish CD change - remove change metadata and update CD PDIV.
     vm_with_cd._apply_cd_change(block_dev)
-    with vm_with_cd._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+    with vm_with_cd._md_desc.device(
+            devtype=hwclass.DISK, name=block_dev) as dev:
         assert dev == LOADING_PDIV
 
 
@@ -200,12 +203,14 @@ def test_change_cd_metadata_fail(vm_with_cd):
     # Start CD change - insert change CD metadata.
     vm_with_cd._add_cd_change(block_dev, LOADING_DRIVE_SPEC)
 
-    with vm_with_cd._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+    with vm_with_cd._md_desc.device(
+            devtype=hwclass.DISK, name=block_dev) as dev:
         assert dev == LOADING_METADATA
 
     # Failure, discard cd change.
     vm_with_cd._discard_cd_change(block_dev)
-    with vm_with_cd._md_desc.device(devtype="cdrom", name=block_dev) as dev:
+    with vm_with_cd._md_desc.device(
+            devtype=hwclass.DISK, name=block_dev) as dev:
         assert dev == CD_PDIV
 
 
@@ -237,7 +242,7 @@ def test_change_cd_loading():
         fakevm.changeCD(cdrom_spec)
 
         assert (sd_id, img_id, vol_id) in fakevm.cif.irs.prepared_volumes
-        with fakevm._md_desc.device(devtype="cdrom", name=device) as dev:
+        with fakevm._md_desc.device(devtype=hwclass.DISK, name=device) as dev:
             _assert_pdiv(drive_spec, dev)
             assert "change" not in dev
 
@@ -257,7 +262,7 @@ def test_change_cd_ejecting(vm_with_cd):
     vm_with_cd.changeCD(cdrom_spec)
 
     assert (sd_id, vol_id) not in vm_with_cd.cif.irs.prepared_volumes
-    with vm_with_cd._md_desc.device(devtype="cdrom", name=device) as dev:
+    with vm_with_cd._md_desc.device(devtype=hwclass.DISK, name=device) as dev:
         assert dev == {}
 
 
@@ -284,7 +289,7 @@ def test_change_cd(vm_with_cd):
 
     volume = (new_sd_id, new_img_id, new_vol_id)
     assert volume in vm_with_cd.cif.irs.prepared_volumes
-    with vm_with_cd._md_desc.device(devtype="cdrom", name=device) as dev:
+    with vm_with_cd._md_desc.device(devtype=hwclass.DISK, name=device) as dev:
         _assert_pdiv(new_drive_spec, dev)
         assert "change" not in dev
 
@@ -323,7 +328,7 @@ def test_change_cd_failed_libvirt():
         # We started with empty CD. Verify that the image was torn down and
         # metadata was reset back to empty.
         assert (sd_id, vol_id) not in fakevm.cif.irs.prepared_volumes
-        with fakevm._md_desc.device(devtype="cdrom", name=device) as dev:
+        with fakevm._md_desc.device(devtype=hwclass.DISK, name=device) as dev:
             assert dev == {}
 
 
@@ -401,7 +406,7 @@ def test_change_cd_teardown_old_cd_failed(monkeypatch, vm_with_cd):
     assert volume in vm_with_cd.cif.irs.prepared_volumes
 
     # Assert metadata is in consistent state and new CD is loaded.
-    with vm_with_cd._md_desc.device(devtype="cdrom", name=device) as dev:
+    with vm_with_cd._md_desc.device(devtype=hwclass.DISK, name=device) as dev:
         _assert_pdiv(new_drive_spec, dev)
         assert "change" not in dev
 
@@ -464,7 +469,7 @@ def test_change_cd_apply_cd_change_failed(monkeypatch):
         # As updating of metadata failed, metadata will be in inconsistent
         # state and should contain old CD and `change` element with new CD
         # PDIV.
-        with fakevm._md_desc.device(devtype="cdrom", name=device) as dev:
+        with fakevm._md_desc.device(devtype=hwclass.DISK, name=device) as dev:
             _assert_pdiv(old_drive_spec, dev)
             assert "change" in dev
             _assert_pdiv(new_drive_spec, dev["change"])
