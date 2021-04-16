@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -121,9 +121,7 @@ def _setup_static_src_routing(networks, rnetworks):
     for net_name, net_attrs in six.viewitems(networks):
         gateway = net_attrs.get('gateway')
         rnet_gateway = rnetworks.get(net_name, {}).get('gateway')
-        if gateway and (
-            not rnet_gateway or _gateway_has_changed(gateway, rnet_gateway)
-        ):
+        if gateway and _gateway_has_changed(gateway, rnet_gateway):
             ip_address = net_attrs.get('ipaddr')
             netmask = net_attrs.get('netmask')
             next_hop = _get_network_iface(net_name, net_attrs)
@@ -179,7 +177,7 @@ def _remove_outdated_source_routing(networks, rnetworks):
 
         if (
             method_has_changed
-            or _gateway_has_changed(gateway, rnet_gateway)
+            or (_gateway_has_changed(gateway, rnet_gateway) and rnet_gateway)
             or is_remove
         ):
             sourceroute.remove(next_hop)
@@ -276,7 +274,7 @@ def _is_changing_between_static_and_dynamic(net_attrs, rnet_attrs):
 
 
 def _gateway_has_changed(gateway, rnet_gateway):
-    return rnet_gateway and gateway and gateway != rnet_gateway
+    return gateway != rnet_gateway
 
 
 def netcaps(compatibility):

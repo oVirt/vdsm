@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -411,6 +411,31 @@ class TestNetworkIPDefaultGateway(object):
 
         with adapter.setupNetworks(net1create, {}, NOCHK):
             adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
+
+    @pytest.mark.parametrize(
+        'remove_gw', [True, False], ids=['removeGw', 'updateGw']
+    )
+    def test_edit_gateway_without_default_route(
+        self, adapter, switch, remove_gw, nic0
+    ):
+        network_attrs = {
+            'nic': nic0,
+            'ipaddr': IPv4_ADDRESS,
+            'netmask': IPv4_NETMASK,
+            'gateway': IPv4_GATEWAY,
+            'switch': switch,
+        }
+        netcreate = {NETWORK_NAME: network_attrs}
+
+        with adapter.setupNetworks(netcreate, {}, NOCHK):
+            adapter.assertNetworkIp(NETWORK_NAME, network_attrs)
+            if remove_gw:
+                network_attrs.pop('gateway')
+            else:
+                network_attrs['gateway'] = IPv4_GATEWAY2
+                network_attrs['ipaddr'] = IPv4_ADDRESS2
+            adapter.setupNetworks(netcreate, {}, NOCHK)
+            adapter.assertNetworkIp(NETWORK_NAME, network_attrs)
 
     def test_remove_net_without_default_route(
         self, adapter, switch, nic0, nic1
