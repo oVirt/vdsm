@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2019 Red Hat, Inc.
+# Copyright 2015-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,14 +19,13 @@
 #
 
 from __future__ import absolute_import
+
+import ipaddress
 import logging
 import socket
 import ssl
 
 import six
-
-from netaddr import IPAddress
-from netaddr.core import AddrFormatError
 
 from ssl import SSLError
 from vdsm.common import pki
@@ -226,7 +225,7 @@ class SSLHandshakeDispatcher(object):
             cert_common_name = \
                 SSLHandshakeDispatcher._normalize_ip_address(
                     cert_common_name)
-        except AddrFormatError:
+        except ValueError:
             # used name not address
             pass
 
@@ -248,9 +247,9 @@ class SSLHandshakeDispatcher(object):
         normalize it to ipv4 in order to compare it with value used
         in commonName in the certificate.
         """
-        ip = IPAddress(addr)
-        if ip.is_ipv4_mapped():
-            addr = str(ip.ipv4())
+        ip = ipaddress.ip_address(addr)
+        if ip.version == 6 and ip.ipv4_mapped:
+            addr = str(ip.ipv4_mapped)
 
         return addr
 
