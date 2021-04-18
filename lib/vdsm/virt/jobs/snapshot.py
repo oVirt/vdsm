@@ -462,13 +462,19 @@ class Snapshot(properties.Owner):
                 self._vm.run_dom_snapshot(snapxml, snap_flags)
             except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
+                    self_abort = self._abort.is_set()
                     with self._lock:
                         self._abort.set()
                         self._snapshot_job['abort'] = self._abort.is_set()
                     set_abort(self._vm, self._snapshot_job, self._completed,
                               self._abort, self._lock)
-                    self._vm.log.info("Snapshot timeout reached,"
-                                      " operation aborted")
+                    if self_abort:
+                        self._vm.log.info("Snapshot timeout reached,"
+                                          " operation aborted")
+                    else:
+                        self._vm.log.warning("Snapshot operation"
+                                             " aborted by libvirt: %s",
+                                             e.get_error_message())
                 self._vm.log.exception("Unable to take snapshot")
                 if self._abort.is_set():
                     # This will cause a jump into the finalize_vm.
