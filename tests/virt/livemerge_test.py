@@ -132,7 +132,7 @@ def test_cleanup_done():
     drive = FakeDrive()
     t = FakeCleanupThread(vm=v, job=job, drive=drive)
     t.start()
-    t.join()
+    t.wait()
 
     assert t.state == CleanupThread.DONE
     assert v.drive_monitor.enabled
@@ -159,7 +159,7 @@ def test_cleanup_retry(monkeypatch, error):
     v = FakeVM()
     t = FakeCleanupThread(vm=v, job=job, drive=FakeDrive())
     t.start()
-    t.join()
+    t.wait()
 
     assert t.state == CleanupThread.FAILED
     assert v.drive_monitor.enabled

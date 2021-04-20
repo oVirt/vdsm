@@ -776,9 +776,22 @@ class DriveMerger:
 
         return disk.find("./mirror[@ready='yes']") is not None
 
-    def wait_for_cleanup(self):
+    def wait_for_cleanup(self, timeout=None):
+        """
+        Wait until all cleanup thread finish. Return True if all cleanup
+        threads finished, False if some threads are still alive.
+        """
+        if timeout is not None:
+            deadline = time.monotonic() + timeout
+
+        finished = []
+
         for t in self._cleanup_threads.values():
-            t.join()
+            if timeout is not None:
+                timeout = max(0, deadline - time.monotonic())
+            finished.append(t.wait(timeout))
+
+        return all(finished)
 
 
 class CleanupThread(object):
@@ -810,8 +823,13 @@ class CleanupThread(object):
     def start(self):
         self._thread.start()
 
-    def join(self):
-        self._thread.join()
+    def wait(self, timeout=None):
+        """
+        Wait until cleanup thread finishes. Return True if finished, False if
+        timeout was specified and the call timeout expired.
+        """
+        self._thread.join(timeout)
+        return not self._thread.is_alive()
 
     def tryPivot(self):
         # We call imageSyncVolumeChain which will mark the current leaf
