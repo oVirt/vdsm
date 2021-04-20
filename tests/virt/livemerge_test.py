@@ -1087,10 +1087,8 @@ def test_active_merge_canceled_during_cleanup(monkeypatch):
 
     # Make pivot fail during cleanup.
     with monkeypatch.context() as c:
-        job_aborted = threading.Event()
 
         def fail(drive, flags=0):
-            job_aborted.set()
             raise fake.libvirt_error(
                 [libvirt.VIR_ERR_INTERNAL_ERROR], "fake libvirt error")
 
@@ -1109,8 +1107,8 @@ def test_active_merge_canceled_during_cleanup(monkeypatch):
         assert persisted_job["pivot"]
 
         # Wait until the first cleanup completes.
-        if not job_aborted.wait(TIMEOUT):
-            raise RuntimeError("Timeout waiting for blockJobAbort() call")
+        if not vm._drive_merger.wait_for_cleanup(TIMEOUT):
+            raise RuntimeError("Timeout waiting for cleanup")
 
     # Cancel the block job. This simulates a scenario where a user aborts
     # running block job from virsh.
