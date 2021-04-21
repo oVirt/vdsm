@@ -904,7 +904,7 @@ def test_extend_error_all(fake_time):
         with pytest.raises(RuntimeError):
             simulate_extend_error(vm)
 
-        # Job is waiting for timeout berfore sending the next attempt.
+        # Job is waiting for timeout before sending the next attempt.
         persisted_job = parse_jobs(vm)[job_id]
         assert persisted_job["state"] == Job.EXTEND
         assert persisted_job["extend"]["attempt"] == attempt - 1
@@ -915,14 +915,14 @@ def test_extend_error_all(fake_time):
         fake_time.time += DriveMerger.EXTEND_TIMEOUT + 1
         vm.query_jobs()
 
-        # New extned request submitted.
+        # New extend request submitted.
         persisted_job = parse_jobs(vm)[job_id]
         assert persisted_job["state"] == Job.EXTEND
         assert persisted_job["extend"]["attempt"] == attempt
         assert persisted_job["extend"]["started"] == fake_time.time
         assert len(vm.cif.irs.extend_requests) == 1
 
-    # The last error wil untrack the job.
+    # The last error will untrack the job.
     with pytest.raises(RuntimeError):
         simulate_extend_error(vm)
 
