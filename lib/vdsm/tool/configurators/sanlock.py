@@ -170,10 +170,7 @@ def _restart_needed():
     options = _daemon_options()
     if options is not None:
         for key, value in _config_for_vdsm().items():
-            # TODO: Sanlock does not report max_worker_threads yet, so we must
-            # skip missing keys. Check all keys when we require sanlock version
-            # reporting max_worker_threads.
-            if key in options and options[key] != value:
+            if options[key] != value:
                 return True
 
     return False
@@ -221,6 +218,7 @@ def _daemon_options():
     #
     # daemon 1a422c70-3b56-4677-9db8-dedb30d66824.host4
     #     our_host_name=1a422c70-3b56-4677-9db8-dedb30d66824.host4
+    #     max_worker_threads=8
     #     use_watchdog=1
     #     ...
     # p -1 helper
