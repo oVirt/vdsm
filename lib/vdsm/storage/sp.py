@@ -419,13 +419,13 @@ class StoragePool(object):
                                sd.BLOCKSD_DIR, "*", sd.MASTER_FS_DIR)
         for master in glob(masters):
             if mount.isMounted(master):
-                cls.log.debug("unmounting %s", master)
+                cls.log.info("Unmounting master %s", master)
                 try:
                     blockSD.BlockStorageDomain.doUnmountMaster(master)
                 except se.StorageDomainMasterUnmountError as e:
-                    panic("unmount %s failed - %s" % (master, e))
+                    panic("Unmount master {} failed: {}".format(master, e))
             else:
-                cls.log.debug("master `%s` is not mounted, skipping", master)
+                cls.log.debug("Master %s is not mounted, skipping", master)
 
     def stopSpm(self, force=False):
         with self.lock:
