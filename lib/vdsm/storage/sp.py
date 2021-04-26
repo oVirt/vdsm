@@ -125,10 +125,16 @@ class StoragePool(object):
 
     @unsecured
     def _setSecure(self):
+        if not self.isSecure():
+            self.log.info("Switching storage pool %s to SECURE mode",
+                          self.spUUID)
         self._secured.set()
 
     @unsecured
     def _setUnsecure(self):
+        if self.isSecure():
+            self.log.info("Switching storage pool %s to UNSECURE mode",
+                          self.spUUID)
         self._secured.clear()
 
     @unsecured
