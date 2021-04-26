@@ -390,8 +390,15 @@ class StoragePool(object):
                 raise
 
     @unsecured
-    def _shutDownUpgrade(self):
-        self.log.debug("Shutting down upgrade process")
+    def _cancel_upgrade(self):
+        """
+        If upgrade threads already took a shared lock, this will block until
+        all upgrade threads release the lock. If upgrade did not start yet,
+        this will cancel the pending upgrade.
+        """
+        self.log.info("Canceling upgrade for domains %s",
+                      self._domainsToUpgrade)
+
         with rm.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
                                 rm.EXCLUSIVE):
             try:
@@ -425,7 +432,7 @@ class StoragePool(object):
             if not force and self.spmRole == SPM_FREE:
                 return True
 
-            self._shutDownUpgrade()
+            self._cancel_upgrade()
             self._setUnsecure()
 
             stopFailed = False
