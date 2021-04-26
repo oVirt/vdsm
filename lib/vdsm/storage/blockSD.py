@@ -1524,10 +1524,10 @@ class BlockStorageDomain(sd.StorageDomain):
         try:
             masterMount = mount.getMountFromTarget(masterdir)
         except OSError as ex:
-            if ex.errno == errno.ENOENT:
-                return
+            if ex.errno != errno.ENOENT:
+                raise
+            return
 
-            raise
         if masterMount.isMounted():
             # Try umount, take 1
             try:
