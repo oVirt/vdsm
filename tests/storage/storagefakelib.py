@@ -509,5 +509,5 @@ def fake_spm(pool_id, master_version, domains_map):
     pool = sp.StoragePool(pool_id, None, None)
     pool.setBackend(spb.StoragePoolMemoryBackend(
         pool, master_version, domains_map))
-    pool._setSecure()
+    pool._set_secure()
     return pool

@@ -100,7 +100,7 @@ class StoragePool(object):
         self._formatConverter = DefaultFormatConverter()
         self._domainsToUpgrade = []
         self.lock = threading.RLock()
-        self._setUnsecure()
+        self._set_insecure()
         self.spUUID = str(spUUID)
         self.poolPath = os.path.join(sc.REPO_DATA_CENTER, self.spUUID)
         self.id = SPM_ID_FREE
@@ -117,23 +117,23 @@ class StoragePool(object):
         self._backend = None
 
     def __is_secure__(self):
-        return self.isSecure()
+        return self.is_secure()
 
     @unsecured
-    def isSecure(self):
+    def is_secure(self):
         return self._secured.isSet()
 
     @unsecured
-    def _setSecure(self):
-        if not self.isSecure():
+    def _set_secure(self):
+        if not self.is_secure():
             self.log.info("Switching storage pool %s to SECURE mode",
                           self.spUUID)
         self._secured.set()
 
     @unsecured
-    def _setUnsecure(self):
-        if self.isSecure():
-            self.log.info("Switching storage pool %s to UNSECURE mode",
+    def _set_insecure(self):
+        if self.is_secure():
+            self.log.info("Switching storage pool %s to INSECURE mode",
                           self.spUUID)
         self._secured.clear()
 
@@ -358,12 +358,12 @@ class StoragePool(object):
 
                 self.spmRole = SPM_ACQUIRED
 
-                # Once setSecure completes we are running as SPM
-                self._setSecure()
+                # Once this completes we are running as SPM.
+                self._set_secure()
 
                 # Mailbox issues SPM commands, therefore we start it AFTER spm
                 # commands are allowed to run to prevent a race between the
-                # mailbox and the "self._setSecure() call"
+                # mailbox and the "self._set_secure() call"
 
                 if self.masterDomain.supportsMailbox:
                     self.masterDomain.prepareMailbox()
@@ -439,7 +439,7 @@ class StoragePool(object):
                 return True
 
             self._cancel_upgrade()
-            self._setUnsecure()
+            self._set_insecure()
 
             stopFailed = False
 
@@ -655,7 +655,7 @@ class StoragePool(object):
         fileUtils.createdir(self.poolPath)
         self._acquireTemporaryClusterLock(msdUUID, leaseParams)
         try:
-            self._setSecure()
+            self._set_secure()
             try:
                 # Mark 'master' domain.  We should do it before actually
                 # attaching this domain to the pool During 'master' marking we
@@ -688,7 +688,7 @@ class StoragePool(object):
                                    exc_info=True)
                 raise
             finally:
-                self._setUnsecure()
+                self._set_insecure()
         finally:
             self._releaseTemporaryClusterLock(msdUUID)
             self.stopMonitoringDomains()
@@ -809,7 +809,7 @@ class StoragePool(object):
             # secure in order to change the domains map.
             # TODO: it is clear that reconstructMaster and create (StoragePool)
             # are extremely similar and they should be unified.
-            self._setSecure()
+            self._set_secure()
             try:
                 self.createMaster(poolName, futureMaster, masterVersion,
                                   leaseParams)
@@ -824,7 +824,7 @@ class StoragePool(object):
 
                 self.refresh(msdUUID=msdUUID, masterVersion=masterVersion)
             finally:
-                self._setUnsecure()
+                self._set_insecure()
         finally:
             futureMaster.releaseClusterLock()
 

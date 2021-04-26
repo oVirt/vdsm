@@ -203,7 +203,7 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
     # Read-Only StoragePool Object Accessors ###
 
     def __is_secure__(self):
-        return self.pool.isSecure()
+        return self.pool.is_secure()
 
     @property
     def id(self):
@@ -396,7 +396,7 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
     # Read-Only StoragePool Object Accessors
 
     def __is_secure__(self):
-        return self.pool.isSecure()
+        return self.pool.is_secure()
 
     @property
     def spUUID(self):
