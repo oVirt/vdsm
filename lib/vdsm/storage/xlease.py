@@ -808,6 +808,12 @@ def rebuild_index(
             for recnum in range(MAX_RECORDS):
                 offset = lease_offset(recnum, alignment)
                 if offset > max_offset:
+                    # xlease volume has size of 1 GiB and as minimal possible
+                    # alignment is 1 MiB, maximum number of leases is ~1024
+                    # (even less for bigger alignment) and therefore always
+                    # less than maximum possible number of records in the index
+                    # (MAX_RECORDS ~ 4000). Write empty records into remaining
+                    # index slots.
                     index.write_record(recnum, EMPTY_RECORD)
                     continue
 
