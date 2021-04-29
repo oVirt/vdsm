@@ -4659,6 +4659,7 @@ class Vm(object):
                       "Action: %s", self.name,
                       actionToString(action))
 
+    @api.guard(_not_migrating)
     def changeCD(self, cdromspec):
         blockdev = drivename.make(
             cdromspec['iface'], cdromspec['index'])
@@ -4676,6 +4677,7 @@ class Vm(object):
 
         return {'vmList': {}}
 
+    @api.guard(_not_migrating)
     def changeFloppy(self, drivespec):
         return self._changeBlockDev('floppy', 'fda', drivespec)
 
