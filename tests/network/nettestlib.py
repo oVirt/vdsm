@@ -72,7 +72,7 @@ class Interface(object):
             addrAdd(self.dev_name, ip_addr, prefix_len, family)
         except IPRoute2Error as e:
             message = (
-                f'Failed to add the IPv{family} address {family}/{prefix_len}'
+                f'Failed to add the IPv{family} address {ip_addr}/{prefix_len}'
                 f'to device {self.dev_name}: {e}'
             )
             pytest.skip(message)
