@@ -10,7 +10,6 @@ RUN  dnf install -y \
         iproute-tc \
         libnl3 \
         nmstate \
-        python3-netaddr \
         python3-devel \
         python3-six \
         python3-pip \
