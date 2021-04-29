@@ -1,4 +1,4 @@
-# Copyright 2013-2020 Red Hat, Inc.
+# Copyright 2013-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,12 +22,11 @@ from __future__ import division
 
 from fnmatch import fnmatch
 from glob import iglob
+from ipaddress import ip_address
+from ipaddress import ip_network
+
 import errno
 import os
-
-from netaddr.core import AddrFormatError
-from netaddr import IPAddress
-from netaddr import IPNetwork
 
 from vdsm.common.cmdutils import CommandPath
 from vdsm.common.compat import subprocess
@@ -62,7 +61,7 @@ _ROUTE_FLAGS = frozenset(
 def _isValid(ip, verifier):
     try:
         verifier(ip)
-    except (AddrFormatError, ValueError):
+    except ValueError:
         return False
 
     return True
@@ -305,13 +304,13 @@ def getLink(dev):
 @equals
 class Route(object):
     def __init__(self, network, via=None, src=None, device=None, table=None):
-        if network != 'local' and not _isValid(network, IPNetwork):
+        if network != 'local' and not _isValid(network, ip_network):
             raise ValueError('network %s is not properly defined' % network)
 
-        if via and not _isValid(via, IPAddress):
+        if via and not _isValid(via, ip_address):
             raise ValueError('via %s is not a proper IP address' % via)
 
-        if src and not _isValid(src, IPAddress):
+        if src and not _isValid(src, ip_address):
             raise ValueError('src %s is not a proper IP address' % src)
 
         self.network = network
@@ -407,7 +406,7 @@ class Rule(object):
     ):
         if source:
             if not (
-                _isValid(source, IPAddress) or _isValid(source, IPNetwork)
+                _isValid(source, ip_address) or _isValid(source, ip_network)
             ):
                 raise ValueError(
                     'Source %s invalid: Not an ip address '
@@ -416,8 +415,8 @@ class Rule(object):
 
         if destination:
             if not (
-                _isValid(destination, IPAddress)
-                or _isValid(destination, IPNetwork)
+                _isValid(destination, ip_address)
+                or _isValid(destination, ip_network)
             ):
                 raise ValueError(
                     'Destination %s invalid: Not an ip address '

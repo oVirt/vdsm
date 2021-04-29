@@ -1,4 +1,4 @@
-# Copyright 2013-2020 Red Hat, Inc.
+# Copyright 2013-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import ipaddress
 import logging
-import netaddr
 
 from vdsm.network.ip import route as ip_route
 from vdsm.network.ip import rule as ip_rule
@@ -48,12 +48,12 @@ class StaticSourceRoute(object):
     def _parse_network(self, ipaddr, mask):
         if not ipaddr or not mask:
             return None
-        network = netaddr.IPNetwork('%s/%s' % (ipaddr, mask))
-        return "%s/%s" % (network.network, network.prefixlen)
+
+        return str(ipaddress.ip_interface(f'{ipaddr}/{mask}').network)
 
     def _generateTableId(self, ipaddr):
         # TODO: Future proof for IPv6
-        return netaddr.IPAddress(ipaddr).value
+        return int(ipaddress.ip_address(ipaddr))
 
     def current_config(self):
         return (), (), self.device

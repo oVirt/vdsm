@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2020 Red Hat, Inc.
+# Copyright 2015-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,11 @@
 
 from __future__ import absolute_import
 from __future__ import division
+
 from collections import defaultdict
+
+import ipaddress
 import logging
-from netaddr import IPNetwork
 import socket
 
 from vdsm.network.netlink import addr as nl_addr
@@ -42,9 +44,9 @@ def getIpInfo(dev, ipaddrs=None, ipv4_gateway=None):
     ipv6addrs = []
 
     def addr_in_gw_net(address, prefix, ipv4_gw):
-        addr_net = IPNetwork('{}/{}'.format(address, prefix))
-        gw_net = IPNetwork('{}/{}'.format(ipv4_gw, prefix))
-        return addr_net in gw_net
+        addr_iface = ipaddress.ip_interface(f'{address}/{prefix}')
+        gw_net = ipaddress.ip_interface(f'{ipv4_gw}/{prefix}').network
+        return addr_iface in gw_net
 
     for addr in ipaddrs[dev]:
         if addr['scope'] == 'link':
@@ -55,16 +57,16 @@ def getIpInfo(dev, ipaddrs=None, ipv4_gateway=None):
             if nl_addr.is_primary(addr) and ipv4_gateway and ipv4addr == '':
                 address, prefix = nl_addr.split(addr)
                 if addr_in_gw_net(address, prefix, ipv4_gateway):
-                    ipv4addr = address
-                    ipv4netmask = str(IPNetwork(address_cidr).netmask)
+                    ipv4addr, ipv4netmask = _addr_and_netmask_from_cidr(
+                        address_cidr
+                    )
         else:  # ipv6
             ipv6addrs.append(address_cidr)
     if ipv4addrs and ipv4addr == '':
         # If we didn't find an address in the gateway subnet (which is
         # legal if there is another route that takes us to the gateway) we
         # choose to report the first address
-        ipv4addr = ipv4addrs[0].split('/')[0]
-        ipv4netmask = str(IPNetwork(ipv4addrs[0]).netmask)
+        ipv4addr, ipv4netmask = _addr_and_netmask_from_cidr(ipv4addrs[0])
 
     return ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs
 
@@ -122,3 +124,8 @@ def is_dynamic(nladdr):
 
 def is_ipv6_local_auto(iface):
     return sysctl_is_ipv6_local_auto(iface)
+
+
+def _addr_and_netmask_from_cidr(address_cidr):
+    ip_iface = ipaddress.ip_interface(address_cidr)
+    return str(ip_iface.ip), str(ip_iface.network.netmask)

@@ -43,8 +43,8 @@ class TestIpwrapper(object):
                 'eth0',
                 'foo',
             ),
-            '200.100.50.0/16 via 11.11.11.11 dev eth2 table foo': (
-                '200.100.50.0/16',
+            '200.100.0.0/16 via 11.11.11.11 dev eth2 table foo': (
+                '200.100.0.0/16',
                 '11.11.11.11',
                 'eth2',
                 'foo',
