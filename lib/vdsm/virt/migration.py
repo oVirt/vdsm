@@ -30,6 +30,7 @@ import libvirt
 
 from vdsm.common import concurrent
 from vdsm.common import conv
+from vdsm.common import exception
 from vdsm.common import logutils
 from vdsm.common import response
 from vdsm import sslutils
@@ -42,6 +43,7 @@ from vdsm.common.define import NORMAL
 from vdsm.common.network.address import normalize_literal_addr
 from vdsm.common.units import MiB
 from vdsm.virt.utils import DynamicBoundedSemaphore
+from vdsm.virt.utils import VolumeSize
 
 from vdsm.virt import virdomain
 from vdsm.virt import vmexitreason
@@ -691,6 +693,15 @@ class SourceThread(object):
         if self._recovery and \
            self._vm.lastStatus == vmstatus.MIGRATION_SOURCE:
             self._recover("Migration failed")
+
+    def refresh_destination_disk(self, vol_pdiv):
+        """
+        Refresh drive on the destination host.
+        """
+        result = self._destServer.refresh_disk(self._vm.id, vol_pdiv)
+        if response.is_error(result):
+            raise exception.CannotRefreshDisk(reason=result["message"])
+        return VolumeSize(int(result["apparentsize"]), int(result["truesize"]))
 
 
 def exponential_downtime(downtime, steps):

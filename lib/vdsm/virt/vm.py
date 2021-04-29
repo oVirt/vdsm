@@ -1426,6 +1426,29 @@ class Vm(object):
             apparentsize=str(new_vol_size.apparentsize),
             truesize=str(new_vol_size.truesize)))
 
+    def _refresh_migrating_volume(self, volInfo):
+        """
+        If the disk is extended during migration, the change is not visible on
+        the destination host and the disk drive has to be refreshed also there,
+        otherwise it becomes corrupted.
+
+        See https://bugzilla.redhat.com/1883399
+        """
+        self.log.info(
+            "Volume %s (domainID: %s, volumeID: %s) was extended during "
+            "migration, refreshing it on destination host.",
+            volInfo["name"], volInfo["domainID"], volInfo["volumeID"])
+        # volInfo can contain fields which are not serializable, so we have to
+        # create a dict which conforms with API specification.
+        vol_pdiv = {
+            "device": hwclass.DISK,
+            "poolID": volInfo["poolID"],
+            "domainID": volInfo["domainID"],
+            "imageID": volInfo["imageID"],
+            "volumeID": volInfo["volumeID"],
+        }
+        return self._migrationSourceThread.refresh_destination_disk(vol_pdiv)
+
     def __verifyVolumeExtension(self, volInfo):
         volSize = self.getVolumeSize(
             volInfo['domainID'],
@@ -1513,6 +1536,23 @@ class Vm(object):
             callback = volInfo["callback"]
             clock = volInfo["clock"]
             clock.stop("extend-volume")
+
+            # If we extend disk during migration, refresh disk on the
+            # destination first. The disk has to be refreshed before VM is
+            # resumed on the destination and as the migration is controlled by
+            # libvirt, we need to refresh destination before source to be sure
+            # that the disk on destination won't be corrupted by resumed VM.
+            # We need to call it only from the source VM.
+            if (self.isMigrating() and
+                    self.lastStatus == vmstatus.MIGRATION_SOURCE):
+                with clock.run("refresh-destination-volume"):
+                    dest_vol_size = self._refresh_migrating_volume(volInfo)
+                if dest_vol_size.apparentsize < volInfo['newSize']:
+                    reason = ("Failed to refresh drive on the destination "
+                              "host actual size {} < expected size {}").format(
+                        dest_vol_size.apparentsize,
+                        volInfo["newSize"])
+                    raise exception.CannotRefreshDisk(reason=reason)
 
             with clock.run("refresh-volume"):
                 self.refresh_drive_volume(volInfo)

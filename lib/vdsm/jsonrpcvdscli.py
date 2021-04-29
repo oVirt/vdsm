@@ -125,6 +125,7 @@ _COMMAND_CONVERTER = {
     'stopMonitoringDomain': 'Host.stopMonitoringDomain',
     'updateVmPolicy': 'VM.updateVmPolicy',
     'validateStorageDomain': 'StorageDomain.validate',
+    'refresh_disk': 'VM.refresh_disk',
 }
 
 

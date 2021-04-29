@@ -594,3 +594,14 @@ class CannotPrepareImage(ContextException):
 class DriveRefreshError(ContextException):
     code = 1640
     msg = "Failed to refresh drive"
+
+
+#################################################
+#  Migration Errors
+#  Range: 1650-1659
+#################################################
+
+
+class CannotRefreshDisk(ContextException):
+    code = 1650
+    msg = "Failed to refresh disk on the destination"
