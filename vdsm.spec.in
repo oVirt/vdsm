@@ -488,6 +488,7 @@ Requires:       ethtool
 Requires:       iproute
 Requires:       iproute-tc
 Requires:       nmstate >= 1.0
+Requires:       nmstate-plugin-ovsdb
 Requires:       libnl3
 Requires:       lldpad
 Requires:       openvswitch >= 2.11
