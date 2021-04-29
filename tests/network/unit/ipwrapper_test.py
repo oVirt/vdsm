@@ -1,4 +1,4 @@
-# Copyright 2013-2019 Red Hat, Inc.
+# Copyright 2013-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import pytest
-import six
 
 from vdsm.network.ipwrapper import Route
 from vdsm.network.ipwrapper import Rule
@@ -77,7 +76,7 @@ class TestIpwrapper(object):
             ),
         }
 
-        for text, attributes in six.viewitems(good_routes):
+        for text, attributes in good_routes.items():
             route = Route.fromText(text)
             assert _getRouteAttrs(route) == attributes
 
@@ -135,7 +134,7 @@ class TestIpwrapper(object):
                 5,
             ),
         }
-        for text, attributes in six.viewitems(good_rules):
+        for text, attributes in good_rules.items():
             rule = Rule.fromText(text)
             assert _getRuleAttrs(rule) == attributes
 

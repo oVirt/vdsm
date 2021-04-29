@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2020 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ import copy
 from unittest import mock
 
 import pytest
-import six
 
 
 from vdsm.network import canonicalize
@@ -154,7 +153,7 @@ class TestDefaultRouteCanonicalization(object):
 
     def _nets_config(self, nets_config, default_route):
         config = copy.deepcopy(nets_config)
-        for net_attrs in six.itervalues(config):
+        for net_attrs in config.values():
             if default_route is not None:
                 net_attrs['defaultRoute'] = default_route
 

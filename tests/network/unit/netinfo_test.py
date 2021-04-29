@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2020 Red Hat, Inc.
+# Copyright 2012-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ import io
 from unittest import mock
 
 import pytest
-import six
 
 from vdsm.network import ipwrapper
 from vdsm.network.ip.address import prefix2netmask
@@ -101,8 +100,8 @@ class TestNetinfo(object):
         values = (
             (b'0', IS_UP, 0),
             (b'-10', IS_UP, 0),
-            (six.b(str(2 ** 16 - 1)), IS_UP, 0),
-            (six.b(str(2 ** 32 - 1)), IS_UP, 0),
+            (str(2 ** 16 - 1).encode("utf8"), IS_UP, 0),
+            (str(2 ** 32 - 1).encode("utf8"), IS_UP, 0),
             (b'123', IS_UP, 123),
             (b'', IS_UP, 0),
             (b'', not IS_UP, 0),

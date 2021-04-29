@@ -1,4 +1,4 @@
-# Copyright 2018-2020 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,9 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from unittest import mock
+import io
 
-import six
+from unittest import mock
 
 from vdsm.network import dns
 
@@ -39,7 +39,7 @@ class TestNetworkDnsUnit(object):
             'nameserver 8.8.4.4\n'
         )
         expected_nameservers = ['192.168.0.100', '8.8.8.8', '8.8.4.4']
-        resolv_conf_stream = six.StringIO(RESOLV_CONF)
+        resolv_conf_stream = io.StringIO(RESOLV_CONF)
         mock_open.return_value.__enter__.return_value = resolv_conf_stream
 
         resulted_nameservers = dns.get_host_nameservers()

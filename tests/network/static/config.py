@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2020 Red Hat, Inc.
+# Copyright 2011-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from six.moves import configparser
+import configparser
 
 parameters = [
     # Section: [vars]

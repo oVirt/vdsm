@@ -1,6 +1,6 @@
 #
 # Copyright 2012 Roman Fenkhuber.
-# Copyright 2012-2019 Red Hat, Inc.
+# Copyright 2012-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 import os
 
-from six.moves import zip_longest
+from itertools import zip_longest
 
 from vdsm.network import tc
 
