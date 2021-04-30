@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +22,6 @@ from __future__ import division
 import contextlib
 import logging
 import sys
-
-import six
 
 from vdsm.network.ipwrapper import IPRoute2Error
 from vdsm.network.ipwrapper import Rule
@@ -66,7 +64,6 @@ def _translate_iproute2_exception(new_exception, rule_data):
         yield
     except IPRoute2Error:
         _, value, tb = sys.exc_info()
-        error_message = value.args[1][0]
-        six.reraise(
-            new_exception, new_exception(str(rule_data), error_message), tb
+        raise new_exception(str(rule_data), value.args[1][0]).with_traceback(
+            tb
         )

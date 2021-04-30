@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,10 +69,7 @@ def validate_static_ipv4_config(net_attrs):
             if 'gateway' in net_attrs:
                 IPAddressData(net_attrs['gateway'], device=None)
         except IPAddressDataError as e:
-            six.reraise(
-                ne.ConfigNetworkError,
-                ne.ConfigNetworkError(ne.ERR_BAD_ADDR, str(e)),
-            )
+            raise ne.ConfigNetworkError(ne.ERR_BAD_ADDR, str(e))
         if net_attrs.get('bootproto') == 'dhcp':
             raise ne.ConfigNetworkError(
                 ne.ERR_BAD_ADDR,

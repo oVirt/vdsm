@@ -1,4 +1,4 @@
-# Copyright 2011-2020 Red Hat, Inc.
+# Copyright 2011-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -130,7 +130,7 @@ def _rollback():
             # exception that might have happened on rollback is
             # properly logged and derived from actions to respond to
             # the original exception.
-            six.reraise(roi.exc_type, roi.value, tb)
+            raise roi.value.with_traceback(tb)
 
 
 def setupNetworks(networks, bondings, options):

@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,6 @@ from __future__ import division
 
 import contextlib
 import sys
-
-import six
 
 from vdsm.network import ipwrapper
 from vdsm.network.netlink import addr as nl_addr
@@ -95,7 +93,6 @@ def _translate_iproute2_exception(new_exception, address_data):
         yield
     except ipwrapper.IPRoute2Error:
         _, value, tb = sys.exc_info()
-        error_message = value.args[1][0]
-        six.reraise(
-            new_exception, new_exception(str(address_data), error_message), tb
-        )
+        raise new_exception(
+            str(address_data), value.args[1][0]
+        ).with_traceback(tb)

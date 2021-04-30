@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ class IPAddressData(object):
             self._address = ipaddress.ip_interface(six.text_type(address))
         except ValueError:
             _, val, tb = sys.exc_info()
-            six.reraise(IPAddressDataError, IPAddressDataError(val), tb)
+            raise IPAddressDataError(val).with_traceback(tb)
         self._device = device
         self._flags = flags
         self._scope = scope

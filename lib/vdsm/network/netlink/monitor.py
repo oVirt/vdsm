@@ -1,4 +1,4 @@
-# Copyright 2014-2020 Red Hat, Inc.
+# Copyright 2014-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ import select
 import sys
 import threading
 
-import six
 from six.moves import queue
 
 from vdsm.common import concurrent
@@ -155,7 +154,7 @@ class Monitor:
                 break
             elif event.type == EventType.EXCEPTION:
                 _, val, tb = event.data
-                six.reraise(MonitorError, MonitorError(val), tb)
+                raise MonitorError(val).with_traceback(tb)
 
             yield event.data
 
