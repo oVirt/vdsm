@@ -97,6 +97,9 @@ class Interface(object):
         linkDel(self.dev_name)
         cmd.exec_sync(['nmcli', 'con', 'del', self.dev_name])
 
+    def set_mac_address(self, mac):
+        linkSet(self.dev_name, ['address', mac])
+
     def __repr__(self):
         return "<{0} {1!r}>".format(self.__class__.__name__, self.dev_name)
 

@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,17 +20,19 @@
 import pytest
 
 from vdsm.network import errors as ne
-from vdsm.network.ip import address
-from vdsm.network.link.bond import Bond
-from vdsm.network.link.iface import iface
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import SetupNetworksError, NOCHK
-from network.nettestlib import dummy_device, vlan_device
+from network.nettestlib import Bond
+from network.nettestlib import bond_device
+from network.nettestlib import dummy_device
+from network.nettestlib import Interface
+from network.nettestlib import IpFamily
 from network.nettestlib import running_on_ovirt_ci
+from network.nettestlib import vlan_device
 
-IPAddress = address.driver(address.Drivers.IPROUTE2)
 
+HWADDRESS = 'ce:0c:46:59:c9:d1'
 NETWORK1_NAME = 'test-network1'
 NETWORK2_NAME = 'test-network2'
 BOND_NAME = 'bond1'
@@ -54,6 +56,23 @@ def nic1():
 def nic2():
     with dummy_device() as nic:
         yield nic
+
+
+@pytest.fixture
+def bond0_with_slaves(nic0, nic1):
+    slaves = [nic0, nic1]
+    with bond_device(slaves) as bond:
+        yield bond, slaves
+
+
+# Special case when we don't want to call delete on bond, is bond that
+# was taken over by vdsm. This bond needs to be deleted through setup networks.
+def bond_without_remove(slaves):
+    bond = Bond(max_length=11)
+    bond.create()
+    for dev in slaves:
+        bond.add_slave(dev)
+    return bond.dev_name
 
 
 @pytest.mark.nmstate
@@ -319,29 +338,22 @@ class TestReuseBond(object):
     def test_add_net_on_existing_external_bond_preserving_mac(
         self, adapter, switch, nic0, nic1
     ):
-        HWADDRESS = 'ce:0c:46:59:c9:d1'
-        with Bond(BOND_NAME, slaves=(nic0, nic1)) as bond:
-            bond.create()
-            iface(BOND_NAME).set_address(HWADDRESS)
-
-            NETBASE = {
-                NETWORK1_NAME: {
-                    'bonding': BOND_NAME,
-                    'bridged': False,
-                    'switch': switch,
-                }
+        bond = bond_without_remove(slaves=[nic0, nic1])
+        Interface.from_existing_dev_name(bond).set_mac_address(HWADDRESS)
+        NETBASE = {
+            NETWORK1_NAME: {
+                'bonding': bond,
+                'bridged': False,
+                'switch': switch,
             }
-            with adapter.setupNetworks(NETBASE, {}, NOCHK):
-                adapter.assertNetwork(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
-                adapter.assertBond(
-                    BOND_NAME,
-                    {
-                        'nics': [nic0, nic1],
-                        'hwaddr': HWADDRESS,
-                        'switch': switch,
-                    },
-                )
-        adapter.setupNetworks({}, {BOND_NAME: {'remove': True}}, NOCHK)
+        }
+        with adapter.setupNetworks(NETBASE, {}, NOCHK):
+            adapter.assertNetwork(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
+            adapter.assertBond(
+                bond,
+                {'nics': [nic0, nic1], 'hwaddr': HWADDRESS, 'switch': switch},
+            )
+        adapter.setupNetworks({}, {bond: {'remove': True}}, NOCHK)
 
 
 @pytest.mark.legacy_switch
@@ -353,68 +365,61 @@ class TestReuseBondOnLegacySwitch(object):
         ADDRESS1 = '192.168.99.1'
         ADDRESS2 = '192.168.99.254'
         PREFIX = '29'
-        with Bond(BOND_NAME, slaves=(nic0, nic1)) as bond:
-            bond.create()
-            bond.up()
-            with vlan_device(bond.master) as vlan:
-                # Make slaves dirty intentionally and check if they recover
-                self._set_ip_address('1.1.1.1/29', nic0)
-                self._set_ip_address('1.1.1.2/29', nic1)
+        bond = bond_without_remove(slaves=[nic0, nic1])
+        with vlan_device(bond) as vlan:
+            # Make slaves dirty intentionally and check if they recover
+            self._set_ip_address(nic0, '1.1.1.1', PREFIX)
+            self._set_ip_address(nic1, '1.1.1.2', PREFIX)
 
-                self._set_ip_address(ADDRESS1 + '/' + PREFIX, bond.master)
-                self._set_ip_address(ADDRESS2 + '/' + PREFIX, vlan)
+            self._set_ip_address(bond, ADDRESS1, PREFIX)
+            self._set_ip_address(vlan, ADDRESS2, PREFIX)
 
-                NETBASE = {
-                    NETWORK1_NAME: {
-                        'bonding': BOND_NAME,
-                        'bridged': True,
-                        'ipaddr': ADDRESS1,
-                        'prefix': PREFIX,
-                        'switch': 'legacy',
-                    }
+            NETBASE = {
+                NETWORK1_NAME: {
+                    'bonding': bond,
+                    'bridged': True,
+                    'ipaddr': ADDRESS1,
+                    'prefix': PREFIX,
+                    'switch': 'legacy',
                 }
-                with adapter.setupNetworks(NETBASE, {}, NOCHK):
-                    adapter.assertNetwork(
-                        NETWORK1_NAME, NETBASE[NETWORK1_NAME]
-                    )
-                    adapter.assertBond(
-                        BOND_NAME, {'nics': [nic0, nic1], 'switch': 'legacy'}
-                    )
+            }
+            with adapter.setupNetworks(NETBASE, {}, NOCHK):
+                adapter.assertNetwork(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
+                adapter.assertBond(
+                    bond, {'nics': [nic0, nic1], 'switch': 'legacy'}
+                )
 
-                    nic1_info = adapter.netinfo.nics[nic0]
-                    nic2_info = adapter.netinfo.nics[nic1]
-                    vlan_info = adapter.netinfo.vlans[vlan]
-                    assert nic1_info['ipv4addrs'] == []
-                    assert nic2_info['ipv4addrs'] == []
-                    assert vlan_info['ipv4addrs'] == [ADDRESS2 + '/' + PREFIX]
-
-        adapter.setupNetworks({}, {BOND_NAME: {'remove': True}}, NOCHK)
+                nic1_info = adapter.netinfo.nics[nic0]
+                nic2_info = adapter.netinfo.nics[nic1]
+                vlan_info = adapter.netinfo.vlans[vlan]
+                assert nic1_info['ipv4addrs'] == []
+                assert nic2_info['ipv4addrs'] == []
+                assert vlan_info['ipv4addrs'] == [ADDRESS2 + '/' + PREFIX]
+        adapter.setupNetworks({}, {bond: {'remove': True}}, NOCHK)
 
     @pytest.mark.nmstate
     def test_add_vlan_network_on_existing_external_bond_with_used_slave(
-        self, adapter, nic0, nic1
+        self, adapter, bond0_with_slaves
     ):
-        with Bond(BOND_NAME, slaves=(nic0, nic1)) as bond:
-            bond.create()
-            bond.up()
-            with vlan_device(nic0):
-                NETBASE = {
-                    NETWORK1_NAME: {
-                        'bonding': BOND_NAME,
-                        'bridged': True,
-                        'switch': 'legacy',
-                        'vlan': 17,
-                    }
+        bond, (nic0, _) = bond0_with_slaves
+        with vlan_device(nic0):
+            NETBASE = {
+                NETWORK1_NAME: {
+                    'bonding': bond,
+                    'bridged': True,
+                    'switch': 'legacy',
+                    'vlan': 17,
                 }
+            }
 
-                with pytest.raises(SetupNetworksError) as err:
-                    with adapter.setupNetworks(NETBASE, {}, NOCHK):
-                        pass
+            with pytest.raises(SetupNetworksError) as err:
+                with adapter.setupNetworks(NETBASE, {}, NOCHK):
+                    pass
 
-                assert err.value.status == ne.ERR_USED_NIC
-                assert 'Nics with multiple usages' in err.value.msg
-            bond.destroy()
+            assert err.value.status == ne.ERR_USED_NIC
+            assert 'Nics with multiple usages' in err.value.msg
 
-    def _set_ip_address(self, ip_address, iface):
-        ip_data = address.IPAddressData(ip_address, device=iface)
-        IPAddress.add(ip_data)
+    def _set_ip_address(self, iface, addr, prefixlen):
+        Interface.from_existing_dev_name(iface).add_ip(
+            addr, prefixlen, IpFamily.IPv4
+        )
