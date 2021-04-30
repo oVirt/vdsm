@@ -18,7 +18,6 @@
 #
 
 SUBDIRS = \
-	address \
 	route \
 	rule \
 	$(NULL)

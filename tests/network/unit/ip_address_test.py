@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,27 +40,6 @@ IPV6_A_ADDRESS = '2001:99::1'
 IPV6_A_WITH_PREFIXLEN = '{}/{}'.format(IPV6_A_ADDRESS, IPV6_PREFIX)
 IPV6_INVALID_ADDRESS = '2001::99::1'
 IPV6_INVALID_WITH_PREFIXLEN = '{}/{}'.format(IPV6_INVALID_ADDRESS, IPV6_PREFIX)
-
-
-class TestAddressIP(object):
-    def test_ipv4_clean_init(self):
-        ip = address.IPv4()
-        assert not ip
-        self._assert_ip_clean_init(ip)
-        assert ip.bootproto is None
-        assert ip.netmask is None
-
-    def test_ipv6_clean_init(self):
-        ip = address.IPv6()
-        assert not ip
-        self._assert_ip_clean_init(ip)
-        assert ip.ipv6autoconf is None
-        assert ip.dhcpv6 is None
-
-    def _assert_ip_clean_init(self, ip):
-        assert ip.address is None
-        assert ip.gateway is None
-        assert ip.defaultRoute is None
 
 
 class TestIPAddressData(object):

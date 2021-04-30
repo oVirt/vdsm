@@ -24,7 +24,7 @@ import six
 
 from vdsm.network import errors as ne
 
-from .address import IPAddressData, IPAddressDataError, IPv4, IPv6
+from .address import IPAddressData, IPAddressDataError
 
 
 def validate(nets):
@@ -53,10 +53,10 @@ def _validate_nameservers_network(attrs):
 def _validate_nameservers_address(nameservers_addr):
     for addr in nameservers_addr:
         addr = _normalize_address(addr)
-        if ':' in addr:
-            IPv6.validateAddress(addr)
-        else:
-            IPv4.validateAddress(addr)
+        try:
+            IPAddressData(addr, device=None)
+        except IPAddressDataError as e:
+            raise ne.ConfigNetworkError(ne.ERR_BAD_ADDR, str(e))
 
 
 def validate_static_ipv4_config(net_attrs):
