@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2012 Adam Litke, IBM Corporation
-# Copyright (C) 2012-2020 Red Hat, Inc.
+# Copyright (C) 2012-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -711,6 +711,14 @@ class VM(APIBase):
         # for backward compatibility reasons, we need to
         # do the instance check before to run the hooks.
         vm = self.vm
+
+        if timeout <= 0:
+            # It makes no sense to run a snapshot with timeout <= 0.
+            # It can happen due to an Engine bug running a synchronous
+            # instead of an asynchronous snapshot (bz#1950209).
+            self.log.error("Zero snapshot timeout requested")
+            raise exception.InvalidParameter(action='VM.snapshot',
+                                             parameter='timeout', value=0)
 
         memoryParams = {}
         if snapMemory:
