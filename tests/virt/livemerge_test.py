@@ -33,6 +33,7 @@ from vdsm.common import xmlutils
 from vdsm.common.units import GiB
 
 from vdsm.virt import metadata
+from vdsm.virt import migration
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.livemerge import (
     CleanupThread,
@@ -226,6 +227,7 @@ class RunningVM(Vm):
         self.drive_monitor = FakeDriveMonitor()
         self._confLock = threading.Lock()
         self._drive_merger = DriveMerger(self)
+        self._migrationSourceThread = migration.SourceThread(self)
 
     def _conf_devices(self, config):
         drive = dict(config.values["drive"])
@@ -234,6 +236,9 @@ class RunningVM(Vm):
 
     def cont(self):
         return response.success()
+
+    def min_cluster_version(self, major, minor):
+        return True
 
 
 class FakeDomain:
