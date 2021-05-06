@@ -34,7 +34,6 @@ from vdsm.sslutils import SSLContext, SSLHandshakeDispatcher
 from yajsonrpc.betterAsyncore import Reactor
 
 from integration.sslhelper import key_cert_pair  # noqa: F401
-from testing import on_centos, on_fedora, on_rhel
 
 
 @pytest.fixture
@@ -148,15 +147,11 @@ def client_cmd(listener, key_cert_pair):
     ),
     pytest.param(
         '-tls1',
-        id='tls1',
-        marks=pytest.mark.skipif(on_fedora(),
-                                 reason="permissive crypto policy")
+        id='tls1'
     ),
     pytest.param(
         '-tls1_1',
-        id='tls1.1',
-        marks=pytest.mark.skipif(on_fedora(),
-                                 reason="permissive crypto policy")
+        id='tls1.1'
     )
 ])
 def test_tls_unsupported_protocols(client_cmd, protocol):
@@ -165,20 +160,6 @@ def test_tls_unsupported_protocols(client_cmd, protocol):
 
 
 @pytest.mark.parametrize('protocol', [
-    pytest.param(
-        '-tls1',
-        id='tls1',
-        marks=pytest.mark.skipif(on_centos(8) or on_rhel(8),
-                                 reason=("unsupported or blocked "
-                                         "by crypto policy"))
-    ),
-    pytest.param(
-        '-tls1_1',
-        id='tls1.1',
-        marks=pytest.mark.skipif(on_centos(8) or on_rhel(8),
-                                 reason=("unsupported or blocked "
-                                         "by crypto policy"))
-    ),
     pytest.param(
         '-tls1_2',
         id='tls1.2'
