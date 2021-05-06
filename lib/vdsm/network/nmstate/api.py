@@ -153,7 +153,7 @@ def _set_bond_slaves_mtu(desired_ifstates, current_ifstates):
         ) or current_ifstates.get(bond_ifname, {}).get(
             BondSchema.CONFIG_SUBTREE, {}
         )
-        slaves = bond_config_state.get(BondSchema.SLAVES, ())
+        slaves = bond_config_state.get(BondSchema.PORT, ())
         for slave in slaves:
             current_slave_state = current_ifstates.get(slave)
             desired_slave_state = desired_ifstates.get(slave)

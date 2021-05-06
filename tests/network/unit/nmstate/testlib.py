@@ -88,7 +88,7 @@ def create_bond_iface_state(name, mode, slaves, mtu=DEFAULT_MTU, **options):
         nmstate.Interface.STATE: nmstate.InterfaceState.UP,
         nmstate.BondSchema.CONFIG_SUBTREE: {
             nmstate.BondSchema.MODE: mode,
-            nmstate.BondSchema.SLAVES: slaves,
+            nmstate.BondSchema.PORT: slaves,
         },
     }
     if mtu is not None:

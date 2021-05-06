@@ -76,7 +76,7 @@ class Bond(object):
         if mac:
             iface_state[Interface.MAC] = mac
         bond_state = iface_state[BondSchema.CONFIG_SUBTREE] = {}
-        bond_state[BondSchema.SLAVES] = sorted(self._attrs['nics'])
+        bond_state[BondSchema.PORT] = sorted(self._attrs['nics'])
 
         options = parse_bond_options(self._attrs.get('options'))
         if options:

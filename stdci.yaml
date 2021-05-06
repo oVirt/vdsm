@@ -37,7 +37,7 @@ stages:
                     jenkins_master: psi.redhat.com
         - linters:
             distributions:
-              - el8:
+              - el8stream:
                   runtime-requirements:
                     jenkins_master: all
         - tests-py3:

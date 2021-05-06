@@ -1333,7 +1333,7 @@ class TestMtu(object):
             nmstate.Interface.STATE: nmstate.InterfaceState.UP,
             nmstate.BondSchema.CONFIG_SUBTREE: {
                 nmstate.BondSchema.MODE: 'balance-rr',
-                nmstate.BondSchema.SLAVES: slaves,
+                nmstate.BondSchema.PORT: slaves,
             },
         }
         if vlanned:
