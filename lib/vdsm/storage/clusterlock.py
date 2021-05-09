@@ -36,6 +36,7 @@ from vdsm import utils
 from vdsm.common import concurrent
 from vdsm.common import errors
 from vdsm.common import osutils
+from vdsm.common.panic import panic
 from vdsm.config import config
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -272,6 +273,11 @@ class SANLock(object):
     # connection.
     _process_fd = None
 
+    # When starting a process, lease count is always 0, since all process
+    # leases are released when process terminates. This counter is increased
+    # when a lease is acquired, and decreased when a lease is released.
+    _lease_count = 0
+
     def __init__(self, sdUUID, idsPath, lease, *args, **kwargs):
         """
         Note: lease and args are unused, needed by legacy locks.
@@ -503,10 +509,21 @@ class SANLock(object):
                             self._sdUUID, e.errno,
                             "Cannot acquire %s" % (lease,), str(e))
 
+                    # If we hold leases, we just lost them, since sanlock is
+                    # releasing all process leases when the process fd is
+                    # closed. The only way to recover is to panic; child
+                    # processes run by vdsm will be killed, and vdsm will lose
+                    # the SPM role.
+                    if SANLock._lease_count > 0:
+                        panic("Sanlock process fd was closed while "
+                              "holding {} leases: {}"
+                              .format(SANLock._lease_count, e))
+
                     self.log.warning("Sanlock process fd was closed: %s", e)
                     SANLock._process_fd = None
                     continue
 
+                SANLock._lease_count += 1
                 break
 
         self.log.info("Successfully acquired %s for host id %s", lease, hostId)
@@ -592,7 +609,15 @@ class SANLock(object):
                     [(lease.path, lease.offset)],
                     slkfd=SANLock._process_fd)
             except sanlock.SanlockException as e:
+                # See acquire() on why we must panic.
+                if SANLock._lease_count > 0 and e.errno == errno.EPIPE:
+                    panic("Sanlock process fd was closed while "
+                          "holding {} leases: {}"
+                          .format(SANLock._lease_count, e))
+
                 raise se.ReleaseLockFailure(self._sdUUID, e)
+
+            SANLock._lease_count -= 1
 
         self.log.info("Successfully released %s", lease)
 

@@ -39,10 +39,23 @@ HOST_ID = 1
 LEASE = clusterlock.Lease("SDM", "leases", MiB)
 
 
+class FakePanic(Exception):
+    pass
+
+
 @pytest.fixture
 def lock(monkeypatch):
     # Reset class attributes to keep tests isolated.
     monkeypatch.setattr(clusterlock.SANLock, "_process_fd", None)
+    monkeypatch.setattr(clusterlock.SANLock, "_lease_count", 0)
+
+    # Monkeypatch clusterlock.panic() to allow testing panic without killing
+    # the tests process.
+
+    def fake_panic(msg):
+        raise FakePanic(msg)
+
+    monkeypatch.setattr(clusterlock, "panic", fake_panic)
 
     # Create new sanlock instance.
     sanlock = clusterlock.SANLock(LS_NAME.decode("utf-8"), LS_PATH, LEASE)
@@ -92,12 +105,103 @@ def test_acquire_lvb(fake_sanlock, lock):
     assert res["lvb"]
 
 
+def test_acquire_process_fd_closed_recover(fake_sanlock, lock):
+    lock.acquireHostId(HOST_ID, wait=True)
+
+    # Acquire and release first lease to register socket with sanlock.
+    lease1 = clusterlock.Lease("lease-1", "/leases", 100 * MiB)
+    fake_sanlock.write_resource(
+        LS_NAME, lease1.name.encode("utf-8"), [(lease1.path, lease1.offset)])
+    lock.acquire(HOST_ID, lease1)
+    lock.release(lease1)
+
+    old_socket = fake_sanlock.process_socket
+
+    # Simulate process fd closed on sanlock daemon side. Since we don't hold
+    # any lease, we don't care about this.
+    fake_sanlock.process_socket.close()
+
+    lease2 = clusterlock.Lease("lease-2", "/leases", 101 * MiB)
+    fake_sanlock.write_resource(
+        LS_NAME, lease2.name.encode("utf-8"), [(lease2.path, lease2.offset)])
+
+    # Since we have no leases, recover from the failure by registering new
+    # socket with sanlock and retrying the acquire() call.
+    lock.acquire(HOST_ID, lease2)
+
+    assert fake_sanlock.process_socket != old_socket
+
+    res = fake_sanlock.resources[(lease2.path, lease2.offset)]
+    assert res["acquired"]
+    assert not res["lvb"]
+
+
+def test_acquire_process_fd_closed_panic(fake_sanlock, lock):
+    lock.acquireHostId(HOST_ID, wait=True)
+
+    # Acquire the first lease.
+    lease1 = clusterlock.Lease("lease-1", "/leases", 100 * MiB)
+    fake_sanlock.write_resource(
+        LS_NAME, lease1.name.encode("utf-8"), [(lease1.path, lease1.offset)])
+    lock.acquire(HOST_ID, LEASE)
+
+    # Simulate process fd closed on sanlock daemon side. The lease was released
+    # behind our back.
+    fake_sanlock.process_socket.close()
+    old_socket = fake_sanlock.process_socket
+
+    lease2 = clusterlock.Lease("lease-2", "/leases", 101 * MiB)
+    fake_sanlock.write_resource(
+        LS_NAME, lease2.name.encode("utf-8"), [(lease2.path, lease2.offset)])
+
+    # Since we have a lease, panic!
+    with pytest.raises(FakePanic):
+        lock.acquire(HOST_ID, lease2)
+
+    assert old_socket == fake_sanlock.process_socket
+
+
 def test_release(fake_sanlock, lock):
     lock.acquireHostId(HOST_ID, wait=True)
     lock.acquire(HOST_ID, LEASE)
     lock.release(LEASE)
     res = fake_sanlock.read_resource(LEASE.path, LEASE.offset)
     assert not res["acquired"]
+
+
+def test_release_process_fd_closed_raise(fake_sanlock, lock):
+    lock.acquireHostId(HOST_ID, wait=True)
+
+    # Acquire and release first lease to register socket with sanlock.
+    lock.acquire(HOST_ID, LEASE)
+    lock.release(LEASE)
+
+    # Simulate process fd closed on sanlock daemon side.
+    fake_sanlock.process_socket.close()
+    old_socket = fake_sanlock.process_socket
+
+    # Since we have no leases, recover from the failure by raising.
+    with pytest.raises(se.ReleaseLockFailure):
+        lock.release(LEASE)
+
+    # In release there is no need to reopen the socket.
+    assert old_socket == fake_sanlock.process_socket
+
+
+def test_release_process_fd_closed_panic(fake_sanlock, lock):
+    lock.acquireHostId(HOST_ID, wait=True)
+    lock.acquire(HOST_ID, LEASE)
+
+    # Simulate process fd closed on sanlock daemon side.
+    fake_sanlock.process_socket.close()
+    old_socket = fake_sanlock.process_socket
+
+    # Since we have a lease, panic!
+    with pytest.raises(FakePanic):
+        lock.release(LEASE)
+
+    # In release there is no need to reopen the socket.
+    assert old_socket == fake_sanlock.process_socket
 
 
 def test_acquire_wait_until_host_id_is_acquired(fake_sanlock, lock):
