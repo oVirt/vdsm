@@ -45,7 +45,6 @@ from testlib import namedTemporaryDir
 from testlib import temporaryPath
 
 from . marks import (
-    requires_bitmaps_merge_support,
     requires_bitmaps_support,
     requires_root,
     xfail_requires_target_is_zero,
@@ -1680,7 +1679,7 @@ class TestBitmaps:
             },
         ]
 
-    @requires_bitmaps_merge_support
+    @requires_bitmaps_support
     def test_merge_bitmaps(self, tmp_mount):
         virtual_size = MiB
         base_bitmap = 'base_bitmap'
