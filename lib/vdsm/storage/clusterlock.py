@@ -262,6 +262,11 @@ class SANLock(object):
     log = logging.getLogger("storage.SANLock")
 
     _io_timeout = config.getint('sanlock', 'io_timeout')
+
+    # Global per process socket connected to sanlock. This socket is used by
+    # sanlock to detect process termination. Both acquire() and release() use
+    # this socket to communicate with sanlock, instead of opening a new
+    # connection. Any access to this fd must be serialized by the fd lock.
     _sanlock_fd = None
     _sanlock_lock = threading.Lock()
 
@@ -571,7 +576,7 @@ class SANLock(object):
 
     def release(self, lease):
         self.log.info("Releasing %s", lease)
-        with self._lock:
+        with self._lock, SANLock._sanlock_lock:
             resource_name = lease.name.encode("utf-8")
             try:
                 sanlock.release(self._lockspace_name, resource_name,
