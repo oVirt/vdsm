@@ -294,10 +294,27 @@ def test_read_resource_wrong_sector(disk_sector, sanlock_sector):
     assert e.value.errno == errno.EINVAL
 
 
-# Connecting to the sanlock daemon
+# Registering with the sanlock daemon
 def test_register():
     fs = FakeSanlock()
-    assert fs.register() == 42
+    fd = fs.register()
+    assert fd == fs.process_socket.fileno()
+
+
+def test_register_twice():
+    fs = FakeSanlock()
+    fs.register()
+    with pytest.raises(AssertionError):
+        fs.register()
+
+
+def test_register_after_close():
+    fs = FakeSanlock()
+    fs.register()
+    old_socket = fs.process_socket
+    fs.process_socket.close()
+    fs.register()
+    assert fs.process_socket != old_socket
 
 
 # Acquiring and releasing resources
@@ -312,6 +329,26 @@ def test_acquire():
     assert res["acquired"]
     assert fs.spaces[LOCKSPACE_NAME]["host_id"] == res["host_id"]
     assert fs.hosts[1]["generation"] == res["generation"]
+
+
+def test_acquire_slkfd_closed():
+    fs = FakeSanlock()
+    fd = fs.register()
+    # Simulate slkfd closed by sanlock daemon.
+    fs.process_socket.close()
+    with pytest.raises(fs.SanlockException) as e:
+        fs.acquire(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
+    assert e.value.errno == errno.EPIPE
+
+
+def test_release_slkfd_closed():
+    fs = FakeSanlock()
+    fd = fs.register()
+    # Simulate slkfd closed by sanlock daemon.
+    fs.process_socket.close()
+    with pytest.raises(fs.SanlockException) as e:
+        fs.release(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)], slkfd=fd)
+    assert e.value.errno == errno.EPIPE
 
 
 def test_acquire_no_lockspace():

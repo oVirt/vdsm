@@ -22,6 +22,8 @@ from __future__ import absolute_import
 from __future__ import division
 
 import errno
+import os
+import socket
 import threading
 
 from operator import itemgetter
@@ -76,6 +78,7 @@ class FakeSanlock(object):
         # As fake sanlock keeps everything only in memory, this mimics
         # sector size of underlying storage.
         self.sector_size = sector_size
+        self.process_socket = None
 
     def check_align_and_sector(
             self, align, sector, resource=None, check_sector=True):
@@ -289,7 +292,13 @@ class FakeSanlock(object):
         """
         Register to sanlock daemon and return the connection fd.
         """
-        return 42
+        # This check is not done by real sanlock, but it is important to detect
+        # wrong usage of the library.
+        assert (self.process_socket is None or
+                self.process_socket.fileno() == -1)
+
+        self.process_socket = socket.socket(socket.AF_UNIX)
+        return self.process_socket.fileno()
 
     def acquire(self, lockspace, resource, disks, slkfd=None, pid=None,
                 shared=False, version=None, lvb=False):
@@ -304,6 +313,17 @@ class FakeSanlock(object):
         # Validate lockspace and resource names are given as bytes.
         self._validate_bytes(lockspace)
         self._validate_bytes(resource)
+
+        # Validate slkfd.
+        if slkfd is not None:
+            if self.process_socket.fileno() == -1:
+                raise self.SanlockException(
+                    errno.EPIPE,
+                    "Sanlock resource not acquired",
+                    os.strerror(errno.EPIPE))
+
+            assert slkfd == self.process_socket.fileno()
+
         # Do we have a lockspace?
         try:
             ls = self.spaces[lockspace]
@@ -339,6 +359,17 @@ class FakeSanlock(object):
         # Validate lockspace and resource names are given as bytes.
         self._validate_bytes(lockspace)
         self._validate_bytes(resource)
+
+        # Validate slkfd.
+        if slkfd is not None:
+            if self.process_socket.fileno() == -1:
+                raise self.SanlockException(
+                    errno.EPIPE,
+                    "Sanlock resource not released",
+                    os.strerror(errno.EPIPE))
+
+            assert slkfd == self.process_socket.fileno()
+
         # Do we have a lockspace?
         try:
             self.spaces[lockspace]

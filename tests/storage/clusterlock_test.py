@@ -40,7 +40,11 @@ LEASE = clusterlock.Lease("SDM", "leases", MiB)
 
 
 @pytest.fixture
-def lock():
+def lock(monkeypatch):
+    # Reset class attributes to keep tests isolated.
+    monkeypatch.setattr(clusterlock.SANLock, "_process_fd", None)
+
+    # Create new sanlock instance.
     sanlock = clusterlock.SANLock(LS_NAME.decode("utf-8"), LS_PATH, LEASE)
     sanlock.initLock(LEASE)
     return sanlock
