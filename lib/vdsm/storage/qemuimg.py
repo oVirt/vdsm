@@ -512,7 +512,7 @@ def bitmaps_supported():
     # Example output:
     # qemu-img version 4.2.0 (qemu-kvm-4.2.0-29.el8.6)
     # Copyright (c) 2003-2019 Fabrice Bellard and the QEMU Project developers
-    match = re.search(r"^qemu-img version (\d)\.(\d)\.(\d) ", out)
+    match = re.search(r"^qemu-img version (\d+)\.(\d+)\.(\d+) ", out)
     if not match:
         _log.warning("Unexpected output for qemu-img --version: %s", out)
         return False
