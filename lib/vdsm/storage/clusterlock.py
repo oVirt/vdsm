@@ -484,6 +484,9 @@ class SANLock(object):
                             self._sdUUID, e.errno,
                             "Cannot register to sanlock", str(e))
 
+                    self.log.info("Using sanlock process fd %d",
+                                  SANLock._process_fd)
+
                 # TODO: remove once sanlock 3.8.3 is available on centos.
                 extra_args = {"lvb": lvb} if supports_lvb else {}
 
@@ -500,6 +503,7 @@ class SANLock(object):
                             self._sdUUID, e.errno,
                             "Cannot acquire %s" % (lease,), str(e))
 
+                    self.log.warning("Sanlock process fd was closed: %s", e)
                     SANLock._process_fd = None
                     continue
 
