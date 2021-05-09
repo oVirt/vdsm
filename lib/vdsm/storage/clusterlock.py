@@ -482,21 +482,22 @@ class SANLock(object):
                             self._sdUUID, e.errno,
                             "Cannot register to sanlock", str(e))
 
-                resource_name = lease.name.encode("utf-8")
-                try:
-                    # TODO: remove once sanlock 3.8.2-4 is available on centos
-                    # and rhel.
-                    extra_args = {"lvb": lvb} if supports_lvb else {}
+                # TODO: remove once sanlock 3.8.3 is available on centos.
+                extra_args = {"lvb": lvb} if supports_lvb else {}
 
-                    sanlock.acquire(self._lockspace_name, resource_name,
-                                    [(lease.path, lease.offset)],
-                                    slkfd=SANLock._sanlock_fd,
-                                    **extra_args)
+                try:
+                    sanlock.acquire(
+                        self._lockspace_name,
+                        lease.name.encode("utf-8"),
+                        [(lease.path, lease.offset)],
+                        slkfd=SANLock._sanlock_fd,
+                        **extra_args)
                 except sanlock.SanlockException as e:
                     if e.errno != errno.EPIPE:
                         raise se.AcquireLockFailure(
                             self._sdUUID, e.errno,
                             "Cannot acquire %s" % (lease,), str(e))
+
                     SANLock._sanlock_fd = None
                     continue
 
@@ -576,12 +577,14 @@ class SANLock(object):
 
     def release(self, lease):
         self.log.info("Releasing %s", lease)
+
         with self._lock, SANLock._sanlock_lock:
-            resource_name = lease.name.encode("utf-8")
             try:
-                sanlock.release(self._lockspace_name, resource_name,
-                                [(lease.path, lease.offset)],
-                                slkfd=SANLock._sanlock_fd)
+                sanlock.release(
+                    self._lockspace_name,
+                    lease.name.encode("utf-8"),
+                    [(lease.path, lease.offset)],
+                    slkfd=SANLock._sanlock_fd)
             except sanlock.SanlockException as e:
                 raise se.ReleaseLockFailure(self._sdUUID, e)
 
