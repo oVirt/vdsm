@@ -263,12 +263,14 @@ class SANLock(object):
 
     _io_timeout = config.getint('sanlock', 'io_timeout')
 
+    # Lock protecting sanlock process state.
+    _process_lock = threading.Lock()
+
     # Global per process socket connected to sanlock. This socket is used by
     # sanlock to detect process termination. Both acquire() and release() use
     # this socket to communicate with sanlock, instead of opening a new
-    # connection. Any access to this fd must be serialized by the fd lock.
-    _sanlock_fd = None
-    _sanlock_lock = threading.Lock()
+    # connection.
+    _process_fd = None
 
     def __init__(self, sdUUID, idsPath, lease, *args, **kwargs):
         """
@@ -472,11 +474,11 @@ class SANLock(object):
                 "Timeout acquiring host id, cannot acquire %s (id=%s)"
                 % (lease, hostId))
 
-        with self._lock, SANLock._sanlock_lock:
+        with self._lock, SANLock._process_lock:
             while True:
-                if SANLock._sanlock_fd is None:
+                if SANLock._process_fd is None:
                     try:
-                        SANLock._sanlock_fd = sanlock.register()
+                        SANLock._process_fd = sanlock.register()
                     except sanlock.SanlockException as e:
                         raise se.AcquireLockFailure(
                             self._sdUUID, e.errno,
@@ -490,7 +492,7 @@ class SANLock(object):
                         self._lockspace_name,
                         lease.name.encode("utf-8"),
                         [(lease.path, lease.offset)],
-                        slkfd=SANLock._sanlock_fd,
+                        slkfd=SANLock._process_fd,
                         **extra_args)
                 except sanlock.SanlockException as e:
                     if e.errno != errno.EPIPE:
@@ -498,7 +500,7 @@ class SANLock(object):
                             self._sdUUID, e.errno,
                             "Cannot acquire %s" % (lease,), str(e))
 
-                    SANLock._sanlock_fd = None
+                    SANLock._process_fd = None
                     continue
 
                 break
@@ -578,13 +580,13 @@ class SANLock(object):
     def release(self, lease):
         self.log.info("Releasing %s", lease)
 
-        with self._lock, SANLock._sanlock_lock:
+        with self._lock, SANLock._process_lock:
             try:
                 sanlock.release(
                     self._lockspace_name,
                     lease.name.encode("utf-8"),
                     [(lease.path, lease.offset)],
-                    slkfd=SANLock._sanlock_fd)
+                    slkfd=SANLock._process_fd)
             except sanlock.SanlockException as e:
                 raise se.ReleaseLockFailure(self._sdUUID, e)
 
