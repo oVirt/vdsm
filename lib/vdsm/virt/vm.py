@@ -1318,7 +1318,7 @@ class Vm(object):
             self.log.warning(
                 "Unexpected state for drive %s: threshold_state SET",
                 drive.name)
-            return
+            return False
 
         try:
             capacity, alloc, physical = self.getExtendInfo(drive)
