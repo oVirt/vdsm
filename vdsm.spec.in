@@ -1202,18 +1202,16 @@ exit 0
 %{_mandir}/man1/vdsm-client.1*
 
 %files jsonrpc
-%{python_sitelib}/%{vdsm_name}/rpc/__init__.py*
-%{python_sitelib}/%{vdsm_name}/rpc/bindingjsonrpc.py*
-%{python_sitelib}/%{vdsm_name}/rpc/Bridge.py*
-%{python_sitelib}/yajsonrpc/__init__.py*
-%{python_sitelib}/yajsonrpc/jsonrpcclient.py*
-%if %{target_py} == py3
+%{python3_sitelib}/%{vdsm_name}/rpc/Bridge.py
+%{python3_sitelib}/%{vdsm_name}/rpc/__init__.py
+%{python3_sitelib}/%{vdsm_name}/rpc/__pycache__/Bridge.*.pyc
 %{python3_sitelib}/%{vdsm_name}/rpc/__pycache__/__init__.*.pyc
 %{python3_sitelib}/%{vdsm_name}/rpc/__pycache__/bindingjsonrpc.*.pyc
-%{python3_sitelib}/%{vdsm_name}/rpc/__pycache__/Bridge.*.pyc
+%{python3_sitelib}/%{vdsm_name}/rpc/bindingjsonrpc.py
+%{python3_sitelib}/yajsonrpc/__init__.py
 %{python3_sitelib}/yajsonrpc/__pycache__/__init__.*.pyc
 %{python3_sitelib}/yajsonrpc/__pycache__/jsonrpcclient.*.pyc
-%endif
+%{python3_sitelib}/yajsonrpc/jsonrpcclient.py
 
 %files api
 %doc lib/vdsm/api/vdsm-api.html
