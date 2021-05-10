@@ -88,10 +88,10 @@ Source0:        %{vdsm_name}-%{version}.tar.gz
 %{!?_licensedir:%global license %%doc}
 
 BuildRequires: openssl
-BuildRequires: %{python_or_python3}
-BuildRequires: %{python_or_python3}-six >= 1.9.0
-BuildRequires: %{python_or_python3}-dateutil
-BuildRequires: %{python2_or_python3}-devel
+BuildRequires: python3
+BuildRequires: python3-six >= 1.9.0
+BuildRequires: python3-dateutil
+BuildRequires: python3-devel
 BuildRequires: rpm-build
 BuildRequires: systemd-units
 
@@ -113,7 +113,7 @@ Requires: numactl
 %endif
 
 %ifarch x86_64
-Requires: %{python_or_python3}-dmidecode
+Requires: python3-dmidecode
 Requires: dmidecode
 Requires: virt-v2v
 %endif
@@ -128,8 +128,8 @@ Requires: ndctl
 Requires: swtpm-tools
 Requires: xz
 Requires: python3-rpm
-Requires: %{python_or_python3}-six >= 1.9.0
-Requires: %{python_or_python3}-requests
+Requires: python3-six >= 1.9.0
+Requires: python3-requests
 Requires: abrt-cli
 Requires: abrt-addon-vmcore
 Requires: abrt-addon-ccpp
@@ -188,7 +188,7 @@ Requires: device-mapper-multipath
 # augeas
 
 %if 0%{?rhel}
-Requires: %{python_or_python3}-augeas
+Requires: python3-augeas
 %endif
 
 # fence-agents
@@ -202,7 +202,7 @@ Requires: fence-agents-all >= 4.2.1-53
 %endif
 
 %if 0%{?fedora}
-Requires: %{python2_or_python3}-augeas
+Requires: python3-augeas
 %endif
 
 Requires: python3-policycoreutils
@@ -232,7 +232,7 @@ Requires: selinux-policy-targeted >= 3.13.1-166.el7_4.3
 # CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
 Requires: kernel >=  5.0.16-100
 Requires: e2fsprogs >= 1.41.14
-Requires: %{python_or_python3}-policycoreutils
+Requires: python3-policycoreutils
 Requires: sed >= 4.2.1-10
 Requires: ed
 Requires: selinux-policy-targeted >= 3.13-1
@@ -732,7 +732,6 @@ make
 %install
 make DESTDIR=%{buildroot} install
 
-%if %{target_py} == py3
 %py_byte_compile python3 %{buildroot}/%{_datadir}/%{vdsm_name}/sitecustomize.py
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_device_create/openstacknet_utils.py
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/openstacknet_utils.py
@@ -743,7 +742,6 @@ make DESTDIR=%{buildroot} install
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/openstacknet_utils.py
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/openstacknet_utils.py
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/vm_libvirt_hook.py
-%endif
 
 %pre
 # Force standard locale behavior (English)
@@ -884,10 +882,8 @@ exit 0
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
 %{_datadir}/%{vdsm_name}/daemonAdapter
-%{_datadir}/%{vdsm_name}/sitecustomize.py*
-%if %{target_py} == py3
+%{_datadir}/%{vdsm_name}/sitecustomize.py
 %{_datadir}/%{vdsm_name}/__pycache__/*
-%endif
 %{_datadir}/%{vdsm_name}/supervdsmd
 %{_datadir}/%{vdsm_name}/vdsmd
 
@@ -912,22 +908,16 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/managedvolume-helper
 %{_libexecdir}/%{vdsm_name}/vdsm-gencerts.sh
 %{_libexecdir}/%{vdsm_name}/vdsmd_init_common.sh
-%{_libexecdir}/%{vdsm_name}/vm_libvirt_hook.py*
+%{_libexecdir}/%{vdsm_name}/vm_libvirt_hook.py
 %{_libexecdir}/%{vdsm_name}/kvm2ovirt
 %{_libexecdir}/%{vdsm_name}/fallocate
 %{_libexecdir}/%{vdsm_name}/spmprotect.sh
 %{_libexecdir}/%{vdsm_name}/spmstop.sh
-%if %{target_py} == py3
 %{_libexecdir}/%{vdsm_name}/__pycache__/*
-%endif
 %dir %{_libexecdir}/%{vdsm_name}/hooks
 %dir %{_libexecdir}/%{vdsm_name}/hooks/*
-%if %{target_py} == py3 && ( ! 0%{?rhel} || 0%{?rhel} >= 8 )
 %{python3_sitelib}/dnf-plugins/*.py
 %{python3_sitelib}/dnf-plugins/__pycache__/*
-%else
-%exclude %{python_sitelib}/dnf-plugins
-%endif
 
 %{_libexecdir}/%{vdsm_name}/get-conf-item
 %{_udevrulesdir}/12-vdsm-lvm.rules
