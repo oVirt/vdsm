@@ -426,7 +426,7 @@ Requires:       nmstate >= 1.0
 Requires:       nmstate-plugin-ovsdb
 Requires:       libnl3
 Requires:       lldpad
-Requires:       %{python_or_python3}-six
+Requires:       python3-six
 Requires:       %{name}-common = %{version}-%{release}
 
 %description network
@@ -968,7 +968,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/common
 
 %files network
-%{python_sitelib}/%{vdsm_name}/network
+%{python3_sitelib}/%{vdsm_name}/network
 
 %files python
 %{_mandir}/man1/vdsm-tool.1*
