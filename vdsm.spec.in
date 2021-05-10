@@ -1191,14 +1191,12 @@ exit 0
 
 %files client
 %{_bindir}/vdsm-client
-%dir %{python_sitelib}/vdsmclient
-%{python_sitelib}/vdsmclient/__init__.py*
-%{python_sitelib}/vdsmclient/client.py*
-%{python_sitelib}/yajsonrpc/__init__.py*
-%if %{target_py} == py3
+%dir %{python3_sitelib}/vdsmclient
+%{python3_sitelib}/vdsmclient/__init__.py
 %{python3_sitelib}/vdsmclient/__pycache__/*
+%{python3_sitelib}/vdsmclient/client.py
+%{python3_sitelib}/yajsonrpc/__init__.py
 %{python3_sitelib}/yajsonrpc/__pycache__/__init__.*.pyc
-%endif
 %{_mandir}/man1/vdsm-client.1*
 
 %files jsonrpc
