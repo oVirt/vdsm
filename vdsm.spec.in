@@ -1139,10 +1139,8 @@ exit 0
 %files hook-checkips
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/10_checkips
 %{_libexecdir}/%{vdsm_name}/hooks/checkipsd
-%{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/checkips_utils.py*
-%if %{target_py} == py3
+%{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/checkips_utils.py
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/__pycache__/checkips_utils.*.pyc
-%endif
 %{_unitdir}/vdsm-checkips.service
 
 %files hook-extra-ipv4-addrs
