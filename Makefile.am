@@ -160,7 +160,6 @@ rpm: dist
 		--define="with_gluster_mgmt $(GLUSTER_MGMT)" \
 		--define="with_hooks $(HOOKS)" \
 		--define="with_vhostmd $(VHOSTMD)" \
-		--define="target_py py3" \
 		--define="vdsm_version $(PACKAGE_VERSION)" \
 		--define="vdsm_release $(PACKAGE_RELEASE)" \
 		$(DIST_ARCHIVES)

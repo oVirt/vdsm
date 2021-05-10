@@ -25,7 +25,6 @@ else
     cat >>$SPEC_FILE <<EOF
 %{!?vdsm_version: %global vdsm_version $VERSION}
 %{!?vdsm_release: %global vdsm_release $RELEASE}
-%{!?target_py: %global target_py py3}
 %global enable_autotools 1
 EOF
     cat $SPEC_FILE_IN >>$SPEC_FILE
