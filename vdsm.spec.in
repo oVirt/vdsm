@@ -1061,28 +1061,26 @@ exit 0
 %files hook-openstacknet
 %attr(440, root, root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_create/50_openstacknet
-%{_libexecdir}/%{vdsm_name}/hooks/after_device_create/openstacknet_utils.py*
-%{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/50_openstacknet
-%{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/openstacknet_utils.py*
-%{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug/50_openstacknet
-%{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug/openstacknet_utils.py*
-%{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/50_openstacknet
-%{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/openstacknet_utils.py*
-%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_openstacknet
-%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/openstacknet_utils.py*
-%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_openstacknet
-%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/openstacknet_utils.py*
-%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/50_openstacknet
-%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/openstacknet_utils.py*
-%if %{target_py} == py3
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_create/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/hooks/after_device_create/openstacknet_utils.py
+%{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/openstacknet_utils.py
+%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/openstacknet_utils.py
+%{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug/openstacknet_utils.py
+%{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/openstacknet_utils.py
+%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/openstacknet_utils.py
+%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/__pycache__/*
-%endif
+%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/openstacknet_utils.py
 
 %if %{with_vhostmd}
 %files hook-vhostmd
