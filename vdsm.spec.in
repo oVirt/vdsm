@@ -1231,18 +1231,16 @@ exit 0
 %endif
 
 %files yajsonrpc
-%{python_sitelib}/yajsonrpc/betterAsyncore.py*
-%{python_sitelib}/yajsonrpc/exception.py*
-%{python_sitelib}/yajsonrpc/stomp.py*
-%{python_sitelib}/yajsonrpc/stompclient.py*
-%{python_sitelib}/yajsonrpc/stompserver.py*
-%if %{target_py} == py3
 %{python3_sitelib}/yajsonrpc/__pycache__/betterAsyncore.*.pyc
 %{python3_sitelib}/yajsonrpc/__pycache__/exception.*.pyc
 %{python3_sitelib}/yajsonrpc/__pycache__/stomp.*.pyc
 %{python3_sitelib}/yajsonrpc/__pycache__/stompclient.*.pyc
 %{python3_sitelib}/yajsonrpc/__pycache__/stompserver.*.pyc
-%endif
+%{python3_sitelib}/yajsonrpc/betterAsyncore.py
+%{python3_sitelib}/yajsonrpc/exception.py
+%{python3_sitelib}/yajsonrpc/stomp.py
+%{python3_sitelib}/yajsonrpc/stompclient.py
+%{python3_sitelib}/yajsonrpc/stompserver.py
 
 %files hook-faqemu
 %license COPYING
