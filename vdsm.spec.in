@@ -43,19 +43,6 @@
 # Disable debuginfo package, since vdsm is a meta-package
 %global debug_package %{nil}
 
-%{!?target_py: %global target_py py3}
-
-%if %{target_py} == py2
-%global python2_or_python3 python2
-%global python_or_python3 python
-%global python_pyyaml PyYAML
-%else
-%global python2_or_python3 python3
-%global python_or_python3 python3
-%global python_pyyaml python3-pyyaml
-%endif
-
-%if %{target_py} == py3
 # RPM packaging guidelines require all files outside of '/usr/lib[64]/pythonX.X'
 # to be compiled manually [1]. Some distros try to find '*.py' files outside of the aforementioned
 # dirs and compile them for us, but using hard-coded '__python' macro, which points to Python 2.
@@ -63,9 +50,6 @@
 #
 # [1] https://docs.fedoraproject.org/en-US/packaging-guidelines/Python_Appendix/#manual-bytecompilation
 %global _python_bytecompile_extra 0
-
-%global python_sitelib %{python3_sitelib}
-%endif
 
 # Release must be generated dynamically and that can't be done here.
 # It must be either:
