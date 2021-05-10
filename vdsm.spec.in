@@ -437,7 +437,7 @@ Summary:        VDSM python libraries
 Requires:       %{name}-api = %{version}-%{release}
 BuildArch:      noarch
 # Fix compatibility with gluster shard, https://bugzilla.redhat.com/1820283
-Requires:       %{python2_or_python3}-ioprocess >= 1.4.1
+Requires:       python3-ioprocess >= 1.4.1
 Requires:       %{name}-common = %{version}-%{release}
 Requires:       %{name}-network = %{version}-%{release}
 
@@ -973,55 +973,9 @@ exit 0
 %files python
 %{_mandir}/man1/vdsm-tool.1*
 %{_bindir}/vdsm-tool
-%{python_sitelib}/%{vdsm_name}/alignmentScan.py*
-%{python_sitelib}/%{vdsm_name}/API.py*
-%{python_sitelib}/%{vdsm_name}/client.py*
-%{python_sitelib}/%{vdsm_name}/clientIF.py*
-%{python_sitelib}/%{vdsm_name}/hook/
-%{python_sitelib}/%{vdsm_name}/host/
-%{python_sitelib}/%{vdsm_name}/config.py*
-%{python_sitelib}/%{vdsm_name}/constants.py*
-%{python_sitelib}/%{vdsm_name}/cpuinfo.py*
-%{python_sitelib}/%{vdsm_name}/dmidecodeUtil.py*
-%{python_sitelib}/%{vdsm_name}/executor.py*
-# gluster.exception is used in many places like Bridge.py. So it is required
-# even without vdsm-gluster package
-%{python_sitelib}/%{vdsm_name}/gluster/__init__.py*
-%{python_sitelib}/%{vdsm_name}/gluster/cli.py*
-%{python_sitelib}/%{vdsm_name}/gluster/exception.py*
-%{python_sitelib}/%{vdsm_name}/health.py*
-%{python_sitelib}/%{vdsm_name}/hugepages.py*
-%{python_sitelib}/%{vdsm_name}/jobs.py*
-%{python_sitelib}/%{vdsm_name}/jsonrpcvdscli.py*
-%{python_sitelib}/%{vdsm_name}/kvm2ovirt.py*
-%{python_sitelib}/%{vdsm_name}/logUtils.py*
-%{python_sitelib}/%{vdsm_name}/machinetype.py*
-%{python_sitelib}/%{vdsm_name}/metrics/
-%{python_sitelib}/%{vdsm_name}/moduleloader.py*
-%{python_sitelib}/%{vdsm_name}/momIF.py*
-%{python_sitelib}/%{vdsm_name}/mkimage.py*
-%{python_sitelib}/%{vdsm_name}/numa.py*
-%{python_sitelib}/%{vdsm_name}/osinfo.py*
-%{python_sitelib}/%{vdsm_name}/ppc64HardwareInfo.py*
-%{python_sitelib}/%{vdsm_name}/protocoldetector.py*
-%{python_sitelib}/%{vdsm_name}/schedule.py*
-%{python_sitelib}/%{vdsm_name}/sslutils.py*
-%{python_sitelib}/%{vdsm_name}/supervdsm_server.py*
-%{python_sitelib}/%{vdsm_name}/taskset.py*
-%{python_sitelib}/%{vdsm_name}/throttledlog.py*
-%{python_sitelib}/%{vdsm_name}/utils.py*
-%{python_sitelib}/%{vdsm_name}/v2v.py*
-%{python_sitelib}/%{vdsm_name}/vdsmd.py*
-%{python_sitelib}/%{vdsm_name}/virtsparsify.py*
-%{python_sitelib}/%{vdsm_name}/virtsysprep.py*
-%{python_sitelib}/%{vdsm_name}/profiling/
-%{python_sitelib}/%{vdsm_name}/storage/
-%{python_sitelib}/%{vdsm_name}/supervdsm_api/
-%{python_sitelib}/%{vdsm_name}/tool/
-%{python_sitelib}/%{vdsm_name}/virt/
-%if %{target_py} == py3
-%{python3_sitelib}/%{vdsm_name}/__pycache__/alignmentScan.*.pyc
+%{python3_sitelib}/%{vdsm_name}/API.py
 %{python3_sitelib}/%{vdsm_name}/__pycache__/API.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/alignmentScan.*.pyc
 %{python3_sitelib}/%{vdsm_name}/__pycache__/client.*.pyc
 %{python3_sitelib}/%{vdsm_name}/__pycache__/clientIF.*.pyc
 %{python3_sitelib}/%{vdsm_name}/__pycache__/config.*.pyc
@@ -1036,9 +990,9 @@ exit 0
 %{python3_sitelib}/%{vdsm_name}/__pycache__/kvm2ovirt.*.pyc
 %{python3_sitelib}/%{vdsm_name}/__pycache__/logUtils.*.pyc
 %{python3_sitelib}/%{vdsm_name}/__pycache__/machinetype.*.pyc
+%{python3_sitelib}/%{vdsm_name}/__pycache__/mkimage.*.pyc
 %{python3_sitelib}/%{vdsm_name}/__pycache__/moduleloader.*.pyc
 %{python3_sitelib}/%{vdsm_name}/__pycache__/momIF.*.pyc
-%{python3_sitelib}/%{vdsm_name}/__pycache__/mkimage.*.pyc
 %{python3_sitelib}/%{vdsm_name}/__pycache__/numa.*.pyc
 %{python3_sitelib}/%{vdsm_name}/__pycache__/osinfo.*.pyc
 %{python3_sitelib}/%{vdsm_name}/__pycache__/ppc64HardwareInfo.*.pyc
@@ -1053,10 +1007,54 @@ exit 0
 %{python3_sitelib}/%{vdsm_name}/__pycache__/vdsmd.*.pyc
 %{python3_sitelib}/%{vdsm_name}/__pycache__/virtsparsify.*.pyc
 %{python3_sitelib}/%{vdsm_name}/__pycache__/virtsysprep.*.pyc
+%{python3_sitelib}/%{vdsm_name}/alignmentScan.py
+%{python3_sitelib}/%{vdsm_name}/client.py
+%{python3_sitelib}/%{vdsm_name}/clientIF.py
+%{python3_sitelib}/%{vdsm_name}/config.py
+%{python3_sitelib}/%{vdsm_name}/constants.py
+%{python3_sitelib}/%{vdsm_name}/cpuinfo.py
+%{python3_sitelib}/%{vdsm_name}/dmidecodeUtil.py
+%{python3_sitelib}/%{vdsm_name}/executor.py
+# gluster.exception is used in many places like Bridge.py. So it is required
+# even without vdsm-gluster package
+%{python3_sitelib}/%{vdsm_name}/gluster/__init__.py
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/__init__.*.pyc
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/cli.*.pyc
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/exception.*.pyc
-%endif
+%{python3_sitelib}/%{vdsm_name}/gluster/cli.py
+%{python3_sitelib}/%{vdsm_name}/gluster/exception.py
+%{python3_sitelib}/%{vdsm_name}/health.py
+%{python3_sitelib}/%{vdsm_name}/hook/
+%{python3_sitelib}/%{vdsm_name}/host/
+%{python3_sitelib}/%{vdsm_name}/hugepages.py
+%{python3_sitelib}/%{vdsm_name}/jobs.py
+%{python3_sitelib}/%{vdsm_name}/jsonrpcvdscli.py
+%{python3_sitelib}/%{vdsm_name}/kvm2ovirt.py
+%{python3_sitelib}/%{vdsm_name}/logUtils.py
+%{python3_sitelib}/%{vdsm_name}/machinetype.py
+%{python3_sitelib}/%{vdsm_name}/metrics/
+%{python3_sitelib}/%{vdsm_name}/mkimage.py
+%{python3_sitelib}/%{vdsm_name}/moduleloader.py
+%{python3_sitelib}/%{vdsm_name}/momIF.py
+%{python3_sitelib}/%{vdsm_name}/numa.py
+%{python3_sitelib}/%{vdsm_name}/osinfo.py
+%{python3_sitelib}/%{vdsm_name}/ppc64HardwareInfo.py
+%{python3_sitelib}/%{vdsm_name}/profiling/
+%{python3_sitelib}/%{vdsm_name}/protocoldetector.py
+%{python3_sitelib}/%{vdsm_name}/schedule.py
+%{python3_sitelib}/%{vdsm_name}/sslutils.py
+%{python3_sitelib}/%{vdsm_name}/storage/
+%{python3_sitelib}/%{vdsm_name}/supervdsm_api/
+%{python3_sitelib}/%{vdsm_name}/supervdsm_server.py
+%{python3_sitelib}/%{vdsm_name}/taskset.py
+%{python3_sitelib}/%{vdsm_name}/throttledlog.py
+%{python3_sitelib}/%{vdsm_name}/tool/
+%{python3_sitelib}/%{vdsm_name}/utils.py
+%{python3_sitelib}/%{vdsm_name}/v2v.py
+%{python3_sitelib}/%{vdsm_name}/vdsmd.py
+%{python3_sitelib}/%{vdsm_name}/virt/
+%{python3_sitelib}/%{vdsm_name}/virtsparsify.py
+%{python3_sitelib}/%{vdsm_name}/virtsysprep.py
 
 %files hook-openstacknet
 %attr(440, root, root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_openstacknet
