@@ -683,9 +683,9 @@ Requires: glusterfs-server >= %{gluster_version}
 Requires: glusterfs-api >= %{gluster_version}
 Requires: glusterfs-geo-replication >= %{gluster_version}
 Requires: glusterfs-events >= %{gluster_version}
-Requires: %{python_or_python3}-magic
-Requires: %{python_pyyaml}
-Requires: %{python_or_python3}-blivet
+Requires: python3-magic
+Requires: python3-pyyaml
+Requires: python3-blivet
 Requires: libblockdev-plugins-all
 Requires: xfsprogs
 %ifarch x86_64
@@ -1252,31 +1252,29 @@ exit 0
 %if %{with_gluster_mgmt}
 %files gluster
 %license COPYING
-%{python_sitelib}/%{vdsm_name}/gluster/api.py*
-%{python_sitelib}/%{vdsm_name}/gluster/apiwrapper.py*
-%{python_sitelib}/%{vdsm_name}/gluster/events.py*
-%{python_sitelib}/%{vdsm_name}/gluster/fstab.py*
-%{python_sitelib}/%{vdsm_name}/gluster/fence.py*
-%{python_sitelib}/%{vdsm_name}/gluster/gfapi.py*
-%{python_sitelib}/%{vdsm_name}/gluster/hooks.py*
-%{python_sitelib}/%{vdsm_name}/gluster/services.py*
-%{python_sitelib}/%{vdsm_name}/gluster/storagedev.py*
-%{python_sitelib}/%{vdsm_name}/gluster/tasks.py*
-%{python_sitelib}/%{vdsm_name}/gluster/thinstorage.py*
-%{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.pickle
-%if %{target_py} == py3
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/api.*.pyc
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/apiwrapper.*.pyc
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/events.*.pyc
-%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/fstab.*.pyc
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/fence.*.pyc
+%{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/fstab.*.pyc
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/gfapi.*.pyc
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/hooks.*.pyc
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/services.*.pyc
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/storagedev.*.pyc
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/tasks.*.pyc
 %{python3_sitelib}/%{vdsm_name}/gluster/__pycache__/thinstorage.*.pyc
-%endif
+%{python3_sitelib}/%{vdsm_name}/gluster/api.py
+%{python3_sitelib}/%{vdsm_name}/gluster/apiwrapper.py
+%{python3_sitelib}/%{vdsm_name}/gluster/events.py
+%{python3_sitelib}/%{vdsm_name}/gluster/fence.py
+%{python3_sitelib}/%{vdsm_name}/gluster/fstab.py
+%{python3_sitelib}/%{vdsm_name}/gluster/gfapi.py
+%{python3_sitelib}/%{vdsm_name}/gluster/hooks.py
+%{python3_sitelib}/%{vdsm_name}/gluster/services.py
+%{python3_sitelib}/%{vdsm_name}/gluster/storagedev.py
+%{python3_sitelib}/%{vdsm_name}/gluster/tasks.py
+%{python3_sitelib}/%{vdsm_name}/gluster/thinstorage.py
+%{python3_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.pickle
 %endif
 
 %changelog
