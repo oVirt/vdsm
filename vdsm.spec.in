@@ -367,7 +367,7 @@ Access vdsm API from the command line.
 %package api
 Summary:        VDSM API
 BuildArch:      noarch
-BuildRequires:  %{python_pyyaml}
+BuildRequires:  python3-pyyaml
 
 %description api
 Contains api schema files
@@ -1217,17 +1217,15 @@ exit 0
 
 %files api
 %doc lib/vdsm/api/vdsm-api.html
-%dir %{python_sitelib}/%{vdsm_name}
-%dir %{python_sitelib}/%{vdsm_name}/api
-%dir %{python_sitelib}/%{vdsm_name}/rpc
-%{python_sitelib}/%{vdsm_name}/api/*.py*
-%{python_sitelib}/%{vdsm_name}/rpc/vdsm-api.pickle
-%{python_sitelib}/%{vdsm_name}/rpc/vdsm-events.pickle
-%if %{target_py} == py3
+%dir %{python3_sitelib}/%{vdsm_name}
+%dir %{python3_sitelib}/%{vdsm_name}/api
+%dir %{python3_sitelib}/%{vdsm_name}/rpc
+%{python3_sitelib}/%{vdsm_name}/api/*.py
+%{python3_sitelib}/%{vdsm_name}/rpc/vdsm-api.pickle
+%{python3_sitelib}/%{vdsm_name}/rpc/vdsm-events.pickle
 %{python3_sitelib}/%{vdsm_name}/api/__pycache__/*
-%endif
 %if ! %{with_gluster_mgmt}
-%exclude %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.pickle
+%exclude %{python3_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.pickle
 %endif
 
 %files yajsonrpc
