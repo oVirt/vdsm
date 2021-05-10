@@ -397,14 +397,14 @@ BuildArch:      noarch
 Requires:       systemd
 Requires:       glibc
 Requires:       python3-dbus
-Requires:       %{python_or_python3}-dateutil
-Requires:       %{python_or_python3}-six >= 1.9.0
+Requires:       python3-dateutil
+Requires:       python3-six >= 1.9.0
 %if 0%{?rhel}
-Requires:       %{python_or_python3}-decorator
+Requires:       python3-decorator
 Requires:       python3-libvirt >= 3.2.0-3.el7_4.1
 %endif
 %if 0%{?fedora}
-Requires:       %{python2_or_python3}-decorator
+Requires:       python3-decorator
 Requires:       python3-libvirt >= 3.7.0
 %endif
 
@@ -961,11 +961,9 @@ exit 0
 
 
 %files common
-%{python_sitelib}/%{vdsm_name}/__init__.py*
-%if %{target_py} == py3
+%{python3_sitelib}/%{vdsm_name}/__init__.py
 %{python3_sitelib}/%{vdsm_name}/__pycache__/__init__.*.pyc
-%endif
-%{python_sitelib}/%{vdsm_name}/common
+%{python3_sitelib}/%{vdsm_name}/common
 
 %files network
 %{python3_sitelib}/%{vdsm_name}/network
