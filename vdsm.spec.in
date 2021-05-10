@@ -1184,10 +1184,8 @@ exit 0
 %endif
 
 %files http
-%{python_sitelib}/%{vdsm_name}/rpc/http.py*
-%if %{target_py} == py3
 %{python3_sitelib}/%{vdsm_name}/rpc/__pycache__/http.*.pyc
-%endif
+%{python3_sitelib}/%{vdsm_name}/rpc/http.py
 
 %files client
 %{_bindir}/vdsm-client
