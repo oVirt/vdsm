@@ -352,7 +352,6 @@ Requires: libselinux-python >= 2.5-2
 Requires: python3-libselinux
 %endif
 Requires: %{name}-python = %{version}-%{release}
-Requires: %{name}-hook-vmfex-dev = %{version}-%{release}
 Requires: libguestfs-tools-c
 
 Requires(post): /usr/sbin/saslpasswd2
@@ -384,6 +383,8 @@ Obsoletes: %{name}-hook-numa
 Obsoletes: %{name}-hook-pincpu
 Obsoletes: %{name}-hook-vmdisk
 Obsoletes: %{name}-hook-hostdev-scsi
+Obsoletes: %{name}-hook-vmfex-dev < 4.40.70
+
 
 %description
 The VDSM service is required by a Virtualization Manager to manage the
