@@ -136,12 +136,6 @@ networkmanager_DATA = \
 	./etc/NetworkManager/conf.d/vdsm.conf \
 	$(NULL)
 
-dracutdir = $(exec_prefix)/lib/dracut/dracut.conf.d
-
-dracut_DATA = \
-	./usr/lib/dracut/dracut.conf.d/99-vdsm_protect_ifcfg.conf \
-	$(NULL)
-
 nmdispatcherdir = $(sysconfdir)/NetworkManager/dispatcher.d
 dist_nmdispatcher_SCRIPTS = \
 	./etc/NetworkManager/dispatcher.d/dhcp_monitor.py \
@@ -186,7 +180,6 @@ EXTRA_DIST = \
 	$(modprobe_DATA) \
 	$(modulesload_DATA) \
 	$(networkmanager_DATA) \
-	$(dracut_DATA) \
 	$(sysctl_DATA) \
 	$(vdsmconfrotate_DATA) \
 	$(vdsm_DATA) \
