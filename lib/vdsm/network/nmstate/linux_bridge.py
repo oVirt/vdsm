@@ -32,6 +32,7 @@ from .schema import InterfaceState
 from .schema import InterfaceType
 from .schema import LinuxBridge
 from .schema import Vlan
+from .state import NetworkingState
 
 
 class LinuxBridgeNetwork(object):
@@ -289,7 +290,7 @@ class LinuxBridgeNetwork(object):
             nets, running_networks, interfaces_state, current_ifaces_state
         )
 
-        return interfaces_state, routes_state, dns_state
+        return NetworkingState(interfaces_state, routes_state, dns_state)
 
     @staticmethod
     def _merge_sb_ifaces(nets):

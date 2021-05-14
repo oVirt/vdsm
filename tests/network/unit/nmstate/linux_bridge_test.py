@@ -158,7 +158,7 @@ class TestBondedNetwork(object):
     def test_translate_empty_networks_and_bonds(self):
         state = nmstate.generate_state(networks={}, bondings={})
 
-        assert {nmstate.Interface.KEY: []} == state
+        assert {} == state
 
     @parametrize_bridged
     def test_translate_net_with_ip_on_bond(self, bridged):

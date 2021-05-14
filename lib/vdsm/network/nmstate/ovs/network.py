@@ -31,6 +31,7 @@ from ..schema import Interface
 from ..schema import InterfaceState
 from ..schema import InterfaceType
 from ..schema import OvsBridgeSchema
+from ..state import NetworkingState
 
 BRIDGE_PREFIX = 'vdsmbr_'
 
@@ -324,7 +325,9 @@ def generate_state(networks, running_networks, current_iface_state):
         if bridge in net_ifstates:
             _sort_ports_by_name(net_ifstates[bridge])
 
-    return net_ifstates, routes_state, dns_state, bridge_mappings
+    return NetworkingState(
+        net_ifstates, routes_state, dns_state, bridge_mappings
+    )
 
 
 def _enforce_network_mac_address(net, net_ifstates, current_iface_state):
