@@ -39,13 +39,6 @@ install_dependencies() {
 
     add_advanced_virt
 
-    # needed by network test suite
-    dnf install -y openvswitch
-
-    # TODO: remove after network/integration tests run in container
-    dnf install -y NetworkManager
-    dnf install -y nmstate
-
     # needed by virt test suite
     dnf update -y python3-libvirt
 }

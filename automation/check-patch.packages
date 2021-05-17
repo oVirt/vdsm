@@ -14,6 +14,8 @@ libguestfs-tools-c
 lshw
 lsof
 make
+nmstate
+nmstate-plugin-ovsdb
 ovirt-imageio-client
 python3-augeas
 python3-blivet
