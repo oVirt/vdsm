@@ -101,8 +101,7 @@ class ThreadPool:
         self.__isJoining = True
 
         # Tell all the threads to quit
-        self.__resizeLock.acquire()
-        try:
+        with self.__resizeLock:
             # Wait until all threads have exited
             if waitForThreads:
                 for t in self.__threads:
@@ -110,8 +109,6 @@ class ThreadPool:
                 for t in self.__threads:
                     t.join()
                 del self.__threads[:]
-        finally:
-            self.__resizeLock.release()
 
 
 class WorkerThread(object):
