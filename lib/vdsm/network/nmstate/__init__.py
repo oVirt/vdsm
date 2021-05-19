@@ -40,6 +40,7 @@ from .schema import LinuxBridge
 from .schema import OvsBridgeSchema
 from .schema import OvsDB
 from .schema import Route
+from .schema import RouteRule
 from .schema import Vlan
 
 
@@ -64,5 +65,6 @@ __all__ = [
     'OvsBridgeSchema',
     'OvsDB',
     'Route',
+    'RouteRule',
     'Vlan',
 ]

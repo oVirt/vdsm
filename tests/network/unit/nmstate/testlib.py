@@ -21,6 +21,7 @@
 import pytest
 
 from vdsm.network import nmstate
+from vdsm.network.nmstate import route
 from vdsm.network.nmstate.bridge_util import OVN_BRIDGE_MAPPINGS_KEY
 
 IPv4_FAMILY = 4
@@ -224,6 +225,11 @@ def get_routes_config(gateway, next_hop, ipv6gateway=None, state=None):
             _create_default_route(ipv6gateway, next_hop, IPv6_FAMILY, state)
         )
     return routes
+
+
+def create_source_routes_and_rules_state(next_hop, ip_addr, mask, gateway):
+    helper = route.SourceRouteHelper(next_hop, ip_addr, mask, gateway)
+    return helper.routes_state(), helper.rules_state()
 
 
 def _create_default_route(gateway, next_hop, family, state=None):

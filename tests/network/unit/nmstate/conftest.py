@@ -32,6 +32,7 @@ def current_state_mock():
             nmstate.Interface.KEY: [],
             nmstate.DNS.KEY: {},
             nmstate.Route.KEY: {},
+            nmstate.RouteRule.KEY: {},
         }
         yield state.return_value
 

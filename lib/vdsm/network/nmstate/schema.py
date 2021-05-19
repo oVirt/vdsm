@@ -29,6 +29,7 @@ from libnmstate.schema import LinuxBridge
 from libnmstate.schema import OVSBridge as OvsBridgeSchema
 from libnmstate.schema import OvsDB
 from libnmstate.schema import Route
+from libnmstate.schema import RouteRule
 from libnmstate.schema import VLAN as Vlan
 
 
@@ -45,5 +46,6 @@ __all__ = [
     'OvsBridgeSchema',
     'OvsDB',
     'Route',
+    'RouteRule',
     'Vlan',
 ]

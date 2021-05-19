@@ -30,6 +30,7 @@ from .schema import InterfaceState
 from .schema import InterfaceType
 from .schema import OvsDB
 from .schema import Route
+from .schema import RouteRule
 from .schema import Vlan
 
 
@@ -190,6 +191,7 @@ class CurrentState(object):
         self._interfaces_state = self._get_interfaces_state(state)
         self._dns_state = self._get_dns_state(state)
         self._routes_state = self._get_routes_state(state)
+        self._rules_state = self._get_rules_state(state)
 
     @property
     def interfaces_state(self):
@@ -202,6 +204,10 @@ class CurrentState(object):
     @property
     def routes_state(self):
         return self._routes_state
+
+    @property
+    def rules_state(self):
+        return self._rules_state
 
     def filtered_interfaces(self, filter=None):
         """
@@ -238,3 +244,7 @@ class CurrentState(object):
     @staticmethod
     def _get_routes_state(state):
         return state[Route.KEY].get(Route.RUNNING, {})
+
+    @staticmethod
+    def _get_rules_state(state):
+        return state[RouteRule.KEY].get(RouteRule.CONFIG, {})
