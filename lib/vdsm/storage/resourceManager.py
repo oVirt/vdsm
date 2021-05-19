@@ -693,9 +693,7 @@ class Owner(object):
         if timeout_ms is not None:
             timeout = timeout_ms / 1000.0
 
-        self.lock.acquire()
-        try:
-
+        with self.lock:
             try:
                 if full_name in self.resources:
                     raise ResourceAlreadyAcquired(
@@ -735,22 +733,16 @@ class Owner(object):
                 return False
 
             return True
-        finally:
-            self.lock.release()
 
     def releaseAll(self):
         self.log.debug("Owner.releaseAll resources %s", self.resources)
-        self.lock.acquire()
-        try:
+        with self.lock:
             for res in list(self.resources.values()):
                 self._release(res.namespace, res.name)
-        finally:
-            self.lock.release()
 
     def _release(self, namespace, name):
         full_name = "%s.%s" % (namespace, name)
-        self.lock.acquire()
-        try:
+        with self.lock:
             if full_name not in self.resources:
                 raise ValueError("resource %s not owned by %s" %
                                  (full_name, self))
@@ -765,9 +757,6 @@ class Owner(object):
             resource.release()
 
             del self.resources[resource.full_name]
-
-        finally:
-            self.lock.release()
 
         if hasattr(self.ownerobject, "resourceReleased"):
             self.ownerobject.resourceReleased(resource.namespace,
