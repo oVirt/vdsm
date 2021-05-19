@@ -65,6 +65,9 @@ class FakeSanlock(object):
                   sc.ALIGNMENT_8M)
     SECTOR_SIZE = (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K)
 
+    RES_LVER = 1
+    RES_SHARED = 4
+
     class SanlockException(Exception):
         @property
         def errno(self):
@@ -388,6 +391,40 @@ class FakeSanlock(object):
         res["host_id"] = 0
         res["generation"] = 0
         res["lvb"] = False
+
+    def inquire(self, slkfd=-1, pid=-1):
+        # Matches sanlock.c error.
+        if slkfd == -1 and pid == -1:
+            raise self.SanlockException(
+                errno.EINVAL,
+                "Invalid slkfd and pid values",
+                os.strerror(errno.EINVAL))
+
+        # Validate slkfd.
+        if slkfd != -1:
+            if self.process_socket.fileno() == -1:
+                raise self.SanlockException(
+                    errno.EPIPE,
+                    "Inquire error",
+                    os.strerror(errno.EPIPE))
+
+            assert slkfd == self.process_socket.fileno()
+
+        result = []
+
+        for disk, res in self.resources.items():
+            if res["acquired"]:
+                info = {
+                    "lockspace": res["lockspace"],
+                    "resource": res["resource"],
+                    # We use only exclusive resources.
+                    "flags": self.RES_LVER,
+                    "version": res["version"],
+                    "disks": [disk],
+                }
+                result.append(info)
+
+        return result
 
     def read_resource_owners(
             self, lockspace, resource, disks, align=ALIGN_SIZE[0],

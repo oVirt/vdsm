@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import errno
+import os
 
 import pytest
 
@@ -416,6 +417,96 @@ def test_release_no_lockspace():
     with pytest.raises(fs.SanlockException) as e:
         fs.release(LOCKSPACE_NAME, RESOURCE_NAME, [("path", MiB)])
     assert e.value.errno == errno.ENOSPC
+
+
+def test_inquire_no_argument():
+    fs = FakeSanlock()
+    with pytest.raises(fs.SanlockException):
+        # Either slkfd= or pid= must be specified.
+        fs.inquire()
+
+
+def test_inquire_invalid_arguments():
+    fs = FakeSanlock()
+    with pytest.raises(fs.SanlockException):
+        # Either slkfd= or pid= must be valid.
+        fs.inquire(slkfd=-1, pid=-1)
+
+
+def test_inquire_no_lockspace():
+    fs = FakeSanlock()
+    fd = fs.register()
+    assert fs.inquire(slkfd=fd) == []
+    assert fs.inquire(pid=os.getpid()) == []
+
+
+def test_inquire_no_resources():
+    fs = FakeSanlock()
+    fs.write_lockspace(LOCKSPACE_NAME, "path")
+    fs.add_lockspace(LOCKSPACE_NAME, 1, "path")
+    fd = fs.register()
+    assert fs.inquire(slkfd=fd) == []
+    assert fs.inquire(pid=os.getpid()) == []
+
+
+def test_inquire_some_resources():
+    fs = FakeSanlock()
+
+    # Write some lockspaces.
+    fs.write_lockspace(b"s1", "path1")
+    fs.write_lockspace(b"s2", "path2")
+    fs.write_lockspace(b"s3", "path3")
+    fs.write_lockspace(b"s4", "path4")
+
+    # Add some lockspaces.
+    fs.add_lockspace(b"s1", 1, "path1")
+    fs.add_lockspace(b"s2", 1, "path2")
+    fs.add_lockspace(b"s3", 1, "path3")
+    fs.add_lockspace(b"s4", 1, "path4")
+
+    # Create some resources.
+    fs.write_resource(b"s1", b"r1", [("path1", 1 * MiB)])
+    fs.write_resource(b"s2", b"r2", [("path2", 2 * MiB)])
+    fs.write_resource(b"s3", b"r3", [("path3", 3 * MiB)])
+    fs.write_resource(b"s4", b"r4", [("path4", 4 * MiB)])
+
+    fd = fs.register()
+
+    # Acquire some resources.
+    fs.acquire(b"s1", b"r1", [("path1", 1 * MiB)], slkfd=fd)
+    fs.acquire(b"s3", b"r3", [("path3", 3 * MiB)], slkfd=fd)
+
+    # Only acquired resources should be reported.
+    expected = [
+        {
+            "lockspace": b"s1",
+            "resource": b"r1",
+            "flags": fs.RES_LVER,
+            "version": 0,
+            "disks": [("path1", 1 * MiB)]
+        },
+        {
+            "lockspace": b"s3",
+            "resource": b"r3",
+            "flags": fs.RES_LVER,
+            "version": 0,
+            "disks": [("path3", 3 * MiB)]
+        },
+    ]
+
+    # We can query using slkfd= or pid=.
+    assert fs.inquire(slkfd=fd) == expected
+    assert fs.inquire(pid=os.getpid()) == expected
+
+
+def test_inquire_slkfd_closed():
+    fs = FakeSanlock()
+    fd = fs.register()
+    # Simulate slkfd closed by sanlock daemon.
+    fs.process_socket.close()
+    with pytest.raises(fs.SanlockException) as e:
+        fs.inquire(slkfd=fd)
+    assert e.value.errno == errno.EPIPE
 
 
 def test_read_resource_owners_lockspace_not_initialized():
