@@ -307,8 +307,8 @@ class StoragePool(object):
 
             try:
                 oldlver, oldid = self._backend.getSpmStatus()
-            except se.InquireNotSupportedError:
-                self.log.info("cluster lock inquire isn't supported. "
+            except se.InspectNotSupportedError:
+                self.log.info("cluster lock inspect isn't supported. "
                               "proceeding with startSpm()")
                 oldlver = LVER_INVALID
             else:

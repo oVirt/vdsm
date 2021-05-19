@@ -218,8 +218,8 @@ class SafeLease(object):
                 raise se.AcquireLockFailure(self._sdUUID, rc, out, err)
             self.log.debug("Clustered lock acquired successfully")
 
-    def inquire(self, lease):
-        raise se.InquireNotSupportedError()
+    def inspect(self, lease):
+        raise se.InspectNotSupportedError()
 
     def getLockUtilFullPath(self):
         return os.path.join(self.lockUtilPath, self.lockCmd)
@@ -528,7 +528,7 @@ class SANLock(object):
 
         self.log.info("Successfully acquired %s for host id %s", lease, hostId)
 
-    def inquire(self, lease):
+    def inspect(self, lease):
         resource = sanlock.read_resource(
             lease.path,
             lease.offset,
@@ -563,7 +563,7 @@ class SANLock(object):
             if e.errno == errno.ENOENT:
                 # add_lockspace has not been completed yet,
                 # the inquiry has to be retried.
-                raise TemporaryFailure("inquire", lease, str(e))
+                raise TemporaryFailure("inspect", lease, str(e))
             elif e.errno == errno.EAGAIN:
                 # The host status is not available yet.
                 # Normally, we'd raise it to the caller, but this
@@ -783,9 +783,9 @@ class LocalLock(object):
         self.log.debug("Local lock for domain %s successfully acquired "
                        "(id: %s)", self._sdUUID, hostId)
 
-    def inquire(self, lease):
+    def inspect(self, lease):
         if lease != self._lease:
-            raise MultipleLeasesNotSupported("inquire", lease)
+            raise MultipleLeasesNotSupported("inspect", lease)
         with self._globalLockMapSync:
             hostId, lockFile = self._getLease()
             return self.LVER, (hostId if lockFile else None)

@@ -195,7 +195,7 @@ class VolumeManifest(object):
         # always report the version. The clusterlock should be fixed to match
         # the schema.
         try:
-            version, host_id = sd_manifest.inquireVolumeLease(self.imgUUID,
+            version, host_id = sd_manifest.inspectVolumeLease(self.imgUUID,
                                                               self.volUUID)
         except clusterlock.InvalidLeaseName as e:
             self.log.warning("Cannot get lease status: %s", e)

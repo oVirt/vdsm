@@ -412,7 +412,7 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
     def getSpmStatus(self):
         # FIXME: unify with StoragePoolDiskBackend
         try:
-            lVer, spmId = self.masterDomain.inquireClusterLock()
+            lVer, spmId = self.masterDomain.inspectClusterLock()
         except clusterlock.TemporaryFailure as e:
             raise exception.expected(e)
         return lVer or LVER_INVALID, spmId or SPM_ID_FREE

@@ -658,8 +658,8 @@ class HSM(object):
             # This happens when we cannot read the MD LV
             self.log.error("Can't read LV based metadata", exc_info=True)
             raise se.StorageDomainMasterError("Can't read LV based metadata")
-        except se.InquireNotSupportedError:
-            self.log.error("Inquire spm status isn't supported by "
+        except se.InspectNotSupportedError:
+            self.log.error("Inspect spm status isn't supported by "
                            "the current cluster lock")
             raise
         except se.StorageException as e:

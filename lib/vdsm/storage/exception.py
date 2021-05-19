@@ -1746,9 +1746,9 @@ class ClusterLockInitError(StorageException):
     msg = "Could not initialize cluster lock"
 
 
-class InquireNotSupportedError(StorageException):
+class InspectNotSupportedError(StorageException):
     code = 702
-    msg = "Cluster lock inquire isnt supported"
+    msg = "Cluster lock inspect isnt supported"
 
 
 class SanlockLVBError(StorageException):

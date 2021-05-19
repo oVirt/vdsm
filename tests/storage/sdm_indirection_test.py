@@ -162,7 +162,7 @@ class FakeDomainManifest(object):
         pass
 
     @recorded
-    def inquireDomainLock(self):
+    def inspectDomainLock(self):
         pass
 
     @recorded
@@ -694,7 +694,7 @@ class DomainTestMixin(object):
         ['getClusterLease', 'getDomainLease', 0],
         ['acquireClusterLock', 'acquireDomainLock', 1],
         ['releaseClusterLock', 'releaseDomainLock', 0],
-        ['inquireClusterLock', 'inquireDomainLock', 0],
+        ['inspectClusterLock', 'inspectDomainLock', 0],
         ['_makeClusterLock', '_makeDomainLock', 1],
     ])
     def test_clusterlock(self, dom_method, manifest_method, nr_args):

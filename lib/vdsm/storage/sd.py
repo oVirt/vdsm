@@ -551,9 +551,9 @@ class StorageDomainManifest(object):
         lease = self.getVolumeLease(imgUUID, volUUID)
         self._domainLock.release(lease)
 
-    def inquireVolumeLease(self, imgUUID, volUUID):
+    def inspectVolumeLease(self, imgUUID, volUUID):
         lease = self.getVolumeLease(imgUUID, volUUID)
-        return self._domainLock.inquire(lease)
+        return self._domainLock.inspect(lease)
 
     def getDomainLease(self):
         """
@@ -595,8 +595,8 @@ class StorageDomainManifest(object):
         finally:
             self.releaseHostId(host_id)
 
-    def inquireDomainLock(self):
-        return self._domainLock.inquire(self.getDomainLease())
+    def inspectDomainLock(self):
+        return self._domainLock.inspect(self.getDomainLease())
 
     def _makeDomainLock(self, domVersion=None):
         if not domVersion:
@@ -803,9 +803,9 @@ class StorageDomainManifest(object):
             lease_info.offset)
 
         # Failing here will raise an exception, this expected as we cannot
-        # tell anything about the status of the lease if we couldn't inquire
+        # tell anything about the status of the lease if we couldn't inspect
         # it.
-        res_version, owner_host_id = self._domainLock.inquire(lease)
+        res_version, owner_host_id = self._domainLock.inspect(lease)
         lvb = None
 
         # We only care about reading lvb on released leases, as lvb is written
@@ -1251,8 +1251,8 @@ class StorageDomain(object):
     def releaseClusterLock(self):
         self._manifest.releaseDomainLock()
 
-    def inquireClusterLock(self):
-        return self._manifest.inquireDomainLock()
+    def inspectClusterLock(self):
+        return self._manifest.inspectDomainLock()
 
     def attach(self, spUUID):
         self.invalidateMetadata()

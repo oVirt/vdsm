@@ -278,10 +278,10 @@ def test_acquire_after_relases_host_id(fake_sanlock, lock):
     pytest.raises(concurrent.InvalidEvent, lock.acquire, HOST_ID, LEASE)
 
 
-def test_inquire_lease(fake_sanlock, lock):
+def test_inspect(fake_sanlock, lock):
     lock.acquireHostId(HOST_ID, wait=True)
     lock.acquire(HOST_ID, LEASE)
-    version, owner = lock.inquire(LEASE)
+    version, owner = lock.inspect(LEASE)
     assert version == 0
     assert owner == HOST_ID
 
@@ -293,17 +293,17 @@ def test_inquire_lease(fake_sanlock, lock):
     (sanlock.HOST_FREE, None),
     (sanlock.HOST_DEAD, None)
 ])
-def test_inquire_owner_status(fake_sanlock, lock, status, expected_owner_id):
+def test_inspect_owner_status(fake_sanlock, lock, status, expected_owner_id):
     lock.acquireHostId(HOST_ID, wait=True)
     lock.acquire(HOST_ID, LEASE)
     # we are simulating another host inquiring the lease
     fake_sanlock.hosts[HOST_ID]["flags"] = status
-    version, owner = lock.inquire(LEASE)
+    version, owner = lock.inspect(LEASE)
     assert version == 0
     assert owner == expected_owner_id
 
 
-def test_inquire_owner_reconnected(fake_sanlock, lock):
+def test_inspect_owner_reconnected(fake_sanlock, lock):
     # This simulates a host reconnecting to the lockspace.
     # The lease should have no owner since the generation
     # increases each time a host reconnects to the lockspace
@@ -311,12 +311,12 @@ def test_inquire_owner_reconnected(fake_sanlock, lock):
     lock.acquire(HOST_ID, LEASE)
     lock.releaseHostId(HOST_ID, wait=True, unused=True)
     lock.acquireHostId(HOST_ID, wait=True)
-    version, owner = lock.inquire(LEASE)
+    version, owner = lock.inspect(LEASE)
     assert version == 0
     assert owner is None
 
 
-def test_inquire_smaller_host_generation(fake_sanlock, lock):
+def test_inspect_smaller_host_generation(fake_sanlock, lock):
     lock.acquireHostId(HOST_ID, wait=True)
     lock.releaseHostId(HOST_ID, wait=True, unused=True)
     lock.acquireHostId(HOST_ID, wait=True)
@@ -325,14 +325,14 @@ def test_inquire_smaller_host_generation(fake_sanlock, lock):
     # generation on the lease (an invalid state), the
     # lease should have no owner
     fake_sanlock.hosts[HOST_ID]["generation"] = 0
-    version, owner = lock.inquire(LEASE)
+    version, owner = lock.inspect(LEASE)
     assert version == 0
     assert owner is None
 
 
-def test_inquire_lease_has_no_owner(fake_sanlock, lock):
+def test_inspect_has_no_owner(fake_sanlock, lock):
     lock.acquireHostId(HOST_ID, wait=True)
-    version, owner = lock.inquire(LEASE)
+    version, owner = lock.inspect(LEASE)
     assert version is None
     assert owner is None
 
