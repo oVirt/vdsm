@@ -26,6 +26,7 @@ from ..bridge_util import is_autoconf_enabled
 from ..bridge_util import is_dhcp_enabled
 from ..bridge_util import NetInfoIfaceSchema
 from ..bridge_util import NetInfoSchema
+from ..route import DEFAULT_TABLE_ID
 from ..route import DefaultRouteDestination
 from ..route import Family
 from ..schema import Interface
@@ -61,8 +62,6 @@ SHARED_NETWORK_ATTRIBUTES = (
     NetInfoIfaceSchema.IPv6.GATEWAY,
     NetInfoIfaceSchema.IPv6.DHCP,
 )
-
-DEFAULT_TABLE_ID = 254
 
 
 class OvsInfo(object):
