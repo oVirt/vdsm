@@ -26,6 +26,7 @@ from .bridge_util import NetworkConfig
 from .dns import Dns
 from .ip import IpAddress
 from .route import Routes
+from .route import SourceRoutes
 from .schema import Interface
 from .schema import InterfaceIP
 from .schema import InterfaceState
@@ -36,14 +37,15 @@ from .state import NetworkingState
 
 
 class LinuxBridgeNetwork(object):
-    def __init__(self, netconf, runconf):
+    def __init__(self, netconf, runconf, current_state):
         """
         netconf: NetworkConfig object, representing a requested network setup.
         runconf: NetworkConfig object, representing an existing network setup.
-        current_ifaces_state: Dict, representing {name: iface-state}.
+        current_state: CurrentState object, representing current state.
         """
         self._netconf = netconf
         self._runconf = runconf
+        self._current_state = current_state
         self._name = netconf.name
         self._to_remove = netconf.remove
 
@@ -51,12 +53,14 @@ class LinuxBridgeNetwork(object):
         self._vlan_iface_state = None
         self._bridge_iface_state = None
         self._route_state = None
+        self._route_rules_state = None
         self._dns_state = None
         self._auto_dns = None
 
         self._create_dns()
         self._create_interfaces_state()
         self._create_routes()
+        self._create_source_routes()
 
     @property
     def name(self):
@@ -95,6 +99,10 @@ class LinuxBridgeNetwork(object):
     @property
     def routes_state(self):
         return self._route_state
+
+    @property
+    def route_rules_state(self):
+        return self._route_rules_state
 
     @property
     def dns_state(self):
@@ -223,6 +231,13 @@ class LinuxBridgeNetwork(object):
         routes = Routes(self._netconf, self._runconf)
         self._route_state = routes.state
 
+    def _create_source_routes(self):
+        source_routes = SourceRoutes(
+            self._netconf, self._runconf, self._current_state
+        )
+        self._route_state.extend(source_routes.routes_state)
+        self._route_rules_state = source_routes.rules_state
+
     def _remove_vlan_iface(self):
         if self._runconf.vlan_iface:
             return {
@@ -246,11 +261,13 @@ class LinuxBridgeNetwork(object):
             LinuxBridgeNetwork(
                 NetworkConfig(netname, netattrs),
                 NetworkConfig(netname, running_networks.get(netname, {})),
+                current_state,
             )
             for netname, netattrs in networks.items()
         ]
         interfaces_state = LinuxBridgeNetwork._merge_sb_ifaces(nets)
         routes_state = []
+        route_rules_state = []
         dns_state = {}
         for net in nets:
             if net.vlan_iface_state:
@@ -261,6 +278,7 @@ class LinuxBridgeNetwork(object):
                 interfaces_state[bridge_iface_name] = net.bridge_iface_state
 
             routes_state += net.routes_state
+            route_rules_state += net.route_rules_state
             net_dns_state = net.dns_state
             if net_dns_state is not None:
                 dns_state[net.name] = net_dns_state
@@ -291,7 +309,9 @@ class LinuxBridgeNetwork(object):
             nets, running_networks, interfaces_state, current_ifaces_state
         )
 
-        return NetworkingState(interfaces_state, routes_state, dns_state)
+        return NetworkingState(
+            interfaces_state, routes_state, route_rules_state, dns_state
+        )
 
     @staticmethod
     def _merge_sb_ifaces(nets):

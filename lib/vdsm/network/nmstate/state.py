@@ -39,11 +39,13 @@ class NetworkingState(object):
         self,
         net_ifstate=None,
         routes_state=None,
+        route_rules_state=None,
         dns_state=None,
         bridge_mappings=None,
     ):
         self._ifaces_state = net_ifstate
         self._routes_state = routes_state
+        self._route_rules_state = route_rules_state
         self._dns_state = dns_state
         self._bridge_mappings = bridge_mappings
 
@@ -67,6 +69,8 @@ class NetworkingState(object):
             )
         if self._routes_state:
             state[Route.KEY] = {Route.CONFIG: self._routes_state}
+        if self._route_rules_state:
+            state[RouteRule.KEY] = {RouteRule.CONFIG: self._route_rules_state}
         if self._dns_state:
             nameservers = itertools.chain.from_iterable(
                 ns for ns in self._dns_state.values()

@@ -54,6 +54,7 @@ from .testlib import (
     create_ipv4_state,
     create_ipv6_state,
     create_network_config,
+    create_source_routes_and_rules_state,
     create_static_ip_configuration,
     create_vlan_iface_state,
     disable_iface_ip,
@@ -506,10 +507,16 @@ def test_translate_add_network_with_default_route(bridged):
         eth0_state.update(ip0_state)
         if_with_default_route = IFACE0
 
-    expected_state[nmstate.Route.KEY] = {
-        nmstate.Route.CONFIG: get_routes_config(
-            IPv4_GATEWAY1, if_with_default_route, IPv6_GATEWAY1
-        )
+    routes = get_routes_config(
+        IPv4_GATEWAY1, if_with_default_route, IPv6_GATEWAY1
+    )
+    source_routes, route_rules = create_source_routes_and_rules_state(
+        if_with_default_route, IPv4_ADDRESS1, IPv4_NETMASK1, IPv4_GATEWAY1
+    )
+    routes.extend(source_routes)
+    expected_state[nmstate.Route.KEY] = {nmstate.Route.CONFIG: routes}
+    expected_state[nmstate.RouteRule.KEY] = {
+        nmstate.RouteRule.CONFIG: route_rules
     }
     assert state == expected_state
 
@@ -608,7 +615,9 @@ def test_update_gateway_with_default_route(rconfig_mock, bridged):
     routes = get_routes_config(
         IPv4_GATEWAY2, if_with_default_route, IPv6_GATEWAY2
     )
-
+    source_routes, route_rules = create_source_routes_and_rules_state(
+        if_with_default_route, IPv4_ADDRESS1, IPv4_NETMASK1, IPv4_GATEWAY2
+    )
     routes.extend(
         get_routes_config(
             IPv4_GATEWAY1,
@@ -618,7 +627,11 @@ def test_update_gateway_with_default_route(rconfig_mock, bridged):
         )
     )
     routes.sort(key=lambda route: len(route[nmstate.Route.NEXT_HOP_ADDRESS]))
+    routes.extend(source_routes)
     expected_state[nmstate.Route.KEY] = {nmstate.Route.CONFIG: routes}
+    expected_state[nmstate.RouteRule.KEY] = {
+        nmstate.RouteRule.CONFIG: route_rules
+    }
 
     assert state == expected_state
 
@@ -767,10 +780,19 @@ def test_translate_add_network_with_default_route_on_vlan_interface():
     vlan_base_state.update(create_ipv6_state())
     expected_state = {nmstate.Interface.KEY: [vlan_base_state, vlan101_state]}
 
-    expected_state[nmstate.Route.KEY] = {
-        nmstate.Route.CONFIG: get_routes_config(
-            IPv4_GATEWAY1, vlan101_state[nmstate.Interface.NAME]
-        )
+    routes = get_routes_config(
+        IPv4_GATEWAY1, vlan101_state[nmstate.Interface.NAME]
+    )
+    source_routes, route_rules = create_source_routes_and_rules_state(
+        vlan101_state[nmstate.Interface.NAME],
+        IPv4_ADDRESS1,
+        IPv4_NETMASK1,
+        IPv4_GATEWAY1,
+    )
+    routes.extend(source_routes)
+    expected_state[nmstate.Route.KEY] = {nmstate.Route.CONFIG: routes}
+    expected_state[nmstate.RouteRule.KEY] = {
+        nmstate.RouteRule.CONFIG: route_rules
     }
     assert expected_state == state
 

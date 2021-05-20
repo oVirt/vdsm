@@ -28,7 +28,6 @@ from vdsm.common.time import monotonic_time
 from vdsm.network import connectivity
 from vdsm.network import errors as ne
 from vdsm.network import nmstate
-from vdsm.network import sourceroute
 from vdsm.network.common import switch_util as util
 from vdsm.network.configurators import qos
 from vdsm.network.dhcp_monitor import MonitoredItemPool
@@ -90,14 +89,11 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
     desired_state = nmstate.generate_state(networks, bondings)
     logging.info('Desired state: %s', desired_state)
     _setup_dynamic_src_routing(networks)
-    rconfig = RunningConfig()
-    _remove_outdated_source_routing(networks, rconfig.networks)
     nmstate.setup(desired_state, verify_change=not in_rollback)
     net_info = NetInfo(netinfo_get())
 
     with Transaction(in_rollback=in_rollback, persistent=False) as config:
         _setup_qos(networks, net_info, config.networks)
-        _setup_static_src_routing(networks, config.networks)
         for net_name, net_attrs in six.viewitems(networks):
             if net_attrs.get('remove'):
                 config.removeNetwork(net_name)
@@ -113,17 +109,6 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
         config.save()
         link_setup.setup_custom_bridge_opts(networks)
         connectivity.check(options)
-
-
-def _setup_static_src_routing(networks, rnetworks):
-    for net_name, net_attrs in six.viewitems(networks):
-        gateway = net_attrs.get('gateway')
-        rnet_gateway = rnetworks.get(net_name, {}).get('gateway')
-        if gateway and _gateway_has_changed(gateway, rnet_gateway):
-            ip_address = net_attrs.get('ipaddr')
-            netmask = net_attrs.get('netmask')
-            next_hop = _get_network_iface(net_name, net_attrs)
-            sourceroute.add(next_hop, ip_address, netmask, gateway)
 
 
 def _setup_qos(networks, net_info, rnetworks):
@@ -156,29 +141,6 @@ def _setup_dynamic_src_routing(networks):
             pool.add((iface, 4))
         if is_dhcpv6:
             pool.add((iface, 6))
-
-
-def _remove_outdated_source_routing(networks, rnetworks):
-    for net_name, net_attrs in networks.items():
-        rnet_attrs = rnetworks.get(net_name, {})
-
-        gateway = net_attrs.get('gateway')
-        is_remove = net_attrs.get('remove', False)
-        rnet_gateway = rnet_attrs.get('gateway')
-        next_hop = _get_network_iface(
-            net_name, rnet_attrs if is_remove else net_attrs
-        )
-
-        method_has_changed = _is_changing_between_static_and_dynamic(
-            net_attrs, rnet_attrs
-        )
-
-        if (
-            method_has_changed
-            or (_gateway_has_changed(gateway, rnet_gateway) and rnet_gateway)
-            or is_remove
-        ):
-            sourceroute.remove(next_hop)
 
 
 def _configure_qos(net_attrs, out):
@@ -226,27 +188,6 @@ def _order_networks(networks):
         yield net, attr
     for net, attr in non_vlanned_nets:
         yield net, attr
-
-
-def _is_changing_between_static_and_dynamic(net_attrs, rnet_attrs):
-    if not rnet_attrs or net_attrs.get('remove', False):
-        return False
-
-    is_dhcpv4 = net_attrs.get('bootproto') == 'dhcp'
-    is_dhcpv6 = net_attrs.get('dhcpv6', False)
-    is_dynamic = is_dhcpv4 or is_dhcpv6
-    was_dhcpv4 = rnet_attrs.get('bootproto') == 'dhcp'
-    was_dhcpv6 = rnet_attrs.get('dhcpv6', False)
-    was_dynamic = was_dhcpv4 or was_dhcpv6
-
-    is_static = net_attrs.get('ipaddr') is not None
-    was_static = rnet_attrs.get('ipaddr') is not None
-
-    return (was_dynamic and is_static) or (was_static and is_dynamic)
-
-
-def _gateway_has_changed(gateway, rnet_gateway):
-    return gateway != rnet_gateway
 
 
 def netcaps(compatibility):
