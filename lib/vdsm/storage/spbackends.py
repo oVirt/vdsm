@@ -417,7 +417,7 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
             raise exception.expected(e)
         return lVer or LVER_INVALID, spmId or SPM_ID_FREE
 
-    def setSpmStatus(self, lVer, spmId):
+    def setSpmStatus(self, lVer=None, spmId=None):
         self.log.debug(
             'this storage pool implementation ignores the set spm '
             'status requests (lver=%s, spmid=%s)', lVer, spmId)
