@@ -26,6 +26,9 @@ import sys
 
 
 def panic(msg):
-    logging.error("Panic: %s", msg, exc_info=True)
-    os.killpg(0, 9)
-    sys.exit(-3)
+    try:
+        logging.error("Panic: %s", msg, exc_info=True)
+        logging.shutdown()
+    finally:
+        os.killpg(0, 9)
+        sys.exit(-3)
