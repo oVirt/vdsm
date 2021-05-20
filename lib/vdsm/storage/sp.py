@@ -446,7 +446,7 @@ class StoragePool(object):
             try:
                 self.cleanupMasterMount()
             except:
-                # If unmounting fails the vdsm panics.
+                self.log.exception("Error cleaning up master mount")
                 stopFailed = True
 
             try:
@@ -455,18 +455,20 @@ class StoragePool(object):
             except:
                 # Here we are just begin polite.
                 # SPM will also clean this on start up.
-                pass
+                self.log.exception("Error stopping SPM mail monitor")
 
             if not stopFailed:
                 try:
                     self._backend.setSpmStatus(spmId=SPM_ID_FREE,
                                                __securityOverride=True)
                 except:
-                    pass  # The system can handle this inconsistency
+                    # The system can handle this inconsistency.
+                    self.log.exception("Error updating SPM status")
 
             try:
                 self.masterDomain.releaseClusterLock()
             except:
+                self.log.exception("Error releasing cluster lock")
                 stopFailed = True
 
             if stopFailed:
