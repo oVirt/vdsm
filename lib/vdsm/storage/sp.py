@@ -449,12 +449,15 @@ class StoragePool(object):
                 self.log.exception("Error cleaning up master mount")
                 stopFailed = True
 
-            try:
-                if self.spmMailer:
+            if self.spmMailer:
+                try:
                     self.spmMailer.stop()
-            except:
-                self.log.exception("Error stopping SPM mail monitor")
-                stopFailed = True
+                    if not self.spmMailer.wait(timeout=60):
+                        self.log.error("Timeout stopping SPM mail monitor")
+                        stopFailed = True
+                except:
+                    self.log.exception("Error stopping SPM mail monitor")
+                    stopFailed = True
 
             if not stopFailed:
                 try:
