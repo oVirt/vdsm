@@ -139,3 +139,9 @@ def is_autoconf_enabled(family_info):
     return family_info[InterfaceIP.ENABLED] and family_info.get(
         InterfaceIPv6.AUTOCONF, False
     )
+
+
+def get_auto_route_table_id(family_info):
+    if family_info[InterfaceIP.ENABLED]:
+        return family_info.get(InterfaceIP.AUTO_ROUTE_TABLE_ID)
+    return None

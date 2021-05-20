@@ -18,6 +18,7 @@
 #
 
 # Re-export public API
+from .api import add_dynamic_source_route_rules
 from .api import generate_state
 from .api import get_current_state
 from .api import is_autoconf_enabled
@@ -45,6 +46,7 @@ from .schema import Vlan
 
 
 __all__ = [
+    'add_dynamic_source_route_rules',
     'generate_state',
     'get_current_state',
     'is_autoconf_enabled',

@@ -1,4 +1,4 @@
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from .route import DEFAULT_TABLE_ID
+from .route import generate_table_id
 from .schema import InterfaceIP
 from .schema import InterfaceIPv6
 
@@ -65,8 +67,9 @@ class IpAddress(object):
         return {
             InterfaceIP.DHCP: self._netconf.dhcpv4,
             InterfaceIP.AUTO_DNS: self._auto_dns,
-            InterfaceIP.AUTO_GATEWAY: self._netconf.default_route,
-            InterfaceIP.AUTO_ROUTES: self._netconf.default_route,
+            InterfaceIP.AUTO_GATEWAY: True,
+            InterfaceIP.AUTO_ROUTES: True,
+            InterfaceIP.AUTO_ROUTE_TABLE_ID: self._get_auto_route_table_id(),
         }
 
     def _create_ipv6(self, enabled):
@@ -98,9 +101,17 @@ class IpAddress(object):
             InterfaceIP.DHCP: self._netconf.dhcpv6,
             InterfaceIPv6.AUTOCONF: self._netconf.ipv6autoconf,
             InterfaceIP.AUTO_DNS: self._auto_dns,
-            InterfaceIP.AUTO_GATEWAY: self._netconf.default_route,
-            InterfaceIP.AUTO_ROUTES: self._netconf.default_route,
+            InterfaceIP.AUTO_GATEWAY: True,
+            InterfaceIP.AUTO_ROUTES: True,
+            InterfaceIP.AUTO_ROUTE_TABLE_ID: self._get_auto_route_table_id(),
         }
+
+    def _get_auto_route_table_id(self):
+        return (
+            DEFAULT_TABLE_ID
+            if self._netconf.default_route
+            else generate_table_id(self._netconf.next_hop_interface)
+        )
 
 
 def _get_ipv4_prefix_from_mask(ipv4netmask):

@@ -38,6 +38,7 @@ from vdsm.network.dhcp_monitor import MonitoredItemPool
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import sriov
 from vdsm.network.lldp import info as lldp_info
+from vdsm.network.nmstate import add_dynamic_source_route_rules
 from vdsm.network.nmstate import update_num_vfs
 
 from . import canonicalize
@@ -281,7 +282,7 @@ def setSafeNetworkConfig():
     netswitch.configurator.persist()
 
 
-def add_sourceroute(iface, ip, mask, route, family=None):
+def add_source_route_rules(iface, ip, mask, route, family=None):
     if not family:
         family = 4
     else:
@@ -298,7 +299,7 @@ def add_sourceroute(iface, ip, mask, route, family=None):
             return
 
     if family == 4:
-        sourceroute.add(iface, ip, mask, route)
+        add_dynamic_source_route_rules(iface, ip, mask)
 
 
 def remove_sourceroute(iface):

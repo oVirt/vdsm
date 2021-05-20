@@ -439,8 +439,16 @@ class TestBasicNetWithIp(object):
         sort_by_name(bridge_ports)
         bridge_state = create_ovs_bridge_state(OVS_BRIDGE[0], bridge_ports)
         nb_state = create_ovs_northbound_state(TESTNET1)
-        nb_state.update(create_ipv4_state(dynamic=dhcpv4, auto_dns=False))
-        nb_state.update(create_ipv6_state(dynamic=dhcpv6, auto_dns=False))
+        nb_state.update(
+            create_ipv4_state(
+                dynamic=dhcpv4, auto_dns=False, next_hop=TESTNET1
+            )
+        )
+        nb_state.update(
+            create_ipv6_state(
+                dynamic=dhcpv6, auto_dns=False, next_hop=TESTNET1
+            )
+        )
         bridge_mappings_state = create_ovs_bridge_mappings_state(
             {OVS_BRIDGE[0]: [TESTNET1]}
         )

@@ -1,4 +1,4 @@
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -140,7 +140,7 @@ class _MonitorHandler(socketserver.BaseRequestHandler):
 
 def initialize_monitor(cif, netapi):
     def _src_route_handler(event):
-        netapi.add_sourceroute(
+        netapi.add_source_route_rules(
             event[ResponseField.IFACE],
             event[ResponseField.IPADDR],
             event[ResponseField.IPMASK],

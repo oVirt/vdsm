@@ -216,9 +216,9 @@ class TestBondedNetwork(object):
         bond0_state = create_bond_iface_state(
             TESTBOND0, 'balance-rr', [IFACE0, IFACE1]
         )
-
-        ip_state = create_ipv4_state(dynamic=True)
-        ip_state.update(create_ipv6_state(dynamic=True))
+        next_hop = TESTNET1 if bridged else TESTBOND0
+        ip_state = create_ipv4_state(dynamic=True, next_hop=next_hop)
+        ip_state.update(create_ipv6_state(dynamic=True, next_hop=next_hop))
 
         expected_state = {nmstate.Interface.KEY: [bond0_state]}
         if bridged:

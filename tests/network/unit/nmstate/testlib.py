@@ -162,6 +162,7 @@ def create_ipv4_state(
     dynamic=False,
     default_route=False,
     auto_dns=True,
+    next_hop="",
 ):
     state = {nmstate.Interface.IPV4: {nmstate.InterfaceIP.ENABLED: False}}
     if dynamic:
@@ -169,8 +170,11 @@ def create_ipv4_state(
             nmstate.InterfaceIP.ENABLED: True,
             nmstate.InterfaceIP.DHCP: True,
             nmstate.InterfaceIP.AUTO_DNS: default_route and auto_dns,
-            nmstate.InterfaceIP.AUTO_GATEWAY: default_route,
-            nmstate.InterfaceIP.AUTO_ROUTES: default_route,
+            nmstate.InterfaceIP.AUTO_GATEWAY: True,
+            nmstate.InterfaceIP.AUTO_ROUTES: True,
+            nmstate.InterfaceIP.AUTO_ROUTE_TABLE_ID: _get_auto_route_table_id(
+                default_route, next_hop
+            ),
         }
     elif address and prefix:
         state[nmstate.Interface.IPV4] = {
@@ -192,6 +196,7 @@ def create_ipv6_state(
     dynamic=False,
     default_route=False,
     auto_dns=True,
+    next_hop="",
 ):
     state = {nmstate.Interface.IPV6: {nmstate.InterfaceIP.ENABLED: False}}
     if dynamic:
@@ -200,8 +205,11 @@ def create_ipv6_state(
             nmstate.InterfaceIP.DHCP: True,
             nmstate.InterfaceIPv6.AUTOCONF: True,
             nmstate.InterfaceIP.AUTO_DNS: default_route and auto_dns,
-            nmstate.InterfaceIP.AUTO_GATEWAY: default_route,
-            nmstate.InterfaceIP.AUTO_ROUTES: default_route,
+            nmstate.InterfaceIP.AUTO_GATEWAY: True,
+            nmstate.InterfaceIP.AUTO_ROUTES: True,
+            nmstate.InterfaceIP.AUTO_ROUTE_TABLE_ID: _get_auto_route_table_id(
+                default_route, next_hop
+            ),
         }
     elif address and prefix:
         state[nmstate.Interface.IPV6] = {
@@ -216,6 +224,14 @@ def create_ipv6_state(
             nmstate.InterfaceIPv6.AUTOCONF: False,
         }
     return state
+
+
+def _get_auto_route_table_id(default_route, next_hop):
+    return (
+        route.DEFAULT_TABLE_ID
+        if default_route
+        else route.generate_table_id(next_hop)
+    )
 
 
 def get_routes_config(gateway, next_hop, ipv6gateway=None, state=None):

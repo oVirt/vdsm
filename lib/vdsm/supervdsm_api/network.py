@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ from . import expose
 
 from vdsm.network.api import (setSafeNetworkConfig, setupNetworks,
                               change_numvfs, network_caps, network_stats,
-                              add_sourceroute, remove_sourceroute,
+                              add_source_route_rules, remove_sourceroute,
                               get_lldp_info)
 from vdsm.network.sysctl import set_rp_filter_loose, set_rp_filter_strict
 from vdsm.network.tc import setPortMirroring, unsetPortMirroring
@@ -39,6 +39,6 @@ expose(setPortMirroring)
 expose(unsetPortMirroring)
 expose(set_rp_filter_loose)
 expose(set_rp_filter_strict)
-expose(add_sourceroute)
+expose(add_source_route_rules)
 expose(remove_sourceroute)
 expose(get_lldp_info)

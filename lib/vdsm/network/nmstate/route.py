@@ -24,6 +24,7 @@ from copy import deepcopy
 
 from .schema import Route
 from .schema import RouteRule
+from .state import NetworkingState
 
 DEFAULT_TABLE_ID = 254
 
@@ -256,6 +257,11 @@ class SourceRouteHelper(object):
 
 def generate_table_id(next_hop):
     return zlib.adler32(next_hop.encode("utf-8"))
+
+
+def generate_dynamic_source_route_rule_state(next_hop, ipaddr, mask):
+    helper = SourceRouteHelper(next_hop, ipaddr, mask, None)
+    return NetworkingState(route_rules_state=helper.rules_state())
 
 
 def _gateway_has_changed(runconf_gateway, netconf_gateway):
