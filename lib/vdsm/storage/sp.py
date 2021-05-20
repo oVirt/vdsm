@@ -453,9 +453,8 @@ class StoragePool(object):
                 if self.spmMailer:
                     self.spmMailer.stop()
             except:
-                # Here we are just begin polite.
-                # SPM will also clean this on start up.
                 self.log.exception("Error stopping SPM mail monitor")
+                stopFailed = True
 
             if not stopFailed:
                 try:
