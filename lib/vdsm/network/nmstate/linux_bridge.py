@@ -240,7 +240,8 @@ class LinuxBridgeNetwork(object):
         return {}
 
     @staticmethod
-    def generate_state(networks, running_networks, current_ifaces_state):
+    def generate_state(networks, running_networks, current_state):
+        current_ifaces_state = current_state.interfaces_state
         nets = [
             LinuxBridgeNetwork(
                 NetworkConfig(netname, netattrs),

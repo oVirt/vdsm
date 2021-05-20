@@ -69,15 +69,18 @@ def _get(vdsmnets=None):
     devices = _get_dev_names(nets_info, flat_devs_info)
     extra_info = _create_default_extra_info(devices)
 
-    state = nmstate.state_show()
-    extra_info.update(_get_devices_info_from_nmstate(state, devices))
-    nameservers = nmstate.get_nameservers(state)
+    current_state = nmstate.get_current_state()
+    extra_info.update(
+        _get_devices_info_from_nmstate(
+            current_state.filtered_interfaces(devices)
+        )
+    )
 
     _update_caps_info(nets_info, flat_devs_info, extra_info)
 
     networking_report = {'networks': nets_info}
     networking_report.update(devices_info)
-    networking_report['nameservers'] = nameservers
+    networking_report['nameservers'] = current_state.dns_state
     networking_report['supportsIPv6'] = ipv6_supported()
 
     return networking_report
@@ -151,16 +154,14 @@ def _sort_devices_qos_by_vlan(devices_info, iface_type):
             iface_attrs['qos'].sort(key=lambda k: (k['vlan']))
 
 
-def _get_devices_info_from_nmstate(state, devices):
+def _get_devices_info_from_nmstate(interfaces_state):
     return {
         ifname: {
             'dhcpv4': nmstate.is_dhcp_enabled(ifstate, nmstate.Interface.IPV4),
             'dhcpv6': nmstate.is_dhcp_enabled(ifstate, nmstate.Interface.IPV6),
             'ipv6autoconf': nmstate.is_autoconf_enabled(ifstate),
         }
-        for ifname, ifstate in six.viewitems(
-            nmstate.get_interfaces(state, filter=devices)
-        )
+        for ifname, ifstate in interfaces_state.items()
     }
 
 

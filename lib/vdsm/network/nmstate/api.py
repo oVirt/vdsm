@@ -33,10 +33,9 @@ from .linux_bridge import LinuxBridgeNetwork as LinuxBrNet
 from .ovs.info import OvsInfo
 from .ovs.info import OvsNetInfo
 from .ovs.network import generate_state as ovs_generate_state
-from .schema import DNS
 from .schema import Interface
-from .schema import Route
 from .sriov import create_sriov_state
+from .state import CurrentState
 
 
 def setup(desired_state, verify_change):
@@ -46,7 +45,7 @@ def setup(desired_state, verify_change):
 def generate_state(networks, bondings):
     """ Generate a new nmstate state given VDSM setup state format """
     rconfig = RunningConfig()
-    current_ifaces_state = get_interfaces(state_show())
+    current_state = get_current_state()
 
     ovs_nets, linux_br_nets = split_switch_type(networks, rconfig.networks)
     ovs_bonds, linux_br_bonds = split_switch_type(bondings, rconfig.bonds)
@@ -54,40 +53,22 @@ def generate_state(networks, bondings):
     linux_br_requested = linux_br_nets or linux_br_bonds
 
     net_state = (
-        ovs_generate_state(networks, rconfig.networks, current_ifaces_state)
+        ovs_generate_state(networks, rconfig.networks, current_state)
         if ovs_requested
         else LinuxBrNet.generate_state(
-            networks, rconfig.networks, current_ifaces_state
+            networks, rconfig.networks, current_state
         )
     )
 
     net_state.add_bond_state(Bond.generate_state(bondings, rconfig.bonds))
-    net_state.update_mtu(linux_br_requested, current_ifaces_state)
+    net_state.update_mtu(linux_br_requested, current_state.interfaces_state)
 
     return net_state.state()
 
 
-def get_interfaces(state, filter=None):
-    filter_set = set(filter) if filter else set()
-    ifaces = (
-        (ifstate[Interface.NAME], ifstate) for ifstate in state[Interface.KEY]
-    )
-    if filter:
-        return {
-            ifname: ifstate
-            for ifname, ifstate in ifaces
-            if ifname in filter_set
-        }
-    else:
-        return {ifname: ifstate for ifname, ifstate in ifaces}
-
-
-def get_nameservers(state):
-    return state[DNS.KEY].get(DNS.RUNNING, {}).get(DNS.SERVER, [])
-
-
-def get_routes(state):
-    return state[Route.KEY].get(Route.RUNNING, {})
+def get_current_state():
+    state = state_show()
+    return CurrentState(state)
 
 
 def is_dhcp_enabled(ifstate, family):
@@ -100,18 +81,10 @@ def is_autoconf_enabled(ifstate):
     return util_is_autoconf_enabled(family_info)
 
 
-def ovs_netinfo(base_netinfo, running_networks, state):
+def ovs_netinfo(base_netinfo, running_networks, current_state):
     rnets_config = translate_config(running_networks)
-    current_iface_state = get_interfaces(state)
-    current_routes_state = get_routes(state)
-    ovs_info = OvsInfo(rnets_config, current_iface_state)
-    netinfo = OvsNetInfo(
-        ovs_info,
-        base_netinfo,
-        rnets_config,
-        current_iface_state,
-        current_routes_state,
-    )
+    ovs_info = OvsInfo(rnets_config, current_state)
+    netinfo = OvsNetInfo(ovs_info, base_netinfo, rnets_config, current_state)
     netinfo.create_netinfo()
 
 

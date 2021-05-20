@@ -266,7 +266,7 @@ def netinfo(vdsmnets=None, compatibility=None):
     )
     ovs_bonds = util.split_switch_type(running_config.bonds, running_config={})
     if ovs_nets or ovs_bonds:
-        state = nmstate.state_show()
+        state = nmstate.get_current_state()
         nmstate.ovs_netinfo(_netinfo, running_config.networks, state)
         _set_bond_type_by_usage(_netinfo, running_config.bonds)
 

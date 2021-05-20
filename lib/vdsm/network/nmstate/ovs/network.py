@@ -279,12 +279,13 @@ class OvsBridge(object):
         )
 
 
-def generate_state(networks, running_networks, current_iface_state):
+def generate_state(networks, running_networks, current_state):
     nets_config = translate_config(networks)
     rnets_config = translate_config(running_networks)
     empty_config = NetworkConfig(name=None, attrs={})
+    current_iface_state = current_state.interfaces_state
 
-    ovs_info = OvsInfo(rnets_config, current_iface_state)
+    ovs_info = OvsInfo(rnets_config, current_state)
     bridges = OvsBridge(nets_config, rnets_config, ovs_info)
     nets = [
         OvsNetwork(

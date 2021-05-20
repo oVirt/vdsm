@@ -35,12 +35,17 @@ from vdsm.network.netinfo import addresses, bonding, misc, nics, routes
 from vdsm.network.netinfo.cache import get
 
 from vdsm.network import nmstate
+from vdsm.network.nmstate import api
 
 
 @pytest.fixture
 def current_state_mock():
-    with mock.patch.object(nmstate, 'state_show') as state:
-        state.return_value = {nmstate.Interface.KEY: [], nmstate.DNS.KEY: {}}
+    with mock.patch.object(api, 'state_show') as state:
+        state.return_value = {
+            nmstate.Interface.KEY: [],
+            nmstate.DNS.KEY: {},
+            nmstate.Route.KEY: {},
+        }
         yield state.return_value
 
 

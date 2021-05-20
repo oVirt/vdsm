@@ -183,3 +183,58 @@ class NetworkingState(object):
         if not is_iface_absent(slave_state):
             slave_mtu = slave_state[Interface.MTU]
             slave_state[Interface.MTU] = max(bond_mtu, slave_mtu)
+
+
+class CurrentState(object):
+    def __init__(self, state):
+        self._interfaces_state = self._get_interfaces_state(state)
+        self._dns_state = self._get_dns_state(state)
+        self._routes_state = self._get_routes_state(state)
+
+    @property
+    def interfaces_state(self):
+        return self._interfaces_state
+
+    @property
+    def dns_state(self):
+        return self._dns_state
+
+    @property
+    def routes_state(self):
+        return self._routes_state
+
+    def filtered_interfaces(self, filter=None):
+        """
+        Get filtered interfaces specified by filter.
+
+        If the filter is None or empty list the return value contains all
+        available interfaces.
+
+        :param filter: List of interface names to filter
+        :type filter: list
+        :returns: Dict in format {IFNAME: IFSTATE}
+        :rtype: dict
+        """
+        filter_set = set(filter) if filter else set()
+        if filter:
+            return {
+                ifname: ifstate
+                for ifname, ifstate in self._interfaces_state.items()
+                if ifname in filter_set
+            }
+        return self._interfaces_state
+
+    @staticmethod
+    def _get_interfaces_state(state):
+        return {
+            ifstate[Interface.NAME]: ifstate
+            for ifstate in state[Interface.KEY]
+        }
+
+    @staticmethod
+    def _get_dns_state(state):
+        return state[DNS.KEY].get(DNS.RUNNING, {}).get(DNS.SERVER, [])
+
+    @staticmethod
+    def _get_routes_state(state):
+        return state[Route.KEY].get(Route.RUNNING, {})

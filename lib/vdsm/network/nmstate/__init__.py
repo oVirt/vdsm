@@ -19,9 +19,7 @@
 
 # Re-export public API
 from .api import generate_state
-from .api import get_interfaces
-from .api import get_nameservers
-from .api import get_routes
+from .api import get_current_state
 from .api import is_autoconf_enabled
 from .api import is_dhcp_enabled
 from .api import ovs_netinfo
@@ -47,9 +45,7 @@ from .schema import Vlan
 
 __all__ = [
     'generate_state',
-    'get_interfaces',
-    'get_nameservers',
-    'get_routes',
+    'get_current_state',
     'is_autoconf_enabled',
     'is_dhcp_enabled',
     'ovs_netinfo',

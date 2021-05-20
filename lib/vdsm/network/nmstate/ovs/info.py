@@ -66,9 +66,9 @@ DEFAULT_TABLE_ID = 254
 
 
 class OvsInfo(object):
-    def __init__(self, running_networks, current_ifaces_state):
+    def __init__(self, running_networks, current_state):
         self._running_networks = running_networks
-        self._current_ifaces_state = current_ifaces_state
+        self._current_ifaces_state = current_state.interfaces_state
 
         self._nb_by_sb = self._get_nb_by_sb()
         self._ports_by_bridge = self._get_ports_by_bridge()
@@ -149,18 +149,13 @@ class OvsInfo(object):
 
 class OvsNetInfo(object):
     def __init__(
-        self,
-        ovs_info,
-        base_netinfo,
-        running_networks,
-        current_ifaces_state,
-        current_routes_state,
+        self, ovs_info, base_netinfo, running_networks, current_state
     ):
         self._ovs_info = ovs_info
         self._base_netinfo = base_netinfo
         self._running_networks = running_networks
-        self._current_ifaces_state = current_ifaces_state
-        self._current_routes_state = current_routes_state
+        self._current_ifaces_state = current_state.interfaces_state
+        self._current_routes_state = current_state.routes_state
 
     def create_netinfo(self):
         for sb, bridge in self._ovs_info.bridge_by_sb.items():
