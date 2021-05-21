@@ -441,40 +441,30 @@ class StoragePool(object):
             self._cancel_upgrade()
             self._set_insecure()
 
-            stopFailed = False
-
             try:
                 self.cleanupMasterMount()
             except:
-                self.log.exception("Error cleaning up master mount")
-                stopFailed = True
+                panic("Error cleaning up master mount")
 
             if self.spmMailer:
                 try:
                     self.spmMailer.stop()
                     if not self.spmMailer.wait(timeout=60):
-                        self.log.error("Timeout stopping SPM mail monitor")
-                        stopFailed = True
+                        raise RuntimeError("Timeout stopping SPM mail monitor")
                 except:
-                    self.log.exception("Error stopping SPM mail monitor")
-                    stopFailed = True
+                    panic("Error stopping SPM mail monitor")
 
-            if not stopFailed:
-                try:
-                    self._backend.setSpmStatus(spmId=SPM_ID_FREE,
-                                               __securityOverride=True)
-                except:
-                    # The system can handle this inconsistency.
-                    self.log.exception("Error updating SPM status")
+            try:
+                self._backend.setSpmStatus(spmId=SPM_ID_FREE,
+                                           __securityOverride=True)
+            except:
+                # The system can handle this inconsistency.
+                self.log.exception("Error updating SPM status")
 
             try:
                 self.masterDomain.releaseClusterLock()
             except:
-                self.log.exception("Error releasing cluster lock")
-                stopFailed = True
-
-            if stopFailed:
-                panic("Unrecoverable errors during SPM stop process.")
+                panic("Error releasing cluster lock")
 
             self.spmRole = SPM_FREE
 
