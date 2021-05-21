@@ -28,7 +28,7 @@ import sys
 
 def panic(msg):
     try:
-        logging.error("Panic: %s", msg, exc_info=True)
+        logging.exception("Panic: %s", msg)
         # Depends on SIGALRM handler register during startup.
         signal.alarm(10)
         logging.shutdown()
