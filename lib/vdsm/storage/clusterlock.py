@@ -140,6 +140,8 @@ class SafeLease(object):
     lockCmd = config.get('irs', 'lock_cmd')
     freeLockCmd = config.get('irs', 'free_lock_cmd')
 
+    supports_inquire = False
+
     def __init__(self, sdUUID, idsPath, lease, lockRenewalIntervalSec,
                  leaseTimeSec, leaseFailRetry, ioOpTimeoutSec, **kwargs):
         """
@@ -277,6 +279,43 @@ class SANLock(object):
     # leases are released when process terminates. This counter is increased
     # when a lease is acquired, and decreased when a lease is released.
     _lease_count = 0
+
+    # sanlock.inquire() added in sanlock-3.8.3-2.
+    # TODO: remove check when we require this version.
+    supports_inquire = hasattr(sanlock, "inquire")
+
+    @classmethod
+    def inquire(cls):
+        """
+        Inquire sanlock daemon and return list of resources dicts owned by
+        current process.
+
+        See help(sanlock.inquire) for more info.
+        """
+        with cls._process_lock:
+            # If we don't have a process fd, we cannot have any lease.
+            if cls._process_fd is None:
+                return []
+
+            try:
+                # pylint: disable=no-member
+                resources = sanlock.inquire(slkfd=cls._process_fd)
+            except sanlock.SanlockException as e:
+                # See acquire() on why we must panic.
+                if cls._lease_count > 0 and e.errno == errno.EPIPE:
+                    panic("Sanlock process fd was closed while "
+                          "holding {} leases: {}"
+                          .format(cls._lease_count, e))
+
+                raise se.SanlockInquireError(e.errno, str(e))
+
+            # Sanlock require bytes values for locksapce and resource names,
+            # but we work internally with strings.
+            for r in resources:
+                r["lockspace"] = r["lockspace"].decode("utf-8")
+                r["resource"] = r["resource"].decode("utf-8")
+
+            return resources
 
     def __init__(self, sdUUID, idsPath, lease, *args, **kwargs):
         """
@@ -669,6 +708,8 @@ class LocalLock(object):
 
     _globalLockMap = {}
     _globalLockMapSync = threading.Lock()
+
+    supports_inquire = False
 
     def __init__(self, sdUUID, idsPath, lease, *args, **kwargs):
         """

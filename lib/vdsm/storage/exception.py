@@ -33,6 +33,8 @@
 
 from __future__ import absolute_import
 
+import errno
+
 from vdsm.common.exception import GeneralException
 from vdsm.storage.securable import SecureError
 SPM_STATUS_ERROR = (654, "Not SPM")
@@ -1754,6 +1756,18 @@ class InspectNotSupportedError(StorageException):
 class SanlockLVBError(StorageException):
     code = 703
     msg = "LVB operation failed"
+
+
+class SanlockInquireError(StorageException):
+    code = 704
+    msg = "Inquire sanlock daemon failed"
+
+    def __init__(self, errno, reason):
+        self.errno = errno
+        self.value = reason
+
+    def is_temporary(self):
+        return self.errno == errno.EBUSY
 
 
 #################################################

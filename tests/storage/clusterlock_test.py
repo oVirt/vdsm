@@ -337,6 +337,81 @@ def test_inspect_has_no_owner(fake_sanlock, lock):
     assert owner is None
 
 
+def test_inquire(fake_sanlock, lock):
+    # No lockspace yet...
+    assert lock.inquire() == []
+
+    # Add lockspace.
+    lock.acquireHostId(HOST_ID, wait=True)
+    assert lock.inquire() == []
+
+    # Acquire a resource.
+    lock.acquire(HOST_ID, LEASE)
+    assert lock.inquire() == [
+        {
+            "lockspace": LS_NAME.decode("utf-8"),
+            "resource": LEASE.name,
+            "flags": fake_sanlock.RES_LVER,
+            "version": 0,
+            "disks": [(LEASE.path, LEASE.offset)],
+        }
+    ]
+
+    # Release the resource.
+    lock.release(LEASE)
+    assert lock.inquire() == []
+
+
+def test_inquire_temporary_error(fake_sanlock, lock):
+    lock.acquireHostId(HOST_ID, wait=True)
+    lock.acquire(HOST_ID, LEASE)
+
+    fake_sanlock.resources[(LEASE.path, LEASE.offset)]["busy"] = True
+
+    with pytest.raises(se.SanlockInquireError) as e:
+        lock.inquire()
+    assert e.value.is_temporary()
+
+
+def test_inquire_process_fd_closed_recover(fake_sanlock, lock):
+    lock.acquireHostId(HOST_ID, wait=True)
+
+    # Acquire and release a lease to register socket with sanlock.
+    lock.acquire(HOST_ID, LEASE)
+    lock.release(LEASE)
+
+    # Simulate process fd closed on sanlock daemon side. Since we don't hold
+    # any lease, we don't care about this.
+    fake_sanlock.process_socket.close()
+    old_socket = fake_sanlock.process_socket
+
+    # Since we have no lease, this should not panic.
+    with pytest.raises(se.SanlockInquireError):
+        lock.inquire()
+
+    # Old socket is not modifed by failed inquire.
+    assert old_socket == fake_sanlock.process_socket
+
+
+def test_inquire_process_fd_closed_panic(fake_sanlock, lock):
+    lock.acquireHostId(HOST_ID, wait=True)
+
+    # Acquire a lease.
+    lock.acquire(HOST_ID, LEASE)
+
+    # Simulate process fd closed on sanlock daemon side. The lease was released
+    # behind our back.
+    fake_sanlock.process_socket.close()
+    old_socket = fake_sanlock.process_socket
+
+    # Since we have a lease, panic!
+    with pytest.raises(FakePanic):
+        lock.inquire()
+
+    # Old socket is not modifed by failed inquire.
+    assert old_socket == fake_sanlock.process_socket
+
+
 @pytest.mark.parametrize('block_size, max_hosts, alignment', [
     (sc.BLOCK_SIZE_512, 250, sc.ALIGNMENT_1M),
     (sc.BLOCK_SIZE_512, 2000, sc.ALIGNMENT_1M),
