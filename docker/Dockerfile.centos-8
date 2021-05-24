@@ -1,4 +1,4 @@
-FROM centos:8
+FROM centos/centos:stream8
 
 # Add runtime dependencies.
 RUN dnf install -y \
@@ -24,7 +24,7 @@ RUN dnf install -y \
         mom \
         NetworkManager \
         nmstate \
-        openvswitch \
+        nmstate-plugin-ovsdb \
         ovirt-imageio-client \
         psmisc \
         python3 \
