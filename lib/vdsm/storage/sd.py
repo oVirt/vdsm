@@ -385,6 +385,14 @@ class StorageDomainManifest(object):
         """
         return False
 
+    @property
+    def supports_inquire(self):
+        """
+        This property advertises whether the storage domain supports
+        inquireCluserLock().
+        """
+        return self._domainLock.supports_inquire
+
     def recommends_unordered_writes(self, format):
         """
         Return True if unordered writes are recommended for copying an image
@@ -597,6 +605,9 @@ class StorageDomainManifest(object):
 
     def inspectDomainLock(self):
         return self._domainLock.inspect(self.getDomainLease())
+
+    def inquireDomainLock(self):
+        return self._domainLock.inquire()
 
     def _makeDomainLock(self, domVersion=None):
         if not domVersion:
@@ -1085,6 +1096,10 @@ class StorageDomain(object):
         """
         return self._manifest.supportsSparseness
 
+    @property
+    def supports_inquire(self):
+        return self._manifest.supports_inquire
+
     def recommends_unordered_writes(self, format):
         return self._manifest.recommends_unordered_writes(format)
 
@@ -1253,6 +1268,9 @@ class StorageDomain(object):
 
     def inspectClusterLock(self):
         return self._manifest.inspectDomainLock()
+
+    def inquireClusterLock(self):
+        return self._manifest.inquireDomainLock()
 
     def attach(self, spUUID):
         self.invalidateMetadata()

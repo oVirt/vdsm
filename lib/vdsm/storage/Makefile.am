@@ -92,6 +92,7 @@ dist_vdsmstorage_PYTHON = \
 	securable.py \
 	sp.py \
 	spbackends.py \
+	spwd.py \
 	storageServer.py \
 	sysfs.py \
 	task.py \
