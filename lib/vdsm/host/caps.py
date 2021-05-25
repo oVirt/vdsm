@@ -148,6 +148,7 @@ def get():
     caps['vncEncrypted'] = _isVncEncrypted()
     caps['backupEnabled'] = backup.backup_enabled
     caps['coldBackupEnabled'] = backup.cold_backup_enabled
+    caps['clearBitmapsEnabled'] = True
     caps['fipsEnabled'] = _getFipsEnabled()
     try:
         caps['boot_uuid'] = osinfo.boot_uuid()
