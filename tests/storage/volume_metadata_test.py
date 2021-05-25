@@ -43,7 +43,7 @@ def make_init_params(**kwargs):
     res = dict(
         domain=make_uuid(),
         image=make_uuid(),
-        puuid=make_uuid(),
+        parent=make_uuid(),
         capacity=GiB,
         format=sc.type2name(sc.RAW_FORMAT),
         type=sc.type2name(sc.SPARSE_VOL),
@@ -98,7 +98,7 @@ class TestVolumeMetadata:
             FORMAT=params['format'],
             IMAGE=params['image'],
             LEGALITY=params['legality'],
-            PUUID=params['puuid'],
+            PUUID=params['parent'],
             CAP=str(params['capacity']),
             TYPE=params['type'],
             VOLTYPE=params['voltype'],
@@ -123,7 +123,7 @@ class TestVolumeMetadata:
             IMAGE=%(image)s
             LEGALITY=%(legality)s
             MTIME=0
-            PUUID=%(puuid)s
+            PUUID=%(parent)s
             SIZE=%(size)s
             TYPE=%(type)s
             VOLTYPE=%(voltype)s
@@ -144,7 +144,7 @@ class TestVolumeMetadata:
             GEN=%(generation)s
             IMAGE=%(image)s
             LEGALITY=%(legality)s
-            PUUID=%(puuid)s
+            PUUID=%(parent)s
             TYPE=%(type)s
             VOLTYPE=%(voltype)s
             EOF
@@ -197,7 +197,7 @@ class TestVolumeMetadata:
         md = volume.VolumeMetadata.from_lines(lines)
         assert data['domain'] == md.domain
         assert data['image'] == md.image
-        assert data['puuid'] == md.puuid
+        assert data['parent'] == md.parent
         assert data['format'] == md.format
         assert data['type'] == md.type
         assert data['voltype'] == md.voltype
@@ -319,7 +319,7 @@ class TestMDSize:
             image='75f8a1bb-4504-4314-91ca-d9365a30692b',
             legality='ILLEGAL',
             # Blank UUID for RAW, can be real UUID for COW.
-            puuid=sc.BLANK_UUID,
+            parent=sc.BLANK_UUID,
             capacity=md_params['capacity'],
             type=md_params['type'],
             voltype='INTERNAL',
@@ -376,7 +376,7 @@ class TestDictInterface:
         assert md[sc.DOMAIN] == params['domain']
         assert md[sc.FORMAT] == params['format']
         assert md[sc.IMAGE] == params['image']
-        assert md[sc.PUUID] == params['puuid']
+        assert md[sc.PUUID] == params['parent']
         assert md[sc.CAPACITY] == str(params['capacity'])
         assert md[sc.TYPE] == params['type']
         assert md[sc.VOLTYPE] == params['voltype']
@@ -421,7 +421,7 @@ class TestDictInterface:
             'generation': params['generation'],
             'image': params['image'],
             'legality': params['legality'],
-            'parent': params['puuid'],
+            'parent': params['parent'],
             'type': params['type'],
             'voltype': params['voltype']
         }

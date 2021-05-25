@@ -39,7 +39,7 @@ class VolumeMetadata(object):
 
     log = logging.getLogger('storage.VolumeMetadata')
 
-    def __init__(self, domain, image, puuid, capacity, format, type, voltype,
+    def __init__(self, domain, image, parent, capacity, format, type, voltype,
                  disktype, description="", legality=sc.ILLEGAL_VOL, ctime=None,
                  generation=sc.DEFAULT_GENERATION):
         # Storage domain UUID
@@ -47,7 +47,7 @@ class VolumeMetadata(object):
         # Image UUID
         self.image = image
         # UUID of the parent volume or BLANK_UUID
-        self.puuid = puuid
+        self.parent = parent
         # Volume capacity in bytes
         self.capacity = capacity
         # Format (RAW or COW)
@@ -97,7 +97,7 @@ class VolumeMetadata(object):
 
             return cls(domain=md[sc.DOMAIN],
                        image=md[sc.IMAGE],
-                       puuid=md[sc.PUUID],
+                       parent=md[sc.PUUID],
                        capacity=capacity,
                        format=md[sc.FORMAT],
                        type=md[sc.TYPE],
@@ -197,7 +197,7 @@ class VolumeMetadata(object):
             sc.GENERATION: self.generation,
             sc.IMAGE: self.image,
             sc.LEGALITY: self.legality,
-            sc.PUUID: self.puuid,
+            sc.PUUID: self.parent,
             sc.TYPE: self.type,
             sc.VOLTYPE: self.voltype,
         }
@@ -243,7 +243,7 @@ class VolumeMetadata(object):
         sc.DOMAIN: 'domain',
         sc.IMAGE: 'image',
         sc.DESCRIPTION: 'description',
-        sc.PUUID: 'puuid',
+        sc.PUUID: 'parent',
         sc.LEGALITY: 'legality',
         sc.GENERATION: 'generation',
     }
@@ -278,7 +278,7 @@ class VolumeMetadata(object):
             "generation": self.generation,
             "image": self.image,
             "legality": self.legality,
-            "parent": self.puuid,
+            "parent": self.parent,
             "type": self.type,
             "voltype": self.voltype
         }
