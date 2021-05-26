@@ -29,6 +29,7 @@ import threading
 from functools import partial
 from weakref import proxy
 from collections import defaultdict
+from typing import Dict
 
 import six
 
@@ -119,7 +120,7 @@ class clientIF(object):
         else:
             self.gluster = None
         try:
-            self.vmContainer = {}
+            self.vmContainer: Dict[str, vm.Vm] = {}
             self.lastRemoteAccess = 0
             self._enabled = True
             self._netConfigDirty = False
@@ -257,7 +258,7 @@ class clientIF(object):
                             pass
 
     @classmethod
-    def getInstance(cls, irs=None, log=None, scheduler=None):
+    def getInstance(cls, irs=None, log=None, scheduler=None) -> 'clientIF':
         with cls._instanceLock:
             if cls._instance is None:
                 if log is None:

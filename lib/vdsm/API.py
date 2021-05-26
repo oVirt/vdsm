@@ -65,6 +65,7 @@ from vdsm.virt import sampling
 from vdsm.virt.domain_descriptor import DomainDescriptor, XmlSource
 import vdsm.virt.jobs
 from vdsm.virt.jobs import seal
+import vdsm.virt.vm
 from vdsm.virt.vmdevices import graphics
 from vdsm.virt.vmdevices import hwclass
 
@@ -132,7 +133,7 @@ class VM(APIBase):
         self._UUID = UUID
 
     @property
-    def vm(self):
+    def vm(self) -> vdsm.virt.vm.Vm:
         vm = self._cif.vmContainer.get(self._UUID)
         if vm is None:
             raise exception.expected(exception.NoSuchVM(vmId=self._UUID))
