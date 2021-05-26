@@ -74,7 +74,7 @@ Set local git clone:
 
 Install additional packages for Fedora, CentOS, and RHEL:
 
-    sudo dnf install -y `cat automation/check-patch.packages.el8`
+    sudo dnf install -y `cat automation/check-patch.packages`
 
 Create virtual environment for vdsm:
 
