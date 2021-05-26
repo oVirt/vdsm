@@ -1305,7 +1305,8 @@ def test_dump_sd_metadata(
                 "status": sc.VOL_STATUS_INVALID,
                 "parent": sc.BLANK_UUID,
                 "mdslot": mdslot,
-                "truesize": vol_size.truesize
+                "truesize": vol_size.truesize,
+                "generation": sc.DEFAULT_GENERATION,
             }
         }
     }
@@ -1319,6 +1320,7 @@ def test_dump_sd_metadata(
                     "status": sc.VOL_STATUS_INVALID,
                     "parent": sc.BLANK_UUID,
                     "mdslot": mdslot,
+                    "generation": sc.DEFAULT_GENERATION,
                 }
             }
         }

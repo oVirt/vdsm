@@ -46,12 +46,12 @@ from vdsm.storage import mount
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import sanlock_direct
 from vdsm.storage import sd
+from vdsm.storage import volumemetadata
 from vdsm.storage import xlease
 from vdsm.storage.persistent import PersistentDict, DictValidator
 
 from vdsm import constants
 from vdsm.storage.constants import LEASE_FILEEXT, UUID_GLOB_PATTERN
-from vdsm.storage.volumemetadata import VolumeMetadata
 
 REMOTE_PATH = "REMOTE_PATH"
 
@@ -879,19 +879,19 @@ class FileStorageDomain(sd.StorageDomain):
         img_uuid = os.path.basename(img_dir)
 
         try:
-            # Parse the meta file's key=value pairs and get the metadata dict.
+            # Read metadata from a file.
             data = self.oop.readFile(filepath, direct=True)
-            md_lines = data.rstrip(b"\0").splitlines()
-            md = VolumeMetadata.from_lines(md_lines).dump()
-            # Set volume status when done.
-            md["status"] = sc.VOL_STATUS_OK
         except Exception as e:
-            self.log.warning("Failed to parse meta file for volume %s/%s: %s",
+            self.log.warning("Failed to read meta file for volume %s/%s: %s",
                              self.sdUUID, vol_uuid, e)
-            md = {
-                "image": img_uuid,
-                "status": sc.VOL_STATUS_INVALID
-            }
+            md = {"status" : sc.VOL_STATUS_INVALID}
+        else:
+            # Parse the meta file's key=value pairs and get the metadata dict.
+            md_lines = data.rstrip(b"\0").splitlines()
+            md = volumemetadata.dump(md_lines)
+
+        if 'image' not in md:
+            md['image'] = img_uuid
 
         # Get volume size.
         try:

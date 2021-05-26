@@ -956,6 +956,7 @@ def test_dump_sd_volumes_invalid_md(
             "apparentsize": vol_size.apparentsize,
             "truesize": vol_size.truesize,
             "status": sc.VOL_STATUS_INVALID,
+            "generation" : sc.DEFAULT_GENERATION,
             "image": img_uuid
         }
     }

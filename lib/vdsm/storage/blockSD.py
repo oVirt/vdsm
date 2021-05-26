@@ -62,6 +62,7 @@ from vdsm.storage import resourceFactories
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import sanlock_direct
 from vdsm.storage import sd
+from vdsm.storage import volumemetadata
 from vdsm.storage.compat import sanlock
 from vdsm.storage.mailbox import MAILBOX_SIZE
 from vdsm.storage.persistent import PersistentDict, DictValidator
@@ -1801,17 +1802,8 @@ class BlockStorageDomain(sd.StorageDomain):
         for slot in slots:
             offset = self._manifest.metadata_offset(slot) - start_offset
             slot_raw_md = raw_md[offset:offset + sc.METADATA_SIZE]
-
-            try:
-                md_lines = slot_raw_md.rstrip(b"\0").splitlines()
-                slot_md = VolumeMetadata.from_lines(md_lines).dump()
-                slot_md["status"] = sc.VOL_STATUS_OK
-            except Exception as e:
-                self.log.warning(
-                    "Failed to parse metadata slot %s offset=%s: %s",
-                    slot, offset, e)
-                slot_md = {"status": sc.VOL_STATUS_INVALID}
-
+            md_lines = slot_raw_md.rstrip(b"\0").splitlines()
+            slot_md = volumemetadata.dump(md_lines)
             slot_md["mdslot"] = slot
             slots_md[slot] = slot_md
 
