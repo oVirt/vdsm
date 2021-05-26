@@ -1,4 +1,4 @@
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,6 +64,13 @@ class NetworkConfig(object):
             self.vlan_iface = '{}.{}'.format(self.base_iface, self.vlan)
         else:
             self.vlan_iface = None
+        self.next_hop_interface = self._get_next_hop_interface()
+
+    def _get_next_hop_interface(self):
+        if self.switch == SwitchType.OVS or self.bridged:
+            return self.name
+
+        return self.vlan_iface or self.base_iface
 
 
 class NetInfoSchema(object):

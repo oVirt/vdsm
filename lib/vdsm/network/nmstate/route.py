@@ -1,4 +1,4 @@
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,6 @@ import ipaddress
 import zlib
 
 from copy import deepcopy
-
-from vdsm.network.common.switch_util import SwitchType
 
 from .schema import Route
 from .schema import RouteRule
@@ -60,7 +58,7 @@ class Routes(object):
 
     def _create_routes(self):
         routes = []
-        next_hop = _get_next_hop_interface(self._netconf)
+        next_hop = self._netconf.next_hop_interface
         for family in (Family.IPV4, Family.IPV6):
             gateway = _get_gateway_by_ip_family(self._netconf, family)
             runconf_gateway = _get_gateway_by_ip_family(self._runconf, family)
@@ -138,8 +136,10 @@ class SourceRoutes(object):
         return self._rules_state
 
     def _create_routes_and_rules(self):
-        next_hop = _get_next_hop_interface(
-            self._runconf if self._netconf.remove else self._netconf
+        next_hop = (
+            self._runconf.next_hop_interface
+            if self._netconf.remove
+            else self._netconf.next_hop_interface
         )
         gateway = _get_gateway_by_ip_family(self._netconf, Family.IPV4)
         runconf_gateway = _get_gateway_by_ip_family(self._runconf, Family.IPV4)
@@ -260,13 +260,6 @@ def generate_table_id(next_hop):
 
 def _gateway_has_changed(runconf_gateway, netconf_gateway):
     return runconf_gateway != netconf_gateway
-
-
-def _get_next_hop_interface(source):
-    if source.switch == SwitchType.OVS or source.bridged:
-        return source.name
-
-    return source.vlan_iface or source.base_iface
 
 
 def _get_gateway_by_ip_family(source, family):
