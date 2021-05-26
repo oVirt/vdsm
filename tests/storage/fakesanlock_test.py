@@ -499,6 +499,24 @@ def test_inquire_some_resources():
     assert fs.inquire(pid=os.getpid()) == expected
 
 
+def test_inquire_busy():
+    fs = FakeSanlock()
+    fd = fs.register()
+
+    # Add an acquired resource.
+    fs.write_lockspace(b"s1", "path1")
+    fs.add_lockspace(b"s1", 1, "path1")
+    fs.write_resource(b"s1", b"r1", [("path1", 1 * MiB)])
+    fs.acquire(b"s1", b"r1", [("path1", 1 * MiB)], slkfd=fd)
+
+    # Simulate a busy resource.
+    fs.resources[("path1", MiB)]["busy"] = True
+
+    with pytest.raises(fs.SanlockException) as e:
+        fs.inquire(slkfd=fd)
+    assert e.value.errno == errno.EBUSY
+
+
 def test_inquire_slkfd_closed():
     fs = FakeSanlock()
     fd = fs.register()

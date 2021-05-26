@@ -261,14 +261,16 @@ class FakeSanlock(object):
         self.check_align_and_sector(align, sector, check_sector=False)
 
         path, offset = disks[0]
-        self.resources[(path, offset)] = {"lockspace": lockspace,
-                                          "resource": resource,
-                                          "version": 0,
-                                          "acquired": False,
-                                          "align": align,
-                                          "sector": sector,
-                                          "lvb": False,
-                                          }
+        self.resources[(path, offset)] = {
+            "lockspace": lockspace,
+            "resource": resource,
+            "version": 0,
+            "acquired": False,
+            "align": align,
+            "sector": sector,
+            "lvb": False,
+            "busy": False,
+        }
 
     @maybefail
     def read_resource(
@@ -285,6 +287,7 @@ class FakeSanlock(object):
 
         # Omit keys not in real sanlock response.
         del res["lvb"]
+        del res["busy"]
 
         return res
 
@@ -380,6 +383,7 @@ class FakeSanlock(object):
         res["host_id"] = 0
         res["generation"] = 0
         res["lvb"] = False
+        res["busy"] = False
 
     def inquire(self, slkfd=-1, pid=-1):
         # Matches sanlock.c error.
@@ -396,6 +400,12 @@ class FakeSanlock(object):
         result = []
 
         for disk, res in self.resources.items():
+            # This state is not expected in vdsm since we serialize calls to
+            # acquire(), release(), and inquire(), but I'm not 100% sure that
+            # this is not possible.
+            if res["busy"]:
+                raise self._error(errno.EBUSY, "Inquire error")
+
             if res["acquired"]:
                 info = {
                     "lockspace": res["lockspace"],
