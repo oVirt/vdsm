@@ -5230,7 +5230,7 @@ class Vm(object):
             # the invariant: if a VM is monitorable, it has a stats cache
             # entry, to avoid false positives when reporting stats too old.
             self._monitorable = False
-            self.lastStatus = vmstatus.POWERING_DOWN
+            self.set_last_status(vmstatus.POWERING_DOWN, vmstatus.UP)
             # Terminate the VM's creation thread.
             self._incoming_migration_vm_running.set()
             self.guestAgent.stop()
