@@ -17,10 +17,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = \
-	route \
-	rule \
-	$(NULL)
 
 include $(top_srcdir)/build-aux/Makefile.subs
 

@@ -25,10 +25,7 @@ import re
 
 import pytest
 
-from vdsm.network import cmd
-from vdsm.network.ip import rule as ip_rule
 from vdsm.network.ipwrapper import getLinks
-from vdsm.network.nmstate.route import RULE_PRIORITY
 
 from network.nettestlib import Interface
 
@@ -61,42 +58,3 @@ def cleanup_leftover_interfaces():
                 Interface.from_existing_dev_name(interface.name).remove()
             except Exception as e:
                 logging.warning('Removal of "%s" failed: %s', interface, e)
-
-
-class StaleIPRulesError(Exception):
-    pass
-
-
-@pytest.fixture(scope='session', autouse=True)
-def cleanup_stale_iprules():
-    """
-    Clean test ip rules that may have been left by the test run.
-    They may exists on the system due to some buggy test that ran
-    and has not properly cleaned after itself.
-    In case any stale entries have been detected, attempt to clean everything
-    and raise an error.
-    """
-    commands = [
-        'bash',
-        '-c',
-        f'while ip rule delete prio {RULE_PRIORITY} 2>/dev/null;'
-        ' do true; done',
-    ]
-    cmd.exec_sync(commands)
-
-    yield
-
-    IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
-    rules = [
-        r
-        for r in IPRule.rules()
-        if r.to == IPV4_ADDRESS1 or r.prio == RULE_PRIORITY
-    ]
-    if rules:
-        for rule in rules:
-            try:
-                IPRule.delete(rule)
-                logging.warning('Rule (%s) has been removed', rule)
-            except Exception as e:
-                logging.error('Error removing rule (%s): %s', rule, e)
-        raise StaleIPRulesError()
