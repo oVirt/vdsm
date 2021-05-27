@@ -27,6 +27,7 @@ from .schema import RouteRule
 from .state import NetworkingState
 
 DEFAULT_TABLE_ID = 254
+RULE_PRIORITY = 3200
 
 
 class Family(object):
@@ -213,8 +214,6 @@ class SourceRoutes(object):
 
 # FIXME: Currently we are supporting only IPv4 source routing
 class SourceRouteHelper(object):
-    RULE_PRIORITY = 3200
-
     def __init__(self, next_hop, ipaddr, mask, gateway):
         self._next_hop = next_hop
         self._ipaddr = ipaddr
@@ -292,10 +291,7 @@ def _create_route_state(
 
 
 def _create_route_rule_state(
-    table_id,
-    ip_from=None,
-    ip_to=None,
-    priority=SourceRouteHelper.RULE_PRIORITY,
+    table_id, ip_from=None, ip_to=None, priority=RULE_PRIORITY
 ):
     state = {RouteRule.ROUTE_TABLE: table_id, RouteRule.PRIORITY: priority}
     if ip_from:

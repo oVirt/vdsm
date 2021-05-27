@@ -26,9 +26,9 @@ import re
 import pytest
 
 from vdsm.network import cmd
-from vdsm.network import sourceroute
 from vdsm.network.ip import rule as ip_rule
 from vdsm.network.ipwrapper import getLinks
+from vdsm.network.nmstate.route import RULE_PRIORITY
 
 from network.nettestlib import Interface
 
@@ -79,9 +79,8 @@ def cleanup_stale_iprules():
     commands = [
         'bash',
         '-c',
-        'while ip rule delete prio {} 2>/dev/null; do true; done'.format(
-            sourceroute.RULE_PRIORITY
-        ),
+        f'while ip rule delete prio {RULE_PRIORITY} 2>/dev/null;'
+        ' do true; done',
     ]
     cmd.exec_sync(commands)
 
@@ -91,7 +90,7 @@ def cleanup_stale_iprules():
     rules = [
         r
         for r in IPRule.rules()
-        if r.to == IPV4_ADDRESS1 or r.prio == sourceroute.RULE_PRIORITY
+        if r.to == IPV4_ADDRESS1 or r.prio == RULE_PRIORITY
     ]
     if rules:
         for rule in rules:

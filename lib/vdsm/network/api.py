@@ -32,7 +32,6 @@ from vdsm.common import hooks
 from vdsm.network import connectivity
 from vdsm.network import netstats
 from vdsm.network import netswitch
-from vdsm.network import sourceroute
 from vdsm.network import validator
 from vdsm.network.dhcp_monitor import MonitoredItemPool
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
@@ -300,10 +299,6 @@ def add_source_route_rules(iface, ip, mask, route, family=None):
 
     if family == 4:
         add_dynamic_source_route_rules(iface, ip, mask)
-
-
-def remove_sourceroute(iface):
-    sourceroute.remove(iface)
 
 
 def confirm_connectivity():
