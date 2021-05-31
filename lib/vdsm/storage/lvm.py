@@ -251,6 +251,7 @@ global {
  prioritise_write_locks=1
  wait_for_locks=1
  use_lvmetad=0
+ use_lvmpolld=%(use_lvmpolld)s
 }
 backup {
  retain_min=50
@@ -278,10 +279,11 @@ def _buildFilter(devices):
     return '[{}"r|.*|"]'.format(accept)
 
 
-def _buildConfig(dev_filter, locking_type):
+def _buildConfig(dev_filter, locking_type, use_lvmpolld="1"):
     conf = LVMCONF_TEMPLATE % {
         "filter": dev_filter,
         "locking_type": locking_type,
+        "use_lvmpolld": use_lvmpolld,
     }
     return conf.replace("\n", " ").strip()
 
@@ -458,7 +460,7 @@ class LVMCache(object):
                 self._filterStale = False
             return self._filter
 
-    def _addExtraCfg(self, cmd, devices=tuple()):
+    def _addExtraCfg(self, cmd, devices=tuple(), use_lvmpolld=True):
         newcmd = [constants.EXT_LVM, cmd[0]]
 
         if devices:
@@ -470,8 +472,8 @@ class LVMCache(object):
         # once we require only lvm-2.03
         conf = _buildConfig(
             dev_filter=dev_filter,
-            locking_type="4" if self._read_only else "1")
-
+            locking_type="4" if self._read_only else "1",
+            use_lvmpolld="1" if use_lvmpolld else "0")
         newcmd += ["--config", conf]
 
         if len(cmd) > 1:
@@ -486,7 +488,7 @@ class LVMCache(object):
         self.invalidateFilter()
         self.flush()
 
-    def cmd(self, cmd, devices=tuple()):
+    def cmd(self, cmd, devices=tuple(), use_lvmpolld=True):
         # Take a shared lock, so set_read_only() can wait for commands using
         # the previous mode.
         with self._cmd_sem, self._read_only_lock.shared:
@@ -495,7 +497,8 @@ class LVMCache(object):
             # 1. Try the command with fast specific filter including the
             # specified devices. If the command succeeded and wanted output was
             # returned we are done.
-            full_cmd = self._addExtraCfg(cmd, devices)
+            full_cmd = self._addExtraCfg(
+                cmd, devices, use_lvmpolld=use_lvmpolld)
             rc, out, err = self._runner.run(full_cmd)
             if rc == 0:
                 return rc, out, err
@@ -1307,7 +1310,11 @@ def movePV(vgName, src_device, dst_devices):
         cmd.extend(_fqpvname(pdev) for pdev in dst_devices)
 
     log.info("Moving pv %s data (vg %s)", pvName, vgName)
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
+
+    # lvmpolld has to be disabled due to: https://bugzilla.redhat.com/1949059
+    rc, out, err = _lvminfo.cmd(
+        cmd, _lvminfo._getVGDevs((vgName, )), use_lvmpolld=False)
+
     # We invalidate all the caches even on failure so we'll have up to date
     # data after moving data within the vg.
     _lvminfo._invalidatepvs(pvName)

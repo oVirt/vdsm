@@ -87,6 +87,7 @@ def test_build_config():
         ' prioritise_write_locks=1 '
         ' wait_for_locks=1 '
         ' use_lvmetad=0 '
+        ' use_lvmpolld=1 '
         '} '
         'backup { '
         ' retain_min=50 '
@@ -95,7 +96,8 @@ def test_build_config():
     )
     assert expected == lvm._buildConfig(
         dev_filter='["a|^/dev/a$|^/dev/b$|", "r|.*|"]',
-        locking_type="1")
+        locking_type="1",
+        use_lvmpolld="1")
 
 
 @pytest.fixture
@@ -111,6 +113,13 @@ def fake_devices(monkeypatch):
     return devices
 
 
+def build_config(devices, locking_type="1", use_lvmpolld="1"):
+    return lvm._buildConfig(
+        dev_filter=lvm._buildFilter(devices),
+        locking_type=locking_type,
+        use_lvmpolld=use_lvmpolld)
+
+
 def test_build_command_long_filter(fake_devices):
     # If the devices are not specified, include all devices reported by
     # multipath.
@@ -121,9 +130,7 @@ def test_build_command_long_filter(fake_devices):
         constants.EXT_LVM,
         "lvs",
         "--config",
-        lvm._buildConfig(
-            dev_filter=lvm._buildFilter(fake_devices),
-            locking_type="1"),
+        build_config(fake_devices),
         "-o", "+tags",
     ]
 
@@ -138,9 +145,7 @@ def test_rebuild_filter_after_invaliation(fake_devices):
     lc.invalidateFilter()
 
     cmd = lc._addExtraCfg(["lvs"])
-    assert cmd[3] == lvm._buildConfig(
-        dev_filter=lvm._buildFilter(fake_devices),
-        locking_type="1")
+    assert cmd[3] == build_config(fake_devices)
 
 
 def test_build_command_read_only(fake_devices):
@@ -208,9 +213,7 @@ def test_cmd_success(fake_devices, no_delay):
         constants.EXT_LVM,
         "lvs",
         "--config",
-        lvm._buildConfig(
-            dev_filter=lvm._buildFilter(fake_devices),
-            locking_type="1"),
+        build_config(fake_devices),
         "-o", "+tags",
     ]
 
@@ -258,9 +261,7 @@ def test_cmd_retry_filter_stale(fake_devices, no_delay):
         constants.EXT_LVM,
         "fake",
         "--config",
-        lvm._buildConfig(
-            dev_filter=lvm._buildFilter(initial_devices),
-            locking_type="1"),
+        build_config(initial_devices),
     ]
 
     # The seocnd call used a wider filter.
@@ -269,9 +270,7 @@ def test_cmd_retry_filter_stale(fake_devices, no_delay):
         constants.EXT_LVM,
         "fake",
         "--config",
-        lvm._buildConfig(
-            dev_filter=lvm._buildFilter(fake_devices),
-            locking_type="1"),
+        build_config(fake_devices)
     ]
 
 
@@ -351,9 +350,7 @@ def test_cmd_read_only_filter_stale(fake_devices, no_delay):
         constants.EXT_LVM,
         "fake",
         "--config",
-        lvm._buildConfig(
-            dev_filter=lvm._buildFilter(initial_devices),
-            locking_type="4"),
+        build_config(initial_devices, locking_type="4"),
     ]
 
     # The seocnd call used a wider filter.
@@ -362,9 +359,7 @@ def test_cmd_read_only_filter_stale(fake_devices, no_delay):
         constants.EXT_LVM,
         "fake",
         "--config",
-        lvm._buildConfig(
-            dev_filter=lvm._buildFilter(fake_devices),
-            locking_type="4"),
+        build_config(fake_devices, locking_type="4"),
     ]
 
     # And then indentical retries with the wider filter.
@@ -429,6 +424,61 @@ def test_suppress_multiple_lvm_warnings(fake_devices, no_delay):
     rc, out, err = lc.cmd(["fake"])
     assert rc == 0
     assert err == [u"  before", u"  after"]
+
+
+def test_pvmove_cmd_lvmpolld(fake_devices, monkeypatch):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+
+    # Don't invalidate PVs in cache because we use cache only without real PVs.
+    lc._invalidatepvs = lambda pvNames: None
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Prepare fake PVs.
+    fake_pv1 = lvm.PV(
+        uuid='id',
+        name='/dev/mapper/a',
+        size='123',
+        vg_name="vg",
+        vg_uuid='id',
+        pe_start='123',
+        pe_count='5',
+        pe_alloc_count='1',
+        mda_count='1',
+        dev_size='123',
+        mda_used_count='1',
+        guid='a')
+
+    fake_pv2 = lvm.PV(
+        uuid='id',
+        name='/dev/mapper/b',
+        size='123',
+        vg_name="vg",
+        vg_uuid='id',
+        pe_start='123',
+        pe_count='5',
+        pe_alloc_count='1',
+        mda_count='1',
+        dev_size='123',
+        mda_used_count='1',
+        guid='b')
+
+    # Assign fake PVs to cache.
+    lc._pvs = {"/dev/mapper/a" : fake_pv1, "/dev/mapper/b" : fake_pv2}
+
+    # Run pvmove command.
+    lvm.movePV("vg", "a", "b")
+
+    # Check the pvmove command had lvmpolld disabled.
+    cmd = fake_runner.calls[0]
+    assert cmd == [
+        constants.EXT_LVM,
+        "pvmove",
+        "--config",
+        build_config(fake_devices, use_lvmpolld="0"),
+        *fake_devices
+    ]
 
 
 class Workers(object):
