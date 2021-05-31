@@ -28,6 +28,8 @@ import uuid
 
 import pytest
 
+from testing import on_ovirt_ci
+
 from vdsm.common import commands
 from vdsm.common import concurrent
 from vdsm.common import constants
@@ -1549,6 +1551,49 @@ def test_bootstrap(tmp_storage, read_only):
         for vg_name in vgs:
             lv = lvm.getLV(vg_name, "unused")
             assert not lv.active
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.skipif(
+    on_ovirt_ci(),
+    reason="dm-mirror kernel module missing - pvmove fails")
+def test_pvmove(tmp_storage):
+    dev_size = 1 * GiB
+    dev1 = tmp_storage.create_device(dev_size)
+    dev2 = tmp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lv_name = str(uuid.uuid4())
+    data = uuid.uuid4()
+
+    lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
+    lvm.createLV(vg_name, lv_name, 512, device=dev1)
+    lv_path = lvm.lvPath(vg_name, lv_name)
+
+    # Write test data to LV.
+    with open(lv_path, "wb") as f:
+        f.write(data.bytes)
+
+    # Deactivate LV to ensure data is written to storage.
+    lvm.deactivateLVs(vg_name, [lv_name])
+
+    # Run pvmove to migrate data to second device.
+    lvm.movePV(vg_name, dev1, [dev2])
+
+    # Remove now unused PV from the volume group.
+    lvm.reduceVG(vg_name, dev1)
+
+    # Activate LV so it can be opened for reading.
+    lvm.activateLVs(vg_name, [lv_name])
+
+    # Check data presence on LV which now uses the second device.
+    with open(lv_path, "rb") as f:
+        assert f.read(len(data.bytes)) == data.bytes
+
+    # Check pv moved to new device and previous device is not used.
+    lv = lvm.getLV(vg_name, lvName=lv_name)
+    assert dev2 in lv.devices
+    assert dev1 not in lv.devices
 
 
 @pytest.fixture
