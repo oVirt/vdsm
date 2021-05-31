@@ -425,6 +425,21 @@ parameters = [
             '(supported versions: 0.10, 1.1)'),
     ]),
 
+    # Section: [spm]
+    ('spm', [
+
+        ('watchdog_enable', 'true',
+            'If enabled, montior the SPM lease status and panic if the '
+            'lease status is not expected. The SPM host will lose the '
+            'SPM role, and engine will select a new SPM host. '
+            '(default true)'),
+
+        ('watchdog_interval', '20',
+            'Watchdog check internal in seconds. The recommended '
+            'value is sanlock:io_timeout * 2. '
+            '(default 20)'),
+    ]),
+
     # Section: [multipath]
     ('multipath', [
 

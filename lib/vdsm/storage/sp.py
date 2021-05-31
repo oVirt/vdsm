@@ -33,6 +33,7 @@ from weakref import proxy
 import six
 
 from vdsm.common import concurrent
+from vdsm.common.config import config
 from vdsm.common.panic import panic
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
@@ -47,6 +48,7 @@ from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
+from vdsm.storage import spwd
 from vdsm.storage import xlease
 from vdsm.storage.formatconverter import DefaultFormatConverter
 from vdsm.storage.sdc import sdCache
@@ -115,6 +117,9 @@ class StoragePool(object):
         self._domainStateCallback = partial(
             StoragePool._domainStateChange, proxy(self))
         self._backend = None
+
+        # The watchdog monitors the SPM lease on the master domain.
+        self._watchdog = None
 
     def __is_secure__(self):
         return self.is_secure()
@@ -361,6 +366,8 @@ class StoragePool(object):
                 # Once this completes we are running as SPM.
                 self._set_secure()
 
+                self._start_watching_spm_lease(self.masterDomain)
+
                 # Mailbox issues SPM commands, therefore we start it AFTER spm
                 # commands are allowed to run to prevent a race between the
                 # mailbox and the "self._set_secure() call"
@@ -439,6 +446,9 @@ class StoragePool(object):
                 return True
 
             self._cancel_upgrade()
+
+            self._stop_watching_spm_lease()
+
             self._set_insecure()
 
             try:
@@ -925,6 +935,13 @@ class StoragePool(object):
             newmsd.unmountMaster()
             newmsd.releaseClusterLock()
             raise
+
+        # At this point both the old and new master acquired the SPM lease.
+        # Before we release the SPM lease on the old master, we need to stop
+        # watching the old master SPM lease, and start watching the new master
+        # SPM lease.
+        self._stop_watching_spm_lease()
+        self._start_watching_spm_lease(newmsd)
 
         # From this point on we have a new master and should not fail
         try:
@@ -2076,3 +2093,42 @@ class StoragePool(object):
         return os.path.join(
             sc.REPO_DATA_CENTER, self.spUUID,
             POOL_MASTER_DOMAIN, sd.DOMAIN_META_DATA, vol)
+
+    # Watching SPM lease
+
+    def _start_watching_spm_lease(self, master_sd):
+        """
+        If the master storage domain supports inquire, start watching the SPM
+        lease.
+
+        Panics on failures.
+        """
+        if not config.getboolean("spm", "watchdog_enable"):
+            return
+
+        if not master_sd.supports_inquire:
+            return
+
+        if self._watchdog is not None:
+            raise RuntimeError("Watchdog already started")
+
+        try:
+            self._watchdog = spwd.Watchdog(
+                master_sd,
+                check_interval=config.getfloat("spm", "watchdog_interval"))
+            self._watchdog.start()
+        except:
+            panic("Error starting SPM lease watchdog")
+
+    def _stop_watching_spm_lease(self):
+        """
+        If we are watching the SPM lease, stop the watchdog.
+
+        Panics on failures.
+        """
+        if self._watchdog:
+            try:
+                self._watchdog.stop()
+            except:
+                panic("Error stopping SPM lease watchdog")
+            self._watchdog = None
