@@ -222,9 +222,9 @@ Requires: python3-libvirt
 Requires: iscsi-initiator-utils >= 6.2.0.873-21
 
 %if 0%{?rhel}
-# RHEL 8.4 (like) base version.
-Requires: python3-sanlock >= 3.8.3
-Requires: sanlock >= 3.8.3
+# For https://bugzilla.redhat.com/1961752
+Requires: python3-sanlock >= 3.8.3-3
+Requires: sanlock >= 3.8.3-3
 %endif
 
 Requires: device-mapper-multipath
