@@ -583,3 +583,14 @@ class RemoveBitmapError(ContextException):
 class CannotPrepareImage(ContextException):
     code = 1630
     msg = "Failed to prepare image"
+
+
+#################################################
+#  Drive Errors
+#  Range: 1640-1649
+#################################################
+
+
+class DriveRefreshError(ContextException):
+    code = 1640
+    msg = "Failed to refresh drive"

@@ -1396,6 +1396,36 @@ class Vm(object):
                 " {}".format(volInfo['name'], volInfo['domainID'],
                              volInfo['volumeID'], res['status']['message']))
 
+    def refresh_disk(self, vol_pdiv):
+        """
+        Refresh VM drive volume.
+        """
+        try:
+            drive = self.findDriveByUUIDs(vol_pdiv)
+            self.log.info(
+                "Refreshing volume for drive %s (domainID: %s, volumeID: %s)",
+                drive["name"], drive["domainID"], drive["volumeID"])
+            self.refresh_drive_volume(drive)
+            vol_size = self.getVolumeSize(
+                drive.domainID,
+                drive.poolID,
+                drive.imageID,
+                drive.volumeID)
+            self._update_drive_volume_size(drive, vol_size)
+            new_vol_size = self.getVolumeSize(
+                drive.domainID,
+                drive.poolID,
+                drive.imageID,
+                drive.volumeID)
+        except Exception as e:
+            raise exception.DriveRefreshError(
+                reason=str(e),
+                vm_id=self.id,
+                drive=drive)
+        return dict(result=dict(
+            apparentsize=str(new_vol_size.apparentsize),
+            truesize=str(new_vol_size.truesize)))
+
     def __verifyVolumeExtension(self, volInfo):
         volSize = self.getVolumeSize(
             volInfo['domainID'],

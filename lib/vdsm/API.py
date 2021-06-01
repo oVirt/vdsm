@@ -789,6 +789,11 @@ class VM(APIBase):
         vdsm.virt.jobs.schedule(job)
         return response.success()
 
+    @api.logged(on="api.virt")
+    @api.method
+    def refresh_disk(self, drive):
+        return self.vm.refresh_disk(drive)
+
 
 class Volume(APIBase):
     ctorArgs = ['volumeID', 'storagepoolID', 'storagedomainID', 'imageID']

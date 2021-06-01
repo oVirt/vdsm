@@ -12520,3 +12520,22 @@ VM.dump_checkpoint:
         description: Requested checkpoint info.
         type:
         - *CheckpointInfo
+
+VM.refresh_disk:
+    added: '4.4.7'
+    description: Refresh VM drive volume. Reload LVM and update disk
+        size on the host. Reload runs only on block based storage
+        disks, on file based storage disks only disk size is refreshed.
+        Should be run in case the disk size was changed on one host and
+        this change should be visible on another host.
+    params:
+    -   description: The UUID of the VM
+        name: vmID
+        type: *UUID
+    -   description: The specification (PDIV) of drive to be refreshed.
+        name: drive
+        type: *DriveSpecVolume
+
+    return:
+        description: Disk volume size information after refresh.
+        type: *VolumeSizeInfo
