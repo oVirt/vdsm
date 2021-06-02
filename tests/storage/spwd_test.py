@@ -118,142 +118,142 @@ class FakePanic:
 
 
 @pytest.fixture
-def fake_panic(monkeypatch):
-    fp = FakePanic()
-    monkeypatch.setattr(spwd, "panic", fp)
-    return fp
+def panic(monkeypatch):
+    panic = FakePanic()
+    monkeypatch.setattr(spwd, "panic", panic)
+    return panic
 
 
-def test_normal_flow(fake_panic):
-    fm = FakeMaster()
+def test_normal_flow(panic):
+    master = FakeMaster()
     cb = WatchdogCallback()
-    wd = spwd.Watchdog(fm, 0.01, callback=cb)
+    watchdog = spwd.Watchdog(master, 0.01, callback=cb)
 
-    wd.start()
+    watchdog.start()
     try:
         for i in range(10):
             cb.wait()
-            assert not fake_panic.was_called
+            assert not panic.was_called
             cb.resume()
     finally:
-        wd.stop()
+        watchdog.stop()
 
 
-def test_panic_on_lost_lease(fake_panic):
-    fm = FakeMaster()
+def test_panic_on_lost_lease(panic):
+    master = FakeMaster()
     cb = WatchdogCallback()
-    wd = spwd.Watchdog(fm, 0.01, callback=cb)
+    watchdog = spwd.Watchdog(master, 0.01, callback=cb)
 
-    wd.start()
+    watchdog.start()
     try:
         # Let first check succeed.
         cb.wait()
-        assert not fake_panic.was_called
+        assert not panic.was_called
 
         # Simulate lost lease.
-        del fm.resources[-1]
+        del master.resources[-1]
 
         # Wait for the next check.
         cb.resume()
         cb.wait()
-        assert fake_panic.was_called
+        assert panic.was_called
     finally:
         cb.resume()
-        wd.stop()
+        watchdog.stop()
 
 
-def test_panic_on_wrong_disk(fake_panic):
-    fm = FakeMaster()
+def test_panic_on_wrong_disk(panic):
+    master = FakeMaster()
     cb = WatchdogCallback()
-    wd = spwd.Watchdog(fm, 0.01, callback=cb)
+    watchdog = spwd.Watchdog(master, 0.01, callback=cb)
 
-    wd.start()
+    watchdog.start()
     try:
         # Let first check succeed.
         cb.wait()
-        assert not fake_panic.was_called
+        assert not panic.was_called
 
         # Simulate bad disk.
-        fm.resources[-1]["disks"] = [("/master/leases", 100 * MiB)]
+        master.resources[-1]["disks"] = [("/master/leases", 100 * MiB)]
 
         # Wait for the next check.
         cb.resume()
         cb.wait()
-        assert fake_panic.was_called
+        assert panic.was_called
     finally:
         cb.resume()
-        wd.stop()
+        watchdog.stop()
 
 
-def test_panic_on_error(fake_panic):
-    fm = FakeMaster()
+def test_panic_on_error(panic):
+    master = FakeMaster()
     cb = WatchdogCallback()
-    wd = spwd.Watchdog(fm, 0.01, callback=cb)
+    watchdog = spwd.Watchdog(master, 0.01, callback=cb)
 
-    wd.start()
+    watchdog.start()
     try:
         # Let first check succeed.
         cb.wait()
-        assert not fake_panic.was_called
+        assert not panic.was_called
 
         # Simulate error checking lease.
-        fm.error = Exception("Inquire error")
+        master.error = Exception("Inquire error")
 
         # Wait for the next check.
         cb.resume()
         cb.wait()
-        assert fake_panic.was_called
+        assert panic.was_called
     finally:
         cb.resume()
-        wd.stop()
+        watchdog.stop()
 
 
-def test_temporary_error(fake_panic):
-    fm = FakeMaster()
+def test_temporary_error(panic):
+    master = FakeMaster()
     cb = WatchdogCallback()
-    wd = spwd.Watchdog(fm, 0.01, callback=cb)
+    watchdog = spwd.Watchdog(master, 0.01, callback=cb)
 
-    wd.start()
+    watchdog.start()
     try:
         # Let first check succeed.
         cb.wait()
-        assert not fake_panic.was_called
+        assert not panic.was_called
 
         # Simulate a temporary error checking lease.
         e = sanlock.SanlockException(
             errno.EBUSY, "Inquire error", "Device or resource busy")
-        fm.error = se.SanlockInquireError(e.errno, str(e))
+        master.error = se.SanlockInquireError(e.errno, str(e))
 
         # Wait for next 3 checks
         for i in range(3):
             cb.resume()
             cb.wait()
-            assert not fake_panic.was_called
+            assert not panic.was_called
 
         # Next error should trigger a panic.
         cb.resume()
         cb.wait()
-        assert fake_panic.was_called
+        assert panic.was_called
     finally:
         cb.resume()
-        wd.stop()
+        watchdog.stop()
 
 
-def test_max_errors(fake_panic):
-    fm = FakeMaster()
+def test_max_errors(panic):
+    master = FakeMaster()
     cb = WatchdogCallback()
-    wd = spwd.Watchdog(fm, 0.01, max_errors=0, callback=cb)
+    watchdog = spwd.Watchdog(master, 0.01, max_errors=0, callback=cb)
 
-    wd.start()
+    watchdog.start()
     try:
         # Simulate a temporary error checking lease.
         e = sanlock.SanlockException(
             errno.EBUSY, "Inquire error", "Device or resource busy")
-        fm.error = se.SanlockInquireError(e.errno, str(e))
+        master.error = se.SanlockInquireError(e.errno, str(e))
 
         # Next check should trigger a panic.
         cb.wait()
-        assert fake_panic.was_called
+        assert panic.was_called
     finally:
         cb.resume()
-        wd.stop()
+        watchdog.stop()
