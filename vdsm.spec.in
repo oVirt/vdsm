@@ -203,20 +203,9 @@ Requires: python3 >= 3.6
 Requires: libvirt-client
 Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
-
-%if 0%{?rhel}
-%if 0%{?centos}
-# TODO: Depend on the same version as RHEL once it is available upstream.
-Requires: libvirt-daemon-kvm >= 6.0.0-17
-%else
-# Bug 1946697 - systemctl restart libvirtd shuts down all VMs on the host
-Requires: libvirt-daemon-kvm >= 7.0.0-13.module+el8.4.0+10604+5608c2b4
-%endif
+# For https://bugzilla.redhat.com/1955667
+Requires: libvirt-daemon-kvm >= 7.0.0-14
 Requires: python3-libvirt
-%else # fedora
-Requires: libvirt-daemon-kvm >= 6.1.0
-Requires: python3-libvirt
-%endif
 
 # iscsi-intiator versions
 Requires: iscsi-initiator-utils >= 6.2.0.873-21
