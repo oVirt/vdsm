@@ -474,14 +474,13 @@ def test_copy_data_collapse(
     dest_img_id = str(uuid.uuid4())
     dest_vol_id = str(uuid.uuid4())
 
-    length = MiB
-
     # Write some data to each layer
     for i, vol in enumerate(volumes):
         qemuio.write_pattern(
             vol.getVolumePath(),
             sc.fmt2str(vol.getFormat()),
-            offset=(i * length))
+            offset=(i * 2 * MiB),
+            len=1 * MiB)
 
     # The last volume in the chain is the leaf
     source_leaf_vol = volumes[-1]

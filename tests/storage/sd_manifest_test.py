@@ -81,8 +81,9 @@ class TestFileManifest(ManifestMixin):
         with self.env() as env:
             make_file_volume(env.sd_manifest, VOLSIZE,
                              self.img_id, self.vol_id)
-            # The first block is always allocated even for sparse image.
-            assert 4096 == env.sd_manifest.getVAllocSize(
+            vol = env.sd_manifest.produceVolume(self.img_id, self.vol_id)
+            allocated = os.stat(vol.getVolumePath()).st_blocks * 512
+            assert allocated <= env.sd_manifest.getVAllocSize(
                 self.img_id, self.vol_id)
 
     def test_getisodomainimagesdir(self):

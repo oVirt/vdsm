@@ -1112,9 +1112,13 @@ def check_raw_sparse_image(path, virtual_size):
     # https://github.com/qemu/qemu/commit/3a20013fbb26
     image_stat = os.stat(path)
     allocated = image_stat.st_blocks * 512
-    filesystem_block_size = os.statvfs(path).f_bsize
+
+    # On XFS filesystem qemu may set extent size of 1 MiB for better
+    # performance.
+    min_allocation = max(os.statvfs(path).f_bsize, MiB)
+
     assert image_stat.st_size == virtual_size
-    assert allocated <= filesystem_block_size
+    assert allocated <= min_allocation
 
 
 def check_raw_preallocated_image(path, virtual_size):
