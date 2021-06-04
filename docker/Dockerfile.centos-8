@@ -1,4 +1,4 @@
-FROM centos/centos:stream8
+FROM quay.io/centos/centos:stream8
 
 # Add runtime dependencies.
 RUN dnf install -y \
