@@ -259,7 +259,7 @@ def package_versions():
             'libvirt': ('libvirt', 'libvirt-daemon-kvm'),
             'mom': ('mom',),
             'ovirt-hosted-engine-ha': ('ovirt-hosted-engine-ha',),
-            'openvswitch': ('openvswitch', 'rhv-openvswitch'),
+            'openvswitch': ('openvswitch', 'ovirt-openvswitch'),
             'nmstate': ('nmstate',),
             'qemu-img': ('qemu-img', 'qemu-img-rhev', 'qemu-img-ev'),
             'qemu-kvm': ('qemu-kvm', 'qemu-kvm-rhev', 'qemu-kvm-ev'),
