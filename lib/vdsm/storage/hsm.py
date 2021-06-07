@@ -95,6 +95,7 @@ from vdsm.storage.sdm.api import (
     amend_volume,
     add_bitmap,
     copy_data,
+    clear_bitmaps,
     merge as api_merge,
     move_device,
     reduce_domain,
@@ -3801,6 +3802,19 @@ class HSM(object):
             bitmap (str): The name of the bitmap to remove.
         """
         job = remove_bitmap.Job(job_id, self._pool.id, vol_info, bitmap)
+        self.sdm_schedule(job)
+
+    @public
+    def sdm_clear_bitmaps(self, job_id, vol_info):
+        """
+        Clear all the bitmaps from the given volume.
+
+        Arguments:
+            job_id (str):  The UUID of the job.
+            vol_info (dict): Dictionary that contains all the needed info
+                on the volume.
+        """
+        job = clear_bitmaps.Job(job_id, self._pool.id, vol_info)
         self.sdm_schedule(job)
 
     # Lease operations
