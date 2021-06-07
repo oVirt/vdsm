@@ -142,6 +142,28 @@ def remove_bitmap(vol_path, bitmap):
             vol_path=vol_path)
 
 
+def clear_bitmaps(vol_path):
+    """
+    Remove all the bitmaps from the given volume path
+
+    Arguments:
+        vol_path (str): Path to the volume
+    """
+    bitmaps = _query_bitmaps(vol_path)
+    log.info(
+        "Removing bitmaps %s from volume %r", list(bitmaps), vol_path)
+
+    for bitmap in bitmaps:
+        try:
+            op = qemuimg.bitmap_remove(vol_path, bitmap)
+            op.run()
+        except cmdutils.Error as e:
+            raise exception.RemoveBitmapError(
+                reason="Failed to remove bitmap: {}".format(e),
+                bitmap=bitmap,
+                vol_path=vol_path)
+
+
 def _add_bitmap(vol_path, bitmap, granularity=None, enable=True):
     log.info("Add bitmap %s to %r", bitmap, vol_path)
 

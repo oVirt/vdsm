@@ -258,3 +258,32 @@ def test_remove_bitmap_failed(monkeypatch, tmp_mount, vol_chain):
 def test_remove_non_existing_bitmap_succeed(tmp_mount, vol_chain):
     # try to remove a non-existing bitmap from top_vol
     bitmaps.remove_bitmap(vol_chain.top_vol, 'bitmap')
+
+
+@requires_bitmaps_support
+def test_clear_bitmaps(tmp_mount, vol_chain):
+    bitmap_1 = 'bitmap_1'
+    bitmap_2 = 'bitmap_2'
+
+    # Add new bitmaps to top volume
+    for bitmap in [bitmap_1, bitmap_2]:
+        op = qemuimg.bitmap_add(vol_chain.top_vol, bitmap)
+        op.run()
+
+    # Clear top volume bitmaps
+    bitmaps.clear_bitmaps(vol_chain.top_vol)
+
+    info = qemuimg.info(vol_chain.top_vol)
+    vol_bitmaps = info["format-specific"]["data"].get("bitmaps", [])
+    assert not vol_bitmaps
+
+
+@requires_bitmaps_support
+def test_clear_bitmaps_failed(monkeypatch, tmp_mount, vol_chain):
+    # Add new bitmap to top volume
+    op = qemuimg.bitmap_add(vol_chain.top_vol, 'bitmap')
+    op.run()
+
+    monkeypatch.setattr(qemuimg, "bitmap_remove", qemuimg_failure)
+    with pytest.raises(exception.RemoveBitmapError):
+        bitmaps.clear_bitmaps(vol_chain.top_vol)
