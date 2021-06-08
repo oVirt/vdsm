@@ -471,11 +471,14 @@ Requires:       NetworkManager-ovs
 Requires:       ethtool
 Requires:       iproute
 Requires:       iproute-tc
+Requires:       openvswitch >= 2.11
+# Workaround for BZ#1966143, python3-openvswitch is provided only by ovirt-python-openvswitch, which depends
+# on correct version of python3-openvswitch2.1*.
+Requires:       python3-openvswitch >= 2.11
 Requires:       nmstate >= 1.0
 Requires:       nmstate-plugin-ovsdb
 Requires:       libnl3
 Requires:       lldpad
-Requires:       openvswitch >= 2.11
 Requires:       %{python_or_python3}-six
 Requires:       %{name}-common = %{version}-%{release}
 
