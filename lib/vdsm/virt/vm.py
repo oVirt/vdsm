@@ -1388,8 +1388,16 @@ class Vm(object):
         self.log.debug("Refreshing drive volume for %s (domainID: %s, "
                        "volumeID: %s)", volInfo['name'], volInfo['domainID'],
                        volInfo['volumeID'])
-        self.cif.irs.refreshVolume(volInfo['domainID'], volInfo['poolID'],
-                                   volInfo['imageID'], volInfo['volumeID'])
+        res = self.cif.irs.refreshVolume(
+            volInfo['domainID'],
+            volInfo['poolID'],
+            volInfo['imageID'],
+            volInfo['volumeID'])
+        if response.is_error(res):
+            raise errors.StorageUnavailableError(
+                "Unable to refresh volume for drive {} (domain {}, volume {}):"
+                " {}".format(volInfo['name'], volInfo['domainID'],
+                             volInfo['volumeID'], res['status']['message']))
 
     def __verifyVolumeExtension(self, volInfo):
         volSize = self.getVolumeSize(

@@ -644,6 +644,7 @@ class FakeIRS(object):
     def refreshVolume(self, domainID, poolID, imageID, volumeID):
         key = (domainID, poolID, imageID, volumeID)
         self.refreshes.append(key)
+        return response.success()
 
     def getVolumeSize(self, domainID, poolID, imageID, volumeID):
         # For block storage we "truesize" and "apparentsize" are always
