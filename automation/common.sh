@@ -32,10 +32,10 @@ EOF
 
 install_dependencies() {
     ${CI_PYTHON} tests/profile pip-upgrade ${CI_PYTHON} -m pip \
-        install --upgrade pip "virtualenv<20"
+        install --upgrade pip
 
     ${CI_PYTHON} tests/profile pip-install ${CI_PYTHON} -m pip \
-        install --upgrade "tox" "coverage>=5"
+        install --upgrade "tox" "coverage"
 
     add_advanced_virt
 
