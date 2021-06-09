@@ -470,7 +470,7 @@ class StorageDomainManifest(object):
         try:
             version = self.getMetaParam(DMDK_VERSION)
         except KeyError:
-            raise se.MetaDataKeyNotFoundError("key={}".format(DMDK_VERSION))
+            raise se.InvalidMetadata("key={}".format(DMDK_VERSION))
         return version
 
     @property

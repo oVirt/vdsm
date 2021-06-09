@@ -1805,7 +1805,7 @@ class MetaDataKeyError(MetaDataGeneralError):
     msg = "Meta data key error"
 
 
-class MetaDataKeyNotFoundError(MetaDataGeneralError):
+class InvalidMetadata(MetaDataGeneralError):
     code = 751
     msg = "Meta Data key not found error"
 
@@ -1842,7 +1842,7 @@ class MetadataOverflowError(MetaDataGeneralError):
         self.value = "data=%r" % data
 
 
-class MetadataCleared(MetaDataKeyNotFoundError):
+class MetadataCleared(InvalidMetadata):
     code = 757
     msg = "Metadata was cleared, volume is partly deleted"
 

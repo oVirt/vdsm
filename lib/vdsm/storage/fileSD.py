@@ -809,7 +809,7 @@ class FileStorageDomain(sd.StorageDomain):
             self.log.debug("Converting volume %s metadata", vol.volUUID)
             try:
                 vol_md = vol.getMetadata()
-            except se.MetaDataKeyNotFoundError as e:
+            except se.InvalidMetadata as e:
                 self.log.warning(
                     "Skipping volume %s with invalid metadata: %s",
                     vol.volUUID, e)
@@ -832,7 +832,7 @@ class FileStorageDomain(sd.StorageDomain):
             self.log.debug("Finalizing volume %s metadata", vol.volUUID)
             try:
                 vol_md = vol.getMetadata()
-            except se.MetaDataKeyNotFoundError:
+            except se.InvalidMetadata:
                 # We already logged about this in convert_volume_metadata().
                 continue
             vol.setMetadata(vol_md)

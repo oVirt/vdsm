@@ -114,7 +114,7 @@ class VolumeManifest(object):
         try:
             return meta[key]
         except KeyError:
-            raise se.MetaDataKeyNotFoundError(str(meta) + ":" + str(key))
+            raise se.InvalidMetadata(str(meta) + ":" + str(key))
 
     def getVolumePath(self):
         """
@@ -148,21 +148,21 @@ class VolumeManifest(object):
         try:
             legality = self.getMetaParam(sc.LEGALITY)
             return legality
-        except se.MetaDataKeyNotFoundError:
+        except se.InvalidMetadata:
             return sc.LEGAL_VOL
 
     def isLegal(self):
         try:
             legality = self.getMetaParam(sc.LEGALITY)
             return legality != sc.ILLEGAL_VOL
-        except se.MetaDataKeyNotFoundError:
+        except se.InvalidMetadata:
             return True
 
     def isFake(self):
         try:
             legality = self.getMetaParam(sc.LEGALITY)
             return legality == sc.FAKE_VOL
-        except se.MetaDataKeyNotFoundError:
+        except se.InvalidMetadata:
             return False
 
     def getCapacity(self):
@@ -546,7 +546,7 @@ class VolumeManifest(object):
             if self.isShared():
                 raise se.CannotDeleteSharedVolume("img %s vol %s" %
                                                   (self.imgUUID, self.volUUID))
-        except se.MetaDataKeyNotFoundError as e:
+        except se.InvalidMetadata as e:
             # In case of metadata key error, we have corrupted
             # volume (One of metadata corruptions may be
             # previous volume deletion failure).

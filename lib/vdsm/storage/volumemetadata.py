@@ -120,7 +120,7 @@ class VolumeMetadata(object):
                 # See https://bugzilla.redhat.com/1574631.
                 raise exception.MetadataCleared("lines={}".format(lines))
 
-            raise exception.MetaDataKeyNotFoundError(
+            raise exception.InvalidMetadata(
                 "key={} lines={}".format(e, lines))
 
     @property

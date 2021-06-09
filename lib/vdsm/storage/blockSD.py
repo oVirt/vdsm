@@ -1672,7 +1672,7 @@ class BlockStorageDomain(sd.StorageDomain):
                     try:
                         md = VolumeMetadata.from_lines(
                             v4_data.rstrip(b"\0").splitlines())
-                    except se.MetaDataKeyNotFoundError as e:
+                    except se.InvalidMetadata as e:
                         self.log.warning(
                             "Cannot convert metadata slot %s offset=%s: %s",
                             slot, v4_off, e)

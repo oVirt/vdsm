@@ -244,7 +244,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                           "volume chain looks damaged", imgUUID,
                           exc_info=True)
 
-            except se.MetaDataKeyNotFoundError:
+            except se.InvalidMetadata:
                 log.error("It is not possible to prepare the image %s, the "
                           "volume metadata looks damaged", imgUUID,
                           exc_info=True)
