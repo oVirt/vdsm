@@ -292,11 +292,17 @@ this drive.
 
 ### Live migration (no changes required)
 
-- Disable monitoring for all the drives of the VM
-- Start the migration
-- If migrtion failed, enable monitoring for all the drives of the VM. If
-  a drive was marked for extension during failed live storage migration,
-  it will be extended on the next drive monitor cycle.
+- Keep the current flow with no changes.
+- Upon extension, refresh the volume first on the destination host and
+  after that on the source host to make sure VM won't use the new size
+  before it's visible on the destination.
+- If refresh fails on the destination, fail the extension also on the 
+  source hosts, otherwise the disk will be corrupted once VM is started
+  on the destination. Extension will be retried automatically.
+- In case disk extension finishes after migration is finished and VM
+  doesn't exists on the source host any more, disk extension finishes
+  with error. However, the error is harmless as VM is already
+  terminated on the source host.
 
 
 ### Benefits of this approach:
