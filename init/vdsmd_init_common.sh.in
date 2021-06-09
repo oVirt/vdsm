@@ -29,12 +29,25 @@ task_configure_vdsm_logs() {
         @VDSMLOGDIR@/mom.log
         @VDSMLOGDIR@/vdsm.log
     "
+    local wanted_mode="0644"
+    local wanted_owner="@VDSMUSER@:@VDSMGROUP@"
 
     for logfile in ${vdsm_logs}; do
         if [ ! -e "${logfile}" ]; then
             @TOUCH_PATH@ "${logfile}"
-            @CHMOD_PATH@ 0644 "${logfile}"
-            @CHOWN_PATH@ @VDSMUSER@:@VDSMGROUP@ "${logfile}"
+            @CHMOD_PATH@ "${wanted_mode}" "${logfile}"
+            @CHOWN_PATH@ "${wanted_owner}" "${logfile}"
+        else
+            owner=$(stat -c %U:%G "${logfile}")
+            fmode=$(stat -c 0%a "${logfile}")
+            if [ "${owner}" != "${wanted_owner}" ]; then
+                echo "Warning: log file ${logfile} is owned by ${owner}... Fixing..."
+                @CHOWN_PATH@ "${wanted_owner}" "${logfile}"
+            fi
+            if [ "${fmode}" != "${wanted_mode}" ]; then
+                echo "Warning: bad file access mode for log file ${logfile} : ${fmode}... Fixing..."
+                @CHMOD_PATH@ "${wanted_mode}" "${logfile}"
+            fi
         fi
     done
 }
