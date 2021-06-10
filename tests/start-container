@@ -1,0 +1,19 @@
+#!/bin/sh
+
+IMAGE="vdsm-test-centos-8"
+REGISTRY="quay.io/ovirt"
+
+# Setting labels on /run/udev requires root permissions.
+if [ $(id -u) -ne 0 ]; then
+    echo "Need to be root!"
+    exit 1
+fi
+
+podman run \
+    --privileged \
+    --rm \
+    -it \
+    --volume $PWD:/vdsm:Z \
+    --volume /run/udev:/run/udev:Z \
+    $REGISTRY/$IMAGE \
+    /vdsm/tests/container-shell
