@@ -41,6 +41,7 @@ To setup the environment for unprivileged user:
 from __future__ import absolute_import
 from __future__ import division
 
+import logging
 import os
 import stat
 import subprocess
@@ -72,6 +73,8 @@ PREALLOCATION = {
     "raw": qemuimg.PREALLOCATION.FALLOC,
     "qcow2": qemuimg.PREALLOCATION.METADATA,
 }
+
+log = logging.getLogger("test")
 
 
 def have_supervdsm():
@@ -272,6 +275,30 @@ def test_no_backing_chain(nbd_env):
     op.run()
 
     compare_images(top.volumePath, nbd_env.dst, strict=True)
+
+
+@broken_on_ci
+@requires_privileges
+@pytest.mark.parametrize("format", ["qcow2", "raw"])
+@pytest.mark.parametrize("backing_chain", [
+    pytest.param(True, id="backing_chain"),
+    pytest.param(False, id="no_backing_chain"),
+])
+def test_allocation_depth(nbd_env, format, backing_chain):
+    # Check that qemu-nbd exposes the "qemu:allocation-depth" meta context.
+    vol = create_volume(nbd_env, format, "sparse")
+    config = {
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
+        "readonly": True,
+        "backing_chain": backing_chain,
+    }
+    with nbd_server(config) as nbd_url:
+        with nbd_client.open(urlparse(nbd_url)) as c:
+            extents = c.extents(0, nbd_env.virtual_size)
+            log.debug("extents: %s", extents)
+            assert "qemu:allocation-depth" in extents
 
 
 @broken_on_ci
