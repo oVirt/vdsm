@@ -358,13 +358,15 @@ def test_bitmap_single_volume(nbd_env):
         with nbd_client.open(urlparse(nbd_url), dirty=True) as c:
             extents = c.extents(0, nbd_env.virtual_size)
 
-            assert extents[c.dirty_bitmap] == [
-                nbd_client.Extent(2 * MiB, 0),
-                nbd_client.Extent(64 * KiB, 1),
-                nbd_client.Extent(1 * MiB - 64 * KiB, 0),
-                nbd_client.Extent(64 * KiB, 1),
-                nbd_client.Extent(
-                    nbd_env.virtual_size - 3 * MiB - 64 * KiB, 0),
+            dirty_extents = [(e.length, e.dirty)
+                             for e in extents[c.dirty_bitmap]]
+
+            assert dirty_extents == [
+                (2 * MiB, False),
+                (64 * KiB, True),
+                (1 * MiB - 64 * KiB, False),
+                (64 * KiB, True),
+                (nbd_env.virtual_size - 3 * MiB - 64 * KiB, False),
             ]
 
             assert c.read(1 * MiB, 64 * KiB) == b"\xf1" * 64 * KiB
@@ -384,11 +386,13 @@ def test_bitmap_single_volume(nbd_env):
         with nbd_client.open(urlparse(nbd_url), dirty=True) as c:
             extents = c.extents(0, nbd_env.virtual_size)
 
-            assert extents[c.dirty_bitmap] == [
-                nbd_client.Extent(3 * MiB, 0),
-                nbd_client.Extent(64 * KiB, 1),
-                nbd_client.Extent(
-                    nbd_env.virtual_size - 3 * MiB - 64 * KiB, 0),
+            dirty_extents = [(e.length, e.dirty)
+                             for e in extents[c.dirty_bitmap]]
+
+            assert dirty_extents == [
+                (3 * MiB, False),
+                (64 * KiB, True),
+                (nbd_env.virtual_size - 3 * MiB - 64 * KiB, False),
             ]
 
             assert c.read(2 * MiB, 64 * KiB) == b"\xf2" * 64 * KiB
@@ -438,13 +442,15 @@ def test_bitmap_backing_chain(nbd_env):
         with nbd_client.open(urlparse(nbd_url), dirty=True) as c:
             extents = c.extents(0, nbd_env.virtual_size)
 
-            assert extents[c.dirty_bitmap] == [
-                nbd_client.Extent(2 * MiB, 0),
-                nbd_client.Extent(64 * KiB, 1),
-                nbd_client.Extent(1 * MiB - 64 * KiB, 0),
-                nbd_client.Extent(64 * KiB, 1),
-                nbd_client.Extent(
-                    nbd_env.virtual_size - 3 * MiB - 64 * KiB, 0),
+            dirty_extents = [(e.length, e.dirty)
+                             for e in extents[c.dirty_bitmap]]
+
+            assert dirty_extents == [
+                (2 * MiB, False),
+                (64 * KiB, True),
+                (1 * MiB - 64 * KiB, False),
+                (64 * KiB, True),
+                (nbd_env.virtual_size - 3 * MiB - 64 * KiB, False),
             ]
 
             assert c.read(1 * MiB, 64 * KiB) == b"\xf1" * 64 * KiB
@@ -464,11 +470,13 @@ def test_bitmap_backing_chain(nbd_env):
         with nbd_client.open(urlparse(nbd_url), dirty=True) as c:
             extents = c.extents(0, nbd_env.virtual_size)
 
-            assert extents[c.dirty_bitmap] == [
-                nbd_client.Extent(3 * MiB, 0),
-                nbd_client.Extent(64 * KiB, 1),
-                nbd_client.Extent(
-                    nbd_env.virtual_size - 3 * MiB - 64 * KiB, 0),
+            dirty_extents = [(e.length, e.dirty)
+                             for e in extents[c.dirty_bitmap]]
+
+            assert dirty_extents == [
+                (3 * MiB, False),
+                (64 * KiB, True),
+                (nbd_env.virtual_size - 3 * MiB - 64 * KiB, False),
             ]
 
             assert c.read(2 * MiB, 64 * KiB) == b"\xf2" * 64 * KiB
