@@ -28,8 +28,6 @@ import uuid
 
 import pytest
 
-from testing import on_ovirt_ci
-
 from vdsm.common import commands
 from vdsm.common import concurrent
 from vdsm.common import constants
@@ -38,6 +36,8 @@ from vdsm.common.units import MiB, GiB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
+
+import testing
 
 from . marks import requires_root
 
@@ -1556,7 +1556,7 @@ def test_bootstrap(tmp_storage, read_only):
 @requires_root
 @pytest.mark.root
 @pytest.mark.skipif(
-    on_ovirt_ci(),
+    testing.on_ovirt_ci() or testing.on_travis_ci(),
     reason="dm-mirror kernel module missing - pvmove fails")
 def test_pvmove(tmp_storage):
     dev_size = 1 * GiB
