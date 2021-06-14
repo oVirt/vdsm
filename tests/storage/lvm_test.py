@@ -428,7 +428,7 @@ def test_suppress_multiple_lvm_warnings(fake_devices, no_delay):
     assert err == [u"  before", u"  after"]
 
 
-def test_pvmove_cmd_lvmpolld(fake_devices, monkeypatch):
+def test_pv_move_cmd(fake_devices, monkeypatch):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
 
@@ -1558,7 +1558,7 @@ def test_bootstrap(tmp_storage, read_only):
 @pytest.mark.skipif(
     testing.on_ovirt_ci() or testing.on_travis_ci(),
     reason="dm-mirror kernel module missing - pvmove fails")
-def test_pvmove(tmp_storage):
+def test_pv_move(tmp_storage):
     dev_size = 1 * GiB
     dev1 = tmp_storage.create_device(dev_size)
     dev2 = tmp_storage.create_device(dev_size)
