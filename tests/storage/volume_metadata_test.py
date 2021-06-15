@@ -305,6 +305,15 @@ class TestVolumeMetadata:
 
         assert 'voltype' not in md
 
+    def test_parse_invalid_storage_value(self):
+        lines = make_lines()
+        invalid_value = b"invalid\xd7value"
+        lines.insert(0, invalid_value)
+        md, errors = volumemetadata.parse(lines)
+
+        # Errors should contain invalid values.
+        assert any([repr(invalid_value) in x for x in errors])
+
 
 class TestMDSize:
     MAX_DESCRIPTION = "x" * sc.DESCRIPTION_SIZE

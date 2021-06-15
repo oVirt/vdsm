@@ -52,27 +52,37 @@ ATTRIBUTES = {
 
 def _lines_to_dict(lines):
     md = {}
+    errors = []
+
     for line in lines:
-        line = line.decode("utf-8")
+        # Skip a line if there is invalid value.
+        try:
+            line = line.decode("utf-8")
+        except UnicodeDecodeError as e:
+            errors.append("Invalid line '{}': {}".format(line, e))
+            continue
+
         if line.startswith("EOF"):
             break
         if '=' not in line:
             continue
+
         key, value = line.split('=', 1)
         md[key.strip()] = value.strip()
-    return md
+
+    return md, errors
 
 
 def parse(lines):
-    md = _lines_to_dict(lines)
+    md, errors = _lines_to_dict(lines)
     metadata = {}
-    errors = []
 
     if "NONE" in md:
         # Before 4.20.34-1 (ovirt 4.2.5) volume metadata could be
         # cleared by writing invalid metadata when deleting a volume.
         # See https://bugzilla.redhat.com/1574631.
-        return {}, [(str(exception.MetadataCleared()))]
+        errors.append(str(exception.MetadataCleared()))
+        return {}, errors
 
     # We work internally in bytes, even if old format store
     # value in blocks, we will read SIZE instead of CAPACITY
