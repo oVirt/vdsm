@@ -884,7 +884,6 @@ exit 0
 %{_tmpfilesdir}/%{vdsm_name}.conf
 %{_sysconfdir}/modprobe.d/vdsm-bonding-modprobe.conf
 %{_sysconfdir}/NetworkManager/conf.d/vdsm.conf
-%{_sysconfdir}/NetworkManager/dispatcher.d/dhcp_monitor.py
 %attr(440, root, root) %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
 %{_sysconfdir}/libvirt/hooks/qemu

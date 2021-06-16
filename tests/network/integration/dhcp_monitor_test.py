@@ -1,4 +1,4 @@
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,61 +18,132 @@
 #
 
 from contextlib import contextmanager
-import json
-import os
-import socket
+from unittest import mock
+import threading
 import time
 
 import pytest
 
 from vdsm.network import dhcp_monitor
+from vdsm.network.initializer import init_unpriviliged_dhcp_monitor_ctx
 
-SOCKET = 'monitor.sock'
+from network.nettestlib import dummy_device
+from network.nettestlib import Interface
+from network.nettestlib import IpFamily
+from network.nettestlib import parametrize_ip_families
 
-EVENT1 = {'event': 'event'}
-
-
-@pytest.fixture(scope='function')
-def monitor(tmp_path):
-    socket_path = str(tmp_path / SOCKET)
-    with monitor_ctx(socket_path) as monitor:
-        yield monitor
-
-
-@contextmanager
-def monitor_ctx(socket_path):
-    monitor = dhcp_monitor.Monitor.instance(socket_path=socket_path)
-    monitor.start()
-    try:
-        yield monitor
-    finally:
-        dhcp_monitor.clear_monitor()
+IPv4_ADDRESS = '192.0.100.1'
+IPv4_PREFIX_LEN = '24'
+IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1010'
+IPv6_PREFIX_LEN = '64'
 
 
-@pytest.fixture(scope='function')
-def client(tmp_path):
-    socket_path = str(tmp_path / SOCKET)
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
-        client.connect(socket_path)
-        yield client
+@pytest.fixture
+def nic0():
+    with dummy_device() as nic:
+        yield nic
+
+
+@pytest.fixture
+def dhcp_monitor_notifier():
+    event_sink = FakeNotifier()
+    with init_unpriviliged_dhcp_monitor_ctx(event_sink):
+        yield event_sink
+
+
+@pytest.fixture
+def add_rule_mock():
+    with mock.patch.object(
+        dhcp_monitor, 'add_dynamic_source_route_rules'
+    ) as add_rule_mock:
+        yield add_rule_mock
+
+
+class FakeNotifier(object):
+    def __init__(self):
+        self.events = []
+
+    def notify(self, event_id, params=None):
+        self.events.append(event_id)
+
+
+class AtomicAddressCounter(object):
+    def __init__(self, families):
+        self._addresses = self._init_addresses(families)
+        self._lock = threading.Lock()
+
+    def remove_addr(self, event):
+        address = event.get(dhcp_monitor.EventField.ADDRESS)
+        with self._lock:
+            if address in self._addresses:
+                self._addresses.remove(address)
+
+    def is_empty(self):
+        with self._lock:
+            return not self._addresses
+
+    @staticmethod
+    def _init_addresses(families):
+        addresses = set()
+        if IpFamily.IPv4 in families:
+            addresses.add(f'{IPv4_ADDRESS}/{IPv4_PREFIX_LEN}')
+        if IpFamily.IPv6 in families:
+            addresses.add(f'{IPv6_ADDRESS}/{IPv6_PREFIX_LEN}')
+        return addresses
 
 
 class TestMonitor(object):
-    def test_socket_creation_and_removal(self, tmp_path):
-        socket_path = str(tmp_path / SOCKET)
-        with monitor_ctx(socket_path):
-            assert os.path.exists(socket_path)
-        assert not os.path.exists(socket_path)
+    @parametrize_ip_families
+    def test_add_ip_with_monitor(
+        self, families, nic0, dhcp_monitor_notifier, add_rule_mock
+    ):
+        pool = dhcp_monitor.MonitoredItemPool.instance()
+        pool.add((nic0, IpFamily.IPv4))
+        pool.add((nic0, IpFamily.IPv6))
 
-    def test_action_handler(self, monitor, client):
-        events = []
-        monitor.add_handler(lambda event: events.append(event))
-        self._send_data(client, EVENT1)
-        time.sleep(0.1)
+        with self._wait_for_events(families):
+            self._configure_ip(nic0, families)
 
-        assert len(events) == 1
-        assert events[0] == EVENT1
+        assert len(dhcp_monitor_notifier.events) == len(families)
+        events_set = set(dhcp_monitor_notifier.events)
+        assert len(events_set) == 1
+        assert '|net|host_conn|no_id' in events_set
+        if IpFamily.IPv4 in families:
+            add_rule_mock.assert_called_once_with(
+                nic0, IPv4_ADDRESS, int(IPv4_PREFIX_LEN)
+            )
+        else:
+            add_rule_mock.assert_not_called()
+
+    @parametrize_ip_families
+    def test_add_ip_without_monitor(
+        self, families, nic0, dhcp_monitor_notifier, add_rule_mock
+    ):
+        with self._wait_for_events(families):
+            self._configure_ip(nic0, families)
+
+        assert not dhcp_monitor_notifier.events
+        add_rule_mock.assert_not_called()
 
     @staticmethod
-    def _send_data(client, content):
-        client.sendall(bytes(json.dumps(content), 'utf-8'))
+    def _configure_ip(device, families):
+        interface = Interface.from_existing_dev_name(device)
+
+        if IpFamily.IPv4 in families:
+            interface.add_ip(IPv4_ADDRESS, IPv4_PREFIX_LEN, IpFamily.IPv4)
+        if IpFamily.IPv6 in families:
+            interface.add_ip(IPv6_ADDRESS, IPv6_PREFIX_LEN, IpFamily.IPv6)
+
+    @contextmanager
+    def _wait_for_events(self, families):
+        counter = AtomicAddressCounter(families)
+        monitor = dhcp_monitor.Monitor.instance()
+        monitor.add_handler(lambda event: counter.remove_addr(event))
+
+        yield
+
+        # Timeout after 5 secs
+        for _ in range(10):
+            if counter.is_empty():
+                return
+            time.sleep(0.5)

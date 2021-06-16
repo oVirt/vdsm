@@ -22,7 +22,6 @@ from copy import deepcopy
 
 import pytest
 
-from vdsm.network import api as net_api
 from vdsm.network import errors as ne
 from vdsm.network.initializer import init_unpriviliged_dhcp_monitor_ctx
 
@@ -66,7 +65,7 @@ class FakeNotifier:
 @pytest.fixture(scope='module', autouse=True)
 def dhcp_monitor():
     event_sink = FakeNotifier()
-    with init_unpriviliged_dhcp_monitor_ctx(event_sink, net_api):
+    with init_unpriviliged_dhcp_monitor_ctx(event_sink):
         yield
 
 

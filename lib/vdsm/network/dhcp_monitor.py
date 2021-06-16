@@ -18,16 +18,14 @@
 #
 
 from contextlib import contextmanager
-import os
-import json
 import logging
-import socketserver
 import threading
 
 from vdsm.common import concurrent
-from vdsm.common.constants import P_VDSM_RUN
+from vdsm.network.netlink import monitor
+from vdsm.network.nmstate import add_dynamic_source_route_rules
+from vdsm.network.ip.address import IPAddressData
 
-SOCKET_DEFAULT = os.path.join(P_VDSM_RUN, 'dhcp-monitor.sock')
 
 _monitor_instance = None
 _monitor_lock = threading.Lock()
@@ -72,22 +70,17 @@ class MonitoredItemPool(object):
 
 class Monitor(object):
     """
-    Monitor that creates UNIX socket and handles the event notification
+    Monitor that handles new ip notifications
     """
 
-    def __init__(self, socket_path=SOCKET_DEFAULT):
-        self._socket = socket_path
+    def __init__(self):
         self._handlers = []
-
-        self._remove_socket()
-        self._server = socketserver.UnixStreamServer(
-            socket_path, _MonitorHandler
+        self._nl_monitor = monitor.object_monitor(
+            groups=('ipv4-ifaddr', 'ipv6-ifaddr')
         )
         self._thread = concurrent.thread(
-            self._server.serve_forever, name='dhcp-monitor'
+            self.serve_forever, name='dhcp-monitor'
         )
-        self._netapi = None
-        self._cif = None
 
     @staticmethod
     def instance(**kwargs):
@@ -100,12 +93,13 @@ class Monitor(object):
 
     def start(self):
         logging.info('Starting DHCP monitor.')
+        self._nl_monitor.start()
         self._thread.start()
 
     def stop(self):
         logging.info('Stopping DHCP monitor.')
-        self._remove_socket()
-        self._server.shutdown()
+        self._nl_monitor.stop()
+        self._nl_monitor.wait()
         self._thread.join()
 
     def add_handler(self, handler):
@@ -115,44 +109,34 @@ class Monitor(object):
         for handler in self._handlers:
             handler(event)
 
-    def _remove_socket(self):
-        try:
-            os.remove(self._socket)
-        except FileNotFoundError:
-            pass
-        except OSError as e:
-            logging.warning('DHCP monitor socket cannot be removed: %s', e)
+    def serve_forever(self):
+        for event in self._nl_monitor:
+            self.handle_event(event)
 
 
-class ResponseField(object):
-    IPADDR = 'ip'
-    IPMASK = 'mask'
-    IPROUTE = 'route'
-    IFACE = 'iface'
-    FAMILY = 'family'
+class EventField(object):
+    class Scope(object):
+        KEY = 'scope'
+        GLOBAL = 'global'
+
+    class Event(object):
+        KEY = 'event'
+        NEW_ADDR = 'new_addr'
+
+    class Family(object):
+        KEY = 'family'
+        IPV4 = 'inet'
+        IPV6 = 'inet6'
+
+    ADDRESS = 'address'
+    IFACE = 'label'
 
 
-class _MonitorHandler(socketserver.BaseRequestHandler):
-    def handle(self):
-        content = self.request.recv(2048).strip()
-        Monitor.instance().handle_event(json.loads(content))
-
-
-def initialize_monitor(cif, netapi):
-    def _src_route_handler(event):
-        netapi.add_source_route_rules(
-            event[ResponseField.IFACE],
-            event[ResponseField.IPADDR],
-            event[ResponseField.IPMASK],
-            event[ResponseField.IPROUTE],
-            event[ResponseField.FAMILY],
-        )
-
+def initialize_monitor(cif):
     global _monitor_instance
     try:
         monitor = Monitor.instance()
-        monitor.add_handler(lambda event: cif.notify('|net|host_conn|no_id'))
-        monitor.add_handler(_src_route_handler)
+        monitor.add_handler(lambda event: _dhcp_event_handler(cif, event))
         monitor.start()
     except Exception as e:
         _monitor_instance = None
@@ -166,9 +150,53 @@ def clear_monitor():
 
 
 @contextmanager
-def initialize_monitor_ctx(cif, netapi):
-    initialize_monitor(cif, netapi)
+def initialize_monitor_ctx(cif):
+    initialize_monitor(cif)
     try:
         yield
     finally:
         clear_monitor()
+
+
+def _dhcp_event_handler(cif, event):
+    if not _is_valid_event(event):
+        return
+
+    pool = MonitoredItemPool.instance()
+
+    iface = event[EventField.IFACE]
+    family = _get_event_family(event.get(EventField.Family.KEY))
+    address = IPAddressData(event[EventField.ADDRESS], iface)
+    item = (iface, family)
+
+    if not pool.is_item_in_pool(item):
+        logging.warning(
+            'Nic %s is not configured for IPv%s monitoring.', iface, family
+        )
+        return
+
+    if family == 4:
+        add_dynamic_source_route_rules(
+            iface, address.address, address.prefixlen
+        )
+
+    cif.notify('|net|host_conn|no_id')
+    pool.remove(item)
+
+
+def _is_valid_event(event):
+    # Skipping local addresses, removal of address or empty address field
+    return (
+        event.get(EventField.Scope.KEY) == EventField.Scope.GLOBAL
+        and event.get(EventField.Event.KEY) == EventField.Event.NEW_ADDR
+        and event.get(EventField.ADDRESS)
+        and event.get(EventField.IFACE)
+    )
+
+
+def _get_event_family(event_family):
+    if event_family == EventField.Family.IPV4:
+        return 4
+    if event_family == EventField.Family.IPV6:
+        return 6
+    return None

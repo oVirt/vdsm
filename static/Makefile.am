@@ -136,11 +136,6 @@ networkmanager_DATA = \
 	./etc/NetworkManager/conf.d/vdsm.conf \
 	$(NULL)
 
-nmdispatcherdir = $(sysconfdir)/NetworkManager/dispatcher.d
-dist_nmdispatcher_SCRIPTS = \
-	./etc/NetworkManager/dispatcher.d/dhcp_monitor.py \
-	$(NULL)
-
 libvirthookdir = $(sysconfdir)/libvirt/hooks
 dist_libvirthook_SCRIPTS = \
 	./etc/libvirt/hooks/qemu \

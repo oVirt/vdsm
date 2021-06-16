@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2018 Red Hat, Inc. and/or its affiliates.
+# Copyright 2009-2021 Red Hat, Inc. and/or its affiliates.
 #
 # Licensed to you under the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -44,7 +44,6 @@ from vdsm.common import hooks
 from vdsm.common import lockfile
 from vdsm.common import libvirtconnection
 from vdsm.common import sigutils
-from vdsm.common import supervdsm
 from vdsm.common import time
 from vdsm.common import zombiereaper
 from vdsm.common.panic import panic
@@ -118,7 +117,7 @@ def serve_clients(log):
 
         cif.start()
 
-        init_unprivileged_network_components(cif, supervdsm.getProxy())
+        init_unprivileged_network_components(cif)
 
         periodic.start(cif, scheduler)
         health.start()

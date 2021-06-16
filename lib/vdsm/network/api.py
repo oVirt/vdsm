@@ -33,11 +33,9 @@ from vdsm.network import connectivity
 from vdsm.network import netstats
 from vdsm.network import netswitch
 from vdsm.network import validator
-from vdsm.network.dhcp_monitor import MonitoredItemPool
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import sriov
 from vdsm.network.lldp import info as lldp_info
-from vdsm.network.nmstate import add_dynamic_source_route_rules
 from vdsm.network.nmstate import update_num_vfs
 
 from . import canonicalize
@@ -279,26 +277,6 @@ def _remove_nets_and_bonds(nets, bonds, in_rollback):
 def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
     netswitch.configurator.persist()
-
-
-def add_source_route_rules(iface, ip, mask, route, family=None):
-    if not family:
-        family = 4
-    else:
-        pool = MonitoredItemPool.instance()
-        item = (iface, family)
-        if pool.is_item_in_pool(item):
-            pool.remove(item)
-        else:
-            logging.warning(
-                'Nic %s is not configured for IPv%s monitoring.',
-                iface,
-                family,
-            )
-            return
-
-    if family == 4:
-        add_dynamic_source_route_rules(iface, ip, mask)
 
 
 def confirm_connectivity():
