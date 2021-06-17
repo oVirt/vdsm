@@ -369,6 +369,10 @@ class FakeFileSD(object):
     def getVolumeClass(self):
         return fileVolume.FileVolumeManifest
 
+    @classmethod
+    def is_block(cls):
+        return False
+
 
 class FakeBlockSD(object):
     def __init__(self, sd_manifest):
@@ -380,6 +384,10 @@ class FakeBlockSD(object):
 
     def getVolumeClass(self):
         return blockVolume.BlockVolumeManifest
+
+    @classmethod
+    def is_block(cls):
+        return True
 
 
 class FakeStorageDomainCache(object):

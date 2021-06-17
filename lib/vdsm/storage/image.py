@@ -114,7 +114,8 @@ class Image:
         qemu_measure = qemuimg.measure(
             image=src_vol_params['path'],
             format=sc.fmt2str(src_vol_params['volFormat']),
-            output_format=qemuimg.FORMAT.QCOW2)
+            output_format=qemuimg.FORMAT.QCOW2,
+            is_block=src_vol_params["block"])
 
         # Adds extra room so we don't have to extend this disk immediately
         # when a vm is started.

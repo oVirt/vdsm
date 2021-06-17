@@ -136,7 +136,8 @@ class TestEstimateQcow2Size:
         vol_params = dict(
             capacity=GiB,
             volFormat=sc.RAW_FORMAT,
-            path='path')
+            path='path',
+            block=sd_class.is_block())
         estimated_size = img.estimate_qcow2_size(vol_params, "sdUUID")
 
         assert estimated_size == 1074135040
@@ -164,7 +165,8 @@ class TestEstimateQcow2Size:
         vol_params = dict(
             capacity=GiB,
             volFormat=sc.COW_FORMAT,
-            path='path')
+            path='path',
+            block=sd_class.is_block())
         estimated_size = img.estimate_qcow2_size(vol_params, "sdUUID")
 
         assert estimated_size == 1074135040

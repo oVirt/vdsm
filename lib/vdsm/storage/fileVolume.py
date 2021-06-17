@@ -85,10 +85,6 @@ class FileVolumeManifest(volume.VolumeManifest):
         volume.VolumeManifest.__init__(self, repoPath, sdUUID, imgUUID,
                                        volUUID)
 
-    @classmethod
-    def is_block(cls):
-        return False
-
     @property
     def oop(self):
         return oop.getProcessPool(self.sdUUID)

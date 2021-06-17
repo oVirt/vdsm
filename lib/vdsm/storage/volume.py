@@ -80,6 +80,10 @@ class VolumeManifest(object):
             raise se.InvalidParameterException("volUUID", volUUID)
         self.validate()
 
+    @classmethod
+    def is_block(cls):
+        return False
+
     @property
     def imagePath(self):
         if self._imagePath is None:
@@ -314,6 +318,7 @@ class VolumeManifest(object):
         volParams['parent'] = self.getParent()
         volParams['descr'] = self.getDescription()
         volParams['legality'] = self.getLegality()
+        volParams['block'] = self.is_block()
         return volParams
 
     def getVmVolumeInfo(self):
