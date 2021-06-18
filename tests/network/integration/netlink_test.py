@@ -158,7 +158,7 @@ class TestNetlinkEventMonitor(object):
     )
     def test_events_keys(self):
         def _simplify_event(event):
-            """ Strips event keys except event, address, name, destination,
+            """Strips event keys except event, address, name, destination,
             family.
             """
             allow = set(['event', 'address', 'name', 'destination', 'family'])

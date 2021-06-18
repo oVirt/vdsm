@@ -135,7 +135,7 @@ def _is_property_line(lines, line_number):
 
 
 class OUI(object):
-    """ Organizationally Unique Identifier """
+    """Organizationally Unique Identifier"""
 
     IEEE8021 = 0x0080C2
     IEEE8023 = 0x00120F

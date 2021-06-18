@@ -132,7 +132,7 @@ def _link_state(link):
 
 @contextmanager
 def _get_link(name=None, index=0, sock=None):
-    """ If defined both name and index, index is primary """
+    """If defined both name and index, index is primary"""
     # libnl/incluede/netlink/errno.h
     NLE_NODEV = 31
 

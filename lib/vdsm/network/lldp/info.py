@@ -27,7 +27,7 @@ Lldp = lldp.driver()
 
 
 def get_info(filter):
-    """"
+    """
     Get LLDP information for all devices.
     """
     return {device: _get_info(device) for device in filter['devices']}

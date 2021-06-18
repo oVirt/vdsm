@@ -41,7 +41,7 @@ class TlvReportLldpError(Exception):
 
 @six.add_metaclass(abc.ABCMeta)
 class LldpAPI(object):
-    """ LLDP driver interface """
+    """LLDP driver interface"""
 
     @staticmethod
     def enable_lldp_on_iface(iface, rx_only=True):

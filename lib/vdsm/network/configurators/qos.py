@@ -176,7 +176,7 @@ def _qdisc_conf_out(dev, root_qdisc_handle, vlan_tag, class_id, qos):
         _add_non_vlanned_filter(dev, root_qdisc_handle)
     else:
         if not _is_explicit_defined_default_class(dev):
-            default_class, = [
+            (default_class,) = [
                 c['hfsc']
                 for c in tc.classes(dev)
                 if c['handle'] == _ROOT_QDISC_HANDLE + _DEFAULT_CLASSID

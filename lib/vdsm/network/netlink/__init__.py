@@ -75,11 +75,11 @@ _pool = NLSocketPool(_POOL_SIZE)
 
 def _open_socket(callback_function=None, callback_arg=None):
     """Returns an open netlink socket.
-        callback_function: Modify the callback handler associated with the
-        socket. Callback function requires two arguments:
-            nl_message: netlink message passed by the socket
-            args: optional argument defined by _nl_socket_modify_cb()
-        callback_arg: optional argument passed to the callback function
+    callback_function: Modify the callback handler associated with the
+    socket. Callback function requires two arguments:
+        nl_message: netlink message passed by the socket
+        args: optional argument defined by _nl_socket_modify_cb()
+    callback_arg: optional argument passed to the callback function
     """
     sock = libnl.nl_socket_alloc()
     try:

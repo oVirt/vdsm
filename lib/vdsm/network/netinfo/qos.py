@@ -53,7 +53,7 @@ def report_network_qos(nets_info, devs_info):
                     host_ports,
                 )
                 continue
-            iface, = host_ports
+            (iface,) = host_ports
         if iface in devs_info['vlans']:
             vlan_id = devs_info['vlans'][iface]['vlanid']
             iface = devs_info['vlans'][iface]['iface']
@@ -74,7 +74,7 @@ def report_network_qos(nets_info, devs_info):
             if cls['kind'] == 'hfsc'
         ]
         if classes:
-            cls, = classes
+            (cls,) = classes
             attrs['hostQos'] = {'out': cls['hfsc']}
 
 

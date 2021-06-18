@@ -30,12 +30,12 @@ from vdsm.network import driverloader
 class IPRuleApi(object):
     @staticmethod
     def add(rule_data):
-        """ Adding a rule entry described by an IPRuleData data object """
+        """Adding a rule entry described by an IPRuleData data object"""
         raise NotImplementedError
 
     @staticmethod
     def delete(rule_data):
-        """ Delete a rule entry described by an IPRuleData data object """
+        """Delete a rule entry described by an IPRuleData data object"""
         raise NotImplementedError
 
     @staticmethod
@@ -44,7 +44,7 @@ class IPRuleApi(object):
 
 
 class IPRuleData(object):
-    """ A data structure used to keep rule information """
+    """A data structure used to keep rule information"""
 
     def __init__(self, to=None, src=None, iif=None, table=None, prio=None):
         self._to = to

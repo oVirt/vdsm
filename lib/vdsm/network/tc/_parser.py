@@ -110,7 +110,7 @@ def parse_hex(tokens):
 
 def linearize(inp):
     """Generator of tc entries (that can span over multiple textual lines).
-    Each entry is a """
+    Each entry is a"""
     current = []
     for line in inp:
         if not line.strip():

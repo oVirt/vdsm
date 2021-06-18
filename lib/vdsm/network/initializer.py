@@ -53,7 +53,7 @@ def init_unpriviliged_dhcp_monitor_ctx(event_sink, net_api):
 
 
 def _lldp_init():
-    """"
+    """
     Enables receiving of LLDP frames for all nics. If sending or receiving
     LLDP frames is already enabled on a nic, it is not modified.
     """

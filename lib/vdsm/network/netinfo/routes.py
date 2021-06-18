@@ -34,7 +34,7 @@ from vdsm.network.netlink.libnl import RtKnownTables
 
 def getRouteDeviceTo(destinationIP):
     """Return the name of the device leading to destinationIP or the empty
-       string if none is found"""
+    string if none is found"""
     try:
         route = routeGet([destinationIP])[0]
     except (IPRoute2Error, IndexError):
@@ -110,7 +110,7 @@ def get_gateway(
     else:
         unique_gateways = frozenset(route['gateway'] for route in gateways)
         if len(unique_gateways) == 1:
-            gateway, = unique_gateways
+            (gateway,) = unique_gateways
             logging.debug(
                 'The gateway %s is duplicated for the device %s', gateway, dev
             )

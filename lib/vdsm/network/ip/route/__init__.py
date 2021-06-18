@@ -30,12 +30,12 @@ from vdsm.network import driverloader
 class IPRouteApi(object):
     @staticmethod
     def add(route_data):
-        """ Adding a route entry described by an IPRouteData data object """
+        """Adding a route entry described by an IPRouteData data object"""
         raise NotImplementedError
 
     @staticmethod
     def delete(route_data):
-        """ Delete a route entry described by an IPRouteData data object """
+        """Delete a route entry described by an IPRouteData data object"""
         raise NotImplementedError
 
     @staticmethod
@@ -44,7 +44,7 @@ class IPRouteApi(object):
 
 
 class IPRouteData(object):
-    """ A data structure used to keep route information """
+    """A data structure used to keep route information"""
 
     def __init__(self, to, via, family, src=None, device=None, table=None):
         self._to = to

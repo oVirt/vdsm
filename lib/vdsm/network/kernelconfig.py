@@ -130,7 +130,7 @@ def _translate_default_route(net_attr, _routes):
 
 
 def _translate_nics(attributes, nics):
-    nic, = nics
+    (nic,) = nics
     attributes['nic'] = nic
 
 

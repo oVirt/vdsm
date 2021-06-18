@@ -217,7 +217,7 @@ class IfaceHybrid(IfaceAPI):
 
 
 def iface(device, vfid=None):
-    """ Iface factory """
+    """Iface factory"""
     interface = IfaceHybrid()
     interface.device = device
     interface.vfid = vfid

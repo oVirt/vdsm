@@ -61,7 +61,7 @@ class Bridge(object):
             )
 
     def _get_sysfs_bridge_options(self):
-        """ Returns a dictionary of bridge option name and value. E.g.,
+        """Returns a dictionary of bridge option name and value. E.g.,
         {'max_age': '2000', 'gc_timer': '332'}"""
         paths = glob.iglob(BRIDGING_OPTS.format(self.name, '*'))
         opts = {}

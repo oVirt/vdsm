@@ -43,7 +43,7 @@ def setup(desired_state, verify_change):
 
 
 def generate_state(networks, bondings):
-    """ Generate a new nmstate state given VDSM setup state format """
+    """Generate a new nmstate state given VDSM setup state format"""
     rconfig = RunningConfig()
     current_state = get_current_state()
 

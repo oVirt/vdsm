@@ -87,7 +87,7 @@ def _get(vdsmnets=None):
 
 
 def add_qos_info_to_devices(nets_info, devices_info):
-    """ Update Qos data from networks on corresponding nic/bond """
+    """Update Qos data from networks on corresponding nic/bond"""
 
     qos_list = _get_qos_info_from_net(nets_info)
     qos_list and _add_qos_info_to_southbound(qos_list, devices_info)
@@ -210,7 +210,7 @@ def _update_net_southbound_info(network_info, devices_info):
         for dev_type in ('bondings', 'nics', 'vlans'):
             sb_set = ports & set(devices_info[dev_type])
             if len(sb_set) == 1:
-                network_info['southbound'], = sb_set
+                (network_info['southbound'],) = sb_set
                 return
         network_info['southbound'] = None
     else:

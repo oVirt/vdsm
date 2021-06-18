@@ -186,7 +186,7 @@ def dynamic_vlaned_ipv4_iface_without_dhcp_server(network_configuration1):
 
 @pytest.fixture
 def dynamic_ipv4_ipv6_iface_with_dhcp_server(
-    network_configuration_ipv4_and_ipv6
+    network_configuration_ipv4_and_ipv6,
 ):
     dhcp_config = DhcpConfig(
         DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO, DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO
@@ -199,7 +199,7 @@ def dynamic_ipv4_ipv6_iface_with_dhcp_server(
 
 @pytest.fixture
 def dynamic_ipv4_ipv6_iface_without_dhcp_server(
-    network_configuration_ipv4_and_ipv6
+    network_configuration_ipv4_and_ipv6,
 ):
     dhcp_config = DhcpConfig(
         DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO, DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO

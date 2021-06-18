@@ -346,13 +346,13 @@ class Route(object):
     @classmethod
     def fromText(cls, text):
         """
-            Creates a Route object from a textual representation.
+        Creates a Route object from a textual representation.
 
-            Examples:
-            'default via 192.168.99.254 dev eth0':
-            '0.0.0.0/0 via 192.168.99.254 dev eth0 table foo':
-            '200.100.50.0/16 via 11.11.11.11 dev eth2 table foo':
-            'local 127.0.0.1 dev lo scope host src 127.0.0.1':
+        Examples:
+        'default via 192.168.99.254 dev eth0':
+        '0.0.0.0/0 via 192.168.99.254 dev eth0 table foo':
+        '200.100.50.0/16 via 11.11.11.11 dev eth2 table foo':
+        'local 127.0.0.1 dev lo scope host src 127.0.0.1':
         """
         try:
             data = cls.parse(text)
@@ -453,15 +453,15 @@ class Rule(object):
     @classmethod
     def fromText(cls, text):
         """
-            Creates a Rule object from a textual representation. Since it is
-            used for source routing, the source network specified in "from" and
-            the table "lookup" that shall be used for the routing must be
-            specified.
+        Creates a Rule object from a textual representation. Since it is
+        used for source routing, the source network specified in "from" and
+        the table "lookup" that shall be used for the routing must be
+        specified.
 
-            Examples:
-            32766:    from all lookup main
-            32767:    from 10.0.0.0/8 to 20.0.0.0/8 lookup table_100
-            32768:    from all to 8.8.8.8 lookup table_200
+        Examples:
+        32766:    from all lookup main
+        32767:    from 10.0.0.0/8 to 20.0.0.0/8 lookup table_100
+        32768:    from all to 8.8.8.8 lookup table_200
         """
         data = cls.parse(text)
         try:

@@ -887,9 +887,9 @@ def attach_dev_to_bridge(tapdev, bridge):
 
 
 def wait_bonds_lp_interval():
-    """ mode 4 (802.3ad) is a relevant bond mode where bonds will attempt
-        to synchronize with each other, sending learning packets to the
-        slaves in intervals set via lp_interval
+    """mode 4 (802.3ad) is a relevant bond mode where bonds will attempt
+    to synchronize with each other, sending learning packets to the
+    slaves in intervals set via lp_interval
     """
     GRACE_PERIOD = 1
     LACP_BOND_MODE = '4'
