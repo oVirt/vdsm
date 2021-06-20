@@ -141,9 +141,10 @@ Requires: nfs-utils
 %endif
 
 # For kvm2ovirt
-Requires: ovirt-imageio-common >= 2.0.10-1
+Requires: ovirt-imageio-common
 # For controlling /tickets
-Requires: ovirt-imageio-daemon >= 2.0.10-1
+# 2.2.0-1 for https://bugzilla.redhat.com/1971182
+Requires: ovirt-imageio-daemon >= 2.2.0-1
 
 %if %{with_ovirt_vmconsole}
 Requires: ovirt-vmconsole >= 1.0.0-0
