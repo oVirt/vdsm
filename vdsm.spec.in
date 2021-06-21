@@ -154,10 +154,8 @@ Requires: python3 >= 3.6
 Requires: libvirt-client
 Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
-# >= 7.0.0-14 for https://bugzilla.redhat.com/1955667,
-# but < 7.4.0-1 cause it introduced a regression:
-# https://bugzilla.redhat.com/1970277
-Requires: (libvirt-daemon-kvm >= 7.0.0-14 and libvirt-daemon-kvm < 7.4.0-1)
+# For https://bugzilla.redhat.com/1955667
+Requires: libvirt-daemon-kvm >= 7.0.0-14
 Requires: python3-libvirt
 
 # iscsi-intiator versions
@@ -231,9 +229,8 @@ Requires: policycoreutils >= 2.1.13-55
 
 %if 0%{?rhel} >= 8
 %if 0%{?centos}
-# 4.4 Advanced virt stream on CentOS 8,
-# because of libvirt breakage we need to stick with older qemu-kvm as well
-Requires: (qemu-kvm >= 15:5.2.0 and qemu-kvm < 15:6.0.0)
+# 4.4 Advanced virt stream on CentOS 8
+Requires: qemu-kvm >= 15:5.2.0
 %else
 # 4.4, AV 8.4 - https://bugzilla.redhat.com/1948532
 Requires: qemu-kvm >= 15:5.2.0-15.module+el8.4.0+10650+50781ca0
