@@ -22,7 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 # stdlib imports
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from contextlib import contextmanager
 import json
 import logging
@@ -119,6 +119,7 @@ from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket
 from vdsm.virt.utils import extract_cluster_version
 from vdsm.virt.utils import TimedAcquireLock
+from vdsm.virt.utils import VolumeSize
 from six.moves import range
 
 
@@ -192,10 +193,6 @@ class SetLinkAndNetworkError(Exception):
 
 class UpdatePortMirroringError(Exception):
     pass
-
-
-VolumeSize = namedtuple("VolumeSize",
-                        ["apparentsize", "truesize"])
 
 
 class MigrationError(Exception):

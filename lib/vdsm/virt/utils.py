@@ -38,6 +38,8 @@ shared utilities and common code for the virt package
 import os.path
 import threading
 
+from collections import namedtuple
+
 from vdsm.common import cmdutils, supervdsm
 from vdsm.common.commands import start, terminating
 from vdsm.common.fileutils import rm_file
@@ -48,6 +50,10 @@ from vdsm.constants import P_VDSM_LOG
 _COMMANDS_LOG_DIR = os.path.join(P_VDSM_LOG, 'commands')
 
 log = logging.getLogger('virt.utils')
+
+
+VolumeSize = namedtuple("VolumeSize",
+                        ["apparentsize", "truesize"])
 
 
 def isVdsmImage(drive):
