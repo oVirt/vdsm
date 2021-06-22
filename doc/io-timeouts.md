@@ -25,7 +25,7 @@ When acquiring the host id during host activation, required for running
 HA VMs with storage leases, larger timeouts will make the process
 slower, in particular after unclean host shutdown.
 
-oVirt is tested only with the default sanlock:io_timeout. You should use
+oVirt is tested only with the default `sanlock:io_timeout`. You should use
 the configuration recommended and tested by your storage vendor.
 
 
@@ -34,28 +34,45 @@ the configuration recommended and tested by your storage vendor.
 For best results, you need to keep multipath and sanlock timeouts
 synchronized.
 
-If multipath is using a shorter timeout, HA VM with a storage lease may
-pause before the lease expire. When the VM pause, libvirt releases the
-storage lease. When the lease expire, sanlock will not terminate the HA
-VM. This will delay starting the HA VM on another host.
+If multipath is using a shorter timeout, HA VM with a sanlock lease may
+pause before the lease expires. When the VM pauses, libvirt releases the
+lease.  When the lease expires, sanlock will not terminate the HA VM.
+This will delay starting the HA VM on another host.
 
 If multipath is using longer timeout, I/O to storage will continue to
-block even after storage leases on this storage have expired. Processes
-may be block on storage in uninterruptible state (D state). This will
+block even after a sanlock lease on this storage has expired. Processes
+may be blocked on storage in uninterruptible state (D state). This will
 delay and fail vdsm API calls or internal flows.
 
-In the worst case, processes holding a storage leases cannot be
+In the worst case, processes holding a sanlock lease cannot be
 terminated by sanlock 60 seconds after the storage lease was expired. In
 this case the host watchdog will reboot the host.
 
+To configure sanlock and multipath, choose the maximum outage duration
+you need to cope with. For example, your storage may need 120 seconds to
+perform a failover process. You want the system to continue to run
+without failures during the outage.
+
+To handle 120 seconds outage duration, we need to configure
+`sanlock:io_timeout` to 24 seconds (outage duration / 5). With this
+configuration, sanlock can tolerate outage duration of 120-168 seconds
+before expiring leases.
+
+To make sure multipath does not fail the I/O before sanlock, configure
+multipath to queue I/O for 192 seconds (8 * sanlock:io_timeout). With
+the default polling interval (5 seconds), this means using
+`no_path_retry` value of 39.
+
 Here are some possible combinations:
 
-| effective timeout           |   80 |  120 |  160 |
-|-----------------------------|------|------|------|
-| sanlock:io_timeout          |   10 |   15 |   20 |
-| multipath/no_path_retry[1]  |   16 |   24 |   32 |
+| outage duration             |   50 |   75 |  100 |  125 |
+|-----------------------------|------|------|------|------|
+| sanlock:io_timeout          |   10 |   15 |   20 |   25 |
+| multipath/no_path_retry[1]  |   16 |   24 |   32 |   40 |
 
 [1] Using 5 seconds polling_interval.
+
+See "Sanlock renewal flow" section for more info on the calculation.
 
 
 ## Configuring vdsm
@@ -69,15 +86,15 @@ For each host, install this vdsm configuration drop-in file:
     # Configuration for FooIO storage.
 
     [sanlock]
-    # Set renewal timeout to 120 seconds
-    # (8 * io_timeout == 120).
-    io_timeout = 15
+    # Tolarate up to 120 seconds storage outage.
+    # (io_timeout = storage outage / 5)
+    io_timeout = 24
 
 
 ## Configuring multipath
 
-When using longer sanlock:io_timeout in vdsm, we need to update
-multipath to use larger no_path_retry value.
+When using longer `sanlock:io_timeout` in vdsm, we need to update
+multipath to use larger `no_path_retry` value.
 
 For each host, install this multipath configuration drop-in file:
 
@@ -85,9 +102,9 @@ For each host, install this multipath configuration drop-in file:
     # Configuration for FooIO storage.
 
     overrides {
-        # Queue I/O for 120 seconds when all paths fail
-        # (no_path_retry * polling_interval == 120).
-        no_path_retry 24
+        # For 24 seconds sanlock:io_timeout.
+        # (no_path_retry = sanlock:io_timeout * 8 / polling_interval)
+        no_path_retry 39
     }
 
 
@@ -135,8 +152,82 @@ When sanlock is failing to renew a lease, we will see this log:
     2020-11-27 00:13:22 69604 [234701]: s22 delta_renew read timeout 15
     sec offset 0 /dev/06e43bfc-2ffe-419e-843b-59a5d23165e1/ids
 
-The log shows that we use io_timeout of 15 seconds.
+The log shows that we use `sanlock:io_timeout` of 15 seconds.
 
+
+## Sanlock renewal flow
+
+Here are example flows, showing what happens under the hood during a
+storage outage.
+
+These flows use 15 seconds `sanlock:io_timeout`. With this timeout,
+sanlock will time out renewal after 15 seconds, and perform a renewal
+every 30 seconds.
+
+When storage server fails, multipath detects that all paths to storage
+are faulty, and start to queue I/O. When sanlock try to submit I/O, the
+requests are queued, so sanlock renewal will time out.
+
+When multipath handles a map with faulty paths, it checks the paths
+every 5 seconds (polling interval). Once one path becomes active again,
+queued I/O will be submitted again to storage.
+
+Sanlock does not know when a storage server has failed. It calculates
+the time since the last successful renewal, and ensures that lease
+expires after 8 * `sanlock:io_timeout` seconds since the last renewal.
+
+### Successful recovery from outage - short
+
+In this flow, the outage starts right before sanlock renew the lease, so
+sanlock has less time to recover. Storage outage duration is 75 seconds.
+
+```
+ 00  sanlock renewal succeeds
+ 30  storage server fails
+ 30  sanlock try to renew lease
+ 45  sanlock renwal timeout
+ 60  sanlock try to renew lease
+ 75  sanlock renewal timeout
+ 90  sanlock try to renew lease
+105  storage server up again
+105  sanlock renwal succeeds
+```
+
+### Successful recovery from outage - long
+
+In this flow, the outage starts right after sanlock renew the lease, so
+sanlock has more time to recover. Storage outage duration is 105 seconds.
+
+```
+ 00  sanlock renewal succeeds
+ 00  storage server fails
+ 30  sanlock try to renew lease
+ 45  sanlock renwal timeout
+ 60  sanlock try to renew lease
+ 75  sanlock renewal timeout
+ 90  sanlock try to renew lease
+105  storage server up again
+105  sanlock renwal succeeds
+```
+
+### Failure to renew a lease
+
+In this flow storage was not accessible after the last renewal attempt,
+so the lease has expired and sanlock killed the VM. Storage outage
+duration is 76 seconds.
+
+```
+ 00  sanlock renewal succeeds
+ 30  storage server fails
+ 30  sanlock try to renew lease
+ 45  sanlock renwal timeout
+ 60  sanlock try to renew lease
+ 75  sanlock renewal timeout
+ 90  sanlock try to renew lease
+105  sanlock renwal timeout
+106  storage is up again
+120  sanlock expires lease, VM killed
+```
 
 ## Additional info
 
