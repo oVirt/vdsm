@@ -1531,6 +1531,15 @@ class Vm(object):
                                    newSize,
                                    self.__afterReplicaExtension)
 
+    def _refresh_destination_volume(self, volInfo):
+        dest_vol_size = self._refresh_migrating_volume(volInfo)
+        if dest_vol_size.apparentsize < volInfo['newSize']:
+            reason = ("Failed to refresh drive on the destination "
+                      "host actual size {} < expected size {}").format(
+                dest_vol_size.apparentsize,
+                volInfo["newSize"])
+            raise exception.CannotRefreshDisk(reason=reason)
+
     def after_volume_extension(self, volInfo):
         try:
             callback = volInfo["callback"]
@@ -1546,13 +1555,7 @@ class Vm(object):
             if (self.isMigrating() and
                     self.lastStatus == vmstatus.MIGRATION_SOURCE):
                 with clock.run("refresh-destination-volume"):
-                    dest_vol_size = self._refresh_migrating_volume(volInfo)
-                if dest_vol_size.apparentsize < volInfo['newSize']:
-                    reason = ("Failed to refresh drive on the destination "
-                              "host actual size {} < expected size {}").format(
-                        dest_vol_size.apparentsize,
-                        volInfo["newSize"])
-                    raise exception.CannotRefreshDisk(reason=reason)
+                    self._refresh_destination_volume(volInfo)
 
             with clock.run("refresh-volume"):
                 self.refresh_drive_volume(volInfo)
