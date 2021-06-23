@@ -35,7 +35,7 @@ from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import nbdutils
 from vdsm.common import response
-from vdsm.common.units import MiB
+from vdsm.common.units import GiB
 
 from vdsm.storage import hsm
 from vdsm.storage import qemuimg
@@ -235,23 +235,6 @@ def tmp_basedir(tmpdir, monkeypatch):
     monkeypatch.setattr(transientdisk, 'P_TRANSIENT_DISKS', path)
 
 
-@pytest.fixture
-def tmp_scratch_disks(tmpdir):
-    virtual_size = MiB
-    disks_path = []
-    for disk in ["scratch1", "scratch2"]:
-        path = str(tmpdir.join(disk))
-        op = qemuimg.create(
-            path,
-            size=virtual_size,
-            format=qemuimg.FORMAT.QCOW2,
-            qcow2Compat='1.1'
-        )
-        op.run()
-        disks_path.append(path)
-    return disks_path
-
-
 @requires_backup_support
 def test_start_stop_backup(tmp_backupdir, tmp_basedir):
     vm = FakeVm()
@@ -305,7 +288,10 @@ def test_start_stop_backup(tmp_backupdir, tmp_basedir):
 
 
 @requires_backup_support
-def test_start_stop_backup_engine_scratch_disks(tmp_scratch_disks):
+def test_start_stop_backup_engine_scratch_disks(tmpdir):
+    scratch1 = create_scratch_disk(tmpdir, "scratch1")
+    scratch2 = create_scratch_disk(tmpdir, "scratch2")
+
     vm = FakeVm()
     socket_path = backup.socket_path(BACKUP_1_ID)
 
@@ -325,19 +311,19 @@ def test_start_stop_backup_engine_scratch_disks(tmp_scratch_disks):
                 </disk>
             </disks>
         </domainbackup>
-        """.format(socket_path, tmp_scratch_disks[0], tmp_scratch_disks[1])
+        """.format(socket_path, scratch1, scratch2)
 
     dom = FakeDomainAdapter()
     fake_disks = create_fake_disks()
     # Set the scratch disks path to the disks
     # TODO: add tests for scratch disks on block storage domain.
     fake_disks[0]['scratch_disk'] = {
-        'path': tmp_scratch_disks[0],
+        'path': scratch1,
         'type': DISK_TYPE.FILE
     }
 
     fake_disks[1]['scratch_disk'] = {
-        'path': tmp_scratch_disks[1],
+        'path': scratch2,
         'type': DISK_TYPE.FILE
     }
 
@@ -1294,3 +1280,9 @@ def _get_scratch_disks_path(backup_id):
         scratch_disk_paths.append(scratch_disk_path)
 
     return scratch_disk_paths
+
+
+def create_scratch_disk(tmpdir, name):
+    path = str(tmpdir.join(name))
+    qemuimg.create(path, size=GiB, format="qcow2", qcow2Compat='1.1').run()
+    return path
