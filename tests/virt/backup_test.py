@@ -147,54 +147,6 @@ class FakeDrive(object):
         self.domainID = domainID
 
 
-class FakeHSM(hsm.HSM):
-
-    def __init__(self):
-        """
-        Overridden to avoid unwanted side effects of the original __init__.
-        """
-
-    @property
-    def ready(self):
-        return True
-
-
-class FakeClientIF(object):
-
-    def __init__(self):
-        self.irs = Dispatcher(FakeHSM())
-
-
-class FakeVm(object):
-
-    def __init__(self):
-        self.id = "vm_id"
-        self.log = FakeLogger()
-        self.cif = FakeClientIF()
-        self.froze = False
-        self.thawed = False
-        self.errors = {}
-
-    def findDriveByUUIDs(self, disk):
-        return FAKE_DRIVES[disk['imageID']]
-
-    def find_device_by_name_or_path(self, disk_name):
-        for fake_drive in FAKE_DRIVES.values():
-            if fake_drive.name == disk_name:
-                return fake_drive
-
-        raise LookupError("Disk %s not found" % disk_name)
-
-    @api.method
-    @maybefail
-    def freeze(self):
-        self.froze = True
-        return response.success()
-
-    def thaw(self):
-        self.thawed = True
-
-
 IMAGE_1_UUID = make_uuid()
 IMAGE_2_UUID = make_uuid()
 
@@ -220,6 +172,55 @@ FAKE_CHECKPOINT_CFG = [
         'xml': CHECKPOINT_2_XML
     },
 ]
+
+
+class FakeHSM(hsm.HSM):
+
+    def __init__(self):
+        """
+        Overridden to avoid unwanted side effects of the original __init__.
+        """
+
+    @property
+    def ready(self):
+        return True
+
+
+class FakeClientIF(object):
+
+    def __init__(self):
+        self.irs = Dispatcher(FakeHSM())
+
+
+class FakeVm(object):
+
+    def __init__(self, drives=FAKE_DRIVES):
+        self.drives = drives
+        self.id = "vm_id"
+        self.log = FakeLogger()
+        self.cif = FakeClientIF()
+        self.froze = False
+        self.thawed = False
+        self.errors = {}
+
+    def findDriveByUUIDs(self, disk):
+        return self.drives[disk['imageID']]
+
+    def find_device_by_name_or_path(self, disk_name):
+        for fake_drive in self.drives.values():
+            if fake_drive.name == disk_name:
+                return fake_drive
+
+        raise LookupError("Disk %s not found" % disk_name)
+
+    @api.method
+    @maybefail
+    def freeze(self):
+        self.froze = True
+        return response.success()
+
+    def thaw(self):
+        self.thawed = True
 
 
 @pytest.fixture
