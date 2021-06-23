@@ -224,19 +224,15 @@ class FakeVm(object):
 
 
 @pytest.fixture
-def tmp_backupdir(tmpdir, monkeypatch):
-    path = str(tmpdir.join("backup"))
-    monkeypatch.setattr(backup, 'P_BACKUP', path)
-
-
-@pytest.fixture
-def tmp_basedir(tmpdir, monkeypatch):
-    path = str(tmpdir.join("transient_disks"))
-    monkeypatch.setattr(transientdisk, 'P_TRANSIENT_DISKS', path)
+def tmp_dirs(tmpdir, monkeypatch):
+    backup_dir = str(tmpdir.join("backup"))
+    monkeypatch.setattr(backup, 'P_BACKUP', backup_dir)
+    transient_dir = str(tmpdir.join("transient_disks"))
+    monkeypatch.setattr(transientdisk, 'P_TRANSIENT_DISKS', transient_dir)
 
 
 @requires_backup_support
-def test_start_stop_backup(tmp_backupdir, tmp_basedir):
+def test_start_stop_backup(tmp_dirs):
     vm = FakeVm()
 
     socket_path = backup.socket_path(BACKUP_1_ID)
@@ -344,7 +340,7 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
 
 
 @requires_backup_support
-def test_full_backup_with_backup_mode(tmp_backupdir, tmp_basedir):
+def test_full_backup_with_backup_mode(tmp_dirs):
     vm = FakeVm()
 
     socket_path = backup.socket_path(BACKUP_1_ID)
@@ -380,7 +376,7 @@ def test_full_backup_with_backup_mode(tmp_backupdir, tmp_basedir):
 
 
 @requires_backup_support
-def test_incremental_backup_with_backup_mode(tmp_backupdir, tmp_basedir):
+def test_incremental_backup_with_backup_mode(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
     fake_disks = create_fake_disks(backup_mode=backup.MODE_FULL)
@@ -450,8 +446,7 @@ def test_incremental_backup_with_backup_mode(tmp_backupdir, tmp_basedir):
     ], ids=["cow", "mix"]
 )
 def test_start_stop_backup_with_checkpoint(
-        tmp_backupdir, tmp_basedir,
-        disks_in_checkpoint, expected_checkpoint_xml):
+        tmp_dirs, disks_in_checkpoint, expected_checkpoint_xml):
     vm = FakeVm()
     dom = FakeDomainAdapter()
 
@@ -483,7 +478,7 @@ def test_start_stop_backup_with_checkpoint(
 
 
 @requires_backup_support
-def test_incremental_backup(tmp_backupdir, tmp_basedir):
+def test_incremental_backup(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
     fake_disks = create_fake_disks()
@@ -562,8 +557,7 @@ def test_incremental_backup(tmp_backupdir, tmp_basedir):
 
 
 @requires_backup_support
-def test_full_backup_without_checkpoint_with_previous_chain(
-        tmp_backupdir, tmp_basedir):
+def test_full_backup_without_checkpoint_with_previous_chain(tmp_dirs):
     vm = FakeVm()
     # This test checks an edge case when a chain of incremental backup was
     # taken for a VM with RAW disks that a snapshot created for them so their
@@ -595,7 +589,7 @@ def test_full_backup_without_checkpoint_with_previous_chain(
 
 
 @requires_backup_support
-def test_start_backup_failed_get_checkpoint(tmp_backupdir, tmp_basedir):
+def test_start_backup_failed_get_checkpoint(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
     dom.errors["checkpointLookupByName"] = fake.libvirt_error(
@@ -657,7 +651,7 @@ def test_start_backup_disk_not_found():
 
 
 @requires_backup_support
-def test_backup_begin_failed(tmp_backupdir, tmp_basedir):
+def test_backup_begin_failed(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
     dom.errors["backupBegin"] = fake.libvirt_error(
@@ -684,7 +678,7 @@ def test_backup_begin_failed(tmp_backupdir, tmp_basedir):
 @pytest.mark.skipif(
     not hasattr(libvirt, "VIR_ERR_CHECKPOINT_INCONSISTENT"),
     reason="Libvirt missing VIR_ERR_CHECKPOINT_INCONSISTENT flag")
-def test_backup_begin_checkpoint_inconsistent(tmp_backupdir, tmp_basedir):
+def test_backup_begin_checkpoint_inconsistent(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
     dom.errors["backupBegin"] = fake.libvirt_error(
@@ -703,7 +697,7 @@ def test_backup_begin_checkpoint_inconsistent(tmp_backupdir, tmp_basedir):
 
 
 @requires_backup_support
-def test_backup_begin_freeze_failed(tmp_backupdir, tmp_basedir):
+def test_backup_begin_freeze_failed(tmp_dirs):
     vm = FakeVm()
     vm.errors["freeze"] = fake.libvirt_error(
         [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
@@ -729,8 +723,7 @@ def test_backup_begin_freeze_failed(tmp_backupdir, tmp_basedir):
 
 @requires_backup_support
 @pytest.mark.parametrize("require_consistency", [False, None])
-def test_backup_begin_consistency_not_required(
-        tmp_backupdir, tmp_basedir, require_consistency):
+def test_backup_begin_consistency_not_required(tmp_dirs, require_consistency):
     vm = FakeVm()
     vm.errors["freeze"] = fake.libvirt_error(
         [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
@@ -751,7 +744,7 @@ def test_backup_begin_consistency_not_required(
     verify_backup_urls(BACKUP_1_ID, result_disks)
 
 
-def test_backup_begin_failed_no_disks(tmp_backupdir, tmp_basedir):
+def test_backup_begin_failed_no_disks(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
 
@@ -764,8 +757,7 @@ def test_backup_begin_failed_no_disks(tmp_backupdir, tmp_basedir):
         backup.start_backup(vm, dom, config)
 
 
-def test_backup_begin_failed_full_with_inremental_disks(
-        tmp_backupdir, tmp_basedir):
+def test_backup_begin_failed_full_with_inremental_disks(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
 
@@ -781,7 +773,7 @@ def test_backup_begin_failed_full_with_inremental_disks(
 
 
 @requires_backup_support
-def test_stop_backup_failed(tmp_backupdir, tmp_basedir):
+def test_stop_backup_failed(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
     dom.errors["abortJob"] = fake.libvirt_error(
@@ -823,7 +815,7 @@ def test_stop_non_existing_backup():
 
 
 @requires_backup_support
-def test_backup_info(tmp_backupdir, tmp_basedir):
+def test_backup_info(tmp_dirs):
     vm = FakeVm()
     expected_xml = """
         <domainbackup mode='pull'>
@@ -882,7 +874,7 @@ def test_backup_info_get_xml_desc_failed():
 
 
 @requires_backup_support
-def test_fail_parse_backup_xml(tmp_backupdir, tmp_basedir):
+def test_fail_parse_backup_xml(tmp_dirs):
     vm = FakeVm()
     INVALID_BACKUP_XML = """
         <domainbackup mode='pull'>
