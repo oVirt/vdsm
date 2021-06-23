@@ -137,13 +137,14 @@ CHECKPOINT_2 = FakeCheckpoint(CHECKPOINT_2_XML, CHECKPOINT_2_ID)
 
 class FakeDrive(object):
 
-    def __init__(self, name, imageID, path=''):
+    def __init__(self, name, imageID, path="", diskType="file", format="cow",
+                 domainID="domain-id"):
         self.name = name
         self.imageID = imageID
-        self.diskType = 'file'
         self.path = path
-        self.format = 'cow'
-        self.domainID = 'domain_id'
+        self.diskType = diskType
+        self.format = format
+        self.domainID = domainID
 
 
 class FakeHSM(hsm.HSM):
