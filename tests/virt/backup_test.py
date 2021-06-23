@@ -149,11 +149,13 @@ class FakeDrive(object):
 class FakeHSM(hsm.HSM):
 
     def __init__(self):
-        self._ready = True
+        """
+        Overridden to avoid unwanted side effects of the original __init__.
+        """
 
     @property
     def ready(self):
-        return self._ready
+        return True
 
 
 class FakeClientIF(object):
