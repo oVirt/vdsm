@@ -240,7 +240,7 @@ def test_start_stop_backup(tmp_backupdir, tmp_basedir):
     vm = FakeVm()
 
     socket_path = backup.socket_path(BACKUP_1_ID)
-    scratch_disk_paths = _get_scratch_disks_path(BACKUP_1_ID)
+    scratch_disk_paths = get_scratch_disks_path(BACKUP_1_ID)
 
     expected_xml = """
         <domainbackup mode='pull'>
@@ -348,7 +348,7 @@ def test_full_backup_with_backup_mode(tmp_backupdir, tmp_basedir):
     vm = FakeVm()
 
     socket_path = backup.socket_path(BACKUP_1_ID)
-    scratch_disk_paths = _get_scratch_disks_path(BACKUP_1_ID)
+    scratch_disk_paths = get_scratch_disks_path(BACKUP_1_ID)
 
     expected_xml = """
         <domainbackup mode='pull'>
@@ -397,7 +397,7 @@ def test_incremental_backup_with_backup_mode(tmp_backupdir, tmp_basedir):
 
     # start incremental backup
     socket_path = backup.socket_path(BACKUP_2_ID)
-    scratch_disk_paths = _get_scratch_disks_path(BACKUP_2_ID)
+    scratch_disk_paths = get_scratch_disks_path(BACKUP_2_ID)
 
     expected_xml = """
         <domainbackup mode='pull'>
@@ -508,7 +508,7 @@ def test_incremental_backup(tmp_backupdir, tmp_basedir):
 
     # start incremental backup
     socket_path = backup.socket_path(BACKUP_2_ID)
-    scratch_disk_paths = _get_scratch_disks_path(BACKUP_2_ID)
+    scratch_disk_paths = get_scratch_disks_path(BACKUP_2_ID)
 
     expected_xml = """
         <domainbackup mode='pull'>
@@ -1271,7 +1271,7 @@ def create_fake_disks(
     return fake_disks
 
 
-def _get_scratch_disks_path(backup_id):
+def get_scratch_disks_path(backup_id):
     scratch_disk_paths = []
     for drive in FAKE_DRIVES.values():
         scratch_disk_name = backup_id + "." + drive.name
