@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import math
+import sys
 import tempfile
 import threading
 import time
@@ -1541,6 +1542,8 @@ class Vm(object):
             raise exception.CannotRefreshDisk(reason=reason)
 
     def after_volume_extension(self, volInfo):
+        callback = None
+        error = None
         try:
             callback = volInfo["callback"]
             clock = volInfo["clock"]
@@ -1578,12 +1581,16 @@ class Vm(object):
 
             self._resume_if_needed()
 
+        except exception.DiskRefreshNotSupported as e:
+            self.log.warning(
+                "Migration destination host does not support "
+                "extending disk during migration, disabling disk "
+                "extension during migration")
+            self.drive_monitor.disable()
+            error = e
+        finally:
             if callback:
-                callback()
-        except Exception as e:
-            if callback:
-                callback(error=e)
-            raise
+                callback(error=sys.exc_info()[1] or error)
 
     def _update_drive_volume_size(self, drive, volsize):
         """

@@ -171,6 +171,9 @@ class SourceThread(object):
         self._migration_flags = self._calculate_migration_flags(
             tunneled, abortOnError, compressed, autoConverge, encrypted
         )
+        # True if destination host supports disk refresh. Initialized before
+        # the first extend of the disk during migration if finished.
+        self._supports_disk_refresh = None
 
     def start(self):
         self._thread.start()
@@ -467,6 +470,10 @@ class SourceThread(object):
         except Exception as e:
             self._recover(str(e))
             self.log.exception("Failed to migrate")
+        finally:
+            # Enable drive monitor as it can be disabled during
+            # migration.
+            self._vm.drive_monitor.enable()
 
     def _startUnderlyingMigration(self, startTime, machineParams):
         if self.hibernating:
@@ -698,6 +705,20 @@ class SourceThread(object):
         """
         Refresh drive on the destination host.
         """
+        if self._supports_disk_refresh is None:
+            caps = self._destServer.getVdsCapabilities()
+            if response.is_error(caps):
+                self.log.warning(
+                    "Failed to get destination host capabilities: %s",
+                    caps["status"]["message"])
+                self._supports_disk_refresh = False
+            else:
+                self._supports_disk_refresh = caps.get(
+                    "refresh_disk_supported", False)
+
+        if not self._supports_disk_refresh:
+            raise exception.DiskRefreshNotSupported()
+
         result = self._destServer.refresh_disk(self._vm.id, vol_pdiv)
         if response.is_error(result):
             raise exception.CannotRefreshDisk(reason=result["message"])

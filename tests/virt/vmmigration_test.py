@@ -36,6 +36,7 @@ from six.moves import zip
 from vdsm.common import exception
 from vdsm.common import response
 from vdsm.config import config
+from vdsm.virt import drivemonitor
 from vdsm.virt import migration
 from vdsm.virt import vmstatus
 
@@ -316,6 +317,8 @@ class FakeVM(object):
         self.stopped_migrated_event_processed.set()
         self.guestAgent = FakeGuestAgent()
         self.hibernation_attempts = 0
+        self.drive_monitor = drivemonitor.DriveMonitor(
+            self, self.log, enabled=True)
 
     def min_cluster_version(self, major, minor):
         return False

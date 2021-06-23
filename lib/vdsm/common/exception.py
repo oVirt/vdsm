@@ -605,3 +605,8 @@ class DriveRefreshError(ContextException):
 class CannotRefreshDisk(ContextException):
     code = 1650
     msg = "Failed to refresh disk on the destination"
+
+
+class DiskRefreshNotSupported(ContextException):
+    code = 1651
+    msg = "Disk refresh is not supported by the host"
