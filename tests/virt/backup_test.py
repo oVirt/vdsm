@@ -238,7 +238,7 @@ def test_start_stop_backup(tmp_dirs):
     socket_path = backup.socket_path(BACKUP_1_ID)
     scratch_disk_paths = get_scratch_disks_path(BACKUP_1_ID)
 
-    expected_xml = """
+    input_xml = """
         <domainbackup mode='pull'>
             <server transport='unix' socket='{}'/>
             <disks>
@@ -264,7 +264,7 @@ def test_start_stop_backup(tmp_dirs):
     }
 
     res = backup.start_backup(vm, dom, config)
-    assert normalized(expected_xml) == normalized(dom.input_backup_xml)
+    assert normalized(input_xml) == normalized(dom.input_backup_xml)
     assert dom.backing_up
 
     verify_scratch_disks_exists(vm)
@@ -291,7 +291,7 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
     vm = FakeVm()
     socket_path = backup.socket_path(BACKUP_1_ID)
 
-    expected_xml = """
+    input_xml = """
         <domainbackup mode='pull'>
             <server transport='unix' socket='{}'/>
             <disks>
@@ -329,7 +329,7 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
     }
 
     res = backup.start_backup(vm, dom, config)
-    assert normalized(expected_xml) == normalized(dom.input_backup_xml)
+    assert normalized(input_xml) == normalized(dom.input_backup_xml)
     assert dom.backing_up
 
     result_disks = res['result']['disks']
@@ -346,7 +346,7 @@ def test_full_backup_with_backup_mode(tmp_dirs):
     socket_path = backup.socket_path(BACKUP_1_ID)
     scratch_disk_paths = get_scratch_disks_path(BACKUP_1_ID)
 
-    expected_xml = """
+    input_xml = """
         <domainbackup mode='pull'>
             <server transport='unix' socket='{}'/>
             <disks>
@@ -372,7 +372,7 @@ def test_full_backup_with_backup_mode(tmp_dirs):
     }
 
     backup.start_backup(vm, dom, config)
-    assert normalized(expected_xml) == normalized(dom.input_backup_xml)
+    assert normalized(input_xml) == normalized(dom.input_backup_xml)
 
 
 @requires_backup_support
@@ -395,7 +395,7 @@ def test_incremental_backup_with_backup_mode(tmp_dirs):
     socket_path = backup.socket_path(BACKUP_2_ID)
     scratch_disk_paths = get_scratch_disks_path(BACKUP_2_ID)
 
-    expected_xml = """
+    input_xml = """
         <domainbackup mode='pull'>
             <incremental>{}</incremental>
             <server transport='unix' socket='{}'/>
@@ -435,7 +435,7 @@ def test_incremental_backup_with_backup_mode(tmp_dirs):
     }
 
     backup.start_backup(vm, dom, config)
-    assert normalized(expected_xml) == normalized(dom.input_backup_xml)
+    assert normalized(input_xml) == normalized(dom.input_backup_xml)
 
 
 @requires_backup_support
@@ -505,7 +505,7 @@ def test_incremental_backup(tmp_dirs):
     socket_path = backup.socket_path(BACKUP_2_ID)
     scratch_disk_paths = get_scratch_disks_path(BACKUP_2_ID)
 
-    expected_xml = """
+    input_xml = """
         <domainbackup mode='pull'>
             <incremental>{}</incremental>
             <server transport='unix' socket='{}'/>
@@ -539,7 +539,7 @@ def test_incremental_backup(tmp_dirs):
 
     res = backup.start_backup(vm, dom, config)
     assert dom.backing_up
-    assert normalized(expected_xml) == normalized(dom.input_backup_xml)
+    assert normalized(input_xml) == normalized(dom.input_backup_xml)
     assert normalized(CHECKPOINT_2_XML) == (
         normalized(dom.input_checkpoint_xml))
 
@@ -817,7 +817,7 @@ def test_stop_non_existing_backup():
 @requires_backup_support
 def test_backup_info(tmp_dirs):
     vm = FakeVm()
-    expected_xml = """
+    output_xml = """
         <domainbackup mode='pull'>
           <server transport='unix' socket='{}'/>
           <disks>
@@ -837,7 +837,7 @@ def test_backup_info(tmp_dirs):
           </disks>
         </domainbackup>
         """.format(backup.socket_path(BACKUP_1_ID))
-    dom = FakeDomainAdapter(output_backup_xml=expected_xml)
+    dom = FakeDomainAdapter(output_backup_xml=output_xml)
 
     fake_disks = create_fake_disks()
     config = {
