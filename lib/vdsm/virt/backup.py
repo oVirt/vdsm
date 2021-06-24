@@ -311,10 +311,10 @@ def redefine_checkpoints(vm, dom, checkpoints):
         else:
             checkpoint_xml = checkpoint_cfg.xml
 
-        flags = libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE
-        # TODO: Simplify when libvirt 6.6.0-9 is required on centos.
-        flags |= getattr(
-            libvirt, "VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE_VALIDATE", 0)
+        flags = (
+            libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE |
+            libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE_VALIDATE
+        )
         try:
             dom.checkpointCreateXML(checkpoint_xml, flags)
         except libvirt.libvirtError as e:

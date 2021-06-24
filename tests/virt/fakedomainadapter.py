@@ -143,10 +143,10 @@ class FakeDomainAdapter(object):
 
     @maybefail
     def checkpointCreateXML(self, checkpoint_xml, flags=None):
-        expected_flags = libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE
-        # TODO: Simplify when libvirt 6.6.0-9 is required on centos.
-        expected_flags |= getattr(
-            libvirt, "VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE_VALIDATE", 0)
+        expected_flags = (
+            libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE |
+            libvirt.VIR_DOMAIN_CHECKPOINT_CREATE_REDEFINE_VALIDATE
+        )
         assert flags == expected_flags
 
         # validate the given checkpoint XML according to the
