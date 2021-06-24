@@ -44,10 +44,7 @@ from testlib import make_config
 from testlib import namedTemporaryDir
 from testlib import temporaryPath
 
-from . marks import (
-    requires_root,
-    xfail_requires_target_is_zero,
-)
+from . marks import requires_root
 
 CLUSTER_SIZE = 64 * KiB
 
@@ -468,7 +465,7 @@ class TestConvert:
 
     @pytest.mark.parametrize("dst_compat,create", [
         pytest.param("0.10", True),
-        pytest.param("1.1", False, marks=xfail_requires_target_is_zero),
+        pytest.param("1.1", False),
     ])
     def test_qcow2(self, tmp_mount, dst_compat, create):
         virtual_size = 10 * MiB
@@ -573,7 +570,7 @@ class TestConvert:
 
     @pytest.mark.parametrize("dst_compat,create", [
         pytest.param("0.10", True),
-        pytest.param("1.1", False, marks=xfail_requires_target_is_zero),
+        pytest.param("1.1", False),
     ])
     def test_qcow2_collapsed(self, tmp_mount, dst_compat, create):
         virtual_size = 10 * MiB
@@ -639,7 +636,6 @@ class TestConvert:
         )
         op.run()
 
-    @xfail_requires_target_is_zero
     def test_raw_preallocated(self, tmp_mount):
         virtual_size = 2 * MiB
 

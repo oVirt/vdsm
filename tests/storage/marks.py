@@ -33,7 +33,6 @@ from vdsm.common import cache
 from vdsm.common import commands
 from vdsm.common import compat
 
-from vdsm.storage import qemuimg
 from vdsm.storage.compat import sanlock
 
 from testing import (
@@ -60,13 +59,6 @@ xfail_python3 = pytest.mark.xfail(
 
 xfail_python37 = pytest.mark.xfail(
     sys.version_info[:2] == (3, 7), reason="needs porting to python 3.7")
-
-# Note: This cannot be strict since in oVirt CI we run with older qemu-img
-# version that does not reproduce this issue.
-xfail_requires_target_is_zero = pytest.mark.xfail(
-    not qemuimg.target_is_zero_supported(),
-    reason="requires qemu-img convert --target-is-zero introdued in 5.1.0",
-    strict=False)
 
 broken_on_ci = pytest.mark.skipif(
     on_ovirt_ci() or on_travis_ci(), reason="fails on CI")

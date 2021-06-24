@@ -24,7 +24,6 @@ import logging
 import os
 import re
 
-from vdsm.common import cache
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import exception
@@ -282,7 +281,7 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
             cmd.extend(('-o', ','.join(options)))
     else:
         cmd.append("-n")
-        if backing is None and target_is_zero and target_is_zero_supported():
+        if backing is None and target_is_zero:
             cmd.append("--target-is-zero")
 
     if compressed:
@@ -500,13 +499,6 @@ def bitmap_update(image, bitmap, enable):
 
     cwdPath = os.path.dirname(image)
     return operation.Command(cmd, cwd=cwdPath)
-
-
-@cache.memoized
-def target_is_zero_supported():
-    cmd = [_qemuimg.cmd, "--help"]
-    out = _run_cmd(cmd).decode("utf-8")
-    return " [--target-is-zero] " in out
 
 
 def default_qcow2_compat():

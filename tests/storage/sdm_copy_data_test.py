@@ -48,10 +48,6 @@ from storage.storagetestlib import (
 from . import qemuio
 from . import userstorage
 
-from . marks import (
-    xfail_requires_target_is_zero,
-)
-
 from testValidation import broken_on_ci
 from testlib import make_uuid
 from testlib import VdsmTestCase, expandPermutations, permutations
@@ -249,7 +245,6 @@ class TestCopyDataDIV(VdsmTestCase):
     # Copy between 2 different domains
 
 
-@xfail_requires_target_is_zero
 def test_copy_to_preallocated_file():
     job_id = make_uuid()
 
@@ -368,13 +363,13 @@ def test_copy_bitmaps_fail_raw_format(
     pytest.param(
         '0.10', 4,
         id="0.10-to-1.1-file",
-        marks=xfail_requires_target_is_zero),
+    ),
 
     # New domain, new volumes
     pytest.param(
         '1.1', 4,
         id="1.1-to-1.1-file",
-        marks=xfail_requires_target_is_zero),
+    ),
 ])
 def test_qcow2_compat(
         user_mount, fake_scheduler, qcow2_compat, sd_version):
