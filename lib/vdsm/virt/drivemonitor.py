@@ -111,9 +111,9 @@ class DriveMonitor(object):
         threshold = max(1, apparentsize - drive.watermarkLimit)
 
         self._log.info(
-            'setting block threshold to %d bytes for drive %r '
-            '(apparentsize %d)',
-            threshold, drive.name, apparentsize
+            'Setting block threshold to %s bytes for drive %r (%s) '
+            'apparentsize %s',
+            threshold, drive.name, drive.path, apparentsize
         )
         try:
             # TODO: find a good way to expose Vm._dom as public property.
@@ -124,7 +124,7 @@ class DriveMonitor(object):
             # this ensures that we will attempt to set the threshold later.
             drive.threshold_state = storage.BLOCK_THRESHOLD.UNSET
             self._log.error(
-                'Failed to set block threshold on %r (%s): %s',
+                'Failed to set block threshold for drive %r (%s): %s',
                 drive.name, drive.path, exc)
         else:
             drive.threshold_state = storage.BLOCK_THRESHOLD.SET
@@ -146,7 +146,9 @@ class DriveMonitor(object):
             target = drive.name
         else:
             target = '%s[%d]' % (drive.name, index)
-        self._log.info('clearing block threshold for drive %r', target)
+
+        self._log.info('Clearing block threshold for drive %r', target)
+
         # undocumented at libvirt level, need to deep dive to QEMU level
         # to learn this: set threshold to 0 disable the notification
         # another alternative could be just clear_threshold the events
@@ -167,8 +169,8 @@ class DriveMonitor(object):
                        causing the event to trigger
             excess: amount (in bytes) written past the threshold
         """
-        self._log.info('block threshold %d exceeded on %r (%s)',
-                       threshold, dev, path)
+        self._log.info('Block threshold %s exceeded by %s for drive %r (%s)',
+                       threshold, excess, dev, path)
         try:
             drive = lookup.drive_by_name(self._vm.getDiskDevices()[:], dev)
         except LookupError:
