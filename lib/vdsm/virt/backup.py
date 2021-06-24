@@ -21,7 +21,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import functools
 import libvirt
 import logging
 import os
@@ -41,9 +40,6 @@ from vdsm.virt.vmdevices.storage import DISK_TYPE
 
 log = logging.getLogger("storage.backup")
 
-# DomainAdapter should be defined only if libvirt supports
-# incremental backup API
-backup_enabled = hasattr(libvirt.virDomain, "backupBegin")
 cold_backup_enabled = hasattr(libvirt, "VIR_ERR_CHECKPOINT_INCONSISTENT")
 
 MODE_FULL = "full"
@@ -59,41 +55,22 @@ class BackupDrive:
         self.scratch_disk = scratch_disk
 
 
-def requires_libvirt_support():
+@virdomain.expose(
+    "backupBegin",
+    "abortJob",
+    "backupGetXMLDesc",
+    "checkpointLookupByName",
+    "listAllCheckpoints",
+    "checkpointCreateXML",
+    "blockInfo"
+)
+class DomainAdapter(object):
     """
-    Decorator for prevent using backup methods to be
-    called if libvirt doesn't supports incremental backup.
+    VM wrapper class that exposes only
+    libvirt backup related operations.
     """
-    def decorator(f):
-        @functools.wraps(f)
-        def wrapper(*a, **kw):
-            if not backup_enabled:
-                raise exception.UnsupportedOperation(
-                    "Libvirt version doesn't support "
-                    "incremental backup operations"
-                )
-            return f(*a, **kw)
-        return wrapper
-    return decorator
-
-
-if backup_enabled:
-    @virdomain.expose(
-        "backupBegin",
-        "abortJob",
-        "backupGetXMLDesc",
-        "checkpointLookupByName",
-        "listAllCheckpoints",
-        "checkpointCreateXML",
-        "blockInfo"
-    )
-    class DomainAdapter(object):
-        """
-        VM wrapper class that exposes only
-        libvirt backup related operations.
-        """
-        def __init__(self, vm):
-            self._vm = vm
+    def __init__(self, vm):
+        self._vm = vm
 
 
 class ScratchDiskConfig(properties.Owner):

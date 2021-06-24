@@ -146,7 +146,7 @@ def get():
     caps['hugepages'] = hugepages.supported()
     caps['kernelFeatures'] = osinfo.kernel_features()
     caps['vncEncrypted'] = _isVncEncrypted()
-    caps['backupEnabled'] = backup.backup_enabled
+    caps['backupEnabled'] = True
     caps['coldBackupEnabled'] = backup.cold_backup_enabled
     caps['clearBitmapsEnabled'] = True
     caps['fipsEnabled'] = _getFipsEnabled()

@@ -4310,45 +4310,38 @@ class Vm(object):
         self.log.info("%d guest filesystems thawed", thawed)
         return response.success()
 
-    @backup.requires_libvirt_support()
     @api.guard(_not_migrating)
     def start_backup(self, config):
         dom = backup.DomainAdapter(self)
         return backup.start_backup(self, dom, config)
 
-    @backup.requires_libvirt_support()
     @api.guard(_not_migrating)
     def stop_backup(self, backup_id):
         dom = backup.DomainAdapter(self)
         return backup.stop_backup(self, dom, backup_id=backup_id)
 
-    @backup.requires_libvirt_support()
     @api.guard(_not_migrating)
     def backup_info(self, backup_id, checkpoint_id=None):
         dom = backup.DomainAdapter(self)
         return backup.backup_info(
             self, dom, backup_id=backup_id, checkpoint_id=checkpoint_id)
 
-    @backup.requires_libvirt_support()
     @api.guard(_not_migrating)
     def delete_checkpoints(self, checkpoint_ids):
         dom = backup.DomainAdapter(self)
         return backup.delete_checkpoints(
             self, dom, checkpoint_ids=checkpoint_ids)
 
-    @backup.requires_libvirt_support()
     @api.guard(_not_migrating)
     def redefine_checkpoints(self, checkpoints):
         dom = backup.DomainAdapter(self)
         return backup.redefine_checkpoints(
             self, dom, checkpoints=checkpoints)
 
-    @backup.requires_libvirt_support()
     def list_checkpoints(self):
         dom = backup.DomainAdapter(self)
         return backup.list_checkpoints(self, dom)
 
-    @backup.requires_libvirt_support()
     def dump_checkpoint(self, checkpoint_id):
         dom = backup.DomainAdapter(self)
         return backup.dump_checkpoint(

@@ -50,10 +50,6 @@ from virt.fakedomainadapter import FakeDomainAdapter
 
 from . import vmfakelib as fake
 
-requires_backup_support = pytest.mark.skipif(
-    not backup.backup_enabled,
-    reason="libvirt does not support backup")
-
 DOMAIN_ID = make_uuid()
 VOLUME_ID = make_uuid()
 # Full backup parameters
@@ -231,7 +227,6 @@ def tmp_dirs(tmpdir, monkeypatch):
     monkeypatch.setattr(transientdisk, 'P_TRANSIENT_DISKS', transient_dir)
 
 
-@requires_backup_support
 def test_start_stop_backup(tmp_dirs):
     vm = FakeVm()
 
@@ -283,7 +278,6 @@ def test_start_stop_backup(tmp_dirs):
     verify_scratch_disks_removed(vm)
 
 
-@requires_backup_support
 def test_start_stop_backup_engine_scratch_disks(tmpdir):
     scratch1 = create_scratch_disk(tmpdir, "scratch1")
     scratch2 = create_scratch_disk(tmpdir, "scratch2")
@@ -339,7 +333,6 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
     assert not dom.backing_up
 
 
-@requires_backup_support
 def test_full_backup_with_backup_mode(tmp_dirs):
     vm = FakeVm()
 
@@ -375,7 +368,6 @@ def test_full_backup_with_backup_mode(tmp_dirs):
     assert normalized(input_xml) == normalized(dom.input_backup_xml)
 
 
-@requires_backup_support
 def test_incremental_backup_with_backup_mode(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
@@ -438,7 +430,6 @@ def test_incremental_backup_with_backup_mode(tmp_dirs):
     assert normalized(input_xml) == normalized(dom.input_backup_xml)
 
 
-@requires_backup_support
 @pytest.mark.parametrize(
     "disks_in_checkpoint, expected_checkpoint_xml", [
         ([IMAGE_1_UUID, IMAGE_2_UUID], CHECKPOINT_1_XML),
@@ -477,7 +468,6 @@ def test_start_stop_backup_with_checkpoint(
     verify_scratch_disks_removed(vm)
 
 
-@requires_backup_support
 def test_incremental_backup(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
@@ -556,7 +546,6 @@ def test_incremental_backup(tmp_dirs):
     verify_scratch_disks_removed(vm)
 
 
-@requires_backup_support
 def test_full_backup_without_checkpoint_with_previous_chain(tmp_dirs):
     vm = FakeVm()
     # This test checks an edge case when a chain of incremental backup was
@@ -588,7 +577,6 @@ def test_full_backup_without_checkpoint_with_previous_chain(tmp_dirs):
     verify_scratch_disks_removed(vm)
 
 
-@requires_backup_support
 def test_start_backup_failed_get_checkpoint(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
@@ -621,7 +609,6 @@ def test_start_backup_failed_get_checkpoint(tmp_dirs):
     verify_scratch_disks_removed(vm)
 
 
-@requires_backup_support
 def test_start_backup_disk_not_found():
     vm = FakeVm()
     dom = FakeDomainAdapter()
@@ -650,7 +637,6 @@ def test_start_backup_disk_not_found():
     assert not vm.thawed
 
 
-@requires_backup_support
 def test_backup_begin_failed(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
@@ -674,7 +660,6 @@ def test_backup_begin_failed(tmp_dirs):
     assert vm.thawed
 
 
-@requires_backup_support
 @pytest.mark.skipif(
     not hasattr(libvirt, "VIR_ERR_CHECKPOINT_INCONSISTENT"),
     reason="Libvirt missing VIR_ERR_CHECKPOINT_INCONSISTENT flag")
@@ -696,7 +681,6 @@ def test_backup_begin_checkpoint_inconsistent(tmp_dirs):
         backup.start_backup(vm, dom, config)
 
 
-@requires_backup_support
 def test_backup_begin_freeze_failed(tmp_dirs):
     vm = FakeVm()
     vm.errors["freeze"] = fake.libvirt_error(
@@ -721,7 +705,6 @@ def test_backup_begin_freeze_failed(tmp_dirs):
     assert vm.thawed
 
 
-@requires_backup_support
 @pytest.mark.parametrize("require_consistency", [False, None])
 def test_backup_begin_consistency_not_required(tmp_dirs, require_consistency):
     vm = FakeVm()
@@ -772,7 +755,6 @@ def test_backup_begin_failed_full_with_inremental_disks(tmp_dirs):
         backup.start_backup(vm, dom, config)
 
 
-@requires_backup_support
 def test_stop_backup_failed(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
@@ -803,7 +785,6 @@ def test_stop_backup_failed(tmp_dirs):
     verify_scratch_disks_exists(vm)
 
 
-@requires_backup_support
 def test_stop_non_existing_backup():
     vm = FakeVm()
     dom = FakeDomainAdapter()
@@ -814,7 +795,6 @@ def test_stop_non_existing_backup():
     backup.stop_backup(vm, dom, BACKUP_1_ID)
 
 
-@requires_backup_support
 def test_backup_info(tmp_dirs):
     vm = FakeVm()
     output_xml = """
@@ -851,7 +831,6 @@ def test_backup_info(tmp_dirs):
     assert 'checkpoint' not in backup_info['result']
 
 
-@requires_backup_support
 def test_backup_info_no_backup_running():
     vm = FakeVm()
     dom = FakeDomainAdapter()
@@ -862,7 +841,6 @@ def test_backup_info_no_backup_running():
         backup.backup_info(vm, dom, BACKUP_1_ID)
 
 
-@requires_backup_support
 def test_backup_info_get_xml_desc_failed():
     vm = FakeVm()
     dom = FakeDomainAdapter()
@@ -873,7 +851,6 @@ def test_backup_info_get_xml_desc_failed():
         backup.backup_info(vm, dom, BACKUP_1_ID)
 
 
-@requires_backup_support
 def test_fail_parse_backup_xml(tmp_dirs):
     vm = FakeVm()
     INVALID_BACKUP_XML = """
@@ -894,7 +871,6 @@ def test_fail_parse_backup_xml(tmp_dirs):
         backup.backup_info(vm, dom, BACKUP_1_ID)
 
 
-@requires_backup_support
 def test_list_checkpoints():
     dom = FakeDomainAdapter(output_checkpoints=[CHECKPOINT_1, CHECKPOINT_2])
 
@@ -904,7 +880,6 @@ def test_list_checkpoints():
     assert res["result"] == [CHECKPOINT_1.getName(), CHECKPOINT_2.getName()]
 
 
-@requires_backup_support
 def test_list_empty_checkpoints():
     dom = FakeDomainAdapter()
     vm = FakeVm()
@@ -913,7 +888,6 @@ def test_list_empty_checkpoints():
     assert res["result"] == []
 
 
-@requires_backup_support
 def test_redefine_checkpoints_succeeded():
     dom = FakeDomainAdapter(output_checkpoints=[CHECKPOINT_1, CHECKPOINT_2])
 
@@ -926,7 +900,6 @@ def test_redefine_checkpoints_succeeded():
     assert res["result"] == expected_result
 
 
-@requires_backup_support
 def test_redefine_checkpoints_failed():
     dom = FakeDomainAdapter()
     # simulating an error that raised during
@@ -948,7 +921,6 @@ def test_redefine_checkpoints_failed():
     assert res["result"] == expected_result
 
 
-@requires_backup_support
 def test_redefine_checkpoints_failed_after_one_succeeded():
     dom = FakeDomainAdapter(output_checkpoints=[CHECKPOINT_1, CHECKPOINT_2])
 
@@ -969,7 +941,6 @@ def test_redefine_checkpoints_failed_after_one_succeeded():
     assert res["result"] == expected_result
 
 
-@requires_backup_support
 def test_redefine_checkpoints_using_config():
     checkpoint_1 = FakeCheckpoint(
         CHECKPOINT_1_WITH_CREATION_TIME_XML, CHECKPOINT_1_ID)
@@ -1008,7 +979,6 @@ def test_redefine_checkpoints_using_config():
     assert res["result"] == expected_result
 
 
-@requires_backup_support
 def test_redefine_diskless_checkpoints_using_config():
     diskless_checkpoint = FakeCheckpoint(
         DISKLESS_CHECKPOINT_XML, DISKLESS_CHECKPOINT_ID)
@@ -1034,7 +1004,6 @@ def test_redefine_diskless_checkpoints_using_config():
     assert res["result"] == expected_result
 
 
-@requires_backup_support
 def test_redefine_checkpoints_failed_no_xml_or_config():
     dom = FakeDomainAdapter(output_checkpoints=[CHECKPOINT_1, CHECKPOINT_2])
     vm = FakeVm()
@@ -1048,7 +1017,6 @@ def test_redefine_checkpoints_failed_no_xml_or_config():
         backup.redefine_checkpoints(vm, dom, checkpoint_cfg)
 
 
-@requires_backup_support
 def test_delete_all_checkpoints():
     dom = FakeDomainAdapter()
     dom.output_checkpoints = [
@@ -1069,7 +1037,6 @@ def test_delete_all_checkpoints():
     assert res["result"] == []
 
 
-@requires_backup_support
 def test_delete_one_checkpoint():
     dom = FakeDomainAdapter()
     dom.output_checkpoints = [
@@ -1089,7 +1056,6 @@ def test_delete_one_checkpoint():
     assert res["result"] == [CHECKPOINT_2_ID]
 
 
-@requires_backup_support
 def test_delete_missing_checkpoint():
     dom = FakeDomainAdapter()
     dom.output_checkpoints = [
@@ -1111,7 +1077,6 @@ def test_delete_missing_checkpoint():
     assert res["result"] == []
 
 
-@requires_backup_support
 def test_delete_checkpoint_from_empty_chain():
     dom = FakeDomainAdapter()
     vm = FakeVm()
@@ -1129,7 +1094,6 @@ def test_delete_checkpoint_from_empty_chain():
     assert res["result"] == []
 
 
-@requires_backup_support
 def test_failed_delete_checkpoint():
     error_msg = "Internal delete error"
 
@@ -1163,7 +1127,6 @@ def test_failed_delete_checkpoint():
     assert res["result"] == [CHECKPOINT_2_ID]
 
 
-@requires_backup_support
 def test_dump_checkpoint():
     dom = FakeDomainAdapter()
     dom.output_checkpoints = [
@@ -1180,7 +1143,6 @@ def test_dump_checkpoint():
         assert res["result"] == expected_result
 
 
-@requires_backup_support
 def test_dump_missing_checkpoint():
     dom = FakeDomainAdapter()
     dom.output_checkpoints = [
@@ -1191,7 +1153,6 @@ def test_dump_missing_checkpoint():
         backup.dump_checkpoint(dom, CHECKPOINT_2_ID)
 
 
-@requires_backup_support
 def test_dump_checkpoint_lookup_failed():
     dom = FakeDomainAdapter()
     dom.errors["checkpointLookupByName"] = fake.libvirt_error(
@@ -1206,7 +1167,6 @@ def test_dump_checkpoint_lookup_failed():
     assert e.value.get_error_code() == libvirt.VIR_ERR_INTERNAL_ERROR
 
 
-@requires_backup_support
 def test_dump_checkpoint_get_xml_failed():
     checkpoint_2 = FakeCheckpoint(CHECKPOINT_2_XML, CHECKPOINT_2_ID)
     # simulating an error that raised when calling the getXMLDesc method
