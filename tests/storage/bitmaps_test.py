@@ -30,10 +30,6 @@ from vdsm.common.units import MiB
 from vdsm.storage import bitmaps
 from vdsm.storage import qemuimg
 
-from . marks import (
-    requires_bitmaps_support,
-)
-
 
 def qemuimg_failure(*args, **kwargs):
     raise cmdutils.Error("code", "out", "err", b"qemuimg failure")
@@ -73,7 +69,6 @@ def vol_chain(tmp_mount):
 
 # add_bitmaps tests
 
-@requires_bitmaps_support
 def test_add_only_valid_bitmaps(vol_chain):
     bitmap = 'bitmap'
 
@@ -102,7 +97,6 @@ def test_add_only_valid_bitmaps(vol_chain):
     ]
 
 
-@requires_bitmaps_support
 def test_no_bitmaps_to_add(vol_chain):
     # Add bitmaps from base volume to top volume
     bitmaps.add_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
@@ -111,7 +105,6 @@ def test_no_bitmaps_to_add(vol_chain):
     assert 'bitmaps' not in info['format-specific']['data']
 
 
-@requires_bitmaps_support
 def test_add_bitmap_failed(monkeypatch, vol_chain):
     # Add new bitmap to base volume
     op = qemuimg.bitmap_add(vol_chain.base_vol, 'bitmap')
@@ -124,7 +117,6 @@ def test_add_bitmap_failed(monkeypatch, vol_chain):
 
 # merge_bitmaps tests
 
-@requires_bitmaps_support
 def test_merge_only_valid_bitmaps(vol_chain):
     bitmap = 'bitmap'
 
@@ -157,7 +149,6 @@ def test_merge_only_valid_bitmaps(vol_chain):
     ]
 
 
-@requires_bitmaps_support
 def test_no_bitmaps_to_merge(vol_chain):
     # Merge bitmaps from base volume to top volume
     bitmaps.merge_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
@@ -166,7 +157,6 @@ def test_no_bitmaps_to_merge(vol_chain):
     assert 'bitmaps' not in info['format-specific']['data']
 
 
-@requires_bitmaps_support
 def test_merge_bitmaps_failed(monkeypatch, vol_chain):
     bitmap = 'bitmap'
 
@@ -189,7 +179,6 @@ def test_merge_bitmaps_failed(monkeypatch, vol_chain):
     ]
 
 
-@requires_bitmaps_support
 def test_merge_bitmaps_failed_to_add_bitmap(
         monkeypatch, vol_chain):
     bitmap = 'bitmap'
@@ -206,7 +195,6 @@ def test_merge_bitmaps_failed_to_add_bitmap(
     assert 'bitmaps' not in info['format-specific']['data']
 
 
-@requires_bitmaps_support
 def test_skip_holes_during_merge_bitmaps(tmp_mount, vol_chain):
     virtual_size = MiB
     bitmap = 'bitmap'
@@ -242,7 +230,6 @@ def test_skip_holes_during_merge_bitmaps(tmp_mount, vol_chain):
     assert 'bitmaps' not in info['format-specific']['data']
 
 
-@requires_bitmaps_support
 def test_remove_bitmap_failed(monkeypatch, tmp_mount, vol_chain):
     bitmap = 'bitmap'
     # Add new bitmap to base parent volume
@@ -254,13 +241,11 @@ def test_remove_bitmap_failed(monkeypatch, tmp_mount, vol_chain):
         bitmaps.remove_bitmap(vol_chain.top_vol, bitmap)
 
 
-@requires_bitmaps_support
 def test_remove_non_existing_bitmap_succeed(tmp_mount, vol_chain):
     # try to remove a non-existing bitmap from top_vol
     bitmaps.remove_bitmap(vol_chain.top_vol, 'bitmap')
 
 
-@requires_bitmaps_support
 def test_clear_bitmaps(tmp_mount, vol_chain):
     bitmap_1 = 'bitmap_1'
     bitmap_2 = 'bitmap_2'
@@ -278,7 +263,6 @@ def test_clear_bitmaps(tmp_mount, vol_chain):
     assert not vol_bitmaps
 
 
-@requires_bitmaps_support
 def test_clear_bitmaps_failed(monkeypatch, tmp_mount, vol_chain):
     # Add new bitmap to top volume
     op = qemuimg.bitmap_add(vol_chain.top_vol, 'bitmap')

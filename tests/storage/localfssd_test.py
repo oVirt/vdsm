@@ -42,7 +42,6 @@ from vdsm.storage import sd
 
 from . import qemuio
 from . import userstorage
-from . marks import requires_bitmaps_support
 from . marks import requires_unprivileged_user
 from . storagetestlib import chmod
 
@@ -1166,7 +1165,6 @@ def test_dump_sd_volumes_removed_image(
     }
 
 
-@requires_bitmaps_support
 def test_create_volume_with_bitmaps(user_domain, local_fallocate):
     if user_domain.getVersion() == 3:
         pytest.skip("Bitmaps operations not supported in v3 domains")

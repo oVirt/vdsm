@@ -47,8 +47,6 @@ from vdsm.storage import qemuimg
 from vdsm.storage.sdm import volume_info
 from vdsm.storage.sdm.api import add_bitmap
 
-from . marks import requires_bitmaps_support
-
 
 def failure(*args, **kwargs):
     raise cmdutils.Error("code", "out", "err", "Fail amend")
@@ -72,7 +70,6 @@ def make_env(storage_type, fmt, chain_length=1,
             yield env
 
 
-@requires_bitmaps_support
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_add_bitmap(fake_scheduler, env_type):
     job_id = make_uuid()
@@ -96,7 +93,6 @@ def test_add_bitmap(fake_scheduler, env_type):
         assert env_vol.getMetaParam(sc.GENERATION) == generation + 1
 
 
-@requires_bitmaps_support
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_vol_type_not_qcow(fake_scheduler, env_type):
     job_id = make_uuid()
@@ -118,7 +114,6 @@ def test_vol_type_not_qcow(fake_scheduler, env_type):
         assert env_vol.getMetaParam(sc.GENERATION) == generation
 
 
-@requires_bitmaps_support
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_qemu_bitmap_add_failure(fake_scheduler, monkeypatch, env_type):
     monkeypatch.setattr(qemuimg, "bitmap_add", failure)
@@ -140,7 +135,6 @@ def test_qemu_bitmap_add_failure(fake_scheduler, monkeypatch, env_type):
         assert env_vol.getMetaParam(sc.GENERATION) == generation
 
 
-@requires_bitmaps_support
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_bitmap_already_exists(fake_scheduler, env_type):
     job_id = make_uuid()

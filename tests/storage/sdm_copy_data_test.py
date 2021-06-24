@@ -49,7 +49,6 @@ from . import qemuio
 from . import userstorage
 
 from . marks import (
-    requires_bitmaps_support,
     xfail_requires_target_is_zero,
 )
 
@@ -271,7 +270,6 @@ def test_copy_to_preallocated_file():
         assert info["virtual-size"] == info["actual-size"]
 
 
-@requires_bitmaps_support
 @pytest.mark.parametrize(
     "env_type, sd_version, copy_seq", [
         ('file', 5, (0, 1)),
@@ -327,7 +325,6 @@ def test_volume_chain_copy_with_bitmaps(
             ]
 
 
-@requires_bitmaps_support
 @pytest.mark.parametrize(
     "env_type, dst_fmt", [
         ('file', sc.RAW_FORMAT),

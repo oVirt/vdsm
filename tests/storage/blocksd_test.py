@@ -44,7 +44,6 @@ from vdsm.storage.sdc import sdCache
 from vdsm.storage.spbackends import StoragePoolDiskBackend
 
 from . import qemuio
-from . marks import requires_bitmaps_support
 from . marks import requires_root
 
 from storage.storagefakelib import fake_spm
@@ -877,7 +876,6 @@ def test_create_snapshot_size(
 
 
 @requires_root
-@requires_bitmaps_support
 @pytest.mark.root
 @pytest.mark.parametrize("domain_version", [4, 5])
 def test_create_with_bitmaps(

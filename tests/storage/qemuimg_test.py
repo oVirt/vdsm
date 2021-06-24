@@ -45,7 +45,6 @@ from testlib import namedTemporaryDir
 from testlib import temporaryPath
 
 from . marks import (
-    requires_bitmaps_support,
     requires_root,
     xfail_requires_target_is_zero,
 )
@@ -174,7 +173,6 @@ class TestInfo:
                                '--cpu=30',
                                '--as=1073741824']
 
-    @requires_bitmaps_support
     def test_backing_chain(self, tmpdir):
         virtual_size = 10 * MiB
         base = str(tmpdir.join('base.raw'))
@@ -699,7 +697,6 @@ class TestConvert:
         info = qemuimg.info(dst)
         assert info["virtual-size"] == info["actual-size"]
 
-    @requires_bitmaps_support
     def test_copy_bitmaps(self, tmp_mount):
         virtual_size = MiB
         base_bitmaps = ['base_bitmap1', 'base_bitmap2']
@@ -796,7 +793,6 @@ class TestConvert:
                 },
             ]
 
-    @requires_bitmaps_support
     def test_convert_without_copy_bitmaps(self, tmp_mount):
         virtual_size = MiB
 
@@ -837,7 +833,6 @@ class TestConvert:
         info = qemuimg.info(dst)
         assert 'bitmaps' not in info['format-specific']['data']
 
-    @requires_bitmaps_support
     def test_copy_with_disabled_bitmaps(self, tmp_mount):
         virtual_size = MiB
         bitmaps = [("a", True), ("b", False)]
@@ -1554,7 +1549,6 @@ class TestMeasure:
 
 class TestBitmaps:
 
-    @requires_bitmaps_support
     @pytest.mark.parametrize("granularity, exp_granularity", [
         (None, 65536),
         (8 * 64 * 1024, 8 * 64 * 1024)
@@ -1597,7 +1591,6 @@ class TestBitmaps:
         info = qemuimg.info(src_path)
         assert 'bitmaps' not in info['format-specific']['data']
 
-    @requires_bitmaps_support
     def test_add_disabled_bitmap(self, tmp_mount):
         virtual_size = MiB
         bitmap_name = 'bitmap1'
@@ -1628,7 +1621,6 @@ class TestBitmaps:
             },
         ]
 
-    @requires_bitmaps_support
     def test_enable_disable_bitmap(self, tmp_mount):
         virtual_size = MiB
         bitmap_name = 'bitmap1'
@@ -1683,7 +1675,6 @@ class TestBitmaps:
             },
         ]
 
-    @requires_bitmaps_support
     def test_merge_bitmaps(self, tmp_mount):
         virtual_size = MiB
         base_bitmap = 'base_bitmap'

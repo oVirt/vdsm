@@ -48,8 +48,6 @@ from vdsm.storage import qemuimg
 from vdsm.storage.sdm import volume_info
 from vdsm.storage.sdm.api import remove_bitmap
 
-from . marks import requires_bitmaps_support
-
 
 def failure(*args, **kwargs):
     raise cmdutils.Error("code", "out", "err", "Fail bitmap operation")
@@ -73,7 +71,6 @@ def make_env(storage_type, fmt, chain_length=1,
             yield env
 
 
-@requires_bitmaps_support
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_add_remove_bitmap(fake_scheduler, env_type):
     bitmap1 = "bitmap1"
@@ -107,7 +104,6 @@ def test_add_remove_bitmap(fake_scheduler, env_type):
         assert top_vol.getMetaParam(sc.GENERATION) == generation + 1
 
 
-@requires_bitmaps_support
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_vol_type_not_qcow(fake_scheduler, env_type):
     with make_env(env_type, sc.name2type('raw')) as env:
@@ -131,7 +127,6 @@ def test_vol_type_not_qcow(fake_scheduler, env_type):
         assert top_vol.getMetaParam(sc.GENERATION) == generation
 
 
-@requires_bitmaps_support
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_remove_bitmap_non_leaf_vol(fake_scheduler, env_type):
     bitmap1 = "bitmap1"
@@ -165,7 +160,6 @@ def test_remove_bitmap_non_leaf_vol(fake_scheduler, env_type):
         assert base_vol.getMetaParam(sc.GENERATION) == generation + 1
 
 
-@requires_bitmaps_support
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_remove_missing_bitmap(fake_scheduler, env_type):
     with make_env(env_type, sc.name2type('cow')) as env:
@@ -188,7 +182,6 @@ def test_remove_missing_bitmap(fake_scheduler, env_type):
         assert top_vol.getMetaParam(sc.GENERATION) == generation + 1
 
 
-@requires_bitmaps_support
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_remove_inactive_bitmap(fake_scheduler, env_type):
     bitmap = "bitmap"
@@ -222,7 +215,6 @@ def test_remove_inactive_bitmap(fake_scheduler, env_type):
         assert base_vol.getMetaParam(sc.GENERATION) == generation + 1
 
 
-@requires_bitmaps_support
 @pytest.mark.parametrize("env_type", ["file", "block"])
 def test_remove_invalid_bitmap(fake_scheduler, env_type):
     bitmap = "bitmap"

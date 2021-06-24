@@ -81,8 +81,3 @@ def has_loopback_sector_size():
 requires_loopback_sector_size = pytest.mark.skipif(
     not has_loopback_sector_size(),
     reason="lossetup --sector-size option not available")
-
-
-requires_bitmaps_support = pytest.mark.skipif(
-    not qemuimg.bitmaps_supported(),
-    reason="qemu-img does not support bitmaps operations")
