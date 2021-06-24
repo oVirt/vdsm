@@ -40,8 +40,6 @@ from vdsm.virt.vmdevices.storage import DISK_TYPE
 
 log = logging.getLogger("storage.backup")
 
-cold_backup_enabled = hasattr(libvirt, "VIR_ERR_CHECKPOINT_INCONSISTENT")
-
 MODE_FULL = "full"
 MODE_INCREMENTAL = "incremental"
 
@@ -405,14 +403,11 @@ def _add_checkpoint_xml(vm, dom, backup_id, checkpoint_id, result):
 
 
 def _begin_backup(vm, dom, backup_cfg, backup_xml, checkpoint_xml):
-    # pylint: disable=no-member
     flags = libvirt.VIR_DOMAIN_BACKUP_BEGIN_REUSE_EXTERNAL
     try:
         dom.backupBegin(backup_xml, checkpoint_xml, flags=flags)
     except libvirt.libvirtError as e:
-        # TODO: Simplify when libvirt 6.6.0-9 is required on centos.
-        if e.get_error_code() == getattr(
-                libvirt, "VIR_ERR_CHECKPOINT_INCONSISTENT", None):
+        if e.get_error_code() == libvirt.VIR_ERR_CHECKPOINT_INCONSISTENT:
             raise exception.InconsistentCheckpointError(
                 reason="Checkpoint can't be used: {}".format(e),
                 vm_id=vm.id,

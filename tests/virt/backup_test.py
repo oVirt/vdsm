@@ -660,9 +660,6 @@ def test_backup_begin_failed(tmp_dirs):
     assert vm.thawed
 
 
-@pytest.mark.skipif(
-    not hasattr(libvirt, "VIR_ERR_CHECKPOINT_INCONSISTENT"),
-    reason="Libvirt missing VIR_ERR_CHECKPOINT_INCONSISTENT flag")
 def test_backup_begin_checkpoint_inconsistent(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()

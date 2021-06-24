@@ -47,7 +47,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import hba
 from vdsm.storage import managedvolume
-from vdsm.virt import backup
 
 try:
     import ovirt_hosted_engine_ha.client.client as haClient
@@ -147,7 +146,7 @@ def get():
     caps['kernelFeatures'] = osinfo.kernel_features()
     caps['vncEncrypted'] = _isVncEncrypted()
     caps['backupEnabled'] = True
-    caps['coldBackupEnabled'] = backup.cold_backup_enabled
+    caps['coldBackupEnabled'] = True
     caps['clearBitmapsEnabled'] = True
     caps['fipsEnabled'] = _getFipsEnabled()
     try:
