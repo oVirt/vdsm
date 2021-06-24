@@ -23,11 +23,11 @@ import pytest
 from vdsm.network import errors as ne
 
 from . import netfunctestlib as nftestlib
-from .netfunctestlib import parametrize_ip_families
-from .netfunctestlib import IpFamily
 from .netfunctestlib import NOCHK, SetupNetworksError
 from network.nettestlib import dummy_device
 from network.nettestlib import Interface
+from network.nettestlib import IpFamily
+from network.nettestlib import parametrize_ip_families
 from network.nettestlib import preserve_default_route
 from network.nettestlib import restore_resolv_conf
 

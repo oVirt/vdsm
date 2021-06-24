@@ -59,6 +59,13 @@ class IpFamily(object):
     IPv6 = 6
 
 
+parametrize_ip_families = pytest.mark.parametrize(
+    'families',
+    [(IpFamily.IPv4,), (IpFamily.IPv6,), (IpFamily.IPv4, IpFamily.IPv6)],
+    ids=['IPv4', 'IPv6', 'IPv4&6'],
+)
+
+
 class Interface(object):
     def __init__(self, prefix='vdsm-', max_length=11):
         self.dev_name = random_iface_name(prefix, max_length)

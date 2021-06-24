@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,6 @@ from vdsm.network.netlink import monitor
 from vdsm.network.netlink import waitfor
 from vdsm.network.restore_net_config import restore
 
-from network.nettestlib import IpFamily
 
 try:
     from functional.utils import getProxy, SUCCESS
@@ -80,12 +79,6 @@ parametrize_bridged = pytest.mark.parametrize(
 
 parametrize_bonded = pytest.mark.parametrize(
     'bonded', [False, True], ids=['unbonded', 'bonded']
-)
-
-parametrize_ip_families = pytest.mark.parametrize(
-    'families',
-    [(IpFamily.IPv4,), (IpFamily.IPv6,), (IpFamily.IPv4, IpFamily.IPv6)],
-    ids=['IPv4', 'IPv6', 'IPv4&6'],
 )
 
 parametrize_def_route = pytest.mark.parametrize(

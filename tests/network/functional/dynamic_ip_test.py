@@ -28,11 +28,11 @@ from vdsm.network.initializer import init_unpriviliged_dhcp_monitor_ctx
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NOCHK
 from .netfunctestlib import parametrize_def_route
-from .netfunctestlib import parametrize_ip_families
-from .netfunctestlib import IpFamily
 from network.nettestlib import Interface
+from network.nettestlib import IpFamily
 from network.nettestlib import veth_pair
 from network.nettestlib import dnsmasq_run
+from network.nettestlib import parametrize_ip_families
 from network.nettestlib import running_on_ovirt_ci
 from network.nettestlib import vlan_device
 from network.nettestlib import wait_for_ipv4
