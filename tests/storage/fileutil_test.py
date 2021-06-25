@@ -92,7 +92,7 @@ def test_createdir_raise_errors():
         if sys.version_info[:2] == (3, 6):
             with pytest.raises(OSError) as e:
                 fileUtils.createdir(path, mode=mode)
-            assert e.value.errno == errno.EPERM
+            assert e.value.errno == errno.EACCES
         else:
             # os.makedirs() behavior changed since python 3.7,
             # os.makedirs() will not respect the 'mode' parameter for
