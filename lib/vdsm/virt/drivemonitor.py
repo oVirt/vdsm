@@ -93,6 +93,7 @@ class DriveMonitor(object):
         """
         if not self._events_enabled:
             return
+
         # watermarkLimit tells us the minimum amount of free space a thin
         # provisioned must have to avoid the extension.
         # If the free space falls below this limit, we should extend.
@@ -235,8 +236,10 @@ class DriveMonitor(object):
         return False
 
     def update_threshold_state_exceeded(self, drive):
-        if (drive.threshold_state != storage.BLOCK_THRESHOLD.EXCEEDED and
-                self.events_enabled()):
+        if not self._events_enabled:
+            return
+
+        if drive.threshold_state != storage.BLOCK_THRESHOLD.EXCEEDED:
             # if the threshold is wrongly set below the current allocation,
             # for example because of delays in handling the event,
             # or if the VM writes too fast, we will never receive an event.
