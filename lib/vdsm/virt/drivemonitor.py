@@ -18,8 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
+import re
 
 import libvirt
 
@@ -76,20 +75,25 @@ class DriveMonitor(object):
         """
         return self._enabled and bool(self.monitored_drives())
 
-    def set_threshold(self, drive, apparentsize):
+    def set_threshold(self, drive, apparentsize, index=None):
         """
-        Set the libvirt block threshold on the given drive, enabling
-        libvirt to deliver the event when the threshold is crossed.
-        Does nothing if the `_events_enabled` attribute is Falsey.
+        Set the libvirt block threshold on the given drive image, enabling
+        libvirt to deliver the event when the threshold is crossed.  Does
+        nothing if events are disabled.
 
         Call this method when you need to set one initial block threshold
         (e.g. first time Vdsm monitors one drive), or after one volume
         extension, or when the top layer changes (after snapshot, after
         live storage migration completes).
 
+        If index is None, register the top layer. Otherwise register the
+        image with the given index. The index can be extracted from
+        libvirt xml.
+
         Args:
-            drive: A storage.Drive object
-            apparentsize: The drive apparent size in bytes (int)
+            drive (storage.Drive): drive to register threshold event
+            apparentsize (int): The drive apparent size in bytes
+            index (int): Libvirt index of the layer in the chain
         """
         if not self._events_enabled:
             return
@@ -112,27 +116,26 @@ class DriveMonitor(object):
         # that should be already handled -or at least notified- elsewhere.
         threshold = max(1, apparentsize - drive.watermarkLimit)
 
+        target = format_target(drive.name, index)
         self._log.info(
-            'Setting block threshold to %s bytes for drive %r (%s) '
-            'apparentsize %s',
-            threshold, drive.name, drive.path, apparentsize
+            'Setting block threshold to %s bytes for drive %r apparentsize %s',
+            threshold, target, apparentsize
         )
         try:
             # TODO: find a good way to expose Vm._dom as public property.
             # we are running out of names in Vm class.
-            self._vm._dom.setBlockThreshold(drive.name, threshold)
+            self._vm._dom.setBlockThreshold(target, threshold)
         except libvirt.libvirtError as exc:
             # The drive threshold_state can be UNSET or EXCEEDED, and
             # this ensures that we will attempt to set the threshold later.
             drive.threshold_state = storage.BLOCK_THRESHOLD.UNSET
             self._log.error(
-                'Failed to set block threshold for drive %r (%s): %s',
-                drive.name, drive.path, exc)
+                'Failed to set block threshold for drive %r: %s', target, exc)
         except virdomain.NotConnectedError:
             drive.threshold_state = storage.BLOCK_THRESHOLD.UNSET
             self._log.debug(
-                "Domain not connected, skipping set block threshold for drive "
-                "%r", drive.name)
+                "Domain not connected, skipping set block threshold for "
+                "drive %r", target)
         else:
             drive.threshold_state = storage.BLOCK_THRESHOLD.SET
 
@@ -149,11 +152,7 @@ class DriveMonitor(object):
         if not self._events_enabled:
             return
 
-        if index is None:
-            target = drive.name
-        else:
-            target = '%s[%d]' % (drive.name, index)
-
+        target = format_target(drive.name, index)
         self._log.info('Clearing block threshold for drive %r', target)
 
         # undocumented at libvirt level, need to deep dive to QEMU level
@@ -164,26 +163,30 @@ class DriveMonitor(object):
         # TODO: file a libvirt documentation bug
         self._vm._dom.setBlockThreshold(target, 0)
 
-    def on_block_threshold(self, dev, path, threshold, excess):
+    def on_block_threshold(self, target, path, threshold, excess):
         """
         Callback to be executed in the libvirt event handler when
         a BLOCK_THRESHOLD event is delivered.
 
         Args:
-            dev: device name (e.g. vda, sdb)
+            target: device name (vda) or indexed name (vda[7])
             path: device path
             threshold: the threshold (in bytes) that was exceeded
                        causing the event to trigger
             excess: amount (in bytes) written past the threshold
         """
         self._log.info('Block threshold %s exceeded by %s for drive %r (%s)',
-                       threshold, excess, dev, path)
+                       threshold, excess, target, path)
+
+        drive_name, index = parse_target(target)
+
         try:
-            drive = lookup.drive_by_name(self._vm.getDiskDevices()[:], dev)
+            drive = lookup.drive_by_name(
+                self._vm.getDiskDevices()[:], drive_name)
         except LookupError:
             self._log.warning(
                 'Unknown drive %r for vm %s - ignored block threshold event',
-                dev, self._vm.id)
+                drive_name, self._vm.id)
         else:
             drive.on_block_threshold(path)
 
@@ -250,3 +253,22 @@ class DriveMonitor(object):
             self._log.info(
                 "Drive %s needs to be extended, forced threshold_state "
                 "to exceeded", drive.name)
+
+
+_TARGET_RE = re.compile(r"([hvs]d[a-z]+)\[(\d+)\]")
+
+
+def format_target(name, index):
+    if index is None:
+        return name
+    else:
+        return "{}[{}]".format(name, index)
+
+
+def parse_target(target):
+    match = _TARGET_RE.match(target)
+    if match:
+        name, index = match.groups()
+        return name, int(index)
+    else:
+        return target, None

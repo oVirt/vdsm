@@ -19,9 +19,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 from contextlib import contextmanager
 import logging
 
@@ -360,7 +357,7 @@ class TestDrivemonitor(VdsmTestCase):
         mon.disable()
         assert mon.enabled() is False
 
-    def test_set_threshold(self):
+    def test_set_threshold_drive_name(self):
         with make_env(events_enabled=True) as (mon, vm):
             vda = make_drive(self.log, index=0, iface='virtio')
             vm.drives.append(vda)
@@ -371,6 +368,18 @@ class TestDrivemonitor(VdsmTestCase):
             mon.set_threshold(vda, apparentsize)
             expected = apparentsize - threshold
             assert vm._dom.thresholds == [('vda', expected)]
+
+    def test_set_threshold_indexed_name(self):
+        with make_env(events_enabled=True) as (mon, vm):
+            vda = make_drive(self.log, index=0, iface='virtio')
+            vm.drives.append(vda)
+
+            apparentsize = 4 * GiB
+            threshold = 512 * MiB
+
+            mon.set_threshold(vda, apparentsize, index=1)
+            expected = apparentsize - threshold
+            assert vm._dom.thresholds == [('vda[1]', expected)]
 
     def test_set_threshold_drive_too_small(self):
         # We seen the storage subsystem creating drive too small,
@@ -383,9 +392,9 @@ class TestDrivemonitor(VdsmTestCase):
 
             apparentsize = 128 * MiB
 
-            mon.set_threshold(vda, apparentsize)
-            drive_name, value = vm._dom.thresholds[0]
-            assert drive_name == 'vda'
+            mon.set_threshold(vda, apparentsize, index=3)
+            target, value = vm._dom.thresholds[0]
+            assert target == 'vda[3]'
             assert value >= 1
 
     def test_clear_with_index_equal_none(self):
@@ -410,6 +419,30 @@ class TestDrivemonitor(VdsmTestCase):
 
             mon.clear_threshold(vda)
             assert vm._dom.thresholds == []
+
+    def test_on_block_threshold_drive_name(self):
+        with make_env(events_enabled=True) as (mon, vm):
+            vda = make_drive(self.log, index=0, iface='virtio')
+            vm.drives.append(vda)
+
+            mon.on_block_threshold("vda", vda.path, 512 * MiB, 10 * MiB)
+            assert vda.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED
+
+    def test_on_block_threshold_indexed_name(self):
+        with make_env(events_enabled=True) as (mon, vm):
+            vda = make_drive(self.log, index=0, iface='virtio')
+            vm.drives.append(vda)
+
+            mon.on_block_threshold("vda[1]", vda.path, 512 * MiB, 10 * MiB)
+            assert vda.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED
+
+    def test_on_block_threshold_unknown_drive(self):
+        with make_env(events_enabled=True) as (mon, vm):
+            vda = make_drive(self.log, index=0, iface='virtio')
+            vm.drives.append(vda)
+
+            mon.on_block_threshold("vdb", "/unkown/path", 512 * MiB, 10 * MiB)
+            assert vda.threshold_state == storage.BLOCK_THRESHOLD.UNSET
 
     @permutations(_DISK_DATA)
     def test_monitored_drives_with_events(self, disk_confs, expected, _):
@@ -449,6 +482,7 @@ class FakeVM(object):
     log = logging.getLogger('test')
 
     def __init__(self):
+        self.id = "fake-vm-id"
         self.drives = []
 
     def getDiskDevices(self):
