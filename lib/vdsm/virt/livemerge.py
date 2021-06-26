@@ -370,14 +370,13 @@ class DriveMerger:
         self._persist_jobs()
 
         # Check that libvirt exposes full volume chain information
-        chains = self._vm.drive_get_actual_volume_chain([drive])
-        if drive['alias'] not in chains:
+        actual_chain = self._vm.drive_get_actual_volume_chain(drive)
+        if actual_chain is None:
             self._untrack_job(job.id)
             raise exception.MergeFailed(
                 "Libvirt does not support volume chain monitoring",
-                drive=drive, alias=drive["alias"], chains=chains, job=job.id)
+                drive=drive, alias=drive["alias"], job=job.id)
 
-        actual_chain = chains[drive['alias']]
         try:
             base_target = drive.volume_target(job.base, actual_chain)
             top_target = drive.volume_target(job.top, actual_chain)
@@ -950,11 +949,11 @@ class CleanupThread(object):
             # is ongoing.  If we are still in this loop when the VM is powered
             # off, the merge will be resolved manually by engine using the
             # reconcileVolumeChain verb.
-            chains = self.vm.drive_get_actual_volume_chain([self.drive])
-            if alias not in chains.keys():
+            actual_chain = self.vm.drive_get_actual_volume_chain(self.drive)
+            if actual_chain is None:
                 raise RuntimeError("Failed to retrieve volume chain for "
                                    "drive %s.  Pivot failed.", alias)
-            curVols = sorted([entry.uuid for entry in chains[alias]])
+            curVols = sorted([entry.uuid for entry in actual_chain])
 
             if curVols == origVols:
                 time.sleep(self.WAIT_INTERVAL)

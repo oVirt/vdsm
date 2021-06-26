@@ -4227,16 +4227,14 @@ class Vm(object):
 
     def clear_drive_threshold(self, drive, old_volume_id):
         # Check that libvirt exposes full volume chain information
-        chains = self.drive_get_actual_volume_chain([drive])
-        if drive['alias'] not in chains:
+        actual_chain = self.drive_get_actual_volume_chain(drive)
+        if actual_chain is None:
             self.log.error(
                 "libvirt does not support volume chain "
                 "monitoring.  Unable to update threshold for drive: %s, "
-                "alias: %s, chains: %r",
-                drive.name, drive['alias'], chains)
+                "alias: %s",
+                drive.name, drive['alias'])
             return
-
-        actual_chain = chains[drive['alias']]
 
         try:
             target_index = drive.volume_target_index(
@@ -5915,18 +5913,11 @@ class Vm(object):
         return self._drive_merger.merge(
             driveSpec, baseVolUUID, topVolUUID, bandwidth, jobUUID)
 
-    def drive_get_actual_volume_chain(self, drives):
-        ret = {}
+    def drive_get_actual_volume_chain(self, drive):
         self._updateDomainDescriptor()
-        for drive in drives:
-            alias = drive['alias']
-            diskXML = vmdevices.lookup.xml_device_by_alias(
-                self._domain.devices, alias
-            )
-            volChain = drive.parse_volume_chain(diskXML)
-            if volChain:
-                ret[alias] = volChain
-        return ret
+        disk_xml = vmdevices.lookup.xml_device_by_alias(
+            self._domain.devices, drive.alias)
+        return drive.parse_volume_chain(disk_xml)
 
     def sync_volume_chain(self, drive):
         if not isVdsmImage(drive):
@@ -5935,10 +5926,8 @@ class Vm(object):
             return
 
         curVols = [x['volumeID'] for x in drive.volumeChain]
-        chains = self.drive_get_actual_volume_chain([drive])
-        try:
-            chain = chains[drive['alias']]
-        except KeyError:
+        chain = self.drive_get_actual_volume_chain(drive)
+        if chain is None:
             self.log.debug("Unable to determine volume chain. Skipping volume "
                            "chain synchronization for drive %s", drive.name)
             return
