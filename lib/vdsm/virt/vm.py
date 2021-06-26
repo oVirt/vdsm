@@ -4230,10 +4230,9 @@ class Vm(object):
         actual_chain = self.drive_get_actual_volume_chain(drive)
         if actual_chain is None:
             self.log.error(
-                "libvirt does not support volume chain "
-                "monitoring.  Unable to update threshold for drive: %s, "
-                "alias: %s",
-                drive.name, drive['alias'])
+                "Unable to clear threshold for drive %s alias %s: cannot get "
+                "drive actual volume chain",
+                drive.name, drive.alias)
             return
 
         try:
@@ -4241,7 +4240,9 @@ class Vm(object):
                 old_volume_id, actual_chain)
         except VolumeNotFound as e:
             self.log.error(
-                "Unable to find the target index for %s: %s", old_volume_id, e)
+                "Unable to find target index for volume %s actual chain %s"
+                ": %s",
+                old_volume_id, actual_chain, e)
             return
 
         try:
@@ -5928,8 +5929,10 @@ class Vm(object):
         curVols = [x['volumeID'] for x in drive.volumeChain]
         chain = self.drive_get_actual_volume_chain(drive)
         if chain is None:
-            self.log.debug("Unable to determine volume chain. Skipping volume "
-                           "chain synchronization for drive %s", drive.name)
+            self.log.debug(
+                "Cannot get actual volume chain for drive %s alias %s, "
+                "skipping chain synchronization",
+                drive.name, drive.alias)
             return
 
         volumes = [entry.uuid for entry in chain]

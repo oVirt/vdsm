@@ -374,8 +374,8 @@ class DriveMerger:
         if actual_chain is None:
             self._untrack_job(job.id)
             raise exception.MergeFailed(
-                "Libvirt does not support volume chain monitoring",
-                drive=drive, alias=drive["alias"], job=job.id)
+                "Cannot get drive actual volume chain",
+                drive=drive.name, alias=drive.alias, job=job.id)
 
         try:
             base_target = drive.volume_target(job.base, actual_chain)
@@ -951,8 +951,10 @@ class CleanupThread(object):
             # reconcileVolumeChain verb.
             actual_chain = self.vm.drive_get_actual_volume_chain(self.drive)
             if actual_chain is None:
-                raise RuntimeError("Failed to retrieve volume chain for "
-                                   "drive %s.  Pivot failed.", alias)
+                raise RuntimeError(
+                    "Cannot get actual volume chain for drive {} alias {}"
+                    .format(self.drive.name, alias))
+
             curVols = sorted([entry.uuid for entry in actual_chain])
 
             if curVols == origVols:
