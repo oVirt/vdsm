@@ -95,13 +95,11 @@ class VolumeNotFound(errors.Base):
         self.vol_id = vol_id
 
 
-class InvalidBackingStoreIndex(errors.Base):
-    msg = ("Backing store for path {self.path} "
-           "contains invalid index {self.index!r}")
+class InvalidDiskXML(errors.Base):
+    msg = "Invalid disk xml: {self.reason}"
 
-    def __init__(self, path, index):
-        self.path = path
-        self.index = index
+    def __init__(self, reason):
+        self.reason = reason
 
 
 VolumeChainEntry = collections.namedtuple(
@@ -713,45 +711,23 @@ class Drive(core.Base):
 
     def volume_target(self, vol_id, actual_chain):
         """
-        Retrieves volume's device target
-        from drive's volume chain using its ID.
-        That device target is used in block-commit api of libvirt.
+        Retrieves volume's target string from drive's volume chain using its
+        ID. That device target is used in block-commit api of libvirt.
 
         Arguments:
             vol_id (str): Volume's UUID
-            actual_chain (VolumeChainEntry[]): Current volume chain
-                as parsed from libvirt xml,
-                see parse_volume_chain. We expect it to be
+            actual_chain (VolumeChainEntry[]): Current volume chain as parsed
+                from libvirt xml, see parse_volume_chain. We expect it to be
                 ordered from base to top.
 
         Returns:
-            str: Volume device target - None for top volume,
-                "vda[1]" for the next volume after top and so on.
+            Volume target string (e.g. "vda[7]")
 
         Raises:
             VolumeNotFound exception when volume is not in chain.
         """
         index = self.volume_target_index(vol_id, actual_chain)
-        # libvirt device target format is name[index] where name is
-        # target device name inside a vm and index is a number,
-        # pointing to a snapshot layer.
-        # Unfortunately, top layer do not have index value and libvirt
-        # doesn't support referencing top layer as name[0] therefore,
-        # we have to check for index absence and return just name for
-        # the top layer. We have an RFE for that problem,
-        # https://bugzilla.redhat.com/1451398 and when it will be
-        # implemented, we need to remove special handling of
-        # the active layer.
-        if index is None:
-            # As right now libvirt is not able to correctly parse
-            # 'name' as a reference to the active layer we need to
-            # return None, so libvirt will use active layer as a
-            # default value for None. We have bug filed for that issue:
-            # https://bugzilla.redhat.com/1451394 and we need to return
-            # self.name instead of None when it is fixed.
-            return None
-        else:
-            return "%s[%d]" % (self.name, index)
+        return "%s[%d]" % (self.name, index)
 
     def volume_id(self, vol_path):
         """
@@ -772,54 +748,144 @@ class Drive(core.Base):
                     return vol['volumeID']
         raise LookupError("Unable to find VolumeID for path '%s'", vol_path)
 
-    def parse_volume_chain(self, disk_xml):
+    def parse_volume_chain(self, disk):
         """
-        Parses libvirt xml and extracts volume chain from it.
+        Extract volume chain from disk root element.
+
+        Relevant elements from typical XML:
+
+        <disk type='block' device='disk' snapshot='no'>
+          <source dev='/top/volume' index='1'>
+            <seclabel model='dac' relabel='no'/>
+          </source>
+          <backingStore type='block' index='3'>
+            <source dev='/first/child'>
+              <seclabel model='dac' relabel='no'/>
+            </source>
+            <backingStore type='block' index='4'>
+              <source dev='/second/child'>
+                <seclabel model='dac' relabel='no'/>
+              </source>
+              <backingStore type='block' index='5'>
+                <source dev='/base/volume'>
+                  <seclabel model='dac' relabel='no'/>
+                </source>
+                <backingStore/>
+              </backingStore>
+            </backingStore>
+          </backingStore>
+        </disk>
+
+        If a disk has not backing store, we have an emtpy backingStore.
+
+        <disk type='block' device='disk' snapshot='no'>
+          <source dev='/single/volume' index='1'>
+            <seclabel model='dac' relabel='no'/>
+          </source>
+          <backingStore/>
+        </disk>
+
+        See https://libvirt.org/formatdomain.html for more info.
 
         Arguments:
-             disk_xml (ElementTree): libvirt xml to parse
+             disk (xml.etree.ElementTree.Element): disk root element from
+                libvirt domain xml.
 
         Returns:
-            list: VolumeChainEntry[] - List of chain entries where
-            each entry contains volume UUID, volume path
-            and volume index. For the 'top' volume index
-            is None, as 'top' volume have no indices at
-            all.
-
-            VolumeChainEntry is reversed in relation to
-            libvirt xml: xml is ordered from top to base
-            volume, while volume chain is ordered from
-            base to the top.
+            list of VolumeChainEntry objects, ordered from base to top (ordered
+            reversed compared to xml order).
 
         Raises:
-            InvalidBackingStoreIndex exception when index value is not int.
+            InvalidDiskXML exception when index value is not int.
         """
         volChain = []
-        index = None
-        source_attr = SOURCE_ATTR[self.diskType]
-        while True:
-            path = vmxml.find_attr(disk_xml, 'source', source_attr)
-            if not path:
-                break
 
-            if index is not None:
-                try:
-                    index = int(index)
-                except ValueError:
-                    raise InvalidBackingStoreIndex(path, index)
+        # Libvirst disk XML is not consistent; For the disk element, the index
+        # is stored in the source element, but for the backing chain, the index
+        # is stored in the backingStore element. So we first parse to top
+        # source element, and then enter a loop parsing backingStore elements.
 
-            backingstore = next(vmxml.children(disk_xml, 'backingStore'), None)
-            if backingstore is None:
-                self.log.warning("<backingStore/> missing from backing "
-                                 "chain for drive %s", self.name)
-                break
+        source = self._parse_source(disk)
+        disk_type = self._parse_type(disk)
+        path = self._parse_path(source, disk_type)
+        index = self._parse_index(source)
+
+        entry = VolumeChainEntry(self.volume_id(path), path, index)
+        volChain.append(entry)
+
+        backing_store = self._parse_backing_store(disk)
+
+        while len(backing_store):
+            source = self._parse_source(backing_store)
+            disk_type = self._parse_type(backing_store)
+            path = self._parse_path(source, disk_type)
+            index = self._parse_index(backing_store)
 
             entry = VolumeChainEntry(self.volume_id(path), path, index)
             volChain.insert(0, entry)
 
-            disk_xml = backingstore
-            index = vmxml.attr(backingstore, 'index')
+            backing_store = self._parse_backing_store(backing_store)
+
         return volChain or None
+
+    def _parse_source(self, element):
+        """
+        Return source element from disk or backingStore element.
+        """
+        source = element.find("./source")
+        if source is None:
+            raise InvalidDiskXML("No source element")
+
+        return source
+
+    def _parse_backing_store(self, element):
+        """
+        Return backingStore element from disk or another backingStore.
+        """
+        backing_store = element.find("./backingStore")
+        if backing_store is None:
+            raise InvalidDiskXML("No backingStore element")
+
+        return backing_store
+
+    def _parse_index(self, element):
+        """
+        Return index attribute from source or backingStore element.
+        """
+        index = element.get("index")
+        if index is None:
+            raise InvalidDiskXML("No index attribute")
+
+        try:
+            return int(index)
+        except ValueError:
+            raise InvalidDiskXML(
+                "Invalid backingStore index {}".format(index))
+
+    def _parse_type(self, element):
+        """
+        Return type attribtue from disk or backingStore element.
+        """
+        disk_type = element.get("type")
+        if disk_type is None:
+            raise InvalidDiskXML("No type attribute")
+
+        if disk_type not in SOURCE_ATTR:
+            raise InvalidDiskXML("Unknown type {}".format(disk_type))
+
+        return disk_type
+
+    def _parse_path(self, source, disk_type):
+        """
+        Return name, dev, or file attribute from source element, based on disk
+        type.
+        """
+        name = SOURCE_ATTR[disk_type]
+        path = source.get(name)
+        if path is None:
+            raise InvalidDiskXML("No {} attribute".format(name))
+
+        return path
 
     def get_snapshot_xml(self, snap_info):
         """Libvirt snapshot XML"""

@@ -873,12 +873,12 @@ class TestVolumeTarget(VdsmTestCase):
         self.actual_chain = [
             storage.VolumeChainEntry(
                 uuid="11111111-1111-1111-1111-111111111111",
-                index=1,
+                index=3,
                 path=None,
             ),
             storage.VolumeChainEntry(
                 uuid="00000000-0000-0000-0000-000000000000",
-                index=None,
+                index=1,
                 path=None,
             )
         ]
@@ -894,14 +894,14 @@ class TestVolumeTarget(VdsmTestCase):
         actual = drive.volume_target(
             "11111111-1111-1111-1111-111111111111",
             self.actual_chain)
-        assert actual == "vda[1]"
+        assert actual == "vda[3]"
 
     def test_top_volume(self):
         drive = Drive(self.log, diskType=DISK_TYPE.NETWORK, **self.conf)
         actual = drive.volume_target(
             "00000000-0000-0000-0000-000000000000",
             self.actual_chain)
-        assert actual is None
+        assert actual == "vda[1]"
 
     def test_volume_missing(self):
         drive = Drive(self.log, diskType=DISK_TYPE.NETWORK, **self.conf)
@@ -967,12 +967,12 @@ class TestVolumeChain(VdsmTestCase):
 
     def test_parse_volume_chain_block(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk_xml = etree.fromstring("""
-            <disk>
-                <source dev='%(top)s'>
+            disk = etree.fromstring("""
+            <disk type='block'>
+                <source dev='%(top)s' index='1'>
                     <seclabel model="dac" relabel="no" type="none" />
                 </source>
-                <backingStore type='block' index='1'>
+                <backingStore type='block' index='3'>
                     <source dev='%(base)s'/>
                     <backingStore/>
                 </backingStore>
@@ -981,27 +981,27 @@ class TestVolumeChain(VdsmTestCase):
                 "base": env.base
             })
 
-            chain = env.drive.parse_volume_chain(disk_xml)
+            chain = env.drive.parse_volume_chain(disk)
             expected = [
                 storage.VolumeChainEntry(
                     path=env.base,
                     uuid='22222222-2222-2222-2222-222222222222',
-                    index=1),
+                    index=3),
                 storage.VolumeChainEntry(
                     path=env.top,
                     uuid='11111111-1111-1111-1111-111111111111',
-                    index=None)
+                    index=1)
             ]
             assert chain == expected
 
     def test_parse_volume_chain_file(self):
         with self.make_env(DISK_TYPE.FILE) as env:
-            disk_xml = etree.fromstring("""
-            <disk>
-                <source file='%(top)s'>
+            disk = etree.fromstring("""
+            <disk type='file'>
+                <source file='%(top)s' index='1'>
                     <seclabel model="dac" relabel="no" type="none" />
                 </source>
-                <backingStore type='file' index='1'>
+                <backingStore type='file' index='3'>
                     <source file='%(base)s'/>
                     <backingStore/>
                 </backingStore>
@@ -1010,16 +1010,16 @@ class TestVolumeChain(VdsmTestCase):
                 "base": env.base
             })
 
-            chain = env.drive.parse_volume_chain(disk_xml)
+            chain = env.drive.parse_volume_chain(disk)
             expected = [
                 storage.VolumeChainEntry(
                     path=env.base,
                     uuid='22222222-2222-2222-2222-222222222222',
-                    index=1),
+                    index=3),
                 storage.VolumeChainEntry(
                     path=env.top,
                     uuid='11111111-1111-1111-1111-111111111111',
-                    index=None)
+                    index=1)
             ]
             assert chain == expected
 
@@ -1033,39 +1033,40 @@ class TestVolumeChain(VdsmTestCase):
         conf = drive_config(volumeChain=volume_chain)
         drive = Drive(self.log, diskType=DISK_TYPE.NETWORK, **conf)
 
-        disk_xml = etree.fromstring("""
-        <disk>
-            <source name='server:/vol/11111111-1111-1111-1111-111111111111'>
+        disk = etree.fromstring("""
+        <disk type='network'>
+            <source name='server:/vol/11111111-1111-1111-1111-111111111111'
+                    index='1'>
                 <seclabel model="dac" relabel="no" type="none" />
             </source>
-            <backingStore type='network' index='1'>
+            <backingStore type='network' index='3'>
                 <source
                     name='server:/vol/22222222-2222-2222-2222-222222222222'/>
                 <backingStore/>
             </backingStore>
         </disk>""")
 
-        chain = drive.parse_volume_chain(disk_xml)
+        chain = drive.parse_volume_chain(disk)
         expected = [
             storage.VolumeChainEntry(
                 path='server:/vol/22222222-2222-2222-2222-222222222222',
                 uuid='22222222-2222-2222-2222-222222222222',
-                index=1),
+                index=3),
             storage.VolumeChainEntry(
                 path='server:/vol/11111111-1111-1111-1111-111111111111',
                 uuid='11111111-1111-1111-1111-111111111111',
-                index=None)
+                index=1)
         ]
         assert chain == expected
 
     def test_parse_volume_not_in_chain(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk_xml = etree.fromstring("""
-            <disk>
-                <source dev='/top'>
+            disk = etree.fromstring("""
+            <disk type='block'>
+                <source dev='/top' index='1'>
                     <seclabel model="dac" relabel="no" type="none" />
                 </source>
-                <backingStore type='block' index='1'>
+                <backingStore type='block' index='3'>
                     <format type='raw'/>
                     <source dev='/base'/>
                     <backingStore/>
@@ -1073,39 +1074,78 @@ class TestVolumeChain(VdsmTestCase):
             </disk>""")
 
             with pytest.raises(LookupError):
-                env.drive.parse_volume_chain(disk_xml)
+                env.drive.parse_volume_chain(disk)
+
+    def test_parse_volume_no_disk_type(self):
+        with self.make_env(DISK_TYPE.BLOCK) as env:
+            disk = etree.fromstring("""<disk/>""")
+
+            with pytest.raises(storage.InvalidDiskXML):
+                env.drive.parse_volume_chain(disk)
 
     def test_parse_volume_no_source(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk_xml = etree.fromstring("""<disk/>""")
+            disk = etree.fromstring("""<disk type='block'/>""")
 
-            chain = env.drive.parse_volume_chain(disk_xml)
-            assert chain is None
+            with pytest.raises(storage.InvalidDiskXML):
+                env.drive.parse_volume_chain(disk)
 
-    @pytest.mark.xfail(reason=("it returns None, instead of a one item chain -"
-                               " looks like a bug"))
-    def test_parse_volume_no_backing(self):
+    def test_parse_volume_no_backing_store_type(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk_xml = etree.fromstring("""
-            <disk>
-                <source dev='%s'>
+            disk = etree.fromstring("""
+            <disk type='block'>
+                <source dev='%(top)s' index='1'>
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
+                <backingStore index='3'>
+                    <format type='raw'/>
+                    <source dev='%(base)s'/>
+                    <backingStore/>
+                </backingStore>
+            </disk>""" % {
+                "top": env.top,
+                "base": env.base
+            })
+
+            with pytest.raises(storage.InvalidDiskXML):
+                env.drive.parse_volume_chain(disk)
+
+    def test_parse_volume_no_backing_store(self):
+        with self.make_env(DISK_TYPE.BLOCK) as env:
+            disk = etree.fromstring("""
+            <disk type='block'>
+                <source dev='%s' index='1'>
                     <seclabel model="dac" relabel="no" type="none" />
                 </source>
             </disk>""" % env.top)
 
-            chain = env.drive.parse_volume_chain(disk_xml)
-            expected = [
-                storage.VolumeChainEntry(
-                    path=env.top,
-                    uuid='11111111-1111-1111-1111-111111111111')
-            ]
-            assert chain == expected
+            with pytest.raises(storage.InvalidDiskXML):
+                env.drive.parse_volume_chain(disk)
 
-    def test_parse_volume_chain_no_index(self):
+    def test_parse_volume_chain_no_source_index(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk_xml = etree.fromstring("""
-            <disk>
+            disk = etree.fromstring("""
+            <disk type='block'>
                 <source dev='%(top)s'>
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
+                <backingStore type='block' index='3'>
+                    <source dev='%(base)s'/>
+                    <backingStore/>
+                </backingStore>
+            </disk>""" % {
+                "top": env.top,
+                "base": env.base
+            })
+
+            with pytest.raises(storage.InvalidDiskXML):
+                env.drive.parse_volume_chain(disk)
+
+    def test_parse_volume_chain_no_backing_store_index(self):
+        with self.make_env(DISK_TYPE.BLOCK) as env:
+            disk = etree.fromstring("""
+            <disk type='block'>
+                <source dev='%(top)s' index='1'>
                     <seclabel model="dac" relabel="no" type="none" />
                 </source>
                 <backingStore type='block'>
@@ -1117,17 +1157,17 @@ class TestVolumeChain(VdsmTestCase):
                 "base": env.base
             })
 
-            with pytest.raises(storage.InvalidBackingStoreIndex):
-                env.drive.parse_volume_chain(disk_xml)
+            with pytest.raises(storage.InvalidDiskXML):
+                env.drive.parse_volume_chain(disk)
 
-    def test_parse_volume_chain_index_invalid(self):
+    def test_parse_volume_chain_invalid_index(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
-            disk_xml = etree.fromstring("""
-            <disk>
-                <source dev='%(top)s'>
+            disk = etree.fromstring("""
+            <disk type='block'>
+                <source dev='%(top)s' index='invalid1'>
                     <seclabel model="dac" relabel="no" type="none" />
                 </source>
-                <backingStore type='block' index='fail'>
+                <backingStore type='block' index='invalid3'>
                     <source dev='%(base)s'/>
                     <backingStore/>
                 </backingStore>
@@ -1135,8 +1175,8 @@ class TestVolumeChain(VdsmTestCase):
                 "top": env.top,
                 "base": env.base
             })
-            with pytest.raises(storage.InvalidBackingStoreIndex):
-                env.drive.parse_volume_chain(disk_xml)
+            with pytest.raises(storage.InvalidDiskXML):
+                env.drive.parse_volume_chain(disk)
 
 
 class TestDiskSnapshotXml(XMLTestCase):
