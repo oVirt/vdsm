@@ -963,11 +963,11 @@ class CleanupThread(object):
                 self.vm.log.info("The XML update has been completed")
                 break
             else:
-                self.vm.log.error("Bad volume chain found for drive %s. "
-                                  "Previous chain: %s, Expected chain: %s, "
-                                  "Actual chain: %s", alias, origVols,
-                                  expectedVols, curVols)
-                raise RuntimeError("Bad volume chain found")
+                raise RuntimeError(
+                    "Bad volume chain found for drive {} alias {} previous "
+                    "chain {} expected chain {} actual chain {}"
+                    .format(self.drive.name, alias, origVols, expectedVols,
+                            curVols))
 
     def _setState(self, state):
         self.vm.log.debug("Switching state from %r to %r (job: %s)",
