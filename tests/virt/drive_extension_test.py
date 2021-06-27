@@ -272,11 +272,17 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             vdb['allocation'] = alloc
 
-            # Simulating block threshold event
+            drv = drives[1]
+            assert drv.threshold_state == BLOCK_THRESHOLD.SET
+
+            # Check that the double event for top volume is ignored.
             testvm.drive_monitor.on_block_threshold(
                 'vdb', '/virtio/1', alloc, 1 * MiB)
+            assert drv.threshold_state == BLOCK_THRESHOLD.SET
 
-            drv = drives[1]
+            # Simulating block threshold event
+            testvm.drive_monitor.on_block_threshold(
+                'vdb[1]', '/virtio/1', alloc, 1 * MiB)
             assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
             # Simulating periodic check
@@ -389,7 +395,8 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             assert vda.threshold_state == expected_state
             if threshold is not None:
-                assert dom.thresholds[vda.name] == threshold
+                target = "{}[{}]".format(vda.name, vda.index)
+                assert dom.thresholds[target] == threshold
 
     def test_set_new_threshold_when_state_unset_but_fails(self):
         with make_env(
@@ -468,16 +475,24 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             alloc = allocation_threshold_for_resize_mb(
                 vda, drives[0]) + 1 * MiB
 
-            # Simulating block threshold event
+            drv = drives[0]
+            assert drv.threshold_state == BLOCK_THRESHOLD.UNSET
+
+            # Check that the double event for top volume is ignored.
             testvm.drive_monitor.on_block_threshold(
                 'vda', '/virtio/0', alloc, 1 * MiB)
+            assert drv.threshold_state == BLOCK_THRESHOLD.UNSET
+
+            # Simulating block threshold event
+            testvm.drive_monitor.on_block_threshold(
+                'vda[0]', '/virtio/0', alloc, 1 * MiB)
+            assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
             testvm.monitor_drives()
 
             # The threshold state is correctly kept as exceeded, so extension
             # will be tried again next cycle.
-            assert drives[0].threshold_state == \
-                BLOCK_THRESHOLD.EXCEEDED
+            assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
     def test_block_threshold_set_failure_after_drive_extended(self):
         with make_env(
@@ -499,9 +514,18 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             # so we need to set both locations to the correct value.
             vdb['allocation'] = alloc
 
-            # Simulating block threshold event
+            drv = drives[1]
+            assert drv.threshold_state == BLOCK_THRESHOLD.SET
+
+            # Check that the double event for top volume is ignored.
             testvm.drive_monitor.on_block_threshold(
                 'vdb', '/virtio/1', alloc, 1 * MiB)
+            assert drv.threshold_state == BLOCK_THRESHOLD.SET
+
+            # Simulating block threshold event
+            testvm.drive_monitor.on_block_threshold(
+                'vdb[1]', '/virtio/1', alloc, 1 * MiB)
+            assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
             # Simulating periodic check
             testvm.monitor_drives()
@@ -515,7 +539,6 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             simulate_extend_callback(testvm.cif.irs, extension_id=0)
 
-            drv = drives[1]
             assert drv.threshold_state == BLOCK_THRESHOLD.UNSET
 
 

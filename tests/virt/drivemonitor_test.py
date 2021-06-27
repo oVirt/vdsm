@@ -420,15 +420,15 @@ class TestDrivemonitor(VdsmTestCase):
             mon.clear_threshold(vda)
             assert vm._dom.thresholds == []
 
-    def test_on_block_threshold_drive_name(self):
+    def test_on_block_threshold_drive_name_ignored(self):
         with make_env(events_enabled=True) as (mon, vm):
             vda = make_drive(self.log, index=0, iface='virtio')
             vm.drives.append(vda)
 
             mon.on_block_threshold("vda", vda.path, 512 * MiB, 10 * MiB)
-            assert vda.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED
+            assert vda.threshold_state == storage.BLOCK_THRESHOLD.UNSET
 
-    def test_on_block_threshold_indexed_name(self):
+    def test_on_block_threshold_indexed_name_handled(self):
         with make_env(events_enabled=True) as (mon, vm):
             vda = make_drive(self.log, index=0, iface='virtio')
             vm.drives.append(vda)

@@ -1326,7 +1326,8 @@ class Vm(object):
             return False
 
         if drive.threshold_state == BLOCK_THRESHOLD.UNSET:
-            self.drive_monitor.set_threshold(drive, physical)
+            index = self._drive_volume_index(drive, drive.volumeID)
+            self.drive_monitor.set_threshold(drive, physical, index=index)
 
         if not self.drive_monitor.should_extend_volume(
                 drive, drive.volumeID, capacity, alloc, physical):
@@ -1616,7 +1617,10 @@ class Vm(object):
         """
         drive.apparentsize = volsize.apparentsize
         drive.truesize = volsize.truesize
-        self.drive_monitor.set_threshold(drive, volsize.apparentsize)
+
+        index = self._drive_volume_index(drive, drive.volumeID)
+        self.drive_monitor.set_threshold(
+            drive, volsize.apparentsize, index=index)
 
     def _resume_if_needed(self):
         try:

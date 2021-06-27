@@ -177,6 +177,15 @@ class DriveMonitor(object):
 
         drive_name, index = parse_target(target)
 
+        # We register only indexed name (vda[7]), but libvirt reports
+        # also an event for the top volume (vda).
+        # See https://bugzilla.redhat.com/1983429
+        # TODO: Remove when bug is fixed.
+        if index is None:
+            self._log.debug(
+                'Ignoring unexpected event for drive %r', drive_name)
+            return
+
         try:
             drive = lookup.drive_by_name(
                 self._vm.getDiskDevices()[:], drive_name)
