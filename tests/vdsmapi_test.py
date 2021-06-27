@@ -634,6 +634,7 @@ class DataVerificationTests(TestCaseBase):
                                       'ipv6gateway': '::',
                                       'gateway': '',
                                       'opts': {'mode': '0'}}},
+               'vdsmToCpusAffinity': [1],
                'software_version': '4.18',
                'memSize': '15934',
                'cpuSpeed': '1600.125',

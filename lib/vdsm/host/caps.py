@@ -30,6 +30,7 @@ from vdsm import hugepages
 from vdsm import machinetype
 from vdsm import numa
 from vdsm import osinfo
+from vdsm import taskset
 from vdsm import utils
 from vdsm.common import cache
 from vdsm.common import commands
@@ -93,6 +94,7 @@ def get():
     caps['cpuSpeed'] = cpuinfo.frequency()
     caps['cpuModel'] = cpuinfo.model()
     caps['cpuFlags'] = ','.join(_getFlagsAndFeatures())
+    caps['vdsmToCpusAffinity'] = list(taskset.get(os.getpid()))
 
     caps.update(dsaversion.version_info())
 

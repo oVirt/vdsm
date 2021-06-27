@@ -7129,6 +7129,11 @@ types:
             name: software_version
             type: string
 
+        -   description: CPU affinity of the VDSM process
+            name: vdsmToCpusAffinity
+            type:
+            - int
+
         -   description: A list of supported virtual machine types
             name: vmTypes
             type:
