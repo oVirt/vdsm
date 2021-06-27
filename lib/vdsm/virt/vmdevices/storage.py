@@ -106,7 +106,7 @@ class InvalidBackingStoreIndex(errors.Base):
 
 VolumeChainEntry = collections.namedtuple(
     'VolumeChainEntry',
-    ['uuid', 'path', 'allocation', 'index'])
+    ['uuid', 'path', 'index'])
 
 
 BlockInfo = collections.namedtuple("BlockInfo", [
@@ -808,16 +808,13 @@ class Drive(core.Base):
                 except ValueError:
                     raise InvalidBackingStoreIndex(path, index)
 
-            # TODO: Allocation information is not available in the XML.  Switch
-            # to the new interface once it becomes available in libvirt.
-            alloc = None
             backingstore = next(vmxml.children(disk_xml, 'backingStore'), None)
             if backingstore is None:
                 self.log.warning("<backingStore/> missing from backing "
                                  "chain for drive %s", self.name)
                 break
 
-            entry = VolumeChainEntry(self.volume_id(path), path, alloc, index)
+            entry = VolumeChainEntry(self.volume_id(path), path, index)
             volChain.insert(0, entry)
 
             disk_xml = backingstore

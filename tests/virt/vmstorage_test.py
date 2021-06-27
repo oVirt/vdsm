@@ -875,13 +875,11 @@ class TestVolumeTarget(VdsmTestCase):
                 uuid="11111111-1111-1111-1111-111111111111",
                 index=1,
                 path=None,
-                allocation=None
             ),
             storage.VolumeChainEntry(
                 uuid="00000000-0000-0000-0000-000000000000",
                 index=None,
                 path=None,
-                allocation=None
             )
         ]
 
@@ -987,12 +985,10 @@ class TestVolumeChain(VdsmTestCase):
             expected = [
                 storage.VolumeChainEntry(
                     path=env.base,
-                    allocation=None,
                     uuid='22222222-2222-2222-2222-222222222222',
                     index=1),
                 storage.VolumeChainEntry(
                     path=env.top,
-                    allocation=None,
                     uuid='11111111-1111-1111-1111-111111111111',
                     index=None)
             ]
@@ -1018,12 +1014,10 @@ class TestVolumeChain(VdsmTestCase):
             expected = [
                 storage.VolumeChainEntry(
                     path=env.base,
-                    allocation=None,
                     uuid='22222222-2222-2222-2222-222222222222',
                     index=1),
                 storage.VolumeChainEntry(
                     path=env.top,
-                    allocation=None,
                     uuid='11111111-1111-1111-1111-111111111111',
                     index=None)
             ]
@@ -1055,12 +1049,10 @@ class TestVolumeChain(VdsmTestCase):
         expected = [
             storage.VolumeChainEntry(
                 path='server:/vol/22222222-2222-2222-2222-222222222222',
-                allocation=None,
                 uuid='22222222-2222-2222-2222-222222222222',
                 index=1),
             storage.VolumeChainEntry(
                 path='server:/vol/11111111-1111-1111-1111-111111111111',
-                allocation=None,
                 uuid='11111111-1111-1111-1111-111111111111',
                 index=None)
         ]
@@ -1105,7 +1097,6 @@ class TestVolumeChain(VdsmTestCase):
             expected = [
                 storage.VolumeChainEntry(
                     path=env.top,
-                    allocation=None,
                     uuid='11111111-1111-1111-1111-111111111111')
             ]
             assert chain == expected
