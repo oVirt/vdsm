@@ -113,7 +113,7 @@ from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices import storagexml
 from vdsm.virt.vmdevices.common import get_metadata
 from vdsm.virt.vmdevices.common import identify_from_xml_elem
-from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound
+from vdsm.virt.vmdevices.storage import DISK_TYPE
 from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
 from vdsm.virt.vmdevices.storagexml import change_disk
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
@@ -4226,30 +4226,23 @@ class Vm(object):
                 conf.update(driveParams)
 
     def clear_drive_threshold(self, drive, old_volume_id):
-        # Check that libvirt exposes full volume chain information
+        try:
+            index = self._drive_volume_index(drive, old_volume_id)
+            self.drive_monitor.clear_threshold(drive, index=index)
+        except Exception as e:
+            self.log.error("Unable to clear drive threshold: %s", e)
+
+    def _drive_volume_index(self, drive, vol_id):
+        """
+        Return the libvirt node index by volume id.
+        """
         actual_chain = self.drive_get_actual_volume_chain(drive)
         if actual_chain is None:
-            self.log.error(
-                "Unable to clear threshold for drive %s alias %s: cannot get "
-                "drive actual volume chain",
-                drive.name, drive.alias)
-            return
+            raise RuntimeError(
+                "Cannot get drive {} alias {} actual volume chain"
+                .format(drive.name, drive.alias))
 
-        try:
-            target_index = drive.volume_target_index(
-                old_volume_id, actual_chain)
-        except VolumeNotFound as e:
-            self.log.error(
-                "Unable to find target index for volume %s actual chain %s"
-                ": %s",
-                old_volume_id, actual_chain, e)
-            return
-
-        try:
-            self.drive_monitor.clear_threshold(drive, index=target_index)
-        except libvirt.libvirtError as e:
-            self.log.error(
-                "Unable to clear the drive threshold: %s", e)
+        return drive.volume_target_index(vol_id, actual_chain)
 
     def freeze(self):
         """
