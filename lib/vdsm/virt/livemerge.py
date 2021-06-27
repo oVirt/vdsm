@@ -939,9 +939,11 @@ class CleanupThread(object):
         expectedVols = origVols[:]
         expectedVols.remove(self.drive.volumeID)
 
-        alias = self.drive['alias']
-        self.vm.log.info("Waiting for libvirt to update the XML after pivot "
-                         "of drive %s completed", alias)
+        self.vm.log.info(
+            "Waiting for libvirt to update the XML after pivot of drive %s "
+            "alias %s completed",
+            self.drive.name, self.drive.alias)
+
         while True:
             # This operation should complete in either one or two iterations of
             # this loop.  Until libvirt updates the XML there is nothing to do
@@ -953,7 +955,7 @@ class CleanupThread(object):
             if actual_chain is None:
                 raise RuntimeError(
                     "Cannot get actual volume chain for drive {} alias {}"
-                    .format(self.drive.name, alias))
+                    .format(self.drive.name, self.drive.alias))
 
             curVols = sorted([entry.uuid for entry in actual_chain])
 
@@ -966,8 +968,8 @@ class CleanupThread(object):
                 raise RuntimeError(
                     "Bad volume chain found for drive {} alias {} previous "
                     "chain {} expected chain {} actual chain {}"
-                    .format(self.drive.name, alias, origVols, expectedVols,
-                            curVols))
+                    .format(self.drive.name, self.drive.alias, origVols,
+                            expectedVols, curVols))
 
     def _setState(self, state):
         self.vm.log.debug("Switching state from %r to %r (job: %s)",
