@@ -30,9 +30,13 @@ from vdsm.common import commands
 from vdsm.common import libvirtconnection
 from vdsm.common.cmdutils import CommandPath
 
-
-NumaTopology = namedtuple('NumaTopology', 'topology, distances, cpu_topology')
+NumaTopology = namedtuple('NumaTopology',
+                          ['topology', 'distances', 'cpu_topology',
+                           'cpu_info'])
 CpuTopology = namedtuple('CpuTopology', 'sockets, cores, threads, online_cpus')
+CpuInfo = namedtuple('CpuInfo',
+                     ['cpu_id', 'numa_cell_id', 'socket_id', 'die_id',
+                      'core_id'])
 
 
 _SYSCTL = CommandPath("sysctl", "/sbin/sysctl", "/usr/sbin/sysctl")
@@ -82,6 +86,18 @@ def cpu_topology(capabilities=None):
                      14, 5, 6, 7, 8, 9, 15, 16, 17, 18, 19])
     '''
     return _numa(capabilities).cpu_topology
+
+
+def cpu_info(capabilities=None):
+    '''
+    Returns a list of all CPUs and information about them. Each CPU is
+    described as:
+        (cpu id, numa cell id, socket id, die id, core id)
+
+    Example:
+        [(0, 0, 0, 0, 0), (1, 1, 1, 0, 0)]
+    '''
+    return _numa(capabilities).cpu_info
 
 
 @cache.memoized
@@ -150,6 +166,7 @@ def _numa(capabilities=None):
     sockets = set()
     siblings = set()
     online_cpus = []
+    cpu_info = []
 
     caps = ET.fromstring(capabilities)
     cells = caps.findall('.host//cells/cell')
@@ -170,10 +187,18 @@ def _numa(capabilities=None):
         for cpu in cell.findall('cpus/cpu'):
             cpu_id = int(cpu.get('id'))
             topology[cell_id]['cpus'].append(cpu_id)
-            if cpu.get('siblings') and cpu.get('socket_id'):
+            if cpu.get('siblings') and cpu.get('socket_id') and \
+                    cpu.get('core_id'):
+                core_id = int(cpu.get('core_id'))
+                die_id = int(cpu.get('die_id', 0))
+                socket_id = int(cpu.get('socket_id'))
                 online_cpus.append(cpu_id)
-                sockets.add(cpu.get('socket_id'))
+                sockets.add(socket_id)
                 siblings.add(cpu.get('siblings'))
+                cpu_info.append(
+                    CpuInfo(cpu_id=cpu_id, numa_cell_id=int(cell_id),
+                            socket_id=socket_id, die_id=die_id,
+                            core_id=core_id))
 
         if cell.find('distances') is not None:
             for sibling in cell.find('distances').findall('sibling'):
@@ -195,7 +220,7 @@ def _numa(capabilities=None):
             cpu_topology = CpuTopology(socketnum, corenum,
                                        threadnum, online_cpus)
 
-    return NumaTopology(topology, distances, cpu_topology)
+    return NumaTopology(topology, distances, cpu_topology, cpu_info)
 
 
 def _get_libvirt_caps():

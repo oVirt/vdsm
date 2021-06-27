@@ -7069,6 +7069,32 @@ types:
             type: string
             added: '4.2'
 
+    CpuInfo: &CpuInfo
+        added: '4.4.8'
+        description: Information about single CPU/thread
+        name: CpuInfo
+        properties:
+        -   description: ID of the CPU on host
+            name: cpu_id
+            type: int
+
+        -   description: To which NUMA cell the CPU belongs
+            name: numa_cell_id
+            type: int
+
+        -   description: On which socket this CPU is
+            name: socket_id
+            type: int
+
+        -   description: On which die of the socket this CPU is
+            name: die_id
+            type: int
+
+        -   description: On which core of the die this CPU is
+            name: core_id
+            type: int
+        type: object
+
     VdsmCapabilities: &VdsmCapabilities
         added: '3.6'
         description: Host information and capabilities.
@@ -7110,6 +7136,12 @@ types:
             name: onlineCpus
             type: string
             added: '3.5'
+
+        -   description: Detailed CPU topology
+            name: cpuTopology
+            type:
+            - *CpuInfo
+            added: '4.4.8'
 
         -   description: The speed of each CPU (in MHz)
             name: cpuSpeed
