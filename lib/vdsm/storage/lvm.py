@@ -353,7 +353,10 @@ class LVMRunner(object):
         if rc == 0 and err:
             log.warning("Command %s succeeded with warnings: %s", cmd, err)
 
-        return rc, out, err
+        if rc != 0:
+            raise se.LVMCommandError(cmd, rc, out, err)
+
+        return out
 
     def _run_command(self, cmd):
         p = commands.start(
@@ -488,7 +491,7 @@ class LVMCache(object):
         self.invalidateFilter()
         self.flush()
 
-    def cmd(self, cmd, devices=tuple(), use_lvmpolld=True):
+    def cmd(self, cmd, devices=(), use_lvmpolld=True):
         # Take a shared lock, so set_read_only() can wait for commands using
         # the previous mode.
         with self._cmd_sem, self._read_only_lock.shared:
@@ -499,9 +502,11 @@ class LVMCache(object):
             # returned we are done.
             full_cmd = self._addExtraCfg(
                 cmd, devices, use_lvmpolld=use_lvmpolld)
-            rc, out, err = self._runner.run(full_cmd)
-            if rc == 0:
-                return rc, out, err
+            try:
+                out = self._runner.run(full_cmd)
+                return 0, out, []
+            except se.LVMCommandError as e:
+                error = e
 
             # 2. Retry the command with a wider filter, in case the we failed
             # or got no data because of a stale filter.
@@ -510,36 +515,38 @@ class LVMCache(object):
             if wider_cmd != full_cmd:
                 log.warning(
                     "Command with specific filter failed or returned no data, "
-                    "retrying with a wider filter, cmd=%r rc=%r out=%r err=%r",
-                    full_cmd, rc, out, err)
+                    "retrying with a wider filter: %s", error)
                 full_cmd = wider_cmd
                 tries += 1
-                rc, out, err = self._runner.run(full_cmd)
-                if rc == 0:
-                    return rc, out, err
+                try:
+                    out = self._runner.run(full_cmd)
+                    return 0, out, []
+                except se.LVMCommandError as e:
+                    error = e
 
             # 3. If we run in read-only mode, retry the command in case it
             # failed because VG metadata was modified while the command was
             # reading the metadata.
-            if rc != 0 and self._read_only:
+            if error and self._read_only:
                 delay = self.RETRY_DELAY
                 for retry in range(1, self.READ_ONLY_RETRIES + 1):
                     log.warning(
-                        "Retry %d failed, retrying in %.2f seconds, cmd=%r "
-                        "rc=%r err=%r",
-                        retry, delay, full_cmd, rc, err)
+                        "Retry %d failed, retrying in %.2f seconds: %s",
+                        retry, delay, error)
 
                     time.sleep(delay)
                     delay *= self.RETRY_BACKUP_OFF
 
                     tries += 1
-                    rc, out, err = self._runner.run(full_cmd)
-                    if rc == 0:
-                        return rc, out, err
+                    try:
+                        out = self._runner.run(full_cmd)
+                        return 0, out, []
+                    except se.LVMCommandError as e:
+                        error = e
 
-            log.warning("All %d tries have failed: cmd=%r rc=%r err=%r",
-                        tries, full_cmd, rc, err)
-            return rc, out, err
+            log.warning("All %d tries have failed: %s", tries, error)
+
+            return error.rc, error.out, error.err
 
     def __str__(self):
         return ("PVS:\n%s\n\nVGS:\n%s\n\nLVS:\n%s" %
