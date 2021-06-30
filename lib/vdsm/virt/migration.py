@@ -181,7 +181,7 @@ class SourceThread(object):
                           self._convergence_schedule)
         self.log.debug('convergence schedule set to: %s',
                        str(self._convergence_schedule))
-        self._state = State.INITIALIZED
+        self._state = State.STARTED if recovery else State.INITIALIZED
         self._recovery = recovery
         tunneled = conv.tobool(tunneled)
         abortOnError = conv.tobool(abortOnError)
@@ -212,6 +212,14 @@ class SourceThread(object):
         return ((self.is_alive() and self._state != State.FAILED) or
                 (self._recovery and
                  self._vm.lastStatus == vmstatus.MIGRATION_SOURCE))
+
+    def needs_disk_refresh(self):
+        """
+        Return True if migrating to destination host, and the migration
+        reached the state when remote disks must be refreshed during extend
+        disk flow.
+        """
+        return State.PREPARED <= self._state < State.FAILED
 
     @property
     def started(self):

@@ -1541,6 +1541,20 @@ class Vm(object):
                 volInfo["newSize"])
             raise exception.CannotRefreshDisk(reason=reason)
 
+    def should_refresh_destination_volume(self):
+        """
+        If we extend disk during migration, we have to refresh disk on the
+        destination first. The disk has to be refreshed before VM is resumed on
+        the destination and as the migration is controlled by libvirt, we need
+        to refresh destination before source to be sure that the disk on the
+        destination won't be corrupted by resumed VM. We need to call it only
+        from the source VM.
+
+        Returns True if aforementioned situation happens and the disk on the
+        destination has to be refreshed.
+        """
+        return self._migrationSourceThread.needs_disk_refresh()
+
     def after_volume_extension(self, volInfo):
         callback = None
         error = None
@@ -1549,14 +1563,7 @@ class Vm(object):
             clock = volInfo["clock"]
             clock.stop("extend-volume")
 
-            # If we extend disk during migration, refresh disk on the
-            # destination first. The disk has to be refreshed before VM is
-            # resumed on the destination and as the migration is controlled by
-            # libvirt, we need to refresh destination before source to be sure
-            # that the disk on destination won't be corrupted by resumed VM.
-            # We need to call it only from the source VM.
-            if (self.isMigrating() and
-                    self.lastStatus == vmstatus.MIGRATION_SOURCE):
+            if self.should_refresh_destination_volume():
                 with clock.run("refresh-destination-volume"):
                     self._refresh_destination_volume(volInfo)
 

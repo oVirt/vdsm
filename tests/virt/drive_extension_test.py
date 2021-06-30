@@ -584,11 +584,11 @@ class FakeVM(vm.Vm):
     def send_status_event(self, **kwargs):
         pass
 
-    def isMigrating(self):
-        return False
-
     def _update_metadata(self):
         pass
+
+    def should_refresh_destination_volume(self):
+        return False
 
 
 class FakeDomain(object):
