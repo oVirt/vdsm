@@ -23,6 +23,7 @@ from __future__ import division
 
 import io
 import collections
+import enum
 import re
 import threading
 import time
@@ -86,6 +87,21 @@ class PostCopyPhase:
     NONE = 0
     REQUESTED = 1
     RUNNING = 2
+
+
+class State(enum.IntEnum):
+
+    # Migration thread was created and initialized. The next state is STARTED
+    # under normal circumstances. If anything fails, next state is FAILED.
+    INITIALIZED = 0
+
+    # VM on the destination host was created and migration is about to start.
+    # If anything fails, next state is FAILED. If everything goes well,
+    # currently there's no other state.
+    STARTED = 1
+
+    # Migration failed. Final state.
+    FAILED = 2
 
 
 @virdomain.expose(
@@ -161,7 +177,7 @@ class SourceThread(object):
                           self._convergence_schedule)
         self.log.debug('convergence schedule set to: %s',
                        str(self._convergence_schedule))
-        self._started = False
+        self._state = State.INITIALIZED
         self._failed = False
         self._recovery = recovery
         tunneled = conv.tobool(tunneled)
@@ -196,7 +212,7 @@ class SourceThread(object):
 
     @property
     def started(self):
-        return self._started
+        return self._state == State.STARTED
 
     @property
     def hibernating(self):
@@ -321,7 +337,7 @@ class SourceThread(object):
             self._recovery = False
         else:
             self._vm.lastStatus = vmstatus.UP
-        self._started = False
+        self._state = State.FAILED
         self._vm.send_status_event()
 
     def _finishSuccessfully(self, machineParams):
@@ -424,7 +440,7 @@ class SourceThread(object):
             self._setupVdsConnection()
             self._prepareGuest()
 
-            while not self._started:
+            while not self.started:
                 try:
                     self.log.info("Migration semaphore: acquiring")
                     with SourceThread.ongoingMigrations:
@@ -477,7 +493,7 @@ class SourceThread(object):
 
     def _startUnderlyingMigration(self, startTime, machineParams):
         if self.hibernating:
-            self._started = True
+            self._state = State.STARTED
             self._vm.hibernate(self._dst)
         else:
             self._vm.prepare_migration()
@@ -502,7 +518,7 @@ class SourceThread(object):
                         'migration destination error: ' +
                         result['status']['message'])
 
-            self._started = True
+            self._state = State.STARTED
 
             # REQUIRED_FOR: destination Vdsm < 4.3
             if not self._vm.min_cluster_version(4, 3):
