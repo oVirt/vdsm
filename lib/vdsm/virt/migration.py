@@ -91,17 +91,21 @@ class PostCopyPhase(enum.IntEnum):
 
 class State(enum.IntEnum):
 
-    # Migration thread was created and initialized. The next state is STARTED
+    # Migration thread was created and initialized. The next state is PREPARED
     # under normal circumstances. If anything fails, next state is FAILED.
     INITIALIZED = 0
+
+    # Set right before defining VM on the destination host. Next state is
+    # STARTED.
+    PREPARED = 1
 
     # VM on the destination host was created and migration is about to start.
     # If anything fails, next state is FAILED. If everything goes well,
     # currently there's no other state.
-    STARTED = 1
+    STARTED = 2
 
     # Migration failed. Final state.
-    FAILED = 2
+    FAILED = 3
 
 
 @virdomain.expose(
@@ -495,6 +499,7 @@ class SourceThread(object):
             self._vm.hibernate(self._dst)
         else:
             self._vm.prepare_migration()
+            self._state = State.PREPARED
 
             # Do not measure the time spent for creating the VM on the
             # destination. In some cases some expensive operations can cause
