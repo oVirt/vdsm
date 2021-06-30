@@ -49,6 +49,7 @@ from vdsm.common import commands
 from vdsm.common import errors
 from vdsm.common import logutils
 from vdsm.common.compat import subprocess
+from vdsm.common.marks import deprecated
 from vdsm.common.units import MiB
 
 from vdsm.storage import devicemapper
@@ -491,7 +492,23 @@ class LVMCache(object):
         self.invalidateFilter()
         self.flush()
 
+    @deprecated
     def cmd(self, cmd, devices=(), use_lvmpolld=True):
+        """
+        Run a command and return command rc, out, err.
+
+        Should be used only by legacy code. New code must use run_command().
+
+        TODO: remove when all callers use run_command()
+        """
+        try:
+            out = self.run_command(
+                cmd, devices=devices, use_lvmpolld=use_lvmpolld)
+            return 0, out, []
+        except se.LVMCommandError as e:
+            return e.rc, e.out, e.err
+
+    def run_command(self, cmd, devices=(), use_lvmpolld=True):
         # Take a shared lock, so set_read_only() can wait for commands using
         # the previous mode.
         with self._cmd_sem, self._read_only_lock.shared:
@@ -503,8 +520,7 @@ class LVMCache(object):
             full_cmd = self._addExtraCfg(
                 cmd, devices, use_lvmpolld=use_lvmpolld)
             try:
-                out = self._runner.run(full_cmd)
-                return 0, out, []
+                return self._runner.run(full_cmd)
             except se.LVMCommandError as e:
                 error = e
 
@@ -519,8 +535,7 @@ class LVMCache(object):
                 full_cmd = wider_cmd
                 tries += 1
                 try:
-                    out = self._runner.run(full_cmd)
-                    return 0, out, []
+                    return self._runner.run(full_cmd)
                 except se.LVMCommandError as e:
                     error = e
 
@@ -539,14 +554,13 @@ class LVMCache(object):
 
                     tries += 1
                     try:
-                        out = self._runner.run(full_cmd)
-                        return 0, out, []
+                        return self._runner.run(full_cmd)
                     except se.LVMCommandError as e:
                         error = e
 
             log.warning("All %d tries have failed: %s", tries, error)
 
-            return error.rc, error.out, error.err
+            raise error
 
     def __str__(self):
         return ("PVS:\n%s\n\nVGS:\n%s\n\nLVS:\n%s" %
