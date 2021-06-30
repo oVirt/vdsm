@@ -402,8 +402,9 @@ def test_suppress_warnings(fake_devices, no_delay):
   after"""  # NOQA: E501 (potentially long line)
 
     lc = lvm.LVMCache(fake_runner)
+    fake_runner.rc = 1
     rc, out, err = lc.cmd(["fake"])
-    assert rc == 0
+    assert rc == 1
     assert err == [
         u"  before",
         (u"  WARNING: Combining activation change with other commands is "
@@ -423,8 +424,9 @@ def test_suppress_multiple_lvm_warnings(fake_devices, no_delay):
   after"""
 
     lc = lvm.LVMCache(fake_runner)
+    fake_runner.rc = 1
     rc, out, err = lc.cmd(["fake"])
-    assert rc == 0
+    assert rc == 1
     assert err == [u"  before", u"  after"]
 
 
