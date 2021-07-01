@@ -229,6 +229,11 @@ class SourceThread(object):
     def hibernating(self):
         return self._mode == MODE_FILE
 
+    def _switch_state(self, value):
+        if value != self._state:
+            self.log.info("Switching from %s to %s", self._state, value)
+            self._state = value
+
     def _update_progress(self):
         if self._monitorThread is None:
             return
@@ -342,7 +347,7 @@ class SourceThread(object):
         elif self._enableGuestEvents:
             self._vm.guestAgent.events.after_migration_failure()
         # either way, migration has finished
-        self._state = State.FAILED
+        self._switch_state(State.FAILED)
         if self._recovery:
             self._vm.set_last_status(vmstatus.UP, vmstatus.MIGRATION_SOURCE)
             self._recovery = False
@@ -503,11 +508,11 @@ class SourceThread(object):
 
     def _startUnderlyingMigration(self, startTime, machineParams):
         if self.hibernating:
-            self._state = State.STARTED
+            self._switch_state(State.STARTED)
             self._vm.hibernate(self._dst)
         else:
             self._vm.prepare_migration()
-            self._state = State.PREPARED
+            self._switch_state(State.PREPARED)
 
             # Do not measure the time spent for creating the VM on the
             # destination. In some cases some expensive operations can cause
@@ -529,7 +534,7 @@ class SourceThread(object):
                         'migration destination error: ' +
                         result['status']['message'])
 
-            self._state = State.STARTED
+            self._switch_state(State.STARTED)
 
             # REQUIRED_FOR: destination Vdsm < 4.3
             if not self._vm.min_cluster_version(4, 3):
