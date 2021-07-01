@@ -127,7 +127,6 @@ def bridgeless_network(switch):
         yield NETCREATE
 
 
-@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkSetupHook(object):
     def test_before_network_setup_hook_enables_bridged(

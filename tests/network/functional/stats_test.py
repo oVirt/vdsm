@@ -36,7 +36,6 @@ def veth_nics():
         yield nics
 
 
-@pytest.mark.nmstate
 @parametrize_switch
 def test_interfaces_stats(adapter, switch, veth_nics):
     NETSETUP1 = {

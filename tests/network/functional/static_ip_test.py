@@ -61,7 +61,6 @@ def nic1():
         yield nic
 
 
-@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkStaticIpBasic(object):
     @nftestlib.parametrize_bridged
@@ -244,7 +243,6 @@ class TestNetworkStaticIpBasic(object):
                 adapter.assertDisabledIPv6(base)
 
 
-@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkIPDefaultGateway(object):
     @pytest.fixture(autouse=True)
@@ -493,7 +491,6 @@ class TestNetworkIPDefaultGateway(object):
 
 
 @nftestlib.parametrize_switch
-@pytest.mark.nmstate
 class TestAcquireNicsWithStaticIP(object):
     def test_attach_nic_with_ip_to_ipless_network(self, adapter, switch, nic0):
         nic0_interface = Interface.from_existing_dev_name(nic0)
@@ -561,7 +558,6 @@ class TestAcquireNicsWithStaticIP(object):
 
 
 @pytest.mark.legacy_switch
-@pytest.mark.nmstate
 class TestIfacesWithMultiplesUsers(object):
     @nftestlib.parametrize_bonded
     def test_remove_ip_from_an_iface_used_by_a_vlan_network(
@@ -594,7 +590,6 @@ class TestIfacesWithMultiplesUsers(object):
 
 
 @nftestlib.parametrize_switch
-@pytest.mark.nmstate
 class TestIPValidation(object):
     def test_add_net_ip_missing_addresses_fails(self, adapter, switch, nic0):
         self._test_invalid_ip_config_fails(

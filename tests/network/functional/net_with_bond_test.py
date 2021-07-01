@@ -75,7 +75,6 @@ def bond_without_remove(slaves):
     return bond.dev_name
 
 
-@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkWithBond(object):
     def test_add_the_same_nic_to_net_and_bond_in_one_step(
@@ -274,7 +273,6 @@ class TestNetworkWithBond(object):
                 adapter.assertBond(BOND_NAME, bond_attrs)
 
 
-@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestReuseBond(object):
     def test_detach_used_bond_from_bridge(self, adapter, switch, nic0):
@@ -358,7 +356,6 @@ class TestReuseBond(object):
 
 @pytest.mark.legacy_switch
 class TestReuseBondOnLegacySwitch(object):
-    @pytest.mark.nmstate
     def test_add_net_on_existing_external_vlanned_bond(
         self, adapter, nic0, nic1
     ):
@@ -397,7 +394,6 @@ class TestReuseBondOnLegacySwitch(object):
                 assert vlan_info['ipv4addrs'] == [ADDRESS2 + '/' + PREFIX]
         adapter.setupNetworks({}, {bond: {'remove': True}}, NOCHK)
 
-    @pytest.mark.nmstate
     def test_add_vlan_network_on_existing_external_bond_with_used_slave(
         self, adapter, bond0_with_slaves
     ):

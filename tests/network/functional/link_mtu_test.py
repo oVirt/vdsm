@@ -56,7 +56,6 @@ def nic1():
         yield nic
 
 
-@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkMtu(object):
     @nftestlib.parametrize_bridged

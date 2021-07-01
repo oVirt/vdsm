@@ -43,7 +43,6 @@ def nic1():
 
 
 @pytest.mark.legacy_switch
-@pytest.mark.nmstate
 class TestRestoreLegacyBridge(object):
     def test_restore_bridge_with_custom_opts(self, adapter, nic0):
         CUSTOM_OPTS1 = {
@@ -77,7 +76,6 @@ class TestRestoreLegacyBridge(object):
 
 
 @parametrize_switch
-@pytest.mark.nmstate
 class TestRestore(object):
     @parametrize_bridged
     def test_restore_missing_network_from_config(

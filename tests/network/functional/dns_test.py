@@ -46,7 +46,6 @@ def nic0():
         yield nic
 
 
-@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkDNS(object):
     def test_set_host_nameservers(self, adapter, switch, nic0):

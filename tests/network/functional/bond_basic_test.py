@@ -61,7 +61,6 @@ def two_connected_pairs_of_bond_slaves():
         yield [n1, n3], [n2, n4]
 
 
-@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestBondBasic(object):
     def test_add_bond_with_two_nics(self, adapter, switch, nic0, nic1):
@@ -187,7 +186,6 @@ class TestBondBasic(object):
         assert bond1_hwaddr == bond2_hwaddr
 
 
-@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestBondOptions(object):
     def test_bond_mode_1(self, adapter, switch, nic0, nic1):

@@ -39,7 +39,6 @@ def nic0():
 
 # TODO: When QoS will be available on OVS, enable the tests.
 @nftestlib.parametrize_legacy_switch
-@pytest.mark.nmstate
 class TestNetworkHostQos(object):
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded

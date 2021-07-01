@@ -51,7 +51,6 @@ def hidden_nic():
         yield nic
 
 
-@pytest.mark.nmstate
 class TestBridge(object):
     @nftestlib.parametrize_switch
     def test_add_bridge_with_stp(self, adapter, switch, nic0):

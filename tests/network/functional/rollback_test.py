@@ -55,7 +55,6 @@ def nic2():
 
 
 @nftestlib.parametrize_switch
-@pytest.mark.nmstate
 class TestNetworkRollback(object):
     def test_remove_broken_network(self, adapter, switch, nic0, nic1):
         BROKEN_NETCREATE = {
@@ -232,7 +231,6 @@ class TestNetworkRollback(object):
 
 
 @pytest.mark.legacy_switch
-@pytest.mark.nmstate
 def test_setup_invalid_bridge_opts_fails(adapter, nic0):
     net_attrs = {
         'nic': nic0,

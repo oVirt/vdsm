@@ -215,7 +215,6 @@ class FakeNotifier:
         pass
 
 
-@pytest.mark.nmstate
 @nftestlib.parametrize_switch
 class TestNetworkDhcpBasic(object):
     @parametrize_ip_families
@@ -294,7 +293,6 @@ class TestNetworkDhcpBasic(object):
 
 
 @nftestlib.parametrize_switch
-@pytest.mark.nmstate
 def test_default_route_of_two_dynamic_ip_networks(
     adapter,
     switch,
@@ -334,7 +332,6 @@ def test_default_route_of_two_dynamic_ip_networks(
             assert read_network1['ipv4defaultroute']
 
 
-@pytest.mark.nmstate
 @parametrize_ip_families
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_switch
@@ -356,7 +353,6 @@ def test_dynamic_ip_switch_to_static_without_running_dhcp_server(
     )
 
 
-@pytest.mark.nmstate
 @parametrize_ip_families
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_switch
@@ -378,7 +374,6 @@ def test_dynamic_ip_switch_to_static_with_running_dhcp_server(
     )
 
 
-@pytest.mark.nmstate
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_switch
 def test_dynamic_ipv4_vlan_net_switch_to_static_without_running_dhcp_server(
@@ -396,7 +391,6 @@ def test_dynamic_ipv4_vlan_net_switch_to_static_without_running_dhcp_server(
     )
 
 
-@pytest.mark.nmstate
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_switch
 def test_dynamic_ipv4_vlan_net_switch_to_static_with_running_dhcp_server(
@@ -416,7 +410,6 @@ def test_dynamic_ipv4_vlan_net_switch_to_static_with_running_dhcp_server(
 
 @nftestlib.parametrize_bridged
 @nftestlib.parametrize_legacy_switch
-@pytest.mark.nmstate
 def test_add_static_dns_with_dhcp(
     adapter, dynamic_ipv4_iface1, switch, bridged
 ):
@@ -472,7 +465,6 @@ def _test_dynamic_ip_switch_to_static(
 
 
 @nftestlib.parametrize_switch
-@pytest.mark.nmstate
 def test_dynamic_ip_bonded_vlanned_network(
     adapter, switch, dynamic_vlaned_ipv4_iface_with_dhcp_server
 ):
@@ -497,7 +489,6 @@ def test_dynamic_ip_bonded_vlanned_network(
 
 
 @nftestlib.parametrize_switch
-@pytest.mark.nmstate
 @unstable_dhcpv6_on_ovirt_ci
 def test_dynamic_ip_bonded_network(
     adapter, switch, dynamic_ipv4_ipv6_iface_with_dhcp_server
