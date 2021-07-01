@@ -83,7 +83,7 @@ class MigrationLimitExceeded(RuntimeError):
     """
 
 
-class PostCopyPhase:
+class PostCopyPhase(enum.IntEnum):
     NONE = 0
     REQUESTED = 1
     RUNNING = 2
