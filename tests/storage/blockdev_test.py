@@ -23,6 +23,7 @@ from __future__ import division
 
 import io
 import os
+import subprocess
 
 from contextlib import contextmanager
 
@@ -154,6 +155,13 @@ class TestDiscard:
 
     @requires_root
     def test_supported(self, loop_device):
+        # If the loop device backing file is on a file system that does not
+        # support discard, discard is not supported.
+        cp = subprocess.run(
+            ["blkdiscard", loop_device.path], stderr=subprocess.PIPE)
+        if cp.returncode != 0:
+            pytest.skip("blkdiscard not supported: %s" % cp.stderr)
+
         # Write some data to the device.
         with directio.open(loop_device.path, "r+") as f:
             f.write(DATA)
