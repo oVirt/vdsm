@@ -22,6 +22,8 @@ import pytest
 
 from vdsm.storage import sanlockconf
 
+from . marks import requires_selinux
+
 EXAMPLE = """
 # Example sanlock configuration file.
 # Comments and empty lines are ignored
@@ -82,6 +84,7 @@ def test_load(tmpconf):
     }
 
 
+@requires_selinux
 def test_dump_create(tmpconf):
     conf = {"key1": "1", "key2": "2"}
     backup = sanlockconf.dump(conf)
@@ -90,6 +93,7 @@ def test_dump_create(tmpconf):
     assert sanlockconf.load() == conf
 
 
+@requires_selinux
 def test_dump_replace(tmpconf):
     sanlockconf.dump({"key1": "1", "key2": "2"})
     with open(sanlockconf.SANLOCK_CONF) as f:

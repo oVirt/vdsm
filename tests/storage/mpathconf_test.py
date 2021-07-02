@@ -23,7 +23,7 @@ import pytest
 from vdsm.storage import mpathconf
 
 from testing import on_fedora
-
+from . marks import requires_selinux
 
 CONF = """\
 blacklist {
@@ -76,6 +76,7 @@ def test_format_empty_blacklist():
 
 
 @skip_on_fedora_30
+@requires_selinux
 def test_configure_blacklist(fake_conf):
     wwids = {"wwid1", "wwid2", "wwid3"}
     mpathconf.configure_blacklist(wwids)
@@ -83,6 +84,7 @@ def test_configure_blacklist(fake_conf):
 
 
 @skip_on_fedora_30
+@requires_selinux
 def test_read_blacklist(fake_conf):
     wwids = {"wwid1", "wwid2", "wwid3"}
     mpathconf.configure_blacklist(wwids)
@@ -90,6 +92,7 @@ def test_read_blacklist(fake_conf):
 
 
 @skip_on_fedora_30
+@requires_selinux
 def test_read_empty_blacklist(fake_conf):
     mpathconf.configure_blacklist([])
     wwids = mpathconf.read_blacklist()
@@ -102,6 +105,7 @@ def test_read_no_blacklist(fake_conf):
 
 
 @skip_on_fedora_30
+@requires_selinux
 def test_read_bad_blacklist(fake_conf):
     mpathconf.configure_blacklist([])
     # Overwrite conf with a bad conf.
