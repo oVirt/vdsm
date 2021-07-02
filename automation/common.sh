@@ -19,16 +19,13 @@ install_dependencies() {
 
     ${CI_PYTHON} tests/profile pip-install ${CI_PYTHON} -m pip \
         install --upgrade "tox" "coverage"
-
-    # needed by virt test suite
-    dnf update -y python3-libvirt
 }
 
 report_packages_versions() {
     echo
     echo "########################################################################"
     echo "Installed packages:"
-    rpm -q qemu-kvm qemu-img
+    rpm -q qemu-kvm qemu-img python3-libvirt
     echo "########################################################################"
     echo
 }
