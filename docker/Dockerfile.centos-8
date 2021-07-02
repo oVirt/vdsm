@@ -25,6 +25,7 @@ RUN dnf install -y \
         NetworkManager \
         nmstate \
         nmstate-plugin-ovsdb \
+        openssl \
         ovirt-imageio-client \
         psmisc \
         python3 \

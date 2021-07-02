@@ -16,6 +16,7 @@ lsof
 make
 nmstate
 nmstate-plugin-ovsdb
+openssl
 ovirt-imageio-client
 python3-augeas
 python3-blivet
