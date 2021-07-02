@@ -22,7 +22,6 @@ import pytest
 
 from vdsm.storage import mpathconf
 
-from testing import on_fedora
 from . marks import requires_selinux
 
 CONF = """\
@@ -33,13 +32,11 @@ blacklist {
 }
 """
 
-
 EMPTY_CONF = """\
 blacklist {
 
 }
 """
-
 
 BAD_CONF = """\
 blacklist {
@@ -51,9 +48,6 @@ blacklist {
     wwid "wwid5"
 }
 """
-
-skip_on_fedora_30 = pytest.mark.skipif(
-    on_fedora('30'), reason="Test hangs on fc30 CI")
 
 
 @pytest.fixture
@@ -75,7 +69,6 @@ def test_format_empty_blacklist():
     assert conf == EMPTY_CONF
 
 
-@skip_on_fedora_30
 @requires_selinux
 def test_configure_blacklist(fake_conf):
     wwids = {"wwid1", "wwid2", "wwid3"}
@@ -83,7 +76,6 @@ def test_configure_blacklist(fake_conf):
     assert fake_conf.read() == mpathconf._HEADER + CONF
 
 
-@skip_on_fedora_30
 @requires_selinux
 def test_read_blacklist(fake_conf):
     wwids = {"wwid1", "wwid2", "wwid3"}
@@ -91,7 +83,6 @@ def test_read_blacklist(fake_conf):
     assert mpathconf.read_blacklist() == wwids
 
 
-@skip_on_fedora_30
 @requires_selinux
 def test_read_empty_blacklist(fake_conf):
     mpathconf.configure_blacklist([])
@@ -104,7 +95,6 @@ def test_read_no_blacklist(fake_conf):
     assert not wwids
 
 
-@skip_on_fedora_30
 @requires_selinux
 def test_read_bad_blacklist(fake_conf):
     mpathconf.configure_blacklist([])
