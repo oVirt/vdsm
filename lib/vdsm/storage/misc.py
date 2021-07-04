@@ -35,7 +35,6 @@ import logging
 import os
 import re
 import threading
-import uuid
 import weakref
 
 import six
@@ -161,18 +160,6 @@ def parseBool(var):
         return True
     else:
         return False
-
-
-def packUuid(s):
-    # pylint: disable=no-member
-    # https://github.com/PyCQA/pylint/issues/961
-    value = uuid.UUID(s).int
-    return value.to_bytes(16, "little")
-
-
-def unpackUuid(s):
-    value = int.from_bytes(s, "little")
-    return str(uuid.UUID(int=value))
 
 
 UUID_REGEX = re.compile("^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$")
