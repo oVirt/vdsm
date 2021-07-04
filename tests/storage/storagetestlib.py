@@ -97,10 +97,11 @@ class FakeFileEnv(object):
     def make_volume(self, size, imguuid, voluuid, parent_vol_id=sc.BLANK_UUID,
                     vol_format=sc.RAW_FORMAT, vol_type=sc.LEAF_VOL,
                     prealloc=sc.SPARSE_VOL, disk_type=sc.DATA_DISKTYPE,
-                    desc='fake volume', qcow2_compat='0.10'):
+                    desc='fake volume', qcow2_compat='0.10', legal=True):
         return make_file_volume(self.sd_manifest, size, imguuid, voluuid,
                                 parent_vol_id, vol_format, vol_type,
-                                prealloc, disk_type, desc, qcow2_compat)
+                                prealloc, disk_type, desc, qcow2_compat,
+                                legal)
 
 
 class FakeBlockEnv(object):
@@ -186,11 +187,12 @@ def fake_env(storage_type, sd_version=3, data_center=None,
 
 
 @contextmanager
-def fake_volume(storage_type='file', size=MiB, format=sc.RAW_FORMAT):
+def fake_volume(storage_type='file', size=MiB, format=sc.RAW_FORMAT,
+                legal=True):
     img_id = make_uuid()
     vol_id = make_uuid()
     with fake_env(storage_type) as env:
-        env.make_volume(size, img_id, vol_id, vol_format=format)
+        env.make_volume(size, img_id, vol_id, vol_format=format, legal=legal)
         vol = env.sd_manifest.produceVolume(img_id, vol_id)
         yield vol
 
@@ -322,7 +324,8 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
                      vol_type=sc.LEAF_VOL,
                      prealloc=sc.SPARSE_VOL,
                      disk_type=sc.DATA_DISKTYPE,
-                     desc='fake volume', qcow2_compat='0.10'):
+                     desc='fake volume', qcow2_compat='0.10',
+                     legal=True):
     volpath = os.path.join(sd_manifest.domaindir, "images", imguuid, voluuid)
 
     # Create needed path components.
@@ -376,7 +379,7 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
         sc.type2name(vol_type),
         disk_type,
         desc,
-        sc.LEGAL_VOL)
+        sc.LEGAL_VOL if legal else sc.ILLEGAL_VOL)
 
 
 def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
@@ -385,7 +388,7 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
                       vol_type=sc.LEAF_VOL,
                       prealloc=sc.PREALLOCATED_VOL,
                       disk_type=sc.DATA_DISKTYPE,
-                      desc='fake volume', qcow2_compat='0.10'):
+                      desc='fake volume', qcow2_compat='0.10', legal=True):
     sduuid = sd_manifest.sdUUID
     imagedir = sd_manifest.getImageDir(imguuid)
     if not os.path.exists(imagedir):
@@ -446,7 +449,7 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
         sc.type2name(vol_type),
         disk_type,
         desc,
-        sc.LEGAL_VOL)
+        sc.LEGAL_VOL if legal else sc.ILLEGAL_VOL)
 
 
 def write_qemu_chain(vol_list):

@@ -518,10 +518,55 @@ def test_copy_data_collapse(
     assert dst_actual_size < src_actual_size
 
 
+def test_copy_data_illegal(
+        tmpdir, tmp_repo, fake_access, fake_rescan,
+        tmp_db, fake_task, fake_scheduler, monkeypatch,
+        sd_version=5):
+    dom = tmp_repo.create_localfs_domain(
+        name="domain",
+        version=sd_version)
+
+    source_img_id = str(uuid.uuid4())
+    source_vol_id = str(uuid.uuid4())
+
+    dest_img_id = str(uuid.uuid4())
+    dest_vol_id = str(uuid.uuid4())
+
+    source_vol = create_volume(
+        dom,
+        source_img_id,
+        source_vol_id,
+        volFormat=sc.RAW_FORMAT)
+
+    dest_vol = create_volume(
+        dom,
+        dest_img_id,
+        dest_vol_id,
+        volFormat=sc.COW_FORMAT,
+        legal=False)
+
+    source = dict(
+        endpoint_type='div',
+        sd_id=source_vol.sdUUID,
+        img_id=source_vol.imgUUID,
+        vol_id=source_vol.volUUID)
+    dest = dict(
+        endpoint_type='div',
+        sd_id=dest_vol.sdUUID,
+        img_id=dest_img_id,
+        vol_id=dest_vol_id)
+
+    job = copy_data.Job(str(uuid.uuid4()), 0, source, dest)
+    monkeypatch.setattr(guarded, 'context', fake_guarded_context())
+    job.run()
+
+    assert jobs.STATUS.DONE == job.status
+
+
 def create_volume(
         dom, imgUUID, volUUID, srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID, volFormat=sc.COW_FORMAT,
-        capacity=GiB):
+        capacity=GiB, legal=True):
     dom.createVolume(
         imgUUID=imgUUID,
         capacity=capacity,
@@ -531,7 +576,8 @@ def create_volume(
         volUUID=volUUID,
         desc="test_volume",
         srcImgUUID=srcImgUUID,
-        srcVolUUID=srcVolUUID)
+        srcVolUUID=srcVolUUID,
+        legal=legal)
 
     return dom.produceVolume(imgUUID, volUUID)
 
