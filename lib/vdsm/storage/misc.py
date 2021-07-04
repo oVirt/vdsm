@@ -34,7 +34,6 @@ import itertools
 import logging
 import os
 import re
-import struct
 import threading
 import uuid
 import weakref
@@ -168,15 +167,11 @@ def packUuid(s):
     # pylint: disable=no-member
     # https://github.com/PyCQA/pylint/issues/961
     value = uuid.UUID(s).int
-    high = value // (2 ** 64)
-    low = value % (2 ** 64)
-    # pack as 128bit little-endian <QQ
-    return struct.pack('<QQ', low, high)
+    return value.to_bytes(16, "little")
 
 
 def unpackUuid(s):
-    low, high = struct.unpack('<QQ', s)
-    value = low + high * (2 ** 64)
+    value = int.from_bytes(s, "little")
     return str(uuid.UUID(int=value))
 
 
