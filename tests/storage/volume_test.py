@@ -185,6 +185,16 @@ class TestVolumeManifest:
         # writing the new generation.
         assert "description" == vol.getMetaParam(sc.DESCRIPTION)
 
+    def test_prepare_illegal_volume_fails(self):
+        with fake_volume('file', legal=False) as vol:
+            with pytest.raises(se.prepareIllegalVolumeError):
+                vol.prepare()
+
+    def test_prepare_illegal_volume_allowed(self):
+        with fake_volume('file', legal=False) as vol:
+            vol.prepare(allow_illegal=True)
+            assert vol.getMetaParam(sc.LEGALITY) == sc.ILLEGAL_VOL
+
 
 class TestVolumeSize:
 

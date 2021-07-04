@@ -56,7 +56,8 @@ class Job(base.Job):
         self._source = _create_endpoint(
             source, host_id, writable=False, job_id=job_id)
         self._dest = _create_endpoint(
-            destination, host_id, writable=True, job_id=job_id)
+            destination, host_id, writable=True, job_id=job_id,
+            is_destination=True)
         self._operation = None
         self._copy_bitmaps = copy_bitmaps
 
@@ -117,10 +118,11 @@ class Job(base.Job):
                         self._operation.run()
 
 
-def _create_endpoint(params, host_id, writable, job_id=None):
+def _create_endpoint(params, host_id, writable, job_id=None, is_destination=False):
     endpoint_type = params.pop('endpoint_type')
     if endpoint_type == 'div':
-        return CopyDataDivEndpoint(params, host_id, writable)
+        return CopyDataDivEndpoint(params, host_id, writable,
+                                   is_destination=is_destination)
     elif endpoint_type == 'external':
         return CopyDataExternalEndpoint(params, host_id, job_id)
     else:
@@ -135,12 +137,13 @@ class CopyDataDivEndpoint(properties.Owner):
                                     maxval=sc.MAX_GENERATION)
     prepared = properties.Boolean(default=False)
 
-    def __init__(self, params, host_id, writable):
+    def __init__(self, params, host_id, writable, is_destination=False):
         self.sd_id = params.get('sd_id')
         self.img_id = params.get('img_id')
         self.vol_id = params.get('vol_id')
         self.generation = params.get('generation')
         self.prepared = params.get('prepared')
+        self.is_destination = is_destination
         self._host_id = host_id
         self._writable = writable
         self._vol = None
@@ -216,7 +219,10 @@ class CopyDataDivEndpoint(properties.Owner):
         if self.prepared:
             yield
         else:
-            self.volume.prepare(rw=self._writable, justme=False)
+            self.volume.prepare(
+                rw=self._writable,
+                justme=False,
+                allow_illegal=self.is_destination)
             try:
                 yield
             finally:
