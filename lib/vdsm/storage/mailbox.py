@@ -776,8 +776,6 @@ def wait_timeout(monitor_interval):
 
 
 def pack_uuid(s):
-    # pylint: disable=no-member
-    # https://github.com/PyCQA/pylint/issues/961
     value = uuid.UUID(s).int
     return value.to_bytes(16, "little")
 
