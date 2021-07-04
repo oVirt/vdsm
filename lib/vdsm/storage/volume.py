@@ -594,18 +594,22 @@ class VolumeManifest(object):
         return None
 
     def prepare(self, rw=True, justme=False,
-                chainrw=False, setrw=False, force=False):
+                chainrw=False, setrw=False, force=False,
+                allow_illegal=False):
         """
         Prepare volume for use by consumer.
         If justme is false, the entire COW chain is prepared.
         Note: setrw arg may be used only by SPM flows.
         """
-        self.log.info("Volume: preparing volume %s/%s",
-                      self.sdUUID, self.volUUID)
+        self.log.info("Preparing volume %s/%s with parameters:"
+                      "justme=%s, rw=%s, setrw=%s, chainrw=%s, force=%s,"
+                      "allow_illegal=%s",
+                      self.sdUUID, self.volUUID, justme, rw, setrw, chainrw,
+                      force, allow_illegal)
 
         if not force:
-            # Cannot prepare ILLEGAL volume
-            if not self.isLegal():
+            # Cannot prepare ILLEGAL volume when allow_illegal is not True
+            if not self.isLegal() and not allow_illegal:
                 raise se.prepareIllegalVolumeError(self.volUUID)
 
             if rw and self.isShared():
