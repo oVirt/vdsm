@@ -33,6 +33,7 @@ BR1_NAME = 'br1'
 xfail_on_ovirt_ci = pytest.mark.xfail(
     testing.on_ovirt_ci(),
     reason="started to fail on centos stream, reason unknown",
+    strict=False,  # tests succeed randomly
 )
 
 
