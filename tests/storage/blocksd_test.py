@@ -1425,6 +1425,33 @@ def test_dump_sd_metadata(
         }
 
 
+@pytest.mark.parametrize("domain_version", [5])
+def test_create_illegal_volume(domain_factory, domain_version, fake_task,
+                               fake_sanlock):
+    sd_uuid = str(uuid.uuid4())
+    dom = domain_factory.create_domain(sd_uuid=sd_uuid, version=domain_version)
+
+    img_uuid = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+    vol_capacity = 10 * GiB
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        capacity=vol_capacity,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType=sc.DATA_DISKTYPE,
+        volUUID=vol_id,
+        desc="Base volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        legal=False)
+
+    vol = dom.produceVolume(img_uuid, vol_id)
+
+    assert vol.getLegality() == sc.ILLEGAL_VOL
+
+
 LVM_TAG_CHARS = string.ascii_letters + "0123456789_+.-/=!:#"
 
 LVM_TAGS = [

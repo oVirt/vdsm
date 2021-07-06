@@ -1887,7 +1887,8 @@ class StoragePool(object):
                      srcImgUUID=sc.BLANK_UUID,
                      srcVolUUID=sc.BLANK_UUID,
                      initialSize=None,
-                     addBitmaps=False):
+                     addBitmaps=False,
+                     legal=True):
         """
         Creates a new volume.
 
@@ -1925,6 +1926,8 @@ class StoragePool(object):
         :param addBitmaps: If true, add source volume bitmaps to the
                            created volume.
         :type addBitmaps: boolean
+        :param legal: If true, create the volume as legal.
+        :type legal: boolean
 
         :returns: a dict with the UUID of the new volume.
         :rtype: dict
@@ -1950,7 +1953,7 @@ class StoragePool(object):
                 imgUUID=imgUUID, capacity=size, volFormat=volFormat,
                 preallocate=preallocate, diskType=diskType, volUUID=volUUID,
                 desc=desc, srcImgUUID=srcImgUUID, srcVolUUID=srcVolUUID,
-                initial_size=initialSize, add_bitmaps=addBitmaps)
+                initial_size=initialSize, add_bitmaps=addBitmaps, legal=legal)
         return dict(uuid=newVolUUID)
 
     def deleteVolume(self, sdUUID, imgUUID, volumes, postZero, force, discard):
