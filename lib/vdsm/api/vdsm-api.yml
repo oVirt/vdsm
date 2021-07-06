@@ -11873,6 +11873,14 @@ Volume.create:
         name: addBitmaps
         type: boolean
         added: '4.4'
+
+    -   defaultvalue: true
+        description: Create legal volume that can be used by the system
+            immediately. Set to false to create illegal volume that cannot
+            be used by the system. To use the volume it must be set to legal.
+        name: legal
+        type: boolean
+        added: '4.5'
     return:
         description: A task UUID
         type: *UUID

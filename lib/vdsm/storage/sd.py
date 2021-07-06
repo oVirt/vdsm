@@ -1206,14 +1206,14 @@ class StorageDomain(object):
 
     def createVolume(self, imgUUID, capacity, volFormat, preallocate, diskType,
                      volUUID, desc, srcImgUUID, srcVolUUID,
-                     initial_size=None, add_bitmaps=False):
+                     initial_size=None, add_bitmaps=False, legal=True):
         """
         Create a new volume
         """
         return self.getVolumeClass().create(
             self._getRepoPath(), self.sdUUID, imgUUID, capacity, volFormat,
             preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID,
-            initial_size=initial_size, add_bitmaps=add_bitmaps)
+            initial_size=initial_size, add_bitmaps=add_bitmaps, legal=legal)
 
     def getMDPath(self):
         return self._manifest.getMDPath()

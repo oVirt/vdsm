@@ -1253,7 +1253,8 @@ class HSM(object):
                      preallocate, diskType, volUUID, desc,
                      srcImgUUID=sc.BLANK_UUID,
                      srcVolUUID=sc.BLANK_UUID,
-                     initialSize=None, addBitmaps=False):
+                     initialSize=None, addBitmaps=False,
+                     legal=True):
         """
         Create a new volume
             Function Type: SPM
@@ -1290,7 +1291,7 @@ class HSM(object):
         self._spmSchedule(spUUID, "createVolume", pool.createVolume, sdUUID,
                           imgUUID, capacity, volFormat, preallocate, diskType,
                           volUUID, desc, srcImgUUID, srcVolUUID, initial_size,
-                          addBitmaps)
+                          addBitmaps, legal)
 
     @public
     def deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False,

@@ -841,13 +841,15 @@ class Volume(APIBase):
                                    discard)
 
     def create(self, size, volFormat, preallocate, diskType, desc,
-               srcImgUUID, srcVolUUID, initialSize=None, addBitmaps=False):
+               srcImgUUID, srcVolUUID, initialSize=None, addBitmaps=False,
+               legal=True):
         return self._irs.createVolume(self._sdUUID, self._spUUID,
                                       self._imgUUID, size, volFormat,
                                       preallocate, diskType, self._UUID, desc,
                                       srcImgUUID, srcVolUUID,
                                       initialSize=initialSize,
-                                      addBitmaps=addBitmaps)
+                                      addBitmaps=addBitmaps,
+                                      legal=legal)
 
     def delete(self, postZero, force, discard=False):
         return self._irs.deleteVolume(self._sdUUID, self._spUUID,

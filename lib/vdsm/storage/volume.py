@@ -1138,7 +1138,7 @@ class Volume(object):
     @classmethod
     def create(cls, repoPath, sdUUID, imgUUID, capacity, volFormat,
                preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID,
-               initial_size=None, add_bitmaps=False):
+               initial_size=None, add_bitmaps=False, legal=True):
         """
         Create a new volume with given size or snapshot
             'capacity' - in bytes
@@ -1150,6 +1150,8 @@ class Volume(object):
             'initial_size' - initial volume size in bytes,
                              in case of thin provisioning
             'add_bitmaps' - add all the bitmaps from source volume
+            'legal' - create the volume as legal if true,
+                      otherwise create as illegal.
         """
         # Do the input values validation first.
         if initial_size is not None:
@@ -1282,9 +1284,10 @@ class Volume(object):
                               [str(x) for x in metaId])
             )
 
+            legality = sc.LEGAL_VOL if legal else sc.ILLEGAL_VOL
             cls.newMetadata(metaId, sdUUID, imgUUID, srcVolUUID, capacity,
                             sc.type2name(volFormat), sc.type2name(preallocate),
-                            volType, diskType, desc, sc.LEGAL_VOL)
+                            volType, diskType, desc, legality)
 
             if dom.hasVolumeLeases():
                 cls.newVolumeLease(metaId, sdUUID, volUUID)

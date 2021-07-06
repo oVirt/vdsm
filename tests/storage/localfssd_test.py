@@ -1165,6 +1165,27 @@ def test_dump_sd_volumes_removed_image(
     }
 
 
+def test_create_illegal_volume(user_domain, local_fallocate):
+    image_id = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+    user_domain.createVolume(
+        imgUUID=image_id,
+        capacity=SPARSE_VOL_SIZE,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType="DATA",
+        volUUID=vol_id,
+        desc="test",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        legal=False)
+
+    vol = user_domain.produceVolume(
+        image_id, vol_id)
+
+    assert vol.getLegality() == sc.ILLEGAL_VOL
+
+
 def test_create_volume_with_bitmaps(user_domain, local_fallocate):
     if user_domain.getVersion() == 3:
         pytest.skip("Bitmaps operations not supported in v3 domains")
