@@ -287,11 +287,6 @@ class TestNetworkIPDefaultGateway(object):
 
     @parametrize_ip_families
     def test_edit_default_gateway(self, adapter, switch, families, nic0):
-        if switch == 'ovs' and IpFamily.IPv6 in families:
-            pytest.xfail(
-                'OvS does not support ipv6 gateway'
-                'see https://bugzilla.redhat.com/1467332'
-            )
         network_attrs = {
             'nic': nic0,
             'ipaddr': IPv4_ADDRESS,
