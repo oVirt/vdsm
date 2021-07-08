@@ -753,7 +753,8 @@ class SourceThread(object):
 
         result = self._destServer.refresh_disk(self._vm.id, vol_pdiv)
         if response.is_error(result):
-            raise exception.CannotRefreshDisk(reason=result["message"])
+            raise exception.CannotRefreshDisk(
+                reason=result["status"]["message"])
         return VolumeSize(int(result["apparentsize"]), int(result["truesize"]))
 
 
