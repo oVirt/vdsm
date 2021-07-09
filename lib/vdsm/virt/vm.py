@@ -1422,7 +1422,8 @@ class Vm(object):
             raise exception.DriveRefreshError(
                 reason=str(e),
                 vm_id=self.id,
-                drive=drive)
+                domain_id=vol_pdiv["domainID"],
+                volume_id=vol_pdiv["volumeID"])
         return dict(result=dict(
             apparentsize=str(new_vol_size.apparentsize),
             truesize=str(new_vol_size.truesize)))
