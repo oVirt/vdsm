@@ -30,7 +30,7 @@ def get_host_nameservers():
         with open(DNS_CONF_FILE, 'r') as file_object:
             file_text = file_object.read()
     except IOError as e:
-        logging.warning('Failed to read {}: {}'.format(DNS_CONF_FILE, e))
+        logging.warning('Failed to read %s: %s', DNS_CONF_FILE, e)
         return []
     return _parse_nameservers(file_text)
 

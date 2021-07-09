@@ -108,7 +108,7 @@ def _greedy_setup_nets(setup_nets):
                 {'connectivityCheck': False, '_inRollback': True},
             )
         except Exception:
-            logging.exception('Failed to setup {}'.format(net))
+            logging.exception('Failed to setup %s', net)
 
 
 def _greedy_setup_bonds(setup_bonds):
@@ -120,7 +120,7 @@ def _greedy_setup_bonds(setup_bonds):
                 {'connectivityCheck': False, '_inRollback': True},
             )
         except Exception:
-            logging.exception('Failed to setup {}'.format(bond))
+            logging.exception('Failed to setup %s', bond)
 
 
 def _convert_to_blocking_dhcp(networks):

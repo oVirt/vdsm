@@ -69,7 +69,7 @@ def change_numvfs(numvfs, devname):
     The persistence is stored in the same place as other network persistence is
     stored. A call to setSafeNetworkConfig() will persist it across reboots.
     """
-    logging.info(f'Changing number of vfs on device {devname} -> {numvfs}.')
+    logging.info('Changing number of vfs on device %s -> %s.', devname, numvfs)
     update_num_vfs(devname, numvfs)
     sriov.persist_numvfs(devname, numvfs)
 
@@ -291,7 +291,9 @@ def add_sourceroute(iface, ip, mask, route, family=None):
             pool.remove(item)
         else:
             logging.warning(
-                f'Nic {iface} is not configured for IPv{family} monitoring.'
+                'Nic %s is not configured for IPv%s monitoring.',
+                iface,
+                family,
             )
             return
 

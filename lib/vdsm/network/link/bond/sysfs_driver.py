@@ -50,14 +50,14 @@ class BondSysFS(BondAPI):
     def __exit__(self, ex_type, ex_value, traceback):
         if ex_type is not None:
             logging.info(
-                'Bond {} transaction failed, reverting...'.format(self._master)
+                'Bond %s transaction failed, reverting...', self._master
             )
             self._revert_transaction()
 
     def create(self):
         with open(BONDING_MASTERS, 'w') as f:
             f.write('+%s' % self._master)
-        logging.info('Bond {} has been created.'.format(self._master))
+        logging.info('Bond %s has been created.', self._master)
         if self._options:
             self.set_options(self._options)
         if self._slaves:
@@ -67,7 +67,7 @@ class BondSysFS(BondAPI):
     def destroy(self):
         with open(BONDING_MASTERS, 'w') as f:
             f.write('-%s' % self._master)
-        logging.info('Bond {} has been destroyed.'.format(self._master))
+        logging.info('Bond %s has been destroyed.', self._master)
 
     def add_slaves(self, slaves):
         for slave in slaves:
@@ -76,9 +76,7 @@ class BondSysFS(BondAPI):
                 with open(self.BONDING_SLAVES % self._master, 'w') as f:
                     f.write('+%s' % slave)
             logging.info(
-                'Slave {} has been added to bond {}.'.format(
-                    slave, self._master
-                )
+                'Slave %s has been added to bond %s.', slave, self._master
             )
             self._slaves.add(slave)
 
@@ -89,9 +87,7 @@ class BondSysFS(BondAPI):
                 with open(self.BONDING_SLAVES % self._master, 'w') as f:
                     f.write('-%s' % slave)
             logging.info(
-                'Slave {} has been removed from bond {}.'.format(
-                    slave, self._master
-                )
+                'Slave %s has been removed from bond %s.', slave, self._master
             )
             self._slaves.remove(slave)
 
@@ -110,7 +106,7 @@ class BondSysFS(BondAPI):
                         sysfs_options.set_options(self._master, options)
             else:
                 sysfs_options.set_options(self._master, options)
-        logging.info('Bond {} options set: {}.'.format(self._master, options))
+        logging.info('Bond %s options set: %s.', self._master, options)
         self._options = options
 
     @contextmanager

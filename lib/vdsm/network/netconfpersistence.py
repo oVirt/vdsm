@@ -183,8 +183,11 @@ class Config(BaseConfig):
         _atomic_copytree(rand_netconf_path, self.netconf_path, remove_src=True)
 
         logging.info(
-            'Saved new config %r to [%s,%s,%s]'
-            % (self, self.networksPath, self.bondingsPath, self.devicesPath)
+            'Saved new config %r to [%s,%s,%s]',
+            self,
+            self.networksPath,
+            self.bondingsPath,
+            self.devicesPath,
         )
 
     def _save_config(self, configs, configpath):

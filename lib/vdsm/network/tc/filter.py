@@ -199,7 +199,7 @@ def _parse_ematch_match(first_arg, tokens):
         elif token == 'mask':
             data['mask'] = _parser.parse_hex(tokens)
         else:
-            logging.debug('unsupported token for vlan: %s' % token)
+            logging.debug('unsupported token for vlan: %s', token)
     return data
 
 

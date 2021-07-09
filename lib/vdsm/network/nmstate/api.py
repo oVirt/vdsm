@@ -90,6 +90,6 @@ def ovs_netinfo(base_netinfo, running_networks, current_state):
 
 def update_num_vfs(device, num_vfs):
     desired_state = create_sriov_state(device, num_vfs)
-    logging.info(f'Desired state: {desired_state}')
+    logging.info('Desired state: %s', desired_state)
 
     setup(desired_state, verify_change=True)

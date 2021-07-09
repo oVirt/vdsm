@@ -128,9 +128,11 @@ def _add_qos_info_to_southbound(qos_list, devices_info):
             devices = devices_info['bondings']
         else:
             logging.warning(
-                'Qos exists on network {},'
-                'but no corresponding nic/bond device ({})'
-                'was found'.format(net_name, southbound)
+                'Qos exists on network %s,'
+                'but no corresponding nic/bond device (%s)'
+                'was found',
+                net_name,
+                southbound,
             )
             continue
 
