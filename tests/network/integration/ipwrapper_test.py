@@ -110,10 +110,7 @@ class TestDrvinfo(object):
 class TestUnicodeDrvinfo(object):
     @pytest.fixture
     def unicode_bridge(self):
-        # First 3 Hebrew letters, in native string format
-        # See http://unicode.org/charts/PDF/U0590.pdf
-        bridge_name = b'\xd7\x90\xd7\x91\xd7\x92'.decode('utf-8')
-        br = Bridge(bridge_name)
+        br = Bridge('vdsm-אבג')
         br.create()
         try:
             yield br.dev_name

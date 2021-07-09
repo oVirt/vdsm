@@ -39,7 +39,7 @@ TEST_NIC_REGEX = re.compile(
     dummy_[a-zA-Z0-9]+|     # match dummy devices
     veth_[a-zA-Z0-9]+|      # match veth devices
     bond_[a-zA-Z0-9]+|      # match bond devices
-    test-network[0-9]*|br1|אבג[a-zA-Z0-9]*|     # match bridges
+    vdsm-אבג[a-zA-Z0-9]*|   # match utf-8 bridges
     vdsm-[a-zA-Z0-9]*       # match any generic vdsm test interface
     ''',
     re.VERBOSE,

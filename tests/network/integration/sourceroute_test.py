@@ -31,9 +31,6 @@ from network.nettestlib import IpFamily
 from vdsm.network import sourceroute
 from vdsm.network.sourceroute import DynamicSourceRoute
 
-
-DEVICE = 'test-network'
-
 IPV4_ADDRESS = '192.168.99.1'
 IPV4_GW = '192.168.99.2'
 IPV4_MASK = 29

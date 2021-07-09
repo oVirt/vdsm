@@ -17,8 +17,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from contextlib import contextmanager
-
 import pytest
 
 from vdsm.network import errors as ne
@@ -29,41 +27,37 @@ from network.nettestlib import Bridge as TestBridge
 BR1_NAME = 'br1'
 
 
-@contextmanager
-def _create_bridge(name):
-    bridge = TestBridge(name, len(name))
+@pytest.fixture
+def bridge():
+    bridge = TestBridge()
     bridge.create()
     bridge.down()
-    try:
-        yield
-    finally:
-        bridge.remove()
+    yield bridge.dev_name
+    bridge.remove()
 
 
-def test_write_custom_bridge_options():
+def test_write_custom_bridge_options(bridge):
     options1 = {'multicast_router': '0', 'multicast_snooping': '0'}
     options2 = {'multicast_router': '1', 'multicast_snooping': '1'}
 
-    with _create_bridge(BR1_NAME):
-        br1 = Bridge(BR1_NAME, options1)
+    br = Bridge(bridge, options1)
 
-        for opt, val in options1.items():
-            assert br1.options.get(opt) == val
+    for opt, val in options1.items():
+        assert br.options.get(opt) == val
 
-        br1.set_options(options2)
+    br.set_options(options2)
 
-        for opt, val in options2.items():
-            assert br1.options.get(opt) == val
+    for opt, val in options2.items():
+        assert br.options.get(opt) == val
 
 
-def test_write_no_custom_bridge_options():
-    with _create_bridge(BR1_NAME):
-        br1 = Bridge(BR1_NAME)
-        initial_opts = br1.options
+def test_write_no_custom_bridge_options(bridge):
+    br = Bridge(bridge)
+    initial_opts = br.options
 
-        br1.set_options({})
+    br.set_options({})
 
-        assert br1.options == initial_opts
+    assert br.options == initial_opts
 
 
 def test_get_non_existent_bridge_opt_with_sysfs_fails():
