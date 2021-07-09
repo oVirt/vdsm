@@ -57,13 +57,13 @@ class TestBridge(object):
         if switch == 'ovs':
             pytest.xfail('stp is currently not implemented for ovs')
 
-            NETCREATE = {
-                NETWORK_NAME: {'nic': nic0, 'switch': switch, 'stp': True}
-            }
-            with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
-                adapter.assertNetworkExists(NETWORK_NAME)
-                adapter.assertNetworkBridged(NETWORK_NAME)
-                adapter.assertBridgeOpts(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+        NETCREATE = {
+            NETWORK_NAME: {'nic': nic0, 'switch': switch, 'stp': True}
+        }
+        with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+            adapter.assertNetworkExists(NETWORK_NAME)
+            adapter.assertNetworkBridged(NETWORK_NAME)
+            adapter.assertBridgeOpts(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     @nftestlib.parametrize_legacy_switch
     def test_add_bridge_with_custom_opts(self, adapter, switch, nic0):
