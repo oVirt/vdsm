@@ -24,6 +24,7 @@ from __future__ import division
 import libvirt
 
 from vdsm.config import config
+from vdsm.virt import virdomain
 from vdsm.virt.vmdevices import lookup
 from vdsm.virt.vmdevices import storage
 
@@ -126,6 +127,11 @@ class DriveMonitor(object):
             self._log.error(
                 'Failed to set block threshold for drive %r (%s): %s',
                 drive.name, drive.path, exc)
+        except virdomain.NotConnectedError:
+            drive.threshold_state = storage.BLOCK_THRESHOLD.UNSET
+            self._log.debug(
+                "Domain not connected, skipping set block threshold for drive "
+                "%r", drive.name)
         else:
             drive.threshold_state = storage.BLOCK_THRESHOLD.SET
 
