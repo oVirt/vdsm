@@ -118,8 +118,18 @@ class DriveMonitor(object):
             # The drive threshold_state can be UNSET or EXCEEDED, and
             # this ensures that we will attempt to set the threshold later.
             drive.threshold_state = storage.BLOCK_THRESHOLD.UNSET
-            self._log.error(
-                'Failed to set block threshold for drive %r: %s', target, exc)
+
+            # If VM is stopped before disk extension finishes (e.g. during
+            # migration), no need to log an error as libvirt call is expected
+            # to fail.
+            if exc.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
+                self._log.debug(
+                    "Domain not connected, skipping set block threshold for"
+                    "drive %r: %s", drive.name, exc)
+            else:
+                self._log.error(
+                    'Failed to set block threshold for drive %r (%s): %s',
+                    drive.name, drive.path, exc)
         except Exception:
             drive.threshold_state = storage.BLOCK_THRESHOLD.UNSET
             raise
