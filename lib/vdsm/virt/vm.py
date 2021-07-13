@@ -1623,6 +1623,9 @@ class Vm(object):
             drive, volsize.apparentsize, index=index)
 
     def _resume_if_needed(self):
+        if not self._can_resume():
+            return
+
         try:
             self.cont()
         except libvirt.libvirtError as e:

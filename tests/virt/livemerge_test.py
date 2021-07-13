@@ -34,6 +34,7 @@ from vdsm.common.units import GiB
 
 from vdsm.virt import metadata
 from vdsm.virt import migration
+from vdsm.virt import vmstatus
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.livemerge import (
     CleanupThread,
@@ -239,6 +240,10 @@ class RunningVM(Vm):
 
     def min_cluster_version(self, major, minor):
         return True
+
+    @property
+    def lastStatus(self):
+        return vmstatus.UP
 
 
 class FakeDomain:
