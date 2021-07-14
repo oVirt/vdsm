@@ -1691,37 +1691,43 @@ class Vm(object):
             config.getint('vars', 'vm_command_timeout'))
         self._guestCpuLock.acquire(timeout, flow)
 
+    def _can_resume(self):
+        """
+        Return True if it's fine to resume the VM, False if the VM is in the
+        state listed below and the VM should not be resumed.
+
+        - vmstatus.MIGRATION_SOURCE
+            Migration is in progress, VM status should not be changed till the
+            migration finishes.
+
+        - vmstatus.SAVING_STATE
+            Hibernation is in progress, VM status should not be changed till
+            the hibernation finishes.
+
+        - vmstatus.DOWN
+            VM is down, continuing is not possible from this state.
+        """
+        return self.lastStatus not in (vmstatus.MIGRATION_SOURCE,
+                                       vmstatus.SAVING_STATE,
+                                       vmstatus.DOWN)
+
     def cont(self, afterState=vmstatus.UP, guestCpuLocked=False,
              ignoreStatus=False, guestTimeSync=False):
         """
-        Continue execution of the VM.
+        Continue execution of the VM. Log an error if the VM cannot be
+        resumed. To check if the VM can be resumed use _can_resume().
 
         :param ignoreStatus: True, if the operation must be performed
                              regardless of the VM's status, False otherwise.
                              Default: False
 
-                             By default, cont() returns error if the VM is in
-                             one of the following states:
-
-                             vmstatus.MIGRATION_SOURCE
-                                 Migration is in progress, VM status should not
-                                 be changed till the migration finishes.
-
-                             vmstatus.SAVING_STATE
-                                 Hibernation is in progress, VM status should
-                                 not be changed till the hibernation finishes.
-
-                             vmstatus.DOWN
-                                 VM is down, continuing is not possible from
-                                 this state.
+                             By default, cont() returns error if
+                             Vm._can_resume() returns False.
         """
         if not guestCpuLocked:
             self._acquireCpuLockWithTimeout(flow='cont')
         try:
-            if (not ignoreStatus and
-                    self.lastStatus in (vmstatus.MIGRATION_SOURCE,
-                                        vmstatus.SAVING_STATE,
-                                        vmstatus.DOWN)):
+            if not ignoreStatus and not self._can_resume():
                 self.log.error('cannot cont while %s', self.lastStatus)
                 return response.error('unexpected')
             self._underlyingCont()
