@@ -18,12 +18,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
 from contextlib import contextmanager
 import logging
 import threading
+
+import xml.etree.ElementTree as etree
 
 import libvirt
 
@@ -86,11 +85,12 @@ def make_env(events_enabled, drive_infos):
     ]):
         dom = FakeDomain()
         irs = FakeIRS()
+        drives = []
 
-        drives = [
-            make_drive(log, dom, irs, index, drive_conf, info)
-            for index, (drive_conf, info) in enumerate(drive_infos)
-        ]
+        for index, (drive_conf, block_info) in enumerate(drive_infos):
+            drive = make_drive(log, irs, index, drive_conf, block_info)
+            dom.add_drive(drive, block_info)
+            drives.append(drive)
 
         cif = FakeClientIF()
         cif.irs = irs
@@ -594,6 +594,7 @@ class FakeVM(vm.Vm):
 class FakeDomain(object):
 
     def __init__(self):
+        self._devices = etree.Element('devices')
         self._state = (libvirt.VIR_DOMAIN_RUNNING, )
         self.block_info = {}
         self.errors = {}
@@ -609,7 +610,9 @@ class FakeDomain(object):
     # by the ImprobableResizeRequestError
 
     def XMLDesc(self, flags=0):
-        return u'<domain/>'
+        domain = etree.Element("domain")
+        domain.append(self._devices)
+        return etree.tostring(domain).decode()
 
     def suspend(self):
         self._state = (libvirt.VIR_DOMAIN_PAUSED, )
@@ -621,8 +624,41 @@ class FakeDomain(object):
         return self._state
 
     @maybefail
-    def setBlockThreshold(self, dev, threshold):
-        self.thresholds[dev] = threshold
+    def setBlockThreshold(self, target, threshold):
+        self.thresholds[target] = threshold
+
+    # Testing API.
+
+    def add_drive(self, drive, block_info):
+        """
+        Add minimal xml to make the drive work with
+        Vm._drive_get_actual_volume_chain().
+
+            <disk type='block'>
+                <source dev='/virtio/1' index='1'/>
+                <backingStore/>
+                <alias name='alias_1'/>
+            </disk>
+        """
+        disk = self._devices.find(
+            "./disk/source[@index='{}']".format(drive.index))
+        if disk is not None:
+            disk_xml = etree.tostring(disk).decode()
+            raise RuntimeError(
+                "Disk already exists: {}".format(disk_xml))
+
+        disk = etree.SubElement(self._devices, "disk", type=drive.diskType)
+
+        # Not correct for network drives, but good enough since we don't
+        # monitor them.
+        path_attr = "dev" if drive.diskType == "block" else "file"
+
+        extra = {path_attr: drive.path, "index": str(drive.index)}
+        etree.SubElement(disk, "source", **extra)
+        etree.SubElement(disk, "backingStore")
+        etree.SubElement(disk, "alias", name=drive.alias)
+
+        self.block_info[drive.path] = utils.picklecopy(block_info)
 
 
 class FakeClientIF(fake.ClientIF):
@@ -666,21 +702,22 @@ class FakeIRS(object):
             self.volume_sizes[key] = capacity
 
 
-def make_drive(log, dom, irs, index, conf, block_info):
+def make_drive(log, irs, index, conf, block_info):
     cfg = utils.picklecopy(conf)
 
     cfg['index'] = index
     cfg['path'] = '/{iface}/{index}'.format(
         iface=cfg['iface'], index=cfg['index']
     )
+    cfg['alias'] = 'alias_%d' % index
 
     add_uuids(index, cfg)
     if 'diskReplicate' in cfg:
         add_uuids(index + REPLICA_BASE_INDEX, cfg['diskReplicate'])
 
-    drive = Drive(log, **cfg)
+    cfg["volumeChain"] = [{"path": cfg["path"], "volumeID": cfg["volumeID"]}]
 
-    dom.block_info[drive.path] = utils.picklecopy(block_info)
+    drive = Drive(log, **cfg)
 
     if (drive.format == "raw" and
             block_info["physical"] != block_info["capacity"]):
