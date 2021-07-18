@@ -1412,7 +1412,13 @@ class Vm(object):
                 drive.poolID,
                 drive.imageID,
                 drive.volumeID)
-            self._update_drive_volume_size(drive, vol_size)
+            try:
+                self._update_drive_volume_size(drive, vol_size)
+            except virdomain.NotConnectedError:
+                # During migration or after the vm was stopped we cannot set a
+                # block threshold. This is not an issue since we will set the
+                # block threshold when the VM starts.
+                self.log.debug("VM not running, skipping volume size update")
         except Exception as e:
             raise exception.DriveRefreshError(
                 reason=str(e),
@@ -1590,6 +1596,9 @@ class Vm(object):
                 "extending disk during migration, disabling disk "
                 "extension during migration")
             self.drive_monitor.disable()
+            error = e
+        except virdomain.NotConnectedError as e:
+            self.log.debug("VM not running, aborting extend completion")
             error = e
         finally:
             if callback:
