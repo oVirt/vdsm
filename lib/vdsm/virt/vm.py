@@ -1413,11 +1413,6 @@ class Vm(object):
                 drive.imageID,
                 drive.volumeID)
             self._update_drive_volume_size(drive, vol_size)
-            new_vol_size = self.getVolumeSize(
-                drive.domainID,
-                drive.poolID,
-                drive.imageID,
-                drive.volumeID)
         except Exception as e:
             raise exception.DriveRefreshError(
                 reason=str(e),
@@ -1425,8 +1420,8 @@ class Vm(object):
                 domain_id=vol_pdiv["domainID"],
                 volume_id=vol_pdiv["volumeID"])
         return dict(result=dict(
-            apparentsize=str(new_vol_size.apparentsize),
-            truesize=str(new_vol_size.truesize)))
+            apparentsize=str(vol_size.apparentsize),
+            truesize=str(vol_size.truesize)))
 
     def _refresh_migrating_volume(self, volInfo):
         """
