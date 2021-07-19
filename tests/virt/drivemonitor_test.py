@@ -36,7 +36,6 @@ from testlib import expandPermutations, permutations
 @contextmanager
 def make_env(events_enabled):
     vm = FakeVM()
-    vm._dom = FakeDomain()
 
     cfg = make_config([
         ('irs', 'enable_block_threshold_event',
@@ -50,6 +49,7 @@ def make_env(events_enabled):
 # so all the expected drives will be vd?
 _DISK_DATA = [
     # disk_confs, expceted_with_events, expected_without_events
+
     # Non-chunked drives
     ([{
       'diskType': storage.DISK_TYPE.FILE,
@@ -64,6 +64,7 @@ _DISK_DATA = [
       'index': 1,
       }],
      [], []),
+
     # Chunked drives
     ([{
       'diskType': storage.DISK_TYPE.BLOCK,
@@ -84,6 +85,7 @@ _DISK_DATA = [
       'index': 2,
       }],
      ['vda', 'vdc'], ['vda', 'vdb', 'vdc']),
+
     # Networked drives
     ([{
       'diskType': storage.DISK_TYPE.NETWORK,
@@ -104,6 +106,7 @@ _DISK_DATA = [
       'index': 2,
       }],
      [], []),
+
     # Replicating file to block
     ([{
       'diskType': storage.DISK_TYPE.FILE,
@@ -141,6 +144,7 @@ _DISK_DATA = [
       'index': 2,
       }],
      ['vda', 'vdc'], ['vda', 'vdb', 'vdc']),
+
     # Replicating block to block
     ([{
       'diskType': storage.DISK_TYPE.BLOCK,
@@ -176,6 +180,7 @@ _DISK_DATA = [
       'index': 2,
       }],
      ['vda', 'vdc'], ['vda', 'vdb', 'vdc']),
+
     # Replicating network to block
     ([{
       'diskType': storage.DISK_TYPE.NETWORK,
@@ -211,6 +216,7 @@ _DISK_DATA = [
       'index': 2,
       }],
      ['vda', 'vdc'], ['vda', 'vdb', 'vdc']),
+
     # Replicating file to file
     ([{
       'diskType': storage.DISK_TYPE.FILE,
@@ -223,6 +229,7 @@ _DISK_DATA = [
       'index': 0,
       }],
      [], []),
+
     # Replicating block to file
     ([{
       'diskType': storage.DISK_TYPE.BLOCK,
@@ -255,6 +262,7 @@ _DISK_DATA = [
       'index': 2,
       }],
      ['vda', 'vdc'], ['vda', 'vdb', 'vdc']),
+
     # Replicating network to file
     ([{
       'diskType': storage.DISK_TYPE.NETWORK,
@@ -270,6 +278,8 @@ _DISK_DATA = [
 ]
 
 _MONITORABLE_DISK_DATA = [
+
+    # Both drives enabled.
     ([{
       'diskType': storage.DISK_TYPE.BLOCK,
       'format': 'cow',
@@ -285,6 +295,8 @@ _MONITORABLE_DISK_DATA = [
       'monitorable': True,
       }],
      ['vda', 'vdb']),
+
+    # First drive disabled.
     ([{
       'diskType': storage.DISK_TYPE.BLOCK,
       'format': 'cow',
@@ -300,6 +312,8 @@ _MONITORABLE_DISK_DATA = [
       'monitorable': True,
       }],
      ['vdb']),
+
+    # Second drive disabled.
     ([{
       'diskType': storage.DISK_TYPE.BLOCK,
       'format': 'cow',
@@ -315,6 +329,8 @@ _MONITORABLE_DISK_DATA = [
       'monitorable': False,
       }],
      ['vda']),
+
+    # Both drives disabled.
     ([{
       'diskType': storage.DISK_TYPE.BLOCK,
       'format': 'cow',
@@ -335,6 +351,7 @@ _MONITORABLE_DISK_DATA = [
 
 @expandPermutations
 class TestDrivemonitor(VdsmTestCase):
+
     @permutations([
         # enabled
         (True,),
@@ -484,6 +501,7 @@ class FakeVM(object):
     def __init__(self):
         self.id = "fake-vm-id"
         self.drives = []
+        self._dom = FakeDomain()
 
     def getDiskDevices(self):
         return self.drives[:]
