@@ -154,6 +154,6 @@ def _systemctl(*args):
     return commands.run(cmd)
 
 
-# TODO: use standad logging
+# TODO: use standard logging
 def _log(fmt, *args):
     sys.stdout.write(fmt % args + "\n")
