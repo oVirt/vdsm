@@ -449,18 +449,13 @@ class Drive(core.Base):
         with self._lock:
             self._threshold_state = state
 
-    def needs_monitoring(self, events_enabled):
+    def needs_monitoring(self):
         """
         Return True if the drive needs to be picked by
         a Drivemonitor periodic check, False otherwise.
 
-        If events_enabled is False, the drive needs monitoring
-        if it is writable and chunked drives; Drives being replicated
-        to a chunked drive needs monitoring too.
-
-        If events_enabled is True, the drive needs monitoring in
-        a subset of the above cases.
-        We can can have two states:
+        Drive needs monitoring in a subset of the above cases. We can
+        can have two states:
 
         - threshold_state == UNSET
           Possible use cases are the first time we monitor a drive, or
@@ -496,12 +491,9 @@ class Drive(core.Base):
             if not (self.chunked or self.replicaChunked):
                 return False
 
-            if events_enabled:
-                return self._threshold_state in (
-                    BLOCK_THRESHOLD.UNSET,
-                    BLOCK_THRESHOLD.EXCEEDED)
-
-            return True
+            return self._threshold_state in (
+                BLOCK_THRESHOLD.UNSET,
+                BLOCK_THRESHOLD.EXCEEDED)
 
     @property
     def diskType(self):

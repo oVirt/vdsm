@@ -22,7 +22,6 @@ import re
 
 import libvirt
 
-from vdsm.config import config
 from vdsm.virt.vmdevices import lookup
 from vdsm.virt.vmdevices import storage
 
@@ -41,11 +40,6 @@ class DriveMonitor(object):
         self._vm = vm
         self._log = log
         self._enabled = enabled
-        self._events_enabled = config.getboolean(
-            'irs', 'enable_block_threshold_event')
-
-    def events_enabled(self):
-        return self._events_enabled
 
     def enabled(self):
         return self._enabled
@@ -77,8 +71,7 @@ class DriveMonitor(object):
     def set_threshold(self, drive, apparentsize, index=None):
         """
         Set the libvirt block threshold on the given drive image, enabling
-        libvirt to deliver the event when the threshold is crossed.  Does
-        nothing if events are disabled.
+        libvirt to deliver the event when the threshold is crossed.
 
         Call this method when you need to set one initial block threshold
         (e.g. first time Vdsm monitors one drive), or after one volume
@@ -94,9 +87,6 @@ class DriveMonitor(object):
             apparentsize (int): The drive apparent size in bytes
             index (int): Libvirt index of the layer in the chain
         """
-        if not self._events_enabled:
-            return
-
         # watermarkLimit tells us the minimum amount of free space a thin
         # provisioned must have to avoid the extension.
         # If the free space falls below this limit, we should extend.
@@ -146,9 +136,6 @@ class DriveMonitor(object):
             index: Optional index (int) of the element of the backing chain
                    to clear. If None (default), use the top layer.
         """
-        if not self._events_enabled:
-            return
-
         target = format_target(drive.name, index)
         self._log.info('Clearing block threshold for drive %r', target)
 
@@ -206,7 +193,7 @@ class DriveMonitor(object):
             for extension.
         """
         return [drive for drive in self._vm.getDiskDevices()
-                if drive.needs_monitoring(self._events_enabled)]
+                if drive.needs_monitoring()]
 
     def should_extend_volume(self, drive, volumeID, capacity, alloc, physical):
         nextPhysSize = drive.getNextVolumeSize(physical, capacity)
@@ -245,9 +232,6 @@ class DriveMonitor(object):
         return False
 
     def update_threshold_state_exceeded(self, drive):
-        if not self._events_enabled:
-            return
-
         if drive.threshold_state != storage.BLOCK_THRESHOLD.EXCEEDED:
             # if the threshold is wrongly set below the current allocation,
             # for example because of delays in handling the event,

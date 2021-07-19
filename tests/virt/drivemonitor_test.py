@@ -26,29 +26,21 @@ from vdsm.common.units import MiB, GiB
 from vdsm.virt.vmdevices import storage
 from vdsm.virt import drivemonitor
 
-from monkeypatch import MonkeyPatchScope
-
-from testlib import make_config
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 
 
 @contextmanager
-def make_env(events_enabled):
+def make_env():
     vm = FakeVM()
-
-    cfg = make_config([
-        ('irs', 'enable_block_threshold_event',
-            'true' if events_enabled else 'false')])
-    with MonkeyPatchScope([(drivemonitor, 'config', cfg)]):
-        mon = drivemonitor.DriveMonitor(vm, vm.log)
-        yield mon, vm
+    mon = drivemonitor.DriveMonitor(vm, vm.log)
+    yield mon, vm
 
 
 # always use the VirtIO interface (iface='virtio'),
 # so all the expected drives will be vd?
 _DISK_DATA = [
-    # disk_confs, expceted_with_events, expected_without_events
+    # disk_confs, expceted
 
     # Non-chunked drives
     ([{
@@ -63,7 +55,7 @@ _DISK_DATA = [
       'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
       'index': 1,
       }],
-     [], []),
+     []),
 
     # Chunked drives
     ([{
@@ -84,7 +76,7 @@ _DISK_DATA = [
       'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
       'index': 2,
       }],
-     ['vda', 'vdc'], ['vda', 'vdb', 'vdc']),
+     ['vda', 'vdc']),
 
     # Networked drives
     ([{
@@ -105,7 +97,7 @@ _DISK_DATA = [
       'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
       'index': 2,
       }],
-     [], []),
+     []),
 
     # Replicating file to block
     ([{
@@ -143,7 +135,7 @@ _DISK_DATA = [
       'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
       'index': 2,
       }],
-     ['vda', 'vdc'], ['vda', 'vdb', 'vdc']),
+     ['vda', 'vdc']),
 
     # Replicating block to block
     ([{
@@ -179,7 +171,7 @@ _DISK_DATA = [
       'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
       'index': 2,
       }],
-     ['vda', 'vdc'], ['vda', 'vdb', 'vdc']),
+     ['vda', 'vdc']),
 
     # Replicating network to block
     ([{
@@ -215,7 +207,7 @@ _DISK_DATA = [
       'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
       'index': 2,
       }],
-     ['vda', 'vdc'], ['vda', 'vdb', 'vdc']),
+     ['vda', 'vdc']),
 
     # Replicating file to file
     ([{
@@ -228,7 +220,7 @@ _DISK_DATA = [
       'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
       'index': 0,
       }],
-     [], []),
+     []),
 
     # Replicating block to file
     ([{
@@ -261,7 +253,7 @@ _DISK_DATA = [
       'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
       'index': 2,
       }],
-     ['vda', 'vdc'], ['vda', 'vdb', 'vdc']),
+     ['vda', 'vdc']),
 
     # Replicating network to file
     ([{
@@ -274,7 +266,7 @@ _DISK_DATA = [
       'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
       'index': 0,
       }],
-     [], []),
+     []),
 ]
 
 _MONITORABLE_DISK_DATA = [
@@ -375,7 +367,7 @@ class TestDrivemonitor(VdsmTestCase):
         assert mon.enabled() is False
 
     def test_set_threshold_drive_name(self):
-        with make_env(events_enabled=True) as (mon, vm):
+        with make_env() as (mon, vm):
             vda = make_drive(self.log, index=0, iface='virtio')
             vm.drives.append(vda)
 
@@ -387,7 +379,7 @@ class TestDrivemonitor(VdsmTestCase):
             assert vm._dom.thresholds == [('vda', expected)]
 
     def test_set_threshold_indexed_name(self):
-        with make_env(events_enabled=True) as (mon, vm):
+        with make_env() as (mon, vm):
             vda = make_drive(self.log, index=0, iface='virtio')
             vm.drives.append(vda)
 
@@ -403,7 +395,7 @@ class TestDrivemonitor(VdsmTestCase):
         # less than the minimum supported size, 1GiB.
         # While this is a storage issue, the drive monitor should
         # be fixed no never set negative thresholds.
-        with make_env(events_enabled=True) as (mon, vm):
+        with make_env() as (mon, vm):
             vda = make_drive(self.log, index=0, iface='virtio')
             vm.drives.append(vda)
 
@@ -415,14 +407,14 @@ class TestDrivemonitor(VdsmTestCase):
             assert value >= 1
 
     def test_clear_with_index_equal_none(self):
-        with make_env(events_enabled=True) as (mon, vm):
+        with make_env() as (mon, vm):
             vda = make_drive(self.log, index=0, iface='virtio')
 
             mon.clear_threshold(vda)
             assert vm._dom.thresholds == [('vda', 0)]
 
     def test_clear_with_index(self):
-        with make_env(events_enabled=True) as (mon, vm):
+        with make_env() as (mon, vm):
             # one drive (virtio, 0)
             vda = make_drive(self.log, index=0, iface='virtio')
 
@@ -430,15 +422,8 @@ class TestDrivemonitor(VdsmTestCase):
             mon.clear_threshold(vda, index=1)
             assert vm._dom.thresholds == [('vda[1]', 0)]
 
-    def test_clear_with_events_disabled(self):
-        with make_env(events_enabled=False) as (mon, vm):
-            vda = make_drive(self.log, index=0, iface='virtio')
-
-            mon.clear_threshold(vda)
-            assert vm._dom.thresholds == []
-
     def test_on_block_threshold_drive_name_ignored(self):
-        with make_env(events_enabled=True) as (mon, vm):
+        with make_env() as (mon, vm):
             vda = make_drive(self.log, index=0, iface='virtio')
             vm.drives.append(vda)
 
@@ -446,7 +431,7 @@ class TestDrivemonitor(VdsmTestCase):
             assert vda.threshold_state == storage.BLOCK_THRESHOLD.UNSET
 
     def test_on_block_threshold_indexed_name_handled(self):
-        with make_env(events_enabled=True) as (mon, vm):
+        with make_env() as (mon, vm):
             vda = make_drive(self.log, index=0, iface='virtio')
             vm.drives.append(vda)
 
@@ -454,7 +439,7 @@ class TestDrivemonitor(VdsmTestCase):
             assert vda.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED
 
     def test_on_block_threshold_unknown_drive(self):
-        with make_env(events_enabled=True) as (mon, vm):
+        with make_env() as (mon, vm):
             vda = make_drive(self.log, index=0, iface='virtio')
             vm.drives.append(vda)
 
@@ -462,25 +447,14 @@ class TestDrivemonitor(VdsmTestCase):
             assert vda.threshold_state == storage.BLOCK_THRESHOLD.UNSET
 
     @permutations(_DISK_DATA)
-    def test_monitored_drives_with_events(self, disk_confs, expected, _):
-        with make_env(events_enabled=True) as (mon, vm):
-            self._check_monitored_drives(mon, vm, disk_confs, expected)
-
-    @permutations(_DISK_DATA)
-    def test_monitored_drives_without_events(self, disk_confs, _, expected):
-        with make_env(events_enabled=False) as (mon, vm):
+    def test_monitored_drives(self, disk_confs, expected):
+        with make_env() as (mon, vm):
             self._check_monitored_drives(mon, vm, disk_confs, expected)
 
     @permutations(_MONITORABLE_DISK_DATA)
-    def test_monitored_drives_flag_disabled_with_events(
+    def test_monitored_drives_flag_disabled(
             self, disk_confs, expected):
-        with make_env(events_enabled=True) as (mon, vm):
-            self._check_monitored_drives(mon, vm, disk_confs, expected)
-
-    @permutations(_MONITORABLE_DISK_DATA)
-    def test_monitored_drives_flag_disabled_without_events(
-            self, disk_confs, expected):
-        with make_env(events_enabled=True) as (mon, vm):
+        with make_env() as (mon, vm):
             self._check_monitored_drives(mon, vm, disk_confs, expected)
 
     def _check_monitored_drives(self, mon, vm, disk_confs, expected):
