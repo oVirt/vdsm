@@ -19,9 +19,11 @@
 
 from __future__ import absolute_import
 from __future__ import division
+
+import sys
+
 from . import YES, NO, MAYBE
 from vdsm import utils
-
 
 SEBOOL_ENABLED = "on"
 SEBOOL_DISABLED = "off"
@@ -65,6 +67,7 @@ def isconfigured():
     ret = YES
     if utils.get_selinux_enforce_mode() == -1:
         ret = MAYBE
+        _log("WARNING: SELinux is disabled!")
     else:
         import seobject
         sebool_obj = seobject.booleanRecords()
@@ -83,6 +86,11 @@ def configure():
     """
     if utils.get_selinux_enforce_mode() > -1:
         _setup_booleans(True)
+    else:
+        _log(
+            "WARNING: SELinux is disabled! "
+            "Skipping SELinux boolean configuration."
+        )
 
 
 def removeConf():
@@ -91,3 +99,13 @@ def removeConf():
     """
     if utils.get_selinux_enforce_mode() > -1:
         _setup_booleans(False)
+    else:
+        _log(
+            "WARNING: SELinux is disabled! "
+            "Skipping removal of SELinux booleans."
+        )
+
+
+# TODO: use standard logging
+def _log(fmt, *args):
+    sys.stdout.write(fmt % args + "\n")
