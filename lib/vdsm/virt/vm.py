@@ -1782,6 +1782,10 @@ class Vm(object):
                 self.guestAgent.stop()
             except Exception:
                 pass
+            finally:
+                if self._dom.connected:
+                    self.log.info("Switching domain to Defined")
+                    self._dom = virdomain.Defined(self.id, self._dom.dom)
         if event_data:
             self.send_status_event(**event_data)
 
@@ -5384,7 +5388,6 @@ class Vm(object):
         try:
             self._dom.destroyFlags(libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
         except libvirt.libvirtError as e:
-            # after successful migrations
             if (self.lastStatus == vmstatus.DOWN and
                     e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN):
                 self.log.info("VM '%s' already down and destroyed", self.id)
@@ -5400,6 +5403,8 @@ class Vm(object):
                                           libvirt.VIR_ERR_SYSTEM_ERROR,):
                     safe_to_force = True
                 return response.error('destroyErr'), safe_to_force
+        except virdomain.NotConnectedError:
+            self.log.info("VM already down")
         return response.success(), safe_to_force
 
     def _destroyVmForceful(self):
@@ -5410,6 +5415,8 @@ class Vm(object):
                 "Failed to destroy VM '%s' forcefully (error=%i)",
                 self.id, e.get_error_code())
             return response.error('destroyErr')
+        except virdomain.NotConnectedError:
+            self.log.info("VM already down")
         return response.success()
 
     def _deleteVm(self):
