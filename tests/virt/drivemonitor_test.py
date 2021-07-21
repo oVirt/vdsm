@@ -28,7 +28,7 @@ from vdsm.virt import drivemonitor
 import pytest
 
 
-_DISK_DATA = [
+_MONITORED_DRIVES = [
 
     pytest.param(
         [
@@ -275,9 +275,6 @@ _DISK_DATA = [
         [],
         id="replicte_network_to_file",
     ),
-]
-
-_MONITORABLE_DISK_DATA = [
 
     pytest.param(
         [
@@ -474,25 +471,17 @@ class TestDrivemonitor:
         mon.on_block_threshold("vdb", "/unkown/path", 512 * MiB, 10 * MiB)
         assert vda.threshold_state == storage.BLOCK_THRESHOLD.UNSET
 
-    @pytest.mark.parametrize("disks,monitored", _DISK_DATA)
-    def test_monitored_drives(self, disks, monitored):
+    @pytest.mark.parametrize("drives,monitored", _MONITORED_DRIVES)
+    def test_monitored_drives(self, drives, monitored):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log)
-        self._check_monitored_drives(mon, vm, disks, monitored)
-
-    @pytest.mark.parametrize("disks,monitored", _MONITORABLE_DISK_DATA)
-    def test_monitored_drives_flag_disabled(self, disks, monitored):
-        vm = FakeVM()
-        mon = drivemonitor.DriveMonitor(vm, vm.log)
-        self._check_monitored_drives(mon, vm, disks, monitored)
-
-    def _check_monitored_drives(self, mon, vm, disks, monitored):
-        for conf in disks:
+        for conf in drives:
             drive = make_drive(vm.log, **conf)
             drive.threshold_state = conf.get('threshold_state',
                                              storage.BLOCK_THRESHOLD.UNSET)
             drive.monitorable = conf.get('monitorable', True)
             vm.drives.append(drive)
+
         found = [drv.name for drv in mon.monitored_drives()]
         assert found == monitored
 
