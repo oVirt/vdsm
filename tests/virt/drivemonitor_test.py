@@ -25,322 +25,350 @@ from vdsm.common.units import MiB, GiB
 from vdsm.virt.vmdevices import storage
 from vdsm.virt import drivemonitor
 
-from testlib import VdsmTestCase
-from testlib import expandPermutations, permutations
+import pytest
 
 
-# always use the VirtIO interface (iface='virtio'),
-# so all the expected drives will be vd?
 _DISK_DATA = [
-    # disk_confs, expceted
 
-    # Non-chunked drives
-    ([{
-      'diskType': storage.DISK_TYPE.FILE,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      },
-      {
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'raw',
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 1,
-      }],
-     []),
+    pytest.param(
+        [
+            {
+                'diskType': storage.DISK_TYPE.FILE,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+            },
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'raw',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 1,
+            }
+        ],
+        [],
+        id="non_chunk_drives",
+    ),
 
-    # Chunked drives
-    ([{
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      },
-      {
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.SET,
-      'index': 1,
-      },
-      {
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
-      'index': 2,
-      }],
-     ['vda', 'vdc']),
+    pytest.param(
+        [
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+            },
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.SET,
+                'index': 1,
+            },
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
+                'index': 2,
+            }
+        ],
+        ['vda', 'vdc'],
+        id="chunked_drives",
+    ),
 
-    # Networked drives
-    ([{
-      'diskType': storage.DISK_TYPE.NETWORK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      },
-      {
-      'diskType': storage.DISK_TYPE.NETWORK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.SET,
-      'index': 1,
-      },
-      {
-      'diskType': storage.DISK_TYPE.NETWORK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
-      'index': 2,
-      }],
-     []),
+    pytest.param(
+        [
+            {
+                'diskType': storage.DISK_TYPE.NETWORK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+            },
+            {
+                'diskType': storage.DISK_TYPE.NETWORK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.SET,
+                'index': 1,
+            },
+            {
+                'diskType': storage.DISK_TYPE.NETWORK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
+                'index': 2,
+            }
+        ],
+        [],
+        id="network_drives",
+    ),
 
-    # Replicating file to block
-    ([{
-      'diskType': storage.DISK_TYPE.FILE,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'format': 'cow',
-          'diskType': storage.DISK_TYPE.BLOCK
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      },
-      {
-      'diskType':
-      storage.DISK_TYPE.FILE,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'format': 'cow',
-          'diskType': storage.DISK_TYPE.BLOCK
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.SET,
-      'index': 1,
-      },
-      {
-      'diskType':
-      storage.DISK_TYPE.FILE,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'format': 'cow',
-          'diskType': storage.DISK_TYPE.BLOCK
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
-      'index': 2,
-      }],
-     ['vda', 'vdc']),
+    pytest.param(
+        [
+            {
+                'diskType': storage.DISK_TYPE.FILE,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+                'diskReplicate': {
+                    'format': 'cow',
+                    'diskType': storage.DISK_TYPE.BLOCK
+                },
+            },
+            {
+                'diskType': storage.DISK_TYPE.FILE,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.SET,
+                'index': 1,
+                'diskReplicate': {
+                    'format': 'cow',
+                    'diskType': storage.DISK_TYPE.BLOCK
+                },
+            },
+            {
+                'diskType': storage.DISK_TYPE.FILE,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
+                'index': 2,
+                'diskReplicate': {
+                    'format': 'cow',
+                    'diskType': storage.DISK_TYPE.BLOCK
+                },
+            }
+        ],
+        ['vda', 'vdc'],
+        id="replicate_file_to_block",
+    ),
 
-    # Replicating block to block
-    ([{
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'format': 'cow',
-          'diskType': storage.DISK_TYPE.BLOCK
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      },
-      {
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'format': 'cow',
-          'diskType': storage.DISK_TYPE.BLOCK
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.SET,
-      'index': 1,
-      },
-      {
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'format': 'cow',
-          'diskType': storage.DISK_TYPE.BLOCK
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
-      'index': 2,
-      }],
-     ['vda', 'vdc']),
+    pytest.param(
+        [
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+                'diskReplicate': {
+                    'format': 'cow',
+                    'diskType': storage.DISK_TYPE.BLOCK
+                },
+            },
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.SET,
+                'index': 1,
+                'diskReplicate': {
+                    'format': 'cow',
+                    'diskType': storage.DISK_TYPE.BLOCK
+                },
+            },
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
+                'index': 2,
+                'diskReplicate': {
+                    'format': 'cow',
+                    'diskType': storage.DISK_TYPE.BLOCK
+                },
+            }
+        ],
+        ['vda', 'vdc'],
+        id="replicate_block_to_block",
+    ),
 
-    # Replicating network to block
-    ([{
-      'diskType': storage.DISK_TYPE.NETWORK,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'format': 'cow',
-          'diskType': storage.DISK_TYPE.BLOCK
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      },
-      {
-      'diskType': storage.DISK_TYPE.NETWORK,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'format': 'cow',
-          'diskType': storage.DISK_TYPE.BLOCK
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.SET,
-      'index': 1,
-      },
-      {
-      'diskType': storage.DISK_TYPE.NETWORK,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'format': 'cow',
-          'diskType': storage.DISK_TYPE.BLOCK
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
-      'index': 2,
-      }],
-     ['vda', 'vdc']),
+    pytest.param(
+        [
+            {
+                'diskType': storage.DISK_TYPE.NETWORK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+                'diskReplicate': {
+                    'format': 'cow',
+                    'diskType': storage.DISK_TYPE.BLOCK
+                },
+            },
+            {
+                'diskType': storage.DISK_TYPE.NETWORK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.SET,
+                'index': 1,
+                'diskReplicate': {
+                    'format': 'cow',
+                    'diskType': storage.DISK_TYPE.BLOCK
+                },
+            },
+            {
+                'diskType': storage.DISK_TYPE.NETWORK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
+                'index': 2,
+                'diskReplicate': {
+                    'format': 'cow',
+                    'diskType': storage.DISK_TYPE.BLOCK
+                },
+            }
+        ],
+        ['vda', 'vdc'],
+        id="replicate_network_to_block",
+    ),
 
-    # Replicating file to file
-    ([{
-      'diskType': storage.DISK_TYPE.FILE,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'diskType': storage.DISK_TYPE.FILE
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      }],
-     []),
+    pytest.param(
+        [
+            {
+                'diskType': storage.DISK_TYPE.FILE,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+                'diskReplicate': {
+                    'diskType': storage.DISK_TYPE.FILE
+                },
+            }
+        ],
+        [],
+        id="replicate_file_to_file",
+    ),
 
-    # Replicating block to file
-    ([{
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'diskType': storage.DISK_TYPE.FILE
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      },
-      {
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'diskType': storage.DISK_TYPE.FILE
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.SET,
-      'index': 1,
-      },
-      {
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'diskType': storage.DISK_TYPE.FILE
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
-      'index': 2,
-      }],
-     ['vda', 'vdc']),
+    pytest.param(
+        [
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+                'diskReplicate': {
+                    'diskType': storage.DISK_TYPE.FILE
+                },
+            },
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.SET,
+                'index': 1,
+                'diskReplicate': {
+                    'diskType': storage.DISK_TYPE.FILE
+                },
+            },
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
+                'index': 2,
+                'diskReplicate': {
+                    'diskType': storage.DISK_TYPE.FILE
+                },
+            }
+        ],
+        ['vda', 'vdc'],
+        id="replicate_block_to_file",
+    ),
 
-    # Replicating network to file
-    ([{
-      'diskType': storage.DISK_TYPE.NETWORK,
-      'format': 'cow',
-      'diskReplicate':
-      {
-          'diskType': storage.DISK_TYPE.FILE
-      },
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      }],
-     []),
+    pytest.param(
+        [
+            {
+                'diskType': storage.DISK_TYPE.NETWORK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+                'diskReplicate': {
+                    'diskType': storage.DISK_TYPE.FILE
+                },
+            }
+        ],
+        [],
+        id="replicte_network_to_file",
+    ),
 ]
 
 _MONITORABLE_DISK_DATA = [
 
-    # Both drives enabled.
-    ([{
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      'monitorable': True,
-      },
-      {
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 1,
-      'monitorable': True,
-      }],
-     ['vda', 'vdb']),
+    pytest.param(
+        [
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+                'monitorable': True,
+            },
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 1,
+                'monitorable': True,
+            }
+        ],
+        ['vda', 'vdb'],
+        id="both_drives_enabled",
+    ),
 
-    # First drive disabled.
-    ([{
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      'monitorable': False,
-      },
-      {
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 1,
-      'monitorable': True,
-      }],
-     ['vdb']),
+    pytest.param(
+        [
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+                'monitorable': False,
+            },
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 1,
+                'monitorable': True,
+            }
+        ],
+        ['vdb'],
+        id="first_drive_disabled",
+    ),
 
-    # Second drive disabled.
-    ([{
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      'monitorable': True,
-      },
-      {
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 1,
-      'monitorable': False,
-      }],
-     ['vda']),
+    pytest.param(
+        [
+            {
 
-    # Both drives disabled.
-    ([{
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 0,
-      'monitorable': False,
-      },
-      {
-      'diskType': storage.DISK_TYPE.BLOCK,
-      'format': 'cow',
-      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
-      'index': 1,
-      'monitorable': False,
-      }],
-     []),
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+                'monitorable': True,
+            },
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 1,
+                'monitorable': False,
+            }
+        ],
+        ['vda'],
+        id="second_drive_disabled",
+    ),
+
+    pytest.param(
+        [
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 0,
+                'monitorable': False,
+            },
+            {
+                'diskType': storage.DISK_TYPE.BLOCK,
+                'format': 'cow',
+                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'index': 1,
+                'monitorable': False,
+            }
+        ],
+        [],
+        id="both_drives_disabled",
+    ),
 ]
 
 
-@expandPermutations
-class TestDrivemonitor(VdsmTestCase):
+class TestDrivemonitor:
 
-    @permutations([
-        # enabled
-        (True,),
-        (False,),
-    ])
+    @pytest.mark.parametrize("enabled", [True, False])
     def test_enable_on_create(self, enabled):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=enabled)
@@ -361,7 +389,7 @@ class TestDrivemonitor(VdsmTestCase):
     def test_set_threshold_drive_name(self):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log)
-        vda = make_drive(self.log, index=0, iface='virtio')
+        vda = make_drive(vm.log, index=0, iface='virtio')
         vm.drives.append(vda)
 
         apparentsize = 4 * GiB
@@ -374,7 +402,7 @@ class TestDrivemonitor(VdsmTestCase):
     def test_set_threshold_indexed_name(self):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log)
-        vda = make_drive(self.log, index=0, iface='virtio')
+        vda = make_drive(vm.log, index=0, iface='virtio')
         vm.drives.append(vda)
 
         apparentsize = 4 * GiB
@@ -391,7 +419,7 @@ class TestDrivemonitor(VdsmTestCase):
         # be fixed no never set negative thresholds.
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log)
-        vda = make_drive(self.log, index=0, iface='virtio')
+        vda = make_drive(vm.log, index=0, iface='virtio')
         vm.drives.append(vda)
 
         apparentsize = 128 * MiB
@@ -404,7 +432,7 @@ class TestDrivemonitor(VdsmTestCase):
     def test_clear_with_index_equal_none(self):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log)
-        vda = make_drive(self.log, index=0, iface='virtio')
+        vda = make_drive(vm.log, index=0, iface='virtio')
 
         mon.clear_threshold(vda)
         assert vm._dom.thresholds == [('vda', 0)]
@@ -413,7 +441,7 @@ class TestDrivemonitor(VdsmTestCase):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log)
         # one drive (virtio, 0)
-        vda = make_drive(self.log, index=0, iface='virtio')
+        vda = make_drive(vm.log, index=0, iface='virtio')
 
         # clear the 1st element in the backing chain of the drive
         mon.clear_threshold(vda, index=1)
@@ -422,7 +450,7 @@ class TestDrivemonitor(VdsmTestCase):
     def test_on_block_threshold_drive_name_ignored(self):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log)
-        vda = make_drive(self.log, index=0, iface='virtio')
+        vda = make_drive(vm.log, index=0, iface='virtio')
         vm.drives.append(vda)
 
         mon.on_block_threshold("vda", vda.path, 512 * MiB, 10 * MiB)
@@ -431,7 +459,7 @@ class TestDrivemonitor(VdsmTestCase):
     def test_on_block_threshold_indexed_name_handled(self):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log)
-        vda = make_drive(self.log, index=0, iface='virtio')
+        vda = make_drive(vm.log, index=0, iface='virtio')
         vm.drives.append(vda)
 
         mon.on_block_threshold("vda[1]", vda.path, 512 * MiB, 10 * MiB)
@@ -440,33 +468,33 @@ class TestDrivemonitor(VdsmTestCase):
     def test_on_block_threshold_unknown_drive(self):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log)
-        vda = make_drive(self.log, index=0, iface='virtio')
+        vda = make_drive(vm.log, index=0, iface='virtio')
         vm.drives.append(vda)
 
         mon.on_block_threshold("vdb", "/unkown/path", 512 * MiB, 10 * MiB)
         assert vda.threshold_state == storage.BLOCK_THRESHOLD.UNSET
 
-    @permutations(_DISK_DATA)
-    def test_monitored_drives(self, disk_confs, expected):
+    @pytest.mark.parametrize("disks,monitored", _DISK_DATA)
+    def test_monitored_drives(self, disks, monitored):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log)
-        self._check_monitored_drives(mon, vm, disk_confs, expected)
+        self._check_monitored_drives(mon, vm, disks, monitored)
 
-    @permutations(_MONITORABLE_DISK_DATA)
-    def test_monitored_drives_flag_disabled(self, disk_confs, expected):
+    @pytest.mark.parametrize("disks,monitored", _MONITORABLE_DISK_DATA)
+    def test_monitored_drives_flag_disabled(self, disks, monitored):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log)
-        self._check_monitored_drives(mon, vm, disk_confs, expected)
+        self._check_monitored_drives(mon, vm, disks, monitored)
 
-    def _check_monitored_drives(self, mon, vm, disk_confs, expected):
-        for conf in disk_confs:
-            drive = make_drive(self.log, **conf)
+    def _check_monitored_drives(self, mon, vm, disks, monitored):
+        for conf in disks:
+            drive = make_drive(vm.log, **conf)
             drive.threshold_state = conf.get('threshold_state',
                                              storage.BLOCK_THRESHOLD.UNSET)
             drive.monitorable = conf.get('monitorable', True)
             vm.drives.append(drive)
         found = [drv.name for drv in mon.monitored_drives()]
-        assert found == expected
+        assert found == monitored
 
 
 class FakeVM(object):
