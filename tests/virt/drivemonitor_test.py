@@ -21,9 +21,10 @@
 
 import logging
 
-from vdsm.common.units import MiB, GiB
-from vdsm.virt.vmdevices import storage
 from vdsm.virt import drivemonitor
+
+from vdsm.common.units import MiB, GiB
+from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE, BLOCK_THRESHOLD
 
 import pytest
 
@@ -122,7 +123,7 @@ def test_on_block_threshold_drive_name_ignored():
     vm.drives.append(vda)
 
     mon.on_block_threshold("vda", vda.path, 512 * MiB, 10 * MiB)
-    assert vda.threshold_state == storage.BLOCK_THRESHOLD.UNSET
+    assert vda.threshold_state == BLOCK_THRESHOLD.UNSET
 
 
 def test_on_block_threshold_indexed_name_handled():
@@ -132,7 +133,7 @@ def test_on_block_threshold_indexed_name_handled():
     vm.drives.append(vda)
 
     mon.on_block_threshold("vda[1]", vda.path, 512 * MiB, 10 * MiB)
-    assert vda.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED
+    assert vda.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
 
 def test_on_block_threshold_unknown_drive():
@@ -142,7 +143,7 @@ def test_on_block_threshold_unknown_drive():
     vm.drives.append(vda)
 
     mon.on_block_threshold("vdb", "/unkown/path", 512 * MiB, 10 * MiB)
-    assert vda.threshold_state == storage.BLOCK_THRESHOLD.UNSET
+    assert vda.threshold_state == BLOCK_THRESHOLD.UNSET
 
 
 @pytest.mark.parametrize("drives,monitored", [
@@ -150,15 +151,15 @@ def test_on_block_threshold_unknown_drive():
     pytest.param(
         [
             {
-                'diskType': storage.DISK_TYPE.FILE,
+                'diskType': DISK_TYPE.FILE,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
             },
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'raw',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 1,
             }
         ],
@@ -169,21 +170,21 @@ def test_on_block_threshold_unknown_drive():
     pytest.param(
         [
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
             },
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.SET,
+                'threshold_state': BLOCK_THRESHOLD.SET,
                 'index': 1,
             },
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
+                'threshold_state': BLOCK_THRESHOLD.EXCEEDED,
                 'index': 2,
             }
         ],
@@ -194,21 +195,21 @@ def test_on_block_threshold_unknown_drive():
     pytest.param(
         [
             {
-                'diskType': storage.DISK_TYPE.NETWORK,
+                'diskType': DISK_TYPE.NETWORK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
             },
             {
-                'diskType': storage.DISK_TYPE.NETWORK,
+                'diskType': DISK_TYPE.NETWORK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.SET,
+                'threshold_state': BLOCK_THRESHOLD.SET,
                 'index': 1,
             },
             {
-                'diskType': storage.DISK_TYPE.NETWORK,
+                'diskType': DISK_TYPE.NETWORK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
+                'threshold_state': BLOCK_THRESHOLD.EXCEEDED,
                 'index': 2,
             }
         ],
@@ -219,33 +220,33 @@ def test_on_block_threshold_unknown_drive():
     pytest.param(
         [
             {
-                'diskType': storage.DISK_TYPE.FILE,
+                'diskType': DISK_TYPE.FILE,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
                 'diskReplicate': {
                     'format': 'cow',
-                    'diskType': storage.DISK_TYPE.BLOCK
+                    'diskType': DISK_TYPE.BLOCK
                 },
             },
             {
-                'diskType': storage.DISK_TYPE.FILE,
+                'diskType': DISK_TYPE.FILE,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.SET,
+                'threshold_state': BLOCK_THRESHOLD.SET,
                 'index': 1,
                 'diskReplicate': {
                     'format': 'cow',
-                    'diskType': storage.DISK_TYPE.BLOCK
+                    'diskType': DISK_TYPE.BLOCK
                 },
             },
             {
-                'diskType': storage.DISK_TYPE.FILE,
+                'diskType': DISK_TYPE.FILE,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
+                'threshold_state': BLOCK_THRESHOLD.EXCEEDED,
                 'index': 2,
                 'diskReplicate': {
                     'format': 'cow',
-                    'diskType': storage.DISK_TYPE.BLOCK
+                    'diskType': DISK_TYPE.BLOCK
                 },
             }
         ],
@@ -256,33 +257,33 @@ def test_on_block_threshold_unknown_drive():
     pytest.param(
         [
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
                 'diskReplicate': {
                     'format': 'cow',
-                    'diskType': storage.DISK_TYPE.BLOCK
+                    'diskType': DISK_TYPE.BLOCK
                 },
             },
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.SET,
+                'threshold_state': BLOCK_THRESHOLD.SET,
                 'index': 1,
                 'diskReplicate': {
                     'format': 'cow',
-                    'diskType': storage.DISK_TYPE.BLOCK
+                    'diskType': DISK_TYPE.BLOCK
                 },
             },
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
+                'threshold_state': BLOCK_THRESHOLD.EXCEEDED,
                 'index': 2,
                 'diskReplicate': {
                     'format': 'cow',
-                    'diskType': storage.DISK_TYPE.BLOCK
+                    'diskType': DISK_TYPE.BLOCK
                 },
             }
         ],
@@ -293,33 +294,33 @@ def test_on_block_threshold_unknown_drive():
     pytest.param(
         [
             {
-                'diskType': storage.DISK_TYPE.NETWORK,
+                'diskType': DISK_TYPE.NETWORK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
                 'diskReplicate': {
                     'format': 'cow',
-                    'diskType': storage.DISK_TYPE.BLOCK
+                    'diskType': DISK_TYPE.BLOCK
                 },
             },
             {
-                'diskType': storage.DISK_TYPE.NETWORK,
+                'diskType': DISK_TYPE.NETWORK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.SET,
+                'threshold_state': BLOCK_THRESHOLD.SET,
                 'index': 1,
                 'diskReplicate': {
                     'format': 'cow',
-                    'diskType': storage.DISK_TYPE.BLOCK
+                    'diskType': DISK_TYPE.BLOCK
                 },
             },
             {
-                'diskType': storage.DISK_TYPE.NETWORK,
+                'diskType': DISK_TYPE.NETWORK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
+                'threshold_state': BLOCK_THRESHOLD.EXCEEDED,
                 'index': 2,
                 'diskReplicate': {
                     'format': 'cow',
-                    'diskType': storage.DISK_TYPE.BLOCK
+                    'diskType': DISK_TYPE.BLOCK
                 },
             }
         ],
@@ -330,12 +331,12 @@ def test_on_block_threshold_unknown_drive():
     pytest.param(
         [
             {
-                'diskType': storage.DISK_TYPE.FILE,
+                'diskType': DISK_TYPE.FILE,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
                 'diskReplicate': {
-                    'diskType': storage.DISK_TYPE.FILE
+                    'diskType': DISK_TYPE.FILE
                 },
             }
         ],
@@ -346,30 +347,30 @@ def test_on_block_threshold_unknown_drive():
     pytest.param(
         [
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
                 'diskReplicate': {
-                    'diskType': storage.DISK_TYPE.FILE
+                    'diskType': DISK_TYPE.FILE
                 },
             },
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.SET,
+                'threshold_state': BLOCK_THRESHOLD.SET,
                 'index': 1,
                 'diskReplicate': {
-                    'diskType': storage.DISK_TYPE.FILE
+                    'diskType': DISK_TYPE.FILE
                 },
             },
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.EXCEEDED,
+                'threshold_state': BLOCK_THRESHOLD.EXCEEDED,
                 'index': 2,
                 'diskReplicate': {
-                    'diskType': storage.DISK_TYPE.FILE
+                    'diskType': DISK_TYPE.FILE
                 },
             }
         ],
@@ -380,12 +381,12 @@ def test_on_block_threshold_unknown_drive():
     pytest.param(
         [
             {
-                'diskType': storage.DISK_TYPE.NETWORK,
+                'diskType': DISK_TYPE.NETWORK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
                 'diskReplicate': {
-                    'diskType': storage.DISK_TYPE.FILE
+                    'diskType': DISK_TYPE.FILE
                 },
             }
         ],
@@ -396,16 +397,16 @@ def test_on_block_threshold_unknown_drive():
     pytest.param(
         [
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
                 'monitorable': True,
             },
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 1,
                 'monitorable': True,
             }
@@ -417,16 +418,16 @@ def test_on_block_threshold_unknown_drive():
     pytest.param(
         [
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
                 'monitorable': False,
             },
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 1,
                 'monitorable': True,
             }
@@ -439,16 +440,16 @@ def test_on_block_threshold_unknown_drive():
         [
             {
 
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
                 'monitorable': True,
             },
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 1,
                 'monitorable': False,
             }
@@ -460,16 +461,16 @@ def test_on_block_threshold_unknown_drive():
     pytest.param(
         [
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 0,
                 'monitorable': False,
             },
             {
-                'diskType': storage.DISK_TYPE.BLOCK,
+                'diskType': DISK_TYPE.BLOCK,
                 'format': 'cow',
-                'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+                'threshold_state': BLOCK_THRESHOLD.UNSET,
                 'index': 1,
                 'monitorable': False,
             }
@@ -484,7 +485,7 @@ def test_monitored_drives(drives, monitored):
     for conf in drives:
         drive = make_drive(vm.log, **conf)
         drive.threshold_state = conf.get('threshold_state',
-                                         storage.BLOCK_THRESHOLD.UNSET)
+                                         BLOCK_THRESHOLD.UNSET)
         drive.monitorable = conf.get('monitorable', True)
         vm.drives.append(drive)
 
@@ -522,7 +523,7 @@ def make_drive(log, index, **param_dict):
         volumeID='volume_%s' % index,
         **param_dict
     )
-    return storage.Drive(log, **conf)
+    return Drive(log, **conf)
 
 
 def drive_config(**kw):
