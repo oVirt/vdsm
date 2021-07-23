@@ -1420,12 +1420,9 @@ class CannotRemoveLogicalVolume(StorageException):
     msg = "Cannot remove Logical Volume"
 
 
-class CannotDeactivateLogicalVolume(StorageException):
+class CannotDeactivateLogicalVolume(LVMCommandError):
     code = 552
     msg = "Cannot deactivate Logical Volume"
-
-    def __init__(self, error):
-        self.value = "error={}".format(error)
 
 
 class CannotAccessLogicalVolume(StorageException):
@@ -1510,9 +1507,7 @@ class CannotWriteAccessLogialVolume(StorageException):
     msg = "Cannot access logical volume for write"
 
 
-class CannotSetRWLogicalVolume(StorageException):
-    def __init__(self, vgname, lvname, rw):
-        self.value = "vgname=%s lvname=%s rw=%s" % (vgname, lvname, rw)
+class CannotSetRWLogicalVolume(LVMCommandError):
     code = 568
     msg = "Cannot set Logical volume RW permission"
 
@@ -1524,7 +1519,7 @@ class LogicalVolumesScanError(StorageException):
     msg = "Logical volume scanning error"
 
 
-class CannotActivateLogicalVolumes(StorageException):
+class CannotActivateLogicalVolumes(LVMCommandError):
     code = 570
     msg = "Cannot activate Logical Volumes"
 
@@ -1534,7 +1529,7 @@ class GetLogicalVolumeDataError(StorageException):
     msg = "Cannot get Logical Volume Info"
 
 
-class LogicalVolumeReplaceTagError(StorageException):
+class LogicalVolumeReplaceTagError(LVMCommandError):
     code = 572
     msg = "Replace Logical Volume tag error"
 

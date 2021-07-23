@@ -206,8 +206,8 @@ class FakeLVM(object):
             try:
                 lv_mds.append(self.lvmd[(vg, lv)])
             except KeyError:
-                raise se.LogicalVolumeReplaceTagError("LV %s does not exist",
-                                                      "%s/%s" % (vg, lv))
+                raise se.LogicalVolumeReplaceTagError(
+                    "cmd", 1, ["out"], ["err"])
 
         for lv_md in lv_mds:
             # Adding an existing tag or removing a nonexistent tag are ignored

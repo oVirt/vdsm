@@ -1219,10 +1219,10 @@ def changelv(vg, lvs, attrs):
         for attr in attrs:
             cmd.extend(attr)
     cmd.extend(lvnames)
-    rc, out, err = _lvminfo.cmd(tuple(cmd), _lvminfo._getVGDevs((vg, )))
-    _lvminfo._invalidatelvs(vg, lvs)
-    if rc != 0:
-        raise se.LVMCommandError(cmd, rc, out, err)
+    try:
+        _lvminfo.run_command(tuple(cmd), devices=_lvminfo._getVGDevs((vg, )))
+    finally:
+        _lvminfo._invalidatelvs(vg, lvs)
 
 
 def _setLVAvailability(vg, lvs, available):
@@ -1232,7 +1232,8 @@ def _setLVAvailability(vg, lvs, available):
         changelv(vg, lvs, ("--available", available))
     except se.LVMCommandError as e:
         if available == "y":
-            raise se.CannotActivateLogicalVolumes(str(e))
+            raise se.CannotActivateLogicalVolumes(
+                e.cmd, e.rc, e.out, e.err) from None
         else:
             if e.lv_in_use():
                 users = _lvs_proc_info(vg, lvs)
@@ -1240,7 +1241,8 @@ def _setLVAvailability(vg, lvs, available):
                     "Cannot deactivate LV vg=%s lv=%s users=%s: %s",
                     vg, lvs, users, e)
             else:
-                raise se.CannotDeactivateLogicalVolume(str(e))
+                raise se.CannotDeactivateLogicalVolume(
+                    e.cmd, e.rc, e.out, e.err) from None
 
 
 def _lvs_proc_info(vg, lvs):
@@ -1841,10 +1843,9 @@ def changeLVsTags(vg, lvs, delTags=(), addTags=()):
 
     try:
         changelv(vg, lvs, attrs)
-    except se.StorageException as e:
+    except se.LVMCommandError as e:
         raise se.LogicalVolumeReplaceTagError(
-            'lvs: `%s` add: `%s` del: `%s` (%s)' %
-            (lvs, ", ".join(addTags), ", ".join(delTags), e))
+            e.cmd, e.rc, e.out, e.err) from None
 
 
 #
@@ -1932,7 +1933,7 @@ def setrwLV(vg_name, lv_name, rw=True):
     permission = {False: 'r', True: 'rw'}[rw]
     try:
         changelv(vg_name, lv_name, ("--permission", permission))
-    except se.StorageException:
+    except se.LVMCommandError as e:
         lv = getLV(vg_name, lv_name)
         if lv.writeable == rw:
             # Ignore the error since lv is now rw, hoping that the error was
@@ -1940,7 +1941,7 @@ def setrwLV(vg_name, lv_name, rw=True):
             # another lvchange error.
             return
 
-        raise se.CannotSetRWLogicalVolume(vg_name, lv_name, permission)
+        raise se.CannotSetRWLogicalVolume(e.cmd, e.rc, e.out, e.err) from None
 
 
 def lvsByTag(vgName, tag):
