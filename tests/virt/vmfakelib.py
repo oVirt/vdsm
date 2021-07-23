@@ -195,9 +195,9 @@ class JsonRpcServer(object):
 
 
 class ClientIF(object):
-    def __init__(self):
+    def __init__(self, irs=None):
         # the bare minimum initialization for our test needs.
-        self.irs = IRS()  # just to make sure nothing ever happens
+        self.irs = irs or IRS()
         self.log = logging.getLogger('fake.ClientIF')
         self.channelListener = None
         self.vm_container_lock = threading.Lock()

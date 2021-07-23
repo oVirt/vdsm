@@ -82,12 +82,12 @@ def make_env(drive_infos):
         drives = []
 
         for index, (drive_conf, block_info) in enumerate(drive_infos):
-            drive = make_drive(log, irs, index, drive_conf, block_info)
+            drive = make_drive(log, index, drive_conf, block_info)
+            irs.set_drive_size(drive, block_info['physical'])
             dom.add_drive(drive, block_info)
             drives.append(drive)
 
-        cif = FakeClientIF()
-        cif.irs = irs
+        cif = FakeClientIF(irs)
         yield FakeVM(cif, dom, drives), dom, drives
 
 
@@ -597,7 +597,7 @@ class FakeIRS(object):
             self.volume_sizes[key] = capacity
 
 
-def make_drive(log, irs, index, conf, block_info):
+def make_drive(log, index, conf, block_info):
     cfg = utils.picklecopy(conf)
 
     cfg['index'] = index
@@ -619,8 +619,6 @@ def make_drive(log, irs, index, conf, block_info):
         raise RuntimeError(
             "Invalid test data - "
             "raw disk capacity != physical: %s" % block_info)
-
-    irs.set_drive_size(drive, block_info['physical'])
 
     return drive
 
