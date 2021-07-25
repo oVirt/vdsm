@@ -231,31 +231,13 @@ Requires: policycoreutils >= 2.1.13-55
 %if 0%{?rhel} >= 8
 %if 0%{?centos}
 # 4.4 Advanced virt stream on CentOS 8
-Requires: qemu-kvm >= 15:5.2.0
+Requires: qemu-kvm >= 15:5.2.0-16
 %else
-# 4.4, AV 8.4 - https://bugzilla.redhat.com/1948532
-Requires: qemu-kvm >= 15:5.2.0-15.module+el8.4.0+10650+50781ca0
+# 4.4, AV 8.4 - https://bugzilla.redhat.com/1892681
+# and https://bugzilla.redhat.com/1976256
+Requires: qemu-kvm >= 5.2.0-16.module+el8.4.0+11923+e8b883e4.4
 %endif #centos
 %endif #rhel
-
-%if 0%{?rhel} == 7
-# 4k not supported yet on rhel 7.
-# https://bugzilla.redhat.com/1745443
-# CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
-Requires: qemu-kvm-rhev >= 10:2.12.0-18.el7_6.5
-%endif
-
-%if 0%{?fedora}
-%ifarch s390 s390x
-# virt-preview is not available on s390 arch.
-Requires: qemu-kvm >= 2:2.11.2
-%else
-# For 4k support:
-# - https://bugzilla.redhat.com/1737256
-# - https://bugzilla.redhat.com/1738657
-Requires: qemu-kvm >= 2:4.1.0-2
-%endif # s390
-%endif # fedora
 
 # GlusterFS client-side RPMs needed for Gluster SD
 %ifnarch ppc64le
