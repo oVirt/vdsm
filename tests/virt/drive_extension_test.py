@@ -58,7 +58,7 @@ def drive_config(**kw):
         'device': 'disk',
         'format': 'raw',
         'iface': 'virtio',
-        'index': '0',
+        'index': 0,
         'propagateErrors': 'off',
         'readonly': 'False',
         'shared': 'none',
@@ -81,8 +81,8 @@ def make_vm(drive_infos):
         irs = FakeIRS()
         drives = []
 
-        for index, (drive_conf, block_info) in enumerate(drive_infos):
-            drive = make_drive(log, index, drive_conf, block_info)
+        for drive_conf, block_info in drive_infos:
+            drive = make_drive(log, drive_conf, block_info)
             irs.set_drive_size(drive, block_info['physical'])
             dom.add_drive(drive, block_info)
             drives.append(drive)
@@ -103,8 +103,10 @@ class DiskExtensionTestBase(VdsmTestCase):
     }
 
     DRIVE_INFOS = (
-        (drive_config(format='cow', diskType=DISK_TYPE.BLOCK), BLOCK_INFOS),
-        (drive_config(format='cow', diskType=DISK_TYPE.BLOCK), BLOCK_INFOS)
+        (drive_config(
+            index=0, format='cow', diskType=DISK_TYPE.BLOCK), BLOCK_INFOS),
+        (drive_config(
+            index=1, format='cow', diskType=DISK_TYPE.BLOCK), BLOCK_INFOS)
     )
 
     def check_extension(self, drive_info, drive_obj, extension_req):
@@ -606,18 +608,18 @@ class FakeIRS(object):
             self.volume_sizes[key] = capacity
 
 
-def make_drive(log, index, conf, block_info):
-    cfg = utils.picklecopy(conf)
+def make_drive(log, drive_conf, block_info):
+    cfg = utils.picklecopy(drive_conf)
 
-    cfg['index'] = index
     cfg['path'] = '/{iface}/{index}'.format(
         iface=cfg['iface'], index=cfg['index']
     )
-    cfg['alias'] = 'alias_%d' % index
+    cfg['alias'] = 'alias_%d' % cfg["index"]
 
-    add_uuids(index, cfg)
+    add_uuids(cfg["index"], cfg)
+
     if 'diskReplicate' in cfg:
-        add_uuids(index + REPLICA_BASE_INDEX, cfg['diskReplicate'])
+        add_uuids(cfg["index"] + REPLICA_BASE_INDEX, cfg['diskReplicate'])
 
     cfg["volumeChain"] = [{"path": cfg["path"], "volumeID": cfg["volumeID"]}]
 
