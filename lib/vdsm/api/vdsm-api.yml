@@ -2253,11 +2253,6 @@ types:
         description: Statistics about this host.
         name: HostStats
         properties:
-        -   description: Amount of memory available to run virtual machines (in
-                MB)
-            name: memAvailable
-            type: int
-
         -   description: Ratio of CPU time spent in userspace by vdsm
             name: cpuUserVdsmd
             type: string
@@ -2349,10 +2344,6 @@ types:
             name: cpuStatistics
             added: '3.4'
             type: *CpuCoreStatsMap
-
-        -   description: Amount of memory committed to running VMs (in MB)
-            name: memCommitted
-            type: int
 
         -   description: The amount of free swap space remaining (in MB)
             name: swapFree

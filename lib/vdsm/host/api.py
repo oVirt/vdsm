@@ -29,7 +29,6 @@ from vdsm import utils
 from vdsm import metrics
 from vdsm.common import hooks
 from vdsm.common.units import KiB, MiB
-from vdsm.config import config
 from vdsm.virt import vmstatus
 
 haClient = None
@@ -61,9 +60,6 @@ def get_stats(cif, sample, multipath=False):
     for var in decStats:
         ret[var] = utils.convertToStr(decStats[var])
 
-    avail, commit = _memUsageInfo(cif)
-    ret['memAvailable'] = avail // MiB
-    ret['memCommitted'] = commit // MiB
     ret['memFree'] = _memFree() // MiB
     ret['swapTotal'], ret['swapFree'] = _readSwapTotalFree()
     (ret['vmCount'], ret['vmActive'], ret['vmMigrating'],
@@ -104,28 +100,6 @@ def send_metrics(hoststats):
 def _readSwapTotalFree():
     meminfo = utils.readMemInfo()
     return meminfo['SwapTotal'] // 1024, meminfo['SwapFree'] // 1024
-
-
-def _memUsageInfo(cif):
-    """
-    Return an approximation of available memory for new VMs.
-    """
-    # These values are not used by Engine >= 4.2 anymore, but they are still
-    # processed, stored to the database and must be present.  Let's return
-    # something very roughly meaningful until it's removed from Engine
-    # completely -- that means just free memory and sum of VM sizes.
-    committed = 0
-    for v in cif.getVMs().values():
-        committed += v.mem_size_mb() * MiB
-    meminfo = utils.readMemInfo()
-    freeOrCached = (meminfo['MemFree'] +
-                    meminfo['Cached'] +
-                    meminfo['Buffers'] +
-                    meminfo['SReclaimable']) * KiB
-    available = (
-        freeOrCached + config.getint('vars', 'host_mem_reserve') * MiB
-    )
-    return available, committed
 
 
 def _memFree():
