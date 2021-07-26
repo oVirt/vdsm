@@ -1663,16 +1663,16 @@ class LVMCommandError(StorageException):
     code = 621
     msg = "LVM command failed"
 
-    def __init__(self, command, rc, out, err):
-        self.command = command
+    def __init__(self, cmd, rc, out, err):
+        self.cmd = cmd
         self.rc = rc
         self.out = out
         self.err = err
 
     @property
     def value(self):
-        return "command={} rc={} out={} err={}".format(
-            self.command, self.rc, self.out, self.err)
+        return "cmd={} rc={} out={} err={}".format(
+            self.cmd, self.rc, self.out, self.err)
 
     def lv_in_use(self):
         in_use = r"^Logical volume \S* in use.$"
