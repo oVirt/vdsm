@@ -1304,11 +1304,14 @@ def resizePV(vgName, guid):
     """
     pvName = _fqpvname(guid)
     cmd = ["pvresize", pvName]
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
-    if rc != 0:
-        raise se.CouldNotResizePhysicalVolume(pvName, err)
-    _lvminfo._invalidatepvs(pvName)
-    _lvminfo._invalidatevgs(vgName)
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+    except se.LVMCommandError as e:
+        raise se.CouldNotResizePhysicalVolume(
+            e.cmd, e.rc, e.out, e.err) from None
+    else:
+        _lvminfo._invalidatepvs(pvName)
+        _lvminfo._invalidatevgs(vgName)
 
 
 def movePV(vgName, src_device, dst_devices):

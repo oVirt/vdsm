@@ -1627,9 +1627,7 @@ class SmallVgMetadata(StorageException):
         "issue and how to resolve it")
 
 
-class CouldNotResizePhysicalVolume(StorageException):
-    def __init__(self, pvname, err):
-        self.value = "pvname=%s err=%s" % (pvname, err)
+class CouldNotResizePhysicalVolume(LVMCommandError):
     code = 615
     msg = "Could not resize PV"
 
