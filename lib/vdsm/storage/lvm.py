@@ -1320,6 +1320,7 @@ def movePV(vgName, src_device, dst_devices):
     # we invalidate the pv as we can't rely on the cache for checking the
     # current state
     _lvminfo._invalidatepvs(pvName)
+
     pv = getPV(pvName)
     if pv.pe_alloc_count == "0":
         log.info("No data to move on pv %s (vg %s), considering as successful",
@@ -1332,17 +1333,18 @@ def movePV(vgName, src_device, dst_devices):
 
     log.info("Moving pv %s data (vg %s)", pvName, vgName)
 
-    # lvmpolld has to be disabled due to: https://bugzilla.redhat.com/1949059
-    rc, out, err = _lvminfo.cmd(
-        cmd, _lvminfo._getVGDevs((vgName, )), use_lvmpolld=False)
-
-    # We invalidate all the caches even on failure so we'll have up to date
-    # data after moving data within the vg.
-    _lvminfo._invalidatepvs(pvName)
-    _lvminfo._invalidatelvs(vgName)
-    _lvminfo._invalidatevgs(vgName)
-    if rc != 0:
-        raise se.CouldNotMovePVData(pvName, vgName, err)
+    try:
+        # lvmpolld has to be disabled: https://bugzilla.redhat.com/1949059
+        _lvminfo.run_command(
+            cmd, devices=_lvminfo._getVGDevs((vgName, )), use_lvmpolld=False)
+    except se.LVMCommandError as e:
+        raise se.CouldNotMovePVData(e.cmd, e.rc, e.out, e.err) from None
+    finally:
+        # We invalidate all the caches even on failure so we'll have up to date
+        # data after moving data within the vg.
+        _lvminfo._invalidatepvs(pvName)
+        _lvminfo._invalidatelvs(vgName)
+        _lvminfo._invalidatevgs(vgName)
 
 
 def getVG(vgName):

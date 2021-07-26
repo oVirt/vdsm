@@ -1654,13 +1654,10 @@ class ForbiddenPhysicalVolumeOperation(StorageException):
         self.value = "reason=%s" % reason
 
 
-class CouldNotMovePVData(StorageException):
+class CouldNotMovePVData(LVMCommandError):
     code = 618
     msg = "Could not move PV data, there might be leftovers that require" \
           " manual handling - please refer to the pvmove man page"
-
-    def __init__(self, pvname, vgname, err):
-        self.value = "pvname=%s vgname=%s err=%s" % (pvname, vgname, err)
 
 
 class NoSuchPhysicalVolume(StorageException):
