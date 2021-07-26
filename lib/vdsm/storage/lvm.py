@@ -1447,16 +1447,19 @@ def removeVG(vgName):
     # Remove VG with force option to skip confirmation VG should be removed
     # and checks that it can be removed.
     cmd = ["vgremove", "-f", vgName]
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
-    # PVS needs to be reloaded anyhow: if vg is removed they are staled,
-    # if vg remove failed, something must be wrong with devices and we want
-    # cache updated as well
-    _lvminfo._invalidatevgpvs(vgName)
-    # If vgremove failed reintroduce the VG into the cache
-    if rc != 0:
+
+    # PVS need to be reloaded for both command success and failures cases:
+    # if vg is removed they are staled, if vg remove failed, something must be
+    # wrong with devices and we want cache updated as well
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+    except se.LVMCommandError as e:
+        _lvminfo._invalidatevgpvs(vgName)
+        # If vgremove failed reintroduce the VG into the cache
         _lvminfo._invalidatevgs(vgName)
-        raise se.VolumeGroupRemoveError("VG %s remove failed." % vgName)
+        raise se.VolumeGroupRemoveError(e.cmd, e.rc, e.out, e.err) from None
     else:
+        _lvminfo._invalidatevgpvs(vgName)
         # Remove the vg from the cache
         _lvminfo._removevgs(vgName)
 
@@ -1515,18 +1518,21 @@ def chkVG(vgName):
 
 def deactivateVG(vgName):
     cmd = ["vgchange", "--available", "n", vgName]
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs([vgName]))
-    _lvminfo._invalidatelvs(vgName)
-    if rc != 0:
+
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs([vgName]))
+    except se.LVMCommandError as e:
+        _lvminfo._invalidatelvs(vgName)
         # During deactivation we ignore error here because we don't care about
         # this vg anymore.
-        log.info("Error deactivating VG %s: rc=%s out=%s err=%s",
-                 vgName, rc, out, err)
-
+        log.info("Error deactivating VG %s: cmd=%s rc=%s out=%s err=%s",
+                 vgName, e.cmd, e.rc, e.out, e.err)
         # When the storage is not available, DM mappings for LVs are not
         # removed by LVM, so we have to clean it up manually. For more details
         # see https://bugzilla.redhat.com/1881468
         _removeVgMapping(vgName)
+    else:
+        _lvminfo._invalidatelvs(vgName)
 
 
 def invalidateVG(vgName, invalidateLVs=True, invalidatePVs=False):

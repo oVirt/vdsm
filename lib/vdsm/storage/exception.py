@@ -1282,6 +1282,26 @@ class ImageVerificationError(StorageException):
 #  LVM related Exceptions
 #################################################
 
+class LVMCommandError(StorageException):
+    code = 621
+    msg = "LVM command failed"
+
+    def __init__(self, cmd, rc, out, err):
+        self.cmd = cmd
+        self.rc = rc
+        self.out = out
+        self.err = err
+
+    @property
+    def value(self):
+        return "cmd={} rc={} out={} err={}".format(
+            self.cmd, self.rc, self.out, self.err)
+
+    def lv_in_use(self):
+        in_use = r"^Logical volume \S* in use.$"
+        return any([re.search(in_use, x.strip()) for x in self.err])
+
+
 class VolumeGroupActionError(StorageException):
     code = 500
     msg = "Error volume group action"
@@ -1326,7 +1346,7 @@ class VolumeGroupRenameError(StorageException):
     msg = "Volume Group rename error"
 
 
-class VolumeGroupRemoveError(StorageException):
+class VolumeGroupRemoveError(LVMCommandError):
     code = 508
     msg = "Volume Group remove error"
 
@@ -1658,25 +1678,7 @@ class NoSuchDestinationPhysicalVolumes(StorageException):
     def __init__(self, pvs, vgname):
         self.value = "pvs=%s vgname=%s" % (pvs, vgname)
 
-
-class LVMCommandError(StorageException):
-    code = 621
-    msg = "LVM command failed"
-
-    def __init__(self, cmd, rc, out, err):
-        self.cmd = cmd
-        self.rc = rc
-        self.out = out
-        self.err = err
-
-    @property
-    def value(self):
-        return "cmd={} rc={} out={} err={}".format(
-            self.cmd, self.rc, self.out, self.err)
-
-    def lv_in_use(self):
-        in_use = r"^Logical volume \S* in use.$"
-        return any([re.search(in_use, x.strip()) for x in self.err])
+# NOTE: code is 621 used by LVMCommandError above.
 
 
 #################################################
