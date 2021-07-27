@@ -68,6 +68,14 @@ def drive_config(**kw):
     return conf
 
 
+def block_info(capacity=4 * GiB, allocation=0, physical=4 * GiB):
+    return {
+        "capacity": capacity,
+        "allocation": allocation,
+        "physical": physical,
+    }
+
+
 @contextmanager
 def make_vm(drive_infos):
     log = logging.getLogger('test')
@@ -98,9 +106,7 @@ def allocation_threshold_for_resize_mb(block_info, drive):
 class DiskExtensionTestBase(VdsmTestCase):
     # helpers
 
-    BLOCK_INFOS = {
-        'capacity': 4 * GiB, 'allocation': 1 * GiB, 'physical': 2 * GiB
-    }
+    BLOCK_INFOS = block_info(allocation=1 * GiB, physical=2 * GiB)
 
     DRIVE_INFOS = (
         (drive_config(
@@ -192,43 +198,67 @@ class TestDiskExtension(DiskExtensionTestBase):
             assert drv.threshold_state == BLOCK_THRESHOLD.SET
 
     @permutations([
-        # drive_conf, expected_state, threshold
+        # (drive_conf, block_info), expected_state, threshold
         # the threshold values depend on the physical size defined in the test,
         # and on the mock config.
-        #
-        # non-chunked drive
-        ((drive_config(
-            format='cow',
-            diskType=DISK_TYPE.FILE),
-         {'capacity': 4 * GiB, 'allocation': 2 * GiB, 'physical': 2 * GiB}),
-         BLOCK_THRESHOLD.UNSET, None),
-        # ditto
-        ((drive_config(
-            format='raw',
-            diskType=DISK_TYPE.BLOCK),
-         {'capacity': 2 * GiB, 'allocation': 0 * GiB, 'physical': 2 * GiB}),
-         BLOCK_THRESHOLD.UNSET, None),
-        # ditto
-        ((drive_config(
-            format='raw',
-            diskType=DISK_TYPE.FILE),
-         {'capacity': 2 * GiB, 'allocation': 0 * GiB, 'physical': 2 * GiB}),
-         BLOCK_THRESHOLD.UNSET, None),
-        # ditto
-        ((drive_config(
-            format='raw',
-            diskType=DISK_TYPE.NETWORK),
-         {'capacity': 2 * GiB, 'allocation': 0 * GiB, 'physical': 2 * GiB}),
-         BLOCK_THRESHOLD.UNSET, None),
+
+        # cow-file
+        (
+            (
+                drive_config(format='cow', diskType=DISK_TYPE.FILE),
+                block_info(),
+            ),
+            BLOCK_THRESHOLD.UNSET,
+            None,
+        ),
+
+        # raw-block
+        (
+            (
+                drive_config(format='raw', diskType=DISK_TYPE.BLOCK),
+                block_info(physical=4 * GiB),
+            ),
+            BLOCK_THRESHOLD.UNSET,
+            None,
+        ),
+
+        # raw-file
+        (
+            (
+                drive_config(format='raw', diskType=DISK_TYPE.FILE),
+                block_info(physical=4 * GiB),
+            ),
+            BLOCK_THRESHOLD.UNSET,
+            None,
+        ),
+
+        # raw-network
+        (
+            (
+                drive_config(format='raw', diskType=DISK_TYPE.NETWORK),
+                block_info(physical=4 * GiB),
+            ),
+            BLOCK_THRESHOLD.UNSET,
+            None,
+        ),
+
         # non-chunked drive replicating to non-chunked drive
-        ((drive_config(
-            format='cow',
-            diskType=DISK_TYPE.FILE,
-            diskReplicate={
-                'format': 'cow',
-                'diskType': DISK_TYPE.FILE}),
-         {'capacity': 4 * GiB, 'allocation': 2 * GiB, 'physical': 2 * GiB}),
-         BLOCK_THRESHOLD.UNSET, None),
+        (
+            (
+                drive_config(
+                    format='cow',
+                    diskType=DISK_TYPE.FILE,
+                    diskReplicate={
+                        'format': 'cow',
+                        'diskType': DISK_TYPE.FILE,
+                    },
+                ),
+                block_info(allocation=2 * GiB, physical=2 * GiB),
+            ),
+            BLOCK_THRESHOLD.UNSET,
+            None,
+        ),
+
         # non-chunked drive replicating to chunked-drive
         #
         # TODO:
@@ -237,38 +267,65 @@ class TestDiskExtension(DiskExtensionTestBase):
         # source: allocation=1, physical=1
         # replica: allocation=1, physical=3
         # Currently we assume that drive size is same as replica size.
-        ((drive_config(
-            format='cow',
-            diskType=DISK_TYPE.FILE,
-            diskReplicate={
-                'format': 'cow',
-                'diskType': DISK_TYPE.BLOCK}),
-         {'capacity': 4 * GiB, 'allocation': 2 * GiB, 'physical': 2 * GiB}),
-         BLOCK_THRESHOLD.SET, 1 * GiB),
+        (
+            (
+                drive_config(
+                    format='cow',
+                    diskType=DISK_TYPE.FILE,
+                    diskReplicate={
+                        'format': 'cow',
+                        'diskType': DISK_TYPE.BLOCK,
+                    },
+                ),
+                block_info(allocation=2 * GiB, physical=2 * GiB),
+            ),
+            BLOCK_THRESHOLD.SET,
+            1 * GiB,
+        ),
+
         # chunked drive
-        ((drive_config(
-            format='cow',
-            diskType=DISK_TYPE.BLOCK),
-         {'capacity': 4 * GiB, 'allocation': 1 * GiB, 'physical': 2 * GiB}),
-         BLOCK_THRESHOLD.SET, 1536 * MiB),
+        (
+            (
+                drive_config(format='cow', diskType=DISK_TYPE.BLOCK),
+                block_info(allocation=1 * GiB, physical=2 * GiB),
+            ),
+            BLOCK_THRESHOLD.SET,
+            1536 * MiB,
+        ),
+
         # chunked drive replicating to chunked drive
-        ((drive_config(
-            format='cow',
-            diskType=DISK_TYPE.BLOCK,
-            diskReplicate={
-                'format': 'cow',
-                'diskType': DISK_TYPE.BLOCK}),
-         {'capacity': 4 * GiB, 'allocation': 1 * GiB, 'physical': 3 * GiB}),
-         BLOCK_THRESHOLD.SET, 2 * GiB),
+        (
+            (
+                drive_config(
+                    format='cow',
+                    diskType=DISK_TYPE.BLOCK,
+                    diskReplicate={
+                        'format': 'cow',
+                        'diskType': DISK_TYPE.BLOCK,
+                    },
+                ),
+                block_info(allocation=1 * GiB, physical=3 * GiB),
+            ),
+            BLOCK_THRESHOLD.SET,
+            2 * GiB,
+        ),
+
         # chunked drive replicating to non-chunked drive
-        ((drive_config(
-            format='cow',
-            diskType=DISK_TYPE.BLOCK,
-            diskReplicate={
-                'format': 'cow',
-                'diskType': DISK_TYPE.FILE}),
-         {'capacity': 4 * GiB, 'allocation': 1 * GiB, 'physical': 3 * GiB}),
-         BLOCK_THRESHOLD.SET, 2 * GiB),
+        (
+            (
+                drive_config(
+                    format='cow',
+                    diskType=DISK_TYPE.BLOCK,
+                    diskReplicate={
+                        'format': 'cow',
+                        'diskType': DISK_TYPE.FILE,
+                    },
+                ),
+                block_info(allocation=1 * GiB, physical=3 * GiB),
+            ),
+            BLOCK_THRESHOLD.SET,
+            2 * GiB,
+        ),
     ])
     def test_set_new_threshold_when_state_unset(self, drive_info,
                                                 expected_state, threshold):
