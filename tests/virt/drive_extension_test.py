@@ -18,6 +18,42 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+"""
+Testng extension during replication may not be implemented yet.
+
+We have several cases:
+- replicating from chunked to chunked: extend the replica, then the volume.
+- replicating from non-chunked to chunked: extend the replica.
+- replicating from chunked to non-chunked: extend the volume.
+
+When extending the replica completed, we have these cases:
+- replication finished during the extend:
+  - abort the extend
+  - drive was UNSET by the pivot.
+- replication failed during the extend:
+  - extend the volume
+  - drive remains EXCCEEDED.
+
+When extending the replica failed, we have these cases:
+- replication finished during the extend
+  - abort the extend
+  - drive was unset by the pivot
+- replication failed during the extend
+  - abort the extend
+  - drive remains EXCEEDED.
+
+When extending the volume completed, we have these cases:
+- replication finished during the extend:
+  - abort the extend
+  - drive was UNSET by the pivot
+- replication failed during the extend:
+  - update drive size and set a new threshold.
+
+When extending the volume failed:
+- regardless of replication state, drive must remain EXCCEEDED
+
+"""
+
 import logging
 import threading
 
@@ -82,7 +118,7 @@ def allocation_threshold_for_resize_mb(block_info, drive):
     return block_info['physical'] - drive.watermarkLimit
 
 
-class DiskExtensionTestBase:
+class TestExtension:
 
     # helpers
 
@@ -125,9 +161,6 @@ class DiskExtensionTestBase:
             assert drive_obj.imageID == volInfo['imageID']
             assert drive_obj.poolID == volInfo['poolID']
             assert drive_obj.volumeID == volInfo['volumeID']
-
-
-class TestDiskExtension(DiskExtensionTestBase):
 
     # TODO: missing tests:
     # - call extend_if_needed when drive.threshold_state is EXCEEDED
@@ -459,43 +492,6 @@ class TestDiskExtension(DiskExtensionTestBase):
         simulate_extend_callback(vm.cif.irs, extension_id=0)
 
         assert drv.threshold_state == BLOCK_THRESHOLD.UNSET
-
-
-class TestReplication(DiskExtensionTestBase):
-    """
-    Test extension during replication.
-
-    We have several cases:
-    - replicating from chunked to chunked: extend the replica, then the volume.
-    - replicating from non-chunked to chunked: extend the replica.
-    - replicating from chunked to non-chunked: extend the volume.
-
-    When extending the replica completed, we have these cases:
-    - replication finished during the extend:
-      - abort the extend
-      - drive was UNSET by the pivot.
-    - replication failed during the extend:
-      - extend the volume
-      - drive remains EXCCEEDED.
-
-    When extending the replica failed, we have these cases:
-    - replication finished during the extend
-      - abort the extend
-      - drive was unset by the pivot
-    - replication failed during the extend
-      - abort the extend
-      - drive remains EXCEEDED.
-
-    When extending the volume completed, we have these cases:
-    - replication finished during the extend:
-      - abort the extend
-      - drive was UNSET by the pivot
-    - replication failed during the extend:
-      - update drive size and set a new threshold.
-
-    When extending the volume failed:
-    - regardless of replication state, drive must remain EXCCEEDED
-    """
 
 
 class FakeVM(Vm):
