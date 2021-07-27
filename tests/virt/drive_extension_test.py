@@ -77,26 +77,13 @@ def block_info(capacity=4 * GiB, allocation=0, physical=4 * GiB):
 
 
 @contextmanager
-def make_vm(drive_infos):
-    log = logging.getLogger('test')
-
+def tmp_config():
     # the Drive class use those two tunables as class constants.
     with MonkeyPatchScope([
         (Drive, 'VOLWM_CHUNK_SIZE', CHUNK_SIZE),
         (Drive, 'VOLWM_FREE_PCT', CHUNK_PCT),
     ]):
-        dom = FakeDomain()
-        irs = FakeIRS()
-        drives = []
-
-        for drive_conf, block_info in drive_infos:
-            drive = make_drive(log, drive_conf, block_info)
-            irs.set_drive_size(drive, block_info['physical'])
-            dom.add_drive(drive, block_info)
-            drives.append(drive)
-
-        cif = FakeClientIF(irs)
-        yield FakeVM(cif, dom, drives)
+        yield
 
 
 def allocation_threshold_for_resize_mb(block_info, drive):
@@ -156,7 +143,8 @@ class TestDiskExtension(DiskExtensionTestBase):
     # FIXME: already covered by existing cases?
 
     def test_extend(self):
-        with make_vm(drive_infos=self.DRIVE_INFOS) as vm:
+        with tmp_config():
+            vm = FakeVM(self.DRIVE_INFOS)
             drives = vm.getDiskDevices()
 
             # first run: does nothing but set the block thresholds
@@ -329,7 +317,8 @@ class TestDiskExtension(DiskExtensionTestBase):
     ])
     def test_set_new_threshold_when_state_unset(self, drive_info,
                                                 expected_state, threshold):
-        with make_vm(drive_infos=[drive_info]) as vm:
+        with tmp_config():
+            vm = FakeVM([drive_info])
             drives = vm.getDiskDevices()
 
             vda = drives[0]  # shortcut
@@ -348,7 +337,8 @@ class TestDiskExtension(DiskExtensionTestBase):
                 assert vm._dom.thresholds[target] == threshold
 
     def test_set_new_threshold_when_state_unset_but_fails(self):
-        with make_vm(drive_infos=self.DRIVE_INFOS) as vm:
+        with tmp_config():
+            vm = FakeVM(self.DRIVE_INFOS)
             drives = vm.getDiskDevices()
 
             for drive in drives:
@@ -368,7 +358,8 @@ class TestDiskExtension(DiskExtensionTestBase):
         # Vm.monitor_drives must not pick up drives with
         # threshold_state == SET, so we call
         # Vm.extend_drive_if_needed explictely
-        with make_vm(drive_infos=self.DRIVE_INFOS) as vm:
+        with tmp_config():
+            vm = FakeVM(self.DRIVE_INFOS)
             drives = vm.getDiskDevices()
 
             drives[0].threshold_state = BLOCK_THRESHOLD.SET
@@ -378,7 +369,9 @@ class TestDiskExtension(DiskExtensionTestBase):
             assert not extended
 
     def test_force_drive_threshold_state_exceeded(self):
-        with make_vm(drive_infos=self.DRIVE_INFOS) as vm:
+        with tmp_config():
+            vm = FakeVM(self.DRIVE_INFOS)
+
             # Simulate event not received. Possible cases:
             # - the handling of the event in Vdsm was delayed because some
             #   blocking code was called from the libvirt event loop
@@ -405,7 +398,8 @@ class TestDiskExtension(DiskExtensionTestBase):
         # volume size is still bellow the threshold.
         # We will not extend the drive, but keep it marked for
         # extension.
-        with make_vm(drive_infos=self.DRIVE_INFOS) as vm:
+        with tmp_config():
+            vm = FakeVM(self.DRIVE_INFOS)
             drives = vm.getDiskDevices()
 
             # NOTE: write not yet completed, so the allocation value
@@ -436,7 +430,8 @@ class TestDiskExtension(DiskExtensionTestBase):
             assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
     def test_block_threshold_set_failure_after_drive_extended(self):
-        with make_vm(drive_infos=self.DRIVE_INFOS) as vm:
+        with tmp_config():
+            vm = FakeVM(self.DRIVE_INFOS)
             drives = vm.getDiskDevices()
 
             # first run: does nothing but set the block thresholds
@@ -523,11 +518,19 @@ class FakeVM(Vm):
 
     log = logging.getLogger('test')
 
-    def __init__(self, cif, dom, disks):
+    def __init__(self, drive_infos):
+        self._dom = FakeDomain()
+        self.cif = FakeClientIF(FakeIRS())
         self.id = 'drive_monitor_vm'
-        self.cif = cif
         self.drive_monitor = drivemonitor.DriveMonitor(self, self.log)
-        self._dom = dom
+
+        disks = []
+        for drive_conf, block_info in drive_infos:
+            drive = make_drive(self.log, drive_conf, block_info)
+            self.cif.irs.set_drive_size(drive, block_info['physical'])
+            self._dom.add_drive(drive, block_info)
+            disks.append(drive)
+
         self._devices = {hwclass.DISK: disks}
 
         # needed for pause()/cont()
