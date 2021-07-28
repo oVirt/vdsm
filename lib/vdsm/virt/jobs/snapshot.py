@@ -99,7 +99,9 @@ class Job(vdsm.virt.jobs.Job):
         self._abort = threading.Event()
         self._completed = threading.Event()
         self._lock = threading.Lock()
-        self._snapshot_job = read_snapshot_md(self._vm, self._lock)
+        self._snapshot_job = {}
+        if recovery:
+            self._snapshot_job = read_snapshot_md(self._vm, self._lock)
         self._load_metadata()
 
     def _run(self):
