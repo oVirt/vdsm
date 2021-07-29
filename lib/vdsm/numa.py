@@ -33,7 +33,8 @@ from vdsm.common.cmdutils import CommandPath
 NumaTopology = namedtuple('NumaTopology',
                           ['topology', 'distances', 'cpu_topology',
                            'cpu_info'])
-CpuTopology = namedtuple('CpuTopology', 'sockets, cores, threads, online_cpus')
+CpuTopology = namedtuple('CpuTopology',
+                         ['sockets', 'cores', 'threads', 'online_cpus'])
 CpuInfo = namedtuple('CpuInfo',
                      ['cpu_id', 'numa_cell_id', 'socket_id', 'die_id',
                       'core_id'])
