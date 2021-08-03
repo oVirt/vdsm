@@ -80,6 +80,13 @@ def _getLibvirtConnStubForTscScaling(scaling):
     return ConnStub()
 
 
+def _getLibvirtConnStubFromFile(path):
+    class ConnStub:
+        def getCapabilities(self):
+            return _getTestData(path)
+    return ConnStub()
+
+
 class TestCaps(TestCaseBase):
 
     def tearDown(self):
@@ -95,56 +102,72 @@ class TestCaps(TestCaseBase):
         with open(path) as f:
             return f.read()
 
+    @MonkeyPatch(libvirtconnection, 'get',
+                 lambda : _getLibvirtConnStubFromFile(
+                     'caps_libvirt_ibm_S822L.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
     @MonkeyPatch(platform, 'machine', lambda: cpuarch.PPC64)
     def testCpuTopologyPPC64(self):
-        testPath = os.path.realpath(__file__)
-        dirName = os.path.split(testPath)[0]
         # PPC64 4 sockets, 5 cores, 1 threads per core
-        path = os.path.join(dirName, "caps_libvirt_ibm_S822L.out")
-        t = numa.cpu_topology(open(path).read())
+        numa.update()
+        t = numa.cpu_topology()
         self.assertEqual(t.threads, 20)
         self.assertEqual(t.cores, 20)
         self.assertEqual(t.sockets, 4)
 
+    @MonkeyPatch(libvirtconnection, 'get',
+                 lambda : _getLibvirtConnStubFromFile(
+                     'caps_libvirt_s390x.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
     @MonkeyPatch(platform, 'machine', lambda: cpuarch.S390X)
     def testCpuTopologyS390X(self):
-        testPath = os.path.realpath(__file__)
-        dirName = os.path.split(testPath)[0]
         # S390 1 socket, 4 cores, 1 threads per core
-        path = os.path.join(dirName, "caps_libvirt_s390x.out")
-        t = numa.cpu_topology(open(path).read())
+        numa.update()
+        t = numa.cpu_topology()
         self.assertEqual(t.threads, 4)
         self.assertEqual(t.cores, 4)
         self.assertEqual(t.sockets, 1)
 
+    @MonkeyPatch(libvirtconnection, 'get',
+                 lambda : _getLibvirtConnStubFromFile(
+                     'caps_libvirt_intel_E5649.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
     @MonkeyPatch(platform, 'machine', lambda: cpuarch.X86_64)
-    def testCpuTopologyX86_64(self):
-        testPath = os.path.realpath(__file__)
-        dirName = os.path.split(testPath)[0]
+    def testCpuTopologyX86_64_intel_e5649(self):
         # 2 x Intel E5649 (with Hyperthreading)
-        path = os.path.join(dirName, "caps_libvirt_intel_E5649.out")
-        with open(path) as p:
-            t = numa.cpu_topology(p.read())
+        numa.update()
+        t = numa.cpu_topology()
         self.assertEqual(t.threads, 24)
         self.assertEqual(t.cores, 12)
         self.assertEqual(t.sockets, 2)
+
+    @MonkeyPatch(libvirtconnection, 'get',
+                 lambda : _getLibvirtConnStubFromFile(
+                     'caps_libvirt_amd_6274.out'))
+    @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
+        'total': '1', 'free': '1'})
+    @MonkeyPatch(platform, 'machine', lambda: cpuarch.X86_64)
+    def testCpuTopologyX86_64_amd_6272(self):
         # 2 x AMD 6272 (with Modules)
-        path = os.path.join(dirName, "caps_libvirt_amd_6274.out")
-        with open(path) as p:
-            t = numa.cpu_topology(p.read())
+        numa.update()
+        t = numa.cpu_topology()
         self.assertEqual(t.threads, 32)
         self.assertEqual(t.cores, 16)
         self.assertEqual(t.sockets, 2)
+
+    @MonkeyPatch(libvirtconnection, 'get',
+                 lambda : _getLibvirtConnStubFromFile(
+                     'caps_libvirt_intel_E31220.out'))
+    @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
+        'total': '1', 'free': '1'})
+    @MonkeyPatch(platform, 'machine', lambda: cpuarch.X86_64)
+    def testCpuTopologyX86_64_intel_e31220(self):
         # 1 x Intel E31220 (normal Multi-core)
-        path = os.path.join(dirName, "caps_libvirt_intel_E31220.out")
-        with open(path) as p:
-            t = numa.cpu_topology(p.read())
+        numa.update()
+        t = numa.cpu_topology()
         self.assertEqual(t.threads, 4)
         self.assertEqual(t.cores, 4)
         self.assertEqual(t.sockets, 1)
@@ -187,10 +210,12 @@ class TestCaps(TestCaseBase):
 
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '49141', 'free': '46783'})
-    @MonkeyPatch(numa, '_get_libvirt_caps', lambda: _getTestData(
-        "caps_libvirt_amd_6274.out"))
+    @MonkeyPatch(libvirtconnection, 'get',
+                 lambda : _getLibvirtConnStubFromFile(
+                     "caps_libvirt_amd_6274.out"))
     def testNumaTopology(self):
         # 2 x AMD 6272 (with Modules)
+        numa.update()
         t = numa.topology()
         expectedNumaInfo = {
             '0': {'cpus': [0, 1, 2, 3, 4, 5, 6, 7], 'totalMemory': '49141',
@@ -214,11 +239,13 @@ class TestCaps(TestCaseBase):
                       2048: {'totalPages': '100'}}}}
         self.assertEqual(t, expectedNumaInfo)
 
-    @MonkeyPatch(numa, '_get_libvirt_caps', lambda: _getTestData(
-        'caps_libvirt_ibm_S822L_le.out'))
+    @MonkeyPatch(libvirtconnection, 'get',
+                 lambda : _getLibvirtConnStubFromFile(
+                     'caps_libvirt_ibm_S822L_le.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
     def testNumaNodeDistance(self):
+        numa.update()
         t = numa.distances()
         expectedDistanceInfo = {'0': [10, 20, 40, 40],
                                 '1': [20, 10, 40, 40],
@@ -275,20 +302,26 @@ class TestCaps(TestCaseBase):
                     'pc-i440fx-rhel7.0.0'}
         self.assertEqual(expected, result)
 
+    @MonkeyPatch(libvirtconnection, 'get',
+                 lambda : _getLibvirtConnStubFromFile(
+                     'caps_libvirt_intel_i73770_nosnap.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
     def test_topology(self):
-        capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
-        result = numa.topology(capsData)
+        numa.update()
+        result = numa.topology()
         # only check cpus, memory does not come from file
         expected = [0, 1, 2, 3, 4, 5, 6, 7]
         self.assertEqual(expected, result['0']['cpus'])
 
+    @MonkeyPatch(libvirtconnection, 'get',
+                 lambda : _getLibvirtConnStubFromFile(
+                     'caps_libvirt_intel_i73770_nosnap.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
     def test_getCpuTopology(self):
-        capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
-        t = numa.cpu_topology(capsData)
+        numa.update()
+        t = numa.cpu_topology()
         self.assertEqual(t.threads, 8)
         self.assertEqual(t.cores, 4)
         self.assertEqual(t.sockets, 1)

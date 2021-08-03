@@ -48,7 +48,7 @@ AUTONUMA_STATUS_ENABLE = 1
 AUTONUMA_STATUS_UNKNOWN = 2
 
 
-def topology(capabilities=None):
+def topology():
     '''
     Get what we call 'numa topology' of the host from libvirt. This topology
     contains mapping numa cell -> (cpu ids, total memory).
@@ -59,7 +59,7 @@ def topology(capabilities=None):
          '1': {'cpus': [5, 6, 7, 8, 9, 15, 16, 17, 18, 19],
                'totalMemory': '32768'}}
     '''
-    return _numa(capabilities).topology
+    return _numa().topology
 
 
 def distances():
@@ -75,7 +75,7 @@ def distances():
     return _numa().distances
 
 
-def cpu_topology(capabilities=None):
+def cpu_topology():
     '''
     Get 'cpu topology' of the host from libvirt. This topology tries to
     summarize the cpu attributes over all numa cells. It is not reliable and
@@ -86,10 +86,10 @@ def cpu_topology(capabilities=None):
         (1, 10, 20, [0, 1, 2, 3, 4, 10, 11, 12, 13,
                      14, 5, 6, 7, 8, 9, 15, 16, 17, 18, 19])
     '''
-    return _numa(capabilities).cpu_topology
+    return _numa().cpu_topology
 
 
-def cpu_info(capabilities=None):
+def cpu_info():
     '''
     Returns a list of all CPUs and information about them. Each CPU is
     described as:
@@ -98,7 +98,7 @@ def cpu_info(capabilities=None):
     Example:
         [(0, 0, 0, 0, 0), (1, 1, 1, 0, 0)]
     '''
-    return _numa(capabilities).cpu_info
+    return _numa().cpu_info
 
 
 @cache.memoized
@@ -157,10 +157,21 @@ def free_pages_by_cell(page_sizes, numa_index):
     return free_pages
 
 
-@cache.memoized
-def _numa(capabilities=None):
-    if capabilities is None:
-        capabilities = _get_libvirt_caps()
+class _cache:
+    capabilities = None
+    numa = None
+
+
+def _numa():
+    if _cache.numa is None:
+        update()
+    return _cache.numa
+
+
+def update():
+    capabilities = libvirtconnection.get().getCapabilities()
+    if capabilities == _cache.capabilities:
+        return
 
     topology = defaultdict(dict)
     distances = defaultdict(dict)
@@ -221,9 +232,5 @@ def _numa(capabilities=None):
             cpu_topology = CpuTopology(socketnum, corenum,
                                        threadnum, online_cpus)
 
-    return NumaTopology(topology, distances, cpu_topology, cpu_info)
-
-
-def _get_libvirt_caps():
-    conn = libvirtconnection.get()
-    return conn.getCapabilities()
+    _cache.numa = NumaTopology(topology, distances, cpu_topology, cpu_info)
+    _cache.capabilities = capabilities

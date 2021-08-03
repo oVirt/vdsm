@@ -76,10 +76,9 @@ def _getIscsiIniName():
 
 
 def get():
-    conn = libvirtconnection.get()
-    libvirt_caps = conn.getCapabilities()
+    numa.update()
     caps = {}
-    cpu_topology = numa.cpu_topology(libvirt_caps)
+    cpu_topology = numa.cpu_topology()
 
     caps['kvmEnabled'] = str(os.path.exists('/dev/kvm')).lower()
 
@@ -101,7 +100,7 @@ def get():
             'socket_id': cpu.socket_id,
             'die_id': cpu.die_id,
             'core_id': cpu.core_id,
-        } for cpu in numa.cpu_info(libvirt_caps)]
+        } for cpu in numa.cpu_info()]
 
     caps['cpuSpeed'] = cpuinfo.frequency()
     caps['cpuModel'] = cpuinfo.model()
@@ -139,7 +138,7 @@ def get():
 
     caps['rngSources'] = rngsources.list_available()
 
-    caps['numaNodes'] = dict(numa.topology(libvirt_caps))
+    caps['numaNodes'] = dict(numa.topology())
     caps['numaNodeDistance'] = dict(numa.distances())
     caps['autoNumaBalancing'] = numa.autonuma_status()
 
