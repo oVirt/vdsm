@@ -71,6 +71,7 @@ _TASKS = _WORKERS * _TASK_PER_WORKER
 _MAX_WORKERS = config.getint('guest_agent', 'max_workers')
 
 _COMMAND_TIMEOUT = config.getint('guest_agent', 'qga_command_timeout')
+_HOTPLUG_CHECK_PERIOD = 10
 _INITIAL_INTERVAL = config.getint('guest_agent', 'qga_initial_info_interval')
 _TASK_TIMEOUT = config.getint('guest_agent', 'qga_task_timeout')
 _THROTTLING_INTERVAL = 60
@@ -461,8 +462,16 @@ class QemuGuestAgentPoller(object):
             for command in _QEMU_COMMANDS.keys():
                 if _QEMU_COMMANDS[command] not in caps['commands']:
                     continue
+                after_hotplug = \
+                    command == VIR_DOMAIN_GUEST_INFO_FILESYSTEM and \
+                    vm_obj.last_disk_hotplug() is not None and \
+                    (now - vm_obj.last_disk_hotplug() >=
+                        _HOTPLUG_CHECK_PERIOD) and \
+                    (self.last_check(vm_id, command) <
+                        vm_obj.last_disk_hotplug() + _HOTPLUG_CHECK_PERIOD)
                 if now - self.last_check(vm_id, command) \
-                        < _QEMU_COMMAND_PERIODS[command]:
+                        < _QEMU_COMMAND_PERIODS[command] and \
+                        not after_hotplug:
                     continue
                 # Commands that have special handling go here
                 if command == VIR_DOMAIN_GUEST_INFO_FILESYSTEM and \

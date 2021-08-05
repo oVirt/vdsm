@@ -479,6 +479,7 @@ class Vm(object):
             lambda: self._domain.nvram is not None,
             self._read_nvram_data,
             self._write_nvram_data)
+        self._last_disk_hotplug = None
 
     @property
     def _hugepages_shared(self):
@@ -3873,6 +3874,7 @@ class Vm(object):
             vmdevices.storage.Drive.update_device_info(self, device_conf)
             hooks.after_disk_hotplug(driveXml, self._custom,
                                      params=drive.custom)
+            self._last_disk_hotplug = vdsm.common.time.monotonic_time()
 
         return {'status': doneCode, 'vmList': {}}
 
@@ -6190,6 +6192,9 @@ class Vm(object):
             finally:
                 if acquired:
                     self._qga_lock.release()
+
+    def last_disk_hotplug(self):
+        return self._last_disk_hotplug
 
 
 def update_active_path(volume_chain, volumeID, activePath):
