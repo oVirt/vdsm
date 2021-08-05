@@ -1477,7 +1477,7 @@ class StorageDomain(object):
         """
         pass
 
-    def extendVolume(self, volumeUUID, size, isShuttingDown=None):
+    def extendVolume(self, volumeUUID, size):
         pass
 
     def reduceVolume(self, imgUUID, volumeUUID, allowActive=False):

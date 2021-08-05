@@ -1470,14 +1470,14 @@ class StoragePool(object):
             self.log.info("Removing VM directory %r", vmDirPath)
             fileUtils.cleanupdir(vmDirPath)
 
-    def extendVolume(self, sdUUID, volumeUUID, size, isShuttingDown=None):
+    def extendVolume(self, sdUUID, volumeUUID, size):
         # This method is not exposed through the remote API but it's called
         # directly from the mailbox to implement the thin provisioning on
         # block devices. The scope of this method is to extend only the
         # volume apparent size; the virtual disk size seen by the guest is
         # unchanged.
         self._assert_sd_in_pool(sdUUID)
-        sdCache.produce(sdUUID).extendVolume(volumeUUID, size, isShuttingDown)
+        sdCache.produce(sdUUID).extendVolume(volumeUUID, size)
 
     def reduceVolume(self, sdUUID, imgUUID, volUUID, allowActive=False):
         self._assert_sd_in_pool(sdUUID)

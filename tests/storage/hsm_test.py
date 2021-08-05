@@ -222,7 +222,7 @@ class FakePool(object):
     def __init__(self):
         self.size = None
 
-    def extendVolume(self, sdUUID, volUUID, size, isShuttingDown):
+    def extendVolume(self, sdUUID, volUUID, size):
         self.size = size
 
     def is_connected(self):

@@ -233,7 +233,7 @@ class FakeSD(object):
     def getVersion(self):
         return self._manifest.getVersion()
 
-    def extendVolume(self, volumeUUID, size, isShuttingDown=None):
+    def extendVolume(self, volumeUUID, size):
         if self.lvm:
             self.lvm.extendLV(self._manifest.sdUUID, volumeUUID, size)
 

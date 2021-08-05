@@ -674,7 +674,7 @@ class HSM(object):
 
     @public
     def extendVolume(self, sdUUID, spUUID, imgUUID, volumeUUID, size,
-                     isShuttingDown=None, options=None):
+                     options=None):
         """
         Extends an existing volume.
 
@@ -693,8 +693,6 @@ class HSM(object):
         :param size: Target volume size in bytes (desired final size, not by
                      how much to increase)
         :type size: number (anything parsable by int(size))
-        :param isShuttingDown: ?
-        :type isShuttingDown: bool
         :param options: ?
         """
         vars.task.setDefaultException(
@@ -711,7 +709,7 @@ class HSM(object):
         #  But we should really convert all code to use bytes.
         #  Using MiB for lvm is not correct anyway since
         #  lvm default extent size is 4 MiB, and we use extent size of 128 MiB.
-        pool.extendVolume(sdUUID, volumeUUID, size_mb, isShuttingDown)
+        pool.extendVolume(sdUUID, volumeUUID, size_mb)
 
     @public
     def reduceVolume(self, spUUID, sdUUID, imgUUID, volUUID,
