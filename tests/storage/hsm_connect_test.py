@@ -101,7 +101,7 @@ def test_refresh_storage_once(fake_hsm, conn_type, expected_calls):
     connections = [{'id': '1', 'connection': 'test', 'port': '3660'},
                    {'id': '2', 'connection': 'test2', 'port': '3660'},
                    {'id': '3', 'connection': 'test3', 'port': '3660'}]
-    fake_hsm.connectStorageServer(conn_type, 'SPUID', connections, None)
+    fake_hsm.connectStorageServer(conn_type, 'SPUID', connections)
 
     calls = getattr(hsm.sdCache, "__calls__", [])
     assert calls == expected_calls
@@ -125,7 +125,7 @@ def test_refresh_storage_once(fake_hsm, conn_type, expected_calls):
       {'id': '9', 'connection': 'test2'}]),
 ])
 def test_connect(fake_hsm, conn_type, connections):
-    fake_hsm.connectStorageServer(conn_type, 'SPUID', connections, None)
+    fake_hsm.connectStorageServer(conn_type, 'SPUID', connections)
 
     sc = storageServer.ConnectionFactory.connections
     for con in connections:
@@ -150,8 +150,7 @@ def test_failed_connection(fake_hsm, conn_type):
          'nfsVersion': 'AUTO', 'nfsRetrans': None, 'nfsTimeo': None,
          'iface': None, 'netIfaceName': None, 'port': '3660'}
     ]
-    result = fake_hsm.connectStorageServer(
-        conn_type, 'SPUID', connections, None)
+    result = fake_hsm.connectStorageServer(conn_type, 'SPUID', connections)
     expected = {
         'statuslist':
             [
@@ -175,7 +174,7 @@ def test_cache_update(fake_hsm):
     ]
     assert hsm.sdCache.knownSDs == {}
 
-    fake_hsm.connectStorageServer(sd.NFS_DOMAIN, 'SPUID', connections, None)
+    fake_hsm.connectStorageServer(sd.NFS_DOMAIN, 'SPUID', connections)
 
     sc = storageServer.ConnectionFactory.connections
     assert sc['1'].connected
