@@ -673,8 +673,7 @@ class HSM(object):
         return dict(spm_st=status)
 
     @public
-    def extendVolume(self, sdUUID, spUUID, imgUUID, volumeUUID, size,
-                     options=None):
+    def extendVolume(self, sdUUID, spUUID, imgUUID, volumeUUID, size):
         """
         Extends an existing volume.
 
@@ -693,7 +692,6 @@ class HSM(object):
         :param size: Target volume size in bytes (desired final size, not by
                      how much to increase)
         :type size: number (anything parsable by int(size))
-        :param options: ?
         """
         vars.task.setDefaultException(
             se.VolumeExtendingError(
