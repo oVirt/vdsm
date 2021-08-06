@@ -2147,15 +2147,12 @@ class HSM(object):
             pass
 
     @public
-    def getTaskStatus(self, taskID, spUUID=None):
+    def getTaskStatus(self, taskID):
         """
         Gets the status of a task.
 
         :param taskID: The ID of the task you want the check.
         :type taskID: ID?
-        :param spUUID: the UUID of the storage pool that the task is
-                       operating on. ??
-        :type spUUID: UUID (deprecated)
 
         :returns: a dict containing the status information of the task.
         :rtype: dict
@@ -2165,13 +2162,9 @@ class HSM(object):
         return dict(taskStatus=taskStatus)
 
     @public
-    def getAllTasksStatuses(self, spUUID=None):
+    def getAllTasksStatuses(self):
         """
         Gets the status of all public tasks.
-
-        :param spUUID: The UUID of the storage pool that you
-                       want to check it's tasks.
-        :type spUUID: UUID (deprecated)
         """
         # getSharedLock(tasksResource...)
         # Calling on non-SPM is client error.
@@ -2187,14 +2180,12 @@ class HSM(object):
         return dict(allTasksStatus=allTasksStatus)
 
     @public
-    def getTaskInfo(self, taskID, spUUID=None):
+    def getTaskInfo(self, taskID):
         """
         Gets information about a Task.
 
         :param taskID: The ID of the task you want to get info on.
         :type taskID: ID ?
-        :param spUUID: The UUID of the storage pool that owns this task. ?
-        :type spUUID: UUID (deprecated)
 
         :returns: a dict with information about the task.
         :rtype: dict
@@ -2207,13 +2198,9 @@ class HSM(object):
         return dict(TaskInfo=inf)
 
     @public
-    def getAllTasksInfo(self, spUUID=None):
+    def getAllTasksInfo(self):
         """
         Get the information of all the tasks in a storage pool.
-
-        :param spUUID: The UUID of the storage pool you that want to check
-                       it's tasks info.
-        :type spUUID: UUID (deprecated)
 
         :returns: a dict of all the tasks information.
         :rtype: dict
@@ -2243,14 +2230,12 @@ class HSM(object):
         return dict(tasks=ret)
 
     @public
-    def stopTask(self, taskID, spUUID=None):
+    def stopTask(self, taskID):
         """
         Stops a task.
 
         :param taskID: The ID of the task you want to stop.
         :type taskID: ID?
-        :param spUUID: The UUID of the storage pool that owns the task.
-        :type spUUID: UUID (deprecated)
 
         :returns: :keyword:`True` if task was stopped successfully.
         :rtype: bool
@@ -2258,14 +2243,12 @@ class HSM(object):
         return self.taskMng.stopTask(taskID=taskID, force=False)
 
     @public
-    def clearTask(self, taskID, spUUID=None):
+    def clearTask(self, taskID):
         """
         Clears a task. ?
 
         :param taskID: The ID of the task you want to clear.
         :type taskID: ID?
-        :param spUUID: The UUID of the storage pool that owns this task.
-        :type spUUID: UUID (deprecated)
 
         :returns: :keyword:`True` if task was cleared successfully.
         :rtype: bool
@@ -2274,14 +2257,12 @@ class HSM(object):
         return self.taskMng.clearTask(taskID=taskID)
 
     @public
-    def revertTask(self, taskID, spUUID=None):
+    def revertTask(self, taskID):
         """
         Revert a task.
 
         :param taskID: The ID of the task you want to clear.
         :type taskID: ID?
-        :param spUUID: The UUID of the storage pool that owns this task.
-        :type spUUID: UUID (deprecated)
 
         :returns:
         :rtype:
