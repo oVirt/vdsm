@@ -1120,12 +1120,9 @@ class StoragePool(APIBase):
     def create(self, name, masterSdUUID, masterVersion, domainList,
                lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec,
                leaseRetries):
-        poolType = None   # Not used
-        lockPolicy = None   # Not used
         return self._irs.createStoragePool(
-            poolType, self._UUID, name, masterSdUUID, domainList,
-            masterVersion, lockPolicy, lockRenewalIntervalSec, leaseTimeSec,
-            ioOpTimeoutSec, leaseRetries)
+            self._UUID, name, masterSdUUID, domainList, masterVersion,
+            lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec, leaseRetries)
 
     # scsiKey not used
     def destroy(self, hostID, scsiKey):

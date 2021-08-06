@@ -939,10 +939,10 @@ class HSM(object):
                                  name, func, *args)
 
     @public
-    def createStoragePool(self, poolType, spUUID, poolName, masterDom,
-                          domList, masterVersion, lockPolicy=None,
-                          lockRenewalIntervalSec=None, leaseTimeSec=None,
-                          ioOpTimeoutSec=None, leaseRetries=None):
+    def createStoragePool(
+            self, spUUID, poolName, masterDom, domList, masterVersion,
+            lockRenewalIntervalSec=None, leaseTimeSec=None,
+            ioOpTimeoutSec=None, leaseRetries=None):
         """
         Create new storage pool with single/multiple image data domain.
         The command will create new storage pool meta-data attach each
@@ -952,8 +952,6 @@ class HSM(object):
         .. note::
             The master domain needs to be also stated in the domain list
 
-        :param poolType: The type of the new storage pool.
-        :type poolType: Some enum?
         :param spUUID: The UUID that the new storage pool will have
         :type spUUID: UUID
         :param poolName: The human readable name of the new pool.
@@ -966,7 +964,6 @@ class HSM(object):
         :type domList: UUID list
         :param masterVersion: The master version of the storage pool meta data.
         :type masterVersion: uint
-        :param lockPolicy: ?
         :param lockRenewalIntervalSec: ?
         :param leaseTimeSec: ?
         :param ioOpTimeoutSec: The default timeout for IO operations
