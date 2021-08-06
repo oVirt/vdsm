@@ -2945,8 +2945,9 @@ class HSM(object):
         """
         Discovers iSCSI targets.
 
-        :param con: A dict containing connection information of some sort.?
-        :type con: dict?
+        :param con: A dict containing connection information like host FQDN or
+            IP address, login credentials etc.
+        :type con: dict
 
         :returns: a dict containing the send targets that were discovered.
         :rtype: dict
