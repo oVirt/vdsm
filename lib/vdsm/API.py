@@ -1157,10 +1157,9 @@ class StoragePool(APIBase):
     def reconstructMaster(self, hostId, name, masterSdUUID, masterVersion,
                           domainDict, lockRenewalIntervalSec, leaseTimeSec,
                           ioOpTimeoutSec, leaseRetries):
-        lockPolicy = None   # Not used
         return self._irs.reconstructMaster(
             self._UUID, name, masterSdUUID, domainDict, masterVersion,
-            lockPolicy, lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec,
+            lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec,
             leaseRetries, hostId)
 
     def setDescription(self, description):

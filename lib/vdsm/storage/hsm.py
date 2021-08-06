@@ -1864,7 +1864,7 @@ class HSM(object):
 
     @public
     def reconstructMaster(self, spUUID, poolName, masterDom, domDict,
-                          masterVersion, lockPolicy, lockRenewalIntervalSec,
+                          masterVersion, lockRenewalIntervalSec,
                           leaseTimeSec, ioOpTimeoutSec, leaseRetries, hostId):
         """
         Reconstruct Master Domains - rescue action: can be issued even when
@@ -1879,7 +1879,6 @@ class HSM(object):
         :type domDict: dict
         :param masterVersion: The new version of master domain.
         :type masterVersion: int
-        :param lockPolicy: ?
         :param lockRenewalIntervalSec: ?
         :param leaseTimeSec: ?
         :param ioOpTimeoutSec: The timeout of IO operations in seconds. ?
