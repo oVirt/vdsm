@@ -2983,17 +2983,6 @@ class HSM(object):
         return dict(targets=partialTargets, fullTargets=fullTargets)
 
     @public
-    def cleanupUnusedConnections(self, options=None):
-        """
-        .. warning::
-            This method is not yet implemented.
-        """
-        # vars.task.setDefaultException(se.ChangeMeError("%s" % args))
-        # getExclusiveLock(connectionsResource...)
-        # TODO: Implement
-        pass
-
-    @public
     def refreshVolume(self, sdUUID, spUUID, imgUUID, volUUID):
         """
         Refresh low level volume after change in the shared storage initiated
