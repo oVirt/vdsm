@@ -4980,7 +4980,10 @@ class Vm(object):
 
     def _create_disk_xml(self, vm_dev, path, device, iface, type):
         disk_elem = vmxml.Element('disk', type=type, device=vm_dev)
-        disk_elem.appendChildWithArgs('source', file=path)
+        if type == DISK_TYPE.BLOCK:
+            disk_elem.appendChildWithArgs('source', dev=path)
+        else:
+            disk_elem.appendChildWithArgs('source', file=path)
 
         target = {'dev': device}
         if iface:
@@ -5040,10 +5043,11 @@ class Vm(object):
             # Empty path means eject CD.
             path = ""
 
+        disk_type = drive_spec["diskType"] if drive_spec else DISK_TYPE.FILE
         # Prepare XML for new CD, change CD via libvirt and update CD metadata
         # with new CD drive spec.
         disk_xml = self._create_disk_xml(
-            "cdrom", path, device, iface, DISK_TYPE.FILE)
+            "cdrom", path, device, iface, disk_type)
 
         try:
             self._update_disk_device(disk_xml, force=force)
