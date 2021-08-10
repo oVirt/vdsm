@@ -33,6 +33,7 @@ from vdsm.common import exception
 from vdsm.virt import vm
 from vdsm.virt.vmdevices import drivename
 from vdsm.virt.vmdevices import hwclass
+from vdsm.virt.vmdevices import storage
 
 from testlib import normalized
 
@@ -434,6 +435,73 @@ def test_change_cd(vm_with_cd):
     with vm_with_cd._md_desc.device(devtype=hwclass.DISK, name=device) as dev:
         _assert_pdiv(new_drive_spec, dev)
         assert "change" not in dev
+
+
+def test_cd_xml_on_file_storage(tmpdir, vm_with_cd):
+    fake_cd = tmpdir.join("fake_cd")
+    fake_cd.write("test")
+
+    sd_id = str(uuid.uuid4())
+    img_id = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+    new_drive_spec = {
+        "device": "cdrom",
+        "domainID": sd_id,
+        "poolID": str(uuid.uuid4()),
+        "imageID": img_id,
+        "volumeID": vol_id,
+    }
+    cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": new_drive_spec,
+    }
+
+    vm_with_cd.changeCD(cdrom_spec)
+
+    expected_dev_xml = """\
+<?xml version='1.0' encoding='utf-8'?>
+<disk type="file" device="cdrom">
+    <source file="/run/storage/{}/{}/{}" />
+    <target dev="sdc" bus="sata" />
+</disk>""".format(sd_id, img_id, vol_id)
+    cd_xml = vm_with_cd._dom.devXml
+    assert normalized(expected_dev_xml) == normalized(cd_xml)
+
+
+def test_cd_xml_on_block_storage(tmpdir, vm_with_cd):
+    fake_cd = tmpdir.join("fake_cd")
+    fake_cd.write("test")
+
+    sd_id = str(uuid.uuid4())
+    img_id = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+    new_drive_spec = {
+        "device": "cdrom",
+        "domainID": sd_id,
+        "poolID": str(uuid.uuid4()),
+        "imageID": img_id,
+        "volumeID": vol_id,
+    }
+    cdrom_spec = {
+        "iface": "sata",
+        "index": "2",
+        "drive_spec": new_drive_spec,
+    }
+
+    # Pretend we are on the block storage.
+    vm_with_cd.cif.irs.sd_types[sd_id] = storage.DISK_TYPE.BLOCK
+
+    vm_with_cd.changeCD(cdrom_spec)
+
+    expected_dev_xml = """\
+<?xml version='1.0' encoding='utf-8'?>
+<disk type="block" device="cdrom">
+    <source dev="/run/storage/{}/{}/{}" />
+    <target dev="sdc" bus="sata" />
+</disk>""".format(sd_id, img_id, vol_id)
+    cd_xml = vm_with_cd._dom.devXml
+    assert normalized(expected_dev_xml) == normalized(cd_xml)
 
 
 def test_change_cd_failed_libvirt():
