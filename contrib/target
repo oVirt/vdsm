@@ -69,6 +69,15 @@ def main():
              "running many services on the same server, but works fine if "
              "server is used only for storage. (default False).")
 
+    parser.add_argument(
+        "--exists",
+        action="store_true",
+        help="Allow creating target with existing directory. This is useful "
+             "when you attach a disk with existing filesystem to a new VM, "
+             "and want to create a new target using the existing directory. "
+             "You must create the target using the same configuration as "
+             "as the existing directory (default False).")
+
     args = parser.parse_args()
 
     host_name = platform.node()
@@ -80,12 +89,12 @@ def main():
 
 
     if args.action == "create":
-        create_target(args, target_iqn, target_dir)
+        create_target(args, target_iqn, target_dir, exists=args.exists)
     else:
         delete_target(args, target_iqn, target_dir)
 
 
-def create_target(args, target_iqn, target_dir):
+def create_target(args, target_iqn, target_dir, exists=False):
     print()
     print("Creating target")
     print("  target_name:   %s" % args.target_name)
@@ -94,13 +103,14 @@ def create_target(args, target_iqn, target_dir):
     print("  lun_count:     %s" % args.lun_count)
     print("  lun_size:      %s GiB" % args.lun_size)
     print("  cache:         %s" % args.cache)
+    print("  exists:        %s" % args.exists)
     print()
 
     if not confirm("Create target? [N/y]: "):
         sys.exit(0)
 
     print("Creating target directory %r" % target_dir)
-    os.makedirs(target_dir)
+    os.makedirs(target_dir, exist_ok=exists)
 
     print("Creating target %r" % target_iqn)
     subprocess.check_call(["targetcli", "/iscsi", "create", target_iqn])
