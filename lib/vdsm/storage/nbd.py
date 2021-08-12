@@ -150,7 +150,7 @@ def start_server(server_id, config):
 
         start_transient_service(server_id, qemu_nbd_config)
 
-        if not _wait_for_socket(sock, 1.0):
+        if not _wait_for_socket(sock, 10.0):
             raise Timeout("Timeout starting NBD server {}: {}"
                           .format(server_id, config))
     finally:
