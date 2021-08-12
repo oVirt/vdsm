@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import datetime
+from dateutil import tz
 
 from collections import defaultdict
 
@@ -177,10 +178,10 @@ def translate_pci_device(device):
     if type(date) is int:
         # If type is int it is number of nanoseconds since epoch otherwise it
         # is string in form YYYY-MM-DD and we don't have to do anything
-        date = datetime.date.fromtimestamp(date // 1e9).isoformat()
+        dt = datetime.datetime.fromtimestamp(date // 10**9, tz=tz.tzutc())
         return {
             'device_id': int(device['id']['device-id']),
-            'driver_date': date,
+            'driver_date': dt.date().isoformat(),
             'driver_name': device['driver-name'],
             'driver_version': device['driver-version'],
             'vendor_id': int(device['id']['vendor-id']),
