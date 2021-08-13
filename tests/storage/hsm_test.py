@@ -131,8 +131,14 @@ class TestVerifyUntrustedVolume(object):
             # Simulate upload image with wrong backing_file.
             wrong_volume = os.path.join(
                 os.path.dirname(vol.volumePath), "wrong")
-            open(wrong_volume, "w").close()
-            op = qemuimg.rebase(vol.volumePath, "wrong", unsafe=True)
+            with open(wrong_volume, "w") as f:
+                f.truncate(self.SIZE)
+            op = qemuimg.rebase(
+                vol.volumePath,
+                "wrong",
+                format=qemuimg.FORMAT.QCOW2,
+                backingFormat=qemuimg.FORMAT.RAW,
+                unsafe=True)
             op.run()
             h = FakeHSM()
             with pytest.raises(se.ImageVerificationError):
@@ -144,8 +150,14 @@ class TestVerifyUntrustedVolume(object):
             # Simulate upload of qcow2 with unexpected backing file.
             unexpected_volume = os.path.join(
                 os.path.dirname(vol.volumePath), "unexpected")
-            open(unexpected_volume, "w").close()
-            op = qemuimg.rebase(vol.volumePath, 'unexpected', unsafe=True)
+            with open(unexpected_volume, "w") as f:
+                f.truncate(self.SIZE)
+            op = qemuimg.rebase(
+                vol.volumePath,
+                'unexpected',
+                format=qemuimg.FORMAT.QCOW2,
+                backingFormat=qemuimg.FORMAT.RAW,
+                unsafe=True)
             op.run()
             h = FakeHSM()
             with pytest.raises(se.ImageVerificationError):
