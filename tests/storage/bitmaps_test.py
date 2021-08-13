@@ -211,7 +211,11 @@ def test_skip_holes_during_merge_bitmaps(tmp_mount, vol_chain):
 
     # Rebase the volume chain on top of base parent volume
     op = qemuimg.rebase(
-        vol_chain.base_vol, base_parent_vol, unsafe=True)
+        vol_chain.base_vol,
+        base_parent_vol,
+        format=qemuimg.FORMAT.QCOW2,
+        backingFormat=qemuimg.FORMAT.QCOW2,
+        unsafe=True)
     op.run()
 
     # Add new bitmap to base parent volume

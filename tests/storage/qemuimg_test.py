@@ -979,7 +979,11 @@ class TestConvertUnorderedWrites:
 
         # Create top image with pattern.
         op = qemuimg.create(
-            top, format=qemuimg.FORMAT.QCOW2, qcow2Compat="1.1", backing=base)
+            top,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat="1.1",
+            backing=base,
+            backingFormat=qemuimg.FORMAT.RAW)
         op.run()
         qemuio.write_pattern(top, qemuimg.FORMAT.QCOW2, offset=top_offset)
 
@@ -1223,15 +1227,25 @@ class TestCommit:
         with namedTemporaryDir() as tmpdir:
             chain = []
             parent = None
+            parent_format = None
+
             # Create a chain of 4 volumes.
             for i in range(4):
                 vol = os.path.join(tmpdir, "vol%d.img" % i)
                 format = (qemuimg.FORMAT.RAW if i == 0 else
                           qemuimg.FORMAT.QCOW2)
-                make_image(vol, size, format, i, qcow2_compat, parent)
+                make_image(
+                    vol,
+                    size,
+                    format,
+                    i,
+                    qcow2_compat,
+                    backing=parent,
+                    backing_format=parent_format)
                 orig_offset = qemuimg.check(vol)["offset"] if i > 0 else None
                 chain.append((vol, orig_offset))
                 parent = vol
+                parent_format = format
 
             base_vol = chain[base][0]
             top_vol = chain[top][0]
@@ -1269,7 +1283,14 @@ class TestCommit:
             make_image(base, size, qemuimg.FORMAT.RAW, 0, "1.1")
 
             top = os.path.join(tmpdir, "top.img")
-            make_image(top, size, qemuimg.FORMAT.QCOW2, 1, "1.1", base)
+            make_image(
+                top,
+                size,
+                qemuimg.FORMAT.QCOW2,
+                1,
+                "1.1",
+                backing=base,
+                backing_format=qemuimg.FORMAT.RAW)
 
             op = qemuimg.commit(top, topFormat=qemuimg.FORMAT.QCOW2)
             op.run()
@@ -1379,11 +1400,16 @@ class TestAmend:
             base_path = os.path.join(tmpdir, 'base.img')
             leaf_path = os.path.join(tmpdir, 'leaf.img')
             size = MiB
-            op_base = qemuimg.create(base_path, size=size,
-                                     format=qemuimg.FORMAT.RAW)
+            op_base = qemuimg.create(
+                base_path,
+                size=size,
+                format=qemuimg.FORMAT.RAW)
             op_base.run()
-            op_leaf = qemuimg.create(leaf_path, format=qemuimg.FORMAT.QCOW2,
-                                     backing=base_path)
+            op_leaf = qemuimg.create(
+                leaf_path,
+                format=qemuimg.FORMAT.QCOW2,
+                backing=base_path,
+                backingFormat=qemuimg.FORMAT.RAW)
             op_leaf.run()
             qemuimg.amend(leaf_path, desired_compat)
             info = qemuimg.info(leaf_path)
@@ -1754,11 +1780,18 @@ def convert_to_qcow2(src, compressed=False, compat="1.1"):
     return dst
 
 
-def make_image(path, size, format, index, qcow2_compat, backing=None):
-    op = qemuimg.create(path, size=size, format=format,
-                        qcow2Compat=qcow2_compat,
-                        backing=backing)
+def make_image(
+        path, size, format, index, qcow2_compat, backing=None,
+        backing_format=None):
+    op = qemuimg.create(
+        path,
+        size=size,
+        format=format,
+        qcow2Compat=qcow2_compat,
+        backing=backing,
+        backingFormat=backing_format)
     op.run()
+
     offset = index * KiB
     qemuio.write_pattern(
         path,

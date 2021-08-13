@@ -331,12 +331,20 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
     # Create the image.
     if vol_format == sc.COW_FORMAT:
         backing = parent_vol_id if parent_vol_id != sc.BLANK_UUID else None
+        if backing:
+            backing_path = os.path.join(
+                sd_manifest.domaindir, "images", imguuid, backing)
+            backing_format = qemuimg.info(backing_path)["format"]
+        else:
+            backing_format = None
+
         op = qemuimg.create(
             volpath,
             size=size,
             format=qemuimg.FORMAT.QCOW2,
             qcow2Compat=qcow2_compat,
-            backing=backing)
+            backing=backing,
+            backingFormat=backing_format)
         op.run()
     else:
         # TODO: Use fallocate helper like the real code.
@@ -398,13 +406,20 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
         volpath = lvm.lvPath(sduuid, voluuid)
         backing = parent_vol_id if parent_vol_id != sc.BLANK_UUID else None
 
+        if backing:
+            backing_path = lvm.lvPath(sduuid, backing)
+            backing_format = qemuimg.info(backing_path)["format"]
+        else:
+            backing_format = None
+
         # Write qcow2 image to the fake block device - truncating the file.
         op = qemuimg.create(
             volpath,
             size=size,
             format=qemuimg.FORMAT.QCOW2,
             qcow2Compat=qcow2_compat,
-            backing=backing)
+            backing=backing,
+            backingFormat=backing_format)
         op.run()
 
         # Truncate fake block device back ot the proper size.
