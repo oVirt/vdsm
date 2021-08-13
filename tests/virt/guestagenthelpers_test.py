@@ -122,7 +122,7 @@ class GuestAgentHelpersTest(TestCaseBase):
             'used': '123',
         }
 
-    def test_translate_pci_device(self):
+    def test_translate_pci_device_iso_date(self):
         assert guestagenthelpers.translate_pci_device({
             'driver-date': '2019-08-12',
             'driver-name': 'Red Hat VirtIO Ethernet Adapter',
@@ -133,6 +133,24 @@ class GuestAgentHelpersTest(TestCaseBase):
                     'device-id': 4096,
                     'vendor-id': 6900,
                 }
+            }
+        }) == {
+            'device_id': 4096,
+            'driver_date': '2019-08-12',
+            'driver_name': 'Red Hat VirtIO Ethernet Adapter',
+            'driver_version': '100.80.104.17300',
+            'vendor_id': 6900,
+        }
+
+    def test_translate_pci_device_timestamp(self):
+        assert guestagenthelpers.translate_pci_device({
+            'driver-date': 1565568000000000000,
+            'driver-name': 'Red Hat VirtIO Ethernet Adapter',
+            'driver-version': '100.80.104.17300',
+            'id': {
+                'type': 'pci',
+                'device-id': 4096,
+                'vendor-id': 6900,
             }
         }) == {
             'device_id': 4096,
