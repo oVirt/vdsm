@@ -1233,7 +1233,7 @@ def _setLVAvailability(vg, lvs, available):
     except se.LVMCommandError as e:
         if available == "y":
             raise se.CannotActivateLogicalVolumes(
-                e.cmd, e.rc, e.out, e.err) from None
+                e.cmd, e.rc, e.out, e.err).with_exception(e)
         else:
             if e.lv_in_use():
                 users = _lvs_proc_info(vg, lvs)
@@ -1242,7 +1242,7 @@ def _setLVAvailability(vg, lvs, available):
                     vg, lvs, users, e)
             else:
                 raise se.CannotDeactivateLogicalVolume(
-                    e.cmd, e.rc, e.out, e.err) from None
+                    e.cmd, e.rc, e.out, e.err).with_exception(e)
 
 
 def _lvs_proc_info(vg, lvs):
@@ -1308,7 +1308,7 @@ def resizePV(vgName, guid):
         _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
     except se.LVMCommandError as e:
         raise se.CouldNotResizePhysicalVolume(
-            e.cmd, e.rc, e.out, e.err) from None
+            e.cmd, e.rc, e.out, e.err).with_exception(e)
     else:
         _lvminfo._invalidatepvs(pvName)
         _lvminfo._invalidatevgs(vgName)
@@ -1343,7 +1343,8 @@ def movePV(vgName, src_device, dst_devices):
         _lvminfo.run_command(
             cmd, devices=_lvminfo._getVGDevs((vgName, )), use_lvmpolld=False)
     except se.LVMCommandError as e:
-        raise se.CouldNotMovePVData(e.cmd, e.rc, e.out, e.err) from None
+        raise se.CouldNotMovePVData(
+            e.cmd, e.rc, e.out, e.err).with_exception(e)
     finally:
         # We invalidate all the caches even on failure so we'll have up to date
         # data after moving data within the vg.
@@ -1464,7 +1465,8 @@ def removeVG(vgName):
         _lvminfo._invalidatevgpvs(vgName)
         # If vgremove failed reintroduce the VG into the cache
         _lvminfo._invalidatevgs(vgName)
-        raise se.VolumeGroupRemoveError(e.cmd, e.rc, e.out, e.err) from None
+        raise se.VolumeGroupRemoveError(
+            e.cmd, e.rc, e.out, e.err).with_exception(e)
     else:
         _lvminfo._invalidatevgpvs(vgName)
         # Remove the vg from the cache
@@ -1848,7 +1850,7 @@ def changeLVsTags(vg, lvs, delTags=(), addTags=()):
         changelv(vg, lvs, attrs)
     except se.LVMCommandError as e:
         raise se.LogicalVolumeReplaceTagError(
-            e.cmd, e.rc, e.out, e.err) from None
+            e.cmd, e.rc, e.out, e.err).with_exception(e)
 
 
 #
@@ -1944,7 +1946,8 @@ def setrwLV(vg_name, lv_name, rw=True):
             # another lvchange error.
             return
 
-        raise se.CannotSetRWLogicalVolume(e.cmd, e.rc, e.out, e.err) from None
+        raise se.CannotSetRWLogicalVolume(
+            e.cmd, e.rc, e.out, e.err).with_exception(e)
 
 
 def lvsByTag(vgName, tag):

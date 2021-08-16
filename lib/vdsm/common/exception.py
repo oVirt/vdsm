@@ -41,6 +41,10 @@ class VdsmException(Exception):
     def __str__(self):
         return self.msg
 
+    def with_exception(self, exc):
+        self.__cause__ = None
+        return self.with_traceback(exc.__traceback__)
+
     def info(self):
         return {'code': self.code, 'message': str(self)}
 
