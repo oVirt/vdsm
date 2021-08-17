@@ -45,7 +45,7 @@ stages:
               - el8stream:
                   runtime-requirements:
                     jenkins_master: ovirt.org
-                    host-distro: newer
+                    host-distro: el8
               - rhel8:
                   runtime-requirements:
                     jenkins_master: psi.redhat.com
