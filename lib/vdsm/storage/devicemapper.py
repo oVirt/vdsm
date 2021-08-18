@@ -28,7 +28,6 @@ import re
 from collections import namedtuple
 from glob import glob
 
-from vdsm.common import cmdutils
 from vdsm.common import supervdsm
 from vdsm.common import commands
 from vdsm.constants import EXT_DMSETUP
@@ -137,10 +136,7 @@ def removeMapping(deviceName):
 
     log.info("Removing device mapping %s", deviceName)
     cmd = [EXT_DMSETUP, "remove", deviceName]
-    try:
-        commands.run(cmd)
-    except cmdutils.Error as e:
-        raise Error("Could not remove mapping: {}".format(e))
+    commands.run(cmd)
 
 
 def getAllMappedDevices():
