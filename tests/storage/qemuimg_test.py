@@ -883,6 +883,55 @@ class TestConvert:
             },
         ]
 
+    def test_convert_with_inconsistent_bitmaps(self, tmp_mount):
+        virtual_size = MiB
+        broken_bitmap = 'broken_bitmap'
+
+        # Create source volume.
+        src_vol = os.path.join(tmp_mount.path, 'src_vol.img')
+        op = qemuimg.create(
+            src_vol,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+
+        # Add new bitmaps to src_base
+        qemuimg.bitmap_add(src_vol, broken_bitmap).run()
+
+        # Simulate qemu crash, leaving bitmaps with the "in-use"
+        # flag by opening the image for writing and killing the process.
+        qemuio.abort(src_vol)
+
+        # Create destination chain.
+        dst_vol = os.path.join(tmp_mount.path, 'dst_vol.img')
+        op = qemuimg.create(
+            dst_vol,
+            size=virtual_size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat='1.1'
+        )
+        op.run()
+
+        # Convert volume with inconsistent bitmaps when
+        # QEMU support of '--skip-broken-bitmaps' flag
+        # should skip the broken bitmaps -
+        # https://bugzilla.redhat.com/1984852
+        op = qemuimg.convert(
+            src_vol,
+            dst_vol,
+            srcFormat=qemuimg.FORMAT.QCOW2,
+            dstFormat=qemuimg.FORMAT.QCOW2,
+            dstQcow2Compat='1.1',
+            bitmaps=True
+        )
+        op.run()
+
+        info = qemuimg.info(dst_vol)
+        vol_bitmaps = info['format-specific']['data'].get("bitmaps", [])
+        assert broken_bitmap not in vol_bitmaps
+
 
 class TestConvertCompressed:
 
