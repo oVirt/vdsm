@@ -293,6 +293,7 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
 
     if bitmaps:
         cmd.append('--bitmaps')
+        cmd.append('--skip-broken-bitmaps')
 
     cmd.append(srcImage)
     cmd.append(dstImage)
