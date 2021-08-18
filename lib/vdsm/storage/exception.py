@@ -1539,7 +1539,7 @@ class BlockDeviceActionError(StorageException):
     msg = "Error block device action"
 
 
-class PhysDevInitializationError(StorageException):
+class PhysDevInitializationError(LVMCommandError):
     code = 601
     msg = "Failed to initialize physical device"
 

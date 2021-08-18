@@ -1135,8 +1135,7 @@ def _createpv(devices, metadataSize, options=tuple()):
                     "--metadatacopies", "2",
                     "--metadataignore", "y"))
     cmd.extend(devices)
-    rc, out, err = _lvminfo.cmd(cmd, devices)
-    return rc, out, err
+    _lvminfo.run_command(cmd, devices=devices)
 
 
 def _initpvs(devices, metadataSize, force=False):
@@ -1160,12 +1159,12 @@ def _initpvs(devices, metadataSize, force=False):
     else:
         options = tuple()
 
-    rc, out, err = _createpv(devices, metadataSize, options)
-    _lvminfo._invalidatepvs(devices)
-    if rc != 0:
-        log.error("pvcreate failed with rc=%s", rc)
-        log.error("%s, %s", out, err)
-        raise se.PhysDevInitializationError(str(devices))
+    try:
+        _createpv(devices, metadataSize, options)
+    except se.LVMCommandError as e:
+        raise se.PhysDevInitializationError(e.cmd, e.rc, e.out, e.err)
+    finally:
+        _lvminfo._invalidatepvs(devices)
 
 
 def getLvDmName(vgName, lvName):
@@ -1281,15 +1280,17 @@ def testPVCreate(devices, metadataSize):
     devs = tuple("%s/%s" % (PV_PREFIX, dev) for dev in devices)
 
     options = ("--test",)
-    rc, out, err = _createpv(devs, metadataSize, options)
-    if rc == 0:
-        unusedDevs = set(devices)
-        usedDevs = set()
-    else:
-        unusedDevs = set(re_pvName.findall("\n".join(out)))
+
+    try:
+        _createpv(devs, metadataSize, options)
+    except se.LVMCommandError as e:
+        unusedDevs = set(re_pvName.findall("\n".join(e.out)))
         usedDevs = set(devs) - set(unusedDevs)
         log.debug("rc: %s, out: %s, err: %s, unusedDevs: %s, usedDevs: %s",
-                  rc, out, err, unusedDevs, usedDevs)
+                  e.rc, e.out, e.err, unusedDevs, usedDevs)
+    else:
+        unusedDevs = set(devices)
+        usedDevs = set()
 
     return unusedDevs, usedDevs
 
