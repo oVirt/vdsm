@@ -26,8 +26,6 @@ Incapsulates the actual LVM mechanics.
 """
 from __future__ import absolute_import
 
-import errno
-
 import os
 import re
 import pwd
@@ -1138,35 +1136,6 @@ def _createpv(devices, metadataSize, options=tuple()):
     _lvminfo.run_command(cmd, devices=devices)
 
 
-def _initpvs(devices, metadataSize, force=False):
-
-    def _initpvs_removeHolders():
-        """Remove holders for all devices."""
-        for device in devices:
-            try:
-                devicemapper.removeMappingsHoldingDevice(
-                    os.path.basename(device))
-            except OSError as e:
-                if e.errno == errno.ENODEV:
-                    raise se.PhysDevInitializationError("%s: %s" %
-                                                        (device, str(e)))
-                else:
-                    raise
-
-    if force is True:
-        options = ("-y", "-ff")
-        _initpvs_removeHolders()
-    else:
-        options = tuple()
-
-    try:
-        _createpv(devices, metadataSize, options)
-    except se.LVMCommandError as e:
-        raise se.PhysDevInitializationError(e.cmd, e.rc, e.out, e.err)
-    finally:
-        _lvminfo._invalidatepvs(devices)
-
-
 def getLvDmName(vgName, lvName):
     return "%s-%s" % (vgName.replace("-", "--"), lvName)
 
@@ -1503,6 +1472,27 @@ def extendVG(vgName, devices, force):
         log.debug("Cache after extending vg %s", _lvminfo._vgs)
     else:
         raise se.VolumeGroupExtendError(vgName, pvs)
+
+
+def _removeHolders(devices):
+    """Remove holders for all devices."""
+    for device in devices:
+        devicemapper.removeMappingsHoldingDevice(os.path.basename(device))
+
+
+def _initpvs(devices, metadataSize, force=False):
+    if force is True:
+        options = ("-y", "-ff")
+        _removeHolders(devices)
+    else:
+        options = tuple()
+
+    try:
+        _createpv(devices, metadataSize, options)
+    except se.LVMCommandError as e:
+        raise se.PhysDevInitializationError(e.cmd, e.rc, e.out, e.err)
+    finally:
+        _lvminfo._invalidatepvs(devices)
 
 
 def reduceVG(vgName, device):
