@@ -110,11 +110,14 @@ class Job(vdsm.virt.jobs.Job):
         self._load_metadata()
 
     def _run(self):
-        t = AbortSnapshot(self._vm, self._job_uuid, self._start_time,
-                          self._timeout, self._abort, self._completed,
-                          self._snapshot_job, self._lock)
-        t.start()
+        t = None
+        if self._memory_params:
+            t = AbortSnapshot(self._vm, self._job_uuid, self._start_time,
+                              self._timeout, self._abort, self._completed,
+                              self._snapshot_job, self._lock)
+            t.start()
         try:
+            self._vm.log.info('Starting snapshot job')
             if self._recovery:
                 LiveSnapshotRecovery(self._vm, self._abort, self._completed,
                                      self._snapshot_job, self._lock).run()
@@ -137,7 +140,8 @@ class Job(vdsm.virt.jobs.Job):
             # report the current job as a failure.
             raise exception.SnapshotFailed()
         finally:
-            t.join()
+            if self._memory_params:
+                t.join()
 
     def _load_metadata(self):
         # If self._snapshot_job is not None, then it was already populated
