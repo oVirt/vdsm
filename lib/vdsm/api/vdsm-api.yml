@@ -3514,6 +3514,14 @@ types:
             type: int
             added: '4.0'
 
+        -   name: parallel
+            type: uint
+            defaultvalue: null
+            description: The number of parallel migration connections
+                to use. If unspecified or 0, parallel connections are not
+                used.
+            added: '4.5'
+
         -   description: The UUID of the virtual machine to migrate
             name: vmId
             type: *UUID

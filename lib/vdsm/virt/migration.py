@@ -130,6 +130,7 @@ class SourceThread(object):
     A thread that takes care of migration on the source vdsm.
     """
     _RECOVERY_LOOP_PAUSE = 10
+    _PARALLEL_CONNECTIONS_DISABLED_VALUE = 0
 
     ongoingMigrations = DynamicBoundedSemaphore(1)
 
@@ -138,7 +139,7 @@ class SourceThread(object):
                  tunneled=False, dstqemu='', abortOnError=False,
                  consoleAddress=None, compressed=False,
                  autoConverge=False, recovery=False, encrypted=False,
-                 cpusets=None, **kwargs):
+                 cpusets=None, parallel=None, **kwargs):
         self.log = vm.log
         self._vm = vm
         self._dom = DomainAdapter(self._vm)
@@ -151,6 +152,9 @@ class SourceThread(object):
         self._consoleAddress = consoleAddress
         self._dstqemu = dstqemu
         self._encrypted = encrypted
+        if parallel == self._PARALLEL_CONNECTIONS_DISABLED_VALUE:
+            parallel = None
+        self._parallel = parallel
         self._maxBandwidth = int(
             kwargs.get('maxBandwidth') or
             config.getint('vars', 'migration_max_bandwidth')
@@ -189,8 +193,10 @@ class SourceThread(object):
         abortOnError = conv.tobool(abortOnError)
         compressed = conv.tobool(compressed)
         autoConverge = conv.tobool(autoConverge)
+        parallel = self._parallel is not None
         self._migration_flags = self._calculate_migration_flags(
-            tunneled, abortOnError, compressed, autoConverge, encrypted
+            tunneled, abortOnError, compressed, autoConverge, encrypted,
+            parallel
         )
         # True if destination host supports disk refresh. Initialized before
         # the first extend of the disk during migration if finished.
@@ -604,7 +610,12 @@ class SourceThread(object):
             self._raiseAbortError()
 
     def _migration_params(self, muri):
-        params = {libvirt.VIR_MIGRATE_PARAM_BANDWIDTH: self._maxBandwidth}
+        params = {}
+        if self._maxBandwidth:
+            params[libvirt.VIR_MIGRATE_PARAM_BANDWIDTH] = self._maxBandwidth
+        if self._parallel is not None:
+            params[libvirt.VIR_MIGRATE_PARAM_PARALLEL_CONNECTIONS] = \
+                self._parallel
         if not self.tunneled:
             params[libvirt.VIR_MIGRATE_PARAM_URI] = str(muri)
         if self._consoleAddress:
@@ -657,7 +668,8 @@ class SourceThread(object):
         return self._migration_flags
 
     def _calculate_migration_flags(self, tunneled, abort_on_error,
-                                   compressed, auto_converge, encrypted):
+                                   compressed, auto_converge, encrypted,
+                                   parallel):
         flags = libvirt.VIR_MIGRATE_LIVE | libvirt.VIR_MIGRATE_PEER2PEER
         if tunneled:
             flags |= libvirt.VIR_MIGRATE_TUNNELLED
@@ -669,6 +681,8 @@ class SourceThread(object):
             flags |= libvirt.VIR_MIGRATE_AUTO_CONVERGE
         if encrypted:
             flags |= libvirt.VIR_MIGRATE_TLS
+        if parallel:
+            flags |= libvirt.VIR_MIGRATE_PARALLEL
         if self._vm.min_cluster_version(4, 2):
             flags |= libvirt.VIR_MIGRATE_PERSIST_DEST
         # Migration may fail immediately when VIR_MIGRATE_POSTCOPY flag is
