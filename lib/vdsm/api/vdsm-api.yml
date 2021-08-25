@@ -8180,6 +8180,13 @@ types:
         -   description: The desired connection password
             name: password
             type: string
+
+        -   description: If Console Disconnect Action is set to Shutdown, this
+                parameter sets the length of the delay before vm shutdown is
+                initiated, in minutes.
+            name: consoleDisconnectActionDelay
+            type: uint
+            added: '4.5'
         type: object
 
     vmUpdateXMLDeviceParams: &vmUpdateXMLDeviceParams

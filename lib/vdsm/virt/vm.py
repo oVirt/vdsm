@@ -395,6 +395,9 @@ class Vm(object):
         self._monitorResponse = 0
         self._post_copy = migration.PostCopyPhase.NONE
         self._consoleDisconnectAction = ConsoleDisconnectAction.LOCK_SCREEN
+        self._console_disconnect_action_delay = 0
+        self._user_console_reconnect = threading.Event()
+        self._desktop_disconnect_action_thread = None
         self._confLock = threading.Lock()
         self._statusLock = threading.Lock()
         self._creationThread = concurrent.thread(self._startUnderlyingVm,
@@ -1188,6 +1191,13 @@ class Vm(object):
             self.log.exception("Reboot event failed")
 
     def onConnect(self, clientIp='', clientPort=''):
+        # Cancel shutting down the VM if user reconnected
+        # within the time limit set by console_disconnect_action_delay
+        self._user_console_reconnect.set()
+        if self._desktop_disconnect_action_thread is not None:
+            self._desktop_disconnect_action_thread.cancel()
+            self._desktop_disconnect_action_thread = None
+
         if clientIp:
             self._clientIp = clientIp
             self._clientPort = clientPort
@@ -1203,9 +1213,13 @@ class Vm(object):
         # This is not a definite fix, we're aware that there is still the
         # possibility of a race condition, however this covers more cases
         # than before and a quick gain
+        #
+        # This timer is supposed to delay the call to lock the desktop of the
+        # guest. And only lock it, if it there was no new connect.
+        # This is detected by the clientIp being set or not.
         _DESKTOP_LOCK_TIMEOUT = 2
-        time.sleep(_DESKTOP_LOCK_TIMEOUT)
-        if not self._clientIp and not self._destroy_requested.is_set():
+        stop = self._user_console_reconnect.wait(timeout=_DESKTOP_LOCK_TIMEOUT)
+        if not (self._clientIp or self._destroy_requested.is_set() or stop):
             delay = config.get('vars', 'user_shutdown_timeout')
             timeout = config.getint('vars', 'sys_shutdown_timeout')
             CDA = ConsoleDisconnectAction
@@ -1218,9 +1232,20 @@ class Vm(object):
                               message='Scheduled reboot on disconnect',
                               force=True)
             elif self._consoleDisconnectAction == CDA.SHUTDOWN:
-                self.shutdown(delay=delay, reboot=False, timeout=timeout,
-                              message='Scheduled shutdown on disconnect',
-                              force=True)
+                if self._desktop_disconnect_action_thread is not None:
+                    self._desktop_disconnect_action_thread.cancel()
+                    if self._guestEvent == vmstatus.POWERING_DOWN:
+                        return
+                self._desktop_disconnect_action_thread = concurrent.Timer(
+                    interval=self._console_disconnect_action_delay * 60,
+                    function=self.shutdown,
+                    kwargs={'delay': delay,
+                            'reboot': False,
+                            'timeout': timeout,
+                            'message': 'Scheduled shutdown on disconnect',
+                            'force': True},
+                    name='vmShutdown')
+                self._desktop_disconnect_action_thread.start()
 
     def onDisconnect(self, detail=None, clientIp='', clientPort=''):
         if self._clientIp != clientIp:
@@ -1237,12 +1262,10 @@ class Vm(object):
         # to a secure channel. However as a result of this we're getting events
         # of false positive disconnects and we need to ensure that we're really
         # having a disconnected client
-        # This timer is supposed to delay the call to lock the desktop of the
-        # guest. And only lock it, if it there was no new connect.
-        # This is detected by the clientIp being set or not.
         #
         # Multiple desktopLock calls won't matter if we're really disconnected
         # It is not harmful. And the threads will exit after 2 seconds anyway.
+        self._user_console_reconnect.clear()
         thread = concurrent.thread(self._timedDesktopLock, name="desktoplock")
         thread.start()
 
@@ -3446,6 +3469,7 @@ class Vm(object):
             params['ttl'],
             params.get('existingConnAction'),
             params.get('disconnectAction'),
+            params.get('consoleDisconnectActionDelay'),
             params['params']
         )
 
@@ -5253,7 +5277,7 @@ class Vm(object):
             raise exception.SpiceTicketError(
                 'no graphics devices configured')
         return self._setTicketForGraphicDev(
-            graphics, otp, seconds, connAct, None, params)
+            graphics, otp, seconds, connAct, None, None, params)
 
     def _check_fips_params_valid(self, params):
         if 'fips' in params and \
@@ -5268,7 +5292,8 @@ class Vm(object):
                 'FIPS mode requires vncUsername')
 
     def _setTicketForGraphicDev(self, graphics, otp, seconds, connAct,
-                                disconnectAction, params):
+                                disconnectAction, consoleDisconnectActionDelay,
+                                params):
         if vmxml.attr(graphics, 'type') == 'vnc':
             self._check_fips_params_valid(params)
 
@@ -5292,6 +5317,8 @@ class Vm(object):
             self._dom.updateDeviceFlags(xmlutils.tostring(graphics), 0)
             self._consoleDisconnectAction = disconnectAction or \
                 ConsoleDisconnectAction.LOCK_SCREEN
+            self._console_disconnect_action_delay = \
+                consoleDisconnectActionDelay or 0
         except virdomain.TimeoutError as tmo:
             raise exception.SpiceTicketError(six.text_type(tmo))
 
