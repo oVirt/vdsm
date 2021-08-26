@@ -708,18 +708,19 @@ class VM(APIBase):
     @api.logged(on="api.virt")
     @api.method
     def snapshot(self, snapDrives, snapMemory=None,
-                 frozen=False, jobUUID=None, timeout=30):
+                 frozen=False, jobUUID=None, timeout=30, freeze_timeout=8):
         # for backward compatibility reasons, we need to
         # do the instance check before to run the hooks.
         vm = self.vm
 
-        if timeout <= 0:
+        if timeout <= 0 or freeze_timeout <= 0:
             # It makes no sense to run a snapshot with timeout <= 0.
             # It can happen due to an Engine bug running a synchronous
             # instead of an asynchronous snapshot (bz#1950209).
             self.log.error("Zero snapshot timeout requested")
+            param = 'timeout' if timeout <= 0 else 'freeze_timeout'
             raise exception.InvalidParameter(action='VM.snapshot',
-                                             parameter='timeout', value=0)
+                                             parameter=param, value=0)
 
         memoryParams = {}
         if snapMemory:
@@ -727,7 +728,8 @@ class VM(APIBase):
                 self._getHibernationPathsFromString(snapMemory)
 
         return vm.snapshot(
-            snapDrives, memoryParams, frozen, jobUUID, False, timeout
+            snapDrives, memoryParams, frozen, jobUUID, False, timeout,
+            freeze_timeout
         )
 
     @api.logged(on="api.virt")

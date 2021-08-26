@@ -83,10 +83,14 @@ def set_completed(vm, snapshot_data, completed, abort, lock):
             snapshot_data["completed"] = completed.is_set()
 
 
+def _running_time(start_time):
+    return monotonic_time() - start_time
+
+
 class Job(vdsm.virt.jobs.Job):
 
-    def __init__(self, vm, snap_drives, memory_params,
-                 frozen, job_uuid, recovery=False, timeout=30):
+    def __init__(self, vm, snap_drives, memory_params, frozen,
+                 job_uuid, recovery=False, timeout=30, freeze_timeout=8):
         super(Job, self).__init__(job_uuid, 'snapshot_vm')
         self._vm = vm
         self._snap_drives = snap_drives
@@ -100,6 +104,7 @@ class Job(vdsm.virt.jobs.Job):
         self._completed = threading.Event()
         self._lock = threading.Lock()
         self._snapshot_job = {}
+        self._freeze_timeout = freeze_timeout * 60
         if recovery:
             self._snapshot_job = read_snapshot_md(self._vm, self._lock)
         self._load_metadata()
@@ -118,7 +123,8 @@ class Job(vdsm.virt.jobs.Job):
                                 self._memory_params, self._frozen,
                                 self._job_uuid, self._abort, self._completed,
                                 self._start_time, self._timeout,
-                                self._snapshot_job, self._lock)
+                                self._snapshot_job, self._lock,
+                                self._freeze_timeout)
                 snap.snapshot()
         except:
             # Setting the abort in cases where the snapshot job failed before
@@ -140,6 +146,7 @@ class Job(vdsm.virt.jobs.Job):
         if self._snapshot_job:
             self._start_time = float(self._snapshot_job['startTime'])
             self._timeout = int(self._snapshot_job['timeout'])
+            self._freeze_timeout = int(self._snapshot_job['freezeTimeout'])
             if self._snapshot_job['abort']:
                 self._abort.set()
             if self._snapshot_job['completed']:
@@ -153,7 +160,8 @@ class Snapshot(properties.Owner):
     _job_uuid = properties.UUID(required=True)
 
     def __init__(self, vm, snap_drives, memory_params, frozen, job_uuid,
-                 abort, completed, start_time, timeout, snapshot_job, lock):
+                 abort, completed, start_time, timeout, snapshot_job, lock,
+                 freeze_timeout):
         self._vm = vm
         self._snap_drives = snap_drives
         self._memory_params = memory_params
@@ -165,6 +173,7 @@ class Snapshot(properties.Owner):
         self._should_freeze = not (self._memory_params or self._frozen)
         self._start_time = start_time
         self._timeout = timeout
+        self._freeze_timeout = freeze_timeout
         self._snapshot_job = snapshot_job
         self._lock = lock
         self._init_snapshot_metadata()
@@ -178,13 +187,16 @@ class Snapshot(properties.Owner):
             # for the snapshot job and the abort thread.
             # Initializing the job parameters; 'abort' and 'completed'
             # will be changed once the job status changes.
-            self._snapshot_job.update({'startTime': str(self._start_time),
-                                       'timeout': str(self._timeout),
-                                       'abort': False,
-                                       'completed': False,
-                                       "jobUUID": self._job_uuid,
-                                       "frozen": self._frozen,
-                                       "memoryParams": self._memory_params})
+            self._snapshot_job.update({
+                'startTime': str(self._start_time),
+                'timeout': str(self._timeout),
+                'freezeTimeout': str(self._freeze_timeout),
+                'abort': False,
+                'completed': False,
+                'jobUUID': self._job_uuid,
+                'frozen': self._frozen,
+                'memoryParams': self._memory_params,
+            })
             write_snapshot_md(self._vm, self._snapshot_job, self._lock)
 
     def _thaw_vm(self):
@@ -196,8 +208,7 @@ class Snapshot(properties.Owner):
 
     def finalize_vm(self, memory_vol):
         try:
-            if self._abort.is_set():
-                self._thaw_vm()
+            self._thaw_vm()
             self._vm.drive_monitor.enable()
             if self._memory_params:
                 self._vm.cif.teardownVolumePath(memory_vol)
@@ -459,6 +470,16 @@ class Snapshot(properties.Owner):
         try:
             if self._should_freeze:
                 self._vm.freeze()
+            if not self._memory_params:
+                run_time = _running_time(self._start_time)
+                if run_time > self._freeze_timeout:
+                    self._vm.log.error(
+                        "Non-memory snapshot timeout %s passed after %s "
+                        "seconds",
+                        self._freeze_timeout, run_time
+                    )
+                    raise exception.SnapshotFailed()
+
             self._vm.log.info("Taking a live snapshot (drives=%s,"
                               "memory=%s)", ', '
                               .join(drive["name"] for drive in
@@ -585,9 +606,12 @@ class LiveSnapshotRecovery(object):
         except KeyError:
             self._vm.log.error("Missing data on the snapshot job "
                                "metadata.. calling teardown")
+        # We only use the Snapshot class to perform the teardown. Therefore,
+        # some of the passed values are not important.
         snap = Snapshot(
             self._vm, None, self._memory_params, self._frozen, self._job_uuid,
-            self._abort, self._completed, 0, 0, self._snapshot_job, self._lock
+            self._abort, self._completed, 0, 0, self._snapshot_job, self._lock,
+            0
         )
         if self._abort.is_set():
             snap.finalize_vm(memory_vol)
@@ -631,7 +655,8 @@ class AbortSnapshot(object):
             while self._timeout_not_reached() and self._job_running() and not \
                     self._completed.is_set():
                 self._vm.log.info("Time passed: %s, out of %s",
-                                  self._running_time(), self._timeout)
+                                  _running_time(self._start_time),
+                                  self._timeout)
                 time.sleep(monitoring_interval)
             if not self._job_completed():
                 self._abort_job()
@@ -665,10 +690,7 @@ class AbortSnapshot(object):
         return False
 
     def _timeout_not_reached(self):
-        return self._running_time() < self._timeout
-
-    def _running_time(self):
-        return monotonic_time() - self._start_time
+        return _running_time(self._start_time) < self._timeout
 
     def _job_running(self):
         try:

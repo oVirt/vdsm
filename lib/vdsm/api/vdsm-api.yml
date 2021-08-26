@@ -11538,6 +11538,12 @@ VM.snapshot:
         type: uint
         added: '4.4'
 
+    -   defaultvalue: 8
+        description: Timeout in minutes for non-memory snapshot operation
+        name: freeze_timeout
+        type: uint
+        added: '4.5'
+
 VM.setBalloonTarget:
     added: '3.1'
     description: Dynamically change the target amount of physical memory
