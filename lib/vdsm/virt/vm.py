@@ -4361,10 +4361,11 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def snapshot(self, snap_drives, memory_params, frozen,
-                 job_uuid, recovery=False, timeout=30):
+                 job_uuid, recovery=False, timeout=30, freeze_timeout=8):
         job_id = job_uuid or str(uuid.uuid4())
         job = snapshot.Job(self, snap_drives, memory_params,
-                           frozen, job_id, recovery, timeout)
+                           frozen, job_id, recovery, timeout,
+                           freeze_timeout)
         jobs.add(job)
         vdsm.virt.jobs.schedule(job)
         return {'status': doneCode}
