@@ -230,10 +230,10 @@ def version():
 
                 if _next_gen_node():
                     version = _get_version_id()
-                    release_name = er['release'].decode()
+                    release_name = er['release']
                 else:
-                    version = er['version'].decode()
-                    release_name = er['release'].decode()
+                    version = er['version']
+                    release_name = er['release']
     except:
         logging.error('failed to find version/release', exc_info=True)
 
@@ -282,8 +282,8 @@ def package_versions():
                                   KEY_PACKAGES[pkg])
                 else:
                     pkgs[pkg] = {
-                        'version': mi['version'].decode('utf-8'),
-                        'release': mi['release'].decode('utf-8'),
+                        'version': mi['version'],
+                        'release': mi['release'],
                     }
         except Exception:
             logging.error('', exc_info=True)
