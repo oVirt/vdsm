@@ -27,6 +27,7 @@ from glob import iglob
 import io
 import json
 import os
+import time
 
 import six
 
@@ -99,9 +100,8 @@ def _get_bonding_options_name2numeric():
 
 @contextmanager
 def _bond_device(bond_name, mode=None):
-    with open(BONDING_MASTERS, 'w') as bonds:
-        bonds.write('+' + bond_name)
-
+    # TODO Revert once the fix for BZ#1999122 is available
+    _create_bond_retry(bond_name)
     if mode is not None:
         _change_mode(bond_name, mode)
     try:
@@ -109,6 +109,23 @@ def _bond_device(bond_name, mode=None):
     finally:
         with open(BONDING_MASTERS, 'w') as bonds:
             bonds.write('-' + bond_name)
+
+
+def _create_bond_retry(bond_name):
+    for i in range(10):
+        _bonding_masters_write(f'+{bond_name}')
+        if os.path.exists(sysfs_options.BONDING_OPT % (bond_name, 'mode')):
+            break
+        else:
+            # The bonding driver is not responding, we need to
+            # recreate the device BZ#1999122
+            _bonding_masters_write(f'-{bond_name}')
+            time.sleep(0.1)
+
+
+def _bonding_masters_write(cmd):
+    with open(BONDING_MASTERS, 'w') as bonds:
+        bonds.write(cmd)
 
 
 def _change_mode(bond_name, mode):
