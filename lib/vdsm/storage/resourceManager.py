@@ -774,11 +774,15 @@ class Owner(object):
 class Lock(guarded.AbstractLock):
     """
     Extend AbstractLock to enable Resources to be used with guarded utilities.
+
+    This lock can also be used as a context manager.
     """
     def __init__(self, ns, name, mode):
         self._ns = ns
         self._name = name
         self._mode = mode
+
+    # guarded.AbstractLock interface.
 
     @property
     def ns(self):
@@ -801,6 +805,25 @@ class Lock(guarded.AbstractLock):
 
     def release(self):
         releaseResource(self.ns, self.name)
+
+    # Contextmanger interface.
+
+    def __enter__(self):
+        self.acquire()
+        return self
+
+    def __exit__(self, t, v, tb):
+        try:
+            self.release()
+        except Exception as e:
+            if t is None:
+                raise
+
+            # Log the release error without the user error which is propagated
+            # to the caller. This avoids the annoying "while handling this
+            # error, another error occurred" double traceback.
+            e.__cause__ = None
+            log.exception("Error releasing resource manager lock")
 
 
 # The single resource manager - this instance is monkeypatched by the tests.
