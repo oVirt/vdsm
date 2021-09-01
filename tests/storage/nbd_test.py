@@ -44,7 +44,6 @@ from __future__ import division
 import logging
 import os
 import stat
-import subprocess
 import uuid
 
 from urllib.parse import urlparse
@@ -521,7 +520,7 @@ def test_bitmap_in_use(nbd_env):
 
     # Simulate qemu crash, leaving bitmaps with the "in-use" flag by opening
     # the image for writing and killing the process.
-    subprocess.run(["qemu-io", "-c", "sigraise 9", vol2.volumePath])
+    qemuio.abort(vol2.volumePath)
 
     config = {
         "sd_id": vol2.sdUUID,

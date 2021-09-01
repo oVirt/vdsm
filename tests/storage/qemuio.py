@@ -23,8 +23,7 @@ qemuio - wrapper for qemu-io tool
 This module provides helpers for wiritng and verifying qcow2 files data.
 """
 
-from __future__ import absolute_import
-from __future__ import division
+import subprocess
 
 from vdsm.common import commands
 from vdsm.common import cmdutils
@@ -56,3 +55,9 @@ def verify_pattern(path, format, offset=512, len=1024, pattern=5):
             % (path, pattern, offset))
     if rc != 0 or err != b"":
         raise cmdutils.Error(cmd, rc, out, err)
+
+
+def abort(path):
+    # Simulate qemu crash, opening the image for writing
+    # and killing the process.
+    subprocess.run(["qemu-io", "-c", "abort", path])
