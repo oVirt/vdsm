@@ -54,8 +54,6 @@ from vdsm.storage.formatconverter import DefaultFormatConverter
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.securable import secured, unsecured, SecureError
 
-POOL_MASTER_DOMAIN = 'mastersd'
-
 SPM_ACQUIRED = 'SPM'
 SPM_CONTEND = 'Contend'
 SPM_FREE = 'Free'
@@ -347,8 +345,11 @@ class StoragePool(object):
 
                 self.masterDomain.mountMaster()
                 self.masterDomain.createMasterTree()
-                self.tasksDir = os.path.join(self.poolPath, POOL_MASTER_DOMAIN,
-                                             sd.MASTER_FS_DIR, sd.TASKS_DIR)
+                self.tasksDir = os.path.join(
+                    self.poolPath,
+                    sc.POOL_MASTER_DOMAIN,
+                    sd.MASTER_FS_DIR,
+                    sd.TASKS_DIR)
 
                 try:
                     # Make sure backup domain is active
@@ -1323,7 +1324,7 @@ class StoragePool(object):
         linkName = os.path.join(self.poolPath, domain.sdUUID)
         self._linkStorageDomain(domain.domaindir, linkName)
         if self.masterDomain.sdUUID == domain.sdUUID:
-            masterName = os.path.join(self.poolPath, POOL_MASTER_DOMAIN)
+            masterName = os.path.join(self.poolPath, sc.POOL_MASTER_DOMAIN)
             self._linkStorageDomain(domain.domaindir, masterName)
 
     @unsecured
@@ -2098,8 +2099,10 @@ class StoragePool(object):
     @unsecured
     def _master_volume_path(self, vol):
         return os.path.join(
-            sc.REPO_DATA_CENTER, self.spUUID,
-            POOL_MASTER_DOMAIN, sd.DOMAIN_META_DATA, vol)
+            sc.REPO_DATA_CENTER,
+            self.spUUID,
+            sc.POOL_MASTER_DOMAIN,
+            sd.DOMAIN_META_DATA, vol)
 
     # Watching SPM lease
 

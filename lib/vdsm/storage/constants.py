@@ -27,6 +27,8 @@ from vdsm.common.config import config
 from vdsm.common.units import MiB
 from vdsm.storage import qemuimg
 
+# Stroage pool.
+POOL_MASTER_DOMAIN = "mastersd"
 
 # ResourceManager Lock Namespaces
 STORAGE = "00_storage"
