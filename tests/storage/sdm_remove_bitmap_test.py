@@ -17,8 +17,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import subprocess
-
 from contextlib import contextmanager
 
 import pytest
@@ -47,6 +45,8 @@ from vdsm.storage import guarded
 from vdsm.storage import qemuimg
 from vdsm.storage.sdm import volume_info
 from vdsm.storage.sdm.api import remove_bitmap
+
+from . import qemuio
 
 
 def failure(*args, **kwargs):
@@ -231,8 +231,7 @@ def test_remove_invalid_bitmap(fake_scheduler, env_type):
 
         # Simulate qemu crash, leaving bitmaps with the "in-use"
         # flag by opening the image for writing and killing the process.
-        subprocess.run(
-            ["qemu-io", "-c", "sigraise 9", base_vol.getVolumePath()])
+        qemuio.abort(base_vol.getVolumePath())
 
         generation = base_vol.getMetaParam(sc.GENERATION)
         vol = {
