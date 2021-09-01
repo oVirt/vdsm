@@ -65,7 +65,7 @@ from vdsm.config import config
 from vdsm.storage import exception as se
 from vdsm.storage import constants as sc
 from vdsm.storage import outOfProcess as oop
-from vdsm.storage import resourceManager
+from vdsm.storage import resourceManager as rm
 
 
 KEY_SEPARATOR = "="
@@ -503,7 +503,7 @@ class Task:
         self.state = State(State.init)
         self.result = TaskResult(0, "Task is initializing", "")
 
-        self.resOwner = resourceManager.Owner(proxy(self), raiseonfailure=True)
+        self.resOwner = rm.Owner(proxy(self), raiseonfailure=True)
         self.error = se.TaskAborted("Unknown error encountered")
 
         self.mng = None
@@ -1372,17 +1372,11 @@ class Task:
         resName,
         timeout=config.getint('irs',
                               'task_resource_default_timeout')):
-        self.resOwner.acquire(namespace,
-                              resName,
-                              resourceManager.EXCLUSIVE,
-                              timeout)
+        self.resOwner.acquire(namespace, resName, rm.EXCLUSIVE, timeout)
 
     def getSharedLock(self,
                       namespace,
                       resName,
                       timeout=config.getint('irs',
                                             'task_resource_default_timeout')):
-        self.resOwner.acquire(namespace,
-                              resName,
-                              resourceManager.SHARED,
-                              timeout)
+        self.resOwner.acquire(namespace, resName, rm.SHARED, timeout)
