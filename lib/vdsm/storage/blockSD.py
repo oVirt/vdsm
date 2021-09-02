@@ -1584,11 +1584,11 @@ class BlockStorageDomain(sd.StorageDomain):
         # It is time to deactivate the master LV now
         lvm.deactivateLVs(self.sdUUID, [MASTERLV])
 
-    def extendVolume(self, volumeUUID, size):
+    def extendVolume(self, volumeUUID, size, refresh=True):
         with self.manifest.metadata_lock:
             self.log.debug("Extending thinly-provisioned LV for volume %s to "
                            "%d MB", volumeUUID, size)
-            lvm.extendLV(self.sdUUID, volumeUUID, size)
+            lvm.extendLV(self.sdUUID, volumeUUID, size, refresh=refresh)
 
     def reduceVolume(self, imgUUID, volUUID, allowActive=False):
         with self.manifest.metadata_lock:

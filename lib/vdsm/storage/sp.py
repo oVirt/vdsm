@@ -1477,7 +1477,14 @@ class StoragePool(object):
         # volume apparent size; the virtual disk size seen by the guest is
         # unchanged.
         self._assert_sd_in_pool(sdUUID)
-        sdCache.produce(sdUUID).extendVolume(volumeUUID, size)
+
+        # Extend volume without refreshing its size. If the SPM host see the
+        # new size immediately after extension, this can cause data corruption
+        # during VM migration when the source host is SPM. Volume size will be
+        # refreshed in Vm.after_volume_extension(), which is a callback of disk
+        # extend command.
+        # For more details see https://bugzilla.redhat.com/1983882
+        sdCache.produce(sdUUID).extendVolume(volumeUUID, size, refresh=False)
 
     def reduceVolume(self, sdUUID, imgUUID, volUUID, allowActive=False):
         self._assert_sd_in_pool(sdUUID)
