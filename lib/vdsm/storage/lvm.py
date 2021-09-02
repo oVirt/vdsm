@@ -1680,7 +1680,7 @@ def removeLVs(vgName, lvNames):
         raise se.CannotRemoveLogicalVolume(vgName, str(lvNames), err)
 
 
-def extendLV(vgName, lvName, size_mb):
+def extendLV(vgName, lvName, size_mb, refresh=True):
     # Since this runs only on the SPM, assume that cached vg and lv metadata
     # are correct.
     vg = getVG(vgName)
@@ -1701,6 +1701,8 @@ def extendLV(vgName, lvName, size_mb):
 
     log.info("Extending LV %s/%s to %s megabytes", vgName, lvName, size_mb)
     cmd = ("lvextend",) + LVM_NOBACKUP
+    if not refresh:
+        cmd += ("--driverloaded", "n")
     cmd += ("--size", "%sm" % (size_mb,), "%s/%s" % (vgName, lvName))
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName,)))
 

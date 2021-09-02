@@ -35,6 +35,7 @@ from vdsm.common.units import MiB, GiB
 
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import fsutils
 from vdsm.storage import lvm
 
 import testing
@@ -1435,6 +1436,48 @@ def test_lv_extend_reduce(tmp_storage):
     lvm.reduceLV(vg_name, lv_name, 1024, force=True)
     lv = lvm.getLV(vg_name, lv_name)
     assert int(lv.size) == 1 * GiB
+
+
+@requires_root
+@pytest.mark.root
+def test_lv_extend_with_refresh(tmp_storage):
+    dev_size = 10 * GiB
+    dev = tmp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lv_name = str(uuid.uuid4())
+    lvm.set_read_only(False)
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    lvm.createLV(vg_name, lv_name, 1024)
+
+    lvm.extendLV(vg_name, lv_name, 2048, refresh=True)
+
+    # LV extension should be visible immediately for the system without
+    # refreshing LV.
+    assert fsutils.size(lvm.lvPath(vg_name, lv_name)) == 2 * GiB
+
+
+@requires_root
+@pytest.mark.root
+def test_lv_extend_without_refresh(tmp_storage):
+    dev_size = 10 * GiB
+    dev = tmp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lv_name = str(uuid.uuid4())
+    lvm.set_read_only(False)
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    lvm.createLV(vg_name, lv_name, 1024)
+
+    lvm.extendLV(vg_name, lv_name, 2048, refresh=False)
+
+    lv_path = lvm.lvPath(vg_name, lv_name)
+    # LV extension should not be visible to the system at this point and device
+    # should has old size.
+    assert fsutils.size(lv_path) == GiB
+
+    lvm.refreshLVs(vg_name, [lv_name])
+
+    # After LVM refresh, extension should be visible to the system.
+    assert fsutils.size(lv_path) == 2 * GiB
 
 
 @requires_root

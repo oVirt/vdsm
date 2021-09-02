@@ -280,7 +280,7 @@ class FakeLVM(object):
         else:
             return self._getLV(vgName, lvName)
 
-    def extendLV(self, vgName, lvName, size_mb):
+    def extendLV(self, vgName, lvName, size_mb, refresh=True):
         try:
             lv = self.lvmd[(vgName, lvName)]
         except KeyError:
