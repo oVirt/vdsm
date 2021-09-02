@@ -4,3 +4,4 @@ ovirt-master-glusterfs-8-testing-el8,https://buildlogs.centos.org/centos/8/stora
 ovirt-master-centos-ovirt44-el8,https://buildlogs.centos.org/centos/8/virt/$basearch/ovirt-44/
 ovirt-imageio-preview,https://download.copr.fedorainfracloud.org/results/nsoffer/ovirt-imageio-preview/epel-8-$basearch/
 centos-stream-advancedvirt-common,http://mirror.centos.org/centos/8-stream/virt/$basearch/advancedvirt-common/
+nfv-master-centos-el8s,https://buildlogs.centos.org/centos/8-stream/nfv/$basearch/openvswitch-2/
