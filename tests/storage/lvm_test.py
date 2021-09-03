@@ -1769,7 +1769,8 @@ def test_lv_reload_error_one(fake_devices, no_delay):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
 
-    other_lv = make_lv("other-lv", "vg-name")
+    pv1 = make_pv(pv_name="/dev/mapper/pv1", vg_name="vg-name")
+    other_lv = make_lv(lv_name="other-lv", pvs=[pv1.name], vg_name="vg-name")
     lc._lvs = {("vg-name", "other-lv"): other_lv}
 
     # Should raise, but currently return None.
@@ -1851,7 +1852,8 @@ def test_lv_reload_error_all_stale_other_vgs(fake_devices, no_delay):
 def test_lv_reload_fresh_vg(fake_devices, no_delay):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner, cache_lvs=True)
-    lv1 = make_lv("lv1", "vg1")
+    pv1 = make_pv(pv_name="/dev/mapper/pv1", vg_name="vg1")
+    lv1 = make_lv(lv_name="lv1", pvs=[pv1.name], vg_name="vg1")
 
     # vg1's lvs are fresh, vg2's lvs were invalidated.
     lc._freshlv = {"vg1", "vg2"}
@@ -1996,16 +1998,51 @@ def test_pv_name_reg_exp(input, expected):
     assert lvm.re_pvName.findall(input) == expected
 
 
-def make_lv(lv_name, vg_name):
+def make_lv(lv_name, vg_name, pvs, size="128"):
     return lvm.LV.fromlvm(
         "uuid",
         lv_name,
         vg_name,
         "-wi-------",
-        "128",
+        size,
         "0",
-        "/dev/mapper/a",
+        pvs,
         "IU_image-uid,PU_00000000,MD_1",
+    )
+
+
+def make_pv(pv_name, vg_name):
+    return lvm.PV.fromlvm(
+        "uuid",
+        pv_name,
+        "508660023296",
+        vg_name,
+        "vg_uuid",
+        "1048576",
+        "121274",
+        "93305",
+        "1",
+        "508661071872",
+        "1",
+    )
+
+
+def make_vg(vg_name, pvs):
+    return lvm.VG.fromlvm(
+        "uuid",
+        vg_name,
+        "wz--n-",
+        "508660023296",
+        "117310488576",
+        "4194304",
+        "121274",
+        "27969",
+        "",
+        "1044480",
+        "519168",
+        "3",
+        "1",
+        pvs,
     )
 
 
