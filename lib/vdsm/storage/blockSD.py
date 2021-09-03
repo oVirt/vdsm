@@ -1223,16 +1223,23 @@ class BlockStorageDomain(sd.StorageDomain):
 
         if now - self._lastUncachedSelftest > timeout:
             self._lastUncachedSelftest = now
-            lvm.chkVG(self.sdUUID)
+            try:
+                lvm.chkVG(self.sdUUID)
+            except se.LVMCommandError as e:
+                raise se.StorageDomainAccessError(self.sdUUID, reason=e)
         elif lvm.getVG(self.sdUUID).partial != lvm.VG_OK:
-            raise se.StorageDomainAccessError(self.sdUUID)
+            raise se.StorageDomainAccessError(
+                self.sdUUID, reason="Volume group is partial.")
 
     def validate(self):
         """
         Validate that the storage domain metadata
         """
         self.log.info("sdUUID=%s", self.sdUUID)
-        lvm.chkVG(self.sdUUID)
+        try:
+            lvm.chkVG(self.sdUUID)
+        except se.LVMCommandError as e:
+            raise se.StorageDomainAccessError(self.sdUUID, reason=e)
         self.invalidateMetadata()
         if not len(self.getMetadata()):
             raise se.StorageDomainAccessError(self.sdUUID)

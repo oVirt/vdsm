@@ -842,6 +842,10 @@ class StorageDomainTypeNotBackup(StorageException):
 
 
 class StorageDomainAccessError(StorageException):
+    def __init__(self, sdUUID, reason=None):
+        self.value = "domain=%s" % sdUUID
+        if reason:
+            self.value += " reason=%s" % reason
     code = 379
     msg = "Domain is either partially accessible or entirely inaccessible"
 

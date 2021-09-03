@@ -213,6 +213,53 @@ def test_cmd_error(fake_devices):
     assert len(fake_runner.calls) == 1
 
 
+def test_chkvg_failure_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner(rc=5)
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name="/dev/mapper/pv", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+    fake_lv = make_lv(lv_name="lv", pvs=[fake_pv.name], vg_name=fake_vg.name)
+
+    # Assign fake PV, VG, LV to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+    lc._lvs = {(fake_vg.name, fake_lv.name): fake_lv}
+
+    with pytest.raises(se.LVMCommandError):
+        lvm.chkVG(fake_vg.name)
+
+    # Verify that lvs and vgs are invalidated after chkVG() failed.
+    assert lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
+    assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
+
+
+def test_chkvg_success_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name="/dev/mapper/pv", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+    fake_lv = make_lv(lv_name="lv", pvs=[fake_pv.name], vg_name=fake_vg.name)
+
+    # Assign fake PV, VG, LV to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+    lc._lvs = {(fake_vg.name, fake_lv.name): fake_lv}
+
+    lvm.chkVG(fake_vg.name)
+
+    # Verify that lvs and vgs are not invalidated after chkVG() succeeded.
+    assert not lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
+    assert not lvm._lvminfo._vgs[fake_vg.name].is_stale()
+
+
 def test_refreshlvs_failure_cache(monkeypatch, fake_devices):
     fake_runner = FakeRunner(rc=5)
     lc = lvm.LVMCache(fake_runner)
@@ -1087,7 +1134,7 @@ def test_vg_check(tmp_storage):
 
     lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
 
-    assert lvm.chkVG(vg_name)
+    lvm.chkVG(vg_name)
 
 
 @requires_root

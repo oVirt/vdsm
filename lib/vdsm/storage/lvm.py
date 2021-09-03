@@ -1401,12 +1401,12 @@ def reduceVG(vgName, device):
 
 def chkVG(vgName):
     cmd = ["vgck", vgName]
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
-    if rc != 0:
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+    except se.LVMCommandError:
         _lvminfo._invalidatevgs(vgName)
         _lvminfo._invalidatelvs(vgName)
-        raise se.StorageDomainAccessError("%s: %s" % (vgName, err))
-    return True
+        raise
 
 
 def deactivateVG(vgName):
