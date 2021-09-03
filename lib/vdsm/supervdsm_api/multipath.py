@@ -30,5 +30,10 @@ def multipath_resize_map(name):
 
 
 @expose
+def multipath_is_ready():
+    return multipath.is_ready()
+
+
+@expose
 def multipath_get_scsi_serial(physdev):
     return multipath.get_scsi_serial(physdev)

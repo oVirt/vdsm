@@ -445,6 +445,10 @@ parameters = [
             'multipath devices used by the hypervisor must be configured '
             'to queue I/O when all paths have failed, and vdsm must not '
             'manage them. Example: 36001405472912345,360014054954321'),
+
+        ('wait_timeout', '10',
+            'Maximum time in seconds to wait until multipathd is ready '
+            'after rescan or connecting to a new server (default 10).'),
     ]),
 
     # Section: [sanlock]

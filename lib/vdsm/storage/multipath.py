@@ -28,6 +28,8 @@ import errno
 from glob import glob
 import logging
 import re
+import time
+
 from collections import namedtuple
 from contextlib import closing
 
@@ -50,6 +52,8 @@ SYS_BLOCK = "/sys/block"
 QUEUE = "queue"
 
 TOXIC_CHARS = '()*+?|^$.\\'
+
+POLL_INTERVAL = 1.0
 
 log = logging.getLogger("storage.Multipath")
 
@@ -86,11 +90,123 @@ def rescan():
     iscsi.rescan()
     hba.rescan()
 
-    # Scanning SCSI interconnects starts a storm of udev events. Wait until all
-    # events are processed, ensuring detection of new devices and creation or
-    # update of multipath devices.
-    timeout = config.getint('irs', 'udev_settle_timeout')
+    # Now wait until multipathd is ready.
+    wait_until_ready()
+
+
+def wait_until_ready():
+    """
+    Wait until multipathd is ready after new devices were added.
+
+    SCSI rescan or connecting to new target trigger udev events when the
+    kernel add the new SCSI devices. We can use udevadm to wait for
+    these events.  We see in the logs that udevadm returns quickly,
+    before multipathd started to process the new devices, but we can use
+    "multipathd show status" to wait until multipathd processed all the
+    new devices.
+    """
+    timeout = config.getint('multipath', 'wait_timeout')
+    start = time.monotonic()
+    deadline = start + timeout
+
+    log.info("Waiting until multipathd is ready")
+
     udevadm.settle(timeout)
+
+    # We treat multipath as ready it reaches steady state - reporting
+    # that it is ready in the last 2 intervals.
+    ready = 0
+    tries = 0
+
+    while ready < 2:
+        tries += 1
+
+        time.sleep(POLL_INTERVAL)
+
+        if is_ready():
+            ready += 1
+        else:
+            ready = 0
+
+        if time.monotonic() >= deadline:
+            log.warning(
+                "Timeout waiting for multipathd (tries=%s, ready=%s)",
+                tries, ready)
+            return
+
+    log.info(
+        "Waited %.2f seconds for multipathd (tries=%s, ready=%s)",
+        time.monotonic() - start, tries, ready)
+
+
+def is_ready():
+    """
+    Return True if multipathd does not have any uevents to process,
+    blocking while multipathd is processing events.
+
+    Typical output when multipathd is busy:
+
+        path checker states:
+        up                  2
+
+        paths: 2
+        busy: True
+
+    Typical output when deactivating a host:
+
+        path checker states:
+        up                  2
+        down                4
+
+        paths: 2
+        busy: False
+
+    Typical output when multipathd is ready:
+
+        path checker states:
+        up                  20
+
+        paths: 20
+        busy: False
+
+    In practice, "multiapthd show status" almost never reports "busy:
+    True".  But when it does it also blocks while processing the new
+    devices.
+
+    Here is an example while logging in to 2 iscsi nodes:
+
+        # iscsiadm -m node -l; while true; do time res=$(multipathd show
+            status | grep busy:); echo "$(date +%s.%N) $res"; done
+        ...
+
+        1630954630.693517697 busy: False
+
+        real 0m0.010s
+        user 0m0.005s
+        sys 0m0.004s
+
+        1630954630.705336777 busy: True
+
+        real 0m0.793s
+        user 0m0.001s
+        sys 0m0.006s
+
+        1630954631.500424141 busy: False
+        ...
+
+    So polling on "multiapth show status" is better than sleeping.
+    """
+    if os.geteuid() != 0:
+        return supervdsm.getProxy().multipath_is_ready()
+
+    try:
+        out = commands.run([_MULTIPATHD.cmd, "show", "status"])
+    except cmdutils.Error:
+        log.exception("Error getting multipathd status")
+        return False  # Assume busy
+
+    status = out.decode("utf-8").lower()
+    return "busy: false" in status
 
 
 def resize_devices():
