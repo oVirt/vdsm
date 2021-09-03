@@ -237,6 +237,133 @@ def test_cmd_error(fake_devices, no_delay):
     assert len(fake_runner.calls) == 1
 
 
+def test_removevg_failure_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner(rc=5)
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv1 = make_pv(pv_name="/dev/mapper/pv1", vg_name="vg")
+    fake_pv2 = make_pv(pv_name="/dev/mapper/pv2", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv1.name, fake_pv2.name], vg_name="vg")
+
+    # Create fake control pv in a different vg - should not get invalidated.
+    fake_control_pv = make_pv(
+        pv_name="/dev/mapper/controlpv", vg_name="controlvg")
+    fake_control_vg = make_vg(pvs=[fake_control_pv.name], vg_name="controlvg")
+
+    # Assign fake PV, VG to cache.
+    lc._pvs = {
+        fake_pv1.name: fake_pv1,
+        fake_pv2.name: fake_pv2,
+        fake_control_pv.name: fake_control_pv,
+    }
+    lc._vgs = {fake_vg.name: fake_vg, fake_control_vg.name: fake_control_vg}
+
+    with pytest.raises(se.VolumeGroupRemoveError):
+        lvm.removeVG("vg")
+
+    # Verify that pvs and vgs are invalidated after removeVG() failed.
+    assert lvm._lvminfo._pvs[fake_pv1.name].is_stale()
+    assert lvm._lvminfo._pvs[fake_pv2.name].is_stale()
+    assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
+
+    # Verify control pvs and vgs are not invalidated.
+    assert not lvm._lvminfo._pvs[fake_control_pv.name].is_stale()
+    assert not lvm._lvminfo._vgs[fake_control_vg.name].is_stale()
+
+
+def test_deactivatevg_failure_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner(rc=5)
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name="/dev/mapper/pv", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+    fake_lv = make_lv(lv_name="lv", pvs=[fake_pv.name], vg_name=fake_vg.name)
+
+    # Assign fake PV, VG, LV to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+    lc._lvs[(fake_vg.name, fake_lv.name)] = fake_lv
+
+    # Deactivate vg - does not raise.
+    lvm.deactivateVG(fake_vg.name)
+
+    # TODO: verify that vg mappings were removed
+    # Verify that lvs are invalidated after deactivateVG() failed.
+    assert lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
+
+
+def test_resizepv_success_cache(monkeypatch):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake pv - should get invalidated.
+    fake_pv = make_pv(pv_name="/dev/mapper/pv", vg_name="vg")
+
+    # Create fake control pv - should not get invalidated.
+    fake_control_pv1 = make_pv(pv_name="/dev/mapper/controlpv1", vg_name="vg")
+
+    # Assign both pvs to same vg.
+    fake_vg = make_vg(
+        pvs=[fake_pv.name, fake_control_pv1.name], vg_name="vg")
+
+    # Create fake control pv in a different vg - should not get invalidated.
+    fake_control_pv2 = make_pv(
+        pv_name="/dev/mapper/controlpv2", vg_name="controlvg")
+    fake_control_vg = make_vg(
+        vg_name="controlvg", pvs=[fake_control_pv2.name])
+
+    # Assign fake PV, VG to cache.
+    lc._pvs = {
+        fake_pv.name: fake_pv,
+        fake_control_pv1.name: fake_control_pv1,
+        fake_control_pv2.name: fake_control_pv2,
+    }
+    lc._vgs = {fake_vg.name: fake_vg, fake_control_vg.name: fake_control_vg}
+
+    # Call resizePV.
+    lvm.resizePV(fake_vg.name, fake_pv.name)
+
+    # Verify pvs and vgs are invalidated after successful resizePV().
+    assert lvm._lvminfo._pvs[fake_pv.name].is_stale()
+    assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
+
+    # Verify control pvs and vgs are not invalidated.
+    assert not lvm._lvminfo._pvs[fake_control_pv1.name].is_stale()
+    assert not lvm._lvminfo._pvs[fake_control_pv2.name].is_stale()
+    assert not lvm._lvminfo._vgs[fake_control_vg.name].is_stale()
+
+
+def test_resizepv_failure_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner(rc=5)
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name="/dev/mapper/pv", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+
+    # Assign fake PV, VG to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+
+    # Check correct exception is raised.
+    with pytest.raises(se.CouldNotResizePhysicalVolume):
+        lvm.resizePV(fake_vg.name, fake_pv.name)
+
+    # Verify pvs and vgs are not invalidated after failed resizePV().
+    assert not lvm._lvminfo._pvs[fake_pv.name].is_stale()
+    assert not lvm._lvminfo._vgs[fake_vg.name].is_stale()
+
+
 def test_cmd_retry_filter_stale(fake_devices, no_delay):
     # Make a call to load the cache.
     initial_devices = fake_devices[:]

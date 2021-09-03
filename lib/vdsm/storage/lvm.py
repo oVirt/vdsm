@@ -1294,6 +1294,7 @@ def movePV(vgName, src_device, dst_devices):
 
     # we invalidate the pv as we can't rely on the cache for checking the
     # current state
+    # TODO: add test coverage once this is no longer needed (using FakeRunner)
     _lvminfo._invalidatepvs(pvName)
 
     pv = getPV(pvName)
