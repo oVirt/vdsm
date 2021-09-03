@@ -323,6 +323,54 @@ def test_reducelv_failure_cache(monkeypatch, fake_devices):
     assert not lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
+def test_removelvs_success_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name="/dev/mapper/pv", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+    fake_lv = make_lv(lv_name="lv", pvs=[fake_pv.name], vg_name=fake_vg.name)
+
+    # Assign fake PV, VG, LV to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+    lc._lvs = {(fake_vg.name, fake_lv.name): fake_lv}
+
+    lvm.removeLVs(fake_vg.name, [fake_lv.name])
+
+    # Verify that lvs are removed from cache after removeLVs() succeeded.
+    assert not lvm._lvminfo._lvs
+
+    # Verify that vgs are invalidated after removeLVs() succeeded.
+    assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
+
+
+def test_removelvs_failure_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner(rc=5)
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name="/dev/mapper/pv", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+    fake_lv = make_lv(lv_name="lv", pvs=[fake_pv.name], vg_name=fake_vg.name)
+
+    # Assign fake PV, VG, LV to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+    lc._lvs = {(fake_vg.name, fake_lv.name): fake_lv}
+
+    with pytest.raises(se.LogicalVolumeRemoveError):
+        lvm.removeLVs(fake_vg.name, [fake_lv.name])
+
+    # Verify that lvs are invalidated after removeLVs() failed.
+    assert lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
+
+
 def test_createlv_success_cache(monkeypatch, fake_devices):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)

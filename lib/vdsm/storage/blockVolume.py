@@ -473,10 +473,8 @@ class BlockVolume(volume.Volume):
             if sc.TAG_VOL_UNINIT in tags:
                 try:
                     lvm.removeLVs(sdUUID, (volUUID,))
-                except se.CannotRemoveLogicalVolume as e:
-                    cls.log.warning("Remove logical volume failed %s/%s %s",
-                                    sdUUID, volUUID, str(e))
-
+                except se.LogicalVolumeRemoveError as e:
+                    cls.log.warning("Cannot remove logical volume: %s", e)
                 if os.path.lexists(volPath):
                     cls.log.info("Unlinking half baked volume: %s", volPath)
                     os.unlink(volPath)
@@ -642,10 +640,9 @@ class BlockVolume(volume.Volume):
 
         try:
             lvm.removeLVs(self.sdUUID, (self.volUUID,))
-        except se.CannotRemoveLogicalVolume:
-            self.log.exception("Failed to delete volume %s/%s. The "
-                               "logical volume must be removed manually.",
-                               self.sdUUID, self.volUUID)
+        except se.LogicalVolumeRemoveError as e:
+            self.log.exception("Cannot remove logical volume, the logical "
+                               "volume must be removed manually: %s", e)
 
         try:
             self.log.info("Unlinking %s", vol_path)

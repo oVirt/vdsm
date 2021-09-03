@@ -340,9 +340,8 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs, discard):
         try:
             log.debug('Removing volume %s task %s', volUUID, taskid)
             deleteVolumes(sdUUID, (volUUID,))
-        except se.CannotRemoveLogicalVolume as e:
-            log.exception("Removing volume %s task %s failed: %s",
-                          volUUID, taskid, e)
+        except se.LogicalVolumeRemoveError as e:
+            log.exception("Task %s failed: %s", taskid, e)
 
         log.debug('Zero volume thread finished for '
                   'volume %s task %s', volUUID, taskid)
@@ -1263,9 +1262,8 @@ class BlockStorageDomain(sd.StorageDomain):
             # Fix me: Should raise and get resource lock.
             try:
                 lvm.removeLVs(sdUUID, (lv.name,))
-            except se.CannotRemoveLogicalVolume as e:
-                cls.log.warning("Remove logical volume failed %s/%s %s",
-                                sdUUID, lv.name, str(e))
+            except se.LogicalVolumeRemoveError as e:
+                cls.log.warning("Cannot remove logical volume: %s", e)
 
         lvm.removeVG(sdUUID)
         return True

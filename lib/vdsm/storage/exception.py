@@ -1534,6 +1534,11 @@ class LogicalVolumeReplaceTagError(LVMCommandError):
     msg = "Replace Logical Volume tag error"
 
 
+class LogicalVolumeRemoveError(LVMCommandError):
+    code = 573
+    msg = "Cannot remove Logical Volume"
+
+
 class BlockDeviceActionError(StorageException):
     code = 600
     msg = "Error block device action"

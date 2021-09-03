@@ -1556,16 +1556,18 @@ def removeLVs(vgName, lvNames):
     cmd.extend(LVM_NOBACKUP)
     for lvName in lvNames:
         cmd.append("%s/%s" % (vgName, lvName))
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
-    if rc == 0:
+
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+    except se.LVMCommandError as e:
+        # LV info needs to be refreshed
+        _lvminfo._invalidatelvs(vgName, lvNames)
+        raise se.LogicalVolumeRemoveError.from_lvmerror(e)
+    else:
         # Remove the LV from the cache
         _lvminfo._removelvs(vgName, lvNames)
         # If lvremove succeeded it affected VG as well
         _lvminfo._invalidatevgs(vgName)
-    else:
-        # Otherwise LV info needs to be refreshed
-        _lvminfo._invalidatelvs(vgName, lvNames)
-        raise se.CannotRemoveLogicalVolume(vgName, str(lvNames), err)
 
 
 def extendLV(vgName, lvName, size_mb, refresh=True):
