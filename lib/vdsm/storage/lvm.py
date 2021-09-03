@@ -1702,14 +1702,13 @@ def extendLV(vgName, lvName, size_mb, refresh=True):
     if not refresh:
         cmd += ("--driverloaded", "n")
     cmd += ("--size", "%sm" % (size_mb,), "%s/%s" % (vgName, lvName))
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName,)))
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName,)))
+    except se.LVMCommandError as e:
+        # Invalidate vg and lv to ensure cached metadata is correct.
+        _lvminfo._invalidatevgs(vgName)
+        _lvminfo._invalidatelvs(vgName, lvName)
 
-    # Invalidate vg and lv to ensure cached metadata is correct if we need to
-    # access it when handling errors.
-    _lvminfo._invalidatevgs(vgName)
-    _lvminfo._invalidatelvs(vgName, lvName)
-
-    if rc != 0:
         # Reload lv to get updated size.
         lv = getLV(vgName, lvName)
         lv_extents = int(lv.size) // extent_size
@@ -1728,8 +1727,10 @@ def extendLV(vgName, lvName, size_mb, refresh=True):
                 "Not enough free extents for extending LV %s/%s (free=%d, "
                 "needed=%d)"
                 % (vgName, lvName, free_extents, needed_extents))
-
-        raise se.LogicalVolumeExtendError(vgName, lvName, "%sm" % (size_mb,))
+        raise se.LogicalVolumeExtendError.from_lvmerror(e)
+    else:
+        _lvminfo._invalidatevgs(vgName)
+        _lvminfo._invalidatelvs(vgName, lvName)
 
 
 def reduceLV(vgName, lvName, size_mb, force=False):
@@ -1739,8 +1740,10 @@ def reduceLV(vgName, lvName, size_mb, force=False):
     if force:
         cmd += ("--force",)
     cmd += ("--size", "%sm" % (size_mb,), "%s/%s" % (vgName, lvName))
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName,)))
-    if rc != 0:
+
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName,)))
+    except se.LVMCommandError as e:
         # Since this runs only on the SPM, assume that cached vg and lv
         # metadata is correct.
         vg = getVG(vgName)
@@ -1758,10 +1761,10 @@ def reduceLV(vgName, lvName, size_mb, force=False):
             return
 
         # TODO: add and raise LogicalVolumeReduceError
-        raise se.LogicalVolumeExtendError(vgName, lvName, "%sm" % (size_mb,))
-
-    _lvminfo._invalidatevgs(vgName)
-    _lvminfo._invalidatelvs(vgName, lvName)
+        raise se.LogicalVolumeExtendError.from_lvmerror(e)
+    else:
+        _lvminfo._invalidatevgs(vgName)
+        _lvminfo._invalidatelvs(vgName, lvName)
 
 
 def activateLVs(vgName, lvNames, refresh=True):

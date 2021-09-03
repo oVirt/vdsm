@@ -1433,10 +1433,7 @@ class CannotAccessLogicalVolume(StorageException):
     msg = "Cannot access Logical Volume"
 
 
-class LogicalVolumeExtendError(StorageException):
-    def __init__(self, vgname, lvname, newsize):
-        self.value = ("vgname=%s lvname=%s "
-                      "newsize=%s" % (vgname, lvname, newsize))
+class LogicalVolumeExtendError(LVMCommandError):
     code = 554
     msg = "Logical Volume extend failed"
 

@@ -484,7 +484,7 @@ class TestFinalizeMerge:
             fake_base_vol = fake_sd.produceVolume(subchain.img_id,
                                                   subchain.base_id)
             fake_base_vol.errors["reduce"] = se.LogicalVolumeExtendError(
-                "vgname", "lvname", base_vol.optimal_size())
+                "cmd", 5, ["out"], ["err"])
 
             with pytest.raises(se.LogicalVolumeExtendError):
                 merge.finalize(subchain)

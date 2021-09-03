@@ -286,8 +286,7 @@ class FakeLVM(object):
         try:
             lv = self.lvmd[(vgName, lvName)]
         except KeyError:
-            raise se.LogicalVolumeExtendError(vgName, lvName,
-                                              "%sm" % (size_mb,))
+            raise se.LogicalVolumeExtendError("cmd", 5, ["out"], ["err"])
         size = self._size_param_to_bytes(size_mb)
         current_size = int(lv["size"])
         if current_size >= size:

@@ -237,6 +237,70 @@ def test_cmd_error(fake_devices, no_delay):
     assert len(fake_runner.calls) == 1
 
 
+def test_extendlv_failure_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner(rc=5)
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name="/dev/mapper/pv", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+    fake_lv = make_lv(lv_name="lv", pvs=[fake_pv.name], vg_name=fake_vg.name)
+
+    # Assign fake PV, VG, LV to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+    lc._lvs = {(fake_vg.name, fake_lv.name): fake_lv}
+
+    # Do not attempt to use real devices.
+    monkeypatch.setattr(lvm, "getLV", lambda x, y: fake_lv)
+    monkeypatch.setattr(lvm, "getVG", lambda x: fake_vg)
+
+    with pytest.raises(se.LogicalVolumeExtendError):
+        lvm.extendLV(fake_vg.name, fake_lv.name, 100)
+
+    # Verify that lvs and vgs are invalidated after extendLV() failed.
+    assert lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
+    assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
+
+
+def test_reducelv_failure_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner(rc=5)
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name="/dev/mapper/pv", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+    fake_lv = make_lv(lv_name="lv", pvs=[fake_pv.name], vg_name=fake_vg.name)
+
+    # Fake LV - 16MiB
+    fake_lv_unreduced = make_lv(
+        vg_name=fake_vg.name,
+        lv_name="lv",
+        pvs=[fake_pv.name],
+        size="16777216")
+
+    # Assign fake PV, VG, LV to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+    lc._lvs = {(fake_vg.name, fake_lv.name): fake_lv}
+
+    # Do not attempt to use real devices.
+    monkeypatch.setattr(lvm, "getLV", lambda x, y: fake_lv_unreduced)
+    monkeypatch.setattr(lvm, "getVG", lambda x: fake_vg)
+
+    with pytest.raises(se.LogicalVolumeExtendError):
+        # Attempt to reduce by 8 MiB
+        lvm.reduceLV(fake_vg.name, fake_lv.name, 8)
+
+    # Verify that lvs and vgs are not invalidated after reduceLV() failed.
+    assert not lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
+    assert not lvm._lvminfo._vgs[fake_vg.name].is_stale()
+
+
 def test_createlv_success_cache(monkeypatch, fake_devices):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
