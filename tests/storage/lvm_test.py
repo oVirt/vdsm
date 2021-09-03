@@ -237,6 +237,55 @@ def test_cmd_error(fake_devices, no_delay):
     assert len(fake_runner.calls) == 1
 
 
+def test_reducevg_success_cache(monkeypatch):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv1 = make_pv(pv_name="/dev/mapper/pv1", vg_name="vg")
+    fake_pv2 = make_pv(pv_name="/dev/mapper/pv2", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv1.name, fake_pv2.name], vg_name="vg")
+
+    # Assign fake PV, VG to cache.
+    lc._pvs = {fake_pv1.name: fake_pv1, fake_pv2.name: fake_pv2}
+    lc._vgs = {fake_vg.name: fake_vg}
+
+    lvm.reduceVG(fake_vg.name, fake_pv2.name)
+
+    # Verify other pvs were not invalidated.
+    assert not lvm._lvminfo._pvs[fake_pv1.name].is_stale()
+
+    # Verify that pvs and vgs are invalidated after reduceVG() succeeded.
+    assert lvm._lvminfo._pvs[fake_pv2.name].is_stale()
+    assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
+
+
+def test_reducevg_failure_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner(rc=5)
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv1 = make_pv(pv_name="/dev/mapper/pv1", vg_name="vg")
+    fake_pv2 = make_pv(pv_name="/dev/mapper/pv2", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv1.name, fake_pv2.name], vg_name="vg")
+
+    # Assign fake PV, VG to cache.
+    lc._pvs = {fake_pv1.name: fake_pv1, fake_pv2.name: fake_pv2}
+    lc._vgs = {fake_vg.name: fake_vg}
+
+    with pytest.raises(se.VolumeGroupReduceError):
+        lvm.reduceVG(fake_vg.name, fake_pv2.name)
+
+    # Verify that pvs and vgs are not invalidated after reduceVG() failed.
+    assert not lvm._lvminfo._pvs[fake_pv1.name].is_stale()
+    assert not lvm._lvminfo._pvs[fake_pv2.name].is_stale()
+    assert not lvm._lvminfo._vgs[fake_vg.name].is_stale()
+
+
 def test_removevg_failure_cache(monkeypatch, fake_devices):
     fake_runner = FakeRunner(rc=5)
     lc = lvm.LVMCache(fake_runner)

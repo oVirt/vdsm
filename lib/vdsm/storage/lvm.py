@@ -1501,11 +1501,13 @@ def reduceVG(vgName, device):
     pvName = _fqpvname(device)
     log.info("Removing pv %s from vg %s", pvName, vgName)
     cmd = ["vgreduce", vgName, pvName]
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
-    if rc != 0:
-        raise se.VolumeGroupReduceError(vgName, pvName, err)
-    _lvminfo._invalidatepvs(pvName)
-    _lvminfo._invalidatevgs(vgName)
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+    except se.LVMCommandError as e:
+        raise se.VolumeGroupReduceError.from_lvmerror(e)
+    else:
+        _lvminfo._invalidatepvs(pvName)
+        _lvminfo._invalidatevgs(vgName)
 
 
 def chkVG(vgName):

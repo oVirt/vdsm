@@ -1306,6 +1306,10 @@ class LVMCommandError(StorageException):
         in_use = r"^Logical volume \S* in use.$"
         return any([re.search(in_use, x.strip()) for x in self.err])
 
+    @classmethod
+    def from_lvmerror(cls, e):
+        return cls(e.cmd, e.rc, e.out, e.err).with_exception(e)
+
 
 class VolumeGroupActionError(StorageException):
     code = 500
@@ -1404,12 +1408,9 @@ class DeviceBlockSizeError(StorageException):
     msg = "Device block size is not supported"
 
 
-class VolumeGroupReduceError(StorageException):
+class VolumeGroupReduceError(LVMCommandError):
     code = 519
     msg = "Cannot reduce the Volume Group"
-
-    def __init__(self, vgname, pvname, err):
-        self.value = "vgname=%s pvname=%s err=%s" % (vgname, pvname, err)
 
 
 class CannotCreateLogicalVolume(StorageException):
