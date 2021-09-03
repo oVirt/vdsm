@@ -237,6 +237,36 @@ def test_cmd_error(fake_devices, no_delay):
     assert len(fake_runner.calls) == 1
 
 
+def test_createlv_success_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name="/dev/mapper/pv", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+
+    # Create fake control lv in same vg - should not get invalidated.
+    fake_control_lv = make_lv(
+        lv_name="controllv", pvs=[fake_pv.name], vg_name=fake_vg.name)
+
+    # Assign fake PV, VG, LV to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+    lc._lvs = {fake_control_lv.name: fake_control_lv}
+
+    # Call createLV - do not activate as it looks for real lv and would fail.
+    lvm.createLV(fake_vg.name, "testlv", "512m", activate=False)
+
+    # Verify vgs and lvs are invalidated after successful createLV().
+    assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
+    assert lvm._lvminfo._lvs[(fake_vg.name, "testlv")].is_stale()
+
+    # Verify control lv is not invalidated.
+    assert not lvm._lvminfo._lvs[fake_control_lv.name].is_stale()
+
+
 def test_reducevg_success_cache(monkeypatch):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)

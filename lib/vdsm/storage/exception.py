@@ -1413,12 +1413,9 @@ class VolumeGroupReduceError(LVMCommandError):
     msg = "Cannot reduce the Volume Group"
 
 
-class CannotCreateLogicalVolume(StorageException):
+class CannotCreateLogicalVolume(LVMCommandError):
     code = 550
     msg = "Cannot create Logical Volume"
-
-    def __init__(self, vgname, lvname, err):
-        self.value = "vgname=%s lvname=%s err=%s" % (vgname, lvname, err)
 
 
 class CannotRemoveLogicalVolume(StorageException):

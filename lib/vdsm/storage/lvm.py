@@ -1621,13 +1621,14 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
     cmd.extend(("--name", lvName, vgName))
     if device is not None:
         cmd.append(_fqpvname(device))
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
 
-    if rc == 0:
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+    except se.LVMCommandError as e:
+        raise se.CannotCreateLogicalVolume.from_lvmerror(e)
+    else:
         _lvminfo._invalidatevgs(vgName)
         _lvminfo._invalidatelvs(vgName, lvName)
-    else:
-        raise se.CannotCreateLogicalVolume(vgName, lvName, err)
 
     # TBD: Need to explore the option of running lvcreate w/o devmapper
     # so that if activation is not needed it would be skipped in the

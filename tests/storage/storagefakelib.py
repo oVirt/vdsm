@@ -132,7 +132,8 @@ class FakeLVM(object):
         try:
             vg_md = self.vgmd[vgName]
         except KeyError:
-            raise se.CannotCreateLogicalVolume(vgName, lvName, 'Fake error')
+            raise se.CannotCreateLogicalVolume(
+                ['Fake cmd'], 5, ['Fake out'], ['Fake error'])
 
         size = self._size_param_to_bytes(size)
 
@@ -164,7 +165,8 @@ class FakeLVM(object):
         lv_count = int(vg_md['lv_count']) + 1
 
         if (vgName, lvName) in self.lvmd:
-            raise se.CannotCreateLogicalVolume(vgName, lvName, 'Fake error')
+            raise se.CannotCreateLogicalVolume(
+                ['Fake cmd'], 5, ['Fake out'], ['Fake error'])
 
         self.lvmd[(vgName, lvName)] = lv_md
         self.vgmd[vgName]['lv_count'] = str(lv_count)
