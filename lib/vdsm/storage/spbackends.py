@@ -195,7 +195,7 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
 
     __slots__ = ('pool',)
 
-    log = logging.getLogger('storage.StoragePoolDiskBackend')
+    log = logging.getLogger('storage.storagepooldiskbackend')
 
     def __init__(self, pool):
         self.pool = weakref.proxy(pool)
@@ -387,7 +387,7 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
 
     __slots__ = ('pool', 'masterVersion', 'domainsMap')
 
-    log = logging.getLogger('storage.StoragePoolMemoryBackend')
+    log = logging.getLogger('storage.storagepoolmemorybackend')
 
     def __init__(self, pool, masterVersion, domainsMap):
         self.pool = weakref.proxy(pool)

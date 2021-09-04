@@ -95,7 +95,7 @@ class StoragePool(object):
     any heavy lifting activities until the time it is really needed.
     '''
 
-    log = logging.getLogger('storage.StoragePool')
+    log = logging.getLogger('storage.storagepool')
 
     def __init__(self, spUUID, domainMonitor, taskManager):
         self._secured = threading.Event()

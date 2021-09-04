@@ -34,7 +34,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage.sdc import sdCache
 
-log = logging.getLogger('storage.Monitor')
+log = logging.getLogger('storage.monitor')
 
 
 class Status(object):

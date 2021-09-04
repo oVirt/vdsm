@@ -114,7 +114,7 @@ class MountConnection(object):
     CGROUP = None
     DIR = ""
 
-    log = logging.getLogger("storage.StorageServer.MountConnection")
+    log = logging.getLogger("storage.storageserver.mountconnection")
     localPathBase = "/tmp"
 
     @property
@@ -345,7 +345,7 @@ class GlusterFSConnection(MountConnection):
 class NFSConnection(object):
     DEFAULT_OPTIONS = ["soft", "nosharecache"]
 
-    log = logging.getLogger("storage.Server.NFS")
+    log = logging.getLogger("storage.server.nfs")
 
     @property
     def id(self):
@@ -475,7 +475,7 @@ class NFSConnection(object):
 
 
 class IscsiConnection(object):
-    log = logging.getLogger("storage.Server.ISCSI")
+    log = logging.getLogger("storage.server.iscsi")
 
     class Mismatch(Exception):
 

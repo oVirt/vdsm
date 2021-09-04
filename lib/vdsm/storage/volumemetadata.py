@@ -124,7 +124,7 @@ def dump(lines):
 
 class VolumeMetadata(object):
 
-    log = logging.getLogger('storage.VolumeMetadata')
+    log = logging.getLogger('storage.volumemetadata')
 
     def __init__(self, domain, image, parent, capacity, format, type, voltype,
                  disktype, description="", legality=sc.ILLEGAL_VOL, ctime=None,

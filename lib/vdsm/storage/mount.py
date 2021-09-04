@@ -182,7 +182,7 @@ def getMountFromTarget(target):
 
 class Mount(object):
 
-    log = logging.getLogger("storage.Mount")
+    log = logging.getLogger("storage.mount")
 
     def __init__(self, fs_spec, fs_file):
         """

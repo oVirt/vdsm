@@ -134,7 +134,7 @@ Lease = collections.namedtuple("Lease", "name, path, offset")
 
 
 class SafeLease(object):
-    log = logging.getLogger("storage.Safelease")
+    log = logging.getLogger("storage.safelease")
 
     lockUtilPath = config.get('irs', 'lock_util_path')
     lockCmd = config.get('irs', 'lock_cmd')
@@ -262,7 +262,7 @@ class SANLock(object):
     # was killed).
     ACQUIRE_HOST_ID_TIMEOUT = 180
 
-    log = logging.getLogger("storage.SANLock")
+    log = logging.getLogger("storage.sanlock")
 
     _io_timeout = config.getint('sanlock', 'io_timeout')
 
@@ -702,7 +702,7 @@ class SANLock(object):
 
 
 class LocalLock(object):
-    log = logging.getLogger("storage.LocalLock")
+    log = logging.getLogger("storage.locallock")
 
     LVER = 0
 

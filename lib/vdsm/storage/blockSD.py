@@ -110,7 +110,7 @@ MASTER_LV_SIZE_MB = 1024
 BlockSDVol = namedtuple("BlockSDVol", "name, image, parent")
 LVTags = namedtuple("LVTags", "mdslot, image, parent")
 
-log = logging.getLogger("storage.BlockSD")
+log = logging.getLogger("storage.blocksd")
 
 # Metadata LV reserved size:
 # 0-1 MiB: V4 metadata area.
@@ -354,7 +354,7 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs, discard):
 
 
 class VGTagMetadataRW(object):
-    log = logging.getLogger("storage.Metadata.VGTagMetadataRW")
+    log = logging.getLogger("storage.metadata.vgtagmetadatarw")
     METADATA_TAG_PREFIX = "MDT_"
     METADATA_TAG_PREFIX_LEN = len(METADATA_TAG_PREFIX)
 

@@ -43,7 +43,7 @@ from vdsm import constants
 from vdsm.common.network import address
 from vdsm.common.osutils import get_umask
 
-log = logging.getLogger('storage.fileUtils')
+log = logging.getLogger('storage.fileutils')
 
 MIN_PORT = 1
 MAX_PORT = 65535

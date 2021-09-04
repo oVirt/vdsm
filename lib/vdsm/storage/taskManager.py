@@ -30,7 +30,7 @@ from vdsm.storage.threadPool import ThreadPool
 
 
 class TaskManager:
-    log = logging.getLogger('storage.TaskManager')
+    log = logging.getLogger('storage.taskmanager')
 
     def __init__(self,
                  tpSize=config.getint('irs', 'thread_pool_size'),

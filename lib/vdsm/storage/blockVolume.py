@@ -46,7 +46,7 @@ QCOW_OVERHEAD_FACTOR = 1.1
 # Minimal padding to be added to internal volume optimal size.
 MIN_PADDING = MiB
 
-log = logging.getLogger('storage.Volume')
+log = logging.getLogger('storage.volume')
 
 
 class BlockVolumeManifest(volume.VolumeManifest):

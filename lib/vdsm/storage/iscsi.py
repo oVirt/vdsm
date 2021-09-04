@@ -81,7 +81,7 @@ IscsiSession = namedtuple("IscsiSession", "id, iface, target, credentials")
 
 _iscsiadmTransactionLock = RLock()
 
-log = logging.getLogger('storage.ISCSI')
+log = logging.getLogger('storage.iscsi')
 
 
 def getDevIscsiSessionId(dev):

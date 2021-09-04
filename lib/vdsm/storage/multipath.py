@@ -55,7 +55,7 @@ TOXIC_CHARS = '()*+?|^$.\\'
 
 POLL_INTERVAL = 1.0
 
-log = logging.getLogger("storage.Multipath")
+log = logging.getLogger("storage.multipath")
 
 _SCSI_ID = cmdutils.CommandPath("scsi_id",
                                 "/usr/lib/udev/scsi_id",    # Fedora, EL7

@@ -55,10 +55,10 @@ DIRECTFLAG = "direct"
 STR_UUID_SIZE = 36
 UUID_HYPHENS = [8, 13, 18, 23]
 
-log = logging.getLogger('storage.Misc')
+log = logging.getLogger('storage.misc')
 
 
-execCmdLogger = logging.getLogger('storage.Misc.excCmd')
+execCmdLogger = logging.getLogger('storage.misc.exccmd')
 
 
 execCmd = partial(commands.execCmd, execCmdLogger=execCmdLogger)
@@ -317,7 +317,7 @@ class SamplingMethod(object):
     Supporting parameters or exception passing to all functions would
     make the code much more complex for no reason.
     """
-    _log = logging.getLogger("storage.SamplingMethod")
+    _log = logging.getLogger("storage.samplingmethod")
 
     def __init__(self, func):
         self.__func = func
@@ -372,7 +372,7 @@ class Event(object):
     _count = itertools.count()
 
     def __init__(self, name, sync=False):
-        self._log = logging.getLogger("storage.Event.%s" % name)
+        self._log = logging.getLogger("storage.event.%s" % name)
         self.name = name
         self._syncRoot = threading.Lock()
         self._registrar = {}

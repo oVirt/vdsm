@@ -37,7 +37,7 @@ from vdsm.common.compat import subprocess
 from vdsm.config import config
 from vdsm.storage import misc
 
-log = logging.getLogger("storage.HBA")
+log = logging.getLogger("storage.hba")
 
 ISCSI_INITIATOR_NAME = "/etc/iscsi/initiatorname.iscsi"
 INITIATOR_NAME = "InitiatorName"

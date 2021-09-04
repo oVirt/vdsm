@@ -42,7 +42,7 @@ from vdsm.storage import utils as su
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.volumemetadata import VolumeMetadata
 
-log = logging.getLogger('storage.Volume')
+log = logging.getLogger('storage.volume')
 
 
 def getBackingVolumePath(imgUUID, volUUID):
@@ -56,7 +56,7 @@ def getBackingVolumePath(imgUUID, volUUID):
 
 
 class VolumeManifest(object):
-    log = logging.getLogger('storage.VolumeManifest')
+    log = logging.getLogger('storage.volumemanifest')
 
     # How this volume is presented to a vm.  Must be overriden in derived
     # classes.
@@ -858,7 +858,7 @@ class VolumeManifest(object):
 
 
 class Volume(object):
-    log = logging.getLogger('storage.Volume')
+    log = logging.getLogger('storage.volume')
     manifestClass = VolumeManifest
 
     @classmethod

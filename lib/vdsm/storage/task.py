@@ -472,7 +472,7 @@ class Task:
         "metadataVersion": int
     }
 
-    log = logging.getLogger('storage.TaskManager.Task')
+    log = logging.getLogger('storage.taskmanager.task')
 
     def __init__(self, id, name="", tag="",
                  recovery=TaskRecoveryType.none,

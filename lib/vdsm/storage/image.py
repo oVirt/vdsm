@@ -45,7 +45,7 @@ from vdsm.storage.sdc import sdCache
 
 from vdsm.common.exception import ActionStopped
 
-log = logging.getLogger('storage.Image')
+log = logging.getLogger('storage.image')
 
 # What volumes to synchronize
 SYNC_VOLUMES_ALL = 'ALL'
@@ -81,7 +81,7 @@ class Image:
     """ Actually represents a whole virtual disk.
         Consist from chain of volumes.
     """
-    log = logging.getLogger('storage.Image')
+    log = logging.getLogger('storage.image')
     _fakeTemplateLock = threading.Lock()
 
     def __init__(self, repoPath):

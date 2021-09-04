@@ -299,7 +299,7 @@ class HSM(object):
         saved on the disk.
     """
     _pool = sp.DisconnectedPool()
-    log = logging.getLogger('storage.HSM')
+    log = logging.getLogger('storage.hsm')
 
     @classmethod
     def validateSdUUID(cls, sdUUID):

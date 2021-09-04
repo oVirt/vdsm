@@ -937,7 +937,7 @@ class FileStorageDomain(sd.StorageDomain):
         Returns:
             the detected block size (1, 512, 4096)
         """
-        log = logging.getLogger("storage.fileSD")
+        log = logging.getLogger("storage.filesd")
         iop = oop.getProcessPool(sd_id)
         try:
             block_size = iop.probe_block_size(mountpoint)
@@ -969,7 +969,7 @@ def _getMountsList(pattern="*"):
 
 
 def scanDomains(pattern="*"):
-    log = logging.getLogger("storage.scanDomains")
+    log = logging.getLogger("storage.scandomains")
 
     mntList = _getMountsList(pattern)
 

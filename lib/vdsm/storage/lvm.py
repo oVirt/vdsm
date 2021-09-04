@@ -60,7 +60,7 @@ from vdsm.storage import rwlock
 
 from vdsm.config import config
 
-log = logging.getLogger("storage.LVM")
+log = logging.getLogger("storage.lvm")
 
 PV_FIELDS = ("uuid,name,size,vg_name,vg_uuid,pe_start,pe_count,"
              "pe_alloc_count,mda_count,dev_size,mda_used_count")

@@ -30,7 +30,7 @@ from vdsm.common.units import KiB, MiB
 
 from vdsm.storage import exception as se
 
-log = logging.getLogger("storage.ImageSharing")
+log = logging.getLogger("storage.imagesharing")
 # Time to wait from finishing writing data to dd, until dd exists,
 # Ensure that we don't keep the task active forever if dd cannot
 # access the storage.

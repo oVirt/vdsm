@@ -31,7 +31,7 @@ from vdsm.storage.sdc import sdCache
 
 import logging
 
-log = logging.getLogger('storage.ResourcesFactories')
+log = logging.getLogger('storage.resourcesfactories')
 
 
 class LvmActivation(object):
