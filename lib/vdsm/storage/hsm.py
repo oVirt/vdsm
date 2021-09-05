@@ -2379,25 +2379,6 @@ class HSM(object):
 
             res.append({'id': conDef["id"], 'status': status})
 
-        if connections and domType == sd.ISCSI_DOMAIN:
-            # We sleep here for 5 seconds (by default), to allow time for
-            # the devices to become visible by the host after iscsiadm
-            # login. It seems that in newer kernels the time it takes for
-            # devices to appear in the hosts is significantly longer.
-            #
-            # TODO: A more comprehnsive solution is required here. Once
-            # ovirt-engine will send the list of devices along with the
-            # connectStorageServer command, we could only wait until the
-            # devices we want are visible. Currently we do not know which
-            # devices we are waiting for, so we can only do a general wait
-            # and hope the devices will become visible.
-            #
-            # See: https://bugzilla.redhat.com/1807050
-            timeout = config.getint('irs', 'iscsi_login_timeout')
-            self.log.info("Waiting for %d seconds until multipath "
-                          "devices are ready...", timeout)
-            time.sleep(timeout)
-
         # In case there were changes in devices size
         # while the VDSM was not connected, we need to
         # call refreshStorage.
