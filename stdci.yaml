@@ -1,3 +1,4 @@
+---
 release_branches:
   master:
     - ovirt-master
@@ -50,7 +51,8 @@ stages:
                   runtime-requirements:
                     jenkins_master: psi.redhat.com
         # For now everything runs on both jenkins u/s and PSI.
-        # Only PSI provides VM for containers, so in order to trigger PSI only we need to use rhel8
+        # Only PSI provides VM for containers, so in order to
+        # trigger PSI only we need to use rhel8
         - tests-container:
             distributions:
               - rhel8:
