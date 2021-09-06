@@ -18,6 +18,9 @@ stages:
                   distributions:
                     - el8stream
                     - rhel8
+                    - el9stream:
+                        runtime-requirements:
+                          host_distro: newer
   - check-patch:
       archs:
         - x86_64
