@@ -1443,7 +1443,7 @@ class LogicalVolumesListError(StorageException):
     msg = "Cannot get Logical Volumes list from Volume Group"
 
 
-class LogicalVolumeRefreshError(StorageException):
+class LogicalVolumeRefreshError(LVMCommandError):
     code = 556
     msg = "Cannot refresh Logical Volume"
 

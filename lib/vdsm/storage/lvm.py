@@ -38,7 +38,6 @@ import threading
 import time
 
 from itertools import chain
-from subprocess import list2cmdline
 import six
 
 from vdsm import constants
@@ -1825,10 +1824,13 @@ def _refreshLVs(vgName, lvNames):
     # If  the  logical  volumes  are active, reload their metadata.
     cmd = ['lvchange', '--refresh']
     cmd.extend("%s/%s" % (vgName, lv) for lv in lvNames)
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
-    _lvminfo._invalidatelvs(vgName, lvNames)
-    if rc != 0:
-        raise se.LogicalVolumeRefreshError("%s failed" % list2cmdline(cmd))
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+    except se.LVMCommandError as e:
+        _lvminfo._invalidatelvs(vgName, lvNames)
+        raise se.LogicalVolumeRefreshError.from_lvmerror(e)
+    else:
+        _lvminfo._invalidatelvs(vgName, lvNames)
 
 
 def changeLVsTags(vg, lvs, delTags=(), addTags=()):

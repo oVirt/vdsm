@@ -237,6 +237,51 @@ def test_cmd_error(fake_devices, no_delay):
     assert len(fake_runner.calls) == 1
 
 
+def test_refreshlvs_failure_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner(rc=5)
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name="/dev/mapper/pv", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+    fake_lv = make_lv(lv_name="lv", pvs=[fake_pv.name], vg_name=fake_vg.name)
+
+    # Assign fake PV, VG, LV to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+    lc._lvs = {(fake_vg.name, fake_lv.name): fake_lv}
+
+    with pytest.raises(se.LVMCommandError):
+        lvm.refreshLVs(fake_vg.name, [fake_lv.name])
+
+    # Verify that lvs are invalidated after refreshLVs() failed.
+    assert lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
+
+
+def test_refreshlvs_success_cache(monkeypatch, fake_devices):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name="/dev/mapper/pv", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+    fake_lv = make_lv(lv_name="lv", pvs=[fake_pv.name], vg_name=fake_vg.name)
+
+    # Assign fake PV, VG, LV to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+    lc._lvs = {(fake_vg.name, fake_lv.name): fake_lv}
+
+    lvm.refreshLVs(fake_vg.name, [fake_lv.name])
+
+    # Verify that lvs are invalidated after refreshLVs() succeeded.
+    assert lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
+
+
 def test_extendlv_failure_cache(monkeypatch, fake_devices):
     fake_runner = FakeRunner(rc=5)
     lc = lvm.LVMCache(fake_runner)
