@@ -1,0 +1,6 @@
+ovirt-master-snapshot,http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/el9/
+ovirt-master-copr-sbonazzo-collection-el9,https://download.copr.fedorainfracloud.org/results/sbonazzo/EL9Collection/centos-stream-9-$basearch/
+ovirt-master-glusterfs-9-testing-el9,https://buildlogs.centos.org/centos/9-stream/storage/$basearch/gluster-9/
+ovirt-master-centos-ovirt45-el9,https://buildlogs.centos.org/centos/9-stream/virt/$basearch/ovirt-45/
+ovirt-master-openvswitch2-el9,https://buildlogs.centos.org/centos/9-stream/nfv/$basearch/openvswitch-2/
+ovirt-master-ceph-pacific-el9,https://buildlogs.centos.org/centos/9-stream/storage/$basearch/ceph-pacific/
