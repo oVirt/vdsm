@@ -246,7 +246,12 @@ Requires: sos >= 3.7-3
 
 Requires: tree
 Requires: dosfstools
+%if 0%{?rhel} >= 9
+# xorriso replaced genisoimage on RHEL 9
+Requires: xorriso
+%else
 Requires: genisoimage
+%endif
 Requires: python3-libselinux
 Requires: %{name}-python = %{version}-%{release}
 Requires: libguestfs-tools-c
