@@ -1807,12 +1807,13 @@ def deactivateLVs(vgName, lvNames):
 def renameLV(vg, oldlv, newlv):
     log.info("Renaming LV (vg=%s, oldlv=%s, newlv=%s)", vg, oldlv, newlv)
     cmd = ("lvrename",) + LVM_NOBACKUP + (vg, oldlv, newlv)
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vg, )))
-    if rc != 0:
-        raise se.LogicalVolumeRenameError("%s %s %s" % (vg, oldlv, newlv))
-
-    _lvminfo._removelvs(vg, oldlv)
-    _lvminfo._reloadlvs(vg, newlv)
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vg, )))
+    except se.LVMCommandError as e:
+        raise se.LogicalVolumeRenameError.from_lvmerror(e)
+    else:
+        _lvminfo._removelvs(vg, oldlv)
+        _lvminfo._reloadlvs(vg, newlv)
 
 
 def refreshLVs(vgName, lvNames):

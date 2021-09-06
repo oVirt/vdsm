@@ -1495,7 +1495,7 @@ class GetLogicalVolumeDevError(StorageException):
     msg = "Cannot get physical devices of logical volume"
 
 
-class LogicalVolumeRenameError(StorageException):
+class LogicalVolumeRenameError(LVMCommandError):
     code = 566
     msg = "Cannot rename Logical Volume"
 

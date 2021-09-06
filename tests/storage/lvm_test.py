@@ -1797,7 +1797,7 @@ def test_lv_refresh(tmp_storage, read_only):
 
 @requires_root
 @pytest.mark.root
-def test_lv_rename(tmp_storage):
+def test_lv_rename_success(tmp_storage):
     dev_size = 10 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
@@ -1815,6 +1815,33 @@ def test_lv_rename(tmp_storage):
 
     lv = lvm.getLV(vg_name, new_lv_name)
     assert lv.name == new_lv_name
+
+
+def test_lv_rename_failure(monkeypatch, fake_devices):
+    fake_runner = FakeRunner(rc=5)
+    lc = lvm.LVMCache(fake_runner)
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name="pv", vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+    fake_lv = make_lv(vg_name=fake_vg.name, pvs=[fake_pv.name], lv_name="lv")
+
+    # Assign fake PV, VG, LV to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+    lc._lvs = {(fake_vg.name, fake_lv.name): fake_lv}
+
+    # Run failing renameLV().
+    with pytest.raises(se.LVMCommandError):
+        lvm.renameLV(fake_vg.name, fake_lv.name, "newname")
+
+    # Verify that cache was not changed after renameLV() failed.
+    assert lc._lvs[(fake_vg.name, fake_lv.name)] == fake_lv
+
+    # Verify that renamed lv is not invalidated after renameLV() failed.
+    assert not lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
 
 
 @requires_root
