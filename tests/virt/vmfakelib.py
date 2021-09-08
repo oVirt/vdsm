@@ -56,6 +56,7 @@ class IRS(object):
         self.ready = True
         self.prepared_volumes = {}
         self.extend_requests = []
+        self.sd_types = {}
 
     def getDeviceVisibility(self, guid):
         pass
@@ -95,7 +96,7 @@ class IRS(object):
         return response.success(
             path=path,
             info={
-                "type": storage.DISK_TYPE.FILE,
+                "type": self.sd_types.get(sdUUID, storage.DISK_TYPE.FILE),
                 "path": path,
             },
             imgVolumesInfo=None
