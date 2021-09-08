@@ -581,7 +581,7 @@ def test_change_read_only_mode(fake_devices, no_delay, workers):
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_vg_create_remove_single_device(tmp_storage, read_only):
-    dev_size = 20 * GiB
+    dev_size = 10 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
 
@@ -915,7 +915,7 @@ def test_vg_extend_reduce(tmp_storage):
 @requires_root
 @pytest.mark.root
 def test_vg_add_delete_tags(tmp_storage):
-    dev_size = 20 * GiB
+    dev_size = 10 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
 
@@ -1198,7 +1198,7 @@ def test_lv_create_zero(tmp_storage):
 @requires_root
 @pytest.mark.root
 def test_lv_add_delete_tags(tmp_storage):
-    dev_size = 20 * GiB
+    dev_size = 10 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv1_name = str(uuid.uuid4())
@@ -1335,7 +1335,7 @@ def test_vg_stale_reload_all_clear(stale_vg):
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_lv_activate_deactivate(tmp_storage, read_only):
-    dev_size = 20 * GiB
+    dev_size = 10 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
@@ -1399,7 +1399,7 @@ def test_in_use_exception(fake_devices, in_use, error):
 @requires_root
 @pytest.mark.root
 def test_lv_extend_reduce(tmp_storage):
-    dev_size = 20 * GiB
+    dev_size = 10 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
@@ -1441,7 +1441,7 @@ def test_lv_extend_reduce(tmp_storage):
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_lv_refresh(tmp_storage, read_only):
-    dev_size = 20 * GiB
+    dev_size = 10 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
@@ -1485,7 +1485,7 @@ def test_lv_refresh(tmp_storage, read_only):
 @requires_root
 @pytest.mark.root
 def test_lv_rename(tmp_storage):
-    dev_size = 20 * GiB
+    dev_size = 10 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
@@ -1508,7 +1508,7 @@ def test_lv_rename(tmp_storage):
 @pytest.mark.root
 @pytest.mark.parametrize("read_only", [True, False])
 def test_bootstrap(tmp_storage, read_only):
-    dev_size = 20 * GiB
+    dev_size = 10 * GiB
 
     lvm.set_read_only(False)
 
@@ -1855,7 +1855,7 @@ def test_retry_with_wider_filter(tmp_storage, read_only):
     check_stats(hits=0, misses=1)
 
     # Create a device - this device in not the lvm cached filter yet.
-    dev = tmp_storage.create_device(20 * GiB)
+    dev = tmp_storage.create_device(10 * GiB)
 
     # Creating VG requires read-write mode.
     lvm.set_read_only(False)
