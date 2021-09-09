@@ -98,7 +98,9 @@ def parse(lines):
 
     for key, (name, validate) in ATTRIBUTES.items():
         try:
-            metadata[name] = validate(md[key])
+            # FIXME: remove pylint skip when bug fixed:
+            # https://github.com/PyCQA/pylint/issues/5113
+            metadata[name] = validate(md[key])  # pylint: disable=not-callable
         except KeyError:
             errors.append("Required key '{}' is missing.".format(name))
         except ValueError as e:

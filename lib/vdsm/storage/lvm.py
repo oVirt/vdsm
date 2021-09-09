@@ -1401,6 +1401,7 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
     cmd.append(pvs[0])
     rc, out, err = _lvminfo.cmd(cmd, tuple(pvs))
     if rc != 0:
+        # pylint: disable=no-value-for-parameter
         raise se.PhysDevInitializationError(pvs[0])
 
     options = ["--physicalextentsize", "%dm" % (sc.VG_EXTENT_SIZE // MiB)]
@@ -1835,6 +1836,7 @@ def changeLVsTags(vg, lvs, delTags=(), addTags=()):
     delTags = set(delTags)
     addTags = set(addTags)
     if delTags.intersection(addTags):
+        # pylint: disable=no-value-for-parameter
         raise se.LogicalVolumeReplaceTagError(
             "Cannot add and delete the same tag lvs: `%s` tags: `%s`" %
             (lvs, ", ".join(delTags.intersection(addTags))))
