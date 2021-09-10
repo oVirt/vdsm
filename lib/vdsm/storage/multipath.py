@@ -169,7 +169,7 @@ def is_ready():
         paths: 20
         busy: False
 
-    In practice, "multiapthd show status" almost never reports "busy:
+    In practice, "multipathd show status" almost never reports "busy:
     True".  But when it does it also blocks while processing the new
     devices.
 
@@ -194,7 +194,7 @@ def is_ready():
         1630954631.500424141 busy: False
         ...
 
-    So polling on "multiapth show status" is better than sleeping.
+    So polling on "multipathd show status" is better than sleeping.
     """
     if os.geteuid() != 0:
         return supervdsm.getProxy().multipath_is_ready()
