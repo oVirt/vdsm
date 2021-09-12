@@ -647,6 +647,11 @@ class GetFileStatsError(StorageException):
     msg = "Cannot get file stats"
 
 
+class TarCommandError(StorageException):
+    code = 331
+    msg = "Tar command failed"
+
+
 #################################################
 #  Domains Exceptions
 #################################################

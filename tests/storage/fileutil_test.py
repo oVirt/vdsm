@@ -30,6 +30,7 @@ import selinux
 import pytest
 
 from vdsm.common.osutils import get_umask
+from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 
 from testlib import namedTemporaryDir
@@ -362,3 +363,84 @@ def test_atomic_symlink_error_isdir():
 ])
 def test_normalize_path_equals(path, normalized_path):
     assert normalized_path == fileUtils.normalize_path(path)
+
+
+# tarCopy tests
+
+
+def test_tarcopy(tmpdir):
+    src = tmpdir.mkdir("src")
+    dst = tmpdir.mkdir("dst")
+
+    # Create simple tree with some data.
+    src_file = src.join("file")
+    src_file.write("file data")
+    src_dir = src.mkdir("dir")
+    src_sub_file = src_dir.join("file")
+    src_sub_file.write("sub file data")
+
+    fileUtils.tarCopy(str(src), str(dst))
+
+    assert dst.join("file").read() == "file data"
+    assert dst.join("dir", "file").read() == "sub file data"
+
+
+def test_tarcopy_excludes(tmpdir):
+    src = tmpdir.mkdir("src")
+    dst = tmpdir.mkdir("dst")
+
+    # Create simple tree with some data.
+    src_file = src.join("file")
+    src_file.write("file data")
+    src_dir = src.mkdir("dir")
+    src_sub_file = src_dir.join("file")
+    src_sub_file.write("sub file data")
+
+    # Data in these directories should be excluded.
+    src_skip1 = src.mkdir("skip1")
+    src_skip1.join("file").write("")
+    src_skip2 = src.mkdir("skip2")
+    src_skip2.join("file").write("")
+
+    fileUtils.tarCopy(str(src), str(dst), exclude=["./skip1", "./skip2"])
+
+    assert dst.join("file").read() == "file data"
+    assert dst.join("dir", "file").read() == "sub file data"
+    assert not dst.join("skip1").check()
+    assert not dst.join("skip2").check()
+
+
+def test_tarcopy_writer_error(tmpdir):
+    src = str(tmpdir.mkdir("src"))
+
+    # Destiation directory does not exist.
+    dst = str(tmpdir.join("dst"))
+
+    with pytest.raises(se.TarCommandError) as e:
+        fileUtils.tarCopy(src, dst)
+
+    msg = str(e.value)
+
+    # Reader was succesful, not included in the error.
+    assert src not in msg
+
+    # Writer failed, error included.
+    assert dst in msg
+
+
+def test_tarcopy_reader_writer_error(tmpdir):
+    # Source directory does not exist.
+    src = str(tmpdir.join("src"))
+
+    dst = str(tmpdir.mkdir("dst"))
+
+    with pytest.raises(se.TarCommandError) as e:
+        fileUtils.tarCopy(str(src), str(dst))
+
+    msg = str(e.value)
+
+    # Reader failed since src does not exist.
+    assert src in msg
+
+    # Writer failed since no data was written by reader.
+    assert dst in msg

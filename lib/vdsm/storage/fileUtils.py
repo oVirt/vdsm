@@ -43,32 +43,62 @@ from vdsm import constants
 from vdsm.common.network import address
 from vdsm.common.osutils import get_umask
 
+from . import exception as se
+
 log = logging.getLogger('storage.fileutils')
 
 MIN_PORT = 1
 MAX_PORT = 65535
 
 
-class TarCopyFailed(RuntimeError):
-    pass
-
-
 def tarCopy(src, dst, exclude=()):
+    log.info("Copying %r to %r", src, dst)
+
     excludeArgs = ["--exclude=%s" % path for path in exclude]
 
-    tsrc = subprocess.Popen([constants.EXT_TAR, "cf", "-"] +
-                            excludeArgs + ["-C", src, "."],
-                            stdout=subprocess.PIPE)
-    tdst = subprocess.Popen([constants.EXT_TAR, "xf", "-", "-C", dst,
-                             "--touch"],
-                            stdin=tsrc.stdout, stderr=subprocess.PIPE,
-                            stdout=subprocess.PIPE)
-    tsrc.stdout.close()
-    out, err = tdst.communicate()
-    tsrc.wait()
+    # Start tar process reading from src and writing to stdout.
 
-    if tdst.returncode != 0 or tsrc.returncode != 0:
-        raise TarCopyFailed(tsrc.returncode, tdst.returncode, out, err)
+    cmd = [constants.EXT_TAR, "cf", "-"] + excludeArgs + ["-C", src, "."]
+    log.debug("Starting reader: %s", cmd)
+    r = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Start tar process reading from reader stdout and writing to dst.
+
+    cmd = [constants.EXT_TAR, "xf", "-", "-C", dst, "--touch"]
+    log.debug("Starting writer: %s", cmd)
+    w = subprocess.Popen(cmd, stdin=r.stdout, stderr=subprocess.PIPE)
+
+    r.stdout.close()
+    r.stdout = None
+
+    # Wait for both child procesesses.
+
+    _, w_err = w.communicate()
+    _, r_err = r.communicate()
+
+    log.debug("Child processes terminated")
+
+    # Sometimes only the reader or writer fail, but sometimes both may fail.
+    # Include all failed commands in the exception.
+
+    errors = {}
+
+    if r.returncode != 0:
+        errors["reader"] = {
+            "cmd": r.args,
+            "rc": r.returncode,
+            "err": r_err.decode(),
+        }
+
+    if w.returncode != 0:
+        errors["writer"] = {
+            "cmd": w.args,
+            "rc": w.returncode,
+            "err": w_err.decode(),
+        }
+
+    if errors:
+        raise se.TarCommandError(errors)
 
 
 def transformPath(remotePath):
