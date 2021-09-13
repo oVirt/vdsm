@@ -125,6 +125,21 @@ VCPU_CURRENT = """
 </domain>
 """
 
+PINNED_CPUS = """
+<domain>
+    <cputune>
+        <vcpupin vcpu="0" cpuset="1,2,5-7" />
+        <vcpupin vcpu="1" cpuset="1,6,10" />
+    </cputune>
+</domain>
+"""
+
+NO_PINNED_CPUS = """
+<domain>
+    <uuid>xyz</uuid>
+</domain>
+"""
+
 
 class DevicesHashTests(VdsmTestCase):
 
@@ -260,3 +275,15 @@ class DomainDescriptorTests(XMLTestCase):
         desc = DomainDescriptor(xml_data)
         cpus = desc.get_number_of_cpus()
         assert cpus == expected
+
+    def test_pinned_cpus(self):
+        desc = DomainDescriptor(PINNED_CPUS)
+        pinning = desc.pinned_cpus
+        assert len(pinning) == 2
+        assert pinning[0] == frozenset([1, 2, 5, 6, 7])
+        assert pinning[1] == frozenset([1, 6, 10])
+
+    def test_no_pinned_cpus(self):
+        desc = DomainDescriptor(NO_PINNED_CPUS)
+        pinning = desc.pinned_cpus
+        assert pinning == {}

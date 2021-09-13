@@ -54,6 +54,7 @@ import libvirt_qemu
 import six
 
 # vdsm imports
+from vdsm import taskset
 from vdsm.common import api
 from vdsm.common import cpuarch
 from vdsm.common import exception
@@ -84,6 +85,7 @@ from vdsm.storage import sdc
 
 from vdsm.virt import backup
 from vdsm.virt import blockjob
+from vdsm.virt import cpumanagement
 from vdsm.virt import domxml_preprocess
 from vdsm.virt import drivemonitor
 from vdsm.virt import errors
@@ -580,6 +582,12 @@ class Vm(object):
             self._balloon_target = md.get('balloonTarget')
             self._ballooning_enabled = conv.tobool(
                 md.get('ballooningEnabled', True))
+            # Store CPU policy related information
+            self._cpu_policy = md.get('cpuPolicy', None)
+            self._manually_pinned_cpus = None
+            pinned = md.get('manuallyPinedCPUs', None)
+            if pinned is not None:
+                self._manually_pinned_cpus = taskset.cpulist_parse(pinned)
 
     def min_cluster_version(self, major, minor):
         """
@@ -2625,8 +2633,30 @@ class Vm(object):
 
         sampling.stats_cache.add(self.id)
         self._monitorable = config.getboolean('sampling', 'enable')
-
+        self._initCpuManagement()
         self._vmDependentInit()
+
+    def _initCpuManagement(self):
+        if self._cpu_policy is None:
+            self._cpu_policy = self._implied_cpu_policy()
+            with self._md_desc.values() as md:
+                md['cpuPolicy'] = self._cpu_policy
+            self.sync_metadata()
+            self.log.debug('Inferred CPU policy: %r', self._cpu_policy)
+        else:
+            self.log.debug('Operating with CPU policy: %r', self._cpu_policy)
+        if self._manually_pinned_cpus is None:
+            if self._cpu_policy == cpumanagement.CPU_POLICY_MANUAL:
+                self._manually_pinned_cpus = frozenset(
+                    self.pinned_cpus().keys())
+                with self._md_desc.values() as md:
+                    md['manuallyPinedCPUs'] = ','.join(
+                        map(str, self._manually_pinned_cpus))
+                self.sync_metadata()
+                self.log.debug(
+                    'Manually pinned CPUs: %r', self._manually_pinned_cpus)
+            else:
+                self._manually_pinned_cpus = frozenset()
 
     def _vmDependentInit(self):
         """
@@ -6261,6 +6291,36 @@ class Vm(object):
 
     def last_disk_hotplug(self):
         return self._last_disk_hotplug
+
+    def _implied_cpu_policy(self):
+        # For backward compatibility we default to shared unless there
+        # is explicit CPU pinning
+        if len(self._domain.pinned_cpus) > 0:
+            return cpumanagement.CPU_POLICY_MANUAL
+        else:
+            return cpumanagement.CPU_POLICY_NONE
+
+    def cpu_policy(self):
+        """
+        :return: CPU policy configured for the VM. It is one of the
+          CPU_POLICY_* string constants.
+        """
+        if self._cpu_policy is None:
+            return self._implied_cpu_policy()
+        return self._cpu_policy
+
+    def pinned_cpus(self):
+        """
+        :return: frozenset with IDs of pCPUs the VM is pinned to. This is a
+          combination for all vCPUs. Empty frozenset is returned if none of
+          the vCPUs has a pinning defined.
+        """
+        return self._domain.pinned_cpus
+
+    def manually_pinned_cpus(self):
+        if self._manually_pinned_cpus is None:
+            return frozenset(self.pinned_cpus().keys())
+        return self._manually_pinned_cpus
 
 
 def update_active_path(volume_chain, volumeID, activePath):

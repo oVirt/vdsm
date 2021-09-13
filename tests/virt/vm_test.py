@@ -46,6 +46,7 @@ from vdsm.common import xmlutils
 
 import vdsm.common.time
 
+from vdsm.virt import cpumanagement
 from vdsm.virt import periodic
 from vdsm.virt import utils
 from vdsm.virt import virdomain
@@ -1834,6 +1835,26 @@ class MetadataTests(TestCaseBase):
   <devices/>
 </domain>'''
 
+    _TEST_XML_IMPLIED_PIN = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>TESTING</uuid>
+  <devices/>
+  <cputune>
+    <vcpupin vcpu='0' cpuset='10'/>
+  </cputune>
+</domain>'''
+
+    _TEST_XML_DEDICATED = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>TESTING</uuid>
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:cpuPolicy>dedicated</ovirt-vm:cpuPolicy>
+    </ovirt-vm:vm>
+  </metadata>
+  <devices/>
+</domain>'''
+
     @contextmanager
     def test_vm(self, test_xml=None):
         with namedTemporaryDir() as tmp_dir:
@@ -1894,6 +1915,19 @@ class MetadataTests(TestCaseBase):
     def test_launch_paused(self):
         with self.test_vm(test_xml=self._TEST_XML_LAUNCH_PAUSED) as testvm:
             assert testvm._launch_paused
+
+    @permutations([
+        (_TEST_XML, cpumanagement.CPU_POLICY_NONE),
+        (_TEST_XML_IMPLIED_PIN, cpumanagement.CPU_POLICY_MANUAL),
+        (_TEST_XML_DEDICATED, cpumanagement.CPU_POLICY_DEDICATED),
+    ])
+    def test_cpu_policy(self, xml, expected):
+        with self.test_vm(test_xml=xml) as testvm:
+            assert testvm.cpu_policy() == expected
+
+    def test_manually_pinned_cpus(self):
+        with self.test_vm(test_xml=self._TEST_XML_IMPLIED_PIN) as testvm:
+            assert testvm.manually_pinned_cpus() == frozenset([0])
 
 
 class TestQgaContext(TestCaseBase):

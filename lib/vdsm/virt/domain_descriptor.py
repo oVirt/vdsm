@@ -25,6 +25,7 @@ from contextlib import contextmanager
 import enum
 import xml.etree.ElementTree as etree
 
+from vdsm import taskset
 from vdsm.common import xmlutils
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
@@ -152,6 +153,27 @@ class MutableDomainDescriptor(object):
           SecureBoot variables) or None if the VM has no NVRAM store.
         """
         return vmxml.find_first(self._dom, 'os/nvram', None)
+
+    @property
+    def pinned_cpus(self):
+        """
+        :return: A dictionary in which key is vCPU ID and value is a frozenset
+          with IDs of pCPUs the vCPU is pinned to. If a vCPU is not pinned to
+          any pCPU it is not listed in the dictionary. Empty dictionary is
+          returned if none of the vCPUs has a pinning defined.
+        """
+        cputune = vmxml.find_first(self._dom, 'cputune', None)
+        if cputune is None:
+            return {}
+        pinning = dict()
+        for vcpupin in vmxml.find_all(cputune, 'vcpupin'):
+            cpuset = vcpupin.get('cpuset', None)
+            vcpu = vcpupin.get('vcpu', None)
+            if vcpu is not None and cpuset is not None:
+                cpus = taskset.cpulist_parse(cpuset)
+                if len(cpus) > 0:
+                    pinning[int(vcpu)] = cpus
+        return pinning
 
 
 class DomainDescriptor(MutableDomainDescriptor):
