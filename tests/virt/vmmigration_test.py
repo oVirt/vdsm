@@ -36,6 +36,7 @@ from six.moves import zip
 from vdsm.common import exception
 from vdsm.common import response
 from vdsm.config import config
+from vdsm.virt import cpumanagement
 from vdsm.virt import drivemonitor
 from vdsm.virt import migration
 from vdsm.virt import vmstatus
@@ -366,6 +367,12 @@ class FakeVM(object):
 
     def reviveTicket(self, newlife):
         pass
+
+    def cpu_policy(self):
+        return cpumanagement.CPU_POLICY_NONE
+
+    def migratable_domain_xml(self):
+        return '<domain/>'
 
 
 class FakeProgress(object):

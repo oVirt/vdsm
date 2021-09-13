@@ -2318,8 +2318,36 @@ class Vm(object):
                 return True
         return False
 
+    def _process_migration_cpusets(self, cpusets):
+        xml_cpusets = []
+        if len(cpusets) != self.get_number_of_cpus():
+            raise exception.InvalidParameter(
+                "length of cpusets (%d) must match"
+                " number of CPUs (%d)" % (
+                    len(cpusets), self.get_number_of_cpus()))
+        for vcpu, cpuset in enumerate(cpusets):
+            if cpuset is None:
+                continue
+            vcpupin = ET.Element('vcpupin')
+            # Try parsing the content to validate it
+            try:
+                taskset.cpulist_parse(cpuset)
+            except ValueError:
+                raise exception.InvalidParameter(
+                    "One or more invalid cpuset list descriptions in: %r" %
+                    cpusets)
+            vcpupin.set('vcpu', str(vcpu))
+            vcpupin.set('cpuset', str(cpuset))
+            xml_cpusets.append(vcpupin)
+        return xml_cpusets
+
     @api.guard(_not_migrating)
     def migrate(self, params):
+        if params.get('cpusets') is not None:
+            # Validate content and turn it into <vcpupin> elements here to
+            # avoid failures later during migration
+            params['cpusets'] = self._process_migration_cpusets(
+                params['cpusets'])
         self._acquireCpuLockWithTimeout(flow='migrate')
         try:
             # It is unlikely, but we could receive migrate()

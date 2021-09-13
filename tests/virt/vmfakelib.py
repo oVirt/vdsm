@@ -425,6 +425,7 @@ DEFAULT_DOMAIN_XML = '''
   <name>n{vm_id}</name>
   <uuid>{vm_id}</uuid>
   <memory unit='KiB'>4194304</memory>
+  <vcpu current='1'>16</vcpu>
   <os>
     <type arch='x86_64' machine='pc-i440fx-2.3'>hvm</type>
   </os>

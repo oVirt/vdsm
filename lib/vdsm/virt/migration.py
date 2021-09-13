@@ -46,9 +46,11 @@ from vdsm.common.units import MiB
 from vdsm.virt.utils import DynamicBoundedSemaphore
 from vdsm.virt.utils import VolumeSize
 
+from vdsm.virt import cpumanagement
 from vdsm.virt import virdomain
 from vdsm.virt import vmexitreason
 from vdsm.virt import vmstatus
+from vdsm.virt import vmxml
 
 
 MODE_REMOTE = 'remote'
@@ -136,7 +138,7 @@ class SourceThread(object):
                  tunneled=False, dstqemu='', abortOnError=False,
                  consoleAddress=None, compressed=False,
                  autoConverge=False, recovery=False, encrypted=False,
-                 **kwargs):
+                 cpusets=None, **kwargs):
         self.log = vm.log
         self._vm = vm
         self._dom = DomainAdapter(self._vm)
@@ -193,6 +195,7 @@ class SourceThread(object):
         # True if destination host supports disk refresh. Initialized before
         # the first extend of the disk during migration if finished.
         self._supports_disk_refresh = None
+        self._destination_cpusets = cpusets
 
     def start(self):
         self._thread.start()
@@ -613,15 +616,33 @@ class SourceThread(object):
             # network, not present in the certificate.
             params[libvirt.VIR_MIGRATE_PARAM_TLS_DESTINATION] = \
                 normalize_literal_addr(self.remoteHost)
+        xml = self._vm.migratable_domain_xml()
         # REQUIRED_FOR: destination Vdsm < 4.3
         if self._legacy_payload_path is not None:
             alias, path = self._legacy_payload_path
-            dom = xmlutils.fromstring(self._vm.migratable_domain_xml())
+            dom = xmlutils.fromstring(xml)
             source = dom.find(".//alias[@name='%s']/../source" % (alias,))
             source.set('file', path)
             xml = xmlutils.tostring(dom)
-            self._vm.log.debug("Migrating domain XML: %s", xml)
-            params[libvirt.VIR_MIGRATE_PARAM_DEST_XML] = xml
+        # Remove & replace CPU pinning added by VDSM
+        dom = xmlutils.fromstring(xml)
+        cputune = dom.find('cputune')
+        if cputune is not None:
+            for vcpu in vmxml.find_all(cputune, 'vcpupin'):
+                vcpu_id = int(vcpu.get('vcpu'))
+                if (self._vm.cpu_policy() == cpumanagement.CPU_POLICY_MANUAL
+                        and vcpu_id in self._vm.manually_pinned_cpus()):
+                    continue
+                cputune.remove(vcpu)
+        if self._destination_cpusets is not None:
+            if cputune is None:
+                cputune = xml.etree.ElementTree.Element('cputune')
+                dom.append(cputune)
+            for vcpupin in self._destination_cpusets:
+                cputune.append(vcpupin)
+        xml = xmlutils.tostring(dom)
+        self._vm.log.debug("Migrating domain XML: %s", xml)
+        params[libvirt.VIR_MIGRATE_PARAM_DEST_XML] = xml
         return params
 
     @property

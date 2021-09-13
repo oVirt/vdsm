@@ -24,6 +24,7 @@ from __future__ import division
 
 import libvirt
 from six.moves import zip
+import xml.etree.ElementTree as ET
 
 from vdsm.common import define
 from vdsm.common import exception
@@ -450,6 +451,26 @@ class TestVmOperations(XMLTestCase):
 
             drives = [drive.name for drive in testvm.getChunkedDrives()]
             assert drives == expected
+
+    def test_process_migration_cpusets(self):
+        with fake.VM() as testvm:
+            elements = testvm._process_migration_cpusets(['1,3-5'])
+            assert len(elements) == 1
+            assert isinstance(elements[0], ET.Element)
+            assert elements[0].tag == 'vcpupin'
+            assert sorted(elements[0].keys()) == ['cpuset', 'vcpu']
+            assert elements[0].get('vcpu') == '0'
+            assert elements[0].get('cpuset') == '1,3-5'
+
+    @permutations([
+        [[], exception.InvalidParameter],
+        [['2', '4'], exception.InvalidParameter],
+        [['abc'], exception.InvalidParameter],
+    ])
+    def test_process_migration_cpusets_invalid(self, cpusets, exception):
+        with fake.VM() as testvm:
+            with pytest.raises(exception):
+                testvm._process_migration_cpusets(cpusets)
 
 
 def _mem_committed(mem_size_mb):
