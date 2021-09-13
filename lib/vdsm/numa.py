@@ -32,7 +32,7 @@ from vdsm.common.cmdutils import CommandPath
 
 NumaTopology = namedtuple('NumaTopology',
                           ['topology', 'distances', 'cpu_topology',
-                           'cpu_info'])
+                           'cpu_info', 'core_cpus'])
 CpuTopology = namedtuple('CpuTopology',
                          ['sockets', 'cores', 'threads', 'online_cpus'])
 CpuInfo = namedtuple('CpuInfo',
@@ -99,6 +99,22 @@ def cpu_info():
         [(0, 0, 0, 0, 0), (1, 1, 1, 0, 0)]
     '''
     return _numa().cpu_info
+
+
+def core_cpus():
+    '''
+    Returns dictionary containing CPUs on each core. Key is a tuple
+    (socket id, die id, core id) and value is a set of CPU ids.
+
+    Example:
+    {
+      (0, 0, 0): set([0,4])
+      (0, 0, 1): set([1,5])
+      (1, 0, 0): set([2,6])
+      (1, 0, 1): set([3,7])
+    }
+    '''
+    return _numa().core_cpus
 
 
 @cache.memoized
@@ -177,6 +193,7 @@ def update():
     distances = defaultdict(dict)
     sockets = set()
     siblings = set()
+    core_cpus = defaultdict(lambda: set())  # Sets of CPU IDs
     online_cpus = []
     cpu_info = []
 
@@ -211,6 +228,7 @@ def update():
                     CpuInfo(cpu_id=cpu_id, numa_cell_id=int(cell_id),
                             socket_id=socket_id, die_id=die_id,
                             core_id=core_id))
+                core_cpus[(socket_id, die_id, core_id)].add(cpu_id)
 
         if cell.find('distances') is not None:
             for sibling in cell.find('distances').findall('sibling'):
@@ -232,5 +250,6 @@ def update():
             cpu_topology = CpuTopology(socketnum, corenum,
                                        threadnum, online_cpus)
 
-    _cache.numa = NumaTopology(topology, distances, cpu_topology, cpu_info)
+    _cache.numa = NumaTopology(topology, distances, cpu_topology, cpu_info,
+                               core_cpus)
     _cache.capabilities = capabilities

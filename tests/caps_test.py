@@ -381,3 +381,18 @@ class TestCaps(TestCaseBase):
         expected = ['flag_1', 'flag_2', 'flag_3']
         self.assertEqual(3, len(flags))
         self.assertTrue(all([x in flags for x in expected]))
+
+    @MonkeyPatch(libvirtconnection, 'get',
+                 lambda : _getLibvirtConnStubFromFile(
+                     'caps_libvirt_intel_E5649.out'))
+    @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
+        'total': '1', 'free': '1'})
+    def test_core_cpus(self):
+        # 2 sockets, 6 cores per socket, 2 threads per core
+        numa.update()
+        cpus = numa.core_cpus()
+        assert len(cpus) == 12
+        assert cpus[(0, 0, 0)] == {0, 12}
+        assert cpus[(0, 0, 1)] == {8, 20}
+        assert cpus[(1, 0, 0)] == {1, 13}
+        assert cpus[(1, 0, 1)] == {9, 21}

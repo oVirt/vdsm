@@ -6322,6 +6322,24 @@ class Vm(object):
             return frozenset(self.pinned_cpus().keys())
         return self._manually_pinned_cpus
 
+    def pin_vcpu(self, vcpu, cpuset):
+        """
+        Pin vCPU to a set of pCPUs.
+
+        :param vcpu: ID of a vCPU for which to configure pinning.
+        :type vcpu: int
+        :param cpuset: Defines which pCPUs to pin to. It is a list of
+          length L, where L is the number of physical CPUs on the host, and
+          each of the list elements is a boolean defining whether to pin to
+          the corresponding physical CPU or not. If Nth element of the list
+          is True then a vCPU should be pinned to pCPU with ID N.
+        :type cpuset: list
+        """
+        self._dom.pinVcpu(vcpu, cpuset)
+
+    def get_number_of_cpus(self):
+        return int(self._domain.get_number_of_cpus())
+
 
 def update_active_path(volume_chain, volumeID, activePath):
     for v in volume_chain:
