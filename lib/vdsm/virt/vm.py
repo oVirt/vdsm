@@ -2657,6 +2657,7 @@ class Vm(object):
                     'Manually pinned CPUs: %r', self._manually_pinned_cpus)
             else:
                 self._manually_pinned_cpus = frozenset()
+        cpumanagement.on_vm_create(self)
 
     def _vmDependentInit(self):
         """
@@ -5513,6 +5514,8 @@ class Vm(object):
             return result
         # Clean VM from the system
         self._deleteVm()
+        # Update shared CPU pool
+        cpumanagement.on_vm_destroy(self)
 
         return response.success()
 

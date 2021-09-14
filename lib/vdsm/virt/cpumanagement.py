@@ -39,6 +39,40 @@ CPU_POLICY_SIBLINGS = "siblings"
 _shared_pool_lock = threading.Lock()
 
 
+def on_vm_create(vm_obj):
+    """
+    Assign CPUs on VM start. At the moment this only takes care of VMs with no
+    CPU policy or pinning.
+
+    :param vm_obj: VM object of the newly created VM. The object has to be
+      already in the VM container.
+    :type vm_obj: vdsm.virt.VM instance
+    """
+    if vm_obj.cpu_policy() == CPU_POLICY_NONE:
+        vm_obj.log.debug('Configuring CPUs')
+        _assign_shared(vm_obj.cif, vm_obj)
+    else:
+        _assign_shared(vm_obj.cif)
+
+
+def on_vm_destroy(vm_obj):
+    """
+    Update shared CPU pool when destroying a VM.
+
+    :param vm_obj: The VM being destroyed. It is expected that VM object is no
+      longer in the VM container.
+    :type vm_obj: vdsm.virt.VM instance
+    """
+    if vm_obj.cpu_policy() in (CPU_POLICY_NONE, CPU_POLICY_MANUAL):
+        # Shared policy VM, nothing to do
+        vm_obj.log.debug('Removing %s policy VM', vm_obj.cpu_policy())
+        return
+    vm_obj.log.debug(
+        'Removing %s policy VM (freeing cpus=%r)',
+        vm_obj.cpu_policy(), vm_obj.pinned_cpus())
+    _assign_shared(vm_obj.cif)
+
+
 def _assign_shared(cif, target_vm=None):
     """
     Assign all CPUs from shared pool to all VMs with no policy or to
