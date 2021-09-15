@@ -32,6 +32,7 @@ from vdsm.common import hooks
 from vdsm.network import connectivity
 from vdsm.network import netstats
 from vdsm.network import netswitch
+from vdsm.network import ovn
 from vdsm.network import validator
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import sriov
@@ -293,6 +294,14 @@ def get_lldp_info(filter):
         # TODO OVS nics
         filter['devices'] = netswitch.configurator.netinfo()['nics'].keys()
     return lldp_info.get_info(filter)
+
+
+def is_ovn_configured():
+    """
+    Check if OVN is configured on this host.
+    :return: True if OVN is configured on this host
+    """
+    return ovn.is_ovn_configured()
 
 
 @contextmanager

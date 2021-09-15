@@ -393,6 +393,7 @@ Requires:       nmstate-plugin-ovsdb
 Requires:       libnl3
 Requires:       lldpad
 Requires:       python3-six
+Requires:       python3-cryptography
 Requires:       %{name}-common = %{version}-%{release}
 
 %description network

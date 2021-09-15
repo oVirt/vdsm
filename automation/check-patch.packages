@@ -21,6 +21,7 @@ openssl
 ovirt-imageio-client
 python3-augeas
 python3-blivet
+python3-cryptography
 python3-dateutil
 python3-dbus
 python3-decorator
