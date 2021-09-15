@@ -506,6 +506,7 @@ class TestRollbackContext(TestCaseBase):
 class TestExecCmdAffinity(TestCaseBase):
 
     CPU_SET = frozenset([0])
+    ONLINE_CPUS = online_cpus()
 
     @forked
     @MonkeyPatch(cmdutils, '_USING_CPU_AFFINITY', False)
@@ -525,7 +526,7 @@ class TestExecCmdAffinity(TestCaseBase):
 
         proc = commands.start((EXT_SLEEP, '30s'))
         try:
-            self.assertEqual(taskset.get(proc.pid), online_cpus())
+            self.assertEqual(taskset.get(proc.pid), self.ONLINE_CPUS)
         finally:
             proc.kill()
 
