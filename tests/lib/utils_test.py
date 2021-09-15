@@ -84,9 +84,12 @@ class TestTerminating(TestCaseBase):
         self.proc_wait = self.proc.wait
 
     def tearDown(self):
-        if self.proc_poll() is None:
-            self.proc_kill()
-            self.proc_wait()
+        self.proc.poll = self.proc_poll
+        self.proc.kill = self.proc_kill
+        self.proc.wait = self.proc_wait
+        if self.proc.poll() is None:
+            self.proc.kill()
+            self.proc.wait()
 
     def test_process_running(self):
         with commands.terminating(self.proc):
