@@ -30,7 +30,7 @@ el7_ovirt36_repo = 'http://resources.ovirt.org/pub/ovirt-3.6/rpm/el7/'
 
 def downgrade_vdsm(url):
     commands.run(['yum-config-manager', '--add-repo', url])
-    commands.run(['yum', 'swap', '--', 'erase', '-y', 'vdsm\*',
+    commands.run(['yum', 'swap', '--', 'erase', '-y', 'vdsm*',
                  '--', 'install', '-y', 'vdsm-4.17.10.1-0.el7.centos.noarch'])
 
 

@@ -814,9 +814,9 @@ class ConfigFileTests(TestCase):
                         sectionStart="# start conf",
                         sectionEnd="# end conf",
                         prefix="# comment ") as conf:
-                    conf.prefixLines()
-                    conf.prependSection(u"Some text to\n"
-                                        "add at the top\n")
+            conf.prefixLines()
+            conf.prependSection(u"Some text to\n"
+                                "add at the top\n")
         with open(self.tname, 'r') as f:
             self.assertEqual(f.read(),
                              "# start conf-3.4.4\n"
@@ -839,7 +839,7 @@ class ConfigFileTests(TestCase):
                         sectionStart="# start conf",
                         sectionEnd="# end conf",
                         prefix="# comment ") as conf:
-                    conf.prefixLines()
+            conf.prefixLines()
         with open(self.tname, 'r') as f:
             self.assertEqual(f.read(),
                              "# comment /var/log/libvirt/libvirtd.log {\n"
@@ -878,11 +878,11 @@ class ConfigFileTests(TestCase):
                         sectionStart="# start conf",
                         sectionEnd="# end conf",
                         prefix="# comment") as conf:
-                            conf.removeConf()
+            conf.removeConf()
         with open(self.tname, 'r') as f:
-                    self.assertEqual(f.read(), "key=val\n"
-                                               "key=val\n"
-                                               "# comment line\n")
+            self.assertEqual(f.read(), "key=val\n"
+                                       "key=val\n"
+                                       "# comment line\n")
 
     def testOutOfContext(self):
         conff = ConfigFile(self.tname,

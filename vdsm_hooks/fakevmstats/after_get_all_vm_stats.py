@@ -113,7 +113,7 @@ ETH_HW_ADDR_FORMAT = '%02x:%02x:%02x:%02x:%02x:%02x'
 
 def randomizeRuntimeStats(stats):
     if stats['status'] != 'Up':
-            return
+        return
 
     vmDigest = uuidDigest(stats['vmId'])
 

@@ -195,7 +195,7 @@ class DynamicBridge(object):
                     except ge.GlusterException as e:
                         result = e.response()
                 else:
-                        result = fn(*methodArgs)
+                    result = fn(*methodArgs)
             except TypeError as e:
                 self.log.exception("TypeError raised by dispatched function")
                 raise InvalidCall(fn, methodArgs, e)
@@ -211,7 +211,7 @@ class DynamicBridge(object):
                 ret = retfield(result)
         elif _glusterEnabled and className.startswith('Gluster'):
             ret = dict([(key, value) for key, value in result.items()
-                        if key is not 'status'])
+                        if key != 'status'])
         else:
             ret = self._get_result(result, retfield)
 

@@ -101,18 +101,18 @@ class Listener(object):
             self._prepare_reconnect(fileno)
 
     def _prepare_reconnect(self, fileno):
-            # fileno will be closed by create_cb
-            self._unregister_fd(fileno)
-            obj = self._channels.pop(fileno)
-            obj['timeout_seen'] = False
-            try:
-                fileno = obj['create_cb']()
-            except:
-                self.log.exception("An error occurred in the create callback "
-                                   "fileno: %d.", fileno)
-            else:
-                with self._update_lock:
-                    self._unconnected[fileno] = obj
+        # fileno will be closed by create_cb
+        self._unregister_fd(fileno)
+        obj = self._channels.pop(fileno)
+        obj['timeout_seen'] = False
+        try:
+            fileno = obj['create_cb']()
+        except:
+            self.log.exception("An error occurred in the create callback "
+                               "fileno: %d.", fileno)
+        else:
+            with self._update_lock:
+                self._unconnected[fileno] = obj
 
     def _handle_timeouts(self):
         """

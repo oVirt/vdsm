@@ -146,15 +146,15 @@ def pages_by_cell(cell, index):
 # Example of a value returned from conn.getFreePages:
 # {1: {2048: 250, 1048576: 0, 4: 862794}}
 def free_pages_by_cell(page_sizes, numa_index):
-        free_pages = {}
-        if page_sizes:
-            conn = libvirtconnection.get()
-            libvirt_freepages = conn.getFreePages(page_sizes, numa_index, 1)
-            free_pages = \
-                {int(page_size): {'freePages': free_pages}
-                 for page_size, free_pages in
-                    libvirt_freepages[numa_index].items()}
-        return free_pages
+    free_pages = {}
+    if page_sizes:
+        conn = libvirtconnection.get()
+        libvirt_freepages = conn.getFreePages(page_sizes, numa_index, 1)
+        free_pages = \
+            {int(page_size): {'freePages': free_pages}
+             for page_size, free_pages in
+                libvirt_freepages[numa_index].items()}
+    return free_pages
 
 
 @cache.memoized

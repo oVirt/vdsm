@@ -642,7 +642,7 @@ class BlockVolume(volume.Volume):
 
         try:
             lvm.removeLVs(self.sdUUID, (self.volUUID,))
-        except se.CannotRemoveLogicalVolume as e:
+        except se.CannotRemoveLogicalVolume:
             self.log.exception("Failed to delete volume %s/%s. The "
                                "logical volume must be removed manually.",
                                self.sdUUID, self.volUUID)

@@ -48,12 +48,12 @@ def autoReapPID(pid):
 
 
 def _tryReap(pid):
-        try:
-            pid, rv = os.waitpid(pid, os.WNOHANG)
-            if pid != 0:
-                _trackedPids.discard(pid)
-        except OSError:
+    try:
+        pid, rv = os.waitpid(pid, os.WNOHANG)
+        if pid != 0:
             _trackedPids.discard(pid)
+    except OSError:
+        _trackedPids.discard(pid)
 
 
 def _zombieReaper(signum, frame):

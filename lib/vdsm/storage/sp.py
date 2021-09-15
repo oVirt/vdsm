@@ -1400,8 +1400,8 @@ class StoragePool(object):
                     self.log.warn("Could not clean all trash from the pool dom"
                                   " `%s` (%s)", oldie, e)
             except Exception as e:
-                    self.log.warn("Could not clean all trash from the pool dom"
-                                  " `%s` (%s)", oldie, e)
+                self.log.warn("Could not clean all trash from the pool dom"
+                              " `%s` (%s)", oldie, e)
 
     @unsecured
     def refresh(self, msdUUID, masterVersion):

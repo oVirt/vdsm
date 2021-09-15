@@ -100,7 +100,7 @@ if 'scratchpad' in os.environ:
         disks = os.environ['scratchpad']
 
         domxml = hooking.read_domxml()
-        size_re = re.compile('^[\d]{1,}[k,K,M,G,T,b]?$')
+        size_re = re.compile(r'^[\d]{1,}[k,K,M,G,T,b]?$')
 
         for disk in disks.split(':'):
             arr = disk.split(',')

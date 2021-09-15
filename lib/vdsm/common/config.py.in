@@ -636,10 +636,10 @@ parameters = [
     ('v2v', [
 
         ('kvm2ovirt_buffer_size', '1048576',
-                'Size of the buffer (in bytes) used by kvm2ovirt when '
-                'transferring data from source libvirt. It may be necessary '
-                'to tweak the size when communicating with old libvirt or '
-                'for performance tuning.'),
+            'Size of the buffer (in bytes) used by kvm2ovirt when '
+            'transferring data from source libvirt. It may be necessary '
+            'to tweak the size when communicating with old libvirt or '
+            'for performance tuning.'),
     ]),
 
     # Section [guest_agent]
@@ -670,8 +670,7 @@ parameters = [
 
         ('qga_task_timeout', '30',
             'Time (in sec) to wait for completion of periodic task.'
-            ' After this time the task is stopped and worker is discarded.'
-            ),
+            ' After this time the task is stopped and worker is discarded.'),
 
         ('qga_polling_period', '5',
             'Period (in sec) with which to execute the polling worker.'

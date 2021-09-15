@@ -129,11 +129,11 @@ class JsonRpcServerTests(TestCaseBase):
 
     @contextmanager
     def _client(self, clientFactory):
-            client = clientFactory()
-            try:
-                yield client
-            finally:
-                client.close()
+        client = clientFactory()
+        try:
+            yield client
+        finally:
+            client.close()
 
     def _get_with_timeout(self, event_queue):
         try:

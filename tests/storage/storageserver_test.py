@@ -58,7 +58,7 @@ class TestIscsiConnectionMismatch(VdsmTestCase):
     def test_format_mismatches_list(self):
         errors = [IscsiConnection.Mismatch("error 1"),
                   IscsiConnection.Mismatch("error 2")]
-        expected = "%s" % ["error 1", "error 2"]
+        expected = "%s" % str(["error 1", "error 2"])
         self.assertEqual(str(errors), expected)
 
 

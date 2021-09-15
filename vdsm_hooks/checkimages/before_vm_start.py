@@ -32,7 +32,7 @@ Without 'timeout' specified, particular timeout is computed based on
 image size.
 
 syntax:
-    checkimages=true(|,timeout:\d+\.{1}\d+);
+    checkimages=true(|,timeout:\d+\.{1}\d+);  # noqa: W605
 
 example:
     checkimages=true,timeout:1.12     # Use 1.12 seconds as timeout

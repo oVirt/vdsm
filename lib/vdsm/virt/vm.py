@@ -923,7 +923,7 @@ class Vm(object):
                     # not even on recovery, to avoid state desync or worse
                     # split-brain scenarios.
                     raise
-                except Exception as e:
+                except Exception:
                     if not self.recovering:
                         raise
                     else:
@@ -5101,16 +5101,16 @@ class Vm(object):
             graphics, otp, seconds, connAct, None, params)
 
     def _check_fips_params_valid(self, params):
-            if 'fips' in params and \
-               params.get('fips') not in ['true', 'false']:
-                raise exception.MissingParameter(
-                    'fips param should either be "true", '
-                    '"false" or non-existent')
+        if 'fips' in params and \
+           params.get('fips') not in ['true', 'false']:
+            raise exception.MissingParameter(
+                'fips param should either be "true", '
+                '"false" or non-existent')
 
-            fips = conv.tobool(params.get('fips'))
-            if fips and params.get('vncUsername') is None:
-                raise exception.GeneralException(
-                    'FIPS mode requires vncUsername')
+        fips = conv.tobool(params.get('fips'))
+        if fips and params.get('vncUsername') is None:
+            raise exception.GeneralException(
+                'FIPS mode requires vncUsername')
 
     def _setTicketForGraphicDev(self, graphics, otp, seconds, connAct,
                                 disconnectAction, params):

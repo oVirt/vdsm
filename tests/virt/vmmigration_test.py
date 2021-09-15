@@ -219,12 +219,12 @@ class TestVmMigrate(TestCaseBase):
 
     @permutations([[vmstatus.UP]])
     def test_migrate_from_status(self, vm_status):
-            with MonkeyPatchScope([
-                (migration, 'SourceThread', fake.MigrationSourceThread)
-            ]):
-                with fake.VM(status=vm_status, cif=self.cif) as testvm:
-                    res = testvm.migrate({})  # no params needed
-                    assert not response.is_error(res)
+        with MonkeyPatchScope([
+            (migration, 'SourceThread', fake.MigrationSourceThread)
+        ]):
+            with fake.VM(status=vm_status, cif=self.cif) as testvm:
+                res = testvm.migrate({})  # no params needed
+                assert not response.is_error(res)
 
     @permutations([
         # vm_status, exception
@@ -232,12 +232,12 @@ class TestVmMigrate(TestCaseBase):
         [vmstatus.DOWN, exception.NoSuchVM],
     ])
     def test_migrate_from_status_error(self, vm_status, exc):
-            with MonkeyPatchScope([
-                (migration, 'SourceThread', fake.MigrationSourceThread)
-            ]):
-                with fake.VM(status=vm_status, cif=self.cif) as testvm:
-                    with pytest.raises(exc):
-                        testvm.migrate({})  # no params needed
+        with MonkeyPatchScope([
+            (migration, 'SourceThread', fake.MigrationSourceThread)
+        ]):
+            with fake.VM(status=vm_status, cif=self.cif) as testvm:
+                with pytest.raises(exc):
+                    testvm.migrate({})  # no params needed
 
 
 class TestPostCopy(TestCaseBase):

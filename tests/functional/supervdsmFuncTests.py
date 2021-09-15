@@ -33,10 +33,10 @@ from vdsm.constants import VDSM_USER
 
 @pytest.fixture
 def dropped_privileges():
-        vdsm_uid, vdsm_gid = getpwnam(VDSM_USER)[2:4:]
-        os.setgroups([])
-        os.setgid(vdsm_gid)
-        os.setuid(vdsm_uid)
+    vdsm_uid, vdsm_gid = getpwnam(VDSM_USER)[2:4:]
+    os.setgroups([])
+    os.setgid(vdsm_gid)
+    os.setuid(vdsm_uid)
 
 
 @pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")

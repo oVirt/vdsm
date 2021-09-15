@@ -280,9 +280,9 @@ class SSLHandshakeDispatcher(object):
 
 
 def create_ssl_context():
-        sslctx = None
-        if config.getboolean('vars', 'ssl'):
-            sslctx = SSLContext(key_file=pki.KEY_FILE,
-                                cert_file=pki.CERT_FILE,
-                                ca_certs=pki.CA_FILE)
-        return sslctx
+    sslctx = None
+    if config.getboolean('vars', 'ssl'):
+        sslctx = SSLContext(key_file=pki.KEY_FILE,
+                            cert_file=pki.CERT_FILE,
+                            ca_certs=pki.CA_FILE)
+    return sslctx

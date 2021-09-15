@@ -96,8 +96,8 @@ def dummy_register_protocol_detector(monkeypatch):
                         lambda d: d.close())
 
 
-@pytest.fixture  # noqa: F811
-def listener(dummy_register_protocol_detector, key_cert_pair, request):
+@pytest.fixture  # noqa: F811 # TODO: remove after upgrading flake to 3.9.2
+def listener(dummy_register_protocol_detector, key_cert_pair, request):  # noqa: F811, E501
     key_file, cert_file = key_cert_pair
     reactor = Reactor()
 
@@ -122,8 +122,8 @@ def listener(dummy_register_protocol_detector, key_cert_pair, request):
         t.join()
 
 
-@pytest.fixture  # noqa: F811
-def client_cmd(listener, key_cert_pair):
+@pytest.fixture  # noqa: F811 # TODO: remove after upgrading flake to 3.9.2
+def client_cmd(listener, key_cert_pair):  # noqa: F811
     key_file, cert_file = key_cert_pair
 
     def wrapper(protocol):

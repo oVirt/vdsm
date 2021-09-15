@@ -207,7 +207,7 @@ def main():
 
     try:
         return tool_command[cmd]["command"](*args)
-    except vdsm.tool.ExtraArgsError as e:
+    except vdsm.tool.ExtraArgsError:
         print_command_usage(tool_command[cmd]["command"], sys.stderr)
         return 1
     except vdsm.tool.UsageError as e:

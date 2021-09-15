@@ -204,18 +204,18 @@ class JsonRpcClient(object):
         self._finalizeCtx(ctx)
 
     def _isResponse(self, obj):
-            if isinstance(obj, list):
-                v = None
-                for res in map(self._isResponse, obj):
-                    if v is None:
-                        v = res
+        if isinstance(obj, list):
+            v = None
+            for res in map(self._isResponse, obj):
+                if v is None:
+                    v = res
 
-                    if v != res:
-                        raise TypeError("batch is mixed")
+                if v != res:
+                    raise TypeError("batch is mixed")
 
-                return v
-            else:
-                return ("result" in obj or "error" in obj)
+            return v
+        else:
+            return ("result" in obj or "error" in obj)
 
     def _handleMessage(self, message, event_queue=None):
         try:

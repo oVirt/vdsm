@@ -154,37 +154,37 @@ def _controller_remove_spapr(domxml):
 @workaround(real_arch=cpuarch.X86_64,
             effective_arch=cpuarch.PPC64LE)
 def _os_set_machine_type_i440fx(domxml):
-        ostag = domxml.getElementsByTagName('os')[0]
-        typetag = ostag.getElementsByTagName('type')[0]
-        typetag.setAttribute('machine', 'pc-i440fx-rhel7.1.0')
+    ostag = domxml.getElementsByTagName('os')[0]
+    typetag = ostag.getElementsByTagName('type')[0]
+    typetag.setAttribute('machine', 'pc-i440fx-rhel7.1.0')
 
 
 @workaround(real_arch=cpuarch.PPC64LE,
             effective_arch=cpuarch.X86_64)
 def _os_set_machine_type_pseries(domxml):
-        ostag = domxml.getElementsByTagName('os')[0]
-        typetag = ostag.getElementsByTagName('type')[0]
-        typetag.setAttribute('machine', 'pseries')
-        bios = ostag.getElementsByTagName('bios')[0]
-        bios.parentNode.removeChild(bios)
+    ostag = domxml.getElementsByTagName('os')[0]
+    typetag = ostag.getElementsByTagName('type')[0]
+    typetag.setAttribute('machine', 'pseries')
+    bios = ostag.getElementsByTagName('bios')[0]
+    bios.parentNode.removeChild(bios)
 
 
 @workaround(real_arch=cpuarch.PPC64LE)
 def _sound_remove(domxml):
-        soundtag = domxml.getElementsByTagName('sound')
-        # may not be present
-        for tag in soundtag:
-            tag.parentNode.removeChild(tag)
+    soundtag = domxml.getElementsByTagName('sound')
+    # may not be present
+    for tag in soundtag:
+        tag.parentNode.removeChild(tag)
 
 
 @workaround(real_arch=cpuarch.PPC64LE,
             effective_arch=cpuarch.X86_64)
 def _sysinfo_remove_smbios(domxml):
-        sysinfotag = domxml.getElementsByTagName('sysinfo')[0]
-        sysinfotag.parentNode.removeChild(sysinfotag)
+    sysinfotag = domxml.getElementsByTagName('sysinfo')[0]
+    sysinfotag.parentNode.removeChild(sysinfotag)
 
-        smbiostag = domxml.getElementsByTagName('smbios')[0]
-        smbiostag.parentNode.removeChild(smbiostag)
+    smbiostag = domxml.getElementsByTagName('smbios')[0]
+    smbiostag.parentNode.removeChild(smbiostag)
 
 
 @workaround(real_arch=cpuarch.PPC64LE,
