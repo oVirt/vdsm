@@ -32,7 +32,7 @@ _SYSTEMCTL = 'systemctl'
 
 def requires_systemctl():
     rc, _, err = cmd.exec_sync([_SYSTEMCTL, 'status', 'foo'])
-    run_chroot_err = 'Running in chroot, ignoring request'
+    run_chroot_err = 'Running in chroot'
     if rc == 1 or run_chroot_err in err:
         pytest.skip('systemctl is not available')
 
