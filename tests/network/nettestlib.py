@@ -495,9 +495,9 @@ class KernelModule(object):
                 )
 
 
-def running_on_centos():
+def running_on_centos_stream(ver=''):
     with open('/etc/redhat-release') as f:
-        return 'CentOS Linux release' in f.readline()
+        return f'CentOS Stream release {ver}' in f.readline()
 
 
 def running_on_fedora(ver=''):

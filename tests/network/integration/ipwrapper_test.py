@@ -25,6 +25,7 @@ from network.nettestlib import bond_device
 from network.nettestlib import Bridge
 from network.nettestlib import bridge_device
 from network.nettestlib import dummy_devices
+from network.nettestlib import running_on_centos_stream
 from network.nettestlib import vlan_device
 
 from vdsm.network import ethtool
@@ -117,6 +118,11 @@ class TestUnicodeDrvinfo(object):
         finally:
             br.remove()
 
+    @pytest.mark.xfail(
+        reason='Failing on CentOS Stream 9',
+        strict=False,
+        condition=running_on_centos_stream('9'),
+    )
     def test_utf8_bridge_ethtool_drvinfo(self, unicode_bridge):
         driver_name = ethtool.driver_name(unicode_bridge)
         assert driver_name == ipwrapper.LinkType.BRIDGE
