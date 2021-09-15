@@ -699,8 +699,8 @@ class Task:
     def _saveMetaFile(cls, filename, obj, fields):
         try:
             getProcPool().writeLines(filename,
-                                     [l.encode('utf-8') + b"\n"
-                                      for l in cls._dump(obj, fields)])
+                                     [line.encode('utf-8') + b"\n"
+                                      for line in cls._dump(obj, fields)])
         except Exception:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.TaskMetaDataSaveError(filename)

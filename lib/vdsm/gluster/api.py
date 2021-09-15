@@ -149,7 +149,7 @@ def updateGeoRepKeys(userName, geoRepPubKeys):
         except OSError as e:
             raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
 
-    newKeys = [" ".join(l.split()[:-1]) for l in geoRepPubKeys]
+    newKeys = [" ".join(line.split()[:-1]) for line in geoRepPubKeys]
     newKeyDict = dict(zip(newKeys, geoRepPubKeys))
 
     try:
@@ -162,7 +162,8 @@ def updateGeoRepKeys(userName, geoRepPubKeys):
             raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
 
     try:
-        existingKeys = [" ".join(l.split()[:-1]) for l in existingKeyLines]
+        existingKeys = [" ".join(line.split()[:-1])
+                        for line in existingKeyLines]
         existingKeyDict = dict(zip(existingKeys, existingKeyLines))
 
         outLines = existingKeyLines
