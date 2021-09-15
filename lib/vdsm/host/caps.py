@@ -110,8 +110,10 @@ def get():
 
     caps.update(dsaversion.version_info())
 
-    net_caps = supervdsm.getProxy().network_caps()
+    proxy = supervdsm.getProxy()
+    net_caps = proxy.network_caps()
     caps.update(net_caps)
+    caps['ovnConfigured'] = proxy.is_ovn_configured()
 
     try:
         caps['hooks'] = hooks.installed()

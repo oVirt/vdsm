@@ -7408,6 +7408,12 @@ types:
             type: string
             added: '4.4'
 
+        -   defaultvalue: false
+            description: Indicates if the host has OVN configured
+            name: ovnConfigured
+            type: boolean
+            added: '4.5'
+
         type: object
 
     VdsmNetworkCapabilities: &VdsmNetworkCapabilities
