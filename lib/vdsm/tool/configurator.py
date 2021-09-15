@@ -53,6 +53,7 @@ def _init_configurators():
             setattr(modules[module_name], 'name', module_name)
     return modules
 
+
 _CONFIGURATORS = _init_configurators()
 
 

@@ -1066,6 +1066,7 @@ def glusterStorageDevData():
     devices.append(device)
     return devices
 
+
 GLUSTER_GEOREP_STATUS = {
     'vol1': {
         'sessions': [

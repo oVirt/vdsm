@@ -174,6 +174,7 @@ def decodePVInfo(value):
     del pvInfo["pv"]
     return pvInfo
 
+
 BLOCK_SD_MD_FIELDS = sd.SD_MD_FIELDS.copy()
 # TBD: Do we really need this key?
 BLOCK_SD_MD_FIELDS.update({

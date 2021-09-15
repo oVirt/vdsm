@@ -51,6 +51,7 @@ def mysum(lst, strategy):
 
         return s
 
+
 SUM_PREMUTATIONS = (("recursive",),
                     ("builtin",),
                     ("loop",))

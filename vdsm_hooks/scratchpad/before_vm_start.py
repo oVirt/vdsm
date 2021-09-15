@@ -95,6 +95,7 @@ def add_disk(domxml, path):
     devices = domxml.getElementsByTagName('devices')[0]
     devices.appendChild(disk)
 
+
 if 'scratchpad' in os.environ:
     try:
         disks = os.environ['scratchpad']

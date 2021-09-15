@@ -28,6 +28,7 @@ class APIData(object):
         self.meth = meth
         self.data = data
 
+
 testPing_apidata = [
     APIData('Global', 'ping', {
         'status': {'code': 0, 'message': 'OK'}})

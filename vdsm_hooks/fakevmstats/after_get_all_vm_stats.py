@@ -108,6 +108,7 @@ def uuidDigest(uuid):
             idx = 0
             iteration += 1
 
+
 ETH_HW_ADDR_FORMAT = '%02x:%02x:%02x:%02x:%02x:%02x'
 
 

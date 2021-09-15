@@ -314,6 +314,7 @@ class ParsingHelperTests(XMLTestCase):
                 xmlutils.fromstring(xml_data)
             )
 
+
 # the alias is not rendered by getXML, so having it would make
 # the test fail
 _CONTROLLERS_XML = [

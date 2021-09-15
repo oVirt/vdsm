@@ -160,6 +160,7 @@ def removeMappingsHoldingDevice(slaveName):
     for holder in holders:
         removeMapping(getDevName(holder))
 
+
 PATH_STATUS_RE = re.compile(r"(?P<devnum>\d+:\d+)\s+(?P<status>[AF])")
 
 

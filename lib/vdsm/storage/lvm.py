@@ -193,6 +193,7 @@ class Unreadable(namedtuple("_Unreadable", "name")):
                     "connections.", self.name)
         raise AttributeError("Failed reload: %s" % self.name)
 
+
 # VG states
 VG_OK = "OK"
 VG_PARTIAL = "PARTIAL"

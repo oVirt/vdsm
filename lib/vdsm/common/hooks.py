@@ -60,6 +60,7 @@ def _scriptsPerDir(dir_name):
     return [s for s in glob.glob(path)
             if os.path.isfile(s) and os.access(s, os.X_OK)]
 
+
 _DOMXML_HOOK = 1
 _JSON_HOOK = 2
 
@@ -481,6 +482,7 @@ def installed():
         if inf:
             res[dir] = inf
     return res
+
 
 if __name__ == '__main__':
     def usage():

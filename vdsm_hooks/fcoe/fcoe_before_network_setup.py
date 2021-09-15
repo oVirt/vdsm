@@ -231,6 +231,7 @@ def main():
         if ret:
             hooking.log('Failed to restart fcoe service. err = %s' % (err))
 
+
 if __name__ == '__main__':
     try:
         main()

@@ -84,6 +84,7 @@ def _usage():
     print('\t-h, --help\t\tdisplay this help')
     print('\t-t, --test\t\trun tests')
 
+
 _SAP_PLACEHOLDER = set(['SAP'])
 _SAP_FLAGS = set(['+invtsc', '+rdtscp'])
 
@@ -125,6 +126,7 @@ _EXTRACT_FLAGS_TEST_DATA = {
 def _find_invalid_flags(flags):
     return list(filter(lambda flag: flag[0] not in ('+', '-'), flags))
 
+
 _FIND_INVALID_FLAGS_TEST_DATA = {
     (): [],
     ('+syscall',): [],
@@ -139,6 +141,7 @@ def _find_conflicting_flags(flags):
     return [flag for flag, count in
             Counter([flag[1:] for flag in flags]).items() if
             count > 1]
+
 
 _FIND_CONFLICTING_FLAGS_DATA = {
     (): [],

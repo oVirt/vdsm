@@ -74,6 +74,7 @@ def addBiosEntry(domxml, sysinfo, entry):
         e.appendChild(txt)
         bios.appendChild(e)
 
+
 if 'smbios' in os.environ:
     try:
         data = os.environ['smbios']

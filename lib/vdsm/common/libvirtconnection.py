@@ -216,4 +216,5 @@ def __close_connections():
     for conn in __connections.values():
         conn.close()
 
+
 atexit.register(__close_connections)

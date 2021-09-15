@@ -54,6 +54,7 @@ def inject_file(filepath, content, drive, diskformat):
 
     return injected
 
+
 if 'fileinject' in os.environ:
     try:
         pos = os.environ['fileinject'].find(':')

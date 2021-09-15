@@ -44,6 +44,7 @@ class FORMAT:
     RAW = "raw"
     VMDK = "vmdk"
 
+
 _QCOW2_COMPAT_SUPPORTED = ("0.10", "1.1")
 
 

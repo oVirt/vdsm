@@ -486,6 +486,7 @@ class FakeMdevType(object):
         self.instances.append(mdev_uuid)
         self.available_instances -= 1
 
+
 FakeMdevDevice = namedtuple('FakeMdevDevice', ['name', 'vendor', 'mdev_types'])
 
 

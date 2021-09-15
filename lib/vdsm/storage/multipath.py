@@ -342,6 +342,7 @@ def get_scsi_serial(physdev):
                 return line.split("=", 1)[1]
     return ""  # Fallback if command failed or no ID_SERIAL found
 
+
 HBTL = namedtuple("HBTL", "host bus target lun")
 
 
