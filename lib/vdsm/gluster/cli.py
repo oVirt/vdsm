@@ -196,11 +196,11 @@ def _parseVolumeStatus(tree):
     for el in tree.findall('volStatus/volumes/volume/node'):
         value = {}
 
-        for ch in el.getchildren():
+        for ch in el:
             value[ch.tag] = ch.text or ''
 
         ports = {}
-        for ch in el.find('ports').getchildren():
+        for ch in el.find('ports'):
             ports[ch.tag] = ch.text or ''
 
         if value['path'] == 'localhost':
@@ -240,7 +240,7 @@ def _parseVolumeStatusDetail(tree):
     for el in tree.findall('volStatus/volumes/volume/node'):
         value = {}
 
-        for ch in el.getchildren():
+        for ch in el:
             value[ch.tag] = ch.text or ''
 
         sizeTotal = int(value.get('sizeTotal', '0'))
@@ -270,7 +270,7 @@ def _parseVolumeStatusClients(tree):
         clientsStatus = []
         for c in el.findall('clientsStatus/client'):
             clientValue = {}
-            for ch in c.getchildren():
+            for ch in c:
                 clientValue[ch.tag] = ch.text or ''
             clientsStatus.append({'hostname': clientValue['hostname'],
                                   'bytesRead': clientValue['bytesRead'],
@@ -292,12 +292,12 @@ def _parseVolumeStatusMem(tree):
                  'mallinfo': {},
                  'mempool': []}
 
-        for ch in el.find('memStatus/mallinfo').getchildren():
+        for ch in el.find('memStatus/mallinfo'):
             brick['mallinfo'][ch.tag] = ch.text or ''
 
         for c in el.findall('memStatus/mempool/pool'):
             mempool = {}
-            for ch in c.getchildren():
+            for ch in c:
                 mempool[ch.tag] = ch.text or ''
             brick['mempool'].append(mempool)
 
@@ -647,7 +647,7 @@ def _parseVolumeSetHelpXml(out):
     tree = etree.fromstring(out)
     for el in tree.findall('option'):
         option = {}
-        for ch in el.getchildren():
+        for ch in el:
             option[ch.tag] = ch.text or ''
         optionList.append(option)
     return optionList
@@ -1284,7 +1284,7 @@ def _parseVolumeGeoRepConfig(tree):
     """
     conf = tree.find('geoRep/config')
     config = {}
-    for child in conf.getchildren():
+    for child in conf:
         config[child.tag] = child.text
     return {'geoRepConfig': config}
 
