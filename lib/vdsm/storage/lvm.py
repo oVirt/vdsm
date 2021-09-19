@@ -1836,7 +1836,7 @@ def changeLVsTags(vg, lvs, delTags=(), addTags=()):
     delTags = set(delTags)
     addTags = set(addTags)
     if delTags.intersection(addTags):
-        raise se.LogicalVolumeReplaceTagError(
+        raise ValueError(
             "Cannot add and delete the same tag lvs: `%s` tags: `%s`" %
             (lvs, ", ".join(delTags.intersection(addTags))))
 
