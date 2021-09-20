@@ -283,7 +283,8 @@ Requires(post): /bin/hostname
 %ifarch x86_64 %{arm}
 %if 0%{?rhel}
 Requires: OVMF
-%else # fedora
+%else
+# fedora
 Requires: edk2-ovmf
 %endif
 %endif
