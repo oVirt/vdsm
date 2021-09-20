@@ -291,13 +291,13 @@ Requires: edk2-ovmf
 Conflicts: ovirt-hosted-engine-ha < 2.3.6
 
 Conflicts: vdsm-hook-sriov
-Obsoletes: vdsm-hook-vfio-mdev
+Obsoletes: vdsm-hook-vfio-mdev < %{version}-%{release}
 Provides: vdsm-hook-vfio-mdev
-Obsoletes: %{name}-hook-floppy
-Obsoletes: %{name}-hook-numa
-Obsoletes: %{name}-hook-pincpu
-Obsoletes: %{name}-hook-vmdisk
-Obsoletes: %{name}-hook-hostdev-scsi
+Obsoletes: %{name}-hook-floppy < %{version}-%{release}
+Obsoletes: %{name}-hook-numa < %{version}-%{release}
+Obsoletes: %{name}-hook-pincpu < %{version}-%{release}
+Obsoletes: %{name}-hook-vmdisk < %{version}-%{release}
+Obsoletes: %{name}-hook-hostdev-scsi < %{version}-%{release}
 Obsoletes: %{name}-hook-vmfex-dev < 4.40.70
 
 
