@@ -128,13 +128,7 @@ Requires(pre): shadow-utils
 
 Obsoletes: %{name}-infra < 4.19
 
-%if 0%{?rhel}
-# Required for supporting minorversion mount option
-# See https://bugzilla.redhat.com/1547681 for details.
-Requires: nfs-utils >= 1:1.3.0-0.48.el7_4.2
-%else # fedora
 Requires: nfs-utils
-%endif
 
 # For kvm2ovirt
 Requires: ovirt-imageio-common
