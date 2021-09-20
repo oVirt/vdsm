@@ -228,15 +228,12 @@ Requires: policycoreutils >= 2.1.13-55
 
 # qemu-kvm
 
-%if 0%{?rhel} >= 8
 %if 0%{?centos}
-# 4.4 Advanced virt stream on CentOS 8
-Requires: qemu-kvm >= 15:5.2.0-16
+Requires: qemu-kvm >= 15:6.0.0-28
 %else
 # AV 8.5 - https://bugzilla.redhat.com/1946084
 Requires: qemu-kvm >= 6.0.0-28.module+el8.5.0+12271+fffa967b
-%endif #centos
-%endif #rhel
+%endif
 
 # GlusterFS client-side RPMs needed for Gluster SD
 %ifnarch ppc64le
