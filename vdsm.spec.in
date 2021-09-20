@@ -21,11 +21,7 @@
 
 %{!?vdsm_repo: %global vdsm_repo /rhev/data-center}
 
-%if 0%{?centos} || 0%{?fedora}
 %global gluster_version 6.0
-%else #rhel
-%global gluster_version 6.0
-%endif
 
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
