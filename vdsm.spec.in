@@ -202,28 +202,17 @@ Requires: lvm2 >= 2.02.177-5
 Requires: lvm2 >= 8:2.03
 %endif
 
-%if 0%{?rhel}
-# TODO - use baseline el8.1 kernel version once available
-%if 0%{?centos}
-# CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
-Requires: kernel >= 3.10.0-957.12.2.el7
-%else # rhel
-# Live migration between 8.2 and 8.3 - bug 1907973
-Requires: kernel >= 4.18.0-240.21.1.el8_3
-%endif
+# EL 8.4 baseline
+Requires: kernel >= 4.18.0-305
+
 Requires: e2fsprogs
-Requires: selinux-policy-targeted >= 3.13.1-166.el7_4.3
-%else # fedora
-# CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091
-Requires: kernel >=  5.0.16-100
-Requires: e2fsprogs >= 1.41.14
-Requires: python3-policycoreutils
-Requires: sed >= 4.2.1-10
+Requires: selinux-policy-targeted
+
+%if 0%{?fedora}
 Requires: ed
-Requires: selinux-policy-targeted >= 3.13-1
-# In order to avoid a policycoreutils bug (rhbz 889698) when selinux is
-# disabled we now require the version 2.1.13-55 (or newer) of Fedora.
-Requires: policycoreutils >= 2.1.13-55
+Requires: sed
+Requires: policycoreutils
+Requires: python3-policycoreutils
 %endif
 
 # qemu-kvm
