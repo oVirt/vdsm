@@ -32,7 +32,6 @@ Example:
 from __future__ import absolute_import
 from __future__ import print_function
 
-_DEV_TYPE = frozenset(('bridge', 'openvswitch'))
 import ast
 import os
 import sys
@@ -41,6 +40,8 @@ import xml.dom
 from vdsm.network.ipwrapper import Link
 
 import hooking
+
+_DEV_TYPE = frozenset(('bridge', 'openvswitch'))
 
 
 def createElement(domxml, element, attribute, attributeValue):

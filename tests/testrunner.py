@@ -22,22 +22,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import testlib
 import logging
 import os
 import sys
 
-# When using Python 2, we must monkey patch threading module before importing
-# any other module.
-if sys.version_info[0] == 2:
-    import pthreading
-    pthreading.monkey_patch()
-
-
 from vdsm.common import zombiereaper
 zombiereaper.registerSignalHandler()
-
-import testlib
-
 
 TEST_LOG = '/var/log/vdsm_tests.log'
 

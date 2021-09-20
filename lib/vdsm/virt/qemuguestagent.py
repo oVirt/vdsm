@@ -45,6 +45,13 @@ from vdsm.virt import guestagenthelpers
 from vdsm.virt import virdomain
 from vdsm.virt import vmstatus
 
+from libvirt import \
+    VIR_DOMAIN_GUEST_INFO_USERS,  \
+    VIR_DOMAIN_GUEST_INFO_OS, \
+    VIR_DOMAIN_GUEST_INFO_TIMEZONE, \
+    VIR_DOMAIN_GUEST_INFO_HOSTNAME, \
+    VIR_DOMAIN_GUEST_INFO_FILESYSTEM
+
 _QEMU_ACTIVE_USERS_COMMAND = 'guest-get-users'
 _QEMU_DEVICES_COMMAND = 'guest-get-devices'
 _QEMU_GUEST_INFO_COMMAND = 'guest-info'
@@ -76,12 +83,6 @@ _INITIAL_INTERVAL = config.getint('guest_agent', 'qga_initial_info_interval')
 _TASK_TIMEOUT = config.getint('guest_agent', 'qga_task_timeout')
 _THROTTLING_INTERVAL = 60
 
-from libvirt import \
-    VIR_DOMAIN_GUEST_INFO_USERS,  \
-    VIR_DOMAIN_GUEST_INFO_OS, \
-    VIR_DOMAIN_GUEST_INFO_TIMEZONE, \
-    VIR_DOMAIN_GUEST_INFO_HOSTNAME, \
-    VIR_DOMAIN_GUEST_INFO_FILESYSTEM
 
 # These values are needed internaly and are not defined by libvirt. Beware
 # that the values cannot colide with those for VIR_DOMAIN_GUEST_INFO_*

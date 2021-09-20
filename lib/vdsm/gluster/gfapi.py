@@ -29,6 +29,15 @@ from vdsm.gluster import exception as ge
 from . import gluster_mgmt_api
 
 
+import sys
+import json
+import argparse
+
+from vdsm import constants
+from vdsm.common import commands
+from vdsm.common import cmdutils
+
+
 GLUSTER_VOL_PROTOCOL = 'tcp'
 GLUSTER_VOL_HOST = 'localhost'
 GLUSTER_VOL_PORT = 24007
@@ -205,14 +214,6 @@ _glfs_readdir = ctypes.CFUNCTYPE(ctypes.POINTER(DirentStruct),
 # avoid that, this file is executed as script.This is
 # a temporary fix for BZ:1142647. This can be reverted
 # back once the memory leak issue is fixed in libgfapi.
-
-import sys
-import json
-import argparse
-
-from vdsm import constants
-from vdsm.common import commands
-from vdsm.common import cmdutils
 
 
 @gluster_mgmt_api

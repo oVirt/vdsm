@@ -41,11 +41,7 @@ import threading
 from contextlib import contextmanager
 import xml.etree.ElementTree as ET
 
-try:
-    from unittest import mock
-except ImportError:  # py2
-    import mock
-mock
+from unittest import mock
 
 from nose import config
 from nose import core
@@ -66,6 +62,8 @@ from testValidation import (
     ProcessLeakPlugin,
     FileLeakPlugin,
 )
+
+mock
 
 # /tmp may use tempfs filesystem, not suitable for some of the test assuming a
 # filesystem with direct io support.
