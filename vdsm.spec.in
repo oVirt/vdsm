@@ -99,6 +99,7 @@ Requires: virt-v2v
 %endif
 
 Requires: chrony
+Requires: crontabs
 Requires: which
 Requires: sudo >= 1.7.3
 Requires: logrotate
