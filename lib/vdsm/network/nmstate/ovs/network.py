@@ -108,12 +108,23 @@ class OvsNetwork(object):
         self._port_state = port_state
 
     def _create_nb_iface(self):
-        return {
+        state = {
             Interface.NAME: self._name,
             Interface.TYPE: InterfaceType.OVS_INTERFACE,
             Interface.STATE: InterfaceState.UP,
             Interface.MTU: self._netconf.mtu,
         }
+
+        # Enforce MAC address if possible, this ensures that the NB
+        # interface keeps the same IP as SB over DHCP. This is not possible
+        # when we try to create bond and network on top of that bond in the
+        # same transaction. In that case we cannot reliably determine the MAC
+        # address of future bond.
+        mac = self._current_state.get_mac_address(self._netconf.base_iface)
+        if mac:
+            state[Interface.MAC] = mac
+
+        return state
 
     def _create_port_state(self):
         port_state = _create_basic_port_state(self._name)
@@ -332,9 +343,6 @@ def generate_state(networks, running_networks, current_state):
         if net.remove:
             continue
 
-        _enforce_network_mac_address(
-            nets_config[net.name], net_ifstates, current_iface_state
-        )
         bridge = bridges.bridge_by_sb[net.sb_iface]
         # Add port state to the bridge
         if net.port_state:
@@ -352,18 +360,6 @@ def generate_state(networks, running_networks, current_state):
         route_rules_state,
         dns_state,
         bridge_mappings,
-    )
-
-
-def _enforce_network_mac_address(net, net_ifstates, current_iface_state):
-    if net.base_iface not in current_iface_state:
-        # This scenario happens when we are trying to create a network and
-        # bond in the same transaction. In this case we cannot reliably
-        # determine the MAC address of future bond.
-        return
-
-    net_ifstates[net.name].update(
-        {Interface.MAC: current_iface_state[net.base_iface][Interface.MAC]}
     )
 
 

@@ -234,6 +234,9 @@ class CurrentState(object):
             }
         return self._interfaces_state
 
+    def get_mac_address(self, interface):
+        return self._interfaces_state.get(interface, {}).get(Interface.MAC)
+
     @staticmethod
     def _get_interfaces_state(state):
         return {
