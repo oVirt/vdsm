@@ -41,6 +41,7 @@ from .testlib import (
     IPv6_GATEWAY2,
     IPv6_PREFIX1,
     IPv6_PREFIX2,
+    MAC_ADDRESS,
     TESTBOND0,
     TESTNET1,
     TESTNET2,
@@ -980,6 +981,51 @@ class TestDns(object):
 
         state = nmstate.generate_state(networks=networks, bondings={})
 
+        assert expected_state == state
+
+
+class TestEnforceMacAddress(object):
+    @parametrize_vlanned
+    def test_net_over_existing_interface_enforce_mac(
+        self, vlanned, current_state_mock
+    ):
+        vlan = VLAN101 if vlanned else None
+
+        current_ifaces_states = current_state_mock[nmstate.Interface.KEY]
+        current_ifaces_states.append(
+            {
+                nmstate.Interface.NAME: IFACE0,
+                nmstate.Interface.TYPE: nmstate.InterfaceType.ETHERNET,
+                nmstate.Interface.MAC: MAC_ADDRESS,
+                nmstate.Interface.STATE: nmstate.InterfaceState.UP,
+            }
+        )
+        networks = {
+            TESTNET1: create_network_config(
+                'nic', IFACE0, bridged=True, vlan=vlan
+            )
+        }
+        state = nmstate.generate_state(networks=networks, bondings={})
+
+        eth0_state = create_ethernet_iface_state(IFACE0)
+        bridge_state = create_bridge_iface_state(
+            TESTNET1,
+            f'{IFACE0}.{vlan}' if vlan else IFACE0,
+            options=generate_bridge_options(stp_enabled=False),
+        )
+        disable_iface_ip(bridge_state)
+
+        expected_state = {nmstate.Interface.KEY: [bridge_state, eth0_state]}
+
+        if vlan:
+            vlan0_state = create_vlan_iface_state(IFACE0, vlan)
+            expected_state[nmstate.Interface.KEY].append(vlan0_state)
+            disable_iface_ip(vlan0_state)
+        else:
+            bridge_state[nmstate.Interface.MAC] = MAC_ADDRESS
+            disable_iface_ip(eth0_state)
+
+        sort_by_name(expected_state[nmstate.Interface.KEY])
         assert expected_state == state
 
 

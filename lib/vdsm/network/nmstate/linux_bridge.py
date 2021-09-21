@@ -198,6 +198,16 @@ class LinuxBridgeNetwork(object):
         if options:
             brstate = bridge_state[LinuxBridge.CONFIG_SUBTREE]
             brstate[LinuxBridge.OPTIONS_SUBTREE] = options
+
+        # Enforce MAC address if possible, this ensures that the bridge
+        # interface keeps the same IP as SB over DHCP. This is not possible
+        # when we try to create bond/vlan and network on top of that bond/vlan
+        # in the same transaction. In that case we cannot reliably
+        # determine the MAC address of future bond/vlan.
+        mac = self._current_state.get_mac_address(port)
+        if mac:
+            bridge_state[Interface.MAC] = mac
+
         return bridge_state
 
     def _create_bridge_options(self):
