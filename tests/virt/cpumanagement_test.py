@@ -69,7 +69,7 @@ def test_libvirt_cpuset_spec():
 
 
 @MonkeyPatch(libvirtconnection, 'get',
-             lambda : _getLibvirtConnStubFromFile(
+             lambda: _getLibvirtConnStubFromFile(
                  'caps_libvirt_intel_E5649.out'))
 @MonkeyPatch(numa, 'memory_by_cell', lambda x: {'total': '1', 'free': '1'})
 def test_shared_pool():
@@ -107,7 +107,7 @@ def test_shared_pool():
 
 
 @MonkeyPatch(libvirtconnection, 'get',
-             lambda : _getLibvirtConnStubFromFile(
+             lambda: _getLibvirtConnStubFromFile(
                  'caps_libvirt_intel_E5649.out'))
 @MonkeyPatch(numa, 'memory_by_cell', lambda x: {'total': '1', 'free': '1'})
 def test_siblings():
@@ -119,7 +119,7 @@ def test_siblings():
 
 
 @MonkeyPatch(libvirtconnection, 'get',
-             lambda : _getLibvirtConnStubFromFile(
+             lambda: _getLibvirtConnStubFromFile(
                  'caps_libvirt_intel_E31220.out'))
 @MonkeyPatch(numa, 'memory_by_cell', lambda x: {'total': '1', 'free': '1'})
 def test_siblings_no_smt():

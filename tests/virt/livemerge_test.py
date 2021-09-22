@@ -326,7 +326,7 @@ def test_merger_dump_jobs(fake_time):
     # Merge was started, new jobs should be in the dump.
 
     assert vm._drive_merger.dump_jobs() == {
-        job_id : {
+        job_id: {
             "bandwidth": merge_params["bandwidth"],
             "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
@@ -365,7 +365,7 @@ def test_merger_load_jobs(fake_time):
     # Load jobs, simulating recovery flow.
 
     dumped_jobs = {
-        job_id : {
+        job_id: {
             "bandwidth": merge_params["bandwidth"],
             "base": merge_params["baseVolUUID"],
             "disk": merge_params["driveSpec"],
@@ -422,8 +422,8 @@ def test_active_merge(monkeypatch):
 
     # Because the libvirt job was not started, report default live info.
     assert vm.query_jobs() == {
-        job_id : {
-            "bandwidth" : 0,
+        job_id: {
+            "bandwidth": 0,
             "blockJobType": "commit",
             "cur": "0",
             "drive": "sda",
@@ -459,8 +459,8 @@ def test_active_merge(monkeypatch):
     assert block_job["type"] == libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
 
     assert vm.query_jobs() == {
-        job_id : {
-            "bandwidth" : 0,
+        job_id: {
+            "bandwidth": 0,
             "blockJobType": "commit",
             "cur": str(block_job["cur"]),
             "drive": "sda",
@@ -479,8 +479,8 @@ def test_active_merge(monkeypatch):
     block_job["cur"] = block_job["end"] // 2
 
     assert vm.query_jobs() == {
-        job_id : {
-            "bandwidth" : 0,
+        job_id: {
+            "bandwidth": 0,
             "blockJobType": "commit",
             "cur": str(block_job["cur"]),
             "drive": "sda",
@@ -496,8 +496,8 @@ def test_active_merge(monkeypatch):
     block_job["cur"] = block_job["end"]
 
     assert vm.query_jobs() == {
-        job_id : {
-            "bandwidth" : 0,
+        job_id: {
+            "bandwidth": 0,
             "blockJobType": "commit",
             "cur": str(block_job["cur"]),
             "drive": "sda",
@@ -526,8 +526,8 @@ def test_active_merge(monkeypatch):
     # Since the job switched to CLEANUP state, we don't query libvirt live info
     # again, and the job reports the last live info.
     assert vm.query_jobs() == {
-        job_id : {
-            "bandwidth" : 0,
+        job_id: {
+            "bandwidth": 0,
             "blockJobType": "commit",
             "cur": str(block_job["cur"]),
             "drive": "sda",
@@ -792,8 +792,8 @@ def test_internal_merge():
 
     # Active jobs after calling merge.
     assert vm.query_jobs() == {
-        job_id : {
-            "bandwidth" : 0,
+        job_id: {
+            "bandwidth": 0,
             "blockJobType": "commit",
             "cur": str(block_job["cur"]),
             "drive": "sda",
@@ -808,8 +808,8 @@ def test_internal_merge():
     block_job["cur"] = block_job["end"] // 2
 
     assert vm.query_jobs() == {
-        job_id : {
-            "bandwidth" : 0,
+        job_id: {
+            "bandwidth": 0,
             "blockJobType": "commit",
             "cur": str(block_job["cur"]),
             "drive": "sda",
@@ -825,8 +825,8 @@ def test_internal_merge():
     block_job["cur"] = block_job["end"]
 
     assert vm.query_jobs() == {
-        job_id : {
-            "bandwidth" : 0,
+        job_id: {
+            "bandwidth": 0,
             "blockJobType": "commit",
             "cur": str(block_job["cur"]),
             "drive": "sda",
@@ -849,8 +849,8 @@ def test_internal_merge():
 
     # Query reports the default status entry before cleanup is done.
     assert info == {
-        job_id : {
-            "bandwidth" : 0,
+        job_id: {
+            "bandwidth": 0,
             "blockJobType": "commit",
             "cur": "0",
             "drive": "sda",
@@ -1180,8 +1180,8 @@ def test_active_merge_canceled_during_commit():
     assert persisted_job["state"] == Job.COMMIT
 
     assert vm.query_jobs() == {
-        job_id : {
-            "bandwidth" : 0,
+        job_id: {
+            "bandwidth": 0,
             "blockJobType": "commit",
             "cur": "0",
             "drive": "sda",
@@ -1310,7 +1310,7 @@ def test_block_job_info_error(monkeypatch):
         # We cannot get live job info, so we return default values.
         assert vm.query_jobs() == {
             job_id: {
-                "bandwidth" : 0,
+                "bandwidth": 0,
                 "blockJobType": "commit",
                 "cur": "0",
                 "drive": "sda",
@@ -1324,7 +1324,7 @@ def test_block_job_info_error(monkeypatch):
     # Libvirt call succeeds so we return live info from libvit.
     assert vm.query_jobs() == {
         job_id: {
-            "bandwidth" : 0,
+            "bandwidth": 0,
             "blockJobType": "commit",
             "cur": "0",
             "drive": "sda",

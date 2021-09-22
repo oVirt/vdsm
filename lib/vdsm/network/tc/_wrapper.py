@@ -38,7 +38,7 @@ def process_request(command):
                 if err_line.startswith(_TC_ERR_PREFIX):
                     err = err_line
                     retcode = _errno_trans.get(
-                        err[len(_TC_ERR_PREFIX) :].strip()
+                        err[len(_TC_ERR_PREFIX) :].strip()  # noqa: E203
                     )
                     break
         raise TrafficControlException(retcode, err, command)

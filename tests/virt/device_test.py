@@ -551,7 +551,7 @@ class TestHotplug(TestCaseBase):
         with fake.VM(xmldevices=devices, create_device_objects=True) as vm:
             vm._dom = fake.Domain(vm=vm)
             vm.cif.irs.prepared_volumes = {
-                (self.SD_ID, self.IMG_ID, self.VOL_ID) : {
+                (self.SD_ID, self.IMG_ID, self.VOL_ID): {
                     'truesize': 1024,
                     'apparentsize': 1024,
                 }

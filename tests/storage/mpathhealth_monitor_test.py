@@ -191,11 +191,11 @@ def test_removed_device(tmp_monitor):
 def test_multiple_mpath(tmp_monitor):
 
     devicemapper.multipath_status.out = {
-        "uuid-1" : [
+        "uuid-1": [
             PathStatus("8:11", "F"),
             PathStatus("6:66", "A")
         ],
-        "uuid-2" : [
+        "uuid-2": [
             PathStatus("7:12", "A"),
             PathStatus("8:32", "F"),
             PathStatus("12:16", "A")

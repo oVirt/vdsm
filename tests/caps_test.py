@@ -103,7 +103,7 @@ class TestCaps(TestCaseBase):
             return f.read()
 
     @MonkeyPatch(libvirtconnection, 'get',
-                 lambda : _getLibvirtConnStubFromFile(
+                 lambda: _getLibvirtConnStubFromFile(
                      'caps_libvirt_ibm_S822L.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
@@ -117,7 +117,7 @@ class TestCaps(TestCaseBase):
         self.assertEqual(t.sockets, 4)
 
     @MonkeyPatch(libvirtconnection, 'get',
-                 lambda : _getLibvirtConnStubFromFile(
+                 lambda: _getLibvirtConnStubFromFile(
                      'caps_libvirt_s390x.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
@@ -131,7 +131,7 @@ class TestCaps(TestCaseBase):
         self.assertEqual(t.sockets, 1)
 
     @MonkeyPatch(libvirtconnection, 'get',
-                 lambda : _getLibvirtConnStubFromFile(
+                 lambda: _getLibvirtConnStubFromFile(
                      'caps_libvirt_intel_E5649.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
@@ -145,7 +145,7 @@ class TestCaps(TestCaseBase):
         self.assertEqual(t.sockets, 2)
 
     @MonkeyPatch(libvirtconnection, 'get',
-                 lambda : _getLibvirtConnStubFromFile(
+                 lambda: _getLibvirtConnStubFromFile(
                      'caps_libvirt_amd_6274.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
@@ -159,7 +159,7 @@ class TestCaps(TestCaseBase):
         self.assertEqual(t.sockets, 2)
 
     @MonkeyPatch(libvirtconnection, 'get',
-                 lambda : _getLibvirtConnStubFromFile(
+                 lambda: _getLibvirtConnStubFromFile(
                      'caps_libvirt_intel_E31220.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
@@ -211,7 +211,7 @@ class TestCaps(TestCaseBase):
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '49141', 'free': '46783'})
     @MonkeyPatch(libvirtconnection, 'get',
-                 lambda : _getLibvirtConnStubFromFile(
+                 lambda: _getLibvirtConnStubFromFile(
                      "caps_libvirt_amd_6274.out"))
     def testNumaTopology(self):
         # 2 x AMD 6272 (with Modules)
@@ -240,7 +240,7 @@ class TestCaps(TestCaseBase):
         self.assertEqual(t, expectedNumaInfo)
 
     @MonkeyPatch(libvirtconnection, 'get',
-                 lambda : _getLibvirtConnStubFromFile(
+                 lambda: _getLibvirtConnStubFromFile(
                      'caps_libvirt_ibm_S822L_le.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
@@ -303,7 +303,7 @@ class TestCaps(TestCaseBase):
         self.assertEqual(expected, result)
 
     @MonkeyPatch(libvirtconnection, 'get',
-                 lambda : _getLibvirtConnStubFromFile(
+                 lambda: _getLibvirtConnStubFromFile(
                      'caps_libvirt_intel_i73770_nosnap.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
@@ -315,7 +315,7 @@ class TestCaps(TestCaseBase):
         self.assertEqual(expected, result['0']['cpus'])
 
     @MonkeyPatch(libvirtconnection, 'get',
-                 lambda : _getLibvirtConnStubFromFile(
+                 lambda: _getLibvirtConnStubFromFile(
                      'caps_libvirt_intel_i73770_nosnap.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
@@ -383,7 +383,7 @@ class TestCaps(TestCaseBase):
         self.assertTrue(all([x in flags for x in expected]))
 
     @MonkeyPatch(libvirtconnection, 'get',
-                 lambda : _getLibvirtConnStubFromFile(
+                 lambda: _getLibvirtConnStubFromFile(
                      'caps_libvirt_intel_E5649.out'))
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})

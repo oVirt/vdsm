@@ -138,7 +138,7 @@ def _dump(
     for line in lines:
         values = line.split()
         try:
-            record = {name : conv(value)
+            record = {name: conv(value)
                       for (name, conv), value in zip(fields, values)}
         except Exception as e:
             log.warning("Failed to parse line %r from %s: %s", line, path, e)

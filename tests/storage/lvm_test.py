@@ -647,7 +647,7 @@ def test_pv_move_cmd(fake_devices, monkeypatch):
         guid='b')
 
     # Assign fake PVs to cache.
-    lc._pvs = {"/dev/mapper/a" : fake_pv1, "/dev/mapper/b" : fake_pv2}
+    lc._pvs = {"/dev/mapper/a": fake_pv1, "/dev/mapper/b": fake_pv2}
 
     # Run pvmove command.
     lvm.movePV("vg", "a", "b")
@@ -1447,7 +1447,7 @@ def test_lv_deactivate_in_use(tmp_storage):
     (False, [])
 ])
 def test_in_use_exception(fake_devices, in_use, error):
-    exc = se.LVMCommandError("cmd" , 1, "out", error)
+    exc = se.LVMCommandError("cmd", 1, "out", error)
     assert exc.lv_in_use() == in_use
 
 

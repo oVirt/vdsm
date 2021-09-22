@@ -884,7 +884,7 @@ class FileStorageDomain(sd.StorageDomain):
         except Exception as e:
             self.log.warning("Failed to read meta file for volume %s/%s: %s",
                              self.sdUUID, vol_uuid, e)
-            md = {"status" : sc.VOL_STATUS_INVALID}
+            md = {"status": sc.VOL_STATUS_INVALID}
         else:
             # Parse the meta file's key=value pairs and get the metadata dict.
             md_lines = data.rstrip(b"\0").splitlines()

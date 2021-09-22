@@ -337,8 +337,9 @@ class Route(object):
             route = route[1:]
 
         network = route[0]
-
-        data = dict(route[i : i + 2] for i in range(1, len(route), 2))
+        data = dict(
+            route[i : i + 2] for i in range(1, len(route), 2)  # noqa: E203
+        )
         data['network'] = '0.0.0.0/0' if network == 'default' else network
         data.update(flags)
         return data
@@ -444,7 +445,8 @@ class Rule(object):
             )
 
         values = dict(
-            parameters[i : i + 2] for i in range(0, len(parameters), 2)
+            parameters[i : i + 2]  # noqa: E203
+            for i in range(0, len(parameters), 2)
         )
         values['detached'] = isDetached
         values['prio'] = prio

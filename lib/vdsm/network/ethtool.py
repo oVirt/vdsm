@@ -44,7 +44,7 @@ def driver_name(device_name):
 
     buff = array.array('b', b'\0' * struct.calcsize(DRVINFO_FORMAT))
     cmds = struct.pack('= I', ETHTOOL_GDRVINFO)
-    buff[0 : len(cmds)] = array.array('b', cmds)
+    buff[0 : len(cmds)] = array.array('b', cmds)  # noqa: E203
     data = struct.pack(IFREQ_FORMAT, encoded_name, *buff.buffer_info())
 
     with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:

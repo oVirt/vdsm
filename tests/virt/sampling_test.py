@@ -244,7 +244,7 @@ class NumaNodeMemorySampleTests(TestCaseBase):
                                   fakeMemoryStats),
                                  (numa.libvirtconnection,
                                   'get',
-                                  lambda : fakeConnection)])
+                                  lambda: fakeConnection)])
 
     def testMemoryStatsWithZeroMemoryAsString(self):
         expected = {0: {

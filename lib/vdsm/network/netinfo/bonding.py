@@ -99,9 +99,11 @@ def permanent_address():
         with open('/proc/net/bonding/' + b) as f:
             for line in f:
                 if line.startswith('Slave Interface: '):
-                    slave = line[len('Slave Interface: ') : -1]
+                    slave = line[len('Slave Interface: ') : -1]  # noqa: E203
                 elif line.startswith('Permanent HW addr: ') and slave:
-                    paddr[slave] = line[len('Permanent HW addr: ') : -1]
+                    paddr[slave] = line[
+                        len('Permanent HW addr: ') : -1  # noqa: E203
+                    ]
     return paddr
 
 
