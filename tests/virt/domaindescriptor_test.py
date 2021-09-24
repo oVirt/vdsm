@@ -113,6 +113,18 @@ NO_REBOOT = """
 </domain>
 """
 
+VCPU = """
+<domain>
+    <vcpu>10</vcpu>
+</domain>
+"""
+
+VCPU_CURRENT = """
+<domain>
+    <vcpu current="5">10</vcpu>
+</domain>
+"""
+
 
 class DevicesHashTests(VdsmTestCase):
 
@@ -239,3 +251,12 @@ class DomainDescriptorTests(XMLTestCase):
         desc = DomainDescriptor(xml_data)
         reboot_config = desc.on_reboot_config()
         assert reboot_config == expected
+
+    @permutations([
+        [VCPU, 10],
+        [VCPU_CURRENT, 5],
+    ])
+    def test_get_number_of_cpus(self, xml_data, expected):
+        desc = DomainDescriptor(xml_data)
+        cpus = desc.get_number_of_cpus()
+        assert cpus == expected

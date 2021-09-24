@@ -115,9 +115,16 @@ class MutableDomainDescriptor(object):
 
     def get_number_of_cpus(self):
         """
-        Return the number of VM's CPUs as a string.
+        Return the number of VM's CPUs as int.
         """
-        return self._dom.findtext('vcpu')
+        vcpu = self._dom.find('./vcpu')
+        if vcpu is None:
+            raise LookupError('Element vcpu not found in domain XML')
+        cpus = vmxml.attr(vcpu, 'current')
+        if cpus == '':
+            # If attribute current is not present fall-back to element text
+            cpus = vcpu.text
+        return int(cpus)
 
     def get_memory_size(self, current=False):
         """
