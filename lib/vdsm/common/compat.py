@@ -25,8 +25,6 @@ import inspect
 
 import six
 
-from enum import Enum  # NOQA: F401
-
 
 class Unsupported(ImportError):
     """

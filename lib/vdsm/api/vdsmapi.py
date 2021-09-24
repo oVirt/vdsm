@@ -28,8 +28,9 @@ import os
 import pickle
 import six
 
+from enum import Enum
+
 from vdsm import utils
-from vdsm.common.compat import Enum
 from vdsm.common.logutils import Suppressed
 from yajsonrpc.exception import JsonRpcInvalidParamsError
 
