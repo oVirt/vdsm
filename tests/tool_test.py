@@ -21,6 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from unittest import mock
+
 from vdsm.common import cpuarch
 from vdsm.common import fileutils
 from vdsm.common import systemctl
@@ -34,7 +36,7 @@ from vdsm.tool import UsageError
 from vdsm.tool import upgrade
 from vdsm import cpuinfo
 import monkeypatch
-from testlib import expandPermutations, make_config, mock, VdsmTestCase
+from testlib import expandPermutations, make_config, VdsmTestCase
 from testValidation import brokentest, ValidateRunningAsRoot
 from unittest import TestCase
 import io

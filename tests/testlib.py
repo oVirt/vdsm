@@ -41,8 +41,6 @@ import threading
 from contextlib import contextmanager
 import xml.etree.ElementTree as ET
 
-from unittest import mock
-
 from nose import config
 from nose import core
 from nose import result
@@ -63,7 +61,6 @@ from testValidation import (
     FileLeakPlugin,
 )
 
-mock
 
 # /tmp may use tempfs filesystem, not suitable for some of the test assuming a
 # filesystem with direct io support.

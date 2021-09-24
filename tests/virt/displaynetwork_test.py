@@ -21,9 +21,10 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from unittest import mock
+
 from vdsm.virt import displaynetwork
 
-from testlib import mock
 from testlib import VdsmTestCase
 
 

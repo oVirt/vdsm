@@ -30,6 +30,8 @@ import sys
 import threading
 import time
 
+from unittest import mock
+
 import pytest
 
 from vdsm import utils
@@ -41,8 +43,6 @@ from vdsm.common.password import ProtectedPassword
 from vdsm.storage import constants as sc
 
 import fakelib
-
-from testlib import mock
 
 
 class TestStart:

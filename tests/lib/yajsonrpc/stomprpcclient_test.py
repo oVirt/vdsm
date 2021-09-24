@@ -20,9 +20,13 @@
 
 from __future__ import absolute_import
 from __future__ import division
-from contextlib import contextmanager
+
 import logging
 import time
+
+from contextlib import contextmanager
+from unittest import mock
+
 from six.moves import queue
 
 from integration.jsonRpcHelper import constructClient
@@ -30,8 +34,7 @@ from integration.sslhelper import generate_key_cert_pair, create_ssl_context
 
 from testlib import \
     VdsmTestCase, \
-    dummyTextGenerator, \
-    mock
+    dummyTextGenerator
 
 from testValidation import broken_on_ci
 from testValidation import slowtest

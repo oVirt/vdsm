@@ -28,6 +28,7 @@ import yaml
 
 from io import StringIO
 from textwrap import dedent
+from unittest import mock
 
 from nose.plugins.attrib import attr
 from vdsm.api import vdsmapi
@@ -35,7 +36,6 @@ from vdsm.api.schema_inconsistency_formatter \
     import SchemaInconsistencyFormatter
 from yajsonrpc.exception import JsonRpcErrorBase
 
-from testlib import mock
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import xfail
 

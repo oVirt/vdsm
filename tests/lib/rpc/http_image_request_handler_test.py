@@ -25,11 +25,11 @@ import logging
 import socket
 import time
 
+from unittest import mock
+
 import pytest
 
 from six.moves import http_client
-
-from testlib import mock
 
 from vdsm.common import concurrent
 from vdsm.rpc import http

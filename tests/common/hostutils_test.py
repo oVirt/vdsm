@@ -22,10 +22,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from unittest import mock
+
 import dbus
 
 from testlib import VdsmTestCase as TestCaseBase
-from testlib import mock
 
 from vdsm.common import hostutils
 
