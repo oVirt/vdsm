@@ -33,6 +33,7 @@ from contextlib import contextmanager
 import errno
 import functools
 import logging
+import pickle
 import six
 import sys
 import os
@@ -41,7 +42,6 @@ import threading
 import time
 
 from vdsm.common import time as vdsm_time
-from vdsm.common.compat import pickle
 from vdsm.common.proc import pidstat
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'

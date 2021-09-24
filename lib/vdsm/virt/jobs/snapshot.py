@@ -25,6 +25,7 @@ This module implements a job that creates a snapshot for a given VM.
 from __future__ import absolute_import
 
 import os
+import pickle
 import threading
 import time
 
@@ -36,7 +37,6 @@ from vdsm import utils
 from vdsm.config import config
 from vdsm.common import concurrent
 from vdsm.common import properties, xmlutils
-from vdsm.common.compat import pickle
 from vdsm.common.time import monotonic_time
 
 # TODO: remove these imports, code using this should use storage apis.

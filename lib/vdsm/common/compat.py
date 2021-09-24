@@ -25,8 +25,6 @@ import inspect
 
 import six
 
-import pickle  # NOQA: F401 (unused import)
-
 from enum import Enum  # NOQA: F401
 
 

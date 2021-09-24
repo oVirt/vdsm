@@ -23,10 +23,9 @@ from __future__ import absolute_import
 from __future__ import division
 
 import io
+import pickle
 import sys
 import yaml
-
-from vdsm.common.compat import pickle
 
 
 def _load_yaml_file(file_path):

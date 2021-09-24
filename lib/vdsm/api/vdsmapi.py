@@ -25,10 +25,11 @@ import io
 import json
 import logging
 import os
+import pickle
 import six
 
 from vdsm import utils
-from vdsm.common.compat import Enum, pickle
+from vdsm.common.compat import Enum
 from vdsm.common.logutils import Suppressed
 from yajsonrpc.exception import JsonRpcInvalidParamsError
 

@@ -23,6 +23,7 @@ from __future__ import division
 
 import json
 import logging
+import pickle
 import yaml
 
 from io import StringIO
@@ -32,7 +33,6 @@ from nose.plugins.attrib import attr
 from vdsm.api import vdsmapi
 from vdsm.api.schema_inconsistency_formatter \
     import SchemaInconsistencyFormatter
-from vdsm.common.compat import pickle
 from yajsonrpc.exception import JsonRpcErrorBase
 
 from testlib import mock

@@ -25,6 +25,7 @@ from __future__ import absolute_import
 import errno
 import io
 import logging
+import pickle
 
 import six
 
@@ -58,7 +59,6 @@ from vdsm.storage import managedvolume
 from vdsm.storage import constants as sc
 from vdsm.virt import migration
 from vdsm.virt import secret
-from vdsm.common.compat import pickle
 from vdsm.common.define import doneCode, errCode
 from vdsm.config import config
 from vdsm.virt import sampling

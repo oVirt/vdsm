@@ -24,6 +24,7 @@ from __future__ import division
 import io
 import collections
 import enum
+import pickle
 import re
 import threading
 import time
@@ -39,7 +40,6 @@ from vdsm import utils
 from vdsm import jsonrpcvdscli
 from vdsm.config import config
 from vdsm.common import xmlutils
-from vdsm.common.compat import pickle
 from vdsm.common.define import NORMAL
 from vdsm.common.network.address import normalize_literal_addr
 from vdsm.common.units import MiB
