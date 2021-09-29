@@ -40,7 +40,7 @@ def addSystemEntry(domxml, sysinfo, entry):
             break
 
     if not updated:
-        name = next(entry.iterkeys())
+        name = next(iter(entry))
         e = domxml.createElement('entry')
         e.setAttribute('name', name)
         txt = domxml.createTextNode(entry[name])
@@ -67,7 +67,7 @@ def addBiosEntry(domxml, sysinfo, entry):
             break
 
     if not updated:
-        name = next(entry.iterkeys())
+        name = next(iter(entry))
         e = domxml.createElement('entry')
         e.setAttribute('name', name)
         txt = domxml.createTextNode(entry[name])
@@ -97,7 +97,7 @@ if 'smbios' in os.environ:
         for d in data.split('^'):
             # convert string to dictionary
             entry = ast.literal_eval(d)
-            name = next(entry.iterkeys())
+            name = next(iter(entry))
             if name in bios_entries:
                 addBiosEntry(domxml, sysinfo, entry)
             else:
