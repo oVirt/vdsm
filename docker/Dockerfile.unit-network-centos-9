@@ -1,0 +1,27 @@
+FROM centos/centos:stream9-development
+
+# Add runtime dependencies.
+RUN  dnf install -y \
+    http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm \
+    && \
+    dnf update -y \
+    && \
+    # el9s does not have modprobe installed by default
+    dnf install -y kmod \
+    && \
+    dnf install -y \
+        iproute-tc \
+        libnl3 \
+        nmstate \
+        python3-devel \
+        python3-six \
+        python3-pip \
+    && \
+    dnf clean all
+
+# Add pytest
+RUN python3 -m pip install --upgrade pip \
+    && \
+    python3 -m pip install pytest
+
+CMD ["/usr/sbin/init"]

@@ -48,6 +48,10 @@ class Dnsmasq(object):
         router=None,
         ipv6_slaac_prefix=None,
     ):
+        # --conf-file=/dev/null     Start with empty config, el8 has already
+        #                           empty default config, but el9 has
+        #                           bind-interfaces which conflicts with
+        #                           bind-dynamic.
         # --dhcp-authoritative      The only DHCP server on network
         # -p 0                      don't act as a DNS server
         # --dhcp-option=3,<router>  advertise a specific gateway (or None)
@@ -58,6 +62,7 @@ class Dnsmasq(object):
         #                           available
         command = [
             _DNSMASQ_BINARY.cmd,
+            '--conf-file=/dev/null',
             '--dhcp-authoritative',
             '-p',
             '0',
