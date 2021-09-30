@@ -233,9 +233,8 @@ Requires: policycoreutils >= 2.1.13-55
 # 4.4 Advanced virt stream on CentOS 8
 Requires: qemu-kvm >= 15:5.2.0-16
 %else
-# 4.4, AV 8.4 - https://bugzilla.redhat.com/1996602
-# and https://bugzilla.redhat.com/1976256
-Requires: qemu-kvm >= 5.2.0-16.module+el8.4.0+12368+54110afb.7
+# AV 8.5 - https://bugzilla.redhat.com/1946084
+Requires: qemu-kvm >= 6.0.0-28.module+el8.5.0+12271+fffa967b
 %endif #centos
 %endif #rhel
 
