@@ -25,10 +25,8 @@ available repository.
 This section describes the steps needed to run the integration tests
 locally in a container.
 
-To build the container, under the vdsm/docker folder, run:
+To build the container, under the vdsm/docker/network folder, run:
 ```
-sudo podman build \
-    -t ovirt/vdsm-test-integration-network-centos-8 \
-    -f "Dockerfile.integration-network-centos-8"
+sudo make integration
 ```
 Proceed on running the tests as mentioned above.

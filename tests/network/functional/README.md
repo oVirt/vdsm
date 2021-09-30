@@ -10,14 +10,9 @@ Multiple runs may be executed in parallel.
 All of those tests are running with nmstate backend.
 
 #### Build the container image
-To build the container, under the vdsm/docker folder, run:
+To build the container, under the vdsm/docker/network folder, run:
 ```
-sudo podman build \
-  --rm \
-  -t \
-  ovirt/vdsm-test-func-network-centos-8 \
-  -f Dockerfile.func-network-centos-8 \
-  .
+sudo make functional
 ```
 Note: Building the container image is needed only if the Dockerfile
 changes.

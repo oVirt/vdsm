@@ -25,10 +25,8 @@ available repository.
 This section describes the steps needed to run the unit tests
 locally in a container.
 
-To build the container, under the vdsm/docker folder, run:
+To build the container, under the vdsm/docker/network folder, run:
 ```
-podman build \
-    -t ovirt/vdsm-test-unit-network-centos-8 \
-    -f "Dockerfile.unit-network-centos-8"
+make unit
 ```
 Proceed on running the tests as mentioned above.
