@@ -2,11 +2,12 @@
 
 source tests/network/common.sh
 
-CONTAINER_IMAGE="${CONTAINER_IMAGE:=ovirt/$PROJECT-test-integration-network-centos-8}"
+IMAGE_TAG="${IMAGE_TAG:=centos-8}"
+CONTAINER_IMAGE="${CONTAINER_IMAGE:=$IMAGE_PREFIX-integration}"
 
 load_kernel_modules
 
-CONTAINER_ID="$($CONTAINER_CMD run --privileged -d -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --env PYTHONPATH=lib $CONTAINER_IMAGE)"
+CONTAINER_ID="$($CONTAINER_CMD run --privileged -d -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --env PYTHONPATH=lib $CONTAINER_IMAGE:$IMAGE_TAG)"
 trap remove_container EXIT
 
 setup_vdsm_sources_for_testing

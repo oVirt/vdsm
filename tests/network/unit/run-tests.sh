@@ -2,7 +2,8 @@
 
 source tests/network/common.sh
 
-CONTAINER_IMAGE="${CONTAINER_IMAGE:=ovirt/$PROJECT-test-unit-network-centos-8}"
+IMAGE_TAG="${IMAGE_TAG:=centos-8}"
+CONTAINER_IMAGE="${CONTAINER_IMAGE:=$IMAGE_PREFIX-unit}"
 
 function patch_dist_commons {
     container_exec "
@@ -14,7 +15,7 @@ function patch_dist_commons {
     "
 }
 
-CONTAINER_ID="$($CONTAINER_CMD run -d -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --env PYTHONPATH=lib $CONTAINER_IMAGE)"
+CONTAINER_ID="$($CONTAINER_CMD run -d -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z --env PYTHONPATH=lib $CONTAINER_IMAGE:$IMAGE_TAG)"
 trap remove_container EXIT
 
 copy_sources_to_workdir

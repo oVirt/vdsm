@@ -5,6 +5,7 @@ PROJECT_PATH="$PWD"
 CONTAINER_WORKSPACE="/workspace/$PROJECT"
 CONTAINER_CMD=${CONTAINER_CMD:=podman}
 VDSM_WORKDIR="/vdsm-tmp"
+IMAGE_PREFIX=${IMAGE_PREFIX:=ovirt/vdsm-network-tests}
 
 test -t 1 && USE_TTY="t"
 

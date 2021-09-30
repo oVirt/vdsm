@@ -2,7 +2,8 @@
 
 source tests/network/common.sh
 
-CONTAINER_IMAGE="${CONTAINER_IMAGE:=ovirt/$PROJECT-test-func-network-centos-8}"
+IMAGE_TAG="${IMAGE_TAG:=centos-8}"
+CONTAINER_IMAGE="${CONTAINER_IMAGE:=$IMAGE_PREFIX-functional}"
 NMSTATE_WORKSPACE="/workspace/nmstate"
 NMSTATE_TMP="/nmstate-tmp"
 
@@ -107,7 +108,7 @@ done
 
 load_kernel_modules
 
-CONTAINER_ID="$($CONTAINER_CMD run --privileged -d -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z $nmstate_mount --env PYTHONPATH=lib --env CI $CONTAINER_IMAGE)"
+CONTAINER_ID="$($CONTAINER_CMD run --privileged -d -v $PROJECT_PATH:$CONTAINER_WORKSPACE:Z $nmstate_mount --env PYTHONPATH=lib --env CI $CONTAINER_IMAGE:$IMAGE_TAG)"
 trap remove_container EXIT
 
 wait_for_active_service "dbus"
