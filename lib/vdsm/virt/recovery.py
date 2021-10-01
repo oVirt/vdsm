@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2017 Red Hat, Inc.
+# Copyright 2011-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -107,8 +107,6 @@ def _recovery_params(vm_id, dom_xml, external):
     params['vmType'] = dom.vm_type()
     params['vmName'] = dom.name
     params['vmId'] = dom.id
-    params['smp'] = dom.get_number_of_cpus()
-    params['memSize'] = dom.get_memory_size()
     return params
 
 
