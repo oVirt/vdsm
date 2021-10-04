@@ -146,8 +146,14 @@ Requires: python3 >= 3.6
 Requires: libvirt-client
 Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
-# For https://bugzilla.redhat.com/1955667
-Requires: libvirt-daemon-kvm >= 7.0.0-14
+%if 0%{?centos}
+# TODO: require 7.6.0-4+ once available on Centos
+Requires: libvirt-daemon-kvm >= 7.6.0-2
+%else
+# AV 8.5, https://bugzilla.redhat.com/2003644
+Requires: libvirt-daemon-kvm >= 7.6.0-4.module+el8.5.0+12786+c4633d9a
+%endif
+
 Requires: python3-libvirt
 
 # iscsi-intiator versions
