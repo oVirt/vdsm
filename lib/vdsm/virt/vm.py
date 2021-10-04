@@ -27,6 +27,7 @@ from contextlib import contextmanager
 import json
 import logging
 import os
+import base64
 import math
 import sys
 import tempfile
@@ -5977,6 +5978,32 @@ class Vm(object):
     def _incoming_migration_completed(self):
         self._incoming_migration_vm_running.set()
         self._incoming_migration_finished.set()
+
+    def screenshot(self):
+        self.log.debug('Entering screenshot with: vm_id: %s', self.id)
+        if not self._dom.connected:
+            raise exception.VMIsDown()
+
+        buf = bytearray()
+        stream = self._connection.newStream()
+        try:
+            mime_type = self._dom.screenshot(stream, 0)
+            while True:
+                data = stream.recv(262120)
+                if not data:
+                    break
+                buf += data
+        finally:
+            stream.finish()
+
+        encoded_string = base64.b64encode(buf).decode('ascii')
+        result = {
+            'data': encoded_string,
+            'encoding': 'base64',
+            'mime_type': mime_type
+        }
+
+        return dict(result=logutils.Suppressed(result))
 
     def sync_jobs_metadata(self):
         with self._md_desc.values() as vm:

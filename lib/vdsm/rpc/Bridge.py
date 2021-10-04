@@ -449,4 +449,5 @@ command_info = {
     'VM_list_checkpoints': {'ret': 'result'},
     'VM_dump_checkpoint': {'ret': 'result'},
     'VM_refresh_disk': {'ret': 'result'},
+    'VM_screenshot': {'ret': 'result'},
 }

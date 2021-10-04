@@ -796,6 +796,14 @@ class VM(APIBase):
     def refresh_disk(self, drive):
         return self.vm.refresh_disk(drive)
 
+    @api.logged(on="api.virt")
+    @api.method
+    def screenshot(self):
+        """
+        Creates screenshot of the VM based on vm id.
+        """
+        return self.vm.screenshot()
+
 
 class Volume(APIBase):
     ctorArgs = ['volumeID', 'storagepoolID', 'storagedomainID', 'imageID']

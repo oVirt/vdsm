@@ -9002,6 +9002,21 @@ types:
             type: string
         type: object
 
+    ScreenshotResponse: &ScreenshotResponse
+        added: '4.5'
+        description: VM Screenshot dump operation response.
+        name: ScreenshotResponse
+        properties:
+            -   name: data
+                description: Encoded image data
+                type: string
+            -   name: encoding
+                description: Image data response encoding
+                type: string
+            -   name: mime_type
+                description: Mime type of the image
+                type: string
+
 Host.setupNetworks:
     added: '3.1'
     description: Reconfigure host networking by adding, removing, and editing
@@ -12614,3 +12629,14 @@ VM.refresh_disk:
     return:
         description: Disk volume size information after refresh.
         type: *VolumeSizeInfo
+
+VM.screenshot:
+    added: '4.5'
+    description: Returns a screenshot of the guest console
+    params:
+    -   description: The UUID of the VM
+        name: vmID
+        type: *UUID
+    return:
+        description: Screenshot response
+        type: *ScreenshotResponse
