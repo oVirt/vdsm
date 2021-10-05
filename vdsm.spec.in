@@ -443,7 +443,7 @@ using the QEMU disk image utility.
 
 %package hook-checkips
 Summary:        Check connectivity from the host to designated IPs
-Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}
 
 %description hook-checkips
 VDSM hook used to check connectivity from the host network to designated IPs
@@ -465,7 +465,7 @@ VDSM hooks which allow to activate disk UNMAP.
 %package hook-ethtool-options
 Summary:        Allow setting custom ethtool options for vdsm controlled nics
 BuildArch:      noarch
-Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}
 
 %description hook-ethtool-options
 VDSM hook used for applying custom network properties that define ethtool
@@ -523,7 +523,7 @@ VDSM hooks which allow to bind a vNIC to a Bridge, managed or not by engine.
 %package hook-extnet
 Summary:        Force a vNIC to connect to a specific libvirt network
 BuildArch:      noarch
-Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}
 
 %description hook-extnet
 VDSM hook which allows to connect a vNIC to a libvirt network that is managed
@@ -611,7 +611,7 @@ the spice optimization attributes and values..
 %package hook-vmfex-dev
 Summary:        VM-FEX vNIC support for VDSM
 BuildArch:      noarch
-Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}
 Conflicts:      hook-vmfex
 
 %description hook-vmfex-dev
@@ -621,7 +621,7 @@ VM-FEX Virtual Function (SR-IOV with macvtap mode).
 %package hook-fcoe
 Summary:        Hook to enable FCoE support
 BuildArch:      noarch
-Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}
 Requires:       fcoe-utils
 
 %description hook-fcoe
