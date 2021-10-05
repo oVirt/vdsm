@@ -1836,7 +1836,6 @@ def changeLVsTags(vg, lvs, delTags=(), addTags=()):
     delTags = set(delTags)
     addTags = set(addTags)
     if delTags.intersection(addTags):
-        # pylint: disable=no-value-for-parameter
         raise ValueError(
             "Cannot add and delete the same tag lvs: `%s` tags: `%s`" %
             (lvs, ", ".join(delTags.intersection(addTags))))
