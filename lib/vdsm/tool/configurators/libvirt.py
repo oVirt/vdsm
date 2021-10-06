@@ -291,7 +291,11 @@ FILES = {
                 'conditions': {},
                 'content': {
                     'dynamic_ownership': 1,
-                    'save_image_format': '"gzip"',
+                    # When using block storage, the saved data will result
+                    # in an error when trying to decompress it using gzip.
+                    # For now, we will default to `raw` to make the restore
+                    # memory state work.
+                    'save_image_format': '"raw"',
                     'user': '"qemu"',
                     'group': '"qemu"',
                     'remote_display_port_min': 5900,
