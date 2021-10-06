@@ -134,18 +134,13 @@ def nbd_env(monkeypatch):
 @requires_privileges
 @pytest.mark.parametrize("format", ["qcow2", "raw"])
 @pytest.mark.parametrize("allocation", ["sparse", "preallocated"])
-@pytest.mark.parametrize("discard", [
-    pytest.param(True, id="discard"),
-    pytest.param(False, id="no_discard")
-])
-def test_roundtrip(nbd_env, format, allocation, discard):
+def test_roundtrip(nbd_env, format, allocation):
     vol = create_volume(nbd_env, format, allocation)
 
     config = {
         "sd_id": vol.sdUUID,
         "img_id": vol.imgUUID,
         "vol_id": vol.volUUID,
-        "discard": discard,
     }
 
     with nbd_server(config) as nbd_url:
@@ -157,6 +152,131 @@ def test_roundtrip(nbd_env, format, allocation, discard):
     # Now the server should not be accessible.
     with pytest.raises(cmdutils.Error):
         qemuimg.info(nbd_url)
+
+
+@broken_on_ci
+@requires_privileges
+@pytest.mark.parametrize("format", ["qcow2", "raw"])
+def test_detect_zeroes_discard(nbd_env, format):
+    vol = create_volume(nbd_env, format, "sparse")
+
+    config = {
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
+        "discard": True,
+        "detect_zeroes": True,
+    }
+
+    with nbd_server(config) as nbd_url:
+        # Fill image with zeroes. The writes should be converted to write
+        # zeroes command.
+        with nbd_client.open(urlparse(nbd_url)) as c:
+            c.write(0 * MiB, b"\0" * nbd_env.virtual_size)
+            c.flush()
+            extents = c.extents(0, nbd_env.virtual_size)
+
+    image_info = qemuimg.info(vol.volumePath)
+    if format == "raw":
+        assert image_info["actual-size"] == 0
+    else:
+        # Image contains only metadata.
+        assert image_info["actual-size"] <= MiB
+
+    log.debug("image extents: %s", extents)
+
+    # Entire image should be zero extent. For qcow2 image, qemu-nbd writes zero
+    # clusters. For raw image, qemu-nbd deallocates the entire image.
+    base_alloc = [(e.length, e.zero)
+                  for e in extents["base:allocation"]]
+    assert base_alloc == [(nbd_env.virtual_size, True)]
+
+    # Entire image should be allocated. For qcow2 image, zero clusters are
+    # always allocated. For raw image, qemu-nbd does not report unallocated
+    # areas as holes.
+    alloc_depth = [(e.length, e.hole)
+                   for e in extents["qemu:allocation-depth"]]
+    assert alloc_depth == [(nbd_env.virtual_size, False)]
+
+
+@broken_on_ci
+@requires_privileges
+@pytest.mark.parametrize("format", ["qcow2", "raw"])
+def test_detect_zeroes_no_discard(nbd_env, format):
+    vol = create_volume(nbd_env, format, "sparse")
+
+    config = {
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
+        "discard": False,
+        "detect_zeroes": True,
+    }
+
+    with nbd_server(config) as nbd_url:
+        # Fill image with zeroes. The writes should be converted to write
+        # zeroes command.
+        with nbd_client.open(urlparse(nbd_url)) as c:
+            c.write(0 * MiB, b"\0" * nbd_env.virtual_size)
+            c.flush()
+            extents = c.extents(0, nbd_env.virtual_size)
+
+    image_info = qemuimg.info(vol.volumePath)
+    if format == "raw":
+        assert image_info["actual-size"] == nbd_env.virtual_size
+    else:
+        # qcow2 metadata requires extra space for fully allocated image.
+        assert image_info["actual-size"] >= nbd_env.virtual_size
+
+    log.debug("image extents: %s", extents)
+
+    # Entire image should be zero extent.
+    base_alloc = [(e.length, e.zero)
+                  for e in extents["base:allocation"]]
+    assert base_alloc == [(nbd_env.virtual_size, True)]
+
+    # qemu-nbd allocated entire image in both cases.
+    alloc_depth = [(e.length, e.hole)
+                   for e in extents["qemu:allocation-depth"]]
+    assert alloc_depth == [(nbd_env.virtual_size, False)]
+
+
+@broken_on_ci
+@requires_privileges
+@pytest.mark.parametrize("format", ["qcow2", "raw"])
+def test_detect_zeroes_disabled(nbd_env, format):
+    vol = create_volume(nbd_env, format, "sparse")
+
+    config = {
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
+    }
+
+    with nbd_server(config) as nbd_url:
+        # Fill image with zeroes.
+        with nbd_client.open(urlparse(nbd_url)) as c:
+            c.write(0 * MiB, b"\0" * nbd_env.virtual_size)
+            c.flush()
+            extents = c.extents(0, nbd_env.virtual_size)
+
+    image_info = qemuimg.info(vol.volumePath)
+    if format == "raw":
+        assert image_info["actual-size"] == nbd_env.virtual_size
+    else:
+        assert image_info["actual-size"] >= nbd_env.virtual_size
+
+    log.debug("image extents: %s", extents)
+
+    # Entire image should be data extent.
+    base_alloc = [(e.length, e.zero)
+                  for e in extents["base:allocation"]]
+    assert base_alloc == [(nbd_env.virtual_size, False)]
+
+    # Entire image should be allocated.
+    alloc_depth = [(e.length, e.hole)
+                   for e in extents["qemu:allocation-depth"]]
+    assert alloc_depth == [(nbd_env.virtual_size, False)]
 
 
 @broken_on_ci

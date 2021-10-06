@@ -8518,9 +8518,19 @@ types:
 
         -   defaultvalue: false
             description: Pass discard requests to underlying filesystem. By
-                default discard requests are ignored.
+                default discard requests are ignored. Recommended when
+                uploading to sparse volume.
             name: discard
             type: boolean
+
+        -   defaultvalue: false
+            description: Try to keep the volume sparse by converting zeroes in
+              write commands to optimized write zeroes commands. If discard is
+              enabled, zeroes writes deallocate space. By default zeroes are
+              not detected. Recommended when uploading to a sparse volume.
+            name: detect_zeroes
+            type: boolean
+            added: '4.5'
 
         -   defaultvalue: true
             description: If true, expose the backing chain of volume using

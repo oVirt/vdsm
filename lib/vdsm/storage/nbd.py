@@ -77,6 +77,7 @@ class ServerConfig(properties.Owner):
     vol_id = properties.UUID(required=True)
     readonly = properties.Boolean(default=False)
     discard = properties.Boolean(default=False)
+    detect_zeroes = properties.Boolean(default=False)
     backing_chain = properties.Boolean(default=True)
     bitmap = properties.UUID()
 
@@ -86,6 +87,7 @@ class ServerConfig(properties.Owner):
         self.vol_id = config.get("vol_id")
         self.readonly = config.get("readonly")
         self.discard = config.get("discard")
+        self.detect_zeroes = config.get("detect_zeroes")
 
         # Setting to None overrides the default value.
         # See https://bugzilla.redhat.com/1892403
@@ -106,7 +108,7 @@ class ServerConfig(properties.Owner):
 
 QemuNBDConfig = collections.namedtuple(
     "QemuNBDConfig",
-    "format,readonly,discard,path,backing_chain,is_block,bitmap")
+    "format,readonly,discard,detect_zeroes,path,backing_chain,is_block,bitmap")
 
 
 def start_server(server_id, config):
@@ -143,6 +145,7 @@ def start_server(server_id, config):
             format=format,
             readonly=cfg.readonly,
             discard=cfg.discard,
+            detect_zeroes=cfg.detect_zeroes,
             path=path,
             backing_chain=cfg.backing_chain,
             is_block=is_block,
@@ -454,8 +457,15 @@ def start_transient_service(server_id, config):
 
     if config.readonly:
         cmd.append("--read-only")
-    elif config.discard:
-        cmd.append("--discard=unmap")
+    else:
+        if config.discard:
+            cmd.append("--discard=unmap")
+
+        if config.detect_zeroes:
+            # "on" convert zero write to fallocate(WRITE_ZEROES).
+            # "unmap" convert zero write to fallocate(PUNCH_HOLE).
+            detect_mode = "unmap" if config.discard else "on"
+            cmd.append("--detect-zeroes={}".format(detect_mode))
 
     if config.bitmap:
         cmd.append("--bitmap={}".format(config.bitmap))
