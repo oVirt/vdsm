@@ -110,6 +110,7 @@ class IRS(object):
                 del self.prepared_volumes[k]
         return response.success()
 
+    @recorded
     def imageSyncVolumeChain(self, domainID, imageID, volumeID, newVols):
         return response.success()
 

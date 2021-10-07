@@ -424,6 +424,14 @@ def test_active_merge(monkeypatch):
 
     vm = RunningVM(config)
 
+    drive = vm.getDiskDevices()[0]
+
+    # Create static list of original chain.
+    orig_chain = [vol.uuid for vol in vm.drive_get_actual_volume_chain(drive)]
+
+    # Create static list of expected new chain.
+    new_chain = [vol_id for vol_id in orig_chain if vol_id != top_id]
+
     # No active block jobs before calling merge.
     assert vm.query_jobs() == {}
 
@@ -459,7 +467,6 @@ def test_active_merge(monkeypatch):
     top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
     base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
     max_alloc = base["apparentsize"] + top["apparentsize"]
-    drive = vm.getDiskDevices()[0]
     new_size = drive.getNextVolumeSize(max_alloc, top["capacity"])
 
     simulate_volume_extension(vm, base_id)
@@ -561,6 +568,32 @@ def test_active_merge(monkeypatch):
     # Check for cleanup completion.
     wait_for_cleanup(vm)
 
+    # Check that actual chain reported by libvirt matches vdsm chain.
+    vdsm_chain = [vol['volumeID'] for vol in drive.volumeChain]
+    libvirt_chain = [
+        vol.uuid for vol in vm.drive_get_actual_volume_chain(drive)]
+
+    # syncVolumeChain func should get chain without leaf as "actualChain" arg.
+    expected_vdsm_chain = set(x for x in vdsm_chain if x != top_id)
+
+    # If pivoting during cleanup imageSyncVolumeChain is called twice.
+    # Calls are done by CleanupThread.run(). First call done at pivot attempt
+    # by tryPivot(), second by sync_volume_chain() if pivot succeeded.
+    assert len(vm.cif.irs.__calls__) == 2
+
+    # Check arguments of both calls are correct.
+    for x in range(1):
+        meth, arg, kwarg = vm.cif.irs.__calls__[x]
+        assert meth == "imageSyncVolumeChain"
+        assert arg[:3] == (sd_id, img_id, top_id)
+        assert set(arg[3]) == expected_vdsm_chain
+
+    # Check actual chain matches expected chain - actual chain is ordered.
+    assert libvirt_chain == new_chain
+
+    # Check current chain matches expected chain - current chain is unordered.
+    assert set(vdsm_chain) == set(new_chain)
+
     # When cleanup finished, job was untracked and jobs were persisted.
     persisted_jobs = parse_jobs(vm)
     assert persisted_jobs == {}
@@ -591,6 +624,14 @@ def test_internal_merge():
     base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
+
+    drive = vm.getDiskDevices()[0]
+
+    # Create static list of original chain.
+    orig_chain = [vol.uuid for vol in vm.drive_get_actual_volume_chain(drive)]
+
+    # Create static list of expected new chain - top_id refers to subchain top.
+    new_chain = [vol_id for vol_id in orig_chain if vol_id != top_id]
 
     assert vm.query_jobs() == {}
 
@@ -689,6 +730,24 @@ def test_internal_merge():
 
     # Check for cleanup completion.
     wait_for_cleanup(vm)
+
+    # Get current and actual chain.
+    vdsm_chain = [vol['volumeID'] for vol in drive.volumeChain]
+    libvirt_chain = [
+        vol.uuid for vol in vm.drive_get_actual_volume_chain(drive)]
+
+    # Check actual chain matches expected chain - actual chain is ordered.
+    assert libvirt_chain == new_chain
+
+    # Check current chain matches expected chain - current chain is unordered.
+    assert set(vdsm_chain) == set(new_chain)
+
+    # Check imageSyncVolumeChain was called with correct arguments.
+    assert len(vm.cif.irs.__calls__) == 1
+    meth, arg, kwarg = vm.cif.irs.__calls__[0]
+    assert meth == "imageSyncVolumeChain"
+    assert arg[:3] == (sd_id, img_id, drive.volumeID)
+    assert set(arg[3]) == set(new_chain)
 
     # Job removed from persisted jobs.
     assert parse_jobs(vm) == {}
