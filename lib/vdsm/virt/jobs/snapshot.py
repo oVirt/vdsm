@@ -52,7 +52,7 @@ from vdsm.virt.vmdevices import storagexml
 import vdsm.virt.jobs
 
 
-def write_snapshot_md(vm, snapshot_data, lock):
+def _write_snapshot_md(vm, snapshot_data, lock):
     with lock:
         try:
             vm.update_snapshot_metadata(snapshot_data)
@@ -60,21 +60,21 @@ def write_snapshot_md(vm, snapshot_data, lock):
             vm.log.error("Couldn't save metadata %s", e)
 
 
-def read_snapshot_md(vm, lock):
+def _read_snapshot_md(vm, lock):
     with lock:
         return vm.snapshot_metadata()
 
 
-def set_abort(vm, snapshot_data, completed, abort, lock):
+def _set_abort(vm, snapshot_data, completed, abort, lock):
     with lock:
         if not completed.is_set():
             abort.set()
             snapshot_data['abort'] = abort.is_set()
     if abort.is_set():
-        write_snapshot_md(vm, snapshot_data, lock)
+        _write_snapshot_md(vm, snapshot_data, lock)
 
 
-def set_completed(vm, snapshot_data, completed, abort, lock):
+def _set_completed(vm, snapshot_data, completed, abort, lock):
     with lock:
         if abort.is_set():
             vm.log.info("Snapshot timeout reached, operation aborted")
@@ -106,7 +106,7 @@ class Job(vdsm.virt.jobs.Job):
         self._snapshot_job = {}
         self._freeze_timeout = freeze_timeout * 60
         if recovery:
-            self._snapshot_job = read_snapshot_md(self._vm, self._lock)
+            self._snapshot_job = _read_snapshot_md(self._vm, self._lock)
         self._load_metadata()
 
     def _run(self):
@@ -134,8 +134,8 @@ class Job(vdsm.virt.jobs.Job):
             # starting the snapshot in libvirt, causing AbortSnapshot thread
             # to finish. This is also safe for recovery, since it saved to the
             # VMs metadata. The engine will see abort and failed as the same.
-            set_abort(self._vm, self._snapshot_job, self._completed,
-                      self._abort, self._lock)
+            _set_abort(self._vm, self._snapshot_job, self._completed,
+                       self._abort, self._lock)
             # We need to raise an exception in order to make job framework
             # report the current job as a failure.
             raise exception.SnapshotFailed()
@@ -201,7 +201,7 @@ class Snapshot(properties.Owner):
                 'frozen': self._frozen,
                 'memoryParams': self._memory_params,
             })
-            write_snapshot_md(self._vm, self._snapshot_job, self._lock)
+            _write_snapshot_md(self._vm, self._snapshot_job, self._lock)
 
     def _thaw_vm(self):
         # Must always thaw, even if freeze failed; in case the guest
@@ -221,7 +221,7 @@ class Snapshot(properties.Owner):
         finally:
             # Cleaning snapshot job metadata
             self._snapshot_job = None
-            write_snapshot_md(self._vm, self._snapshot_job, self._lock)
+            _write_snapshot_md(self._vm, self._snapshot_job, self._lock)
             if self._abort.is_set():
                 raise exception.ActionStopped()
 
@@ -462,7 +462,7 @@ class Snapshot(properties.Owner):
         for k, v in vm_drives.items():
             vm_drives_serialized[k] = [xmlutils.tostring(v[0].getXML()), v[1]]
         self._snapshot_job['vmDrives'] = vm_drives_serialized
-        write_snapshot_md(self._vm, self._snapshot_job, self._lock)
+        _write_snapshot_md(self._vm, self._snapshot_job, self._lock)
 
         # We need to stop the drive monitoring for two reasons, one is to
         # prevent spurious libvirt errors about missing drive paths (since
@@ -497,8 +497,8 @@ class Snapshot(properties.Owner):
                     with self._lock:
                         self._abort.set()
                         self._snapshot_job['abort'] = self._abort.is_set()
-                    set_abort(self._vm, self._snapshot_job, self._completed,
-                              self._abort, self._lock)
+                    _set_abort(self._vm, self._snapshot_job, self._completed,
+                               self._abort, self._lock)
                     if self_abort:
                         self._vm.log.info("Snapshot timeout reached,"
                                           " operation aborted")
@@ -515,10 +515,10 @@ class Snapshot(properties.Owner):
                     raise exception.ActionStopped()
                 self._thaw_vm()
                 raise exception.SnapshotFailed()
-            set_completed(self._vm, self._snapshot_job, self._completed,
-                          self._abort, self._lock)
+            _set_completed(self._vm, self._snapshot_job, self._completed,
+                           self._abort, self._lock)
             if self._completed.is_set():
-                write_snapshot_md(self._vm, self._snapshot_job, self._lock)
+                _write_snapshot_md(self._vm, self._snapshot_job, self._lock)
                 self._vm.log.info("Completed live snapshot")
         except:
             # In case the VM was shutdown in the middle of the snapshot
@@ -571,10 +571,10 @@ class LiveSnapshotRecovery(object):
                     break
             self._vm.log.info("JOBMON: Snapshot is running")
             time.sleep(10)
-        set_completed(self._vm, self._snapshot_job, self._completed,
-                      self._abort, self._lock)
+        _set_completed(self._vm, self._snapshot_job, self._completed,
+                       self._abort, self._lock)
         if self._completed.is_set():
-            write_snapshot_md(self._vm, self._snapshot_job, self._lock)
+            _write_snapshot_md(self._vm, self._snapshot_job, self._lock)
         self._vm.log.info("JOBMON: Snapshot isn't running")
         memory_vol_path = memory_vol = new_drives = vm_drives = None
 
@@ -675,8 +675,8 @@ class AbortSnapshot(object):
             # failing the snapshot, telling it succeeded.
             # This is also better for optional racing with LiveSnapshotRecovery
             # thread.
-            set_abort(self._vm, self._snapshot_job, self._completed,
-                      self._abort, self._lock)
+            _set_abort(self._vm, self._snapshot_job, self._completed,
+                       self._abort, self._lock)
             try:
                 self._vm.abort_domjob()
             except libvirt.libvirtError as e:
