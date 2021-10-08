@@ -22,6 +22,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from collections import namedtuple
 from contextlib import contextmanager
 import os
 import time
@@ -35,6 +36,7 @@ from vdsm.storage import blockSD
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import image
 from vdsm.storage import lvm
 from vdsm.storage import qemuimg
 from vdsm.storage import sanlock_direct
@@ -52,6 +54,9 @@ from storage.storagefakelib import FakeDomainMonitor
 from storage.storagefakelib import FakeTaskManager
 
 TESTDIR = os.path.dirname(__file__)
+
+
+Chain = namedtuple("Chain", ["base", "internal", "top"])
 
 
 class TestMetadataValidity:
@@ -78,6 +83,41 @@ class TestMetadataValidity:
         vg = fake_vg(
             vg_mda_size=self.MIN_MD_SIZE, vg_mda_free=self.MIN_MD_FREE)
         assert not blockSD.metadataValidity(vg)['mdathreshold']
+
+
+class DomainFactory:
+
+    def __init__(self, tmp_storage, tmp_repo):
+        self.tmp_storage = tmp_storage
+        self.tmp_repo = tmp_repo
+
+    def create_domain(self, sd_uuid, name="domain", version=5):
+        dev = self.tmp_storage.create_device(20 * GiB)
+        lvm.createVG(sd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+        vg = lvm.getVG(sd_uuid)
+
+        dom = blockSD.BlockStorageDomain.create(
+            sdUUID=sd_uuid,
+            domainName=name,
+            domClass=sd.DATA_DOMAIN,
+            vgUUID=vg.uuid,
+            version=version,
+            storageType=sd.ISCSI_DOMAIN)
+
+        # Create domain directory structure.
+        dom.refresh()
+
+        # Attach repo pool - SD expects at least one pool is attached.
+        dom.attach(self.tmp_repo.pool_id)
+        sdCache.knownSDs[sd_uuid] = blockSD.findDomain
+        sdCache.manuallyAddDomain(dom)
+
+        return dom
+
+
+@pytest.fixture
+def domain_factory(tmp_storage, tmp_repo):
+    return DomainFactory(tmp_storage, tmp_repo)
 
 
 def fakeGetLV(vgName):
@@ -112,6 +152,67 @@ def make_lv(name=None, tags=()):
         writeable=None,
         opened=None,
         active=None)
+
+
+def create_chain(domain):
+    img_uuid = str(uuid.uuid4())
+    base_vol_id = str(uuid.uuid4())
+    internal_vol_id = str(uuid.uuid4())
+    top_vol_id = str(uuid.uuid4())
+
+    vol_capacity = 10 * GiB
+
+    domain.createVolume(
+        imgUUID=img_uuid,
+        capacity=vol_capacity,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType=sc.DATA_DISKTYPE,
+        volUUID=base_vol_id,
+        desc="Base volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    domain.createVolume(
+        imgUUID=img_uuid,
+        capacity=vol_capacity,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType=sc.DATA_DISKTYPE,
+        volUUID=internal_vol_id,
+        desc="Internal volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=base_vol_id)
+
+    domain.createVolume(
+        imgUUID=img_uuid,
+        capacity=vol_capacity,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType=sc.DATA_DISKTYPE,
+        volUUID=top_vol_id,
+        desc="Top volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=internal_vol_id)
+
+    # Get volumes.
+    base_vol = domain.produceVolume(img_uuid, base_vol_id)
+    internal_vol = domain.produceVolume(img_uuid, internal_vol_id)
+    top_vol = domain.produceVolume(img_uuid, top_vol_id)
+
+    # Load image.
+    img = image.Image(top_vol.repoPath)
+
+    # Check volume chain created correctly.
+    chain = [v.volUUID for v in img.getChain(domain.sdUUID, img_uuid)]
+    assert chain == [base_vol_id, internal_vol_id, top_vol_id]
+
+    # Verify current chain parents.
+    assert base_vol.getParent() == sc.BLANK_UUID
+    assert internal_vol.getParent() == base_vol_id
+    assert top_vol.getParent() == internal_vol_id
+
+    return Chain(base_vol, internal_vol, top_vol)
 
 
 @contextmanager
@@ -1411,3 +1512,85 @@ def test_spm_lifecycle(
 
     pool.startSpm(prevID=0, prevLVER=0, maxHostID=clusterlock.MAX_HOST_ID)
     pool.stopSpm()
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("domain_version", [5])
+def test_sync_volume_chain_active(
+        domain_factory,
+        fake_task,
+        fake_sanlock,
+        domain_version):
+
+    sd_uuid = str(uuid.uuid4())
+    dom = domain_factory.create_domain(sd_uuid=sd_uuid, version=domain_version)
+    chain = create_chain(dom)
+
+    assert chain.top.isLegal()
+
+    # Simulate top/leaf volume removal from actual chain.
+    actual_chain = [chain.base.volUUID, chain.internal.volUUID]
+
+    # Sync volume chain - in libvirt this would happen during snapshot removal
+    # when the volume being removed *is* the active layer and pivot is
+    # performed. Expected result after calling the volume sync is that the top
+    # volume *is* put into ILLEGAL state and the chain shifts it's parent
+    # metadata to reflect the new chain after removal. Purpose of syncing the
+    # volume chain is to modify current(vdsm) chain according to
+    # actual(libvirt) chain.
+    img = image.Image(chain.top.repoPath)
+    img.syncVolumeChain(
+        sd_uuid, chain.top.imgUUID, chain.top.volUUID, actual_chain)
+
+    # Verify top volume is illegal now.
+    assert not chain.top.isLegal()
+
+    # Verify current chain parents did not change.
+    assert chain.base.getParent() == sc.BLANK_UUID
+    assert chain.internal.getParent() == chain.base.volUUID
+    assert chain.top.getParent() == chain.internal.volUUID
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("domain_version", [5])
+def test_sync_volume_chain_internal(
+        domain_factory,
+        fake_task,
+        fake_sanlock,
+        domain_version):
+
+    sd_uuid = str(uuid.uuid4())
+    dom = domain_factory.create_domain(sd_uuid=sd_uuid, version=domain_version)
+    chain = create_chain(dom)
+
+    assert chain.top.isLegal()
+
+    # Simulate internal volume removal from actual chain.
+    actual_chain = [chain.base.volUUID, chain.top.volUUID]
+
+    # Sync volume chain - in libvirt this would happen during snapshot removal
+    # when the volume being removed is *not* the active layer. Expected result
+    # after calling the volume sync is that the top volume is *not* put into
+    # ILLEGAL state and the chain shifts it's parent metadata to reflect the
+    # new chain after removal. Purpose of syncing the volume chain is to
+    # modify current(vdsm) chain according to actual(libvirt) chain.
+    img = image.Image(chain.top.repoPath)
+    img.syncVolumeChain(
+        sd_uuid, chain.top.imgUUID, chain.top.volUUID, actual_chain)
+
+    # Verify top volume is still legal.
+    assert chain.top.isLegal()
+
+    # Verify that base volume parent did not change.
+    assert chain.base.getParent() == sc.BLANK_UUID
+
+    # Because imageSyncVolumeChain runs on any host, it cannot chang the lv
+    # tags, only the volume metadata. getParentMeta() returns the parent UUID
+    # from the volume metadata.
+    assert chain.top.getParentMeta() == chain.base.volUUID
+
+    # getParent() uses the lv tags, so it still returns the internal volume.
+    # This will be fixed later on the SPM when the internal volume is deleted.
+    assert chain.top.getParent() == chain.internal.volUUID
