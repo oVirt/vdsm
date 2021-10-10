@@ -549,6 +549,23 @@ class LiveSnapshotRecovery(object):
         self._completed = completed
         self._lock = lock
 
+    def _check_volumes(self, new_drives):
+        # Checks if the volumes exist in the domain XML.
+        if not new_drives:
+            return False
+
+        self._vm.update_domain_descriptor()
+        try:
+            for drive in new_drives.values():
+                if not self._vm.volume_exists(drive['volumeID']):
+                    self._vm.log.error('New volume id: %s was not found in'
+                                       ' the domain xml', drive["volumeID"])
+                    return False
+            return True
+        except KeyError:
+            self._vm.log.error('Could not get the drive volumeID')
+            return False
+
     @logutils.traceback()
     def run(self):
         self._vm.log.info("JOBMON: Checking job on VM: %s", self._vm.id)
@@ -591,25 +608,31 @@ class LiveSnapshotRecovery(object):
                     self._vm.send_status_event()
                     break
                 time.sleep(1)
+
+        missing_data = False
         try:
             # Taking the values from the VM metadata.
-            # If we fail, then we are missing the data and will try
-            # to recovery without them. It might be that we didn't start
-            # the operation in libvirt and therefore we don't have them.
-            # We still must perform teardown in such a case,
-            # with incomplete metadata stored in __init__.
+            # If some of the values are missing here, it means the snapshot
+            # job didn't update the metadata after preparing the volumes.
+            # In this case we'll try to finalize the job and fail the job
+            # We still must perform the finalizing in such a case,
+            # with incomplete metadata values stored in __init__.
             memory_vol_path = self._snapshot_job['memoryVolPath']
             memory_vol = self._snapshot_job['memoryVol']
             new_drives = self._snapshot_job['newDrives']
             vm_drives = self._snapshot_job['vmDrives']
+        except KeyError:
+            self._vm.log.error("Missing data on the snapshot job "
+                               "metadata, finalizing the VM")
+            missing_data = True
+            if self._memory_params:
+                memory_vol = self._memory_params['dst']
+        else:
             for k, v in vm_drives.items():
                 vm_drives[k] = (vmdevices.storage.Drive(
                     self._vm.log, **storagexml.parse(
                         xmlutils.fromstring(v[0]), {})
                 ), v[1])
-        except KeyError:
-            self._vm.log.error("Missing data on the snapshot job "
-                               "metadata.. calling teardown")
         # We only use the Snapshot class to perform the teardown. Therefore,
         # some of the passed values are not important.
         snap = Snapshot(
@@ -617,7 +640,8 @@ class LiveSnapshotRecovery(object):
             self._abort, self._completed, 0, 0, self._snapshot_job, self._lock,
             0
         )
-        if self._abort.is_set():
+        if (self._abort.is_set() or missing_data or
+                not self._check_volumes(new_drives)):
             snap.finalize_vm(memory_vol)
             res = False
         else:
