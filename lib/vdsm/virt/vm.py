@@ -3033,6 +3033,28 @@ class Vm(object):
 
         return domain.xml
 
+    def volume_exists(self, vol):
+        """
+        Checks if the volume ID exists in the domain XML.
+
+        :param vol: The volume ID we are seeking.
+        :type vol: string
+        :return: True if the volume with the given ID exists.
+        :rtype boolean
+        """
+        for disk_element in self._domain.get_device_elements('disk'):
+            if vmxml.attr(disk_element, 'device') == 'disk':
+                source = vmxml.find_first(disk_element, 'source', None)
+                if source is not None:
+                    path = (vmxml.attr(source, 'file') or
+                            vmxml.attr(source, 'dev') or
+                            vmxml.attr(source, 'name'))
+                else:
+                    path = ''
+                if os.path.basename(path) == vol:
+                    return True
+                return False
+
     def _correctGraphicsConfiguration(self, domXML):
         """
         Fix the configuration of graphics device after resume.
