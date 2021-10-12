@@ -184,9 +184,13 @@ class _SuperVdsm(object):
                 proc.terminate()
                 proc.join(1)
 
-                if proc.is_alive():
-                    os.kill(proc.pid, signal.SIGKILL)
-                    commands.wait_async(PopenAdapter(proc))
+                if proc.exitcode is None:
+                    try:
+                        os.kill(proc.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    else:
+                        commands.wait_async(PopenAdapter(proc))
 
     @logDecorator
     def validateAccess(self, user, groups, *args, **kwargs):
