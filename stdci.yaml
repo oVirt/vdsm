@@ -21,6 +21,9 @@ stages:
                     - el9stream:
                         runtime-requirements:
                           host_distro: newer
+              - s390x:
+                  distributions:
+                    - el9stream
   - check-patch:
       archs:
         - x86_64
