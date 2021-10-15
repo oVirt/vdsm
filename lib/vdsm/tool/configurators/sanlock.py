@@ -170,7 +170,9 @@ def _restart_needed():
     options = _daemon_options()
     if options is not None:
         for key, value in _config_for_vdsm().items():
-            if options[key] != value:
+            # When upgrading sanlock < 3.8.3, "max_worker_threads" is missing.
+            # See https://bugzilla.redhat.com/2013383
+            if options.get(key) != value:
                 return True
 
     return False
