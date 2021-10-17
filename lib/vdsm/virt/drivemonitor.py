@@ -237,6 +237,20 @@ class DriveMonitor(object):
             # next lvm extent.
             return False
 
+        if (alloc == 0 and
+                drive.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED):
+            # We get alloc == 0:
+            # - Before the guest write to the disk.
+            # - During backup, regardless of actual allocation. This is likely
+            #   a bug in libvirt or qemu.
+            # If we got a threshold event, we can safely assume that the guest
+            # wrote to the drive, and we need to extend it.
+            self._log.warning(
+                "No allocation info for drive %s, but block threshold was "
+                "exceeded - assuming that drive needs extension",
+                drive.name)
+            return True
+
         if physical - alloc < drive.watermarkLimit:
             return True
         return False
