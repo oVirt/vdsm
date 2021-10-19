@@ -493,7 +493,7 @@ class QemuGuestAgentPoller(object):
                     types |= command
             if types == 0:
                 # Nothing to do
-                return
+                continue
             info = self._libvirt_get_guest_info(
                 vm_obj, types, not have_disk_mapping)
             if info is None:
