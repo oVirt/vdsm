@@ -4,6 +4,8 @@ FROM centos/centos:stream8
 RUN dnf install -y \
     http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm \
     && \
+    dnf update -y \
+    && \
     dnf install -y \
         autoconf \
         automake \
@@ -20,6 +22,8 @@ RUN dnf install -y \
     dnf clean all
 
 # Add pytest
-RUN python3 -m pip install pytest
+RUN python3 -m pip install --upgrade pip \
+    && \
+    python3 -m pip install pytest
 
 CMD ["/usr/sbin/init"]
