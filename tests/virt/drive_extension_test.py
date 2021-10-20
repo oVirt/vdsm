@@ -206,6 +206,35 @@ def test_extend(tmp_config):
     assert drv.threshold_state == BLOCK_THRESHOLD.SET
 
 
+def test_extend_no_allocation(tmp_config):
+    vm = FakeVM(DRIVE_INFOS)
+    drives = vm.getDiskDevices()
+
+    # first run: does nothing but set the block thresholds
+    vm.monitor_drives()
+
+    # Simulate writing to drive vdb
+    vdb = vm._dom.block_info['/virtio/1']
+
+    # Simulate libvirt bug when alloction is not reported during backup.
+    # https://bugzilla.redhat.com/2015281
+    vdb['allocation'] = 0
+
+    drv = drives[1]
+
+    # Simulating block threshold event
+    vm.drive_monitor.on_block_threshold(
+        'vdb[1]', '/virtio/1', 0, 1 * MiB)
+    assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
+
+    # Simulating periodic check
+    extended = vm.monitor_drives()
+    assert extended is True
+    assert len(vm.cif.irs.extensions) == 1
+    check_extension(vdb, drives[1], vm.cif.irs.extensions[0])
+    assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
+
+
 @pytest.mark.parametrize("drive_info,expected_state,threshold", [
     # the threshold values depend on the physical size defined in the test,
     # and on the mock config.
