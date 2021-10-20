@@ -1192,6 +1192,8 @@ class Vm(object):
         # This is not a definite fix, we're aware that there is still the
         # possibility of a race condition, however this covers more cases
         # than before and a quick gain
+        _DESKTOP_LOCK_TIMEOUT = 2
+        time.sleep(_DESKTOP_LOCK_TIMEOUT)
         if not self._clientIp and not self._destroy_requested.is_set():
             delay = config.get('vars', 'user_shutdown_timeout')
             timeout = config.getint('vars', 'sys_shutdown_timeout')
@@ -1230,9 +1232,8 @@ class Vm(object):
         #
         # Multiple desktopLock calls won't matter if we're really disconnected
         # It is not harmful. And the threads will exit after 2 seconds anyway.
-        _DESKTOP_LOCK_TIMEOUT = 2
-        timer = threading.Timer(_DESKTOP_LOCK_TIMEOUT, self._timedDesktopLock)
-        timer.start()
+        thread = concurrent.thread(self._timedDesktopLock, name="desktoplock")
+        thread.start()
 
     def onRTCUpdate(self, timeOffset):
         newTimeOffset = str(self._initTimeRTC + int(timeOffset))
