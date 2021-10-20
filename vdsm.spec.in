@@ -783,28 +783,28 @@ if  [ -f "%{_localstatedir}/lib/%{vdsm_name}/upgraded_version" ]; then
     if [ -f "%{_localstatedir}/lib/%{vdsm_name}/vdsmd_start_required" ]; then
         vdsmd_start_required='yes'
         /bin/rm -f "%{_localstatedir}/lib/%{vdsm_name}/vdsmd_start_required"
-        /bin/systemctl stop vdsmd >/dev/null 2>&1 || :
+        /bin/systemctl stop vdsmd >/dev/null || :
     fi
 
     if [ -f "%{_localstatedir}/lib/%{vdsm_name}/supervdsmd_start_required" ]; then
         supervdsmd_start_required='yes'
         /bin/rm -f "%{_localstatedir}/lib/%{vdsm_name}/supervdsmd_start_required"
-        /bin/systemctl stop supervdsmd >/dev/null 2>&1 || :
+        /bin/systemctl stop supervdsmd >/dev/null || :
     fi
 
-    if /bin/systemctl status vdsm-network >/dev/null 2>&1; then
-        /bin/systemctl stop vdsm-network >/dev/null 2>&1 || :
+    if /bin/systemctl status vdsm-network >/dev/null; then
+        /bin/systemctl stop vdsm-network >/dev/null || :
     fi
 
-    if ! %{_bindir}/vdsm-tool is-configured >/dev/null 2>&1; then
-        %{_bindir}/vdsm-tool configure --force >/dev/null 2>&1
+    if ! %{_bindir}/vdsm-tool is-configured >/dev/null; then
+        %{_bindir}/vdsm-tool configure --force >/dev/null
     fi
 
     if [ "${supervdsmd_start_required}" = 'yes' ]; then
-        /bin/systemctl start supervdsmd >/dev/null 2>&1 || :
+        /bin/systemctl start supervdsmd >/dev/null || :
     fi
     if [ "${vdsmd_start_required}" = 'yes' ]; then
-        /bin/systemctl start vdsmd >/dev/null 2>&1 || :
+        /bin/systemctl start vdsmd >/dev/null || :
     fi
 fi
 exit 0
