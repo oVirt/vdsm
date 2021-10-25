@@ -14,7 +14,7 @@ Type=simple
 LimitCORE=infinity
 EnvironmentFile=-/etc/sysconfig/vdsm
 ExecStartPre=@LIBEXECDIR@/vdsmd_init_common.sh --pre-start
-ExecStart=@VDSMDIR@/daemonAdapter -0 /dev/null -1 /dev/null -2 /dev/null "@VDSMDIR@/vdsmd"
+ExecStart=@LIBEXECDIR@/daemonAdapter -0 /dev/null -1 /dev/null -2 /dev/null "@LIBEXECDIR@/vdsmd"
 # WARNING: Do not use ExecStopPost, breaks killing child processes.
 # https://bugzilla.redhat.com/1761260
 Restart=always

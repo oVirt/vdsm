@@ -8,5 +8,5 @@ After=lldpad.service libvirtd.service
 Type=simple
 LimitCORE=infinity
 EnvironmentFile=-/etc/sysconfig/supervdsmd
-ExecStart=@VDSMDIR@/daemonAdapter "@VDSMDIR@/supervdsmd" --sockfile "@VDSMRUNDIR@/svdsm.sock"
+ExecStart=@LIBEXECDIR@/daemonAdapter "@LIBEXECDIR@/supervdsmd" --sockfile "@VDSMRUNDIR@/svdsm.sock"
 Restart=always

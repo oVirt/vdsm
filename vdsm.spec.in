@@ -687,7 +687,7 @@ make
 %install
 make DESTDIR=%{buildroot} install
 
-%py_byte_compile python3 %{buildroot}/%{_datadir}/%{vdsm_name}/sitecustomize.py
+%py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/sitecustomize.py
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_device_create/openstacknet_utils.py
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/openstacknet_utils.py
 %py_byte_compile python3 %{buildroot}/%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/openstacknet_utils.py
@@ -836,11 +836,11 @@ exit 0
 %dir %{_sysconfdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
-%{_datadir}/%{vdsm_name}/daemonAdapter
-%{_datadir}/%{vdsm_name}/sitecustomize.py
-%{_datadir}/%{vdsm_name}/__pycache__/*
-%{_datadir}/%{vdsm_name}/supervdsmd
-%{_datadir}/%{vdsm_name}/vdsmd
+%{_libexecdir}/%{vdsm_name}/daemonAdapter
+%{_libexecdir}/%{vdsm_name}/sitecustomize.py
+%{_libexecdir}/%{vdsm_name}/__pycache__/*
+%{_libexecdir}/%{vdsm_name}/supervdsmd
+%{_libexecdir}/%{vdsm_name}/vdsmd
 
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf

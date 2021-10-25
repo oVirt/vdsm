@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@ dist_bin_SCRIPTS = \
 	./usr/bin/vdsm-client \
 	./usr/bin/vdsm-tool
 
-dist_vdsm_PYTHON = \
-	./usr/share/vdsm/sitecustomize.py \
+dist_vdsmexec_PYTHON = \
+	./libexec/vdsm/sitecustomize.py \
 	$(NULL)
 
 vdsm_DATA = \
@@ -51,11 +51,6 @@ vdsm_autounattend_DATA = \
 	./usr/share/vdsm/autounattend/Win2012.xml \
 	./usr/share/vdsm/autounattend/Win2012R2.xml \
 	./usr/share/vdsm/autounattend/Win2016.xml \
-	$(NULL)
-
-dist_vdsm_SCRIPTS = \
-	./usr/sbin/supervdsmd \
-	./usr/sbin/vdsmd \
 	$(NULL)
 
 vdsmconf_DATA = \
@@ -127,7 +122,9 @@ dist_cronhourly_SCRIPTS = \
 
 dist_vdsmexec_SCRIPTS = \
 	./libexec/vdsm/get-conf-item \
+	./libexec/vdsm/supervdsmd \
 	./libexec/vdsm/vdsm-gencerts.sh \
+	./libexec/vdsm/vdsmd \
 	$(NULL)
 
 networkmanagerdir = $(sysconfdir)/NetworkManager/conf.d
