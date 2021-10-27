@@ -5985,11 +5985,8 @@ class Vm(object):
         self.log.debug("vdsm chain: %s, libvirt chain: %s", curVols, volumes)
 
         # Ask the storage to sync metadata according to the new chain
-        res = self.cif.irs.imageSyncVolumeChain(drive.domainID, drive.imageID,
-                                                drive['volumeID'], volumes)
-        if res['status']['code'] != 0:
-            self.log.error("Unable to synchronize volume chain to storage")
-            raise errors.StorageUnavailableError()
+        self.imageSyncVolumeChain(
+            drive.domainID, drive.imageID, drive['volumeID'], volumes)
 
         if (set(curVols) == set(volumes)):
             return
@@ -6029,6 +6026,15 @@ class Vm(object):
             sync_drive_conf(dev_conf, drive)
         dev_conf['volumeChain'] = clean_volume_chain(
             dev_conf['volumeChain'], volumes)
+
+    def imageSyncVolumeChain(self, domainID, imageID, volumeID, newVols):
+        res = self.cif.irs.imageSyncVolumeChain(
+            domainID, imageID, volumeID, newVols)
+        if res['status']['code'] != 0:
+            raise errors.StorageUnavailableError(
+                "Unable to sync volume chain for image %s in domain %s volume "
+                "%s requested chain %s: %s",
+                imageID, domainID, volumeID, newVols, res["status"]["message"])
 
     def getDiskDevices(self):
         return self._devices[hwclass.DISK]
