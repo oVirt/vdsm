@@ -14,7 +14,7 @@ Testing 2 iscsi targets with 2 portals each (4 connections in total):
 
 - Login all nodes at once:
 
-    $ sudo python3 initiator.py -i 10.35.18.139 10.35.18.150
+    $ sudo python3 initiator.py -i 10.35.18.139 10.35.18.150 -t login-all
 
     2020-07-26 19:13:50,353 INFO    (MainThread) Removing prior sessions and nodes
     2020-07-26 19:13:50,489 INFO    (MainThread) Deleting all nodes
@@ -34,7 +34,7 @@ Testing 2 iscsi targets with 2 portals each (4 connections in total):
 - Login to all nodes at once when a single network interface is down
   spends 120 seconds in total for all connections (2 connections are down):
 
-    $ sudo python3 initiator.py -i 10.35.18.139 10.35.18.150 -d 10.35.18.150
+    $ sudo python3 initiator.py -i 10.35.18.139 10.35.18.150 -d 10.35.18.150 -t login-all
 
     2020-07-26 19:13:52,821 INFO    (MainThread) Removing prior sessions and nodes
     2020-07-26 19:13:53,561 INFO    (MainThread) Deleting all nodes
@@ -54,7 +54,7 @@ Testing 2 iscsi targets with 2 portals each (4 connections in total):
 
 - Perform a single node login at a time (current vdsm way):
 
-    $ sudo python3 initiator.py -i 10.35.18.139 10.35.18.150 -j 1
+    $ sudo python3 initiator.py -i 10.35.18.139 10.35.18.150 -t vdsm44
 
     2020-07-26 19:15:54,073 INFO    (MainThread) Removing prior sessions and nodes
     2020-07-26 19:15:54,231 INFO    (MainThread) Deleting all nodes
@@ -78,7 +78,7 @@ Testing 2 iscsi targets with 2 portals each (4 connections in total):
   spends 240 seconds (120 seconds timeout per a failed login) for
   entire logins:
 
-    $ sudo python3 initiator.py -i 10.35.18.139 10.35.18.150 -j 1 -d 10.35.18.150
+    $ sudo python3 initiator.py -i 10.35.18.139 10.35.18.150 -d 10.35.18.150 -t vdsm44
 
     2020-07-26 19:16:02,859 INFO    (MainThread) Removing prior sessions and nodes
     2020-07-26 19:16:03,393 INFO    (MainThread) Deleting all nodes
@@ -102,7 +102,7 @@ Testing 2 iscsi targets with 2 portals each (4 connections in total):
 
 - Perform each connection login in a concurrent thread
 
-    $ sudo python3 initiator.py -i 10.35.18.139 10.35.18.150 -j 4
+    $ sudo python3 initiator.py -i 10.35.18.139 10.35.18.150 -j 4 -t concurrent-login
 
     2020-07-26 19:20:07,342 INFO    (MainThread) Removing prior sessions and nodes
     2020-07-26 19:20:07,466 INFO    (MainThread) Deleting all nodes
@@ -126,7 +126,7 @@ Testing 2 iscsi targets with 2 portals each (4 connections in total):
   120 seconds in total for all connections when a network interface
   is down (2 connections are down).
 
-    $ sudo python3 initiator.py -i 10.35.18.139 10.35.18.150 -j 4 -d 10.35.18.150
+    $ sudo python3 initiator.py -i 10.35.18.139 10.35.18.150 -j 4 -d 10.35.18.150 -t concurrent-login
 
     2020-07-26 19:20:09,730 INFO    (MainThread) Removing prior sessions and nodes
     2020-07-26 19:20:10,443 INFO    (MainThread) Deleting all nodes
@@ -190,18 +190,59 @@ def main():
 
     start = time.monotonic()
 
-    for target, portal in connections:
-        new_node(target, portal)
-
-    if args.login_all:
-        login_all()
+    if args.type == "concurrent-login":
+        do_concurrent_login(connections, args.concurrency)
+    elif args.type == "concurrent-add":
+        do_concurrent_add(connections, args.concurrency)
+    elif args.type == "bulk-login":
+        do_bulk_login(connections)
     else:
-        login_threads(connections, args.concurrency)
+        do_vdsm44(connections)
 
     logging.info("Connecting completed in %.3fs",
                  time.monotonic() - start)
 
     list_sessions()
+
+
+def run_workers(func, connections, concurrency):
+    with ThreadPoolExecutor(
+            max_workers=concurrency,
+            thread_name_prefix="worker") as executor:
+        jobs = [executor.submit(func, target, portal)
+                for target, portal in connections]
+        for job in jobs:
+            try:
+                job.result()
+            except Exception as e:
+                logging.error("Job failed: %s", e)
+
+
+def add_node(target, portal):
+    new_node(target, portal)
+    login(target, portal)
+
+
+def do_vdsm44(connections):
+    for target, portal in connections:
+        new_node(target, portal)
+        login(target, portal)
+
+
+def do_concurrent_login(connections, concurrency):
+    for target, portal in connections:
+        new_node(target, portal)
+    run_workers(login, connections, concurrency)
+
+
+def do_concurrent_add(connections, concurrency):
+    run_workers(add_node, connections, concurrency)
+
+
+def do_bulk_login(connections):
+    for target, portal in connections:
+        new_node(target, portal)
+    login_all()
 
 
 def run(args):
@@ -261,9 +302,11 @@ def parse_args():
         help="Run login per connection at set concurrency (default is none)")
 
     p.add_argument(
-        "--login-all",
-        action="store_true",
-        help="Use \"--loginall=manual\" method for login to the targets.")
+        "-t",
+        "--type",
+        default="vdsm44",
+        choices=["vdsm44", "concurrent-login", "concurrent-add", "bulk-login"],
+        help="Login strategy")
 
     p.add_argument(
         "--debug",
@@ -314,18 +357,6 @@ def discovery_delete(portal):
         "--interface", "default",
         "--portal", portal,
         "--op=delete"])
-
-
-def login_threads(connections, concurrency):
-    with ThreadPoolExecutor(
-            max_workers=concurrency, thread_name_prefix="login") as executor:
-        jobs = [executor.submit(login, target, portal)
-                for target, portal in connections]
-        for job in jobs:
-            try:
-                job.result()
-            except Exception as e:
-                logging.error("Job failed: %s", e)
 
 
 def login_all():
