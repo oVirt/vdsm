@@ -256,8 +256,8 @@ class FakeLVM(object):
         try:
             vg_md = self.vgmd[vgName]
         except KeyError:
-            raise se.VolumeGroupReplaceTagError("VG %s does not exist" %
-                                                vgName)
+            raise se.VolumeGroupReplaceTagError(
+                ['Fake cmd'], 5, ['Fake out'], ['Fake error'])
 
         # Adding an existing tag or removing a nonexistent tag are ignored
         tags = set(vg_md['tags'])

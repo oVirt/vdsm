@@ -1780,7 +1780,7 @@ def changeVGTags(vgName, delTags=(), addTags=()):
     delTags = set(delTags)
     addTags = set(addTags)
     if delTags.intersection(addTags):
-        raise se.VolumeGroupReplaceTagError(
+        raise ValueError(
             "Cannot add and delete the same tag vg: `%s` tags: `%s`" %
             (vgName, ", ".join(delTags.intersection(addTags))))
 
@@ -1792,12 +1792,12 @@ def changeVGTags(vgName, delTags=(), addTags=()):
         cmd.extend(("--addtag", tag))
 
     cmd.append(vgName)
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
-    _lvminfo._invalidatevgs(vgName)
-    if rc != 0:
-        raise se.VolumeGroupReplaceTagError(
-            "vg:%s del:%s add:%s (%s)" %
-            (vgName, ", ".join(delTags), ", ".join(addTags), err[-1]))
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
+    except se.LVMCommandError as e:
+        raise se.VolumeGroupReplaceTagError.from_lvmerror(e)
+    finally:
+        _lvminfo._invalidatevgs(vgName)
 
 
 def replaceVGTag(vg, oldTag, newTag):

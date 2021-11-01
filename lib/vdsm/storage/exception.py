@@ -1389,7 +1389,7 @@ class VolumeGroupHasDomainTag(StorageException):
     msg = "Volume Group has domain tag - requires cleaning"
 
 
-class VolumeGroupReplaceTagError(StorageException):
+class VolumeGroupReplaceTagError(LVMCommandError):
     code = 516
     msg = "Replace Volume Group tag error"
 
