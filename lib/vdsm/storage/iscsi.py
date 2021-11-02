@@ -207,6 +207,9 @@ def addIscsiNode(iface, target, credentials=None):
     with _iscsiadmTransactionLock:
         iscsiadm.node_new(iface.name, target.address, target.iqn)
         try:
+            iscsiadm.node_update(iface.name, target.address, target.iqn,
+                                 "node.startup", "manual")
+
             if credentials is not None:
                 for key, value in credentials.getIscsiadmOptions():
                     key = "node.session." + key
@@ -217,9 +220,6 @@ def addIscsiNode(iface, target, credentials=None):
                                 True)
 
             iscsiadm.node_login(iface.name, target.address, target.iqn)
-
-            iscsiadm.node_update(iface.name, target.address, target.iqn,
-                                 "node.startup", "manual")
         except:
             removeIscsiNode(iface, target)
             raise
