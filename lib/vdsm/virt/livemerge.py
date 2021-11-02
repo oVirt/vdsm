@@ -834,17 +834,26 @@ class CleanupThread(object):
         self._thread.join(timeout)
         return not self._thread.is_alive()
 
-    def tryPivot(self):
-        # We call imageSyncVolumeChain which will mark the current leaf
-        # ILLEGAL.  We do this before requesting a pivot so that we can
-        # properly recover the VM in case we crash.  At this point the
-        # active layer contains the same data as its parent so the ILLEGAL
-        # flag indicates that the VM should be restarted using the parent.
+    def _mark_leaf_illegal(self):
+        """
+        Marks leaf volume as ILLEGAL.
+
+        This is useful for setting leaf volume as ILLEGAL before requesting a
+        pivot so that we can properly recover the VM in case we crash. At this
+        point the active layer contains the same data as its parent so the
+        ILLEGAL flag indicates that the VM should be restarted using the
+        parent.
+        """
         newVols = [vol['volumeID'] for vol in self.drive.volumeChain
                    if vol['volumeID'] != self.drive.volumeID]
+
         self.vm.imageSyncVolumeChain(self.drive.domainID,
                                      self.drive.imageID,
-                                     self.drive['volumeID'], newVols)
+                                     self.drive['volumeID'],
+                                     newVols)
+
+    def tryPivot(self):
+        self._mark_leaf_illegal()
 
         # A pivot changes the top volume being used for the VM Disk.  Until
         # we can correct our metadata following the pivot we should not
