@@ -842,9 +842,9 @@ class CleanupThread(object):
         # flag indicates that the VM should be restarted using the parent.
         newVols = [vol['volumeID'] for vol in self.drive.volumeChain
                    if vol['volumeID'] != self.drive.volumeID]
-        self.vm.cif.irs.imageSyncVolumeChain(self.drive.domainID,
-                                             self.drive.imageID,
-                                             self.drive['volumeID'], newVols)
+        self.vm.imageSyncVolumeChain(self.drive.domainID,
+                                     self.drive.imageID,
+                                     self.drive['volumeID'], newVols)
 
         # A pivot changes the top volume being used for the VM Disk.  Until
         # we can correct our metadata following the pivot we should not
