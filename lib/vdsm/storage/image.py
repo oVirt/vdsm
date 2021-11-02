@@ -877,14 +877,17 @@ class Image:
         dstParent = sdDom.produceVolume(imgUUID, subChain[0]).getParent()
         subChainTailVol = sdDom.produceVolume(imgUUID, subChain[-1])
         if subChainTailVol.isLeaf():
-            self.log.info("Leaf volume %s is being removed from the chain. "
-                          "Marking it ILLEGAL to prevent data corruption",
-                          subChainTailVol.volUUID)
+            self.log.info(
+                "Leaf volume %s is being removed from the actual chain. "
+                "Marking it ILLEGAL to prevent data corruption",
+                subChainTailVol.volUUID)
             subChainTailVol.setLegality(sc.ILLEGAL_VOL)
         else:
             for childID in subChainTailVol.getChildren():
-                self.log.info("Setting parent of volume %s to %s",
-                              childID, dstParent)
+                self.log.info(
+                    "Internal volume %s removed from actual chain, linking "
+                    "child volume %s to parent volume %s",
+                    subChainTailVol, childID, dstParent)
                 sdDom.produceVolume(imgUUID, childID). \
                     setParentMeta(dstParent)
 
