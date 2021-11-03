@@ -193,10 +193,10 @@ def main():
     for target, portal in connections:
         new_node(target, portal)
 
-    if args.concurrency:
-        login_threads(connections, args.concurrency)
-    else:
+    if args.login_all:
         login_all()
+    else:
+        login_threads(connections, args.concurrency)
 
     logging.info("Connecting completed in %.3fs",
                  time.monotonic() - start)
@@ -259,6 +259,11 @@ def parse_args():
         type=int,
         default=0,
         help="Run login per connection at set concurrency (default is none)")
+
+    p.add_argument(
+        "--login-all",
+        action="store_true",
+        help="Use \"--loginall=manual\" method for login to the targets.")
 
     p.add_argument(
         "--debug",
@@ -324,6 +329,14 @@ def login_threads(connections, concurrency):
 
 
 def login_all():
+    """
+    Login into all targets at once. This approach is currently not used in
+    vdsm. It solves the issue with slow login, but has other drawbacks:
+      - there's no easy way how to find out if login to the target was
+        successful or not, only to parse the command output
+      - there's no control to which targets vdsm will log in, this way vdsm
+        would login to all targets, no matter is these are used by vdsm or not.
+    """
     logging.info("Login to all nodes")
     try:
         run(["iscsiadm", "--mode", "node", "--loginall=manual"])
