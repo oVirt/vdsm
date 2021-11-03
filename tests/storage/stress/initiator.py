@@ -263,7 +263,7 @@ def parse_args():
     p.add_argument(
         "--debug",
         action="store_true",
-        help="Show debug logs (defalt is false)")
+        help="Show debug logs (default is false)")
 
     return p.parse_args()
 
