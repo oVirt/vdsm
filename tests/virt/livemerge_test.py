@@ -32,6 +32,7 @@ from vdsm.common import response
 from vdsm.common import xmlutils
 from vdsm.common.units import GiB
 
+from vdsm.virt import errors
 from vdsm.virt import metadata
 from vdsm.virt import migration
 from vdsm.virt import vmstatus
@@ -46,7 +47,7 @@ from vdsm.virt.livemerge import (
 from vdsm.virt.vm import Vm
 from vdsm.virt.vmdevices import storage
 
-from testlib import recorded, read_data, read_files
+from testlib import maybefail, recorded, read_data, read_files
 
 from . import vmfakelib as fake
 
@@ -261,6 +262,7 @@ class FakeDomain:
         self.block_jobs = {}
         # Keeps block info dict for every drive, returned by blockInfo().
         self.drives = {}
+        self.errors = {}
 
     def UUIDString(self):
         return self._id
@@ -297,6 +299,7 @@ class FakeDomain:
     def blockJobInfo(self, drive, flags=0):
         return self.block_jobs.get(drive, {})
 
+    @maybefail
     def blockJobAbort(self, drive, flags=0):
         if flags & libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT:
             # The test should simulate abort-ready such that the cleanup
@@ -612,6 +615,118 @@ def test_active_merge(monkeypatch):
     drive = vm.getDiskDevices()[0]
     assert drive.volumeChain == expected_volumes_chain
     assert vm.drive_monitor.enabled
+
+
+def test_active_merge_pivot_failure(monkeypatch):
+    monkeypatch.setattr(CleanupThread, "WAIT_INTERVAL", 0.01)
+
+    config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
+    merge_params = config.values["merge_params"]
+    job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
+    base_id = merge_params["baseVolUUID"]
+
+    vm = RunningVM(config)
+
+    drive = vm.getDiskDevices()[0]
+
+    # Create static list of original chain.
+    orig_chain = [vol.uuid for vol in vm.drive_get_actual_volume_chain(drive)]
+
+    # Create static list of expected new chain.
+    new_chain = [vol_id for vol_id in orig_chain if vol_id != top_id]
+
+    # No active block jobs before calling merge.
+    assert vm.query_jobs() == {}
+
+    vm.merge(**merge_params)
+
+    # Merge persists the job with EXTEND state.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+
+    # Libvit block job was not started yet.
+    assert "sda" not in vm._dom.block_jobs
+
+    # query_jobs() keeps job in EXTEND state.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.EXTEND
+
+    # We should extend to next volume size based on base and top currrent size,
+    # base volume capacity, and chunk size configuration.
+    top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
+    max_alloc = base["apparentsize"] + top["apparentsize"]
+    new_size = drive.getNextVolumeSize(max_alloc, top["capacity"])
+
+    simulate_volume_extension(vm, base_id)
+
+    assert base["apparentsize"] == new_size
+
+    # Extend callback started a commit and persisted the job.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.COMMIT
+    assert persisted_job["extend"] is None
+
+    # And start a libvirt active block commit block job.
+    block_job = vm._dom.block_jobs["sda"]
+    assert block_job["type"] == libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
+
+    # query_jobs() keeps job in COMMIT state.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.COMMIT
+
+    # Check block job status while in progress.
+    block_job["cur"] = block_job["end"] // 2
+
+    # Check job status when job finished, but before libvirt
+    # updated the xml.
+    block_job["cur"] = block_job["end"]
+
+    # Simulate completion of backup job - libvirt updates the xml.
+    vm._dom.xml = config.xmls["02-commit-ready.xml"]
+
+    # Inject libvirt error to fail pivot attempt.
+    vm._dom.errors["blockJobAbort"] = fake.libvirt_error(
+        [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
+
+    # Trigger cleanup and pivot attempt.
+    vm.query_jobs()
+
+    # Wait for cleanup to call and record sync volume chain.
+    if not vm._drive_merger.wait_for_cleanup(TIMEOUT):
+        raise RuntimeError("Timeout waiting for cleanup")
+
+    # If pivot failed due to libvirt error volume chain sync should have been
+    # called twice.
+    assert len(vm.cif.irs.__calls__) == 2
+
+    # First sync call attempted the pivot and should have been called with
+    # expected new chain.
+    meth, arg, kwarg = vm.cif.irs.__calls__[0]
+    assert meth == "imageSyncVolumeChain"
+    assert arg[:3] == (sd_id, img_id, top_id)
+    assert set(arg[3]) == set(new_chain)
+
+    # Second sync call is done after libvirt error in order to recover the
+    # current volume chain so the requested chain should match our orig. chain.
+    meth, arg, kwarg = vm.cif.irs.__calls__[1]
+    assert meth == "imageSyncVolumeChain"
+    assert arg[:3] == (sd_id, img_id, top_id)
+    assert set(arg[3]) == set(orig_chain)
+
+    # Remove the libvirt error.
+    del vm._dom.errors["blockJobAbort"]
+
+    # Trigger cleanup and pivot attempt again.
+    vm.query_jobs()
+
+    # query_jobs() switched job to CLEANUP state.
+    persisted_job = parse_jobs(vm)[job_id]
+    assert persisted_job["state"] == Job.CLEANUP
+    assert persisted_job["pivot"]
 
 
 def test_active_merge_storage_unavailable(monkeypatch):

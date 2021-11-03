@@ -855,6 +855,27 @@ class CleanupThread(object):
                                      self.drive['volumeID'],
                                      newVols)
 
+    def _mark_leaf_legal(self):
+        """
+        Marks leaf volume as LEGAL.
+
+        This is useful for recovering leaf volume legality for example after
+        failed pivot attempt. If we leave the volume ILLEGAL, preparing the
+        volume in the next run will fail and the VM will not start.
+        See https://bugzilla.redhat.com/1949475
+        """
+        newVols = [vol['volumeID'] for vol in self.drive.volumeChain]
+
+        try:
+            self.vm.imageSyncVolumeChain(self.drive.domainID,
+                                         self.drive.imageID,
+                                         self.drive['volumeID'],
+                                         newVols)
+        except errors.StorageUnavailableError as e:
+            self.vm.log.error(
+                "Cannot mark leaf volume as LEGAL: %s (job: %s)",
+                e, self.job.id)
+
     def tryPivot(self):
         self._mark_leaf_illegal()
 
@@ -871,6 +892,7 @@ class CleanupThread(object):
             self.vm._dom.blockJobAbort(self.drive.name, flags=flags)
         except libvirt.libvirtError as e:
             self.vm.drive_monitor.enable()
+            self._mark_leaf_legal()
             if e.get_error_code() != libvirt.VIR_ERR_BLOCK_COPY_ACTIVE:
                 raise JobPivotError(self.job.id, e)
             raise JobNotReadyError(self.job.id)
