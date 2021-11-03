@@ -614,6 +614,56 @@ def test_active_merge(monkeypatch):
     assert vm.drive_monitor.enabled
 
 
+def test_active_merge_storage_unavailable(monkeypatch):
+    monkeypatch.setattr(CleanupThread, "WAIT_INTERVAL", 0.01)
+
+    config = Config('active-merge')
+    merge_params = config.values["merge_params"]
+    job_id = merge_params["jobUUID"]
+    base_id = merge_params["baseVolUUID"]
+
+    vm = RunningVM(config)
+
+    with monkeypatch.context() as ctx:
+        # Simulate unavailable storage.
+        fail = lambda *args, **kwargs: response.error("unavail")
+        ctx.setattr(vm.cif.irs, "imageSyncVolumeChain", fail)
+
+        vm.merge(**merge_params)
+
+        simulate_volume_extension(vm, base_id)
+
+        # Start a libvirt active block commit block job.
+        block_job = vm._dom.block_jobs["sda"]
+        block_job["cur"] = block_job["end"]
+
+        # Simulate completion of backup job - libvirt updates the xml.
+        vm._dom.xml = config.xmls["02-commit-ready.xml"]
+
+        assert parse_jobs(vm)[job_id]['state'] == Job.COMMIT
+
+        # Trigger cleanup and pivot attempt which fails - resource unavailable.
+        vm.query_jobs()
+
+        # Wait until the first cleanup completes.
+        if not vm._drive_merger.wait_for_cleanup(TIMEOUT):
+            raise RuntimeError("Timeout waiting for cleanup")
+
+        assert parse_jobs(vm)[job_id]['state'] == Job.CLEANUP
+
+        # Verify drive monitor is enabled after the failure.
+        assert vm.drive_monitor.enabled
+
+    # Verify cleanup thread switched to FAILED.
+    ct = vm._drive_merger._cleanup_threads.get(job_id)
+    assert ct.state == CleanupThread.FAILED
+
+    # Next query_jobs() call will start a new cleanup thread.
+    vm.query_jobs()
+    ct = vm._drive_merger._cleanup_threads.get(job_id)
+    assert ct.state == CleanupThread.TRYING
+
+
 def test_internal_merge():
     config = Config('internal-merge')
     sd_id = config.values["drive"]["domainID"]
