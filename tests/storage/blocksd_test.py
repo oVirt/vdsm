@@ -1594,3 +1594,81 @@ def test_sync_volume_chain_internal(
     # getParent() uses the lv tags, so it still returns the internal volume.
     # This will be fixed later on the SPM when the internal volume is deleted.
     assert chain.top.getParent() == chain.internal.volUUID
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("domain_version", [5])
+def test_sync_volume_chain_recovery(
+        domain_factory,
+        fake_task,
+        fake_sanlock,
+        domain_version):
+
+    sd_uuid = str(uuid.uuid4())
+    dom = domain_factory.create_domain(sd_uuid=sd_uuid, version=domain_version)
+    chain = create_chain(dom)
+
+    assert chain.top.isLegal()
+
+    # Simulate top/leaf volume removal from actual chain.
+    actual_chain = [chain.base.volUUID, chain.internal.volUUID]
+
+    # Sync volume chain.
+    img = image.Image(chain.top.repoPath)
+    img.syncVolumeChain(
+        sd_uuid, chain.top.imgUUID, chain.top.volUUID, actual_chain)
+
+    # Simulate recovery - actual chain is unchanged and sync called again.
+    # This should happen when libvirt failed during pivot and we're trying to
+    # recover. If the requested and current chain matches and top volume
+    # is currently ILLEGAL it should change back to LEGAL.
+    actual_chain = [
+        chain.base.volUUID, chain.internal.volUUID, chain.top.volUUID]
+
+    img = image.Image(chain.top.repoPath)
+    img.syncVolumeChain(
+        sd_uuid, chain.top.imgUUID, chain.top.volUUID, actual_chain)
+
+    # Verify top volume was recovered and is legal now.
+    assert chain.top.isLegal()
+
+    current_chain = [vol.volUUID
+                     for vol in img.getChain(sd_uuid, chain.top.imgUUID)]
+
+    # Verify requested/actual chain matches current chain.
+    assert current_chain == actual_chain
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("domain_version", [5])
+def test_sync_volume_chain_noop(
+        domain_factory,
+        fake_task,
+        fake_sanlock,
+        domain_version):
+
+    sd_uuid = str(uuid.uuid4())
+    dom = domain_factory.create_domain(sd_uuid=sd_uuid, version=domain_version)
+    chain = create_chain(dom)
+
+    assert chain.top.isLegal()
+
+    # Simulate a case when actual chain is the same as current chain.
+    actual_chain = [
+        chain.base.volUUID, chain.internal.volUUID, chain.top.volUUID]
+
+    # Sync volume chain - no change will be done.
+    img = image.Image(chain.top.repoPath)
+    img.syncVolumeChain(
+        sd_uuid, chain.top.imgUUID, chain.top.volUUID, actual_chain)
+
+    # Verify top volume is unchanged and still marked legal.
+    assert chain.top.isLegal()
+
+    current_chain = [vol.volUUID
+                     for vol in img.getChain(sd_uuid, chain.top.imgUUID)]
+
+    # Verify requested/actual chain matches current chain.
+    assert current_chain == actual_chain

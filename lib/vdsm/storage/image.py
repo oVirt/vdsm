@@ -856,12 +856,48 @@ class Image:
 
     def syncVolumeChain(self, sdUUID, imgUUID, volUUID, actualChain):
         """
-        Fix volume metadata to reflect the given actual chain.  This function
-        is used to correct the volume chain linkage after a live merge.
+        Fix volume metadata to reflect the given actual chain. This function
+        is used to correct the volume chain linkage after a live merge or for
+        recovery after live merge failure.
+
+        There are multiple cases for the usage of this function:
+
+        1. Marking leaf volume ILLEGAL before we complete a live merge of the
+           leaf volume. In this case actual_chain will not contain the leaf
+           volume id.
+
+           actual_chain: ["base-vol", "internal-vol"]
+           current_chain: ["base-vol", "internal-vol", "leaf-vol"]
+           action: mark "leaf-vol" as illegal.
+
+        2. Removal of internal volume after internal live merge was completed
+           successfully. In this case actual_chain will not contain one of the
+           internal volumes ids.
+
+           actual_chain: ["base-vol", "leaf-vol"]
+           current_chain: ["base-vol", "internal-vol", "leaf-vol"]
+           action: set "leaf-vol" parent to "base-vol"
+
+        3. Fixing the chain after completing live merge of leaf volume has
+           failed. In this case actual_chain will contain all volumes ids. This
+           reverts the change done in case 1.
+
+           actual_chain: ["base-vol", "internal-vol", "leaf-vol"]
+           current_chain: ["base-vol", "internal-vol", "leaf-vol"]
+           action: if "leaf-vol" is ILLEGAL, mark it to LEGAL
+
+        4. Do nothing if actual and current chain matches (no subChain) and
+           leaf volume is marked legal. I this case no change needs to be done
+           in the current_chain.
+
+           actual_chain: ["base-vol", "internal-vol", "leaf-vol"]
+           current_chain: ["base-vol", "internal-vol", "leaf-vol"]
+           action: if "leaf-vol" is LEGAL, do nothing
         """
         curChain = self.getChain(sdUUID, imgUUID, volUUID)
         log_str = logutils.volume_chain_to_str(vol.volUUID for vol in curChain)
         self.log.info("Current chain=%s ", log_str)
+        sdDom = sdCache.produce(sdUUID)
 
         subChain = []
         for vol in curChain:
@@ -869,20 +905,30 @@ class Image:
                 subChain.insert(0, vol.volUUID)
             elif len(subChain) > 0:
                 break
-        if len(subChain) == 0:
-            return
-        self.log.info("Unlinking subchain: %s", subChain)
 
-        sdDom = sdCache.produce(sdUUID=sdUUID)
+        if len(subChain) == 0:
+            tailVol = sdDom.produceVolume(imgUUID, volUUID)
+            if not tailVol.isLegal():
+                # Case 3 - fixing the chain.
+                self.log.info(
+                    "Leaf volume %s is ILLEGAL but is part of the actual chain"
+                    " - marking it LEGAL so it can be used again.",
+                    tailVol.volUUID)
+                tailVol.setLegality(sc.LEGAL_VOL)
+            # Case 4 - do nothing.
+            return
+
         dstParent = sdDom.produceVolume(imgUUID, subChain[0]).getParent()
         subChainTailVol = sdDom.produceVolume(imgUUID, subChain[-1])
         if subChainTailVol.isLeaf():
+            # Case 1 - mark leaf ILLEGAL.
             self.log.info(
                 "Leaf volume %s is being removed from the actual chain. "
                 "Marking it ILLEGAL to prevent data corruption",
                 subChainTailVol.volUUID)
             subChainTailVol.setLegality(sc.ILLEGAL_VOL)
         else:
+            # Case 2 - remove internal volume.
             for childID in subChainTailVol.getChildren():
                 self.log.info(
                     "Internal volume %s removed from actual chain, linking "
