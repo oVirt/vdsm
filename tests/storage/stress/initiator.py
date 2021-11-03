@@ -257,7 +257,7 @@ def parse_args():
         "-j",
         dest='concurrency',
         type=int,
-        default=0,
+        default=4,
         help="Run login per connection at set concurrency (default is none)")
 
     p.add_argument(
