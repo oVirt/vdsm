@@ -19,11 +19,23 @@
 #
 
 import re
+from collections import namedtuple
 
 import libvirt
 
 from vdsm.virt.vmdevices import lookup
 from vdsm.virt.vmdevices import storage
+
+# Block device Information from libvirt block stats API.
+BlockInfo = namedtuple("BlockInfo", [
+    "index",
+    "name",
+    "path",
+    "allocation",
+    "capacity",
+    "physical",
+    "threshold",
+])
 
 
 class ImprobableResizeRequestError(RuntimeError):
@@ -266,6 +278,41 @@ class DriveMonitor(object):
             self._log.info(
                 "Drive %s needs to be extended, forced threshold_state "
                 "to exceeded", drive.name)
+
+    def get_block_stats(self):
+        """
+        Extract monitoring related info from libvirt block stats.
+
+        Return mapping from volume backing index to its BlockInfo.
+        """
+        block_stats = self._vm.get_block_stats()
+        result = {}
+
+        for i in range(block_stats["block.count"]):
+            # The index and name are required to identify the node using
+            # indexed name ("vda[7]").
+
+            index = block_stats.get(f"block.{i}.backingIndex")
+            if index is None:
+                continue  # cdrom
+
+            name = block_stats.get(f"block.{i}.name")
+            if name is None:
+                self._log.warning(
+                    "Missing block.%s.name in block stats, skipping node", i)
+                continue
+
+            result[index] = BlockInfo(
+                index=index,
+                name=name,
+                path=block_stats.get(f"block.{i}.path"),  # for debugging.
+                allocation=block_stats.get(f"block.{i}.allocation", 0),
+                capacity=block_stats.get(f"block.{i}.capacity", 0),
+                physical=block_stats.get(f"block.{i}.physical", 0),
+                threshold=block_stats.get(f"block.{i}.threshold", 0),
+            )
+
+        return result
 
 
 _TARGET_RE = re.compile(r"([hvs]d[a-z]+)\[(\d+)\]")

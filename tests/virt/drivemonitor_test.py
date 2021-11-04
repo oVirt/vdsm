@@ -493,6 +493,99 @@ def test_monitored_drives(drives, monitored):
     assert found == monitored
 
 
+def test_get_block_stats():
+    vm = FakeVM()
+
+    vm.block_stats = {
+        # Empty cdrom
+        "block.count": 4,
+        "block.0.name": "sdc",
+        "block.0.rd.reqs": 19,
+        "block.0.rd.bytes": 410,
+        "block.0.rd.times": 79869,
+        "block.0.wr.reqs": 0,
+        "block.0.wr.bytes": 0,
+        "block.0.wr.times": 0,
+        "block.0.fl.reqs": 0,
+        "block.0.fl.times": 0,
+
+        # 6g qcow2 active layer that was extended many times.
+        "block.1.name": "sda",
+        "block.1.path": "/rhev/.../44d498a1-54a5-4371-8eda-02d839d7c840",
+        "block.1.backingIndex": 2,
+        "block.1.rd.reqs": 13448,
+        "block.1.rd.bytes": 415614976,
+        "block.1.rd.times": 9940902315,
+        "block.1.wr.reqs": 4909,
+        "block.1.wr.bytes": 82999296,
+        "block.1.wr.times": 47469574949,
+        "block.1.fl.reqs": 683,
+        "block.1.fl.times": 4204366339,
+        "block.1.allocation": 216006656,
+        "block.1.capacity": 6442450944,
+        "block.1.physical": 7113539584,
+        "block.1.threshold": 6576668672,
+
+        # 6g qcow2 backing file.
+        "block.2.name": "sda",
+        "block.2.path": "/rhev/.../9d63f782-7467-4243-af1e-5c1f8b49c111",
+        "block.2.backingIndex": 4,
+        "block.2.allocation": 0,
+        "block.2.capacity": 6442450944,
+        "block.2.physical": 3087007744,
+
+        # 20g Data disk active layer.
+        "block.3.name": "sdd",
+        "block.3.path": "/rhev/.../cf6552e0-1c88-4b2a-aec6-0d2f26c2aaea",
+        "block.3.backingIndex": 7,
+        "block.3.rd.reqs": 50,
+        "block.3.rd.bytes": 1077248,
+        "block.3.rd.times": 1200296,
+        "block.3.wr.reqs": 0,
+        "block.3.wr.bytes": 0,
+        "block.3.wr.times": 0,
+        "block.3.fl.reqs": 0,
+        "block.3.fl.times": 0,
+        "block.3.allocation": 0,
+        "block.3.capacity": 21474836480,
+        "block.3.physical": 1073741824,
+        "block.3.threshold": 536870912
+    }
+
+    mon = drivemonitor.DriveMonitor(vm, vm.log)
+    block_stats = mon.get_block_stats()
+
+    assert block_stats == {
+        2: drivemonitor.BlockInfo(
+            index=2,
+            name='sda',
+            path='/rhev/.../44d498a1-54a5-4371-8eda-02d839d7c840',
+            allocation=216006656,
+            capacity=6442450944,
+            physical=7113539584,
+            threshold=6576668672,
+        ),
+        4: drivemonitor.BlockInfo(
+            index=4,
+            name='sda',
+            path='/rhev/.../9d63f782-7467-4243-af1e-5c1f8b49c111',
+            allocation=0,
+            capacity=6442450944,
+            physical=3087007744,
+            threshold=0,
+        ),
+        7: drivemonitor.BlockInfo(
+            index=7,
+            name='sdd',
+            path='/rhev/.../cf6552e0-1c88-4b2a-aec6-0d2f26c2aaea',
+            allocation=0,
+            capacity=21474836480,
+            physical=1073741824,
+            threshold=536870912,
+        ),
+    }
+
+
 class FakeVM(object):
 
     log = logging.getLogger('test')
@@ -500,10 +593,14 @@ class FakeVM(object):
     def __init__(self):
         self.id = "fake-vm-id"
         self.drives = []
+        self.block_stats = []
         self._dom = FakeDomain()
 
     def getDiskDevices(self):
         return self.drives[:]
+
+    def get_block_stats(self):
+        return self.block_stats
 
 
 class FakeDomain(object):

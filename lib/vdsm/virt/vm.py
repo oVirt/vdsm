@@ -1280,6 +1280,26 @@ class Vm(object):
 
         return blockinfo
 
+    def get_block_stats(self):
+        """
+        Return stats for all block nodes.
+
+        The result includes:
+        - the active volume ("vda")
+        - volume in the active volume backing chain
+        - blockCopy destination volume
+        - backup scratch disk (since rhel 8.6)
+
+        Return the raw stats from libvirt - mapping from "block.{n}.{key}" to
+        value.
+        """
+        res = self._connection.domainListGetStats(
+            [self._dom.dom],
+            stats=libvirt.VIR_DOMAIN_STATS_BLOCK,
+            flags=libvirt.VIR_CONNECT_GET_ALL_DOMAINS_STATS_BACKING)
+        _, raw_stats = res[0]
+        return raw_stats
+
     def monitor_drives(self):
         """
         Return True if at least one drive is being extended, False otherwise.
