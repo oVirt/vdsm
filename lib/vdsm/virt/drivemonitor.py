@@ -241,8 +241,8 @@ class DriveMonitor(object):
                 drive.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED):
             # We get alloc == 0:
             # - Before the guest write to the disk.
-            # - During backup, regardless of actual allocation. This is likely
-            #   a bug in libvirt or qemu.
+            # - Older libvirt versions did not report allocation during
+            #   backup, see https://bugzilla.redhat.com/2015281.
             # If we got a threshold event, we can safely assume that the guest
             # wrote to the drive, and we need to extend it.
             self._log.warning(

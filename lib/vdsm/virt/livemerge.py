@@ -457,6 +457,9 @@ class DriveMerger:
         job.extend["started"] = time.monotonic()
         self._persist_jobs()
 
+        # Curent extend API extend to the next chunk based on current size. We
+        # need to lie about the current size to get a bigger allocation.
+        # TODO: Change extendDriveVolume so client can request a specific size.
         capacity, alloc, physical = self._vm.getExtendInfo(drive)
         max_alloc = job.extend["base_size"] + job.extend["top_size"]
 
