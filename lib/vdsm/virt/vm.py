@@ -1322,7 +1322,7 @@ class Vm(object):
             return False
 
         try:
-            capacity, alloc, physical = self.getExtendInfo(drive)
+            block_info = self.getExtendInfo(drive)
         except libvirt.libvirtError as e:
             self.log.error("Unable to get watermarks for drive %s: %s",
                            drive.name, e)
@@ -1330,10 +1330,11 @@ class Vm(object):
 
         if drive.threshold_state == BLOCK_THRESHOLD.UNSET:
             index = self._drive_volume_index(drive, drive.volumeID)
-            self.drive_monitor.set_threshold(drive, physical, index=index)
+            self.drive_monitor.set_threshold(
+                drive, block_info.physical, index=index)
 
         if not self.drive_monitor.should_extend_volume(
-                drive, drive.volumeID, capacity, alloc, physical):
+                drive, drive.volumeID, block_info):
             return False
 
         # TODO: if the threshold is wrongly set below the current allocation,
@@ -1345,13 +1346,12 @@ class Vm(object):
         self.drive_monitor.update_threshold_state_exceeded(drive)
 
         self.log.info(
-            "Requesting extension for volume %s on domain %s (apparent: "
-            "%s, capacity: %s, allocated: %s, physical: %s "
-            "threshold_state: %s)",
-            drive.volumeID, drive.domainID, drive.apparentsize, capacity,
-            alloc, physical, drive.threshold_state)
+            "Requesting extension for volume %s on domain %s block_info %s "
+            "threshold_state %s",
+            drive.volumeID, drive.domainID, block_info, drive.threshold_state)
 
-        self.extendDriveVolume(drive, drive.volumeID, physical, capacity)
+        self.extendDriveVolume(
+            drive, drive.volumeID, block_info.physical, block_info.capacity)
         return True
 
     def extendDriveVolume(self, vmDrive, volumeID, curSize, capacity,

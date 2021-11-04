@@ -205,8 +205,9 @@ class DriveMonitor(object):
         return [drive for drive in self._vm.getDiskDevices()
                 if drive.needs_monitoring()]
 
-    def should_extend_volume(self, drive, volumeID, capacity, alloc, physical):
-        nextPhysSize = drive.getNextVolumeSize(physical, capacity)
+    def should_extend_volume(self, drive, volumeID, block_info):
+        nextPhysSize = drive.getNextVolumeSize(
+            block_info.physical, block_info.capacity)
 
         # NOTE: the intent of this check is to prevent faulty images to
         # trick qemu in requesting extremely large extensions (BZ#998443).
@@ -217,29 +218,28 @@ class DriveMonitor(object):
         #   assumptions that may change in the future e.g. cluster size)
         # - currently we allow only to extend by one chunk at time
         #
-        # the current check compares alloc with the next volume size.
-        # It should be noted that alloc cannot be directly compared with
-        # the volume physical size as it includes also the clusters not
-        # written yet (pending).
-        if alloc > nextPhysSize:
+        # the current check compares allocation with the next volume
+        # size. It should be noted that allocation cannot be directly
+        # compared with the volume physical size as it includes also the
+        # clusters not written yet (pending).
+        if block_info.allocation > nextPhysSize:
             msg = ("Improbable extension request for volume %s on domain "
-                   "%s, pausing the VM to avoid corruptions (capacity: %s, "
-                   "allocated: %s, physical: %s, next physical size: %s)" %
-                   (volumeID, drive.domainID, capacity, alloc, physical,
-                    nextPhysSize))
+                   "%s, pausing the VM to avoid corruptions (block_info: %s"
+                   ", next physical size: %s)" %
+                   (volumeID, drive.domainID, block_info, nextPhysSize))
             self._log.error(msg)
             self._vm.pause(pauseCode='EOTHER')
             raise ImprobableResizeRequestError(msg)
 
-        if physical >= drive.getMaxVolumeSize(capacity):
+        if block_info.physical >= drive.getMaxVolumeSize(block_info.capacity):
             # The volume was extended to the maximum size. physical may be
             # larger than maximum volume size since it is rounded up to the
             # next lvm extent.
             return False
 
-        if (alloc == 0 and
+        if (block_info.allocation == 0 and
                 drive.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED):
-            # We get alloc == 0:
+            # We get allocation == 0:
             # - Before the guest write to the disk.
             # - Older libvirt versions did not report allocation during
             #   backup, see https://bugzilla.redhat.com/2015281.
@@ -251,9 +251,8 @@ class DriveMonitor(object):
                 drive.name)
             return True
 
-        if physical - alloc < drive.watermarkLimit:
-            return True
-        return False
+        free_space = block_info.physical - block_info.allocation
+        return free_space < drive.watermarkLimit
 
     def update_threshold_state_exceeded(self, drive):
         if drive.threshold_state != storage.BLOCK_THRESHOLD.EXCEEDED:
