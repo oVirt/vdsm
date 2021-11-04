@@ -63,6 +63,16 @@ class Defined(Disconnected):
         super(Defined, self).__init__(vmid)
         self._dom = dom
 
+    @property
+    def dom(self):
+        """
+        Access the underlying libvirt.virDomain object.
+
+        WARNING: should be used only when the underlying libvirt.virDomain
+        object must be passed as an argument to libvirt.
+        """
+        return self._dom
+
     def state(self, *args, **kwargs):
         return self._dom.state(*args, **kwargs)
 
@@ -86,6 +96,16 @@ class Notifying(object):
     def __init__(self, dom, tocb):
         self._dom = dom
         self._cb = tocb
+
+    @property
+    def dom(self):
+        """
+        Access the underlying libvirt.virDomain object.
+
+        WARNING: should be used only when the underlying libvirt.virDomain
+        object must be passed as an argument to libvirt.
+        """
+        return self._dom
 
     @property
     def connected(self):

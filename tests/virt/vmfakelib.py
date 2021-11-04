@@ -267,6 +267,11 @@ class Domain(object):
         self._agent_timeout = libvirt.VIR_DOMAIN_AGENT_RESPONSE_TIMEOUT_BLOCK
 
     @property
+    def dom(self):
+        # Some code check the underlying domain's UUIDString().
+        return self
+
+    @property
     def connected(self):
         return True
 

@@ -465,7 +465,7 @@ class VMBulkstatsMonitor(object):
                 # TODO: This racy check may fail if the underlying libvirt
                 # domain has died just after checking isDomainReadyForCommands
                 # succeeded.
-                doms.append(vm_obj._dom._dom)
+                doms.append(vm_obj._dom.dom)
         return doms
 
 

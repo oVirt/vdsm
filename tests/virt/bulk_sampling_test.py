@@ -208,7 +208,11 @@ class FakeStatsCache(object):
 class FakeDomain(object):
     def __init__(self, name):
         self._name = name
-        self._dom = self  # yep, this is an ugly hack
+
+    @property
+    def dom(self):
+        # Some code check the underlying domain's UUIDString().
+        return self
 
     def UUIDString(self):
         # yes this is cheating
