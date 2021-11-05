@@ -480,6 +480,18 @@ class LVMCache(object):
 
             raise error
 
+    def run_command_error(self, cmd, devices=(), use_lvmpolld=True):
+        """
+        Helper for running a command and returning out and error instead of
+        raising on failure.
+        """
+        try:
+            out = self.run_command(
+                cmd, devices=devices, use_lvmpolld=use_lvmpolld)
+            return out, None
+        except se.LVMCommandError as e:
+            return e.out, e
+
     def __str__(self):
         return ("PVS:\n%s\n\nVGS:\n%s\n\nLVS:\n%s" %
                 (pp.pformat(self._pvs),
@@ -498,12 +510,12 @@ class LVMCache(object):
         if pvNames:
             cmd.extend(pvNames)
 
-        rc, out, err = self.cmd(cmd)
+        out, error = self.run_command_error(cmd)
 
         with self._lock:
             updatedPVs = {}
 
-            if rc != 0:
+            if error:
                 pvNames = pvNames if pvNames else self._pvs
                 for p in pvNames:
                     pv = self._pvs.get(p)
@@ -570,10 +582,11 @@ class LVMCache(object):
         if vgNames:
             cmd.extend(vgNames)
 
-        rc, out, err = self.cmd(cmd, self._getVGDevs(vgNames))
+        out, error = self.run_command_error(
+            cmd, devices=self._getVGDevs(vgNames))
 
         with self._lock:
-            if rc != 0:
+            if error:
                 unreadable_vgs = []
                 for v in (vgNames or self._vgs):
                     vg = self._vgs.get(v)
@@ -643,12 +656,13 @@ class LVMCache(object):
         else:
             cmd.append(vgName)
 
-        rc, out, err = self.cmd(cmd, self._getVGDevs((vgName,)))
+        out, error = self.run_command_error(
+            cmd, devices=self._getVGDevs((vgName,)))
 
         with self._lock:
             updatedLVs = {}
 
-            if rc != 0:
+            if error:
                 if not lvNames:
                     lvNames = (lvn for vgn, lvn in self._lvs if vgn == vgName)
                 for lvName in lvNames:
@@ -707,23 +721,26 @@ class LVMCache(object):
         Used only during bootstrap.
         """
         cmd = list(LVS_CMD)
-        rc, out, err = self.cmd(cmd)
 
-        if rc == 0:
-            new_lvs = {}
-            for line in out:
-                fields = [field.strip() for field in line.split(SEPARATOR)]
-                if len(fields) != LV_FIELDS_LEN:
-                    raise InvalidOutputLine("lvs", line)
+        out, error = self.run_command_error(cmd)
 
-                lv = LV.fromlvm(*fields)
-                # For LV we are only interested in its first extent
-                if lv.seg_start_pe == "0":
-                    new_lvs[(lv.vg_name, lv.name)] = lv
+        if error:
+            return self._lvs.copy()
 
-            with self._lock:
-                self._lvs = new_lvs
-                self._freshlv = {vg_name for vg_name, _ in self._lvs}
+        new_lvs = {}
+        for line in out:
+            fields = [field.strip() for field in line.split(SEPARATOR)]
+            if len(fields) != LV_FIELDS_LEN:
+                raise InvalidOutputLine("lvs", line)
+
+            lv = LV.fromlvm(*fields)
+            # For LV we are only interested in its first extent
+            if lv.seg_start_pe == "0":
+                new_lvs[(lv.vg_name, lv.name)] = lv
+
+        with self._lock:
+            self._lvs = new_lvs
+            self._freshlv = {vg_name for vg_name, _ in self._lvs}
 
         return self._lvs.copy()
 
