@@ -104,12 +104,14 @@ generate_combined_coverage_report() {
 
         ${CI_PYTHON} -m coverage combine .coverage-* \
             || echo "WARNING: coverage combine failed, ignoring."
-        ${CI_PYTHON} ./profile coverage ${CI_PYTHON} -m coverage html -d "$EXPORT_DIR/htmlcov" \
+        ${CI_PYTHON} ./profile coverage ${CI_PYTHON} -m coverage html -d htmlcov \
             || echo "WARNING: coverage conversion to html failed, ignoring."
     )
+}
 
-    # Export subsystem coverage reports for viewing in jenkins.
-    mv tests/htmlcov-* "$EXPORT_DIR"
+export_artifacts() {
+    # Export coverage reports for viewing in jenkins.
+    mv tests/htmlcov* "$EXPORT_DIR"
 }
 
 teardown() {
@@ -117,7 +119,6 @@ teardown() {
     [ "$res" -ne 0 ] && echo "*** err: $res"
 
     collect_logs
-    teardown_storage
 }
 
 install_lvmlocal_conf() {
@@ -165,17 +166,24 @@ run_tests() {
 
     install_python_debuginfo
 
+    make tests NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib" TIMEOUT=600
+}
+
+run_tests_storage() {
+    if [ -z "$EXPORT_DIR" ]; then
+        (>&2 echo "*** EXPORT_DIR must be set to run tests!")
+        exit 1
+    fi
+
+    trap teardown_storage EXIT
+
     # Make sure we have enough loop device nodes. Using 16 devices since with 8
     # devices we have random mount failures.
     create_loop_devices 16
 
     install_lvmlocal_conf
-
     setup_storage
-
-    # Jenkins slaves randomly time out storage tests with 600 seconds timeout.
-    # Use larger timeout to avoid failures when the slaves are too slow.
-    make tests NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib" TIMEOUT=600
+    make tests-storage
 }
 
 # Set up storage for storage tests. The storage is tore down in teardown().
@@ -191,8 +199,13 @@ setup_storage() {
 # NOTE: should be called only in teardown context. Always succeeds, even if
 # tearing down storage failed.
 teardown_storage() {
+    res=$?
+    [ "$res" -ne 0 ] && echo "*** err: $res"
+
     ${CI_PYTHON} tests/storage/userstorage.py teardown \
         || echo "WARNING: Ingoring error while tearing down user storage"
+
+    collect_logs
 }
 
 # Collect tests logs.
