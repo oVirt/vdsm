@@ -2117,6 +2117,11 @@ class Vm(object):
         def _getVmStatusFromGuest():
             GUEST_WAIT_TIMEOUT = 60
             now = time.time()
+            self.log.debug(
+                "VM status from guest: event=%s event_time=%s now=%s diff=%s",
+                self._guestEvent, self._guestEventTime, now,
+                now - self._guestEventTime
+            )
             if now - self._guestEventTime < 5 * GUEST_WAIT_TIMEOUT and \
                     self._guestEvent == vmstatus.POWERING_DOWN:
                 return self._guestEvent
