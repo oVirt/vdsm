@@ -199,14 +199,14 @@ class TestPortMirror(object):
     def _send_ping(self):
         self._tap1.start_listener(self._ICMP)
         self._tap0.write_to_device(self._ICMP)
-        # Attention: sleep is bad programming practice! Never use it for
-        # synchronization in productive code!
-        time.sleep(0.1)
-        if self._tap1.is_listener_alive():
+
+        if _wait_for_func(
+            lambda: not self._tap1.is_listener_alive(), timeout=2
+        ):
+            return True
+        else:
             self._tap1.stop_listener()
             return False
-        else:
-            return True
 
     @pytest.mark.xfail(
         condition=running_on_travis_ci(),
@@ -530,3 +530,12 @@ def _find_entity(predicate, entities):
     for ent in entities:
         if predicate(ent):
             return ent
+
+
+def _wait_for_func(func, timeout=5, **func_kwargs):
+    while not func(**func_kwargs):
+        if timeout <= 0:
+            return False
+        timeout -= 1
+        time.sleep(1)
+    return True
