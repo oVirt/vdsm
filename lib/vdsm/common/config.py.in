@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2020 Red Hat, Inc.
+# Copyright 2011-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -243,14 +243,6 @@ parameters = [
             'parts: two seconds are used in the very end to'
             'allow for passing final state from host to engine,'
             'the rest is used to wait when VMs are shutting down.'),
-
-        ('vm_kill_paused_time', '80',
-            'How many seconds to wait before killing VMs paused due to an I/O '
-            'error. Only VMs explicitly marked as killable by Engine will be '
-            'killed, the value does not have any effect on other VMs. '
-            'The value should be close to sanlock kill interval and in any '
-            'case greater than 0 (to tolerate short disturbances) and '
-            'less than 300 (Engine monitoring interval).'),
 
         ('time_sync_snapshot_enable', 'false',
             'Enable guest time synchronization after snapshot.'

@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ from vdsm.virt import sampling
 from vdsm.virt import virdomain
 from vdsm.virt import vmstatus
 from vdsm.virt.externaldata import ExternalDataKind
+from vdsm.virt.utils import vm_kill_paused_timeout
 
 
 # Just a made up number. Maybe should be equal to number of cores?
@@ -470,7 +471,7 @@ def _create(cif, scheduler):
 
         Operation(
             lambda: _kill_long_paused_vms(cif),
-            config.getint('vars', 'vm_kill_paused_time') // 2,
+            vm_kill_paused_timeout() // 2,
             scheduler,
             exclusive=True,
             discard=False),

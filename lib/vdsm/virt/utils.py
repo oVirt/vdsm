@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2019 Red Hat, Inc.
+# Copyright 2014-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ from vdsm.common import cmdutils, supervdsm
 from vdsm.common.commands import start, terminating
 from vdsm.common.fileutils import rm_file
 from vdsm.common.time import monotonic_time
+from vdsm.config import config
 from vdsm.constants import P_VDSM_LOG
 
 
@@ -444,3 +445,16 @@ class LibguestfsCommand(object):
     def run(self, args_, log_tag=None):
         args = self._args + args_
         run_logging(args, log_tag=log_tag)
+
+
+def vm_kill_paused_timeout():
+    """
+    Return a safe timeout in seconds for killing paused VMs.
+
+    The value determines how many seconds to wait before killing VMs with
+    ResumeBehavior.KILL paused due to an I/O error. The value is equal to
+    sanlock kill interval. Note that setting sanlock I/O timeout to too
+    high values may have unexpected consequences and it may also require using
+    longer, non-default, timeouts in Engine.
+    """
+    return 8 * config.getint('sanlock', 'io_timeout')

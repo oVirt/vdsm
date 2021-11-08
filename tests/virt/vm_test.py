@@ -47,6 +47,7 @@ from vdsm.common import xmlutils
 import vdsm.common.time
 
 from vdsm.virt import periodic
+from vdsm.virt import utils
 from vdsm.virt import virdomain
 from vdsm.virt import vm
 from vdsm.virt import vmdevices
@@ -1616,8 +1617,8 @@ class BlockIoTuneTests(TestCaseBase):
             with pytest.raises(exception.UpdateIOTuneError):
                 testvm.setIoTune(tunables)
 
-    @MonkeyPatch(vm, 'config',
-                 make_config([('vars', 'vm_kill_paused_time', '1')]))
+    @MonkeyPatch(utils, 'config',
+                 make_config([('sanlock', 'io_timeout', '1')]))
     def test_exit_with_error_on_resume(self):
         with fake.VM() as testvm:
             pretime = vdsm.common.time.monotonic_time() - 30.0

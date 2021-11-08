@@ -120,6 +120,7 @@ from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket
 from vdsm.virt.utils import extract_cluster_version
 from vdsm.virt.utils import TimedAcquireLock
+from vdsm.virt.utils import vm_kill_paused_timeout
 from vdsm.virt.utils import VolumeSize
 from six.moves import range
 
@@ -1682,7 +1683,7 @@ class Vm(object):
         now = vdsm.common.time.monotonic_time()
         if pause_time is not None and \
            now - pause_time > \
-           config.getint('vars', 'vm_kill_paused_time'):
+           vm_kill_paused_timeout():
             self.log.info("VM paused for too long, will be destroyed")
             self.destroy(gracefulAttempts=0,
                          reason=vmexitreason.DESTROYED_ON_PAUSE_TIMEOUT)
