@@ -55,6 +55,16 @@ def on_vm_create(vm_obj):
         _assign_shared(vm_obj.cif)
 
 
+def on_vm_change(vm_obj):
+    """
+    Update shared CPU pool after change to CPU pining of a VM.
+
+    :param vm_obj: VM object of the changed VM.
+    :type vm_obj: vdsm.virt.Vm instance
+    """
+    _assign_shared(vm_obj.cif)
+
+
 def on_vm_destroy(vm_obj):
     """
     Update shared CPU pool when destroying a VM.
@@ -91,7 +101,7 @@ def _assign_shared(cif, target_vm=None):
     with _shared_pool_lock:
         shared_cpus = _shared_pool(cif, cpu_topology.online_cpus, core_cpus)
         shared_str = ','.join(map(str, shared_cpus))
-        cpuset = _libvirt_cpuset_spec(shared_cpus, cpu_list_length)
+        cpuset = libvirt_cpuset_spec(shared_cpus, cpu_list_length)
         if target_vm is None:
             vms_to_update = cif.getVMs().values()
         else:
@@ -126,7 +136,7 @@ def _assign_shared(cif, target_vm=None):
                 # pool for other VMs.
 
 
-def _libvirt_cpuset_spec(cpus, cpu_list_length):
+def libvirt_cpuset_spec(cpus, cpu_list_length):
     """
     Turn set of CPU IDs to a CPU set list for libvirt API. That is a tuple of
     boolean values where True value on index i means that CPU with ID i is

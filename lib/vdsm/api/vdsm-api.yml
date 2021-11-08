@@ -12179,6 +12179,15 @@ VM.setNumberOfCpus:
     -   description: The new number of cpus
         name: numberOfCpus
         type: int
+
+    -   defaultvalue: null
+        description: A list of cpuset definitions (e.g. '1,3-5') for all CPUs.
+            Items of the list correspond to vCPUs and, if specified, length
+            of the list must match numberOfCpus.
+        name: cpusets
+        type:
+        - string
+        added: '4.5'
     return:
         description: The VM definition, as updated
         type: *VmDefinition

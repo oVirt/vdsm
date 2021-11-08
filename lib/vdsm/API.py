@@ -428,7 +428,7 @@ class VM(APIBase):
         return self.vm.hotunplugMemory(params)
 
     @api.logged(on="api.virt")
-    def setNumberOfCpus(self, numberOfCpus):
+    def setNumberOfCpus(self, numberOfCpus, cpusets=None):
 
         if self._UUID is None or numberOfCpus is None:
             self.log.error('Missing one of required parameters: \
@@ -436,7 +436,7 @@ class VM(APIBase):
             return {'status': {'code': errCode['MissParam']['status']['code'],
                                'message': 'Missing one of required '
                                           'parameters: vmId, numberOfCpus'}}
-        return self.vm.setNumberOfCpus(int(numberOfCpus))
+        return self.vm.setNumberOfCpus(int(numberOfCpus), cpusets)
 
     @api.logged(on="api.virt")
     @api.method

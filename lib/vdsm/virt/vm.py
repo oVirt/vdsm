@@ -67,6 +67,7 @@ import vdsm.virt.jobs
 from vdsm.virt.livemerge import DriveMerger
 from vdsm import hugepages
 from vdsm import jobs
+from vdsm import numa
 from vdsm import utils
 from vdsm.config import config
 from vdsm.common import concurrent
@@ -3572,9 +3573,41 @@ class Vm(object):
 
         self._update_mem_guaranteed_size(params)
 
+    def _assignCpusets(self, cpusets):
+        if cpusets is None:
+            return
+        numa.update()
+        cpu_list_length = max(numa.cpu_topology().online_cpus) + 1
+        for vcpu, cpuset in enumerate(cpusets):
+            parsed_cpus = taskset.cpulist_parse(cpuset)
+            try:
+                self.pin_vcpu(vcpu, cpumanagement.libvirt_cpuset_spec(
+                    parsed_cpus, cpu_list_length))
+            except virdomain.NotConnectedError:
+                self.log.warning(
+                    "Cannot reconfigure CPUs, domain not connected.")
+            except libvirt.libvirtError as e:
+                if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                    self.log.warning(
+                        "Cannot reconfigure CPUs,"
+                        " domain does not exist anymore.")
+                else:
+                    raise
+
     @api.guard(_not_migrating)
-    def setNumberOfCpus(self, numberOfCpus):
+    def setNumberOfCpus(self, numberOfCpus, cpusets=None):
         self.log.debug("Setting number of cpus to : %s", numberOfCpus)
+        self.log.debug("New cpusets for CPUs: %r", cpusets)
+        if self.cpu_policy() not in (
+                cpumanagement.CPU_POLICY_NONE,
+                cpumanagement.CPU_POLICY_MANUAL) and cpusets is None:
+            raise exception.MissingParameter(
+                "cpusets is required for VM with "
+                " CPU policy '%s'" % self.cpu_policy())
+        if cpusets is not None and len(cpusets) != numberOfCpus:
+            raise exception.InvalidParameter(
+                "length of cpusets (%d) must match"
+                " numberOfCpus (%d)" % (len(cpusets), numberOfCpus))
         hooks.before_set_num_of_cpus()
         try:
             self._dom.setVcpusFlags(numberOfCpus,
@@ -3585,7 +3618,9 @@ class Vm(object):
                 raise exception.NoSuchVM()
             return response.error('setNumberOfCpusErr', str(e))
 
+        self._assignCpusets(cpusets)
         self._updateDomainDescriptor()
+        cpumanagement.on_vm_change(self)
         hooks.after_set_num_of_cpus()
         return {'status': doneCode, 'vmList': {}}
 

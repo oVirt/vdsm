@@ -26,6 +26,7 @@ import libvirt
 from six.moves import zip
 import xml.etree.ElementTree as ET
 
+from vdsm import numa
 from vdsm.common import define
 from vdsm.common import exception
 from vdsm.common import hooks
@@ -34,6 +35,7 @@ from vdsm.common import password
 from vdsm.common import response
 from vdsm.common.units import MiB
 from vdsm.config import config
+from vdsm.virt import cpumanagement
 from vdsm.virt import saslpasswd2
 from vdsm.virt import virdomain
 from vdsm.virt import vmexitreason
@@ -387,6 +389,41 @@ class TestVmOperations(XMLTestCase):
                 res = testvm.setNumberOfCpus(4)  # random value
 
                 assert res == response.error(vdsm_error)
+
+    @MonkeyPatch(numa, 'update', lambda: None)
+    @MonkeyPatch(numa, 'cpu_topology', lambda:
+                 numa.CpuTopology(1, 6, 6, [0, 1, 2, 3, 4, 5]))
+    def testAssignCpusets(self):
+        with fake.VM() as testvm:
+            dom = fake.Domain()
+            dom.vcpu_pinning = {}
+
+            def pinVcpu(vcpu, cpuset):
+                dom.vcpu_pinning[vcpu] = cpuset
+
+            dom.pinVcpu = pinVcpu
+            dom.setVcpusFlags = lambda vcpus, flags: None
+            testvm._dom = dom
+            testvm._updateDomainDescriptor = lambda: None
+
+            testvm._assignCpusets(['0', '2-3', '1,4-5'])
+            pinning = dom.vcpu_pinning
+            assert len(pinning) == 3
+            assert pinning[0] == (True, False, False, False, False, False)
+            assert pinning[1] == (False, False, True, True, False, False)
+            assert pinning[2] == (False, True, False, False, True, True)
+
+    @MonkeyPatch(hooks, 'before_set_num_of_cpus', lambda: None)
+    def testSetNumberOfVcpusWrongCpusets(self):
+        with fake.VM() as testvm:
+            testvm._cpu_policy = cpumanagement.CPU_POLICY_DEDICATED
+            with pytest.raises(exception.MissingParameter):
+                testvm.setNumberOfCpus(4)
+            # Check length matches number of CPUs
+            with pytest.raises(exception.InvalidParameter):
+                testvm.setNumberOfCpus(4, ['1', '2', '3'])
+            with pytest.raises(exception.InvalidParameter):
+                testvm.setNumberOfCpus(4, ['1', '2', '3', '4', '5'])
 
     def testUpdateDeviceGraphicsFailed(self):
         with fake.VM(devices=self.GRAPHIC_DEVICES) as testvm:
