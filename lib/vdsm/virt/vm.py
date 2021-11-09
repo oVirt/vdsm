@@ -1692,6 +1692,13 @@ class Vm(object):
             raise Exception("Unsupported resume behavior value: %s",
                             (resume_behavior,))
 
+    def _paused_long_enough_to_kill(self):
+        pause_time = self._pause_time
+        if pause_time is None:
+            return False
+        paused_time = vdsm.common.time.monotonic_time() - pause_time
+        return paused_time > vm_kill_paused_timeout()
+
     def maybe_kill_paused(self):
         self.log.debug("Considering to kill a paused VM")
         if self._resume_behavior != ResumeBehavior.KILL:
@@ -1702,11 +1709,7 @@ class Vm(object):
         # unaware about what's happening and may trigger concurrent operations
         # (such as resume, migration, destroy, ...) on the VM while we check
         # its status and possibly destroy it.
-        pause_time = self._pause_time
-        now = vdsm.common.time.monotonic_time()
-        if pause_time is not None and \
-           now - pause_time > \
-           vm_kill_paused_timeout():
+        if self._paused_long_enough_to_kill():
             self.log.info("VM paused for too long, will be destroyed")
             self.destroy(gracefulAttempts=0,
                          reason=vmexitreason.DESTROYED_ON_PAUSE_TIMEOUT)
