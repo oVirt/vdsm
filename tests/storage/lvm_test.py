@@ -183,9 +183,8 @@ class FakeRunner(lvm.LVMRunner):
 def test_cmd_success(fake_devices):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
-    rc, out, err = lc.cmd(["lvs", "-o", "+tags"])
+    lc.run_command(["lvs", "-o", "+tags"])
 
-    assert rc == 0
     assert len(fake_runner.calls) == 1
 
     cmd = fake_runner.calls[0]
@@ -207,9 +206,9 @@ def test_cmd_error(fake_devices):
 
     # Since the filter is correct, the error should be propagated to the caller
     # after the first call.
-    rc, out, err = lc.cmd(["lvs", "-o", "+tags"])
+    with pytest.raises(se.LVMCommandError):
+        lc.run_command(["lvs", "-o", "+tags"])
 
-    assert rc == 1
     assert len(fake_runner.calls) == 1
 
 
@@ -673,7 +672,7 @@ def test_cmd_retry_filter_stale(fake_devices):
     initial_devices = fake_devices[:]
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
-    lc.cmd(["fake"])
+    lc.run_command(["fake"])
     del fake_runner.calls[:]
 
     # Add a new device to the system. This will makes the cached filter stale,
@@ -683,9 +682,8 @@ def test_cmd_retry_filter_stale(fake_devices):
     # Require 2 calls to succeed.
     fake_runner.retries = 1
 
-    rc, out, err = lc.cmd(["fake"])
+    lc.run_command(["fake"])
 
-    assert rc == 0
     assert len(fake_runner.calls) == 2
 
     # The first call used the stale cache filter.
@@ -720,15 +718,16 @@ def test_suppress_warnings(fake_devices):
 
     lc = lvm.LVMCache(fake_runner)
     fake_runner.rc = 1
-    rc, out, err = lc.cmd(["fake"])
-    assert rc == 1
-    assert err == [
-        u"  before",
-        (u"  WARNING: Combining activation change with other commands is "
-         "not advised."),
-        u"  Configuration setting \"global/event_activation\" unknown.",
-        u"  after"
-    ]
+    with pytest.raises(se.LVMCommandError) as e:
+        lc.run_command(["fake"])
+        assert e.rc == 1
+        assert e.err == [
+            u"  before",
+            (u"  WARNING: Combining activation change with other commands is "
+             "not advised."),
+            u"  Configuration setting \"global/event_activation\" unknown.",
+            u"  after"
+        ]
 
 
 def test_suppress_multiple_lvm_warnings(fake_devices):
@@ -742,9 +741,10 @@ def test_suppress_multiple_lvm_warnings(fake_devices):
 
     lc = lvm.LVMCache(fake_runner)
     fake_runner.rc = 1
-    rc, out, err = lc.cmd(["fake"])
-    assert rc == 1
-    assert err == [u"  before", u"  after"]
+    with pytest.raises(se.LVMCommandError) as e:
+        lc.run_command(["fake"])
+        assert e.rc == 1
+        assert e.err == [u"  before", u"  after"]
 
 
 def test_pv_move_cmd(fake_devices, monkeypatch):
@@ -836,7 +836,7 @@ def test_command_concurrency(fake_devices, workers):
     start = time.time()
     try:
         for i in range(count):
-            workers.start_thread(lc.cmd, ["fake", i])
+            workers.start_thread(lc.run_command, ["fake", i])
     finally:
         workers.join()
 
