@@ -148,7 +148,7 @@ class SourceRoutes(object):
         routes, rules = self._create_remove_outdated_source_routes(
             next_hop, gateway, runconf_gateway
         )
-        if gateway and _gateway_has_changed(runconf_gateway, gateway):
+        if gateway:
             helper = SourceRouteHelper(
                 next_hop,
                 self._netconf.ipv4addr,
