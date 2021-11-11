@@ -36,8 +36,8 @@ def init_privileged_network_components():
     _lldp_init()
 
 
-def init_unprivileged_network_components(cif):
-    dhcp_monitor.initialize_monitor(cif)
+def init_unprivileged_network_components(cif, net_api):
+    dhcp_monitor.initialize_monitor(cif, net_api)
     bond_monitor.initialize_monitor(cif)
 
 
@@ -47,8 +47,8 @@ def stop_unprivileged_network_components():
 
 
 @contextmanager
-def init_unpriviliged_dhcp_monitor_ctx(event_sink):
-    with dhcp_monitor.initialize_monitor_ctx(event_sink):
+def init_unpriviliged_dhcp_monitor_ctx(event_sink, net_api):
+    with dhcp_monitor.initialize_monitor_ctx(event_sink, net_api):
         yield
 
 

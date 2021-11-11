@@ -24,6 +24,7 @@ import time
 
 import pytest
 
+from vdsm.network import api as net_api
 from vdsm.network import dhcp_monitor
 from vdsm.network.initializer import init_unpriviliged_dhcp_monitor_ctx
 
@@ -47,14 +48,14 @@ def nic0():
 @pytest.fixture
 def dhcp_monitor_notifier():
     event_sink = FakeNotifier()
-    with init_unpriviliged_dhcp_monitor_ctx(event_sink):
+    with init_unpriviliged_dhcp_monitor_ctx(event_sink, net_api):
         yield event_sink
 
 
 @pytest.fixture
 def add_rule_mock():
     with mock.patch.object(
-        dhcp_monitor, 'add_dynamic_source_route_rules'
+        net_api, 'add_dynamic_source_route_rules'
     ) as add_rule_mock:
         yield add_rule_mock
 

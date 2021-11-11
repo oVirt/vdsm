@@ -37,6 +37,7 @@ from vdsm.common import hooks
 from vdsm.common import lockfile
 from vdsm.common import libvirtconnection
 from vdsm.common import sigutils
+from vdsm.common import supervdsm
 from vdsm.common import time
 from vdsm.common.panic import panic
 from vdsm.config import config
@@ -107,7 +108,7 @@ def serve_clients(log):
 
         cif.start()
 
-        init_unprivileged_network_components(cif)
+        init_unprivileged_network_components(cif, supervdsm.getProxy())
 
         periodic.start(cif, scheduler)
         health.start()

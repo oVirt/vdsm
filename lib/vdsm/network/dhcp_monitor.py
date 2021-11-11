@@ -23,7 +23,6 @@ import threading
 
 from vdsm.common import concurrent
 from vdsm.network.netlink import monitor
-from vdsm.network.nmstate import add_dynamic_source_route_rules
 from vdsm.network.ip.address import IPAddressData
 
 
@@ -132,11 +131,13 @@ class EventField(object):
     IFACE = 'label'
 
 
-def initialize_monitor(cif):
+def initialize_monitor(cif, net_api):
     global _monitor_instance
     try:
         monitor = Monitor.instance()
-        monitor.add_handler(lambda event: _dhcp_event_handler(cif, event))
+        monitor.add_handler(
+            lambda event: _dhcp_event_handler(cif, net_api, event)
+        )
         monitor.start()
     except Exception as e:
         _monitor_instance = None
@@ -150,38 +151,35 @@ def clear_monitor():
 
 
 @contextmanager
-def initialize_monitor_ctx(cif):
-    initialize_monitor(cif)
+def initialize_monitor_ctx(cif, net_api):
+    initialize_monitor(cif, net_api)
     try:
         yield
     finally:
         clear_monitor()
 
 
-def _dhcp_event_handler(cif, event):
+def _dhcp_event_handler(cif, net_api, event):
     if not _is_valid_event(event):
         return
-
-    pool = MonitoredItemPool.instance()
 
     iface = event[EventField.IFACE]
     family = _get_event_family(event.get(EventField.Family.KEY))
     address = IPAddressData(event[EventField.ADDRESS], iface)
-    item = (iface, family)
 
-    if not pool.is_item_in_pool(item):
+    if not net_api.is_dhcp_ip_monitored(iface, family):
         logging.warning(
             'Nic %s is not configured for IPv%s monitoring.', iface, family
         )
         return
 
     if family == 4:
-        add_dynamic_source_route_rules(
+        net_api.add_dynamic_source_route_rules(
             iface, address.address, address.prefixlen
         )
 
     cif.notify('|net|host_conn|no_id')
-    pool.remove(item)
+    net_api.remove_dhcp_monitoring(iface, family)
 
 
 def _is_valid_event(event):

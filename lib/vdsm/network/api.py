@@ -34,9 +34,13 @@ from vdsm.network import netstats
 from vdsm.network import netswitch
 from vdsm.network import ovn
 from vdsm.network import validator
+from vdsm.network.dhcp_monitor import MonitoredItemPool
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import sriov
 from vdsm.network.lldp import info as lldp_info
+from vdsm.network.nmstate import (
+    add_dynamic_source_route_rules as nmstate_add_dynamic_source_route_rules,
+)
 from vdsm.network.nmstate import update_num_vfs
 
 from . import canonicalize
@@ -302,6 +306,36 @@ def is_ovn_configured():
     :return: True if OVN is configured on this host
     """
     return ovn.is_ovn_configured()
+
+
+def is_dhcp_ip_monitored(iface, family):
+    """
+    Check if combination of iface and family is configured for DHCP
+    IP monitoring
+    :param iface: Interface name
+    :param family: 4 (IPv4) or 6 (IPv6)
+    :return: True if the combination is monitored for DHCP IP changes
+    """
+    return MonitoredItemPool.instance().is_item_in_pool((iface, family))
+
+
+def add_dynamic_source_route_rules(iface, address, prefixlen):
+    """
+    Delegate creation of dynamic source route rules to supervdsm context
+    :param iface: Interface name
+    :param address: Interface address
+    :param prefixlen: Address prefixlen
+    """
+    nmstate_add_dynamic_source_route_rules(iface, address, prefixlen)
+
+
+def remove_dhcp_monitoring(iface, family):
+    """
+    Remove iface and family combination from DHCP IP monitoring
+    :param iface: Interface name
+    :param family: 4 (IPv4) or 6 (IPv6)
+    """
+    MonitoredItemPool.instance().remove((iface, family))
 
 
 @contextmanager
