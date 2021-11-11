@@ -37,9 +37,6 @@ class FakeConnectHSM(hsm.HSM):
         self.prefetched_domains = {}
         pass
 
-    def _connectStorageOverIser(self, conDef, conObj, conTypeId):
-        pass
-
     def _prefetchDomains(self, domType, conObj):
         return self.prefetched_domains
 

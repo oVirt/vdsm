@@ -42,6 +42,7 @@ from vdsm.common import supervdsm
 from vdsm.common.network.address import hosttail_join
 from vdsm.network.netinfo.routes import getRouteDeviceTo
 from vdsm.storage import devicemapper
+from vdsm.storage import exception as se
 from vdsm.storage import iscsiadm
 from vdsm.storage import misc
 from vdsm.storage import sysfs
@@ -182,7 +183,7 @@ def readSessionInfo(sessionID):
 
     # NOTE: ChapCredentials must match the way we initialize username and
     # password when receiving request from engine in
-    # hsm._connectionDict2ConnectionInfo().
+    # storageServer.connectionDict2ConnectionInfo().
     # iscsi reports empty user/password as "<NULL>" (RHEL5) or "(null)"
     # (RHEL6);  empty values are stored as None.
 
@@ -590,3 +591,40 @@ def setRpFilterIfNeeded(netIfaceName, hostname, loose_mode):
             log.info("Setting strict mode rp_filter for device %r." %
                      netIfaceName)
             supervdsm.getProxy().set_rp_filter_strict(netIfaceName)
+
+
+def _updateIfaceNameIfNeeded(iface, netIfaceName):
+    if iface.netIfaceName is None:
+        iface.netIfaceName = netIfaceName
+        iface.update()
+        return True
+
+    return False
+
+
+def resolveIscsiIface(ifaceName, initiatorName, netIfaceName):
+    if not ifaceName:
+        return IscsiInterface('default')
+
+    for iface in iterateIscsiInterfaces():
+
+        if iface.name != ifaceName:
+            continue
+
+        if netIfaceName is not None:
+            if (not _updateIfaceNameIfNeeded(iface, netIfaceName) and
+                    netIfaceName != iface.netIfaceName):
+                logging.error('iSCSI netIfaceName coming from engine [%s] '
+                              'is different from iface.net_ifacename '
+                              'present on the system [%s]. Aborting iscsi '
+                              'iface [%s] configuration.' %
+                              (netIfaceName, iface.netIfaceName, iface.name))
+
+                raise se.iSCSIifaceError()
+
+        return iface
+
+    iface = IscsiInterface(ifaceName, initiatorName=initiatorName,
+                           netIfaceName=netIfaceName)
+    iface.create()
+    return iface

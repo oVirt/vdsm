@@ -131,163 +131,6 @@ def public(f):
     return dispatcher.exported(logged(f))
 
 
-# Connection Management API competability code
-# Remove when deprecating dis\connectStorageServer
-
-CON_TYPE_ID_2_CON_TYPE = {
-    sd.LOCALFS_DOMAIN: 'localfs',
-    sd.NFS_DOMAIN: 'nfs',
-    sd.ISCSI_DOMAIN: 'iscsi',
-    sd.FCP_DOMAIN: 'fcp',
-    sd.POSIXFS_DOMAIN: 'posixfs',
-    sd.GLUSTERFS_DOMAIN: 'glusterfs'}
-
-
-def _updateIfaceNameIfNeeded(iface, netIfaceName):
-    if iface.netIfaceName is None:
-        iface.netIfaceName = netIfaceName
-        iface.update()
-        return True
-
-    return False
-
-
-def _resolveIscsiIface(ifaceName, initiatorName, netIfaceName):
-    if not ifaceName:
-        return iscsi.IscsiInterface('default')
-
-    for iface in iscsi.iterateIscsiInterfaces():
-
-        if iface.name != ifaceName:
-            continue
-
-        if netIfaceName is not None:
-            if (not _updateIfaceNameIfNeeded(iface, netIfaceName) and
-                    netIfaceName != iface.netIfaceName):
-                logging.error('iSCSI netIfaceName coming from engine [%s] '
-                              'is different from iface.net_ifacename '
-                              'present on the system [%s]. Aborting iscsi '
-                              'iface [%s] configuration.' %
-                              (netIfaceName, iface.netIfaceName, iface.name))
-
-                raise se.iSCSIifaceError()
-
-        return iface
-
-    iface = iscsi.IscsiInterface(ifaceName, initiatorName=initiatorName,
-                                 netIfaceName=netIfaceName)
-    iface.create()
-    return iface
-
-
-def _connectionDict2ConnectionInfo(conTypeId, conDict):
-    def getIntParam(optDict, key, default):
-        res = optDict.get(key, default)
-        if res is None:
-            return res
-
-        try:
-            return int(res)
-        except ValueError:
-            raise se.InvalidParameterException(key, res)
-
-    # FIXME: Remove when nfs_mount_options is no longer supported.  This is
-    # in the compatibility layer so that the NFSConnection class stays clean.
-    # Engine options have precendence, so use deprecated nfs_mount_options
-    # only if engine passed nothing (indicated by default params of 'None').
-    def tryDeprecatedNfsParams(conDict):
-        if (conDict.get('protocol_version', None),
-                conDict.get('retrans', None),
-                conDict.get('timeout', None)) == (None, None, None):
-            conf_options = config.get(
-                'irs', 'nfs_mount_options').replace(' ', '')
-            if (frozenset(conf_options.split(',')) !=
-                    frozenset(storageServer.NFSConnection.DEFAULT_OPTIONS)):
-                logging.warning("Using deprecated nfs_mount_options from"
-                                " vdsm.conf to mount %s: %s",
-                                conDict.get('connection', '(unknown)'),
-                                conf_options)
-                return storageServer.PosixFsConnectionParameters(
-                    conDict["id"],
-                    conDict.get('connection', None),
-                    'nfs',
-                    conf_options)
-        return None
-
-    typeName = CON_TYPE_ID_2_CON_TYPE[conTypeId]
-    if typeName == 'localfs':
-        params = storageServer.LocaFsConnectionParameters(
-            conDict["id"],
-            conDict.get('connection', None))
-    elif typeName == 'nfs':
-        params = tryDeprecatedNfsParams(conDict)
-        if params is not None:
-            # Hack to support vdsm.conf nfs_mount_options
-            typeName = 'posixfs'
-        else:
-            version = conDict.get('protocol_version', "3")
-            version = str(version)
-            if version == "auto":
-                version = None
-
-            params = storageServer.NfsConnectionParameters(
-                conDict["id"],
-                conDict.get('connection', None),
-                getIntParam(conDict, 'retrans', None),
-                getIntParam(conDict, 'timeout', None),
-                version,
-                conDict.get('mnt_options', None))
-    elif typeName == 'posixfs':
-        params = storageServer.PosixFsConnectionParameters(
-            conDict["id"],
-            conDict.get('connection', None),
-            conDict.get('vfs_type', None),
-            conDict.get('mnt_options', None))
-    elif typeName == 'glusterfs':
-        params = storageServer.GlusterFsConnectionParameters(
-            conDict["id"],
-            conDict.get('connection', None),
-            conDict.get('vfs_type', None),
-            conDict.get('mnt_options', None))
-    elif typeName == 'iscsi':
-        portal = iscsi.IscsiPortal(
-            conDict.get('connection', None),
-            int(conDict.get('port', None)))
-        tpgt = int(conDict.get('tpgt', iscsi.DEFAULT_TPGT))
-
-        target = iscsi.IscsiTarget(portal, tpgt, conDict.get('iqn', None))
-
-        iface = _resolveIscsiIface(conDict.get('ifaceName', None),
-                                   conDict.get('initiatorName', None),
-                                   conDict.get('netIfaceName', None))
-
-        # NOTE: ChapCredentials must match the way we initialize username and
-        # password when reading session info in iscsi.readSessionInfo(). Empty
-        # or missing username or password are stored as None.
-
-        username = conDict.get('user')
-        if not username:
-            username = None
-        password = conDict.get('password')
-        if not getattr(password, "value", None):
-            password = None
-        cred = None
-        if username or password:
-            cred = iscsi.ChapCredentials(username, password)
-
-        params = storageServer.IscsiConnectionParameters(
-            conDict["id"],
-            target,
-            iface,
-            cred)
-    elif typeName == 'fcp':
-        params = storageServer.FcpConnectionParameters(conDict["id"])
-    else:
-        raise se.StorageServerActionError()
-
-    return storageServer.ConnectionInfo(typeName, params)
-
-
 class HSM(object):
     """
     This is the HSM class. It controls all the stuff relate to the Host.
@@ -2364,10 +2207,11 @@ class HSM(object):
         res = []
         connections = []
         for conDef in conList:
-            conInfo = _connectionDict2ConnectionInfo(domType, conDef)
+            conInfo = storageServer.connectionDict2ConnectionInfo(
+                domType, conDef)
             conObj = storageServer.ConnectionFactory.createConnection(conInfo)
             try:
-                self._connectStorageOverIser(conDef, conObj, domType)
+                storageServer.connectStorageOverIser(conDef, conObj, domType)
                 conObj.connect()
             except Exception as err:
                 self.log.error(
@@ -2409,25 +2253,6 @@ class HSM(object):
         return dict(statuslist=res)
 
     @deprecated
-    def _connectStorageOverIser(self, conDef, conObj, conTypeId):
-        """
-        Tries to connect the storage server over iSER.
-        This applies if the storage type is iSCSI and 'iser' is in
-        the configuration option 'iscsi_default_ifaces'.
-        """
-        # FIXME: remove this method when iface selection is in higher interface
-        typeName = CON_TYPE_ID_2_CON_TYPE[conTypeId]
-        if typeName == 'iscsi' and 'initiatorName' not in conDef:
-            ifaces = config.get('irs', 'iscsi_default_ifaces').split(',')
-            if 'iser' in ifaces:
-                conObj._iface = iscsi.IscsiInterface('iser')
-                try:
-                    conObj.connect()
-                    conObj.disconnect()
-                except:
-                    conObj._iface = iscsi.IscsiInterface('default')
-
-    @deprecated
     @public
     def disconnectStorageServer(self, domType, spUUID, conList):
         """
@@ -2451,7 +2276,8 @@ class HSM(object):
 
         res = []
         for conDef in conList:
-            conInfo = _connectionDict2ConnectionInfo(domType, conDef)
+            conInfo = storageServer.connectionDict2ConnectionInfo(
+                domType, conDef)
             conObj = storageServer.ConnectionFactory.createConnection(conInfo)
             try:
                 conObj.disconnect()

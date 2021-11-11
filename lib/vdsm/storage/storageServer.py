@@ -33,6 +33,7 @@ from vdsm.config import config
 from vdsm import utils
 from vdsm.common import supervdsm
 from vdsm.common import udevadm
+from vdsm.common.marks import deprecated
 from vdsm.gluster import cli as gluster_cli
 from vdsm.gluster import exception as ge
 from vdsm.storage import exception as se
@@ -40,6 +41,7 @@ from vdsm.storage import fileSD
 from vdsm.storage import fileUtils
 from vdsm.storage import iscsi
 from vdsm.storage import mount
+from vdsm.storage import sd
 from vdsm.storage.mount import MountError
 
 
@@ -61,6 +63,17 @@ NfsConnectionParameters = namedtuple("NfsConnectionParameters",
 FcpConnectionParameters = namedtuple("FcpConnectionParameters", "id")
 
 ConnectionInfo = namedtuple("ConnectionInfo", "type, params")
+
+# Connection Management API competability code
+# Remove when deprecating dis\connectStorageServer
+
+CON_TYPE_ID_2_CON_TYPE = {
+    sd.LOCALFS_DOMAIN: 'localfs',
+    sd.NFS_DOMAIN: 'nfs',
+    sd.ISCSI_DOMAIN: 'iscsi',
+    sd.FCP_DOMAIN: 'fcp',
+    sd.POSIXFS_DOMAIN: 'posixfs',
+    sd.GLUSTERFS_DOMAIN: 'glusterfs'}
 
 
 class ExampleConnection(object):
@@ -739,3 +752,131 @@ class ConnectionFactory(object):
             raise UnknownConnectionTypeError(conType)
 
         return ctor(**params)
+
+
+@deprecated
+def connectStorageOverIser(conDef, conObj, conTypeId):
+    """
+    Tries to connect the storage server over iSER.
+    This applies if the storage type is iSCSI and 'iser' is in
+    the configuration option 'iscsi_default_ifaces'.
+    """
+    # FIXME: remove this method when iface selection is in higher interface
+    typeName = CON_TYPE_ID_2_CON_TYPE[conTypeId]
+    if typeName == 'iscsi' and 'initiatorName' not in conDef:
+        ifaces = config.get('irs', 'iscsi_default_ifaces').split(',')
+        if 'iser' in ifaces:
+            conObj._iface = iscsi.IscsiInterface('iser')
+            try:
+                conObj.connect()
+                conObj.disconnect()
+            except:
+                conObj._iface = iscsi.IscsiInterface('default')
+
+
+def connectionDict2ConnectionInfo(conTypeId, conDict):
+    def getIntParam(optDict, key, default):
+        res = optDict.get(key, default)
+        if res is None:
+            return res
+
+        try:
+            return int(res)
+        except ValueError:
+            raise se.InvalidParameterException(key, res)
+
+    # FIXME: Remove when nfs_mount_options is no longer supported.  This is
+    # in the compatibility layer so that the NFSConnection class stays clean.
+    # Engine options have precendence, so use deprecated nfs_mount_options
+    # only if engine passed nothing (indicated by default params of 'None').
+    def tryDeprecatedNfsParams(conDict):
+        if (conDict.get('protocol_version', None),
+                conDict.get('retrans', None),
+                conDict.get('timeout', None)) == (None, None, None):
+            conf_options = config.get(
+                'irs', 'nfs_mount_options').replace(' ', '')
+            if (frozenset(conf_options.split(',')) !=
+                    frozenset(NFSConnection.DEFAULT_OPTIONS)):
+                logging.warning("Using deprecated nfs_mount_options from"
+                                " vdsm.conf to mount %s: %s",
+                                conDict.get('connection', '(unknown)'),
+                                conf_options)
+                return PosixFsConnectionParameters(
+                    conDict["id"],
+                    conDict.get('connection', None),
+                    'nfs',
+                    conf_options)
+        return None
+
+    typeName = CON_TYPE_ID_2_CON_TYPE[conTypeId]
+    if typeName == 'localfs':
+        params = LocaFsConnectionParameters(
+            conDict["id"],
+            conDict.get('connection', None))
+    elif typeName == 'nfs':
+        params = tryDeprecatedNfsParams(conDict)
+        if params is not None:
+            # Hack to support vdsm.conf nfs_mount_options
+            typeName = 'posixfs'
+        else:
+            version = conDict.get('protocol_version', "3")
+            version = str(version)
+            if version == "auto":
+                version = None
+
+            params = NfsConnectionParameters(
+                conDict["id"],
+                conDict.get('connection', None),
+                getIntParam(conDict, 'retrans', None),
+                getIntParam(conDict, 'timeout', None),
+                version,
+                conDict.get('mnt_options', None))
+    elif typeName == 'posixfs':
+        params = PosixFsConnectionParameters(
+            conDict["id"],
+            conDict.get('connection', None),
+            conDict.get('vfs_type', None),
+            conDict.get('mnt_options', None))
+    elif typeName == 'glusterfs':
+        params = GlusterFsConnectionParameters(
+            conDict["id"],
+            conDict.get('connection', None),
+            conDict.get('vfs_type', None),
+            conDict.get('mnt_options', None))
+    elif typeName == 'iscsi':
+        portal = iscsi.IscsiPortal(
+            conDict.get('connection', None),
+            int(conDict.get('port', None)))
+        tpgt = int(conDict.get('tpgt', iscsi.DEFAULT_TPGT))
+
+        target = iscsi.IscsiTarget(portal, tpgt, conDict.get('iqn', None))
+
+        iface = iscsi.resolveIscsiIface(conDict.get('ifaceName', None),
+                                        conDict.get('initiatorName', None),
+                                        conDict.get('netIfaceName', None))
+
+        # NOTE: ChapCredentials must match the way we initialize username and
+        # password when reading session info in iscsi.readSessionInfo(). Empty
+        # or missing username or password are stored as None.
+
+        username = conDict.get('user')
+        if not username:
+            username = None
+        password = conDict.get('password')
+        if not getattr(password, "value", None):
+            password = None
+        cred = None
+        if username or password:
+            cred = iscsi.ChapCredentials(username, password)
+
+        params = IscsiConnectionParameters(
+            conDict["id"],
+            target,
+            iface,
+            cred)
+    elif typeName == 'fcp':
+        params = FcpConnectionParameters(conDict["id"])
+    else:
+        raise se.StorageServerActionError()
+
+    return ConnectionInfo(typeName, params)
