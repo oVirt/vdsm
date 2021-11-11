@@ -219,11 +219,17 @@ def addIscsiNode(iface, target, credentials=None):
 
             setRpFilterIfNeeded(iface.netIfaceName, target.portal.hostname,
                                 True)
-
-            iscsiadm.node_login(iface.name, target.address, target.iqn)
         except:
             removeIscsiNode(iface, target)
             raise
+
+
+def loginToIscsiNode(iface, target):
+    try:
+        iscsiadm.node_login(iface.name, target.address, target.iqn)
+    except:
+        removeIscsiNode(iface, target)
+        raise
 
 
 def removeIscsiNode(iface, target):

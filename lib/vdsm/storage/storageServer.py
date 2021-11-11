@@ -535,6 +535,7 @@ class IscsiConnection(object):
 
     def _connect_iscsi(self):
         iscsi.addIscsiNode(self._iface, self._target, self._cred)
+        iscsi.loginToIscsiNode(self._iface, self._target)
         timeout = config.getint("irs", "udev_settle_timeout")
         udevadm.settle(timeout)
 
