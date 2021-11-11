@@ -515,6 +515,10 @@ class IscsiConnection(object):
     def iface(self):
         return self._iface
 
+    @property
+    def cred(self):
+        return self._cred
+
     def __init__(self, id, target, iface=None, credentials=None):
         self._id = id
         self._target = target
