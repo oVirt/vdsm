@@ -32,7 +32,6 @@ from vdsm.common import response
 from vdsm.common import xmlutils
 from vdsm.common.units import GiB
 
-from vdsm.virt import errors
 from vdsm.virt import metadata
 from vdsm.virt import migration
 from vdsm.virt import vmstatus
