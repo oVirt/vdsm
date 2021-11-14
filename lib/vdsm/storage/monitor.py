@@ -344,7 +344,9 @@ class MonitorThread(object):
             self._stopCheckingPath()
             if self._shouldReleaseHostId():
                 self._releaseHostId()
-            self._teardownDomain()
+            if self._shouldTeardownDomain():
+                self._teardownDomain()
+            self.domain = None
 
     # Setting up
 
@@ -597,6 +599,11 @@ class MonitorThread(object):
         domain.setup()
         self.domain = domain
 
+    def _shouldTeardownDomain(self):
+        # During shutdown we must not teardown the domain, since there may be
+        # VMs or image transfers using the stroage domain.
+        return not self.wasShutdown
+
     def _teardownDomain(self):
         if not self.domain:
             return
@@ -604,7 +611,6 @@ class MonitorThread(object):
             self.domain.teardown()
         except Exception as e:
             log.exception("Error tearing down domain %s: %s", self.sdUUID, e)
-        self.domain = None
 
 
 def _NULL_CALLBACK():
