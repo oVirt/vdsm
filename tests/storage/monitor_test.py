@@ -794,13 +794,21 @@ class TestMonitorThreadStopping(VdsmTestCase):
         self.assertFalse(domain.acquired)
         self.assertNotIn(domain.getMonitoringPath(), env.checker.checkers)
 
-    def test_teardown_called(self):
-        with monitor_env() as env:
+    def test_stop_teardown(self):
+        with monitor_env(shutdown=False) as env:
             domain = FakeDomain("uuid")
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
             env.wait_for_cycle()
         self.assertEqual(domain.state, TEARDOWN)
+
+    def test_shutdown_no_teardown(self):
+        with monitor_env(shutdown=True) as env:
+            domain = FakeDomain("uuid")
+            monitor.sdCache.domains["uuid"] = domain
+            env.thread.start()
+            env.wait_for_cycle()
+        self.assertEqual(domain.state, SETUP)
 
     def test_teardown_failed(self):
         with monitor_env() as env:
