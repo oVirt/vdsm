@@ -1306,12 +1306,12 @@ class Vm(object):
         """
         extended = False
 
-        try:
-            for drive in self.drive_monitor.monitored_drives():
+        for drive in self.drive_monitor.monitored_drives():
+            try:
                 if self.extend_drive_if_needed(drive):
                     extended = True
-        except drivemonitor.ImprobableResizeRequestError:
-            return False
+            except drivemonitor.ImprobableResizeRequestError:
+                break
 
         return extended
 
