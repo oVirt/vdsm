@@ -2170,23 +2170,20 @@ class HSM(object):
                 "domType=%s, spUUID=%s, conList=%s" %
                 (domType, spUUID, conList)))
 
-        res = []
-        connections = []
-        for conDef in conList:
-            conInfo = storageServer.connectionDict2ConnectionInfo(
-                domType, conDef)
-            conObj = storageServer.ConnectionFactory.createConnection(conInfo)
+        results = []
+        connections = storageServer.prepare_connections(domType, conList)
+
+        for con in connections:
             try:
-                conObj.connect()
+                con.connect()
             except Exception as err:
                 self.log.error(
                     "Could not connect to storageServer", exc_info=True)
                 status, _ = self._translateConnectionError(err)
             else:
                 status = 0
-                connections.append(conObj)
 
-            res.append({'id': conDef["id"], 'status': status})
+            results.append((con, status))
 
         # In case there were changes in devices size
         # while the VDSM was not connected, we need to
@@ -2194,9 +2191,12 @@ class HSM(object):
         if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN):
             sdCache.refreshStorage()
 
-        for conObj in connections:
+        for con, status in results:
+            if status != 0:
+                continue
+
             try:
-                doms = self._prefetchDomains(domType, conObj)
+                doms = self._prefetchDomains(domType, con)
             except:
                 self.log.debug("prefetch failed: %s",
                                sdCache.knownSDs, exc_info=True)
@@ -2215,7 +2215,9 @@ class HSM(object):
         # Connecting new device may change the visible storage domain list
         # so invalidate caches
         sdCache.invalidateStorage()
-        return dict(statuslist=res)
+        status_list = [{"id": con.id, "status": status}
+                       for con, status in results]
+        return dict(statuslist=status_list)
 
     @deprecated
     @public
@@ -2239,25 +2241,24 @@ class HSM(object):
                 "domType=%s, spUUID=%s, conList=%s" %
                 (domType, spUUID, conList)))
 
-        res = []
-        for conDef in conList:
-            conInfo = storageServer.connectionDict2ConnectionInfo(
-                domType, conDef)
-            conObj = storageServer.ConnectionFactory.createConnection(conInfo)
+        results = []
+        connnections = storageServer.prepare_connections(domType, conList)
+
+        for con in connnections:
             try:
-                conObj.disconnect()
+                con.disconnect()
                 status = 0
             except Exception as err:
                 self.log.error("Could not disconnect from storageServer",
                                exc_info=True)
                 status, _ = self._translateConnectionError(err)
 
-            res.append({'id': conDef["id"], 'status': status})
+            results.append({'id': con.id, 'status': status})
 
         # Disconnecting a device may change the visible storage domain list
         # so invalidate the caches
         sdCache.refreshStorage(resize=False)
-        return dict(statuslist=res)
+        return dict(statuslist=results)
 
     def _translateConnectionError(self, e):
         if e is None:

@@ -786,7 +786,16 @@ class ConnectionFactory(object):
         return ctor(**params)
 
 
-def connectionDict2ConnectionInfo(conTypeId, conDict):
+def prepare_connections(dom_type, con_defs):
+    prep_cons = []
+    for con_def in con_defs:
+        con_info = _connectionDict2ConnectionInfo(dom_type, con_def)
+        prep_con = ConnectionFactory.createConnection(con_info)
+        prep_cons.append(prep_con)
+    return prep_cons
+
+
+def _connectionDict2ConnectionInfo(conTypeId, conDict):
     def getIntParam(optDict, key, default):
         res = optDict.get(key, default)
         if res is None:
