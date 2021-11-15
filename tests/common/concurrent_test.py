@@ -524,3 +524,34 @@ class TestValidatingEvent:
 
         assert all(invalidated)
         assert not event.valid
+
+
+class TestTimer:
+
+    def test_run(self):
+        delay = 0.2
+        finished = threading.Event()
+        timer = concurrent.Timer(delay, finished.set)
+        start = time.monotonic()
+        timer.start()
+        assert finished.wait(1)
+        assert time.monotonic() - start >= delay
+
+    def test_cancel(self):
+        delay = 5
+        finished = threading.Event()
+        timer = concurrent.Timer(delay, finished.set)
+        timer.start()
+        timer.cancel()
+        timer._thread.join(1)
+        assert not timer._thread.is_alive()
+        assert not finished.is_set()
+
+    def test_late_cancel(self):
+        delay = 0
+        finished = threading.Event()
+        timer = concurrent.Timer(delay, finished.set)
+        timer.start()
+        finished.wait(1)
+        timer.cancel()
+        assert finished.is_set()

@@ -377,3 +377,40 @@ def format_traceback(ident):
         if line:
             lines.append("  %s" % (line.strip()))
     return '\n'.join(lines)
+
+
+class Timer:
+    """
+    Timer that creates a thread using concurrent.thread.
+
+    This Timer is similar to threading.Timer, but uses concurrent.thread()
+    instead of threading.Thread.
+
+    Sample usage:
+            t = Timer(30.0, f, args=None, kwargs=None)
+            t.start()
+            t.cancel()     # stop the timer's action if it's still waiting
+    """
+
+    def __init__(self, interval, function, args=(), kwargs=None,
+                 name=None, daemon=True, log=None):
+        if kwargs is None:
+            kwargs = {}
+        self._function = function
+        self._args = args
+        self._kwargs = kwargs
+        self._interval = interval
+        self._finished = threading.Event()
+        self._thread = thread(self._run, name=name, daemon=daemon, log=log)
+
+    def cancel(self):
+        """Stop the timer if it hasn't finished yet."""
+        self._finished.set()
+
+    def _run(self):
+        if not self._finished.wait(self._interval):
+            self._function(*self._args, **self._kwargs)
+
+    def start(self):
+        """Start the timer."""
+        self._thread.start()
