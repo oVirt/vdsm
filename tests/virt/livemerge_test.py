@@ -211,15 +211,6 @@ class RunningVM(Vm):
             for vol_id, vol_info in config.values["volumes"].items()
         }
 
-        # Add the drive block info to fake domain.  This value is returned by
-        # FakeDomain.blockInfo().
-        top_volume = config.values["volumes"][drive["volumeID"]]
-        self._dom.drives[drive["path"]] = {
-            "capacity": top_volume["capacity"],
-            "alloc": 0,
-            "physical": top_volume["apparentsize"],
-        }
-
         self.conf = self._conf_devices(config)
         self.conf["vmId"] = config.values["vm-id"]
         self.conf["xml"] = config.xmls["00-before.xml"]
@@ -260,7 +251,6 @@ class FakeDomain:
         self.aborted = threading.Event()
         self.block_jobs = {}
         # Keeps block info dict for every drive, returned by blockInfo().
-        self.drives = {}
         self.errors = {}
 
     def UUIDString(self):
@@ -311,23 +301,6 @@ class FakeDomain:
 
         self.aborted.set()
         del self.block_jobs[drive]
-
-    def blockInfo(self, path, flags=0):
-        """
-        Return drive block info tuple (capacity, alloc, physical).
-
-        Libvirt supports drive path ("/path/to/top/volume"), drive name (e.g.
-        "sda"), or name[index] notation ("sda[4]").  We support only drive
-        path.
-
-        For more info see:
-        https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainGetBlockInfo
-        """
-        if path not in self.drives:
-            raise fake.libvirt_error(
-                [libvirt.VIR_ERR_INTERNAL_ERROR], "Drive not found")
-        drive = self.drives[path]
-        return drive["capacity"], drive["alloc"], drive["physical"]
 
 
 def test_merger_dump_jobs(fake_time):
@@ -1058,9 +1031,7 @@ def test_extend_use_current_top_size(fake_time):
     new_size1 = vm.cif.irs.extend_requests[0][2]
 
     # While waiting for extend completion, top volume was extended.
-    drive = vm.getDiskDevices()[0]
     top["apparentsize"] += GiB
-    vm._dom.drives[drive.path]["physical"] = top["apparentsize"]
 
     # Simulate extend timeout, triggering the next extend attempt.
     fake_time.time += DriveMerger.EXTEND_TIMEOUT + 1
@@ -1182,7 +1153,6 @@ def test_extend_skipped():
     base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
     max_size = drive.getMaxVolumeSize(base["capacity"])
     base['apparentsize'] = max_size
-    vm._dom.drives[drive.path]["physical"] = max_size
 
     vm.merge(**merge_params)
 
@@ -1441,7 +1411,6 @@ def simulate_volume_extension(vm, vol_id):
 
     # We have to update both prepared volume info and libvirt info.
     base['apparentsize'] = new_size
-    vm._dom.drives[drive.path]["physical"] = new_size
 
     callback(vol_info)
 
