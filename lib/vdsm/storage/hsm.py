@@ -2170,20 +2170,8 @@ class HSM(object):
                 "domType=%s, spUUID=%s, conList=%s" %
                 (domType, spUUID, conList)))
 
-        results = []
-        connections = storageServer.prepare_connections(domType, conList)
-
-        for con in connections:
-            try:
-                con.connect()
-            except Exception as err:
-                self.log.error(
-                    "Could not connect to storageServer", exc_info=True)
-                status, _ = self._translateConnectionError(err)
-            else:
-                status = 0
-
-            results.append((con, status))
+        prep_cons = storageServer.prepare_connections(domType, conList)
+        results = storageServer.Connection.connect_all(prep_cons)
 
         # In case there were changes in devices size
         # while the VDSM was not connected, we need to
@@ -2241,42 +2229,13 @@ class HSM(object):
                 "domType=%s, spUUID=%s, conList=%s" %
                 (domType, spUUID, conList)))
 
-        results = []
-        connnections = storageServer.prepare_connections(domType, conList)
-
-        for con in connnections:
-            try:
-                con.disconnect()
-                status = 0
-            except Exception as err:
-                self.log.error("Could not disconnect from storageServer",
-                               exc_info=True)
-                status, _ = self._translateConnectionError(err)
-
-            results.append({'id': con.id, 'status': status})
+        prep_cons = storageServer.prepare_connections(domType, conList)
+        results = storageServer.Connection.disconnect_all(prep_cons)
 
         # Disconnecting a device may change the visible storage domain list
         # so invalidate the caches
         sdCache.refreshStorage(resize=False)
         return dict(statuslist=results)
-
-    def _translateConnectionError(self, e):
-        if e is None:
-            return 0, ""
-
-        if isinstance(e, mount.MountError):
-            return se.MountError.code, se.MountError.msg
-        if isinstance(e, iscsi.iscsiadm.IscsiAuthenticationError):
-            return se.iSCSILoginAuthError.code, se.iSCSILoginAuthError.msg
-        if isinstance(e, iscsi.iscsiadm.IscsiInterfaceError):
-            return se.iSCSIifaceError.code, se.iSCSIifaceError.msg
-        if isinstance(e, iscsi.iscsiadm.IscsiError):
-            return se.iSCSISetupError.code, se.iSCSISetupError.msg
-
-        if hasattr(e, 'code'):
-            return e.code, e.msg
-
-        return se.GeneralException.code, str(e)
 
     @public
     def getStoragePoolInfo(self, spUUID):

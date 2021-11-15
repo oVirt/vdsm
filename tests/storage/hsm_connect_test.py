@@ -41,7 +41,7 @@ class FakeConnectHSM(hsm.HSM):
         return self.prefetched_domains
 
 
-class FakeConnection(object):
+class FakeConnection(storageServer.Connection):
     def __init__(self, conInfo):
         self.conInfo = conInfo
         self.connected = False

@@ -76,7 +76,46 @@ CON_TYPE_ID_2_CON_TYPE = {
     sd.GLUSTERFS_DOMAIN: 'glusterfs'}
 
 
-class ExampleConnection(object):
+class Connection:
+    log = logging.getLogger("storage.server.connection")
+
+    @classmethod
+    def connect_all(cls, connections):
+        results = []
+
+        for con in connections:
+            try:
+                con.connect()
+            except Exception as err:
+                cls.log.error(
+                    "Could not connect to storageServer", exc_info=True)
+                status, _ = _translateConnectionError(err)
+            else:
+                status = 0
+
+            results.append((con, status))
+
+        return results
+
+    @classmethod
+    def disconnect_all(cls, connections):
+        results = []
+
+        for con in connections:
+            try:
+                con.disconnect()
+                status = 0
+            except Exception as err:
+                cls.log.error("Could not disconnect from storageServer",
+                              exc_info=True)
+                status, _ = _translateConnectionError(err)
+
+            results.append({'id': con.id, 'status': status})
+
+        return results
+
+
+class ExampleConnection(Connection):
     """Do not inherit from this object it is just to show and document the
     connection object interface"""
 
@@ -122,7 +161,7 @@ class ExampleConnection(object):
         of dictionaries"""
 
 
-class MountConnection(object):
+class MountConnection(Connection):
 
     CGROUP = None
     DIR = ""
@@ -355,7 +394,7 @@ class GlusterFSConnection(MountConnection):
             return {}
 
 
-class NFSConnection(object):
+class NFSConnection(Connection):
     DEFAULT_OPTIONS = ["soft", "nosharecache"]
 
     log = logging.getLogger("storage.server.nfs")
@@ -487,7 +526,7 @@ class NFSConnection(object):
         return hash(type(self)) ^ hash(self._mountCon)
 
 
-class IscsiConnection(object):
+class IscsiConnection(Connection):
     log = logging.getLogger("storage.server.iscsi")
 
     class Mismatch(Exception):
@@ -657,7 +696,7 @@ class IscsiConnection(object):
         return hsh
 
 
-class FcpConnection(object):
+class FcpConnection(Connection):
 
     @property
     def id(self):
@@ -686,7 +725,7 @@ class FcpConnection(object):
         return hash((self.__class__, self._id))
 
 
-class LocalDirectoryConnection(object):
+class LocalDirectoryConnection(Connection):
 
     @property
     def id(self):
@@ -901,3 +940,22 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
         raise se.StorageServerActionError()
 
     return ConnectionInfo(typeName, params)
+
+
+def _translateConnectionError(e):
+    if e is None:
+        return 0, ""
+
+    if isinstance(e, mount.MountError):
+        return se.MountError.code, se.MountError.msg
+    if isinstance(e, iscsi.iscsiadm.IscsiAuthenticationError):
+        return se.iSCSILoginAuthError.code, se.iSCSILoginAuthError.msg
+    if isinstance(e, iscsi.iscsiadm.IscsiInterfaceError):
+        return se.iSCSIifaceError.code, se.iSCSIifaceError.msg
+    if isinstance(e, iscsi.iscsiadm.IscsiError):
+        return se.iSCSISetupError.code, se.iSCSISetupError.msg
+
+    if hasattr(e, 'code'):
+        return e.code, e.msg
+
+    return se.GeneralException.code, str(e)
