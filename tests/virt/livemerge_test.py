@@ -362,8 +362,9 @@ def test_merger_dump_jobs(fake_time):
             "extend": {
                 "attempt": 1,
                 "base_size": base["apparentsize"],
-                "top_size": top["apparentsize"],
+                "capacity": top["capacity"],
                 "started": fake_time.time,
+                "top_size": top["apparentsize"],
             },
             "pivot": None,
             "id": job_id,
@@ -952,8 +953,9 @@ def test_extend_timeout_recover(fake_time):
     assert persisted_job["state"] == Job.EXTEND
     assert persisted_job["extend"] == {
         "attempt": 1,
-        "started": fake_time.time,
         "base_size": base_size,
+        "capacity": top["capacity"],
+        "started": fake_time.time,
         "top_size": top_size,
     }
 
@@ -969,8 +971,9 @@ def test_extend_timeout_recover(fake_time):
     assert persisted_job["state"] == Job.EXTEND
     assert persisted_job["extend"] == {
         "attempt": 2,
-        "started": fake_time.time,
         "base_size": base_size,
+        "capacity": top["capacity"],
+        "started": fake_time.time,
         "top_size": top_size,
     }
 
