@@ -526,9 +526,33 @@ class IscsiConnection(object):
         self._cred = credentials
 
     def connect(self):
+        self._maybe_connect_iser()
+        self._connect_iscsi()
+
+    def _connect_iscsi(self):
         iscsi.addIscsiNode(self._iface, self._target, self._cred)
         timeout = config.getint("irs", "udev_settle_timeout")
         udevadm.settle(timeout)
+
+    @deprecated
+    def _maybe_connect_iser(self):
+        """
+        Tries to connect the storage server over iSER.
+        This applies if 'iser' is in the configuration option
+        'iscsi_default_ifaces'.
+        """
+        # FIXME: remove this method when iface selection is in higher interface
+        try:
+            self._iface.initiatorName
+        except KeyError:
+            ifaces = config.get('irs', 'iscsi_default_ifaces').split(',')
+            if 'iser' in ifaces:
+                self._iface = iscsi.IscsiInterface('iser')
+                try:
+                    self._connect_iscsi()
+                    self._disconnect_iscsi()
+                except:
+                    self._iface = iscsi.IscsiInterface('default')
 
     def _match(self, session):
         target = session.target
@@ -590,6 +614,9 @@ class IscsiConnection(object):
             raise
 
     def disconnect(self):
+        self._disconnect_iscsi()
+
+    def _disconnect_iscsi(self):
         self.log.info("disconnecting")
         try:
             sid = self.getSessionInfo().id
@@ -752,26 +779,6 @@ class ConnectionFactory(object):
             raise UnknownConnectionTypeError(conType)
 
         return ctor(**params)
-
-
-@deprecated
-def connectStorageOverIser(conDef, conObj, conTypeId):
-    """
-    Tries to connect the storage server over iSER.
-    This applies if the storage type is iSCSI and 'iser' is in
-    the configuration option 'iscsi_default_ifaces'.
-    """
-    # FIXME: remove this method when iface selection is in higher interface
-    typeName = CON_TYPE_ID_2_CON_TYPE[conTypeId]
-    if typeName == 'iscsi' and 'initiatorName' not in conDef:
-        ifaces = config.get('irs', 'iscsi_default_ifaces').split(',')
-        if 'iser' in ifaces:
-            conObj._iface = iscsi.IscsiInterface('iser')
-            try:
-                conObj.connect()
-                conObj.disconnect()
-            except:
-                conObj._iface = iscsi.IscsiInterface('default')
 
 
 def connectionDict2ConnectionInfo(conTypeId, conDict):

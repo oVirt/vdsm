@@ -2177,7 +2177,6 @@ class HSM(object):
                 domType, conDef)
             conObj = storageServer.ConnectionFactory.createConnection(conInfo)
             try:
-                storageServer.connectStorageOverIser(conDef, conObj, domType)
                 conObj.connect()
             except Exception as err:
                 self.log.error(

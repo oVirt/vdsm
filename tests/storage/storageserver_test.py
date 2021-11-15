@@ -21,9 +21,12 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import pytest
+
 from monkeypatch import MonkeyPatch
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
+from vdsm.storage import sd
 from vdsm.storage import storageServer
 from vdsm.storage.storageServer import GlusterFSConnection
 from vdsm.storage.storageServer import IscsiConnection
@@ -294,3 +297,21 @@ class TestGlusterFSNotAccessibleConnection(VdsmTestCase):
         gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music",
                                       options=userMountOptions)
         self.assertEqual(gluster.options, userMountOptions)
+
+
+def test_prepare_connection_without_initiator_name():
+    con_def = [{
+        "password": "password",
+        "port": "3260",
+        "iqn": "iqn.2016-01.com.ovirt:444",
+        "connection": "192.168.1.2",
+        "ipv6_enabled": "false",
+        "id": "994a711a-60f3-411a-aca2-0b60f01e8b8c",
+        "user": "",
+        "tpgt": "1",
+    }]
+    conn = storageServer._prepare_connections(sd.ISCSI_DOMAIN, con_def)
+
+    # Unset keys raise KeyError
+    with pytest.raises(KeyError):
+        conn[0].iface.initiatorName
