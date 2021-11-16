@@ -7,7 +7,7 @@ build_vdsm
 
 cp $PWD/lib/vdsm/api/vdsm-api.html "$EXPORT_DIR"
 
-yum-builddep ./vdsm.spec
+dnf builddep -y ./vdsm.spec
 make rpm
 
 find "$BUILDS" \
