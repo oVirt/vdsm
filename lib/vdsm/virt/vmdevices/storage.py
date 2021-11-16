@@ -107,13 +107,6 @@ VolumeChainEntry = collections.namedtuple(
     ['uuid', 'path', 'index'])
 
 
-BlockInfo = collections.namedtuple("BlockInfo", [
-    "capacity",  # guest virtual size
-    "allocation",  # host allocated size (highest allocated offset)
-    "physical"  # host physical size (lv size, file size)
-])
-
-
 class Drive(core.Base):
     __slots__ = ('iface', '_path', 'readonly', 'bootOrder', 'domainID',
                  'poolID', 'imageID', 'UUID', 'volumeID', 'format',
