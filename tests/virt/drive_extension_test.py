@@ -85,6 +85,7 @@ REPLICA_BASE_INDEX = 1000
 def drive_config(**kw):
     ''' Return drive configuration updated from **kw '''
     conf = {
+        'name': 'vda',
         'device': 'disk',
         'format': 'raw',
         'iface': 'virtio',
@@ -98,24 +99,54 @@ def drive_config(**kw):
     return conf
 
 
-def block_info(capacity=4 * GiB, allocation=0, physical=4 * GiB):
+def block_info(
+        name="vda", path="/virtio/0", backingIndex=1, capacity=4 * GiB,
+        allocation=0, physical=4 * GiB, threshold=0):
     return {
+        "name": name,
+        "path": path,
+        "backingIndex": backingIndex,
         "capacity": capacity,
         "allocation": allocation,
         "physical": physical,
+        "threshold": threshold,
     }
 
 
-DRIVE_INFOS = (
-    (
-        drive_config(index=0, format='cow', diskType=DISK_TYPE.BLOCK),
-        block_info(allocation=1 * GiB, physical=2 * GiB),
-    ),
-    (
-        drive_config(index=1, format='cow', diskType=DISK_TYPE.BLOCK),
-        block_info(allocation=1 * GiB, physical=2 * GiB),
-    ),
-)
+def drive_infos():
+    return (
+        (
+            drive_config(
+                name="vda",
+                index=0,
+                format='cow',
+                diskType=DISK_TYPE.BLOCK,
+            ),
+            block_info(
+                name="vda",
+                path="/virtio/0",
+                # libvirt starts backingIndex at 1.
+                backingIndex=1,
+                allocation=1 * GiB,
+                physical=2 * GiB,
+            ),
+        ),
+        (
+            drive_config(
+                name="vdb",
+                index=1,
+                format='cow',
+                diskType=DISK_TYPE.BLOCK,
+            ),
+            block_info(
+                name="vdb",
+                path="/virtio/1",
+                backingIndex=2,
+                allocation=1 * GiB,
+                physical=2 * GiB,
+            ),
+        ),
+    )
 
 
 @pytest.fixture
@@ -164,21 +195,20 @@ def check_extension(drive_info, drive_obj, extension_req):
 
 
 def test_extend(tmp_config):
-    vm = FakeVM(DRIVE_INFOS)
+    vm = FakeVM(drive_infos())
     drives = vm.getDiskDevices()
+    drv = drives[1]
 
     # first run: does nothing but set the block thresholds
     vm.monitor_drives()
 
     # Simulate writing to drive vdb
-    vdb = vm._dom.block_info['/virtio/1']
+    vdb = vm.block_stats[2]
 
-    alloc = allocation_threshold_for_resize_mb(
-        vdb, drives[1]) + 1 * MiB
+    alloc = allocation_threshold_for_resize_mb(vdb, drv) + 1 * MiB
 
     vdb['allocation'] = alloc
 
-    drv = drives[1]
     assert drv.threshold_state == BLOCK_THRESHOLD.SET
 
     # Check that the double event for top volume is ignored.
@@ -202,19 +232,18 @@ def test_extend(tmp_config):
 
     simulate_extend_callback(vm.cif.irs, extension_id=0)
 
-    drv = drives[1]
     assert drv.threshold_state == BLOCK_THRESHOLD.SET
 
 
 def test_extend_no_allocation(tmp_config):
-    vm = FakeVM(DRIVE_INFOS)
+    vm = FakeVM(drive_infos())
     drives = vm.getDiskDevices()
 
     # first run: does nothing but set the block thresholds
     vm.monitor_drives()
 
     # Simulate writing to drive vdb
-    vdb = vm._dom.block_info['/virtio/1']
+    vdb = vm.block_stats[2]
 
     # Simulate libvirt bug when alloction is not reported during backup.
     # https://bugzilla.redhat.com/2015281
@@ -380,12 +409,11 @@ def test_set_new_threshold_when_state_unset(
 
     assert vda.threshold_state == expected_state
     if threshold is not None:
-        target = "{}[{}]".format(vda.name, vda.index)
-        assert vm._dom.thresholds[target] == threshold
+        assert vm._dom.thresholds["vda[1]"] == threshold
 
 
 def test_set_new_threshold_when_state_unset_but_fails(tmp_config):
-    vm = FakeVM(DRIVE_INFOS)
+    vm = FakeVM(drive_infos())
     drives = vm.getDiskDevices()
 
     for drive in drives:
@@ -406,18 +434,19 @@ def test_set_new_threshold_when_state_set(tmp_config):
     # Vm.monitor_drives must not pick up drives with
     # threshold_state == SET, so we call
     # Vm.extend_drive_if_needed explictely
-    vm = FakeVM(DRIVE_INFOS)
+    vm = FakeVM(drive_infos())
     drives = vm.getDiskDevices()
 
     drives[0].threshold_state = BLOCK_THRESHOLD.SET
 
-    extended = vm.extend_drive_if_needed(drives[0])
+    block_stats = vm.drive_monitor.get_block_stats()
+    extended = vm.extend_drive_if_needed(drives[0], block_stats)
 
     assert not extended
 
 
 def test_force_drive_threshold_state_exceeded(tmp_config):
-    vm = FakeVM(DRIVE_INFOS)
+    vm = FakeVM(drive_infos())
 
     # Simulate event not received. Possible cases:
     # - the handling of the event in Vdsm was delayed because some
@@ -428,7 +457,7 @@ def test_force_drive_threshold_state_exceeded(tmp_config):
 
     drives = vm.getDiskDevices()
 
-    vda = vm._dom.block_info['/virtio/0']
+    vda = vm.block_stats[1]
     vda['allocation'] = allocation_threshold_for_resize_mb(
         vda, drives[0]) + 1 * MiB
 
@@ -446,13 +475,13 @@ def test_event_received_before_write_completes(tmp_config):
     # volume size is still bellow the threshold.
     # We will not extend the drive, but keep it marked for
     # extension.
-    vm = FakeVM(DRIVE_INFOS)
+    vm = FakeVM(drive_infos())
     drives = vm.getDiskDevices()
 
     # NOTE: write not yet completed, so the allocation value
     # for the drive must me below than the value reported in
     # the event.
-    vda = vm._dom.block_info['/virtio/0']
+    vda = vm.block_stats[1]
 
     alloc = allocation_threshold_for_resize_mb(
         vda, drives[0]) + 1 * MiB
@@ -478,14 +507,14 @@ def test_event_received_before_write_completes(tmp_config):
 
 
 def test_block_threshold_set_failure_after_drive_extended(tmp_config):
-    vm = FakeVM(DRIVE_INFOS)
+    vm = FakeVM(drive_infos())
     drives = vm.getDiskDevices()
 
     # first run: does nothing but set the block thresholds
     vm.monitor_drives()
 
     # Simulate write on drive vdb
-    vdb = vm._dom.block_info['/virtio/1']
+    vdb = vm.block_stats[2]
 
     # The BLOCK_THRESHOLD event contains the highest allocated
     # block...
@@ -533,6 +562,7 @@ class FakeVM(Vm):
         self.cif = FakeClientIF(FakeIRS())
         self.id = 'drive_monitor_vm'
         self.drive_monitor = drivemonitor.DriveMonitor(self, self.log)
+        self.block_stats = {}
 
         disks = []
         for drive_conf, block_info in drive_infos:
@@ -540,6 +570,7 @@ class FakeVM(Vm):
             self.cif.irs.set_drive_size(drive, block_info['physical'])
             self._dom.add_drive(drive, block_info)
             disks.append(drive)
+            self.block_stats[block_info["backingIndex"]] = block_info
 
         self._devices = {hwclass.DISK: disks}
 
@@ -566,21 +597,27 @@ class FakeVM(Vm):
     def should_refresh_destination_volume(self):
         return False
 
+    def get_block_stats(self):
+        # Create libvirt response.
+        raw_stats = {"block.count": len(self.block_stats)}
+        for i, block_info in enumerate(self.block_stats.values()):
+            raw_stats[f"block.{i}.name"] = block_info["name"]
+            raw_stats[f"block.{i}.backingIndex"] = block_info["backingIndex"]
+            raw_stats[f"block.{i}.path"] = block_info["path"]
+            raw_stats[f"block.{i}.capacity"] = block_info["capacity"]
+            raw_stats[f"block.{i}.physical"] = block_info["physical"]
+            raw_stats[f"block.{i}.allocation"] = block_info["allocation"]
+            raw_stats[f"block.{i}.threshold"] = block_info["threshold"]
+        return raw_stats
+
 
 class FakeDomain(object):
 
     def __init__(self):
         self._devices = etree.Element('devices')
         self._state = (libvirt.VIR_DOMAIN_RUNNING, )
-        self.block_info = {}
         self.errors = {}
         self.thresholds = {}
-
-    def blockInfo(self, path, flags=0):
-        # TODO: support access by name
-        # flags is ignored
-        d = self.block_info[path]
-        return d['capacity'], d['allocation'], d['physical']
 
     # The following is needed in the 'pause' flow triggered
     # by the ImprobableResizeRequestError
@@ -611,13 +648,14 @@ class FakeDomain(object):
         Vm._drive_get_actual_volume_chain().
 
             <disk type='block'>
-                <source dev='/virtio/1' index='1'/>
+                <source dev='/virtio/1' index='2'/>
                 <backingStore/>
                 <alias name='alias_1'/>
             </disk>
         """
+        index = block_info["backingIndex"]
         disk = self._devices.find(
-            "./disk/source[@index='{}']".format(drive.index))
+            "./disk/source[@index='{}']".format(index))
         if disk is not None:
             disk_xml = etree.tostring(disk).decode()
             raise RuntimeError(
@@ -629,12 +667,10 @@ class FakeDomain(object):
         # monitor them.
         path_attr = "dev" if drive.diskType == "block" else "file"
 
-        extra = {path_attr: drive.path, "index": str(drive.index)}
+        extra = {path_attr: drive.path, "index": str(index)}
         etree.SubElement(disk, "source", **extra)
         etree.SubElement(disk, "backingStore")
         etree.SubElement(disk, "alias", name=drive.alias)
-
-        self.block_info[drive.path] = utils.picklecopy(block_info)
 
 
 class FakeClientIF(fake.ClientIF):
@@ -681,9 +717,7 @@ class FakeIRS(object):
 def make_drive(log, drive_conf, block_info):
     cfg = utils.picklecopy(drive_conf)
 
-    cfg['path'] = '/{iface}/{index}'.format(
-        iface=cfg['iface'], index=cfg['index']
-    )
+    cfg['path'] = block_info['path']
     cfg['alias'] = 'alias_%d' % cfg["index"]
 
     add_uuids(cfg["index"], cfg)

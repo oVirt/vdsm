@@ -1250,35 +1250,30 @@ class Vm(object):
                 if (drive.chunked or drive.replicaChunked) and not
                 drive.readonly]
 
-    def getExtendInfo(self, drive):
+    def _amend_block_info(self, drive, block_info):
         """
-        Return extension info for a chunked drive or drive replicating to
-        chunked replica volume.
+        Ammend block info from libvirt in case the drive is not chucked and is
+        replicating to a chunked drive.
         """
-        capacity, alloc, physical = self._dom.blockInfo(drive.path)
-
-        # Libvirt reports watermarks only for the source drive, but for
-        # file-based drives it reports the same alloc and physical, which
-        # breaks our extend logic. Since drive is chunked, we must have a
-        # disk-based replica, so we get the physical size from the replica.
-
         if not drive.chunked:
+            # Libvirt reports watermarks only for the source drive, but for
+            # file-based drives it reports the same alloc and physical, which
+            # breaks our extend logic. Since drive is chunked, we must have a
+            # disk-based replica, so we get the physical size from the replica.
             replica = drive.diskReplicate
             volsize = self.getVolumeSize(
                 replica["domainID"],
                 replica["poolID"],
                 replica["imageID"],
                 replica["volumeID"])
-            physical = volsize.apparentsize
+            block_info._replace(physical=volsize.apparentsize)
 
-        blockinfo = vmdevices.storage.BlockInfo(capacity, alloc, physical)
-
-        if blockinfo != drive.blockinfo:
-            drive.blockinfo = blockinfo
+        if block_info != drive.blockinfo:
+            drive.blockinfo = block_info
             self.log.debug("Extension info for drive %s volume %s: %s",
-                           drive.name, drive.volumeID, blockinfo)
+                           drive.name, drive.volumeID, block_info)
 
-        return blockinfo
+        return block_info
 
     def get_block_stats(self):
         """
@@ -1308,17 +1303,23 @@ class Vm(object):
         if not drives:
             return False
 
+        try:
+            block_stats = self.drive_monitor.get_block_stats()
+        except libvirt.libvirtError as e:
+            self.log.error("Unable to get block stats: %s", e)
+            return False
+
         extended = False
         for drive in drives:
             try:
-                if self.extend_drive_if_needed(drive):
+                if self.extend_drive_if_needed(drive, block_stats):
                     extended = True
             except drivemonitor.ImprobableResizeRequestError:
                 break
 
         return extended
 
-    def extend_drive_if_needed(self, drive):
+    def extend_drive_if_needed(self, drive, block_stats):
         """
         Check if a drive should be extended, and start extension flow if
         needed.
@@ -1337,22 +1338,16 @@ class Vm(object):
 
         Return True if started an extension flow, False otherwise.
         """
-
         if drive.threshold_state == BLOCK_THRESHOLD.SET:
             self.log.warning(
                 "Unexpected state for drive %s: threshold_state SET",
                 drive.name)
             return False
 
-        try:
-            block_info = self.getExtendInfo(drive)
-        except libvirt.libvirtError as e:
-            self.log.error("Unable to get watermarks for drive %s: %s",
-                           drive.name, e)
-            return False
+        index = self._drive_volume_index(drive, drive.volumeID)
+        block_info = self._amend_block_info(drive, block_stats[index])
 
         if drive.threshold_state == BLOCK_THRESHOLD.UNSET:
-            index = self._drive_volume_index(drive, drive.volumeID)
             self.drive_monitor.set_threshold(
                 drive, block_info.physical, index=index)
 
@@ -4474,9 +4469,14 @@ class Vm(object):
 
         if drive.chunked or drive.replicaChunked:
             try:
-                capacity, alloc, physical = self.getExtendInfo(drive)
-                self.extendDriveVolume(drive, drive.volumeID, physical,
-                                       capacity)
+                block_stats = self.drive_monitor.get_block_stats()
+                index = self._drive_volume_index(drive, drive.volumeID)
+                block_info = self._amend_block_info(drive, block_stats[index])
+                self.extendDriveVolume(
+                    drive,
+                    drive.volumeID,
+                    block_info.physical,
+                    block_info.capacity)
             except Exception:
                 self.log.exception("Initial extension request failed for %s",
                                    drive.name)
