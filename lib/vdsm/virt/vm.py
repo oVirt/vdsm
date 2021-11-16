@@ -1304,9 +1304,12 @@ class Vm(object):
         """
         Return True if at least one drive is being extended, False otherwise.
         """
-        extended = False
+        drives = self.drive_monitor.monitored_drives()
+        if not drives:
+            return False
 
-        for drive in self.drive_monitor.monitored_drives():
+        extended = False
+        for drive in drives:
             try:
                 if self.extend_drive_if_needed(drive):
                     extended = True
