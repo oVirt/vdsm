@@ -46,7 +46,10 @@ stages:
             distributions:
               - el8stream:
                   runtime-requirements:
-                    jenkins_master: all
+                    jenkins_master: ovirt.org
+              - rhel8:
+                  runtime-requirements:
+                    jenkins_master: psi.redhat.com
         - tests-py3:
             distributions:
               - el8stream:
