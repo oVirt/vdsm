@@ -192,7 +192,7 @@ class FakeVm(object):
 
     def __init__(self, drives=FAKE_DRIVES):
         self.drives = drives
-        self.id = "vm_id"
+        self.id = "vm-id"
         self.log = FakeLogger()
         self.cif = FakeClientIF()
         self.froze = False
@@ -231,7 +231,7 @@ def test_start_stop_backup(tmp_dirs):
     vm = FakeVm()
 
     socket_path = backup.socket_path(BACKUP_1_ID)
-    scratch_disk_paths = get_scratch_disks_path(BACKUP_1_ID)
+    scratch_disk_paths = get_scratch_disks_path(vm, BACKUP_1_ID)
 
     input_xml = """
         <domainbackup mode='pull'>
@@ -252,7 +252,7 @@ def test_start_stop_backup(tmp_dirs):
         """.format(socket_path, scratch_disk_paths[0], scratch_disk_paths[1])
 
     dom = FakeDomainAdapter()
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
     config = {
         'backup_id': BACKUP_1_ID,
         'disks': fake_disks
@@ -270,7 +270,7 @@ def test_start_stop_backup(tmp_dirs):
 
     assert 'checkpoint' not in res['result']
     result_disks = res['result']['disks']
-    verify_backup_urls(BACKUP_1_ID, result_disks)
+    verify_backup_urls(vm, BACKUP_1_ID, result_disks)
 
     backup.stop_backup(vm, dom, BACKUP_1_ID)
     assert not dom.backing_up
@@ -304,7 +304,7 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
         """.format(socket_path, scratch1, scratch2)
 
     dom = FakeDomainAdapter()
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
     # Set the scratch disks path to the disks
     # TODO: add tests for scratch disks on block storage domain.
     fake_disks[0]['scratch_disk'] = {
@@ -327,7 +327,7 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
     assert dom.backing_up
 
     result_disks = res['result']['disks']
-    verify_backup_urls(BACKUP_1_ID, result_disks)
+    verify_backup_urls(vm, BACKUP_1_ID, result_disks)
 
     backup.stop_backup(vm, dom, BACKUP_1_ID)
     assert not dom.backing_up
@@ -337,7 +337,7 @@ def test_full_backup_with_backup_mode(tmp_dirs):
     vm = FakeVm()
 
     socket_path = backup.socket_path(BACKUP_1_ID)
-    scratch_disk_paths = get_scratch_disks_path(BACKUP_1_ID)
+    scratch_disk_paths = get_scratch_disks_path(vm, BACKUP_1_ID)
 
     input_xml = """
         <domainbackup mode='pull'>
@@ -358,7 +358,7 @@ def test_full_backup_with_backup_mode(tmp_dirs):
         """.format(socket_path, scratch_disk_paths[0], scratch_disk_paths[1])
 
     dom = FakeDomainAdapter()
-    fake_disks = create_fake_disks(backup_mode=backup.MODE_FULL)
+    fake_disks = create_fake_disks(vm, backup_mode=backup.MODE_FULL)
     config = {
         'backup_id': BACKUP_1_ID,
         'disks': fake_disks
@@ -371,7 +371,7 @@ def test_full_backup_with_backup_mode(tmp_dirs):
 def test_incremental_backup_with_backup_mode(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
-    fake_disks = create_fake_disks(backup_mode=backup.MODE_FULL)
+    fake_disks = create_fake_disks(vm, backup_mode=backup.MODE_FULL)
 
     # start full backup
     config = {
@@ -385,7 +385,7 @@ def test_incremental_backup_with_backup_mode(tmp_dirs):
 
     # start incremental backup
     socket_path = backup.socket_path(BACKUP_2_ID)
-    scratch_disk_paths = get_scratch_disks_path(BACKUP_2_ID)
+    scratch_disk_paths = get_scratch_disks_path(vm, BACKUP_2_ID)
 
     input_xml = """
         <domainbackup mode='pull'>
@@ -441,7 +441,7 @@ def test_start_stop_backup_with_checkpoint(
     vm = FakeVm()
     dom = FakeDomainAdapter()
 
-    fake_disks = create_fake_disks(disks_in_checkpoint)
+    fake_disks = create_fake_disks(vm, disks_in_checkpoint)
     config = {
         'backup_id': BACKUP_1_ID,
         'disks': fake_disks,
@@ -460,7 +460,7 @@ def test_start_stop_backup_with_checkpoint(
     assert vm.thawed
 
     result_disks = res['result']['disks']
-    verify_backup_urls(BACKUP_1_ID, result_disks)
+    verify_backup_urls(vm, BACKUP_1_ID, result_disks)
 
     backup.stop_backup(vm, dom, BACKUP_1_ID)
     assert not dom.backing_up
@@ -471,7 +471,7 @@ def test_start_stop_backup_with_checkpoint(
 def test_incremental_backup(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
 
     # start full backup
     config = {
@@ -484,7 +484,7 @@ def test_incremental_backup(tmp_dirs):
     assert dom.backing_up
 
     result_disks = res['result']['disks']
-    verify_backup_urls(BACKUP_1_ID, result_disks)
+    verify_backup_urls(vm, BACKUP_1_ID, result_disks)
 
     backup.stop_backup(vm, dom, BACKUP_1_ID)
     assert not dom.backing_up
@@ -493,7 +493,7 @@ def test_incremental_backup(tmp_dirs):
 
     # start incremental backup
     socket_path = backup.socket_path(BACKUP_2_ID)
-    scratch_disk_paths = get_scratch_disks_path(BACKUP_2_ID)
+    scratch_disk_paths = get_scratch_disks_path(vm, BACKUP_2_ID)
 
     input_xml = """
         <domainbackup mode='pull'>
@@ -540,7 +540,7 @@ def test_incremental_backup(tmp_dirs):
     assert vm.thawed
 
     result_disks = res['result']['disks']
-    verify_backup_urls(BACKUP_2_ID, result_disks)
+    verify_backup_urls(vm, BACKUP_2_ID, result_disks)
 
     backup.stop_backup(vm, dom, BACKUP_2_ID)
     verify_scratch_disks_removed(vm)
@@ -555,7 +555,7 @@ def test_full_backup_without_checkpoint_with_previous_chain(tmp_dirs):
     # a full backup without a checkpoint can be taken while there are defined
     # checkpoints for the VM.
     dom = FakeDomainAdapter(output_checkpoints=[CHECKPOINT_1, CHECKPOINT_2])
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
 
     # Start full backup without a checkpoint
     config = {
@@ -570,7 +570,7 @@ def test_full_backup_without_checkpoint_with_previous_chain(tmp_dirs):
     assert dom.backing_up
 
     result_disks = res['result']['disks']
-    verify_backup_urls(BACKUP_1_ID, result_disks)
+    verify_backup_urls(vm, BACKUP_1_ID, result_disks)
 
     backup.stop_backup(vm, dom, BACKUP_1_ID)
     assert not dom.backing_up
@@ -583,7 +583,7 @@ def test_start_backup_failed_get_checkpoint(tmp_dirs):
     dom.errors["checkpointLookupByName"] = fake.libvirt_error(
         [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
 
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
     config = {
         'backup_id': BACKUP_1_ID,
         'disks': fake_disks,
@@ -601,7 +601,7 @@ def test_start_backup_failed_get_checkpoint(tmp_dirs):
 
     assert 'checkpoint' not in res['result']
     result_disks = res['result']['disks']
-    verify_backup_urls(BACKUP_1_ID, result_disks)
+    verify_backup_urls(vm, BACKUP_1_ID, result_disks)
 
     backup.stop_backup(vm, dom, BACKUP_1_ID)
     assert not dom.backing_up
@@ -613,7 +613,7 @@ def test_start_backup_disk_not_found():
     vm = FakeVm()
     dom = FakeDomainAdapter()
 
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
     fake_disks.append({
         'domainID': make_uuid(),
         'imageID': make_uuid(),
@@ -643,7 +643,7 @@ def test_backup_begin_failed(tmp_dirs):
     dom.errors["backupBegin"] = fake.libvirt_error(
         [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
 
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
 
     config = {
         'backup_id': BACKUP_1_ID,
@@ -667,7 +667,7 @@ def test_backup_begin_checkpoint_inconsistent(tmp_dirs):
         [libvirt.VIR_ERR_CHECKPOINT_INCONSISTENT],
         "Fake libvirt error")
 
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
 
     config = {
         'backup_id': BACKUP_1_ID,
@@ -684,7 +684,7 @@ def test_backup_begin_freeze_failed(tmp_dirs):
         [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
     dom = FakeDomainAdapter()
 
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
 
     config = {
         'backup_id': BACKUP_1_ID,
@@ -709,7 +709,7 @@ def test_backup_begin_consistency_not_required(tmp_dirs, require_consistency):
         [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
     dom = FakeDomainAdapter()
 
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
     config = {
         'backup_id': BACKUP_1_ID,
         'disks': fake_disks,
@@ -721,7 +721,7 @@ def test_backup_begin_consistency_not_required(tmp_dirs, require_consistency):
     verify_scratch_disks_exists(vm)
 
     result_disks = res['result']['disks']
-    verify_backup_urls(BACKUP_1_ID, result_disks)
+    verify_backup_urls(vm, BACKUP_1_ID, result_disks)
 
 
 def test_backup_begin_failed_no_disks(tmp_dirs):
@@ -742,7 +742,7 @@ def test_backup_begin_failed_full_with_inremental_disks(tmp_dirs):
     dom = FakeDomainAdapter()
 
     # Set disks backup_mode to 'incremental'
-    fake_disks = create_fake_disks(backup_mode=backup.MODE_INCREMENTAL)
+    fake_disks = create_fake_disks(vm, backup_mode=backup.MODE_INCREMENTAL)
     config = {
         'backup_id': BACKUP_1_ID,
         'disks': fake_disks
@@ -758,7 +758,7 @@ def test_stop_backup_failed(tmp_dirs):
     dom.errors["abortJob"] = fake.libvirt_error(
         [libvirt.VIR_ERR_INTERNAL_ERROR], "Fake libvirt error")
 
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
 
     config = {
         'backup_id': BACKUP_1_ID,
@@ -770,7 +770,7 @@ def test_stop_backup_failed(tmp_dirs):
     verify_scratch_disks_exists(vm)
 
     result_disks = res['result']['disks']
-    verify_backup_urls(BACKUP_1_ID, result_disks)
+    verify_backup_urls(vm, BACKUP_1_ID, result_disks)
 
     with pytest.raises(exception.BackupError):
         backup.stop_backup(vm, dom, BACKUP_1_ID)
@@ -816,7 +816,7 @@ def test_backup_info(tmp_dirs):
         """.format(backup.socket_path(BACKUP_1_ID))
     dom = FakeDomainAdapter(output_backup_xml=output_xml)
 
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
     config = {
         'backup_id': BACKUP_1_ID,
         'disks': fake_disks
@@ -857,7 +857,7 @@ def test_fail_parse_backup_xml(tmp_dirs):
         """
     dom = FakeDomainAdapter(output_backup_xml=INVALID_BACKUP_XML)
 
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
     config = {
         'backup_id': BACKUP_1_ID,
         'disks': fake_disks
@@ -946,7 +946,7 @@ def test_redefine_checkpoints_using_config():
     dom = FakeDomainAdapter(output_checkpoints=[checkpoint_1, checkpoint_2])
     vm = FakeVm()
 
-    fake_disks = create_fake_disks()
+    fake_disks = create_fake_disks(vm)
     fake_checkpoint_config_cfg = [
         {
             'id': CHECKPOINT_1_ID,
@@ -1188,12 +1188,12 @@ def verify_scratch_disks_exists(vm, backup_id=BACKUP_1_ID):
     assert res["status"]["code"] == 0
 
     scratch_disks = [backup_id + "." + drive.name
-                     for drive in FAKE_DRIVES.values()]
+                     for drive in vm.drives.values()]
     assert sorted(res["result"]) == sorted(scratch_disks)
 
 
-def verify_backup_urls(backup_id, result_disks):
-    for image_id, drive in FAKE_DRIVES.items():
+def verify_backup_urls(vm, backup_id, result_disks):
+    for image_id, drive in vm.drives.items():
         socket_path = backup.socket_path(backup_id)
         exp_addr = nbdutils.UnixAddress(socket_path).url(drive.name)
         assert result_disks[image_id] == exp_addr
@@ -1206,10 +1206,11 @@ def verify_scratch_disks_removed(vm):
 
 
 def create_fake_disks(
+        vm,
         disks_in_checkpoint=(IMAGE_1_UUID, IMAGE_2_UUID),
         backup_mode=None):
     fake_disks = []
-    for img_id in FAKE_DRIVES:
+    for img_id in vm.drives:
         fake_disks.append({
             'domainID': DOMAIN_ID,
             'imageID': img_id,
@@ -1220,12 +1221,12 @@ def create_fake_disks(
     return fake_disks
 
 
-def get_scratch_disks_path(backup_id):
+def get_scratch_disks_path(vm, backup_id):
     scratch_disk_paths = []
-    for drive in FAKE_DRIVES.values():
+    for drive in vm.drives.values():
         scratch_disk_name = backup_id + "." + drive.name
         scratch_disk_path = os.path.join(
-            transientdisk.P_TRANSIENT_DISKS, "vm_id", scratch_disk_name)
+            transientdisk.P_TRANSIENT_DISKS, vm.id, scratch_disk_name)
         scratch_disk_paths.append(scratch_disk_path)
 
     return scratch_disk_paths
