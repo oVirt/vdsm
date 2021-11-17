@@ -55,40 +55,40 @@ def create_disk(
     Returns:
         dict with "path" to the new disk.
     """
-    dir_path = _owner_dir(owner_name)
+    dir_path = owner_dir(owner_name)
     _create_dir(dir_path)
-    disk_path = _disk_dir(owner_name, disk_name)
-    log.info("Creating transient disk %s", disk_path)
+    path = disk_path(owner_name, disk_name)
+    log.info("Creating transient disk %s", path)
 
-    _create_placeholder(disk_path)
+    _create_placeholder(path)
     try:
         operation = qemuimg.create(
-            disk_path,
+            path,
             size=size,
             format=qemuimg.FORMAT.QCOW2,
             qcow2Compat='1.1',
             backing=backing,
             backingFormat=backing_format)
         operation.run()
-        os.chmod(disk_path, sc.FILE_VOLUME_PERMISSIONS)
+        os.chmod(path, sc.FILE_VOLUME_PERMISSIONS)
     except:
         remove_disk(owner_name, disk_name)
         raise
 
-    return dict(path=disk_path)
+    return dict(path=path)
 
 
 def remove_disk(owner_name, disk_name):
-    disk_path = _disk_dir(owner_name, disk_name)
-    log.info("Removing transient disk %s", disk_path)
+    path = disk_path(owner_name, disk_name)
+    log.info("Removing transient disk %s", path)
     try:
-        os.unlink(disk_path)
+        os.unlink(path)
     except OSError as e:
         if e.errno != errno.ENOENT:
             raise
 
     # Remove the transient disks directory if empty.
-    dir_path = _owner_dir(owner_name)
+    dir_path = owner_dir(owner_name)
     try:
         _remove_dir(dir_path)
     except OSError as e:
@@ -97,13 +97,21 @@ def remove_disk(owner_name, disk_name):
 
 
 def list_disks(owner_name):
-    dir_path = _owner_dir(owner_name)
+    dir_path = owner_dir(owner_name)
     try:
         return os.listdir(dir_path)
     except OSError as e:
         if e.errno != errno.ENOENT:
             raise
         return []
+
+
+def owner_dir(owner_name):
+    return os.path.join(P_TRANSIENT_DISKS, owner_name)
+
+
+def disk_path(owner_name, disk_name):
+    return os.path.join(P_TRANSIENT_DISKS, owner_name, disk_name)
 
 
 def _create_dir(path):
@@ -124,14 +132,6 @@ def _remove_dir(path):
         if e.errno != errno.ENOENT:
             raise
     log.info("Directory %s removed", path)
-
-
-def _owner_dir(owner_name):
-    return os.path.join(P_TRANSIENT_DISKS, owner_name)
-
-
-def _disk_dir(owner_name, disk_name):
-    return os.path.join(P_TRANSIENT_DISKS, owner_name, disk_name)
 
 
 def _create_placeholder(disk_path):
