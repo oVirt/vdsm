@@ -23,7 +23,6 @@ from __future__ import division
 from __future__ import print_function
 
 import libvirt
-import os
 import pytest
 
 from fakelib import FakeLogger
@@ -229,25 +228,26 @@ def test_start_stop_backup(tmp_dirs):
     vm = FakeVm()
 
     socket_path = backup.socket_path(BACKUP_1_ID)
-    scratch_disk_paths = get_scratch_disks_path(vm, BACKUP_1_ID)
+    scratch1 = scratch_disk_path(vm, BACKUP_1_ID, "sda")
+    scratch2 = scratch_disk_path(vm, BACKUP_1_ID, "vda")
 
-    input_xml = """
+    input_xml = f"""
         <domainbackup mode='pull'>
-            <server transport='unix' socket='{}'/>
+            <server transport='unix' socket='{socket_path}'/>
             <disks>
                 <disk name='sda' type='file'>
-                    <scratch file='{}'>
+                    <scratch file='{scratch1}'>
                         <seclabel model="dac" relabel="no"/>
                     </scratch>
                 </disk>
                 <disk name='vda' type='file'>
-                    <scratch file='{}'>
+                    <scratch file='{scratch2}'>
                         <seclabel model="dac" relabel="no"/>
                     </scratch>
                 </disk>
             </disks>
         </domainbackup>
-        """.format(socket_path, scratch_disk_paths[0], scratch_disk_paths[1])
+        """
 
     dom = FakeDomainAdapter()
     fake_disks = create_fake_disks(vm)
@@ -277,32 +277,33 @@ def test_start_stop_backup(tmp_dirs):
 
 
 def test_start_stop_backup_engine_scratch_disks(tmpdir):
+    vm = FakeVm()
+
+    socket_path = backup.socket_path(BACKUP_1_ID)
     scratch1 = create_scratch_disk(tmpdir, "scratch1")
     scratch2 = create_scratch_disk(tmpdir, "scratch2")
 
-    vm = FakeVm()
-    socket_path = backup.socket_path(BACKUP_1_ID)
-
-    input_xml = """
+    input_xml = f"""
         <domainbackup mode='pull'>
-            <server transport='unix' socket='{}'/>
+            <server transport='unix' socket='{socket_path}'/>
             <disks>
                 <disk name='sda' type='file'>
-                    <scratch file='{}'>
+                    <scratch file='{scratch1}'>
                         <seclabel model="dac" relabel="no"/>
                     </scratch>
                 </disk>
                 <disk name='vda' type='file'>
-                    <scratch file='{}'>
+                    <scratch file='{scratch2}'>
                         <seclabel model="dac" relabel="no"/>
                     </scratch>
                 </disk>
             </disks>
         </domainbackup>
-        """.format(socket_path, scratch1, scratch2)
+        """
 
     dom = FakeDomainAdapter()
     fake_disks = create_fake_disks(vm)
+
     # Set the scratch disks path to the disks
     # TODO: add tests for scratch disks on block storage domain.
     fake_disks[0]['scratch_disk'] = {
@@ -335,25 +336,26 @@ def test_full_backup_with_backup_mode(tmp_dirs):
     vm = FakeVm()
 
     socket_path = backup.socket_path(BACKUP_1_ID)
-    scratch_disk_paths = get_scratch_disks_path(vm, BACKUP_1_ID)
+    scratch1 = scratch_disk_path(vm, BACKUP_1_ID, "sda")
+    scratch2 = scratch_disk_path(vm, BACKUP_1_ID, "vda")
 
-    input_xml = """
+    input_xml = f"""
         <domainbackup mode='pull'>
-            <server transport='unix' socket='{}'/>
+            <server transport='unix' socket='{socket_path}'/>
             <disks>
                 <disk backupmode="full" name='sda' type='file'>
-                    <scratch file='{}'>
+                    <scratch file='{scratch1}'>
                         <seclabel model="dac" relabel="no"/>
                     </scratch>
                 </disk>
                 <disk backupmode="full" name='vda' type='file'>
-                    <scratch file='{}'>
+                    <scratch file='{scratch2}'>
                         <seclabel model="dac" relabel="no"/>
                     </scratch>
                 </disk>
             </disks>
         </domainbackup>
-        """.format(socket_path, scratch_disk_paths[0], scratch_disk_paths[1])
+        """
 
     dom = FakeDomainAdapter()
     fake_disks = create_fake_disks(vm, backup_mode=backup.MODE_FULL)
@@ -383,32 +385,28 @@ def test_incremental_backup_with_backup_mode(tmp_dirs):
 
     # start incremental backup
     socket_path = backup.socket_path(BACKUP_2_ID)
-    scratch_disk_paths = get_scratch_disks_path(vm, BACKUP_2_ID)
+    scratch1 = scratch_disk_path(vm, BACKUP_2_ID, "sda")
+    scratch2 = scratch_disk_path(vm, BACKUP_2_ID, "vda")
 
-    input_xml = """
+    input_xml = f"""
         <domainbackup mode='pull'>
-            <incremental>{}</incremental>
-            <server transport='unix' socket='{}'/>
+            <incremental>{CHECKPOINT_1_ID}</incremental>
+            <server transport='unix' socket='{socket_path}'/>
             <disks>
                 <disk backupmode="full" name='sda' type='file'>
-                    <scratch file='{}'>
+                    <scratch file='{scratch1}'>
                         <seclabel model="dac" relabel="no"/>
                     </scratch>
                 </disk>
-                <disk backupmode="incremental" incremental='{}'
+                <disk backupmode="incremental" incremental='{CHECKPOINT_1_ID}'
                  name='vda' type='file'>
-                    <scratch file='{}'>
+                    <scratch file='{scratch2}'>
                         <seclabel model="dac" relabel="no"/>
                     </scratch>
                 </disk>
             </disks>
         </domainbackup>
-        """.format(
-        CHECKPOINT_1_ID,
-        socket_path,
-        scratch_disk_paths[0],
-        CHECKPOINT_1_ID,
-        scratch_disk_paths[1])
+        """
 
     dom.output_checkpoints = [CHECKPOINT_1]
 
@@ -491,30 +489,27 @@ def test_incremental_backup(tmp_dirs):
 
     # start incremental backup
     socket_path = backup.socket_path(BACKUP_2_ID)
-    scratch_disk_paths = get_scratch_disks_path(vm, BACKUP_2_ID)
+    scratch1 = scratch_disk_path(vm, BACKUP_2_ID, "sda")
+    scratch2 = scratch_disk_path(vm, BACKUP_2_ID, "vda")
 
-    input_xml = """
+    input_xml = f"""
         <domainbackup mode='pull'>
-            <incremental>{}</incremental>
-            <server transport='unix' socket='{}'/>
+            <incremental>{CHECKPOINT_1_ID}</incremental>
+            <server transport='unix' socket='{socket_path}'/>
             <disks>
                 <disk name='sda' type='file'>
-                    <scratch file='{}'>
+                    <scratch file='{scratch1}'>
                         <seclabel model="dac" relabel="no"/>
                     </scratch>
                 </disk>
                 <disk name='vda' type='file'>
-                    <scratch file='{}'>
+                    <scratch file='{scratch2}'>
                         <seclabel model="dac" relabel="no"/>
                     </scratch>
                 </disk>
             </disks>
         </domainbackup>
-        """.format(
-        CHECKPOINT_1_ID,
-        socket_path,
-        scratch_disk_paths[0],
-        scratch_disk_paths[1])
+        """
 
     dom.output_checkpoints = [CHECKPOINT_1]
 
@@ -792,9 +787,12 @@ def test_stop_non_existing_backup():
 
 def test_backup_info(tmp_dirs):
     vm = FakeVm()
-    output_xml = """
+
+    socket_path = backup.socket_path(BACKUP_1_ID)
+
+    output_xml = f"""
         <domainbackup mode='pull'>
-          <server transport='unix' socket='{}'/>
+          <server transport='unix' socket='{socket_path}'/>
           <disks>
             <disk name='sda' backup='yes' type='file' exportname='sda'>
                 <driver type='qcow2'/>
@@ -811,7 +809,8 @@ def test_backup_info(tmp_dirs):
             <disk name='hdc' backup='no'/>
           </disks>
         </domainbackup>
-        """.format(backup.socket_path(BACKUP_1_ID))
+        """
+
     dom = FakeDomainAdapter(output_backup_xml=output_xml)
 
     fake_disks = create_fake_disks(vm)
@@ -1219,15 +1218,8 @@ def create_fake_disks(
     return fake_disks
 
 
-def get_scratch_disks_path(vm, backup_id):
-    scratch_disk_paths = []
-    for drive in vm.drives.values():
-        scratch_disk_name = backup_id + "." + drive.name
-        scratch_disk_path = os.path.join(
-            transientdisk.P_TRANSIENT_DISKS, vm.id, scratch_disk_name)
-        scratch_disk_paths.append(scratch_disk_path)
-
-    return scratch_disk_paths
+def scratch_disk_path(vm, backup_id, drive_name):
+    return transientdisk.disk_path(vm.id, backup_id + "." + drive_name)
 
 
 def create_scratch_disk(tmpdir, name):
