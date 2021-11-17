@@ -50,8 +50,6 @@ from virt.fakedomainadapter import FakeDomainAdapter
 
 from . import vmfakelib as fake
 
-DOMAIN_ID = make_uuid()
-VOLUME_ID = make_uuid()
 # Full backup parameters
 BACKUP_1_ID = make_uuid()
 CHECKPOINT_1_ID = make_uuid()
@@ -1212,9 +1210,9 @@ def create_fake_disks(
     fake_disks = []
     for img_id in vm.drives:
         fake_disks.append({
-            'domainID': DOMAIN_ID,
+            'domainID': make_uuid(),
             'imageID': img_id,
-            'volumeID': VOLUME_ID,
+            'volumeID': make_uuid(),
             'checkpoint': img_id in disks_in_checkpoint,
             'backup_mode': backup_mode
         })
