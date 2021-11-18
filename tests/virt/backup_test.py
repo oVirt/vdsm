@@ -18,10 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
 import libvirt
 import pytest
 
-from fakelib import FakeLogger
 from testlib import make_uuid
 from testlib import maybefail
 from testlib import normalized
@@ -186,7 +186,7 @@ class FakeVm(object):
     def __init__(self, drives=FAKE_DRIVES):
         self.drives = drives
         self.id = "vm-id"
-        self.log = FakeLogger()
+        self.log = logging.getLogger("test")
         self.cif = FakeClientIF()
         self.froze = False
         self.thawed = False
