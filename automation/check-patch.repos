@@ -1,4 +1,4 @@
-ovirt-master-snapshot,http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/el8/
+ovirt-4.4-snapshot,http://resources.ovirt.org/pub/ovirt-4.4-snapshot/rpm/el8/
 ovirt-master-copr-sbonazzo-collection-el8,https://copr-be.cloud.fedoraproject.org/results/sbonazzo/EL8_collection/epel-8-$basearch/
 ovirt-master-glusterfs-8-testing-el8,https://buildlogs.centos.org/centos/8/storage/$basearch/gluster-8/
 ovirt-master-centos-ovirt44-el8,https://buildlogs.centos.org/centos/8/virt/$basearch/ovirt-44/
