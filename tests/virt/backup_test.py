@@ -222,30 +222,12 @@ def tmp_dirs(tmpdir, monkeypatch):
 
 def test_start_stop_backup(tmp_dirs):
     vm = FakeVm()
+    dom = FakeDomainAdapter()
 
-    socket_path = backup.socket_path(BACKUP_1_ID)
+    socket = backup.socket_path(BACKUP_1_ID)
     scratch1 = scratch_disk_path(vm, BACKUP_1_ID, "sda")
     scratch2 = scratch_disk_path(vm, BACKUP_1_ID, "vda")
 
-    input_xml = f"""
-        <domainbackup mode='pull'>
-            <server transport='unix' socket='{socket_path}'/>
-            <disks>
-                <disk name='sda' type='file'>
-                    <scratch file='{scratch1}'>
-                        <seclabel model="dac" relabel="no"/>
-                    </scratch>
-                </disk>
-                <disk name='vda' type='file'>
-                    <scratch file='{scratch2}'>
-                        <seclabel model="dac" relabel="no"/>
-                    </scratch>
-                </disk>
-            </disks>
-        </domainbackup>
-        """
-
-    dom = FakeDomainAdapter()
     fake_disks = create_fake_disks(vm)
     config = {
         'backup_id': BACKUP_1_ID,
@@ -253,8 +235,30 @@ def test_start_stop_backup(tmp_dirs):
     }
 
     res = backup.start_backup(vm, dom, config)
-    assert normalized(input_xml) == normalized(dom.input_backup_xml)
     assert dom.backing_up
+
+    backup_xml = f"""
+        <domainbackup mode='pull'>
+          <server transport='unix' socket='{socket}'/>
+          <disks>
+            <disk name='sda' backup='yes' type='file' backupmode='full'
+                exportname='sda' index='7'>
+              <driver type='qcow2'/>
+              <scratch file='{scratch1}'>
+                <seclabel model='dac' relabel='no'/>
+              </scratch>
+            </disk>
+            <disk name='vda' backup='yes' type='file' backupmode='full'
+                exportname='vda' index='8'>
+              <driver type='qcow2'/>
+              <scratch file='{scratch2}'>
+                <seclabel model="dac" relabel="no"/>
+              </scratch>
+            </disk>
+          </disks>
+        </domainbackup>
+        """
+    assert normalized(dom.backupGetXMLDesc()) == normalized(backup_xml)
 
     verify_scratch_disks_exists(vm)
 
@@ -274,30 +278,12 @@ def test_start_stop_backup(tmp_dirs):
 
 def test_start_stop_backup_engine_scratch_disks(tmpdir):
     vm = FakeVm()
+    dom = FakeDomainAdapter()
 
-    socket_path = backup.socket_path(BACKUP_1_ID)
+    socket = backup.socket_path(BACKUP_1_ID)
     scratch1 = create_scratch_disk(tmpdir, "scratch1")
     scratch2 = create_scratch_disk(tmpdir, "scratch2")
 
-    input_xml = f"""
-        <domainbackup mode='pull'>
-            <server transport='unix' socket='{socket_path}'/>
-            <disks>
-                <disk name='sda' type='file'>
-                    <scratch file='{scratch1}'>
-                        <seclabel model="dac" relabel="no"/>
-                    </scratch>
-                </disk>
-                <disk name='vda' type='file'>
-                    <scratch file='{scratch2}'>
-                        <seclabel model="dac" relabel="no"/>
-                    </scratch>
-                </disk>
-            </disks>
-        </domainbackup>
-        """
-
-    dom = FakeDomainAdapter()
     fake_disks = create_fake_disks(vm)
 
     # Set the scratch disks path to the disks
@@ -318,8 +304,30 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
     }
 
     res = backup.start_backup(vm, dom, config)
-    assert normalized(input_xml) == normalized(dom.input_backup_xml)
     assert dom.backing_up
+
+    backup_xml = f"""
+        <domainbackup mode='pull'>
+          <server transport='unix' socket='{socket}'/>
+          <disks>
+            <disk name='sda' backup='yes' type='file' backupmode='full'
+                exportname='sda' index='7'>
+              <driver type='qcow2'/>
+              <scratch file='{scratch1}'>
+                <seclabel model='dac' relabel='no'/>
+              </scratch>
+            </disk>
+            <disk name='vda' backup='yes' type='file' backupmode='full'
+                exportname='vda' index='8'>
+              <driver type='qcow2'/>
+              <scratch file='{scratch2}'>
+                <seclabel model="dac" relabel="no"/>
+              </scratch>
+            </disk>
+          </disks>
+        </domainbackup>
+        """
+    assert normalized(dom.backupGetXMLDesc()) == normalized(backup_xml)
 
     result_disks = res['result']['disks']
     verify_backup_urls(vm, BACKUP_1_ID, result_disks)
@@ -330,30 +338,12 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
 
 def test_full_backup_with_backup_mode(tmp_dirs):
     vm = FakeVm()
+    dom = FakeDomainAdapter()
 
-    socket_path = backup.socket_path(BACKUP_1_ID)
+    socket = backup.socket_path(BACKUP_1_ID)
     scratch1 = scratch_disk_path(vm, BACKUP_1_ID, "sda")
     scratch2 = scratch_disk_path(vm, BACKUP_1_ID, "vda")
 
-    input_xml = f"""
-        <domainbackup mode='pull'>
-            <server transport='unix' socket='{socket_path}'/>
-            <disks>
-                <disk backupmode="full" name='sda' type='file'>
-                    <scratch file='{scratch1}'>
-                        <seclabel model="dac" relabel="no"/>
-                    </scratch>
-                </disk>
-                <disk backupmode="full" name='vda' type='file'>
-                    <scratch file='{scratch2}'>
-                        <seclabel model="dac" relabel="no"/>
-                    </scratch>
-                </disk>
-            </disks>
-        </domainbackup>
-        """
-
-    dom = FakeDomainAdapter()
     fake_disks = create_fake_disks(vm, backup_mode=backup.MODE_FULL)
     config = {
         'backup_id': BACKUP_1_ID,
@@ -361,7 +351,30 @@ def test_full_backup_with_backup_mode(tmp_dirs):
     }
 
     backup.start_backup(vm, dom, config)
-    assert normalized(input_xml) == normalized(dom.input_backup_xml)
+    assert dom.backing_up
+
+    backup_xml = f"""
+        <domainbackup mode='pull'>
+          <server transport='unix' socket='{socket}'/>
+          <disks>
+            <disk name='sda' backup='yes' type='file' backupmode='full'
+                exportname='sda' index='7'>
+              <driver type='qcow2'/>
+              <scratch file='{scratch1}'>
+                <seclabel model='dac' relabel='no'/>
+              </scratch>
+            </disk>
+            <disk name='vda' backup='yes' type='file' backupmode='full'
+                exportname='vda' index='8'>
+              <driver type='qcow2'/>
+              <scratch file='{scratch2}'>
+                <seclabel model="dac" relabel="no"/>
+              </scratch>
+            </disk>
+          </disks>
+        </domainbackup>
+        """
+    assert normalized(dom.backupGetXMLDesc()) == normalized(backup_xml)
 
 
 def test_incremental_backup_with_backup_mode(tmp_dirs):
@@ -380,29 +393,10 @@ def test_incremental_backup_with_backup_mode(tmp_dirs):
     backup.stop_backup(vm, dom, BACKUP_1_ID)
 
     # start incremental backup
-    socket_path = backup.socket_path(BACKUP_2_ID)
+
+    socket = backup.socket_path(BACKUP_2_ID)
     scratch1 = scratch_disk_path(vm, BACKUP_2_ID, "sda")
     scratch2 = scratch_disk_path(vm, BACKUP_2_ID, "vda")
-
-    input_xml = f"""
-        <domainbackup mode='pull'>
-            <incremental>{CHECKPOINT_1_ID}</incremental>
-            <server transport='unix' socket='{socket_path}'/>
-            <disks>
-                <disk backupmode="full" name='sda' type='file'>
-                    <scratch file='{scratch1}'>
-                        <seclabel model="dac" relabel="no"/>
-                    </scratch>
-                </disk>
-                <disk backupmode="incremental" incremental='{CHECKPOINT_1_ID}'
-                 name='vda' type='file'>
-                    <scratch file='{scratch2}'>
-                        <seclabel model="dac" relabel="no"/>
-                    </scratch>
-                </disk>
-            </disks>
-        </domainbackup>
-        """
 
     dom.output_checkpoints = [CHECKPOINT_1]
 
@@ -419,7 +413,30 @@ def test_incremental_backup_with_backup_mode(tmp_dirs):
     }
 
     backup.start_backup(vm, dom, config)
-    assert normalized(input_xml) == normalized(dom.input_backup_xml)
+
+    backup_xml = f"""
+        <domainbackup mode='pull'>
+          <incremental>{CHECKPOINT_1_ID}</incremental>
+          <server transport='unix' socket='{socket}'/>
+          <disks>
+            <disk name='sda' backup='yes' type='file' backupmode='full'
+                exportname='sda' index='9'>
+              <driver type='qcow2'/>
+              <scratch file='{scratch1}'>
+                <seclabel model='dac' relabel='no'/>
+              </scratch>
+            </disk>
+            <disk name='vda' backup='yes' type='file' backupmode='incremental'
+                incremental='{CHECKPOINT_1_ID}' exportname='vda' index='10'>
+              <driver type='qcow2'/>
+              <scratch file='{scratch2}'>
+                <seclabel model="dac" relabel="no"/>
+              </scratch>
+            </disk>
+          </disks>
+        </domainbackup>
+        """
+    assert normalized(dom.backupGetXMLDesc()) == normalized(backup_xml)
 
 
 @pytest.mark.parametrize(
@@ -484,28 +501,10 @@ def test_incremental_backup(tmp_dirs):
     verify_scratch_disks_removed(vm)
 
     # start incremental backup
-    socket_path = backup.socket_path(BACKUP_2_ID)
+
+    socket = backup.socket_path(BACKUP_2_ID)
     scratch1 = scratch_disk_path(vm, BACKUP_2_ID, "sda")
     scratch2 = scratch_disk_path(vm, BACKUP_2_ID, "vda")
-
-    input_xml = f"""
-        <domainbackup mode='pull'>
-            <incremental>{CHECKPOINT_1_ID}</incremental>
-            <server transport='unix' socket='{socket_path}'/>
-            <disks>
-                <disk name='sda' type='file'>
-                    <scratch file='{scratch1}'>
-                        <seclabel model="dac" relabel="no"/>
-                    </scratch>
-                </disk>
-                <disk name='vda' type='file'>
-                    <scratch file='{scratch2}'>
-                        <seclabel model="dac" relabel="no"/>
-                    </scratch>
-                </disk>
-            </disks>
-        </domainbackup>
-        """
 
     dom.output_checkpoints = [CHECKPOINT_1]
 
@@ -518,7 +517,31 @@ def test_incremental_backup(tmp_dirs):
 
     res = backup.start_backup(vm, dom, config)
     assert dom.backing_up
-    assert normalized(input_xml) == normalized(dom.input_backup_xml)
+
+    backup_xml = f"""
+        <domainbackup mode='pull'>
+          <incremental>{CHECKPOINT_1_ID}</incremental>
+          <server transport='unix' socket='{socket}'/>
+          <disks>
+            <disk name='sda' backup='yes' type='file' backupmode='incremental'
+                incremental='{CHECKPOINT_1_ID}' exportname='sda' index='9'>
+                <driver type="qcow2"/>
+                <scratch file='{scratch1}'>
+                  <seclabel model="dac" relabel="no"/>
+                </scratch>
+            </disk>
+            <disk name='vda' backup='yes' type='file' backupmode='incremental'
+                incremental='{CHECKPOINT_1_ID}' exportname='vda' index='10'>
+              <driver type="qcow2"/>
+              <scratch file='{scratch2}'>
+                <seclabel model="dac" relabel="no"/>
+              </scratch>
+            </disk>
+          </disks>
+        </domainbackup>
+        """
+    assert normalized(dom.backupGetXMLDesc()) == normalized(backup_xml)
+
     assert normalized(CHECKPOINT_2_XML) == (
         normalized(dom.input_checkpoint_xml))
 
@@ -783,32 +806,7 @@ def test_stop_non_existing_backup():
 
 def test_backup_info(tmp_dirs):
     vm = FakeVm()
-
-    socket_path = backup.socket_path(BACKUP_1_ID)
-
-    output_xml = f"""
-        <domainbackup mode='pull'>
-          <server transport='unix' socket='{socket_path}'/>
-          <disks>
-            <disk name='sda' backup='yes' type='file' exportname='sda'>
-                <driver type='qcow2'/>
-                <scratch file='/path/to/scratch_sda'>
-                    <seclabel model='dac' relabel='no'/>
-                </scratch>
-            </disk>
-            <disk name='vda' backup='yes' type='file' exportname='vda'>
-                <driver type='qcow2'/>
-                <scratch file='/path/to/scratch_vda'>
-                    <seclabel model="dac" relabel="no"/>
-                </scratch>
-            </disk>
-            <disk name='hdc' backup='no'/>
-          </disks>
-        </domainbackup>
-        """
-
-    dom = FakeDomainAdapter(output_backup_xml=output_xml)
-
+    dom = FakeDomainAdapter()
     fake_disks = create_fake_disks(vm)
     config = {
         'backup_id': BACKUP_1_ID,
@@ -843,13 +841,7 @@ def test_backup_info_get_xml_desc_failed():
 
 def test_fail_parse_backup_xml(tmp_dirs):
     vm = FakeVm()
-    INVALID_BACKUP_XML = """
-        <domainbackup mode='pull'>
-            <disks/>
-        </domainbackup>
-        """
-    dom = FakeDomainAdapter(output_backup_xml=INVALID_BACKUP_XML)
-
+    dom = FakeDomainAdapter()
     fake_disks = create_fake_disks(vm)
     config = {
         'backup_id': BACKUP_1_ID,
@@ -857,6 +849,11 @@ def test_fail_parse_backup_xml(tmp_dirs):
     }
     backup.start_backup(vm, dom, config)
 
+    dom.backup_xml = """
+        <domainbackup mode='pull'>
+            <disks/>
+        </domainbackup>
+        """
     with pytest.raises(exception.BackupError):
         backup.backup_info(vm, dom, BACKUP_1_ID)
 

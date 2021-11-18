@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import xml.etree.ElementTree as etree
+
 import libvirt
 
 from testlib import maybefail
@@ -65,13 +67,11 @@ class FakeDomainAdapter(object):
     dom.errors['backupBegin'] = vmfakelib.libvirt_error(
         [libvirt.VIR_ERR_NO_DOMAIN_BACKUP], "Some libvirt error")
 
-    Another option is to set custom backup and/or checkpoint XML
-    as a response to backupGetXMLDesc() and/or checkpointLookupByName() by
-    providing output_backup_xml/output_checkpoints when creating the
-    FakeDomainAdapter instance.
+    Another option is to set custom checkpoint XML as a response to
+    checkpointLookupByName() by providing output_checkpoints
+    when creating the FakeDomainAdapter instance.
 
     dom = FakeDomainAdapter(
-        output_backup_xml=output_backup_xml,
         output_checkpoints=[fakeCheckpoint1, fakeCheckpoint2])
 
     To test a code using DomainAdapter:
@@ -86,22 +86,24 @@ class FakeDomainAdapter(object):
             ...
     """
 
-    def __init__(self, output_backup_xml=None, output_checkpoints=()):
+    def __init__(self, output_checkpoints=()):
         self.backing_up = False
-        self.input_backup_xml = None
         self.input_checkpoint_xml = None
-        self.output_backup_xml = output_backup_xml
         self.output_checkpoints = list(output_checkpoints)
         self.errors = {}
+
+        # Index for the next block node, incremented each time new block node
+        # is created. In libvirt logs these are seen as "libvirt-7-format" and
+        # "libvirt-7-storage".
+        self.next_index = 7
 
     @maybefail
     def backupBegin(self, backup_xml, checkpoint_xml, flags=None):
         if self.backing_up:
             raise libvirt.libvirtError("backup already running for that VM")
 
-        self.input_backup_xml = backup_xml
         self.input_checkpoint_xml = checkpoint_xml
-
+        self.backup_xml = self._generate_backup_xml(backup_xml)
         self.backing_up = True
         return 0
 
@@ -118,7 +120,7 @@ class FakeDomainAdapter(object):
         if not self.backing_up:
             raise libvirt.libvirtError("no domain backup job found")
 
-        return self.output_backup_xml
+        return self.backup_xml
 
     @maybefail
     def blockInfo(self, drive_name, flags=0):
@@ -159,3 +161,95 @@ class FakeDomainAdapter(object):
                 [libvirt.VIR_ERR_INVALID_DOMAIN_CHECKPOINT,
                  '', "Invalid checkpoint error"],
                 "Fake checkpoint error")
+
+    def _generate_backup_xml(self, backup_xml):
+        """
+        Generate backup xml from backupBegin backup_xml argument.
+
+        Full backup input:
+
+        <domainbackup mode='pull'>
+          <server transport='unix' socket='/socket'/>
+          <disks>
+            <disk name='sda' type='file'>
+              <scratch file='/scratch1'>
+                <seclabel model="dac" relabel="no"/>
+              </scratch>
+            </disk>
+          </disks>
+        </domainbackup>
+
+        Full backup output:
+
+        <domainbackup mode='pull'>
+          <server transport='unix' socket='/socket'/>
+          <disks>
+            <disk name='sda' backup='yes' type='file' backupmode='full'
+                exportname='sda' index='7'>
+              <driver type='qcow2'/>
+              <scratch file='/scratch1'>
+                <seclabel model='dac' relabel='no'/>
+              </scratch>
+            </disk>
+          </disks>
+        </domainbackup>
+
+        Incremental backup input:
+
+        <domainbackup mode='pull'>
+          <incremental>checkpoint-name>/incremental>
+          <server transport='unix' socket='/socket'/>
+          <disks>
+            <disk name='sda' type='file'>
+              <scratch file='/scratch1'>
+                <seclabel model="dac" relabel="no"/>
+              </scratch>
+            </disk>
+          </disks>
+        </domainbackup>
+
+        Incremental backup output:
+
+        <domainbackup mode='pull'>
+          <incremental>checkpoint-name>/incremental>
+          <server transport='unix' socket='/socket'/>
+          <disks>
+            <disk name='sda' backup='yes' type='file' backupmode='incremental'
+                incremental='checkpoint-name' exportname='sda' index='8'>
+              <driver type='qcow2'/>
+              <scratch file='/scratch1'>
+                <seclabel model='dac' relabel='no'/>
+              </scratch>
+            </disk>
+          </disks>
+        </domainbackup>
+
+        NOTE: Libvirt also adds entries for disks that are not backed up (e.g.
+        cdrom). Since we ignore them, we don't add them here.
+        """
+        tree = etree.fromstring(backup_xml)
+
+        incremental = tree.find("./incremental")
+        backupmode = "full" if incremental is None else "incremental"
+
+        for disk in tree.findall("./disks/disk"):
+            if disk.get("backup") is None:
+                disk.set("backup", "yes")
+
+            if disk.get("backupmode") is None:
+                disk.set("backupmode", backupmode)
+
+            if disk.get("exportname") is None:
+                disk.set("exportname", disk.get("name"))
+
+            if (disk.get("incrementala") is None and
+                    disk.get("backupmode") == "incremental"):
+                disk.set("incremental", incremental.text)
+
+            disk.set("index", str(self.next_index))
+            self.next_index += 1
+
+            driver = etree.Element("driver", type="qcow2")
+            disk.insert(0, driver)
+
+        return etree.tostring(tree).decode("utf-8")
