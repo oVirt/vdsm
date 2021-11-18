@@ -18,13 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
-from __future__ import division
-
-import libvirt
 import logging
 import os
-import six
+
+import libvirt
 
 from vdsm.common import exception
 from vdsm.common import nbdutils
@@ -194,17 +191,14 @@ def start_backup(vm, dom, config):
         # Libvirt is using same logic (see src/qemu/qemu_driver.c).
         vm.thaw()
 
-    disks_urls = {
-        img_id: nbd_addr.url(drive.name)
-        for img_id, drive in six.iteritems(drives)}
+    backup = _get_backup(vm, dom, backup_cfg.backup_id)
+    vm.log.debug("backup_id %r info: %s", backup_cfg.backup_id, backup)
 
-    result = {'disks': disks_urls}
+    # TODO: add scratch disk info the drive.
 
-    if backup_cfg.to_checkpoint_id is not None:
-        _add_checkpoint_xml(
-            vm, dom, backup_cfg.backup_id, backup_cfg.to_checkpoint_id, result)
-
-    return dict(result=result)
+    return _backup_info(
+        vm, dom, backup_cfg.backup_id, backup,
+        checkpoint_id=backup_cfg.to_checkpoint_id)
 
 
 def stop_backup(vm, dom, backup_id):
@@ -222,16 +216,10 @@ def stop_backup(vm, dom, backup_id):
 
 
 def backup_info(vm, dom, backup_id, checkpoint_id=None):
-    backup_xml = _get_backup_xml(vm.id, dom, backup_id)
-    vm.log.debug("backup_id %r info: %s", backup_id, backup_xml)
-
-    disks_urls = _parse_backup_info(vm, backup_id, backup_xml)
-    result = {'disks': disks_urls}
-
-    if checkpoint_id is not None:
-        _add_checkpoint_xml(vm, dom, backup_id, checkpoint_id, result)
-
-    return dict(result=result)
+    backup = _get_backup(vm, dom, backup_id)
+    vm.log.debug("backup_id %r info: %s", backup_id, backup)
+    return _backup_info(
+        vm, dom, backup_id, backup, checkpoint_id=checkpoint_id)
 
 
 def delete_checkpoints(vm, dom, checkpoint_ids):
@@ -358,6 +346,30 @@ def _get_disks_drives(vm, backup_cfg):
     return drives
 
 
+def _get_backup(vm, dom, backup_id):
+    backup_xml = _get_backup_xml(vm.id, dom, backup_id)
+    vm.log.debug("backup_id %r xml: %s", backup_id, backup_xml)
+    return _parse_backup_xml(vm, backup_id, backup_xml)
+
+
+def _backup_info(vm, dom, backup_id, backup, checkpoint_id=None):
+    nbd_addr = nbdutils.UnixAddress(backup["socket"])
+
+    backup_urls = {}
+    for name in backup["disks"]:
+        drive = vm.find_device_by_name_or_path(name)
+        backup_urls[drive.imageID] = nbd_addr.url(name)
+
+    result = {"disks": backup_urls}
+
+    # TODO: Remove this; engine >= 4.4.6 does not need the checkpoint xml, and
+    # older engine did not support incremental backup.
+    if checkpoint_id is not None:
+        _add_checkpoint_xml(vm, dom, backup_id, checkpoint_id, result)
+
+    return dict(result=result)
+
+
 def _get_backup_xml(vm_id, dom, backup_id):
     try:
         backup_xml = dom.backupGetXMLDesc()
@@ -420,46 +432,66 @@ def _begin_backup(vm, dom, backup_cfg, backup_xml, checkpoint_xml):
             backup=backup_cfg)
 
 
-def _parse_backup_info(vm, backup_id, backup_xml):
+def _parse_backup_xml(vm, backup_id, backup_xml):
     """
-    Parse the backup info returned XML,
-    For example using Unix socket:
+    Parse the interesting parts from backup xml to dict.
+
+    Input:
 
     <domainbackup mode='pull' id='1'>
-        <server transport='unix' socket='/run/vdsm/backup-id'/>
-        <disks>
-            <disk name='vda' backup='yes' type='file'>
-                <driver type='qcow2'/>
-                <scratch file='/path/to/scratch/disk.qcow2'/>
-            </disk>
-            <disk name='sda' backup='yes' type='file'>
-                <driver type='qcow2'/>
-                <scratch file='/path/to/scratch/disk.qcow2'/>
-            </disk>
-        </disks>
+      <server transport='unix' socket='/socket'/>
+      <disks>
+        <disk name='vda' backup='yes' type='file' index='7'>
+          <driver type='qcow2'/>
+          <scratch file='/scratch1.qcow2'/>
+        </disk>
+        <disk name='sda' backup='yes' type='file' index='8'>
+          <driver type='qcow2'/>
+          <scratch file='/scratch2.qcow2'/>
+        </disk>
+      </disks>
     </domainbackup>
+
+    Output:
+
+    {
+        "socket": "/socket",
+        "disks": {"vda": 7, "sda": 8},
+    }
     """
+    backup = {}
+
     domainbackup = xmlutils.fromstring(backup_xml)
 
     server = domainbackup.find('./server')
     if server is None:
         _raise_parse_error(vm.id, backup_id, backup_xml)
 
-    path = server.get('socket')
-    if path is None:
+    socket = server.get('socket')
+    if socket is None:
         _raise_parse_error(vm.id, backup_id, backup_xml)
 
-    address = nbdutils.UnixAddress(path)
+    backup["socket"] = socket
 
-    disks_urls = {}
+    disks = {}
     for disk in domainbackup.findall("./disks/disk[@backup='yes']"):
         disk_name = disk.get('name')
         if disk_name is None:
             _raise_parse_error(vm.id, backup_id, backup_xml)
-        drive = vm.find_device_by_name_or_path(disk_name)
-        disks_urls[drive.imageID] = address.url(disk_name)
 
-    return disks_urls
+        index = disk.get("index")
+        if index is None:
+            _raise_parse_error(vm.id, backup_id, backup_xml)
+
+        try:
+            index = int(index)
+        except ValueError:
+            _raise_parse_error(vm.id, backup_id, backup_xml)
+
+        disks[disk_name] = index
+
+    backup["disks"] = disks
+    return backup
 
 
 def _raise_parse_error(vm_id, backup_id, backup_xml):
