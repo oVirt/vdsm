@@ -45,7 +45,6 @@ from vdsm.common import commands
 from vdsm.common import errors
 from vdsm.common import logutils
 from vdsm.common.compat import subprocess
-from vdsm.common.marks import deprecated
 from vdsm.common.units import MiB
 
 from vdsm.storage import devicemapper
@@ -430,22 +429,6 @@ class LVMCache(object):
     def invalidateCache(self):
         self.invalidateFilter()
         self.flush()
-
-    @deprecated
-    def cmd(self, cmd, devices=(), use_lvmpolld=True):
-        """
-        Run a command and return command rc, out, err.
-
-        Should be used only by legacy code. New code must use run_command().
-
-        TODO: remove when all callers use run_command()
-        """
-        try:
-            out = self.run_command(
-                cmd, devices=devices, use_lvmpolld=use_lvmpolld)
-            return 0, out, []
-        except se.LVMCommandError as e:
-            return e.rc, e.out, e.err
 
     def run_command(self, cmd, devices=(), use_lvmpolld=True):
         with self._cmd_sem:
