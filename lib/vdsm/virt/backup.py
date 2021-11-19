@@ -439,6 +439,7 @@ def _parse_backup_xml(vm, backup_id, backup_xml):
     Input:
 
     <domainbackup mode='pull' id='1'>
+      <incremental>checkpoint-name</incremental>
       <server transport='unix' socket='/socket'/>
       <disks>
         <disk name='vda' backup='yes' type='file' index='7'>
@@ -455,6 +456,7 @@ def _parse_backup_xml(vm, backup_id, backup_xml):
     Output:
 
     {
+        "incremental": "checkpoint-name",
         "socket": "/socket",
         "disks": {"vda": 7, "sda": 8},
     }
@@ -462,6 +464,10 @@ def _parse_backup_xml(vm, backup_id, backup_xml):
     backup = {}
 
     domainbackup = xmlutils.fromstring(backup_xml)
+
+    incremental = domainbackup.find("./incremental")
+    if incremental is not None:
+        backup["incremental"] = incremental.text
 
     server = domainbackup.find('./server')
     if server is None:
