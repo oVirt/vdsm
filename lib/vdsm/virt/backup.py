@@ -41,7 +41,7 @@ MODE_FULL = "full"
 MODE_INCREMENTAL = "incremental"
 
 
-class BackupDrive:
+class BackupDisk:
 
     def __init__(self, name, path, backup_mode, scratch_disk):
         self.name = name
@@ -156,12 +156,12 @@ def start_backup(vm, dom, config):
             reason="Cannot start a backup without disks",
             backup=backup_cfg.backup_id)
 
-    drives = _get_disks_drives(vm, backup_cfg)
+    backup_disks = _get_backup_disks(vm, backup_cfg)
     path = socket_path(backup_cfg.backup_id)
     nbd_addr = nbdutils.UnixAddress(path)
 
     # Create scratch disk for each drive
-    _create_scratch_disks(vm, dom, backup_cfg.backup_id, drives)
+    _create_scratch_disks(vm, dom, backup_cfg.backup_id, backup_disks)
 
     try:
         res = vm.freeze()
@@ -172,8 +172,8 @@ def start_backup(vm, dom, config):
                 backup=backup_cfg)
 
         backup_xml = create_backup_xml(
-            nbd_addr, drives, backup_cfg.from_checkpoint_id)
-        checkpoint_xml = create_checkpoint_xml(backup_cfg, drives)
+            nbd_addr, backup_disks, backup_cfg.from_checkpoint_id)
+        checkpoint_xml = create_checkpoint_xml(backup_cfg, backup_disks)
 
         vm.log.info(
             "Starting backup for backup_id: %r, "
@@ -268,9 +268,9 @@ def redefine_checkpoints(vm, dom, checkpoints):
                     vm.id, checkpoint_cfg.id)
 
         if checkpoint_cfg.config:
-            drives = _get_disks_drives(vm, checkpoint_cfg.config)
+            backup_disks = _get_backup_disks(vm, checkpoint_cfg.config)
             checkpoint_xml = create_checkpoint_xml(
-                checkpoint_cfg.config, drives)
+                checkpoint_cfg.config, backup_disks)
         else:
             checkpoint_xml = checkpoint_cfg.xml
 
@@ -324,15 +324,15 @@ def dump_checkpoint(dom, checkpoint_id):
         raise
 
 
-def _get_disks_drives(vm, backup_cfg):
-    drives = {}
+def _get_backup_disks(vm, backup_cfg):
+    backup_disks = {}
     try:
         for disk in backup_cfg.disks:
             drive = vm.findDriveByUUIDs({
                 'domainID': disk.dom_id,
                 'imageID': disk.img_id,
                 'volumeID': disk.vol_id})
-            drives[disk.img_id] = BackupDrive(
+            backup_disks[disk.img_id] = BackupDisk(
                 drive.name,
                 drive.path,
                 disk.backup_mode,
@@ -343,7 +343,7 @@ def _get_disks_drives(vm, backup_cfg):
             vm_id=vm.id,
             backup=backup_cfg)
 
-    return drives
+    return backup_disks
 
 
 def _get_backup(vm, dom, backup_id):
@@ -530,7 +530,7 @@ def _raise_parse_error(vm_id, backup_id, backup_xml):
         backup_id=backup_id)
 
 
-def create_backup_xml(address, drives, from_checkpoint_id=None):
+def create_backup_xml(address, backup_disks, from_checkpoint_id=None):
     domainbackup = vmxml.Element('domainbackup', mode='pull')
 
     if from_checkpoint_id is not None:
@@ -546,16 +546,16 @@ def create_backup_xml(address, drives, from_checkpoint_id=None):
     disks = vmxml.Element('disks')
 
     # fill the backup XML disks
-    for drive in drives.values():
+    for backup_disk in backup_disks.values():
         disk = vmxml.Element(
-            'disk', name=drive.name, type=drive.scratch_disk.type)
+            'disk', name=backup_disk.name, type=backup_disk.scratch_disk.type)
 
         # If backup mode reported by the engine it should be added
         # to the backup XML.
-        if drive.backup_mode is not None:
-            vmxml.set_attr(disk, "backupmode", drive.backup_mode)
+        if backup_disk.backup_mode is not None:
+            vmxml.set_attr(disk, "backupmode", backup_disk.backup_mode)
 
-            if drive.backup_mode == MODE_INCREMENTAL:
+            if backup_disk.backup_mode == MODE_INCREMENTAL:
                 # if backupmode is 'incremental' we should also provide the
                 # checkpoint ID we start the incremental backup from.
                 vmxml.set_attr(disk, MODE_INCREMENTAL, from_checkpoint_id)
@@ -563,10 +563,12 @@ def create_backup_xml(address, drives, from_checkpoint_id=None):
         # scratch element can have dev=/path/to/block/disk
         # or file=/path/to/file/disk attribute according to
         # the disk type.
-        if drive.scratch_disk.type == DISK_TYPE.BLOCK:
-            scratch = vmxml.Element('scratch', dev=drive.scratch_disk.path)
+        if backup_disk.scratch_disk.type == DISK_TYPE.BLOCK:
+            scratch = vmxml.Element(
+                'scratch', dev=backup_disk.scratch_disk.path)
         else:
-            scratch = vmxml.Element('scratch', file=drive.scratch_disk.path)
+            scratch = vmxml.Element(
+                'scratch', file=backup_disk.scratch_disk.path)
 
         storage.disable_dynamic_ownership(scratch, write_type=False)
         disk.appendChild(scratch)
@@ -578,7 +580,7 @@ def create_backup_xml(address, drives, from_checkpoint_id=None):
     return xmlutils.tostring(domainbackup)
 
 
-def create_checkpoint_xml(backup_cfg, drives):
+def create_checkpoint_xml(backup_cfg, backup_disks):
     if backup_cfg.to_checkpoint_id is None:
         return None
 
@@ -608,9 +610,9 @@ def create_checkpoint_xml(backup_cfg, drives):
         disks = vmxml.Element('disks')
         for disk in backup_cfg.disks:
             if disk.checkpoint:
-                drive = drives[disk.img_id]
+                backup_disk = backup_disks[disk.img_id]
                 disk_elm = vmxml.Element(
-                    'disk', name=drive.name, checkpoint='bitmap',
+                    'disk', name=backup_disk.name, checkpoint='bitmap',
                     bitmap=backup_cfg.to_checkpoint_id)
                 disks.appendChild(disk_elm)
 
@@ -627,19 +629,19 @@ def socket_path(backup_id):
     return os.path.join(P_BACKUP, backup_id)
 
 
-def _create_scratch_disks(vm, dom, backup_id, drives):
-    for drive in drives.values():
+def _create_scratch_disks(vm, dom, backup_id, backup_disks):
+    for backup_disk in backup_disks.values():
         # Skip the scratch disk creation if the scratch
         # disk already created by the engine.
-        if drive.scratch_disk is not None:
+        if backup_disk.scratch_disk is not None:
             continue
 
         try:
-            path = _create_transient_disk(vm, dom, backup_id, drive)
+            path = _create_transient_disk(vm, dom, backup_id, backup_disk)
         except Exception:
             _remove_scratch_disks(vm, backup_id)
             raise
-        drive.scratch_disk = ScratchDiskConfig(path=path, type="file")
+        backup_disk.scratch_disk = ScratchDiskConfig(path=path, type="file")
 
 
 def _remove_scratch_disks(vm, backup_id):
@@ -662,29 +664,29 @@ def _remove_scratch_disks(vm, backup_id):
                 backup_id, disk_name)
 
 
-def _get_drive_capacity(dom, drive):
+def _get_drive_capacity(dom, backup_disk):
     try:
-        capacity, _, _ = dom.blockInfo(drive.path)
+        capacity, _, _ = dom.blockInfo(backup_disk.path)
         return capacity
     except libvirt.libvirtError as e:
         raise exception.BackupError(
             reason="Failed to get drive {} capacity: {}".format(
-                drive.name, e))
+                backup_disk.name, e))
 
 
-def _create_transient_disk(vm, dom, backup_id, drive):
-    disk_name = "{}.{}".format(backup_id, drive.name)
-    drive_size = _get_drive_capacity(dom, drive)
+def _create_transient_disk(vm, dom, backup_id, backup_disk):
+    disk_name = "{}.{}".format(backup_id, backup_disk.name)
+    drive_size = _get_drive_capacity(dom, backup_disk)
 
     res = vm.cif.irs.create_transient_disk(
         owner_name=vm.id,
         disk_name=disk_name,
-        size=drive_size
+        size=drive_size,
     )
     if response.is_error(res):
         raise exception.BackupError(
             reason='Failed to create transient disk: {}'.format(res),
             vm_id=vm.id,
             backup_id=backup_id,
-            drive_name=drive.name)
+            drive_name=backup_disk.name)
     return res['result']['path']
