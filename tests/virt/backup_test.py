@@ -134,6 +134,7 @@ class FakeDrive(object):
         self.diskType = diskType
         self.format = format
         self.domainID = domainID
+        self.scratch_disk = None
 
 
 IMAGE_1_UUID = make_uuid()
@@ -141,9 +142,19 @@ IMAGE_2_UUID = make_uuid()
 
 FAKE_DRIVES = {
     IMAGE_1_UUID:
-        FakeDrive(name="sda", imageID=IMAGE_1_UUID, path="/path/to/backing1"),
+        FakeDrive(
+            name="sda",
+            imageID=IMAGE_1_UUID,
+            path="/path/to/backing1",
+            diskType=DISK_TYPE.BLOCK,
+        ),
     IMAGE_2_UUID:
-        FakeDrive(name="vda", imageID=IMAGE_2_UUID, path="/path/to/backing2"),
+        FakeDrive(
+            name="vda",
+            imageID=IMAGE_2_UUID,
+            path="/path/to/backing2",
+            diskType=DISK_TYPE.FILE,
+        ),
 }
 
 FAKE_SCRATCH_DISKS = {
@@ -202,6 +213,9 @@ class FakeVm(object):
 
         raise LookupError("Disk %s not found" % disk_name)
 
+    def getDiskDevices(self):
+        return self.drives.values()
+
     @api.method
     @maybefail
     def freeze(self):
@@ -220,7 +234,7 @@ def tmp_dirs(tmpdir, monkeypatch):
     monkeypatch.setattr(transientdisk, 'P_TRANSIENT_DISKS', transient_dir)
 
 
-def test_start_stop_backup(tmp_dirs):
+def test_start_stop_backup_transient_scratch_disk(tmp_dirs):
     vm = FakeVm()
     dom = FakeDomainAdapter()
 
@@ -260,6 +274,10 @@ def test_start_stop_backup(tmp_dirs):
         """
     assert normalized(dom.backupGetXMLDesc()) == normalized(backup_xml)
 
+    # We don't monitor file based scratch disks.
+    for drive in vm.drives.values():
+        assert drive.scratch_disk is None
+
     verify_scratch_disks_exists(vm)
 
     # verify that the vm froze and thawed during the backup
@@ -286,16 +304,16 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
 
     fake_disks = create_fake_disks(vm)
 
-    # Set the scratch disks path to the disks
-    # TODO: add tests for scratch disks on block storage domain.
+    # Block based scratch disk for block based disk.
     fake_disks[0]['scratch_disk'] = {
         'path': scratch1,
-        'type': DISK_TYPE.FILE
+        'type': DISK_TYPE.BLOCK,
     }
 
+    # File based scratch disk for file based disk.
     fake_disks[1]['scratch_disk'] = {
         'path': scratch2,
-        'type': DISK_TYPE.FILE
+        'type': DISK_TYPE.FILE,
     }
 
     config = {
@@ -310,10 +328,10 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
         <domainbackup mode='pull'>
           <server transport='unix' socket='{socket}'/>
           <disks>
-            <disk name='sda' backup='yes' type='file' backupmode='full'
+            <disk name='sda' backup='yes' type='block' backupmode='full'
                 exportname='sda' index='7'>
               <driver type='qcow2'/>
-              <scratch file='{scratch1}'>
+              <scratch dev='{scratch1}'>
                 <seclabel model='dac' relabel='no'/>
               </scratch>
             </disk>
@@ -329,11 +347,19 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
         """
     assert normalized(dom.backupGetXMLDesc()) == normalized(backup_xml)
 
+    # We monitor only block based scratch disks.
+    assert vm.drives[IMAGE_1_UUID].scratch_disk == {"index": 7}
+    assert vm.drives[IMAGE_2_UUID].scratch_disk is None
+
     result_disks = res['result']['disks']
     verify_backup_urls(vm, BACKUP_1_ID, result_disks)
 
     backup.stop_backup(vm, dom, BACKUP_1_ID)
     assert not dom.backing_up
+
+    # Stopping backup remove the scratch disks from the drives.
+    for drive in vm.drives.values():
+        assert drive.scratch_disk is None
 
 
 def test_full_backup_with_backup_mode(tmp_dirs):

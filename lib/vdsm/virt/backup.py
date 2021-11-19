@@ -193,7 +193,7 @@ def start_backup(vm, dom, config):
     backup = _get_backup(vm, dom, backup_cfg.backup_id)
     vm.log.debug("backup_id %r info: %s", backup_cfg.backup_id, backup)
 
-    # TODO: add scratch disk info the drive.
+    _start_monitoring_scratch_disks(vm, backup_disks, backup)
 
     return _backup_info(
         vm, dom, backup_cfg.backup_id, backup,
@@ -211,6 +211,7 @@ def stop_backup(vm, dom, backup_id):
                     vm_id=vm.id,
                     backup_id=backup_id)
 
+    _stop_monitoring_scratch_disks(vm)
     _remove_scratch_disks(vm, backup_id)
 
 
@@ -342,6 +343,28 @@ def _get_backup_disks(vm, backup_cfg):
             backup=backup_cfg)
 
     return backup_disks
+
+
+def _start_monitoring_scratch_disks(vm, backup_disks, backup):
+    disks = backup["disks"]
+    for backup_disk in backup_disks.values():
+        if backup_disk.scratch_disk.type == DISK_TYPE.BLOCK:
+            # TODO: Add domain, image, and volume ids when they are
+            # availble.
+            scratch_disk = disks[backup_disk.drive.name]
+            vm.log.info("Start monitoring scratch disk %s for drive %s",
+                        scratch_disk, backup_disk.drive.name)
+            backup_disk.drive.scratch_disk = {
+                "index": scratch_disk["index"],
+            }
+
+
+def _stop_monitoring_scratch_disks(vm):
+    for drive in list(vm.getDiskDevices()):
+        if drive.scratch_disk:
+            vm.log.info("Stop monitoring scratch disk %s for drive %s",
+                        drive.scratch_disk, drive.name)
+            drive.scratch_disk = None
 
 
 def _get_backup(vm, dom, backup_id):
