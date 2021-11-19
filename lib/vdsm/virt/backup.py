@@ -462,10 +462,12 @@ def _parse_backup_xml(vm, backup_id, backup_xml):
             "vda": {
                 "index": 7,
                 "exportname": "vda",
+                "type": "file",
             },
             "sda": {
                 "index": 8,
                 "exportname": "sda",
+                "type": "file",
             },
     }
     """
@@ -506,9 +508,14 @@ def _parse_backup_xml(vm, backup_id, backup_xml):
         if exportname is None:
             _raise_parse_error(vm.id, backup_id, backup_xml)
 
+        disk_type = disk.get("type")
+        if disk_type is None:
+            _raise_parse_error(vm.id, backup_id, backup_xml)
+
         disks[disk_name] = {
             "index": index,
             "exportname": exportname,
+            "type": disk_type,
         }
 
     backup["disks"] = disks
