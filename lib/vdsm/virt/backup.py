@@ -43,9 +43,8 @@ MODE_INCREMENTAL = "incremental"
 
 class BackupDisk:
 
-    def __init__(self, name, path, backup_mode, scratch_disk):
-        self.name = name
-        self.path = path
+    def __init__(self, drive, backup_mode, scratch_disk):
+        self.drive = drive
         self.backup_mode = backup_mode
         self.scratch_disk = scratch_disk
 
@@ -333,8 +332,7 @@ def _get_backup_disks(vm, backup_cfg):
                 'imageID': disk.img_id,
                 'volumeID': disk.vol_id})
             backup_disks[disk.img_id] = BackupDisk(
-                drive.name,
-                drive.path,
+                drive,
                 disk.backup_mode,
                 disk.scratch_disk)
     except LookupError as e:
@@ -548,7 +546,9 @@ def create_backup_xml(address, backup_disks, from_checkpoint_id=None):
     # fill the backup XML disks
     for backup_disk in backup_disks.values():
         disk = vmxml.Element(
-            'disk', name=backup_disk.name, type=backup_disk.scratch_disk.type)
+            'disk',
+            name=backup_disk.drive.name,
+            type=backup_disk.scratch_disk.type)
 
         # If backup mode reported by the engine it should be added
         # to the backup XML.
@@ -612,7 +612,9 @@ def create_checkpoint_xml(backup_cfg, backup_disks):
             if disk.checkpoint:
                 backup_disk = backup_disks[disk.img_id]
                 disk_elm = vmxml.Element(
-                    'disk', name=backup_disk.name, checkpoint='bitmap',
+                    'disk',
+                    name=backup_disk.drive.name,
+                    checkpoint='bitmap',
                     bitmap=backup_cfg.to_checkpoint_id)
                 disks.appendChild(disk_elm)
 
@@ -637,7 +639,8 @@ def _create_scratch_disks(vm, dom, backup_id, backup_disks):
             continue
 
         try:
-            path = _create_transient_disk(vm, dom, backup_id, backup_disk)
+            path = _create_transient_disk(
+                vm, dom, backup_id, backup_disk.drive)
         except Exception:
             _remove_scratch_disks(vm, backup_id)
             raise
@@ -664,19 +667,19 @@ def _remove_scratch_disks(vm, backup_id):
                 backup_id, disk_name)
 
 
-def _get_drive_capacity(dom, backup_disk):
+def _get_drive_capacity(dom, drive):
     try:
-        capacity, _, _ = dom.blockInfo(backup_disk.path)
+        capacity, _, _ = dom.blockInfo(drive.path)
         return capacity
     except libvirt.libvirtError as e:
         raise exception.BackupError(
             reason="Failed to get drive {} capacity: {}".format(
-                backup_disk.name, e))
+                drive.name, e))
 
 
-def _create_transient_disk(vm, dom, backup_id, backup_disk):
-    disk_name = "{}.{}".format(backup_id, backup_disk.name)
-    drive_size = _get_drive_capacity(dom, backup_disk)
+def _create_transient_disk(vm, dom, backup_id, drive):
+    disk_name = "{}.{}".format(backup_id, drive.name)
+    drive_size = _get_drive_capacity(dom, drive)
 
     res = vm.cif.irs.create_transient_disk(
         owner_name=vm.id,
@@ -688,5 +691,5 @@ def _create_transient_disk(vm, dom, backup_id, backup_disk):
             reason='Failed to create transient disk: {}'.format(res),
             vm_id=vm.id,
             backup_id=backup_id,
-            drive_name=backup_disk.name)
+            drive_name=drive.name)
     return res['result']['path']
