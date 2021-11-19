@@ -356,9 +356,9 @@ def _backup_info(vm, dom, backup_id, backup, checkpoint_id=None):
     nbd_addr = nbdutils.UnixAddress(backup["socket"])
 
     backup_urls = {}
-    for name in backup["disks"]:
+    for name, disk in backup["disks"].items():
         drive = vm.find_device_by_name_or_path(name)
-        backup_urls[drive.imageID] = nbd_addr.url(name)
+        backup_urls[drive.imageID] = nbd_addr.url(disk["exportname"])
 
     result = {"disks": backup_urls}
 
@@ -458,7 +458,15 @@ def _parse_backup_xml(vm, backup_id, backup_xml):
     {
         "incremental": "checkpoint-name",
         "socket": "/socket",
-        "disks": {"vda": 7, "sda": 8},
+        "disks": {
+            "vda": {
+                "index": 7,
+                "exportname": "vda",
+            },
+            "sda": {
+                "index": 8,
+                "exportname": "sda",
+            },
     }
     """
     backup = {}
@@ -494,7 +502,14 @@ def _parse_backup_xml(vm, backup_id, backup_xml):
         except ValueError:
             _raise_parse_error(vm.id, backup_id, backup_xml)
 
-        disks[disk_name] = index
+        exportname = disk.get("exportname")
+        if exportname is None:
+            _raise_parse_error(vm.id, backup_id, backup_xml)
+
+        disks[disk_name] = {
+            "index": index,
+            "exportname": exportname,
+        }
 
     backup["disks"] = disks
     return backup
