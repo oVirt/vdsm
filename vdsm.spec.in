@@ -49,7 +49,7 @@
 %global debug_package %{nil}
 
 Name:           %{vdsm_name}
-Version:        4.30.51
+Version:        4.30.52
 Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
 Summary:        Virtual Desktop Server Manager
 
@@ -1638,5 +1638,5 @@ exit 0
 %endif
 
 %changelog
-* Wed Jan 20 2021 Milan Zamazal <mzamazal@redhat.com> - 4.30.51
+* Fri Nov 19 2021 Milan Zamazal <mzamazal@redhat.com> - 4.30.52
 - See %{_docdir}/%{vdsm_name}/ChangeLog for the complete list of Vdsm changes.
