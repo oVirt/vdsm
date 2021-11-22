@@ -86,7 +86,6 @@ def test_build_config():
         ' obtain_device_list_from_udev=0 '
         '} '
         'global { '
-        ' locking_type=1 '
         ' prioritise_write_locks=1 '
         ' wait_for_locks=1 '
         ' use_lvmetad=0 '
@@ -99,7 +98,6 @@ def test_build_config():
     )
     assert expected == lvm._buildConfig(
         dev_filter='["a|^/dev/a$|^/dev/b$|", "r|.*|"]',
-        locking_type="1",
         use_lvmpolld="1")
 
 
@@ -116,10 +114,9 @@ def fake_devices(monkeypatch):
     return devices
 
 
-def build_config(devices, locking_type="1", use_lvmpolld="1"):
+def build_config(devices, use_lvmpolld="1"):
     return lvm._buildConfig(
         dev_filter=lvm._buildFilter(devices),
-        locking_type=locking_type,
         use_lvmpolld=use_lvmpolld)
 
 
@@ -149,18 +146,6 @@ def test_rebuild_filter_after_invaliation(fake_devices):
 
     cmd = lc._addExtraCfg(["lvs"])
     assert cmd[3] == build_config(fake_devices)
-
-
-def test_build_command_read_only(fake_devices):
-    # When cache in read-write mode, use locking_type=1
-    lc = lvm.LVMCache()
-    cmd = lc._addExtraCfg(["lvs", "-o", "+tags"])
-    assert " locking_type=1 " in cmd[3]
-
-    # When cache in read-only mode, use locking_type=4
-    lc.set_read_only(True)
-    cmd = lc._addExtraCfg(["lvs", "-o", "+tags"])
-    assert " locking_type=4 " in cmd[3]
 
 
 class FakeRunner(lvm.LVMRunner):
@@ -668,7 +653,7 @@ def test_cmd_read_only_filter_stale(fake_devices, no_delay):
         constants.EXT_LVM,
         "fake",
         "--config",
-        build_config(initial_devices, locking_type="4"),
+        build_config(initial_devices),
     ]
 
     # The seocnd call used a wider filter.
@@ -677,7 +662,7 @@ def test_cmd_read_only_filter_stale(fake_devices, no_delay):
         constants.EXT_LVM,
         "fake",
         "--config",
-        build_config(fake_devices, locking_type="4"),
+        build_config(fake_devices),
     ]
 
     # And then indentical retries with the wider filter.
@@ -880,14 +865,6 @@ def test_change_read_only_mode(fake_devices, no_delay, workers):
     elapsed = time.time() - start
 
     assert len(fake_runner.calls) == 4
-
-    # The first 2 commands should run in read-write mode.
-    for cmd in fake_runner.calls[:2]:
-        assert " locking_type=1 " in cmd[3]
-
-    # The last 2 command should run in not read-only mode.
-    for cmd in fake_runner.calls[2:]:
-        assert " locking_type=4 " in cmd[3]
 
     # The last 2 command can start only after the first 2 command finished.
     assert elapsed > fake_runner.delay * 2

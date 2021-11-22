@@ -246,7 +246,6 @@ devices {
  obtain_device_list_from_udev=0
 }
 global {
- locking_type=%(locking_type)s
  prioritise_write_locks=1
  wait_for_locks=1
  use_lvmetad=0
@@ -278,10 +277,9 @@ def _buildFilter(devices):
     return '[{}"r|.*|"]'.format(accept)
 
 
-def _buildConfig(dev_filter, locking_type, use_lvmpolld="1"):
+def _buildConfig(dev_filter, use_lvmpolld="1"):
     conf = LVMCONF_TEMPLATE % {
         "filter": dev_filter,
-        "locking_type": locking_type,
         "use_lvmpolld": use_lvmpolld,
     }
     return conf.replace("\n", " ").strip()
@@ -470,11 +468,8 @@ class LVMCache(object):
         else:
             dev_filter = self._getCachedFilter()
 
-        # TODO: remove locking type configuration
-        # once we require only lvm-2.03
         conf = _buildConfig(
             dev_filter=dev_filter,
-            locking_type="4" if self._read_only else "1",
             use_lvmpolld="1" if use_lvmpolld else "0")
         newcmd += ["--config", conf]
 
