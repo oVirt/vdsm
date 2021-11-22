@@ -150,8 +150,7 @@ def test_rebuild_filter_after_invaliation(fake_devices):
 
 class FakeRunner(lvm.LVMRunner):
     """
-    Simulate a command failing multiple times before suceeding. This is the
-    case when running lvm read-only command with a very busy SPM.
+    Simulate a command failing multiple times before suceeding.
 
     By default, the first call will succeed, returning the given rc, out, and
     err.
@@ -182,13 +181,7 @@ class FakeRunner(lvm.LVMRunner):
         return self.rc, self.out, self.err
 
 
-@pytest.fixture
-def no_delay(monkeypatch):
-    # Disable delay to speed up testing.
-    monkeypatch.setattr(lvm.LVMCache, "RETRY_DELAY", 0)
-
-
-def test_cmd_success(fake_devices, no_delay):
+def test_cmd_success(fake_devices):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
     rc, out, err = lc.cmd(["lvs", "-o", "+tags"])
@@ -206,12 +199,11 @@ def test_cmd_success(fake_devices, no_delay):
     ]
 
 
-def test_cmd_error(fake_devices, no_delay):
+def test_cmd_error(fake_devices):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
 
     # Require 2 calls to succeed.
-    assert lc.READ_ONLY_RETRIES > 1
     fake_runner.retries = 1
 
     # Since the filter is correct, the error should be propagated to the caller
@@ -537,7 +529,7 @@ def test_resizepv_failure_cache(monkeypatch, fake_devices):
     assert not lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
-def test_cmd_retry_filter_stale(fake_devices, no_delay):
+def test_cmd_retry_filter_stale(fake_devices):
     # Make a call to load the cache.
     initial_devices = fake_devices[:]
     fake_runner = FakeRunner()
@@ -550,7 +542,6 @@ def test_cmd_retry_filter_stale(fake_devices, no_delay):
     fake_devices.append("/dev/mapper/c")
 
     # Require 2 calls to succeed.
-    assert lc.READ_ONLY_RETRIES > 1
     fake_runner.retries = 1
 
     rc, out, err = lc.cmd(["fake"])
@@ -577,7 +568,7 @@ def test_cmd_retry_filter_stale(fake_devices, no_delay):
     ]
 
 
-def test_suppress_warnings(fake_devices, no_delay):
+def test_suppress_warnings(fake_devices):
     fake_runner = FakeRunner()
     fake_runner.err = b"""\
   before
@@ -601,7 +592,7 @@ def test_suppress_warnings(fake_devices, no_delay):
     ]
 
 
-def test_suppress_multiple_lvm_warnings(fake_devices, no_delay):
+def test_suppress_multiple_lvm_warnings(fake_devices):
     fake_runner = FakeRunner()
     fake_runner.err = b"""\
   before
@@ -696,7 +687,7 @@ def workers():
         workers.join()
 
 
-def test_command_concurrency(fake_devices, no_delay, workers):
+def test_command_concurrency(fake_devices, workers):
     # Test concurrent commands to reveal locking issues.
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
@@ -1837,7 +1828,7 @@ def test_lv_stale_reload_all_clear(stale_lv):
     assert lvs == [good_lv_name]
 
 
-def test_lv_reload_error_one(fake_devices, no_delay):
+def test_lv_reload_error_one(fake_devices):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
 
@@ -1852,7 +1843,7 @@ def test_lv_reload_error_one(fake_devices, no_delay):
     assert lc._lvs == {("vg-name", "other-lv"): other_lv}
 
 
-def test_lv_reload_error_one_stale(fake_devices, no_delay):
+def test_lv_reload_error_one_stale(fake_devices):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
     lc._lvs = {
@@ -1873,7 +1864,7 @@ def test_lv_reload_error_one_stale(fake_devices, no_delay):
     assert isinstance(lv, lvm.Unreadable)
 
 
-def test_lv_reload_error_one_stale_other_vg(fake_devices, no_delay):
+def test_lv_reload_error_one_stale_other_vg(fake_devices):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
     lc._lvs = {
@@ -1887,13 +1878,13 @@ def test_lv_reload_error_one_stale_other_vg(fake_devices, no_delay):
     assert not isinstance(other_lv, lvm.Unreadable)
 
 
-def test_lv_reload_error_all(fake_devices, no_delay):
+def test_lv_reload_error_all(fake_devices):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
     assert lc.getLv("vg-name") == []
 
 
-def test_lv_reload_error_all_other_vg(fake_devices, no_delay):
+def test_lv_reload_error_all_other_vg(fake_devices):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
     lc._lvs = {("vg-name", "lv-name"): lvm.Stale("lv-name")}
@@ -1907,7 +1898,7 @@ def test_lv_reload_error_all_other_vg(fake_devices, no_delay):
     assert lvs == []
 
 
-def test_lv_reload_error_all_stale_other_vgs(fake_devices, no_delay):
+def test_lv_reload_error_all_stale_other_vgs(fake_devices):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
     lc._lvs = {
@@ -1921,7 +1912,7 @@ def test_lv_reload_error_all_stale_other_vgs(fake_devices, no_delay):
     assert not isinstance(other_lv, lvm.Unreadable)
 
 
-def test_lv_reload_fresh_vg(fake_devices, no_delay):
+def test_lv_reload_fresh_vg(fake_devices):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner, cache_lvs=True)
     pv1 = make_pv(pv_name="/dev/mapper/pv1", vg_name="vg1")
@@ -1948,7 +1939,7 @@ def test_lv_reload_fresh_vg(fake_devices, no_delay):
     assert not lc._lvs_needs_reload("vg2")
 
 
-def test_lv_reload_for_stale_vg(fake_devices, no_delay):
+def test_lv_reload_for_stale_vg(fake_devices):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner, cache_lvs=True)
 

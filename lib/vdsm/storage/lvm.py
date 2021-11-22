@@ -35,7 +35,6 @@ import logging
 from collections import namedtuple
 import pprint as pp
 import threading
-import time
 
 from itertools import chain
 import six
@@ -55,7 +54,6 @@ from vdsm.storage import exception as se
 from vdsm.storage import lsof
 from vdsm.storage import misc
 from vdsm.storage import multipath
-from vdsm.storage import rwlock
 
 from vdsm.config import config
 
@@ -376,44 +374,6 @@ class LVMCache(object):
     # having exponential back-off for read-only commands.
     MAX_COMMANDS = 10
 
-    # Read-only commands may fail if the SPM modified VG metadata while
-    # a read-only command was reading the metadata. We retry the command
-    # with exponential back-off delay to recover for these failures.
-    #
-    # Testing with 10 times higher load compared with real systems show that
-    # 1.2% of the read-only commands failed and needed up to 3 retries to
-    # succeed. 97.45% of the failing commands succeeded after 1 retry. 2.3% of
-    # the failing commands needed 2 retries, and 0.21% of the commands needed 3
-    # retries.
-    #
-    # Here are stats from a test using tests/storage/stress/extend.py:
-    #
-    # $ python extend.py log-stats run-regular.log
-    # {
-    #   "activating": 5000,
-    #   "creating": 5000,
-    #   "deactivating": 4999,
-    #   "extend-rate": 4.684750527055517,
-    #   "extending": 99996,
-    #   "max-retry": 3,
-    #   "read-only": 109995,
-    #   "refreshing": 99996,
-    #   "removing": 4999,
-    #   "retries": 1374,
-    #   "retry 1": 1339,
-    #   "retry 2": 32,
-    #   "retry 3": 3,
-    #   "retry-rate": 0.012491476885312968,
-    #   "total-time": 21345,
-    #   "warnings": 3766
-    # }
-    #
-    # Use 4 retries for extra safety. This translates to typical delay of 0.1
-    # seconds, and worst case delay of 1.5 seconds.
-    READ_ONLY_RETRIES = 4
-    RETRY_DELAY = 0.1
-    RETRY_BACKUP_OFF = 2
-
     def __init__(self, cmd_runner=LVMRunner(), cache_lvs=False):
         """
         Arguemnts:
@@ -423,8 +383,6 @@ class LVMCache(object):
         """
         self._runner = cmd_runner
         self._cache_lvs = cache_lvs
-        self._read_only_lock = rwlock.RWLock()
-        self._read_only = False
         self._filter = None
         self._filterStale = True
         self._filterLock = threading.Lock()
@@ -441,17 +399,6 @@ class LVMCache(object):
     @property
     def stats(self):
         return self._stats
-
-    def set_read_only(self, value):
-        """
-        Called when the SPM is started or stopped.
-        """
-        # Take an exclusive lock, so we wait for commands using the previous
-        # mode before switching to the new mode.
-        with self._read_only_lock.exclusive:
-            if self._read_only != value:
-                log.info("Switching to read_only=%s", value)
-                self._read_only = value
 
     def _getCachedFilter(self):
         with self._filterLock:
@@ -502,9 +449,7 @@ class LVMCache(object):
             return e.rc, e.out, e.err
 
     def run_command(self, cmd, devices=(), use_lvmpolld=True):
-        # Take a shared lock, so set_read_only() can wait for commands using
-        # the previous mode.
-        with self._cmd_sem, self._read_only_lock.shared:
+        with self._cmd_sem:
             tries = 1
 
             # 1. Try the command with fast specific filter including the
@@ -531,25 +476,6 @@ class LVMCache(object):
                     return self._runner.run(full_cmd)
                 except se.LVMCommandError as e:
                     error = e
-
-            # 3. If we run in read-only mode, retry the command in case it
-            # failed because VG metadata was modified while the command was
-            # reading the metadata.
-            if error and self._read_only:
-                delay = self.RETRY_DELAY
-                for retry in range(1, self.READ_ONLY_RETRIES + 1):
-                    log.warning(
-                        "Retry %d failed, retrying in %.2f seconds: %s",
-                        retry, delay, error)
-
-                    time.sleep(delay)
-                    delay *= self.RETRY_BACKUP_OFF
-
-                    tries += 1
-                    try:
-                        return self._runner.run(full_cmd)
-                    except se.LVMCommandError as e:
-                        error = e
 
             log.warning("All %d tries have failed: %s", tries, error)
 
@@ -1354,32 +1280,6 @@ def getLV(vgName, lvName=None):
         raise se.LogicalVolumeDoesNotExistError("%s/%s" % (vgName, lvName))
     else:
         return lv
-
-
-#
-# Public configuration
-#
-
-def set_read_only(read_only):
-    """
-    Change lvm module mode to read-only or read-write.
-
-    In read-wite mode, any lvm command may attempt to recover VG metadata if
-    the metadata looks inconsistent. This may happen if the SPM is modifying
-    the VG metadata at the same time. Attempting to recover the metadata may
-    corrupt the metadata.
-
-    In read-only mode, lvm commands that find inconsistant metadata will fail.
-    The module retries read-only commands automaticaly to recover from such
-    errors.
-
-    If there are running lvm commands, this will wait until the commands are
-    finished before changing the mode. New commands started when read-only mode
-    is changed will wait until the change is complete.
-
-    See https://bugzilla.redhat.com/1553133 for more info.
-    """
-    _lvminfo.set_read_only(read_only)
 
 
 #
