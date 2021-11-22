@@ -25,7 +25,7 @@ report_packages_versions() {
     echo
     echo "########################################################################"
     echo "Installed packages:"
-    rpm -q qemu-kvm qemu-img python3-libvirt
+    rpm -q qemu-kvm qemu-img python3-libvirt lvm2
     echo "########################################################################"
     echo
 }
