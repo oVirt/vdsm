@@ -37,13 +37,13 @@ from . marks import requires_root
 
 TEST_DIR = os.path.dirname(__file__)
 FAKE_LSBLK = os.path.join(TEST_DIR, "fake-lsblk")
-FAKE_DEVICES = ("/dev/disk/by-id/lvm-pv-uuid-FAKE-UUID",)
+FAKE_DEVICES = ("/dev/sda2",)
 
 log = logging.getLogger("test")
 
 
 FakeDevice = collections.namedtuple(
-    "FakeDevice", "device, stable_link, unstable_link")
+    "FakeDevice", "device, udev_link, mapper_link")
 
 
 @pytest.fixture
@@ -53,13 +53,13 @@ def fake_device(tmpdir):
     simulating /dev/aaa and /dev/disk/by-id/lvm-pv-uuid-bbb.
     """
     stable_name = "lvm-pv-uuid-{}".format(str(uuid.uuid4()))
-    stable_link = str(tmpdir.join(stable_name))
+    udev_link = str(tmpdir.join(stable_name))
     device = str(tmpdir.join("sda1"))
 
     open(device, "w").close()
-    os.symlink(device, stable_link)
+    os.symlink(device, udev_link)
 
-    return FakeDevice(device, stable_link, None)
+    return FakeDevice(device, udev_link, None)
 
 
 @pytest.fixture
@@ -70,15 +70,15 @@ def fake_dm_device(tmpdir):
     with links /dev/disk/by-id/lvm-pv-uuid-bbb and /dev/mapper/ccc.
     """
     stable_name = "lvm-pv-uuid-{}".format(str(uuid.uuid4()))
-    stable_link = str(tmpdir.join(stable_name))
-    unstable_link = str(tmpdir.join("mapped-device"))
+    udev_link = str(tmpdir.join(stable_name))
+    mapper_link = str(tmpdir.join("mapped-device"))
     device = str(tmpdir.join("dm-1"))
 
     open(device, "w").close()
-    os.symlink(device, stable_link)
-    os.symlink(device, unstable_link)
+    os.symlink(device, udev_link)
+    os.symlink(device, mapper_link)
 
-    return FakeDevice(device, stable_link, unstable_link)
+    return FakeDevice(device, udev_link, mapper_link)
 
 
 @pytest.fixture
@@ -346,9 +346,9 @@ def test_analyze_invalid_filter_empty_item():
             wanted_blacklist)
 
 
-def test_resolve_devices_stable_names(fake_device):
+def test_resolve_devices_udev_links(fake_device):
     original = [
-        lvmfilter.FilterItem("a", "^{}$".format(fake_device.stable_link)),
+        lvmfilter.FilterItem("a", "^{}$".format(fake_device.udev_link)),
         lvmfilter.FilterItem("r", ".*"),
     ]
     resolved = [
@@ -386,10 +386,11 @@ def test_resolve_devices_no_anchors():
     assert lvmfilter.resolve_devices(original) == resolved
 
 
-def test_analyze_configure_replace_unstable_device(fake_device):
-    # Current filter is correct, but uses unstable device name.
-    wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
-    current_filter = ["a|^{}$|".format(fake_device.device), "r|.*|"]
+def test_analyze_configure_replace_udev_link_with_device(fake_device):
+    # Current filter is correct, but uses udev links. We want to use device
+    # name.
+    wanted_filter = ["a|^{}$|".format(fake_device.device), "r|.*|"]
+    current_filter = ["a|^{}$|".format(fake_device.udev_link), "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
         current_filter,
@@ -401,10 +402,10 @@ def test_analyze_configure_replace_unstable_device(fake_device):
     assert advice.wwids == wanted_blacklist
 
 
-def test_analyze_configure_replace_unstable_link(fake_dm_device):
+def test_analyze_configure_replace_udev_link_with_mapper_link(fake_dm_device):
     # Current filter is correct, but uses unstable link name to the device.
-    wanted_filter = ["a|^{}$|".format(fake_dm_device.stable_link), "r|.*|"]
-    current_filter = ["a|^{}$|".format(fake_dm_device.unstable_link), "r|.*|"]
+    wanted_filter = ["a|^{}$|".format(fake_dm_device.mapper_link), "r|.*|"]
+    current_filter = ["a|^{}$|".format(fake_dm_device.udev_link), "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
         current_filter,
@@ -420,13 +421,13 @@ def test_analyze_configure_different_item_order(fake_device, fake_dm_device):
     # Current filter is correct, but has different order of items than
     # recommended filter.
     wanted_filter = [
-        "a|^{}$|".format(fake_device.stable_link),
-        "a|^{}$|".format(fake_dm_device.stable_link),
+        "a|^{}$|".format(fake_device.device),
+        "a|^{}$|".format(fake_dm_device.mapper_link),
         "r|.*|",
     ]
     current_filter = [
-        "a|^{}$|".format(fake_dm_device.unstable_link),
-        "a|^{}$|".format(fake_device.device),
+        "a|^{}$|".format(fake_dm_device.udev_link),
+        "a|^{}$|".format(fake_device.udev_link),
         "r|.*|",
     ]
     current_blacklist = wanted_blacklist = {"wwid1", "wwid2"}
@@ -440,13 +441,14 @@ def test_analyze_configure_different_item_order(fake_device, fake_dm_device):
     assert advice.wwids == wanted_blacklist
 
 
-def test_analyze_recommend_replace_unstable_link_duplicate(fake_dm_device):
-    # Current filter uses unstable links name to the device and there's also
-    # another link with stable name to the same device.
-    wanted_filter = ["a|^{}$|".format(fake_dm_device.stable_link), "r|.*|"]
+def test_analyze_recommend_replace_udev_link_duplicate(fake_dm_device):
+    # Current filter uses devicem mapper links to the device and there's also
+    # another udev link to the same device. We want to use the device mapper
+    # link since udev link is not reliable during boot.
+    wanted_filter = ["a|^{}$|".format(fake_dm_device.mapper_link), "r|.*|"]
     current_filter = [
-        "a|^{}$|".format(fake_dm_device.unstable_link),
-        "a|^{}$|".format(fake_dm_device.stable_link),
+        "a|^{}$|".format(fake_dm_device.mapper_link),
+        "a|^{}$|".format(fake_dm_device.udev_link),
         "r|.*|",
     ]
     current_blacklist = wanted_blacklist = {"wwid1"}
@@ -463,8 +465,8 @@ def test_analyze_recommend_replace_unstable_link_duplicate(fake_dm_device):
 def test_analyze_recommend_replace_unstable_device_no_anchors(fake_device):
     # Current filter is correct, but uses unstable device name and don't use
     # anchors.
-    wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
-    current_filter = ["a|{}|".format(fake_device.device), "r|.*|"]
+    wanted_filter = ["a|^{}$|".format(fake_device.device), "r|.*|"]
+    current_filter = ["a|{}|".format(fake_device.udev_link), "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
         current_filter,
@@ -477,11 +479,11 @@ def test_analyze_recommend_replace_unstable_device_no_anchors(fake_device):
 
 
 def test_analyze_recommend_links_do_not_match(tmpdir, fake_device):
-    # Stable name is a link to different device than one in the filter.
+    # Filter includes another device.
     other_device = str(tmpdir.join("dm-2"))
     open(other_device, "w").close()
 
-    wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
+    wanted_filter = ["a|^{}$|".format(fake_device.device), "r|.*|"]
     current_filter = ["a|^{}$|".format(other_device), "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
@@ -496,7 +498,7 @@ def test_analyze_recommend_links_do_not_match(tmpdir, fake_device):
 
 def test_analyze_recommend_reg_exp_in_path(fake_device):
     # Current filter use unstable names and contains regular expression.
-    wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
+    wanted_filter = ["a|^{}$|".format(fake_device.device), "r|.*|"]
     current_filter = ["a|^/dev/sda*$|", "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
@@ -509,10 +511,10 @@ def test_analyze_recommend_reg_exp_in_path(fake_device):
     assert advice.wwids == wanted_blacklist
 
 
-def test_analyze_recommend_added_custom_unstable_name(fake_device):
+def test_analyze_recommend_added_custom_device(fake_device):
     # Current filter use unstable names and admin added another device with
     # unstable name.
-    wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
+    wanted_filter = ["a|^{}$|".format(fake_device.device), "r|.*|"]
     current_filter = ["a|^/dev/sda1$|", "a|^/dev/sda2$|", "r|.*|"]
     current_blacklist = wanted_blacklist = {"wwid1"}
     advice = lvmfilter.analyze(
@@ -525,12 +527,12 @@ def test_analyze_recommend_added_custom_unstable_name(fake_device):
     assert advice.wwids == wanted_blacklist
 
 
-def test_analyze_recommend_added_custom_stable_name(fake_device):
+def test_analyze_recommend_added_custom_udev_link(fake_device):
     # Current filter use unstable names and admin added another device with
     # stable name.
-    wanted_filter = ["a|^{}$|".format(fake_device.stable_link), "r|.*|"]
+    wanted_filter = ["a|^{}$|".format(fake_device.device), "r|.*|"]
     current_filter = [
-        "a|^{}$|".format(fake_device.device),
+        "a|^{}$|".format(fake_device.udev_link),
         "a|^/dev/disk/by-id/lvm-pv-uuid-2d84b62d$|",
         "r|.*|",
     ]
