@@ -29,7 +29,6 @@ from vdsm.common import systemctl
 from vdsm.tool import configurator
 from vdsm.tool.configurators import YES, NO, MAYBE, InvalidConfig, InvalidRun
 from vdsm.tool.configfile import ConfigFile, ParserWrapper
-from vdsm.tool.configurators import abrt
 from vdsm.tool.configurators import libvirt
 from vdsm.tool.configurators import passwd
 from vdsm.tool import UsageError
@@ -49,7 +48,6 @@ dirName = os.path.dirname(os.path.realpath(__file__))
 tmp_dir = tempfile.mkdtemp()
 
 FakeLibvirtFiles = libvirt.FILES
-FakeAbrtFiles = abrt.FILES
 LibvirtConnectionConfig = libvirt._LibvirtConnectionConfig
 
 
@@ -336,68 +334,6 @@ class ExposedFunctionsFailuresTests(VdsmTestCase):
     def test_remove_config(self):
         self.assertRaises(InvalidRun, configurator.remove_config,
                           "remove-config")
-
-
-class AbrtModuleConfigureTests(TestCase):
-    srcPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    test_env = {}
-
-    def setUp(self):
-        self._test_dir = tempfile.mkdtemp()
-        self.test_env['ABRT_CONF'] = self._test_dir + '/abrt.conf'
-        self.test_env['CCPP_CONF'] = self._test_dir + '/CCPP.conf'
-        self.test_env['VMCORE_CONF'] = self._test_dir + '/vmcore.conf'
-        self.test_env['PKG_CONF'] = self._test_dir + \
-            '/abrt-action-save-package-data.conf'
-
-        for key, val in self.test_env.items():
-            FakeAbrtFiles[key]['path'] = val
-
-        self.patch = monkeypatch.Patch([
-            (
-                abrt,
-                'FILES',
-                FakeAbrtFiles
-            )
-        ])
-
-        self.patch.apply()
-
-    def tearDown(self):
-        self.patch.revert()
-        fileutils.rm_tree(self._test_dir)
-
-    def testIsConfiguredNegative(self):
-        _setConfig(self,
-                   ('ABRT_CONF', 'abrt'),
-                   ('CCPP_CONF', 'CCPP'),
-                   ('VMCORE_CONF', 'empty'),
-                   ('PKG_CONF', 'abrt-action-save-package-data'),
-                   )
-        self.assertEqual(
-            abrt.isconfigured(),
-            NO
-        )
-
-    def testAbrtConfigure(self):
-        _setConfig(self,
-                   ('ABRT_CONF', 'empty'),
-                   ('CCPP_CONF', 'empty'),
-                   ('VMCORE_CONF', 'empty'),
-                   ('PKG_CONF', 'empty'),
-                   )
-
-        self.assertEqual(
-            abrt.isconfigured(),
-            NO
-        )
-
-        abrt.configure()
-
-        self.assertEqual(
-            abrt.isconfigured(),
-            MAYBE
-        )
 
 
 class LibvirtModuleConfigureTests(TestCase):

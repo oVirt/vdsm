@@ -21,7 +21,6 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_configurators_PYTHON = \
 	__init__.py \
-	abrt.py \
 	bond_defaults.py \
 	certificates.py \
 	libvirt.py \
