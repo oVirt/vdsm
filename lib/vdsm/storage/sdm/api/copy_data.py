@@ -54,7 +54,10 @@ class Job(base.Job):
                  copy_bitmaps=False):
         super(Job, self).__init__(job_id, 'copy_data', host_id)
         self._source = _create_endpoint(
-            source, host_id, writable=False, job_id=job_id)
+            source, host_id, writable=False, job_id=job_id,
+            # Skip locking image for source endpoint as locking would fail
+            # if copy data is performed within the same image.
+            lock_image=source['img_id'] != destination['img_id'])
         self._dest = _create_endpoint(
             destination, host_id, writable=True, job_id=job_id,
             is_destination=True)
@@ -118,11 +121,17 @@ class Job(base.Job):
                         self._operation.run()
 
 
-def _create_endpoint(params, host_id, writable, job_id=None, is_destination=False):
+def _create_endpoint(params, host_id, writable, job_id=None,
+                     is_destination=False,
+                     lock_image=True):
     endpoint_type = params.pop('endpoint_type')
     if endpoint_type == 'div':
-        return CopyDataDivEndpoint(params, host_id, writable,
-                                   is_destination=is_destination)
+        return CopyDataDivEndpoint(
+            params,
+            host_id,
+            writable,
+            is_destination=is_destination,
+            lock_image=lock_image)
     elif endpoint_type == 'external':
         return CopyDataExternalEndpoint(params, host_id, job_id)
     else:
@@ -137,23 +146,31 @@ class CopyDataDivEndpoint(properties.Owner):
                                     maxval=sc.MAX_GENERATION)
     prepared = properties.Boolean(default=False)
 
-    def __init__(self, params, host_id, writable, is_destination=False):
+    def __init__(self, params, host_id, writable, is_destination=False,
+                 lock_image=True):
         self.sd_id = params.get('sd_id')
         self.img_id = params.get('img_id')
         self.vol_id = params.get('vol_id')
         self.generation = params.get('generation')
         self.prepared = params.get('prepared')
         self.is_destination = is_destination
+        self.lock_image = lock_image
         self._host_id = host_id
         self._writable = writable
         self._vol = None
 
     @property
     def locks(self):
-        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, self.sd_id)
-        mode = rm.EXCLUSIVE if self._writable else rm.SHARED
-        ret = [rm.Lock(sc.STORAGE, self.sd_id, rm.SHARED),
-               rm.Lock(img_ns, self.img_id, mode)]
+        # A shared lock is always required
+        ret = [rm.Lock(sc.STORAGE, self.sd_id, rm.SHARED)]
+
+        # An exclusive lock will be taken if source and destination images
+        # are not the same, otherwise there will be a deadlock.
+        if self.lock_image:
+            img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, self.sd_id)
+            mode = rm.EXCLUSIVE if self._writable else rm.SHARED
+            ret.append(rm.Lock(img_ns, self.img_id, mode))
+
         if self._writable:
             dom = sdCache.produce_manifest(self.sd_id)
             if dom.hasVolumeLeases():
