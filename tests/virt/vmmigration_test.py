@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2020 Red Hat, Inc.
+# Copyright 2014-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ from six.moves import zip
 from vdsm.common import exception
 from vdsm.common import response
 from vdsm.config import config
+import vdsm.virt
 from vdsm.virt import cpumanagement
 from vdsm.virt import drivemonitor
 from vdsm.virt import migration
@@ -218,25 +219,40 @@ class TestVmMigrate(TestCaseBase):
         self.serv = fake.JsonRpcServer()
         self.cif.bindings["jsonrpc"] = self.serv
 
-    @permutations([[vmstatus.UP]])
-    def test_migrate_from_status(self, vm_status):
+    @permutations([
+        # vm_status, pause_code
+        [vmstatus.UP, None],
+        [vmstatus.PAUSED, ''],
+    ])
+    def test_migrate_from_status(self, vm_status, pause_code):
         with MonkeyPatchScope([
             (migration, 'SourceThread', fake.MigrationSourceThread)
         ]):
-            with fake.VM(status=vm_status, cif=self.cif) as testvm:
+            with fake.VM(
+                    cif=self.cif,
+                    status=vm_status,
+                    runCpu=(vm_status == vmstatus.UP),
+                    pause_code=pause_code
+            ) as testvm:
                 res = testvm.migrate({})  # no params needed
                 assert not response.is_error(res)
 
     @permutations([
-        # vm_status, exception
-        [vmstatus.WAIT_FOR_LAUNCH, exception.NoSuchVM],
-        [vmstatus.DOWN, exception.NoSuchVM],
+        # vm_status, pause_code, exception
+        [vmstatus.WAIT_FOR_LAUNCH, None, exception.NoSuchVM],
+        [vmstatus.DOWN, None, exception.NoSuchVM],
+        [vmstatus.PAUSED, 'EIO', vdsm.virt.vm.MigrationError],
     ])
-    def test_migrate_from_status_error(self, vm_status, exc):
+    def test_migrate_from_status_error(self, vm_status, pause_code, exc):
         with MonkeyPatchScope([
             (migration, 'SourceThread', fake.MigrationSourceThread)
         ]):
-            with fake.VM(status=vm_status, cif=self.cif) as testvm:
+            with fake.VM(
+                    cif=self.cif,
+                    status=vm_status,
+                    runCpu=False,
+                    pause_code=pause_code
+            ) as testvm:
                 with pytest.raises(exc):
                     testvm.migrate({})  # no params needed
 

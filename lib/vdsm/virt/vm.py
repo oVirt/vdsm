@@ -186,6 +186,11 @@ def _not_migrating(vm, *args, **kwargs):
         raise exception.MigrationInProgress(vmId=vm.id)
 
 
+def _not_paused_on_io_error(vm, *args, **kwargs):
+    if vm.lastStatus == vmstatus.PAUSED and vm.pause_code == 'EIO':
+        raise MigrationError("VM paused due to I/O error cannot migrate")
+
+
 def eventToString(event):
     try:
         return _EVENT_STRINGS[event]
@@ -2367,6 +2372,7 @@ class Vm(object):
         return xml_cpusets
 
     @api.guard(_not_migrating)
+    @api.guard(_not_paused_on_io_error)
     def migrate(self, params):
         if params.get('cpusets') is not None:
             # Validate content and turn it into <vcpupin> elements here to

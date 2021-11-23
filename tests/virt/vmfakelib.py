@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2020 Red Hat, Inc.
+# Copyright 2013-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -469,7 +469,7 @@ def VM(params=None, devices=None, runCpu=False,
        arch=cpuarch.X86_64, status=None,
        cif=None, create_device_objects=False,
        post_copy=None, recover=False, vmid=None,
-       resume_behavior=None, pause_time_offset=None,
+       resume_behavior=None, pause_code=None, pause_time_offset=None,
        features='', xmldevices='', metadata=''):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([
@@ -508,6 +508,7 @@ def VM(params=None, devices=None, runCpu=False,
                 fake._post_copy = post_copy
             if resume_behavior is not None:
                 fake._resume_behavior = resume_behavior
+            fake._pause_code = pause_code
             if pause_time_offset is not None:
                 fake._pause_time = (vdsm.common.time.monotonic_time() -
                                     pause_time_offset)
