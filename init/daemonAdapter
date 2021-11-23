@@ -99,16 +99,20 @@ class DaemonAdapter(object):
             # otherwise it swallows error messages from daemonAdapter when
             # redirected to /dev/null.
             if self._args.stdout:
-                fdout = os.open(self._args.stdout, os.O_WRONLY | os.O_CREAT |
-                                os.O_APPEND,
-                                S_IRUSR | S_IWUSR)
+                fdout = os.open(
+                    self._args.stdout,
+                    os.O_WRONLY | os.O_CREAT | os.O_APPEND,
+                    S_IRUSR | S_IWUSR
+                )
                 os.dup2(fdout, sys.stdout.fileno())
                 os.close(fdout)
 
             if self._args.stderr:
-                fderr = os.open(self._args.stderr, os.O_WRONLY | os.O_CREAT |
-                                os.O_APPEND,
-                                S_IRUSR | S_IWUSR)
+                fderr = os.open(
+                    self._args.stderr,
+                    os.O_WRONLY | os.O_CREAT | os.O_APPEND,
+                    S_IRUSR | S_IWUSR
+                )
                 os.dup2(fderr, sys.stderr.fileno())
                 os.close(fderr)
 

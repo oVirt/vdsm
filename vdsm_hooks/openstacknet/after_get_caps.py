@@ -52,8 +52,8 @@ def _test():
 
 
 def _get_openstack_binding_host_id():
-    return (_get_open_vswitch_odl_os_hostconfig_hostid() or
-            _get_open_vswitch_hostname())
+    return (_get_open_vswitch_odl_os_hostconfig_hostid()
+            or _get_open_vswitch_hostname())
 
 
 def _get_open_vswitch_odl_os_hostconfig_hostid():

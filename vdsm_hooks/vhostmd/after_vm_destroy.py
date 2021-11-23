@@ -36,7 +36,8 @@ if hooking.tobool(os.environ.get('sap_agent', False)):
     with utils.closing(cli):
         res = cli.Host.getVMFullList()
         if not [v for v in res
-                if v.get('vmId') != os.environ.get('vmId') and
-                hooking.tobool(v.get('custom', {}).get('sap_agent', False))]:
+                if v.get('vmId') != os.environ.get('vmId')
+                and hooking.tobool(
+                    v.get('custom', {}).get('sap_agent', False))]:
             subprocess.call(['/usr/bin/sudo', '-n', '/sbin/service', 'vhostmd',
                              'stop'])

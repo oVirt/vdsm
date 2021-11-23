@@ -157,8 +157,8 @@ def setup_logging(log_file, verbosity, append):
     else:
         handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter(
-        "%(threadName)s::%(levelname)s::%(asctime)s::%(module)s::" +
-        "%(lineno)d::%(name)s::(%(funcName)s) %(message)s"))
+        "%(threadName)s::%(levelname)s::%(asctime)s::%(module)s::"
+        + "%(lineno)d::%(name)s::(%(funcName)s) %(message)s"))
 
     root_logger = logging.getLogger('')
     root_logger.setLevel(level)

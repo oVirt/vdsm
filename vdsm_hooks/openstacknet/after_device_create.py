@@ -49,8 +49,8 @@ def main():
 
     providerType = os.environ[PROVIDER_TYPE_KEY]
     pluginType = os.environ[PLUGIN_TYPE_KEY]
-    if (providerType == OPENSTACK_NET_PROVIDER_TYPE and
-            pluginType == PT_BRIDGE):
+    if (providerType == OPENSTACK_NET_PROVIDER_TYPE
+            and pluginType == PT_BRIDGE):
         vNicId = os.environ[VNIC_ID_KEY]
         sys.stderr.write('Removing vNIC %s from %s for provider type %s'
                          % (vNicId, DUMMY_BRIDGE, providerType))

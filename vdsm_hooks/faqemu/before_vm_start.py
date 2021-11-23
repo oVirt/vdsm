@@ -67,8 +67,9 @@ def workaround(real_arch=None, effective_arch=None):
         def wrapped(*args, **kwargs):
             return function(*args, **kwargs)
 
-        if ((not real_arch or real_arch == cpuarch.real()) and
-                (not effective_arch or effective_arch == cpuarch.effective())):
+        if ((not real_arch or real_arch == cpuarch.real())
+                and (not effective_arch
+                     or effective_arch == cpuarch.effective())):
             _WORKAROUNDS.append(wrapped)
 
         return wrapped
@@ -292,10 +293,10 @@ def _video_spice_to_vnc_test():
     _video_spice_to_vnc(domxml)
 
     return (domxml.getElementsByTagName('video')[0].getElementsByTagName(
-        'model')[0].getAttribute('type') == 'vga' and
-        not domxml.getElementsByTagName('video')[0].getElementsByTagName(
-            'model')[0].getAttribute('vgamem') and
-        not domxml.getElementsByTagName('video')[0].getElementsByTagName(
+        'model')[0].getAttribute('type') == 'vga'
+        and not domxml.getElementsByTagName('video')[0].getElementsByTagName(
+            'model')[0].getAttribute('vgamem')
+        and not domxml.getElementsByTagName('video')[0].getElementsByTagName(
             'model')[0].getAttribute('ram'))
 
 
@@ -357,8 +358,8 @@ def _os_set_machine_type_pseries_test():
     _os_set_machine_type_pseries(domxml)
 
     return (domxml.getElementsByTagName(
-        'type')[0].getAttribute('machine') == 'pseries' and
-        not domxml.getElementsByTagName('bios'))
+        'type')[0].getAttribute('machine') == 'pseries'
+        and not domxml.getElementsByTagName('bios'))
 
 
 @workaround_testcase()
@@ -372,8 +373,8 @@ def _os_set_machine_type_i440fx_test():
 
     _os_set_machine_type_i440fx(domxml)
 
-    return (domxml.getElementsByTagName('type')[0].getAttribute('machine') ==
-            'pc-i440fx-rhel7.1.0')
+    return (domxml.getElementsByTagName('type')[0].getAttribute('machine')
+            == 'pc-i440fx-rhel7.1.0')
 
 
 @workaround_testcase()
@@ -394,8 +395,8 @@ def _sysinfo_remove_smbios_test():
 
     _sysinfo_remove_smbios(domxml)
 
-    return (not domxml.getElementsByTagName('sysinfo') and
-            not domxml.getElementsByTagName('smbios'))
+    return (not domxml.getElementsByTagName('sysinfo')
+            and not domxml.getElementsByTagName('smbios'))
 
 
 @workaround_testcase()
@@ -453,8 +454,8 @@ def _memory_lower_max_test():
     _memory_lower_max(domxml)
 
     return (domxml.getElementsByTagName(
-        'maxMemory')[0].getAttribute('slots') == '2' and
-        domxml.getElementsByTagName(
+        'maxMemory')[0].getAttribute('slots') == '2'
+        and domxml.getElementsByTagName(
             'maxMemory')[0].childNodes[0].nodeValue == '1073741824')
 
 

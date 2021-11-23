@@ -63,8 +63,8 @@ def increase_devices_boot_order(devices):
                     )
                 except ValueError:
                     hooking.log(
-                        'httpsisoboot: unable to manipulate the boot order: ' +
-                        d.toxml()
+                        'httpsisoboot: unable to manipulate the boot order: '
+                        + d.toxml()
                     )
                     raise
 

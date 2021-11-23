@@ -70,9 +70,9 @@ def createDirectPool(conn):
 
     # create a new direct-pool
     content = (['<network>', '<name>direct-pool</name>',
-               '<forward mode="passthrough">'] +
-               ['<interface dev="%s"/>' % nic for nic in getUsableNics()] +
-               ['</forward>', '</network>'])
+               '<forward mode="passthrough">']
+               + ['<interface dev="%s"/>' % nic for nic in getUsableNics()]
+               + ['</forward>', '</network>'])
     xmlDefinition = '\n'.join(content)
     conn.networkDefineXML(xmlDefinition)
     directPool = conn.networkLookupByName('direct-pool')

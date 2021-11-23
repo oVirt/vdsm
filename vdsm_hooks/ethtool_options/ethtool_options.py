@@ -63,8 +63,8 @@ def test():
     print(opts['ethtool_opts'])
     print('splits into: ')
     for subcmd in _parse_into_subcommands(opts['ethtool_opts'].split()):
-        command = ([ETHTOOL_BINARY.cmd] + [subcmd.name, subcmd.device] +
-                   subcmd.flags)
+        command = ([ETHTOOL_BINARY.cmd] + [subcmd.name, subcmd.device]
+                   + subcmd.flags)
         print('    ', end=' ')
         print(command)
 

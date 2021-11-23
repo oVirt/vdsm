@@ -81,15 +81,15 @@ if 'fileinject' in os.environ:
         diskformat = 'raw'
         rawcount = 0
         for disk in disks:
-            if (disk.hasAttribute('device') and
-                    disk.attributes['device'].value == 'disk'):
+            if (disk.hasAttribute('device')
+                    and disk.attributes['device'].value == 'disk'):
                 sources = disk.getElementsByTagName('source')
                 if len(sources) > 0:
                     source = sources[0]
                     drivers = disk.getElementsByTagName('driver')
-                    if (len(drivers) > 0 and
-                        drivers[0].hasAttribute('type') and
-                            drivers[0].attributes['type'].value == 'qcow2'):
+                    if (len(drivers) > 0
+                       and drivers[0].hasAttribute('type')
+                       and drivers[0].attributes['type'].value == 'qcow2'):
                         # we can only inject to 'raw' file format
                         continue
 

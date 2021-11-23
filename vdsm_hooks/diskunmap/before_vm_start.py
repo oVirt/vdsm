@@ -45,8 +45,8 @@ def addDiscardUnmap(domxml):
         device = disk.getAttribute('device')
         target = disk.getElementsByTagName('target')[0]
         bus = target.getAttribute('bus')
-        if ((device == 'disk' or device == 'lun') and
-           (bus == 'scsi' or bus == 'ide')):
+        if ((device == 'disk' or device == 'lun')
+           and (bus == 'scsi' or bus == 'ide')):
             driver = disk.getElementsByTagName('driver')[0]
             driver.setAttribute('discard', 'unmap')
 

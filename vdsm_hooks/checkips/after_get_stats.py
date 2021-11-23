@@ -55,8 +55,8 @@ def _is_network_accessible(net, stats_dir):
     file_path = os.path.join(stats_dir, net)
     if os.path.exists(file_path):
         return (
-            time.time() - os.stat(file_path).st_mtime <=
-            CONNECTIVITY_TIMEOUT
+            time.time() - os.stat(file_path).st_mtime
+            <= CONNECTIVITY_TIMEOUT
         )
     return False
 

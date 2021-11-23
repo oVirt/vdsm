@@ -151,8 +151,8 @@ def x86_64_test():
     if cpuarch.real() == cpuarch.X86_64:
         flag_list += cpuinfo.flags()
 
-    expected_caps['cpuFlags'] = (','.join(set(flag_list)) +
-                                 expected_caps['cpuFlags'])
+    expected_caps['cpuFlags'] = (','.join(set(flag_list))
+                                 + expected_caps['cpuFlags'])
     _fake_caps_arch(caps, cpuarch.X86_64)
 
     return caps == expected_caps
