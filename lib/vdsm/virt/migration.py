@@ -352,10 +352,10 @@ class SourceThread(object):
         # either way, migration has finished
         self._switch_state(State.FAILED)
         if self._recovery:
-            self._vm.set_last_status(vmstatus.UP, vmstatus.MIGRATION_SOURCE)
             self._recovery = False
-        else:
-            self._vm.lastStatus = vmstatus.UP
+        self._vm.recover_status()
+        # Escape from MIGRATION_SOURCE if we're still there
+        self._vm.set_last_status(vmstatus.UP, vmstatus.MIGRATION_SOURCE)
         self._vm.send_status_event()
         if (self._vm.lastStatus == vmstatus.PAUSED and
                 self._vm.resume_postponed):

@@ -961,7 +961,7 @@ class Vm(object):
                     self.set_last_status(vmstatus.DOWN,
                                          vmstatus.WAIT_FOR_LAUNCH)
                 else:
-                    self._recover_status()
+                    self.recover_status()
                     if self._lastStatus == vmstatus.MIGRATION_DESTINATION:
                         self._wait_for_incoming_postcopy_migration()
                         self.lastStatus = vmstatus.UP
@@ -1016,7 +1016,7 @@ class Vm(object):
                 self.log.debug('Releasing incoming migration semaphore')
                 migration.incomingMigrations.release()
 
-    def _recover_status(self):
+    def recover_status(self):
         try:
             state, reason = self._dom.state(0)
         except (libvirt.libvirtError, virdomain.NotConnectedError,):
