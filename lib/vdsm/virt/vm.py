@@ -493,6 +493,7 @@ class Vm(object):
             self._read_nvram_data,
             self._write_nvram_data)
         self._last_disk_hotplug = None
+        self._resume_postponed = False
 
     @property
     def _hugepages_shared(self):
@@ -1683,6 +1684,7 @@ class Vm(object):
 
     def _resume_if_needed(self):
         if not self._can_resume():
+            self._resume_postponed = True
             return
 
         try:
@@ -1794,7 +1796,9 @@ class Vm(object):
         try:
             if not ignoreStatus and not self._can_resume():
                 self.log.error('cannot cont while %s', self.lastStatus)
+                self._resume_postponed = True
                 return response.error('unexpected')
+            self._resume_postponed = False
             self._underlyingCont()
             self._setGuestCpuRunning(self.isDomainRunning(),
                                      guestCpuLocked=True)
@@ -1815,6 +1819,7 @@ class Vm(object):
 
     def pause(self, afterState=vmstatus.PAUSED, guestCpuLocked=False,
               pauseCode='NOERR'):
+        self._resume_postponed = False
         if not guestCpuLocked:
             self._acquireCpuLockWithTimeout(flow='pause')
         self._pause_code = pauseCode
@@ -1837,6 +1842,10 @@ class Vm(object):
     @property
     def pause_code(self):
         return self._pause_code
+
+    @property
+    def resume_postponed(self):
+        return self._resume_postponed
 
     def reset(self):
         if self.lastStatus == vmstatus.DOWN:

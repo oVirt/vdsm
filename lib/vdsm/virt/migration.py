@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2020 Red Hat, Inc.
+# Copyright 2008-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -357,6 +357,9 @@ class SourceThread(object):
         else:
             self._vm.lastStatus = vmstatus.UP
         self._vm.send_status_event()
+        if (self._vm.lastStatus == vmstatus.PAUSED and
+                self._vm.resume_postponed):
+            self._vm.maybe_resume()
 
     def _finishSuccessfully(self, machineParams):
         with self._lock:
