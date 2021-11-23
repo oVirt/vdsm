@@ -31,6 +31,7 @@ import sys
 
 from vdsm.config import config
 from vdsm import utils
+from vdsm.common import concurrent
 from vdsm.common import supervdsm
 from vdsm.common import udevadm
 from vdsm.common.marks import deprecated
@@ -569,6 +570,67 @@ class IscsiConnection(Connection):
         self._cred = credentials
 
     @classmethod
+    def connect_all(cls, prep_cons):
+        results = []
+        logins = []
+
+        # Prepare connections and setup iSCSI nodes serially. These operations
+        # happen on the host and are very fast, so there's no need to run them
+        # in parallel. Also, running them concurrently could cause locking
+        # issues when multiple threads try to access local iscsi database.
+        for con in prep_cons:
+            try:
+                con.setup_node()
+            except Exception as err:
+                cls.log.error(
+                    "Could configure connection to % and iface %s",
+                    con.target, con.iface)
+                status, _ = _translateConnectionError(err)
+                results.append((con, status))
+            else:
+                logins.append(con)
+
+        # Run login to nodes in parallel. This operations happen on remote
+        # iscsi server and if the some targets are not available, the operation
+        # can take quite some time (by default 120 seconds) and can cause
+        # engine command times out. Running login to targets in parallel should
+        # mitigate this issue.
+
+        max_workers = config.getint("iscsi", "parallel_logins")
+        if max_workers < 1:
+            cls.log.warning("Number of parallel logins (%d) is less then 1, "
+                            "using only one thread", max_workers)
+            max_workers = 1
+
+        def iscsi_login(con):
+            try:
+                iscsi.loginToIscsiNode(con.iface, con.target)
+                return con, None
+            except Exception as e:
+                return con, e
+
+        login_results = concurrent.tmap(
+            iscsi_login,
+            logins,
+            max_workers=min(len(logins), max_workers),
+            name="iscsi-login")
+
+        # Evaluate if login was successful.
+        for login_result in login_results:
+            con, err = login_result.value
+            if err is None:
+                status = 0
+            else:
+                cls.log.exception("Could not login to storageServer")
+                status, _ = _translateConnectionError(err)
+            results.append((con, status))
+
+        # Wait for all new devices to be settled.
+        cls.settle_devices()
+
+        return results
+
+    @classmethod
     def settle_devices(cls):
         timeout = config.getint("irs", "udev_settle_timeout")
         udevadm.settle(timeout)
@@ -581,6 +643,10 @@ class IscsiConnection(Connection):
     def _connect_iscsi(self):
         iscsi.addIscsiNode(self._iface, self._target, self._cred)
         iscsi.loginToIscsiNode(self._iface, self._target)
+
+    def setup_node(self):
+        self._maybe_connect_iser()
+        iscsi.addIscsiNode(self.iface, self.target, self.cred)
 
     @deprecated
     def _maybe_connect_iser(self):

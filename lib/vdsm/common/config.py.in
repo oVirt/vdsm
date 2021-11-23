@@ -404,6 +404,13 @@ parameters = [
             '(supported versions: 0.10, 1.1)'),
     ]),
 
+    # Section: [iscsi]
+    ('iscsi', [
+        ('parallel_logins', '10',
+            'The maximal number of login to iSCSI portals to be run in '
+            'parallel. (default 10)'),
+    ]),
+
     # Section: [spm]
     ('spm', [
 
