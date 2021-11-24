@@ -1888,7 +1888,8 @@ class StoragePool(object):
                      srcVolUUID=sc.BLANK_UUID,
                      initialSize=None,
                      addBitmaps=False,
-                     legal=True):
+                     legal=True,
+                     sequence=0):
         """
         Creates a new volume.
 
@@ -1929,6 +1930,9 @@ class StoragePool(object):
         :param legal: If true, create the volume as legal.
         :type legal: boolean
 
+        :type sequence: int
+        :param sequence: The sequence number of the volume.
+
         :returns: a dict with the UUID of the new volume.
         :rtype: dict
         """
@@ -1953,7 +1957,8 @@ class StoragePool(object):
                 imgUUID=imgUUID, capacity=size, volFormat=volFormat,
                 preallocate=preallocate, diskType=diskType, volUUID=volUUID,
                 desc=desc, srcImgUUID=srcImgUUID, srcVolUUID=srcVolUUID,
-                initial_size=initialSize, add_bitmaps=addBitmaps, legal=legal)
+                initial_size=initialSize, add_bitmaps=addBitmaps, legal=legal,
+                sequence=sequence)
         return dict(uuid=newVolUUID)
 
     def deleteVolume(self, sdUUID, imgUUID, volumes, postZero, force, discard):

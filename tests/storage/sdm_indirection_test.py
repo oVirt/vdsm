@@ -32,6 +32,8 @@ from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from testlib import recorded
 
+import uuid
+
 
 class FakeDomainManifest(object):
     def __init__(self):
@@ -337,7 +339,7 @@ class FakeVolumeManifest(object):
     @classmethod
     @recorded
     def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
-                    voltype, disktype, desc="", legality=None):
+                    voltype, disktype, desc="", legality=None, sequence=0):
         pass
 
     @recorded
@@ -843,10 +845,27 @@ class VolumeTestMixin(object):
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
 
+    def test_newmetadata(self):
+        args = (
+            1,             # metaId
+            uuid.uuid4(),  # sdUUID
+            uuid.uuid4(),  # imgUUID
+            uuid.uuid4(),  # puuid
+            1000,          # capacity
+            1,             # format
+            2,             # type
+            sc.LEAF_VOL,   # voltype
+            'file',        # disktype
+            '',            # description
+            sc.LEGAL_VOL,
+            0)
+        self.checker.check_classmethod_call_args_kwargs(
+            "newMetadata",
+            *args)
+
     @permutations([
         ['_putMetadata', 2],
         ['createMetadata', 2],
-        ['newMetadata', 11],
         ['newVolumeLease', 3],
         ['getImageVolumes', 2],
         ['teardown', 3],

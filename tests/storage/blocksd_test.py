@@ -1229,7 +1229,8 @@ def test_dump_sd_metadata(
             srcImgUUID=sc.BLANK_UUID,
             srcVolUUID=sc.BLANK_UUID,
             volFormat=sc.COW_FORMAT,
-            volUUID=vol_uuid)
+            volUUID=vol_uuid,
+            sequence=42)
 
     # Create external lease.
     dom.create_lease(vol_uuid)
@@ -1241,6 +1242,8 @@ def test_dump_sd_metadata(
             "updating": False
         }
     }
+
+    expected_sequence = sc.DEFAULT_SEQUENCE if domain_version == 4 else 42
 
     vol = dom.produceVolume(img_uuid, vol_uuid)
     mdslot = vol.getMetaSlot()
@@ -1254,6 +1257,7 @@ def test_dump_sd_metadata(
             'disktype': sc.DATA_DISKTYPE,
             'format': 'COW',
             'generation': 0,
+            'sequence': expected_sequence,
             'image': img_uuid,
             'legality': sc.LEGAL_VOL,
             'mdslot': mdslot,
@@ -1309,6 +1313,7 @@ def test_dump_sd_metadata(
                     'disktype': sc.DATA_DISKTYPE,
                     'format': 'COW',
                     'generation': 0,
+                    'sequence': expected_sequence,
                     'image': img_uuid,
                     'legality': sc.LEGAL_VOL,
                     'mdslot': mdslot,
@@ -1335,6 +1340,7 @@ def test_dump_sd_metadata(
                     'disktype': sc.DATA_DISKTYPE,
                     'format': 'COW',
                     'generation': 0,
+                    'sequence': expected_sequence,
                     'image': img_uuid,
                     'legality': sc.LEGAL_VOL,
                     'mdslot': mdslot,
@@ -1379,6 +1385,7 @@ def test_dump_sd_metadata(
                     'disktype': sc.DATA_DISKTYPE,
                     'format': 'COW',
                     'generation': 0,
+                    'sequence': expected_sequence,
                     'image': img_uuid,
                     'legality': sc.LEGAL_VOL,
                     'mdslot': mdslot,
@@ -1406,6 +1413,7 @@ def test_dump_sd_metadata(
                 "mdslot": mdslot,
                 "truesize": vol_size.truesize,
                 "generation": sc.DEFAULT_GENERATION,
+                "sequence": sc.DEFAULT_SEQUENCE,
             }
         }
     }
@@ -1420,6 +1428,7 @@ def test_dump_sd_metadata(
                     "parent": sc.BLANK_UUID,
                     "mdslot": mdslot,
                     "generation": sc.DEFAULT_GENERATION,
+                    "sequence": sc.DEFAULT_SEQUENCE,
                 }
             }
         }

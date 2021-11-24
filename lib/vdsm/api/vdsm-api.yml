@@ -11874,6 +11874,13 @@ Volume.create:
         name: legal
         type: boolean
         added: '4.5'
+
+    -   defaultvalue: 0
+        description: The sequence number of the volume. Newer volume will have
+            a higher number.
+        name: sequence
+        type: int
+        added: '4.5'
     return:
         description: A task UUID
         type: *UUID

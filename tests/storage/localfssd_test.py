@@ -864,7 +864,9 @@ def test_dump_sd_volumes(monkeypatch, tmp_repo, user_mount, user_domain):
             volUUID=vol_uuid,
             desc="test",
             srcImgUUID=sc.BLANK_UUID,
-            srcVolUUID=sc.BLANK_UUID)
+            srcVolUUID=sc.BLANK_UUID,
+            sequence=sc.DEFAULT_SEQUENCE,
+        )
 
     expected_metadata = {
         "alignment": user_domain.alignment,
@@ -889,6 +891,7 @@ def test_dump_sd_volumes(monkeypatch, tmp_repo, user_mount, user_domain):
             "disktype": sc.DATA_DISKTYPE,
             "format": "RAW",
             "generation": 0,
+            "sequence": 0,
             "image": img_uuid,
             "legality": sc.LEGAL_VOL,
             "status": sc.VOL_STATUS_OK,
@@ -927,7 +930,9 @@ def test_dump_sd_volumes_invalid_md(
             volUUID=vol_uuid,
             desc="test",
             srcImgUUID=sc.BLANK_UUID,
-            srcVolUUID=sc.BLANK_UUID)
+            srcVolUUID=sc.BLANK_UUID,
+            sequence=0,
+        )
 
     # Corrupt the metadata of the volume.
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
@@ -956,6 +961,7 @@ def test_dump_sd_volumes_invalid_md(
             "truesize": vol_size.truesize,
             "status": sc.VOL_STATUS_INVALID,
             "generation": sc.DEFAULT_GENERATION,
+            "sequence": 0,
             "image": img_uuid
         }
     }
@@ -1080,6 +1086,7 @@ def test_dump_sd_volumes_failed_size_query(
             "disktype": sc.DATA_DISKTYPE,
             "format": "RAW",
             "generation": 0,
+            "sequence": 0,
             "image": img_uuid,
             "legality": sc.LEGAL_VOL,
             "status": sc.VOL_STATUS_INVALID,
@@ -1117,7 +1124,9 @@ def test_dump_sd_volumes_removed_image(
             volUUID=vol_uuid,
             desc="test",
             srcImgUUID=sc.BLANK_UUID,
-            srcVolUUID=sc.BLANK_UUID)
+            srcVolUUID=sc.BLANK_UUID,
+            sequence=0,
+        )
 
     # Mark the volume image as removed.
     vol = user_domain.produceVolume(img_uuid, vol_uuid)
@@ -1149,6 +1158,7 @@ def test_dump_sd_volumes_removed_image(
             "disktype": sc.DATA_DISKTYPE,
             "format": "RAW",
             "generation": 0,
+            "sequence": 0,
             "image": img_uuid,
             "legality": sc.LEGAL_VOL,
             "status": sc.VOL_STATUS_REMOVED,

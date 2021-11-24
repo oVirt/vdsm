@@ -348,5 +348,5 @@ class VolumeMetadata(object):
             "legality": self.legality,
             "parent": self.parent,
             "type": self.type,
-            "voltype": self.voltype
+            "voltype": self.voltype,
         }
