@@ -310,8 +310,17 @@ def test_prepare_connection_without_initiator_name():
         "user": "",
         "tpgt": "1",
     }]
-    conn = storageServer.prepare_connections(sd.ISCSI_DOMAIN, con_def)
+
+    con_class, cons = storageServer._prepare_connections(
+        sd.ISCSI_DOMAIN, con_def)
+    con = cons[0]
+
+    # Check we get right connection class.
+    assert con_class == IscsiConnection
+
+    # Connection class has to be same type as actual connection object.
+    assert con_class == type(con)
 
     # Unset keys raise KeyError
     with pytest.raises(KeyError):
-        conn[0].iface.initiatorName
+        con.iface.initiatorName

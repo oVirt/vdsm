@@ -59,7 +59,15 @@ class FakeConnection(storageServer.Connection):
         self.connected = False
 
 
+class FakeConnectionTypes(dict):
+    def __getitem__(self, key):
+        return FakeConnection
+
+
 class FakeConnectionFactory(object):
+
+    registeredConnectionTypes = FakeConnectionTypes()
+
     def __init__(self):
         self.connections = {}
 

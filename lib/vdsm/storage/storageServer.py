@@ -801,7 +801,7 @@ class UnknownConnectionTypeError(RuntimeError):
 
 
 class ConnectionFactory(object):
-    _registeredConnectionTypes = {
+    registeredConnectionTypes = {
         "nfs": NFSConnection,
         "posixfs": MountConnection,
         "glusterfs": GlusterFSConnection,
@@ -818,7 +818,7 @@ class ConnectionFactory(object):
             if params[param] is None:
                 del params[param]
         try:
-            ctor = cls._registeredConnectionTypes[conType]
+            ctor = cls.registeredConnectionTypes[conType]
         except KeyError:
             raise UnknownConnectionTypeError(conType)
 
@@ -826,13 +826,13 @@ class ConnectionFactory(object):
 
 
 def connect(dom_type, con_defs):
-    connections = _prepare_connections(dom_type, con_defs)
-    return Connection.connect_all(connections)
+    con_class, connections = _prepare_connections(dom_type, con_defs)
+    return con_class.connect_all(connections)
 
 
 def disconnect(dom_type, con_defs):
-    connections = _prepare_connections(dom_type, con_defs)
-    return Connection.disconnect_all(connections)
+    con_class, connections = _prepare_connections(dom_type, con_defs)
+    return con_class.disconnect_all(connections)
 
 
 def _prepare_connections(dom_type, con_defs):
@@ -841,7 +841,8 @@ def _prepare_connections(dom_type, con_defs):
         con_info = _connectionDict2ConnectionInfo(dom_type, con_def)
         prep_con = ConnectionFactory.createConnection(con_info)
         prep_cons.append(prep_con)
-    return prep_cons
+    con_class = ConnectionFactory.registeredConnectionTypes[con_info.type]
+    return con_class, prep_cons
 
 
 def _connectionDict2ConnectionInfo(conTypeId, conDict):
