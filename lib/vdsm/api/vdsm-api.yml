@@ -11880,6 +11880,12 @@ Volume.create:
             be used by the system. To use the volume it must be set to legal.
         name: legal
         type: boolean
+
+    -   defaultvalue: 0
+        description: The sequence number of the volume. Newer volume will have
+            a higher number.
+        name: sequence
+        type: int
         added: '4.5'
     return:
         description: A task UUID

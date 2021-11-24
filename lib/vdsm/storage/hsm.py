@@ -1254,7 +1254,8 @@ class HSM(object):
                      srcImgUUID=sc.BLANK_UUID,
                      srcVolUUID=sc.BLANK_UUID,
                      initialSize=None, addBitmaps=False,
-                     legal=True):
+                     legal=True,
+                     sequence=0):
         """
         Create a new volume
             Function Type: SPM
@@ -1263,10 +1264,11 @@ class HSM(object):
         """
         argsStr = ("sdUUID=%s, spUUID=%s, imgUUID=%s, size=%s, volFormat=%s, "
                    "preallocate=%s, diskType=%s, volUUID=%s, desc=%s, "
-                   "srcImgUUID=%s, srcVolUUID=%s, initialSize=%s" %
+                   "srcImgUUID=%s, srcVolUUID=%s, initialSize=%s, "
+                   "sequence=%s" %
                    (sdUUID, spUUID, imgUUID, size, volFormat, preallocate,
                     diskType, volUUID, desc, srcImgUUID, srcVolUUID,
-                    initialSize))
+                    initialSize, sequence))
         vars.task.setDefaultException(se.VolumeCreationError(argsStr))
         # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
@@ -1291,7 +1293,7 @@ class HSM(object):
         self._spmSchedule(spUUID, "createVolume", pool.createVolume, sdUUID,
                           imgUUID, capacity, volFormat, preallocate, diskType,
                           volUUID, desc, srcImgUUID, srcVolUUID, initial_size,
-                          addBitmaps, legal)
+                          addBitmaps, legal, sequence)
 
     @public
     def deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False,

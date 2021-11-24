@@ -228,7 +228,8 @@ class VolumeManifest(object):
             "ctime": meta.get(sc.CTIME, ""),
             "mtime": "0",
             "legality": meta.get(sc.LEGALITY, ""),
-            "generation": meta.get(sc.GENERATION, sc.DEFAULT_GENERATION)
+            "generation": meta.get(sc.GENERATION, sc.DEFAULT_GENERATION),
+            "sequence": meta.get(sc.SEQUENCE, sc.DEFAULT_SEQUENCE)
         }
 
     def getInfo(self):
@@ -567,9 +568,21 @@ class VolumeManifest(object):
 
     @classmethod
     def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, capacity, format,
-                    type, voltype, disktype, desc="", legality=sc.ILLEGAL_VOL):
-        meta = VolumeMetadata(sdUUID, imgUUID, puuid, capacity, format, type,
-                              voltype, disktype, desc, legality)
+                    type, voltype, disktype, desc="", legality=sc.ILLEGAL_VOL,
+                    sequence=0):
+        meta = VolumeMetadata(
+            domain=sdUUID,
+            image=imgUUID,
+            parent=puuid,
+            capacity=capacity,
+            format=format,
+            type=type,
+            voltype=voltype,
+            disktype=disktype,
+            description=desc,
+            legality=legality,
+            sequence=sequence,
+        )
         cls.createMetadata(metaId, meta)
         return meta
 
@@ -1142,7 +1155,8 @@ class Volume(object):
     @classmethod
     def create(cls, repoPath, sdUUID, imgUUID, capacity, volFormat,
                preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID,
-               initial_size=None, add_bitmaps=False, legal=True):
+               initial_size=None, add_bitmaps=False, legal=True,
+               sequence=0):
         """
         Create a new volume with given size or snapshot
             'capacity' - in bytes
@@ -1156,6 +1170,7 @@ class Volume(object):
             'add_bitmaps' - add all the bitmaps from source volume
             'legal' - create the volume as legal if true,
                       otherwise create as illegal.
+            'sequence' - the sequence number of the volume in the metadata
         """
         # Do the input values validation first.
         if initial_size is not None:
@@ -1291,7 +1306,8 @@ class Volume(object):
             legality = sc.LEGAL_VOL if legal else sc.ILLEGAL_VOL
             cls.newMetadata(metaId, sdUUID, imgUUID, srcVolUUID, capacity,
                             sc.type2name(volFormat), sc.type2name(preallocate),
-                            volType, diskType, desc, legality)
+                            volType, diskType, desc, legality,
+                            sequence=sequence)
 
             if dom.hasVolumeLeases():
                 cls.newVolumeLease(metaId, sdUUID, volUUID)
@@ -1508,10 +1524,11 @@ class Volume(object):
 
     @classmethod
     def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, capacity, format,
-                    type, voltype, disktype, desc="", legality=sc.ILLEGAL_VOL):
+                    type, voltype, disktype, desc="", legality=sc.ILLEGAL_VOL,
+                    sequence=0):
         return cls.manifestClass.newMetadata(
             metaId, sdUUID, imgUUID, puuid, capacity, format, type, voltype,
-            disktype, desc, legality)
+            disktype, desc, legality, sequence=sequence)
 
     def getInfo(self):
         return self._manifest.getInfo()
