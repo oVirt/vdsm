@@ -1326,13 +1326,15 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
     if initialTag:
         options.extend(("--addtag", initialTag))
     cmd = ["vgcreate"] + options + [vgName] + pvs
-    rc, out, err = _lvminfo.cmd(cmd, tuple(pvs))
-    if rc == 0:
+
+    try:
+        _lvminfo.run_command(cmd, devices=tuple(pvs))
+    except se.LVMCommandError as e:
+        raise se.VolumeGroupCreateError.from_lvmerror(e)
+    else:
         _lvminfo._invalidatepvs(pvs)
         _lvminfo._invalidatevgs(vgName)
         log.debug("Cache after createvg %s", _lvminfo._vgs)
-    else:
-        raise se.VolumeGroupCreateError(vgName, pvs)
 
 
 def removeVG(vgName):

@@ -1903,8 +1903,6 @@ class HSM(object):
 
         MINIMALVGSIZE = 10 * GiB
 
-        vars.task.setDefaultException(
-            se.VolumeGroupCreateError(str(vgname), str(devlist)))
         misc.validateUUID(vgname, 'vgname')
         # getSharedLock(connectionsResource...)
         knowndevs = set(os.path.basename(p) for p

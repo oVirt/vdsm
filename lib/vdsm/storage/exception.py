@@ -1325,9 +1325,7 @@ class VolumeGroupPermissionsError(StorageException):
     msg = "Could not update/change volume group permissions"
 
 
-class VolumeGroupCreateError(StorageException):
-    def __init__(self, vgname, devname):
-        self.value = "vgname=%s, devname=%s" % (vgname, devname)
+class VolumeGroupCreateError(LVMCommandError):
     code = 502
     msg = "Cannot create Volume Group"
 
