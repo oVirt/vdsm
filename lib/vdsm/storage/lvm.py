@@ -1371,24 +1371,20 @@ def extendVG(vgName, devices, force):
     _checkpvsblksize(pvs, getVGBlockSizes(vgName))
     vg = _lvminfo.getVg(vgName)
 
-    member_pvs = set(vg.pv_name).intersection(pvs)
-    if member_pvs:
-        log.error("Cannot extend vg %s: pvs already belong to vg %s",
-                  vg.name, member_pvs)
-        raise se.VolumeGroupExtendError(vgName, pvs)
-
-    # Format extension PVs as all the other already in the VG
+    # Format extension PVs, will raise if any pv is a member of another vg.
     _initpvs(pvs, int(vg.vg_mda_size) // MiB, force)
 
     cmd = ["vgextend", vgName] + pvs
     devs = tuple(_lvminfo._getVGDevs((vgName, )) + tuple(pvs))
-    rc, out, err = _lvminfo.cmd(cmd, devs)
-    if rc == 0:
+
+    try:
+        _lvminfo.run_command(cmd, devices=devs)
+    except se.LVMCommandError as e:
+        raise se.VolumeGroupExtendError.from_lvmerror(e)
+    else:
         _lvminfo._invalidatepvs(pvs)
         _lvminfo._invalidatevgs(vgName)
         log.debug("Cache after extending vg %s", _lvminfo._vgs)
-    else:
-        raise se.VolumeGroupExtendError(vgName, pvs)
 
 
 def _removeHolders(devices):

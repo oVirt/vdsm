@@ -1330,9 +1330,7 @@ class VolumeGroupCreateError(LVMCommandError):
     msg = "Cannot create Volume Group"
 
 
-class VolumeGroupExtendError(StorageException):
-    def __init__(self, vgname, devname):
-        self.value = "vgname=%s, devname=%s" % (vgname, devname)
+class VolumeGroupExtendError(LVMCommandError):
     code = 503
     msg = "Cannot extend Volume Group"
 
