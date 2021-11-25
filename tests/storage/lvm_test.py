@@ -88,7 +88,6 @@ def test_build_config():
         'global { '
         ' prioritise_write_locks=1 '
         ' wait_for_locks=1 '
-        ' use_lvmetad=0 '
         ' use_lvmpolld=1 '
         '} '
         'backup { '
