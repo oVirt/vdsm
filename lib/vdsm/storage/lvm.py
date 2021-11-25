@@ -1073,6 +1073,19 @@ def _createpv(devices, metadataSize, options=tuple()):
     _lvminfo.run_command(cmd, devices=devices)
 
 
+def _enable_metadata_area(pvs):
+    """
+    Activate the 1st PV metadata areas
+    """
+    cmd = ["pvchange", "--metadataignore", "n", pvs[0]]
+
+    try:
+        # TODO: Check why we need to specify all devices for running the cmd.
+        _lvminfo.run_command(cmd, devices=tuple(pvs))
+    except se.LVMCommandError as e:
+        raise se.PhysDevInitializationError.from_lvmerror(e)
+
+
 def getLvDmName(vgName, lvName):
     return "%s-%s" % (vgName.replace("-", "--"), lvName)
 
@@ -1307,13 +1320,7 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
     _checkpvsblksize(pvs)
 
     _initpvs(pvs, metadataSize, force)
-    # Activate the 1st PV metadata areas
-    cmd = ["pvchange", "--metadataignore", "n"]
-    cmd.append(pvs[0])
-    rc, out, err = _lvminfo.cmd(cmd, tuple(pvs))
-    if rc != 0:
-        # pylint: disable=no-value-for-parameter
-        raise se.PhysDevInitializationError(pvs[0])
+    _enable_metadata_area(pvs)
 
     options = ["--physicalextentsize", "%dm" % (sc.VG_EXTENT_SIZE // MiB)]
     if initialTag:
