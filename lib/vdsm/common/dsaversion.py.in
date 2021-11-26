@@ -52,11 +52,13 @@ def version_info():
         cluster_levels.append('4.5')
     if libvirt_version >= (7, 0):
         cluster_levels.append('4.6')
+    if libvirt_version >= (7, 10):
+        cluster_levels.append('4.7')
 
     return {
         'version_name': version_name,
         'software_version': software_version,
         'software_revision': software_revision,
-        'supportedENGINEs': ['4.2', '4.3', '4.4'],
+        'supportedENGINEs': ['4.2', '4.3', '4.4', '4.5'],
         'clusterLevels': cluster_levels,
     }
