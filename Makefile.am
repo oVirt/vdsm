@@ -66,7 +66,7 @@ CLEANFILES = \
 
 PYLINT_TARGETS = \
 	static/usr/bin/vdsm-tool \
-	static/usr/share/vdsm/sitecustomize.py \
+	static/libexec/vdsm/sitecustomize.py \
 	lib/vdsm \
 	lib/vdsmclient \
 	lib/yajsonrpc \
