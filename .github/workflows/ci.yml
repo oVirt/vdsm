@@ -1,0 +1,10 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container: quay.io/ovirt/vdsm-test-centos-8
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run linters
+      run: ./automation/lint.sh
