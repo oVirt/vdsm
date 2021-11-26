@@ -1,5 +1,7 @@
 name: CI
 on: [push, pull_request]
+env:
+  EXPORT_DIR: exported-artifacts
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -20,3 +22,18 @@ jobs:
     - uses: actions/checkout@v2
     - name: Run storage tests
       run: ./automation/tests-storage.sh
+  rpm:
+    runs-on: ubuntu-latest
+    container: quay.io/ovirt/vdsm-test-centos-8
+    steps:
+    # we need the tags to be pulled for RPMs to have proper versions
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Build RPMs
+      run: ./automation/rpm.sh
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: artifacts
+        path: ${{ env.EXPORT_DIR }}
