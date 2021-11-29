@@ -45,13 +45,9 @@ def _get_libvirt_version():
 
 @cache.memoized
 def version_info():
-    cluster_levels = ['4.2', '4.3', '4.4']
+    cluster_levels = ['4.2', '4.3', '4.4', '4.5', '4.6']
     libvirt_version = _get_libvirt_version()
 
-    if libvirt_version >= (6, 6):
-        cluster_levels.append('4.5')
-    if libvirt_version >= (7, 0):
-        cluster_levels.append('4.6')
     if libvirt_version >= (7, 10):
         cluster_levels.append('4.7')
 
