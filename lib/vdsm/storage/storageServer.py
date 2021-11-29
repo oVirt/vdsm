@@ -110,7 +110,7 @@ class Connection:
                               exc_info=True)
                 status, _ = _translateConnectionError(err)
 
-            results.append({'id': con.id, 'status': status})
+            results.append((con, status))
 
         return results
 

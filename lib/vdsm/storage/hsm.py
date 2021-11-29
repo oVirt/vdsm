@@ -2235,7 +2235,9 @@ class HSM(object):
         # Disconnecting a device may change the visible storage domain list
         # so invalidate the caches
         sdCache.refreshStorage(resize=False)
-        return dict(statuslist=results)
+        status_list = [{"id": con.id, "status": status}
+                       for con, status in results]
+        return dict(statuslist=status_list)
 
     @public
     def getStoragePoolInfo(self, spUUID):
