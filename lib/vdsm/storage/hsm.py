@@ -2170,8 +2170,7 @@ class HSM(object):
                 "domType=%s, spUUID=%s, conList=%s" %
                 (domType, spUUID, conList)))
 
-        prep_cons = storageServer.prepare_connections(domType, conList)
-        results = storageServer.Connection.connect_all(prep_cons)
+        results = storageServer.connect(domType, conList)
 
         # In case there were changes in devices size
         # while the VDSM was not connected, we need to
@@ -2229,8 +2228,7 @@ class HSM(object):
                 "domType=%s, spUUID=%s, conList=%s" %
                 (domType, spUUID, conList)))
 
-        prep_cons = storageServer.prepare_connections(domType, conList)
-        results = storageServer.Connection.disconnect_all(prep_cons)
+        results = storageServer.disconnect(domType, conList)
 
         # Disconnecting a device may change the visible storage domain list
         # so invalidate the caches

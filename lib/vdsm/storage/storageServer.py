@@ -825,7 +825,17 @@ class ConnectionFactory(object):
         return ctor(**params)
 
 
-def prepare_connections(dom_type, con_defs):
+def connect(dom_type, con_defs):
+    connections = _prepare_connections(dom_type, con_defs)
+    return Connection.connect_all(connections)
+
+
+def disconnect(dom_type, con_defs):
+    connections = _prepare_connections(dom_type, con_defs)
+    return Connection.disconnect_all(connections)
+
+
+def _prepare_connections(dom_type, con_defs):
     prep_cons = []
     for con_def in con_defs:
         con_info = _connectionDict2ConnectionInfo(dom_type, con_def)
