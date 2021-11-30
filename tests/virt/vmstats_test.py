@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2020 Red Hat, Inc.
+# Copyright 2015-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -538,8 +538,10 @@ class CpuStatsTests(VmStatsTestCase):
     def test_empty_samples(self, first, last):
         stats = {}
         res = vmstats.cpu(stats, {}, {}, self.INTERVAL)
-        assert stats == \
-            {'cpuUsage': 0.0, 'cpuUser': 0.0, 'cpuSys': 0.0}
+        assert stats == {
+            'cpuUsage': 0.0, 'cpuUser': 0.0, 'cpuSys': 0.0,
+            'cpuActual': False,
+        }
         assert res is None
 
     def test_only_cpu_user_system(self):
@@ -550,6 +552,7 @@ class CpuStatsTests(VmStatsTestCase):
             'cpuUser': 0.0,
             'cpuSys': 0.2,
             'cpuUsage': '11260000000',
+            'cpuActual': False,
         }
         assert res is None
 
@@ -565,6 +568,7 @@ class CpuStatsTests(VmStatsTestCase):
             'cpuUser': 0.6840879,
             'cpuSys': 0.2,
             'cpuUsage': '11260000000',
+            'cpuActual': True,
         }
         assert res is not None
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -360,6 +360,7 @@ class DataVerificationTests(TestCaseBase):
                 'elapsedTime': '2560',
                 'vmType': u'kvm',
                 'cpuSys': '0.20',
+                'cpuActual': True,
                 'status': 'Up',
                 'guestCPUCount': -1,
                 'appsList': (),
@@ -431,6 +432,7 @@ class DataVerificationTests(TestCaseBase):
                 'elapsedTime': '2541',
                 'vmType': u'kvm',
                 'cpuSys': '0.07',
+                'cpuActual': True,
                 'status': 'Up',
                 'guestCPUCount': -1,
                 'appsList': (),

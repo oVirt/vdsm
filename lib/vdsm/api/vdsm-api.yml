@@ -5548,6 +5548,13 @@ types:
             datatype: uint
             added: '3.6'
 
+        -   description: Indicates whether all the CPU stats (cpuUser,
+                cpuSys, cpuUsage) are based on actual values rather
+                than initial fake values.
+            name: cpuActual
+            type: boolean
+            added: '4.5'
+
         -   description: Ratio of CPU time spent by the guest VM
             name: cpuUser
             type: string
