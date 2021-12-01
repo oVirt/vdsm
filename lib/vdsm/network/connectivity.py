@@ -37,9 +37,7 @@ P_VDSM_CLIENT_LOG = constants.P_VDSM_RUN + 'client.log'
 
 
 def _get_connectivity_timeout(options):
-    return int(
-        options.get('connectivityTimeout', CONNECTIVITY_TIMEOUT_DEFAULT)
-    )
+    return int(options.get('connectivityTimeout', CONNECTIVITY_TIMEOUT_DEFAULT))
 
 
 def check(options):
