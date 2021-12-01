@@ -1,6 +1,6 @@
 # Virtual Desktop Server Manager
 
-[![Build Status](https://travis-ci.org/oVirt/vdsm.svg?branch=master)](https://travis-ci.org/oVirt/vdsm)
+[![CI Status](https://github.com/oVirt/vdsm/actions/workflows/ci.yml/badge.svg)](https://github.com/oVirt/vdsm/actions)
 [![Copr build status](https://copr.fedorainfracloud.org/coprs/ovirt/ovirt-master-snapshot/package/vdsm/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/ovirt/ovirt-master-snapshot/package/vdsm/)
 
 Welcome to the Vdsm source repository.
