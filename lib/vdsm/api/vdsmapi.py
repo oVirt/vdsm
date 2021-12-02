@@ -31,7 +31,7 @@ import six
 from enum import Enum
 
 from vdsm import utils
-from vdsm.common.password import HiddenValue
+from vdsm.common.password import unhide
 from yajsonrpc.exception import JsonRpcInvalidParamsError
 
 
@@ -246,11 +246,13 @@ class Schema(object):
                                        ' verification for %s' % rep.id)
 
     def _verify_type(self, param, value, identifier):
+        value = unhide(value)
         # check whether a parameter is in a list
         if isinstance(param, list):
             if not isinstance(value, list):
-                self._report_inconsistency('Parameter %s is not a list'
-                                           % (value))
+                self._report_inconsistency(
+                    'Parameter of type %s from %s is not a list'
+                    % (type(value), identifier,))
             for a in value:
                 self._verify_type(param[0], a, identifier)
             return
@@ -280,8 +282,9 @@ class Schema(object):
             # type verification method
             elif isinstance(t, list):
                 if not isinstance(value, (list, tuple)):
-                    self._report_inconsistency('Parameter %s is not a sequence'
-                                               % (value))
+                    self._report_inconsistency(
+                        'Parameter of type %s from %s is not a sequence'
+                        % (type(value), identifier,))
                 for a in value:
                     self._verify_type(t[0], a, identifier)
             else:
@@ -312,17 +315,17 @@ class Schema(object):
                     self._verify_complex_type(value.get('type'), value, arg,
                                               name, identifier)
                     return
-            self._report_inconsistency('Provided parameters %s do not match'
-                                       ' any of union %s values'
-                                       % (arg, t.get('name')))
+            self._report_inconsistency(
+                'Provided parameter of type %s from %s does not match'
+                ' any of union %s values'
+                % (type(arg), identifier, t.get('name'),))
         elif t_type == 'enum':
             # if enum we need to check whether provided parameter is in values
             if arg not in t.get('values'):
-                self._report_inconsistency('Provided value "%s" not'
-                                           ' defined in %s enum for'
-                                           ' %s' % (arg,
-                                                    t.get('name'),
-                                                    identifier))
+                self._report_inconsistency(
+                    'Provided parameter of type %s from %s not'
+                    ' defined in %s enum'
+                    % (type(arg), identifier, t.get('name'),))
         else:
             # if custom time (object) we need to check whether all the
             # properties match values provided
@@ -370,8 +373,6 @@ class Schema(object):
             ret_args = self.get_ret_param(rep)
 
             if ret_args:
-                if isinstance(ret, HiddenValue):
-                    ret = ret.value
                 self._verify_type(ret_args.get('type'), ret, rep.id)
         except JsonRpcInvalidParamsError:
             raise

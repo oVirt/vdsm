@@ -1075,7 +1075,8 @@ class SchemaInconsistencyFormatterTest(TestCaseBase):
         log_entries = self.log_entries_for(types, parameters, call_args)
 
         self.assertIn(FakeSchema.METHOD_NAME, log_entries)
-        self.assertIn(u'Provided value "42" not defined in MyEnum enum',
+        self.assertIn("Provided parameter of type <class 'int'> from "
+                      "Namespace.Method not defined in MyEnum enum",
                       log_entries)
         self.assertIn(u"With backtrace:", log_entries)
         self.assertIn(u"_verify_complex_type", log_entries)

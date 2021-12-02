@@ -21,7 +21,6 @@ from six.moves import queue
 from vdsm.common import exception as vdsmexception
 from vdsm.common.compat import json
 from vdsm.common.logutils import traceback
-from vdsm.common.password import HiddenValue
 from vdsm.common.threadlocal import vars
 from vdsm.common.time import monotonic_time, event_time
 from vdsm.common.password import protect_passwords, unhide
@@ -358,8 +357,6 @@ class JsonRpcServer(object):
             res = True if res is None else res
             self.log.log(logLevel, "Return '%s' in bridge with %s",
                          req.method, res)
-            if isinstance(res, HiddenValue):
-                res = res.value
             return JsonRpcResponse(res, None, req.id)
         finally:
             vars.context = None
