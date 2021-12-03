@@ -16,6 +16,7 @@ import errno
 import logging
 import os
 import subprocess
+import time
 
 # because this is used both as script and as a module, we don't import any vdsm
 # module here. Importing vdsm modules requires changing PYTHONPATH to run this
@@ -113,8 +114,25 @@ class LoopDevice(Path):
             cmd.append("--sector-size")
             cmd.append(str(self.sector_size))
 
-        out = subprocess.check_output(cmd)
-        return out.decode("utf-8").strip()
+        # Creating loop device with --sector-size may fail if the loop device
+        # has dirty pages from previous usage. This was fixed in losetup from
+        # util-linux 2.37.1, but it is not available in Centos Stream 8. Use
+        # a similar retry loop as used by losetup.
+        # See https://www.spinics.net/lists/kernel/msg3969074.html
+
+        max_attempts = 20
+        for attempt in range(1, max_attempts + 1):
+            try:
+                out = subprocess.check_output(cmd, stderr=subprocess.PIPE)
+                return out.decode("utf-8").strip()
+            except subprocess.CalledProcessError as e:
+                if attempt == max_attempts:
+                    raise RuntimeError(
+                        f"Attempt {attempt}/{max_attempts} failed: {e.stderr}")
+
+                log.warning("Attempt %s/%s failed: %s",
+                            attempt, max_attempts, e.stderr)
+                time.sleep(0.5)
 
     def _remove_loop_device(self):
         subprocess.check_call(["sudo", "losetup", "-d", self.path])
