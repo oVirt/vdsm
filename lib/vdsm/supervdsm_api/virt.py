@@ -195,7 +195,7 @@ def write_tpm_data(vm_id, tpm_data):
       `read_tpm_data()`
     :type tpm_data: HiddenValue
     """
-    tpm_data = password.unprotect(tpm_data)
+    tpm_data = password.unhide(tpm_data)
     # Permit only archives with plain files and directories to prevent various
     # kinds of attacks.
     with tempfile.TemporaryDirectory() as d:
@@ -225,7 +225,7 @@ def read_nvram_data(vm_id, last_modified):
 
 @expose
 def write_nvram_data(vm_id, nvram_data):
-    nvram_data = password.unprotect(nvram_data)
+    nvram_data = password.unhide(nvram_data)
     nvram_path = filedata.nvram_path(vm_id)
     # Create the file with restricted permissions owned by root
     if os.path.exists(nvram_path):

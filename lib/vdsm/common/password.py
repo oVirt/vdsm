@@ -21,7 +21,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import copy
 import six
 
 
@@ -52,47 +51,44 @@ def protect_passwords(obj):
     """
     Replace "password" values with HiddenValue() object.
 
+    The password values are modified in place, `obj' is modified by side
+    effects.
+
     Accept a dict, list of dicts or nested structure containing these types.
+    Return `obj`.
     """
-    for d, key, value in _walk(obj):
+    for d, key, value in _walk_passwords(obj):
         d[key] = HiddenValue(value)
     return obj
 
 
-def unhide(obj):
-    """
-    Return `obj` with `ProtectedPassword` objects replaced by actual values.
-
-    Accept a dict, list of dicts or nested structure containing these types.
-    The original `obj` remains unmodified.
-    """
-    obj = copy.deepcopy(obj)
-    for d, key, value in _walk(obj):
-        if isinstance(value, HiddenValue):
-            d[key] = value.value
-    return obj
-
-
-def unprotect(obj):
-    """
-    If `obj` is a hidden value, return the hidden value.
-    Otherwise return `obj`.
-    """
-    if isinstance(obj, HiddenValue):
-        return obj.value
-    return obj
-
-
-def _walk(obj):
+def _walk_passwords(obj):
     if isinstance(obj, dict):
         for key, value in six.iteritems(obj):
             if key == "password" or \
                isinstance(key, str) and key.startswith("_X_"):
                 yield obj, key, value
             elif isinstance(value, (dict, list)):
-                for d, k, v in _walk(value):
+                for d, k, v in _walk_passwords(value):
                     yield d, k, v
     elif isinstance(obj, list):
         for item in obj:
-            for d, k, v in _walk(item):
+            for d, k, v in _walk_passwords(item):
                 yield d, k, v
+
+
+def unhide(obj):
+    """
+    Return `obj` with `HiddenValue` objects replaced by actual values.
+
+    It reveals hidden values if `obj` is a HiddenValue itself and it also
+    recursively processes lists and dictionaries.
+    The original `obj` remains unmodified.
+    """
+    if isinstance(obj, HiddenValue):
+        obj = obj.value
+    if isinstance(obj, dict):
+        result = {k: unhide(v) for k, v in obj.items()}
+    else:
+        result = obj
+    return result

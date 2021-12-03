@@ -649,7 +649,7 @@ class Vm(object):
                               kind)
             engine_hash = ''
         else:
-            initial_data = password.unprotect(initial_data)
+            initial_data = password.unhide(initial_data)
             error = None
             self.log.debug("Writing initial data for %s", kind)
             try:
@@ -683,7 +683,7 @@ class Vm(object):
     def _read_tpm_data(self, last_modified):
         proxy = supervdsm.getProxy()
         data, timestamp = proxy.read_tpm_data(self.id, last_modified)
-        return password.unprotect(data), timestamp
+        return password.unhide(data), timestamp
 
     def _write_tpm_data(self, tpm_data):
         protected_data = HiddenValue(tpm_data)
@@ -692,7 +692,7 @@ class Vm(object):
     def _read_nvram_data(self, last_modified):
         proxy = supervdsm.getProxy()
         data, timestamp = proxy.read_nvram_data(self.id, last_modified)
-        return password.unprotect(data), timestamp
+        return password.unhide(data), timestamp
 
     def _write_nvram_data(self, nvram_data):
         protected_data = HiddenValue(nvram_data)

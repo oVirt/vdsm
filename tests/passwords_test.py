@@ -23,9 +23,9 @@ from __future__ import division
 
 import marshal
 import pickle
+import pytest
 
 from testlib import VdsmTestCase
-from testlib import expandPermutations, permutations
 from vdsm.common.compat import json
 
 from vdsm.common.password import (
@@ -71,58 +71,6 @@ class HiddenValueTests(VdsmTestCase):
     def test_no_json(self):
         p1 = HiddenValue("12345678")
         self.assertRaises(TypeError, json.dumps, p1)
-
-
-@expandPermutations
-class ProtectTests(VdsmTestCase):
-
-    @permutations([[list()], [dict()], [tuple()]])
-    def test_protect_empty(self, params):
-        self.assertEqual(params, protect_passwords(params))
-
-    @permutations([[list()], [dict()], [tuple()]])
-    def test_unprotect_empty(self, result):
-        self.assertEqual(result, unhide(result))
-
-    def test_protect_dict(self):
-        unprotected = dict_unprotected()
-        protected = dict_protected()
-        self.assertEqual(protected, protect_passwords(unprotected))
-
-    def test_unprotect_dict(self):
-        protected = dict_protected()
-        unprotected = dict_unprotected()
-        self.assertEqual(unprotected, unhide(protected))
-
-    def test_protect_nested_dicts(self):
-        unprotected = nested_dicts_unprotected()
-        protected = nested_dicts_protected()
-        self.assertEqual(protected, protect_passwords(unprotected))
-
-    def test_unprotect_nested_dicts(self):
-        protected = nested_dicts_protected()
-        unprotected = nested_dicts_unprotected()
-        self.assertEqual(unprotected, unhide(protected))
-
-    def test_protect_lists_of_dicts(self):
-        unprotected = lists_of_dicts_unprotected()
-        protected = lists_of_dicts_protected()
-        self.assertEqual(protected, protect_passwords(unprotected))
-
-    def test_unprotect_lists_of_dicts(self):
-        protected = lists_of_dicts_protected()
-        unprotected = lists_of_dicts_unprotected()
-        self.assertEqual(unprotected, unhide(protected))
-
-    def test_protect_nested_lists_of_dicts(self):
-        unprotected = nested_lists_of_dicts_unprotected()
-        protected = nested_lists_of_dicts_protected()
-        self.assertEqual(protected, protect_passwords(unprotected))
-
-    def test_unprotect_nested_lists_of_dicts(self):
-        protected = nested_lists_of_dicts_protected()
-        unprotected = nested_lists_of_dicts_unprotected()
-        self.assertEqual(unprotected, unhide(protected))
 
 
 def dict_unprotected():
@@ -235,3 +183,72 @@ def nested_lists_of_dicts_protected():
             }
         ]
     }
+
+
+def hidden_inside_hidden_unprotected():
+    return {
+        "key": "value",
+        "nested": [
+            {
+                "key": "value",
+                "nested": [
+                    {
+                        "key": "value",
+                        "secret": "12345678",
+                    }
+                ]
+            }
+        ]
+    }
+
+
+def hidden_inside_hidden_protected():
+    return {
+        "key": "value",
+        "nested": HiddenValue([
+            {
+                "key": "value",
+                "nested": [
+                    {
+                        "key": "value",
+                        "secret": HiddenValue("12345678"),
+                    }
+                ]
+            }
+        ])
+    }
+
+
+class ProtectTests:
+
+    @pytest.mark.parametrize("param", [[list()], [dict()], [tuple()]])
+    def test_protect_empty(self, param):
+        assert param == protect_passwords(param)
+
+    @pytest.mark.parametrize("result", [[list()], [dict()], [tuple()]])
+    def test_unprotect_empty(self, result):
+        assert result == unhide(result)
+
+    @pytest.mark.parametrize("protected,unprotected", [
+        (dict_protected, dict_unprotected),
+        (nested_dicts_protected, nested_dicts_unprotected),
+        (lists_of_dicts_protected, lists_of_dicts_unprotected),
+        (nested_lists_of_dicts_protected, nested_lists_of_dicts_unprotected),
+    ])
+    def test_protect(self, protected, unprotected):
+        protected_value = protected()
+        unprotected_value = unprotected()
+        assert protected_value == protect_passwords(unprotected_value)
+
+    @pytest.mark.parametrize("protected,unprotected", [
+        (dict_protected, dict_unprotected),
+        (nested_dicts_protected, nested_dicts_unprotected),
+        (lists_of_dicts_protected, lists_of_dicts_unprotected),
+        (nested_lists_of_dicts_protected, nested_lists_of_dicts_unprotected),
+        (hidden_inside_hidden_protected, hidden_inside_hidden_unprotected),
+    ])
+    def test_unprotect(self, protected, unprotected):
+        protected_value = protected()
+        unprotected_value = unprotected()
+        assert unprotected_value == unhide(protected_value)
+        assert protected_value == protected()

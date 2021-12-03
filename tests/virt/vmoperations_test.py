@@ -242,7 +242,7 @@ class TestVmOperations(XMLTestCase):
                                     _fake_set_vnc_pwd)]):
                 testvm.updateDevice(params)
 
-            assert password.unprotect(params['password']) == \
+            assert password.unhide(params['password']) == \
                 testvm.pwd
             assert params['params']['vncUsername'] == testvm.username
 

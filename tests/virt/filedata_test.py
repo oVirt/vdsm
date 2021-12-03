@@ -333,7 +333,7 @@ def test_monitor_no_data():
 def test_supervdsm_read_write(monkeypatch):
     with directory_data(monkeypatch):
         encoded, _modified = virt.read_tpm_data(UUID, -1)
-        assert password.unprotect(encoded)
+        assert password.unhide(encoded)
     with temporary_directory(monkeypatch):
         virt.write_tpm_data(UUID, encoded)
         assert encoded == virt.read_tpm_data(UUID, -1)[0]

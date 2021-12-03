@@ -153,7 +153,7 @@ def start(args, stdin=None, stdout=None, stderr=None, cwd=None, env=None,
 
     log.debug(cmdutils.command_log_line(args, cwd=cwd))
 
-    args = [password.unprotect(a) for a in args]
+    args = [password.unhide(a) for a in args]
 
     cmd_class = PrivilegedPopen if sudo else subprocess.Popen
 
