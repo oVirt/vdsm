@@ -44,6 +44,7 @@ from vdsm.common import exception
 from vdsm.common import hooks
 from vdsm.common import hostdev
 from vdsm.common import logutils
+from vdsm.common import password
 from vdsm.common import response
 from vdsm.common import supervdsm
 from vdsm.common import validate
@@ -1427,7 +1428,7 @@ class Global(APIBase):
         throttledlog.info('getAllVmStats', "Current getAllVmStats: %s",
                           logutils.AllVmStatsValue(statsList))
         return {'status': doneCode,
-                'statsList': logutils.Suppressed(statsList)}
+                'statsList': password.HiddenValue(statsList)}
 
     @api.logged(on="api.host")
     def getAllVmIoTunePolicies(self):
@@ -1463,7 +1464,7 @@ class Global(APIBase):
                                  sampling.host_samples.stats(),
                                  multipath=True)
         throttledlog.info('getStats', "Current getStats: %s", info)
-        return {'status': doneCode, 'info': logutils.Suppressed(info)}
+        return {'status': doneCode, 'info': password.HiddenValue(info)}
 
     @api.logged(on="api.host")
     def setLogLevel(self, level, name=''):

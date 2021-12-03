@@ -1,4 +1,4 @@
-# Copyright 2014-2020 Red Hat, Inc.
+# Copyright 2014-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ from vdsm.common import libvirtconnection
 from vdsm.common import response
 from vdsm.common.cmdutils import CommandPath, exec_cmd
 from vdsm.common.commands import terminating
-from vdsm.common.password import ProtectedPassword
+from vdsm.common.password import HiddenValue
 
 from testlib import VdsmTestCase as TestCaseBase, recorded
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
@@ -183,7 +183,7 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'),
+                                       HiddenValue('password'),
                                        None)['vmList']
 
         # Make sure that VM nr. 4 is now in the returned list
@@ -209,7 +209,7 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'),
+                                       HiddenValue('password'),
                                        names)['vmList']
 
         assert len(vms) == len(vmIDs)
@@ -229,7 +229,7 @@ class v2vTests(TestCaseBase):
                                 _connect)]):
             vms = v2v.get_external_vm_names(
                 'esx://mydomain', 'user',
-                ProtectedPassword('password'))['vmNames']
+                HiddenValue('password'))['vmNames']
 
         assert sorted(vms) == \
             sorted(spec.name for spec in VM_SPECS)
@@ -251,7 +251,7 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'),
+                                       HiddenValue('password'),
                                        None)['vmList']
 
         assert len(vms) == len(specs)
@@ -269,7 +269,7 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'),
+                                       HiddenValue('password'),
                                        None)['vmList']
             assert len(vms) == len(self._vms)
 
@@ -283,7 +283,7 @@ class v2vTests(TestCaseBase):
                                 _connect)]):
             with pytest.raises(libvirt.libvirtError):
                 v2v.get_external_vms('esx://mydomain', 'user',
-                                     ProtectedPassword('password'),
+                                     HiddenValue('password'),
                                      None)
 
     @permutations([
@@ -301,7 +301,7 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'),
+                                       HiddenValue('password'),
                                        None)['vmList']
             assert sorted(vm['vmName'] for vm in vms) == \
                 sorted(spec.name for spec in VM_SPECS
@@ -352,7 +352,7 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'),
+                                       HiddenValue('password'),
                                        None)['vmList']
         assert len(vms) == 0
 
@@ -412,7 +412,7 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms(self.xen_url, 'user',
-                                       ProtectedPassword('password'),
+                                       HiddenValue('password'),
                                        None)['vmList']
 
         assert len(vms) == len(VM_SPECS)
@@ -428,7 +428,7 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms(self.xen_url, 'user',
-                                       ProtectedPassword('password'),
+                                       HiddenValue('password'),
                                        None)['vmList']
 
         # Import of VMs with block devices is not supported for Xen source
@@ -486,7 +486,7 @@ class v2vTests(TestCaseBase):
                 namedTemporaryDir() as v2v._LOG_DIR:
             v2v.convert_external_vm(url,
                                     'root',
-                                    ProtectedPassword('mypassword'),
+                                    HiddenValue('mypassword'),
                                     self.vminfo,
                                     self.job_id,
                                     FakeIRS())

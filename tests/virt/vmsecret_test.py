@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2020 Red Hat, Inc.
+# Copyright 2015-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ import vmfakecon
 
 from vdsm.common import libvirtconnection
 from vdsm.common import response
-from vdsm.common.password import ProtectedPassword
+from vdsm.common.password import HiddenValue
 from vdsm.virt import secret
 import pytest
 
@@ -64,7 +64,7 @@ class SecretTests(VdsmTestCase):
 
     def test_unencoded_password(self):
         params = make_secret()
-        params["password"] = ProtectedPassword("not base64 value")
+        params["password"] = HiddenValue("not base64 value")
         with pytest.raises(ValueError):
             secret.Secret(params)
 
@@ -322,4 +322,4 @@ def make_secret(sid=None, usage_type="ceph", usage_id=None,
 
 
 def make_password(value):
-    return ProtectedPassword(base64.b64encode(value.encode('utf8')))
+    return HiddenValue(base64.b64encode(value.encode('utf8')))

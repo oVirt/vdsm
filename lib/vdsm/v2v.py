@@ -1,4 +1,4 @@
-# Copyright 2014-2018 Red Hat, Inc.
+# Copyright 2014-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -404,7 +404,7 @@ class V2VCommand(object):
         self._irs = irs
         self._prepared_volumes = []
         self._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % vmid)
-        self._password = password.ProtectedPassword('')
+        self._password = password.HiddenValue('')
         self._base_command = [_VIRT_V2V.cmd, '-v', '-x']
         self._query_v2v_caps()
         if 'qcow2_compat' in vminfo:

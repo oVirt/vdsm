@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ from testlib import VdsmTestCase
 from testlib import make_config
 from testlib import expandPermutations, permutations
 from vdsm.common import time
-from vdsm.common.password import ProtectedPassword
+from vdsm.common.password import HiddenValue
 from vdsm.storage import iscsi
 from vdsm.storage import iscsiadm
 
@@ -167,7 +167,7 @@ class TestChapCredentialsHash(VdsmTestCase):
 def protected(password):
     if password is None:
         return None
-    return ProtectedPassword(password)
+    return HiddenValue(password)
 
 
 @expandPermutations

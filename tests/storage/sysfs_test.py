@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,16 +79,16 @@ class TestSysfs(VdsmTestCase):
     def test_read_password(self):
         with temporaryPath(data=b"password") as path:
             self.assertEqual(sysfs.read_password(path),
-                             password.ProtectedPassword("password"))
+                             password.HiddenValue("password"))
 
     def test_read_password_strip(self):
         with temporaryPath(data=b" password\n ") as path:
             self.assertEqual(sysfs.read_password(path),
-                             password.ProtectedPassword("password"))
+                             password.HiddenValue("password"))
 
     def test_read_password_missing_default(self):
         self.assertEqual(sysfs.read_password("/no/such/path", ""),
-                         password.ProtectedPassword(""))
+                         password.HiddenValue(""))
 
     def test_read_password_missing_no_default(self):
         with self.assertRaises(EnvironmentError):

@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2020 Red Hat, Inc.
+# Copyright 2015-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,9 +25,12 @@ import copy
 import six
 
 
-class ProtectedPassword(object):
+class HiddenValue(object):
     """
-    Protect a password so it will not be logged or serialized by mistake.
+    Base class for protecting values from exposing in logs and elsewhere.
+
+    It is useful for purposes such as preventing sensitive data from occurring
+    in logs in logs or not polluting logs with large data.
     """
     def __init__(self, value):
         self.value = value
@@ -35,11 +38,8 @@ class ProtectedPassword(object):
     def __eq__(self, other):
         return type(self) == type(other) and self.value == other.value
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
     def __str__(self):
-        return "********"
+        return "(hidden)"
 
     def __repr__(self):
         return repr(str(self))
@@ -50,16 +50,16 @@ class ProtectedPassword(object):
 
 def protect_passwords(obj):
     """
-    Replace "password" values with ProtectedPassword() object.
+    Replace "password" values with HiddenValue() object.
 
     Accept a dict, list of dicts or nested structure containing these types.
     """
     for d, key, value in _walk(obj):
-        d[key] = ProtectedPassword(value)
+        d[key] = HiddenValue(value)
     return obj
 
 
-def unprotect_passwords(obj):
+def unhide(obj):
     """
     Return `obj` with `ProtectedPassword` objects replaced by actual values.
 
@@ -68,17 +68,17 @@ def unprotect_passwords(obj):
     """
     obj = copy.deepcopy(obj)
     for d, key, value in _walk(obj):
-        if isinstance(value, ProtectedPassword):
+        if isinstance(value, HiddenValue):
             d[key] = value.value
     return obj
 
 
 def unprotect(obj):
     """
-    If obj is a protected password, return the protected value. Otherwise
-    returns obj.
+    If `obj` is a hidden value, return the hidden value.
+    Otherwise return `obj`.
     """
-    if isinstance(obj, ProtectedPassword):
+    if isinstance(obj, HiddenValue):
         return obj.value
     return obj
 

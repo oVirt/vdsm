@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2020 Red Hat, Inc.
+# Copyright 2011-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ from inspect import ismethod
 
 import six
 
+from vdsm.common.password import HiddenValue
 from . import concurrent
 
 
@@ -389,23 +390,10 @@ class _Dropper(object):
 _DROPPER = _Dropper()
 
 
-class Suppressed(object):
-
-    def __init__(self, value):
-        self._value = value
-
-    @property
-    def value(self):
-        return self._value
+class AllVmStatsValue(HiddenValue):
 
     def __repr__(self):
-        return '(suppressed)'
-
-
-class AllVmStatsValue(Suppressed):
-
-    def __repr__(self):
-        return repr({vm.get('vmId'): vm.get('status') for vm in self._value})
+        return repr({vm.get('vmId'): vm.get('status') for vm in self.value})
 
 
 def set_level(level_name, name=''):

@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2019 Red Hat Inc.
+# Copyright (C) 2014-2021 Red Hat Inc.
 # Copyright (C) 2014 Saggi Mizrahi, Red Hat Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,12 +19,12 @@ import logging
 from six.moves import queue
 
 from vdsm.common import exception as vdsmexception
-
 from vdsm.common.compat import json
-from vdsm.common.logutils import Suppressed, traceback
+from vdsm.common.logutils import traceback
+from vdsm.common.password import HiddenValue
 from vdsm.common.threadlocal import vars
 from vdsm.common.time import monotonic_time, event_time
-from vdsm.common.password import protect_passwords, unprotect_passwords
+from vdsm.common.password import protect_passwords, unhide
 
 from yajsonrpc import exception
 
@@ -102,7 +102,7 @@ class JsonRpcRequest(object):
 
 class JsonRpcResponse(object):
     def __init__(self, result=None, error=None, reqId=None):
-        self.result = unprotect_passwords(result)
+        self.result = unhide(result)
         self.error = error
         self.id = reqId
 
@@ -358,7 +358,7 @@ class JsonRpcServer(object):
             res = True if res is None else res
             self.log.log(logLevel, "Return '%s' in bridge with %s",
                          req.method, res)
-            if isinstance(res, Suppressed):
+            if isinstance(res, HiddenValue):
                 res = res.value
             return JsonRpcResponse(res, None, req.id)
         finally:

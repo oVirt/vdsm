@@ -78,7 +78,8 @@ from vdsm.common import supervdsm
 from vdsm.common import xmlutils
 from vdsm.common.define import ERROR, NORMAL, doneCode
 from vdsm.common.hostutils import host_in_shutdown
-from vdsm.common.logutils import SimpleLogAdapter, Suppressed
+from vdsm.common.logutils import SimpleLogAdapter
+from vdsm.common.password import HiddenValue
 from vdsm.network import api as net_api
 
 # TODO: remove these imports, code using this should use storage apis.
@@ -626,7 +627,7 @@ class Vm(object):
         :param kind: Kind of external data to initialize
         :type kind: ExternalDataKind value
         :param initial_data: Initial data to write or None
-        :type initial_data: ProtectedPassword
+        :type initial_data: HiddenValue
         :param check_function: function taking zero arguments and returning
           True or False based on the presence of device in domain XML
         :type check_function: function
@@ -685,7 +686,7 @@ class Vm(object):
         return password.unprotect(data), timestamp
 
     def _write_tpm_data(self, tpm_data):
-        protected_data = password.ProtectedPassword(tpm_data)
+        protected_data = HiddenValue(tpm_data)
         supervdsm.getProxy().write_tpm_data(self.id, protected_data)
 
     def _read_nvram_data(self, last_modified):
@@ -694,7 +695,7 @@ class Vm(object):
         return password.unprotect(data), timestamp
 
     def _write_nvram_data(self, nvram_data):
-        protected_data = password.ProtectedPassword(nvram_data)
+        protected_data = HiddenValue(nvram_data)
         supervdsm.getProxy().write_nvram_data(self.id, protected_data)
 
     def _get_lastStatus(self):
@@ -2259,7 +2260,7 @@ class Vm(object):
         result = {'hash': hash_}
         if data and last_hash != hash_:
             result['_X_data'] = data
-            result = Suppressed(result)
+            result = HiddenValue(result)
         return response.success(data=result)
 
     def update_external_data(self, kind, force=False):
@@ -6058,7 +6059,7 @@ class Vm(object):
             'mime_type': mime_type
         }
 
-        return dict(result=logutils.Suppressed(result))
+        return dict(result=HiddenValue(result))
 
     def sync_jobs_metadata(self):
         with self._md_desc.values() as vm:

@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -91,7 +91,7 @@ def log(name, level, message, *args):
       and `args` may not be logged at all.  So don't perform expensive
       preprocessing of `args` before calling this function.  If you need to
       modify it before logging it, you may want to use something like
-      `vdsm.common.logutils.Suppressed` or its subclasses.
+      `vdsm.common.password.HiddenValue`.
     """
     try:
         periodic = _periodic[name]

@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ This module provides the following properties:
   Integer       keeps integer value within limits
   String        keeps string value
   UUID          keeps a UUID string
-  Password      keeps a ProtectedPassword object
+  Password      keeps a HiddenValue object
 
 
 Common property attributes:
@@ -88,7 +88,7 @@ from __future__ import division
 import base64
 import uuid
 
-from vdsm.common.password import ProtectedPassword
+from vdsm.common.password import HiddenValue
 
 
 class Property(object):
@@ -221,8 +221,8 @@ class Password(Property):
         self.decode = decode
 
     def validate(self, password):
-        if not isinstance(password, ProtectedPassword):
-            raise ValueError("Not a ProtectedPassword %s" % type(password))
+        if not isinstance(password, HiddenValue):
+            raise ValueError("Not a HiddenValue %s" % type(password))
         if self.decode:
             password.value = self.decode(password.value)
         return password

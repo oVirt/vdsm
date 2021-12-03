@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ from vdsm.common import errors
 from vdsm.common import osutils
 from vdsm.common.compat import subprocess
 from vdsm.common.config import config
-from vdsm.common.password import ProtectedPassword
+from vdsm.common.password import HiddenValue
 from vdsm.common.time import monotonic_time
 
 log = logging.getLogger("procutils")
@@ -89,13 +89,13 @@ def retcode_log_line(code, err=None):
 
 def _list2cmdline(args):
     """
-    Convert argument list for exeCmd to string for logging. 'ProtectedPassword'
+    Convert argument list for exeCmd to string for logging. 'HiddenValue'
     arguments are obfuscated so that no secrets leak. The purpose of this
     log is make it easy to run vdsm commands in the shell for debugging.
     """
     parts = []
     for arg in args:
-        if isinstance(arg, ProtectedPassword):
+        if isinstance(arg, HiddenValue):
             arg = str(arg)
         if _needs_quoting(arg) or arg == '':
             arg = "'" + arg.replace("'", r"'\''") + "'"

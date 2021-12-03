@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ class TestAllVmStats(TestCaseBase):
 
     def test_allvmstats(self):
         data = logutils.AllVmStatsValue(self._STATS)
-        result = str(data)
+        result = repr(data)
         self.assertEqual(eval(result), self._SIMPLIFIED)
 
 

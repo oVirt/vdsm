@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ import six
 from enum import Enum
 
 from vdsm import utils
-from vdsm.common.logutils import Suppressed
+from vdsm.common.password import HiddenValue
 from yajsonrpc.exception import JsonRpcInvalidParamsError
 
 
@@ -370,7 +370,7 @@ class Schema(object):
             ret_args = self.get_ret_param(rep)
 
             if ret_args:
-                if isinstance(ret, Suppressed):
+                if isinstance(ret, HiddenValue):
                     ret = ret.value
                 self._verify_type(ret_args.get('type'), ret, rep.id)
         except JsonRpcInvalidParamsError:

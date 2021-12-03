@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2020 Red Hat, Inc.
+# Copyright 2013-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ _TICKET_PARAMS = {
 
 _GRAPHICS_DEVICE_PARAMS = {
     'deviceType': hwclass.GRAPHICS,
-    'password': password.ProtectedPassword('12345678'),
+    'password': password.HiddenValue('12345678'),
     'ttl': 0,
     'existingConnAction': 'disconnect',
     'params': _TICKET_PARAMS

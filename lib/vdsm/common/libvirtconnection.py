@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2017 Red Hat, Inc.
+# Copyright 2009-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ from vdsm.common import cache
 from vdsm.common import concurrent
 from vdsm.common import function
 from vdsm.common import pki
-from vdsm.common.password import ProtectedPassword
+from vdsm.common.password import HiddenValue
 
 log = logging.getLogger()
 
@@ -166,7 +166,7 @@ def get(target=None, killOnFailure=True):
         conn = __connections.get(id(target))
         if not conn:
             log.debug('trying to connect libvirt')
-            password = ProtectedPassword(libvirt_password())
+            password = HiddenValue(libvirt_password())
             conn = open_connection('qemu:///system', SASL_USERNAME, password)
             __connections[id(target)] = conn
 

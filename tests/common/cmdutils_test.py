@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017, 2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import signal
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common.compat import subprocess
-from vdsm.common.password import ProtectedPassword
+from vdsm.common.password import HiddenValue
 
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -91,7 +91,7 @@ class List2CmdlineeTests(TestCaseBase):
         self.assertEqual(cmdutils._list2cmdline([]), "")
 
     def test_protected_password(self):
-        secret = ProtectedPassword("secret!")
+        secret = HiddenValue("secret!")
         line = "'" + str(secret) + "'"
         self.assertEqual(cmdutils._list2cmdline([secret]), line)
 

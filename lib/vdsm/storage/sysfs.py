@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ def read_int(path, default=None):
 
 def read_password(path, default=None):
     """
-    Return ProtectedPassword wrapping value of a sysfs attribute, or default if
+    Return HiddenValue wrapping value of a sysfs attribute, or default if
     default is specified and the attribute does not exists.
 
     Raises:
@@ -53,7 +53,7 @@ def read_password(path, default=None):
             specified and the attribute does not exist.
     """
     value = read(path, default)
-    return password.ProtectedPassword(value)
+    return password.HiddenValue(value)
 
 
 def read(path, default=None):

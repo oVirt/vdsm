@@ -365,7 +365,7 @@ def run_logging(args, log_tag=None):
 
     args are logged when command starts, and are included in the exception if a
     command has failed. If args contain sensitive information that should not
-    be logged, such as passwords, they must be wrapped with ProtectedPassword.
+    be logged, such as passwords, they must be wrapped with HiddenValue.
     While access to the directory with log files is restricted caution should
     be taken when logging commands. Avoid storing output of commands that may
     leak passwords or other sensitive information.

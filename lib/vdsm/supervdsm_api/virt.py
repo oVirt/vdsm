@@ -172,7 +172,7 @@ def read_tpm_data(vm_id, last_modified):
       newer than this time in seconds, None is returned
     :type last_modified: float
     :returns: tuple (DATA, MODIFIED) where DATA is encoded TPM data suitable to
-      use in `write_tpm_data()`, wrapped by `password.ProtectedPassword`,
+      use in `write_tpm_data()`, wrapped by `password.HiddenValue`,
       or None, and MODIFIED is DATA modification time (which may be older than
       actual modification time)
     :rtype: tuple
@@ -181,7 +181,7 @@ def read_tpm_data(vm_id, last_modified):
                                       compress=False)
     currently_modified = accessor.last_modified()
     data = accessor.retrieve(last_modified=last_modified)
-    return password.ProtectedPassword(data), currently_modified
+    return password.HiddenValue(data), currently_modified
 
 
 @expose
@@ -193,7 +193,7 @@ def write_tpm_data(vm_id, tpm_data):
     :type vm_id: string
     :param tpm_data: encoded TPM data as previously obtained from
       `read_tpm_data()`
-    :type tpm_data: ProtectedPassword
+    :type tpm_data: HiddenValue
     """
     tpm_data = password.unprotect(tpm_data)
     # Permit only archives with plain files and directories to prevent various
@@ -220,7 +220,7 @@ def read_nvram_data(vm_id, last_modified):
     accessor = filedata.FileData(filedata.nvram_path(vm_id))
     currently_modified = accessor.last_modified()
     data = accessor.retrieve(last_modified=last_modified)
-    return password.ProtectedPassword(data), currently_modified
+    return password.HiddenValue(data), currently_modified
 
 
 @expose

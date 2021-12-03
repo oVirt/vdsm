@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2017, 2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ from vdsm.common import cmdutils
 from vdsm.common import constants
 from vdsm.common import commands
 from vdsm.common.compat import subprocess
-from vdsm.common.password import ProtectedPassword
+from vdsm.common.password import HiddenValue
 from vdsm.storage import constants as sc
 
 import fakelib
@@ -235,21 +235,21 @@ class TestRun:
         assert int(out.split()[18]) == 7
 
     def test_unprotect_passwords(self):
-        secret = ProtectedPassword("top-secret")
+        secret = HiddenValue("top-secret")
         args = ["echo", "-n", secret]
         out = commands.run(args)
         assert out.decode() == secret.value
 
     def test_protect_log_passwords(self, monkeypatch):
         monkeypatch.setattr(commands, "log", fakelib.FakeLogger())
-        secret = ProtectedPassword("top-secret")
+        secret = HiddenValue("top-secret")
         args = ["echo", "-n", secret]
         commands.run(args)
         for level, msg, kwargs in commands.log.messages:
             assert str(secret.value) not in msg
 
     def test_protect_password_error(self):
-        secret = ProtectedPassword("top-secret")
+        secret = HiddenValue("top-secret")
         args = ["false", secret]
         with pytest.raises(cmdutils.Error) as e:
             commands.run(args)

@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2017 Red Hat, Inc.
+# Copyright 2008-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ def run(args, input=None, cwd=None, env=None, sudo=False, setsid=False,
 
     args are logged when command starts, and are included in the exception if a
     command has failed. If args contain sensitive information that should not
-    be logged, such as passwords, they must be wrapped with ProtectedPassword.
+    be logged, such as passwords, they must be wrapped with HiddenValue.
 
     The child process stdout and stderr are always buffered. If you have
     special needs, such as running the command without buffering stdout, or
@@ -113,7 +113,7 @@ def start(args, stdin=None, stdout=None, stderr=None, cwd=None, env=None,
 
     args are always logged when command starts. If args contain sensitive
     information that should not be logged, such as passwords, they must be
-    wrapped with ProtectedPassword.
+    wrapped with HiddenValue.
 
     Arguments:
         args (list): Command arguments

@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ import base64
 import pytest
 
 from vdsm.common import properties
-from vdsm.common.password import ProtectedPassword
+from vdsm.common.password import HiddenValue
 
 
 class TestProperty:
@@ -472,7 +472,7 @@ class TestPassword:
 
     def test_valid(self):
         obj = self.Cls()
-        obj.password = ProtectedPassword("12345678")
+        obj.password = HiddenValue("12345678")
         assert obj.password.value == "12345678"
 
     def test_invalid(self):
@@ -507,10 +507,10 @@ class TestPasswordDecode:
     def test_decode(self):
         obj = self.Cls()
         data = b"\x80\x81\x82\x83"
-        obj.password = ProtectedPassword(base64.b64encode(data))
+        obj.password = HiddenValue(base64.b64encode(data))
         assert obj.password.value == data
 
     def test_invalid(self):
         obj = self.Cls()
         with pytest.raises(ValueError):
-            obj.password = ProtectedPassword("not base64 value")
+            obj.password = HiddenValue("not base64 value")

@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ from ovirt_imageio._internal import directio
 from vdsm.common import concurrent
 from vdsm.common import libvirtconnection
 from vdsm.common import time
-from vdsm.common.password import ProtectedPassword
+from vdsm.common.password import HiddenValue
 from vdsm.common.units import MiB
 from vdsm.common import fileutils
 
@@ -186,7 +186,7 @@ def get_password(options):
         write_output('>>> Reading password from file %s' %
                      options.password_file)
     with open(options.password_file, 'r') as f:
-        return ProtectedPassword(f.read())
+        return HiddenValue(f.read())
 
 
 def handle_volume(con, diskno, src, dst, options):
