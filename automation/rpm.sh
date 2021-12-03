@@ -2,7 +2,17 @@
 
 export EXPORT_DIR="${EXPORT_DIR:-exported-artifacts}"
 
-./autogen.sh --system
+if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+    # For merged patches, use stanrad git describe format matching vdsm
+    # copr builds.
+    # vdsm-4.50.0.2-46.git8dc924a21.el8.src.rpm
+    ./autogen.sh --system
+else
+    # For pull requests or local builds use a timestamp:
+    # vdsm-4.50.0.2-202112031326.git8dc924a21.el8.src.rpm
+    ./autogen.sh --system --enable-timestamp
+fi
+
 make
 make rpm
 
