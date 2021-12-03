@@ -85,13 +85,13 @@ class ProtectTests(VdsmTestCase):
         self.assertEqual(result, unprotect_passwords(result))
 
     def test_protect_dict(self):
-        unprotected = dict_unprotedted()
+        unprotected = dict_unprotected()
         protected = dict_protected()
         self.assertEqual(protected, protect_passwords(unprotected))
 
     def test_unprotect_dict(self):
         protected = dict_protected()
-        unprotected = dict_unprotedted()
+        unprotected = dict_unprotected()
         self.assertEqual(unprotected, unprotect_passwords(protected))
 
     def test_protect_nested_dicts(self):
@@ -125,7 +125,7 @@ class ProtectTests(VdsmTestCase):
         self.assertEqual(unprotected, unprotect_passwords(protected))
 
 
-def dict_unprotedted():
+def dict_unprotected():
     return {
         "key": "value",
         "_X_key": "secret",
