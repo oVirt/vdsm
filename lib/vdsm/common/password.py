@@ -20,6 +20,8 @@
 
 from __future__ import absolute_import
 from __future__ import division
+
+import copy
 import six
 
 
@@ -59,10 +61,12 @@ def protect_passwords(obj):
 
 def unprotect_passwords(obj):
     """
-    Replace ProtectedPassword() objects with the actual password value.
+    Return `obj` with `ProtectedPassword` objects replaced by actual values.
 
     Accept a dict, list of dicts or nested structure containing these types.
+    The original `obj` remains unmodified.
     """
+    obj = copy.deepcopy(obj)
     for d, key, value in _walk(obj):
         if isinstance(value, ProtectedPassword):
             d[key] = value.value
