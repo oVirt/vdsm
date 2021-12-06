@@ -41,11 +41,6 @@ from vdsm.network.link.iface import random_iface_name
 @pytest.fixture(scope='module', autouse=True)
 def setup():
     check_sysfs_bond_permission()
-    if running_on_travis_ci():
-        pytest.skip(
-            'The sysfs access is not working inside container without '
-            'proper bonding module loading'
-        )
 
 
 def _sorted_arp_ip_target(options):

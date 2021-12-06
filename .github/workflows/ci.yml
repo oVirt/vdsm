@@ -32,6 +32,14 @@ jobs:
       options: --privileged
     steps:
     - uses: actions/checkout@v2
+    - name: Show IPv6
+      run: cat /proc/sys/net/ipv6/conf/all/disable_ipv6
+    - name: Set IPv6
+      run: echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6
+    - name: Enable bonding
+      run: ip link add bond0 type bond && ip link del bond0
+    - name: Show bonding
+      run: lsmod | grep bonding
     - name: Run tests
       run: ./automation/tests.sh
   rpm:

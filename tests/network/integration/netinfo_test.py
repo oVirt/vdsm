@@ -62,11 +62,6 @@ IPV6_ADDR_CIDR = f'{IPV6_ADDR}/{IPV6_PREFIX_LENGTH}'
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
 
 
-ipv6_broken_on_travis_ci = pytest.mark.skipif(
-    running_on_travis_ci(), reason='IPv6 not supported on travis'
-)
-
-
 @pytest.fixture
 def nic0():
     with dummy_device() as nic:
@@ -161,7 +156,6 @@ class TestNetinfo(object):
         opts.pop('mode')
         return opts
 
-    @ipv6_broken_on_travis_ci
     def test_ip_info(self, nic0):
         nic0_interface = Interface.from_existing_dev_name(nic0)
         with waitfor.waitfor_ipv4_addr(nic0, address=IPV4_ADDR1_CIDR):
@@ -206,7 +200,6 @@ class TestNetinfo(object):
                 IPV6_ADDR,
                 IPV6_PREFIX_LENGTH,
                 id="IPV6",
-                marks=ipv6_broken_on_travis_ci,
             ),
         ],
     )
@@ -225,11 +218,9 @@ class TestIPv6Addresses(object):
         sysctl.disable_ipv6(nic0)
         assert not addresses.is_ipv6_local_auto(nic0)
 
-    @ipv6_broken_on_travis_ci
     def test_local_auto_without_router_advertisement_server(self, nic0):
         assert addresses.is_ipv6_local_auto(nic0)
 
-    @ipv6_broken_on_travis_ci
     def test_local_auto_with_static_address_without_ra_server(self, nic0):
         Interface.from_existing_dev_name(nic0).add_ip(
             '2001::88', IPV6_PREFIX_LENGTH, IpFamily.IPv6
@@ -240,7 +231,6 @@ class TestIPv6Addresses(object):
         assert addresses.is_ipv6(ip_addrs[0])
         assert not addresses.is_dynamic(ip_addrs[0])
 
-    @ipv6_broken_on_travis_ci
     def test_local_auto_with_dynamic_address_from_ra(self, dynamic_ipv6_iface):
         # Expecting link and global addresses on client iface
         # The addresses are given randomly, so we sort them
