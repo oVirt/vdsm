@@ -37,7 +37,9 @@ jobs:
     - name: Set IPv6
       run: echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6
     - name: Enable bonding
-      run: ip link add mod_bond$RANDOM type bond && ip link del mod_bond$RANDOM
+      run: |
+        SUFIX=$RANDOM
+        ip link add mod_bond$SUFIX type bond && ip link del mod_bond$SUFIX
     - name: Show bonding
       run: lsmod | grep bonding
     - name: Run tests
