@@ -328,12 +328,12 @@ class v2vTests(TestCaseBase):
         parser = v2v.OutputParser()
         events = list(parser.parse(io.BytesIO(output)))
         assert events == [
-            (v2v.ImportProgress(1, 2, b'Copying disk 1/2')),
+            (v2v.ImportProgress(1, 2, 'Copying disk 1/2')),
             (v2v.DiskProgress(0)),
             (v2v.DiskProgress(25)),
             (v2v.DiskProgress(50)),
             (v2v.DiskProgress(100)),
-            (v2v.ImportProgress(2, 2, b'Copying disk 2/2')),
+            (v2v.ImportProgress(2, 2, 'Copying disk 2/2')),
             (v2v.DiskProgress(0)),
             (v2v.DiskProgress(50)),
             (v2v.DiskProgress(100))]
@@ -535,6 +535,36 @@ class v2vTests(TestCaseBase):
         assert '--vdsm-compat' in cmd._base_command
         i = cmd._base_command.index('--vdsm-compat')
         assert '1.1' == cmd._base_command[i + 1]
+
+    def test_v2v_error(self):
+
+        class FakeProc(object):
+            def __init__(self):
+                self.returncode = 1
+                self.stdout = io.FileIO('/dev/null')
+
+            def kill(self):
+                return
+
+            def wait(self):
+                return
+
+        class FakeV2VCommand(object):
+            @contextmanager
+            def execute(self):
+                yield FakeProc()
+
+        job_id = '00000000-0000-0000-0000-000000000000'
+        job = v2v.ImportVm(job_id, FakeV2VCommand())
+        v2v._add_job(job_id, job)
+        job.start()
+        job.wait()
+        status = v2v.get_jobs_status()
+        assert status[job_id] == {
+            'status': v2v.STATUS.FAILED,
+            'description': "Job '%s' process failed exit-code: 1" % job_id,
+            'progress': 0,
+        }
 
 
 SHORT_SLEEP = 0.3
