@@ -287,7 +287,7 @@ def get_jobs_status():
     for job_id, job in items:
         ret[job_id] = {
             'status': job.status,
-            'description': job.description.decode('utf-8'),
+            'description': job.description,
             'progress': job.progress
         }
     return ret
@@ -961,7 +961,7 @@ class OutputParser(object):
             if b'Copying disk' in line:
                 description, current_disk, disk_count = self._parse_line(line)
                 yield ImportProgress(int(current_disk), int(disk_count),
-                                     description)
+                                     description.decode('utf-8'))
                 for chunk in self._iter_progress(stream):
                     progress = self._parse_progress(chunk)
                     if progress is not None:
