@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2021 Red Hat, Inc.
+# Copyright 2008-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1765,7 +1765,10 @@ class Vm(object):
 
         - vmstatus.MIGRATION_SOURCE
             Migration is in progress, VM status should not be changed till the
-            migration finishes.
+            migration finishes. An exception is when the VM is paused due to
+            an I/O error: Such VMs cannot migrate so it is safe to resume them,
+            which is important to do in order not to keep them paused
+            unnecessarily while they wait on ongoingMigrations lock.
 
         - vmstatus.SAVING_STATE
             Hibernation is in progress, VM status should not be changed till
@@ -1774,9 +1777,11 @@ class Vm(object):
         - vmstatus.DOWN
             VM is down, continuing is not possible from this state.
         """
-        return self.lastStatus not in (vmstatus.MIGRATION_SOURCE,
-                                       vmstatus.SAVING_STATE,
-                                       vmstatus.DOWN)
+        if self.lastStatus in (vmstatus.SAVING_STATE, vmstatus.DOWN):
+            return False
+        if self.lastStatus == vmstatus.MIGRATION_SOURCE:
+            return self.paused_on_io_error()
+        return True
 
     def cont(self, afterState=vmstatus.UP, guestCpuLocked=False,
              ignoreStatus=False, guestTimeSync=False):
@@ -4190,11 +4195,7 @@ class Vm(object):
                     raise HotunplugTimeout("Timeout detaching %r" % device)
 
     def _readPauseCode(self):
-        state, reason = self._dom.state(0)
-
-        if (state == libvirt.VIR_DOMAIN_PAUSED and
-           reason == libvirt.VIR_DOMAIN_PAUSED_IOERROR):
-
+        if self.paused_on_io_error():
             diskErrors = self._dom.diskErrors()
             for device, error in six.viewitems(diskErrors):
                 if error == libvirt.VIR_DOMAIN_DISK_ERROR_NO_SPACE:
@@ -4206,8 +4207,20 @@ class Vm(object):
                     return 'EIO'
                 # else error == libvirt.VIR_DOMAIN_DISK_ERROR_NONE
                 # so no worries.
-
         return 'NOERR'
+
+    def paused_on_io_error(self):
+        """Return whether the VM is paused due to an I/O error.
+
+        This check is performed by asking libvirt to be completely reliable
+        (except for possible races).
+
+        :return: True iff the VM is paused due to an I/O error
+        :rtype: bool
+        """
+        state, reason = self._dom.state(0)
+        return (state == libvirt.VIR_DOMAIN_PAUSED and
+                reason == libvirt.VIR_DOMAIN_PAUSED_IOERROR)
 
     def isDomainReadyForCommands(self):
         """
