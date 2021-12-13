@@ -684,12 +684,16 @@ class IscsiConnection(Connection):
         except KeyError:
             ifaces = config.get('irs', 'iscsi_default_ifaces').split(',')
             if 'iser' in ifaces:
+                orig_iface = self._iface
                 self._iface = iscsi.IscsiInterface('iser')
                 try:
                     self._connect_iscsi()
                     self._disconnect_iscsi()
                 except:
-                    self._iface = iscsi.IscsiInterface('default')
+                    log.warning(
+                        "Cannot connect to storage over iSER, using original "
+                        "iface %r", orig_iface)
+                    self._iface = orig_iface
 
     def _match(self, session):
         target = session.target
