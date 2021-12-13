@@ -568,15 +568,19 @@ class IscsiConnection(Connection):
         self._iface = iface
         self._cred = credentials
 
+    @classmethod
+    def settle_devices(cls):
+        timeout = config.getint("irs", "udev_settle_timeout")
+        udevadm.settle(timeout)
+
     def connect(self):
         self._maybe_connect_iser()
         self._connect_iscsi()
+        self.settle_devices()
 
     def _connect_iscsi(self):
         iscsi.addIscsiNode(self._iface, self._target, self._cred)
         iscsi.loginToIscsiNode(self._iface, self._target)
-        timeout = config.getint("irs", "udev_settle_timeout")
-        udevadm.settle(timeout)
 
     @deprecated
     def _maybe_connect_iser(self):
