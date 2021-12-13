@@ -39,12 +39,9 @@ import stat
 import six
 from six.moves import map
 
-from vdsm import constants
 from vdsm import jobs
 from vdsm import utils
 from vdsm.common import api
-from vdsm.common import cmdutils
-from vdsm.common import commands
 from vdsm.common import concurrent
 from vdsm.common import exception
 from vdsm.common import function
@@ -233,8 +230,6 @@ class HSM(object):
 
         self._preparedVolumes = defaultdict(list)
 
-        self.__validateLvmLockingType()
-
         # cleanStorageRepoitory uses tasksDir value, this must be assigned
         # before calling it
         self.tasksDir = config.get('irs', 'hsm_tasks')
@@ -281,33 +276,6 @@ class HSM(object):
 
     def _hsmSchedule(self, name, func, *args):
         self.taskMng.scheduleJob("hsm", None, vars.task, name, func, *args)
-
-    def __validateLvmLockingType(self):
-        """
-        Check lvm locking type.
-        """
-        try:
-            out = commands.run(
-                [constants.EXT_LVM, "dumpconfig", "global/locking_type"],
-                sudo=True
-            )
-        except cmdutils.Error as e:
-            self.log.debug("Can't validate lvm locking_type: %s", e)
-            return False
-
-        out = out.decode("utf-8").strip()
-
-        try:
-            lvmLockingType = int(out.split('=')[1])
-        except (ValueError, IndexError):
-            self.log.error("Can't parse lvm locking_type. %s", out)
-            return False
-
-        if lvmLockingType != 1:
-            self.log.error("Invalid lvm locking_type. %d", lvmLockingType)
-            return False
-
-        return True
 
     def __cleanStorageRepository(self):
         """
