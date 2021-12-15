@@ -76,9 +76,10 @@ CON_TYPE_ID_2_CON_TYPE = {
     sd.POSIXFS_DOMAIN: 'posixfs',
     sd.GLUSTERFS_DOMAIN: 'glusterfs'}
 
+log = logging.getLogger("storage.storageServer")
+
 
 class Connection:
-    log = logging.getLogger("storage.server.connection")
 
     @classmethod
     def connect_all(cls, connections):
@@ -88,7 +89,7 @@ class Connection:
             try:
                 con.connect()
             except Exception as err:
-                cls.log.error(
+                log.error(
                     "Could not connect to storageServer", exc_info=True)
                 status, _ = cls.translate_error(err)
             else:
@@ -107,8 +108,8 @@ class Connection:
                 con.disconnect()
                 status = 0
             except Exception as err:
-                cls.log.error("Could not disconnect from storageServer",
-                              exc_info=True)
+                log.error(
+                    "Could not disconnect from storageServer", exc_info=True)
                 status, _ = cls.translate_error(err)
 
             results.append((con, status))
@@ -177,7 +178,6 @@ class MountConnection(Connection):
     CGROUP = None
     DIR = ""
 
-    log = logging.getLogger("storage.storageserver.mountconnection")
     localPathBase = "/tmp"
 
     @property
@@ -233,7 +233,7 @@ class MountConnection(Connection):
             return
 
         self.validate()
-        self.log.info("Creating directory %r", self._getLocalPath())
+        log.info("Creating directory %r", self._getLocalPath())
         fileUtils.createdir(self._getLocalPath())
 
         try:
@@ -243,7 +243,7 @@ class MountConnection(Connection):
             try:
                 os.rmdir(self._getLocalPath())
             except OSError as e:
-                self.log.warning(
+                log.warning(
                     "Error removing mountpoint directory %r: %s",
                     self._getLocalPath(), e)
             six.reraise(t, v, tb)
@@ -256,7 +256,7 @@ class MountConnection(Connection):
                 try:
                     self.disconnect()
                 except OSError:
-                    self.log.exception("Error disconnecting")
+                    log.exception("Error disconnecting")
                 six.reraise(t, v, tb)
 
     def validate(self):
@@ -341,7 +341,7 @@ class GlusterFSConnection(MountConnection):
     def options(self):
         backup_servers_option = ""
         if "backup-volfile-servers" in self._options:
-            self.log.warning(
+            log.warning(
                 "Using user specified backup-volfile-servers option")
         elif self._have_gluster_cli:
             backup_servers_option = self._get_backup_servers_option()
@@ -356,30 +356,30 @@ class GlusterFSConnection(MountConnection):
 
     def validate(self):
         if not self._have_gluster_cli:
-            self.log.warning("Required glusterfs-cli package is missing "
-                             "on this host. Note that automatic detection "
-                             "of backup servers will be disabled! Please "
-                             "install the missing package in order to "
-                             "automatically mount gluster storage backup "
-                             "servers")
+            log.warning("Required glusterfs-cli package is missing "
+                        "on this host. Note that automatic detection "
+                        "of backup servers will be disabled! Please "
+                        "install the missing package in order to "
+                        "automatically mount gluster storage backup "
+                        "servers")
             return
 
         if not self.volinfo:
             return
 
         if "disperse" in self.volinfo['volumeType'].lower():
-            self.log.warning("Unsupported volume type, volume: %r, "
-                             "volume type: %r. Please use the replicate type."
-                             "To recover existing migrate it to "
-                             "supported type.",
-                             self._volname, self.volinfo['volumeType'])
+            log.warning("Unsupported volume type, volume: %r, "
+                        "volume type: %r. Please use the replicate type."
+                        "To recover existing migrate it to "
+                        "supported type.",
+                        self._volname, self.volinfo['volumeType'])
             return
 
         replicaCount = self.volinfo['replicaCount']
         if replicaCount not in self.ALLOWED_REPLICA_COUNTS:
-            self.log.warning("Unsupported replica count (%s) for volume %r, "
-                             "please upgrade volume to replica 3",
-                             replicaCount, self._volname)
+            log.warning("Unsupported replica count (%s) for volume %r, "
+                        "please upgrade volume to replica 3",
+                        replicaCount, self._volname)
 
     def _get_backup_servers_option(self):
         if not self.volinfo:
@@ -387,13 +387,13 @@ class GlusterFSConnection(MountConnection):
 
         servers = utils.unique(brick.split(":")[0] for brick
                                in self.volinfo['bricks'])
-        self.log.debug("Using bricks: %s", servers)
+        log.debug("Using bricks: %s", servers)
         if self._volfileserver in servers:
             servers.remove(self._volfileserver)
         else:
-            self.log.warning("gluster server %r is not in bricks %s, possibly "
-                             "mounting duplicate servers",
-                             self._volfileserver, servers)
+            log.warning("gluster server %r is not in bricks %s, possibly "
+                        "mounting duplicate servers",
+                        self._volfileserver, servers)
 
         if not servers:
             return ""
@@ -407,14 +407,12 @@ class GlusterFSConnection(MountConnection):
                                                        self._volfileserver)
             return volinfo[self._volname]
         except ge.GlusterCmdExecFailedException as e:
-            self.log.warning("Failed to get volume info: %s", e)
+            log.warning("Failed to get volume info: %s", e)
             return {}
 
 
 class NFSConnection(Connection):
     DEFAULT_OPTIONS = ["soft", "nosharecache"]
-
-    log = logging.getLogger("storage.server.nfs")
 
     @property
     def id(self):
@@ -515,10 +513,10 @@ class NFSConnection(Connection):
             # See https://bugzilla.redhat.com/1550127
 
             if "lock" in extraOptions:
-                self.log.warning("Using remote locks for NFSv3 locks, HA VMs "
-                                 "should not be used with this mount")
+                log.warning("Using remote locks for NFSv3 locks, HA VMs "
+                            "should not be used with this mount")
             elif "nolock" not in extraOptions:
-                self.log.debug("Using local locks for NFSv3 locks")
+                log.debug("Using local locks for NFSv3 locks")
                 extraOptions.append("nolock")
 
         optionsString = ",".join(options + extraOptions)
@@ -544,7 +542,6 @@ class NFSConnection(Connection):
 
 
 class IscsiConnection(Connection):
-    log = logging.getLogger("storage.server.iscsi")
 
     class Mismatch(Exception):
 
@@ -598,7 +595,7 @@ class IscsiConnection(Connection):
             try:
                 con.setup_node()
             except Exception as err:
-                cls.log.error(
+                log.error(
                     "Could configure connection to % and iface %s",
                     con.target, con.iface)
                 status, _ = cls.translate_error(err)
@@ -614,8 +611,8 @@ class IscsiConnection(Connection):
 
         max_workers = config.getint("iscsi", "parallel_logins")
         if max_workers < 1:
-            cls.log.warning("Number of parallel logins (%d) is less then 1, "
-                            "using only one thread", max_workers)
+            log.warning("Number of parallel logins (%d) is less then 1, "
+                        "using only one thread", max_workers)
             max_workers = 1
 
         def iscsi_login(con):
@@ -637,7 +634,7 @@ class IscsiConnection(Connection):
             if err is None:
                 status = 0
             else:
-                cls.log.exception("Could not login to storageServer")
+                log.exception("Could not login to storageServer")
                 status, _ = cls.translate_error(err)
             results.append((con, status))
 
@@ -741,7 +738,7 @@ class IscsiConnection(Connection):
             else:
                 return session
 
-        self.log.debug("Session mismatches: %s", errors)
+        log.debug("Session mismatches: %s", errors)
         raise OSError(errno.ENOENT, "Session not found")
 
     def isConnected(self):
@@ -757,12 +754,12 @@ class IscsiConnection(Connection):
         self._disconnect_iscsi()
 
     def _disconnect_iscsi(self):
-        self.log.info("disconnecting")
+        log.info("disconnecting")
         try:
             sid = self.getSessionInfo().id
         except OSError as e:
             if e.errno == errno.ENOENT:
-                self.log.debug("not connected")
+                log.debug("not connected")
                 return
             raise
 
