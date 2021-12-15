@@ -889,6 +889,7 @@ def test_dump_sd_volumes(monkeypatch, tmp_repo, user_mount, user_domain):
             "disktype": sc.DATA_DISKTYPE,
             "format": "RAW",
             "generation": 0,
+            "sequence": sc.DEFAULT_SEQUENCE,
             "image": img_uuid,
             "legality": sc.LEGAL_VOL,
             "status": sc.VOL_STATUS_OK,
@@ -956,6 +957,7 @@ def test_dump_sd_volumes_invalid_md(
             "truesize": vol_size.truesize,
             "status": sc.VOL_STATUS_INVALID,
             "generation": sc.DEFAULT_GENERATION,
+            "sequence": sc.DEFAULT_SEQUENCE,
             "image": img_uuid
         }
     }
@@ -1080,6 +1082,7 @@ def test_dump_sd_volumes_failed_size_query(
             "disktype": sc.DATA_DISKTYPE,
             "format": "RAW",
             "generation": 0,
+            "sequence": sc.DEFAULT_SEQUENCE,
             "image": img_uuid,
             "legality": sc.LEGAL_VOL,
             "status": sc.VOL_STATUS_INVALID,
@@ -1149,6 +1152,7 @@ def test_dump_sd_volumes_removed_image(
             "disktype": sc.DATA_DISKTYPE,
             "format": "RAW",
             "generation": 0,
+            "sequence": sc.DEFAULT_SEQUENCE,
             "image": img_uuid,
             "legality": sc.LEGAL_VOL,
             "status": sc.VOL_STATUS_REMOVED,

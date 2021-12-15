@@ -214,6 +214,7 @@ DESCRIPTION = "DESCRIPTION"
 LEGALITY = "LEGALITY"
 MTIME = "MTIME"
 GENERATION = "GEN"  # Added in 4.1
+SEQUENCE = "SEQ"  # Added in 4.5
 
 # In block storage, metadata size is limited to BLOCK_SIZE (512), to
 # ensure that metadata is written atomically. This is big enough for the
@@ -242,6 +243,7 @@ GENERATION = "GEN"  # Added in 4.1
 # TYPE=PREALLOCATED                           # PREALLOCATED|UNKNOWN|SPARSE
 # VOLTYPE=INTERNAL                            # INTERNAL|SHARED|LEAF
 # GEN=999                                     # int
+# SEQ=4294967295                              # int
 # EOF
 #
 # For more info why this is the worst possible case, see
@@ -250,7 +252,7 @@ GENERATION = "GEN"  # Added in 4.1
 # On V4 This content requires up to 276 bytes, leaving 236 bytes for the
 # description.
 #
-# On V5 this content requires 270 bytes, leaving 242 bytes for the description
+# On V5 this content requires 285 bytes, leaving 227 bytes for the description
 # field.
 #
 # OVF_STORE JSON description format needs up to 175 bytes.
@@ -268,6 +270,10 @@ DESCRIPTION_SIZE = 210
 # after reaching its maximum value.
 DEFAULT_GENERATION = 0
 MAX_GENERATION = 999  # Since this is represented in ASCII, limit to 3 places
+
+# The SEQUENCE metadata may be missing, as it was added only in 4.5.
+DEFAULT_SEQUENCE = 0
+MAX_SEQUENCE = 2**32 - 1
 
 # Block volume metadata tags
 TAG_PREFIX_MD = "MD_"

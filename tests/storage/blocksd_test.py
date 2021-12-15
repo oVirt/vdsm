@@ -1254,6 +1254,7 @@ def test_dump_sd_metadata(
             'disktype': sc.DATA_DISKTYPE,
             'format': 'COW',
             'generation': 0,
+            'sequence': sc.DEFAULT_SEQUENCE,
             'image': img_uuid,
             'legality': sc.LEGAL_VOL,
             'mdslot': mdslot,
@@ -1309,6 +1310,7 @@ def test_dump_sd_metadata(
                     'disktype': sc.DATA_DISKTYPE,
                     'format': 'COW',
                     'generation': 0,
+                    'sequence': sc.DEFAULT_SEQUENCE,
                     'image': img_uuid,
                     'legality': sc.LEGAL_VOL,
                     'mdslot': mdslot,
@@ -1335,6 +1337,7 @@ def test_dump_sd_metadata(
                     'disktype': sc.DATA_DISKTYPE,
                     'format': 'COW',
                     'generation': 0,
+                    'sequence': sc.DEFAULT_SEQUENCE,
                     'image': img_uuid,
                     'legality': sc.LEGAL_VOL,
                     'mdslot': mdslot,
@@ -1379,6 +1382,7 @@ def test_dump_sd_metadata(
                     'disktype': sc.DATA_DISKTYPE,
                     'format': 'COW',
                     'generation': 0,
+                    'sequence': sc.DEFAULT_SEQUENCE,
                     'image': img_uuid,
                     'legality': sc.LEGAL_VOL,
                     'mdslot': mdslot,
@@ -1406,6 +1410,7 @@ def test_dump_sd_metadata(
                 "mdslot": mdslot,
                 "truesize": vol_size.truesize,
                 "generation": sc.DEFAULT_GENERATION,
+                "sequence": sc.DEFAULT_SEQUENCE,
             }
         }
     }
@@ -1420,6 +1425,7 @@ def test_dump_sd_metadata(
                     "parent": sc.BLANK_UUID,
                     "mdslot": mdslot,
                     "generation": sc.DEFAULT_GENERATION,
+                    "sequence": sc.DEFAULT_SEQUENCE,
                 }
             }
         }
