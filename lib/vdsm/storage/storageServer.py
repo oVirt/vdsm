@@ -90,7 +90,7 @@ class Connection:
             except Exception as err:
                 cls.log.error(
                     "Could not connect to storageServer", exc_info=True)
-                status, _ = _translateConnectionError(err)
+                status, _ = cls.translate_error(err)
             else:
                 status = 0
 
@@ -109,11 +109,21 @@ class Connection:
             except Exception as err:
                 cls.log.error("Could not disconnect from storageServer",
                               exc_info=True)
-                status, _ = _translateConnectionError(err)
+                status, _ = cls.translate_error(err)
 
             results.append((con, status))
 
         return results
+
+    @classmethod
+    def translate_error(cls, e):
+        if e is None:
+            return 0, ""
+
+        if hasattr(e, 'code'):
+            return e.code, e.msg
+
+        return se.GeneralException.code, str(e)
 
 
 class ExampleConnection(Connection):
@@ -193,6 +203,12 @@ class MountConnection(Connection):
     @classmethod
     def getLocalPathBase(cls):
         return cls.localPathBase
+
+    @classmethod
+    def translate_error(cls, e):
+        if isinstance(e, mount.MountError):
+            return se.MountError.code, se.MountError.msg
+        return super().translate_error(e)
 
     def __init__(self,
                  id,
@@ -585,7 +601,7 @@ class IscsiConnection(Connection):
                 cls.log.error(
                     "Could configure connection to % and iface %s",
                     con.target, con.iface)
-                status, _ = _translateConnectionError(err)
+                status, _ = cls.translate_error(err)
                 results.append((con, status))
             else:
                 logins.append(con)
@@ -622,7 +638,7 @@ class IscsiConnection(Connection):
                 status = 0
             else:
                 cls.log.exception("Could not login to storageServer")
-                status, _ = _translateConnectionError(err)
+                status, _ = cls.translate_error(err)
             results.append((con, status))
 
         # Wait for all new devices to be settled.
@@ -634,6 +650,16 @@ class IscsiConnection(Connection):
     def settle_devices(cls):
         timeout = config.getint("irs", "udev_settle_timeout")
         udevadm.settle(timeout)
+
+    @classmethod
+    def translate_error(cls, e):
+        if isinstance(e, iscsi.iscsiadm.IscsiAuthenticationError):
+            return se.iSCSILoginAuthError.code, se.iSCSILoginAuthError.msg
+        if isinstance(e, iscsi.iscsiadm.IscsiInterfaceError):
+            return se.iSCSIifaceError.code, se.iSCSIifaceError.msg
+        if isinstance(e, iscsi.iscsiadm.IscsiError):
+            return se.iSCSISetupError.code, se.iSCSISetupError.msg
+        return super().translate_error(e)
 
     def connect(self):
         self._maybe_connect_iser()
@@ -1021,22 +1047,3 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
         raise se.StorageServerActionError()
 
     return ConnectionInfo(typeName, params)
-
-
-def _translateConnectionError(e):
-    if e is None:
-        return 0, ""
-
-    if isinstance(e, mount.MountError):
-        return se.MountError.code, se.MountError.msg
-    if isinstance(e, iscsi.iscsiadm.IscsiAuthenticationError):
-        return se.iSCSILoginAuthError.code, se.iSCSILoginAuthError.msg
-    if isinstance(e, iscsi.iscsiadm.IscsiInterfaceError):
-        return se.iSCSIifaceError.code, se.iSCSIifaceError.msg
-    if isinstance(e, iscsi.iscsiadm.IscsiError):
-        return se.iSCSISetupError.code, se.iSCSISetupError.msg
-
-    if hasattr(e, 'code'):
-        return e.code, e.msg
-
-    return se.GeneralException.code, str(e)
