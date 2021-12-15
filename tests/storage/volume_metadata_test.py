@@ -51,7 +51,8 @@ def make_init_params(**kwargs):
         disktype=sc.DATA_DISKTYPE,
         description="",
         legality=sc.LEGAL_VOL,
-        generation=sc.DEFAULT_GENERATION)
+        generation=sc.DEFAULT_GENERATION,
+        sequence=sc.DEFAULT_SEQUENCE)
     res.update(kwargs)
     return res
 
@@ -70,6 +71,7 @@ def make_md_dict(**kwargs):
         sc.LEGALITY: 'legality',
         sc.CTIME: '0',
         sc.GENERATION: '1',
+        sc.SEQUENCE: 7,
     }
     res.update(kwargs)
     return res
@@ -102,7 +104,8 @@ class TestVolumeMetadata:
             CAP=str(params['capacity']),
             TYPE=params['type'],
             VOLTYPE=params['voltype'],
-            GEN=params['generation'])
+            GEN=params['generation'],
+            SEQ=params['sequence'])
 
         monkeypatch.setattr(time, 'time', lambda: FAKE_TIME)
         info = volume.VolumeMetadata(**params)
@@ -145,6 +148,7 @@ class TestVolumeMetadata:
             IMAGE=%(image)s
             LEGALITY=%(legality)s
             PUUID=%(parent)s
+            SEQ=%(sequence)s
             TYPE=%(type)s
             VOLTYPE=%(voltype)s
             EOF
@@ -167,7 +171,7 @@ class TestVolumeMetadata:
 
     @pytest.mark.parametrize("required_key",
                              [key for key in make_md_dict()
-                              if key != sc.GENERATION])
+                              if key not in (sc.SEQUENCE, sc.GENERATION)])
     def test_from_lines_missing_key(self, required_key):
         data = make_md_dict()
         data[required_key] = None
@@ -208,6 +212,11 @@ class TestVolumeMetadata:
         assert data['legality'] == md.legality
         assert int(data['generation']) == md.generation
 
+        if version == 5:
+            assert int(data['sequence']) == md.sequence
+        if version == 4:
+            assert 0 == md.sequence
+
     def test_from_lines_v5(self):
         data = make_init_params()
         md = volume.VolumeMetadata(**data)
@@ -239,6 +248,11 @@ class TestVolumeMetadata:
         lines = make_lines(GEN=None)
         md = volume.VolumeMetadata.from_lines(lines)
         assert sc.DEFAULT_GENERATION == md.generation
+
+    def test_sequence_default(self):
+        lines = make_lines(SEQ=None)
+        md = volume.VolumeMetadata.from_lines(lines)
+        assert sc.DEFAULT_SEQUENCE == md.sequence
 
     def test_cleared_metadata(self):
         lines = CLEARED_VOLUME_METADATA.rstrip(b"\0").splitlines()
@@ -348,6 +362,7 @@ class TestMDSize:
         # POOL_UUID=
         # TYPE=PREALLOCATED
         # GEN=0
+        # SEQ=4294967295
         # EOF
         {
             'capacity': MAX_PREALLOCATED_SIZE,
@@ -368,6 +383,7 @@ class TestMDSize:
         # POOL_UUID=
         # TYPE=SPARSE
         # GEN=0
+        # SEQ=4294967295
         # EOF
         {
             'capacity': MAX_VOLUME_SIZE,
@@ -389,6 +405,7 @@ class TestMDSize:
             capacity=md_params['capacity'],
             type=md_params['type'],
             voltype='INTERNAL',
+            sequence=sc.MAX_SEQUENCE,
         )
 
         md_len = len(md.storage_format(version))
@@ -448,6 +465,7 @@ class TestDictInterface:
         assert md[sc.VOLTYPE] == params['voltype']
         assert md[sc.DISKTYPE] == params['disktype']
         assert md[sc.GENERATION] == params['generation']
+        assert md[sc.SEQUENCE] == params['sequence']
 
     def test_dict_setter(self):
         params = make_init_params()
@@ -485,11 +503,12 @@ class TestDictInterface:
             'disktype': params['disktype'],
             'format': params['format'],
             'generation': params['generation'],
+            'sequence': params['sequence'],
             'image': params['image'],
             'legality': params['legality'],
             'parent': params['parent'],
             'type': params['type'],
-            'voltype': params['voltype']
+            'voltype': params['voltype'],
         }
 
         assert md.dump() == expected
