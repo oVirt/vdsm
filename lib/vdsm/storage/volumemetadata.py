@@ -46,7 +46,8 @@ ATTRIBUTES = {
     sc.DESCRIPTION: ("description", str),
     sc.LEGALITY: ("legality", str),
     sc.CTIME: ("ctime", int),
-    sc.GENERATION: ("generation", int)
+    sc.GENERATION: ("generation", int),
+    sc.SEQUENCE: ("sequence", int),
 }
 
 
@@ -96,6 +97,9 @@ def parse(lines):
     if sc.GENERATION not in md:
         md[sc.GENERATION] = sc.DEFAULT_GENERATION
 
+    if sc.SEQUENCE not in md:
+        md[sc.SEQUENCE] = sc.DEFAULT_SEQUENCE
+
     for key, (name, validate) in ATTRIBUTES.items():
         try:
             # FIXME: remove pylint skip when bug fixed:
@@ -130,7 +134,8 @@ class VolumeMetadata(object):
 
     def __init__(self, domain, image, parent, capacity, format, type, voltype,
                  disktype, description="", legality=sc.ILLEGAL_VOL, ctime=None,
-                 generation=sc.DEFAULT_GENERATION):
+                 generation=sc.DEFAULT_GENERATION,
+                 sequence=sc.DEFAULT_SEQUENCE):
         # Storage domain UUID
         self.domain = domain
         # Image UUID
@@ -155,6 +160,9 @@ class VolumeMetadata(object):
         self.ctime = int(time.time()) if ctime is None else ctime
         # Generation increments each time certain operations complete
         self.generation = generation
+        # Sequence number of the volume, increased every time a new volume is
+        # created in an image.
+        self.sequence = sequence
 
     @classmethod
     def from_lines(cls, lines):
@@ -203,6 +211,14 @@ class VolumeMetadata(object):
     @generation.setter
     def generation(self, value):
         self._generation = self._validate_integer("generation", value)
+
+    @property
+    def sequence(self):
+        return self._sequence
+
+    @sequence.setter
+    def sequence(self, value):
+        self._sequence = self._validate_integer("sequence", value)
 
     @classmethod
     def _validate_integer(cls, property, value):
@@ -262,6 +278,7 @@ class VolumeMetadata(object):
             info[_SIZE] = self.capacity // sc.BLOCK_SIZE_512
         else:
             info[sc.CAPACITY] = self.capacity
+            info[sc.SEQUENCE] = self.sequence
 
         info.update(overrides)
 
@@ -295,6 +312,7 @@ class VolumeMetadata(object):
         sc.PUUID: 'parent',
         sc.LEGALITY: 'legality',
         sc.GENERATION: 'generation',
+        sc.SEQUENCE: "sequence",
     }
 
     def __getitem__(self, item):
@@ -325,6 +343,7 @@ class VolumeMetadata(object):
             "disktype": self.disktype,
             "format": self.format,
             "generation": self.generation,
+            "sequence": self.sequence,
             "image": self.image,
             "legality": self.legality,
             "parent": self.parent,

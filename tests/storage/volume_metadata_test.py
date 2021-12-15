@@ -51,7 +51,8 @@ def make_init_params(**kwargs):
         disktype=sc.DATA_DISKTYPE,
         description="",
         legality=sc.LEGAL_VOL,
-        generation=sc.DEFAULT_GENERATION)
+        generation=sc.DEFAULT_GENERATION,
+        sequence=42)
     res.update(kwargs)
     return res
 
@@ -207,6 +208,11 @@ class TestVolumeMetadata:
         assert FAKE_TIME == md.ctime
         assert data['legality'] == md.legality
         assert int(data['generation']) == md.generation
+
+        if version == 5:
+            assert int(data['sequence']) == md.sequence
+        if version == 4:
+            assert 0 == md.sequence
 
     def test_from_lines_v5(self):
         data = make_init_params()
@@ -485,6 +491,7 @@ class TestDictInterface:
             'disktype': params['disktype'],
             'format': params['format'],
             'generation': params['generation'],
+            'sequence': params['sequence'],
             'image': params['image'],
             'legality': params['legality'],
             'parent': params['parent'],
