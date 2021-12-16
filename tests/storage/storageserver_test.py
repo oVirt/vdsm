@@ -310,7 +310,7 @@ def test_prepare_connection_without_initiator_name():
         "user": "",
         "tpgt": "1",
     }]
-    conn = storageServer._prepare_connections(sd.ISCSI_DOMAIN, con_def)
+    conn = storageServer.prepare_connections(sd.ISCSI_DOMAIN, con_def)
 
     # Unset keys raise KeyError
     with pytest.raises(KeyError):
