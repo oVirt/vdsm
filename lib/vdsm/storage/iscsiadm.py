@@ -24,7 +24,6 @@ import logging
 import re
 
 from collections import namedtuple
-from threading import Lock
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
@@ -113,20 +112,14 @@ class IscsiSessionRescanTimeout(IscsiSessionError):
 
 _RESERVED_INTERFACES = ("default", "tcp", "iser")
 
-# Running multiple iscsiadm commands in parallel causes random problems.
-# This serializes all calls to iscsiadm.
-# Remove when iscsid is actually thread safe.
-_iscsiadmLock = Lock()
-
 
 def run_cmd(args):
     # FIXME: I don't use supervdsm because this entire module has to just be
     # run as root and there is no such feature yet in supervdsm. When such
     # feature exists please change this.
-    with _iscsiadmLock:
-        cmd = [constants.EXT_ISCSIADM] + args
-        out = commands.run(cmd, sudo=True)
-        return out.decode("utf-8")
+    cmd = [constants.EXT_ISCSIADM] + args
+    out = commands.run(cmd, sudo=True)
+    return out.decode("utf-8")
 
 
 def iface_exists(interfaceName):
@@ -334,20 +327,13 @@ def node_login(iface, portal, targetName):
 
 
 def session_rescan(timeout=None):
-    # Note: keeping old behaviour of taking the module lock while starting the
-    # command, and releasing the lock while the scan command is running. This
-    # looks like a bug since the purpose of the lock is preventing concurrent
-    # iscsiadm commands, but taking a lock for the entire operation may cause
-    # bigger issues.
-
     args = [constants.EXT_ISCSIADM, "-m", "session", "-R"]
 
-    with _iscsiadmLock:
-        p = commands.start(
-            args,
-            sudo=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+    p = commands.start(
+        args,
+        sudo=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
 
     try:
         out, err = p.communicate(timeout=timeout)
