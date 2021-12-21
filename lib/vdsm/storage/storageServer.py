@@ -89,8 +89,7 @@ class Connection:
             try:
                 con.connect()
             except Exception as err:
-                log.error(
-                    "Could not connect to storageServer", exc_info=True)
+                log.exception("Could not connect to storage server")
                 status, _ = cls.translate_error(err)
             else:
                 status = 0
@@ -108,8 +107,7 @@ class Connection:
                 con.disconnect()
                 status = 0
             except Exception as err:
-                log.error(
-                    "Could not disconnect from storageServer", exc_info=True)
+                log.exception("Could not disconnect from storage server")
                 status, _ = cls.translate_error(err)
 
             results.append((con, status))
