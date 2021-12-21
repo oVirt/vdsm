@@ -591,6 +591,8 @@ class IscsiConnection(Connection):
         # happen on the host and are very fast, so there's no need to run them
         # in parallel. Also, running them concurrently could cause locking
         # issues when multiple threads try to access local iscsi database.
+
+        log.info("Setting up %s iscsi nodes", len(prep_cons))
         for con in prep_cons:
             try:
                 con.setup_node()
@@ -614,6 +616,10 @@ class IscsiConnection(Connection):
             log.warning("Number of parallel logins (%d) is less then 1, "
                         "using only one thread", max_workers)
             max_workers = 1
+        max_workers = min(len(logins), max_workers)
+
+        log.info("Log in to %s targets using %s workers",
+                 len(logins), max_workers)
 
         def iscsi_login(con):
             try:
@@ -625,7 +631,7 @@ class IscsiConnection(Connection):
         login_results = concurrent.tmap(
             iscsi_login,
             logins,
-            max_workers=min(len(logins), max_workers),
+            max_workers=max_workers,
             name="iscsi-login")
 
         # Evaluate if login was successful.
