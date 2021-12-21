@@ -205,6 +205,9 @@ def addIscsiNode(iface, target, credentials=None):
     # bounded iface. Explicitly specifying tpgt on iSCSI login imposes creation
     # of the node record in the new style format which enables to access a
     # portal through multiple ifaces for multipathing.
+
+    log.info("Adding iscsi node for target %s iface %s", target, iface.name)
+
     with _iscsiadmTransactionLock:
         iscsiadm.node_new(iface.name, target.address, target.iqn)
         try:
@@ -225,6 +228,7 @@ def addIscsiNode(iface, target, credentials=None):
 
 
 def loginToIscsiNode(iface, target):
+    log.info("Logging in to iscsi target %s via iface %s", target, iface.name)
     try:
         iscsiadm.node_login(iface.name, target.address, target.iqn)
     except:
@@ -236,6 +240,9 @@ def removeIscsiNode(iface, target):
     # Basically this command deleting a node record (see addIscsiNode).
     # Once we create a record in the new style format by specifying a tpgt,
     # we delete it in the same way.
+
+    log.info("Removing iscsi node for target %s iface %s", target, iface.name)
+
     with _iscsiadmTransactionLock:
         try:
             iscsiadm.node_disconnect(iface.name, target.address, target.iqn)
@@ -247,8 +254,9 @@ def removeIscsiNode(iface, target):
 
 
 def addIscsiPortal(iface, portal, credentials=None):
-    discoverType = "sendtargets"
+    log.info("Adding iscsi portal %s iface %s", portal, iface.name)
 
+    discoverType = "sendtargets"
     with _iscsiadmTransactionLock:
         iscsiadm.discoverydb_new(discoverType, iface.name, str(portal))
 
@@ -266,6 +274,7 @@ def addIscsiPortal(iface, portal, credentials=None):
 
 
 def deleteIscsiPortal(iface, portal):
+    log.info("Deleting iscsi portal %s iface %s", portal, iface.name)
     discoverType = "sendtargets"
     iscsiadm.discoverydb_delete(discoverType, iface.name, str(portal))
 
@@ -273,6 +282,10 @@ def deleteIscsiPortal(iface, portal):
 def discoverSendTargets(iface, portal, credentials=None):
     # Because proper discovery actually has to clear the DB having multiple
     # discoveries at once will cause unpredictable results
+
+    log.info("Discovering iscsi targets for portal %s iface %s",
+             portal, iface.name)
+
     discoverType = "sendtargets"
 
     with _iscsiadmTransactionLock:
@@ -545,6 +558,8 @@ def disconnectFromUndelyingStorage(devPath):
 
 
 def disconnectiScsiSession(sessionID):
+    log.info("Disconnecting iscsi session %s", sessionID)
+
     # FIXME : Should throw exception on error
     sessionID = int(sessionID)
     sessionInfo = getSessionInfo(sessionID)

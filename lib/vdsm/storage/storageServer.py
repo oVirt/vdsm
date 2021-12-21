@@ -590,7 +590,6 @@ class IscsiConnection(Connection):
         # in parallel. Also, running them concurrently could cause locking
         # issues when multiple threads try to access local iscsi database.
 
-        log.info("Setting up %s iscsi nodes", len(prep_cons))
         for con in prep_cons:
             try:
                 con.setup_node()
@@ -761,7 +760,6 @@ class IscsiConnection(Connection):
         self._disconnect_iscsi()
 
     def _disconnect_iscsi(self):
-        log.info("disconnecting")
         try:
             sid = self.getSessionInfo().id
         except OSError as e:
