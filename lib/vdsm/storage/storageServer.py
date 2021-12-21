@@ -611,12 +611,7 @@ class IscsiConnection(Connection):
         # engine command times out. Running login to targets in parallel should
         # mitigate this issue.
 
-        max_workers = config.getint("iscsi", "parallel_logins")
-        if max_workers < 1:
-            log.warning("Number of parallel logins (%d) is less then 1, "
-                        "using only one thread", max_workers)
-            max_workers = 1
-        max_workers = min(len(logins), max_workers)
+        max_workers = cls.max_workers(logins)
 
         log.info("Log in to %s targets using %s workers",
                  len(logins), max_workers)
@@ -648,6 +643,15 @@ class IscsiConnection(Connection):
         cls.settle_devices()
 
         return results
+
+    @classmethod
+    def max_workers(cls, logins):
+        max_workers = config.getint("iscsi", "parallel_logins")
+        if max_workers < 1:
+            log.warning("Number of parallel logins (%d) is less then 1, "
+                        "using only one thread", max_workers)
+            max_workers = 1
+        return min(len(logins), max_workers)
 
     @classmethod
     def settle_devices(cls):
