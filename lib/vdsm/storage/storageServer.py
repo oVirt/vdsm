@@ -619,9 +619,11 @@ class IscsiConnection(Connection):
         def iscsi_login(con):
             try:
                 iscsi.loginToIscsiNode(con.iface, con.target)
-                return con, None
+                return con, 0
             except Exception as e:
-                return con, e
+                log.exception("Could not login to target")
+                status, _ = cls.translate_error(e)
+                return con, status
 
         login_results = concurrent.tmap(
             iscsi_login,
@@ -629,15 +631,8 @@ class IscsiConnection(Connection):
             max_workers=max_workers,
             name="iscsi-login")
 
-        # Evaluate if login was successful.
-        for login_result in login_results:
-            con, err = login_result.value
-            if err is None:
-                status = 0
-            else:
-                log.exception("Could not login to storageServer")
-                status, _ = cls.translate_error(err)
-            results.append((con, status))
+        for res in login_results:
+            results.append(res.value)
 
         # Wait for all new devices to be settled.
         cls.settle_devices()
