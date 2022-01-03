@@ -275,7 +275,7 @@ def nic_info(nic):
         'macAddr': nic.macAddr,
         'name': nic.name,
         'speed': str(
-            1000 if nic.nicModel in ('e1000', 'virtio') else 100
+            1000 if nic.nicModel in ('e1000', 'e1000e', 'virtio') else 100
         ),
         'state': 'unknown',
     }

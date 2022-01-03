@@ -3037,6 +3037,7 @@ types:
         type: enum
         values:
             e1000: Emulated Intel(R) Gigabit Ethernet NIC
+            e1000e: Emulated PCIe Intel(R) Gigabit Ethernet NIC
             i82551: Emulated Intel(R) 82551ER NIC
             i82557b: Emulated Intel i82557B NIC
             i82559er: Emulated Intel i82559ER NIC
