@@ -63,6 +63,7 @@ dist_vdsmstorage_PYTHON = \
 	localFsSD.py \
 	lvm.py \
 	lvmconf.py \
+	lvmdevices.py \
 	lvmfilter.py \
 	lsof.py \
 	mailbox.py \
