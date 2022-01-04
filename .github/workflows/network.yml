@@ -1,0 +1,34 @@
+name: Network CI
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'lib/vdsm/network/**'
+      - 'lib/vdsm/common/**'
+      - 'tests/network/**'
+      - '.github/workflows/network.yml'
+  pull_request:
+    paths:
+      - 'lib/vdsm/network/**'
+      - 'lib/vdsm/common/**'
+      - 'tests/network/**'
+      - '.github/workflows/network.yml'
+
+jobs:
+  tests:
+    env:
+      IMAGE_TAG: ${{ matrix.tag }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        type: [ unit, integration, functional ]
+        tag: [ centos-8, centos-9 ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install podman
+      - name: Run ${{ matrix.type }} tests
+        run: sudo -E ./tests/network/${{ matrix.type }}/run-tests.sh
