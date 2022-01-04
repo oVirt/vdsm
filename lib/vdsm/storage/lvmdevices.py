@@ -64,3 +64,13 @@ def _devices_file_exists():
     exists, lvm disables whole devices file functionality.
     """
     return os.path.exists(_LVM_SYSTEM_DEVICES_PATH)
+
+
+def _configure_devices_file(enable=True):
+    """
+    Configure lvm to use devices file or disable it.
+    """
+    enabled = 1 if enable else 0
+    with lvmconf.LVMConfig() as config:
+        config.setint("devices", "use_devicesfile", enabled)
+        config.save()
