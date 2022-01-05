@@ -49,6 +49,7 @@ import re
 from vdsm.common import errors
 from vdsm.common import udevadm
 from vdsm.common.compat import subprocess
+from vdsm.storage import lvmconf
 
 LSBLK = "/usr/bin/lsblk"
 LVM = "/usr/sbin/lvm"
@@ -536,6 +537,17 @@ def resolve_devices(filter_items):
             resolved_items.append(FilterItem(r.action, r.path))
 
     return normalize_items(resolved_items)
+
+
+def remove_filter():
+    """
+    Remove LVM filter from LVM configuration file.
+    """
+    with lvmconf.LVMConfig() as config:
+        current_filter = config.getlist("devices", "filter")
+        if current_filter:
+            config.remove("devices", "filter")
+            config.save()
 
 
 def _run(args):
