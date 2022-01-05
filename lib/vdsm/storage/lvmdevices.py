@@ -32,10 +32,15 @@ vdsm-tool.
 
 import logging
 import os
+import subprocess
 
+from vdsm.common import cmdutils
+from vdsm.common import commands
 from vdsm.storage import lvmconf
 
+LVM = "/usr/sbin/lvm"
 _LVM_SYSTEM_DEVICES_PATH = "/etc/lvm/devices/system.devices"
+
 
 log = logging.getLogger("lvmdevices")
 
@@ -74,3 +79,40 @@ def _configure_devices_file(enable=True):
     with lvmconf.LVMConfig() as config:
         config.setint("devices", "use_devicesfile", enabled)
         config.save()
+
+
+def _create_system_devices(vgs):
+    """
+    Import devices of provided VGs into LVM devices file.
+    """
+    for vg in vgs:
+        _run_vgimportdevices(vg)
+
+
+def _run_vgimportdevices(vg):
+    """
+    Import underlying devices of provided VG into LVM devices file. Import is
+    done using vgimportdevices command. vgimportdevices takes into account
+    existing lvm filter, so if some devices are excluded by the filter, such
+    devices won't be imported. If the filter is wrong, we may miss some
+    devices. To avoid such situation, set the filter to enable all the devices.
+    """
+    cmd = [LVM,
+           'vgimportdevices',
+           vg,
+           '--config',
+           'devices { use_devicesfile = 1 filter = ["a|.*|"] }'
+           ]
+
+    p = commands.start(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    out, err = commands.communicate(p)
+
+    if p.returncode == 0 and err:
+        log.warning("Command %s succeeded with warnings: %s", cmd, err)
+
+    if p.returncode != 0:
+        raise cmdutils.Error(cmd, p.returncode, out, err)
