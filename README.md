@@ -11,23 +11,11 @@ the host's storage, memory and networks as well as virtual machine
 creation, other host administration tasks, statistics gathering, and
 log collection.
 
-
-This repository is hosted on [gerrit.ovirt.org:vdsm](https://gerrit.ovirt.org/#/admin/projects/vdsm)
-and a **backup** of it is hosted on [GitHub:vdsm](https://github.com/oVirt/vdsm)
-
 ## How to contribute
 
 ### Submitting patches
 
-Patches are welcome!
-
-Please submit patches to [gerrit.ovirt.org:vdsm](https://gerrit.ovirt.org/#/admin/projects/vdsm).
-If you are not familiar with the review process for Gerrit patches you can read about
-[Working with oVirt Gerrit](https://ovirt.org/develop/dev-process/working-with-gerrit.html)
-on the [oVirt](https://ovirt.org/) website.
-
-**NOTE**: We might not notice pull requests that you create on Github, because we only use Github for backups.
-
+Please use GitHub pull requests.
 
 ### Found a bug or documentation issue?
 
@@ -37,6 +25,10 @@ To submit a bug or suggest an enhancement for Vdsm please use
 If you find a documentation issue on the oVirt website please navigate
 and click "Report an issue on GitHub" in the page footer.
 
+### Code review history
+
+Vdsm moved to GitHub on Jan 9, 2022. To look up code reviews before this
+date, please check the [Gerrit vdsm project](https://gerrit.ovirt.org/q/project:vdsm+is:merged).
 
 ## Manual installation
 
@@ -68,10 +60,12 @@ Vdsm logs can be found at `/var/log/vdsm/*.log` (refer to README.logging for fur
 
 ## Development environment setup
 
-Set local git clone:
+Fork the project on https://github.com/oVirt/vdsm.
+
+Clone your fork:
 
     sudo dnf install -y git
-    git clone "https://gerrit.ovirt.org/vdsm"
+    git@github.com:{user}/vdsm.git
 
 Install additional packages for Fedora, CentOS, and RHEL:
 
