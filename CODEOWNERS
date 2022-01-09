@@ -1,0 +1,165 @@
+# See github docs for more info on the syntax:
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default if nothing more specific matches
+*                                       @nirs @mz-pdm @vjuranek @almusil @tiez
+
+# Storage
+lib/vdsm/storage/                       @nirs @vjuranek
+tests/storage/                          @nirs @vjuranek
+
+# Virt
+lib/dnf-plugins                         @mz-pdm
+lib/vdsm/virt/                          @mz-pdm
+tests/virt/                             @mz-pdm
+tests/virt/backup_test.py               @nirs
+tests/virt/cd_test.py                   @vjuranek
+tests/virt/diskreplicate_test.py        @nirs
+tests/virt/drive_extension_test.py      @nirs
+tests/virt/drivemonitor_test.py         @nirs
+tests/virt/fakedomainadapter.py         @nirs
+tests/virt/livemerge_test.py            @nirs
+tests/virt/vmlease_test.py              @nirs @mz-pdm
+tests/virt/vmsecret_test.py             @nirs
+tests/virt/vmstorage_test.py            @nirs @mz-pdm
+
+# Network
+lib/vdsm/network/                       @almusil
+pyproject.toml                          @almusil
+tests/network/                          @almusil
+
+# Gluster - maintainer needed
+lib/vdsm/gluster/
+
+# Infra
+lib/vdsm/alignmentScan.py               @nirs @vjuranek
+lib/vdsm/api/                           @tinez
+lib/vdsm/client.py                      @tinez
+lib/vdsm/clientIF.py                    @mz-pdm @nirs @vjuranek
+lib/vdsm/config.py                      @tinez
+lib/vdsm/constants.py                   @tinez
+lib/vdsm/cpuinfo.py                     @mz-pdm
+lib/vdsm/dmidecodeUtil.py               @mz-pdm
+lib/vdsm/executor.py                    @nirs @mz-pdm @tinez
+lib/vdsm/health.py                      @nirs
+lib/vdsm/hook/                          @tinez
+lib/vdsm/host/                          @tinez
+lib/vdsm/hugepages.py                   @mz-pdm
+lib/vdsm/jobs.py                        @nirs @vjuranek @mz-pdm
+lib/vdsm/jsonrpcvdscli.py               @tinez
+lib/vdsm/kvm2ovirt.py                   @mz-pdm
+lib/vdsm/logUtils.py                    @nirs @mz-pdm @tinez
+lib/vdsm/machinetype.py                 @mz-pdm
+lib/vdsm/metrics/                       @tinez
+lib/vdsm/mkimage.py                     @mz-pdm
+lib/vdsm/moduleloader.py                @tinez
+lib/vdsm/momIF.py                       @mz-pdm
+lib/vdsm/numa.py                        @mz-pdm
+lib/vdsm/osinfo.py                      @tinez
+lib/vdsm/ppc64HardwareInfo.py           @mz-pdm
+lib/vdsm/protocoldetector.py            @tinez
+lib/vdsm/rpc/                           @tinez
+lib/vdsm/schedule.py                    @nirs @mz-pdm @tinez
+lib/vdsm/sslutils.py                    @tinez
+lib/vdsm/supervdsm_server.py            @tinez
+lib/vdsm/taskset.py                     @nirs
+lib/vdsm/throttledlog.py                @mz-pdm
+lib/vdsm/tool/                          @tinez
+lib/vdsm/utils.py                       @tinez
+lib/vdsm/v2v.py                         @mz-pdm
+lib/vdsm/vdsm.conf.sample               @tinez
+lib/vdsm/vdsmd.py                       @tinez
+lib/vdsm/virtsparsify.py                @mz-pdm
+lib/vdsm/virtsysprep.py                 @mz-pdm
+tests/executor_test.py                  @nirs @mz-pdm @tinez
+tests/lib/                              @tinez
+tests/passwords_test.py                 @nirs @mz-pdm @tinez
+tests/prlimit_test.py                   @nirs
+tests/schedule_test.py                  @nirs @mz-pdm @tinez
+
+# Profiling
+lib/vdsm/profiling/                     @nirs
+lib/vdsm/profiling/memory
+
+# Common
+lib/vdsm/common/                        @tinez
+lib/vdsm/common/api.py                  @tinez @nirs
+lib/vdsm/common/base26.py               @mz-pdm
+lib/vdsm/common/cache.py                @nirs @tinez
+lib/vdsm/common/cmdutils.py             @tinez @nirs
+lib/vdsm/common/commands.py             @tinez @nirs
+lib/vdsm/common/compat.py               @tinez @nirs
+lib/vdsm/common/concurrent.py           @nirs
+lib/vdsm/common/config.py.in            @tinez
+lib/vdsm/common/constants.py.in         @tinez
+lib/vdsm/common/conv.py                 @mz-pdm
+lib/vdsm/common/cpuarch.py              @mz-pdm
+lib/vdsm/common/define.py               @mz-pdm
+lib/vdsm/common/dsaversion.py.in        @tinez
+lib/vdsm/common/errors.py               @nirs
+lib/vdsm/common/eventfd.py              @tinez
+lib/vdsm/common/exception.py            @nirs @mz-pdm
+lib/vdsm/common/filecontrol.py          @tinez
+lib/vdsm/common/fileutils.py            @almusil @nirs @mz-pdm
+lib/vdsm/common/function.py             @almusil
+lib/vdsm/common/glob.py                 @nirs @vjuranek
+lib/vdsm/common/hooks.py                @tinez
+lib/vdsm/common/hostdev.py              @mz-pdm
+lib/vdsm/common/hostutils.py            @almusil
+lib/vdsm/common/libvirtconnection.py    @mz-pdm
+lib/vdsm/common/lockfile.py             @tinez @nirs
+lib/vdsm/common/logutils.py             @nirs @mz-pdm @tinez
+lib/vdsm/common/nbdutils.py             @nirs
+lib/vdsm/common/osutils.py              @tinez
+lib/vdsm/common/panic.py                @nirs @tinez
+lib/vdsm/common/password.py             @nirs @mz-pdm @tinez
+lib/vdsm/common/pki.py                  @tinez
+lib/vdsm/common/proc.py                 @almusil
+lib/vdsm/common/properties.py           @nirs @vjuranek
+lib/vdsm/common/pthread.py              @mz-pdm @nirs @tinez
+lib/vdsm/common/sigutils.py             @tinez @nirs
+lib/vdsm/common/supervdsm.py            @tinez @nirs
+lib/vdsm/common/systemctl.py            @nirs @vjuranek
+lib/vdsm/common/systemd.py              @nirs @vjuranek
+lib/vdsm/common/threadlocal.py          @tinez @nirs
+lib/vdsm/common/time.py                 @tinez @nirs
+lib/vdsm/common/udevadm.py              @nirs @vjuranek
+lib/vdsm/common/units.py                @nirs @vjuranek
+lib/vdsm/common/unixrpc.py              @mz-pdm
+lib/vdsm/common/validate.py             @mz-pdm
+lib/vdsm/common/xmlutils.py             @mz-pdm
+tests/common/                           @tinez
+tests/common/cmdutils_test.py           @tinez @nirs @almusil
+tests/common/commands_test.py           @tinez @nirs
+tests/common/concurrent_test.py         @nirs
+tests/common/properties_test.py         @nirs
+tests/common/pthread_test.py            @nirs
+tests/common/systemctl_test.py          @nirs
+tests/common/systemd_test.py            @nirs
+tests/common/time_test.py               @nirs
+
+# Helpers
+helpers/fallocate                       @nirs @vjuranek
+helpers/kvm2ovirt                       @mz-pdm
+
+# Containers
+docker/                                 @nirs @almusil @tinez
+
+# Init
+init/                                   @tinez
+
+# Static
+static/                                 @tinez
+static/etc/libvirt                      @mz-pdm
+static/etc/modprobe.d                   @almusil
+static/etc/modules-load.d               @almusil
+static/etc/NetworkManager               @almusil
+static/etc/ovirt-imageio                @nirs @vjuranek
+static/etc/sudoers.d                    @tinez @nirs @vjuranek
+static/etc/vdsm/mom.d/                  @mz-pdm
+
+# Hooks
+vdsm_hooks/                             @tinez @mz-pdm @almusil
+
+# Documentation owners - maintainer needed
+#doc/ @myname
