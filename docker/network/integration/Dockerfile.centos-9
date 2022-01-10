@@ -1,10 +1,7 @@
-FROM centos/centos:stream9-development
+FROM quay.io/ovirt/buildcontainer:stream9
 
 # Add runtime dependencies.
-RUN dnf install -y \
-    http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm \
-    && \
-    dnf update -y \
+RUN dnf update -y \
     && \
     # Without it the ovirt-openvswitch fails to install
     # It seems that the el8s container has systemd installed by default
@@ -14,8 +11,6 @@ RUN dnf install -y \
         autoconf \
         automake \
         dnsmasq \
-        git \
-        make \
         python3-devel \
         python3-pip \
         # Install vdsm-network for its dependencies
