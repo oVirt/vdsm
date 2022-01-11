@@ -101,14 +101,7 @@ def config_with_filter(
 
     # We need to configure LVM filter.
 
-    _print_mounts(mounts)
-    _print_recommended_filter(wanted_filter)
-
-    if current_filter:
-        _print_current_filter(current_filter)
-
-    if advice.wwids:
-        _print_wanted_blacklist(advice.wwids)
+    _print_summary(mounts, current_filter, wanted_filter, advice.wwids)
 
     if advice.action == lvmfilter.CONFIGURE:
 
@@ -199,3 +192,14 @@ recommended 'blacklist' section.
 
 It is recommended to reboot to verify the new configuration.
     """)
+
+
+def _print_summary(mounts, current_filter, wanted_filter, advice_wwids):
+    _print_mounts(mounts)
+    _print_recommended_filter(wanted_filter)
+
+    if current_filter:
+        _print_current_filter(current_filter)
+
+    if advice_wwids:
+        _print_wanted_blacklist(advice_wwids)
