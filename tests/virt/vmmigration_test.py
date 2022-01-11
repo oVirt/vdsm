@@ -222,7 +222,8 @@ class TestVmMigrate(TestCaseBase):
     @permutations([
         # vm_status, pause_code
         [vmstatus.UP, None],
-        [vmstatus.PAUSED, ''],
+        [vmstatus.PAUSED, ''],  # empty pause code = not an I/O error
+        [vmstatus.PAUSED, 'NOERR'],
     ])
     def test_migrate_from_status(self, vm_status, pause_code):
         with MonkeyPatchScope([
