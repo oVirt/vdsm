@@ -81,7 +81,8 @@ class StompTests(TestCaseBase):
             super(TestCaseBase, self).run(result)
 
     @broken_on_ci(
-        "Fails randomly in oVirt CI, see https://gerrit.ovirt.org/c/95899/")
+        "Fails randomly in oVirt CI, see https://gerrit.ovirt.org/c/95899/",
+        name="TRAVIS_CI")
     @permutations([
         # size, use_ssl
         (1024, True),

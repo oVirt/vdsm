@@ -154,7 +154,7 @@ class JsonRpcServerTests(TestCaseBase):
         return res
 
     @permutations(USE_SSL)
-    @broken_on_ci(reason="Fails randomly in CI")
+    @broken_on_ci(reason="Fails randomly in CI", name="TRAVIS_CI")
     def testMethodCallArgList(self, use_ssl):
         data = dummyTextGenerator(1024)
         ssl_ctx = self.ssl_ctx if use_ssl else None
@@ -167,7 +167,7 @@ class JsonRpcServerTests(TestCaseBase):
                                                    (data,), CALL_ID), data)
 
     @permutations(USE_SSL)
-    @broken_on_ci("fails randomly in CI")
+    @broken_on_ci("fails randomly in CI", name="TRAVIS_CI")
     def testMethodCallArgDict(self, use_ssl):
         data = dummyTextGenerator(1024)
         ssl_ctx = self.ssl_ctx if use_ssl else None
@@ -179,7 +179,7 @@ class JsonRpcServerTests(TestCaseBase):
                                  {'text': data}, CALL_ID), data)
 
     @permutations(USE_SSL)
-    @broken_on_ci("fails randomly in CI")
+    @broken_on_ci("fails randomly in CI", name="TRAVIS_CI")
     def testMethodMissingMethod(self, use_ssl):
         missing_method = "I_DO_NOT_EXIST :("
         ssl_ctx = self.ssl_ctx if use_ssl else None
@@ -197,7 +197,7 @@ class JsonRpcServerTests(TestCaseBase):
                 self.assertIn(missing_method, cm.exception.msg)
 
     @permutations(USE_SSL)
-    @broken_on_ci("fails randomly in CI")
+    @broken_on_ci("fails randomly in CI", name="TRAVIS_CI")
     def testMethodBadParameters(self, use_ssl):
         # Without a schema the server returns an internal error
         ssl_ctx = self.ssl_ctx if use_ssl else None
@@ -213,7 +213,7 @@ class JsonRpcServerTests(TestCaseBase):
                                  JsonRpcInternalError().code)
 
     @permutations(USE_SSL)
-    @broken_on_ci("fails randomly in CI")
+    @broken_on_ci("fails randomly in CI", name="TRAVIS_CI")
     def testMethodReturnsNullAndServerReturnsTrue(self, use_ssl):
         ssl_ctx = self.ssl_ctx if use_ssl else None
         bridge = _DummyBridge()
@@ -240,7 +240,7 @@ class JsonRpcServerTests(TestCaseBase):
 
     @MonkeyPatch(executor.Executor, 'dispatch', dispatch)
     @permutations(USE_SSL)
-    @broken_on_ci("fails randomly in CI")
+    @broken_on_ci("fails randomly in CI", name="TRAVIS_CI")
     def testFullExecutor(self, use_ssl):
         ssl_ctx = self.ssl_ctx if use_ssl else None
         bridge = _DummyBridge()
@@ -254,7 +254,7 @@ class JsonRpcServerTests(TestCaseBase):
                                  JsonRpcInternalError().code)
 
     @permutations(USE_SSL)
-    @broken_on_ci("fails randomly in CI")
+    @broken_on_ci("fails randomly in CI", name="TRAVIS_CI")
     def testClientSubscribe(self, use_ssl):
         ssl_ctx = self.ssl_ctx if use_ssl else None
         bridge = _DummyBridge()
@@ -277,7 +277,7 @@ class JsonRpcServerTests(TestCaseBase):
                 self.assertEqual(event_params['content'], True)
 
     @permutations(USE_SSL)
-    @broken_on_ci("fails randomly in CI")
+    @broken_on_ci("fails randomly in CI", name="TRAVIS_CI")
     def testClientNotify(self, use_ssl):
         ssl_ctx = self.ssl_ctx if use_ssl else None
         bridge = _DummyBridge()
