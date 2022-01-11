@@ -441,6 +441,16 @@ parameters = [
             'after rescan or connecting to a new server (default 10).'),
     ]),
 
+    # Section: [lvm]
+    ('lvm', [
+
+        ('config_method', 'filter',
+            'Method how to specify devices which LVM can use. Possible values'
+            'are either "filter" or "devices". Filter method will use LVM '
+            'filter, while device will use LVM devices file. The default '
+            'value is "filter".'),
+    ]),
+
     # Section: [sanlock]
     ('sanlock', [
 
