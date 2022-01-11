@@ -24,6 +24,7 @@ from __future__ import print_function
 import argparse
 import textwrap
 
+from vdsm.common.config import config
 from vdsm.storage import lvmconf
 from vdsm.storage import lvmdevices
 from vdsm.storage import lvmfilter
@@ -67,18 +68,27 @@ def main(*args):
     wanted_filter = lvmfilter.build_filter(mounts)
     wanted_wwids = lvmfilter.find_wwids(mounts)
 
-    with lvmconf.LVMConfig() as config:
-        current_filter = config.getlist("devices", "filter")
+    with lvmconf.LVMConfig() as lvm_config:
+        current_filter = lvm_config.getlist("devices", "filter")
 
     current_wwids = mpathconf.read_blacklist()
 
-    return config_with_filter(
-        args,
-        mounts,
-        current_filter,
-        wanted_filter,
-        current_wwids,
-        wanted_wwids)
+    config_method = config.get("lvm", "config_method").lower()
+
+    if config_method == "filter":
+        return config_with_filter(
+            args,
+            mounts,
+            current_filter,
+            wanted_filter,
+            current_wwids,
+            wanted_wwids)
+    elif config_method == "devices":
+        return config_with_devices(args, mounts, current_wwids, wanted_wwids)
+    else:
+        print("Unknown configuration method %s, use either 'filter' or "
+              "'devices'." % config_method)
+        return CANNOT_CONFIG
 
 
 def config_with_filter(
