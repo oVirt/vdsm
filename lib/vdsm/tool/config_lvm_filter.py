@@ -25,6 +25,7 @@ import argparse
 import textwrap
 
 from vdsm.storage import lvmconf
+from vdsm.storage import lvmdevices
 from vdsm.storage import lvmfilter
 from vdsm.storage import mpathconf
 
@@ -120,6 +121,29 @@ def config_with_filter(
     elif advice.action == lvmfilter.RECOMMEND:
         _print_filter_warning()
         return CANNOT_CONFIG
+
+
+def config_with_devices(args, mounts, current_wwids, wanted_wwids):
+
+    # Check if the lvm devices is already configured.
+    if lvmdevices.is_configured():
+        print("LVM devices already configured for vdsm")
+        return
+
+    # Find VGs of mounted devices.
+    vgs = {mnt.vg_name for mnt in mounts}
+
+    if not args.assume_yes:
+        if not common.confirm("Configure host? [yes,NO] "):
+            return NEEDS_CONFIG
+
+    # Before creating devices file we have to also configure multipath
+    # blacklist.
+    if current_wwids != wanted_wwids:
+        mpathconf.configure_blacklist(wanted_wwids)
+
+    # Enable lvm devices, configure devices file and remove lvm filter.
+    lvmdevices.configure(vgs)
 
 
 def parse_args(args):
