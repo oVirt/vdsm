@@ -98,14 +98,14 @@ def fake_sys_block_info(monkeypatch, tmpdir):
 
 @pytest.mark.parametrize("plat,expected", [
     ("rhel74", [
-        MountInfo("/dev/mapper/vg0-lv_home", "/home", FAKE_DEVICES),
-        MountInfo("/dev/mapper/vg0-lv_root", "/", FAKE_DEVICES),
-        MountInfo("/dev/mapper/vg0-lv_swap", "[SWAP]", FAKE_DEVICES),
+        MountInfo("/dev/mapper/vg0-lv_home", "/home", "vg0", FAKE_DEVICES),
+        MountInfo("/dev/mapper/vg0-lv_root", "/", "vg0", FAKE_DEVICES),
+        MountInfo("/dev/mapper/vg0-lv_swap", "[SWAP]", "vg0", FAKE_DEVICES),
     ]),
     ("fedora", [
-        MountInfo("/dev/mapper/fedora-home", "/home", FAKE_DEVICES),
-        MountInfo("/dev/mapper/fedora-root", "/", FAKE_DEVICES),
-        MountInfo("/dev/mapper/fedora-swap", "[SWAP]", FAKE_DEVICES),
+        MountInfo("/dev/mapper/fedora-home", "/home", "vg0", FAKE_DEVICES),
+        MountInfo("/dev/mapper/fedora-root", "/", "vg0", FAKE_DEVICES),
+        MountInfo("/dev/mapper/fedora-swap", "[SWAP]", "vg0", FAKE_DEVICES),
     ]),
 ])
 def test_find_lvm_mounts(monkeypatch, plat, expected):
@@ -119,9 +119,9 @@ def test_find_lvm_mounts(monkeypatch, plat, expected):
 
     def fake_vg_info(lv_path):
         if lv_path.endswith("-master"):
-            return "vg_name", ["tag", lvmfilter.OVIRT_VG_TAG, "another"]
+            return "vg0", ["tag", lvmfilter.OVIRT_VG_TAG, "another"]
         else:
-            return "vg_name", ["no,ovirt,tag"]
+            return "vg0", ["no,ovirt,tag"]
 
     monkeypatch.setattr(lvmfilter, "vg_info", fake_vg_info)
     monkeypatch.setattr(lvmfilter, "vg_devices", lambda x: FAKE_DEVICES)
@@ -135,12 +135,15 @@ def test_build_filter():
     mounts = [
         MountInfo("/dev/mapper/vg0-lv_home",
                   "/home",
+                  "vg0",
                   ["/dev/sda2", "/dev/sdb2"]),
         MountInfo("/dev/mapper/vg0-lv_root",
                   "/",
+                  "vg0",
                   ["/dev/sda2"]),
         MountInfo("/dev/mapper/vg0-lv_swap",
                   "[SWAP]",
+                  "vg0",
                   ["/dev/sda2"]),
     ]
     lvm_filter = lvmfilter.build_filter(mounts)
@@ -590,6 +593,7 @@ def test_find_wwids(monkeypatch, fake_sys_block_info):
     mounts = [
         MountInfo("/dev/mapper/vg0-lv_root",
                   "/",
+                  "vg0",
                   ["/dev/sda2"]),
     ]
 
