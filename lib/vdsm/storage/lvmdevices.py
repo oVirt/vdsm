@@ -37,6 +37,7 @@ import subprocess
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.storage import lvmconf
+from vdsm.storage import lvmfilter
 
 LVM = "/usr/sbin/lvm"
 _LVM_SYSTEM_DEVICES_PATH = "/etc/lvm/devices/system.devices"
@@ -56,6 +57,8 @@ def is_configured():
 def configure(vgs):
     """
     Configure lvm to use devices file and create initial system devices file.
+    When we succeed, remove lvm filter if there is any, as it's not needed
+    any more.
     """
     # Always configure devices file. File maybe be empty or not up to date.
     # On the other hand configuring correct devices file doesn't cause any
@@ -73,6 +76,10 @@ def configure(vgs):
     # Devices file is now configured and enabled, check if it's valid and
     # inform the user if it's not.
     _run_check()
+
+    # We are done with configuration of lvm devices file and lvm filter is not
+    # needed/used any more. Remove it, if there is any.
+    lvmfilter.remove_filter()
 
 
 def _enabled():
