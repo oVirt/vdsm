@@ -64,7 +64,8 @@ WWID_ATTRIBUTE = {
 log = logging.getLogger("lvmfilter")
 
 
-MountInfo = collections.namedtuple("MountInfo", "lv,mountpoint,devices")
+MountInfo = collections.namedtuple(
+    "MountInfo", "lv,mountpoint,vg_name,devices")
 FilterItem = collections.namedtuple("FilterItem", "action,path")
 Advice = collections.namedtuple("Advice", "action,filter,wwids")
 
@@ -172,7 +173,7 @@ def find_lvm_mounts():
             log.debug("Skipping oVirt logical volume %r", name)
             continue
         devices = vg_devices(vg_name)
-        mounts.append(MountInfo(name, mountpoint, devices))
+        mounts.append(MountInfo(name, mountpoint, vg_name, devices))
 
     # Keep sorted for easy testing.
     return sorted(mounts)
