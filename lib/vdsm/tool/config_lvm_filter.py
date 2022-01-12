@@ -64,40 +64,25 @@ def main(*args):
 
     print("Analyzing host...")
 
-    mounts = lvmfilter.find_lvm_mounts()
-    wanted_filter = lvmfilter.build_filter(mounts)
-    wanted_wwids = lvmfilter.find_wwids(mounts)
-
-    with lvmconf.LVMConfig() as lvm_config:
-        current_filter = lvm_config.getlist("devices", "filter")
-
-    current_wwids = mpathconf.read_blacklist()
-
     config_method = config.get("lvm", "config_method").lower()
 
     if config_method == "filter":
-        return config_with_filter(
-            args,
-            mounts,
-            current_filter,
-            wanted_filter,
-            current_wwids,
-            wanted_wwids)
+        return config_with_filter(args)
     elif config_method == "devices":
-        return config_with_devices(args, mounts, current_wwids, wanted_wwids)
+        return config_with_devices(args)
     else:
         print("Unknown configuration method %s, use either 'filter' or "
               "'devices'." % config_method)
         return CANNOT_CONFIG
 
 
-def config_with_filter(
-        args,
-        mounts,
-        current_filter,
-        wanted_filter,
-        current_wwids,
-        wanted_wwids):
+def config_with_filter(args):
+    mounts = lvmfilter.find_lvm_mounts()
+    wanted_wwids = lvmfilter.find_wwids(mounts)
+    current_wwids = mpathconf.read_blacklist()
+    wanted_filter = lvmfilter.build_filter(mounts)
+    with lvmconf.LVMConfig() as lvm_config:
+        current_filter = lvm_config.getlist("devices", "filter")
 
     advice = lvmfilter.analyze(
         current_filter,
@@ -133,12 +118,16 @@ def config_with_filter(
         return CANNOT_CONFIG
 
 
-def config_with_devices(args, mounts, current_wwids, wanted_wwids):
+def config_with_devices(args):
 
     # Check if the lvm devices is already configured.
     if lvmdevices.is_configured():
         print("LVM devices already configured for vdsm")
         return
+
+    mounts = lvmfilter.find_lvm_mounts()
+    wanted_wwids = lvmfilter.find_wwids(mounts)
+    current_wwids = mpathconf.read_blacklist()
 
     # Find VGs of mounted devices.
     vgs = {mnt.vg_name for mnt in mounts}
