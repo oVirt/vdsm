@@ -169,5 +169,6 @@ static/etc/vdsm/mom.d/                  @mz-pdm
 # Hooks
 vdsm_hooks/                             @tinez @mz-pdm @almusil
 
-# Documentation owners - maintainer needed
-#doc/ @myname
+# Documentation owners
+doc/                                    @nirs @mz-pdm @vjuranek @almusil @tinez @oVirt/ovirt-documentation
+README.md                               @nirs @mz-pdm @vjuranek @almusil @tinez @oVirt/ovirt-documentation
