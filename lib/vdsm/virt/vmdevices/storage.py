@@ -115,7 +115,7 @@ class Drive(core.Base):
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
                  'extSharedState', 'drv', 'sgio', 'GUID', 'diskReplicate',
                  '_diskType', 'hosts', 'protocol', 'auth', 'discard',
-                 'vm_custom', 'blockinfo', '_threshold_state', '_lock',
+                 'vm_custom', '_block_info', '_threshold_state', '_lock',
                  '_monitorable', 'guestName', '_iotune', 'RBD', 'managed',
                  'scratch_disk')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
@@ -250,7 +250,7 @@ class Drive(core.Base):
             kwargs.get('readonly', self.device == 'floppy'))
 
         # Used for chunked drives or drives replicating to chunked replica.
-        self.blockinfo = None
+        self._block_info = None
 
         self._setExtSharedState()
 
@@ -491,6 +491,17 @@ class Drive(core.Base):
             return self._threshold_state in (
                 BLOCK_THRESHOLD.UNSET,
                 BLOCK_THRESHOLD.EXCEEDED)
+
+    @property
+    def block_info(self):
+        return self._block_info
+
+    @block_info.setter
+    def block_info(self, value):
+        if value != self._block_info:
+            self.log.debug("Extension info for drive %s volume %s: %s",
+                           self.name, self.volumeID, value)
+            self._block_info = value
 
     @property
     def diskType(self):

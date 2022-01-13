@@ -1298,11 +1298,6 @@ class Vm(object):
                 replica["volumeID"])
             block_info = block_info._replace(physical=volsize.apparentsize)
 
-        if block_info != drive.blockinfo:
-            drive.blockinfo = block_info
-            self.log.debug("Extension info for drive %s volume %s: %s",
-                           drive.name, drive.volumeID, block_info)
-
         return block_info
 
     def get_block_stats(self):
@@ -1376,6 +1371,7 @@ class Vm(object):
 
         index = self._drive_volume_index(drive, drive.volumeID)
         block_info = self._amend_block_info(drive, block_stats[index])
+        drive.block_info = block_info
 
         if drive.threshold_state == BLOCK_THRESHOLD.UNSET:
             self.drive_monitor.set_threshold(
@@ -4610,6 +4606,7 @@ class Vm(object):
                 block_stats = self.drive_monitor.get_block_stats()
                 index = self._drive_volume_index(drive, drive.volumeID)
                 block_info = self._amend_block_info(drive, block_stats[index])
+                drive.block_info = block_info
                 self.extendDriveVolume(
                     drive,
                     drive.volumeID,
