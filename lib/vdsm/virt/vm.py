@@ -1305,7 +1305,7 @@ class Vm(object):
                 replica["poolID"],
                 replica["imageID"],
                 replica["volumeID"])
-            block_info._replace(physical=volsize.apparentsize)
+            block_info = block_info._replace(physical=volsize.apparentsize)
 
         if block_info != drive.blockinfo:
             drive.blockinfo = block_info
