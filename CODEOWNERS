@@ -2,7 +2,7 @@
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Default if nothing more specific matches
-*                                       @nirs @mz-pdm @vjuranek @almusil @tiez
+*                                       @nirs @mz-pdm @vjuranek @almusil @tinez
 
 # Storage
 lib/vdsm/storage/                       @nirs @vjuranek
