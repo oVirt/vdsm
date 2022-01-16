@@ -1,0 +1,10 @@
+name: OST
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  ost:
+    if: ${{ github.event.issue.pull_request && github.event.comment.body == '/ost'}}
+    uses: oVirt/ovirt-system-tests/.github/workflows/ost.yaml@master
+    with:
+      pr_url: ${{ github.event.issue.pull_request.url }}
