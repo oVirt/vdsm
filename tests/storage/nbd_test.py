@@ -221,12 +221,12 @@ def test_detect_zeroes_no_discard(nbd_env, format):
             c.flush()
             extents = c.extents(0, nbd_env.virtual_size)
 
-    image_info = qemuimg.info(vol.volumePath)
+    # For qcow2 format, in qemu-nd < 6.2 actual zeroes written to image.
+    # In 6.2 zeroes seem to be converted to zero clusters. Since the
+    # behavior is not consistent we don't have easy way to verify.
     if format == "raw":
+        image_info = qemuimg.info(vol.volumePath)
         assert image_info["actual-size"] == nbd_env.virtual_size
-    else:
-        # qcow2 metadata requires extra space for fully allocated image.
-        assert image_info["actual-size"] >= nbd_env.virtual_size
 
     log.debug("image extents: %s", extents)
 
