@@ -27,7 +27,7 @@ To setup the environment for unprivileged user:
 
     $ sudo chown $USER:$USER /run/vdsm
 
-    $ sudo env PYTHONPATH=lib static/usr/sbin/supervdsmd \
+    $ sudo env PYTHONPATH=lib static/libexec/vdsm/supervdsmd \
           --data-center /var/tmp/vdsm/data-center \
           --transient-disks /var/tmp/vdsm/transient-disks \
           --sockfile /run/vdsm/svdsm.sock \
