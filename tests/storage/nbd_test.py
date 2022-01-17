@@ -191,12 +191,12 @@ def test_detect_zeroes_discard(nbd_env, format):
                   for e in extents["base:allocation"]]
     assert base_alloc == [(nbd_env.virtual_size, True)]
 
-    # Entire image should be allocated. For qcow2 image, zero clusters are
-    # always allocated. For raw image, qemu-nbd does not report unallocated
-    # areas as holes.
-    alloc_depth = [(e.length, e.hole)
-                   for e in extents["qemu:allocation-depth"]]
-    assert alloc_depth == [(nbd_env.virtual_size, False)]
+    if format != "raw":
+        # Entire image should be allocated. For qcow2 image, zero
+        # clusters are always allocated.
+        alloc_depth = [(e.length, e.hole)
+                       for e in extents["qemu:allocation-depth"]]
+        assert alloc_depth == [(nbd_env.virtual_size, False)]
 
 
 @broken_on_ci
@@ -235,10 +235,11 @@ def test_detect_zeroes_no_discard(nbd_env, format):
                   for e in extents["base:allocation"]]
     assert base_alloc == [(nbd_env.virtual_size, True)]
 
-    # qemu-nbd allocated entire image in both cases.
-    alloc_depth = [(e.length, e.hole)
-                   for e in extents["qemu:allocation-depth"]]
-    assert alloc_depth == [(nbd_env.virtual_size, False)]
+    if format != "raw":
+        # qemu-nbd allocated entire image in both cases.
+        alloc_depth = [(e.length, e.hole)
+                       for e in extents["qemu:allocation-depth"]]
+        assert alloc_depth == [(nbd_env.virtual_size, False)]
 
 
 @broken_on_ci
@@ -273,10 +274,11 @@ def test_detect_zeroes_disabled(nbd_env, format):
                   for e in extents["base:allocation"]]
     assert base_alloc == [(nbd_env.virtual_size, False)]
 
-    # Entire image should be allocated.
-    alloc_depth = [(e.length, e.hole)
-                   for e in extents["qemu:allocation-depth"]]
-    assert alloc_depth == [(nbd_env.virtual_size, False)]
+    if format != "raw":
+        # Entire image should be allocated.
+        alloc_depth = [(e.length, e.hole)
+                       for e in extents["qemu:allocation-depth"]]
+        assert alloc_depth == [(nbd_env.virtual_size, False)]
 
 
 @broken_on_ci
@@ -404,7 +406,8 @@ def test_no_backing_chain(nbd_env):
     pytest.param(False, id="no_backing_chain"),
 ])
 def test_allocation_depth(nbd_env, format, backing_chain):
-    # Check that qemu-nbd exposes the "qemu:allocation-depth" meta context.
+    # Check that qemu-nbd exposes the "qemu:allocation-depth" meta
+    # context for qcow2 format.
     vol = create_volume(nbd_env, format, "sparse")
     config = {
         "sd_id": vol.sdUUID,
@@ -417,7 +420,7 @@ def test_allocation_depth(nbd_env, format, backing_chain):
         with nbd_client.open(urlparse(nbd_url)) as c:
             extents = c.extents(0, nbd_env.virtual_size)
             log.debug("extents: %s", extents)
-            assert "qemu:allocation-depth" in extents
+            assert ("qemu:allocation-depth" in extents) == (format != "raw")
 
 
 @broken_on_ci

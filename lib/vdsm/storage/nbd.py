@@ -446,14 +446,18 @@ def start_transient_service(server_id, config):
         # "nbd:unix:/path:exportname=name".
         "--export-name=",
 
-        # Enable detection of unallocated extents in qcow2 images. Required for
-        # downloading single volume with backing_chain=False. Always enable it
-        # so NBD client can inspect image allocation.
-        "--allocation-depth",
-
         "--cache=none",
         "--aio=native",
     ]
+
+    if config.format != "raw":
+        # Enable detection of unallocated extents in qcow2 images. Required for
+        # downloading single volume with backing_chain=False. Always enable it
+        # so NBD client can inspect image allocation.
+        # For raw images allocation depth is not useful, and also triggers a
+        # bug in qemu-nbd 6.2 breaking extents reporting in some cases.
+        # See https://bugzilla.redhat.com/2041480.
+        cmd.append("--allocation-depth")
 
     if config.readonly:
         cmd.append("--read-only")
