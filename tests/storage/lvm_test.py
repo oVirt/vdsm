@@ -71,17 +71,19 @@ def test_build_filter_with_user_devices(monkeypatch):
     assert expected_filter == lvm._buildFilter(("/dev/a", "/dev/c"))
 
 
-# TODO: replace the build command tests with cmd tests.
+def test_build_config(fake_devices):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+    lc.run_command(["lvs"])
+    cmd = fake_runner.calls[0]
 
-
-def test_build_config():
     expected = (
         'devices { '
         ' preferred_names=["^/dev/mapper/"] '
         ' ignore_suspended_devices=1 '
         ' write_cache_state=0 '
         ' disable_after_error_count=3 '
-        ' filter=["a|^/dev/a$|^/dev/b$|", "r|.*|"] '
+        ' filter=["a|^/dev/mapper/a$|^/dev/mapper/b$|", "r|.*|"] '
         ' hints="none" '
         ' obtain_device_list_from_udev=0 '
         '} '
@@ -95,9 +97,7 @@ def test_build_config():
         ' retain_days=0 '
         '}'
     )
-    assert expected == lvm._buildConfig(
-        dev_filter='["a|^/dev/a$|^/dev/b$|", "r|.*|"]',
-        use_lvmpolld="1")
+    assert cmd[3] == expected
 
 
 @pytest.fixture
@@ -122,8 +122,10 @@ def build_config(devices, use_lvmpolld="1"):
 def test_build_command_long_filter(fake_devices):
     # If the devices are not specified, include all devices reported by
     # multipath.
-    lc = lvm.LVMCache()
-    cmd = lc._addExtraCfg(["lvs", "-o", "+tags"])
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+    lc.run_command(["lvs", "-o", "+tags"])
+    cmd = fake_runner.calls[0]
 
     assert cmd == [
         constants.EXT_LVM,
@@ -137,13 +139,14 @@ def test_build_command_long_filter(fake_devices):
 def test_rebuild_filter_after_invaliation(fake_devices):
     # Check that adding a device and invalidating the filter rebuilds the
     # config with the correct filter.
-    lc = lvm.LVMCache()
-    lc._addExtraCfg(["lvs"])
-
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
     fake_devices.append("/dev/mapper/c")
     lc.invalidateFilter()
 
-    cmd = lc._addExtraCfg(["lvs"])
+    lc.run_command(["lvs"])
+    cmd = fake_runner.calls[0]
+
     assert cmd[3] == build_config(fake_devices)
 
 
