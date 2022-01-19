@@ -105,7 +105,7 @@ def attach_volume(vol_id, connection_info):
                     path=path,
                     attachment=attachment,
                     multipath_id=attachment.get("multipath_id"))
-                _invalidate_lvm_filter(attachment)
+                _invalidate_lvm_devices(attachment)
                 volume_type = connection_info["driver_volume_type"]
                 if volume_type not in ("rbd", "iscsi"):
                     raise se.UnsupportedOperation(
@@ -242,20 +242,20 @@ def _resolve_path(vol_id, connection_info, attachment):
         return attachment["path"]
 
 
-def _invalidate_lvm_filter(attachment):
+def _invalidate_lvm_devices(attachment):
     """
-    Invalidate lvm filter when attached disk has a multipath id.
+    Invalidate lvm devices when attached disk has a multipath id.
 
     Vdsm may discover a managed volume after we connected the device to the
     host on the storage side (FC), or after we attached the volume but before
-    we store the multipath id (iSCSI). In this case lvm filter may include the
+    we store the multipath id (iSCSI). In this case lvm devices may include the
     device, and the next lvm command will scan the device.
 
-    Invalidate the lvm filter to ensure that it does not contain the managed
+    Invalidate the lvm devices to ensure that it does not contain the managed
     volume.
     """
     if "multipath_id" in attachment:
-        lvm.invalidateFilter()
+        lvm.invalidate_devices()
 
 
 def _silent_remove(db, vol_id):
