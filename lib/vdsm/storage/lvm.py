@@ -421,9 +421,10 @@ class LVMCache(object):
 
         if devices:
             device_set = _prepare_device_set(devices)
-            dev_filter = _buildFilter(device_set)
         else:
-            dev_filter = _buildFilter(self._cached_devices())
+            device_set = self._cached_devices()
+
+        dev_filter = _buildFilter(device_set)
 
         conf = _buildConfig(
             dev_filter=dev_filter,
