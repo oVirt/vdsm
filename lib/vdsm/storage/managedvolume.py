@@ -244,10 +244,10 @@ def _resolve_path(vol_id, connection_info, attachment):
 
 def _invalidate_lvm_filter(attachment):
     """
-    Invalidate lvm filter when if attached disk has a multipath id.
+    Invalidate lvm filter when attached disk has a multipath id.
 
     Vdsm may discover a managed volume after we connected the device to the
-    host on the storage side (FC), or after we attached the volume but betore
+    host on the storage side (FC), or after we attached the volume but before
     we store the multipath id (iSCSI). In this case lvm filter may include the
     device, and the next lvm command will scan the device.
 
