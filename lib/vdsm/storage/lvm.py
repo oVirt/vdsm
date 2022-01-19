@@ -256,6 +256,8 @@ backup {
 USER_DEV_LIST = [d for d in config.get("irs", "lvm_dev_whitelist").split(",")
                  if d is not None]
 
+USE_DEVICES = config.get("lvm", "config_method").lower() == "devices"
+
 
 def _prepare_device_set(devs):
     devices = set(d.strip() for d in chain(devs, USER_DEV_LIST))
@@ -424,7 +426,12 @@ class LVMCache(object):
         else:
             device_set = self._cached_devices()
 
-        dev_filter = _buildFilter(device_set)
+        if USE_DEVICES:
+            if device_set:
+                newcmd += ["--devices", ",".join(device_set)]
+            dev_filter = ""
+        else:
+            dev_filter = _buildFilter(device_set)
 
         conf = _buildConfig(
             dev_filter=dev_filter,
