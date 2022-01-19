@@ -43,6 +43,37 @@ import testing
 from . marks import requires_root
 
 
+EXPECTED_CFG_DEVICES = (
+    'devices { '
+    ' preferred_names=["^/dev/mapper/"] '
+    ' ignore_suspended_devices=1 '
+    ' write_cache_state=0 '
+    ' disable_after_error_count=3   '
+    ' hints="none" '
+    ' obtain_device_list_from_udev=0 '
+    '} '
+    'global { '
+    ' prioritise_write_locks=1 '
+    ' wait_for_locks=1 '
+    ' use_lvmpolld=1 '
+    '} '
+    'backup { '
+    ' retain_min=50 '
+    ' retain_days=0 '
+    '}'
+)
+
+
+@pytest.fixture
+def use_filter(monkeypatch):
+    monkeypatch.setattr(lvm, "USE_DEVICES", False)
+
+
+@pytest.fixture
+def use_devices(monkeypatch):
+    monkeypatch.setattr(lvm, "USE_DEVICES", True)
+
+
 # TODO: replace the filter tests with cmd tests.
 
 
@@ -72,7 +103,7 @@ def test_build_filter_with_user_devices(monkeypatch):
     assert expected == actual
 
 
-def test_build_config(fake_devices):
+def test_build_config_with_filter(fake_devices, use_filter):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
     lc.run_command(["lvs"])
@@ -101,6 +132,15 @@ def test_build_config(fake_devices):
     assert cmd[3] == expected
 
 
+def test_build_config_with_devices(fake_devices, use_devices):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+    lc.run_command(["lvs"])
+    cmd = fake_runner.calls[0]
+
+    assert cmd[5] == EXPECTED_CFG_DEVICES
+
+
 @pytest.fixture
 def fake_devices(monkeypatch):
     devices = ["/dev/mapper/a", "/dev/mapper/b"]
@@ -120,7 +160,7 @@ def build_config(devices, use_lvmpolld="1"):
         use_lvmpolld=use_lvmpolld)
 
 
-def test_build_command_long_filter(fake_devices):
+def test_build_command_long_filter(fake_devices, use_filter):
     # If the devices are not specified, include all devices reported by
     # multipath.
     fake_runner = FakeRunner()
@@ -137,7 +177,7 @@ def test_build_command_long_filter(fake_devices):
     ]
 
 
-def test_rebuild_filter_after_invaliation(fake_devices):
+def test_rebuild_filter_after_invaliation(fake_devices, use_filter):
     # Check that adding a device and invalidating the filter rebuilds the
     # config with the correct filter.
     fake_runner = FakeRunner()
@@ -184,7 +224,7 @@ class FakeRunner(lvm.LVMRunner):
         return self.rc, self.out, self.err
 
 
-def test_cmd_success(fake_devices):
+def test_cmd_success(fake_devices, use_filter):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
     lc.run_command(["lvs", "-o", "+tags"])
@@ -199,6 +239,29 @@ def test_cmd_success(fake_devices):
         build_config(fake_devices),
         "-o", "+tags",
     ]
+
+
+@pytest.mark.parametrize("devices, expected", [
+    (("/dev/mapper/a",), "/dev/mapper/a"),
+    (("/dev/mapper/a", "/dev/mapper/b"), "/dev/mapper/a,/dev/mapper/b"),
+    ((r"\x20\x24\x7c\x22\x28",), r"\\x20\\x24\\x7c\\x22\\x28"),
+])
+def test_cmd_with_devices(use_devices, devices, expected):
+    fake_runner = FakeRunner()
+    lc = lvm.LVMCache(fake_runner)
+    lc.run_command(["lvs", "-o", "+tags"], devices=devices)
+
+    assert len(fake_runner.calls) == 1
+
+    cmd = fake_runner.calls[0]
+    expected_cmd = [
+        constants.EXT_LVM, "lvs",
+        "--devices", expected,
+        "--config", EXPECTED_CFG_DEVICES,
+        "-o", "+tags",
+    ]
+
+    assert cmd == expected_cmd
 
 
 def test_cmd_error(fake_devices):
@@ -671,7 +734,7 @@ def test_resizepv_failure_cache(monkeypatch, fake_devices):
     assert not lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
-def test_cmd_retry_filter_stale(fake_devices):
+def test_cmd_retry_filter_stale(fake_devices, use_filter):
     # Make a call to load the cache.
     initial_devices = fake_devices[:]
     fake_runner = FakeRunner()
@@ -752,7 +815,7 @@ def test_suppress_multiple_lvm_warnings(fake_devices):
     assert e.value.err == [u"  before", u"  after"]
 
 
-def test_pv_move_cmd(fake_devices, monkeypatch):
+def test_pv_move_cmd(fake_devices, monkeypatch, use_filter):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
 
