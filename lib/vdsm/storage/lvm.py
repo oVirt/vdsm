@@ -257,13 +257,18 @@ USER_DEV_LIST = [d for d in config.get("irs", "lvm_dev_whitelist").split(",")
                  if d is not None]
 
 
-def _buildFilter(devices):
-    devices = set(d.strip() for d in chain(devices, USER_DEV_LIST))
+def _prepare_device_set(devs):
+    devices = set(d.strip() for d in chain(devs, USER_DEV_LIST))
     devices.discard('')
+    if devices:
+        devices = sorted(d.replace(r'\x', r'\\x') for d in devices)
+    return devices
+
+
+def _buildFilter(devices):
     if devices:
         # Accept specified devices, reject everything else.
         # ["a|^/dev/1$|^/dev/2$|", "r|.*|"]
-        devices = sorted(d.replace(r'\x', r'\\x') for d in devices)
         pattern = "|".join("^{}$".format(d) for d in devices)
         accept = '"a|{}|", '.format(pattern)
     else:
@@ -406,7 +411,8 @@ class LVMCache(object):
     def _getCachedFilter(self):
         with self._filterLock:
             if self._filterStale:
-                self._filter = _buildFilter(multipath.getMPDevNamesIter())
+                device_set = _prepare_device_set(multipath.getMPDevNamesIter())
+                self._filter = _buildFilter(device_set)
                 self._filterStale = False
             return self._filter
 
@@ -414,7 +420,8 @@ class LVMCache(object):
         newcmd = [constants.EXT_LVM, cmd[0]]
 
         if devices:
-            dev_filter = _buildFilter(devices)
+            device_set = _prepare_device_set(devices)
+            dev_filter = _buildFilter(device_set)
         else:
             dev_filter = self._getCachedFilter()
 
