@@ -238,7 +238,7 @@ devices {
  ignore_suspended_devices=1
  write_cache_state=0
  disable_after_error_count=3
- filter=%(filter)s
+ %(filter)s
  hints="none"
  obtain_device_list_from_udev=0
 }
@@ -273,7 +273,10 @@ def _buildFilter(devices):
     return '[{}"r|.*|"]'.format(accept)
 
 
-def _buildConfig(dev_filter, use_lvmpolld="1"):
+def _buildConfig(dev_filter="", use_lvmpolld="1"):
+    if dev_filter:
+        dev_filter = f"filter={dev_filter}"
+
     conf = LVMCONF_TEMPLATE % {
         "filter": dev_filter,
         "use_lvmpolld": use_lvmpolld,
