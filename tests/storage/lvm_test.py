@@ -49,13 +49,13 @@ from . marks import requires_root
 def test_build_filter():
     devices = ("/dev/mapper/a", "/dev/mapper/b")
     expected = '["a|^/dev/mapper/a$|^/dev/mapper/b$|", "r|.*|"]'
-    assert expected == lvm._buildFilter(devices)
+    assert expected == lvm._buildFilter(lvm._prepare_device_set(devices))
 
 
 def test_build_filter_quoting():
     devices = (r"\x20\x24\x7c\x22\x28",)
     expected = r'["a|^\\x20\\x24\\x7c\\x22\\x28$|", "r|.*|"]'
-    assert expected == lvm._buildFilter(devices)
+    assert expected == lvm._buildFilter(lvm._prepare_device_set(devices))
 
 
 def test_build_filter_no_devices():
@@ -67,8 +67,9 @@ def test_build_filter_no_devices():
 
 def test_build_filter_with_user_devices(monkeypatch):
     monkeypatch.setattr(lvm, "USER_DEV_LIST", ("/dev/b",))
-    expected_filter = '["a|^/dev/a$|^/dev/b$|^/dev/c$|", "r|.*|"]'
-    assert expected_filter == lvm._buildFilter(("/dev/a", "/dev/c"))
+    expected = '["a|^/dev/a$|^/dev/b$|^/dev/c$|", "r|.*|"]'
+    actual = lvm._buildFilter(lvm._prepare_device_set(("/dev/a", "/dev/c")))
+    assert expected == actual
 
 
 def test_build_config(fake_devices):
@@ -115,7 +116,7 @@ def fake_devices(monkeypatch):
 
 def build_config(devices, use_lvmpolld="1"):
     return lvm._buildConfig(
-        dev_filter=lvm._buildFilter(devices),
+        dev_filter=lvm._buildFilter(lvm._prepare_device_set(devices)),
         use_lvmpolld=use_lvmpolld)
 
 
