@@ -1882,7 +1882,7 @@ class HSM(object):
 
         # After multipath.rescan, existing devices may disapper, and new
         # devices may appear, making lvm filter stale.
-        lvm.invalidateFilter()
+        lvm.invalidate_devices()
 
         return {'visible': visibility}
 

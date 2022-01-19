@@ -143,7 +143,7 @@ def test_rebuild_filter_after_invaliation(fake_devices):
     fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
     fake_devices.append("/dev/mapper/c")
-    lc.invalidateFilter()
+    lc.invalidate_devices()
 
     lc.run_command(["lvs"])
     cmd = fake_runner.calls[0]
