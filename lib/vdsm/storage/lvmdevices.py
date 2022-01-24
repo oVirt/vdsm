@@ -53,6 +53,24 @@ def is_configured():
     return _enabled() and _devices_file_exists()
 
 
+def configure(vgs):
+    """
+    Configure lvm to use devices file and create initial system devices file.
+    """
+    # Always configure devices file. File maybe be empty or not up to date.
+    # On the other hand configuring correct devices file doesn't cause any
+    # harm.
+    try:
+        _create_system_devices(vgs)
+    except cmdutils.Error:
+        log.warning("Failed to create system devices file.")
+        raise
+
+    # Devices file was created, enable devices/use_devicesfile in lvm config.
+    log.debug("Enabling lvm devices/use_devicesfile.")
+    _configure_devices_file(enable=True)
+
+
 def _enabled():
     """
     Return True if lvm is configured to use devices file. Devices file itself
