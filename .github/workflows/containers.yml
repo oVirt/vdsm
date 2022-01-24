@@ -25,7 +25,7 @@ jobs:
         working-directory: docker/network
         run: make ${{ matrix.container }}
       - name: Push to Quay.io
-        if: ${{ env.can_push == true }}
+        if: ${{ env.can_push == 'true' }}
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
         with:
@@ -35,5 +35,5 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME  }}
           password: ${{ secrets.QUAY_TOKEN }}
       - name: Print image url
-        if: ${{ env.can_push == true }}
+        if: ${{ env.can_push == 'true' }}
         run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
