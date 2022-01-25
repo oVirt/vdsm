@@ -102,7 +102,7 @@ def config_with_filter(
 
     # We need to configure LVM filter.
 
-    _print_summary(mounts, current_filter, wanted_filter, advice.wwids)
+    _print_summary(mounts, current_filter, wanted_filter, advice.wwids, None)
 
     if advice.action == lvmfilter.CONFIGURE:
 
@@ -133,6 +133,9 @@ def config_with_devices(args, mounts, current_wwids, wanted_wwids):
     # Find VGs of mounted devices.
     vgs = {mnt.vg_name for mnt in mounts}
 
+    # Print config summary for the user.
+    _print_summary(mounts, None, None, wanted_wwids, vgs)
+
     if not args.assume_yes:
         if not common.confirm("Configure host? [yes,NO] "):
             return NEEDS_CONFIG
@@ -144,6 +147,8 @@ def config_with_devices(args, mounts, current_wwids, wanted_wwids):
 
     # Enable lvm devices, configure devices file and remove lvm filter.
     lvmdevices.configure(vgs)
+
+    _print_success()
 
 
 def parse_args(args):
@@ -188,7 +193,7 @@ def _print_current_filter(current_filter):
 
 
 def _print_wanted_blacklist(wanted_wwids):
-    print("To use the recommended filter we need to add multipath")
+    print("To properly configure the host, we need to add multipath")
     print("blacklist in /etc/multipath/conf.d/vdsm_blacklist.conf:")
     print()
     print(textwrap.indent(mpathconf.format_blacklist(wanted_wwids), "  "))
@@ -218,9 +223,23 @@ It is recommended to reboot to verify the new configuration.
     """)
 
 
-def _print_summary(mounts, current_filter, wanted_filter, advice_wwids):
+def _print_devices_info(vgs):
+    print("""\
+Configuring LVM system.devices.
+Devices for following VGs will be imported:
+    """)
+    print(f" {', '.join(vgs)}")
+    print()
+
+
+def _print_summary(mounts, current_filter, wanted_filter, advice_wwids, vgs):
     _print_mounts(mounts)
-    _print_recommended_filter(wanted_filter)
+
+    if wanted_filter:
+        _print_recommended_filter(wanted_filter)
+
+    if vgs:
+        _print_devices_info(vgs)
 
     if current_filter:
         _print_current_filter(current_filter)
