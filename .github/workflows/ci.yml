@@ -45,7 +45,6 @@ jobs:
     - name: Build RPMs
       run: ./automation/rpm.sh
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: ovirt/upload-rpms-action@v2
       with:
-        name: artifacts
-        path: ${{ env.EXPORT_DIR }}
+        directory: ${{ env.EXPORT_DIR }}
