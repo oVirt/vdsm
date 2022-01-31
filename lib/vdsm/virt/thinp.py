@@ -19,10 +19,14 @@
 #
 
 import re
+import sys
 from collections import namedtuple
 
 import libvirt
 
+from vdsm.common import exception
+from vdsm.common import time
+from vdsm.virt import virdomain
 from vdsm.virt.vmdevices import lookup
 from vdsm.virt.vmdevices import storage
 
@@ -390,6 +394,183 @@ class VolumeMonitor(object):
             )
 
         return result
+
+    # Exteding volumes.
+
+    def extend_volume(self, vmDrive, volumeID, curSize, capacity,
+                      callback=None):
+        """
+        Extend drive volume and its replica volume during replication.
+
+        Must be called only when the drive or its replica are chunked.
+
+        If callback is specified, it will be invoked when the extend operation
+        completes. If extension fails, the callback is called with an exception
+        object. The callback signature is:
+
+            def callback(error=None):
+
+        """
+        newSize = vmDrive.getNextVolumeSize(curSize, capacity)
+
+        # If drive is replicated to a block device, we extend first the
+        # replica, and handle drive later in _after_replica_extension.
+
+        # Used to measure the total extend time for the drive and the replica.
+        # Note that the volume is extended after the replica is extended, so
+        # the total extend time includes the time to extend the replica.
+        clock = time.Clock()
+        clock.start("total")
+
+        if vmDrive.replicaChunked:
+            self._extend_replica_volume(
+                vmDrive, newSize, clock, callback=callback)
+        else:
+            self._extend_volume(
+                vmDrive, volumeID, newSize, clock, callback=callback)
+
+    def _extend_replica_volume(self, drive, newSize, clock, callback=None):
+        clock.start("extend-replica")
+        volInfo = {
+            'domainID': drive.diskReplicate['domainID'],
+            'imageID': drive.diskReplicate['imageID'],
+            'name': drive.name,
+            'newSize': newSize,
+            'poolID': drive.diskReplicate['poolID'],
+            'volumeID': drive.diskReplicate['volumeID'],
+            'clock': clock,
+            'callback': callback,
+        }
+        self._log.debug(
+            "Requesting an extension for the volume replication: %s",
+            volInfo)
+        self._vm.cif.irs.sendExtendMsg(
+            drive.poolID, volInfo, newSize, self._after_replica_extension)
+
+    def _after_replica_extension(self, volInfo):
+        clock = volInfo["clock"]
+        clock.stop("extend-replica")
+
+        with clock.run("refresh-replica"):
+            self._vm.refresh_volume(volInfo)
+
+        self._verify_volume_extension(volInfo)
+        vmDrive = lookup.drive_by_name(
+            self._vm.getDiskDevices()[:], volInfo['name'])
+        if not vmDrive.chunked:
+            # This was a replica only extension, we are done.
+            clock.stop("total")
+            self._log.info(
+                "Extend replica %s completed %s", volInfo["volumeID"], clock)
+            return
+
+        self._log.debug(
+            "Requesting extension for the original drive: %s (domainID: %s, "
+            "volumeID: %s)",
+            vmDrive.name, vmDrive.domainID, vmDrive.volumeID)
+        self._extend_volume(
+            vmDrive, vmDrive.volumeID, volInfo['newSize'], clock,
+            callback=volInfo["callback"])
+
+    def _extend_volume(self, vmDrive, volumeID, newSize, clock,
+                       callback=None):
+        clock.start("extend-volume")
+        volInfo = {
+            'domainID': vmDrive.domainID,
+            'imageID': vmDrive.imageID,
+            'internal': vmDrive.volumeID != volumeID,
+            'name': vmDrive.name,
+            'newSize': newSize,
+            'poolID': vmDrive.poolID,
+            'volumeID': volumeID,
+            'clock': clock,
+            'callback': callback,
+        }
+        self._log.debug("Requesting an extension for the volume: %s", volInfo)
+        self._vm.cif.irs.sendExtendMsg(
+            vmDrive.poolID, volInfo, newSize, self._after_volume_extension)
+
+    def _after_volume_extension(self, volInfo):
+        callback = None
+        error = None
+        try:
+            callback = volInfo["callback"]
+            clock = volInfo["clock"]
+            clock.stop("extend-volume")
+
+            if self._vm.should_refresh_destination_volume():
+                with clock.run("refresh-destination-volume"):
+                    self._vm.refresh_destination_volume(volInfo)
+
+            with clock.run("refresh-volume"):
+                self._vm.refresh_volume(volInfo)
+
+            # Check if the extension succeeded.  On failure an exception is
+            # raised.
+            # TODO: Report failure to the engine.
+            volSize = self._verify_volume_extension(volInfo)
+
+            # This was a volume extension or replica and volume extension.
+            clock.stop("total")
+            self._log.info(
+                "Extend volume %s completed %s", volInfo["volumeID"], clock)
+
+            # Only update apparentsize and truesize if we've resized the leaf
+            if not volInfo['internal']:
+                drive = lookup.drive_by_name(
+                    self._vm.getDiskDevices()[:], volInfo['name'])
+                self.update_drive_volume_size(drive, volSize)
+
+            self._vm.extend_volume_completed()
+
+        except exception.DiskRefreshNotSupported as e:
+            self._log.warning(
+                "Migration destination host does not support "
+                "extending disk during migration, disabling disk "
+                "extension during migration")
+            self.disable()
+            error = e
+        except virdomain.NotConnectedError as e:
+            self._log.debug("VM not running, aborting extend completion")
+            error = e
+        finally:
+            if callback:
+                callback(error=sys.exc_info()[1] or error)
+
+    def _verify_volume_extension(self, volInfo):
+        volSize = self._vm.getVolumeSize(
+            volInfo['domainID'],
+            volInfo['poolID'],
+            volInfo['imageID'],
+            volInfo['volumeID'])
+
+        self._log.debug(
+            "Verifying extension for volume %s, requested size %s, current "
+            "size %s",
+            volInfo['volumeID'], volInfo['newSize'], volSize.apparentsize)
+
+        if volSize.apparentsize < volInfo['newSize']:
+            raise RuntimeError(
+                "Volume extension failed for %s (domainID: %s, volumeID: %s)" %
+                (volInfo['name'], volInfo['domainID'], volInfo['volumeID']))
+
+        return volSize
+
+    def update_drive_volume_size(self, drive, volsize):
+        """
+        Updates drive's apparentsize and truesize, and set a new block
+        threshold based on the new size.
+
+        Arguments:
+            drive (virt.vmdevices.storage.Drive): The drive object using the
+                resized volume.
+            volsize (virt.vm.VolumeSize): new volume size tuple
+        """
+        drive.apparentsize = volsize.apparentsize
+        drive.truesize = volsize.truesize
+
+        index = self._vm.query_drive_volume_index(drive, drive.volumeID)
+        self.set_threshold(drive, volsize.apparentsize, index=index)
 
 
 _TARGET_RE = re.compile(r"([hvs]d[a-z]+)\[(\d+)\]")
