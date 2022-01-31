@@ -118,7 +118,6 @@ from vdsm.virt.vmdevices import storagexml
 from vdsm.virt.vmdevices.common import get_metadata
 from vdsm.virt.vmdevices.common import identify_from_xml_elem
 from vdsm.virt.vmdevices.storage import DISK_TYPE
-from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
 from vdsm.virt.vmdevices.storagexml import change_disk
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket
@@ -1324,79 +1323,7 @@ class Vm(object):
         """
         Return True if at least one volume is being extended, False otherwise.
         """
-        drives = self.volume_monitor.monitored_volumes()
-        if not drives:
-            return False
-
-        try:
-            block_stats = self.volume_monitor.get_block_stats()
-        except libvirt.libvirtError as e:
-            self.log.error("Unable to get block stats: %s", e)
-            return False
-
-        extended = False
-        for drive in drives:
-            try:
-                if self.extend_drive_if_needed(drive, block_stats):
-                    extended = True
-            except thinp.ImprobableResizeRequestError:
-                break
-
-        return extended
-
-    def extend_drive_if_needed(self, drive, block_stats):
-        """
-        Check if a drive should be extended, and start extension flow if
-        needed.
-
-        When libvirt BLOCK_THRESHOLD event handling is enabled (
-        irs.enable_block_threshold_event == True), this method acts according
-        the drive.threshold_state:
-
-        - UNSET: the drive needs to register for a new block threshold,
-                 so try to set it. We set the threshold both for chunked
-                 drives and non-chunked drives replicating to chunked
-                 drives.
-        - EXCEEDED: the drive needs extension, try to extend it.
-        - SET: this method should never receive a drive in this state,
-               emit warning and exit.
-
-        Return True if started an extension flow, False otherwise.
-        """
-        if drive.threshold_state == BLOCK_THRESHOLD.SET:
-            self.log.warning(
-                "Unexpected state for drive %s: threshold_state SET",
-                drive.name)
-            return False
-
-        index = self.query_drive_volume_index(drive, drive.volumeID)
-        block_info = self.amend_block_info(drive, block_stats[index])
-        drive.block_info = block_info
-
-        if drive.threshold_state == BLOCK_THRESHOLD.UNSET:
-            self.volume_monitor.set_threshold(
-                drive, block_info.physical, index=index)
-
-        if not self.volume_monitor.should_extend_volume(
-                drive, drive.volumeID, block_info):
-            return False
-
-        # TODO: if the threshold is wrongly set below the current allocation,
-        # for example because of delays in handling the event, or if the VM
-        # writes too fast, we will never receive an event.
-        # We need to set the drive threshold to EXCEEDED both if we receive
-        # one event or if we found that the threshold was exceeded during
-        # the VolumeMonitor.should_extend_volume check.
-        self.volume_monitor.update_threshold_state_exceeded(drive)
-
-        self.log.info(
-            "Requesting extension for volume %s on domain %s block_info %s "
-            "threshold_state %s",
-            drive.volumeID, drive.domainID, block_info, drive.threshold_state)
-
-        self.extendDriveVolume(
-            drive, drive.volumeID, block_info.physical, block_info.capacity)
-        return True
+        return self.volume_monitor.monitor_volumes()
 
     def extendDriveVolume(self, vmDrive, volumeID, curSize, capacity,
                           callback=None):
