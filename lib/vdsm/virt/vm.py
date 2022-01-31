@@ -1338,6 +1338,8 @@ class Vm(object):
 
             def callback(error=None):
 
+        If the extend completes successfully, extend_volume_completed() will be
+        called.
         """
         newSize = vmDrive.getNextVolumeSize(curSize, capacity)
 
@@ -1452,7 +1454,7 @@ class Vm(object):
                     self.getDiskDevices()[:], volInfo['name'])
                 self._update_drive_volume_size(drive, volSize)
 
-            self._resume_if_needed()
+            self.extend_volume_completed()
 
         except exception.DiskRefreshNotSupported as e:
             self.log.warning(
@@ -1596,7 +1598,14 @@ class Vm(object):
         self.volume_monitor.set_threshold(
             drive, volsize.apparentsize, index=index)
 
-    def _resume_if_needed(self):
+    def extend_volume_completed(self):
+        """
+        Called when extending a thin volume completed successfully.
+
+        If a guest writes data too fast, the VM may pause with ENOSPC before
+        the volume extension is completed. If the VM is paused, we try to
+        resume it in case it was paused during the volume extension.
+        """
         if not self._can_resume():
             self._resume_postponed = True
             return
