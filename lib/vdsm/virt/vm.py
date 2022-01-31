@@ -1485,15 +1485,6 @@ class Vm(object):
         return self._migrationSourceThread.needs_disk_refresh()
 
     def refresh_destination_volume(self, volInfo):
-        dest_vol_size = self._refresh_migrating_volume(volInfo)
-        if dest_vol_size.apparentsize < volInfo['newSize']:
-            reason = ("Failed to refresh drive on the destination "
-                      "host actual size {} < expected size {}").format(
-                dest_vol_size.apparentsize,
-                volInfo["newSize"])
-            raise exception.CannotRefreshDisk(reason=reason)
-
-    def _refresh_migrating_volume(self, volInfo):
         """
         If the disk is extended during migration, the change is not visible on
         the destination host and the disk drive has to be refreshed also there,
@@ -1505,16 +1496,24 @@ class Vm(object):
             "Volume %s (domainID: %s, volumeID: %s) was extended during "
             "migration, refreshing it on destination host.",
             volInfo["name"], volInfo["domainID"], volInfo["volumeID"])
+
         # volInfo can contain fields which are not serializable, so we have to
         # create a dict which conforms with API specification.
-        vol_pdiv = {
+        vol = {
             "device": hwclass.DISK,
             "poolID": volInfo["poolID"],
             "domainID": volInfo["domainID"],
             "imageID": volInfo["imageID"],
             "volumeID": volInfo["volumeID"],
         }
-        return self._migrationSourceThread.refresh_destination_disk(vol_pdiv)
+
+        vol_size = self._migrationSourceThread.refresh_destination_disk(vol)
+
+        if vol_size.apparentsize < volInfo['newSize']:
+            raise exception.CannotRefreshDisk(
+                "Failed to refresh drive on the destination host: actual "
+                "size {} < expected size {}"
+                .format(vol_size.apparentsize, volInfo["newSize"]))
 
     def refresh_disk(self, vol_pdiv):
         """
