@@ -645,7 +645,7 @@ class FakeDomain(object):
     def add_drive(self, drive, block_info):
         """
         Add minimal xml to make the drive work with
-        Vm._drive_get_actual_volume_chain().
+        Vm.query_drive_volume_chain().
 
             <disk type='block'>
                 <source dev='/virtio/1' index='2'/>

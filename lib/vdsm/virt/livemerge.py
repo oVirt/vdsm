@@ -371,7 +371,7 @@ class DriveMerger:
         self._persist_jobs()
 
         # Check that libvirt exposes full volume chain information
-        actual_chain = self._vm.drive_get_actual_volume_chain(drive)
+        actual_chain = self._vm.query_drive_volume_chain(drive)
         if actual_chain is None:
             self._untrack_job(job.id)
             raise exception.MergeFailed(
@@ -986,7 +986,7 @@ class CleanupThread(object):
             # is ongoing.  If we are still in this loop when the VM is powered
             # off, the merge will be resolved manually by engine using the
             # reconcileVolumeChain verb.
-            actual_chain = self.vm.drive_get_actual_volume_chain(self.drive)
+            actual_chain = self.vm.query_drive_volume_chain(self.drive)
             if actual_chain is None:
                 raise RuntimeError(
                     "Cannot get actual volume chain for drive {} alias {}"
