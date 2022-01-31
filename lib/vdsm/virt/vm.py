@@ -1430,7 +1430,7 @@ class Vm(object):
             self._extend_drive_volume(
                 vmDrive, volumeID, newSize, clock, callback=callback)
 
-    def refresh_drive_volume(self, volInfo):
+    def refresh_volume(self, volInfo):
         self.log.debug("Refreshing drive volume for %s (domainID: %s, "
                        "volumeID: %s)", volInfo['name'], volInfo['domainID'],
                        volInfo['volumeID'])
@@ -1454,7 +1454,7 @@ class Vm(object):
             self.log.info(
                 "Refreshing volume for drive %s (domainID: %s, volumeID: %s)",
                 drive["name"], drive["domainID"], drive["volumeID"])
-            self.refresh_drive_volume(drive)
+            self.refresh_volume(drive)
             vol_size = self.getVolumeSize(
                 drive.domainID,
                 drive.poolID,
@@ -1523,7 +1523,7 @@ class Vm(object):
         clock.stop("extend-replica")
 
         with clock.run("refresh-replica"):
-            self.refresh_drive_volume(volInfo)
+            self.refresh_volume(volInfo)
 
         self._verify_volume_extension(volInfo)
         vmDrive = lookup.drive_by_name(
@@ -1618,7 +1618,7 @@ class Vm(object):
                     self._refresh_destination_volume(volInfo)
 
             with clock.run("refresh-volume"):
-                self.refresh_drive_volume(volInfo)
+                self.refresh_volume(volInfo)
 
             # Check if the extension succeeded.  On failure an exception is
             # raised.
@@ -4827,7 +4827,7 @@ class Vm(object):
     def _diskSizeExtendRaw(self, drive, newSizeBytes):
         # Picking up the drive size extension.
         if isVdsmImage(drive):
-            self.refresh_drive_volume({
+            self.refresh_volume({
                 'domainID': drive.domainID, 'poolID': drive.poolID,
                 'imageID': drive.imageID, 'volumeID': drive.volumeID,
                 'name': drive.name,
