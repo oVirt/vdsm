@@ -1369,7 +1369,7 @@ class Vm(object):
                 drive.name)
             return False
 
-        index = self._drive_volume_index(drive, drive.volumeID)
+        index = self.query_drive_volume_index(drive, drive.volumeID)
         block_info = self._amend_block_info(drive, block_stats[index])
         drive.block_info = block_info
 
@@ -1665,7 +1665,7 @@ class Vm(object):
         drive.apparentsize = volsize.apparentsize
         drive.truesize = volsize.truesize
 
-        index = self._drive_volume_index(drive, drive.volumeID)
+        index = self.query_drive_volume_index(drive, drive.volumeID)
         self.volume_monitor.set_threshold(
             drive, volsize.apparentsize, index=index)
 
@@ -4435,12 +4435,12 @@ class Vm(object):
 
     def clear_drive_threshold(self, drive, old_volume_id):
         try:
-            index = self._drive_volume_index(drive, old_volume_id)
+            index = self.query_drive_volume_index(drive, old_volume_id)
             self.volume_monitor.clear_threshold(drive, index=index)
         except Exception as e:
             self.log.error("Unable to clear drive threshold: %s", e)
 
-    def _drive_volume_index(self, drive, vol_id):
+    def query_drive_volume_index(self, drive, vol_id):
         """
         Return the libvirt node index by volume id.
         """
@@ -4604,7 +4604,7 @@ class Vm(object):
         if drive.chunked or drive.replicaChunked:
             try:
                 block_stats = self.volume_monitor.get_block_stats()
-                index = self._drive_volume_index(drive, drive.volumeID)
+                index = self.query_drive_volume_index(drive, drive.volumeID)
                 block_info = self._amend_block_info(drive, block_stats[index])
                 drive.block_info = block_info
                 self.extendDriveVolume(
