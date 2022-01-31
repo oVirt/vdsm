@@ -77,7 +77,7 @@ class FakeDrive:
         self.volumeChain = []
 
 
-class FakeDriveMonitor:
+class FakeVolumeMonitor:
 
     def __init__(self):
         # driver_monitor is always enabled when calling cleanup.
@@ -93,7 +93,7 @@ class FakeDriveMonitor:
 class FakeVM:
 
     def __init__(self):
-        self.drive_monitor = FakeDriveMonitor()
+        self.volume_monitor = FakeVolumeMonitor()
         self.log = logging.getLogger()
 
     @recorded
@@ -125,7 +125,7 @@ def test_cleanup_initial():
     t = FakeCleanupThread(vm=v, job=job, drive=FakeDrive())
 
     assert t.state == CleanupThread.TRYING
-    assert v.drive_monitor.enabled
+    assert v.volume_monitor.enabled
 
 
 def test_cleanup_done():
@@ -137,7 +137,7 @@ def test_cleanup_done():
     assert t.wait(TIMEOUT)
 
     assert t.state == CleanupThread.DONE
-    assert v.drive_monitor.enabled
+    assert v.volume_monitor.enabled
     assert v.__calls__ == [('sync_volume_chain', (drive,), {})]
     assert t.__calls__ == [
         ('update_base_size', (), {}),
@@ -164,7 +164,7 @@ def test_cleanup_retry(monkeypatch, error):
     assert t.wait(TIMEOUT)
 
     assert t.state == CleanupThread.FAILED
-    assert v.drive_monitor.enabled
+    assert v.volume_monitor.enabled
     assert t.__calls__ == [('update_base_size', (), {})]
 
 
@@ -216,7 +216,7 @@ class RunningVM(Vm):
         self.conf["xml"] = config.xmls["00-before.xml"]
 
         self._external = False  # Used when syncing metadata.
-        self.drive_monitor = FakeDriveMonitor()
+        self.volume_monitor = FakeVolumeMonitor()
         self._confLock = threading.Lock()
         self._drive_merger = DriveMerger(self)
         self._migrationSourceThread = migration.SourceThread(self)
@@ -587,7 +587,7 @@ def test_active_merge(monkeypatch):
     # Drive volume chain is updated and monitoring is back to enabled.
     drive = vm.getDiskDevices()[0]
     assert drive.volumeChain == expected_volumes_chain
-    assert vm.drive_monitor.enabled
+    assert vm.volume_monitor.enabled
 
 
 def test_active_merge_pivot_failure(monkeypatch):
@@ -739,8 +739,8 @@ def test_active_merge_storage_unavailable(monkeypatch):
 
         assert parse_jobs(vm)[job_id]['state'] == Job.CLEANUP
 
-        # Verify drive monitor is enabled after the failure.
-        assert vm.drive_monitor.enabled
+        # Verify volume monitor is enabled after the failure.
+        assert vm.volume_monitor.enabled
 
     # Verify cleanup thread switched to FAILED.
     ct = vm._drive_merger._cleanup_threads.get(job_id)
@@ -899,7 +899,7 @@ def test_internal_merge():
 
     drive = vm.getDiskDevices()[0]
     assert drive.volumeChain == expected_volumes_chain
-    assert vm.drive_monitor.enabled
+    assert vm.volume_monitor.enabled
 
 
 def test_extend_timeout_recover(fake_time):
@@ -1218,7 +1218,7 @@ def test_active_merge_canceled_during_commit():
     drive = vm.getDiskDevices()[0]
     assert drive.volumeID == config.values["drive"]["volumeID"]
     assert drive.volumeChain == expected_volumes_chain
-    assert vm.drive_monitor.enabled
+    assert vm.volume_monitor.enabled
 
 
 def test_active_merge_canceled_during_cleanup(monkeypatch):

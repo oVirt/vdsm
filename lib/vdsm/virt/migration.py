@@ -514,9 +514,8 @@ class SourceThread(object):
             self._recover(str(e))
             self.log.exception("Failed to migrate")
         finally:
-            # Enable drive monitor as it can be disabled during
-            # migration.
-            self._vm.drive_monitor.enable()
+            # Enable the volume monitor as it can be disabled during migration.
+            self._vm.volume_monitor.enable()
 
     def _startUnderlyingMigration(self, startTime, machineParams):
         if self.hibernating:

@@ -349,7 +349,7 @@ class UpdateVolumes(_RunnableOnVm):
     def required(self):
         return (super(UpdateVolumes, self).required and
                 # Avoid queries from storage during recovery process
-                self._vm.drive_monitor.enabled())
+                self._vm.volume_monitor.enabled())
 
     def _execute(self):
         for drive in self._vm.getDiskDevices():
@@ -374,15 +374,15 @@ class BlockjobMonitor(_RunnableOnVm):
         self._vm.updateVmJobs()
 
 
-class DriveWatermarkMonitor(_RunnableOnVm):
+class VolumeWatermarkMonitor(_RunnableOnVm):
 
     @property
     def required(self):
-        return (super(DriveWatermarkMonitor, self).required and
-                self._vm.drive_monitor.monitoring_needed())
+        return (super(VolumeWatermarkMonitor, self).required and
+                self._vm.volume_monitor.monitoring_needed())
 
     def _execute(self):
-        self._vm.monitor_drives()
+        self._vm.monitor_volumes()
 
 
 class _ExternalDataMonitor(_RunnableOnVm):
@@ -451,7 +451,7 @@ def _create(cif, scheduler):
         # from QEMU. It accesses storage and/or QEMU monitor, so can block,
         # thus we need dispatching.
         per_vm_operation(
-            DriveWatermarkMonitor,
+            VolumeWatermarkMonitor,
             config.getint('vars', 'vm_watermark_interval')),
 
         per_vm_operation(

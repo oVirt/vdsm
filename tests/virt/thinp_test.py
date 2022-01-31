@@ -21,7 +21,7 @@
 
 import logging
 
-from vdsm.virt import drivemonitor
+from vdsm.virt import thinp
 
 from vdsm.common.units import MiB, GiB
 from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE, BLOCK_THRESHOLD
@@ -32,27 +32,27 @@ import pytest
 @pytest.mark.parametrize("enabled", [True, False])
 def test_enable_on_create(enabled):
     vm = FakeVM()
-    mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=enabled)
+    mon = thinp.VolumeMonitor(vm, vm.log, enabled=enabled)
     assert mon.enabled() == enabled
 
 
 def test_enable_runtime():
     vm = FakeVM()
-    mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=False)
+    mon = thinp.VolumeMonitor(vm, vm.log, enabled=False)
     mon.enable()
     assert mon.enabled() is True
 
 
 def test_disable_runtime():
     vm = FakeVM()
-    mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=True)
+    mon = thinp.VolumeMonitor(vm, vm.log, enabled=True)
     mon.disable()
     assert mon.enabled() is False
 
 
 def test_set_threshold_drive_name():
     vm = FakeVM()
-    mon = drivemonitor.DriveMonitor(vm, vm.log)
+    mon = thinp.VolumeMonitor(vm, vm.log)
     vda = make_drive(vm.log, index=0, iface='virtio')
     vm.drives.append(vda)
 
@@ -66,7 +66,7 @@ def test_set_threshold_drive_name():
 
 def test_set_threshold_indexed_name():
     vm = FakeVM()
-    mon = drivemonitor.DriveMonitor(vm, vm.log)
+    mon = thinp.VolumeMonitor(vm, vm.log)
     vda = make_drive(vm.log, index=0, iface='virtio')
     vm.drives.append(vda)
 
@@ -81,10 +81,10 @@ def test_set_threshold_indexed_name():
 def test_set_threshold_drive_too_small():
     # We seen the storage subsystem creating drive too small,
     # less than the minimum supported size, 1GiB.
-    # While this is a storage issue, the drive monitor should
+    # While this is a storage issue, the volume monitor should
     # be fixed no never set negative thresholds.
     vm = FakeVM()
-    mon = drivemonitor.DriveMonitor(vm, vm.log)
+    mon = thinp.VolumeMonitor(vm, vm.log)
     vda = make_drive(vm.log, index=0, iface='virtio')
     vm.drives.append(vda)
 
@@ -98,7 +98,7 @@ def test_set_threshold_drive_too_small():
 
 def test_clear_with_index_equal_none():
     vm = FakeVM()
-    mon = drivemonitor.DriveMonitor(vm, vm.log)
+    mon = thinp.VolumeMonitor(vm, vm.log)
     vda = make_drive(vm.log, index=0, iface='virtio')
 
     mon.clear_threshold(vda)
@@ -107,7 +107,7 @@ def test_clear_with_index_equal_none():
 
 def test_clear_with_index():
     vm = FakeVM()
-    mon = drivemonitor.DriveMonitor(vm, vm.log)
+    mon = thinp.VolumeMonitor(vm, vm.log)
     # one drive (virtio, 0)
     vda = make_drive(vm.log, index=0, iface='virtio')
 
@@ -118,7 +118,7 @@ def test_clear_with_index():
 
 def test_on_block_threshold_drive_name_ignored():
     vm = FakeVM()
-    mon = drivemonitor.DriveMonitor(vm, vm.log)
+    mon = thinp.VolumeMonitor(vm, vm.log)
     vda = make_drive(vm.log, index=0, iface='virtio')
     vm.drives.append(vda)
 
@@ -128,7 +128,7 @@ def test_on_block_threshold_drive_name_ignored():
 
 def test_on_block_threshold_indexed_name_handled():
     vm = FakeVM()
-    mon = drivemonitor.DriveMonitor(vm, vm.log)
+    mon = thinp.VolumeMonitor(vm, vm.log)
     vda = make_drive(vm.log, index=0, iface='virtio')
     vm.drives.append(vda)
 
@@ -138,7 +138,7 @@ def test_on_block_threshold_indexed_name_handled():
 
 def test_on_block_threshold_unknown_drive():
     vm = FakeVM()
-    mon = drivemonitor.DriveMonitor(vm, vm.log)
+    mon = thinp.VolumeMonitor(vm, vm.log)
     vda = make_drive(vm.log, index=0, iface='virtio')
     vm.drives.append(vda)
 
@@ -479,9 +479,9 @@ def test_on_block_threshold_unknown_drive():
         id="both_drives_disabled",
     ),
 ])
-def test_monitored_drives(drives, monitored):
+def test_monitored_volumes(drives, monitored):
     vm = FakeVM()
-    mon = drivemonitor.DriveMonitor(vm, vm.log)
+    mon = thinp.VolumeMonitor(vm, vm.log)
     for conf in drives:
         drive = make_drive(vm.log, **conf)
         drive.threshold_state = conf.get('threshold_state',
@@ -489,7 +489,7 @@ def test_monitored_drives(drives, monitored):
         drive.monitorable = conf.get('monitorable', True)
         vm.drives.append(drive)
 
-    found = [drv.name for drv in mon.monitored_drives()]
+    found = [drv.name for drv in mon.monitored_volumes()]
     assert found == monitored
 
 
@@ -552,11 +552,11 @@ def test_get_block_stats():
         "block.3.threshold": 536870912
     }
 
-    mon = drivemonitor.DriveMonitor(vm, vm.log)
+    mon = thinp.VolumeMonitor(vm, vm.log)
     block_stats = mon.get_block_stats()
 
     assert block_stats == {
-        2: drivemonitor.BlockInfo(
+        2: thinp.BlockInfo(
             index=2,
             name='sda',
             path='/rhev/.../44d498a1-54a5-4371-8eda-02d839d7c840',
@@ -565,7 +565,7 @@ def test_get_block_stats():
             physical=7113539584,
             threshold=6576668672,
         ),
-        4: drivemonitor.BlockInfo(
+        4: thinp.BlockInfo(
             index=4,
             name='sda',
             path='/rhev/.../9d63f782-7467-4243-af1e-5c1f8b49c111',
@@ -574,7 +574,7 @@ def test_get_block_stats():
             physical=3087007744,
             threshold=0,
         ),
-        7: drivemonitor.BlockInfo(
+        7: thinp.BlockInfo(
             index=7,
             name='sdd',
             path='/rhev/.../cf6552e0-1c88-4b2a-aec6-0d2f26c2aaea',

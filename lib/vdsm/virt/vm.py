@@ -89,7 +89,6 @@ from vdsm.virt import backup
 from vdsm.virt import blockjob
 from vdsm.virt import cpumanagement
 from vdsm.virt import domxml_preprocess
-from vdsm.virt import drivemonitor
 from vdsm.virt import errors
 from vdsm.virt import guestagent
 from vdsm.virt import libvirtxml
@@ -97,6 +96,7 @@ from vdsm.virt import metadata
 from vdsm.virt import migration
 from vdsm.virt import sampling
 from vdsm.virt import saslpasswd2
+from vdsm.virt import thinp
 from vdsm.virt import vmchannels
 from vdsm.virt import vmexitreason
 from vdsm.virt import virdomain
@@ -438,7 +438,7 @@ class Vm(object):
         self._devices = vmdevices.common.empty_dev_map()
         self._hotunplugged_devices = {}  # { alias: device_object }
 
-        self.drive_monitor = drivemonitor.DriveMonitor(
+        self.volume_monitor = thinp.VolumeMonitor(
             self, self.log, enabled=False)
         self._connection = libvirtconnection.get(cif)
         if (recover and
@@ -1128,7 +1128,7 @@ class Vm(object):
                     drive.update(modified)
         else:
             # Now we got all the resources we needed
-            self.drive_monitor.enable()
+            self.volume_monitor.enable()
 
     def _prepareTransientDisks(self, drives):
         for drive in drives:
@@ -1320,16 +1320,16 @@ class Vm(object):
         _, raw_stats = res[0]
         return raw_stats
 
-    def monitor_drives(self):
+    def monitor_volumes(self):
         """
-        Return True if at least one drive is being extended, False otherwise.
+        Return True if at least one volume is being extended, False otherwise.
         """
-        drives = self.drive_monitor.monitored_drives()
+        drives = self.volume_monitor.monitored_volumes()
         if not drives:
             return False
 
         try:
-            block_stats = self.drive_monitor.get_block_stats()
+            block_stats = self.volume_monitor.get_block_stats()
         except libvirt.libvirtError as e:
             self.log.error("Unable to get block stats: %s", e)
             return False
@@ -1339,7 +1339,7 @@ class Vm(object):
             try:
                 if self.extend_drive_if_needed(drive, block_stats):
                     extended = True
-            except drivemonitor.ImprobableResizeRequestError:
+            except thinp.ImprobableResizeRequestError:
                 break
 
         return extended
@@ -1374,10 +1374,10 @@ class Vm(object):
         drive.block_info = block_info
 
         if drive.threshold_state == BLOCK_THRESHOLD.UNSET:
-            self.drive_monitor.set_threshold(
+            self.volume_monitor.set_threshold(
                 drive, block_info.physical, index=index)
 
-        if not self.drive_monitor.should_extend_volume(
+        if not self.volume_monitor.should_extend_volume(
                 drive, drive.volumeID, block_info):
             return False
 
@@ -1386,8 +1386,8 @@ class Vm(object):
         # writes too fast, we will never receive an event.
         # We need to set the drive threshold to EXCEEDED both if we receive
         # one event or if we found that the threshold was exceeded during
-        # the drivemonitor.should_extend_volume check.
-        self.drive_monitor.update_threshold_state_exceeded(drive)
+        # the VolumeMonitor.should_extend_volume check.
+        self.volume_monitor.update_threshold_state_exceeded(drive)
 
         self.log.info(
             "Requesting extension for volume %s on domain %s block_info %s "
@@ -1643,7 +1643,7 @@ class Vm(object):
                 "Migration destination host does not support "
                 "extending disk during migration, disabling disk "
                 "extension during migration")
-            self.drive_monitor.disable()
+            self.volume_monitor.disable()
             error = e
         except virdomain.NotConnectedError as e:
             self.log.debug("VM not running, aborting extend completion")
@@ -1666,7 +1666,7 @@ class Vm(object):
         drive.truesize = volsize.truesize
 
         index = self._drive_volume_index(drive, drive.volumeID)
-        self.drive_monitor.set_threshold(
+        self.volume_monitor.set_threshold(
             drive, volsize.apparentsize, index=index)
 
     def _resume_if_needed(self):
@@ -4436,7 +4436,7 @@ class Vm(object):
     def clear_drive_threshold(self, drive, old_volume_id):
         try:
             index = self._drive_volume_index(drive, old_volume_id)
-            self.drive_monitor.clear_threshold(drive, index=index)
+            self.volume_monitor.clear_threshold(drive, index=index)
         except Exception as e:
             self.log.error("Unable to clear drive threshold: %s", e)
 
@@ -4603,7 +4603,7 @@ class Vm(object):
 
         if drive.chunked or drive.replicaChunked:
             try:
-                block_stats = self.drive_monitor.get_block_stats()
+                block_stats = self.volume_monitor.get_block_stats()
                 index = self._drive_volume_index(drive, drive.volumeID)
                 block_info = self._amend_block_info(drive, block_stats[index])
                 drive.block_info = block_info
@@ -4684,7 +4684,7 @@ class Vm(object):
             # errors from the stats threads during the switch from the old
             # drive to the new one. This applies only to the case where we
             # actually switch to the destination.
-            self.drive_monitor.disable()
+            self.volume_monitor.disable()
         else:
             self.log.debug("Stopping the disk replication remaining on the "
                            "source drive: %s", dstDisk)
@@ -4718,7 +4718,7 @@ class Vm(object):
                 self._delDiskReplica(drive)
 
         finally:
-            self.drive_monitor.enable()
+            self.volume_monitor.enable()
 
         return response.success()
 
@@ -5389,8 +5389,8 @@ class Vm(object):
             self._setGuestCpuRunning(False, flow='IOError')
             self._logGuestCpuStatus('onIOError')
             if reason == 'ENOSPC':
-                if not self.monitor_drives():
-                    self.log.info("No VM drives were extended")
+                if not self.monitor_volumes():
+                    self.log.info("No volumes were extended")
 
             self._send_ioerror_status_event(reason, blockDevAlias)
             self._update_metadata()
