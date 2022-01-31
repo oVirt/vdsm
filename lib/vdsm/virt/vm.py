@@ -1280,7 +1280,7 @@ class Vm(object):
         self.log.debug('new rtc offset %s', newTimeOffset)
         self._timeOffset = newTimeOffset
 
-    def _amend_block_info(self, drive, block_info):
+    def amend_block_info(self, drive, block_info):
         """
         Ammend block info from libvirt in case the drive is not chucked and is
         replicating to a chunked drive.
@@ -1370,7 +1370,7 @@ class Vm(object):
             return False
 
         index = self.query_drive_volume_index(drive, drive.volumeID)
-        block_info = self._amend_block_info(drive, block_stats[index])
+        block_info = self.amend_block_info(drive, block_stats[index])
         drive.block_info = block_info
 
         if drive.threshold_state == BLOCK_THRESHOLD.UNSET:
@@ -4605,7 +4605,7 @@ class Vm(object):
             try:
                 block_stats = self.volume_monitor.get_block_stats()
                 index = self.query_drive_volume_index(drive, drive.volumeID)
-                block_info = self._amend_block_info(drive, block_stats[index])
+                block_info = self.amend_block_info(drive, block_stats[index])
                 drive.block_info = block_info
                 self.extendDriveVolume(
                     drive,
