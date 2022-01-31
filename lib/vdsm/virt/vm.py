@@ -1433,7 +1433,7 @@ class Vm(object):
 
             if self.should_refresh_destination_volume():
                 with clock.run("refresh-destination-volume"):
-                    self._refresh_destination_volume(volInfo)
+                    self.refresh_destination_volume(volInfo)
 
             with clock.run("refresh-volume"):
                 self.refresh_volume(volInfo)
@@ -1484,7 +1484,7 @@ class Vm(object):
         """
         return self._migrationSourceThread.needs_disk_refresh()
 
-    def _refresh_destination_volume(self, volInfo):
+    def refresh_destination_volume(self, volInfo):
         dest_vol_size = self._refresh_migrating_volume(volInfo)
         if dest_vol_size.apparentsize < volInfo['newSize']:
             reason = ("Failed to refresh drive on the destination "
