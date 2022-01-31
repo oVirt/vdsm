@@ -12,7 +12,7 @@ implemented with block based storage.
 Vdsm monitors thin provisioned drives or drives being replicated to thin
 provisioned drives periodically.  During startup, DriveWatermarkMonitor
 is created and scheduled with the periodic executor to run
-VM.monitor_drives every 2 seconds (configurable) on all VMs.
+VM.monitor_volumes every 2 seconds (configurable) on all VMs.
 
 For each VM, we fetch the drives that should be monitored. We have 2
 cases:
@@ -39,7 +39,7 @@ failed, a VM may try to write behind the current disk size. In this case
 qemu will pause the VM and we get a libvirt
 VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON event with ```ENOSPC``` reason.
 
-When receiving such event, we call VM.monitor_drives() on the paused VM.
+When receiving such event, we call VM.monitor_volumes() on the paused VM.
 We are likely to find that one or more drives are too full, and trigger
 an extend of the drives.
 
@@ -96,7 +96,7 @@ because of many reasons:
 - Storage may not be available when trying to refresh a logical volume
 
 Because the system is based on periodic monitoring, the operation will
-be retried on the next drive monitoring internal.
+be retried on the next volume monitoring internal.
 
 
 ### Pre-extension and post-reduce
@@ -131,14 +131,14 @@ These configuration options control thin provisioning:
 
 ## Implementation in Vdsm 4.20.3 and onwards (oVirt >= 4.2)
 
-We want to optimize drive monitoring using the "BLOCK_THRESHOLD" event
+We want to optimize volume monitoring using the "BLOCK_THRESHOLD" event
 provided by libvirt >= 3.2. Instead of checking periodically if a drive
 should be extended, we will mark a drive for extension when receiving a
 libvirt block threshold event.
 
 Libvirt cannot yet deliver events for all the flows and the storage
 configurations oVirt supports. Please check the documentation of
-the DriveMonitor.monitored_drives method in the drivemonitor.py module
+the VolumeMonitor.monitored_volumes method in the thinp.py module
 to learn when Vdsm can use events, and when Vdsm must keep polling the
 drives.
 
@@ -161,7 +161,7 @@ drive. For example, with default configuration, if the drive allocation
 is 3g, the threshold will be 2.5g.
 
 If setting block threshold for a drive failed, the system should retry
-the operation on the next drive monitor cycle.
+the operation on the next volume monitor cycle.
 
 
 ### Handling block threshold events
@@ -191,7 +191,7 @@ In some cases (e.g. live merge pivot), we need to temporarily stop
 monitoring the drives. We start monitoring back the drives as soon as
 possible.
 
-If we receive a block threshold event while drive monitoring is disabled
+If we receive a block threshold event while volume monitoring is disabled
 for monitoring, we mark the drive for extension as usual, but the
 extension request will not be handled until monitoring is enabled for
 this drive.
@@ -202,7 +202,7 @@ this drive.
 - Set the block thresholds when starting or recovering the VM
 - When we get the threshold event, we mark the related drive for
   extension
-- Up to 2 seconds (configurable) later, the periodic drive monitoring
+- Up to 2 seconds (configurable) later, the periodic volume monitoring
   will trigger the extension flow
 - When the extension flow ends, set a new block threshold in libvirt
   for the extended drive
@@ -241,7 +241,7 @@ this drive.
   during LSM.
 - Keep the current flow with no changes.
 - Events received during LSM will mark a drive for extension, but the
-  drive monitor ignores this state during LSM, since it must check the
+  volume monitor ignores this state during LSM, since it must check the
   drive and/or the replica explicitly.
 - When LSM is completed:
   - If the new drive is chunked and the source drive was marked for
@@ -255,7 +255,7 @@ this drive.
   - If the new drive is not chunked, and the drive was marked for
     extension, clear the threshold, as it is not relevant any more.
 - If LSM failed, and a drive was marked for extension during LSM, it
-  will extended on the next drive monitor cycle.
+  will extended on the next volume monitor cycle.
 
 
 ### Live Merge
@@ -264,7 +264,7 @@ this drive.
 - Keep the block threshold event as is, so we don't miss an event during
   pivot.
 - If we receive a block threshold event during the pivot, the drive will
-  be marked for extension, but the drive monitoring code will ingore
+  be marked for extension, but the volume monitoring code will ingore
   this because the drive is diabled for monitoring.
 - Perform a pivot
 - If pivot succeeded:
@@ -287,7 +287,7 @@ this drive.
   - Enable monitoring for the drive
 - If pivot failed, enable monitoring for the drive. If the drive was
   marked for extension during the piovt, it will be extended on the next
-  drive monitoring cycle.
+  volume monitoring cycle.
 
 
 ### Live migration (no changes required)
@@ -312,7 +312,7 @@ this drive.
 - Much less work for the periodic workers, checking only drives during
   LSM, and extending drives marked for extension.
 - Eliminates the major source of discarded worker
-- Since drive monitor does nothing most of the time, delays in drive
+- Since volume monitor does nothing most of the time, delays in drive
   monitoring are unlikely, avoiding delays in extending drives, that may
   lead to pausing a VM.
 
@@ -326,4 +326,4 @@ before to trigger extension.
 ### Future work
 
 Avoid the delay between block threshold event is received until the
-drive is extended by waking up the drive monitor when event is received.
+drive is extended by waking up the volume monitor when event is received.

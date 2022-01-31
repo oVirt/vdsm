@@ -12,10 +12,10 @@ tests/storage/                          @nirs @vjuranek
 lib/dnf-plugins                         @mz-pdm
 lib/vdsm/virt/                          @mz-pdm
 lib/vdsm/virt/backup.py                 @nirs
-lib/vdsm/virt/drivemonitor.py           @nirs @vjuranek
 lib/vdsm/virt/livemerge.py              @nirs @vjuranek
 lib/vdsm/virt/periodic.py               @mz-pdm @nirs
 lib/vdsm/virt/secret.py                 @nirs @vjuranek
+lib/vdsm/virt/thinp.py                  @nirs @vjuranek
 lib/vdsm/virt/vm.py                     @mz-pdm @nirs @vjuranek
 lib/vdsm/virt/vmdevices/lease.py        @nirs @vjuranek @mz-pdm
 lib/vdsm/virt/vmdevices/storage.py      @nirs @vjuranek @mz-pdm
@@ -24,9 +24,9 @@ tests/virt/backup_test.py               @nirs
 tests/virt/cd_test.py                   @vjuranek
 tests/virt/diskreplicate_test.py        @nirs
 tests/virt/drive_extension_test.py      @nirs
-tests/virt/drivemonitor_test.py         @nirs
 tests/virt/fakedomainadapter.py         @nirs
 tests/virt/livemerge_test.py            @nirs
+tests/virt/thinp_test.py                @nirs
 tests/virt/vmlease_test.py              @nirs @mz-pdm
 tests/virt/vmsecret_test.py             @nirs
 tests/virt/vmstorage_test.py            @nirs @mz-pdm

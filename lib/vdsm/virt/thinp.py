@@ -42,10 +42,10 @@ class ImprobableResizeRequestError(RuntimeError):
     pass
 
 
-class DriveMonitor(object):
+class VolumeMonitor(object):
     """
-    Track the highest allocation of thin-provisioned drives
-    of a Vm, triggering the extension flow when needed.
+    Track the highest allocation of thin-provisioned volumes of a Vm,
+    triggering the extension flow when needed.
     """
 
     def __init__(self, vm, log, enabled=True):
@@ -58,27 +58,27 @@ class DriveMonitor(object):
 
     def enable(self):
         """
-        Enable drive monitor, does not raise.
+        Enable the volume monitor, does not raise.
         """
         self._enabled = True
-        self._log.info('Enabling drive monitoring')
+        self._log.info('Enabling volume monitoring')
 
     def disable(self):
         """
-        Disable drive monitor, does not raise.
+        Disable the volume monitor, does not raise.
         """
         self._enabled = False
-        self._log.info('Disabling drive monitoring')
+        self._log.info('Disabling volume monitoring')
 
     def monitoring_needed(self):
         """
-        Return True if a vm needs drive monitoring in this cycle.
+        Return True if a vm needs volume monitoring in this cycle.
 
         This is called every 2 seconds (configurable) by the periodic system.
         If this returns True, the periodic system will invoke
-        monitor_drives during this periodic cycle.
+        monitor_volumes during this periodic cycle.
         """
-        return self._enabled and bool(self.monitored_drives())
+        return self._enabled and bool(self.monitored_volumes())
 
     def set_threshold(self, drive, apparentsize, index=None):
         """
@@ -205,7 +205,7 @@ class DriveMonitor(object):
         else:
             drive.on_block_threshold(path)
 
-    def monitored_drives(self):
+    def monitored_volumes(self):
         """
         Return the drives that need to be checked for extension
         on the next monitoring cycle.

@@ -213,7 +213,7 @@ class Snapshot(properties.Owner):
     def finalize_vm(self, memory_vol):
         try:
             self._thaw_vm()
-            self._vm.drive_monitor.enable()
+            self._vm.volume_monitor.enable()
             if self._memory_params:
                 self._vm.cif.teardownVolumePath(memory_vol)
             if config.getboolean('vars', 'time_sync_snapshot_enable'):
@@ -464,12 +464,12 @@ class Snapshot(properties.Owner):
         self._snapshot_job['vmDrives'] = vm_drives_serialized
         _write_snapshot_md(self._vm, self._snapshot_job, self._lock)
 
-        # We need to stop the drive monitoring for two reasons, one is to
+        # We need to stop the volume monitor for two reasons, one is to
         # prevent spurious libvirt errors about missing drive paths (since
         # we're changing them), and also to prevent to trigger a drive
         # extension for the new volume with the apparent size of the old one
         # (the apparentsize is updated as last step in updateDriveParameters)
-        self._vm.drive_monitor.disable()
+        self._vm.volume_monitor.disable()
 
         try:
             if self._should_freeze:

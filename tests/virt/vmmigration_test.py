@@ -38,8 +38,8 @@ from vdsm.common import response
 from vdsm.config import config
 import vdsm.virt
 from vdsm.virt import cpumanagement
-from vdsm.virt import drivemonitor
 from vdsm.virt import migration
+from vdsm.virt import thinp
 from vdsm.virt import vmstatus
 
 from monkeypatch import MonkeyPatchScope
@@ -335,7 +335,7 @@ class FakeVM(object):
         self.stopped_migrated_event_processed.set()
         self.guestAgent = FakeGuestAgent()
         self.hibernation_attempts = 0
-        self.drive_monitor = drivemonitor.DriveMonitor(
+        self.volume_monitor = thinp.VolumeMonitor(
             self, self.log, enabled=True)
 
     def min_cluster_version(self, major, minor):

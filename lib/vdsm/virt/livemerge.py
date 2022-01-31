@@ -884,7 +884,7 @@ class CleanupThread(object):
         # we can correct our metadata following the pivot we should not
         # attempt to monitor drives.
         # TODO: Stop monitoring only for the live merge disk
-        self.vm.drive_monitor.disable()
+        self.vm.volume_monitor.disable()
 
         self.vm.log.info("Requesting pivot to complete active layer commit "
                          "(job %s)", self.job.id)
@@ -892,13 +892,13 @@ class CleanupThread(object):
             flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
             self.vm._dom.blockJobAbort(self.drive.name, flags=flags)
         except libvirt.libvirtError as e:
-            self.vm.drive_monitor.enable()
+            self.vm.volume_monitor.enable()
             self._mark_leaf_legal()
             if e.get_error_code() != libvirt.VIR_ERR_BLOCK_COPY_ACTIVE:
                 raise JobPivotError(self.job.id, e)
             raise JobNotReadyError(self.job.id)
         except:
-            self.vm.drive_monitor.enable()
+            self.vm.volume_monitor.enable()
             raise
 
         self._waitForXMLUpdate()
@@ -942,7 +942,7 @@ class CleanupThread(object):
                              "(job %s)", self.job.id)
             self.vm.sync_volume_chain(self.drive)
             if self.doPivot:
-                self.vm.drive_monitor.enable()
+                self.vm.volume_monitor.enable()
             chain_after_merge = [vol['volumeID']
                                  for vol in self.drive.volumeChain]
             if self.job.top not in chain_after_merge:

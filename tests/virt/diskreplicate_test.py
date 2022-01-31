@@ -130,7 +130,7 @@ def test_diskreplicatefinish_job_not_finished():
     assert result == response.error("unavail")
 
     # if pivot was not called the monitor should not have been disabled
-    assert not _vm.drive_monitor.was_disabled
+    assert not _vm.volume_monitor.was_disabled
 
 
 def test_blockjobabort_failed(monkeypatch):
@@ -165,7 +165,7 @@ def test_replicatefinish_successful():
 
     # we need to check whether the monitor was disabled during the
     # run of diskReplicateFinish
-    assert _vm.drive_monitor.was_disabled
+    assert _vm.volume_monitor.was_disabled
 
 
 def make_drive(drive_conf, shared_type=storage.DRIVE_SHARED_TYPE.EXCLUSIVE):
@@ -177,7 +177,7 @@ class FakeVm(vm.Vm):
     def __init__(self, devices=[]):
         self._devices = {hwclass.DISK: devices}
         self.id = "testvm"
-        self.drive_monitor = FakeDriveMonitor()
+        self.volume_monitor = FakeVolumeMonitor()
         self._dom = FakeDomain()
         self.cif = FakeClientIF(log)
         # We don't always pass the destination drive
@@ -216,7 +216,7 @@ class FakeClientIF(clientIF):
         self.log = log
 
 
-class FakeDriveMonitor(object):
+class FakeVolumeMonitor(object):
 
     def __init__(self):
         self.enabled = False
