@@ -434,7 +434,7 @@ def test_set_new_threshold_when_state_set(tmp_config):
     # Vm.monitor_volumes must not pick up drives with
     # threshold_state == SET, so we call
     # VolumeMonitor._extend_drive_if_needed explictely.
-    # TODO: Tesst without this calling it.
+    # TODO: Test without this calling it.
     vm = FakeVM(drive_infos())
     mon = vm.volume_monitor
     drives = vm.getDiskDevices()
