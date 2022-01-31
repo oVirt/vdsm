@@ -34,6 +34,7 @@ from vdsm.common.units import GiB
 
 from vdsm.virt import metadata
 from vdsm.virt import migration
+from vdsm.virt import thinp
 from vdsm.virt import vmstatus
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.livemerge import (
@@ -77,24 +78,11 @@ class FakeDrive:
         self.volumeChain = []
 
 
-class FakeVolumeMonitor:
-
-    def __init__(self):
-        # driver_monitor is always enabled when calling cleanup.
-        self.enabled = True
-
-    def enable(self):
-        self.enabled = True
-
-    def disable(self):
-        self.enabled = False
-
-
 class FakeVM:
 
     def __init__(self):
-        self.volume_monitor = FakeVolumeMonitor()
         self.log = logging.getLogger()
+        self.volume_monitor = thinp.VolumeMonitor(self, self.log)
 
     @recorded
     def sync_volume_chain(self, drive):
@@ -216,7 +204,7 @@ class RunningVM(Vm):
         self.conf["xml"] = config.xmls["00-before.xml"]
 
         self._external = False  # Used when syncing metadata.
-        self.volume_monitor = FakeVolumeMonitor()
+        self.volume_monitor = thinp.VolumeMonitor(self, self.log)
         self._confLock = threading.Lock()
         self._drive_merger = DriveMerger(self)
         self._migrationSourceThread = migration.SourceThread(self)
