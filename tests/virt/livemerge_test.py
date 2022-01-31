@@ -403,7 +403,7 @@ def test_active_merge(monkeypatch):
     drive = vm.getDiskDevices()[0]
 
     # Create static list of original chain.
-    orig_chain = [vol.uuid for vol in vm.drive_get_actual_volume_chain(drive)]
+    orig_chain = [vol.uuid for vol in vm.query_drive_volume_chain(drive)]
 
     # Create static list of expected new chain.
     new_chain = [vol_id for vol_id in orig_chain if vol_id != top_id]
@@ -547,7 +547,7 @@ def test_active_merge(monkeypatch):
     # Check that actual chain reported by libvirt matches vdsm chain.
     vdsm_chain = [vol['volumeID'] for vol in drive.volumeChain]
     libvirt_chain = [
-        vol.uuid for vol in vm.drive_get_actual_volume_chain(drive)]
+        vol.uuid for vol in vm.query_drive_volume_chain(drive)]
 
     # syncVolumeChain func should get chain without leaf as "actualChain" arg.
     expected_vdsm_chain = set(x for x in vdsm_chain if x != top_id)
@@ -606,7 +606,7 @@ def test_active_merge_pivot_failure(monkeypatch):
     drive = vm.getDiskDevices()[0]
 
     # Create static list of original chain.
-    orig_chain = [vol.uuid for vol in vm.drive_get_actual_volume_chain(drive)]
+    orig_chain = [vol.uuid for vol in vm.query_drive_volume_chain(drive)]
 
     # Create static list of expected new chain.
     new_chain = [vol_id for vol_id in orig_chain if vol_id != top_id]
@@ -766,7 +766,7 @@ def test_internal_merge():
     drive = vm.getDiskDevices()[0]
 
     # Create static list of original chain.
-    orig_chain = [vol.uuid for vol in vm.drive_get_actual_volume_chain(drive)]
+    orig_chain = [vol.uuid for vol in vm.query_drive_volume_chain(drive)]
 
     # Create static list of expected new chain - top_id refers to subchain top.
     new_chain = [vol_id for vol_id in orig_chain if vol_id != top_id]
@@ -872,7 +872,7 @@ def test_internal_merge():
     # Get current and actual chain.
     vdsm_chain = [vol['volumeID'] for vol in drive.volumeChain]
     libvirt_chain = [
-        vol.uuid for vol in vm.drive_get_actual_volume_chain(drive)]
+        vol.uuid for vol in vm.query_drive_volume_chain(drive)]
 
     # Check actual chain matches expected chain - actual chain is ordered.
     assert libvirt_chain == new_chain

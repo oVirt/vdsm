@@ -4444,7 +4444,7 @@ class Vm(object):
         """
         Return the libvirt node index by volume id.
         """
-        actual_chain = self.drive_get_actual_volume_chain(drive)
+        actual_chain = self.query_drive_volume_chain(drive)
         if actual_chain is None:
             raise RuntimeError(
                 "Cannot get drive {} alias {} actual volume chain"
@@ -6157,7 +6157,7 @@ class Vm(object):
         return self._drive_merger.merge(
             driveSpec, baseVolUUID, topVolUUID, bandwidth, jobUUID)
 
-    def drive_get_actual_volume_chain(self, drive):
+    def query_drive_volume_chain(self, drive):
         self._updateDomainDescriptor()
         disk_xml = vmdevices.lookup.xml_device_by_alias(
             self._domain.devices, drive.alias)
@@ -6170,7 +6170,7 @@ class Vm(object):
             return
 
         curVols = [x['volumeID'] for x in drive.volumeChain]
-        chain = self.drive_get_actual_volume_chain(drive)
+        chain = self.query_drive_volume_chain(drive)
         if chain is None:
             self.log.debug(
                 "Cannot get actual volume chain for drive %s alias %s, "
