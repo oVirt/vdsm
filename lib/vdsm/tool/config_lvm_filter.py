@@ -109,6 +109,7 @@ def config_with_filter(args):
 
         with lvmconf.LVMConfig() as config:
             config.setlist("devices", "filter", advice.filter)
+            config.setint("devices", "use_devicesfile", 0)
             config.save()
 
         _print_success()
@@ -213,7 +214,8 @@ WARNING: The current LVM filter does not match the recommended filter,
 Vdsm cannot configure the filter automatically.
 
 Please edit /etc/lvm/lvm.conf and set the 'filter' option in the
-'devices' section to the recommended value.
+'devices' section to the recommended value. Also make sure that
+'use_devicesfile' in this section is set to 0.
 
 Make sure /etc/multipath/conf.d/vdsm_blacklist.conf is set with the
 recommended 'blacklist' section.
