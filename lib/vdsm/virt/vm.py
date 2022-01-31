@@ -1357,93 +1357,24 @@ class Vm(object):
             self._extend_volume(
                 vmDrive, volumeID, newSize, clock, callback=callback)
 
-    def refresh_volume(self, volInfo):
-        self.log.debug("Refreshing drive volume for %s (domainID: %s, "
-                       "volumeID: %s)", volInfo['name'], volInfo['domainID'],
-                       volInfo['volumeID'])
-        res = self.cif.irs.refreshVolume(
-            volInfo['domainID'],
-            volInfo['poolID'],
-            volInfo['imageID'],
-            volInfo['volumeID'])
-        if response.is_error(res):
-            raise errors.StorageUnavailableError(
-                "Unable to refresh volume for drive {} (domain {}, volume {}):"
-                " {}".format(volInfo['name'], volInfo['domainID'],
-                             volInfo['volumeID'], res['status']['message']))
-
-    def refresh_disk(self, vol_pdiv):
-        """
-        Refresh VM drive volume.
-        """
-        try:
-            drive = self.findDriveByUUIDs(vol_pdiv)
-            self.log.info(
-                "Refreshing volume for drive %s (domainID: %s, volumeID: %s)",
-                drive["name"], drive["domainID"], drive["volumeID"])
-            self.refresh_volume(drive)
-            vol_size = self.getVolumeSize(
-                drive.domainID,
-                drive.poolID,
-                drive.imageID,
-                drive.volumeID)
-            try:
-                self._update_drive_volume_size(drive, vol_size)
-            except virdomain.NotConnectedError:
-                # During migration or after the vm was stopped we cannot set a
-                # block threshold. This is not an issue since we will set the
-                # block threshold when the VM starts.
-                self.log.debug("VM not running, skipping volume size update")
-        except Exception as e:
-            raise exception.DriveRefreshError(
-                reason=str(e),
-                vm_id=self.id,
-                domain_id=vol_pdiv["domainID"],
-                volume_id=vol_pdiv["volumeID"])
-        return dict(result=dict(
-            apparentsize=str(vol_size.apparentsize),
-            truesize=str(vol_size.truesize)))
-
-    def _refresh_migrating_volume(self, volInfo):
-        """
-        If the disk is extended during migration, the change is not visible on
-        the destination host and the disk drive has to be refreshed also there,
-        otherwise it becomes corrupted.
-
-        See https://bugzilla.redhat.com/1883399
-        """
-        self.log.info(
-            "Volume %s (domainID: %s, volumeID: %s) was extended during "
-            "migration, refreshing it on destination host.",
-            volInfo["name"], volInfo["domainID"], volInfo["volumeID"])
-        # volInfo can contain fields which are not serializable, so we have to
-        # create a dict which conforms with API specification.
-        vol_pdiv = {
-            "device": hwclass.DISK,
-            "poolID": volInfo["poolID"],
-            "domainID": volInfo["domainID"],
-            "imageID": volInfo["imageID"],
-            "volumeID": volInfo["volumeID"],
+    def _extend_replica_volume(self, drive, newSize, clock, callback=None):
+        clock.start("extend-replica")
+        volInfo = {
+            'domainID': drive.diskReplicate['domainID'],
+            'imageID': drive.diskReplicate['imageID'],
+            'name': drive.name,
+            'newSize': newSize,
+            'poolID': drive.diskReplicate['poolID'],
+            'volumeID': drive.diskReplicate['volumeID'],
+            'clock': clock,
+            'callback': callback,
         }
-        return self._migrationSourceThread.refresh_destination_disk(vol_pdiv)
-
-    def _verify_volume_extension(self, volInfo):
-        volSize = self.getVolumeSize(
-            volInfo['domainID'],
-            volInfo['poolID'],
-            volInfo['imageID'],
-            volInfo['volumeID'])
-
-        self.log.debug("Verifying extension for volume %s, requested size %s, "
-                       "current size %s", volInfo['volumeID'],
-                       volInfo['newSize'], volSize.apparentsize)
-
-        if volSize.apparentsize < volInfo['newSize']:
-            raise RuntimeError(
-                "Volume extension failed for %s (domainID: %s, volumeID: %s)" %
-                (volInfo['name'], volInfo['domainID'], volInfo['volumeID']))
-
-        return volSize
+        self.log.debug("Requesting an extension for the volume "
+                       "replication: %s", volInfo)
+        self.cif.irs.sendExtendMsg(drive.poolID,
+                                   volInfo,
+                                   newSize,
+                                   self._after_replica_extension)
 
     def _after_replica_extension(self, volInfo):
         clock = volInfo["clock"]
@@ -1489,48 +1420,6 @@ class Vm(object):
             volInfo,
             newSize,
             self._after_volume_extension)
-
-    def _extend_replica_volume(self, drive, newSize, clock, callback=None):
-        clock.start("extend-replica")
-        volInfo = {
-            'domainID': drive.diskReplicate['domainID'],
-            'imageID': drive.diskReplicate['imageID'],
-            'name': drive.name,
-            'newSize': newSize,
-            'poolID': drive.diskReplicate['poolID'],
-            'volumeID': drive.diskReplicate['volumeID'],
-            'clock': clock,
-            'callback': callback,
-        }
-        self.log.debug("Requesting an extension for the volume "
-                       "replication: %s", volInfo)
-        self.cif.irs.sendExtendMsg(drive.poolID,
-                                   volInfo,
-                                   newSize,
-                                   self._after_replica_extension)
-
-    def _refresh_destination_volume(self, volInfo):
-        dest_vol_size = self._refresh_migrating_volume(volInfo)
-        if dest_vol_size.apparentsize < volInfo['newSize']:
-            reason = ("Failed to refresh drive on the destination "
-                      "host actual size {} < expected size {}").format(
-                dest_vol_size.apparentsize,
-                volInfo["newSize"])
-            raise exception.CannotRefreshDisk(reason=reason)
-
-    def should_refresh_destination_volume(self):
-        """
-        If we extend disk during migration, we have to refresh disk on the
-        destination first. The disk has to be refreshed before VM is resumed on
-        the destination and as the migration is controlled by libvirt, we need
-        to refresh destination before source to be sure that the disk on the
-        destination won't be corrupted by resumed VM. We need to call it only
-        from the source VM.
-
-        Returns True if aforementioned situation happens and the disk on the
-        destination has to be refreshed.
-        """
-        return self._migrationSourceThread.needs_disk_refresh()
 
     def _after_volume_extension(self, volInfo):
         callback = None
@@ -1578,6 +1467,117 @@ class Vm(object):
         finally:
             if callback:
                 callback(error=sys.exc_info()[1] or error)
+
+    def should_refresh_destination_volume(self):
+        """
+        If we extend disk during migration, we have to refresh disk on the
+        destination first. The disk has to be refreshed before VM is resumed on
+        the destination and as the migration is controlled by libvirt, we need
+        to refresh destination before source to be sure that the disk on the
+        destination won't be corrupted by resumed VM. We need to call it only
+        from the source VM.
+
+        Returns True if aforementioned situation happens and the disk on the
+        destination has to be refreshed.
+        """
+        return self._migrationSourceThread.needs_disk_refresh()
+
+    def _refresh_destination_volume(self, volInfo):
+        dest_vol_size = self._refresh_migrating_volume(volInfo)
+        if dest_vol_size.apparentsize < volInfo['newSize']:
+            reason = ("Failed to refresh drive on the destination "
+                      "host actual size {} < expected size {}").format(
+                dest_vol_size.apparentsize,
+                volInfo["newSize"])
+            raise exception.CannotRefreshDisk(reason=reason)
+
+    def _refresh_migrating_volume(self, volInfo):
+        """
+        If the disk is extended during migration, the change is not visible on
+        the destination host and the disk drive has to be refreshed also there,
+        otherwise it becomes corrupted.
+
+        See https://bugzilla.redhat.com/1883399
+        """
+        self.log.info(
+            "Volume %s (domainID: %s, volumeID: %s) was extended during "
+            "migration, refreshing it on destination host.",
+            volInfo["name"], volInfo["domainID"], volInfo["volumeID"])
+        # volInfo can contain fields which are not serializable, so we have to
+        # create a dict which conforms with API specification.
+        vol_pdiv = {
+            "device": hwclass.DISK,
+            "poolID": volInfo["poolID"],
+            "domainID": volInfo["domainID"],
+            "imageID": volInfo["imageID"],
+            "volumeID": volInfo["volumeID"],
+        }
+        return self._migrationSourceThread.refresh_destination_disk(vol_pdiv)
+
+    def refresh_disk(self, vol_pdiv):
+        """
+        Refresh VM drive volume.
+        """
+        try:
+            drive = self.findDriveByUUIDs(vol_pdiv)
+            self.log.info(
+                "Refreshing volume for drive %s (domainID: %s, volumeID: %s)",
+                drive["name"], drive["domainID"], drive["volumeID"])
+            self.refresh_volume(drive)
+            vol_size = self.getVolumeSize(
+                drive.domainID,
+                drive.poolID,
+                drive.imageID,
+                drive.volumeID)
+            try:
+                self._update_drive_volume_size(drive, vol_size)
+            except virdomain.NotConnectedError:
+                # During migration or after the vm was stopped we cannot set a
+                # block threshold. This is not an issue since we will set the
+                # block threshold when the VM starts.
+                self.log.debug("VM not running, skipping volume size update")
+        except Exception as e:
+            raise exception.DriveRefreshError(
+                reason=str(e),
+                vm_id=self.id,
+                domain_id=vol_pdiv["domainID"],
+                volume_id=vol_pdiv["volumeID"])
+        return dict(result=dict(
+            apparentsize=str(vol_size.apparentsize),
+            truesize=str(vol_size.truesize)))
+
+    def refresh_volume(self, volInfo):
+        self.log.debug("Refreshing drive volume for %s (domainID: %s, "
+                       "volumeID: %s)", volInfo['name'], volInfo['domainID'],
+                       volInfo['volumeID'])
+        res = self.cif.irs.refreshVolume(
+            volInfo['domainID'],
+            volInfo['poolID'],
+            volInfo['imageID'],
+            volInfo['volumeID'])
+        if response.is_error(res):
+            raise errors.StorageUnavailableError(
+                "Unable to refresh volume for drive {} (domain {}, volume {}):"
+                " {}".format(volInfo['name'], volInfo['domainID'],
+                             volInfo['volumeID'], res['status']['message']))
+
+    def _verify_volume_extension(self, volInfo):
+        volSize = self.getVolumeSize(
+            volInfo['domainID'],
+            volInfo['poolID'],
+            volInfo['imageID'],
+            volInfo['volumeID'])
+
+        self.log.debug("Verifying extension for volume %s, requested size %s, "
+                       "current size %s", volInfo['volumeID'],
+                       volInfo['newSize'], volSize.apparentsize)
+
+        if volSize.apparentsize < volInfo['newSize']:
+            raise RuntimeError(
+                "Volume extension failed for %s (domainID: %s, volumeID: %s)" %
+                (volInfo['name'], volInfo['domainID'], volInfo['volumeID']))
+
+        return volSize
 
     def _update_drive_volume_size(self, drive, volsize):
         """
