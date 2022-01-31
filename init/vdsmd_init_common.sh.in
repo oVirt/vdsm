@@ -80,16 +80,6 @@ task_syslog_available() {
 }
 
 
-task_nwfilter(){
-    "${VDSM_TOOL}" nwfilter
-}
-
-
-task_dummybr(){
-    "${VDSM_TOOL}" dummybr
-}
-
-
 _has_systemd() {
     "@MOUNTPOINT_PATH@" -q /cgroup/systemd ||
         "@MOUNTPOINT_PATH@" -q /sys/fs/cgroup/systemd
@@ -232,8 +222,6 @@ case "$1" in
             validate_configuration \
             prepare_transient_repository \
             syslog_available \
-            nwfilter \
-            dummybr \
             tune_system \
             test_space \
             test_lo \

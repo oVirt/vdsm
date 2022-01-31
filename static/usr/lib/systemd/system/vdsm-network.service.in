@@ -8,6 +8,8 @@ After=libvirtd.service openvswitch.service NetworkManager.service
 Type=oneshot
 EnvironmentFile=-/etc/sysconfig/vdsm
 ExecStartPre=@BINDIR@/vdsm-tool dump-bonding-options
+ExecStart=@BINDIR@/vdsm-tool nwfilter
+ExecStart=@BINDIR@/vdsm-tool dummybr
 ExecStart=@BINDIR@/vdsm-tool restore-nets
 RemainAfterExit=yes
 
