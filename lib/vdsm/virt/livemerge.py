@@ -460,7 +460,7 @@ class DriveMerger:
 
         # Curent extend API extend to the next chunk based on current size. We
         # need to lie about the current size to get a bigger allocation.
-        # TODO: Change extendDriveVolume so client can request a specific size.
+        # TODO: Change extend_volume so client can request a specific size.
         max_alloc = job.extend["base_size"] + job.extend["top_size"]
         capacity = job.extend["capacity"]
 
@@ -473,7 +473,7 @@ class DriveMerger:
             job_id=job.id,
             attempt=job.extend["attempt"])
 
-        self._vm.extendDriveVolume(
+        self._vm.extend_volume(
             drive, job.base, max_alloc, capacity, callback=callback)
 
     def _retry_extend(self, job):

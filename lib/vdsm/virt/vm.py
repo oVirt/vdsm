@@ -1325,8 +1325,8 @@ class Vm(object):
         """
         return self.volume_monitor.monitor_volumes()
 
-    def extendDriveVolume(self, vmDrive, volumeID, curSize, capacity,
-                          callback=None):
+    def extend_volume(self, vmDrive, volumeID, curSize, capacity,
+                      callback=None):
         """
         Extend drive volume and its replica volume during replication.
 
@@ -1354,7 +1354,7 @@ class Vm(object):
             self._extend_replica_volume(
                 vmDrive, newSize, clock, callback=callback)
         else:
-            self._extend_drive_volume(
+            self._extend_volume(
                 vmDrive, volumeID, newSize, clock, callback=callback)
 
     def refresh_volume(self, volInfo):
@@ -1465,12 +1465,12 @@ class Vm(object):
         self.log.debug("Requesting extension for the original drive: %s "
                        "(domainID: %s, volumeID: %s)",
                        vmDrive.name, vmDrive.domainID, vmDrive.volumeID)
-        self._extend_drive_volume(
+        self._extend_volume(
             vmDrive, vmDrive.volumeID, volInfo['newSize'], clock,
             callback=volInfo["callback"])
 
-    def _extend_drive_volume(self, vmDrive, volumeID, newSize, clock,
-                             callback=None):
+    def _extend_volume(self, vmDrive, volumeID, newSize, clock,
+                       callback=None):
         clock.start("extend-volume")
         volInfo = {
             'domainID': vmDrive.domainID,
@@ -4534,7 +4534,7 @@ class Vm(object):
                 index = self.query_drive_volume_index(drive, drive.volumeID)
                 block_info = self.amend_block_info(drive, block_stats[index])
                 drive.block_info = block_info
-                self.extendDriveVolume(
+                self.extend_volume(
                     drive,
                     drive.volumeID,
                     block_info.physical,
