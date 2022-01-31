@@ -1561,7 +1561,7 @@ class Vm(object):
             vmDrive.poolID,
             volInfo,
             newSize,
-            self.after_volume_extension)
+            self._after_volume_extension)
 
     def __extendDriveReplica(self, drive, newSize, clock, callback=None):
         clock.start("extend-replica")
@@ -1605,7 +1605,7 @@ class Vm(object):
         """
         return self._migrationSourceThread.needs_disk_refresh()
 
-    def after_volume_extension(self, volInfo):
+    def _after_volume_extension(self, volInfo):
         callback = None
         error = None
         try:
