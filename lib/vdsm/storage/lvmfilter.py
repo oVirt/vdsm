@@ -461,8 +461,11 @@ def vg_info(lv_path):
         "--readonly",
         # If the host was already configured, the lvm filter hides the devices
         # of the mounted master lv, and lvs will fail. Use a permissive filter
-        # to avoid this.
-        "--config", 'devices {filter=["a|.*|"]}',
+        # to avoid this. Also, run lvs with devices file disabled. This allows
+        # us to avoid warnings that filter should be used while devices file is
+        # enabled. This can happen when lvm is configured to use devices file,
+        # but vdsm is configured to use filter.
+        "--config", 'devices {use_devicesfile = 0 filter=["a|.*|"]}',
         "--options", "vg_name,vg_tags",
         lv_path
     ])
@@ -484,8 +487,12 @@ def vg_devices(vg_name):
         "--noheadings",
         "--readonly",
         # If the host has an incorrect filter, some devices needed by the host
-        # may be hidden, preventing creating of a new correct filter.
-        "--config", 'devices {filter=["a|.*|"]}',
+        # may be hidden, preventing creating of a new correct filter. Also, run
+        # lvs with devices file disabled. This allows us to avoid warnings that
+        # filter should be used while devices file is enabled. This can happen
+        # when lvm is configured to use devices file, but vdsm is configured to
+        # use filter.
+        "--config", 'devices {use_devicesfile = 0 filter=["a|.*|"]}',
         "--options", "pv_name",
         vg_name
     ])
