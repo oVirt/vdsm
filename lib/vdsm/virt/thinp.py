@@ -84,7 +84,7 @@ class VolumeMonitor(object):
         """
         return self._enabled and bool(self.monitored_volumes())
 
-    def set_threshold(self, drive, apparentsize, index=None):
+    def set_threshold(self, drive, apparentsize, index):
         """
         Set the libvirt block threshold on the given drive image, enabling
         libvirt to deliver the event when the threshold is crossed.
@@ -152,7 +152,7 @@ class VolumeMonitor(object):
         else:
             drive.threshold_state = storage.BLOCK_THRESHOLD.SET
 
-    def clear_threshold(self, drive, index=None):
+    def clear_threshold(self, drive, index):
         """
         Clear the libvirt block threshold on the given drive, disabling
         libvirt events.
@@ -263,7 +263,7 @@ class VolumeMonitor(object):
         drive.block_info = block_info
 
         if drive.threshold_state == storage.BLOCK_THRESHOLD.UNSET:
-            self.set_threshold(drive, block_info.physical, index=index)
+            self.set_threshold(drive, block_info.physical, index)
 
         if not self.should_extend_volume(drive, drive.volumeID, block_info):
             return False
@@ -570,17 +570,14 @@ class VolumeMonitor(object):
         drive.truesize = volsize.truesize
 
         index = self._vm.query_drive_volume_index(drive, drive.volumeID)
-        self.set_threshold(drive, volsize.apparentsize, index=index)
+        self.set_threshold(drive, volsize.apparentsize, index)
 
 
 _TARGET_RE = re.compile(r"([hvs]d[a-z]+)\[(\d+)\]")
 
 
 def format_target(name, index):
-    if index is None:
-        return name
-    else:
-        return "{}[{}]".format(name, index)
+    return "{}[{:d}]".format(name, index)
 
 
 def parse_target(target):
