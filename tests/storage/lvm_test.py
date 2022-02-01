@@ -720,14 +720,14 @@ def test_suppress_warnings(fake_devices):
     fake_runner.rc = 1
     with pytest.raises(se.LVMCommandError) as e:
         lc.run_command(["fake"])
-        assert e.rc == 1
-        assert e.err == [
-            u"  before",
-            (u"  WARNING: Combining activation change with other commands is "
-             "not advised."),
-            u"  Configuration setting \"global/event_activation\" unknown.",
-            u"  after"
-        ]
+    assert e.value.rc == 1
+    assert e.value.err == [
+        u"  before",
+        (u"  WARNING: Combining activation change with other commands is "
+         "not advised."),
+        u"  Configuration setting \"global/event_activation\" unknown.",
+        u"  after"
+    ]
 
 
 def test_suppress_multiple_lvm_warnings(fake_devices):
@@ -743,8 +743,8 @@ def test_suppress_multiple_lvm_warnings(fake_devices):
     fake_runner.rc = 1
     with pytest.raises(se.LVMCommandError) as e:
         lc.run_command(["fake"])
-        assert e.rc == 1
-        assert e.err == [u"  before", u"  after"]
+    assert e.value.rc == 1
+    assert e.value.err == [u"  before", u"  after"]
 
 
 def test_pv_move_cmd(fake_devices, monkeypatch):
