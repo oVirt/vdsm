@@ -1,7 +1,13 @@
-FROM quay.io/ovirt/buildcontainer:stream8
+FROM quay.io/centos/centos:stream8
 
 # Add runtime dependencies.
-RUN dnf update -y \
+RUN dnf -y install dnf-plugins-core \
+    && \
+    dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-8 \
+    && \
+    dnf install -y ovirt-release-master \
+    && \
+    dnf update -y \
     && \
     dnf install -y \
         iproute-tc \
