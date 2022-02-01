@@ -168,7 +168,7 @@ def _dhcp_event_handler(cif, net_api, event):
     address = IPAddressData(event[EventField.ADDRESS], iface)
 
     if not net_api.is_dhcp_ip_monitored(iface, family):
-        logging.warning(
+        logging.debug(
             'Nic %s is not configured for IPv%s monitoring.', iface, family
         )
         return
