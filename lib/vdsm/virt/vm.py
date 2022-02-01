@@ -4209,7 +4209,7 @@ class Vm(object):
     def clear_drive_threshold(self, drive, old_volume_id):
         try:
             index = self.query_drive_volume_index(drive, old_volume_id)
-            self.volume_monitor.clear_threshold(drive, index=index)
+            self.volume_monitor.clear_threshold(drive, index)
         except Exception as e:
             self.log.error("Unable to clear drive threshold: %s", e)
 

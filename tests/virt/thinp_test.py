@@ -50,7 +50,7 @@ def test_disable_runtime():
     assert mon.enabled() is False
 
 
-def test_set_threshold_drive_name():
+def test_set_threshold():
     vm = FakeVM()
     mon = thinp.VolumeMonitor(vm, vm.log)
     vda = make_drive(vm.log, index=0, iface='virtio')
@@ -59,21 +59,7 @@ def test_set_threshold_drive_name():
     apparentsize = 4 * GiB
     threshold = 512 * MiB
 
-    mon.set_threshold(vda, apparentsize)
-    expected = apparentsize - threshold
-    assert vm._dom.thresholds == [('vda', expected)]
-
-
-def test_set_threshold_indexed_name():
-    vm = FakeVM()
-    mon = thinp.VolumeMonitor(vm, vm.log)
-    vda = make_drive(vm.log, index=0, iface='virtio')
-    vm.drives.append(vda)
-
-    apparentsize = 4 * GiB
-    threshold = 512 * MiB
-
-    mon.set_threshold(vda, apparentsize, index=1)
+    mon.set_threshold(vda, apparentsize, 1)
     expected = apparentsize - threshold
     assert vm._dom.thresholds == [('vda[1]', expected)]
 
@@ -90,29 +76,20 @@ def test_set_threshold_drive_too_small():
 
     apparentsize = 128 * MiB
 
-    mon.set_threshold(vda, apparentsize, index=3)
+    mon.set_threshold(vda, apparentsize, 3)
     target, value = vm._dom.thresholds[0]
     assert target == 'vda[3]'
     assert value >= 1
 
 
-def test_clear_with_index_equal_none():
-    vm = FakeVM()
-    mon = thinp.VolumeMonitor(vm, vm.log)
-    vda = make_drive(vm.log, index=0, iface='virtio')
-
-    mon.clear_threshold(vda)
-    assert vm._dom.thresholds == [('vda', 0)]
-
-
-def test_clear_with_index():
+def test_clear_threshold():
     vm = FakeVM()
     mon = thinp.VolumeMonitor(vm, vm.log)
     # one drive (virtio, 0)
     vda = make_drive(vm.log, index=0, iface='virtio')
 
     # clear the 1st element in the backing chain of the drive
-    mon.clear_threshold(vda, index=1)
+    mon.clear_threshold(vda, 1)
     assert vm._dom.thresholds == [('vda[1]', 0)]
 
 
