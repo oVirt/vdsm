@@ -414,7 +414,7 @@ class VolumeMonitor(object):
         newSize = vmDrive.getNextVolumeSize(curSize, capacity)
 
         # If drive is replicated to a block device, we extend first the
-        # replica, and handle drive later in _after_replica_extension.
+        # replica, and handle drive later in _extend_replica_completed.
 
         # Used to measure the total extend time for the drive and the replica.
         # Note that the volume is extended after the replica is extended, so
@@ -423,13 +423,13 @@ class VolumeMonitor(object):
         clock.start("total")
 
         if vmDrive.replicaChunked:
-            self._extend_replica_volume(
+            self._extend_replica(
                 vmDrive, newSize, clock, callback=callback)
         else:
             self._extend_volume(
                 vmDrive, volumeID, newSize, clock, callback=callback)
 
-    def _extend_replica_volume(self, drive, newSize, clock, callback=None):
+    def _extend_replica(self, drive, newSize, clock, callback=None):
         clock.start("extend-replica")
         volInfo = {
             'domainID': drive.diskReplicate['domainID'],
@@ -445,9 +445,9 @@ class VolumeMonitor(object):
             "Requesting an extension for the volume replication: %s",
             volInfo)
         self._vm.cif.irs.sendExtendMsg(
-            drive.poolID, volInfo, newSize, self._after_replica_extension)
+            drive.poolID, volInfo, newSize, self._extend_replica_completed)
 
-    def _after_replica_extension(self, volInfo):
+    def _extend_replica_completed(self, volInfo):
         clock = volInfo["clock"]
         clock.stop("extend-replica")
 
@@ -488,9 +488,9 @@ class VolumeMonitor(object):
         }
         self._log.debug("Requesting an extension for the volume: %s", volInfo)
         self._vm.cif.irs.sendExtendMsg(
-            vmDrive.poolID, volInfo, newSize, self._after_volume_extension)
+            vmDrive.poolID, volInfo, newSize, self._extend_volume_completed)
 
-    def _after_volume_extension(self, volInfo):
+    def _extend_volume_completed(self, volInfo):
         callback = None
         error = None
         try:
