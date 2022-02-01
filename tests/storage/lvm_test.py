@@ -711,6 +711,7 @@ def test_suppress_warnings(fake_devices):
   before
   WARNING: This metadata update is NOT backed up.
   WARNING: Combining activation change with other commands is not advised.
+  WARNING: Activation disabled. No device-mapper interaction will be attempted.
   Configuration setting "global/event_activation" unknown.
   WARNING: ignoring metadata seqno 1566 on /dev/mapper/3600a098038304437415d4b6a59684474 for seqno 1567 on /dev/mapper/3600a098038304437415d4b6a59684474 for VG Bug."
   WARNING: Inconsistent metadata found for VG Bug."
