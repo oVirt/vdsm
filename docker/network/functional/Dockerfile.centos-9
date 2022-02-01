@@ -1,7 +1,11 @@
-FROM quay.io/ovirt/buildcontainer:stream9
+FROM quay.io/centos/centos:stream9
 
 # Add runtime dependencies.
 RUN dnf -y install dnf-plugins-core \
+    && \
+    dnf copr enable -y ovirt/ovirt-master-snapshot \
+    && \
+    dnf install -y ovirt-release-master \
     && \
     dnf update -y \
     && \
@@ -13,6 +17,8 @@ RUN dnf -y install dnf-plugins-core \
         autoconf \
         automake \
         dnsmasq \
+        git \
+        make \
         python3 \
         python3-devel \
         python3-pip \
