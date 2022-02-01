@@ -1479,11 +1479,15 @@ class StoragePool(object):
         # unchanged.
         self._assert_sd_in_pool(sdUUID)
 
-        # Extend volume without refreshing its size. If the SPM host see the
-        # new size immediately after extension, this can cause data corruption
-        # during VM migration when the source host is SPM. Volume size will be
-        # refreshed in Vm._after_volume_extension(), which is a callback of
-        # disk extend command.
+        # Extend the volume without refreshing its size. If the SPM host
+        # see the new size immediately after extension, this can cause
+        # data corruption during VM migration when the source host is
+        # SPM.
+        #
+        # The logical volume will be refreshed by the host requesting
+        # the extension when we send a reply, after refreshing the disk
+        # on the migration destination host.
+        #
         # For more details see https://bugzilla.redhat.com/1983882
         sdCache.produce(sdUUID).extendVolume(volumeUUID, size, refresh=False)
 
