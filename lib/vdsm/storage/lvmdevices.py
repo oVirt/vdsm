@@ -70,6 +70,10 @@ def configure(vgs):
     log.debug("Enabling lvm devices/use_devicesfile.")
     _configure_devices_file(enable=True)
 
+    # Devices file is now configured and enabled, check if it's valid and
+    # inform the user if it's not.
+    _run_check()
+
 
 def _enabled():
     """
@@ -131,6 +135,29 @@ def _run_vgimportdevices(vg):
 
     if p.returncode == 0 and err:
         log.warning("Command %s succeeded with warnings: %s", cmd, err)
+
+    if p.returncode != 0:
+        raise cmdutils.Error(cmd, p.returncode, out, err)
+
+
+def _run_check():
+    """
+    Check the devices file. As, according to LVM developers, the behavior of
+    this functionality is not entirely or strictly well defined yet, we don't
+    raise any exception if the check finds issues in devices file, but only
+    log a waring with found issues.
+    """
+    cmd = [LVM, 'lvmdevices', "--check"]
+
+    p = commands.start(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    out, err = commands.communicate(p)
+
+    if p.returncode == 0 and err:
+        log.warning("Found following issues in LVM devices file: %s", err)
 
     if p.returncode != 0:
         raise cmdutils.Error(cmd, p.returncode, out, err)
