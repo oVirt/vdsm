@@ -1278,26 +1278,6 @@ class Vm(object):
         self.log.debug('new rtc offset %s', newTimeOffset)
         self._timeOffset = newTimeOffset
 
-    def amend_block_info(self, drive, block_info):
-        """
-        Ammend block info from libvirt in case the drive is not chucked and is
-        replicating to a chunked drive.
-        """
-        if not drive.chunked:
-            # Libvirt reports watermarks only for the source drive, but for
-            # file-based drives it reports the same alloc and physical, which
-            # breaks our extend logic. Since drive is chunked, we must have a
-            # disk-based replica, so we get the physical size from the replica.
-            replica = drive.diskReplicate
-            volsize = self.getVolumeSize(
-                replica["domainID"],
-                replica["poolID"],
-                replica["imageID"],
-                replica["volumeID"])
-            block_info = block_info._replace(physical=volsize.apparentsize)
-
-        return block_info
-
     def get_block_stats(self):
         """
         Return stats for all block nodes.
@@ -4376,9 +4356,10 @@ class Vm(object):
 
         if drive.chunked or drive.replicaChunked:
             try:
-                block_stats = self.volume_monitor.get_block_stats()
                 index = self.query_drive_volume_index(drive, drive.volumeID)
-                block_info = self.amend_block_info(drive, block_stats[index])
+                block_stats = self.volume_monitor.get_block_stats()
+                block_info = self.volume_monitor.amend_block_info(
+                    drive, block_stats[index])
                 drive.block_info = block_info
                 self.extend_volume(
                     drive,

@@ -259,7 +259,7 @@ class VolumeMonitor(object):
             return False
 
         index = self._vm.query_drive_volume_index(drive, drive.volumeID)
-        block_info = self._vm.amend_block_info(drive, block_stats[index])
+        block_info = self.amend_block_info(drive, block_stats[index])
         drive.block_info = block_info
 
         if drive.threshold_state == storage.BLOCK_THRESHOLD.UNSET:
@@ -360,6 +360,8 @@ class VolumeMonitor(object):
                 "Drive %s needs to be extended, forced threshold_state "
                 "to exceeded", drive.name)
 
+    # Quering libvirt
+
     def get_block_stats(self):
         """
         Extract monitoring related info from libvirt block stats.
@@ -394,6 +396,26 @@ class VolumeMonitor(object):
             )
 
         return result
+
+    def amend_block_info(self, drive, block_info):
+        """
+        Ammend block info from libvirt in case the drive is not chucked and is
+        replicating to a chunked drive.
+        """
+        if not drive.chunked:
+            # Libvirt reports watermarks only for the source drive, but for
+            # file-based drives it reports the same alloc and physical, which
+            # breaks our extend logic. Since drive is chunked, we must have a
+            # disk-based replica, so we get the physical size from the replica.
+            replica = drive.diskReplicate
+            volsize = self._vm.getVolumeSize(
+                replica["domainID"],
+                replica["poolID"],
+                replica["imageID"],
+                replica["volumeID"])
+            block_info = block_info._replace(physical=volsize.apparentsize)
+
+        return block_info
 
     # Exteding volumes.
 
