@@ -402,7 +402,8 @@ def test_set_new_threshold_when_state_unset(
     assert vda.threshold_state == BLOCK_THRESHOLD.UNSET
     # first run: does nothing but set the block thresholds
 
-    vm.volume_monitor.update_threshold_state_exceeded = \
+    # TODO: Use public API.
+    vm.volume_monitor._update_threshold_state_exceeded = \
         lambda *args: None
 
     vm.monitor_volumes()
