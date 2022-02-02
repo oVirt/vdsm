@@ -82,9 +82,9 @@ class VolumeMonitor(object):
         If this returns True, the periodic system will invoke
         monitor_volumes during this periodic cycle.
         """
-        return self._enabled and bool(self.monitored_volumes())
+        return self._enabled and bool(self._monitored_volumes())
 
-    def set_threshold(self, drive, apparentsize, index):
+    def _set_threshold(self, drive, apparentsize, index):
         """
         Set the libvirt block threshold on the given drive image, enabling
         libvirt to deliver the event when the threshold is crossed.
@@ -213,7 +213,7 @@ class VolumeMonitor(object):
         """
         Return True if at least one volume is being extended, False otherwise.
         """
-        drives = self.monitored_volumes()
+        drives = self._monitored_volumes()
         if not drives:
             return False
 
@@ -263,9 +263,9 @@ class VolumeMonitor(object):
         drive.block_info = block_info
 
         if drive.threshold_state == storage.BLOCK_THRESHOLD.UNSET:
-            self.set_threshold(drive, block_info.physical, index)
+            self._set_threshold(drive, block_info.physical, index)
 
-        if not self.should_extend_volume(drive, drive.volumeID, block_info):
+        if not self._should_extend_volume(drive, drive.volumeID, block_info):
             return False
 
         # TODO: if the threshold is wrongly set below the current allocation,
@@ -273,8 +273,8 @@ class VolumeMonitor(object):
         # writes too fast, we will never receive an event.
         # We need to set the drive threshold to EXCEEDED both if we receive
         # one event or if we found that the threshold was exceeded during
-        # the VolumeMonitor.should_extend_volume check.
-        self.update_threshold_state_exceeded(drive)
+        # the VolumeMonitor._should_extend_volume check.
+        self._update_threshold_state_exceeded(drive)
 
         self._log.info(
             "Requesting extension for volume %s on domain %s block_info %s "
@@ -286,7 +286,7 @@ class VolumeMonitor(object):
 
         return True
 
-    def monitored_volumes(self):
+    def _monitored_volumes(self):
         """
         Return the drives that need to be checked for extension
         on the next monitoring cycle.
@@ -298,7 +298,7 @@ class VolumeMonitor(object):
         return [drive for drive in self._vm.getDiskDevices()
                 if drive.needs_monitoring()]
 
-    def should_extend_volume(self, drive, volumeID, block_info):
+    def _should_extend_volume(self, drive, volumeID, block_info):
         nextPhysSize = drive.getNextVolumeSize(
             block_info.physical, block_info.capacity)
 
@@ -347,7 +347,7 @@ class VolumeMonitor(object):
         free_space = block_info.physical - block_info.allocation
         return free_space < drive.watermarkLimit
 
-    def update_threshold_state_exceeded(self, drive):
+    def _update_threshold_state_exceeded(self, drive):
         if drive.threshold_state != storage.BLOCK_THRESHOLD.EXCEEDED:
             # if the threshold is wrongly set below the current allocation,
             # for example because of delays in handling the event,
@@ -570,7 +570,7 @@ class VolumeMonitor(object):
         drive.truesize = volsize.truesize
 
         index = self._vm.query_drive_volume_index(drive, drive.volumeID)
-        self.set_threshold(drive, volsize.apparentsize, index)
+        self._set_threshold(drive, volsize.apparentsize, index)
 
 
 _TARGET_RE = re.compile(r"([hvs]d[a-z]+)\[(\d+)\]")

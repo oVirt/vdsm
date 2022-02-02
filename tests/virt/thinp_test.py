@@ -59,7 +59,8 @@ def test_set_threshold():
     apparentsize = 4 * GiB
     threshold = 512 * MiB
 
-    mon.set_threshold(vda, apparentsize, 1)
+    # TODO: Use public API.
+    mon._set_threshold(vda, apparentsize, 1)
     expected = apparentsize - threshold
     assert vm._dom.thresholds == [('vda[1]', expected)]
 
@@ -76,7 +77,8 @@ def test_set_threshold_drive_too_small():
 
     apparentsize = 128 * MiB
 
-    mon.set_threshold(vda, apparentsize, 3)
+    # TODO: Use public API.
+    mon._set_threshold(vda, apparentsize, 3)
     target, value = vm._dom.thresholds[0]
     assert target == 'vda[3]'
     assert value >= 1
@@ -466,7 +468,8 @@ def test_monitored_volumes(drives, monitored):
         drive.monitorable = conf.get('monitorable', True)
         vm.drives.append(drive)
 
-    found = [drv.name for drv in mon.monitored_volumes()]
+    # TODO: Use public API
+    found = [drv.name for drv in mon._monitored_volumes()]
     assert found == monitored
 
 
