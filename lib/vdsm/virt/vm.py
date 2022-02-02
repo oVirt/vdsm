@@ -1280,15 +1280,6 @@ class Vm(object):
         self.log.debug('new rtc offset %s', newTimeOffset)
         self._timeOffset = newTimeOffset
 
-    def getChunkedDrives(self):
-        """
-        Return list of writable chunked drives, or writable non-chunked
-        drives replicating to chunked replica drive.
-        """
-        return [drive for drive in self._devices[hwclass.DISK]
-                if (drive.chunked or drive.replicaChunked) and not
-                drive.readonly]
-
     def _amend_block_info(self, drive, block_info):
         """
         Ammend block info from libvirt in case the drive is not chucked and is
