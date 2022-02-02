@@ -473,7 +473,7 @@ def test_monitored_volumes(drives, monitored):
     assert found == monitored
 
 
-def test_get_block_stats():
+def test_query_block_stats():
     vm = FakeVM()
 
     vm.block_stats = {
@@ -533,7 +533,7 @@ def test_get_block_stats():
     }
 
     mon = thinp.VolumeMonitor(vm, vm.log)
-    block_stats = mon._get_block_stats()
+    block_stats = mon._query_block_stats()
 
     assert block_stats == {
         2: thinp.BlockInfo(
@@ -579,7 +579,7 @@ class FakeVM(object):
     def getDiskDevices(self):
         return self.drives[:]
 
-    def get_block_stats(self):
+    def query_block_stats(self):
         return self.block_stats
 
 

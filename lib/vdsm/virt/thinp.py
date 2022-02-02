@@ -218,7 +218,7 @@ class VolumeMonitor(object):
             return False
 
         try:
-            block_stats = self._get_block_stats()
+            block_stats = self._query_block_stats()
         except libvirt.libvirtError as e:
             self._log.error("Unable to get block stats: %s", e)
             return False
@@ -369,20 +369,20 @@ class VolumeMonitor(object):
 
         The updated block info is stored in the drive.
         """
-        return self._query_block_info(drive, vol_id, self._get_block_stats())
+        return self._query_block_info(drive, vol_id, self._query_block_stats())
 
     def _query_block_info(self, drive, vol_id, block_stats):
         index = self._vm.query_drive_volume_index(drive, vol_id)
         drive.block_info = self._amend_block_info(drive, block_stats[index])
         return drive.block_info
 
-    def _get_block_stats(self):
+    def _query_block_stats(self):
         """
         Extract monitoring related info from libvirt block stats.
 
         Return mapping from volume backing index to its BlockInfo.
         """
-        block_stats = self._vm.get_block_stats()
+        block_stats = self._vm.query_block_stats()
         result = {}
 
         for i in range(block_stats["block.count"]):

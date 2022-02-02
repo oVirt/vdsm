@@ -442,7 +442,7 @@ def test_set_new_threshold_when_state_set(tmp_config):
 
     drives[0].threshold_state = BLOCK_THRESHOLD.SET
 
-    block_stats = mon._get_block_stats()
+    block_stats = mon._query_block_stats()
     extended = mon._extend_drive_if_needed(drives[0], block_stats)
 
     assert not extended
@@ -600,7 +600,7 @@ class FakeVM(Vm):
     def should_refresh_destination_volume(self):
         return False
 
-    def get_block_stats(self):
+    def query_block_stats(self):
         # Create libvirt response.
         raw_stats = {"block.count": len(self.block_stats)}
         for i, block_info in enumerate(self.block_stats.values()):
