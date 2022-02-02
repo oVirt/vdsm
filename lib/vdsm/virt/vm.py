@@ -1278,7 +1278,7 @@ class Vm(object):
         self.log.debug('new rtc offset %s', newTimeOffset)
         self._timeOffset = newTimeOffset
 
-    def get_block_stats(self):
+    def query_block_stats(self):
         """
         Return stats for all block nodes.
 
