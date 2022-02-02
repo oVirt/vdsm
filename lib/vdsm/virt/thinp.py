@@ -281,7 +281,7 @@ class VolumeMonitor(object):
             "threshold_state %s",
             drive.volumeID, drive.domainID, block_info, drive.threshold_state)
 
-        self._vm.extend_volume(
+        self.extend_volume(
             drive, drive.volumeID, block_info.physical, block_info.capacity)
 
         return True
