@@ -57,6 +57,8 @@ class VolumeMonitor(object):
         self._log = log
         self._enabled = enabled
 
+    # Enabling and disabling the monitor.
+
     def enabled(self):
         return self._enabled
 
@@ -83,6 +85,8 @@ class VolumeMonitor(object):
         monitor_volumes during this periodic cycle.
         """
         return self._enabled and bool(self._monitored_volumes())
+
+    # Managing libvirt block threshold.
 
     def _set_threshold(self, drive, apparentsize, index):
         """
@@ -208,6 +212,8 @@ class VolumeMonitor(object):
                 drive_name, self._vm.id)
         else:
             drive.on_block_threshold(path)
+
+    # Monitoring volumes.
 
     def monitor_volumes(self):
         """
@@ -357,7 +363,7 @@ class VolumeMonitor(object):
                 "Drive %s needs to be extended, forced threshold_state "
                 "to exceeded", drive.name)
 
-    # Quering libvirt
+    # Querying libvirt
 
     def query_block_info(self, drive, vol_id):
         """
