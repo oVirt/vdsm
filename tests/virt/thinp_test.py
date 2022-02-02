@@ -533,7 +533,7 @@ def test_get_block_stats():
     }
 
     mon = thinp.VolumeMonitor(vm, vm.log)
-    block_stats = mon.get_block_stats()
+    block_stats = mon._get_block_stats()
 
     assert block_stats == {
         2: thinp.BlockInfo(

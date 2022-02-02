@@ -218,7 +218,7 @@ class VolumeMonitor(object):
             return False
 
         try:
-            block_stats = self.get_block_stats()
+            block_stats = self._get_block_stats()
         except libvirt.libvirtError as e:
             self._log.error("Unable to get block stats: %s", e)
             return False
@@ -259,7 +259,7 @@ class VolumeMonitor(object):
             return False
 
         index = self._vm.query_drive_volume_index(drive, drive.volumeID)
-        block_info = self.amend_block_info(drive, block_stats[index])
+        block_info = self._amend_block_info(drive, block_stats[index])
         drive.block_info = block_info
 
         if drive.threshold_state == storage.BLOCK_THRESHOLD.UNSET:
@@ -362,7 +362,22 @@ class VolumeMonitor(object):
 
     # Quering libvirt
 
-    def get_block_stats(self):
+    def query_block_info(self, drive, vol_id):
+        """
+        Get block info for drive volume.
+
+        The drive must be part of the backing chain. This does not work for
+        volumes which are not in the backing chain like a scratch disks volume
+        or the target volume in blockCopy.
+
+        The updated block info is stored in the drive.
+        """
+        index = self._vm.query_drive_volume_index(drive, vol_id)
+        block_stats = self._get_block_stats()
+        drive.block_info = self._amend_block_info(drive, block_stats[index])
+        return drive.block_info
+
+    def _get_block_stats(self):
         """
         Extract monitoring related info from libvirt block stats.
 
@@ -397,7 +412,7 @@ class VolumeMonitor(object):
 
         return result
 
-    def amend_block_info(self, drive, block_info):
+    def _amend_block_info(self, drive, block_info):
         """
         Ammend block info from libvirt in case the drive is not chucked and is
         replicating to a chunked drive.
