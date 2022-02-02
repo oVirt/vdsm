@@ -258,12 +258,9 @@ class VolumeMonitor(object):
                 drive.name)
             return False
 
-        index = self._vm.query_drive_volume_index(drive, drive.volumeID)
-        block_info = self._amend_block_info(drive, block_stats[index])
-        drive.block_info = block_info
-
+        block_info = self._query_block_info(drive, drive.volumeID, block_stats)
         if drive.threshold_state == storage.BLOCK_THRESHOLD.UNSET:
-            self._set_threshold(drive, block_info.physical, index)
+            self._set_threshold(drive, block_info.physical, block_info.index)
 
         if not self._should_extend_volume(drive, drive.volumeID, block_info):
             return False
@@ -372,8 +369,10 @@ class VolumeMonitor(object):
 
         The updated block info is stored in the drive.
         """
+        return self._query_block_info(drive, vol_id, self._get_block_stats())
+
+    def _query_block_info(self, drive, vol_id, block_stats):
         index = self._vm.query_drive_volume_index(drive, vol_id)
-        block_stats = self._get_block_stats()
         drive.block_info = self._amend_block_info(drive, block_stats[index])
         return drive.block_info
 
