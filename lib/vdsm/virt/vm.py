@@ -4356,11 +4356,8 @@ class Vm(object):
 
         if drive.chunked or drive.replicaChunked:
             try:
-                index = self.query_drive_volume_index(drive, drive.volumeID)
-                block_stats = self.volume_monitor.get_block_stats()
-                block_info = self.volume_monitor.amend_block_info(
-                    drive, block_stats[index])
-                drive.block_info = block_info
+                block_info = self.volume_monitor.query_block_info(
+                    drive, drive.volumeID)
                 self.extend_volume(
                     drive,
                     drive.volumeID,

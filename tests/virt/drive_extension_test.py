@@ -442,7 +442,7 @@ def test_set_new_threshold_when_state_set(tmp_config):
 
     drives[0].threshold_state = BLOCK_THRESHOLD.SET
 
-    block_stats = mon.get_block_stats()
+    block_stats = mon._get_block_stats()
     extended = mon._extend_drive_if_needed(drives[0], block_stats)
 
     assert not extended
