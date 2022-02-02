@@ -40,7 +40,6 @@ from vdsm.virt import saslpasswd2
 from vdsm.virt import virdomain
 from vdsm.virt import vmexitreason
 from vdsm.virt.vmdevices import hwclass
-from vdsm.virt.vmdevices import storage
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import XMLTestCase
@@ -465,29 +464,6 @@ class TestVmOperations(XMLTestCase):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(vmId='testvm')
             assert not response.is_error(testvm.acpiReboot())
-
-    @permutations([
-        # info, expected
-        ({'readonly': True, 'diskType': storage.DISK_TYPE.BLOCK}, []),
-        ({'readonly': True, 'diskType': storage.DISK_TYPE.FILE}, []),
-        ({'readonly': False, 'diskType': storage.DISK_TYPE.FILE}, []),
-        ({'readonly': False, 'diskType': storage.DISK_TYPE.FILE}, []),
-        ({'readonly': False, 'diskType': storage.DISK_TYPE.BLOCK,
-          'format': 'raw'}, []),
-        ({'readonly': False, 'diskType': storage.DISK_TYPE.BLOCK}, ['vda']),
-        ({'readonly': False, 'diskType': storage.DISK_TYPE.FILE,
-          'diskReplicate': {
-              'format': 'cow', 'diskType': storage.DISK_TYPE.BLOCK}
-          },
-         ['vda']),
-    ])
-    def testGetChunkedDrives(self, disk_conf, expected):
-        with fake.VM() as testvm:
-            vda = storage.Drive(self.log, **drive_config(**disk_conf))
-            testvm._devices[hwclass.DISK] = [vda]
-
-            drives = [drive.name for drive in testvm.getChunkedDrives()]
-            assert drives == expected
 
     def test_process_migration_cpusets(self):
         with fake.VM() as testvm:
