@@ -419,7 +419,7 @@ class VolumeMonitor(object):
 
     def _amend_block_info(self, drive, block_info):
         """
-        Ammend block info from libvirt in case the drive is not chucked and is
+        Amend block info from libvirt in case the drive is not chucked and is
         replicating to a chunked drive.
         """
         if not drive.chunked:
@@ -437,7 +437,7 @@ class VolumeMonitor(object):
 
         return block_info
 
-    # Exteding volumes.
+    # Extending volumes.
 
     def extend_volume(self, vmDrive, volumeID, curSize, capacity,
                       callback=None):
