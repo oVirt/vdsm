@@ -223,23 +223,39 @@ class VolumeMonitor(object):
         if not drives:
             return False
 
-        try:
-            block_stats = self._query_block_stats()
-        except libvirt.libvirtError as e:
-            self._log.error("Unable to get block stats: %s", e)
+        if not self._update_block_info(drives):
             return False
 
         extended = False
         for drive in drives:
             try:
-                if self._extend_drive_if_needed(drive, block_stats):
+                if self._extend_drive_if_needed(drive):
                     extended = True
             except ImprobableResizeRequestError:
                 break
 
         return extended
 
-    def _extend_drive_if_needed(self, drive, block_stats):
+    def _update_block_info(self, drives):
+        """
+        Query libvirt block stats and update drives block info. This must be
+        done on every monitoring cycle, before we decide if a drive should be
+        extended.
+
+        Return True if the update was successful.
+        """
+        try:
+            block_stats = self._query_block_stats()
+        except libvirt.libvirtError as e:
+            self._log.error("Unable to get block stats: %s", e)
+            return False
+
+        for drive in drives:
+            self._query_block_info(drive, drive.volumeID, block_stats)
+
+        return True
+
+    def _extend_drive_if_needed(self, drive):
         """
         Check if a drive should be extended, and start extension flow if
         needed.
@@ -264,7 +280,8 @@ class VolumeMonitor(object):
                 drive.name)
             return False
 
-        block_info = self._query_block_info(drive, drive.volumeID, block_stats)
+        block_info = drive.block_info
+
         if drive.threshold_state == storage.BLOCK_THRESHOLD.UNSET:
             self._set_threshold(drive, block_info.physical, block_info.index)
 
