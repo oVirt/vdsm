@@ -23,9 +23,9 @@ tests/virt/                             @mz-pdm
 tests/virt/backup_test.py               @nirs
 tests/virt/cd_test.py                   @vjuranek
 tests/virt/diskreplicate_test.py        @nirs
-tests/virt/drive_extension_test.py      @nirs
 tests/virt/fakedomainadapter.py         @nirs
 tests/virt/livemerge_test.py            @nirs
+tests/virt/thinp_monitor_test.py        @nirs
 tests/virt/thinp_test.py                @nirs
 tests/virt/vmlease_test.py              @nirs @mz-pdm
 tests/virt/vmsecret_test.py             @nirs
