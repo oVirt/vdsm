@@ -52,6 +52,8 @@ def libvirt_sasl_isconfigured():
         # check for new default configuration - since libvirt 3.2
         if 'mech_list: gssapi\n' in lines:
             return NO
+        if 'mech_list: scram-sha-256\n' not in lines:
+            return NO
     return MAYBE
 
 
@@ -94,8 +96,8 @@ def removeConf():
 
 def configure_libvirt_sasl():
     with io.open(_SASL2_CONF, 'w', encoding='utf8') as f:
-        f.writelines([u'## start vdsm-4.20.0 configuration\n',
-                      u'mech_list: scram-sha-1\n',
+        f.writelines([u'## start vdsm-4.50.0 configuration\n',
+                      u'mech_list: scram-sha-256\n',
                       u'sasldb_path: %s\n' % (_LIBVIRT_SASLDB),
                       u'## end vdsm configuration']
                      )

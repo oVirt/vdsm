@@ -107,21 +107,28 @@ def patchConfigurators(mockConfigurers):
 
 class PasswdConfiguratorTest(VdsmTestCase):
     def testCheckIsConfiguredNo(self):
-        tmpfile = tempfile.mktemp()
-        with open(tmpfile, 'w') as f:
+        with tempfile.NamedTemporaryFile(mode='w+') as f:
             f.write("\n"
                     "\n"
                     "mech_list: gssapi\n")
+            f.flush()
 
-        passwd._SASL2_CONF = tmpfile
-        self.assertEqual(passwd.libvirt_sasl_isconfigured(), NO)
+            passwd._SASL2_CONF = f.name
+            self.assertEqual(passwd.libvirt_sasl_isconfigured(), NO)
+
+    def testCheckIsConfiguredNoWithWrongSha(self):
+        with tempfile.NamedTemporaryFile(mode='w+') as f:
+            f.write("\nmech_list: scram-sha-1\n")
+            f.flush()
+            passwd._SASL2_CONF = f.name
+            self.assertEqual(passwd.libvirt_sasl_isconfigured(), NO)
 
     def testCheckIsConfiguredMaybe(self):
-        tmpfile = tempfile.mktemp()
-        with open(tmpfile, 'w') as f:
-            f.write("\n")
-        passwd._SASL2_CONF = tmpfile
-        self.assertEqual(passwd.libvirt_sasl_isconfigured(), MAYBE)
+        with tempfile.NamedTemporaryFile(mode='w+') as f:
+            f.write("\nmech_list: scram-sha-256\n")
+            f.flush()
+            passwd._SASL2_CONF = f.name
+            self.assertEqual(passwd.libvirt_sasl_isconfigured(), MAYBE)
 
 
 @expandPermutations
