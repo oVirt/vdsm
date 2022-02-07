@@ -475,6 +475,10 @@ def test_force_drive_threshold_state_exceeded(tmp_config):
     # event received.
     assert drives[0].threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
+    # And try to exend.
+    assert len(vm.cif.irs.extensions) == 1
+    check_extension(vda, drives[0], vm.cif.irs.extensions[0])
+
 
 def test_event_received_before_write_completes(tmp_config):
     # QEMU submits an event when write is attempted, so it
