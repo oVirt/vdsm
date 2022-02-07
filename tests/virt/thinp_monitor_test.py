@@ -438,21 +438,19 @@ def test_set_new_threshold_when_state_unset_but_fails(tmp_config):
         assert drive.threshold_state == BLOCK_THRESHOLD.UNSET
 
 
-def test_set_new_threshold_when_state_set(tmp_config):
-    # Vm.monitor_volumes must not pick up drives with
-    # threshold_state == SET, so we call
-    # VolumeMonitor._extend_drive_if_needed explictely.
-    # TODO: Test without this calling it.
+def test_monitor_all_drives_set(tmp_config):
     vm = FakeVM(drive_infos())
-    mon = vm.volume_monitor
     drives = vm.getDiskDevices()
 
-    drives[0].threshold_state = BLOCK_THRESHOLD.SET
+    # first run: does nothing but set the block thresholds
+    vm.monitor_volumes()
 
-    block_stats = mon._query_block_stats()
-    extended = mon._extend_drive_if_needed(drives[0], block_stats)
+    assert drives[0].threshold_state == BLOCK_THRESHOLD.SET
+    assert drives[1].threshold_state == BLOCK_THRESHOLD.SET
 
-    assert not extended
+    # Next call should skip both drives.
+    assert not vm.monitor_volumes()
+    assert len(vm.cif.irs.extensions) == 0
 
 
 def test_force_drive_threshold_state_exceeded(tmp_config):
