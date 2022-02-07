@@ -80,6 +80,8 @@ CHUNK_SIZE = 1 * GiB
 CHUNK_PCT = 50
 REPLICA_BASE_INDEX = 1000
 
+log = logging.getLogger("test")
+
 
 # TODO: factor out this function and its counterpart in vmstorage_test.py
 def drive_config(**kw):
@@ -316,6 +318,7 @@ def test_extend_no_allocation(tmp_config):
                 diskReplicate={
                     'format': 'cow',
                     'diskType': DISK_TYPE.FILE,
+                    'size': 2 * GiB,
                 },
             ),
             block_info(allocation=2 * GiB, physical=2 * GiB),
@@ -325,12 +328,6 @@ def test_extend_no_allocation(tmp_config):
         id="replicate-to-file",
     ),
 
-    # TODO:
-    # Here the replica size should be bigger than the source drive size.
-    # Possible setup:
-    # source: allocation=1, physical=1
-    # replica: allocation=1, physical=3
-    # Currently we assume that drive size is same as replica size.
     pytest.param(
         (
             drive_config(
@@ -339,11 +336,16 @@ def test_extend_no_allocation(tmp_config):
                 diskReplicate={
                     'format': 'cow',
                     'diskType': DISK_TYPE.BLOCK,
+                    'size': 2 * GiB,
                 },
             ),
-            block_info(allocation=2 * GiB, physical=2 * GiB),
+            # Libvirt reports same allocation and physical for files, so
+            # we take the physical value from the replica.
+            block_info(allocation=750 * MiB, physical=750 * MiB),
         ),
         BLOCK_THRESHOLD.SET,
+        # During replication we use 2 * GiB chunk size instead of 1 GiB.
+        # With 50% utilization, we set the threshold to 1 GiB.
         1 * GiB,
         id="replicate-to-block",
     ),
@@ -366,6 +368,7 @@ def test_extend_no_allocation(tmp_config):
                 diskReplicate={
                     'format': 'cow',
                     'diskType': DISK_TYPE.BLOCK,
+                    'size': 3 * GiB,
                 },
             ),
             block_info(allocation=1 * GiB, physical=3 * GiB),
@@ -383,6 +386,7 @@ def test_extend_no_allocation(tmp_config):
                 diskReplicate={
                     'format': 'cow',
                     'diskType': DISK_TYPE.FILE,
+                    'size': 3 * GiB,
                 },
             ),
             block_info(allocation=1 * GiB, physical=3 * GiB),
@@ -399,13 +403,16 @@ def test_set_new_threshold_when_state_unset(
 
     vda = drives[0]  # shortcut
 
+    # Log replica and volumes size for easiser debuging.
+    if hasattr(vda, "diskReplicate"):
+        replica = vda.diskReplicate
+        key = (replica['domainID'], replica['poolID'],
+               replica['imageID'], replica['volumeID'])
+        log.debug("replica_size=%s", vm.cif.irs.volume_sizes[key])
+
     assert vda.threshold_state == BLOCK_THRESHOLD.UNSET
+
     # first run: does nothing but set the block thresholds
-
-    # TODO: Use public API.
-    vm.volume_monitor._update_threshold_state_exceeded = \
-        lambda *args: None
-
     vm.monitor_volumes()
 
     assert vda.threshold_state == expected_state
@@ -714,7 +721,7 @@ class FakeIRS(object):
             replica = drive.diskReplicate
             key = (replica['domainID'], replica['poolID'],
                    replica['imageID'], replica['volumeID'])
-            self.volume_sizes[key] = capacity
+            self.volume_sizes[key] = replica['size']
 
 
 def make_drive(log, drive_conf, block_info):
