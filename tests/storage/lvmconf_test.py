@@ -25,6 +25,8 @@ from __future__ import division
 import os
 import pytest
 
+from vdsm.common import cmdutils
+
 from vdsm.storage import lvmconf
 
 
@@ -218,6 +220,29 @@ def test_context_propagate_user_error(tmpdir):
 def test_real_lvm_conf():
     with lvmconf.LVMConfig() as conf:
         assert conf.getint("global", "use_lvmetad") in (1, 0, None)
+
+
+def test_configured_value_devices_dir():
+    # Test lvmconf.configured_value() with value "devices/dir" which is very
+    # unlikely to be something else than /dev.
+    dev_dir = lvmconf.configured_value("devices", "dir")
+    assert dev_dir == "/dev"
+
+
+def test_non_existing_config_value():
+    with pytest.raises(cmdutils.Error) as e:
+        lvmconf.configured_value("not", "exists")
+    assert e.value.rc == 5
+
+
+def test_configured_value_empty_section():
+    with pytest.raises(ValueError):
+        lvmconf.configured_value("", "dir")
+
+
+def test_configured_value_empty_option():
+    with pytest.raises(ValueError):
+        lvmconf.configured_value("devices", "")
 
 
 def create_lvm_conf(tmpdir, data):
