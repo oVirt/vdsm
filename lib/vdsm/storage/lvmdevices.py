@@ -41,7 +41,7 @@ from vdsm.storage import lvmconf
 from vdsm.storage import lvmfilter
 
 
-_LVM_SYSTEM_DEVICES_PATH = "/etc/lvm/devices/system.devices"
+_LVM_DEVICES_DIR = "/etc/lvm/devices"
 
 
 log = logging.getLogger("lvmdevices")
@@ -98,7 +98,13 @@ def _devices_file_exists():
     Returns True if default lvm devices file exists. If the file doesn't
     exists, lvm disables whole devices file functionality.
     """
-    return os.path.exists(_LVM_SYSTEM_DEVICES_PATH)
+    try:
+        devicesfile = lvmconf.configured_value("devices", "devicesfile")
+    except (cmdutils.Error, lvmconf.UnexpectedLvmConfigOutput):
+        return False
+
+    devices_file = os.path.join(_LVM_DEVICES_DIR, devicesfile)
+    return os.path.exists(devices_file)
 
 
 def _configure_devices_file(enable=True):
