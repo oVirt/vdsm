@@ -19,7 +19,9 @@
 #
 
 """
-Testng extension during replication may not be implemented yet.
+TODO:
+
+Testing replication flows:
 
 We have several cases:
 - replicating from chunked to chunked: extend the replica, then the volume.
@@ -189,11 +191,6 @@ def check_extension(drive_info, drive_obj, extension_req):
         assert drive_obj.imageID == volInfo['imageID']
         assert drive_obj.poolID == volInfo['poolID']
         assert drive_obj.volumeID == volInfo['volumeID']
-
-# TODO: missing tests:
-# - call extend_if_needed when drive.threshold_state is EXCEEDED
-#   -> extend
-# FIXME: already covered by existing cases?
 
 
 def test_extend(tmp_config):
