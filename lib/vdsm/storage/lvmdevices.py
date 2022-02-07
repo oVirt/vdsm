@@ -34,12 +34,13 @@ import logging
 import os
 import subprocess
 
+from vdsm import constants
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.storage import lvmconf
 from vdsm.storage import lvmfilter
 
-LVM = "/usr/sbin/lvm"
+
 _LVM_SYSTEM_DEVICES_PATH = "/etc/lvm/devices/system.devices"
 
 
@@ -126,7 +127,7 @@ def _run_vgimportdevices(vg):
     devices won't be imported. If the filter is wrong, we may miss some
     devices. To avoid such situation, set the filter to enable all the devices.
     """
-    cmd = [LVM,
+    cmd = [constants.EXT_LVM,
            'vgimportdevices',
            vg,
            '--config',
@@ -154,7 +155,7 @@ def _run_check():
     raise any exception if the check finds issues in devices file, but only
     log a waring with found issues.
     """
-    cmd = [LVM, 'lvmdevices', "--check"]
+    cmd = [constants.EXT_LVM, 'lvmdevices', "--check"]
 
     p = commands.start(
         cmd,

@@ -46,13 +46,13 @@ import operator
 import os
 import re
 
+from vdsm import constants
 from vdsm.common import errors
 from vdsm.common import udevadm
 from vdsm.common.compat import subprocess
 from vdsm.storage import lvmconf
 
 LSBLK = "/usr/bin/lsblk"
-LVM = "/usr/sbin/lvm"
 PROC_DEVICES = "/proc/devices"
 SYS_BLOCK_DEVICE_PATTERN = "/sys/block/{}/device/subsystem"
 WWID_ATTRIBUTE = {
@@ -455,7 +455,7 @@ def vg_info(lv_path):
     """
     log.debug("Looking up information for logical volume %r", lv_path)
     out = _run([
-        LVM,
+        constants.EXT_LVM,
         "lvs",
         "--noheadings",
         "--readonly",
@@ -482,7 +482,7 @@ def vg_devices(vg_name):
     """
     log.debug("Looking up volume group %r devices", vg_name)
     out = _run([
-        LVM,
+        constants.EXT_LVM,
         "vgs",
         "--noheadings",
         "--readonly",
