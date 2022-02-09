@@ -8459,7 +8459,7 @@ types:
 
     BlockScratchDisk: &BlockScratchDisk
         added: '4.4.5'
-        description: VM backup file-based scratch disk parameters
+        description: VM backup block-based scratch disk parameters
             for usage when starting a backup.
         name: BlockScratchDisk
         properties:
