@@ -24,7 +24,7 @@ This is a simple generic client that does not know anything about the available
 methods and parameters.
 Available commands and parameters are derived from the schema:
 
-    https://github.com/oVirt/vdsm/blob/master/lib/api/vdsm-api.yml
+    https://github.com/oVirt/vdsm/blob/master/lib/vdsm/api/vdsm-api.yml
 
 Please consult vdsm-client help in order to get information regarding the
 available methods.
