@@ -5,7 +5,19 @@ on:
     types: [created]
 
 jobs:
+  parse-params:
+    outputs:
+      ost_suite: ${{ steps.parse-params.outputs.ost_suite }}
+      ost_images_distro: ${{ steps.parse-params.outputs.ost_images_distro }}
+    steps:
+    - id: parse-params
+      run: |
+        echo "::set-output name=ost_suite::$(echo ${{ github.event.comment.body }} | egrep -o '\w+-suite-master' || echo basic-suite-master)"
+      run: |
+        echo "::set-output name=ost_images_distro::$(echo ${{ github.event.comment.body }} | egrep -o '(el8stream|el9stream|rhel8)' || echo el8stream)"
+
   trigger-ost:
+    needs: parse-params
     if: |
       github.event.issue.pull_request &&
       startsWith(github.event.comment.body, '/ost') &&
@@ -16,3 +28,5 @@ jobs:
     uses: oVirt/ovirt-system-tests/.github/workflows/ost.yaml@master
     with:
       pr_url: ${{ github.event.issue.pull_request.url }}
+      suite: ${{ needs.parse-params.outputs.ost_suite }}
+      distro: ${{ needs.parse-params.outputs.ost_images_distro }}
