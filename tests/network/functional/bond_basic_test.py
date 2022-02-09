@@ -25,7 +25,6 @@ from vdsm.network import errors as ne
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NOCHK, SetupNetworksError
 from network.nettestlib import dummy_device
-from network.nettestlib import running_on_centos_stream
 from network.nettestlib import veth_pair
 
 BOND_NAME = 'bond1_name'
@@ -174,7 +173,6 @@ class TestBondBasic(object):
         with adapter.setupNetworks({}, BONDCREATE, NOCHK):
             adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
-    @pytest.mark.skipif(running_on_centos_stream("9"), reason="BZ#1921094")
     def test_bond_slaves_order_does_not_affect_the_mac_address(
         self, adapter, switch, nic0, nic1
     ):
