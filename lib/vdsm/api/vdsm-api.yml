@@ -8455,6 +8455,21 @@ types:
                 volume resides on ('file').
             name: type
             type: *DiskType
+
+        -   description: The UUID of the Storage Domain containing the Volume
+            name: domainID
+            type: *UUID
+            added: '4.5'
+
+        -   description: The UUID of the Image
+            name: imageID
+            type: *UUID
+            added: '4.5'
+
+        -   description: The UUID of the Volume
+            name: volumeID
+            type: *UUID
+            added: '4.5'
         type: object
 
     BlockScratchDisk: &BlockScratchDisk
@@ -8471,6 +8486,21 @@ types:
                 volume resides on ('block').
             name: type
             type: *DiskType
+
+        -   description: The UUID of the Storage Domain containing the Volume
+            name: domainID
+            type: *UUID
+            added: '4.5'
+
+        -   description: The UUID of the Image
+            name: imageID
+            type: *UUID
+            added: '4.5'
+
+        -   description: The UUID of the Volume
+            name: volumeID
+            type: *UUID
+            added: '4.5'
         type: object
 
     ScratchDisk: &ScratchDisk
