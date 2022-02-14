@@ -358,14 +358,17 @@ def _start_monitoring_scratch_disks(vm, backup_disks, backup):
     disks = backup["disks"]
     for backup_disk in backup_disks.values():
         if backup_disk.scratch_disk.type == DISK_TYPE.BLOCK:
-            # TODO: Add domain, image, and volume ids when they are
-            # availble.
             scratch_disk = disks[backup_disk.drive.name]
             vm.log.info("Start monitoring scratch disk %s for drive %s",
                         scratch_disk, backup_disk.drive.name)
-            backup_disk.drive.scratch_disk = {
-                "index": scratch_disk["index"],
-            }
+            d = {"index": scratch_disk["index"]}
+            if backup_disk.scratch_disk.sd_id is not None:
+                d["sd_id"] = backup_disk.scratch_disk.sd_id
+            if backup_disk.scratch_disk.img_id is not None:
+                d["img_id"] = backup_disk.scratch_disk.img_id
+            if backup_disk.scratch_disk.vol_id is not None:
+                d["vol_id"] = backup_disk.scratch_disk.vol_id
+            backup_disk.drive.scratch_disk = d
 
 
 def _stop_monitoring_scratch_disks(vm):
