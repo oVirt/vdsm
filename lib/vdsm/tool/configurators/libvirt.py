@@ -42,6 +42,9 @@ from vdsm.tool.configfile import ParserWrapper
 from vdsm import constants
 
 
+_LIBIVRT_DAEMON_CONFIG = os.path.join(
+    constants.SYSCONF_PATH, 'sysconfig/libvirtd'
+)
 _LIBVIRT_SERVICE_UNIT = "libvirtd.service"
 _LIBVIRT_TCP_SOCKET_UNIT = "libvirtd-tcp.socket"
 _LIBVIRT_TLS_SOCKET_UNIT = "libvirtd-tls.socket"
@@ -99,6 +102,9 @@ def isconfigured():
     """
     Check if libvirt is already configured for vdsm
     """
+    # Creates libvirt conf file if not exists
+    open(_LIBIVRT_DAEMON_CONFIG, 'a').close()
+
     ret = MAYBE
     for path in (confutils.get_persisted_files(FILES)):
         if not confutils.open_config(path, CONF_VERSION).hasConf():
@@ -355,10 +361,7 @@ FILES = {
     },
 
     'LDCONF': {
-        'path': os.path.join(
-            constants.SYSCONF_PATH,
-            'sysconfig/libvirtd',
-        ),
+        'path': _LIBIVRT_DAEMON_CONFIG,
         'configure': confutils.add_section,
         'removeConf': confutils.remove_section,
         'persisted': True,
