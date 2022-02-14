@@ -294,7 +294,7 @@ def test_start_stop_backup_transient_scratch_disk(tmp_dirs):
     verify_scratch_disks_removed(vm)
 
 
-def test_start_stop_backup_engine_scratch_disks(tmpdir):
+def test_start_stop_backup_engine_scratch_disks_without_scratch_ids(tmpdir):
     vm = FakeVm()
     dom = FakeDomainAdapter()
 
@@ -308,12 +308,14 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
     fake_disks[0]['scratch_disk'] = {
         'path': scratch1,
         'type': DISK_TYPE.BLOCK,
+        # Engine does not send scratch disk IDs.
     }
 
     # File based scratch disk for file based disk.
     fake_disks[1]['scratch_disk'] = {
         'path': scratch2,
         'type': DISK_TYPE.FILE,
+        # Engine does not send scratch disk IDs.
     }
 
     config = {
@@ -349,6 +351,87 @@ def test_start_stop_backup_engine_scratch_disks(tmpdir):
 
     # We monitor only block based scratch disks.
     assert vm.drives[IMAGE_1_UUID].scratch_disk == {"index": 7}
+    assert vm.drives[IMAGE_2_UUID].scratch_disk is None
+
+    result_disks = res['result']['disks']
+    verify_backup_urls(vm, BACKUP_1_ID, result_disks)
+
+    backup.stop_backup(vm, dom, BACKUP_1_ID)
+    assert not dom.backing_up
+
+    # Stopping backup remove the scratch disks from the drives.
+    for drive in vm.drives.values():
+        assert drive.scratch_disk is None
+
+
+def test_start_stop_backup_engine_scratch_disks_with_scratch_ids(tmpdir):
+    vm = FakeVm()
+    dom = FakeDomainAdapter()
+
+    socket = backup.socket_path(BACKUP_1_ID)
+    scratch1 = create_scratch_disk(tmpdir, "scratch1")
+    scratch2 = create_scratch_disk(tmpdir, "scratch2")
+
+    fake_disks = create_fake_disks(vm)
+
+    # Block based scratch disk for block based disk.
+    fake_disks[0]['scratch_disk'] = {
+        'path': scratch1,
+        'type': DISK_TYPE.BLOCK,
+        # Engine sends scratch disk IDs.
+        'domainID': make_uuid(),
+        'imageID': make_uuid(),
+        'volumeID': make_uuid(),
+    }
+
+    # File based scratch disk for file based disk.
+    fake_disks[1]['scratch_disk'] = {
+        'path': scratch2,
+        'type': DISK_TYPE.FILE,
+        # Engine sends scratch disk IDs.
+        'domainID': make_uuid(),
+        'imageID': make_uuid(),
+        'volumeID': make_uuid(),
+    }
+
+    config = {
+        'backup_id': BACKUP_1_ID,
+        'disks': fake_disks
+    }
+
+    res = backup.start_backup(vm, dom, config)
+    assert dom.backing_up
+
+    backup_xml = f"""
+        <domainbackup mode='pull'>
+          <server transport='unix' socket='{socket}'/>
+          <disks>
+            <disk name='sda' backup='yes' type='block' backupmode='full'
+                exportname='sda' index='7'>
+              <driver type='qcow2'/>
+              <scratch dev='{scratch1}'>
+                <seclabel model='dac' relabel='no'/>
+              </scratch>
+            </disk>
+            <disk name='vda' backup='yes' type='file' backupmode='full'
+                exportname='vda' index='8'>
+              <driver type='qcow2'/>
+              <scratch file='{scratch2}'>
+                <seclabel model="dac" relabel="no"/>
+              </scratch>
+            </disk>
+          </disks>
+        </domainbackup>
+        """
+    assert normalized(dom.backupGetXMLDesc()) == normalized(backup_xml)
+
+    # We monitor only block based scratch disks.
+    assert vm.drives[IMAGE_1_UUID].scratch_disk == {
+        "index": 7,
+        'sd_id': fake_disks[0]['scratch_disk']['domainID'],
+        'img_id': fake_disks[0]['scratch_disk']['imageID'],
+        'vol_id': fake_disks[0]['scratch_disk']['volumeID'],
+    }
     assert vm.drives[IMAGE_2_UUID].scratch_disk is None
 
     result_disks = res['result']['disks']
