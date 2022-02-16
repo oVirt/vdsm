@@ -187,13 +187,11 @@ def test_cache_update(fake_hsm):
     assert hsm.sdCache.knownSDs['sd-uuid-1'] == nfs_find_method
 
 
-@pytest.mark.xfail(reason="BZ #2054745, not checking empty connections yet")
 def test_empty_conn_list_on_connect(fake_hsm):
     with pytest.raises(se.InvalidParameterException):
         fake_hsm.connectStorageServer(sd.ISCSI_DOMAIN, "fake-sp-uuid", [])
 
 
-@pytest.mark.xfail(reason="BZ #2054745, not ready to accept empty connection")
 def test_empty_conn_list_on_disconnect(fake_hsm):
     # If iSCSI target is used by multiple SDs, engine sends empty connection
     # list and vdsm has to handle empty list on disconnect.

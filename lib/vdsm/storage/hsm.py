@@ -2168,6 +2168,9 @@ class HSM(object):
                   successful
         :rtype: dict
         """
+        if not conList:
+            raise se.InvalidParameterException("conList", conList)
+
         vars.task.setDefaultException(
             se.StorageServerConnectionError(
                 "domType=%s, spUUID=%s, conList=%s" %
@@ -2226,6 +2229,12 @@ class HSM(object):
                   successful
         :rtype: dict
         """
+        if not conList:
+            # Engine currently sends empty list when more than one iSCSI SD use
+            # same iSCSI target. Return empty result list.
+            self.log.warning("Connection list is empty, ignoring request")
+            return dict(statuslist=[])
+
         vars.task.setDefaultException(
             se.StorageServerDisconnectionError(
                 "domType=%s, spUUID=%s, conList=%s" %
