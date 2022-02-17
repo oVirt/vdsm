@@ -63,7 +63,7 @@ Summary:        Virtual Desktop Server Manager
 Group:          Applications/System
 License:        GPLv2+
 Url:            http://www.ovirt.org/develop/developer-guide/vdsm/vdsm/
-Source0:        %{vdsm_name}-%{version}.tar.gz
+Source0:        https://github.com/oVirt/vdsm/releases/download/v%{version}/%{vdsm_name}-%{version}.tar.gz
 
 %{!?_licensedir:%global license %%doc}
 
