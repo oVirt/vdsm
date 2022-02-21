@@ -462,7 +462,16 @@ class VolumeMonitor(object):
         # Note that the volume is extended after the replica is extended, so
         # the total extend time includes the time to extend the replica.
         clock = time.Clock()
-        clock.start("total")
+
+        # If we received a block threshold event for this drive, include
+        # the time since we received the event in the total time.
+        # Otherwise measure only the time to extend the volume.
+        if vmDrive.exceeded_time:
+            clock.start("total", start_time=vmDrive.exceeded_time)
+            clock.start("wait", start_time=vmDrive.exceeded_time)
+            clock.stop("wait")
+        else:
+            clock.start("total")
 
         if vmDrive.replicaChunked:
             self._extend_replica(
