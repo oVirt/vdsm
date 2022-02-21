@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import logging
 import os
 import xml.etree.ElementTree as etree
 
@@ -36,6 +37,7 @@ from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
 
 from vdsm.common import exception
+from vdsm.common import time
 from vdsm.common.units import MiB, GiB
 from vdsm.common import xmlutils
 from vdsm import utils
@@ -43,6 +45,8 @@ from vdsm.virt.vmdevices import storage
 from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE, DRIVE_SHARED_TYPE
 from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
 import pytest
+
+log = logging.getLogger("test")
 
 VolumeChainEnv = namedtuple(
     'VolumeChainEnv',
@@ -615,6 +619,27 @@ class DriveDiskTypeTests(VdsmTestCase):
 
         drive.on_block_threshold('/old/path')
         assert drive.threshold_state == BLOCK_THRESHOLD.SET
+
+
+def test_drive_exceeded_time(monkeypatch):
+    conf = drive_config(diskType=DISK_TYPE.BLOCK, path="/path")
+    drive = Drive(log, **conf)
+
+    # Exceeded time not set yet.
+    assert drive.exceeded_time is None
+
+    # Setting threshold state does not set exceeded time.
+    drive.threshold_state = BLOCK_THRESHOLD.SET
+    assert drive.exceeded_time is None
+
+    # Getting threshold event sets exceeded time.
+    monkeypatch.setattr(time, "monotonic_time", lambda: 123.0)
+    drive.on_block_threshold("/path")
+    assert drive.exceeded_time == 123.0
+
+    # Changing threshold clears exceeded time.
+    drive.threshold_state = BLOCK_THRESHOLD.SET
+    assert drive.exceeded_time is None
 
 
 @expandPermutations
