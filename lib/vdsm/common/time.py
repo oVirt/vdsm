@@ -78,10 +78,12 @@ class Clock(object):
     def __init__(self):
         self._timers = collections.OrderedDict()
 
-    def start(self, name):
+    def start(self, name, start_time=None):
         if name in self._timers:
             raise RuntimeError("Timer %r already started" % name)
-        self._timers[name] = (monotonic_time(), None)
+        if start_time is None:
+            start_time = monotonic_time()
+        self._timers[name] = (start_time, None)
 
     def stop(self, name):
         if name not in self._timers:
