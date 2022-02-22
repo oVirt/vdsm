@@ -315,12 +315,14 @@ parameters = [
 
         ('irsd', '%(images)s/irsd', None),
 
-        ('volume_utilization_percent', '50',
+        ('volume_utilization_percent', '20',
             'Together with volume_utilization_chunk_mb, set the minimal free '
             'space before a thin provisioned block volume is extended. Use '
-            'lower values to extend earlier.'),
+            'lower values to extend earlier. With the default value (20) the'
+            'system will extend the volume when free space is 80% of '
+            'volume_utilization_chunk_mb (2 GiB).'),
 
-        ('volume_utilization_chunk_mb', '1024',
+        ('volume_utilization_chunk_mb', '2560',
             'Size of extension chunk in megabytes, and together with '
             'volume_utilization_percent, set the free space limit. Use higher '
             'values to extend in bigger chunks.'),
