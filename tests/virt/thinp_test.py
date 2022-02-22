@@ -23,6 +23,7 @@ import logging
 
 from vdsm.virt import thinp
 
+from vdsm.common.config import config
 from vdsm.common.units import MiB, GiB
 from vdsm.virt.vmdevices.storage import Drive, BLOCK_THRESHOLD
 
@@ -57,7 +58,9 @@ def test_set_threshold():
     vm.drives.append(vda)
 
     apparentsize = 4 * GiB
-    threshold = 512 * MiB
+    chunk_size = config.getint("irs", "volume_utilization_chunk_mb") * MiB
+    free = (100 - config.getint("irs", "volume_utilization_percent")) / 100
+    threshold = chunk_size * free
 
     # TODO: Use public API.
     mon._set_threshold(vda, apparentsize, 1)
