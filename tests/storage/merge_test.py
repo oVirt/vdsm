@@ -41,6 +41,7 @@ from storage.storagetestlib import (
 
 from . import qemuio
 
+from testlib import make_config
 from testlib import make_uuid
 
 from vdsm.common import cmdutils
@@ -56,6 +57,10 @@ from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import volume
 
+CONFIG = make_config([
+    ('irs', 'volume_utilization_chunk_mb', '1024'),
+    ('irs', 'volume_utilizzation_precent', '50'),
+])
 
 Volume = namedtuple("Volume", "format,virtual,physical")
 Expected = namedtuple("Expected", "virtual,physical")
@@ -73,32 +78,35 @@ def make_env(env_type, base, top):
         prealloc = sc.SPARSE_VOL
 
     with fake_env(env_type) as env:
-        env.make_volume(base.virtual * GiB, img_id, base_id,
-                        vol_format=sc.name2type(base.format),
-                        prealloc=prealloc)
-        env.make_volume(top.virtual * GiB, img_id, top_id,
-                        parent_vol_id=base_id,
-                        vol_format=sc.COW_FORMAT)
-        env.subchain = merge.SubchainInfo(
-            dict(sd_id=env.sd_manifest.sdUUID, img_id=img_id,
-                 base_id=base_id, top_id=top_id), 0)
-
-        if env_type == 'block':
-            # Simulate allocation by adjusting the LV sizes
-            env.lvm.extendLV(env.sd_manifest.sdUUID, base_id,
-                             base.physical * GiB // MiB)
-            env.lvm.extendLV(env.sd_manifest.sdUUID, top_id,
-                             top.physical * GiB // MiB)
-
         with MonkeyPatch().context() as mp:
             mp.setattr(guarded, 'context', fake_guarded_context())
+            mp.setattr(merge, "config", CONFIG)
             mp.setattr(merge, 'sdCache', env.sdcache)
+            mp.setattr(blockVolume, "config", CONFIG)
             mp.setattr(blockVolume, 'rm', FakeResourceManager())
             mp.setattr(blockVolume, 'sdCache', env.sdcache)
             mp.setattr(
                 image.Image, 'getChain',
                 lambda self, sdUUID, imgUUID:
                     [env.subchain.base_vol, env.subchain.top_vol])
+
+            env.make_volume(base.virtual * GiB, img_id, base_id,
+                            vol_format=sc.name2type(base.format),
+                            prealloc=prealloc)
+            env.make_volume(top.virtual * GiB, img_id, top_id,
+                            parent_vol_id=base_id,
+                            vol_format=sc.COW_FORMAT)
+            env.subchain = merge.SubchainInfo(
+                dict(sd_id=env.sd_manifest.sdUUID, img_id=img_id,
+                     base_id=base_id, top_id=top_id), 0)
+
+            if env_type == 'block':
+                # Simulate allocation by adjusting the LV sizes
+                env.lvm.extendLV(env.sd_manifest.sdUUID, base_id,
+                                 base.physical * GiB // MiB)
+                env.lvm.extendLV(env.sd_manifest.sdUUID, top_id,
+                                 top.physical * GiB // MiB)
+
             yield env
 
 
