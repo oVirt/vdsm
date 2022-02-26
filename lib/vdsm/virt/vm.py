@@ -1300,9 +1300,9 @@ class Vm(object):
 
     def monitor_volumes(self):
         """
-        Return True if at least one volume is being extended, False otherwise.
+        Check and extend drives if needed.
         """
-        return self.volume_monitor.monitor_volumes()
+        self.volume_monitor.monitor_volumes()
 
     def extend_volume(self, vmDrive, volumeID, curSize, capacity,
                       callback=None):
@@ -5150,8 +5150,7 @@ class Vm(object):
             self._setGuestCpuRunning(False, flow='IOError')
             self._logGuestCpuStatus('onIOError')
             if reason == 'ENOSPC':
-                if not self.monitor_volumes():
-                    self.log.info("No volumes were extended")
+                self.monitor_volumes()
 
             self._send_ioerror_status_event(reason, blockDevAlias)
             self._update_metadata()
