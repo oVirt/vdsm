@@ -217,24 +217,20 @@ class VolumeMonitor(object):
 
     def monitor_volumes(self):
         """
-        Return True if at least one volume is being extended, False otherwise.
+        Check and extend drives if needed.
         """
         drives = self._monitored_volumes()
         if not drives:
-            return False
+            return
 
         if not self._update_block_info(drives):
-            return False
+            return
 
-        extended = False
         for drive in drives:
             try:
-                if self._extend_drive_if_needed(drive):
-                    extended = True
+                self._extend_drive_if_needed(drive)
             except ImprobableResizeRequestError:
                 break
-
-        return extended
 
     def _update_block_info(self, drives):
         """
@@ -271,14 +267,12 @@ class VolumeMonitor(object):
         - EXCEEDED: the drive needs extension, try to extend it.
         - SET: this method should never receive a drive in this state,
                emit warning and exit.
-
-        Return True if started an extension flow, False otherwise.
         """
         if drive.threshold_state == storage.BLOCK_THRESHOLD.SET:
             self._log.warning(
                 "Unexpected state for drive %s: threshold_state SET",
                 drive.name)
-            return False
+            return
 
         block_info = drive.block_info
 
@@ -286,7 +280,7 @@ class VolumeMonitor(object):
             self._set_threshold(drive, block_info.physical, block_info.index)
 
         if not self._should_extend_volume(drive, drive.volumeID, block_info):
-            return False
+            return
 
         # TODO: if the threshold is wrongly set below the current allocation,
         # for example because of delays in handling the event, or if the VM
@@ -303,8 +297,6 @@ class VolumeMonitor(object):
 
         self.extend_volume(
             drive, drive.volumeID, block_info.physical, block_info.capacity)
-
-        return True
 
     def _monitored_volumes(self):
         """
