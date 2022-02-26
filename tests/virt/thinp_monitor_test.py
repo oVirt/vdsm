@@ -221,8 +221,7 @@ def test_extend(tmp_config):
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
     # Simulating periodic check
-    extended = vm.monitor_volumes()
-    assert extended is True
+    vm.monitor_volumes()
     assert len(vm.cif.irs.extensions) == 1
     check_extension(vdb, drives[1], vm.cif.irs.extensions[0])
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
@@ -256,8 +255,7 @@ def test_extend_no_allocation(tmp_config):
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
     # Simulating periodic check
-    extended = vm.monitor_volumes()
-    assert extended is True
+    vm.monitor_volumes()
     assert len(vm.cif.irs.extensions) == 1
     check_extension(vdb, drives[1], vm.cif.irs.extensions[0])
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
@@ -446,7 +444,7 @@ def test_monitor_all_drives_set(tmp_config):
     assert drives[1].threshold_state == BLOCK_THRESHOLD.SET
 
     # Next call should skip both drives.
-    assert not vm.monitor_volumes()
+    vm.monitor_volumes()
     assert len(vm.cif.irs.extensions) == 0
 
 
