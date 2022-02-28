@@ -1053,22 +1053,23 @@ class Volume(object):
             raise se.CannotCloneVolume(self.volumePath, dstPath, str(e))
 
         if add_bitmaps:
-            self.prepare(rw=False, justme=False)
-            try:
-                bitmaps.add_bitmaps(self.getVolumePath(), dstPath)
-            except exception.AddBitmapError as e:
-                # In case of failure to add the bitmaps, only an
-                # error log is propagated, we don't want to fail the
-                # snapshot creation, doing so will require a manual
-                # intervention from the user to remove the backups
-                # in order to create a snapshot successfully.
-                self.log.error(
-                    "Failed to add bitmaps to %r, note that the next "
-                    "incremental backup is likely to fail so a full backup "
-                    "will be required. Error: %s",
-                    dstPath, e)
-            finally:
-                self.teardown(self.sdUUID, self.volUUID, justme=False)
+            self._silent_clone_bitmaps(dstPath)
+
+    def _silent_clone_bitmaps(self, child_path):
+        """
+        Try to clone bitmaps from this volume to child volume, logging
+        failures.
+        """
+        self.prepare(rw=False, justme=False)
+        try:
+            bitmaps.add_bitmaps(self.getVolumePath(), child_path)
+        except exception.AddBitmapError as e:
+            self.log.error(
+                "Cannot clone bitmaps to child volume %r, the next backup "
+                "will be a full backup: %s",
+                child_path, e)
+        finally:
+            self.teardown(self.sdUUID, self.volUUID, justme=False)
 
     def _shareLease(self, dstImgPath):
         self._manifest._shareLease(dstImgPath)
