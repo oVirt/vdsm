@@ -186,7 +186,7 @@ class FakeDomainManifest(object):
     @recorded
     def validateCreateVolumeParams(
             self, volFormat, srcVolUUID, diskType=None, preallocate=None,
-            add_bitmaps=False):
+            add_bitmaps=False, bitmap=None):
         pass
 
     @recorded
@@ -681,7 +681,12 @@ class DomainTestMixin(object):
             (
                 'validateCreateVolumeParams',
                 ("1", "2"),
-                {"diskType": "3", "preallocate": None, "add_bitmaps": False}
+                {
+                    "diskType": "3",
+                    "preallocate": None,
+                    "add_bitmaps": False,
+                    "bitmap": None,
+                }
             )
         ]
         self.checker.check_method(
