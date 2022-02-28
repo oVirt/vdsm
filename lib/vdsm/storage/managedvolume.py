@@ -56,6 +56,7 @@ from vdsm.storage import managedvolumedb
 HELPER = '/usr/libexec/vdsm/managedvolume-helper'
 DEV_MAPPER = "/dev/mapper"
 DEV_RBD = "/dev/rbd"
+VOLUME_LINK_DIR = "/run/vdsm/managedvolumes/"
 
 log = logging.getLogger("storage.managedvolume")
 
@@ -112,18 +113,18 @@ def attach_volume(sd_id, vol_id, connection_info):
                         "Unsupported volume type, supported types are: "
                         "rbd, iscsi")
 
+                run_link = _add_run_link(sd_id, vol_id, path)
                 _add_udev_rule(vol_id, path)
             except:
                 _silent_detach(connection_info, attachment)
                 raise
         except:
-            _silent_remove(db, vol_id)
+            _silent_remove(db, sd_id, vol_id)
             raise
-
     log.debug("Attached volume %s attachment=%s", vol_id, attachment)
 
     return {"result": {'attachment': attachment, 'path': path,
-                       'vol_id': vol_id}}
+                       'vol_id': vol_id, 'managed_path': run_link}}
 
 
 @requires_os_brick
@@ -144,6 +145,7 @@ def detach_volume(sd_id, vol_id):
             run_helper("detach", vol_info)
 
         _remove_udev_rule(vol_info['vol_id'])
+        _remove_run_link(sd_id, vol_id)
         db.remove_volume(vol_id)
 
 
@@ -258,14 +260,18 @@ def _invalidate_lvm_devices(attachment):
         lvm.invalidate_devices()
 
 
-def _silent_remove(db, vol_id):
+def _silent_remove(db, sd_id, vol_id):
     """
-    Remove volume from db during cleanup flow, logging errors.
+    Remove volume from db, udev rule and link during cleanup flow, logging
+    errors.
     """
     try:
         db.remove_volume(vol_id)
     except Exception:
         log.exception("Failed to remove managed volume %s from DB", vol_id)
+
+    _remove_udev_rule(vol_id)
+    _remove_run_link(sd_id, vol_id)
 
 
 def _silent_detach(connection_info, attachment):
@@ -297,3 +303,28 @@ def _remove_udev_rule(vol_id):
     except Exception:
         log.exception(
             "Failed to remove udev rule for volume %s", vol_id)
+
+
+def _add_run_link(sd_id, vol_id, path):
+    _create_run_dir()
+    run_path = _run_link(sd_id, vol_id)
+    os.symlink(path, run_path)
+    return run_path
+
+
+def _remove_run_link(sd_id, vol_id):
+    try:
+        os.remove(_run_link(sd_id, vol_id))
+    except Exception:
+        log.exception("Failed to remove run link for volume %s", vol_id)
+
+
+def _create_run_dir():
+    try:
+        os.mkdir(VOLUME_LINK_DIR)
+    except FileExistsError:
+        pass
+
+
+def _run_link(sd_id, vol_id):
+    return os.path.join(VOLUME_LINK_DIR, f"{sd_id}_{vol_id}")
