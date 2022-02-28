@@ -51,7 +51,8 @@ def fake_os_brick(monkeypatch, tmpdir):
     log_path = tmpdir.join("os_brick.log")
     log_path.write("")
     monkeypatch.setenv("FAKE_OS_BRICK_LOG", str(log_path))
-
+    monkeypatch.setattr(
+        managedvolume, 'VOLUME_LINK_DIR', tmpdir.join("volumes"))
     monkeypatch.setattr(
         managedvolume, 'HELPER', "../lib/vdsm/storage/managedvolume-helper")
     os_brick_dir = os.path.abspath("storage/fake_os_brick")

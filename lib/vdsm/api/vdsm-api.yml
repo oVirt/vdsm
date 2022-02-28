@@ -1187,9 +1187,18 @@ types:
             name: connection_info
             type: *ManagedVolumeConnection
         -   defaultvalue: null
-            description: The volume path to be used in the VM XML
+            description: A stable volume path constructed by vdsm, used by
+                by engine to run VMs. Superseded by managed_path.
             name: path
             type: string
+            deprecated: '4.5'
+        -   defaultvalue: null
+            description: The volume path to be used for running VMs,
+                         a vdsm controlled link to the path mapped by
+                         os-brick.
+            name: managed_path
+            type: string
+            added: '4.5.1'
         -   defaultvalue: null
             description: The attached volume information
             name: attachment
