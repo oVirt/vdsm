@@ -1434,6 +1434,7 @@ def test_dump_sd_metadata(
         }
 
 
+@requires_root
 @pytest.mark.parametrize("domain_version", [5])
 def test_create_illegal_volume(domain_factory, domain_version, fake_task,
                                fake_sanlock):
