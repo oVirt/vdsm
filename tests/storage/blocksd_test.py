@@ -979,7 +979,7 @@ def test_create_snapshot_size(
 @requires_root
 @pytest.mark.root
 @pytest.mark.parametrize("domain_version", [4, 5])
-def test_create_with_bitmaps(
+def test_create_snapshot_cloning_bitmaps(
         tmp_storage, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
         fake_sanlock, domain_version):
     sd_uuid = str(uuid.uuid4())
@@ -1079,7 +1079,148 @@ def test_create_with_bitmaps(
 
 @requires_root
 @pytest.mark.root
-def test_failed_to_add_bitmaps_to_v3_domain(
+@pytest.mark.parametrize("domain_version", [4, 5])
+def test_create_snapshot_with_new_bitmap(
+        tmp_storage, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
+        fake_sanlock, domain_version):
+    sd_id = str(uuid.uuid4())
+
+    dev = tmp_storage.create_device(20 * GiB)
+    lvm.createVG(sd_id, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_id)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_id,
+        domainName="domain",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=domain_version,
+        storageType=sd.ISCSI_DOMAIN)
+
+    sdCache.knownSDs[sd_id] = blockSD.findDomain
+    sdCache.manuallyAddDomain(dom)
+
+    dom.refresh()
+    dom.attach(tmp_repo.pool_id)
+
+    img_id = str(uuid.uuid4())
+    base_id = str(uuid.uuid4())
+    base_capacity = 1 * GiB
+    top_id = str(uuid.uuid4())
+    top_capacity = 2 * base_capacity
+
+    # Create base volume.
+    dom.createVolume(
+        imgUUID=img_id,
+        capacity=base_capacity,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=base_id,
+        desc="Test base volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    base = dom.produceVolume(img_id, base_id)
+
+    base.prepare()
+    qemuimg.bitmap_add(base.getVolumePath(), "old-bitmap").run()
+    base.teardown(sd_id, base_id)
+
+    # Create top volume with a new bitmap.
+    dom.createVolume(
+        imgUUID=img_id,
+        capacity=top_capacity,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=top_id,
+        desc="Test top volume",
+        srcImgUUID=base.imgUUID,
+        srcVolUUID=base.volUUID,
+        add_bitmaps=True,
+        bitmap="new-bitmap")
+
+    top = dom.produceVolume(img_id, top_id)
+
+    top.prepare()
+    info = qemuimg.info(top.getVolumePath())
+    top.teardown(sd_id, top_id)
+
+    assert info['format-specific']['data']['bitmaps'] == [
+        {
+            "flags": ["auto"],
+            "name": "old-bitmap",
+            "granularity": 65536
+        },
+        {
+            "flags": ["auto"],
+            "name": "new-bitmap",
+            "granularity": 65536
+        },
+    ]
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("domain_version", [4, 5])
+def test_create_volume_with_new_bitmap(
+        tmp_storage, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
+        fake_sanlock, domain_version):
+    sd_id = str(uuid.uuid4())
+
+    dev = tmp_storage.create_device(20 * GiB)
+    lvm.createVG(sd_id, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_id)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_id,
+        domainName="domain",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=domain_version,
+        storageType=sd.ISCSI_DOMAIN)
+
+    sdCache.knownSDs[sd_id] = blockSD.findDomain
+    sdCache.manuallyAddDomain(dom)
+
+    dom.refresh()
+    dom.attach(tmp_repo.pool_id)
+
+    img_id = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+
+    # Create base volume.
+    dom.createVolume(
+        imgUUID=img_id,
+        capacity=1 * GiB,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=vol_id,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        bitmap="new-bitmap")
+
+    vol = dom.produceVolume(img_id, vol_id)
+
+    vol.prepare()
+    info = qemuimg.info(vol.getVolumePath())
+    vol.teardown(sd_id, vol_id)
+
+    assert info['format-specific']['data']['bitmaps'] == [
+        {
+            "flags": ["auto"],
+            "name": "new-bitmap",
+            "granularity": 65536
+        },
+    ]
+
+
+@requires_root
+@pytest.mark.root
+def test_fail_clone_bitmaps_v3_domain(
         tmp_storage, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
         fake_sanlock):
     sd_uuid = str(uuid.uuid4())
@@ -1134,6 +1275,46 @@ def test_failed_to_add_bitmaps_to_v3_domain(
             srcImgUUID=base_vol.imgUUID,
             srcVolUUID=base_vol.volUUID,
             add_bitmaps=True)
+
+
+@requires_root
+@pytest.mark.root
+def test_fail_create_new_bitmap_v3_domain(
+        tmp_storage, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
+        fake_sanlock):
+    sd_id = str(uuid.uuid4())
+
+    dev = tmp_storage.create_device(20 * GiB)
+    lvm.createVG(sd_id, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_id)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_id,
+        domainName="domain",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=3,
+        storageType=sd.ISCSI_DOMAIN)
+
+    sdCache.knownSDs[sd_id] = blockSD.findDomain
+    sdCache.manuallyAddDomain(dom)
+
+    dom.refresh()
+    dom.attach(tmp_repo.pool_id)
+
+    with pytest.raises(se.UnsupportedOperation):
+        # Create volume with new bitmap.
+        dom.createVolume(
+            imgUUID=str(uuid.uuid4()),
+            capacity=1 * GiB,
+            volFormat=sc.COW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType='DATA',
+            volUUID=str(uuid.uuid4()),
+            desc="Test top volume",
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID,
+            bitmap="new-bitmap")
 
 
 @requires_root
