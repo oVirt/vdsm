@@ -43,6 +43,8 @@ from vdsm.storage import glance
 
 OVIRT_GLANCE_URL = "http://glance.ovirt.org:9292"
 
+pytestmark = pytest.mark.skip("Tests depend on external server")
+
 
 @pytest.fixture(
     params=[
