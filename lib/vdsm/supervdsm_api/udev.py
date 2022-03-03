@@ -17,6 +17,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+"""
+General udev utilities
+
+Example for Managed Block Storage paths that are handled:
+# /dev/mapper/20024f4005854000b
+# /dev/rbd/volumes/volume-d1530bb1-8b92-40e8-9d5b-1adbcbc4eedc
+# /dev/nvme0n3
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 
@@ -48,7 +57,8 @@ _UDEV_RULE_FILE_NAME = os.path.join(
     _UDEV_RULE_FILE_EXT)
 
 _UDEV_RULE_FILE_NAME_MANAGED = os.path.join(
-    _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + 'managed_' + '%s' +
+    _UDEV_RULE_FILE_DIR,
+    _UDEV_RULE_FILE_PREFIX + 'managed_' + '%s' + '_' + '%s' +
     _UDEV_RULE_FILE_EXT)
 _UDEV_RULE_FILE_NAME_VFIO = os.path.join(
     _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + "iommu_group_%s" +
@@ -115,11 +125,15 @@ def rmAppropriateMultipathRules(thiefId):
 
 
 @expose
-def add_managed_udev_rule(vol_id, path):
-    rule_file = _UDEV_RULE_FILE_NAME_MANAGED % vol_id
-    symlink = os.path.relpath(path, '/dev/')
-    rule = 'SYMLINK=="%s", RUN+="%s %s:%s $env{DEVNAME}"\n' % (
-        symlink, EXT_CHOWN, DISKIMAGE_USER, DISKIMAGE_GROUP)
+def add_managed_udev_rule(sd_id, vol_id, path):
+    rule_file = _UDEV_RULE_FILE_NAME_MANAGED % (sd_id, vol_id)
+    device = os.path.relpath(path, '/dev/')
+    if os.path.islink(path):
+        rule = 'SYMLINK=="%s", RUN+="%s %s:%s $env{DEVNAME}"\n' % (
+            device, EXT_CHOWN, DISKIMAGE_USER, DISKIMAGE_GROUP)
+    else:
+        rule = 'KERNEL=="%s", RUN+="%s %s:%s $env{DEVNAME}"\n' % (
+            device, EXT_CHOWN, DISKIMAGE_USER, DISKIMAGE_GROUP)
     with open(rule_file, "w") as rf:
         _log.debug("Creating rule %s: %r", rule_file, rule)
         rf.write(rule)
@@ -127,12 +141,12 @@ def add_managed_udev_rule(vol_id, path):
 
 @expose
 def trigger_managed_udev_rule(path):
-    _udevTrigger(property_matches=(('DEVLINKS', path),))
+    _udevTrigger(path=path)
 
 
 @expose
-def remove_managed_udev_rule(vol_id):
-    rule_file = _UDEV_RULE_FILE_NAME_MANAGED % vol_id
+def remove_managed_udev_rule(sd_id, vol_id):
+    rule_file = _UDEV_RULE_FILE_NAME_MANAGED % (sd_id, vol_id)
     try:
         os.remove(rule_file)
     except FileNotFoundError:
