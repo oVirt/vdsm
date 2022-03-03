@@ -114,7 +114,7 @@ def attach_volume(sd_id, vol_id, connection_info):
                         "rbd, iscsi")
 
                 run_link = _add_run_link(sd_id, vol_id, path)
-                _add_udev_rule(vol_id, path)
+                _add_udev_rule(sd_id, vol_id, path)
             except:
                 _silent_detach(connection_info, attachment)
                 raise
@@ -144,7 +144,7 @@ def detach_volume(sd_id, vol_id):
         if "path" in vol_info and os.path.exists(vol_info["path"]):
             run_helper("detach", vol_info)
 
-        _remove_udev_rule(vol_info['vol_id'])
+        _remove_udev_rule(sd_id, vol_info['vol_id'])
         _remove_run_link(sd_id, vol_id)
         db.remove_volume(vol_id)
 
@@ -270,7 +270,7 @@ def _silent_remove(db, sd_id, vol_id):
     except Exception:
         log.exception("Failed to remove managed volume %s from DB", vol_id)
 
-    _remove_udev_rule(vol_id)
+    _remove_udev_rule(sd_id, vol_id)
     _remove_run_link(sd_id, vol_id)
 
 
@@ -286,20 +286,20 @@ def _silent_detach(connection_info, attachment):
         log.exception("Failed to detach managed volume %s", vol_info)
 
 
-def _add_udev_rule(vol_id, path):
+def _add_udev_rule(sd_id, vol_id, path):
     proxy = supervdsm.getProxy()
-    proxy.add_managed_udev_rule(vol_id, path)
+    proxy.add_managed_udev_rule(sd_id, vol_id, path)
     try:
         proxy.trigger_managed_udev_rule(path)
     except:
-        _remove_udev_rule(vol_id)
+        _remove_udev_rule(sd_id, vol_id)
         raise
 
 
-def _remove_udev_rule(vol_id):
+def _remove_udev_rule(sd_id, vol_id):
     try:
         proxy = supervdsm.getProxy()
-        proxy.remove_managed_udev_rule(vol_id)
+        proxy.remove_managed_udev_rule(sd_id, vol_id)
     except Exception:
         log.exception(
             "Failed to remove udev rule for volume %s", vol_id)
