@@ -53,7 +53,12 @@ def settle(timeout, exit_if_exists=None):
         logging.error("%s", e)
 
 
-def trigger(attr_matches=(), property_matches=(), subsystem_matches=()):
+def trigger(
+    attr_matches=(),
+    property_matches=(),
+    subsystem_matches=(),
+    path=None,
+):
     '''
     Request device events from the kernel.
 
@@ -83,6 +88,10 @@ def trigger(attr_matches=(), property_matches=(), subsystem_matches=()):
 
                         Causes only events related to specified subsystem to
                         be triggered.
+
+    path                Path to trigger events for. For example:
+                        /dev/mapper/20024f4005854000a
+
     '''
     _run_command(['control', '--reload'])
 
@@ -96,6 +105,9 @@ def trigger(attr_matches=(), property_matches=(), subsystem_matches=()):
 
     for name in subsystem_matches:
         cmd.append('--subsystem-match={}'.format(name))
+
+    if path:
+        cmd.append(path)
 
     _run_command(cmd)
 

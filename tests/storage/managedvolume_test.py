@@ -97,7 +97,7 @@ def fake_supervdsm(monkeypatch):
         def getProxy(self):
             return self
 
-        def add_managed_udev_rule(self, vol_id, path):
+        def add_managed_udev_rule(self, sd_id, vol_id, path):
             self.udev_rules[vol_id] = {
                 "path": path,
                 "triggered": False,
@@ -112,7 +112,7 @@ def fake_supervdsm(monkeypatch):
             raise OSError(
                 errno.EINVAL, 'Could not trigger change for rule %r', rule)
 
-        def remove_managed_udev_rule(self, vol_id):
+        def remove_managed_udev_rule(self, sd_id, vol_id):
             self.udev_rules.pop(vol_id, None)
 
     fsupervdsm = fake_supervdsm()
