@@ -419,9 +419,14 @@ class clientIF(object):
         """
         if type(drive) is dict:
             device = drive['device']
+
+            # Managed drives are prepared in ManagedVolume.attach_volume
+            if drive.get("managed", False):
+                volPath = drive['path']
+
             # PDIV drive format
             # Since version 4.2 cdrom may use a PDIV format
-            if device in ("cdrom", "disk") and isVdsmImage(drive):
+            elif device in ("cdrom", "disk") and isVdsmImage(drive):
                 res = self.irs.prepareImage(
                     drive['domainID'], drive['poolID'],
                     drive['imageID'], drive['volumeID'])
