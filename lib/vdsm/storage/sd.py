@@ -652,7 +652,8 @@ class StorageDomainManifest(object):
         pass
 
     def validateCreateVolumeParams(self, volFormat, srcVolUUID, diskType=None,
-                                   preallocate=None, add_bitmaps=False):
+                                   preallocate=None, add_bitmaps=False,
+                                   bitmap=None):
         """
         Validate create volume parameters
         """
@@ -669,19 +670,25 @@ class StorageDomainManifest(object):
         if preallocate is not None and preallocate not in sc.VOL_TYPE:
             raise se.IncorrectType(preallocate)
 
-        if add_bitmaps:
-            if srcVolUUID == sc.BLANK_UUID:
-                raise se.UnsupportedOperation(
-                    "Cannot add bitmaps for volume without parent volume",
-                    srcVolUUID=srcVolUUID,
-                    add_bitmaps=add_bitmaps)
+        if add_bitmaps and srcVolUUID == sc.BLANK_UUID:
+            raise se.UnsupportedOperation(
+                "Cannot add bitmaps without a parent volume",
+                srcVolUUID=srcVolUUID,
+                add_bitmaps=add_bitmaps)
 
-            if not self.supports_bitmaps_operations():
-                raise se.UnsupportedOperation(
-                    "Cannot perform bitmaps operations on "
-                    "storage domain version < 4",
-                    domain_version=self.getVersion(),
-                    add_bitmaps=add_bitmaps)
+        if bitmap and volFormat != sc.COW_FORMAT:
+            raise se.UnsupportedOperation(
+                f"Creating bitmap requires volFormat={sc.COW_FORMAT}",
+                volFormat=volFormat,
+                bitmap=bitmap)
+
+        if (add_bitmaps or bitmap) and not self.supports_bitmaps_operations():
+            raise se.UnsupportedOperation(
+                "Cannot perform bitmaps operations on storage domain "
+                "version < 4",
+                domain_version=self.getVersion(),
+                add_bitmaps=add_bitmaps,
+                bitmap=bitmap)
 
     def teardownVolume(self, imgUUID, volUUID):
         """
@@ -1199,15 +1206,16 @@ class StorageDomain(object):
                                      volUUID)
 
     def validateCreateVolumeParams(self, volFormat, srcVolUUID, diskType=None,
-                                   preallocate=None, add_bitmaps=False):
+                                   preallocate=None, add_bitmaps=False,
+                                   bitmap=None):
         return self._manifest.validateCreateVolumeParams(
             volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate,
-            add_bitmaps=add_bitmaps)
+            add_bitmaps=add_bitmaps, bitmap=bitmap)
 
     def createVolume(self, imgUUID, capacity, volFormat, preallocate, diskType,
                      volUUID, desc, srcImgUUID, srcVolUUID,
                      initial_size=None, add_bitmaps=False, legal=True,
-                     sequence=0):
+                     sequence=0, bitmap=None):
         """
         Create a new volume
         """
@@ -1215,7 +1223,7 @@ class StorageDomain(object):
             self._getRepoPath(), self.sdUUID, imgUUID, capacity, volFormat,
             preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID,
             initial_size=initial_size, add_bitmaps=add_bitmaps, legal=legal,
-            sequence=sequence)
+            sequence=sequence, bitmap=bitmap)
 
     def getMDPath(self):
         return self._manifest.getMDPath()

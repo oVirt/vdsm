@@ -31,6 +31,7 @@ from vdsm.common import conv
 from vdsm.common import cpuarch
 from vdsm.common import errors
 from vdsm.common import exception
+from vdsm.common import time
 from vdsm.common.units import MiB
 from vdsm.config import config
 from vdsm import utils
@@ -117,7 +118,7 @@ class Drive(core.Base):
                  '_diskType', 'hosts', 'protocol', 'auth', 'discard',
                  'vm_custom', '_block_info', '_threshold_state', '_lock',
                  '_monitorable', 'guestName', '_iotune', 'RBD', 'managed',
-                 'scratch_disk')
+                 'scratch_disk', 'exceeded_time')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         MiB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -233,7 +234,7 @@ class Drive(core.Base):
         if not hasattr(self, 'vm_custom'):
             self.vm_custom = {}
         self._monitorable = True
-        self._threshold_state = BLOCK_THRESHOLD.UNSET
+        self.threshold_state = BLOCK_THRESHOLD.UNSET
         # Keep sizes as int
         self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
         self.truesize = int(kwargs.get('truesize', '0'))
@@ -445,6 +446,8 @@ class Drive(core.Base):
     def threshold_state(self, state):
         with self._lock:
             self._threshold_state = state
+            # State set to EXCEEDED in on_block_threshold().
+            self.exceeded_time = None
 
     def needs_monitoring(self):
         """
@@ -933,6 +936,7 @@ class Drive(core.Base):
                 return
 
             self._threshold_state = BLOCK_THRESHOLD.EXCEEDED
+            self.exceeded_time = time.monotonic_time()
             self.log.info("drive %r threshold exceeded", self.name)
 
 

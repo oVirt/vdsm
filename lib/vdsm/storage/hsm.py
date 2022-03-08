@@ -1254,8 +1254,7 @@ class HSM(object):
                      srcImgUUID=sc.BLANK_UUID,
                      srcVolUUID=sc.BLANK_UUID,
                      initialSize=None, addBitmaps=False,
-                     legal=True,
-                     sequence=0):
+                     legal=True, sequence=0, bitmap=None):
         """
         Create a new volume
             Function Type: SPM
@@ -1265,10 +1264,10 @@ class HSM(object):
         argsStr = ("sdUUID=%s, spUUID=%s, imgUUID=%s, size=%s, volFormat=%s, "
                    "preallocate=%s, diskType=%s, volUUID=%s, desc=%s, "
                    "srcImgUUID=%s, srcVolUUID=%s, initialSize=%s, "
-                   "sequence=%s" %
+                   "sequence=%s, bitmap=%s" %
                    (sdUUID, spUUID, imgUUID, size, volFormat, preallocate,
                     diskType, volUUID, desc, srcImgUUID, srcVolUUID,
-                    initialSize, sequence))
+                    initialSize, sequence, bitmap))
         vars.task.setDefaultException(se.VolumeCreationError(argsStr))
         # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
@@ -1284,16 +1283,19 @@ class HSM(object):
             misc.validateUUID(srcImgUUID, 'srcImgUUID')
         if srcVolUUID:
             misc.validateUUID(srcVolUUID, 'srcVolUUID')
+        if bitmap:
+            misc.validateUUID(bitmap, 'bitmap')
+
         # Validate volume type and format
         dom.validateCreateVolumeParams(
             volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate,
-            add_bitmaps=addBitmaps)
+            add_bitmaps=addBitmaps, bitmap=bitmap)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(spUUID, "createVolume", pool.createVolume, sdUUID,
                           imgUUID, capacity, volFormat, preallocate, diskType,
                           volUUID, desc, srcImgUUID, srcVolUUID, initial_size,
-                          addBitmaps, legal, sequence)
+                          addBitmaps, legal, sequence, bitmap)
 
     @public
     def deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False,
@@ -1882,7 +1884,7 @@ class HSM(object):
 
         # After multipath.rescan, existing devices may disapper, and new
         # devices may appear, making lvm filter stale.
-        lvm.invalidateFilter()
+        lvm.invalidate_devices()
 
         return {'visible': visibility}
 
@@ -2168,6 +2170,9 @@ class HSM(object):
                   successful
         :rtype: dict
         """
+        if not conList:
+            raise se.InvalidParameterException("conList", conList)
+
         vars.task.setDefaultException(
             se.StorageServerConnectionError(
                 "domType=%s, spUUID=%s, conList=%s" %
@@ -2226,6 +2231,12 @@ class HSM(object):
                   successful
         :rtype: dict
         """
+        if not conList:
+            # Engine currently sends empty list when more than one iSCSI SD use
+            # same iSCSI target. Return empty result list.
+            self.log.warning("Connection list is empty, ignoring request")
+            return dict(statuslist=[])
+
         vars.task.setDefaultException(
             se.StorageServerDisconnectionError(
                 "domType=%s, spUUID=%s, conList=%s" %

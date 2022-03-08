@@ -72,10 +72,16 @@ class ScratchDiskConfig(properties.Owner):
     type = properties.Enum(
         required=True,
         values=[DISK_TYPE.FILE, DISK_TYPE.BLOCK])
+    sd_id = properties.UUID(required=False)
+    img_id = properties.UUID(required=False)
+    vol_id = properties.UUID(required=False)
 
     def __init__(self, **kw):
         self.path = kw.get("path")
         self.type = kw.get("type")
+        self.sd_id = kw.get("sd_id")
+        self.img_id = kw.get("img_id")
+        self.vol_id = kw.get("vol_id")
 
 
 class DiskConfig(properties.Owner):
@@ -98,7 +104,10 @@ class DiskConfig(properties.Owner):
             scratch_disk = disk_config.get("scratch_disk")
             self.scratch_disk = ScratchDiskConfig(
                 path=scratch_disk.get("path"),
-                type=scratch_disk.get("type"))
+                type=scratch_disk.get("type"),
+                sd_id=scratch_disk.get("domainID"),
+                img_id=scratch_disk.get("imageID"),
+                vol_id=scratch_disk.get("volumeID"))
         else:
             self.scratch_disk = None
 
@@ -349,14 +358,17 @@ def _start_monitoring_scratch_disks(vm, backup_disks, backup):
     disks = backup["disks"]
     for backup_disk in backup_disks.values():
         if backup_disk.scratch_disk.type == DISK_TYPE.BLOCK:
-            # TODO: Add domain, image, and volume ids when they are
-            # availble.
             scratch_disk = disks[backup_disk.drive.name]
             vm.log.info("Start monitoring scratch disk %s for drive %s",
                         scratch_disk, backup_disk.drive.name)
-            backup_disk.drive.scratch_disk = {
-                "index": scratch_disk["index"],
-            }
+            d = {"index": scratch_disk["index"]}
+            if backup_disk.scratch_disk.sd_id is not None:
+                d["sd_id"] = backup_disk.scratch_disk.sd_id
+            if backup_disk.scratch_disk.img_id is not None:
+                d["img_id"] = backup_disk.scratch_disk.img_id
+            if backup_disk.scratch_disk.vol_id is not None:
+                d["vol_id"] = backup_disk.scratch_disk.vol_id
+            backup_disk.drive.scratch_disk = d
 
 
 def _stop_monitoring_scratch_disks(vm):

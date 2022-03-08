@@ -116,7 +116,7 @@ def _parse_u32(tokens):
         elif token == 'terminal':
             data['terminal'] = _parser.parse_true(tokens)
             _parser.consume(tokens, 'flowid')
-            _parser.consume(tokens, '???')
+            _parser.consume(tokens, '???', 'not_in_hw')
         elif token == 'ht':
             _parser.consume(tokens, 'divisor')
             data['ht_divisor'] = _parser.parse_int(tokens)

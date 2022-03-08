@@ -19,6 +19,7 @@ RUN dnf -y install dnf-plugins-core \
         python3-devel \
         python3-six \
         python3-pip \
+        systemd \
     && \
     dnf clean all
 

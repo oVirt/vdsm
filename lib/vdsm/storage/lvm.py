@@ -238,7 +238,7 @@ devices {
  ignore_suspended_devices=1
  write_cache_state=0
  disable_after_error_count=3
- filter=%(filter)s
+ %(filter)s
  hints="none"
  obtain_device_list_from_udev=0
 }
@@ -256,14 +256,21 @@ backup {
 USER_DEV_LIST = [d for d in config.get("irs", "lvm_dev_whitelist").split(",")
                  if d is not None]
 
+USE_DEVICES = config.get("lvm", "config_method").lower() == "devices"
+
+
+def _prepare_device_set(devs):
+    devices = set(d.strip() for d in chain(devs, USER_DEV_LIST))
+    devices.discard('')
+    if devices:
+        devices = sorted(d.replace(r'\x', r'\\x') for d in devices)
+    return devices
+
 
 def _buildFilter(devices):
-    devices = set(d.strip() for d in chain(devices, USER_DEV_LIST))
-    devices.discard('')
     if devices:
         # Accept specified devices, reject everything else.
         # ["a|^/dev/1$|^/dev/2$|", "r|.*|"]
-        devices = sorted(d.replace(r'\x', r'\\x') for d in devices)
         pattern = "|".join("^{}$".format(d) for d in devices)
         accept = '"a|{}|", '.format(pattern)
     else:
@@ -273,7 +280,10 @@ def _buildFilter(devices):
     return '[{}"r|.*|"]'.format(accept)
 
 
-def _buildConfig(dev_filter, use_lvmpolld="1"):
+def _buildConfig(dev_filter="", use_lvmpolld="1"):
+    if dev_filter:
+        dev_filter = f"filter={dev_filter}"
+
     conf = LVMCONF_TEMPLATE % {
         "filter": dev_filter,
         "use_lvmpolld": use_lvmpolld,
@@ -383,9 +393,9 @@ class LVMCache(object):
         """
         self._runner = cmd_runner
         self._cache_lvs = cache_lvs
-        self._filter = None
-        self._filterStale = True
-        self._filterLock = threading.Lock()
+        self._devices = None
+        self._devices_stale = True
+        self._devices_lock = threading.Lock()
         self._lock = threading.Lock()
         self._cmd_sem = threading.BoundedSemaphore(self.MAX_COMMANDS)
         self._stalepv = True
@@ -400,20 +410,28 @@ class LVMCache(object):
     def stats(self):
         return self._stats
 
-    def _getCachedFilter(self):
-        with self._filterLock:
-            if self._filterStale:
-                self._filter = _buildFilter(multipath.getMPDevNamesIter())
-                self._filterStale = False
-            return self._filter
+    def _cached_devices(self):
+        with self._devices_lock:
+            if self._devices_stale:
+                self._devices = _prepare_device_set(
+                    multipath.getMPDevNamesIter())
+                self._devices_stale = False
+            return self._devices
 
     def _addExtraCfg(self, cmd, devices=tuple(), use_lvmpolld=True):
         newcmd = [constants.EXT_LVM, cmd[0]]
 
         if devices:
-            dev_filter = _buildFilter(devices)
+            device_set = _prepare_device_set(devices)
         else:
-            dev_filter = self._getCachedFilter()
+            device_set = self._cached_devices()
+
+        if USE_DEVICES:
+            if device_set:
+                newcmd += ["--devices", ",".join(device_set)]
+            dev_filter = ""
+        else:
+            dev_filter = _buildFilter(device_set)
 
         conf = _buildConfig(
             dev_filter=dev_filter,
@@ -425,11 +443,11 @@ class LVMCache(object):
 
         return newcmd
 
-    def invalidateFilter(self):
-        self._filterStale = True
+    def invalidate_devices(self):
+        self._devices_stale = True
 
     def invalidateCache(self):
-        self.invalidateFilter()
+        self.invalidate_devices()
         self.flush()
 
     def run_command(self, cmd, devices=(), use_lvmpolld=True):
@@ -446,14 +464,14 @@ class LVMCache(object):
             except se.LVMCommandError as e:
                 error = e
 
-            # 2. Retry the command with a wider filter, in case the we failed
-            # or got no data because of a stale filter.
-            self.invalidateFilter()
+            # 2. Retry the command with a refreshed devices, in case the we
+            # failed or got no data because of a stale device cache.
+            self.invalidate_devices()
             wider_cmd = self._addExtraCfg(cmd)
             if wider_cmd != full_cmd:
                 log.warning(
                     "Command with specific filter failed or returned no data, "
-                    "retrying with a wider filter: %s", error)
+                    "retrying with refreshed device list: %s", error)
                 full_cmd = wider_cmd
                 tries += 1
                 try:
@@ -1855,8 +1873,8 @@ def lvsByTag(vgName, tag):
     return [lv for lv in getLV(vgName) if tag in lv.tags]
 
 
-def invalidateFilter():
-    _lvminfo.invalidateFilter()
+def invalidate_devices():
+    _lvminfo.invalidate_devices()
 
 
 def cache_stats():

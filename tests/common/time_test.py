@@ -81,6 +81,30 @@ class TestClock:
                 fake_time.time += 4
         assert str(c) == "<Clock(outer=7.00, inner=4.00)>"
 
+    def test_start_with_start_time(self, fake_time):
+        # We received an event.
+        event_time = fake_time.time
+
+        # The event was handled after 5 seconds...
+        fake_time.time += 5
+        c = time.Clock()
+
+        # The total time includes the wait time..
+        c.start("total", start_time=event_time)
+
+        # Measure the time we waited since the event was received.
+        c.start("wait", start_time=event_time)
+        c.stop("wait")
+
+        # Measure processing time.
+        c.start("process")
+        fake_time.time += 2
+        c.stop("process")
+
+        c.stop("total")
+
+        assert str(c) == "<Clock(total=7.00, wait=5.00, process=2.00)>"
+
     # Inccorrect usage
 
     def test_start_started_clock(self):

@@ -26,7 +26,6 @@ from contextlib import contextmanager
 import pytest
 
 from vdsm.common.units import MiB, GiB
-from vdsm.config import config
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -49,7 +48,10 @@ from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
 
 
-CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
+CONFIG = make_config([
+    ('irs', 'volume_utilization_chunk_mb', '1024'),
+    ('irs', 'volume_utilizzation_precent', '50'),
+])
 
 
 @expandPermutations
@@ -73,7 +75,7 @@ class TestBlockVolumeSize(VdsmTestCase):
         # Sparse, cow, capacity config.volume_utilization_chunk_mb - 1,
         # No initial size.
         # Expected 1024 MiB allocated (config.volume_utilization_chunk_mb)
-        [(sc.SPARSE_VOL, sc.COW_FORMAT, (config.getint(
+        [(sc.SPARSE_VOL, sc.COW_FORMAT, (CONFIG.getint(
             "irs", "volume_utilization_chunk_mb") - 1) * MiB, None), GiB],
         # Sparse, cow, capacity 4 GiB, initial size 952320 B.
         [(sc.SPARSE_VOL, sc.COW_FORMAT, 4 * GiB, 952320),
@@ -87,6 +89,7 @@ class TestBlockVolumeSize(VdsmTestCase):
          int(BlockVolume.max_size(GiB, sc.COW_FORMAT) *
              blockVolume.QCOW_OVERHEAD_FACTOR)],
     ])
+    @MonkeyPatch(blockVolume, 'config', CONFIG)
     def test_block_volume_size(self, args, result):
         size = BlockVolume.calculate_volume_alloc_size(*args)
         self.assertEqual(size, result)
@@ -132,6 +135,7 @@ class TestBlockVolumeManifest(VdsmTestCase):
         self.assertEqual(BlockVolume.max_size(10 * GiB, sc.COW_FORMAT),
                          11811160064)
 
+    @MonkeyPatch(blockVolume, 'config', CONFIG)
     def test_optimal_size_raw(self):
         # verify optimal size equals to virtual size.
         with self.make_volume(size=GiB) as vol:

@@ -2,30 +2,30 @@
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Default if nothing more specific matches
-*                                       @nirs @mz-pdm @vjuranek @almusil @tinez
+*                                       @nirs @mz-pdm @almusil @tinez
 
 # Storage
-lib/vdsm/storage/                       @nirs @vjuranek
-tests/storage/                          @nirs @vjuranek
+lib/vdsm/storage/                       @nirs
+tests/storage/                          @nirs
 
 # Virt
 lib/dnf-plugins                         @mz-pdm
 lib/vdsm/virt/                          @mz-pdm
 lib/vdsm/virt/backup.py                 @nirs
-lib/vdsm/virt/livemerge.py              @nirs @vjuranek
+lib/vdsm/virt/livemerge.py              @nirs
 lib/vdsm/virt/periodic.py               @mz-pdm @nirs
-lib/vdsm/virt/secret.py                 @nirs @vjuranek
-lib/vdsm/virt/thinp.py                  @nirs @vjuranek
-lib/vdsm/virt/vm.py                     @mz-pdm @nirs @vjuranek
-lib/vdsm/virt/vmdevices/lease.py        @nirs @vjuranek @mz-pdm
-lib/vdsm/virt/vmdevices/storage.py      @nirs @vjuranek @mz-pdm
+lib/vdsm/virt/secret.py                 @nirs
+lib/vdsm/virt/thinp.py                  @nirs
+lib/vdsm/virt/vm.py                     @mz-pdm @nirs
+lib/vdsm/virt/vmdevices/lease.py        @nirs @mz-pdm
+lib/vdsm/virt/vmdevices/storage.py      @nirs @mz-pdm
 tests/virt/                             @mz-pdm
 tests/virt/backup_test.py               @nirs
-tests/virt/cd_test.py                   @vjuranek
+tests/virt/cd_test.py                   @nirs
 tests/virt/diskreplicate_test.py        @nirs
-tests/virt/drive_extension_test.py      @nirs
 tests/virt/fakedomainadapter.py         @nirs
 tests/virt/livemerge_test.py            @nirs
+tests/virt/thinp_monitor_test.py        @nirs
 tests/virt/thinp_test.py                @nirs
 tests/virt/vmlease_test.py              @nirs @mz-pdm
 tests/virt/vmsecret_test.py             @nirs
@@ -40,10 +40,10 @@ tests/network/                          @almusil
 lib/vdsm/gluster/
 
 # Infra
-lib/vdsm/alignmentScan.py               @nirs @vjuranek
+lib/vdsm/alignmentScan.py               @nirs
 lib/vdsm/api/                           @tinez
 lib/vdsm/client.py                      @tinez
-lib/vdsm/clientIF.py                    @mz-pdm @nirs @vjuranek
+lib/vdsm/clientIF.py                    @mz-pdm @nirs
 lib/vdsm/config.py                      @tinez
 lib/vdsm/constants.py                   @tinez
 lib/vdsm/cpuinfo.py                     @mz-pdm
@@ -53,7 +53,7 @@ lib/vdsm/health.py                      @nirs
 lib/vdsm/hook/                          @tinez
 lib/vdsm/host/                          @tinez
 lib/vdsm/hugepages.py                   @mz-pdm
-lib/vdsm/jobs.py                        @nirs @vjuranek @mz-pdm
+lib/vdsm/jobs.py                        @nirs @mz-pdm
 lib/vdsm/jsonrpcvdscli.py               @tinez
 lib/vdsm/kvm2ovirt.py                   @mz-pdm
 lib/vdsm/logUtils.py                    @nirs @mz-pdm @tinez
@@ -110,7 +110,7 @@ lib/vdsm/common/exception.py            @nirs @mz-pdm
 lib/vdsm/common/filecontrol.py          @tinez
 lib/vdsm/common/fileutils.py            @almusil @nirs @mz-pdm
 lib/vdsm/common/function.py             @almusil
-lib/vdsm/common/glob.py                 @nirs @vjuranek
+lib/vdsm/common/glob.py                 @nirs
 lib/vdsm/common/hooks.py                @tinez
 lib/vdsm/common/hostdev.py              @mz-pdm
 lib/vdsm/common/hostutils.py            @almusil
@@ -123,16 +123,16 @@ lib/vdsm/common/panic.py                @nirs @tinez
 lib/vdsm/common/password.py             @nirs @mz-pdm @tinez
 lib/vdsm/common/pki.py                  @tinez
 lib/vdsm/common/proc.py                 @almusil
-lib/vdsm/common/properties.py           @nirs @vjuranek
+lib/vdsm/common/properties.py           @nirs
 lib/vdsm/common/pthread.py              @mz-pdm @nirs @tinez
 lib/vdsm/common/sigutils.py             @tinez @nirs
 lib/vdsm/common/supervdsm.py            @tinez @nirs
-lib/vdsm/common/systemctl.py            @nirs @vjuranek
-lib/vdsm/common/systemd.py              @nirs @vjuranek
+lib/vdsm/common/systemctl.py            @nirs
+lib/vdsm/common/systemd.py              @nirs
 lib/vdsm/common/threadlocal.py          @tinez @nirs
 lib/vdsm/common/time.py                 @tinez @nirs
-lib/vdsm/common/udevadm.py              @nirs @vjuranek
-lib/vdsm/common/units.py                @nirs @vjuranek
+lib/vdsm/common/udevadm.py              @nirs
+lib/vdsm/common/units.py                @nirs
 lib/vdsm/common/unixrpc.py              @mz-pdm
 lib/vdsm/common/validate.py             @mz-pdm
 lib/vdsm/common/xmlutils.py             @mz-pdm
@@ -147,7 +147,7 @@ tests/common/systemd_test.py            @nirs
 tests/common/time_test.py               @nirs
 
 # Helpers
-helpers/fallocate                       @nirs @vjuranek
+helpers/fallocate                       @nirs
 helpers/kvm2ovirt                       @mz-pdm
 
 # Containers
@@ -162,13 +162,13 @@ static/etc/libvirt                      @mz-pdm
 static/etc/modprobe.d                   @almusil
 static/etc/modules-load.d               @almusil
 static/etc/NetworkManager               @almusil
-static/etc/ovirt-imageio                @nirs @vjuranek
-static/etc/sudoers.d                    @tinez @nirs @vjuranek
+static/etc/ovirt-imageio                @nirs
+static/etc/sudoers.d                    @tinez @nirs
 static/etc/vdsm/mom.d/                  @mz-pdm
 
 # Hooks
 vdsm_hooks/                             @tinez @mz-pdm @almusil
 
 # Documentation owners
-doc/                                    @nirs @mz-pdm @vjuranek @almusil @tinez @oVirt/ovirt-documentation
-README.md                               @nirs @mz-pdm @vjuranek @almusil @tinez @oVirt/ovirt-documentation
+doc/                                    @nirs @mz-pdm @almusil @tinez @oVirt/ovirt-documentation
+README.md                               @nirs @mz-pdm @almusil @tinez @oVirt/ovirt-documentation

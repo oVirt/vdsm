@@ -1893,7 +1893,8 @@ class StoragePool(object):
                      initialSize=None,
                      addBitmaps=False,
                      legal=True,
-                     sequence=0):
+                     sequence=0,
+                     bitmap=None):
         """
         Creates a new volume.
 
@@ -1962,7 +1963,7 @@ class StoragePool(object):
                 preallocate=preallocate, diskType=diskType, volUUID=volUUID,
                 desc=desc, srcImgUUID=srcImgUUID, srcVolUUID=srcVolUUID,
                 initial_size=initialSize, add_bitmaps=addBitmaps, legal=legal,
-                sequence=sequence)
+                sequence=sequence, bitmap=bitmap)
 
         return dict(uuid=newVolUUID)
 

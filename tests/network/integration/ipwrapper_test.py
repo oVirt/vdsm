@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2013-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -22,10 +21,8 @@
 import pytest
 
 from network.nettestlib import bond_device
-from network.nettestlib import Bridge
 from network.nettestlib import bridge_device
 from network.nettestlib import dummy_devices
-from network.nettestlib import running_on_centos_stream
 from network.nettestlib import vlan_device
 
 from vdsm.network import ethtool
@@ -106,23 +103,3 @@ class TestDrvinfo(object):
         assert not ipwrapper.getLink(
             bridge0
         ).promisc, 'Could not disable promiscuous mode.'
-
-
-class TestUnicodeDrvinfo(object):
-    @pytest.fixture
-    def unicode_bridge(self):
-        br = Bridge('vdsm-אבג')
-        br.create()
-        try:
-            yield br.dev_name
-        finally:
-            br.remove()
-
-    @pytest.mark.xfail(
-        reason='Failing on CentOS Stream 9',
-        strict=False,
-        condition=running_on_centos_stream('9'),
-    )
-    def test_utf8_bridge_ethtool_drvinfo(self, unicode_bridge):
-        driver_name = ethtool.driver_name(unicode_bridge)
-        assert driver_name == ipwrapper.LinkType.BRIDGE

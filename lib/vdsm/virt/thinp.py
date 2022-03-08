@@ -57,6 +57,8 @@ class VolumeMonitor(object):
         self._log = log
         self._enabled = enabled
 
+    # Enabling and disabling the monitor.
+
     def enabled(self):
         return self._enabled
 
@@ -82,9 +84,11 @@ class VolumeMonitor(object):
         If this returns True, the periodic system will invoke
         monitor_volumes during this periodic cycle.
         """
-        return self._enabled and bool(self.monitored_volumes())
+        return self._enabled and bool(self._monitored_volumes())
 
-    def set_threshold(self, drive, apparentsize, index=None):
+    # Managing libvirt block threshold.
+
+    def _set_threshold(self, drive, apparentsize, index):
         """
         Set the libvirt block threshold on the given drive image, enabling
         libvirt to deliver the event when the threshold is crossed.
@@ -152,7 +156,7 @@ class VolumeMonitor(object):
         else:
             drive.threshold_state = storage.BLOCK_THRESHOLD.SET
 
-    def clear_threshold(self, drive, index=None):
+    def clear_threshold(self, drive, index):
         """
         Clear the libvirt block threshold on the given drive, disabling
         libvirt events.
@@ -209,16 +213,18 @@ class VolumeMonitor(object):
         else:
             drive.on_block_threshold(path)
 
+    # Monitoring volumes.
+
     def monitor_volumes(self):
         """
         Return True if at least one volume is being extended, False otherwise.
         """
-        drives = self.monitored_volumes()
+        drives = self._monitored_volumes()
         if not drives:
             return False
 
         try:
-            block_stats = self.get_block_stats()
+            block_stats = self._query_block_stats()
         except libvirt.libvirtError as e:
             self._log.error("Unable to get block stats: %s", e)
             return False
@@ -258,14 +264,11 @@ class VolumeMonitor(object):
                 drive.name)
             return False
 
-        index = self._vm.query_drive_volume_index(drive, drive.volumeID)
-        block_info = self._vm.amend_block_info(drive, block_stats[index])
-        drive.block_info = block_info
-
+        block_info = self._query_block_info(drive, drive.volumeID, block_stats)
         if drive.threshold_state == storage.BLOCK_THRESHOLD.UNSET:
-            self.set_threshold(drive, block_info.physical, index=index)
+            self._set_threshold(drive, block_info.physical, block_info.index)
 
-        if not self.should_extend_volume(drive, drive.volumeID, block_info):
+        if not self._should_extend_volume(drive, drive.volumeID, block_info):
             return False
 
         # TODO: if the threshold is wrongly set below the current allocation,
@@ -273,20 +276,20 @@ class VolumeMonitor(object):
         # writes too fast, we will never receive an event.
         # We need to set the drive threshold to EXCEEDED both if we receive
         # one event or if we found that the threshold was exceeded during
-        # the VolumeMonitor.should_extend_volume check.
-        self.update_threshold_state_exceeded(drive)
+        # the VolumeMonitor._should_extend_volume check.
+        self._update_threshold_state_exceeded(drive)
 
         self._log.info(
             "Requesting extension for volume %s on domain %s block_info %s "
             "threshold_state %s",
             drive.volumeID, drive.domainID, block_info, drive.threshold_state)
 
-        self._vm.extend_volume(
+        self.extend_volume(
             drive, drive.volumeID, block_info.physical, block_info.capacity)
 
         return True
 
-    def monitored_volumes(self):
+    def _monitored_volumes(self):
         """
         Return the drives that need to be checked for extension
         on the next monitoring cycle.
@@ -298,7 +301,7 @@ class VolumeMonitor(object):
         return [drive for drive in self._vm.getDiskDevices()
                 if drive.needs_monitoring()]
 
-    def should_extend_volume(self, drive, volumeID, block_info):
+    def _should_extend_volume(self, drive, volumeID, block_info):
         nextPhysSize = drive.getNextVolumeSize(
             block_info.physical, block_info.capacity)
 
@@ -347,7 +350,7 @@ class VolumeMonitor(object):
         free_space = block_info.physical - block_info.allocation
         return free_space < drive.watermarkLimit
 
-    def update_threshold_state_exceeded(self, drive):
+    def _update_threshold_state_exceeded(self, drive):
         if drive.threshold_state != storage.BLOCK_THRESHOLD.EXCEEDED:
             # if the threshold is wrongly set below the current allocation,
             # for example because of delays in handling the event,
@@ -360,13 +363,32 @@ class VolumeMonitor(object):
                 "Drive %s needs to be extended, forced threshold_state "
                 "to exceeded", drive.name)
 
-    def get_block_stats(self):
+    # Querying libvirt
+
+    def query_block_info(self, drive, vol_id):
+        """
+        Get block info for drive volume.
+
+        The drive must be part of the backing chain. This does not work for
+        volumes which are not in the backing chain like a scratch disks volume
+        or the target volume in blockCopy.
+
+        The updated block info is stored in the drive.
+        """
+        return self._query_block_info(drive, vol_id, self._query_block_stats())
+
+    def _query_block_info(self, drive, vol_id, block_stats):
+        index = self._vm.query_drive_volume_index(drive, vol_id)
+        drive.block_info = self._amend_block_info(drive, block_stats[index])
+        return drive.block_info
+
+    def _query_block_stats(self):
         """
         Extract monitoring related info from libvirt block stats.
 
         Return mapping from volume backing index to its BlockInfo.
         """
-        block_stats = self._vm.get_block_stats()
+        block_stats = self._vm.query_block_stats()
         result = {}
 
         for i in range(block_stats["block.count"]):
@@ -395,7 +417,27 @@ class VolumeMonitor(object):
 
         return result
 
-    # Exteding volumes.
+    def _amend_block_info(self, drive, block_info):
+        """
+        Amend block info from libvirt in case the drive is not chucked and is
+        replicating to a chunked drive.
+        """
+        if not drive.chunked:
+            # Libvirt reports watermarks only for the source drive, but for
+            # file-based drives it reports the same alloc and physical, which
+            # breaks our extend logic. Since drive is chunked, we must have a
+            # disk-based replica, so we get the physical size from the replica.
+            replica = drive.diskReplicate
+            volsize = self._vm.getVolumeSize(
+                replica["domainID"],
+                replica["poolID"],
+                replica["imageID"],
+                replica["volumeID"])
+            block_info = block_info._replace(physical=volsize.apparentsize)
+
+        return block_info
+
+    # Extending volumes.
 
     def extend_volume(self, vmDrive, volumeID, curSize, capacity,
                       callback=None):
@@ -420,7 +462,16 @@ class VolumeMonitor(object):
         # Note that the volume is extended after the replica is extended, so
         # the total extend time includes the time to extend the replica.
         clock = time.Clock()
-        clock.start("total")
+
+        # If we received a block threshold event for this drive, include
+        # the time since we received the event in the total time.
+        # Otherwise measure only the time to extend the volume.
+        if vmDrive.exceeded_time:
+            clock.start("total", start_time=vmDrive.exceeded_time)
+            clock.start("wait", start_time=vmDrive.exceeded_time)
+            clock.stop("wait")
+        else:
+            clock.start("total")
 
         if vmDrive.replicaChunked:
             self._extend_replica(
@@ -570,17 +621,14 @@ class VolumeMonitor(object):
         drive.truesize = volsize.truesize
 
         index = self._vm.query_drive_volume_index(drive, drive.volumeID)
-        self.set_threshold(drive, volsize.apparentsize, index=index)
+        self._set_threshold(drive, volsize.apparentsize, index)
 
 
 _TARGET_RE = re.compile(r"([hvs]d[a-z]+)\[(\d+)\]")
 
 
 def format_target(name, index):
-    if index is None:
-        return name
-    else:
-        return "{}[{}]".format(name, index)
+    return "{}[{:d}]".format(name, index)
 
 
 def parse_target(target):

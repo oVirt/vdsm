@@ -8455,11 +8455,26 @@ types:
                 volume resides on ('file').
             name: type
             type: *DiskType
+
+        -   description: The UUID of the Storage Domain containing the Volume
+            name: domainID
+            type: *UUID
+            added: '4.5'
+
+        -   description: The UUID of the Image
+            name: imageID
+            type: *UUID
+            added: '4.5'
+
+        -   description: The UUID of the Volume
+            name: volumeID
+            type: *UUID
+            added: '4.5'
         type: object
 
     BlockScratchDisk: &BlockScratchDisk
         added: '4.4.5'
-        description: VM backup file-based scratch disk parameters
+        description: VM backup block-based scratch disk parameters
             for usage when starting a backup.
         name: BlockScratchDisk
         properties:
@@ -8471,6 +8486,21 @@ types:
                 volume resides on ('block').
             name: type
             type: *DiskType
+
+        -   description: The UUID of the Storage Domain containing the Volume
+            name: domainID
+            type: *UUID
+            added: '4.5'
+
+        -   description: The UUID of the Image
+            name: imageID
+            type: *UUID
+            added: '4.5'
+
+        -   description: The UUID of the Volume
+            name: volumeID
+            type: *UUID
+            added: '4.5'
         type: object
 
     ScratchDisk: &ScratchDisk
@@ -11895,6 +11925,16 @@ Volume.create:
         name: sequence
         type: int
         added: '4.5'
+
+    -   defaultvalue: null
+        description: If specified, create a new empty bitmap with the specified
+            UUID. Allowed only when creating a snapshot or when creating a new
+            volume in COW format. The new bitmap records the changes in the
+            volume since the volume was created.
+        name: bitmap
+        type: *UUID
+        added: '4.5'
+
     return:
         description: A task UUID
         type: *UUID

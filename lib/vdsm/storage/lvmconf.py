@@ -72,13 +72,25 @@ TODO
 
 """
 
-from __future__ import absolute_import
-
 import logging
 
 from augeas import Augeas
 
+from vdsm import constants
+from vdsm.common import commands
+
+
 log = logging.getLogger("storage.lvmconf")
+
+
+class UnexpectedLvmConfigOutput(Exception):
+    msg = "Unexpected LVM config output"
+
+    def __init__(self, reason):
+        self.value = "reason=%s" % reason
+
+    def __str__(self):
+        return "%s: %s" % (self.msg, repr(self.value))
 
 
 class LVMConfig(object):
@@ -186,3 +198,38 @@ class LVMConfig(object):
     def close(self):
         log.debug("Closing LVM configuration %s", self.path)
         self.aug.close()
+
+
+def configured_value(section, option):
+    """
+    Return value configured for the option, taken into account all config
+    files and default configurations.
+    """
+    if not section:
+        raise ValueError("Section must not be empty.")
+    if not option:
+        raise ValueError("Option must not be empty.")
+
+    cmd = [constants.EXT_LVM, "lvmconfig",
+           "--typeconfig", "full",
+           f"{section}/{option}"]
+    out = commands.run(cmd).decode("utf-8").strip()
+
+    # Validate, that the output is in expected format key=value and doesn't
+    # span multiple lines.
+    if "=" not in out or "\n" in out:
+        raise UnexpectedLvmConfigOutput(
+            f"Unexpected output: option={section}/{option}, output={out}")
+
+    key, value = out.split("=", 1)
+
+    # Validate, that returned key matches requested option.
+    if key.strip() != option:
+        raise UnexpectedLvmConfigOutput(
+            f"Returned key doesn't match option: option={option}, key={key}")
+
+    # String value.
+    if value[0] == '"' and value[-1] == '"':
+        value = value[1:-1]
+
+    return value

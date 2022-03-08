@@ -21,6 +21,7 @@ RUN dnf -y install dnf-plugins-core \
         make \
         python3-devel \
         python3-pip \
+        systemd \
         # Install vdsm-network for its dependencies
         vdsm-network \
     && \

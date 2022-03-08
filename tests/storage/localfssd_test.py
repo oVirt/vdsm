@@ -1201,7 +1201,7 @@ def test_create_illegal_volume(user_domain, local_fallocate):
     assert vol.getLegality() == sc.ILLEGAL_VOL
 
 
-def test_create_volume_with_bitmaps(user_domain, local_fallocate):
+def test_create_snapshot_cloning_bitmaps(user_domain, local_fallocate):
     if user_domain.getVersion() == 3:
         pytest.skip("Bitmaps operations not supported in v3 domains")
 
@@ -1267,7 +1267,99 @@ def test_create_volume_with_bitmaps(user_domain, local_fallocate):
     ]
 
 
-def test_failed_to_add_bitmaps_to_v3_domain(user_domain, local_fallocate):
+def test_create_snapshot_with_new_bitmap(user_domain, local_fallocate):
+    if user_domain.getVersion() == 3:
+        pytest.skip("Bitmaps operations not supported in v3 domains")
+
+    img_id = str(uuid.uuid4())
+    base_id = str(uuid.uuid4())
+    top_id = str(uuid.uuid4())
+
+    # Create base volume.
+    user_domain.createVolume(
+        imgUUID=img_id,
+        capacity=SPARSE_VOL_SIZE,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType="DATA",
+        volUUID=base_id,
+        desc="test",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    base = user_domain.produceVolume(img_id, base_id)
+
+    # Add bitmap to base volume.
+    qemuimg.bitmap_add(base.getVolumePath(), "old-bitmap").run()
+
+    # Create top volume.
+    user_domain.createVolume(
+        imgUUID=img_id,
+        capacity=SPARSE_VOL_SIZE,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=top_id,
+        desc="Test volume",
+        srcImgUUID=base.imgUUID,
+        srcVolUUID=base.volUUID,
+        add_bitmaps=True,
+        bitmap="new-bitmap",
+    )
+
+    top = user_domain.produceVolume(img_id, top_id)
+    info = qemuimg.info(top.getVolumePath())
+
+    # Old bitmap cloned to top volume, and new bitmap added.
+    assert info['format-specific']['data']['bitmaps'] == [
+        {
+            "flags": ["auto"],
+            "name": "old-bitmap",
+            "granularity": 65536
+        },
+        {
+            "flags": ["auto"],
+            "name": "new-bitmap",
+            "granularity": 65536
+        },
+    ]
+
+
+def test_create_volume_with_new_bitmap(user_domain, local_fallocate):
+    if user_domain.getVersion() == 3:
+        pytest.skip("Bitmaps operations not supported in v3 domains")
+
+    img_id = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+
+    # Create a volume with a new bitmap.
+    user_domain.createVolume(
+        imgUUID=img_id,
+        capacity=SPARSE_VOL_SIZE,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType="DATA",
+        volUUID=vol_id,
+        desc="test",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        bitmap='new-bitmap')
+
+    vol = user_domain.produceVolume(img_id, vol_id)
+
+    info = qemuimg.info(vol.getVolumePath())
+
+    # Old bitmap cloned to top volume, and new bitmap added.
+    assert info['format-specific']['data']['bitmaps'] == [
+        {
+            "flags": ["auto"],
+            "name": "new-bitmap",
+            "granularity": 65536
+        },
+    ]
+
+
+def test_fail_add_bitmaps_to_v3_domain(user_domain, local_fallocate):
     if user_domain.getVersion() != 3:
         pytest.skip("Bitmaps operations supported on domains version > 3")
 
@@ -1302,6 +1394,25 @@ def test_failed_to_add_bitmaps_to_v3_domain(user_domain, local_fallocate):
             srcImgUUID=parent_vol.imgUUID,
             srcVolUUID=parent_vol.volUUID,
             add_bitmaps=True
+        )
+
+
+def test_fail_create_bitmap_with_v3_domain(user_domain, local_fallocate):
+    if user_domain.getVersion() != 3:
+        pytest.skip("Bitmaps operations supported on domains version > 3")
+
+    with pytest.raises(se.UnsupportedOperation):
+        user_domain.createVolume(
+            imgUUID=str(uuid.uuid4()),
+            capacity=SPARSE_VOL_SIZE,
+            volFormat=sc.COW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType='DATA',
+            volUUID=str(uuid.uuid4()),
+            desc="Test volume",
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID,
+            bitmap="new-bitmap",
         )
 
 
