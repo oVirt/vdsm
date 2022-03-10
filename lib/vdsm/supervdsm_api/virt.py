@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Red Hat, Inc.
+# Copyright 2016-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -84,13 +84,14 @@ def hugepages_alloc(count, path):
 
 
 @expose
-def mdev_create(device, mdev_type, mdev_uuid=None):
-    """Create the desired mdev type.
+def mdev_create(device, mdev_properties, mdev_uuid=None):
+    """Create the desired mediated device.
 
     Args:
         device: PCI address of the parent device in the format
             (domain:bus:slot.function). Example:  0000:06:00.0.
-        mdev_type: Type to be spawned. Example: nvidia-11.
+        mdev_properties: `vdsm.common.hostdev.MdevProperties` instance
+            specifying the desired device properties
         mdev_uuid: UUID for the spawned device. Keeping None generates a new
             UUID.
 
@@ -102,15 +103,29 @@ def mdev_create(device, mdev_type, mdev_uuid=None):
     """
     path = os.path.join(
         '/sys/class/mdev_bus/{}/mdev_supported_types/{}/create'.format(
-            device, mdev_type
+            device, mdev_properties.device_type
         )
     )
-
     if mdev_uuid is None:
         mdev_uuid = str(uuid.uuid4())
-
     with open(path, 'w') as f:
         f.write(mdev_uuid)
+
+    driver_parameters = mdev_properties.driver_parameters
+    if driver_parameters is not None:
+        param_path = f'/sys/bus/mdev/devices/{mdev_uuid}/nvidia/vgpu_params'
+        try:
+            with open(param_path, 'w') as f:
+                f.write('%s\n' % (driver_parameters,))
+        except:
+            # We must perform the cleanup here, because we may not know the
+            # device UUID elsewhere.
+            try:
+                mdev_delete(device, mdev_uuid)
+            except Exception as e:
+                logging.error("Failed to remove vGPU device with failed "
+                              "driver parameters: %s", e)
+            raise
 
     return mdev_uuid
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2019 Red Hat, Inc.
+# Copyright 2015-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,8 @@ from __future__ import division
 from vdsm.common import validate
 from vdsm.common import xmlutils
 from vdsm.common.hostdev import detach_detachable, reattach_detachable, \
-    device_name_from_address, spawn_mdev, despawn_mdev, MdevPlacement
+    device_name_from_address, spawn_mdev, despawn_mdev, MdevPlacement, \
+    MdevProperties
 from vdsm.virt import vmxml
 
 from . import core
@@ -66,13 +67,14 @@ def _normalize_scsi_address(dev, addr):
 def _mdev_properties(dev, meta):
     mdev_type = None
     mdev_placement = MdevPlacement.COMPACT
+    mdev_driver_parameters = meta.get('mdevDriverParameters')
     mdev_metadata = meta.get('mdevType')
     if mdev_metadata:
         mdev_info = mdev_metadata.split('|')
         mdev_type = mdev_info[0]
         if len(mdev_info) > 1:
             mdev_placement = mdev_info[1]
-    return mdev_type, mdev_placement
+    return MdevProperties(mdev_type, mdev_placement, mdev_driver_parameters)
 
 
 def setup_device(dom, meta, log):
@@ -81,8 +83,7 @@ def setup_device(dom, meta, log):
         log.debug("Unknown kind of host device: %s",
                   xmlutils.tostring(dom, pretty=True))
     elif type_ == 'mdev':
-        mdev_type, mdev_placement = _mdev_properties(dom, meta)
-        spawn_mdev(mdev_type, name, mdev_placement, log)
+        spawn_mdev(_mdev_properties(dom, meta), name, log)
     else:
         log.info('Detaching device %s from the host.' % (name,))
         detach_detachable(name)
