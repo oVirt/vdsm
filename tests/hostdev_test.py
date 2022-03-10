@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2020 Red Hat, Inc.
+# Copyright 2014-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -252,8 +252,10 @@ class TestMdev(TestCaseBase):
                 (hostdev, '_each_mdev_device', lambda: self.devices)
         ]):
             for mdev_type, mdev_uuid in mdev_specs:
-                hostdev.spawn_mdev(mdev_type, mdev_uuid, mdev_placement,
-                                   self.log)
+                mdev_properties = hostdev.MdevProperties(
+                    mdev_type, mdev_placement, None
+                )
+                hostdev.spawn_mdev(mdev_properties, mdev_uuid, self.log)
         for inst, dev in zip(instances, self.devices):
             dev_inst = []
             for mdev_type in dev.mdev_types:
@@ -268,7 +270,10 @@ class TestMdev(TestCaseBase):
         with MonkeyPatchScope([
                 (hostdev, '_each_mdev_device', lambda: self.devices)
         ]):
+            mdev_properties = hostdev.MdevProperties(
+                'unsupported', placement, None
+            )
             self.assertRaises(
                 exception.ResourceUnavailable,
-                hostdev.spawn_mdev, 'unsupported', '1234', placement, self.log
+                hostdev.spawn_mdev, mdev_properties, '1234', self.log
             )

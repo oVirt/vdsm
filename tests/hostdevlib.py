@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -515,8 +515,8 @@ class FakeSuperVdsm:
     def getProxy(self):
         return self
 
-    def mdev_create(self, device, mdev_type, mdev_uuid):
+    def mdev_create(self, device, mdev_properties, mdev_uuid):
         for device_type in device.mdev_types:
-            if device_type.name == mdev_type:
+            if device_type.name == mdev_properties.device_type:
                 break
         device_type.mdev_create(mdev_uuid)

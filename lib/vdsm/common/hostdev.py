@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2020 Red Hat, Inc.
+# Copyright 2014-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ import os
 import uuid
 import xml.etree.ElementTree as etree
 
+from collections import namedtuple
 import libvirt
 import six
 
@@ -99,6 +100,16 @@ class Vendor:
 class MdevPlacement:
     COMPACT = 'compact'
     SEPARATE = 'separate'
+
+
+MdevProperties = namedtuple('MdevProperties', [
+    # Device type, such as "nvidia-22", string
+    'device_type',
+    # One of the MdevPlacement constants
+    'placement',
+    # Raw driver parameters to set, string or None
+    'driver_parameters'
+])
 
 
 class NoIOMMUSupportException(Exception):
@@ -641,9 +652,10 @@ def _mdev_type_devices(mdev_type, path):
     return os.listdir(os.path.join(path, mdev_type, 'devices'))
 
 
-def _suitable_device_for_mdev_type(target_mdev_type, mdev_placement, log):
+def _suitable_device_for_mdev_type(mdev_properties, log):
     target_device = None
-
+    target_mdev_type = mdev_properties.device_type
+    mdev_placement = mdev_properties.placement
     log.debug("Looking for a mdev of type {}".format(target_mdev_type))
     for device in _each_mdev_device():
         vendor = _mdev_device_vendor(device)
@@ -682,7 +694,7 @@ def _suitable_device_for_mdev_type(target_mdev_type, mdev_placement, log):
     if target_device is None and mdev_placement == MdevPlacement.SEPARATE:
         log.info("Separate mdev placement failed, trying compact placement.")
         return _suitable_device_for_mdev_type(
-            target_mdev_type, MdevPlacement.COMPACT, log
+            mdev_properties._replace(placement=MdevPlacement.COMPACT), log
         )
     return target_device
 
@@ -818,16 +830,18 @@ def change_numvfs(device_name, numvfs):
     supervdsm.getProxy().change_numvfs(numvfs, net_name)
 
 
-def spawn_mdev(mdev_type, mdev_uuid, mdev_placement, log):
-    device = _suitable_device_for_mdev_type(mdev_type, mdev_placement, log)
+def spawn_mdev(mdev_properties, mdev_uuid, log):
+    device = _suitable_device_for_mdev_type(mdev_properties, log)
     if device is None:
-        message = 'vgpu: No device with type {} is available'.format(mdev_type)
+        message = 'vgpu: No device with type {} is available'.format(
+            mdev_properties.device_type
+        )
         log.error(message)
         raise exception.ResourceUnavailable(message)
     try:
-        supervdsm.getProxy().mdev_create(device, mdev_type, mdev_uuid)
+        supervdsm.getProxy().mdev_create(device, mdev_properties, mdev_uuid)
     except IOError:
-        message = 'vgpu: Failed to create mdev type {}'.format(mdev_type)
+        message = f'vgpu: Failed to create mdev: {mdev_properties}'
         log.error(message)
         raise exception.ResourceUnavailable(message)
 
