@@ -631,6 +631,33 @@ def test_bitmap_backing_chain(nbd_env):
             assert c.read(2 * MiB, 64 * KiB) == b"\xf2" * 64 * KiB
 
 
+@pytest.mark.xfail(reason="missing validation")
+@broken_on_ci
+@requires_privileges
+def test_bitmap_in_use_single_volume(nbd_env):
+    vol = create_volume(nbd_env, "qcow2", "sparse")
+
+    bitmap = str(uuid.uuid4())
+    qemuimg.bitmap_add(vol.volumePath, bitmap).run()
+
+    # Simulate qemu crash, leaving bitmaps with the "in-use" flag by opening
+    # the image for writing and killing the process.
+    qemuio.abort(vol.volumePath)
+
+    config = {
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
+        "readonly": True,
+        "bitmap": bitmap,
+    }
+
+    # Starting server will fail since the bitmap in vol is in use.
+    with pytest.raises(se.InvalidBitmapChain):
+        with nbd_server(config):
+            pass
+
+
 @broken_on_ci
 @requires_privileges
 def test_bitmap_in_use_backing_chain(nbd_env):
@@ -654,6 +681,31 @@ def test_bitmap_in_use_backing_chain(nbd_env):
     }
 
     # Starting server will fail since the bitmap in vol2 is in in use.
+    with pytest.raises(se.InvalidBitmapChain):
+        with nbd_server(config):
+            pass
+
+
+@pytest.mark.xfail(reason="missing validation")
+@broken_on_ci
+@requires_privileges
+def test_bitmap_disabled_single_volume(nbd_env):
+    vol = create_volume(nbd_env, "qcow2", "sparse")
+
+    bitmap = str(uuid.uuid4())
+
+    # Add disabled bitmap.
+    qemuimg.bitmap_add(vol.volumePath, bitmap, enable=False).run()
+
+    config = {
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
+        "readonly": True,
+        "bitmap": bitmap,
+    }
+
+    # Starting server will fail since the bitmap is disabled.
     with pytest.raises(se.InvalidBitmapChain):
         with nbd_server(config):
             pass
@@ -683,6 +735,31 @@ def test_bitmap_disabled_backing_chain(nbd_env):
     with pytest.raises(se.InvalidBitmapChain):
         with nbd_server(config):
             pass
+
+
+@pytest.mark.xfail(reason="missing validation")
+@broken_on_ci
+@requires_privileges
+def test_bitmap_missing_single_volume(nbd_env):
+    vol = create_volume(nbd_env, "qcow2", "sparse")
+
+    bitmap = str(uuid.uuid4())
+
+    config = {
+        "sd_id": vol.sdUUID,
+        "img_id": vol.imgUUID,
+        "vol_id": vol.volUUID,
+        "readonly": True,
+        "bitmap": bitmap,
+    }
+
+    # Starting server will fail since the bitmap is missing.
+    with pytest.raises(se.BitmapDoesNotExist) as e:
+        with nbd_server(config):
+            pass
+
+    # Check that we report the volume where the bitmap is missing.
+    assert vol.volumePath in str(e.value)
 
 
 @broken_on_ci
