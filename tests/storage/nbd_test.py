@@ -633,7 +633,7 @@ def test_bitmap_backing_chain(nbd_env):
 
 @broken_on_ci
 @requires_privileges
-def test_bitmap_in_use(nbd_env):
+def test_bitmap_in_use_backing_chain(nbd_env):
     vol1 = create_volume(nbd_env, "qcow2", "sparse")
     vol2 = create_volume(nbd_env, "qcow2", "sparse", parent=vol1)
 
@@ -661,7 +661,7 @@ def test_bitmap_in_use(nbd_env):
 
 @broken_on_ci
 @requires_privileges
-def test_bitmap_disabled(nbd_env):
+def test_bitmap_disabled_backing_chain(nbd_env):
     vol1 = create_volume(nbd_env, "qcow2", "sparse")
     vol2 = create_volume(nbd_env, "qcow2", "sparse", parent=vol1)
 
@@ -747,7 +747,7 @@ def test_bitmap_missing_middle(nbd_env):
 
 @broken_on_ci
 @requires_privileges
-def test_bitmap_does_not_exist(nbd_env):
+def test_bitmap_does_not_exist_backing_chain(nbd_env):
     vol1 = create_volume(nbd_env, "raw", "sparse")
     vol2 = create_volume(nbd_env, "qcow2", "sparse", parent=vol1)
 
