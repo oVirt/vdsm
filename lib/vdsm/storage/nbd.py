@@ -192,7 +192,9 @@ def _create_overlay(server_id, backing, bitmap):
     """
     filenames = _find_bitmap(backing, bitmap)
     if not filenames:
-        raise se.BitmapDoesNotExist(bitmap=bitmap)
+        raise se.BitmapDoesNotExist(
+            reason=f"Bitmap does not exist in {backing}",
+            bitmap=bitmap)
 
     overlay = transientdisk.create_disk(
         server_id,
