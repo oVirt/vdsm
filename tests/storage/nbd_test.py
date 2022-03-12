@@ -631,7 +631,6 @@ def test_bitmap_backing_chain(nbd_env):
             assert c.read(2 * MiB, 64 * KiB) == b"\xf2" * 64 * KiB
 
 
-@pytest.mark.xfail(reason="missing validation")
 @broken_on_ci
 @requires_privileges
 def test_bitmap_in_use_single_volume(nbd_env):
@@ -686,7 +685,6 @@ def test_bitmap_in_use_backing_chain(nbd_env):
             pass
 
 
-@pytest.mark.xfail(reason="missing validation")
 @broken_on_ci
 @requires_privileges
 def test_bitmap_disabled_single_volume(nbd_env):
@@ -737,7 +735,6 @@ def test_bitmap_disabled_backing_chain(nbd_env):
             pass
 
 
-@pytest.mark.xfail(reason="missing validation")
 @broken_on_ci
 @requires_privileges
 def test_bitmap_missing_single_volume(nbd_env):
