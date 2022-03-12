@@ -134,7 +134,9 @@ def start_server(server_id, config):
 
     _create_rundir()
 
-    using_overlay = cfg.bitmap and vol.getParent() != sc.BLANK_UUID
+    # If the bitmap exists in the volume backing chain, we need to
+    # create an overlay exporting the bitmap from the entire chain.
+    using_overlay = cfg.bitmap and len(bitmap_chain) > 1
 
     if using_overlay:
         path = _create_overlay(
