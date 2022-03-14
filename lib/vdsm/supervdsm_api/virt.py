@@ -132,12 +132,11 @@ def mdev_create(device, mdev_properties, mdev_uuid=None):
 
 @expose
 def mdev_delete(device, mdev_uuid):
-    """
+    """Remove the given mediated device.
 
     Args:
         device: PCI address of the parent device in the format
             (domain:bus:slot.function). Example:  0000:06:00.0.
-        mdev_type: Type to be spawned. Example: nvidia-11.
         mdev_uuid: UUID for the spawned device. Keeping None generates a new
             UUID.
 
