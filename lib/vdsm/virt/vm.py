@@ -2125,6 +2125,23 @@ class Vm(object):
             xml_cpusets.append(vcpupin)
         return xml_cpusets
 
+    def _validate_migration_numa_nodesets(self, numaNodesets):
+        if numaNodesets is None:
+            return
+        if len(numaNodesets) != self._domain.vnuma_count:
+            raise exception.InvalidParameter(
+                "length of numaNodesets (%d) must match"
+                " number of vNUMA nodes (%d)" % (
+                    len(numaNodesets), self._domain.vnuma_count))
+        for nodeset in numaNodesets:
+            try:
+                # Validate node set string just like cpu list
+                taskset.cpulist_parse(nodeset)
+            except ValueError:
+                raise exception.InvalidParameter(
+                    "One or more invalid node set descriptions in: %r" %
+                    numaNodesets)
+
     @api.guard(_not_migrating)
     @api.guard(_not_paused_on_io_error)
     def migrate(self, params):
@@ -2133,6 +2150,7 @@ class Vm(object):
             # avoid failures later during migration
             params['cpusets'] = self._process_migration_cpusets(
                 params['cpusets'])
+        self._validate_migration_numa_nodesets(params.get('numaNodesets'))
         self._acquireCpuLockWithTimeout(flow='migrate')
         try:
             # It is unlikely, but we could receive migrate()

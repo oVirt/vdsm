@@ -3606,6 +3606,16 @@ types:
             -   string
             added: '4.5'
 
+        -   defaultvalue: null
+            description: A list of NUMA nodesets (e.g. '1,3-5') for all NUMA
+              nodes. Items of the list correspond to vNUMA cells and, if
+              specified, length of the list must match number of vNUMA cells
+              in the VM.
+            name: numaNodesets
+            type:
+            -   string
+            added: '4.5'
+
         type: object
 
     MigrationStatus: &MigrationStatus
