@@ -175,6 +175,17 @@ class MutableDomainDescriptor(object):
                     pinning[int(vcpu)] = cpus
         return pinning
 
+    @property
+    def vnuma_count(self):
+        """
+        :return: Number of vNUMA cells defined in VM. Zero is returned when
+          NUMA is not defined.
+        """
+        numa = vmxml.find_first(self._dom, 'cpu/numa', None)
+        if numa is None:
+            return 0
+        return len(list(vmxml.find_all(numa, 'cell')))
+
 
 class DomainDescriptor(MutableDomainDescriptor):
 

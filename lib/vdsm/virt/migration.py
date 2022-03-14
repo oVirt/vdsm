@@ -139,7 +139,7 @@ class SourceThread(object):
                  tunneled=False, dstqemu='', abortOnError=False,
                  consoleAddress=None, compressed=False,
                  autoConverge=False, recovery=False, encrypted=False,
-                 cpusets=None, parallel=None, **kwargs):
+                 cpusets=None, parallel=None, numaNodesets=None, **kwargs):
         self.log = vm.log
         self._vm = vm
         self._dom = DomainAdapter(self._vm)
@@ -202,6 +202,7 @@ class SourceThread(object):
         # the first extend of the disk during migration if finished.
         self._supports_disk_refresh = None
         self._destination_cpusets = cpusets
+        self._destination_numa_nodesets = numaNodesets
 
     def start(self):
         self._thread.start()
@@ -653,6 +654,15 @@ class SourceThread(object):
                 dom.append(cputune)
             for vcpupin in self._destination_cpusets:
                 cputune.append(vcpupin)
+        if self._destination_numa_nodesets is not None:
+            numatune = dom.find('numatune')
+            if numatune is not None:
+                for memnode in vmxml.find_all(numatune, 'memnode'):
+                    cellid = int(memnode.get('cellid'))
+                    if (cellid >= 0 and
+                            cellid < len(self._destination_numa_nodesets)):
+                        memnode.set('nodeset',
+                                    self._destination_numa_nodesets[cellid])
         xml = xmlutils.tostring(dom)
         self._vm.log.debug("Migrating domain XML: %s", xml)
         params[libvirt.VIR_MIGRATE_PARAM_DEST_XML] = xml
