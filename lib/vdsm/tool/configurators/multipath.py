@@ -37,9 +37,10 @@ _CONF_FILE = "/etc/multipath.conf"
 # "VDSM REVISION X.Y" tag.  Note that older version used "RHEV REVISION X.Y"
 # format.
 
-_CURRENT_TAG = "# VDSM REVISION 2.1"
+_CURRENT_TAG = "# VDSM REVISION 2.2"
 
 _OLD_TAGS = (
+    "# VDSM REVISION 2.1",
     "# VDSM REVISION 2.0",
     "# VDSM REVISION 1.9",
     "# VDSM REVISION 1.8",
@@ -193,8 +194,8 @@ defaults {
     max_fds                     4096
 }
 
-Blacklist local devices, obsolete protocols, and device nodes which
-should not be used with multipath.
+# Blacklist local devices, obsolete protocols, and device nodes which
+# should not be used with multipath.
 #
 # Complete list of protocols recognized by multipath:
 # scsi:fcp        Fibre Channel
