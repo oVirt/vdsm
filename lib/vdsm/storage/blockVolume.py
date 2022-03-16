@@ -492,7 +492,7 @@ class BlockVolume(volume.Volume):
     @classmethod
     def _create(cls, dom, imgUUID, volUUID, capacity, volFormat, preallocate,
                 volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None,
-                add_bitmaps=False):
+                add_bitmaps=False, bitmap=None):
         """
         Class specific implementation of volumeCreate. All the exceptions are
         properly handled and logged in volume.create()
@@ -526,6 +526,9 @@ class BlockVolume(volume.Volume):
                          imgUUID, volUUID, srcImgUUID, srcVolUUID, capacity)
             volParent.clone(
                 volPath, volFormat, capacity, add_bitmaps=add_bitmaps)
+
+        if bitmap:
+            cls._silent_add_bitmap(volPath, bitmap)
 
         with dom.acquireVolumeMetadataSlot(volUUID) as slot:
             mdTags = ["%s%s" % (sc.TAG_PREFIX_MD, slot),

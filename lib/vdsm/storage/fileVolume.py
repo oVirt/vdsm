@@ -446,7 +446,7 @@ class FileVolume(volume.Volume):
     @classmethod
     def _create(cls, dom, imgUUID, volUUID, capacity, volFormat, preallocate,
                 volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None,
-                add_bitmaps=False):
+                add_bitmaps=False, bitmap=None):
         """
         Class specific implementation of volumeCreate.
         """
@@ -456,7 +456,8 @@ class FileVolume(volume.Volume):
         else:
             return cls._create_cow_volume(
                 dom, volUUID, capacity, volPath, initial_size, volParent,
-                imgUUID, srcImgUUID, srcVolUUID, add_bitmaps)
+                imgUUID, srcImgUUID, srcVolUUID, add_bitmaps=add_bitmaps,
+                bitmap=bitmap)
 
     @classmethod
     def _create_raw_volume(
@@ -500,7 +501,7 @@ class FileVolume(volume.Volume):
     @classmethod
     def _create_cow_volume(
             cls, dom, vol_id, capacity, vol_path, initial_size, vol_parent,
-            img_id, src_img_id, src_vol_id, add_bitmaps):
+            img_id, src_img_id, src_vol_id, add_bitmaps, bitmap=None):
         """
         specific implementation of _create() for COW volumes.
         All the exceptions are properly handled and logged in volume.create()
@@ -528,6 +529,9 @@ class FileVolume(volume.Volume):
                          img_id, vol_id, src_img_id, src_vol_id, capacity)
             vol_parent.clone(
                 vol_path, sc.COW_FORMAT, capacity, add_bitmaps=add_bitmaps)
+
+        if bitmap:
+            cls._silent_add_bitmap(vol_path, bitmap)
 
         # Forcing the volume permissions in case one of the tools we use
         # (dd, qemu-img, etc.) will mistakenly change the file permissions.

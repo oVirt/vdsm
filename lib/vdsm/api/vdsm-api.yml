@@ -11925,6 +11925,16 @@ Volume.create:
         name: sequence
         type: int
         added: '4.5'
+
+    -   defaultvalue: null
+        description: If specified, create a new empty bitmap with the specified
+            UUID. Allowed only when creating a snapshot or when creating a new
+            volume in COW format. The new bitmap records the changes in the
+            volume since the volume was created.
+        name: bitmap
+        type: *UUID
+        added: '4.5'
+
     return:
         description: A task UUID
         type: *UUID

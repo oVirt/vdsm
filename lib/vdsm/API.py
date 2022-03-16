@@ -842,8 +842,7 @@ class Volume(APIBase):
 
     def create(self, size, volFormat, preallocate, diskType, desc,
                srcImgUUID, srcVolUUID, initialSize=None, addBitmaps=False,
-               legal=True,
-               sequence=0):
+               legal=True, sequence=0, bitmap=None):
         return self._irs.createVolume(self._sdUUID, self._spUUID,
                                       self._imgUUID, size, volFormat,
                                       preallocate, diskType, self._UUID, desc,
@@ -851,7 +850,8 @@ class Volume(APIBase):
                                       initialSize=initialSize,
                                       addBitmaps=addBitmaps,
                                       legal=legal,
-                                      sequence=sequence)
+                                      sequence=sequence,
+                                      bitmap=bitmap)
 
     def delete(self, postZero, force, discard=False):
         return self._irs.deleteVolume(self._sdUUID, self._spUUID,

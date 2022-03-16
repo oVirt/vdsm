@@ -119,15 +119,28 @@ def start_server(server_id, config):
     if vol.isShared() and not cfg.readonly:
         raise se.SharedVolumeNonWritable(vol)
 
-    if cfg.bitmap and vol.getFormat() != sc.COW_FORMAT:
-        raise se.UnsupportedOperation("Cannot export bitmap from RAW volume")
+    if cfg.bitmap:
+        if vol.getFormat() != sc.COW_FORMAT:
+            raise se.UnsupportedOperation(
+                "Cannot export bitmap from RAW volume")
+
+        # The bitmap must exist in the volume, and may exist in the
+        # backing chain.
+        bitmap_chain = _find_bitmap(vol.volumePath, cfg.bitmap)
+        if not bitmap_chain:
+            raise se.BitmapDoesNotExist(
+                reason=f"Bitmap does not exist in {vol.volumePath}",
+                bitmap=cfg.bitmap)
 
     _create_rundir()
 
-    using_overlay = cfg.bitmap and vol.getParent() != sc.BLANK_UUID
+    # If the bitmap exists in the volume backing chain, we need to
+    # create an overlay exporting the bitmap from the entire chain.
+    using_overlay = cfg.bitmap and len(bitmap_chain) > 1
 
     if using_overlay:
-        path = _create_overlay(server_id, vol.volumePath, cfg.bitmap)
+        path = _create_overlay(
+            server_id, vol.volumePath, cfg.bitmap, bitmap_chain)
         format = "qcow2"
         is_block = False
     else:
@@ -185,15 +198,11 @@ def stop_server(server_id):
     systemctl.stop(service)
 
 
-def _create_overlay(server_id, backing, bitmap):
+def _create_overlay(server_id, backing, bitmap, bitmap_chain):
     """
     To export bitmaps from entire chain, we need to create an overlay, and
     merge all bitmaps from the chain into the overlay.
     """
-    filenames = _find_bitmap(backing, bitmap)
-    if not filenames:
-        raise se.BitmapDoesNotExist(bitmap=bitmap)
-
     overlay = transientdisk.create_disk(
         server_id,
         OVERLAY,
@@ -202,7 +211,7 @@ def _create_overlay(server_id, backing, bitmap):
     try:
         # Merge bitmap from filenames into overlay.
         qemuimg.bitmap_add(overlay, bitmap).run()
-        for src_img in filenames:
+        for src_img in bitmap_chain:
             qemuimg.bitmap_merge(
                 src_img, bitmap, "qcow2", overlay, bitmap).run()
     except:

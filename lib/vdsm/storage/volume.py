@@ -881,7 +881,7 @@ class Volume(object):
     @classmethod
     def _create(cls, dom, imgUUID, volUUID, capacity, volFormat, preallocate,
                 volParent, srcImgUUID, srcVolUUID, volPath, initial_size=None,
-                add_bitmaps=False):
+                add_bitmaps=False, bitmap=None):
         raise NotImplementedError
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
@@ -1053,22 +1053,39 @@ class Volume(object):
             raise se.CannotCloneVolume(self.volumePath, dstPath, str(e))
 
         if add_bitmaps:
-            self.prepare(rw=False, justme=False)
-            try:
-                bitmaps.add_bitmaps(self.getVolumePath(), dstPath)
-            except exception.AddBitmapError as e:
-                # In case of failure to add the bitmaps, only an
-                # error log is propagated, we don't want to fail the
-                # snapshot creation, doing so will require a manual
-                # intervention from the user to remove the backups
-                # in order to create a snapshot successfully.
-                self.log.error(
-                    "Failed to add bitmaps to %r, note that the next "
-                    "incremental backup is likely to fail so a full backup "
-                    "will be required. Error: %s",
-                    dstPath, e)
-            finally:
-                self.teardown(self.sdUUID, self.volUUID, justme=False)
+            self._silent_clone_bitmaps(dstPath)
+
+    def _silent_clone_bitmaps(self, child_path):
+        """
+        Try to clone bitmaps from this volume to child volume, logging
+        failures.
+        """
+        self.prepare(rw=False, justme=False)
+        try:
+            bitmaps.add_bitmaps(self.getVolumePath(), child_path)
+        except exception.AddBitmapError as e:
+            self.log.error(
+                "Cannot clone bitmaps to child volume %r, the next backup "
+                "will be a full backup: %s",
+                child_path, e)
+        finally:
+            self.teardown(self.sdUUID, self.volUUID, justme=False)
+
+    @classmethod
+    def _silent_add_bitmap(cls, vol_path, bitmap):
+        """
+        Try to add bitmap to this volume, logging failures.
+
+        Called in volume creation flow, when volume is not fully
+        created, so getVolumePath() may not work yet.
+        """
+        try:
+            bitmaps.add_bitmap(vol_path, bitmap)
+        except exception.AddBitmapError as e:
+            cls.log.error(
+                "Cannot create bitmap %r in volume %r, the next "
+                "backup will be a full backup: %s",
+                bitmap, vol_path, e)
 
     def _shareLease(self, dstImgPath):
         self._manifest._shareLease(dstImgPath)
@@ -1156,7 +1173,7 @@ class Volume(object):
     def create(cls, repoPath, sdUUID, imgUUID, capacity, volFormat,
                preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID,
                initial_size=None, add_bitmaps=False, legal=True,
-               sequence=0):
+               sequence=0, bitmap=None):
         """
         Create a new volume with given size or snapshot
             'capacity' - in bytes
@@ -1171,6 +1188,7 @@ class Volume(object):
             'legal' - create the volume as legal if true,
                       otherwise create as illegal.
             'sequence' - the sequence number of the volume in the metadata
+            'bitmap' - create a new bitmap with name.
         """
         # Do the input values validation first.
         if initial_size is not None:
@@ -1190,7 +1208,7 @@ class Volume(object):
         dom = sdCache.produce(sdUUID)
         dom.validateCreateVolumeParams(
             volFormat, srcVolUUID, diskType=diskType, preallocate=preallocate,
-            add_bitmaps=add_bitmaps)
+            add_bitmaps=add_bitmaps, bitmap=bitmap)
 
         imgPath = dom.create_image(imgUUID)
 
@@ -1272,7 +1290,7 @@ class Volume(object):
                                      volFormat, preallocate, volParent,
                                      srcImgUUID, srcVolUUID, volPath,
                                      initial_size=initial_size,
-                                     add_bitmaps=add_bitmaps)
+                                     add_bitmaps=add_bitmaps, bitmap=bitmap)
             except (se.VolumeAlreadyExists, se.CannotCreateLogicalVolume,
                     se.VolumeCreationError, se.InvalidParameterException) as e:
                 cls.log.error("Failed to create volume %s: %s", volPath, e)
