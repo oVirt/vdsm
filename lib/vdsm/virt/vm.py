@@ -2102,8 +2102,9 @@ class Vm(object):
                 return True
         return False
 
-    def _process_migration_cpusets(self, cpusets):
-        xml_cpusets = []
+    def _validate_migration_cpusets(self, cpusets):
+        if cpusets is None:
+            return
         if len(cpusets) != self.get_number_of_cpus():
             raise exception.InvalidParameter(
                 "length of cpusets (%d) must match"
@@ -2112,7 +2113,6 @@ class Vm(object):
         for vcpu, cpuset in enumerate(cpusets):
             if cpuset is None:
                 continue
-            vcpupin = ET.Element('vcpupin')
             # Try parsing the content to validate it
             try:
                 taskset.cpulist_parse(cpuset)
@@ -2120,10 +2120,6 @@ class Vm(object):
                 raise exception.InvalidParameter(
                     "One or more invalid cpuset list descriptions in: %r" %
                     cpusets)
-            vcpupin.set('vcpu', str(vcpu))
-            vcpupin.set('cpuset', str(cpuset))
-            xml_cpusets.append(vcpupin)
-        return xml_cpusets
 
     def _validate_migration_numa_nodesets(self, numaNodesets):
         if numaNodesets is None:
@@ -2145,11 +2141,7 @@ class Vm(object):
     @api.guard(_not_migrating)
     @api.guard(_not_paused_on_io_error)
     def migrate(self, params):
-        if params.get('cpusets') is not None:
-            # Validate content and turn it into <vcpupin> elements here to
-            # avoid failures later during migration
-            params['cpusets'] = self._process_migration_cpusets(
-                params['cpusets'])
+        self._validate_migration_cpusets(params.get('cpusets'))
         self._validate_migration_numa_nodesets(params.get('numaNodesets'))
         self._acquireCpuLockWithTimeout(flow='migrate')
         try:

@@ -29,6 +29,7 @@ import re
 import threading
 import time
 import libvirt
+import xml.etree.ElementTree as ET
 
 from vdsm.common import concurrent
 from vdsm.common import conv
@@ -649,10 +650,27 @@ class SourceThread(object):
                     continue
                 cputune.remove(vcpu)
         if self._destination_cpusets is not None:
+            # Reconfigure CPU pinning based on the call parameter
             if cputune is None:
                 cputune = xml.etree.ElementTree.Element('cputune')
                 dom.append(cputune)
-            for vcpupin in self._destination_cpusets:
+            # First modify existing elements
+            for vcpupin in vmxml.find_all(cputune, 'vcpupin'):
+                vcpu_id = int(vcpupin.get('vcpu'))
+                if vcpu_id >= 0 and vcpu_id < len(self._destination_cpusets):
+                    vcpupin.set('cpuset',
+                                str(self._destination_cpusets[vcpu_id]))
+                    self._destination_cpusets[vcpu_id] = None
+            # Now create elements for pinning that was not there before.
+            # This should happen only for pinning that was removed above. It
+            # should not happen for manual CPU pinning because it would render
+            # the value of manuallyPinedCPUs metadata invalid.
+            for vcpu_id, cpuset in enumerate(self._destination_cpusets):
+                if cpuset is None:
+                    continue
+                vcpupin = ET.Element('vcpupin')
+                vcpupin.set('vcpu', str(vcpu_id))
+                vcpupin.set('cpuset', str(cpuset))
                 cputune.append(vcpupin)
         if self._destination_numa_nodesets is not None:
             numatune = dom.find('numatune')
