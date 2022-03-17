@@ -24,7 +24,6 @@ from __future__ import division
 
 import libvirt
 from six.moves import zip
-import xml.etree.ElementTree as ET
 
 from vdsm import numa
 from vdsm.common import define
@@ -465,25 +464,18 @@ class TestVmOperations(XMLTestCase):
             testvm._dom = fake.Domain(vmId='testvm')
             assert not response.is_error(testvm.acpiReboot())
 
-    def test_process_migration_cpusets(self):
-        with fake.VM() as testvm:
-            elements = testvm._process_migration_cpusets(['1,3-5'])
-            assert len(elements) == 1
-            assert isinstance(elements[0], ET.Element)
-            assert elements[0].tag == 'vcpupin'
-            assert sorted(elements[0].keys()) == ['cpuset', 'vcpu']
-            assert elements[0].get('vcpu') == '0'
-            assert elements[0].get('cpuset') == '1,3-5'
-
     @permutations([
+        # length should be 1
         [[], exception.InvalidParameter],
+        # length should be 1
         [['2', '4'], exception.InvalidParameter],
+        # cannot be arbitrary string
         [['abc'], exception.InvalidParameter],
     ])
     def test_process_migration_cpusets_invalid(self, cpusets, exception):
         with fake.VM() as testvm:
             with pytest.raises(exception):
-                testvm._process_migration_cpusets(cpusets)
+                testvm._validate_migration_cpusets(cpusets)
 
 
 def _mem_committed(mem_size_mb):
