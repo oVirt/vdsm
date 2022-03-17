@@ -12103,6 +12103,15 @@ Volume.measure:
           or the entire chain.
         name: backing_chain
         type: boolean
+
+    -   defaultvalue: null
+        description: If specified, only the sub-chain will be measured. The
+            range of sub-chain is from volumeID to baseID. Currently the only
+            allowed value of baseID is the parent volume UUID. Ignored if
+            backing_chain is false.
+        name: baseID
+        type: *UUID
+
     return:
         description: Measured result
         type: *VolumeMeasureResult
