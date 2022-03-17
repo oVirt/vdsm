@@ -1706,11 +1706,64 @@ class TestMeasure:
             backing=False)
 
         assert top_only == base_only
+
+        sub_chain = qemuimg.measure(
+            block_chain.top,
             format=qemuimg.FORMAT.QCOW2,
             output_format=qemuimg.FORMAT.QCOW2,
             is_block=True,
-            backing=True
-        )
+            base=block_chain.base)
+
+        assert 2 * MiB < sub_chain["required"] < 2.5 * MiB
+
+        with pytest.raises(ValueError) as e:
+            qemuimg.measure(
+                block_chain.top,
+                format=qemuimg.FORMAT.QCOW2,
+                output_format=qemuimg.FORMAT.QCOW2,
+                base=block_chain.parent)
+
+        # Check that we include the invalid and actual base in the error.
+        assert block_chain.parent in str(e.value)
+        assert block_chain.base in str(e.value)
+
+    def test_file_base(self, file_chain):
+        entire_chain = qemuimg.measure(
+            file_chain.top,
+            format=qemuimg.FORMAT.QCOW2,
+            output_format=qemuimg.FORMAT.QCOW2)
+
+        # parent <- [base <- top]
+        sub_chain1 = qemuimg.measure(
+            file_chain.top,
+            format=qemuimg.FORMAT.QCOW2,
+            output_format=qemuimg.FORMAT.QCOW2,
+            base=file_chain.base)
+
+        assert entire_chain["required"] >= sub_chain1["required"] + MiB
+
+        # [parent <- base] <- top
+        sub_chain2 = qemuimg.measure(
+            file_chain.base,
+            format=qemuimg.FORMAT.QCOW2,
+            output_format=qemuimg.FORMAT.QCOW2,
+            base=file_chain.parent)
+
+        assert sub_chain1 == sub_chain2
+
+    def test_file_base_invalid(self, file_chain):
+        # Trying to measure unsupported chain:
+        # [parent <- base <- top]
+        with pytest.raises(ValueError) as e:
+            qemuimg.measure(
+                file_chain.top,
+                format=qemuimg.FORMAT.QCOW2,
+                output_format=qemuimg.FORMAT.QCOW2,
+                base=file_chain.parent)
+
+        # Check that we include the invalid and actual base in the error.
+        assert file_chain.parent in str(e.value)
+        assert file_chain.base in str(e.value)
 
     def test_file_leaf(self, file_chain):
         entire_chain = qemuimg.measure(

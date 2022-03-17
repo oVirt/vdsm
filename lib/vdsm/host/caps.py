@@ -185,6 +185,7 @@ def get():
     caps["cd_change_pdiv"] = True
     caps["refresh_disk_supported"] = True
     caps["replicate_extend"] = True
+    caps['measure_subchain'] = True
 
     return caps
 

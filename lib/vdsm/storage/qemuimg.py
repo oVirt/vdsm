@@ -135,7 +135,7 @@ def info(image, format=None, unsafe=False, trusted_image=True,
 
 
 def measure(image, format=None, output_format=None, backing=True,
-            is_block=False):
+            is_block=False, base=None):
     cmd = [_qemuimg.cmd, "measure", "--output", "json"]
 
     if not format and not backing:
@@ -148,8 +148,33 @@ def measure(image, format=None, output_format=None, backing=True,
     node = {"file": {"driver": protocol, "filename": image}}
     if format:
         node["driver"] = format
-        if format == FORMAT.QCOW2 and not backing:
-            node["backing"] = None
+        if format == FORMAT.QCOW2:
+            if not backing:
+                # Measure single volume:
+                # parent <- base <- [top] <- child
+                node["backing"] = None
+            elif base:
+                # Meaure a sub-chain:
+                # parent <- [base <- top] <- child
+                top = info(image, FORMAT.QCOW2)
+                actual_base = top.get("full-backing-filename")
+
+                # Currently base must be top backing file; We can extend
+                # this later to support longer sub chain.
+                if actual_base != base:
+                    raise ValueError(
+                        f"Invalid base {base}, actual {actual_base}")
+
+                base_node = {
+                    "driver": top["backing-filename-format"],
+                    "file": {
+                        "driver": protocol,
+                        "filename": actual_base,
+                    },
+                }
+                if base_node["driver"] == FORMAT.QCOW2:
+                    base_node["backing"] = None
+                node["backing"] = base_node
 
     cmd.append("json:" + json.dumps(node))
 
