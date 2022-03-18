@@ -95,3 +95,18 @@ def test_read_bad_chain_raises(tmpdir):
     operation.run()
     with pytest.raises(cmdutils.Error):
         qemuio.verify_pattern(top, qemuimg.FORMAT.QCOW2)
+
+
+@pytest.mark.parametrize("fmt", [
+    pytest.param(
+        qemuimg.FORMAT.RAW,
+        marks=pytest.mark.xfail(reason="Always times out", run=False)),
+    qemuimg.FORMAT.QCOW2
+])
+def test_open_write_mode(tmpdir, fmt):
+    image = str(tmpdir.join("disk." + fmt))
+    op = qemuimg.create(image, "1m", fmt)
+    op.run()
+    with qemuio.open(image, fmt):
+        with pytest.raises(cmdutils.Error):
+            qemuimg.info(image, fmt)

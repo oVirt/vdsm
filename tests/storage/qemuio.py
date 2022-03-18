@@ -24,6 +24,9 @@ This module provides helpers for wiritng and verifying qcow2 files data.
 """
 
 import subprocess
+import time
+
+from contextlib import contextmanager
 
 from vdsm.common import commands
 from vdsm.common import cmdutils
@@ -61,3 +64,32 @@ def abort(path):
     # Simulate qemu crash, opening the image for writing
     # and killing the process.
     subprocess.run(["qemu-io", "-c", "abort", path])
+
+
+@contextmanager
+def open(image, fmt, timeout=2.0):
+    """
+    Open image in write mode for testing access to active image.
+    """
+    cmd = [
+        "qemu-io",
+        "-c", f"open -o driver={fmt} {image}",
+        "-c", "sleep 10000",
+    ]
+    p = subprocess.Popen(cmd)
+    try:
+        # Wait until image is locked.
+        deadline = time.monotonic() + timeout
+        while True:
+            time.sleep(0.01)
+            cmd = ["qemu-io", "-c", f"open -r -o driver={fmt} {image}"]
+            if subprocess.run(cmd).returncode != 0:
+                break
+
+            if time.monotonic() >= deadline:
+                raise RuntimeError(f"Timeout waiting until {image} is locked")
+
+        yield
+    finally:
+        p.terminate()
+        p.wait()
