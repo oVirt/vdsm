@@ -1803,6 +1803,31 @@ class TestMeasure:
         assert estimated_size >= actual_size
         assert error_pct <= 0.1, error_pct
 
+    def test_active_image_fail(self, file_chain):
+        # Measuring an active image without unsafe=True fails.
+        with qemuio.open(file_chain.top, qemuimg.FORMAT.QCOW2):
+            with pytest.raises(cmdutils.Error):
+                qemuimg.measure(
+                    file_chain.top,
+                    format=qemuimg.FORMAT.QCOW2,
+                    output_format=qemuimg.FORMAT.QCOW2)
+
+    def test_active_image_unsafe(self, file_chain):
+        # We can measure an active image with unsafe=True.
+        with qemuio.open(file_chain.top, qemuimg.FORMAT.QCOW2):
+            active = qemuimg.measure(
+                file_chain.top,
+                format=qemuimg.FORMAT.QCOW2,
+                output_format=qemuimg.FORMAT.QCOW2,
+                unsafe=True)
+
+        inactive = qemuimg.measure(
+            file_chain.top,
+            format=qemuimg.FORMAT.QCOW2,
+            output_format=qemuimg.FORMAT.QCOW2)
+
+        assert active == inactive
+
 
 class TestBitmaps:
 

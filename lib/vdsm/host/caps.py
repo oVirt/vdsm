@@ -186,6 +186,7 @@ def get():
     caps["refresh_disk_supported"] = True
     caps["replicate_extend"] = True
     caps['measure_subchain'] = True
+    caps['measure_active'] = True
 
     return caps
 

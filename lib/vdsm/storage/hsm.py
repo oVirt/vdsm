@@ -2858,13 +2858,19 @@ class HSM(object):
                 "Measuring without the backing chain, ignoring baseUUID: %s",
                 baseUUID)
 
+        # Using unsafe=True to allow measuring an active image. Measuring an
+        # active image can give less accurate results since the guest may write
+        # while we measure, but it is good enough for getting an estimate of
+        # the required size.
+
         result = qemuimg.measure(
             vol.getVolumePath(),
             format=sc.fmt2str(vol.getFormat()),
             output_format=sc.fmt2str(dest_format),
             backing=backing,
             is_block=vol.is_block(),
-            base=base.getVolumePath() if base else None)
+            base=base.getVolumePath() if base else None,
+            unsafe=True)
 
         return dict(result=result)
 
