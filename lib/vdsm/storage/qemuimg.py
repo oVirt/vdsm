@@ -135,8 +135,13 @@ def info(image, format=None, unsafe=False, trusted_image=True,
 
 
 def measure(image, format=None, output_format=None, backing=True,
-            is_block=False, base=None):
+            is_block=False, base=None, unsafe=False):
     cmd = [_qemuimg.cmd, "measure", "--output", "json"]
+
+    if unsafe:
+        # Open the image in shared mode, allowing other QEMU processes to open
+        # it in write mode. This allows measuring an active image.
+        cmd.append("--force-share")
 
     if not format and not backing:
         raise ValueError("backing=False requires specifying image format")
@@ -156,7 +161,7 @@ def measure(image, format=None, output_format=None, backing=True,
             elif base:
                 # Meaure a sub-chain:
                 # parent <- [base <- top] <- child
-                top = info(image, FORMAT.QCOW2)
+                top = info(image, FORMAT.QCOW2, unsafe=unsafe)
                 actual_base = top.get("full-backing-filename")
 
                 # Currently base must be top backing file; We can extend
