@@ -11677,6 +11677,17 @@ VM.diskReplicateStart:
         name: dstDisk
         type: *DriveSpecVolume
 
+    -   defaultvalue: true
+        description: If true or not specified, the source and
+            destination active volume will be extended before starting
+            replication. Newer engine uses false and takes care of
+            creating the source and destination volumes large enough to
+            avoid the need for extending. You can tell if a host
+            supports this argument by checking the "replicate_extend"
+            host capability.
+        name: needExtend
+        type: boolean
+
 VM.diskReplicateFinish:
     added: '3.2'
     description: Stop the replication of a disk switching to a destination.
