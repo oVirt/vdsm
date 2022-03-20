@@ -187,6 +187,7 @@ def get():
     caps["replicate_extend"] = True
     caps['measure_subchain'] = True
     caps['measure_active'] = True
+    caps['mailbox_events'] = config.getboolean("mailbox", "events_enable")
 
     return caps
 
