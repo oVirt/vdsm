@@ -184,6 +184,7 @@ def get():
     caps["supported_block_size"] = backends.supported_block_size()
     caps["cd_change_pdiv"] = True
     caps["refresh_disk_supported"] = True
+    caps["replicate_extend"] = True
 
     return caps
 

@@ -549,8 +549,9 @@ class VM(APIBase):
 
     @api.logged(on="api.virt")
     @api.method
-    def diskReplicateStart(self, srcDisk, dstDisk):
-        return self.vm.diskReplicateStart(srcDisk, dstDisk)
+    def diskReplicateStart(self, srcDisk, dstDisk, needExtend=True):
+        return self.vm.diskReplicateStart(
+            srcDisk, dstDisk, need_extend=needExtend)
 
     @api.logged(on="api.virt")
     @api.method

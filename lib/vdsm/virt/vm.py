@@ -4317,7 +4317,7 @@ class Vm(object):
         vdsm.virt.jobs.schedule(job)
         return {'status': doneCode}
 
-    def diskReplicateStart(self, srcDisk, dstDisk):
+    def diskReplicateStart(self, srcDisk, dstDisk, need_extend=True):
         try:
             drive = self.findDriveByUUIDs(srcDisk)
         except LookupError:
@@ -4364,7 +4364,7 @@ class Vm(object):
             self._delDiskReplica(drive)
             return response.error('replicaErr')
 
-        if drive.chunked or drive.replicaChunked:
+        if need_extend and (drive.chunked or drive.replicaChunked):
             try:
                 block_info = self.volume_monitor.query_block_info(
                     drive, drive.volumeID)
