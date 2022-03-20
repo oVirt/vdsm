@@ -55,12 +55,17 @@ MESSAGE_VERSION = b"1"
 MESSAGE_SIZE = 64
 CLEAN_MESSAGE = b"\1" * MESSAGE_SIZE
 EXTEND_CODE = b"xtnd"
+EVENT_CODE = b"\0evt"
 REPLY_OK = 1
 EMPTYMAILBOX = MAILBOX_SIZE * b"\0"
 SLOTS_PER_MAILBOX = int(MAILBOX_SIZE // MESSAGE_SIZE)
 # Last message slot is reserved for metadata (checksum, extendable mailbox,
 # etc)
 MESSAGES_PER_MAILBOX = SLOTS_PER_MAILBOX - 1
+
+
+class ReadEventError(Exception):
+    pass
 
 
 def checksum(data):
@@ -187,10 +192,12 @@ class HSM_Mailbox:
 
     log = logging.getLogger('storage.mailbox.hsm')
 
-    def __init__(self, hostID, poolID, inbox, outbox, monitorInterval=2):
+    def __init__(self, hostID, poolID, inbox, outbox, monitorInterval=2.0,
+                 eventInterval=0.5):
         self._hostID = str(hostID)
         self._poolID = str(poolID)
         self._monitorInterval = monitorInterval
+        self._eventInterval = min(eventInterval, monitorInterval)
         self._queue = queue.Queue(-1)
         self._inbox = inbox
         if not os.path.exists(self._inbox):
@@ -204,8 +211,9 @@ class HSM_Mailbox:
                            "exist" % repr(self._outbox))
             raise RuntimeError("HSM_Mailbox create failed - outbox %s does "
                                "not exist" % repr(self._outbox))
-        self._mailman = HSM_MailMonitor(self._inbox, self._outbox, hostID,
-                                        self._queue, monitorInterval)
+        self._mailman = HSM_MailMonitor(
+            self._inbox, self._outbox, hostID, self._queue, monitorInterval,
+            eventInterval)
         self.log.debug('HSM_MailboxMonitor created for pool %s' % self._poolID)
 
     def sendExtendMsg(self, volumeData, newSize, callbackFunction=None):
@@ -229,8 +237,10 @@ class HSM_Mailbox:
 class HSM_MailMonitor(object):
     log = logging.getLogger('storage.mailbox.hsmmailmonitor')
 
-    def __init__(self, inbox, outbox, hostID, queue, monitorInterval):
+    def __init__(self, inbox, outbox, hostID, queue, monitorInterval,
+                 eventInterval):
         # Save arguments
+        self._outbox = outbox
         tpSize = config.getint('irs', 'thread_pool_size') // 2
         waitTimeout = wait_timeout(monitorInterval)
         maxTasks = config.getint('irs', 'max_tasks')
@@ -239,6 +249,7 @@ class HSM_MailMonitor(object):
         self._queue = queue
         self._activeMessages = {}
         self._monitorInterval = monitorInterval
+        self._eventInterval = eventInterval
         self._hostID = int(hostID)
         self._used_slots_array = [0] * MESSAGES_PER_MAILBOX
         self._outgoingMail = EMPTYMAILBOX
@@ -481,6 +492,7 @@ class HSM_MailMonitor(object):
 
                     if sendMail:
                         self._sendMail()
+                        self._write_event()
 
                     # If there are active messages waiting for SPM reply, wait
                     # a few seconds before performing another IO op
@@ -490,7 +502,7 @@ class HSM_MailMonitor(object):
                         if (failures > 9):
                             time.sleep(60)
                         else:
-                            time.sleep(self._monitorInterval)
+                            self._wait_for_reply()
 
                 except:
                     self.log.error("HSM_MailboxMonitor - Incoming mail"
@@ -501,6 +513,48 @@ class HSM_MailMonitor(object):
                           "thread stopped, clearing outgoing mail")
             self._outgoingMail = EMPTYMAILBOX
             self._sendMail()  # Clear outgoing mailbox
+
+    # Events.
+
+    def _wait_for_reply(self):
+        if config.getboolean("mailbox", "events_enable"):
+            time.sleep(self._eventInterval)
+        else:
+            time.sleep(self._monitorInterval)
+
+    def _write_event(self):
+        """
+        Write event to host 0 mailbox.
+        """
+        if not config.getboolean("mailbox", "events_enable"):
+            return
+
+        # Event include a random UUID to ensure that when multiple hosts write
+        # to the event block at the same time, the last event written will be
+        # considered as a new event on the SPM side.
+        event = uuid.uuid4()
+
+        self.log.info("HSM_MailMonitor sending event %s to SPM", event)
+
+        buf = bytearray(MAILBOX_SIZE)
+        buf[0:4] = EVENT_CODE
+        buf[4:20] = event.bytes
+
+        cmd = [
+            constants.EXT_DD,
+            'of=' + str(self._outbox),
+            'iflag=fullblock',
+            'oflag=direct',
+            'conv=notrunc',
+            'bs=' + str(MAILBOX_SIZE),
+            'count=1',
+        ]
+
+        # If writing an event failed, the SPM will detect the message on the
+        # next monitor interval.
+        rc, _, err = _mboxExecCmd(cmd, data=buf)
+        if rc != 0:
+            self.log.warning("Error sending event to SPM: %s", err.decode())
 
 
 class SPM_MailMonitor:
@@ -513,7 +567,8 @@ class SPM_MailMonitor:
     def unregisterMessageType(self, messageType):
         del self._messageTypes[messageType]
 
-    def __init__(self, poolID, maxHostID, inbox, outbox, monitorInterval=2):
+    def __init__(self, poolID, maxHostID, inbox, outbox, monitorInterval=2.0,
+                 eventInterval=0.5):
         """
         Note: inbox parameter here should point to the HSM's outbox
         mailbox file, and vice versa.
@@ -542,6 +597,7 @@ class SPM_MailMonitor:
         self._numHosts = int(maxHostID)
         self._outMailLen = MAILBOX_SIZE * self._numHosts
         self._monitorInterval = monitorInterval
+        self._eventInterval = min(eventInterval, monitorInterval)
         # TODO: add support for multiple paths (multiple mailboxes)
         self._outgoingMail = self._outMailLen * b"\0"
         self._incomingMail = self._outgoingMail
@@ -559,6 +615,10 @@ class SPM_MailMonitor:
                         ]
         self._outLock = threading.Lock()
         self._inLock = threading.Lock()
+
+        # The event detected in an empty mailbox.
+        self._last_event = uuid.UUID(int=0)
+
         # Clear outgoing mail
         self.log.debug("SPM_MailMonitor - clearing outgoing mail, command is: "
                        "%s", self._outCmd)
@@ -758,12 +818,83 @@ class SPM_MailMonitor:
                     self._checkForMail()
                 except:
                     self.log.error("Error checking for mail", exc_info=True)
-                time.sleep(self._monitorInterval)
+                self._wait_for_events()
         finally:
             self._stopped = True
             self.tp.joinAll()
             self.log.info("SPM_MailMonitor - Incoming mail monitoring thread "
                           "stopped")
+
+    # Events.
+
+    def _wait_for_events(self):
+        """
+        Wait until an event is received in the event block, or the monitor
+        interval has passed.
+
+        With the default monitor and event intervals, we expect to check
+        event 3 times between mail checks.
+
+        check mail   |---------------------|-------------------|
+        check event       |     |     |        |     |     |
+
+        With this configuraion we run 3 event checks per 2 seconds,
+        which is expected to consume less than 1% cpu.
+        """
+        if not config.getboolean("mailbox", "events_enable"):
+            time.sleep(self._monitorInterval)
+            return
+
+        now = time.monotonic()
+        deadline = now + self._monitorInterval
+
+        while now < deadline:
+            remaining = deadline - now
+            if remaining <= self._eventInterval:
+                # The last interval before checking mail.
+                time.sleep(remaining)
+                return
+
+            time.sleep(self._eventInterval)
+
+            try:
+                event = self._read_event()
+            except ReadEventError as e:
+                self.log.warning("Error reading event block: %s", e)
+            else:
+                if event != self._last_event:
+                    self.log.info("Recived event: %s", event)
+                    self._last_event = event
+                    return
+
+            now = time.monotonic()
+
+    def _read_event(self):
+        """
+        Read event from host 0 mailbox.
+        """
+        # Even if we got a short read, it will be at least 512 bytes, so
+        # we don't need iflag=fullblock.
+        cmd = [
+            constants.EXT_DD,
+            'if=' + str(self._inbox),
+            'iflag=direct',
+            'count=1',
+            'bs=' + str(MAILBOX_SIZE),
+        ]
+
+        # If read fails, we will retry on the next check. In the worst
+        # case we will check the entire mailbox after one monitor
+        # interval.
+        rc, out, err = _mboxExecCmd(cmd, raw=True)
+        if rc != 0:
+            raise ReadEventError(err.decode())
+
+        # Should never happen, we will retry on the next check.
+        if len(out) < 24:
+            raise ReadEventError(f"Short read: {len(out)} < 24")
+
+        return uuid.UUID(bytes=bytes(out[4:20]))
 
 
 def wait_timeout(monitor_interval):

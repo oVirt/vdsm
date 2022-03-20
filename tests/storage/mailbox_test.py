@@ -44,8 +44,9 @@ from vdsm.common.units import MiB, GiB
 MAX_HOSTS = 10
 MAILER_TIMEOUT = 10
 
-# We used 0.1 seconds for several years, and it proved flaky, failing randomly.
-MONITOR_INTERVAL = 0.2
+# Use shorter intervals for quicker tests.
+MONITOR_INTERVAL = 0.4
+EVENT_INTERVAL = 0.1
 
 SPUUID = '5d928855-b09b-47a7-b920-bd2d2eb5808c'
 
@@ -102,7 +103,8 @@ def make_hsm_mailbox(mboxfiles, host_id):
         poolID=SPUUID,
         inbox=mboxfiles.outbox,
         outbox=mboxfiles.inbox,
-        monitorInterval=MONITOR_INTERVAL)
+        monitorInterval=MONITOR_INTERVAL,
+        eventInterval=EVENT_INTERVAL)
     try:
         yield mailbox
     finally:
@@ -118,7 +120,8 @@ def make_spm_mailbox(mboxfiles):
         MAX_HOSTS,
         inbox=mboxfiles.inbox,
         outbox=mboxfiles.outbox,
-        monitorInterval=MONITOR_INTERVAL)
+        monitorInterval=MONITOR_INTERVAL,
+        eventInterval=EVENT_INTERVAL)
     mailbox.start()
     try:
         yield mailbox
@@ -169,7 +172,8 @@ class TestSPMMailMonitor:
             SPUUID, 100,
             inbox=mboxfiles.inbox,
             outbox=mboxfiles.outbox,
-            monitorInterval=MONITOR_INTERVAL)
+            monitorInterval=MONITOR_INTERVAL,
+            eventInterval=EVENT_INTERVAL)
         mailer.start()
         try:
             mailer.stop()
@@ -347,6 +351,9 @@ class TestCommunicate:
                 deadline = time.time() + MAILER_TIMEOUT
                 while True:
                     with io.open(mboxfiles.inbox, "rb") as f:
+                        # Skip the event block, checking it is racy since hsm
+                        # mail monitor writes events to this block.
+                        f.seek(sm.MAILBOX_SIZE)
                         # check that SPM inbox was cleared
                         if f.read(sm.MAILBOX_SIZE) == sm.EMPTYMAILBOX:
                             break
