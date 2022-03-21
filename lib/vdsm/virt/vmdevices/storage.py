@@ -118,7 +118,7 @@ class Drive(core.Base):
                  '_diskType', 'hosts', 'protocol', 'auth', 'discard',
                  'vm_custom', '_block_info', '_threshold_state', '_lock',
                  '_monitorable', 'guestName', '_iotune', 'RBD', 'managed',
-                 'scratch_disk', 'exceeded_time')
+                 'scratch_disk', 'exceeded_time', 'managed_reservation')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         MiB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -228,6 +228,7 @@ class Drive(core.Base):
         self._iotune = {}
         self.managed = False
         self.scratch_disk = None
+        self.managed_reservation = False
 
         super(Drive, self).__init__(log, **kwargs)
 
@@ -1039,6 +1040,10 @@ def _getSourceXML(drive):
     if drive["diskType"] == DISK_TYPE.BLOCK:
         needs_seclabel = True
         source.setAttrs(dev=drive["path"])
+        if 'managed_reservation' in drive and drive["managed_reservation"]:
+            reservations = vmxml.Element('reservations')
+            reservations.set('managed', 'yes')
+            source.appendChild(reservations)
     elif drive["diskType"] == DISK_TYPE.NETWORK:
         if drive["protocol"] == "gluster":
             needs_seclabel = True

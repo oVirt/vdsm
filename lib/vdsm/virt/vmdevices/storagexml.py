@@ -130,6 +130,10 @@ def _update_source_params(params, disk_type, source):
         path = ''
     elif disk_type == 'block':
         path = source.attrib.get('dev')
+        reservations = vmxml.find_first(source, 'reservations', None)
+        if (reservations is not None and
+                reservations.attrib.get('managed') == 'yes'):
+            params['managed_reservation'] = True
     elif disk_type == 'file':
         path = source.attrib.get('file', '')
     elif 'protocol' in source.attrib:
