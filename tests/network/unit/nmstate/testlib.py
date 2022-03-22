@@ -380,7 +380,7 @@ def create_ovs_bridge_mappings_state(nbs_by_bridge=None):
     return {
         nmstate.OvsDB.KEY: {
             nmstate.OvsDB.EXTERNAL_IDS: {
-                OVN_BRIDGE_MAPPINGS_KEY: ','.join(mapping_pairs) or '""'
+                OVN_BRIDGE_MAPPINGS_KEY: ','.join(mapping_pairs)
             }
         }
     }
