@@ -76,7 +76,8 @@ class NetworkingState(object):
                 ns for ns in self._dns_state.values()
             )
             state[DNS.KEY] = {DNS.CONFIG: {DNS.SERVER: list(nameservers)}}
-        if self._bridge_mappings:
+        # Empty string ('') is valid mapping
+        if self._bridge_mappings is not None:
             state[OvsDB.KEY] = {
                 OvsDB.EXTERNAL_IDS: {
                     OVN_BRIDGE_MAPPINGS_KEY: self._bridge_mappings

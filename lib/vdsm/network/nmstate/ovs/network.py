@@ -394,7 +394,7 @@ def _create_bridge_mappings(bridges):
         bridge = bridges.bridge_by_sb[sb]
         mapping_pairs.extend([f'{nb}:{bridge}' for nb in sorted(nbs)])
 
-    return ','.join(mapping_pairs) or '""'
+    return ','.join(mapping_pairs)
 
 
 def _create_sb_iface_state(name, mtu):
