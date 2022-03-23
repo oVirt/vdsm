@@ -346,6 +346,29 @@ class DriveXMLTests(XMLTestCase):
             """
         self.check(conf, xml)
 
+    def test_reservations(self):
+        conf = drive_config(
+            device='lun',
+            iface='scsi',
+            path='/dev/mapper/lun1',
+            serial='54-a672-23e5b495a9ea',
+            sgio='unfiltered',
+            diskType=DISK_TYPE.BLOCK,
+            managed_reservation=True,
+        )
+        xml = """
+            <disk device="lun" sgio="unfiltered" snapshot="no" type="block">
+                <source dev="/dev/mapper/lun1">
+                    <reservations managed='yes' />
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
+                <target bus="scsi" dev="sda"/>
+                <driver cache="none" error_policy="stop"
+                        io="native" name="qemu" type="raw"/>
+            </disk>
+            """
+        self.check(conf, xml)
+
     def check(self, device_conf, xml):
         drive = Drive(self.log, **device_conf)
         self.assertXMLEqual(xmlutils.tostring(drive.getXML()), xml)
