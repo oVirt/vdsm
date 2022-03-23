@@ -431,13 +431,13 @@ parameters = [
     # Section: [mailbox]
     ('mailbox', [
 
-        ('events_enable', 'false',
+        ('events_enable', 'true',
             'If enabled, hosts use storage events to signal the SPM '
             'when sending an extend request, and the SPM uses storage '
             'events to detect extend requests quickly. Enabling events '
             'decreases the time to extend a thin volume and lowers the '
             'risk of pausing virtual machines when a thin volume is '
-            'extended automatically. (default false)'),
+            'extended automatically. (default true)'),
     ]),
 
     # Section: [multipath]
