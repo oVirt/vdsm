@@ -1,0 +1,101 @@
+#!/usr/bin/python3
+#
+# Copyright 2014 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+"""
+Compute extend stats from vdsm log.
+
+Parse extend completion logs:
+
+    2022-03-23 03:57:59,502+0200 INFO  (mailbox-hsm/3) [virt.vm]
+    (vmId='108e7903-08a0-42b7-94cd-2e18272bda06') Extend volume
+    7d859aa5-feb5-4fa1-8ab4-657976a9888c completed
+    <Clock(total=1.65, wait=0.28, extend-volume=1.09, refresh-volume=0.28)>
+    (thinp:567)
+
+Usage:
+
+    $ contrib/extend-stats </var/log/vdsm/vdsm.log
+
+    Total time
+    min=1.050 avg=2.162 max=3.470
+
+    Wait time
+    min=0.090 avg=1.011 max=1.980
+
+    Extend time
+    min=0.560 avg=0.864 max=1.150
+
+    Refresh time
+    min=0.190 avg=0.285 max=0.600
+
+"""
+import sys
+import re
+
+patern = re.compile(
+    r"completed \<Clock\(total=(.+?), wait=(.+?), extend-volume=(.+?), "
+    r"refresh-volume=(.+?)\)")
+
+totals = []
+waits = []
+extends = []
+refreshes = []
+
+for line in sys.stdin:
+    m = patern.search(line)
+    if m:
+        totals.append(float(m[1]))
+        waits.append(float(m[2]))
+        extends.append(float(m[3]))
+        refreshes.append(float(m[4]))
+
+totals.sort()
+waits.sort()
+extends.sort()
+refreshes.sort()
+
+print()
+print("Total time")
+total_min = totals[0]
+total_avg = sum(totals) / len(totals)
+total_max = totals[-1]
+print(f"min={total_min:.3f} avg={total_avg:.3f} max={total_max:.3f}")
+
+print()
+print("Wait time")
+wait_min = waits[0]
+wait_avg = sum(waits) / len(waits)
+wait_max = waits[-1]
+print(f"min={wait_min:.3f} avg={wait_avg:.3f} max={wait_max:.3f}")
+
+print()
+print("Extend time")
+extend_min = extends[0]
+extend_avg = sum(extends) / len(extends)
+extend_max = extends[-1]
+print(f"min={extend_min:.3f} avg={extend_avg:.3f} max={extend_max:.3f}")
+
+print()
+print("Refresh time")
+refresh_min = refreshes[0]
+refresh_avg = sum(refreshes) / len(refreshes)
+refresh_max = refreshes[-1]
+print(f"min={refresh_min:.3f} avg={refresh_avg:.3f} max={refresh_max:.3f}")
