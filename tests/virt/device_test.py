@@ -536,6 +536,30 @@ class TestHotplug(TestCaseBase):
 ''' % {'sd_id': SD_ID,
        'vol_id': VOL_ID,
        'img_id': IMG_ID}
+    BLOCK_DISK_HOTPLUG = '''<?xml version='1.0' encoding='UTF-8'?>
+<hotplug>
+  <devices>
+    <disk snapshot="no" type="block" device="lun" sgio="unfiltered">
+      <target dev="sda" bus="scsi"/>
+      <source dev="/dev/mapper/lun1">
+        <reservations managed="yes"/>
+        <seclabel model="dac" type="none" relabel="no"/>
+      </source>
+      <driver name="qemu" io="native" type="raw" error_policy="stop"
+            cache="none"/>
+      <alias name="name1"/>
+      <address bus="0" controller="0" unit="1" type="drive" target="0"/>
+    </disk>
+  </devices>
+  <metadata xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:vm>
+      <ovirt-vm:device devtype="disk" name="sda">
+        <ovirt-vm:GUID>lun1</ovirt-vm:GUID>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</hotplug>
+'''
 
     def setUp(self):
         devices = '''
@@ -572,6 +596,21 @@ class TestHotplug(TestCaseBase):
     def test_disk_hotunplug(self):
         vm = self.vm
         params = {'xml': self.DISK_HOTPLUG}
+        vm.hotunplugDisk(params)
+        assert len(vm.getDiskDevices()) == 0
+
+    def test_block_disk_hotplug(self):
+        vm = self.vm
+        params = {'xml': self.BLOCK_DISK_HOTPLUG}
+        vm.hotplugDisk(params)
+        assert len(vm.getDiskDevices()) == 1
+        dev = vm._devices[hwclass.DISK][0]
+        assert dev.managed_reservation
+        assert dev.path == '/dev/mapper/lun1'
+
+    def test_block_disk_hotunplug(self):
+        vm = self.vm
+        params = {'xml': self.BLOCK_DISK_HOTPLUG}
         vm.hotunplugDisk(params)
         assert len(vm.getDiskDevices()) == 0
 
