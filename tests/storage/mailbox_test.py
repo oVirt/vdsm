@@ -309,7 +309,6 @@ class TestCommunicate:
         sm.MESSAGES_PER_MAILBOX,
     ])
     def test_roundtrip(self, mboxfiles, delay, messages):
-        timeout = MAILER_TIMEOUT + messages * (1.0 + delay)
         with make_hsm_mailbox(mboxfiles, 7) as hsm_mb:
             with make_spm_mailbox(mboxfiles) as spm_mm:
                 pool = FakePool(spm_mm)
@@ -326,7 +325,7 @@ class TestCommunicate:
                     assert vol_id in start, "Missing request"
                     assert vol_id not in end, "Duplicate request"
 
-                    end[vol_id] = time.time()
+                    end[vol_id] = time.monotonic()
                     log.info("got extension reply for volume %s, elapsed %s",
                              vol_id, end[vol_id] - start[vol_id])
                     if len(end) == messages:
@@ -335,7 +334,7 @@ class TestCommunicate:
 
                 for _ in range(messages):
                     vol_id = make_uuid()
-                    start[vol_id] = time.time()
+                    start[vol_id] = time.monotonic()
                     log.info("requesting to extend volume %s (delay=%.3f)",
                              vol_id, delay)
                     hsm_mb.sendExtendMsg(
@@ -344,11 +343,12 @@ class TestCommunicate:
                         callbackFunction=reply_msg_callback)
                     time.sleep(delay)
 
-                log.info("waiting for replies clearing")
-                assert done.wait(timeout), "Roundtrip did not finish"
+                log.info("waiting for all replies")
+                if not done.wait(MAILER_TIMEOUT):
+                    raise RuntimeError("Roundtrip did not finish in time")
 
                 log.info("waiting for messages clearing in SPM inbox")
-                deadline = time.time() + MAILER_TIMEOUT
+                deadline = time.monotonic() + MAILER_TIMEOUT
                 while True:
                     with io.open(mboxfiles.inbox, "rb") as f:
                         # Skip the event block, checking it is racy since hsm
@@ -357,8 +357,10 @@ class TestCommunicate:
                         # check that SPM inbox was cleared
                         if f.read(sm.MAILBOX_SIZE) == sm.EMPTYMAILBOX:
                             break
-                    assert time.time() < deadline, "Timeout clearing SPM inbox"
-                    time.sleep(0.1)
+                    if time.monotonic() >= deadline:
+                        raise RuntimeError("Timeout clearing SPM inbox")
+
+                    time.sleep(EVENT_INTERVAL)
 
         times = [end[k] - start[k] for k in start]
         times.sort()
