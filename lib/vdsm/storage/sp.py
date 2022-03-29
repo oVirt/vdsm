@@ -378,7 +378,9 @@ class StoragePool(object):
                     inbox = self._master_volume_path("inbox")
                     outbox = self._master_volume_path("outbox")
                     self.spmMailer = mailbox.SPM_MailMonitor(
-                        self, maxHostID, inbox, outbox)
+                        self, maxHostID, inbox, outbox,
+                        eventInterval=config.getfloat(
+                            "mailbox", "events_interval"))
                     self.spmMailer.start()
                     self.spmMailer.registerMessageType(
                         mailbox.EXTEND_CODE, partial(
@@ -532,7 +534,8 @@ class StoragePool(object):
             outbox = self._master_volume_path("inbox")
             inbox = self._master_volume_path("outbox")
             self.hsmMailer = mailbox.HSM_Mailbox(
-                self.id, self.spUUID, inbox, outbox)
+                self.id, self.spUUID, inbox, outbox,
+                eventInterval=config.getfloat("mailbox", "events_interval"))
             self.log.debug("HSM mailbox ready for pool %s on master "
                            "domain %s", self.spUUID, self.masterDomain.sdUUID)
 
