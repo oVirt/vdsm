@@ -438,6 +438,13 @@ parameters = [
             'decreases the time to extend a thin volume and lowers the '
             'risk of pausing virtual machines when a thin volume is '
             'extended automatically. (default true)'),
+
+        ('events_interval', '0.5',
+            'Interval in seconds between mailbox events checks. '
+            'Shorter interval decreases the time to extend a volume, '
+            'but increases CPU usage and I/O to the inbox special volume '
+            'on the SPM, and to the outbox special volume on other hosts. '
+            '(default 0.5)'),
     ]),
 
     # Section: [multipath]
