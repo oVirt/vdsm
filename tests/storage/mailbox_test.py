@@ -309,6 +309,34 @@ class TestCommunicate:
         sm.MESSAGES_PER_MAILBOX,
     ])
     def test_roundtrip(self, mboxfiles, delay, messages):
+        """
+        Test roundtrip latency.
+
+        This test is best run like this:
+
+            $ tox -e storage tests/storage/mailbox_test.py -- \
+                -k test_roundtrip \
+                --log-cli-level=info \
+                | grep stats
+
+        Example output (trimmed):
+
+            stats: messages=1 delay=0.000 best=0.215 average=0.215 worst=0.215
+            stats: messages=1 delay=0.050 best=0.234 average=0.234 worst=0.234
+            stats: messages=2 delay=0.000 best=0.231 average=0.233 worst=0.236
+            stats: messages=2 delay=0.050 best=0.252 average=0.285 worst=0.319
+            stats: messages=4 delay=0.000 best=0.257 average=0.258 worst=0.259
+            stats: messages=4 delay=0.050 best=0.267 average=0.311 worst=0.354
+            stats: messages=8 delay=0.000 best=0.231 average=0.344 worst=0.365
+            stats: messages=8 delay=0.050 best=0.246 average=0.314 worst=0.391
+            stats: messages=16 delay=0.000 best=0.244 average=0.379 worst=0.395
+            stats: messages=16 delay=0.050 best=0.148 average=0.312 worst=0.393
+            stats: messages=32 delay=0.000 best=0.260 average=0.378 worst=0.395
+            stats: messages=32 delay=0.050 best=0.146 average=0.267 worst=0.402
+            stats: messages=63 delay=0.000 best=0.269 average=0.429 worst=0.505
+            stats: messages=63 delay=0.050 best=0.160 average=0.272 worst=0.423
+
+        """
         with make_hsm_mailbox(mboxfiles, 7) as hsm_mb:
             with make_spm_mailbox(mboxfiles) as spm_mm:
                 pool = FakePool(spm_mm)
@@ -364,8 +392,22 @@ class TestCommunicate:
 
         times = [end[k] - start[k] for k in start]
         times.sort()
-        log.info("stats: messages=%d delay=%.3f best=%.3f worst=%.3f avg=%.3f",
-                 messages, delay, times[0], times[-1], sum(times) / len(times))
+        best = times[0]
+        worst = times[-1]
+        average = sum(times) / len(times)
+
+        log.info(
+            "stats: messages=%d delay=%.3f best=%.3f average=%.3f worst=%.3f",
+            messages, delay, best, average, worst)
+
+        # This is the slowest run when running locally:
+        # stats: messages=63 delay=0.000 best=0.269 average=0.429 worst=0.505
+        # In github CI this can be about twice slower. We use larger timeouts
+        # to avoid flakeyness on slow CI.
+
+        assert best < 5 * EVENT_INTERVAL
+        assert average < 10 * EVENT_INTERVAL
+        assert worst < 15 * EVENT_INTERVAL
 
 
 class TestExtendMessage:
