@@ -329,6 +329,26 @@ class TestCommunicate:
             stats: messages=63 delay=0.050 best=0.160 average=0.272 worst=0.423
 
         """
+        times = self.roundtrip(mboxfiles, delay, messages)
+
+        best = times[0]
+        worst = times[-1]
+        average = sum(times) / len(times)
+
+        log.info(
+            "stats: messages=%d delay=%.3f best=%.3f average=%.3f worst=%.3f",
+            messages, delay, best, average, worst)
+
+        # This is the slowest run when running locally:
+        # stats: messages=63 delay=0.000 best=0.269 average=0.429 worst=0.505
+        # In github CI this can be about twice slower. We use larger timeouts
+        # to avoid flakeyness on slow CI.
+
+        assert best < 5 * EVENT_INTERVAL
+        assert average < 10 * EVENT_INTERVAL
+        assert worst < 15 * EVENT_INTERVAL
+
+    def roundtrip(self, mboxfiles, delay, messages):
         with make_hsm_mailbox(mboxfiles, 7) as hsm_mb:
             with make_spm_mailbox(mboxfiles) as spm_mm:
                 pool = FakePool(spm_mm)
@@ -384,22 +404,8 @@ class TestCommunicate:
 
         times = [end[k] - start[k] for k in start]
         times.sort()
-        best = times[0]
-        worst = times[-1]
-        average = sum(times) / len(times)
 
-        log.info(
-            "stats: messages=%d delay=%.3f best=%.3f average=%.3f worst=%.3f",
-            messages, delay, best, average, worst)
-
-        # This is the slowest run when running locally:
-        # stats: messages=63 delay=0.000 best=0.269 average=0.429 worst=0.505
-        # In github CI this can be about twice slower. We use larger timeouts
-        # to avoid flakeyness on slow CI.
-
-        assert best < 5 * EVENT_INTERVAL
-        assert average < 10 * EVENT_INTERVAL
-        assert worst < 15 * EVENT_INTERVAL
+        return times
 
 
 class TestExtendMessage:
