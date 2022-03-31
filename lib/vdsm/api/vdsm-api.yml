@@ -11687,6 +11687,7 @@ VM.diskReplicateStart:
             host capability.
         name: needExtend
         type: boolean
+        added: '4.5'
 
 VM.diskReplicateFinish:
     added: '3.2'
@@ -12111,6 +12112,7 @@ Volume.measure:
             backing_chain is false.
         name: baseID
         type: *UUID
+        added: '4.5'
 
     return:
         description: Measured result
