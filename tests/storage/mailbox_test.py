@@ -299,15 +299,7 @@ class TestCommunicate:
 
     @pytest.mark.parametrize("delay", [0, 0.05])
     @pytest.mark.parametrize("messages", [
-        1,
-        2,
-        4,
-        8,
-        # From 9 failures and on the code sleeps for a minute
-        16,
-        32,
-        sm.MESSAGES_PER_MAILBOX,
-    ])
+        1, 2, 4, 8, 16, 32, sm.MESSAGES_PER_MAILBOX])
     def test_roundtrip(self, mboxfiles, delay, messages):
         """
         Test roundtrip latency.
