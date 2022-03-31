@@ -36,6 +36,7 @@ from functools import partial
 import pytest
 
 from testlib import make_uuid
+from testlib import make_config
 
 import vdsm.storage.mailbox as sm
 
@@ -300,7 +301,7 @@ class TestCommunicate:
     @pytest.mark.parametrize("delay", [0, 0.05])
     @pytest.mark.parametrize("messages", [
         1, 2, 4, 8, 16, 32, sm.MESSAGES_PER_MAILBOX])
-    def test_roundtrip(self, mboxfiles, delay, messages):
+    def test_roundtrip_events_enabled(self, mboxfiles, delay, messages):
         """
         Test roundtrip latency.
 
@@ -347,6 +348,29 @@ class TestCommunicate:
         assert best < 5 * EVENT_INTERVAL
         assert average < 10 * EVENT_INTERVAL
         assert worst < 15 * EVENT_INTERVAL
+
+    def test_roundtrip_events_disabled(self, mboxfiles, monkeypatch):
+        config = make_config([("mailbox", "events_enable", "false")])
+        monkeypatch.setattr(sm, "config", config)
+
+        delay = 0.05
+        messages = 8
+        times = self.roundtrip(mboxfiles, delay, messages)
+
+        best = times[0]
+        worst = times[-1]
+        average = sum(times) / len(times)
+
+        log.info(
+            "stats: messages=%d delay=%.3f best=%.3f average=%.3f worst=%.3f",
+            messages, delay, best, average, worst)
+
+        # Running locally takes:
+        # stats: messages=8 delay=0.050 best=0.847 average=1.064 worst=1.243
+        # Using larger timeout to avoid failures on slower environment.
+        assert best < 5 * MONITOR_INTERVAL
+        assert average < 6 * MONITOR_INTERVAL
+        assert worst < 7 * MONITOR_INTERVAL
 
     def roundtrip(self, mboxfiles, delay, messages):
         with make_hsm_mailbox(mboxfiles, 7) as hsm_mb:
