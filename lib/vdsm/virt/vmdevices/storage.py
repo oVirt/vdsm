@@ -378,8 +378,8 @@ class Drive(core.Base):
     @property
     def replicaChunked(self):
         """
-        Return True if drive is replicating to chuked storage and the replica
-        volume may require extending. See Drive.chunkd for more info.
+        Return True if drive is replicating to chunked storage and the replica
+        volume may require extending. See Drive.chunked for more info.
         """
         replica = getattr(self, "diskReplicate", {})
         return (replica.get("diskType") == DISK_TYPE.BLOCK and
@@ -452,8 +452,8 @@ class Drive(core.Base):
 
     def needs_monitoring(self):
         """
-        Return True if the drive needs to be picked by
-        a Drivemonitor periodic check, False otherwise.
+        Return True if the drive needs to be picked by the VolumeMonitor
+        periodic check, False otherwise.
 
         Drive needs monitoring in a subset of the above cases. We can
         can have two states:
