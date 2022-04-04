@@ -568,7 +568,7 @@ class FileVolume(volume.Volume):
             # If the image is preallocated, allocate the rest of the image
             # using fallocate helper. qemu-img create always writes zeroes to
             # the first block so we should skip it during preallocation.
-            if preallocate == sc.PREALLOCATED_VOL:
+            if size > 4096 and preallocate == sc.PREALLOCATED_VOL:
                 op = fallocate.allocate(vol_path, size - 4096, offset=4096)
 
                 # This is fast on NFS 4.2, GlusterFS, XFS and ext4, but can be
