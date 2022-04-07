@@ -21,6 +21,7 @@
 import pytest
 
 from vdsm.network import errors as ne
+from vdsm.network.link.setup import NmstateBridgeOptionNotSupported
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import SetupNetworksError
@@ -238,7 +239,7 @@ def test_setup_invalid_bridge_opts_fails(adapter, nic0):
         'custom': {'bridge_opts': 'foo=0'},
     }
 
-    with pytest.raises(SetupNetworksError):
+    with pytest.raises(NmstateBridgeOptionNotSupported):
         adapter.setupNetworks({NETWORK_NAME: net_attrs}, {}, NOCHK)
 
     adapter.update_netinfo()
