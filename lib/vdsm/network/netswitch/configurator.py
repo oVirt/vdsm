@@ -32,7 +32,6 @@ from vdsm.network.common import switch_util as util
 from vdsm.network.configurators import qos
 from vdsm.network.dhcp_monitor import MonitoredItemPool
 from vdsm.network.link import nic
-from vdsm.network.link import setup as link_setup
 from vdsm.network.link.iface import iface as iface_obj
 from vdsm.network.netconfpersistence import RunningConfig, Transaction
 from vdsm.network.netlink import waitfor
@@ -107,7 +106,6 @@ def _setup_nmstate(networks, bondings, options, in_rollback):
             if not bond_attrs.get('remove'):
                 config.setBonding(bond_name, bond_attrs)
         config.save()
-        link_setup.setup_custom_bridge_opts(networks)
         connectivity.check(options)
 
 
