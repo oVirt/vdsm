@@ -863,7 +863,7 @@ class SPM_MailMonitor:
                 self.log.warning("Error reading event block: %s", e)
             else:
                 if event != self._last_event:
-                    self.log.info("Recived event: %s", event)
+                    self.log.info("Received event: %s", event)
                     self._last_event = event
                     return
 
