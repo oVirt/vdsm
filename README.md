@@ -32,9 +32,15 @@ date, please check the [Gerrit vdsm project](https://gerrit.ovirt.org/q/project:
 
 ## Manual installation
 
-Add ovirt repositories to your repositories list:
+Add ovirt repositories to your repositories list.
 
-    sudo dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm
+For CentOS Stream 8 use:
+
+    sudo dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-8
+    sudo dnf install -y ovirt-release-master
+
+For more info see
+[copr master-snapshot repositories](https://copr.fedorainfracloud.org/coprs/ovirt/ovirt-master-snapshot/).
 
 Install Vdsm:
 
@@ -66,6 +72,11 @@ Clone your fork:
 
     sudo dnf install -y git
     git@github.com:{user}/vdsm.git
+
+Enable oVirt packages for Fedora:
+
+    sudo dnf copr enable -y nsoffer/ioprocess-preview
+    sudo dnf copr enable -y nsoffer/ovirt-imageio-preview
 
 Install additional packages for Fedora, CentOS, and RHEL:
 
