@@ -5149,10 +5149,18 @@ class Vm(object):
             self._pause_time = vdsm.common.time.monotonic_time()
             self._setGuestCpuRunning(False, flow='IOError')
             self._logGuestCpuStatus('onIOError')
+
+            try:
+                drive = vmdevices.lookup.device_by_alias(
+                    self._devices[hwclass.DISK][:], blockDevAlias)
+            except LookupError:
+                drive = None
+                self.log.warning('unknown disk alias: %s', blockDevAlias)
+
             if reason == 'ENOSPC':
                 self.monitor_volumes()
 
-            self._send_ioerror_status_event(reason, blockDevAlias)
+            self._send_ioerror_status_event(reason, blockDevAlias, drive=drive)
             self._update_metadata()
 
         elif action == libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT:
@@ -5163,14 +5171,9 @@ class Vm(object):
             self.log.warning('unexpected action %i on device %s error %s',
                              action, blockDevAlias, reason)
 
-    def _send_ioerror_status_event(self, reason, alias):
+    def _send_ioerror_status_event(self, reason, alias, drive=None):
         io_error_info = {'alias': alias}
-        try:
-            drive = vmdevices.lookup.device_by_alias(
-                self._devices[hwclass.DISK][:], alias)
-        except LookupError:
-            self.log.warning('unknown disk alias: %s', alias)
-        else:
+        if drive is not None:
             io_error_info['name'] = drive.name
             io_error_info['path'] = drive.path
 
