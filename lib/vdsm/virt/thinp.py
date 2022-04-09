@@ -262,9 +262,7 @@ class VolumeMonitor(object):
         Check if a drive should be extended, and start extension flow if
         needed.
 
-        When libvirt BLOCK_THRESHOLD event handling is enabled (
-        irs.enable_block_threshold_event == True), this method acts according
-        the drive.threshold_state:
+        We handle the drive according to the drive.threshold_state:
 
         - UNSET: the drive needs to register for a new block threshold,
                  so try to set it. We set the threshold both for chunked
