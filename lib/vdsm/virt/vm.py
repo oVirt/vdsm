@@ -5150,9 +5150,9 @@ class Vm(object):
             except LookupError:
                 drive = None
                 self.log.warning('unknown disk alias: %s', blockDevAlias)
-
-            if reason == 'ENOSPC':
-                self.volume_monitor.on_enospc(drive)
+            else:
+                if reason == 'ENOSPC':
+                    self.volume_monitor.on_enospc(drive)
 
             self._send_ioerror_status_event(reason, blockDevAlias, drive=drive)
             self._update_metadata()

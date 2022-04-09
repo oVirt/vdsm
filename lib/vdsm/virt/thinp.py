@@ -213,11 +213,11 @@ class VolumeMonitor(object):
         else:
             drive.on_block_threshold(path)
 
-    def on_enospc(self, drive=None):
+    def on_enospc(self, drive):
         """
         Called when a VM pauses because of ENOSPC error writing to drive.
         """
-        self.monitor_volumes()
+        drive.on_enospc()
 
     # Monitoring volumes.
 
