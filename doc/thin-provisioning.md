@@ -12,7 +12,8 @@ implemented with block based storage.
 Vdsm monitors thin provisioned drives or drives being replicated to thin
 provisioned drives periodically.  During startup, DriveWatermarkMonitor
 is created and scheduled with the periodic executor to run
-VM.monitor_volumes every 2 seconds (configurable) on all VMs.
+VM.volume_monitor.monitor_volumes every 2 seconds (configurable) on all
+VMs.
 
 For each VM, we fetch the drives that should be monitored. We have 2
 cases:
@@ -39,9 +40,9 @@ failed, a VM may try to write behind the current disk size. In this case
 qemu will pause the VM and we get a libvirt
 VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON event with ```ENOSPC``` reason.
 
-When receiving such event, we call VM.monitor_volumes() on the paused VM.
-We are likely to find that one or more drives are too full, and trigger
-an extend of the drives.
+When receiving such event, we call VM.volume_monitor.on_enospc()
+on the paused VM.  We are likely to find that one or more drives are
+too full, and trigger an extend of the drives.
 
 
 ### Extend drive flow

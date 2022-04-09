@@ -199,7 +199,7 @@ def test_extend(tmp_config):
     drv = drives[1]
 
     # first run: does nothing but set the block thresholds
-    vm.monitor_volumes()
+    vm.volume_monitor.monitor_volumes()
 
     # Simulate writing to drive vdb
     vdb = vm.block_stats[2]
@@ -221,7 +221,7 @@ def test_extend(tmp_config):
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
     # Simulating periodic check
-    vm.monitor_volumes()
+    vm.volume_monitor.monitor_volumes()
     assert len(vm.cif.irs.extensions) == 1
     check_extension(vdb, drives[1], vm.cif.irs.extensions[0])
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
@@ -238,7 +238,7 @@ def test_extend_no_allocation(tmp_config):
     drives = vm.getDiskDevices()
 
     # first run: does nothing but set the block thresholds
-    vm.monitor_volumes()
+    vm.volume_monitor.monitor_volumes()
 
     # Simulate writing to drive vdb
     vdb = vm.block_stats[2]
@@ -255,7 +255,7 @@ def test_extend_no_allocation(tmp_config):
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
     # Simulating periodic check
-    vm.monitor_volumes()
+    vm.volume_monitor.monitor_volumes()
     assert len(vm.cif.irs.extensions) == 1
     check_extension(vdb, drives[1], vm.cif.irs.extensions[0])
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
@@ -408,7 +408,7 @@ def test_set_new_threshold_when_state_unset(
     assert vda.threshold_state == BLOCK_THRESHOLD.UNSET
 
     # first run: does nothing but set the block thresholds
-    vm.monitor_volumes()
+    vm.volume_monitor.monitor_volumes()
 
     assert vda.threshold_state == expected_state
     if threshold is not None:
@@ -427,7 +427,7 @@ def test_set_new_threshold_when_state_unset_but_fails(tmp_config):
         libvirt.VIR_ERR_OPERATION_FAILED, "fake error")
 
     # first run: does nothing but set the block thresholds
-    vm.monitor_volumes()
+    vm.volume_monitor.monitor_volumes()
 
     for drive in drives:
         assert drive.threshold_state == BLOCK_THRESHOLD.UNSET
@@ -438,13 +438,13 @@ def test_monitor_all_drives_set(tmp_config):
     drives = vm.getDiskDevices()
 
     # first run: does nothing but set the block thresholds
-    vm.monitor_volumes()
+    vm.volume_monitor.monitor_volumes()
 
     assert drives[0].threshold_state == BLOCK_THRESHOLD.SET
     assert drives[1].threshold_state == BLOCK_THRESHOLD.SET
 
     # Next call should skip both drives.
-    vm.monitor_volumes()
+    vm.volume_monitor.monitor_volumes()
     assert len(vm.cif.irs.extensions) == 0
 
 
@@ -464,7 +464,7 @@ def test_force_drive_threshold_state_exceeded(tmp_config):
     vda['allocation'] = allocation_threshold_for_resize_mb(
         vda, drives[0]) + 1 * MiB
 
-    vm.monitor_volumes()
+    vm.volume_monitor.monitor_volumes()
 
     # forced to exceeded by monitor_volumes() even if no
     # event received.
@@ -506,7 +506,7 @@ def test_event_received_before_write_completes(tmp_config):
         'vda[0]', '/virtio/0', alloc, 1 * MiB)
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
-    vm.monitor_volumes()
+    vm.volume_monitor.monitor_volumes()
 
     # The threshold state is correctly kept as exceeded, so extension
     # will be tried again next cycle.
@@ -518,7 +518,7 @@ def test_block_threshold_set_failure_after_drive_extended(tmp_config):
     drives = vm.getDiskDevices()
 
     # first run: does nothing but set the block thresholds
-    vm.monitor_volumes()
+    vm.volume_monitor.monitor_volumes()
 
     # Simulate write on drive vdb
     vdb = vm.block_stats[2]
@@ -546,7 +546,7 @@ def test_block_threshold_set_failure_after_drive_extended(tmp_config):
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
     # Simulating periodic check
-    vm.monitor_volumes()
+    vm.volume_monitor.monitor_volumes()
     assert len(vm.cif.irs.extensions) == 1
 
     # Simulate completed extend operation, invoking callback
