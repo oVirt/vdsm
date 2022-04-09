@@ -626,8 +626,8 @@ class DriveDiskTypeTests(VdsmTestCase):
         drive.path = '/new/path'
         assert drive.threshold_state == BLOCK_THRESHOLD.UNSET
 
-    def test_block_threshold_set_state(self):
-        path = '/old/path'
+    def test_on_block_threshold_set(self):
+        path = '/path'
         conf = drive_config(diskType=DISK_TYPE.BLOCK, path=path)
         drive = Drive(self.log, **conf)
         drive.threshold_state = BLOCK_THRESHOLD.SET
@@ -635,13 +635,23 @@ class DriveDiskTypeTests(VdsmTestCase):
         drive.on_block_threshold(path)
         assert drive.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
-    def test_block_threshold_stale_path(self):
+    def test_on_block_threshold_set_stale_path(self):
         conf = drive_config(diskType=DISK_TYPE.BLOCK, path='/new/path')
         drive = Drive(self.log, **conf)
         drive.threshold_state = BLOCK_THRESHOLD.SET
 
         drive.on_block_threshold('/old/path')
         assert drive.threshold_state == BLOCK_THRESHOLD.SET
+
+    def test_on_block_threshold_exceeded(self):
+        path = '/path'
+        conf = drive_config(diskType=DISK_TYPE.BLOCK, path=path)
+        drive = Drive(self.log, **conf)
+        drive.threshold_state = BLOCK_THRESHOLD.EXCEEDED
+
+        # When exceeded, call does nothing.
+        drive.on_block_threshold(path)
+        assert drive.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
 
 def test_drive_exceeded_time(monkeypatch):
