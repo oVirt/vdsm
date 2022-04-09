@@ -286,13 +286,10 @@ class VolumeMonitor(object):
         if not self._should_extend_volume(drive, drive.volumeID, block_info):
             return
 
-        # TODO: if the threshold is wrongly set below the current allocation,
-        # for example because of delays in handling the event, or if the VM
-        # writes too fast, we will never receive an event.
-        # We need to set the drive threshold to EXCEEDED both if we receive
-        # one event or if we found that the threshold was exceeded during
-        # the VolumeMonitor._should_extend_volume check.
-        self._update_threshold_state_exceeded(drive)
+        # Ensure that drive is marked for extension, in case we missed a block
+        # threshold event. This does nothing if the drive is already marked for
+        # extension.
+        drive.on_block_threshold(drive.path)
 
         self._log.info(
             "Requesting extension for volume %s on domain %s block_info %s "
@@ -362,19 +359,6 @@ class VolumeMonitor(object):
 
         free_space = block_info.physical - block_info.allocation
         return free_space < drive.watermarkLimit
-
-    def _update_threshold_state_exceeded(self, drive):
-        if drive.threshold_state != storage.BLOCK_THRESHOLD.EXCEEDED:
-            # if the threshold is wrongly set below the current allocation,
-            # for example because of delays in handling the event,
-            # or if the VM writes too fast, we will never receive an event.
-            # We need to set the drive threshold to EXCEEDED both if we receive
-            # one event or if we found that the threshold was exceeded during
-            # the _shouldExtendVolume check.
-            drive.threshold_state = storage.BLOCK_THRESHOLD.EXCEEDED
-            self._log.info(
-                "Drive %s needs to be extended, forced threshold_state "
-                "to exceeded", drive.name)
 
     # Querying libvirt
 
