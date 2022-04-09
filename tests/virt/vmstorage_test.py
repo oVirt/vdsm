@@ -651,6 +651,30 @@ class DriveDiskTypeTests(VdsmTestCase):
 
         # When exceeded, call does nothing.
         drive.on_block_threshold(path)
+
+    def test_on_enospc_unset(self):
+        conf = drive_config(diskType=DISK_TYPE.BLOCK)
+        drive = Drive(self.log, **conf)
+        drive.threshold_state = BLOCK_THRESHOLD.UNSET
+
+        drive.on_enospc()
+        assert drive.threshold_state == BLOCK_THRESHOLD.EXCEEDED
+
+    def test_on_enospc_set(self):
+        conf = drive_config(diskType=DISK_TYPE.BLOCK)
+        drive = Drive(self.log, **conf)
+        drive.threshold_state = BLOCK_THRESHOLD.SET
+
+        drive.on_enospc()
+        assert drive.threshold_state == BLOCK_THRESHOLD.EXCEEDED
+
+    def test_on_enospc_exceeded(self):
+        conf = drive_config(diskType=DISK_TYPE.BLOCK)
+        drive = Drive(self.log, **conf)
+        drive.threshold_state = BLOCK_THRESHOLD.EXCEEDED
+
+        # When exceeded, call does nothing.
+        drive.on_enospc()
         assert drive.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
 
