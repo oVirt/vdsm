@@ -128,6 +128,16 @@ def test_on_block_threshold_unknown_drive():
     assert vda.threshold_state == BLOCK_THRESHOLD.UNSET
 
 
+def test_on_enospc():
+    vm = FakeVM()
+    mon = thinp.VolumeMonitor(vm, vm.log)
+    vda = make_drive(vm.log, index=0, iface='virtio')
+    vm.drives.append(vda)
+
+    mon.on_enospc(vda)
+    assert vda.threshold_state == BLOCK_THRESHOLD.EXCEEDED
+
+
 def test_monitoring_needed():
 
     class FakeDrive:

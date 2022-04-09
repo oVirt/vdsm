@@ -936,15 +936,32 @@ class Drive(core.Base):
                     self.name, self._path, reported_path)
                 return
 
-            if self._threshold_state == BLOCK_THRESHOLD.EXCEEDED:
-                self.log.debug(
-                    "drive %r block threshold already exceeded, ignored",
-                    self.name)
-                return
+            self._mark_for_extension()
 
-            self.log.info("drive %r block threshold exceeded", self.name)
-            self._threshold_state = BLOCK_THRESHOLD.EXCEEDED
-            self.exceeded_time = time.monotonic_time()
+    def on_enospc(self):
+        """
+        Called when a VM was paused because of ENOSPC error when writing to
+        this drive.
+
+        We mark the drive for extension so it will be picked up by the periodic
+        monitor later.
+        """
+        with self._lock:
+            self._mark_for_extension()
+
+    def _mark_for_extension(self):
+        """
+        Must be called when holding self._lock.
+        """
+        if self._threshold_state == BLOCK_THRESHOLD.EXCEEDED:
+            self.log.debug(
+                "drive %r block threshold already exceeded, ignored",
+                self.name)
+            return
+
+        self.log.info("drive %r needs extension", self.name)
+        self._threshold_state = BLOCK_THRESHOLD.EXCEEDED
+        self.exceeded_time = time.monotonic_time()
 
 
 def chain_index(actual_chain, vol_id, drive_name):
