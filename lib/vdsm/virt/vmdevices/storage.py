@@ -923,10 +923,10 @@ class Drive(core.Base):
 
     def on_block_threshold(self, reported_path):
         """
-        Callback to be executed when we receive a BLOCK_THRESHOLD
-        event from libvirt. We mark this drive accordingly,
-        so the periodic check will pick up this drive for
-        extension.
+        Called when disk allocation exceeds configured threshold.
+
+        Mark this drive for extension, to be picked by the periodic monitor
+        later.
         """
         with self._lock:
             if reported_path != self._path:
@@ -936,9 +936,15 @@ class Drive(core.Base):
                     self.name, self._path, reported_path)
                 return
 
+            if self._threshold_state == BLOCK_THRESHOLD.EXCEEDED:
+                self.log.debug(
+                    "drive %r block threshold already exceeded, ignored",
+                    self.name)
+                return
+
+            self.log.info("drive %r block threshold exceeded", self.name)
             self._threshold_state = BLOCK_THRESHOLD.EXCEEDED
             self.exceeded_time = time.monotonic_time()
-            self.log.info("drive %r threshold exceeded", self.name)
 
 
 def chain_index(actual_chain, vol_id, drive_name):
