@@ -5158,7 +5158,7 @@ class Vm(object):
                 self.log.warning('unknown disk alias: %s', blockDevAlias)
 
             if reason == 'ENOSPC':
-                self.monitor_volumes()
+                self.volume_monitor.on_enospc(drive)
 
             self._send_ioerror_status_event(reason, blockDevAlias, drive=drive)
             self._update_metadata()
