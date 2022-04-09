@@ -1298,12 +1298,6 @@ class Vm(object):
         _, raw_stats = res[0]
         return raw_stats
 
-    def monitor_volumes(self):
-        """
-        Check and extend drives if needed.
-        """
-        self.volume_monitor.monitor_volumes()
-
     def extend_volume(self, vmDrive, volumeID, curSize, capacity,
                       callback=None):
         """
