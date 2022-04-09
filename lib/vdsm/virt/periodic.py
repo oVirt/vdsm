@@ -382,7 +382,7 @@ class VolumeWatermarkMonitor(_RunnableOnVm):
                 self._vm.volume_monitor.monitoring_needed())
 
     def _execute(self):
-        self._vm.monitor_volumes()
+        self._vm.volume_monitor.monitor_volumes()
 
 
 class _ExternalDataMonitor(_RunnableOnVm):
