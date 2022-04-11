@@ -286,9 +286,8 @@ class VolumeMonitor(object):
         drive.on_block_threshold(drive.path)
 
         self._log.info(
-            "Requesting extension for volume %s on domain %s block_info %s "
-            "threshold_state %s",
-            drive.volumeID, drive.domainID, block_info, drive.threshold_state)
+            "Requesting an extension for volume %s on domain %s block_info %s",
+            drive.volumeID, drive.domainID, block_info)
 
         self.extend_volume(
             drive, drive.volumeID, block_info.physical, block_info.capacity)
