@@ -1170,7 +1170,7 @@ class Vm(object):
                 self.setDownStatus(exit_code, reason)
         self._powerDownEvent.set()
 
-    def _loadCorrectedTimeout(self, base, doubler=20, load=None):
+    def _load_corrected_timeout(self, base, doubler=20, load=None):
         """
         Return load-corrected base timeout
 
@@ -1498,7 +1498,7 @@ class Vm(object):
             return False
 
     def _acquireCpuLockWithTimeout(self, flow):
-        timeout = self._loadCorrectedTimeout(
+        timeout = self._load_corrected_timeout(
             config.getint('vars', 'vm_command_timeout'))
         self._guestCpuLock.acquire(timeout, flow)
 
@@ -5772,11 +5772,11 @@ class Vm(object):
         # the timed waiting for path preparation before the work has started.
         self.log.debug('migration destination: waiting for VM creation')
         self._vmCreationEvent.wait()
-        prepareTimeout = self._loadCorrectedTimeout(
+        prepare_timeout = self._load_corrected_timeout(
             config.getint('vars', 'migration_listener_timeout'), doubler=5)
         self.log.debug('migration destination: waiting %ss '
-                       'for path preparation', prepareTimeout)
-        self._incoming_migration_prepared.wait(prepareTimeout)
+                       'for path preparation', prepare_timeout)
+        self._incoming_migration_prepared.wait(prepare_timeout)
         if not self._incoming_migration_prepared.isSet():
             self.log.debug('Timeout while waiting for path preparation')
             return False
