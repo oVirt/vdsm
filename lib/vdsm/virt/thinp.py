@@ -261,18 +261,9 @@ class VolumeMonitor(object):
         """
         Check if a drive should be extended, and start extension flow if
         needed.
-
-        We handle the drive according to the drive.threshold_state:
-
-        - UNSET: the drive needs to register for a new block threshold,
-                 so try to set it. We set the threshold both for chunked
-                 drives and non-chunked drives replicating to chunked
-                 drives.
-        - EXCEEDED: the drive needs extension, try to extend it.
-        - SET: this method should never receive a drive in this state,
-               emit warning and exit.
         """
         if drive.threshold_state == storage.BLOCK_THRESHOLD.SET:
+            # Should never happen; we monitor only UNSET and EXCEEDED drives.
             self._log.warning(
                 "Unexpected state for drive %s: threshold_state SET",
                 drive.name)
@@ -280,6 +271,9 @@ class VolumeMonitor(object):
 
         block_info = drive.block_info
 
+        # Set block threshold if needed. However since this is racy, and we may
+        # not get a block threshold event, continue and check if the volume
+        # needs extension.
         if drive.threshold_state == storage.BLOCK_THRESHOLD.UNSET:
             self._set_threshold(drive, block_info.physical, block_info.index)
 
