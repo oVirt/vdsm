@@ -927,6 +927,8 @@ class Drive(core.Base):
 
         Mark this drive for extension, to be picked by the periodic monitor
         later.
+
+        Return True if threshold state was modified.
         """
         with self._lock:
             if reported_path != self._path:
@@ -934,9 +936,9 @@ class Drive(core.Base):
                     "block threshold event mismatch drive %r path=%r "
                     "reported path=%r - ignored",
                     self.name, self._path, reported_path)
-                return
+                return False
 
-            self._mark_for_extension()
+            return self._mark_for_extension()
 
     def on_enospc(self):
         """
@@ -945,9 +947,11 @@ class Drive(core.Base):
 
         We mark the drive for extension so it will be picked up by the periodic
         monitor later.
+
+        Return True if threshold state was modified.
         """
         with self._lock:
-            self._mark_for_extension()
+            return self._mark_for_extension()
 
     def _mark_for_extension(self):
         """
@@ -957,11 +961,12 @@ class Drive(core.Base):
             self.log.debug(
                 "drive %r block threshold already exceeded, ignored",
                 self.name)
-            return
+            return False
 
         self.log.info("drive %r needs extension", self.name)
         self._threshold_state = BLOCK_THRESHOLD.EXCEEDED
         self.exceeded_time = time.monotonic_time()
+        return True
 
 
 def chain_index(actual_chain, vol_id, drive_name):
