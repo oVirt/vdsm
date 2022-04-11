@@ -480,8 +480,6 @@ def test_event_received_before_write_completes(tmp_config):
     # is possible that at the time we receive the event the
     # the write was not completed yet, or failed, and the
     # volume size is still bellow the threshold.
-    # We will not extend the drive, but keep it marked for
-    # extension.
     vm = FakeVM(drive_infos())
     drives = vm.getDiskDevices()
 
@@ -508,9 +506,12 @@ def test_event_received_before_write_completes(tmp_config):
 
     vm.volume_monitor.monitor_volumes()
 
-    # The threshold state is correctly kept as exceeded, so extension
-    # will be tried again next cycle.
+    # The drive is marked for extension.
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
+
+    # And try to exend.
+    assert len(vm.cif.irs.extensions) == 1
+    check_extension(vda, drives[0], vm.cif.irs.extensions[0])
 
 
 def test_block_threshold_set_failure_after_drive_extended(tmp_config):

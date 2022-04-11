@@ -343,20 +343,15 @@ class VolumeMonitor(object):
             # next lvm extent.
             return False
 
-        if (block_info.allocation == 0 and
-                drive.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED):
-            # We get allocation == 0:
-            # - Before the guest write to the disk.
-            # - Older libvirt versions did not report allocation during
-            #   backup, see https://bugzilla.redhat.com/2015281.
-            # If we got a threshold event, we can safely assume that the guest
-            # wrote to the drive, and we need to extend it.
-            self._log.warning(
-                "No allocation info for drive %s, but block threshold was "
-                "exceeded - assuming that drive needs extension",
-                drive.name)
+        # If drive is marked for extension, extend it regardless of allocation.
+        # When checking the allocation right after getting a block threshold
+        # event, libvirt reports lower allocation, so we cannot verify the
+        # allocation in this case.
+        if drive.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED:
             return True
 
+        # Otherwise extend if allocation exceeded the threshold, even if we did
+        # not get an event yet.
         free_space = block_info.physical - block_info.allocation
         return free_space < drive.watermarkLimit
 
