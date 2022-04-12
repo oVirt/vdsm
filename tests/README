@@ -17,10 +17,6 @@ Note: Not all tests have been converted to tox and/or pytest yet.
 Running the tests
 -----------------
 
-Recreate all tox environments without test execution:
-
-    tox -r --notest
-
 Run storage tests:
 
     tox -e storage
@@ -87,6 +83,19 @@ deactivate it:
 Note that your prompt has changed again:
 
     [user@fedora tests (storage-tests)]$
+
+
+Troubleshooting
+---------------
+
+Tox may fail due to an outdated or corrupted virtual environment.
+To solve this you can recreate a specific tox environment without test execution:
+
+    tox -e storage -r --notest
+
+Or just remove the tox hidden folder to clean all tox environments by doing:
+
+    rm -rf .tox
 
 
 Using pytest directly
