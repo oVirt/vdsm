@@ -67,6 +67,11 @@ Source0:        https://github.com/oVirt/vdsm/releases/download/v%{version}/%{vd
 
 %{!?_licensedir:%global license %%doc}
 
+%if 0%{?rhel} >= 9
+# qemu-kvm is not available for ppc64le on RHEL 9
+ExcludeArch:   ppc64le
+%endif
+
 BuildRequires: openssl
 BuildRequires: python3
 BuildRequires: python3-six >= 1.9.0
