@@ -17,6 +17,10 @@ Note: Not all tests have been converted to tox and/or pytest yet.
 Running the tests
 -----------------
 
+Recreate all tox environments without test execution:
+
+    tox -r --notest
+
 Run storage tests:
 
     tox -e storage
@@ -27,12 +31,12 @@ Increasing test verbosity:
 
 You can also use environment variables:
 
-   export PYTEST_ADDOPTS=-vv
-   tox -e storage
+    export PYTEST_ADDOPTS=-vv
+    tox -e storage
 
 Running specific storage tests modules:
 
-   tox -e storage -- storage/image_test.py
+    tox -e storage -- storage/image_test.py
 
 
 Using tox virtual environment
@@ -160,7 +164,8 @@ Some tests are too slow to run on each build. these are marked in the source
 with the @slowtest decorator and are disabled by default.
 
 To enable slow tests:
-     ./run_tests_local.sh --enable-slow-tests filename [...]
+     
+    ./run_tests_local.sh --enable-slow-tests filename [...]
 
 Slow tests are also enabled if NOSE_SLOW_TESTS environment variable is set.
 
@@ -173,7 +178,8 @@ running tests in parallel. These tests are marked in the source with the
 @stresstest decorator and are disabled by default.
 
 To enable stress tests:
-     ./run_tests_local.sh --enable-stress-tests filename [...]
+     
+    ./run_tests_local.sh --enable-stress-tests filename [...]
 
 Stress tests are also enabled if NOSE_STRESS_TESTS environment variable is set.
 
@@ -219,6 +225,7 @@ By default, tests run without verbose level 1.
 To run with verbose output, set verbose level to 3.
 
 To set verbose level:
+    
     make check NOSE_VERBOSE=<VERBOSE LEVEL>
 
 Functional test suite:
@@ -226,6 +233,7 @@ Functional test suite:
 
 The functional test suite is designed to test a running vdsm instance.  To run
 the full suite of functional tests from within the installed directory:
+    
     ./run_tests.sh functional/*.py
 
 Test timeout
