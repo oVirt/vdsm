@@ -402,17 +402,10 @@ class BlockVolumeManifest(volume.VolumeManifest):
 
     def optimal_size(self):
         """
-        Return the optimal size of the volume.
+        Return the optimal size of the volume, based on actual allocation.
 
-        Returns:
-            optimal size is the minimum of the volume maximum size and the
-            volume actual size plus padding. For leaf volumes, the padding
-            is one chunk, and for internal volumes the padding is
-            `MIN_PADDING`.
-            Size is returned in bytes.
-
-        Note:
-            the volume must be prepared when calling this helper.
+        NOTE: The volume must be prepared so we can check the actual
+        allocation.
         """
         if self.getFormat() == sc.RAW_FORMAT:
             virtual_size = self.getCapacity()
@@ -423,29 +416,21 @@ class BlockVolumeManifest(volume.VolumeManifest):
         check = qemuimg.check(self.getVolumePath(), qemuimg.FORMAT.QCOW2)
         actual_size = check['offset']
 
-        # Add padding.
+        # Add free space.
         if self.isLeaf():
-            # For leaf volumes, the padding is one chunk.
-            chnuk_size_mb = int(config.get("irs",
-                                           "volume_utilization_chunk_mb"))
-            padding = chnuk_size_mb * MiB
-            self.log.debug("Leaf volume, using padding: %s", padding)
-
-            potential_optimal_size = actual_size + padding
-
+            # For leaf volumes, add one chunk of free space so the VM
+            # will not pause quickly when it is started.
+            free_space = config.getint(
+                "irs", "volume_utilization_chunk_mb") * MiB
+            optimal_size = actual_size + free_space
         else:
-            # For internal volumes, using minimal padding.
-            padding = MIN_PADDING
-            self.log.debug("Internal volume, using padding: %s", padding)
+            # For internal volumes, add minimal padding and extend to
+            # minimal volume size.
+            optimal_size = max(actual_size + MIN_PADDING, sc.MIN_CHUNK)
 
-            potential_optimal_size = actual_size + padding
-
-            # Limit optimal size to the minimal volume size.
-            potential_optimal_size = max(sc.MIN_CHUNK, potential_optimal_size)
-
-        # Limit optimal size by maximum size.
+        # Limit by maximum size.
         max_size = self.max_size(self.getCapacity(), self.getFormat())
-        optimal_size = min(potential_optimal_size, max_size)
+        optimal_size = min(optimal_size, max_size)
         self.log.debug("COW format, actual_size: %s, max_size: %s, "
                        "optimal_size: %s",
                        actual_size, max_size, optimal_size)
