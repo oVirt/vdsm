@@ -397,6 +397,43 @@ class BlockVolumeManifest(volume.VolumeManifest):
             if pvolUUID != sc.BLANK_UUID:
                 cls.teardown(sdUUID=sdUUID, volUUID=pvolUUID, justme=False)
 
+    @classmethod
+    def optimal_cow_size(cls, required_size, capacity, is_leaf):
+        """
+        Return the optimal size for a volume based on the required allocation,
+        volume capacity, and volume type.
+
+        This is a class method so we can use this calculation for the base
+        volume during merge, using the mesured size for the merged instead of
+        the actual volume size.
+        """
+        # Add free space.
+        if is_leaf:
+            # For leaf volumes, add one chunk of free space so the VM
+            # will not pause quickly when it is started.
+            free_space = config.getint(
+                "irs", "volume_utilization_chunk_mb") * MiB
+            optimal_size = required_size + free_space
+        else:
+            # For internal volumes, use the required size. It cannot be zero
+            # since it includes qcow2 metadata.
+            assert required_size > 0
+            optimal_size = required_size
+
+        # Align to align size so callers can compare optimal size with the
+        # actual size.
+        optimal_size = utils.round(optimal_size, cls.align_size)
+
+        # Limit by maximum size.
+        max_size = cls.max_size(capacity, sc.COW_FORMAT)
+        optimal_size = min(optimal_size, max_size)
+
+        cls.log.debug(
+            "COW format, required_size=%s max_size=%s optimal_size=%s",
+            required_size, max_size, optimal_size)
+
+        return optimal_size
+
     def optimal_size(self):
         """
         Return the optimal size of the volume, based on actual allocation.
@@ -408,35 +445,10 @@ class BlockVolumeManifest(volume.VolumeManifest):
             virtual_size = self.getCapacity()
             self.log.debug("RAW format, using virtual size: %s", virtual_size)
             return virtual_size
-
-        # Read actual size.
-        check = qemuimg.check(self.getVolumePath(), qemuimg.FORMAT.QCOW2)
-        actual_size = check['offset']
-
-        # Add free space.
-        if self.isLeaf():
-            # For leaf volumes, add one chunk of free space so the VM
-            # will not pause quickly when it is started.
-            free_space = config.getint(
-                "irs", "volume_utilization_chunk_mb") * MiB
-            optimal_size = actual_size + free_space
         else:
-            # For internal volumes, use the actual size. It cannot be zero
-            # since it includes qcow2 metadata.
-            assert actual_size > 0
-            optimal_size = actual_size
-
-        # Align to align size so callers can compare optimal size with the
-        # actual size.
-        optimal_size = utils.round(optimal_size, self.align_size)
-
-        # Limit by maximum size.
-        max_size = self.max_size(self.getCapacity(), self.getFormat())
-        optimal_size = min(optimal_size, max_size)
-        self.log.debug("COW format, actual_size: %s, max_size: %s, "
-                       "optimal_size: %s",
-                       actual_size, max_size, optimal_size)
-        return optimal_size
+            check = qemuimg.check(self.getVolumePath(), qemuimg.FORMAT.QCOW2)
+            return self.optimal_cow_size(
+                check['offset'], self.getCapacity(), self.isLeaf())
 
 
 class BlockVolume(volume.Volume):
