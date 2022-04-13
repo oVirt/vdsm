@@ -80,7 +80,6 @@ def make_env(env_type, base, top):
     with fake_env(env_type) as env:
         with MonkeyPatch().context() as mp:
             mp.setattr(guarded, 'context', fake_guarded_context())
-            mp.setattr(merge, "config", CONFIG)
             mp.setattr(merge, 'sdCache', env.sdcache)
             mp.setattr(blockVolume, "config", CONFIG)
             mp.setattr(blockVolume, 'rm', FakeResourceManager())
@@ -219,36 +218,63 @@ class TestSubchainInfo:
 class TestPrepareMerge:
 
     @pytest.mark.parametrize("base, top, expected", [
-        # No capacity update, no allocation update
+        # Active merge, no capacity update, no allocation update
         (
             Volume(format='raw', virtual=1, physical=1, leaf=False),
             Volume(format='cow', virtual=1, physical=1, leaf=True),
-            Expected(virtual=1, physical=1),
+            Expected(virtual=1024, physical=1024),
         ),
-        # No capacity update, increase LV size
+        # Active merge, no capacity update, increase LV size adding one chunk
+        # of free space.
         (
             Volume(format='cow', virtual=10, physical=2, leaf=False),
             Volume(format='cow', virtual=10, physical=2, leaf=True),
-            Expected(virtual=10, physical=5),
+            Expected(virtual=10240, physical=3200),
         ),
-        # Update capacity and increase LV size
+        # Internal merge, no capacity update, no LV extend.
+        (
+            Volume(format='cow', virtual=10, physical=2, leaf=False),
+            Volume(format='cow', virtual=10, physical=2, leaf=False),
+            Expected(virtual=10240, physical=2176),
+        ),
+        # Active merge, update capacity and increase LV size adding one chunk
+        # of free space.
         (
             Volume(format='cow', virtual=3, physical=1, leaf=False),
             Volume(format='cow', virtual=5, physical=1, leaf=True),
-            Expected(virtual=5, physical=3),
+            Expected(virtual=5120, physical=3200),
         ),
     ])
-    def test_block_cow(self, base, top, expected):
+    def test_block_cow(self, monkeypatch, base, top, expected):
         with make_env('block', base, top) as env:
-            merge.prepare(env.subchain)
-            assert self.expected_locks(env.subchain) == guarded.context.locks
             base_vol = env.subchain.base_vol
+            top_vol = env.subchain.top_vol
+
+            def fake_measure(image, format=None, output_format=None,
+                             backing=True, is_block=False, base=None,
+                             unsafe=False):
+                # Make sure we are called with the right arguments.
+                assert image == top_vol.getVolumePath()
+                assert format == qemuimg.FORMAT.QCOW2
+                assert output_format == qemuimg.FORMAT.QCOW2
+                assert backing
+                assert is_block
+                assert base == base_vol.getVolumePath()
+                assert not unsafe
+
+                # Return fake response.
+                return {"required": 2048 * MiB, "bitmaps": 1 * MiB}
+
+            monkeypatch.setattr(qemuimg, "measure", fake_measure)
+
+            merge.prepare(env.subchain)
+
+            assert self.expected_locks(env.subchain) == guarded.context.locks
             assert sc.LEGAL_VOL == base_vol.getLegality()
-            new_base_size = base_vol.getCapacity()
-            new_base_alloc = env.sd_manifest.getVSize(base_vol.imgUUID,
-                                                      base_vol.volUUID)
-            assert expected.virtual * GiB == new_base_size
-            assert expected.physical * GiB == new_base_alloc
+            assert expected.virtual * MiB == base_vol.getCapacity()
+            new_size = env.sd_manifest.getVSize(
+                base_vol.imgUUID, base_vol.volUUID)
+            assert expected.physical * MiB == new_size
 
     @pytest.mark.xfail(reason="cannot create a domain object in the tests")
     @pytest.mark.parametrize("base, top, expected", [
