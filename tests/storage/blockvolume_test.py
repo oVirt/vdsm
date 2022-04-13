@@ -23,6 +23,7 @@ from __future__ import division
 
 from contextlib import contextmanager
 
+from vdsm import utils
 from vdsm.common.units import MiB, GiB
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
@@ -143,7 +144,8 @@ class TestBlockVolumeManifest(VdsmTestCase):
         with self.make_volume(size=2 * GiB, format=sc.COW_FORMAT) as vol:
             chunk_size = GiB
             check = qemuimg.check(vol.getVolumePath(), qemuimg.FORMAT.QCOW2)
-            actual_size = check['offset'] + chunk_size
+            actual_size = utils.round(
+                check['offset'] + chunk_size, vol.align_size)
             self.assertEqual(vol.optimal_size(), actual_size)
 
     @MonkeyPatch(blockVolume, 'config', CONFIG)
@@ -160,7 +162,7 @@ class TestBlockVolumeManifest(VdsmTestCase):
         (512 * MiB, 200 * MiB, 640 * MiB),
         # Add minimum padding.
         (2 * GiB, 1023 * MiB, 1024 * MiB),
-        (2 * GiB, 1024 * MiB, 1024 * MiB + blockVolume.MIN_PADDING),
+        (2 * GiB, 1024 * MiB, 1152 * MiB),
     ])
     def test_optimal_size_cow_internal(
             self, virtual_size, actual_size, optimal_size):
