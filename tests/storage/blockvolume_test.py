@@ -144,9 +144,12 @@ class TestBlockVolumeManifest(VdsmTestCase):
         with self.make_volume(size=2 * GiB, format=sc.COW_FORMAT) as vol:
             chunk_size = GiB
             check = qemuimg.check(vol.getVolumePath(), qemuimg.FORMAT.QCOW2)
-            actual_size = utils.round(
+            optimal_size = utils.round(
                 check['offset'] + chunk_size, vol.align_size)
-            self.assertEqual(vol.optimal_size(), actual_size)
+            self.assertEqual(vol.optimal_size(), optimal_size)
+            self.assertEqual(
+                vol.optimal_cow_size(check["offset"], 2 * GiB, vol.isLeaf()),
+                optimal_size)
 
     @MonkeyPatch(blockVolume, 'config', CONFIG)
     def test_optimal_size_cow_leaf_max(self):
@@ -155,6 +158,10 @@ class TestBlockVolumeManifest(VdsmTestCase):
         with self.make_volume(size=size, format=sc.COW_FORMAT) as vol:
             max_size = vol.max_size(size, vol.getFormat())
             self.assertEqual(vol.optimal_size(), max_size)
+            check = qemuimg.check(vol.getVolumePath(), qemuimg.FORMAT.QCOW2)
+            self.assertEqual(
+                vol.optimal_cow_size(check["offset"], 512 * MiB, vol.isLeaf()),
+                max_size)
 
     @permutations([
         # virtual_size, actual_size, optimal_size
@@ -178,7 +185,12 @@ class TestBlockVolumeManifest(VdsmTestCase):
             with MonkeyPatchScope([(qemuimg, 'check', fake_check)]):
                 env.chain = make_qemu_chain(
                     env, virtual_size, sc.COW_FORMAT, 3)
-                self.assertEqual(env.chain[1].optimal_size(), optimal_size)
+                vol = env.chain[1]
+                self.assertEqual(vol.optimal_size(), optimal_size)
+                self.assertEqual(
+                    vol.optimal_cow_size(
+                        actual_size, virtual_size, vol.isLeaf()),
+                    optimal_size)
 
     @permutations([
         # capacity, virtual_size, expected_capacity
