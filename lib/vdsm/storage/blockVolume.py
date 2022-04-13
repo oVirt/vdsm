@@ -421,8 +421,10 @@ class BlockVolumeManifest(volume.VolumeManifest):
                 "irs", "volume_utilization_chunk_mb") * MiB
             optimal_size = actual_size + free_space
         else:
-            # For internal volumes, extend to minimal volume size.
-            optimal_size = max(actual_size, sc.MIN_CHUNK)
+            # For internal volumes, use the actual size. It cannot be zero
+            # since it includes qcow2 metadata.
+            assert actual_size > 0
+            optimal_size = actual_size
 
         # Align to align size so callers can compare optimal size with the
         # actual size.
