@@ -43,9 +43,6 @@ from vdsm.storage.volumemetadata import VolumeMetadata
 
 QCOW_OVERHEAD_FACTOR = 1.1
 
-# Minimal padding to be added to internal volume optimal size.
-MIN_PADDING = MiB
-
 log = logging.getLogger('storage.volume')
 
 
@@ -424,9 +421,8 @@ class BlockVolumeManifest(volume.VolumeManifest):
                 "irs", "volume_utilization_chunk_mb") * MiB
             optimal_size = actual_size + free_space
         else:
-            # For internal volumes, add minimal padding and extend to
-            # minimal volume size.
-            optimal_size = max(actual_size + MIN_PADDING, sc.MIN_CHUNK)
+            # For internal volumes, extend to minimal volume size.
+            optimal_size = max(actual_size, sc.MIN_CHUNK)
 
         # Align to align size so callers can compare optimal size with the
         # actual size.
