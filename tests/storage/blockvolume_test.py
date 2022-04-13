@@ -155,12 +155,15 @@ class TestBlockVolumeManifest(VdsmTestCase):
             self.assertEqual(vol.optimal_size(), max_size)
 
     @permutations([
-        # actual_size, optimal_size
-        (200 * MiB, 256 * MiB),
-        (1023 * MiB, 1024 * MiB),
-        (1024 * MiB, 1024 * MiB + blockVolume.MIN_PADDING),
+        # virtual_size, actual_size, optimal_size
+        # Limited by max size.
+        (512 * MiB, 200 * MiB, 640 * MiB),
+        # Add minimum padding.
+        (2 * GiB, 1023 * MiB, 1024 * MiB),
+        (2 * GiB, 1024 * MiB, 1024 * MiB + blockVolume.MIN_PADDING),
     ])
-    def test_optimal_size_cow_internal(self, actual_size, optimal_size):
+    def test_optimal_size_cow_internal(
+            self, virtual_size, actual_size, optimal_size):
         def fake_check(path, format):
             return {'offset': actual_size}
 
@@ -169,7 +172,8 @@ class TestBlockVolumeManifest(VdsmTestCase):
             # fake qemuimg check to return big volumes size, instead of writing
             # big data to volumes, an operation that takes long time.
             with MonkeyPatchScope([(qemuimg, 'check', fake_check)]):
-                env.chain = make_qemu_chain(env, actual_size, sc.COW_FORMAT, 3)
+                env.chain = make_qemu_chain(
+                    env, virtual_size, sc.COW_FORMAT, 3)
                 self.assertEqual(env.chain[1].optimal_size(), optimal_size)
 
     @permutations([
