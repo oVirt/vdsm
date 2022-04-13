@@ -62,7 +62,7 @@ CONFIG = make_config([
     ('irs', 'volume_utilizzation_precent', '50'),
 ])
 
-Volume = namedtuple("Volume", "format,virtual,physical")
+Volume = namedtuple("Volume", "format,virtual,physical,leaf")
 Expected = namedtuple("Expected", "virtual,physical")
 
 
@@ -90,12 +90,18 @@ def make_env(env_type, base, top):
                 lambda self, sdUUID, imgUUID:
                     [env.subchain.base_vol, env.subchain.top_vol])
 
-            env.make_volume(base.virtual * GiB, img_id, base_id,
-                            vol_format=sc.name2type(base.format),
-                            prealloc=prealloc)
-            env.make_volume(top.virtual * GiB, img_id, top_id,
-                            parent_vol_id=base_id,
-                            vol_format=sc.COW_FORMAT)
+            env.make_volume(
+                base.virtual * GiB, img_id, base_id,
+                vol_format=sc.name2type(base.format),
+                prealloc=prealloc,
+                vol_type=sc.INTERNAL_VOL)
+
+            env.make_volume(
+                top.virtual * GiB, img_id, top_id,
+                parent_vol_id=base_id,
+                vol_format=sc.COW_FORMAT,
+                vol_type=sc.LEAF_VOL if top.leaf else sc.INTERNAL_VOL)
+
             env.subchain = merge.SubchainInfo(
                 dict(sd_id=env.sd_manifest.sdUUID, img_id=img_id,
                      base_id=base_id, top_id=top_id), 0)
@@ -214,11 +220,23 @@ class TestPrepareMerge:
 
     @pytest.mark.parametrize("base, top, expected", [
         # No capacity update, no allocation update
-        (Volume('raw', 1, 1), Volume('cow', 1, 1), Expected(1, 1)),
+        (
+            Volume(format='raw', virtual=1, physical=1, leaf=False),
+            Volume(format='cow', virtual=1, physical=1, leaf=True),
+            Expected(virtual=1, physical=1),
+        ),
         # No capacity update, increase LV size
-        (Volume('cow', 10, 2), Volume('cow', 10, 2), Expected(10, 5)),
+        (
+            Volume(format='cow', virtual=10, physical=2, leaf=False),
+            Volume(format='cow', virtual=10, physical=2, leaf=True),
+            Expected(virtual=10, physical=5),
+        ),
         # Update capacity and increase LV size
-        (Volume('cow', 3, 1), Volume('cow', 5, 1), Expected(5, 3)),
+        (
+            Volume(format='cow', virtual=3, physical=1, leaf=False),
+            Volume(format='cow', virtual=5, physical=1, leaf=True),
+            Expected(virtual=5, physical=3),
+        ),
     ])
     def test_block_cow(self, base, top, expected):
         with make_env('block', base, top) as env:
@@ -235,7 +253,11 @@ class TestPrepareMerge:
     @pytest.mark.xfail(reason="cannot create a domain object in the tests")
     @pytest.mark.parametrize("base, top, expected", [
         # Update capacity and fully allocate LV
-        (Volume('raw', 1, 1), Volume('cow', 2, 1), Expected(2, 2)),
+        (
+            Volume(format='raw', virtual=1, physical=1, leaf=False),
+            Volume(format='cow', virtual=2, physical=1, leaf=True),
+            Expected(virtual=2, physical=2),
+        ),
     ])
     def test_block_raw(self, base, top, expected):
         with make_env('block', base, top) as env:
@@ -250,8 +272,16 @@ class TestPrepareMerge:
             assert expected.physical * GiB == new_base_alloc
 
     @pytest.mark.parametrize("base, top, expected", [
-        (Volume('cow', 1, 0), Volume('cow', 1, 0), Expected(1, 0)),
-        (Volume('cow', 1, 0), Volume('cow', 2, 0), Expected(2, 0)),
+        (
+            Volume(format='cow', virtual=1, physical=0, leaf=False),
+            Volume(format='cow', virtual=1, physical=0, leaf=True),
+            Expected(virtual=1, physical=0),
+        ),
+        (
+            Volume(format='cow', virtual=1, physical=0, leaf=False),
+            Volume(format='cow', virtual=2, physical=0, leaf=True),
+            Expected(virtual=2, physical=0),
+        ),
     ])
     def test_file_cow(self, base, top, expected):
         with make_env('file', base, top) as env:
@@ -263,7 +293,11 @@ class TestPrepareMerge:
 
     @pytest.mark.xfail(reason="cannot create a domain object in the tests")
     @pytest.mark.parametrize("base, top, expected", [
-        (Volume('raw', 1, 0), Volume('cow', 2, 0), Expected(2, 0)),
+        (
+            Volume(format='raw', virtual=1, physical=0, leaf=False),
+            Volume(format='cow', virtual=2, physical=0, leaf=True),
+            Expected(virtual=2, physical=0),
+        ),
     ])
     def test_file_raw(self, base, top, expected):
         with make_env('file', base, top) as env:
