@@ -159,7 +159,9 @@ class TestBlockVolumeManifest(VdsmTestCase):
     @permutations([
         # virtual_size, actual_size, optimal_size
         # Limited by max size.
-        (512 * MiB, 200 * MiB, 640 * MiB),
+        (512 * MiB, 200 * MiB, 256 * MiB),
+        # Empty qcow2 image - align to extent size.
+        (2 * GiB, 262144, sc.VG_EXTENT_SIZE),
         # Align to extent size.
         (2 * GiB, 1023 * MiB, 1024 * MiB),
         (2 * GiB, 1024 * MiB, 1024 * MiB),
