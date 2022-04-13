@@ -428,6 +428,10 @@ class BlockVolumeManifest(volume.VolumeManifest):
             # minimal volume size.
             optimal_size = max(actual_size + MIN_PADDING, sc.MIN_CHUNK)
 
+        # Align to align size so callers can compare optimal size with the
+        # actual size.
+        optimal_size = utils.round(optimal_size, self.align_size)
+
         # Limit by maximum size.
         max_size = self.max_size(self.getCapacity(), self.getFormat())
         optimal_size = min(optimal_size, max_size)
