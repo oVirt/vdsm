@@ -36,10 +36,8 @@ from contextlib import contextmanager
 
 import logging
 
-from vdsm import utils
 from vdsm.common import properties
 from vdsm.common.units import MiB
-from vdsm.config import config
 
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -207,18 +205,31 @@ def _extend_base_allocation(base_vol, top_vol):
     if not (base_vol.is_block() and base_vol.getFormat() == sc.COW_FORMAT):
         return
 
-    base_alloc = base_vol.getVolumeSize()
-    top_alloc = top_vol.getVolumeSize()
-    vol_chunk_size = config.getint('irs', 'volume_utilization_chunk_mb') * MiB
-    potential_alloc = base_alloc + top_alloc + vol_chunk_size
-    # TODO: add chunk_size only if top is leaf.
-    capacity = base_vol.getCapacity()
-    max_alloc = utils.round(capacity * sc.COW_OVERHEAD, MiB)
-    actual_alloc = min(potential_alloc, max_alloc)
-    actual_alloc = utils.round(actual_alloc, MiB)
-    actual_alloc_mb = actual_alloc // MiB
+    # Measure the subchain from top to base. This gives us the required
+    # allocation for merging top into base.
+    log.debug("Measuring sub chain top=%r base=%r",
+              top_vol.volUUID, base_vol.volUUID)
+    measure = qemuimg.measure(
+        top_vol.getVolumePath(),
+        format=qemuimg.FORMAT.QCOW2,
+        output_format=qemuimg.FORMAT.QCOW2,
+        is_block=True,
+        base=base_vol.getVolumePath())
+    log.debug("Measure result: %s", measure)
+
+    # When merging we always copy the bitmaps from the top to base. Measure
+    # gives us the size of the bitmaps in top *and* base, so this may allocate
+    # more than needed, but bitmaps are small so it should be good enough.
+    required_size = measure["required"] + measure.get("bitmaps", 0)
+
+    # If the top volume is leaf, the base volume will become leaf after the
+    # merge, so it needs more space.
+    optimal_size = base_vol.optimal_cow_size(
+        required_size, base_vol.getCapacity(), top_vol.isLeaf())
+
+    # Extend the volume.
     dom = sdCache.produce(base_vol.sdUUID)
-    dom.extendVolume(base_vol.volUUID, actual_alloc_mb)
+    dom.extendVolume(base_vol.volUUID, optimal_size // MiB)
 
 
 def finalize(subchain):
@@ -265,8 +276,9 @@ def finalize(subchain):
             if subchain.base_vol.chunked():
                 # optimal_size must be called when the volume is prepared
                 optimal_size = subchain.base_vol.optimal_size()
+                actual_size = subchain.base_vol.getVolumeSize()
 
-        if subchain.base_vol.chunked():
+        if subchain.base_vol.chunked() and optimal_size < actual_size:
             _shrink_base_volume(subchain, optimal_size)
 
 
