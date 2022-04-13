@@ -23,8 +23,6 @@ from __future__ import division
 
 from contextlib import contextmanager
 
-import pytest
-
 from vdsm.common.units import MiB, GiB
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
@@ -39,8 +37,6 @@ from storage.storagetestlib import (
     fake_env,
     make_qemu_chain,
 )
-
-from . import qemuio
 
 from testlib import make_config
 from testlib import make_uuid
@@ -142,24 +138,20 @@ class TestBlockVolumeManifest(VdsmTestCase):
             self.assertEqual(vol.optimal_size(), GiB)
 
     @MonkeyPatch(blockVolume, 'config', CONFIG)
-    def test_optimal_size_cow_leaf_empty(self):
-        # verify optimal size equals to actual size + one chunk.
-        with self.make_volume(size=GiB, format=sc.COW_FORMAT) as vol:
+    def test_optimal_size_cow_leaf(self):
+        # Optimal size calculated using actual size and chunk size.
+        with self.make_volume(size=2 * GiB, format=sc.COW_FORMAT) as vol:
             chunk_size = GiB
             check = qemuimg.check(vol.getVolumePath(), qemuimg.FORMAT.QCOW2)
             actual_size = check['offset'] + chunk_size
             self.assertEqual(vol.optimal_size(), actual_size)
 
-    @pytest.mark.slow
     @MonkeyPatch(blockVolume, 'config', CONFIG)
-    def test_optimal_size_cow_leaf_not_empty(self):
-        # verify that optimal size is limited to max size.
-        with self.make_volume(size=GiB, format=sc.COW_FORMAT) as vol:
-            qemuio.write_pattern(
-                path=vol.volumePath,
-                format=sc.fmt2str(vol.getFormat()),
-                len=200 * MiB)
-            max_size = vol.max_size(GiB, vol.getFormat())
+    def test_optimal_size_cow_leaf_max(self):
+        # Optimal size is limited to maximum size.
+        size = 512 * MiB
+        with self.make_volume(size=size, format=sc.COW_FORMAT) as vol:
+            max_size = vol.max_size(size, vol.getFormat())
             self.assertEqual(vol.optimal_size(), max_size)
 
     @permutations([
