@@ -1,7 +1,7 @@
 # Vdsm logging configuration.
 
 [loggers]
-keys=root,vds,storage,virt,ovirt_hosted_engine_ha,ovirt_hosted_engine_ha_config,IOProcess,schema_inconsistency,devel
+keys=root,vds,storage,mailbox,virt,ovirt_hosted_engine_ha,ovirt_hosted_engine_ha_config,IOProcess,schema_inconsistency,devel
 
 [handlers]
 keys=console,syslog,logfile,logthread,schema_inconsistency
@@ -24,6 +24,12 @@ propagate=0
 level=INFO
 handlers=logthread
 qualname=storage
+propagate=0
+
+[logger_mailbox]
+level=INFO
+handlers=logthread
+qualname=storage.mailbox
 propagate=0
 
 [logger_ovirt_hosted_engine_ha]
