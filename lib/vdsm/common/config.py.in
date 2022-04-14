@@ -447,6 +447,15 @@ parameters = [
             '(default 0.5)'),
     ]),
 
+    # Section: [thinp]
+    ('thinp', [
+
+        ('monitor_timeout', '0.5',
+            'Time in seconds to wait for drive monitor lock during periodic '
+            'monitoring. On timeout, the drive will be monitored in the '
+            'next monitoring cycle. (default 0.5)'),
+    ]),
+
     # Section: [multipath]
     ('multipath', [
 
