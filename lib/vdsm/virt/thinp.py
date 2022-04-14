@@ -20,13 +20,15 @@
 
 import re
 import sys
+import time
 
 from collections import namedtuple
 
 import libvirt
 
 from vdsm.common import exception
-from vdsm.common import time
+from vdsm.common.config import config
+from vdsm.common.time import Clock
 from vdsm.virt import virdomain
 from vdsm.virt.vmdevices import lookup
 from vdsm.virt.vmdevices import storage
@@ -235,8 +237,16 @@ class VolumeMonitor(object):
         if not self._update_block_info(drives):
             return
 
+        timeout = config.getfloat("thinp", "monitor_timeout")
         for drive in drives:
-            self._extend_drive_if_needed(drive)
+            try:
+                with drive.monitor_lock(timeout):
+                    self._extend_drive_if_needed(drive)
+            except storage.MonitorBusy:
+                self._log.debug(
+                    "Timeout acquiring monitor lock for drive %s, retrying "
+                    "in next monitoring cycle",
+                    drive.name)
 
     def _update_block_info(self, drives):
         """
@@ -466,7 +476,7 @@ class VolumeMonitor(object):
         # Used to measure the total extend time for the drive and the replica.
         # Note that the volume is extended after the replica is extended, so
         # the total extend time includes the time to extend the replica.
-        clock = time.Clock()
+        clock = Clock()
 
         # If we received a block threshold event for this drive, include
         # the time since we received the event in the total time.
