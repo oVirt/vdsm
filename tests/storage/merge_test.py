@@ -363,7 +363,7 @@ class TestFinalizeMerge:
     # TODO: use one make_env for all tests?
     @contextmanager
     def make_env(self, sd_type='block', format='raw', chain_len=2):
-        size = MiB
+        size = 2 * GiB
         base_fmt = sc.name2type(format)
         with fake_env(sd_type) as env:
             with MonkeyPatch().context() as mp:
@@ -494,10 +494,11 @@ class TestFinalizeMerge:
 
             assert subchain.top_vol.getLegality() == sc.ILLEGAL_VOL
 
-    def test_reduce_chunked(self):
+    def test_reduce_chunked_internal(self):
         with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
             base_vol = env.chain[1]
             top_vol = env.chain[2]
+            assert not top_vol.isLeaf()
             subchain_info = dict(sd_id=base_vol.sdUUID,
                                  img_id=base_vol.imgUUID,
                                  base_id=base_vol.volUUID,
@@ -513,6 +514,28 @@ class TestFinalizeMerge:
 
             assert fake_base_vol.__calls__ == [
                 ('reduce', (base_vol.optimal_size(),), {}),
+            ]
+
+    def test_reduce_chunked_leaf(self):
+        with self.make_env(sd_type='block', format='cow', chain_len=3) as env:
+            base_vol = env.chain[1]
+            top_vol = env.chain[2]
+            assert top_vol.isLeaf()
+            subchain_info = dict(sd_id=base_vol.sdUUID,
+                                 img_id=base_vol.imgUUID,
+                                 base_id=base_vol.volUUID,
+                                 top_id=top_vol.volUUID,
+                                 base_generation=0)
+            subchain = merge.SubchainInfo(subchain_info, 0)
+
+            merge.finalize(subchain)
+
+            fake_sd = env.sdcache.domains[env.sd_manifest.sdUUID]
+            fake_base_vol = fake_sd.produceVolume(subchain.img_id,
+                                                  subchain.base_id)
+
+            assert fake_base_vol.__calls__ == [
+                ('reduce', (base_vol.optimal_size(as_leaf=True),), {}),
             ]
 
     def test_reduce_not_chunked(self):
