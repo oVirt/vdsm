@@ -27,11 +27,13 @@ import time
 import threading
 import struct
 import logging
-
 import uuid
+
+from functools import partial
 
 from six.moves import queue
 
+from vdsm.common import commands
 from vdsm.common.units import KiB
 from vdsm.config import config
 from vdsm.storage import misc
@@ -63,6 +65,10 @@ SLOTS_PER_MAILBOX = int(MAILBOX_SIZE // MESSAGE_SIZE)
 # etc)
 MESSAGES_PER_MAILBOX = SLOTS_PER_MAILBOX - 1
 
+log = logging.getLogger('storage.mailbox')
+
+_mboxExecCmd = partial(commands.execCmd, execCmdLogger=log)
+
 
 class ReadEventError(Exception):
     pass
@@ -91,10 +97,6 @@ def runTask(args):
         args = None
     ctask = task.Task(id=None, name=cmd)
     ctask.prepare(cmd, *args)
-
-
-def _mboxExecCmd(*args, **kwargs):
-    return misc.execCmd(*args, **kwargs)
 
 
 class SPM_Extend_Message:
