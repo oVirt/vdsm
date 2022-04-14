@@ -56,7 +56,7 @@
 %{!?vdsm_release: %global vdsm_release @PACKAGE_RELEASE@}
 
 Name:           %{vdsm_name}
-Version:        4.50.0.11
+Version:        4.50.1
 Release:        %{vdsm_release}%{?dist}%{?extra_release}
 Summary:        Virtual Desktop Server Manager
 
