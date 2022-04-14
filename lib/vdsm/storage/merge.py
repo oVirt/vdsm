@@ -274,8 +274,10 @@ def finalize(subchain):
                 _finalize_internal_merge(dom, subchain)
 
             if subchain.base_vol.chunked():
-                # optimal_size must be called when the volume is prepared
-                optimal_size = subchain.base_vol.optimal_size()
+                # If the top volume is leaf, the base volume will become a leaf
+                # after the top volume is deleted.
+                optimal_size = subchain.base_vol.optimal_size(
+                    as_leaf=subchain.top_vol.isLeaf())
                 actual_size = subchain.base_vol.getVolumeSize()
 
         if subchain.base_vol.chunked() and optimal_size < actual_size:
