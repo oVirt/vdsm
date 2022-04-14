@@ -99,7 +99,7 @@ def _mboxExecCmd(*args, **kwargs):
 
 class SPM_Extend_Message:
 
-    log = logging.getLogger('storage.spm.messages.extend')
+    log = logging.getLogger('storage.mailbox')
 
     def __init__(self, volumeData, newSize, callbackFunction=None):
         if ('poolID' not in volumeData or
@@ -190,7 +190,7 @@ class SPM_Extend_Message:
 
 class HSM_Mailbox:
 
-    log = logging.getLogger('storage.mailbox.hsm')
+    log = logging.getLogger('storage.mailbox')
 
     def __init__(self, hostID, poolID, inbox, outbox, monitorInterval=2.0,
                  eventInterval=0.5):
@@ -235,7 +235,7 @@ class HSM_Mailbox:
 
 
 class HSM_MailMonitor(object):
-    log = logging.getLogger('storage.mailbox.hsmmailmonitor')
+    log = logging.getLogger('storage.mailbox')
 
     def __init__(self, inbox, outbox, hostID, queue, monitorInterval,
                  eventInterval):
@@ -559,7 +559,7 @@ class HSM_MailMonitor(object):
 
 class SPM_MailMonitor:
 
-    log = logging.getLogger('storage.MailBox.SpmMailMonitor')
+    log = logging.getLogger('storage.mailbox')
 
     def registerMessageType(self, messageType, callback):
         self._messageTypes[messageType] = callback
