@@ -27,6 +27,8 @@ import os
 import threading
 import xml.etree.ElementTree as ET
 
+from contextlib import contextmanager
+
 from vdsm.common import conv
 from vdsm.common import cpuarch
 from vdsm.common import errors
@@ -43,6 +45,12 @@ from . import core
 from . import drivename
 from . import hwclass
 from . import lease
+
+
+class MonitorBusy(Exception):
+    """
+    Raised when acquiring the monitor lock times out.
+    """
 
 
 DEFAULT_INTERFACE_FOR_ARCH = {
@@ -119,8 +127,9 @@ class Drive(core.Base):
                  'extSharedState', 'drv', 'sgio', 'GUID', 'diskReplicate',
                  '_diskType', 'hosts', 'protocol', 'auth', 'discard',
                  'vm_custom', '_block_info', '_threshold_state', '_lock',
-                 '_monitorable', 'guestName', '_iotune', 'RBD', 'managed',
-                 'scratch_disk', 'exceeded_time', 'managed_reservation')
+                 '_monitor_lock', '_monitorable', 'guestName', '_iotune',
+                 'RBD', 'managed', 'scratch_disk', 'exceeded_time',
+                 'managed_reservation')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         MiB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -219,6 +228,7 @@ class Drive(core.Base):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
         self._lock = threading.Lock()
+        self._monitor_lock = threading.Lock()
         self._path = None
         self._diskType = None
         # device needs to be initialized in prior
@@ -969,6 +979,20 @@ class Drive(core.Base):
         self._threshold_state = BLOCK_THRESHOLD.EXCEEDED
         self.exceeded_time = time.monotonic_time()
         return True
+
+    @contextmanager
+    def monitor_lock(self, timeout):
+        """
+        Context manager acquiring lock for monitoring thin provisioned drive.
+        Raises MonitorBusy if acquiring the lock times out.
+        """
+        if not self._monitor_lock.acquire(timeout=timeout):
+            raise MonitorBusy(
+                f"Timeout acquiring monitor lock for drive {self.name}")
+        try:
+            yield
+        finally:
+            self._monitor_lock.release()
 
 
 def chain_index(actual_chain, vol_id, drive_name):
