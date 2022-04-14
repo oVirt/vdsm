@@ -437,9 +437,14 @@ class BlockVolumeManifest(volume.VolumeManifest):
 
         return optimal_size
 
-    def optimal_size(self):
+    def optimal_size(self, as_leaf=False):
         """
         Return the optimal size of the volume, based on actual allocation.
+
+        If as_leaf is True, calculate the optimal size as if this volume is a
+        leaf. This is used when calculating the optimal size for the base
+        volume after a merge, before the top volume is deleted and the base
+        volume becomes the leaf.
 
         NOTE: The volume must be prepared so we can check the actual
         allocation.
@@ -451,7 +456,9 @@ class BlockVolumeManifest(volume.VolumeManifest):
         else:
             check = qemuimg.check(self.getVolumePath(), qemuimg.FORMAT.QCOW2)
             return self.optimal_cow_size(
-                check['offset'], self.getCapacity(), self.isLeaf())
+                check['offset'],
+                self.getCapacity(),
+                self.isLeaf() or as_leaf)
 
 
 class BlockVolume(volume.Volume):

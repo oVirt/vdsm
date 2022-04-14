@@ -194,6 +194,17 @@ class TestBlockVolumeManifest(VdsmTestCase):
                         actual_size, virtual_size, vol.isLeaf()),
                     optimal_size)
 
+    @MonkeyPatch(blockVolume, 'config', CONFIG)
+    def test_optimal_size_cow_internal_as_leaf(self):
+        def fake_check(path, format):
+            return {'offset': 512 * MiB}
+
+        with fake_env('block') as env:
+            with MonkeyPatchScope([(qemuimg, 'check', fake_check)]):
+                env.chain = make_qemu_chain(env, 3 * GiB, sc.COW_FORMAT, 3)
+                vol = env.chain[1]
+                self.assertEqual(vol.optimal_size(as_leaf=True), 1536 * MiB)
+
     @permutations([
         # capacity, virtual_size, expected_capacity
         (0, 128 * MiB, 128 * MiB),  # failed resize, repair capacity
