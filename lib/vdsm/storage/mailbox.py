@@ -391,8 +391,7 @@ class HSM_MailMonitor(object):
         return self._handleResponses(in_mail)
 
     def _sendMail(self):
-        self.log.info("HSM_MailMonitor sending mail to SPM - " +
-                      str(self._outCmd))
+        self.log.debug("HSM_MailMonitor sending mail to SPM")
         pChk = packed_checksum(
             self._outgoingMail[0:MAILBOX_SIZE - CHECKSUM_BYTES])
         self._outgoingMail = \
@@ -536,7 +535,7 @@ class HSM_MailMonitor(object):
         # considered as a new event on the SPM side.
         event = uuid.uuid4()
 
-        self.log.info("HSM_MailMonitor sending event %s to SPM", event)
+        self.log.debug("HSM_MailMonitor sending event %s to SPM", event)
 
         buf = bytearray(MAILBOX_SIZE)
         buf[0:4] = EVENT_CODE
@@ -865,7 +864,7 @@ class SPM_MailMonitor:
                 self.log.warning("Error reading event block: %s", e)
             else:
                 if event != self._last_event:
-                    self.log.info("Received event: %s", event)
+                    self.log.debug("Received event: %s", event)
                     self._last_event = event
                     return
 
