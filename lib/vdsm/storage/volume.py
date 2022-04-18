@@ -1258,8 +1258,8 @@ class Volume(object):
                 (srcVolUUID, volUUID, e))
 
         if volParent:
-            # Requested capacity must not be smaller then parent capacity,
-            # as this will corrupt the new volume when qemu will try to
+            # Requested capacity must not be smaller than parent capacity,
+            # as this will corrupt the new volume when qemu attempts to
             # access areas beyond the volume virtual size.
             if capacity < volParent.getCapacity():
                 cls.log.error(
