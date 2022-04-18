@@ -20,11 +20,14 @@
 #
 
 import argparse
+import ipaddress
 import os
 import platform
 import shutil
 import subprocess
 import sys
+
+DEFAULT_PORTAL = (ipaddress.ip_address("0.0.0.0"), 3260)
 
 
 def main():
@@ -78,6 +81,17 @@ def main():
              "You must create the target using the same configuration as "
              "as the existing directory (default False).")
 
+    parser.add_argument(
+        "--portal",
+        action="append",
+        type=portal,
+        help="Create portal for this target. Specify multiple values "
+             "to create multiple portals. Value can be IPv4 address "
+             "(1.2.3.4), IPv6 address ([fe80::5054:ff:fede:9c26]), or "
+             "address:port (1.2.3.4:3260). If not specificed use the"
+             "detault portal (0.0.0.0:3260). The default portal does"
+             "not work with existing targets with non default portals.")
+
     args = parser.parse_args()
 
     host_name = platform.node()
@@ -87,11 +101,50 @@ def main():
     target_iqn = args.iqn_base + "." + host_name + "." + args.target_name
     target_dir = os.path.join(args.root_dir, args.target_name)
 
+    if args.portal:
+        # Duplicate portals are user error.
+        if len(args.portal) != len(set(args.portal)):
+            raise ValueError(f"Duplicate portals: {args.portal}")
+    else:
+        # This works only if all other targets use the default portal. Once you
+        # add a target using non default portal you must specify the portal for
+        # new targets. If you don't care about multiple portals, this default
+        # make it easy to use.
+        args.portal = [DEFAULT_PORTAL]
 
     if args.action == "create":
         create_target(args, target_iqn, target_dir, exists=args.exists)
     else:
         delete_target(args, target_iqn, target_dir)
+
+
+def portal(s):
+    _, port = DEFAULT_PORTAL
+    if s[0] == "[":
+        # IPv6: "[address]" or "[address]:port"
+        end = s.find("]")
+        if end == -1:
+            raise ValueError(s)
+        address = s[1:end]
+        if end + 1 < len(s):
+            if s[end+1] != ":":
+                raise ValueError(s)
+            port = s[end+2:]
+    else:
+        # IPv4: address or address:port
+        if ":" in s:
+            address, port = s.split(":", 1)
+        else:
+            address = s
+    return ipaddress.ip_address(address), int(port)
+
+
+def format_portal(p):
+    address, port = p
+    if address.version == 6:
+        return f"[{address}]:{port}"
+    else:
+        return f"{address}:{port}"
 
 
 def create_target(args, target_iqn, target_dir, exists=False):
@@ -104,6 +157,8 @@ def create_target(args, target_iqn, target_dir, exists=False):
     print("  lun_size:      %s GiB" % args.lun_size)
     print("  cache:         %s" % args.cache)
     print("  exists:        %s" % args.exists)
+    print("  portals:       %s" % ", ".join(
+        format_portal(p) for p in args.portal))
     print()
 
     if not confirm("Create target? [N/y]: "):
@@ -115,9 +170,28 @@ def create_target(args, target_iqn, target_dir, exists=False):
     print("Creating target %r" % target_iqn)
     subprocess.check_call(["targetcli", "/iscsi", "create", target_iqn])
 
+    portals_path = "/iscsi/%s/tpg1/portals" % target_iqn
+
+    print("Checking if target has the default portal")
+    cp = subprocess.run(
+        ["targetcli", portals_path, "ls", format_portal(DEFAULT_PORTAL)])
+    if cp.returncode == 0:
+        if DEFAULT_PORTAL in args.portal:
+            args.portal.remove(DEFAULT_PORTAL)
+        else:
+            print("Removing the default portal")
+            address, port = DEFAULT_PORTAL
+            subprocess.check_call(
+                ["targetcli", portals_path, "remove", str(address), str(port)])
+
+    for address, port in args.portal:
+        print("Creating portal address=%s port=%s" % (address, port))
+        subprocess.check_call(
+            ["targetcli", portals_path, "create", str(address), str(port)])
+
     print("Setting permissions (any host can access this target)")
-    portal_path = "/iscsi/%s/tpg1" % target_iqn
-    subprocess.check_call(["targetcli", portal_path, "set", "attribute",
+    tpg1_path = "/iscsi/%s/tpg1" % target_iqn
+    subprocess.check_call(["targetcli", tpg1_path, "set", "attribute",
                            "authentication=0",
                            "demo_mode_write_protect=0",
                            "generate_node_acls=1",
