@@ -231,7 +231,13 @@ class Mount(object):
             fs_specs = self.fs_spec, None
 
         for record in _iterMountRecords():
-            if self.fs_file == record.fs_file and record.fs_spec in fs_specs:
+            if self.fs_file == record.fs_file:
+                # Note: We cannot compare fs_spec, as some file
+                # systems will record _different_ information in
+                # /proc/mounts than was given to the mount command...
+                #
+                # E.g. ceph will resolve DNS names given into IP
+                # addresses to be presented in /proc/mounts...
                 return record
 
         raise OSError(errno.ENOENT,
