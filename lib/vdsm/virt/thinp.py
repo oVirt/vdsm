@@ -568,24 +568,29 @@ class VolumeMonitor(object):
                 with clock.run("refresh-destination-volume"):
                     self._vm.refresh_destination_volume(volInfo)
 
-            with clock.run("refresh-volume"):
-                self._vm.refresh_volume(volInfo)
+            # After a volume was refreshed, the monitor thread may wake up and
+            # trigger unwanted extend to the next chunk size. Lock the drive
+            # during refresh until we set a new threshold. If taking the lock
+            # times out, we abort this attempt without refreshing the volume.
+            # The next extend attempt will try to take the lock and refresh the
+            # drive.
 
-            # Check if the extension succeeded.  On failure an exception is
-            # raised.
-            # TODO: Report failure to the engine.
-            volSize = self._verify_volume_extension(volInfo)
+            drive = lookup.drive_by_name(
+                self._vm.getDiskDevices()[:], volInfo['name'])
+            timeout = config.getfloat("thinp", "refresh_timeout")
 
-            # This was a volume extension or replica and volume extension.
-            clock.stop("total")
-            self._log.info(
-                "Extend volume %s completed %s", volInfo["volumeID"], clock)
+            with drive.monitor_lock(timeout):
+                with clock.run("refresh-volume"):
+                    self._vm.refresh_volume(volInfo)
+                volSize = self._verify_volume_extension(volInfo)
 
-            # Only update apparentsize and truesize if we've resized the leaf
-            if not volInfo['internal']:
-                drive = lookup.drive_by_name(
-                    self._vm.getDiskDevices()[:], volInfo['name'])
-                self.update_drive_volume_size(drive, volSize)
+                clock.stop("total")
+                self._log.info(
+                    "Extend volume %s completed %s",
+                    volInfo["volumeID"], clock)
+
+                if not volInfo['internal']:
+                    self.update_drive_volume_size(drive, volSize)
 
             self._vm.extend_volume_completed()
 
