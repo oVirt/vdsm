@@ -32,7 +32,7 @@ date, please check the [Gerrit VDSM project](https://gerrit.ovirt.org/q/project:
 
 ## Manual installation
 
-Add ovirt repositories to your repositories list.
+Add oVirt repositories to your repositories list.
 
 For CentOS Stream 8 use:
 
@@ -134,7 +134,7 @@ steps:
   posting the patch to gerrit.
 
 - Verifying the patch by checking that the Jenkins build produced a
-  correct set of rpm's with the correct version.
+  correct set of RPMs with the correct version.
 
 - Merging the patch (no review needed).
 
