@@ -3,10 +3,10 @@
 [![CI Status](https://github.com/oVirt/vdsm/actions/workflows/ci.yml/badge.svg)](https://github.com/oVirt/vdsm/actions)
 [![Copr build status](https://copr.fedorainfracloud.org/coprs/ovirt/ovirt-master-snapshot/package/vdsm/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/ovirt/ovirt-master-snapshot/package/vdsm/)
 
-Welcome to the Vdsm source repository.
+Welcome to the VDSM source repository.
 
-The Vdsm service exposes an API for managing virtualization
-hosts running the KVM hypervisor technology. Vdsm manages and monitors
+The VDSM service exposes an API for managing virtualization
+hosts running the KVM hypervisor technology. VDSM manages and monitors
 the host's storage, memory and networks as well as virtual machine
 creation, other host administration tasks, statistics gathering, and
 log collection.
@@ -19,16 +19,16 @@ Please use GitHub pull requests.
 
 ### Found a bug or documentation issue?
 
-To submit a bug or suggest an enhancement for Vdsm please use
-[oVirt Bugzilla for vdsm product](https://bugzilla.redhat.com/enter_bug.cgi?product=vdsm).
+To submit a bug or suggest an enhancement for VDSM please use
+[oVirt Bugzilla for VDSM product](https://bugzilla.redhat.com/enter_bug.cgi?product=vdsm).
 
 If you find a documentation issue on the oVirt website please navigate
 and click "Report an issue on GitHub" in the page footer.
 
 ### Code review history
 
-Vdsm moved to GitHub on Jan 9, 2022. To look up code reviews before this
-date, please check the [Gerrit vdsm project](https://gerrit.ovirt.org/q/project:vdsm+is:merged).
+VDSM moved to GitHub on Jan 9, 2022. To look up code reviews before this
+date, please check the [Gerrit VDSM project](https://gerrit.ovirt.org/q/project:vdsm+is:merged).
 
 ## Manual installation
 
@@ -42,26 +42,26 @@ For CentOS Stream 8 use:
 For more info see
 [copr master-snapshot repositories](https://copr.fedorainfracloud.org/coprs/ovirt/ovirt-master-snapshot/).
 
-Install Vdsm:
+Install VDSM:
 
     sudo dnf install vdsm vdsm-client
 
-Configure Vdsm:
+Configure VDSM:
 
     sudo vdsm-tool configure --force
 
-`--force` flag will override old conf files with vdsm defaults and
+`--force` flag will override old conf files with VDSM defaults and
 restart services that were configured (if were already running).
 
-Enable and start Vdsm service:
+Enable and start VDSM service:
 
     sudo systemctl enable --now vdsmd
 
-To inspect Vdsm service status:
+To inspect VDSM service status:
 
     sudo systemctl status vdsmd
 
-Vdsm logs can be found at `/var/log/vdsm/*.log` (refer to README.logging for further information).
+VDSM logs can be found at `/var/log/vdsm/*.log` (refer to README.logging for further information).
 
 
 ## Development environment setup
@@ -82,7 +82,7 @@ Install additional packages for Fedora, CentOS, and RHEL:
 
     sudo dnf install -y `cat automation/check-patch.packages`
 
-Create virtual environment for vdsm:
+Create virtual environment for VDSM:
 
     python3 -m venv ~/.venv/vdsm
     source ~/.venv/vdsm/bin/activate
@@ -90,7 +90,7 @@ Create virtual environment for vdsm:
     pip install -r docker/requirements.txt
     deactivate
 
-Before running vdsm tests, activate the environment:
+Before running VDSM tests, activate the environment:
 
     source ~/.venv/vdsm/bin/activate
 
@@ -98,7 +98,7 @@ When done, you can deactivate the environment:
 
     deactivate
 
-## Building Vdsm
+## Building VDSM
 
 To configure sources (run `./configure --help` to see configuration options):
 
@@ -106,7 +106,7 @@ To configure sources (run `./configure --help` to see configuration options):
     ./autogen.sh --system --enable-timestamp
     make
 
-To test Vdsm (refer to tests/README for further tests information):
+To test VDSM (refer to tests/README for further tests information):
 
     make check
 
@@ -122,7 +122,7 @@ To update your system with local build's RPM:
 
 ## Making new releases
 
-Release process of Vdsm version `VERSION` consists of the following
+Release process of VDSM version `VERSION` consists of the following
 steps:
 
 - Changing `Version:` field value in `vdsm.spec.in` to `VERSION`.
@@ -143,8 +143,8 @@ steps:
 
 - Setting "Keep this build forever" for the check-merge Jenkins build.
 
-- Updating releng-tools with the new Vdsm version.  See releng-tools
-  repo (`git clone https://gerrit.ovirt.org/releng-tools`) and Vdsm
+- Updating releng-tools with the new VDSM version.  See releng-tools
+  repo (`git clone https://gerrit.ovirt.org/releng-tools`) and VDSM
   related patches there for examples.
 
 
@@ -159,7 +159,7 @@ according to configuration in the stdci.yaml file.
 
 ### Travis CI for storage patches
 
-oVirt's Jenkins CI is the integrated method for testing Vdsm patches,
+oVirt's Jenkins CI is the integrated method for testing VDSM patches,
 however for storage related patches we have to cover also 4k tests which
 are not covered currently by Jenkins CI. This can be achieved in a fast
 way manually and independently from gerrit by invoking Travis CI on your
@@ -167,7 +167,7 @@ github branch:
 
 - Fork the project on github.
 - Visit https://travis-ci.org, register using your github account, and
-  enable builds for your Vdsm fork.
+  enable builds for your VDSM fork.
 - Push your changes to your github fork to trigger a build.
 
 See .travis.yml file for tested Travis platforms and tests configurations.
@@ -195,7 +195,7 @@ The latest upstream code can be obtained from GIT:
 
 ## Licensing
 
-Vdsm is provided under the terms of the GNU General Public License,
+VDSM is provided under the terms of the GNU General Public License,
 version 2 or later. Please see the COPYING file for complete GPLv2+
 license terms.
 
