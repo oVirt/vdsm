@@ -26,6 +26,7 @@ import gc
 import logging
 import os
 import re
+import shutil
 import stat
 import time
 import weakref
@@ -39,6 +40,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage.exception import MiscDirCleanupFailure
 
+from . import userstorage
 from . marks import requires_root, requires_unprivileged_user
 from . storagetestlib import chmod
 
@@ -47,6 +49,23 @@ from . storagetestlib import chmod
 def oop_cleanup():
     yield
     oop.stop()
+
+
+@pytest.fixture(
+    params=[
+        userstorage.PATHS["mount-512"],
+        userstorage.PATHS["mount-4k"],
+    ],
+    ids=str,
+)
+def user_mount(request):
+    storage = request.param
+    if not storage.exists():
+        pytest.xfail("{} storage not available".format(storage.name))
+    tmpdir = os.path.join(storage.path, "tmp")
+    os.mkdir(tmpdir)
+    yield tmpdir
+    shutil.rmtree(tmpdir)
 
 
 # TODO: the following 2 tests use private instance variables that
@@ -967,54 +986,54 @@ def test_glob(oop_cleanup, tmpdir):
 
 # External APIs
 
-def test_read_lines(oop_cleanup, tmpdir):
+def test_read_lines(oop_cleanup, user_mount):
     iop = oop.getProcessPool("test")
-    path = str(tmpdir.join("file"))
+    path = os.path.join(user_mount, "file")
 
     with open(path, "wb") as f:
         f.write(b"1\n2\n3\n")
     assert iop.readLines(path) == [b"1", b"2", b"3"]
 
 
-def test_write_lines(oop_cleanup, tmpdir):
+def test_write_lines(oop_cleanup, user_mount):
     iop = oop.getProcessPool("test")
-    path = str(tmpdir.join("file"))
+    path = os.path.join(user_mount, "file")
 
     iop.writeLines(path, [b"1\n", b"2\n", b"3\n"])
     with open(path, "rb") as f:
         assert f.read() == b"1\n2\n3\n"
 
 
-def test_write_file_direct_false(oop_cleanup, tmpdir):
+def test_write_file_direct_false(oop_cleanup, user_mount):
     iop = oop.getProcessPool("test")
-    path = str(tmpdir.join("file"))
+    path = os.path.join(user_mount, "file")
 
     iop.writeFile(path, b"1\n2\n3\n", direct=False)
     with open(path, "rb") as f:
         assert f.read() == b"1\n2\n3\n"
 
 
-def test_write_file_direct_true_aligned(oop_cleanup, tmpdir):
+def test_write_file_direct_true_aligned(oop_cleanup, user_mount):
     iop = oop.getProcessPool("test")
-    path = str(tmpdir.join("file"))
+    path = os.path.join(user_mount, "file")
 
     iop.writeFile(path, b"x" * 4096, direct=True)
     with open(path, "rb") as f:
         assert f.read() == b"x" * 4096
 
 
-def test_write_file_direct_true_unaligned(oop_cleanup, tmpdir):
+def test_write_file_direct_true_unaligned(oop_cleanup, user_mount):
     iop = oop.getProcessPool("test")
-    path = str(tmpdir.join("file"))
+    path = os.path.join(user_mount, "file")
 
     with pytest.raises(OSError) as e:
         iop.writeFile(path, b"1\n2\n3\n", direct=True)
     assert e.value.errno == errno.EINVAL
 
 
-def test_truncate_file_default_mode(oop_cleanup, tmpdir):
+def test_truncate_file_default_mode(oop_cleanup, user_mount):
     iop = oop.getProcessPool("test")
-    path = str(tmpdir.join("file"))
+    path = os.path.join(user_mount, "file")
 
     iop.truncateFile(path, 10)
 
