@@ -578,6 +578,7 @@ class TestExecCmd(VdsmTestCase):
                 "and not let your weirdness mess up my day")
         # (C) Nickolodeon - Invader Zim
         ret, stdout, stderr = commands.execCmd((EXT_ECHO, line))
+        self.assertEqual(ret, 0, f"Command failed: {stderr}")
         self.assertEqual(stdout[0].decode("ascii"), line)
 
     def testStdErr(self):
@@ -587,6 +588,7 @@ class TestExecCmd(VdsmTestCase):
         """
         cmd = ["sh", "-c", "echo it works! >&2"]
         ret, stdout, stderr = commands.execCmd(cmd)
+        self.assertEqual(ret, 0, f"Command failed: {stderr}")
         self.assertEqual(stderr[0].decode("ascii"), "it works!")
 
     def testSudo(self):
@@ -597,6 +599,7 @@ class TestExecCmd(VdsmTestCase):
         cmd = [EXT_WHOAMI]
         checkSudo(cmd)
         ret, stdout, stderr = commands.execCmd(cmd, sudo=True)
+        self.assertEqual(ret, 0, f"Command failed: {stderr}")
         self.assertEqual(stdout[0].decode("ascii"), SUDO_USER)
 
     def testNice(self):
