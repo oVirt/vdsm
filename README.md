@@ -173,7 +173,7 @@ GitHub branch:
 See .travis.yml file for tested Travis platforms and tests configurations.
 
 
-## Getting Help
+## Getting help
 
 There are two mailing lists for discussions:
 
@@ -186,7 +186,9 @@ There are two mailing lists for discussions:
 
   https://lists.ovirt.org/admin/lists/users.ovirt.org/
 
-The developers also hang out on IRC at #vdsm hosted on freenode.net
+The developers also hang out on IRC at
+[#vdsm](irc://irc.freenode.org/vdsm) hosted on freenode.net
+([logs](http://ekohl.nl/vdsm)).
 
 The latest upstream code can be obtained from GIT:
 
