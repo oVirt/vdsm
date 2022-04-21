@@ -131,7 +131,7 @@ steps:
   the committer, and `VERSION`.
 
 - Committing these changes, with subject "New release: `VERSION`" and
-  posting the patch to gerrit.
+  posting the patch to GitHub.
 
 - Verifying the patch by checking that the Jenkins build produced a
   correct set of RPMs with the correct version.
@@ -144,7 +144,7 @@ steps:
 - Setting "Keep this build forever" for the check-merge Jenkins build.
 
 - Updating releng-tools with the new VDSM version.  See releng-tools
-  repo (`git clone https://gerrit.ovirt.org/releng-tools`) and VDSM
+  repo (`git clone https://github.com/oVirt/releng-tools`) and VDSM
   related patches there for examples.
 
 
@@ -154,7 +154,7 @@ Running tests locally is convenient, but before your changes can be
 merged, we need to test them on all supported distributions and
 architectures.
 
-When you submit patches to gerrit, oVirt's Jenkins CI will run its tests
+When you submit patches to GitHub, oVirt's Jenkins CI will run its tests
 according to configuration in the stdci.yaml file.
 
 ### Travis CI for storage patches
@@ -162,7 +162,7 @@ according to configuration in the stdci.yaml file.
 oVirt's Jenkins CI is the integrated method for testing VDSM patches,
 however for storage related patches we have to cover also 4k tests which
 are not covered currently by Jenkins CI. This can be achieved in a fast
-way manually and independently from gerrit by invoking Travis CI on your
+way manually and independently by invoking Travis CI on your
 GitHub branch:
 
 - Fork the project on GitHub.
@@ -190,9 +190,9 @@ The developers also hang out on IRC at
 [#vdsm](irc://irc.freenode.org/vdsm) hosted on freenode.net
 ([logs](http://ekohl.nl/vdsm)).
 
-The latest upstream code can be obtained from GIT:
+The latest upstream code can be obtained from GitHub:
 
-    git clone https://gerrit.ovirt.org/vdsm
+    git clone https://github.com/oVirt/vdsm.git
 
 
 ## Licensing
