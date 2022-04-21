@@ -71,7 +71,7 @@ Fork the project on https://github.com/oVirt/vdsm.
 Clone your fork:
 
     sudo dnf install -y git
-    git@github.com:{user}/vdsm.git
+    git clone https://github.com/{user}/vdsm.git
 
 Enable oVirt packages for Fedora:
 
