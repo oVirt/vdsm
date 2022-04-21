@@ -39,7 +39,7 @@ For CentOS Stream 8 use:
     sudo dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-8
     sudo dnf install -y ovirt-release-master
 
-For more info see
+**Note:** for more info see
 [copr master-snapshot repositories](https://copr.fedorainfracloud.org/coprs/ovirt/ovirt-master-snapshot/).
 
 Install VDSM:
@@ -61,7 +61,7 @@ To inspect VDSM service status:
 
     sudo systemctl status vdsmd
 
-VDSM logs can be found at `/var/log/vdsm/*.log` (refer to README.logging for further information).
+VDSM logs can be found at `/var/log/vdsm/*.log` (refer to `README.logging` for further information).
 
 
 ## Development environment setup
@@ -106,7 +106,7 @@ To configure sources (run `./configure --help` to see configuration options):
     ./autogen.sh --system --enable-timestamp
     make
 
-To test VDSM (refer to tests/README for further tests information):
+To test VDSM (refer to `tests/README` for further tests information):
 
     make check
 
@@ -143,7 +143,7 @@ steps:
 
 - Setting "Keep this build forever" for the check-merge Jenkins build.
 
-- Updating releng-tools with the new VDSM version.  See releng-tools
+- Updating `releng-tools` with the new VDSM version. See `releng-tools`
   repo (`git clone https://github.com/oVirt/releng-tools`) and VDSM
   related patches there for examples.
 
@@ -155,7 +155,7 @@ merged, we need to test them on all supported distributions and
 architectures.
 
 When you submit patches to GitHub, oVirt's Jenkins CI will run its tests
-according to configuration in the stdci.yaml file.
+according to configuration in the `stdci.yaml` file.
 
 ### Travis CI for storage patches
 
@@ -170,7 +170,7 @@ GitHub branch:
   enable builds for your VDSM fork.
 - Push your changes to your GitHub fork to trigger a build.
 
-See .travis.yml file for tested Travis platforms and tests configurations.
+See `.travis.yml` file for tested Travis platforms and tests configurations.
 
 
 ## Getting help
@@ -198,7 +198,7 @@ The latest upstream code can be obtained from GitHub:
 ## Licensing
 
 VDSM is provided under the terms of the GNU General Public License,
-version 2 or later. Please see the COPYING file for complete GPLv2+
+version 2 or later. Please see the `COPYING` file for complete GPLv2+
 license terms.
 
 In addition, as a special exception, Red Hat, Inc. and its affiliates
@@ -206,10 +206,10 @@ give you permission to distribute this program, or a work based on it,
 linked or combined with the OpenSSL project's OpenSSL library (or a
 modified version of that library) to the extent that the library, or
 modified version, is covered by the terms of the OpenSSL or SSLeay
-licenses.  Corresponding source code for the object code form of such
+licenses. Corresponding source code for the object code form of such
 a combination shall include source code for the parts of OpenSSL
 contained in the combination.
 
 If you modify this program, you may extend this exception to your
-version, but you are not obligated to do so.  If you do not wish to do
+version, but you are not obligated to do so. If you do not wish to do
 so, delete this exception statement from your version.
