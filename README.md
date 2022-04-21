@@ -163,12 +163,12 @@ oVirt's Jenkins CI is the integrated method for testing VDSM patches,
 however for storage related patches we have to cover also 4k tests which
 are not covered currently by Jenkins CI. This can be achieved in a fast
 way manually and independently from gerrit by invoking Travis CI on your
-github branch:
+GitHub branch:
 
-- Fork the project on github.
-- Visit https://travis-ci.org, register using your github account, and
+- Fork the project on GitHub.
+- Visit https://travis-ci.org, register using your GitHub account, and
   enable builds for your VDSM fork.
-- Push your changes to your github fork to trigger a build.
+- Push your changes to your GitHub fork to trigger a build.
 
 See .travis.yml file for tested Travis platforms and tests configurations.
 
