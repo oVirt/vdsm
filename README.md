@@ -9,7 +9,7 @@ The VDSM service exposes an API for managing virtualization
 hosts running the KVM hypervisor technology. VDSM manages and monitors
 the host's storage, memory and networks as well as virtual machine
 creation, other host administration tasks, statistics gathering, and
-log collection.
+logs collection.
 
 ## How to contribute
 
@@ -54,7 +54,7 @@ Configure VDSM:
 $ sudo vdsm-tool configure --force
 ```
 
-`--force` flag will override old conf files with VDSM defaults and
+`--force` flag will override old configuration files with VDSM defaults and
 restart services that were configured (if were already running).
 
 Enable and start VDSM service:
@@ -155,7 +155,7 @@ steps:
 
 - Tagging the commit immediately after merge with an annotated tag:
   ```shell
-  $ git tag -a vVERSION
+  $ git tag -a v{VERSION}
   ```
 
 - Setting "Keep this build forever" for the check-merge Jenkins build.
