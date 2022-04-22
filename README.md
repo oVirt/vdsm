@@ -15,15 +15,16 @@ log collection.
 
 ### Submitting patches
 
-Please use GitHub pull requests.
+Please use [GitHub pull requests](https://github.com/oVirt/vdsm/pulls).
+See [Development environment setup](#development-environment-setup) for more details.
 
 ### Found a bug or documentation issue?
 
 To submit a bug or suggest an enhancement for VDSM please use
 [oVirt Bugzilla for VDSM product](https://bugzilla.redhat.com/enter_bug.cgi?product=vdsm).
 
-If you find a documentation issue on the oVirt website please navigate
-and click "Report an issue on GitHub" in the page footer.
+If you find a documentation issue on the [oVirt website](https://www.ovirt.org) please navigate
+and click "Report an issue with this page" in the page footer.
 
 ### Code review history
 
