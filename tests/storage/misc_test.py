@@ -415,9 +415,7 @@ class TestReadBlock(VdsmTestCase):
         """
         Test that when all arguments are correct the method works smoothly.
         """
-        writeData = (b"DON'T THINK OF IT AS DYING, said Death. "
-                     b"JUST THINK OF IT AS LEAVING EARLY TO AVOID THE RUSH.")
-        # (C) Terry Pratchet - Good Omens
+        writeData = b"Some data"
         dataLength = len(writeData)
 
         offset = 512
@@ -459,9 +457,7 @@ class TestReadBlock(VdsmTestCase):
         See that correct exception is raised when trying to read more then the
         file has to offer.
         """
-        writeData = (b"History, contrary to popular theories, "
-                     b"is kings and dates and battles.")
-        # (C) Terry Pratchet - Small Gods
+        writeData = b"Some data"
 
         offset = 512
         size = 512
@@ -574,9 +570,7 @@ class TestExecCmd(VdsmTestCase):
         Tests that execCmd correctly returns the standard output of the prog it
         executes.
         """
-        line = ("All I wanted was to have some pizza, hang out with dad, "
-                "and not let your weirdness mess up my day")
-        # (C) Nickolodeon - Invader Zim
+        line = "Some text line"
         ret, stdout, stderr = commands.execCmd((EXT_ECHO, line))
         self.assertEqual(ret, 0, f"Command failed: {stderr}")
         self.assertEqual(stdout[0].decode("ascii"), line)
