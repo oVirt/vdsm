@@ -16,7 +16,7 @@ be run again after rebooting the host.
 
 If you want to tear down the user storage, run:
 
-    python tests/storage/userstorage.py teardown
+    make clean-storage
 
 There is no need to tear down the storage normally. The loop devices are
 backed up by sparse files and do not consume much resources.
