@@ -35,31 +35,36 @@ date, please check the [Gerrit VDSM project](https://gerrit.ovirt.org/q/project:
 Add oVirt repositories to your repositories list.
 
 For CentOS Stream 8 use:
-
-    sudo dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-8
-    sudo dnf install -y ovirt-release-master
+```shell
+$ sudo dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-8
+$ sudo dnf install -y ovirt-release-master
+```
 
 **Note:** for more info see
 [copr master-snapshot repositories](https://copr.fedorainfracloud.org/coprs/ovirt/ovirt-master-snapshot/).
 
 Install VDSM:
-
-    sudo dnf install vdsm vdsm-client
+```shell
+$ sudo dnf install vdsm vdsm-client
+```
 
 Configure VDSM:
-
-    sudo vdsm-tool configure --force
+```shell
+$ sudo vdsm-tool configure --force
+```
 
 `--force` flag will override old conf files with VDSM defaults and
 restart services that were configured (if were already running).
 
 Enable and start VDSM service:
-
-    sudo systemctl enable --now vdsmd
+```shell
+$ sudo systemctl enable --now vdsmd
+```
 
 To inspect VDSM service status:
-
-    sudo systemctl status vdsmd
+```shell
+$ sudo systemctl status vdsmd
+```
 
 VDSM logs can be found at `/var/log/vdsm/*.log` (refer to `README.logging` for further information).
 
@@ -69,56 +74,65 @@ VDSM logs can be found at `/var/log/vdsm/*.log` (refer to `README.logging` for f
 Fork the project on https://github.com/oVirt/vdsm.
 
 Clone your fork:
-
-    sudo dnf install -y git
-    git clone https://github.com/{user}/vdsm.git
+```shell
+$ sudo dnf install -y git
+$ git clone https://github.com/{user}/vdsm.git
+```
 
 Enable oVirt packages for Fedora:
-
-    sudo dnf copr enable -y nsoffer/ioprocess-preview
-    sudo dnf copr enable -y nsoffer/ovirt-imageio-preview
+```shell
+$ sudo dnf copr enable -y nsoffer/ioprocess-preview
+$ sudo dnf copr enable -y nsoffer/ovirt-imageio-preview
+```
 
 Install additional packages for Fedora, CentOS, and RHEL:
-
-    sudo dnf install -y `cat automation/check-patch.packages`
+```shell
+$ sudo dnf install -y `cat automation/check-patch.packages`
+```
 
 Create virtual environment for VDSM:
-
-    python3 -m venv ~/.venv/vdsm
-    source ~/.venv/vdsm/bin/activate
-    pip install --upgrade pip
-    pip install -r docker/requirements.txt
-    deactivate
+```shell
+$ python3 -m venv ~/.venv/vdsm
+$ source ~/.venv/vdsm/bin/activate
+$ pip install --upgrade pip
+$ pip install -r docker/requirements.txt
+$ deactivate
+```
 
 Before running VDSM tests, activate the environment:
-
-    source ~/.venv/vdsm/bin/activate
+```shell
+$ source ~/.venv/vdsm/bin/activate
+```
 
 When done, you can deactivate the environment:
-
-    deactivate
+```shell
+$ deactivate
+```
 
 ## Building VDSM
 
 To configure sources (run `./configure --help` to see configuration options):
-
-    git clean -xfd
-    ./autogen.sh --system --enable-timestamp
-    make
+```shell
+$ git clean -xfd
+$ ./autogen.sh --system --enable-timestamp
+$ make
+```
 
 To test VDSM (refer to `tests/README` for further tests information):
-
-    make check
+```shell
+$ make check
+```
 
 To create an RPM:
-
-    rm -rf ~/rpmbuild/RPMS/*/vdsm*.rpm
-    make rpm
+```shell
+$ rm -rf ~/rpmbuild/RPMS/*/vdsm*.rpm
+$ make rpm
+```
 
 To update your system with local build's RPM:
-
-    (cd ~/rpmbuild/RPMS && sudo dnf upgrade */vdsm*.rpm)
-
+```shell
+$ (cd ~/rpmbuild/RPMS && sudo dnf upgrade */vdsm*.rpm)
+```
 
 ## Making new releases
 
@@ -139,14 +153,17 @@ steps:
 - Merging the patch (no review needed).
 
 - Tagging the commit immediately after merge with an annotated tag:
-  `git tag -a vVERSION`
+  ```shell
+  $ git tag -a vVERSION
+  ```
 
 - Setting "Keep this build forever" for the check-merge Jenkins build.
 
 - Updating `releng-tools` with the new VDSM version. See `releng-tools`
-  repo (`git clone https://github.com/oVirt/releng-tools`) and VDSM
-  related patches there for examples.
-
+  repo and VDSM related patches there for examples.
+  ```shell
+  $ git clone https://github.com/oVirt/releng-tools
+  ```
 
 ## CI
 
@@ -191,9 +208,9 @@ The developers also hang out on IRC at
 ([logs](http://ekohl.nl/vdsm)).
 
 The latest upstream code can be obtained from GitHub:
-
-    git clone https://github.com/oVirt/vdsm.git
-
+```shell
+$ git clone https://github.com/oVirt/vdsm.git
+```
 
 ## Licensing
 
