@@ -47,7 +47,7 @@ from vdsm.storage import fileUtils
 from vdsm.storage import misc
 
 from monkeypatch import MonkeyPatch
-from testValidation import checkSudo
+from . marks import requires_root
 
 
 EXT_DD = "/bin/dd"
@@ -585,13 +585,13 @@ class TestExecCmd(VdsmTestCase):
         self.assertEqual(ret, 0, f"Command failed: {stderr}")
         self.assertEqual(stderr[0].decode("ascii"), "it works!")
 
+    @requires_root
     def testSudo(self):
         """
         Tests that when running with sudo the user really is root (or other
         desired user).
         """
         cmd = [EXT_WHOAMI]
-        checkSudo(cmd)
         ret, stdout, stderr = commands.execCmd(cmd, sudo=True)
         self.assertEqual(ret, 0, f"Command failed: {stderr}")
         self.assertEqual(stdout[0].decode("ascii"), SUDO_USER)
