@@ -147,6 +147,10 @@ tests-storage: tox
 storage:
 	python3 tests/storage/userstorage.py setup
 
+.PHONY: clean-storage
+clean-storage:
+	python3 tests/storage/userstorage.py teardown
+
 all-local: \
 	vdsm.spec
 
