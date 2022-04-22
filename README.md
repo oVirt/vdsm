@@ -88,6 +88,7 @@ $ sudo dnf copr enable -y nsoffer/ovirt-imageio-preview
 
 Install additional packages for Fedora, CentOS, and RHEL:
 ```shell
+$ cd vdsm
 $ sudo dnf install -y `cat automation/check-patch.packages`
 ```
 
@@ -97,16 +98,6 @@ $ python3 -m venv ~/.venv/vdsm
 $ source ~/.venv/vdsm/bin/activate
 $ pip install --upgrade pip
 $ pip install -r docker/requirements.txt
-$ deactivate
-```
-
-Before running VDSM tests, activate the environment:
-```shell
-$ source ~/.venv/vdsm/bin/activate
-```
-
-When done, you can deactivate the environment:
-```shell
 $ deactivate
 ```
 
@@ -120,9 +111,21 @@ $ make
 ```
 
 To test VDSM (refer to `tests/README` for further tests information):
-```shell
-$ make check
-```
+
+- Before running VDSM tests, activate the environment:
+  ```shell
+  $ source ~/.venv/vdsm/bin/activate
+  ```
+
+- To run the entire test suit:
+  ```shell
+  $ make check
+  ```
+
+- When done, you can deactivate the environment:
+  ```shell
+  $ deactivate
+  ```
 
 To create an RPM:
 ```shell
