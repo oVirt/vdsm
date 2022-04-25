@@ -746,6 +746,9 @@ parameters = [
             'Period (in sec) for gathering filesystem information and disk'
             ' mapping.'),
 
+        ('qga_cpu_info_period', '60',
+            'Period (in sec) for gathering information about CPUs.'),
+
     ]),
 ]
 
