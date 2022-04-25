@@ -305,6 +305,22 @@ class VolumeMonitor(object):
                 if drive.needs_monitoring()]
 
     def _should_extend_volume(self, drive, volumeID, block_info):
+        if block_info.physical >= drive.getMaxVolumeSize(block_info.capacity):
+            # The volume was extended to the maximum size. physical may be
+            # larger than maximum volume size since it is rounded up to the
+            # next lvm extent.
+            return False
+
+        # If drive is marked for extension, extend it regardless of allocation.
+        # When checking the allocation right after getting a block threshold
+        # event, libvirt reports lower allocation, so we cannot verify the
+        # allocation in this case.
+        if drive.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED:
+            return True
+
+        # Otherwise extend if allocation exceeded the threshold, even if we did
+        # not get an event yet.
+
         nextPhysSize = drive.getNextVolumeSize(
             block_info.physical, block_info.capacity)
 
@@ -327,21 +343,6 @@ class VolumeMonitor(object):
                 "Improbable allocation, pausing the VM to avoid corruption: "
                 f"{block_info}")
 
-        if block_info.physical >= drive.getMaxVolumeSize(block_info.capacity):
-            # The volume was extended to the maximum size. physical may be
-            # larger than maximum volume size since it is rounded up to the
-            # next lvm extent.
-            return False
-
-        # If drive is marked for extension, extend it regardless of allocation.
-        # When checking the allocation right after getting a block threshold
-        # event, libvirt reports lower allocation, so we cannot verify the
-        # allocation in this case.
-        if drive.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED:
-            return True
-
-        # Otherwise extend if allocation exceeded the threshold, even if we did
-        # not get an event yet.
         free_space = block_info.physical - block_info.allocation
         return free_space < drive.watermarkLimit
 
