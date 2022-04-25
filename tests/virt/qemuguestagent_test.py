@@ -157,6 +157,13 @@ class FakeDomain(object):
             'disk.2.name': '/dev/vdc',
         }
 
+    def guestVcpus(self, flags=0):
+        return {
+            'vcpus': '0-7',
+            'online': '0-3',
+            'offlinable': '0-7'
+        }
+
 
 class FakeGuestAgent(object):
     def __init__(self):
@@ -384,3 +391,8 @@ class QemuGuestAgentTests(TestCaseBase):
         with pytest.raises(TypeError):
             self.qga_poller.channel_state_changed(
                 self.vm.id, 'abc', 0)
+
+    def test_guest_vcpus(self):
+        info = self.qga_poller._qga_call_get_vcpus(self.vm)
+        assert 'guestCPUCount' in info
+        assert info['guestCPUCount'] == 4
