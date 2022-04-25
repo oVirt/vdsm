@@ -20,6 +20,7 @@
 
 import re
 import sys
+
 from collections import namedtuple
 
 import libvirt
@@ -42,8 +43,10 @@ BlockInfo = namedtuple("BlockInfo", [
 ])
 
 
-class ImprobableResizeRequestError(RuntimeError):
-    pass
+class ImprobableAllocationError(RuntimeError):
+    """
+    Raised if libvirt reports improbable allocation value.
+    """
 
 
 class VolumeMonitor(object):
@@ -233,10 +236,7 @@ class VolumeMonitor(object):
             return
 
         for drive in drives:
-            try:
-                self._extend_drive_if_needed(drive)
-            except ImprobableResizeRequestError:
-                break
+            self._extend_drive_if_needed(drive)
 
     def _update_block_info(self, drives):
         """
@@ -322,13 +322,10 @@ class VolumeMonitor(object):
         # compared with the volume physical size as it includes also the
         # clusters not written yet (pending).
         if block_info.allocation > nextPhysSize:
-            msg = ("Improbable extension request for volume %s on domain "
-                   "%s, pausing the VM to avoid corruptions (block_info: %s"
-                   ", next physical size: %s)" %
-                   (volumeID, drive.domainID, block_info, nextPhysSize))
-            self._log.error(msg)
             self._vm.pause(pauseCode='EOTHER')
-            raise ImprobableResizeRequestError(msg)
+            raise ImprobableAllocationError(
+                "Improbable allocation, pausing the VM to avoid corruption: "
+                f"{block_info}")
 
         if block_info.physical >= drive.getMaxVolumeSize(block_info.capacity):
             # The volume was extended to the maximum size. physical may be
