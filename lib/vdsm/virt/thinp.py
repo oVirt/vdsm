@@ -262,67 +262,65 @@ class VolumeMonitor(object):
         Check if a drive should be extended, and start extension flow if
         needed.
         """
-        if drive.threshold_state == storage.BLOCK_THRESHOLD.SET:
-            # Should never happen; we monitor only UNSET and EXCEEDED drives.
-            self._log.warning(
-                "Unexpected state for drive %s: threshold_state SET",
-                drive.name)
-            return
-
-        block_info = drive.block_info
-
-        # Set block threshold if needed. However since this is racy, and we may
-        # not get a block threshold event, continue and check if the volume
-        # needs extension.
         if drive.threshold_state == storage.BLOCK_THRESHOLD.UNSET:
-            self._set_threshold(drive, block_info.physical, block_info.index)
+            self._handle_unset(drive)
+        elif drive.threshold_state == storage.BLOCK_THRESHOLD.SET:
+            # Extend completed during monitoring, nothing to do.
+            pass
+        elif drive.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED:
+            self._handle_exceeded(drive)
+        else:
+            self._log.warning(
+                "Unexpected threshold state %s for drive %s",
+                drive.threshold_state, drive.name)
 
-        if not self._should_extend_volume(drive, drive.volumeID, block_info):
+    def _handle_unset(self, drive):
+        """
+        Handle drive with UNSET threshold state.
+        """
+        if self._drive_needs_extend(drive):
+            # The threshold was already exceeded, so qemu will never trigger a
+            # block threshold event. Synthesize a block threshold event, and
+            # handle the drive as if we received an event right now.
+            drive.on_block_threshold(drive.path)
+            self._handle_exceeded(drive)
+        else:
+            # Set block threshold. on_block_threshold() will be called when the
+            # guest exceeds the threshold. If we will miss the event,
+            # on_enospc() will be called.
+            self._set_threshold(
+                drive, drive.block_info.physical, drive.block_info.index)
+
+    def _handle_exceeded(self, drive):
+        """
+        Handle drive with EXCEEDED threshold state.
+        """
+        if not self._can_extend_drive(drive):
+            # Should not happen.
+            self._log.warning(
+                "Drive already extended to maximum size: %s",
+                drive.block_info)
             return
-
-        # Ensure that drive is marked for extension, in case we missed a block
-        # threshold event. This does nothing if the drive is already marked for
-        # extension.
-        drive.on_block_threshold(drive.path)
 
         self._log.info(
             "Requesting an extension for volume %s on domain %s block_info %s",
-            drive.volumeID, drive.domainID, block_info)
+            drive.volumeID, drive.domainID, drive.block_info)
 
         self.extend_volume(
-            drive, drive.volumeID, block_info.physical, block_info.capacity)
+            drive,
+            drive.volumeID,
+            drive.block_info.physical,
+            drive.block_info.capacity)
 
-    def _monitored_volumes(self):
-        """
-        Return the drives that need to be checked for extension
-        on the next monitoring cycle.
+    def _can_extend_drive(self, drive):
+        # NOTE: Physical may be larger than maximum volume size since it is
+        # rounded up to the next lvm extent.
+        max_size = drive.getMaxVolumeSize(drive.block_info.capacity)
+        return drive.block_info.physical < max_size
 
-        Returns:
-            iterable of storage.Drives that needs to be checked
-            for extension.
-        """
-        return [drive for drive in self._vm.getDiskDevices()
-                if drive.needs_monitoring()]
-
-    def _should_extend_volume(self, drive, volumeID, block_info):
-        if block_info.physical >= drive.getMaxVolumeSize(block_info.capacity):
-            # The volume was extended to the maximum size. physical may be
-            # larger than maximum volume size since it is rounded up to the
-            # next lvm extent.
-            return False
-
-        # If drive is marked for extension, extend it regardless of allocation.
-        # When checking the allocation right after getting a block threshold
-        # event, libvirt reports lower allocation, so we cannot verify the
-        # allocation in this case.
-        if drive.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED:
-            return True
-
-        # Otherwise extend if allocation exceeded the threshold, even if we did
-        # not get an event yet.
-
+    def _drive_needs_extend(self, drive):
         nextPhysSize = drive.getNextVolumeSize(
-            block_info.physical, block_info.capacity)
+            drive.block_info.physical, drive.block_info.capacity)
 
         # NOTE: the intent of this check is to prevent faulty images to
         # trick qemu in requesting extremely large extensions (BZ#998443).
@@ -337,14 +335,26 @@ class VolumeMonitor(object):
         # size. It should be noted that allocation cannot be directly
         # compared with the volume physical size as it includes also the
         # clusters not written yet (pending).
-        if block_info.allocation > nextPhysSize:
+        if drive.block_info.allocation > nextPhysSize:
             self._vm.pause(pauseCode='EOTHER')
             raise ImprobableAllocationError(
                 "Improbable allocation, pausing the VM to avoid corruption: "
-                f"{block_info}")
+                f"{drive.block_info}")
 
-        free_space = block_info.physical - block_info.allocation
+        free_space = drive.block_info.physical - drive.block_info.allocation
         return free_space < drive.watermarkLimit
+
+    def _monitored_volumes(self):
+        """
+        Return the drives that need to be checked for extension
+        on the next monitoring cycle.
+
+        Returns:
+            iterable of storage.Drives that needs to be checked
+            for extension.
+        """
+        return [drive for drive in self._vm.getDiskDevices()
+                if drive.needs_monitoring()]
 
     # Querying libvirt
 
