@@ -37,6 +37,7 @@ import time
 
 from vdsm import utils
 from vdsm import executor
+from vdsm import taskset
 from vdsm.common import exception
 from vdsm.common.time import monotonic_time
 from vdsm.config import config
@@ -62,6 +63,7 @@ _QEMU_OSINFO_COMMAND = 'guest-get-osinfo'
 _QEMU_TIMEZONE_COMMAND = 'guest-get-timezone'
 _QEMU_FSINFO_COMMAND = 'guest-get-fsinfo'
 _QEMU_DISKS_COMMAND = 'guest-get-disks'
+_QEMU_VCPUS_COMMAND = 'guest-get-vcpus'
 
 _HOST_NAME_FIELD = 'host-name'
 _OS_ID_FIELD = 'id'
@@ -91,8 +93,10 @@ _THROTTLING_INTERVAL = 60
 VDSM_GUEST_INFO = (1 << 30)
 VDSM_GUEST_INFO_NETWORK = (1 << 31)
 VDSM_GUEST_INFO_DRIVERS = (1 << 32)
+VDSM_GUEST_INFO_CPUS = (1 << 33)
 
 _QEMU_COMMANDS = {
+    VDSM_GUEST_INFO_CPUS: _QEMU_VCPUS_COMMAND,
     VDSM_GUEST_INFO_DRIVERS: _QEMU_DEVICES_COMMAND,
     VDSM_GUEST_INFO_NETWORK: _QEMU_NETWORK_INTERFACES_COMMAND,
     VIR_DOMAIN_GUEST_INFO_DISKS: _QEMU_DISKS_COMMAND,
@@ -106,6 +110,8 @@ _QEMU_COMMANDS = {
 _QEMU_COMMAND_PERIODS = {
     VDSM_GUEST_INFO:
         config.getint('guest_agent', 'qga_info_period'),
+    VDSM_GUEST_INFO_CPUS:
+        config.getint('guest_agent', 'qga_cpu_info_period'),
     VDSM_GUEST_INFO_DRIVERS:
         config.getint('guest_agent', 'qga_sysinfo_period'),
     VDSM_GUEST_INFO_NETWORK:
@@ -150,7 +156,7 @@ def channel_state_to_str(state):
         return 'UNKNOWN'
 
 
-@virdomain.expose("guestInfo", "interfaceAddresses")
+@virdomain.expose("guestInfo", "interfaceAddresses", "guestVcpus")
 class QemuGuestAgentDomain(object):
     """Wrapper object exposing libvirt API."""
     def __init__(self, vm):
@@ -161,6 +167,10 @@ class QemuGuestAgentDomain(object):
         raise NotImplementedError("method stub")
 
     def guestInfo(self, types, flags):
+        """Method stub to make pylint happy."""
+        raise NotImplementedError("method stub")
+
+    def guestVcpus(self, flags=0):
         """Method stub to make pylint happy."""
         raise NotImplementedError("method stub")
 
@@ -478,7 +488,11 @@ class QemuGuestAgentPoller(object):
                         not after_hotplug:
                     continue
                 # Commands that have special handling go here
-                if command == VDSM_GUEST_INFO_DRIVERS:
+                if command == VDSM_GUEST_INFO_CPUS:
+                    self.update_guest_info(
+                        vm_id, self._qga_call_get_vcpus(vm_obj))
+                    self.set_last_check(vm_id, command, now)
+                elif command == VDSM_GUEST_INFO_DRIVERS:
                     self.update_guest_info(
                         vm_id, self._qga_call_get_devices(vm_obj))
                     self.set_last_check(vm_id, command, now)
@@ -781,3 +795,24 @@ class QemuGuestAgentPoller(object):
         else:
             self.set_failure(vm.id)
             return {}
+
+    def _qga_call_get_vcpus(self, vm):
+        try:
+            self.log.debug('Requesting guest CPU info for vm=%s', vm.id)
+            with vm.qga_context(_COMMAND_TIMEOUT):
+                vcpus = QemuGuestAgentDomain(vm).guestVcpus()
+        except (exception.NonResponsiveGuestAgent, libvirt.libvirtError) as e:
+            self.log.info('Failed to get guest CPU info for vm=%s, error: %s',
+                          vm.id, e)
+            self.set_failure(vm.id)
+            return {}
+        except virdomain.NotConnectedError:
+            self.log.debug(
+                'Not querying QEMU-GA for guest CPU info because domain'
+                'is not running for vm-id=%s', vm.id)
+            return {}
+        if 'online' in vcpus:
+            count = len(taskset.cpulist_parse(vcpus['online']))
+        else:
+            count = -1
+        return {'guestCPUCount': count}
