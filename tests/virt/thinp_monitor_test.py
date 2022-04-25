@@ -261,6 +261,23 @@ def test_extend_no_allocation(tmp_config):
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
 
+def test_extend_improbable_allocation(tmp_config):
+    vm = FakeVM(drive_infos())
+    drive = vm.getDiskDevices()[0]
+
+    # Fake an improbable allocation value.
+    vdb = vm.block_stats[2]
+    next_vol_size = drive.getNextVolumeSize(vdb["physical"], vdb["capacity"])
+    vdb['allocation'] = next_vol_size + 1
+
+    # Monitoring should raise and pause the VM.
+    with pytest.raises(thinp.ImprobableAllocationError):
+        vm.volume_monitor.monitor_volumes()
+
+    assert vm._lastStatus == vmstatus.PAUSED
+    assert vm.pause_code == "EOTHER"
+
+
 @pytest.mark.parametrize("drive_info,expected_state,threshold", [
     # the threshold values depend on the physical size defined in the test,
     # and on the mock config.
@@ -628,7 +645,7 @@ class FakeDomain(object):
         self.thresholds = {}
 
     # The following is needed in the 'pause' flow triggered
-    # by the ImprobableResizeRequestError
+    # by the ImprobableAllocationError.
 
     def XMLDesc(self, flags=0):
         domain = etree.Element("domain")
