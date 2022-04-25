@@ -178,14 +178,10 @@ class FakeVM(object):
     def __init__(self):
         self.id = "fake-vm-id"
         self.drives = []
-        self.block_stats = []
         self._dom = FakeDomain()
 
     def getDiskDevices(self):
         return self.drives[:]
-
-    def query_block_stats(self):
-        return self.block_stats
 
 
 class FakeDomain(object):
