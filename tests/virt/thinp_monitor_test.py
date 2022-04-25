@@ -58,6 +58,7 @@ When extending the volume failed:
 
 import logging
 import threading
+import time
 
 import xml.etree.ElementTree as etree
 
@@ -66,6 +67,7 @@ import pytest
 
 from vdsm import utils
 from vdsm.common import response
+from vdsm.common.config import config
 from vdsm.common.units import MiB, GiB
 from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE, BLOCK_THRESHOLD
 from vdsm.virt.vmdevices import hwclass
@@ -81,6 +83,7 @@ from . import vmfakelib as fake
 CHUNK_SIZE = 2560 * MiB
 FREE_PCT = 80
 REPLICA_BASE_INDEX = 1000
+EXTEND_TIMEOUT = config.getfloat("thinp", "extend_timeout")
 
 log = logging.getLogger("test")
 
@@ -638,6 +641,44 @@ def test_resize_maxed_drive(tmp_config):
 
     # And extned to next size.
     assert len(vm.cif.irs.extensions) == 1
+
+
+def test_skip_extend_if_extend_in_progress(tmp_config):
+    vm = FakeVM(drive_infos())
+    drive = vm.getDiskDevices()[1]
+
+    # Simulate a drive that was extended recently.
+    drive.extend_time = time.monotonic() - EXTEND_TIMEOUT / 2
+    drive.threshold_state = BLOCK_THRESHOLD.EXCEEDED
+
+    # Simulating periodic check skip the extend since the previous extend is in
+    # progress.
+    vm.volume_monitor.monitor_volumes()
+    assert vm.cif.irs.extensions == []
+
+    # If enough time passed since the last extend, trigger a new extend.
+    drive.extend_time = time.monotonic() - EXTEND_TIMEOUT
+    vm.volume_monitor.monitor_volumes()
+    assert len(vm.cif.irs.extensions) == 1
+
+
+def test_dont_skip_if_drive_needs_extend(tmp_config):
+    vm = FakeVM(drive_infos())
+    drive = vm.getDiskDevices()[1]
+
+    # Simulate a drive that was extended recently.
+    drive.extend_time = time.monotonic() - EXTEND_TIMEOUT / 2
+
+    # But setting block threshold after the extend failed.
+    drive.threshold_state = BLOCK_THRESHOLD.UNSET
+
+    # And the guest wrote after the threshold.
+    vdb = vm.block_stats[2]
+    vdb["allocation"] = allocation_threshold_for_resize_mb(vdb, drive) + 1
+
+    # Simulating periodic check should ignore the time since the last extend
+    # and extend again immediately.
+    vm.volume_monitor.monitor_volumes()
 
 
 class FakeVM(Vm):

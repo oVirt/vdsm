@@ -455,6 +455,10 @@ parameters = [
             'monitoring. On timeout, the drive will be monitored in the '
             'next monitoring cycle. (default 0.5)'),
 
+        ('extend_timeout', '2.0',
+            'Time in seconds to wait for extend completion during periodic '
+            'monitoring before retrying to extend. (default 2.0)'),
+
         ('refresh_timeout', '60.0',
             'Time in seconds to wait for drive monitor lock when refreshing '
             'a volume after extend completed. (default 60.0)'),
