@@ -293,7 +293,7 @@ class VolumeMonitor(object):
             # block threshold event. Synthesize a block threshold event, and
             # handle the drive as if we received an event right now.
             drive.on_block_threshold(drive.path)
-            self._handle_exceeded(drive)
+            self._handle_exceeded(drive, urgent=True)
         else:
             # Set block threshold. on_block_threshold() will be called when the
             # guest exceeds the threshold. If we will miss the event,
@@ -301,7 +301,7 @@ class VolumeMonitor(object):
             self._set_threshold(
                 drive, drive.block_info.physical, drive.block_info.index)
 
-    def _handle_exceeded(self, drive):
+    def _handle_exceeded(self, drive, urgent=False):
         """
         Handle drive with EXCEEDED threshold state.
         """
@@ -323,6 +323,14 @@ class VolumeMonitor(object):
                 drive.name)
             drive.threshold_state = storage.BLOCK_THRESHOLD.DISABLED
             return
+
+        if not urgent and self._recently_started_extend(drive):
+            self._log.debug(
+                "Drive %s extension in progress, retrying later",
+                drive.name)
+            return
+
+        drive.extend_time = time.monotonic()
 
         self._log.info(
             "Requesting an extension for volume %s on domain %s block_info %s",
@@ -365,6 +373,14 @@ class VolumeMonitor(object):
 
         free_space = drive.block_info.physical - drive.block_info.allocation
         return free_space < drive.watermarkLimit
+
+    def _recently_started_extend(self, drive):
+        """
+        Return True if drive extension was started recently and did not
+        time out yet.
+        """
+        extend_timeout = config.getfloat("thinp", "extend_timeout")
+        return time.monotonic() - drive.extend_time < extend_timeout
 
     def _monitored_volumes(self):
         """

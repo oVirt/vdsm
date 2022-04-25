@@ -129,7 +129,7 @@ class Drive(core.Base):
                  'vm_custom', '_block_info', '_threshold_state', '_lock',
                  '_monitor_lock', '_monitorable', 'guestName', '_iotune',
                  'RBD', 'managed', 'scratch_disk', 'exceeded_time',
-                 'managed_reservation')
+                 'extend_time', 'managed_reservation')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         MiB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -248,6 +248,7 @@ class Drive(core.Base):
             self.vm_custom = {}
         self._monitorable = True
         self.threshold_state = BLOCK_THRESHOLD.UNSET
+        self.extend_time = 0.0  # Distant past.
         # Keep sizes as int
         self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
         self.truesize = int(kwargs.get('truesize', '0'))
