@@ -21,13 +21,15 @@
 
 import logging
 
+import pytest
+
 from vdsm.virt import thinp
 
 from vdsm.common.config import config
 from vdsm.common.units import MiB, GiB
 from vdsm.virt.vmdevices.storage import Drive, BLOCK_THRESHOLD
 
-import pytest
+EXTEND_TIMEOUT = config.getfloat("thinp", "extend_timeout")
 
 
 @pytest.mark.parametrize("enabled", [True, False])
@@ -100,42 +102,60 @@ def test_clear_threshold():
 
 def test_on_block_threshold_drive_name_ignored():
     vm = FakeVM()
-    mon = thinp.VolumeMonitor(vm, vm.log)
+    dispatch = FakeDispatch()
+    mon = thinp.VolumeMonitor(vm, vm.log, dispatch=dispatch)
     vda = make_drive(vm.log, index=0, iface='virtio')
     vm.drives.append(vda)
 
     mon.on_block_threshold("vda", vda.path, 512 * MiB, 10 * MiB)
     assert vda.threshold_state == BLOCK_THRESHOLD.UNSET
+    assert len(dispatch.calls) == 0
 
 
 def test_on_block_threshold_indexed_name_handled():
     vm = FakeVM()
-    mon = thinp.VolumeMonitor(vm, vm.log)
+    dispatch = FakeDispatch()
+    mon = thinp.VolumeMonitor(vm, vm.log, dispatch=dispatch)
     vda = make_drive(vm.log, index=0, iface='virtio')
     vm.drives.append(vda)
 
     mon.on_block_threshold("vda[1]", vda.path, 512 * MiB, 10 * MiB)
     assert vda.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
+    assert len(dispatch.calls) == 1
+    part, args = dispatch.calls[0]
+    assert part.func == mon._extend_drive
+    assert part.args == (vda,)
+    assert args == dict(timeout=EXTEND_TIMEOUT, discard=True)
+
 
 def test_on_block_threshold_unknown_drive():
     vm = FakeVM()
-    mon = thinp.VolumeMonitor(vm, vm.log)
+    dispatch = FakeDispatch()
+    mon = thinp.VolumeMonitor(vm, vm.log, dispatch=dispatch)
     vda = make_drive(vm.log, index=0, iface='virtio')
     vm.drives.append(vda)
 
     mon.on_block_threshold("vdb", "/unkown/path", 512 * MiB, 10 * MiB)
     assert vda.threshold_state == BLOCK_THRESHOLD.UNSET
+    assert len(dispatch.calls) == 0
 
 
 def test_on_enospc():
     vm = FakeVM()
-    mon = thinp.VolumeMonitor(vm, vm.log)
+    dispatch = FakeDispatch()
+    mon = thinp.VolumeMonitor(vm, vm.log, dispatch=dispatch)
     vda = make_drive(vm.log, index=0, iface='virtio')
     vm.drives.append(vda)
 
     mon.on_enospc(vda)
     assert vda.threshold_state == BLOCK_THRESHOLD.EXCEEDED
+
+    assert len(dispatch.calls) == 1
+    part, args = dispatch.calls[0]
+    assert part.func == mon._extend_drive
+    assert part.args == (vda,)
+    assert args == dict(timeout=EXTEND_TIMEOUT, discard=True)
 
 
 def test_monitoring_needed():
@@ -182,6 +202,15 @@ class FakeVM(object):
 
     def getDiskDevices(self):
         return self.drives[:]
+
+
+class FakeDispatch:
+
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, func, timeout=None, discard=True):
+        self.calls.append((func, dict(timeout=timeout, discard=discard)))
 
 
 class FakeDomain(object):

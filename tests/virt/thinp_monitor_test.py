@@ -205,6 +205,7 @@ def test_extend(tmp_config):
 
     # first run: does nothing but set the block thresholds
     vm.volume_monitor.monitor_volumes()
+    assert drv.threshold_state == BLOCK_THRESHOLD.SET
 
     # Simulate writing to drive vdb
     vdb = vm.block_stats[2]
@@ -219,22 +220,18 @@ def test_extend(tmp_config):
     vm.volume_monitor.on_block_threshold(
         'vdb', '/virtio/1', alloc, 1 * MiB)
     assert drv.threshold_state == BLOCK_THRESHOLD.SET
+    assert len(vm.cif.irs.extensions) == 0
 
     # Simulating block threshold event
     vm.volume_monitor.on_block_threshold(
         'vdb[1]', '/virtio/1', alloc, 1 * MiB)
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
-
-    # Simulating periodic check
-    vm.volume_monitor.monitor_volumes()
     assert len(vm.cif.irs.extensions) == 1
     check_extension(vdb, drives[1], vm.cif.irs.extensions[0])
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
 
     # Simulate completed extend operation, invoking callback
-
     simulate_extend_callback(vm.cif.irs, extension_id=0)
-
     assert drv.threshold_state == BLOCK_THRESHOLD.SET
 
 
@@ -258,9 +255,6 @@ def test_extend_no_allocation(tmp_config):
     vm.volume_monitor.on_block_threshold(
         'vdb[1]', '/virtio/1', 0, 1 * MiB)
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
-
-    # Simulating periodic check
-    vm.volume_monitor.monitor_volumes()
     assert len(vm.cif.irs.extensions) == 1
     check_extension(vdb, drives[1], vm.cif.irs.extensions[0])
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
@@ -521,18 +515,12 @@ def test_event_received_before_write_completes(tmp_config):
     vm.volume_monitor.on_block_threshold(
         'vda', '/virtio/0', alloc, 1 * MiB)
     assert drv.threshold_state == BLOCK_THRESHOLD.UNSET
+    assert len(vm.cif.irs.extensions) == 0
 
     # Simulating block threshold event
     vm.volume_monitor.on_block_threshold(
         'vda[0]', '/virtio/0', alloc, 1 * MiB)
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
-
-    vm.volume_monitor.monitor_volumes()
-
-    # The drive is marked for extension.
-    assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
-
-    # And try to exend.
     assert len(vm.cif.irs.extensions) == 1
     check_extension(vda, drives[0], vm.cif.irs.extensions[0])
 
@@ -563,24 +551,19 @@ def test_block_threshold_set_failure_after_drive_extended(tmp_config):
     vm.volume_monitor.on_block_threshold(
         'vdb', '/virtio/1', alloc, 1 * MiB)
     assert drv.threshold_state == BLOCK_THRESHOLD.SET
+    assert len(vm.cif.irs.extensions) == 0
 
     # Simulating block threshold event
     vm.volume_monitor.on_block_threshold(
         'vdb[1]', '/virtio/1', alloc, 1 * MiB)
     assert drv.threshold_state == BLOCK_THRESHOLD.EXCEEDED
-
-    # Simulating periodic check
-    vm.volume_monitor.monitor_volumes()
     assert len(vm.cif.irs.extensions) == 1
 
-    # Simulate completed extend operation, invoking callback
-
-    # Simulate setBlockThreshold failure
+    # Simulate completed extend operation, failing to set block threshold.
     vm._dom.errors["setBlockThreshold"] = fake.Error(
         libvirt.VIR_ERR_OPERATION_FAILED, "fake error")
 
     simulate_extend_callback(vm.cif.irs, extension_id=0)
-
     assert drv.threshold_state == BLOCK_THRESHOLD.UNSET
 
 
@@ -602,15 +585,16 @@ def test_exceeded_max_size(tmp_config):
     alloc = allocation_threshold_for_resize_mb(vdb, drive) + 1
     vdb["allocation"] = alloc
     vm.volume_monitor.on_block_threshold('vdb[1]', '/virtio/1', alloc, 1)
-    assert drive.threshold_state == BLOCK_THRESHOLD.EXCEEDED
-
-    # Simulate the next monitoring cycle.
-    vm.volume_monitor.monitor_volumes()
 
     # Because the drive is already extended, disable monitoring.
     assert drive.threshold_state == BLOCK_THRESHOLD.DISABLED
 
     # And no extesion request should be sent.
+    assert len(vm.cif.irs.extensions) == 0
+
+    # Next monitoring cycle will not modify the drive.
+    vm.volume_monitor.monitor_volumes()
+    assert drive.threshold_state == BLOCK_THRESHOLD.DISABLED
     assert len(vm.cif.irs.extensions) == 0
 
 
@@ -689,7 +673,12 @@ class FakeVM(Vm):
         self._dom = FakeDomain()
         self.cif = FakeClientIF(FakeIRS())
         self.id = 'volume_monitor_vm'
-        self.volume_monitor = thinp.VolumeMonitor(self, self.log)
+
+        # Simplify testing by dispatching on the calling thread.
+        self.volume_monitor = thinp.VolumeMonitor(
+            self, self.log,
+            dispatch=lambda func, **kw: func())
+
         self.block_stats = {}
 
         disks = []
