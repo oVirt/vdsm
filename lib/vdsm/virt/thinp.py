@@ -23,6 +23,7 @@ import sys
 import time
 
 from collections import namedtuple
+from functools import partial
 
 import libvirt
 
@@ -57,9 +58,22 @@ class VolumeMonitor(object):
     triggering the extension flow when needed.
     """
 
-    def __init__(self, vm, log, enabled=True):
+    def __init__(self, vm, log, dispatch=None, enabled=True):
+        """
+        Arguemnts:
+            vm (vdsm.virt.VM): Owner VM
+            log (logging.Logger): logger to use
+            dispatch (vdsm.executor.Executor.dispatch): An executor dispatch
+                function for handling block threshold or enospc events. If set,
+                drive will be extended immediately when receiving events.
+                Otherwise drive is marked for extension and will be extended
+                when the periodic monitor wakes up.
+            enabled (bool): True to enable the monitor when created. If False,
+                the monitor need to be enabled later.
+        """
         self._vm = vm
         self._log = log
+        self._dispatch = dispatch
         self._enabled = enabled
 
     # Enabling and disabling the monitor.
@@ -182,6 +196,8 @@ class VolumeMonitor(object):
         # TODO: file a libvirt documentation bug
         self._vm._dom.setBlockThreshold(target, 0)
 
+    # Handling libvirt events.
+
     def on_block_threshold(self, target, path, threshold, excess):
         """
         Callback to be executed in the libvirt event handler when
@@ -216,13 +232,48 @@ class VolumeMonitor(object):
                 'Unknown drive %r for vm %s - ignored block threshold event',
                 drive_name, self._vm.id)
         else:
-            drive.on_block_threshold(path)
+            if drive.on_block_threshold(path):
+                self._extend_drive_soon(drive)
 
     def on_enospc(self, drive):
         """
         Called when a VM pauses because of ENOSPC error writing to drive.
         """
-        drive.on_enospc()
+        if drive.on_enospc():
+            self._extend_drive_soon(drive)
+
+    def _extend_drive_soon(self, drive):
+        if self._dispatch is None:
+            return
+        self._log.debug("Scheduling drive %s extension", drive.name)
+        try:
+            self._dispatch(
+                partial(self._extend_drive, drive),
+                timeout=config.getfloat("thinp", "extend_timeout"))
+        except exception.ResourceExhausted:
+            # Drive will be extended later by the periodic monitor.
+            self._log.warning(
+                "Executor queue full, extending drive %s in the next "
+                "monitoring cycle",
+                drive.name)
+
+    def _extend_drive(self, drive):
+        if not self._update_block_info([drive]):
+            self._log.warning(
+                "Cannot update block info for drive %s, retrying in "
+                "the next monitoring cycle",
+                drive.name)
+            return
+
+        timeout = config.getfloat("thinp", "extend_timeout")
+        try:
+            with drive.monitor_lock(timeout):
+                self._handle_exceeded(drive, urgent=True)
+        except storage.MonitorBusy:
+            self._log.warning(
+                "Timeout acquiring monitor lock for drive %s, retrying "
+                "in the next monitoring cycle",
+                drive.name)
 
     # Monitoring volumes.
 
