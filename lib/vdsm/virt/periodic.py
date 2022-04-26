@@ -117,6 +117,20 @@ def stop():
     _executor.stop(wait=False)
 
 
+def dispatch(callable, timeout=None, discard=True):
+    """
+    Dispatch callable on the periodic executor.
+
+    Should be used when a periodic operation should run as soon as possible
+    instead of waiting for the next cycle.
+
+    Raises:
+    - vdsm.exception.ResourceExhausted if the executor queue is full
+    - vdsm.executor.NotRunning if the executor is not running
+    """
+    _executor.dispatch(callable, timeout=timeout, discard=discard)
+
+
 class Operation(object):
     """
     Operation runs a callable with a given period until

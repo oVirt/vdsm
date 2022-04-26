@@ -93,6 +93,7 @@ from vdsm.virt import guestagent
 from vdsm.virt import libvirtxml
 from vdsm.virt import metadata
 from vdsm.virt import migration
+from vdsm.virt import periodic
 from vdsm.virt import sampling
 from vdsm.virt import saslpasswd2
 from vdsm.virt import thinp
@@ -437,7 +438,7 @@ class Vm(object):
         self._hotunplugged_devices = {}  # { alias: device_object }
 
         self.volume_monitor = thinp.VolumeMonitor(
-            self, self.log, enabled=False)
+            self, self.log, dispatch=periodic.dispatch, enabled=False)
         self._connection = libvirtconnection.get(cif)
         if (recover and
             # status retrieved from the recovery file (legacy style)
