@@ -78,8 +78,8 @@ from testlib import maybefail
 
 from . import vmfakelib as fake
 
-CHUNK_SIZE = 1 * GiB
-CHUNK_PCT = 50
+CHUNK_SIZE = 2560 * MiB
+FREE_PCT = 80
 REPLICA_BASE_INDEX = 1000
 
 log = logging.getLogger("test")
@@ -104,8 +104,8 @@ def drive_config(**kw):
 
 
 def block_info(
-        name="vda", path="/virtio/0", backingIndex=1, capacity=4 * GiB,
-        allocation=0, physical=4 * GiB, threshold=0):
+        name="vda", path="/virtio/0", backingIndex=1, capacity=10 * GiB,
+        allocation=0, physical=5 * GiB, threshold=0):
     return {
         "name": name,
         "path": path,
@@ -132,7 +132,8 @@ def drive_infos():
                 # libvirt starts backingIndex at 1.
                 backingIndex=1,
                 allocation=1 * GiB,
-                physical=2 * GiB,
+                physical=5 * GiB,
+                capacity=10 * GiB,
             ),
         ),
         (
@@ -147,7 +148,8 @@ def drive_infos():
                 path="/virtio/1",
                 backingIndex=2,
                 allocation=1 * GiB,
-                physical=2 * GiB,
+                physical=5 * GiB,
+                capacity=10 * GiB,
             ),
         ),
     )
@@ -157,7 +159,7 @@ def drive_infos():
 def tmp_config(monkeypatch):
     # the Drive class use those two tunables as class constants.
     monkeypatch.setattr(Drive, 'VOLWM_CHUNK_SIZE', CHUNK_SIZE)
-    monkeypatch.setattr(Drive, 'VOLWM_FREE_PCT', CHUNK_PCT)
+    monkeypatch.setattr(Drive, 'VOLWM_FREE_PCT', FREE_PCT)
 
 
 def allocation_threshold_for_resize_mb(block_info, drive):
@@ -285,7 +287,7 @@ def test_extend_improbable_allocation(tmp_config):
     pytest.param(
         (
             drive_config(format='cow', diskType=DISK_TYPE.FILE),
-            block_info(),
+            block_info(allocation=1 * GiB, physical=1 * GiB),
         ),
         BLOCK_THRESHOLD.UNSET,
         None,
@@ -295,7 +297,7 @@ def test_extend_improbable_allocation(tmp_config):
     pytest.param(
         (
             drive_config(format='raw', diskType=DISK_TYPE.BLOCK),
-            block_info(physical=4 * GiB),
+            block_info(physical=10 * GiB),
         ),
         BLOCK_THRESHOLD.UNSET,
         None,
@@ -305,7 +307,7 @@ def test_extend_improbable_allocation(tmp_config):
     pytest.param(
         (
             drive_config(format='raw', diskType=DISK_TYPE.FILE),
-            block_info(physical=4 * GiB),
+            block_info(allocation=1 * GiB, physical=10 * GiB),
         ),
         BLOCK_THRESHOLD.UNSET,
         None,
@@ -315,7 +317,7 @@ def test_extend_improbable_allocation(tmp_config):
     pytest.param(
         (
             drive_config(format='raw', diskType=DISK_TYPE.NETWORK),
-            block_info(physical=4 * GiB),
+            block_info(physical=10 * GiB),
         ),
         BLOCK_THRESHOLD.UNSET,
         None,
@@ -333,7 +335,7 @@ def test_extend_improbable_allocation(tmp_config):
                     'size': 2 * GiB,
                 },
             ),
-            block_info(allocation=2 * GiB, physical=2 * GiB),
+            block_info(allocation=2 * GiB, physical=5 * GiB),
         ),
         BLOCK_THRESHOLD.UNSET,
         None,
@@ -348,27 +350,26 @@ def test_extend_improbable_allocation(tmp_config):
                 diskReplicate={
                     'format': 'cow',
                     'diskType': DISK_TYPE.BLOCK,
-                    'size': 2 * GiB,
+                    # We extended once by 2 chunks.
+                    'size': int(7.5 * GiB),
                 },
             ),
             # Libvirt reports same allocation and physical for files, so
             # we take the physical value from the replica.
-            block_info(allocation=750 * MiB, physical=750 * MiB),
+            block_info(allocation=1 * GiB, physical=1 * GiB),
         ),
         BLOCK_THRESHOLD.SET,
-        # During replication we use 2 * GiB chunk size instead of 1 GiB.
-        # With 50% utilization, we set the threshold to 1 GiB.
-        1 * GiB,
+        int(3.5 * GiB),
         id="replicate-to-block",
     ),
 
     pytest.param(
         (
             drive_config(format='cow', diskType=DISK_TYPE.BLOCK),
-            block_info(allocation=1 * GiB, physical=2 * GiB),
+            block_info(allocation=1 * GiB, physical=5 * GiB),
         ),
         BLOCK_THRESHOLD.SET,
-        1536 * MiB,
+        3 * GiB,
         id="cow-block",
     ),
 
@@ -380,13 +381,14 @@ def test_extend_improbable_allocation(tmp_config):
                 diskReplicate={
                     'format': 'cow',
                     'diskType': DISK_TYPE.BLOCK,
-                    'size': 3 * GiB,
+                    'size': 5 * GiB,
                 },
             ),
-            block_info(allocation=1 * GiB, physical=3 * GiB),
+            block_info(allocation=750 * MiB, physical=5 * GiB),
         ),
         BLOCK_THRESHOLD.SET,
-        2 * GiB,
+        # During replication we use 2 * chunk size.
+        1 * GiB,
         id="cow-block-replicate-to-cow-block",
     ),
 
@@ -398,13 +400,14 @@ def test_extend_improbable_allocation(tmp_config):
                 diskReplicate={
                     'format': 'cow',
                     'diskType': DISK_TYPE.FILE,
-                    'size': 3 * GiB,
+                    'size': 750 * MiB,
                 },
             ),
-            block_info(allocation=1 * GiB, physical=3 * GiB),
+            block_info(allocation=750 * MiB, physical=5 * GiB),
         ),
         BLOCK_THRESHOLD.SET,
-        2 * GiB,
+        # During replication we use 2 * chunk size.
+        1 * GiB,
         id="cow-block-replicate-to-cow-file",
     ),
 ])
