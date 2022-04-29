@@ -116,7 +116,7 @@ from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices import storagexml
 from vdsm.virt.vmdevices.common import get_metadata
 from vdsm.virt.vmdevices.common import identify_from_xml_elem
-from vdsm.virt.vmdevices.storage import DISK_TYPE
+from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD, DISK_TYPE
 from vdsm.virt.vmdevices.storagexml import change_disk
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket
@@ -4566,6 +4566,12 @@ class Vm(object):
                                drive.name, newSizeBytes, e)
             return response.error('updateDevice')
         finally:
+            # If the disk was resized to maximum size and drive monitoring was
+            # disabled, we need to start monitoring the drive again after the
+            # resize. Change the threshold state to UNSET so the periodic
+            # monitor will pick it up again on the next monitoring cycle.
+            drive.threshold_state = BLOCK_THRESHOLD.UNSET
+
             # Note that newVirtualSize may be larger than the requested size
             # because of rounding in qemu.
             try:
