@@ -9,7 +9,7 @@ or fail (depending on the test).
 
 To setup storage for these tests, run:
 
-    python tests/storage/userstorage.py setup
+    make storage
 
 This can be run once when setting up development environment, and must
 be run again after rebooting the host.

@@ -14,6 +14,16 @@ Enable oVirt packages for Fedora:
     sudo dnf copr enable -y nsoffer/ioprocess-preview
     sudo dnf copr enable -y nsoffer/ovirt-imageio-preview
 
+Enable
+[virt-preview](https://copr.fedorainfracloud.org/coprs/g/virtmaint-sig/virt-preview/)
+repository to obtain latest qemu and libvirt versions:
+
+    sudo dnf copr enable @virtmaint-sig/virt-preview
+
+Update the system after enabling all repositories:
+
+    sudo dnf update -y
+
 Install additional packages for Fedora, CentOS, and RHEL:
 
     sudo dnf install -y `cat automation/check-patch.packages`
@@ -24,14 +34,6 @@ Create virtual environment for vdsm:
     source ~/.venv/vdsm/bin/activate
     pip install --upgrade pip
     pip install -r docker/requirements.txt
-    deactivate
-
-Before running vdsm tests, activate the environment:
-
-    source ~/.venv/vdsm/bin/activate
-
-When done, you can deactivate the environment:
-
     deactivate
 
 
