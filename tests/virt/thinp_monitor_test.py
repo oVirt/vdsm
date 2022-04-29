@@ -581,6 +581,65 @@ def test_block_threshold_set_failure_after_drive_extended(tmp_config):
     assert drv.threshold_state == BLOCK_THRESHOLD.UNSET
 
 
+def test_exceeded_max_size(tmp_config):
+    vm = FakeVM(drive_infos())
+    drive = vm.getDiskDevices()[1]
+    vdb = vm.block_stats[2]
+
+    # Simulate drive extended to maximum size after guest reached block
+    # threshold at 8 GiB.
+    vdb["allocation"] = 8 * GiB
+    vdb["capacity"] = 10 * GiB
+    vdb["physical"] = 11 * GiB
+
+    # first run: does nothing but set the block threshold.
+    vm.volume_monitor.monitor_volumes()
+
+    # Simulate block threshold event when guest write to new threshold.
+    alloc = allocation_threshold_for_resize_mb(vdb, drive) + 1
+    vdb["allocation"] = alloc
+    vm.volume_monitor.on_block_threshold('vdb[1]', '/virtio/1', alloc, 1)
+    assert drive.threshold_state == BLOCK_THRESHOLD.EXCEEDED
+
+    # Simulate the next monitoring cycle.
+    vm.volume_monitor.monitor_volumes()
+
+    # Because the drive is already extended, disable monitoring.
+    assert drive.threshold_state == BLOCK_THRESHOLD.DISABLED
+
+    # And no extesion request should be sent.
+    assert len(vm.cif.irs.extensions) == 0
+
+
+def test_resize_maxed_drive(tmp_config):
+    vm = FakeVM(drive_infos())
+    drive = vm.getDiskDevices()[1]
+    vdb = vm.block_stats[2]
+
+    # Simulate drive extended to maximum size.
+    vdb["allocation"] = 9 * GiB + 1
+    vdb["capacity"] = 10 * GiB
+    vdb["physical"] = 11 * GiB
+    drive.threshold_state = BLOCK_THRESHOLD.DISABLED
+
+    # first run: does nothing, drive is disabled.
+    vm.volume_monitor.monitor_volumes()
+    assert drive.threshold_state == BLOCK_THRESHOLD.DISABLED
+
+    # Simulate resizing drive to 15 GiB.
+    vdb["capacity"] = 15 * GiB
+    drive.threshold_state = BLOCK_THRESHOLD.UNSET
+
+    # Simulate the next monitoring cycle.
+    vm.volume_monitor.monitor_volumes()
+
+    # Since drive already exceeded, mark it as exceeded.
+    assert drive.threshold_state == BLOCK_THRESHOLD.EXCEEDED
+
+    # And extned to next size.
+    assert len(vm.cif.irs.extensions) == 1
+
+
 class FakeVM(Vm):
 
     log = logging.getLogger('test')
