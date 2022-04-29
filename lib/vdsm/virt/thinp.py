@@ -296,10 +296,22 @@ class VolumeMonitor(object):
         Handle drive with EXCEEDED threshold state.
         """
         if not self._can_extend_drive(drive):
-            # Should not happen.
-            self._log.warning(
-                "Drive already extended to maximum size: %s",
-                drive.block_info)
+            # Can happen with the default chunk size and utilization if drive
+            # size <= 22g, drive is extended to maximum size, and the guest
+            # writes to the end of the device.
+            #
+            # Example with 22g volume:
+            #   qcow2 overhead:         1%
+            #   maximum allocation:     24.20g
+            #   maximum write offset:   22.22g
+            #   block threshold:        22.20g
+            #
+            # We disable monitoring for the drive. Monitoring will be enabled
+            # again if the drive will be resized.
+            self._log.info(
+                "Drive %s extended to maximum size, disabling monitoring",
+                drive.name)
+            drive.threshold_state = storage.BLOCK_THRESHOLD.DISABLED
             return
 
         self._log.info(

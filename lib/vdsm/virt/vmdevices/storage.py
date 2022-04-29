@@ -85,6 +85,8 @@ class BLOCK_THRESHOLD:
     SET = "set"
     # event delivered, Drive waiting to be picked up for check and extension
     EXCEEDED = "exceeded"
+    # Drive extended to maximum size and does not need monitoring.
+    DISABLED = "disabled"
 
 
 class VolumeNotFound(errors.Base):
