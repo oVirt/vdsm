@@ -13,6 +13,23 @@ Note: Not all tests have been converted to tox and/or pytest yet.
 
 ## Running the tests
 
+Before running vdsm tests, activate the environment:
+
+    source ~/.venv/vdsm/bin/activate
+
+When done, you can deactivate the environment:
+
+    deactivate
+
+Before running storage tests, make sure you have setup the user storage
+accordingly. To create storage you can do:
+
+    make storage
+
+See
+[Setting up user storage](./storage/README.md#setting-up-user-storage)
+for more information.
+
 Run storage tests:
 
     tox -e storage
@@ -29,6 +46,14 @@ You can also use environment variables:
 Running specific storage tests modules:
 
     tox -e storage -- storage/image_test.py
+
+Alternatively, all tests but storage tests can be run by doing:
+
+    make tests
+
+Furthermore, storage-only tests can be run by doing:
+
+    make tests-storage
 
 
 ## Using tox virtual environment
