@@ -451,8 +451,6 @@ class LVMCache(object):
 
     def run_command(self, cmd, devices=(), use_lvmpolld=True):
         with self._cmd_sem:
-            tries = 1
-
             # 1. Try the command with fast specific filter including the
             # specified devices. If the command succeeded and wanted output was
             # returned we are done.
@@ -472,13 +470,10 @@ class LVMCache(object):
                     "Command with specific filter failed or returned no data, "
                     "retrying with refreshed device list: %s", error)
                 full_cmd = wider_cmd
-                tries += 1
                 try:
                     return self._runner.run(full_cmd)
                 except se.LVMCommandError as e:
                     error = e
-
-            log.warning("All %d tries have failed: %s", tries, error)
 
             raise error
 
