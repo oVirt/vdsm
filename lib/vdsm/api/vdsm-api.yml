@@ -9769,6 +9769,11 @@ ManagedVolume.detach_volume:
     -   description: The volume ID
         name: vol_id
         type: *UUID
+    -   defaultvalue: '00000000-0000-0000-0000-000000000000'
+        added: '4.5.1'
+        description: The storage domain ID
+        name: sd_id
+        type: *UUID
 
 ManagedVolume.volumes_info:
     added: '4.3'

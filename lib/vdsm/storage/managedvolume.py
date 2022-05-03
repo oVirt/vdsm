@@ -127,7 +127,7 @@ def attach_volume(sd_id, vol_id, connection_info):
 
 
 @requires_os_brick
-def detach_volume(vol_id):
+def detach_volume(sd_id, vol_id):
     """
     Detach volume with os-brick.
     """

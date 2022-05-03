@@ -1820,8 +1820,8 @@ class ManagedVolume(APIBase):
 
     @api.logged(on="api.storage")
     @api.method
-    def detach_volume(self, vol_id):
-        return managedvolume.detach_volume(vol_id)
+    def detach_volume(self, vol_id, sd_id):
+        return managedvolume.detach_volume(sd_id, vol_id)
 
     @api.logged(on="api.storage")
     @api.method
