@@ -9752,6 +9752,11 @@ ManagedVolume.attach_volume:
     -   description: The information needed to attach a volume
         name: connection_info
         type: *ManagedVolumeConnection
+    -   defaultvalue: '00000000-0000-0000-0000-000000000000'
+        added: '4.5.1'
+        description: The storage domain ID
+        name: sd_id
+        type: *UUID
     return:
         description: Information about the attached volume.
         type: *ManagedVolumeInformation
