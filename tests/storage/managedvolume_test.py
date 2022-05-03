@@ -379,7 +379,7 @@ def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick, tmp_db,
     # Attaching invalidates the filter, reset.
     fake_lvm.devices_invalidated = False
 
-    managedvolume.detach_volume("fake_vol_id")
+    managedvolume.detach_volume("fake_sd_id", "fake_vol_id")
 
     with pytest.raises(managedvolumedb.NotFound):
         tmp_db.get_volume("fake_vol_id")
@@ -402,7 +402,7 @@ def test_detach_volume_not_installed(monkeypatch, fake_os_brick, tmp_db,
     fake_lvm.devices_invalidated = False
 
     with pytest.raises(se.ManagedVolumeNotSupported):
-        managedvolume.detach_volume("vol_id")
+        managedvolume.detach_volume("sd_id", "vol_id")
 
     # No multipath id added, no need to invalidated filter.
     assert not fake_lvm.devices_invalidated
@@ -411,7 +411,7 @@ def test_detach_volume_not_installed(monkeypatch, fake_os_brick, tmp_db,
 @requires_root
 def test_detach_not_in_db(monkeypatch, fake_os_brick, tmp_db, fake_lvm,
                           fake_supervdsm):
-    managedvolume.detach_volume("fake_vol_id")
+    managedvolume.detach_volume("sd_id", "fake_vol_id")
 
     # Attaching invalidates the filter, reset.
     fake_lvm.devices_invalidated = False
@@ -439,7 +439,7 @@ def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir,
     fake_lvm.devices_invalidated = False
 
     tmpdir.join("fakemultipathid").write("")
-    managedvolume.detach_volume("fake_vol_id")
+    managedvolume.detach_volume("fake_sd_id", "fake_vol_id")
 
     entries = fake_os_brick.log()
     assert len(entries) == 2
