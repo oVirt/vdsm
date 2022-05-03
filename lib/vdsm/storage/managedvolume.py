@@ -85,7 +85,7 @@ def connector_info():
 
 
 @requires_os_brick
-def attach_volume(vol_id, connection_info):
+def attach_volume(sd_id, vol_id, connection_info):
     """
     Attach volume with os-brick.
     """

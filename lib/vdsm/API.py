@@ -1809,11 +1809,14 @@ class ManagedVolume(APIBase):
 
     @api.logged(on="api.storage")
     @api.method
-    def attach_volume(self, vol_id, connection_info):
+    def attach_volume(self, vol_id, connection_info, sd_id):
         """
         attach volume and return attached device information
         """
-        return managedvolume.attach_volume(vol_id, connection_info)
+        return managedvolume.attach_volume(
+            sd_id,
+            vol_id,
+            connection_info)
 
     @api.logged(on="api.storage")
     @api.method
