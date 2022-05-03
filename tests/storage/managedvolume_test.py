@@ -161,7 +161,7 @@ def test_attach_volume_not_installed_attach(monkeypatch):
     # Simulate missing os_brick.
     monkeypatch.setattr(managedvolume, "os_brick", None)
     with pytest.raises(se.ManagedVolumeNotSupported):
-        managedvolume.attach_volume("vol_id", {})
+        managedvolume.attach_volume("sd_id", "vol_id", {})
 
 
 @requires_root
@@ -172,7 +172,10 @@ def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db, fake_lvm,
         "driver_volume_type": "iscsi",
         "data": {"some_info": 26}
     }
-    ret = managedvolume.attach_volume("fake_vol_id", connection_info)
+    ret = managedvolume.attach_volume(
+        "fake_sd_id",
+        "fake_vol_id",
+        connection_info)
     path = "/dev/mapper/fakemultipathid"
 
     assert ret["result"]["path"] == path
@@ -211,7 +214,10 @@ def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick, tmp_db, fake_lvm,
         "data": {
             "name": "volumes/volume-fake"
         }}
-    ret = managedvolume.attach_volume("fake_vol_id", connection_info)
+    ret = managedvolume.attach_volume(
+        "fake_sd_id",
+        "fake_vol_id",
+        connection_info)
     path = "/dev/rbd/volumes/volume-fake"
 
     assert ret["result"]["path"] == path
@@ -243,9 +249,13 @@ def test_attach_volume_no_multipath_id(monkeypatch, fake_os_brick, tmp_db,
     # Simulate attaching iSCSI or FC device without multipath_id.
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "NO_WWN")
     with pytest.raises(se.ManagedVolumeUnsupportedDevice):
-        managedvolume.attach_volume("vol_id", {
-            "driver_volume_type": vol_type,
-            "data": {"some_info": 26}})
+        managedvolume.attach_volume(
+            "sd_id",
+            "vol_id",
+            {
+                "driver_volume_type": vol_type,
+                "data": {"some_info": 26}
+            })
 
     # Verify that we deatch the unsupported device.
     entries = fake_os_brick.log()
@@ -271,13 +281,16 @@ def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir, tmp_db,
         "driver_volume_type": "iscsi",
         "data": {"some_info": 26}
     }
-    managedvolume.attach_volume("fake_vol_id", connection_info)
+    managedvolume.attach_volume("fake_sd_id", "fake_vol_id", connection_info)
 
     # Attaching invalidates the filter, reset.
     fake_lvm.devices_invalidated = False
 
     with pytest.raises(se.ManagedVolumeAlreadyAttached):
-        managedvolume.attach_volume("fake_vol_id", connection_info)
+        managedvolume.attach_volume(
+            "fake_sd_id",
+            "fake_vol_id",
+            connection_info)
 
     # Device still owned by managed volume.
     assert tmp_db.owns_multipath("fakemultipathid")
@@ -307,7 +320,10 @@ def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir, tmp_db,
     monkeypatch.setattr(managedvolumedb.DB, "update_volume", raise_error)
 
     with pytest.raises(RuntimeError):
-        managedvolume.attach_volume("fake_vol_id", connection_info)
+        managedvolume.attach_volume(
+            "fake_sd_id",
+            "fake_vol_id",
+            connection_info)
 
     entries = fake_os_brick.log()
     assert len(entries) == 2
@@ -326,7 +342,7 @@ def test_reattach_volume_other_connection(monkeypatch, fake_os_brick, tmp_db,
         "driver_volume_type": "iscsi",
         "data": {"some_info": 26}
     }
-    managedvolume.attach_volume("fake_vol_id", connection_info)
+    managedvolume.attach_volume("fake_sd_id", "fake_vol_id", connection_info)
 
     # Attaching invalidates the filter, reset.
     fake_lvm.devices_invalidated = False
@@ -337,7 +353,10 @@ def test_reattach_volume_other_connection(monkeypatch, fake_os_brick, tmp_db,
     }
 
     with pytest.raises(se.ManagedVolumeConnectionMismatch):
-        managedvolume.attach_volume("fake_vol_id", other_connection_info)
+        managedvolume.attach_volume(
+            "fake_sd_id",
+            "fake_vol_id",
+            other_connection_info)
 
     entries = fake_os_brick.log()
     assert len(entries) == 1
@@ -355,7 +374,7 @@ def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick, tmp_db,
         "driver_volume_type": "iscsi",
         "data": {"some_info": 26}
     }
-    managedvolume.attach_volume("fake_vol_id", connection_info)
+    managedvolume.attach_volume("fake_sd_id", "fake_vol_id", connection_info)
 
     # Attaching invalidates the filter, reset.
     fake_lvm.devices_invalidated = False
@@ -414,7 +433,7 @@ def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir,
         "driver_volume_type": "iscsi",
         "data": {"some_info": 26}
     }
-    managedvolume.attach_volume("fake_vol_id", connection_info)
+    managedvolume.attach_volume("fake_sd_id", "fake_vol_id", connection_info)
 
     # Attaching invalidates the filter, reset.
     fake_lvm.devices_invalidated = False
