@@ -605,7 +605,7 @@ class LVMCache(object):
                         logutils.Head(unreadable_vgs, max_items=20))
 
                 # NOTE: vgs may return useful output even on failure, so we
-                # don't retrun here.
+                # don't return here.
 
             updatedVGs = {}
             vgsFields = {}
