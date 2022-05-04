@@ -645,7 +645,7 @@ def test_removevg_failure_cache(monkeypatch, fake_devices):
 
 
 def test_deactivatevg_failure_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner(rc=5)
+    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
@@ -666,6 +666,15 @@ def test_deactivatevg_failure_cache(monkeypatch, fake_devices):
     # TODO: verify that vg mappings were removed
     # Verify that lvs are invalidated after deactivateVG() failed.
     assert lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
+    # Verify that getVG raises with a LVM error
+    with pytest.raises(se.VolumeGroupDoesNotExist) as e:
+        lvm.getVG("non-existing-vg-name")
+    # Ensure that the error is captured and printed in the exception.
+    assert "Fake lvm error" in str(e.value)
+    # Local cache shall remain intact after an LVM error
+    assert len(lc._vgs) == 1
+    assert len(lc._pvs) == 1
+    assert len(lc._lvs) == 1
 
 
 def test_resizepv_success_cache(monkeypatch):
@@ -952,9 +961,11 @@ def test_vg_create_remove_single_device(tmp_storage):
 
     # We remove the VG
     clear_stats()
-    with pytest.raises(se.VolumeGroupDoesNotExist):
+    with pytest.raises(se.VolumeGroupDoesNotExist) as e:
         lvm.getVG(vg_name)
     check_stats(hits=0, misses=1)
+
+    assert vg_name in str(e.value)
 
     # But keep the PVs, not sure why.
     clear_stats()
@@ -1009,9 +1020,11 @@ def test_vg_create_multiple_devices(tmp_storage):
 
     # We remove the VG
     clear_stats()
-    with pytest.raises(se.VolumeGroupDoesNotExist):
+    with pytest.raises(se.VolumeGroupDoesNotExist) as e:
         lvm.getVG(vg_name)
     check_stats(hits=0, misses=1)
+
+    assert vg_name in str(e.value)
 
     # But keep the PVs, not sure why.
     for dev in dev1, dev2, dev3:
