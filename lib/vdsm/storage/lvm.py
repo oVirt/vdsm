@@ -652,6 +652,9 @@ class LVMCache(object):
     def _reload_single_vg(self, vg_name):
         """
         Run LVM 'vgs' command and update VG name.
+        Raise VolumeGroupDoesNotExist if an LVM error occurred without output
+        or VG is stale (not updated).
+        Return the updated VG.
         """
         cmd = list(VGS_CMD)
         cmd.append(vg_name)
@@ -662,7 +665,17 @@ class LVMCache(object):
             if error:
                 self._update_stale_vgs_locked([vg_name])
 
-            return self._updatevgs_locked(out, [vg_name])
+                # Reload a specific VG name and failing
+                # might be indicative of a real error.
+                raise se.VolumeGroupDoesNotExist.from_error(vg_name, error)
+
+            updated_vgs = self._updatevgs_locked(out, [vg_name])
+
+            if vg_name not in updated_vgs:
+                # This should not happen.
+                raise se.VolumeGroupDoesNotExist(vg_name=vg_name)
+
+        return updated_vgs[vg_name]
 
     def _reloadvgs(self, vgName=None):
         """
@@ -909,12 +922,14 @@ class LVMCache(object):
         return pvs
 
     def getVg(self, vgName):
-        # Get specific VG
+        """
+        Get specific VG.
+        Raise a VolumeGroupDoesNotExist for LVM command errors or missing VG.
+        """
         vg = self._vgs.get(vgName)
         if not vg or vg.is_stale():
             self.stats.miss()
-            vgs = self._reload_single_vg(vgName)
-            vg = vgs.get(vgName)
+            vg = self._reload_single_vg(vgName)
         else:
             self.stats.hit()
         return vg
@@ -1315,11 +1330,11 @@ def movePV(vgName, src_device, dst_devices):
 
 
 def getVG(vgName):
-    vg = _lvminfo.getVg(vgName)  # returns single VG namedtuple
-    if not vg:
-        raise se.VolumeGroupDoesNotExist(vg_name=vgName)
-    else:
-        return vg
+    """
+    Return VG named tupple. Raise se.VolumeGroupDoesNotExist if the
+    VG does not exist.
+    """
+    return _lvminfo.getVg(vgName)
 
 
 def getVGs(vgNames):
