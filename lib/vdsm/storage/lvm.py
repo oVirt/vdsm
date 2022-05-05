@@ -1275,7 +1275,7 @@ def movePV(vgName, src_device, dst_devices):
 def getVG(vgName):
     vg = _lvminfo.getVg(vgName)  # returns single VG namedtuple
     if not vg:
-        raise se.VolumeGroupDoesNotExist(vgName)
+        raise se.VolumeGroupDoesNotExist(vg_name=vgName)
     else:
         return vg
 
@@ -1301,7 +1301,7 @@ def getVGbyUUID(vgUUID):
             log.debug("%s", e, exc_info=True)
             continue
     # If not cry loudly
-    raise se.VolumeGroupDoesNotExist("vg_uuid: %s" % vgUUID)
+    raise se.VolumeGroupDoesNotExist(vg_uuid=vgUUID)
 
 
 def getLV(vgName, lvName=None):
@@ -1489,14 +1489,14 @@ def _checkpvsblksize(pvs, vgBlkSize=None):
 def checkVGBlockSizes(vgUUID, vgBlkSize=None):
     pvs = listPVNames(vgUUID)
     if not pvs:
-        raise se.VolumeGroupDoesNotExist("vg_uuid: %s" % vgUUID)
+        raise se.VolumeGroupDoesNotExist(vg_uuid=vgUUID)
     _checkpvsblksize(pvs, vgBlkSize)
 
 
 def getVGBlockSizes(vgUUID):
     pvs = listPVNames(vgUUID)
     if not pvs:
-        raise se.VolumeGroupDoesNotExist("vg_uuid: %s" % vgUUID)
+        raise se.VolumeGroupDoesNotExist(vg_uuid=vgUUID)
     # Returning the block size of the first pv is correct since we don't allow
     # devices with different block size to be on the same VG.
     return _getpvblksize(pvs[0])

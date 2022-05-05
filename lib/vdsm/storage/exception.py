@@ -1349,6 +1349,26 @@ class VolumeGroupDoesNotExist(StorageException):
     code = 506
     msg = "Volume Group does not exist"
 
+    def __init__(self, vg_name=None, vg_uuid=None, error=None):
+        if vg_name is None and vg_uuid is None:
+            raise ValueError("Require a VG name or UUID")
+
+        if error is not None and not isinstance(error, LVMCommandError):
+            raise TypeError(
+                f"Expecting instance of LVMCommandError, got {type(error)}")
+
+        self.vg_name = vg_name
+        self.vg_uuid = vg_uuid
+        self.error = error
+
+    @property
+    def value(self):
+        return ", ".join(f"{k}={v}" for k, v in self.__dict__.items() if v)
+
+    @classmethod
+    def from_error(cls, vg_name, error):
+        return cls(vg_name=vg_name, error=error).with_exception(error)
+
 
 class VolumeGroupRenameError(StorageException):
     code = 507
