@@ -37,7 +37,6 @@ import pprint as pp
 import threading
 
 from itertools import chain
-import six
 
 from vdsm import constants
 from vdsm import utils
@@ -300,7 +299,7 @@ def _buildConfig(dev_filter="", use_lvmpolld="1"):
 def normalize_args(args=None):
     if args is None:
         args = []
-    elif isinstance(args, six.string_types):
+    elif isinstance(args, str):
         args = [args]
 
     return args
@@ -626,7 +625,7 @@ class LVMCache(object):
                     vgsFields[uuid] = fields
                 else:
                     vgsFields[uuid][pvNameIdx].append(pv_name)
-            for fields in six.itervalues(vgsFields):
+            for fields in vgsFields.values():
                 vg = VG.fromlvm(*fields)
                 if int(vg.pv_count) != len(vg.pv_name):
                     log.error("vg %s has pv_count %s but pv_names %s",
@@ -833,7 +832,7 @@ class LVMCache(object):
             pvs = self._reloadpvs()
         else:
             pvs = self._pvs.copy()
-            stalepvs = [pv.name for pv in six.itervalues(pvs) if pv.is_stale()]
+            stalepvs = [pv.name for pv in pvs.values() if pv.is_stale()]
             if stalepvs:
                 self.stats.miss()
                 for name in stalepvs:
@@ -842,7 +841,7 @@ class LVMCache(object):
                 pvs.update(reloaded)
             else:
                 self.stats.hit()
-        return list(six.itervalues(pvs))
+        return list(pvs.values())
 
     def getPvs(self, vgName):
         """
@@ -886,7 +885,7 @@ class LVMCache(object):
         Only returns found VGs.
         """
         self.stats.miss()
-        return [vg for vgName, vg in six.iteritems(self._reloadvgs(vgNames))
+        return [vg for vgName, vg in self._reloadvgs(vgNames).items()
                 if vgName in vgNames]
 
     def getAllVgs(self):
@@ -896,7 +895,7 @@ class LVMCache(object):
             vgs = self._reloadvgs()
         else:
             vgs = self._vgs.copy()
-            stalevgs = [vg.name for vg in six.itervalues(vgs) if vg.is_stale()]
+            stalevgs = [vg.name for vg in vgs.values() if vg.is_stale()]
             if stalevgs:
                 self.stats.miss()
                 for name in stalevgs:
@@ -905,7 +904,7 @@ class LVMCache(object):
                 vgs.update(reloaded)
             else:
                 self.stats.hit()
-        return list(six.itervalues(vgs))
+        return list(vgs.values())
 
     def getLv(self, vgName, lvName=None):
         """
