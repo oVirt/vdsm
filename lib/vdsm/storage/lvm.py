@@ -1487,19 +1487,13 @@ def _checkpvsblksize(pvs, vgBlkSize=None):
 
 
 def checkVGBlockSizes(vg_name, vgBlkSize=None):
-    pvs = listPVNames(vg_name)
-    if not pvs:
-        raise se.VolumeGroupDoesNotExist(vg_name=vg_name)
-    _checkpvsblksize(pvs, vgBlkSize)
+    _checkpvsblksize(listPVNames(vg_name), vgBlkSize)
 
 
 def getVGBlockSizes(vg_name):
-    pvs = listPVNames(vg_name)
-    if not pvs:
-        raise se.VolumeGroupDoesNotExist(vg_name=vg_name)
     # Returning the block size of the first pv is correct since we don't allow
     # devices with different block size to be on the same VG.
-    return _getpvblksize(pvs[0])
+    return _getpvblksize(listPVNames(vg_name)[0])
 
 #
 # Public Logical volume interface
@@ -1844,11 +1838,7 @@ def getVgMetadataPv(vgName):
 
 
 def listPVNames(vgName):
-    try:
-        pvNames = _lvminfo._vgs[vgName].pv_name
-    except (KeyError, AttributeError):
-        pvNames = getVG(vgName).pv_name
-    return pvNames
+    return getVG(vgName).pv_name
 
 
 def setrwLV(vg_name, lv_name, rw=True):
