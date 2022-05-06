@@ -1023,6 +1023,63 @@ def test_vg_create_multiple_devices(tmp_storage):
         assert pv.vg_name == ""
 
 
+@requires_root
+@pytest.mark.root
+def test_vg_remove_by_uuid(tmp_storage):
+    dev_size = 10 * GiB
+
+    dev1 = tmp_storage.create_device(dev_size)
+    dev2 = tmp_storage.create_device(dev_size)
+    vg1_name = str(uuid.uuid4())
+    vg2_name = str(uuid.uuid4())
+
+    lvm.createVG(vg1_name, [dev1], "initial-tag", 128)
+    lvm.createVG(vg2_name, [dev2], "initial-tag", 128)
+
+    vg = lvm.getVG(vg1_name)
+
+    clear_stats()
+    lvm.removeVGbyUUID(vg.uuid)
+    check_stats(hits=0, misses=1)
+
+    # Ensure we have removed the matching VG.
+    with pytest.raises(se.VolumeGroupDoesNotExist):
+        lvm.getVGbyUUID(vg.uuid)
+
+    with pytest.raises(se.VolumeGroupDoesNotExist):
+        lvm.getVG(vg1_name)
+
+    assert len(lvm.getAllVGs()) == 1
+
+    # The other VG is still available.
+    vg2 = lvm.getVG(vg2_name)
+    assert vg2.name == vg2_name
+
+
+def test_vg_invalid_output(monkeypatch, fake_devices):
+    fake_runner = FakeRunner(out=b"Fake lvm output")
+    lc = lvm.LVMCache(fake_runner)
+    lc._stalevg = False
+
+    # Create fake devices.
+    fake_pv = make_pv(pv_name=fake_devices[0], vg_name="vg")
+    fake_vg = make_vg(pvs=[fake_pv.name], vg_name="vg")
+
+    # Assign fake PV, VG to cache.
+    lc._pvs = {fake_pv.name: fake_pv}
+    lc._vgs = {fake_vg.name: fake_vg}
+
+    monkeypatch.setattr(lvm, "_lvminfo", lc)
+
+    # TODO: is this the best way to handle this unlikely error
+    # An error with an LVM invalid output shall keep the local cache intact
+    with pytest.raises(lvm.InvalidOutputLine) as e:
+        lvm.getVG("vg-name")
+    assert "Fake lvm output" in str(e.value)
+    assert len(lc._vgs) == 1
+    assert len(lc._pvs) == 1
+
+
 @pytest.fixture
 def stale_pv(tmp_storage):
     dev_size = 1 * 1024**3
