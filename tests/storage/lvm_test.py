@@ -1937,7 +1937,7 @@ def stale_lv(tmp_storage):
     commands.run([
         "lvremove",
         "--devices", dev,
-        "{}/{}".format(vg_name, stale_lv_name),
+        f"{vg_name}/{stale_lv_name}",
     ])
 
     # The cache still keeps both lvs.
