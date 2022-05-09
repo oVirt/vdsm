@@ -90,6 +90,10 @@ class IscsiNodeError(IscsiError):
     pass
 
 
+class IscsiSessionExists(IscsiError):
+    pass
+
+
 class IscsiSessionNotFound(IscsiError):
     pass
 
@@ -322,6 +326,9 @@ def node_login(iface, portal, targetName):
 
         if e.rc == ISCSI_ERR_LOGIN_AUTH_FAILED:
             raise IscsiAuthenticationError(e.rc, e.out, e.err)
+
+        if e.rc == ISCSI_ERR_SESS_EXISTS:
+            raise IscsiSessionExists(e.rc, e.out, e.err)
 
         raise IscsiNodeError(e.rc, e.out, e.err)
 
