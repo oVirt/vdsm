@@ -1038,17 +1038,18 @@ def stale_pv(tmp_storage):
     pvs = sorted(pv.name for pv in lvm.getAllPVs())
     assert pvs == sorted([good_pv_name, stale_pv_name])
 
+    devices = ",".join([good_pv_name, stale_pv_name])
     # Simulate removal of the second PV on another host, leaving stale PV in
     # the cache.
     commands.run([
         "vgreduce",
-        "--config", tmp_storage.lvm_config(),
+        "--devices", devices,
         vg_name,
         stale_pv_name,
     ])
     commands.run([
         "pvremove",
-        "--config", tmp_storage.lvm_config(),
+        "--devices", devices,
         stale_pv_name,
     ])
 
@@ -1513,7 +1514,7 @@ def stale_vg(tmp_storage):
     # the cache.
     commands.run([
         "vgremove",
-        "--config", tmp_storage.lvm_config(),
+        "--devices", dev2,
         stale_vg_name,
     ])
 
@@ -1753,7 +1754,7 @@ def test_lv_refresh(tmp_storage):
     # Simulate extending the LV on the SPM.
     commands.run([
         "lvextend",
-        "--config", tmp_storage.lvm_config(),
+        "--devices", dev,
         "-L+1g",
         lv_fullname
     ])
@@ -1766,7 +1767,7 @@ def test_lv_refresh(tmp_storage):
     # Simulate extending the LV on the SPM.
     commands.run([
         "lvextend",
-        "--config", tmp_storage.lvm_config(),
+        "--devices", dev,
         "-L+1g",
         lv_fullname
     ])
@@ -1935,7 +1936,7 @@ def stale_lv(tmp_storage):
     # the cache.
     commands.run([
         "lvremove",
-        "--config", tmp_storage.lvm_config(),
+        "--devices", dev,
         "{}/{}".format(vg_name, stale_lv_name),
     ])
 
