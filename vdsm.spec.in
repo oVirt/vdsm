@@ -379,6 +379,7 @@ Requires:       ovirt-openvswitch >= 2.15
 Requires:       ovirt-python-openvswitch >= 2.15
 Requires:       nmstate >= 1.0
 Requires:       nmstate-plugin-ovsdb
+Requires:       python3-libnmstate
 Requires:       libnl3
 Requires:       lldpad
 Requires:       python3-six
