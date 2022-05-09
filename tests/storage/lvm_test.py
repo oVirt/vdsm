@@ -1627,6 +1627,7 @@ def test_lv_activate_deactivate(tmp_storage):
 @requires_root
 @pytest.mark.root
 def test_lv_deactivate_in_use(tmp_storage):
+    # TODO: This test does not work in active hosts.
     dev_size = 1 * GiB
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
