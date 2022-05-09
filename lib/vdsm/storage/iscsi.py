@@ -231,6 +231,10 @@ def loginToIscsiNode(iface, target):
     log.info("Logging in to iscsi target %s via iface %s", target, iface.name)
     try:
         iscsiadm.node_login(iface.name, target.address, target.iqn)
+    except iscsiadm.IscsiSessionExists:
+        # We are already logged in to this node, fail the request keeping the
+        # existing session.
+        raise
     except:
         removeIscsiNode(iface, target)
         raise
