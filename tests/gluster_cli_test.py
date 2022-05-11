@@ -164,9 +164,126 @@ class GlusterCliTests(TestCaseBase):
         volumeInfo = gcli._parseVolumeInfo(tree)
         self.assertEqual(volumeInfo, oVolumeInfo)
 
+    def _parseVolumeStripeCount_empty(self):
+        out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <cliOutput>
+              <opRet>0</opRet>
+              <opErrno>0</opErrno>
+              <opErrstr/>
+              <volInfo>
+                <volumes>
+                  <volume>
+                    <name>music</name>
+                    <id>b3114c71-741b-4c6f-a39e-80384c4ea3cf</id>
+                    <status>1</status>
+                    <statusStr>Started</statusStr>
+                    <brickCount>2</brickCount>
+                    <distCount>2</distCount>
+                    <replicaCount>2</replicaCount>
+                    <disperseCount>0</disperseCount>
+                    <arbiterCount>1</arbiterCount>
+                    <redundancyCount>0</redundancyCount>
+                    <type>2</type>
+                    <typeStr>Replicate</typeStr>
+                    <transport>0</transport>
+                    <bricks>
+                      <brick>192.168.122.2:/tmp/m_b1<name>192.168.122.2:/tmp/m_b1</name>
+                        <isArbiter>1</isArbiter>
+                        <hostUuid>04eb591b-2fd3-489e-a22c-5d342a3c713d</hostUuid>
+                      </brick>
+                      <brick>192.168.122.2:/tmp/m_b2<name>192.168.122.2:/tmp/m_b2</name>
+                        <isArbiter>1</isArbiter>
+                        <hostUuid>04eb591b-2fd3-489e-a22c-5d342a3c713d</hostUuid>
+                      </brick>
+                    </bricks>
+                    <optCount>1</optCount>
+                    <options>
+                      <option>
+                        <name>auth.allow</name>
+                        <value>*</value>
+                      </option>
+                    </options>
+                  </volume>
+                  <volume>
+                    <name>test1</name>
+                    <id>b444ed94-f346-4cda-bd55-0282f21d22db</id>
+                    <status>2</status>
+                    <statusStr>Stopped</statusStr>
+                    <brickCount>1</brickCount>
+                    <distCount>1</distCount>
+                    <replicaCount>1</replicaCount>
+                    <disperseCount>0</disperseCount>
+                    <arbiterCount>0</arbiterCount>
+                    <redundancyCount>0</redundancyCount>
+                    <type>0</type>
+                    <typeStr>Distribute</typeStr>
+                    <transport>1</transport>
+                    <bricks>
+                      <brick>192.168.122.2:/tmp/t_b1<name>192.168.122.2:/tmp/t_b1</name>
+                        <isArbiter>0</isArbiter>
+                        <hostUuid>04eb591b-2fd3-489e-a22c-5d342a3c713d</hostUuid>
+                      </brick>
+                    </bricks>
+                    <optCount>0</optCount>
+                    <options/>
+                  </volume>
+                  <count>2</count>
+                </volumes>
+              </volInfo>
+            </cliOutput>
+            """
+        tree = etree.fromstring(out)
+        oVolumeInfo = \
+            {'music': {'isArbiter': True,
+                       'brickCount': '2',
+                       'bricks': ['192.168.122.2:/tmp/m_b1',
+                                  '192.168.122.2:/tmp/m_b2'],
+                       'distCount': '2',
+                       'bricksInfo': [{
+                           'name': '192.168.122.2:/tmp/m_b1',
+                           'isArbiter': True,
+                           'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
+                       }, {
+                           'name': '192.168.122.2:/tmp/m_b2',
+                           'isArbiter': True,
+                           'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
+                       }],
+                       'options': {'auth.allow': '*'},
+                       'replicaCount': '2',
+                       'stripeCount': '1',
+                       'disperseCount': '0',
+                       'redundancyCount': '0',
+                       'transportType': [gcli.TransportType.TCP],
+                       'uuid': 'b3114c71-741b-4c6f-a39e-80384c4ea3cf',
+                       'volumeName': 'music',
+                       'volumeStatus': gcli.VolumeStatus.ONLINE,
+                       'volumeType': 'REPLICATE'},
+             'test1': {'isArbiter': False,
+                       'brickCount': '1',
+                       'bricks': ['192.168.122.2:/tmp/t_b1'],
+                       'distCount': '1',
+                       'bricksInfo': [{
+                           'name': '192.168.122.2:/tmp/t_b1',
+                           'isArbiter': False,
+                           'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
+                       }],
+                       'options': {},
+                       'replicaCount': '1',
+                       'stripeCount': '1',
+                       'disperseCount': '0',
+                       'redundancyCount': '0',
+                       'transportType': [gcli.TransportType.RDMA],
+                       'uuid': 'b444ed94-f346-4cda-bd55-0282f21d22db',
+                       'volumeName': 'test1',
+                       'volumeStatus': gcli.VolumeStatus.OFFLINE,
+                       'volumeType': 'DISTRIBUTE'}}
+        volumeInfo = gcli._parseVolumeInfo(tree)
+        self.assertEqual(volumeInfo, oVolumeInfo)
+
     def test_parseVolumeInfo(self):
         self._parseVolumeInfo_empty_test()
         self._parseVolumeInfo_test()
+        self._parseVolumeStripeCount_empty()
 
     def _parsePeerStatus_empty_test(self):
         out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
