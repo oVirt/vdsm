@@ -426,7 +426,7 @@ def _parseVolumeInfo(tree):
             value["volumeStatus"] = VolumeStatus.OFFLINE
         value['brickCount'] = el.find('brickCount').text
         value['distCount'] = el.find('distCount').text
-        value['stripeCount'] = el.find('stripeCount').text
+        value['stripeCount'] = el.findtext('stripeCount', '1')
         value['replicaCount'] = el.find('replicaCount').text
         value['disperseCount'] = el.find('disperseCount').text
         value['redundancyCount'] = el.find('redundancyCount').text
