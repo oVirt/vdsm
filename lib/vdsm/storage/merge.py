@@ -273,14 +273,17 @@ def finalize(subchain):
             else:
                 _finalize_internal_merge(dom, subchain)
 
-            if subchain.base_vol.chunked():
+            if subchain.base_vol.can_reduce():
                 # If the top volume is leaf, the base volume will become a leaf
                 # after the top volume is deleted.
                 optimal_size = subchain.base_vol.optimal_size(
                     as_leaf=subchain.top_vol.isLeaf())
                 actual_size = subchain.base_vol.getVolumeSize()
 
-        if subchain.base_vol.chunked() and optimal_size < actual_size:
+        # Optimal size must be computed while the image is prepared, but
+        # reducing with the volume still active will issue a warning from LVM.
+        # Thus, reduce after having teardown the volume.
+        if subchain.base_vol.can_reduce() and optimal_size < actual_size:
             _shrink_base_volume(subchain, optimal_size)
 
 

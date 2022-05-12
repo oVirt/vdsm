@@ -362,7 +362,12 @@ class TestFinalizeMerge:
 
     # TODO: use one make_env for all tests?
     @contextmanager
-    def make_env(self, sd_type='block', format='raw', chain_len=2):
+    def make_env(
+            self,
+            sd_type='block',
+            format='raw',
+            prealloc=sc.SPARSE_VOL,
+            chain_len=2):
         size = 2 * GiB
         base_fmt = sc.name2type(format)
         with fake_env(sd_type) as env:
@@ -372,7 +377,8 @@ class TestFinalizeMerge:
                 mp.setattr(blockVolume, 'rm', FakeResourceManager())
                 mp.setattr(image, 'Image', FakeImage)
 
-                env.chain = make_qemu_chain(env, size, base_fmt, chain_len)
+                env.chain = make_qemu_chain(
+                    env, size, base_fmt, chain_len, prealloc=prealloc)
 
                 volumes = {(vol.imgUUID, vol.volUUID): FakeVolume()
                            for vol in env.chain}
@@ -538,8 +544,18 @@ class TestFinalizeMerge:
                 ('reduce', (base_vol.optimal_size(as_leaf=True),), {}),
             ]
 
-    def test_reduce_not_chunked(self):
-        with self.make_env(sd_type='file', format='cow', chain_len=4) as env:
+    @pytest.mark.parametrize("sd_type, format, prealloc", [
+        # Not chunked, reduce not called
+        pytest.param('file', 'cow', sc.SPARSE_VOL),
+        # Preallocated, reduce not called
+        pytest.param('block', 'cow', sc.PREALLOCATED_VOL),
+    ])
+    def test_reduce_skipped(self, sd_type, format, prealloc):
+        with self.make_env(
+                sd_type=sd_type,
+                format=format,
+                prealloc=prealloc,
+                chain_len=4) as env:
             base_vol = env.chain[1]
             top_vol = env.chain[2]
             subchain_info = dict(sd_id=base_vol.sdUUID,
