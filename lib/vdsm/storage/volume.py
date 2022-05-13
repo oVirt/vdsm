@@ -103,6 +103,9 @@ class VolumeManifest(object):
     def chunked(self):
         return False
 
+    def can_reduce(self):
+        return False
+
     def validate(self):
         """
         Validate that the volume can be accessed

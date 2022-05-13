@@ -109,17 +109,19 @@ class TestBlockVolumeSize(VdsmTestCase):
 class TestBlockVolumeManifest(VdsmTestCase):
 
     @contextmanager
-    def make_volume(self, size, storage_type='block', format=sc.RAW_FORMAT):
+    def make_volume(self, size, format=sc.RAW_FORMAT, prealloc=sc.SPARSE_VOL):
         img_id = make_uuid()
         vol_id = make_uuid()
         # TODO fix make_volume helper to create the qcow image when needed
-        with fake_env(storage_type) as env:
+        with fake_env(storage_type='block') as env:
             if format == sc.RAW_FORMAT:
-                env.make_volume(size, img_id, vol_id, vol_format=format)
+                env.make_volume(
+                    size, img_id, vol_id, vol_format=format, prealloc=prealloc)
                 vol = env.sd_manifest.produceVolume(img_id, vol_id)
                 yield vol
             else:
-                chain = make_qemu_chain(env, size, format, 1)
+                chain = make_qemu_chain(
+                    env, size, format, chain_len=1, prealloc=prealloc)
                 yield chain[0]
 
     def test_max_size_raw(self):
@@ -208,3 +210,17 @@ class TestBlockVolumeManifest(VdsmTestCase):
 
             vol.updateInvalidatedSize()
             assert vol.getMetadata().capacity == expected_capacity
+
+    @permutations([
+        # format, prealloc, can_reduce
+        # Raw or preallocated disks cannot be reduced.
+        (sc.RAW_FORMAT, sc.PREALLOCATED_VOL, False),
+        (sc.COW_FORMAT, sc.PREALLOCATED_VOL, False),
+        # Cow sparse can be reduced.
+        (sc.COW_FORMAT, sc.SPARSE_VOL, True),
+        # Raw sparse is an invalid combination.
+    ])
+    def test_can_reduce(self, format, prealloc, can_reduce):
+        with self.make_volume(
+                size=GiB, format=format, prealloc=prealloc) as vol:
+            assert vol.can_reduce() == can_reduce
