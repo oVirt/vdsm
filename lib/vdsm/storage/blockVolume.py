@@ -67,6 +67,9 @@ class BlockVolumeManifest(volume.VolumeManifest):
     def chunked(self):
         return self.getFormat() == sc.COW_FORMAT
 
+    def can_reduce(self):
+        return self.chunked() and self.getType() == sc.SPARSE_VOL
+
     def getMetadataId(self):
         """
         Get the metadata Id
