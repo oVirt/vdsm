@@ -30,6 +30,8 @@ import subprocess
 import threading
 import time
 
+import sanlock
+
 from vdsm import constants
 from vdsm import utils
 
@@ -41,7 +43,6 @@ from vdsm.config import config
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
-from vdsm.storage.compat import sanlock
 
 
 MAX_HOST_ID = 250

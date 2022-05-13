@@ -23,14 +23,16 @@ from __future__ import division
 
 import json
 import time
+
 import pytest
+import sanlock
+
 from vdsm.common import concurrent
 from vdsm.common.units import MiB
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 
-from vdsm.storage.compat import sanlock
 
 LS_NAME = b"sd-uuid"
 LS_PATH = "ids"

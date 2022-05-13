@@ -34,7 +34,6 @@ dist_vdsmstorage_PYTHON = \
 	blockdev.py \
 	check.py \
 	clusterlock.py \
-	compat.py \
 	constants.py \
 	curlImgWrap.py \
 	devicemapper.py \
