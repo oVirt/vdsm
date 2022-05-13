@@ -21,11 +21,11 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import sanlock
 import six
 
 from .. common import compat
 
-from . compat import sanlock
 from . import blockSD
 from . import constants as sc
 from . import glusterSD

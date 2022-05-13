@@ -144,6 +144,7 @@ import time
 from collections import namedtuple
 from contextlib import contextmanager
 
+import sanlock
 import six
 
 from vdsm import utils
@@ -155,7 +156,6 @@ from vdsm.common.osutils import uninterruptible
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fsutils
-from vdsm.storage.compat import sanlock
 
 # The first 3 slots are reserved for the lockspace, the index, and the master
 # lease.

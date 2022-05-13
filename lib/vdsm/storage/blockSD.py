@@ -35,6 +35,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 from contextlib import closing
 
+import sanlock
 import six
 
 from vdsm.common import concurrent
@@ -63,7 +64,6 @@ from vdsm.storage import resourceManager as rm
 from vdsm.storage import sanlock_direct
 from vdsm.storage import sd
 from vdsm.storage import volumemetadata
-from vdsm.storage.compat import sanlock
 from vdsm.storage.mailbox import MAILBOX_SIZE
 from vdsm.storage.persistent import PersistentDict, DictValidator
 from vdsm.storage.volumemetadata import VolumeMetadata

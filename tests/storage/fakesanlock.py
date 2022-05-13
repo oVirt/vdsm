@@ -28,10 +28,10 @@ import threading
 
 from operator import itemgetter
 
+import sanlock
 from testlib import maybefail
 
 from vdsm.storage import constants as sc
-from vdsm.storage.compat import sanlock
 
 LVB_POISON = b"x"
 

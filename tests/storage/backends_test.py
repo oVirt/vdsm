@@ -21,13 +21,14 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import sanlock
+
 from vdsm.storage import backends
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import glusterSD
 from vdsm.storage import localFsSD
 from vdsm.storage import nfsSD
-from vdsm.storage.compat import sanlock
 
 from . marks import requires_sanlock
 
