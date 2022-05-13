@@ -24,10 +24,11 @@ from __future__ import print_function
 from collections import defaultdict
 import argparse
 
+import sanlock
+
 from vdsm import client
 from vdsm import utils
 from vdsm.config import config
-from vdsm.storage.compat import sanlock
 from . import UsageError
 from . import common
 from . import expose

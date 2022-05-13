@@ -24,6 +24,8 @@ import errno
 import logging
 import os
 
+import sanlock
+
 from vdsm import constants
 from vdsm import utils
 from vdsm.common import cmdutils
@@ -40,7 +42,6 @@ from vdsm.storage import outOfProcess as oop
 from vdsm.storage import qemuimg
 from vdsm.storage import task
 from vdsm.storage import volume
-from vdsm.storage.compat import sanlock
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.volumemetadata import VolumeMetadata
 

@@ -25,12 +25,12 @@ import errno
 import os
 
 import pytest
+import sanlock
 
 from .fakesanlock import FakeSanlock
 from vdsm.common import concurrent
 from vdsm.common.units import KiB, MiB
 from vdsm.storage import constants as sc
-from vdsm.storage.compat import sanlock
 
 
 INVALID_ALIGN_SECTOR = [

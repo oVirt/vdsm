@@ -32,13 +32,14 @@ import weakref
 from functools import partial
 import six
 
+import ioprocess
+
 from vdsm import constants
 from vdsm import utils
 from vdsm.common.osutils import get_umask
 from vdsm.config import config
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
-from vdsm.storage.compat import ioprocess
 
 DEFAULT_TIMEOUT = config.getint("irs", "process_pool_timeout")
 IOPROC_IDLE_TIME = config.getint("irs", "max_ioprocess_idle_time")

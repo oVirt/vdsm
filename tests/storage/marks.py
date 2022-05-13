@@ -25,6 +25,7 @@ from __future__ import division
 import os
 import sys
 
+import sanlock
 import selinux
 import six
 import pytest
@@ -32,8 +33,6 @@ import pytest
 from vdsm.common import cache
 from vdsm.common import commands
 from vdsm.common import compat
-
-from vdsm.storage.compat import sanlock
 
 from testing import (
     on_ovirt_ci,
