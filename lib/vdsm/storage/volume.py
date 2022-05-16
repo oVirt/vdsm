@@ -1474,6 +1474,9 @@ class Volume(object):
     def getCapacity(self):
         return self._manifest.getCapacity()
 
+    def can_reduce(self):
+        return self._manifest.can_reduce()
+
     @classmethod
     def max_size(cls, virtual_size, format):
         return cls.manifestClass.max_size(virtual_size, format)
