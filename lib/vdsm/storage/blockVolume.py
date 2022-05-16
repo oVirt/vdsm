@@ -420,8 +420,8 @@ class BlockVolumeManifest(volume.VolumeManifest):
             assert required_size > 0
             optimal_size = required_size
 
-        # Align to align size so callers can compare optimal size with the
-        # actual size.
+        # Align to align_size (lvm extent size) so callers can compare optimal
+        # size with the actual size of the logical volume.
         optimal_size = utils.round(optimal_size, cls.align_size)
 
         # Limit by maximum size.
