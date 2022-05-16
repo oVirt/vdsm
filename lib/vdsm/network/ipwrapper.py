@@ -90,6 +90,7 @@ class LinkType(object):
     TEAM = 'team'
     VETH = 'veth'
     VF = 'vf'
+    IPOIB = 'ipoib'
 
 
 @equals
@@ -207,6 +208,9 @@ class Link(object):
     def isMACVLAN(self):
         return self.type == LinkType.MACVLAN
 
+    def isIPoIB(self):
+        return self.type == LinkType.IPOIB
+
     def isFakeNIC(self):
         """
         Returns True iff vdsm config marks the DUMMY or VETH dev to be reported
@@ -217,7 +221,9 @@ class Link(object):
         return False
 
     def isNICLike(self):
-        return self.isNIC() or self.isVF() or self.isFakeNIC()
+        return (
+            self.isNIC() or self.isVF() or self.isFakeNIC() or self.isIPoIB()
+        )
 
     def isHidden(self):
         """Returns True iff vdsm config hides the device."""
