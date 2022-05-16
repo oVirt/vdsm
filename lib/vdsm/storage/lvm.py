@@ -649,12 +649,29 @@ class LVMCache(object):
                 "Marked vgs=%r as Unreadable due to reload failure",
                 logutils.Head(unreadable_vgs, max_items=20))
 
-    def _reloadvgs(self, vgName=None):
+    def _reload_single_vg(self, vg_name):
+        """
+        Run LVM 'vgs' command and update VG name.
+        """
         cmd = list(VGS_CMD)
+        cmd.append(vg_name)
+        out, error = self.run_command_error(
+            cmd, devices=self._getVGDevs([vg_name]))
 
+        with self._lock:
+            if error:
+                self._update_stale_vgs_locked([vg_name])
+
+            return self._updatevgs_locked(out, [vg_name])
+
+    def _reloadvgs(self, vgName=None):
+        """
+        Run LVM 'vgs' command and update VG names.
+        If no VG name is provided, reload all VGs.
+        """
         vgNames = normalize_args(vgName)
-        if vgNames:
-            cmd.extend(vgNames)
+        cmd = list(VGS_CMD)
+        cmd.extend(vgNames)
 
         out, error = self.run_command_error(
             cmd, devices=self._getVGDevs(vgNames))
@@ -896,7 +913,7 @@ class LVMCache(object):
         vg = self._vgs.get(vgName)
         if not vg or vg.is_stale():
             self.stats.miss()
-            vgs = self._reloadvgs(vgName)
+            vgs = self._reload_single_vg(vgName)
             vg = vgs.get(vgName)
         else:
             self.stats.hit()
