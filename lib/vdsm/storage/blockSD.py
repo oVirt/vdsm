@@ -521,7 +521,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                 "This PV is used by LVM to store the VG metadata")
 
     def _validatePVsPartOfVG(self, pv, dstPVs=None):
-        vgPvs = {os.path.basename(pv) for pv in lvm.listPVNames(self.sdUUID)}
+        vgPvs = {os.path.basename(path)
+                 for path in lvm.listPVNames(self.sdUUID)}
         if pv not in vgPvs:
             raise se.NoSuchPhysicalVolume(pv, self.sdUUID)
         if dstPVs:
