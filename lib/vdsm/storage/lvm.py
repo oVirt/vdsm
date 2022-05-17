@@ -577,6 +577,78 @@ class LVMCache(object):
                 devices = tuple(devices)
         return devices
 
+    def _updatevgs_locked(self, vgs_output, vg_names):
+        """
+        Update cached VGs based on the output of the LVM command:
+        - Add new VGs to the cache.
+        - Replace VGs in the cache with VGs reported by the 'vgs' command,
+          updating the VG attributes.
+        - If called without vg names, remove all VGs from the cache not
+          reported by LVM.
+        - If called with vg names, remove specifed VGs from the cache if they
+          were not reported by LVM.
+        Must be called while holding the lock.
+        Return dict of updated VGs.
+        """
+        updatedVGs = {}
+        vgsFields = {}
+        for line in vgs_output:
+            fields = [field.strip() for field in line.split(SEPARATOR)]
+            if len(fields) != VG_FIELDS_LEN:
+                raise InvalidOutputLine("vgs", line)
+
+            uuid = fields[VG._fields.index("uuid")]
+            pvNameIdx = VG._fields.index("pv_name")
+            pv_name = fields[pvNameIdx]
+            if pv_name == UNKNOWN:
+                # PV is missing, e.g. device lost of target not connected
+                continue
+            if uuid not in vgsFields:
+                fields[pvNameIdx] = [pv_name]  # Make a pv_names list
+                vgsFields[uuid] = fields
+            else:
+                vgsFields[uuid][pvNameIdx].append(pv_name)
+        for fields in vgsFields.values():
+            vg = VG.fromlvm(*fields)
+            if int(vg.pv_count) != len(vg.pv_name):
+                log.error("vg %s has pv_count %s but pv_names %s",
+                          vg.name, vg.pv_count, vg.pv_name)
+            self._vgs[vg.name] = vg
+            updatedVGs[vg.name] = vg
+
+        # Remove stale VGs
+        staleVGs = [name for name in (vg_names or self._vgs)
+                    if name not in updatedVGs]
+        for name in staleVGs:
+            if name in self._vgs:
+                log.warning("Removing stale VG %s", name)
+                del self._vgs[name]
+                # Remove fresh lvs indication of the vg removed from cache.
+                self._freshlv.discard(name)
+
+        return updatedVGs
+
+    def _update_stale_vgs_locked(self, vg_names):
+        """
+        Check if any VG is stale after an LVM command and make it Unreadable.
+        Log a warning if any VG has been made Unreadable.
+        Must be called while holding the lock.
+        """
+        unreadable_vgs = []
+        for v in (vg_names or self._vgs):
+            vg = self._vgs.get(v)
+            if vg and vg.is_stale():
+                self._vgs[v] = Unreadable(vg.name)
+                unreadable_vgs.append(vg.name)
+
+        if unreadable_vgs:
+            # This may be a real error (failure to reload existing VG)
+            # or no error at all (failure to reload non-existing VG),
+            # so we cannot make this an error.
+            log.warning(
+                "Marked vgs=%r as Unreadable due to reload failure",
+                logutils.Head(unreadable_vgs, max_items=20))
+
     def _reloadvgs(self, vgName=None):
         cmd = list(VGS_CMD)
 
@@ -589,59 +661,12 @@ class LVMCache(object):
 
         with self._lock:
             if error:
-                unreadable_vgs = []
-                for v in (vgNames or self._vgs):
-                    vg = self._vgs.get(v)
-                    if vg and vg.is_stale():
-                        self._vgs[v] = Unreadable(vg.name)
-                        unreadable_vgs.append(vg.name)
-
-                if unreadable_vgs:
-                    # This may be a real error (failure to reload existing VG)
-                    # or no error at all (failure to reload non-existing VG),
-                    # so we cannot make this an error.
-                    log.warning(
-                        "Marked vgs=%r as Unreadable due to reload failure",
-                        logutils.Head(unreadable_vgs, max_items=20))
+                self._update_stale_vgs_locked(vgNames)
 
                 # NOTE: vgs may return useful output even on failure, so we
                 # don't return here.
 
-            updatedVGs = {}
-            vgsFields = {}
-            for line in out:
-                fields = [field.strip() for field in line.split(SEPARATOR)]
-                if len(fields) != VG_FIELDS_LEN:
-                    raise InvalidOutputLine("vgs", line)
-
-                uuid = fields[VG._fields.index("uuid")]
-                pvNameIdx = VG._fields.index("pv_name")
-                pv_name = fields[pvNameIdx]
-                if pv_name == UNKNOWN:
-                    # PV is missing, e.g. device lost of target not connected
-                    continue
-                if uuid not in vgsFields:
-                    fields[pvNameIdx] = [pv_name]  # Make a pv_names list
-                    vgsFields[uuid] = fields
-                else:
-                    vgsFields[uuid][pvNameIdx].append(pv_name)
-            for fields in vgsFields.values():
-                vg = VG.fromlvm(*fields)
-                if int(vg.pv_count) != len(vg.pv_name):
-                    log.error("vg %s has pv_count %s but pv_names %s",
-                              vg.name, vg.pv_count, vg.pv_name)
-                self._vgs[vg.name] = vg
-                updatedVGs[vg.name] = vg
-
-            # Remove stale VGs
-            staleVGs = [name for name in (vgNames or self._vgs)
-                        if name not in updatedVGs]
-            for name in staleVGs:
-                if name in self._vgs:
-                    log.warning("Removing stale VG %s", name)
-                    del self._vgs[name]
-                    # Remove fresh lvs indication of the vg removed from cache.
-                    self._freshlv.discard(name)
+            updatedVGs = self._updatevgs_locked(out, vgNames)
 
             # If we updated all the VGs drop stale flag
             if not vgName:
