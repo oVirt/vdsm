@@ -1486,17 +1486,17 @@ def _checkpvsblksize(pvs, vgBlkSize=None):
             raise se.VolumeGroupBlockSizeError(vgBlkSize, pvBlkSize)
 
 
-def checkVGBlockSizes(vgUUID, vgBlkSize=None):
-    pvs = listPVNames(vgUUID)
+def checkVGBlockSizes(vg_name, vgBlkSize=None):
+    pvs = listPVNames(vg_name)
     if not pvs:
-        raise se.VolumeGroupDoesNotExist(vg_uuid=vgUUID)
+        raise se.VolumeGroupDoesNotExist(vg_name=vg_name)
     _checkpvsblksize(pvs, vgBlkSize)
 
 
-def getVGBlockSizes(vgUUID):
-    pvs = listPVNames(vgUUID)
+def getVGBlockSizes(vg_name):
+    pvs = listPVNames(vg_name)
     if not pvs:
-        raise se.VolumeGroupDoesNotExist(vg_uuid=vgUUID)
+        raise se.VolumeGroupDoesNotExist(vg_name=vg_name)
     # Returning the block size of the first pv is correct since we don't allow
     # devices with different block size to be on the same VG.
     return _getpvblksize(pvs[0])
