@@ -1643,6 +1643,66 @@ def test_create_illegal_volume(domain_factory, domain_version, fake_task,
     assert vol.getLegality() == sc.ILLEGAL_VOL
 
 
+@requires_root
+def test_reduce_volume_called(domain_factory, fake_task, fake_sanlock):
+    sd_uuid = str(uuid.uuid4())
+    dom = domain_factory.create_domain(sd_uuid=sd_uuid, version=5)
+
+    img_uuid = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+    vol_capacity = 10 * GiB
+    initial_size = 5 * GiB
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        capacity=vol_capacity,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType=sc.DATA_DISKTYPE,
+        volUUID=vol_id,
+        desc="Over extended volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        initial_size=initial_size)
+
+    # Prepare volume before reducing.
+    vol = dom.produceVolume(img_uuid, vol_id)
+    vol.prepare()
+    dom.reduceVolume(img_uuid, vol_id, allowActive=True)
+
+    # Check that (prepared) volume size has been reduced.
+    new_size = dom.getVolumeSize(img_uuid, vol_id).apparentsize
+    assert new_size == vol.optimal_size()
+
+
+@requires_root
+def test_reduce_volume_skipped(domain_factory, fake_task, fake_sanlock):
+    sd_uuid = str(uuid.uuid4())
+    dom = domain_factory.create_domain(sd_uuid=sd_uuid, version=5)
+
+    img_uuid = str(uuid.uuid4())
+    vol_id = str(uuid.uuid4())
+    vol_capacity = 10 * GiB
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        capacity=vol_capacity,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.PREALLOCATED_VOL,
+        diskType=sc.DATA_DISKTYPE,
+        volUUID=vol_id,
+        desc="Base volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    # Volume is not prepared but it does fail since we skip the reduce
+    # for preallocated volume.
+    dom.reduceVolume(img_uuid, vol_id)
+
+    # Check that volume size has not changed.
+    assert dom.getVolumeSize(img_uuid, vol_id).apparentsize == vol_capacity
+
+
 LVM_TAG_CHARS = string.ascii_letters + "0123456789_+.-/=!:#"
 
 LVM_TAGS = [
