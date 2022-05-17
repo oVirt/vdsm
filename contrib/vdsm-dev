@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+# Author: Albert Esteve <aesteve@redhat.com>
+
+venv_path=$HOME/.venv/vdsm
+venv_activate_path=${venv_path}/bin/activate
+user_storage_path=/var/tmp/vdsm-storage/
+
+print_help()
+{
+    echo "oVirt/vdsm command line helper."
+    echo "Should be run from the repository root folder."
+    echo "Usage: $0 CMD [options]"
+    echo
+    echo "Available commands:"
+    echo "help:          Print this message and exits."
+    echo "build-podman:  Build RPMs in a container."
+    echo "                 Receives an container image as first argument [default=quay.io/ovirt/vdsm-test-centos-8]"
+    echo "build-upgrade: Build vdsm, make RPMs, and update local packages."
+    echo "test:          Run any test from specified environment using tox."
+    echo "root-test:     Run one test as root from specified environment using tox."
+    echo "                 Receives an environment with -e env [default=storage],"
+    echo "                 followed by the test path. [mandatory]"
+    echo "test-storage:  Run one/all storage tests using tox."
+    echo "coverage:      Show coverage results generated after a test run."
+    echo "                 Receives an environment with '-e env'. [default=storage]"
+    echo "Examples:"
+    echo "Run a storage test"
+    echo "  $ $0 test-storage storage/lvm_test.py"
+    echo "Run all virt and storage tests"
+    echo "  $ $0 test -e virt,storage"
+    echo "Run a test as root"
+    echo "  $ $0 root-test [-e storage] storage/storageserver_test.py"
+    echo "Show network coverage"
+    echo "  $ $0 coverage -e network"
+}
+
+
+check_storage_env()
+{
+    while test $# -gt 0
+    do
+        case "$1" in
+            -e)
+                shift
+                env=$1
+                if [ $env == *"storage"* ]; then
+                    make storage
+                fi
+                ;;
+            *)
+                # Let tox handle the rest of the arguments
+                ;;
+        esac
+        shift
+    done
+}
+
+
+if [ -z "$1" ]; then
+    echo "Command missing"
+    print_help
+    exit 1
+fi
+
+case $1 in
+
+    help )
+
+        print_help
+
+        ;;
+
+    build-podman )
+
+        shift
+        image=quay.io/ovirt/vdsm-test-centos-8
+        if [ ! -z "$1" ]; then
+            image="$1"
+        fi
+
+        podman run \
+            --env-host \
+            --privileged \
+            --rm \
+            -it \
+            --volume `pwd`:/vdsm:Z \
+            "$image" \
+            bash -c "cd /vdsm && ./autogen.sh --system --enable-timestamp && make rpm"
+
+        ;;
+
+    build-upgrade )
+
+        ./autogen.sh --system --enable-timestamp && make all rpm upgrade
+
+        ;;
+
+    test )
+
+        if [ ! -f $venv_activate_path ]; then
+            make venv
+        fi
+
+        # Loop all params passed to the script and check if storage is needed
+        check_storage_env "$@"
+
+        source ${venv_activate_path}
+        echo "Running: tox ${@:2}"
+        tox "${@:2}"
+
+        ;;
+
+    root-test )
+
+        if [ ! -f $venv_activate_path ]; then
+            make venv
+        fi
+
+        # Loop all params passed to the script and check if storage is needed
+        check_storage_env "$@"
+
+        shift
+        env="storage"
+        if [ "$1" == "-e" ]; then
+            shift
+            env="$1"
+            test="$2"
+        else
+            test="$1"
+        fi
+
+        if [ -z $test ]; then
+            echo "Missing mandatory test argument"
+            exit 1
+        fi
+
+        source ${venv_activate_path}
+        echo "Running: sudo ${venv_path}/bin/tox -e {$env} --workdir .root-tox  -- -vv $test"
+        echo "Coverage check skipped"
+        echo "Coverage report created at ./tests/htmlcov-root-$env"
+        sudo ${venv_path}/bin/tox -e {$env} --workdir .root-tox  -- -vv $test --cov-report=html:htmlcov-root-$env  --cov-fail-under 0
+
+        ;;
+
+    test-storage )
+
+        shift
+        test=$1
+       
+        if [ ! -f $venv_activate_path ]; then
+            make venv
+        fi
+
+        make storage
+
+        source ${venv_activate_path}
+        if [[ $test == "" ]]; then
+            echo "Running: tox -e storage"
+            tox -e storage
+        else
+            echo "Running: tox -e storage -- -vv $test ${@:2}"
+            echo "Coverage check skipped"
+            tox -e storage -- -vv $test "${@:2}" --cov-fail-under 0
+        fi
+
+        ;;
+
+    coverage )
+
+        env="storage"
+        while test $# -gt 0
+        do
+            case "$1" in
+                -e)
+                    shift
+                    env=$1
+                    ;;
+                *)
+                    echo "Unrecognized parameter: $1"
+                    ;;
+            esac
+            shift
+        done
+
+        cov_path="tests/htmlcov-$env/index.html"
+
+        if [ ! -f $cov_path ]; then
+            echo "No coverage summary found at $cov_path"
+            exit 1
+        fi
+
+        xdg-open $cov_path
+
+        ;;
+
+    * )
+
+        echo "Unknwon option: $1"
+        print_help
+        exit 1
+
+        ;;
+
+esac
