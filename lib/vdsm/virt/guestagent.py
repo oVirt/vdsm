@@ -161,8 +161,8 @@ class GuestAgent(object):
     MAX_MESSAGE_SIZE = 1 * MiB  # for now
 
     def __init__(self, socketName, channelListener, log, onStatusChange,
-                 qgaGuestInfo, api_version=None, user='Unknown',
-                 ips=''):
+                 qgaGuestInfo, api_version=None, username='Unknown',
+                 ips='', guestFQDN='', netIfaces=[]):
         self.effectiveApiVersion = min(
             api_version or _IMPLICIT_API_VERSION_ZERO,
             _MAX_SUPPORTED_API_VERSION)
@@ -175,15 +175,15 @@ class GuestAgent(object):
         self.guestDiskMapping = {}
         self.oVirtGuestDiskMapping = {}
         self.guestInfo = {
-            'username': user,
+            'username': username,
             'memUsage': 0,
             'guestCPUCount': -1,
             'guestIPs': ips,
-            'guestFQDN': '',
+            'guestFQDN': guestFQDN,
             'session': 'Unknown',
             'appsList': (),
             'disksUsage': [],
-            'netIfaces': [],
+            'netIfaces': netIfaces,
             'memoryStats': {}}
         self._agentTimestamp = 0
         self._channelListener = channelListener
@@ -476,8 +476,13 @@ class GuestAgent(object):
                 info['appsList'] = self.guestInfo['appsList']
             if len(self.guestInfo['guestIPs']) > 0:
                 info['guestIPs'] = self.guestInfo['guestIPs']
+            # The following may be passed from migration source
             if len(self.guestInfo['guestFQDN']) > 0:
                 info['guestFQDN'] = self.guestInfo['guestFQDN']
+            if len(self.guestInfo['netIfaces']) > 0:
+                info['netIfaces'] = self.guestInfo['netIfaces']
+            if self.guestInfo['username'] != "Unknown":
+                info['username'] = self.guestInfo['username']
         qga = self._qgaGuestInfo()
         if qga is not None:
             if 'diskMapping' in qga:

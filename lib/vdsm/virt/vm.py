@@ -364,10 +364,14 @@ class Vm(object):
         self.conf.update(params)
         self._external = params.get('external', False)
         self.arch = cpuarch.effective()
+        migrated_guest_info = {}
         self._src_domain_xml = params.get('_srcDomXML')
         if self._src_domain_xml is not None:
             self._domain = DomainDescriptor(
                 self._src_domain_xml, xml_source=XmlSource.MIGRATION_SOURCE)
+            for k in ['guestFQDN', 'netIfaces', 'username']:
+                if k in params:
+                    migrated_guest_info[k] = params[k]
         else:
             self._domain = DomainDescriptor(
                 params['xml'], xml_source=XmlSource.INITIAL)
@@ -458,7 +462,8 @@ class Vm(object):
             self._guestSocketFile, self.cif.channelListener, self.log,
             self._onGuestStatusChange,
             lambda: self.cif.qga_poller.get_guest_info(self.id),
-            self._guest_agent_api_version)
+            self._guest_agent_api_version,
+            **migrated_guest_info)
         self._qga_lock = threading.Lock()
         self._released = threading.Event()
         self._releaseLock = threading.Lock()
@@ -2022,6 +2027,7 @@ class Vm(object):
         return self._external_data[kind].update(force=force)
 
     def migration_parameters(self):
+        guest_stats = self._getGuestStats()
         return {
             '_srcDomXML': self._dom.XMLDesc(),
             'vmId': self.id,
@@ -2029,6 +2035,9 @@ class Vm(object):
             'elapsedTimeOffset': (
                 time.time() - self._startTime
             ),
+            'guestFQDN': guest_stats['guestFQDN'],
+            'username': guest_stats['username'],
+            'netIfaces': guest_stats.get('netIfaces', []),
         }
 
     def migratable_domain_xml(self):
