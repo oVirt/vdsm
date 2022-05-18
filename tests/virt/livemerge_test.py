@@ -30,7 +30,8 @@ import pytest
 from vdsm.common import exception
 from vdsm.common import response
 from vdsm.common import xmlutils
-from vdsm.common.units import GiB
+from vdsm.common.config import config
+from vdsm.common.units import GiB, MiB
 
 from vdsm.virt import metadata
 from vdsm.virt import migration
@@ -54,6 +55,10 @@ from . import vmfakelib as fake
 TIMEOUT = 10
 
 log = logging.getLogger("test")
+
+
+def chunk_size():
+    return config.getint("irs", "volume_utilization_chunk_mb") * MiB
 
 
 class FakeTime(object):
@@ -302,12 +307,11 @@ def test_merger_dump_jobs(fake_time):
 
     vm = RunningVM(config)
 
-    top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
-    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
-
     # No jobs yet.
 
     assert vm._drive_merger.dump_jobs() == {}
+
+    simulate_base_needs_extend(vm, sd_id, img_id, top_id, base_id)
 
     vm.merge(**merge_params)
 
@@ -316,37 +320,27 @@ def test_merger_dump_jobs(fake_time):
     assert vm._drive_merger.dump_jobs() == {
         job_id: {
             "bandwidth": merge_params["bandwidth"],
-            "base": merge_params["baseVolUUID"],
+            "base": base_id,
             "disk": merge_params["driveSpec"],
             "drive": "sda",
             "state": Job.EXTEND,
             "extend": {
                 "attempt": 1,
-                "base_size": base["apparentsize"],
-                "capacity": top["capacity"],
                 "started": fake_time.time,
-                "top_size": top["apparentsize"],
             },
             "pivot": None,
             "id": job_id,
-            "top": merge_params["topVolUUID"],
+            "top": top_id,
         }
     }
 
 
 def test_merger_load_jobs(fake_time):
     config = Config('active-merge')
-    sd_id = config.values["drive"]["domainID"]
-    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
-    top_id = merge_params["topVolUUID"]
-    base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
-
-    top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
-    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
 
     assert vm._drive_merger.dump_jobs() == {}
 
@@ -361,8 +355,6 @@ def test_merger_load_jobs(fake_time):
             "state": Job.EXTEND,
             "extend": {
                 "attempt": 1,
-                "base_size": base["apparentsize"],
-                "top_size": top["apparentsize"],
                 "started": fake_time.time,
             },
             "pivot": None,
@@ -399,6 +391,8 @@ def test_active_merge(monkeypatch):
     # No active block jobs before calling merge.
     assert vm.query_jobs() == {}
 
+    simulate_base_needs_extend(vm, sd_id, img_id, top_id, base_id)
+
     vm.merge(**merge_params)
 
     # Merge persists the job with EXTEND state.
@@ -426,12 +420,12 @@ def test_active_merge(monkeypatch):
     persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.EXTEND
 
-    # We should extend to next volume size based on base and top currrent size,
-    # base volume capacity, and chunk size configuration.
-    top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
+    # We should extend to next volume size based on the required size for this
+    # merge, including bitmaps size.
+    measure = vm.cif.irs.measure_info[(top_id, base_id)]
+    required_size = measure["required"] + measure["bitmaps"]
     base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
-    max_alloc = base["apparentsize"] + top["apparentsize"]
-    new_size = drive.getNextVolumeSize(max_alloc, top["capacity"])
+    new_size = drive.getNextVolumeSize(required_size, base["capacity"])
 
     simulate_volume_extension(vm, base_id)
 
@@ -602,6 +596,8 @@ def test_active_merge_pivot_failure(monkeypatch):
     # No active block jobs before calling merge.
     assert vm.query_jobs() == {}
 
+    simulate_base_needs_extend(vm, sd_id, img_id, top_id, base_id)
+
     vm.merge(**merge_params)
 
     # Merge persists the job with EXTEND state.
@@ -615,12 +611,12 @@ def test_active_merge_pivot_failure(monkeypatch):
     persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.EXTEND
 
-    # We should extend to next volume size based on base and top currrent size,
-    # base volume capacity, and chunk size configuration.
-    top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
+    # We should extend to next volume size based on the required size for this
+    # merge, including bitmaps size.
+    measure = vm.cif.irs.measure_info[(top_id, base_id)]
+    required_size = measure["required"] + measure["bitmaps"]
     base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
-    max_alloc = base["apparentsize"] + top["apparentsize"]
-    new_size = drive.getNextVolumeSize(max_alloc, top["capacity"])
+    new_size = drive.getNextVolumeSize(required_size, base["capacity"])
 
     simulate_volume_extension(vm, base_id)
 
@@ -694,11 +690,16 @@ def test_active_merge_storage_unavailable(monkeypatch):
     monkeypatch.setattr(CleanupThread, "WAIT_INTERVAL", 0.01)
 
     config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
     base_id = merge_params["baseVolUUID"]
+    top_id = merge_params["topVolUUID"]
 
     vm = RunningVM(config)
+
+    simulate_base_needs_extend(vm, sd_id, img_id, top_id, base_id)
 
     with monkeypatch.context() as ctx:
         # Simulate unavailable storage.
@@ -760,6 +761,9 @@ def test_internal_merge():
     new_chain = [vol_id for vol_id in orig_chain if vol_id != top_id]
 
     assert vm.query_jobs() == {}
+
+    simulate_base_needs_extend(
+        vm, sd_id, img_id, top_id, base_id, active=False)
 
     vm.merge(**merge_params)
 
@@ -896,28 +900,21 @@ def test_extend_timeout_recover(fake_time):
     img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
-    base_id = merge_params["baseVolUUID"]
     top_id = merge_params["topVolUUID"]
+    base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
 
-    vm.merge(**merge_params)
+    simulate_base_needs_extend(vm, sd_id, img_id, top_id, base_id)
 
-    # Find base and top sizes. They do not change during this test.
-    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
-    top = vm.cif.irs.prepared_volumes[(sd_id, img_id, top_id)]
-    base_size = base["apparentsize"]
-    top_size = top["apparentsize"]
+    vm.merge(**merge_params)
 
     # Job starts at EXTEND state, tracking the first extend attempt.
     persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.EXTEND
     assert persisted_job["extend"] == {
         "attempt": 1,
-        "base_size": base_size,
-        "capacity": top["capacity"],
         "started": fake_time.time,
-        "top_size": top_size,
     }
 
     # First extend request was sent.
@@ -932,10 +929,7 @@ def test_extend_timeout_recover(fake_time):
     assert persisted_job["state"] == Job.EXTEND
     assert persisted_job["extend"] == {
         "attempt": 2,
-        "base_size": base_size,
-        "capacity": top["capacity"],
         "started": fake_time.time,
-        "top_size": top_size,
     }
 
     # Second extend request was sent.
@@ -948,49 +942,44 @@ def test_extend_timeout_recover(fake_time):
     assert persisted_job["state"] == Job.COMMIT
 
 
-def test_extend_use_original_base_size(fake_time):
+def test_extend_update_switch_to_commit(fake_time):
     config = Config('active-merge')
     sd_id = config.values["drive"]["domainID"]
     img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
     base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
+
+    simulate_base_needs_extend(vm, sd_id, img_id, top_id, base_id)
 
     vm.merge(**merge_params)
 
     # Find base volume size.
     base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
-    base_size = base["apparentsize"]
 
     # Job starts at EXTEND state, tracking the first extend attempt.
     persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.EXTEND
     assert persisted_job["extend"]["attempt"] == 1
-    assert persisted_job["extend"]["base_size"] == base_size
 
     # Just when the extend timed out, the base volume was extended, but the
     # extend callback was not called yet.
-    new_size1 = vm.cif.irs.extend_requests[0][2]
-    base["apparentsize"] = new_size1
+    new_size = vm.cif.irs.extend_requests[0][2]
+    base["apparentsize"] = new_size
 
     # Simulate extend timeout, triggering the next extend attempt.
     fake_time.time += DriveMerger.EXTEND_TIMEOUT + 1
     vm.query_jobs()
 
-    # Job tracks the second extend attempt, using the original base size.
+    # Job detected that the base volume was extended and move to COMMIT state.
     persisted_job = parse_jobs(vm)[job_id]
-    assert persisted_job["state"] == Job.EXTEND
-    assert persisted_job["extend"]["attempt"] == 2
-    assert persisted_job["extend"]["base_size"] == base_size
+    assert persisted_job["state"] == Job.COMMIT
 
-    # Second extend request was sent same size. This extend does not have any
-    # effect since the volume was already extended.
-    new_size2 = vm.cif.irs.extend_requests[1][2]
-    assert new_size2 == new_size1
-
-    # The first extend callback is called now, moving the job to COMMIT state.
+    # Simulate the extend callback - it has no effect since the jobs already
+    # moved to new state.
     simulate_volume_extension(vm, base_id)
     persisted_job = parse_jobs(vm)[job_id]
     assert persisted_job["state"] == Job.COMMIT
@@ -1003,8 +992,11 @@ def test_extend_use_current_top_size(fake_time):
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
     top_id = merge_params["topVolUUID"]
+    base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
+
+    simulate_base_needs_extend(vm, sd_id, img_id, top_id, base_id)
 
     vm.merge(**merge_params)
 
@@ -1018,8 +1010,10 @@ def test_extend_use_current_top_size(fake_time):
     # First extend request was sent based on base and top size.
     new_size1 = vm.cif.irs.extend_requests[0][2]
 
-    # While waiting for extend completion, top volume was extended.
-    top["apparentsize"] += GiB
+    # While waiting for extend completion, guest wrote 1 GiB of data, and the
+    # top wolume was extended.
+    top["apparentsize"] += chunk_size()
+    vm.cif.irs.measure_info[(top_id, base_id)]["required"] += GiB
 
     # Simulate extend timeout, triggering the next extend attempt.
     fake_time.time += DriveMerger.EXTEND_TIMEOUT + 1
@@ -1030,17 +1024,23 @@ def test_extend_use_current_top_size(fake_time):
     assert persisted_job["state"] == Job.EXTEND
     assert persisted_job["extend"]["attempt"] == 2
 
-    # Second extend request was sent with bigger volume size.
+    # Second extend request considered the changed measure results.
     new_size2 = vm.cif.irs.extend_requests[1][2]
     assert new_size2 == new_size1 + GiB
 
 
 def test_extend_timeout_all(fake_time):
     config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
+    base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
+
+    simulate_base_needs_extend(vm, sd_id, img_id, top_id, base_id)
 
     vm.merge(**merge_params)
 
@@ -1080,10 +1080,16 @@ def test_extend_timeout_all(fake_time):
 
 def test_extend_error_all(fake_time):
     config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
+    base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
+
+    simulate_base_needs_extend(vm, sd_id, img_id, top_id, base_id)
 
     vm.merge(**merge_params)
 
@@ -1151,13 +1157,18 @@ def test_extend_skipped():
 
 def test_active_merge_canceled_during_commit():
     config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
     base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
 
     assert vm.query_jobs() == {}
+
+    simulate_base_needs_extend(vm, sd_id, img_id, top_id, base_id)
 
     vm.merge(**merge_params)
 
@@ -1211,13 +1222,18 @@ def test_active_merge_canceled_during_commit():
 
 def test_active_merge_canceled_during_cleanup(monkeypatch):
     config = Config('active-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
     base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
 
     assert vm.query_jobs() == {}
+
+    simulate_base_needs_extend(vm, sd_id, img_id, top_id, base_id)
 
     vm.merge(**merge_params)
 
@@ -1271,12 +1287,20 @@ def test_active_merge_canceled_during_cleanup(monkeypatch):
 
 
 def test_block_job_info_error(monkeypatch):
-    config = Config("internal-merge")
+    config = Config('internal-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
     base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
+
+    assert vm.query_jobs() == {}
+
+    simulate_base_needs_extend(
+        vm, sd_id, img_id, top_id, base_id, active=False)
 
     vm.merge(**merge_params)
 
@@ -1325,11 +1349,19 @@ def test_block_job_info_error(monkeypatch):
 
 
 def test_merge_commit_error(monkeypatch):
-    config = Config("internal-merge")
+    config = Config('internal-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
+    top_id = merge_params["topVolUUID"]
     base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
+
+    assert vm.query_jobs() == {}
+
+    simulate_base_needs_extend(
+        vm, sd_id, img_id, top_id, base_id, active=False)
 
     def commit_error(*args, **kwargs):
         raise fake.libvirt_error(
@@ -1351,11 +1383,20 @@ def test_merge_commit_error(monkeypatch):
 
 
 def test_merge_job_already_exists(monkeypatch):
-    config = Config("internal-merge")
+    config = Config('internal-merge')
+    sd_id = config.values["drive"]["domainID"]
+    img_id = config.values["drive"]["imageID"]
     merge_params = config.values["merge_params"]
     job_id = merge_params["jobUUID"]
+    top_id = merge_params["topVolUUID"]
+    base_id = merge_params["baseVolUUID"]
 
     vm = RunningVM(config)
+
+    assert vm.query_jobs() == {}
+
+    simulate_base_needs_extend(
+        vm, sd_id, img_id, top_id, base_id, active=False)
 
     # Calling merge twice will fail the second call with same block
     # job already tracked from first call.
@@ -1389,6 +1430,25 @@ def test_merge_base_too_small(monkeypatch):
 
     assert vm.query_jobs() == {}
     assert parse_jobs(vm) == {}
+
+
+def simulate_base_needs_extend(
+        vm, sd_id, img_id, top_id, base_id, active=True):
+    base = vm.cif.irs.prepared_volumes[(sd_id, img_id, base_id)]
+
+    # Set required to maximum value before base need extension. For active
+    # volume we extend if required + chunk > current.  For internal volume we
+    # extend if required > current.
+    if active:
+        required = base["apparentsize"] - chunk_size()
+    else:
+        required = base["apparentsize"]
+
+    # Since we report non-zero bitmaps value, base need to be extended.
+    vm.cif.irs.measure_info[(top_id, base_id)] = {
+        "required": required,
+        "bitmaps": 1 * MiB,
+    }
 
 
 def simulate_volume_extension(vm, vol_id):
