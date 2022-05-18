@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2021 Red Hat, Inc.
+# Copyright 2011-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,7 +80,17 @@ parameters = [
 
         ('migration_listener_timeout', '30',
             'Time to wait (in seconds) for migration destination to start '
-            'listening before migration begins.'),
+            'listening before migration begins. The timeout may be prolonged '
+            'automatically to account for system or VM status, up to '
+            'max_migration_listener_timeout.'),
+
+        ('max_migration_listener_timeout', '600',
+            'Maximum time to wait (in seconds) for migration destination to '
+            'start listening before migration begins.'),
+
+        ('migration_listener_prepare_disk_timeout', '2.0',
+            'Time (in seconds) to prolong migration_listener_timeout per each '
+            'disk needing modifying udev rules.'),
 
         ('migration_max_bandwidth', '52',
             'Local VDSM setting of the maximum bandwidth for sending '
