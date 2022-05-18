@@ -81,6 +81,7 @@ from vdsm.common.logutils import SimpleLogAdapter, Suppressed
 from vdsm.network import api as net_api
 
 # TODO: remove these imports, code using this should use storage apis.
+from vdsm.storage import constants as sc
 from vdsm.storage import qemuimg
 from vdsm.storage import sdc
 
@@ -6067,6 +6068,27 @@ class Vm(object):
         self._updateDomainDescriptor()
 
     # Accessing storage
+
+    def measure(self, domainID, imageID, topID, dest_format, backing=True,
+                baseID=None):
+        """
+        Measure size required for merging top into base.
+        """
+        res = self.cif.irs.measure(
+            domainID,
+            imageID,
+            topID,
+            sc.name2type(dest_format),
+            backing=backing,
+            baseUUID=baseID)
+
+        if res['status']['code'] != 0:
+            message = res['status']['message']
+            raise errors.StorageUnavailableError(
+                f"Unable to measure domain {domainID} image {imageID} top "
+                f"{topID} base {baseID}: {message}")
+
+        return res['result']
 
     def getVolumeSize(self, domainID, poolID, imageID, volumeID):
         """ Return volume size info by accessing storage """
