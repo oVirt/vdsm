@@ -46,6 +46,7 @@ from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import make_config
+from testlib import read_data
 
 from . import vmfakelib as fake
 import pytest
@@ -266,6 +267,35 @@ class TestPostCopy(TestCaseBase):
                      params={'vmType': 'kvm'}) as testvm:
             stats = testvm.getStats()
         assert stats['status'] == vmstatus.PAUSED
+
+
+class TestMigrationTimeout:
+
+    CONFIG = make_config(
+        [('vars', 'migration_listener_timeout', '30'),
+         ('vars', 'max_migration_listener_timeout', '5')]
+    )
+
+    def test_disk_timeout_needed(self):
+        with fake.VM(xmldevices=read_data('disk_devices.xml')) as testvm:
+            timeout = testvm._disk_preparation_timeout()
+            assert timeout == 10.0
+
+    def test_no_disks(self):
+        with fake.VM() as testvm:
+            timeout = testvm._disk_preparation_timeout()
+            assert timeout == 0.0
+
+    def test_overall_timeout(self):
+        with fake.VM(xmldevices=read_data('disk_devices.xml')) as testvm:
+            timeout = testvm._migration_destination_prepare_timeout()
+            assert timeout == 46.0
+
+    def test_max_timeout(self, monkeypatch):
+        monkeypatch.setattr(vdsm.virt.vm, 'config', self.CONFIG)
+        with fake.VM() as testvm:
+            timeout = testvm._migration_destination_prepare_timeout()
+            assert timeout == 5
 
 
 class FakeServer(object):
