@@ -1183,6 +1183,26 @@ class Vm(object):
             load = len(self.cif.vmContainer)
         return base * (doubler + load) / doubler
 
+    def _disk_preparation_timeout(self):
+        """
+        Return approximate timeout for disk preparation.
+
+        Some disk devices require modifying and reloading udev rules.
+        Currently, udev rules are reloaded for each such device individually.
+        This function returns a wild-guess timeout value based on the number
+        of such devices.
+
+        :returns: The timeout in seconds (int).
+        """
+        n_disks_to_appropriate = 0
+        for element in self._domain.devices.findall('./disk/source[@dev]'):
+            if element.attrib['dev'].startswith('/dev/mapper/'):
+                n_disks_to_appropriate += 1
+        per_disk_time = config.getfloat(
+            'vars', 'migration_listener_prepare_disk_timeout'
+        )
+        return per_disk_time * n_disks_to_appropriate
+
     def onReboot(self):
         try:
             self.log.info('reboot event')
@@ -5766,14 +5786,21 @@ class Vm(object):
             if alias in aliasToDevice:
                 aliasToDevice[alias]._deviceXML = xmlutils.tostring(deviceXML)
 
+    def _migration_destination_prepare_timeout(self):
+        prepare_timeout = self._load_corrected_timeout(
+            config.getint('vars', 'migration_listener_timeout'), doubler=5
+        ) + self._disk_preparation_timeout()
+        max_timeout = config.getint('vars', 'max_migration_listener_timeout')
+        prepare_timeout = min(prepare_timeout, max_timeout)
+        return prepare_timeout
+
     def waitForMigrationDestinationPrepare(self):
         """Wait until paths are prepared for migration destination"""
         # Wait for the VM to start its creation. There is no reason to start
         # the timed waiting for path preparation before the work has started.
         self.log.debug('migration destination: waiting for VM creation')
         self._vmCreationEvent.wait()
-        prepare_timeout = self._load_corrected_timeout(
-            config.getint('vars', 'migration_listener_timeout'), doubler=5)
+        prepare_timeout = self._migration_destination_prepare_timeout()
         self.log.debug('migration destination: waiting %ss '
                        'for path preparation', prepare_timeout)
         self._incoming_migration_prepared.wait(prepare_timeout)

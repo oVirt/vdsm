@@ -1,0 +1,161 @@
+<disk device="disk" snapshot="no" type="block">
+  <source dev="/path/to/volume">
+    <seclabel model="dac" relabel="no" type="none" />
+  </source>
+  <target bus="virtio" dev="vda"/>
+  <serial>54-a672-23e5b495a9ea</serial>
+  <driver cache="none" discard="unmap" error_policy="stop"
+          io="native" name="qemu" type="raw"/>
+</disk>
+<disk device="disk" snapshot="no" type="block">
+  <source dev="/path/to/volume">
+    <seclabel model="dac" relabel="no" type="none" />
+  </source>
+  <target bus="virtio" dev="vda"/>
+  <serial>54-a672-23e5b495a9eb</serial>
+  <driver cache="none" discard="unmap" error_policy="enospace"
+          io="native" name="qemu" type="raw"/>
+</disk>
+<disk device="disk" snapshot="no" type="block">
+  <source dev="/path/to/volume">
+    <seclabel model="dac" relabel="no" type="none" />
+  </source>
+  <target bus="virtio" dev="vda"/>
+  <serial>54-a672-23e5b495a9ec</serial>
+  <driver cache="none" error_policy="stop"
+          io="native" name="qemu" type="raw"/>
+</disk>
+<disk device="disk" snapshot="no" type="file">
+  <source file="/path/to/volume">
+    <seclabel model="dac" relabel="no" type="none" />
+  </source>
+  <target bus="virtio" dev="vda"/>
+  <serial>54-a672-23e5b495a9ed</serial>
+  <driver cache="none" error_policy="stop"
+          io="threads" name="qemu" type="raw"/>
+</disk>
+<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
+  <source dev="/dev/mapper/lun1">
+    <seclabel model="dac" relabel="no" type="none" />
+  </source>
+  <target bus="scsi" dev="sda"/>
+  <driver cache="none" error_policy="stop"
+          io="native" name="qemu" type="raw"/>
+</disk>
+<disk device="disk" snapshot="no" type="network">
+  <source name="poolname/volumename" protocol="rbd">
+    <host name="1.2.3.41" port="6789" transport="tcp"/>
+    <host name="1.2.3.42" port="6789" transport="tcp"/>
+  </source>
+  <target bus="virtio" dev="vda"/>
+  <driver cache="none" error_policy="stop"
+          io="threads" name="qemu" type="raw"/>
+</disk>
+<disk device="disk" snapshot="no" type="network">
+  <source name="poolname/volumename" protocol="rbd">
+    <host name="1.2.3.41" port="6789" transport="tcp"/>
+    <host name="1.2.3.42" port="6789" transport="tcp"/>
+  </source>
+  <auth username="cinder">
+    <secret type="ceph" uuid="abcdef"/>
+  </auth>
+  <target bus="virtio" dev="vda"/>
+  <serial>54-a672-23e5b495a9ea</serial>
+  <driver cache="none" error_policy="stop"
+          io="threads" name="qemu" type="raw"/>
+</disk>
+<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
+  <address bus="0" controller="0" target="0" type="drive" unit="0" />
+  <source dev="/dev/mapper/36001405b3b7829f14c1400d925eefebb">
+    <seclabel model="dac" relabel="no" type="none" />
+  </source>
+  <target bus="scsi" dev="sda" />
+  <driver cache="none" error_policy="stop" io="native"
+          name="qemu" type="raw" />
+</disk>
+<disk type='block' device='disk' snapshot='no'>
+  <driver name='qemu' type='raw' cache='none' error_policy='stop' io='native'/>
+  <source dev='/dev/mapper/360014055bd72b7a8c2c4f338cdbdc258' index='2'>
+    <seclabel model='dac' relabel='no'/>
+  </source>
+  <backingStore/>
+  <target dev='sdb' bus='scsi'/>
+  <serial>cca4f09d-fdf7-46b9-9e77-a96e293eb33f</serial>
+  <alias name='ua-cca4f09d-fdf7-46b9-9e77-a96e293eb33f'/>
+  <address type='drive' controller='0' bus='0' target='0' unit='2'/>
+</disk>
+<disk type='block' device='disk' snapshot='no'>
+  <driver name='qemu' type='raw' cache='none' error_policy='stop' io='native'/>
+  <source dev='/dev/mapper/36001405f4f3d2dee8494a21a89d43179' index='1'>
+    <seclabel model='dac' relabel='no'/>
+  </source>
+  <backingStore/>
+  <target dev='sdd' bus='scsi'/>
+  <serial>ed0fb068-840e-4c9f-a1ec-1767de89c0df</serial>
+  <alias name='ua-ed0fb068-840e-4c9f-a1ec-1767de89c0df'/>
+  <address type='drive' controller='0' bus='0' target='0' unit='1'/>
+</disk>
+<disk type='block' device='disk' snapshot='no'>
+  <driver name='qemu' type='raw' cache='none' error_policy='stop' io='native'/>
+  <source dev='/dev/mapper/36001405d6f6b81aa3d742de9af08f906' index='1'>
+    <seclabel model='dac' relabel='no'/>
+  </source>
+  <backingStore/>
+  <target dev='sde' bus='scsi'/>
+  <serial>d9d12846-d8ec-414e-ac0b-f8b69c1efdd5</serial>
+  <alias name='ua-d9d12846-d8ec-414e-ac0b-f8b69c1efdd5'/>
+  <address type='drive' controller='0' bus='0' target='0' unit='3'/>
+</disk>
+<disk device="cdrom" snapshot="no" type="file">
+  <source file="/run/vdsm/payload/8a1dc504-9d00-48f3-abdc-c70404e6f7e2.4137dc5fb55e021fbfd2653621d9d194.img"
+          startupPolicy="optional">
+    <seclabel model="dac" relabel="no" type="none" />
+  </source>
+  <target bus="ide" dev="hdd" />
+  <readonly />
+  <driver error_policy="report" name="qemu" type="raw" />
+</disk>
+<disk type="file" device="cdrom" snapshot="no">
+  <address bus="1" controller="0" unit="0" type="drive" target="0"/>
+  <source file="" startupPolicy="optional">
+    <seclabel model="dac" relabel="no" type="none" />
+  </source>
+  <target dev="hdc" bus="ide"/>
+  <readonly/>
+  <driver name="qemu" type="raw" error_policy="report"/>
+</disk>
+<disk device="disk" snapshot="no" type="block">
+  <source dev="/path/to/volume">
+    <seclabel model="dac" relabel="no" type="none" />
+  </source>
+  <target bus="virtio" dev="vda"/>
+  <serial>54-a672-23e5b495a9ea</serial>
+  <driver cache="none" discard="unmap" error_policy="stop"
+          io="native" name="qemu" type="raw"/>
+  <iotune>
+    <read_iops_sec>400000</read_iops_sec>
+    <total_bytes_sec>10000000</total_bytes_sec>
+    <write_iops_sec>100000</write_iops_sec>
+  </iotune>
+</disk>
+<disk snapshot="no" type="block" device="disk">
+  <address bus="0" controller="0" unit="0" type="drive" target="0"/>
+  <source dev="/rhev/data-center/mnt/blockSD/a/images/b/c">
+    <seclabel model="dac" relabel="no" type="none" />
+  </source>
+  <target dev="sda" bus="scsi"/>
+  <serial>d591482b-eb24-47bd-be07-082c115d11f4</serial>
+  <boot order="1"/>
+  <driver name="qemu" io="native" type="qcow2"
+          error_policy="stop" cache="none"/>
+  <alias name="ua-58ca6050-0134-00d6-0053-000000000388"/>
+</disk>
+<disk device="disk" snapshot="no" type="file">
+  <source file="/path/to/volume">
+    <seclabel model="dac" relabel="no" type="none" />
+  </source>
+  <target bus="sata" dev="sda"/>
+  <serial>54-a672-23e5b495a9ea</serial>
+  <driver cache="writethrough" error_policy="enospace"
+          io="threads" name="qemu" type="raw"/>
+</disk>
