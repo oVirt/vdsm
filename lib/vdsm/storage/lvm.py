@@ -505,6 +505,68 @@ class LVMCache(object):
         self._reloadvgs()
         self._loadAllLvs()
 
+    def _updatepvs_locked(self, pvs_output, pv_names):
+        """
+        Update cached PVs based on the output of the LVM command:
+        - Add new PVs to the cache.
+        - Replace PVs in the cache with PVs reported by the 'pvs' command,
+          updating the PV attributes.
+        - If called without pv names, remove all PVs from the cache not
+          reported by LVM.
+        - If called with pv names, remove specifed PVs from the cache if they
+          were not reported by LVM.
+        Must be called while holding the lock.
+        Return dict of updated PVs.
+        """
+        updatedPVs = {}
+        for line in pvs_output:
+            fields = [field.strip() for field in line.split(SEPARATOR)]
+            if len(fields) != PV_FIELDS_LEN:
+                raise InvalidOutputLine("pvs", line)
+
+            pv = PV.fromlvm(*fields)
+            if pv.name == UNKNOWN:
+                log.error("Missing pv: %s in vg: %s", pv.uuid, pv.vg_name)
+                continue
+            self._pvs[pv.name] = pv
+            updatedPVs[pv.name] = pv
+
+        # Remove stalePVs
+        stalePVs = [name for name in (pv_names or self._pvs)
+                    if name not in updatedPVs]
+        for name in stalePVs:
+            if name in self._pvs:
+                log.warning("Removing stale PV %s", name)
+                del self._pvs[name]
+
+        return updatedPVs
+
+    def _update_stale_pvs_locked(self, pv_names):
+        """
+        Check if any PV is stale after an LVM command and make it Unreadable.
+        Log a warning if any PV has been made Unreadable.
+        Must be called while holding the lock.
+        """
+        updatedPVs = {}
+        pvNames = pv_names if pv_names else self._pvs
+        for p in pvNames:
+            pv = self._pvs.get(p)
+            if pv and pv.is_stale():
+                pv = Unreadable(pv.name)
+                self._pvs[p] = pv
+                updatedPVs[p] = pv
+
+        if updatedPVs:
+            # This may be a real error (failure to reload existing PV)
+            # or no error at all (failure to reload non-existing PV),
+            # so we cannot make this an error.
+            log.warning(
+                "Marked pvs=%r as Unreadable due to reload failure",
+                logutils.Head(updatedPVs, max_items=20))
+
+        return updatedPVs
+
+
     def _reloadpvs(self, pvName=None):
         cmd = list(PVS_CMD)
 
@@ -515,46 +577,10 @@ class LVMCache(object):
         out, error = self.run_command_error(cmd)
 
         with self._lock:
-            updatedPVs = {}
-
             if error:
-                pvNames = pvNames if pvNames else self._pvs
-                for p in pvNames:
-                    pv = self._pvs.get(p)
-                    if pv and pv.is_stale():
-                        pv = Unreadable(pv.name)
-                        self._pvs[p] = pv
-                        updatedPVs[p] = pv
+                return self._update_stale_pvs_locked(pvNames)
 
-                if updatedPVs:
-                    # This may be a real error (failure to reload existing PV)
-                    # or no error at all (failure to reload non-existing PV),
-                    # so we cannot make this an error.
-                    log.warning(
-                        "Marked pvs=%r as Unreadable due to reload failure",
-                        logutils.Head(updatedPVs, max_items=20))
-
-                return updatedPVs
-
-            for line in out:
-                fields = [field.strip() for field in line.split(SEPARATOR)]
-                if len(fields) != PV_FIELDS_LEN:
-                    raise InvalidOutputLine("pvs", line)
-
-                pv = PV.fromlvm(*fields)
-                if pv.name == UNKNOWN:
-                    log.error("Missing pv: %s in vg: %s", pv.uuid, pv.vg_name)
-                    continue
-                self._pvs[pv.name] = pv
-                updatedPVs[pv.name] = pv
-
-            # Remove stalePVs
-            stalePVs = [name for name in (pvNames or self._pvs)
-                        if name not in updatedPVs]
-            for name in stalePVs:
-                if name in self._pvs:
-                    log.warning("Removing stale PV %s", name)
-                    del self._pvs[name]
+            updatedPVs = self._updatepvs_locked(out, pvNames)
 
             # If we updated all the PVs drop stale flag
             if not pvName:
