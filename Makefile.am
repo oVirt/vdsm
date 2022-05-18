@@ -35,6 +35,9 @@ SUBDIRS = \
 # prepared before running.
 SUBDIRS += tests
 
+VENV_DIR = $(HOME)/.venv/vdsm
+VENV = $(VENV_DIR)/bin
+
 include $(top_srcdir)/build-aux/Makefile.subs
 
 # This is an *exception*, we ship also vdsm.spec so it's possible to build the
@@ -134,6 +137,12 @@ check-unit:
 
 .PHONY: lint
 lint: gitignore execcmd black flake8 pylint
+
+.PHONY: venv
+venv:
+	python3 -m venv $(VENV_DIR) && \
+	$(VENV)/python3 -m pip install --upgrade pip && \
+	$(VENV)/python3 -m pip install -r docker/requirements.txt
 
 .PHONY: tests
 tests: tox
