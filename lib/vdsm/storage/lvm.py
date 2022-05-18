@@ -566,13 +566,29 @@ class LVMCache(object):
 
         return updatedPVs
 
+    def _reload_single_pv(self, pv_name):
+        """
+        Run LVM 'pvs' command and update PV pv_name.
+        """
+        cmd = list(PVS_CMD)
+        cmd.append(pv_name)
+
+        out, error = self.run_command_error(cmd)
+
+        with self._lock:
+            if error:
+                return self._update_stale_pvs_locked([pv_name])
+
+            return self._updatepvs_locked(out, [pv_name])
 
     def _reloadpvs(self, pvName=None):
-        cmd = list(PVS_CMD)
-
+        """
+        Run LVM 'pvs' command and update all PVs from pvNames.
+        If no PV name is provided, reload all PVs.
+        """
         pvNames = normalize_args(pvName)
-        if pvNames:
-            cmd.extend(pvNames)
+        cmd = list(PVS_CMD)
+        cmd.extend(pvNames)
 
         out, error = self.run_command_error(cmd)
 
@@ -889,7 +905,7 @@ class LVMCache(object):
         pv = self._pvs.get(pvName)
         if not pv or pv.is_stale():
             self.stats.miss()
-            pvs = self._reloadpvs(pvName)
+            pvs = self._reload_single_pv(pvName)
             pv = pvs.get(pvName)
         else:
             self.stats.hit()
