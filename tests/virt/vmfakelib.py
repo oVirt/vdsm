@@ -57,6 +57,7 @@ class IRS(object):
         self.prepared_volumes = {}
         self.extend_requests = []
         self.sd_types = {}
+        self.measure_info = {}
 
     def getDeviceVisibility(self, guid):
         pass
@@ -66,6 +67,13 @@ class IRS(object):
 
     def inappropriateDevices(self, ident):
         pass
+
+    def measure(self, sdUUID, imgUUID, volUUID, dest_format, backing=True,
+                baseUUID=None):
+        # Return fake measure set up by the test. Not setting up anyting will
+        # fail; this is a good way to simulate measure error.
+        measure = self.measure_info[(volUUID, baseUUID)]
+        return response.success(result=measure)
 
     def getVolumeSize(self, domainID, poolID, imageID, volumeID):
         key = (domainID, imageID, volumeID)
