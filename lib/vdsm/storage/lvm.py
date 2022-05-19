@@ -569,6 +569,8 @@ class LVMCache(object):
     def _reload_single_pv(self, pv_name):
         """
         Run LVM 'pvs' command and update PV pv_name.
+        Raise InaccessiblePhysDev if a PV is not updated.
+        Return the updated PV.
         """
         cmd = list(PVS_CMD)
         cmd.append(pv_name)
@@ -577,9 +579,18 @@ class LVMCache(object):
 
         with self._lock:
             if error:
-                return self._update_stale_pvs_locked([pv_name])
+                updated_pvs = self._update_stale_pvs_locked([pv_name])
+                if pv_name not in updated_pvs:
+                    raise se.InaccessiblePhysDev.from_error((pv_name,), error)
 
-            return self._updatepvs_locked(out, [pv_name])
+                return updated_pvs[pv_name]
+
+            updated_pvs = self._updatepvs_locked(out, [pv_name])
+            if pv_name not in updated_pvs:
+                # This should not happen.
+                raise se.InaccessiblePhysDev((pv_name,))
+
+            return updated_pvs[pv_name]
 
     def _reloadpvs(self, pvName=None):
         """
@@ -901,12 +912,14 @@ class LVMCache(object):
         self._invalidateAllLvs()
 
     def getPv(self, pvName):
-        # Get specific PV
+        """
+        Get specific PV.
+        Raise a InaccessiblePhysDev if PV is missing.
+        """
         pv = self._pvs.get(pvName)
         if not pv or pv.is_stale():
             self.stats.miss()
-            pvs = self._reload_single_pv(pvName)
-            pv = pvs.get(pvName)
+            pv = self._reload_single_pv(pvName)
         else:
             self.stats.hit()
         return pv
@@ -1265,10 +1278,11 @@ def _lvs_proc_info(vg, lvs):
 
 
 def getPV(pvName):
-    pv = _lvminfo.getPv(_fqpvname(pvName))
-    if pv is None:
-        raise se.InaccessiblePhysDev((pvName,))
-    return pv
+    """
+    Return PV named tuple. Raise se.InaccessiblePhysDev if the
+    PV does not exist.
+    """
+    return _lvminfo.getPv(_fqpvname(pvName))
 
 
 def getAllPVs():
