@@ -756,6 +756,68 @@ class LVMCache(object):
 
         return updatedVGs
 
+    def _updatelvs_locked(self, lvs_output, vg_name):
+        """
+        Update cached LVs in a given VG based on the output of the LVM command:
+        - Add new LVs to the cache.
+        - Replace LVs in the cache with LVs reported by the 'lvs' command,
+          updating the LV attributes.
+        - Remove specifed LVs in the VG from the cache if they were not
+          reported by LVM.
+        Must be called while holding the lock.
+        Return dict of updated LVs.
+        """
+        updatedLVs = {}
+        for line in lvs_output:
+            fields = [field.strip() for field in line.split(SEPARATOR)]
+            if len(fields) != LV_FIELDS_LEN:
+                raise InvalidOutputLine("lvs", line)
+
+            lv = LV.fromlvm(*fields)
+            # For LV we are only interested in its first extent
+            if lv.seg_start_pe == "0":
+                self._lvs[(lv.vg_name, lv.name)] = lv
+                updatedLVs[(lv.vg_name, lv.name)] = lv
+
+        # Determine if there are stale LVs
+        # All the LVs in the VG
+        staleLVs = [lvName for v, lvName in self._lvs
+                    if (v == vg_name) and
+                    ((vg_name, lvName) not in updatedLVs)]
+
+        for lvName in staleLVs:
+            if (vg_name, lvName) in self._lvs:
+                log.warning("Removing stale lv: %s/%s", vg_name, lvName)
+                del self._lvs[(vg_name, lvName)]
+
+        return updatedLVs
+
+    def _update_stale_lvs_locked(self, vg_name):
+        """
+        Check if any LV is stale after an LVM command and make it Unreadable.
+        Log a warning if any LV has been made Unreadable.
+        Must be called while holding the lock.
+        """
+        updatedLVs = {}
+        lv_names = (lvn for vgn, lvn in self._lvs if vgn == vg_name)
+        for lvName in lv_names:
+            key = (vg_name, lvName)
+            lv = self._lvs.get(key)
+            if lv and lv.is_stale():
+                lv = Unreadable(lv.name)
+                self._lvs[key] = lv
+                updatedLVs[key] = lv
+
+        if updatedLVs:
+            # This may be a real error (failure to reload existing LV)
+            # or no error at all (failure to reload non-existing LV),
+            # so we cannot make this an error.
+            log.warning(
+                "Marked lvs=%r as Unreadable due to reload failure",
+                logutils.Head(updatedLVs, max_items=20))
+
+        return updatedLVs
+
     def _reloadlvs(self, vgName):
         cmd = list(LVS_CMD)
         cmd.append(vgName)
@@ -764,49 +826,10 @@ class LVMCache(object):
             cmd, devices=self._getVGDevs((vgName,)))
 
         with self._lock:
-            updatedLVs = {}
-
             if error:
-                lvNames = (lvn for vgn, lvn in self._lvs if vgn == vgName)
-                for lvName in lvNames:
-                    key = (vgName, lvName)
-                    lv = self._lvs.get(key)
-                    if lv and lv.is_stale():
-                        lv = Unreadable(lv.name)
-                        self._lvs[key] = lv
-                        updatedLVs[key] = lv
+                return self._update_stale_lvs_locked(vgName)
 
-                if updatedLVs:
-                    # This may be a real error (failure to reload existing LV)
-                    # or no error at all (failure to reload non-existing LV),
-                    # so we cannot make this an error.
-                    log.warning(
-                        "Marked lvs=%r as Unreadable due to reload failure",
-                        logutils.Head(updatedLVs, max_items=20))
-
-                return updatedLVs
-
-            for line in out:
-                fields = [field.strip() for field in line.split(SEPARATOR)]
-                if len(fields) != LV_FIELDS_LEN:
-                    raise InvalidOutputLine("lvs", line)
-
-                lv = LV.fromlvm(*fields)
-                # For LV we are only interested in its first extent
-                if lv.seg_start_pe == "0":
-                    self._lvs[(lv.vg_name, lv.name)] = lv
-                    updatedLVs[(lv.vg_name, lv.name)] = lv
-
-            # Determine if there are stale LVs
-            # All the LVs in the VG
-            staleLVs = [lvName for v, lvName in self._lvs
-                        if (v == vgName) and
-                        ((vgName, lvName) not in updatedLVs)]
-
-            for lvName in staleLVs:
-                if (vgName, lvName) in self._lvs:
-                    log.warning("Removing stale lv: %s/%s", vgName, lvName)
-                    del self._lvs[(vgName, lvName)]
+            updatedLVs = self._updatelvs_locked(out, vgName)
 
             self._freshlv.add(vgName)
 
