@@ -704,14 +704,9 @@ class LVMCache(object):
 
         return updatedVGs
 
-    def _reloadlvs(self, vgName, lvNames=None):
+    def _reloadlvs(self, vgName):
         cmd = list(LVS_CMD)
-
-        lvNames = normalize_args(lvNames)
-        if lvNames:
-            cmd.extend("%s/%s" % (vgName, lvName) for lvName in lvNames)
-        else:
-            cmd.append(vgName)
+        cmd.append(vgName)
 
         out, error = self.run_command_error(
             cmd, devices=self._getVGDevs((vgName,)))
@@ -720,8 +715,7 @@ class LVMCache(object):
             updatedLVs = {}
 
             if error:
-                if not lvNames:
-                    lvNames = (lvn for vgn, lvn in self._lvs if vgn == vgName)
+                lvNames = (lvn for vgn, lvn in self._lvs if vgn == vgName)
                 for lvName in lvNames:
                     key = (vgName, lvName)
                     lv = self._lvs.get(key)
@@ -752,22 +746,17 @@ class LVMCache(object):
                     updatedLVs[(lv.vg_name, lv.name)] = lv
 
             # Determine if there are stale LVs
-            if lvNames:
-                staleLVs = [lvName for lvName in lvNames
-                            if (vgName, lvName) not in updatedLVs]
-            else:
-                # All the LVs in the VG
-                staleLVs = [lvName for v, lvName in self._lvs
-                            if (v == vgName) and
-                            ((vgName, lvName) not in updatedLVs)]
+            # All the LVs in the VG
+            staleLVs = [lvName for v, lvName in self._lvs
+                        if (v == vgName) and
+                        ((vgName, lvName) not in updatedLVs)]
 
             for lvName in staleLVs:
                 if (vgName, lvName) in self._lvs:
                     log.warning("Removing stale lv: %s/%s", vgName, lvName)
                     del self._lvs[(vgName, lvName)]
 
-            if not lvNames:
-                self._freshlv.add(vgName)
+            self._freshlv.add(vgName)
 
             log.debug("lvs reloaded")
 
