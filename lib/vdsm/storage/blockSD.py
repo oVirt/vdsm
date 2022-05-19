@@ -1071,11 +1071,10 @@ class BlockStorageDomain(sd.StorageDomain):
 
         if set((STORAGE_UNREADY_DOMAIN_TAG,)) != set(vg.tags):
             raise se.VolumeGroupHasDomainTag(vgUUID)
-        try:
-            lvm.getAllLVs(vgName)
+
+        if lvm.getAllLVs(vgName):
+            # There are already LVs in the VG
             raise se.StorageDomainNotEmpty(vgUUID)
-        except se.LogicalVolumeDoesNotExistError:
-            pass
 
         # Create metadata service volume. Metadata have to be stored always on
         # the VG metadata device, which is always the first PV.
@@ -1262,12 +1261,8 @@ class BlockStorageDomain(sd.StorageDomain):
         # Remove special metadata and service volumes
         # Remove all volumes LV if exists
         _removeVMSfs(lvm.lvPath(sdUUID, MASTERLV))
-        try:
-            lvs = lvm.getAllLVs(sdUUID)
-        except se.LogicalVolumeDoesNotExistError:
-            lvs = ()  # No LVs in this VG (domain)
 
-        for lv in lvs:
+        for lv in lvm.getAllLVs(sdUUID):
             # Fix me: Should raise and get resource lock.
             try:
                 lvm.removeLVs(sdUUID, (lv.name,))
