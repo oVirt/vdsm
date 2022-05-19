@@ -35,7 +35,6 @@ from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
-from vdsm.storage import task
 from vdsm.storage import volume
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.volumemetadata import VolumeMetadata
@@ -692,47 +691,6 @@ class BlockVolume(volume.Volume):
                       self.imgUUID, self.sdUUID, new_size, allowActive)
         sizemb = utils.round(new_size, MiB) // MiB
         lvm.reduceLV(self.sdUUID, self.volUUID, sizemb, force=allowActive)
-
-    @classmethod
-    def renameVolumeRollback(cls, taskObj, sdUUID, oldUUID, newUUID):
-        try:
-            cls.log.info("renameVolumeRollback: sdUUID=%s oldUUID=%s "
-                         "newUUID=%s", sdUUID, oldUUID, newUUID)
-            lvm.renameLV(sdUUID, oldUUID, newUUID)
-        except Exception:
-            cls.log.error("Failure in renameVolumeRollback: sdUUID=%s "
-                          "oldUUID=%s newUUID=%s", sdUUID, oldUUID, newUUID,
-                          exc_info=True)
-
-    def rename(self, newUUID, recovery=True):
-        """
-        Rename volume
-        """
-        self.log.info("Rename volume %s as %s ", self.volUUID, newUUID)
-        if not self.imagePath:
-            self._manifest.validateImagePath()
-
-        if os.path.lexists(self.getVolumePath()):
-            self.log.info("Unlinking volume symlink %r", self.getVolumePath())
-            os.unlink(self.getVolumePath())
-
-        if recovery:
-            name = "Rename volume rollback: " + newUUID
-            vars.task.pushRecovery(task.Recovery(
-                name, "blockVolume", "BlockVolume", "renameVolumeRollback",
-                [self.sdUUID, newUUID, self.volUUID]))
-
-        # Save the metadaId before renaming the LV, because getMetadataId()
-        # uses the volume UUID and we need the metadataId before perform the
-        # rename.
-        metadataId = self.getMetadataId()
-
-        lvm.renameLV(self.sdUUID, self.volUUID, newUUID)
-
-        self.renameLease(metadataId, newUUID, recovery=recovery)
-
-        self._manifest.volUUID = newUUID
-        self._manifest.volumePath = os.path.join(self.imagePath, newUUID)
 
     def getDevPath(self):
         return self._manifest.getDevPath()

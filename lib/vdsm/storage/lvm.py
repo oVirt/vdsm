@@ -1770,18 +1770,6 @@ def deactivateLVs(vgName, lvNames):
         _setLVAvailability(vgName, toDeactivate, "n")
 
 
-def renameLV(vg, oldlv, newlv):
-    log.info("Renaming LV (vg=%s, oldlv=%s, newlv=%s)", vg, oldlv, newlv)
-    cmd = ("lvrename",) + LVM_NOBACKUP + (vg, oldlv, newlv)
-    try:
-        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vg, )))
-    except se.LVMCommandError as e:
-        raise se.LogicalVolumeRenameError.from_lvmerror(e)
-    else:
-        _lvminfo._removelvs(vg, oldlv)
-        _lvminfo._reloadlvs(vg, newlv)
-
-
 def refreshLVs(vgName, lvNames):
     log.info("Refreshing LVs (vg=%s, lvs=%s)", vgName, lvNames)
     _refreshLVs(vgName, lvNames)
