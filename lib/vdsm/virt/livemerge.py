@@ -473,8 +473,9 @@ class DriveMerger:
             job_id=job.id,
             attempt=job.extend["attempt"])
 
-        self._vm.extend_volume(
-            drive, job.base, max_alloc, capacity, callback=callback)
+        # New size includes one chunk of free space.
+        new_size = drive.getNextVolumeSize(max_alloc, capacity)
+        self._vm.extend_volume(drive, job.base, new_size, callback=callback)
 
     def _retry_extend(self, job):
         """
