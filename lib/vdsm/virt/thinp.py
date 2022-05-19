@@ -387,11 +387,11 @@ class VolumeMonitor(object):
             "Requesting an extension for volume %s on domain %s block_info %s",
             drive.volumeID, drive.domainID, drive.block_info)
 
-        self.extend_volume(
-            drive,
-            drive.volumeID,
-            drive.block_info.physical,
-            drive.block_info.capacity)
+        # New size includes one chunk of free space.
+        new_size = drive.getNextVolumeSize(
+            drive.block_info.physical, drive.block_info.capacity)
+
+        self.extend_volume(drive, drive.volumeID, new_size)
 
     def _can_extend_drive(self, drive):
         # NOTE: Physical may be larger than maximum volume size since it is
@@ -521,10 +521,10 @@ class VolumeMonitor(object):
 
     # Extending volumes.
 
-    def extend_volume(self, vmDrive, volumeID, curSize, capacity,
-                      callback=None):
+    def extend_volume(self, vmDrive, volumeID, newSize, callback=None):
         """
-        Extend drive volume and its replica volume during replication.
+        Extend drive volume and its replica volume during replication to
+        newSize.
 
         Must be called only when the drive or its replica are chunked.
 
@@ -535,8 +535,6 @@ class VolumeMonitor(object):
             def callback(error=None):
 
         """
-        newSize = vmDrive.getNextVolumeSize(curSize, capacity)
-
         # If drive is replicated to a block device, we extend first the
         # replica, and handle drive later in _extend_replica_completed.
 

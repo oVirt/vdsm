@@ -1305,10 +1305,13 @@ class Vm(object):
         _, raw_stats = res[0]
         return raw_stats
 
-    def extend_volume(self, vmDrive, volumeID, curSize, capacity,
-                      callback=None):
+    def extend_volume(self, vmDrive, volumeID, new_size, callback=None):
         """
-        Extend drive volume and its replica volume during replication.
+        Extend drive volume and its replica volume during replication to
+        new_size.
+
+        The new size of the volume may be bigger than the requested value
+        because the actual volume size is always aligned to lvm extent size.
 
         Must be called only when the drive or its replica are chunked.
 
@@ -1322,7 +1325,7 @@ class Vm(object):
         called.
         """
         self.volume_monitor.extend_volume(
-            vmDrive, volumeID, curSize, capacity, callback=callback)
+            vmDrive, volumeID, new_size, callback=callback)
 
     def should_refresh_destination_volume(self):
         """
@@ -4373,11 +4376,9 @@ class Vm(object):
             try:
                 block_info = self.volume_monitor.query_block_info(
                     drive, drive.volumeID)
-                self.extend_volume(
-                    drive,
-                    drive.volumeID,
-                    block_info.physical,
-                    block_info.capacity)
+                new_size = drive.getNextVolumeSize(
+                    block_info.physical, block_info.capacity)
+                self.extend_volume(drive, drive.volumeID, new_size)
             except Exception:
                 self.log.exception("Initial extension request failed for %s",
                                    drive.name)
