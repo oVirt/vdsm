@@ -30,11 +30,7 @@ Install additional packages for Fedora, CentOS, and RHEL:
 
 Create virtual environment for vdsm:
 
-    python3 -m venv ~/.venv/vdsm
-    source ~/.venv/vdsm/bin/activate
-    pip install --upgrade pip
-    pip install -r docker/requirements.txt
-    deactivate
+    make venv
 
 
 ## Building Vdsm
