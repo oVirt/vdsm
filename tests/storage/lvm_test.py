@@ -2068,8 +2068,11 @@ def test_lv_reload_error_one(fake_devices):
     other_lv = make_lv(lv_name="other-lv", pvs=[pv1.name], vg_name="vg-name")
     lc._lvs = {("vg-name", "other-lv"): other_lv}
 
-    # Should raise, but currently return None.
-    assert lc.getLv("vg-name", "lv-name") is None
+    # LV does not exist, shall raise.
+    with pytest.raises(se.LogicalVolumeDoesNotExistError) as e:
+        lc.getLv("vg-name", "lv-name")
+
+    assert "vg-name/lv-name" in str(e.value)
 
     # Other lv is not affected since it was not a stale.
     assert lc._lvs == {("vg-name", "other-lv"): other_lv}
@@ -2082,18 +2085,19 @@ def test_lv_reload_error_one_stale(fake_devices):
         ("vg-name", "lv-name"): lvm.Stale("lv-name"),
         ("vg-name", "other-lv"): lvm.Stale("other-lv"),
     }
-    lv = lc.getLv("vg-name", "lv-name")
 
-    # Mark lv as unreadable. Because we always reload all lvs, the other lvs is
-    # also marked as unreadable.
+    # LVM error with single LV getter, shall raise.
+    with pytest.raises(se.LogicalVolumeDoesNotExistError) as e:
+        lc.getLv("vg-name", "lv-name")
+
+    assert "vg-name/lv-name" in str(e.value)
+
+    # Mark lv as unreadable. Because on LVM error we reload all lvs, the
+    # other lvs is also marked as unreadable.
     assert lc._lvs == {
         ("vg-name", "lv-name"): lvm.Unreadable("lv-name"),
         ("vg-name", "other-lv"): lvm.Unreadable("other-lv"),
     }
-
-    # Report the unreadbale lv.
-    assert lv.name == "lv-name"
-    assert isinstance(lv, lvm.Unreadable)
 
 
 def test_lv_reload_error_one_stale_other_vg(fake_devices):
@@ -2103,7 +2107,11 @@ def test_lv_reload_error_one_stale_other_vg(fake_devices):
         ("vg-name", "lv-name"): lvm.Stale("lv-name"),
         ("other-vg", "other-lv"): lvm.Stale("other-lv"),
     }
-    lc.getLv("vg-name", "lv-name")
+    # LVM error with single LV getter, shall raise.
+    with pytest.raises(se.LogicalVolumeDoesNotExistError) as e:
+        lc.getLv("vg-name", "lv-name")
+
+    assert "vg-name/lv-name" in str(e.value)
 
     # Should not affect other vg lvs.
     other_lv = lc._lvs[("other-vg", "other-lv")]
