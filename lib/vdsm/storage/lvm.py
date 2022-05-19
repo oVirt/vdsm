@@ -820,6 +820,8 @@ class LVMCache(object):
     def _reload_single_lv(self, vg_name, lv_name):
         """
         Run LVM 'lvs' command and update LV lv_name.
+        Raise LogicalVolumeDoesNotExistError if a LV is not updated.
+        Return the updated LV.
         """
         cmd = list(LVS_CMD)
         cmd.append(f"{vg_name}/{lv_name}")
@@ -829,11 +831,20 @@ class LVMCache(object):
 
         with self._lock:
             if error:
-                return self._update_stale_lvs_locked(vg_name)
+                self._update_stale_lvs_locked(vg_name)
+
+                # Reload a specific LV name and failing
+                # might be indicative of a real error.
+                raise se.LogicalVolumeDoesNotExistError.from_error(
+                    vg_name, lv_name, error=error)
 
             updated_lvs = self._updatelvs_locked(out, vg_name, lv_name)
 
-        return updated_lvs
+        if (vg_name, lv_name) not in updated_lvs:
+            # This should not happen.
+            raise se.LogicalVolumeDoesNotExistError(vg_name, lv_name)
+
+        return updated_lvs[(vg_name, lv_name)]
 
     def _reloadlvs(self, vgName):
         cmd = list(LVS_CMD)
@@ -1065,8 +1076,7 @@ class LVMCache(object):
         lv = self._lvs.get((vgName, lvName))
         if not lv or lv.is_stale():
             self.stats.miss()
-            lvs = self._reload_single_lv(vgName, lvName)
-            lv = lvs.get((vgName, lvName))
+            lv = self._reload_single_lv(vgName, lvName)
         else:
             self.stats.hit()
 
@@ -1452,12 +1462,11 @@ def getVGbyUUID(vgUUID):
 
 
 def getLV(vgName, lv_name):
-    lv = _lvminfo.getLv(vgName, lv_name)
-    # getLV() should not return None
-    if not lv:
-        raise se.LogicalVolumeDoesNotExistError(vgName, lv_name)
-    else:
-        return lv
+    """
+    Return LV named tuple. Raise se.LogicalVolumeDoesNotExistError if the
+    LV does not exist.
+    """
+    return _lvminfo.getLv(vgName, lv_name)
 
 
 def getAllLVs(vg_name):
