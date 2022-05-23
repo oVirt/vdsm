@@ -1590,10 +1590,26 @@ class CouldNotRetrieveLogicalVolumesList(StorageException):
 
 
 class InaccessiblePhysDev(StorageException):
-    def __init__(self, devices):
-        self.value = "devices=%s" % (devices,)
     code = 606
     msg = "Multipath cannot access physical device(s)"
+
+    def __init__(self, devices, error=None):
+        if error is not None and not isinstance(error, LVMCommandError):
+            raise TypeError(
+                f"Expecting instance of LVMCommandError, got {type(error)}")
+        self.devices = devices
+        self.error = error
+
+    @property
+    def value(self):
+        ret_value = f"devices={self.devices}"
+        if self.error:
+            ret_value += f", error={self.error}"
+        return ret_value
+
+    @classmethod
+    def from_error(cls, devices, error):
+        return cls(devices=devices, error=error).with_exception(error)
 
 
 class PartitionedPhysDev(StorageException):
