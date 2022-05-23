@@ -1029,40 +1029,49 @@ class LVMCache(object):
                 self.stats.hit()
         return list(vgs.values())
 
-    def getLv(self, vgName, lvName=None):
+    def getLv(self, vgName, lvName):
         """
-        Get specific LV or all LVs in specified VG.
+        Get specific LV in specified VG.
 
         If there are any stale LVs reload the whole VG, since it would
         cost us around same efforts anyhow and these stale LVs can
         be in the vg.
 
-        We never return Stale or Unreadable LVs when
-        getting all LVs for a VG, but may return a Stale or an Unreadable
-        LV when LV name is specified as argument.
+        May return a Stale or an Unreadable LV.
 
         Arguments:
             vgName (str): VG name to query.
-            lvName (str): Optional LV name.
+            lvName (str): LV name.
 
         Returns:
-            LV nameduple if lvName is specified, otherwise list of LV
-            namedtuple for all lvs in VG vgName.
+            LV nameduple.
         """
+        # vgName, lvName
+        lv = self._lvs.get((vgName, lvName))
+        if not lv or lv.is_stale():
+            self.stats.miss()
+            # while we here reload all the LVs in the VG
+            lvs = self._reloadlvs(vgName)
+            lv = lvs.get((vgName, lvName))
+        else:
+            self.stats.hit()
 
-        if lvName:
-            # vgName, lvName
-            lv = self._lvs.get((vgName, lvName))
-            if not lv or lv.is_stale():
-                self.stats.miss()
-                # while we here reload all the LVs in the VG
-                lvs = self._reloadlvs(vgName)
-                lv = lvs.get((vgName, lvName))
-            else:
-                self.stats.hit()
+        return lv
 
-            return lv
+    def getAllLvs(self, vgName):
+        """
+        Get all LVs in specified VG.
 
+        If there are any stale LVs reload the whole VG.
+
+        Never return Stale or Unreadable LVs.
+
+        Arguments:
+            vgName (str): VG name to query.
+
+        Returns:
+            List of LV namedtuple for all lvs in VG vgName.
+        """
         if self._lvs_needs_reload(vgName):
             self.stats.miss()
             lvs = self._reloadlvs(vgName)
@@ -1143,7 +1152,7 @@ def deactivateUnusedLVs(vgname, skiplvs=()):
     pattern = "{}/{}/*/*".format(sc.P_VDSM_STORAGE, vgname)
     prepared = frozenset(os.path.basename(n) for n in glob.iglob(pattern))
 
-    for lv in _lvminfo.getLv(vgname):
+    for lv in _lvminfo.getAllLvs(vgname):
         if lv.active:
             if lv.name in skiplvs:
                 log.debug("Skipping active lv: vg=%s lv=%s",
@@ -1428,13 +1437,17 @@ def getVGbyUUID(vgUUID):
     raise se.VolumeGroupDoesNotExist(vg_uuid=vgUUID)
 
 
-def getLV(vgName, lvName=None):
-    lv = _lvminfo.getLv(vgName, lvName)
+def getLV(vgName, lv_name):
+    lv = _lvminfo.getLv(vgName, lv_name)
     # getLV() should not return None
     if not lv:
-        raise se.LogicalVolumeDoesNotExistError(vgName, lvName)
+        raise se.LogicalVolumeDoesNotExistError(vgName, lv_name)
     else:
         return lv
+
+
+def getAllLVs(vg_name):
+    return _lvminfo.getAllLvs(vg_name)
 
 
 #
@@ -1971,7 +1984,7 @@ def setrwLV(vg_name, lv_name, rw=True):
 
 
 def lvsByTag(vgName, tag):
-    return [lv for lv in getLV(vgName) if tag in lv.tags]
+    return [lv for lv in getAllLVs(vgName) if tag in lv.tags]
 
 
 def invalidate_devices():

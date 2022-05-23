@@ -219,7 +219,7 @@ class FakeLVM(object):
             lv_md['tags'] = tuple(tags)
 
     def lvsByTag(self, vgName, tag):
-        return [lv for lv in self.getLV(vgName) if tag in lv.tags]
+        return [lv for lv in self.getAllLVs(vgName) if tag in lv.tags]
 
     def lvPath(self, vgName, lvName):
         return os.path.join(self.root, "dev", vgName, lvName)
@@ -276,11 +276,11 @@ class FakeLVM(object):
         return real_lvm.LV(**lv_md)
 
     def getLV(self, vgName, lvName=None):
-        if lvName is None:
-            return [self._getLV(vgName, lv)
-                    for vg, lv in self.lvmd if vg == vgName]
-        else:
-            return self._getLV(vgName, lvName)
+        return self._getLV(vgName, lvName)
+
+    def getAllLVs(self, vgName):
+        return [self._getLV(vgName, lv)
+                for vg, lv in self.lvmd if vg == vgName]
 
     def extendLV(self, vgName, lvName, size_mb, refresh=True):
         try:

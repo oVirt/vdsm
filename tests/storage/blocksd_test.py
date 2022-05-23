@@ -250,13 +250,13 @@ class TestGetAllVolumes:
     # TODO: add more tests, see fileSDTests.py
 
     def test_volumes_count(self, monkeypatch):
-        monkeypatch.setattr(lvm, 'getLV', fakeGetLV)
+        monkeypatch.setattr(lvm, 'getAllLVs', fakeGetLV)
         sdName = "3386c6f2-926f-42c4-839c-38287fac8998"
         allVols = blockSD.getAllVolumes(sdName)
         assert len(allVols) == 23
 
     def test_missing_tags(self, monkeypatch):
-        monkeypatch.setattr(lvm, 'getLV', fakeGetLV)
+        monkeypatch.setattr(lvm, 'getAllLVs', fakeGetLV)
         sdName = "f9e55e18-67c4-4377-8e39-5833ca422bef"
         allVols = blockSD.getAllVolumes(sdName)
         assert len(allVols) == 2
@@ -312,7 +312,7 @@ class TestIterVolumes:
             make_lv(name="lv2", tags=(sc.TAG_VOL_UNINIT,)),
             make_lv(name="lv3")
         ]
-        monkeypatch.setattr(lvm, 'getLV', lambda sd_uuid: lvs)
+        monkeypatch.setattr(lvm, 'getAllLVs', lambda sd_uuid: lvs)
 
         # Expecting to have only user initialized volumes.
         expected_lvs = [
@@ -352,7 +352,7 @@ class TestOccupiedSlots:
             id="missing-md-tag"),
     ])
     def test_occupied_slots(self, lvs, expected, monkeypatch):
-        monkeypatch.setattr(lvm, 'getLV', lambda sd_uuid: lvs)
+        monkeypatch.setattr(lvm, 'getAllLVs', lambda sd_uuid: lvs)
         occupied = blockSD._occupied_metadata_slots("sd-id")
         assert occupied == expected
 
