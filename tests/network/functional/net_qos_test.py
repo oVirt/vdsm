@@ -198,4 +198,4 @@ class TestNetworkHostQos(object):
 
 
 def rate(rate_in_mbps):
-    return rate_in_mbps * 1000 ** 2
+    return rate_in_mbps * 1000**2
