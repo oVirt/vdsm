@@ -59,8 +59,12 @@ def test_collisions():
 
 
 def test_info():
+    skipped_exceptions = [
+        storage_exception.VolumeGroupDoesNotExist,
+        storage_exception.InaccessiblePhysDev,
+    ]
     for obj in find_module_exceptions(storage_exception, VdsmException):
-        if obj == storage_exception.VolumeGroupDoesNotExist:
+        if obj in skipped_exceptions:
             # Skip since a constructor parameter requires a specific type.
             # This exception should be tested separately.
             continue
@@ -104,6 +108,22 @@ def test_VolumeGroupDoesNotExist():
     assert "vg_name=vg-name" in formatted
     assert f'error={fake_error}'.replace('\'', r'\'') in formatted
     assert "vg_uuid=" not in formatted
+
+
+def test_InaccessiblePhysDev():
+    # Expected error type is LVMCommandError.
+    with pytest.raises(TypeError):
+        e = storage_exception.InaccessiblePhysDev("pv-name", error="error")
+
+    # Correct initialization.
+    fake_error = storage_exception.LVMCommandError(
+        rc=5, cmd=["fake"], out=["fake output"], err=["fake error"])
+    e = storage_exception.InaccessiblePhysDev("pv-name", error=fake_error)
+    assert e.error == fake_error
+    # Check error format
+    formatted = str(e)
+    assert "devices=pv-name" in formatted
+    assert f'error={fake_error}'.replace('\'', r'\'') in formatted
 
 
 class FakeArg(int):
