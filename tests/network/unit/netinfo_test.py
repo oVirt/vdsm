@@ -106,8 +106,8 @@ class TestNetinfo(object):
         values = (
             (b'0', IS_UP, 0),
             (b'-10', IS_UP, 0),
-            (str(2 ** 16 - 1).encode("utf8"), IS_UP, 0),
-            (str(2 ** 32 - 1).encode("utf8"), IS_UP, 0),
+            (str(2**16 - 1).encode("utf8"), IS_UP, 0),
+            (str(2**32 - 1).encode("utf8"), IS_UP, 0),
             (b'123', IS_UP, 123),
             (b'', IS_UP, 0),
             (b'', not IS_UP, 0),
