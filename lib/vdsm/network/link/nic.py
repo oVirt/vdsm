@@ -47,7 +47,7 @@ def read_speed_using_sysfs(nic_name):
     # the device may have been disabled/downed after checking
     # so we validate the return value as sysfs may return
     # special values to indicate the device is down/disabled
-    if s in (2 ** 16 - 1, 2 ** 32 - 1) or s <= 0:
+    if s in (2**16 - 1, 2**32 - 1) or s <= 0:
         raise ReadSpeedValueError(s)
     return s
 

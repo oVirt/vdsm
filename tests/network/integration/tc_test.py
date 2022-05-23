@@ -230,11 +230,11 @@ class TestPortMirror(object):
 
 HOST_QOS_OUTBOUND = {
     'ls': {
-        'm1': 4 * 1000 ** 2,  # 4Mbit/s
+        'm1': 4 * 1000**2,  # 4Mbit/s
         'd': 100 * 1000,  # 100 microseconds
-        'm2': 3 * 1000 ** 2,
+        'm2': 3 * 1000**2,
     },  # 3Mbit/s
-    'ul': {'m2': 8 * 1000 ** 2},
+    'ul': {'m2': 8 * 1000**2},
 }  # 8Mbit/s
 
 TcClasses = namedtuple('TcClasses', 'classes, default_class, root_class')
@@ -385,7 +385,7 @@ class TestConfigureOutbound(object):
                 max_rate = max(
                     [
                         float(interval['streams'][0]['bits_per_second'])
-                        // (2 ** 10)
+                        // (2**10)
                         for interval in client.out['intervals']
                     ]
                 )
