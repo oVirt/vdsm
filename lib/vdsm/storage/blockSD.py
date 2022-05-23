@@ -215,7 +215,7 @@ def _getVolsTree(sdUUID):
 
 
 def _iter_volumes(sdUUID):
-    for lv in lvm.getLV(sdUUID):
+    for lv in lvm.getAllLVs(sdUUID):
         if lv.name in SPECIAL_LVS_V4:
             # Exclude special volumes.
             continue
@@ -1072,7 +1072,7 @@ class BlockStorageDomain(sd.StorageDomain):
         if set((STORAGE_UNREADY_DOMAIN_TAG,)) != set(vg.tags):
             raise se.VolumeGroupHasDomainTag(vgUUID)
         try:
-            lvm.getLV(vgName)
+            lvm.getAllLVs(vgName)
             raise se.StorageDomainNotEmpty(vgUUID)
         except se.LogicalVolumeDoesNotExistError:
             pass
@@ -1263,7 +1263,7 @@ class BlockStorageDomain(sd.StorageDomain):
         # Remove all volumes LV if exists
         _removeVMSfs(lvm.lvPath(sdUUID, MASTERLV))
         try:
-            lvs = lvm.getLV(sdUUID)
+            lvs = lvm.getAllLVs(sdUUID)
         except se.LogicalVolumeDoesNotExistError:
             lvs = ()  # No LVs in this VG (domain)
 

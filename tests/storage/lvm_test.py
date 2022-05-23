@@ -1341,11 +1341,11 @@ def test_vg_invalidate(tmp_storage):
 
     pv1 = lvm.getPV(dev1)
     vg1 = lvm.getVG(vg1_name)
-    lv1 = lvm.getLV(vg1_name)[0]
+    lv1 = lvm.getAllLVs(vg1_name)[0]
 
     pv2 = lvm.getPV(dev2)
     vg2 = lvm.getVG(vg2_name)
-    lv2 = lvm.getLV(vg2_name)[0]
+    lv2 = lvm.getAllLVs(vg2_name)[0]
 
     assert lvm._lvminfo._pvs == {dev1: pv1, dev2: pv2}
     assert lvm._lvminfo._vgs == {vg1_name: vg1, vg2_name: vg2}
@@ -1390,12 +1390,12 @@ def test_vg_invalidate_lvs(tmp_storage):
     vg = lvm.getVG(vg_name)
 
     clear_stats()
-    lv = lvm.getLV(vg_name)[0]
+    lv = lvm.getAllLVs(vg_name)[0]
     check_stats(hits=0, misses=1)
 
     # Accessing LVs always access storage.
     # TODO: Use cache if VG did not change.
-    lvm.getLV(vg_name)
+    lvm.getAllLVs(vg_name)
     check_stats(hits=0, misses=2)
 
     assert lvm._lvminfo._pvs == {dev: pv}
@@ -1412,7 +1412,7 @@ def test_vg_invalidate_lvs(tmp_storage):
     # Accessing LVs always access storage.
     # TODO: Use cache if VG did not change.
     clear_stats()
-    lvm.getLV(vg_name)
+    lvm.getAllLVs(vg_name)
     check_stats(hits=0, misses=1)
 
 
@@ -1429,7 +1429,7 @@ def test_vg_invalidate_lvs_pvs(tmp_storage):
     # Reload cache.
     pv = lvm.getPV(dev)
     vg = lvm.getVG(vg_name)
-    lv = lvm.getLV(vg_name)[0]
+    lv = lvm.getAllLVs(vg_name)[0]
 
     assert lvm._lvminfo._pvs == {dev: pv}
 
@@ -1933,7 +1933,7 @@ def test_pv_move(tmp_storage):
         assert f.read(len(data.bytes)) == data.bytes
 
     # Check pv moved to new device and previous device is not used.
-    lv = lvm.getLV(vg_name, lvName=lv_name)
+    lv = lvm.getLV(vg_name, lv_name)
     assert dev2 in lv.devices
     assert dev1 not in lv.devices
 
@@ -1995,7 +1995,7 @@ def test_lv_stale_cache_all(stale_lv):
     # LVs always skip the cache.
     # TODO: Use cache if VG did not change.
 
-    lv_names = {lv.name for lv in lvm.getLV(vg_name)}
+    lv_names = {lv.name for lv in lvm.getAllLVs(vg_name)}
     assert good_lv_name in lv_names
     assert stale_lv_name not in lv_names
 
@@ -2043,7 +2043,7 @@ def test_lv_stale_reload_all_stale(stale_lv):
     lvm.invalidateVG(vg_name, invalidateLVs=True)
 
     # Only the good lv is reported.
-    lvs = [lv.name for lv in lvm.getLV(vg_name)]
+    lvs = [lv.name for lv in lvm.getAllLVs(vg_name)]
     assert lvs == [good_lv_name]
 
 
@@ -2056,7 +2056,7 @@ def test_lv_stale_reload_all_clear(stale_lv):
     lvm.invalidateCache()
 
     # Only the good lv is reported.
-    lvs = [lv.name for lv in lvm.getLV(vg_name)]
+    lvs = [lv.name for lv in lvm.getAllLVs(vg_name)]
     assert lvs == [good_lv_name]
 
 
@@ -2113,14 +2113,14 @@ def test_lv_reload_error_one_stale_other_vg(fake_devices):
 def test_lv_reload_error_all(fake_devices):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
-    assert lc.getLv("vg-name") == []
+    assert lc.getAllLvs("vg-name") == []
 
 
 def test_lv_reload_error_all_other_vg(fake_devices):
     fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
     lc = lvm.LVMCache(fake_runner)
     lc._lvs = {("vg-name", "lv-name"): lvm.Stale("lv-name")}
-    lvs = lc.getLv("vg-name")
+    lvs = lc.getAllLvs("vg-name")
 
     # Mark lv as unreadable.
     assert lc._lvs == {("vg-name", "lv-name"): lvm.Unreadable("lv-name")}
@@ -2137,7 +2137,7 @@ def test_lv_reload_error_all_stale_other_vgs(fake_devices):
         ("vg-name", "lv-name"): lvm.Stale("lv-name"),
         ("other-vg", "other-lv"): lvm.Stale("other-lv"),
     }
-    lc.getLv("vg-name")
+    lc.getAllLvs("vg-name")
 
     # Should not affect other vg lvs.
     other_lv = lc._lvs[("other-vg", "other-lv")]
@@ -2160,13 +2160,13 @@ def test_lv_reload_fresh_vg(fake_devices):
     assert not lc._lvs_needs_reload("vg1")
     assert lc._lvs_needs_reload("vg2")
 
-    # getLv for vg1 should use cache without reload lvs.
-    assert lc.getLv("vg1") == [lv1]
+    # getAllLvs for vg1 should use cache without reload lvs.
+    assert lc.getAllLvs("vg1") == [lv1]
     assert not lc._lvs_needs_reload("vg1")
     assert lc._lvs_needs_reload("vg2")
 
-    # getLv for vg2 should reload lvs.
-    assert lc.getLv("vg2") == []
+    # getAllLvs for vg2 should reload lvs.
+    assert lc.getAllLvs("vg2") == []
     assert not lc._lvs_needs_reload("vg1")
     assert not lc._lvs_needs_reload("vg2")
 
@@ -2177,8 +2177,8 @@ def test_lv_reload_for_stale_vg(fake_devices):
 
     assert lc._lvs_needs_reload("vg")
 
-    # getLv call should call reload lvs.
-    lc.getLv("vg")
+    # getAllLvs call should call reload lvs.
+    lc.getAllLvs("vg")
     assert not lc._lvs_needs_reload("vg")
 
 
@@ -2232,17 +2232,17 @@ def test_get_lvs_after_sd_refresh(tmp_storage):
     lvm.createLV(vg2_name, "lv2", 128, activate=False)
 
     # Make sure that LVs are in LVM cache for both VGs.
-    lv1 = lvm.getLV(vg1_name)[0]
-    lv2 = lvm.getLV(vg2_name)[0]
+    lv1 = lvm.getAllLVs(vg1_name)[0]
+    lv2 = lvm.getAllLVs(vg2_name)[0]
 
     # Simulate refresh SD.
     lvm.invalidateCache()
 
     # Reload lvs for vg1.
-    assert lvm.getLV(vg1_name) == [lv1]
+    assert lvm.getAllLVs(vg1_name) == [lv1]
 
     # Reload lvs for vg2.
-    assert lvm.getLV(vg2_name) == [lv2]
+    assert lvm.getAllLVs(vg2_name) == [lv2]
 
 
 def test_normalize_args():
