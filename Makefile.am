@@ -166,6 +166,10 @@ all-local: \
 
 clean-local: clean-build
 
+.PHONY: upgrade
+upgrade:
+	sudo dnf upgrade $(RPM_TOPDIR)/RPMS/*/*.rpm
+
 .PHONY: srpm rpm clean-build
 
 srpm: clean-build dist
