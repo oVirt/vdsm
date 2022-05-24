@@ -47,12 +47,11 @@ To test Vdsm (refer to tests/README for further tests information):
 
 To create an RPM:
 
-    rm -rf ~/rpmbuild/RPMS/*/vdsm*.rpm
     make rpm
 
-To update your system with local build's RPM:
+To upgrade your system with local build's RPM:
 
-    (cd ~/rpmbuild/RPMS && sudo dnf upgrade */vdsm*.rpm)
+    make upgrade
 
 
 ## Making new releases
