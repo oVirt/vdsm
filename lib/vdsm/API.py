@@ -191,8 +191,10 @@ class VM(APIBase):
         """
         # self._UUID is None in this call, it must be retrieved from XML
         xml = vmParams.get('_srcDomXML') or vmParams['xml']
-        self._UUID = DomainDescriptor(xml, xml_source=XmlSource.INITIAL).id
+        descriptor = DomainDescriptor(xml, xml_source=XmlSource.INITIAL)
+        self._UUID = descriptor.id
         vmParams['vmId'] = self._UUID
+        vmParams['initialVCPUPin'] = descriptor.pinned_cpus
         try:
             if vmParams.get('vmId') in self._cif.vmContainer:
                 self.log.warning('vm %s already exists' % vmParams['vmId'])
