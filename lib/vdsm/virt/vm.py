@@ -358,6 +358,7 @@ class Vm(object):
         else:
             self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
             self._altered_state = _AlteredState()
+        self._initial_vcpupin = params.pop('initialVCPUPin', None)
         elapsedTimeOffset = float(params.pop('elapsedTimeOffset', 0))
         # we need to make sure the 'devices' key exists in vm.conf regardless
         # how the Vm is initialized, either through XML or from conf.
@@ -2813,32 +2814,42 @@ class Vm(object):
             hooks.before_vm_start(self._buildDomainXML(), self._custom)
 
             fromSnapshot = self._altered_state.from_snapshot
-            srcDomXML = self._src_domain_xml
-            if fromSnapshot:
-                # If XML was provided by Engine, disk paths have already been
-                # corrected in __init__.  If legacy configuration
-                # (e.g. 'vmName') is present, we use the legacy path here.
-                # Otherwise we leave srcDomXML untouched, since we don't have
-                # anything from Engine (4.2.0) to update it with.
-                if 'vmName' in self.conf:
-                    srcDomXML = self._correct_disk_volumes_from_conf(srcDomXML)
-                srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
-            hooks.before_vm_dehibernate(srcDomXML, self._custom,
-                                        {'FROM_SNAPSHOT': str(fromSnapshot)})
-
-            # TODO: this is debug information. For 3.6.x we still need to
-            # see the XML even with 'info' as default level.
-            self.log.info("%s", srcDomXML)
-
-            self._connection.defineXML(srcDomXML)
             restore_path = self._altered_state.path
             fname = self.cif.prepareVolumePath(restore_path)
             try:
                 if fromSnapshot:
-                    self._connection.restoreFlags(
-                        fname, srcDomXML, libvirt.VIR_DOMAIN_SAVE_PAUSED)
+                    srcDomXML = self._src_domain_xml
+                    # If XML was provided by Engine, disk paths have already
+                    # been corrected in __init__.  If legacy configuration
+                    # (e.g. 'vmName') is present, we use the legacy path here.
+                    # Otherwise we leave srcDomXML untouched, since we don't
+                    # have anything from Engine (4.2.0) to update it with.
+                    if 'vmName' in self.conf:
+                        srcDomXML = self._correct_disk_volumes_from_conf(
+                            srcDomXML)
+                    srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
                 else:
-                    self._connection.restore(fname)
+                    srcDomXML = self._connection.saveImageGetXMLDesc(fname)
+                    # Modify CPU pinning -- remove pinning saved during
+                    # hibernation and replace it with pinning provided by
+                    # engine in API call.
+                    dom = xmlutils.fromstring(srcDomXML)
+                    dom = cpumanagement.replace_cpu_pinning(
+                        self, dom, self._initial_vcpupin)
+                    srcDomXML = xmlutils.tostring(dom)
+                hooks.before_vm_dehibernate(
+                    srcDomXML, self._custom,
+                    {'FROM_SNAPSHOT': str(fromSnapshot)})
+
+                # TODO: this is debug information. For 3.6.x we still need to
+                # see the XML even with 'info' as default level.
+                self.log.info("%s", srcDomXML)
+
+                self._connection.defineXML(srcDomXML)
+                flags = 0
+                if fromSnapshot:
+                    flags |= libvirt.VIR_DOMAIN_SAVE_PAUSED
+                self._connection.restoreFlags(fname, srcDomXML, flags)
             finally:
                 self.cif.teardownVolumePath(restore_path)
 
