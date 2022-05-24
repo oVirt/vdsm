@@ -138,6 +138,27 @@ def _assign_shared(cif, target_vm=None):
                 # pool for other VMs.
 
 
+def _flatten_cpusets(cpusets_dict):
+    """
+    Convert dictionary with cpusets (key: vCPU ID, value: frozenset) into a
+    list where on index <vCPU_ID> is string description of cpuset if such is
+    specified in the dictionary and None otherwise. The first form is used
+    when parsing libvirt domain XML and the second form is used in VDSM API
+    calls.
+
+    :param cpusets_dict: Dictionary with CPU sets
+    :type cpusets_dict: dict
+
+    :returns: list of strings
+    """
+    if len(cpusets_dict.keys()) == 0:
+        return []
+    result = [None] * (max(cpusets_dict.keys()) + 1)
+    for cpu_id, cpuset in cpusets_dict.items():
+        result[cpu_id] = ",".join(map(str, cpuset))
+    return result
+
+
 def libvirt_cpuset_spec(cpus, cpu_list_length):
     """
     Turn set of CPU IDs to a CPU set list for libvirt API. That is a tuple of
@@ -185,9 +206,12 @@ def replace_cpu_pinning(vm, dom, target_vcpupin):
                 continue
             cputune.remove(vcpu)
     # Reconfigure CPU pinning based on the call parameter
-    if target_vcpupin is not None:
-        # Make sure we don't modify original list
-        target_vcpupin = list(target_vcpupin)
+    if target_vcpupin is not None and len(target_vcpupin) > 0:
+        if type(target_vcpupin) == dict:
+            target_vcpupin = _flatten_cpusets(target_vcpupin)
+        else:
+            # Make sure we don't modify original list
+            target_vcpupin = list(target_vcpupin)
         if cputune is None:
             cputune = ET.Element('cputune')
             dom.append(cputune)
