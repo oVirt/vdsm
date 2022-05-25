@@ -58,6 +58,11 @@ DEV_MAPPER = "/dev/mapper"
 DEV_RBD = "/dev/rbd"
 VOLUME_LINK_DIR = "/run/vdsm/managedvolumes/"
 
+SUPPORTED_DRIVERS = (
+    "rbd",
+    "iscsi",
+)
+
 log = logging.getLogger("storage.managedvolume")
 
 
@@ -108,10 +113,10 @@ def attach_volume(sd_id, vol_id, connection_info):
                     multipath_id=attachment.get("multipath_id"))
                 _invalidate_lvm_devices(attachment)
                 volume_type = connection_info["driver_volume_type"]
-                if volume_type not in ("rbd", "iscsi"):
+                if volume_type not in SUPPORTED_DRIVERS:
                     raise se.UnsupportedOperation(
                         "Unsupported volume type, supported types are: "
-                        "rbd, iscsi")
+                        f"{SUPPORTED_DRIVERS}")
 
                 run_link = _add_run_link(sd_id, vol_id, path)
                 _add_udev_rule(sd_id, vol_id, path)
