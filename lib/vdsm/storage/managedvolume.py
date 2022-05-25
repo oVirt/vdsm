@@ -58,9 +58,14 @@ DEV_MAPPER = "/dev/mapper"
 DEV_RBD = "/dev/rbd"
 VOLUME_LINK_DIR = "/run/vdsm/managedvolumes/"
 
+# Drivers that have been tested and are known to work.
 SUPPORTED_DRIVERS = (
+    # Drivers tested by the oVirt team
     "rbd",
     "iscsi",
+
+    # Tested by Muli Ben-Yehuda <info (at) lightbitslabs.com>
+    "lightos",
 )
 
 log = logging.getLogger("storage.managedvolume")
