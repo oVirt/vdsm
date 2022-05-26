@@ -518,7 +518,7 @@ class LVMCache(object):
         Must be called while holding the lock.
         Return dict of updated PVs.
         """
-        updatedPVs = {}
+        updated_pvs = {}
         for line in pvs_output:
             fields = [field.strip() for field in line.split(SEPARATOR)]
             if len(fields) != PV_FIELDS_LEN:
@@ -529,17 +529,17 @@ class LVMCache(object):
                 log.error("Missing pv: %s in vg: %s", pv.uuid, pv.vg_name)
                 continue
             self._pvs[pv.name] = pv
-            updatedPVs[pv.name] = pv
+            updated_pvs[pv.name] = pv
 
-        # Remove stalePVs
-        stalePVs = [name for name in (pv_names or self._pvs)
-                    if name not in updatedPVs]
-        for name in stalePVs:
+        # Remove stale PVs
+        stale_pvs = [name for name in (pv_names or self._pvs)
+                     if name not in updated_pvs]
+        for name in stale_pvs:
             if name in self._pvs:
                 log.warning("Removing stale PV %s", name)
                 del self._pvs[name]
 
-        return updatedPVs
+        return updated_pvs
 
     def _update_stale_pvs_locked(self, pv_names):
         """
@@ -547,24 +547,23 @@ class LVMCache(object):
         Log a warning if any PV has been made Unreadable.
         Must be called while holding the lock.
         """
-        updatedPVs = {}
-        pvNames = pv_names if pv_names else self._pvs
-        for p in pvNames:
+        updated_pvs = {}
+        for p in (pv_names or self._pvs):
             pv = self._pvs.get(p)
             if pv and pv.is_stale():
                 pv = Unreadable(pv.name)
                 self._pvs[p] = pv
-                updatedPVs[p] = pv
+                updated_pvs[p] = pv
 
-        if updatedPVs:
+        if updated_pvs:
             # This may be a real error (failure to reload existing PV)
             # or no error at all (failure to reload non-existing PV),
             # so we cannot make this an error.
             log.warning(
                 "Marked pvs=%r as Unreadable due to reload failure",
-                logutils.Head(updatedPVs, max_items=20))
+                logutils.Head(updated_pvs, max_items=20))
 
-        return updatedPVs
+        return updated_pvs
 
     def _reload_single_pv(self, pv_name):
         """
@@ -592,28 +591,28 @@ class LVMCache(object):
 
             return updated_pvs[pv_name]
 
-    def _reloadpvs(self, pvName=None):
+    def _reloadpvs(self, pv_name=None):
         """
-        Run LVM 'pvs' command and update all PVs from pvNames.
+        Run LVM 'pvs' command and update all PVs from pv_names.
         If no PV name is provided, reload all PVs.
         """
-        pvNames = normalize_args(pvName)
+        pv_names = normalize_args(pv_name)
         cmd = list(PVS_CMD)
-        cmd.extend(pvNames)
+        cmd.extend(pv_names)
 
         out, error = self.run_command_error(cmd)
 
         with self._lock:
             if error:
-                return self._update_stale_pvs_locked(pvNames)
+                return self._update_stale_pvs_locked(pv_names)
 
-            updatedPVs = self._updatepvs_locked(out, pvNames)
+            updated_pvs = self._updatepvs_locked(out, pv_names)
 
             # If we updated all the PVs drop stale flag
-            if not pvName:
+            if not pv_name:
                 self._stalepv = False
 
-        return updatedPVs
+        return updated_pvs
 
     def _getVGDevs(self, vgNames):
         devices = []
@@ -911,15 +910,15 @@ class LVMCache(object):
         self._invalidateAllVgs()
         self._invalidateAllLvs()
 
-    def getPv(self, pvName):
+    def getPv(self, pv_name):
         """
         Get specific PV.
         Raise a InaccessiblePhysDev if PV is missing.
         """
-        pv = self._pvs.get(pvName)
+        pv = self._pvs.get(pv_name)
         if not pv or pv.is_stale():
             self.stats.miss()
-            pv = self._reload_single_pv(pvName)
+            pv = self._reload_single_pv(pv_name)
         else:
             self.stats.hit()
         return pv
@@ -950,16 +949,16 @@ class LVMCache(object):
         stalepvs = []
         pvs = []
         vg = self.getVg(vgName)
-        for pvName in vg.pv_name:
-            pv = self._pvs.get(pvName)
+        for pv_name in vg.pv_name:
+            pv = self._pvs.get(pv_name)
             if pv is None or pv.is_stale():
-                stalepvs.append(pvName)
+                stalepvs.append(pv_name)
             else:
                 pvs.append(pv)
 
         if stalepvs:
             self.stats.miss()
-            reloadedpvs = self._reloadpvs(pvName=stalepvs)
+            reloadedpvs = self._reloadpvs(pv_name=stalepvs)
             pvs.extend(reloadedpvs.values())
         else:
             self.stats.hit()
@@ -1277,12 +1276,12 @@ def _lvs_proc_info(vg, lvs):
 #
 
 
-def getPV(pvName):
+def getPV(pv_name):
     """
     Return PV named tuple. Raise se.InaccessiblePhysDev if the
     PV does not exist.
     """
-    return _lvminfo.getPv(_fqpvname(pvName))
+    return _lvminfo.getPv(_fqpvname(pv_name))
 
 
 def getAllPVs():
