@@ -767,7 +767,7 @@ class LVMCache(object):
         Must be called while holding the lock.
         Return dict of updated LVs.
         """
-        updatedLVs = {}
+        updated_lvs = {}
         for line in lvs_output:
             fields = [field.strip() for field in line.split(SEPARATOR)]
             if len(fields) != LV_FIELDS_LEN:
@@ -777,19 +777,19 @@ class LVMCache(object):
             # For LV we are only interested in its first extent
             if lv.seg_start_pe == "0":
                 self._lvs[(lv.vg_name, lv.name)] = lv
-                updatedLVs[(lv.vg_name, lv.name)] = lv
+                updated_lvs[(lv.vg_name, lv.name)] = lv
 
         # Determine if there are stale LVs
         items = self._lvs if lv_name is None else [(vg_name, lv_name)]
         stale_lvs = [lvn for vgn, lvn in items
-                     if vgn == vg_name and (vgn, lvn) not in updatedLVs]
+                     if vgn == vg_name and (vgn, lvn) not in updated_lvs]
 
         for lvName in stale_lvs:
             if (vg_name, lvName) in self._lvs:
                 log.warning("Removing stale lv: %s/%s", vg_name, lvName)
                 del self._lvs[(vg_name, lvName)]
 
-        return updatedLVs
+        return updated_lvs
 
     def _update_stale_lvs_locked(self, vg_name):
         """
@@ -797,7 +797,7 @@ class LVMCache(object):
         Log a warning if any LV has been made Unreadable.
         Must be called while holding the lock.
         """
-        updatedLVs = {}
+        updated_lvs = {}
         lv_names = (lvn for vgn, lvn in self._lvs if vgn == vg_name)
         for lvName in lv_names:
             key = (vg_name, lvName)
@@ -805,17 +805,17 @@ class LVMCache(object):
             if lv and lv.is_stale():
                 lv = Unreadable(lv.name)
                 self._lvs[key] = lv
-                updatedLVs[key] = lv
+                updated_lvs[key] = lv
 
-        if updatedLVs:
+        if updated_lvs:
             # This may be a real error (failure to reload existing LV)
             # or no error at all (failure to reload non-existing LV),
             # so we cannot make this an error.
             log.warning(
                 "Marked lvs=%r as Unreadable due to reload failure",
-                logutils.Head(updatedLVs, max_items=20))
+                logutils.Head(updated_lvs, max_items=20))
 
-        return updatedLVs
+        return updated_lvs
 
     def _reload_single_lv(self, vg_name, lv_name):
         """
@@ -846,24 +846,24 @@ class LVMCache(object):
 
         return updated_lvs[(vg_name, lv_name)]
 
-    def _reloadlvs(self, vgName):
+    def _reloadlvs(self, vg_name):
         cmd = list(LVS_CMD)
-        cmd.append(vgName)
+        cmd.append(vg_name)
 
         out, error = self.run_command_error(
-            cmd, devices=self._getVGDevs((vgName,)))
+            cmd, devices=self._getVGDevs((vg_name,)))
 
         with self._lock:
             if error:
-                return self._update_stale_lvs_locked(vgName)
+                return self._update_stale_lvs_locked(vg_name)
 
-            updatedLVs = self._updatelvs_locked(out, vgName)
+            updated_lvs = self._updatelvs_locked(out, vg_name)
 
-            self._freshlv.add(vgName)
+            self._freshlv.add(vg_name)
 
             log.debug("lvs reloaded")
 
-        return updatedLVs
+        return updated_lvs
 
     def _loadAllLvs(self):
         """
@@ -1057,7 +1057,7 @@ class LVMCache(object):
                 self.stats.hit()
         return list(vgs.values())
 
-    def getLv(self, vgName, lvName):
+    def getLv(self, vg_name, lv_name):
         """
         Get specific LV in specified VG.
 
@@ -1066,23 +1066,23 @@ class LVMCache(object):
         May return a Stale or an Unreadable LV.
 
         Arguments:
-            vgName (str): VG name to query.
-            lvName (str): LV name.
+            vg_name (str): VG name to query.
+            lv_name (str): LV name.
 
         Returns:
             LV nameduple.
         """
-        # vgName, lvName
-        lv = self._lvs.get((vgName, lvName))
+        # vg_name, lv_name
+        lv = self._lvs.get((vg_name, lv_name))
         if not lv or lv.is_stale():
             self.stats.miss()
-            lv = self._reload_single_lv(vgName, lvName)
+            lv = self._reload_single_lv(vg_name, lv_name)
         else:
             self.stats.hit()
 
         return lv
 
-    def getAllLvs(self, vgName):
+    def getAllLvs(self, vg_name):
         """
         Get all LVs in specified VG.
 
@@ -1091,20 +1091,20 @@ class LVMCache(object):
         Never return Stale or Unreadable LVs.
 
         Arguments:
-            vgName (str): VG name to query.
+            vg_name (str): VG name to query.
 
         Returns:
-            List of LV namedtuple for all lvs in VG vgName.
+            List of LV namedtuple for all lvs in VG vg_name.
         """
-        if self._lvs_needs_reload(vgName):
+        if self._lvs_needs_reload(vg_name):
             self.stats.miss()
-            lvs = self._reloadlvs(vgName)
+            lvs = self._reloadlvs(vg_name)
         else:
             self.stats.hit()
             lvs = self._lvs.copy()
 
         lvs = [lv for lv in lvs.values()
-               if not lv.is_stale() and (lv.vg_name == vgName)]
+               if not lv.is_stale() and (lv.vg_name == vg_name)]
         return lvs
 
     def _lvs_needs_reload(self, vg_name):
