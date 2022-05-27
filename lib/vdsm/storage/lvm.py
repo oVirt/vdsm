@@ -756,7 +756,7 @@ class LVMCache(object):
 
         return updatedVGs
 
-    def _updatelvs_locked(self, lvs_output, vg_name):
+    def _updatelvs_locked(self, lvs_output, vg_name, lv_name=None):
         """
         Update cached LVs in a given VG based on the output of the LVM command:
         - Add new LVs to the cache.
@@ -780,12 +780,11 @@ class LVMCache(object):
                 updatedLVs[(lv.vg_name, lv.name)] = lv
 
         # Determine if there are stale LVs
-        # All the LVs in the VG
-        staleLVs = [lvName for v, lvName in self._lvs
-                    if (v == vg_name) and
-                    ((vg_name, lvName) not in updatedLVs)]
+        items = self._lvs if lv_name is None else [(vg_name, lv_name)]
+        stale_lvs = [lvn for vgn, lvn in items
+                     if vgn == vg_name and (vgn, lvn) not in updatedLVs]
 
-        for lvName in staleLVs:
+        for lvName in stale_lvs:
             if (vg_name, lvName) in self._lvs:
                 log.warning("Removing stale lv: %s/%s", vg_name, lvName)
                 del self._lvs[(vg_name, lvName)]
@@ -817,6 +816,24 @@ class LVMCache(object):
                 logutils.Head(updatedLVs, max_items=20))
 
         return updatedLVs
+
+    def _reload_single_lv(self, vg_name, lv_name):
+        """
+        Run LVM 'lvs' command and update LV lv_name.
+        """
+        cmd = list(LVS_CMD)
+        cmd.append(f"{vg_name}/{lv_name}")
+
+        out, error = self.run_command_error(
+            cmd, devices=self._getVGDevs((vg_name,)))
+
+        with self._lock:
+            if error:
+                return self._update_stale_lvs_locked(vg_name)
+
+            updated_lvs = self._updatelvs_locked(out, vg_name, lv_name)
+
+        return updated_lvs
 
     def _reloadlvs(self, vgName):
         cmd = list(LVS_CMD)
@@ -1033,9 +1050,7 @@ class LVMCache(object):
         """
         Get specific LV in specified VG.
 
-        If there are any stale LVs reload the whole VG, since it would
-        cost us around same efforts anyhow and these stale LVs can
-        be in the vg.
+        Reload the LV if it is Stale.
 
         May return a Stale or an Unreadable LV.
 
@@ -1050,8 +1065,7 @@ class LVMCache(object):
         lv = self._lvs.get((vgName, lvName))
         if not lv or lv.is_stale():
             self.stats.miss()
-            # while we here reload all the LVs in the VG
-            lvs = self._reloadlvs(vgName)
+            lvs = self._reload_single_lv(vgName, lvName)
             lv = lvs.get((vgName, lvName))
         else:
             self.stats.hit()
