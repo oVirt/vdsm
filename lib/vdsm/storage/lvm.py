@@ -1409,7 +1409,7 @@ def getLV(vgName, lvName=None):
     lv = _lvminfo.getLv(vgName, lvName)
     # getLV() should not return None
     if not lv:
-        raise se.LogicalVolumeDoesNotExistError("%s/%s" % (vgName, lvName))
+        raise se.LogicalVolumeDoesNotExistError(vgName, lvName)
     else:
         return lv
 

@@ -1628,9 +1628,18 @@ class MissingTagOnLogicalVolume(StorageException):
     msg = "Missing logical volume tag."
 
 
-class LogicalVolumeDoesNotExistError(StorageException):
+class LogicalVolumeDoesNotExistError(_HoldingLVMCommandError):
     code = 610
     msg = "Logical volume does not exist"
+
+    def __init__(self, vg_name, lv_name, error=None):
+        super().__init__(error)
+        self.vg_name = vg_name
+        self.lv_name = lv_name
+
+    @classmethod
+    def from_error(cls, vg_name, lv_name, error):
+        return cls(vg_name, lv_name, error=error).with_exception(error)
 
 
 class LogicalVolumeCachingError(StorageException):
