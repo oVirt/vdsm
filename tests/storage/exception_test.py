@@ -88,6 +88,25 @@ def test_info():
         }
 
 
+def test_LogicalVolumeDoesNotExistError():
+    # Expected error type is LVMCommandError.
+    with pytest.raises(TypeError):
+        e = storage_exception.LogicalVolumeDoesNotExistError(
+            "vg-name", "lv-name", error="error")
+
+    # Correct initialization.
+    fake_error = storage_exception.LVMCommandError(
+        rc=5, cmd=["fake"], out=["fake output"], err=["fake error"])
+    e = storage_exception.LogicalVolumeDoesNotExistError(
+        "vg-name", "lv-name", error=fake_error)
+    assert e.error == fake_error
+    # Check error format
+    formatted = str(e)
+    assert "vg_name=vg-name" in formatted
+    assert "lv_name=lv-name" in formatted
+    assert "error=" in formatted
+
+
 def test_VolumeGroupDoesNotExist():
     # Require a VG name or UUID at initialization.
     # Empty constructor shall raise.

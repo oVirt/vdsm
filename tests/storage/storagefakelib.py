@@ -269,7 +269,7 @@ class FakeLVM(object):
         try:
             lv = self.lvmd[(vgName, lvName)]
         except KeyError:
-            raise se.LogicalVolumeDoesNotExistError("%s/%s" % (vgName, lvName))
+            raise se.LogicalVolumeDoesNotExistError(vgName, lvName)
         lv_md = deepcopy(lv)
         lv_attr = real_lvm.LV_ATTR(**lv_md['attr'])
         lv_md['attr'] = lv_attr
