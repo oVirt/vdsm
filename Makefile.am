@@ -37,6 +37,7 @@ SUBDIRS += tests
 
 VENV_DIR = $(HOME)/.venv/vdsm
 VENV = $(VENV_DIR)/bin
+RPM_TOPDIR = $(PWD)/build
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -163,14 +164,18 @@ clean-storage:
 all-local: \
 	vdsm.spec
 
-.PHONY: srpm rpm
+clean-local: clean-build
 
-srpm: dist
+.PHONY: srpm rpm clean-build
+
+srpm: clean-build dist
 	rpmbuild -ts $(if $(BUILDID),--define="extra_release .$(BUILDID)") \
+		--define="_topdir $(RPM_TOPDIR)" \
 		$(DIST_ARCHIVES)
 
-rpm: dist
+rpm: clean-build dist
 	rpmbuild -ta $(if $(BUILDID),--define="extra_release .$(BUILDID)") \
+		--define="_topdir $(RPM_TOPDIR)" \
 		--define="qemu_user $(QEMUUSER)" \
 		--define="qemu_group $(QEMUGROUP)" \
 		--define="with_ovirt_vmconsole $(OVIRT_VMCONSOLE)" \
@@ -180,6 +185,9 @@ rpm: dist
 		--define="vdsm_version $(PACKAGE_VERSION)" \
 		--define="vdsm_release $(PACKAGE_RELEASE)" \
 		$(DIST_ARCHIVES)
+
+clean-build:
+	rm -rf $(RPM_TOPDIR)
 
 dist-hook: gen-VERSION gen-ChangeLog
 .PHONY: gen-VERSION gen-ChangeLog
