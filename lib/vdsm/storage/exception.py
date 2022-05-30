@@ -1315,6 +1315,23 @@ class LVMCommandError(StorageException):
         return cls(e.cmd, e.rc, e.out, e.err).with_exception(e)
 
 
+class _HoldingLVMCommandError(StorageException):
+    def __init__(self, error=None):
+        if error is not None and not isinstance(error, LVMCommandError):
+            raise TypeError(
+                f"Expecting instance of LVMCommandError, got {type(error)}")
+
+        self.error = error
+
+    @property
+    def value(self):
+        pairs = [(k, v) for k, v in self.__dict__.items()
+                 if v and k != "error"]
+        if self.error:
+            pairs.append(("error", self.error))
+        return ", ".join(f"{k}={v}" for k, v in pairs)
+
+
 class VolumeGroupActionError(StorageException):
     code = 500
     msg = "Error volume group action"
@@ -1345,7 +1362,7 @@ class VolumeGroupAlreadyExistsError(StorageException):
     msg = "Volume Group Already Exists"
 
 
-class VolumeGroupDoesNotExist(StorageException):
+class VolumeGroupDoesNotExist(_HoldingLVMCommandError):
     code = 506
     msg = "Volume Group does not exist"
 
@@ -1353,17 +1370,9 @@ class VolumeGroupDoesNotExist(StorageException):
         if vg_name is None and vg_uuid is None:
             raise ValueError("Require a VG name or UUID")
 
-        if error is not None and not isinstance(error, LVMCommandError):
-            raise TypeError(
-                f"Expecting instance of LVMCommandError, got {type(error)}")
-
+        super().__init__(error)
         self.vg_name = vg_name
         self.vg_uuid = vg_uuid
-        self.error = error
-
-    @property
-    def value(self):
-        return ", ".join(f"{k}={v}" for k, v in self.__dict__.items() if v)
 
     @classmethod
     def from_error(cls, vg_name, error):
@@ -1589,23 +1598,13 @@ class CouldNotRetrieveLogicalVolumesList(StorageException):
     msg = "Could not retrieve lv list"
 
 
-class InaccessiblePhysDev(StorageException):
+class InaccessiblePhysDev(_HoldingLVMCommandError):
     code = 606
     msg = "Multipath cannot access physical device(s)"
 
     def __init__(self, devices, error=None):
-        if error is not None and not isinstance(error, LVMCommandError):
-            raise TypeError(
-                f"Expecting instance of LVMCommandError, got {type(error)}")
+        super().__init__(error)
         self.devices = devices
-        self.error = error
-
-    @property
-    def value(self):
-        ret_value = f"devices={self.devices}"
-        if self.error:
-            ret_value += f", error={self.error}"
-        return ret_value
 
     @classmethod
     def from_error(cls, devices, error):
