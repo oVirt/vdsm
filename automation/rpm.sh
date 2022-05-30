@@ -20,7 +20,7 @@ mkdir -p ${EXPORT_DIR}
 
 cp $PWD/lib/vdsm/api/vdsm-api.html "${EXPORT_DIR}"
 
-find ~/rpmbuild \
+find $PWD/build \
     -iname '*.rpm' \
     -exec mv {} "${EXPORT_DIR}/" \;
 
