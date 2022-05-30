@@ -850,24 +850,21 @@ class VolumeManifest(object):
            NFS < 4.2). qemu-img convert will fully allocate the entire image
            when trying to punch holes in the unallocated areas.
 
-        2. qcow2 compat=0.10 when volume does not have a parent. qemu-img
-           convert will fully allocate the image instead of skipping the
-           unallocated areas.
-           TODO: Remove when qemu-5.1.0 is available.
-           https://bugzilla.redhat.com/1858632
+        2. qcow2 image when volume does not have a parent. qemu-img convert
+           writes zero clusters for unallocated areas which is very slow with
+           a big image.
 
         When qemu-img convert creates the target image it knows that the image
         is zeroed so it can skip the unallocated areas.
+
+        For qcow2 images, creating a new image during convert creates a sparse
+        image.  This is not a problem since we don't support yet preallocated
+        qcow2 images.
         """
         if self.getFormat() == sc.RAW_FORMAT:
             return self.isSparse()
         else:
-            puuid = self.getParent()
-            if puuid and puuid != sc.BLANK_UUID:
-                return False
-
-            dom = sdCache.produce(self.sdUUID)
-            return dom.qcow2_compat() == "0.10"
+            return self.getParent() == sc.BLANK_UUID
 
     @classmethod
     def zero_initialized(cls):
