@@ -21,7 +21,7 @@ import io
 
 from vdsm.virt.libvirthook import vm_libvirt_hook
 
-from testlib import XMLTestCase
+from testlib import normalized
 
 
 _DISK_XML = '''<domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
@@ -154,14 +154,14 @@ _MODIFIED_DISK_XML = '''<domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
 '''
 
 
-class MigrateHookTestCase(XMLTestCase):
+class TestMigrateHook:
 
     def _test_hook(self, xml, modified_xml,
                    domain='foo', event='migrate', phase='begin'):
         stdin = io.StringIO(xml)
         stdout = io.StringIO()
         vm_libvirt_hook.main(domain, event, phase, stdin=stdin, stdout=stdout)
-        self.assertXMLEqual(stdout.getvalue(), modified_xml)
+        assert normalized(stdout.getvalue()) == normalized(modified_xml)
 
     def test_empty(self):
         xml = '<domain/>'
