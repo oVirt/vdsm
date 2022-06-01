@@ -378,7 +378,9 @@ Requires:       ovirt-openvswitch >= 2.15
 # Workaround for BZ#1966143
 Requires:       ovirt-python-openvswitch >= 2.15
 Requires:       nmstate >= 1.0
+%if 0%{?rhel} < 9
 Requires:       nmstate-plugin-ovsdb
+%endif
 Requires:       python3-libnmstate
 Requires:       libnl3
 Requires:       lldpad
