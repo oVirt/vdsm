@@ -13,6 +13,6 @@ srpm: installdeps
 	make dist
 	rpmbuild \
 		-D "_topdir tmp.repos" \
-		-D "release_suffix ${SUFFIX}" \
+		-D "vdsm_release ${SUFFIX}" \
 		-ts ./*.tar.gz
 	cp tmp.repos/SRPMS/*.src.rpm $(outdir)
