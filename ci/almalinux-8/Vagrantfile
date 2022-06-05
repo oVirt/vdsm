@@ -1,0 +1,10 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#
+# For a complete reference, please see the online documentation at
+# https://docs.vagrantup.com.
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "nirs/vdsm-almalinux-8"
+  config.vm.synced_folder ".", "/vagrant", type: "rsync"
+end
