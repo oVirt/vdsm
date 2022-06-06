@@ -70,7 +70,9 @@ class TestBridge(object):
         NET_ATTRS = {
             'nic': nic0,
             'switch': switch,
-            'custom': {'bridge_opts': 'multicast_snooping=0'},
+            'custom': {
+                'bridge_opts': 'multicast_snooping=0 multicast_router=0'
+            },
         }
         NETCREATE = {NETWORK_NAME: NET_ATTRS}
         with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):

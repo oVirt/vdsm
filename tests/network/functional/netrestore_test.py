@@ -45,8 +45,12 @@ def nic1():
 @pytest.mark.legacy_switch
 class TestRestoreLegacyBridge(object):
     def test_restore_bridge_with_custom_opts(self, adapter, nic0):
-        CUSTOM_OPTS1 = {'bridge_opts': 'multicast_snooping=0'}
-        CUSTOM_OPTS2 = {'bridge_opts': 'multicast_snooping=1'}
+        CUSTOM_OPTS1 = {
+            'bridge_opts': 'multicast_router=0 multicast_snooping=0'
+        }
+        CUSTOM_OPTS2 = {
+            'bridge_opts': 'multicast_router=0 multicast_snooping=1'
+        }
         NETCREATE = {
             NETWORK_NAME: {
                 'nic': nic0,
