@@ -1479,7 +1479,8 @@ def createVG(vgName, devices, initialTag, metadataSize, force=False):
     _initpvs(pvs, metadataSize, force)
     _enable_metadata_area(pvs)
 
-    options = ["--physicalextentsize", "%dm" % (sc.VG_EXTENT_SIZE // MiB)]
+    options = ["--setautoactivation", "n",
+               "--physicalextentsize", "%dm" % (sc.VG_EXTENT_SIZE // MiB)]
     if initialTag:
         options.extend(("--addtag", initialTag))
     cmd = ["vgcreate"] + options + [vgName] + pvs
