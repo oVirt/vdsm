@@ -68,6 +68,18 @@ class TestDirectioChecker:
         with pytest.raises(exception.MiscFileReadException):
             result.delay()
 
+    @pytest.mark.xfail(reason="bug reproduced")
+    def test_path_missing_leak(self):
+        fds_before = set(os.listdir("/proc/self/fd"))
+        self.checks = 10
+        checker = check.DirectioChecker(
+            self.loop, "/no/such/path", self.complete, interval=0.1)
+        checker.start()
+        self.loop.run_forever()
+        pprint.pprint(self.results)
+        fds_after = set(os.listdir("/proc/self/fd"))
+        assert fds_before == fds_after
+
     def test_path_ok(self):
         self.checks = 1
         with temporaryPath(data=b"blah") as path:
@@ -79,6 +91,19 @@ class TestDirectioChecker:
             delay = result.delay()
             print("delay:", delay)
             assert type(delay) == float
+
+    @pytest.mark.xfail(reason="bug reproduced")
+    def test_path_ok_leak(self):
+        fds_before = set(os.listdir("/proc/self/fd"))
+        self.checks = 10
+        with temporaryPath(data=b"blah") as path:
+            checker = check.DirectioChecker(
+                self.loop, path, self.complete, interval=0.1)
+            checker.start()
+            self.loop.run_forever()
+            pprint.pprint(self.results)
+        fds_after = set(os.listdir("/proc/self/fd"))
+        assert fds_before == fds_after
 
     def test_executable_missing(self, monkeypatch):
         monkeypatch.setattr(constants, "EXT_DD", "/no/such/executable")
