@@ -331,6 +331,13 @@ class DirectioChecker(object):
         """
         assert self._state is not IDLE
         self._reader = None
+
+        # Avoid leaking self._proc.stderr. The pipe should be closed
+        # automatically after we clear the reference to self._proc, but we see
+        # clear leak for every failing check.
+        # See https://bugzilla.redhat.com/2075795
+        self._proc.stderr.close()
+
         self._err = data
         rc = self._proc.poll()
         # About 95% of runs, the process has terminated at this point. If not,

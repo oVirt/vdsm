@@ -68,7 +68,6 @@ class TestDirectioChecker:
         with pytest.raises(exception.MiscFileReadException):
             result.delay()
 
-    @pytest.mark.xfail(reason="bug reproduced")
     def test_path_missing_leak(self):
         fds_before = set(os.listdir("/proc/self/fd"))
         self.checks = 10
@@ -92,7 +91,6 @@ class TestDirectioChecker:
             print("delay:", delay)
             assert type(delay) == float
 
-    @pytest.mark.xfail(reason="bug reproduced")
     def test_path_ok_leak(self):
         fds_before = set(os.listdir("/proc/self/fd"))
         self.checks = 10
