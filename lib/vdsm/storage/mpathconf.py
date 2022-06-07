@@ -19,17 +19,21 @@
 #
 
 """
-This module provides multipath configuration functionality over the host.
-Currently it only provides blacklist configuration for setting WWIDs of
-disk devices which should be excluded from multipath management.
+This module provides multipath configuration functionality over the host:
+- Blacklist configuration for setting WWIDs of disk devices
+  which should be excluded from multipath management.
+- Configuration metadata parser.
 """
 import io
 import logging
 import os
 import re
 
+from collections import namedtuple
+
 from . import fileUtils
 
+CONF_FILE = '/etc/multipath.conf'
 _VDSM_MULTIPATH_BLACKLIST = '/etc/multipath/conf.d/vdsm_blacklist.conf'
 
 _HEADER = """\
@@ -39,8 +43,49 @@ _HEADER = """\
 
 """
 
+# The first line of multipath.conf configured by vdsm must contain a
+# "VDSM REVISION X.Y" tag.  Note that older version used "RHEV REVISION X.Y"
+# format.
+
+CURRENT_TAG = "# VDSM REVISION 2.2"
+
+_OLD_TAGS = (
+    "# VDSM REVISION 2.1",
+    "# VDSM REVISION 2.0",
+    "# VDSM REVISION 1.9",
+    "# VDSM REVISION 1.8",
+    "# VDSM REVISION 1.7",
+    "# VDSM REVISION 1.6",
+    "# VDSM REVISION 1.5",
+    "# VDSM REVISION 1.4",
+    "# VDSM REVISION 1.3",
+    "# VDSM REVISION 1.2",
+    "# RHEV REVISION 1.1",
+    "# RHEV REVISION 1.0",
+    "# RHEV REVISION 0.9",
+    "# RHEV REVISION 0.8",
+    "# RHEV REVISION 0.7",
+    "# RHEV REVISION 0.6",
+    "# RHEV REVISION 0.5",
+    "# RHEV REVISION 0.4",
+    "# RHEV REVISION 0.3",
+    "# RHAT REVISION 0.2",
+)
+
+# The second line of multipath.conf may contain PRIVATE_TAG. This means
+# vdsm-tool should never change the conf file even when using the --force flag.
+
+_PRIVATE_TAG = "# VDSM PRIVATE"
+_OLD_PRIVATE_TAG = "# RHEV PRIVATE"
+_PRIVATE_TAGS = (_PRIVATE_TAG, _OLD_PRIVATE_TAG)
+
+REVISION_OK = "OK"
+REVISION_OLD = "OLD"
+REVISION_MISSING = "MISSING"
 
 log = logging.getLogger("storage.mpathconf")
+
+Metadata = namedtuple("Metadata", "revision,private")
 
 
 def configure_blacklist(wwids):
@@ -130,3 +175,33 @@ def read_blacklist():
         wwids.add(wwid)
 
     return wwids
+
+
+def read_metadata():
+    """
+    The multipath configuration file at /etc/multipath.conf should contain
+    a tag in form "RHEV REVISION X.Y" for this check to succeed.
+    If the tag above is followed by tag "RHEV PRIVATE" (old format) or
+    "VDSM PRIVATE" (new format), the configuration should be preserved
+    at all cost.
+
+    Returns:
+        vdsm.storage.mpathconf.Metadata
+    """
+    first = second = ''
+    with open(CONF_FILE) as f:
+        mpathconf = [x.strip("\n") for x in f.readlines()]
+    try:
+        first = mpathconf[0]
+        second = mpathconf[1]
+    except IndexError:
+        pass
+    private = second.startswith(_PRIVATE_TAGS)
+
+    if first.startswith(CURRENT_TAG):
+        return Metadata(REVISION_OK, private)
+
+    if first.startswith(_OLD_TAGS):
+        return Metadata(REVISION_OLD, private)
+
+    return Metadata(REVISION_MISSING, private)

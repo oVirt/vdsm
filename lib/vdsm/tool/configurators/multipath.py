@@ -25,48 +25,12 @@ import sys
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.storage import fileUtils
+from vdsm.storage import mpathconf
 from vdsm.tool import service
 
 from . import YES, NO
 
 _MULTIPATHD = cmdutils.CommandPath("multipathd", "/usr/sbin/multipathd")
-
-_CONF_FILE = "/etc/multipath.conf"
-
-# The first line of multipath.conf configured by vdsm must contain a
-# "VDSM REVISION X.Y" tag.  Note that older version used "RHEV REVISION X.Y"
-# format.
-
-_CURRENT_TAG = "# VDSM REVISION 2.2"
-
-_OLD_TAGS = (
-    "# VDSM REVISION 2.1",
-    "# VDSM REVISION 2.0",
-    "# VDSM REVISION 1.9",
-    "# VDSM REVISION 1.8",
-    "# VDSM REVISION 1.7",
-    "# VDSM REVISION 1.6",
-    "# VDSM REVISION 1.5",
-    "# VDSM REVISION 1.4",
-    "# VDSM REVISION 1.3",
-    "# VDSM REVISION 1.2",
-    "# RHEV REVISION 1.1",
-    "# RHEV REVISION 1.0",
-    "# RHEV REVISION 0.9",
-    "# RHEV REVISION 0.8",
-    "# RHEV REVISION 0.7",
-    "# RHEV REVISION 0.6",
-    "# RHEV REVISION 0.5",
-    "# RHEV REVISION 0.4",
-    "# RHEV REVISION 0.3",
-    "# RHAT REVISION 0.2",
-)
-
-# The second line of multipath.conf may contain PRIVATE_TAG. This means
-# vdsm-tool should never change the conf file even when using the --force flag.
-
-_PRIVATE_TAG = "# VDSM PRIVATE"
-_OLD_PRIVATE_TAG = "# RHEV PRIVATE"
 
 # Once multipathd notices that the last path has failed, it will check
 # all paths "no_path_retry" more times. If no paths are up, it will tell
@@ -273,7 +237,7 @@ overrides {
     no_path_retry   %(no_path_retry)d
 }
 
-""" % {"current_tag": _CURRENT_TAG,
+""" % {"current_tag": mpathconf.CURRENT_TAG,
        "no_path_retry": _NO_PATH_RETRY}
 
 # If multipathd is up, it will be reloaded after configuration,
@@ -287,12 +251,12 @@ def configure():
     Set up the multipath daemon configuration to the known and
     supported state. The original configuration, if any, is saved
     """
-    backup = fileUtils.backup_file(_CONF_FILE)
+    backup = fileUtils.backup_file(mpathconf.CONF_FILE)
     if backup:
         sys.stdout.write("Previous multipath.conf copied to %s\n" % backup)
 
     data = _CONF_DATA.encode('utf-8')
-    fileUtils.atomic_write(_CONF_FILE, data, relabel=True)
+    fileUtils.atomic_write(mpathconf.CONF_FILE, data, relabel=True)
 
     # We want to handle these cases:
     #
@@ -329,42 +293,34 @@ def configure():
 
 def isconfigured():
     """
-    Check the multipath daemon configuration. The configuration file
-    /etc/multipath.conf should contain a tag in form
-    "RHEV REVISION X.Y" for this check to succeed.
-    If the tag above is followed by tag "RHEV PRIVATE" the configuration
-    should be preserved at all cost.
+    Check the multipath daemon configuration.
     """
 
-    if os.path.exists(_CONF_FILE):
-        first = second = ''
-        with open(_CONF_FILE) as f:
-            mpathconf = [x.strip("\n") for x in f.readlines()]
-        try:
-            first = mpathconf[0]
-            second = mpathconf[1]
-        except IndexError:
-            pass
-        if _PRIVATE_TAG in second or _OLD_PRIVATE_TAG in second:
+    if os.path.exists(mpathconf.CONF_FILE):
+        revision, private = mpathconf.read_metadata()
+        if private:
             sys.stdout.write("Manual override for multipath.conf detected"
                              " - preserving current configuration\n")
-            if _CURRENT_TAG not in first:
+            if revision != mpathconf.REVISION_OK:
                 sys.stdout.write("This manual override for multipath.conf "
                                  "was based on downrevved template. "
                                  "You are strongly advised to "
                                  "contact your support representatives\n")
             return YES
 
-        if _CURRENT_TAG in first:
+        if revision == mpathconf.REVISION_OK:
             sys.stdout.write("Current revision of multipath.conf detected,"
                              " preserving\n")
             return YES
 
-        for tag in _OLD_TAGS:
-            if tag in first:
-                sys.stdout.write("Downrev multipath.conf detected, "
-                                 "upgrade required\n")
-                return NO
+        if revision == mpathconf.REVISION_OLD:
+            sys.stdout.write("Downrev multipath.conf detected, "
+                             "upgrade required\n")
+            return NO
+
+        if revision == mpathconf.REVISION_MISSING:
+            sys.stdout.write("No revision of multipath.conf detected.\n")
+            return NO
 
     sys.stdout.write("multipath requires configuration\n")
     return NO
