@@ -111,6 +111,15 @@ def fake_mpath_conf(tmpdir, monkeypatch):
     return fake_conf
 
 
+def test_mpath_conf_create(fake_mpath_conf):
+    # Generated multipath configuration shall contain a valid revision number.
+    mpathconf.configure_multipathd()
+    assert mpathconf.read_metadata() == mpathconf.Metadata(
+        revision=mpathconf.REVISION_OK,
+        private=False,
+    )
+
+
 def test_mpath_current_tag_conf(fake_mpath_conf):
     data = f"""\
 {mpathconf.CURRENT_TAG}
