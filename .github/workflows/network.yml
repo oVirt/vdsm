@@ -26,7 +26,12 @@ jobs:
     strategy:
       matrix:
         type: [ unit, integration, functional ]
-        tag: [ centos-8, centos-9 ]
+        tag: [ centos-8 ]
+        include:
+          - type: unit
+            tag: centos-9
+          - type: integration
+            tag: centos-9
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
