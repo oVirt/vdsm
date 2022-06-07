@@ -102,3 +102,64 @@ def test_read_bad_blacklist(fake_conf):
     fake_conf.write(BAD_CONF)
     wwids = mpathconf.read_blacklist()
     assert wwids == {"wwid1", "wwid2", "wwid5"}
+
+
+@pytest.fixture
+def fake_mpath_conf(tmpdir, monkeypatch):
+    fake_conf = tmpdir.join("multipath.conf")
+    monkeypatch.setattr(mpathconf, "CONF_FILE", str(fake_conf))
+    return fake_conf
+
+
+def test_mpath_current_tag_conf(fake_mpath_conf):
+    data = f"""\
+{mpathconf.CURRENT_TAG}
+"""
+    fake_mpath_conf.write(data)
+    assert mpathconf.read_metadata() == mpathconf.Metadata(
+        revision=mpathconf.REVISION_OK,
+        private=False,
+    )
+
+
+def test_mpath_private_current_tag_conf(fake_mpath_conf):
+    data = f"""\
+{mpathconf.CURRENT_TAG}
+# VDSM PRIVATE
+"""
+    fake_mpath_conf.write(data)
+    assert mpathconf.read_metadata() == mpathconf.Metadata(
+        revision=mpathconf.REVISION_OK,
+        private=True,
+    )
+
+
+def test_mpath_private_old_tag_conf(fake_mpath_conf):
+    data = """\
+# VDSM REVISION 1.5
+# VDSM PRIVATE
+"""
+    fake_mpath_conf.write(data)
+    assert mpathconf.read_metadata() == mpathconf.Metadata(
+        revision=mpathconf.REVISION_OLD,
+        private=True,
+    )
+
+
+def test_mpath_old_tag_conf(fake_mpath_conf):
+    data = """\
+# RHEV REVISION 1.0
+"""
+    fake_mpath_conf.write(data)
+    assert mpathconf.read_metadata() == mpathconf.Metadata(
+        revision=mpathconf.REVISION_OLD,
+        private=False,
+    )
+
+
+def test_mpath_empty_conf(fake_mpath_conf):
+    fake_mpath_conf.write("")
+    assert mpathconf.read_metadata() == mpathconf.Metadata(
+        revision=mpathconf.REVISION_MISSING,
+        private=False,
+    )
