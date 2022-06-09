@@ -1696,6 +1696,32 @@ def test_vg_no_autoactivation(tmp_storage):
 
 @requires_root
 @pytest.mark.root
+def test_vg_autoactivation_check_disabled(tmp_storage):
+    dev_size = 10 * GiB
+    dev = tmp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lv1_name = str(uuid.uuid4())
+    lv2_name = str(uuid.uuid4())
+
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    lvm.createLV(vg_name, lv1_name, 1024, activate=False)
+    lvm.createLV(vg_name, lv2_name, 1024, activate=False)
+
+    # Enable autoactivation for the VG.
+    commands.run(
+        ["vgchange", "--setautoactivation", "y", "--devices", dev, vg_name])
+
+    # Check should detect the VG with enabled autoactivation and disable it.
+    lvm.check_vgs_autoactivation()
+
+    # LVM command to autoactivate all LVs of the VG, but is disabled.
+    commands.run(["vgchange", "--devices", dev, "-a", "ay", vg_name])
+    assert not lvm.getLV(vg_name, lv1_name).active
+    assert not lvm.getLV(vg_name, lv2_name).active
+
+
+@requires_root
+@pytest.mark.root
 def test_lv_activate_deactivate(tmp_storage):
     dev_size = 10 * GiB
     dev = tmp_storage.create_device(dev_size)

@@ -1440,6 +1440,62 @@ def getAllVGs():
     return _lvminfo.getAllVgs()  # returns list
 
 
+def check_single_vg_autoactivation(vg_name):
+    """
+    Retrieve the autoactivation field of vg_name and check if is disabled.
+    For each VG with autoactivation enabled, log a warning and disable it.
+    The autoactivation field should remain always disabled to avoid unexpected
+    VG activation.
+
+    Args:
+        vg_name (str): name of the VG to check.
+
+    Raises:
+        se.VolumeGroupDoesNotExist: in case it fails at retrieving the
+            autoactivation field of a VG.
+        se.VolumeGroupDisableOptionError: in case it fails at disabling the
+            autoactivation field of a VG.
+    """
+    cmd = ["vgs", "-o", "autoactivation", vg_name]
+    try:
+        out = _lvminfo.run_command(
+            cmd, devices=_lvminfo._getVGDevs([vg_name]))
+    except se.LVMCommandError as e:
+        log.warning(
+            "Retrieving VG %s autoactivation field failed", vg_name)
+        # Retrieving options for a single VG failed after a recent update.
+        # Assume VG does not exist and raise.
+        raise se.VolumeGroupDoesNotExist.from_error(vg_name, e)
+    else:
+        if 'enabled' in (line.strip() for line in out):
+            log.warning(
+                "Found autoactivation enabled for VG %s, disabling",
+                vg_name)
+            _disable_vg_autoactivation(vg_name)
+
+
+def check_vgs_autoactivation():
+    """
+    Loop through all VGs, and check if autoactivation field is disabled.
+    """
+    for vg in getAllVGs():
+        try:
+            check_single_vg_autoactivation(vg.name)
+        except se.VolumeGroupDoesNotExist as e:
+            log.warning("Failed to check VG %s autoactivation: %s", vg.name, e)
+        except se.VolumeGroupDisableOptionError as e:
+            log.warning(
+                "Failed to disable VG %s autoactivation: %s", vg.name, e)
+
+
+def _disable_vg_autoactivation(vg_name):
+    cmd = ["vgchange", "--setautoactivation", "n", vg_name]
+    try:
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vg_name, )))
+    except se.LVMCommandError as e:
+        raise se.VolumeGroupDisableOptionError.from_lvmerror(e)
+
+
 # TODO: lvm VG UUID should not be exposed.
 # Remove this function when hsm.public_createVG is removed.
 def getVGbyUUID(vgUUID):

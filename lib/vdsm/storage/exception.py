@@ -1442,6 +1442,11 @@ class VolumeGroupReduceError(LVMCommandError):
     msg = "Cannot reduce the Volume Group"
 
 
+class VolumeGroupDisableOptionError(LVMCommandError):
+    code = 520
+    msg = "Disable a Volume Group option error"
+
+
 class CannotCreateLogicalVolume(LVMCommandError):
     code = 550
     msg = "Cannot create Logical Volume"
