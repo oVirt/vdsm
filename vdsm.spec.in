@@ -499,6 +499,14 @@ The system administrator will be responsible for creating the host "ovirt-local"
 volume group and extending it with new devices if needed.
 The VM must be pinned to the host.
 
+%package hook-log-console
+Summary:        Log VM's serial console to a file
+BuildArch:      noarch
+Requires:       %{name} == %{version}
+
+%description hook-log-console
+This hook allows logging a VM serial console to a file.
+
 %package hook-macbind
 Summary:        Bind a vNIC to a Bridge
 BuildArch:      noarch
@@ -1049,6 +1057,9 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/localdisk
 %{_libexecdir}/%{vdsm_name}/localdisk-helper
 %{_udevrulesdir}/12-vdsm-localdisk.rules
+
+%files hook-log-console
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_log_console
 
 %files hook-vmfex-dev
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_vmfex

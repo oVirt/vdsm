@@ -1,0 +1,42 @@
+log_console vdsm hook
+=================================
+This hook appends a VM's serial console to a log file on the host.
+
+Installation:
+* Use engine-config to set the appropriate custom properties as such:
+
+Custom property for a VM:
+    sudo engine-config -s "UserDefinedVMProperties=log_console=^(on|off)$"
+
+Usage:
+
+The hook can be enabled using one of two ways:
+
+1. Set the VM property 'log_console' to 'on', for specific VMs, as needed, via
+the engine. Set it to 'off', to explicitly disable the hook.
+
+2. Set the environment variable 'log_console_vm_regexp', in
+/etc/sysconfig/vdsm, to a regular expression matching the VM names for which
+you want to enable the hook. Matching is done using Python's re.match().
+
+If log_console is set to 'off', for some VM, the hook will be disabled,
+regardless of the value of log_console_vm_regexp or whether the name matches.
+
+If 'log_console' is not 'on', for some VM, and 'log_console_vm_regexp' does
+not match, the hook will be disabled. So by default, with both variables
+being empty/unset, the hook is disabled.
+
+In principle, a future version might enable it by default, based on feedback
+from users.
+
+Using log_console_vm_regexp is useful, in particular, for enabling the hook
+for a HostedEngine VM, for which using 'log_console' is less practical, as
+the engine might be down exactly when you want to use it (to help diagnose
+why it's down...).
+
+The logs are currently hard-coded to
+/var/log/libvirt/qemu/{vm_name}-console.log .
+
+TODO: Allow putting logs elsewhere.
+This also requires fiddling with selinux/permissions.
+See also: https://gerrit.ovirt.org/c/lago-ost/+/114150
