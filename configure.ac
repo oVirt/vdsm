@@ -401,6 +401,7 @@ AC_OUTPUT([
 	vdsm_hooks/fileinject/Makefile
 	vdsm_hooks/httpsisoboot/Makefile
 	vdsm_hooks/localdisk/Makefile
+	vdsm_hooks/log_console/Makefile
 	vdsm_hooks/macbind/Makefile
 	vdsm_hooks/nestedvt/Makefile
 	vdsm_hooks/openstacknet/Makefile

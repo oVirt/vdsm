@@ -24,6 +24,7 @@ SUBDIRS = \
 	faqemu \
 	fcoe \
 	localdisk \
+	log_console \
 	openstacknet \
 	qemucmdline \
 	vhostmd \
