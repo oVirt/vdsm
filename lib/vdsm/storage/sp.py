@@ -392,6 +392,10 @@ class StoragePool(object):
                 else:
                     self.spmMailer = None
 
+                # As SPM we can check for VGs autoactivation field and
+                # and repair them as needed.
+                lvm.check_vgs_autoactivation()
+
                 # Restore tasks is last because tasks are spm ops (spm has to
                 # be started)
                 self.taskMng.recoverDumpedTasks()
@@ -1205,6 +1209,11 @@ class StoragePool(object):
 
         if dom.getDomainClass() == sd.DATA_DOMAIN:
             self._convertDomain(dom)
+
+        # If running as SPM, check that autoactivation is disabled for all VGs
+        # before activating the SD.
+        if self.spmRole == SPM_ACQUIRED:
+            lvm.check_single_vg_autoactivation(sdUUID)
 
         dom.activate()
         # set domains also do rebuild

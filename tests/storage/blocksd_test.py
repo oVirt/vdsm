@@ -31,6 +31,7 @@ import string
 
 import pytest
 
+from vdsm.common import commands
 from vdsm.common.units import MiB, GiB
 from vdsm.storage import blockSD
 from vdsm.storage import clusterlock
@@ -1790,6 +1791,58 @@ def test_spm_lifecycle(
 
     pool.startSpm(prevID=0, prevLVER=0, maxHostID=clusterlock.MAX_HOST_ID)
     pool.stopSpm()
+
+
+@requires_root
+@pytest.mark.root
+def test_spm_start_autoactivation_check(
+        tmp_storage,
+        tmp_repo,
+        fake_access,
+        fake_rescan,
+        tmp_db,
+        fake_task,
+        fake_sanlock,
+        caplog):
+    msd_uuid = str(uuid.uuid4())
+
+    dev = tmp_storage.create_device(20 * GiB)
+    lvm.createVG(msd_uuid, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    msd_vg = lvm.getVG(msd_uuid)
+
+    master_dom = blockSD.BlockStorageDomain.create(
+        sdUUID=msd_uuid,
+        domainName="mst_domain",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=msd_vg.uuid,
+        version=5,
+        storageType=sd.ISCSI_DOMAIN)
+
+    sdCache.knownSDs[msd_uuid] = blockSD.findDomain
+    sdCache.manuallyAddDomain(master_dom)
+
+    pool = sp.StoragePool(
+        tmp_repo.pool_id,
+        FakeDomainMonitor(),
+        FakeTaskManager())
+    pool.setBackend(StoragePoolDiskBackend(pool))
+    pool.create(
+        poolName="pool",
+        msdUUID=msd_uuid,
+        domList=[msd_uuid],
+        masterVersion=0,
+        leaseParams=sd.DEFAULT_LEASE_PARAMS)
+
+    commands.run(
+        ["vgchange", "--setautoactivation", "y", "--devices", dev, msd_uuid])
+    caplog.set_level("WARNING")
+    caplog.clear()
+    pool.startSpm(prevID=0, prevLVER=0, maxHostID=clusterlock.MAX_HOST_ID)
+    pool.stopSpm()
+    # A warning has been logged due to the enabled autoactivation, but the
+    # SPM start process is not interrupted and the SPM lifecycle goes on.
+    assert len(caplog.records) == 1
+    assert "Found autoactivation enabled for VG" in caplog.records[0].message
 
 
 @requires_root
