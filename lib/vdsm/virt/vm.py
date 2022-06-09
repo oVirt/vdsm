@@ -2829,13 +2829,6 @@ class Vm(object):
                             srcDomXML)
                 else:
                     srcDomXML = self._connection.saveImageGetXMLDesc(fname)
-                    # Modify CPU pinning -- remove pinning saved during
-                    # hibernation and replace it with pinning provided by
-                    # engine in API call.
-                    dom = xmlutils.fromstring(srcDomXML)
-                    dom = cpumanagement.replace_cpu_pinning(
-                        self, dom, self._initial_vcpupin)
-                    srcDomXML = xmlutils.tostring(dom)
                 # We need to set `passwd` attribute to graphics devices
                 # otherwise libvirt would remove the `passwdValidTo` attribute
                 # and that would cause other errors in our validation code
@@ -2845,6 +2838,13 @@ class Vm(object):
                 # does not bring any value and we risk leaking the password
                 # into the log.
                 srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
+                # Modify CPU pinning -- remove pinning saved during
+                # hibernation/snapshot and replace it with pinning provided by
+                # engine in API call.
+                dom = xmlutils.fromstring(srcDomXML)
+                dom = cpumanagement.replace_cpu_pinning(
+                    self, dom, self._initial_vcpupin)
+                srcDomXML = xmlutils.tostring(dom)
                 hooks.before_vm_dehibernate(
                     srcDomXML, self._custom,
                     {'FROM_SNAPSHOT': str(fromSnapshot)})
