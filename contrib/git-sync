@@ -1,0 +1,86 @@
+#!/usr/bin/python3
+#
+# Copyright 2020 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+"""
+Push a git branch to remote, modifying the remote working directory.
+
+To use this script, you need to clone vdsm on the host. In this example we
+clone in /home/user/src:
+
+    ssh myhost
+    cd src
+    git clone https://github.com/oVirt/vdsm.git
+
+Add a remote on your developement machine:
+
+    git remote add myhost ssh://user@myhost:/home/user/src/vdsm/.git
+
+With this, you can push the current branch to `myhost` with:
+
+    git-sync myhost
+
+To push another branch use:
+
+    git-sync myhost mybranch
+
+"""
+
+import os
+import sys
+import uuid
+import subprocess
+from urllib.parse import urlparse
+
+
+def run(cmd):
+    return subprocess.check_output(cmd).decode().strip()
+
+
+if len(sys.argv) < 2:
+    print("Usage: git-sync REMOTE [BRANCH]")
+    sys.exit(2)
+
+remote = sys.argv[1]
+
+if len(sys.argv) > 2:
+    branch = sys.argv[2]
+else:
+    branch = run(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+
+tmp_branch = "tmp-%s" % uuid.uuid4()
+
+# NOTE: this works only with ssh:// URL:
+#   ssh://user@host:/home/user/src/vdsm/.git
+# I would be nice to support also:
+#   user@host:src/vdsm/.git
+remote_url = urlparse(run(["git", "remote", "get-url", remote]))
+
+# netloc='user@host1:',
+netloc = remote_url.netloc.rstrip(":")
+
+# path='/home/user/vdsm/.git',
+path = remote_url.path.replace("/.git", "")
+
+run(["ssh", netloc, f"cd {path} && git checkout -b {tmp_branch}"])
+
+run(["git", "push", "-f", remote, branch])
+
+run(["ssh", netloc, f"cd {path} && git checkout {branch} && git branch -D {tmp_branch}"])
