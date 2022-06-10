@@ -42,6 +42,7 @@ from vdsm.storage import fileSD
 from vdsm.storage import fileUtils
 from vdsm.storage import guarded
 from vdsm.storage import image
+from vdsm.storage import lvm
 from vdsm.storage import mailbox
 from vdsm.storage import merge
 from vdsm.storage import misc
@@ -1360,7 +1361,7 @@ class StoragePool(object):
         # We want to avoid looking up (vgs) of unknown block domains.
         # domUUIDs includes all the domains, file or block.
         block_mountpoint = os.path.join(sc.REPO_MOUNT_DIR, sd.BLOCKSD_DIR)
-        blockDomUUIDs = [vg.name for vg in blockSD.lvm.getVGs(domUUIDs)]
+        blockDomUUIDs = [vg.name for vg in lvm.getVGs(domUUIDs)]
         domDirs = {}  # {domUUID: domaindir}
         # Add the block domains
         for domUUID in blockDomUUIDs:
