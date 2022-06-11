@@ -10,6 +10,6 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder ".", "/vagrant", type: "rsync"
   config.push.define "local-exec" do |push|
     push.script = "~/bin/git-sync"
-    push.args = "vagrant"
+    push.args = "al8"
   end
 end
