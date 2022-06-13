@@ -2827,7 +2827,6 @@ class Vm(object):
                     if 'vmName' in self.conf:
                         srcDomXML = self._correct_disk_volumes_from_conf(
                             srcDomXML)
-                    srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
                 else:
                     srcDomXML = self._connection.saveImageGetXMLDesc(fname)
                     # Modify CPU pinning -- remove pinning saved during
@@ -2837,6 +2836,15 @@ class Vm(object):
                     dom = cpumanagement.replace_cpu_pinning(
                         self, dom, self._initial_vcpupin)
                     srcDomXML = xmlutils.tostring(dom)
+                # We need to set `passwd` attribute to graphics devices
+                # otherwise libvirt would remove the `passwdValidTo` attribute
+                # and that would cause other errors in our validation code
+                # elsewhere. We might call `saveImageGetXMLDesc()` with
+                # `VIR_DOMAIN_SAVE_IMAGE_XML_SECURE` flag to retrieve the
+                # stored password, but our passwords are temporary so this
+                # does not bring any value and we risk leaking the password
+                # into the log.
+                srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
                 hooks.before_vm_dehibernate(
                     srcDomXML, self._custom,
                     {'FROM_SNAPSHOT': str(fromSnapshot)})
