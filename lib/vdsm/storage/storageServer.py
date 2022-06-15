@@ -602,6 +602,9 @@ class IscsiConnection(Connection):
             else:
                 logins.append(con)
 
+        if not logins:
+            return results
+
         # Run login to nodes in parallel. This operations happen on remote
         # iscsi server and if the some targets are not available, the operation
         # can take quite some time (by default 120 seconds) and can cause
