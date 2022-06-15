@@ -28,6 +28,7 @@ import socket
 from collections import namedtuple
 import six
 import sys
+import time
 
 from vdsm.config import config
 from vdsm import utils
@@ -43,6 +44,7 @@ from vdsm.storage import fileUtils
 from vdsm.storage import iscsi
 from vdsm.storage import mount
 from vdsm.storage import sd
+from vdsm.storage.devicemapper import DMPATH_PREFIX
 from vdsm.storage.mount import MountError
 
 
@@ -82,7 +84,7 @@ log = logging.getLogger("storage.storageServer")
 class Connection:
 
     @classmethod
-    def connect_all(cls, connections):
+    def connect_all(cls, connections, guids):
         results = []
 
         for con in connections:
@@ -581,7 +583,21 @@ class IscsiConnection(Connection):
         self._cred = credentials
 
     @classmethod
-    def connect_all(cls, prep_cons):
+    def connect_all(cls, prep_cons, guids):
+        """
+        Prepare all connections, do login attempts for each one and
+        wait for devices to be available and settled.
+
+        Args:
+            prep_cons (List[Connection]): List of requested connections.
+            guids (List[str]): List of device GUIDs to check.
+
+        Returns:
+            List[Tuple[bool, result]]: Iterator of Result tuples for all
+                connections. Each element is either (True, result) if the
+                connection succeeded or (False, exception) if it raised an
+                exception.
+        """
         results = []
         logins = []
 
@@ -634,10 +650,25 @@ class IscsiConnection(Connection):
         for res in login_results:
             results.append(res.value)
 
+        if guids is not None:
+            # Wait for all expected devices to be available.
+            cls._wait_available_devices(guids)
         # Wait for all new devices to be settled.
         cls.settle_devices()
 
         return results
+
+    @classmethod
+    def _wait_available_devices(cls, guids):
+        timeout = config.getint("multipath", "wait_timeout")
+        start = time.monotonic()
+        deadline = start + timeout
+        for guid in guids:
+            while not os.path.exists(os.path.join(DMPATH_PREFIX, guid)):
+                time.sleep(1.0)
+                if time.monotonic() >= deadline:
+                    log.warning("Timeout reached for %s device", guid)
+                    break
 
     @classmethod
     def max_workers(cls, logins):
@@ -926,9 +957,9 @@ class ConnectionFactory(object):
         return ctor(**params)
 
 
-def connect(dom_type, con_defs):
+def connect(dom_type, con_defs, guids):
     con_class, connections = _prepare_connections(dom_type, con_defs)
-    return con_class.connect_all(connections)
+    return con_class.connect_all(connections, guids)
 
 
 def disconnect(dom_type, con_defs):

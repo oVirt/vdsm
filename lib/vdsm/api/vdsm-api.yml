@@ -10643,6 +10643,13 @@ StoragePool.connectStorageServer:
         name: connectionParams
         type:
         - *ConnectionRefParameters
+
+    -   defaultvalue: null
+        description: An array of device names with which the connections depend
+        name: devlist
+        added: '4.5'
+        type:
+        - string
     return:
         description: The status of each connection attempt
         type:

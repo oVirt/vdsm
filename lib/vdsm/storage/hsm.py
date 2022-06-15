@@ -2155,7 +2155,7 @@ class HSM(object):
 
     @deprecated
     @public
-    def connectStorageServer(self, domType, spUUID, conList):
+    def connectStorageServer(self, domType, spUUID, conList, guids=None):
         """
         Connects to a storage low level entity (server).
 
@@ -2165,6 +2165,8 @@ class HSM(object):
         :param conList: A list of connections. Each connection being a dict
                         with keys depending on the type
         :type conList: list
+        :param guids: List of device GUIDs to check.
+        :type guids: list
 
         :returns: a list of statuses status will be 0 if connection was
                   successful
@@ -2178,7 +2180,7 @@ class HSM(object):
                 "domType=%s, spUUID=%s, conList=%s" %
                 (domType, spUUID, conList)))
 
-        results = storageServer.connect(domType, conList)
+        results = storageServer.connect(domType, conList, guids)
 
         # In case there were changes in devices size
         # while the VDSM was not connected, we need to

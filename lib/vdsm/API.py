@@ -1130,9 +1130,9 @@ class StoragePool(APIBase):
         return self._irs.connectStoragePool(
             self._UUID, hostID, masterSdUUID, masterVersion, domainDict)
 
-    def connectStorageServer(self, domainType, connectionParams):
-        return self._irs.connectStorageServer(domainType, self._UUID,
-                                              connectionParams)
+    def connectStorageServer(self, domainType, connectionParams, devlist=None):
+        return self._irs.connectStorageServer(
+            domainType, self._UUID, connectionParams, devlist)
 
     def create(self, name, masterSdUUID, masterVersion, domainList,
                lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec,
