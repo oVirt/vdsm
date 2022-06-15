@@ -595,8 +595,8 @@ class IscsiConnection(Connection):
                 con.setup_node()
             except Exception as err:
                 log.error(
-                    "Could configure connection to % and iface %s",
-                    con.target, con.iface)
+                    "Could not configure connection to %s and iface %s: %s",
+                    con.target, con.iface, err)
                 status, _ = cls.translate_error(err)
                 results.append((con, status))
             else:
