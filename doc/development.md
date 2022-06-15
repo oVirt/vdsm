@@ -2,13 +2,6 @@
 
 ## Environment setup
 
-Fork the project on https://github.com/oVirt/vdsm.
-
-Clone your fork:
-
-    sudo dnf install -y git
-    git@github.com:{user}/vdsm.git
-
 Enable oVirt packages for Fedora:
 
     sudo dnf copr enable -y nsoffer/ioprocess-preview
@@ -24,34 +17,65 @@ Update the system after enabling all repositories:
 
     sudo dnf update -y
 
+Fork the project on https://github.com/oVirt/vdsm.
+
+Clone your fork:
+
+    sudo dnf install -y git
+    git clone git@github.com:{your_username}/vdsm.git
+
 Install additional packages for Fedora, CentOS, and RHEL:
 
     sudo dnf install -y `cat automation/check-patch.packages`
 
-Create virtual environment for vdsm:
+Generate the Makefile (and configure script):
+
+    ./autogen.sh --system --enable-timestamp
+
+Now you can create the virtual environment
+(https://docs.python.org/3/library/venv.html), which is necessary to run the
+tests later. This needs to be done only once:
 
     make venv
 
 
 ## Building Vdsm
 
-To configure sources (run `./configure --help` to see configuration options):
+Before building, it is recommended to recreate the Makefile because it
+contains version numbers, which might have changed by updating the local
+repository:
 
-    git clean -xfd
     ./autogen.sh --system --enable-timestamp
+
+To build Vdsm:
+
     make
 
-To test Vdsm (refer to tests/README for further tests information):
-
-    make check
-
-To create an RPM:
+To create the RPMs:
 
     make rpm
 
-To upgrade your system with local build's RPM:
+To upgrade your system with local build's RPM (before you do this you should
+activate maintenance mode for Vdsm):
 
     make upgrade
+
+
+## Running the tests
+
+To run tests, first enter the virtual environment:
+
+    source ~/.venv/vdsm/bin/activate
+
+Then start some tests with tox, for example the networking tests:
+
+    tox -e network
+
+To exit the virtual environment afterwards:
+
+    deactivate
+
+For more information about testing see [/tests/README.md](/tests/README.md).
 
 
 ## Making new releases
@@ -90,3 +114,9 @@ architectures.
 
 When you push patches to GitHub, CI will run its tests according to the
 configuration in the `.github/workflows/ci.yml` file.
+
+
+## Advanced Configuration
+
+Before running `make` you could use `./configure` to set some (rarely used) options.
+To see the list of options: `./configure -h`.
