@@ -13,15 +13,26 @@ Note: Not all tests have been converted to tox and/or pytest yet.
 
 ## Running the tests
 
-Before running vdsm tests, activate the environment:
+Before running Vdsm tests, activate the virtual environment (which you need to
+create once, with `make venv`, as described in
+[/doc/development.md](/doc/development.md)):
 
     source ~/.venv/vdsm/bin/activate
 
-When done, you can deactivate the environment:
+When done with testing, you can deactivate the virtual environment:
 
     deactivate
 
-Before running storage tests, make sure you have setup the user storage
+To run tests from only one module, for example `lib`:
+
+    tox -e lib
+
+The test verbosity can be increased. Any arguments after `--` are passed
+through to pytest:
+
+    tox -e lib -- -vv
+
+Before running storage tests, make sure you have set up the user storage
 accordingly. To create storage you can do:
 
     make storage
@@ -32,20 +43,29 @@ for more information.
 
 Run storage tests:
 
+    tox -e storage -- -vv --no-cov storage
+
+Note that for some test modules (like `storage` or `virt`), _if_ there
+are any extra pytest arguments (after the `--`) then the search path at
+the end needs to be specified explicitly, because the configuration in
+`tox.ini` doesn't take care of it in that case and unintended tests from
+other tox environments would be collected and run too.  
+Here we also disabled the coverage check, which is configured in
+`tox.ini`, because running subsets of the tests can't meet the desired
+coverage goal anyway and will just produce a useless warning. In this case
+some tests can only run as root. The same applies when we run the tests
+from just one file. But note that you also don't get any coverage reports
+in that case.
+
+You can also use environment variables to pass options to pytest, then you
+don't have to worry about the search path:
+
+    export PYTEST_ADDOPTS="--no-cov -vv"
     tox -e storage
 
-Increasing test verbosity:
+To run the tests from just a single file:
 
-    tox -e storage -- -vv
-
-You can also use environment variables:
-
-    export PYTEST_ADDOPTS=-vv
-    tox -e storage
-
-Running specific storage tests modules:
-
-    tox -e storage -- storage/image_test.py
+    tox -e storage -- --no-cov storage/image_test.py
 
 Alternatively, all tests but storage tests can be run by doing:
 
