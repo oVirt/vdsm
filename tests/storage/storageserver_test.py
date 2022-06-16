@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import os
 import uuid
 import random
 
@@ -32,6 +33,8 @@ from vdsm.storage.storageServer import MountConnection
 
 from vdsm.gluster import cli as gluster_cli
 from vdsm.gluster import exception as ge
+
+from . marks import requires_root
 
 
 class FakeSupervdsm(object):
@@ -338,6 +341,18 @@ class TestIscsiConnection:
 
         return _return_connection
 
+    @pytest.fixture
+    def dm_device(self, monkeypatch, tmpdir):
+        """
+        Create a dm device in a temporary non-root folder.
+        Device mapper fixtures do not work properly in containters.
+        """
+        device_name = str(uuid.uuid4())
+        dm_dir = os.path.join(tmpdir, device_name)
+        os.mkdir(dm_dir)
+        monkeypatch.setattr(storageServer, 'DMPATH_PREFIX', tmpdir)
+        return device_name
+
     def test_prepare_connection_without_initiator_name(self, fake_connection):
         con_def = fake_connection()
 
@@ -354,3 +369,44 @@ class TestIscsiConnection:
         # Unset keys raise KeyError
         with pytest.raises(KeyError):
             con.iface.initiatorName
+
+    @requires_root
+    @pytest.mark.root
+    def test_connect(self, fake_iscsi, fake_connection, dm_device, caplog):
+        connections = fake_connection()
+
+        conn, status = storageServer.connect(
+            sd.ISCSI_DOMAIN, connections, [dm_device])[0]
+
+        assert status == 0
+        assert len(fake_iscsi.connections) == len(connections)
+        iscsi_portal = fake_iscsi.connections[0].portal
+        assert iscsi_portal.hostname == connections[0]["connection"]
+        assert iscsi_portal.port == int(connections[0]["port"])
+        assert conn.id == connections[0]["id"]
+        assert "Timeout reached" not in caplog.text
+
+    def test_failed_connection(self, fake_iscsi, fake_connection, dm_device):
+        connections = fake_connection(valid=False)
+
+        _, status = storageServer.connect(
+            sd.ISCSI_DOMAIN, connections, [dm_device])[0]
+
+        assert status != 0
+        assert len(fake_iscsi.connections) == 0
+
+    @requires_root
+    @pytest.mark.root
+    def test_invalid_device(self, fake_iscsi, fake_connection, caplog):
+        connections = fake_connection()
+
+        conn, status = storageServer.connect(
+            sd.ISCSI_DOMAIN, connections, ['dm-invalid'])[0]
+
+        assert status == 0
+        assert len(fake_iscsi.connections) == len(connections)
+        iscsi_portal = fake_iscsi.connections[0].portal
+        assert iscsi_portal.hostname == connections[0]["connection"]
+        assert iscsi_portal.port == int(connections[0]["port"])
+        assert conn.id == connections[0]["id"]
+        assert "Timeout reached for dm-invalid device" in caplog.text
