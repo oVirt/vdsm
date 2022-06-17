@@ -297,28 +297,30 @@ class TestGlusterFSNotAccessibleConnection:
         assert gluster.options == userMountOptions
 
 
-def test_prepare_connection_without_initiator_name():
-    con_def = [{
-        "password": "password",
-        "port": "3260",
-        "iqn": "iqn.2016-01.com.ovirt:444",
-        "connection": "192.168.1.2",
-        "ipv6_enabled": "false",
-        "id": "994a711a-60f3-411a-aca2-0b60f01e8b8c",
-        "user": "",
-        "tpgt": "1",
-    }]
+class TestIscsiConnection:
 
-    con_class, cons = storageServer._prepare_connections(
-        sd.ISCSI_DOMAIN, con_def)
-    con = cons[0]
+    def test_prepare_connection_without_initiator_name(self):
+        con_def = [{
+            "password": "password",
+            "port": "3260",
+            "iqn": "iqn.2016-01.com.ovirt:444",
+            "connection": "192.168.1.2",
+            "ipv6_enabled": "false",
+            "id": "994a711a-60f3-411a-aca2-0b60f01e8b8c",
+            "user": "",
+            "tpgt": "1",
+        }]
 
-    # Check we get right connection class.
-    assert con_class == IscsiConnection
+        con_class, cons = storageServer._prepare_connections(
+            sd.ISCSI_DOMAIN, con_def)
+        con = cons[0]
 
-    # Connection class has to be same type as actual connection object.
-    assert con_class == type(con)
+        # Check we get right connection class.
+        assert con_class == IscsiConnection
 
-    # Unset keys raise KeyError
-    with pytest.raises(KeyError):
-        con.iface.initiatorName
+        # Connection class has to be same type as actual connection object.
+        assert con_class == type(con)
+
+        # Unset keys raise KeyError
+        with pytest.raises(KeyError):
+            con.iface.initiatorName
