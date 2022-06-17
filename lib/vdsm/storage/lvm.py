@@ -36,8 +36,6 @@ from collections import namedtuple
 import pprint as pp
 import threading
 
-from itertools import chain
-
 from vdsm import constants
 from vdsm import utils
 from vdsm.common import errors
@@ -50,9 +48,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import lsof
 from vdsm.storage import misc
 from vdsm.storage import multipath
-from vdsm.storage.lvmcmd import LVMRunner
-
-from vdsm.config import config
+from vdsm.storage import lvmcmd
 
 log = logging.getLogger("storage.lvm")
 
@@ -209,85 +205,6 @@ LVS_CMD = ("lvs",) + LVM_FLAGS + ("-o", LV_FIELDS)
 # metadata volumes
 USER_GROUP = constants.DISKIMAGE_USER + ":" + constants.DISKIMAGE_GROUP
 
-# Runtime configuration notes
-# ===========================
-#
-# This configuration is used for all commands using --config option. This
-# overrides various options built into lvm comamnds, or defined in
-# /etc/lvm/lvm.conf or /etc/lvm/lvmlocl.conf.
-#
-# hints="none"
-# ------------
-# prevent from lvm to remember which devices are PVs so that lvm can avoid
-# scanning other devices that are not PVs, since we create and remove PVs from
-# other hosts, then the hints might be wrong.  Finally because oVirt host is
-# like to use strict lvm filter, the hints are not needed.  Disable hints for
-# lvm commands run by vdsm, even if hints are enabled on the host.
-#
-# obtain_device_list_from_udev=0
-# ------------------------------
-# Avoid random faiures in lvcreate an lvchange seen during stress tests
-# (using tests/storage/stress/reload.py). This was disabled in RHEL 6, and
-# enabled back in RHEL 7, and seems to be broken again in RHEL 8.
-
-LVMCONF_TEMPLATE = """
-devices {
- preferred_names=["^/dev/mapper/"]
- ignore_suspended_devices=1
- write_cache_state=0
- disable_after_error_count=3
- %(filter)s
- hints="none"
- obtain_device_list_from_udev=0
-}
-global {
- prioritise_write_locks=1
- wait_for_locks=1
- use_lvmpolld=%(use_lvmpolld)s
-}
-backup {
- retain_min=50
- retain_days=0
-}
-"""
-
-USER_DEV_LIST = [d for d in config.get("irs", "lvm_dev_whitelist").split(",")
-                 if d is not None]
-
-USE_DEVICES = config.get("lvm", "config_method").lower() == "devices"
-
-
-def _prepare_device_set(devs):
-    devices = set(d.strip() for d in chain(devs, USER_DEV_LIST))
-    devices.discard('')
-    if devices:
-        devices = sorted(d.replace(r'\x', r'\\x') for d in devices)
-    return devices
-
-
-def _buildFilter(devices):
-    if devices:
-        # Accept specified devices, reject everything else.
-        # ["a|^/dev/1$|^/dev/2$|", "r|.*|"]
-        pattern = "|".join("^{}$".format(d) for d in devices)
-        accept = '"a|{}|", '.format(pattern)
-    else:
-        # Reject all devices.
-        # ["r|.*|"]
-        accept = ''
-    return '[{}"r|.*|"]'.format(accept)
-
-
-def _buildConfig(dev_filter="", use_lvmpolld="1"):
-    if dev_filter:
-        dev_filter = f"filter={dev_filter}"
-
-    conf = LVMCONF_TEMPLATE % {
-        "filter": dev_filter,
-        "use_lvmpolld": use_lvmpolld,
-    }
-    return conf.replace("\n", " ").strip()
-
 
 #
 # Make sure that "args" is suitable for consumption in interfaces
@@ -323,14 +240,13 @@ class LVMCache(object):
     # having exponential back-off for read-only commands.
     MAX_COMMANDS = 10
 
-    def __init__(self, cmd_runner=LVMRunner(), cache_lvs=False):
+    def __init__(self, cache_lvs=False):
         """
         Arguemnts:
             cmd_runner (LVMRunner): used to run LVM command
             cache_lvs (bool): use LVs cache when looking up LVs. False by
                 defualt since it works only on the SPM.
         """
-        self._runner = cmd_runner
         self._cache_lvs = cache_lvs
         self._devices = None
         self._devices_stale = True
@@ -352,35 +268,9 @@ class LVMCache(object):
     def _cached_devices(self):
         with self._devices_lock:
             if self._devices_stale:
-                self._devices = _prepare_device_set(
-                    multipath.getMPDevNamesIter())
+                self._devices = multipath.getMPDevNamesIter()
                 self._devices_stale = False
             return self._devices
-
-    def _addExtraCfg(self, cmd, devices=tuple(), use_lvmpolld=True):
-        newcmd = [constants.EXT_LVM, cmd[0]]
-
-        if devices:
-            device_set = _prepare_device_set(devices)
-        else:
-            device_set = self._cached_devices()
-
-        if USE_DEVICES:
-            if device_set:
-                newcmd += ["--devices", ",".join(device_set)]
-            dev_filter = ""
-        else:
-            dev_filter = _buildFilter(device_set)
-
-        conf = _buildConfig(
-            dev_filter=dev_filter,
-            use_lvmpolld="1" if use_lvmpolld else "0")
-        newcmd += ["--config", conf]
-
-        if len(cmd) > 1:
-            newcmd += cmd[1:]
-
-        return newcmd
 
     def invalidate_devices(self):
         self._devices_stale = True
@@ -394,24 +284,23 @@ class LVMCache(object):
             # 1. Try the command with fast specific filter including the
             # specified devices. If the command succeeded and wanted output was
             # returned we are done.
-            full_cmd = self._addExtraCfg(
-                cmd, devices, use_lvmpolld=use_lvmpolld)
+            if not devices:
+                devices = self._cached_devices()
             try:
-                return self._runner.run(full_cmd)
+                return lvmcmd.run(cmd, devices, use_lvmpolld=use_lvmpolld)
             except se.LVMCommandError as e:
                 error = e
 
             # 2. Retry the command with a refreshed devices, in case the we
             # failed or got no data because of a stale device cache.
             self.invalidate_devices()
-            wider_cmd = self._addExtraCfg(cmd)
-            if wider_cmd != full_cmd:
+            upd_devices = self._cached_devices()
+            if upd_devices != devices or not use_lvmpolld:
                 log.warning(
                     "Command with specific filter failed or returned no data, "
                     "retrying with refreshed device list: %s", error)
-                full_cmd = wider_cmd
                 try:
-                    return self._runner.run(full_cmd)
+                    return lvmcmd.run(cmd, upd_devices)
                 except se.LVMCommandError as e:
                     error = e
 

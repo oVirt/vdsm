@@ -37,6 +37,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fsutils
 from vdsm.storage import lvm
+from vdsm.storage import lvmcmd
 
 import testing
 
@@ -66,12 +67,22 @@ EXPECTED_CFG_DEVICES = (
 
 @pytest.fixture
 def use_filter(monkeypatch):
-    monkeypatch.setattr(lvm, "USE_DEVICES", False)
+    monkeypatch.setattr(lvmcmd, "USE_DEVICES", False)
 
 
 @pytest.fixture
 def use_devices(monkeypatch):
-    monkeypatch.setattr(lvm, "USE_DEVICES", True)
+    monkeypatch.setattr(lvmcmd, "USE_DEVICES", True)
+
+
+@pytest.fixture
+def fake_runner(monkeypatch, request):
+    if hasattr(request, 'param'):
+        fake_runner = FakeRunner(**request.param)
+    else:
+        fake_runner = FakeRunner()
+    monkeypatch.setattr(lvmcmd, "_runner", fake_runner)
+    return fake_runner
 
 
 # TODO: replace the filter tests with cmd tests.
@@ -80,32 +91,32 @@ def use_devices(monkeypatch):
 def test_build_filter():
     devices = ("/dev/mapper/a", "/dev/mapper/b")
     expected = '["a|^/dev/mapper/a$|^/dev/mapper/b$|", "r|.*|"]'
-    assert expected == lvm._buildFilter(lvm._prepare_device_set(devices))
+    assert expected == lvmcmd._buildFilter(lvmcmd._prepare_device_set(devices))
 
 
 def test_build_filter_quoting():
     devices = (r"\x20\x24\x7c\x22\x28",)
     expected = r'["a|^\\x20\\x24\\x7c\\x22\\x28$|", "r|.*|"]'
-    assert expected == lvm._buildFilter(lvm._prepare_device_set(devices))
+    assert expected == lvmcmd._buildFilter(lvmcmd._prepare_device_set(devices))
 
 
 def test_build_filter_no_devices():
     # This special case is possible on a system without any multipath device.
     # LVM commands will succeed, returning no info.
     expected = '["r|.*|"]'
-    assert expected == lvm._buildFilter(())
+    assert expected == lvmcmd._buildFilter(())
 
 
 def test_build_filter_with_user_devices(monkeypatch):
-    monkeypatch.setattr(lvm, "USER_DEV_LIST", ("/dev/b",))
+    monkeypatch.setattr(lvmcmd, "USER_DEV_LIST", ("/dev/b",))
     expected = '["a|^/dev/a$|^/dev/b$|^/dev/c$|", "r|.*|"]'
-    actual = lvm._buildFilter(lvm._prepare_device_set(("/dev/a", "/dev/c")))
+    actual = lvmcmd._buildFilter(
+        lvmcmd._prepare_device_set(("/dev/a", "/dev/c")))
     assert expected == actual
 
 
-def test_build_config_with_filter(fake_devices, use_filter):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+def test_build_config_with_filter(fake_devices, use_filter, fake_runner):
+    lc = lvm.LVMCache()
     lc.run_command(["lvs"])
     cmd = fake_runner.calls[0]
 
@@ -132,9 +143,8 @@ def test_build_config_with_filter(fake_devices, use_filter):
     assert cmd[3] == expected
 
 
-def test_build_config_with_devices(fake_devices, use_devices):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+def test_build_config_with_devices(fake_devices, use_devices, fake_runner):
+    lc = lvm.LVMCache()
     lc.run_command(["lvs"])
     cmd = fake_runner.calls[0]
 
@@ -155,16 +165,15 @@ def fake_devices(monkeypatch):
 
 
 def build_config(devices, use_lvmpolld="1"):
-    return lvm._buildConfig(
-        dev_filter=lvm._buildFilter(lvm._prepare_device_set(devices)),
+    return lvmcmd._buildConfig(
+        dev_filter=lvmcmd._buildFilter(lvmcmd._prepare_device_set(devices)),
         use_lvmpolld=use_lvmpolld)
 
 
-def test_build_command_long_filter(fake_devices, use_filter):
+def test_build_command_long_filter(fake_devices, use_filter, fake_runner):
     # If the devices are not specified, include all devices reported by
     # multipath.
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+    lc = lvm.LVMCache()
     lc.run_command(["lvs", "-o", "+tags"])
     cmd = fake_runner.calls[0]
 
@@ -177,11 +186,11 @@ def test_build_command_long_filter(fake_devices, use_filter):
     ]
 
 
-def test_rebuild_filter_after_invaliation(fake_devices, use_filter):
+def test_rebuild_filter_after_invaliation(
+        fake_devices, use_filter, fake_runner):
     # Check that adding a device and invalidating the filter rebuilds the
     # config with the correct filter.
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+    lc = lvm.LVMCache()
     fake_devices.append("/dev/mapper/c")
     lc.invalidate_devices()
 
@@ -191,7 +200,7 @@ def test_rebuild_filter_after_invaliation(fake_devices, use_filter):
     assert cmd[3] == build_config(fake_devices)
 
 
-class FakeRunner(lvm.LVMRunner):
+class FakeRunner(lvmcmd.LVMRunner):
     """
     Simulate a command failing multiple times before suceeding.
 
@@ -224,9 +233,8 @@ class FakeRunner(lvm.LVMRunner):
         return self.rc, self.out, self.err
 
 
-def test_cmd_success(fake_devices, use_filter):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+def test_cmd_success(fake_devices, use_filter, fake_runner):
+    lc = lvm.LVMCache()
     lc.run_command(["lvs", "-o", "+tags"])
 
     assert len(fake_runner.calls) == 1
@@ -246,9 +254,8 @@ def test_cmd_success(fake_devices, use_filter):
     (("/dev/mapper/a", "/dev/mapper/b"), "/dev/mapper/a,/dev/mapper/b"),
     ((r"\x20\x24\x7c\x22\x28",), r"\\x20\\x24\\x7c\\x22\\x28"),
 ])
-def test_cmd_with_devices(use_devices, devices, expected):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+def test_cmd_with_devices(use_devices, devices, expected, fake_runner):
+    lc = lvm.LVMCache()
     lc.run_command(["lvs", "-o", "+tags"], devices=devices)
 
     assert len(fake_runner.calls) == 1
@@ -264,9 +271,8 @@ def test_cmd_with_devices(use_devices, devices, expected):
     assert cmd == expected_cmd
 
 
-def test_cmd_error(fake_devices):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+def test_cmd_error(fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     # Require 2 calls to succeed.
     fake_runner.retries = 1
@@ -279,9 +285,9 @@ def test_cmd_error(fake_devices):
     assert len(fake_runner.calls) == 1
 
 
-def test_changevgtags_failure_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner(rc=5)
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize('fake_runner', [{'rc': 5}], indirect=True)
+def test_changevgtags_failure_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -302,9 +308,8 @@ def test_changevgtags_failure_cache(monkeypatch, fake_devices):
     assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
-def test_changevgtags_success_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+def test_changevgtags_success_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -324,8 +329,9 @@ def test_changevgtags_success_cache(monkeypatch, fake_devices):
     assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
-def test_chkvg_failure_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner(rc=5)
+@pytest.mark.parametrize('fake_runner', [{'rc': 5}], indirect=True)
+def test_chkvg_failure_cache(monkeypatch, fake_devices, fake_runner):
+    fake_runner = FakeRunner()
     lc = lvm.LVMCache(fake_runner)
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
@@ -348,9 +354,8 @@ def test_chkvg_failure_cache(monkeypatch, fake_devices):
     assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
-def test_chkvg_success_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+def test_chkvg_success_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -371,9 +376,9 @@ def test_chkvg_success_cache(monkeypatch, fake_devices):
     assert not lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
-def test_refreshlvs_failure_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner(rc=5)
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize('fake_runner', [{'rc': 5}], indirect=True)
+def test_refreshlvs_failure_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -394,9 +399,8 @@ def test_refreshlvs_failure_cache(monkeypatch, fake_devices):
     assert lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
 
 
-def test_refreshlvs_success_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+def test_refreshlvs_success_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -416,9 +420,9 @@ def test_refreshlvs_success_cache(monkeypatch, fake_devices):
     assert lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
 
 
-def test_extendlv_failure_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner(rc=5)
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize('fake_runner', [{'rc': 5}], indirect=True)
+def test_extendlv_failure_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -444,9 +448,9 @@ def test_extendlv_failure_cache(monkeypatch, fake_devices):
     assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
-def test_reducelv_failure_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner(rc=5)
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize('fake_runner', [{'rc': 5}], indirect=True)
+def test_reducelv_failure_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -480,9 +484,8 @@ def test_reducelv_failure_cache(monkeypatch, fake_devices):
     assert not lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
-def test_removelvs_success_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+def test_removelvs_success_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -505,9 +508,9 @@ def test_removelvs_success_cache(monkeypatch, fake_devices):
     assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
-def test_removelvs_failure_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner(rc=5)
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize('fake_runner', [{'rc': 5}], indirect=True)
+def test_removelvs_failure_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -528,9 +531,8 @@ def test_removelvs_failure_cache(monkeypatch, fake_devices):
     assert lvm._lvminfo._lvs[(fake_vg.name, fake_lv.name)].is_stale()
 
 
-def test_createlv_success_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+def test_createlv_success_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -558,8 +560,7 @@ def test_createlv_success_cache(monkeypatch, fake_devices):
     assert not lvm._lvminfo._lvs[fake_control_lv.name].is_stale()
 
 
-def test_reducevg_success_cache(monkeypatch):
-    fake_runner = FakeRunner()
+def test_reducevg_success_cache(monkeypatch, fake_runner):
     lc = lvm.LVMCache(fake_runner)
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
@@ -583,9 +584,9 @@ def test_reducevg_success_cache(monkeypatch):
     assert lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
-def test_reducevg_failure_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner(rc=5)
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize('fake_runner', [{'rc': 5}], indirect=True)
+def test_reducevg_failure_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -607,9 +608,9 @@ def test_reducevg_failure_cache(monkeypatch, fake_devices):
     assert not lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
-def test_removevg_failure_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner(rc=5)
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize('fake_runner', [{'rc': 5}], indirect=True)
+def test_removevg_failure_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -644,9 +645,10 @@ def test_removevg_failure_cache(monkeypatch, fake_devices):
     assert not lvm._lvminfo._vgs[fake_control_vg.name].is_stale()
 
 
-def test_deactivatevg_failure_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize(
+    'fake_runner', [{'rc': 5, 'err': b"Fake lvm error"}], indirect=True)
+def test_deactivatevg_failure_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -677,9 +679,8 @@ def test_deactivatevg_failure_cache(monkeypatch, fake_devices):
     assert len(lc._lvs) == 1
 
 
-def test_resizepv_success_cache(monkeypatch):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+def test_resizepv_success_cache(monkeypatch, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -720,9 +721,9 @@ def test_resizepv_success_cache(monkeypatch):
     assert not lvm._lvminfo._vgs[fake_control_vg.name].is_stale()
 
 
-def test_resizepv_failure_cache(monkeypatch, fake_devices):
-    fake_runner = FakeRunner(rc=5)
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize('fake_runner', [{'rc': 5}], indirect=True)
+def test_resizepv_failure_cache(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     monkeypatch.setattr(lvm, "_lvminfo", lc)
 
@@ -743,11 +744,10 @@ def test_resizepv_failure_cache(monkeypatch, fake_devices):
     assert not lvm._lvminfo._vgs[fake_vg.name].is_stale()
 
 
-def test_cmd_retry_filter_stale(fake_devices, use_filter):
+def test_cmd_retry_filter_stale(fake_devices, use_filter, fake_runner):
     # Make a call to load the cache.
     initial_devices = fake_devices[:]
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+    lc = lvm.LVMCache()
     lc.run_command(["fake"])
     del fake_runner.calls[:]
 
@@ -781,8 +781,7 @@ def test_cmd_retry_filter_stale(fake_devices, use_filter):
     ]
 
 
-def test_suppress_warnings(fake_devices):
-    fake_runner = FakeRunner()
+def test_suppress_warnings(fake_devices, fake_runner):
     fake_runner.err = b"""\
   before
   WARNING: This metadata update is NOT backed up.
@@ -793,7 +792,7 @@ def test_suppress_warnings(fake_devices):
   WARNING: Inconsistent metadata found for VG Bug."
   after"""  # NOQA: E501 (potentially long line)
 
-    lc = lvm.LVMCache(fake_runner)
+    lc = lvm.LVMCache()
     fake_runner.rc = 1
     with pytest.raises(se.LVMCommandError) as e:
         lc.run_command(["fake"])
@@ -807,8 +806,7 @@ def test_suppress_warnings(fake_devices):
     ]
 
 
-def test_suppress_multiple_lvm_warnings(fake_devices):
-    fake_runner = FakeRunner()
+def test_suppress_multiple_lvm_warnings(fake_devices, fake_runner):
     fake_runner.err = b"""\
   before
   WARNING: This metadata update is NOT backed up.
@@ -816,7 +814,7 @@ def test_suppress_multiple_lvm_warnings(fake_devices):
   WARNING: This metadata update is NOT backed up.
   after"""
 
-    lc = lvm.LVMCache(fake_runner)
+    lc = lvm.LVMCache()
     fake_runner.rc = 1
     with pytest.raises(se.LVMCommandError) as e:
         lc.run_command(["fake"])
@@ -824,9 +822,8 @@ def test_suppress_multiple_lvm_warnings(fake_devices):
     assert e.value.err == [u"  before", u"  after"]
 
 
-def test_pv_move_cmd(fake_devices, monkeypatch, use_filter):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+def test_pv_move_cmd(fake_devices, monkeypatch, use_filter, fake_runner):
+    lc = lvm.LVMCache()
 
     # Don't invalidate PVs in cache because we use cache only without real PVs.
     lc._invalidatepvs = lambda pvNames: None
@@ -903,10 +900,9 @@ def workers():
         workers.join()
 
 
-def test_command_concurrency(fake_devices, workers):
+def test_command_concurrency(fake_devices, workers, fake_runner):
     # Test concurrent commands to reveal locking issues.
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner)
+    lc = lvm.LVMCache()
 
     fake_runner.delay = 0.2
     count = 50
@@ -1069,9 +1065,10 @@ def test_vg_remove_by_uuid(tmp_storage):
     assert vg2.name == vg2_name
 
 
-def test_vg_invalid_output(monkeypatch, fake_devices):
-    fake_runner = FakeRunner(out=b"Fake lvm output")
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize(
+    'fake_runner', [{'out': b"Fake lvm output"}], indirect=True)
+def test_vg_invalid_output(monkeypatch, fake_devices, fake_runner):
+    lc = lvm.LVMCache()
     lc._stalevg = False
 
     # Create fake devices.
@@ -2060,9 +2057,10 @@ def test_lv_stale_reload_all_clear(stale_lv):
     assert lvs == [good_lv_name]
 
 
-def test_lv_reload_error_one(fake_devices):
-    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize(
+    'fake_runner', [{'rc': 5, 'err': b"Fake lvm error"}], indirect=True)
+def test_lv_reload_error_one(fake_devices, fake_runner):
+    lc = lvm.LVMCache()
 
     pv1 = make_pv(pv_name="/dev/mapper/pv1", vg_name="vg-name")
     other_lv = make_lv(lv_name="other-lv", pvs=[pv1.name], vg_name="vg-name")
@@ -2078,9 +2076,10 @@ def test_lv_reload_error_one(fake_devices):
     assert lc._lvs == {("vg-name", "other-lv"): other_lv}
 
 
-def test_lv_reload_error_one_stale(fake_devices):
-    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize(
+    'fake_runner', [{'rc': 5, 'err': b"Fake lvm error"}], indirect=True)
+def test_lv_reload_error_one_stale(fake_devices, fake_runner):
+    lc = lvm.LVMCache()
     lc._lvs = {
         ("vg-name", "lv-name"): lvm.Stale("lv-name"),
         ("vg-name", "other-lv"): lvm.Stale("other-lv"),
@@ -2100,9 +2099,10 @@ def test_lv_reload_error_one_stale(fake_devices):
     }
 
 
-def test_lv_reload_error_one_stale_other_vg(fake_devices):
-    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize(
+    'fake_runner', [{'rc': 5, 'err': b"Fake lvm error"}], indirect=True)
+def test_lv_reload_error_one_stale_other_vg(fake_devices, fake_runner):
+    lc = lvm.LVMCache()
     lc._lvs = {
         ("vg-name", "lv-name"): lvm.Stale("lv-name"),
         ("other-vg", "other-lv"): lvm.Stale("other-lv"),
@@ -2118,15 +2118,17 @@ def test_lv_reload_error_one_stale_other_vg(fake_devices):
     assert not isinstance(other_lv, lvm.Unreadable)
 
 
-def test_lv_reload_error_all(fake_devices):
-    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize(
+    'fake_runner', [{'rc': 5, 'err': b"Fake lvm error"}], indirect=True)
+def test_lv_reload_error_all(fake_devices, fake_runner):
+    lc = lvm.LVMCache()
     assert lc.getAllLvs("vg-name") == []
 
 
-def test_lv_reload_error_all_other_vg(fake_devices):
-    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize(
+    'fake_runner', [{'rc': 5, 'err': b"Fake lvm error"}], indirect=True)
+def test_lv_reload_error_all_other_vg(fake_devices, fake_runner):
+    lc = lvm.LVMCache()
     lc._lvs = {("vg-name", "lv-name"): lvm.Stale("lv-name")}
     lvs = lc.getAllLvs("vg-name")
 
@@ -2138,9 +2140,10 @@ def test_lv_reload_error_all_other_vg(fake_devices):
     assert lvs == []
 
 
-def test_lv_reload_error_all_stale_other_vgs(fake_devices):
-    fake_runner = FakeRunner(rc=5, err=b"Fake lvm error")
-    lc = lvm.LVMCache(fake_runner)
+@pytest.mark.parametrize(
+    'fake_runner', [{'rc': 5, 'err': b"Fake lvm error"}], indirect=True)
+def test_lv_reload_error_all_stale_other_vgs(fake_devices, fake_runner):
+    lc = lvm.LVMCache()
     lc._lvs = {
         ("vg-name", "lv-name"): lvm.Stale("lv-name"),
         ("other-vg", "other-lv"): lvm.Stale("other-lv"),
@@ -2152,9 +2155,8 @@ def test_lv_reload_error_all_stale_other_vgs(fake_devices):
     assert not isinstance(other_lv, lvm.Unreadable)
 
 
-def test_lv_reload_fresh_vg(fake_devices):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner, cache_lvs=True)
+def test_lv_reload_fresh_vg(fake_devices, fake_runner):
+    lc = lvm.LVMCache(cache_lvs=True)
     pv1 = make_pv(pv_name="/dev/mapper/pv1", vg_name="vg1")
     lv1 = make_lv(lv_name="lv1", pvs=[pv1.name], vg_name="vg1")
 
@@ -2179,9 +2181,8 @@ def test_lv_reload_fresh_vg(fake_devices):
     assert not lc._lvs_needs_reload("vg2")
 
 
-def test_lv_reload_for_stale_vg(fake_devices):
-    fake_runner = FakeRunner()
-    lc = lvm.LVMCache(fake_runner, cache_lvs=True)
+def test_lv_reload_for_stale_vg(fake_devices, fake_runner):
+    lc = lvm.LVMCache(cache_lvs=True)
 
     assert lc._lvs_needs_reload("vg")
 
