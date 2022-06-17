@@ -40,10 +40,8 @@ from itertools import chain
 
 from vdsm import constants
 from vdsm import utils
-from vdsm.common import commands
 from vdsm.common import errors
 from vdsm.common import logutils
-from vdsm.common.compat import subprocess
 from vdsm.common.units import MiB
 
 from vdsm.storage import devicemapper
@@ -52,6 +50,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import lsof
 from vdsm.storage import misc
 from vdsm.storage import multipath
+from vdsm.storage.lvmcmd import LVMRunner
 
 from vdsm.config import config
 
@@ -312,65 +311,6 @@ def _tags2Tuple(sTags):
     Return an empty tuple for sTags == ""
     """
     return tuple(sTags.split(",")) if sTags else tuple()
-
-
-class LVMRunner(object):
-    """
-    Does actual execution of the LVM command and handle output, e.g. decode
-    output or log warnings.
-    """
-
-    # Warnings written to LVM stderr that should not be logged as warnings.
-    SUPPRESS_WARNINGS = re.compile(
-        "|".join([
-            "WARNING: This metadata update is NOT backed up",
-            (r"WARNING: ignoring metadata seqno \d+ on /dev/mapper/\w+ for "
-             r"seqno \d+ on /dev/mapper/\w+ for VG \w+"),
-            r"WARNING: Inconsistent metadata found for VG \w+",
-            ("WARNING: Activation disabled. No device-mapper interaction "
-             "will be attempted"),
-        ]),
-        re.IGNORECASE)
-
-    def run(self, cmd):
-        """
-        Run LVM command, logging warnings for successful commands.
-
-        An example case is when LVM decide to fix VG metadata when running a
-        command that should not change the metadata on non-SPM host. In this
-        case LVM will log this warning:
-
-            WARNING: Inconsistent metadata found for VG xxx-yyy-zzz - updating
-            to use version 42
-
-        We log warnings only for successful commands since callers are already
-        handling failures.
-        """
-
-        rc, out, err = self._run_command(cmd)
-
-        out = out.decode("utf-8").splitlines()
-        err = err.decode("utf-8").splitlines()
-
-        err = [s for s in err if not self.SUPPRESS_WARNINGS.search(s)]
-
-        if rc == 0 and err:
-            log.warning("Command %s succeeded with warnings: %s", cmd, err)
-
-        if rc != 0:
-            raise se.LVMCommandError(cmd, rc, out, err)
-
-        return out
-
-    def _run_command(self, cmd):
-        p = commands.start(
-            cmd,
-            sudo=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        out, err = commands.communicate(p)
-        return p.returncode, out, err
 
 
 class LVMCache(object):
