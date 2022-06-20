@@ -22,14 +22,11 @@ from __future__ import division
 import os
 import sys
 
-from vdsm.common import cmdutils
-from vdsm.common import commands
 from vdsm.storage import mpathconf
+from vdsm.storage import multipath
 from vdsm.tool import service
 
 from . import YES, NO
-
-_MULTIPATHD = cmdutils.CommandPath("multipathd", "/usr/sbin/multipathd")
 
 
 # If multipathd is up, it will be reloaded after configuration,
@@ -76,7 +73,7 @@ def configure():
     # If any of those steps fails, we want to fail the configuration.
 
     service.service_start("multipathd")
-    commands.run([_MULTIPATHD.cmd, "reconfigure"])
+    multipath.reconfigure()
 
 
 def isconfigured():

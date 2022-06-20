@@ -209,6 +209,14 @@ def is_ready():
     return "busy: false" in status
 
 
+def reconfigure():
+    """
+    Invoke multipathd to reconfigure the multipaths.
+    Must run as root.
+    """
+    commands.run([_MULTIPATHD.cmd, "reconfigure"])
+
+
 def resize_devices():
     """
     This is needed in case a device has been increased on the storage server
