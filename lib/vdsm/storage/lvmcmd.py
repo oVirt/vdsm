@@ -23,9 +23,11 @@
 Wrapper for running and formatting LVM commands.
 """
 
+import os
 import re
 import logging
 
+from enum import Enum, auto
 from itertools import chain
 
 from vdsm import constants
@@ -33,6 +35,7 @@ from vdsm.common import commands
 from vdsm.common.compat import subprocess
 from vdsm.config import config
 from vdsm.storage import exception as se
+from vdsm.storage.devicemapper import DMPATH_PREFIX
 
 log = logging.getLogger("storage.lvmcmd")
 
@@ -95,6 +98,25 @@ USER_DEV_LIST = [d for d in config.get("irs", "lvm_dev_whitelist").split(",")
                  if d is not None]
 
 USE_DEVICES = config.get("lvm", "config_method").lower() == "devices"
+
+LVM_NOBACKUP = ("--autobackup", "n")
+
+
+class AutoName(Enum):
+    @staticmethod
+    def _generate_next_value_(name, start, count, last_values):
+        return name
+
+
+class LVMCmd(str, AutoName):
+    lvcreate = auto()
+    lvremove = auto()
+    lvchange = auto()
+    lvextend = auto()
+    lvreduce = auto()
+
+    def __str__(self):
+        return self.value
 
 
 def _run(cmd):
@@ -209,3 +231,73 @@ def run(cmd, devices, use_lvmpolld=True):
     """
     full_cmd = _addExtraCfg(cmd, devices, use_lvmpolld=use_lvmpolld)
     return _run(full_cmd)
+
+
+def fqpvname(pv):
+    if pv[0] == "/":
+        # Absolute path, use as is.
+        return pv
+    else:
+        # Multipath device guid
+        return os.path.join(DMPATH_PREFIX, pv)
+
+
+def lvcreate(vg_name, lv_name, size, contiguous, initial_tags, device):
+    cont = {True: "y", False: "n"}[contiguous]
+    cmd = [str(LVMCmd.lvcreate)]
+    cmd.extend(LVM_NOBACKUP)
+    cmd.extend(("--contiguous", cont, "--size", "%sm" % size))
+    # Disable wiping signatures, enabled by default in RHEL 8.4. We own the VG
+    # and the LVs and we know it is alwasy safe to zero a new LV. With this
+    # option, LVM will zero the first 4k of the device without confirmation.
+    # See https://bugzilla.redhat.com/1946199.
+    cmd.extend(("--wipesignatures", "n"))
+    for tag in initial_tags:
+        cmd.extend(("--addtag", tag))
+    cmd.extend(("--name", lv_name, vg_name))
+    if device is not None:
+        cmd.append(fqpvname(device))
+    return cmd
+
+
+def lvremove(vg_name, lv_names):
+    # Fix me:removes active LVs too. "-f" should be removed.
+    cmd = [str(LVMCmd.lvremove), "-f"]
+    cmd.extend(LVM_NOBACKUP)
+    for lv_name in lv_names:
+        cmd.append(f"{vg_name}/{lv_name}")
+    return cmd
+
+
+def lvchange(vg, lvs, attrs, autobackup=False):
+    # If it fails or not we (may be) change the lv,
+    # so we invalidate cache to reload these volumes on first occasion
+    lvnames = tuple(f"{vg}/{lv}" for lv in lvs)
+    cmd = [str(LVMCmd.lvchange)]
+    if not autobackup:
+        cmd.extend(LVM_NOBACKUP)
+    if isinstance(attrs[0], str):
+        # ("--attribute", "value")
+        cmd.extend(attrs)
+    else:
+        # (("--aa", "v1"), ("--ab", "v2"))
+        for attr in attrs:
+            cmd.extend(attr)
+    cmd.extend(lvnames)
+    return cmd
+
+
+def lvextend(vg_name, lv_name, size_mb, refresh):
+    cmd = (str(LVMCmd.lvextend),) + LVM_NOBACKUP
+    if not refresh:
+        cmd += ("--driverloaded", "n")
+    cmd += ("--size", f"{size_mb}m", f"{vg_name}/{lv_name}")
+    return cmd
+
+
+def lvreduce(vg_name, lv_name, size_mb, force):
+    cmd = (str(LVMCmd.lvreduce),) + LVM_NOBACKUP
+    if force:
+        cmd += ("--force",)
+    cmd += ("--size", f"{size_mb}m", f"{vg_name}/{lv_name}")
+    return cmd

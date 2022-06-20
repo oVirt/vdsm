@@ -38,6 +38,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileVolume
 from vdsm.storage import lvm as real_lvm
+from vdsm.storage import lvmcmd
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
 from vdsm.storage import sp
@@ -326,7 +327,7 @@ class FakeLVM(object):
                    if pv["vg_name"] == vg_name)
 
 
-_fqpvname = real_lvm._fqpvname
+_fqpvname = lvmcmd.fqpvname
 
 
 def fake_lvm_uuid():

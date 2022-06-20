@@ -189,7 +189,6 @@ VG_OK = "OK"
 VG_PARTIAL = "PARTIAL"
 
 SEPARATOR = "|"
-LVM_NOBACKUP = ("--autobackup", "n")
 LVM_FLAGS = ("--noheadings", "--units", "b", "--nosuffix", "--separator",
              SEPARATOR, "--ignoreskippedcluster")
 
@@ -1029,15 +1028,6 @@ def invalidateCache():
     _lvminfo.invalidateCache()
 
 
-def _fqpvname(pv):
-    if pv[0] == "/":
-        # Absolute path, use as is.
-        return pv
-    else:
-        # Multipath device guid
-        return os.path.join(PV_PREFIX, pv)
-
-
 def _createpv(devices, metadataSize, options=tuple()):
     """
     Size for pvcreate should be with units k|m|g
@@ -1104,21 +1094,7 @@ def changelv(vg, lvs, attrs):
     You may activate an activated LV without error
     but lvchange returns an error (RC=5) when activating rw if already rw
     """
-
-    lvs = normalize_args(lvs)
-    # If it fails or not we (may be) change the lv,
-    # so we invalidate cache to reload these volumes on first occasion
-    lvnames = tuple("%s/%s" % (vg, lv) for lv in lvs)
-    cmd = ["lvchange"]
-    cmd.extend(LVM_NOBACKUP)
-    if isinstance(attrs[0], str):
-        # ("--attribute", "value")
-        cmd.extend(attrs)
-    else:
-        # (("--aa", "v1"), ("--ab", "v2"))
-        for attr in attrs:
-            cmd.extend(attr)
-    cmd.extend(lvnames)
+    cmd = lvmcmd.lvchange(vg, normalize_args(lvs), attrs)
     try:
         _lvminfo.run_command(tuple(cmd), devices=_lvminfo._getVGDevs((vg, )))
     finally:
@@ -1161,7 +1137,7 @@ def getPV(pv_name):
     Return PV named tuple. Raise se.InaccessiblePhysDev if the
     PV does not exist.
     """
-    return _lvminfo.getPv(_fqpvname(pv_name))
+    return _lvminfo.getPv(lvmcmd.fqpvname(pv_name))
 
 
 def getAllPVs():
@@ -1203,7 +1179,7 @@ def resizePV(vgName, guid):
 
     Raises se.CouldNotResizePhysicalVolume if pvresize fails
     """
-    pvName = _fqpvname(guid)
+    pvName = lvmcmd.fqpvname(guid)
     cmd = ["pvresize", pvName]
     try:
         _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
@@ -1220,7 +1196,7 @@ def movePV(vgName, src_device, dst_devices):
 
     Raises se.CouldNotMovePVData if pvmove fails
     """
-    pvName = _fqpvname(src_device)
+    pvName = lvmcmd.fqpvname(src_device)
 
     # we invalidate the pv as we can't rely on the cache for checking the
     # current state
@@ -1235,7 +1211,7 @@ def movePV(vgName, src_device, dst_devices):
 
     cmd = ["pvmove", pvName]
     if dst_devices:
-        cmd.extend(_fqpvname(pdev) for pdev in dst_devices)
+        cmd.extend(lvmcmd.fqpvname(pdev) for pdev in dst_devices)
 
     log.info("Moving pv %s data (vg %s)", pvName, vgName)
 
@@ -1302,7 +1278,7 @@ def getAllLVs(vg_name):
 #
 
 def createVG(vgName, devices, initialTag, metadataSize, force=False):
-    pvs = [_fqpvname(pdev) for pdev in normalize_args(devices)]
+    pvs = [lvmcmd.fqpvname(pdev) for pdev in normalize_args(devices)]
     _checkpvsblksize(pvs)
 
     _initpvs(pvs, metadataSize, force)
@@ -1353,7 +1329,7 @@ def removeVGbyUUID(vgUUID):
 
 
 def extendVG(vgName, devices, force):
-    pvs = [_fqpvname(pdev) for pdev in normalize_args(devices)]
+    pvs = [lvmcmd.fqpvname(pdev) for pdev in normalize_args(devices)]
     _checkpvsblksize(pvs, getVGBlockSizes(vgName))
     vg = _lvminfo.getVg(vgName)
 
@@ -1395,7 +1371,7 @@ def _initpvs(devices, metadataSize, force=False):
 
 
 def reduceVG(vgName, device):
-    pvName = _fqpvname(device)
+    pvName = lvmcmd.fqpvname(device)
     log.info("Removing pv %s from vg %s", pvName, vgName)
     cmd = ["vgreduce", vgName, pvName]
     try:
@@ -1498,21 +1474,9 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
     log.info("Creating LV (vg=%s, lv=%s, size=%sm, activate=%s, "
              "contiguous=%s, initialTags=%s, device=%s)",
              vgName, lvName, size, activate, contiguous, initialTags, device)
-    cont = {True: "y", False: "n"}[contiguous]
-    cmd = ["lvcreate"]
-    cmd.extend(LVM_NOBACKUP)
-    cmd.extend(("--contiguous", cont, "--size", "%sm" % size))
-    # Disable wiping signatures, enabled by default in RHEL 8.4. We own the VG
-    # and the LVs and we know it is alwasy safe to zero a new LV. With this
-    # option, LVM will zero the first 4k of the device without confirmation.
-    # See https://bugzilla.redhat.com/1946199.
-    cmd.extend(("--wipesignatures", "n"))
-    for tag in initialTags:
-        cmd.extend(("--addtag", tag))
-    cmd.extend(("--name", lvName, vgName))
-    if device is not None:
-        cmd.append(_fqpvname(device))
 
+    cmd = lvmcmd.lvcreate(
+        vgName, lvName, size, contiguous, initialTags, device)
     try:
         _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
     except se.LVMCommandError as e:
@@ -1552,12 +1516,7 @@ def removeLVs(vgName, lvNames):
     # LV exists or not in cache, attempting to remove it.
     # Removing Stales also. Active Stales should raise.
     # Destroy LV
-    # Fix me:removes active LVs too. "-f" should be removed.
-    cmd = ["lvremove", "-f"]
-    cmd.extend(LVM_NOBACKUP)
-    for lvName in lvNames:
-        cmd.append("%s/%s" % (vgName, lvName))
-
+    cmd = lvmcmd.lvremove(vgName, lvNames)
     try:
         _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
     except se.LVMCommandError as e:
@@ -1591,10 +1550,7 @@ def extendLV(vgName, lvName, size_mb, refresh=True):
         return
 
     log.info("Extending LV %s/%s to %s megabytes", vgName, lvName, size_mb)
-    cmd = ("lvextend",) + LVM_NOBACKUP
-    if not refresh:
-        cmd += ("--driverloaded", "n")
-    cmd += ("--size", "%sm" % (size_mb,), "%s/%s" % (vgName, lvName))
+    cmd = lvmcmd.lvextend(vgName, lvName, size_mb, refresh)
     try:
         _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName,)))
     except se.LVMCommandError as e:
@@ -1629,10 +1585,7 @@ def extendLV(vgName, lvName, size_mb, refresh=True):
 def reduceLV(vgName, lvName, size_mb, force=False):
     log.info("Reducing LV %s/%s to %s megabytes (force=%s)",
              vgName, lvName, size_mb, force)
-    cmd = ("lvreduce",) + LVM_NOBACKUP
-    if force:
-        cmd += ("--force",)
-    cmd += ("--size", "%sm" % (size_mb,), "%s/%s" % (vgName, lvName))
+    cmd = lvmcmd.lvreduce(vgName, lvName, size_mb, force)
 
     try:
         _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName,)))
@@ -1704,8 +1657,8 @@ def refreshLVs(vgName, lvNames):
 
 def _refreshLVs(vgName, lvNames):
     # If  the  logical  volumes  are active, reload their metadata.
-    cmd = ['lvchange', '--refresh']
-    cmd.extend("%s/%s" % (vgName, lv) for lv in lvNames)
+    cmd = lvmcmd.lvchange(
+        vgName, lvNames, attrs=('--refresh',), autobackup=True)
     try:
         _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vgName, )))
     except se.LVMCommandError as e:
