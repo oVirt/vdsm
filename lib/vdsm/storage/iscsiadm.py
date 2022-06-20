@@ -90,10 +90,6 @@ class IscsiNodeError(IscsiError):
     pass
 
 
-class IscsiSessionExists(IscsiError):
-    pass
-
-
 class IscsiSessionNotFound(IscsiError):
     pass
 
@@ -321,14 +317,23 @@ def node_login(iface, portal, targetName):
         run_cmd(["-m", "node", "-T", targetName, "-I", iface,
                  "-p", portal, "-l"])
     except cmdutils.Error as e:
+        if e.rc == ISCSI_ERR_SESS_EXISTS:
+            # If we have multiple portals using same (address, port, iface),
+            # only one session can log in, and we get a "session exists" error
+            # for the duplicate nodes.  Since we have a logged in session, we
+            # can treat this as success, but we want to warn about the
+            # duplicate portals.
+            # https://bugzilla.redhat.com/2097614
+            log.warning(
+                "Duplicate portals for target %s iface %s portal %s: %s",
+                targetName, iface, portal, e)
+            return
+
         if not iface_exists(iface):
             raise IscsiInterfaceDoesNotExistError(iface)
 
         if e.rc == ISCSI_ERR_LOGIN_AUTH_FAILED:
             raise IscsiAuthenticationError(e.rc, e.out, e.err)
-
-        if e.rc == ISCSI_ERR_SESS_EXISTS:
-            raise IscsiSessionExists(e.rc, e.out, e.err)
 
         raise IscsiNodeError(e.rc, e.out, e.err)
 
