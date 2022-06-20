@@ -414,14 +414,11 @@ def read_metadata():
     Returns:
         vdsm.storage.mpathconf.Metadata
     """
-    first = second = ''
     with open(CONF_FILE) as f:
-        mpathconf = [x.strip("\n") for x in f.readlines()]
-    try:
-        first = mpathconf[0]
-        second = mpathconf[1]
-    except IndexError:
-        pass
+        # Read only the lines that are going to be processed
+        first = f.readline()
+        second = f.readline()
+
     private = second.startswith(_PRIVATE_TAGS)
 
     if first.startswith(CURRENT_TAG):
