@@ -377,7 +377,7 @@ Requires:       iproute-tc
 Requires:       ovirt-openvswitch >= 2.15
 # Workaround for BZ#1966143
 Requires:       ovirt-python-openvswitch >= 2.15
-Requires:       nmstate >= 1.0
+Requires:       nmstate >= 1.2.1-3
 %if 0%{?rhel} < 9
 Requires:       nmstate-plugin-ovsdb
 %endif
