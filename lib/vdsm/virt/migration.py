@@ -309,6 +309,11 @@ class SourceThread(object):
         machineParams['enableGuestEvents'] = self._enableGuestEvents
         if not self.hibernating:
             machineParams['migrationDest'] = 'libvirt'
+        # Remove & replace CPU pinning added by VDSM
+        dom = xmlutils.fromstring(machineParams['_srcDomXML'])
+        dom = cpumanagement.replace_cpu_pinning(self._vm, dom,
+                                                self._destination_cpusets)
+        machineParams['_srcDomXML'] = xmlutils.tostring(dom)
         return machineParams
 
     def _prepareGuest(self):
