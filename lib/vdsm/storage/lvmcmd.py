@@ -234,7 +234,7 @@ def run(cmd, devices, use_lvmpolld=True):
 
 
 def fqpvname(pv):
-    if pv[0] == "/":
+    if os.path.isabs(pv):
         # Absolute path, use as is.
         return pv
     else:
