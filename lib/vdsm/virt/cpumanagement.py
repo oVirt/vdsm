@@ -278,4 +278,4 @@ def _siblings(core_cpus, cpu):
     for core in core_cpus.values():
         if cpu in core:
             return frozenset(core) - frozenset([cpu])
-    return IndexError('No such CPU %s' % cpu)
+    raise IndexError('No such CPU %s' % cpu)
