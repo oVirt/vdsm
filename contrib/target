@@ -92,6 +92,12 @@ def main():
              "detault portal (0.0.0.0:3260). The default portal does"
              "not work with existing targets with non default portals.")
 
+    parser.add_argument(
+        "--tpgt",
+        type=int,
+        default=1,
+        help="Target portal group tag (default 1).")
+
     args = parser.parse_args()
 
     host_name = platform.node()
@@ -159,6 +165,7 @@ def create_target(args, target_iqn, target_dir, exists=False):
     print("  exists:        %s" % args.exists)
     print("  portals:       %s" % ", ".join(
         format_portal(p) for p in args.portal))
+    print("  tpgt:          %s" % args.tpgt)
     print()
 
     if not confirm("Create target? [N/y]: "):
@@ -170,7 +177,17 @@ def create_target(args, target_iqn, target_dir, exists=False):
     print("Creating target %r" % target_iqn)
     subprocess.check_call(["targetcli", "/iscsi", "create", target_iqn])
 
-    portals_path = "/iscsi/%s/tpg1/portals" % target_iqn
+    iqn_path = "/iscsi/%s" % target_iqn
+    tpg_path = iqn_path + "/tpg%s" % args.tpgt
+
+    # New target always use tpgt=1. If the user want a different tpgt, we need
+    # to remove /tpg1 and create a new one instead.
+    if args.tpgt != 1:
+        subprocess.check_call(["targetcli", iqn_path, "delete", "tpg1"])
+        subprocess.check_call(
+            ["targetcli", iqn_path, "create", "tpg%s" % args.tpgt])
+
+    portals_path = tpg_path + "/portals"
 
     print("Checking if target has the default portal")
     cp = subprocess.run(
@@ -190,8 +207,7 @@ def create_target(args, target_iqn, target_dir, exists=False):
             ["targetcli", portals_path, "create", str(address), str(port)])
 
     print("Setting permissions (any host can access this target)")
-    tpg1_path = "/iscsi/%s/tpg1" % target_iqn
-    subprocess.check_call(["targetcli", tpg1_path, "set", "attribute",
+    subprocess.check_call(["targetcli", tpg_path, "set", "attribute",
                            "authentication=0",
                            "demo_mode_write_protect=0",
                            "generate_node_acls=1",
@@ -201,7 +217,7 @@ def create_target(args, target_iqn, target_dir, exists=False):
     print("Creating disks")
 
     fileio_path = "/backstores/fileio"
-    luns_path = "/iscsi/%s/tpg1/luns" % target_iqn
+    luns_path = tpg_path + "/luns"
     write_back = "write_back={}".format("true" if args.cache else "false")
 
     for n in range(args.lun_count):
