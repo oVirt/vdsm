@@ -1,5 +1,17 @@
 #!/bin/sh -e
 
+print_help() {
+    echo "Usage: $0 USER"
+    echo ""
+    echo "  Helper script to setup and run storage tests as USER."
+    echo ""
+    echo "Examples:"
+    echo "  Run tests as root user"
+    echo "    $ $0 root"
+    echo "  Run tests as vdsm user"
+    echo "    $ $0 vdsm"
+}
+
 create_loop_devices() {
     local last=$(($1-1))
     local min
@@ -12,28 +24,51 @@ create_loop_devices() {
 }
 
 setup_storage() {
-    python3 tests/storage/userstorage.py setup
+    # Configure lvm to ignore udev events, otherwise some lvm tests hang.
+    mkdir -p /etc/lvm
+    cp docker/lvmlocal.conf /etc/lvm/
+
+    # Make sure we have enough loop device nodes. Using 16 devices since with 8
+    # devices we have random mount failures.
+    create_loop_devices 16
+
+    # Build vdsm.
+    ./autogen.sh --system
+    make
+
+    # Setup user storage during the tests.
+    make storage
 }
 
 teardown_storage() {
-    python3 tests/storage/userstorage.py teardown \
+    make clean-storage \
         || echo "WARNING: Ingoring error while tearing down user storage"
 }
 
-# Configure lvm to ignore udev events, otherwise some lvm tests hang.
-mkdir -p /etc/lvm
-cp docker/lvmlocal.conf /etc/lvm/
+# Process user argument
+user=$1
+if [ -z "$user" ]; then
+    echo "ERROR: user required"
+    print_help
+    exit 1
+fi
 
-# Make sure we have enough loop device nodes. Using 16 devices since with 8
-# devices we have random mount failures.
-create_loop_devices 16
+echo "Running tests as user $user"
 
-# Build vdsm.
-./autogen.sh --system
-make
-
-# Setup user stoage during the tests.
-trap teardown_storage EXIT
 setup_storage
+if [ "$user" != "root" ]; then
+    # Change ownership of current and storage folders
+    # to allow non-privileged access.
+    chown -R $user ./ /var/tmp/vdsm*
+fi
+# Teardown storage before exit.
+trap teardown_storage EXIT
 
-make tests-storage
+if [ "$user" = "root" ]; then
+    # Run only tests marked as root
+    make tests-storage-root
+else
+    # Run tests not marked as root as $user
+    # Use 'su' instead of 'sudo' in order to preserve the environment.
+    su $user -c "make tests-storage-user"
+fi
