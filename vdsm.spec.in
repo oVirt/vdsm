@@ -502,7 +502,7 @@ The VM must be pinned to the host.
 %package hook-log-console
 Summary:        Log VM's serial console to a file
 BuildArch:      noarch
-Requires:       %{name} == %{version}
+Requires:       %{name}
 
 %description hook-log-console
 This hook allows logging a VM serial console to a file.
