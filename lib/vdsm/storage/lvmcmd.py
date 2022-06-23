@@ -288,16 +288,18 @@ def lvchange(vg, lvs, attrs, autobackup=False):
 
 
 def lvextend(vg_name, lv_name, size_mb, refresh):
-    cmd = (str(LVMCmd.lvextend),) + LVM_NOBACKUP
+    cmd = [str(LVMCmd.lvextend)]
+    cmd.extend(LVM_NOBACKUP)
     if not refresh:
-        cmd += ("--driverloaded", "n")
-    cmd += ("--size", f"{size_mb}m", f"{vg_name}/{lv_name}")
+        cmd.extend(("--driverloaded", "n"))
+    cmd.extend(("--size", f"{size_mb}m", f"{vg_name}/{lv_name}"))
     return cmd
 
 
 def lvreduce(vg_name, lv_name, size_mb, force):
-    cmd = (str(LVMCmd.lvreduce),) + LVM_NOBACKUP
+    cmd = [str(LVMCmd.lvreduce)]
+    cmd.extend(LVM_NOBACKUP)
     if force:
-        cmd += ("--force",)
-    cmd += ("--size", f"{size_mb}m", f"{vg_name}/{lv_name}")
+        cmd.append("--force")
+    cmd.extend(("--size", f"{size_mb}m", f"{vg_name}/{lv_name}"))
     return cmd

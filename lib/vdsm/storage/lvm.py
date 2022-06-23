@@ -1096,7 +1096,7 @@ def changelv(vg, lvs, attrs):
     """
     cmd = lvmcmd.lvchange(vg, normalize_args(lvs), attrs)
     try:
-        _lvminfo.run_command(tuple(cmd), devices=_lvminfo._getVGDevs((vg, )))
+        _lvminfo.run_command(cmd, devices=_lvminfo._getVGDevs((vg, )))
     finally:
         _lvminfo._invalidatelvs(vg, lvs)
 
