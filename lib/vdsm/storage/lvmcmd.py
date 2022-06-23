@@ -79,72 +79,64 @@ backup {
 }
 """
 
+# Warnings written to LVM stderr that should not be logged as warnings.
+SUPPRESS_WARNINGS = re.compile(
+    "|".join([
+        "WARNING: This metadata update is NOT backed up",
+        (r"WARNING: ignoring metadata seqno \d+ on /dev/mapper/\w+ for "
+            r"seqno \d+ on /dev/mapper/\w+ for VG \w+"),
+        r"WARNING: Inconsistent metadata found for VG \w+",
+        ("WARNING: Activation disabled. No device-mapper interaction "
+            "will be attempted"),
+    ]),
+    re.IGNORECASE)
+
 USER_DEV_LIST = [d for d in config.get("irs", "lvm_dev_whitelist").split(",")
                  if d is not None]
 
 USE_DEVICES = config.get("lvm", "config_method").lower() == "devices"
 
 
-class LVMRunner(object):
+def _run(cmd):
     """
-    Does actual execution of the LVM command and handle output, e.g. decode
-    output or log warnings.
+    Run LVM command, logging warnings for successful commands.
+
+    An example case is when LVM decide to fix VG metadata when running a
+    command that should not change the metadata on non-SPM host. In this
+    case LVM will log this warning:
+
+        WARNING: Inconsistent metadata found for VG xxx-yyy-zzz - updating
+        to use version 42
+
+    We log warnings only for successful commands since callers are already
+    handling failures.
     """
 
-    # Warnings written to LVM stderr that should not be logged as warnings.
-    SUPPRESS_WARNINGS = re.compile(
-        "|".join([
-            "WARNING: This metadata update is NOT backed up",
-            (r"WARNING: ignoring metadata seqno \d+ on /dev/mapper/\w+ for "
-             r"seqno \d+ on /dev/mapper/\w+ for VG \w+"),
-            r"WARNING: Inconsistent metadata found for VG \w+",
-            ("WARNING: Activation disabled. No device-mapper interaction "
-             "will be attempted"),
-        ]),
-        re.IGNORECASE)
+    rc, out, err = _run_command(cmd)
 
-    def run(self, cmd):
-        """
-        Run LVM command, logging warnings for successful commands.
+    out = out.decode("utf-8").splitlines()
+    err = err.decode("utf-8").splitlines()
 
-        An example case is when LVM decide to fix VG metadata when running a
-        command that should not change the metadata on non-SPM host. In this
-        case LVM will log this warning:
+    err = [s for s in err if not SUPPRESS_WARNINGS.search(s)]
 
-            WARNING: Inconsistent metadata found for VG xxx-yyy-zzz - updating
-            to use version 42
+    if rc == 0 and err:
+        log.warning("Command %s succeeded with warnings: %s", cmd, err)
 
-        We log warnings only for successful commands since callers are already
-        handling failures.
-        """
+    if rc != 0:
+        raise se.LVMCommandError(cmd, rc, out, err)
 
-        rc, out, err = self._run_command(cmd)
-
-        out = out.decode("utf-8").splitlines()
-        err = err.decode("utf-8").splitlines()
-
-        err = [s for s in err if not self.SUPPRESS_WARNINGS.search(s)]
-
-        if rc == 0 and err:
-            log.warning("Command %s succeeded with warnings: %s", cmd, err)
-
-        if rc != 0:
-            raise se.LVMCommandError(cmd, rc, out, err)
-
-        return out
-
-    def _run_command(self, cmd):
-        p = commands.start(
-            cmd,
-            sudo=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        out, err = commands.communicate(p)
-        return p.returncode, out, err
+    return out
 
 
-_runner = LVMRunner()
+def _run_command(cmd):
+    p = commands.start(
+        cmd,
+        sudo=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    out, err = commands.communicate(p)
+    return p.returncode, out, err
 
 
 def _prepare_device_set(devs):
@@ -204,8 +196,8 @@ def _addExtraCfg(cmd, devices, use_lvmpolld):
 
 def run(cmd, devices, use_lvmpolld=True):
     """
-    Format and run LVM command with the given devices through the LVMRunner.
-    May raise se.LVMCommandError from the LVMRunner.
+    Format and run LVM command with the given devices.
+    May raise se.LVMCommandError.
 
     Args:
         cmd (List[str]): Specific LVM command that will be run.
@@ -216,4 +208,4 @@ def run(cmd, devices, use_lvmpolld=True):
         str: LVM command output.
     """
     full_cmd = _addExtraCfg(cmd, devices, use_lvmpolld=use_lvmpolld)
-    return _runner.run(full_cmd)
+    return _run(full_cmd)

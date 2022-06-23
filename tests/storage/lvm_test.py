@@ -81,7 +81,7 @@ def fake_runner(monkeypatch, request):
         fake_runner = FakeRunner(**request.param)
     else:
         fake_runner = FakeRunner()
-    monkeypatch.setattr(lvmcmd, "_runner", fake_runner)
+    monkeypatch.setattr(lvmcmd, "_run_command", fake_runner._run_command)
     return fake_runner
 
 
@@ -200,7 +200,7 @@ def test_rebuild_filter_after_invaliation(
     assert cmd[3] == build_config(fake_devices)
 
 
-class FakeRunner(lvmcmd.LVMRunner):
+class FakeRunner():
     """
     Simulate a command failing multiple times before suceeding.
 
