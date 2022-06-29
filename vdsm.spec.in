@@ -507,6 +507,14 @@ Requires:       %{name}
 %description hook-log-console
 This hook allows logging a VM serial console to a file.
 
+%package hook-log-firmware
+Summary:        Log VM's firmware to a file
+BuildArch:      noarch
+Requires:       %{name}
+
+%description hook-log-firmware
+This hook allows logging a VM firmware to a file.
+
 %package hook-macbind
 Summary:        Bind a vNIC to a Bridge
 BuildArch:      noarch
@@ -1060,6 +1068,9 @@ exit 0
 
 %files hook-log-console
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_log_console
+
+%files hook-log-firmware
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_log_firmware
 
 %files hook-vmfex-dev
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_vmfex

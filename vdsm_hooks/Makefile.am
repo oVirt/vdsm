@@ -25,6 +25,7 @@ SUBDIRS = \
 	fcoe \
 	localdisk \
 	log_console \
+	log_firmware \
 	openstacknet \
 	qemucmdline \
 	vhostmd \
