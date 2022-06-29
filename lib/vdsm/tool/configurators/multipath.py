@@ -76,11 +76,7 @@ def configure():
     multipath.reconfigure()
 
 
-def isconfigured():
-    """
-    Check the multipath daemon configuration.
-    """
-
+def _check_mpath_metadata():
     if os.path.exists(mpathconf.CONF_FILE):
         revision, private = mpathconf.read_metadata()
         if private:
@@ -109,3 +105,25 @@ def isconfigured():
 
     sys.stdout.write("multipath requires configuration\n")
     return NO
+
+
+def isconfigured():
+    """
+    Check the multipath daemon configuration.
+    """
+    conf_metadata_ok = _check_mpath_metadata()
+    if conf_metadata_ok == YES:
+        check_result = mpathconf.check_local_config()
+        if check_result.error is not None:
+            # Just warn for now, do not fail the isconfigured check here.
+            sys.stdout.write(f"WARNING: {check_result.error}:\n")
+            for section in check_result.issues:
+                sys.stdout.write(f"  {section.name} {{\n")
+                for attr in section.children:
+                    sys.stdout.write(f"    {attr.key} {attr.value}\n")
+                sys.stdout.write("  }\n")
+            if check_result.issues:
+                sys.stdout.write("This configuration is not supported and "
+                                 "may lead to storage domain corruption.\n")
+
+    return conf_metadata_ok
