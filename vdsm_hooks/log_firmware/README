@@ -1,0 +1,51 @@
+log_firmware vdsm hook
+=================================
+This hook appends a VM's firmware debug logging to a log file on the host.
+
+Installation:
+* Use engine-config to set the appropriate custom properties as such:
+
+Custom property for a VM:
+    sudo engine-config -s "UserDefinedVMProperties=log_firmware=^(on|off)$"
+
+* Prepare the log directory on the host:
+    sudo mkdir -p /var/log/qemu-firmware
+    sudo chown qemu /var/log/qemu-firmware
+    sudo chcon -t qemu_var_run_t /var/log/qemu-firmware
+    sudo chmod 700 /var/log/qemu-firmware
+
+Usage:
+
+The hook can be enabled using one of two ways:
+
+1. Set the VM property 'log_firmware' to 'on', for specific VMs, as needed, via
+the engine. Set it to 'off', to explicitly disable the hook.
+
+2. Set the environment variable 'log_firmware_vm_regexp', in
+/etc/sysconfig/vdsm, to a regular expression matching the VM names for which
+you want to enable the hook. Matching is done using Python's re.match().
+
+If log_firmware is set to 'off', for some VM, the hook will be disabled,
+regardless of the value of log_firmware_vm_regexp or whether the name matches.
+
+If 'log_firmware' is not 'on', for some VM, and 'log_firmware_vm_regexp' does
+not match, the hook will be disabled. So by default, with both variables
+being empty/unset, the hook is disabled.
+
+In principle, a future version might enable it by default, based on feedback
+from users.
+
+Using log_firmware_vm_regexp is useful, in particular, for enabling the hook
+for a HostedEngine VM, for which using 'log_firmware' is less practical, as
+the engine might be down exactly when you want to use it (to help diagnose
+why it's down...).
+
+The logs are written to the directory set with the environment variable
+log_firmware_dir, or to /var/log/qemu-firmware if it's not set.
+If you do set it, you should prepare the directory as detailed above.
+The logs' filenames, inside this directory, are {vm_name}-firmware.log,
+where {vm_name} is replaced with the VM's name.
+
+TODO: I'd like to be able to be able to write log files to
+/var/log/libvirt/qemu, like other logs, but that's not easy.
+See also: https://gerrit.ovirt.org/c/lago-ost/+/114150
