@@ -46,6 +46,7 @@ class Dispatcher(asyncore.dispatcher):
         asyncore.dispatcher.__init__(self, sock=sock, map=map)
         if impl is not None:
             self.switch_implementation(impl)
+        self._log.debug("Initialized dispatcher %s", self)
 
     def handle_connect(self):
         self._delegate_call("handle_connect")
@@ -77,6 +78,7 @@ class Dispatcher(asyncore.dispatcher):
     def close(self):
         if self.closing:
             return
+        self._log.debug("Closing dispatcher %s", self)
         self.closing = True
         asyncore.dispatcher.close(self)
 
