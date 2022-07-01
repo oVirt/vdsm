@@ -59,6 +59,7 @@ def loop_device(tmpdir):
 class TestZero:
 
     @requires_root
+    @pytest.mark.root
     def test_entire_device(self, loop_device):
         # Write some data to the device.
         with directio.open(loop_device.path, "r+") as f:
@@ -78,6 +79,7 @@ class TestZero:
             assert data == ZERO
 
     @requires_root
+    @pytest.mark.root
     def test_size(self, loop_device):
         # Write some data to the device.
         with directio.open(loop_device.path, "r+") as f:
@@ -94,6 +96,7 @@ class TestZero:
             assert data == DATA
 
     @requires_root
+    @pytest.mark.root
     @pytest.mark.parametrize("size", [
         sc.BLOCK_SIZE_4K,
         250 * sc.BLOCK_SIZE_4K
@@ -154,6 +157,7 @@ class TestDiscard:
             assert data == DATA
 
     @requires_root
+    @pytest.mark.root
     def test_supported(self, loop_device):
         # If the loop device backing file is on a file system that does not
         # support discard, discard is not supported.

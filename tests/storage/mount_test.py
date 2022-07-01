@@ -137,6 +137,7 @@ def loop_mount(m):
 class TestMount(VdsmTestCase):
 
     @requires_root
+    @pytest.mark.root
     @broken_on_ci("mount check fails after successful mount", name="TRAVIS_CI")
     def testLoopMount(self):
         with namedTemporaryDir() as mpath:
@@ -147,6 +148,7 @@ class TestMount(VdsmTestCase):
                     self.assertTrue(m.isMounted())
 
     @requires_root
+    @pytest.mark.root
     @broken_on_ci("mount check fails after successful mount", name="TRAVIS_CI")
     def testSymlinkMount(self):
         with namedTemporaryDir() as root_dir:

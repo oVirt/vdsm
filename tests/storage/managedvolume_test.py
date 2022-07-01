@@ -122,6 +122,7 @@ def fake_supervdsm(monkeypatch):
 
 
 @requires_root
+@pytest.mark.root
 def test_connector_info_not_installed(monkeypatch):
     # Simulate missing os_brick.
     monkeypatch.setattr(managedvolume, "os_brick", None)
@@ -130,12 +131,14 @@ def test_connector_info_not_installed(monkeypatch):
 
 
 @requires_root
+@pytest.mark.root
 def test_connector_info_ok(monkeypatch, fake_os_brick):
     monkeypatch.setenv("FAKE_CONNECTOR_INFO_RESULT", "OK")
     assert managedvolume.connector_info() == {"multipath": True}
 
 
 @requires_root
+@pytest.mark.root
 def test_connector_info_fail(monkeypatch, fake_os_brick):
     monkeypatch.setenv("FAKE_CONNECTOR_INFO_RESULT", "FAIL")
     with pytest.raises(se.ManagedVolumeHelperFailed):
@@ -143,6 +146,7 @@ def test_connector_info_fail(monkeypatch, fake_os_brick):
 
 
 @requires_root
+@pytest.mark.root
 def test_connector_info_fail_json(monkeypatch, fake_os_brick):
     monkeypatch.setenv("FAKE_CONNECTOR_INFO_RESULT", "FAIL_JSON")
     with pytest.raises(se.ManagedVolumeHelperFailed):
@@ -150,6 +154,7 @@ def test_connector_info_fail_json(monkeypatch, fake_os_brick):
 
 
 @requires_root
+@pytest.mark.root
 def test_connector_info_raise(monkeypatch, fake_os_brick):
     monkeypatch.setenv("FAKE_CONNECTOR_INFO_RESULT", "RAISE")
     with pytest.raises(se.ManagedVolumeHelperFailed) as e:
@@ -158,6 +163,7 @@ def test_connector_info_raise(monkeypatch, fake_os_brick):
 
 
 @requires_root
+@pytest.mark.root
 def test_attach_volume_not_installed_attach(monkeypatch):
     # Simulate missing os_brick.
     monkeypatch.setattr(managedvolume, "os_brick", None)
@@ -166,6 +172,7 @@ def test_attach_volume_not_installed_attach(monkeypatch):
 
 
 @requires_root
+@pytest.mark.root
 def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db, fake_lvm,
                                 fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
@@ -206,6 +213,7 @@ def test_attach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmp_db, fake_lvm,
 
 
 @requires_root
+@pytest.mark.root
 @pytest.mark.xfail(reason='RBD monkeypatching not implemented yet')
 def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick, tmp_db, fake_lvm,
                               fake_supervdsm):
@@ -244,6 +252,7 @@ def test_attach_volume_ok_rbd(monkeypatch, fake_os_brick, tmp_db, fake_lvm,
 
 
 @requires_root
+@pytest.mark.root
 @pytest.mark.parametrize("vol_type", ["iscsi", "fibre_channel"])
 def test_attach_volume_no_multipath_id(monkeypatch, fake_os_brick, tmp_db,
                                        vol_type, fake_lvm, fake_supervdsm):
@@ -273,6 +282,7 @@ def test_attach_volume_no_multipath_id(monkeypatch, fake_os_brick, tmp_db,
 
 
 @requires_root
+@pytest.mark.root
 def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir, tmp_db,
                                   fake_lvm, fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
@@ -305,6 +315,7 @@ def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir, tmp_db,
 
 
 @requires_root
+@pytest.mark.root
 def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir, tmp_db,
                                    fake_lvm, fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
@@ -336,6 +347,7 @@ def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir, tmp_db,
 
 
 @requires_root
+@pytest.mark.root
 def test_reattach_volume_other_connection(monkeypatch, fake_os_brick, tmp_db,
                                           fake_lvm, fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
@@ -368,6 +380,7 @@ def test_reattach_volume_other_connection(monkeypatch, fake_os_brick, tmp_db,
 
 
 @requires_root
+@pytest.mark.root
 def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick, tmp_db,
                                           fake_lvm, fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
@@ -394,6 +407,7 @@ def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick, tmp_db,
 
 
 @requires_root
+@pytest.mark.root
 def test_detach_volume_not_installed(monkeypatch, fake_os_brick, tmp_db,
                                      fake_lvm):
     # Simulate missing os_brick.
@@ -410,6 +424,7 @@ def test_detach_volume_not_installed(monkeypatch, fake_os_brick, tmp_db,
 
 
 @requires_root
+@pytest.mark.root
 def test_detach_not_in_db(monkeypatch, fake_os_brick, tmp_db, fake_lvm,
                           fake_supervdsm):
     managedvolume.detach_volume("sd_id", "fake_vol_id")
@@ -426,6 +441,7 @@ def test_detach_not_in_db(monkeypatch, fake_os_brick, tmp_db, fake_lvm,
 
 
 @requires_root
+@pytest.mark.root
 def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir,
                                       tmp_db, fake_lvm, fake_supervdsm):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
