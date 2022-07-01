@@ -52,7 +52,10 @@ class Dispatcher(asyncore.dispatcher):
         self._delegate_call("handle_connect")
 
     def handle_close(self):
-        self._delegate_call("handle_close")
+        try:
+            self._delegate_call("handle_close")
+        finally:
+            self.close()
 
     def handle_accept(self):
         self._delegate_call("handle_accept")
