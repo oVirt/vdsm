@@ -156,6 +156,7 @@ def test_createdir_file_exists_no_mode():
 
 
 @requires_root
+@pytest.mark.root
 def test_chown():
     targetId = 666
     with temporaryPath() as srcPath:
@@ -165,6 +166,7 @@ def test_chown():
 
 
 @requires_root
+@pytest.mark.root
 def test_chown_names():
     # I convert to some id because I have no
     # idea what users are defined and what

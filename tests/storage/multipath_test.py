@@ -116,12 +116,14 @@ def fake_scsi_id(monkeypatch, fake_executable):
 
 
 @requires_root
+@pytest.mark.root
 def test_resize_map(fake_multipathd):
     fake_multipathd.write(MULTIPATHD_SCRIPT.format("ok"))
     multipath.resize_map("fake_device")
 
 
 @requires_root
+@pytest.mark.root
 def test_resize_map_failed(fake_multipathd):
     fake_multipathd.write(MULTIPATHD_SCRIPT.format("fail"))
 
@@ -130,6 +132,7 @@ def test_resize_map_failed(fake_multipathd):
 
 
 @requires_root
+@pytest.mark.root
 def test_scsi_id(fake_scsi_id):
     fake_scsi_id.write(SCSI_ID_SCRIPT.format(FAKE_SCSI_ID_OUTPUT))
 
@@ -138,6 +141,7 @@ def test_scsi_id(fake_scsi_id):
 
 
 @requires_root
+@pytest.mark.root
 def test_scsi_id_no_serial(fake_scsi_id):
     fake_scsi_id.write(SCSI_ID_SCRIPT.format(FAKE_SCSI_ID_NO_SERIAL))
 
@@ -151,6 +155,7 @@ def test_scsi_id_no_serial(fake_scsi_id):
 
 
 @requires_root
+@pytest.mark.root
 def test_scsi_id_fails(fake_scsi_id):
     fake_scsi_id.write("#!/bin/sh\nexit 1\n")
 

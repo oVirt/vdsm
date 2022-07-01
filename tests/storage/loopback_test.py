@@ -41,6 +41,7 @@ AFTER = b"b" * 10
 
 
 @requires_root
+@pytest.mark.root
 @pytest.mark.parametrize("sector_size", [
     None,
     pytest.param(sc.BLOCK_SIZE_512, marks=requires_loopback_sector_size),
@@ -67,6 +68,7 @@ def test_with_device(tmpdir, sector_size):
 
 
 @requires_root
+@pytest.mark.root
 def test_attach_detach_manually(tmpdir):
     filename = str(tmpdir.join("file"))
     prepare_backing_file(filename)
@@ -82,6 +84,7 @@ def test_attach_detach_manually(tmpdir):
 
 
 @requires_root
+@pytest.mark.root
 @pytest.mark.stress
 def test_many_devices(tmpdir):
     filename = str(tmpdir.join("file"))

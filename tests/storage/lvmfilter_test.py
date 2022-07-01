@@ -162,6 +162,7 @@ def test_format_option():
 
 
 @requires_root
+@pytest.mark.root
 def test_real_find_lvm_mounts():
     mounts = lvmfilter.find_lvm_mounts()
     # This will return different results on any host, but we expect to find a
@@ -172,6 +173,7 @@ def test_real_find_lvm_mounts():
 
 
 @requires_root
+@pytest.mark.root
 def test_real_build_filter():
     mounts = lvmfilter.find_lvm_mounts()
     lvm_filter = lvmfilter.build_filter(mounts)

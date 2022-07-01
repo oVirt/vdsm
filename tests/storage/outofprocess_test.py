@@ -521,6 +521,7 @@ def test_fileutils_pathexists(oop_cleanup, tmpdir):
 
 
 @requires_root
+@pytest.mark.root
 def test_fileutils_validateqemureadable_other_group(oop_cleanup, tmpdir):
     iop = oop.getProcessPool("test")
 
@@ -544,6 +545,7 @@ def test_fileutils_validateqemureadable_other_group(oop_cleanup, tmpdir):
     (36, 0o750),    # kvm
 ])
 @requires_root
+@pytest.mark.root
 def test_fileutils_validateqemureadable_qemu_or_kvm_group(
         oop_cleanup, tmpdir, gid, mode):
     iop = oop.getProcessPool("test")

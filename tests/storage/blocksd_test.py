@@ -1616,6 +1616,7 @@ def test_dump_sd_metadata(
 
 
 @requires_root
+@pytest.mark.root
 @pytest.mark.parametrize("domain_version", [5])
 def test_create_illegal_volume(domain_factory, domain_version, fake_task,
                                fake_sanlock):
@@ -1644,6 +1645,7 @@ def test_create_illegal_volume(domain_factory, domain_version, fake_task,
 
 
 @requires_root
+@pytest.mark.root
 def test_reduce_volume_called(domain_factory, fake_task, fake_sanlock):
     sd_uuid = str(uuid.uuid4())
     dom = domain_factory.create_domain(sd_uuid=sd_uuid, version=5)
@@ -1676,6 +1678,7 @@ def test_reduce_volume_called(domain_factory, fake_task, fake_sanlock):
 
 
 @requires_root
+@pytest.mark.root
 def test_reduce_volume_skipped(domain_factory, fake_task, fake_sanlock):
     sd_uuid = str(uuid.uuid4())
     dom = domain_factory.create_domain(sd_uuid=sd_uuid, version=5)

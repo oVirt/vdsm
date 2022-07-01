@@ -1663,6 +1663,7 @@ class TestMeasure:
         self.check_measure(filename, compat, format, compressed)
 
     @requires_root
+    @pytest.mark.root
     def test_block(self, block_chain):
         # Creating a block chain is very slow, so we reuse it for many tests.
 

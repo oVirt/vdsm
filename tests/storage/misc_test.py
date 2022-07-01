@@ -586,6 +586,7 @@ class TestExecCmd(VdsmTestCase):
         self.assertEqual(stderr[0].decode("ascii"), "it works!")
 
     @requires_root
+    @pytest.mark.root
     def testSudo(self):
         """
         Tests that when running with sudo the user really is root (or other

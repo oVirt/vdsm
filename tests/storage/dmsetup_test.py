@@ -70,6 +70,7 @@ def fake_dmsetup(monkeypatch, fake_executable):
 
 
 @requires_root
+@pytest.mark.root
 def test_status(fake_dmsetup):
     fake_dmsetup.write(DMSETUP_SCRIPT.format(FAKE_DMSETUP_OUTPUT))
 

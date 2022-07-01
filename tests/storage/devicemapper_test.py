@@ -145,6 +145,7 @@ def test_get_paths_status_no_device(fake_dmsetup_status):
 
 @broken_on_ci
 @requires_root
+@pytest.mark.root
 def test_remove_mapping(zero_dm_device):
     device_path = "{}{}".format(DMPATH_PREFIX, zero_dm_device)
     assert os.path.exists(device_path)
@@ -155,6 +156,7 @@ def test_remove_mapping(zero_dm_device):
 
 @broken_on_ci
 @requires_root
+@pytest.mark.root
 def test_dm_id(zero_dm_device):
     # Resolve the dm link and get dm name of the device.
     device_path = "{}{}".format(DMPATH_PREFIX, zero_dm_device)
@@ -176,6 +178,7 @@ def test_dm_id(zero_dm_device):
 
 @broken_on_ci
 @requires_root
+@pytest.mark.root
 def test_dev_name(zero_dm_device):
     dm_id = devicemapper.getDmId(zero_dm_device)
     device_name = devicemapper.getDevName(dm_id)
@@ -184,6 +187,7 @@ def test_dev_name(zero_dm_device):
 
 @broken_on_ci
 @requires_root
+@pytest.mark.root
 def test_is_virtual_device(zero_dm_device):
     dm_id = devicemapper.getDmId(zero_dm_device)
     assert devicemapper.isVirtualDevice(dm_id)
@@ -191,6 +195,7 @@ def test_is_virtual_device(zero_dm_device):
 
 @broken_on_ci
 @requires_root
+@pytest.mark.root
 def test_is_block_device(zero_dm_device):
     dm_id = devicemapper.getDmId(zero_dm_device)
     assert devicemapper.isBlockDevice(dm_id)
@@ -198,6 +203,7 @@ def test_is_block_device(zero_dm_device):
 
 @broken_on_ci
 @requires_root
+@pytest.mark.root
 def test_is_dm_device(zero_dm_device):
     dm_id = devicemapper.getDmId(zero_dm_device)
     assert devicemapper.isDmDevice(dm_id)
@@ -205,6 +211,7 @@ def test_is_dm_device(zero_dm_device):
 
 @broken_on_ci
 @requires_root
+@pytest.mark.root
 def test_get_all_mapped_devices(zero_dm_device):
     devices = devicemapper.getAllMappedDevices()
     assert zero_dm_device in devices
@@ -212,6 +219,7 @@ def test_get_all_mapped_devices(zero_dm_device):
 
 @broken_on_ci
 @requires_root
+@pytest.mark.root
 def test_get_all_slaves(zero_dm_device):
     slaves = devicemapper.getAllSlaves()
     assert zero_dm_device in slaves
@@ -221,6 +229,7 @@ def test_get_all_slaves(zero_dm_device):
 
 @broken_on_ci
 @requires_root
+@pytest.mark.root
 def test_get_slaves(zero_dm_device):
     slaves = devicemapper.getSlaves(zero_dm_device)
     # Zero device mapping has no slaves.
@@ -229,6 +238,7 @@ def test_get_slaves(zero_dm_device):
 
 @broken_on_ci
 @requires_root
+@pytest.mark.root
 def test_get_holders(zero_dm_device):
     holders = devicemapper.getHolders(zero_dm_device)
     # Zero device mapping has no holders.
