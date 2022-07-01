@@ -122,11 +122,11 @@ class Dispatcher(asyncore.dispatcher):
     def recv(self, buffer_size):
         try:
             data = self.socket.recv(buffer_size)
-            if data == "":
+            if data == b'':
                 # a closed connection is indicated by signaling
                 # a read condition, and having recv() return 0.
                 self.handle_close()
-                return ''
+                return b''
             else:
                 return data
         except sslutils.SSLError as e:
@@ -134,7 +134,7 @@ class Dispatcher(asyncore.dispatcher):
                 return None
             self._log.debug('SSL error receiving from %s: %s', self, e)
             self.handle_close()
-            return ''
+            return b''
         except socket.error as why:
             # winsock sometimes raises ENOTCONN
             # according to asyncore.dispatcher#recv docstring
@@ -143,7 +143,7 @@ class Dispatcher(asyncore.dispatcher):
                 return None
             elif why.args[0] in asyncore._DISCONNECTED:
                 self.handle_close()
-                return ''
+                return b''
             else:
                 raise
 
