@@ -1,8 +1,8 @@
 FROM quay.io/centos/centos:stream8
 
 # Add runtime dependencies.
-RUN dnf install -y \
-        http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm \
+RUN dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-8 \
+    && dnf install -y ovirt-release-master \
     && dnf update -y \
     && dnf install -y \
         autoconf \
@@ -49,7 +49,7 @@ RUN dnf install -y \
         python3-sanlock \
         python3-six \
         python3-yaml \
-        qemu-img-6.0.0 \
+        qemu-img \
         redhat-rpm-config \
         rpm-build \
         sanlock \
