@@ -60,6 +60,9 @@ RUN dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-8 \
         xfsprogs \
     && dnf clean all
 
+# Create vdsm user with groups kvm,qemu,sanlock
+RUN useradd --system -m -u 36 -N -G 36,107,179 vdsm
+
 # Add gdb python support.
 RUN debuginfo-install -y python3 \
     && dnf clean all
