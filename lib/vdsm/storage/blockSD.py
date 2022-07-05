@@ -1457,7 +1457,7 @@ class BlockStorageDomain(sd.StorageDomain):
                (constants.METADATA_USER, constants.METADATA_GROUP), masterDir]
         (rc, out, err) = misc.execCmd(cmd, sudo=True)
         if rc != 0:
-            self.log.error("failed to chown %s", masterDir)
+            self.log.error("failed to chown %s: %s", masterDir, err)
 
     @classmethod
     def __handleStuckUmount(cls, masterDir):
