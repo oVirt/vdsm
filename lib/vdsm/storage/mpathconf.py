@@ -33,6 +33,8 @@ import re
 from collections import namedtuple
 from string import Template
 
+from vdsm.common import cmdutils
+from vdsm.storage import multipath
 from . import fileUtils
 
 CONF_FILE = '/etc/multipath.conf'
@@ -293,12 +295,14 @@ overrides {
 """).substitute({"current_tag": CURRENT_TAG,
                  "no_path_retry": _NO_PATH_RETRY})
 
+_SKIPPED_SECTIONS = ("blacklist", "blacklist_exceptions")
 
 log = logging.getLogger("storage.mpathconf")
 
 Metadata = namedtuple("Metadata", "revision,private")
 Section = namedtuple("Section", "name,children")
 Pair = namedtuple("Pair", "key,value")
+Result = namedtuple("Result", "error,issues")
 
 
 def configure_blacklist(wwids):
@@ -430,6 +434,58 @@ def read_metadata():
         return Metadata(REVISION_OLD, private)
 
     return Metadata(REVISION_MISSING, private)
+
+
+def check_local_config():
+    """
+    Check if 'user_friendly_names' is enabled in the multipathd configuration.
+    The configuration is obtained by running the multipathd command to show
+    the local configuration and capturing the output.
+    Parse the output and check that the contents are valid.
+
+    Returns:
+        vdsm.storage.mpathconf.Result
+    """
+    error = None
+    try:
+        mpath_conf = _parse_conf(io.StringIO(multipath.show_config_local()))
+        issues = _check_conf(mpath_conf)
+    except cmdutils.Error as e:
+        error = f"Cannot check multipath configuration: {e}"
+        issues = []
+    else:
+        if issues:
+            error = ("Invalid configuration: 'user_friendly_names' is "
+                     "enabled in multipath configuration")
+    return Result(error, issues)
+
+
+def _check_conf(mpath_conf):
+    """
+    Check that 'user_friendly_names' is disabled in all the children
+    of the parsed multipathd configuration.
+    Search is recursive.
+
+    Args:
+        mpath_conf: Parsed structure of the multipathd configuration output.
+
+    Returns:
+        List[Section]: Sections that have invalid configuration.
+    """
+    issues = []
+    for item in mpath_conf:
+        if not item.children or item.name in _SKIPPED_SECTIONS:
+            continue
+
+        if all(isinstance(child, Section) for child in item.children):
+            issues.extend(_check_conf(item.children))
+        elif all(isinstance(child, Pair) for child in item.children):
+            if Pair("user_friendly_names", "yes") in item.children:
+                issues.append(item)
+        else:
+            raise ValueError(f"Invalid item: {item}")
+
+    return issues
 
 
 def _parse_conf(mpath_out_it):
