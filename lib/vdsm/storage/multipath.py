@@ -209,6 +209,18 @@ def is_ready():
     return "busy: false" in status
 
 
+def show_config_local():
+    """
+    Obtain the local configuration of the multipath daemon.
+    Must run as root.
+
+    Returns:
+        str: Output of the multipathd show command.
+    """
+    return commands.run(
+        [_MULTIPATHD.cmd, "show", "config", "local"]).decode('ascii')
+
+
 def reconfigure():
     """
     Invoke multipathd to reconfigure the multipaths.
