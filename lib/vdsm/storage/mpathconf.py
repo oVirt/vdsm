@@ -297,6 +297,8 @@ overrides {
 log = logging.getLogger("storage.mpathconf")
 
 Metadata = namedtuple("Metadata", "revision,private")
+Section = namedtuple("Section", "name,children")
+Pair = namedtuple("Pair", "key,value")
 
 
 def configure_blacklist(wwids):
@@ -428,3 +430,33 @@ def read_metadata():
         return Metadata(REVISION_OLD, private)
 
     return Metadata(REVISION_MISSING, private)
+
+
+def _parse_conf(mpath_out_it):
+    """
+    Recursively parse multipath daemon configuration output.
+
+    Args:
+        mpath_out_it (iterator): String iterator containing the output of the
+            multipath configuration.
+
+    Returns:
+        Parsed configuration.
+    """
+    res = []
+    for line in mpath_out_it:
+        line = line.strip()
+        if line.endswith("{"):
+            name, _ = line.rsplit(" ", 1)
+            res.append(Section(name, _parse_conf(mpath_out_it)))
+        elif line == "}":
+            break
+        else:
+            if not line:
+                # Discard empty lines
+                continue
+            key, value = line.split(" ", 1)
+            if value[0] == value[-1] == '"':
+                value = value[1:-1]
+            res.append(Pair(key, value))
+    return res
