@@ -18,9 +18,12 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import io
+
 import pytest
 
 from vdsm.storage import mpathconf
+from vdsm.storage.mpathconf import Section, Pair
 
 from . marks import requires_selinux
 
@@ -172,3 +175,74 @@ def test_mpath_empty_conf(fake_mpath_conf):
         revision=mpathconf.REVISION_MISSING,
         private=False,
     )
+
+
+def test_mpathd_parser():
+    mpath_out = """\
+section1 {
+    key1 "value 1"
+    key2 value2
+    key3 3
+}
+section2 {
+    key1 value1
+}
+section3 {
+}
+section4 {
+    entry {
+        key1 "value 1"
+        key2 "value 2"
+        key3 "value 3"
+    }
+    entry {
+        key1 "value1"
+    }
+    entry {
+    }
+}
+section5 {
+    key1 value1
+    key2 value2
+    entry {
+        key1 value1
+        key2 value2
+    }
+    entry {
+        key1 value1
+    }
+}"""
+    assert mpathconf._parse_conf(io.StringIO(mpath_out)) == [
+        Section('section1', [
+            Pair('key1', 'value 1'),
+            Pair('key2', 'value2'),
+            Pair('key3', '3')
+        ]),
+        Section('section2', [
+            Pair('key1', 'value1')
+        ]),
+        Section('section3', [
+        ]),
+        Section('section4', [
+            Section('entry', [
+                Pair('key1', 'value 1'),
+                Pair('key2', 'value 2'),
+                Pair('key3', 'value 3')
+            ]),
+            Section('entry', [
+                Pair('key1', 'value1')
+            ]),
+            Section('entry', [])
+        ]),
+        Section('section5', [
+            Pair('key1', 'value1'),
+            Pair('key2', 'value2'),
+            Section('entry', [
+                Pair('key1', 'value1'),
+                Pair('key2', 'value2')
+            ]),
+            Section('entry', [
+                Pair('key1', 'value1')
+            ])
+        ]),
+    ]
