@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2021 Red Hat, Inc.
+# Copyright 2016-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -404,10 +404,11 @@ class _ExternalDataMonitor(_RunnableOnVm):
 
     @property
     def required(self):
-        # TPM data is normally initialized in Vm constructor, with the
-        # exception of live migrations where it is transferred by
-        # libvirt, after the migration is started.
-        return self._vm.lastStatus != vmstatus.MIGRATION_DESTINATION
+        return self._vm.lastStatus not in (
+            vmstatus.MIGRATION_DESTINATION,
+            vmstatus.RESTORING_STATE,
+            vmstatus.WAIT_FOR_LAUNCH,
+        )
 
     @property
     def runnable(self):
