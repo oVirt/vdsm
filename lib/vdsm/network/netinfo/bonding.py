@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Hat, Inc.
+# Copyright 2015-2022 Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,10 +23,7 @@ import os
 
 import six
 
-from vdsm.network.ipwrapper import Link
-
-from .misc import visible_devs
-
+from vdsm.network import ipwrapper
 from vdsm.network.link.bond import Bond
 
 # In order to limit the scope of change, this module is now acting as a proxy
@@ -45,7 +42,7 @@ BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
 BONDING_SLAVE_OPT = '/sys/class/net/%s/bonding_slave/%s'
 
-bondings = partial(visible_devs, Link.isBOND)
+bondings = partial(ipwrapper.visible_devs, ipwrapper.Link.isBOND)
 
 
 def _file_value(path):

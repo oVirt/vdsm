@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2020 Hat, Inc.
+# Copyright 2015-2022 Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,13 +22,12 @@ from functools import partial
 import logging
 import os
 
-from vdsm.network.ipwrapper import Link
+from vdsm.network import ipwrapper
 from vdsm.network.link import bridge as br
-from .misc import visible_devs
 
 BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
 
-bridges = partial(visible_devs, Link.isBRIDGE)
+bridges = partial(ipwrapper.visible_devs, ipwrapper.Link.isBRIDGE)
 
 
 def ports(bridge):

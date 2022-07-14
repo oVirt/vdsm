@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2020 Hat, Inc.
+# Copyright 2015-2022 Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,13 +22,12 @@ from __future__ import division
 import io
 from functools import partial
 
-from vdsm.network.ipwrapper import Link
-from .misc import visible_devs
+from vdsm.network import ipwrapper
 
 OPERSTATE_UP = 'up'
 
 
-nics = partial(visible_devs, Link.isNICLike)
+nics = partial(ipwrapper.visible_devs, ipwrapper.Link.isNICLike)
 
 
 def operstate(nic_name):
