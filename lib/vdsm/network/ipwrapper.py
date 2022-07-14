@@ -303,6 +303,14 @@ def getLinks():
             continue
 
 
+def visible_links():
+    return (lnk for lnk in getLinks() if not lnk.isHidden())
+
+
+def nic_links():
+    return (lnk for lnk in getLinks() if lnk.isNIC())
+
+
 def getLink(dev):
     """Returns the Link object for the specified dev."""
     return Link.fromDict(link.get_link(dev))
