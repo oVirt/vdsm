@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 from fnmatch import fnmatch
+from functools import partial
 from glob import iglob
 from ipaddress import ip_address
 from ipaddress import ip_network
@@ -307,12 +308,17 @@ def getLink(dev):
     return Link.fromDict(link.get_link(dev))
 
 
-def visible_devs(predicate):
+def _visible_devs(predicate):
     """Returns a list of visible (vdsm manageable) links for which the
     predicate is True"""
     return [
         dev.name for dev in getLinks() if predicate(dev) and not dev.isHidden()
     ]
+
+
+visible_bonds = partial(_visible_devs, Link.isBOND)
+visible_bridges = partial(_visible_devs, Link.isBRIDGE)
+visible_nics = partial(_visible_devs, Link.isNICLike)
 
 
 @equals
