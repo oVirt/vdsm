@@ -22,7 +22,6 @@ import os
 
 import six
 
-from vdsm.network import ipwrapper
 from vdsm.network.link.bond import Bond
 
 # In order to limit the scope of change, this module is now acting as a proxy
@@ -40,8 +39,6 @@ BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
 BONDING_SLAVE_OPT = '/sys/class/net/%s/bonding_slave/%s'
-
-bondings = ipwrapper.visible_bonds
 
 
 def _file_value(path):
