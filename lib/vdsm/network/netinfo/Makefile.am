@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2018 Red Hat, Inc.
+# Copyright 2015-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ dist_vdsmnetinfo_PYTHON = \
 	bonding.py \
 	bridges.py \
 	cache.py \
-	misc.py \
 	nics.py \
 	qos.py \
 	routes.py \
