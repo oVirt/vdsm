@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2021 Red Hat, Inc.
+# Copyright 2016-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -893,7 +893,7 @@ def wait_bonds_lp_interval():
     time.sleep(default_lp_interval + GRACE_PERIOD)
 
 
-def _normalize_caps(netinfo_from_caps):
+def _normalize_caps(netinfo_from_caps: CachingNetInfo):
     """
     Normalize network caps to allow kernel vs running config comparison.
 
