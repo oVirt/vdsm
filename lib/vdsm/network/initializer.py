@@ -1,4 +1,4 @@
-# Copyright 2017-2021 Red Hat, Inc.
+# Copyright 2017-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ import logging
 from vdsm.common.config import config
 from vdsm.network import bond_monitor
 from vdsm.network import dhcp_monitor
+from vdsm.network import ipwrapper
 from vdsm.network import lldp
-from vdsm.network.ipwrapper import getLinks
 
 Lldp = lldp.driver()
 
@@ -62,7 +62,7 @@ def _lldp_init():
         return
 
     if Lldp.is_active():
-        for device in (link for link in getLinks() if link.isNIC()):
+        for device in ipwrapper.nic_links():
             if not Lldp.is_lldp_enabled_on_iface(device.name):
                 try:
                     Lldp.enable_lldp_on_iface(device.name)

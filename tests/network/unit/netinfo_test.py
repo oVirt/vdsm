@@ -132,7 +132,7 @@ class TestNetinfo(object):
         get()
 
     @mock.patch.object(netinfo.bonding, 'permanent_address', lambda: {})
-    @mock.patch('vdsm.network.netinfo.cache.getLinks')
+    @mock.patch('vdsm.network.ipwrapper.getLinks')
     @mock.patch('vdsm.network.netinfo.cache.RunningConfig')
     def test_get_empty(self, mock_networks, mock_getLinks, current_state_mock):
         result = {}
