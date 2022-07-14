@@ -20,14 +20,13 @@ from __future__ import absolute_import
 from __future__ import division
 
 import io
-from functools import partial
 
 from vdsm.network import ipwrapper
 
 OPERSTATE_UP = 'up'
 
 
-nics = partial(ipwrapper.visible_devs, ipwrapper.Link.isNICLike)
+nics = ipwrapper.visible_nics
 
 
 def operstate(nic_name):
