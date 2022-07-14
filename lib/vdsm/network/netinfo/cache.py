@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2020 Red Hat, Inc.
+# Copyright 2015-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,10 +26,10 @@ import logging
 
 import six
 
+from vdsm.network import link
 from vdsm.network import nmstate
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ipwrapper import getLinks
-from vdsm.network.link import iface as link_iface
 from vdsm.network.netconfpersistence import RunningConfig
 
 from . import bonding
@@ -289,7 +289,7 @@ def networks_base_info(running_nets, routes=None, ipaddrs=None):
             continue
         iface = get_net_iface_from_config(net, attrs)
         try:
-            if not link_iface.iface(iface).exists():
+            if not link.iface.iface(iface).exists():
                 raise NetworkIsMissing('Iface %s was not found' % iface)
             info[net] = _getNetInfo(iface, attrs['bridged'], routes, ipaddrs)
         except NetworkIsMissing:
@@ -363,7 +363,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs):
                 'gateway': gateway,
                 'ipv6gateway': get_gateway(routes, iface, family=6),
                 'ipv4defaultroute': is_default_route(gateway, routes),
-                'mtu': link_iface.iface(iface).mtu(),
+                'mtu': link.iface.iface(iface).mtu(),
             }
         )
     except (IOError, OSError) as e:

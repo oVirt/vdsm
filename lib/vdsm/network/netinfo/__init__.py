@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,3 +23,10 @@ from __future__ import absolute_import
 from __future__ import division
 
 NET_PATH = '/sys/class/net'
+
+__all__ = [
+    'addresses',
+    'bonding',
+    'nics',
+    'routes',
+]
