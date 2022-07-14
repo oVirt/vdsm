@@ -1,4 +1,4 @@
-# Copyright 2011-2020 Red Hat, Inc.
+# Copyright 2011-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,9 +27,9 @@ import six
 
 from vdsm.common.constants import P_VDSM_RUN
 from vdsm.network import kernelconfig
+from vdsm.network import netinfo
 from vdsm.network import netswitch
 from vdsm.network.link import sriov
-from vdsm.network.netinfo import nics
 from vdsm.network.netinfo.cache import NetInfo
 from vdsm.network.netconfpersistence import PersistentConfig, BaseConfig
 
@@ -142,7 +142,7 @@ def _filter_available(persistent_config):
     """Returns only nets and bonds that can be configured with the devices
     present in the system"""
 
-    available_nics = nics.nics()
+    available_nics = netinfo.nics.nics()
     available_bonds = _find_bonds_with_available_nics(
         available_nics, persistent_config.bonds
     )

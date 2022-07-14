@@ -28,10 +28,10 @@ from unittest import mock
 import pytest
 
 from vdsm.network import ipwrapper
+from vdsm.network import netinfo
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link import nic
 from vdsm.network.link.bond import Bond, bond_speed
-from vdsm.network.netinfo import addresses, bonding, nics, routes
 from vdsm.network.netinfo.cache import get
 
 from vdsm.network import nmstate
@@ -100,7 +100,7 @@ class TestNetinfo(object):
             assert bond_speed.speed(bond_name) == expected_speed
 
     @mock.patch.object(nic, 'iface')
-    @mock.patch.object(nics.io, 'open')
+    @mock.patch.object(netinfo.nics.io, 'open')
     def test_valid_nic_speed(self, mock_io_open, mock_iface):
         IS_UP = True
         values = (
@@ -120,7 +120,7 @@ class TestNetinfo(object):
 
             assert nic.speed('fake_nic') == expected
 
-    @mock.patch.object(bonding, 'permanent_address', lambda: {})
+    @mock.patch.object(netinfo.bonding, 'permanent_address', lambda: {})
     @mock.patch('vdsm.network.netinfo.cache.RunningConfig')
     def test_get_non_existing_bridge_info(
         self, mock_runningconfig, current_state_mock
@@ -131,7 +131,7 @@ class TestNetinfo(object):
         mock_runningconfig.return_value.networks = {'fake': {'bridged': True}}
         get()
 
-    @mock.patch.object(bonding, 'permanent_address', lambda: {})
+    @mock.patch.object(netinfo.bonding, 'permanent_address', lambda: {})
     @mock.patch('vdsm.network.netinfo.cache.getLinks')
     @mock.patch('vdsm.network.netinfo.cache.RunningConfig')
     def test_get_empty(self, mock_networks, mock_getLinks, current_state_mock):
@@ -144,7 +144,9 @@ class TestNetinfo(object):
         assert result['vlans'] == {}
 
     def test_ipv4_to_mapped(self):
-        assert '::ffff:127.0.0.1' == addresses.IPv4toMapped('127.0.0.1')
+        assert '::ffff:127.0.0.1' == netinfo.addresses.IPv4toMapped(
+            '127.0.0.1'
+        )
 
     def test_get_device_by_ip(self):
         NL_ADDRESS4 = {
@@ -160,10 +162,11 @@ class TestNetinfo(object):
         NL_ADDRESSES = [NL_ADDRESS4, NL_ADDRESS6]
 
         with mock.patch.object(
-            addresses.nl_addr, 'iter_addrs', lambda: NL_ADDRESSES
+            netinfo.addresses.nl_addr, 'iter_addrs', lambda: NL_ADDRESSES
         ):
             for nl_addr in NL_ADDRESSES:
-                lbl = addresses.getDeviceByIP(nl_addr['address'].split('/')[0])
+                nl_address = nl_addr['address'].split('/')[0]
+                lbl = netinfo.addresses.getDeviceByIP(nl_address)
                 assert nl_addr['label'] == lbl
 
     @mock.patch.object(ipwrapper.Link, '_hiddenNics', ['hid*'])
@@ -180,7 +183,7 @@ class TestNetinfo(object):
         """
         mock_getLinks.return_value = self._LINKS_REPORT
 
-        assert set(nics.nics()) == set(['em', 'me', 'fake', 'fake0'])
+        assert set(netinfo.nics.nics()) == {'em', 'me', 'fake', 'fake0'}
 
     # Creates a test fixture so that nics() reports:
     # physical nics: em, me, me0, me1, hid0 and hideous
@@ -307,9 +310,9 @@ class TestNetinfo(object):
         }
         SINGLE_GATEWAY = {TEST_IFACE: [DUPLICATED_GATEWAY[TEST_IFACE][0]]}
 
-        gateway = routes.get_gateway(SINGLE_GATEWAY, TEST_IFACE)
+        gateway = netinfo.routes.get_gateway(SINGLE_GATEWAY, TEST_IFACE)
         assert gateway == '12.34.56.1'
-        gateway = routes.get_gateway(DUPLICATED_GATEWAY, TEST_IFACE)
+        gateway = netinfo.routes.get_gateway(DUPLICATED_GATEWAY, TEST_IFACE)
         assert gateway == '12.34.56.1'
 
     def test_netinfo_ignoring_link_scope_ip(self):
@@ -342,12 +345,17 @@ class TestNetinfo(object):
             'flags': ['permanent'],
         }
         ipaddrs = {'eth0': (v4_link, v4_global, v6_link, v6_global)}
-        ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = addresses.getIpInfo(
-            'eth0', ipaddrs=ipaddrs
-        )
+        (
+            ipv4addr,
+            ipv4netmask,
+            ipv4addrs,
+            ipv6addrs,
+        ) = netinfo.addresses.getIpInfo('eth0', ipaddrs=ipaddrs)
         assert ipv4addrs == ['192.0.2.2/24']
         assert ipv6addrs == ['ee80::5054:ff:fea3:f9f3/64']
 
     def test_parse_bond_options(self):
         expected = {'mode': '4', 'miimon': '100'}
-        assert expected == bonding.parse_bond_options('mode=4 miimon=100')
+        assert expected == netinfo.bonding.parse_bond_options(
+            'mode=4 miimon=100'
+        )

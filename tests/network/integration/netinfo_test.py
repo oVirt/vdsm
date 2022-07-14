@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2021 Red Hat, Inc.
+# Copyright 2012-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,12 +25,12 @@ from unittest import mock
 import pytest
 
 from vdsm.network import ipwrapper
+from vdsm.network import netinfo
 from vdsm.network import sysctl
 from vdsm.network.link import nic
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.iface import random_iface_name
-from vdsm.network.netinfo import addresses, bonding, nics, routes
 from vdsm.network.netlink import waitfor
 
 from network.nettestlib import Interface
@@ -90,7 +90,7 @@ class TestNetinfo(object):
         assert nic.speed('lo') == 0
 
     def test_speed_in_range(self):
-        for d in nics.nics():
+        for d in netinfo.nics.nics():
             s = nic.speed(d)
             assert not s < 0
             assert s in ETHTOOL_SPEEDS or s == 0
@@ -100,14 +100,14 @@ class TestNetinfo(object):
         with veth_pair() as (v1a, v1b):
             with dummy_device() as d1:
                 fakes = set([d1, v1a, v1b])
-                _nics = nics.nics()
+                _nics = netinfo.nics.nics()
             errmsg = 'Fake devices {} are not listed in nics {}'
             assert fakes.issubset(_nics), errmsg.format(fakes, _nics)
 
         with veth_pair(prefix='mehv_') as (v2a, v2b):
             with dummy_device(prefix='mehd_') as d2:
                 hiddens = set([d2, v2a, v2b])
-                _nics = nics.nics()
+                _nics = netinfo.nics.nics()
             errmsg = 'Some of hidden devices {} is shown in nics {}'
             assert not hiddens.intersection(_nics), errmsg.format(
                 hiddens, _nics
@@ -138,7 +138,7 @@ class TestNetinfo(object):
                 )
 
                 with open(
-                    bonding.BONDING_OPT % (bond_name, 'miimon'), 'w'
+                    netinfo.bonding.BONDING_OPT % (bond_name, 'miimon'), 'w'
                 ) as opt:
                     opt.write(INTERVAL)
 
@@ -172,19 +172,23 @@ class TestNetinfo(object):
         with waitfor.waitfor_ipv4_addr(nic0, address=IPV4_ADDR3):
             nic0_interface.add_ip(IPV4_ADDR3, 32, IpFamily.IPv4)
 
-        assert addresses.getIpInfo(nic0) == (
+        assert netinfo.addresses.getIpInfo(nic0) == (
             IPV4_ADDR1,
             IPV4_NETMASK,
             [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
             [IPV6_ADDR_CIDR],
         )
-        assert addresses.getIpInfo(nic0, ipv4_gateway=IPV4_GATEWAY1) == (
+        assert netinfo.addresses.getIpInfo(
+            nic0, ipv4_gateway=IPV4_GATEWAY1
+        ) == (
             IPV4_ADDR1,
             IPV4_NETMASK,
             [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
             [IPV6_ADDR_CIDR],
         )
-        assert addresses.getIpInfo(nic0, ipv4_gateway=IPV4_GATEWAY2) == (
+        assert netinfo.addresses.getIpInfo(
+            nic0, ipv4_gateway=IPV4_GATEWAY2
+        ) == (
             IPV4_ADDR2,
             IPV4_NETMASK,
             [IPV4_ADDR1_CIDR, IPV4_ADDR2_CIDR, IPV4_ADDR3_CIDR],
@@ -209,37 +213,37 @@ class TestNetinfo(object):
         Interface.from_existing_dev_name(nic0).add_ip(
             ip_addr, ip_netmask, family=ip_version
         )
-        assert routes.getRouteDeviceTo(str(addr_in_net)) == nic0
+        assert netinfo.routes.getRouteDeviceTo(str(addr_in_net)) == nic0
 
 
 class TestIPv6Addresses(object):
     def test_local_auto_when_ipv6_is_disabled(self, nic0):
         sysctl.disable_ipv6(nic0)
-        assert not addresses.is_ipv6_local_auto(nic0)
+        assert not netinfo.addresses.is_ipv6_local_auto(nic0)
 
     def test_local_auto_without_router_advertisement_server(self, nic0):
-        assert addresses.is_ipv6_local_auto(nic0)
+        assert netinfo.addresses.is_ipv6_local_auto(nic0)
 
     def test_local_auto_with_static_address_without_ra_server(self, nic0):
         Interface.from_existing_dev_name(nic0).add_ip(
             '2001::88', IPV6_PREFIX_LENGTH, IpFamily.IPv6
         )
-        ip_addrs = addresses.getIpAddrs()[nic0]
-        assert addresses.is_ipv6_local_auto(nic0)
+        ip_addrs = netinfo.addresses.getIpAddrs()[nic0]
+        assert netinfo.addresses.is_ipv6_local_auto(nic0)
         assert 2 == len(ip_addrs), ip_addrs
-        assert addresses.is_ipv6(ip_addrs[0])
-        assert not addresses.is_dynamic(ip_addrs[0])
+        assert netinfo.addresses.is_ipv6(ip_addrs[0])
+        assert not netinfo.addresses.is_dynamic(ip_addrs[0])
 
     def test_local_auto_with_dynamic_address_from_ra(self, dynamic_ipv6_iface):
         # Expecting link and global addresses on client iface
         # The addresses are given randomly, so we sort them
         ip_addrs = sorted(
-            addresses.getIpAddrs()[dynamic_ipv6_iface],
+            netinfo.addresses.getIpAddrs()[dynamic_ipv6_iface],
             key=lambda ip: ip['address'],
         )
         assert len(ip_addrs) == 2
 
-        assert addresses.is_dynamic(ip_addrs[0])
+        assert netinfo.addresses.is_dynamic(ip_addrs[0])
         assert ip_addrs[0]['scope'] == 'global'
         assert ip_addrs[0]['address'].startswith(IPV6_ADDR_BASE)
 
