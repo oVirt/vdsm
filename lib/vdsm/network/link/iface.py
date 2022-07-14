@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -216,7 +216,7 @@ class IfaceHybrid(IfaceAPI):
             ipwrapper.linkSet(self._dev, [STATE_UP])
 
 
-def iface(device, vfid=None):
+def iface(device, vfid=None) -> IfaceHybrid:
     """Iface factory"""
     interface = IfaceHybrid()
     interface.device = device
