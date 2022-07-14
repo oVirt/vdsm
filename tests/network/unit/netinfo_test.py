@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2021 Red Hat, Inc.
+# Copyright 2012-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ from vdsm.network import ipwrapper
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link import nic
 from vdsm.network.link.bond import Bond, bond_speed
-from vdsm.network.netinfo import addresses, bonding, misc, nics, routes
+from vdsm.network.netinfo import addresses, bonding, nics, routes
 from vdsm.network.netinfo.cache import get
 
 from vdsm.network import nmstate
@@ -171,7 +171,7 @@ class TestNetinfo(object):
     @mock.patch.object(ipwrapper.Link, '_fakeNics', ['fake*'])
     @mock.patch.object(ipwrapper.Link, '_detectType', lambda x: None)
     @mock.patch.object(ipwrapper, '_bondExists', lambda x: x == 'jbond')
-    @mock.patch.object(misc, 'getLinks')
+    @mock.patch.object(ipwrapper, 'getLinks')
     def test_nics(self, mock_getLinks):
         """
         managed by vdsm: em, me, fake0, fake1

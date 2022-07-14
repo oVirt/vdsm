@@ -1,4 +1,4 @@
-# Copyright 2013-2021 Red Hat, Inc.
+# Copyright 2013-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -305,6 +305,14 @@ def getLinks():
 def getLink(dev):
     """Returns the Link object for the specified dev."""
     return Link.fromDict(link.get_link(dev))
+
+
+def visible_devs(predicate):
+    """Returns a list of visible (vdsm manageable) links for which the
+    predicate is True"""
+    return [
+        dev.name for dev in getLinks() if predicate(dev) and not dev.isHidden()
+    ]
 
 
 @equals
