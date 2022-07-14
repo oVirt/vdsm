@@ -183,7 +183,7 @@ class TestNetinfo(object):
         """
         mock_getLinks.return_value = self._LINKS_REPORT
 
-        assert set(netinfo.nics.nics()) == {'em', 'me', 'fake', 'fake0'}
+        assert set(ipwrapper.visible_nics()) == {'em', 'me', 'fake', 'fake0'}
 
     # Creates a test fixture so that nics() reports:
     # physical nics: em, me, me0, me1, hid0 and hideous
