@@ -21,12 +21,7 @@ from __future__ import division
 
 import io
 
-from vdsm.network import ipwrapper
-
 OPERSTATE_UP = 'up'
-
-
-nics = ipwrapper.visible_nics
 
 
 def operstate(nic_name):

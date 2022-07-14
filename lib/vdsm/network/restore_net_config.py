@@ -26,8 +26,8 @@ import os
 import six
 
 from vdsm.common.constants import P_VDSM_RUN
+from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
-from vdsm.network import netinfo
 from vdsm.network import netswitch
 from vdsm.network.link import sriov
 from vdsm.network.netinfo.cache import NetInfo
@@ -142,7 +142,7 @@ def _filter_available(persistent_config):
     """Returns only nets and bonds that can be configured with the devices
     present in the system"""
 
-    available_nics = netinfo.nics.nics()
+    available_nics = ipwrapper.visible_nics()
     available_bonds = _find_bonds_with_available_nics(
         available_nics, persistent_config.bonds
     )

@@ -90,7 +90,7 @@ class TestNetinfo(object):
         assert nic.speed('lo') == 0
 
     def test_speed_in_range(self):
-        for d in netinfo.nics.nics():
+        for d in ipwrapper.visible_nics():
             s = nic.speed(d)
             assert not s < 0
             assert s in ETHTOOL_SPEEDS or s == 0
@@ -100,14 +100,14 @@ class TestNetinfo(object):
         with veth_pair() as (v1a, v1b):
             with dummy_device() as d1:
                 fakes = set([d1, v1a, v1b])
-                _nics = netinfo.nics.nics()
+                _nics = ipwrapper.visible_nics()
             errmsg = 'Fake devices {} are not listed in nics {}'
             assert fakes.issubset(_nics), errmsg.format(fakes, _nics)
 
         with veth_pair(prefix='mehv_') as (v2a, v2b):
             with dummy_device(prefix='mehd_') as d2:
                 hiddens = set([d2, v2a, v2b])
-                _nics = netinfo.nics.nics()
+                _nics = ipwrapper.visible_nics()
             errmsg = 'Some of hidden devices {} is shown in nics {}'
             assert not hiddens.intersection(_nics), errmsg.format(
                 hiddens, _nics

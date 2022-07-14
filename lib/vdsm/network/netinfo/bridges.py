@@ -21,12 +21,9 @@ from __future__ import division
 import logging
 import os
 
-from vdsm.network import ipwrapper
 from vdsm.network.link import bridge as br
 
 BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
-
-bridges = ipwrapper.visible_bridges
 
 
 def ports(bridge):
