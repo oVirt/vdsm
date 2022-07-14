@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Red Hat, Inc.
+# Copyright 2020-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 from collections import defaultdict
 
-from vdsm.network.link.setup import parse_nets_bridge_opts
+from vdsm.network.link.setup import NmstateBridgeOpts
 
 from .bridge_util import DEFAULT_MTU
 from .bridge_util import is_iface_up
@@ -213,14 +213,14 @@ class LinuxBridgeNetwork(object):
         return bridge_state
 
     def _create_bridge_options(self):
-        opts = parse_nets_bridge_opts(self._netconf.bridge_opts)
-        birdge_opts_dict = {
+        opts = NmstateBridgeOpts().parse(self._netconf.bridge_opts)
+        bridge_opts_dict = {
             LinuxBridge.STP_SUBTREE: {
                 LinuxBridge.STP.ENABLED: self._netconf.stp
             }
         }
-        birdge_opts_dict.update(opts)
-        return birdge_opts_dict
+        bridge_opts_dict.update(opts)
+        return bridge_opts_dict
 
     def _add_ip(self, sb_iface, vlan_iface, bridge_iface):
         ip_addr = IpAddress(self._netconf, self._auto_dns)

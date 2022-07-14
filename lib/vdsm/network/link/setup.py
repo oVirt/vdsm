@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,21 @@ from __future__ import absolute_import
 from __future__ import division
 
 
-class NmstateBridgeOpts:
+class OptStringParser:
+    def __init__(self, delim=' ', assign_op='='):
+        self._delim = delim
+        self._assign_op = assign_op
+
+    def parse(self, opts_str: str):
+        if opts_str:
+            opts = opts_str.strip(self._delim).split(self._delim)
+            return dict(opt.split(self._assign_op, 1) for opt in opts)
+        return {}
+
+
+class NmstateBridgeOpts(OptStringParser):
     def __init__(self):
+        super(NmstateBridgeOpts, self).__init__()
         self._types_dict = {
             'mac-ageing-time': int,
             'group-forward-mask': int,
@@ -41,54 +54,30 @@ class NmstateBridgeOpts:
             'multicast-startup-query-interval': int,
         }
 
-    @property
-    def types_dict(self):
-        return self._types_dict
+    def parse(self, opts: str):
+        """
+        param: opts: vdsm.network.nmstate.bridge_util.NetworkConfig bridge opts
+        """
+        if not opts:
+            return {}
+        bridge_opts = super().parse(opts.replace('_', '-'))
+        try:
+            for key, value in bridge_opts.items():
+                bridge_opts[key] = self._convert_value(key, value)
+        except KeyError:
+            raise NmstateBridgeOptionNotSupported(
+                f'{key} is not a supported bridge option'
+            )
+        return bridge_opts
 
-    def convert_value(self, key, value):
+    def _convert_value(self, key, value):
         conversion_func = self._types_dict[key]
         return conversion_func(value)
 
     @staticmethod
     def _str_to_bool(str_value):
-        str_value = str_value.lower()
-        false_values = ['false', '0']
-        return str_value not in false_values
+        return str_value.lower() not in ['false', '0']
 
 
 class NmstateBridgeOptionNotSupported(Exception):
     pass
-
-
-def parse_bond_options(options):
-    """
-    Parse bonding options into a dictionary.
-    """
-    if options:
-        d_options = _string_to_dict(options, ' ', '=')
-        return d_options
-    else:
-        return {}
-
-
-def parse_nets_bridge_opts(opts):
-
-    if not opts:
-        return {}
-    opts_str = opts.replace('_', '-')
-    bridge_opts = _string_to_dict(opts_str, ' ', '=')
-    try:
-        nmstate_bridge_opts = NmstateBridgeOpts()
-        for key, value in bridge_opts.items():
-            bridge_opts[key] = nmstate_bridge_opts.convert_value(key, value)
-    except KeyError:
-        raise NmstateBridgeOptionNotSupported(
-            f'{key} is not a valid nmstate bridge option'
-        )
-    return bridge_opts
-
-
-def _string_to_dict(str, div, eq):
-    if str == '':
-        return {}
-    return dict(option.split(eq, 1) for option in str.strip(div).split(div))

@@ -32,6 +32,7 @@ from vdsm.network import netinfo
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link import nic
 from vdsm.network.link.bond import Bond, bond_speed
+from vdsm.network.link.setup import OptStringParser
 from vdsm.network.netinfo.cache import get
 
 from vdsm.network import nmstate
@@ -356,6 +357,4 @@ class TestNetinfo(object):
 
     def test_parse_bond_options(self):
         expected = {'mode': '4', 'miimon': '100'}
-        assert expected == netinfo.bonding.parse_bond_options(
-            'mode=4 miimon=100'
-        )
+        assert expected == OptStringParser().parse('mode=4 miimon=100')

@@ -24,9 +24,6 @@ import six
 
 from vdsm.network.link.bond import Bond
 
-from vdsm.network.link.setup import parse_bond_options
-
-parse_bond_options
 
 BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'

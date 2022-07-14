@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from vdsm.network.link import setup as linksetup
+from vdsm.network.link.setup import NmstateBridgeOpts
 
 
 def test_parse_nets_bridge_opts():
@@ -34,5 +34,5 @@ def test_parse_nets_bridge_opts():
     }
 
     for name, opts in nets.items():
-        parsed_opts = linksetup.parse_nets_bridge_opts(opts)
+        parsed_opts = NmstateBridgeOpts().parse(opts)
         assert expected[name] == parsed_opts

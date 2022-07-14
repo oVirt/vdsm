@@ -1,4 +1,4 @@
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 
 from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NUMBER_TO_NAME
-from vdsm.network.link.setup import parse_bond_options
+from vdsm.network.link.setup import OptStringParser
 
 from .schema import BondSchema
 from .schema import Interface
@@ -78,7 +78,7 @@ class Bond(object):
         bond_state = iface_state[BondSchema.CONFIG_SUBTREE] = {}
         bond_state[BondSchema.PORT] = sorted(self._attrs['nics'])
 
-        options = parse_bond_options(self._attrs.get('options'))
+        options = OptStringParser().parse(self._attrs.get('options'))
         if options:
             bond_state[BondSchema.OPTIONS_SUBTREE] = options
         mode = self._translate_mode(mode=options.pop('mode', 'balance-rr'))
