@@ -26,10 +26,10 @@ import logging
 
 import six
 
+from vdsm.network import ipwrapper
 from vdsm.network import link
 from vdsm.network import nmstate
 from vdsm.network.ip.address import ipv6_supported
-from vdsm.network.ipwrapper import getLinks
 from vdsm.network.netconfpersistence import RunningConfig
 
 from . import bonding
@@ -228,7 +228,7 @@ def _update_net_vlanid_info(network_info, vlans_info):
 def _devices_report(ipaddrs, routes):
     devs_report = {'bondings': {}, 'bridges': {}, 'nics': {}, 'vlans': {}}
 
-    for dev in (link for link in getLinks() if not link.isHidden()):
+    for dev in ipwrapper.visible_links():
         if dev.isBRIDGE():
             devinfo = devs_report['bridges'][dev.name] = bridges.info(dev)
         elif dev.isNICLike():
