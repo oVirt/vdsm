@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 from __future__ import division
-from functools import partial
 import logging
 import os
 
@@ -27,7 +26,7 @@ from vdsm.network.link import bridge as br
 
 BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
 
-bridges = partial(ipwrapper.visible_devs, ipwrapper.Link.isBRIDGE)
+bridges = ipwrapper.visible_bridges
 
 
 def ports(bridge):
