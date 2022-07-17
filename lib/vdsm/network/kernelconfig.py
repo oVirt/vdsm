@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2020 Red Hat, Inc.
+# Copyright 2015-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from __future__ import division
 import copy
 import six
 
+from vdsm.network.link.bond import sysfs_options
 from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
 from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo import bridges
@@ -224,9 +225,9 @@ def _parse_bond_options(opts):
     opts = dict((pair.split('=', 1) for pair in opts.split()))
 
     mode = opts.get(
-        'mode', bonding.getAllDefaultBondingOptions()['0']['mode'][-1]
+        'mode', sysfs_options.getAllDefaultBondingOptions()['0']['mode'][-1]
     )
-    opts['mode'] = numeric_mode = bonding.numerize_bond_mode(mode)
+    opts['mode'] = numeric_mode = sysfs_options.numerize_bond_mode(mode)
 
     # Force a numeric value for an option
     for opname, opval in opts.items():
@@ -236,5 +237,5 @@ def _parse_bond_options(opts):
         if numeric_val is not None:
             opts[opname] = numeric_val
 
-    defaults = bonding.getDefaultBondingOptions(numeric_mode)
+    defaults = sysfs_options.getDefaultBondingOptions(numeric_mode)
     return dict((k, v) for k, v in six.viewitems(opts) if v != defaults.get(k))
