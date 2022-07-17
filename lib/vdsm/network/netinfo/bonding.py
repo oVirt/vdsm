@@ -24,15 +24,8 @@ import six
 
 from vdsm.network.link.bond import Bond
 
-# In order to limit the scope of change, this module is now acting as a proxy
-# to the link.bond.sysfs_options module.
-from vdsm.network.link.bond import sysfs_options
-from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
-from vdsm.network.link.bond.sysfs_options import getAllDefaultBondingOptions
 from vdsm.network.link.setup import parse_bond_options
 
-getDefaultBondingOptions
-getAllDefaultBondingOptions
 parse_bond_options
 
 BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
@@ -98,7 +91,3 @@ def permanent_address():
                         len('Permanent HW addr: ') : -1  # noqa: E203
                     ]
     return paddr
-
-
-def numerize_bond_mode(mode):
-    return sysfs_options.numerize_bond_mode(mode)
