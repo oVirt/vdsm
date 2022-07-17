@@ -35,9 +35,8 @@ from vdsm.network.cmd import exec_sync
 from vdsm.network.dhcp_monitor import MonitoredItemPool
 from vdsm.network.ip.address import ipv6_supported, prefix2netmask
 from vdsm.network.link.iface import iface
-from vdsm.network.link.bond import sysfs_options as bond_options
+from vdsm.network.link.bond import sysfs_options
 from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
-from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo.cache import CachingNetInfo
@@ -888,7 +887,9 @@ def wait_bonds_lp_interval():
     LACP_BOND_MODE = '4'
 
     default_lp_interval = int(
-        getDefaultBondingOptions(LACP_BOND_MODE)['lp_interval'][0]
+        sysfs_options.getDefaultBondingOptions(LACP_BOND_MODE)['lp_interval'][
+            0
+        ]
     )
     time.sleep(default_lp_interval + GRACE_PERIOD)
 
@@ -953,7 +954,7 @@ def _numerize_bond_options(opts):
     if not mode:
         return opts
 
-    optmap['mode'] = numeric_mode = bond_options.numerize_bond_mode(mode)
+    optmap['mode'] = numeric_mode = sysfs_options.numerize_bond_mode(mode)
     for opname, opval in optmap.items():
         numeric_val = bond_opts_mapper.get_bonding_option_numeric_val(
             numeric_mode, opname, opval
