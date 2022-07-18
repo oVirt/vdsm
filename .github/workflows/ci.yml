@@ -10,8 +10,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Run linters
       run: ./automation/lint.sh
-  # TODO: rename to 'test-storage-user' once the github settings allow it.
-  test-storage:
+  test-storage-user:
     env:
       TRAVIS_CI: 1
     runs-on: ubuntu-latest
