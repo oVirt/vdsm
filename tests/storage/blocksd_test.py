@@ -1872,9 +1872,12 @@ def test_sync_volume_chain_internal(
     # from the volume metadata.
     assert chain.top.getParentMeta() == chain.base.volUUID
 
-    # getParent() uses the lv tags, so it still returns the internal volume.
+    # Parent tag is still pointing to the internal volume.
     # This will be fixed later on the SPM when the internal volume is deleted.
-    assert chain.top.getParent() == chain.internal.volUUID
+    assert chain.top.getParentTag() == chain.internal.volUUID
+
+    # getParent() uses the metadata parent.
+    assert chain.top.getParent() == chain.base.volUUID
 
 
 @requires_root

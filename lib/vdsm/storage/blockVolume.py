@@ -164,7 +164,21 @@ class BlockVolumeManifest(volume.VolumeManifest):
         """
         Return parent volume UUID
         """
-        return self.getParentTag()
+        parent_tag = self.getParentTag()
+        parent_meta = self.getParentMeta()
+        if parent_tag != parent_meta:
+            self.log.debug(
+                "Getting different PUUID LV from tag %s and metada %s for "
+                "volume %s, reloading volume tags",
+                parent_tag, parent_meta, self.volUUID)
+            lvm.invalidateVG(self.sdUUID)
+            parent_tag = self.getParentTag()
+            if parent_tag != parent_meta:
+                self.log.warning(
+                    "Getting volume %s PUUID: volume tag %s does not "
+                    "match metadata parent %s",
+                    self.volUUID, parent_tag, parent_meta)
+        return parent_meta
 
     def getChildren(self):
         """ Return children volume UUIDs.
