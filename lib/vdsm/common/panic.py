@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,22 +17,25 @@
 #
 # Refer to the README and COPYING files for full details of the license
 
-from __future__ import absolute_import
-from __future__ import division
-
 import logging
 import os
-import signal
 import sys
+import threading
 
 
 def panic(msg):
-    try:
-        logging.exception("Panic: %s", msg)
-        # Depends on SIGALRM handler register during startup.
-        signal.alarm(10)
-        logging.shutdown()
-    finally:
-        signal.alarm(0)
+    logging.exception("Panic: %s", msg)
+    ready = threading.Event()
+
+    def run():
+        ready.wait(10)
         os.killpg(0, 9)
         sys.exit(-3)
+
+    t = threading.Thread(target=run)
+    t.daemon = True
+    t.start()
+    try:
+        logging.shutdown()
+    finally:
+        ready.set()
