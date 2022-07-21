@@ -78,10 +78,6 @@ def serve_clients(log):
             irs.spmStop(
                 irs.getConnectedStoragePoolsList()['poollist'][0])
 
-    def sigalrmHandler(signum, frame):
-        # Used in panic.panic() when shuting down logging, must not log.
-        raise RuntimeError("Alarm timeout")
-
     sigutils.register()
     signal.signal(signal.SIGTERM, sigtermHandler)
     signal.signal(signal.SIGUSR1, sigusr1Handler)
