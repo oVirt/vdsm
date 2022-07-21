@@ -67,6 +67,9 @@ def serve_clients(log):
         running[0] = False
 
     def sigusr1Handler(signum, frame):
+        """
+        Called during fencing from spmprotect.sh when using export domain.
+        """
         if irs:
             log.info("Received signal %s, stopping SPM" % signum)
             # pylint: disable=no-member
