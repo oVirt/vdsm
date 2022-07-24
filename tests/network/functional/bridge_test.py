@@ -67,12 +67,11 @@ class TestBridge(object):
 
     @nftestlib.parametrize_legacy_switch
     def test_add_bridge_with_custom_opts(self, adapter, switch, nic0):
+        opts = 'multicast_snooping=0 multicast_router=0 priority=1'
         NET_ATTRS = {
             'nic': nic0,
             'switch': switch,
-            'custom': {
-                'bridge_opts': 'multicast_snooping=0 multicast_router=0'
-            },
+            'custom': {'bridge_opts': opts},
         }
         NETCREATE = {NETWORK_NAME: NET_ATTRS}
         with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
