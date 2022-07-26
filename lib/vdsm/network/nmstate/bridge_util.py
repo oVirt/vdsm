@@ -40,7 +40,6 @@ class NetworkConfig(object):
         self.bridged = attrs.get('bridged')
         self.stp = attrs.get('stp')
         self.mtu = attrs.get('mtu', DEFAULT_MTU)
-        self.bridge_opts = attrs.get('custom', {}).get('bridge_opts')
 
         self.ipv4addr = attrs.get('ipaddr')
         self.ipv4netmask = attrs.get('netmask')

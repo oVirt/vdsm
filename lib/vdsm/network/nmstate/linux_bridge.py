@@ -19,8 +19,6 @@
 
 from collections import defaultdict
 
-from vdsm.network.link.setup import parse_nets_bridge_opts
-
 from .bridge_util import DEFAULT_MTU
 from .bridge_util import is_iface_up
 from .bridge_util import is_default_mtu
@@ -213,14 +211,11 @@ class LinuxBridgeNetwork(object):
         return bridge_state
 
     def _create_bridge_options(self):
-        opts = parse_nets_bridge_opts(self._netconf.bridge_opts)
-        birdge_opts_dict = {
+        return {
             LinuxBridge.STP_SUBTREE: {
                 LinuxBridge.STP.ENABLED: self._netconf.stp
             }
         }
-        birdge_opts_dict.update(opts)
-        return birdge_opts_dict
 
     def _add_ip(self, sb_iface, vlan_iface, bridge_iface):
         ip_addr = IpAddress(self._netconf, self._auto_dns)
