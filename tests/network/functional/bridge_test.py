@@ -71,7 +71,7 @@ class TestBridge(object):
             'nic': nic0,
             'switch': switch,
             'custom': {
-                'bridge_opts': 'multicast_snooping=0 multicast_router=0'
+                'bridge_opts': 'multicast_snooping=0'
             },
         }
         NETCREATE = {NETWORK_NAME: NET_ATTRS}
