@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from vdsm.network.link.setup import NmstateBridgeOpts
+from vdsm.network.link.setup import BridgeOptsBuilder
 
 
 def test_parse_nets_bridge_opts():
@@ -29,10 +29,18 @@ def test_parse_nets_bridge_opts():
         'br2': 'multicast_router=1 multicast_snooping=1',
     }
     expected = {
-        'br1': {'multicast-router': 0, 'multicast-snooping': False},
-        'br2': {'multicast-router': 1, 'multicast-snooping': True},
+        'br1': {
+            'multicast-router': 0,
+            'multicast-snooping': False,
+            'stp': {'enabled': False},
+        },
+        'br2': {
+            'multicast-router': 1,
+            'multicast-snooping': True,
+            'stp': {'enabled': False},
+        },
     }
 
     for name, opts in nets.items():
-        parsed_opts = NmstateBridgeOpts().parse(opts)
+        parsed_opts = BridgeOptsBuilder().parse(opts)
         assert expected[name] == parsed_opts

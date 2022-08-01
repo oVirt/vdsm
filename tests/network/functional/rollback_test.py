@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2020 Red Hat, Inc.
+# Copyright 2016-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 import pytest
 
 from vdsm.network import errors as ne
-from vdsm.network.link.setup import NmstateBridgeOptionNotSupported
+from vdsm.network.link.setup import BridgeOptionNotSupported
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import SetupNetworksError
@@ -239,7 +239,7 @@ def test_setup_invalid_bridge_opts_fails(adapter, nic0):
         'custom': {'bridge_opts': 'foo=0'},
     }
 
-    with pytest.raises(NmstateBridgeOptionNotSupported):
+    with pytest.raises(BridgeOptionNotSupported):
         adapter.setupNetworks({NETWORK_NAME: net_attrs}, {}, NOCHK)
 
     adapter.update_netinfo()

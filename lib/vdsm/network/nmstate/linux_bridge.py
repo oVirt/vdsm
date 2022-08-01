@@ -19,7 +19,7 @@
 
 from collections import defaultdict
 
-from vdsm.network.link.setup import NmstateBridgeOpts
+from vdsm.network.link.setup import BridgeOptsBuilder
 
 from .bridge_util import DEFAULT_MTU
 from .bridge_util import is_iface_up
@@ -154,7 +154,9 @@ class LinuxBridgeNetwork(object):
             bridge_port = vlan_iface_state or sb_iface_state
             bridge_iface_state = self._create_bridge_iface(
                 bridge_port[Interface.NAME] if bridge_port else None,
-                options=self._create_bridge_options(),
+                options=BridgeOptsBuilder().parse(
+                    self._netconf.bridge_opts, self._netconf.stp
+                ),
             )
         else:
             bridge_iface_state = self._remove_bridge_iface()
@@ -211,16 +213,6 @@ class LinuxBridgeNetwork(object):
             bridge_state[Interface.MAC] = mac
 
         return bridge_state
-
-    def _create_bridge_options(self):
-        opts = NmstateBridgeOpts().parse(self._netconf.bridge_opts)
-        bridge_opts_dict = {
-            LinuxBridge.STP_SUBTREE: {
-                LinuxBridge.STP.ENABLED: self._netconf.stp
-            }
-        }
-        bridge_opts_dict.update(opts)
-        return bridge_opts_dict
 
     def _add_ip(self, sb_iface, vlan_iface, bridge_iface):
         ip_addr = IpAddress(self._netconf, self._auto_dns)

@@ -20,6 +20,10 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import os
+
+from vdsm.network.nmstate.schema import LinuxBridge
+
 
 class OptStringParser:
     def __init__(self, delim=' ', assign_op='='):
@@ -33,60 +37,81 @@ class OptStringParser:
         return {}
 
 
-class Conversions:
-    @staticmethod
-    def booleanize(str_value):
+class BridgeOptsSchema:
+    _TICKS_PER_SEC = os.sysconf('SC_CLK_TCK')
+
+    def __init__(self):
+        self._schema = {
+            LinuxBridge.Options.MAC_AGEING_TIME: int,
+            LinuxBridge.Options.GROUP_FORWARD_MASK: int,
+            LinuxBridge.Options.HASH_MAX: int,
+            LinuxBridge.Options.MULTICAST_SNOOPING: self.booleanize,
+            LinuxBridge.Options.MULTICAST_ROUTER: int,
+            LinuxBridge.Options.MULTICAST_LAST_MEMBER_COUNT: int,
+            LinuxBridge.Options.MULTICAST_LAST_MEMBER_INTERVAL: int,
+            LinuxBridge.Options.MULTICAST_MEMBERSHIP_INTERVAL: int,
+            LinuxBridge.Options.MULTICAST_QUERIER: self.booleanize,
+            LinuxBridge.Options.MULTICAST_QUERIER_INTERVAL: int,
+            LinuxBridge.Options.MULTICAST_QUERY_USE_IFADDR: self.booleanize,
+            LinuxBridge.Options.MULTICAST_QUERY_INTERVAL: int,
+            LinuxBridge.Options.MULTICAST_QUERY_RESPONSE_INTERVAL: int,
+            LinuxBridge.Options.MULTICAST_STARTUP_QUERY_COUNT: int,
+            LinuxBridge.Options.MULTICAST_STARTUP_QUERY_INTERVAL: int,
+            LinuxBridge.STP_SUBTREE: {
+                LinuxBridge.STP.ENABLED: self.booleanize,
+                LinuxBridge.STP.FORWARD_DELAY: self.os_ticks_to_secs,
+                LinuxBridge.STP.HELLO_TIME: self.os_ticks_to_secs,
+                LinuxBridge.STP.MAX_AGE: self.os_ticks_to_secs,
+                LinuxBridge.STP.PRIORITY: int,
+            },
+        }
+
+    @classmethod
+    def os_ticks_to_secs(cls, str_value):
+        return int(int(str_value) / cls._TICKS_PER_SEC)
+
+    @classmethod
+    def booleanize(cls, str_value):
         return str_value.lower() not in ['false', '0']
 
-
-_BRIDGE_OPTS = {
-    'mac-ageing-time': int,
-    'group-forward-mask': int,
-    'hash-max': int,
-    'multicast-snooping': Conversions.booleanize,
-    'multicast-router': int,
-    'multicast-last-member-count': int,
-    'multicast-last-member-interval': int,
-    'multicast-membership-interval': int,
-    'multicast-querier': Conversions.booleanize,
-    'multicast-querier-interval': int,
-    'multicast-query-use-ifaddr': Conversions.booleanize,
-    'multicast-query-interval': int,
-    'multicast-query-response-interval': int,
-    'multicast-startup-query-count': int,
-    'multicast-startup-query-interval': int,
-}
+    @property
+    def schema(self):
+        return self._schema
 
 
-class NmstateBridgeOpts(OptStringParser):
+class BridgeOptsBuilder(OptStringParser):
     def __init__(self):
-        super(NmstateBridgeOpts, self).__init__()
-        self._opts_by_type = _BRIDGE_OPTS
+        super(BridgeOptsBuilder, self).__init__()
+        self._opts_schema = BridgeOptsSchema()
+        self._opts_dict = {}
 
-    def parse(self, opts: str):
+    def parse(self, opts: str, stp=False) -> {}:
         """
         param: opts: vdsm.network.nmstate.bridge_util.NetworkConfig bridge opts
         """
-        if not opts:
-            return {}
-        bridge_opts = super().parse(opts.replace('_', '-'))
-        try:
-            for key, value in bridge_opts.items():
-                bridge_opts[key] = self._convert_value(key, value)
-        except KeyError:
-            raise NmstateBridgeOptionNotSupported(
-                f'{key} is not a supported bridge option'
+        self._opts_dict = super().parse(opts.replace('_', '-')) if opts else {}
+        result_opts = self._build(self._opts_schema.schema, result={})
+        if self._opts_dict:
+            raise BridgeOptionNotSupported(
+                f'{[k for k in self._opts_dict.keys()]}'
+                ' not supported as bridge option(s)'
             )
-        return bridge_opts
+        result_opts[LinuxBridge.STP_SUBTREE][LinuxBridge.STP.ENABLED] = stp
+        return result_opts
 
-    def _convert_value(self, key, value):
-        conversion_func = self._opts_by_type[key]
-        return conversion_func(value)
+    def _build(self, opts_schema, result):
+        for k, conversion_func in opts_schema.items():
+            if type(conversion_func) is dict:
+                result[k] = {}
+                self._build(opts_schema[k], result[k])
+            else:
+                try:
+                    result[k] = conversion_func(self._opts_dict[k])
+                    del self._opts_dict[k]
+                except KeyError:
+                    pass
+        return result
 
-    @staticmethod
-    def _str_to_bool(str_value):
-        return str_value.lower() not in ['false', '0']
 
-
-class NmstateBridgeOptionNotSupported(Exception):
+class BridgeOptionNotSupported(Exception):
     pass
