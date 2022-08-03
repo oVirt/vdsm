@@ -33,26 +33,35 @@ class OptStringParser:
         return {}
 
 
+class Conversions:
+    @staticmethod
+    def booleanize(str_value):
+        return str_value.lower() not in ['false', '0']
+
+
+_BRIDGE_OPTS = {
+    'mac-ageing-time': int,
+    'group-forward-mask': int,
+    'hash-max': int,
+    'multicast-snooping': Conversions.booleanize,
+    'multicast-router': int,
+    'multicast-last-member-count': int,
+    'multicast-last-member-interval': int,
+    'multicast-membership-interval': int,
+    'multicast-querier': Conversions.booleanize,
+    'multicast-querier-interval': int,
+    'multicast-query-use-ifaddr': Conversions.booleanize,
+    'multicast-query-interval': int,
+    'multicast-query-response-interval': int,
+    'multicast-startup-query-count': int,
+    'multicast-startup-query-interval': int,
+}
+
+
 class NmstateBridgeOpts(OptStringParser):
     def __init__(self):
         super(NmstateBridgeOpts, self).__init__()
-        self._types_dict = {
-            'mac-ageing-time': int,
-            'group-forward-mask': int,
-            'hash-max': int,
-            'multicast-snooping': self._str_to_bool,
-            'multicast-router': int,
-            'multicast-last-member-count': int,
-            'multicast-last-member-interval': int,
-            'multicast-membership-interval': int,
-            'multicast-querier': self._str_to_bool,
-            'multicast-querier-interval': int,
-            'multicast-query-use-ifaddr': self._str_to_bool,
-            'multicast-query-interval': int,
-            'multicast-query-response-interval': int,
-            'multicast-startup-query-count': int,
-            'multicast-startup-query-interval': int,
-        }
+        self._opts_by_type = _BRIDGE_OPTS
 
     def parse(self, opts: str):
         """
@@ -71,7 +80,7 @@ class NmstateBridgeOpts(OptStringParser):
         return bridge_opts
 
     def _convert_value(self, key, value):
-        conversion_func = self._types_dict[key]
+        conversion_func = self._opts_by_type[key]
         return conversion_func(value)
 
     @staticmethod
