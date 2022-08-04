@@ -19,14 +19,13 @@
 
 from collections import defaultdict
 
-from vdsm.network.link.setup import BridgeOptsBuilder
-
 from .bridge_util import DEFAULT_MTU
 from .bridge_util import is_iface_up
 from .bridge_util import is_default_mtu
 from .bridge_util import NetworkConfig
 from .dns import Dns
 from .ip import IpAddress
+from .options import BridgeOptsBuilder
 from .route import Routes
 from .route import SourceRoutes
 from .schema import Interface

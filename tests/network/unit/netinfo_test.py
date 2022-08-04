@@ -32,11 +32,11 @@ from vdsm.network import netinfo
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link import nic
 from vdsm.network.link.bond import Bond, bond_speed
-from vdsm.network.link.setup import OptStringParser
 from vdsm.network.netinfo.cache import get
 
 from vdsm.network import nmstate
 from vdsm.network.nmstate import api
+from vdsm.network.nmstate.options import OptStringParser
 
 
 @pytest.fixture

@@ -18,8 +18,8 @@
 #
 
 from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NUMBER_TO_NAME
-from vdsm.network.link.setup import OptStringParser
 
+from .options import OptStringParser
 from .schema import BondSchema
 from .schema import Interface
 from .schema import InterfaceIP

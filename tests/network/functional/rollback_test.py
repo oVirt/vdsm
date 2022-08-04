@@ -21,7 +21,7 @@
 import pytest
 
 from vdsm.network import errors as ne
-from vdsm.network.link.setup import BridgeOptionNotSupported
+from vdsm.network.nmstate.options import BridgeOptionNotSupported
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import SetupNetworksError

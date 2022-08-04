@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from vdsm.network.link.setup import BridgeOptsBuilder
+from vdsm.network.nmstate.options import BridgeOptsBuilder
 
 
 def test_parse_nets_bridge_opts():
