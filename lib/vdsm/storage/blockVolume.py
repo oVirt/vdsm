@@ -364,7 +364,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
             else:
                 chunk_size_mb = config.getint("irs",
                                               "volume_utilization_chunk_mb")
-                alloc_size = chunk_size_mb * MiB
+                alloc_size = min(chunk_size_mb * MiB, capacity)
         else:
             # Preallocated raw or qcow2
             alloc_size = initial_size if initial_size else capacity
