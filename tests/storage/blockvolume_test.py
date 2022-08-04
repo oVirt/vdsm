@@ -45,8 +45,9 @@ from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
 
 
+CHUNK_SIZE_MB = 1024
 CONFIG = make_config([
-    ('irs', 'volume_utilization_chunk_mb', '1024'),
+    ('irs', 'volume_utilization_chunk_mb', str(CHUNK_SIZE_MB)),
     ('irs', 'volume_utilizzation_precent', '50'),
 ])
 
@@ -71,9 +72,9 @@ class TestBlockVolumeSize(VdsmTestCase):
         [(sc.PREALLOCATED_VOL, sc.COW_FORMAT, GiB, None), GiB],
         # Sparse, cow, capacity config.volume_utilization_chunk_mb - 1,
         # No initial size.
-        # Expected 1024 MiB allocated (config.volume_utilization_chunk_mb)
-        [(sc.SPARSE_VOL, sc.COW_FORMAT, (CONFIG.getint(
-            "irs", "volume_utilization_chunk_mb") - 1) * MiB, None), GiB],
+        # Expected 1023 MiB allocated (config.volume_utilization_chunk_mb - 1)
+        [(sc.SPARSE_VOL, sc.COW_FORMAT, (CHUNK_SIZE_MB - 1) * MiB, None),
+         (CHUNK_SIZE_MB - 1) * MiB],
         # Sparse, cow, capacity 4 GiB, initial size 952320 B.
         [(sc.SPARSE_VOL, sc.COW_FORMAT, 4 * GiB, 952320),
          int(952320 * blockVolume.QCOW_OVERHEAD_FACTOR)],

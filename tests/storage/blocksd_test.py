@@ -866,7 +866,6 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
 
 @requires_root
 @pytest.mark.root
-@pytest.mark.xfail(reason='Vdsm over-allocates small volumes', strict=False)
 def test_cow_small_volume(domain_factory, fake_task, fake_sanlock):
     """
     Test added to verify fix for https://bugzilla.redhat.com/2094576.
