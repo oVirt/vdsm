@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2020 Red Hat, Inc.
+# Copyright 2017-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,31 +52,59 @@ def hidden_nic():
 
 
 class TestBridge(object):
+    DEFAULT_STP_OPTS = (
+        'forward_delay=1500 hello_time=200 max_age=2000 priority=32768'
+    )
+    NON_DEFAULT_STP_OPTS = (
+        'forward_delay=1600 hello_time=300 max_age=3000 priority=1'
+    )
+
     @nftestlib.parametrize_switch
-    def test_add_bridge_with_stp(self, adapter, switch, nic0):
+    @pytest.mark.parametrize(argnames='stp_state', argvalues=[True, False])
+    def test_add_bridge_with_stp(self, adapter, switch, nic0, stp_state):
         if switch == 'ovs':
             pytest.xfail('stp is currently not implemented for ovs')
 
         NETCREATE = {
-            NETWORK_NAME: {'nic': nic0, 'switch': switch, 'stp': True}
+            NETWORK_NAME: {'nic': nic0, 'switch': switch, 'stp': stp_state}
         }
         with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
             adapter.assertNetworkExists(NETWORK_NAME)
             adapter.assertNetworkBridged(NETWORK_NAME)
             adapter.assertBridgeOpts(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
+    @pytest.mark.parametrize(
+        argnames='stp_opts',
+        argvalues=[
+            {'stp': False, 'opts': DEFAULT_STP_OPTS},
+            {'stp': True, 'opts': DEFAULT_STP_OPTS},
+            {'stp': True, 'opts': NON_DEFAULT_STP_OPTS},
+        ],
+    )
+    @nftestlib.parametrize_legacy_switch
+    def test_add_bridge_stp_with_opts(self, adapter, switch, nic0, stp_opts):
+        net_attrs = self._net_attrs_with_bridge_opts(
+            switch, nic0, stp_opts['opts']
+        )
+        net_attrs['stp'] = stp_opts['stp']
+        NETCREATE = {NETWORK_NAME: net_attrs}
+        with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+            adapter.assertBridgeOpts(NETWORK_NAME, net_attrs)
+
     @nftestlib.parametrize_legacy_switch
     def test_add_bridge_with_custom_opts(self, adapter, switch, nic0):
-        NET_ATTRS = {
+        opts = 'multicast_snooping=0 multicast_router=0'
+        net_attrs = self._net_attrs_with_bridge_opts(switch, nic0, opts)
+        NETCREATE = {NETWORK_NAME: net_attrs}
+        with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+            adapter.assertBridgeOpts(NETWORK_NAME, net_attrs)
+
+    def _net_attrs_with_bridge_opts(self, switch, nic0, bridge_opts):
+        return {
             'nic': nic0,
             'switch': switch,
-            'custom': {
-                'bridge_opts': 'multicast_snooping=0 multicast_router=0'
-            },
+            'custom': {'bridge_opts': bridge_opts},
         }
-        NETCREATE = {NETWORK_NAME: NET_ATTRS}
-        with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
-            adapter.assertBridgeOpts(NETWORK_NAME, NET_ATTRS)
 
     @pytest.mark.xfail(
         reason='Unstable on oVirt CI',
