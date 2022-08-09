@@ -31,6 +31,8 @@ import string
 
 import pytest
 
+from vdsm import utils
+from vdsm.config import config
 from vdsm.common.units import MiB, GiB
 from vdsm.storage import blockSD
 from vdsm.storage import clusterlock
@@ -54,7 +56,7 @@ from storage.storagefakelib import FakeDomainMonitor
 from storage.storagefakelib import FakeTaskManager
 
 TESTDIR = os.path.dirname(__file__)
-
+CHUNK_SIZE_MB = config.getint("irs", "volume_utilization_chunk_mb")
 
 Chain = namedtuple("Chain", ["base", "internal", "top"])
 
@@ -860,6 +862,49 @@ def test_volume_metadata(tmp_storage, tmp_repo, fake_access, fake_rescan,
         data = f.read(sc.METADATA_SIZE)
     data = data.rstrip(b"\0")
     assert data == md.storage_format(domain_version, CAP=md.capacity)
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.xfail(reason='Vdsm over-allocates small volumes', strict=False)
+def test_cow_small_volume(domain_factory, fake_task, fake_sanlock):
+    """
+    Test added to verify fix for https://bugzilla.redhat.com/2094576.
+    Small cow sparse volumes should not over-allocate beyond its capacity.
+    Small volumes in this context mean `capacity < chunk_size`.
+
+    To avoid slowness of creating loop devices and storage domains for every
+    test, avoid parametrized test, just create as many volumes as needed
+    to test, and check them in one execution.
+    """
+    # Tested volumes capacity
+    vol_sizes = [
+        CHUNK_SIZE_MB * MiB,          # capacity == chunk size
+        (CHUNK_SIZE_MB - 1) * MiB,    # capacity < chunk size
+        sc.VG_EXTENT_SIZE - 1 * MiB,  # capacity < extent size
+    ]
+    sd_uuid = str(uuid.uuid4())
+    dom = domain_factory.create_domain(sd_uuid=sd_uuid, version=5)
+
+    img_uuid = str(uuid.uuid4())
+    vol_info = [(str(uuid.uuid4()), size) for size in vol_sizes]
+
+    for vol_uuid, capacity in vol_info:
+        dom.createVolume(
+            imgUUID=img_uuid,
+            capacity=capacity,
+            volFormat=sc.COW_FORMAT,
+            preallocate=sc.SPARSE_VOL,
+            diskType=sc.DATA_DISKTYPE,
+            volUUID=vol_uuid,
+            desc="Small volume",
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID)
+
+        vol = dom.produceVolume(img_uuid, vol_uuid)
+        assert vol.getCapacity() == capacity
+        initial_size = utils.round(capacity, sc.VG_EXTENT_SIZE)
+        assert vol.getVolumeSize() == initial_size
 
 
 @requires_root
