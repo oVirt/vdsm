@@ -21,17 +21,18 @@
 from collections import namedtuple
 
 import pytest
+import userstorage
 
 from vdsm import utils
 from vdsm.common import commands
 from vdsm.storage import sanlock_direct
 from vdsm.storage import constants as sc
 
-from . import userstorage
 from .marks import requires_root
 
 # Wait 1 second for lockspace initialization for quick tests.
 INIT_LOCKSPACE_TIMEOUT = 1
+BACKENDS = userstorage.load_config("storage.py").BACKENDS
 
 Storage = namedtuple("Storage", "path, block_size, alignment")
 
@@ -39,22 +40,17 @@ Storage = namedtuple("Storage", "path, block_size, alignment")
 @pytest.fixture(
     params=[
         pytest.param(
-            (userstorage.PATHS["file-512"], sc.ALIGNMENT_1M),
+            (BACKENDS["file-512"], sc.ALIGNMENT_1M),
             id="file-512-1m"),
         pytest.param(
-            (userstorage.PATHS["file-4k"], sc.ALIGNMENT_2M),
+            (BACKENDS["file-4k"], sc.ALIGNMENT_2M),
             id="file-4k-2m"),
     ]
 )
 def storage(request):
-    storage, alignment = request.param
-    if not storage.exists():
-        pytest.xfail("{} storage not available".format(storage.name))
-
-    with open(storage.path, "wb") as f:
-        f.truncate()
-
-    yield Storage(storage.path, storage.sector_size, alignment)
+    backend, alignment = request.param
+    with backend:
+        yield Storage(backend.path, backend.sector_size, alignment)
 
 
 @requires_root

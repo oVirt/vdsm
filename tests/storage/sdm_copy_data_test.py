@@ -28,6 +28,7 @@ import uuid
 from contextlib import contextmanager
 
 import pytest
+import userstorage
 
 from fakelib import FakeNotifier
 from fakelib import FakeScheduler
@@ -46,7 +47,6 @@ from storage.storagetestlib import (
 )
 
 from . import qemuio
-from . import userstorage
 
 from testValidation import broken_on_ci
 from testlib import make_uuid
@@ -66,21 +66,21 @@ from vdsm.storage import volume
 from vdsm.storage import workarounds
 from vdsm.storage.sdm.api import copy_data
 
+BACKENDS = userstorage.load_config("storage.py").BACKENDS
 DEFAULT_SIZE = MiB
 
 
 @pytest.fixture(
     scope="module",
     params=[
-        userstorage.PATHS["mount-512"],
+        BACKENDS["mount-512"],
     ],
     ids=str,
 )
 def user_mount(request):
-    mount = request.param
-    if not mount.exists():
-        pytest.xfail("{} storage not available".format(mount.name))
-    return mount
+    backend = request.param
+    with backend:
+        yield backend
 
 
 @expandPermutations

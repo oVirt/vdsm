@@ -24,13 +24,13 @@ from __future__ import division
 import collections
 
 import pytest
+import userstorage
 
 from vdsm.storage import constants as sc
 from vdsm.storage import fileSD
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import sd
 
-from . import userstorage
 
 EXAMPLE_DATA = {
     (sc.BLOCK_SIZE_512, sc.ALIGNMENT_1M): """\
@@ -88,6 +88,7 @@ VERSION=5
 _SHA_CKSUM=769baef6c65aeef08cf6d177c2c44046b2aac877
 """,
 }
+BACKENDS = userstorage.load_config("storage.py").BACKENDS
 
 Storage = collections.namedtuple("Storage", "path, block_size, alignment")
 
@@ -95,26 +96,21 @@ Storage = collections.namedtuple("Storage", "path, block_size, alignment")
 @pytest.fixture(
     params=[
         pytest.param(
-            (userstorage.PATHS["file-512"], sc.ALIGNMENT_1M),
+            (BACKENDS["file-512"], sc.ALIGNMENT_1M),
             id="file-512-1m"),
         pytest.param(
-            (userstorage.PATHS["file-4k"], sc.ALIGNMENT_1M),
+            (BACKENDS["file-4k"], sc.ALIGNMENT_1M),
             id="file-4k-1m"),
         pytest.param(
-            (userstorage.PATHS["file-4k"], sc.ALIGNMENT_2M),
+            (BACKENDS["file-4k"], sc.ALIGNMENT_2M),
             id="file-4k-2m"),
     ],
 )
 def storage(request):
-    storage, alignment = request.param
-    if not storage.exists():
-        pytest.xfail("{} storage not available".format(storage.name))
-
-    with open(storage.path, "w") as f:
-        f.truncate(0)
-
-    yield Storage(storage.path, storage.sector_size, alignment)
-    oop.stop()
+    backend, alignment = request.param
+    with backend:
+        yield Storage(backend.path, backend.sector_size, alignment)
+        oop.stop()
 
 
 def make_metadata(storage):

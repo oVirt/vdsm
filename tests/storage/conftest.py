@@ -33,6 +33,7 @@ import types
 from contextlib import closing
 
 import pytest
+import userstorage
 
 from vdsm import jobs
 from vdsm.common import threadlocal
@@ -56,8 +57,12 @@ from .fakesanlock import FakeSanlock
 from . import tmpfs
 from . import tmprepo
 from . import tmpstorage
-from . import userstorage
 
+# Mark tests with xfail if userstorage is missing
+userstorage.missing_handler = pytest.xfail
+
+# Requires relative path from tox basedir
+BACKENDS = userstorage.load_config("storage/storage.py").BACKENDS
 
 log = logging.getLogger("test")
 
@@ -146,16 +151,14 @@ def tmp_storage(monkeypatch, tmpdir):
 @pytest.fixture(
     scope="module",
     params=[
-        userstorage.PATHS["mount-512"],
-        userstorage.PATHS["mount-4k"],
+        BACKENDS["mount-512"],
+        BACKENDS["mount-4k"],
     ],
     ids=str,
 )
 def tmp_mount(request):
-    mount = request.param
-    if not mount.exists():
-        pytest.xfail("{} storage not available".format(mount.name))
-    return mount
+    with request.param:
+        yield request.param
 
 
 @pytest.fixture
