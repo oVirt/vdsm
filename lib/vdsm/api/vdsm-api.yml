@@ -3625,6 +3625,16 @@ types:
             -   string
             added: '4.5'
 
+        -   defaultvalue: false
+            description: Whether to enable zero-copy migrations. Note
+              it works only with parallel migration connections and
+              may have other requirements, such as using non-encrypted
+              migration connections. If those contraints are not
+              satisfied, the migration will fail.
+            name: zerocopy
+            type: boolean
+            added: '4.5'
+
         type: object
 
     MigrationStatus: &MigrationStatus
@@ -7455,6 +7465,13 @@ types:
         -   defaultvalue: false
             description: Indicates if the host has OVN configured
             name: ovnConfigured
+            type: boolean
+            added: '4.5'
+
+        -   defaultvalue: false
+            description: Indicates whether zero-copy migrations are
+              supported on the host
+            name: zerocopy_migrations
             type: boolean
             added: '4.5'
 

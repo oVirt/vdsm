@@ -147,15 +147,14 @@ Requires: python3 >= 3.6
 Requires: libvirt-client
 Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
-%if 0%{?centos}
-# TODO: require 7.6.0-4+ once available on Centos
-Requires: libvirt-daemon-kvm >= 7.6.0-2
-%else
-# AV 8.5, https://bugzilla.redhat.com/2003644
-Requires: libvirt-daemon-kvm >= 7.6.0-4.module+el8.5.0+12786+c4633d9a
-%endif
-
+# Zero-copy migrations, https://bugzilla.redhat.com/2089434
+Requires: libvirt-daemon-kvm >= 8.0.0-5.4.module+el8.6.0+16370+bb85faee
+%if 0%{?centos} == 8
 Requires: python3-libvirt
+%else
+# VIR_MIGRATE_ZEROCOPY flag, https://bugzilla.redhat.com/2089434
+Requires: python3-libvirt >= 8.0.0-1.1.module+el8.6.0+16381+3abc475c
+%endif
 
 # iscsi-intiator versions
 Requires: iscsi-initiator-utils >= 6.2.0.873-21
@@ -215,12 +214,8 @@ Requires: python3-policycoreutils
 
 # qemu-kvm
 
-%if 0%{?centos}
-Requires: qemu-kvm >= 15:6.0.0-28
-%else
-# AV 8.5 - https://bugzilla.redhat.com/1946084
-Requires: qemu-kvm >= 6.0.0-28.module+el8.5.0+12271+fffa967b
-%endif
+# Zero-copy migrations, https://bugzilla.redhat.com/2089434
+Requires: qemu-kvm >= 15:6.2.0-11.module+el8.6.0+16360+9e5d914e.4
 
 # GlusterFS client-side RPMs needed for Gluster SD
 %ifnarch ppc64le
@@ -357,11 +352,9 @@ Requires:       python3-dateutil
 Requires:       python3-six >= 1.9.0
 %if 0%{?rhel}
 Requires:       python3-decorator
-Requires:       python3-libvirt >= 3.2.0-3.el7_4.1
 %endif
 %if 0%{?fedora}
 Requires:       python3-decorator
-Requires:       python3-libvirt >= 3.7.0
 %endif
 
 %description common

@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2020 Red Hat, Inc.
+# Copyright 2011-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ from __future__ import division
 
 import os
 import logging
+
+import libvirt
 
 from vdsm import cpuinfo
 from vdsm import host
@@ -188,6 +190,7 @@ def get():
     caps['measure_subchain'] = True
     caps['measure_active'] = True
     caps['mailbox_events'] = config.getboolean("mailbox", "events_enable")
+    caps['zerocopy_migrations'] = hasattr(libvirt, 'VIR_MIGRATE_ZEROCOPY')
 
     return caps
 

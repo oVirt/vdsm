@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2021 Red Hat, Inc.
+# Copyright 2008-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -139,7 +139,8 @@ class SourceThread(object):
                  tunneled=False, dstqemu='', abortOnError=False,
                  consoleAddress=None, compressed=False,
                  autoConverge=False, recovery=False, encrypted=False,
-                 cpusets=None, parallel=None, numaNodesets=None, **kwargs):
+                 cpusets=None, parallel=None, numaNodesets=None,
+                 zerocopy=False, **kwargs):
         self.log = vm.log
         self._vm = vm
         self._dom = DomainAdapter(self._vm)
@@ -155,6 +156,7 @@ class SourceThread(object):
         if parallel == self._PARALLEL_CONNECTIONS_DISABLED_VALUE:
             parallel = None
         self._parallel = parallel
+        self._zerocopy = zerocopy
         self._maxBandwidth = int(
             kwargs.get('maxBandwidth') or
             config.getint('vars', 'migration_max_bandwidth')
@@ -689,6 +691,12 @@ class SourceThread(object):
             flags |= libvirt.VIR_MIGRATE_PARALLEL
         if self._vm.min_cluster_version(4, 2):
             flags |= libvirt.VIR_MIGRATE_PERSIST_DEST
+        if self._zerocopy:
+            if hasattr(libvirt, 'VIR_MIGRATE_ZEROCOPY'):
+                flags |= libvirt.VIR_MIGRATE_ZEROCOPY
+            else:
+                self._vm.log.info(
+                    "Zero-copy migration support not available, not enabling")
         # Migration may fail immediately when VIR_MIGRATE_POSTCOPY flag is
         # present in the following situations:
         # - The transport is not capable of full bidirectional
