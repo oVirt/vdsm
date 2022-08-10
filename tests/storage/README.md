@@ -24,6 +24,9 @@ backed up by sparse files and do not consume much resources.
 
 ## Storage test matrix
 
+The storage is configured in the file storage.py.
+Tests that use user storage, load this configuration file and access the
+storage via the BACKENDS dict.
 These are the available storage configurations:
 
 - file-512 - a file on a file system backed by loop device with 512
@@ -45,29 +48,7 @@ environment are skipped automatically. The tests must deal with the
 missing storage configuration by detecting that the storage does not
 exist.
 
-To add new storage configurations edit the STORAGE list in the
-userstorage.py tool.
+To add new storage configurations edit the BACKENDS list in storage.py.
 
-
-## How user storage works?
-
-The userstorage.py tool creates this directory layout:
-
-```
-$ tree /var/tmp/vdsm-storage/
-/var/tmp/vdsm-storage/
-├── backing.file-4k
-├── backing.file-512
-├── loop.file-4k -> /dev/loop5
-├── loop.file-512 -> /dev/loop4
-├── mount.file-4k
-│   └── file
-└── mount.file-512
-    └── file
-```
-
-The symbolic links (e.g. loop.file-4k) link to the loop devices created
-by the helper (/dev/loop4), and used to tear down the storage.
-
-The actual file used for the tests are created inside the mounted
-filesystem (/var/tmp/vdsm-storage/mount.file-4k/file).
+For more info on userstorage, including details of how it works,
+see https://github.com/nirs/userstorage.
