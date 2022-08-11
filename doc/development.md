@@ -89,9 +89,9 @@ steps:
   the committer, and `VERSION`.
 
 - Committing these changes, with subject "New release: `VERSION`" and
-  posting the patch to gerrit.
+  posting the patch to GitHub.
 
-- Verifying the patch by checking that the Jenkins build produced a
+- Verifying the patch by checking that the GitHub CI build produced a
   correct set of rpm's with the correct version.
 
 - Merging the patch (no review needed).
@@ -99,11 +99,7 @@ steps:
 - Tagging the commit immediately after merge with an annotated tag:
   `git tag -a vVERSION`
 
-- Setting "Keep this build forever" for the check-merge Jenkins build.
-
-- Updating releng-tools with the new Vdsm version.  See releng-tools
-  repo (`git clone https://gerrit.ovirt.org/releng-tools`) and Vdsm
-  related patches there for examples.
+- Making a new release in the GitHub repo.
 
 
 ## CI
