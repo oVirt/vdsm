@@ -53,7 +53,7 @@
 # - generated using ./build-aux/make-dist script
 # - passed to rpmbuild as
 #   --define="vdsm_release $(./build-aux/pkg-version --release)"
-%{!?vdsm_release: %global vdsm_release @PACKAGE_RELEASE@}
+%{!?vdsm_release: %global vdsm_release 1}
 
 Name:           %{vdsm_name}
 Version:        4.50.2.2

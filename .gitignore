@@ -76,7 +76,6 @@ tests/other.crt
 tests/other.csr
 tests/other.key
 vdsm-*.tar.gz
-vdsm.spec
 vdsm/vdscli.py
 static/usr/share/man/man1/vdsm-tool.1
 static/usr/share/man/man8/vdsmd.8

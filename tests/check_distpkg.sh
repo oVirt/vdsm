@@ -20,7 +20,6 @@ for i in $(git ls-files \*.in); do
     for f in \
         static/libexec/vdsm/vdsm-gencerts.sh \
         static/usr/share/man/man1/vdsm-tool.1 \
-        vdsm.spec \
     ; do
         if test "$FILE" = "$f" ; then
             KEEP=1

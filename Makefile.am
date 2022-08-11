@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2020 Red Hat, Inc.
+# Copyright 2008-2022 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -59,12 +59,10 @@ EXTRA_DIST = \
 	contrib/repostat \
 	pylintrc \
 	vdsm.spec \
-	vdsm.spec.in \
 	tox.ini \
 	$(NULL)
 
 CLEANFILES = \
-	vdsm.spec \
 	$(DIST_ARCHIVES) \
 	$(NULL)
 
@@ -164,9 +162,6 @@ storage:
 .PHONY: clean-storage
 clean-storage:
 	python3 tests/storage/userstorage.py teardown
-
-all-local: \
-	vdsm.spec
 
 clean-local: clean-build
 
