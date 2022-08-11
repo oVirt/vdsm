@@ -86,7 +86,7 @@ The developers also hang out on IRC at #vdsm hosted on freenode.net
 
 The latest upstream code can be obtained from GIT:
 
-    git clone https://gerrit.ovirt.org/vdsm
+    git clone https://github.com/oVirt/vdsm
 
 
 ## Licensing
