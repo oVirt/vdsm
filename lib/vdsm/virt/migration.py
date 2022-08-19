@@ -605,12 +605,16 @@ class SourceThread(object):
         # if we call stop() and libvirt migrateToURI3 didn't start
         # we may return migration stop but it will start at libvirt
         # side
+        params = self._migration_params(muri)
+        params_copy = params.copy()
+        params_copy[libvirt.VIR_MIGRATE_PARAM_DEST_XML] = '...'
+        flags = self._migration_flags
+        self.log.info("Migrating to %s with params %s and flags %s",
+                      duri, params_copy, flags)
         self._preparingMigrationEvt = False
         if not self._migrationCanceledEvt.is_set():
             # pylint: disable=no-member
-            self._dom.migrateToURI3(duri,
-                                    self._migration_params(muri),
-                                    self._migration_flags)
+            self._dom.migrateToURI3(duri, params, flags)
         else:
             self._raiseAbortError()
 
