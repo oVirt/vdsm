@@ -30,7 +30,7 @@ jobs:
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ovirt/vdsm-network-tests-${{ matrix.container }}
-          tags: centos-8 centos-9
+          tags: alma-9 centos-8 centos-9
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ secrets.QUAY_USERNAME  }}
           password: ${{ secrets.QUAY_TOKEN }}
