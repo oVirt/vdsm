@@ -52,11 +52,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: centos-stream-8
-            shortcut: cs8
+          - name: el8
             container-name: el8stream
-          - name: centos-stream-9
-            shortcut: cs9
+          - name: el9
             container-name: el9stream
     name: ${{ matrix.name }}
     container:
