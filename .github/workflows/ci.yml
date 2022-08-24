@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     container: quay.io/ovirt/vdsm-test-centos-8
     steps:
-    - uses: actions/checkout@v2
+    - uses: ovirt/checkout-action@main
     - name: Run linters
       run: ./automation/lint.sh
   test-storage-user:
@@ -19,7 +19,7 @@ jobs:
       # Required to create loop devices.
       options: --privileged
     steps:
-    - uses: actions/checkout@v2
+    - uses: ovirt/checkout-action@main
     - name: Run storage tests as vdsm
       run: ./automation/tests-storage.sh vdsm
   test-storage-root:
@@ -31,7 +31,7 @@ jobs:
       # Required to create loop devices.
       options: --privileged
     steps:
-    - uses: actions/checkout@v2
+    - uses: ovirt/checkout-action@main
     - name: Run storage tests as root
       run: ./automation/tests-storage.sh root
   tests:
@@ -43,15 +43,27 @@ jobs:
       # Needed for many operations, i.e. creating bridges
       options: --privileged
     steps:
-    - uses: actions/checkout@v2
+    - uses: ovirt/checkout-action@main
     - name: Run tests
       run: ./automation/tests.sh
   rpm:
     runs-on: ubuntu-latest
-    container: quay.io/ovirt/vdsm-test-centos-8
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: centos-stream-8
+            shortcut: cs8
+            container-name: el8stream
+          - name: centos-stream-9
+            shortcut: cs9
+            container-name: el9stream
+    name: ${{ matrix.name }}
+    container:
+      image: quay.io/ovirt/buildcontainer:${{ matrix.container-name }}
     steps:
     # we need the tags to be pulled for RPMs to have proper versions
-    - uses: actions/checkout@v2
+    - uses: ovirt/checkout-action@main
       with:
         fetch-depth: 0
     - name: Build RPMs
