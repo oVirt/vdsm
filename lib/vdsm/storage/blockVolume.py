@@ -366,7 +366,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
                                               "volume_utilization_chunk_mb")
                 alloc_size = chunk_size_mb * MiB
         else:
-            # Preallocated qcow2
+            # Preallocated raw or qcow2
             alloc_size = initial_size if initial_size else capacity
 
         return alloc_size
