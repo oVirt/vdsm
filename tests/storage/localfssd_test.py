@@ -682,6 +682,52 @@ def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
     assert int(actual["truesize"]) == qemu_info['actual-size']
 
 
+@pytest.mark.xfail(reason='Preallocation for qcow2 not considered')
+def test_volume_create_cow_prealloc(user_domain, local_fallocate):
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    user_domain.createVolume(
+        imgUUID=img_uuid,
+        capacity=PREALLOCATED_VOL_SIZE,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.PREALLOCATED_VOL,
+        diskType='DATA',
+        volUUID=vol_uuid,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    vol = user_domain.produceVolume(img_uuid, vol_uuid)
+
+    path = vol.getVolumePath()
+    qemu_info = qemuimg.info(path)
+
+    verify_volume_file(
+        path=path,
+        format=qemuimg.FORMAT.QCOW2,
+        virtual_size=PREALLOCATED_VOL_SIZE,
+        qemu_info=qemu_info)
+
+    # Actual size is bigger than than virtual size as it includes
+    # the qcow2 header, which is one cluster size plus the variable sized
+    # tables. The size depends also on the file system, thus checking that
+    # actual size is bigger than virtual should suffice.
+    assert qemu_info['actual-size'] >= qemu_info['virtual-size']
+
+    # Verify actual volume metadata
+    actual = vol.getInfo()
+    assert int(actual["capacity"]) == PREALLOCATED_VOL_SIZE
+    assert actual["format"] == "COW"
+    assert actual["type"] == "PREALLOCATED"
+    assert actual["voltype"] == "LEAF"
+    assert actual["uuid"] == vol_uuid
+    # Check the volume specific apparent size is fragile,
+    # will easily break on CI or when qemu change the implementation.
+    assert int(actual["apparentsize"]) == qemu_info['virtual-size']
+    assert int(actual["truesize"]) == qemu_info['actual-size']
+
+
 @pytest.mark.parametrize("initial_size, expected_exception", [
     # initial size, expected exception
     [-1, se.InvalidParameterException],
