@@ -682,7 +682,6 @@ def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
     assert int(actual["truesize"]) == qemu_info['actual-size']
 
 
-@pytest.mark.xfail(reason='Preallocation for qcow2 not considered')
 def test_volume_create_cow_prealloc(user_domain, local_fallocate):
     img_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())

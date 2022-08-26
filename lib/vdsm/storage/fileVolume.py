@@ -456,9 +456,9 @@ class FileVolume(volume.Volume):
                     dom, volUUID, capacity, volPath, initial_size, preallocate)
             else:
                 return cls._create_cow_volume(
-                    dom, volUUID, capacity, volPath, initial_size, volParent,
-                    imgUUID, srcImgUUID, srcVolUUID, add_bitmaps=add_bitmaps,
-                    bitmap=bitmap)
+                    dom, volUUID, capacity, volPath, initial_size, preallocate,
+                    volParent, imgUUID, srcImgUUID, srcVolUUID,
+                    add_bitmaps=add_bitmaps, bitmap=bitmap)
         except cmdutils.Error as e:
             cls.log.error("Unexpected error: %s", e, exc_info=True)
             raise se.VolumeCreationError(volPath) from e
@@ -510,8 +510,9 @@ class FileVolume(volume.Volume):
 
     @classmethod
     def _create_cow_volume(
-            cls, dom, vol_id, capacity, vol_path, initial_size, vol_parent,
-            img_id, src_img_id, src_vol_id, add_bitmaps, bitmap=None):
+            cls, dom, vol_id, capacity, vol_path, initial_size, preallocate,
+            vol_parent, img_id, src_img_id, src_vol_id, add_bitmaps,
+            bitmap=None):
         """
         specific implementation of _create() for COW volumes.
         All the exceptions are properly handled and logged in volume.create()
@@ -527,9 +528,17 @@ class FileVolume(volume.Volume):
             cls.log.info("Request to create COW volume %s with capacity = %s",
                          vol_path, capacity)
 
-            cls._create_image(vol_path, capacity,
-                              format=sc.fmt2str(sc.COW_FORMAT),
+            format = sc.fmt2str(sc.COW_FORMAT)
+            cls._create_image(vol_path, capacity, format=format,
                               qcow2_compat=dom.qcow2_compat())
+            if preallocate == sc.PREALLOCATED_VOL:
+                offset = qemuimg.check(vol_path, format=format)["offset"]
+
+                # qemu-img offset is usually not aligned to 4k, and fallocate
+                # uses direct I/O requiring alignment to logical block size.
+                # Using 4k alignment ensures this works for any storage.
+                offset = utils.round(offset, 4 * KiB)
+                cls._preallocate_volume(vol_path, capacity, offset=offset)
         else:
             # Create hardlink to template and its meta file
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s "
