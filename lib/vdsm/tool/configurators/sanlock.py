@@ -2,15 +2,16 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import grp
+import logging
 import os
 import re
-import sys
 
 from vdsm import constants
 from vdsm import host
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.storage import sanlockconf
+from vdsm.tool import LOGGER_NAME
 
 from . import YES, NO
 
@@ -20,6 +21,8 @@ REQUIRED_GROUPS = {constants.QEMU_PROCESS_GROUP, constants.VDSM_GROUP}
 # Configuring requires stopping sanlock.
 services = ('sanlock',)
 
+log = logging.getLogger(LOGGER_NAME)
+
 
 def isconfigured():
     """
@@ -28,19 +31,19 @@ def isconfigured():
     """
     groups = _groups_issues()
     if groups:
-        _log("sanlock user needs groups: %s", ", ".join(groups))
+        log.error("sanlock user needs groups: %s", ", ".join(groups))
         return NO
 
     options = _config_file_issues()
     if options:
-        _log("sanlock config file needs options: %s", options)
+        log.error("sanlock config file needs options: %s", options)
         return NO
 
     if _restart_needed():
-        _log("sanlock daemon needs restart")
+        log.error("sanlock daemon needs restart")
         return NO
 
-    _log("sanlock is configured for vdsm")
+    log.info("sanlock is configured for vdsm")
     return YES
 
 
@@ -50,14 +53,14 @@ def configure():
     sanlock is started after configuration.
     """
     if _groups_issues():
-        _log("Configuring sanlock user groups")
+        log.info("Configuring sanlock user groups")
         _configure_groups()
 
     if _config_file_issues():
-        _log("Configuring sanlock config file")
+        log.info("Configuring sanlock config file")
         backup = _configure_config_file()
         if backup:
-            _log("Previous sanlock.conf copied to %s", backup)
+            log.debug("Previous sanlock.conf copied to %s", backup)
 
 
 # Checking and configuring groups.
@@ -226,8 +229,3 @@ def _daemon_options():
         options[key.lstrip()] = value
 
     return options
-
-
-# TODO: use standard logging
-def _log(fmt, *args):
-    sys.stdout.write(fmt % args + "\n")

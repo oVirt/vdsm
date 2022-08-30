@@ -5,16 +5,15 @@ from __future__ import absolute_import
 from __future__ import division
 import argparse
 import logging
-import logging.config
 import os
 
 from vdsm.common import fileutils
 
+from . import LOGGER_NAME
 from ..constants import P_VDSM_LIB
 
 
-def _get_upgrade_log():
-    return logging.getLogger('upgrade')
+log = logging.getLogger(LOGGER_NAME)
 
 
 def _upgrade_seal_path(upgrade):
@@ -30,10 +29,9 @@ def _upgrade_seal(upgrade):
     try:
         fileutils.touch_file(seal_file)
     except (OSError, IOError):
-        _get_upgrade_log().exception("Failed to seal upgrade %s", upgrade.name)
+        log.exception("Failed to seal upgrade %s", upgrade.name)
     else:
-        _get_upgrade_log().debug("Upgrade %s successfully performed",
-                                 upgrade.name)
+        log.debug("Upgrade %s successfully performed", upgrade.name)
 
 
 def apply_upgrade(upgrade, *args):
@@ -72,11 +70,11 @@ def apply_upgrade(upgrade, *args):
         upgrade.extendArgParser(argparser)
     ns, args = argparser.parse_known_args(args[1:])
     if (_upgrade_needed(upgrade) or ns.runAgain):
-        _get_upgrade_log().debug("Running upgrade %s", upgrade.name)
+        log.debug("Running upgrade %s", upgrade.name)
         try:
             upgrade.run(ns, args)
         except Exception:
-            _get_upgrade_log().exception("Failed to run %s", upgrade.name)
+            log.exception("Failed to run %s", upgrade.name)
             return 1
         else:
             _upgrade_seal(upgrade)

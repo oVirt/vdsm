@@ -8,7 +8,11 @@ import logging
 import libvirt
 
 from vdsm.common import libvirtconnection
+from . import LOGGER_NAME
 from . import expose, ExtraArgsError
+
+
+log = logging.getLogger(LOGGER_NAME)
 
 
 @expose('nwfilter')
@@ -64,7 +68,7 @@ class NwFilter(object):
         define vdsm network filter on libvirt to control VM traffic
         """
         libvirt_filter = self.connection.nwfilterDefineXML(self.build_xml())
-        logging.debug("Filter %s was defined", libvirt_filter.name())
+        log.debug("Filter %s was defined", libvirt_filter.name())
 
 
 class NoMacSpoofingFilter(NwFilter):

@@ -9,13 +9,17 @@ System service management utlities.
 '''
 
 import functools
+import logging
 import re
-import sys
 from collections import defaultdict
 
 from vdsm.common.cmdutils import CommandPath
 from vdsm.common.commands import execCmd as _execCmd
+from . import LOGGER_NAME
 from . import expose, UsageError, ExtraArgsError
+
+
+log = logging.getLogger(LOGGER_NAME)
 
 
 def execCmd(argv, raw=True, *args, **kwargs):
@@ -214,7 +218,7 @@ def service_status(srvName, verbose=True):
         return _runAlts(_srvStatusAlts, srvName)
     except ServiceError as e:
         if verbose:
-            sys.stderr.write('service-status: %s\n' % e)
+            log.error('service-status: %s', e)
         return 1
 
 
@@ -290,5 +294,5 @@ def service_is_managed(srvName):
     try:
         return _runAlts(_srvIsManagedAlts, srvName)
     except ServiceError as e:
-        sys.stderr.write('service-is-managed: %s\n' % e)
+        log.error('service-is-managed: %s', e)
         return 1

@@ -16,11 +16,13 @@ configurators interface is described below.
 
 from collections import deque
 import argparse
+import logging
 import sys
 import traceback
 
 import six
 
+from . import LOGGER_NAME
 from . import \
     service, \
     expose, \
@@ -39,6 +41,8 @@ def _init_configurators():
 
 
 _CONFIGURATORS = _init_configurators()
+
+log = logging.getLogger(LOGGER_NAME)
 
 
 #
@@ -106,7 +110,7 @@ def configure(*args):
     """
     pargs = _parse_args(*args)
 
-    sys.stdout.write("\nChecking configuration status...\n\n")
+    log.info("Checking configuration status...")
     configurer_to_trigger = [c for c in pargs.modules
                              if _should_configure(c, pargs.force)]
 
@@ -125,14 +129,14 @@ def configure(*args):
     for s in services:
         service.service_stop(s)
 
-    sys.stdout.write("\nRunning configure...\n")
+    log.info("Running configure...")
     for c in configurer_to_trigger:
         _configure(c)
-        sys.stdout.write("Reconfiguration of %s is done.\n" % (c.name,))
+        log.info("Reconfiguration of %s is done.", c.name)
 
     for s in reversed(services):
         service.service_start(s)
-    sys.stdout.write("\nDone configuring modules to VDSM.\n")
+    log.info("Done configuring modules to VDSM.")
 
 
 @expose("is-configured")
@@ -149,9 +153,7 @@ def isconfigured(*args):
     m = [c.name for c in pargs.modules if _isconfigured(c) == configurators.NO]
 
     if m:
-        sys.stdout.write(
-            "Modules %s are not configured\n " % ', '.join(m),
-        )
+        log.error("Modules %s are not configured", ', '.join(m))
         ret = False
 
     if not ret:
@@ -184,9 +186,7 @@ def validate_config(*args):
     m = [c.name for c in pargs.modules if not _validate(c)]
 
     if m:
-        sys.stdout.write(
-            "Modules %s contains invalid configuration\n " % ', '.join(m),
-        )
+        log.error("Modules %s contains invalid configuration", ', '.join(m))
         ret = False
 
     if not ret:
@@ -207,10 +207,7 @@ def remove_config(*args):
         try:
             _removeConf(c)
         except Exception:
-            sys.stderr.write(
-                "can't remove configuration of module %s\n" %
-                c.name
-            )
+            log.error("can't remove configuration of module %s", c.name)
             traceback.print_exc(file=sys.stderr)
             failed = True
     if failed:

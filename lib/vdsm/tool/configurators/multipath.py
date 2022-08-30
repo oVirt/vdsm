@@ -4,11 +4,11 @@
 from __future__ import absolute_import
 from __future__ import division
 import os
-import sys
+import logging
 
 from vdsm.storage import mpathconf
 from vdsm.storage import multipath
-from vdsm.tool import service
+from vdsm.tool import service, LOGGER_NAME
 
 from . import YES, NO
 
@@ -18,6 +18,8 @@ from . import YES, NO
 # during configuration.
 services = []
 
+log = logging.getLogger(LOGGER_NAME)
+
 
 def configure():
     """
@@ -25,7 +27,7 @@ def configure():
     """
     backup = mpathconf.configure_multipathd()
     if backup:
-        sys.stdout.write(f"Previous multipath.conf copied to {backup}\n")
+        log.info("Previous multipath.conf copied to %s", backup)
 
     # We want to handle these cases:
     #
@@ -64,30 +66,28 @@ def _check_mpath_metadata():
     if os.path.exists(mpathconf.CONF_FILE):
         revision, private = mpathconf.read_metadata()
         if private:
-            sys.stdout.write("Manual override for multipath.conf detected"
-                             " - preserving current configuration\n")
+            log.info("Manual override for multipath.conf detected"
+                     " - preserving current configuration")
             if revision != mpathconf.REVISION_OK:
-                sys.stdout.write("This manual override for multipath.conf "
-                                 "was based on downrevved template. "
-                                 "You are strongly advised to "
-                                 "contact your support representatives\n")
+                log.warning("This manual override for multipath.conf "
+                            "was based on downrevved template. "
+                            "You are strongly advised to "
+                            "contact your support representatives")
             return YES
 
         if revision == mpathconf.REVISION_OK:
-            sys.stdout.write("Current revision of multipath.conf detected,"
-                             " preserving\n")
+            log.info("Current revision of multipath.conf detected, preserving")
             return YES
 
         if revision == mpathconf.REVISION_OLD:
-            sys.stdout.write("Downrev multipath.conf detected, "
-                             "upgrade required\n")
+            log.error("Downrev multipath.conf detected, upgrade required")
             return NO
 
         if revision == mpathconf.REVISION_MISSING:
-            sys.stdout.write("No revision of multipath.conf detected.\n")
+            log.error("No revision of multipath.conf detected.")
             return NO
 
-    sys.stdout.write("multipath requires configuration\n")
+    log.error("multipath requires configuration")
     return NO
 
 
@@ -100,14 +100,14 @@ def isconfigured():
         check_result = mpathconf.check_local_config()
         if check_result.error is not None:
             # Just warn for now, do not fail the isconfigured check here.
-            sys.stdout.write(f"WARNING: {check_result.error}:\n")
+            log.warning("%s:", check_result.error)
             for section in check_result.issues:
-                sys.stdout.write(f"  {section.name} {{\n")
+                log.warning("  %s {", section.name)
                 for attr in section.children:
-                    sys.stdout.write(f"    {attr.key} {attr.value}\n")
-                sys.stdout.write("  }\n")
+                    log.warning("    %s %s", attr.key, attr.value)
+                log.warning("  }")
             if check_result.issues:
-                sys.stdout.write("This configuration is not supported and "
-                                 "may lead to storage domain corruption.\n")
+                log.warning("This configuration is not supported and "
+                            "may lead to storage domain corruption.")
 
     return conf_metadata_ok

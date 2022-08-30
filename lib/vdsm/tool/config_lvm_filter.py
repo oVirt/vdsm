@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
+import logging
 import textwrap
 
 from vdsm.common.config import config
@@ -14,6 +15,7 @@ from vdsm.storage import lvmdevices
 from vdsm.storage import lvmfilter
 from vdsm.storage import mpathconf
 
+from . import LOGGER_NAME
 from . import expose
 from . import common
 
@@ -25,6 +27,8 @@ _NAME = 'config-lvm-filter'
 # rc=2 will be exited from parse_args() in case of invalid usage.
 CANNOT_CONFIG = 3
 NEEDS_CONFIG = 4
+
+log = logging.getLogger(LOGGER_NAME)
 
 
 @expose(_NAME)
@@ -46,7 +50,7 @@ def main(*args):
     """
     args = parse_args(args)
 
-    print("Analyzing host...")
+    log.info("Analyzing host...")
 
     config_method = config.get("lvm", "config_method").lower()
 
@@ -55,8 +59,8 @@ def main(*args):
     elif config_method == "devices":
         return config_with_devices(args)
     else:
-        print("Unknown configuration method %s, use either 'filter' or "
-              "'devices'." % config_method)
+        log.info("Unknown configuration method %s, use either 'filter' or "
+                 "'devices'.", config_method)
         return CANNOT_CONFIG
 
 
@@ -76,7 +80,7 @@ def config_with_filter(args):
 
     # This is the expected condition on a correctly configured host.
     if advice.action == lvmfilter.UNNEEDED:
-        print("LVM filter is already configured for Vdsm")
+        log.info("LVM filter is already configured for Vdsm")
         return
 
     # We need to configure LVM filter.
@@ -107,7 +111,7 @@ def config_with_devices(args):
 
     # Check if the lvm devices is already configured.
     if lvmdevices.is_configured():
-        print("LVM devices already configured for vdsm")
+        log.info("LVM devices already configured for vdsm")
         return
 
     mounts = lvmfilter.find_lvm_mounts()
@@ -147,74 +151,65 @@ def parse_args(args):
 
 
 def _print_mounts(mounts):
-    print("Found these mounted logical volumes on this host:")
-    print()
+    log.info("Found these mounted logical volumes on this host:\n")
 
     for mnt in mounts:
-        print("  logical volume: ", mnt.lv)
-        print("  mountpoint:     ", mnt.mountpoint)
-        print("  devices:        ", ", ".join(mnt.devices))
-        print()
+        log.info("  logical volume: %s", mnt.lv)
+        log.info("  mountpoint:     %s", mnt.mountpoint)
+        log.info("  devices:        %s\n", ", ".join(mnt.devices))
 
 
 def _print_recommended_filter(wanted_filter):
-    print("This is the recommended LVM filter for this host:")
+    log.info("This is the recommended LVM filter for this host:\n")
     print()
     print("  " + lvmfilter.format_option(wanted_filter))
     print()
-    print("""\
-This filter allows LVM to access the local devices used by the
-hypervisor, but not shared storage owned by Vdsm. If you add a new
-device to the volume group, you will need to edit the filter manually.
-    """)
+    log.info("This filter allows LVM to access the local devices used by the")
+    log.info("hypervisor, but not shared storage owned by Vdsm. "
+             "If you add a new")
+    log.info("device to the volume group, "
+             "you will need to edit the filter manually.")
 
 
 def _print_current_filter(current_filter):
-    print("This is the current LVM filter:")
+    log.info("This is the current LVM filter:\n")
     print()
     print("  " + lvmfilter.format_option(current_filter))
     print()
 
 
 def _print_wanted_blacklist(wanted_wwids):
-    print("To properly configure the host, we need to add multipath")
-    print("blacklist in /etc/multipath/conf.d/vdsm_blacklist.conf:")
+    log.info("To properly configure the host, we need to add multipath")
+    log.info("blacklist in /etc/multipath/conf.d/vdsm_blacklist.conf:\n")
     print()
     print(textwrap.indent(mpathconf.format_blacklist(wanted_wwids), "  "))
     print()
 
 
 def _print_success():
-    print("""\
-Configuration completed successfully!
-
-Please reboot to verify the configuration.
-    """)
+    log.info("Configuration completed successfully!\n")
+    log.info("Please reboot to verify the configuration.")
 
 
 def _print_filter_warning():
-    print("""\
-WARNING: The current LVM filter does not match the recommended filter,
-Vdsm cannot configure the filter automatically.
-
-Please edit /etc/lvm/lvm.conf and set the 'filter' option in the
-'devices' section to the recommended value. Also make sure that
-'use_devicesfile' in this section is set to 0.
-
-Make sure /etc/multipath/conf.d/vdsm_blacklist.conf is set with the
-recommended 'blacklist' section.
-
-It is recommended to reboot to verify the new configuration.
-    """)
+    log.warning(
+        "The current LVM filter does not match the recommended filter,")
+    log.warning("Vdsm cannot configure the filter automatically.\n")
+    log.warning(
+        "Please edit /etc/lvm/lvm.conf and set the 'filter' option in the")
+    log.warning(
+        "'devices' section to the recommended value. Also make sure that")
+    log.warning("'use_devicesfile' in this section is set to 0.\n")
+    log.warning(
+        "Make sure /etc/multipath/conf.d/vdsm_blacklist.conf is set with the")
+    log.warning("recommended 'blacklist' section.\n")
+    log.warning("It is recommended to reboot to verify the new configuration.")
 
 
 def _print_devices_info(vgs):
-    print("""\
-Configuring LVM system.devices.
-Devices for following VGs will be imported:
-    """)
-    print(f" {', '.join(vgs)}")
-    print()
+    log.info("Configuring LVM system.devices.")
+    log.info("Devices for following VGs will be imported:")
+    log.info(" %s\n", ', '.join(vgs))
 
 
 def _print_summary(mounts, current_filter, wanted_filter, advice_wwids, vgs):

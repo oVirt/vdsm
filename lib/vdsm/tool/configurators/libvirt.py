@@ -3,10 +3,10 @@
 
 from __future__ import absolute_import
 from __future__ import division
+import logging
 import os
 import os.path
 import uuid
-import sys
 
 from collections import namedtuple
 
@@ -20,6 +20,7 @@ from vdsm.common import commands
 from vdsm.common import cpuarch
 from vdsm.common import pki
 from vdsm.common import systemctl
+from vdsm.tool import LOGGER_NAME
 from vdsm.tool import confutils
 from vdsm.tool import service
 from vdsm.tool.configfile import ParserWrapper
@@ -40,6 +41,7 @@ requires = frozenset(('certificates',))
 
 services = ("vdsmd", "supervdsmd", "libvirtd")
 
+log = logging.getLogger(LOGGER_NAME)
 
 _LibvirtConnectionConfig = namedtuple(
     "_LibvirtConnectionConfig",
@@ -75,8 +77,8 @@ def validate():
     socket_unit = _socket_unit()
 
     if socket_unit not in _unit_requirements(_LIBVIRT_SERVICE_UNIT):
-        sys.stdout.write("{} doesn't have requirement on {} unit\n".format(
-            _LIBVIRT_SERVICE_UNIT, socket_unit))
+        log.error("%s doesn't have requirement on %s unit",
+                  _LIBVIRT_SERVICE_UNIT, socket_unit)
         return False
 
     return _validate_config()
@@ -101,9 +103,9 @@ def isconfigured():
         ret = NO
 
     if ret == MAYBE:
-        sys.stdout.write("libvirt is already configured for vdsm\n")
+        log.info("libvirt is already configured for vdsm")
     else:
-        sys.stdout.write("libvirt is not configured for vdsm yet\n")
+        log.warning("libvirt is not configured for vdsm yet")
     return ret
 
 
@@ -176,31 +178,26 @@ def _validate_config():
 
     if _ssl():
         if (cfg.auth_tcp != '"none"' and cfg.spice_tls != 0):
-            sys.stdout.write(
-                "SUCCESS: ssl configured to true. No conflicts\n")
+            log.info("SUCCESS: ssl configured to true. No conflicts")
         else:
-            sys.stdout.write(
-                "FAILED: "
-                "conflicting vdsm and libvirt-qemu tls configuration.\n"
-                "vdsm.conf with ssl=True "
-                "requires the following changes:\n"
-                "libvirtd.conf: auth_tcp=\"sasl\"\n"
-                "qemu.conf: spice_tls=1.\n"
-            )
+            log.error("FAILED: "
+                      "conflicting vdsm and libvirt-qemu tls configuration.")
+            log.error("vdsm.conf with ssl=True "
+                      "requires the following changes:")
+            log.error("libvirtd.conf: auth_tcp=\"sasl\"")
+            log.error("qemu.conf: spice_tls=1.")
             ret = False
     else:
         if (cfg.auth_tcp == '"none"' and cfg.spice_tls == 0):
-            sys.stdout.write(
+            log.info(
                 "SUCCESS: ssl configured to false. No conflicts.\n")
         else:
-            sys.stdout.write(
-                "FAILED: "
-                "conflicting vdsm and libvirt-qemu tls configuration.\n"
-                "vdsm.conf with ssl=False "
-                "requires the following changes:\n"
-                "libvirtd.conf: auth_tcp=\"none\"\n"
-                "qemu.conf: spice_tls=0.\n"
-            )
+            log.error("FAILED: "
+                      "conflicting vdsm and libvirt-qemu tls configuration.")
+            log.error("vdsm.conf with ssl=False "
+                      "requires the following changes:")
+            log.error("libvirtd.conf: auth_tcp=\"none\"")
+            log.error("qemu.conf: spice_tls=0.")
             ret = False
     return ret
 

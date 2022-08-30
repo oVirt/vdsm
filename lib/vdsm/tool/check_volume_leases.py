@@ -7,17 +7,21 @@ from __future__ import print_function
 
 from collections import defaultdict
 import argparse
+import logging
 
 import sanlock
 
 from vdsm import client
 from vdsm import utils
 from vdsm.config import config
+from . import LOGGER_NAME
 from . import UsageError
 from . import common
 from . import expose
 
 _NAME = "check-volume-leases"
+
+log = logging.getLogger(LOGGER_NAME)
 
 
 @expose(_NAME)
@@ -33,16 +37,13 @@ def main(*args):
     cli = client.connect(parsed_args.host, parsed_args.port,
                          use_tls=parsed_args.use_ssl)
     with utils.closing(cli):
-        print()
-        print("Checking active storage domains. This can take several "
-              "minutes, please wait.")
+        log.info("Checking active storage domains. This can take several "
+                 "minutes, please wait.")
         broken_leases = _get_leases_to_repair(cli)
         if not broken_leases:
-            print()
-            print("There are no leases to repair.")
+            log.info("There are no leases to repair.")
             return
 
-    print()
     _print_broken_leases(broken_leases)
     if not parsed_args.repair and not _confirm_repair_leases():
         return
@@ -51,10 +52,8 @@ def main(*args):
 
 
 def _confirm_check_leases():
-    return common.confirm("""\
-WARNING: Make sure there are no running storage operations.
-
-Do you want to check volume leases? [yes,NO] """)
+    log.warning("Make sure there are no running storage operations.\n")
+    return common.confirm("Do you want to check volume leases? [yes,NO] ")
 
 
 def _confirm_repair_leases():
@@ -90,9 +89,8 @@ def _get_leases_to_repair(cli):
     # }
     pools = cli.Host.getConnectedStoragePools()
     if not pools:
-        print()
         raise UsageError(
-            "The storage pool is not connected.\n"
+            "The storage pool is not connected. "
             "Please make sure the host is active before running the tool."
         )
 
@@ -119,10 +117,9 @@ def _get_domain_broken_leases(cli, sp_uuid, sd_uuid):
                                           imageID=img_uuid,
                                           volumeID=vol_uuid)
             except client.Error as e:
-                print()
-                print("Error: failed to get volume info: {} (domain: {}, "
-                      "image: {}, volume: {}"
-                      .format(e, sd_uuid, img_uuid, vol_uuid))
+                log.error("Failed to get volume info: %s (domain: %s, "
+                          "image: %s, volume: %s",
+                          e, sd_uuid, img_uuid, vol_uuid)
                 continue
 
             if 'lease' not in info:
@@ -141,21 +138,18 @@ def _get_domain_broken_leases(cli, sp_uuid, sd_uuid):
 
 
 def _print_broken_leases(broken_leases):
-    print("The following volume leases need repair:")
-    print()
+    log.warning("The following volume leases need repair:\n")
 
     for sd_uuid in broken_leases:
-        print("- domain: {}".format(sd_uuid))
-        print()
+        log.warning("- domain: %s\n", sd_uuid)
         for img_uuid in broken_leases[sd_uuid]:
-            print("  - image: {}".format(img_uuid))
+            log.warning("  - image: %s", img_uuid)
             for vol_uuid in broken_leases[sd_uuid][img_uuid]:
-                print("    - volume: {}".format(vol_uuid))
-        print()
+                log.warning("    - volume: %s", vol_uuid)
 
 
 def _repair(broken_leases):
-    print("Repairing volume leases ...")
+    log.info("Repairing volume leases ...")
     total = 0
     repaired = 0
     for sd_uuid in broken_leases:
@@ -170,7 +164,8 @@ def _repair(broken_leases):
                         [(vol_lease['path'], vol_lease['offset'])])
                     repaired += 1
                 except sanlock.SanlockException as e:
-                    print("Failed to repair lease of volume {}/{}. Error {}"
-                          .format(vol_lease['image'], vol_lease['volume'], e))
+                    log.error("Failed to repair lease of volume %s/%s. "
+                              "Error %s",
+                              vol_lease['image'], vol_lease['volume'], e)
 
-    print("Repaired ({}/{}) volume leases.".format(repaired, total))
+    log.info("Repaired (%s/%s) volume leases.", repaired, total)

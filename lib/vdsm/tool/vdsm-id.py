@@ -3,9 +3,15 @@
 
 from __future__ import absolute_import
 from __future__ import division
+
+import logging
+
 from .. import host
+from . import LOGGER_NAME
 from . import expose, ExtraArgsError
-import sys
+
+
+log = logging.getLogger(LOGGER_NAME)
 
 
 @expose("vdsm-id")
@@ -19,5 +25,5 @@ def getUUID(*args):
     hostUUID = host.uuid()
     if hostUUID is None:
         raise EnvironmentError('Cannot retrieve host UUID')
-    sys.stdout.write(hostUUID + '\n')
+    log.info("%s", hostUUID)
     return 0
