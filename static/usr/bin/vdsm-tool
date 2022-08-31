@@ -116,10 +116,6 @@ def usage_and_exit(exit_code):
                      "  -l, --logfile <path>",
                      "\t\tRedirect logging to file.",
                      "  -v, --verbose",
-                     "\t\tInclude warning (and errors) messages in log.",
-                     "  -vv, --vverbose",
-                     "\t\tInclude information (and above) messages in log.",
-                     "  -vvv, --vvverbose",
                      "\t\tInclude debug (and above) messages in log.",
                      "  -a, --append",
                      "\t\tAppend to logfile instead of truncating it",
@@ -133,22 +129,29 @@ def usage_and_exit(exit_code):
 
 
 def setup_logging(log_file, verbosity, append):
+    level = logging.DEBUG if verbosity else logging.INFO
+    root_logger = logging.getLogger("")
+    root_logger.setLevel(level)
 
-    level = {0: logging.ERROR,
-             1: logging.WARNING,
-             2: logging.INFO}.get(verbosity, logging.DEBUG)
+    if root_logger.handlers:
+        return root_logger
 
     if log_file is not None:
-        handler = logging.FileHandler(log_file, mode=(append and 'a' or 'w'))
-    else:
-        handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter(
-        "%(threadName)s::%(levelname)s::%(asctime)s::%(module)s::"
-        + "%(lineno)d::%(name)s::(%(funcName)s) %(message)s"))
+        mode = append and 'a' or 'w'
+        file_handler = logging.FileHandler(log_file, mode=mode)
+        file_handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s [%(levelname)-7s] %(message)s",
+                "%m/%d/%Y %I:%M:%S %p"))
+        # File logging always at DEBUG level
+        file_handler.setLevel(logging.DEBUG)
+        root_logger.addHandler(file_handler)
 
-    root_logger = logging.getLogger('')
-    root_logger.setLevel(level)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(levelname)-7s | %(message)s"))
     root_logger.addHandler(handler)
+
+    return root_logger
 
 
 def main():
@@ -157,12 +160,12 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hl:av",
                                    ["help", "logfile=", "append",
-                                    "verbose", "vverbose", "vvverbose"])
+                                    "verbose"])
     except getopt.GetoptError:
         usage_and_exit(1)
 
     log_file = None
-    verbosity = 0
+    verbosity = False
     append = False
 
     for opt in opts:
@@ -170,18 +173,12 @@ def main():
             usage_and_exit(0)
         elif opt[0] in ('-l', '--logfile'):
             log_file = opt[1]
-        elif opt[0] in ('-v'):
-            verbosity += 1
-        elif opt[0] == '--verbose':
-            verbosity = 1
-        elif opt[0] == '--vverbose':
-            verbosity = 2
-        elif opt[0] == '--vvverbose':
-            verbosity = 3
+        elif opt[0] in ('-v', '--verbose'):
+            verbosity = True
         elif opt[0] in ('-a', '--append'):
             append = True
 
-    setup_logging(log_file, verbosity, append)
+    log = setup_logging(log_file, verbosity, append)
 
     if len(args) < 1:
         usage_and_exit(1)
@@ -197,13 +194,13 @@ def main():
         print_command_usage(tool_command[cmd]["command"], sys.stderr)
         return 1
     except vdsm.tool.UsageError as e:
-        print('Error: ', e, '\n', file=sys.stderr)
+        log.error('%s', e)
         return 1
     except Exception:
         traceback.print_exc(file=sys.stderr)
         return 1
     except KeyboardInterrupt:
-        print("Interrupted", file=sys.stderr)
+        log.warning("Interrupted")
         return 1
 
 
