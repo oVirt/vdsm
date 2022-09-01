@@ -4,7 +4,37 @@
 from __future__ import absolute_import
 from __future__ import division
 import functools
+import logging
 import os
+
+
+LOGGER_NAME = "vdsm-tool"
+
+
+def setup_logging(log_file, verbosity, append):
+    level = logging.DEBUG if verbosity else logging.INFO
+    root_logger = logging.getLogger(LOGGER_NAME)
+    root_logger.setLevel(level)
+
+    if root_logger.handlers:
+        return root_logger
+
+    if log_file is not None:
+        mode = append and 'a' or 'w'
+        file_handler = logging.FileHandler(log_file, mode=mode)
+        file_handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s [%(levelname)-7s] %(message)s",
+                "%m/%d/%Y %I:%M:%S %p"))
+        # File logging always at DEBUG level
+        file_handler.setLevel(logging.DEBUG)
+        root_logger.addHandler(file_handler)
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(levelname)-7s | %(message)s"))
+    root_logger.addHandler(handler)
+
+    return root_logger
 
 
 class expose(object):

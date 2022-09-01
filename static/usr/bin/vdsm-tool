@@ -8,7 +8,6 @@ from __future__ import print_function
 
 import getopt
 import importlib
-import logging
 import os
 import sys
 import syslog
@@ -128,32 +127,6 @@ def usage_and_exit(exit_code):
     sys.exit(exit_code)
 
 
-def setup_logging(log_file, verbosity, append):
-    level = logging.DEBUG if verbosity else logging.INFO
-    root_logger = logging.getLogger("")
-    root_logger.setLevel(level)
-
-    if root_logger.handlers:
-        return root_logger
-
-    if log_file is not None:
-        mode = append and 'a' or 'w'
-        file_handler = logging.FileHandler(log_file, mode=mode)
-        file_handler.setFormatter(
-            logging.Formatter(
-                "%(asctime)s [%(levelname)-7s] %(message)s",
-                "%m/%d/%Y %I:%M:%S %p"))
-        # File logging always at DEBUG level
-        file_handler.setLevel(logging.DEBUG)
-        root_logger.addHandler(file_handler)
-
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(levelname)-7s | %(message)s"))
-    root_logger.addHandler(handler)
-
-    return root_logger
-
-
 def main():
     load_modules()
 
@@ -178,7 +151,7 @@ def main():
         elif opt[0] in ('-a', '--append'):
             append = True
 
-    log = setup_logging(log_file, verbosity, append)
+    log = vdsm.tool.setup_logging(log_file, verbosity, append)
 
     if len(args) < 1:
         usage_and_exit(1)
