@@ -87,6 +87,10 @@ pylint-diff: tox
 flake8: tox
 	tox -e flake8
 
+.PHONY: reuse
+reuse: tox
+	tox -e reuse
+
 .PHONY: black
 black: tox
 	tox -e black
@@ -121,7 +125,7 @@ check-unit:
 	$(MAKE) -C tests/ check NOSE_EVAL_ATTR="type=='unit'"
 
 .PHONY: lint
-lint: gitignore execcmd black flake8 pylint
+lint: gitignore reuse execcmd black flake8 pylint
 
 .PHONY: venv
 venv:
