@@ -1,2 +1,0 @@
-- name: 'CI_PYTHON'  # This variable needs to be in a 'pythonMAJOR' form because it's
-  value: 'python3'   # used to run commands like 'python3-coverage' and for package names
