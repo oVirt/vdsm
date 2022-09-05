@@ -6,15 +6,15 @@ variables:
 
 lint:
   script:
-    - ./automation/lint.sh
+    - ./ci/lint.sh
 
 tests-storage:
   script:
-    - ./automation/tests-storage.sh
+    - ./ci/tests-storage.sh
 
 rpm:
   script:
-    - ./automation/rpm.sh
+    - ./ci/rpm.sh
   artifacts:
     name: "rpm-centos-8"
     paths:
