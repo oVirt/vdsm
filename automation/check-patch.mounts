@@ -1,2 +1,0 @@
-/var/log:/var/host_log
-/run/udev:/run/udev

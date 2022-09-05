@@ -1,8 +1,0 @@
-ovirt-master-snapshot,http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/el8/
-ovirt-master-copr-sbonazzo-collection-el8,https://copr-be.cloud.fedoraproject.org/results/sbonazzo/EL8_collection/epel-8-$basearch/
-ovirt-master-glusterfs-9-testing-el8stream,https://buildlogs.centos.org/centos/8-stream/storage/$basearch/gluster-9/
-ovirt-master-centos-ovirt45-testing-el8stream,https://buildlogs.centos.org/centos/8-stream/virt/$basearch/ovirt-45/
-ovirt-imageio-preview,https://download.copr.fedorainfracloud.org/results/nsoffer/ovirt-imageio-preview/epel-8-$basearch/
-ovirt-ioprocess-preview,https://download.copr.fedorainfracloud.org/results/nsoffer/ioprocess-preview/epel-8-$basearch/
-centos-el8stream-advancedvirt-common,http://mirror.centos.org/centos/8-stream/virt/$basearch/advancedvirt-common/
-centos-elstream-nfv-openvswitch2-testing,https://buildlogs.centos.org/centos/8-stream/nfv/$basearch/openvswitch-2/
