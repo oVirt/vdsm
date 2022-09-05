@@ -26,7 +26,7 @@ Clone your fork:
 
 Install additional packages for Fedora, CentOS, and RHEL:
 
-    sudo dnf install -y `cat ci/check-patch.packages`
+    contrib/install-pkg.sh
 
 Generate the Makefile (and configure script):
 
