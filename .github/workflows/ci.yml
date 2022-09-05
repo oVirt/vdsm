@@ -9,7 +9,7 @@ jobs:
     steps:
     - uses: ovirt/checkout-action@main
     - name: Run linters
-      run: ./automation/lint.sh
+      run: ./ci/lint.sh
   test-storage-user:
     env:
       TRAVIS_CI: 1
@@ -21,7 +21,7 @@ jobs:
     steps:
     - uses: ovirt/checkout-action@main
     - name: Run storage tests as vdsm
-      run: ./automation/tests-storage.sh vdsm
+      run: ./ci/tests-storage.sh vdsm
   test-storage-root:
     env:
       TRAVIS_CI: 1
@@ -33,7 +33,7 @@ jobs:
     steps:
     - uses: ovirt/checkout-action@main
     - name: Run storage tests as root
-      run: ./automation/tests-storage.sh root
+      run: ./ci/tests-storage.sh root
   tests:
     env:
       TRAVIS_CI: 1
@@ -45,7 +45,7 @@ jobs:
     steps:
     - uses: ovirt/checkout-action@main
     - name: Run tests
-      run: ./automation/tests.sh
+      run: ./ci/tests.sh
   rpm:
     runs-on: ubuntu-latest
     strategy:
@@ -65,7 +65,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Build RPMs
-      run: ./automation/rpm.sh
+      run: ./ci/rpm.sh
     - name: Upload artifacts
       uses: ovirt/upload-rpms-action@v2
       with:

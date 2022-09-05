@@ -26,7 +26,7 @@ Clone your fork:
 
 Install additional packages for Fedora, CentOS, and RHEL:
 
-    sudo dnf install -y `cat automation/check-patch.packages`
+    sudo dnf install -y `cat ci/check-patch.packages`
 
 Generate the Makefile (and configure script):
 
