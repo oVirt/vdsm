@@ -495,7 +495,13 @@ class FileVolume(volume.Volume):
 
         cls._truncate_volume(vol_path, 0, vol_id, dom)
 
-        cls._allocate_volume(vol_path, capacity, preallocate=preallocate)
+        cls._create_image(vol_path, capacity, sc.fmt2str(sc.RAW_FORMAT))
+
+        # If the image is preallocated, allocate the rest of the image
+        # using fallocate helper. qemu-img create always writes zeroes to
+        # the first block so we should skip it during preallocation.
+        if preallocate == sc.PREALLOCATED_VOL:
+            cls._preallocate_volume(vol_path, capacity, offset=4 * KiB)
 
         # Forcing volume permissions in case qemu-img changed the permissions.
         cls._set_permissions(vol_path, dom)
@@ -551,16 +557,6 @@ class FileVolume(volume.Volume):
             if e.errno == errno.EEXIST:
                 raise se.VolumeAlreadyExists(vol_id)
             raise
-
-    @classmethod
-    def _allocate_volume(cls, vol_path, size, preallocate):
-        cls._create_image(vol_path, size, sc.fmt2str(sc.RAW_FORMAT))
-
-        # If the image is preallocated, allocate the rest of the image
-        # using fallocate helper. qemu-img create always writes zeroes to
-        # the first block so we should skip it during preallocation.
-        if preallocate == sc.PREALLOCATED_VOL:
-            cls._preallocate_volume(vol_path, size, offset=4 * KiB)
 
     @classmethod
     def _create_image(cls, vol_path, size, format, qcow2_compat=None):
