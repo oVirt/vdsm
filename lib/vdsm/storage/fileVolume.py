@@ -33,7 +33,7 @@ from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
-from vdsm.common.units import MiB
+from vdsm.common.units import KiB, MiB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fallocate
@@ -559,17 +559,8 @@ class FileVolume(volume.Volume):
         # If the image is preallocated, allocate the rest of the image
         # using fallocate helper. qemu-img create always writes zeroes to
         # the first block so we should skip it during preallocation.
-        if size > 4096 and preallocate == sc.PREALLOCATED_VOL:
-            op = fallocate.allocate(vol_path, size - 4096, offset=4096)
-
-            # This is fast on NFS 4.2, GlusterFS, XFS and ext4, but can be
-            # extremely slow on NFS < 4.2, writing zeroes to entire image.
-            with vars.task.abort_callback(op.abort):
-                with utils.stopwatch(
-                        "Preallocating volume {}".format(vol_path),
-                        level=logging.INFO,
-                        log=cls.log):
-                    op.run()
+        if preallocate == sc.PREALLOCATED_VOL:
+            cls._preallocate_volume(vol_path, size, offset=4 * KiB)
 
     @classmethod
     def _create_image(cls, vol_path, size, format, qcow2_compat=None):
@@ -582,6 +573,22 @@ class FileVolume(volume.Volume):
         with vars.task.abort_callback(op.abort):
             with utils.stopwatch(
                     "Creating image {}".format(vol_path),
+                    level=logging.INFO,
+                    log=cls.log):
+                op.run()
+
+    @classmethod
+    def _preallocate_volume(cls, vol_path, capacity, offset):
+        if capacity <= offset:
+            return
+        op = fallocate.allocate(
+            vol_path, size=capacity - offset, offset=offset)
+
+        # This is fast on NFS 4.2, GlusterFS, XFS and ext4, but can be
+        # extremely slow on NFS < 4.2, writing zeroes to entire image.
+        with vars.task.abort_callback(op.abort):
+            with utils.stopwatch(
+                    "Preallocating volume {}".format(vol_path),
                     level=logging.INFO,
                     log=cls.log):
                 op.run()
