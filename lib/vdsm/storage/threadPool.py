@@ -1,9 +1,10 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: PSF-2.0
+
 #
 # Adapted by Red Hat from
 # http://code.activestate.com/recipes/203871-a-generic-programming-thread-pool/
 # Author: Tim Lesher
-# License: PSF License
-# http://wiki.python.org/moin/PythonSoftwareFoundationLicenseV2Easy
 #
 
 from __future__ import absolute_import
