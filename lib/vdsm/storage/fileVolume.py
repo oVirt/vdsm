@@ -582,9 +582,9 @@ class FileVolume(volume.Volume):
                         op.run()
         except exception.ActionStopped:
             raise
-        except Exception:
-            cls.log.error("Unexpected error", exc_info=True)
-            raise se.VolumesZeroingError(vol_path)
+        except Exception as e:
+            cls.log.error("Unexpected error: %s", e, exc_info=True)
+            raise se.VolumeCreationError(vol_path) from e
 
     @classmethod
     def _set_permissions(cls, vol_path, dom):
