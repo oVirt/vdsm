@@ -450,14 +450,18 @@ class FileVolume(volume.Volume):
         """
         Class specific implementation of volumeCreate.
         """
-        if volFormat == sc.RAW_FORMAT:
-            return cls._create_raw_volume(
-                dom, volUUID, capacity, volPath, initial_size, preallocate)
-        else:
-            return cls._create_cow_volume(
-                dom, volUUID, capacity, volPath, initial_size, volParent,
-                imgUUID, srcImgUUID, srcVolUUID, add_bitmaps=add_bitmaps,
-                bitmap=bitmap)
+        try:
+            if volFormat == sc.RAW_FORMAT:
+                return cls._create_raw_volume(
+                    dom, volUUID, capacity, volPath, initial_size, preallocate)
+            else:
+                return cls._create_cow_volume(
+                    dom, volUUID, capacity, volPath, initial_size, volParent,
+                    imgUUID, srcImgUUID, srcVolUUID, add_bitmaps=add_bitmaps,
+                    bitmap=bitmap)
+        except cmdutils.Error as e:
+            cls.log.error("Unexpected error: %s", e, exc_info=True)
+            raise se.VolumeCreationError(volPath) from e
 
     @classmethod
     def _create_raw_volume(
@@ -552,36 +556,32 @@ class FileVolume(volume.Volume):
 
     @classmethod
     def _allocate_volume(cls, vol_path, size, preallocate):
-        try:
-            # Always create sparse image, since qemu-img create uses
-            # posix_fallocate() which is inefficient and harmful.
-            op = qemuimg.create(vol_path, size=size, format=qemuimg.FORMAT.RAW)
+        # Always create sparse image, since qemu-img create uses
+        # posix_fallocate() which is inefficient and harmful.
+        op = qemuimg.create(vol_path, size=size, format=qemuimg.FORMAT.RAW)
 
-            # This is fast but it can get stuck if storage is inaccessible.
+        # This is fast but it can get stuck if storage is inaccessible.
+        with vars.task.abort_callback(op.abort):
+            with utils.stopwatch(
+                    "Creating image {}".format(vol_path),
+                    level=logging.INFO,
+                    log=cls.log):
+                op.run()
+
+        # If the image is preallocated, allocate the rest of the image
+        # using fallocate helper. qemu-img create always writes zeroes to
+        # the first block so we should skip it during preallocation.
+        if size > 4096 and preallocate == sc.PREALLOCATED_VOL:
+            op = fallocate.allocate(vol_path, size - 4096, offset=4096)
+
+            # This is fast on NFS 4.2, GlusterFS, XFS and ext4, but can be
+            # extremely slow on NFS < 4.2, writing zeroes to entire image.
             with vars.task.abort_callback(op.abort):
                 with utils.stopwatch(
-                        "Creating image {}".format(vol_path),
+                        "Preallocating volume {}".format(vol_path),
                         level=logging.INFO,
                         log=cls.log):
                     op.run()
-
-            # If the image is preallocated, allocate the rest of the image
-            # using fallocate helper. qemu-img create always writes zeroes to
-            # the first block so we should skip it during preallocation.
-            if size > 4096 and preallocate == sc.PREALLOCATED_VOL:
-                op = fallocate.allocate(vol_path, size - 4096, offset=4096)
-
-                # This is fast on NFS 4.2, GlusterFS, XFS and ext4, but can be
-                # extremely slow on NFS < 4.2, writing zeroes to entire image.
-                with vars.task.abort_callback(op.abort):
-                    with utils.stopwatch(
-                            "Preallocating volume {}".format(vol_path),
-                            level=logging.INFO,
-                            log=cls.log):
-                        op.run()
-        except cmdutils.Error as e:
-            cls.log.error("Unexpected error: %s", e, exc_info=True)
-            raise se.VolumeCreationError(vol_path) from e
 
     @classmethod
     def _set_permissions(cls, vol_path, dom):
