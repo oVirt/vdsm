@@ -31,7 +31,6 @@ from vdsm import constants
 from vdsm import utils
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm.common import exception
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
 from vdsm.common.units import MiB
@@ -580,9 +579,7 @@ class FileVolume(volume.Volume):
                             level=logging.INFO,
                             log=cls.log):
                         op.run()
-        except exception.ActionStopped:
-            raise
-        except Exception as e:
+        except cmdutils.Error as e:
             cls.log.error("Unexpected error: %s", e, exc_info=True)
             raise se.VolumeCreationError(vol_path) from e
 
