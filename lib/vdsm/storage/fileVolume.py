@@ -521,11 +521,9 @@ class FileVolume(volume.Volume):
             cls.log.info("Request to create COW volume %s with capacity = %s",
                          vol_path, capacity)
 
-            operation = qemuimg.create(vol_path,
-                                       size=capacity,
-                                       format=sc.fmt2str(sc.COW_FORMAT),
-                                       qcow2Compat=dom.qcow2_compat())
-            operation.run()
+            cls._create_image(vol_path, capacity,
+                              format=sc.fmt2str(sc.COW_FORMAT),
+                              qcow2_compat=dom.qcow2_compat())
         else:
             # Create hardlink to template and its meta file
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s "
@@ -556,17 +554,7 @@ class FileVolume(volume.Volume):
 
     @classmethod
     def _allocate_volume(cls, vol_path, size, preallocate):
-        # Always create sparse image, since qemu-img create uses
-        # posix_fallocate() which is inefficient and harmful.
-        op = qemuimg.create(vol_path, size=size, format=qemuimg.FORMAT.RAW)
-
-        # This is fast but it can get stuck if storage is inaccessible.
-        with vars.task.abort_callback(op.abort):
-            with utils.stopwatch(
-                    "Creating image {}".format(vol_path),
-                    level=logging.INFO,
-                    log=cls.log):
-                op.run()
+        cls._create_image(vol_path, size, sc.fmt2str(sc.RAW_FORMAT))
 
         # If the image is preallocated, allocate the rest of the image
         # using fallocate helper. qemu-img create always writes zeroes to
@@ -582,6 +570,21 @@ class FileVolume(volume.Volume):
                         level=logging.INFO,
                         log=cls.log):
                     op.run()
+
+    @classmethod
+    def _create_image(cls, vol_path, size, format, qcow2_compat=None):
+        # Always create sparse image, since qemu-img create uses
+        # posix_fallocate() which is inefficient and harmful.
+        op = qemuimg.create(vol_path, size=size,
+                            format=format, qcow2Compat=qcow2_compat)
+
+        # This is fast but it can get stuck if storage is inaccessible.
+        with vars.task.abort_callback(op.abort):
+            with utils.stopwatch(
+                    "Creating image {}".format(vol_path),
+                    level=logging.INFO,
+                    log=cls.log):
+                op.run()
 
     @classmethod
     def _set_permissions(cls, vol_path, dom):
