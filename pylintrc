@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2022 Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # This file was generated using `pylint --generate-rcfile > pylintrc` command.
 # It was edited to support vdsm python source conventions.
 [MASTER]
