@@ -1,5 +1,8 @@
 #!/bin/bash -xe
 
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 export EXPORT_DIR="${EXPORT_DIR:-exported-artifacts}"
 
 if [ "$GITHUB_EVENT_NAME" = "push" ]; then
