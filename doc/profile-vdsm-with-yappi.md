@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 # Profile Vdsm execution using Yappi
 
 To profile Vdsm execution using Yappi, take the following steps:

@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 # thin-provisioning support in Vdsm
 
 Vdsm supports thin-provisioned drives backed by either block or

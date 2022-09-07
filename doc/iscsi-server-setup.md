@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 # Setting iSCSI storage
 
 For testing oVirt setups using iSCSI storage domain, take following steps:

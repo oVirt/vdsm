@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 # Check Volume Leases
 
 Running legacy cold merge, when the cluster level <= 4.0, ends with

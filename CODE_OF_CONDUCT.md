@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 # Community Code of Conduct
 
 We want to keep the oVirt Community a great place to participate, but we

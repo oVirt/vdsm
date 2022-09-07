@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 # Managed Volumes
 
 In version 4.3, oVirt introduced support of Managed Block Storage.

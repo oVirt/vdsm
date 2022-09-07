@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 # vdsm I/O timeouts
 
 Some storage servers need longer I/O timeouts in failover or upgrade
