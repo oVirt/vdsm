@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # Install required packages and start services.
 # This must run on all gluster nodes.  When done, you can create gluster
 # bricks and volumes on one of the nodes.

@@ -1,5 +1,8 @@
 #!/bin/bash -xe
 
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 PROJECT=${PROJECT:-${PWD##*/}}
 PROJECT_PATH="$PWD"
 CONTAINER_WORKSPACE="/workspace/$PROJECT"
