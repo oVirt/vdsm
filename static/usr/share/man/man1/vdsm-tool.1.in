@@ -1,3 +1,5 @@
+.\"SPDX-FileCopyrightText: Red Hat, Inc.
+.\"SPDX-License-Identifier: GPL-2.0-or-later
 .TH man 1 "29 May, 2014" "1.0" "vdsm-tool man page"
 .SH NAME
 vdsm-tool \- Virtual Desktops and Servers Manager Tool
