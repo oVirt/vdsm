@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 diskunmap vdsm hook:
 ==================
 This hook goes through all of the VM's disks and manipulate its XML

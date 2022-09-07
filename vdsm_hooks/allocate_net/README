@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 allocate_net vdsm hook
 =====================
 This hook allocates a random network to a VM when the VM is started.

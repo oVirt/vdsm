@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 checkips vdsm hook
 =====================
 This hook check connectivity from host to given addresses

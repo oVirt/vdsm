@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 boot_hostdev vdsm hook
 =================================
 This hook allows to boot VMs from passthrough devices such as SCSI, PCI cards

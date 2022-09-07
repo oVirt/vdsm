@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 httpsisoboot hook:
 ============
 Let the VM boot from an ISO image made available via an https URL without
