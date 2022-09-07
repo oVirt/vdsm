@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 vendor_id       : IBM/S390
 # processors    : 7
 bogomips per cpu: 21881.00

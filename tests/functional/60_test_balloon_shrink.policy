@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 ### Auto-Balloon ###############################################################
 
 # This policy decreases the balloon target by 5% until it reaches
