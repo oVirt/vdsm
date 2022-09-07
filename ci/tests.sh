@@ -1,5 +1,8 @@
 #!/bin/bash -xe
 
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # Enable IPv6
 echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6
 # Load bonding module
