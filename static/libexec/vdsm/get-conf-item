@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # Access python's config files from bash.
 # Usage: get-conf-item filename.conf section item default
 
