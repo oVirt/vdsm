@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-FileCopyrightText: 2008 Andrew Collier
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
 # ===========================================================================
 #     http://www.gnu.org/software/autoconf-archive/ax_python_module.html
 # ===========================================================================
@@ -13,15 +17,6 @@
 #   If fatal is non-empty then absence of a module will trigger an error.
 #   The third parameter can either be "python" for Python 2 or "python3" for
 #   Python 3; defaults to Python 3.
-#
-# LICENSE
-#
-#   Copyright (c) 2008 Andrew Collier
-#
-#   Copying and distribution of this file, with or without modification, are
-#   permitted in any medium without royalty provided the copyright notice
-#   and this notice are preserved. This file is offered as-is, without any
-#   warranty.
 
 #serial 8
 
