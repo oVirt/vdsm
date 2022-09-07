@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 ### DO NOT REMOVE THIS COMMENT -- MOM Configuration for VDSM ###
 
 [main]

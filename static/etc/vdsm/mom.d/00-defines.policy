@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # This file defines python constans that make it easier to convert data
 # received by setMOMPolicyParameters
 (defvar False 0)

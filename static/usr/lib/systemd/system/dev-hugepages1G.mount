@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 [Unit]
 Description=Huge Pages 1G File System
 ConditionPathExists=/sys/kernel/mm/hugepages/hugepages-1048576kB

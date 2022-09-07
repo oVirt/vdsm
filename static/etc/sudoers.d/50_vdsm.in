@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 Cmnd_Alias VDSM_STORAGE = \
     @FSCK_PATH@ -p *, \
     @TUNE2FS_PATH@ -j *, \

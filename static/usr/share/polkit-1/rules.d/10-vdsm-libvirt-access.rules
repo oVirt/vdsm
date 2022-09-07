@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # VDSM libvirt management permissions
 
 polkit.addRule(function(action, subject) {
