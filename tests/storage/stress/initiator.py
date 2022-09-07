@@ -1,4 +1,8 @@
 #!/usr/bin/python3
+
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 """
 iscsiadm initiator test.
 Allows testing initiator setup and logins to iSCSI targets via multiple

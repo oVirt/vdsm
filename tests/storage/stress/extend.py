@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 """
 This is a reproducer for https://bugzilla.redhat.com/1553133, reproducing
 the issue of lvm read-only like commands running on non-spm host corrupting
