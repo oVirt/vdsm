@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # Lists all Python files (including the ones without '.py' extension,
 # but containing a Python shebang line) in current directory.
 # Please remember to run 'make' before using this script - it doesn't

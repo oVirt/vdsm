@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # tags and output versions:
 #   - v4.9.0   => 4.9.0 (upstream clean)
 #   - v4.9.0-1 => 4.9.0 (downstream clean)
