@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 log_console vdsm hook
 =================================
 This hook appends a VM's serial console to a log file on the host.

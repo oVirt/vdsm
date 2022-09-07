@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 extnet vdsm hook
 =================================
 This hook allows to override Engine's choice of to which bridge device should a

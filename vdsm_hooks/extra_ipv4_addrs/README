@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 extra_ipv4_addrs vdsm hook
 =================================
 This hook allows the user to set extra ipv4 addresses for vdsm networks.

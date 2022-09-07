@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Red Hat, Inc.
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
                     IMPORTANT NOTE:
 ***********************************************************************
 hooks are NOT part of VDSM. They are extensions that -
