@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
