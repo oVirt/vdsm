@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 d @VDSMRUNDIR@ 755 @VDSMUSER@ @VDSMGROUP@
 d @VDSMRUNDIR@/v2v 700 @VDSMUSER@ @VDSMGROUP@
 d @VDSMRUNDIR@/payload 755 @VDSMUSER@ @VDSMGROUP@

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # Useful VDSM helpers for developers. It supplies a few shorthands for common
 # developer's daily tasks. This file can be imported to one's .bashrc or
 # .zshrc.
