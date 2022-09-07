@@ -1,4 +1,8 @@
 #!/usr/bin/python3
+
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 """
 Tweak an interface defintion so that its source is forced to be a specified
 network. Applied on a per vnic basis, it gets triggered and used by two
