@@ -110,7 +110,6 @@ lib/vdsm/common/exception.py            @nirs @mz-pdm
 lib/vdsm/common/filecontrol.py          @tinez
 lib/vdsm/common/fileutils.py            @almusil @nirs @mz-pdm
 lib/vdsm/common/function.py             @almusil
-lib/vdsm/common/glob.py                 @nirs
 lib/vdsm/common/hooks.py                @tinez
 lib/vdsm/common/hostdev.py              @mz-pdm
 lib/vdsm/common/hostutils.py            @almusil

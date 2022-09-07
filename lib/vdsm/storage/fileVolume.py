@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 import errno
 import logging
+import glob
 import os
 
 import sanlock
@@ -31,7 +32,6 @@ from vdsm import utils
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import exception
-from vdsm.common.compat import glob_escape
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
 from vdsm.common.units import MiB
@@ -186,7 +186,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         This API is not suitable for use with a template's base volume.
         """
         imgDir, _ = os.path.split(self.volumePath)
-        metaPattern = os.path.join(glob_escape(imgDir), "*.meta")
+        metaPattern = os.path.join(glob.escape(imgDir), "*.meta")
         metaPaths = oop.getProcessPool(self.sdUUID).glob.glob(metaPattern)
         pattern = "%s.*%s" % (sc.PUUID, self.volUUID)
         matches = grep_files(pattern, metaPaths)
@@ -353,7 +353,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         """
         sd = sdCache.produce_manifest(sdUUID)
         img_dir = sd.getImageDir(imgUUID)
-        pattern = os.path.join(glob_escape(img_dir), "*.meta")
+        pattern = os.path.join(glob.escape(img_dir), "*.meta")
         files = oop.getProcessPool(sdUUID).glob.glob(pattern)
         volList = []
         for i in files:

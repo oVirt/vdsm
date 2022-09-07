@@ -59,7 +59,6 @@ test_modules = \
 	eventfd_test.py \
 	filecontrol_test.py \
 	fuser_test.py \
-	glob_test.py \
 	gluster_cli_test.py \
 	gluster_exception_test.py \
 	glusterTestData.py \

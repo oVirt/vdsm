@@ -35,7 +35,6 @@ import six
 from vdsm import utils
 from vdsm.common import concurrent
 from vdsm.common import supervdsm
-from vdsm.common.compat import glob_escape
 from vdsm.common.units import MiB
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
@@ -285,7 +284,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         Template volumes have no parent, and thus we report BLANK_UUID as their
         parentUUID.
         """
-        volMetaPattern = os.path.join(glob_escape(self.mountpoint),
+        volMetaPattern = os.path.join(glob.escape(self.mountpoint),
                                       self.sdUUID,
                                       sd.DOMAIN_IMAGES, "*", "*.meta")
         volMetaPaths = self.oop.glob.glob(volMetaPattern)
@@ -337,7 +336,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         Fetch the set of the Image UUIDs in the SD.
         """
         # Get Volumes of an image
-        pattern = os.path.join(glob_escape(self.mountpoint), self.sdUUID,
+        pattern = os.path.join(glob.escape(self.mountpoint), self.sdUUID,
                                sd.DOMAIN_IMAGES, UUID_GLOB_PATTERN)
         files = self.oop.glob.glob(pattern)
         images = set()
@@ -860,7 +859,7 @@ class FileStorageDomain(sd.StorageDomain):
         # Glob *.meta files directly without an iterator which
         # may break if a metadata file fails on path validation.
         meta_files_pattern = os.path.join(
-            glob_escape(self.mountpoint),
+            glob.escape(self.mountpoint),
             self.sdUUID,
             sd.DOMAIN_IMAGES,
             UUID_GLOB_PATTERN,
@@ -984,7 +983,7 @@ def scanDomains(pattern="*"):
             # mountPoint that we pass to glob.
             # <data-center>/mnt/mountpoint/<uuid>/dom_mdm
             mdPattern = os.path.join(
-                glob_escape(mountPoint),
+                glob.escape(mountPoint),
                 UUID_GLOB_PATTERN,
                 sd.DOMAIN_META_DATA)
 
