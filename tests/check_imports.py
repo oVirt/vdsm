@@ -30,8 +30,6 @@ import importlib
 import pkgutil
 import pytest
 
-from vdsm.common import compat
-
 
 def find_modules():
     """
@@ -59,5 +57,5 @@ def find_modules():
 def test_import(name):
     try:
         importlib.import_module(name)
-    except compat.Unsupported as e:
+    except ModuleNotFoundError as e:
         pytest.skip(str(e))

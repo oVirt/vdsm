@@ -27,14 +27,13 @@ import threading
 
 import six
 
-from vdsm.common import compat
 from vdsm.common import concurrent
 from vdsm.config import config
 
 try:
     from hawkular import metrics
 except ImportError as e:
-    raise compat.Unsupported(str(e))
+    raise ModuleNotFoundError(str(e))
 
 _running = False
 _queue = collections.deque(maxlen=config.getint('metrics', 'queue_size'))
