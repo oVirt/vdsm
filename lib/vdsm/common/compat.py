@@ -21,10 +21,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import inspect
-
-import six
-
 
 class Unsupported(ImportError):
     """
@@ -62,15 +58,3 @@ class MissingModule(object):
 
     def __getattr__(self, name):
         raise Unsupported(self._message)
-
-
-# Wrapper function for inspect arg spec API
-def get_args_spec(func):
-    if six.PY2:
-        spec = inspect.getargspec(func)
-        kwarg = spec.keywords
-    else:
-        spec = inspect.getfullargspec(func)  # pylint: disable=no-member
-        kwarg = spec.varkw
-
-    return spec.args, spec.varargs, kwarg

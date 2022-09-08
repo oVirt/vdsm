@@ -21,13 +21,14 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import inspect
+
 import six
 
 from collections import defaultdict
 
 import pytest
 
-from vdsm.common.compat import get_args_spec
 from vdsm.common.exception import GeneralException
 from vdsm.common.exception import VdsmException
 from vdsm.storage import exception as storage_exception
@@ -70,15 +71,15 @@ def test_info():
             continue
 
         # Inspect exception object initialization parameters.
-        args, varargs, kwargs = get_args_spec(obj.__init__)
+        spec = inspect.getfullargspec(obj.__init__)
 
         # Prepare fake parameters for object initialization.
         # We ignore the 'self' argument from counting.
-        args = [FakeArg(i) for i in range(len(args) - 1)]
-        if varargs:
+        args = [FakeArg(i) for i in range(len(spec.args) - 1)]
+        if spec.varargs:
             args.append(FakeArg(len(args)))
             args.append(FakeArg(len(args)))
-        kwargs = {kwargs: FakeArg(len(args))} if kwargs else {}
+        kwargs = {spec.varkw: FakeArg(len(args))} if spec.varkw else {}
 
         # Instantiate the traversed exception object.
         e = obj(*args, **kwargs)
