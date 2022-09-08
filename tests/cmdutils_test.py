@@ -25,11 +25,10 @@ from __future__ import print_function
 
 import io
 import os
-from subprocess import Popen
+import subprocess
 
 from vdsm import constants
 from vdsm.common import cmdutils
-from vdsm.common.compat import subprocess
 from vdsm.common.time import monotonic_time
 from vdsm.common.units import MiB, GiB
 
@@ -52,11 +51,11 @@ class TestRecieveBench(VdsmTestCase):
     BUFSIZE = MiB
 
     def test_plain_read(self):
-        p = Popen(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
-                   "count=%d" % self.COUNT],
-                  stdin=None,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
+        p = subprocess.Popen(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
+                              "count=%d" % self.COUNT],
+                             stdin=None,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
         start = monotonic_time()
         received = 0
         while True:
@@ -73,11 +72,11 @@ class TestRecieveBench(VdsmTestCase):
         self.assertEqual(p.returncode, 0)
 
     def test_read(self):
-        p = Popen(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
-                   "count=%d" % self.COUNT],
-                  stdin=None,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
+        p = subprocess.Popen(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
+                              "count=%d" % self.COUNT],
+                             stdin=None,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
         start = monotonic_time()
         received = 0
         for src, data in cmdutils.receive(p, bufsize=self.BUFSIZE):
@@ -91,10 +90,10 @@ class TestRecieveBench(VdsmTestCase):
         self.assertEqual(p.returncode, 0)
 
     def test_write(self):
-        p = Popen(["dd", "of=/dev/null", "bs=%d" % self.BUFSIZE],
-                  stdin=subprocess.PIPE,
-                  stdout=None,
-                  stderr=subprocess.PIPE)
+        p = subprocess.Popen(["dd", "of=/dev/null", "bs=%d" % self.BUFSIZE],
+                             stdin=subprocess.PIPE,
+                             stdout=None,
+                             stderr=subprocess.PIPE)
         start = monotonic_time()
         total = self.COUNT * self.BUFSIZE
         sent = 0

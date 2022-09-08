@@ -27,9 +27,9 @@ from ipaddress import ip_network
 
 import errno
 import os
+import subprocess
 
 from vdsm.common.cmdutils import CommandPath
-from vdsm.common.compat import subprocess
 from vdsm.common.config import config
 from vdsm.network import cmd
 from vdsm.network import ethtool

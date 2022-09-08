@@ -24,6 +24,7 @@ import errno
 import logging
 import os
 import signal
+import subprocess
 import sys
 
 import pytest
@@ -31,7 +32,6 @@ import pytest
 from vdsm.common import cache
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm.common.compat import subprocess
 
 
 log = logging.getLogger("test")

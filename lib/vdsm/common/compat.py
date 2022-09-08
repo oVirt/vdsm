@@ -64,13 +64,6 @@ class MissingModule(object):
         raise Unsupported(self._message)
 
 
-
-if six.PY2:
-    import subprocess32 as subprocess  # pylint: disable=import-error
-else:
-    import subprocess  # NOQA: F401 (unused import)
-
-
 # Wrapper function for inspect arg spec API
 def get_args_spec(func):
     if six.PY2:

@@ -27,12 +27,12 @@ import logging
 import os
 import re
 import select
+import subprocess
 import time
 
 from vdsm.common import constants
 from vdsm.common import errors
 from vdsm.common import osutils
-from vdsm.common.compat import subprocess
 from vdsm.common.config import config
 from vdsm.common.password import ProtectedPassword
 from vdsm.common.time import monotonic_time

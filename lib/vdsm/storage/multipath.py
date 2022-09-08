@@ -28,6 +28,7 @@ import errno
 from glob import glob
 import logging
 import re
+import subprocess
 import time
 
 from collections import namedtuple
@@ -38,7 +39,6 @@ from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import supervdsm
 from vdsm.common import udevadm
-from vdsm.common.compat import subprocess
 from vdsm.config import config
 from vdsm.storage import devicemapper
 from vdsm.storage import hba

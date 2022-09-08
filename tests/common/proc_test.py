@@ -21,10 +21,10 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import subprocess
 import time
 
 from vdsm.common import proc
-from vdsm.common.compat import subprocess
 
 from testlib import VdsmTestCase as TestCaseBase
 

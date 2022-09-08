@@ -34,6 +34,7 @@ import io
 import logging
 import os
 import re
+import subprocess
 import tarfile
 import time
 import threading
@@ -49,7 +50,6 @@ from vdsm.common import password
 from vdsm.common import response
 from vdsm.common.cmdutils import wrap_command
 from vdsm.common.commands import execCmd, BUFFSIZE, terminating
-from vdsm.common.compat import subprocess
 from vdsm.common.config import config
 from vdsm.common.define import errCode, doneCode
 from vdsm.common.logutils import traceback

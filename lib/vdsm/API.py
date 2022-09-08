@@ -26,6 +26,7 @@ import errno
 import io
 import logging
 import pickle
+import subprocess
 
 import six
 
@@ -49,7 +50,6 @@ from vdsm.common import supervdsm
 from vdsm.common import validate
 from vdsm.common import conv
 from vdsm.common.commands import terminating
-from vdsm.common.compat import subprocess
 from vdsm.host import api as hostapi
 from vdsm.host import caps
 # TODO fix name conflict and use from vdsm.storage import sd

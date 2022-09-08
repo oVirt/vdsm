@@ -26,6 +26,7 @@ import os
 import os.path
 import signal
 import six
+import subprocess
 import sys
 import threading
 import time
@@ -38,7 +39,6 @@ from vdsm import utils
 from vdsm.common import cmdutils
 from vdsm.common import constants
 from vdsm.common import commands
-from vdsm.common.compat import subprocess
 from vdsm.common.password import ProtectedPassword
 from vdsm.storage import constants as sc
 

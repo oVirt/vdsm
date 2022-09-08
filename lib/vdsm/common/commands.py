@@ -23,13 +23,13 @@ from __future__ import division
 
 from contextlib import contextmanager
 import logging
+import subprocess
 
 from vdsm.common import cmdutils
 from vdsm.common import concurrent
 from vdsm.common import constants
 from vdsm.common import password
 from vdsm.common.cmdutils import command_log_line, retcode_log_line
-from vdsm.common.compat import subprocess
 from vdsm.common.marks import deprecated
 
 # Buffsize is 1K because I tested it on some use cases and 1K was fastest. If
