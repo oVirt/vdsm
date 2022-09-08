@@ -4,10 +4,10 @@ from __future__ import division
 import json
 import os
 import unittest
+import subprocess
 
 import six
 
-from vdsm.common.compat import subprocess
 from testValidation import skipif
 
 MOM_POLICY_VALIDATOR = 'mom_policy_validator.py'

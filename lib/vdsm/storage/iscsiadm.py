@@ -22,13 +22,13 @@ from __future__ import absolute_import
 
 import logging
 import re
+import subprocess
 
 from collections import namedtuple
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import constants
-from vdsm.common.compat import subprocess
 from vdsm.common.network.address import hosttail_split
 
 log = logging.getLogger("storage.iscsiadm")

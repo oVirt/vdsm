@@ -26,12 +26,12 @@ import errno
 import logging
 import os
 import socket
+import subprocess
 import time
 import xml.etree.ElementTree as etree
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm.common.compat import subprocess
 from vdsm.network.netinfo import addresses
 
 from . import exception as ge

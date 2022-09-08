@@ -23,11 +23,11 @@ from __future__ import absolute_import
 import errno
 import logging
 import threading
+import subprocess
 
 from vdsm import utils
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm.common.compat import subprocess
 from vdsm.common import exception
 
 # Operation states

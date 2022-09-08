@@ -20,12 +20,12 @@
 from __future__ import absolute_import
 
 import logging
+import subprocess
 
 from vdsm import constants
 from vdsm import utils
 
 from vdsm.common import commands
-from vdsm.common.compat import subprocess
 from vdsm.common.units import KiB, MiB
 
 from vdsm.storage import exception as se

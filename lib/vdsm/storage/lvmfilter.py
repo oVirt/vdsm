@@ -45,11 +45,11 @@ import logging
 import operator
 import os
 import re
+import subprocess
 
 from vdsm import constants
 from vdsm.common import errors
 from vdsm.common import udevadm
-from vdsm.common.compat import subprocess
 from vdsm.storage import lvmconf
 
 LSBLK = "/usr/bin/lsblk"

@@ -23,10 +23,10 @@ from __future__ import division
 
 import errno
 import signal
+import subprocess
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm.common.compat import subprocess
 from vdsm.common.password import ProtectedPassword
 
 from testlib import VdsmTestCase as TestCaseBase

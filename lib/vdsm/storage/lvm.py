@@ -34,6 +34,7 @@ import grp
 import logging
 from collections import namedtuple
 import pprint as pp
+import subprocess
 import threading
 
 from itertools import chain
@@ -43,7 +44,6 @@ from vdsm import utils
 from vdsm.common import commands
 from vdsm.common import errors
 from vdsm.common import logutils
-from vdsm.common.compat import subprocess
 from vdsm.common.units import MiB
 
 from vdsm.storage import devicemapper

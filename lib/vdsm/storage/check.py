@@ -35,11 +35,11 @@ from __future__ import absolute_import
 import logging
 import re
 import threading
+import subprocess
 
 from vdsm.common import constants
 from vdsm.common import cmdutils
 from vdsm.common import concurrent
-from vdsm.common.compat import subprocess
 from vdsm.storage import asyncevent
 from vdsm.storage import asyncutils
 from vdsm.storage import exception
