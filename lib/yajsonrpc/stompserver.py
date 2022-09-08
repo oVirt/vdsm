@@ -15,12 +15,12 @@
 
 from __future__ import absolute_import
 from __future__ import division
+import json
 import logging
 from collections import deque
 import functools
 
 from vdsm.config import config
-from vdsm.common.compat import json
 from . import JsonRpcServer
 from . import stomp, stompclient
 from .betterAsyncore import Dispatcher, Reactor

@@ -15,14 +15,13 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import json
 import logging
 
 import six
 
 from six.moves import queue
 from threading import Lock, Event
-
-from vdsm.common.compat import json
 
 from yajsonrpc import \
     exception, \
