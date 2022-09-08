@@ -21,10 +21,10 @@ from __future__ import absolute_import
 from __future__ import division
 
 import inspect
+import json
 import logging
 
 from vdsm.common import api
-from vdsm.common.compat import json
 
 
 class SchemaInconsistencyFormatter(logging.Formatter):

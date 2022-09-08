@@ -20,10 +20,10 @@
 
 from __future__ import absolute_import
 from __future__ import division
+import json
 from yajsonrpc import JsonRpcRequest, JsonRpcServer
 
 from vdsm.common import exception
-from vdsm.common.compat import json
 
 from testlib import VdsmTestCase
 

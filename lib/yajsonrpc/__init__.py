@@ -15,12 +15,12 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 from __future__ import absolute_import
 from __future__ import division
+import json
 import logging
 from six.moves import queue
 
 from vdsm.common import exception as vdsmexception
 
-from vdsm.common.compat import json
 from vdsm.common.logutils import Suppressed, traceback
 from vdsm.common.threadlocal import vars
 from vdsm.common.time import monotonic_time, event_time
