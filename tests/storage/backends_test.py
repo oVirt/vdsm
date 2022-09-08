@@ -21,7 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import sanlock
+import pytest
 
 from vdsm.storage import backends
 from vdsm.storage import blockSD
@@ -30,10 +30,11 @@ from vdsm.storage import glusterSD
 from vdsm.storage import localFsSD
 from vdsm.storage import nfsSD
 
-from . marks import requires_sanlock
+sanlock = pytest.importorskip(
+    modname='sanlock',
+    reason="sanlock is not available")
 
 
-@requires_sanlock
 def test_supported_block_size_new_sanlock(monkeypatch):
     monkeypatch.setattr(
         sanlock, "SECTOR_SIZE", (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K))
@@ -47,7 +48,6 @@ def test_supported_block_size_new_sanlock(monkeypatch):
     }
 
 
-@requires_sanlock
 def test_supported_block_size_old_sanlock(monkeypatch):
     monkeypatch.setattr(sanlock, "SECTOR_SIZE", (sc.BLOCK_SIZE_512,))
     assert backends.supported_block_size() == {

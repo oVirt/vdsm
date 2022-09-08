@@ -24,8 +24,6 @@ from __future__ import division
 import sanlock
 import six
 
-from .. common import compat
-
 from . import blockSD
 from . import constants as sc
 from . import glusterSD
@@ -47,7 +45,7 @@ def supported_block_size():
     # TODO: needed only for 4.3, we require sanlock 3.7.3.
     try:
         have_4k = sc.BLOCK_SIZE_4K in sanlock.SECTOR_SIZE
-    except compat.Unsupported:
+    except ModuleNotFoundError:
         have_4k = False
 
     res = {}

@@ -96,7 +96,6 @@ lib/vdsm/common/base26.py               @mz-pdm
 lib/vdsm/common/cache.py                @nirs @tinez
 lib/vdsm/common/cmdutils.py             @tinez @nirs
 lib/vdsm/common/commands.py             @tinez @nirs
-lib/vdsm/common/compat.py               @tinez @nirs
 lib/vdsm/common/concurrent.py           @nirs
 lib/vdsm/common/config.py.in            @tinez
 lib/vdsm/common/constants.py.in         @tinez
