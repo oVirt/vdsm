@@ -36,7 +36,7 @@ AWK_SPEC_VERSION='
 
 PKG_VERSION=`cat VERSION 2> /dev/null || git describe --tags --match "v[0-9]*"`
 if [ -d .git ]; then
-    SPEC_VERSION=`awk "$AWK_SPEC_VERSION" vdsm.spec.in`
+    SPEC_VERSION=`awk "$AWK_SPEC_VERSION" vdsm.spec`
     if [ "$PKG_VERSION" != "$SPEC_VERSION" ] && [ "${PKG_VERSION#$SPEC_VERSION-}" = "$PKG_VERSION" ]; then
         # New version, not yet tagged.
         PKG_VERSION="$SPEC_VERSION"

@@ -83,9 +83,9 @@ For more information about testing see [/tests/README.md](/tests/README.md).
 Release process of Vdsm version `VERSION` consists of the following
 steps:
 
-- Changing `Version:` field value in `vdsm.spec.in` to `VERSION`.
+- Changing `Version:` field value in `vdsm.spec` to `VERSION`.
 
-- Updating `%changelog` line in `vdsm.spec.in` to the current date,
+- Updating `%changelog` line in `vdsm.spec` to the current date,
   the committer, and `VERSION`.
 
 - Committing these changes, with subject "New release: `VERSION`" and
