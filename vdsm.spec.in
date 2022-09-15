@@ -56,7 +56,7 @@
 %{!?vdsm_release: %global vdsm_release @PACKAGE_RELEASE@}
 
 Name:           %{vdsm_name}
-Version:        4.50.3
+Version:        4.50.3.1
 Release:        %{vdsm_release}%{?dist}%{?extra_release}
 Summary:        Virtual Desktop Server Manager
 
@@ -1213,5 +1213,5 @@ exit 0
 %endif
 
 %changelog
-* Wed Sep 14 2022 Marcin Sobczyk <msobczyk@redhat.com> - 4.50.3
+* Thu Sep 15 2022 Milan Zamazal <mzamazal@redhat.com> - 4.50.3.1
 - See %{_docdir}/%{vdsm_name}/ChangeLog for the complete list of Vdsm changes.
