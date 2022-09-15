@@ -368,7 +368,7 @@ class TestFinalizeMerge:
             format='raw',
             prealloc=sc.SPARSE_VOL,
             chain_len=2):
-        size = 2 * GiB
+        size = 10 * GiB
         base_fmt = sc.name2type(format)
         with fake_env(sd_type) as env:
             with MonkeyPatch().context() as mp:
@@ -539,10 +539,10 @@ class TestFinalizeMerge:
             fake_sd = env.sdcache.domains[env.sd_manifest.sdUUID]
             fake_base_vol = fake_sd.produceVolume(subchain.img_id,
                                                   subchain.base_id)
-
-            assert fake_base_vol.__calls__ == [
-                ('reduce', (base_vol.optimal_size(as_leaf=True),), {}),
-            ]
+            # Chunked leaf volumes add one chunk of free space as condition
+            # to reduce, so the VM will not pause quickly when it is started.
+            # Consequently, cold merges will not call reduce.
+            assert getattr(fake_base_vol, "__calls__", []) == []
 
     @pytest.mark.parametrize("sd_type, format, prealloc", [
         # Not chunked, reduce not called
