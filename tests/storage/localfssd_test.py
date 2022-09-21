@@ -684,8 +684,27 @@ def test_volume_create_cow_sparse_with_parent(user_domain, local_fallocate):
 
 def test_volume_create_cow_prealloc(user_domain, local_fallocate):
     img_uuid = str(uuid.uuid4())
+    ref_uuid = str(uuid.uuid4())
     vol_uuid = str(uuid.uuid4())
+    format = qemuimg.FORMAT.QCOW2
 
+    # Create reference sparse volume to obtain initial image end offset
+    user_domain.createVolume(
+        imgUUID=img_uuid,
+        capacity=PREALLOCATED_VOL_SIZE,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=ref_uuid,
+        desc="Reference volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    ref_vol = user_domain.produceVolume(img_uuid, ref_uuid)
+    init_offset = qemuimg.check(
+        ref_vol.getVolumePath(), format=format)["offset"]
+
+    # Create preallocated volume
     user_domain.createVolume(
         imgUUID=img_uuid,
         capacity=PREALLOCATED_VOL_SIZE,
@@ -704,15 +723,18 @@ def test_volume_create_cow_prealloc(user_domain, local_fallocate):
 
     verify_volume_file(
         path=path,
-        format=qemuimg.FORMAT.QCOW2,
+        format=format,
         virtual_size=PREALLOCATED_VOL_SIZE,
         qemu_info=qemu_info)
 
-    # Actual size is bigger than than virtual size as it includes
+    # We do not control the allocation in the range between 0 bytes and the
+    # initial image offset, so we need to remove those bytes from the
+    # reported virtual size to obtain the actual allocated bytes.
+    # Actual size is bigger than allocated bytes as it includes
     # the qcow2 header, which is one cluster size plus the variable sized
     # tables. The size depends also on the file system, thus checking that
-    # actual size is bigger than virtual should suffice.
-    assert qemu_info['actual-size'] >= qemu_info['virtual-size']
+    # actual size is bigger than the allocated bytes should suffice.
+    assert qemu_info['actual-size'] >= qemu_info['virtual-size'] - init_offset
 
     # Verify actual volume metadata
     actual = vol.getInfo()
