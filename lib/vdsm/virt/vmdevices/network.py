@@ -52,6 +52,7 @@ class MissingNetwork(Exception):
 
 
 class Interface(core.Base):
+    # pylint: disable=no-member
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter', 'filterParameters',
                  'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev', 'mtu',

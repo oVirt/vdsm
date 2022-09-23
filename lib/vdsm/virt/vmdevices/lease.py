@@ -138,6 +138,7 @@ class Device(core.Base):
     """
     VM lease device.
     """
+    # pylint: disable=no-member
     __slots__ = ("lease_id", "sd_id", "path", "offset")
 
     @classmethod

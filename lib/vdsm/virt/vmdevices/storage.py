@@ -119,6 +119,7 @@ VolumeChainEntry = collections.namedtuple(
 
 
 class Drive(core.Base):
+    # pylint: disable=no-member
     __slots__ = ('iface', '_path', 'readonly', 'bootOrder', 'domainID',
                  'poolID', 'imageID', 'UUID', 'volumeID', 'format',
                  'propagateErrors', 'address', 'apparentsize', 'volumeInfo',
