@@ -18,6 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import uuid
+import random
+
 import pytest
 
 from vdsm.storage import sd
@@ -299,17 +302,28 @@ class TestGlusterFSNotAccessibleConnection:
 
 class TestIscsiConnection:
 
-    def test_prepare_connection_without_initiator_name(self):
-        con_def = [{
-            "password": "password",
-            "port": "3260",
-            "iqn": "iqn.2016-01.com.ovirt:444",
-            "connection": "192.168.1.2",
-            "ipv6_enabled": "false",
-            "id": "994a711a-60f3-411a-aca2-0b60f01e8b8c",
-            "user": "",
-            "tpgt": "1",
-        }]
+    @pytest.fixture
+    def fake_connection(self):
+        def _return_connection(valid=True):
+            connection = [
+                {'password': 'password',
+                 'port': '3260',
+                 'iqn': 'iqn.2016-01.com.ovirt:444',
+                 'connection':
+                    f'fd8f:1391:3a82:200::c0a8:{random.randint(0, 16**4):x}',
+                 'ipv6_enabled': 'true',
+                 'id': str(uuid.uuid4()),
+                 'user': 'username',
+                 'tpgt': '1'}]
+            if not valid:
+                # Break connection dictionary by removing a key.
+                del(connection[0]['iqn'])
+            return connection
+
+        return _return_connection
+
+    def test_prepare_connection_without_initiator_name(self, fake_connection):
+        con_def = fake_connection()
 
         con_class, cons = storageServer._prepare_connections(
             sd.ISCSI_DOMAIN, con_def)
