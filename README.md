@@ -25,7 +25,7 @@ Please use GitHub pull requests.
 ### Found a bug or documentation issue?
 
 To submit a bug or suggest an enhancement for Vdsm please use
-[oVirt Bugzilla for vdsm product](https://bugzilla.redhat.com/enter_bug.cgi?product=vdsm).
+GitHub [issues](https://github.com/oVirt/vdsm/issues).
 
 If you find a documentation issue on the oVirt website please navigate
 and click "Report an issue on GitHub" in the page footer.

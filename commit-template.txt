@@ -10,4 +10,4 @@ specific way, and the nature of the change.
 The description should use line length of 72 chars and multiple
 paragraphs if necessary.
 
-Bug-Url: https://bugzilla.redhat.com/??????
+Bug-Url: https://github.com/oVirt/vdsm/issues/?
