@@ -23,6 +23,7 @@ import random
 
 import pytest
 
+from vdsm.storage import iscsi
 from vdsm.storage import sd
 from vdsm.storage import storageServer
 from vdsm.storage.storageServer import GlusterFSConnection
@@ -301,6 +302,21 @@ class TestGlusterFSNotAccessibleConnection:
 
 
 class TestIscsiConnection:
+
+    class FakeIscsi():
+
+        def __init__(self):
+            self.connections = []
+
+        def loginToIscsiNode(self, iface, target):
+            self.connections.append(target)
+
+    @pytest.fixture
+    def fake_iscsi(self, monkeypatch):
+        fake_iscsi = self.FakeIscsi()
+        monkeypatch.setattr(
+            iscsi, 'loginToIscsiNode', fake_iscsi.loginToIscsiNode)
+        return fake_iscsi
 
     @pytest.fixture
     def fake_connection(self):
