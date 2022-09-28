@@ -121,3 +121,39 @@ configuration in the `.github/workflows/ci.yml` file.
 
 Before running `make` you could use `./configure` to set some (rarely used) options.
 To see the list of options: `./configure -h`.
+
+
+## SPDX headers
+
+All files must include the SPDX copyright notice and the license identifier.
+This project employs [reuse](https://reuse.software/) to handle copyright
+notices and ensure that all files have the proper SPDX headers.
+To add the SPDX headers to new files in the project you can use:
+
+    contrib/add-spdx-header.sh new_file.py
+
+This will create default `GPL-2.0-or-later` license header
+with `Red Hat, Inc.` as copyright holder.
+
+```
+# SPDX-FileCopyrightText: Red Hat, Inc.
+# SPDX-License-Identifier: GPL-2.0-or-later
+```
+To add new license to be used in the project:
+
+    reuse download <License-Identifier>
+
+Check list of available license identifier in https://spdx.org/licenses/.
+
+To add SPDX header to a file with a non-default license:
+
+    reuse addheader
+      --copyright="Red Hat, Inc." \
+      --license="<License-Identifier>" \
+      --template=vdsm.jinja2 \
+      --exclude-year \
+      new_file.py
+
+Please check that all files are reuse-compliant before pushing your branch:
+
+    make reuse
