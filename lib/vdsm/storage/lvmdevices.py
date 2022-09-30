@@ -14,6 +14,7 @@ The module should be used from command line running as root such as
 vdsm-tool.
 """
 
+import datetime
 import logging
 import os
 import subprocess
@@ -21,6 +22,7 @@ import subprocess
 from vdsm import constants
 from vdsm.common import cmdutils
 from vdsm.common import commands
+from vdsm.storage import fileUtils
 from vdsm.storage import lvmconf
 from vdsm.storage import lvmfilter
 
@@ -79,12 +81,16 @@ def _devices_file_exists():
     exists, lvm disables whole devices file functionality.
     """
     try:
-        devicesfile = lvmconf.configured_value("devices", "devicesfile")
+        devices_file = _get_devices_file_path()
     except (cmdutils.Error, lvmconf.UnexpectedLvmConfigOutput):
         return False
 
-    devices_file = os.path.join(_LVM_DEVICES_DIR, devicesfile)
     return os.path.exists(devices_file)
+
+
+def _get_devices_file_path():
+    devicesfile = lvmconf.configured_value("devices", "devicesfile")
+    return os.path.join(_LVM_DEVICES_DIR, devicesfile)
 
 
 def _configure_devices_file(enable=True):
@@ -101,8 +107,17 @@ def _create_system_devices(vgs):
     """
     Import devices of provided VGs into LVM devices file.
     """
-    for vg in vgs:
-        _run_vgimportdevices(vg)
+    if not vgs:
+        # Create empty devices file if no VGs are provided.
+        devices_file = _get_devices_file_path()
+        now = datetime.datetime.now()
+        data = (f"# Created by Vdsm pid {os.getpid()} at "
+                f"{now.strftime('%a %b %d %H:%M:%S %Y')}\n")
+
+        fileUtils.atomic_write(devices_file, data.encode("utf-8"))
+    else:
+        for vg in vgs:
+            _run_vgimportdevices(vg)
 
 
 def _run_vgimportdevices(vg):
