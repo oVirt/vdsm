@@ -125,7 +125,7 @@ check-unit:
 	$(MAKE) -C tests/ check NOSE_EVAL_ATTR="type=='unit'"
 
 .PHONY: lint
-lint: gitignore reuse execcmd black flake8 pylint
+lint: gitignore execcmd black flake8 pylint
 
 .PHONY: venv
 venv:
