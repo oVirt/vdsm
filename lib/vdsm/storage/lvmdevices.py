@@ -48,11 +48,7 @@ def configure(vgs):
     # Always configure devices file. File maybe be empty or not up to date.
     # On the other hand configuring correct devices file doesn't cause any
     # harm.
-    try:
-        _create_system_devices(vgs)
-    except cmdutils.Error:
-        log.warning("Failed to create system devices file.")
-        raise
+    _create_system_devices(vgs)
 
     # Devices file was created, enable devices/use_devicesfile in lvm config.
     log.debug("Enabling lvm devices/use_devicesfile.")
