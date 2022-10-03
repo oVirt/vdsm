@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Red Hat, Inc.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-targets := centos-8
+targets := centos-8 centos-9
 prefix := vdsm-test
 
 .PHONY: $(targets) push
