@@ -8,7 +8,11 @@ env:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    container: quay.io/ovirt/vdsm-test-centos-8
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [centos-8, centos-9]
+    container: quay.io/ovirt/vdsm-test-${{ matrix.distro }}
     steps:
     - uses: ovirt/checkout-action@main
     - name: Run linters
@@ -17,8 +21,12 @@ jobs:
     env:
       TRAVIS_CI: 1
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [centos-8, centos-9]
     container:
-      image: quay.io/ovirt/vdsm-test-centos-8
+      image: quay.io/ovirt/vdsm-test-${{ matrix.distro }}
       # Required to create loop devices.
       options: --privileged
     steps:
@@ -29,8 +37,12 @@ jobs:
     env:
       TRAVIS_CI: 1
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [centos-8, centos-9]
     container:
-      image: quay.io/ovirt/vdsm-test-centos-8
+      image: quay.io/ovirt/vdsm-test-${{ matrix.distro }}
       # Required to create loop devices.
       options: --privileged
     steps:
@@ -41,8 +53,12 @@ jobs:
     env:
       TRAVIS_CI: 1
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [centos-8, centos-9]
     container:
-      image: quay.io/ovirt/vdsm-test-centos-8
+      image: quay.io/ovirt/vdsm-test-${{ matrix.distro }}
       # Needed for many operations, i.e. creating bridges
       options: --privileged
     steps:
