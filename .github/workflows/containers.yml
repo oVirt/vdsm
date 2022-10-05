@@ -13,7 +13,7 @@ env:
   IMAGE_REGISTRY: quay.io
   can_push: ${{ github.repository_owner == 'oVirt' }}
 jobs:
-  container:
+  container-network:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -34,6 +34,33 @@ jobs:
         with:
           image: ovirt/vdsm-network-tests-${{ matrix.container }}
           tags: alma-9 centos-8 centos-9
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ secrets.QUAY_USERNAME  }}
+          password: ${{ secrets.QUAY_TOKEN }}
+      - name: Print image url
+        if: ${{ env.can_push == 'true' }}
+        run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+  container-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro: [ centos-8, centos-9, alma-9 ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install podman
+      - name: Build container images
+        working-directory: docker
+        run: make ${{ matrix.distro }}
+      - name: Push to Quay.io
+        if: ${{ env.can_push == 'true' }}
+        id: push-to-quay
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ovirt/vdsm-test
+          tags: ${{ matrix.distro }}
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ secrets.QUAY_USERNAME  }}
           password: ${{ secrets.QUAY_TOKEN }}
