@@ -9,9 +9,9 @@ prefix := vdsm-test
 all: $(targets)
 
 $(targets):
-	podman build -t $(prefix)-$@ -f Dockerfile.$@ .
+	podman build -t $(prefix):$@ -f Dockerfile.$@ .
 
 push:
 	for name in $(targets); do \
-		podman push $(prefix)-$$name quay.io/ovirt/$(prefix)-$$name; \
+		podman push $(prefix):$$name quay.io/ovirt/$(prefix):$$name; \
 	done
