@@ -1072,6 +1072,33 @@ GLUSTER_GEOREP_STATUS = {
                  'data': '0'}],
              'remoteVolumeName': 'vol2',
              'sessionKey': '6a2f7584-05a8-4651-8786-1cd6ae87b896:ssh:'
+             '//192.168.122.145::vol2:3e8382d6-f509-49db-b64f-59a8dfb5ee3b'}
+        ]
+    }
+}
+
+GLUSTER_GEOREP_STATUS_OLD = {
+    'vol1': {
+        'sessions': [
+            {'bricks': [
+                {'status': 'Stopped',
+                 'brickName': '/root/b1_vol1',
+                 'crawlStatus': 'N/A',
+                 'hostUuid': '6a2f7584-05a8-4651-8786-1cd6ae87b896',
+                 'remoteHost': '192.168.122.145',
+                 'checkpointCompletionTime': 1418361500,
+                 'meta': '0',
+                 'checkpointCompleted': 'Yes',
+                 'host': 'localhost.localdomain',
+                 'checkpointTime': 1418361443,
+                 'lastSynced': 1418361503,
+                 'failures': '0',
+                 'entry': '0',
+                 'remoteUserName': 'root',
+                 'timeZone': 'IST',
+                 'data': '0'}],
+             'remoteVolumeName': 'vol2',
+             'sessionKey': '6a2f7584-05a8-4651-8786-1cd6ae87b896:ssh:'
              '//192.168.122.145::vol2'}
         ]
     }
