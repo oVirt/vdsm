@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cliOutput>
+  <opRet>0</opRet>
+  <opErrno>0</opErrno>
+  <opErrstr/>
+  <geoRep>
+    <volume>
+      <name>vol1</name>
+      <sessions>
+        <session>
+          <session_slave>6a2f7584-05a8-4651-8786-1cd6ae87b896:ssh://192.168.122.145::vol2</session_slave>
+          <pair>
+            <master_node>localhost.localdomain</master_node>
+            <master_node_uuid>6a2f7584-05a8-4651-8786-1cd6ae87b896</master_node_uuid>
+            <master_brick>/root/b1_vol1</master_brick>
+	    <slave_user>root</slave_user>
+            <slave>192.168.122.145::vol2</slave>
+	    <slave_node>192.168.122.145</slave_node>
+            <status>Stopped</status>
+            <crawl_status>N/A</crawl_status>
+            <last_synced>2014-12-12 05:18:23</last_synced>
+            <entry>0</entry>
+            <data>0</data>
+            <meta>0</meta>
+            <failures>0</failures>
+	    <checkpoint_time>2014-12-12 05:17:23</checkpoint_time>
+	    <checkpoint_completion_time>2014-12-12 05:18:20</checkpoint_completion_time>
+	    <checkpoint_completed>Yes</checkpoint_completed>
+          </pair>
+        </session>
+      </sessions>
+    </volume>
+  </geoRep>
+</cliOutput>

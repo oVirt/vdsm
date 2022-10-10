@@ -1125,7 +1125,7 @@ def _parseGeoRepStatus(tree):
                     bricks: [{host: 'local node',
                               hostUuid: 'uuid of brick host',
                               brickName: 'brick in the local volume',
-                              remoteHost: 'slave',
+                              remoteHost: 'secondary',
                               status: 'status'
                               remoteUserName: 'root'
                               timeZone: 'nodes time zone'
@@ -1142,6 +1142,8 @@ def _parseGeoRepStatus(tree):
                ]....
     }
     """
+    gluster_old_format = tree.find(
+        'geoRep/volume/sessions/session/session_secondary') is None
     status = {}
     for volume in tree.findall('geoRep/volume'):
         sessions = []
@@ -1149,17 +1151,35 @@ def _parseGeoRepStatus(tree):
         for session in volume.findall('sessions/session'):
             pairs = []
             sessionDetail = {}
-            sessionDetail['sessionKey'] = session.find('session_slave').text
+            if gluster_old_format:
+                sessionDetail['sessionKey'] = session.find(
+                    'session_slave').text
+            else:
+                sessionDetail['sessionKey'] = session.find(
+                    'session_secondary').text
             sessionDetail['remoteVolumeName'] = sessionDetail[
                 'sessionKey'].split("::")[-1].split(":")[0]
             for pair in session.findall('pair'):
                 pairDetail = {}
-                pairDetail['host'] = pair.find('master_node').text
-                pairDetail['hostUuid'] = pair.find(
-                    'master_node_uuid').text
-                pairDetail['brickName'] = pair.find('master_brick').text
-                pairDetail['remoteHost'] = pair.find('slave_node').text
-                pairDetail['remoteUserName'] = pair.find('slave_user').text
+                if gluster_old_format:
+                    pairDetail['host'] = pair.find('master_node').text
+                    pairDetail['hostUuid'] = pair.find('master_node_uuid').text
+                    pairDetail['brickName'] = pair.find('master_brick').text
+                    pairDetail['remoteHost'] = pair.find('slave_node').text
+                    if pairDetail['remoteHost'] is None:
+                        pairDetail['remoteHost'] = pair.find(
+                            'slave').text.split("::")[0]
+                    pairDetail['remoteUserName'] = pair.find(
+                        'slave_user').text
+                else:
+                    pairDetail['host'] = pair.find('primary_node').text
+                    pairDetail['hostUuid'] = pair.find(
+                        'primary_node_uuid').text
+                    pairDetail['brickName'] = pair.find('primary_brick').text
+                    pairDetail['remoteHost'] = pair.find(
+                        'secondary').text.split("::")[0]
+                    pairDetail['remoteUserName'] = pair.find(
+                        'secondary_user').text
                 pairDetail['status'] = pair.find('status').text
                 pairDetail['crawlStatus'] = pair.find('crawl_status').text
                 pairDetail['timeZone'] = _TIME_ZONE

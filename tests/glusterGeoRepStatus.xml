@@ -8,14 +8,14 @@
       <name>vol1</name>
       <sessions>
         <session>
-          <session_slave>6a2f7584-05a8-4651-8786-1cd6ae87b896:ssh://192.168.122.145::vol2</session_slave>
+          <session_secondary>6a2f7584-05a8-4651-8786-1cd6ae87b896:ssh://192.168.122.145::vol2:3e8382d6-f509-49db-b64f-59a8dfb5ee3b</session_secondary>
           <pair>
-            <master_node>localhost.localdomain</master_node>
-            <master_node_uuid>6a2f7584-05a8-4651-8786-1cd6ae87b896</master_node_uuid>
-            <master_brick>/root/b1_vol1</master_brick>
-	    <slave_user>root</slave_user>
-            <slave>192.168.122.145::vol2</slave>
-	    <slave_node>192.168.122.145</slave_node>
+            <primary_node>localhost.localdomain</primary_node>
+            <primary_node_uuid>6a2f7584-05a8-4651-8786-1cd6ae87b896</primary_node_uuid>
+            <primary_brick>/root/b1_vol1</primary_brick>
+	    	<secondary_user>root</secondary_user>
+            <secondary>192.168.122.145::vol2</secondary>
+	    	<secondary_node/>
             <status>Stopped</status>
             <crawl_status>N/A</crawl_status>
             <last_synced>2014-12-12 05:18:23</last_synced>
@@ -23,9 +23,9 @@
             <data>0</data>
             <meta>0</meta>
             <failures>0</failures>
-	    <checkpoint_time>2014-12-12 05:17:23</checkpoint_time>
-	    <checkpoint_completion_time>2014-12-12 05:18:20</checkpoint_completion_time>
-	    <checkpoint_completed>Yes</checkpoint_completed>
+	    	<checkpoint_time>2014-12-12 05:17:23</checkpoint_time>
+	    	<checkpoint_completion_time>2014-12-12 05:18:20</checkpoint_completion_time>
+	    	<checkpoint_completed>Yes</checkpoint_completed>
           </pair>
         </session>
       </sessions>
