@@ -114,6 +114,7 @@ def _create_system_devices(vgs):
         data = (f"# Created by Vdsm pid {os.getpid()} at "
                 f"{now.strftime('%a %b %d %H:%M:%S %Y')}\n")
 
+        os.makedirs(os.path.dirname(devices_file), exist_ok=True)
         fileUtils.atomic_write(devices_file, data.encode("utf-8"))
     else:
         for vg in vgs:
