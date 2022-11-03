@@ -811,6 +811,9 @@ class QemuGuestAgentPoller(object):
                 'Not querying QEMU-GA for guest CPU info because domain'
                 'is not running for vm-id=%s', vm.id)
             return {}
+        if vcpus is None:
+            self.log.info('Guest CPU count was not returned for vm=%s', vm.id)
+            return {}
         if 'online' in vcpus:
             count = len(taskset.cpulist_parse(vcpus['online']))
         else:
