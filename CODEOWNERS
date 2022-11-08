@@ -171,5 +171,5 @@ static/etc/vdsm/mom.d/                  @mz-pdm
 vdsm_hooks/                             @tinez @mz-pdm @almusil
 
 # Documentation owners
-doc/                                    @aesteve-rh @mz-pdm @almusil @tinez @oVirt/ovirt-documentation
-README.md                               @aesteve-rh @mz-pdm @almusil @tinez @oVirt/ovirt-documentation
+doc/                                    @aesteve-rh @mz-pdm @almusil @tinez
+README.md                               @aesteve-rh @mz-pdm @almusil @tinez
