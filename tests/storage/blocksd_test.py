@@ -13,6 +13,7 @@ import string
 
 import pytest
 
+from vdsm import jobs
 from vdsm import utils
 from vdsm.config import config
 from vdsm.common.units import MiB, GiB
@@ -20,22 +21,28 @@ from vdsm.storage import blockSD
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import guarded
 from vdsm.storage import image
 from vdsm.storage import lvm
 from vdsm.storage import qemuimg
+from vdsm.storage import merge
 from vdsm.storage import sanlock_direct
 from vdsm.storage import sd
 from vdsm.storage import sp
 from vdsm.storage.sdc import sdCache
+from vdsm.storage.sdm.api import merge as api_merge
 from vdsm.storage.spbackends import StoragePoolDiskBackend
 
 from . import qemuio
 from . marks import requires_root
 
+from fakelib import FakeNotifier
+from fakelib import FakeScheduler
 from storage.storagefakelib import fake_spm
 from storage.storagefakelib import fake_vg
 from storage.storagefakelib import FakeDomainMonitor
 from storage.storagefakelib import FakeTaskManager
+from storage.storagefakelib import fake_guarded_context
 
 TESTDIR = os.path.dirname(__file__)
 CHUNK_SIZE_MB = config.getint("irs", "volume_utilization_chunk_mb")
@@ -1242,6 +1249,125 @@ def test_create_volume_with_new_bitmap(
             "granularity": 65536
         },
     ]
+
+
+@requires_root
+@pytest.mark.root
+@pytest.mark.parametrize("stale_bitmaps", [
+    6,   # required size < lv size
+    11,  # required size = lv size
+    15,  # required size > lv size
+])
+@pytest.mark.xfail(reason='Stale bitmaps in base volume not considered')
+def test_merge_with_bitmap(
+        tmp_storage, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
+        fake_sanlock, monkeypatch, stale_bitmaps, caplog):
+    sd_id = str(uuid.uuid4())
+
+    dev = tmp_storage.create_device(10 * GiB)
+    lvm.createVG(sd_id, [dev], blockSD.STORAGE_UNREADY_DOMAIN_TAG, 128)
+    vg = lvm.getVG(sd_id)
+
+    dom = blockSD.BlockStorageDomain.create(
+        sdUUID=sd_id,
+        domainName="domain",
+        domClass=sd.DATA_DOMAIN,
+        vgUUID=vg.uuid,
+        version=4,
+        storageType=sd.ISCSI_DOMAIN)
+
+    sdCache.knownSDs[sd_id] = blockSD.findDomain
+    sdCache.manuallyAddDomain(dom)
+
+    dom.refresh()
+    dom.attach(tmp_repo.pool_id)
+
+    img_id = str(uuid.uuid4())
+    base_vol_uuid = str(uuid.uuid4())
+    top_vol_uuid = str(uuid.uuid4())
+
+    # Create base volume.
+    dom.createVolume(
+        imgUUID=img_id,
+        capacity=128 * MiB,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=base_vol_uuid,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID)
+
+    base_vol = dom.produceVolume(img_id, base_vol_uuid)
+
+    # Create top volume with bitmaps.
+    dom.createVolume(
+        imgUUID=img_id,
+        capacity=128 * MiB,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=top_vol_uuid,
+        desc="Test top volume",
+        srcImgUUID=base_vol.imgUUID,
+        srcVolUUID=base_vol.volUUID)
+
+    top_vol = dom.produceVolume(img_id, top_vol_uuid)
+
+    # Create leaf volume.
+    dom.createVolume(
+        imgUUID=img_id,
+        capacity=128 * MiB,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=str(uuid.uuid4()),
+        desc="Test top volume",
+        srcImgUUID=top_vol.imgUUID,
+        srcVolUUID=top_vol.volUUID)
+
+    host_id = 0
+    subchain_info = dict(sd_id=base_vol.sdUUID,
+                         img_id=base_vol.imgUUID,
+                         base_id=base_vol.volUUID,
+                         top_id=top_vol.volUUID,
+                         base_generation=0)
+    subchain = merge.SubchainInfo(subchain_info, host_id)
+
+    # Nearly fill the volume with data.
+    top_vol.prepare()
+    qemuio.write_pattern(
+        top_vol.getVolumePath(),
+        qemuimg.FORMAT.QCOW2,
+        offset=0,
+        len=126 * MiB)
+    # Add good bitmap to top.
+    qemuimg.bitmap_add(base_vol.getVolumePath(), "good-bitmap").run()
+    top_vol.teardown(sd_id, top_vol_uuid)
+
+    # Add bitmaps to the base volume after creating top volume.
+    base_vol.prepare()
+    for i in range(stale_bitmaps):
+        qemuimg.bitmap_add(base_vol.getVolumePath(), f"stale-bitmap{i}").run()
+    base_vol.teardown(sd_id, base_vol_uuid)
+
+    with monkeypatch.context() as mc:
+        # TODO: check why this context fake is required. Otherwise, we need to
+        # acquire the host id, which causes other tests to fail.
+        mc.setattr(guarded, 'context', fake_guarded_context())
+        # Prepare for merge, should expand the base volume.
+        merge.prepare(subchain)
+        # Run the actual merge.
+        jobs.start(FakeScheduler(), FakeNotifier())
+        caplog.clear()
+        job = api_merge.Job(str(uuid.uuid4()), subchain, merge_bitmaps=True)
+        job.run()
+        merge.finalize(subchain)
+
+    # Merge ended correctly.
+    for record in caplog.records:
+        assert record.levelname != "WARNING"
+    assert job.status == jobs.STATUS.DONE
 
 
 @requires_root
