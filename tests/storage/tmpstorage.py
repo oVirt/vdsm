@@ -7,7 +7,6 @@ from __future__ import division
 import itertools
 import logging
 import os
-import re
 
 import six
 
@@ -21,17 +20,6 @@ log = logging.getLogger("test")
 
 
 class TemporaryStorage(object):
-
-    CONF = """
-        global {
-         use_lvmetad=0
-        }
-        devices {
-         write_cache_state=0
-         filter=%s
-        }
-    """
-    CONF = re.sub(r"\s+", " ", CONF).strip()
 
     def __init__(self, tmpdir):
         self._tmpdir = tmpdir
@@ -64,15 +52,6 @@ class TemporaryStorage(object):
     def devices(self):
         return tuple(self._devices)
 
-    def lvm_config(self):
-        if self._devices:
-            pattern = "|".join("^{}$".format(path) for path in self._devices)
-            accept = '"a|{}|", '.format(pattern)
-        else:
-            accept = ""
-        filt = '[%s"r|.*|"]' % accept
-        return self.CONF % filt
-
     def close(self):
         errors = []
 
@@ -92,12 +71,12 @@ class TemporaryStorage(object):
             raise CleanupError("Errors during close", errors)
 
     def _remove_device_vg(self, device):
-        conf = self.lvm_config()
+        tmp_devices = ",".join(self._devices)
         cmd = [
             "vgs",
             "-o", "name",
             "--noheadings",
-            "--config", conf,
+            "--devices", tmp_devices,
             "--select", "pv_name = %s" % device.path
         ]
         vg_name = commands.run(cmd).strip().decode()
@@ -106,13 +85,14 @@ class TemporaryStorage(object):
 
             errors = []
             cmds = [
-                ["vgchange", "-an", "--config", conf, vg_name],
-                ["lvremove", "-ff", "--config", conf, vg_name],
-                ["vgremove", "-ff", "--config", conf, vg_name],
+                ["vgchange", "-an", "--devices", tmp_devices, vg_name],
+                ["lvremove", "-ff", "--devices", tmp_devices, vg_name],
+                ["vgremove", "-ff", "--devices", tmp_devices, vg_name],
             ]
 
             # run all the commands even if some of them fail
             for cmd in cmds:
+
                 try:
                     commands.run(cmd)
                 except cmdutils.Error as e:
