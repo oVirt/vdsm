@@ -39,7 +39,7 @@ class Command(object):
     """
 
     def __init__(self, cmd, cwd=None, nice=utils.NICENESS.HIGH,
-                 ioclass=utils.IOCLASS.IDLE):
+                 ioclass=utils.IOCLASS.IDLE, warn_stderr=False):
         self._cmd = cmd
         self._cwd = cwd
         self._nice = nice
@@ -47,6 +47,7 @@ class Command(object):
         self._lock = threading.Lock()
         self._state = CREATED
         self._proc = None
+        self._warn_stderr = warn_stderr
 
     def run(self):
         """
@@ -150,7 +151,12 @@ class Command(object):
             `RuntimeError` if operation state is invalid
         """
         rc = self._proc.returncode
-        log.debug(cmdutils.retcode_log_line(rc, err))
+        if rc == 0 and self._warn_stderr and err:
+            log.warning(
+                "Command %s succeeded with warnings: %s", self._cmd, err)
+        else:
+            log.debug("%s", cmdutils.retcode_log_line(rc, err))
+
         with self._lock:
             self._proc = None
             if self._state == ABORTING:
