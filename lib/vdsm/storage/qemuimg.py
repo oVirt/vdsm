@@ -361,7 +361,7 @@ class ProgressCommand(object):
     REGEXPR = re.compile(br'\s*\(([\d.]+)/100%\)\s*')
 
     def __init__(self, cmd, cwd=None):
-        self._operation = operation.Command(cmd, cwd=cwd)
+        self._operation = operation.Command(cmd, cwd=cwd, warn_stderr=True)
         self._progress = 0.0
 
     def run(self):
