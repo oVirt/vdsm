@@ -125,6 +125,27 @@ def remove_bitmap(vol_path, bitmap):
             vol_path=vol_path)
 
 
+def prune_bitmaps(base_path, top_path):
+    """
+    Prune all the stale bitmaps from the base volume path.
+    A bitmap is considered stale if it appears only in the base volume,
+    and is missing or invalid in the top volume.
+
+    Args:
+        base_path (str): Path to the base volume
+        top_path (str): Path to the top volume
+    """
+    base_bitmaps = _query_bitmaps(base_path)
+    valid_top_bitmaps = _query_bitmaps(top_path, filter=_valid)
+
+    stale_bitmaps = [
+        name for name in base_bitmaps if name not in valid_top_bitmaps]
+    if stale_bitmaps:
+        log.warning("Prune stale bitmaps %s from %r", stale_bitmaps, base_path)
+        for bitmap in stale_bitmaps:
+            remove_bitmap(base_path, bitmap)
+
+
 def clear_bitmaps(vol_path):
     """
     Remove all the bitmaps from the given volume path
