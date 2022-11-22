@@ -1258,7 +1258,6 @@ def test_create_volume_with_new_bitmap(
     11,  # required size = lv size
     15,  # required size > lv size
 ])
-@pytest.mark.xfail(reason='Stale bitmaps in base volume not considered')
 def test_merge_with_bitmap(
         tmp_storage, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
         fake_sanlock, monkeypatch, stale_bitmaps, caplog):
