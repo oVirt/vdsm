@@ -7,6 +7,8 @@ import pytest
 
 from collections import namedtuple
 
+from . import qemuio
+
 from vdsm.common import cmdutils
 from vdsm.common import exception
 from vdsm.common.units import MiB
@@ -232,6 +234,78 @@ def test_remove_bitmap_failed(monkeypatch, tmp_mount, vol_chain):
 def test_remove_non_existing_bitmap_succeed(tmp_mount, vol_chain):
     # try to remove a non-existing bitmap from top_vol
     bitmaps.remove_bitmap(vol_chain.top_vol, 'bitmap')
+
+
+def test_prune_stale_bitmaps(tmp_mount, vol_chain):
+    # Add valid bitmap to volumes
+    bitmap = 'valid-bitmap'
+    qemuimg.bitmap_add(vol_chain.base_vol, bitmap).run()
+    qemuimg.bitmap_add(vol_chain.top_vol, bitmap).run()
+
+    # Add stale bitmaps to base volume
+    for i in range(5):
+        qemuimg.bitmap_add(vol_chain.top_vol, f"stale-bitmap-{i}").run()
+
+    bitmaps.prune_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
+
+    info = qemuimg.info(vol_chain.base_vol)
+    assert info['format-specific']['data']['bitmaps'] == [
+        {
+            "flags": ['auto'],
+            "name": bitmap,
+            "granularity": 65536
+        },
+    ]
+
+
+def test_prune_disabled_bitmaps(tmp_mount, vol_chain):
+    # Add valid bitmap to volumes
+    bitmap = 'valid-bitmap'
+    qemuimg.bitmap_add(vol_chain.base_vol, bitmap).run()
+    qemuimg.bitmap_add(vol_chain.top_vol, bitmap).run()
+
+    # Add disabled bitmaps to top volume
+    for i in range(5):
+        bitmap_disabled = f"disabled-bitmap-{i}"
+        qemuimg.bitmap_add(vol_chain.base_vol, bitmap_disabled).run()
+        qemuimg.bitmap_add(
+            vol_chain.top_vol, bitmap_disabled, enable=False).run()
+
+    bitmaps.prune_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
+
+    info = qemuimg.info(vol_chain.base_vol)
+    assert info['format-specific']['data']['bitmaps'] == [
+        {
+            "flags": ['auto'],
+            "name": bitmap,
+            "granularity": 65536
+        },
+    ]
+
+
+def test_prune_in_use_bitmaps(tmp_mount, vol_chain):
+    # Add inconsistent "in-use" bitmaps to volumes
+    for i in range(5):
+        bitmap_in_use = f"in-use-bitmap-{i}"
+        qemuimg.bitmap_add(vol_chain.base_vol, bitmap_in_use).run()
+        qemuimg.bitmap_add(vol_chain.top_vol, bitmap_in_use).run()
+    qemuio.abort(vol_chain.top_vol)
+
+    # Add valid bitmap to volumes
+    bitmap = 'valid-bitmap'
+    qemuimg.bitmap_add(vol_chain.base_vol, bitmap).run()
+    qemuimg.bitmap_add(vol_chain.top_vol, bitmap).run()
+
+    bitmaps.prune_bitmaps(vol_chain.base_vol, vol_chain.top_vol)
+
+    info = qemuimg.info(vol_chain.base_vol)
+    assert info['format-specific']['data']['bitmaps'] == [
+        {
+            "flags": ['auto'],
+            "name": bitmap,
+            "granularity": 65536
+        },
+    ]
 
 
 def test_clear_bitmaps(tmp_mount, vol_chain):
