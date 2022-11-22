@@ -22,6 +22,7 @@ import logging
 from vdsm.common import properties
 from vdsm.common.units import MiB
 
+from vdsm.storage import bitmaps
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
@@ -158,6 +159,15 @@ def prepare(subchain):
     log.info("Preparing subchain %s for merge", subchain)
     with guarded.context(subchain.locks):
         with subchain.prepare():
+            # There may be stale bitmaps in base if they were left
+            # after failed delete bitmap operation. These bitmaps may
+            # cause the bitmaps merge operation to fail with ENOSPC.
+            # As there is not a reliable way to calculate the size of
+            # these bitmaps, and they are invalid and can never be used
+            # for incremental backup, we prune them before the commit.
+            bitmaps.prune_bitmaps(subchain.base_vol.getVolumePath(),
+                                  subchain.top_vol.getVolumePath())
+
             _update_base_capacity(subchain.base_vol,
                                   subchain.top_vol)
             _extend_base_allocation(subchain.base_vol,
