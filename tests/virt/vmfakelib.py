@@ -51,6 +51,9 @@ class IRS(object):
     def inappropriateDevices(self, ident):
         pass
 
+    def prune_bitmaps(self, sdUUID, imgUUID, volUUID, baseUUID):
+        return response.success(result=None)
+
     def measure(self, sdUUID, imgUUID, volUUID, dest_format, backing=True,
                 baseUUID=None):
         # Return fake measure set up by the test. Not setting up anyting will
