@@ -287,6 +287,16 @@ class DriveMerger:
             except JobExistsError as e:
                 raise exception.MergeFailed(str(e), job=job.id)
 
+            # Prune stale bitmaps if needed once before measuring the image.
+            # Currently, qemu-img ignores bitmaps in base, but future
+            # version may not.
+            if self._base_needs_prune_bitmaps(job, base_info):
+                self._dom._vm.prune_bitmaps(
+                    drive.domainID,
+                    drive.imageID,
+                    job.top,
+                    job.base)
+
             needs_extend, new_size = self._base_needs_extend(
                 drive, job, base_info)
 
@@ -401,6 +411,19 @@ class DriveMerger:
         except libvirt.libvirtError as e:
             self._untrack_job(job.id)
             raise exception.MergeFailed(str(e), job=job.id)
+
+    def _base_needs_prune_bitmaps(self, job, base_info):
+        if base_info['format'] != 'COW':
+            log.debug("Base volume does not support bitmaps, "
+                      "job=%r base=%r", job.id, job.base)
+            return False
+
+        if job.active_commit:
+            log.debug("Top volume is the active volume, "
+                      "job=%r top=%r", job.id, job.top)
+            return False
+
+        return True
 
     def _base_needs_extend(self, drive, job, base_info):
         """
