@@ -34,6 +34,7 @@ from vdsm.common.threadlocal import vars
 from vdsm.common.time import monotonic_time
 from vdsm.common.units import MiB, GiB
 from vdsm.config import config
+from vdsm.storage import bitmaps
 from vdsm.storage import blockSD
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
@@ -42,6 +43,7 @@ from vdsm.storage import dispatcher
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import glusterSD
+from vdsm.storage import guarded
 from vdsm.storage import image
 from vdsm.storage import imagetickets
 from vdsm.storage import iscsi
@@ -2856,6 +2858,30 @@ class HSM(object):
             unsafe=True)
 
         return dict(result=result)
+
+    @public
+    def prune_bitmaps(self, sdUUID, imgUUID, volUUID, baseUUID):
+        """
+        Prune stale bitmaps from the base volume.
+        Warning: Internal use only (i.e., from virt code).
+
+        Arguments:
+            sdUUID (str): The UUID of the storage domain that owns the volume.
+            imgUUID (str): The UUID of the image contained on the volume.
+            volUUID (str): The UUID of the top volume.
+            baseUUID (str): The UUID of the volume that will get its bitmaps
+                pruned if missing or invalid in top.
+        """
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        locks = [rm.Lock(sc.STORAGE, sdUUID, rm.SHARED),
+                 rm.Lock(img_ns, imgUUID, rm.EXCLUSIVE)]
+        with guarded.context(locks):
+            dom = sdCache.produce_manifest(sdUUID)
+            base_vol = dom.produceVolume(imgUUID, baseUUID)
+            top_vol = dom.produceVolume(imgUUID, volUUID)
+            bitmaps.prune_bitmaps(
+                base_path=base_vol.getVolumePath(),
+                top_path=top_vol.getVolumePath())
 
     @public
     def appropriateDevice(self, guid, thiefId, deviceType):
