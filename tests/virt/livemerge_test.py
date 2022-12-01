@@ -17,6 +17,7 @@ from vdsm.common import xmlutils
 from vdsm.common.config import config
 from vdsm.common.units import GiB, MiB
 
+from vdsm.virt import errors
 from vdsm.virt import metadata
 from vdsm.virt import migration
 from vdsm.virt import thinp
@@ -887,6 +888,23 @@ def test_internal_merge():
     drive = vm.getDiskDevices()[0]
     assert drive.volumeChain == expected_volumes_chain
     assert vm.volume_monitor.enabled
+
+
+def test_internal_merge_prune_error():
+    config = Config('internal-merge')
+    merge_params = config.values["merge_params"]
+
+    vm = RunningVM(config)
+
+    assert vm.query_jobs() == {}
+
+    # Simulate prune_bitmaps error.
+    error_msg = "Failed to remove bitmap"
+    vm.cif.irs.errors["prune_bitmaps"] = exception.RemoveBitmapError(error_msg)
+
+    with pytest.raises(errors.StorageUnavailableError) as e:
+        vm.merge(**merge_params)
+    assert error_msg in str(e)
 
 
 def test_extend_timeout_recover(fake_time):
