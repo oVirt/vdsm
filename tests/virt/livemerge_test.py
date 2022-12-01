@@ -856,9 +856,20 @@ def test_internal_merge():
     # Check current chain matches expected chain - current chain is unordered.
     assert set(vdsm_chain) == set(new_chain)
 
-    # Check imageSyncVolumeChain was called with correct arguments.
-    assert len(vm.cif.irs.__calls__) == 1
+    assert len(vm.cif.irs.__calls__) == 2
+    # First call to prune_bitmaps, as it is supported and may be required.
+    # This is an internal merge with cow volumes.
     meth, arg, kwarg = vm.cif.irs.__calls__[0]
+    assert meth == "prune_bitmaps"
+    assert kwarg == {
+        "sdUUID": sd_id,
+        "imgUUID": img_id,
+        "volUUID": top_id,
+        "baseUUID": base_id
+    }
+
+    # Check imageSyncVolumeChain was called with correct arguments.
+    meth, arg, kwarg = vm.cif.irs.__calls__[1]
     assert meth == "imageSyncVolumeChain"
     assert arg[:3] == (sd_id, img_id, drive.volumeID)
     assert set(arg[3]) == set(new_chain)
