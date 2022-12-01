@@ -41,6 +41,7 @@ class IRS(object):
         self.extend_requests = []
         self.sd_types = {}
         self.measure_info = {}
+        self.errors = {}
 
     def getDeviceVisibility(self, guid):
         pass
@@ -53,6 +54,9 @@ class IRS(object):
 
     @recorded
     def prune_bitmaps(self, sdUUID, imgUUID, volUUID, baseUUID):
+        error = self.errors.get("prune_bitmaps")
+        if error:
+            return response.error_raw(error.code, error.msg)
         return response.success(result=None)
 
     def measure(self, sdUUID, imgUUID, volUUID, dest_format, backing=True,
