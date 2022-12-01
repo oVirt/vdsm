@@ -6106,6 +6106,22 @@ class Vm(object):
 
     # Accessing storage
 
+    def prune_bitmaps(self, domainID, imageID, topID, baseID):
+        """
+        Prune stale bitmaps from the base volume.
+        """
+        res = self.cif.irs.prune_bitmaps(
+            sdUUID=domainID,
+            imgUUID=imageID,
+            volUUID=topID,
+            baseUUID=baseID)
+
+        if res['status']['code'] != 0:
+            message = res['status']['message']
+            raise errors.StorageUnavailableError(
+                f"Unable to prune bitmaps in domain {domainID} "
+                f"image {imageID} top {topID} base {baseID}: {message}")
+
     def measure(self, domainID, imageID, topID, dest_format, backing=True,
                 baseID=None):
         """
