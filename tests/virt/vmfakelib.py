@@ -51,6 +51,7 @@ class IRS(object):
     def inappropriateDevices(self, ident):
         pass
 
+    @recorded
     def prune_bitmaps(self, sdUUID, imgUUID, volUUID, baseUUID):
         return response.success(result=None)
 
