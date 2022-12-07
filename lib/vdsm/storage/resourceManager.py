@@ -426,9 +426,9 @@ class _ResourceManager(object):
         if not request.granted():
             try:
                 request.cancel()
-                raise RequestTimedOutError("Request timed out. Could not "
-                                           "acquire resource '%s.%s'" %
-                                           (namespace, name))
+                raise RequestTimedOutError(
+                    "Request timed out. Could not "
+                    f"acquire resource '{namespace}.{name}'")
             except RequestAlreadyProcessedError:
                 # We might have acquired the resource between 'wait' and
                 # 'cancel'
