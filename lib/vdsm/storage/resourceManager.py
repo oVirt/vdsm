@@ -356,8 +356,9 @@ class _ResourceManager(object):
             try:
                 namespaceObj = self._namespaces[namespace]
             except KeyError:
-                raise ValueError("Namespace '%s' is not registered with this "
-                                 "manager" % namespace)
+                raise ValueError(
+                    f"Namespace '{namespace}' is not registered "
+                    "with this manager")
             resources = namespaceObj.resources
             with namespaceObj.lock:
                 if not namespaceObj.factory.resourceExists(name):
@@ -458,8 +459,9 @@ class _ResourceManager(object):
             try:
                 namespaceObj = self._namespaces[namespace]
             except KeyError:
-                raise ValueError("Namespace '%s' is not registered with this "
-                                 "manager" % namespace)
+                raise ValueError(
+                    f"Namespace '{namespace}' is not registered "
+                    "with this manager")
 
             resources = namespaceObj.resources
             with namespaceObj.lock:
@@ -531,16 +533,18 @@ class _ResourceManager(object):
             try:
                 namespaceObj = self._namespaces[namespace]
             except KeyError:
-                raise ValueError("Namespace '%s' is not registered with this "
-                                 "manager", namespace)
+                raise ValueError(
+                    f"Namespace '{namespace}' is not registered "
+                    "with this manager")
             resources = namespaceObj.resources
 
             with namespaceObj.lock:
                 try:
                     resource = resources[name]
                 except KeyError:
-                    raise ValueError("Resource '%s.%s' is not currently "
-                                     "registered" % (namespace, name))
+                    raise ValueError(
+                        f"Resource '{namespace}.{name}' is not "
+                        "currently registered")
 
                 resource.activeUsers -= 1
                 log.debug("Released resource '%s' (%d active users)",
@@ -726,8 +730,7 @@ class Owner(object):
         full_name = "%s.%s" % (namespace, name)
         with self.lock:
             if full_name not in self.resources:
-                raise ValueError("resource %s not owned by %s" %
-                                 (full_name, self))
+                raise ValueError(f"resource {full_name} not owned by {self}")
 
             resource = self.resources[full_name]
 
